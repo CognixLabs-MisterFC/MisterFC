@@ -146,7 +146,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 - **0.9** GitHub Actions CI + PR template (30 min) — [hecho 2026-05-27]
 - **0.10** direnv `.envrc` + `.env.example` (15 min) — [hecho 2026-05-27]
 - **0.11** Plan Maestro como Markdown (este archivo) committeado a `docs/journey/plan-maestro.md` (15 min) — [hecho 2026-05-27]
-- **0.12** ADR-0003: estrategia monorepo + decisión Ola 2 RN (30 min)
+- **0.12** ADR-0003: estrategia monorepo + decisión Ola 2 RN (30 min) — [hecho 2026-05-27]
 
 ---
 
