@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+dist/
+build/
+out/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env
+.env
+.env.local
+.env*.local
+.envrc.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel/
+
+# Turbo
+.turbo/
+
+# Coverage
+coverage/
+
+# Certs
+*.pem
+
+# Editor
+.idea/
+*.swp
+*.swo
+
+# Sentry
+.sentryclirc
