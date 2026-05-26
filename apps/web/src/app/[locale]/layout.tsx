@@ -4,6 +4,7 @@ import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
+import { ServiceWorkerRegister } from '@/components/service-worker-register';
 import '../globals.css';
 
 const inter = Inter({
@@ -21,6 +22,12 @@ export const metadata: Metadata = {
   applicationName: 'MisterFC',
   authors: [{ name: 'Iker Milla' }],
   creator: 'Cognix Labs',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'MisterFC',
+  },
 };
 
 export const viewport: Viewport = {
@@ -52,6 +59,7 @@ export default async function LocaleLayout({
     <html lang={locale} className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
