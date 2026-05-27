@@ -6,7 +6,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 | Fase | Título | Estado | Inicio | Cierre |
 |---|---|---|---|---|
-| 0 | Bootstrap del repositorio y andamiaje | ⟳ en curso | 2026-05-26 | — |
+| 0 | Bootstrap del repositorio y andamiaje | ☑ completada | 2026-05-26 | 2026-05-27 |
 | 1 | Identidad, Auth y modelo de roles base | ☐ pendiente | — | — |
 | 2 | Estructura del club, plantilla y cuerpo técnico | ☐ pendiente | — | — |
 | 3 | Calendario unificado y comunicación básica | ☐ pendiente | — | — |
@@ -28,6 +28,5 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 ## Notas
 
-- **Fase 0** se cerrará cuando el usuario mergee el PR `feat/fase-0-bootstrap` a `main`.
 - Al cerrar cada fase, mover su fila a `☑` y rellenar la fecha de cierre.
 - Si una subfase concreta dentro de una fase cierra, registrar `[hecho YYYY-MM-DD]` en [plan-maestro.md](plan-maestro.md) (no en esta tabla).
