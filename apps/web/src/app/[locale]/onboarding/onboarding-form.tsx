@@ -48,6 +48,11 @@ export function OnboardingForm({ locale }: { locale: string }) {
           {t('error_slug_collision')}
         </p>
       )}
+      {state.error === 'already_in_a_club' && (
+        <p role="alert" className="text-sm text-red-400">
+          {t('error_already_in_a_club')}
+        </p>
+      )}
       {state.error === 'generic' && (
         <p role="alert" className="text-sm text-red-400">
           {t('error_generic')}

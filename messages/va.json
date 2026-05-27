@@ -38,6 +38,7 @@
     "submitting": "Creant…",
     "error_name_required": "Posa el nom del club",
     "error_slug_collision": "Ja existeix un club amb un nom molt similar. Canvia'l una mica.",
+    "error_already_in_a_club": "Ja pertanys a un club. Torna a l'inici.",
     "error_generic": "No hem pogut crear el club. Torna-ho a provar."
   },
   "home": {

@@ -38,6 +38,7 @@
     "submitting": "Creando…",
     "error_name_required": "Pon el nombre del club",
     "error_slug_collision": "Ya existe un club con un nombre muy parecido. Cámbialo un poco.",
+    "error_already_in_a_club": "Ya perteneces a un club. Vuelve al inicio.",
     "error_generic": "No hemos podido crear el club. Inténtalo de nuevo."
   },
   "home": {

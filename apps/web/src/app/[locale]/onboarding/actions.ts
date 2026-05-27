@@ -9,23 +9,22 @@ import {
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 export type CreateClubFormState = {
-  error?: 'name_required' | 'slug_collision' | 'generic';
+  error?: 'name_required' | 'slug_collision' | 'already_in_a_club' | 'generic';
 };
 
 /**
  * Server Action: crea un club nuevo + membership admin_club para el user actual.
  *
- * Pasos:
- *  1. Validar input con Zod.
- *  2. Derivar slug del nombre. Si queda vacío (input solo símbolos), error.
- *  3. INSERT en clubs. Si choca el unique de slug → error de colisión.
- *  4. INSERT en memberships con role=admin_club.
- *  5. Redirect a `/<locale>`.
+ * Llamada única a la RPC `create_club_with_admin` (SECURITY DEFINER, atómica).
+ * Esa función:
+ *   - exige auth.uid() != null
+ *   - exige que el user no tenga ya memberships
+ *   - valida name/slug/locale
+ *   - inserta club y membership en una sola transacción
  *
- * Si el paso 4 falla, el paso 3 queda hecho (sin transacción cross-tabla aquí).
- * En la práctica las RLS de 1.7 + la cascade ON DELETE permiten reconciliar
- * manualmente desde el dashboard si pasa. Para Fase 2 evaluaremos envolverlo
- * en una RPC `create_club_with_admin` que sea atómica.
+ * La tabla `clubs` está cerrada a INSERT directo desde cliente (policy
+ * clubs_insert_forbidden), así que este es el único path autorizado para
+ * crear un club en Fase 1.
  */
 export async function createClub(
   locale: string,
@@ -56,31 +55,21 @@ export async function createClub(
     redirect(`/${locale}/signin`);
   }
 
-  const { data: club, error: clubError } = await supabase
-    .from('clubs')
-    .insert({
-      name: parsed.data.name,
-      slug,
-      locale: parsed.data.locale,
-    })
-    .select('id')
-    .single();
-
-  if (clubError) {
-    // Postgres unique_violation
-    if (clubError.code === '23505') {
-      return { error: 'slug_collision' };
-    }
-    return { error: 'generic' };
-  }
-
-  const { error: membershipError } = await supabase.from('memberships').insert({
-    profile_id: user.id,
-    club_id: club.id,
-    role: 'admin_club',
+  const { error } = await supabase.rpc('create_club_with_admin', {
+    p_name: parsed.data.name,
+    p_slug: slug,
+    p_locale: parsed.data.locale,
   });
 
-  if (membershipError) {
+  if (error) {
+    // Postgres unique_violation sobre clubs.slug
+    if (error.code === '23505') {
+      return { error: 'slug_collision' };
+    }
+    // Excepciones explícitas de la función (errcode P0001 con MESSAGE específico)
+    if (error.message?.includes('already_in_a_club')) {
+      return { error: 'already_in_a_club' };
+    }
     return { error: 'generic' };
   }
 
