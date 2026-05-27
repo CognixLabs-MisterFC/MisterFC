@@ -1,0 +1,26 @@
+{
+  "name": "MisterFC",
+  "short_name": "MisterFC",
+  "description": "Gestión, metodología y desarrollo deportivo para entrenadores de fútbol base y amateur.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F1B2E",
+  "theme_color": "#0F1B2E",
+  "lang": "es",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
