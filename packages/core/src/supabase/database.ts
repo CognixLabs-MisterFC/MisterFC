@@ -433,6 +433,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_club_with_admin: {
+        Args: { p_locale?: string; p_name: string; p_slug: string }
+        Returns: string
+      }
       current_user_email: { Args: never; Returns: string }
       user_has_capability: {
         Args: { p_capability: string; p_membership_id: string }
