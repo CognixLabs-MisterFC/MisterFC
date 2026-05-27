@@ -4,5 +4,46 @@
     "welcome": "Welcome to MisterFC",
     "tagline": "Management, methodology and sports development for grassroots and amateur football coaches.",
     "footer": "Cognix Labs · v0.0.0"
+  },
+  "auth": {
+    "signin": {
+      "title": "Sign in to MisterFC",
+      "subtitle": "We'll send a magic link to your inbox. No passwords.",
+      "email_label": "Email",
+      "email_placeholder": "you@email.com",
+      "submit": "Send link",
+      "submitting": "Sending…",
+      "error_invalid_email": "Invalid email",
+      "error_generic": "We couldn't send the link. Please try again."
+    },
+    "check_email": {
+      "title": "Check your email",
+      "body": "We sent a link to {email}. Open it from this device to sign in.",
+      "body_fallback": "We sent you a sign-in link. Open it from this device to sign in.",
+      "back_to_signin": "Use a different email"
+    },
+    "callback": {
+      "error_title": "We couldn't complete sign-in",
+      "error_body": "The link is expired or already used. Request a new one from the sign-in page.",
+      "back_to_signin": "Back to sign-in"
+    }
+  },
+  "onboarding": {
+    "title": "Create your club",
+    "subtitle": "You're the first member. Create your club and you'll be the admin.",
+    "club_name_label": "Club name",
+    "club_name_placeholder": "CD My Club",
+    "club_locale_label": "Default language",
+    "submit": "Create club",
+    "submitting": "Creating…",
+    "error_name_required": "Enter the club name",
+    "error_slug_collision": "A club with a very similar name already exists. Tweak it a bit.",
+    "error_generic": "We couldn't create the club. Please try again."
+  },
+  "home": {
+    "signed_in_as": "Signed in as {email}",
+    "your_clubs": "Your clubs",
+    "no_clubs": "You don't belong to any club yet.",
+    "signout": "Sign out"
   }
 }

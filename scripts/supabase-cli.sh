@@ -46,9 +46,13 @@ case "$CMD" in
     exec npx "supabase@${SUPABASE_VERSION}" db push --db-url "$REMOTE_DB_URL" "$@"
     ;;
   types)
+    # `gen types --db-url` requiere Docker (bug del CLI 2.98). Usamos
+    # `--project-id` que va por el Management API y solo necesita el access
+    # token (que sí tiene permiso de lectura para esta operación).
+    : "${SUPABASE_ACCESS_TOKEN:?falta SUPABASE_ACCESS_TOKEN en apps/web/.env.local}"
     OUT="$REPO_ROOT/packages/core/src/supabase/database.ts"
-    echo "Generando types desde BD remota → $OUT"
-    npx "supabase@${SUPABASE_VERSION}" gen types typescript --db-url "$REMOTE_DB_URL" "$@" > "$OUT"
+    echo "Generando types desde proyecto $SUPABASE_PROJECT_REF → $OUT"
+    npx "supabase@${SUPABASE_VERSION}" gen types typescript --project-id "$SUPABASE_PROJECT_REF" "$@" > "$OUT"
     echo "OK"
     ;;
   reset)

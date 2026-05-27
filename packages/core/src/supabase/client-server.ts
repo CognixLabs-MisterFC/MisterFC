@@ -1,6 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import type { Database } from './types.js';
-import { readPublicEnv } from './env.js';
+import type { Database } from './types';
+import { readPublicEnv } from './env';
 
 /**
  * Cookie store contract — abstrae sobre next/headers para mantener

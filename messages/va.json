@@ -4,5 +4,46 @@
     "welcome": "Benvingut a MisterFC",
     "tagline": "Gestió, metodologia i desenvolupament esportiu per a entrenadors de futbol base i amateur.",
     "footer": "Cognix Labs · v0.0.0"
+  },
+  "auth": {
+    "signin": {
+      "title": "Accedir a MisterFC",
+      "subtitle": "T'enviarem un enllaç màgic al teu correu. Sense contrasenyes.",
+      "email_label": "Correu electrònic",
+      "email_placeholder": "tu@email.com",
+      "submit": "Enviar enllaç",
+      "submitting": "Enviant…",
+      "error_invalid_email": "Email no vàlid",
+      "error_generic": "No hem pogut enviar l'enllaç. Torna-ho a provar."
+    },
+    "check_email": {
+      "title": "Revisa el teu correu",
+      "body": "T'hem enviat un enllaç a {email}. Obre'l des del mateix dispositiu per entrar.",
+      "body_fallback": "T'hem enviat un enllaç d'accés. Obre'l des del mateix dispositiu per entrar.",
+      "back_to_signin": "Fer servir un altre correu"
+    },
+    "callback": {
+      "error_title": "No hem pogut completar l'accés",
+      "error_body": "L'enllaç ha caducat o ja s'ha usat. Demana'n un de nou des del signin.",
+      "back_to_signin": "Tornar al signin"
+    }
+  },
+  "onboarding": {
+    "title": "Crea el teu club",
+    "subtitle": "Ets el primer membre. Crea el teu club i seràs administrador.",
+    "club_name_label": "Nom del club",
+    "club_name_placeholder": "CD El meu club",
+    "club_locale_label": "Idioma per defecte",
+    "submit": "Crear club",
+    "submitting": "Creant…",
+    "error_name_required": "Posa el nom del club",
+    "error_slug_collision": "Ja existeix un club amb un nom molt similar. Canvia'l una mica.",
+    "error_generic": "No hem pogut crear el club. Torna-ho a provar."
+  },
+  "home": {
+    "signed_in_as": "Sessió iniciada com {email}",
+    "your_clubs": "Els teus clubs",
+    "no_clubs": "Encara no pertanys a cap club.",
+    "signout": "Tancar sessió"
   }
 }

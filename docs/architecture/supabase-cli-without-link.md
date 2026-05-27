@@ -44,7 +44,7 @@ Definidos en `package.json` raíz, todos delegan en `scripts/supabase-cli.sh`:
 | Script | Equivalente CLI | Uso |
 |---|---|---|
 | `pnpm db:push` | `supabase db push --db-url ...` | Aplica migraciones pendientes a la BD remota |
-| `pnpm db:types` | `supabase gen types typescript --db-url ... > packages/core/src/supabase/database.ts` | Regenera types TS desde el schema remoto |
+| `pnpm db:types` | `supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > packages/core/src/supabase/database.ts` | Regenera types TS desde el schema remoto. **Excepción**: usa Management API (no `--db-url`) porque el CLI 2.98 con `--db-url` exige Docker (bug). El access token sí tiene permiso de lectura para esta operación aunque no para `supabase link`. |
 | `pnpm db:reset` | `supabase db reset --db-url ...` | ⚠️ Borra y recrea el schema `public` remoto. Pide confirmación interactiva por nombre del ref. Solo usar en proyectos vacíos / sandbox. |
 
 Cualquier flag extra pasado al script se reenvía al CLI:
