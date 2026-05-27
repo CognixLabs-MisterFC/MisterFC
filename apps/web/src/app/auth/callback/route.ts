@@ -1,28 +1,32 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createSupabaseServerClient } from '@misterfc/core';
-import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { createServerClient } from '@supabase/ssr';
 
 /**
  * Callback del magic link de Supabase Auth.
  *
- * Supabase redirige a `/auth/callback?code=<otp>&next=<path>` tras hacer click
- * en el link. Intercambiamos el `code` por una sesión (cookies se setean
- * automáticamente vía nuestro CookieAdapter sobre `next/headers.cookies()`).
+ * Diseño cookie-handling:
+ *   Construimos primero el `NextResponse.redirect(...)` y le pasamos al cliente
+ *   Supabase un adapter que escribe directamente sobre `response.cookies`.
+ *   Patrón recomendado por Supabase para Route Handlers + redirect:
+ *   https://supabase.com/docs/guides/auth/server-side/nextjs
  *
- * - Si todo OK → redirect al `next` (validado a path relativo) o a `/`.
- * - Si falla → redirect a `/es/signin?error=callback_failed`. Hardcodeamos `es`
- *   porque no sabemos el locale preferido del user (aún no hay sesión).
+ *   La alternativa de usar `next/headers.cookies()` + `NextResponse.redirect`
+ *   puede en algunos casos no propagar los Set-Cookie headers al response que
+ *   construimos manualmente, especialmente con Next 16 + Turbopack. Mejor
+ *   atarse al response directamente.
  *
- * Esta ruta está fuera de `[locale]` a propósito: la URL es la que se configura
- * en Supabase Dashboard y no debe llevar prefijo de idioma.
+ * Flujo:
+ *   - Llega `/auth/callback?code=<otp>&next=<path>` desde Supabase.
+ *   - Intercambiamos el code → cookies set en response.
+ *   - Redirigimos al `next` (validado como path relativo) o a `/`.
+ *   - Si falla → redirect a `/es/signin?error=callback_failed`.
  */
-function safeNextPath(raw: string | null, origin: string): string {
-  if (!raw) return `${origin}/`;
-  // Solo permitir paths relativos que empiezan por `/` y no por `//` (open redirect).
+function safeNextPath(raw: string | null): string {
+  if (!raw) return '/';
   if (raw.startsWith('/') && !raw.startsWith('//')) {
-    return `${origin}${raw}`;
+    return raw;
   }
-  return `${origin}/`;
+  return '/';
 }
 
 export async function GET(request: NextRequest) {
@@ -35,13 +39,32 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
   }
 
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
+  // Construimos el redirect ANTES de exchangear, para escribir cookies sobre él.
+  const response = NextResponse.redirect(`${origin}${safeNextPath(next)}`);
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) {
+    return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
+  }
+
+  const supabase = createServerClient(url, anon, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        for (const { name, value, options } of cookiesToSet) {
+          response.cookies.set(name, value, options);
+        }
+      },
+    },
+  });
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
   }
 
-  return NextResponse.redirect(safeNextPath(next, origin));
+  return response;
 }
