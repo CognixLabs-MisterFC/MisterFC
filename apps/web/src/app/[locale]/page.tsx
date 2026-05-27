@@ -1,8 +1,11 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { getCurrentUser, getCurrentUserClubs } from '@misterfc/core';
+import { getCurrentUser, getCurrentUserClubs, type Role } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { signout } from './actions';
+
+const ROLES_THAT_CAN_INVITE: Role[] = ['admin_club', 'coordinador'];
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -53,6 +56,15 @@ export default async function Home({ params }: Props) {
             ))}
           </ul>
         </section>
+
+        {clubs.some((c) => ROLES_THAT_CAN_INVITE.includes(c.role)) && (
+          <Link
+            href={`/${locale}/invitations`}
+            className="text-sm text-[#10B981] underline underline-offset-4 hover:text-emerald-300"
+          >
+            {t('home.invitations_link')}
+          </Link>
+        )}
 
         <form action={signoutAction}>
           <button

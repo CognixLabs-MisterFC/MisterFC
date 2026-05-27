@@ -44,6 +44,45 @@
     "signed_in_as": "Signed in as {email}",
     "your_clubs": "Your clubs",
     "no_clubs": "You don't belong to any club yet.",
-    "signout": "Sign out"
+    "signout": "Sign out",
+    "invitations_link": "Invite people"
+  },
+  "invitations": {
+    "title": "Invitations",
+    "subtitle": "Invite people to {club} with the appropriate role.",
+    "new_section_title": "New invitation",
+    "list_section_title": "Sent",
+    "empty": "You haven't sent any invitations yet.",
+    "status_pending": "Pending",
+    "status_accepted": "Accepted",
+    "status_expired": "Expired",
+    "form": {
+      "email_label": "Email",
+      "email_placeholder": "person@email.com",
+      "role_label": "Role",
+      "role_admin_club": "Club admin",
+      "role_coordinador": "Coordinator",
+      "role_entrenador_principal": "Head coach",
+      "role_entrenador_ayudante": "Assistant coach",
+      "role_jugador": "Player / Family",
+      "submit": "Send invitation",
+      "submitting": "Sending…",
+      "ok": "Invitation sent to {email}",
+      "error_invalid_input": "Check the form fields",
+      "error_forbidden": "You don't have permission to invite in this club",
+      "error_no_club": "You don't belong to any club yet",
+      "error_generic": "We couldn't create the invitation. Please try again."
+    }
+  },
+  "invite": {
+    "title": "Accept invitation",
+    "summary": "You've been invited to join {club} as {role}.",
+    "submit": "Accept and join",
+    "submitting": "Processing…",
+    "error_wrong_email": "This invitation is for a different email. Sign out and sign in with the invited email.",
+    "error_expired": "This invitation has expired. Ask the club admin for a new one.",
+    "error_already_accepted": "This invitation has already been accepted.",
+    "error_not_found": "Invitation not found.",
+    "error_generic": "We couldn't process the invitation. Please try again."
   }
 }

@@ -2,5 +2,5 @@
  * Zod schemas compartidos.
  */
 
-export { signinSchema, createClubSchema } from './auth';
-export type { SigninInput, CreateClubInput } from './auth';
+export { signinSchema, createClubSchema, sendInvitationSchema } from './auth';
+export type { SigninInput, CreateClubInput, SendInvitationInput } from './auth';

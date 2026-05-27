@@ -24,14 +24,21 @@ En `apps/web/.env.local` (gitignored, cargado por direnv):
 ```
 SUPABASE_PROJECT_REF=<ref-del-proyecto>          # ej. tvbdykkuoyalyzllnqkn
 SUPABASE_DB_PASSWORD=<password-bd>               # la que pusiste al crear el proyecto
-SUPABASE_ACCESS_TOKEN=sbp_...                    # opcional: solo si vuelves a `supabase link`
+SUPABASE_ACCESS_TOKEN=sbp_...                    # necesario para `pnpm db:types`
+SUPABASE_DB_REGION=eu-west-1                     # opcional; default eu-west-1
 ```
 
-La URL se construye internamente como:
+La URL se construye internamente apuntando al **pooler IPv4** del proyecto:
 
 ```
-postgresql://postgres:<password-url-encoded>@db.<ref>.supabase.co:5432/postgres
+postgresql://postgres.<ref>:<password-url-encoded>@aws-0-<region>.pooler.supabase.com:6543/postgres
 ```
+
+Por qué pooler y no `db.<ref>.supabase.co:5432`:
+
+- El host directo solo resuelve a IPv6 (`2a05:...`) en muchas regiones.
+- Hay entornos (Vercel Edge runtime, Codespaces, CI con red limitada, el harness local) que no rutean IPv6 a Postgres → `network is unreachable`.
+- El pooler en modo transaction (puerto 6543) es IPv4, soporta DDL para `db push` (cada statement = transacción) y para el resto de comandos también vale.
 
 La password se URL-encodea con `encodeURIComponent` (Node) porque suele tener caracteres reservados (`@`, `:`, `/`, `?`).
 

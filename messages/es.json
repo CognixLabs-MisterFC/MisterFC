@@ -44,6 +44,45 @@
     "signed_in_as": "Sesión iniciada como {email}",
     "your_clubs": "Tus clubs",
     "no_clubs": "Aún no perteneces a ningún club.",
-    "signout": "Cerrar sesión"
+    "signout": "Cerrar sesión",
+    "invitations_link": "Invitar a personas"
+  },
+  "invitations": {
+    "title": "Invitaciones",
+    "subtitle": "Invita a personas al club {club} con el rol que les corresponda.",
+    "new_section_title": "Nueva invitación",
+    "list_section_title": "Enviadas",
+    "empty": "Aún no has enviado ninguna invitación.",
+    "status_pending": "Pendiente",
+    "status_accepted": "Aceptada",
+    "status_expired": "Caducada",
+    "form": {
+      "email_label": "Correo",
+      "email_placeholder": "persona@email.com",
+      "role_label": "Rol",
+      "role_admin_club": "Administrador del club",
+      "role_coordinador": "Coordinador",
+      "role_entrenador_principal": "Entrenador principal",
+      "role_entrenador_ayudante": "Entrenador ayudante",
+      "role_jugador": "Jugador / Familia",
+      "submit": "Enviar invitación",
+      "submitting": "Enviando…",
+      "ok": "Invitación enviada a {email}",
+      "error_invalid_input": "Revisa los datos del formulario",
+      "error_forbidden": "No tienes permiso para invitar en este club",
+      "error_no_club": "No perteneces a ningún club aún",
+      "error_generic": "No hemos podido crear la invitación. Inténtalo de nuevo."
+    }
+  },
+  "invite": {
+    "title": "Aceptar invitación",
+    "summary": "Te invitan a entrar al club {club} con el rol {role}.",
+    "submit": "Aceptar y entrar",
+    "submitting": "Procesando…",
+    "error_wrong_email": "Esta invitación es para otro correo. Cierra sesión y entra con el correo de la invitación.",
+    "error_expired": "Esta invitación ha caducado. Pide una nueva al admin del club.",
+    "error_already_accepted": "Esta invitación ya se ha aceptado.",
+    "error_not_found": "Invitación no encontrada.",
+    "error_generic": "No hemos podido procesar la invitación. Inténtalo de nuevo."
   }
 }

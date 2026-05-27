@@ -44,6 +44,45 @@
     "signed_in_as": "Sessió iniciada com {email}",
     "your_clubs": "Els teus clubs",
     "no_clubs": "Encara no pertanys a cap club.",
-    "signout": "Tancar sessió"
+    "signout": "Tancar sessió",
+    "invitations_link": "Convidar persones"
+  },
+  "invitations": {
+    "title": "Invitacions",
+    "subtitle": "Convida persones al club {club} amb el rol que els correspon.",
+    "new_section_title": "Nova invitació",
+    "list_section_title": "Enviades",
+    "empty": "Encara no has enviat cap invitació.",
+    "status_pending": "Pendent",
+    "status_accepted": "Acceptada",
+    "status_expired": "Caducada",
+    "form": {
+      "email_label": "Correu",
+      "email_placeholder": "persona@email.com",
+      "role_label": "Rol",
+      "role_admin_club": "Administrador del club",
+      "role_coordinador": "Coordinador",
+      "role_entrenador_principal": "Entrenador principal",
+      "role_entrenador_ayudante": "Entrenador ajudant",
+      "role_jugador": "Jugador / Família",
+      "submit": "Enviar invitació",
+      "submitting": "Enviant…",
+      "ok": "Invitació enviada a {email}",
+      "error_invalid_input": "Revisa les dades del formulari",
+      "error_forbidden": "No tens permís per convidar en aquest club",
+      "error_no_club": "Encara no pertanys a cap club",
+      "error_generic": "No hem pogut crear la invitació. Torna-ho a provar."
+    }
+  },
+  "invite": {
+    "title": "Acceptar invitació",
+    "summary": "Et conviden a entrar al club {club} amb el rol {role}.",
+    "submit": "Acceptar i entrar",
+    "submitting": "Processant…",
+    "error_wrong_email": "Aquesta invitació és per a un altre correu. Tanca sessió i entra amb el correu de la invitació.",
+    "error_expired": "Aquesta invitació ha caducat. Demana'n una de nova a l'admin del club.",
+    "error_already_accepted": "Aquesta invitació ja s'ha acceptat.",
+    "error_not_found": "Invitació no trobada.",
+    "error_generic": "No hem pogut processar la invitació. Torna-ho a provar."
   }
 }

@@ -34,10 +34,20 @@ set +a
 : "${SUPABASE_DB_PASSWORD:?falta SUPABASE_DB_PASSWORD en apps/web/.env.local}"
 : "${SUPABASE_PROJECT_REF:?falta SUPABASE_PROJECT_REF en apps/web/.env.local}"
 
+# Región del proyecto Supabase. Necesaria para construir el host del pooler IPv4.
+# Default eu-west-1 (MisterFC). Override vía env var si cambia.
+SUPABASE_DB_REGION="${SUPABASE_DB_REGION:-eu-west-1}"
+
 # La password puede tener caracteres reservados de URL (@, :, /, etc.).
 # Codificamos vía Node para no depender de python.
 ENC_PW=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$SUPABASE_DB_PASSWORD")
-REMOTE_DB_URL="postgresql://postgres:${ENC_PW}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres"
+
+# Usamos el pooler IPv4 en lugar de la conexión directa porque el host directo
+# `db.<ref>.supabase.co` solo resuelve a IPv6 en muchas regiones, y no todos los
+# entornos (Vercel runtime, Codespaces, CI con redes limitadas, el harness local)
+# rutean IPv6 al puerto 5432. El pooler en modo transaction (6543) sirve para
+# DDL de migraciones porque cada statement es una transacción independiente.
+REMOTE_DB_URL="postgresql://postgres.${SUPABASE_PROJECT_REF}:${ENC_PW}@aws-0-${SUPABASE_DB_REGION}.pooler.supabase.com:6543/postgres"
 
 SUPABASE_VERSION="2.98.2"
 
