@@ -2,6 +2,8 @@
  * Helpers puros, sin dependencias de React/Next.
  */
 
+export { nameToSlug } from './slug';
+
 export function assertNever(value: never): never {
   throw new Error(`Unhandled value: ${String(value)}`);
 }

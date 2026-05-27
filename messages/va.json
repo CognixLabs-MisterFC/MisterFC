@@ -4,5 +4,85 @@
     "welcome": "Benvingut a MisterFC",
     "tagline": "Gestió, metodologia i desenvolupament esportiu per a entrenadors de futbol base i amateur.",
     "footer": "Cognix Labs · v0.0.0"
+  },
+  "auth": {
+    "signin": {
+      "title": "Accedir a MisterFC",
+      "subtitle": "T'enviarem un enllaç màgic al teu correu. Sense contrasenyes.",
+      "email_label": "Correu electrònic",
+      "email_placeholder": "tu@email.com",
+      "submit": "Enviar enllaç",
+      "submitting": "Enviant…",
+      "error_invalid_email": "Email no vàlid",
+      "error_generic": "No hem pogut enviar l'enllaç. Torna-ho a provar."
+    },
+    "check_email": {
+      "title": "Revisa el teu correu",
+      "body": "T'hem enviat un enllaç a {email}. Obre'l des del mateix dispositiu per entrar.",
+      "body_fallback": "T'hem enviat un enllaç d'accés. Obre'l des del mateix dispositiu per entrar.",
+      "back_to_signin": "Fer servir un altre correu"
+    },
+    "callback": {
+      "error_title": "No hem pogut completar l'accés",
+      "error_body": "L'enllaç ha caducat o ja s'ha usat. Demana'n un de nou des del signin.",
+      "back_to_signin": "Tornar al signin"
+    }
+  },
+  "onboarding": {
+    "title": "Crea el teu club",
+    "subtitle": "Ets el primer membre. Crea el teu club i seràs administrador.",
+    "club_name_label": "Nom del club",
+    "club_name_placeholder": "CD El meu club",
+    "club_locale_label": "Idioma per defecte",
+    "submit": "Crear club",
+    "submitting": "Creant…",
+    "error_name_required": "Posa el nom del club",
+    "error_slug_collision": "Ja existeix un club amb un nom molt similar. Canvia'l una mica.",
+    "error_generic": "No hem pogut crear el club. Torna-ho a provar."
+  },
+  "home": {
+    "signed_in_as": "Sessió iniciada com {email}",
+    "your_clubs": "Els teus clubs",
+    "no_clubs": "Encara no pertanys a cap club.",
+    "signout": "Tancar sessió",
+    "invitations_link": "Convidar persones"
+  },
+  "invitations": {
+    "title": "Invitacions",
+    "subtitle": "Convida persones al club {club} amb el rol que els correspon.",
+    "new_section_title": "Nova invitació",
+    "list_section_title": "Enviades",
+    "empty": "Encara no has enviat cap invitació.",
+    "status_pending": "Pendent",
+    "status_accepted": "Acceptada",
+    "status_expired": "Caducada",
+    "form": {
+      "email_label": "Correu",
+      "email_placeholder": "persona@email.com",
+      "role_label": "Rol",
+      "role_admin_club": "Administrador del club",
+      "role_coordinador": "Coordinador",
+      "role_entrenador_principal": "Entrenador principal",
+      "role_entrenador_ayudante": "Entrenador ajudant",
+      "role_jugador": "Jugador / Família",
+      "submit": "Enviar invitació",
+      "submitting": "Enviant…",
+      "ok": "Invitació enviada a {email}",
+      "error_invalid_input": "Revisa les dades del formulari",
+      "error_forbidden": "No tens permís per convidar en aquest club",
+      "error_no_club": "Encara no pertanys a cap club",
+      "error_generic": "No hem pogut crear la invitació. Torna-ho a provar."
+    }
+  },
+  "invite": {
+    "title": "Acceptar invitació",
+    "summary": "Et conviden a entrar al club {club} amb el rol {role}.",
+    "submit": "Acceptar i entrar",
+    "submitting": "Processant…",
+    "error_wrong_email": "Aquesta invitació és per a un altre correu. Tanca sessió i entra amb el correu de la invitació.",
+    "error_expired": "Aquesta invitació ha caducat. Demana'n una de nova a l'admin del club.",
+    "error_already_accepted": "Aquesta invitació ja s'ha acceptat.",
+    "error_not_found": "Invitació no trobada.",
+    "error_generic": "No hem pogut processar la invitació. Torna-ho a provar."
   }
 }

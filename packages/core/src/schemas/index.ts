@@ -1,6 +1,6 @@
 /**
  * Zod schemas compartidos.
- * Se llenará en Fase 1 con schemas reales (usuarios, clubes, jugadores, etc.).
  */
 
-export {};
+export { signinSchema, createClubSchema, sendInvitationSchema } from './auth';
+export type { SigninInput, CreateClubInput, SendInvitationInput } from './auth';

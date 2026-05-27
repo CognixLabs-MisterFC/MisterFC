@@ -1,18 +1,10 @@
 /**
- * Database type placeholder.
+ * Re-exporta el tipo `Database` generado por la CLI de Supabase.
  *
- * En Fase 1 se reemplaza por el tipo generado con:
- *   pnpm dlx supabase gen types typescript --linked > packages/core/src/supabase/database.ts
+ * El archivo `database.ts` se autogenera con `pnpm db:types`. No editarlo a mano.
+ * Para regenerarlo cuando cambie el schema:
  *
- * y se reexporta como Database desde aquí.
+ *   pnpm db:types
  */
 
-export type Database = {
-  public: {
-    Tables: Record<string, never>;
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
-  };
-};
+export type { Database, Json } from './database';

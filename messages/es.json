@@ -4,5 +4,85 @@
     "welcome": "Bienvenido a MisterFC",
     "tagline": "Gestión, metodología y desarrollo deportivo para entrenadores de fútbol base y amateur.",
     "footer": "Cognix Labs · v0.0.0"
+  },
+  "auth": {
+    "signin": {
+      "title": "Acceder a MisterFC",
+      "subtitle": "Te enviaremos un enlace mágico a tu correo. Sin contraseñas.",
+      "email_label": "Correo electrónico",
+      "email_placeholder": "tu@email.com",
+      "submit": "Enviar enlace",
+      "submitting": "Enviando…",
+      "error_invalid_email": "Email no válido",
+      "error_generic": "No hemos podido enviar el enlace. Inténtalo de nuevo."
+    },
+    "check_email": {
+      "title": "Revisa tu correo",
+      "body": "Te hemos enviado un enlace a {email}. Ábrelo desde el mismo dispositivo para entrar.",
+      "body_fallback": "Te hemos enviado un enlace de acceso. Ábrelo desde el mismo dispositivo para entrar.",
+      "back_to_signin": "Usar otro correo"
+    },
+    "callback": {
+      "error_title": "No hemos podido completar el acceso",
+      "error_body": "El enlace ha caducado o ya se ha usado. Pide uno nuevo desde el signin.",
+      "back_to_signin": "Volver a signin"
+    }
+  },
+  "onboarding": {
+    "title": "Crea tu club",
+    "subtitle": "Eres el primer miembro. Crea tu club y quedarás como administrador.",
+    "club_name_label": "Nombre del club",
+    "club_name_placeholder": "CD Mi Club",
+    "club_locale_label": "Idioma por defecto",
+    "submit": "Crear club",
+    "submitting": "Creando…",
+    "error_name_required": "Pon el nombre del club",
+    "error_slug_collision": "Ya existe un club con un nombre muy parecido. Cámbialo un poco.",
+    "error_generic": "No hemos podido crear el club. Inténtalo de nuevo."
+  },
+  "home": {
+    "signed_in_as": "Sesión iniciada como {email}",
+    "your_clubs": "Tus clubs",
+    "no_clubs": "Aún no perteneces a ningún club.",
+    "signout": "Cerrar sesión",
+    "invitations_link": "Invitar a personas"
+  },
+  "invitations": {
+    "title": "Invitaciones",
+    "subtitle": "Invita a personas al club {club} con el rol que les corresponda.",
+    "new_section_title": "Nueva invitación",
+    "list_section_title": "Enviadas",
+    "empty": "Aún no has enviado ninguna invitación.",
+    "status_pending": "Pendiente",
+    "status_accepted": "Aceptada",
+    "status_expired": "Caducada",
+    "form": {
+      "email_label": "Correo",
+      "email_placeholder": "persona@email.com",
+      "role_label": "Rol",
+      "role_admin_club": "Administrador del club",
+      "role_coordinador": "Coordinador",
+      "role_entrenador_principal": "Entrenador principal",
+      "role_entrenador_ayudante": "Entrenador ayudante",
+      "role_jugador": "Jugador / Familia",
+      "submit": "Enviar invitación",
+      "submitting": "Enviando…",
+      "ok": "Invitación enviada a {email}",
+      "error_invalid_input": "Revisa los datos del formulario",
+      "error_forbidden": "No tienes permiso para invitar en este club",
+      "error_no_club": "No perteneces a ningún club aún",
+      "error_generic": "No hemos podido crear la invitación. Inténtalo de nuevo."
+    }
+  },
+  "invite": {
+    "title": "Aceptar invitación",
+    "summary": "Te invitan a entrar al club {club} con el rol {role}.",
+    "submit": "Aceptar y entrar",
+    "submitting": "Procesando…",
+    "error_wrong_email": "Esta invitación es para otro correo. Cierra sesión y entra con el correo de la invitación.",
+    "error_expired": "Esta invitación ha caducado. Pide una nueva al admin del club.",
+    "error_already_accepted": "Esta invitación ya se ha aceptado.",
+    "error_not_found": "Invitación no encontrada.",
+    "error_generic": "No hemos podido procesar la invitación. Inténtalo de nuevo."
   }
 }

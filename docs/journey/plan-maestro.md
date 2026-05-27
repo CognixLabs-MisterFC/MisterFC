@@ -164,14 +164,14 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 **Subfases**:
 
-- **1.1** Modelo de datos: club, categoría, equipo (tablas `clubs`, `categories`, `teams`) — 1–2 h
-- **1.2** Modelo de datos: perfiles y roles con 5 roles enumerados (`admin_club`, `coordinador`, `entrenador_principal`, `entrenador_ayudante`, `jugador`). Rol `familia` fusionado con `jugador` — 1–2 h
-- **1.3** Modelo de cuentas vinculadas al jugador: tablas `team_members` + `player_accounts` (jugador_id, profile_id, relation: self/parent/guardian). Permite 0, 1 o varias cuentas asociadas — 1–2 h
-- **1.4** Sistema de capabilities para entrenador ayudante: tabla `capabilities` (membership_id, capability_name, granted). Capabilities estándar: can_evaluate, can_create_lineups, can_register_match_events, can_create_sessions, can_create_plays, can_see_medical, can_message_families, can_manage_squad — 1–2 h
-- **1.5** Auth con magic link nativo de Supabase Auth + onboarding club — 1–2 h
-- **1.6** Sistema de invitaciones (tabla `invitations` + email transaccional) — 1–2 h
-- **1.7** RLS por rol + capabilities — políticas base + tests SQL — 3–4 h
-- **1.8** ADR-0002: modelo de roles, capabilities y cuentas vinculadas — 30 min
+- **1.1** [hecho 2026-05-27] Modelo de datos: club, categoría, equipo (tablas `clubs`, `categories`, `teams`) — 1–2 h
+- **1.2** [hecho 2026-05-27] Modelo de datos: perfiles y roles con 5 roles enumerados (`admin_club`, `coordinador`, `entrenador_principal`, `entrenador_ayudante`, `jugador`). Rol `familia` fusionado con `jugador` — 1–2 h
+- **1.3** [hecho 2026-05-27] Modelo de cuentas vinculadas al jugador: tablas `team_members` + `player_accounts` (jugador_id, profile_id, relation: self/parent/guardian). Permite 0, 1 o varias cuentas asociadas — 1–2 h
+- **1.4** [hecho 2026-05-27] Sistema de capabilities para entrenador ayudante: tabla `capabilities` (membership_id, capability_name, granted). Capabilities estándar: can_evaluate, can_create_lineups, can_register_match_events, can_create_sessions, can_create_plays, can_see_medical, can_message_families, can_manage_squad — 1–2 h
+- **1.5** [hecho 2026-05-27] Auth con magic link nativo de Supabase Auth + onboarding club — 1–2 h
+- **1.6** [hecho 2026-05-27] Sistema de invitaciones (tabla `invitations` + email transaccional) — 1–2 h
+- **1.7** [hecho 2026-05-27] RLS por rol + capabilities — políticas base + tests SQL — 3–4 h
+- **1.8** [hecho 2026-05-27] ADR-0002: modelo de roles, capabilities y cuentas vinculadas — 30 min
 
 ---
 
