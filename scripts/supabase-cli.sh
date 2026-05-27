@@ -45,9 +45,14 @@ ENC_PW=$(node -e "process.stdout.write(encodeURIComponent(process.argv[1]))" "$S
 # Usamos el pooler IPv4 en lugar de la conexión directa porque el host directo
 # `db.<ref>.supabase.co` solo resuelve a IPv6 en muchas regiones, y no todos los
 # entornos (Vercel runtime, Codespaces, CI con redes limitadas, el harness local)
-# rutean IPv6 al puerto 5432. El pooler en modo transaction (6543) sirve para
-# DDL de migraciones porque cada statement es una transacción independiente.
-REMOTE_DB_URL="postgresql://postgres.${SUPABASE_PROJECT_REF}:${ENC_PW}@aws-0-${SUPABASE_DB_REGION}.pooler.supabase.com:6543/postgres"
+# rutean IPv6 al puerto 5432.
+#
+# Puerto 5432 = pooler en modo SESSION (statements + prepared statements completos).
+# Puerto 6543 = pooler en modo TRANSACTION (no soporta named prepared statements,
+#                ni cosas tipo `set local`, lo que rompe `supabase db push` con
+#                `prepared statement "lrupsc_1_0" already exists`).
+# Para migraciones (DDL) usamos session mode siempre.
+REMOTE_DB_URL="postgresql://postgres.${SUPABASE_PROJECT_REF}:${ENC_PW}@aws-0-${SUPABASE_DB_REGION}.pooler.supabase.com:5432/postgres"
 
 SUPABASE_VERSION="2.98.2"
 
@@ -64,6 +69,32 @@ case "$CMD" in
     echo "Generando types desde proyecto $SUPABASE_PROJECT_REF → $OUT"
     npx "supabase@${SUPABASE_VERSION}" gen types typescript --project-id "$SUPABASE_PROJECT_REF" "$@" > "$OUT"
     echo "OK"
+    ;;
+  test)
+    # Ejecuta los .sql de supabase/tests/ contra la BD remota.
+    # Cada test se envuelve en BEGIN/ROLLBACK, así que NO deja rastros en la BD.
+    # Requiere `psql` instalado localmente.
+    if ! command -v psql >/dev/null 2>&1; then
+      echo "Error: necesitas psql instalado. Apt: 'sudo apt install postgresql-client'." >&2
+      exit 1
+    fi
+    cd "$REPO_ROOT"
+    shopt -s nullglob
+    files=(supabase/tests/*.sql)
+    if [ "${#files[@]}" -eq 0 ]; then
+      echo "No hay tests en supabase/tests/" >&2
+      exit 1
+    fi
+    rc=0
+    for f in "${files[@]}"; do
+      echo ""
+      echo "▶ $f"
+      if ! psql "$REMOTE_DB_URL" -v ON_ERROR_STOP=1 -f "$f"; then
+        echo "✗ Falló: $f" >&2
+        rc=1
+      fi
+    done
+    exit $rc
     ;;
   reset)
     echo "⚠️  db:reset apunta al proyecto REMOTO (ref=$SUPABASE_PROJECT_REF)." >&2

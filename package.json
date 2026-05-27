@@ -22,7 +22,8 @@
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "db:push": "bash scripts/supabase-cli.sh push",
     "db:types": "bash scripts/supabase-cli.sh types",
-    "db:reset": "bash scripts/supabase-cli.sh reset"
+    "db:reset": "bash scripts/supabase-cli.sh reset",
+    "db:test": "bash scripts/supabase-cli.sh test"
   },
   "devDependencies": {
     "prettier": "^3.3.3",
