@@ -19,6 +19,10 @@
       "types": "./src/supabase/client-server.ts",
       "import": "./src/supabase/client-server.ts"
     },
+    "./supabase/admin": {
+      "types": "./src/supabase/client-admin.ts",
+      "import": "./src/supabase/client-admin.ts"
+    },
     "./schemas": {
       "types": "./src/schemas/index.ts",
       "import": "./src/schemas/index.ts"

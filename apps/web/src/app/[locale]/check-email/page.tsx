@@ -1,17 +1,42 @@
 import Link from 'next/link';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 
+type Context = 'signup' | 'reset';
+
 type Props = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ email?: string | string[] }>;
+  searchParams: Promise<{
+    email?: string | string[];
+    context?: string | string[];
+  }>;
 };
 
+function parseContext(raw: string | string[] | undefined): Context {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  return value === 'reset' ? 'reset' : 'signup';
+}
+
+/**
+ * Pantalla pasiva que muestra "te hemos enviado un email" tras signup o tras
+ * pedir reset de contraseña. La página no interactúa con Supabase — se limita
+ * a explicar al user qué esperar y darle un atajo a /signin.
+ *
+ * Distingue 2 contextos:
+ *  - `signup`: tras crear cuenta, el email contiene el link de verificación.
+ *  - `reset`: tras pedir reset de contraseña, el email contiene el link al form
+ *    de nueva contraseña.
+ *
+ * El flujo de invitación NO pasa por aquí: el invitee va directo a /invite/{token}
+ * desde el email.
+ */
 export default async function CheckEmailPage({ params, searchParams }: Props) {
   const { locale } = await params;
   const sp = await searchParams;
   setRequestLocale(locale);
 
-  const t = await getTranslations('auth.check_email');
+  const context = parseContext(sp.context);
+  const t = await getTranslations(`auth.check_email.${context}`);
+  const tCommon = await getTranslations('auth.check_email');
 
   const rawEmail = Array.isArray(sp.email) ? sp.email[0] : sp.email;
   const email = rawEmail?.trim();
@@ -27,7 +52,7 @@ export default async function CheckEmailPage({ params, searchParams }: Props) {
           href={`/${locale}/signin`}
           className="mt-8 inline-block text-sm text-zinc-400 underline underline-offset-4 hover:text-white"
         >
-          {t('back_to_signin')}
+          {tCommon('back_to_signin')}
         </Link>
       </div>
     </main>
