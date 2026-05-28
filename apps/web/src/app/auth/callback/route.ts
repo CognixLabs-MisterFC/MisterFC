@@ -29,13 +29,42 @@ function safeNextPath(raw: string | null): string {
   return '/';
 }
 
+type OtpType =
+  | 'invite'
+  | 'magiclink'
+  | 'recovery'
+  | 'email_change'
+  | 'signup'
+  | 'email';
+
+const VALID_OTP_TYPES: ReadonlySet<OtpType> = new Set([
+  'invite',
+  'magiclink',
+  'recovery',
+  'email_change',
+  'signup',
+  'email',
+]);
+
+function isOtpType(value: string | null): value is OtpType {
+  return value !== null && VALID_OTP_TYPES.has(value as OtpType);
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
+  const tokenHash = searchParams.get('token_hash');
+  const typeParam = searchParams.get('type');
   const errorParam = searchParams.get('error') ?? searchParams.get('error_description');
   const next = searchParams.get('next');
 
-  if (errorParam || !code) {
+  // Aceptamos dos artefactos:
+  //   - `code` (PKCE, lo más común desde Supabase Auth v2).
+  //   - `token_hash` + `type` (OTP flow). Casos de fallback para entornos donde
+  //     el dashboard fuerza el patrón antiguo.
+  const hasCode = code !== null;
+  const hasOtp = tokenHash !== null && isOtpType(typeParam);
+  if (errorParam || (!hasCode && !hasOtp)) {
     return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
   }
 
@@ -61,9 +90,19 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
-  if (error) {
-    return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
+  if (hasCode) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
+    }
+  } else if (hasOtp && tokenHash && isOtpType(typeParam)) {
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: typeParam,
+    });
+    if (error) {
+      return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
+    }
   }
 
   return response;

@@ -174,13 +174,17 @@ export async function sendInvitation(
   const hdrs = await headers();
   const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
   const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  const next = `/${locale}/invite/${invite.token}`;
-  const redirectTo = `${proto}://${host}/auth/callback?next=${encodeURIComponent(next)}`;
+  // redirectTo apunta directamente a la página de invitación: Supabase verify
+  // anexará `?code=<...>` (PKCE) o `?token_hash=<...>` (OTP), y la página se
+  // encarga de intercambiar el artefacto por sesión antes de mostrar el form.
+  // Antes pasábamos por /auth/callback, pero si la URL no estaba en la allowlist
+  // de Supabase, caía silenciosamente al Site URL (raíz) y el code se perdía.
+  const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
 
   console.info('[invitations][invite-email] sending', {
     masked_email: maskedEmail,
     invitation_id: invite.id,
-    redirectTo_origin: `${proto}://${host}`,
+    redirectTo,
   });
 
   const admin = createSupabaseAdminClient();

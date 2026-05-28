@@ -1,6 +1,7 @@
 'use server';
 
-import { redirect } from 'next/navigation';
+import { redirect, unstable_rethrow } from 'next/navigation';
+import * as Sentry from '@sentry/nextjs';
 import {
   acceptInvitationWithProfileSchema,
   createSupabaseServerClient,
@@ -23,6 +24,65 @@ export type AcceptInvitationState = {
     | 'generic';
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers de diagnóstico
+//
+// Vercel runtime logs no rinden bien objetos anidados; pasamos strings JSON
+// grepables por `[invite][accept]`. Sentry recibe las mismas excepciones con
+// tags por step para poder filtrar incidencias en el dashboard.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function maskEmail(email: string | null | undefined): string {
+  if (!email) return 'none';
+  const [user, domain] = email.split('@');
+  if (!user || !domain) return 'invalid';
+  const [domainName, ...tld] = domain.split('.');
+  return `${user.slice(0, 2)}***@${(domainName ?? '').slice(0, 1)}***${tld.length ? '.' + tld.join('.') : ''}`;
+}
+
+function serializeError(err: unknown): Record<string, unknown> {
+  if (err instanceof Error) {
+    const anyErr = err as Error & {
+      status?: number;
+      code?: string;
+      details?: unknown;
+      hint?: unknown;
+    };
+    return {
+      name: err.name,
+      message: err.message,
+      status: anyErr.status,
+      code: anyErr.code,
+      details: anyErr.details,
+      hint: anyErr.hint,
+    };
+  }
+  if (typeof err === 'object' && err !== null) {
+    try {
+      return JSON.parse(JSON.stringify(err));
+    } catch {
+      return { repr: String(err) };
+    }
+  }
+  return { repr: String(err) };
+}
+
+function logStep(step: string, payload: Record<string, unknown> = {}) {
+  console.info(`[invite][accept] ${step} ` + JSON.stringify(payload));
+}
+
+function logError(step: string, error: unknown, extra: Record<string, unknown> = {}) {
+  const serialized = serializeError(error);
+  console.error(
+    `[invite][accept] ${step} failed ` +
+      JSON.stringify({ ...extra, error: serialized })
+  );
+  Sentry.captureException(error, {
+    tags: { feature: 'invitations', step: `accept-${step}` },
+    extra: { ...extra, error_summary: serialized },
+  });
+}
+
 /**
  * Verifica la invitación y devuelve datos seguros para el caller. Centraliza
  * los chequeos de existencia / expiración / propietario para que las dos
@@ -44,13 +104,19 @@ async function loadAndAssertInvitation(token: string): Promise<
     }
   | { ok: false; error: NonNullable<AcceptInvitationState['error']> }
 > {
+  logStep('fetch-invitation entered', { token_prefix: token.slice(0, 8) });
   const adapter = await createCookieAdapter();
+  logStep('fetch-invitation adapter-ok', { token_prefix: token.slice(0, 8) });
   const supabase = createSupabaseServerClient(adapter);
+  logStep('fetch-invitation client-ok', { token_prefix: token.slice(0, 8) });
+
+  logStep('fetch-invitation start', { token_prefix: token.slice(0, 8) });
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
+    logStep('fetch-invitation no-session');
     return { ok: false, error: 'no_session' };
   }
 
@@ -62,16 +128,47 @@ async function loadAndAssertInvitation(token: string): Promise<
     .eq('token', token)
     .maybeSingle();
 
-  if (error) return { ok: false, error: 'generic' };
-  if (!inv) return { ok: false, error: 'not_found' };
-  if (inv.accepted_at) return { ok: false, error: 'already_accepted' };
-  if (new Date(inv.expires_at) < new Date()) return { ok: false, error: 'expired' };
+  if (error) {
+    logError('fetch-invitation', error, {
+      token_prefix: token.slice(0, 8),
+      user_id: user.id,
+    });
+    return { ok: false, error: 'generic' };
+  }
+  if (!inv) {
+    logStep('fetch-invitation not-found', { token_prefix: token.slice(0, 8) });
+    return { ok: false, error: 'not_found' };
+  }
+  if (inv.accepted_at) {
+    logStep('fetch-invitation already-accepted', { invitation_id: inv.id });
+    return { ok: false, error: 'already_accepted' };
+  }
+  if (new Date(inv.expires_at) < new Date()) {
+    logStep('fetch-invitation expired', {
+      invitation_id: inv.id,
+      expires_at: inv.expires_at,
+    });
+    return { ok: false, error: 'expired' };
+  }
   if (
     !user.email ||
     user.email.trim().toLowerCase() !== inv.email.trim().toLowerCase()
   ) {
+    logStep('fetch-invitation wrong-email', {
+      invitation_id: inv.id,
+      user_email_masked: maskEmail(user.email),
+      invite_email_masked: maskEmail(inv.email),
+    });
     return { ok: false, error: 'wrong_email' };
   }
+
+  logStep('fetch-invitation ok', {
+    invitation_id: inv.id,
+    role: inv.role,
+    has_player_id: !!inv.player_id,
+    has_team_id: !!inv.team_id,
+    has_team_staff_role: !!inv.team_staff_role,
+  });
 
   return {
     ok: true,
@@ -104,8 +201,17 @@ async function attachToClub(
   },
   profileId: string
 ): Promise<AcceptInvitationState> {
+  logStep('attach-to-club entered', { invitation_id: invitation.id });
   const adapter = await createCookieAdapter();
+  logStep('attach-to-club adapter-ok', { invitation_id: invitation.id });
   const supabase = createSupabaseServerClient(adapter);
+  logStep('attach-to-club client-ok', { invitation_id: invitation.id });
+
+  logStep('membership-insert start', {
+    invitation_id: invitation.id,
+    role: invitation.role,
+    club_id: invitation.club_id,
+  });
 
   const { data: insertedMembership, error: mErr } = await supabase
     .from('memberships')
@@ -123,16 +229,29 @@ async function attachToClub(
     // 23505 = unique violation: membership ya existía. No es un error fatal;
     // seguimos para no dejar la invitación colgada en estado pendiente.
     if (mErr.code !== '23505') {
+      logError('membership-insert', mErr, { invitation_id: invitation.id });
       return { error: 'generic' };
     }
+    logStep('membership-insert duplicate-recovered', {
+      invitation_id: invitation.id,
+    });
     // Recuperar el membership ya existente para los inserts posteriores.
-    const { data: existing } = await supabase
+    const { data: existing, error: fetchErr } = await supabase
       .from('memberships')
       .select('id')
       .eq('profile_id', profileId)
       .eq('club_id', invitation.club_id)
       .maybeSingle();
+    if (fetchErr) {
+      logError('membership-refetch', fetchErr, { invitation_id: invitation.id });
+      // No abortamos: seguimos sin membershipId; team_staff se omite abajo.
+    }
     membershipId = existing?.id ?? null;
+  } else {
+    logStep('membership-insert ok', {
+      invitation_id: invitation.id,
+      membership_id: membershipId,
+    });
   }
 
   // Si la invitación llevaba vinculación a jugador (tutor familiar), insertar
@@ -143,21 +262,45 @@ async function attachToClub(
     invitation.player_id &&
     invitation.player_relation
   ) {
+    logStep('player-account-insert start', {
+      invitation_id: invitation.id,
+      player_id: invitation.player_id,
+      relation: invitation.player_relation,
+    });
     const { error: paErr } = await supabase.from('player_accounts').insert({
       player_id: invitation.player_id,
       profile_id: profileId,
       relation: invitation.player_relation as 'parent' | 'guardian',
     });
-    // 23505 = vínculo ya existía (caso poco probable: misma pareja
-    // player+profile re-invitada). No abortamos.
-    if (paErr && paErr.code !== '23505') {
-      return { error: 'generic' };
+    if (paErr) {
+      // 23505 = vínculo ya existía (caso poco probable: misma pareja
+      // player+profile re-invitada). No abortamos.
+      if (paErr.code !== '23505') {
+        logError('player-account-insert', paErr, {
+          invitation_id: invitation.id,
+          player_id: invitation.player_id,
+        });
+        return { error: 'generic' };
+      }
+      logStep('player-account-insert duplicate-ignored', {
+        invitation_id: invitation.id,
+      });
+    } else {
+      logStep('player-account-insert ok', {
+        invitation_id: invitation.id,
+      });
     }
   }
 
   // F2.6: si la invitación llevaba team_id + team_staff_role, insertar
   // team_staff con la membership_id recién creada (o la existente).
   if (invitation.team_id && invitation.team_staff_role && membershipId) {
+    logStep('team-staff-insert start', {
+      invitation_id: invitation.id,
+      team_id: invitation.team_id,
+      team_staff_role: invitation.team_staff_role,
+      membership_id: membershipId,
+    });
     const { error: tsErr } = await supabase.from('team_staff').insert({
       team_id: invitation.team_id,
       membership_id: membershipId,
@@ -167,16 +310,51 @@ async function attachToClub(
         | 'preparador_fisico'
         | 'delegado',
     });
-    // 23505 = vínculo activo ya existía (mismo team+membership). No abortamos.
-    if (tsErr && tsErr.code !== '23505') {
-      return { error: 'generic' };
+    if (tsErr) {
+      // 23505 = vínculo activo ya existía (mismo team+membership). No abortamos.
+      if (tsErr.code !== '23505') {
+        logError('team-staff-insert', tsErr, {
+          invitation_id: invitation.id,
+          team_id: invitation.team_id,
+        });
+        return { error: 'generic' };
+      }
+      logStep('team-staff-insert duplicate-ignored', {
+        invitation_id: invitation.id,
+      });
+    } else {
+      logStep('team-staff-insert ok', {
+        invitation_id: invitation.id,
+      });
     }
+  } else if (invitation.team_id && invitation.team_staff_role && !membershipId) {
+    // Esto solo pasa si tras un 23505 no pudimos recuperar el membership_id.
+    // Sin él, no podemos insertar team_staff — dejamos la invitación
+    // semi-aceptada para que el admin pueda re-vincular manualmente.
+    logStep('team-staff-insert skipped-no-membership', {
+      invitation_id: invitation.id,
+      team_id: invitation.team_id,
+    });
+    Sentry.captureMessage('[invite][accept] team-staff skipped: missing membership_id', {
+      level: 'warning',
+      tags: { feature: 'invitations', step: 'accept-team-staff-skipped' },
+      extra: { invitation_id: invitation.id, team_id: invitation.team_id },
+    });
   }
 
-  await supabase
+  logStep('mark-accepted start', { invitation_id: invitation.id });
+  const { error: acceptErr } = await supabase
     .from('invitations')
     .update({ accepted_at: new Date().toISOString() })
     .eq('id', invitation.id);
+  if (acceptErr) {
+    // No es fatal: la membership ya está creada. Logueamos para detectar
+    // invitaciones que quedan visibles como pendientes pese a haber sido
+    // efectivas, y devolvemos OK.
+    logError('mark-accepted', acceptErr, { invitation_id: invitation.id });
+  } else {
+    logStep('mark-accepted ok', { invitation_id: invitation.id });
+  }
 
   return {};
 }
@@ -192,27 +370,60 @@ export async function acceptInvitation(
   locale: string,
   token: string
 ): Promise<AcceptInvitationState> {
-  const gate = await loadAndAssertInvitation(token);
-  if (!gate.ok) {
-    if (gate.error === 'no_session') {
+  logStep('flow=quick entered', { token_prefix: token.slice(0, 8), locale });
+  try {
+    logStep('flow=quick start', { token_prefix: token.slice(0, 8), locale });
+
+    logStep('flow=quick pre-gate');
+    const gate = await loadAndAssertInvitation(token);
+    logStep('flow=quick post-gate', { ok: gate.ok });
+    if (!gate.ok) {
+      if (gate.error === 'no_session') {
+        redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
+      }
+      logStep('flow=quick aborted-by-gate', { gate_error: gate.error });
+      return { error: gate.error };
+    }
+
+    logStep('flow=quick pre-getUser');
+    const adapter = await createCookieAdapter();
+    const supabase = createSupabaseServerClient(adapter);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    logStep('flow=quick post-getUser', { has_user: !!user });
+    if (!user) {
+      logStep('flow=quick no-session-after-gate');
       redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
     }
-    return { error: gate.error };
+
+    logStep('flow=quick pre-attach', { invitation_id: gate.invitation.id });
+    const result = await attachToClub(gate.invitation, user.id);
+    logStep('flow=quick post-attach', { has_error: !!result.error });
+    if (result.error) {
+      logStep('flow=quick attach-failed', {
+        invitation_id: gate.invitation.id,
+        error: result.error,
+      });
+      return result;
+    }
+
+    logStep('flow=quick success', {
+      invitation_id: gate.invitation.id,
+      role: gate.invitation.role,
+    });
+    redirect(`/${locale}`);
+  } catch (err) {
+    // unstable_rethrow reenvía señales de framework (NEXT_REDIRECT, NOT_FOUND,
+    // unauthorized) sin loguearlas como fallo. Si llegamos a la línea siguiente
+    // es un throw inesperado de verdad.
+    unstable_rethrow(err);
+    logError('flow=quick unexpected-throw', err, {
+      token_prefix: token.slice(0, 8),
+      locale,
+    });
+    return { error: 'generic' };
   }
-
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
-  }
-
-  const result = await attachToClub(gate.invitation, user.id);
-  if (result.error) return result;
-
-  redirect(`/${locale}`);
 }
 
 /**
@@ -237,71 +448,145 @@ export async function acceptInvitationWithProfile(
   _prev: AcceptInvitationState,
   formData: FormData
 ): Promise<AcceptInvitationState> {
-  const parsed = acceptInvitationWithProfileSchema.safeParse({
-    full_name: formData.get('full_name'),
-    date_of_birth: formData.get('date_of_birth'),
-    password: formData.get('password'),
-    confirm: formData.get('confirm'),
+  logStep('flow=with-profile entered', {
+    token_prefix: token.slice(0, 8),
+    locale,
   });
-  if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    if (issue?.message === 'full_name_too_short') return { error: 'full_name_too_short' };
-    if (issue?.message === 'full_name_too_long') return { error: 'full_name_too_long' };
-    if (issue?.message === 'date_of_birth_invalid') return { error: 'date_of_birth_invalid' };
-    if (issue?.message === 'password_too_short') return { error: 'password_too_short' };
-    if (issue?.message === 'password_mismatch') return { error: 'password_mismatch' };
-    return { error: 'invalid_input' };
-  }
+  try {
+    logStep('flow=with-profile start', {
+      token_prefix: token.slice(0, 8),
+      locale,
+    });
 
-  const gate = await loadAndAssertInvitation(token);
-  if (!gate.ok) {
-    if (gate.error === 'no_session') {
+    logStep('flow=with-profile pre-parse', {
+      has_full_name: formData.get('full_name') !== null,
+      has_date_of_birth: formData.get('date_of_birth') !== null,
+      has_password: formData.get('password') !== null,
+      has_confirm: formData.get('confirm') !== null,
+    });
+    const parsed = acceptInvitationWithProfileSchema.safeParse({
+      full_name: formData.get('full_name'),
+      date_of_birth: formData.get('date_of_birth'),
+      password: formData.get('password'),
+      confirm: formData.get('confirm'),
+    });
+    logStep('flow=with-profile post-parse', { success: parsed.success });
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const code = issue?.message ?? 'invalid_input';
+      logStep('flow=with-profile invalid-input', {
+        code,
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path,
+          code: i.code,
+          message: i.message,
+        })),
+      });
+      if (code === 'full_name_too_short') return { error: 'full_name_too_short' };
+      if (code === 'full_name_too_long') return { error: 'full_name_too_long' };
+      if (code === 'date_of_birth_invalid') return { error: 'date_of_birth_invalid' };
+      if (code === 'password_too_short') return { error: 'password_too_short' };
+      if (code === 'password_mismatch') return { error: 'password_mismatch' };
+      return { error: 'invalid_input' };
+    }
+
+    logStep('flow=with-profile input-ok', {
+      has_date_of_birth: !!parsed.data.date_of_birth,
+      full_name_len: parsed.data.full_name.length,
+    });
+
+    logStep('flow=with-profile pre-gate');
+    const gate = await loadAndAssertInvitation(token);
+    logStep('flow=with-profile post-gate', { ok: gate.ok });
+    if (!gate.ok) {
+      if (gate.error === 'no_session') {
+        redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
+      }
+      logStep('flow=with-profile aborted-by-gate', { gate_error: gate.error });
+      return { error: gate.error };
+    }
+
+    logStep('flow=with-profile pre-getUser');
+    const adapter = await createCookieAdapter();
+    const supabase = createSupabaseServerClient(adapter);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    logStep('flow=with-profile post-getUser', { has_user: !!user });
+    if (!user) {
+      logStep('flow=with-profile no-session-after-gate');
       redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
     }
-    return { error: gate.error };
-  }
 
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
-  }
+    // Paso 1: password + metadata en auth.users.
+    logStep('auth-update start', { invitation_id: gate.invitation.id });
+    const { error: updErr } = await supabase.auth.updateUser({
+      password: parsed.data.password,
+      data: {
+        full_name: parsed.data.full_name,
+        date_of_birth: parsed.data.date_of_birth,
+        locale,
+      },
+    });
+    if (updErr) {
+      logError('auth-update', updErr, {
+        invitation_id: gate.invitation.id,
+        user_email_masked: maskEmail(user.email),
+      });
+      return { error: 'generic' };
+    }
+    logStep('auth-update ok', { invitation_id: gate.invitation.id });
 
-  // Paso 1: password + metadata en auth.users (transporte de datos para clientes
-  // que lean raw_user_meta_data en el futuro).
-  const { error: updErr } = await supabase.auth.updateUser({
-    password: parsed.data.password,
-    data: {
-      full_name: parsed.data.full_name,
-      date_of_birth: parsed.data.date_of_birth,
+    // Paso 2: UPDATE profiles.
+    logStep('profile-update start', { invitation_id: gate.invitation.id });
+    const { error: profErr } = await supabase
+      .from('profiles')
+      .update({
+        full_name: parsed.data.full_name,
+        date_of_birth: parsed.data.date_of_birth,
+        locale,
+      })
+      .eq('id', user.id);
+    if (profErr) {
+      logError('profile-update', profErr, {
+        invitation_id: gate.invitation.id,
+        user_id: user.id,
+      });
+      return { error: 'generic' };
+    }
+    logStep('profile-update ok', { invitation_id: gate.invitation.id });
+
+    // Paso 3: membership + accept.
+    logStep('flow=with-profile pre-attach', { invitation_id: gate.invitation.id });
+    const result = await attachToClub(gate.invitation, user.id);
+    logStep('flow=with-profile post-attach', { has_error: !!result.error });
+    if (result.error) {
+      logStep('flow=with-profile attach-failed', {
+        invitation_id: gate.invitation.id,
+        error: result.error,
+      });
+      return result;
+    }
+
+    logStep('flow=with-profile success', {
+      invitation_id: gate.invitation.id,
+      role: gate.invitation.role,
+      type: gate.invitation.team_id
+        ? 'staff'
+        : gate.invitation.player_id
+          ? 'tutor'
+          : 'generic',
+    });
+    redirect(`/${locale}`);
+  } catch (err) {
+    // unstable_rethrow reenvía señales de framework (NEXT_REDIRECT, NOT_FOUND,
+    // unauthorized) sin loguearlas como fallo. Si llegamos a la línea siguiente
+    // es un throw inesperado de verdad.
+    unstable_rethrow(err);
+    logError('flow=with-profile unexpected-throw', err, {
+      token_prefix: token.slice(0, 8),
       locale,
-    },
-  });
-  if (updErr) {
+    });
     return { error: 'generic' };
   }
-
-  // Paso 2: UPDATE profiles. El trigger handle_new_user creó la fila vacía
-  // (sin full_name), así que rellenamos aquí lo que el invitee introdujo.
-  // La policy de profiles permite al propio user actualizar su fila.
-  const { error: profErr } = await supabase
-    .from('profiles')
-    .update({
-      full_name: parsed.data.full_name,
-      date_of_birth: parsed.data.date_of_birth,
-      locale,
-    })
-    .eq('id', user.id);
-  if (profErr) {
-    return { error: 'generic' };
-  }
-
-  // Paso 3: membership + accept.
-  const result = await attachToClub(gate.invitation, user.id);
-  if (result.error) return result;
-
-  redirect(`/${locale}`);
 }
