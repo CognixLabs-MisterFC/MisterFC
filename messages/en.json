@@ -166,5 +166,144 @@
     "error_password_mismatch": "Passwords don't match",
     "error_no_session": "Session not found. Please reopen the link from your email.",
     "error_generic": "We couldn't process the invitation. Please try again."
+  },
+  "shell": {
+    "app_name": "MisterFC",
+    "sidebar_label": "Menú principal",
+    "signout": "Cerrar sesión",
+    "open_menu": "Abrir menú",
+    "active_club_label": "Club activo",
+    "active_club_switch_help": "Cambiar de club activo",
+    "user_menu_label": "Menú de usuario",
+    "user_menu_perfil": "Mi perfil",
+    "nav": {
+      "home": "Inicio",
+      "categorias": "Categorías",
+      "invitations": "Invitaciones",
+      "perfil": "Mi perfil"
+    }
+  },
+  "perfil": {
+    "title": "Mi perfil",
+    "subtitle": "Datos de tu cuenta y cómo te ven el resto de miembros del club.",
+    "save": "Guardar cambios",
+    "saved": "Cambios guardados.",
+    "change_password": "Cambiar contraseña",
+    "section": {
+      "avatar": "Foto de perfil",
+      "data": "Datos personales",
+      "account": "Cuenta"
+    },
+    "field": {
+      "full_name": "Nombre completo",
+      "email": "Correo electrónico",
+      "email_help": "Para cambiar tu correo, contacta con soporte.",
+      "date_of_birth": "Fecha de nacimiento",
+      "locale": "Idioma de la app",
+      "locale_help": "Determina el idioma de menús, mensajes y emails."
+    },
+    "locales": {
+      "es": "Español",
+      "en": "Inglés",
+      "va": "Valencià"
+    },
+    "avatar": {
+      "pick_label": "Elegir nueva foto",
+      "change": "Cambiar foto",
+      "remove": "Quitar foto",
+      "hint": "JPG, PNG o WebP. Máximo {maxMb} MB."
+    },
+    "errors": {
+      "full_name_too_short": "El nombre debe tener al menos 2 caracteres",
+      "full_name_too_long": "El nombre no puede superar los 120 caracteres",
+      "date_of_birth_invalid": "Fecha de nacimiento no válida",
+      "locale_invalid": "Idioma no válido",
+      "no_session": "Sesión perdida. Vuelve a iniciar sesión.",
+      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo.",
+      "avatar_mime_invalid": "Formato no admitido. Usa JPG, PNG o WebP.",
+      "avatar_too_large": "La foto es demasiado grande.",
+      "avatar_empty": "El archivo está vacío.",
+      "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
+      "avatar_remove_failed": "No hemos podido quitar la foto."
+    }
+  },
+  "categorias": {
+    "title": "Categorías",
+    "subtitle": "Organiza el club por categorías y temporadas.",
+    "empty": "Aún no has creado ninguna categoría. Empieza por la primera.",
+    "season_label": "Temporada {season}",
+    "teams_count": "{count, plural, =0 {Sin equipos} one {# equipo} other {# equipos}}",
+    "actions": {
+      "create": "Nueva categoría",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "cancel": "Cancelar",
+      "save": "Guardar"
+    },
+    "dialog": {
+      "create_title": "Crear categoría",
+      "edit_title": "Editar categoría",
+      "description": "Las categorías agrupan equipos por edad o nivel dentro de una temporada."
+    },
+    "field": {
+      "name": "Nombre",
+      "season": "Temporada",
+      "season_help": "Formato YYYY-YY, por ejemplo 2025-26.",
+      "order_idx": "Orden"
+    },
+    "delete": {
+      "title": "¿Eliminar la categoría?",
+      "description": "Vas a eliminar «{name}». Esta acción elimina también sus equipos y no se puede deshacer."
+    },
+    "errors": {
+      "name_required": "Pon el nombre de la categoría",
+      "name_too_long": "El nombre no puede superar los 80 caracteres",
+      "season_invalid": "Temporada no válida. Usa formato YYYY-YY (ej. 2025-26).",
+      "no_active_club": "No hay club activo.",
+      "forbidden": "No tienes permiso para hacer esto.",
+      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo."
+    }
+  },
+  "equipos": {
+    "back_to_categorias": "← Volver a categorías",
+    "subtitle": "Equipos de la temporada {season}.",
+    "empty": "Aún no hay equipos en esta categoría.",
+    "list_title": "Equipos",
+    "actions": {
+      "create": "Nuevo equipo",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "cancel": "Cancelar",
+      "save": "Guardar"
+    },
+    "dialog": {
+      "create_title": "Crear equipo",
+      "edit_title": "Editar equipo"
+    },
+    "field": {
+      "name": "Nombre",
+      "format": "Formato",
+      "color": "Color",
+      "color_help": "Color identificativo en calendarios y vistas del equipo."
+    },
+    "delete": {
+      "title": "¿Eliminar el equipo?",
+      "description": "Vas a eliminar «{name}». Esta acción no se puede deshacer."
+    },
+    "errors": {
+      "name_required": "Pon el nombre del equipo",
+      "name_too_long": "El nombre no puede superar los 80 caracteres",
+      "format_invalid": "Formato no válido",
+      "color_invalid": "Color no válido",
+      "forbidden": "No tienes permiso para hacer esto.",
+      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo."
+    }
+  },
+  "roles": {
+    "admin_club": "Administrador del club",
+    "coordinador": "Coordinador",
+    "entrenador_principal": "Entrenador principal",
+    "entrenador_ayudante": "Entrenador ayudante",
+    "jugador": "Jugador / Familia"
   }
 }

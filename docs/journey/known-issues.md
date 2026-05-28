@@ -4,11 +4,8 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 ## Activas
 
-### Botón "Cerrar sesión" ausente en `/onboarding`
-- **Detectado en**: 2026-05-28, al cierre de Fase 1.
-- **Síntoma**: un usuario autenticado sin club queda atrapado en `/onboarding` sin forma evidente de cambiar de cuenta. El único camino es vaciar cookies o abrir incógnito.
-- **Impacto**: bajo (afecta testing y casos edge), pero rompe el principio de "siempre poder salir".
-- **Plan**: añadir botón de logout en el layout de `/onboarding` (o en un header global accesible incluso sin membership). Abordar en **Fase 2** junto al refactor multi-club.
+<!-- Issue "Botón Cerrar sesión ausente en /onboarding" resuelto en F2.0 — movido a "Resueltas". -->
+
 
 ### Sentry server-side no captura excepciones en producción
 - **Detectado en**: 2026-05-28, debug de invitaciones en `feat/auth-email-password`.
@@ -87,4 +84,7 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 ## Resueltas
 
-_(vacío todavía)_
+### Botón "Cerrar sesión" ausente en `/onboarding` — resuelto en F2.0 (2026-05-28)
+- **Detectado en**: 2026-05-28, al cierre de Fase 1.
+- **Síntoma**: un usuario autenticado sin club quedaba atrapado en `/onboarding` sin forma evidente de cambiar de cuenta. El único camino era vaciar cookies o abrir incógnito.
+- **Fix**: `/onboarding` queda fuera del route group `(authenticated)` y usa `OnboardingShell` con header minimal (brand + botón "Cerrar sesión"). El mismo componente `LogoutButton` se reutiliza en el header autenticado y en onboarding. El server action `signout` también limpia la cookie `active_club_id` al cerrar sesión.

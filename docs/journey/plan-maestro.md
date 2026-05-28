@@ -189,7 +189,8 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 **Subfases**:
 
-- **2.1** CRUD club, categorías, equipos — 1–2 h
+- **2.0** [hecho 2026-05-28] App shell + navegación role-aware + fix logout + perfil propio — incluye route group `(authenticated)`, sidebar/drawer, ActiveClubSwitcher, /perfil con avatar privado (signed URLs), shadcn/ui adoptado. Spec en `docs/specs/2.0-app-shell.md`. ADR-0000 confirmado en práctica.
+- **2.1** [hecho 2026-05-28] CRUD club, categorías, equipos — `/categorias` agrupada por temporada, anidación equipos por categoría con formato F7/F8/F11 + color. Sin spec (CRUD directo).
 - **2.2** Ficha completa del jugador (foto, nombre, apellidos, fecha nacimiento, dorsal, posiciones, pie dominante, contacto, alergias, notas médicas, altura, peso, procedencia) — 2–3 h
 - **2.3** Alta de jugador (con o sin email, con o sin cuenta) — 1–2 h
 - **2.4** Vincular cuentas de familia al jugador menor (rol jugador fusionado con familia, relación parent/guardian) — 1 h
