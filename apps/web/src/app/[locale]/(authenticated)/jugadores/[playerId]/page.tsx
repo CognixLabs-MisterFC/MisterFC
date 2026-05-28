@@ -8,6 +8,8 @@ import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { AssignTeamDialog } from './assign-team-dialog';
+import { InviteTutorDialog } from './invite-tutor-dialog';
 import { PlayerForm } from './player-form';
 import { MedicalNotesForm } from './medical-notes-form';
 import { PlayerPhotoUploader } from './player-photo-uploader';
@@ -45,7 +47,6 @@ export default async function PlayerDetailPage({ params }: Props) {
   if (!player || player.club_id !== ctx.activeClub.club.id) notFound();
 
   const t = await getTranslations('jugadores');
-  const tShell = await getTranslations('shell');
 
   const canManage = ROLES_THAT_CAN_MANAGE.includes(ctx.activeClub.role);
 
@@ -83,6 +84,30 @@ export default async function PlayerDetailPage({ params }: Props) {
     .eq('player_id', player.id)
     .order('joined_at', { ascending: false });
 
+  // Familia: cuentas vinculadas + invitaciones pendientes (F2.4)
+  const { data: linkedAccounts } = await supabase
+    .from('player_accounts')
+    .select('id, relation, profiles!inner(full_name)')
+    .eq('player_id', player.id);
+
+  const { data: pendingInvites } = await supabase
+    .from('invitations')
+    .select('id, email, player_relation, expires_at')
+    .eq('player_id', player.id)
+    .is('accepted_at', null)
+    .gt('expires_at', new Date().toISOString());
+
+  // Equipos del club para el dialog de asignación
+  const { data: teamRows } = await supabase
+    .from('teams')
+    .select('id, name, category_id, categories!inner(club_id)')
+    .eq('categories.club_id', player.club_id);
+  const teamsForDialog = (teamRows ?? []).map((t) => ({
+    id: t.id as string,
+    name: t.name as string,
+  }));
+
+  const hasActiveAssignment = (history ?? []).some((h) => h.left_at === null);
   const fullName = `${player.first_name} ${player.last_name}`;
 
   return (
@@ -151,8 +176,77 @@ export default async function PlayerDetailPage({ params }: Props) {
       )}
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+          <CardTitle>{t('section.family')}</CardTitle>
+          {canManage && (
+            <InviteTutorDialog
+              locale={locale}
+              playerId={player.id}
+              playerName={fullName}
+            />
+          )}
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {(linkedAccounts ?? []).length === 0 &&
+          (pendingInvites ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('family.empty')}</p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-border">
+              {(linkedAccounts ?? []).map((acc) => {
+                const profObj = (acc.profiles ?? null) as
+                  | { full_name: string | null }
+                  | null;
+                const name = profObj?.full_name ?? '—';
+                return (
+                  <li
+                    key={acc.id}
+                    className="flex items-center justify-between gap-3 py-2"
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {t(`family.relation.${acc.relation}`)}
+                      </span>
+                    </div>
+                    <span className="text-xs text-misterfc-green">
+                      {t('family.linked')}
+                    </span>
+                  </li>
+                );
+              })}
+              {(pendingInvites ?? []).map((inv) => (
+                <li
+                  key={inv.id}
+                  className="flex items-center justify-between gap-3 py-2"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{inv.email}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {inv.player_relation
+                        ? t(`family.relation.${inv.player_relation}`)
+                        : ''}
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {t('family.pending')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
           <CardTitle>{t('section.history')}</CardTitle>
+          {canManage && teamsForDialog.length > 0 && (
+            <AssignTeamDialog
+              playerId={player.id}
+              teams={teamsForDialog}
+              hasActiveAssignment={hasActiveAssignment}
+            />
+          )}
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {(history ?? []).length === 0 ? (
@@ -168,6 +262,7 @@ export default async function PlayerDetailPage({ params }: Props) {
                 const teamName = teamObj?.name ?? '—';
                 const catName = teamObj?.categories?.name ?? '';
                 const season = teamObj?.categories?.season ?? '';
+                const isActive = h.left_at === null;
                 return (
                   <li
                     key={h.id}
@@ -182,7 +277,12 @@ export default async function PlayerDetailPage({ params }: Props) {
                     </div>
                     <span className="text-xs text-muted-foreground">
                       {h.joined_at}
-                      {h.left_at ? ` → ${h.left_at}` : ` · ${tShell('app_name')}`}
+                      {h.left_at
+                        ? ` → ${h.left_at}`
+                        : ` · ${t('history.active')}`}
+                      {isActive && (
+                        <span className="ml-1 text-misterfc-green">●</span>
+                      )}
                     </span>
                   </li>
                 );

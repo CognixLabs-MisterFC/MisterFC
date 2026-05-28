@@ -1,12 +1,16 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import * as Sentry from '@sentry/nextjs';
 import {
   ACTIVE_CLUB_COOKIE_NAME,
+  assignPlayerToTeamSchema,
   createPlayerSchema,
+  createSupabaseAdminClient,
   createSupabaseServerClient,
   getCurrentUserClubs,
+  invitePlayerTutorSchema,
   resolveActiveClub,
   updatePlayerSchema,
   updateMedicalNotesSchema,
@@ -307,4 +311,221 @@ export async function clearPlayerPhotoPath(
   revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
   revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
   return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Asignar/mover jugador a un equipo (F2.5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type AssignToTeamState = {
+  error?:
+    | 'team_invalid'
+    | 'dorsal_invalid'
+    | 'position_invalid'
+    | 'forbidden'
+    | 'generic';
+  success?: boolean;
+};
+
+export async function assignPlayerToTeam(
+  playerId: string,
+  _prev: AssignToTeamState,
+  formData: FormData
+): Promise<AssignToTeamState> {
+  const parsed = assignPlayerToTeamSchema.safeParse({
+    team_id: formData.get('team_id'),
+    dorsal_in_team: formData.get('dorsal_in_team'),
+    position_in_team: formData.get('position_in_team'),
+  });
+  if (!parsed.success) {
+    const code = parsed.error.issues[0]?.message;
+    if (
+      code === 'team_invalid' ||
+      code === 'dorsal_invalid' ||
+      code === 'position_invalid'
+    ) {
+      return { error: code };
+    }
+    return { error: 'generic' };
+  }
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Cerrar el team_member activo (cualquier equipo) con left_at = today.
+  // Si no había activo, no-op.
+  const { error: closeErr } = await supabase
+    .from('team_members')
+    .update({ left_at: today })
+    .eq('player_id', playerId)
+    .is('left_at', null);
+
+  if (closeErr) {
+    if (closeErr.code === '42501') return { error: 'forbidden' };
+    return { error: 'generic' };
+  }
+
+  // Insertar nuevo. El índice parcial UNIQUE (player_id, team_id) WHERE left_at
+  // IS NULL ya garantiza que no haya duplicados activos.
+  const { error: insErr } = await supabase.from('team_members').insert({
+    player_id: playerId,
+    team_id: parsed.data.team_id,
+    joined_at: today,
+    dorsal_in_team: parsed.data.dorsal_in_team,
+    position_in_team: parsed.data.position_in_team,
+  });
+
+  if (insErr) {
+    if (insErr.code === '42501') return { error: 'forbidden' };
+    if (insErr.code === '23505') {
+      // Ya estaba activo en ese equipo (raro: el cierre anterior debería
+      // haberlo desactivado). Devolvemos success para que el caller no rompa.
+      revalidatePath(
+        `/[locale]/(authenticated)/jugadores/${playerId}`,
+        'page'
+      );
+      return { success: true };
+    }
+    return { error: 'generic' };
+  }
+
+  revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invitar tutor para un jugador (F2.4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type InviteTutorState = {
+  error?:
+    | 'email_invalid'
+    | 'email_too_long'
+    | 'relation_invalid'
+    | 'forbidden'
+    | 'generic';
+  ok?: { email: string };
+};
+
+export async function inviteTutorForPlayer(
+  locale: string,
+  playerId: string,
+  _prev: InviteTutorState,
+  formData: FormData
+): Promise<InviteTutorState> {
+  const parsed = invitePlayerTutorSchema.safeParse({
+    email: formData.get('email'),
+    relation: formData.get('relation'),
+  });
+  if (!parsed.success) {
+    const code = parsed.error.issues[0]?.message;
+    if (code === 'email_invalid' || code === 'email_too_long') {
+      return { error: code };
+    }
+    if (code === 'relation_invalid') return { error: 'relation_invalid' };
+    return { error: 'generic' };
+  }
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  // Cargar club del jugador (la RLS rechazará si el user no pertenece).
+  const { data: player } = await supabase
+    .from('players')
+    .select('id, club_id')
+    .eq('id', playerId)
+    .maybeSingle();
+  if (!player) return { error: 'forbidden' };
+
+  // Insertar invitación. La policy `invitations_insert_admin` ya exige
+  // admin/coord del club; si el actor no lo es, devuelve error y aquí lo
+  // mapeamos a forbidden.
+  const { data: invite, error: insErr } = await supabase
+    .from('invitations')
+    .insert({
+      email: parsed.data.email,
+      role: 'jugador',
+      club_id: player.club_id,
+      player_id: player.id,
+      player_relation: parsed.data.relation,
+      created_by: user.id,
+    })
+    .select('id, token')
+    .single();
+
+  if (insErr) {
+    if (insErr.code === '42501') return { error: 'forbidden' };
+    Sentry.captureException(insErr, {
+      tags: { feature: 'invitations', step: 'insert_tutor' },
+      extra: { player_id: player.id, relation: parsed.data.relation },
+    });
+    return { error: 'generic' };
+  }
+  if (!invite) return { error: 'generic' };
+
+  const hdrs = await headers();
+  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
+  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
+  const next = `/${locale}/invite/${invite.token}`;
+  const redirectTo = `${proto}://${host}/auth/callback?next=${encodeURIComponent(next)}`;
+
+  const admin = createSupabaseAdminClient();
+  try {
+    const { error: invErr } = await admin.auth.admin.inviteUserByEmail(
+      parsed.data.email,
+      {
+        redirectTo,
+        data: { invite_pending: true, invitation_id: invite.id },
+      }
+    );
+
+    if (invErr) {
+      const msg = invErr.message?.toLowerCase() ?? '';
+      const alreadyExists =
+        ('code' in invErr && invErr.code === 'email_exists') ||
+        msg.includes('already been registered') ||
+        msg.includes('already exists');
+
+      if (alreadyExists) {
+        // Reusa resetPasswordForEmail como vehículo del mismo redirectTo
+        // cuando el email ya está registrado (mismo patrón que sendInvitation).
+        const { error: resetErr } =
+          await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+            redirectTo,
+          });
+        if (resetErr) {
+          Sentry.captureException(resetErr, {
+            tags: { feature: 'invitations', step: 'reset_fallback_tutor' },
+            extra: { invitation_id: invite.id },
+          });
+          return { error: 'generic' };
+        }
+      } else {
+        Sentry.captureException(invErr, {
+          tags: { feature: 'invitations', step: 'inviteUserByEmail_tutor' },
+          extra: { invitation_id: invite.id },
+        });
+        return { error: 'generic' };
+      }
+    }
+  } catch (thrown) {
+    Sentry.captureException(thrown, {
+      tags: {
+        feature: 'invitations',
+        step: 'inviteUserByEmail_tutor_thrown',
+      },
+      extra: { invitation_id: invite.id },
+    });
+    return { error: 'generic' };
+  }
+
+  revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
+  return { ok: { email: parsed.data.email } };
 }

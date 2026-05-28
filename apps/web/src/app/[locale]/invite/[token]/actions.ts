@@ -31,7 +31,14 @@ export type AcceptInvitationState = {
 async function loadAndAssertInvitation(token: string): Promise<
   | {
       ok: true;
-      invitation: { id: string; club_id: string; role: string; email: string };
+      invitation: {
+        id: string;
+        club_id: string;
+        role: string;
+        email: string;
+        player_id: string | null;
+        player_relation: string | null;
+      };
     }
   | { ok: false; error: NonNullable<AcceptInvitationState['error']> }
 > {
@@ -47,7 +54,9 @@ async function loadAndAssertInvitation(token: string): Promise<
 
   const { data: inv, error } = await supabase
     .from('invitations')
-    .select('id, email, club_id, role, expires_at, accepted_at')
+    .select(
+      'id, email, club_id, role, expires_at, accepted_at, player_id, player_relation'
+    )
     .eq('token', token)
     .maybeSingle();
 
@@ -69,16 +78,24 @@ async function loadAndAssertInvitation(token: string): Promise<
       club_id: inv.club_id,
       role: inv.role,
       email: inv.email,
+      player_id: inv.player_id,
+      player_relation: inv.player_relation,
     },
   };
 }
 
 /**
- * Inserta membership + marca invitación como aceptada. Asume que
- * `loadAndAssertInvitation` ha validado todo antes.
+ * Inserta membership + (si aplica) vínculo player_accounts + marca invitación
+ * como aceptada. Asume que `loadAndAssertInvitation` ha validado todo antes.
  */
 async function attachToClub(
-  invitation: { id: string; club_id: string; role: string },
+  invitation: {
+    id: string;
+    club_id: string;
+    role: string;
+    player_id: string | null;
+    player_relation: string | null;
+  },
   profileId: string
 ): Promise<AcceptInvitationState> {
   const adapter = await createCookieAdapter();
@@ -94,6 +111,26 @@ async function attachToClub(
     // 23505 = unique violation: membership ya existía. No es un error fatal;
     // seguimos para no dejar la invitación colgada en estado pendiente.
     if (mErr.code !== '23505') {
+      return { error: 'generic' };
+    }
+  }
+
+  // Si la invitación llevaba vinculación a jugador (tutor familiar), insertar
+  // player_accounts. Solo aplicable cuando role=jugador + player_id presente
+  // (el CHECK estructural de la migración F2.4 garantiza el resto).
+  if (
+    invitation.role === 'jugador' &&
+    invitation.player_id &&
+    invitation.player_relation
+  ) {
+    const { error: paErr } = await supabase.from('player_accounts').insert({
+      player_id: invitation.player_id,
+      profile_id: profileId,
+      relation: invitation.player_relation as 'parent' | 'guardian',
+    });
+    // 23505 = vínculo ya existía (caso poco probable: misma pareja
+    // player+profile re-invitada). No abortamos.
+    if (paErr && paErr.code !== '23505') {
       return { error: 'generic' };
     }
   }

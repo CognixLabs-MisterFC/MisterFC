@@ -351,10 +351,12 @@
     "section": {
       "basic_data": "Datos básicos",
       "medical": "Notas médicas",
-      "history": "Trayectoria en el club"
+      "history": "Trayectoria en el club",
+      "family": "Familia"
     },
     "history": {
-      "empty": "Sin asignaciones a equipos todavía."
+      "empty": "Sin asignaciones a equipos todavía.",
+      "active": "Actual"
     },
     "photo": {
       "change": "Cambiar foto",
@@ -396,6 +398,64 @@
       "no_active_club": "Selecciona primero un club.",
       "forbidden": "No tienes permiso.",
       "generic": "No se pudo guardar. Inténtalo de nuevo."
+    },
+    "family": {
+      "empty": "Aún no hay cuentas de familia vinculadas.",
+      "linked": "Vinculada",
+      "pending": "Invitación pendiente",
+      "relation": {
+        "parent": "Padre/madre",
+        "guardian": "Tutor legal",
+        "self": "El propio jugador"
+      }
+    },
+    "tutor": {
+      "action": "Invitar tutor",
+      "title": "Invitar tutor familiar",
+      "description": "Envía una invitación por email a un familiar de {player}. Al aceptar quedará vinculado a esta ficha.",
+      "field": {
+        "email": "Email del tutor",
+        "relation": "Relación",
+        "help": "Determina el vínculo legal. Ambos comparten la misma vista del jugador."
+      },
+      "relation": {
+        "parent": "Padre/madre",
+        "guardian": "Tutor legal"
+      },
+      "send": "Enviar invitación",
+      "cancel": "Cancelar",
+      "close": "Cerrar",
+      "sent": "Invitación enviada a {email}.",
+      "errors": {
+        "email_invalid": "Email no válido.",
+        "email_too_long": "Email demasiado largo.",
+        "relation_invalid": "Relación no válida.",
+        "forbidden": "No tienes permiso para invitar tutores en este club.",
+        "generic": "No se pudo enviar la invitación."
+      }
+    },
+    "assign": {
+      "action_move": "Mover de equipo",
+      "action_assign": "Asignar a equipo",
+      "title_assign": "Asignar a equipo",
+      "title_move": "Mover a otro equipo",
+      "description": "Al asignar a un equipo nuevo, el equipo actual se cierra con la fecha de hoy. La trayectoria se conserva.",
+      "field": {
+        "team": "Equipo destino",
+        "team_placeholder": "Selecciona un equipo",
+        "dorsal_in_team": "Dorsal en el equipo",
+        "position_in_team": "Posición en el equipo",
+        "optional": "Opcional"
+      },
+      "cancel": "Cancelar",
+      "save": "Confirmar",
+      "errors": {
+        "team_invalid": "Equipo no válido.",
+        "dorsal_invalid": "El dorsal debe estar entre 1 y 99.",
+        "position_invalid": "Posición no válida.",
+        "forbidden": "No tienes permiso para gestionar este jugador.",
+        "generic": "No se pudo guardar."
+      }
     }
   }
 }

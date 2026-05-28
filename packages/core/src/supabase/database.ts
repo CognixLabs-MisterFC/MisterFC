@@ -120,6 +120,8 @@ export type Database = {
           email: string
           expires_at: string
           id: string
+          player_id: string | null
+          player_relation: string | null
           role: string
           team_id: string | null
           token: string
@@ -132,6 +134,8 @@ export type Database = {
           email: string
           expires_at?: string
           id?: string
+          player_id?: string | null
+          player_relation?: string | null
           role: string
           team_id?: string | null
           token?: string
@@ -144,6 +148,8 @@ export type Database = {
           email?: string
           expires_at?: string
           id?: string
+          player_id?: string | null
+          player_relation?: string | null
           role?: string
           team_id?: string | null
           token?: string
@@ -161,6 +167,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
           {
