@@ -5,6 +5,7 @@ import {
   Mail,
   UserRound,
   Users,
+  ClipboardList,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -48,12 +49,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     key: 'jugadores',
     href: '/jugadores',
     icon: Users,
-    roles: [
-      'admin_club',
-      'coordinador',
-      'entrenador_principal',
-      'entrenador_ayudante',
-    ],
+    // admin/coord ven la plantilla completa del club.
+    roles: ['admin_club', 'coordinador'],
+  },
+  {
+    key: 'mi_plantilla',
+    href: '/mi-plantilla',
+    icon: ClipboardList,
+    // Los entrenadores ven solo el roster de sus equipos.
+    roles: ['entrenador_principal', 'entrenador_ayudante'],
   },
   {
     key: 'invitations',
