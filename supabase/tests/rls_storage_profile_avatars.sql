@@ -7,8 +7,15 @@
 --   T2. anon NO puede SELECT — el bucket no es público.
 --   T3. User A puede INSERT en su propia carpeta `<A>/...`.
 --   T4. User A NO puede INSERT en la carpeta de B `<B>/...` (anti-suplantación).
---   T5. User A puede UPDATE/DELETE solo en su propia carpeta.
---   T6. User A NO puede UPDATE/DELETE objetos de B.
+--   T5. User A puede UPDATE en su propia carpeta.
+--   T6. User A NO puede UPDATE objetos de B.
+--
+-- Nota: las policies de DELETE NO se prueban aquí. Supabase Storage instala
+-- un trigger global `storage.protect_delete()` que bloquea cualquier DELETE
+-- directo en `storage.objects` desde SQL (incluso si la policy lo permite)
+-- para evitar orphans entre la tabla y el bucket físico. El único path válido
+-- es la Storage API (supabase-js `.remove()`). El DELETE se valida en
+-- smoke tests E2E desde la app.
 
 begin;
 
@@ -103,10 +110,9 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- T5: User A puede UPDATE/DELETE en su propia carpeta
+-- T5: User A puede UPDATE en su propia carpeta
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- Seed un objeto propio para luego actualizar/borrar.
 do $$
 declare own_name text;
 begin
@@ -118,18 +124,12 @@ begin
     set metadata = '{"v":2}'::jsonb
     where bucket_id = 'profile-avatars' and name = own_name;
   if not found then
-    raise exception 'FAIL [T5.a]: user A no pudo UPDATE su propio objeto';
-  end if;
-
-  delete from storage.objects
-    where bucket_id = 'profile-avatars' and name = own_name;
-  if not found then
-    raise exception 'FAIL [T5.b]: user A no pudo DELETE su propio objeto';
+    raise exception 'FAIL [T5]: user A no pudo UPDATE su propio objeto';
   end if;
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- T6: User A NO puede UPDATE/DELETE objetos de B
+-- T6: User A NO puede UPDATE objetos de B
 -- ─────────────────────────────────────────────────────────────────────────────
 
 do $$
@@ -146,18 +146,7 @@ begin
     and name = 'bbbbbbbb-2222-2222-2222-222222222222/seed.webp'
     and metadata @> '{"hacked":true}'::jsonb;
   if cnt <> 0 then
-    raise exception 'FAIL [T6.a]: user A pudo UPDATE objeto de B';
-  end if;
-
-  delete from storage.objects
-    where bucket_id = 'profile-avatars'
-      and name = 'bbbbbbbb-2222-2222-2222-222222222222/seed.webp';
-  select count(*) into cnt
-  from storage.objects
-  where bucket_id = 'profile-avatars'
-    and name = 'bbbbbbbb-2222-2222-2222-222222222222/seed.webp';
-  if cnt <> 1 then
-    raise exception 'FAIL [T6.b]: user A pudo DELETE objeto de B';
+    raise exception 'FAIL [T6]: user A pudo UPDATE objeto de B';
   end if;
 end $$;
 
