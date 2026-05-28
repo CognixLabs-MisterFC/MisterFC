@@ -180,7 +180,8 @@
       "home": "Inicio",
       "categorias": "Categorías",
       "invitations": "Invitaciones",
-      "perfil": "Mi perfil"
+      "perfil": "Mi perfil",
+      "jugadores": "Plantilla"
     }
   },
   "perfil": {
@@ -305,5 +306,96 @@
     "entrenador_principal": "Entrenador principal",
     "entrenador_ayudante": "Entrenador ayudante",
     "jugador": "Jugador / Familia"
+  },
+  "jugadores": {
+    "title": "Jugadores",
+    "count": "{count, plural, =0 {Sin jugadores todavía} one {1 jugador} other {# jugadores}}",
+    "empty": "Aún no hay jugadores en este club. Crea el primero arriba.",
+    "create": "Crear jugador",
+    "create_help": "Da de alta la ficha del jugador. Puedes asignarle un equipo ahora o más tarde.",
+    "back_to_list": "Volver al listado",
+    "age_years": "{age, plural, one {1 año} other {# años}}",
+    "saved": "Cambios guardados.",
+    "actions": {
+      "create": "Crear",
+      "cancel": "Cancelar",
+      "save": "Guardar cambios"
+    },
+    "field": {
+      "first_name": "Nombre",
+      "last_name": "Apellidos",
+      "date_of_birth": "Fecha de nacimiento",
+      "date_of_birth_help": "Obligatoria — necesaria para edad y categoría.",
+      "dorsal": "Dorsal",
+      "position_main": "Posición principal",
+      "positions_secondary": "Otras posiciones",
+      "foot": "Pie dominante",
+      "height_cm": "Altura (cm)",
+      "weight_kg": "Peso (kg)",
+      "origin": "Procedencia",
+      "team": "Asignar a equipo",
+      "no_team": "Sin equipo (asignar luego)",
+      "optional": "Opcional"
+    },
+    "positions": {
+      "goalkeeper": "Portero",
+      "defender": "Defensa",
+      "midfielder": "Centrocampista",
+      "forward": "Delantero"
+    },
+    "feet": {
+      "right": "Diestro",
+      "left": "Zurdo",
+      "both": "Ambidiestro"
+    },
+    "section": {
+      "basic_data": "Datos básicos",
+      "medical": "Notas médicas",
+      "history": "Trayectoria en el club"
+    },
+    "history": {
+      "empty": "Sin asignaciones a equipos todavía."
+    },
+    "photo": {
+      "change": "Cambiar foto",
+      "remove": "Quitar foto",
+      "hint": "Máximo {maxMb} MB. JPG, PNG o WebP.",
+      "errors": {
+        "mime": "Formato no aceptado. Usa JPG, PNG o WebP.",
+        "too_large": "Imagen demasiado grande.",
+        "empty": "Fichero vacío.",
+        "upload_failed": "No se pudo subir la imagen.",
+        "remove_failed": "No se pudo quitar la imagen."
+      }
+    },
+    "medical": {
+      "label": "Notas médicas",
+      "placeholder": "Alergias, lesiones, tratamientos en curso, contactos de urgencia…",
+      "help": "Visible solo para admin/coordinador, entrenador principal, ayudantes con permiso explícito, y tutores legales vinculados.",
+      "errors": {
+        "medical_notes_too_long": "Las notas son demasiado largas (máx. 5000 caracteres).",
+        "forbidden": "No tienes permiso para editar las notas médicas.",
+        "generic": "No se pudo guardar."
+      }
+    },
+    "errors": {
+      "first_name_required": "Introduce el nombre.",
+      "first_name_too_long": "Nombre demasiado largo.",
+      "last_name_required": "Introduce los apellidos.",
+      "last_name_too_long": "Apellidos demasiado largos.",
+      "date_of_birth_required": "Falta la fecha de nacimiento.",
+      "date_of_birth_invalid": "Fecha de nacimiento no válida.",
+      "dorsal_invalid": "El dorsal debe estar entre 1 y 99.",
+      "position_invalid": "Posición no válida.",
+      "positions_secondary_too_many": "Demasiadas posiciones secundarias.",
+      "foot_invalid": "Pie no válido.",
+      "height_cm_invalid": "La altura debe estar entre 50 y 250 cm.",
+      "weight_kg_invalid": "El peso debe estar entre 10 y 200 kg.",
+      "origin_too_long": "Procedencia demasiado larga.",
+      "team_invalid": "Equipo no válido.",
+      "no_active_club": "Selecciona primero un club.",
+      "forbidden": "No tienes permiso.",
+      "generic": "No se pudo guardar. Inténtalo de nuevo."
+    }
   }
 }

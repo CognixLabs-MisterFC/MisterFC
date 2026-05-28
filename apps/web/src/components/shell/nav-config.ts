@@ -4,6 +4,7 @@ import {
   FolderKanban,
   Mail,
   UserRound,
+  Users,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -42,6 +43,17 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/categorias',
     icon: FolderKanban,
     roles: ['admin_club', 'coordinador'],
+  },
+  {
+    key: 'jugadores',
+    href: '/jugadores',
+    icon: Users,
+    roles: [
+      'admin_club',
+      'coordinador',
+      'entrenador_principal',
+      'entrenador_ayudante',
+    ],
   },
   {
     key: 'invitations',

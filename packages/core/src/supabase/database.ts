@@ -438,6 +438,15 @@ export type Database = {
         Returns: string
       }
       current_user_email: { Args: never; Returns: string }
+      user_can_manage_player: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
+      user_can_see_player: { Args: { p_player_id: string }; Returns: boolean }
+      user_can_see_player_medical: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
       user_has_capability: {
         Args: { p_capability: string; p_membership_id: string }
         Returns: boolean
