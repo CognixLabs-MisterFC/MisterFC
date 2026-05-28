@@ -473,8 +473,9 @@ export async function inviteTutorForPlayer(
   const hdrs = await headers();
   const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
   const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  const next = `/${locale}/invite/${invite.token}`;
-  const redirectTo = `${proto}://${host}/auth/callback?next=${encodeURIComponent(next)}`;
+  // redirectTo directo a la página de invitación. Ver nota en
+  // invitations/actions.ts para el porqué (allowlist Supabase).
+  const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
 
   const admin = createSupabaseAdminClient();
   try {

@@ -1,4 +1,4 @@
-import { type NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { createServerClient } from '@supabase/ssr';
 import { routing } from './i18n/routing';
@@ -8,17 +8,49 @@ const handleIntl = createIntlMiddleware(routing);
 /**
  * Middleware combinado:
  *
- *   1. Refresca la sesión Supabase leyendo/escribiendo cookies sobre el
+ *   1. Si llega un `?code=` (PKCE) o `?token_hash=&type=` (OTP) suelto en la
+ *      URL (típicamente porque Supabase Auth redirigió aquí tras verificar un
+ *      email), lo enrutamos a `/auth/callback` para que se intercambie por
+ *      sesión antes de servir la página. Esto es una red de seguridad: aunque
+ *      el redirectTo de la action apunte directamente a /invite/{token}, si
+ *      Supabase termina cayendo en otra ruta por allowlist, igualmente
+ *      establecemos sesión.
+ *
+ *   2. Refresca la sesión Supabase leyendo/escribiendo cookies sobre el
  *      response. Sin esto, los tokens caducan en el browser pero no se
  *      refrescan en server-side y los Server Components ven al user como
  *      desconectado.
  *
- *   2. Aplica el routing i18n de next-intl (prefijo de locale).
+ *   3. Aplica el routing i18n de next-intl (prefijo de locale).
  *
- * No hace redirects de auth aquí; cada página decide qué hacer en función
- * de `getCurrentUser()`. Eso evita doble lógica de protección.
+ * No hace redirects de auth aquí (más allá del callback); cada página decide
+ * qué hacer en función de `getCurrentUser()`. Eso evita doble lógica de
+ * protección.
  */
 export default async function middleware(request: NextRequest) {
+  // (1) Reenrutar artefactos de auth sueltos hacia /auth/callback.
+  const { searchParams, pathname } = request.nextUrl;
+  const code = searchParams.get('code');
+  const tokenHash = searchParams.get('token_hash');
+  const type = searchParams.get('type');
+  const hasAuthArtifact = code !== null || (tokenHash !== null && type !== null);
+  if (hasAuthArtifact && !pathname.startsWith('/auth/callback')) {
+    const callbackUrl = new URL('/auth/callback', request.url);
+    if (code) callbackUrl.searchParams.set('code', code);
+    if (tokenHash) callbackUrl.searchParams.set('token_hash', tokenHash);
+    if (type) callbackUrl.searchParams.set('type', type);
+    // Preservamos la ruta original (sin los params de auth) como `next`
+    // para que el callback redirija de vuelta tras establecer sesión.
+    const cleanedSearch = new URLSearchParams(searchParams);
+    cleanedSearch.delete('code');
+    cleanedSearch.delete('token_hash');
+    cleanedSearch.delete('type');
+    const query = cleanedSearch.toString();
+    const nextPath = pathname + (query ? `?${query}` : '');
+    callbackUrl.searchParams.set('next', nextPath);
+    return NextResponse.redirect(callbackUrl);
+  }
+
   const response = handleIntl(request);
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
