@@ -38,6 +38,8 @@ async function loadAndAssertInvitation(token: string): Promise<
         email: string;
         player_id: string | null;
         player_relation: string | null;
+        team_id: string | null;
+        team_staff_role: string | null;
       };
     }
   | { ok: false; error: NonNullable<AcceptInvitationState['error']> }
@@ -55,7 +57,7 @@ async function loadAndAssertInvitation(token: string): Promise<
   const { data: inv, error } = await supabase
     .from('invitations')
     .select(
-      'id, email, club_id, role, expires_at, accepted_at, player_id, player_relation'
+      'id, email, club_id, role, expires_at, accepted_at, player_id, player_relation, team_id, team_staff_role'
     )
     .eq('token', token)
     .maybeSingle();
@@ -80,6 +82,8 @@ async function loadAndAssertInvitation(token: string): Promise<
       email: inv.email,
       player_id: inv.player_id,
       player_relation: inv.player_relation,
+      team_id: inv.team_id,
+      team_staff_role: inv.team_staff_role,
     },
   };
 }
@@ -95,17 +99,25 @@ async function attachToClub(
     role: string;
     player_id: string | null;
     player_relation: string | null;
+    team_id: string | null;
+    team_staff_role: string | null;
   },
   profileId: string
 ): Promise<AcceptInvitationState> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { error: mErr } = await supabase.from('memberships').insert({
-    profile_id: profileId,
-    club_id: invitation.club_id,
-    role: invitation.role,
-  });
+  const { data: insertedMembership, error: mErr } = await supabase
+    .from('memberships')
+    .insert({
+      profile_id: profileId,
+      club_id: invitation.club_id,
+      role: invitation.role,
+    })
+    .select('id')
+    .single();
+
+  let membershipId: string | null = insertedMembership?.id ?? null;
 
   if (mErr) {
     // 23505 = unique violation: membership ya existía. No es un error fatal;
@@ -113,6 +125,14 @@ async function attachToClub(
     if (mErr.code !== '23505') {
       return { error: 'generic' };
     }
+    // Recuperar el membership ya existente para los inserts posteriores.
+    const { data: existing } = await supabase
+      .from('memberships')
+      .select('id')
+      .eq('profile_id', profileId)
+      .eq('club_id', invitation.club_id)
+      .maybeSingle();
+    membershipId = existing?.id ?? null;
   }
 
   // Si la invitación llevaba vinculación a jugador (tutor familiar), insertar
@@ -131,6 +151,24 @@ async function attachToClub(
     // 23505 = vínculo ya existía (caso poco probable: misma pareja
     // player+profile re-invitada). No abortamos.
     if (paErr && paErr.code !== '23505') {
+      return { error: 'generic' };
+    }
+  }
+
+  // F2.6: si la invitación llevaba team_id + team_staff_role, insertar
+  // team_staff con la membership_id recién creada (o la existente).
+  if (invitation.team_id && invitation.team_staff_role && membershipId) {
+    const { error: tsErr } = await supabase.from('team_staff').insert({
+      team_id: invitation.team_id,
+      membership_id: membershipId,
+      staff_role: invitation.team_staff_role as
+        | 'entrenador_principal'
+        | 'entrenador_ayudante'
+        | 'preparador_fisico'
+        | 'delegado',
+    });
+    // 23505 = vínculo activo ya existía (mismo team+membership). No abortamos.
+    if (tsErr && tsErr.code !== '23505') {
       return { error: 'generic' };
     }
   }

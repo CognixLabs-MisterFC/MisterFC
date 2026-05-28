@@ -61,3 +61,16 @@ export type {
   PlayerFoot,
   PlayerAccountRelation,
 } from './player';
+
+export {
+  sendStaffInvitationSchema,
+  updateCapabilitySchema,
+  TEAM_STAFF_ROLES,
+  CAPABILITY_NAMES,
+} from './staff';
+export type {
+  SendStaffInvitationInput,
+  UpdateCapabilityInput,
+  TeamStaffRole,
+  CapabilityName,
+} from './staff';

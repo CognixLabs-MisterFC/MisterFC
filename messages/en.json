@@ -181,7 +181,8 @@
       "categorias": "Categorías",
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
-      "jugadores": "Plantilla"
+      "jugadores": "Plantilla",
+      "mi_plantilla": "Mi plantilla"
     }
   },
   "perfil": {
@@ -456,6 +457,107 @@
         "forbidden": "No tienes permiso para gestionar este jugador.",
         "generic": "No se pudo guardar."
       }
+    }
+  },
+  "equipo_detalle": {
+    "back": "Volver a la categoría",
+    "roster_title": "Jugadores activos",
+    "roster_empty": "Aún no hay jugadores asignados a este equipo."
+  },
+  "staff": {
+    "title": "Cuerpo técnico",
+    "empty": "Sin cuerpo técnico asignado todavía.",
+    "caps": "Configurar permisos del ayudante",
+    "role": {
+      "entrenador_principal": "Entrenador principal",
+      "entrenador_ayudante": "Entrenador ayudante",
+      "preparador_fisico": "Preparador físico",
+      "delegado": "Delegado"
+    },
+    "invite": {
+      "action": "Invitar staff",
+      "title": "Invitar cuerpo técnico",
+      "description": "Envía una invitación por email. Al aceptar quedará vinculado a este equipo con la función indicada.",
+      "field": {
+        "email": "Email",
+        "role": "Función en el equipo",
+        "help": "Solo un entrenador principal por equipo. Preparador físico y delegado se gestionan como ayudantes a nivel de club (sin caps por defecto)."
+      },
+      "send": "Enviar invitación",
+      "cancel": "Cancelar",
+      "close": "Cerrar",
+      "sent": "Invitación enviada a {email}.",
+      "errors": {
+        "email_invalid": "Email no válido.",
+        "email_too_long": "Email demasiado largo.",
+        "team_staff_role_invalid": "Función no válida.",
+        "principal_exists": "Ya hay un entrenador principal activo en este equipo. Quita el actual antes de invitar otro.",
+        "forbidden": "No tienes permiso para invitar staff en este equipo.",
+        "generic": "No se pudo enviar la invitación."
+      }
+    },
+    "remove": {
+      "action": "Quitar del cuerpo técnico",
+      "title": "Quitar del cuerpo técnico",
+      "description": "¿Seguro que quieres quitar a {name} del cuerpo técnico de este equipo? Su membership en el club no se ve afectada.",
+      "cancel": "Cancelar",
+      "confirm": "Quitar"
+    }
+  },
+  "capabilities": {
+    "back": "Volver al equipo",
+    "subtitle": "Permisos del entrenador ayudante",
+    "read_only": "Solo el entrenador principal del equipo, coordinador o admin puede modificar estos permisos.",
+    "not_assistant": "Este miembro no es entrenador ayudante. Los permisos solo aplican a ayudantes.",
+    "autosave_hint": "Los cambios se guardan automáticamente.",
+    "can_evaluate": {
+      "label": "Valorar a jugadores",
+      "description": "Puede dejar valoraciones individuales post-partido y post-entrenamiento."
+    },
+    "can_create_lineups": {
+      "label": "Crear alineaciones",
+      "description": "Puede preparar alineaciones (titular, plan B, segunda parte)."
+    },
+    "can_register_match_events": {
+      "label": "Registrar eventos del partido",
+      "description": "Puede usar la pantalla de toma de datos en directo."
+    },
+    "can_create_sessions": {
+      "label": "Crear sesiones de entrenamiento",
+      "description": "Puede diseñar y publicar sesiones al equipo."
+    },
+    "can_create_plays": {
+      "label": "Crear jugadas tácticas",
+      "description": "Puede crear y compartir jugadas con el equipo."
+    },
+    "can_see_medical": {
+      "label": "Ver notas médicas",
+      "description": "Puede leer las notas médicas de los jugadores del equipo."
+    },
+    "can_message_families": {
+      "label": "Escribir a familias",
+      "description": "Puede iniciar conversaciones con tutores legales."
+    },
+    "can_manage_squad": {
+      "label": "Gestionar plantilla",
+      "description": "Puede crear/editar fichas y subir fotos. Sin esto, no puede dar de alta jugadores."
+    },
+    "errors": {
+      "forbidden": "No tienes permiso para modificar este permiso.",
+      "not_assistant": "Este miembro no es entrenador ayudante.",
+      "invalid_input": "Datos no válidos.",
+      "db": "No se pudo guardar. Inténtalo de nuevo."
+    }
+  },
+  "mi_plantilla": {
+    "title": "Mi plantilla",
+    "subtitle": "Jugadores de tus equipos.",
+    "no_teams": "Aún no estás asignado a ningún equipo. Pide al coordinador del club que te invite.",
+    "count": "{count, plural, =0 {Sin jugadores} one {1 jugador} other {# jugadores}}",
+    "empty": "No hay jugadores con esa posición en este equipo.",
+    "select_team": "Equipo",
+    "filter": {
+      "all": "Todos"
     }
   }
 }

@@ -6,6 +6,17 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 <!-- Issue "Botón Cerrar sesión ausente en /onboarding" resuelto en F2.0 — movido a "Resueltas". -->
 
+### F2.7 — Capabilities cross-team: cualquier principal del club puede modificar caps de cualquier ayudante
+- **Detectado en**: 2026-05-28, implementación de F2.7 (UI de capabilities del ayudante).
+- **Síntoma**: la policy `capabilities_update` (F1.7) acepta a admin/coord/principal del **club** sin filtrar por equipo. Un entrenador principal del Equipo A puede modificar las caps de un ayudante asignado únicamente al Equipo B (sin ser principal de ese equipo).
+- **Causa**: la tabla `capabilities` es por `membership_id` (a nivel club), no por `(membership, team)`. La policy no tiene cómo distinguir "principal de qué equipo".
+- **Impacto actual**: bajo. En la beta del primer club (un solo equipo en activo en F16 según plan) el problema no se materializa.
+- **Mitigación temporal**: el server action `toggleCapability` (apps/web/.../capabilities/actions.ts) chequea membership.role pero NO chequea pertenencia por equipo. La RLS sigue siendo la autoridad.
+- **Plan de endurecimiento**: cuando el primer club opere con ≥2 equipos cuyos principales sean personas distintas:
+  - Refactor del modelo: añadir `team_id` a `capabilities` (o tabla puente `team_capabilities`) y recomputar al asignar/quitar staff.
+  - O alternativa más simple: cambiar la policy para exigir que el principal sea el mismo del team activo del ayudante (vía `team_staff` introducido en F2.6).
+- **Plan**: abordar en **F11 (biblioteca de ejercicios + planificador microciclo)** o antes si surge necesidad. Spec ya recoge la limitación (`docs/specs/2.7-capabilities-ui.md` §8).
+
 
 ### Sentry server-side no captura excepciones en producción
 - **Detectado en**: 2026-05-28, debug de invitaciones en `feat/auth-email-password`.

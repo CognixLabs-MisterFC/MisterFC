@@ -124,6 +124,7 @@ export type Database = {
           player_relation: string | null
           role: string
           team_id: string | null
+          team_staff_role: string | null
           token: string
         }
         Insert: {
@@ -138,6 +139,7 @@ export type Database = {
           player_relation?: string | null
           role: string
           team_id?: string | null
+          team_staff_role?: string | null
           token?: string
         }
         Update: {
@@ -152,6 +154,7 @@ export type Database = {
           player_relation?: string | null
           role?: string
           team_id?: string | null
+          team_staff_role?: string | null
           token?: string
         }
         Relationships: [
@@ -406,6 +409,51 @@ export type Database = {
           },
         ]
       }
+      team_staff: {
+        Row: {
+          created_at: string
+          id: string
+          joined_at: string
+          left_at: string | null
+          membership_id: string
+          staff_role: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          membership_id: string
+          staff_role: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          joined_at?: string
+          left_at?: string | null
+          membership_id?: string
+          staff_role?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_staff_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_staff_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           category_id: string
@@ -451,6 +499,10 @@ export type Database = {
         Returns: string
       }
       current_user_email: { Args: never; Returns: string }
+      user_active_team_for_staff: {
+        Args: { p_club_id: string }
+        Returns: string
+      }
       user_can_manage_player: {
         Args: { p_player_id: string }
         Returns: boolean
@@ -468,6 +520,7 @@ export type Database = {
         Args: { p_capability: string; p_club_id: string }
         Returns: boolean
       }
+      user_is_staff_of_team: { Args: { p_team_id: string }; Returns: boolean }
       user_role_in_club: { Args: { p_club_id: string }; Returns: string }
     }
     Enums: {

@@ -195,9 +195,9 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 - **2.3** [hecho 2026-05-28] Alta de jugador con dialog. Asignación opcional a equipo al alta. La ficha existe sin cuenta vinculada (modelo `players` + `player_accounts`).
 - **2.4** [hecho 2026-05-28] Vincular cuentas de familia al jugador menor. Migración extiende `invitations` con `player_id` + `player_relation` (parent/guardian) + trigger same_club. `attachToClub` adapta el accept para crear `player_accounts`.
 - **2.5** [hecho 2026-05-28] Histórico del jugador en el club. Action `assignPlayerToTeam` cierra el `team_members` activo con `left_at=today` y crea el nuevo. UI dialog "Asignar/Mover de equipo" en la ficha.
-- **2.6** Cuerpo técnico con roles diferenciados (UI gestión de staff) — 1 h
-- **2.7** UI de configuración de permisos del ayudante (panel de capabilities) — 2–3 h
-- **2.8** Vista de plantilla para entrenador (`/mi-plantilla`) — 1–2 h
+- **2.6** [hecho 2026-05-28] Cuerpo técnico con roles diferenciados. Nueva tabla `team_staff(team_id, membership_id, staff_role)` + helpers `user_is_staff_of_team` / `user_active_team_for_staff`. Extensión `invitations.team_staff_role` con CHECK y trigger same_club. UI `/equipos/[teamId]` con bloques Staff + Roster e InviteStaffDialog. Mapeo staff_role → membership.role aplicado en server.
+- **2.7** [hecho 2026-05-28] UI de capabilities del ayudante implementada (spec `docs/specs/2.7-capabilities-ui.md`). Página `/equipos/[teamId]/staff/[membershipId]/capabilities` con shadcn Switch + optimistic UI + UPSERT robusto. Limitación cross-team registrada en `known-issues.md` (endurecer cuando haya multi-equipo activo).
+- **2.8** [hecho 2026-05-28] Vista `/mi-plantilla` para entrenadores (read-only). Resuelve equipo activo vía `team_staff` activos del user; soporta multi-equipo con TeamSelector; filtros por posición sin estado server.
 - **2.9** Importación masiva de jugadores vía CSV/Excel (plantilla descargable, validación, duplicados, vista previa) — 4–8 h
 
 ---
