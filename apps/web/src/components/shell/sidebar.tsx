@@ -29,14 +29,21 @@ export async function Sidebar({ role, variant }: Props) {
         </span>
       </div>
 
-      {items.map((item) => (
-        <SidebarNavLink
-          key={item.key}
-          href={item.href || '/'}
-          icon={item.icon}
-          label={t(`nav.${item.key}`)}
-        />
-      ))}
+      {items.map((item) => {
+        const Icon = item.icon;
+        return (
+          <SidebarNavLink
+            key={item.key}
+            href={item.href || '/'}
+            // El icono se renderiza aquí en el server y se pasa como ReactNode
+            // ya resuelto. Pasar `item.icon` directamente cruzaría la frontera
+            // RSC con una función (lucide es forwardRef) y rompería el render
+            // con "Functions cannot be passed directly to Client Components".
+            icon={<Icon className="size-4 shrink-0" aria-hidden />}
+            label={t(`nav.${item.key}`)}
+          />
+        );
+      })}
     </nav>
   );
 }

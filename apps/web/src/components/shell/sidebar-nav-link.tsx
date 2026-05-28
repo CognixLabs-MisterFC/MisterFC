@@ -1,13 +1,17 @@
 'use client';
 
-import type { ComponentProps } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 
 type Props = {
   href: ComponentProps<typeof Link>['href'];
-  icon: LucideIcon;
+  /**
+   * Icono ya renderizado como JSX por el server. NO aceptamos `LucideIcon`
+   * (una función) porque cruzar la frontera RSC con una función rompe el
+   * render — ver fix en `Sidebar` que renderiza el icono ahí.
+   */
+  icon: ReactNode;
   label: string;
   onNavigate?: () => void;
 };
@@ -16,7 +20,7 @@ type Props = {
  * Entry del sidebar con resaltado del item activo.
  * Compara `usePathname()` (sin locale prefix) con `href`.
  */
-export function SidebarNavLink({ href, icon: Icon, label, onNavigate }: Props) {
+export function SidebarNavLink({ href, icon, label, onNavigate }: Props) {
   const pathname = usePathname();
   const target = typeof href === 'string' ? href : href.pathname;
   const isHome = target === '' || target === '/';
@@ -35,7 +39,7 @@ export function SidebarNavLink({ href, icon: Icon, label, onNavigate }: Props) {
           : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
       )}
     >
-      <Icon className="size-4 shrink-0" aria-hidden />
+      {icon}
       <span>{label}</span>
     </Link>
   );
