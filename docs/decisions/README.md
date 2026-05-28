@@ -17,9 +17,10 @@ Decisiones técnicas con impacto significativo en la arquitectura, el stack o la
 
 ## Índice
 
-| ADR | Título | Status |
-|---|---|---|
-| 0000 | Stack técnico | Accepted |
-| 0001 | Supabase como backend | Accepted |
-| 0002 | Modelo de roles y capabilities | Accepted |
-| 0003 | Monorepo y Ola 2 RN | Accepted |
+| ADR  | Título                                          | Status   |
+| ---- | ----------------------------------------------- | -------- |
+| 0000 | Stack técnico                                   | Accepted |
+| 0001 | Supabase como backend                           | Accepted |
+| 0002 | Modelo de roles y capabilities                  | Accepted |
+| 0003 | Monorepo y Ola 2 RN                             | Accepted |
+| 0004 | Email + contraseña como método de autenticación | Accepted |

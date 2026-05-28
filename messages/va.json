@@ -8,24 +8,86 @@
   "auth": {
     "signin": {
       "title": "Accedir a MisterFC",
-      "subtitle": "T'enviarem un enllaç màgic al teu correu. Sense contrasenyes.",
+      "subtitle": "Introdueix el teu correu i contrasenya.",
+      "email_label": "Correu electrònic",
+      "email_placeholder": "tu@email.com",
+      "password_label": "Contrasenya",
+      "submit": "Entrar",
+      "submitting": "Entrant…",
+      "forgot_password_link": "Has oblidat la contrasenya?",
+      "signup_link": "No tens compte? Crea'n un",
+      "error_invalid_input": "Revisa les dades del formulari",
+      "error_invalid_credentials": "Correu o contrasenya incorrectes",
+      "error_email_not_confirmed": "Encara no has verificat el teu correu. Revisa la safata d'entrada.",
+      "error_generic": "No hem pogut iniciar la sessió. Torna-ho a provar."
+    },
+    "signup": {
+      "title": "Crea el teu compte",
+      "subtitle": "T'enviarem un correu de verificació.",
+      "full_name_label": "Nom complet",
+      "full_name_placeholder": "El teu nom i cognoms",
+      "email_label": "Correu electrònic",
+      "email_placeholder": "tu@email.com",
+      "password_label": "Contrasenya",
+      "password_hint": "Mínim 8 caràcters.",
+      "confirm_label": "Confirma la contrasenya",
+      "submit": "Crear compte",
+      "submitting": "Creant…",
+      "have_account": "Ja tens compte?",
+      "signin_link": "Inicia sessió",
+      "error_invalid_input": "Revisa les dades del formulari",
+      "error_full_name_too_short": "El nom ha de tenir almenys 2 caràcters",
+      "error_full_name_too_long": "El nom no pot superar els 120 caràcters",
+      "error_password_too_short": "La contrasenya ha de tenir almenys 8 caràcters",
+      "error_password_mismatch": "Les contrasenyes no coincideixen",
+      "error_user_already_exists": "Ja existeix un compte amb aquest correu. Inicia sessió.",
+      "error_generic": "No hem pogut crear el compte. Torna-ho a provar."
+    },
+    "forgot_password": {
+      "title": "Recuperar contrasenya",
+      "subtitle": "T'enviarem un enllaç per crear-ne una de nova.",
       "email_label": "Correu electrònic",
       "email_placeholder": "tu@email.com",
       "submit": "Enviar enllaç",
       "submitting": "Enviant…",
+      "back_to_signin": "Tornar a iniciar sessió",
       "error_invalid_email": "Email no vàlid",
       "error_generic": "No hem pogut enviar l'enllaç. Torna-ho a provar."
     },
+    "reset_password": {
+      "title": "Nova contrasenya",
+      "subtitle": "Introdueix la teva nova contrasenya.",
+      "password_label": "Nova contrasenya",
+      "password_hint": "Mínim 8 caràcters.",
+      "confirm_label": "Confirma la contrasenya",
+      "submit": "Guardar contrasenya",
+      "submitting": "Guardant…",
+      "no_session_title": "L'enllaç ha caducat",
+      "no_session_body": "L'enllaç de reset ja s'ha usat o ha caducat. Demana'n un de nou.",
+      "no_session_cta": "Demanar un nou enllaç",
+      "error_invalid_input": "Revisa les dades del formulari",
+      "error_password_too_short": "La contrasenya ha de tenir almenys 8 caràcters",
+      "error_password_mismatch": "Les contrasenyes no coincideixen",
+      "error_no_session": "No hi ha cap sessió activa. Demana un nou enllaç de reset.",
+      "error_generic": "No hem pogut actualitzar la contrasenya. Torna-ho a provar."
+    },
     "check_email": {
-      "title": "Revisa el teu correu",
-      "body": "T'hem enviat un enllaç a {email}. Obre'l des del mateix dispositiu per entrar.",
-      "body_fallback": "T'hem enviat un enllaç d'accés. Obre'l des del mateix dispositiu per entrar.",
-      "back_to_signin": "Fer servir un altre correu"
+      "back_to_signin": "Tornar a iniciar sessió",
+      "signup": {
+        "title": "Verifica el teu correu",
+        "body": "T'hem enviat un email de verificació a {email}. Obre'l des del mateix dispositiu per activar el teu compte.",
+        "body_fallback": "T'hem enviat un email de verificació. Obre'l des del mateix dispositiu per activar el teu compte."
+      },
+      "reset": {
+        "title": "Revisa el teu correu",
+        "body": "Si existeix un compte associat a {email}, t'hem enviat un enllaç per restablir la contrasenya.",
+        "body_fallback": "Si existeix un compte amb aquest correu, t'hem enviat un enllaç per restablir la contrasenya."
+      }
     },
     "callback": {
       "error_title": "No hem pogut completar l'accés",
-      "error_body": "L'enllaç ha caducat o ja s'ha usat. Demana'n un de nou des del signin.",
-      "back_to_signin": "Tornar al signin"
+      "error_body": "L'enllaç ha caducat o ja s'ha usat. Demana'n un de nou des de l'inici de sessió.",
+      "back_to_signin": "Tornar a iniciar sessió"
     }
   },
   "onboarding": {
@@ -78,12 +140,31 @@
   "invite": {
     "title": "Acceptar invitació",
     "summary": "Et conviden a entrar al club {club} amb el rol {role}.",
+    "invited_email_hint": "Invitació enviada a {email}.",
     "submit": "Acceptar i entrar",
     "submitting": "Processant…",
+    "set_password_summary": "Et conviden a entrar al club {club} amb el rol {role}. Completa les teves dades i estableix una contrasenya per al teu compte.",
+    "email_label": "Correu electrònic",
+    "full_name_label": "Nom complet",
+    "full_name_placeholder": "El teu nom i cognoms",
+    "date_of_birth_label": "Data de naixement",
+    "optional": "(opcional)",
+    "password_label": "Contrasenya",
+    "password_hint": "Mínim 8 caràcters.",
+    "confirm_label": "Confirma la contrasenya",
+    "set_password_submit": "Acceptar invitació",
+    "set_password_submitting": "Processant…",
     "error_wrong_email": "Aquesta invitació és per a un altre correu. Tanca sessió i entra amb el correu de la invitació.",
     "error_expired": "Aquesta invitació ha caducat. Demana'n una de nova a l'admin del club.",
     "error_already_accepted": "Aquesta invitació ja s'ha acceptat.",
     "error_not_found": "Invitació no trobada.",
+    "error_invalid_input": "Revisa les dades del formulari",
+    "error_full_name_too_short": "El nom ha de tenir almenys 2 caràcters",
+    "error_full_name_too_long": "El nom no pot superar els 120 caràcters",
+    "error_date_of_birth_invalid": "Data de naixement no vàlida",
+    "error_password_too_short": "La contrasenya ha de tenir almenys 8 caràcters",
+    "error_password_mismatch": "Les contrasenyes no coincideixen",
+    "error_no_session": "Sessió no trobada. Torna a obrir l'enllaç del correu.",
     "error_generic": "No hem pogut processar la invitació. Torna-ho a provar."
   }
 }

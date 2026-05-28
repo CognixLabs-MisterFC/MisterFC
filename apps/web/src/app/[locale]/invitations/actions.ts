@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/nextjs';
 import {
   sendInvitationSchema,
   createSupabaseServerClient,
+  createSupabaseAdminClient,
   type Role,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -21,7 +22,6 @@ const ROLES_ALLOWED_TO_INVITE: Role[] = ['admin_club', 'coordinador'];
 /**
  * Devuelve un identificador del email seguro para logs (no PII completo).
  * Ej: "alice@example.com" → "al***@e***.com"
- * Útil para Sentry/Vercel logs sin filtrar el email entero.
  */
 function maskEmail(email: string): string {
   const [user, domain] = email.split('@');
@@ -31,24 +31,25 @@ function maskEmail(email: string): string {
 }
 
 /**
- * Server Action: crea una invitación y dispara el magic link.
+ * Server Action: crea una invitación y dispara el email vía Supabase Invite.
  *
- * Reglas:
- *  - El user actual debe tener role admin_club o coordinador en el club activo.
- *  - En Fase 1 asumimos que el user solo administra **un** club (el primero
- *    de sus memberships). En Fase 2, cuando exista UI multi-club, esto se
- *    pasará explícito por param.
- *  - El magic link redirige tras autenticación a /[locale]/invite/{token}.
+ * Flow (ADR-0004 — auth por email+password):
+ *  1. Validar permisos del actor (admin_club o coordinador del club).
+ *  2. INSERT en `invitations` con token + expiración.
+ *  3. `auth.admin.inviteUserByEmail` — crea el user (si no existe) con
+ *     email confirmado y dispara el template "Invite user" de Supabase
+ *     con `redirectTo=/auth/callback?next=/invite/{token}`.
+ *  4. Marca `app_metadata.invite_pending=true` para que la page de invitación
+ *     muestre el form de password.
  *
- * Diagnostic logging (Bug 2): cada error path captura el error completo a
- * Sentry y a console.error (Vercel logs). Sin esto los fallos del API REST
- * de Supabase Auth quedan invisibles porque el try/catch del runtime de
- * Next no muestra el error al user.
+ * No usamos `signInWithOtp` aquí (era el método pre-ADR-0004). Sustituido por
+ * inviteUserByEmail porque encaja mejor con email+password: el user llega ya
+ * autenticado al callback y solo tiene que establecer password una vez.
  */
 export async function sendInvitation(
   locale: string,
   _prev: SendInvitationFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<SendInvitationFormState> {
   const teamIdRaw = formData.get('team_id');
   const parsed = sendInvitationSchema.safeParse({
@@ -79,7 +80,7 @@ export async function sendInvitation(
     redirect(`/${locale}/signin`);
   }
 
-  // Paso 1: leer memberships del user actual
+  // Paso 1: memberships del actor.
   const { data: memberships, error: mErr } = await supabase
     .from('memberships')
     .select('id, club_id, role')
@@ -104,9 +105,7 @@ export async function sendInvitation(
     return { error: 'no_club' };
   }
 
-  const authorized = memberships.find((m) =>
-    ROLES_ALLOWED_TO_INVITE.includes(m.role as Role)
-  );
+  const authorized = memberships.find((m) => ROLES_ALLOWED_TO_INVITE.includes(m.role as Role));
   if (!authorized) {
     console.warn('[invitations] forbidden_role', {
       user_id: user.id,
@@ -115,7 +114,7 @@ export async function sendInvitation(
     return { error: 'forbidden' };
   }
 
-  // Paso 2: INSERT en invitations
+  // Paso 2: INSERT en invitations.
   const insertPayload = {
     email: parsed.data.email,
     role: parsed.data.role,
@@ -169,80 +168,109 @@ export async function sendInvitation(
     masked_email: maskedEmail,
   });
 
-  // Paso 3: si el rol es entrenador_ayudante, las capabilities se sembrarán al
-  // crearse la membership en /invite/{token}/accept (trigger ensure_assistant_capabilities).
-  // En 1.6 NO se crea membership aquí — solo la invitación.
-  if (parsed.data.role === 'entrenador_ayudante') {
-    console.info('[invitations] assistant_role_invited_capabilities_will_seed_on_accept', {
-      invitation_id: invite.id,
-    });
-  }
-
-  // Paso 4: magic link
+  // Paso 3: Supabase Invite (service role) — envía email y crea/upsert user
+  // con flag invite_pending. El template "Invite user" del dashboard debe
+  // contener `{{ .ConfirmationURL }}` que apunta a `redirectTo`.
   const hdrs = await headers();
   const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
   const proto = hdrs.get('x-forwarded-proto') ?? 'https';
   const next = `/${locale}/invite/${invite.token}`;
-  const emailRedirectTo = `${proto}://${host}/auth/callback?next=${encodeURIComponent(
-    next
-  )}`;
+  const redirectTo = `${proto}://${host}/auth/callback?next=${encodeURIComponent(next)}`;
 
-  console.info('[invitations] sending_magic_link', {
+  console.info('[invitations] sending_invite', {
     masked_email: maskedEmail,
-    emailRedirectTo_origin: `${proto}://${host}`,
+    redirectTo_origin: `${proto}://${host}`,
   });
 
-  let otpResp: Awaited<ReturnType<typeof supabase.auth.signInWithOtp>>;
+  const admin = createSupabaseAdminClient();
+
   try {
-    otpResp = await supabase.auth.signInWithOtp({
-      email: parsed.data.email,
-      options: {
-        emailRedirectTo,
-        shouldCreateUser: true,
-      },
+    const { error: invErr } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
+      redirectTo,
+      data: { invite_pending: true, invitation_id: invite.id },
     });
+
+    if (invErr) {
+      // Si el user ya existe (email previo) Supabase devuelve un error.
+      // En ese caso reenviamos el email de invitación vía resetPasswordForEmail
+      // como vehículo de transporte para reusar la misma URL de redirect,
+      // sin tener que reimplementar el template propio.
+      const code = 'code' in invErr ? invErr.code : undefined;
+      const alreadyExists =
+        code === 'email_exists' ||
+        invErr.message?.toLowerCase().includes('already been registered') ||
+        invErr.message?.toLowerCase().includes('already exists');
+
+      if (alreadyExists) {
+        console.info('[invitations] user_exists_falling_back_to_reset', {
+          masked_email: maskedEmail,
+          invitation_id: invite.id,
+        });
+        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+          redirectTo,
+        });
+        if (resetErr) {
+          console.error('[invitations] reset_fallback_failed', {
+            step: 'resetPasswordForEmail_fallback',
+            message: resetErr.message,
+            masked_email: maskedEmail,
+            invitation_id: invite.id,
+          });
+          Sentry.captureException(resetErr, {
+            tags: { feature: 'invitations', step: 'reset_fallback' },
+            extra: { masked_email: maskedEmail, invitation_id: invite.id },
+          });
+          return { error: 'generic' };
+        }
+      } else {
+        console.error('[invitations] invite_returned_error', {
+          step: 'inviteUserByEmail',
+          name: invErr.name,
+          message: invErr.message,
+          status: invErr.status,
+          code,
+          masked_email: maskedEmail,
+          invitation_id: invite.id,
+        });
+        Sentry.captureException(invErr, {
+          tags: {
+            feature: 'invitations',
+            step: 'inviteUserByEmail',
+            invite_status: String(invErr.status ?? 'unknown'),
+          },
+          extra: { masked_email: maskedEmail, invitation_id: invite.id },
+        });
+        return { error: 'generic' };
+      }
+    }
   } catch (thrown) {
-    // El SDK normalmente NO tira, devuelve { error }. Pero por si acaso.
-    console.error('[invitations] otp_thrown', {
-      step: 'signInWithOtp',
-      thrown: thrown instanceof Error ? { name: thrown.name, message: thrown.message, stack: thrown.stack } : String(thrown),
+    console.error('[invitations] invite_thrown', {
+      step: 'inviteUserByEmail',
+      thrown:
+        thrown instanceof Error
+          ? { name: thrown.name, message: thrown.message, stack: thrown.stack }
+          : String(thrown),
       masked_email: maskedEmail,
     });
     Sentry.captureException(thrown, {
-      tags: { feature: 'invitations', step: 'signInWithOtp_thrown' },
+      tags: { feature: 'invitations', step: 'inviteUserByEmail_thrown' },
       extra: { masked_email: maskedEmail, invitation_id: invite.id },
     });
     return { error: 'generic' };
   }
 
-  if (otpResp.error) {
-    console.error('[invitations] otp_returned_error', {
-      step: 'signInWithOtp',
-      name: otpResp.error.name,
-      message: otpResp.error.message,
-      status: otpResp.error.status,
-      code: 'code' in otpResp.error ? otpResp.error.code : undefined,
-      masked_email: maskedEmail,
-      invitation_id: invite.id,
-    });
-    Sentry.captureException(otpResp.error, {
-      tags: {
-        feature: 'invitations',
-        step: 'signInWithOtp',
-        otp_status: String(otpResp.error.status ?? 'unknown'),
-      },
-      extra: {
-        masked_email: maskedEmail,
-        invitation_id: invite.id,
-      },
-    });
-    return { error: 'generic' };
-  }
-
-  console.info('[invitations] magic_link_sent', {
+  console.info('[invitations] invite_sent', {
     masked_email: maskedEmail,
     invitation_id: invite.id,
   });
+
+  // Paso 4: si el rol es entrenador_ayudante, las capabilities se sembrarán al
+  // crearse la membership en /invite/{token} (trigger ensure_assistant_capabilities).
+  if (parsed.data.role === 'entrenador_ayudante') {
+    console.info('[invitations] assistant_role_invited_capabilities_will_seed_on_accept', {
+      invitation_id: invite.id,
+    });
+  }
 
   revalidatePath(`/${locale}/invitations`);
   return { ok: { email: parsed.data.email } };

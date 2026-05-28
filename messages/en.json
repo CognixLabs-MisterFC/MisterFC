@@ -8,24 +8,86 @@
   "auth": {
     "signin": {
       "title": "Sign in to MisterFC",
-      "subtitle": "We'll send a magic link to your inbox. No passwords.",
+      "subtitle": "Enter your email and password.",
+      "email_label": "Email",
+      "email_placeholder": "you@email.com",
+      "password_label": "Password",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "forgot_password_link": "Forgot your password?",
+      "signup_link": "Don't have an account? Create one",
+      "error_invalid_input": "Check the form fields",
+      "error_invalid_credentials": "Wrong email or password",
+      "error_email_not_confirmed": "You haven't verified your email yet. Check your inbox.",
+      "error_generic": "We couldn't sign you in. Please try again."
+    },
+    "signup": {
+      "title": "Create your account",
+      "subtitle": "We'll send a verification email.",
+      "full_name_label": "Full name",
+      "full_name_placeholder": "Your first and last name",
+      "email_label": "Email",
+      "email_placeholder": "you@email.com",
+      "password_label": "Password",
+      "password_hint": "At least 8 characters.",
+      "confirm_label": "Confirm password",
+      "submit": "Create account",
+      "submitting": "Creating…",
+      "have_account": "Already have an account?",
+      "signin_link": "Sign in",
+      "error_invalid_input": "Check the form fields",
+      "error_full_name_too_short": "Name must be at least 2 characters",
+      "error_full_name_too_long": "Name can't exceed 120 characters",
+      "error_password_too_short": "Password must be at least 8 characters",
+      "error_password_mismatch": "Passwords don't match",
+      "error_user_already_exists": "An account with this email already exists. Sign in instead.",
+      "error_generic": "We couldn't create the account. Please try again."
+    },
+    "forgot_password": {
+      "title": "Reset your password",
+      "subtitle": "We'll send you a link to set a new one.",
       "email_label": "Email",
       "email_placeholder": "you@email.com",
       "submit": "Send link",
       "submitting": "Sending…",
+      "back_to_signin": "Back to sign in",
       "error_invalid_email": "Invalid email",
       "error_generic": "We couldn't send the link. Please try again."
     },
+    "reset_password": {
+      "title": "New password",
+      "subtitle": "Enter your new password.",
+      "password_label": "New password",
+      "password_hint": "At least 8 characters.",
+      "confirm_label": "Confirm password",
+      "submit": "Save password",
+      "submitting": "Saving…",
+      "no_session_title": "Link expired",
+      "no_session_body": "This reset link has been used or has expired. Request a new one.",
+      "no_session_cta": "Request new link",
+      "error_invalid_input": "Check the form fields",
+      "error_password_too_short": "Password must be at least 8 characters",
+      "error_password_mismatch": "Passwords don't match",
+      "error_no_session": "No active session. Request a new reset link.",
+      "error_generic": "We couldn't update the password. Please try again."
+    },
     "check_email": {
-      "title": "Check your email",
-      "body": "We sent a link to {email}. Open it from this device to sign in.",
-      "body_fallback": "We sent you a sign-in link. Open it from this device to sign in.",
-      "back_to_signin": "Use a different email"
+      "back_to_signin": "Back to sign in",
+      "signup": {
+        "title": "Verify your email",
+        "body": "We sent a verification email to {email}. Open it from this device to activate your account.",
+        "body_fallback": "We sent you a verification email. Open it from this device to activate your account."
+      },
+      "reset": {
+        "title": "Check your email",
+        "body": "If an account exists for {email}, we've sent a link to reset your password.",
+        "body_fallback": "If an account exists for that email, we've sent a link to reset your password."
+      }
     },
     "callback": {
       "error_title": "We couldn't complete sign-in",
-      "error_body": "The link is expired or already used. Request a new one from the sign-in page.",
-      "back_to_signin": "Back to sign-in"
+      "error_body": "The link is expired or already used. Request a new one from sign in.",
+      "back_to_signin": "Back to sign in"
     }
   },
   "onboarding": {
@@ -78,12 +140,31 @@
   "invite": {
     "title": "Accept invitation",
     "summary": "You've been invited to join {club} as {role}.",
+    "invited_email_hint": "Invitation sent to {email}.",
     "submit": "Accept and join",
     "submitting": "Processing…",
+    "set_password_summary": "You've been invited to join {club} as {role}. Fill in your details and set a password for your account.",
+    "email_label": "Email",
+    "full_name_label": "Full name",
+    "full_name_placeholder": "Your first and last name",
+    "date_of_birth_label": "Date of birth",
+    "optional": "(optional)",
+    "password_label": "Password",
+    "password_hint": "At least 8 characters.",
+    "confirm_label": "Confirm password",
+    "set_password_submit": "Accept invitation",
+    "set_password_submitting": "Processing…",
     "error_wrong_email": "This invitation is for a different email. Sign out and sign in with the invited email.",
     "error_expired": "This invitation has expired. Ask the club admin for a new one.",
     "error_already_accepted": "This invitation has already been accepted.",
     "error_not_found": "Invitation not found.",
+    "error_invalid_input": "Check the form fields",
+    "error_full_name_too_short": "Name must be at least 2 characters",
+    "error_full_name_too_long": "Name can't exceed 120 characters",
+    "error_date_of_birth_invalid": "Invalid date of birth",
+    "error_password_too_short": "Password must be at least 8 characters",
+    "error_password_mismatch": "Passwords don't match",
+    "error_no_session": "Session not found. Please reopen the link from your email.",
     "error_generic": "We couldn't process the invitation. Please try again."
   }
 }

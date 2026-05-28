@@ -3,13 +3,13 @@ import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { getCurrentUser } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { SigninForm } from './signin-form';
+import { SignupForm } from './signup-form';
 
 type Props = {
   params: Promise<{ locale: string }>;
 };
 
-export default async function SigninPage({ params }: Props) {
+export default async function SignupPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
 
@@ -19,7 +19,7 @@ export default async function SigninPage({ params }: Props) {
     redirect(`/${locale}`);
   }
 
-  const t = await getTranslations('auth.signin');
+  const t = await getTranslations('auth.signup');
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#0F1B2E] px-6 text-center text-white">
@@ -28,21 +28,16 @@ export default async function SigninPage({ params }: Props) {
           <h1 className="text-3xl font-bold text-[#10B981]">{t('title')}</h1>
           <p className="mt-2 text-sm text-zinc-300">{t('subtitle')}</p>
         </div>
-        <SigninForm locale={locale} />
-        <div className="flex flex-col gap-2 text-sm text-zinc-400">
+        <SignupForm locale={locale} />
+        <p className="text-sm text-zinc-400">
+          {t('have_account')}{' '}
           <Link
-            href={`/${locale}/forgot-password`}
+            href={`/${locale}/signin`}
             className="underline underline-offset-4 hover:text-white"
           >
-            {t('forgot_password_link')}
+            {t('signin_link')}
           </Link>
-          <Link
-            href={`/${locale}/signup`}
-            className="underline underline-offset-4 hover:text-white"
-          >
-            {t('signup_link')}
-          </Link>
-        </div>
+        </p>
       </div>
     </main>
   );

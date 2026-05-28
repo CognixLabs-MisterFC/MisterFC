@@ -8,24 +8,86 @@
   "auth": {
     "signin": {
       "title": "Acceder a MisterFC",
-      "subtitle": "Te enviaremos un enlace mágico a tu correo. Sin contraseñas.",
+      "subtitle": "Introduce tu correo y contraseña.",
+      "email_label": "Correo electrónico",
+      "email_placeholder": "tu@email.com",
+      "password_label": "Contraseña",
+      "submit": "Entrar",
+      "submitting": "Entrando…",
+      "forgot_password_link": "¿Olvidaste tu contraseña?",
+      "signup_link": "¿No tienes cuenta? Crea una",
+      "error_invalid_input": "Revisa los datos del formulario",
+      "error_invalid_credentials": "Correo o contraseña incorrectos",
+      "error_email_not_confirmed": "Aún no has verificado tu correo. Revisa tu bandeja de entrada.",
+      "error_generic": "No hemos podido iniciar sesión. Inténtalo de nuevo."
+    },
+    "signup": {
+      "title": "Crea tu cuenta",
+      "subtitle": "Te enviaremos un correo de verificación.",
+      "full_name_label": "Nombre completo",
+      "full_name_placeholder": "Tu nombre y apellidos",
+      "email_label": "Correo electrónico",
+      "email_placeholder": "tu@email.com",
+      "password_label": "Contraseña",
+      "password_hint": "Mínimo 8 caracteres.",
+      "confirm_label": "Confirma la contraseña",
+      "submit": "Crear cuenta",
+      "submitting": "Creando…",
+      "have_account": "¿Ya tienes cuenta?",
+      "signin_link": "Inicia sesión",
+      "error_invalid_input": "Revisa los datos del formulario",
+      "error_full_name_too_short": "El nombre debe tener al menos 2 caracteres",
+      "error_full_name_too_long": "El nombre no puede superar los 120 caracteres",
+      "error_password_too_short": "La contraseña debe tener al menos 8 caracteres",
+      "error_password_mismatch": "Las contraseñas no coinciden",
+      "error_user_already_exists": "Ya existe una cuenta con ese correo. Inicia sesión.",
+      "error_generic": "No hemos podido crear la cuenta. Inténtalo de nuevo."
+    },
+    "forgot_password": {
+      "title": "Recuperar contraseña",
+      "subtitle": "Te enviaremos un enlace para crear una nueva.",
       "email_label": "Correo electrónico",
       "email_placeholder": "tu@email.com",
       "submit": "Enviar enlace",
       "submitting": "Enviando…",
+      "back_to_signin": "Volver a iniciar sesión",
       "error_invalid_email": "Email no válido",
       "error_generic": "No hemos podido enviar el enlace. Inténtalo de nuevo."
     },
+    "reset_password": {
+      "title": "Nueva contraseña",
+      "subtitle": "Introduce tu nueva contraseña.",
+      "password_label": "Nueva contraseña",
+      "password_hint": "Mínimo 8 caracteres.",
+      "confirm_label": "Confirma la contraseña",
+      "submit": "Guardar contraseña",
+      "submitting": "Guardando…",
+      "no_session_title": "El enlace ha caducado",
+      "no_session_body": "El enlace de reset ya se ha usado o ha caducado. Pide uno nuevo.",
+      "no_session_cta": "Pedir nuevo enlace",
+      "error_invalid_input": "Revisa los datos del formulario",
+      "error_password_too_short": "La contraseña debe tener al menos 8 caracteres",
+      "error_password_mismatch": "Las contraseñas no coinciden",
+      "error_no_session": "No hay sesión activa. Pide un nuevo enlace de reset.",
+      "error_generic": "No hemos podido actualizar la contraseña. Inténtalo de nuevo."
+    },
     "check_email": {
-      "title": "Revisa tu correo",
-      "body": "Te hemos enviado un enlace a {email}. Ábrelo desde el mismo dispositivo para entrar.",
-      "body_fallback": "Te hemos enviado un enlace de acceso. Ábrelo desde el mismo dispositivo para entrar.",
-      "back_to_signin": "Usar otro correo"
+      "back_to_signin": "Volver a iniciar sesión",
+      "signup": {
+        "title": "Verifica tu correo",
+        "body": "Te hemos enviado un email de verificación a {email}. Ábrelo desde el mismo dispositivo para activar tu cuenta.",
+        "body_fallback": "Te hemos enviado un email de verificación. Ábrelo desde el mismo dispositivo para activar tu cuenta."
+      },
+      "reset": {
+        "title": "Revisa tu correo",
+        "body": "Si existe una cuenta asociada a {email}, te hemos enviado un enlace para restablecer la contraseña.",
+        "body_fallback": "Si existe una cuenta con ese correo, te hemos enviado un enlace para restablecer la contraseña."
+      }
     },
     "callback": {
       "error_title": "No hemos podido completar el acceso",
-      "error_body": "El enlace ha caducado o ya se ha usado. Pide uno nuevo desde el signin.",
-      "back_to_signin": "Volver a signin"
+      "error_body": "El enlace ha caducado o ya se ha usado. Pide uno nuevo desde el inicio de sesión.",
+      "back_to_signin": "Volver a iniciar sesión"
     }
   },
   "onboarding": {
@@ -78,12 +140,31 @@
   "invite": {
     "title": "Aceptar invitación",
     "summary": "Te invitan a entrar al club {club} con el rol {role}.",
+    "invited_email_hint": "Invitación enviada a {email}.",
     "submit": "Aceptar y entrar",
     "submitting": "Procesando…",
+    "set_password_summary": "Te invitan a entrar al club {club} con el rol {role}. Completa tus datos y establece una contraseña para tu cuenta.",
+    "email_label": "Correo electrónico",
+    "full_name_label": "Nombre completo",
+    "full_name_placeholder": "Tu nombre y apellidos",
+    "date_of_birth_label": "Fecha de nacimiento",
+    "optional": "(opcional)",
+    "password_label": "Contraseña",
+    "password_hint": "Mínimo 8 caracteres.",
+    "confirm_label": "Confirma la contraseña",
+    "set_password_submit": "Aceptar invitación",
+    "set_password_submitting": "Procesando…",
     "error_wrong_email": "Esta invitación es para otro correo. Cierra sesión y entra con el correo de la invitación.",
     "error_expired": "Esta invitación ha caducado. Pide una nueva al admin del club.",
     "error_already_accepted": "Esta invitación ya se ha aceptado.",
     "error_not_found": "Invitación no encontrada.",
+    "error_invalid_input": "Revisa los datos del formulario",
+    "error_full_name_too_short": "El nombre debe tener al menos 2 caracteres",
+    "error_full_name_too_long": "El nombre no puede superar los 120 caracteres",
+    "error_date_of_birth_invalid": "Fecha de nacimiento no válida",
+    "error_password_too_short": "La contraseña debe tener al menos 8 caracteres",
+    "error_password_mismatch": "Las contraseñas no coinciden",
+    "error_no_session": "Sesión no encontrada. Vuelve a abrir el enlace del email.",
     "error_generic": "No hemos podido procesar la invitación. Inténtalo de nuevo."
   }
 }

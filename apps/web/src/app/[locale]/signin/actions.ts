@@ -1,56 +1,65 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
 import { signinSchema, createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 export type SigninFormState = {
-  error?: 'invalid_email' | 'generic';
+  error?: 'invalid_input' | 'invalid_credentials' | 'email_not_confirmed' | 'generic';
 };
 
 /**
- * Server Action del formulario de signin.
+ * Server Action del signin.
  *
- * Envía un magic link a `email`. Si el email es inválido devuelve estado de
- * error (se renderiza en el form). Si Supabase falla, devuelve `generic`.
- * En caso de éxito redirige a `/<locale>/check-email?email=<email>`.
+ * Autentica con email + password contra Supabase Auth. Discrimina:
+ *  - `invalid_input`: el form no pasó Zod (email mal formado o password vacío).
+ *  - `invalid_credentials`: combinación email/password incorrecta.
+ *  - `email_not_confirmed`: el user existe pero no verificó el email aún
+ *    (signup pendiente de confirmación).
+ *  - `generic`: cualquier otro error de Supabase.
  *
- * `shouldCreateUser=true` permite que un email nuevo cree cuenta automáticamente.
- * En Fase 1 esto es lo deseable; en fases posteriores con invitaciones se
- * cerrará el embudo a sólo emails invitados.
+ * En éxito, redirige a `/<locale>`. El home decide a dónde mandarlo según
+ * memberships (onboarding, dashboard, etc.).
  */
-export async function requestMagicLink(
+export async function signInWithPassword(
   locale: string,
   _prev: SigninFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<SigninFormState> {
-  const email = String(formData.get('email') ?? '').trim();
-
-  const parsed = signinSchema.safeParse({ email });
+  const parsed = signinSchema.safeParse({
+    email: formData.get('email'),
+    password: formData.get('password'),
+  });
   if (!parsed.success) {
-    return { error: 'invalid_email' };
+    return { error: 'invalid_input' };
   }
-
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
-  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  const emailRedirectTo = `${proto}://${host}/auth/callback`;
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithPassword({
     email: parsed.data.email,
-    options: {
-      emailRedirectTo,
-      shouldCreateUser: true,
-    },
+    password: parsed.data.password,
   });
 
   if (error) {
+    // Supabase devuelve códigos estables a partir de @supabase/supabase-js 2.x.
+    // `error.code` es el contrato preferente; `error.message` es backup.
+    const code = 'code' in error ? error.code : undefined;
+    if (
+      code === 'invalid_credentials' ||
+      error.message?.toLowerCase().includes('invalid login credentials')
+    ) {
+      return { error: 'invalid_credentials' };
+    }
+    if (
+      code === 'email_not_confirmed' ||
+      error.message?.toLowerCase().includes('email not confirmed')
+    ) {
+      return { error: 'email_not_confirmed' };
+    }
     return { error: 'generic' };
   }
 
-  redirect(`/${locale}/check-email?email=${encodeURIComponent(parsed.data.email)}`);
+  redirect(`/${locale}`);
 }

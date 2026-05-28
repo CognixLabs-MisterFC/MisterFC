@@ -33,6 +33,15 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 - **Impacto**: solo warning de build, no rompe. La convención cambia de nombre en Next.js 16+; la API es la misma.
 - **Plan**: renombrar `apps/web/src/middleware.ts` → `apps/web/src/proxy.ts` en una subfase futura cuando next-intl haya actualizado sus docs/ejemplos a la nueva convención, para no divergir innecesariamente.
 
+### Formato pre-existente del repo no pasa `pnpm format:check`
+- **Detectado en**: 2026-05-28, durante el PR de `feat/auth-email-password` (ADR-0004). Al correr `pnpm format` el script reformateó ~17 archivos que ya estaban en `main` y que no formaban parte del cambio: `README.md`, varias páginas y actions de F1 (`onboarding/*`, `invitations/invite-form.tsx`, `page.tsx`), `_bootstrap/plan-maestro.md`, `docs/journey/*.md`, ADRs 0002/0003, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `packages/core/src/auth/current-user.ts`, `packages/core/src/supabase/database.ts`, `apps/web/public/sw.js`, `docs/architecture/supabase-cli-without-link.md`.
+- **Causa raíz**: el repo no tiene husky pre-commit ni `pnpm format:check` en CI, así que cambios merged desde Fase 0 y Fase 1 acumularon formato inconsistente. Prettier 3 normaliza al ejecutar `--write`.
+- **Impacto**: no rompe build ni CI actual (CI solo corre typecheck/lint/build). Sí incomoda cualquier futuro PR cuyo autor corra `pnpm format` localmente y termine con diff espurio.
+- **Plan**:
+  - PR aparte tipo `chore: pnpm format global tras Fase 1` que aplique prettier a todo el árbol sin mezclar con feature.
+  - Opcional: añadir `pnpm format:check` al workflow CI (`.github/workflows/ci.yml`) para que cualquier desviación bloquee merge.
+  - Opcional: habilitar husky pre-commit con `lint-staged` para formato/lint incremental por commit.
+
 ## Resueltas
 
 _(vacío todavía)_

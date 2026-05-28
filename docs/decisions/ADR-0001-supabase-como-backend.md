@@ -3,7 +3,9 @@
 - **Status**: Accepted
 - **Date**: 2026-05-27
 - **Deciders**: Iker Milla
-- **Related**: ADR-0000 (stack técnico), ADR-0002 (modelo de roles)
+- **Related**: ADR-0000 (stack técnico), ADR-0002 (modelo de roles), ADR-0004 (método de autenticación)
+
+> **Nota (2026-05-28)**: este ADR menciona "magic link" como método de auth en la sección de Decision (era el método de Fase 1). El método concreto de autenticación pasa a estar gobernado por **ADR-0004 — Email + contraseña como método de autenticación**, que documenta el cambio y sus motivos. El resto de decisiones de este ADR (Postgres + RLS + Storage + Edge Functions vía Supabase Free) sigue vigente sin cambios.
 
 ## Context
 
