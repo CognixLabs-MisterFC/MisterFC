@@ -6,6 +6,7 @@ import {
   createSupabaseServerClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { OnboardingShell } from '@/components/shell/onboarding-shell';
 import { OnboardingForm } from './onboarding-form';
 
 type Props = {
@@ -48,14 +49,14 @@ export default async function OnboardingPage({ params }: Props) {
   const t = await getTranslations('onboarding');
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-[#0F1B2E] px-6 text-center text-white">
-      <div className="flex w-full max-w-md flex-col items-center gap-6">
+    <OnboardingShell locale={locale}>
+      <div className="flex w-full max-w-md flex-col items-center gap-6 text-center">
         <div>
-          <h1 className="text-3xl font-bold text-[#10B981]">{t('title')}</h1>
-          <p className="mt-2 text-sm text-zinc-300">{t('subtitle')}</p>
+          <h1 className="text-3xl font-bold text-misterfc-green">{t('title')}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t('subtitle')}</p>
         </div>
         <OnboardingForm locale={locale} />
       </div>
-    </main>
+    </OnboardingShell>
   );
 }
