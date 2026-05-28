@@ -120,6 +120,8 @@ export type Database = {
           email: string
           expires_at: string
           id: string
+          player_id: string | null
+          player_relation: string | null
           role: string
           team_id: string | null
           token: string
@@ -132,6 +134,8 @@ export type Database = {
           email: string
           expires_at?: string
           id?: string
+          player_id?: string | null
+          player_relation?: string | null
           role: string
           team_id?: string | null
           token?: string
@@ -144,6 +148,8 @@ export type Database = {
           email?: string
           expires_at?: string
           id?: string
+          player_id?: string | null
+          player_relation?: string | null
           role?: string
           team_id?: string | null
           token?: string
@@ -161,6 +167,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
           {
@@ -438,6 +451,15 @@ export type Database = {
         Returns: string
       }
       current_user_email: { Args: never; Returns: string }
+      user_can_manage_player: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
+      user_can_see_player: { Args: { p_player_id: string }; Returns: boolean }
+      user_can_see_player_medical: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
       user_has_capability: {
         Args: { p_capability: string; p_membership_id: string }
         Returns: boolean

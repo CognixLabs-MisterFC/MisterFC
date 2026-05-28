@@ -191,10 +191,10 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 - **2.0** [hecho 2026-05-28] App shell + navegación role-aware + fix logout + perfil propio — incluye route group `(authenticated)`, sidebar/drawer, ActiveClubSwitcher, /perfil con avatar privado (signed URLs), shadcn/ui adoptado. Spec en `docs/specs/2.0-app-shell.md`. ADR-0000 confirmado en práctica.
 - **2.1** [hecho 2026-05-28] CRUD club, categorías, equipos — `/categorias` agrupada por temporada, anidación equipos por categoría con formato F7/F8/F11 + color. Sin spec (CRUD directo).
-- **2.2** Ficha completa del jugador (foto, nombre, apellidos, fecha nacimiento, dorsal, posiciones, pie dominante, contacto, alergias, notas médicas, altura, peso, procedencia) — 2–3 h
-- **2.3** Alta de jugador (con o sin email, con o sin cuenta) — 1–2 h
-- **2.4** Vincular cuentas de familia al jugador menor (rol jugador fusionado con familia, relación parent/guardian) — 1 h
-- **2.5** Histórico del jugador en el club (trayectoria por equipos y temporadas) — 1 h
+- **2.2** [hecho 2026-05-28] Ficha completa del jugador + bucket privado `player-photos` con helpers RLS (`user_can_see_player`, `user_can_manage_player`, `user_can_see_player_medical`). Signed URLs TTL 10min. Notas médicas con visibilidad por rol + capability + tutor. Spec en `docs/specs/2.2-...` (cubierta por nota crítica en spec 2.0).
+- **2.3** [hecho 2026-05-28] Alta de jugador con dialog. Asignación opcional a equipo al alta. La ficha existe sin cuenta vinculada (modelo `players` + `player_accounts`).
+- **2.4** [hecho 2026-05-28] Vincular cuentas de familia al jugador menor. Migración extiende `invitations` con `player_id` + `player_relation` (parent/guardian) + trigger same_club. `attachToClub` adapta el accept para crear `player_accounts`.
+- **2.5** [hecho 2026-05-28] Histórico del jugador en el club. Action `assignPlayerToTeam` cierra el `team_members` activo con `left_at=today` y crea el nuevo. UI dialog "Asignar/Mover de equipo" en la ficha.
 - **2.6** Cuerpo técnico con roles diferenciados (UI gestión de staff) — 1 h
 - **2.7** UI de configuración de permisos del ayudante (panel de capabilities) — 2–3 h
 - **2.8** Vista de plantilla para entrenador (`/mi-plantilla`) — 1–2 h
