@@ -1,6 +1,6 @@
 'use server';
 
-import { redirect } from 'next/navigation';
+import { redirect, unstable_rethrow } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
 import {
   acceptInvitationWithProfileSchema,
@@ -104,8 +104,11 @@ async function loadAndAssertInvitation(token: string): Promise<
     }
   | { ok: false; error: NonNullable<AcceptInvitationState['error']> }
 > {
+  logStep('fetch-invitation entered', { token_prefix: token.slice(0, 8) });
   const adapter = await createCookieAdapter();
+  logStep('fetch-invitation adapter-ok', { token_prefix: token.slice(0, 8) });
   const supabase = createSupabaseServerClient(adapter);
+  logStep('fetch-invitation client-ok', { token_prefix: token.slice(0, 8) });
 
   logStep('fetch-invitation start', { token_prefix: token.slice(0, 8) });
 
@@ -198,8 +201,11 @@ async function attachToClub(
   },
   profileId: string
 ): Promise<AcceptInvitationState> {
+  logStep('attach-to-club entered', { invitation_id: invitation.id });
   const adapter = await createCookieAdapter();
+  logStep('attach-to-club adapter-ok', { invitation_id: invitation.id });
   const supabase = createSupabaseServerClient(adapter);
+  logStep('attach-to-club client-ok', { invitation_id: invitation.id });
 
   logStep('membership-insert start', {
     invitation_id: invitation.id,
@@ -364,41 +370,60 @@ export async function acceptInvitation(
   locale: string,
   token: string
 ): Promise<AcceptInvitationState> {
-  logStep('flow=quick start', { token_prefix: token.slice(0, 8), locale });
+  logStep('flow=quick entered', { token_prefix: token.slice(0, 8), locale });
+  try {
+    logStep('flow=quick start', { token_prefix: token.slice(0, 8), locale });
 
-  const gate = await loadAndAssertInvitation(token);
-  if (!gate.ok) {
-    if (gate.error === 'no_session') {
+    logStep('flow=quick pre-gate');
+    const gate = await loadAndAssertInvitation(token);
+    logStep('flow=quick post-gate', { ok: gate.ok });
+    if (!gate.ok) {
+      if (gate.error === 'no_session') {
+        redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
+      }
+      logStep('flow=quick aborted-by-gate', { gate_error: gate.error });
+      return { error: gate.error };
+    }
+
+    logStep('flow=quick pre-getUser');
+    const adapter = await createCookieAdapter();
+    const supabase = createSupabaseServerClient(adapter);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    logStep('flow=quick post-getUser', { has_user: !!user });
+    if (!user) {
+      logStep('flow=quick no-session-after-gate');
       redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
     }
-    logStep('flow=quick aborted-by-gate', { gate_error: gate.error });
-    return { error: gate.error };
-  }
 
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    logStep('flow=quick no-session-after-gate');
-    redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
-  }
+    logStep('flow=quick pre-attach', { invitation_id: gate.invitation.id });
+    const result = await attachToClub(gate.invitation, user.id);
+    logStep('flow=quick post-attach', { has_error: !!result.error });
+    if (result.error) {
+      logStep('flow=quick attach-failed', {
+        invitation_id: gate.invitation.id,
+        error: result.error,
+      });
+      return result;
+    }
 
-  const result = await attachToClub(gate.invitation, user.id);
-  if (result.error) {
-    logStep('flow=quick attach-failed', {
+    logStep('flow=quick success', {
       invitation_id: gate.invitation.id,
-      error: result.error,
+      role: gate.invitation.role,
     });
-    return result;
+    redirect(`/${locale}`);
+  } catch (err) {
+    // unstable_rethrow reenvía señales de framework (NEXT_REDIRECT, NOT_FOUND,
+    // unauthorized) sin loguearlas como fallo. Si llegamos a la línea siguiente
+    // es un throw inesperado de verdad.
+    unstable_rethrow(err);
+    logError('flow=quick unexpected-throw', err, {
+      token_prefix: token.slice(0, 8),
+      locale,
+    });
+    return { error: 'generic' };
   }
-
-  logStep('flow=quick success', {
-    invitation_id: gate.invitation.id,
-    role: gate.invitation.role,
-  });
-  redirect(`/${locale}`);
 }
 
 /**
@@ -423,116 +448,145 @@ export async function acceptInvitationWithProfile(
   _prev: AcceptInvitationState,
   formData: FormData
 ): Promise<AcceptInvitationState> {
-  logStep('flow=with-profile start', {
+  logStep('flow=with-profile entered', {
     token_prefix: token.slice(0, 8),
     locale,
   });
-
-  const parsed = acceptInvitationWithProfileSchema.safeParse({
-    full_name: formData.get('full_name'),
-    date_of_birth: formData.get('date_of_birth'),
-    password: formData.get('password'),
-    confirm: formData.get('confirm'),
-  });
-  if (!parsed.success) {
-    const issue = parsed.error.issues[0];
-    const code = issue?.message ?? 'invalid_input';
-    logStep('flow=with-profile invalid-input', {
-      code,
-      issues: parsed.error.issues.map((i) => ({
-        path: i.path,
-        code: i.code,
-        message: i.message,
-      })),
+  try {
+    logStep('flow=with-profile start', {
+      token_prefix: token.slice(0, 8),
+      locale,
     });
-    if (code === 'full_name_too_short') return { error: 'full_name_too_short' };
-    if (code === 'full_name_too_long') return { error: 'full_name_too_long' };
-    if (code === 'date_of_birth_invalid') return { error: 'date_of_birth_invalid' };
-    if (code === 'password_too_short') return { error: 'password_too_short' };
-    if (code === 'password_mismatch') return { error: 'password_mismatch' };
-    return { error: 'invalid_input' };
-  }
 
-  logStep('flow=with-profile input-ok', {
-    has_date_of_birth: !!parsed.data.date_of_birth,
-    full_name_len: parsed.data.full_name.length,
-  });
+    logStep('flow=with-profile pre-parse', {
+      has_full_name: formData.get('full_name') !== null,
+      has_date_of_birth: formData.get('date_of_birth') !== null,
+      has_password: formData.get('password') !== null,
+      has_confirm: formData.get('confirm') !== null,
+    });
+    const parsed = acceptInvitationWithProfileSchema.safeParse({
+      full_name: formData.get('full_name'),
+      date_of_birth: formData.get('date_of_birth'),
+      password: formData.get('password'),
+      confirm: formData.get('confirm'),
+    });
+    logStep('flow=with-profile post-parse', { success: parsed.success });
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const code = issue?.message ?? 'invalid_input';
+      logStep('flow=with-profile invalid-input', {
+        code,
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path,
+          code: i.code,
+          message: i.message,
+        })),
+      });
+      if (code === 'full_name_too_short') return { error: 'full_name_too_short' };
+      if (code === 'full_name_too_long') return { error: 'full_name_too_long' };
+      if (code === 'date_of_birth_invalid') return { error: 'date_of_birth_invalid' };
+      if (code === 'password_too_short') return { error: 'password_too_short' };
+      if (code === 'password_mismatch') return { error: 'password_mismatch' };
+      return { error: 'invalid_input' };
+    }
 
-  const gate = await loadAndAssertInvitation(token);
-  if (!gate.ok) {
-    if (gate.error === 'no_session') {
+    logStep('flow=with-profile input-ok', {
+      has_date_of_birth: !!parsed.data.date_of_birth,
+      full_name_len: parsed.data.full_name.length,
+    });
+
+    logStep('flow=with-profile pre-gate');
+    const gate = await loadAndAssertInvitation(token);
+    logStep('flow=with-profile post-gate', { ok: gate.ok });
+    if (!gate.ok) {
+      if (gate.error === 'no_session') {
+        redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
+      }
+      logStep('flow=with-profile aborted-by-gate', { gate_error: gate.error });
+      return { error: gate.error };
+    }
+
+    logStep('flow=with-profile pre-getUser');
+    const adapter = await createCookieAdapter();
+    const supabase = createSupabaseServerClient(adapter);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    logStep('flow=with-profile post-getUser', { has_user: !!user });
+    if (!user) {
+      logStep('flow=with-profile no-session-after-gate');
       redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
     }
-    logStep('flow=with-profile aborted-by-gate', { gate_error: gate.error });
-    return { error: gate.error };
-  }
 
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    logStep('flow=with-profile no-session-after-gate');
-    redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
-  }
+    // Paso 1: password + metadata en auth.users.
+    logStep('auth-update start', { invitation_id: gate.invitation.id });
+    const { error: updErr } = await supabase.auth.updateUser({
+      password: parsed.data.password,
+      data: {
+        full_name: parsed.data.full_name,
+        date_of_birth: parsed.data.date_of_birth,
+        locale,
+      },
+    });
+    if (updErr) {
+      logError('auth-update', updErr, {
+        invitation_id: gate.invitation.id,
+        user_email_masked: maskEmail(user.email),
+      });
+      return { error: 'generic' };
+    }
+    logStep('auth-update ok', { invitation_id: gate.invitation.id });
 
-  // Paso 1: password + metadata en auth.users.
-  logStep('auth-update start', { invitation_id: gate.invitation.id });
-  const { error: updErr } = await supabase.auth.updateUser({
-    password: parsed.data.password,
-    data: {
-      full_name: parsed.data.full_name,
-      date_of_birth: parsed.data.date_of_birth,
-      locale,
-    },
-  });
-  if (updErr) {
-    logError('auth-update', updErr, {
+    // Paso 2: UPDATE profiles.
+    logStep('profile-update start', { invitation_id: gate.invitation.id });
+    const { error: profErr } = await supabase
+      .from('profiles')
+      .update({
+        full_name: parsed.data.full_name,
+        date_of_birth: parsed.data.date_of_birth,
+        locale,
+      })
+      .eq('id', user.id);
+    if (profErr) {
+      logError('profile-update', profErr, {
+        invitation_id: gate.invitation.id,
+        user_id: user.id,
+      });
+      return { error: 'generic' };
+    }
+    logStep('profile-update ok', { invitation_id: gate.invitation.id });
+
+    // Paso 3: membership + accept.
+    logStep('flow=with-profile pre-attach', { invitation_id: gate.invitation.id });
+    const result = await attachToClub(gate.invitation, user.id);
+    logStep('flow=with-profile post-attach', { has_error: !!result.error });
+    if (result.error) {
+      logStep('flow=with-profile attach-failed', {
+        invitation_id: gate.invitation.id,
+        error: result.error,
+      });
+      return result;
+    }
+
+    logStep('flow=with-profile success', {
       invitation_id: gate.invitation.id,
-      user_email_masked: maskEmail(user.email),
+      role: gate.invitation.role,
+      type: gate.invitation.team_id
+        ? 'staff'
+        : gate.invitation.player_id
+          ? 'tutor'
+          : 'generic',
+    });
+    redirect(`/${locale}`);
+  } catch (err) {
+    // unstable_rethrow reenvía señales de framework (NEXT_REDIRECT, NOT_FOUND,
+    // unauthorized) sin loguearlas como fallo. Si llegamos a la línea siguiente
+    // es un throw inesperado de verdad.
+    unstable_rethrow(err);
+    logError('flow=with-profile unexpected-throw', err, {
+      token_prefix: token.slice(0, 8),
+      locale,
     });
     return { error: 'generic' };
   }
-  logStep('auth-update ok', { invitation_id: gate.invitation.id });
-
-  // Paso 2: UPDATE profiles.
-  logStep('profile-update start', { invitation_id: gate.invitation.id });
-  const { error: profErr } = await supabase
-    .from('profiles')
-    .update({
-      full_name: parsed.data.full_name,
-      date_of_birth: parsed.data.date_of_birth,
-      locale,
-    })
-    .eq('id', user.id);
-  if (profErr) {
-    logError('profile-update', profErr, {
-      invitation_id: gate.invitation.id,
-      user_id: user.id,
-    });
-    return { error: 'generic' };
-  }
-  logStep('profile-update ok', { invitation_id: gate.invitation.id });
-
-  // Paso 3: membership + accept.
-  const result = await attachToClub(gate.invitation, user.id);
-  if (result.error) {
-    logStep('flow=with-profile attach-failed', {
-      invitation_id: gate.invitation.id,
-      error: result.error,
-    });
-    return result;
-  }
-
-  logStep('flow=with-profile success', {
-    invitation_id: gate.invitation.id,
-    role: gate.invitation.role,
-    type: gate.invitation.team_id
-      ? 'staff'
-      : gate.invitation.player_id
-        ? 'tutor'
-        : 'generic',
-  });
-  redirect(`/${locale}`);
 }
