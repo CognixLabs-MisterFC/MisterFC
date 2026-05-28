@@ -27,7 +27,7 @@
 
 MisterFC es un producto greenfield: no existe código previo. Este Plan Maestro articula su construcción en tres olas:
 
-- **Ola 1 — MVP** (diecisiete fases, 0 a 16). Producto mínimo viable lanzable a beta cerrada con primer club como PWA instalable en iPad, Android y desktop. 158–241 h.
+- **Ola 1 — MVP** (diecisiete fases, 0 a 16). Producto mínimo viable lanzable a beta cerrada con primer club como PWA instalable en iPad, Android y desktop. 159–243 h.
 - **Ola 2 — App nativa Android + iOS**. Una vez validada Ola 1, se construye la app nativa para App Store y Google Play reutilizando `packages/core`. 50–70 h.
 - **Ola 3 — A definir tras feedback de beta**. Espacio reservado para propuestas que surjan del uso real. Sin estimación todavía.
 
@@ -116,8 +116,8 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☐ |
 | F14 | RGPD para menores y seguridad | 10–14 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
-| F16 | Beta cerrada con primer club | 5–8 h | 2–3 | ☐ |
-| **TOTAL Ola 1** | | **158–241 h** | **60–78** | |
+| F16 | Beta cerrada con primer club | 6–10 h | 2–3 | ☐ |
+| **TOTAL Ola 1** | | **159–243 h** | **60–78** | |
 
 ---
 
@@ -515,7 +515,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 **Objetivo**: lanzar con un club real, recoger feedback estructurado, iterar.
 
-**Horas**: 5–8 h · **Sesiones**: 2–3
+**Horas**: 6–10 h · **Sesiones**: 2–3
 
 **Criterio de cierre**: club piloto operando MisterFC en producción durante al menos un mes con uso real (partidos, entrenamientos, asistencia, valoraciones). Feedback documentado en `docs/journey/retros/`.
 
@@ -525,6 +525,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 **Subfases**:
 
+- **16.0** Configurar SMTP propio para emails de autenticación. El email integrado de Supabase tiene rate limit ~2-4/hora (solo testing). Sin SMTP propio, signup/invitaciones/reset fallan con 429. Configurar proveedor (Brevo recomendado: 300/día gratis, permite empezar sin dominio verificado; alternativa Resend con dominio). Setup en Supabase Dashboard → Auth → SMTP Settings. — 1–2 h
 - **16.1** Onboarding del club (sesión con coordinador, importar plantilla, configurar permisos) — 2–3 h
 - **16.2** Soporte directo durante 4 semanas — incluido en bolsa de horas
 - **16.3** Recogida estructurada de feedback (cuestionarios + observación) — 1–2 h

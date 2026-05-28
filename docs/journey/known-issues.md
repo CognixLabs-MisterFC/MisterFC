@@ -4,6 +4,33 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 ## Activas
 
+### Botón "Cerrar sesión" ausente en `/onboarding`
+- **Detectado en**: 2026-05-28, al cierre de Fase 1.
+- **Síntoma**: un usuario autenticado sin club queda atrapado en `/onboarding` sin forma evidente de cambiar de cuenta. El único camino es vaciar cookies o abrir incógnito.
+- **Impacto**: bajo (afecta testing y casos edge), pero rompe el principio de "siempre poder salir".
+- **Plan**: añadir botón de logout en el layout de `/onboarding` (o en un header global accesible incluso sin membership). Abordar en **Fase 2** junto al refactor multi-club.
+
+### Sentry server-side no captura excepciones en producción
+- **Detectado en**: 2026-05-28, debug de invitaciones en `feat/auth-email-password`.
+- **Síntoma**: en Vercel logs sólo aparece `[sentry][edge-init]`, nunca `[sentry][server-init]`. Los errores lanzados desde server actions (p. ej. `inviteUserByEmail`) no llegan a Sentry.
+- **Hipótesis a investigar**: `instrumentation.ts` no está cargando `sentry.server.config.ts`, o el runtime de server está corriendo en edge cuando debería ser Node, o el SDK no se inicializa por una env var faltante en el contexto server.
+- **Relación**: emparentado con la entrada "Sentry no recibe eventos (SENTRY_PROJECT slug mismatch + DSN a verificar)" más abajo, pero distinto: ese habla del slug del proyecto; este habla de que el init server ni siquiera se ejecuta.
+- **Plan**: abordar en **Fase 15 (observabilidad)** junto al setup de alertas. Hasta entonces los server errors sólo son visibles vía Vercel logs.
+
+### Log `[invitations][invite-email]` no aparece tras el insert
+- **Detectado en**: 2026-05-28, debug de invitaciones.
+- **Síntoma**: el `console.log` con prefijo `[invitations][invite-email]` que debería aparecer tras el insert en la tabla `invitations` no se ve en Vercel logs. El insert sí ocurre.
+- **Hipótesis**: el logging está colocado en una rama de código que no se alcanza, o el server action está siendo throttled/serializado de forma que el log se pierde, o está antes de un `throw` que el SDK de Sentry tampoco captura (ver entrada anterior).
+- **Acción**: verificar la colocación del logging en `apps/web/src/app/.../invitations/actions.ts`. Está bloqueado por el problema de Sentry server-side (mismo síntoma, mismo runtime).
+- **Plan**: **Fase 15** junto con el fix de Sentry server.
+
+### Email rate limit de Supabase free (HTTP 429) bloquea testing
+- **Detectado en**: 2026-05-28, durante el testing de signup/invitaciones de Fase 1.
+- **Síntoma**: el SMTP integrado de Supabase impone ~2-4 emails/hora en el plan free. Signup, invitaciones y reset password fallan con HTTP 429 al superarlo.
+- **Mitigación temporal**: desactivar "Confirm email" en Supabase Auth Settings durante testing local + esperar a que se resetee el contador antes de continuar.
+- **Solución definitiva**: SMTP propio (Brevo o Resend). Tracked como subfase **F16.0** en `plan-maestro.md`.
+- **Plan**: convivir con la limitación durante F2–F15; resolver al arrancar **Fase 16** antes de invitar al primer club.
+
 ### Ventana de deploy mismatch al aplicar migraciones de RLS antes del merge
 - **Detectado en**: 2026-05-27 ~15:48 UTC, durante el fix de Bug 1 (clubs INSERT RLS).
 - **Observado**: tras la merge del PR #4 a las 15:48:29 UTC, Postgres logs muestran un INSERT en clubs fallido — el último intento de un user antes de que Vercel terminara de redesplegar el código actualizado.
