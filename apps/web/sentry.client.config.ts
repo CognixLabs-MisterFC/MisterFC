@@ -7,11 +7,8 @@ if (dsn) {
     dsn,
     environment: process.env.NODE_ENV,
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    replaysOnErrorSampleRate: 0,
-    replaysSessionSampleRate: 0,
     debug: false,
 
-    // Privacidad: no logueamos PII (emails, nombres, contenido de mensajes).
     beforeSend(event) {
       if (event.user) {
         delete event.user.email;
@@ -28,4 +25,14 @@ if (dsn) {
       return event;
     },
   });
+  // En el cliente esto va a devtools del browser. Sirve como sanity-check en
+  // producción: si abres el devtools y NO ves esta línea, el SDK no se cargó.
+  console.info('[sentry][client-init] initialized', {
+    dsn_present: true,
+    environment: process.env.NODE_ENV,
+  });
+} else {
+  console.warn(
+    '[sentry][client-init] NEXT_PUBLIC_SENTRY_DSN missing — Sentry browser SDK NOT initialized. Client errors will NOT be sent.'
+  );
 }

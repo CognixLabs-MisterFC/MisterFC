@@ -177,12 +177,53 @@ export async function sendInvitation(
   const next = `/${locale}/invite/${invite.token}`;
   const redirectTo = `${proto}://${host}/auth/callback?next=${encodeURIComponent(next)}`;
 
-  console.info('[invitations] sending_invite', {
+  console.info('[invitations][invite-email] sending', {
     masked_email: maskedEmail,
+    invitation_id: invite.id,
     redirectTo_origin: `${proto}://${host}`,
   });
 
   const admin = createSupabaseAdminClient();
+
+  /**
+   * Serializa un error del SDK Supabase (o cualquier objeto error-like) a un
+   * objeto plano para console.error.
+   *
+   * Logueamos a console.error con un objeto JSON-stringificable porque Vercel
+   * runtime logs no rinden bien objetos anidados; pasar string asegura que
+   * todos los campos llegan en una línea grepable.
+   *
+   * NUNCA depender solo de Sentry.captureException — históricamente Sentry
+   * ha estado roto en este proyecto y el único registro del error eran los
+   * console.* en Vercel. Ver `docs/journey/known-issues.md`.
+   */
+  function serializeError(err: unknown): Record<string, unknown> {
+    if (err instanceof Error) {
+      const anyErr = err as Error & {
+        status?: number;
+        code?: string;
+        details?: unknown;
+        hint?: unknown;
+      };
+      return {
+        name: err.name,
+        message: err.message,
+        status: anyErr.status,
+        code: anyErr.code,
+        details: anyErr.details,
+        hint: anyErr.hint,
+        stack: err.stack,
+      };
+    }
+    if (typeof err === 'object' && err !== null) {
+      try {
+        return JSON.parse(JSON.stringify(err));
+      } catch {
+        return { repr: String(err) };
+      }
+    }
+    return { repr: String(err) };
+  }
 
   try {
     const { error: invErr } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
@@ -202,20 +243,24 @@ export async function sendInvitation(
         invErr.message?.toLowerCase().includes('already exists');
 
       if (alreadyExists) {
-        console.info('[invitations] user_exists_falling_back_to_reset', {
+        console.info('[invitations][invite-email] user_exists_falling_back_to_reset', {
           masked_email: maskedEmail,
           invitation_id: invite.id,
+          original_error: serializeError(invErr),
         });
         const { error: resetErr } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
           redirectTo,
         });
         if (resetErr) {
-          console.error('[invitations] reset_fallback_failed', {
-            step: 'resetPasswordForEmail_fallback',
-            message: resetErr.message,
-            masked_email: maskedEmail,
-            invitation_id: invite.id,
-          });
+          console.error(
+            '[invitations][invite-email] reset_fallback_failed ' +
+              JSON.stringify({
+                step: 'resetPasswordForEmail_fallback',
+                masked_email: maskedEmail,
+                invitation_id: invite.id,
+                error: serializeError(resetErr),
+              })
+          );
           Sentry.captureException(resetErr, {
             tags: { feature: 'invitations', step: 'reset_fallback' },
             extra: { masked_email: maskedEmail, invitation_id: invite.id },
@@ -223,15 +268,15 @@ export async function sendInvitation(
           return { error: 'generic' };
         }
       } else {
-        console.error('[invitations] invite_returned_error', {
-          step: 'inviteUserByEmail',
-          name: invErr.name,
-          message: invErr.message,
-          status: invErr.status,
-          code,
-          masked_email: maskedEmail,
-          invitation_id: invite.id,
-        });
+        console.error(
+          '[invitations][invite-email] invite_returned_error ' +
+            JSON.stringify({
+              step: 'inviteUserByEmail',
+              masked_email: maskedEmail,
+              invitation_id: invite.id,
+              error: serializeError(invErr),
+            })
+        );
         Sentry.captureException(invErr, {
           tags: {
             feature: 'invitations',
@@ -244,14 +289,15 @@ export async function sendInvitation(
       }
     }
   } catch (thrown) {
-    console.error('[invitations] invite_thrown', {
-      step: 'inviteUserByEmail',
-      thrown:
-        thrown instanceof Error
-          ? { name: thrown.name, message: thrown.message, stack: thrown.stack }
-          : String(thrown),
-      masked_email: maskedEmail,
-    });
+    console.error(
+      '[invitations][invite-email] invite_thrown ' +
+        JSON.stringify({
+          step: 'inviteUserByEmail',
+          masked_email: maskedEmail,
+          invitation_id: invite.id,
+          error: serializeError(thrown),
+        })
+    );
     Sentry.captureException(thrown, {
       tags: { feature: 'invitations', step: 'inviteUserByEmail_thrown' },
       extra: { masked_email: maskedEmail, invitation_id: invite.id },
@@ -259,7 +305,7 @@ export async function sendInvitation(
     return { error: 'generic' };
   }
 
-  console.info('[invitations] invite_sent', {
+  console.info('[invitations][invite-email] sent', {
     masked_email: maskedEmail,
     invitation_id: invite.id,
   });
