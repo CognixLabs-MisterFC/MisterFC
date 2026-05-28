@@ -8,7 +8,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 |---|---|---|---|---|
 | 0 | Bootstrap del repositorio y andamiaje | ☑ completada | 2026-05-26 | 2026-05-27 |
 | 1 | Identidad, Auth y modelo de roles base | ☑ completada | 2026-05-27 | 2026-05-28 |
-| 2 | Estructura del club, plantilla y cuerpo técnico | ☐ pendiente | — | — |
+| 2 | Estructura del club, plantilla y cuerpo técnico | ⟳ en curso (lote A: 2.0 + 2.1) | 2026-05-28 | — |
 | 3 | Calendario unificado y comunicación básica | ☐ pendiente | — | — |
 | 4 | Asistencia y convocatorias | ☐ pendiente | — | — |
 | 5 | Mensajería interna y push notifications | ☐ pendiente | — | — |
