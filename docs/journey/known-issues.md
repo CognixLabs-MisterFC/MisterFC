@@ -33,6 +33,22 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 - **Impacto**: solo warning de build, no rompe. La convención cambia de nombre en Next.js 16+; la API es la misma.
 - **Plan**: renombrar `apps/web/src/middleware.ts` → `apps/web/src/proxy.ts` en una subfase futura cuando next-intl haya actualizado sus docs/ejemplos a la nueva convención, para no divergir innecesariamente.
 
+### Sentry no recibe eventos (SENTRY_PROJECT slug mismatch + DSN a verificar)
+- **Detectado en**: 2026-05-28, durante el debug de `feat/auth-email-password`. El proyecto `mister-fc/javascript-nextjs` en sentry.io muestra "Get Started" — cero eventos recibidos desde el deploy de Fase 1, a pesar de varios `Sentry.captureException` ejecutados en producción (action de invitaciones, Bug 1, Bug 2 logging).
+- **Causa raíz probable**:
+  - **(1)** Slug del proyecto en sentry.io es `javascript-nextjs` (no `misterfc-web` como decía `.env.example`). Afecta SOLO al upload de source maps via `withSentryConfig` — los eventos en sí los enruta el DSN, no `SENTRY_PROJECT`. Pero si `SENTRY_PROJECT=misterfc-web` (slug inexistente), Vercel logs durante el build muestran fallo de upload de source maps que se confunde con fallo de captura.
+  - **(2)** `NEXT_PUBLIC_SENTRY_DSN` puede estar vacío o apuntar a un proyecto distinto en Vercel Production. Verificar en Vercel UI: env var debe estar en *All Environments* (no solo Development) y debe coincidir con el DSN que aparece en `sentry.io → Settings → Projects → javascript-nextjs → Client Keys (DSN)`.
+  - **(3)** Cualquier cambio en env var requiere **redeploy** en Vercel; las env vars NO se aplican en caliente al runtime.
+- **Fix aplicado en este PR**:
+  - `apps/web/sentry.{server,edge,client}.config.ts`: logging diagnóstico tras `Sentry.init`. Si el SDK se inicializa, aparece `[sentry][server-init] initialized { dsn_present: true, ... }` en Vercel logs al boot del runtime. Si el DSN falta, aparece `[sentry][server-init] NEXT_PUBLIC_SENTRY_DSN missing …` como `console.error`, grepeable de inmediato.
+  - `apps/web/.env.example`: `SENTRY_PROJECT` actualizado a `javascript-nextjs` con comentario sobre por qué.
+- **Acción pendiente del responsable** (no es código):
+  1. En Vercel → Settings → Environment Variables del proyecto: verificar que `NEXT_PUBLIC_SENTRY_DSN` exista, esté marcada para *Production* y coincida exactamente con el DSN del proyecto `javascript-nextjs` en sentry.io.
+  2. Verificar `SENTRY_PROJECT` en Vercel: debe ser `javascript-nextjs`. Actualizar si está `misterfc-web`.
+  3. Redeploy en Vercel Production tras cambiar env vars.
+  4. Tras el deploy, en Vercel logs buscar la línea `[sentry][server-init]` para confirmar que el SDK inicializó.
+  5. Probar generar un error real (ej. invitar a un email inválido a propósito) y comprobar que llega a sentry.io en <1 min.
+
 ### Formato pre-existente del repo no pasa `pnpm format:check`
 - **Detectado en**: 2026-05-28, durante el PR de `feat/auth-email-password` (ADR-0004). Al correr `pnpm format` el script reformateó ~17 archivos que ya estaban en `main` y que no formaban parte del cambio: `README.md`, varias páginas y actions de F1 (`onboarding/*`, `invitations/invite-form.tsx`, `page.tsx`), `_bootstrap/plan-maestro.md`, `docs/journey/*.md`, ADRs 0002/0003, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `packages/core/src/auth/current-user.ts`, `packages/core/src/supabase/database.ts`, `apps/web/public/sw.js`, `docs/architecture/supabase-cli-without-link.md`.
 - **Causa raíz**: el repo no tiene husky pre-commit ni `pnpm format:check` en CI, así que cambios merged desde Fase 0 y Fase 1 acumularon formato inconsistente. Prettier 3 normaliza al ejecutar `--write`.

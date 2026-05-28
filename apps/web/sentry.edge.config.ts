@@ -25,4 +25,12 @@ if (dsn) {
       return event;
     },
   });
+  console.info('[sentry][edge-init] initialized', {
+    dsn_present: true,
+    environment: process.env.NODE_ENV,
+  });
+} else {
+  console.error(
+    '[sentry][edge-init] NEXT_PUBLIC_SENTRY_DSN missing — Sentry edge SDK NOT initialized. Events will NOT be sent.'
+  );
 }
