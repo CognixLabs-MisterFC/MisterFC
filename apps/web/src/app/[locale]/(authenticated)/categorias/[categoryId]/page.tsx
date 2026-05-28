@@ -94,7 +94,10 @@ export default async function CategoryDetailPage({ params }: Props) {
                 key={team.id}
                 className="flex items-center justify-between gap-2 px-4 py-3"
               >
-                <div className="flex flex-1 items-center gap-3">
+                <Link
+                  href={`/equipos/${team.id}`}
+                  className="flex flex-1 items-center gap-3 hover:opacity-90"
+                >
                   <span
                     aria-hidden
                     className="inline-block size-4 rounded-full border border-zinc-700"
@@ -106,7 +109,7 @@ export default async function CategoryDetailPage({ params }: Props) {
                       {team.format}
                     </Badge>
                   </div>
-                </div>
+                </Link>
                 <div className="flex items-center gap-1">
                   <TeamDialog
                     mode="edit"
