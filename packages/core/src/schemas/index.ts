@@ -84,6 +84,8 @@ export {
   detectDuplicates,
   dedupKey,
   summarize,
+  mapHeaders,
+  parseTabular,
 } from '../import';
 export type {
   PlayerImportColumn,
@@ -92,4 +94,6 @@ export type {
   RowStatus,
   ValidatedRow,
   ExistingPlayer,
+  ParsedTabular,
+  ParseTabularError,
 } from '../import';
