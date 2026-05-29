@@ -8,7 +8,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 |---|---|---|---|---|
 | 0 | Bootstrap del repositorio y andamiaje | ☑ completada | 2026-05-26 | 2026-05-27 |
 | 1 | Identidad, Auth y modelo de roles base | ☑ completada | 2026-05-27 | 2026-05-28 |
-| 2 | Estructura del club, plantilla y cuerpo técnico | ☑ completada | 2026-05-28 | 2026-05-29 |
+| 2 | Estructura del club, plantilla y cuerpo técnico | ⟳ extendida 2026-05-29 | 2026-05-28 | lote inicial 2026-05-29 |
 | 3 | Calendario unificado y comunicación básica | ☑ completada | 2026-05-29 | 2026-05-29 |
 | 4 | Asistencia y convocatorias | ☐ pendiente | — | — |
 | 5 | Mensajería interna y push notifications | ☐ pendiente | — | — |
@@ -28,6 +28,8 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 ## Fase 2 — Subfases entregadas
 
+> **F2 extendida 2026-05-29** con nuevas subfases (2.10, 2.11) tras feedback de uso real. Lote inicial (2.0–2.9) **sigue cerrado y sin cambios**; lo que se reabre es el alcance, no el código entregado. Ver [plan-maestro.md](plan-maestro.md) §Fase 2.
+
 | Subfase | Cierre | Resumen |
 |---|---|---|
 | 2.0 | 2026-05-28 | App shell + nav role-aware + `/perfil` + avatares privados |
@@ -40,6 +42,13 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 2.7 | 2026-05-28 | UI capabilities del ayudante (shadcn Switch + optimistic UPSERT) |
 | 2.8 | 2026-05-28 | Vista `/mi-plantilla` read-only del entrenador |
 | 2.9 | 2026-05-29 | Import masivo CSV/Excel (wizard 4 pasos, primer Vitest del repo) |
+
+### Fase 2 — Subfases pendientes (extensión)
+
+| Subfase | Estado | Resumen | Spec |
+|---|---|---|---|
+| 2.10 | ☐ pendiente | Listado global de jugadores del club con filtros + asignación individual a equipo | [docs/specs/2.10-listado-global-jugadores.md](../specs/2.10-listado-global-jugadores.md) |
+| 2.11 | ☐ pendiente | Gestión global de cuerpo técnico (equipos asignados, horarios, agenda F3) | [docs/specs/2.11-gestion-global-cuerpo-tecnico.md](../specs/2.11-gestion-global-cuerpo-tecnico.md) |
 
 ## Fase 3 — Subfases entregadas
 
@@ -69,8 +78,17 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 ---
 
+## Fase 16 — Subfases pendientes (anticipadas)
+
+| Subfase | Estado | Resumen | Spec |
+|---|---|---|---|
+| 16.x | ☐ pendiente (ESPERA F16.0) | Bulk-invite de jugadores con email + team vía Excel/CSV | [docs/specs/16.x-bulk-invite-excel.md](../specs/16.x-bulk-invite-excel.md) |
+
+---
+
 ## Notas
 
 - Al cerrar cada fase, mover su fila a `☑` y rellenar la fecha de cierre.
 - Si una subfase concreta dentro de una fase cierra, registrar `[hecho YYYY-MM-DD]` en [plan-maestro.md](plan-maestro.md) (esta tabla solo refleja el cierre de fase).
 - Cierres de fase con cierta complejidad (>5 subfases o >1 lote) van acompañados de un `fase-N-summary.md` con bugs cazados, decisiones técnicas y lecciones.
+- Las **extensiones** sobre fases ya cerradas se marcan `⟳ extendida YYYY-MM-DD` en la tabla principal y se documentan en su sección con la nota de qué se reabre y qué no.
