@@ -79,10 +79,16 @@ function yearOfDob(dob: string): number | null {
   return Number.isNaN(y) ? null : y;
 }
 
-function initials(first: string, last: string): string {
+function initials(first: string, last: string | null): string {
   const a = first.trim().charAt(0).toUpperCase();
-  const b = last.trim().charAt(0).toUpperCase();
+  const b = (last ?? '').trim().charAt(0).toUpperCase();
   return `${b || a}${a || ''}`.slice(0, 2);
+}
+
+function fullName(first: string, last: string | null): string {
+  const f = first.trim();
+  const l = (last ?? '').trim();
+  return l.length > 0 ? `${l}, ${f}` : f;
 }
 
 export default async function JugadoresPage({ params, searchParams }: Props) {
@@ -258,7 +264,7 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
                           className="flex flex-col hover:underline"
                         >
                           <span className="font-medium">
-                            {p.last_name}, {p.first_name}
+                            {fullName(p.first_name, p.last_name)}
                           </span>
                           <span className="text-xs text-muted-foreground md:hidden">
                             {y && `${y}`}

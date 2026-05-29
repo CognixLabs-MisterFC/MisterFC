@@ -648,7 +648,7 @@
       "upload": {
         "short": "Subir",
         "title": "Sube tu archivo",
-        "help": "Usa la plantilla descargable: las columnas tienen que llamarse igual. Filas sin fecha de nacimiento NO se importan."
+        "help": "Usa la plantilla descargable. Solo Nombre y Fecha de nacimiento son obligatorios. Fecha en formato día/mes/año (15/03/2010). Posiciones y pie aceptan castellano (Portero, Defensa, Mediocentro, Delantero, Derecho, Izquierdo...)."
       },
       "preview": {
         "short": "Revisar",
@@ -683,11 +683,12 @@
     },
     "col": {
       "first_name": "Nombre",
-      "last_name": "Apellido",
+      "last_name": "Apellidos",
       "date_of_birth": "Nacimiento",
       "dorsal": "Dorsal",
       "position_main": "Posición",
-      "status": "Estado"
+      "status": "Estado",
+      "required_hint": "Campo obligatorio"
     },
     "status": {
       "valid": "OK",
@@ -699,14 +700,14 @@
       "duplicate_in_file": "duplicada en el archivo",
       "first_name_required": "Falta nombre",
       "first_name_too_long": "Nombre demasiado largo",
-      "last_name_required": "Falta apellido",
-      "last_name_too_long": "Apellido demasiado largo",
+      "last_name_required": "Falta apellidos",
+      "last_name_too_long": "Apellidos demasiado largos",
       "date_of_birth_required": "Falta fecha de nacimiento",
-      "date_of_birth_invalid": "Fecha inválida (usa YYYY-MM-DD o DD/MM/YYYY)",
+      "date_of_birth_invalid": "Formato de fecha no reconocido. Usa dd/mm/yyyy (ej. 15/03/2010)",
       "dorsal_invalid": "Dorsal fuera de rango (1-99)",
-      "position_invalid": "Posición no reconocida",
+      "position_invalid": "Posición no reconocida. Opciones: Portero, Defensa, Lateral, Mediocentro, Delantero, Extremo (y sinónimos)",
       "positions_secondary_too_many": "Demasiadas posiciones secundarias",
-      "foot_invalid": "Pie no reconocido",
+      "foot_invalid": "Pie no reconocido. Opciones: Derecho, Izquierdo, Ambidiestro",
       "height_cm_invalid": "Altura fuera de rango (50-250)",
       "weight_kg_invalid": "Peso fuera de rango (10-200)",
       "origin_too_long": "Origen demasiado largo",

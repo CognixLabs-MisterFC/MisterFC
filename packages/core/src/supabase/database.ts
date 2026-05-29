@@ -583,7 +583,7 @@ export type Database = {
           foot: string | null
           height_cm: number | null
           id: string
-          last_name: string
+          last_name: string | null
           medical_notes: string | null
           origin: string | null
           photo_url: string | null
@@ -601,7 +601,7 @@ export type Database = {
           foot?: string | null
           height_cm?: number | null
           id?: string
-          last_name: string
+          last_name?: string | null
           medical_notes?: string | null
           origin?: string | null
           photo_url?: string | null
@@ -619,7 +619,7 @@ export type Database = {
           foot?: string | null
           height_cm?: number | null
           id?: string
-          last_name?: string
+          last_name?: string | null
           medical_notes?: string | null
           origin?: string | null
           photo_url?: string | null

@@ -75,7 +75,8 @@ export default async function ImportPlayersPage({ params }: Props) {
   const existing = (existingData ?? []) as Array<{
     id: string;
     first_name: string;
-    last_name: string;
+    /** Nullable per F2.9 hotfix 2026-05-30. */
+    last_name: string | null;
     date_of_birth: string;
   }>;
 

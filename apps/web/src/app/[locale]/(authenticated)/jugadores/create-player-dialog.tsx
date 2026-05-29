@@ -83,7 +83,6 @@ export function CreatePlayerDialog({ teams }: Props) {
               <Input
                 id="cp-last-name"
                 name="last_name"
-                required
                 maxLength={120}
               />
             </div>

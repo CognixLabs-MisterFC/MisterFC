@@ -10,6 +10,7 @@ import {
   Truck,
   XCircle,
 } from 'lucide-react';
+import { formatPlayerName } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -238,7 +239,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                           {initials(p.first_name, p.last_name)}
                         </span>
                         <span className="font-medium">
-                          {p.last_name}, {p.first_name}
+                          {formatPlayerName(p.first_name, p.last_name)}
                         </span>
                         {p.dorsal != null && (
                           <span className="text-xs text-muted-foreground">
@@ -296,7 +297,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                       </span>
                       <div className="flex min-w-0 flex-col">
                         <span className="truncate text-sm font-medium">
-                          {p.last_name}, {p.first_name}
+                          {formatPlayerName(p.first_name, p.last_name)}
                         </span>
                         <span className="flex items-center gap-2 text-xs text-muted-foreground">
                           {p.dorsal != null && <span>#{p.dorsal}</span>}
@@ -353,7 +354,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                     .filter((x) => x.d?.decision === 'called_up')
                     .map(({ p }) => (
                       <li key={p.id} className="text-sm">
-                        {p.last_name}, {p.first_name}
+                        {formatPlayerName(p.first_name, p.last_name)}
                       </li>
                     ))}
                 </ul>
@@ -368,7 +369,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                     .filter((x) => x.d?.decision === 'discarded')
                     .map(({ p, d }) => (
                       <li key={p.id} className="text-sm">
-                        {p.last_name}, {p.first_name}
+                        {formatPlayerName(p.first_name, p.last_name)}
                         {d?.reason && (
                           <span className="ml-1 text-xs italic text-muted-foreground">
                             · {d.reason}

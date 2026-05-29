@@ -647,9 +647,9 @@
     },
     "step": {
       "upload": {
-        "short": "Subir",
-        "title": "Sube tu archivo",
-        "help": "Usa la plantilla descargable: las columnas tienen que llamarse igual. Filas sin fecha de nacimiento NO se importan."
+        "short": "Pujar",
+        "title": "Puja el teu arxiu",
+        "help": "Usa la plantilla descarregable. Només Nom i Data de naixement són obligatoris. Data en format dia/mes/any (15/03/2010). Posicions i peu accepten castellà (Portero, Defensa, Mediocentro, Delantero, Derecho, Izquierdo...)."
       },
       "preview": {
         "short": "Revisar",
@@ -683,12 +683,13 @@
       "confirm": "Importar {count} jugadores"
     },
     "col": {
-      "first_name": "Nombre",
-      "last_name": "Apellido",
-      "date_of_birth": "Nacimiento",
+      "first_name": "Nom",
+      "last_name": "Cognoms",
+      "date_of_birth": "Naixement",
       "dorsal": "Dorsal",
-      "position_main": "Posición",
-      "status": "Estado"
+      "position_main": "Posició",
+      "status": "Estat",
+      "required_hint": "Camp obligatori"
     },
     "status": {
       "valid": "OK",
@@ -698,19 +699,19 @@
     "reason": {
       "duplicate_in_db": "ya existe en el club",
       "duplicate_in_file": "duplicada en el archivo",
-      "first_name_required": "Falta nombre",
-      "first_name_too_long": "Nombre demasiado largo",
-      "last_name_required": "Falta apellido",
-      "last_name_too_long": "Apellido demasiado largo",
-      "date_of_birth_required": "Falta fecha de nacimiento",
-      "date_of_birth_invalid": "Fecha inválida (usa YYYY-MM-DD o DD/MM/YYYY)",
-      "dorsal_invalid": "Dorsal fuera de rango (1-99)",
-      "position_invalid": "Posición no reconocida",
-      "positions_secondary_too_many": "Demasiadas posiciones secundarias",
-      "foot_invalid": "Pie no reconocido",
-      "height_cm_invalid": "Altura fuera de rango (50-250)",
-      "weight_kg_invalid": "Peso fuera de rango (10-200)",
-      "origin_too_long": "Origen demasiado largo",
+      "first_name_required": "Falta el nom",
+      "first_name_too_long": "Nom massa llarg",
+      "last_name_required": "Falten cognoms",
+      "last_name_too_long": "Cognoms massa llargs",
+      "date_of_birth_required": "Falta la data de naixement",
+      "date_of_birth_invalid": "Format de data no reconegut. Usa dd/mm/aaaa (ex. 15/03/2010)",
+      "dorsal_invalid": "Dorsal fora de rang (1-99)",
+      "position_invalid": "Posició no reconeguda. Opcions: Porter, Defensa, Lateral, Migcampista, Davanter, Extrem (i sinònims)",
+      "positions_secondary_too_many": "Massa posicions secundàries",
+      "foot_invalid": "Peu no reconegut. Opcions: Dret, Esquerre, Ambidextre",
+      "height_cm_invalid": "Alçada fora de rang (50-250)",
+      "weight_kg_invalid": "Pes fora de rang (10-200)",
+      "origin_too_long": "Procedència massa llarga",
       "rls": "permiso denegado",
       "duplicate_constraint": "violación de unicidad",
       "team_assign_failed": "creado pero no asignado al equipo",

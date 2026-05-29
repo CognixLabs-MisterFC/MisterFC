@@ -18,7 +18,8 @@ import { updatePlayer, type PlayerFormState } from '../actions';
 
 type PlayerInitial = {
   first_name: string;
-  last_name: string;
+  /** Nullable per F2.9 hotfix 2026-05-30. */
+  last_name: string | null;
   date_of_birth: string;
   dorsal: number | null;
   position_main: string | null;
@@ -74,9 +75,8 @@ export function PlayerForm({ playerId, initial, canEdit }: Props) {
           <Input
             id="pf-last-name"
             name="last_name"
-            required
             maxLength={120}
-            defaultValue={initial.last_name}
+            defaultValue={initial.last_name ?? ''}
             {...fieldProps}
           />
         </div>

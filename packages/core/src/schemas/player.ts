@@ -27,11 +27,21 @@ const firstNameField = z
   .min(1, { message: 'first_name_required' })
   .max(80, { message: 'first_name_too_long' });
 
+/**
+ * Apellidos opcionales per F2.9 hotfix 2026-05-30. La columna BD pasó a
+ * nullable. Strings vacíos o solo-whitespace se normalizan a `null`.
+ */
 const lastNameField = z
-  .string()
-  .trim()
-  .min(1, { message: 'last_name_required' })
-  .max(120, { message: 'last_name_too_long' });
+  .union([z.string(), z.null()])
+  .optional()
+  .transform((v) => {
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim();
+    return s.length > 0 ? s : null;
+  })
+  .refine((v) => v === null || v.length <= 120, {
+    message: 'last_name_too_long',
+  });
 
 const dateOfBirthField = z
   .string()

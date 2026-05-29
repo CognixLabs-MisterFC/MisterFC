@@ -3,6 +3,7 @@
  */
 
 export { nameToSlug } from './slug';
+export { formatPlayerName, playerInitials } from './name';
 
 export function assertNever(value: never): never {
   throw new Error(`Unhandled value: ${String(value)}`);
