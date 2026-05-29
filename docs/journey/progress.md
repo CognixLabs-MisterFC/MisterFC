@@ -12,7 +12,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 3 | Calendario unificado y comunicación básica | ☑ completada | 2026-05-29 | 2026-05-29 |
 | 4 | Asistencia y convocatorias | ⟳ Lote A entregado | 2026-05-29 | — |
 | 5 | Mensajería interna y push notifications | ☐ pendiente | — | — |
-| 6 | Editor de alineaciones F7/F8/F11 | ☐ pendiente | — | — |
+| 6 | Alineaciones y planificación del partido (ampliada 2026-05-29) | ☐ pendiente | — | — |
 | 7 | Pantalla de toma de datos del partido (live) | ☐ pendiente | — | — |
 | 8 | Valoraciones de partido y entrenamiento | ☐ pendiente | — | — |
 | 9 | Perfil del jugador y evolución multi-temporada | ☐ pendiente | — | — |
@@ -87,6 +87,22 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - Más detalle en [fase-2-summary.md](fase-2-summary.md).
 
 ---
+
+## Fase 6 — Subfases pendientes
+
+> **Ampliada 2026-05-29**: F6 pasa de "Editor de alineaciones F7/F8/F11" → "Alineaciones y planificación del partido" con 4 subfases adicionales (6.6 importar convocatoria, 6.7 banquillo, 6.8 cambios programados, 6.9 notas tácticas). Pieza central `<MatchFieldEditor>` sienta la base reutilizable para F7 — ver [ADR-0009](../decisions/ADR-0009-f6-f7-match-field-editor-compartido.md).
+
+| Subfase | Estado | Resumen | Spec |
+|---|---|---|---|
+| 6.1 | ☐ pendiente | Modelo `lineups` + `lineup_positions` | — |
+| 6.2 | ☐ pendiente | Presets de formación F7 / F8 / F11 | — |
+| 6.3 | ☐ pendiente | Editor visual drag&drop (`<MatchFieldEditor>` nace aquí) | — |
+| 6.4 | ☐ pendiente | Múltiples alineaciones por partido (titular, plan B, segunda parte) | — |
+| 6.5 | ☐ pendiente | Lista de "fuera de convocatoria" con motivo | — |
+| 6.6 | ☐ pendiente | Importar plantilla desde convocatoria F4 (Sí/Duda → disponibles, No/descarte → no) | [docs/specs/6.6-importar-convocatoria.md](../specs/6.6-importar-convocatoria.md) |
+| 6.7 | ☐ pendiente | Banquillo del partido + drag&drop bidireccional campo↔banquillo | [docs/specs/6.7-banquillo.md](../specs/6.7-banquillo.md) |
+| 6.8 | ☐ pendiente | Cambios programados (minuto + jugador out/in + razón) | [docs/specs/6.8-cambios-programados.md](../specs/6.8-cambios-programados.md) |
+| 6.9 | ☐ pendiente | Notas tácticas del partido (bloque libre + por jugador / fase) | [docs/specs/6.9-notas-tacticas.md](../specs/6.9-notas-tacticas.md) |
 
 ## Fase 16 — Subfases pendientes (anticipadas)
 

@@ -106,7 +106,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F3 | Calendario y eventos | 6–9 h | 2–3 | ☑ |
 | F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h (Lote A ≈4–5 h ☑) | 3 | ⟳ Lote A |
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☐ |
-| F6 | Alineaciones del partido | 6–9 h | 2–3 | ☐ |
+| F6 | Alineaciones y planificación del partido | 9–14 h | 3–4 | ☐ |
 | F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☐ |
 | F8 | Valoraciones del partido y del entrenamiento | 8–13 h | 3–4 | ☐ |
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☐ |
@@ -117,9 +117,11 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F14 | RGPD para menores y seguridad | 10–14 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
 | F16 | Beta cerrada con primer club | 9–15 h (subfases 16.0–16.4 6–10 h + F16.x bulk-invite +3–5 h) | 3–4 | ☐ |
-| **TOTAL Ola 1** | | **167–257 h** | **62–81** | |
+| **TOTAL Ola 1** | | **170–262 h** | **63–82** | |
 
-> **Cambio 2026-05-29**: F2 reabierta como "extendida" con F2.10 (listado global de jugadores) y F2.11 (gestión global de cuerpo técnico). F16 incorpora F16.x (bulk-invite por email, depende de F16.0 SMTP propio). El lote inicial de F2 (subfases 2.0–2.9) sigue cerrado operacionalmente; lo que se reabre es el alcance. Delta total Ola 1: +8–14 h sobre el plan original (159–243 → 167–257).
+> **Cambio 2026-05-29**: F2 reabierta como "extendida" con F2.10 (listado global de jugadores) y F2.11 (gestión global de cuerpo técnico). F16 incorpora F16.x (bulk-invite por email, depende de F16.0 SMTP propio). El lote inicial de F2 (subfases 2.0–2.9) sigue cerrado operacionalmente; lo que se reabre es el alcance. Delta acumulado sobre el plan original: +11–19 h (159–243 → 170–262).
+
+> **Cambio 2026-05-29 (planificación)**: F6 ampliada de "Alineaciones del partido" → "Alineaciones y planificación del partido" con 4 nuevas subfases (F6.6 importar convocatoria, F6.7 banquillo, F6.8 cambios programados, F6.9 notas tácticas) y nota arquitectural sobre `<MatchFieldEditor>` reutilizable en F7. Delta F6: 6–9 h / 2–3 sesiones → 9–14 h / 3–4 sesiones (+3–5 h, +1 sesión). Ver [ADR-0009](../decisions/ADR-0009-f6-f7-match-field-editor-compartido.md).
 
 ---
 
@@ -289,23 +291,33 @@ ADRs cerrados con la fase: ADR-0005 (recurrencia A), ADR-0006 (componente propio
 
 ---
 
-### Fase 6 — Alineaciones del partido
+### Fase 6 — Alineaciones y planificación del partido
 
-**Objetivo**: editor de alineaciones con presets F7/F8/F11, drag&drop de jugadores convocados al campo. Soporte para varias alineaciones por partido (titular, plan B, segunda parte).
+**Objetivo**: editor visual de alineación y planificación pre-partido. Cubre alineación titular (campo) + banquillo + cambios programados + notas tácticas, no solo el lineup básico. Toma como input la convocatoria publicada de F4 y entrega al staff una preparación completa antes del pitido inicial. La pieza visual central (`<MatchFieldEditor>`) sienta la fundación reutilizable para F7.
 
-**Horas**: 6–9 h · **Sesiones**: 2–3
+**Horas**: 9–14 h · **Sesiones**: 3–4
 
-**Criterio de cierre**: entrenador crea alineación con drag&drop a partir de presets. Decide qué alineación es oficial y si se publica al equipo o se mantiene privada del cuerpo técnico. Lista de jugadores fuera de la convocatoria con motivo, separada de la convocatoria del jugador.
+**Criterio de cierre**: entrenador parte de la convocatoria F4, monta titular vía drag&drop, organiza banquillo y "fuera de convocatoria", programa cambios con minuto + razón, deja notas tácticas. Decide qué alineación es oficial y si se publica al equipo o se mantiene privada del cuerpo técnico.
 
-**Riesgo**: bajo. **Dependencias**: Fase 4 cerrada.
+**Riesgo**: bajo–medio. El componente `<MatchFieldEditor>` requiere cuidar el drag&drop bidireccional campo↔banquillo y será reutilizado por F7.
+
+**Dependencias**: Fase 4 cerrada.
+
+**Nota arquitectural — `<MatchFieldEditor>` como fundación compartida con F7**:
+
+F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de jugadores, snap a posiciones del preset) como **fundación visual reutilizable**. F7 (Toma de datos en directo) reusa ese mismo componente y añade encima su capa de cronómetro/timeline/eventos. F6 NO es de un solo uso — sienta la base del módulo de partido completo. El refactor que necesite F7 sobre el componente se prevé pequeño porque la API ya queda diseñada con eso en mente (props para overlays externos, eventos hover/click expuestos, sin lógica de eventos de partido dentro). Ver [ADR-0009](../decisions/ADR-0009-f6-f7-match-field-editor-compartido.md).
 
 **Subfases**:
 
 - **6.1** Modelo `lineups` y `lineup_positions` (varias alineaciones por partido) — 1 h
 - **6.2** Presets de formación F7/F8/F11 — 1–2 h
-- **6.3** Editor visual con drag & drop (campo SVG, snap a posiciones del preset) — 2–3 h
+- **6.3** Editor visual con drag & drop (campo SVG, snap a posiciones del preset) — 2–3 h. **Aquí nace `<MatchFieldEditor>`.**
 - **6.4** Múltiples alineaciones por partido (titular, plan B, segunda parte) — 1 h
 - **6.5** Lista de "fuera de convocatoria" con motivo (técnico, físico, disciplinario) — 1 h
+- **6.6** Importar plantilla desde convocatoria F4 (Sí/Duda → disponibles, No/descarte → no disponibles) — 30 min. **Dependencias**: F4 cerrada.
+- **6.7** Banquillo del partido: titulares + reservas + fuera convocatoria, con drag&drop bidireccional campo↔banquillo — 1–2 h
+- **6.8** Cambios programados: minuto + jugador que sale + jugador que entra + razón, lista ordenada visible en el editor — 1–2 h
+- **6.9** Notas tácticas del partido: bloque libre + objetivos + indicaciones por jugador o por fase — 1 h
 
 ---
 
