@@ -125,7 +125,8 @@
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
       "mi_plantilla": "Mi plantilla",
-      "import_players": "Importar"
+      "import_players": "Importar",
+      "calendario": "Calendario"
     }
   },
   "roles": {
@@ -547,6 +548,10 @@
       "not_assistant": "Este miembro no es entrenador ayudante.",
       "invalid_input": "Datos no válidos.",
       "db": "No se pudo guardar. Inténtalo de nuevo."
+    },
+    "can_manage_calendar": {
+      "label": "Gestionar calendario",
+      "description": "Puede crear, editar y borrar eventos del equipo. Sin esto, solo puede ver el calendario."
     }
   },
   "mi_plantilla": {
@@ -659,6 +664,139 @@
         "invalid_payload": "Datos del cliente inválidos.",
         "no_active_club": "Sin club activo.",
         "generic": "Error inesperado. Inténtalo de nuevo."
+      }
+    }
+  },
+  "calendario": {
+    "title": "Calendario",
+    "subtitle": "Entrenamientos, partidos, torneos y otros eventos del club.",
+    "nav": {
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "today": "Hoy"
+    },
+    "views": {
+      "label": "Cambiar vista",
+      "month": "Mes",
+      "week": "Semana",
+      "agenda": "Agenda"
+    },
+    "month": {
+      "more": "+{count} más"
+    },
+    "week": {
+      "no_events": "Sin eventos"
+    },
+    "agenda": {
+      "empty": "No hay eventos en este rango.",
+      "today": "Hoy"
+    },
+    "filters": {
+      "label": "Filtros",
+      "title": "Filtrar eventos",
+      "team": "Equipo",
+      "category": "Categoría",
+      "type": "Tipo",
+      "clear": "Limpiar",
+      "empty_team": "No hay equipos en este club.",
+      "empty_category": "No hay categorías en este club."
+    },
+    "types": {
+      "training": "Entrenamiento",
+      "match": "Partido",
+      "tournament": "Torneo",
+      "friendly": "Amistoso",
+      "other": "Otro"
+    },
+    "new": {
+      "trigger": "Nuevo evento",
+      "create_for_day": "Crear evento para este día"
+    },
+    "dialog": {
+      "new_title": "Nuevo evento",
+      "edit_title": "Editar evento",
+      "description": "Rellena los datos. Los campos opcionales puedes dejarlos en blanco.",
+      "readonly_description": "No tienes permiso para editar este evento.",
+      "field": {
+        "type": "Tipo",
+        "title": "Título",
+        "target": "Para quién",
+        "starts_at": "Empieza",
+        "ends_at": "Termina",
+        "all_day": "Todo el día",
+        "location_name": "Lugar",
+        "location_address": "Dirección",
+        "opponent_name": "Rival",
+        "notes": "Notas"
+      },
+      "target": {
+        "team": "Equipo",
+        "category": "Categoría",
+        "club": "Todo el club"
+      },
+      "recurrence": {
+        "label": "Repetir",
+        "weekdays": "Días de la semana",
+        "interval": "Cada (semanas)",
+        "end": "Fin",
+        "end_count": "Tras N semanas",
+        "end_until": "Hasta una fecha",
+        "count_label": "Número de semanas",
+        "until_label": "Hasta el (inclusive)",
+        "preview": "{count} ocurrencias se crearán al guardar.",
+        "day_short": {
+          "0": "L",
+          "1": "M",
+          "2": "X",
+          "3": "J",
+          "4": "V",
+          "5": "S",
+          "6": "D"
+        }
+      },
+      "update_scope": {
+        "label": "Aplicar cambios a",
+        "single": "Solo esta instancia",
+        "this_and_future": "Esta y las siguientes",
+        "series": "Toda la serie"
+      },
+      "errors": {
+        "invalid_input": "Revisa los datos del formulario.",
+        "forbidden": "No tienes permiso para esta acción.",
+        "no_active_club": "No hay club activo.",
+        "cross_club": "El equipo o categoría no pertenece a este club.",
+        "not_found": "El evento no existe o ya no es accesible.",
+        "db": "Error al guardar. Inténtalo de nuevo."
+      },
+      "save": "Guardar",
+      "cancel": "Cancelar"
+    },
+    "delete": {
+      "trigger": "Borrar",
+      "title": "Borrar evento",
+      "description": "Esta acción no se puede deshacer.",
+      "cancel": "Cancelar",
+      "confirm": "Borrar",
+      "mode": {
+        "label": "Alcance",
+        "single": {
+          "label": "Solo esta instancia",
+          "help": "Las demás ocurrencias se mantienen."
+        },
+        "this_and_future": {
+          "label": "Esta y las siguientes",
+          "help": "Borra esta y todas las futuras."
+        },
+        "series": {
+          "label": "Toda la serie",
+          "help": "Borra el evento original y todos los hijos."
+        }
+      },
+      "errors": {
+        "forbidden": "No tienes permiso para borrar este evento.",
+        "not_found": "El evento ya no existe.",
+        "invalid_mode": "Alcance no válido.",
+        "db": "Error al borrar. Inténtalo de nuevo."
       }
     }
   }

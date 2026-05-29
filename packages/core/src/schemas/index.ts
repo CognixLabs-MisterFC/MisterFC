@@ -87,6 +87,20 @@ export {
   mapHeaders,
   parseTabular,
 } from '../import';
+
+export {
+  recurrenceRuleSchema,
+  eventInputSchema,
+  updateEventModes,
+  deleteEventModes,
+  EVENT_TARGET_KINDS,
+} from './event';
+export type {
+  RecurrenceRuleInput,
+  EventInput,
+  UpdateEventMode,
+  DeleteEventMode,
+} from './event';
 export type {
   PlayerImportColumn,
   PlayerImportRow,
