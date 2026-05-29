@@ -102,7 +102,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 |---|---|---|---|---|
 | F0 | Bootstrap y fundamentos | 4–5 h | 2 | ☑ |
 | F1 | Modelo de datos y auth multi-rol con permisos configurables | 12–17 h | 5–6 | ☑ |
-| F2 | Plantilla y cuerpo técnico | 14–23 h (real ≈18–20 h) | 5–7 | ☑ |
+| F2 | Plantilla y cuerpo técnico | 19–32 h (lote inicial 14–23 h ≈18–20 h real ☑ + ext. F2.10/F2.11 +5–9 h ☐) | 6–9 | ⟳ ext. |
 | F3 | Calendario y eventos | 6–9 h | 2–3 | ☑ |
 | F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h | 3 | ☐ |
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☐ |
@@ -116,8 +116,10 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☐ |
 | F14 | RGPD para menores y seguridad | 10–14 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
-| F16 | Beta cerrada con primer club | 6–10 h | 2–3 | ☐ |
-| **TOTAL Ola 1** | | **159–243 h** | **60–78** | |
+| F16 | Beta cerrada con primer club | 9–15 h (subfases 16.0–16.4 6–10 h + F16.x bulk-invite +3–5 h) | 3–4 | ☐ |
+| **TOTAL Ola 1** | | **167–257 h** | **62–81** | |
+
+> **Cambio 2026-05-29**: F2 reabierta como "extendida" con F2.10 (listado global de jugadores) y F2.11 (gestión global de cuerpo técnico). F16 incorpora F16.x (bulk-invite por email, depende de F16.0 SMTP propio). El lote inicial de F2 (subfases 2.0–2.9) sigue cerrado operacionalmente; lo que se reabre es el alcance. Delta total Ola 1: +8–14 h sobre el plan original (159–243 → 167–257).
 
 ---
 
@@ -175,13 +177,17 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 ---
 
-### Fase 2 — Plantilla y cuerpo técnico ☑ [cerrada 2026-05-29]
+### Fase 2 — Plantilla y cuerpo técnico ⟳ extendida 2026-05-29
 
-**Objetivo**: implementar la gestión completa del club: CRUD de categorías, equipos, jugadores y staff. Configuración de permisos para entrenadores ayudantes. Importación masiva desde CSV/Excel.
+> **Estado**: lote inicial (2.0–2.9) ☑ cerrado 2026-05-29 y sin cambios. **Extensión** (2.10–2.11) ☐ pendiente, añadida tras feedback de uso real. La extensión no reabre código de las subfases cerradas; añade nuevas vistas globales sobre los modelos ya existentes.
 
-**Horas**: estimado 14–23 h · **Real**: ≈18–20 h efectivos (dentro del rango). · **Sesiones**: 5–7 · **PRs**: #10, #11, #12, #13, #14, #15, #16.
+**Objetivo**: implementar la gestión completa del club: CRUD de categorías, equipos, jugadores y staff. Configuración de permisos para entrenadores ayudantes. Importación masiva desde CSV/Excel. **Vistas globales** (listado y gestión cross-equipo) en la extensión.
 
-**Cierre**: admin/coord pueden montar la jerarquía completa del club (categorías → equipos → jugadores → staff). Familias se vinculan a menores vía invitación. Capabilities del ayudante editables desde UI. Importación masiva CSV/Excel con dedup + RLS validada por pgTAP. Resumen ejecutivo en [fase-2-summary.md](fase-2-summary.md).
+**Horas**: 19–32 h total · **Lote inicial 2.0–2.9**: estimado 14–23 h · real ≈18–20 h ☑ · **Extensión 2.10–2.11**: estimado +5–9 h ☐ · **Sesiones**: 6–9 · **PRs lote inicial**: #10–#16.
+
+**Cierre del lote inicial** (sigue válido): admin/coord pueden montar la jerarquía completa del club (categorías → equipos → jugadores → staff). Familias se vinculan a menores vía invitación. Capabilities del ayudante editables desde UI. Importación masiva CSV/Excel con dedup + RLS validada por pgTAP. Resumen ejecutivo en [fase-2-summary.md](fase-2-summary.md).
+
+**Criterio de cierre de la extensión**: admin/coord tienen una vista global de toda la plantilla del club (no por equipo) con filtros operativos, y una vista global del cuerpo técnico con su agenda de eventos F3. Ninguna funcionalidad nueva de modelo de datos — solo composición de lectura sobre tablas existentes.
 
 **Riesgo**: bajo-medio.
 
@@ -199,6 +205,11 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 - **2.7** [hecho 2026-05-28] UI de capabilities del ayudante implementada (spec `docs/specs/2.7-capabilities-ui.md`). Página `/equipos/[teamId]/staff/[membershipId]/capabilities` con shadcn Switch + optimistic UI + UPSERT robusto. Limitación cross-team registrada en `known-issues.md` (endurecer cuando haya multi-equipo activo).
 - **2.8** [hecho 2026-05-28] Vista `/mi-plantilla` para entrenadores (read-only). Resuelve equipo activo vía `team_staff` activos del user; soporta multi-equipo con TeamSelector; filtros por posición sin estado server.
 - **2.9** [hecho 2026-05-29] Importación masiva CSV/Excel (spec `docs/specs/2.9-import-csv.md`). Wizard 4 pasos (`/plantilla/importar`), plantilla XLSX+CSV pre-generadas en `public/import-templates/`, parsing cliente (papaparse + read-excel-file), dedup `(lower(first_name), lower(last_name), date_of_birth, club_id)`, server action loop fila-a-fila. Primer Vitest del repo en `packages/core/src/import/__tests__/` (25 tests).
+
+**Extensión post-feedback (☐ pendiente, añadidas 2026-05-29)**:
+
+- **2.10** Listado global de jugadores del club con filtros (búsqueda por nombre, año de nacimiento, posición, equipo) y acción de asignación individual a equipo. Spec `docs/specs/2.10-listado-global-jugadores.md`. **Reusa** tablas `players` + `team_members` + `teams` + `categories` (cero modelo nuevo). UI Server Component sobre DataTable shadcn. **Estimación**: 2–4 h. **Depende**: F2 (lote inicial) cerrada — cumplido.
+- **2.11** Gestión global del cuerpo técnico: listado de todos los entrenadores del club con vista de los equipos asignados, horarios de entrenamiento (eventos F3) y agenda. Acción "mover staff a otro equipo" (consume el patrón histórico `team_staff` joined_at/left_at). Spec `docs/specs/2.11-gestion-global-cuerpo-tecnico.md`. **Reusa** `team_staff` + `memberships` + `capabilities` + `events` (cero modelo nuevo). **Estimación**: 3–5 h. **Depende**: **F3 cerrada** (necesita `events` para mostrar la agenda) — cumplido.
 
 ---
 
@@ -383,7 +394,7 @@ ADRs cerrados con la fase: ADR-0005 (recurrencia A), ADR-0006 (componente propio
 **Subfases**:
 
 - **10.1** Modelo de stats agregadas del club + cache (vistas materializadas) — 1 h
-- **10.2** Sección de plantilla del club (totales, distribución, comparativa temporadas) — 1 h
+- **10.2** Sección de plantilla del club: **solo stats agregadas** — totales, distribución por categoría/equipo, comparativa temporadas. El listado completo de jugadores con filtros vive en **F2.10**, y el listado de cuerpo técnico en **F2.11**. F10.2 enlaza a ambas; no las duplica. — 1 h
 - **10.3** Sección de resultados acumulados por equipo — 1 h
 - **10.4** Sección de asistencia a entrenamientos (media, ranking, tendencia) — 1–2 h
 - **10.5** Alertas: bajas de asistencia y jugadores inactivos — 1 h
@@ -518,7 +529,7 @@ ADRs cerrados con la fase: ADR-0005 (recurrencia A), ADR-0006 (componente propio
 
 **Objetivo**: lanzar con un club real, recoger feedback estructurado, iterar.
 
-**Horas**: 6–10 h · **Sesiones**: 2–3
+**Horas**: 9–15 h (subfases 16.0–16.4: 6–10 h + F16.x bulk-invite +3–5 h) · **Sesiones**: 3–4
 
 **Criterio de cierre**: club piloto operando MisterFC en producción durante al menos un mes con uso real (partidos, entrenamientos, asistencia, valoraciones). Feedback documentado en `docs/journey/retros/`.
 
@@ -533,6 +544,7 @@ ADRs cerrados con la fase: ADR-0005 (recurrencia A), ADR-0006 (componente propio
 - **16.2** Soporte directo durante 4 semanas — incluido en bolsa de horas
 - **16.3** Recogida estructurada de feedback (cuestionarios + observación) — 1–2 h
 - **16.4** Retro final + backlog priorizado para iteraciones — 1–2 h
+- **16.x** Importación masiva de jugadores con invitación por email. Wizard tipo F2.9 con columnas `email` + `team` (Excel/CSV). Genera filas en `invitations` reutilizando el modelo de F1.6 y dispara los emails vía el SMTP propio configurado en F16.0. **Estrictamente depende de F16.0** — sin SMTP propio el rate limit de Supabase Auth (~2–4 emails/h) bloquearía el envío bulk tras 3–5 invitaciones, dejando el resto en estado fallido. Spec `docs/specs/16.x-bulk-invite-excel.md`. **Estimación**: 3–5 h. **Depende**: F16.0 (SMTP propio configurado y verificado).
 
 ---
 
