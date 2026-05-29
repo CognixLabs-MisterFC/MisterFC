@@ -1,0 +1,390 @@
+/**
+ * F2.10 — Queries del listado global de jugadores.
+ *
+ * Reusa exclusivamente las tablas existentes (`players`, `team_members`,
+ * `teams`, `categories`, `memberships`, `team_staff`, `capabilities`).
+ * Cero modelo nuevo.
+ *
+ * Permisos de lectura (visibilidad):
+ *  - admin_club / coordinador → todos los jugadores del club.
+ *  - entrenador_principal → solo jugadores cuya pertenencia ACTIVA es a un team
+ *    donde el user es staff activo (team_staff.left_at IS NULL).
+ *  - entrenador_ayudante con can_manage_squad → idem que principal.
+ *  - entrenador_ayudante sin can_manage_squad → 0 resultados (la page mostrará
+ *    un estado "no tienes permiso para ver este listado").
+ *  - jugador → no debería llegar aquí (la page redirige antes).
+ *
+ * Permisos de escritura (acción "asignar a equipo"): mismos roles que arriba
+ * para los jugadores visibles. Verificado en BD por las policies de F1.7.
+ */
+
+import {
+  PLAYER_POSITIONS,
+  type PlayerPosition,
+  createSupabaseServerClient,
+  getCurrentUser,
+} from '@misterfc/core';
+import { createCookieAdapter } from '@/lib/supabase-cookies';
+
+export type Role =
+  | 'admin_club'
+  | 'coordinador'
+  | 'entrenador_principal'
+  | 'entrenador_ayudante'
+  | 'jugador';
+
+export type VisibilityScope =
+  | { kind: 'all' }
+  | { kind: 'restricted'; teamIds: string[] }
+  | { kind: 'none' };
+
+export type PlayerRow = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  date_of_birth: string;
+  dorsal: number | null;
+  position_main: PlayerPosition | null;
+  current_team_id: string | null;
+  current_team_name: string | null;
+  current_team_color: string | null;
+  current_category_id: string | null;
+  current_category_name: string | null;
+  current_category_season: string | null;
+  has_account: boolean;
+};
+
+export type TeamOption = {
+  id: string;
+  name: string;
+  color: string;
+  category_id: string;
+  category_name: string;
+  season: string;
+};
+
+export type GlobalPlayersFilters = {
+  search: string;
+  years: number[];
+  positions: string[];
+  teamIds: string[];
+};
+
+export type GlobalPlayersResult = {
+  players: PlayerRow[];
+  total: number;
+  /** Equipos visibles para el filtro y para el dialog "Asignar a equipo". */
+  visibleTeams: TeamOption[];
+  /** Años de nacimiento presentes en el conjunto visible (orden descendente). */
+  visibleYears: number[];
+  /** El user puede ejecutar la acción "Asignar a equipo" sobre los visibles. */
+  canManage: boolean;
+};
+
+export const PLAYERS_PAGE_SIZE = 50;
+
+/**
+ * Determina el scope de visibilidad del user en el club activo.
+ * No-throw: si no hay sesión, devuelve { kind: 'none' }.
+ */
+export async function resolveVisibilityScope(
+  clubId: string,
+  role: Role
+): Promise<VisibilityScope> {
+  if (role === 'admin_club' || role === 'coordinador') {
+    return { kind: 'all' };
+  }
+  if (role === 'jugador') return { kind: 'none' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const user = await getCurrentUser(adapter);
+  if (!user) return { kind: 'none' };
+
+  // ayudante: exige can_manage_squad en el club activo.
+  if (role === 'entrenador_ayudante') {
+    type CapRow = {
+      granted: boolean;
+      memberships: { profile_id: string; club_id: string };
+    };
+    const { data: caps } = await supabase
+      .from('capabilities')
+      .select('granted, memberships!inner(profile_id, club_id)')
+      .eq('capability_name', 'can_manage_squad')
+      .eq('granted', true);
+    const hasSquadCap = (caps ?? []).some((row) => {
+      const r = row as unknown as CapRow;
+      return (
+        r.memberships.profile_id === user.id &&
+        r.memberships.club_id === clubId &&
+        r.granted
+      );
+    });
+    if (!hasSquadCap) return { kind: 'none' };
+  }
+
+  // Equipos donde el user es staff activo en el club activo.
+  type StaffRow = {
+    team_id: string;
+    memberships: { profile_id: string; club_id: string };
+  };
+  const { data: staff } = await supabase
+    .from('team_staff')
+    .select('team_id, memberships!inner(profile_id, club_id)')
+    .is('left_at', null);
+
+  const teamIds = (staff ?? [])
+    .map((row) => row as unknown as StaffRow)
+    .filter(
+      (r) =>
+        r.memberships.profile_id === user.id &&
+        r.memberships.club_id === clubId
+    )
+    .map((r) => r.team_id);
+
+  return { kind: 'restricted', teamIds };
+}
+
+/**
+ * Carga los equipos visibles del club (filtrados por scope).
+ */
+async function loadVisibleTeams(
+  clubId: string,
+  scope: VisibilityScope
+): Promise<TeamOption[]> {
+  if (scope.kind === 'none') return [];
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('teams')
+    .select('id, name, color, category_id, categories!inner(name, season, club_id)')
+    .order('name');
+
+  type Row = {
+    id: string;
+    name: string;
+    color: string;
+    category_id: string;
+    categories: { name: string; season: string; club_id: string };
+  };
+
+  const all: TeamOption[] = (data ?? [])
+    .map((r) => r as unknown as Row)
+    .filter((r) => r.categories.club_id === clubId)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      color: r.color,
+      category_id: r.category_id,
+      category_name: r.categories.name,
+      season: r.categories.season,
+    }));
+
+  if (scope.kind === 'restricted') {
+    const allowed = new Set(scope.teamIds);
+    return all.filter((t) => allowed.has(t.id));
+  }
+  return all;
+}
+
+/**
+ * Carga el conjunto paginado de jugadores con filtros aplicados.
+ */
+export async function loadGlobalPlayers(
+  clubId: string,
+  role: Role,
+  filters: GlobalPlayersFilters,
+  page: number
+): Promise<GlobalPlayersResult> {
+  const scope = await resolveVisibilityScope(clubId, role);
+
+  if (scope.kind === 'none') {
+    return {
+      players: [],
+      total: 0,
+      visibleTeams: [],
+      visibleYears: [],
+      canManage: false,
+    };
+  }
+
+  const visibleTeams = await loadVisibleTeams(clubId, scope);
+  const visibleTeamIds = visibleTeams.map((t) => t.id);
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // Compone la query principal sobre `players`. El embed de `team_members`
+  // se filtra por `left_at IS NULL` para traer la pertenencia activa.
+  const positionsValid = filters.positions.filter((p) =>
+    (PLAYER_POSITIONS as readonly string[]).includes(p)
+  );
+
+  // El filtro de equipo en URL puede traer ids fuera del scope; los recortamos
+  // a la intersección con visibleTeamIds.
+  const teamFilter =
+    scope.kind === 'restricted'
+      ? filters.teamIds.filter((id) => visibleTeamIds.includes(id))
+      : filters.teamIds;
+
+  // El scope para construir la query final:
+  //  - admin/coord sin team filter → todos los jugadores del club.
+  //  - admin/coord con team filter → jugadores con pertenencia activa a esos teams.
+  //  - principal/ayudante sin team filter → jugadores con pertenencia activa a
+  //    cualquier visible team.
+  //  - principal/ayudante con team filter → intersección.
+
+  const effectiveTeamFilter =
+    scope.kind === 'restricted' && teamFilter.length === 0
+      ? visibleTeamIds
+      : teamFilter;
+
+  // Si principal/ayudante no tiene equipos asignados → 0 resultados.
+  if (scope.kind === 'restricted' && visibleTeamIds.length === 0) {
+    return {
+      players: [],
+      total: 0,
+      visibleTeams,
+      visibleYears: [],
+      canManage: true,
+    };
+  }
+
+  // Construye la lista de player_ids permitidos si hay restricción por equipo.
+  let allowedPlayerIds: string[] | null = null;
+  if (effectiveTeamFilter.length > 0) {
+    const { data: tmRows } = await supabase
+      .from('team_members')
+      .select('player_id, team_id')
+      .is('left_at', null)
+      .in('team_id', effectiveTeamFilter);
+    allowedPlayerIds = Array.from(
+      new Set((tmRows ?? []).map((r) => r.player_id as string))
+    );
+    if (allowedPlayerIds.length === 0) {
+      return {
+        players: [],
+        total: 0,
+        visibleTeams,
+        visibleYears: [],
+        canManage: true,
+      };
+    }
+  }
+
+  // Query principal de players con conteo.
+  let q = supabase
+    .from('players')
+    .select(
+      `id, first_name, last_name, date_of_birth, dorsal, position_main,
+       team_members!left(team_id, left_at, teams(id, name, color, categories(id, name, season))),
+       player_accounts(profile_id)`,
+      { count: 'exact' }
+    )
+    .eq('club_id', clubId);
+
+  if (allowedPlayerIds) {
+    q = q.in('id', allowedPlayerIds);
+  }
+
+  if (filters.search.trim().length > 0) {
+    const term = filters.search.trim();
+    const escaped = term.replace(/[%_,]/g, (m) => `\\${m}`);
+    q = q.or(
+      `first_name.ilike.%${escaped}%,last_name.ilike.%${escaped}%`
+    );
+  }
+
+  if (positionsValid.length > 0) {
+    q = q.in('position_main', positionsValid);
+  }
+
+  if (filters.years.length > 0) {
+    const ranges = filters.years
+      .map((y) => `and(date_of_birth.gte.${y}-01-01,date_of_birth.lte.${y}-12-31)`)
+      .join(',');
+    q = q.or(ranges);
+  }
+
+  const from = (page - 1) * PLAYERS_PAGE_SIZE;
+  const to = from + PLAYERS_PAGE_SIZE - 1;
+
+  q = q
+    .order('last_name', { ascending: true })
+    .order('first_name', { ascending: true })
+    .range(from, to);
+
+  const { data, count } = await q;
+
+  type TMRow = {
+    team_id: string;
+    left_at: string | null;
+    teams: {
+      id: string;
+      name: string;
+      color: string;
+      categories: { id: string; name: string; season: string };
+    } | null;
+  };
+
+  const players: PlayerRow[] = (data ?? []).map((p) => {
+    const tms = (p.team_members as unknown as TMRow[] | null) ?? [];
+    const active = tms.find((tm) => tm.left_at == null && tm.teams);
+    const accounts = (p.player_accounts as unknown as Array<{ profile_id: string }> | null) ?? [];
+    return {
+      id: p.id as string,
+      first_name: p.first_name as string,
+      last_name: p.last_name as string,
+      date_of_birth: p.date_of_birth as string,
+      dorsal: (p.dorsal as number | null) ?? null,
+      position_main: (p.position_main as PlayerPosition | null) ?? null,
+      current_team_id: active?.teams?.id ?? null,
+      current_team_name: active?.teams?.name ?? null,
+      current_team_color: active?.teams?.color ?? null,
+      current_category_id: active?.teams?.categories?.id ?? null,
+      current_category_name: active?.teams?.categories?.name ?? null,
+      current_category_season: active?.teams?.categories?.season ?? null,
+      has_account: accounts.length > 0,
+    };
+  });
+
+  // Para el filtro de años: distintos años presentes en los jugadores VISIBLES
+  // (no solo los que pasaron los filtros — para que el usuario pueda navegar).
+  const visibleYears = await loadVisibleYears(clubId, allowedPlayerIds);
+
+  return {
+    players,
+    total: count ?? 0,
+    visibleTeams,
+    visibleYears,
+    canManage: true,
+  };
+}
+
+async function loadVisibleYears(
+  clubId: string,
+  allowedPlayerIds: string[] | null
+): Promise<number[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  let q = supabase
+    .from('players')
+    .select('date_of_birth')
+    .eq('club_id', clubId);
+
+  if (allowedPlayerIds) q = q.in('id', allowedPlayerIds);
+
+  const { data } = await q;
+  const yearSet = new Set<number>();
+  for (const row of data ?? []) {
+    const dob = (row.date_of_birth as string | null) ?? null;
+    if (dob && dob.length >= 4) {
+      const y = parseInt(dob.slice(0, 4), 10);
+      if (!Number.isNaN(y)) yearSet.add(y);
+    }
+  }
+  return [...yearSet].sort((a, b) => b - a);
+}

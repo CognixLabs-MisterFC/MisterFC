@@ -386,12 +386,16 @@ export async function assignPlayerToTeam(
         `/[locale]/(authenticated)/jugadores/${playerId}`,
         'page'
       );
+      revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
       return { success: true };
     }
     return { error: 'generic' };
   }
 
   revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
+  // F2.10: el listado global también muestra la pertenencia activa al equipo,
+  // así que se invalida tras cada movimiento individual desde la tabla.
+  revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
   return { success: true };
 }
 

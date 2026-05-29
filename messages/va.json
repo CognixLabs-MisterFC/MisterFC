@@ -459,6 +459,43 @@
         "forbidden": "No tienes permiso para gestionar este jugador.",
         "generic": "No se pudo guardar."
       }
+    },
+    "subtitle": "Llistat global del club amb filtres i assignació individual.",
+    "forbidden_no_cap": "No tens permís per veure el llistat global. Demana a un entrenador principal o coordinador que et concedisca la capability 'Gestionar plantilla'.",
+    "empty_filtered": "No hi ha jugadors que coincidisquen amb estos filtres.",
+    "no_team": "Sense equip",
+    "has_account": "Compte vinculat",
+    "age_years_short": "{age} anys",
+    "table": {
+      "avatar": "Inicials",
+      "name": "Jugador",
+      "year": "Any",
+      "position": "Posició",
+      "dorsal": "Dorsal",
+      "team": "Equip",
+      "category": "Categoria",
+      "actions": "Accions"
+    },
+    "filters": {
+      "label": "Filtres",
+      "title": "Filtrar plantilla",
+      "clear": "Netejar filtres",
+      "year_of_birth": "Any de naixement",
+      "position": "Posició",
+      "team": "Equip",
+      "empty_year": "Sense anys disponibles.",
+      "empty_team": "No hi ha equips visibles.",
+      "search_placeholder": "Cerca per nom o cognom…",
+      "search_label": "Cercar jugadors",
+      "search_clear": "Netejar cerca"
+    },
+    "row_actions": {
+      "open_card": "Obrir fitxa"
+    },
+    "pagination": {
+      "prev": "Anterior",
+      "next": "Següent",
+      "page_of": "Pàgina {current} de {total}"
     }
   },
   "equipo_detalle": {

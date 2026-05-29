@@ -25,6 +25,10 @@ import {
 } from '@/components/ui/select';
 import { assignPlayerToTeam, type AssignToTeamState } from '../actions';
 
+// Movido en F2.10 desde `[playerId]/assign-team-dialog.tsx` a `_components/`
+// para poder reutilizarse tanto en la ficha del jugador (F2.5) como en la
+// lista global con DataTable (F2.10). Sin cambios funcionales.
+
 type Props = {
   playerId: string;
   teams: Array<{ id: string; name: string }>;

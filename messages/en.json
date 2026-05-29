@@ -459,6 +459,43 @@
         "forbidden": "No tienes permiso para gestionar este jugador.",
         "generic": "No se pudo guardar."
       }
+    },
+    "subtitle": "Club-wide list with filters and individual assignment.",
+    "forbidden_no_cap": "You don't have permission to view the global list. Ask a head coach or coordinator to grant you the 'Manage squad' capability.",
+    "empty_filtered": "No players match these filters.",
+    "no_team": "No team",
+    "has_account": "Account linked",
+    "age_years_short": "{age} yrs",
+    "table": {
+      "avatar": "Initials",
+      "name": "Player",
+      "year": "Year",
+      "position": "Position",
+      "dorsal": "Number",
+      "team": "Team",
+      "category": "Category",
+      "actions": "Actions"
+    },
+    "filters": {
+      "label": "Filters",
+      "title": "Filter squad",
+      "clear": "Clear filters",
+      "year_of_birth": "Year of birth",
+      "position": "Position",
+      "team": "Team",
+      "empty_year": "No years available.",
+      "empty_team": "No visible teams.",
+      "search_placeholder": "Search by name or surname…",
+      "search_label": "Search players",
+      "search_clear": "Clear search"
+    },
+    "row_actions": {
+      "open_card": "Open profile"
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "page_of": "Page {current} of {total}"
     }
   },
   "equipo_detalle": {
