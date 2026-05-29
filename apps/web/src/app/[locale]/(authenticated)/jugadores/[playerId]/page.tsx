@@ -8,7 +8,7 @@ import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { AssignTeamDialog } from './assign-team-dialog';
+import { AssignTeamDialog } from '../_components/assign-team-dialog';
 import { InviteTutorDialog } from './invite-tutor-dialog';
 import { PlayerForm } from './player-form';
 import { MedicalNotesForm } from './medical-notes-form';
