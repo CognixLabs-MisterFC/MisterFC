@@ -71,6 +71,9 @@ export type EventAttendanceData = {
   roster: RosterPlayer[];
   attendance: Map<string, AttendanceRow>;
   canRecord: boolean;
+  /** Pre-computado server-side para evitar Date.now() en render
+   *  (regla react-hooks/purity de React Compiler). */
+  isFuture: boolean;
 };
 
 export type AsistenciaScope =
@@ -370,6 +373,10 @@ export async function loadEventAttendance(
     (scope.kind === 'all' ||
       (scope.kind === 'restricted' && scope.teamIds.includes(event.team_id)));
 
+  // Pre-computed aquí (server) para no llamar Date.now() en el render del
+  // page.tsx — react-hooks/purity lo flagea aunque sea un Server Component.
+  const isFuture = new Date(event.starts_at).getTime() > Date.now();
+
   return {
     event: {
       id: event.id,
@@ -395,6 +402,7 @@ export async function loadEventAttendance(
       ),
     attendance,
     canRecord,
+    isFuture,
   };
 }
 

@@ -65,8 +65,7 @@ export default async function AttendanceMarkingPage({ params }: Props) {
   const t = await getTranslations('asistencia');
   const tCodes = await getTranslations('asistencia.codes');
 
-  const { event, roster, attendance, canRecord } = data;
-  const isFuture = new Date(event.starts_at).getTime() > Date.now();
+  const { event, roster, attendance, canRecord, isFuture } = data;
   const markedCount = roster.filter((p) => attendance.has(p.id)).length;
 
   return (

@@ -280,14 +280,15 @@ export function EventDialog({
   const isEdit = mode === 'edit';
   const readonly = isEdit && !canManage;
 
-  // Snapshot mount-time de "el evento ya empezó". Date.now() es impuro y
-  // dispara react-hooks/purity; cacheamos por event?.starts_at para que
-  // el chequeo cambie si el evento se reabre con otro id en la misma
-  // instancia del componente.
-  const isPastEvent = useMemo(() => {
+  // Snapshot mount-time de "el evento ya empezó". Date.now() y new Date()
+  // son impuros: dentro de useMemo react-hooks/purity los rechaza (la regla
+  // del React Compiler trata el body de useMemo como render-puro). useState
+  // con init function es la vía idiomática para snapshot-on-mount; el
+  // initializer queda fuera del scope de pureza.
+  const [isPastEvent] = useState<boolean>(() => {
     if (!event?.starts_at) return false;
     return new Date(event.starts_at).getTime() <= Date.now();
-  }, [event?.starts_at]);
+  });
 
   // Render trigger por defecto si no es controlado externamente
   const trigger = controlledOpen === undefined && !isEdit && (
