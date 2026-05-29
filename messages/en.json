@@ -183,7 +183,8 @@
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
       "mi_plantilla": "Mi plantilla",
-      "import_players": "Importar"
+      "import_players": "Importar",
+      "calendario": "Calendar"
     }
   },
   "perfil": {
@@ -548,6 +549,10 @@
       "not_assistant": "Este miembro no es entrenador ayudante.",
       "invalid_input": "Datos no válidos.",
       "db": "No se pudo guardar. Inténtalo de nuevo."
+    },
+    "can_manage_calendar": {
+      "label": "Manage calendar",
+      "description": "Can create, edit and delete team events. Without this, can only view the calendar."
     }
   },
   "mi_plantilla": {
@@ -660,6 +665,139 @@
         "invalid_payload": "Datos del cliente inválidos.",
         "no_active_club": "Sin club activo.",
         "generic": "Error inesperado. Inténtalo de nuevo."
+      }
+    }
+  },
+  "calendario": {
+    "title": "Calendar",
+    "subtitle": "Trainings, matches, tournaments and other club events.",
+    "nav": {
+      "prev": "Previous",
+      "next": "Next",
+      "today": "Today"
+    },
+    "views": {
+      "label": "Change view",
+      "month": "Month",
+      "week": "Week",
+      "agenda": "Agenda"
+    },
+    "month": {
+      "more": "+{count} more"
+    },
+    "week": {
+      "no_events": "No events"
+    },
+    "agenda": {
+      "empty": "No events in this range.",
+      "today": "Today"
+    },
+    "filters": {
+      "label": "Filters",
+      "title": "Filter events",
+      "team": "Team",
+      "category": "Category",
+      "type": "Type",
+      "clear": "Clear",
+      "empty_team": "No teams in this club.",
+      "empty_category": "No categories in this club."
+    },
+    "types": {
+      "training": "Training",
+      "match": "Match",
+      "tournament": "Tournament",
+      "friendly": "Friendly",
+      "other": "Other"
+    },
+    "new": {
+      "trigger": "New event",
+      "create_for_day": "Create event for this day"
+    },
+    "dialog": {
+      "new_title": "New event",
+      "edit_title": "Edit event",
+      "description": "Fill in the details. Optional fields can be left blank.",
+      "readonly_description": "You do not have permission to edit this event.",
+      "field": {
+        "type": "Type",
+        "title": "Title",
+        "target": "For whom",
+        "starts_at": "Starts",
+        "ends_at": "Ends",
+        "all_day": "All day",
+        "location_name": "Place",
+        "location_address": "Address",
+        "opponent_name": "Opponent",
+        "notes": "Notes"
+      },
+      "target": {
+        "team": "Team",
+        "category": "Category",
+        "club": "Whole club"
+      },
+      "recurrence": {
+        "label": "Repeat",
+        "weekdays": "Days of the week",
+        "interval": "Every (weeks)",
+        "end": "End",
+        "end_count": "After N weeks",
+        "end_until": "Until a date",
+        "count_label": "Number of weeks",
+        "until_label": "Until (inclusive)",
+        "preview": "{count} occurrences will be created on save.",
+        "day_short": {
+          "0": "M",
+          "1": "T",
+          "2": "W",
+          "3": "T",
+          "4": "F",
+          "5": "S",
+          "6": "S"
+        }
+      },
+      "update_scope": {
+        "label": "Apply changes to",
+        "single": "Only this instance",
+        "this_and_future": "This and following",
+        "series": "Entire series"
+      },
+      "errors": {
+        "invalid_input": "Check the form data.",
+        "forbidden": "You do not have permission for this action.",
+        "no_active_club": "No active club.",
+        "cross_club": "Team or category does not belong to this club.",
+        "not_found": "The event no longer exists or is not accessible.",
+        "db": "Save failed. Try again."
+      },
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "delete": {
+      "trigger": "Delete",
+      "title": "Delete event",
+      "description": "This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete",
+      "mode": {
+        "label": "Scope",
+        "single": {
+          "label": "Only this instance",
+          "help": "Other occurrences are preserved."
+        },
+        "this_and_future": {
+          "label": "This and following",
+          "help": "Deletes this and all future ones."
+        },
+        "series": {
+          "label": "Entire series",
+          "help": "Deletes the original event and all children."
+        }
+      },
+      "errors": {
+        "forbidden": "You do not have permission to delete this event.",
+        "not_found": "The event no longer exists.",
+        "invalid_mode": "Invalid scope.",
+        "db": "Delete failed. Try again."
       }
     }
   }

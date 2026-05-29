@@ -7,6 +7,7 @@ import {
   Users,
   ClipboardList,
   Upload,
+  Calendar,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -59,6 +60,19 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: ClipboardList,
     // Los entrenadores ven solo el roster de sus equipos.
     roles: ['entrenador_principal', 'entrenador_ayudante'],
+  },
+  {
+    key: 'calendario',
+    href: '/calendario',
+    icon: Calendar,
+    // Calendario visible para todos los roles (cada uno ve filtrado en UI).
+    roles: [
+      'admin_club',
+      'coordinador',
+      'entrenador_principal',
+      'entrenador_ayudante',
+      'jugador',
+    ],
   },
   {
     key: 'import_players',

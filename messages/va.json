@@ -183,7 +183,8 @@
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
       "mi_plantilla": "Mi plantilla",
-      "import_players": "Importar"
+      "import_players": "Importar",
+      "calendario": "Calendari"
     }
   },
   "perfil": {
@@ -548,6 +549,10 @@
       "not_assistant": "Este miembro no es entrenador ayudante.",
       "invalid_input": "Datos no válidos.",
       "db": "No se pudo guardar. Inténtalo de nuevo."
+    },
+    "can_manage_calendar": {
+      "label": "Gestionar calendari",
+      "description": "Pot crear, editar i esborrar esdeveniments de l'equip. Sense açò, només pot veure el calendari."
     }
   },
   "mi_plantilla": {
@@ -660,6 +665,139 @@
         "invalid_payload": "Datos del cliente inválidos.",
         "no_active_club": "Sin club activo.",
         "generic": "Error inesperado. Inténtalo de nuevo."
+      }
+    }
+  },
+  "calendario": {
+    "title": "Calendari",
+    "subtitle": "Entrenaments, partits, tornejos i altres esdeveniments del club.",
+    "nav": {
+      "prev": "Anterior",
+      "next": "Següent",
+      "today": "Hui"
+    },
+    "views": {
+      "label": "Canviar vista",
+      "month": "Mes",
+      "week": "Setmana",
+      "agenda": "Agenda"
+    },
+    "month": {
+      "more": "+{count} més"
+    },
+    "week": {
+      "no_events": "Sense esdeveniments"
+    },
+    "agenda": {
+      "empty": "No hi ha esdeveniments en este rang.",
+      "today": "Hui"
+    },
+    "filters": {
+      "label": "Filtres",
+      "title": "Filtrar esdeveniments",
+      "team": "Equip",
+      "category": "Categoria",
+      "type": "Tipus",
+      "clear": "Netejar",
+      "empty_team": "No hi ha equips en este club.",
+      "empty_category": "No hi ha categories en este club."
+    },
+    "types": {
+      "training": "Entrenament",
+      "match": "Partit",
+      "tournament": "Torneig",
+      "friendly": "Amistós",
+      "other": "Altre"
+    },
+    "new": {
+      "trigger": "Nou esdeveniment",
+      "create_for_day": "Crear esdeveniment per a este dia"
+    },
+    "dialog": {
+      "new_title": "Nou esdeveniment",
+      "edit_title": "Editar esdeveniment",
+      "description": "Òmpli les dades. Els camps opcionals pots deixar-los en blanc.",
+      "readonly_description": "No tens permís per editar este esdeveniment.",
+      "field": {
+        "type": "Tipus",
+        "title": "Títol",
+        "target": "Per a qui",
+        "starts_at": "Comença",
+        "ends_at": "Acaba",
+        "all_day": "Tot el dia",
+        "location_name": "Lloc",
+        "location_address": "Adreça",
+        "opponent_name": "Rival",
+        "notes": "Notes"
+      },
+      "target": {
+        "team": "Equip",
+        "category": "Categoria",
+        "club": "Tot el club"
+      },
+      "recurrence": {
+        "label": "Repetir",
+        "weekdays": "Dies de la setmana",
+        "interval": "Cada (setmanes)",
+        "end": "Fi",
+        "end_count": "Després de N setmanes",
+        "end_until": "Fins a una data",
+        "count_label": "Nombre de setmanes",
+        "until_label": "Fins al (inclusiu)",
+        "preview": "{count} ocurrències es crearan al guardar.",
+        "day_short": {
+          "0": "Dl",
+          "1": "Dm",
+          "2": "Dx",
+          "3": "Dj",
+          "4": "Dv",
+          "5": "Ds",
+          "6": "Dg"
+        }
+      },
+      "update_scope": {
+        "label": "Aplicar canvis a",
+        "single": "Només esta instància",
+        "this_and_future": "Esta i les següents",
+        "series": "Tota la sèrie"
+      },
+      "errors": {
+        "invalid_input": "Revisa les dades del formulari.",
+        "forbidden": "No tens permís per a esta acció.",
+        "no_active_club": "No hi ha club actiu.",
+        "cross_club": "L'equip o categoria no pertany a este club.",
+        "not_found": "L'esdeveniment ja no existeix o no és accessible.",
+        "db": "Error en guardar. Torna-ho a intentar."
+      },
+      "save": "Guardar",
+      "cancel": "Cancel·lar"
+    },
+    "delete": {
+      "trigger": "Esborrar",
+      "title": "Esborrar esdeveniment",
+      "description": "Esta acció no es pot desfer.",
+      "cancel": "Cancel·lar",
+      "confirm": "Esborrar",
+      "mode": {
+        "label": "Abast",
+        "single": {
+          "label": "Només esta instància",
+          "help": "Les altres ocurrències es mantenen."
+        },
+        "this_and_future": {
+          "label": "Esta i les següents",
+          "help": "Esborra esta i totes les futures."
+        },
+        "series": {
+          "label": "Tota la sèrie",
+          "help": "Esborra l'esdeveniment original i tots els fills."
+        }
+      },
+      "errors": {
+        "forbidden": "No tens permís per esborrar este esdeveniment.",
+        "not_found": "L'esdeveniment ja no existeix.",
+        "invalid_mode": "Abast no vàlid.",
+        "db": "Error en esborrar. Torna-ho a intentar."
       }
     }
   }
