@@ -18,6 +18,10 @@
 --   D4. Regresión bug: ayudante a nivel club PERO principal en team_staff
 --       puede INSERT + UPDATE decision en borrador (migración 20260603).
 --   D5. Ayudante a nivel club + ayudante en team_staff SIN cap → 42501.
+--   F1. self responde → OK; responded_by = self.profile.
+--   F2. parent (familia) overwrites self via UPDATE → OK; responded_by = familia.
+--   F3. parent re-INSERT tras limpieza → OK; responded_by = familia.
+--   F4. jugador sin player_accounts → INSERT rechazado con 42501.
 
 begin;
 
@@ -507,6 +511,130 @@ begin
   end;
   if not ok then
     raise exception 'FAIL [D5]: ayudante sin principal_de_team_staff ni cap no debería poder insertar decision';
+  end if;
+end $$;
+
+reset role;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- F1–F4: Bug 2 (post-smoke). Una respuesta por (event_id, player_id), última
+-- escritura gana. La familia (player_accounts.relation='parent') puede
+-- sobrescribir la respuesta del jugador (relation='self'). Un profile sin
+-- player_account NO puede.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Limpieza de filas residuales.
+delete from public.callup_responses
+ where event_id = '77dd0000-0000-0000-0000-000000000001';
+
+-- Usuarios nuevos.
+insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
+  ('44dd0000-aaaa-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'familia-c-a@ts.test', now(), '{}'::jsonb, now(), now()),
+  ('44dd0000-aaaa-7777-7777-777777777777', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-otro-c-a@ts.test', now(), '{}'::jsonb, now(), now());
+
+insert into public.memberships (id, profile_id, club_id, role) values
+  ('55dd0000-aaaa-6666-6666-666666666666', '44dd0000-aaaa-6666-6666-666666666666', '11dd0000-0000-0000-0000-000000000001', 'jugador'),
+  ('55dd0000-aaaa-7777-7777-777777777777', '44dd0000-aaaa-7777-7777-777777777777', '11dd0000-0000-0000-0000-000000000001', 'jugador');
+
+-- Familia con relation=parent del mismo player.
+insert into public.player_accounts (player_id, profile_id, relation) values
+  ('66dd0000-0000-0000-0000-000000000001', '44dd0000-aaaa-6666-6666-666666666666', 'parent');
+
+-- F1: self responde → ok.
+set local role authenticated;
+set local "request.jwt.claim.sub" to '44dd0000-aaaa-9999-9999-999999999999';
+
+do $$
+declare v_id uuid;
+begin
+  insert into public.callup_responses (event_id, player_id, status, responded_by)
+  values (
+    '77dd0000-0000-0000-0000-000000000001',
+    '66dd0000-0000-0000-0000-000000000001',
+    'yes',
+    '44dd0000-aaaa-9999-9999-999999999999'
+  )
+  returning id into v_id;
+  if (select responded_by from public.callup_responses where id = v_id)
+     <> '44dd0000-aaaa-9999-9999-999999999999'::uuid then
+    raise exception 'FAIL [F1]: self responde y responded_by debería ser su profile';
+  end if;
+end $$;
+
+reset role;
+
+-- F2: parent (familia) hace UPDATE sobreescribiendo la respuesta del self.
+set local role authenticated;
+set local "request.jwt.claim.sub" to '44dd0000-aaaa-6666-6666-666666666666';
+
+do $$
+begin
+  update public.callup_responses
+     set status = 'no', reason = 'tiene un cumple'
+   where event_id = '77dd0000-0000-0000-0000-000000000001'
+     and player_id = '66dd0000-0000-0000-0000-000000000001';
+
+  if not found then
+    raise exception 'FAIL [F2 setup]: la familia no encontró la fila (RLS read?)';
+  end if;
+
+  if (select responded_by from public.callup_responses
+       where event_id = '77dd0000-0000-0000-0000-000000000001'
+         and player_id = '66dd0000-0000-0000-0000-000000000001')
+     <> '44dd0000-aaaa-6666-6666-666666666666'::uuid then
+    raise exception 'FAIL [F2]: parent overwrites self, responded_by debería ser la familia';
+  end if;
+end $$;
+
+reset role;
+
+-- F3: parent INSERT directo tras limpiar.
+delete from public.callup_responses
+ where event_id = '77dd0000-0000-0000-0000-000000000001';
+
+set local role authenticated;
+set local "request.jwt.claim.sub" to '44dd0000-aaaa-6666-6666-666666666666';
+
+do $$
+begin
+  insert into public.callup_responses (event_id, player_id, status, responded_by)
+  values (
+    '77dd0000-0000-0000-0000-000000000001',
+    '66dd0000-0000-0000-0000-000000000001',
+    'maybe',
+    '44dd0000-aaaa-6666-6666-666666666666'
+  );
+
+  if (select responded_by from public.callup_responses
+       where event_id = '77dd0000-0000-0000-0000-000000000001'
+         and player_id = '66dd0000-0000-0000-0000-000000000001')
+     <> '44dd0000-aaaa-6666-6666-666666666666'::uuid then
+    raise exception 'FAIL [F3]: parent INSERT, responded_by debería ser la familia';
+  end if;
+end $$;
+
+reset role;
+
+-- F4: jugador-otro (sin player_accounts) → 42501.
+set local role authenticated;
+set local "request.jwt.claim.sub" to '44dd0000-aaaa-7777-7777-777777777777';
+
+do $$
+declare ok boolean := false;
+begin
+  begin
+    insert into public.callup_responses (event_id, player_id, status, responded_by)
+    values (
+      '77dd0000-0000-0000-0000-000000000001',
+      '66dd0000-0000-0000-0000-000000000001',
+      'yes',
+      '44dd0000-aaaa-7777-7777-777777777777'
+    );
+  exception when others then
+    if sqlstate = '42501' then ok := true; end if;
+  end;
+  if not ok then
+    raise exception 'FAIL [F4]: jugador sin player_account no debería poder responder';
   end if;
 end $$;
 
