@@ -2,7 +2,13 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import {
+  ClipboardList,
+  Loader2,
+  Plus,
+  Calendar as CalendarIcon,
+} from 'lucide-react';
+import { Link } from '@/i18n/navigation';
 import {
   EVENT_TYPES,
   type EventInput,
@@ -273,6 +279,15 @@ export function EventDialog({
 
   const isEdit = mode === 'edit';
   const readonly = isEdit && !canManage;
+
+  // Snapshot mount-time de "el evento ya empezó". Date.now() es impuro y
+  // dispara react-hooks/purity; cacheamos por event?.starts_at para que
+  // el chequeo cambie si el evento se reabre con otro id en la misma
+  // instancia del componente.
+  const isPastEvent = useMemo(() => {
+    if (!event?.starts_at) return false;
+    return new Date(event.starts_at).getTime() <= Date.now();
+  }, [event?.starts_at]);
 
   // Render trigger por defecto si no es controlado externamente
   const trigger = controlledOpen === undefined && !isEdit && (
@@ -659,6 +674,24 @@ export function EventDialog({
               />
             </div>
           )}
+          {/* F4 entry point: si es un entrenamiento ya finalizado y el user
+              gestiona el team, link directo a la pantalla de marcar
+              asistencia. */}
+          {isEdit &&
+            event &&
+            event.type === 'training' &&
+            isPastEvent &&
+            canManage && (
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  href={`/asistencia/${event.id}`}
+                  onClick={() => setOpen(false)}
+                >
+                  <ClipboardList className="size-4" aria-hidden />
+                  <span>{t('dialog.mark_attendance')}</span>
+                </Link>
+              </Button>
+            )}
           <Button
             type="button"
             variant="ghost"

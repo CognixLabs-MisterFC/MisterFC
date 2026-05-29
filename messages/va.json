@@ -185,7 +185,8 @@
       "mi_plantilla": "Mi plantilla",
       "import_players": "Importar",
       "calendario": "Calendari",
-      "cuerpo_tecnico": "Cos tècnic"
+      "cuerpo_tecnico": "Cos tècnic",
+      "asistencia": "Assistència"
     }
   },
   "perfil": {
@@ -808,7 +809,8 @@
         "db": "Error en guardar. Torna-ho a intentar."
       },
       "save": "Guardar",
-      "cancel": "Cancel·lar"
+      "cancel": "Cancel·lar",
+      "mark_attendance": "Registrar assistència"
     },
     "delete": {
       "trigger": "Esborrar",
@@ -912,6 +914,82 @@
       "history_title": "Històric",
       "history_empty": "Sense històric previ.",
       "history_active": "Actiu"
+    }
+  },
+  "asistencia": {
+    "title": "Assistència a entrenaments",
+    "subtitle": "Marca ràpidament al teu equip després de cada entrenament i consulta les estadístiques.",
+    "pending": {
+      "title": "Pendents de marcar",
+      "subtitle": "Entrenaments dels últims 30 dies sense assistència completa.",
+      "empty": "No tens entrenaments pendents — al dia!",
+      "count": "{marked}/{total}"
+    },
+    "recent": {
+      "title": "Entrenaments recents",
+      "empty": "No hi ha entrenaments en els últims 30 dies.",
+      "event": "Entrenament",
+      "team": "Equip",
+      "when": "Quan",
+      "marked": "Marcats",
+      "actions": "Accions",
+      "open": "Obrir",
+      "mark": "Marcar"
+    },
+    "stats": {
+      "title": "Estadístiques d'assistència",
+      "subtitle": "{total} registres en el rang seleccionat.",
+      "by_code": "Per codi",
+      "by_player": "Per jugador",
+      "player": "Jugador",
+      "pct": "% Present",
+      "total": "Total",
+      "empty": "Sense dades en el rang seleccionat.",
+      "team_filter": "Filtrar per equip",
+      "team_all": "Tots els equips",
+      "range": {
+        "7d": "7 dies",
+        "30d": "30 dies",
+        "season": "Temporada"
+      }
+    },
+    "detail": {
+      "back": "Tornar al llistat",
+      "progress": "{marked}/{total} marcats",
+      "future_event": "Encara no celebrat",
+      "empty_roster": "L'equip no tenia jugadors actius en eixa data.",
+      "roster_title": "Plantilla",
+      "read_only": "No tens permís per marcar assistència en este equip."
+    },
+    "marker": {
+      "unmarked": "Sense marcar",
+      "cycle_hint": "Polsa per ciclar: present → absent → absent amb avís",
+      "more": "Més opcions",
+      "pick_code": "Triar codi",
+      "clear": "Esborrar marca",
+      "errors": {
+        "event_invalid": "Esdeveniment no vàlid.",
+        "player_invalid": "Jugador no vàlid.",
+        "code_invalid": "Codi no vàlid.",
+        "notes_too_long": "Les notes són massa llargues.",
+        "event_not_training": "L'assistència només es marca en entrenaments.",
+        "event_in_future": "L'entrenament encara no s'ha celebrat.",
+        "player_not_in_team_at_event": "Eixe jugador no pertanyia a l'equip eixe dia.",
+        "forbidden": "No tens permís per marcar assistència.",
+        "generic": "No s'ha pogut guardar. Reintenta."
+      }
+    },
+    "codes": {
+      "presente": "Present",
+      "ausente": "Absent",
+      "ausente_con_aviso": "Absent amb avís",
+      "entreno_diferenciado": "Entrenament diferenciat",
+      "lesionado": "Lesionat",
+      "enfermo": "Malalt",
+      "partido_oficial": "Partit oficial (una altra categoria)",
+      "viaje": "Viatge",
+      "sancionado": "Sancionat",
+      "descanso": "Descans (decisió tècnica)"
     }
   }
 }

@@ -6,6 +6,7 @@ import {
   UserRound,
   Users,
   UsersRound,
+  ClipboardCheck,
   ClipboardList,
   Upload,
   Calendar,
@@ -76,6 +77,21 @@ export const NAV_ITEMS: readonly NavItem[] = [
     href: '/calendario',
     icon: Calendar,
     // Calendario visible para todos los roles (cada uno ve filtrado en UI).
+    roles: [
+      'admin_club',
+      'coordinador',
+      'entrenador_principal',
+      'entrenador_ayudante',
+      'jugador',
+    ],
+  },
+  {
+    key: 'asistencia',
+    href: '/asistencia',
+    icon: ClipboardCheck,
+    // Asistencia: cuerpo técnico marca, jugador/familia ve solo lo suyo.
+    // El ayudante necesita `can_mark_attendance` para que la page muestre
+    // datos; la nav se le enseña igual y la propia page filtra.
     roles: [
       'admin_club',
       'coordinador',
