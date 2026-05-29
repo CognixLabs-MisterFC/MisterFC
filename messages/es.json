@@ -126,7 +126,8 @@
       "jugadores": "Plantilla",
       "mi_plantilla": "Mi plantilla",
       "import_players": "Importar",
-      "calendario": "Calendario"
+      "calendario": "Calendario",
+      "cuerpo_tecnico": "Cuerpo técnico"
     }
   },
   "roles": {
@@ -835,6 +836,81 @@
         "invalid_mode": "Alcance no válido.",
         "db": "Error al borrar. Inténtalo de nuevo."
       }
+    }
+  },
+  "cuerpo_tecnico": {
+    "title": "Cuerpo técnico",
+    "count": "{count, plural, =0 {Sin entrenadores activos} one {1 entrenador} other {# entrenadores}}",
+    "empty": "Aún no hay cuerpo técnico activo en el club. Invita entrenadores desde la ficha de un equipo.",
+    "empty_filtered": "No hay entrenadores que coincidan con los filtros.",
+    "caps_summary": "{granted}/{total} capabilities concedidas",
+    "filters": {
+      "label": "Filtros",
+      "title": "Filtrar cuerpo técnico",
+      "clear": "Limpiar",
+      "role": "Función",
+      "team": "Equipo",
+      "category": "Categoría",
+      "empty_team": "No hay equipos visibles.",
+      "empty_category": "No hay categorías visibles.",
+      "search_placeholder": "Buscar por nombre…",
+      "search_label": "Buscar",
+      "search_clear": "Limpiar búsqueda"
+    },
+    "table": {
+      "avatar": "Avatar",
+      "name": "Nombre",
+      "club_role": "Rol de club",
+      "teams": "Equipos asignados",
+      "caps": "Permisos",
+      "actions": "Acciones"
+    },
+    "row_actions": {
+      "open": "Ver ficha"
+    },
+    "move": {
+      "action": "Mover",
+      "title": "Mover a otro equipo",
+      "description": "Cierra el vínculo activo del equipo actual y crea uno nuevo en el equipo destino. La membership en el club no se ve afectada.",
+      "field": {
+        "team": "Equipo destino",
+        "team_placeholder": "Selecciona equipo",
+        "staff_role": "Función en el equipo destino",
+        "staff_role_help": "Solo un entrenador principal por equipo."
+      },
+      "save": "Mover",
+      "cancel": "Cancelar",
+      "errors": {
+        "team_staff_invalid": "El vínculo de origen ya no es válido.",
+        "team_invalid": "Equipo destino no válido.",
+        "staff_role_invalid": "Función no válida.",
+        "same_team": "El equipo destino es el mismo que el actual.",
+        "principal_exists": "Ya hay un entrenador principal activo en ese equipo.",
+        "cross_club": "Origen y destino no pertenecen al mismo club.",
+        "forbidden": "No tienes permiso para mover staff.",
+        "generic": "No se pudo completar el movimiento."
+      }
+    },
+    "remove": {
+      "action": "Quitar del equipo",
+      "title": "Quitar del equipo",
+      "description": "¿Seguro que quieres quitar a esta persona del cuerpo técnico de {team}? Su membership en el club no se ve afectada.",
+      "cancel": "Cancelar",
+      "confirm": "Quitar"
+    },
+    "detail": {
+      "back": "Volver al cuerpo técnico",
+      "teams_title": "Equipos asignados",
+      "no_active_teams": "Esta persona no tiene equipos activos en el club.",
+      "edit_caps": "Editar permisos",
+      "agenda_title": "Agenda (próximos 28 días)",
+      "agenda_subtitle": "Eventos de F3 filtrados a los equipos activos.",
+      "agenda_no_teams": "Sin equipos activos, no hay eventos que mostrar.",
+      "agenda_open": "Abrir calendario filtrado",
+      "agenda_open_month": "Ver mes completo en calendario",
+      "history_title": "Histórico",
+      "history_empty": "Sin histórico previo.",
+      "history_active": "Activo"
     }
   }
 }

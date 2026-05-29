@@ -48,7 +48,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | Subfase | Estado | Resumen | Spec |
 |---|---|---|---|
 | 2.10 | ☐ pendiente | Listado global de jugadores del club con filtros + asignación individual a equipo | [docs/specs/2.10-listado-global-jugadores.md](../specs/2.10-listado-global-jugadores.md) |
-| 2.11 | ☐ pendiente | Gestión global de cuerpo técnico (equipos asignados, horarios, agenda F3) | [docs/specs/2.11-gestion-global-cuerpo-tecnico.md](../specs/2.11-gestion-global-cuerpo-tecnico.md) |
+| 2.11 | ☑ 2026-05-29 | Gestión global de cuerpo técnico (`/cuerpo-tecnico`): listado + ficha con agenda F3 + acción mover staff (reuso `team_staff` joined_at/left_at) | [docs/specs/2.11-gestion-global-cuerpo-tecnico.md](../specs/2.11-gestion-global-cuerpo-tecnico.md) |
 
 ## Fase 3 — Subfases entregadas
 

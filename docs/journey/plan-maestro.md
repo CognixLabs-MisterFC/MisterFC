@@ -209,7 +209,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 **Extensión post-feedback (☐ pendiente, añadidas 2026-05-29)**:
 
 - **2.10** Listado global de jugadores del club con filtros (búsqueda por nombre, año de nacimiento, posición, equipo) y acción de asignación individual a equipo. Spec `docs/specs/2.10-listado-global-jugadores.md`. **Reusa** tablas `players` + `team_members` + `teams` + `categories` (cero modelo nuevo). UI Server Component sobre DataTable shadcn. **Estimación**: 2–4 h. **Depende**: F2 (lote inicial) cerrada — cumplido.
-- **2.11** Gestión global del cuerpo técnico: listado de todos los entrenadores del club con vista de los equipos asignados, horarios de entrenamiento (eventos F3) y agenda. Acción "mover staff a otro equipo" (consume el patrón histórico `team_staff` joined_at/left_at). Spec `docs/specs/2.11-gestion-global-cuerpo-tecnico.md`. **Reusa** `team_staff` + `memberships` + `capabilities` + `events` (cero modelo nuevo). **Estimación**: 3–5 h. **Depende**: **F3 cerrada** (necesita `events` para mostrar la agenda) — cumplido.
+- **2.11** [hecho 2026-05-29] Gestión global del cuerpo técnico (`/cuerpo-tecnico`): listado del club con filtros (búsqueda, función staff, equipo, categoría) y ficha individual con equipos activos + agenda F3 (28 días, reuso `loadCalendarData` + `CalendarAgenda`) + histórico. Server action `moveStaffToTeam` (cierra fila origen, abre destino, valida principal único). pgTAP `rls_move_staff.sql` (4 casos). Sin modelo nuevo: reusa `team_staff` + `memberships` + `capabilities` + `events`.
 
 ---
 

@@ -184,7 +184,8 @@
       "jugadores": "Plantilla",
       "mi_plantilla": "Mi plantilla",
       "import_players": "Importar",
-      "calendario": "Calendari"
+      "calendario": "Calendari",
+      "cuerpo_tecnico": "Cos tècnic"
     }
   },
   "perfil": {
@@ -836,6 +837,81 @@
         "invalid_mode": "Abast no vàlid.",
         "db": "Error en esborrar. Torna-ho a intentar."
       }
+    }
+  },
+  "cuerpo_tecnico": {
+    "title": "Cos tècnic",
+    "count": "{count, plural, =0 {Sense entrenadors actius} one {1 entrenador} other {# entrenadors}}",
+    "empty": "Encara no hi ha cos tècnic actiu al club. Convida entrenadors des de la fitxa d'un equip.",
+    "empty_filtered": "No hi ha entrenadors que coincidisquen amb els filtres.",
+    "caps_summary": "{granted}/{total} capabilities concedides",
+    "filters": {
+      "label": "Filtres",
+      "title": "Filtrar cos tècnic",
+      "clear": "Netejar",
+      "role": "Funció",
+      "team": "Equip",
+      "category": "Categoria",
+      "empty_team": "No hi ha equips visibles.",
+      "empty_category": "No hi ha categories visibles.",
+      "search_placeholder": "Cerca per nom…",
+      "search_label": "Cerca",
+      "search_clear": "Netejar cerca"
+    },
+    "table": {
+      "avatar": "Avatar",
+      "name": "Nom",
+      "club_role": "Rol de club",
+      "teams": "Equips assignats",
+      "caps": "Permisos",
+      "actions": "Accions"
+    },
+    "row_actions": {
+      "open": "Veure fitxa"
+    },
+    "move": {
+      "action": "Moure",
+      "title": "Moure a un altre equip",
+      "description": "Tanca el vincle actiu de l'equip actual i crea un nou en l'equip destí. La membership al club no es veu afectada.",
+      "field": {
+        "team": "Equip destí",
+        "team_placeholder": "Selecciona equip",
+        "staff_role": "Funció en l'equip destí",
+        "staff_role_help": "Només un entrenador principal per equip."
+      },
+      "save": "Moure",
+      "cancel": "Cancel·lar",
+      "errors": {
+        "team_staff_invalid": "El vincle d'origen ja no és vàlid.",
+        "team_invalid": "Equip destí no vàlid.",
+        "staff_role_invalid": "Funció no vàlida.",
+        "same_team": "L'equip destí és el mateix que l'actual.",
+        "principal_exists": "Ja hi ha un entrenador principal actiu en eixe equip.",
+        "cross_club": "Origen i destí no pertanyen al mateix club.",
+        "forbidden": "No tens permís per moure staff.",
+        "generic": "No s'ha pogut completar el moviment."
+      }
+    },
+    "remove": {
+      "action": "Llevar de l'equip",
+      "title": "Llevar de l'equip",
+      "description": "Segur que vols llevar a esta persona del cos tècnic de {team}? La membership al club no es veu afectada.",
+      "cancel": "Cancel·lar",
+      "confirm": "Llevar"
+    },
+    "detail": {
+      "back": "Tornar al cos tècnic",
+      "teams_title": "Equips assignats",
+      "no_active_teams": "Esta persona no té equips actius al club.",
+      "edit_caps": "Editar permisos",
+      "agenda_title": "Agenda (pròxims 28 dies)",
+      "agenda_subtitle": "Esdeveniments de F3 filtrats als equips actius.",
+      "agenda_no_teams": "Sense equips actius, no hi ha res a mostrar.",
+      "agenda_open": "Obrir calendari filtrat",
+      "agenda_open_month": "Veure el mes complet al calendari",
+      "history_title": "Històric",
+      "history_empty": "Sense històric previ.",
+      "history_active": "Actiu"
     }
   }
 }
