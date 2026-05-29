@@ -24,3 +24,5 @@ Decisiones técnicas con impacto significativo en la arquitectura, el stack o la
 | 0002 | Modelo de roles y capabilities                  | Accepted |
 | 0003 | Monorepo y Ola 2 RN                             | Accepted |
 | 0004 | Email + contraseña como método de autenticación | Accepted |
+| 0005 | Estrategia de recurrencia en eventos            | Accepted |
+| 0006 | Componente de calendario propio                 | Accepted |

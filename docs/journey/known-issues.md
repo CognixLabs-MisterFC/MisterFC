@@ -4,6 +4,19 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 ## Activas
 
+### F3-rls-events-visibilidad — jugador puede consultar vía API eventos de equipos a los que no pertenece
+- **Detectado en**: 2026-05-29, spec 3.0 §4.6 (RLS de events).
+- **Síntoma**: la policy `events_select_member` abre SELECT a cualquier miembro autenticado del club (`user_role_in_club(club_id) is not null`). Un jugador autenticado puede invocar vía REST/RPC un `select * from events where team_id = 'X'` con un team al que no pertenece y recibirá los eventos. La UI no se lo muestra (la query del Server Component filtra), pero la BD no lo bloquea.
+- **Causa**: decisión deliberada de Ola 1 para mantener la matriz de policies simple. Los eventos son semi-públicos dentro del club (título + fecha + lugar; sin datos sensibles). El filtro jugador-ve-solo-su-equipo es **UX, no seguridad**.
+- **Por qué se asume**:
+  - Beta cerrada con un solo club piloto: superficie de "abuso" prácticamente nula.
+  - Datos sensibles (médicos, fotos) tienen su propia RLS estricta (F2.2, F2.7).
+  - Sin esta apertura, la policy SELECT necesitaría 4–5 ramas distintas por rol; complejidad innecesaria en Ola 1.
+- **Impacto actual**: bajo. Visibilidad cross-equipo intra-club. No hay fuga cross-club (el `club_id` sigue siendo barrera dura).
+- **Mitigación temporal**: ninguna. El Server Component filtra por defecto lo que muestra el jugador.
+- **Plan de endurecimiento**: **F14 (RGPD para menores)**. Añadir helper `user_can_see_event(event_id) → bool` que cruce el `team_id` del evento contra los `team_members` activos del jugador (vía sus `player_accounts`) + eventos sin `team_id` (de club/categoría) abiertos. Cambiar la policy SELECT a usar ese helper. Sin refactor del modelo.
+- **Referencia**: `docs/specs/3.0-calendario-eventos.md` §4.6, comentario explícito en `supabase/migrations/20260530000000_events.sql`.
+
 ### F2.7 — Capabilities cross-team: cualquier principal del club puede modificar caps de cualquier ayudante
 - **Detectado en**: 2026-05-28, implementación de F2.7 (UI de capabilities del ayudante).
 - **Síntoma**: la policy `capabilities_update` (F1.7) acepta a admin/coord/principal del **club** sin filtrar por equipo. Un entrenador principal del Equipo A puede modificar las caps de un ayudante asignado únicamente al Equipo B.
