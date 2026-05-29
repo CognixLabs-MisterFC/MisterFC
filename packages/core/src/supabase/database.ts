@@ -588,6 +588,61 @@ export type Database = {
           },
         ]
       }
+      training_attendance: {
+        Row: {
+          code: Database["public"]["Enums"]["attendance_code"]
+          event_id: string
+          id: string
+          notes: string | null
+          player_id: string
+          recorded_at: string
+          recorded_by: string
+          updated_at: string
+        }
+        Insert: {
+          code: Database["public"]["Enums"]["attendance_code"]
+          event_id: string
+          id?: string
+          notes?: string | null
+          player_id: string
+          recorded_at?: string
+          recorded_by: string
+          updated_at?: string
+        }
+        Update: {
+          code?: Database["public"]["Enums"]["attendance_code"]
+          event_id?: string
+          id?: string
+          notes?: string | null
+          player_id?: string
+          recorded_at?: string
+          recorded_by?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_attendance_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_attendance_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_attendance_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -603,11 +658,15 @@ export type Database = {
         Returns: string
       }
       user_can_manage_event: {
-        Args: { p_club_id: string; p_team_id: string | null }
+        Args: { p_club_id: string; p_team_id: string }
         Returns: boolean
       }
       user_can_manage_player: {
         Args: { p_player_id: string }
+        Returns: boolean
+      }
+      user_can_record_attendance: {
+        Args: { p_event_id: string }
         Returns: boolean
       }
       user_can_see_player: { Args: { p_player_id: string }; Returns: boolean }
@@ -627,7 +686,17 @@ export type Database = {
       user_role_in_club: { Args: { p_club_id: string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      attendance_code:
+        | "presente"
+        | "ausente"
+        | "ausente_con_aviso"
+        | "entreno_diferenciado"
+        | "lesionado"
+        | "enfermo"
+        | "partido_oficial"
+        | "viaje"
+        | "sancionado"
+        | "descanso"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -754,6 +823,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      attendance_code: [
+        "presente",
+        "ausente",
+        "ausente_con_aviso",
+        "entreno_diferenciado",
+        "lesionado",
+        "enfermo",
+        "partido_oficial",
+        "viaje",
+        "sancionado",
+        "descanso",
+      ],
+    },
   },
 } as const

@@ -2,7 +2,13 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import {
+  ClipboardList,
+  Loader2,
+  Plus,
+  Calendar as CalendarIcon,
+} from 'lucide-react';
+import { Link } from '@/i18n/navigation';
 import {
   EVENT_TYPES,
   type EventInput,
@@ -273,6 +279,16 @@ export function EventDialog({
 
   const isEdit = mode === 'edit';
   const readonly = isEdit && !canManage;
+
+  // Snapshot mount-time de "el evento ya empezó". Date.now() y new Date()
+  // son impuros: dentro de useMemo react-hooks/purity los rechaza (la regla
+  // del React Compiler trata el body de useMemo como render-puro). useState
+  // con init function es la vía idiomática para snapshot-on-mount; el
+  // initializer queda fuera del scope de pureza.
+  const [isPastEvent] = useState<boolean>(() => {
+    if (!event?.starts_at) return false;
+    return new Date(event.starts_at).getTime() <= Date.now();
+  });
 
   // Render trigger por defecto si no es controlado externamente
   const trigger = controlledOpen === undefined && !isEdit && (
@@ -659,6 +675,24 @@ export function EventDialog({
               />
             </div>
           )}
+          {/* F4 entry point: si es un entrenamiento ya finalizado y el user
+              gestiona el team, link directo a la pantalla de marcar
+              asistencia. */}
+          {isEdit &&
+            event &&
+            event.type === 'training' &&
+            isPastEvent &&
+            canManage && (
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  href={`/asistencia/${event.id}`}
+                  onClick={() => setOpen(false)}
+                >
+                  <ClipboardList className="size-4" aria-hidden />
+                  <span>{t('dialog.mark_attendance')}</span>
+                </Link>
+              </Button>
+            )}
           <Button
             type="button"
             variant="ghost"

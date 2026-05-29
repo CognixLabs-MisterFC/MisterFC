@@ -76,6 +76,17 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
   - Cualquier cambio en env vars requiere **redeploy**.
 - **Plan**: revisar al cerrar **F15 (observabilidad)** junto con el setup de alertas. Hasta entonces, verificación manual cuando se sospeche.
 
+### Capabilities — lista plana va creciendo, evaluar agrupación por dominio cuando llegue a 13–15
+- **Detectado en**: 2026-05-29, spec 4.0 (D4) — F4 añade `can_mark_attendance` y `can_manage_callups`, dejando el CHECK list en **11**.
+- **Causa raíz**: cada fase añade caps planas al enum `CAPABILITY_NAMES` y al CHECK de la tabla. La auditoría visual del panel F2.7 (`/equipos/[teamId]/staff/[membershipId]/capabilities`) muestra 11 switches sin agrupación y va a degradar UX y testabilidad cuando llegue a 13–15 (F6 alineaciones, F8 valoraciones, F10 dashboard probablemente añaden más).
+- **Impacto actual**: nulo en BD ni en runtime. Solo UX del panel y mental model de quien lo lee. Pre-deuda.
+- **Plan candidato (no ahora)**:
+  - Agrupar por dominio: `squad`, `match`, `calendar`, `attendance`, `callups`, … con sub-acciones (ej. `squad.can_manage`, `match.can_register_events`).
+  - O mover capabilities a una tabla aparte con `(domain, action)` en lugar de una sola columna `capability_name`.
+  - O al menos agruparlas en la UI sin tocar el modelo (decoración del panel F2.7).
+- **Cuándo abordar**: cuando se añada la **13ª** capability (≈ Fase 6 si se confirma una para alineaciones; si no, Fase 8). Lo que primero impacte UX dispara la retro.
+- **Referencia**: `docs/specs/4.0-asistencia-convocatorias.md` §D4.
+
 ### Formato pre-existente del repo no pasa `pnpm format:check`
 - **Detectado en**: 2026-05-28, durante el PR de `feat/auth-email-password` (ADR-0004).
 - **Causa raíz**: el repo no tiene husky pre-commit ni `pnpm format:check` en CI; cambios merged desde Fase 0 y Fase 1 acumularon formato inconsistente.

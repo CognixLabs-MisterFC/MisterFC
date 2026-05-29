@@ -127,7 +127,8 @@
       "mi_plantilla": "Mi plantilla",
       "import_players": "Importar",
       "calendario": "Calendario",
-      "cuerpo_tecnico": "Cuerpo técnico"
+      "cuerpo_tecnico": "Cuerpo técnico",
+      "asistencia": "Asistencia"
     }
   },
   "roles": {
@@ -807,7 +808,8 @@
         "db": "Error al guardar. Inténtalo de nuevo."
       },
       "save": "Guardar",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "mark_attendance": "Registrar asistencia"
     },
     "delete": {
       "trigger": "Borrar",
@@ -911,6 +913,81 @@
       "history_title": "Histórico",
       "history_empty": "Sin histórico previo.",
       "history_active": "Activo"
+    }
+  },
+  "asistencia": {
+    "title": "Asistencia a entrenamientos",
+    "subtitle": "Marca rápidamente a tu equipo tras cada entrenamiento y consulta las stats.",
+    "pending": {
+      "title": "Pendientes de marcar",
+      "subtitle": "Entrenamientos de los últimos 30 días sin asistencia completa.",
+      "empty": "No tienes entrenamientos pendientes — ¡al día!",
+      "count": "{marked}/{total}"
+    },
+    "recent": {
+      "title": "Entrenamientos recientes",
+      "empty": "No hay entrenamientos en los últimos 30 días.",
+      "event": "Entrenamiento",
+      "team": "Equipo",
+      "when": "Cuándo",
+      "marked": "Marcados",
+      "actions": "Acciones",
+      "open": "Abrir",
+      "mark": "Marcar"
+    },
+    "stats": {
+      "title": "Estadísticas de asistencia",
+      "subtitle": "{total} registros en el rango seleccionado.",
+      "by_code": "Por código",
+      "by_player": "Por jugador",
+      "player": "Jugador",
+      "pct": "% Presente",
+      "total": "Total",
+      "empty": "Sin datos en el rango seleccionado.",
+      "team_filter": "Filtrar por equipo",
+      "team_all": "Todos los equipos",
+      "range": {
+        "7d": "7 días",
+        "30d": "30 días",
+        "season": "Temporada"
+      }
+    },
+    "detail": {
+      "back": "Volver al listado",
+      "progress": "{marked}/{total} marcados",
+      "future_event": "Aún no celebrado",
+      "empty_roster": "El equipo no tenía jugadores activos en esa fecha.",
+      "roster_title": "Plantilla",
+      "read_only": "No tienes permiso para marcar asistencia en este equipo."
+    },
+    "row": {
+      "group_label": "Asistencia de {player}",
+      "others": "Otros",
+      "others_label": "Otros códigos",
+      "clear": "Borrar marca",
+      "errors": {
+        "event_invalid": "Evento no válido.",
+        "player_invalid": "Jugador no válido.",
+        "code_invalid": "Código no válido.",
+        "notes_too_long": "Las notas son demasiado largas.",
+        "event_not_training": "Solo se marca asistencia en entrenamientos.",
+        "event_in_future": "El entrenamiento aún no se ha celebrado.",
+        "player_not_in_team_at_event": "Ese jugador no pertenecía al equipo ese día.",
+        "forbidden": "No tienes permiso para marcar asistencia.",
+        "generic": "No se pudo guardar. Reintenta."
+      }
+    },
+    "codes": {
+      "presente": "Presente",
+      "ausente": "Ausente",
+      "ausente_con_aviso": "Ausente con aviso",
+      "entreno_diferenciado": "Entreno diferenciado",
+      "lesionado": "Lesionado",
+      "enfermo": "Enfermo",
+      "partido_oficial": "Partido oficial (otra categoría)",
+      "viaje": "Viaje",
+      "sancionado": "Sancionado",
+      "descanso": "Descanso (decisión técnica)"
     }
   }
 }

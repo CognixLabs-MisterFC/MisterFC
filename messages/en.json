@@ -185,7 +185,8 @@
       "mi_plantilla": "Mi plantilla",
       "import_players": "Importar",
       "calendario": "Calendar",
-      "cuerpo_tecnico": "Coaching staff"
+      "cuerpo_tecnico": "Coaching staff",
+      "asistencia": "Attendance"
     }
   },
   "perfil": {
@@ -808,7 +809,8 @@
         "db": "Save failed. Try again."
       },
       "save": "Save",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "mark_attendance": "Mark attendance"
     },
     "delete": {
       "trigger": "Delete",
@@ -912,6 +914,81 @@
       "history_title": "History",
       "history_empty": "No prior history.",
       "history_active": "Active"
+    }
+  },
+  "asistencia": {
+    "title": "Training attendance",
+    "subtitle": "Quickly mark your team after each training and review the stats.",
+    "pending": {
+      "title": "Pending to mark",
+      "subtitle": "Trainings from the last 30 days without complete attendance.",
+      "empty": "No pending trainings — all caught up!",
+      "count": "{marked}/{total}"
+    },
+    "recent": {
+      "title": "Recent trainings",
+      "empty": "No trainings in the last 30 days.",
+      "event": "Training",
+      "team": "Team",
+      "when": "When",
+      "marked": "Marked",
+      "actions": "Actions",
+      "open": "Open",
+      "mark": "Mark"
+    },
+    "stats": {
+      "title": "Attendance stats",
+      "subtitle": "{total} records in the selected range.",
+      "by_code": "By code",
+      "by_player": "By player",
+      "player": "Player",
+      "pct": "% Present",
+      "total": "Total",
+      "empty": "No data in the selected range.",
+      "team_filter": "Filter by team",
+      "team_all": "All teams",
+      "range": {
+        "7d": "7 days",
+        "30d": "30 days",
+        "season": "Season"
+      }
+    },
+    "detail": {
+      "back": "Back to list",
+      "progress": "{marked}/{total} marked",
+      "future_event": "Not held yet",
+      "empty_roster": "The team had no active players on that date.",
+      "roster_title": "Roster",
+      "read_only": "You do not have permission to mark attendance for this team."
+    },
+    "row": {
+      "group_label": "Attendance for {player}",
+      "others": "Others",
+      "others_label": "Other codes",
+      "clear": "Clear mark",
+      "errors": {
+        "event_invalid": "Invalid event.",
+        "player_invalid": "Invalid player.",
+        "code_invalid": "Invalid code.",
+        "notes_too_long": "Notes are too long.",
+        "event_not_training": "Attendance can only be marked on trainings.",
+        "event_in_future": "The training hasn't been held yet.",
+        "player_not_in_team_at_event": "That player wasn't in the team on that date.",
+        "forbidden": "You do not have permission to mark attendance.",
+        "generic": "Could not save. Retry."
+      }
+    },
+    "codes": {
+      "presente": "Present",
+      "ausente": "Absent",
+      "ausente_con_aviso": "Absent (notified)",
+      "entreno_diferenciado": "Individual training",
+      "lesionado": "Injured",
+      "enfermo": "Sick",
+      "partido_oficial": "Official match (other category)",
+      "viaje": "Travel",
+      "sancionado": "Sanctioned",
+      "descanso": "Rest (coaching decision)"
     }
   }
 }

@@ -10,7 +10,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 1 | Identidad, Auth y modelo de roles base | ☑ completada | 2026-05-27 | 2026-05-28 |
 | 2 | Estructura del club, plantilla y cuerpo técnico | ⟳ extendida 2026-05-29 | 2026-05-28 | lote inicial 2026-05-29 |
 | 3 | Calendario unificado y comunicación básica | ☑ completada | 2026-05-29 | 2026-05-29 |
-| 4 | Asistencia y convocatorias | ☐ pendiente | — | — |
+| 4 | Asistencia y convocatorias | ⟳ Lote A entregado | 2026-05-29 | — |
 | 5 | Mensajería interna y push notifications | ☐ pendiente | — | — |
 | 6 | Editor de alineaciones F7/F8/F11 | ☐ pendiente | — | — |
 | 7 | Pantalla de toma de datos del partido (live) | ☐ pendiente | — | — |
@@ -49,6 +49,16 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 |---|---|---|---|
 | 2.10 | ☐ pendiente | Listado global de jugadores del club con filtros + asignación individual a equipo | [docs/specs/2.10-listado-global-jugadores.md](../specs/2.10-listado-global-jugadores.md) |
 | 2.11 | ☑ 2026-05-29 | Gestión global de cuerpo técnico (`/cuerpo-tecnico`): listado + ficha con agenda F3 + acción mover staff (reuso `team_staff` joined_at/left_at) | [docs/specs/2.11-gestion-global-cuerpo-tecnico.md](../specs/2.11-gestion-global-cuerpo-tecnico.md) |
+
+## Fase 4 — Subfases entregadas
+
+> **Lote A** entregado 2026-05-29 (4.1 + 4.2 + 4.8). **Lote B** (convocatorias + cron + panel) pendiente.
+
+| Subfase | Cierre | Resumen |
+|---|---|---|
+| 4.1 | 2026-05-29 | Enum `attendance_code` (10 códigos, ADR-0007) + tabla `training_attendance` con UNIQUE (event,player) + triggers (solo training, no futuro, roster histórico, recorded_by forzado, FKs inmutables) + helper RLS `user_can_record_attendance` + capability `can_mark_attendance` |
+| 4.2 | 2026-05-29 | UI marcado por jugador (ciclo rápido + dropdown completo) + bulk + `/asistencia/[eventId]` + entry point desde event-dialog del calendario F3 |
+| 4.8 | 2026-05-29 | Vista `/asistencia` con stats por código + por jugador, filtros temporales (7d/30d/temporada) + por equipo, lista de entrenamientos pendientes |
 
 ## Fase 3 — Subfases entregadas
 

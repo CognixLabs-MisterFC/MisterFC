@@ -104,7 +104,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F1 | Modelo de datos y auth multi-rol con permisos configurables | 12–17 h | 5–6 | ☑ |
 | F2 | Plantilla y cuerpo técnico | 19–32 h (lote inicial 14–23 h ≈18–20 h real ☑ + ext. F2.10/F2.11 +5–9 h ☐) | 6–9 | ⟳ ext. |
 | F3 | Calendario y eventos | 6–9 h | 2–3 | ☑ |
-| F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h | 3 | ☐ |
+| F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h (Lote A ≈4–5 h ☑) | 3 | ⟳ Lote A |
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☐ |
 | F6 | Alineaciones del partido | 6–9 h | 2–3 | ☐ |
 | F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☐ |
@@ -249,14 +249,19 @@ ADRs cerrados con la fase: ADR-0005 (recurrencia A), ADR-0006 (componente propio
 
 **Subfases**:
 
-- **4.1** Modelo `training_attendance` con códigos estructurados (presente, ausente, ausente_con_aviso, entreno_diferenciado, lesionado, enfermo, partido_oficial, viaje, sancionado, descanso) — 45 min
-- **4.2** UI registro post-entrenamiento (lista plantilla, selector rápido por jugador) — 1–2 h
-- **4.3** Modelo `callup_responses` + `match_callup_meta` (citacion_at, citacion_location separados del partido) — 30 min
-- **4.4** Acción "Convocar" desde un partido con datos de citación — 1 h
+**Lote A** ☑ (entregado 2026-05-29, ver spec 4.0 §D8):
+
+- **4.1** [hecho 2026-05-29] Modelo `training_attendance` con enum `attendance_code` (10 valores, ADR-0007) + capability `can_mark_attendance` + helper RLS `user_can_record_attendance` + triggers (solo training, no futuro, roster histórico, recorded_by forzado a auth.uid, FKs inmutables, updated_at) + 12 casos pgTAP en `rls_training_attendance.sql`.
+- **4.2** [hecho 2026-05-29] UI registro post-entrenamiento: `/asistencia/[eventId]` con AttendanceMarker (ciclo rápido 3 códigos + dropdown completo) + acciones `markAttendance` / `markAttendanceBulk` / `clearAttendance`. Entry point desde event-dialog del calendario F3 cuando el evento es training pasado.
+- **4.8** [hecho 2026-05-29] Vista `/asistencia` con stats agregadas (por código + por jugador) y filtros temporales (`7d` / `30d` / `temporada` + filtro por equipo) + lista de entrenamientos pendientes (`marked_count < roster_count`) + entrada de sidebar.
+
+**Lote B** ☐ pendiente (convocatorias + cron + panel del entrenador):
+
+- **4.3** Modelo `callup_responses` + `match_callup_meta` (citacion_at, citacion_location separados del partido) + `callup_decisions` (descarte técnico separado de respuesta del jugador, ver spec 4.0 §D3) — 30 min
+- **4.4** Acción "Convocar" desde un partido con datos de citación + capability `can_manage_callups` — 1 h
 - **4.5** UI respuesta del jugador/familia (Sí/Duda/No con justificación) — 1 h
 - **4.6** Panel del entrenador con asistencia reciente y descartes — 2 h
-- **4.7** Recordatorios automáticos vía cron — 1 h
-- **4.8** Estadísticas con filtros temporales y desglose por código — 2–3 h
+- **4.7** Tabla `notifications` futuro-proof (ADR-0008 candidato, channel `in_app`/`push`/`email` desde el día uno) + endpoint cron `/api/cron/reminders` protegido por `CRON_SECRET` — 1 h
 
 ---
 
