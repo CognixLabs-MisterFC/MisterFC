@@ -128,7 +128,8 @@
       "import_players": "Importar",
       "calendario": "Calendario",
       "cuerpo_tecnico": "Cuerpo técnico",
-      "asistencia": "Asistencia"
+      "asistencia": "Asistencia",
+      "convocatorias": "Convocatorias"
     }
   },
   "roles": {
@@ -809,7 +810,8 @@
       },
       "save": "Guardar",
       "cancel": "Cancelar",
-      "mark_attendance": "Registrar asistencia"
+      "mark_attendance": "Registrar asistencia",
+      "open_callup": "Convocatoria"
     },
     "delete": {
       "trigger": "Borrar",
@@ -988,6 +990,121 @@
       "viaje": "Viaje",
       "sancionado": "Sancionado",
       "descanso": "Descanso (decisión técnica)"
+    }
+  },
+  "convocatorias": {
+    "title": "Convocatorias",
+    "subtitle_coach": "Publica datos de citación y gestiona la lista del partido.",
+    "subtitle_player": "Confirma tu asistencia a los próximos partidos.",
+    "empty": "No hay partidos próximos en los siguientes 30 días.",
+    "published": "Publicada",
+    "draft": "Borrador",
+    "meeting_summary": "Citación: {when} en {where}",
+    "your_response": "Tu respuesta",
+    "your_response_pending": "Aún no has respondido.",
+    "count_responded": "{n}/{total} respuestas",
+    "count_yes": "Sí: {n}",
+    "count_maybe": "Duda: {n}",
+    "count_no": "No: {n}",
+    "count_called_up": "Convocados: {n}",
+    "open_player": "Ver convocatoria",
+    "open_coach": "Gestionar",
+    "transport": {
+      "club": "Transporte del club",
+      "individual": "Transporte individual",
+      "mixed": "Mixto"
+    },
+    "response": {
+      "group_label": "Tu respuesta a la convocatoria",
+      "yes": "Sí",
+      "maybe": "Duda",
+      "no": "No",
+      "add_reason": "Añadir motivo",
+      "edit_reason": "Editar motivo",
+      "save_reason": "Guardar",
+      "reason_placeholder": "Motivo opcional (lesión, viaje familiar, …)",
+      "errors": {
+        "event_invalid": "Evento no válido.",
+        "player_invalid": "Jugador no válido.",
+        "status_invalid": "Estado no válido.",
+        "reason_too_long": "El motivo es demasiado largo.",
+        "event_not_match": "Esta acción solo se permite en partidos.",
+        "callup_not_published": "La convocatoria aún no se ha publicado.",
+        "player_not_in_team_at_event": "Ese jugador no estaba en el equipo en esa fecha.",
+        "forbidden": "No tienes permiso para responder por este jugador.",
+        "generic": "No se pudo guardar. Reintenta."
+      }
+    },
+    "decision": {
+      "group_label": "Decisión técnica",
+      "called_up": "Convocado",
+      "discarded": "Descartado",
+      "clear": "Borrar decisión",
+      "add_reason": "Añadir motivo",
+      "edit_reason": "Editar motivo",
+      "save_reason": "Guardar",
+      "reason_placeholder": "Motivo del descarte (opcional)",
+      "errors": {
+        "event_invalid": "Evento no válido.",
+        "player_invalid": "Jugador no válido.",
+        "decision_invalid": "Decisión no válida.",
+        "reason_too_long": "El motivo es demasiado largo.",
+        "event_not_match": "Esta acción solo se permite en partidos.",
+        "player_not_in_team_at_event": "Ese jugador no estaba en el equipo en esa fecha.",
+        "forbidden": "No tienes permiso para gestionar esta convocatoria.",
+        "generic": "No se pudo guardar. Reintenta."
+      }
+    },
+    "publish": {
+      "action_publish": "Publicar convocatoria",
+      "action_edit": "Editar citación",
+      "title_publish": "Publicar convocatoria",
+      "title_edit": "Editar citación",
+      "description": "Datos de citación que verán los jugadores y familias. Guarda como borrador o publica ahora.",
+      "field": {
+        "meeting_at": "Hora de citación",
+        "meeting_location": "Lugar de citación",
+        "meeting_address": "Dirección",
+        "transport_mode": "Transporte",
+        "transport_notes": "Notas de transporte",
+        "notes_general": "Notas generales",
+        "optional": "Opcional"
+      },
+      "publish_now": "Publicar",
+      "save_changes": "Guardar cambios",
+      "save_draft": "Guardar borrador",
+      "cancel": "Cancelar",
+      "errors": {
+        "event_invalid": "Evento no válido.",
+        "meeting_at_invalid": "Hora de citación no válida.",
+        "meeting_location_required": "El lugar es obligatorio.",
+        "meeting_location_too_long": "El lugar es demasiado largo.",
+        "meeting_address_too_long": "La dirección es demasiado larga.",
+        "transport_mode_invalid": "Modo de transporte no válido.",
+        "transport_notes_too_long": "Las notas de transporte son demasiado largas.",
+        "notes_general_too_long": "Las notas generales son demasiado largas.",
+        "event_not_match": "Esta acción solo se permite en partidos.",
+        "event_without_team": "El partido no tiene equipo asignado.",
+        "cannot_unpublish": "Una vez publicada, no se puede dejar como borrador.",
+        "forbidden": "No tienes permiso para publicar esta convocatoria.",
+        "generic": "No se pudo guardar. Reintenta."
+      }
+    },
+    "detail": {
+      "back": "Volver a convocatorias",
+      "citation_title": "Citación",
+      "citation_when": "Cuándo",
+      "citation_where": "Dónde",
+      "citation_transport": "Transporte",
+      "player_section_title": "Tu respuesta",
+      "coach_section_title": "Plantilla y decisiones técnicas",
+      "draft_hint": "La convocatoria está en borrador — los jugadores aún no la ven.",
+      "coach_readonly_hint": "Solo lectura para tu rol/equipo.",
+      "no_response_yet": "Sin respuesta",
+      "decisions_summary": "Resumen de decisiones técnicas",
+      "not_published_yet": "El cuerpo técnico aún no ha publicado la citación.",
+      "not_in_roster": "No estabas en el equipo a la fecha del partido.",
+      "not_linked": "Esta cuenta no está vinculada a este jugador."
     }
   }
 }

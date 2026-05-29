@@ -4,3 +4,4 @@ export * from './utils/index';
 export * from './supabase/index';
 export * from './auth/index';
 export * from './events/index';
+export * from './notifications/index';

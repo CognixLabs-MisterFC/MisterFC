@@ -104,7 +104,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F1 | Modelo de datos y auth multi-rol con permisos configurables | 12–17 h | 5–6 | ☑ |
 | F2 | Plantilla y cuerpo técnico | 19–32 h (lote inicial 14–23 h ≈18–20 h real ☑ + ext. F2.10/F2.11 +5–9 h ☐) | 6–9 | ⟳ ext. |
 | F3 | Calendario y eventos | 6–9 h | 2–3 | ☑ |
-| F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h (Lote A ≈4–5 h ☑) | 3 | ⟳ Lote A |
+| F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h (Lote A ≈4–5 h ☑ + Lote B ≈5–8 h ☑) | 3 | ☑ |
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☐ |
 | F6 | Alineaciones del partido | 6–9 h | 2–3 | ☐ |
 | F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☐ |
@@ -255,13 +255,13 @@ ADRs cerrados con la fase: ADR-0005 (recurrencia A), ADR-0006 (componente propio
 - **4.2** [hecho 2026-05-29] UI registro post-entrenamiento: `/asistencia/[eventId]` con AttendanceMarker (ciclo rápido 3 códigos + dropdown completo) + acciones `markAttendance` / `markAttendanceBulk` / `clearAttendance`. Entry point desde event-dialog del calendario F3 cuando el evento es training pasado.
 - **4.8** [hecho 2026-05-29] Vista `/asistencia` con stats agregadas (por código + por jugador) y filtros temporales (`7d` / `30d` / `temporada` + filtro por equipo) + lista de entrenamientos pendientes (`marked_count < roster_count`) + entrada de sidebar.
 
-**Lote B** ☐ pendiente (convocatorias + cron + panel del entrenador):
+**Lote B** ☑ (entregado 2026-05-29):
 
-- **4.3** Modelo `callup_responses` + `match_callup_meta` (citacion_at, citacion_location separados del partido) + `callup_decisions` (descarte técnico separado de respuesta del jugador, ver spec 4.0 §D3) — 30 min
-- **4.4** Acción "Convocar" desde un partido con datos de citación + capability `can_manage_callups` — 1 h
-- **4.5** UI respuesta del jugador/familia (Sí/Duda/No con justificación) — 1 h
-- **4.6** Panel del entrenador con asistencia reciente y descartes — 2 h
-- **4.7** Tabla `notifications` futuro-proof (ADR-0008 candidato, channel `in_app`/`push`/`email` desde el día uno) + endpoint cron `/api/cron/reminders` protegido por `CRON_SECRET` — 1 h
+- **4.3** [hecho 2026-05-29] 3 modelos: `match_callup_meta` (1:1 evento) + `callup_responses` (UNIQUE event+player) + `callup_decisions` (PK compuesto). Helpers RLS `user_can_manage_callup` y `user_owns_player_account`. Triggers: solo type='match', roster histórico, FKs inmutables, `responded_by`/`decided_by`/`published_by` forzados a `auth.uid()`. Capability `can_manage_callups`. 13 pgTAP en `rls_callup.sql`.
+- **4.4** [hecho 2026-05-29] Server action `publishCallup` (manual existing→UPDATE / falta→INSERT, evita upsert ON CONFLICT WITH CHECK del PR #19) + UI `PublishCallupDialog` con guardar borrador / publicar ahora. Trigger BD enforce que publicar es one-way (cannot_unpublish).
+- **4.5** [hecho 2026-05-29] UI `/convocatorias` con badges yes/maybe/no + `/convocatorias/[eventId]` para jugador/familia con `ResponseButtons` (chips activos + textarea reason opcional, optimistic UI).
+- **4.6** [hecho 2026-05-29] Panel del entrenador en mismo `/convocatorias/[eventId]`: lista de jugadores con respuesta + `DecisionButtons` (called_up / discarded + reason + clear) + resumen de descartes técnicos. RLS verifica `can_manage_callups` para el ayudante.
+- **4.7** [hecho 2026-05-29] Tabla `notifications` futuro-proof (channel `in_app`/`push`/`email`, status `pending`/`sent`/`failed`/`skipped`, dedupe_key UNIQUE, sent_at nullable) + endpoint `POST/GET /api/cron/reminders` protegido por `Authorization: Bearer ${CRON_SECRET}` + cron `0 8 * * *` UTC en `apps/web/vercel.json`. Helpers puros `buildDedupeKey`/`dayBucketMadrid` (13 Vitest). ADR-0008 (Vercel Cron como patrón). 6 pgTAP en `rls_notifications.sql`.
 
 ---
 

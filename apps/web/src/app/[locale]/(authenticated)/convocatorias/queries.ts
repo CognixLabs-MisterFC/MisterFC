@@ -1,0 +1,525 @@
+/**
+ * F4 Lote B — Queries de convocatorias.
+ *
+ * Reusa `events` (F3) + `team_members` (F2.5) + las 3 tablas de F4.3.
+ *
+ * Permisos de lectura:
+ *  - admin / coord → todos los partidos del club.
+ *  - principal / ayudante → solo los partidos de sus teams (vía team_staff).
+ *  - jugador → partidos de sus jugadores vinculados (vía player_accounts).
+ */
+
+import {
+  type CallupDecisionKind,
+  type CallupResponseStatus,
+  type TransportMode,
+  createSupabaseServerClient,
+  getCurrentUser,
+} from '@misterfc/core';
+import { createCookieAdapter } from '@/lib/supabase-cookies';
+import type { Role } from '../jugadores/queries';
+
+export type ConvocatoriasScope =
+  | { kind: 'all' }
+  | { kind: 'restricted'; teamIds: string[] }
+  | { kind: 'player'; playerIds: string[] }
+  | { kind: 'none' };
+
+export type CallupMatchRow = {
+  event_id: string;
+  team_id: string;
+  team_name: string;
+  team_color: string;
+  category_name: string;
+  category_season: string;
+  title: string;
+  opponent_name: string | null;
+  starts_at: string;
+  /** True si la meta está publicada (apparece para player/family). */
+  published: boolean;
+  meeting_at: string | null;
+  meeting_location: string | null;
+  /** Conteo de respuestas (entrenador). */
+  responses_count: { yes: number; maybe: number; no: number };
+  /** Conteo de decisiones técnicas (entrenador). */
+  decisions_count: { called_up: number; discarded: number };
+  /** Roster del equipo a la fecha (para porcentajes). */
+  roster_count: number;
+  /** Mi respuesta (jugador/familia) — solo si scope='player'. */
+  my_response: CallupResponseStatus | null;
+};
+
+export type CallupMetaRow = {
+  event_id: string;
+  meeting_at: string;
+  meeting_location: string;
+  meeting_address: string | null;
+  transport_mode: TransportMode | null;
+  transport_notes: string | null;
+  notes_general: string | null;
+  published_at: string | null;
+  published_by: string | null;
+};
+
+export type CallupResponseRow = {
+  player_id: string;
+  status: CallupResponseStatus;
+  reason: string | null;
+  responded_by: string;
+  responded_at: string;
+};
+
+export type CallupDecisionRow = {
+  player_id: string;
+  decision: CallupDecisionKind;
+  reason: string | null;
+  decided_by: string;
+  decided_at: string;
+};
+
+export type CallupPlayerRow = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  dorsal: number | null;
+};
+
+export type CallupDetail = {
+  event: {
+    id: string;
+    club_id: string;
+    team_id: string;
+    team_name: string;
+    team_color: string;
+    category_name: string;
+    category_season: string;
+    title: string;
+    opponent_name: string | null;
+    starts_at: string;
+    location_name: string | null;
+    location_address: string | null;
+  };
+  roster: CallupPlayerRow[];
+  meta: CallupMetaRow | null;
+  responses: Map<string, CallupResponseRow>;
+  decisions: Map<string, CallupDecisionRow>;
+  /** Player IDs que el user actual puede manejar (responder por). */
+  ownedPlayerIds: string[];
+  canManage: boolean;
+};
+
+const COACH_ROLES: ReadonlyArray<Role> = [
+  'admin_club',
+  'coordinador',
+  'entrenador_principal',
+  'entrenador_ayudante',
+];
+
+const WRITE_DECISION_ROLES: ReadonlyArray<Role> = [
+  'admin_club',
+  'coordinador',
+  'entrenador_principal',
+  // ayudante con can_manage_callups también — la RLS lo verifica en BD;
+  // aquí la UI solo restringe a estos 3 para esconder controles. El
+  // ayudante con cap los verá igualmente como controles activos: el server
+  // action decide finalmente.
+];
+
+export async function resolveConvocatoriasScope(
+  clubId: string,
+  role: Role
+): Promise<ConvocatoriasScope> {
+  if (role === 'admin_club' || role === 'coordinador') return { kind: 'all' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const user = await getCurrentUser(adapter);
+  if (!user) return { kind: 'none' };
+
+  if (role === 'entrenador_principal' || role === 'entrenador_ayudante') {
+    type Row = {
+      team_id: string;
+      memberships: { profile_id: string; club_id: string };
+    };
+    const { data } = await supabase
+      .from('team_staff')
+      .select('team_id, memberships!inner(profile_id, club_id)')
+      .is('left_at', null);
+    const teamIds = (data ?? [])
+      .map((r) => r as unknown as Row)
+      .filter(
+        (r) =>
+          r.memberships.profile_id === user.id &&
+          r.memberships.club_id === clubId
+      )
+      .map((r) => r.team_id);
+    return { kind: 'restricted', teamIds };
+  }
+
+  if (role === 'jugador') {
+    type Row = { player_id: string; players: { club_id: string } };
+    const { data } = await supabase
+      .from('player_accounts')
+      .select('player_id, players!inner(club_id)')
+      .eq('profile_id', user.id);
+    const playerIds = (data ?? [])
+      .map((r) => r as unknown as Row)
+      .filter((r) => r.players.club_id === clubId)
+      .map((r) => r.player_id);
+    return { kind: 'player', playerIds };
+  }
+
+  return { kind: 'none' };
+}
+
+/**
+ * Lista de partidos próximos (siguientes 30 días) con resumen de convocatoria.
+ */
+export async function loadUpcomingCallups(
+  clubId: string,
+  role: Role,
+  rangeDays: number = 30
+): Promise<CallupMatchRow[]> {
+  const scope = await resolveConvocatoriasScope(clubId, role);
+  if (scope.kind === 'none') return [];
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const nowIso = new Date().toISOString();
+  const untilIso = new Date(
+    Date.now() + rangeDays * 86_400_000
+  ).toISOString();
+
+  let q = supabase
+    .from('events')
+    .select(
+      `id, club_id, team_id, title, opponent_name, starts_at,
+       teams!inner(name, color, categories!inner(name, season))`
+    )
+    .eq('club_id', clubId)
+    .eq('type', 'match')
+    .gte('starts_at', nowIso)
+    .lte('starts_at', untilIso)
+    .order('starts_at', { ascending: true })
+    .limit(200);
+
+  if (scope.kind === 'restricted') {
+    if (scope.teamIds.length === 0) return [];
+    q = q.in('team_id', scope.teamIds);
+  } else if (scope.kind === 'player') {
+    if (scope.playerIds.length === 0) return [];
+    // jugador / familia: solo partidos de sus teams.
+    type TM = { team_id: string };
+    const { data: tms } = await supabase
+      .from('team_members')
+      .select('team_id')
+      .in('player_id', scope.playerIds)
+      .is('left_at', null);
+    const teamIds = Array.from(
+      new Set((tms ?? []).map((t) => (t as unknown as TM).team_id))
+    );
+    if (teamIds.length === 0) return [];
+    q = q.in('team_id', teamIds);
+  }
+
+  const { data: rawEvents } = await q;
+
+  type EventRow = {
+    id: string;
+    club_id: string;
+    team_id: string;
+    title: string;
+    opponent_name: string | null;
+    starts_at: string;
+    teams: {
+      name: string;
+      color: string;
+      categories: { name: string; season: string };
+    };
+  };
+  const events = (rawEvents ?? []).map((e) => e as unknown as EventRow);
+  if (events.length === 0) return [];
+
+  const eventIds = events.map((e) => e.id);
+
+  // Meta por evento (puede no existir si nadie publicó nada).
+  const { data: metas } = await supabase
+    .from('match_callup_meta')
+    .select(
+      'event_id, meeting_at, meeting_location, published_at'
+    )
+    .in('event_id', eventIds);
+  type MetaRow = {
+    event_id: string;
+    meeting_at: string;
+    meeting_location: string;
+    published_at: string | null;
+  };
+  const metaByEvent = new Map<string, MetaRow>();
+  for (const m of (metas ?? []) as MetaRow[]) {
+    metaByEvent.set(m.event_id, m);
+  }
+
+  // Responses
+  const { data: rawResponses } = await supabase
+    .from('callup_responses')
+    .select('event_id, player_id, status')
+    .in('event_id', eventIds);
+  type ResShape = {
+    event_id: string;
+    player_id: string;
+    status: CallupResponseStatus;
+  };
+  const responsesByEvent = new Map<string, ResShape[]>();
+  for (const r of (rawResponses ?? []) as ResShape[]) {
+    const list = responsesByEvent.get(r.event_id) ?? [];
+    list.push(r);
+    responsesByEvent.set(r.event_id, list);
+  }
+
+  // Decisions
+  const { data: rawDecisions } = await supabase
+    .from('callup_decisions')
+    .select('event_id, decision')
+    .in('event_id', eventIds);
+  type DecShape = { event_id: string; decision: CallupDecisionKind };
+  const decisionsByEvent = new Map<
+    string,
+    { called_up: number; discarded: number }
+  >();
+  for (const d of (rawDecisions ?? []) as DecShape[]) {
+    const cur = decisionsByEvent.get(d.event_id) ?? {
+      called_up: 0,
+      discarded: 0,
+    };
+    if (d.decision === 'called_up') cur.called_up++;
+    else cur.discarded++;
+    decisionsByEvent.set(d.event_id, cur);
+  }
+
+  // Roster snapshot por team.
+  const teamIds = Array.from(new Set(events.map((e) => e.team_id)));
+  const { data: rosterRows } = await supabase
+    .from('team_members')
+    .select('team_id, player_id, joined_at, left_at')
+    .in('team_id', teamIds);
+  type RosterRow = {
+    team_id: string;
+    player_id: string;
+    joined_at: string;
+    left_at: string | null;
+  };
+  const roster = (rosterRows ?? []).map((r) => r as unknown as RosterRow);
+
+  return events.map((e) => {
+    const eventDate = e.starts_at.slice(0, 10);
+    const rosterCount = roster.filter(
+      (r) =>
+        r.team_id === e.team_id &&
+        r.joined_at <= eventDate &&
+        (r.left_at == null || r.left_at >= eventDate)
+    ).length;
+
+    const responses = responsesByEvent.get(e.id) ?? [];
+    const respCount = { yes: 0, maybe: 0, no: 0 };
+    let myResponse: CallupResponseStatus | null = null;
+    for (const r of responses) {
+      respCount[r.status]++;
+      if (
+        scope.kind === 'player' &&
+        scope.playerIds.includes(r.player_id)
+      ) {
+        myResponse = r.status;
+      }
+    }
+    const decisions = decisionsByEvent.get(e.id) ?? {
+      called_up: 0,
+      discarded: 0,
+    };
+    const meta = metaByEvent.get(e.id) ?? null;
+
+    return {
+      event_id: e.id,
+      team_id: e.team_id,
+      team_name: e.teams.name,
+      team_color: e.teams.color,
+      category_name: e.teams.categories.name,
+      category_season: e.teams.categories.season,
+      title: e.title,
+      opponent_name: e.opponent_name,
+      starts_at: e.starts_at,
+      published: meta?.published_at != null,
+      meeting_at: meta?.meeting_at ?? null,
+      meeting_location: meta?.meeting_location ?? null,
+      responses_count: respCount,
+      decisions_count: decisions,
+      roster_count: rosterCount,
+      my_response: myResponse,
+    };
+  });
+}
+
+/**
+ * Detalle de una convocatoria. Carga roster + meta + respuestas + decisiones.
+ * Si el scope es 'player', devuelve solo lo visible para ellos.
+ */
+export async function loadCallupDetail(
+  clubId: string,
+  role: Role,
+  eventId: string
+): Promise<CallupDetail | null> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select(
+      `id, club_id, team_id, type, title, opponent_name, starts_at,
+       location_name, location_address,
+       teams!inner(name, color, categories!inner(name, season))`
+    )
+    .eq('id', eventId)
+    .maybeSingle();
+
+  if (!ev) return null;
+  if ((ev.club_id as string) !== clubId) return null;
+  if (ev.type !== 'match') return null;
+  if (ev.team_id == null) return null;
+
+  type EventShape = {
+    id: string;
+    club_id: string;
+    team_id: string;
+    title: string;
+    opponent_name: string | null;
+    starts_at: string;
+    location_name: string | null;
+    location_address: string | null;
+    teams: {
+      name: string;
+      color: string;
+      categories: { name: string; season: string };
+    };
+  };
+  const event = ev as unknown as EventShape;
+
+  const scope = await resolveConvocatoriasScope(clubId, role);
+  if (scope.kind === 'none') return null;
+  if (
+    scope.kind === 'restricted' &&
+    !scope.teamIds.includes(event.team_id)
+  )
+    return null;
+
+  // Roster a la fecha del partido.
+  const eventDate = event.starts_at.slice(0, 10);
+  const { data: rosterRows } = await supabase
+    .from('team_members')
+    .select(
+      'player_id, joined_at, left_at, players!inner(id, first_name, last_name, dorsal)'
+    )
+    .eq('team_id', event.team_id)
+    .lte('joined_at', eventDate);
+  type RosterShape = {
+    player_id: string;
+    joined_at: string;
+    left_at: string | null;
+    players: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      dorsal: number | null;
+    };
+  };
+  const allRoster = (rosterRows ?? []).map((r) => r as unknown as RosterShape);
+  const activeRoster = allRoster.filter(
+    (r) => r.left_at == null || r.left_at >= eventDate
+  );
+
+  // Filtrar a propios si jugador.
+  const visibleRoster =
+    scope.kind === 'player'
+      ? activeRoster.filter((r) => scope.playerIds.includes(r.player_id))
+      : activeRoster;
+
+  const ownedPlayerIds =
+    scope.kind === 'player'
+      ? scope.playerIds.filter((pid) =>
+          activeRoster.some((r) => r.player_id === pid)
+        )
+      : [];
+
+  // Meta
+  const { data: metaRow } = await supabase
+    .from('match_callup_meta')
+    .select(
+      'event_id, meeting_at, meeting_location, meeting_address, transport_mode, transport_notes, notes_general, published_at, published_by'
+    )
+    .eq('event_id', eventId)
+    .maybeSingle();
+  const meta = (metaRow as unknown as CallupMetaRow | null) ?? null;
+
+  // Responses
+  const { data: rawResponses } = await supabase
+    .from('callup_responses')
+    .select(
+      'player_id, status, reason, responded_by, responded_at'
+    )
+    .eq('event_id', eventId);
+  const responses = new Map<string, CallupResponseRow>();
+  for (const r of (rawResponses ?? []) as CallupResponseRow[]) {
+    responses.set(r.player_id, r);
+  }
+
+  // Decisions
+  const { data: rawDecisions } = await supabase
+    .from('callup_decisions')
+    .select(
+      'player_id, decision, reason, decided_by, decided_at'
+    )
+    .eq('event_id', eventId);
+  const decisions = new Map<string, CallupDecisionRow>();
+  for (const d of (rawDecisions ?? []) as CallupDecisionRow[]) {
+    decisions.set(d.player_id, d);
+  }
+
+  const canManage =
+    WRITE_DECISION_ROLES.includes(role) &&
+    (scope.kind === 'all' ||
+      (scope.kind === 'restricted' && scope.teamIds.includes(event.team_id)));
+
+  return {
+    event: {
+      id: event.id,
+      club_id: event.club_id,
+      team_id: event.team_id,
+      team_name: event.teams.name,
+      team_color: event.teams.color,
+      category_name: event.teams.categories.name,
+      category_season: event.teams.categories.season,
+      title: event.title,
+      opponent_name: event.opponent_name,
+      starts_at: event.starts_at,
+      location_name: event.location_name,
+      location_address: event.location_address,
+    },
+    roster: visibleRoster
+      .map((r) => ({
+        id: r.players.id,
+        first_name: r.players.first_name,
+        last_name: r.players.last_name,
+        dorsal: r.players.dorsal,
+      }))
+      .sort((a, b) =>
+        a.last_name.localeCompare(b.last_name, 'es', { sensitivity: 'base' })
+      ),
+    meta,
+    responses,
+    decisions,
+    ownedPlayerIds,
+    canManage,
+  };
+}
+
+export { COACH_ROLES };

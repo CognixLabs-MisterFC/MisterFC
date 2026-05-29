@@ -14,6 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
+      callup_decisions: {
+        Row: {
+          decided_at: string
+          decided_by: string
+          decision: Database["public"]["Enums"]["callup_decision_kind"]
+          event_id: string
+          player_id: string
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          decided_at?: string
+          decided_by: string
+          decision: Database["public"]["Enums"]["callup_decision_kind"]
+          event_id: string
+          player_id: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          decided_at?: string
+          decided_by?: string
+          decision?: Database["public"]["Enums"]["callup_decision_kind"]
+          event_id?: string
+          player_id?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "callup_decisions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "callup_decisions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "callup_decisions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      callup_responses: {
+        Row: {
+          event_id: string
+          id: string
+          player_id: string
+          reason: string | null
+          responded_at: string
+          responded_by: string
+          status: Database["public"]["Enums"]["callup_response_status"]
+          updated_at: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          player_id: string
+          reason?: string | null
+          responded_at?: string
+          responded_by: string
+          status: Database["public"]["Enums"]["callup_response_status"]
+          updated_at?: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          player_id?: string
+          reason?: string | null
+          responded_at?: string
+          responded_by?: string
+          status?: Database["public"]["Enums"]["callup_response_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "callup_responses_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "callup_responses_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "callup_responses_responded_by_fkey"
+            columns: ["responded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       capabilities: {
         Row: {
           capability_name: string
@@ -287,6 +394,63 @@ export type Database = {
           },
         ]
       }
+      match_callup_meta: {
+        Row: {
+          created_at: string
+          event_id: string
+          meeting_address: string | null
+          meeting_at: string
+          meeting_location: string
+          notes_general: string | null
+          published_at: string | null
+          published_by: string | null
+          transport_mode: Database["public"]["Enums"]["transport_mode"] | null
+          transport_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          meeting_address?: string | null
+          meeting_at: string
+          meeting_location: string
+          notes_general?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          transport_mode?: Database["public"]["Enums"]["transport_mode"] | null
+          transport_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          meeting_address?: string | null
+          meeting_at?: string
+          meeting_location?: string
+          notes_general?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          transport_mode?: Database["public"]["Enums"]["transport_mode"] | null
+          transport_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_callup_meta_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_callup_meta_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           club_id: string
@@ -320,6 +484,50 @@ export type Database = {
           {
             foreignKeyName: "memberships_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          created_at: string
+          dedupe_key: string
+          id: string
+          payload: Json
+          sent_at: string | null
+          status: Database["public"]["Enums"]["notification_status"]
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          created_at?: string
+          dedupe_key: string
+          id?: string
+          payload?: Json
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["notification_status"]
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          created_at?: string
+          dedupe_key?: string
+          id?: string
+          payload?: Json
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["notification_status"]
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -657,6 +865,7 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: string
       }
+      user_can_manage_callup: { Args: { p_event_id: string }; Returns: boolean }
       user_can_manage_event: {
         Args: { p_club_id: string; p_team_id: string }
         Returns: boolean
@@ -683,6 +892,10 @@ export type Database = {
         Returns: boolean
       }
       user_is_staff_of_team: { Args: { p_team_id: string }; Returns: boolean }
+      user_owns_player_account: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
       user_role_in_club: { Args: { p_club_id: string }; Returns: string }
     }
     Enums: {
@@ -697,6 +910,12 @@ export type Database = {
         | "viaje"
         | "sancionado"
         | "descanso"
+      callup_decision_kind: "called_up" | "discarded"
+      callup_response_status: "yes" | "maybe" | "no"
+      notification_channel: "in_app" | "push" | "email"
+      notification_status: "pending" | "sent" | "failed" | "skipped"
+      notification_type: "match_callup_reminder" | "attendance_pending_reminder"
+      transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -836,6 +1055,15 @@ export const Constants = {
         "sancionado",
         "descanso",
       ],
+      callup_decision_kind: ["called_up", "discarded"],
+      callup_response_status: ["yes", "maybe", "no"],
+      notification_channel: ["in_app", "push", "email"],
+      notification_status: ["pending", "sent", "failed", "skipped"],
+      notification_type: [
+        "match_callup_reminder",
+        "attendance_pending_reminder",
+      ],
+      transport_mode: ["club", "individual", "mixed"],
     },
   },
 } as const

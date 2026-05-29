@@ -186,7 +186,8 @@
       "import_players": "Importar",
       "calendario": "Calendari",
       "cuerpo_tecnico": "Cos tècnic",
-      "asistencia": "Assistència"
+      "asistencia": "Assistència",
+      "convocatorias": "Convocatòries"
     }
   },
   "perfil": {
@@ -810,7 +811,8 @@
       },
       "save": "Guardar",
       "cancel": "Cancel·lar",
-      "mark_attendance": "Registrar assistència"
+      "mark_attendance": "Registrar assistència",
+      "open_callup": "Convocatòria"
     },
     "delete": {
       "trigger": "Esborrar",
@@ -989,6 +991,121 @@
       "viaje": "Viatge",
       "sancionado": "Sancionat",
       "descanso": "Descans (decisió tècnica)"
+    }
+  },
+  "convocatorias": {
+    "title": "Convocatòries",
+    "subtitle_coach": "Publica dades de citació i gestiona la llista del partit.",
+    "subtitle_player": "Confirma l'assistència als pròxims partits.",
+    "empty": "No hi ha partits pròxims als següents 30 dies.",
+    "published": "Publicada",
+    "draft": "Esborrany",
+    "meeting_summary": "Citació: {when} en {where}",
+    "your_response": "La teua resposta",
+    "your_response_pending": "Encara no has respost.",
+    "count_responded": "{n}/{total} respostes",
+    "count_yes": "Sí: {n}",
+    "count_maybe": "Dubte: {n}",
+    "count_no": "No: {n}",
+    "count_called_up": "Convocats: {n}",
+    "open_player": "Veure convocatòria",
+    "open_coach": "Gestionar",
+    "transport": {
+      "club": "Transport del club",
+      "individual": "Transport individual",
+      "mixed": "Mixt"
+    },
+    "response": {
+      "group_label": "La teua resposta a la convocatòria",
+      "yes": "Sí",
+      "maybe": "Dubte",
+      "no": "No",
+      "add_reason": "Afegir motiu",
+      "edit_reason": "Editar motiu",
+      "save_reason": "Guardar",
+      "reason_placeholder": "Motiu opcional (lesió, viatge familiar, …)",
+      "errors": {
+        "event_invalid": "Esdeveniment no vàlid.",
+        "player_invalid": "Jugador no vàlid.",
+        "status_invalid": "Estat no vàlid.",
+        "reason_too_long": "El motiu és massa llarg.",
+        "event_not_match": "Esta acció només es permet en partits.",
+        "callup_not_published": "La convocatòria encara no s'ha publicat.",
+        "player_not_in_team_at_event": "Eixe jugador no estava a l'equip en eixa data.",
+        "forbidden": "No tens permís per respondre per este jugador.",
+        "generic": "No s'ha pogut guardar. Reintenta."
+      }
+    },
+    "decision": {
+      "group_label": "Decisió tècnica",
+      "called_up": "Convocat",
+      "discarded": "Descartat",
+      "clear": "Esborrar decisió",
+      "add_reason": "Afegir motiu",
+      "edit_reason": "Editar motiu",
+      "save_reason": "Guardar",
+      "reason_placeholder": "Motiu del descart (opcional)",
+      "errors": {
+        "event_invalid": "Esdeveniment no vàlid.",
+        "player_invalid": "Jugador no vàlid.",
+        "decision_invalid": "Decisió no vàlida.",
+        "reason_too_long": "El motiu és massa llarg.",
+        "event_not_match": "Esta acció només es permet en partits.",
+        "player_not_in_team_at_event": "Eixe jugador no estava a l'equip en eixa data.",
+        "forbidden": "No tens permís per gestionar esta convocatòria.",
+        "generic": "No s'ha pogut guardar. Reintenta."
+      }
+    },
+    "publish": {
+      "action_publish": "Publicar convocatòria",
+      "action_edit": "Editar citació",
+      "title_publish": "Publicar convocatòria",
+      "title_edit": "Editar citació",
+      "description": "Dades de citació que veuran els jugadors i famílies. Guarda com a esborrany o publica ara.",
+      "field": {
+        "meeting_at": "Hora de citació",
+        "meeting_location": "Lloc de citació",
+        "meeting_address": "Adreça",
+        "transport_mode": "Transport",
+        "transport_notes": "Notes de transport",
+        "notes_general": "Notes generals",
+        "optional": "Opcional"
+      },
+      "publish_now": "Publicar",
+      "save_changes": "Guardar canvis",
+      "save_draft": "Guardar esborrany",
+      "cancel": "Cancel·lar",
+      "errors": {
+        "event_invalid": "Esdeveniment no vàlid.",
+        "meeting_at_invalid": "Hora de citació no vàlida.",
+        "meeting_location_required": "El lloc és obligatori.",
+        "meeting_location_too_long": "El lloc és massa llarg.",
+        "meeting_address_too_long": "L'adreça és massa llarga.",
+        "transport_mode_invalid": "Mode de transport no vàlid.",
+        "transport_notes_too_long": "Les notes de transport són massa llargues.",
+        "notes_general_too_long": "Les notes generals són massa llargues.",
+        "event_not_match": "Esta acció només es permet en partits.",
+        "event_without_team": "El partit no té equip assignat.",
+        "cannot_unpublish": "Una vegada publicada, no es pot deixar com a esborrany.",
+        "forbidden": "No tens permís per publicar esta convocatòria.",
+        "generic": "No s'ha pogut guardar. Reintenta."
+      }
+    },
+    "detail": {
+      "back": "Tornar a convocatòries",
+      "citation_title": "Citació",
+      "citation_when": "Quan",
+      "citation_where": "On",
+      "citation_transport": "Transport",
+      "player_section_title": "La teua resposta",
+      "coach_section_title": "Plantilla i decisions tècniques",
+      "draft_hint": "La convocatòria està en esborrany — els jugadors encara no la veuen.",
+      "coach_readonly_hint": "Només lectura per al teu rol/equip.",
+      "no_response_yet": "Sense resposta",
+      "decisions_summary": "Resum de decisions tècniques",
+      "not_published_yet": "El cos tècnic encara no ha publicat la citació.",
+      "not_in_roster": "No estaves a l'equip en la data del partit.",
+      "not_linked": "Este compte no està vinculat a este jugador."
     }
   }
 }
