@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AttendanceMarker } from './_components/attendance-marker';
+import { AttendanceRow } from './_components/attendance-row';
 import { loadEventAttendance } from '../queries';
 import type { Role } from '../../jugadores/queries';
 
@@ -39,12 +39,6 @@ function fmtDate(iso: string, locale: string): string {
   }).format(d);
 }
 
-function initials(first: string, last: string): string {
-  const a = first.trim().charAt(0).toUpperCase();
-  const b = last.trim().charAt(0).toUpperCase();
-  return `${b || a}${a || ''}`.slice(0, 2);
-}
-
 export default async function AttendanceMarkingPage({ params }: Props) {
   const { locale, eventId } = await params;
   setRequestLocale(locale);
@@ -63,7 +57,6 @@ export default async function AttendanceMarkingPage({ params }: Props) {
   if (!data) notFound();
 
   const t = await getTranslations('asistencia');
-  const tCodes = await getTranslations('asistencia.codes');
 
   const { event, roster, attendance, canRecord, isFuture } = data;
   const markedCount = roster.filter((p) => attendance.has(p.id)).length;
@@ -134,47 +127,19 @@ export default async function AttendanceMarkingPage({ params }: Props) {
               {roster.map((p) => {
                 const att = attendance.get(p.id) ?? null;
                 return (
-                  <li
+                  <AttendanceRow
                     key={p.id}
-                    className="flex items-center justify-between gap-3 px-3 py-3"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span
-                        className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground"
-                        aria-hidden
-                      >
-                        {initials(p.first_name, p.last_name)}
-                      </span>
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate font-medium">
-                          {p.last_name}, {p.first_name}
-                        </span>
-                        {p.dorsal != null && (
-                          <span className="text-xs text-muted-foreground">
-                            #{p.dorsal}
-                          </span>
-                        )}
-                        {att && (
-                          <span className="text-[10px] text-muted-foreground/80">
-                            {tCodes(att.code)}
-                            {att.notes && (
-                              <>
-                                {' · '}
-                                <span className="italic">{att.notes}</span>
-                              </>
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <AttendanceMarker
-                      eventId={event.id}
-                      playerId={p.id}
-                      current={att?.code ?? null}
-                      disabled={!canRecord || isFuture}
-                    />
-                  </li>
+                    eventId={event.id}
+                    playerId={p.id}
+                    initialCode={att?.code ?? null}
+                    initialNotes={att?.notes ?? null}
+                    disabled={!canRecord || isFuture}
+                    player={{
+                      first_name: p.first_name,
+                      last_name: p.last_name,
+                      dorsal: p.dorsal,
+                    }}
+                  />
                 );
               })}
             </ul>

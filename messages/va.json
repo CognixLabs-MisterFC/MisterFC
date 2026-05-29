@@ -961,11 +961,10 @@
       "roster_title": "Plantilla",
       "read_only": "No tens permís per marcar assistència en este equip."
     },
-    "marker": {
-      "unmarked": "Sense marcar",
-      "cycle_hint": "Polsa per ciclar: present → absent → absent amb avís",
-      "more": "Més opcions",
-      "pick_code": "Triar codi",
+    "row": {
+      "group_label": "Assistència de {player}",
+      "others": "Altres",
+      "others_label": "Altres codis",
       "clear": "Esborrar marca",
       "errors": {
         "event_invalid": "Esdeveniment no vàlid.",

@@ -961,11 +961,10 @@
       "roster_title": "Roster",
       "read_only": "You do not have permission to mark attendance for this team."
     },
-    "marker": {
-      "unmarked": "Unmarked",
-      "cycle_hint": "Tap to cycle: present → absent → absent (notified)",
-      "more": "More options",
-      "pick_code": "Pick a code",
+    "row": {
+      "group_label": "Attendance for {player}",
+      "others": "Others",
+      "others_label": "Other codes",
       "clear": "Clear mark",
       "errors": {
         "event_invalid": "Invalid event.",

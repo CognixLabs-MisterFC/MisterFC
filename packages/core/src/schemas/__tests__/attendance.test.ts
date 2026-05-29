@@ -2,14 +2,18 @@ import { describe, expect, it } from 'vitest';
 import {
   ATTENDANCE_CODES,
   ATTENDANCE_QUICK_CYCLE,
+  ATTENDANCE_PRIMARY_CHIPS,
+  ATTENDANCE_SECONDARY_CHIPS,
   ATTENDANCE_CODES_JUSTIFIED,
   ATTENDANCE_CODES_PRESENT,
   ATTENDANCE_CODES_UNJUSTIFIED,
   ATTENDANCE_CODES_PARTIAL,
   bucketOf,
+  isPrimaryChip,
   markAttendanceBulkSchema,
   markAttendanceSchema,
   nextQuickCycle,
+  otherChipLabel,
   type AttendanceCode,
 } from '../attendance';
 
@@ -206,6 +210,65 @@ describe('markAttendanceBulkSchema', () => {
     expect(r.success).toBe(false);
     if (!r.success) {
       expect(r.error.issues[0]?.message).toBe('entries_too_many');
+    }
+  });
+});
+
+describe('ATTENDANCE_PRIMARY_CHIPS (UI tabla F4.2)', () => {
+  it('expone exactamente 3 chips primarios: presente, ausente, lesionado', () => {
+    expect(ATTENDANCE_PRIMARY_CHIPS).toEqual([
+      'presente',
+      'ausente',
+      'lesionado',
+    ]);
+  });
+
+  it('chips primarios + secundarios cubren los 10 códigos sin solapes', () => {
+    const all = new Set<string>([
+      ...ATTENDANCE_PRIMARY_CHIPS,
+      ...ATTENDANCE_SECONDARY_CHIPS,
+    ]);
+    expect(all.size).toBe(ATTENDANCE_CODES.length);
+    expect(
+      ATTENDANCE_PRIMARY_CHIPS.length + ATTENDANCE_SECONDARY_CHIPS.length
+    ).toBe(ATTENDANCE_CODES.length);
+  });
+
+  it('cada chip primario está en el catálogo global', () => {
+    for (const c of ATTENDANCE_PRIMARY_CHIPS) {
+      expect(ATTENDANCE_CODES).toContain(c);
+    }
+  });
+
+  it('isPrimaryChip clasifica correctamente', () => {
+    expect(isPrimaryChip('presente')).toBe(true);
+    expect(isPrimaryChip('ausente')).toBe(true);
+    expect(isPrimaryChip('lesionado')).toBe(true);
+    expect(isPrimaryChip('ausente_con_aviso')).toBe(false);
+    expect(isPrimaryChip('entreno_diferenciado')).toBe(false);
+    expect(isPrimaryChip('enfermo')).toBe(false);
+    expect(isPrimaryChip('partido_oficial')).toBe(false);
+    expect(isPrimaryChip('viaje')).toBe(false);
+    expect(isPrimaryChip('sancionado')).toBe(false);
+    expect(isPrimaryChip('descanso')).toBe(false);
+  });
+});
+
+describe('otherChipLabel (label dinámico del botón Otros)', () => {
+  it('sin marca → null (renderizar placeholder por defecto)', () => {
+    expect(otherChipLabel(null)).toBeNull();
+    expect(otherChipLabel(undefined)).toBeNull();
+  });
+
+  it('marca primaria → null (la indicación va en el chip)', () => {
+    for (const c of ATTENDANCE_PRIMARY_CHIPS) {
+      expect(otherChipLabel(c)).toBeNull();
+    }
+  });
+
+  it('marca secundaria → devuelve el código activo', () => {
+    for (const c of ATTENDANCE_SECONDARY_CHIPS) {
+      expect(otherChipLabel(c)).toBe(c);
     }
   });
 });

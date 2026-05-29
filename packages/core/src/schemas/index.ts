@@ -105,6 +105,8 @@ export type {
 export {
   ATTENDANCE_CODES,
   ATTENDANCE_QUICK_CYCLE,
+  ATTENDANCE_PRIMARY_CHIPS,
+  ATTENDANCE_SECONDARY_CHIPS,
   ATTENDANCE_CODES_PRESENT,
   ATTENDANCE_CODES_JUSTIFIED,
   ATTENDANCE_CODES_UNJUSTIFIED,
@@ -113,6 +115,8 @@ export {
   markAttendanceBulkSchema,
   nextQuickCycle,
   bucketOf,
+  isPrimaryChip,
+  otherChipLabel,
 } from './attendance';
 export type {
   AttendanceCode,

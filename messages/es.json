@@ -960,11 +960,10 @@
       "roster_title": "Plantilla",
       "read_only": "No tienes permiso para marcar asistencia en este equipo."
     },
-    "marker": {
-      "unmarked": "Sin marcar",
-      "cycle_hint": "Pulsa para ciclar: presente → ausente → ausente con aviso",
-      "more": "Más opciones",
-      "pick_code": "Elegir código",
+    "row": {
+      "group_label": "Asistencia de {player}",
+      "others": "Otros",
+      "others_label": "Otros códigos",
       "clear": "Borrar marca",
       "errors": {
         "event_invalid": "Evento no válido.",

@@ -32,12 +32,65 @@ export type AttendanceCode = (typeof ATTENDANCE_CODES)[number];
  *
  * Decisión: los 3 más frecuentes son `presente`, `ausente`,
  * `ausente_con_aviso`. Ver spec 4.0 §D1.
+ *
+ * **Reservado** — F4.2 evolucionó a un layout tabla con chips visibles
+ * (ver `ATTENDANCE_PRIMARY_CHIPS`); el ciclo pulsable se mantiene como
+ * constante exportada por si una UI alternativa (móvil compacta) lo
+ * necesita más adelante.
  */
 export const ATTENDANCE_QUICK_CYCLE = [
   'presente',
   'ausente',
   'ausente_con_aviso',
 ] as const satisfies ReadonlyArray<AttendanceCode>;
+
+/**
+ * Chips primarios que la UI tabla de marcado (F4.2) muestra siempre
+ * visibles a la derecha de cada fila. Los 7 restantes viven detrás del
+ * dropdown "Otros".
+ *
+ * Selección: el feedback del usuario priorizó `lesionado` sobre
+ * `ausente_con_aviso` como tercer chip visible — en fútbol base la
+ * decisión "está lesionado" tiene consecuencias inmediatas (gestión de
+ * minutos, parte médico) que justifican exposición de un click.
+ * `ausente_con_aviso` sigue accesible en el dropdown.
+ */
+export const ATTENDANCE_PRIMARY_CHIPS = [
+  'presente',
+  'ausente',
+  'lesionado',
+] as const satisfies ReadonlyArray<AttendanceCode>;
+
+/** Subset de códigos NO mostrados como chip — visibles tras "Otros ▼". */
+export const ATTENDANCE_SECONDARY_CHIPS = [
+  'ausente_con_aviso',
+  'entreno_diferenciado',
+  'enfermo',
+  'partido_oficial',
+  'viaje',
+  'sancionado',
+  'descanso',
+] as const satisfies ReadonlyArray<AttendanceCode>;
+
+/** TRUE si el código se renderiza como chip primario fijo. */
+export function isPrimaryChip(code: AttendanceCode): boolean {
+  return (ATTENDANCE_PRIMARY_CHIPS as readonly AttendanceCode[]).includes(code);
+}
+
+/**
+ * Etiqueta dinámica del botón "Otros".
+ *  - Sin marca → null (renderizar texto i18n por defecto).
+ *  - Marca primaria → null (el chip primario lleva la indicación visual).
+ *  - Marca secundaria → devuelve ese código para que el botón muestre su
+ *    nombre y siga reflejando la selección activa.
+ */
+export function otherChipLabel(
+  code: AttendanceCode | null | undefined
+): AttendanceCode | null {
+  if (code == null) return null;
+  if (isPrimaryChip(code)) return null;
+  return code;
+}
 
 /**
  * Input para `markAttendance` (acción del Lote A).
