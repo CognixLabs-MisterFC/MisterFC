@@ -87,6 +87,18 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 ## Resueltas
 
+### Bug F2.7 latente — server action `toggleCapability` fallaba para todos los roles con 42501 — resuelto en fix/capabilities-admin-grant
+- **Detectado en**: 2026-05-29, smoke test de F3 (`can_manage_calendar`). El user reportó que admin_club no podía activar la capability.
+- **Síntoma reportado**: "no tengo permisos para activarlo" al pulsar el switch desde `/equipos/[teamId]/staff/[membershipId]/capabilities`.
+- **Causa raíz** (no específica de `can_manage_calendar`): el server action usa `supabase.from('capabilities').upsert(..., { onConflict: ... })`. PostgREST lo traduce a `INSERT ... ON CONFLICT DO UPDATE`. PostgreSQL evalúa la policy INSERT WITH CHECK para todas las filas en el INSERT path, también cuando habrá conflict + UPDATE. La migración F1.7 solo creó policy UPDATE para `capabilities` (comentario explícito: "INSERT/DELETE solo vía trigger SECURITY DEFINER"). Resultado: el UPSERT fallaba con 42501 para CUALQUIER rol, no solo admin.
+- **Por qué no se cazó en F2.7**: el pgTAP `rls_capabilities_update.sql` usa `UPDATE` plano, no UPSERT — distinto code path. El smoke manual de F2.7 (asumido como exitoso) probablemente no llegó a tocar realmente este flujo.
+- **Aprendizaje (lección transversal)**: cuando una server action use `.upsert(..., { onConflict })`, asegurarse de que la tabla tiene policy INSERT compatible con el rol esperado, no solo UPDATE. El comentario "INSERT solo vía trigger" en RLS y el `.upsert()` en código son contradictorios — uno de los dos miente. Documentado en `docs/architecture/rls-policies.md` si llega el momento de añadirlo (gancho para F14 cuando se haga la auditoría de RLS).
+- **Fix aplicado**: defensa en profundidad en dos capas.
+  - **App**: `toggleCapability` cambiado de `.upsert()` a `.update()` plano. La fila siempre existe porque el trigger `ensure_assistant_capabilities` la siembra al crear membership ayudante + backfill F3.1 para `can_manage_calendar`. Si rows_affected = 0, devuelve 'forbidden' explícito.
+  - **BD**: nueva policy `capabilities_insert_managers` con el mismo predicate que la UPDATE (admin_club + coordinador + entrenador_principal del club al que pertenece la membership). Por si un futuro cambio vuelve a UPSERT.
+- **Tests añadidos**: `supabase/tests/rls_capabilities_upsert.sql` con 7 casos cubriendo el code path INSERT ON CONFLICT (U1–U7) — admin/coord/principal pueden, ayudante propio/jugador/admin-cross-club no, capability libre rechazada por CHECK.
+- **Migración**: `supabase/migrations/20260530000002_capabilities_insert_policy.sql`.
+
 ### Botón "Cerrar sesión" ausente en `/onboarding` — resuelto en F2.0 (PR #10)
 - **Detectado en**: 2026-05-28, al cierre de Fase 1.
 - **Síntoma**: un usuario autenticado sin club quedaba atrapado en `/onboarding` sin forma evidente de cambiar de cuenta.
