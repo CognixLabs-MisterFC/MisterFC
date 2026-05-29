@@ -42,6 +42,8 @@ export const CAPABILITY_NAMES = [
   'can_see_medical',
   'can_message_families',
   'can_manage_squad',
+  // F3 — gestión del calendario (eventos). Añadido en F3.1.
+  'can_manage_calendar',
 ] as const;
 
 export type CapabilityName = (typeof CAPABILITY_NAMES)[number];

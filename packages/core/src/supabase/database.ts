@@ -111,6 +111,105 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          all_day: boolean
+          category_id: string | null
+          club_id: string
+          created_at: string
+          created_by: string
+          ends_at: string | null
+          id: string
+          location_address: string | null
+          location_name: string | null
+          notes: string | null
+          opponent_name: string | null
+          parent_event_id: string | null
+          recurrence_rule: Json | null
+          starts_at: string
+          team_id: string | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          category_id?: string | null
+          club_id: string
+          created_at?: string
+          created_by: string
+          ends_at?: string | null
+          id?: string
+          location_address?: string | null
+          location_name?: string | null
+          notes?: string | null
+          opponent_name?: string | null
+          parent_event_id?: string | null
+          recurrence_rule?: Json | null
+          starts_at: string
+          team_id?: string | null
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          category_id?: string | null
+          club_id?: string
+          created_at?: string
+          created_by?: string
+          ends_at?: string | null
+          id?: string
+          location_address?: string | null
+          location_name?: string | null
+          notes?: string | null
+          opponent_name?: string | null
+          parent_event_id?: string | null
+          recurrence_rule?: Json | null
+          starts_at?: string
+          team_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_parent_event_id_fkey"
+            columns: ["parent_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -502,6 +601,10 @@ export type Database = {
       user_active_team_for_staff: {
         Args: { p_club_id: string }
         Returns: string
+      }
+      user_can_manage_event: {
+        Args: { p_club_id: string; p_team_id: string | null }
+        Returns: boolean
       }
       user_can_manage_player: {
         Args: { p_player_id: string }
