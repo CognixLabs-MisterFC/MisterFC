@@ -15,10 +15,18 @@ export type CapabilityActionResult =
     };
 
 /**
- * UPSERT en lugar de UPDATE: cubre el caso (poco probable) de que la fila
- * sembrada por el trigger `ensure_assistant_capabilities` no exista. RLS
- * sigue siendo la autoridad real: si el user no es admin/coord/principal del
- * club al que pertenece la membership, la operación falla en BD.
+ * UPDATE plano sobre la fila pre-sembrada.
+ *
+ * El trigger `ensure_assistant_capabilities` (F1.4) siembra las N filas con
+ * granted=false al crear una membership con role=entrenador_ayudante. La
+ * migración F3.1 backfilleó `can_manage_calendar` para ayudantes existentes.
+ * Por tanto la fila SIEMPRE existe; un UPSERT no aporta robustez real y sí
+ * abre la ruta INSERT ... ON CONFLICT DO UPDATE, que PostgreSQL evalúa contra
+ * la policy INSERT (inexistente en F1.7 hasta F3.2-fix). Resultado: el
+ * `.upsert()` original fallaba con 42501 para todos los roles.
+ *
+ * La migración 20260530000002 añade defensa en profundidad (policy INSERT)
+ * por si en el futuro se vuelve a UPSERT.
  */
 export async function toggleCapability(
   teamId: string,
@@ -48,18 +56,25 @@ export async function toggleCapability(
     return { success: false, error: 'not_assistant' };
   }
 
-  const { error } = await supabase.from('capabilities').upsert(
-    {
-      membership_id: parsed.data.membership_id,
-      capability_name: parsed.data.capability_name,
-      granted: parsed.data.granted,
-    },
-    { onConflict: 'membership_id,capability_name' }
-  );
+  const { error, count } = await supabase
+    .from('capabilities')
+    .update(
+      { granted: parsed.data.granted },
+      { count: 'exact' }
+    )
+    .eq('membership_id', parsed.data.membership_id)
+    .eq('capability_name', parsed.data.capability_name);
 
   if (error) {
     if (error.code === '42501') return { success: false, error: 'forbidden' };
     return { success: false, error: 'db' };
+  }
+
+  // UPDATE con RLS USING que evalúa a false NO lanza error; deja rows=0. Eso
+  // significa "permitido por RLS de SELECT pero no de UPDATE": reportamos
+  // forbidden para que la UI no parezca que ha guardado.
+  if ((count ?? 0) === 0) {
+    return { success: false, error: 'forbidden' };
   }
 
   revalidatePath(
