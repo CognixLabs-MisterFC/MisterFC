@@ -5,6 +5,7 @@ import {
   Mail,
   UserRound,
   Users,
+  UsersRound,
   ClipboardList,
   Upload,
   Calendar,
@@ -60,6 +61,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: ClipboardList,
     // Los entrenadores ven solo el roster de sus equipos.
     roles: ['entrenador_principal', 'entrenador_ayudante'],
+  },
+  {
+    key: 'cuerpo_tecnico',
+    href: '/cuerpo-tecnico',
+    icon: UsersRound,
+    // Gestión global del cuerpo técnico. Principal ve los staff de SUS
+    // equipos (lectura); admin/coord además mueve. Ayudante / jugador no
+    // ven la entrada.
+    roles: ['admin_club', 'coordinador', 'entrenador_principal'],
   },
   {
     key: 'calendario',

@@ -184,7 +184,8 @@
       "jugadores": "Plantilla",
       "mi_plantilla": "Mi plantilla",
       "import_players": "Importar",
-      "calendario": "Calendar"
+      "calendario": "Calendar",
+      "cuerpo_tecnico": "Coaching staff"
     }
   },
   "perfil": {
@@ -836,6 +837,81 @@
         "invalid_mode": "Invalid scope.",
         "db": "Delete failed. Try again."
       }
+    }
+  },
+  "cuerpo_tecnico": {
+    "title": "Coaching staff",
+    "count": "{count, plural, =0 {No active coaches} one {1 coach} other {# coaches}}",
+    "empty": "No active staff yet. Invite coaches from a team page.",
+    "empty_filtered": "No coaches match the current filters.",
+    "caps_summary": "{granted}/{total} capabilities granted",
+    "filters": {
+      "label": "Filters",
+      "title": "Filter staff",
+      "clear": "Clear",
+      "role": "Function",
+      "team": "Team",
+      "category": "Category",
+      "empty_team": "No visible teams.",
+      "empty_category": "No visible categories.",
+      "search_placeholder": "Search by name…",
+      "search_label": "Search",
+      "search_clear": "Clear search"
+    },
+    "table": {
+      "avatar": "Avatar",
+      "name": "Name",
+      "club_role": "Club role",
+      "teams": "Assigned teams",
+      "caps": "Capabilities",
+      "actions": "Actions"
+    },
+    "row_actions": {
+      "open": "Open"
+    },
+    "move": {
+      "action": "Move",
+      "title": "Move to another team",
+      "description": "Closes the current team_staff row and opens a new one in the target team. Club membership is not affected.",
+      "field": {
+        "team": "Target team",
+        "team_placeholder": "Select team",
+        "staff_role": "Function in the target team",
+        "staff_role_help": "Only one head coach per team."
+      },
+      "save": "Move",
+      "cancel": "Cancel",
+      "errors": {
+        "team_staff_invalid": "The source link is no longer valid.",
+        "team_invalid": "Invalid target team.",
+        "staff_role_invalid": "Invalid function.",
+        "same_team": "Target team is the same as the current one.",
+        "principal_exists": "There is already an active head coach in that team.",
+        "cross_club": "Source and target do not belong to the same club.",
+        "forbidden": "You do not have permission to move staff.",
+        "generic": "Could not complete the move."
+      }
+    },
+    "remove": {
+      "action": "Remove from team",
+      "title": "Remove from team",
+      "description": "Are you sure you want to remove this person from the coaching staff of {team}? Club membership is not affected.",
+      "cancel": "Cancel",
+      "confirm": "Remove"
+    },
+    "detail": {
+      "back": "Back to coaching staff",
+      "teams_title": "Assigned teams",
+      "no_active_teams": "This person has no active teams in the club.",
+      "edit_caps": "Edit capabilities",
+      "agenda_title": "Agenda (next 28 days)",
+      "agenda_subtitle": "F3 events filtered to active teams.",
+      "agenda_no_teams": "No active teams, nothing to show.",
+      "agenda_open": "Open filtered calendar",
+      "agenda_open_month": "Open full month in calendar",
+      "history_title": "History",
+      "history_empty": "No prior history.",
+      "history_active": "Active"
     }
   }
 }
