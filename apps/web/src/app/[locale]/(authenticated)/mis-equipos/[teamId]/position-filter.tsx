@@ -11,7 +11,7 @@ type Props = {
 
 export function PositionFilter({ currentPosition }: Props) {
   const t = useTranslations('jugadores.positions');
-  const tMP = useTranslations('mi_plantilla');
+  const tMP = useTranslations('mis_equipos');
   const router = useRouter();
   const searchParams = useSearchParams();
 

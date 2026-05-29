@@ -182,7 +182,7 @@
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
-      "mi_plantilla": "Mi plantilla",
+      "mis_equipos": "My teams",
       "import_players": "Importar",
       "calendario": "Calendar",
       "cuerpo_tecnico": "Coaching staff",
@@ -595,15 +595,44 @@
       "description": "Can create, edit and delete team events. Without this, can only view the calendar."
     }
   },
-  "mi_plantilla": {
-    "title": "Mi plantilla",
-    "subtitle": "Jugadores de tus equipos.",
-    "no_teams": "Aún no estás asignado a ningún equipo. Pide al coordinador del club que te invite.",
-    "count": "{count, plural, =0 {Sin jugadores} one {1 jugador} other {# jugadores}}",
-    "empty": "No hay jugadores con esa posición en este equipo.",
-    "select_team": "Equipo",
+  "mis_equipos": {
+    "title": "My teams",
+    "subtitle": "Teams where you are part of the coaching staff.",
+    "no_teams": "You're not coaching any team yet. Ask the club coordinator to assign you.",
+    "back_to_hub": "My teams",
+    "players_count": "{count, plural, =0 {No players} one {1 player} other {# players}}",
+    "next_training": "Next training: {when}",
+    "no_next_training": "No upcoming training",
+    "next_match": "Next match: {when} vs {opponent}",
+    "no_next_match": "No upcoming match",
+    "opponent_tbd": "opponent TBD",
+    "staff_role": {
+      "entrenador_principal": "Head coach",
+      "entrenador_ayudante": "Assistant"
+    },
+    "actions": {
+      "title": "Actions",
+      "convocar_next": "Call up players for {when}",
+      "view_active_callups": "{count, plural, =0 {Team callups} one {1 active callup} other {# active callups}}",
+      "mark_last_attendance": "Mark last training attendance",
+      "open_calendar": "Open team calendar"
+    },
+    "upcoming": {
+      "title": "Upcoming events",
+      "match_vs": "Match vs {opponent}",
+      "callup_published": "Callup published",
+      "empty": "No events scheduled in the next 60 days.",
+      "type": {
+        "training": "Training",
+        "match": "Match"
+      }
+    },
+    "roster": {
+      "count": "{count, plural, =0 {No players} one {1 player} other {# players}}",
+      "empty": "No players with that position in this team."
+    },
     "filter": {
-      "all": "Todos"
+      "all": "All"
     }
   },
   "import": {

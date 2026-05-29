@@ -24,3 +24,11 @@ export {
   MAX_RECURRENCE_WEEKS,
 } from './recurrence';
 export type { Occurrence } from './recurrence';
+
+export {
+  pickNextEvent,
+  pickLastEventWithin,
+  pickNextMatchWithoutCallup,
+  pickLastTrainingWithoutAttendance,
+} from './aggregation';
+export type { DatedEvent } from './aggregation';

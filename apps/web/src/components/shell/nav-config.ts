@@ -7,10 +7,10 @@ import {
   Users,
   UsersRound,
   ClipboardCheck,
-  ClipboardList,
   Megaphone,
   Upload,
   Calendar,
+  Shield,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -58,10 +58,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     roles: ['admin_club', 'coordinador'],
   },
   {
-    key: 'mi_plantilla',
-    href: '/mi-plantilla',
-    icon: ClipboardList,
-    // Los entrenadores ven solo el roster de sus equipos.
+    key: 'mis_equipos',
+    href: '/mis-equipos',
+    icon: Shield,
+    // Hub multi-equipo del coach: lista de equipos + accesos contextuales
+    // a convocatoria, asistencia y calendario del equipo.
+    // Admin/coord NO tienen `/mis-equipos`: usan `/jugadores` global.
     roles: ['entrenador_principal', 'entrenador_ayudante'],
   },
   {

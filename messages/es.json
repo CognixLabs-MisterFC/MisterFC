@@ -124,7 +124,7 @@
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
-      "mi_plantilla": "Mi plantilla",
+      "mis_equipos": "Mis equipos",
       "import_players": "Importar",
       "calendario": "Calendario",
       "cuerpo_tecnico": "Cuerpo técnico",
@@ -594,13 +594,42 @@
       "description": "Puede crear, editar y borrar eventos del equipo. Sin esto, solo puede ver el calendario."
     }
   },
-  "mi_plantilla": {
-    "title": "Mi plantilla",
-    "subtitle": "Jugadores de tus equipos.",
-    "no_teams": "Aún no estás asignado a ningún equipo. Pide al coordinador del club que te invite.",
-    "count": "{count, plural, =0 {Sin jugadores} one {1 jugador} other {# jugadores}}",
-    "empty": "No hay jugadores con esa posición en este equipo.",
-    "select_team": "Equipo",
+  "mis_equipos": {
+    "title": "Mis equipos",
+    "subtitle": "Equipos donde formas parte del cuerpo técnico.",
+    "no_teams": "Aún no eres entrenador de ningún equipo. Pide al coordinador del club que te asigne.",
+    "back_to_hub": "Mis equipos",
+    "players_count": "{count, plural, =0 {Sin jugadores} one {1 jugador} other {# jugadores}}",
+    "next_training": "Próximo entreno: {when}",
+    "no_next_training": "Sin entreno programado",
+    "next_match": "Próximo partido: {when} vs {opponent}",
+    "no_next_match": "Sin partido programado",
+    "opponent_tbd": "rival por confirmar",
+    "staff_role": {
+      "entrenador_principal": "Principal",
+      "entrenador_ayudante": "Ayudante"
+    },
+    "actions": {
+      "title": "Acciones",
+      "convocar_next": "Convocar al partido del {when}",
+      "view_active_callups": "{count, plural, =0 {Convocatorias del equipo} one {1 convocatoria activa} other {# convocatorias activas}}",
+      "mark_last_attendance": "Marcar asistencia del último entreno",
+      "open_calendar": "Ver calendario del equipo"
+    },
+    "upcoming": {
+      "title": "Próximos eventos",
+      "match_vs": "Partido vs {opponent}",
+      "callup_published": "Convocatoria publicada",
+      "empty": "No hay eventos programados en los próximos 60 días.",
+      "type": {
+        "training": "Entreno",
+        "match": "Partido"
+      }
+    },
+    "roster": {
+      "count": "{count, plural, =0 {Sin jugadores} one {1 jugador} other {# jugadores}}",
+      "empty": "No hay jugadores con esa posición en este equipo."
+    },
     "filter": {
       "all": "Todos"
     }

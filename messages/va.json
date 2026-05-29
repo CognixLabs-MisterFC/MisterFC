@@ -182,7 +182,7 @@
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
-      "mi_plantilla": "Mi plantilla",
+      "mis_equipos": "Els meus equips",
       "import_players": "Importar",
       "calendario": "Calendari",
       "cuerpo_tecnico": "Cos tècnic",
@@ -595,15 +595,44 @@
       "description": "Pot crear, editar i esborrar esdeveniments de l'equip. Sense açò, només pot veure el calendari."
     }
   },
-  "mi_plantilla": {
-    "title": "Mi plantilla",
-    "subtitle": "Jugadores de tus equipos.",
-    "no_teams": "Aún no estás asignado a ningún equipo. Pide al coordinador del club que te invite.",
-    "count": "{count, plural, =0 {Sin jugadores} one {1 jugador} other {# jugadores}}",
-    "empty": "No hay jugadores con esa posición en este equipo.",
-    "select_team": "Equipo",
+  "mis_equipos": {
+    "title": "Els meus equips",
+    "subtitle": "Equips on formes part del cos tècnic.",
+    "no_teams": "Encara no entrenes cap equip. Demana al coordinador del club que t'assigne.",
+    "back_to_hub": "Els meus equips",
+    "players_count": "{count, plural, =0 {Sense jugadors} one {1 jugador} other {# jugadors}}",
+    "next_training": "Pròxim entrenament: {when}",
+    "no_next_training": "Sense entrenament programat",
+    "next_match": "Pròxim partit: {when} vs {opponent}",
+    "no_next_match": "Sense partit programat",
+    "opponent_tbd": "rival per confirmar",
+    "staff_role": {
+      "entrenador_principal": "Principal",
+      "entrenador_ayudante": "Ajudant"
+    },
+    "actions": {
+      "title": "Accions",
+      "convocar_next": "Convocar al partit del {when}",
+      "view_active_callups": "{count, plural, =0 {Convocatòries de l'equip} one {1 convocatòria activa} other {# convocatòries actives}}",
+      "mark_last_attendance": "Marcar assistència de l'últim entrenament",
+      "open_calendar": "Veure calendari de l'equip"
+    },
+    "upcoming": {
+      "title": "Pròxims esdeveniments",
+      "match_vs": "Partit vs {opponent}",
+      "callup_published": "Convocatòria publicada",
+      "empty": "No hi ha esdeveniments programats en els pròxims 60 dies.",
+      "type": {
+        "training": "Entrenament",
+        "match": "Partit"
+      }
+    },
+    "roster": {
+      "count": "{count, plural, =0 {Sense jugadors} one {1 jugador} other {# jugadors}}",
+      "empty": "No hi ha jugadors amb eixa posició en aquest equip."
+    },
     "filter": {
-      "all": "Todos"
+      "all": "Tots"
     }
   },
   "import": {
