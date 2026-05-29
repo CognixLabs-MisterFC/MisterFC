@@ -182,11 +182,12 @@
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
-      "mi_plantilla": "Mi plantilla",
+      "mis_equipos": "My teams",
       "import_players": "Importar",
       "calendario": "Calendar",
       "cuerpo_tecnico": "Coaching staff",
-      "asistencia": "Attendance"
+      "asistencia": "Attendance",
+      "convocatorias": "Callups"
     }
   },
   "perfil": {
@@ -594,15 +595,44 @@
       "description": "Can create, edit and delete team events. Without this, can only view the calendar."
     }
   },
-  "mi_plantilla": {
-    "title": "Mi plantilla",
-    "subtitle": "Jugadores de tus equipos.",
-    "no_teams": "Aún no estás asignado a ningún equipo. Pide al coordinador del club que te invite.",
-    "count": "{count, plural, =0 {Sin jugadores} one {1 jugador} other {# jugadores}}",
-    "empty": "No hay jugadores con esa posición en este equipo.",
-    "select_team": "Equipo",
+  "mis_equipos": {
+    "title": "My teams",
+    "subtitle": "Teams where you are part of the coaching staff.",
+    "no_teams": "You're not coaching any team yet. Ask the club coordinator to assign you.",
+    "back_to_hub": "My teams",
+    "players_count": "{count, plural, =0 {No players} one {1 player} other {# players}}",
+    "next_training": "Next training: {when}",
+    "no_next_training": "No upcoming training",
+    "next_match": "Next match: {when} vs {opponent}",
+    "no_next_match": "No upcoming match",
+    "opponent_tbd": "opponent TBD",
+    "staff_role": {
+      "entrenador_principal": "Head coach",
+      "entrenador_ayudante": "Assistant"
+    },
+    "actions": {
+      "title": "Actions",
+      "convocar_next": "Call up players for {when}",
+      "view_active_callups": "{count, plural, =0 {Team callups} one {1 active callup} other {# active callups}}",
+      "mark_last_attendance": "Mark last training attendance",
+      "open_calendar": "Open team calendar"
+    },
+    "upcoming": {
+      "title": "Upcoming events",
+      "match_vs": "Match vs {opponent}",
+      "callup_published": "Callup published",
+      "empty": "No events scheduled in the next 60 days.",
+      "type": {
+        "training": "Training",
+        "match": "Match"
+      }
+    },
+    "roster": {
+      "count": "{count, plural, =0 {No players} one {1 player} other {# players}}",
+      "empty": "No players with that position in this team."
+    },
     "filter": {
-      "all": "Todos"
+      "all": "All"
     }
   },
   "import": {
@@ -810,7 +840,8 @@
       },
       "save": "Save",
       "cancel": "Cancel",
-      "mark_attendance": "Mark attendance"
+      "mark_attendance": "Mark attendance",
+      "open_callup": "Callup"
     },
     "delete": {
       "trigger": "Delete",
@@ -989,6 +1020,121 @@
       "viaje": "Travel",
       "sancionado": "Sanctioned",
       "descanso": "Rest (coaching decision)"
+    }
+  },
+  "convocatorias": {
+    "title": "Callups",
+    "subtitle_coach": "Publish meeting details and manage the match list.",
+    "subtitle_player": "Confirm attendance for upcoming matches.",
+    "empty": "No upcoming matches in the next 30 days.",
+    "published": "Published",
+    "draft": "Draft",
+    "meeting_summary": "Meeting: {when} at {where}",
+    "your_response": "Your response",
+    "your_response_pending": "You haven't replied yet.",
+    "count_responded": "{n}/{total} responses",
+    "count_yes": "Yes: {n}",
+    "count_maybe": "Maybe: {n}",
+    "count_no": "No: {n}",
+    "count_called_up": "Called up: {n}",
+    "open_player": "View callup",
+    "open_coach": "Manage",
+    "transport": {
+      "club": "Club transport",
+      "individual": "Individual",
+      "mixed": "Mixed"
+    },
+    "response": {
+      "group_label": "Your callup response",
+      "yes": "Yes",
+      "maybe": "Maybe",
+      "no": "No",
+      "add_reason": "Add reason",
+      "edit_reason": "Edit reason",
+      "save_reason": "Save",
+      "reason_placeholder": "Optional reason (injury, family trip, …)",
+      "errors": {
+        "event_invalid": "Invalid event.",
+        "player_invalid": "Invalid player.",
+        "status_invalid": "Invalid status.",
+        "reason_too_long": "Reason is too long.",
+        "event_not_match": "This action is only for matches.",
+        "callup_not_published": "Callup not published yet.",
+        "player_not_in_team_at_event": "Player wasn't in the team on that date.",
+        "forbidden": "You don't have permission to respond for this player.",
+        "generic": "Could not save. Retry."
+      }
+    },
+    "decision": {
+      "group_label": "Coaching decision",
+      "called_up": "Called up",
+      "discarded": "Discarded",
+      "clear": "Clear decision",
+      "add_reason": "Add reason",
+      "edit_reason": "Edit reason",
+      "save_reason": "Save",
+      "reason_placeholder": "Discard reason (optional)",
+      "errors": {
+        "event_invalid": "Invalid event.",
+        "player_invalid": "Invalid player.",
+        "decision_invalid": "Invalid decision.",
+        "reason_too_long": "Reason is too long.",
+        "event_not_match": "This action is only for matches.",
+        "player_not_in_team_at_event": "Player wasn't in the team on that date.",
+        "forbidden": "You don't have permission to manage this callup.",
+        "generic": "Could not save. Retry."
+      }
+    },
+    "publish": {
+      "action_publish": "Publish callup",
+      "action_edit": "Edit meeting",
+      "title_publish": "Publish callup",
+      "title_edit": "Edit meeting details",
+      "description": "Meeting details visible to players and families. Save as draft or publish now.",
+      "field": {
+        "meeting_at": "Meeting time",
+        "meeting_location": "Meeting place",
+        "meeting_address": "Address",
+        "transport_mode": "Transport",
+        "transport_notes": "Transport notes",
+        "notes_general": "General notes",
+        "optional": "Optional"
+      },
+      "publish_now": "Publish",
+      "save_changes": "Save changes",
+      "save_draft": "Save draft",
+      "cancel": "Cancel",
+      "errors": {
+        "event_invalid": "Invalid event.",
+        "meeting_at_invalid": "Invalid meeting time.",
+        "meeting_location_required": "Meeting place is required.",
+        "meeting_location_too_long": "Meeting place is too long.",
+        "meeting_address_too_long": "Address is too long.",
+        "transport_mode_invalid": "Invalid transport mode.",
+        "transport_notes_too_long": "Transport notes are too long.",
+        "notes_general_too_long": "General notes are too long.",
+        "event_not_match": "This action is only for matches.",
+        "event_without_team": "The match has no team assigned.",
+        "cannot_unpublish": "Once published, the callup cannot become a draft again.",
+        "forbidden": "You don't have permission to publish this callup.",
+        "generic": "Could not save. Retry."
+      }
+    },
+    "detail": {
+      "back": "Back to callups",
+      "citation_title": "Meeting",
+      "citation_when": "When",
+      "citation_where": "Where",
+      "citation_transport": "Transport",
+      "player_section_title": "Your response",
+      "coach_section_title": "Squad and coaching decisions",
+      "draft_hint": "Callup is a draft — players cannot see it yet.",
+      "coach_readonly_hint": "Read-only for your role/team.",
+      "no_response_yet": "No response",
+      "decisions_summary": "Coaching decisions summary",
+      "not_published_yet": "The coaching staff hasn't published the meeting yet.",
+      "not_in_roster": "You weren't in the team on the match date.",
+      "not_linked": "This account isn't linked to this player."
     }
   }
 }

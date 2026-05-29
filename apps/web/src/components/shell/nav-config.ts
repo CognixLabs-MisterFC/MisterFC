@@ -7,9 +7,10 @@ import {
   Users,
   UsersRound,
   ClipboardCheck,
-  ClipboardList,
+  Megaphone,
   Upload,
   Calendar,
+  Shield,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -57,10 +58,12 @@ export const NAV_ITEMS: readonly NavItem[] = [
     roles: ['admin_club', 'coordinador'],
   },
   {
-    key: 'mi_plantilla',
-    href: '/mi-plantilla',
-    icon: ClipboardList,
-    // Los entrenadores ven solo el roster de sus equipos.
+    key: 'mis_equipos',
+    href: '/mis-equipos',
+    icon: Shield,
+    // Hub multi-equipo del coach: lista de equipos + accesos contextuales
+    // a convocatoria, asistencia y calendario del equipo.
+    // Admin/coord NO tienen `/mis-equipos`: usan `/jugadores` global.
     roles: ['entrenador_principal', 'entrenador_ayudante'],
   },
   {
@@ -92,6 +95,22 @@ export const NAV_ITEMS: readonly NavItem[] = [
     // Asistencia: cuerpo técnico marca, jugador/familia ve solo lo suyo.
     // El ayudante necesita `can_mark_attendance` para que la page muestre
     // datos; la nav se le enseña igual y la propia page filtra.
+    roles: [
+      'admin_club',
+      'coordinador',
+      'entrenador_principal',
+      'entrenador_ayudante',
+      'jugador',
+    ],
+  },
+  {
+    key: 'convocatorias',
+    href: '/convocatorias',
+    icon: Megaphone,
+    // Convocatorias de partido. Todos los roles ven entrada; la page
+    // diferencia vista jugador/familia (responder) vs cuerpo técnico
+    // (publicar + descartar). Ayudante necesita can_manage_callups para
+    // las acciones de gestión; la entrada le aparece igual.
     roles: [
       'admin_club',
       'coordinador',

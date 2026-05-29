@@ -4,6 +4,13 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 ## Activas
 
+### F4b-redirect-mi-plantilla-cleanup — retirar redirect 308 `/mi-plantilla` → `/mis-equipos`
+- **Detectado en**: 2026-05-29, F4 Lote B (rename del hub del coach).
+- **Síntoma**: `apps/web/next.config.ts` mantiene un par de redirects 308 desde `/[locale]/mi-plantilla` (y `/:path*`) para no romper bookmarks o links externos a la ruta vieja.
+- **Cuándo retirar**: 2026-06-28 (30 días después del merge). Antes solo si el primer club piloto confirma que nadie tiene la URL vieja guardada.
+- **Cómo retirar**: eliminar el bloque `async redirects()` (o las dos entradas concretas) de `apps/web/next.config.ts`. Sin migración de datos ni RLS.
+- **Riesgo de no retirar**: ninguno funcional. Solo overhead de mantener una regla de routing que ya no aporta.
+
 ### F3-rls-events-visibilidad — jugador puede consultar vía API eventos de equipos a los que no pertenece
 - **Detectado en**: 2026-05-29, spec 3.0 §4.6 (RLS de events).
 - **Síntoma**: la policy `events_select_member` abre SELECT a cualquier miembro autenticado del club (`user_role_in_club(club_id) is not null`). Un jugador autenticado puede invocar vía REST/RPC un `select * from events where team_id = 'X'` con un team al que no pertenece y recibirá los eventos. La UI no se lo muestra (la query del Server Component filtra), pero la BD no lo bloquea.

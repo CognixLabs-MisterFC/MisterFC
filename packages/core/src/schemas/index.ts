@@ -134,3 +134,20 @@ export type {
   ParsedTabular,
   ParseTabularError,
 } from '../import';
+
+export {
+  TRANSPORT_MODES,
+  CALLUP_RESPONSE_STATUSES,
+  CALLUP_DECISION_KINDS,
+  publishCallupSchema,
+  upsertCallupResponseSchema,
+  upsertCallupDecisionSchema,
+} from './callup';
+export type {
+  TransportMode,
+  CallupResponseStatus,
+  CallupDecisionKind,
+  PublishCallupInput,
+  UpsertCallupResponseInput,
+  UpsertCallupDecisionInput,
+} from './callup';

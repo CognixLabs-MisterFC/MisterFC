@@ -10,7 +10,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 1 | Identidad, Auth y modelo de roles base | ☑ completada | 2026-05-27 | 2026-05-28 |
 | 2 | Estructura del club, plantilla y cuerpo técnico | ⟳ extendida 2026-05-29 | 2026-05-28 | lote inicial 2026-05-29 |
 | 3 | Calendario unificado y comunicación básica | ☑ completada | 2026-05-29 | 2026-05-29 |
-| 4 | Asistencia y convocatorias | ⟳ Lote A entregado | 2026-05-29 | — |
+| 4 | Asistencia y convocatorias | ☑ Lote A + B entregados | 2026-05-29 | 2026-05-29 |
 | 5 | Mensajería interna y push notifications | ☐ pendiente | — | — |
 | 6 | Alineaciones y planificación del partido (ampliada 2026-05-29) | ☐ pendiente | — | — |
 | 7 | Pantalla de toma de datos del partido (live) | ☐ pendiente | — | — |
@@ -52,12 +52,17 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 ## Fase 4 — Subfases entregadas
 
-> **Lote A** entregado 2026-05-29 (4.1 + 4.2 + 4.8). **Lote B** (convocatorias + cron + panel) pendiente.
+> **Lote A** entregado 2026-05-29 (4.1 + 4.2 + 4.8). **Lote B** entregado 2026-05-29 (4.3–4.7).
 
 | Subfase | Cierre | Resumen |
 |---|---|---|
 | 4.1 | 2026-05-29 | Enum `attendance_code` (10 códigos, ADR-0007) + tabla `training_attendance` con UNIQUE (event,player) + triggers (solo training, no futuro, roster histórico, recorded_by forzado, FKs inmutables) + helper RLS `user_can_record_attendance` + capability `can_mark_attendance` |
-| 4.2 | 2026-05-29 | UI marcado por jugador (ciclo rápido + dropdown completo) + bulk + `/asistencia/[eventId]` + entry point desde event-dialog del calendario F3 |
+| 4.2 | 2026-05-29 | UI marcado por jugador (tabla con chips primarios + dropdown Otros + Clear, ver F4.2 redesign) + `/asistencia/[eventId]` + entry point desde event-dialog del calendario F3 |
+| 4.3 | 2026-05-29 | 3 tablas separadas: `match_callup_meta` (citación + estado borrador/publicado) + `callup_responses` (yes/maybe/no del jugador/familia, RLS via player_accounts) + `callup_decisions` (called_up/discarded del cuerpo técnico) + helpers `user_can_manage_callup` y `user_owns_player_account` |
+| 4.4 | 2026-05-29 | Acción `publishCallup` + UI `PublishCallupDialog` (guardar borrador / publicar; bloqueo de despublicación) + capability `can_manage_callups` |
+| 4.5 | 2026-05-29 | UI `/convocatorias` (lista con badges yes/maybe/no) + ResponseButtons en `/convocatorias/[eventId]` para el jugador/familia con reason opcional |
+| 4.6 | 2026-05-29 | Panel del entrenador: DecisionButtons (called_up/discarded + reason) por fila + resumen de descartes técnicos + lista de respuestas pendientes |
+| 4.7 | 2026-05-29 | Tabla `notifications` futuro-proof (channel `in_app`/`push`/`email`, status, dedupe_key UNIQUE) + endpoint `/api/cron/reminders` (Vercel Cron `0 8 * * *` UTC, ADR-0008) + helpers `buildDedupeKey` / `dayBucketMadrid` |
 | 4.8 | 2026-05-29 | Vista `/asistencia` con stats por código + por jugador, filtros temporales (7d/30d/temporada) + por equipo, lista de entrenamientos pendientes |
 
 ## Fase 3 — Subfases entregadas

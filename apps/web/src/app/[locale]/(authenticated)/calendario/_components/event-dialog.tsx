@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import {
   ClipboardList,
   Loader2,
+  Megaphone,
   Plus,
   Calendar as CalendarIcon,
 } from 'lucide-react';
@@ -693,6 +694,18 @@ export function EventDialog({
                 </Link>
               </Button>
             )}
+          {/* F4.4 entry point: si es un partido, link a la convocatoria. */}
+          {isEdit && event && event.type === 'match' && (
+            <Button asChild variant="outline" size="sm">
+              <Link
+                href={`/convocatorias/${event.id}`}
+                onClick={() => setOpen(false)}
+              >
+                <Megaphone className="size-4" aria-hidden />
+                <span>{t('dialog.open_callup')}</span>
+              </Link>
+            </Button>
+          )}
           <Button
             type="button"
             variant="ghost"
