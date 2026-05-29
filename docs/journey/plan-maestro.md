@@ -100,9 +100,9 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 | Fase | Título | Horas | Sesiones | Estado |
 |---|---|---|---|---|
-| F0 | Bootstrap y fundamentos | 4–5 h | 2 | ☐ |
-| F1 | Modelo de datos y auth multi-rol con permisos configurables | 12–17 h | 5–6 | ☐ |
-| F2 | Plantilla y cuerpo técnico | 14–23 h | 5–7 | ☐ |
+| F0 | Bootstrap y fundamentos | 4–5 h | 2 | ☑ |
+| F1 | Modelo de datos y auth multi-rol con permisos configurables | 12–17 h | 5–6 | ☑ |
+| F2 | Plantilla y cuerpo técnico | 14–23 h (real ≈18–20 h) | 5–7 | ☑ |
 | F3 | Calendario y eventos | 6–9 h | 2–3 | ☐ |
 | F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h | 3 | ☐ |
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☐ |
@@ -175,13 +175,13 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 ---
 
-### Fase 2 — Plantilla y cuerpo técnico
+### Fase 2 — Plantilla y cuerpo técnico ☑ [cerrada 2026-05-29]
 
 **Objetivo**: implementar la gestión completa del club: CRUD de categorías, equipos, jugadores y staff. Configuración de permisos para entrenadores ayudantes. Importación masiva desde CSV/Excel.
 
-**Horas**: 14–23 h · **Sesiones**: 5–7
+**Horas**: estimado 14–23 h · **Real**: ≈18–20 h efectivos (dentro del rango). · **Sesiones**: 5–7 · **PRs**: #10, #11, #12, #13, #14, #15, #16.
 
-**Criterio de cierre**: admin puede crear club, categorías, equipos. Puede dar de alta jugadores (con o sin email) y staff. Familias pueden vincularse a jugadores menores. Puede importar plantilla masivamente desde CSV/Excel. Vista lista y ficha completas.
+**Cierre**: admin/coord pueden montar la jerarquía completa del club (categorías → equipos → jugadores → staff). Familias se vinculan a menores vía invitación. Capabilities del ayudante editables desde UI. Importación masiva CSV/Excel con dedup + RLS validada por pgTAP. Resumen ejecutivo en [fase-2-summary.md](fase-2-summary.md).
 
 **Riesgo**: bajo-medio.
 
