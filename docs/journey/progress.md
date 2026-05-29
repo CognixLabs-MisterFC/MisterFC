@@ -9,7 +9,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 0 | Bootstrap del repositorio y andamiaje | ☑ completada | 2026-05-26 | 2026-05-27 |
 | 1 | Identidad, Auth y modelo de roles base | ☑ completada | 2026-05-27 | 2026-05-28 |
 | 2 | Estructura del club, plantilla y cuerpo técnico | ☑ completada | 2026-05-28 | 2026-05-29 |
-| 3 | Calendario unificado y comunicación básica | ☐ pendiente (siguiente) | — | — |
+| 3 | Calendario unificado y comunicación básica | ☑ completada | 2026-05-29 | 2026-05-29 |
 | 4 | Asistencia y convocatorias | ☐ pendiente | — | — |
 | 5 | Mensajería interna y push notifications | ☐ pendiente | — | — |
 | 6 | Editor de alineaciones F7/F8/F11 | ☐ pendiente | — | — |
@@ -40,6 +40,24 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 2.7 | 2026-05-28 | UI capabilities del ayudante (shadcn Switch + optimistic UPSERT) |
 | 2.8 | 2026-05-28 | Vista `/mi-plantilla` read-only del entrenador |
 | 2.9 | 2026-05-29 | Import masivo CSV/Excel (wizard 4 pasos, primer Vitest del repo) |
+
+## Fase 3 — Subfases entregadas
+
+| Subfase | Cierre | Resumen |
+|---|---|---|
+| 3.1 | 2026-05-29 | Modelo `events` + capability `can_manage_calendar` + RLS + 19 pgTAP |
+| 3.2 | 2026-05-29 | UI calendario (mes/semana/agenda) componente propio sobre Intl+Date |
+| 3.3 | 2026-05-29 | CRUD eventos (createEvent / updateEvent / deleteEvent) con permisos |
+| 3.4 | 2026-05-29 | Filtros equipo/categoría/tipo con estado URL serializado |
+| 3.5 | 2026-05-29 | Recurrencia weekly opción A (parent + children, ADR-0005), 23 Vitest del generador |
+
+## Fase 3 — Cierre
+
+- **Inicio / Fin**: 2026-05-29 (un solo lote, dentro de presupuesto 6–9h).
+- **PR**: uno único con spec + ADR-0005 + ADR-0006 + migraciones + UI + i18n es/en/va.
+- **Tests añadidos**: 38 Vitest nuevos (15 TZ + 15 recurrencia + 8 schemas events) + 19 casos pgTAP RLS/CHECK/helpers de `events`. Sigue verde en CI.
+- **Decisión de impl que difiere de spec original**: se eliminó `date-fns` durante la implementación (Intl + Date nativos cubren el caso con cero KB extra). ADR-0006 actualizado antes del merge.
+- **Known-issue nueva**: `F3-rls-events-visibilidad` (jugador puede consultar API vía REST eventos de equipos a los que no pertenece; intencional Ola 1, endurecer en F14).
 
 ## Fase 2 — Cierre
 

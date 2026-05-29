@@ -103,7 +103,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F0 | Bootstrap y fundamentos | 4–5 h | 2 | ☑ |
 | F1 | Modelo de datos y auth multi-rol con permisos configurables | 12–17 h | 5–6 | ☑ |
 | F2 | Plantilla y cuerpo técnico | 14–23 h (real ≈18–20 h) | 5–7 | ☑ |
-| F3 | Calendario y eventos | 6–9 h | 2–3 | ☐ |
+| F3 | Calendario y eventos | 6–9 h | 2–3 | ☑ |
 | F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h | 3 | ☐ |
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☐ |
 | F6 | Alineaciones del partido | 6–9 h | 2–3 | ☐ |
@@ -202,25 +202,27 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 ---
 
-### Fase 3 — Calendario y eventos
+### Fase 3 — Calendario y eventos ☑ [cerrada 2026-05-29]
 
 **Objetivo**: calendario unificado del club con entrenamientos, partidos, torneos y otros eventos. Vista mensual / semanal / agenda. Filtros por equipo y categoría.
 
-**Horas**: 6–9 h · **Sesiones**: 2–3
+**Horas**: 6–9 h. **Real**: ≈ dentro del rango. **Sesiones**: 1 lote.
 
-**Criterio de cierre**: cualquier usuario ve el calendario filtrado a lo que le corresponde (jugador su equipo, entrenador sus equipos, admin todo el club). Crear/editar eventos respeta permisos.
+**Cierre**: spec `docs/specs/3.0-calendario-eventos.md`. Modelo `events` con RLS abierta a miembros del club (decisión Ola 1, knownissue `F3-rls-events-visibilidad`). Capability 9ª `can_manage_calendar` añadida. Componente de calendario propio sobre `Intl` + `Date` (ADR-0006), 3 vistas (mes/semana/agenda) + filtros + recurrencia semanal opción A (ADR-0005). 63 tests Vitest + 19 casos pgTAP. PR único con 5 subfases.
 
-**Riesgo**: bajo.
+**Riesgo**: bajo (cumplido).
 
 **Dependencias**: Fase 2 cerrada.
 
 **Subfases**:
 
-- **3.1** Modelo `events` (type: training/match/tournament/other, team_id, datetime, location, notes) — 1 h
-- **3.2** UI calendario mensual + semanal + agenda — 2–3 h
-- **3.3** CRUD de eventos con permisos — 1 h
-- **3.4** Filtros por equipo, categoría y tipo de evento — 1 h
-- **3.5** Eventos recurrentes (entrenamientos semanales) — 1–2 h
+- **3.1** [hecho 2026-05-29] Modelo `events` + capability `can_manage_calendar` + pgTAP — 1 h
+- **3.2** [hecho 2026-05-29] UI calendario mensual + semanal + agenda (componente propio sobre Intl+Date) — 2–3 h
+- **3.3** [hecho 2026-05-29] CRUD de eventos con permisos (server actions + dialog) — 1 h
+- **3.4** [hecho 2026-05-29] Filtros por equipo, categoría y tipo de evento (estado URL) — 1 h
+- **3.5** [hecho 2026-05-29] Eventos recurrentes weekly (opción A, parent + children explícitos) — 1–2 h
+
+ADRs cerrados con la fase: ADR-0005 (recurrencia A), ADR-0006 (componente propio).
 
 ---
 
