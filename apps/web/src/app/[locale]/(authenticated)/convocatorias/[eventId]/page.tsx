@@ -318,7 +318,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                       playerId={p.id}
                       initial={dec?.decision ?? null}
                       initialReason={dec?.reason ?? null}
-                      disabled={!canManage || !isPublished}
+                      disabled={!canManage}
                     />
                   </li>
                 );

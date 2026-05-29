@@ -15,6 +15,9 @@
 --   D1. INSERT decision por admin → OK; decided_by forzado.
 --   D2. INSERT decision por jugador → forbidden (42501).
 --   D3. UNIQUE (event,player) — segundo INSERT en decisions → 23505.
+--   D4. Regresión bug: ayudante a nivel club PERO principal en team_staff
+--       puede INSERT + UPDATE decision en borrador (migración 20260603).
+--   D5. Ayudante a nivel club + ayudante en team_staff SIN cap → 42501.
 
 begin;
 
@@ -46,10 +49,16 @@ insert into public.team_staff (team_id, membership_id, staff_role) values
   ('33dd0000-0000-0000-0000-000000000001', '55dd0000-aaaa-3333-3333-333333333333', 'entrenador_principal');
 
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
-  ('66dd0000-0000-0000-0000-000000000001', '11dd0000-0000-0000-0000-000000000001', 'Pol', 'Test', '2014-04-01');
+  ('66dd0000-0000-0000-0000-000000000001', '11dd0000-0000-0000-0000-000000000001', 'Pol', 'Test', '2014-04-01'),
+  -- Player de control para el test R4: existe en el mismo team/club para que la
+  -- UPDATE intentando reasignar player_id no falle por FK/club mismatch antes
+  -- de llegar al check de inmutabilidad.
+  ('66dd0000-0000-0000-0000-000000000002', '11dd0000-0000-0000-0000-000000000001', 'Aniol', 'Control', '2014-05-01');
 
 insert into public.team_members (team_id, player_id, joined_at) values
   ('33dd0000-0000-0000-0000-000000000001', '66dd0000-0000-0000-0000-000000000001',
+   (current_date - interval '60 days')::date),
+  ('33dd0000-0000-0000-0000-000000000001', '66dd0000-0000-0000-0000-000000000002',
    (current_date - interval '60 days')::date);
 
 -- Vínculo player_accounts: el "jugador-c-a" es la propia cuenta del jugador.
@@ -299,7 +308,7 @@ declare ok boolean := false;
 begin
   begin
     update public.callup_responses
-       set player_id = gen_random_uuid()
+       set player_id = '66dd0000-0000-0000-0000-000000000002'
      where event_id = '77dd0000-0000-0000-0000-000000000001';
   exception when others then
     if sqlerrm like '%player_id_immutable%' then ok := true; end if;
@@ -381,6 +390,123 @@ begin
   end;
   if not ok then
     raise exception 'FAIL [D2]: jugador no debería poder insertar decision';
+  end if;
+end $$;
+
+reset role;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- D4: principal del team vía team_staff.staff_role (NO vía memberships.role)
+--      puede INSERT y UPDATE decision en estado borrador.
+--
+-- Regresión del bug detectado en smoke (commit 70788df):
+--   user es `memberships.role = entrenador_ayudante` a nivel club,
+--   pero `team_staff.staff_role = entrenador_principal` en el team del partido.
+--   La fix `user_can_manage_callup` (migración 20260603) debe permitirle gestionar.
+--
+-- Importante: la meta del partido sigue siendo BORRADOR (no la publicamos).
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Usuario nuevo: ayudante a nivel club, principal del team_staff.
+insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
+  ('44dd0000-aaaa-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'team-principal-c-a@ts.test', now(), '{}'::jsonb, now(), now());
+
+insert into public.memberships (id, profile_id, club_id, role) values
+  ('55dd0000-aaaa-4444-4444-444444444444', '44dd0000-aaaa-4444-4444-444444444444', '11dd0000-0000-0000-0000-000000000001', 'entrenador_ayudante');
+
+-- El team ya tiene un principal (membership 3333) de la setup inicial. Lo
+-- marcamos como inactivo (left_at) para no chocar con el unique de un
+-- principal activo por team_staff antes de añadir al nuevo.
+update public.team_staff
+   set left_at = current_date
+ where team_id = '33dd0000-0000-0000-0000-000000000001'
+   and membership_id = '55dd0000-aaaa-3333-3333-333333333333';
+
+insert into public.team_staff (team_id, membership_id, staff_role) values
+  ('33dd0000-0000-0000-0000-000000000001', '55dd0000-aaaa-4444-4444-444444444444', 'entrenador_principal');
+
+-- Usamos el evento 77dd0000-3 (creado en R3) que no tiene meta publicada
+-- — está implícitamente en borrador. Confirmamos:
+do $$
+begin
+  if (select published_at from public.match_callup_meta
+       where event_id = '77dd0000-0000-0000-0000-000000000003') is not null then
+    raise exception 'FAIL [D4 setup]: el evento debería estar en borrador';
+  end if;
+end $$;
+
+-- Limpiamos cualquier decision residual de tests previos.
+delete from public.callup_decisions
+ where event_id = '77dd0000-0000-0000-0000-000000000003';
+
+set local role authenticated;
+set local "request.jwt.claim.sub" to '44dd0000-aaaa-4444-4444-444444444444';
+
+do $$
+begin
+  insert into public.callup_decisions (event_id, player_id, decision, decided_by)
+  values (
+    '77dd0000-0000-0000-0000-000000000003',
+    '66dd0000-0000-0000-0000-000000000001',
+    'called_up',
+    '44dd0000-aaaa-4444-4444-444444444444'
+  );
+
+  -- Y UPDATE: cambio de called_up → discarded sobre la propia fila.
+  update public.callup_decisions
+     set decision = 'discarded', reason = 'lesión'
+   where event_id = '77dd0000-0000-0000-0000-000000000003'
+     and player_id = '66dd0000-0000-0000-0000-000000000001';
+
+  if (select decision from public.callup_decisions
+       where event_id = '77dd0000-0000-0000-0000-000000000003'
+         and player_id = '66dd0000-0000-0000-0000-000000000001')
+     <> 'discarded' then
+    raise exception 'FAIL [D4]: UPDATE como principal_de_team_staff en borrador debería persistir';
+  end if;
+end $$;
+
+reset role;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- D5: ayudante a nivel club SIN principal en team_staff y SIN
+--      can_manage_callups: NO puede insertar decision.
+--
+-- Cierra el complemento de D4: el cambio de la migración 20260603 NO abre
+-- el acceso a cualquier ayudante; sigue exigiendo o principal_de_team_staff
+-- o capability.
+-- ─────────────────────────────────────────────────────────────────────────────
+insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
+  ('44dd0000-aaaa-5555-5555-555555555555', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'just-asst-c-a@ts.test', now(), '{}'::jsonb, now(), now());
+
+insert into public.memberships (id, profile_id, club_id, role) values
+  ('55dd0000-aaaa-5555-5555-555555555555', '44dd0000-aaaa-5555-5555-555555555555', '11dd0000-0000-0000-0000-000000000001', 'entrenador_ayudante');
+
+insert into public.team_staff (team_id, membership_id, staff_role) values
+  ('33dd0000-0000-0000-0000-000000000001', '55dd0000-aaaa-5555-5555-555555555555', 'entrenador_ayudante');
+
+delete from public.callup_decisions
+ where event_id = '77dd0000-0000-0000-0000-000000000003';
+
+set local role authenticated;
+set local "request.jwt.claim.sub" to '44dd0000-aaaa-5555-5555-555555555555';
+
+do $$
+declare ok boolean := false;
+begin
+  begin
+    insert into public.callup_decisions (event_id, player_id, decision, decided_by)
+    values (
+      '77dd0000-0000-0000-0000-000000000003',
+      '66dd0000-0000-0000-0000-000000000001',
+      'called_up',
+      '44dd0000-aaaa-5555-5555-555555555555'
+    );
+  exception when others then
+    if sqlstate = '42501' then ok := true; end if;
+  end;
+  if not ok then
+    raise exception 'FAIL [D5]: ayudante sin principal_de_team_staff ni cap no debería poder insertar decision';
   end if;
 end $$;
 

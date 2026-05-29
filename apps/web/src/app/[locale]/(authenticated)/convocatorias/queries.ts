@@ -21,7 +21,17 @@ import type { Role } from '../jugadores/queries';
 
 export type ConvocatoriasScope =
   | { kind: 'all' }
-  | { kind: 'restricted'; teamIds: string[] }
+  | {
+      kind: 'restricted';
+      /** Teams donde el user es staff activo (cualquier staff_role). */
+      teamIds: string[];
+      /**
+       * Teams donde el user puede gestionar convocatorias: principal vía
+       * `team_staff.staff_role` (autoridad por equipo, NO el rol del club),
+       * o cualquier staff con capability `can_manage_callups`.
+       */
+      managedTeamIds: string[];
+    }
   | { kind: 'player'; playerIds: string[] }
   | { kind: 'none' };
 
@@ -115,16 +125,6 @@ const COACH_ROLES: ReadonlyArray<Role> = [
   'entrenador_ayudante',
 ];
 
-const WRITE_DECISION_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  // ayudante con can_manage_callups también — la RLS lo verifica en BD;
-  // aquí la UI solo restringe a estos 3 para esconder controles. El
-  // ayudante con cap los verá igualmente como controles activos: el server
-  // action decide finalmente.
-];
-
 export async function resolveConvocatoriasScope(
   clubId: string,
   role: Role
@@ -139,21 +139,49 @@ export async function resolveConvocatoriasScope(
   if (role === 'entrenador_principal' || role === 'entrenador_ayudante') {
     type Row = {
       team_id: string;
+      staff_role: string;
       memberships: { profile_id: string; club_id: string };
     };
     const { data } = await supabase
       .from('team_staff')
-      .select('team_id, memberships!inner(profile_id, club_id)')
+      .select('team_id, staff_role, memberships!inner(profile_id, club_id)')
       .is('left_at', null);
-    const teamIds = (data ?? [])
+    const myRows = (data ?? [])
       .map((r) => r as unknown as Row)
       .filter(
         (r) =>
           r.memberships.profile_id === user.id &&
           r.memberships.club_id === clubId
-      )
-      .map((r) => r.team_id);
-    return { kind: 'restricted', teamIds };
+      );
+    const teamIds = myRows.map((r) => r.team_id);
+
+    // Detecta capability can_manage_callups en este club: si la tiene, todos
+    // los teamIds del user pasan a managedTeamIds. Si no, solo los teams en
+    // los que es principal vía team_staff.staff_role.
+    type CapRow = {
+      granted: boolean;
+      memberships: { profile_id: string; club_id: string };
+    };
+    const { data: capData } = await supabase
+      .from('capabilities')
+      .select('granted, memberships!inner(profile_id, club_id)')
+      .eq('capability_name', 'can_manage_callups');
+    const hasCallupCap = (capData ?? [])
+      .map((r) => r as unknown as CapRow)
+      .some(
+        (r) =>
+          r.granted &&
+          r.memberships.profile_id === user.id &&
+          r.memberships.club_id === clubId
+      );
+
+    const managedTeamIds = hasCallupCap
+      ? teamIds
+      : myRows
+          .filter((r) => r.staff_role === 'entrenador_principal')
+          .map((r) => r.team_id);
+
+    return { kind: 'restricted', teamIds, managedTeamIds };
   }
 
   if (role === 'jugador') {
@@ -484,10 +512,13 @@ export async function loadCallupDetail(
     decisions.set(d.player_id, d);
   }
 
+  // canManage refleja la lógica del helper SQL `user_can_manage_callup`
+  // (migración 20260603): admin/coord del club, principal vía team_staff.
+  // staff_role (no memberships.role), o staff del team con can_manage_callups.
   const canManage =
-    WRITE_DECISION_ROLES.includes(role) &&
-    (scope.kind === 'all' ||
-      (scope.kind === 'restricted' && scope.teamIds.includes(event.team_id)));
+    scope.kind === 'all' ||
+    (scope.kind === 'restricted' &&
+      scope.managedTeamIds.includes(event.team_id));
 
   return {
     event: {
