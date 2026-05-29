@@ -198,7 +198,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 - **2.6** [hecho 2026-05-28] Cuerpo técnico con roles diferenciados. Nueva tabla `team_staff(team_id, membership_id, staff_role)` + helpers `user_is_staff_of_team` / `user_active_team_for_staff`. Extensión `invitations.team_staff_role` con CHECK y trigger same_club. UI `/equipos/[teamId]` con bloques Staff + Roster e InviteStaffDialog. Mapeo staff_role → membership.role aplicado en server.
 - **2.7** [hecho 2026-05-28] UI de capabilities del ayudante implementada (spec `docs/specs/2.7-capabilities-ui.md`). Página `/equipos/[teamId]/staff/[membershipId]/capabilities` con shadcn Switch + optimistic UI + UPSERT robusto. Limitación cross-team registrada en `known-issues.md` (endurecer cuando haya multi-equipo activo).
 - **2.8** [hecho 2026-05-28] Vista `/mi-plantilla` para entrenadores (read-only). Resuelve equipo activo vía `team_staff` activos del user; soporta multi-equipo con TeamSelector; filtros por posición sin estado server.
-- **2.9** Importación masiva de jugadores vía CSV/Excel (plantilla descargable, validación, duplicados, vista previa) — 4–8 h
+- **2.9** [hecho 2026-05-29] Importación masiva CSV/Excel (spec `docs/specs/2.9-import-csv.md`). Wizard 4 pasos (`/plantilla/importar`), plantilla XLSX+CSV pre-generadas en `public/import-templates/`, parsing cliente (papaparse + read-excel-file), dedup `(lower(first_name), lower(last_name), date_of_birth, club_id)`, server action loop fila-a-fila. Primer Vitest del repo en `packages/core/src/import/__tests__/` (25 tests).
 
 ---
 

@@ -182,7 +182,8 @@
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
-      "mi_plantilla": "Mi plantilla"
+      "mi_plantilla": "Mi plantilla",
+      "import_players": "Importar"
     }
   },
   "perfil": {
@@ -558,6 +559,108 @@
     "select_team": "Equipo",
     "filter": {
       "all": "Todos"
+    }
+  },
+  "import": {
+    "title": "Importar jugadores",
+    "subtitle": "Sube un CSV o Excel con tu plantilla. Hasta 500 filas por carga.",
+    "download": {
+      "xlsx": "Descargar plantilla XLSX",
+      "csv": "Descargar plantilla CSV"
+    },
+    "upload": {
+      "label": "Selecciona el archivo (.csv o .xlsx)"
+    },
+    "step": {
+      "upload": {
+        "short": "Subir",
+        "title": "Sube tu archivo",
+        "help": "Usa la plantilla descargable: las columnas tienen que llamarse igual. Filas sin fecha de nacimiento NO se importan."
+      },
+      "preview": {
+        "short": "Revisar",
+        "title": "Revisa antes de confirmar"
+      },
+      "confirming": {
+        "short": "Importar",
+        "spinner": "Importando jugadores..."
+      },
+      "result": {
+        "short": "Resumen",
+        "title": "Resumen de la importación"
+      }
+    },
+    "stats": {
+      "valid": "Listas para crear",
+      "duplicates": "Duplicadas (omitidas)",
+      "invalid": "Inválidas"
+    },
+    "preview": {
+      "truncated": "+{count} filas más se procesan igual aunque no se muestren aquí.",
+      "unmapped_headers": "Columnas no reconocidas (se ignoran): {headers}"
+    },
+    "team": {
+      "label": "Asignar al equipo (opcional)",
+      "placeholder": "Sin equipo",
+      "none": "Sin equipo"
+    },
+    "action": {
+      "back": "Volver",
+      "confirm": "Importar {count} jugadores"
+    },
+    "col": {
+      "first_name": "Nombre",
+      "last_name": "Apellido",
+      "date_of_birth": "Nacimiento",
+      "dorsal": "Dorsal",
+      "position_main": "Posición",
+      "status": "Estado"
+    },
+    "status": {
+      "valid": "OK",
+      "duplicate": "Duplicada",
+      "invalid": "Inválida"
+    },
+    "reason": {
+      "duplicate_in_db": "ya existe en el club",
+      "duplicate_in_file": "duplicada en el archivo",
+      "first_name_required": "Falta nombre",
+      "first_name_too_long": "Nombre demasiado largo",
+      "last_name_required": "Falta apellido",
+      "last_name_too_long": "Apellido demasiado largo",
+      "date_of_birth_required": "Falta fecha de nacimiento",
+      "date_of_birth_invalid": "Fecha inválida (usa YYYY-MM-DD o DD/MM/YYYY)",
+      "dorsal_invalid": "Dorsal fuera de rango (1-99)",
+      "position_invalid": "Posición no reconocida",
+      "positions_secondary_too_many": "Demasiadas posiciones secundarias",
+      "foot_invalid": "Pie no reconocido",
+      "height_cm_invalid": "Altura fuera de rango (50-250)",
+      "weight_kg_invalid": "Peso fuera de rango (10-200)",
+      "origin_too_long": "Origen demasiado largo",
+      "rls": "permiso denegado",
+      "duplicate_constraint": "violación de unicidad",
+      "team_assign_failed": "creado pero no asignado al equipo",
+      "generic": "fallo del servidor"
+    },
+    "error": {
+      "too_large": "Archivo demasiado grande (máx. 5 MB).",
+      "unsupported_type": "Formato no soportado. Sube .csv o .xlsx.",
+      "parse_failed": "No hemos podido leer el archivo. Comprueba el formato.",
+      "empty_file": "El archivo está vacío.",
+      "no_recognized_headers": "No reconocemos ninguna columna. Asegúrate de usar la plantilla."
+    },
+    "result": {
+      "created": "Creados",
+      "skipped": "Duplicados",
+      "failed": "Fallidos",
+      "download": "Descargar informe CSV",
+      "again": "Importar otro archivo",
+      "error": {
+        "forbidden": "No tienes permisos para importar.",
+        "invalid_payload": "Datos del cliente inválidos.",
+        "no_active_club": "Sin club activo.",
+        "generic": "Error inesperado. Inténtalo de nuevo."
+      }
     }
   }
 }

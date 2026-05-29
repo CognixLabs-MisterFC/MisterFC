@@ -6,6 +6,7 @@ import {
   UserRound,
   Users,
   ClipboardList,
+  Upload,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -58,6 +59,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: ClipboardList,
     // Los entrenadores ven solo el roster de sus equipos.
     roles: ['entrenador_principal', 'entrenador_ayudante'],
+  },
+  {
+    key: 'import_players',
+    href: '/plantilla/importar',
+    icon: Upload,
+    // Entrenadores con `can_manage_squad` también podrían usarlo. Esta nav lo
+    // dejamos restringido a roles que SIEMPRE pueden; la page hace el check
+    // de capability para el ayudante.
+    roles: ['admin_club', 'coordinador', 'entrenador_principal'],
   },
   {
     key: 'invitations',
