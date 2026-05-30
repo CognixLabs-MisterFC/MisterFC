@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MessageThread } from './message-thread';
-import { markConversationRead } from '../actions';
 
 type Props = {
   params: Promise<{ locale: string; conversationId: string }>;
@@ -63,9 +62,19 @@ export default async function ConversationPage({ params }: Props) {
   };
   const messages = (messageRows ?? []) as Msg[];
 
-  // Marca como leídos los mensajes recibidos al cargar la página. No
-  // bloqueamos el render — fire-and-forget mediante el server action.
-  await markConversationRead(locale, conversationId);
+  // Marca como leídos los mensajes recibidos por este user al cargar la
+  // página. Lo hacemos INLINE (sin pasar por server action) porque la
+  // acción llama a revalidatePath y Next.js 16 prohíbe revalidatePath
+  // durante el render de un Server Component — devuelve "server error".
+  // La revalidación no es necesaria aquí: el render actual ya muestra los
+  // mensajes con su read_at vigente, y la próxima navegación a /mensajes
+  // hará SELECT fresco. Idempotente: si ya estaban leídos no afecta filas.
+  await supabase
+    .from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('conversation_id', conversationId)
+    .is('read_at', null)
+    .neq('sender_profile_id', ctx.user.id);
 
   const playerName = formatPlayerName(conv.players.first_name, conv.players.last_name);
 
