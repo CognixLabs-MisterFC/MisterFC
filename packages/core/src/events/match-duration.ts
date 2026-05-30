@@ -18,9 +18,18 @@ const MS_PER_MIN = 60_000;
 export const DEFAULT_CITACION_LEAD_MINUTES = 60;
 
 /**
+ * F4.9 L1 — descanso entre tiempos, constante 15 min. NO depende de la
+ * categoría (alevín 30+15+30 = 75; juvenil 45+15+45 = 105). El valor
+ * está en `categories.half_duration_minutes` SIN incluir descanso; el
+ * descanso vive aquí en código.
+ */
+export const HALFTIME_BREAK_MINUTES = 15;
+
+/**
  * Devuelve el ISO de fin estimado de un partido dado el kickoff y la
- * duración por tiempo de la categoría. Total = 2 × half (sin contar
- * descanso, despreciable a efectos de planificación).
+ * duración por tiempo de la categoría.
+ *
+ *   total = 2 × half_duration_minutes + HALFTIME_BREAK_MINUTES
  *
  * - Si halfDurationMinutes ≤ 0 → null (no sabemos, deja que UI lo deje vacío).
  * - Si startsAtIso es inválido → null.
@@ -34,7 +43,8 @@ export function computeEndsAt(
   }
   const t = Date.parse(startsAtIso);
   if (!Number.isFinite(t)) return null;
-  const totalMs = 2 * halfDurationMinutes * MS_PER_MIN;
+  const totalMs =
+    (2 * halfDurationMinutes + HALFTIME_BREAK_MINUTES) * MS_PER_MIN;
   return new Date(t + totalMs).toISOString();
 }
 

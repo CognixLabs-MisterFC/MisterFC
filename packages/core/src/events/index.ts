@@ -37,4 +37,5 @@ export {
   computeEndsAt,
   computeCitacionAt,
   DEFAULT_CITACION_LEAD_MINUTES,
+  HALFTIME_BREAK_MINUTES,
 } from './match-duration';

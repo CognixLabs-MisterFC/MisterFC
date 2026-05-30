@@ -18,6 +18,7 @@ import {
   countOccurrences,
   TIMEZONE_OLA1,
   computeEndsAt,
+  HALFTIME_BREAK_MINUTES,
 } from '@misterfc/core';
 import {
   Dialog,
@@ -488,7 +489,7 @@ export function EventDialog({
               {type === 'match' && targetHalfDuration != null && !endsAtTouched && (
                 <p className="text-xs text-muted-foreground">
                   {t('dialog.field.ends_at_auto', {
-                    minutes: 2 * targetHalfDuration,
+                    minutes: 2 * targetHalfDuration + HALFTIME_BREAK_MINUTES,
                   })}
                 </p>
               )}

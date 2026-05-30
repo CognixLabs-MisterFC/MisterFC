@@ -841,7 +841,7 @@
         "target": "Para quién",
         "starts_at": "Empieza",
         "ends_at": "Termina",
-        "ends_at_auto": "Auto: {minutes} min (2 tiempos de la categoría). Editable.",
+        "ends_at_auto": "Auto: {minutes} min (2 tiempos + 15 min descanso). Editable.",
         "all_day": "Todo el día",
         "location_name": "Lugar",
         "location_address": "Dirección",

@@ -842,7 +842,7 @@
         "target": "Per a qui",
         "starts_at": "Comença",
         "ends_at": "Acaba",
-        "ends_at_auto": "Auto: {minutes} min (2 temps de la categoria). Editable.",
+        "ends_at_auto": "Auto: {minutes} min (2 temps + 15 min descans). Editable.",
         "all_day": "Tot el dia",
         "location_name": "Lloc",
         "location_address": "Adreça",

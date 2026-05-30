@@ -59,9 +59,17 @@ export default async function AnunciosGlobalesPage({
   const teams = (teamRows ?? []) as unknown as TeamRow[];
 
   // Filtros de URL (defaults: scope=all, since=30d).
-  const scope = SCOPE_VALUES.includes(sp.scope ?? '') ? sp.scope! : 'all';
+  // BUG K — scope/team solo aplicables a admin/coord. Para entrenador y
+  // jugador, RLS ya filtra a (club-wide + sus team_ids), así que el
+  // selector de scope/team no aporta y lo ignoramos para evitar que un
+  // URL manipulado se vea raro.
+  const scope = canPublish && SCOPE_VALUES.includes(sp.scope ?? '')
+    ? sp.scope!
+    : 'all';
   const since = SINCE_VALUES.includes(sp.since ?? '') ? sp.since! : '30d';
-  const filterTeamId = scope === 'team' && sp.team_id ? sp.team_id : null;
+  const filterTeamId = canPublish && scope === 'team' && sp.team_id
+    ? sp.team_id
+    : null;
 
   let q = supabase
     .from('announcements')
@@ -70,8 +78,10 @@ export default async function AnunciosGlobalesPage({
     )
     .eq('club_id', clubId);
 
-  if (scope === 'club') q = q.is('team_id', null);
-  if (scope === 'team' && filterTeamId) q = q.eq('team_id', filterTeamId);
+  if (canPublish && scope === 'club') q = q.is('team_id', null);
+  if (canPublish && scope === 'team' && filterTeamId) {
+    q = q.eq('team_id', filterTeamId);
+  }
 
   if (since !== 'all') {
     const days = since === '7d' ? 7 : 30;
@@ -149,25 +159,27 @@ export default async function AnunciosGlobalesPage({
           <CardTitle>{t('list.title')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {/* Filtros */}
+          {/* Filtros — scope/team solo admin/coord (BUG K). since para todos. */}
           <div className="flex flex-col gap-3 rounded-md border border-zinc-800 bg-zinc-900/40 p-3">
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="text-muted-foreground">{t('filters.scope')}:</span>
-              {(['all', 'club', 'team'] as const).map((s) => (
-                <Link
-                  key={s}
-                  href={urlFor({ scope: s })}
-                  className={`rounded px-2 py-0.5 ${
-                    scope === s
-                      ? 'bg-misterfc-green text-zinc-900'
-                      : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
-                  }`}
-                >
-                  {t(`filters.scope_${s}`)}
-                </Link>
-              ))}
-            </div>
-            {scope === 'team' && (
+            {canPublish && (
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-muted-foreground">{t('filters.scope')}:</span>
+                {(['all', 'club', 'team'] as const).map((s) => (
+                  <Link
+                    key={s}
+                    href={urlFor({ scope: s })}
+                    className={`rounded px-2 py-0.5 ${
+                      scope === s
+                        ? 'bg-misterfc-green text-zinc-900'
+                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                    }`}
+                  >
+                    {t(`filters.scope_${s}`)}
+                  </Link>
+                ))}
+              </div>
+            )}
+            {canPublish && scope === 'team' && (
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="text-muted-foreground">{t('filters.team')}:</span>
                 {teams.map((tm) => (

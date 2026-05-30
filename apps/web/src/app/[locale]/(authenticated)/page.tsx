@@ -116,6 +116,10 @@ export default async function Home({ params }: Props) {
   //      match_callup_meta embebido.
   //   3. Filtramos en JS los que NO tienen meta o tienen meta sin
   //      published_at — esos son los que el coach debe convocar.
+  // Bug J2 — horizon de 7d era demasiado corto: el siguiente partido suele
+  // estar a 10-21 días. Usamos 60 días (igual que /mis-equipos).
+  // eslint-disable-next-line react-hooks/purity
+  const callupHorizonIso = new Date(Date.now() + 60 * 86_400_000).toISOString();
   let pendingCallupsCount = 0;
   if (isCoach) {
     const { data: staffRows } = await supabase
@@ -131,7 +135,7 @@ export default async function Home({ params }: Props) {
         .select('id, match_callup_meta(published_at)')
         .eq('type', 'match')
         .gte('starts_at', nowIso)
-        .lte('starts_at', upcomingHorizon)
+        .lte('starts_at', callupHorizonIso)
         .in('team_id', coachTeamIds);
       type MatchRow = {
         id: string;

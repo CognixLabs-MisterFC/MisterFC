@@ -842,7 +842,7 @@
         "target": "For whom",
         "starts_at": "Starts",
         "ends_at": "Ends",
-        "ends_at_auto": "Auto: {minutes} min (2 halves of the category). Editable.",
+        "ends_at_auto": "Auto: {minutes} min (2 halves + 15 min halftime). Editable.",
         "all_day": "All day",
         "location_name": "Place",
         "location_address": "Address",
