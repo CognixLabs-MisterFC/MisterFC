@@ -109,6 +109,23 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 6.8 | ☐ pendiente | Cambios programados (minuto + jugador out/in + razón) | [docs/specs/6.8-cambios-programados.md](../specs/6.8-cambios-programados.md) |
 | 6.9 | ☐ pendiente | Notas tácticas del partido (bloque libre + por jugador / fase) | [docs/specs/6.9-notas-tacticas.md](../specs/6.9-notas-tacticas.md) |
 
+## Fase 11 — Subfases pendientes
+
+> **+1 subfase 2026-05-30**: deuda diferida (capabilities UI plana) absorbida en F11.9. Ver [plan-maestro.md](plan-maestro.md) §Fase 11.
+
+| Subfase | Estado | Resumen |
+|---|---|---|
+| 11.9 | ☐ pendiente | Agrupar capabilities por dominio en panel del ayudante (squad / match / calendar / attendance / comms) |
+
+## Fase 14 — Subfases pendientes
+
+> **+2 subfases 2026-05-30**: deuda diferida de RLS absorbida (F2.7 capabilities cross-team, F3 events visibilidad). Ver [plan-maestro.md](plan-maestro.md) §Fase 14.
+
+| Subfase | Estado | Resumen |
+|---|---|---|
+| 14.9 | ☐ pendiente | Endurecer RLS de `capabilities` a `team_staff` específico (un principal solo edita ayudantes de SUS equipos) |
+| 14.10 | ☐ pendiente | Endurecer RLS de `events` para aislamiento team-a-team (jugador del equipo A no ve eventos del equipo B vía API) |
+
 ## Fase 16 — Subfases pendientes (anticipadas)
 
 | Subfase | Estado | Resumen | Spec |

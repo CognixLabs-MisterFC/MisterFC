@@ -6,23 +6,6 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@misterfc/core'],
-  async redirects() {
-    return [
-      // F4 Lote B — rename /mi-plantilla → /mis-equipos.
-      // 308 (permanent + preserve method). Vive 30 días tras merge; ver
-      // known-issues `F4b-redirect-mi-plantilla-cleanup` para retirarlo.
-      {
-        source: '/:locale(es|en|va)/mi-plantilla',
-        destination: '/:locale/mis-equipos',
-        permanent: true,
-      },
-      {
-        source: '/:locale(es|en|va)/mi-plantilla/:path*',
-        destination: '/:locale/mis-equipos/:path*',
-        permanent: true,
-      },
-    ];
-  },
 };
 
 const configWithIntl = withNextIntl(nextConfig);

@@ -1,8 +1,8 @@
 /**
  * /mis-equipos — Hub multi-equipo del entrenador.
  *
- * Sustituye a /mi-plantilla. Lista TODOS los equipos donde el user es
- * staff (principal o ayudante). Click en card → /mis-equipos/[teamId].
+ * Lista TODOS los equipos donde el user es staff (principal o ayudante).
+ * Click en card → /mis-equipos/[teamId].
  *
  * Permisos: solo entrenador_principal y entrenador_ayudante. Admin /
  * coordinador → redirect a /jugadores (su vista global). Jugador /
