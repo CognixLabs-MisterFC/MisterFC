@@ -107,7 +107,33 @@
     "welcome": "Bienvenido a {club}",
     "your_role": "Tu rol aquí es {role}.",
     "next_steps_title": "Siguientes pasos",
-    "next_steps_body": "Empieza creando categorías y equipos en el menú lateral. Después podrás dar de alta jugadores y configurar al cuerpo técnico."
+    "next_steps_body": "Empieza creando categorías y equipos en el menú lateral. Después podrás dar de alta jugadores y configurar al cuerpo técnico.",
+    "cards": {
+      "messages": {
+        "title": "Mensajes sin leer",
+        "empty": "No tienes mensajes pendientes.",
+        "cta": "{count, plural, =1 {1 conversación con mensajes nuevos →} other {# conversaciones con mensajes nuevos →}}"
+      },
+      "announcements": {
+        "title": "Anuncios recientes",
+        "empty": "No hay anuncios recientes.",
+        "club_wide": "Todo el club"
+      },
+      "upcoming": {
+        "title": "Próximos eventos (7 días)",
+        "empty": "No hay eventos en los próximos 7 días.",
+        "kind": {
+          "training": "Entrenamiento",
+          "match": "Partido",
+          "tournament": "Torneo",
+          "other": "Otro"
+        }
+      },
+      "coach_callups": {
+        "title": "Convocatorias por publicar",
+        "cta": "{count, plural, =1 {1 partido sin convocatoria →} other {# partidos sin convocatoria →}}"
+      }
+    }
   },
   "shell": {
     "app_name": "MisterFC",
@@ -130,7 +156,8 @@
       "cuerpo_tecnico": "Cuerpo técnico",
       "asistencia": "Asistencia",
       "convocatorias": "Convocatorias",
-      "mensajes": "Mensajes"
+      "mensajes": "Mensajes",
+      "anuncios": "Anuncios del club"
     }
   },
   "roles": {
@@ -1214,6 +1241,41 @@
       "team_not_in_club": "El equipo no pertenece a este club.",
       "not_found": "Anuncio no encontrado.",
       "generic": "No se pudo guardar. Inténtalo de nuevo."
+    }
+  },
+  "anuncios_global": {
+    "title": "Anuncios del club",
+    "subtitle": "Publica anuncios a un equipo, varios equipos o a todo el club.",
+    "form": {
+      "title": "Publicar anuncio",
+      "submit": "Publicar",
+      "ok": "{count, plural, =0 {Sin destinos.} =1 {Anuncio publicado.} other {# anuncios publicados (uno por equipo).}}",
+      "field": {
+        "title": "Título",
+        "body": "Mensaje",
+        "pinned": "Fijar arriba",
+        "expires_at": "Caduca",
+        "audience": "Destinatarios"
+      },
+      "audience": {
+        "club_wide": "Todo el club",
+        "teams_hint": "Selecciona uno o varios equipos. Se publicará un anuncio por equipo.",
+        "no_teams": "No hay equipos en este club todavía."
+      }
+    },
+    "list": {
+      "title": "Anuncios recientes",
+      "empty": "No hay anuncios publicados.",
+      "expired": "(caducado)"
+    },
+    "badge": {
+      "club_wide": "Todo el club"
+    },
+    "errors": {
+      "forbidden": "No tienes permisos.",
+      "invalid_payload": "Datos del anuncio inválidos.",
+      "audience_required": "Selecciona al menos un equipo o marca \"Todo el club\".",
+      "generic": "No se pudo publicar. Inténtalo de nuevo."
     }
   }
 }

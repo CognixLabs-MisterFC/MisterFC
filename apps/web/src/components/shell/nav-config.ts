@@ -130,6 +130,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     roles: ['admin_club', 'coordinador', 'entrenador_principal'],
   },
   {
+    key: 'anuncios',
+    href: '/anuncios',
+    icon: Megaphone,
+    // Anuncios globales del club. Admin/coord pueden publicar club-wide
+    // o seleccionar varios teams; coaches usan /equipos/[teamId]/anuncios
+    // para su team específico.
+    roles: ['admin_club', 'coordinador'],
+  },
+  {
     key: 'mensajes',
     href: '/mensajes',
     icon: MessageSquare,

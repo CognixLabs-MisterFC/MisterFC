@@ -6,6 +6,7 @@ import { Loader2, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { createAnnouncement } from './actions';
 
 type Props = {
@@ -64,7 +65,7 @@ export function AnnouncementForm({ locale, teamId }: Props) {
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="an-body">{t('field.body')}</Label>
-        <textarea
+        <Textarea
           id="an-body"
           name="body"
           value={body}
@@ -72,7 +73,6 @@ export function AnnouncementForm({ locale, teamId }: Props) {
           maxLength={2000}
           rows={4}
           required
-          className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm focus:border-misterfc-green focus:outline-none"
         />
       </div>
 

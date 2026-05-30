@@ -9,6 +9,7 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
+import { userCanPublishAnnouncementsToTeam } from '@/lib/messaging-permissions';
 
 export type AnnouncementResult = {
   ok?: { announcement_id: string };
@@ -20,17 +21,10 @@ export type AnnouncementResult = {
     | 'generic';
 };
 
-const ROLES_AUTHOR_CAN_PUBLISH: ReadonlyArray<string> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante', // requiere can_message_families
-];
-
 /**
  * Crea un anuncio en un team del club activo. Permisos: admin/coord/principal
- * por rol; ayudante con `can_message_families` granted. RLS es la autoridad
- * final.
+ * por rol; ayudante con cap on, O ayudante con team_staff.staff_role =
+ * 'entrenador_principal' DE ESTE team específico. RLS es la autoridad final.
  */
 export async function createAnnouncement(
   locale: string,
@@ -47,23 +41,17 @@ export async function createAnnouncement(
 
   const ctx = await loadShellContext();
   if (!ctx) return { error: 'forbidden' };
-  if (!ROLES_AUTHOR_CAN_PUBLISH.includes(ctx.activeClub.role)) {
-    return { error: 'forbidden' };
-  }
 
   const clubId = ctx.activeClub.club.id;
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  if (ctx.activeClub.role === 'entrenador_ayudante') {
-    const { data: cap } = await supabase
-      .from('capabilities')
-      .select('granted')
-      .eq('membership_id', ctx.activeClub.membershipId)
-      .eq('capability_name', 'can_message_families')
-      .maybeSingle();
-    if (!cap?.granted) return { error: 'forbidden' };
-  }
+  const canPublish = await userCanPublishAnnouncementsToTeam(
+    supabase,
+    ctx,
+    parsed.data.team_id,
+  );
+  if (!canPublish) return { error: 'forbidden' };
 
   // Verificar que el team pertenece al club activo.
   const { data: teamRow } = await supabase
@@ -78,6 +66,7 @@ export async function createAnnouncement(
     .from('announcements')
     .insert({
       team_id: parsed.data.team_id,
+      club_id: clubId,
       author_profile_id: ctx.user.id,
       title: parsed.data.title,
       body: parsed.data.body,

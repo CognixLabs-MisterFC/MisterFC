@@ -10,6 +10,7 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
+import { userCanMessageInClub } from '@/lib/messaging-permissions';
 
 export type StartConversationResult = {
   ok?: { conversation_id: string };
@@ -21,21 +22,14 @@ export type StartConversationResult = {
     | 'generic';
 };
 
-const ROLES_THAT_CAN_MESSAGE: ReadonlyArray<string> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante', // requiere can_message_families — verificado abajo
-];
-
 /**
  * Abre (o reusa) una conversación 1:1 entre el coach (auth.uid()) y un
  * jugador del club activo. Idempotente por UNIQUE (coach_profile_id,
  * player_id) — si ya existe, devuelve la misma.
  *
- * Permisos: admin/coord/principal pueden por rol; ayudante necesita la
- * capability `can_message_families` granted en su membership del club.
- * La RLS también lo bloquea por defensa en profundidad.
+ * Permisos: admin/coord/principal por rol; ayudante con cap on, O
+ * ayudante con team_staff.staff_role='entrenador_principal' (caso F2.6 —
+ * ver `userCanMessageInClub`). RLS es la autoridad final.
  */
 export async function startConversation(
   locale: string,
@@ -46,24 +40,13 @@ export async function startConversation(
 
   const ctx = await loadShellContext();
   if (!ctx) return { error: 'forbidden' };
-  if (!ROLES_THAT_CAN_MESSAGE.includes(ctx.activeClub.role)) {
-    return { error: 'forbidden' };
-  }
 
   const clubId = ctx.activeClub.club.id;
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // Ayudante: verificar capability.
-  if (ctx.activeClub.role === 'entrenador_ayudante') {
-    const { data: cap } = await supabase
-      .from('capabilities')
-      .select('granted')
-      .eq('membership_id', ctx.activeClub.membershipId)
-      .eq('capability_name', 'can_message_families')
-      .maybeSingle();
-    if (!cap?.granted) return { error: 'forbidden' };
-  }
+  const canMessage = await userCanMessageInClub(supabase, ctx);
+  if (!canMessage) return { error: 'forbidden' };
 
   // Verificar que el player pertenece al club activo (defensa en profundidad;
   // el trigger conversations_same_club_trg también lo verifica).

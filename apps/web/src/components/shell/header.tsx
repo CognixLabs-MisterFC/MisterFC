@@ -15,6 +15,7 @@ type Props = {
   clubs: CurrentUserClub[];
   activeClub: CurrentUserClub;
   locale: string;
+  badges?: Partial<Record<string, number>>;
 };
 
 export async function Header({
@@ -24,6 +25,7 @@ export async function Header({
   clubs,
   activeClub,
   locale,
+  badges,
 }: Props) {
   const t = await getTranslations('shell');
   const fallback = initialsOf(fullName, user.email ?? '?');
@@ -35,7 +37,7 @@ export async function Header({
           triggerLabel={t('open_menu')}
           title={t('sidebar_label')}
         >
-          <Sidebar role={activeClub.role} variant="mobile" />
+          <Sidebar role={activeClub.role} variant="mobile" badges={badges} />
         </MobileDrawer>
 
         <ActiveClubSwitcher

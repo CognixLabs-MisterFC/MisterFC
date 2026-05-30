@@ -4,6 +4,7 @@ import { useState, useTransition, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { sendMessage } from '../actions';
 
 type Message = {
@@ -129,13 +130,13 @@ export function MessageThread({
       )}
 
       <form onSubmit={onSubmit} className="flex items-end gap-2">
-        <textarea
+        <Textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={t('thread.placeholder')}
           maxLength={2000}
           rows={2}
-          className="flex-1 resize-none rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm focus:border-misterfc-green focus:outline-none"
+          className="flex-1 resize-none"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
               onSubmit(e as unknown as React.FormEvent);

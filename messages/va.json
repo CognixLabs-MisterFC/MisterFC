@@ -108,7 +108,33 @@
     "your_clubs": "Els teus clubs",
     "no_clubs": "Encara no pertanys a cap club.",
     "signout": "Tancar sessió",
-    "invitations_link": "Convidar persones"
+    "invitations_link": "Convidar persones",
+    "cards": {
+      "messages": {
+        "title": "Missatges sense llegir",
+        "empty": "No tens missatges pendents.",
+        "cta": "{count, plural, =1 {1 conversa amb missatges nous →} other {# converses amb missatges nous →}}"
+      },
+      "announcements": {
+        "title": "Anuncis recents",
+        "empty": "No hi ha anuncis recents.",
+        "club_wide": "Tot el club"
+      },
+      "upcoming": {
+        "title": "Pròxims esdeveniments (7 dies)",
+        "empty": "No hi ha esdeveniments els pròxims 7 dies.",
+        "kind": {
+          "training": "Entrenament",
+          "match": "Partit",
+          "tournament": "Torneig",
+          "other": "Altre"
+        }
+      },
+      "coach_callups": {
+        "title": "Convocatòries per publicar",
+        "cta": "{count, plural, =1 {1 partit sense convocatòria →} other {# partits sense convocatòria →}}"
+      }
+    }
   },
   "invitations": {
     "title": "Invitacions",
@@ -203,7 +229,8 @@
       "cuerpo_tecnico": "Cos tècnic",
       "asistencia": "Assistència",
       "convocatorias": "Convocatòries",
-      "mensajes": "Missatges"
+      "mensajes": "Missatges",
+      "anuncios": "Anuncis del club"
     }
   },
   "perfil": {
@@ -1215,6 +1242,41 @@
       "team_not_in_club": "L'equip no pertany a aquest club.",
       "not_found": "Anunci no trobat.",
       "generic": "No s'ha pogut guardar. Torna-ho a provar."
+    }
+  },
+  "anuncios_global": {
+    "title": "Anuncis del club",
+    "subtitle": "Publica anuncis a un equip, diversos equips o a tot el club.",
+    "form": {
+      "title": "Publicar anunci",
+      "submit": "Publicar",
+      "ok": "{count, plural, =0 {Sense destinataris.} =1 {Anunci publicat.} other {# anuncis publicats (un per equip).}}",
+      "field": {
+        "title": "Títol",
+        "body": "Missatge",
+        "pinned": "Fixar a dalt",
+        "expires_at": "Caduca",
+        "audience": "Destinataris"
+      },
+      "audience": {
+        "club_wide": "Tot el club",
+        "teams_hint": "Selecciona un o diversos equips. Es publicarà un anunci per equip.",
+        "no_teams": "Encara no hi ha equips en aquest club."
+      }
+    },
+    "list": {
+      "title": "Anuncis recents",
+      "empty": "No hi ha anuncis publicats.",
+      "expired": "(caducat)"
+    },
+    "badge": {
+      "club_wide": "Tot el club"
+    },
+    "errors": {
+      "forbidden": "No tens permisos.",
+      "invalid_payload": "Dades de l'anunci invàlides.",
+      "audience_required": "Selecciona almenys un equip o marca 'Tot el club'.",
+      "generic": "No s'ha pogut publicar. Torna-ho a provar."
     }
   }
 }

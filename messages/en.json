@@ -108,7 +108,33 @@
     "your_clubs": "Your clubs",
     "no_clubs": "You don't belong to any club yet.",
     "signout": "Sign out",
-    "invitations_link": "Invite people"
+    "invitations_link": "Invite people",
+    "cards": {
+      "messages": {
+        "title": "Unread messages",
+        "empty": "No pending messages.",
+        "cta": "{count, plural, =1 {1 conversation with new messages →} other {# conversations with new messages →}}"
+      },
+      "announcements": {
+        "title": "Recent announcements",
+        "empty": "No recent announcements.",
+        "club_wide": "Whole club"
+      },
+      "upcoming": {
+        "title": "Upcoming events (7 days)",
+        "empty": "No events in the next 7 days.",
+        "kind": {
+          "training": "Training",
+          "match": "Match",
+          "tournament": "Tournament",
+          "other": "Other"
+        }
+      },
+      "coach_callups": {
+        "title": "Call-ups to publish",
+        "cta": "{count, plural, =1 {1 match without call-up →} other {# matches without call-up →}}"
+      }
+    }
   },
   "invitations": {
     "title": "Invitations",
@@ -203,7 +229,8 @@
       "cuerpo_tecnico": "Coaching staff",
       "asistencia": "Attendance",
       "convocatorias": "Callups",
-      "mensajes": "Messages"
+      "mensajes": "Messages",
+      "anuncios": "Club announcements"
     }
   },
   "perfil": {
@@ -1215,6 +1242,41 @@
       "team_not_in_club": "Team doesn't belong to this club.",
       "not_found": "Announcement not found.",
       "generic": "Couldn't save. Please try again."
+    }
+  },
+  "anuncios_global": {
+    "title": "Club announcements",
+    "subtitle": "Publish to one team, several teams, or the whole club.",
+    "form": {
+      "title": "Publish announcement",
+      "submit": "Publish",
+      "ok": "{count, plural, =0 {No destinations.} =1 {Announcement published.} other {# announcements published (one per team).}}",
+      "field": {
+        "title": "Title",
+        "body": "Message",
+        "pinned": "Pin to top",
+        "expires_at": "Expires",
+        "audience": "Audience"
+      },
+      "audience": {
+        "club_wide": "Whole club",
+        "teams_hint": "Pick one or more teams. One announcement per team will be published.",
+        "no_teams": "No teams in this club yet."
+      }
+    },
+    "list": {
+      "title": "Recent announcements",
+      "empty": "No announcements published.",
+      "expired": "(expired)"
+    },
+    "badge": {
+      "club_wide": "Whole club"
+    },
+    "errors": {
+      "forbidden": "You don't have permission.",
+      "invalid_payload": "Invalid announcement data.",
+      "audience_required": "Pick at least one team or check \"Whole club\".",
+      "generic": "Couldn't publish. Please try again."
     }
   }
 }

@@ -18,33 +18,36 @@ export type Database = {
         Row: {
           author_profile_id: string
           body: string
+          club_id: string
           created_at: string
           expires_at: string | null
           id: string
           pinned: boolean
-          team_id: string
+          team_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
           author_profile_id: string
           body: string
+          club_id: string
           created_at?: string
           expires_at?: string | null
           id?: string
           pinned?: boolean
-          team_id: string
+          team_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
           author_profile_id?: string
           body?: string
+          club_id?: string
           created_at?: string
           expires_at?: string | null
           id?: string
           pinned?: boolean
-          team_id?: string
+          team_id?: string | null
           title?: string
           updated_at?: string
         }
@@ -54,6 +57,13 @@ export type Database = {
             columns: ["author_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcements_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
             referencedColumns: ["id"]
           },
           {

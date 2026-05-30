@@ -14,17 +14,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { AnnouncementForm } from './announcement-form';
 import { AnnouncementActions } from './announcement-actions';
+import { userCanPublishAnnouncementsToTeam } from '@/lib/messaging-permissions';
 
 type Props = {
   params: Promise<{ locale: string; teamId: string }>;
 };
-
-const ROLES_THAT_CAN_PUBLISH: ReadonlyArray<string> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 export default async function AnunciosPage({ params }: Props) {
   const { locale, teamId } = await params;
@@ -52,17 +46,10 @@ export default async function AnunciosPage({ params }: Props) {
   };
   if (team.categories.club_id !== ctx.activeClub.club.id) notFound();
 
-  // Verificar capability del ayudante (los demás roles tienen permiso por rol).
-  let canPublish = ROLES_THAT_CAN_PUBLISH.includes(ctx.activeClub.role);
-  if (canPublish && ctx.activeClub.role === 'entrenador_ayudante') {
-    const { data: cap } = await supabase
-      .from('capabilities')
-      .select('granted')
-      .eq('membership_id', ctx.activeClub.membershipId)
-      .eq('capability_name', 'can_message_families')
-      .maybeSingle();
-    canPublish = Boolean(cap?.granted);
-  }
+  // canPublish considera memberships.role + capability + team_staff.staff_role
+  // del team específico. Caso real F2.6: ayudante club que es principal via
+  // team_staff de ESTE team debe poder publicar aunque su cap esté off.
+  const canPublish = await userCanPublishAnnouncementsToTeam(supabase, ctx, teamId);
 
   const { data: announcementRows } = await supabase
     .from('announcements')

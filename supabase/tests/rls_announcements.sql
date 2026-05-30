@@ -37,24 +37,25 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('55555555-5555-4555-8555-5555555500b4', '44444444-4444-4444-8444-4444444400b4', '11111111-1111-4111-8111-1111111100b1', 'jugador'),
   ('55555555-5555-4555-8555-5555555500b5', '44444444-4444-4444-8444-4444444400b5', '11111111-1111-4111-8111-1111111100b2', 'admin_club');
 
--- Capability ayudante: por defecto granted=true al sembrar (trigger).
--- Para A4 vamos a desactivarla; para A3 dejarla on.
--- Comprobación: el trigger ensure_assistant_capabilities siembra TODAS las
--- caps en granted=true al crear membership ayudante. Confirmamos y luego
--- modificamos.
-do $$
-declare v_granted boolean;
-begin
-  select granted into v_granted from public.capabilities
-   where membership_id = '55555555-5555-4555-8555-5555555500b3'
-     and capability_name = 'can_message_families';
-  if v_granted is null or not v_granted then
-    raise notice 'cap default no-grant; seed manual';
-    insert into public.capabilities (membership_id, capability_name, granted) values
-      ('55555555-5555-4555-8555-5555555500b3', 'can_message_families', true)
-    on conflict (membership_id, capability_name) do update set granted = true;
-  end if;
-end $$;
+-- F5 Lote A hotfix — la RLS SELECT amplió a "team_members + player_account
+-- activos" para anuncios team-bound. Añadimos player + vínculos para
+-- jug-ann@msg.test (la cuenta jugador, profile id ...b4).
+insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
+  ('66666666-6666-4666-8666-66666666b001', '11111111-1111-4111-8111-1111111100b1', 'Test', 'JugAnn', '2012-01-01');
+
+insert into public.player_accounts (player_id, profile_id, relation) values
+  ('66666666-6666-4666-8666-66666666b001', '44444444-4444-4444-8444-4444444400b4', 'self');
+
+insert into public.team_members (player_id, team_id) values
+  ('66666666-6666-4666-8666-66666666b001', '33333333-3333-4333-8333-3333333300b1');
+
+-- Capability ayudante: el trigger ensure_assistant_capabilities siembra
+-- todas las caps con granted=FALSE por defecto (confirmado empíricamente).
+-- Para A3 activamos can_message_families con UPDATE directo. A4 la
+-- desactivará para volver al estado inicial.
+update public.capabilities set granted = true
+ where membership_id = '55555555-5555-4555-8555-5555555500b3'
+   and capability_name = 'can_message_families';
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- A1: jugador del club ve anuncio del team
@@ -64,9 +65,10 @@ do $$
 begin
   set local role authenticated;
   set local "request.jwt.claims" = '{"sub":"44444444-4444-4444-8444-4444444400b2","role":"authenticated"}';
-  insert into public.announcements (id, team_id, author_profile_id, title, body) values
+  insert into public.announcements (id, team_id, club_id, author_profile_id, title, body) values
     ('99999999-9999-4999-8999-9999999900b1',
      '33333333-3333-4333-8333-3333333300b1',
+     '11111111-1111-4111-8111-1111111100b1',
      '44444444-4444-4444-8444-4444444400b2',
      'Calentamiento mañana', 'A las 17:30 en pista B');
   reset role;
@@ -109,8 +111,9 @@ declare v_ann_id uuid;
 begin
   set local role authenticated;
   set local "request.jwt.claims" = '{"sub":"44444444-4444-4444-8444-4444444400b3","role":"authenticated"}';
-  insert into public.announcements (team_id, author_profile_id, title, body) values
+  insert into public.announcements (team_id, club_id, author_profile_id, title, body) values
     ('33333333-3333-4333-8333-3333333300b1',
+     '11111111-1111-4111-8111-1111111100b1',
      '44444444-4444-4444-8444-4444444400b3',
      'Mensaje del ayudante', 'Recordatorio de equipación')
   returning id into v_ann_id;
@@ -133,8 +136,9 @@ begin
   set local role authenticated;
   set local "request.jwt.claims" = '{"sub":"44444444-4444-4444-8444-4444444400b3","role":"authenticated"}';
   begin
-    insert into public.announcements (team_id, author_profile_id, title, body) values
+    insert into public.announcements (team_id, club_id, author_profile_id, title, body) values
       ('33333333-3333-4333-8333-3333333300b1',
+       '11111111-1111-4111-8111-1111111100b1',
        '44444444-4444-4444-8444-4444444400b3',
        't-off', 'b-off');
   exception when insufficient_privilege then
@@ -169,9 +173,10 @@ do $$
 begin
   set local role authenticated;
   set local "request.jwt.claims" = '{"sub":"44444444-4444-4444-8444-4444444400b2","role":"authenticated"}';
-  insert into public.announcements (id, team_id, author_profile_id, title, body) values
+  insert into public.announcements (id, team_id, club_id, author_profile_id, title, body) values
     ('99999999-9999-4999-8999-9999999900b9',
      '33333333-3333-4333-8333-3333333300b1',
+     '11111111-1111-4111-8111-1111111100b1',
      '44444444-4444-4444-8444-4444444400b2',
      'Otro', 'Otro body');
   reset role;
@@ -198,9 +203,10 @@ do $$
 begin
   set local role authenticated;
   set local "request.jwt.claims" = '{"sub":"44444444-4444-4444-8444-4444444400b2","role":"authenticated"}';
-  insert into public.announcements (id, team_id, author_profile_id, title, body) values
+  insert into public.announcements (id, team_id, club_id, author_profile_id, title, body) values
     ('99999999-9999-4999-8999-9999999900b7',
      '33333333-3333-4333-8333-3333333300b1',
+     '11111111-1111-4111-8111-1111111100b1',
      '44444444-4444-4444-8444-4444444400b2',
      'Inmutable', 'autor inmutable test');
   reset role;
