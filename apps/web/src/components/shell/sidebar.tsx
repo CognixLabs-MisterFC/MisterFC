@@ -9,9 +9,15 @@ type Props = {
   variant: 'desktop' | 'mobile';
   /** Solo en mobile: invocado al navegar para cerrar el drawer. */
   onNavigate?: () => void;
+  /**
+   * Conteos opcionales por nav key para renderizar badge. Hoy solo
+   * 'mensajes' (Feature F). Si el badge no aplica para una entrada, la
+   * key simplemente no aparece en el record.
+   */
+  badges?: Partial<Record<string, number>>;
 };
 
-export async function Sidebar({ role, variant }: Props) {
+export async function Sidebar({ role, variant, badges }: Props) {
   const t = await getTranslations('shell');
   const items = navItemsForRole(role);
 
@@ -41,6 +47,7 @@ export async function Sidebar({ role, variant }: Props) {
             // con "Functions cannot be passed directly to Client Components".
             icon={<Icon className="size-4 shrink-0" aria-hidden />}
             label={t(`nav.${item.key}`)}
+            badge={badges?.[item.key]}
           />
         );
       })}

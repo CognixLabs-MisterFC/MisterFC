@@ -14,6 +14,115 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          author_profile_id: string
+          body: string
+          club_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          pinned: boolean
+          team_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_profile_id: string
+          body: string
+          club_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          pinned?: boolean
+          team_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_profile_id?: string
+          body?: string
+          club_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          pinned?: boolean
+          team_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcements_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcements_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_log: {
+        Row: {
+          action: string
+          actor_profile_id: string
+          club_id: string
+          id: string
+          occurred_at: string
+          reason: string
+          target_id: string
+          target_kind: string
+        }
+        Insert: {
+          action: string
+          actor_profile_id: string
+          club_id: string
+          id?: string
+          occurred_at?: string
+          reason: string
+          target_id: string
+          target_kind: string
+        }
+        Update: {
+          action?: string
+          actor_profile_id?: string
+          club_id?: string
+          id?: string
+          occurred_at?: string
+          reason?: string
+          target_id?: string
+          target_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_log_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       callup_decisions: {
         Row: {
           decided_at: string
@@ -157,6 +266,7 @@ export type Database = {
         Row: {
           club_id: string
           created_at: string
+          half_duration_minutes: number
           id: string
           name: string
           order_idx: number
@@ -165,6 +275,7 @@ export type Database = {
         Insert: {
           club_id: string
           created_at?: string
+          half_duration_minutes?: number
           id?: string
           name: string
           order_idx?: number
@@ -173,6 +284,7 @@ export type Database = {
         Update: {
           club_id?: string
           created_at?: string
+          half_duration_minutes?: number
           id?: string
           name?: string
           order_idx?: number
@@ -217,6 +329,55 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      conversations: {
+        Row: {
+          club_id: string
+          coach_profile_id: string
+          created_at: string
+          id: string
+          last_message_at: string
+          player_id: string
+        }
+        Insert: {
+          club_id: string
+          coach_profile_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          player_id: string
+        }
+        Update: {
+          club_id?: string
+          coach_profile_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_coach_profile_id_fkey"
+            columns: ["coach_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       events: {
         Row: {
@@ -484,6 +645,48 @@ export type Database = {
           {
             foreignKeyName: "memberships_profile_id_fkey"
             columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          id: string
+          read_at: string | null
+          sender_profile_id: string
+          sent_at: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          id?: string
+          read_at?: string | null
+          sender_profile_id: string
+          sent_at?: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          id?: string
+          read_at?: string | null
+          sender_profile_id?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -856,6 +1059,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      audit_get_conversation: {
+        Args: { p_conversation_id: string; p_reason: string }
+        Returns: {
+          body: string
+          message_id: string
+          read_at: string
+          sender_profile_id: string
+          sent_at: string
+        }[]
+      }
       create_club_with_admin: {
         Args: { p_locale?: string; p_name: string; p_slug: string }
         Returns: string
@@ -891,6 +1104,10 @@ export type Database = {
         Args: { p_capability: string; p_club_id: string }
         Returns: boolean
       }
+      user_is_conversation_participant: {
+        Args: { p_conversation_id: string }
+        Returns: boolean
+      }
       user_is_staff_of_team: { Args: { p_team_id: string }; Returns: boolean }
       user_owns_player_account: {
         Args: { p_player_id: string }
@@ -914,7 +1131,11 @@ export type Database = {
       callup_response_status: "yes" | "maybe" | "no"
       notification_channel: "in_app" | "push" | "email"
       notification_status: "pending" | "sent" | "failed" | "skipped"
-      notification_type: "match_callup_reminder" | "attendance_pending_reminder"
+      notification_type:
+        | "match_callup_reminder"
+        | "attendance_pending_reminder"
+        | "new_message"
+        | "new_announcement"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -1062,6 +1283,8 @@ export const Constants = {
       notification_type: [
         "match_callup_reminder",
         "attendance_pending_reminder",
+        "new_message",
+        "new_announcement",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },

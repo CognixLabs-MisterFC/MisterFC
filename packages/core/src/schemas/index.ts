@@ -136,6 +136,21 @@ export type {
 } from '../import';
 
 export {
+  startConversationSchema,
+  sendMessageSchema,
+  announcementInputSchema,
+  announcementUpdateSchema,
+  auditReasonSchema,
+  MESSAGE_RATE_LIMIT,
+} from './messaging';
+export type {
+  StartConversationInput,
+  SendMessageInput,
+  AnnouncementInput,
+  AnnouncementUpdateInput,
+} from './messaging';
+
+export {
   TRANSPORT_MODES,
   CALLUP_RESPONSE_STATUSES,
   CALLUP_DECISION_KINDS,

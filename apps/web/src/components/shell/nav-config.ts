@@ -3,6 +3,7 @@ import {
   Home,
   FolderKanban,
   Mail,
+  MessageSquare,
   UserRound,
   Users,
   UsersRound,
@@ -127,6 +128,30 @@ export const NAV_ITEMS: readonly NavItem[] = [
     // dejamos restringido a roles que SIEMPRE pueden; la page hace el check
     // de capability para el ayudante.
     roles: ['admin_club', 'coordinador', 'entrenador_principal'],
+  },
+  {
+    key: 'anuncios',
+    href: '/anuncios',
+    icon: Megaphone,
+    // Anuncios globales del club. Admin/coord pueden publicar club-wide
+    // o seleccionar varios teams; coaches usan /equipos/[teamId]/anuncios
+    // para su team específico.
+    roles: ['admin_club', 'coordinador'],
+  },
+  {
+    key: 'mensajes',
+    href: '/mensajes',
+    icon: MessageSquare,
+    // Mensajería 1:1. Cualquier rol puede tener conversaciones (coach inicia;
+    // jugador/familia recibe y responde). El badge de no leídos lo gestiona
+    // la propia /mensajes; aquí solo entry point.
+    roles: [
+      'admin_club',
+      'coordinador',
+      'entrenador_principal',
+      'entrenador_ayudante',
+      'jugador',
+    ],
   },
   {
     key: 'invitations',

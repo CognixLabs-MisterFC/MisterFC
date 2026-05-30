@@ -108,7 +108,34 @@
     "your_clubs": "Your clubs",
     "no_clubs": "You don't belong to any club yet.",
     "signout": "Sign out",
-    "invitations_link": "Invite people"
+    "invitations_link": "Invite people",
+    "cards": {
+      "messages": {
+        "title": "Unread messages",
+        "empty": "No pending messages.",
+        "cta": "{count, plural, =1 {1 conversation with new messages →} other {# conversations with new messages →}}"
+      },
+      "announcements": {
+        "title": "Recent announcements",
+        "empty": "No announcements in the last 7 days.",
+        "club_wide": "Whole club",
+        "view_all": "View all announcements →"
+      },
+      "upcoming": {
+        "title": "Upcoming events (7 days)",
+        "empty": "No events in the next 7 days.",
+        "kind": {
+          "training": "Training",
+          "match": "Match",
+          "tournament": "Tournament",
+          "other": "Other"
+        }
+      },
+      "coach_callups": {
+        "title": "Call-ups to publish",
+        "cta": "{count, plural, =1 {1 match without call-up →} other {# matches without call-up →}}"
+      }
+    }
   },
   "invitations": {
     "title": "Invitations",
@@ -202,7 +229,9 @@
       "calendario": "Calendar",
       "cuerpo_tecnico": "Coaching staff",
       "asistencia": "Attendance",
-      "convocatorias": "Callups"
+      "convocatorias": "Callups",
+      "mensajes": "Messages",
+      "anuncios": "Club announcements"
     }
   },
   "perfil": {
@@ -519,7 +548,8 @@
   "equipo_detalle": {
     "back": "Volver a la categoría",
     "roster_title": "Jugadores activos",
-    "roster_empty": "Aún no hay jugadores asignados a este equipo."
+    "roster_empty": "Aún no hay jugadores asignados a este equipo.",
+    "announcements_link": "Announcements"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -812,6 +842,7 @@
         "target": "For whom",
         "starts_at": "Starts",
         "ends_at": "Ends",
+        "ends_at_auto": "Auto: {minutes} min (2 halves + 15 min halftime). Editable.",
         "all_day": "All day",
         "location_name": "Place",
         "location_address": "Address",
@@ -1154,6 +1185,118 @@
       "not_published_yet": "The coaching staff hasn't published the meeting yet.",
       "not_in_roster": "You weren't in the team on the match date.",
       "not_linked": "This account isn't linked to this player."
+    }
+  },
+  "mensajes": {
+    "title": "Messages",
+    "back_to_list": "Back",
+    "list": {
+      "title": "Conversations",
+      "empty": "No conversations yet. Start one from a player profile."
+    },
+    "thread": {
+      "empty": "No messages yet. Write the first one.",
+      "placeholder": "Type a message...",
+      "send": "Send",
+      "read": "read"
+    },
+    "start": {
+      "action": "Send message"
+    },
+    "errors": {
+      "forbidden": "You don't have permission.",
+      "invalid_payload": "Invalid message.",
+      "rate_limited": "Too many messages in a short time. Please wait a minute.",
+      "conversation_not_found": "Conversation not found.",
+      "player_not_in_club": "Player doesn't belong to this club.",
+      "no_active_club": "No active club.",
+      "generic": "Couldn't send. Please try again."
+    }
+  },
+  "anuncios": {
+    "title": "Team announcements",
+    "back": "Back to team",
+    "form": {
+      "title": "Publish announcement",
+      "submit": "Publish",
+      "field": {
+        "title": "Title",
+        "body": "Message",
+        "pinned": "Pin to top",
+        "expires_at": "Expires"
+      }
+    },
+    "list": {
+      "title": "Announcements",
+      "empty": "No announcements published.",
+      "expired": "(expired)"
+    },
+    "delete": {
+      "action": "Delete announcement",
+      "title": "Delete announcement",
+      "description": "Delete this announcement? This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "errors": {
+      "forbidden": "You don't have permission.",
+      "invalid_payload": "Invalid announcement data.",
+      "team_not_in_club": "Team doesn't belong to this club.",
+      "not_found": "Announcement not found.",
+      "generic": "Couldn't save. Please try again."
+    }
+  },
+  "anuncios_global": {
+    "title": "Club announcements",
+    "subtitle": "Publish to one team, several teams, or the whole club.",
+    "subtitle_viewer": "Announcements you can see in your club.",
+    "filters": {
+      "scope": "Scope",
+      "scope_all": "All",
+      "scope_club": "Whole club",
+      "scope_team": "By team",
+      "team": "Team",
+      "since": "Since",
+      "since_7d": "Last 7 days",
+      "since_30d": "Last 30 days",
+      "since_all": "All time"
+    },
+    "detail": {
+      "back": "Back to announcements",
+      "club_wide": "Whole club",
+      "expired": "(expired)",
+      "expires_at": "Expires"
+    },
+    "form": {
+      "title": "Publish announcement",
+      "submit": "Publish",
+      "ok": "{count, plural, =0 {No destinations.} =1 {Announcement published.} other {# announcements published (one per team).}}",
+      "field": {
+        "title": "Title",
+        "body": "Message",
+        "pinned": "Pin to top",
+        "expires_at": "Expires",
+        "audience": "Audience"
+      },
+      "audience": {
+        "club_wide": "Whole club",
+        "teams_hint": "Pick one or more teams. One announcement per team will be published.",
+        "no_teams": "No teams in this club yet."
+      }
+    },
+    "list": {
+      "title": "Recent announcements",
+      "empty": "No announcements published.",
+      "expired": "(expired)"
+    },
+    "badge": {
+      "club_wide": "Whole club"
+    },
+    "errors": {
+      "forbidden": "You don't have permission.",
+      "invalid_payload": "Invalid announcement data.",
+      "audience_required": "Pick at least one team or check \"Whole club\".",
+      "generic": "Couldn't publish. Please try again."
     }
   }
 }

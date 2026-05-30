@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { AssignTeamDialog } from '../_components/assign-team-dialog';
 import { InviteTutorDialog } from './invite-tutor-dialog';
 import { CancelInvitationButton } from '../../invitations/cancel-invitation-button';
+import { SendMessageButton } from './send-message-button';
+import { userCanMessageInClub } from '@/lib/messaging-permissions';
 import { PlayerForm } from './player-form';
 import { MedicalNotesForm } from './medical-notes-form';
 import { PlayerPhotoUploader } from './player-photo-uploader';
@@ -50,6 +52,10 @@ export default async function PlayerDetailPage({ params }: Props) {
   const t = await getTranslations('jugadores');
 
   const canManage = ROLES_THAT_CAN_MANAGE.includes(ctx.activeClub.role);
+  // canMessage considera además team_staff.staff_role (un ayudante club que
+  // es principal via team_staff debe poder mensajear). Patrón calcado de
+  // PR #24 (4f3bf39) para canManage de convocatorias.
+  const canMessage = await userCanMessageInClub(supabase, ctx);
 
   // Visibilidad de medical_notes: helper SQL es la autoridad
   const { data: canSeeMedical } = await supabase.rpc(
@@ -142,12 +148,17 @@ export default async function PlayerDetailPage({ params }: Props) {
             },
           }}
         />
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">{fullName}</h1>
           {player.dorsal != null && (
             <p className="text-sm text-muted-foreground">
               {t('field.dorsal')} #{player.dorsal}
             </p>
+          )}
+          {canMessage && (
+            <div className="mt-1">
+              <SendMessageButton locale={locale} playerId={player.id} />
+            </div>
           )}
         </div>
       </div>

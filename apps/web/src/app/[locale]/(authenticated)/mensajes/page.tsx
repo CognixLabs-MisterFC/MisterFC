@@ -1,0 +1,117 @@
+import { redirect } from 'next/navigation';
+import { setRequestLocale, getTranslations } from 'next-intl/server';
+import { MessageSquare } from 'lucide-react';
+import { createSupabaseServerClient, formatPlayerName } from '@misterfc/core';
+import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { loadShellContext } from '@/lib/auth-shell';
+import { Link } from '@/i18n/navigation';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+
+type Props = { params: Promise<{ locale: string }> };
+
+export default async function MensajesPage({ params }: Props) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  const ctx = await loadShellContext();
+  if (!ctx) redirect(`/${locale}/signin`);
+
+  const t = await getTranslations('mensajes');
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // RLS conversations_select_participants ya filtra a las del user.
+  const { data: conversationRows } = await supabase
+    .from('conversations')
+    .select(
+      'id, last_message_at, coach_profile_id, players!inner(id, first_name, last_name)',
+    )
+    .order('last_message_at', { ascending: false });
+
+  type ConversationRow = {
+    id: string;
+    last_message_at: string;
+    coach_profile_id: string;
+    players: {
+      id: string;
+      first_name: string;
+      last_name: string | null;
+    };
+  };
+
+  const conversations =
+    (conversationRows ?? []) as unknown as ConversationRow[];
+
+  // Para cada conversación, contar mensajes no leídos por el user actual.
+  // Una sola query agregada por simplicidad inicial; si crece, optimizar.
+  const ids = conversations.map((c) => c.id);
+  const unreadByConvId = new Map<string, number>();
+  if (ids.length > 0) {
+    const { data: unreadRows } = await supabase
+      .from('messages')
+      .select('conversation_id')
+      .in('conversation_id', ids)
+      .is('read_at', null)
+      .neq('sender_profile_id', ctx.user.id);
+    for (const m of unreadRows ?? []) {
+      const id = (m as { conversation_id: string }).conversation_id;
+      unreadByConvId.set(id, (unreadByConvId.get(id) ?? 0) + 1);
+    }
+  }
+
+  return (
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <div className="flex items-center gap-3">
+        <MessageSquare className="size-6" aria-hidden />
+        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('list.title')}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {conversations.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('list.empty')}</p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-border">
+              {conversations.map((c) => {
+                const unread = unreadByConvId.get(c.id) ?? 0;
+                const playerName = formatPlayerName(
+                  c.players.first_name,
+                  c.players.last_name,
+                );
+                return (
+                  <li key={c.id}>
+                    <Link
+                      href={`/mensajes/${c.id}`}
+                      className="flex items-center justify-between gap-3 py-3 hover:bg-muted/30"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium">{playerName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(c.last_message_at).toLocaleString(locale)}
+                        </span>
+                      </div>
+                      {unread > 0 && (
+                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-misterfc-green px-2 text-xs font-semibold text-zinc-900">
+                          {unread}
+                        </span>
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

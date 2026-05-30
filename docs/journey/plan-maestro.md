@@ -267,6 +267,10 @@ ADRs cerrados con la fase: ADR-0005 (recurrencia A), ADR-0006 (componente propio
 - **4.6** [hecho 2026-05-29] Panel del entrenador en mismo `/convocatorias/[eventId]`: lista de jugadores con respuesta + `DecisionButtons` (called_up / discarded + reason + clear) + resumen de descartes técnicos. RLS verifica `can_manage_callups` para el ayudante.
 - **4.7** [hecho 2026-05-29] Tabla `notifications` futuro-proof (channel `in_app`/`push`/`email`, status `pending`/`sent`/`failed`/`skipped`, dedupe_key UNIQUE, sent_at nullable) + endpoint `POST/GET /api/cron/reminders` protegido por `Authorization: Bearer ${CRON_SECRET}` + cron `0 8 * * *` UTC en `apps/web/vercel.json`. Helpers puros `buildDedupeKey`/`dayBucketMadrid` (13 Vitest). ADR-0008 (Vercel Cron como patrón). 6 pgTAP en `rls_notifications.sql`.
 
+**Lote C** — extensión 2026-05-31 (parte del hotfix de PR #31):
+
+- **4.9** [hecho 2026-05-31] Estándares de duración de partido por categoría. Columna `categories.half_duration_minutes INT NOT NULL DEFAULT 45` con backfill por nombre normalizado (lower + unaccent + prefijo) según estándares españoles: querubín 15, prebenjamín 20, benjamín 25, alevín 30, infantil 35, cadete 40, juvenil/amateur/senior/veterano 45. Helpers puros `computeEndsAt(starts_at, half_duration_minutes)` y `computeCitacionAt(starts_at, lead=60)` en `packages/core`. Total partido = `2 × half + 15` min (descanso constante en código vía `HALFTIME_BREAK_MINUTES`, no en BD). UI: event-dialog del calendario auto-rellena `ends_at` para type=match con target team/category (editable después); publish-callup-dialog auto-rellena `meeting_at = starts_at − 60 min`. Migración `20260605000003_categories_half_duration.sql` + pgTAP `categories_half_duration_backfill.sql`. Estimación 2–3 h.
+
 ---
 
 ### Fase 5 — Mensajería interna y notificaciones push

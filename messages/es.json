@@ -107,7 +107,34 @@
     "welcome": "Bienvenido a {club}",
     "your_role": "Tu rol aquí es {role}.",
     "next_steps_title": "Siguientes pasos",
-    "next_steps_body": "Empieza creando categorías y equipos en el menú lateral. Después podrás dar de alta jugadores y configurar al cuerpo técnico."
+    "next_steps_body": "Empieza creando categorías y equipos en el menú lateral. Después podrás dar de alta jugadores y configurar al cuerpo técnico.",
+    "cards": {
+      "messages": {
+        "title": "Mensajes sin leer",
+        "empty": "No tienes mensajes pendientes.",
+        "cta": "{count, plural, =1 {1 conversación con mensajes nuevos →} other {# conversaciones con mensajes nuevos →}}"
+      },
+      "announcements": {
+        "title": "Anuncios recientes",
+        "empty": "No hay anuncios en los últimos 7 días.",
+        "club_wide": "Todo el club",
+        "view_all": "Ver todos los anuncios →"
+      },
+      "upcoming": {
+        "title": "Próximos eventos (7 días)",
+        "empty": "No hay eventos en los próximos 7 días.",
+        "kind": {
+          "training": "Entrenamiento",
+          "match": "Partido",
+          "tournament": "Torneo",
+          "other": "Otro"
+        }
+      },
+      "coach_callups": {
+        "title": "Convocatorias por publicar",
+        "cta": "{count, plural, =1 {1 partido sin convocatoria →} other {# partidos sin convocatoria →}}"
+      }
+    }
   },
   "shell": {
     "app_name": "MisterFC",
@@ -129,7 +156,9 @@
       "calendario": "Calendario",
       "cuerpo_tecnico": "Cuerpo técnico",
       "asistencia": "Asistencia",
-      "convocatorias": "Convocatorias"
+      "convocatorias": "Convocatorias",
+      "mensajes": "Mensajes",
+      "anuncios": "Anuncios del club"
     }
   },
   "roles": {
@@ -518,7 +547,8 @@
   "equipo_detalle": {
     "back": "Volver a la categoría",
     "roster_title": "Jugadores activos",
-    "roster_empty": "Aún no hay jugadores asignados a este equipo."
+    "roster_empty": "Aún no hay jugadores asignados a este equipo.",
+    "announcements_link": "Anuncios"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -811,6 +841,7 @@
         "target": "Para quién",
         "starts_at": "Empieza",
         "ends_at": "Termina",
+        "ends_at_auto": "Auto: {minutes} min (2 tiempos + 15 min descanso). Editable.",
         "all_day": "Todo el día",
         "location_name": "Lugar",
         "location_address": "Dirección",
@@ -1153,6 +1184,118 @@
       "not_published_yet": "El cuerpo técnico aún no ha publicado la citación.",
       "not_in_roster": "No estabas en el equipo a la fecha del partido.",
       "not_linked": "Esta cuenta no está vinculada a este jugador."
+    }
+  },
+  "mensajes": {
+    "title": "Mensajes",
+    "back_to_list": "Volver",
+    "list": {
+      "title": "Conversaciones",
+      "empty": "Sin conversaciones todavía. Abre una desde la ficha del jugador."
+    },
+    "thread": {
+      "empty": "Aún no hay mensajes. Escribe el primero.",
+      "placeholder": "Escribe un mensaje...",
+      "send": "Enviar",
+      "read": "leído"
+    },
+    "start": {
+      "action": "Enviar mensaje"
+    },
+    "errors": {
+      "forbidden": "No tienes permisos.",
+      "invalid_payload": "Mensaje inválido.",
+      "rate_limited": "Demasiados mensajes en poco tiempo. Espera un minuto.",
+      "conversation_not_found": "Conversación no encontrada.",
+      "player_not_in_club": "El jugador no pertenece a este club.",
+      "no_active_club": "No hay club activo.",
+      "generic": "No se pudo enviar. Inténtalo de nuevo."
+    }
+  },
+  "anuncios": {
+    "title": "Anuncios del equipo",
+    "back": "Volver al equipo",
+    "form": {
+      "title": "Publicar anuncio",
+      "submit": "Publicar",
+      "field": {
+        "title": "Título",
+        "body": "Mensaje",
+        "pinned": "Fijar arriba",
+        "expires_at": "Caduca"
+      }
+    },
+    "list": {
+      "title": "Anuncios",
+      "empty": "No hay anuncios publicados.",
+      "expired": "(caducado)"
+    },
+    "delete": {
+      "action": "Eliminar anuncio",
+      "title": "Eliminar anuncio",
+      "description": "¿Eliminar este anuncio? La acción no se puede deshacer.",
+      "cancel": "Volver",
+      "confirm": "Eliminar"
+    },
+    "errors": {
+      "forbidden": "No tienes permisos.",
+      "invalid_payload": "Datos del anuncio inválidos.",
+      "team_not_in_club": "El equipo no pertenece a este club.",
+      "not_found": "Anuncio no encontrado.",
+      "generic": "No se pudo guardar. Inténtalo de nuevo."
+    }
+  },
+  "anuncios_global": {
+    "title": "Anuncios del club",
+    "subtitle": "Publica anuncios a un equipo, varios equipos o a todo el club.",
+    "subtitle_viewer": "Anuncios que puedes ver en tu club.",
+    "filters": {
+      "scope": "Ámbito",
+      "scope_all": "Todos",
+      "scope_club": "Todo el club",
+      "scope_team": "Por equipo",
+      "team": "Equipo",
+      "since": "Desde",
+      "since_7d": "Últimos 7 días",
+      "since_30d": "Últimos 30 días",
+      "since_all": "Todos"
+    },
+    "detail": {
+      "back": "Volver a anuncios",
+      "club_wide": "Todo el club",
+      "expired": "(caducado)",
+      "expires_at": "Caduca"
+    },
+    "form": {
+      "title": "Publicar anuncio",
+      "submit": "Publicar",
+      "ok": "{count, plural, =0 {Sin destinos.} =1 {Anuncio publicado.} other {# anuncios publicados (uno por equipo).}}",
+      "field": {
+        "title": "Título",
+        "body": "Mensaje",
+        "pinned": "Fijar arriba",
+        "expires_at": "Caduca",
+        "audience": "Destinatarios"
+      },
+      "audience": {
+        "club_wide": "Todo el club",
+        "teams_hint": "Selecciona uno o varios equipos. Se publicará un anuncio por equipo.",
+        "no_teams": "No hay equipos en este club todavía."
+      }
+    },
+    "list": {
+      "title": "Anuncios recientes",
+      "empty": "No hay anuncios publicados.",
+      "expired": "(caducado)"
+    },
+    "badge": {
+      "club_wide": "Todo el club"
+    },
+    "errors": {
+      "forbidden": "No tienes permisos.",
+      "invalid_payload": "Datos del anuncio inválidos.",
+      "audience_required": "Selecciona al menos un equipo o marca \"Todo el club\".",
+      "generic": "No se pudo publicar. Inténtalo de nuevo."
     }
   }
 }
