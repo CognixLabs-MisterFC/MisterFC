@@ -1,47 +1,84 @@
 import { PLAYER_IMPORT_COLUMNS, type PlayerImportColumn } from './schema';
 
 /**
- * Mapa de aliases tolerables que mapean a la columna canónica. Cubre
- * variaciones típicas en Excel español: espacios, mayúsculas, acentos en
- * "fecha". El matching se hace contra esta tabla tras lowercase+trim.
+ * Mapa de aliases de headers (castellano primario + retro-compat inglés).
+ * Las claves son la versión "folded" del header: lowercase, sin acentos,
+ * espacios colapsados a un solo espacio. Eso cubre las variaciones típicas
+ * en plantillas de clubs (mayúsculas, tildes, espacios extra).
  *
- * Cualquier header no mapeado se descarta silenciosamente (spec §5: "columnas
- * extra se ignoran con aviso"). El aviso lo hace la UI a partir del retorno
- * `unmapped_headers`.
+ * El asterisco final ("Nombre*", "Fecha de nacimiento*") que la plantilla
+ * castellana usa para marcar obligatorios se quita en `foldHeader` antes
+ * del lookup.
+ *
+ * Headers no mapeados → `unmapped_headers` (la UI los avisa pero el import
+ * sigue).
  */
 const HEADER_ALIASES: Record<string, PlayerImportColumn> = {
-  first_name: 'first_name',
+  // first_name
   nombre: 'first_name',
+  nombres: 'first_name',
+  first_name: 'first_name',
   'first name': 'first_name',
-  last_name: 'last_name',
+  firstname: 'first_name',
+  // last_name (ahora opcional, ver F2.9 hotfix 2026-05-30)
   apellido: 'last_name',
   apellidos: 'last_name',
+  last_name: 'last_name',
   'last name': 'last_name',
-  date_of_birth: 'date_of_birth',
-  dob: 'date_of_birth',
-  'fecha nacimiento': 'date_of_birth',
+  lastname: 'last_name',
+  // date_of_birth
   'fecha de nacimiento': 'date_of_birth',
+  'fecha nacimiento': 'date_of_birth',
+  nacimiento: 'date_of_birth',
+  'f nacimiento': 'date_of_birth',
   fecha_nacimiento: 'date_of_birth',
+  date_of_birth: 'date_of_birth',
+  'date of birth': 'date_of_birth',
+  dob: 'date_of_birth',
+  // dorsal
   dorsal: 'dorsal',
   numero: 'dorsal',
+  número: 'dorsal',
+  'numero de camiseta': 'dorsal',
+  'número de camiseta': 'dorsal',
   number: 'dorsal',
+  jersey: 'dorsal',
+  // position_main
+  posicion: 'position_main',
+  posición: 'position_main',
+  'posicion principal': 'position_main',
+  'posición principal': 'position_main',
   position_main: 'position_main',
   'position main': 'position_main',
-  posicion: 'position_main',
+  position: 'position_main',
+  // positions_secondary
+  'posiciones secundarias': 'positions_secondary',
+  posiciones_secundarias: 'positions_secondary',
+  'otras posiciones': 'positions_secondary',
   positions_secondary: 'positions_secondary',
   'positions secondary': 'positions_secondary',
-  posiciones_secundarias: 'positions_secondary',
-  foot: 'foot',
+  // foot
+  'pie dominante': 'foot',
+  'pie habil': 'foot',
+  'pie hábil': 'foot',
   pie: 'foot',
-  height_cm: 'height_cm',
-  height: 'height_cm',
+  foot: 'foot',
+  // height_cm
+  'altura cm': 'height_cm',
   altura: 'height_cm',
-  weight_kg: 'weight_kg',
-  weight: 'weight_kg',
+  estatura: 'height_cm',
+  height: 'height_cm',
+  height_cm: 'height_cm',
+  // weight_kg
+  'peso kg': 'weight_kg',
   peso: 'weight_kg',
-  origin: 'origin',
-  origen: 'origin',
+  weight: 'weight_kg',
+  weight_kg: 'weight_kg',
+  // origin
   procedencia: 'origin',
+  origen: 'origin',
+  'club anterior': 'origin',
+  origin: 'origin',
 };
 
 export type ParseTabularError =
@@ -54,17 +91,28 @@ export type ParsedTabular = {
 };
 
 /**
- * Normaliza un header: trim + lowercase. No quita acentos (asumimos que la
- * plantilla viene con los nombres canónicos y solo dejamos pasar aliases
- * exactos del mapa).
+ * Folding de header para el lookup tolerante.
+ *  - Quita NFD diacríticos.
+ *  - Lowercase.
+ *  - Trim.
+ *  - Colapsa whitespace múltiple a uno.
+ *  - Quita el asterisco final que la plantilla castellana usa como marca de
+ *    obligatorio ("Nombre*" → "nombre").
  */
-function normalizeHeader(h: string): string {
-  return h.trim().toLowerCase();
+function foldHeader(h: string): string {
+  return h
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .replace(/\*+$/, '')
+    .trim();
 }
 
 /**
- * Construye el mapa header_raw → columna canónica. Headers desconocidos se
- * dejan fuera; el caller decide cómo avisar al user.
+ * Construye el mapa header_raw → columna canónica. Tolerante a tildes,
+ * mayúsculas y espacios. Headers desconocidos se devuelven en `unmapped`.
  */
 export function mapHeaders(rawHeaders: string[]): {
   mapping: Map<string, PlayerImportColumn>;
@@ -73,8 +121,8 @@ export function mapHeaders(rawHeaders: string[]): {
   const mapping = new Map<string, PlayerImportColumn>();
   const unmapped: string[] = [];
   for (const h of rawHeaders) {
-    const key = normalizeHeader(h);
-    const canonical = HEADER_ALIASES[key];
+    const folded = foldHeader(h);
+    const canonical = HEADER_ALIASES[folded];
     if (canonical) {
       mapping.set(h, canonical);
     } else {
@@ -86,13 +134,13 @@ export function mapHeaders(rawHeaders: string[]): {
 
 /**
  * Transforma filas tabulares crudas (objetos `{header: value}` tal como las
- * devolverían papaparse o read-excel-file con `header:true`) en filas con
- * keys canónicas listas para `validateRow`.
+ * devuelve papaparse o read-excel-file con `header:true`) en filas con keys
+ * canónicas listas para `validateRow`.
  *
- * Edge cases por el spec §7:
+ * Edge cases per spec §7:
  *  - Archivo vacío → `{ code: 'empty_file' }`.
  *  - Sin headers reconocibles → `{ code: 'no_recognized_headers' }`.
- *  - Columnas extra → silencio (anotadas en `unmapped_headers` para la UI).
+ *  - Columnas extra → silencio (anotadas en `unmapped_headers`).
  */
 export function parseTabular(
   rawRows: Array<Record<string, unknown>>
@@ -115,9 +163,9 @@ export function parseTabular(
     for (const [rawHeader, canonical] of mapping.entries()) {
       out[canonical] = raw[rawHeader];
     }
-    // Aseguramos que todas las columnas existentes en la plantilla aparezcan
-    // (aunque sea con undefined) para que el schema Zod las trate como vacías
-    // en vez de fallar por shape.
+    // Aseguramos que todas las columnas conocidas aparezcan (al menos como
+    // null) para que el schema Zod las trate como vacías en vez de fallar
+    // por shape.
     for (const col of PLAYER_IMPORT_COLUMNS) {
       if (!(col in out)) out[col] = null;
     }

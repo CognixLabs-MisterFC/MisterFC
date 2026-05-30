@@ -93,4 +93,55 @@ describe('dedupKey', () => {
       'pepe|gomez|2010-05-15'
     );
   });
+
+  it('apellidos null → clave sin componente de apellido', () => {
+    expect(dedupKey('Pepe', null, '2010-05-15')).toBe('pepe||2010-05-15');
+  });
+
+  it('apellidos vacío trimmed → clave sin apellido (mismo que null)', () => {
+    expect(dedupKey('Pepe', '   ', '2010-05-15')).toBe('pepe||2010-05-15');
+  });
+});
+
+describe('detectDuplicates — last_name opcional (F2.9 hotfix 2026-05-30)', () => {
+  const makeNullLast = (first: string, dob: string) =>
+    validateRow({ first_name: first, last_name: '', date_of_birth: dob }, 0);
+
+  it('dos filas con apellidos null pero mismo first+DOB → 2ª duplicate_in_file', () => {
+    const rows = [
+      { ...makeNullLast('Solo', '2010-05-15'), index: 0 },
+      { ...makeNullLast('Solo', '2010-05-15'), index: 1 },
+    ];
+    const out = detectDuplicates(rows, []);
+    expect(out[0]!.status).toBe('valid');
+    expect(out[1]!.status).toBe('duplicate');
+    expect(out[1]!.reason).toBe('duplicate_in_file');
+  });
+
+  it('jugador BD con last_name NULL y fila con last_name NULL → match', () => {
+    const rows = [{ ...makeNullLast('Solo', '2010-05-15'), index: 0 }];
+    const existing = [
+      {
+        id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+        first_name: 'Solo',
+        last_name: null,
+        date_of_birth: '2010-05-15',
+      },
+    ];
+    const out = detectDuplicates(rows, existing);
+    expect(out[0]!.status).toBe('duplicate');
+    expect(out[0]!.reason).toBe('duplicate_in_db');
+  });
+
+  it('fila con apellido y otra sin apellido del mismo jugador → NO se marcan duplicadas (claves distintas)', () => {
+    // Decisión documentada: si el club tiene una fila con apellido y otra sin,
+    // tratamos como entradas independientes (el usuario decide tras revisar).
+    const rows = [
+      { ...validateRow({ first_name: 'Pepe', last_name: 'Gomez', date_of_birth: '2010-05-15' }, 0), index: 0 },
+      { ...makeNullLast('Pepe', '2010-05-15'), index: 1 },
+    ];
+    const out = detectDuplicates(rows, []);
+    expect(out[0]!.status).toBe('valid');
+    expect(out[1]!.status).toBe('valid');
+  });
 });

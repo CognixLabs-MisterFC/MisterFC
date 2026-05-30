@@ -23,9 +23,19 @@ export function PreviewTable({ rows }: Props) {
         <thead className="bg-zinc-900/60 text-left text-xs uppercase tracking-wider text-zinc-400">
           <tr>
             <th className="px-3 py-2">#</th>
-            <th className="px-3 py-2">{t('col.first_name')}</th>
+            <th
+              className="px-3 py-2 text-emerald-300"
+              title={t('col.required_hint')}
+            >
+              {t('col.first_name')} *
+            </th>
             <th className="px-3 py-2">{t('col.last_name')}</th>
-            <th className="px-3 py-2">{t('col.date_of_birth')}</th>
+            <th
+              className="px-3 py-2 text-emerald-300"
+              title={t('col.required_hint')}
+            >
+              {t('col.date_of_birth')} *
+            </th>
             <th className="px-3 py-2">{t('col.dorsal')}</th>
             <th className="px-3 py-2">{t('col.position_main')}</th>
             <th className="px-3 py-2">{t('col.status')}</th>
@@ -59,7 +69,9 @@ function RowItem({ row }: { row: ValidatedRow }) {
     <tr className={`border-t border-zinc-800 ${colorClass}`}>
       <td className="px-3 py-2 align-top text-xs text-zinc-500">{row.index + 1}</td>
       <td className="px-3 py-2 align-top">{row.data?.first_name ?? ''}</td>
-      <td className="px-3 py-2 align-top">{row.data?.last_name ?? ''}</td>
+      <td className="px-3 py-2 align-top text-muted-foreground">
+        {row.data?.last_name ?? ''}
+      </td>
       <td className="px-3 py-2 align-top">{row.data?.date_of_birth ?? ''}</td>
       <td className="px-3 py-2 align-top">{row.data?.dorsal ?? ''}</td>
       <td className="px-3 py-2 align-top">{row.data?.position_main ?? ''}</td>

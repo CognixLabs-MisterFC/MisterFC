@@ -112,14 +112,21 @@ export async function importPlayers(
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]!;
     // Dedup server-side: cubre la race condition entre dos imports concurrentes.
-    const { data: dup } = await supabase
+    // last_name nullable per F2.9 hotfix 2026-05-30: si la fila NO trae apellido,
+    // matcheamos contra players con last_name IS NULL del mismo nombre+DOB; si
+    // SÍ trae, ilike sobre last_name.
+    let dupQuery = supabase
       .from('players')
       .select('id')
       .eq('club_id', clubId)
       .ilike('first_name', row.first_name)
-      .ilike('last_name', row.last_name)
-      .eq('date_of_birth', row.date_of_birth)
-      .maybeSingle();
+      .eq('date_of_birth', row.date_of_birth);
+    if (row.last_name === null) {
+      dupQuery = dupQuery.is('last_name', null);
+    } else {
+      dupQuery = dupQuery.ilike('last_name', row.last_name);
+    }
+    const { data: dup } = await dupQuery.maybeSingle();
     if (dup?.id) {
       skipped++;
       details.push({ row_index: i, status: 'skipped', reason: 'duplicate_in_db' });

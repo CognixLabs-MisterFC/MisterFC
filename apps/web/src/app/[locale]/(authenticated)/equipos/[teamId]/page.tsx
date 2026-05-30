@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Settings, UserRound, Users } from 'lucide-react';
-import { createSupabaseServerClient } from '@misterfc/core';
+import { createSupabaseServerClient, formatPlayerName } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -216,7 +216,7 @@ export default async function TeamDetailPage({ params }: Props) {
                   >
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate font-medium">
-                        {r.players.last_name}, {r.players.first_name}
+                        {formatPlayerName(r.players.first_name, r.players.last_name)}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {tCat('age_years', {

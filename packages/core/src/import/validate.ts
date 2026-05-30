@@ -24,7 +24,8 @@ export type ValidatedRow = {
 export type ExistingPlayer = {
   id: string;
   first_name: string;
-  last_name: string;
+  /** NULL permitido per F2.9 hotfix 2026-05-30 (last_name pasó a nullable). */
+  last_name: string | null;
   date_of_birth: string;
 };
 
@@ -47,16 +48,24 @@ export function validateRow(
 }
 
 /**
- * Clave normalizada para el dedup. La spec exige `lower(first_name) +
- * lower(last_name) + date_of_birth`. NO normalizamos tildes: input limpio
- * asumido (decisión documentada en spec §7).
+ * Clave normalizada para el dedup. Per F2.9 hotfix 2026-05-30 el apellido
+ * es opcional:
+ *   - Si `last_name` presente: dedup por (lower(first), lower(last), dob).
+ *   - Si `last_name` NULL/vacío: dedup por (lower(first), dob) — sin
+ *     componente de apellido.
+ *
+ * Esto evita falsos positivos cuando un club tiene dos plantillas
+ * concurrentes, una con apellidos y otra sin, del mismo jugador.
  */
 export function dedupKey(
   firstName: string,
-  lastName: string,
+  lastName: string | null,
   dob: string
 ): string {
-  return `${firstName.trim().toLowerCase()}|${lastName.trim().toLowerCase()}|${dob}`;
+  const f = firstName.trim().toLowerCase();
+  const l = (lastName ?? '').trim().toLowerCase();
+  if (l.length === 0) return `${f}||${dob}`;
+  return `${f}|${l}|${dob}`;
 }
 
 /**

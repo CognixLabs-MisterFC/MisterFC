@@ -21,7 +21,7 @@ import {
   Megaphone,
   UserRound,
 } from 'lucide-react';
-import { PLAYER_POSITIONS } from '@misterfc/core';
+import { PLAYER_POSITIONS, formatPlayerName } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -258,7 +258,7 @@ export default async function TeamDetailPage({ params, searchParams }: Props) {
                     >
                       <div className="flex min-w-0 flex-col">
                         <span className="truncate font-medium">
-                          {r.last_name}, {r.first_name}
+                          {formatPlayerName(r.first_name, r.last_name)}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {tCat('age_years', {

@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { CalendarCheck2, ClipboardList } from 'lucide-react';
 import {
   createSupabaseServerClient,
+  formatPlayerName,
   type AttendanceCode,
 } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -317,7 +318,7 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
                     {stats.byPlayer.map((p) => (
                       <TableRow key={p.player_id}>
                         <TableCell className="text-sm">
-                          {p.last_name}, {p.first_name}
+                          {formatPlayerName(p.first_name, p.last_name)}
                         </TableCell>
                         <TableCell className="text-right text-sm">
                           {p.pct_present.toFixed(0)}%

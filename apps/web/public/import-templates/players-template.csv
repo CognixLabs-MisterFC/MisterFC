@@ -1,3 +1,5 @@
-first_name,last_name,date_of_birth,dorsal,position_main,positions_secondary,foot,height_cm,weight_kg,origin
-Pepe,Gomez Garcia,2010-05-15,10,midfielder,defender|forward,right,150,42.5,Cantera
-Lucia,Sanchez Lopez,2011-09-03,7,forward,,left,148,40,
+Nombre*,Apellidos,Fecha de nacimiento*,Dorsal,Posición,Posiciones secundarias,Pie dominante,Altura (cm),Peso (kg),Procedencia
+Pepe,Gómez García,15/03/2010,10,Mediocentro,Defensa|Delantero,Derecho,150,"42,5",Cantera
+Lucía,Sánchez López,03/09/2011,7,Delantero,,Izquierdo,148,40,
+Solo Nombre,,20/01/2012,,,,,,,
+Ana,,14/07/2013,5,Portero,,Derecho,,,

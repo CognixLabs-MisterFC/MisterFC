@@ -6,6 +6,7 @@ import {
   ATTENDANCE_PRIMARY_CHIPS,
   ATTENDANCE_SECONDARY_CHIPS,
   type AttendanceCode,
+  formatPlayerName,
   otherChipLabel,
 } from '@misterfc/core';
 import { ChevronDown, Loader2, Undo2 } from 'lucide-react';
@@ -132,7 +133,7 @@ export function AttendanceRow({
         </span>
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-sm font-medium">
-            {player.last_name}, {player.first_name}
+            {formatPlayerName(player.first_name, player.last_name)}
           </span>
           {player.dorsal != null && (
             <span className="text-xs text-muted-foreground">

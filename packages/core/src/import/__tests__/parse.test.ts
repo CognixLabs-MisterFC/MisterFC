@@ -109,4 +109,32 @@ describe('mapHeaders', () => {
     expect(mapping.get('date_of_birth')).toBe('date_of_birth');
     expect(unmapped).toEqual(['foo']);
   });
+
+  it('headers castellanos con asterisco de obligatorio se aceptan ("Nombre*")', () => {
+    const { mapping, unmapped } = mapHeaders([
+      'Nombre*',
+      'Apellidos',
+      'Fecha de nacimiento*',
+    ]);
+    expect(mapping.get('Nombre*')).toBe('first_name');
+    expect(mapping.get('Apellidos')).toBe('last_name');
+    expect(mapping.get('Fecha de nacimiento*')).toBe('date_of_birth');
+    expect(unmapped).toHaveLength(0);
+  });
+
+  it('tolera tildes y mayúsculas ("POSICIÓN" / "Posición principal")', () => {
+    const { mapping } = mapHeaders(['POSICIÓN', 'Posición principal']);
+    // Ambos mapean al mismo destino → ambos válidos.
+    expect(mapping.get('POSICIÓN')).toBe('position_main');
+    expect(mapping.get('Posición principal')).toBe('position_main');
+  });
+
+  it('tolera espacios extra y minúsculas', () => {
+    const { mapping } = mapHeaders([
+      '  pie dominante  ',
+      'Posiciones Secundarias',
+    ]);
+    expect(mapping.get('  pie dominante  ')).toBe('foot');
+    expect(mapping.get('Posiciones Secundarias')).toBe('positions_secondary');
+  });
 });
