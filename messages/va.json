@@ -117,8 +117,9 @@
       },
       "announcements": {
         "title": "Anuncis recents",
-        "empty": "No hi ha anuncis recents.",
-        "club_wide": "Tot el club"
+        "empty": "No hi ha anuncis dels últims 7 dies.",
+        "club_wide": "Tot el club",
+        "view_all": "Veure tots els anuncis →"
       },
       "upcoming": {
         "title": "Pròxims esdeveniments (7 dies)",
@@ -841,6 +842,7 @@
         "target": "Per a qui",
         "starts_at": "Comença",
         "ends_at": "Acaba",
+        "ends_at_auto": "Auto: {minutes} min (2 temps de la categoria). Editable.",
         "all_day": "Tot el dia",
         "location_name": "Lloc",
         "location_address": "Adreça",
@@ -1247,6 +1249,24 @@
   "anuncios_global": {
     "title": "Anuncis del club",
     "subtitle": "Publica anuncis a un equip, diversos equips o a tot el club.",
+    "subtitle_viewer": "Anuncis que pots veure al teu club.",
+    "filters": {
+      "scope": "Àmbit",
+      "scope_all": "Tots",
+      "scope_club": "Tot el club",
+      "scope_team": "Per equip",
+      "team": "Equip",
+      "since": "Des de",
+      "since_7d": "Últims 7 dies",
+      "since_30d": "Últims 30 dies",
+      "since_all": "Tots"
+    },
+    "detail": {
+      "back": "Tornar a anuncis",
+      "club_wide": "Tot el club",
+      "expired": "(caducat)",
+      "expires_at": "Caduca"
+    },
     "form": {
       "title": "Publicar anunci",
       "submit": "Publicar",

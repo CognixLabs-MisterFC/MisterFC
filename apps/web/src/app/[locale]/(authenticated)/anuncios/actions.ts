@@ -136,3 +136,49 @@ export async function createGlobalAnnouncement(
 
   return { ok: { created_count: inserted?.length ?? rows.length } };
 }
+
+/**
+ * Borrar un anuncio desde la vista de detalle (/anuncios/[id]).
+ * RLS exige autor o admin/coord/principal del club. Tras borrar revalidamos
+ * /anuncios y, si era team-bound, también /equipos/[teamId]/anuncios.
+ */
+export async function deleteAnnouncementFromDetail(
+  locale: string,
+  announcementId: string,
+): Promise<{ ok?: true; error?: 'forbidden' | 'not_found' | 'generic' }> {
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: existing } = await supabase
+    .from('announcements')
+    .select('id, team_id, club_id')
+    .eq('id', announcementId)
+    .maybeSingle();
+  if (!existing) return { error: 'not_found' };
+  if (existing.club_id !== ctx.activeClub.club.id) return { error: 'forbidden' };
+
+  const { error: delErr, count } = await supabase
+    .from('announcements')
+    .delete({ count: 'exact' })
+    .eq('id', announcementId);
+
+  if (delErr) {
+    if (delErr.code === '42501') return { error: 'forbidden' };
+    Sentry.captureException(delErr, {
+      tags: { feature: 'announcements', step: 'delete_detail' },
+      extra: { announcement_id: announcementId },
+    });
+    return { error: 'generic' };
+  }
+  if (count === 0) return { error: 'forbidden' };
+
+  revalidatePath(`/${locale}/anuncios`);
+  revalidatePath(`/${locale}`);
+  if (existing.team_id) {
+    revalidatePath(`/${locale}/equipos/${existing.team_id}/anuncios`);
+  }
+  return { ok: true };
+}

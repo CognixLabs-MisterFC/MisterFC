@@ -17,6 +17,7 @@ import {
   type RecurrenceRuleInput,
   countOccurrences,
   TIMEZONE_OLA1,
+  computeEndsAt,
 } from '@misterfc/core';
 import {
   Dialog,
@@ -169,6 +170,47 @@ export function EventDialog({
     return teams.filter((tm) => manageableTeamIds.includes(tm.id));
   }, [teams, manageableTeamIds]);
 
+  // F4.9 — half_duration_minutes del target activo (team o category):
+  // - team → su categoría.
+  // - category → directa.
+  // - club → null (no sabemos qué duración aplicar).
+  const targetHalfDuration = useMemo<number | null>(() => {
+    if (targetKind === 'team') {
+      const tm = teams.find((t) => t.id === teamId);
+      return tm?.half_duration_minutes ?? null;
+    }
+    if (targetKind === 'category') {
+      const c = categories.find((cat) => cat.id === categoryId);
+      return c?.half_duration_minutes ?? null;
+    }
+    return null;
+  }, [targetKind, teamId, categoryId, teams, categories]);
+
+  // F4.9 — Auto-rellenar ends_at para type=match: la sugerencia se computa
+  // derivada durante render (sin useEffect, para cumplir con el lint
+  // `react-hooks/set-state-in-effect`). El input lee `effectiveEndsAt`:
+  // si el usuario aún no ha tocado el campo (`endsAtTouched=false`),
+  // muestra la sugerencia; si ha editado manualmente, respeta su valor.
+  // El evento ya existente con ends_at viene "tocado" para no machacar.
+  const [endsAtTouched, setEndsAtTouched] = useState<boolean>(
+    () => Boolean(event?.ends_at),
+  );
+
+  const autoEndsAtSuggestion = useMemo<string | null>(() => {
+    if (type !== 'match' || !startsAt || targetHalfDuration == null) return null;
+    let startIso: string;
+    try {
+      startIso = localInputToIso(startsAt);
+    } catch {
+      return null;
+    }
+    const suggested = computeEndsAt(startIso, targetHalfDuration);
+    return suggested ? isoToLocalInput(suggested) : null;
+  }, [type, startsAt, targetHalfDuration]);
+
+  const effectiveEndsAt =
+    endsAtTouched || autoEndsAtSuggestion == null ? endsAt : autoEndsAtSuggestion;
+
   // ── Cálculo de número de ocurrencias previas a guardar ──────────────────
   const occurrencesPreview = useMemo(() => {
     if (mode !== 'new' || !recurEnabled) return null;
@@ -212,7 +254,7 @@ export function EventDialog({
     let endIso: string | null;
     try {
       startIso = localInputToIso(startsAt);
-      endIso = endsAt ? localInputToIso(endsAt) : null;
+      endIso = effectiveEndsAt ? localInputToIso(effectiveEndsAt) : null;
     } catch {
       return null;
     }
@@ -434,10 +476,22 @@ export function EventDialog({
               <Input
                 id="ev-ends"
                 type="datetime-local"
-                value={endsAt}
-                onChange={(e) => setEndsAt(e.target.value)}
+                value={effectiveEndsAt}
+                onChange={(e) => {
+                  // F4.9 — al editar manualmente, dejamos de mostrar la
+                  // sugerencia auto. setEndsAt + setEndsAtTouched(true).
+                  setEndsAt(e.target.value);
+                  setEndsAtTouched(true);
+                }}
                 disabled={readonly}
               />
+              {type === 'match' && targetHalfDuration != null && !endsAtTouched && (
+                <p className="text-xs text-muted-foreground">
+                  {t('dialog.field.ends_at_auto', {
+                    minutes: 2 * targetHalfDuration,
+                  })}
+                </p>
+              )}
             </div>
           </div>
 

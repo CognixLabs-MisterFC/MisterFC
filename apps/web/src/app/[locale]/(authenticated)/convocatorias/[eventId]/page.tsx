@@ -148,6 +148,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
           {canManage && (
             <PublishCallupDialog
               eventId={event.id}
+              eventStartsAt={event.starts_at}
               initial={{
                 meeting_at: meta?.meeting_at ?? null,
                 meeting_location: meta?.meeting_location ?? null,

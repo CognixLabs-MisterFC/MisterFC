@@ -32,3 +32,9 @@ export {
   pickLastTrainingWithoutAttendance,
 } from './aggregation';
 export type { DatedEvent } from './aggregation';
+
+export {
+  computeEndsAt,
+  computeCitacionAt,
+  DEFAULT_CITACION_LEAD_MINUTES,
+} from './match-duration';

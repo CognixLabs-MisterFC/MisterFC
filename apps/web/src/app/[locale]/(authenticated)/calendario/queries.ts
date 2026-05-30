@@ -44,12 +44,16 @@ export type TeamOption = {
   category_id: string;
   category_name: string;
   season: string;
+  /** F4.9 — duración por tiempo (min) de la categoría del team. */
+  half_duration_minutes: number;
 };
 
 export type CategoryOption = {
   id: string;
   name: string;
   season: string;
+  /** F4.9 — duración por tiempo (min) de la categoría. */
+  half_duration_minutes: number;
 };
 
 export type CalendarFilters = {
@@ -193,7 +197,9 @@ export async function loadCalendarData(
   // Teams + categories del club para los selectores de filtro y dialog.
   const { data: rawTeams } = await supabase
     .from('teams')
-    .select('id, name, color, category_id, categories!inner(name, season, club_id)')
+    .select(
+      'id, name, color, category_id, categories!inner(name, season, club_id, half_duration_minutes)',
+    )
     .order('name');
 
   const teams: TeamOption[] = (rawTeams ?? [])
@@ -202,6 +208,7 @@ export async function loadCalendarData(
         name: string;
         season: string;
         club_id: string;
+        half_duration_minutes: number;
       };
       return {
         id: t.id as string,
@@ -211,6 +218,7 @@ export async function loadCalendarData(
         category_name: cat.name,
         season: cat.season,
         club_id: cat.club_id,
+        half_duration_minutes: cat.half_duration_minutes ?? 45,
       };
     })
     .filter((t) => t.club_id === clubId)
@@ -222,7 +230,7 @@ export async function loadCalendarData(
 
   const { data: rawCategories } = await supabase
     .from('categories')
-    .select('id, name, season')
+    .select('id, name, season, half_duration_minutes')
     .eq('club_id', clubId)
     .order('season', { ascending: false })
     .order('name');
@@ -231,6 +239,7 @@ export async function loadCalendarData(
     id: c.id as string,
     name: c.name as string,
     season: c.season as string,
+    half_duration_minutes: (c.half_duration_minutes as number | null) ?? 45,
   }));
 
   return { events, teams, categories };

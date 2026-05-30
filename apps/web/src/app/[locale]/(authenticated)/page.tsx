@@ -4,7 +4,13 @@ import { createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -51,11 +57,17 @@ export default async function Home({ params }: Props) {
     (unreadRows ?? []).map((m) => m.conversation_id),
   ).size;
 
-  // Anuncios recientes que el user ve (RLS filtra).
+  // Anuncios recientes que el user ve (RLS filtra). Limitamos a últimos 7
+  // días para que la card no acumule histórico — el link "Ver todos" lleva
+  // a /es/anuncios para la lista completa filtrable.
+  // eslint-disable-next-line react-hooks/purity
+  const annHorizonIso = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
   const { data: annRows } = await supabase
     .from('announcements')
     .select('id, title, body, pinned, team_id, club_id, created_at, teams(name)')
     .eq('club_id', clubId)
+    .gte('created_at', annHorizonIso)
+    .order('pinned', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(5);
   type AnnRow = {
@@ -95,19 +107,48 @@ export default async function Home({ params }: Props) {
   const upcomingEvents = (upcomingEventRows ?? []) as unknown as Ev[];
 
   // Convocatorias pendientes a publicar (coach).
+  // Bug J — la versión anterior usaba `head: true` + filtro embebido
+  // `.is('match_callup_meta.published_at', null)` que PostgREST aplica a la
+  // selección del embedded, no a la fila padre — por eso el count daba
+  // todas las matches futuras o cero según el caso. Reescribimos:
+  //   1. Obtenemos team_ids donde el coach es staff activo.
+  //   2. Pedimos events type=match dentro del horizon de esos teams con
+  //      match_callup_meta embebido.
+  //   3. Filtramos en JS los que NO tienen meta o tienen meta sin
+  //      published_at — esos son los que el coach debe convocar.
   let pendingCallupsCount = 0;
   if (isCoach) {
-    const { count } = await supabase
-      .from('events')
-      .select('id, match_callup_meta!left(event_id, published_at)', {
-        count: 'exact',
-        head: true,
-      })
-      .eq('type', 'match')
-      .gte('starts_at', nowIso)
-      .lte('starts_at', upcomingHorizon)
-      .is('match_callup_meta.published_at', null);
-    pendingCallupsCount = count ?? 0;
+    const { data: staffRows } = await supabase
+      .from('team_staff')
+      .select('team_id')
+      .eq('membership_id', ctx.activeClub.membershipId)
+      .is('left_at', null);
+    const coachTeamIds = (staffRows ?? []).map((r) => r.team_id);
+
+    if (coachTeamIds.length > 0) {
+      const { data: matchRows } = await supabase
+        .from('events')
+        .select('id, match_callup_meta(published_at)')
+        .eq('type', 'match')
+        .gte('starts_at', nowIso)
+        .lte('starts_at', upcomingHorizon)
+        .in('team_id', coachTeamIds);
+      type MatchRow = {
+        id: string;
+        match_callup_meta:
+          | { published_at: string | null }
+          | { published_at: string | null }[]
+          | null;
+      };
+      pendingCallupsCount = ((matchRows ?? []) as unknown as MatchRow[]).filter(
+        (e) => {
+          const m = e.match_callup_meta;
+          if (!m) return true;
+          if (Array.isArray(m)) return m.length === 0 || !m[0]?.published_at;
+          return !m.published_at;
+        },
+      ).length;
+    }
   }
 
   return (
@@ -147,7 +188,7 @@ export default async function Home({ params }: Props) {
           </CardContent>
         </Card>
 
-        {/* Anuncios recientes — para todos los roles */}
+        {/* Anuncios recientes (últimos 7d) — para todos los roles */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -161,20 +202,35 @@ export default async function Home({ params }: Props) {
             ) : (
               <ul className="flex flex-col gap-2">
                 {announcements.map((a) => (
-                  <li key={a.id} className="flex flex-col gap-0.5">
-                    <span className="font-medium">{a.title}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {a.team_id === null
-                        ? t('cards.announcements.club_wide')
-                        : (a.teams?.name ?? '—')}
-                      {' · '}
-                      {new Date(a.created_at).toLocaleDateString(locale)}
-                    </span>
+                  <li key={a.id}>
+                    <Link
+                      href={`/anuncios/${a.id}`}
+                      className="flex flex-col gap-0.5 rounded-md p-1 -mx-1 hover:bg-zinc-900/50"
+                    >
+                      <span className="font-medium hover:text-misterfc-green">
+                        {a.title}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {a.team_id === null
+                          ? t('cards.announcements.club_wide')
+                          : (a.teams?.name ?? '—')}
+                        {' · '}
+                        {new Date(a.created_at).toLocaleDateString(locale)}
+                      </span>
+                    </Link>
                   </li>
                 ))}
               </ul>
             )}
           </CardContent>
+          <CardFooter className="pt-0">
+            <Link
+              href="/anuncios"
+              className="text-xs text-misterfc-green hover:underline"
+            >
+              {t('cards.announcements.view_all')}
+            </Link>
+          </CardFooter>
         </Card>
 
         {/* Próximos eventos — jugador + coach */}

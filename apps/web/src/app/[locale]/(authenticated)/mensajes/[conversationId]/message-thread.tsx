@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Loader2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,15 +37,30 @@ export function MessageThread({
   initialMessages,
 }: Props) {
   const t = useTranslations('mensajes');
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [draft, setDraft] = useState('');
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const didRefreshLayoutRef = useRef(false);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages.length]);
+
+  // Bug I — al abrir la conversación, el page Server Component marca los
+  // mensajes recibidos como leídos pero el sidebar (en el layout) ya
+  // renderizó con el contador anterior. router.refresh() re-ejecuta los
+  // Server Components — incluido el layout — y el badge se actualiza al
+  // contador real. Solo lo hacemos UNA vez por montaje para no entrar en
+  // bucle (router.refresh() también re-renderiza este componente, pero
+  // useRef sobrevive y previene la segunda llamada).
+  useEffect(() => {
+    if (didRefreshLayoutRef.current) return;
+    didRefreshLayoutRef.current = true;
+    router.refresh();
+  }, [router]);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();

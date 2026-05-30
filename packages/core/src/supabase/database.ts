@@ -266,6 +266,7 @@ export type Database = {
         Row: {
           club_id: string
           created_at: string
+          half_duration_minutes: number
           id: string
           name: string
           order_idx: number
@@ -274,6 +275,7 @@ export type Database = {
         Insert: {
           club_id: string
           created_at?: string
+          half_duration_minutes?: number
           id?: string
           name: string
           order_idx?: number
@@ -282,6 +284,7 @@ export type Database = {
         Update: {
           club_id?: string
           created_at?: string
+          half_duration_minutes?: number
           id?: string
           name?: string
           order_idx?: number

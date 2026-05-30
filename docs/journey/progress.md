@@ -64,6 +64,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 4.6 | 2026-05-29 | Panel del entrenador: DecisionButtons (called_up/discarded + reason) por fila + resumen de descartes técnicos + lista de respuestas pendientes |
 | 4.7 | 2026-05-29 | Tabla `notifications` futuro-proof (channel `in_app`/`push`/`email`, status, dedupe_key UNIQUE) + endpoint `/api/cron/reminders` (Vercel Cron `0 8 * * *` UTC, ADR-0008) + helpers `buildDedupeKey` / `dayBucketMadrid` |
 | 4.8 | 2026-05-29 | Vista `/asistencia` con stats por código + por jugador, filtros temporales (7d/30d/temporada) + por equipo, lista de entrenamientos pendientes |
+| 4.9 | 2026-05-31 | `categories.half_duration_minutes` (default 45) con backfill por categoría española estándar (querubín 15 … veterano 45, prefijo + unaccent). Helpers `computeEndsAt` / `computeCitacionAt` en `@misterfc/core` (15 Vitest). UI: event-dialog auto-rellena ends_at para type=match; publish-callup-dialog auto-rellena meeting_at = starts_at − 60 min. pgTAP `categories_half_duration_backfill.sql` |
 
 ## Fase 3 — Subfases entregadas
 

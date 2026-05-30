@@ -117,8 +117,9 @@
       },
       "announcements": {
         "title": "Recent announcements",
-        "empty": "No recent announcements.",
-        "club_wide": "Whole club"
+        "empty": "No announcements in the last 7 days.",
+        "club_wide": "Whole club",
+        "view_all": "View all announcements →"
       },
       "upcoming": {
         "title": "Upcoming events (7 days)",
@@ -841,6 +842,7 @@
         "target": "For whom",
         "starts_at": "Starts",
         "ends_at": "Ends",
+        "ends_at_auto": "Auto: {minutes} min (2 halves of the category). Editable.",
         "all_day": "All day",
         "location_name": "Place",
         "location_address": "Address",
@@ -1247,6 +1249,24 @@
   "anuncios_global": {
     "title": "Club announcements",
     "subtitle": "Publish to one team, several teams, or the whole club.",
+    "subtitle_viewer": "Announcements you can see in your club.",
+    "filters": {
+      "scope": "Scope",
+      "scope_all": "All",
+      "scope_club": "Whole club",
+      "scope_team": "By team",
+      "team": "Team",
+      "since": "Since",
+      "since_7d": "Last 7 days",
+      "since_30d": "Last 30 days",
+      "since_all": "All time"
+    },
+    "detail": {
+      "back": "Back to announcements",
+      "club_wide": "Whole club",
+      "expired": "(expired)",
+      "expires_at": "Expires"
+    },
     "form": {
       "title": "Publish announcement",
       "submit": "Publish",

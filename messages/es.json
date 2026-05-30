@@ -116,8 +116,9 @@
       },
       "announcements": {
         "title": "Anuncios recientes",
-        "empty": "No hay anuncios recientes.",
-        "club_wide": "Todo el club"
+        "empty": "No hay anuncios en los últimos 7 días.",
+        "club_wide": "Todo el club",
+        "view_all": "Ver todos los anuncios →"
       },
       "upcoming": {
         "title": "Próximos eventos (7 días)",
@@ -840,6 +841,7 @@
         "target": "Para quién",
         "starts_at": "Empieza",
         "ends_at": "Termina",
+        "ends_at_auto": "Auto: {minutes} min (2 tiempos de la categoría). Editable.",
         "all_day": "Todo el día",
         "location_name": "Lugar",
         "location_address": "Dirección",
@@ -1246,6 +1248,24 @@
   "anuncios_global": {
     "title": "Anuncios del club",
     "subtitle": "Publica anuncios a un equipo, varios equipos o a todo el club.",
+    "subtitle_viewer": "Anuncios que puedes ver en tu club.",
+    "filters": {
+      "scope": "Ámbito",
+      "scope_all": "Todos",
+      "scope_club": "Todo el club",
+      "scope_team": "Por equipo",
+      "team": "Equipo",
+      "since": "Desde",
+      "since_7d": "Últimos 7 días",
+      "since_30d": "Últimos 30 días",
+      "since_all": "Todos"
+    },
+    "detail": {
+      "back": "Volver a anuncios",
+      "club_wide": "Todo el club",
+      "expired": "(caducado)",
+      "expires_at": "Caduca"
+    },
     "form": {
       "title": "Publicar anuncio",
       "submit": "Publicar",

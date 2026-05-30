@@ -3,7 +3,11 @@
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, Megaphone } from 'lucide-react';
-import { TRANSPORT_MODES, type TransportMode } from '@misterfc/core';
+import {
+  TRANSPORT_MODES,
+  type TransportMode,
+  computeCitacionAt,
+} from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -27,6 +31,8 @@ import { publishCallup, type PublishCallupState } from '../actions';
 
 type Props = {
   eventId: string;
+  /** ISO del kickoff del partido — F4.9 usa esto para sugerir meeting_at. */
+  eventStartsAt: string;
   /** Si ya existe meta, prefill inicial. */
   initial: {
     meeting_at: string | null;
@@ -49,15 +55,20 @@ function toLocalInputValue(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function PublishCallupDialog({ eventId, initial }: Props) {
+export function PublishCallupDialog({ eventId, eventStartsAt, initial }: Props) {
   const t = useTranslations('convocatorias.publish');
   const tTransport = useTranslations('convocatorias.transport');
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [state, setState] = useState<PublishCallupState>({});
 
+  // F4.9 — si NO había meeting_at previo, sugerimos kickoff − 60 min.
+  // Si ya había uno guardado, respetamos ese valor (no machacar trabajo
+  // del coach al re-abrir el dialog).
+  const initialMeetingAt =
+    initial.meeting_at ?? computeCitacionAt(eventStartsAt) ?? null;
   const [meetingAt, setMeetingAt] = useState(
-    toLocalInputValue(initial.meeting_at)
+    toLocalInputValue(initialMeetingAt),
   );
   const [meetingLocation, setMeetingLocation] = useState(
     initial.meeting_location ?? ''

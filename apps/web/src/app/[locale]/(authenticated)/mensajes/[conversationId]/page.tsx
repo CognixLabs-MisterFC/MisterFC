@@ -47,6 +47,19 @@ export default async function ConversationPage({ params }: Props) {
   };
   const conv = convRow as unknown as ConvRow;
 
+  // Marca como leídos PRIMERO los mensajes recibidos por este user, para
+  // que el SELECT que sigue ya los devuelva con read_at poblado y la UI
+  // los pinte como leídos en el primer render. Inline (sin server action)
+  // porque Next.js 16 prohíbe revalidatePath durante render — la
+  // revalidación del badge en el sidebar la dispara MessageThread tras
+  // mount via router.refresh() (Bug I).
+  await supabase
+    .from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('conversation_id', conversationId)
+    .is('read_at', null)
+    .neq('sender_profile_id', ctx.user.id);
+
   const { data: messageRows } = await supabase
     .from('messages')
     .select('id, sender_profile_id, body, sent_at, read_at')
@@ -61,20 +74,6 @@ export default async function ConversationPage({ params }: Props) {
     read_at: string | null;
   };
   const messages = (messageRows ?? []) as Msg[];
-
-  // Marca como leídos los mensajes recibidos por este user al cargar la
-  // página. Lo hacemos INLINE (sin pasar por server action) porque la
-  // acción llama a revalidatePath y Next.js 16 prohíbe revalidatePath
-  // durante el render de un Server Component — devuelve "server error".
-  // La revalidación no es necesaria aquí: el render actual ya muestra los
-  // mensajes con su read_at vigente, y la próxima navegación a /mensajes
-  // hará SELECT fresco. Idempotente: si ya estaban leídos no afecta filas.
-  await supabase
-    .from('messages')
-    .update({ read_at: new Date().toISOString() })
-    .eq('conversation_id', conversationId)
-    .is('read_at', null)
-    .neq('sender_profile_id', ctx.user.id);
 
   const playerName = formatPlayerName(conv.players.first_name, conv.players.last_name);
 
