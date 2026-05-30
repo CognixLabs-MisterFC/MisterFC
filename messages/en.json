@@ -135,6 +135,21 @@
       "error_forbidden": "You don't have permission to invite in this club",
       "error_no_club": "You don't belong to any club yet",
       "error_generic": "We couldn't create the invitation. Please try again."
+    },
+    "cancel": {
+      "action": "Cancel invitation",
+      "confirm": {
+        "title": "Cancel invitation",
+        "description": "Cancel the invitation to {email}? They won't be able to use the link they received. This action cannot be undone.",
+        "cancel": "Go back",
+        "action": "Cancel invitation"
+      },
+      "errors": {
+        "not_found": "Invitation not found.",
+        "already_accepted": "This invitation was already accepted; it can't be cancelled.",
+        "forbidden": "You don't have permission to cancel this invitation.",
+        "generic": "Couldn't cancel. Please try again."
+      }
     }
   },
   "invite": {
@@ -544,7 +559,10 @@
       "description": "¿Seguro que quieres quitar a {name} del cuerpo técnico de este equipo? Su membership en el club no se ve afectada.",
       "cancel": "Cancelar",
       "confirm": "Quitar"
-    }
+    },
+    "pending_title": "Pending invitations",
+    "pending_status": "Sent",
+    "pending_expired": "Expired"
   },
   "capabilities": {
     "back": "Volver al equipo",

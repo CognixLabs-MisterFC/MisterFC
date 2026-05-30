@@ -8,6 +8,7 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { InviteForm } from './invite-form';
+import { CancelInvitationButton } from './cancel-invitation-button';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -75,6 +76,7 @@ export default async function InvitationsPage({ params }: Props) {
                 : expired
                   ? t('status_expired')
                   : t('status_pending');
+              const cancellable = !inv.accepted_at;
               return (
                 <li
                   key={inv.id}
@@ -84,7 +86,16 @@ export default async function InvitationsPage({ params }: Props) {
                     <div className="font-medium text-white">{inv.email}</div>
                     <div className="text-xs text-zinc-400">{inv.role}</div>
                   </div>
-                  <div className="text-xs text-zinc-400">{status}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-400">{status}</span>
+                    {cancellable && (
+                      <CancelInvitationButton
+                        locale={locale}
+                        invitationId={inv.id}
+                        email={inv.email}
+                      />
+                    )}
+                  </div>
                 </li>
               );
             })}
