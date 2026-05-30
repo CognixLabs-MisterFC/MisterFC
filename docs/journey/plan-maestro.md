@@ -111,17 +111,19 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F8 | Valoraciones del partido y del entrenamiento | 8–13 h | 3–4 | ☐ |
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☐ |
 | F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☐ |
-| F11 | Biblioteca de ejercicios | 12–16 h | 5–6 | ☐ |
+| F11 | Biblioteca de ejercicios | 13–18 h | 5–6 | ☐ |
 | F12 | Planificador de sesiones | 12–20 h | 4–6 | ☐ |
 | F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☐ |
-| F14 | RGPD para menores y seguridad | 10–14 h | 4–5 | ☐ |
+| F14 | RGPD para menores y seguridad | 12–18 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
 | F16 | Beta cerrada con primer club | 9–15 h (subfases 16.0–16.4 6–10 h + F16.x bulk-invite +3–5 h) | 3–4 | ☐ |
-| **TOTAL Ola 1** | | **170–262 h** | **63–82** | |
+| **TOTAL Ola 1** | | **173–268 h** | **63–82** | |
 
 > **Cambio 2026-05-29**: F2 reabierta como "extendida" con F2.10 (listado global de jugadores) y F2.11 (gestión global de cuerpo técnico). F16 incorpora F16.x (bulk-invite por email, depende de F16.0 SMTP propio). El lote inicial de F2 (subfases 2.0–2.9) sigue cerrado operacionalmente; lo que se reabre es el alcance. Delta acumulado sobre el plan original: +11–19 h (159–243 → 170–262).
 
 > **Cambio 2026-05-29 (planificación)**: F6 ampliada de "Alineaciones del partido" → "Alineaciones y planificación del partido" con 4 nuevas subfases (F6.6 importar convocatoria, F6.7 banquillo, F6.8 cambios programados, F6.9 notas tácticas) y nota arquitectural sobre `<MatchFieldEditor>` reutilizable en F7. Delta F6: 6–9 h / 2–3 sesiones → 9–14 h / 3–4 sesiones (+3–5 h, +1 sesión). Ver [ADR-0009](../decisions/ADR-0009-f6-f7-match-field-editor-compartido.md).
+
+> **Cambio 2026-05-30 (deuda diferida → plan)**: 3 puntos de deuda registrados en `known-issues.md` movidos a subfases concretas + 1 ejecutado en el mismo PR. F11 +1 subfase (11.9 capabilities agrupadas por dominio) → 12–16 h ⇒ 13–18 h. F14 +2 subfases (14.9 RLS capabilities por team_staff, 14.10 RLS events team-isolation) → 10–14 h ⇒ 12–18 h. La 4ª deuda (housekeeping redirect 308 `/mi-plantilla` → `/mis-equipos`) se ejecutó en este mismo PR — app en beta cerrada con piloto único, sin bookmarks externos a la URL antigua, riesgo de breakage = 0. Delta total Ola 1: +3–6 h (170–262 → 173–268).
 
 ---
 
@@ -423,7 +425,7 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Objetivo**: sistema completo de gestión de ejercicios: categorización rica, filtros, ficha detallada, editor visual para crear ejercicios propios.
 
-**Horas**: 12–16 h · **Sesiones**: 5–6
+**Horas**: 13–18 h · **Sesiones**: 5–6
 
 **Criterio de cierre**: entrenador puede explorar biblioteca de ejercicios con filtros (objetivo táctico, categoría de edad, intensidad, duración). Puede ver ficha completa con diagrama del campo. Puede crear sus propios ejercicios con editor visual.
 
@@ -441,6 +443,7 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **11.6** Crear/editar ejercicio propio — 2 h
 - **11.7** Ejercicios privados del entrenador vs compartidos del club — 1 h
 - **11.8** Importar/exportar ejercicios (JSON) — 1 h
+- **11.9** Agrupar capabilities por dominio en panel del ayudante — 1–2 h. Refactor de la UI de capabilities (hoy `/equipos/[teamId]/staff/[membershipId]/capabilities`, plana) a subgrupos colapsables por dominio: **squad** (can_manage_squad), **match** (can_create_lineups, can_register_match_events, can_evaluate), **calendar** (can_manage_calendar, can_create_sessions, can_create_plays), **attendance** (asistencia, convocatorias), **comms** (can_message_families). **Motivación**: con 11+ capabilities planas la UI se vuelve mar de switches sin estructura, y la lista seguirá creciendo con F11-F13 (sesiones, jugadas, pizarra). Hacerlo antes que F12/F13 introduzcan más capabilities evita un refactor más caro después. Recoge la deuda registrada en `known-issues.md` como "capabilities UI plana". Sin cambio de modelo de datos — solo presentación.
 
 ---
 
@@ -495,9 +498,9 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 ### Fase 14 — RGPD para menores y seguridad
 
-**Objetivo**: cumplimiento RGPD para datos de menores: consentimiento parental explícito, audit log de accesos a datos sensibles, derechos del usuario (acceso, rectificación, supresión, portabilidad).
+**Objetivo**: cumplimiento RGPD para datos de menores: consentimiento parental explícito, audit log de accesos a datos sensibles, derechos del usuario (acceso, rectificación, supresión, portabilidad). Además: endurecimiento de RLS en políticas hoy demasiado permisivas (F2.7 capabilities, F3 events).
 
-**Horas**: 10–14 h · **Sesiones**: 4–5
+**Horas**: 12–18 h · **Sesiones**: 4–5
 
 **Criterio de cierre**: alta de jugador menor requiere consentimiento explícito de tutor con timestamp y versión del documento aceptado. Audit log activo en accesos a datos médicos. Usuario puede ejercer sus derechos desde la UI.
 
@@ -515,6 +518,8 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **14.6** Derecho de rectificación (UI para editar) — ya cubierto en Fase 2, validar — 30 min
 - **14.7** Derecho de supresión (borrado lógico con plazo de gracia) — 2 h
 - **14.8** Política de privacidad y términos versionados en la app — 1–2 h
+- **14.9** Endurecer RLS de `capabilities` a `team_staff` específico — 1–2 h. Hoy las RLS permiten que un entrenador_principal del club edite las capabilities de cualquier ayudante de cualquier equipo del club. Debe filtrar al `team_staff` concreto al que pertenece ese ayudante (un principal solo puede tocar las capabilities de los ayudantes activos en sus propios equipos). Migración con drop+create de las policies de `capabilities` + helper `user_is_principal_of_assistant_team(membership_id)` (SECURITY DEFINER) + pgTAP con 4 casos. Recoge la deuda registrada en `known-issues.md` como "F2.7 capabilities cross-team". Sin cambio de UI.
+- **14.10** Endurecer RLS de `events` para aislamiento equipo-a-equipo — 1–2 h. Hoy la RLS de `events` solo verifica miembro del club; el filtrado "jugador ve solo eventos de su equipo" es UX, no seguridad. Un jugador autenticado puede listar via API todos los eventos del club. Cambio: predicate SELECT añade `(team_id IS NULL OR user_is_in_team(team_id))` cuando el rol es jugador/ayudante. Migración + pgTAP con 4 casos (jugador del team A no ve evento del team B; ayudante sin team_staff no ve nada; admin/coord ven todo del club; eventos globales sin team_id siguen visibles). Recoge la deuda registrada en `known-issues.md` como "F3 events RLS visibilidad".
 
 ---
 

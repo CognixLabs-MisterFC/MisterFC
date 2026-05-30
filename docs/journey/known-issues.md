@@ -4,37 +4,6 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 ## Activas
 
-### F4b-redirect-mi-plantilla-cleanup — retirar redirect 308 `/mi-plantilla` → `/mis-equipos`
-- **Detectado en**: 2026-05-29, F4 Lote B (rename del hub del coach).
-- **Síntoma**: `apps/web/next.config.ts` mantiene un par de redirects 308 desde `/[locale]/mi-plantilla` (y `/:path*`) para no romper bookmarks o links externos a la ruta vieja.
-- **Cuándo retirar**: 2026-06-28 (30 días después del merge). Antes solo si el primer club piloto confirma que nadie tiene la URL vieja guardada.
-- **Cómo retirar**: eliminar el bloque `async redirects()` (o las dos entradas concretas) de `apps/web/next.config.ts`. Sin migración de datos ni RLS.
-- **Riesgo de no retirar**: ninguno funcional. Solo overhead de mantener una regla de routing que ya no aporta.
-
-### F3-rls-events-visibilidad — jugador puede consultar vía API eventos de equipos a los que no pertenece
-- **Detectado en**: 2026-05-29, spec 3.0 §4.6 (RLS de events).
-- **Síntoma**: la policy `events_select_member` abre SELECT a cualquier miembro autenticado del club (`user_role_in_club(club_id) is not null`). Un jugador autenticado puede invocar vía REST/RPC un `select * from events where team_id = 'X'` con un team al que no pertenece y recibirá los eventos. La UI no se lo muestra (la query del Server Component filtra), pero la BD no lo bloquea.
-- **Causa**: decisión deliberada de Ola 1 para mantener la matriz de policies simple. Los eventos son semi-públicos dentro del club (título + fecha + lugar; sin datos sensibles). El filtro jugador-ve-solo-su-equipo es **UX, no seguridad**.
-- **Por qué se asume**:
-  - Beta cerrada con un solo club piloto: superficie de "abuso" prácticamente nula.
-  - Datos sensibles (médicos, fotos) tienen su propia RLS estricta (F2.2, F2.7).
-  - Sin esta apertura, la policy SELECT necesitaría 4–5 ramas distintas por rol; complejidad innecesaria en Ola 1.
-- **Impacto actual**: bajo. Visibilidad cross-equipo intra-club. No hay fuga cross-club (el `club_id` sigue siendo barrera dura).
-- **Mitigación temporal**: ninguna. El Server Component filtra por defecto lo que muestra el jugador.
-- **Plan de endurecimiento**: **F14 (RGPD para menores)**. Añadir helper `user_can_see_event(event_id) → bool` que cruce el `team_id` del evento contra los `team_members` activos del jugador (vía sus `player_accounts`) + eventos sin `team_id` (de club/categoría) abiertos. Cambiar la policy SELECT a usar ese helper. Sin refactor del modelo.
-- **Referencia**: `docs/specs/3.0-calendario-eventos.md` §4.6, comentario explícito en `supabase/migrations/20260530000000_events.sql`.
-
-### F2.7 — Capabilities cross-team: cualquier principal del club puede modificar caps de cualquier ayudante
-- **Detectado en**: 2026-05-28, implementación de F2.7 (UI de capabilities del ayudante).
-- **Síntoma**: la policy `capabilities_update` (F1.7) acepta a admin/coord/principal del **club** sin filtrar por equipo. Un entrenador principal del Equipo A puede modificar las caps de un ayudante asignado únicamente al Equipo B.
-- **Causa**: la tabla `capabilities` es por `membership_id` (a nivel club), no por `(membership, team)`. La policy no tiene cómo distinguir "principal de qué equipo".
-- **Impacto actual**: bajo. En la beta del primer club (un solo equipo activo en F16 según plan) el problema no se materializa.
-- **Mitigación temporal**: el server action `toggleCapability` chequea membership.role pero NO chequea pertenencia por equipo. La RLS sigue siendo la autoridad.
-- **Plan de endurecimiento**: cuando el primer club opere con ≥2 equipos cuyos principales sean personas distintas:
-  - Refactor del modelo: añadir `team_id` a `capabilities` (o tabla puente `team_capabilities`) y recomputar al asignar/quitar staff.
-  - O alternativa más simple: cambiar la policy para exigir que el principal sea el mismo del team activo del ayudante (vía `team_staff` introducido en F2.6).
-- **Plan**: abordar en **F11** o antes si surge necesidad. Spec recoge la limitación (`docs/specs/2.7-capabilities-ui.md` §8).
-
 ### InviteStaffDialog — el form no resetea estado entre invitaciones consecutivas
 - **Detectado en**: 2026-05-29, cierre de F2 (revisión post-lote-D).
 - **Síntoma**: al invitar a un segundo miembro del staff sin cerrar el dialog, el banner del envío anterior sigue visible y los inputs no se limpian.
@@ -83,17 +52,6 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
   - Cualquier cambio en env vars requiere **redeploy**.
 - **Plan**: revisar al cerrar **F15 (observabilidad)** junto con el setup de alertas. Hasta entonces, verificación manual cuando se sospeche.
 
-### Capabilities — lista plana va creciendo, evaluar agrupación por dominio cuando llegue a 13–15
-- **Detectado en**: 2026-05-29, spec 4.0 (D4) — F4 añade `can_mark_attendance` y `can_manage_callups`, dejando el CHECK list en **11**.
-- **Causa raíz**: cada fase añade caps planas al enum `CAPABILITY_NAMES` y al CHECK de la tabla. La auditoría visual del panel F2.7 (`/equipos/[teamId]/staff/[membershipId]/capabilities`) muestra 11 switches sin agrupación y va a degradar UX y testabilidad cuando llegue a 13–15 (F6 alineaciones, F8 valoraciones, F10 dashboard probablemente añaden más).
-- **Impacto actual**: nulo en BD ni en runtime. Solo UX del panel y mental model de quien lo lee. Pre-deuda.
-- **Plan candidato (no ahora)**:
-  - Agrupar por dominio: `squad`, `match`, `calendar`, `attendance`, `callups`, … con sub-acciones (ej. `squad.can_manage`, `match.can_register_events`).
-  - O mover capabilities a una tabla aparte con `(domain, action)` en lugar de una sola columna `capability_name`.
-  - O al menos agruparlas en la UI sin tocar el modelo (decoración del panel F2.7).
-- **Cuándo abordar**: cuando se añada la **13ª** capability (≈ Fase 6 si se confirma una para alineaciones; si no, Fase 8). Lo que primero impacte UX dispara la retro.
-- **Referencia**: `docs/specs/4.0-asistencia-convocatorias.md` §D4.
-
 ### Formato pre-existente del repo no pasa `pnpm format:check`
 - **Detectado en**: 2026-05-28, durante el PR de `feat/auth-email-password` (ADR-0004).
 - **Causa raíz**: el repo no tiene husky pre-commit ni `pnpm format:check` en CI; cambios merged desde Fase 0 y Fase 1 acumularon formato inconsistente.
@@ -103,7 +61,35 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
   - Opcional: añadir `pnpm format:check` al workflow CI (`.github/workflows/ci.yml`).
   - Opcional: husky pre-commit con `lint-staged`.
 
+## Planificadas en plan-maestro
+
+> Entradas que dejan de ser "deuda activa" porque han pasado a subfase concreta del plan-maestro con horas presupuestadas. El detalle del plan vive en [plan-maestro.md](plan-maestro.md); aquí solo el cross-reference al issue original para no perder el rastro de por qué entró al plan.
+
+### F11.9 — Capabilities UI plana → agrupar por dominio
+- **Issue original** (2026-05-29, spec 4.0 §D4): la lista plana de capabilities (11 switches en `/equipos/[teamId]/staff/[membershipId]/capabilities`) degrada UX cuando crezca a 13–15 con F6/F8/F10. Pre-deuda de UX, sin impacto en BD ni runtime.
+- **Planificado en**: **F11.9** (1–2 h). Subgrupos colapsables `squad / match / calendar / attendance / comms`. Sin cambio de modelo.
+- **Referencia**: `docs/specs/2.7-capabilities-ui.md` §8, `docs/specs/4.0-asistencia-convocatorias.md` §D4.
+
+### F14.9 — RLS capabilities cross-team
+- **Issue original** (2026-05-28, F2.7): el policy `capabilities_update` (F1.7) acepta admin/coord/principal del **club** sin filtrar por equipo. Un entrenador principal del Equipo A puede modificar caps de un ayudante asignado solo al Equipo B. La RLS sigue siendo la autoridad y el server action no chequea pertenencia por equipo.
+- **Impacto en beta**: bajo (el primer club piloto opera con pocos equipos cuyos principales son la misma persona).
+- **Planificado en**: **F14.9** (1–2 h). Helper `user_is_principal_of_assistant_team(membership_id)` + drop/create de policies de `capabilities` filtrando por `team_staff` específico + pgTAP con 4 casos. Sin cambio de modelo.
+- **Referencia**: `docs/specs/2.7-capabilities-ui.md` §8.
+
+### F14.10 — RLS events team-isolation
+- **Issue original** (2026-05-29, spec 3.0 §4.6): la policy `events_select_member` abre SELECT a cualquier miembro autenticado del club. Un jugador del Equipo A puede listar via API eventos del Equipo B. El filtrado "jugador ve solo eventos de su equipo" es **UX, no seguridad**. Decisión deliberada de Ola 1.
+- **Impacto en beta**: bajo (datos semi-públicos intra-club: título + fecha + lugar). Datos sensibles tienen su propia RLS.
+- **Planificado en**: **F14.10** (1–2 h). Cambio del SELECT policy: `team_id IS NULL OR user_is_in_team(team_id)` para roles jugador/ayudante; admin/coord sin cambio. Migración + pgTAP con 4 casos.
+- **Referencia**: `docs/specs/3.0-calendario-eventos.md` §4.6, comentario explícito en `supabase/migrations/20260530000000_events.sql`.
+
+---
+
 ## Resueltas
+
+### F4b — redirect 308 `/mi-plantilla` → `/mis-equipos` retirado (2026-05-30, chore/diferida-a-plan)
+- **Issue original** (2026-05-29, F4 Lote B): `apps/web/next.config.ts` mantenía un par de redirects 308 desde `/[locale]/mi-plantilla` para no romper bookmarks o links externos a la ruta vieja. Plan original: borrar a partir de 2026-06-28 tras 30 días de gracia.
+- **Decisión 2026-05-30**: ejecutar ahora en lugar de esperar. App en beta cerrada con piloto único, sin bookmarks externos a la URL antigua, riesgo de breakage = 0.
+- **Cómo se retiró**: borrado del bloque `redirects()` en `apps/web/next.config.ts` + verificación con `git grep mi-plantilla` de que no quedan referencias internas.
 
 ### Bug F2.7 latente — server action `toggleCapability` fallaba para todos los roles con 42501 — resuelto en fix/capabilities-admin-grant
 - **Detectado en**: 2026-05-29, smoke test de F3 (`can_manage_calendar`). El user reportó que admin_club no podía activar la capability.

@@ -2,7 +2,7 @@
  * /mis-equipos/[teamId] — Detalle de un equipo del coach.
  *
  * Contiene:
- *   - Plantilla del equipo (lo que mostraba /mi-plantilla).
+ *   - Plantilla del equipo.
  *   - Próximos eventos del equipo (training + match) con link al evento.
  *   - Sección "Acciones" contextual:
  *       · Convocar al próximo partido (si hay match futuro sin convocatoria).
