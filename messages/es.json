@@ -280,6 +280,21 @@
       "error_forbidden": "No tienes permiso para invitar en este club",
       "error_no_club": "No perteneces a ningún club aún",
       "error_generic": "No hemos podido crear la invitación. Inténtalo de nuevo."
+    },
+    "cancel": {
+      "action": "Cancelar invitación",
+      "confirm": {
+        "title": "Cancelar invitación",
+        "description": "¿Cancelar la invitación a {email}? La persona no podrá usar el enlace que recibió. Esta acción no se puede deshacer.",
+        "cancel": "Volver",
+        "action": "Cancelar invitación"
+      },
+      "errors": {
+        "not_found": "Invitación no encontrada.",
+        "already_accepted": "Esta invitación ya se aceptó; no se puede cancelar.",
+        "forbidden": "No tienes permisos para cancelar esta invitación.",
+        "generic": "No se pudo cancelar. Inténtalo de nuevo."
+      }
     }
   },
   "invite": {
@@ -543,7 +558,10 @@
       "description": "¿Seguro que quieres quitar a {name} del cuerpo técnico de este equipo? Su membership en el club no se ve afectada.",
       "cancel": "Cancelar",
       "confirm": "Quitar"
-    }
+    },
+    "pending_title": "Invitaciones pendientes",
+    "pending_status": "Enviada",
+    "pending_expired": "Caducada"
   },
   "capabilities": {
     "back": "Volver al equipo",

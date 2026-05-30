@@ -325,3 +325,86 @@ export async function sendInvitation(
   revalidatePath(`/${locale}/invitations`);
   return { ok: { email: parsed.data.email } };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// cancelInvitation — F2.6 hotfix 2026-05-30
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type CancelInvitationResult = {
+  ok?: { email: string };
+  error?: 'not_found' | 'already_accepted' | 'forbidden' | 'generic';
+};
+
+/**
+ * Borra una invitación pendiente o expirada. Permisos delegados al policy RLS
+ * `invitations_delete_managers` (inviter + admin/coord del club + principal
+ * del team referenciado). El server verifica además que `accepted_at IS NULL`
+ * para impedir borrar invitaciones ya aceptadas — esas generaron memberships
+ * reales y el camino para revocar acceso es removeStaff / removeFamilyLink.
+ *
+ * Revalida la vista correcta según la invitación:
+ *   - club-level → /invitations
+ *   - team-level (team_id) → /equipos/[teamId]
+ *   - player-level (player_id) → /jugadores/[playerId]
+ *
+ * El cliente borra optimista la fila en su lista; si el server devuelve error,
+ * vuelve a mostrarla.
+ */
+export async function cancelInvitation(
+  locale: string,
+  invitationId: string,
+): Promise<CancelInvitationResult> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // SELECT primero para validar estado y poder revalidar paths correctos.
+  // RLS de SELECT ya filtra invitaciones que el user no debería ver; si vuelve
+  // null lo tratamos como not_found (no leakeamos existencia).
+  const { data: invite, error: selErr } = await supabase
+    .from('invitations')
+    .select('id, email, accepted_at, team_id, player_id, club_id')
+    .eq('id', invitationId)
+    .maybeSingle();
+
+  if (selErr) {
+    Sentry.captureException(selErr, {
+      tags: { feature: 'invitations', step: 'cancel_select' },
+      extra: { invitation_id: invitationId },
+    });
+    return { error: 'generic' };
+  }
+  if (!invite) return { error: 'not_found' };
+
+  if (invite.accepted_at) return { error: 'already_accepted' };
+
+  const { error: delErr, count } = await supabase
+    .from('invitations')
+    .delete({ count: 'exact' })
+    .eq('id', invitationId);
+
+  if (delErr) {
+    // 42501 = insufficient privilege — el RLS rechazó al user. No es genérico.
+    if (delErr.code === '42501') return { error: 'forbidden' };
+    Sentry.captureException(delErr, {
+      tags: { feature: 'invitations', step: 'cancel_delete' },
+      extra: { invitation_id: invitationId },
+    });
+    return { error: 'generic' };
+  }
+  // Sin error pero count=0: RLS dejó pasar el query pero ningún row matchea
+  // (puede ser una race con un cancel simultáneo). Lo tratamos como forbidden
+  // para no engañar al cliente con un "ok" falso.
+  if (count === 0) return { error: 'forbidden' };
+
+  console.info('[invitations] cancelled', {
+    invitation_id: invitationId,
+    masked_email: maskEmail(invite.email),
+  });
+
+  // Revalidar todas las rutas donde esta invitación pudiera estar listada.
+  revalidatePath(`/${locale}/invitations`);
+  if (invite.team_id) revalidatePath(`/${locale}/equipos/${invite.team_id}`);
+  if (invite.player_id) revalidatePath(`/${locale}/jugadores/${invite.player_id}`);
+
+  return { ok: { email: invite.email } };
+}

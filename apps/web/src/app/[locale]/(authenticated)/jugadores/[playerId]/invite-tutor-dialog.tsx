@@ -33,36 +33,18 @@ type Props = {
   playerName: string;
 };
 
+/**
+ * Dialog "Invitar tutor/familia" — F2.4 hotfix 2026-05-30: el form vive en un
+ * subcomponente montado sólo cuando `open=true`. Garantiza reset completo del
+ * estado entre opens (email, relation, error). Mismo patrón que
+ * `InviteStaffDialog`.
+ */
 export function InviteTutorDialog({ locale, playerId, playerName }: Props) {
   const t = useTranslations('jugadores.tutor');
   const [open, setOpen] = useState(false);
 
-  const action = inviteTutorForPlayer.bind(null, locale, playerId);
-  const [state, formAction, pending] = useActionState<InviteTutorState, FormData>(
-    action,
-    {}
-  );
-
-  const [lastHandled, setLastHandled] = useState(state);
-  const [sentTo, setSentTo] = useState<string | null>(null);
-  if (state !== lastHandled) {
-    setLastHandled(state);
-    if (state.ok) {
-      setSentTo(state.ok.email);
-      // Reset el form al cerrar — dejamos el dialog abierto con confirmación.
-    }
-  }
-
-  const errorMsg = state.error ? t(`errors.${state.error}`) : null;
-
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(o) => {
-        setOpen(o);
-        if (!o) setSentTo(null);
-      }}
-    >
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Mail className="size-4" aria-hidden />
@@ -76,74 +58,100 @@ export function InviteTutorDialog({ locale, playerId, playerName }: Props) {
             {t('description', { player: playerName })}
           </DialogDescription>
         </DialogHeader>
-
-        {sentTo ? (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm">
-              {t('sent', { email: sentTo })}
-            </p>
-            <DialogFooter>
-              <Button type="button" onClick={() => setOpen(false)}>
-                {t('close')}
-              </Button>
-            </DialogFooter>
-          </div>
-        ) : (
-          <form action={formAction} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="it-email">{t('field.email')}</Label>
-              <Input
-                id="it-email"
-                name="email"
-                type="email"
-                required
-                maxLength={254}
-                autoFocus
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="it-relation">{t('field.relation')}</Label>
-              <Select name="relation" defaultValue="parent">
-                <SelectTrigger id="it-relation">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="parent">
-                    {t('relation.parent')}
-                  </SelectItem>
-                  <SelectItem value="guardian">
-                    {t('relation.guardian')}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">{t('field.help')}</p>
-            </div>
-
-            {errorMsg && (
-              <p className="text-sm text-destructive" role="alert">
-                {errorMsg}
-              </p>
-            )}
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setOpen(false)}
-              >
-                {t('cancel')}
-              </Button>
-              <Button type="submit" disabled={pending}>
-                {pending && (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                )}
-                <span>{t('send')}</span>
-              </Button>
-            </DialogFooter>
-          </form>
+        {open && (
+          <InviteTutorForm
+            locale={locale}
+            playerId={playerId}
+            onClose={() => setOpen(false)}
+          />
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function InviteTutorForm({
+  locale,
+  playerId,
+  onClose,
+}: {
+  locale: string;
+  playerId: string;
+  onClose: () => void;
+}) {
+  const t = useTranslations('jugadores.tutor');
+
+  const action = inviteTutorForPlayer.bind(null, locale, playerId);
+  const [state, formAction, pending] = useActionState<InviteTutorState, FormData>(
+    action,
+    {},
+  );
+
+  const [lastHandled, setLastHandled] = useState(state);
+  const [sentTo, setSentTo] = useState<string | null>(null);
+  if (state !== lastHandled) {
+    setLastHandled(state);
+    if (state.ok) setSentTo(state.ok.email);
+  }
+
+  const errorMsg = state.error ? t(`errors.${state.error}`) : null;
+
+  if (sentTo) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm">{t('sent', { email: sentTo })}</p>
+        <DialogFooter>
+          <Button type="button" onClick={onClose}>
+            {t('close')}
+          </Button>
+        </DialogFooter>
+      </div>
+    );
+  }
+
+  return (
+    <form action={formAction} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="it-email">{t('field.email')}</Label>
+        <Input
+          id="it-email"
+          name="email"
+          type="email"
+          required
+          maxLength={254}
+          autoFocus
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="it-relation">{t('field.relation')}</Label>
+        <Select name="relation" defaultValue="parent">
+          <SelectTrigger id="it-relation">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="parent">{t('relation.parent')}</SelectItem>
+            <SelectItem value="guardian">{t('relation.guardian')}</SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">{t('field.help')}</p>
+      </div>
+
+      {errorMsg && (
+        <p className="text-sm text-destructive" role="alert">
+          {errorMsg}
+        </p>
+      )}
+
+      <DialogFooter>
+        <Button type="button" variant="ghost" onClick={onClose}>
+          {t('cancel')}
+        </Button>
+        <Button type="submit" disabled={pending}>
+          {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
+          <span>{t('send')}</span>
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }

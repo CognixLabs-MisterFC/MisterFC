@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { AssignTeamDialog } from '../_components/assign-team-dialog';
 import { InviteTutorDialog } from './invite-tutor-dialog';
+import { CancelInvitationButton } from '../../invitations/cancel-invitation-button';
 import { PlayerForm } from './player-form';
 import { MedicalNotesForm } from './medical-notes-form';
 import { PlayerPhotoUploader } from './player-photo-uploader';
@@ -227,9 +228,18 @@ export default async function PlayerDetailPage({ params }: Props) {
                         : ''}
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {t('family.pending')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {t('family.pending')}
+                    </span>
+                    {canManage && (
+                      <CancelInvitationButton
+                        locale={locale}
+                        invitationId={inv.id}
+                        email={inv.email}
+                      />
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>
