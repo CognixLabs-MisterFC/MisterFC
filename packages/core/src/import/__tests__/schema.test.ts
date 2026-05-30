@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { playerImportRowSchema, normalizeDate } from '../schema';
+import {
+  playerImportRowSchema,
+  playerImportPayloadSchema,
+  normalizeDate,
+} from '../schema';
 
 /**
  * Validación por fila. Cubre el hotfix F2.9 2026-05-30:
@@ -239,5 +243,121 @@ describe('normalizeDate', () => {
 
   it('dd/mm/yyyy con punto como separador también funciona', () => {
     expect(normalizeDate('15.03.2010')).toBe('2010-03-15');
+  });
+});
+
+/**
+ * Round-trip — el cliente envía al server action el OUTPUT de
+ * `playerImportRowSchema.parse()` (transformado: dorsal=number,
+ * positions_secondary=string[], date_of_birth=ISO, etc.). El server re-valida
+ * con `playerImportPayloadSchema`, que reutiliza `playerImportRowSchema`. La
+ * forma transformada DEBE volver a pasar la validación; si no, el server
+ * responde "invalid_payload" y el import devuelve 0 creados.
+ *
+ * Regresión del bug F2.9 post-piloto 2026-05-30:
+ *   `positions_secondary` salía como `string[]` pero el input union sólo
+ *   aceptaba `string | null` → fallaba en cuanto el row pasaba al server.
+ */
+describe('round-trip: el output del schema vuelve a parsear (server re-valida)', () => {
+  const base = {
+    first_name: 'Pepe',
+    last_name: 'Gomez',
+    date_of_birth: '15/03/2010',
+  };
+
+  it('row mínima (solo obligatorios) re-parsea OK', () => {
+    const first = playerImportRowSchema.safeParse({
+      first_name: 'Solo',
+      date_of_birth: '15/03/2010',
+    });
+    expect(first.success).toBe(true);
+    if (!first.success) return;
+    const second = playerImportRowSchema.safeParse(first.data);
+    expect(second.success).toBe(true);
+    if (second.success) {
+      expect(second.data).toEqual(first.data);
+    }
+  });
+
+  it('row completa (todos los campos opcionales) re-parsea OK', () => {
+    const first = playerImportRowSchema.safeParse({
+      ...base,
+      dorsal: 7,
+      position_main: 'Delantero',
+      positions_secondary: 'Mediocentro|Extremo',
+      foot: 'Derecho',
+      height_cm: 180,
+      weight_kg: '72,5',
+      origin: 'Cantera',
+    });
+    expect(first.success).toBe(true);
+    if (!first.success) return;
+    expect(first.data.positions_secondary).toEqual(['midfielder', 'forward']);
+    const second = playerImportRowSchema.safeParse(first.data);
+    expect(second.success).toBe(true);
+    if (second.success) {
+      expect(second.data).toEqual(first.data);
+    }
+  });
+
+  it('positions_secondary = [] (vacío) re-parsea OK', () => {
+    const first = playerImportRowSchema.safeParse(base);
+    expect(first.success).toBe(true);
+    if (!first.success) return;
+    expect(first.data.positions_secondary).toEqual([]);
+    const second = playerImportRowSchema.safeParse(first.data);
+    expect(second.success).toBe(true);
+  });
+
+  it('positions_secondary = string[] canónico (sin transform) re-parsea OK', () => {
+    const r = playerImportRowSchema.safeParse({
+      ...base,
+      positions_secondary: ['defender', 'forward'],
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.positions_secondary).toEqual(['defender', 'forward']);
+    }
+  });
+
+  it('positions_secondary array castellano se resuelve a canónico', () => {
+    const r = playerImportRowSchema.safeParse({
+      ...base,
+      positions_secondary: ['Mediocentro', 'Delantero'],
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.positions_secondary).toEqual(['midfielder', 'forward']);
+    }
+  });
+
+  it('payload completo (rows + team_id) re-parsea OK', () => {
+    const r1 = playerImportRowSchema.safeParse({
+      ...base,
+      positions_secondary: 'Defensa, Mediocentro',
+    });
+    expect(r1.success).toBe(true);
+    if (!r1.success) return;
+    const payload = {
+      rows: [r1.data],
+      // UUID v4 válido (Zod en este schema rechaza UUIDs nil con [1-8] middle).
+      team_id: 'a3b1c2d4-e5f6-4789-8abc-1234567890ab',
+    };
+    const r2 = playerImportPayloadSchema.safeParse(payload);
+    expect(r2.success).toBe(true);
+  });
+
+  it('payload con team_id=null re-parsea OK (caso "sin equipo asignado")', () => {
+    const r1 = playerImportRowSchema.safeParse({
+      ...base,
+      positions_secondary: ['defender'],
+    });
+    expect(r1.success).toBe(true);
+    if (!r1.success) return;
+    const r2 = playerImportPayloadSchema.safeParse({
+      rows: [r1.data],
+      team_id: null,
+    });
+    expect(r2.success).toBe(true);
   });
 });

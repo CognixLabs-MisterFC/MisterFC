@@ -276,11 +276,21 @@ const positionMainField = z
   )
   .transform((v) => v as (typeof PLAYER_POSITIONS)[number] | null);
 
+// Acepta también `string[]` en input para que el round-trip funcione: el
+// cliente envía al server action el OUTPUT ya transformado (array de enums
+// canónicos) y el server re-valida con el mismo schema. Sin esto, cualquier
+// import devuelve "invalid_payload". Regresión bug F2.9 post-piloto 2026-05-30.
 const positionsSecondaryField = z
-  .union([z.string(), z.null()])
+  .union([z.string(), z.null(), z.array(z.string())])
   .optional()
   .transform((v) => {
     if (v === null || v === undefined) return [] as string[];
+    if (Array.isArray(v)) {
+      return v
+        .map((p) => String(p).trim())
+        .filter((p) => p.length > 0)
+        .map((p) => resolvePosition(p) ?? p);
+    }
     const s = String(v).trim();
     if (s.length === 0) return [] as string[];
     return s
