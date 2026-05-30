@@ -202,7 +202,8 @@
       "calendario": "Calendari",
       "cuerpo_tecnico": "Cos tècnic",
       "asistencia": "Assistència",
-      "convocatorias": "Convocatòries"
+      "convocatorias": "Convocatòries",
+      "mensajes": "Missatges"
     }
   },
   "perfil": {
@@ -519,7 +520,8 @@
   "equipo_detalle": {
     "back": "Volver a la categoría",
     "roster_title": "Jugadores activos",
-    "roster_empty": "Aún no hay jugadores asignados a este equipo."
+    "roster_empty": "Aún no hay jugadores asignados a este equipo.",
+    "announcements_link": "Anuncis"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -1154,6 +1156,65 @@
       "not_published_yet": "El cos tècnic encara no ha publicat la citació.",
       "not_in_roster": "No estaves a l'equip en la data del partit.",
       "not_linked": "Este compte no està vinculat a este jugador."
+    }
+  },
+  "mensajes": {
+    "title": "Missatges",
+    "back_to_list": "Tornar",
+    "list": {
+      "title": "Converses",
+      "empty": "Encara no hi ha converses. Obre'n una des de la fitxa del jugador."
+    },
+    "thread": {
+      "empty": "Encara no hi ha missatges. Escriu el primer.",
+      "placeholder": "Escriu un missatge...",
+      "send": "Enviar",
+      "read": "llegit"
+    },
+    "start": {
+      "action": "Enviar missatge"
+    },
+    "errors": {
+      "forbidden": "No tens permisos.",
+      "invalid_payload": "Missatge invàlid.",
+      "rate_limited": "Massa missatges en poc temps. Espera un minut.",
+      "conversation_not_found": "Conversa no trobada.",
+      "player_not_in_club": "El jugador no pertany a aquest club.",
+      "no_active_club": "No hi ha club actiu.",
+      "generic": "No s'ha pogut enviar. Torna-ho a provar."
+    }
+  },
+  "anuncios": {
+    "title": "Anuncis de l'equip",
+    "back": "Tornar a l'equip",
+    "form": {
+      "title": "Publicar anunci",
+      "submit": "Publicar",
+      "field": {
+        "title": "Títol",
+        "body": "Missatge",
+        "pinned": "Fixar a dalt",
+        "expires_at": "Caduca"
+      }
+    },
+    "list": {
+      "title": "Anuncis",
+      "empty": "No hi ha anuncis publicats.",
+      "expired": "(caducat)"
+    },
+    "delete": {
+      "action": "Eliminar anunci",
+      "title": "Eliminar anunci",
+      "description": "Eliminar aquest anunci? L'acció no es pot desfer.",
+      "cancel": "Tornar",
+      "confirm": "Eliminar"
+    },
+    "errors": {
+      "forbidden": "No tens permisos.",
+      "invalid_payload": "Dades de l'anunci invàlides.",
+      "team_not_in_club": "L'equip no pertany a aquest club.",
+      "not_found": "Anunci no trobat.",
+      "generic": "No s'ha pogut guardar. Torna-ho a provar."
     }
   }
 }

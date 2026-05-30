@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { AssignTeamDialog } from '../_components/assign-team-dialog';
 import { InviteTutorDialog } from './invite-tutor-dialog';
 import { CancelInvitationButton } from '../../invitations/cancel-invitation-button';
+import { SendMessageButton } from './send-message-button';
 import { PlayerForm } from './player-form';
 import { MedicalNotesForm } from './medical-notes-form';
 import { PlayerPhotoUploader } from './player-photo-uploader';
@@ -142,12 +143,17 @@ export default async function PlayerDetailPage({ params }: Props) {
             },
           }}
         />
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">{fullName}</h1>
           {player.dorsal != null && (
             <p className="text-sm text-muted-foreground">
               {t('field.dorsal')} #{player.dorsal}
             </p>
+          )}
+          {canManage && (
+            <div className="mt-1">
+              <SendMessageButton locale={locale} playerId={player.id} />
+            </div>
           )}
         </div>
       </div>

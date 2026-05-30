@@ -129,7 +129,8 @@
       "calendario": "Calendario",
       "cuerpo_tecnico": "Cuerpo técnico",
       "asistencia": "Asistencia",
-      "convocatorias": "Convocatorias"
+      "convocatorias": "Convocatorias",
+      "mensajes": "Mensajes"
     }
   },
   "roles": {
@@ -518,7 +519,8 @@
   "equipo_detalle": {
     "back": "Volver a la categoría",
     "roster_title": "Jugadores activos",
-    "roster_empty": "Aún no hay jugadores asignados a este equipo."
+    "roster_empty": "Aún no hay jugadores asignados a este equipo.",
+    "announcements_link": "Anuncios"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -1153,6 +1155,65 @@
       "not_published_yet": "El cuerpo técnico aún no ha publicado la citación.",
       "not_in_roster": "No estabas en el equipo a la fecha del partido.",
       "not_linked": "Esta cuenta no está vinculada a este jugador."
+    }
+  },
+  "mensajes": {
+    "title": "Mensajes",
+    "back_to_list": "Volver",
+    "list": {
+      "title": "Conversaciones",
+      "empty": "Sin conversaciones todavía. Abre una desde la ficha del jugador."
+    },
+    "thread": {
+      "empty": "Aún no hay mensajes. Escribe el primero.",
+      "placeholder": "Escribe un mensaje...",
+      "send": "Enviar",
+      "read": "leído"
+    },
+    "start": {
+      "action": "Enviar mensaje"
+    },
+    "errors": {
+      "forbidden": "No tienes permisos.",
+      "invalid_payload": "Mensaje inválido.",
+      "rate_limited": "Demasiados mensajes en poco tiempo. Espera un minuto.",
+      "conversation_not_found": "Conversación no encontrada.",
+      "player_not_in_club": "El jugador no pertenece a este club.",
+      "no_active_club": "No hay club activo.",
+      "generic": "No se pudo enviar. Inténtalo de nuevo."
+    }
+  },
+  "anuncios": {
+    "title": "Anuncios del equipo",
+    "back": "Volver al equipo",
+    "form": {
+      "title": "Publicar anuncio",
+      "submit": "Publicar",
+      "field": {
+        "title": "Título",
+        "body": "Mensaje",
+        "pinned": "Fijar arriba",
+        "expires_at": "Caduca"
+      }
+    },
+    "list": {
+      "title": "Anuncios",
+      "empty": "No hay anuncios publicados.",
+      "expired": "(caducado)"
+    },
+    "delete": {
+      "action": "Eliminar anuncio",
+      "title": "Eliminar anuncio",
+      "description": "¿Eliminar este anuncio? La acción no se puede deshacer.",
+      "cancel": "Volver",
+      "confirm": "Eliminar"
+    },
+    "errors": {
+      "forbidden": "No tienes permisos.",
+      "invalid_payload": "Datos del anuncio inválidos.",
+      "team_not_in_club": "El equipo no pertenece a este club.",
+      "not_found": "Anuncio no encontrado.",
+      "generic": "No se pudo guardar. Inténtalo de nuevo."
     }
   }
 }

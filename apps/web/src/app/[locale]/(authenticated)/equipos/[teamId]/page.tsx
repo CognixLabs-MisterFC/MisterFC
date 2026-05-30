@@ -158,13 +158,18 @@ export default async function TeamDetailPage({ params }: Props) {
         </Button>
       </div>
 
-      <div className="flex items-start gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col">
           <h1 className="text-3xl font-bold tracking-tight">{team.name}</h1>
           <p className="text-sm text-muted-foreground">
             {category.name} · {category.season} · {team.format}
           </p>
         </div>
+        <Button asChild variant="outline" size="sm">
+          <Link href={`/equipos/${teamId}/anuncios`}>
+            <span>{t('announcements_link')}</span>
+          </Link>
+        </Button>
       </div>
 
       <Card>

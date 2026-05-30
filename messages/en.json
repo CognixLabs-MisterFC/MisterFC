@@ -202,7 +202,8 @@
       "calendario": "Calendar",
       "cuerpo_tecnico": "Coaching staff",
       "asistencia": "Attendance",
-      "convocatorias": "Callups"
+      "convocatorias": "Callups",
+      "mensajes": "Messages"
     }
   },
   "perfil": {
@@ -519,7 +520,8 @@
   "equipo_detalle": {
     "back": "Volver a la categoría",
     "roster_title": "Jugadores activos",
-    "roster_empty": "Aún no hay jugadores asignados a este equipo."
+    "roster_empty": "Aún no hay jugadores asignados a este equipo.",
+    "announcements_link": "Announcements"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -1154,6 +1156,65 @@
       "not_published_yet": "The coaching staff hasn't published the meeting yet.",
       "not_in_roster": "You weren't in the team on the match date.",
       "not_linked": "This account isn't linked to this player."
+    }
+  },
+  "mensajes": {
+    "title": "Messages",
+    "back_to_list": "Back",
+    "list": {
+      "title": "Conversations",
+      "empty": "No conversations yet. Start one from a player profile."
+    },
+    "thread": {
+      "empty": "No messages yet. Write the first one.",
+      "placeholder": "Type a message...",
+      "send": "Send",
+      "read": "read"
+    },
+    "start": {
+      "action": "Send message"
+    },
+    "errors": {
+      "forbidden": "You don't have permission.",
+      "invalid_payload": "Invalid message.",
+      "rate_limited": "Too many messages in a short time. Please wait a minute.",
+      "conversation_not_found": "Conversation not found.",
+      "player_not_in_club": "Player doesn't belong to this club.",
+      "no_active_club": "No active club.",
+      "generic": "Couldn't send. Please try again."
+    }
+  },
+  "anuncios": {
+    "title": "Team announcements",
+    "back": "Back to team",
+    "form": {
+      "title": "Publish announcement",
+      "submit": "Publish",
+      "field": {
+        "title": "Title",
+        "body": "Message",
+        "pinned": "Pin to top",
+        "expires_at": "Expires"
+      }
+    },
+    "list": {
+      "title": "Announcements",
+      "empty": "No announcements published.",
+      "expired": "(expired)"
+    },
+    "delete": {
+      "action": "Delete announcement",
+      "title": "Delete announcement",
+      "description": "Delete this announcement? This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    },
+    "errors": {
+      "forbidden": "You don't have permission.",
+      "invalid_payload": "Invalid announcement data.",
+      "team_not_in_club": "Team doesn't belong to this club.",
+      "not_found": "Announcement not found.",
+      "generic": "Couldn't save. Please try again."
     }
   }
 }
