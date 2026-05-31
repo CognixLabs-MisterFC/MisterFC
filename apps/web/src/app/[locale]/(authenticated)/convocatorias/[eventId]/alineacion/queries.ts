@@ -28,6 +28,15 @@ export type LineupSummary = {
   name: string;
   formationCode: string;
   isOfficial: boolean;
+  visibility: 'staff' | 'team';
+};
+
+export type PlannedSubRow = {
+  id: string;
+  minutePlanned: number;
+  playerOutId: string;
+  playerInId: string;
+  positionCodeTarget: string | null;
 };
 
 export type LineupPositionRow = {
@@ -56,6 +65,10 @@ export type LineupEditorData = {
   lineups: LineupSummary[];
   selectedLineupId: string | null;
   positions: LineupPositionRow[];
+  tacticalNotes: string | null;
+  plannedSubs: PlannedSubRow[];
+  /** La convocatoria del partido está publicada (gate de auto-marcado 6.6). */
+  callupPublished: boolean;
 };
 
 export async function loadLineupEditor(
@@ -134,7 +147,7 @@ export async function loadLineupEditor(
   // Alineaciones del evento.
   const { data: lineupRows } = await supabase
     .from('lineups')
-    .select('id, name, formation_code, is_official, created_at')
+    .select('id, name, formation_code, is_official, visibility, created_at')
     .eq('event_id', eventId)
     .order('is_official', { ascending: false })
     .order('created_at', { ascending: true });
@@ -143,6 +156,7 @@ export async function loadLineupEditor(
     name: string;
     formation_code: string;
     is_official: boolean;
+    visibility: 'staff' | 'team';
     created_at: string;
   };
   const lineups: LineupSummary[] = (lineupRows ?? [])
@@ -152,6 +166,7 @@ export async function loadLineupEditor(
       name: l.name,
       formationCode: l.formation_code,
       isOfficial: l.is_official,
+      visibility: l.visibility,
     }));
 
   // Alineación seleccionada: la pedida (si existe) → la oficial → la primera.
@@ -187,6 +202,49 @@ export async function loadLineupEditor(
       }));
   }
 
+  // Notas tácticas + cambios programados de la alineación seleccionada.
+  let tacticalNotes: string | null = null;
+  let plannedSubs: PlannedSubRow[] = [];
+  if (selected) {
+    const [{ data: notesRow }, { data: subRows }] = await Promise.all([
+      supabase
+        .from('lineup_tactical_notes')
+        .select('notes')
+        .eq('lineup_id', selected.id)
+        .maybeSingle(),
+      supabase
+        .from('planned_substitutions')
+        .select('id, minute_planned, player_out_id, player_in_id, position_code_target')
+        .eq('lineup_id', selected.id)
+        .order('minute_planned', { ascending: true }),
+    ]);
+    tacticalNotes = (notesRow?.notes as string | undefined) ?? null;
+    type SubShape = {
+      id: string;
+      minute_planned: number;
+      player_out_id: string;
+      player_in_id: string;
+      position_code_target: string | null;
+    };
+    plannedSubs = (subRows ?? [])
+      .map((s) => s as unknown as SubShape)
+      .map((s) => ({
+        id: s.id,
+        minutePlanned: s.minute_planned,
+        playerOutId: s.player_out_id,
+        playerInId: s.player_in_id,
+        positionCodeTarget: s.position_code_target,
+      }));
+  }
+
+  // ¿Convocatoria publicada? (gate del auto-marcado 6.6 en el editor.)
+  const { data: metaRow } = await supabase
+    .from('match_callup_meta')
+    .select('published_at')
+    .eq('event_id', eventId)
+    .maybeSingle();
+  const callupPublished = metaRow?.published_at != null;
+
   return {
     event: {
       id: event.id,
@@ -204,5 +262,8 @@ export async function loadLineupEditor(
     lineups,
     selectedLineupId: selected?.id ?? null,
     positions,
+    tacticalNotes,
+    plannedSubs,
+    callupPublished,
   };
 }

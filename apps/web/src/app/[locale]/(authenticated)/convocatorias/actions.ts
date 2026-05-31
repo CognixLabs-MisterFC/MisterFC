@@ -2,12 +2,71 @@
 
 import { revalidatePath } from 'next/cache';
 import {
+  calledUpOverflow,
   createSupabaseServerClient,
+  maxCalledUpFor,
   publishCallupSchema,
   upsertCallupDecisionSchema,
   upsertCallupResponseSchema,
+  type TeamFormat,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+
+type SupaClient = ReturnType<typeof createSupabaseServerClient>;
+
+/**
+ * F6 Mejora 3 — devuelve un estado de error si el nº de convocados (roster a
+ * fecha del partido − descartados en callup_decisions) excede el máximo de la
+ * modalidad del equipo. null si cabe. "Convocados" = los que el coach lleva,
+ * no los que respondieron "no" (esos son no-disponibles por respuesta propia).
+ */
+async function checkCalledUpLimit(
+  supabase: SupaClient,
+  eventId: string
+): Promise<PublishCallupState | null> {
+  const { data: ev } = await supabase
+    .from('events')
+    .select('team_id, starts_at, teams!inner(format)')
+    .eq('id', eventId)
+    .maybeSingle();
+  const teamId = (ev?.team_id as string | null) ?? null;
+  if (!ev || !teamId) return null;
+  const format = (ev as unknown as { teams: { format: TeamFormat } }).teams
+    .format;
+  const eventDate = (ev.starts_at as string).slice(0, 10);
+
+  const { data: tms } = await supabase
+    .from('team_members')
+    .select('player_id, joined_at, left_at')
+    .eq('team_id', teamId)
+    .lte('joined_at', eventDate);
+  type TM = { player_id: string; joined_at: string; left_at: string | null };
+  const rosterIds = (tms ?? [])
+    .map((r) => r as unknown as TM)
+    .filter((r) => r.left_at == null || r.left_at >= eventDate)
+    .map((r) => r.player_id);
+
+  const { data: decs } = await supabase
+    .from('callup_decisions')
+    .select('player_id, decision')
+    .eq('event_id', eventId);
+  const discarded = new Set(
+    (decs ?? [])
+      .filter((d) => (d.decision as string) === 'discarded')
+      .map((d) => d.player_id as string)
+  );
+  const calledUp = rosterIds.filter((id) => !discarded.has(id)).length;
+
+  const overflow = calledUpOverflow(calledUp, format);
+  if (overflow > 0) {
+    return {
+      error: 'too_many_called_up',
+      overflow,
+      maxCalledUp: maxCalledUpFor(format),
+    };
+  }
+  return null;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // publishCallup (F4.4)
@@ -34,10 +93,15 @@ export type PublishCallupState = {
     | 'event_not_match'
     | 'event_without_team'
     | 'cannot_unpublish'
+    | 'too_many_called_up'
     | 'forbidden'
     | 'generic';
   success?: boolean;
   published?: boolean;
+  /** Sobrante de convocados sobre el máximo de la modalidad (F6 Mejora 3). */
+  overflow?: number;
+  /** Máximo de convocados de la modalidad (para el mensaje). */
+  maxCalledUp?: number;
 };
 
 function mapPublishErr(
@@ -99,6 +163,13 @@ export async function publishCallup(
     .select('event_id, published_at')
     .eq('event_id', event_id)
     .maybeSingle();
+
+  // F6 Mejora 3 — al PUBLICAR (transición a publicada), bloquear si el nº de
+  // convocados (roster a fecha − descartados) excede el máximo de la modalidad.
+  if (publish && existing?.published_at == null) {
+    const gate = await checkCalledUpLimit(supabase, event_id);
+    if (gate) return gate;
+  }
 
   const payloadCommon = {
     meeting_at,
