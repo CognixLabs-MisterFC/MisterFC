@@ -113,15 +113,17 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 > **Ampliada 2026-05-29**: F6 pasa de "Editor de alineaciones F7/F8/F11" → "Alineaciones y planificación del partido" con 4 subfases adicionales (6.6 importar convocatoria, 6.7 banquillo, 6.8 cambios programados, 6.9 notas tácticas). Pieza central `<MatchFieldEditor>` sienta la base reutilizable para F7 — ver [ADR-0009](../decisions/ADR-0009-f6-f7-match-field-editor-compartido.md).
 
+> **Lote A entregado 2026-05-31** (PR #33): modelo + catálogo + `<MatchFieldEditor>` + página/editor del staff + permisos. Subfases 6.1–6.5 y 6.7 cerradas. Spec [6.0](../specs/6.0-alineaciones.md), ADR-0012 / ADR-0013. Lote B (6.6, 6.8, 6.9 + compartir con familia) pendiente.
+
 | Subfase | Estado | Resumen | Spec |
 |---|---|---|---|
-| 6.1 | ☐ pendiente | Modelo `lineups` + `lineup_positions` | — |
-| 6.2 | ☐ pendiente | Presets de formación F7 / F8 / F11 | — |
-| 6.3 | ☐ pendiente | Editor visual drag&drop (`<MatchFieldEditor>` nace aquí) | — |
-| 6.4 | ☐ pendiente | Múltiples alineaciones por partido (titular, plan B, segunda parte) | — |
-| 6.5 | ☐ pendiente | Lista de "fuera de convocatoria" con motivo | — |
+| 6.1 | ☑ 2026-05-31 | Modelo `lineups` + `lineup_positions` (normalizado, ADR-0012) + RLS | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
+| 6.2 | ☑ 2026-05-31 | Catálogo de formaciones F7 / F8 / F11 en código (ADR-0013) + geometría | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
+| 6.3 | ☑ 2026-05-31 | Editor visual drag&drop — `<MatchFieldEditor>` (mode edit/readonly/live-overlay) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
+| 6.4 | ☑ 2026-05-31 | Múltiples alineaciones por partido + marcar oficial (una por evento) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
+| 6.5 | ☑ 2026-05-31 | Lista de "fuera de convocatoria" con motivo (`out_reason`) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
 | 6.6 | ☐ pendiente | Importar plantilla desde convocatoria F4 (Sí/Duda → disponibles, No/descarte → no) | [docs/specs/6.6-importar-convocatoria.md](../specs/6.6-importar-convocatoria.md) |
-| 6.7 | ☐ pendiente | Banquillo del partido + drag&drop bidireccional campo↔banquillo | [docs/specs/6.7-banquillo.md](../specs/6.7-banquillo.md) |
+| 6.7 | ☑ 2026-05-31 | Banquillo del partido + drag&drop bidireccional campo↔banquillo↔fuera | [docs/specs/6.7-banquillo.md](../specs/6.7-banquillo.md) |
 | 6.8 | ☐ pendiente | Cambios programados (minuto + jugador out/in + razón) | [docs/specs/6.8-cambios-programados.md](../specs/6.8-cambios-programados.md) |
 | 6.9 | ☐ pendiente | Notas tácticas del partido (bloque libre + por jugador / fase) | [docs/specs/6.9-notas-tacticas.md](../specs/6.9-notas-tacticas.md) |
 

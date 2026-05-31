@@ -555,6 +555,108 @@ export type Database = {
           },
         ]
       }
+      lineup_positions: {
+        Row: {
+          created_at: string
+          id: string
+          lineup_id: string
+          location: string
+          out_reason: string | null
+          player_id: string
+          position_code: string | null
+          updated_at: string
+          x_pct: number | null
+          y_pct: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lineup_id: string
+          location?: string
+          out_reason?: string | null
+          player_id: string
+          position_code?: string | null
+          updated_at?: string
+          x_pct?: number | null
+          y_pct?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lineup_id?: string
+          location?: string
+          out_reason?: string | null
+          player_id?: string
+          position_code?: string | null
+          updated_at?: string
+          x_pct?: number | null
+          y_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lineup_positions_lineup_id_fkey"
+            columns: ["lineup_id"]
+            isOneToOne: false
+            referencedRelation: "lineups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lineup_positions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lineups: {
+        Row: {
+          created_at: string
+          created_by: string
+          event_id: string
+          formation_code: string
+          id: string
+          is_official: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          event_id: string
+          formation_code: string
+          id?: string
+          is_official?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          event_id?: string
+          formation_code?: string
+          id?: string
+          is_official?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lineups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lineups_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_callup_meta: {
         Row: {
           created_at: string
@@ -693,6 +795,38 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          enabled: boolean
+          type: Database["public"]["Enums"]["notification_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          enabled?: boolean
+          type: Database["public"]["Enums"]["notification_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          enabled?: boolean
+          type?: Database["public"]["Enums"]["notification_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           channel: Database["public"]["Enums"]["notification_channel"]
@@ -730,79 +864,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      notification_preferences: {
-        Row: {
-          channel: Database["public"]["Enums"]["notification_channel"]
-          enabled: boolean
-          type: Database["public"]["Enums"]["notification_type"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          channel: Database["public"]["Enums"]["notification_channel"]
-          enabled?: boolean
-          type: Database["public"]["Enums"]["notification_type"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          channel?: Database["public"]["Enums"]["notification_channel"]
-          enabled?: boolean
-          type?: Database["public"]["Enums"]["notification_type"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notification_preferences_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      push_subscriptions: {
-        Row: {
-          auth: string
-          created_at: string
-          endpoint: string
-          id: string
-          last_seen_at: string
-          p256dh: string
-          user_agent: string | null
-          user_id: string
-        }
-        Insert: {
-          auth: string
-          created_at?: string
-          endpoint: string
-          id?: string
-          last_seen_at?: string
-          p256dh: string
-          user_agent?: string | null
-          user_id: string
-        }
-        Update: {
-          auth?: string
-          created_at?: string
-          endpoint?: string
-          id?: string
-          last_seen_at?: string
-          p256dh?: string
-          user_agent?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "push_subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
@@ -943,6 +1004,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_seen_at: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_seen_at?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_seen_at?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_members: {
         Row: {
@@ -1147,6 +1249,7 @@ export type Database = {
         Returns: string
       }
       current_user_email: { Args: never; Returns: string }
+      unaccent: { Args: { "": string }; Returns: string }
       user_active_team_for_staff: {
         Args: { p_club_id: string }
         Returns: string
@@ -1156,6 +1259,7 @@ export type Database = {
         Args: { p_club_id: string; p_team_id: string }
         Returns: boolean
       }
+      user_can_manage_lineup: { Args: { p_event_id: string }; Returns: boolean }
       user_can_manage_player: {
         Args: { p_player_id: string }
         Returns: boolean
@@ -1187,15 +1291,12 @@ export type Database = {
         Returns: boolean
       }
       user_role_in_club: { Args: { p_club_id: string }; Returns: string }
-      user_unread_conversations_count: {
-        Args: Record<string, never>
-        Returns: number
-      }
+      user_unread_conversations_count: { Args: never; Returns: number }
       user_wants_notification: {
         Args: {
-          p_user_id: string
-          p_type: Database["public"]["Enums"]["notification_type"]
           p_channel: Database["public"]["Enums"]["notification_channel"]
+          p_type: Database["public"]["Enums"]["notification_type"]
+          p_user_id: string
         }
         Returns: boolean
       }

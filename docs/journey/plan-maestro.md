@@ -324,15 +324,17 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Subfases**:
 
-- **6.1** Modelo `lineups` y `lineup_positions` (varias alineaciones por partido) — 1 h
-- **6.2** Presets de formación F7/F8/F11 — 1–2 h
-- **6.3** Editor visual con drag & drop (campo SVG, snap a posiciones del preset) — 2–3 h. **Aquí nace `<MatchFieldEditor>`.**
-- **6.4** Múltiples alineaciones por partido (titular, plan B, segunda parte) — 1 h
-- **6.5** Lista de "fuera de convocatoria" con motivo (técnico, físico, disciplinario) — 1 h
+- **6.1** Modelo `lineups` y `lineup_positions` (varias alineaciones por partido) — 1 h `[hecho 2026-05-31]`
+- **6.2** Presets de formación F7/F8/F11 — 1–2 h `[hecho 2026-05-31]`
+- **6.3** Editor visual con drag & drop (campo SVG, snap a posiciones del preset) — 2–3 h. **Aquí nace `<MatchFieldEditor>`.** `[hecho 2026-05-31]`
+- **6.4** Múltiples alineaciones por partido (titular, plan B, segunda parte) — 1 h `[hecho 2026-05-31]`
+- **6.5** Lista de "fuera de convocatoria" con motivo (técnico, físico, disciplinario) — 1 h `[hecho 2026-05-31]`
 - **6.6** Importar plantilla desde convocatoria F4 (Sí/Duda → disponibles, No/descarte → no disponibles) — 30 min. **Dependencias**: F4 cerrada.
-- **6.7** Banquillo del partido: titulares + reservas + fuera convocatoria, con drag&drop bidireccional campo↔banquillo — 1–2 h
+- **6.7** Banquillo del partido: titulares + reservas + fuera convocatoria, con drag&drop bidireccional campo↔banquillo — 1–2 h `[hecho 2026-05-31]`
 - **6.8** Cambios programados: minuto + jugador que sale + jugador que entra + razón, lista ordenada visible en el editor — 1–2 h
 - **6.9** Notas tácticas del partido: bloque libre + objetivos + indicaciones por jugador o por fase — 1 h
+
+> **Lote A entregado 2026-05-31** (PR #33): 6.1–6.5 + 6.7. Spec `docs/specs/6.0-alineaciones.md`, ADR-0012 (modelo normalizado) y ADR-0013 (catálogo en código). Lote B pendiente: 6.6 (import convocatoria), 6.8 (cambios programados), 6.9 (notas tácticas) + visibilidad/compartir con familia.
 
 ---
 

@@ -1185,7 +1185,8 @@
       "decisions_summary": "Resumen de decisiones técnicas",
       "not_published_yet": "El cuerpo técnico aún no ha publicado la citación.",
       "not_in_roster": "No estabas en el equipo a la fecha del partido.",
-      "not_linked": "Esta cuenta no está vinculada a este jugador."
+      "not_linked": "Esta cuenta no está vinculada a este jugador.",
+      "edit_lineup": "Editar alineación"
     }
   },
   "mensajes": {
@@ -1392,5 +1393,42 @@
       }
     },
     "no_team": "No estás asignado a ningún equipo todavía. Habla con el coordinador del club."
+  },
+  "alineacion": {
+    "title": "Alineación",
+    "back": "Volver a la convocatoria",
+    "empty_hint": "Aún no hay alineación para este partido. Crea una para empezar.",
+    "name_label": "Nombre",
+    "formation_label": "Formación",
+    "create": "Crear alineación",
+    "official_label": "Oficial",
+    "official_badge": "Oficial",
+    "new_lineup": "Nueva",
+    "new_lineup_default_name": "Plan B",
+    "bench": "Banquillo",
+    "bench_empty": "Arrastra jugadores aquí.",
+    "out": "Fuera de convocatoria",
+    "out_empty": "Sin descartes.",
+    "remove": "Quitar de la alineación",
+    "saving": "Guardando…",
+    "saved": "Guardado",
+    "out_reason": {
+      "tecnico": "Técnico",
+      "fisico": "Físico",
+      "disciplinario": "Disciplinario",
+      "personal": "Personal"
+    },
+    "errors": {
+      "forbidden": "No tienes permiso para editar esta alineación.",
+      "invalid": "Datos no válidos.",
+      "not_found": "Alineación no encontrada.",
+      "event_not_match": "El evento no es un partido.",
+      "event_without_team": "El partido no tiene equipo.",
+      "player_not_in_team_at_event": "El jugador no está en el equipo en esa fecha.",
+      "position_code_coherence": "Posición incoherente con la zona.",
+      "out_reason_coherence": "Falta el motivo de descarte.",
+      "coords_only_field": "Coordenadas solo válidas en el campo.",
+      "generic": "No se pudo guardar. Inténtalo de nuevo."
+    }
   }
 }

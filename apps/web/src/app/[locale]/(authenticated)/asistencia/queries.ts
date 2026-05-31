@@ -398,7 +398,9 @@ export async function loadEventAttendance(
         dorsal: r.players.dorsal,
       }))
       .sort((a, b) =>
-        a.last_name.localeCompare(b.last_name, 'es', { sensitivity: 'base' })
+        (a.last_name ?? '').localeCompare(b.last_name ?? '', 'es', {
+          sensitivity: 'base',
+        })
       ),
     attendance,
     canRecord,
@@ -605,7 +607,9 @@ export async function loadAsistenciaStats(
       pct_present: p.total > 0 ? (p.present / p.total) * 100 : 0,
     }))
     .sort((a, b) =>
-      a.last_name.localeCompare(b.last_name, 'es', { sensitivity: 'base' })
+      (a.last_name ?? '').localeCompare(b.last_name ?? '', 'es', {
+        sensitivity: 'base',
+      })
     );
 
   return { byPlayer, byCode, totalRecorded };

@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   CalendarDays,
   CheckCircle2,
+  ClipboardList,
   HelpCircle,
   MapPin,
   Megaphone,
@@ -50,9 +51,9 @@ function fmtDate(iso: string, locale: string): string {
   }).format(new Date(iso));
 }
 
-function initials(first: string, last: string): string {
+function initials(first: string, last: string | null): string {
   const a = first.trim().charAt(0).toUpperCase();
-  const b = last.trim().charAt(0).toUpperCase();
+  const b = (last ?? '').trim().charAt(0).toUpperCase();
   return `${b || a}${a || ''}`.slice(0, 2);
 }
 
@@ -141,11 +142,20 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex items-center justify-between gap-3">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
           <Badge variant={isPublished ? 'default' : 'secondary'}>
             {isPublished ? t('published') : t('draft')}
           </Badge>
-          {canManage && (
+          <div className="flex flex-wrap items-center gap-2">
+            {canManage && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/convocatorias/${event.id}/alineacion`}>
+                  <ClipboardList className="size-4" aria-hidden />
+                  <span>{tDetail('edit_lineup')}</span>
+                </Link>
+              </Button>
+            )}
+            {canManage && (
             <PublishCallupDialog
               eventId={event.id}
               eventStartsAt={event.starts_at}
@@ -159,7 +169,8 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                 published: isPublished,
               }}
             />
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
 
