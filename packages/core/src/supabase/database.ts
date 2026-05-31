@@ -609,6 +609,32 @@ export type Database = {
           },
         ]
       }
+      lineup_tactical_notes: {
+        Row: {
+          lineup_id: string
+          notes: string
+          updated_at: string
+        }
+        Insert: {
+          lineup_id: string
+          notes: string
+          updated_at?: string
+        }
+        Update: {
+          lineup_id?: string
+          notes?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lineup_tactical_notes_lineup_id_fkey"
+            columns: ["lineup_id"]
+            isOneToOne: true
+            referencedRelation: "lineups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lineups: {
         Row: {
           created_at: string
@@ -619,6 +645,7 @@ export type Database = {
           is_official: boolean
           name: string
           updated_at: string
+          visibility: string
         }
         Insert: {
           created_at?: string
@@ -629,6 +656,7 @@ export type Database = {
           is_official?: boolean
           name: string
           updated_at?: string
+          visibility?: string
         }
         Update: {
           created_at?: string
@@ -639,6 +667,7 @@ export type Database = {
           is_official?: boolean
           name?: string
           updated_at?: string
+          visibility?: string
         }
         Relationships: [
           {
@@ -867,6 +896,58 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planned_substitutions: {
+        Row: {
+          created_at: string
+          id: string
+          lineup_id: string
+          minute_planned: number
+          player_in_id: string
+          player_out_id: string
+          position_code_target: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lineup_id: string
+          minute_planned: number
+          player_in_id: string
+          player_out_id: string
+          position_code_target?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lineup_id?: string
+          minute_planned?: number
+          player_in_id?: string
+          player_out_id?: string
+          position_code_target?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planned_substitutions_lineup_id_fkey"
+            columns: ["lineup_id"]
+            isOneToOne: false
+            referencedRelation: "lineups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planned_substitutions_player_in_id_fkey"
+            columns: ["player_in_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planned_substitutions_player_out_id_fkey"
+            columns: ["player_out_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
         ]
@@ -1271,6 +1352,10 @@ export type Database = {
       user_can_see_player: { Args: { p_player_id: string }; Returns: boolean }
       user_can_see_player_medical: {
         Args: { p_player_id: string }
+        Returns: boolean
+      }
+      user_can_see_shared_lineup: {
+        Args: { p_event_id: string }
         Returns: boolean
       }
       user_has_capability: {
