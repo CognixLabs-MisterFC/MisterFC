@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MODALITY_RULES,
   calledUpOverflow,
+  exceedsStarters,
   maxCalledUpFor,
   modalityRules,
   startersFor,
@@ -35,5 +36,15 @@ describe('reglas por modalidad', () => {
     expect(calledUpOverflow(16, 'F8')).toBe(2);
     expect(calledUpOverflow(10, 'F11')).toBe(0);
     expect(maxCalledUpFor('F8')).toBe(14);
+  });
+
+  it('exceedsStarters: tope de titulares por modalidad (Bug F)', () => {
+    // F7=7, F8=8, F11=11 titulares.
+    expect(exceedsStarters(7, 'F7')).toBe(false);
+    expect(exceedsStarters(8, 'F7')).toBe(true);
+    expect(exceedsStarters(8, 'F8')).toBe(false);
+    expect(exceedsStarters(9, 'F8')).toBe(true);
+    expect(exceedsStarters(11, 'F11')).toBe(false);
+    expect(exceedsStarters(12, 'F11')).toBe(true);
   });
 });

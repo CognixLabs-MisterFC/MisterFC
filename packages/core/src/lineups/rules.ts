@@ -43,3 +43,11 @@ export function maxCalledUpFor(format: TeamFormat): number {
 export function calledUpOverflow(count: number, format: TeamFormat): number {
   return Math.max(0, count - MODALITY_RULES[format].maxCalledUp);
 }
+
+/**
+ * Bug F — ¿`fieldCount` titulares en el campo supera el máximo de la modalidad?
+ * Usado por el editor (cliente, bloqueo + toast) y el server action.
+ */
+export function exceedsStarters(fieldCount: number, format: TeamFormat): boolean {
+  return fieldCount > MODALITY_RULES[format].starters;
+}
