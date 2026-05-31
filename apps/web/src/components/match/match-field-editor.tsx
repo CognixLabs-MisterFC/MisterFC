@@ -25,28 +25,29 @@
 import { type ReactNode, useId } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { getFormation, type Formation, type TeamFormat } from '@misterfc/core';
+import {
+  fieldSlotDroppableId,
+  getFormation,
+  playerDraggableId,
+  type Formation,
+  type TeamFormat,
+} from '@misterfc/core';
 import { cn } from '@/lib/utils';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Ids estables para drag&drop. La página los usa en su onDragEnd sin string
-// magic. droppable de slot: `lineup-slot:<code>`; draggable de jugador:
-// `lineup-player:<playerId>`. Las zonas banquillo/fuera (paneles de la página,
-// F6.7) usan sus propios ids (`lineup-zone:bench` / `:out`).
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const FIELD_SLOT_PREFIX = 'lineup-slot:';
-export const PLAYER_DRAG_PREFIX = 'lineup-player:';
-
-export const fieldSlotDroppableId = (slotCode: string): string =>
-  `${FIELD_SLOT_PREFIX}${slotCode}`;
-export const playerDraggableId = (playerId: string): string =>
-  `${PLAYER_DRAG_PREFIX}${playerId}`;
-
-export const parseFieldSlotId = (id: string): string | null =>
-  id.startsWith(FIELD_SLOT_PREFIX) ? id.slice(FIELD_SLOT_PREFIX.length) : null;
-export const parsePlayerDragId = (id: string): string | null =>
-  id.startsWith(PLAYER_DRAG_PREFIX) ? id.slice(PLAYER_DRAG_PREFIX.length) : null;
+// Ids de drag&drop centralizados en @misterfc/core/lineups/editor (compartidos
+// con el cliente de la página). El droppable de slot es `lineup-slot:<code>`;
+// el draggable de jugador `lineup-player:<id>`; las zonas banquillo/fuera usan
+// BENCH_ZONE_ID / OUT_ZONE_ID. Se re-exportan para consumidores del componente.
+export {
+  FIELD_SLOT_PREFIX,
+  PLAYER_DRAG_PREFIX,
+  BENCH_ZONE_ID,
+  OUT_ZONE_ID,
+  fieldSlotDroppableId,
+  playerDraggableId,
+  parseFieldSlotId,
+  parsePlayerDragId,
+} from '@misterfc/core';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tipos públicos

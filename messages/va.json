@@ -1186,7 +1186,8 @@
       "decisions_summary": "Resum de decisions tècniques",
       "not_published_yet": "El cos tècnic encara no ha publicat la citació.",
       "not_in_roster": "No estaves a l'equip en la data del partit.",
-      "not_linked": "Este compte no està vinculat a este jugador."
+      "not_linked": "Este compte no està vinculat a este jugador.",
+      "edit_lineup": "Editar alineació"
     }
   },
   "mensajes": {
@@ -1393,5 +1394,42 @@
       }
     },
     "no_team": "Encara no estàs assignat a cap equip. Parla amb el coordinador del club."
+  },
+  "alineacion": {
+    "title": "Alineació",
+    "back": "Tornar a la convocatòria",
+    "empty_hint": "Encara no hi ha alineació per a aquest partit. Crea’n una per començar.",
+    "name_label": "Nom",
+    "formation_label": "Formació",
+    "create": "Crear alineació",
+    "official_label": "Oficial",
+    "official_badge": "Oficial",
+    "new_lineup": "Nova",
+    "new_lineup_default_name": "Pla B",
+    "bench": "Banqueta",
+    "bench_empty": "Arrossega jugadors ací.",
+    "out": "Fora de convocatòria",
+    "out_empty": "Sense descarts.",
+    "remove": "Llevar de l’alineació",
+    "saving": "Guardant…",
+    "saved": "Guardat",
+    "out_reason": {
+      "tecnico": "Tècnic",
+      "fisico": "Físic",
+      "disciplinario": "Disciplinari",
+      "personal": "Personal"
+    },
+    "errors": {
+      "forbidden": "No tens permís per editar aquesta alineació.",
+      "invalid": "Dades no vàlides.",
+      "not_found": "Alineació no trobada.",
+      "event_not_match": "L’esdeveniment no és un partit.",
+      "event_without_team": "El partit no té equip.",
+      "player_not_in_team_at_event": "El jugador no està a l’equip en eixa data.",
+      "position_code_coherence": "Posició incoherent amb la zona.",
+      "out_reason_coherence": "Falta el motiu del descart.",
+      "coords_only_field": "Coordenades només vàlides al camp.",
+      "generic": "No s’ha pogut guardar. Torna-ho a provar."
+    }
   }
 }
