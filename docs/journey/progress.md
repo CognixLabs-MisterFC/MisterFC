@@ -126,6 +126,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 6.7 | ☑ 2026-05-31 | Banquillo del partido + drag&drop bidireccional campo↔banquillo↔fuera | [docs/specs/6.7-banquillo.md](../specs/6.7-banquillo.md) |
 | 6.8 | ☐ pendiente | Cambios programados (minuto + jugador out/in + razón) | [docs/specs/6.8-cambios-programados.md](../specs/6.8-cambios-programados.md) |
 | 6.9 | ☐ pendiente | Notas tácticas del partido (bloque libre + por jugador / fase) | [docs/specs/6.9-notas-tacticas.md](../specs/6.9-notas-tacticas.md) |
+| 6.10 | ☐ pendiente | Plantillas personalizadas de formación (tabla `coach_formations`, ruta `/perfil/formaciones`, grupo "Mis formaciones" en el selector del editor) | — |
 
 ## Fase 11 — Subfases pendientes
 
