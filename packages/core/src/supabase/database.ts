@@ -561,7 +561,6 @@ export type Database = {
           id: string
           lineup_id: string
           location: string
-          out_reason: string | null
           player_id: string
           position_code: string | null
           updated_at: string
@@ -573,7 +572,6 @@ export type Database = {
           id?: string
           lineup_id: string
           location?: string
-          out_reason?: string | null
           player_id: string
           position_code?: string | null
           updated_at?: string
@@ -585,7 +583,6 @@ export type Database = {
           id?: string
           lineup_id?: string
           location?: string
-          out_reason?: string | null
           player_id?: string
           position_code?: string | null
           updated_at?: string
@@ -1409,6 +1406,7 @@ export type Database = {
         | "new_announcement"
         | "callup_published"
         | "training_reminder"
+        | "callup_updated"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -1560,6 +1558,7 @@ export const Constants = {
         "new_announcement",
         "callup_published",
         "training_reminder",
+        "callup_updated",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },
