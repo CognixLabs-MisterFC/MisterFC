@@ -31,3 +31,17 @@ export type {
   SlottedPlayer,
   RemapResult,
 } from './geometry';
+
+export {
+  FIELD_SLOT_PREFIX,
+  PLAYER_DRAG_PREFIX,
+  BENCH_ZONE_ID,
+  OUT_ZONE_ID,
+  fieldSlotDroppableId,
+  playerDraggableId,
+  parseFieldSlotId,
+  parsePlayerDragId,
+  resolveDrop,
+  applyDrop,
+} from './editor';
+export type { DropTarget, ResolvedDrop, ApplyDropResult } from './editor';

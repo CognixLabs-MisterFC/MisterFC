@@ -166,3 +166,18 @@ export type {
   UpsertCallupResponseInput,
   UpsertCallupDecisionInput,
 } from './callup';
+
+export {
+  createLineupSchema,
+  setLineupFormationSchema,
+  setLineupOfficialSchema,
+  deleteLineupPositionSchema,
+  upsertLineupPositionSchema,
+} from './lineup';
+export type {
+  CreateLineupInput,
+  SetLineupFormationInput,
+  SetLineupOfficialInput,
+  DeleteLineupPositionInput,
+  UpsertLineupPositionInput,
+} from './lineup';
