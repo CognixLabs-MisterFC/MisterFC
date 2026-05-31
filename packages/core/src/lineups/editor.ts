@@ -8,7 +8,19 @@
  * y el cliente compartan la MISMA convención sin duplicarla.
  */
 
-import type { Formation, OutReason, PositionAssignment } from './types';
+import type { Formation, LineupLocation, OutReason, PositionAssignment } from './types';
+
+/**
+ * F6.6 — mapeo de zona del editor a decisión técnica de convocatoria (F4):
+ * 'out' = el coach lo saca del cómputo → discarded; field/bench = lo lleva →
+ * called_up. (Las respuestas yes/maybe/no del jugador son otra cosa: eso es
+ * disponibilidad propia, no la decisión del coach.)
+ */
+export function callupDecisionForLocation(
+  location: LineupLocation,
+): 'called_up' | 'discarded' {
+  return location === 'out' ? 'discarded' : 'called_up';
+}
 
 export const FIELD_SLOT_PREFIX = 'lineup-slot:';
 export const PLAYER_DRAG_PREFIX = 'lineup-player:';

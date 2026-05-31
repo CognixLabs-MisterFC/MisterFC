@@ -43,5 +43,15 @@ export {
   parsePlayerDragId,
   resolveDrop,
   applyDrop,
+  callupDecisionForLocation,
 } from './editor';
 export type { DropTarget, ResolvedDrop, ApplyDropResult } from './editor';
+
+export {
+  MODALITY_RULES,
+  modalityRules,
+  startersFor,
+  maxCalledUpFor,
+  calledUpOverflow,
+} from './rules';
+export type { ModalityRules } from './rules';

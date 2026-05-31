@@ -47,6 +47,39 @@ export type DeleteLineupPositionInput = z.infer<typeof deleteLineupPositionSchem
  * BD (coherencia location ↔ position_code / out_reason / coords) para fallar
  * temprano con un mensaje claro en vez de un error de constraint genérico.
  */
+export const setLineupVisibilitySchema = z.object({
+  lineup_id: uuid,
+  visibility: z.enum(['staff', 'team'], { message: 'visibility_invalid' }),
+});
+export type SetLineupVisibilityInput = z.infer<typeof setLineupVisibilitySchema>;
+
+export const setTacticalNotesSchema = z.object({
+  lineup_id: uuid,
+  notes: z
+    .string()
+    .max(2000, { message: 'notes_too_long' })
+    .nullable()
+    .transform((v) => (v != null && v.trim().length === 0 ? null : v)),
+});
+export type SetTacticalNotesInput = z.infer<typeof setTacticalNotesSchema>;
+
+export const createPlannedSubSchema = z
+  .object({
+    lineup_id: uuid,
+    minute_planned: z.number().int().min(0, { message: 'minute_invalid' }).max(120, { message: 'minute_invalid' }),
+    player_out_id: uuid,
+    player_in_id: uuid,
+    position_code_target: z.string().min(1).max(20).nullable().optional().default(null),
+  })
+  .refine((v) => v.player_out_id !== v.player_in_id, {
+    message: 'same_player',
+    path: ['player_in_id'],
+  });
+export type CreatePlannedSubInput = z.infer<typeof createPlannedSubSchema>;
+
+export const deletePlannedSubSchema = z.object({ id: uuid });
+export type DeletePlannedSubInput = z.infer<typeof deletePlannedSubSchema>;
+
 export const upsertLineupPositionSchema = z
   .object({
     lineup_id: uuid,
