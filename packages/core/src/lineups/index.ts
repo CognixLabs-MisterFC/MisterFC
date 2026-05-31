@@ -8,10 +8,9 @@ export type {
   FormationSlot,
   Formation,
   LineupLocation,
-  OutReason,
   PositionAssignment,
 } from './types';
-export { LINEUP_LOCATIONS, OUT_REASONS } from './types';
+export { LINEUP_LOCATIONS } from './types';
 
 export {
   FORMATIONS,
@@ -36,14 +35,12 @@ export {
   FIELD_SLOT_PREFIX,
   PLAYER_DRAG_PREFIX,
   BENCH_ZONE_ID,
-  OUT_ZONE_ID,
   fieldSlotDroppableId,
   playerDraggableId,
   parseFieldSlotId,
   parsePlayerDragId,
   resolveDrop,
   applyDrop,
-  callupDecisionForLocation,
 } from './editor';
 export type { DropTarget, ResolvedDrop, ApplyDropResult } from './editor';
 

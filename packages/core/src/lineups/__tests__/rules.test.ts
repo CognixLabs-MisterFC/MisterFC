@@ -6,7 +6,6 @@ import {
   modalityRules,
   startersFor,
 } from '../rules';
-import { callupDecisionForLocation } from '../editor';
 import { fieldCapacity } from '../geometry';
 import { getFormation } from '../formations';
 
@@ -36,13 +35,5 @@ describe('reglas por modalidad', () => {
     expect(calledUpOverflow(16, 'F8')).toBe(2);
     expect(calledUpOverflow(10, 'F11')).toBe(0);
     expect(maxCalledUpFor('F8')).toBe(14);
-  });
-});
-
-describe('callupDecisionForLocation', () => {
-  it('out → discarded; field/bench → called_up', () => {
-    expect(callupDecisionForLocation('out')).toBe('discarded');
-    expect(callupDecisionForLocation('field')).toBe('called_up');
-    expect(callupDecisionForLocation('bench')).toBe('called_up');
   });
 });

@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { getFormation } from '../lineups/formations';
-import { LINEUP_LOCATIONS, OUT_REASONS } from '../lineups/types';
+import { LINEUP_LOCATIONS } from '../lineups/types';
 
 const uuid = z.string().uuid({ message: 'invalid_id' });
 
@@ -42,11 +42,6 @@ export const deleteLineupPositionSchema = z.object({
 });
 export type DeleteLineupPositionInput = z.infer<typeof deleteLineupPositionSchema>;
 
-/**
- * Upsert de la posición de un jugador. Las refinements replican los CHECK de
- * BD (coherencia location ↔ position_code / out_reason / coords) para fallar
- * temprano con un mensaje claro en vez de un error de constraint genérico.
- */
 export const setLineupVisibilitySchema = z.object({
   lineup_id: uuid,
   visibility: z.enum(['staff', 'team'], { message: 'visibility_invalid' }),
@@ -80,6 +75,12 @@ export type CreatePlannedSubInput = z.infer<typeof createPlannedSubSchema>;
 export const deletePlannedSubSchema = z.object({ id: uuid });
 export type DeletePlannedSubInput = z.infer<typeof deletePlannedSubSchema>;
 
+/**
+ * Upsert de la posición de un jugador. Las refinements replican los CHECK de
+ * BD (coherencia location ↔ position_code / coords) para fallar temprano con un
+ * mensaje claro en vez de un error de constraint genérico. Rediseño Lote B':
+ * solo field/bench, sin out_reason.
+ */
 export const upsertLineupPositionSchema = z
   .object({
     lineup_id: uuid,
@@ -88,16 +89,11 @@ export const upsertLineupPositionSchema = z
     position_code: z.string().min(1).max(20).nullable().optional().default(null),
     x_pct: z.number().min(0).max(100).nullable().optional().default(null),
     y_pct: z.number().min(0).max(100).nullable().optional().default(null),
-    out_reason: z.enum(OUT_REASONS, { message: 'out_reason_invalid' }).nullable().optional().default(null),
   })
   .refine(
     (v) =>
       v.location === 'field' ? v.position_code != null : v.position_code == null,
     { message: 'position_code_coherence', path: ['position_code'] },
-  )
-  .refine(
-    (v) => (v.location === 'out' ? v.out_reason != null : v.out_reason == null),
-    { message: 'out_reason_coherence', path: ['out_reason'] },
   )
   .refine(
     (v) => v.location === 'field' || (v.x_pct == null && v.y_pct == null),

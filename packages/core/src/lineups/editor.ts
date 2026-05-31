@@ -6,26 +6,17 @@
  *
  * Los ids de drag&drop viven aquí (strings agnósticos) para que el componente
  * y el cliente compartan la MISMA convención sin duplicarla.
+ *
+ * Rediseño Lote B': solo hay dos zonas, field y bench. La alineación distribuye
+ * a los CONVOCADOS; sacar a un jugador es decisión de convocatoria, no del
+ * editor (ya no existe la zona "out" ni el out_reason).
  */
 
-import type { Formation, LineupLocation, OutReason, PositionAssignment } from './types';
-
-/**
- * F6.6 — mapeo de zona del editor a decisión técnica de convocatoria (F4):
- * 'out' = el coach lo saca del cómputo → discarded; field/bench = lo lleva →
- * called_up. (Las respuestas yes/maybe/no del jugador son otra cosa: eso es
- * disponibilidad propia, no la decisión del coach.)
- */
-export function callupDecisionForLocation(
-  location: LineupLocation,
-): 'called_up' | 'discarded' {
-  return location === 'out' ? 'discarded' : 'called_up';
-}
+import type { Formation, PositionAssignment } from './types';
 
 export const FIELD_SLOT_PREFIX = 'lineup-slot:';
 export const PLAYER_DRAG_PREFIX = 'lineup-player:';
 export const BENCH_ZONE_ID = 'lineup-zone:bench';
-export const OUT_ZONE_ID = 'lineup-zone:out';
 
 export const fieldSlotDroppableId = (slotCode: string): string =>
   `${FIELD_SLOT_PREFIX}${slotCode}`;
@@ -39,8 +30,7 @@ export const parsePlayerDragId = (id: string): string | null =>
 
 export type DropTarget =
   | { kind: 'field'; slotCode: string }
-  | { kind: 'bench' }
-  | { kind: 'out' };
+  | { kind: 'bench' };
 
 export interface ResolvedDrop {
   playerId: string;
@@ -61,7 +51,6 @@ export function resolveDrop(
   const slotCode = parseFieldSlotId(overId);
   if (slotCode) return { playerId, target: { kind: 'field', slotCode } };
   if (overId === BENCH_ZONE_ID) return { playerId, target: { kind: 'bench' } };
-  if (overId === OUT_ZONE_ID) return { playerId, target: { kind: 'out' } };
   return null;
 }
 
@@ -81,7 +70,6 @@ export function applyDrop(
   assignments: PositionAssignment[],
   drop: ResolvedDrop,
   formation: Formation | undefined,
-  defaultOutReason: OutReason = 'tecnico',
 ): ApplyDropResult {
   const { playerId, target } = drop;
   const byId = new Map<string, PositionAssignment>(
@@ -104,7 +92,6 @@ export function applyDrop(
         a.positionCode = null;
         a.xPct = null;
         a.yPct = null;
-        a.outReason = null;
         changed.add(a.playerId);
       }
     }
@@ -113,21 +100,12 @@ export function applyDrop(
     me.positionCode = target.slotCode;
     me.xPct = slot ? slot.xPct : null;
     me.yPct = slot ? slot.yPct : null;
-    me.outReason = null;
     changed.add(playerId);
-  } else if (target.kind === 'bench') {
+  } else {
     me.location = 'bench';
     me.positionCode = null;
     me.xPct = null;
     me.yPct = null;
-    me.outReason = null;
-    changed.add(playerId);
-  } else {
-    me.location = 'out';
-    me.positionCode = null;
-    me.xPct = null;
-    me.yPct = null;
-    me.outReason = me.outReason ?? defaultOutReason;
     changed.add(playerId);
   }
 
