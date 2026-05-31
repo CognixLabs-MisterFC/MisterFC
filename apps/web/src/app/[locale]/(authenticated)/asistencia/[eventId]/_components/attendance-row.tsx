@@ -57,9 +57,9 @@ type Props = {
   disabled?: boolean;
 };
 
-function initials(first: string, last: string): string {
+function initials(first: string, last: string | null): string {
   const a = first.trim().charAt(0).toUpperCase();
-  const b = last.trim().charAt(0).toUpperCase();
+  const b = (last ?? '').trim().charAt(0).toUpperCase();
   return `${b || a}${a || ''}`.slice(0, 2);
 }
 
