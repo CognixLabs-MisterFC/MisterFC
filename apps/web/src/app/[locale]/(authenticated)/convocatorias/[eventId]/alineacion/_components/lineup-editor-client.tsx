@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import {
   DndContext,
   KeyboardSensor,
@@ -15,39 +16,31 @@ import {
 } from '@dnd-kit/core';
 import {
   BENCH_ZONE_ID,
-  OUT_ZONE_ID,
-  OUT_REASONS,
   applyDrop,
   defaultFormation,
+  exceedsStarters,
   formationsForFormat,
   getFormation,
   playerDraggableId,
   remapToFormation,
   resolveDrop,
   roleFromPosition,
-  type LineupLocation,
-  type OutReason,
+  startersFor,
   type PlayerPositionMain,
   type PositionAssignment,
   type TeamFormat,
 } from '@misterfc/core';
-import { Loader2, Plus, RefreshCw, Trash2, UserMinus } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
 import {
   MatchFieldEditor,
   type FieldEditorPlayer,
 } from '@/components/match/match-field-editor';
+import { PlayerAvatar } from '@/components/match/player-avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Hint } from '@/components/ui/tooltip';
 import {
   Select,
   SelectContent,
@@ -58,12 +51,9 @@ import {
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import {
-  applyCallupSync,
   createLineup,
   createPlannedSub,
-  deleteLineupPosition,
   deletePlannedSub,
-  resyncFromCallup,
   setLineupFormation,
   setLineupOfficial,
   setLineupVisibility,
@@ -77,6 +67,7 @@ export type RosterPlayerVM = {
   lastName: string;
   dorsal: number | null;
   positionMain: PlayerPositionMain;
+  photoUrl: string | null;
 };
 
 export type LineupSummaryVM = {
@@ -107,7 +98,6 @@ type Props = {
   initialPositions: PositionAssignment[];
   initialTacticalNotes: string | null;
   initialPlannedSubs: PlannedSubVM[];
-  callupPublished: boolean;
 };
 
 function shortLabel(p: RosterPlayerVM | undefined, playerId: string): string {
@@ -115,6 +105,10 @@ function shortLabel(p: RosterPlayerVM | undefined, playerId: string): string {
   return p.lastName || p.firstName || playerId.slice(0, 4);
 }
 
+/**
+ * Siembra como banquillo a los convocados que aún no tienen posición. El roster
+ * que llega ya viene filtrado a convocados (no descartados) desde el server.
+ */
 function mergeInitial(
   positions: PositionAssignment[],
   roster: RosterPlayerVM[],
@@ -128,7 +122,6 @@ function mergeInitial(
       positionCode: null,
       xPct: null,
       yPct: null,
-      outReason: null,
     }));
   return [...positions, ...extra];
 }
@@ -156,18 +149,17 @@ function DropZone({
 
 function PlayerPill({
   playerId,
-  label,
-  dorsal,
+  player,
   positionLabel,
 }: {
   playerId: string;
-  label: string;
-  dorsal: number | null;
+  player: RosterPlayerVM | undefined;
   positionLabel: string | null;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: playerDraggableId(playerId),
   });
+  const label = shortLabel(player, playerId);
   return (
     <button
       type="button"
@@ -179,8 +171,14 @@ function PlayerPill({
       {...listeners}
       {...attributes}
     >
-      <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-        {dorsal ?? '·'}
+      <PlayerAvatar
+        firstName={player?.firstName ?? ''}
+        lastName={player?.lastName ?? ''}
+        photoUrl={player?.photoUrl ?? null}
+        size="sm"
+      />
+      <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+        {player?.dorsal ?? '·'}
       </span>
       {positionLabel && (
         <span className="shrink-0 rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
@@ -205,7 +203,6 @@ export function LineupEditorClient(props: Props) {
     initialPositions,
     initialTacticalNotes,
     initialPlannedSubs,
-    callupPublished,
   } = props;
 
   const t = useTranslations('alineacion');
@@ -236,16 +233,11 @@ export function LineupEditorClient(props: Props) {
     (initialTacticalNotes ?? '').length > 0,
   );
   const [plannedSubs, setPlannedSubs] = useState<PlannedSubVM[]>(initialPlannedSubs);
-  const [autoMsg, setAutoMsg] = useState<string | null>(null);
-  const [confirmSync, setConfirmSync] = useState<
-    { playerId: string; location: LineupLocation; outReason: OutReason | null }[] | null
-  >(null);
 
   // Form de cambio programado.
   const [subMinute, setSubMinute] = useState('');
   const [subOut, setSubOut] = useState('');
   const [subIn, setSubIn] = useState('');
-  const [subPos, setSubPos] = useState('');
 
   const [newName, setNewName] = useState('Titular');
   const [newFormation, setNewFormation] = useState<string>(
@@ -253,6 +245,7 @@ export function LineupEditorClient(props: Props) {
   );
 
   const formations = useMemo(() => formationsForFormat(format), [format]);
+  const maxStarters = startersFor(format);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -314,17 +307,20 @@ export function LineupEditorClient(props: Props) {
 
   const fieldPlayers: FieldEditorPlayer[] = positions
     .filter((p) => p.location === 'field')
-    .map((p) => ({
-      playerId: p.playerId,
-      label: shortLabel(rosterById.get(p.playerId), p.playerId),
-      dorsal: rosterById.get(p.playerId)?.dorsal ?? null,
-      positionLabel: posLabelOf(p.playerId),
-      positionCode: p.positionCode,
-      xPct: p.xPct,
-      yPct: p.yPct,
-    }));
+    .map((p) => {
+      const r = rosterById.get(p.playerId);
+      return {
+        playerId: p.playerId,
+        label: shortLabel(r, p.playerId),
+        dorsal: r?.dorsal ?? null,
+        positionLabel: posLabelOf(p.playerId),
+        photoUrl: r?.photoUrl ?? null,
+        positionCode: p.positionCode,
+        xPct: p.xPct,
+        yPct: p.yPct,
+      };
+    });
   const benchPlayers = positions.filter((p) => p.location === 'bench');
-  const outPlayers = positions.filter((p) => p.location === 'out');
 
   function persist(
     next: PositionAssignment[],
@@ -343,68 +339,18 @@ export function LineupEditorClient(props: Props) {
           position_code: a.positionCode,
           x_pct: a.xPct,
           y_pct: a.yPct,
-          out_reason: a.outReason,
         });
         if (r.error) {
           setPositions(prev);
-          setError(r.error);
+          if (r.error === 'too_many_starters') {
+            toast.error(t('field_full', { max: maxStarters }));
+          } else {
+            setError(r.error);
+          }
           return;
         }
       }
     });
-  }
-
-  // F6.6 — sincroniza el descarte/convocado de la convocatoria para las
-  // transiciones que cruzan la frontera "out".
-  function runCallupSync(
-    items: { playerId: string; location: LineupLocation; outReason: OutReason | null }[],
-    confirm: boolean,
-  ) {
-    startTransition(async () => {
-      let discarded = 0;
-      let calledUp = 0;
-      for (const it of items) {
-        const r = await applyCallupSync({
-          event_id: eventId,
-          player_id: it.playerId,
-          location: it.location,
-          out_reason: it.outReason,
-          confirm,
-        });
-        if (r.error) {
-          setError(r.error);
-          return;
-        }
-        if (r.needsConfirm) {
-          setConfirmSync(items);
-          return;
-        }
-        if (r.decision === 'discarded') discarded += 1;
-        else calledUp += 1;
-      }
-      const parts: string[] = [];
-      if (discarded > 0) parts.push(t('auto_discarded', { n: discarded }));
-      if (calledUp > 0) parts.push(t('auto_called_up', { n: calledUp }));
-      setAutoMsg(parts.join(' · '));
-    });
-  }
-
-  function syncOutTransitions(
-    prev: PositionAssignment[],
-    next: PositionAssignment[],
-    changed: string[],
-  ) {
-    const transitions = changed
-      .map((pid) => {
-        const before = prev.find((p) => p.playerId === pid)?.location;
-        const after = next.find((p) => p.playerId === pid)!;
-        return { playerId: pid, before, location: after.location, outReason: after.outReason };
-      })
-      .filter((tr) => (tr.location === 'out') !== (tr.before === 'out'))
-      .map((tr) => ({ playerId: tr.playerId, location: tr.location, outReason: tr.outReason }));
-    if (transitions.length === 0) return;
-    if (callupPublished) setConfirmSync(transitions);
-    else runCallupSync(transitions, false);
   }
 
   function onDragEnd(e: DragEndEvent) {
@@ -413,31 +359,18 @@ export function LineupEditorClient(props: Props) {
     const prev = positions;
     const { next, changed } = applyDrop(prev, drop, formation);
     if (changed.length === 0) return;
+
+    // Bug F: tope de titulares por modalidad (toast + bloqueo en cliente).
+    if (
+      drop.target.kind === 'field' &&
+      exceedsStarters(next.filter((p) => p.location === 'field').length, format)
+    ) {
+      toast.error(t('field_full', { max: maxStarters }));
+      return;
+    }
+
     setPositions(next);
     persist(next, changed, prev);
-    syncOutTransitions(prev, next, changed);
-  }
-
-  function changeOutReason(playerId: string, reason: OutReason) {
-    const prev = positions;
-    const next = positions.map((p) =>
-      p.playerId === playerId ? { ...p, outReason: reason } : p,
-    );
-    setPositions(next);
-    persist(next, [playerId], prev);
-  }
-
-  function removeFromLineup(playerId: string) {
-    const prev = positions;
-    const next = positions.filter((p) => p.playerId !== playerId);
-    setPositions(next);
-    startTransition(async () => {
-      const r = await deleteLineupPosition({ lineup_id: lineupId, player_id: playerId });
-      if (r.error) {
-        setPositions(prev);
-        setError(r.error);
-      }
-    });
   }
 
   function onFormationChange(code: string) {
@@ -454,10 +387,10 @@ export function LineupEditorClient(props: Props) {
     const optimistic = positions.map((p) => {
       if (assignMap.has(p.playerId)) {
         const a = assignMap.get(p.playerId)!;
-        return { ...p, location: 'field' as const, positionCode: a.positionCode, xPct: a.xPct, yPct: a.yPct, outReason: null };
+        return { ...p, location: 'field' as const, positionCode: a.positionCode, xPct: a.xPct, yPct: a.yPct };
       }
       if (benchedSet.has(p.playerId)) {
-        return { ...p, location: 'bench' as const, positionCode: null, xPct: null, yPct: null, outReason: null };
+        return { ...p, location: 'bench' as const, positionCode: null, xPct: null, yPct: null };
       }
       return p;
     });
@@ -498,30 +431,7 @@ export function LineupEditorClient(props: Props) {
     startTransition(async () => {
       const r = await setTacticalNotes({ lineup_id: lineupId, notes: notes.trim() || null });
       if (r.error) setError(r.error);
-    });
-  }
-
-  function onResync() {
-    startTransition(async () => {
-      setError(null);
-      const r = await resyncFromCallup(lineupId);
-      if (r.error) {
-        setError(r.error);
-        return;
-      }
-      if (r.positions) {
-        setPositions(
-          r.positions.map((p) => ({
-            playerId: p.playerId,
-            location: p.location,
-            positionCode: p.positionCode,
-            xPct: p.xPct,
-            yPct: p.yPct,
-            outReason: (p.outReason as OutReason | null) ?? null,
-          })),
-        );
-      }
-      setAutoMsg(t('resync_done', { out: r.toOut ?? 0, bench: r.toBench ?? 0 }));
+      else toast.success(t('notes_saved'));
     });
   }
 
@@ -534,7 +444,7 @@ export function LineupEditorClient(props: Props) {
         minute_planned: minute,
         player_out_id: subOut,
         player_in_id: subIn,
-        position_code_target: subPos || null,
+        position_code_target: null,
       });
       if (r.error || !r.subId) {
         setError(r.error ?? 'generic');
@@ -548,14 +458,13 @@ export function LineupEditorClient(props: Props) {
             minutePlanned: minute,
             playerOutId: subOut,
             playerInId: subIn,
-            positionCodeTarget: subPos || null,
+            positionCodeTarget: null,
           },
         ].sort((a, b) => a.minutePlanned - b.minutePlanned),
       );
       setSubMinute('');
       setSubOut('');
       setSubIn('');
-      setSubPos('');
     });
   }
 
@@ -566,8 +475,6 @@ export function LineupEditorClient(props: Props) {
       if (r.error) setError(r.error);
     });
   }
-
-  const fieldAndBench = positions.filter((p) => p.location !== 'out');
 
   return (
     <div className="flex flex-col gap-3">
@@ -591,57 +498,60 @@ export function LineupEditorClient(props: Props) {
 
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{t('formation_label')}</span>
-          <Select value={formationCode} onValueChange={onFormationChange}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {formations.map((f) => (
-                <SelectItem key={f.code} value={f.code}>
-                  {f.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Hint label={t('formation_hint')}>
+            <Select value={formationCode} onValueChange={onFormationChange}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {formations.map((f) => (
+                  <SelectItem key={f.code} value={f.code}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Hint>
         </div>
 
-        <label className="flex items-center gap-2 text-sm">
-          <Switch checked={selectedIsOfficial} onCheckedChange={onToggleOfficial} disabled={pending} />
-          {t('official_label')}
-        </label>
+        <Hint label={t('official_hint')}>
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={selectedIsOfficial} onCheckedChange={onToggleOfficial} disabled={pending} />
+            {t('official_label')}
+          </label>
+        </Hint>
 
-        <label className="flex items-center gap-2 text-sm">
-          <Switch checked={visibility === 'team'} onCheckedChange={onToggleVisibility} disabled={pending} />
-          {t('share_label')}
-        </label>
+        <Hint label={t('share_hint')}>
+          <label className="flex items-center gap-2 text-sm">
+            <Switch checked={visibility === 'team'} onCheckedChange={onToggleVisibility} disabled={pending} />
+            {t('share_label')}
+          </label>
+        </Hint>
 
-        <Button variant="outline" size="sm" disabled={pending} onClick={onResync}>
-          <RefreshCw className="size-4" aria-hidden />
-          {t('resync')}
-        </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={pending}
-          onClick={() =>
-            startTransition(async () => {
-              const r = await createLineup({
-                event_id: eventId,
-                name: t('new_lineup_default_name'),
-                formation_code: defaultFormation(format).code,
-              });
-              if (r.error) {
-                setError(r.error);
-                return;
-              }
-              if (r.lineupId) router.push(`${pathname}?lineup=${r.lineupId}`);
-            })
-          }
-        >
-          <Plus className="size-4" aria-hidden />
-          {t('new_lineup')}
-        </Button>
+        <Hint label={t('new_lineup_hint')}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={pending}
+            onClick={() =>
+              startTransition(async () => {
+                const r = await createLineup({
+                  event_id: eventId,
+                  name: t('new_lineup_default_name'),
+                  formation_code: defaultFormation(format).code,
+                });
+                if (r.error) {
+                  setError(r.error);
+                  return;
+                }
+                if (r.lineupId) router.push(`${pathname}?lineup=${r.lineupId}`);
+              })
+            }
+          >
+            <Plus className="size-4" aria-hidden />
+            {t('new_lineup')}
+          </Button>
+        </Hint>
 
         <span className="ml-auto inline-flex items-center gap-1 text-xs text-muted-foreground">
           {pending ? (
@@ -655,11 +565,6 @@ export function LineupEditorClient(props: Props) {
         </span>
       </div>
 
-      {autoMsg && (
-        <p className="rounded-md border border-border bg-card/40 px-3 py-1.5 text-xs text-muted-foreground" role="status">
-          {autoMsg}
-        </p>
-      )}
       {error && (
         <p className="text-xs text-destructive" role="alert">
           {t(`errors.${error}` as 'errors.generic')}
@@ -667,7 +572,7 @@ export function LineupEditorClient(props: Props) {
       )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <div className="grid gap-3 md:grid-cols-[1fr_2fr_1fr]">
+        <div className="grid gap-3 md:grid-cols-[1fr_2fr]">
           <section className="flex flex-col gap-2">
             <h3 className="text-sm font-semibold">
               {t('bench')} · {benchPlayers.length}
@@ -680,8 +585,7 @@ export function LineupEditorClient(props: Props) {
                   <PlayerPill
                     key={p.playerId}
                     playerId={p.playerId}
-                    label={shortLabel(rosterById.get(p.playerId), p.playerId)}
-                    dorsal={rosterById.get(p.playerId)?.dorsal ?? null}
+                    player={rosterById.get(p.playerId)}
                     positionLabel={posLabelOf(p.playerId)}
                   />
                 ))
@@ -696,45 +600,6 @@ export function LineupEditorClient(props: Props) {
               players={fieldPlayers}
               mode="edit"
             />
-          </section>
-
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold">
-              {t('out')} · {outPlayers.length}
-            </h3>
-            <DropZone id={OUT_ZONE_ID}>
-              {outPlayers.length === 0 ? (
-                <p className="text-xs text-muted-foreground">{t('out_empty')}</p>
-              ) : (
-                outPlayers.map((p) => (
-                  <div key={p.playerId} className="flex flex-col gap-1">
-                    <PlayerPill
-                      playerId={p.playerId}
-                      label={shortLabel(rosterById.get(p.playerId), p.playerId)}
-                      dorsal={rosterById.get(p.playerId)?.dorsal ?? null}
-                      positionLabel={posLabelOf(p.playerId)}
-                    />
-                    <div className="flex items-center gap-1 pl-1">
-                      <Select value={p.outReason ?? 'tecnico'} onValueChange={(v) => changeOutReason(p.playerId, v as OutReason)}>
-                        <SelectTrigger className="h-7 flex-1 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {OUT_REASONS.map((r) => (
-                            <SelectItem key={r} value={r}>
-                              {t(`out_reason.${r}`)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button type="button" variant="ghost" size="icon" className="size-7" aria-label={t('remove')} onClick={() => removeFromLineup(p.playerId)}>
-                        <UserMinus className="size-3.5" aria-hidden />
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </DropZone>
           </section>
         </div>
       </DndContext>
@@ -757,11 +622,12 @@ export function LineupEditorClient(props: Props) {
                       out: shortLabel(out, s.playerOutId),
                       in: shortLabel(inn, s.playerInId),
                     })}
-                    {s.positionCodeTarget ? ` (${s.positionCodeTarget})` : ''}
                   </span>
-                  <Button type="button" variant="ghost" size="icon" className="size-7" aria-label={t('remove')} onClick={() => removePlannedSub(s.id)}>
-                    <Trash2 className="size-3.5" aria-hidden />
-                  </Button>
+                  <Hint label={t('sub_remove_hint')}>
+                    <Button type="button" variant="ghost" size="icon" className="size-7" aria-label={t('remove')} onClick={() => removePlannedSub(s.id)}>
+                      <Trash2 className="size-3.5" aria-hidden />
+                    </Button>
+                  </Hint>
                 </li>
               );
             })}
@@ -779,7 +645,7 @@ export function LineupEditorClient(props: Props) {
                 <SelectValue placeholder="—" />
               </SelectTrigger>
               <SelectContent>
-                {fieldAndBench.map((p) => (
+                {positions.map((p) => (
                   <SelectItem key={p.playerId} value={p.playerId}>
                     {shortLabel(rosterById.get(p.playerId), p.playerId)}
                   </SelectItem>
@@ -827,30 +693,6 @@ export function LineupEditorClient(props: Props) {
           </div>
         )}
       </section>
-
-      {/* Confirmación de sincronización con convocatoria publicada (F6.6) */}
-      <Dialog open={confirmSync != null} onOpenChange={(o) => !o && setConfirmSync(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('confirm_published_title')}</DialogTitle>
-            <DialogDescription>{t('confirm_published_body')}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmSync(null)}>
-              {t('cancel')}
-            </Button>
-            <Button
-              onClick={() => {
-                const items = confirmSync ?? [];
-                setConfirmSync(null);
-                runCallupSync(items, true);
-              }}
-            >
-              {t('confirm_apply')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

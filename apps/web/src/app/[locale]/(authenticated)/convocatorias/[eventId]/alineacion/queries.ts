@@ -1,15 +1,19 @@
 /**
- * F6 Lote A — Carga del editor de alineación de un partido.
+ * F6 — Carga del editor de alineación de un partido.
  *
  * Permission gate autoritativo vía RPC `user_can_manage_lineup` (mismo helper
  * SQL que la RLS). Roster a la fecha del partido (patrón F4). Si el evento no
  * es válido o el user no gestiona → null (la página hace notFound).
+ *
+ * Rediseño Lote B': el editor trabaja SOLO con los CONVOCADOS (called_up). El
+ * roster que se devuelve ya viene filtrado quitando a los descartados en
+ * callup_decisions. Las posiciones (field/bench) son la distribución de esos
+ * convocados.
  */
 
 import {
   createSupabaseServerClient,
   type LineupLocation,
-  type OutReason,
   type PlayerPositionMain,
   type TeamFormat,
 } from '@misterfc/core';
@@ -21,6 +25,7 @@ export type RosterPlayer = {
   lastName: string;
   dorsal: number | null;
   positionMain: PlayerPositionMain;
+  photoUrl: string | null;
 };
 
 export type LineupSummary = {
@@ -45,7 +50,6 @@ export type LineupPositionRow = {
   positionCode: string | null;
   xPct: number | null;
   yPct: number | null;
-  outReason: OutReason | null;
 };
 
 export type LineupEditorData = {
@@ -67,8 +71,6 @@ export type LineupEditorData = {
   positions: LineupPositionRow[];
   tacticalNotes: string | null;
   plannedSubs: PlannedSubRow[];
-  /** La convocatoria del partido está publicada (gate de auto-marcado 6.6). */
-  callupPublished: boolean;
 };
 
 export async function loadLineupEditor(
@@ -112,12 +114,23 @@ export async function loadLineupEditor(
   });
   if (canManage !== true) return null;
 
-  // Roster a la fecha del partido.
+  // Descartados de la convocatoria — el editor NO los muestra (rediseño B').
+  const { data: decisionRows } = await supabase
+    .from('callup_decisions')
+    .select('player_id, decision')
+    .eq('event_id', eventId);
+  const discarded = new Set(
+    (decisionRows ?? [])
+      .filter((d) => (d.decision as string) === 'discarded')
+      .map((d) => d.player_id as string),
+  );
+
+  // Roster a la fecha del partido, filtrado a CONVOCADOS (roster − descartados).
   const eventDate = event.starts_at.slice(0, 10);
   const { data: rosterRows } = await supabase
     .from('team_members')
     .select(
-      'player_id, joined_at, left_at, players!inner(id, first_name, last_name, dorsal, position_main)',
+      'player_id, joined_at, left_at, players!inner(id, first_name, last_name, dorsal, position_main, photo_url)',
     )
     .eq('team_id', event.team_id)
     .lte('joined_at', eventDate);
@@ -128,20 +141,23 @@ export async function loadLineupEditor(
     players: {
       id: string;
       first_name: string;
-      last_name: string;
+      last_name: string | null;
       dorsal: number | null;
       position_main: PlayerPositionMain;
+      photo_url: string | null;
     };
   };
   const roster: RosterPlayer[] = (rosterRows ?? [])
     .map((r) => r as unknown as RosterShape)
     .filter((r) => r.left_at == null || r.left_at >= eventDate)
+    .filter((r) => !discarded.has(r.player_id))
     .map((r) => ({
       playerId: r.player_id,
       firstName: r.players.first_name,
-      lastName: r.players.last_name,
+      lastName: r.players.last_name ?? '',
       dorsal: r.players.dorsal,
       positionMain: r.players.position_main,
+      photoUrl: r.players.photo_url,
     }));
 
   // Alineaciones del evento.
@@ -180,7 +196,7 @@ export async function loadLineupEditor(
   if (selected) {
     const { data: posRows } = await supabase
       .from('lineup_positions')
-      .select('player_id, location, position_code, x_pct, y_pct, out_reason')
+      .select('player_id, location, position_code, x_pct, y_pct')
       .eq('lineup_id', selected.id);
     type PosShape = {
       player_id: string;
@@ -188,17 +204,17 @@ export async function loadLineupEditor(
       position_code: string | null;
       x_pct: number | string | null;
       y_pct: number | string | null;
-      out_reason: OutReason | null;
     };
     positions = (posRows ?? [])
       .map((p) => p as unknown as PosShape)
+      // Defensa: nunca mostrar a un descartado aunque quedara una fila vieja.
+      .filter((p) => !discarded.has(p.player_id))
       .map((p) => ({
         playerId: p.player_id,
         location: p.location,
         positionCode: p.position_code,
         xPct: p.x_pct == null ? null : Number(p.x_pct),
         yPct: p.y_pct == null ? null : Number(p.y_pct),
-        outReason: p.out_reason,
       }));
   }
 
@@ -237,14 +253,6 @@ export async function loadLineupEditor(
       }));
   }
 
-  // ¿Convocatoria publicada? (gate del auto-marcado 6.6 en el editor.)
-  const { data: metaRow } = await supabase
-    .from('match_callup_meta')
-    .select('published_at')
-    .eq('event_id', eventId)
-    .maybeSingle();
-  const callupPublished = metaRow?.published_at != null;
-
   return {
     event: {
       id: event.id,
@@ -264,6 +272,5 @@ export async function loadLineupEditor(
     positions,
     tacticalNotes,
     plannedSubs,
-    callupPublished,
   };
 }

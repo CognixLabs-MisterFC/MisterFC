@@ -22,7 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 type PosShape = {
   player_id: string;
-  location: 'field' | 'bench' | 'out';
+  location: 'field' | 'bench';
   position_code: string | null;
   x_pct: number | string | null;
   y_pct: number | string | null;
@@ -31,6 +31,7 @@ type PosShape = {
     last_name: string | null;
     dorsal: number | null;
     position_main: PlayerPositionMain;
+    photo_url: string | null;
   };
 };
 
@@ -59,7 +60,7 @@ export async function SharedLineupSection({ eventId }: { eventId: string }) {
   const { data: posRows } = await supabase
     .from('lineup_positions')
     .select(
-      'player_id, location, position_code, x_pct, y_pct, players!inner(first_name, last_name, dorsal, position_main)',
+      'player_id, location, position_code, x_pct, y_pct, players!inner(first_name, last_name, dorsal, position_main, photo_url)',
     )
     .eq('lineup_id', lu.id as string);
   const positions = (posRows ?? []).map((p) => p as unknown as PosShape);
@@ -75,6 +76,7 @@ export async function SharedLineupSection({ eventId }: { eventId: string }) {
       label: p.players.last_name || p.players.first_name,
       dorsal: p.players.dorsal,
       positionLabel: posLabel(p.players.position_main),
+      photoUrl: p.players.photo_url,
       positionCode: p.position_code,
       xPct: p.x_pct == null ? null : Number(p.x_pct),
       yPct: p.y_pct == null ? null : Number(p.y_pct),

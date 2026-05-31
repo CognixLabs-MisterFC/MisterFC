@@ -2,13 +2,13 @@
 
 import { revalidatePath } from 'next/cache';
 import {
-  callupDecisionForLocation,
   createLineupSchema,
   createPlannedSubSchema,
   createSupabaseServerClient,
   defaultFormation,
   deleteLineupPositionSchema,
   deletePlannedSubSchema,
+  exceedsStarters,
   getFormation,
   remapToFormation,
   roleFromPosition,
@@ -17,8 +17,8 @@ import {
   setLineupVisibilitySchema,
   setTacticalNotesSchema,
   upsertLineupPositionSchema,
-  type LineupLocation,
   type PlayerPositionMain,
+  type TeamFormat,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -34,8 +34,8 @@ type ActionError =
   | 'event_without_team'
   | 'player_not_in_team_at_event'
   | 'position_code_coherence'
-  | 'out_reason_coherence'
   | 'coords_only_field'
+  | 'too_many_starters'
   | 'generic';
 
 export type LineupActionState = {
@@ -51,7 +51,6 @@ function mapPgErr(message: string | undefined, code: string | undefined): Action
   if (message.includes('event_without_team')) return 'event_without_team';
   if (message.includes('player_not_in_team_at_event')) return 'player_not_in_team_at_event';
   if (message.includes('lineup_positions_field_has_position')) return 'position_code_coherence';
-  if (message.includes('lineup_positions_out_reason_coherent')) return 'out_reason_coherence';
   if (message.includes('lineup_positions_coords_only_field')) return 'coords_only_field';
   return 'generic';
 }
@@ -75,8 +74,28 @@ async function eventIdOfLineup(supabase: Supa, lineupId: string): Promise<string
   return (data?.event_id as string | undefined) ?? null;
 }
 
+/** Modalidad del equipo del evento (para topar titulares por modalidad). */
+async function teamFormatOfEvent(
+  supabase: Supa,
+  eventId: string,
+): Promise<TeamFormat | null> {
+  const { data } = await supabase
+    .from('events')
+    .select('teams!inner(format)')
+    .eq('id', eventId)
+    .maybeSingle();
+  const fmt = (data as unknown as { teams?: { format?: string } } | null)?.teams
+    ?.format;
+  return (fmt as TeamFormat | undefined) ?? null;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// createLineup — crea la cabecera y siembra el banquillo con el roster a fecha.
+// createLineup — crea la cabecera y siembra el banquillo con los CONVOCADOS.
+//
+// Rediseño Lote B': la alineación distribuye a los convocados (called_up), no a
+// todo el roster. called_up = roster a fecha − descartados en callup_decisions.
+// Si aún no hay decisiones (convocatoria sin tocar), called_up = roster entero
+// (todos los que el coach espera llevar).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function createLineup(input: unknown): Promise<LineupActionState> {
@@ -101,8 +120,7 @@ export async function createLineup(input: unknown): Promise<LineupActionState> {
   const lineupId = created?.id as string | undefined;
   if (!lineupId) return { error: 'generic' };
 
-  // Siembra el banquillo con el roster a la fecha del partido (fallback manual,
-  // sin callup_status; el import de convocatoria F6.6 llega en Lote B).
+  // Siembra el banquillo con los convocados (roster a fecha − descartados).
   const { data: ev } = await supabase
     .from('events')
     .select('team_id, starts_at')
@@ -120,9 +138,21 @@ export async function createLineup(input: unknown): Promise<LineupActionState> {
       .map((r) => r as unknown as TM)
       .filter((r) => r.left_at == null || r.left_at >= eventDate)
       .map((r) => r.player_id);
-    if (rosterIds.length > 0) {
+
+    const { data: decisions } = await supabase
+      .from('callup_decisions')
+      .select('player_id, decision')
+      .eq('event_id', event_id);
+    const discarded = new Set(
+      (decisions ?? [])
+        .filter((d) => (d.decision as string) === 'discarded')
+        .map((d) => d.player_id as string),
+    );
+    const calledUp = rosterIds.filter((pid) => !discarded.has(pid));
+
+    if (calledUp.length > 0) {
       await supabase.from('lineup_positions').insert(
-        rosterIds.map((pid) => ({
+        calledUp.map((pid) => ({
           lineup_id: lineupId,
           player_id: pid,
           location: 'bench' as const,
@@ -136,7 +166,12 @@ export async function createLineup(input: unknown): Promise<LineupActionState> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// upsertLineupPosition — coloca/mueve un jugador (field/bench/out).
+// upsertLineupPosition — coloca/mueve un jugador (field/bench).
+//
+// Bug F: al colocar en el campo se respeta el máximo de titulares de la
+// modalidad (F7=7, F8=8, F11=11). El cliente persiste primero los desplazados
+// (a banquillo) y luego el nuevo titular, de modo que un swap legítimo no choca
+// con el tope; un exceso real (más jugadores que titulares de la modalidad) sí.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function upsertLineupPosition(input: unknown): Promise<LineupActionState> {
@@ -152,6 +187,25 @@ export async function upsertLineupPosition(input: unknown): Promise<LineupAction
   const eventId = await eventIdOfLineup(supabase, v.lineup_id);
   if (!eventId) return { error: 'not_found' };
 
+  // Tope de titulares por modalidad (solo al colocar/mover a campo).
+  if (v.location === 'field') {
+    const format = await teamFormatOfEvent(supabase, eventId);
+    if (format) {
+      const { data: fieldRows } = await supabase
+        .from('lineup_positions')
+        .select('player_id')
+        .eq('lineup_id', v.lineup_id)
+        .eq('location', 'field');
+      const fieldOthers = (fieldRows ?? [])
+        .map((r) => r.player_id as string)
+        .filter((pid) => pid !== v.player_id);
+      // El jugador objetivo se suma a los demás titulares ya presentes.
+      if (exceedsStarters(fieldOthers.length + 1, format)) {
+        return { error: 'too_many_starters' };
+      }
+    }
+  }
+
   const { data: existing } = await supabase
     .from('lineup_positions')
     .select('id')
@@ -164,7 +218,6 @@ export async function upsertLineupPosition(input: unknown): Promise<LineupAction
     position_code: v.position_code,
     x_pct: v.x_pct,
     y_pct: v.y_pct,
-    out_reason: v.out_reason,
   };
 
   if (existing) {
@@ -290,7 +343,6 @@ export async function setLineupFormation(input: unknown): Promise<LineupActionSt
         position_code: a.positionCode,
         x_pct: a.xPct,
         y_pct: a.yPct,
-        out_reason: null,
       })
       .eq('lineup_id', lineup_id)
       .eq('player_id', a.playerId);
@@ -305,7 +357,6 @@ export async function setLineupFormation(input: unknown): Promise<LineupActionSt
         position_code: null,
         x_pct: null,
         y_pct: null,
-        out_reason: null,
       })
       .eq('lineup_id', lineup_id)
       .eq('player_id', playerId);
@@ -442,175 +493,4 @@ export async function deletePlannedSub(input: unknown): Promise<LineupActionStat
 
   if (eventId) revalidate(eventId);
   return { success: true };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// applyCallupSync (F6.6 alineación→convocatoria) — auto-marca descarte/convocado.
-//
-// out → callup_decisions.discarded; field/bench → called_up. Si la convocatoria
-// está PUBLICADA y no se confirmó, devuelve needsConfirm (no toca la convocatoria
-// publicada en silencio). El reason del descarte guarda el out_reason.
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type CallupSyncState = {
-  error?: ActionError;
-  success?: boolean;
-  needsConfirm?: boolean;
-  decision?: 'called_up' | 'discarded';
-};
-
-export async function applyCallupSync(args: {
-  event_id: string;
-  player_id: string;
-  location: LineupLocation;
-  out_reason?: string | null;
-  confirm?: boolean;
-}): Promise<CallupSyncState> {
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'forbidden' };
-
-  const decision = callupDecisionForLocation(args.location);
-
-  const { data: meta } = await supabase
-    .from('match_callup_meta')
-    .select('published_at')
-    .eq('event_id', args.event_id)
-    .maybeSingle();
-  const published = meta?.published_at != null;
-  if (published && !args.confirm) {
-    return { needsConfirm: true, decision };
-  }
-
-  const reason = decision === 'discarded' ? (args.out_reason ?? null) : null;
-
-  const { data: existing } = await supabase
-    .from('callup_decisions')
-    .select('event_id')
-    .eq('event_id', args.event_id)
-    .eq('player_id', args.player_id)
-    .maybeSingle();
-
-  if (existing) {
-    const { error } = await supabase
-      .from('callup_decisions')
-      .update({ decision, reason })
-      .eq('event_id', args.event_id)
-      .eq('player_id', args.player_id);
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  } else {
-    const { error } = await supabase.from('callup_decisions').insert({
-      event_id: args.event_id,
-      player_id: args.player_id,
-      decision,
-      reason,
-      decided_by: user.id,
-    });
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  }
-
-  revalidate(args.event_id);
-  return { success: true, decision };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// resyncFromCallup (F6.6 convocatoria→alineación) — reimport explícito.
-//
-// Lee callup_decisions del evento y aplica al lineup: descartados → out,
-// y los que estaban out pero ya NO están descartados → bench. No es sync vivo
-// (decisión: reimport explícito, sin trigger F4→F6).
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type ResyncedPosition = {
-  playerId: string;
-  location: LineupLocation;
-  positionCode: string | null;
-  xPct: number | null;
-  yPct: number | null;
-  outReason: string | null;
-};
-
-export type ResyncState = {
-  error?: ActionError;
-  success?: boolean;
-  toOut?: number;
-  toBench?: number;
-  positions?: ResyncedPosition[];
-};
-
-export async function resyncFromCallup(lineupId: string): Promise<ResyncState> {
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-  const eventId = await eventIdOfLineup(supabase, lineupId);
-  if (!eventId) return { error: 'not_found' };
-
-  const { data: decisions } = await supabase
-    .from('callup_decisions')
-    .select('player_id, decision')
-    .eq('event_id', eventId);
-  const discarded = new Set(
-    (decisions ?? [])
-      .filter((d) => (d.decision as string) === 'discarded')
-      .map((d) => d.player_id as string),
-  );
-
-  const { data: positions } = await supabase
-    .from('lineup_positions')
-    .select('player_id, location')
-    .eq('lineup_id', lineupId);
-
-  let toOut = 0;
-  let toBench = 0;
-  for (const p of positions ?? []) {
-    const pid = p.player_id as string;
-    const loc = p.location as LineupLocation;
-    if (discarded.has(pid) && loc !== 'out') {
-      const { error } = await supabase
-        .from('lineup_positions')
-        .update({ location: 'out', out_reason: 'tecnico', position_code: null, x_pct: null, y_pct: null })
-        .eq('lineup_id', lineupId)
-        .eq('player_id', pid);
-      if (error) return { error: mapPgErr(error.message, error.code) };
-      toOut += 1;
-    } else if (!discarded.has(pid) && loc === 'out') {
-      const { error } = await supabase
-        .from('lineup_positions')
-        .update({ location: 'bench', out_reason: null })
-        .eq('lineup_id', lineupId)
-        .eq('player_id', pid);
-      if (error) return { error: mapPgErr(error.message, error.code) };
-      toBench += 1;
-    }
-  }
-
-  // Devuelve el estado final de posiciones para que el cliente lo refleje sin
-  // depender de un re-render con props (el editor mantiene estado local).
-  const { data: finalRows } = await supabase
-    .from('lineup_positions')
-    .select('player_id, location, position_code, x_pct, y_pct, out_reason')
-    .eq('lineup_id', lineupId);
-  type Row = {
-    player_id: string;
-    location: LineupLocation;
-    position_code: string | null;
-    x_pct: number | string | null;
-    y_pct: number | string | null;
-    out_reason: string | null;
-  };
-  const positionsOut: ResyncedPosition[] = (finalRows ?? [])
-    .map((r) => r as unknown as Row)
-    .map((r) => ({
-      playerId: r.player_id,
-      location: r.location,
-      positionCode: r.position_code,
-      xPct: r.x_pct == null ? null : Number(r.x_pct),
-      yPct: r.y_pct == null ? null : Number(r.y_pct),
-      outReason: r.out_reason,
-    }));
-
-  revalidate(eventId);
-  return { success: true, toOut, toBench, positions: positionsOut };
 }

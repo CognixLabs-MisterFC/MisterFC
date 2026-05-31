@@ -78,7 +78,6 @@ export default async function LineupPage({ params, searchParams }: Props) {
         initialPositions={data.positions}
         initialTacticalNotes={data.tacticalNotes}
         initialPlannedSubs={data.plannedSubs}
-        callupPublished={data.callupPublished}
       />
     </div>
   );
