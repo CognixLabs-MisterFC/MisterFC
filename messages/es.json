@@ -1189,6 +1189,14 @@
       "not_in_roster": "No estabas en el equipo a la fecha del partido.",
       "not_linked": "Esta cuenta no está vinculada a este jugador.",
       "edit_lineup": "Editar alineación"
+    },
+    "republish": {
+      "pending": "Hay cambios sin publicar.",
+      "publish_changes": "Publicar cambios",
+      "done": "Cambios publicados. Se ha notificado a las familias.",
+      "error": "No se pudieron publicar los cambios.",
+      "too_many": "Demasiados convocados ({overflow} de más, máx. {max}). Descarta a alguien antes de publicar.",
+      "event_started": "El partido ya ha empezado."
     }
   },
   "mensajes": {
@@ -1430,7 +1438,8 @@
       "position_code_coherence": "Posición incoherente con la zona.",
       "out_reason_coherence": "Falta el motivo de descarte.",
       "coords_only_field": "Coordenadas solo válidas en el campo.",
-      "generic": "No se pudo guardar. Inténtalo de nuevo."
+      "generic": "No se pudo guardar. Inténtalo de nuevo.",
+      "too_many_starters": "Demasiados titulares en el campo para esta modalidad."
     },
     "pos_short": {
       "goalkeeper": "POR",
@@ -1457,6 +1466,13 @@
     "auto_discarded": "{n} marcado(s) como no convocado",
     "auto_called_up": "{n} marcado(s) como convocado",
     "resync_done": "Resincronizado: {out} a fuera, {bench} a banquillo",
-    "official_lineup_title": "Alineación oficial"
+    "official_lineup_title": "Alineación oficial",
+    "share_hint": "Actívalo para que jugadores y familias vean esta alineación oficial. Las notas tácticas siempre quedan ocultas.",
+    "official_hint": "Marca esta como la alineación oficial del partido (solo puede haber una).",
+    "formation_hint": "Cambia el sistema de juego; los titulares se reubican automáticamente.",
+    "new_lineup_hint": "Crear una segunda alineación (Plan B, Plan C…) con los mismos convocados pero distinta distribución.",
+    "field_full": "Máximo {max} jugadores en el campo para esta modalidad.",
+    "notes_saved": "Notas guardadas.",
+    "sub_remove_hint": "Eliminar este cambio programado."
   }
 }

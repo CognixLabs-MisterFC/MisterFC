@@ -1190,6 +1190,14 @@
       "not_in_roster": "You weren't in the team on the match date.",
       "not_linked": "This account isn't linked to this player.",
       "edit_lineup": "Edit lineup"
+    },
+    "republish": {
+      "pending": "There are unpublished changes.",
+      "publish_changes": "Publish changes",
+      "done": "Changes published. Families have been notified.",
+      "error": "Couldn't publish the changes.",
+      "too_many": "Too many called up ({overflow} over, max {max}). Discard someone before publishing.",
+      "event_started": "The match has already started."
     }
   },
   "mensajes": {
@@ -1431,7 +1439,8 @@
       "position_code_coherence": "Position inconsistent with zone.",
       "out_reason_coherence": "Exclusion reason missing.",
       "coords_only_field": "Coordinates only valid on the field.",
-      "generic": "Couldn’t save. Try again."
+      "generic": "Couldn’t save. Try again.",
+      "too_many_starters": "Too many starters on the pitch for this format."
     },
     "pos_short": {
       "goalkeeper": "GK",
@@ -1458,6 +1467,13 @@
     "auto_discarded": "{n} marked as not called up",
     "auto_called_up": "{n} marked as called up",
     "resync_done": "Resynced: {out} to out, {bench} to bench",
-    "official_lineup_title": "Official lineup"
+    "official_lineup_title": "Official lineup",
+    "share_hint": "Turn on so players and families can see this official lineup. Tactical notes always stay hidden.",
+    "official_hint": "Mark this as the official lineup for the match (only one allowed).",
+    "formation_hint": "Change the formation; starters are repositioned automatically.",
+    "new_lineup_hint": "Create a second lineup (Plan B, Plan C…) with the same called-up players but a different setup.",
+    "field_full": "Maximum {max} players on the pitch for this format.",
+    "notes_saved": "Notes saved.",
+    "sub_remove_hint": "Remove this planned substitution."
   }
 }

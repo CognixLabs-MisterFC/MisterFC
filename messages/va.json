@@ -1190,6 +1190,14 @@
       "not_in_roster": "No estaves a l'equip en la data del partit.",
       "not_linked": "Este compte no està vinculat a este jugador.",
       "edit_lineup": "Editar alineació"
+    },
+    "republish": {
+      "pending": "Hi ha canvis sense publicar.",
+      "publish_changes": "Publicar canvis",
+      "done": "Canvis publicats. S'ha notificat les famílies.",
+      "error": "No s’han pogut publicar els canvis.",
+      "too_many": "Massa convocats ({overflow} de més, màx. {max}). Descarta algú abans de publicar.",
+      "event_started": "El partit ja ha començat."
     }
   },
   "mensajes": {
@@ -1431,7 +1439,8 @@
       "position_code_coherence": "Posició incoherent amb la zona.",
       "out_reason_coherence": "Falta el motiu del descart.",
       "coords_only_field": "Coordenades només vàlides al camp.",
-      "generic": "No s’ha pogut guardar. Torna-ho a provar."
+      "generic": "No s’ha pogut guardar. Torna-ho a provar.",
+      "too_many_starters": "Massa titulars al camp per a esta modalitat."
     },
     "pos_short": {
       "goalkeeper": "POR",
@@ -1458,6 +1467,13 @@
     "auto_discarded": "{n} marcat(s) com a no convocat",
     "auto_called_up": "{n} marcat(s) com a convocat",
     "resync_done": "Resincronitzat: {out} a fora, {bench} a banqueta",
-    "official_lineup_title": "Alineació oficial"
+    "official_lineup_title": "Alineació oficial",
+    "share_hint": "Activaʼl perquè jugadors i famílies vegen esta alineació oficial. Les notes tàctiques sempre queden ocultes.",
+    "official_hint": "Marca esta com l'alineació oficial del partit (només pot haver-ne una).",
+    "formation_hint": "Canvia el sistema de joc; els titulars es reubiquen automàticament.",
+    "new_lineup_hint": "Crear una segona alineació (Pla B, Pla C…) amb els mateixos convocats però distinta distribució.",
+    "field_full": "Màxim {max} jugadors al camp per a esta modalitat.",
+    "notes_saved": "Notes guardades.",
+    "sub_remove_hint": "Eliminar este canvi programat."
   }
 }
