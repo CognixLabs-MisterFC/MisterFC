@@ -60,6 +60,8 @@ export interface FieldEditorPlayer {
   /** Nombre corto a mostrar en el chip (p.ej. "A. Pérez"). */
   label: string;
   dorsal: number | null;
+  /** Posición primaria del jugador (POR/DEF/MED/DEL) — Mejora 1. */
+  positionLabel?: string | null;
   /** Slot del preset que ocupa este jugador. */
   positionCode: string | null;
   /** Coordenadas propias; si null se usan las del slot del preset. */
@@ -103,6 +105,7 @@ function ChipBody({
         {player.dorsal ?? '·'}
       </div>
       <span className="max-w-16 truncate rounded bg-black/55 px-1 text-[10px] leading-tight text-white">
+        {player.positionLabel ? `${player.positionLabel} · ` : ''}
         {player.label}
       </span>
     </div>

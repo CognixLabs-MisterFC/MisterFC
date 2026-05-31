@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Link } from '@/i18n/navigation';
 import { publishCallup, type PublishCallupState } from '../actions';
 
 type Props = {
@@ -107,7 +108,12 @@ export function PublishCallupDialog({ eventId, eventStartsAt, initial }: Props) 
   }
 
   const errorMsg = state.error
-    ? t(`errors.${state.error}` as 'errors.generic')
+    ? state.error === 'too_many_called_up'
+      ? t('errors.too_many_called_up', {
+          overflow: state.overflow ?? 0,
+          max: state.maxCalledUp ?? 0,
+        })
+      : t(`errors.${state.error}` as 'errors.generic')
     : null;
 
   return (
@@ -210,9 +216,17 @@ export function PublishCallupDialog({ eventId, eventStartsAt, initial }: Props) 
           </div>
 
           {errorMsg && (
-            <p className="text-sm text-destructive" role="alert">
-              {errorMsg}
-            </p>
+            <div className="flex flex-col gap-1" role="alert">
+              <p className="text-sm text-destructive">{errorMsg}</p>
+              {state.error === 'too_many_called_up' && (
+                <Link
+                  href={`/convocatorias/${eventId}/alineacion`}
+                  className="text-xs font-medium underline underline-offset-2"
+                >
+                  {t('go_to_editor')}
+                </Link>
+              )}
+            </div>
           )}
 
           <DialogFooter className="flex-col gap-2 sm:flex-row">

@@ -1168,8 +1168,10 @@
         "event_without_team": "El partido no tiene equipo asignado.",
         "cannot_unpublish": "Una vez publicada, no se puede dejar como borrador.",
         "forbidden": "No tienes permiso para publicar esta convocatoria.",
-        "generic": "No se pudo guardar. Reintenta."
-      }
+        "generic": "No se pudo guardar. Reintenta.",
+        "too_many_called_up": "Hay {overflow} convocado(s) de más (máx {max}). Descarta jugadores antes de publicar."
+      },
+      "go_to_editor": "Ir al editor de alineación"
     },
     "detail": {
       "back": "Volver a convocatorias",
@@ -1429,6 +1431,32 @@
       "out_reason_coherence": "Falta el motivo de descarte.",
       "coords_only_field": "Coordenadas solo válidas en el campo.",
       "generic": "No se pudo guardar. Inténtalo de nuevo."
-    }
+    },
+    "pos_short": {
+      "goalkeeper": "POR",
+      "defender": "DEF",
+      "midfielder": "MED",
+      "forward": "DEL"
+    },
+    "share_label": "Compartir con equipo",
+    "resync": "Resincronizar",
+    "planned_subs": "Cambios programados",
+    "sub_minute": "Min",
+    "sub_out": "Sale",
+    "sub_in": "Entra",
+    "sub_add": "Añadir",
+    "sub_line": "Min {minute}: sale {out} → entra {in}",
+    "tactical_notes": "Notas tácticas",
+    "tactical_notes_placeholder": "Presión, vigilancias, objetivos por fases…",
+    "tactical_notes_staff_only": "Solo visible para el cuerpo técnico.",
+    "save_notes": "Guardar notas",
+    "confirm_published_title": "Convocatoria publicada",
+    "confirm_published_body": "La convocatoria ya está publicada. ¿Aplicar también los cambios de convocados/descartes a la convocatoria?",
+    "cancel": "Cancelar",
+    "confirm_apply": "Aplicar",
+    "auto_discarded": "{n} marcado(s) como no convocado",
+    "auto_called_up": "{n} marcado(s) como convocado",
+    "resync_done": "Resincronizado: {out} a fuera, {bench} a banquillo",
+    "official_lineup_title": "Alineación oficial"
   }
 }

@@ -66,6 +66,7 @@ export default async function LineupPage({ params, searchParams }: Props) {
       </header>
 
       <LineupEditorClient
+        key={data.selectedLineupId ?? 'new'}
         eventId={eventId}
         format={data.event.format}
         roster={data.roster}
@@ -73,7 +74,11 @@ export default async function LineupPage({ params, searchParams }: Props) {
         selectedLineupId={data.selectedLineupId}
         selectedFormationCode={selected?.formationCode ?? null}
         selectedIsOfficial={selected?.isOfficial ?? false}
+        selectedVisibility={selected?.visibility ?? 'staff'}
         initialPositions={data.positions}
+        initialTacticalNotes={data.tacticalNotes}
+        initialPlannedSubs={data.plannedSubs}
+        callupPublished={data.callupPublished}
       />
     </div>
   );

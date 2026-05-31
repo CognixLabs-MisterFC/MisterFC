@@ -1169,8 +1169,10 @@
         "event_without_team": "El partit no té equip assignat.",
         "cannot_unpublish": "Una vegada publicada, no es pot deixar com a esborrany.",
         "forbidden": "No tens permís per publicar esta convocatòria.",
-        "generic": "No s'ha pogut guardar. Reintenta."
-      }
+        "generic": "No s'ha pogut guardar. Reintenta.",
+        "too_many_called_up": "Hi ha {overflow} convocat(s) de més (màx {max}). Descarta jugadors abans de publicar."
+      },
+      "go_to_editor": "Anar a l'editor d'alineació"
     },
     "detail": {
       "back": "Tornar a convocatòries",
@@ -1430,6 +1432,32 @@
       "out_reason_coherence": "Falta el motiu del descart.",
       "coords_only_field": "Coordenades només vàlides al camp.",
       "generic": "No s’ha pogut guardar. Torna-ho a provar."
-    }
+    },
+    "pos_short": {
+      "goalkeeper": "POR",
+      "defender": "DEF",
+      "midfielder": "MIG",
+      "forward": "DAV"
+    },
+    "share_label": "Compartir amb equip",
+    "resync": "Resincronitzar",
+    "planned_subs": "Canvis programats",
+    "sub_minute": "Min",
+    "sub_out": "Ix",
+    "sub_in": "Entra",
+    "sub_add": "Afegir",
+    "sub_line": "Min {minute}: ix {out} → entra {in}",
+    "tactical_notes": "Notes tàctiques",
+    "tactical_notes_placeholder": "Pressió, vigilàncies, objectius per fases…",
+    "tactical_notes_staff_only": "Només visible per al cos tècnic.",
+    "save_notes": "Guardar notes",
+    "confirm_published_title": "Convocatòria publicada",
+    "confirm_published_body": "La convocatòria ja està publicada. Vols aplicar també els canvis de convocats/descarts a la convocatòria?",
+    "cancel": "Cancel·lar",
+    "confirm_apply": "Aplicar",
+    "auto_discarded": "{n} marcat(s) com a no convocat",
+    "auto_called_up": "{n} marcat(s) com a convocat",
+    "resync_done": "Resincronitzat: {out} a fora, {bench} a banqueta",
+    "official_lineup_title": "Alineació oficial"
   }
 }

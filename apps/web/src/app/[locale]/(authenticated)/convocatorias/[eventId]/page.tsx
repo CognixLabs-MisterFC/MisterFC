@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { PublishCallupDialog } from '../_components/publish-callup-dialog';
 import { ResponseButtons } from '../_components/response-buttons';
 import { DecisionButtons } from '../_components/decision-buttons';
+import { SharedLineupSection } from '@/components/match/shared-lineup-section';
 import { loadCallupDetail } from '../queries';
 import type { Role } from '../../jugadores/queries';
 
@@ -345,6 +346,9 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
           </CardContent>
         </Card>
       )}
+
+      {/* F6 Lote B — alineación oficial compartida (solo si visibility=team). */}
+      {isPlayer && <SharedLineupSection eventId={event.id} />}
 
       {/* Resumen de descartes técnicos */}
       {!isPlayer && decisions.size > 0 && (
