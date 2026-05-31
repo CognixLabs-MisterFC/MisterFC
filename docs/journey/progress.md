@@ -122,10 +122,10 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 6.3 | ☑ 2026-05-31 | Editor visual drag&drop — `<MatchFieldEditor>` (mode edit/readonly/live-overlay) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
 | 6.4 | ☑ 2026-05-31 | Múltiples alineaciones por partido + marcar oficial (una por evento) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
 | 6.5 | ☑ 2026-05-31 | Lista de "fuera de convocatoria" con motivo (`out_reason`) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
-| 6.6 | ☐ pendiente | Importar plantilla desde convocatoria F4 (Sí/Duda → disponibles, No/descarte → no) | [docs/specs/6.6-importar-convocatoria.md](../specs/6.6-importar-convocatoria.md) |
+| 6.6 | ☑ 2026-05-31 | Sync bidireccional alineación↔convocatoria (auto-marca descarte/convocado + reimport explícito) | [docs/specs/6.6-importar-convocatoria.md](../specs/6.6-importar-convocatoria.md) |
 | 6.7 | ☑ 2026-05-31 | Banquillo del partido + drag&drop bidireccional campo↔banquillo↔fuera | [docs/specs/6.7-banquillo.md](../specs/6.7-banquillo.md) |
-| 6.8 | ☐ pendiente | Cambios programados (minuto + jugador out/in + razón) | [docs/specs/6.8-cambios-programados.md](../specs/6.8-cambios-programados.md) |
-| 6.9 | ☐ pendiente | Notas tácticas del partido (bloque libre + por jugador / fase) | [docs/specs/6.9-notas-tacticas.md](../specs/6.9-notas-tacticas.md) |
+| 6.8 | ☑ 2026-05-31 | Cambios programados (`planned_substitutions`, solo-staff) | [docs/specs/6.8-cambios-programados.md](../specs/6.8-cambios-programados.md) |
+| 6.9 | ☑ 2026-05-31 | Notas tácticas (`lineup_tactical_notes`, solo-staff) + visibilidad equipo/familia | [docs/specs/6.9-notas-tacticas.md](../specs/6.9-notas-tacticas.md) |
 | 6.10 | ☐ pendiente | Plantillas personalizadas de formación (tabla `coach_formations`, ruta `/perfil/formaciones`, grupo "Mis formaciones" en el selector del editor) | — |
 
 ## Fase 11 — Subfases pendientes

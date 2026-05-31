@@ -331,10 +331,10 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **6.3** Editor visual con drag & drop (campo SVG, snap a posiciones del preset) — 2–3 h. **Aquí nace `<MatchFieldEditor>`.** `[hecho 2026-05-31]`
 - **6.4** Múltiples alineaciones por partido (titular, plan B, segunda parte) — 1 h `[hecho 2026-05-31]`
 - **6.5** Lista de "fuera de convocatoria" con motivo (técnico, físico, disciplinario) — 1 h `[hecho 2026-05-31]`
-- **6.6** Importar plantilla desde convocatoria F4 (Sí/Duda → disponibles, No/descarte → no disponibles) — 30 min. **Dependencias**: F4 cerrada.
+- **6.6** Importar plantilla desde convocatoria F4 (Sí/Duda → disponibles, No/descarte → no disponibles) — 30 min. **Dependencias**: F4 cerrada. `[hecho 2026-05-31]` (Lote B: sync bidireccional alineación↔convocatoria — auto-marca descarte/convocado + reimport explícito)
 - **6.7** Banquillo del partido: titulares + reservas + fuera convocatoria, con drag&drop bidireccional campo↔banquillo — 1–2 h `[hecho 2026-05-31]`
-- **6.8** Cambios programados: minuto + jugador que sale + jugador que entra + razón, lista ordenada visible en el editor — 1–2 h
-- **6.9** Notas tácticas del partido: bloque libre + objetivos + indicaciones por jugador o por fase — 1 h
+- **6.8** Cambios programados: minuto + jugador que sale + jugador que entra + razón, lista ordenada visible en el editor — 1–2 h `[hecho 2026-05-31]`
+- **6.9** Notas tácticas del partido: bloque libre + objetivos + indicaciones por jugador o por fase — 1 h `[hecho 2026-05-31]` (tabla solo-staff `lineup_tactical_notes`)
 - **6.10** Plantillas personalizadas de formación — 3–5 h. El entrenador crea formaciones propias arrastrando círculos sobre el campo SVG, las guarda con nombre y las reutiliza en alineaciones de cualquier partido. **Modelo**: tabla `coach_formations` (`id`, `owner_profile_id`, `name`, `format` F7/F8/F11, `positions` JSONB de `{position_code, x_pct, y_pct}`, `created_at`, `updated_at`). **UI**: ruta `/perfil/formaciones` con CRUD; el selector de formación del editor de alineaciones añade un grupo "Mis formaciones" junto al catálogo predefinido. **RLS**: cada coach gestiona solo las suyas; admin/coord puede listar las del club. **Out of scope**: compartir formaciones entre coaches → futuro.
 
 > **Lote A entregado 2026-05-31** (PR #33): 6.1–6.5 + 6.7. Spec `docs/specs/6.0-alineaciones.md`, ADR-0012 (modelo normalizado) y ADR-0013 (catálogo en código). Lote B pendiente: 6.6 (import convocatoria), 6.8 (cambios programados), 6.9 (notas tácticas) + visibilidad/compartir con familia + mejoras (posición primaria, reglas por modalidad, fix "+Nueva").
