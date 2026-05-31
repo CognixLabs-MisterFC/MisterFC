@@ -47,15 +47,15 @@ export default async function Home({ params }: Props) {
   // ─── Datos para Cards ───
   const nowIso = new Date().toISOString();
 
-  // Mensajes no leídos — todos los roles.
-  const { data: unreadRows } = await supabase
-    .from('messages')
-    .select('conversation_id')
-    .is('read_at', null)
-    .neq('sender_profile_id', ctx.user.id);
-  const unreadConversations = new Set(
-    (unreadRows ?? []).map((m) => m.conversation_id),
-  ).size;
+  // Mensajes no leídos — todos los roles. Bug M: usa la RPC
+  // `user_unread_conversations_count` (SECURITY DEFINER) por consistencia
+  // con el badge del sidebar — la query directa sobre messages devolvía 0
+  // para admin_club en runtime.
+  const { data: unreadCountRpc } = await supabase.rpc(
+    'user_unread_conversations_count',
+  );
+  const unreadConversations =
+    typeof unreadCountRpc === 'number' ? unreadCountRpc : 0;
 
   // Anuncios recientes que el user ve (RLS filtra). Limitamos a últimos 7
   // días para que la card no acumule histórico — el link "Ver todos" lleva
