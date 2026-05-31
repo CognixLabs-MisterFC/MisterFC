@@ -68,6 +68,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
     roles: ['entrenador_principal', 'entrenador_ayudante'],
   },
   {
+    key: 'mi_equipo',
+    href: '/mi-equipo',
+    icon: Shield,
+    // F5.8 — Vista equipo para el jugador (compañeros + eventos + anuncios).
+    // Solo rol jugador; coaches usan /mis-equipos.
+    roles: ['jugador'],
+  },
+  {
     key: 'cuerpo_tecnico',
     href: '/cuerpo-tecnico',
     icon: UsersRound,

@@ -287,13 +287,22 @@ ADRs cerrados con la fase: ADR-0005 (recurrencia A), ADR-0006 (componente propio
 
 **Subfases**:
 
-- **5.1** Modelo `conversations`, `messages` — 1 h
-- **5.2** UI mensajería 1:1 entrenador ↔ jugador/familia — 2–3 h
-- **5.3** UI anuncios fijados al equipo — 1–2 h
-- **5.4** Web Push API + service worker para notificaciones — 2 h
-- **5.5** Suscripción a push desde el cliente — 1 h
-- **5.6** Preferencias de notificaciones por usuario — 1 h
-- **5.7** Cron para envío de notificaciones programadas (recordatorios de partido, etc.) — 1–2 h
+**Lote A** ☑ (entregado 2026-05-30, PR #31):
+
+- **5.1** [hecho 2026-05-30] Modelo `conversations`, `messages`, `announcements`, `audit_log` + RLS + triggers + helpers. Capability `can_message_families` ya existente (F2.7). 18 pgTAP.
+- **5.2** [hecho 2026-05-30] UI `/mensajes` + `/mensajes/[conversationId]` (lista + hilo con composer optimistic + read receipts) + botón "Enviar mensaje" en `/jugadores/[playerId]`.
+- **5.3** [hecho 2026-05-30] UI `/equipos/[teamId]/anuncios` con form de publicación gateada por capability + lista pinned-first. Plus `/es/anuncios` global para admin/coord con audience club-wide o multi-team. Plus `/anuncios/[id]` detail page. Helper `userCanPublishAnnouncementsToTeam`.
+
+**Lote B** ☑ (entregado 2026-05-31, este PR feat/fase-5-lote-b-y-mi-equipo):
+
+- **5.4** [hecho 2026-05-31] Service Worker (`public/sw.js`) ampliado con handlers `push` y `notificationclick` (deep link al deep_link del payload, fallback `/`, `tag` para colapsar). VAPID keys generadas (ECDSA P-256), helper `web-push.ts` server-side con `sendPushToUser(...)` que respeta `notification_preferences` y borra endpoints 404/410.
+- **5.5** [hecho 2026-05-31] Tabla `push_subscriptions` (id, user_id, endpoint UNIQUE, p256dh, auth, user_agent, last_seen_at). RLS estricta: cada user solo gestiona sus filas. UI `/perfil/notificaciones` panel cliente con flow `Notification.requestPermission` + `pushManager.subscribe` + acción server `subscribePush`/`unsubscribePush`. Banner explicativo en navegadores sin soporte (iOS Safari sin PWA / iOS <16.4).
+- **5.6** [hecho 2026-05-31] Tabla `notification_preferences (user_id, type, channel, enabled)` PK compuesta. RLS estricta own-only. Helper SQL `user_wants_notification(user_id, type, channel)` SECURITY DEFINER con LEFT JOIN default true (opt-in implícito). UI matrix tipo × canal con switches; canal `in_app` no opt-out (siempre on); canal `email` bloqueado con tooltip hasta F16. Tipos: new_message, new_announcement, callup_published, match_callup_reminder, training_reminder, attendance_pending_reminder.
+- **5.7** [hecho 2026-05-31] Cron `/api/cron/reminders` extendido: además de las filas `in_app` ya escritas, escribe filas espejo `channel='push'` para los mismos eventos (match_callup_reminder + attendance_pending_reminder). Tras escribir, drena hasta 100 filas push pending por ejecución llamando a `sendPushToUser` con la lógica de `decideNotificationOutcome` para marcar sent/skipped/failed/pending. **Eager send**: server actions `sendMessage` (new_message), `createAnnouncement`/`createGlobalAnnouncement` (new_announcement), `publishCallup` (callup_published) emiten notificaciones via helper `notify-bus.ts` (lib/`emitNotification`/`emitNotificationFanOut`) que insertan in_app + push y disparan push inmediato. Si fallan, queda pending para el cron. ADR-0010 y ADR-0011 efectivos.
+
+**Lote C** — extensión 2026-05-31 (entregado con Lote B en este PR):
+
+- **5.8** [hecho 2026-05-31] Vista `/es/mi-equipo` solo para `role=jugador` (redirect otros roles). Muestra header del team (nombre + categoría + half_duration informativo), compañeros del equipo (dorsal + nombre, dedupe y orden por dorsal asc), próximos eventos (30d, limit 10), anuncios visibles (mix team-bound + club-wide, RLS filtra), acceso 1-click a `/convocatorias`. Selector dropdown si el jugador está en >1 team. Sidebar item `mi_equipo` solo para jugador. Helpers puros en `@misterfc/core/team-view` (`listTeammates`, `listUpcomingTeamEvents`, `listVisibleAnnouncements`) con 15 Vitest. Sin migración: reusa `team_members` + `players` + `events` + `announcements`. Estimación 2–3 h.
 
 ---
 

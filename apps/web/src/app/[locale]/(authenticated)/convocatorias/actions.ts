@@ -137,7 +137,84 @@ export async function publishCallup(
   revalidatePath(`/[locale]/(authenticated)/calendario`, 'page');
   const finalPublished =
     publish || existing?.published_at != null;
+
+  // F5.7 — Notificación callup_published al jugador / familia cuando se
+  // publica por primera vez (transition pending → published). Se omite si
+  // era un re-save de borrador o si ya estaba publicada.
+  const isFirstPublish = publish && (existing?.published_at == null);
+  if (isFirstPublish) {
+    try {
+      await notifyCallupPublished(supabase, event_id);
+    } catch (e) {
+      // No bloquear el publish por fallo de notificación.
+      console.error('notify callup_published error', e);
+    }
+  }
+
   return { success: true, published: !!finalPublished };
+}
+
+async function notifyCallupPublished(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  eventId: string,
+): Promise<void> {
+  const { data: event } = await supabase
+    .from('events')
+    .select('id, team_id, title, opponent_name, starts_at')
+    .eq('id', eventId)
+    .maybeSingle();
+  if (!event?.team_id) return;
+
+  const eventDate = event.starts_at.slice(0, 10);
+  const { data: tms } = await supabase
+    .from('team_members')
+    .select('player_id, joined_at, left_at')
+    .eq('team_id', event.team_id)
+    .lte('joined_at', eventDate);
+  type TM = {
+    player_id: string;
+    joined_at: string;
+    left_at: string | null;
+  };
+  const rosterIds = (tms ?? [])
+    .map((r) => r as unknown as TM)
+    .filter((r) => r.left_at == null || r.left_at >= eventDate)
+    .map((r) => r.player_id);
+  if (rosterIds.length === 0) return;
+
+  const { data: pas } = await supabase
+    .from('player_accounts')
+    .select('profile_id')
+    .in('player_id', rosterIds);
+  const recipientUserIds = Array.from(
+    new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
+  ) as string[];
+  if (recipientUserIds.length === 0) return;
+
+  const oppLabel = event.opponent_name ?? '';
+  const title = oppLabel
+    ? `Convocatoria: ${event.title} vs ${oppLabel}`
+    : `Convocatoria: ${event.title}`;
+  const body = `Partido el ${new Date(event.starts_at).toLocaleString('es-ES')}`;
+
+  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+  await emitNotificationFanOut(
+    recipientUserIds.map((u) => ({ user_id: u })),
+    {
+      type: 'callup_published',
+      in_app_payload: {
+        event_id: eventId,
+        deep_link: `/es/convocatorias/${eventId}`,
+      },
+      push_payload: {
+        title,
+        body,
+        deep_link: `/es/convocatorias/${eventId}`,
+        tag: `callup_published:${eventId}`,
+      },
+      dedupe_base_prefix: `callup_published:${eventId}`,
+    },
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -166,6 +166,63 @@ export async function sendMessage(
     return { error: 'generic' };
   }
 
+  // F5.7 — Notificación al otro participante. Para la conversación
+  // coach<>player: si el sender es el coach, recipient son todas las
+  // accounts del player (jugador + familia). Si el sender es la familia o
+  // el propio jugador, recipient es el coach.
+  try {
+    const { data: convExtra } = await supabase
+      .from('conversations')
+      .select('coach_profile_id, player_id')
+      .eq('id', parsed.data.conversation_id)
+      .maybeSingle();
+
+    if (convExtra) {
+      const recipientUserIds: string[] = [];
+      if (convExtra.coach_profile_id === ctx.user.id) {
+        // Coach → familia / jugador
+        const { data: pas } = await supabase
+          .from('player_accounts')
+          .select('profile_id')
+          .eq('player_id', convExtra.player_id);
+        for (const r of pas ?? []) {
+          if (r.profile_id) recipientUserIds.push(r.profile_id as string);
+        }
+      } else {
+        // Family / player → coach
+        recipientUserIds.push(convExtra.coach_profile_id);
+      }
+
+      const senderName = ctx.profile.full_name ?? 'Mensaje nuevo';
+      const preview = parsed.data.body.slice(0, 140);
+      const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+      await emitNotificationFanOut(
+        recipientUserIds.map((u) => ({ user_id: u })),
+        {
+          type: 'new_message',
+          in_app_payload: {
+            conversation_id: parsed.data.conversation_id,
+            message_id: inserted.id,
+            sender_profile_id: ctx.user.id,
+            deep_link: `/${locale}/mensajes/${parsed.data.conversation_id}`,
+          },
+          push_payload: {
+            title: senderName,
+            body: preview,
+            deep_link: `/${locale}/mensajes/${parsed.data.conversation_id}`,
+            tag: `conversation:${parsed.data.conversation_id}`,
+          },
+          dedupe_base_prefix: `new_message:${inserted.id}`,
+        },
+      );
+    }
+  } catch (notifyErr) {
+    Sentry.captureException(notifyErr, {
+      tags: { feature: 'messaging', step: 'notify' },
+      extra: { message_id: inserted.id },
+    });
+  }
+
   revalidatePath(`/${locale}/mensajes`);
   revalidatePath(`/${locale}/mensajes/${parsed.data.conversation_id}`);
   return { ok: { message_id: inserted.id } };

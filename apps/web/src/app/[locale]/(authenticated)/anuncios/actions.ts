@@ -129,6 +129,73 @@ export async function createGlobalAnnouncement(
     return { error: 'generic' };
   }
 
+  // F5.7 — Notificación a los destinatarios.
+  try {
+    const created = (inserted ?? []) as Array<{ id: string }>;
+    const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+
+    for (let i = 0; i < rows.length; i += 1) {
+      const row = rows[i];
+      const annId = created[i]?.id;
+      if (!row || !annId) continue;
+
+      let recipientUserIds: string[] = [];
+      if (row.team_id === null) {
+        // Club-wide: todos los miembros del club (jugadores + familia + staff).
+        const { data: mems } = await supabase
+          .from('memberships')
+          .select('profile_id')
+          .eq('club_id', clubId);
+        recipientUserIds = Array.from(
+          new Set((mems ?? []).map((m) => m.profile_id).filter(Boolean)),
+        ) as string[];
+      } else {
+        // Team-bound: jugadores del team + sus familias.
+        const { data: tms } = await supabase
+          .from('team_members')
+          .select('player_id')
+          .eq('team_id', row.team_id)
+          .is('left_at', null);
+        const playerIds = (tms ?? []).map((r) => r.player_id);
+        if (playerIds.length === 0) continue;
+        const { data: pas } = await supabase
+          .from('player_accounts')
+          .select('profile_id')
+          .in('player_id', playerIds);
+        recipientUserIds = Array.from(
+          new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
+        ) as string[];
+      }
+
+      // Excluir al autor.
+      recipientUserIds = recipientUserIds.filter((u) => u !== ctx.user.id);
+      if (recipientUserIds.length === 0) continue;
+
+      await emitNotificationFanOut(
+        recipientUserIds.map((u) => ({ user_id: u })),
+        {
+          type: 'new_announcement',
+          in_app_payload: {
+            announcement_id: annId,
+            team_id: row.team_id,
+            deep_link: `/${locale}/anuncios/${annId}`,
+          },
+          push_payload: {
+            title: parsed.data.title,
+            body: parsed.data.body.slice(0, 200),
+            deep_link: `/${locale}/anuncios/${annId}`,
+            tag: `announcement:${annId}`,
+          },
+          dedupe_base_prefix: `new_announcement:${annId}`,
+        },
+      );
+    }
+  } catch (notifyErr) {
+    Sentry.captureException(notifyErr, {
+      tags: { feature: 'announcements', step: 'notify_global' },
+    });
+  }
+
   revalidatePath(`/${locale}/anuncios`);
   for (const r of rows) {
     if (r.team_id) revalidatePath(`/${locale}/equipos/${r.team_id}/anuncios`);

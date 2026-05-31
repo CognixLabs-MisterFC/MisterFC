@@ -42,7 +42,7 @@ export const dynamic = 'force-dynamic';
 type NotificationRow = {
   user_id: string;
   type: 'match_callup_reminder' | 'attendance_pending_reminder';
-  channel: 'in_app';
+  channel: 'in_app' | 'push';
   payload: Json;
   dedupe_key: string;
 };
@@ -164,21 +164,43 @@ async function handle(req: Request): Promise<NextResponse> {
     for (const playerId of pendingPlayerIds) {
       const profiles = profilesByPlayer.get(playerId) ?? [];
       for (const profileId of profiles) {
+        const inAppPayload: Json = {
+          event_id: m.id,
+          player_id: playerId,
+          title: m.title,
+          opponent_name: m.opponent_name,
+          starts_at: m.starts_at,
+          deep_link: `/convocatorias/${m.id}`,
+        };
         inserts.push({
           user_id: profileId,
           type: 'match_callup_reminder',
           channel: 'in_app',
-          payload: {
-            event_id: m.id,
-            player_id: playerId,
-            title: m.title,
-            opponent_name: m.opponent_name,
-            starts_at: m.starts_at,
-            deep_link: `/convocatorias/${m.id}`,
-          },
+          payload: inAppPayload,
           dedupe_key: buildDedupeKey({
             type: 'match_callup_reminder',
             channel: 'in_app',
+            event_id: m.id,
+            day_bucket: dayBucket,
+            user_id: profileId,
+          }),
+        });
+        // Push paralelo — el drainer al final lo procesa.
+        inserts.push({
+          user_id: profileId,
+          type: 'match_callup_reminder',
+          channel: 'push',
+          payload: {
+            title: m.opponent_name
+              ? `Partido vs ${m.opponent_name}`
+              : `Convocatoria pendiente`,
+            body: `Confirma tu disponibilidad para ${m.title}`,
+            deep_link: `/es/convocatorias/${m.id}`,
+            tag: `match_callup_reminder:${m.id}`,
+          },
+          dedupe_key: buildDedupeKey({
+            type: 'match_callup_reminder',
+            channel: 'push',
             event_id: m.id,
             day_bucket: dayBucket,
             user_id: profileId,
@@ -254,6 +276,25 @@ async function handle(req: Request): Promise<NextResponse> {
           user_id: profileId,
         }),
       });
+      // Push paralelo — el drainer al final lo procesa.
+      inserts.push({
+        user_id: profileId,
+        type: 'attendance_pending_reminder',
+        channel: 'push',
+        payload: {
+          title: 'Asistencia pendiente',
+          body: `Falta marcar la asistencia de ${tr.title}`,
+          deep_link: `/es/asistencia/${tr.id}`,
+          tag: `attendance_pending:${tr.id}`,
+        },
+        dedupe_key: buildDedupeKey({
+          type: 'attendance_pending_reminder',
+          channel: 'push',
+          event_id: tr.id,
+          day_bucket: dayBucket,
+          user_id: profileId,
+        }),
+      });
     }
   }
 
@@ -273,6 +314,11 @@ async function handle(req: Request): Promise<NextResponse> {
     inserted = data?.length ?? 0;
   }
 
+  // F5.7 — Drainer de push notifications pending. Rate-limited a 100 por
+  // ejecución para no saturar el cron ni el push service. Las que sobren
+  // quedan para mañana.
+  const drainResult = await drainPushQueue(supabase, 100);
+
   return NextResponse.json({
     ok: true,
     queued: inserts.length,
@@ -280,5 +326,86 @@ async function handle(req: Request): Promise<NextResponse> {
     day_bucket: dayBucket,
     matches_scanned: matches.length,
     trainings_scanned: trainings.length,
+    push_drain: drainResult,
   });
+}
+
+type DrainResult = {
+  scanned: number;
+  sent: number;
+  skipped_user_pref: number;
+  failed_gone: number;
+  failed_other: number;
+  no_subscriptions: number;
+};
+
+async function drainPushQueue(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  cap: number,
+): Promise<DrainResult> {
+  const result: DrainResult = {
+    scanned: 0,
+    sent: 0,
+    skipped_user_pref: 0,
+    failed_gone: 0,
+    failed_other: 0,
+    no_subscriptions: 0,
+  };
+
+  const { data: pendings } = await supabase
+    .from('notifications')
+    .select('id, user_id, type, payload')
+    .eq('channel', 'push')
+    .eq('status', 'pending')
+    .is('sent_at', null)
+    .order('created_at', { ascending: true })
+    .limit(cap);
+
+  if (!pendings || pendings.length === 0) return result;
+  result.scanned = pendings.length;
+
+  // Importamos lazy para que la ruta no falle en build si web-push no está
+  // disponible (también nos protege en tests).
+  const { sendPushToUser, pushPayloadFromNotificationRow } = await import(
+    '@/lib/web-push'
+  );
+
+  for (const row of pendings) {
+    const payload = pushPayloadFromNotificationRow({
+      payload: row.payload,
+      type: row.type,
+    });
+    try {
+      const r = await sendPushToUser(supabase, row.user_id, row.type, payload);
+      result.sent += r.sent;
+      result.failed_gone += r.failed_gone;
+      result.failed_other += r.failed_other;
+
+      if (r.skipped_user_pref) {
+        result.skipped_user_pref += 1;
+        await supabase
+          .from('notifications')
+          .update({ status: 'skipped', sent_at: new Date().toISOString() })
+          .eq('id', row.id);
+      } else if (r.skipped_no_subscriptions) {
+        result.no_subscriptions += 1;
+        // Lo dejamos pending — quizá el user se suscribe mañana.
+      } else if (r.sent > 0) {
+        await supabase
+          .from('notifications')
+          .update({ status: 'sent', sent_at: new Date().toISOString() })
+          .eq('id', row.id);
+      } else if (r.failed_gone > 0 && r.failed_other === 0 && r.sent === 0) {
+        // Todos los endpoints estaban muertos. Marcar failed.
+        await supabase
+          .from('notifications')
+          .update({ status: 'failed', sent_at: new Date().toISOString() })
+          .eq('id', row.id);
+      }
+    } catch {
+      result.failed_other += 1;
+    }
+  }
+
+  return result;
 }

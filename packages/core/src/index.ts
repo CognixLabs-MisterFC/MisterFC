@@ -5,3 +5,4 @@ export * from './supabase/index';
 export * from './auth/index';
 export * from './events/index';
 export * from './notifications/index';
+export * from './team-view/index';

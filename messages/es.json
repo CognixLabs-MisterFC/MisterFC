@@ -158,7 +158,8 @@
       "asistencia": "Asistencia",
       "convocatorias": "Convocatorias",
       "mensajes": "Mensajes",
-      "anuncios": "Anuncios del club"
+      "anuncios": "Anuncios del club",
+      "mi_equipo": "Mi equipo"
     }
   },
   "roles": {
@@ -174,6 +175,7 @@
     "save": "Guardar cambios",
     "saved": "Cambios guardados.",
     "change_password": "Cambiar contraseña",
+    "manage_notifications": "Gestionar notificaciones",
     "section": {
       "avatar": "Foto de perfil",
       "data": "Datos personales",
@@ -1297,5 +1299,98 @@
       "audience_required": "Selecciona al menos un equipo o marca \"Todo el club\".",
       "generic": "No se pudo publicar. Inténtalo de nuevo."
     }
+  },
+  "notificaciones": {
+    "title": "Notificaciones",
+    "subtitle": "Gestiona en qué dispositivos recibes push y qué te avisa la app.",
+    "back": "Volver al perfil",
+    "push": {
+      "title": "Push en este navegador",
+      "description": "Activa Web Push para recibir avisos cuando la app no está abierta. Funciona en Chrome, Firefox, Edge y en iOS 16.4+ con MisterFC instalada como app.",
+      "detecting": "Comprobando compatibilidad…",
+      "unsupported_title": "Tu navegador no soporta Web Push",
+      "unsupported_body": "En iPhone/iPad solo funciona si instalas MisterFC en la pantalla de inicio (Compartir → Añadir a inicio) y tienes iOS 16.4 o superior.",
+      "denied_title": "Permiso denegado",
+      "denied_body": "Has bloqueado las notificaciones para este sitio. Cámbialo desde la configuración del navegador para volver a activarlas.",
+      "button_subscribe": "Activar push en este dispositivo",
+      "button_unsubscribe_local": "Desactivar push en este dispositivo",
+      "status_active": "Suscripción activa en este dispositivo.",
+      "status_granted_no_sub": "Permiso concedido. Pulsa el botón para suscribirte.",
+      "status_inactive": "No estás suscrito en este dispositivo.",
+      "devices_label": "Dispositivos suscritos",
+      "device_unknown": "Dispositivo desconocido",
+      "this_device": "Este dispositivo",
+      "remove_device": "Quitar dispositivo",
+      "error_permission": "Necesitamos permiso del navegador para enviarte notificaciones.",
+      "error_generic": "No se pudo completar. Inténtalo de nuevo."
+    },
+    "preferences": {
+      "title": "Qué quieres recibir",
+      "description": "La campana de la app siempre recibe avisos. Push solo si tienes este dispositivo suscrito arriba. Email se activará cuando esté disponible.",
+      "column_type": "Tipo",
+      "email_disabled_hint": "Disponible próximamente",
+      "saving": "Guardando preferencia…"
+    },
+    "channels": {
+      "in_app": "Campana",
+      "push": "Push",
+      "email": "Email"
+    },
+    "types": {
+      "new_message": {
+        "label": "Mensaje nuevo",
+        "description": "Un entrenador o familiar te envía un mensaje directo."
+      },
+      "new_announcement": {
+        "label": "Anuncio nuevo",
+        "description": "Anuncio del equipo o del club."
+      },
+      "callup_published": {
+        "label": "Convocatoria publicada",
+        "description": "Tu entrenador publica la convocatoria de un partido."
+      },
+      "match_callup_reminder": {
+        "label": "Recordatorio de partido",
+        "description": "Aviso el día previo si aún no has confirmado tu convocatoria."
+      },
+      "training_reminder": {
+        "label": "Recordatorio de entrenamiento",
+        "description": "Aviso el día previo a un entrenamiento."
+      },
+      "attendance_pending_reminder": {
+        "label": "Asistencia pendiente",
+        "description": "Para entrenadores: aviso si quedan asistencias por marcar."
+      }
+    }
+  },
+  "mi_equipo": {
+    "title": "Mi equipo",
+    "subtitle_one": "Tu equipo, próximos eventos y anuncios.",
+    "subtitle_many": "Selecciona uno de tus equipos para ver su detalle.",
+    "team_selector": "Equipo",
+    "category_format": "{category} · {season} · {minutes} min/tiempo",
+    "cards": {
+      "teammates": {
+        "title": "Compañeros",
+        "empty": "Aún no hay otros jugadores en este equipo.",
+        "view_all": "Ver todos →"
+      },
+      "upcoming": {
+        "title": "Próximos eventos",
+        "empty": "No hay eventos en los próximos 30 días."
+      },
+      "announcements": {
+        "title": "Anuncios recientes",
+        "empty": "No hay anuncios recientes.",
+        "club_wide": "Todo el club",
+        "view_all": "Ver todos los anuncios →"
+      },
+      "callups": {
+        "title": "Mis convocatorias",
+        "description": "Confirma o rechaza tus convocatorias de partido.",
+        "cta": "Ir a convocatorias →"
+      }
+    },
+    "no_team": "No estás asignado a ningún equipo todavía. Habla con el coordinador del club."
   }
 }

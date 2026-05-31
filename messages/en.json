@@ -231,7 +231,8 @@
       "asistencia": "Attendance",
       "convocatorias": "Callups",
       "mensajes": "Messages",
-      "anuncios": "Club announcements"
+      "anuncios": "Club announcements",
+      "mi_equipo": "My team"
     }
   },
   "perfil": {
@@ -239,7 +240,8 @@
     "subtitle": "Datos de tu cuenta y cómo te ven el resto de miembros del club.",
     "save": "Guardar cambios",
     "saved": "Cambios guardados.",
-    "change_password": "Cambiar contraseña",
+    "change_password": "Change password",
+    "manage_notifications": "Manage notifications",
     "section": {
       "avatar": "Foto de perfil",
       "data": "Datos personales",
@@ -1298,5 +1300,98 @@
       "audience_required": "Pick at least one team or check \"Whole club\".",
       "generic": "Couldn't publish. Please try again."
     }
+  },
+  "notificaciones": {
+    "title": "Notifications",
+    "subtitle": "Choose which devices get push and what the app alerts you about.",
+    "back": "Back to profile",
+    "push": {
+      "title": "Push on this browser",
+      "description": "Enable Web Push so the app can alert you when it's closed. Works on Chrome, Firefox, Edge, and iOS 16.4+ with MisterFC installed as an app.",
+      "detecting": "Checking compatibility…",
+      "unsupported_title": "Your browser doesn't support Web Push",
+      "unsupported_body": "On iPhone/iPad this only works if you install MisterFC to the home screen (Share → Add to Home Screen) on iOS 16.4 or later.",
+      "denied_title": "Permission denied",
+      "denied_body": "You've blocked notifications for this site. Re-enable them in your browser settings.",
+      "button_subscribe": "Enable push on this device",
+      "button_unsubscribe_local": "Disable push on this device",
+      "status_active": "Subscription active on this device.",
+      "status_granted_no_sub": "Permission granted. Press the button to subscribe.",
+      "status_inactive": "You're not subscribed on this device.",
+      "devices_label": "Subscribed devices",
+      "device_unknown": "Unknown device",
+      "this_device": "This device",
+      "remove_device": "Remove device",
+      "error_permission": "Browser permission is required to send you notifications.",
+      "error_generic": "Couldn't complete. Please try again."
+    },
+    "preferences": {
+      "title": "What you want to receive",
+      "description": "The in-app bell always receives alerts. Push only works if you've subscribed this device above. Email will be enabled when available.",
+      "column_type": "Type",
+      "email_disabled_hint": "Coming soon",
+      "saving": "Saving preference…"
+    },
+    "channels": {
+      "in_app": "Bell",
+      "push": "Push",
+      "email": "Email"
+    },
+    "types": {
+      "new_message": {
+        "label": "New message",
+        "description": "A coach or family member sends you a direct message."
+      },
+      "new_announcement": {
+        "label": "New announcement",
+        "description": "Team or club announcement."
+      },
+      "callup_published": {
+        "label": "Callup published",
+        "description": "Your coach publishes a match callup."
+      },
+      "match_callup_reminder": {
+        "label": "Match reminder",
+        "description": "Day-before alert if you haven't confirmed your callup yet."
+      },
+      "training_reminder": {
+        "label": "Training reminder",
+        "description": "Day-before alert for a training session."
+      },
+      "attendance_pending_reminder": {
+        "label": "Attendance pending",
+        "description": "For coaches: alert if attendance is still unmarked."
+      }
+    }
+  },
+  "mi_equipo": {
+    "title": "My team",
+    "subtitle_one": "Your team, upcoming events and announcements.",
+    "subtitle_many": "Pick one of your teams to see its details.",
+    "team_selector": "Team",
+    "category_format": "{category} · {season} · {minutes} min/half",
+    "cards": {
+      "teammates": {
+        "title": "Teammates",
+        "empty": "No other players in this team yet.",
+        "view_all": "View all →"
+      },
+      "upcoming": {
+        "title": "Upcoming events",
+        "empty": "No events in the next 30 days."
+      },
+      "announcements": {
+        "title": "Recent announcements",
+        "empty": "No recent announcements.",
+        "club_wide": "Whole club",
+        "view_all": "View all announcements →"
+      },
+      "callups": {
+        "title": "My callups",
+        "description": "Confirm or decline your match callups.",
+        "cta": "Go to callups →"
+      }
+    },
+    "no_team": "You're not assigned to any team yet. Reach out to your club coordinator."
   }
 }
