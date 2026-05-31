@@ -95,6 +95,13 @@ export default async function PerfilPage({ params }: Props) {
           >
             {t('change_password')}
           </a>
+          <Separator />
+          <a
+            href={`/${locale}/perfil/notificaciones`}
+            className="text-sm text-misterfc-green underline underline-offset-4 hover:text-emerald-300"
+          >
+            {t('manage_notifications')}
+          </a>
         </CardContent>
       </Card>
     </div>

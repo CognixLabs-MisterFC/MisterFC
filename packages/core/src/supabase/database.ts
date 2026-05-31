@@ -737,6 +737,79 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          enabled: boolean
+          type: Database["public"]["Enums"]["notification_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["notification_channel"]
+          enabled?: boolean
+          type: Database["public"]["Enums"]["notification_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["notification_channel"]
+          enabled?: boolean
+          type?: Database["public"]["Enums"]["notification_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_seen_at: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_seen_at?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_seen_at?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_accounts: {
         Row: {
           created_at: string
@@ -1114,6 +1187,14 @@ export type Database = {
         Returns: boolean
       }
       user_role_in_club: { Args: { p_club_id: string }; Returns: string }
+      user_wants_notification: {
+        Args: {
+          p_user_id: string
+          p_type: Database["public"]["Enums"]["notification_type"]
+          p_channel: Database["public"]["Enums"]["notification_channel"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       attendance_code:
@@ -1136,6 +1217,8 @@ export type Database = {
         | "attendance_pending_reminder"
         | "new_message"
         | "new_announcement"
+        | "callup_published"
+        | "training_reminder"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -1285,6 +1368,8 @@ export const Constants = {
         "attendance_pending_reminder",
         "new_message",
         "new_announcement",
+        "callup_published",
+        "training_reminder",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },

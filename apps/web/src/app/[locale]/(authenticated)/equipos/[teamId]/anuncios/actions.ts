@@ -85,8 +85,71 @@ export async function createAnnouncement(
     return { error: 'generic' };
   }
 
+  // F5.7 — Notificación a los miembros del team (jugadores + familia).
+  try {
+    await notifyTeamAnnouncement(
+      supabase,
+      created.id,
+      parsed.data.team_id,
+      parsed.data.title,
+      parsed.data.body,
+      locale,
+    );
+  } catch (notifyErr) {
+    Sentry.captureException(notifyErr, {
+      tags: { feature: 'announcements', step: 'notify' },
+      extra: { announcement_id: created.id },
+    });
+  }
+
   revalidatePath(`/${locale}/equipos/${parsed.data.team_id}/anuncios`);
   return { ok: { announcement_id: created.id } };
+}
+
+async function notifyTeamAnnouncement(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  announcementId: string,
+  teamId: string,
+  title: string,
+  body: string,
+  locale: string,
+): Promise<void> {
+  const { data: tms } = await supabase
+    .from('team_members')
+    .select('player_id')
+    .eq('team_id', teamId)
+    .is('left_at', null);
+  const playerIds = (tms ?? []).map((r) => r.player_id);
+  if (playerIds.length === 0) return;
+
+  const { data: pas } = await supabase
+    .from('player_accounts')
+    .select('profile_id')
+    .in('player_id', playerIds);
+  const recipientUserIds = Array.from(
+    new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
+  ) as string[];
+  if (recipientUserIds.length === 0) return;
+
+  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+  await emitNotificationFanOut(
+    recipientUserIds.map((u) => ({ user_id: u })),
+    {
+      type: 'new_announcement',
+      in_app_payload: {
+        announcement_id: announcementId,
+        team_id: teamId,
+        deep_link: `/${locale}/anuncios/${announcementId}`,
+      },
+      push_payload: {
+        title,
+        body: body.slice(0, 200),
+        deep_link: `/${locale}/anuncios/${announcementId}`,
+        tag: `announcement:${announcementId}`,
+      },
+      dedupe_base_prefix: `new_announcement:${announcementId}`,
+    },
+  );
 }
 
 export async function updateAnnouncement(

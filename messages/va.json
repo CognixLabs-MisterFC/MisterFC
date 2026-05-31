@@ -231,7 +231,8 @@
       "asistencia": "Assistència",
       "convocatorias": "Convocatòries",
       "mensajes": "Missatges",
-      "anuncios": "Anuncis del club"
+      "anuncios": "Anuncis del club",
+      "mi_equipo": "El meu equip"
     }
   },
   "perfil": {
@@ -239,7 +240,8 @@
     "subtitle": "Datos de tu cuenta y cómo te ven el resto de miembros del club.",
     "save": "Guardar cambios",
     "saved": "Cambios guardados.",
-    "change_password": "Cambiar contraseña",
+    "change_password": "Canviar contrasenya",
+    "manage_notifications": "Gestionar notificacions",
     "section": {
       "avatar": "Foto de perfil",
       "data": "Datos personales",
@@ -1298,5 +1300,98 @@
       "audience_required": "Selecciona almenys un equip o marca 'Tot el club'.",
       "generic": "No s'ha pogut publicar. Torna-ho a provar."
     }
+  },
+  "notificaciones": {
+    "title": "Notificacions",
+    "subtitle": "Gestiona en quins dispositius reps push i de què t'avisa l'app.",
+    "back": "Tornar al perfil",
+    "push": {
+      "title": "Push en aquest navegador",
+      "description": "Activa Web Push per rebre avisos quan l'app no és oberta. Funciona en Chrome, Firefox, Edge i en iOS 16.4+ amb MisterFC instal·lada com a app.",
+      "detecting": "Comprovant compatibilitat…",
+      "unsupported_title": "El teu navegador no admet Web Push",
+      "unsupported_body": "En iPhone/iPad només funciona si instal·les MisterFC a la pantalla d'inici (Compartir → Afegir a inici) amb iOS 16.4 o superior.",
+      "denied_title": "Permís denegat",
+      "denied_body": "Has bloquejat les notificacions per a aquest lloc. Canvia-ho des de la configuració del navegador.",
+      "button_subscribe": "Activar push en aquest dispositiu",
+      "button_unsubscribe_local": "Desactivar push en aquest dispositiu",
+      "status_active": "Subscripció activa en aquest dispositiu.",
+      "status_granted_no_sub": "Permís concedit. Prem el botó per subscriure't.",
+      "status_inactive": "No estàs subscrit en aquest dispositiu.",
+      "devices_label": "Dispositius subscrits",
+      "device_unknown": "Dispositiu desconegut",
+      "this_device": "Aquest dispositiu",
+      "remove_device": "Treure dispositiu",
+      "error_permission": "Cal permís del navegador per enviar-te notificacions.",
+      "error_generic": "No s'ha pogut completar. Torna-ho a provar."
+    },
+    "preferences": {
+      "title": "Què vols rebre",
+      "description": "La campana de l'app sempre rep avisos. Push només si tens aquest dispositiu subscrit a dalt. Email s'activarà quan estigui disponible.",
+      "column_type": "Tipus",
+      "email_disabled_hint": "Disponible aviat",
+      "saving": "Guardant preferència…"
+    },
+    "channels": {
+      "in_app": "Campana",
+      "push": "Push",
+      "email": "Email"
+    },
+    "types": {
+      "new_message": {
+        "label": "Missatge nou",
+        "description": "Un entrenador o familiar t'envia un missatge directe."
+      },
+      "new_announcement": {
+        "label": "Anunci nou",
+        "description": "Anunci de l'equip o del club."
+      },
+      "callup_published": {
+        "label": "Convocatòria publicada",
+        "description": "El teu entrenador publica la convocatòria d'un partit."
+      },
+      "match_callup_reminder": {
+        "label": "Recordatori de partit",
+        "description": "Avís el dia abans si encara no has confirmat la convocatòria."
+      },
+      "training_reminder": {
+        "label": "Recordatori d'entrenament",
+        "description": "Avís el dia abans d'un entrenament."
+      },
+      "attendance_pending_reminder": {
+        "label": "Assistència pendent",
+        "description": "Per a entrenadors: avís si queden assistències per marcar."
+      }
+    }
+  },
+  "mi_equipo": {
+    "title": "El meu equip",
+    "subtitle_one": "El teu equip, pròxims esdeveniments i anuncis.",
+    "subtitle_many": "Selecciona un dels teus equips per veure el detall.",
+    "team_selector": "Equip",
+    "category_format": "{category} · {season} · {minutes} min/temps",
+    "cards": {
+      "teammates": {
+        "title": "Companys",
+        "empty": "Encara no hi ha altres jugadors en aquest equip.",
+        "view_all": "Veure tots →"
+      },
+      "upcoming": {
+        "title": "Pròxims esdeveniments",
+        "empty": "No hi ha esdeveniments en els pròxims 30 dies."
+      },
+      "announcements": {
+        "title": "Anuncis recents",
+        "empty": "No hi ha anuncis recents.",
+        "club_wide": "Tot el club",
+        "view_all": "Veure tots els anuncis →"
+      },
+      "callups": {
+        "title": "Les meves convocatòries",
+        "description": "Confirma o rebutja les teves convocatòries de partit.",
+        "cta": "Anar a convocatòries →"
+      }
+    },
+    "no_team": "Encara no estàs assignat a cap equip. Parla amb el coordinador del club."
   }
 }

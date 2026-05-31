@@ -50,6 +50,21 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 2.10 | ☐ pendiente | Listado global de jugadores del club con filtros + asignación individual a equipo | [docs/specs/2.10-listado-global-jugadores.md](../specs/2.10-listado-global-jugadores.md) |
 | 2.11 | ☑ 2026-05-29 | Gestión global de cuerpo técnico (`/cuerpo-tecnico`): listado + ficha con agenda F3 + acción mover staff (reuso `team_staff` joined_at/left_at) | [docs/specs/2.11-gestion-global-cuerpo-tecnico.md](../specs/2.11-gestion-global-cuerpo-tecnico.md) |
 
+## Fase 5 — Subfases entregadas
+
+> **Lote A** entregado 2026-05-30 (5.1 + 5.2 + 5.3). **Lote B + 5.8** entregado 2026-05-31 (5.4–5.8).
+
+| Subfase | Cierre | Resumen |
+|---|---|---|
+| 5.1 | 2026-05-30 | Modelo `conversations`, `messages`, `announcements` + `audit_log` (acceso admin/coord logged) + helpers RLS + 18 pgTAP |
+| 5.2 | 2026-05-30 | UI `/mensajes` (lista) + `/mensajes/[id]` (hilo con optimistic + read receipts) + botón "Enviar mensaje" en ficha jugador con `userCanMessageInClub` |
+| 5.3 | 2026-05-30 | UI `/equipos/[teamId]/anuncios` (lista pinned-first + form gated por capability) + `/es/anuncios` global (admin/coord, audience club-wide / multi-team) + `/anuncios/[id]` detail page con delete autor-o-manager |
+| 5.4 | 2026-05-31 | SW push + notificationclick (deep link, tag colapsable). VAPID keys ECDSA P-256. Helper `web-push.ts` server-side con `sendPushToUser` (respeta preferences, borra endpoints 404/410) |
+| 5.5 | 2026-05-31 | Tabla `push_subscriptions` (endpoint UNIQUE) + RLS own-only + UI `/perfil/notificaciones` panel cliente con `Notification.requestPermission` + `pushManager.subscribe`. Banner explicativo iOS sin PWA |
+| 5.6 | 2026-05-31 | Tabla `notification_preferences (user_id, type, channel, enabled)` + helper SQL `user_wants_notification` (LEFT JOIN default true). UI matrix con switches; `in_app` siempre on, `email` bloqueado hasta F16 |
+| 5.7 | 2026-05-31 | Cron drainer + filas push espejo en `/api/cron/reminders`. Eager push en `sendMessage` / `createAnnouncement` / `createGlobalAnnouncement` / `publishCallup` via `notify-bus.ts`. Helpers puros `decideNotificationOutcome` con 11 Vitest |
+| 5.8 | 2026-05-31 | Vista `/es/mi-equipo` (jugador): header team + compañeros + próximos 30d + anuncios + link a convocatorias. Selector si multi-team. Sidebar item solo jugador. Helpers `@misterfc/core/team-view` con 15 Vitest |
+
 ## Fase 4 — Subfases entregadas
 
 > **Lote A** entregado 2026-05-29 (4.1 + 4.2 + 4.8). **Lote B** entregado 2026-05-29 (4.3–4.7).
