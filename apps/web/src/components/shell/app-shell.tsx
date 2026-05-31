@@ -30,10 +30,44 @@ async function loadUnreadConversationsCount(
   return data;
 }
 
+/**
+ * PART 3.4 — badge verde por tipo de notificación in_app pendiente. callup_*
+ * (publicada/actualizada) se acumula en "convocatorias"; new_announcement en
+ * "anuncios". Se marcan leídas al abrir la lista (MarkNotificationsRead).
+ */
+async function loadNotificationBadges(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+): Promise<{ convocatorias: number; anuncios: number }> {
+  const { data } = await supabase
+    .from('notifications')
+    .select('type')
+    .eq('channel', 'in_app')
+    .eq('status', 'pending');
+  let convocatorias = 0;
+  let anuncios = 0;
+  for (const row of data ?? []) {
+    const type = row.type as string;
+    if (type === 'callup_published' || type === 'callup_updated') {
+      convocatorias += 1;
+    } else if (type === 'new_announcement') {
+      anuncios += 1;
+    }
+  }
+  return { convocatorias, anuncios };
+}
+
 export async function AppShell({ ctx, locale, children }: Props) {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const unreadConversations = await loadUnreadConversationsCount(supabase);
+  const [unreadConversations, notifBadges] = await Promise.all([
+    loadUnreadConversationsCount(supabase),
+    loadNotificationBadges(supabase),
+  ]);
+  const badges = {
+    mensajes: unreadConversations,
+    convocatorias: notifBadges.convocatorias,
+    anuncios: notifBadges.anuncios,
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -44,14 +78,14 @@ export async function AppShell({ ctx, locale, children }: Props) {
         clubs={ctx.clubs}
         activeClub={ctx.activeClub}
         locale={locale}
-        badges={{ mensajes: unreadConversations }}
+        badges={badges}
       />
       <div className="flex flex-1">
         <aside className="hidden w-60 shrink-0 border-r border-zinc-800 bg-zinc-950 lg:block">
           <Sidebar
             role={ctx.activeClub.role}
             variant="desktop"
-            badges={{ mensajes: unreadConversations }}
+            badges={badges}
           />
         </aside>
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-10">{children}</main>
