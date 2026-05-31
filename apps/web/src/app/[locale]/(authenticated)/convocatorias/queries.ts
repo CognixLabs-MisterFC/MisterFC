@@ -543,7 +543,9 @@ export async function loadCallupDetail(
         dorsal: r.players.dorsal,
       }))
       .sort((a, b) =>
-        a.last_name.localeCompare(b.last_name, 'es', { sensitivity: 'base' })
+        (a.last_name ?? '').localeCompare(b.last_name ?? '', 'es', {
+          sensitivity: 'base',
+        })
       ),
     meta,
     responses,

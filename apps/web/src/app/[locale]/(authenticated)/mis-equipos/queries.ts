@@ -342,7 +342,7 @@ export async function loadTeamDetail(
         };
 
   roster.sort((a, b) =>
-    a.players.last_name.localeCompare(b.players.last_name, 'es', {
+    (a.players.last_name ?? '').localeCompare(b.players.last_name ?? '', 'es', {
       sensitivity: 'base',
     })
   );
