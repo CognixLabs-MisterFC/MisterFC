@@ -229,7 +229,7 @@
       "calendario": "Calendari",
       "cuerpo_tecnico": "Cos tècnic",
       "asistencia": "Assistència",
-      "convocatorias": "Convocatòries",
+      "convocatorias": "Gestió de partits",
       "mensajes": "Missatges",
       "anuncios": "Anuncis del club",
       "mi_equipo": "El meu equip",
@@ -1076,7 +1076,7 @@
     }
   },
   "convocatorias": {
-    "title": "Convocatòries",
+    "title": "Gestió de partits",
     "subtitle_coach": "Publica dades de citació i gestiona la llista del partit.",
     "subtitle_player": "Confirma l'assistència als pròxims partits.",
     "empty": "No hi ha partits pròxims als següents 30 dies.",
@@ -1176,7 +1176,7 @@
       "go_to_editor": "Anar a l'editor d'alineació"
     },
     "detail": {
-      "back": "Tornar a convocatòries",
+      "back": "Tornar a Gestió de partits",
       "citation_title": "Citació",
       "citation_when": "Quan",
       "citation_where": "On",
@@ -1190,7 +1190,8 @@
       "not_published_yet": "El cos tècnic encara no ha publicat la citació.",
       "not_in_roster": "No estaves a l'equip en la data del partit.",
       "not_linked": "Este compte no està vinculat a este jugador.",
-      "edit_lineup": "Editar alineació"
+      "edit_lineup": "Editar alineació",
+      "live_capture": "En directe"
     },
     "republish": {
       "pending": "Hi ha canvis sense publicar.",
@@ -1408,7 +1409,7 @@
   },
   "alineacion": {
     "title": "Alineació",
-    "back": "Tornar a la convocatòria",
+    "back": "Tornar a Gestió de partits",
     "empty_hint": "Encara no hi ha alineació per a aquest partit. Crea’n una per començar.",
     "name_label": "Nom",
     "formation_label": "Formació",
@@ -1545,5 +1546,40 @@
     "RW": "ED",
     "LW": "EI",
     "ST": "DC"
+  },
+  "partido_directo": {
+    "back": "Tornar a Gestió de partits",
+    "clock_label": "Cronòmetre",
+    "clock_hint": "El cronòmetre s’activa en la pròxima entrega",
+    "status_not_started": "Sense començar",
+    "side_label": "Equip o rival",
+    "side_own": "Equip",
+    "side_rival": "Rival",
+    "palette_title": "Esdeveniments",
+    "palette_hint": "Selecciona un esdeveniment. Arrossegar-lo al jugador o al camp arriba en la pròxima entrega.",
+    "event": {
+      "goal": "Gol",
+      "assist": "Assistència",
+      "yellow_card": "Groga",
+      "red_card": "Roja",
+      "substitution": "Canvi",
+      "corner": "Córner",
+      "foul": "Falta",
+      "offside": "Fora de joc",
+      "shot": "Tir"
+    },
+    "no_event": "cap esdeveniment",
+    "stub_player": "{event} sobre {player} — el registre arriba en la pròxima entrega",
+    "stub_field": "{event} al camp ({x}, {y}) — el registre arriba en la pròxima entrega",
+    "panel_own_title": "El teu equip",
+    "panel_rival_title": "Equip rival",
+    "panel_rival_hint": "Els esdeveniments del rival es registren per dorsal (pròxima entrega).",
+    "panel_own_hint": "{count} jugadors al camp.",
+    "landscape_hint": "Gira el dispositiu en horitzontal per a registrar millor.",
+    "friendly_note": "Amistós · la presa de dades funciona igual que en un partit.",
+    "scope_note": "Pantalla de captura en directe. El registre d’esdeveniments s’activa en les pròximes entregues.",
+    "empty_title": "Sense alineació oficial",
+    "empty_desc": "Marca una alineació com a oficial per a registrar el partit en directe.",
+    "empty_cta": "Crear/obrir alineació"
   }
 }

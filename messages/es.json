@@ -156,7 +156,7 @@
       "calendario": "Calendario",
       "cuerpo_tecnico": "Cuerpo técnico",
       "asistencia": "Asistencia",
-      "convocatorias": "Convocatorias",
+      "convocatorias": "Gestión de partidos",
       "mensajes": "Mensajes",
       "anuncios": "Anuncios del club",
       "mi_equipo": "Mi equipo",
@@ -1075,7 +1075,7 @@
     }
   },
   "convocatorias": {
-    "title": "Convocatorias",
+    "title": "Gestión de partidos",
     "subtitle_coach": "Publica datos de citación y gestiona la lista del partido.",
     "subtitle_player": "Confirma tu asistencia a los próximos partidos.",
     "empty": "No hay partidos próximos en los siguientes 30 días.",
@@ -1175,7 +1175,7 @@
       "go_to_editor": "Ir al editor de alineación"
     },
     "detail": {
-      "back": "Volver a convocatorias",
+      "back": "Volver a Gestión de partidos",
       "citation_title": "Citación",
       "citation_when": "Cuándo",
       "citation_where": "Dónde",
@@ -1189,7 +1189,8 @@
       "not_published_yet": "El cuerpo técnico aún no ha publicado la citación.",
       "not_in_roster": "No estabas en el equipo a la fecha del partido.",
       "not_linked": "Esta cuenta no está vinculada a este jugador.",
-      "edit_lineup": "Editar alineación"
+      "edit_lineup": "Editar alineación",
+      "live_capture": "En directo"
     },
     "republish": {
       "pending": "Hay cambios sin publicar.",
@@ -1407,7 +1408,7 @@
   },
   "alineacion": {
     "title": "Alineación",
-    "back": "Volver a la convocatoria",
+    "back": "Volver a Gestión de partidos",
     "empty_hint": "Aún no hay alineación para este partido. Crea una para empezar.",
     "name_label": "Nombre",
     "formation_label": "Formación",
@@ -1544,5 +1545,40 @@
     "RW": "ED",
     "LW": "EI",
     "ST": "DC"
+  },
+  "partido_directo": {
+    "back": "Volver a Gestión de partidos",
+    "clock_label": "Cronómetro",
+    "clock_hint": "El cronómetro se activa en la próxima entrega",
+    "status_not_started": "Sin empezar",
+    "side_label": "Equipo o rival",
+    "side_own": "Equipo",
+    "side_rival": "Rival",
+    "palette_title": "Eventos",
+    "palette_hint": "Selecciona un evento. Arrastrarlo al jugador o al campo llega en la próxima entrega.",
+    "event": {
+      "goal": "Gol",
+      "assist": "Asistencia",
+      "yellow_card": "Amarilla",
+      "red_card": "Roja",
+      "substitution": "Cambio",
+      "corner": "Córner",
+      "foul": "Falta",
+      "offside": "Fuera de juego",
+      "shot": "Tiro"
+    },
+    "no_event": "ningún evento",
+    "stub_player": "{event} sobre {player} — el registro llega en la próxima entrega",
+    "stub_field": "{event} en el campo ({x}, {y}) — el registro llega en la próxima entrega",
+    "panel_own_title": "Tu equipo",
+    "panel_rival_title": "Equipo rival",
+    "panel_rival_hint": "Los eventos del rival se registran por dorsal (próxima entrega).",
+    "panel_own_hint": "{count} jugadores en el campo.",
+    "landscape_hint": "Gira el dispositivo en horizontal para registrar mejor.",
+    "friendly_note": "Amistoso · la toma de datos funciona igual que en un partido.",
+    "scope_note": "Pantalla de captura en directo. El registro de eventos se activa en las siguientes entregas.",
+    "empty_title": "Sin alineación oficial",
+    "empty_desc": "Marca una alineación como oficial para registrar el partido en directo.",
+    "empty_cta": "Crear/abrir alineación"
   }
 }

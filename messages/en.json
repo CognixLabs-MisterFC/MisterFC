@@ -229,7 +229,7 @@
       "calendario": "Calendar",
       "cuerpo_tecnico": "Coaching staff",
       "asistencia": "Attendance",
-      "convocatorias": "Callups",
+      "convocatorias": "Match management",
       "mensajes": "Messages",
       "anuncios": "Club announcements",
       "mi_equipo": "My team",
@@ -1076,7 +1076,7 @@
     }
   },
   "convocatorias": {
-    "title": "Callups",
+    "title": "Match management",
     "subtitle_coach": "Publish meeting details and manage the match list.",
     "subtitle_player": "Confirm attendance for upcoming matches.",
     "empty": "No upcoming matches in the next 30 days.",
@@ -1176,7 +1176,7 @@
       "go_to_editor": "Go to lineup editor"
     },
     "detail": {
-      "back": "Back to callups",
+      "back": "Back to match management",
       "citation_title": "Meeting",
       "citation_when": "When",
       "citation_where": "Where",
@@ -1190,7 +1190,8 @@
       "not_published_yet": "The coaching staff hasn't published the meeting yet.",
       "not_in_roster": "You weren't in the team on the match date.",
       "not_linked": "This account isn't linked to this player.",
-      "edit_lineup": "Edit lineup"
+      "edit_lineup": "Edit lineup",
+      "live_capture": "Live"
     },
     "republish": {
       "pending": "There are unpublished changes.",
@@ -1408,7 +1409,7 @@
   },
   "alineacion": {
     "title": "Lineup",
-    "back": "Back to call-up",
+    "back": "Back to match management",
     "empty_hint": "No lineup yet for this match. Create one to start.",
     "name_label": "Name",
     "formation_label": "Formation",
@@ -1545,5 +1546,40 @@
     "RW": "RW",
     "LW": "LW",
     "ST": "ST"
+  },
+  "partido_directo": {
+    "back": "Back to match management",
+    "clock_label": "Stopwatch",
+    "clock_hint": "The stopwatch goes live in the next drop",
+    "status_not_started": "Not started",
+    "side_label": "Team or opponent",
+    "side_own": "Team",
+    "side_rival": "Opponent",
+    "palette_title": "Events",
+    "palette_hint": "Pick an event. Dragging it onto a player or the pitch comes in the next drop.",
+    "event": {
+      "goal": "Goal",
+      "assist": "Assist",
+      "yellow_card": "Yellow",
+      "red_card": "Red",
+      "substitution": "Sub",
+      "corner": "Corner",
+      "foul": "Foul",
+      "offside": "Offside",
+      "shot": "Shot"
+    },
+    "no_event": "no event",
+    "stub_player": "{event} on {player} — recording comes in the next drop",
+    "stub_field": "{event} on the pitch ({x}, {y}) — recording comes in the next drop",
+    "panel_own_title": "Your team",
+    "panel_rival_title": "Opponent",
+    "panel_rival_hint": "Opponent events are recorded by shirt number (next drop).",
+    "panel_own_hint": "{count} players on the pitch.",
+    "landscape_hint": "Turn your device to landscape for easier recording.",
+    "friendly_note": "Friendly · live capture works the same as a match.",
+    "scope_note": "Live capture screen. Event recording is enabled in the next drops.",
+    "empty_title": "No official lineup",
+    "empty_desc": "Mark a lineup as official to record the match live.",
+    "empty_cta": "Create/open lineup"
   }
 }

@@ -8,6 +8,7 @@ import {
   HelpCircle,
   MapPin,
   Megaphone,
+  Radio,
   Truck,
   XCircle,
 } from 'lucide-react';
@@ -96,6 +97,8 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
     decisions,
     ownedPlayerIds,
     canManage,
+    canManageLineup,
+    canRecordMatch,
     hasUnpublishedChanges,
   } = detail;
 
@@ -157,11 +160,19 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
             {isPublished ? t('published') : t('draft')}
           </Badge>
           <div className="flex flex-wrap items-center gap-2">
-            {canManage && (
+            {canManageLineup && (
               <Button asChild variant="outline" size="sm">
                 <Link href={`/convocatorias/${event.id}/alineacion`}>
                   <ClipboardList className="size-4" aria-hidden />
                   <span>{tDetail('edit_lineup')}</span>
+                </Link>
+              </Button>
+            )}
+            {canRecordMatch && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/convocatorias/${event.id}/directo`}>
+                  <Radio className="size-4" aria-hidden />
+                  <span>{tDetail('live_capture')}</span>
                 </Link>
               </Button>
             )}

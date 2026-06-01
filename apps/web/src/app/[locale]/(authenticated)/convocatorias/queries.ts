@@ -118,6 +118,21 @@ export type CallupDetail = {
   ownedPlayerIds: string[];
   canManage: boolean;
   /**
+   * ¿El user puede editar la ALINEACIÓN del partido? (helper SQL
+   * user_can_manage_lineup: admin/coord, principal del team, o ayudante con
+   * can_create_lineups). Distinto de canManage (can_manage_callups): el botón
+   * "Editar alineación" usa este para que el cuerpo técnico —incluido el
+   * ayudante con can_create_lineups— siempre lo vea.
+   */
+  canManageLineup: boolean;
+  /**
+   * ¿El user puede registrar el partido EN DIRECTO? (helper SQL F7.1
+   * user_can_record_match: admin/coord, o cualquier team_staff activo del team
+   * —principal o ayudante—). Gatea el botón "En directo" para que coincida con
+   * quién puede entrar a la pantalla en vivo (gateada por el mismo helper).
+   */
+  canRecordMatch: boolean;
+  /**
    * Bug G — la convocatoria está publicada y hay decisiones del cuerpo técnico
    * modificadas DESPUÉS de la última publicación (cambios sin publicar).
    */
@@ -536,6 +551,23 @@ export async function loadCallupDetail(
     (scope.kind === 'restricted' &&
       scope.managedTeamIds.includes(event.team_id));
 
+  // Autoridad sobre la ALINEACIÓN (helper SQL, mismo que la RLS de F6). Permite
+  // que el ayudante con can_create_lineups vea "Editar alineación" aunque no
+  // tenga can_manage_callups.
+  const { data: canManageLineupRaw } = await supabase.rpc(
+    'user_can_manage_lineup',
+    { p_event_id: eventId },
+  );
+  const canManageLineup = canManageLineupRaw === true;
+
+  // Autoridad de captura en vivo (helper SQL F7.1, mismo que la RLS y que la
+  // pantalla /directo): cualquier team_staff del partido + admin/coord.
+  const { data: canRecordMatchRaw } = await supabase.rpc(
+    'user_can_record_match',
+    { p_event_id: eventId },
+  );
+  const canRecordMatch = canRecordMatchRaw === true;
+
   return {
     event: {
       id: event.id,
@@ -568,6 +600,8 @@ export async function loadCallupDetail(
     decisions,
     ownedPlayerIds,
     canManage,
+    canManageLineup,
+    canRecordMatch,
     hasUnpublishedChanges,
   };
 }
