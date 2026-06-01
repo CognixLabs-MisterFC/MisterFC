@@ -118,6 +118,14 @@ export type CallupDetail = {
   ownedPlayerIds: string[];
   canManage: boolean;
   /**
+   * ¿El user puede editar la ALINEACIÓN del partido? (helper SQL
+   * user_can_manage_lineup: admin/coord, principal del team, o ayudante con
+   * can_create_lineups). Distinto de canManage (can_manage_callups): el botón
+   * "Editar alineación" usa este para que el cuerpo técnico —incluido el
+   * ayudante con can_create_lineups— siempre lo vea.
+   */
+  canManageLineup: boolean;
+  /**
    * Bug G — la convocatoria está publicada y hay decisiones del cuerpo técnico
    * modificadas DESPUÉS de la última publicación (cambios sin publicar).
    */
@@ -536,6 +544,15 @@ export async function loadCallupDetail(
     (scope.kind === 'restricted' &&
       scope.managedTeamIds.includes(event.team_id));
 
+  // Autoridad sobre la ALINEACIÓN (helper SQL, mismo que la RLS de F6). Permite
+  // que el ayudante con can_create_lineups vea "Editar alineación" aunque no
+  // tenga can_manage_callups.
+  const { data: canManageLineupRaw } = await supabase.rpc(
+    'user_can_manage_lineup',
+    { p_event_id: eventId },
+  );
+  const canManageLineup = canManageLineupRaw === true;
+
   return {
     event: {
       id: event.id,
@@ -568,6 +585,7 @@ export async function loadCallupDetail(
     decisions,
     ownedPlayerIds,
     canManage,
+    canManageLineup,
     hasUnpublishedChanges,
   };
 }

@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   ArrowLeftRight,
   Ban,
+  ClipboardList,
   Flag,
   Footprints,
   Goal,
@@ -32,6 +33,8 @@ import {
   type FieldEditorPlayer,
 } from '@/components/match/match-field-editor';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import type { LiveFieldPlayer } from '../queries';
 
@@ -71,6 +74,7 @@ const EVENT_ICON_CLASS: Partial<Record<EventType, string>> = {
 };
 
 type Props = {
+  eventId: string;
   eventType: 'match' | 'friendly';
   opponentName: string | null;
   format: TeamFormat;
@@ -80,6 +84,7 @@ type Props = {
 };
 
 export function LiveCaptureClient({
+  eventId,
   eventType,
   opponentName,
   format,
@@ -90,6 +95,26 @@ export function LiveCaptureClient({
   const t = useTranslations('partido_directo');
   const [side, setSide] = useState<MatchSide>('own');
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
+
+  // Sin alineación oficial no hay once que pintar (no auto-marcamos ninguna ni
+  // hacemos fallback a "la última"): empty-state claro con CTA al editor.
+  if (!hasOfficialLineup) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed border-border bg-card/30 px-6 py-16 text-center">
+        <ClipboardList className="size-10 text-muted-foreground" aria-hidden />
+        <div className="flex max-w-md flex-col gap-1">
+          <p className="text-lg font-semibold">{t('empty_title')}</p>
+          <p className="text-sm text-muted-foreground">{t('empty_desc')}</p>
+        </div>
+        <Button asChild>
+          <Link href={`/convocatorias/${eventId}/alineacion`}>
+            <ClipboardList className="size-4" aria-hidden />
+            <span>{t('empty_cta')}</span>
+          </Link>
+        </Button>
+      </div>
+    );
+  }
 
   const players: FieldEditorPlayer[] = fieldPlayers.map((p) => ({
     playerId: p.playerId,
@@ -251,8 +276,6 @@ export function LiveCaptureClient({
             <p className="text-sm text-muted-foreground">
               {t('panel_rival_hint')}
             </p>
-          ) : !hasOfficialLineup ? (
-            <p className="text-sm text-muted-foreground">{t('no_lineup')}</p>
           ) : (
             <p className="text-sm text-muted-foreground">
               {t('panel_own_hint', { count: players.length })}

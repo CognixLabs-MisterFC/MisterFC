@@ -156,7 +156,7 @@
       "calendario": "Calendario",
       "cuerpo_tecnico": "Cuerpo técnico",
       "asistencia": "Asistencia",
-      "convocatorias": "Convocatorias",
+      "convocatorias": "Gestión de partidos",
       "mensajes": "Mensajes",
       "anuncios": "Anuncios del club",
       "mi_equipo": "Mi equipo",
@@ -1075,7 +1075,7 @@
     }
   },
   "convocatorias": {
-    "title": "Convocatorias",
+    "title": "Gestión de partidos",
     "subtitle_coach": "Publica datos de citación y gestiona la lista del partido.",
     "subtitle_player": "Confirma tu asistencia a los próximos partidos.",
     "empty": "No hay partidos próximos en los siguientes 30 días.",
@@ -1574,9 +1574,11 @@
     "panel_rival_title": "Equipo rival",
     "panel_rival_hint": "Los eventos del rival se registran por dorsal (próxima entrega).",
     "panel_own_hint": "{count} jugadores en el campo.",
-    "no_lineup": "Sin alineación oficial todavía. Monta el once en la alineación.",
     "landscape_hint": "Gira el dispositivo en horizontal para registrar mejor.",
     "friendly_note": "Amistoso · la toma de datos funciona igual que en un partido.",
-    "scope_note": "Pantalla de captura en directo. El registro de eventos se activa en las siguientes entregas."
+    "scope_note": "Pantalla de captura en directo. El registro de eventos se activa en las siguientes entregas.",
+    "empty_title": "Sin alineación oficial",
+    "empty_desc": "Marca una alineación como oficial para registrar el partido en directo.",
+    "empty_cta": "Crear/abrir alineación"
   }
 }

@@ -97,6 +97,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
     decisions,
     ownedPlayerIds,
     canManage,
+    canManageLineup,
     hasUnpublishedChanges,
   } = detail;
 
@@ -158,7 +159,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
             {isPublished ? t('published') : t('draft')}
           </Badge>
           <div className="flex flex-wrap items-center gap-2">
-            {canManage && (
+            {canManageLineup && (
               <Button asChild variant="outline" size="sm">
                 <Link href={`/convocatorias/${event.id}/alineacion`}>
                   <ClipboardList className="size-4" aria-hidden />

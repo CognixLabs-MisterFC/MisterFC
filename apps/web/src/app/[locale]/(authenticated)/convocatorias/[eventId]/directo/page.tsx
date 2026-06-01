@@ -56,6 +56,7 @@ export default async function MatchLivePage({ params }: Props) {
       </div>
 
       <LiveCaptureClient
+        eventId={eventId}
         eventType={data.event.type}
         opponentName={data.event.opponentName}
         format={data.event.format}

@@ -229,7 +229,7 @@
       "calendario": "Calendar",
       "cuerpo_tecnico": "Coaching staff",
       "asistencia": "Attendance",
-      "convocatorias": "Callups",
+      "convocatorias": "Match management",
       "mensajes": "Messages",
       "anuncios": "Club announcements",
       "mi_equipo": "My team",
@@ -1076,7 +1076,7 @@
     }
   },
   "convocatorias": {
-    "title": "Callups",
+    "title": "Match management",
     "subtitle_coach": "Publish meeting details and manage the match list.",
     "subtitle_player": "Confirm attendance for upcoming matches.",
     "empty": "No upcoming matches in the next 30 days.",
@@ -1575,9 +1575,11 @@
     "panel_rival_title": "Opponent",
     "panel_rival_hint": "Opponent events are recorded by shirt number (next drop).",
     "panel_own_hint": "{count} players on the pitch.",
-    "no_lineup": "No official lineup yet. Set the XI in the lineup editor.",
     "landscape_hint": "Turn your device to landscape for easier recording.",
     "friendly_note": "Friendly · live capture works the same as a match.",
-    "scope_note": "Live capture screen. Event recording is enabled in the next drops."
+    "scope_note": "Live capture screen. Event recording is enabled in the next drops.",
+    "empty_title": "No official lineup",
+    "empty_desc": "Mark a lineup as official to record the match live.",
+    "empty_cta": "Create/open lineup"
   }
 }
