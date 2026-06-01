@@ -137,9 +137,17 @@ export function FormationsManager({ formations, canCreate }: Props) {
       </div>
 
       {visible.length === 0 ? (
-        <p className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-          {t('empty')}
-        </p>
+        <div className="flex flex-col items-center gap-3 rounded-md border border-dashed p-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            {canCreate ? t('empty') : t('empty_no_permission')}
+          </p>
+          {canCreate && (
+            <Button onClick={() => setView({ mode: 'create' })}>
+              <Plus className="size-4" aria-hidden />
+              <span>{t('actions.create_first')}</span>
+            </Button>
+          )}
+        </div>
       ) : (
         <ul className="flex flex-col gap-2">
           {visible.map((f) => (

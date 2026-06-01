@@ -232,7 +232,8 @@
       "convocatorias": "Convocatòries",
       "mensajes": "Missatges",
       "anuncios": "Anuncis del club",
-      "mi_equipo": "El meu equip"
+      "mi_equipo": "El meu equip",
+      "formaciones": "Formacions"
     }
   },
   "perfil": {
@@ -278,8 +279,7 @@
       "avatar_empty": "El archivo está vacío.",
       "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
       "avatar_remove_failed": "No hemos podido quitar la foto."
-    },
-    "manage_formations": "Les meues formacions"
+    }
   },
   "categorias": {
     "title": "Categorías",
@@ -1503,7 +1503,8 @@
       "delete": "Esborrar",
       "cancel": "Cancel·lar",
       "save": "Guardar",
-      "saving": "Guardant…"
+      "saving": "Guardant…",
+      "create_first": "Crear primera formació"
     },
     "field": {
       "name": "Nom",
@@ -1528,6 +1529,7 @@
       "positions_invalid": "Les posicions no són vàlides per a la modalitat.",
       "name_required": "El nom és obligatori.",
       "generic": "Alguna cosa ha eixit malament. Torna-ho a provar."
-    }
+    },
+    "empty_no_permission": "No tens permís per a crear formacions. Parla amb un coordinador o admin del club."
   }
 }

@@ -41,7 +41,7 @@ function mapPgErr(
 }
 
 function revalidate() {
-  revalidatePath('/[locale]/(authenticated)/perfil/formaciones', 'page');
+  revalidatePath('/[locale]/(authenticated)/formaciones', 'page');
 }
 
 export async function createFormation(

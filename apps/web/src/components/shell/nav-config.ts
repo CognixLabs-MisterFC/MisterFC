@@ -12,6 +12,7 @@ import {
   Upload,
   Calendar,
   Shield,
+  LayoutGrid,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -126,6 +127,20 @@ export const NAV_ITEMS: readonly NavItem[] = [
       'entrenador_principal',
       'entrenador_ayudante',
       'jugador',
+    ],
+  },
+  {
+    key: 'formaciones',
+    href: '/formaciones',
+    icon: LayoutGrid,
+    // F6.10 — plantillas personalizadas de formación del coach. Visible para
+    // staff (admin/coord + entrenadores); la page gatea el botón "Nueva" y la
+    // RLS gatea el INSERT según la autoridad de alineaciones.
+    roles: [
+      'admin_club',
+      'coordinador',
+      'entrenador_principal',
+      'entrenador_ayudante',
     ],
   },
   {

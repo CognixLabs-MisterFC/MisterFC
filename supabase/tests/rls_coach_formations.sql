@@ -23,6 +23,9 @@
 --     P1. coach A1 (cap can_create_lineups) inserta la suya → OK; owner forzado.
 --     P2. jugador (sin cap) inserta → forbidden (42501).
 --     P3. ayudante sin cap inserta → forbidden (42501).
+--     P4. principal del team (team_staff) sin cap inserta → OK (Bug BB).
+--     P5. admin del club sin cap inserta → OK (Bug BB).
+--     P6. coordinador del club sin cap inserta → OK (Bug BB).
 --   DELETE:
 --     X1. otro coach (A2) borra la de A1 → 0 filas (RLS la oculta).
 --     X2. coordinador borra la de A1 → 0 filas (solo owner + admin).
@@ -41,6 +44,7 @@ insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, r
   ('99cf0000-aaaa-0004-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord-cf-a@ts.test',     now(), '{}'::jsonb, now(), now()),
   ('99cf0000-aaaa-0005-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-cf-a@ts.test',   now(), '{}'::jsonb, now(), now()),
   ('99cf0000-aaaa-0006-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayudante-cf-a@ts.test',  now(), '{}'::jsonb, now(), now()),
+  ('99cf0000-aaaa-0007-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-cf-a@ts.test',  now(), '{}'::jsonb, now(), now()),
   ('99cf0000-bbbb-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-cf-b@ts.test',     now(), '{}'::jsonb, now(), now());
 
 insert into public.memberships (id, profile_id, club_id, role) values
@@ -50,12 +54,23 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('99cf0000-5555-0004-0000-000000000000', '99cf0000-aaaa-0004-0000-000000000000', '99cf0000-0000-0000-0000-000000000001', 'coordinador'),
   ('99cf0000-5555-0005-0000-000000000000', '99cf0000-aaaa-0005-0000-000000000000', '99cf0000-0000-0000-0000-000000000001', 'jugador'),
   ('99cf0000-5555-0006-0000-000000000000', '99cf0000-aaaa-0006-0000-000000000000', '99cf0000-0000-0000-0000-000000000001', 'entrenador_ayudante'),
-  ('99cf0000-5555-0007-0000-000000000000', '99cf0000-bbbb-0001-0000-000000000000', '99cf0000-0000-0000-0000-000000000002', 'admin_club');
+  ('99cf0000-5555-0007-0000-000000000000', '99cf0000-bbbb-0001-0000-000000000000', '99cf0000-0000-0000-0000-000000000002', 'admin_club'),
+  ('99cf0000-5555-0008-0000-000000000000', '99cf0000-aaaa-0007-0000-000000000000', '99cf0000-0000-0000-0000-000000000001', 'entrenador_principal');
 
--- Capability can_create_lineups: coach1 y coach2 la tienen; ayudante NO.
+-- Capability can_create_lineups: coach1 y coach2 la tienen; ayudante y el
+-- principal-sin-cap (coach3) NO — coach3 crea vía autoridad team_staff (Bug BB).
 insert into public.capabilities (membership_id, capability_name, granted) values
   ('99cf0000-5555-0002-0000-000000000000', 'can_create_lineups', true),
   ('99cf0000-5555-0003-0000-000000000000', 'can_create_lineups', true);
+
+-- Team + team_staff: coach3 es PRINCIPAL del team (autoridad de alineaciones
+-- sin capability explícita).
+insert into public.categories (id, club_id, name, season) values
+  ('99cf0000-dddd-0001-0000-000000000000', '99cf0000-0000-0000-0000-000000000001', 'Cat CF A', '2025-26');
+insert into public.teams (id, category_id, name, format, color) values
+  ('99cf0000-eeee-0001-0000-000000000000', '99cf0000-dddd-0001-0000-000000000000', 'Team CF A', 'F7', '#0EA5E9');
+insert into public.team_staff (team_id, membership_id, staff_role) values
+  ('99cf0000-eeee-0001-0000-000000000000', '99cf0000-5555-0008-0000-000000000000', 'entrenador_principal');
 
 -- Posiciones válidas para F7 (7 items). Las reutilizamos en varios casos.
 -- (sin \set para no depender de variables; se repite el literal donde hace falta)
@@ -308,6 +323,66 @@ begin
     raise exception 'FAIL [P3]: ayudante sin cap no debería poder insertar';
   exception when insufficient_privilege then null;
   end;
+end $$;
+reset role;
+
+-- P4. principal del team (team_staff) SIN capability inserta → OK (Bug BB).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '99cf0000-aaaa-0007-0000-000000000000';
+do $$
+begin
+  insert into public.coach_formations (owner_profile_id, club_id, name, format, positions)
+    values ('99cf0000-aaaa-0007-0000-000000000000', '99cf0000-0000-0000-0000-000000000001',
+      'P4 principal', 'F7',
+      '[{"position_code":"POR","x_pct":50,"y_pct":94},
+        {"position_code":"DF1","x_pct":20,"y_pct":70},
+        {"position_code":"DF2","x_pct":50,"y_pct":70},
+        {"position_code":"DF3","x_pct":80,"y_pct":70},
+        {"position_code":"FW1","x_pct":20,"y_pct":38},
+        {"position_code":"FW2","x_pct":50,"y_pct":38},
+        {"position_code":"FW3","x_pct":80,"y_pct":38}]'::jsonb);
+exception when others then
+  raise exception 'FAIL [P4]: principal del team (sin cap) debería poder insertar: %', sqlerrm;
+end $$;
+reset role;
+
+-- P5. admin del club SIN capability inserta → OK (Bug BB: la otra mitad).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '99cf0000-aaaa-0001-0000-000000000000';
+do $$
+begin
+  insert into public.coach_formations (owner_profile_id, club_id, name, format, positions)
+    values ('99cf0000-aaaa-0001-0000-000000000000', '99cf0000-0000-0000-0000-000000000001',
+      'P5 admin', 'F7',
+      '[{"position_code":"POR","x_pct":50,"y_pct":94},
+        {"position_code":"DF1","x_pct":20,"y_pct":70},
+        {"position_code":"DF2","x_pct":50,"y_pct":70},
+        {"position_code":"DF3","x_pct":80,"y_pct":70},
+        {"position_code":"FW1","x_pct":20,"y_pct":38},
+        {"position_code":"FW2","x_pct":50,"y_pct":38},
+        {"position_code":"FW3","x_pct":80,"y_pct":38}]'::jsonb);
+exception when others then
+  raise exception 'FAIL [P5]: admin sin cap debería poder insertar: %', sqlerrm;
+end $$;
+reset role;
+
+-- P6. coordinador del club SIN capability inserta → OK.
+set local role authenticated;
+set local "request.jwt.claim.sub" to '99cf0000-aaaa-0004-0000-000000000000';
+do $$
+begin
+  insert into public.coach_formations (owner_profile_id, club_id, name, format, positions)
+    values ('99cf0000-aaaa-0004-0000-000000000000', '99cf0000-0000-0000-0000-000000000001',
+      'P6 coord', 'F7',
+      '[{"position_code":"POR","x_pct":50,"y_pct":94},
+        {"position_code":"DF1","x_pct":20,"y_pct":70},
+        {"position_code":"DF2","x_pct":50,"y_pct":70},
+        {"position_code":"DF3","x_pct":80,"y_pct":70},
+        {"position_code":"FW1","x_pct":20,"y_pct":38},
+        {"position_code":"FW2","x_pct":50,"y_pct":38},
+        {"position_code":"FW3","x_pct":80,"y_pct":38}]'::jsonb);
+exception when others then
+  raise exception 'FAIL [P6]: coordinador sin cap debería poder insertar: %', sqlerrm;
 end $$;
 reset role;
 

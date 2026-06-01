@@ -1380,6 +1380,10 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: string
       }
+      user_can_create_coach_formations: {
+        Args: { p_club_id: string }
+        Returns: boolean
+      }
       user_can_manage_callup: { Args: { p_event_id: string }; Returns: boolean }
       user_can_manage_event: {
         Args: { p_club_id: string; p_team_id: string }

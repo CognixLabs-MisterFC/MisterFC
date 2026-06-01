@@ -232,7 +232,8 @@
       "convocatorias": "Callups",
       "mensajes": "Messages",
       "anuncios": "Club announcements",
-      "mi_equipo": "My team"
+      "mi_equipo": "My team",
+      "formaciones": "Formations"
     }
   },
   "perfil": {
@@ -278,8 +279,7 @@
       "avatar_empty": "El archivo está vacío.",
       "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
       "avatar_remove_failed": "No hemos podido quitar la foto."
-    },
-    "manage_formations": "My formations"
+    }
   },
   "categorias": {
     "title": "Categorías",
@@ -1503,7 +1503,8 @@
       "delete": "Delete",
       "cancel": "Cancel",
       "save": "Save",
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "create_first": "Create first formation"
     },
     "field": {
       "name": "Name",
@@ -1528,6 +1529,7 @@
       "positions_invalid": "Positions are not valid for the format.",
       "name_required": "Name is required.",
       "generic": "Something went wrong. Please try again."
-    }
+    },
+    "empty_no_permission": "You do not have permission to create formations. Ask a club coordinator or admin."
   }
 }

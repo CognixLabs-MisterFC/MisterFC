@@ -159,7 +159,8 @@
       "convocatorias": "Convocatorias",
       "mensajes": "Mensajes",
       "anuncios": "Anuncios del club",
-      "mi_equipo": "Mi equipo"
+      "mi_equipo": "Mi equipo",
+      "formaciones": "Formaciones"
     }
   },
   "roles": {
@@ -212,8 +213,7 @@
       "avatar_empty": "El archivo está vacío.",
       "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
       "avatar_remove_failed": "No hemos podido quitar la foto."
-    },
-    "manage_formations": "Mis formaciones"
+    }
   },
   "categorias": {
     "title": "Categorías",
@@ -1502,7 +1502,8 @@
       "delete": "Borrar",
       "cancel": "Cancelar",
       "save": "Guardar",
-      "saving": "Guardando…"
+      "saving": "Guardando…",
+      "create_first": "Crear primera formación"
     },
     "field": {
       "name": "Nombre",
@@ -1527,6 +1528,7 @@
       "positions_invalid": "Las posiciones no son válidas para la modalidad.",
       "name_required": "El nombre es obligatorio.",
       "generic": "Algo salió mal. Inténtalo de nuevo."
-    }
+    },
+    "empty_no_permission": "No tienes permiso para crear formaciones. Habla con un coordinador o admin del club."
   }
 }
