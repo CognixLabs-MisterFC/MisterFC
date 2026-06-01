@@ -1176,7 +1176,7 @@
       "go_to_editor": "Go to lineup editor"
     },
     "detail": {
-      "back": "Back to callups",
+      "back": "Back to match management",
       "citation_title": "Meeting",
       "citation_when": "When",
       "citation_where": "Where",
@@ -1409,7 +1409,7 @@
   },
   "alineacion": {
     "title": "Lineup",
-    "back": "Back to call-up",
+    "back": "Back to match management",
     "empty_hint": "No lineup yet for this match. Create one to start.",
     "name_label": "Name",
     "formation_label": "Formation",
@@ -1548,7 +1548,7 @@
     "ST": "ST"
   },
   "partido_directo": {
-    "back": "Back to the call-up",
+    "back": "Back to match management",
     "clock_label": "Stopwatch",
     "clock_hint": "The stopwatch goes live in the next drop",
     "status_not_started": "Not started",

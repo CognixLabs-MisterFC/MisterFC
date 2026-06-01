@@ -1175,7 +1175,7 @@
       "go_to_editor": "Ir al editor de alineación"
     },
     "detail": {
-      "back": "Volver a convocatorias",
+      "back": "Volver a Gestión de partidos",
       "citation_title": "Citación",
       "citation_when": "Cuándo",
       "citation_where": "Dónde",
@@ -1408,7 +1408,7 @@
   },
   "alineacion": {
     "title": "Alineación",
-    "back": "Volver a la convocatoria",
+    "back": "Volver a Gestión de partidos",
     "empty_hint": "Aún no hay alineación para este partido. Crea una para empezar.",
     "name_label": "Nombre",
     "formation_label": "Formación",
@@ -1547,7 +1547,7 @@
     "ST": "DC"
   },
   "partido_directo": {
-    "back": "Volver a la convocatoria",
+    "back": "Volver a Gestión de partidos",
     "clock_label": "Cronómetro",
     "clock_hint": "El cronómetro se activa en la próxima entrega",
     "status_not_started": "Sin empezar",

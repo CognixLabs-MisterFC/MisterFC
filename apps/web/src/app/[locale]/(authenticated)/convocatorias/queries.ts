@@ -126,6 +126,13 @@ export type CallupDetail = {
    */
   canManageLineup: boolean;
   /**
+   * ¿El user puede registrar el partido EN DIRECTO? (helper SQL F7.1
+   * user_can_record_match: admin/coord, o cualquier team_staff activo del team
+   * —principal o ayudante—). Gatea el botón "En directo" para que coincida con
+   * quién puede entrar a la pantalla en vivo (gateada por el mismo helper).
+   */
+  canRecordMatch: boolean;
+  /**
    * Bug G — la convocatoria está publicada y hay decisiones del cuerpo técnico
    * modificadas DESPUÉS de la última publicación (cambios sin publicar).
    */
@@ -553,6 +560,14 @@ export async function loadCallupDetail(
   );
   const canManageLineup = canManageLineupRaw === true;
 
+  // Autoridad de captura en vivo (helper SQL F7.1, mismo que la RLS y que la
+  // pantalla /directo): cualquier team_staff del partido + admin/coord.
+  const { data: canRecordMatchRaw } = await supabase.rpc(
+    'user_can_record_match',
+    { p_event_id: eventId },
+  );
+  const canRecordMatch = canRecordMatchRaw === true;
+
   return {
     event: {
       id: event.id,
@@ -586,6 +601,7 @@ export async function loadCallupDetail(
     ownedPlayerIds,
     canManage,
     canManageLineup,
+    canRecordMatch,
     hasUnpublishedChanges,
   };
 }

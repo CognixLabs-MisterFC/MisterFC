@@ -1176,7 +1176,7 @@
       "go_to_editor": "Anar a l'editor d'alineació"
     },
     "detail": {
-      "back": "Tornar a convocatòries",
+      "back": "Tornar a Gestió de partits",
       "citation_title": "Citació",
       "citation_when": "Quan",
       "citation_where": "On",
@@ -1409,7 +1409,7 @@
   },
   "alineacion": {
     "title": "Alineació",
-    "back": "Tornar a la convocatòria",
+    "back": "Tornar a Gestió de partits",
     "empty_hint": "Encara no hi ha alineació per a aquest partit. Crea’n una per començar.",
     "name_label": "Nom",
     "formation_label": "Formació",
@@ -1548,7 +1548,7 @@
     "ST": "DC"
   },
   "partido_directo": {
-    "back": "Tornar a la convocatòria",
+    "back": "Tornar a Gestió de partits",
     "clock_label": "Cronòmetre",
     "clock_hint": "El cronòmetre s’activa en la pròxima entrega",
     "status_not_started": "Sense començar",

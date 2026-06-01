@@ -98,6 +98,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
     ownedPlayerIds,
     canManage,
     canManageLineup,
+    canRecordMatch,
     hasUnpublishedChanges,
   } = detail;
 
@@ -167,7 +168,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                 </Link>
               </Button>
             )}
-            {canManage && (
+            {canRecordMatch && (
               <Button asChild variant="outline" size="sm">
                 <Link href={`/convocatorias/${event.id}/directo`}>
                   <Radio className="size-4" aria-hidden />
