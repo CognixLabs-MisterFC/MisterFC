@@ -232,7 +232,8 @@
       "convocatorias": "Convocatòries",
       "mensajes": "Missatges",
       "anuncios": "Anuncis del club",
-      "mi_equipo": "El meu equip"
+      "mi_equipo": "El meu equip",
+      "formaciones": "Formacions"
     }
   },
   "perfil": {
@@ -1482,6 +1483,67 @@
     "discard_reason_body": "El jugador eixirà de la convocatòria i de totes les alineacions d'este partit.",
     "discard_confirm": "Descartar",
     "rename_hint": "Fes clic per a reanomenar esta alineació.",
-    "prepare_failed": "No s'ha pogut preparar l'alineació. Recarrega la pàgina."
+    "prepare_failed": "No s'ha pogut preparar l'alineació. Recarrega la pàgina.",
+    "formation_catalog": "Catàleg",
+    "formation_mine": "Les meues formacions"
+  },
+  "formaciones": {
+    "title": "Les meues formacions",
+    "subtitle": "Crea i reutilitza les teues pròpies plantilles de formació en l’editor d’alineació.",
+    "empty": "Encara no tens formacions. Crea’n una amb «Nova formació».",
+    "builder_hint": "Arrossega cada posició sobre el camp. Toca’n una per a canviar-ne el codi.",
+    "select_chip_hint": "Toca una posició del camp per a editar-ne el codi.",
+    "positions_count": "{count} posicions",
+    "filter": {
+      "all": "Totes"
+    },
+    "actions": {
+      "new": "Nova formació",
+      "edit": "Editar",
+      "delete": "Esborrar",
+      "cancel": "Cancel·lar",
+      "save": "Guardar",
+      "saving": "Guardant…",
+      "create_first": "Crear primera formació"
+    },
+    "field": {
+      "name": "Nom",
+      "name_placeholder": "p. ex. La meua 1-3-3-1",
+      "format": "Modalitat",
+      "position_code": "Codi de posició"
+    },
+    "delete": {
+      "title": "Esborrar formació",
+      "description": "Segur que vols esborrar «{name}»? Esta acció no es pot desfer."
+    },
+    "toast": {
+      "created": "Formació creada",
+      "updated": "Formació actualitzada",
+      "deleted": "Formació esborrada"
+    },
+    "errors": {
+      "forbidden": "No tens permís per a esta acció.",
+      "invalid": "Dades no vàlides.",
+      "not_found": "Formació no trobada.",
+      "name_taken": "Ja tens una formació amb eixe nom en eixa modalitat.",
+      "positions_invalid": "Les posicions no són vàlides per a la modalitat.",
+      "name_required": "El nom és obligatori.",
+      "generic": "Alguna cosa ha eixit malament. Torna-ho a provar."
+    },
+    "empty_no_permission": "No tens permís per a crear formacions. Parla amb un coordinador o admin del club."
+  },
+  "positions": {
+    "GK": "POR",
+    "RB": "LD",
+    "CB": "DFC",
+    "LB": "LI",
+    "DM": "MCD",
+    "CM": "MC",
+    "RM": "MD",
+    "LM": "MI",
+    "AM": "MP",
+    "RW": "ED",
+    "LW": "EI",
+    "ST": "DC"
   }
 }

@@ -159,7 +159,8 @@
       "convocatorias": "Convocatorias",
       "mensajes": "Mensajes",
       "anuncios": "Anuncios del club",
-      "mi_equipo": "Mi equipo"
+      "mi_equipo": "Mi equipo",
+      "formaciones": "Formaciones"
     }
   },
   "roles": {
@@ -1481,6 +1482,67 @@
     "discard_reason_body": "El jugador saldrá de la convocatoria y de todas las alineaciones de este partido.",
     "discard_confirm": "Descartar",
     "rename_hint": "Haz clic para renombrar esta alineación.",
-    "prepare_failed": "No se pudo preparar la alineación. Recarga la página."
+    "prepare_failed": "No se pudo preparar la alineación. Recarga la página.",
+    "formation_catalog": "Catálogo",
+    "formation_mine": "Mis formaciones"
+  },
+  "formaciones": {
+    "title": "Mis formaciones",
+    "subtitle": "Crea y reutiliza tus propias plantillas de formación en el editor de alineación.",
+    "empty": "Aún no tienes formaciones. Crea una con «Nueva formación».",
+    "builder_hint": "Arrastra cada posición sobre el campo. Toca una para cambiar su código.",
+    "select_chip_hint": "Toca una posición del campo para editar su código.",
+    "positions_count": "{count} posiciones",
+    "filter": {
+      "all": "Todas"
+    },
+    "actions": {
+      "new": "Nueva formación",
+      "edit": "Editar",
+      "delete": "Borrar",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "create_first": "Crear primera formación"
+    },
+    "field": {
+      "name": "Nombre",
+      "name_placeholder": "p. ej. Mi 1-3-3-1",
+      "format": "Modalidad",
+      "position_code": "Código de posición"
+    },
+    "delete": {
+      "title": "Borrar formación",
+      "description": "¿Seguro que quieres borrar «{name}»? Esta acción no se puede deshacer."
+    },
+    "toast": {
+      "created": "Formación creada",
+      "updated": "Formación actualizada",
+      "deleted": "Formación borrada"
+    },
+    "errors": {
+      "forbidden": "No tienes permiso para esta acción.",
+      "invalid": "Datos no válidos.",
+      "not_found": "Formación no encontrada.",
+      "name_taken": "Ya tienes una formación con ese nombre en esa modalidad.",
+      "positions_invalid": "Las posiciones no son válidas para la modalidad.",
+      "name_required": "El nombre es obligatorio.",
+      "generic": "Algo salió mal. Inténtalo de nuevo."
+    },
+    "empty_no_permission": "No tienes permiso para crear formaciones. Habla con un coordinador o admin del club."
+  },
+  "positions": {
+    "GK": "POR",
+    "RB": "LD",
+    "CB": "DFC",
+    "LB": "LI",
+    "DM": "MCD",
+    "CM": "MC",
+    "RM": "MD",
+    "LM": "MI",
+    "AM": "MP",
+    "RW": "ED",
+    "LW": "EI",
+    "ST": "DC"
   }
 }

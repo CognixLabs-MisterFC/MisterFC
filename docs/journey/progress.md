@@ -12,7 +12,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 3 | Calendario unificado y comunicación básica | ☑ completada | 2026-05-29 | 2026-05-29 |
 | 4 | Asistencia y convocatorias | ☑ Lote A + B entregados | 2026-05-29 | 2026-05-29 |
 | 5 | Mensajería interna y push notifications | ☐ pendiente | — | — |
-| 6 | Alineaciones y planificación del partido (ampliada 2026-05-29) | ☐ pendiente | — | — |
+| 6 | Alineaciones y planificación del partido (ampliada 2026-05-29) | ☑ completada | 2026-05-31 | 2026-06-01 |
 | 7 | Pantalla de toma de datos del partido (live) | ☐ pendiente | — | — |
 | 8 | Valoraciones de partido y entrenamiento | ☐ pendiente | — | — |
 | 9 | Perfil del jugador y evolución multi-temporada | ☐ pendiente | — | — |
@@ -109,7 +109,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 ---
 
-## Fase 6 — Subfases pendientes
+## Fase 6 — Subfases entregadas
 
 > **Ampliada 2026-05-29**: F6 pasa de "Editor de alineaciones F7/F8/F11" → "Alineaciones y planificación del partido" con 4 subfases adicionales (6.6 importar convocatoria, 6.7 banquillo, 6.8 cambios programados, 6.9 notas tácticas). Pieza central `<MatchFieldEditor>` sienta la base reutilizable para F7 — ver [ADR-0009](../decisions/ADR-0009-f6-f7-match-field-editor-compartido.md).
 
@@ -128,7 +128,9 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 6.7 | ☑ 2026-05-31 · ↻ B' | Banquillo del partido + drag&drop campo↔banquillo (sin zona "fuera") | [docs/specs/6.7-banquillo.md](../specs/6.7-banquillo.md) |
 | 6.8 | ☑ 2026-05-31 | Cambios programados (`planned_substitutions`, solo-staff) | [docs/specs/6.8-cambios-programados.md](../specs/6.8-cambios-programados.md) |
 | 6.9 | ☑ 2026-05-31 | Notas tácticas (`lineup_tactical_notes`, solo-staff) + visibilidad equipo/familia | [docs/specs/6.9-notas-tacticas.md](../specs/6.9-notas-tacticas.md) |
-| 6.10 | ☐ pendiente | Plantillas personalizadas de formación (tabla `coach_formations`, ruta `/perfil/formaciones`, grupo "Mis formaciones" en el selector del editor) | — |
+| 6.10 | ☑ 2026-06-01 | Plantillas personalizadas de formación: tabla `coach_formations` (positions JSONB validado por trigger, unique `(owner, format, name)`, RLS owner∪admin/coord), ruta `/perfil/formaciones` (CRUD + editor drag&drop), grupo "Mis formaciones" en el selector del editor de alineación (adopta el layout) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
+
+> **F6.10 entregada 2026-06-01** (PR pendiente): migración `20260610000000_coach_formations.sql`. Helpers de dominio en `packages/core` (`placeOnFormation`, `blankFormationPositions`, schema Zod con validación de nº de posiciones por modalidad). pgTAP `rls_coach_formations` (validación trigger + RLS SELECT/INSERT/DELETE por rol). Con esto **F6 queda cerrada** (6.1–6.10).
 
 ## Fase 11 — Subfases pendientes
 

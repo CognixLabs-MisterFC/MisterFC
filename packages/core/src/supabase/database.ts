@@ -330,6 +330,54 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_formations: {
+        Row: {
+          club_id: string
+          created_at: string
+          format: string
+          id: string
+          name: string
+          owner_profile_id: string
+          positions: Json
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          format: string
+          id?: string
+          name: string
+          owner_profile_id: string
+          positions: Json
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          format?: string
+          id?: string
+          name?: string
+          owner_profile_id?: string
+          positions?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_formations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_formations_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           club_id: string
@@ -1331,6 +1379,10 @@ export type Database = {
       user_active_team_for_staff: {
         Args: { p_club_id: string }
         Returns: string
+      }
+      user_can_create_coach_formations: {
+        Args: { p_club_id: string }
+        Returns: boolean
       }
       user_can_manage_callup: { Args: { p_event_id: string }; Returns: boolean }
       user_can_manage_event: {

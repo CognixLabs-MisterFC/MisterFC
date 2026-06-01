@@ -16,6 +16,20 @@ const formationCode = z
   .max(40)
   .refine((c) => getFormation(c) !== undefined, { message: 'formation_unknown' });
 
+// F6.10 — al adoptar una plantilla del entrenador, formation_code guarda el
+// uuid de coach_formations (cabe en char_length ≤ 40, no es FK). Aceptamos un
+// code del catálogo O un uuid; la existencia de la coach_formation la garantiza
+// la RLS de lineups + que el editor solo ofrece las del propio coach.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const formationCodeOrCoachId = z
+  .string()
+  .min(1)
+  .max(40)
+  .refine((c) => getFormation(c) !== undefined || UUID_RE.test(c), {
+    message: 'formation_unknown',
+  });
+
 export const createLineupSchema = z.object({
   event_id: uuid,
   name: z.string().trim().min(1, { message: 'name_required' }).max(60, { message: 'name_too_long' }),
@@ -26,7 +40,7 @@ export type CreateLineupInput = z.infer<typeof createLineupSchema>;
 
 export const setLineupFormationSchema = z.object({
   lineup_id: uuid,
-  formation_code: formationCode,
+  formation_code: formationCodeOrCoachId,
 });
 export type SetLineupFormationInput = z.infer<typeof setLineupFormationSchema>;
 

@@ -18,6 +18,8 @@
 import {
   createSupabaseServerClient,
   defaultLineupDraft,
+  type CoachFormation,
+  type CoachFormationPosition,
   type LineupLocation,
   type PlayerPositionMain,
   type TeamFormat,
@@ -88,6 +90,8 @@ export type LineupEditorData = {
   positions: LineupPositionRow[];
   tacticalNotes: string | null;
   plannedSubs: PlannedSubRow[];
+  /** F6.10 — plantillas del coach para la modalidad del equipo. */
+  coachFormations: CoachFormation[];
 };
 
 export async function loadLineupEditor(
@@ -337,6 +341,30 @@ export async function loadLineupEditor(
       }));
   }
 
+  // F6.10 — plantillas del coach para la modalidad del equipo (selector "Mis
+  // formaciones"). La RLS ya limita a las propias (+ admin/coord); filtramos
+  // por owner para que solo aparezcan las del usuario actual.
+  let coachFormations: CoachFormation[] = [];
+  {
+    const {
+      data: { user: cfUser },
+    } = await supabase.auth.getUser();
+    if (cfUser) {
+      const { data: cfRows } = await supabase
+        .from('coach_formations')
+        .select('id, name, format, positions')
+        .eq('owner_profile_id', cfUser.id)
+        .eq('format', event.teams.format)
+        .order('name', { ascending: true });
+      coachFormations = (cfRows ?? []).map((r) => ({
+        id: r.id as string,
+        name: r.name as string,
+        format: r.format as TeamFormat,
+        positions: (r.positions as unknown as CoachFormationPosition[]) ?? [],
+      }));
+    }
+  }
+
   return {
     event: {
       id: event.id,
@@ -357,5 +385,6 @@ export async function loadLineupEditor(
     positions,
     tacticalNotes,
     plannedSubs,
+    coachFormations,
   };
 }

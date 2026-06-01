@@ -23,12 +23,17 @@ import {
   getFormation,
   parsePlayerDragId,
   playerDraggableId,
+  coachFormationToFormation,
+  positionKeyOfSlotCode,
   remapToFormation,
   resolveDrop,
   roleFromPosition,
   startersFor,
+  type CoachFormation,
+  type Formation,
   type PlayerPositionMain,
   type PositionAssignment,
+  type SlotRole,
   type TeamFormat,
 } from '@misterfc/core';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
@@ -53,7 +58,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -105,6 +112,14 @@ export type DiscardedVM = { playerId: string; reason: string | null };
 const DISCARDED_ZONE_ID = 'lineup-zone:discarded';
 
 const DISCARD_REASONS = ['tecnico', 'fisico', 'disciplinario', 'personal'] as const;
+
+// Slot vacío del catálogo: etiqueta por rol vía i18n `alineacion.pos_short.*`.
+const ROLE_TO_SHORT: Record<SlotRole, string> = {
+  GK: 'goalkeeper',
+  DF: 'defender',
+  MF: 'midfielder',
+  FW: 'forward',
+};
 type DiscardReason = (typeof DISCARD_REASONS)[number];
 
 type Props = {
@@ -120,6 +135,8 @@ type Props = {
   initialPositions: PositionAssignment[];
   initialTacticalNotes: string | null;
   initialPlannedSubs: PlannedSubVM[];
+  /** F6.10 — plantillas personalizadas del coach para esta modalidad. */
+  coachFormations: CoachFormation[];
 };
 
 function shortLabel(p: RosterPlayerVM | undefined, playerId: string): string {
@@ -236,9 +253,11 @@ export function LineupEditorClient(props: Props) {
     initialPositions,
     initialTacticalNotes,
     initialPlannedSubs,
+    coachFormations,
   } = props;
 
   const t = useTranslations('alineacion');
+  const tp = useTranslations('positions');
   const router = useRouter();
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
@@ -335,7 +354,24 @@ export function LineupEditorClient(props: Props) {
       }
     });
   }
-  const formation = getFormation(formationCode);
+  // F6.10 — la formación activa puede ser del catálogo o una plantilla del
+  // entrenador (formation_code = uuid de coach_formations). Si es del coach,
+  // sintetizamos un Formation con SU layout real (BUG 3). slotLabels traduce
+  // el slot vacío por i18n (BUG 1): clave de posición (coach) o rol (catálogo).
+  const activeCoachFormation: CoachFormation | null = getFormation(formationCode)
+    ? null
+    : (coachFormations.find((f) => f.id === formationCode) ?? null);
+  const formation: Formation | undefined = activeCoachFormation
+    ? coachFormationToFormation(activeCoachFormation)
+    : getFormation(formationCode);
+  const slotLabels: Record<string, string> = {};
+  if (formation) {
+    for (const s of formation.slots) {
+      slotLabels[s.code] = activeCoachFormation
+        ? tp(positionKeyOfSlotCode(s.code))
+        : t(`pos_short.${ROLE_TO_SHORT[s.role]}`);
+    }
+  }
 
   const fieldPlayers: FieldEditorPlayer[] = positions
     .filter((p) => p.location === 'field')
@@ -517,6 +553,94 @@ export function LineupEditorClient(props: Props) {
     });
   }
 
+  // F6.10 (fix BUG 3) — adopta una plantilla del entrenador como layout del
+  // campo. Sintetiza el Formation (sus x/y + códigos de slot únicos), coloca a
+  // los jugadores en orden (campo primero, luego banquillo) sobre esos slots y
+  // persiste formation_code = cf.id, de modo que al recargar el editor vuelve a
+  // sintetizar el MISMO layout y los jugadores se pintan y editan sobre él.
+  function onCoachFormationChange(cf: CoachFormation) {
+    const synth = coachFormationToFormation(cf);
+    const fieldIds = positions.filter((p) => p.location === 'field').map((p) => p.playerId);
+    const benchIds = positions.filter((p) => p.location === 'bench').map((p) => p.playerId);
+    const ordered = [...fieldIds, ...benchIds];
+    const slotByPlayer = new Map<string, (typeof synth.slots)[number]>();
+    synth.slots.forEach((slot, i) => {
+      const pid = ordered[i];
+      if (pid) slotByPlayer.set(pid, slot);
+    });
+
+    const prev = positions;
+    const prevCode = formationCode;
+    const optimistic = positions.map((p) => {
+      const slot = slotByPlayer.get(p.playerId);
+      if (slot) {
+        return {
+          ...p,
+          location: 'field' as const,
+          positionCode: slot.code,
+          xPct: slot.xPct,
+          yPct: slot.yPct,
+        };
+      }
+      return { ...p, location: 'bench' as const, positionCode: null, xPct: null, yPct: null };
+    });
+
+    const changed = optimistic
+      .filter((p) => {
+        const before = prev.find((x) => x.playerId === p.playerId);
+        return (
+          before &&
+          (before.location !== p.location ||
+            before.positionCode !== p.positionCode ||
+            before.xPct !== p.xPct ||
+            before.yPct !== p.yPct)
+        );
+      })
+      .map((p) => p.playerId);
+
+    setPositions(optimistic);
+    setFormationCode(cf.id);
+    startTransition(async () => {
+      setError(null);
+      const rf = await setLineupFormation({ lineup_id: lineupId, formation_code: cf.id });
+      if (rf.error) {
+        setPositions(prev);
+        setFormationCode(prevCode);
+        setError(rf.error);
+        return;
+      }
+      for (const pid of changed) {
+        const a = optimistic.find((x) => x.playerId === pid);
+        if (!a) continue;
+        const r = await upsertLineupPosition({
+          lineup_id: lineupId,
+          player_id: pid,
+          location: a.location,
+          position_code: a.positionCode,
+          x_pct: a.xPct,
+          y_pct: a.yPct,
+        });
+        if (r.error) {
+          setPositions(prev);
+          if (r.error === 'too_many_starters') toast.error(t('field_full', { max: maxStarters }));
+          else setError(r.error);
+          return;
+        }
+      }
+    });
+  }
+
+  // Dispatcher del Select de formación: catálogo (code del catálogo) o plantilla
+  // del entrenador (value = uuid de coach_formations).
+  function onFormationSelect(value: string) {
+    if (getFormation(value)) {
+      onFormationChange(value);
+      return;
+    }
+    const cf = coachFormations.find((f) => f.id === value);
+    if (cf) onCoachFormationChange(cf);
+  }
+
   function onToggleOfficial(value: boolean) {
     startTransition(async () => {
       const r = await setLineupOfficial({ lineup_id: lineupId, is_official: value });
@@ -641,16 +765,29 @@ export function LineupEditorClient(props: Props) {
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{t('formation_label')}</span>
           <Hint label={t('formation_hint')}>
-            <Select value={formationCode} onValueChange={onFormationChange}>
+            <Select value={formationCode} onValueChange={onFormationSelect}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {formations.map((f) => (
-                  <SelectItem key={f.code} value={f.code}>
-                    {f.label}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  <SelectLabel>{t('formation_catalog')}</SelectLabel>
+                  {formations.map((f) => (
+                    <SelectItem key={f.code} value={f.code}>
+                      {f.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+                {coachFormations.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel>{t('formation_mine')}</SelectLabel>
+                    {coachFormations.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
               </SelectContent>
             </Select>
           </Hint>
@@ -739,6 +876,8 @@ export function LineupEditorClient(props: Props) {
             <MatchFieldEditor
               format={format}
               formationCode={formationCode}
+              formationOverride={formation}
+              slotLabels={slotLabels}
               players={fieldPlayers}
               mode="edit"
             />

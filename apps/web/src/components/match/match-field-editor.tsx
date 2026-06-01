@@ -74,6 +74,17 @@ export interface FieldEditorPlayer {
 export interface MatchFieldEditorProps {
   format: TeamFormat;
   formationCode: string;
+  /**
+   * F6.10 — formación a renderizar. Si se pasa, se usa en vez de resolver
+   * `formationCode` contra el catálogo. Lo usa el editor de alineación para
+   * renderizar el layout REAL de una plantilla del entrenador (BUG 3).
+   */
+  formationOverride?: Formation;
+  /**
+   * F6.10 — etiqueta localizada por código de slot (BUG 1/2). Si falta para un
+   * slot, se muestra el código crudo como fallback. Aplica al slot vacío.
+   */
+  slotLabels?: Record<string, string>;
   /** Jugadores actualmente en el campo (location='field'). */
   players: FieldEditorPlayer[];
   mode?: FieldMode;
@@ -156,12 +167,14 @@ function DraggableChip({
 
 function EditableSlot({
   slotCode,
+  slotLabel,
   xPct,
   yPct,
   player,
   onHover,
 }: {
   slotCode: string;
+  slotLabel: string;
   xPct: number;
   yPct: number;
   player: FieldEditorPlayer | undefined;
@@ -185,7 +198,7 @@ function EditableSlot({
             isOver && 'scale-110 border-white bg-white/20',
           )}
         >
-          {slotCode}
+          {slotLabel}
         </div>
       )}
     </div>
@@ -263,6 +276,8 @@ function slotCoords(
 export function MatchFieldEditor({
   format,
   formationCode,
+  formationOverride,
+  slotLabels,
   players,
   mode = 'readonly',
   onPlayerClick,
@@ -272,7 +287,7 @@ export function MatchFieldEditor({
   className,
 }: MatchFieldEditorProps) {
   const labelId = useId();
-  const formation = getFormation(formationCode);
+  const formation = formationOverride ?? getFormation(formationCode);
   const byCode = new Map(
     players.filter((p) => p.positionCode).map((p) => [p.positionCode!, p]),
   );
@@ -316,6 +331,7 @@ export function MatchFieldEditor({
             <EditableSlot
               key={slot.code}
               slotCode={slot.code}
+              slotLabel={slotLabels?.[slot.code] ?? slot.code}
               xPct={slot.xPct}
               yPct={slot.yPct}
               player={byCode.get(slot.code)}
