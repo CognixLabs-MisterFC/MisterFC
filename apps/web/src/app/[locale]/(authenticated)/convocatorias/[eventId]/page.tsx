@@ -8,6 +8,7 @@ import {
   HelpCircle,
   MapPin,
   Megaphone,
+  Radio,
   Truck,
   XCircle,
 } from 'lucide-react';
@@ -162,6 +163,14 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                 <Link href={`/convocatorias/${event.id}/alineacion`}>
                   <ClipboardList className="size-4" aria-hidden />
                   <span>{tDetail('edit_lineup')}</span>
+                </Link>
+              </Button>
+            )}
+            {canManage && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/convocatorias/${event.id}/directo`}>
+                  <Radio className="size-4" aria-hidden />
+                  <span>{tDetail('live_capture')}</span>
                 </Link>
               </Button>
             )}

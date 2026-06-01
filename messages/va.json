@@ -1190,7 +1190,8 @@
       "not_published_yet": "El cos tècnic encara no ha publicat la citació.",
       "not_in_roster": "No estaves a l'equip en la data del partit.",
       "not_linked": "Este compte no està vinculat a este jugador.",
-      "edit_lineup": "Editar alineació"
+      "edit_lineup": "Editar alineació",
+      "live_capture": "En directe"
     },
     "republish": {
       "pending": "Hi ha canvis sense publicar.",
@@ -1545,5 +1546,38 @@
     "RW": "ED",
     "LW": "EI",
     "ST": "DC"
+  },
+  "partido_directo": {
+    "back": "Tornar a la convocatòria",
+    "clock_label": "Cronòmetre",
+    "clock_hint": "El cronòmetre s’activa en la pròxima entrega",
+    "status_not_started": "Sense començar",
+    "side_label": "Equip o rival",
+    "side_own": "Equip",
+    "side_rival": "Rival",
+    "palette_title": "Esdeveniments",
+    "palette_hint": "Selecciona un esdeveniment. Arrossegar-lo al jugador o al camp arriba en la pròxima entrega.",
+    "event": {
+      "goal": "Gol",
+      "assist": "Assistència",
+      "yellow_card": "Groga",
+      "red_card": "Roja",
+      "substitution": "Canvi",
+      "corner": "Córner",
+      "foul": "Falta",
+      "offside": "Fora de joc",
+      "shot": "Tir"
+    },
+    "no_event": "cap esdeveniment",
+    "stub_player": "{event} sobre {player} — el registre arriba en la pròxima entrega",
+    "stub_field": "{event} al camp ({x}, {y}) — el registre arriba en la pròxima entrega",
+    "panel_own_title": "El teu equip",
+    "panel_rival_title": "Equip rival",
+    "panel_rival_hint": "Els esdeveniments del rival es registren per dorsal (pròxima entrega).",
+    "panel_own_hint": "{count} jugadors al camp.",
+    "no_lineup": "Encara no hi ha alineació oficial. Munta l’onze en l’alineació.",
+    "landscape_hint": "Gira el dispositiu en horitzontal per a registrar millor.",
+    "friendly_note": "Amistós · la presa de dades funciona igual que en un partit.",
+    "scope_note": "Pantalla de captura en directe. El registre d’esdeveniments s’activa en les pròximes entregues."
   }
 }
