@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import {
   calledUpOverflow,
+  createSupabaseAdminClient,
   createSupabaseServerClient,
   maxCalledUpFor,
   publishCallupSchema,
@@ -215,7 +216,7 @@ export async function publishCallup(
   const isFirstPublish = publish && (existing?.published_at == null);
   if (isFirstPublish) {
     try {
-      await notifyCallup(supabase, event_id, 'callup_published');
+      await notifyCallup(event_id, 'callup_published');
     } catch (e) {
       // No bloquear el publish por fallo de notificación.
       console.error('notify callup_published error', e);
@@ -289,7 +290,7 @@ export async function republishCallup(eventId: string): Promise<RepublishState> 
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');
 
   try {
-    await notifyCallup(supabase, eventId, 'callup_updated', String(Date.now()));
+    await notifyCallup(eventId, 'callup_updated', String(Date.now()));
   } catch (e) {
     console.error('notify callup_updated error', e);
   }
@@ -310,10 +311,14 @@ type CallupEvent = {
  * player_accounts) a jugadores del roster activo a la fecha del partido.
  */
 async function callupRecipients(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
   eventId: string,
 ): Promise<{ event: CallupEvent; userIds: string[] } | null> {
-  const { data: event } = await supabase
+  // Admin client (service role): la resolución de destinatarios NO debe quedar
+  // limitada por la RLS del cuerpo técnico sobre player_accounts (Bug CC: si el
+  // coach no veía las cuentas vinculadas, no se generaba ninguna notificación).
+  const admin = createSupabaseAdminClient();
+
+  const { data: event } = await admin
     .from('events')
     .select('id, team_id, title, opponent_name, starts_at')
     .eq('id', eventId)
@@ -321,7 +326,7 @@ async function callupRecipients(
   if (!event?.team_id) return null;
 
   const eventDate = event.starts_at.slice(0, 10);
-  const { data: tms } = await supabase
+  const { data: tms } = await admin
     .from('team_members')
     .select('player_id, joined_at, left_at')
     .eq('team_id', event.team_id)
@@ -333,7 +338,7 @@ async function callupRecipients(
     .map((r) => r.player_id);
   if (rosterIds.length === 0) return null;
 
-  const { data: pas } = await supabase
+  const { data: pas } = await admin
     .from('player_accounts')
     .select('profile_id')
     .in('player_id', rosterIds);
@@ -352,12 +357,11 @@ async function callupRecipients(
  * notificación NO quede deduplicada con la anterior.
  */
 async function notifyCallup(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
   eventId: string,
   kind: 'callup_published' | 'callup_updated',
   dedupeToken?: string,
 ): Promise<void> {
-  const r = await callupRecipients(supabase, eventId);
+  const r = await callupRecipients(eventId);
   if (!r) return;
   const { event, userIds } = r;
 

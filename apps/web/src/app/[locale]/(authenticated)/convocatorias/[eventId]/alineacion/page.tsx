@@ -70,6 +70,7 @@ export default async function LineupPage({ params, searchParams }: Props) {
         eventId={eventId}
         format={data.event.format}
         roster={data.roster}
+        discarded={data.discarded}
         lineups={data.lineups}
         selectedLineupId={data.selectedLineupId}
         selectedFormationCode={selected?.formationCode ?? null}

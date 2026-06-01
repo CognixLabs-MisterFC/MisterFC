@@ -1473,6 +1473,12 @@
     "new_lineup_hint": "Crear una segunda alineación (Plan B, Plan C…) con los mismos convocados pero distinta distribución.",
     "field_full": "Máximo {max} jugadores en el campo para esta modalidad.",
     "notes_saved": "Notas guardadas.",
-    "sub_remove_hint": "Eliminar este cambio programado."
+    "sub_remove_hint": "Eliminar este cambio programado.",
+    "discarded_panel": "Descartados",
+    "discarded_empty": "Sin descartes. Arrastra aquí para descartar.",
+    "discarded_hint": "Compartido por todas las alineaciones del partido.",
+    "discard_reason_title": "Motivo del descarte",
+    "discard_reason_body": "El jugador saldrá de la convocatoria y de todas las alineaciones de este partido.",
+    "discard_confirm": "Descartar"
   }
 }

@@ -21,6 +21,7 @@ import {
   exceedsStarters,
   formationsForFormat,
   getFormation,
+  parsePlayerDragId,
   playerDraggableId,
   remapToFormation,
   resolveDrop,
@@ -42,6 +43,14 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Hint } from '@/components/ui/tooltip';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -60,6 +69,7 @@ import {
   setTacticalNotes,
   upsertLineupPosition,
 } from '../actions';
+import { upsertCallupDecision } from '../../../actions';
 
 export type RosterPlayerVM = {
   playerId: string;
@@ -86,10 +96,21 @@ export type PlannedSubVM = {
   positionCodeTarget: string | null;
 };
 
+export type DiscardedVM = { playerId: string; reason: string | null };
+
+// Zona de descarte: NIVEL EVENTO (callup_decisions), no una location del lineup.
+// Por eso su id vive aquí y se maneja fuera de resolveDrop (core solo conoce
+// field/bench).
+const DISCARDED_ZONE_ID = 'lineup-zone:discarded';
+
+const DISCARD_REASONS = ['tecnico', 'fisico', 'disciplinario', 'personal'] as const;
+type DiscardReason = (typeof DISCARD_REASONS)[number];
+
 type Props = {
   eventId: string;
   format: TeamFormat;
   roster: RosterPlayerVM[];
+  discarded: DiscardedVM[];
   lineups: LineupSummaryVM[];
   selectedLineupId: string | null;
   selectedFormationCode: string | null;
@@ -106,16 +127,17 @@ function shortLabel(p: RosterPlayerVM | undefined, playerId: string): string {
 }
 
 /**
- * Siembra como banquillo a los convocados que aún no tienen posición. El roster
- * que llega ya viene filtrado a convocados (no descartados) desde el server.
+ * Siembra como banquillo a los convocados que aún no tienen posición. Excluye a
+ * los descartados (nivel evento) — el roster que llega incluye a todos.
  */
 function mergeInitial(
   positions: PositionAssignment[],
   roster: RosterPlayerVM[],
+  discardedIds: Set<string>,
 ): PositionAssignment[] {
   const present = new Set(positions.map((p) => p.playerId));
   const extra: PositionAssignment[] = roster
-    .filter((r) => !present.has(r.playerId))
+    .filter((r) => !present.has(r.playerId) && !discardedIds.has(r.playerId))
     .map((r) => ({
       playerId: r.playerId,
       location: 'bench',
@@ -151,10 +173,12 @@ function PlayerPill({
   playerId,
   player,
   positionLabel,
+  subLabel,
 }: {
   playerId: string;
   player: RosterPlayerVM | undefined;
   positionLabel: string | null;
+  subLabel?: string | null;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: playerDraggableId(playerId),
@@ -185,7 +209,14 @@ function PlayerPill({
           {positionLabel}
         </span>
       )}
-      <span className="truncate">{label}</span>
+      <span className="flex min-w-0 flex-col">
+        <span className="truncate">{label}</span>
+        {subLabel && (
+          <span className="truncate text-[10px] text-muted-foreground">
+            {subLabel}
+          </span>
+        )}
+      </span>
     </button>
   );
 }
@@ -195,6 +226,7 @@ export function LineupEditorClient(props: Props) {
     eventId,
     format,
     roster,
+    discarded: initialDiscarded,
     lineups,
     selectedLineupId,
     selectedFormationCode,
@@ -221,8 +253,18 @@ export function LineupEditorClient(props: Props) {
     return pm ? t(`pos_short.${pm}`) : null;
   };
 
+  const [discarded, setDiscarded] = useState<DiscardedVM[]>(initialDiscarded);
+  const discardedIds = useMemo(
+    () => new Set(discarded.map((d) => d.playerId)),
+    [discarded],
+  );
+
   const [positions, setPositions] = useState<PositionAssignment[]>(() =>
-    mergeInitial(initialPositions, roster),
+    mergeInitial(
+      initialPositions,
+      roster,
+      new Set(initialDiscarded.map((d) => d.playerId)),
+    ),
   );
   const [formationCode, setFormationCode] = useState<string>(
     selectedFormationCode ?? defaultFormation(format).code,
@@ -233,6 +275,10 @@ export function LineupEditorClient(props: Props) {
     (initialTacticalNotes ?? '').length > 0,
   );
   const [plannedSubs, setPlannedSubs] = useState<PlannedSubVM[]>(initialPlannedSubs);
+
+  // Diálogo de motivo de descarte (drag banquillo/campo → Descartados).
+  const [pendingDiscard, setPendingDiscard] = useState<string | null>(null);
+  const [discardReason, setDiscardReason] = useState<DiscardReason>('tecnico');
 
   // Form de cambio programado.
   const [subMinute, setSubMinute] = useState('');
@@ -322,6 +368,13 @@ export function LineupEditorClient(props: Props) {
     });
   const benchPlayers = positions.filter((p) => p.location === 'bench');
 
+  function reasonLabel(reason: string | null): string | null {
+    if (!reason) return null;
+    return (DISCARD_REASONS as readonly string[]).includes(reason)
+      ? t(`out_reason.${reason as DiscardReason}`)
+      : reason;
+  }
+
   function persist(
     next: PositionAssignment[],
     changed: string[],
@@ -353,14 +406,85 @@ export function LineupEditorClient(props: Props) {
     });
   }
 
+  // Descartar (nivel evento): quita de positions, añade a Descartados, persiste
+  // la decisión de convocatoria (que el server propaga a todas las alineaciones).
+  function confirmDiscard(playerId: string, reason: DiscardReason) {
+    const prevPos = positions;
+    const prevDisc = discarded;
+    setPositions(positions.filter((p) => p.playerId !== playerId));
+    setDiscarded([...discarded, { playerId, reason }]);
+    setPendingDiscard(null);
+    startTransition(async () => {
+      const r = await upsertCallupDecision({
+        event_id: eventId,
+        player_id: playerId,
+        decision: 'discarded',
+        reason,
+      });
+      if (r.error) {
+        setPositions(prevPos);
+        setDiscarded(prevDisc);
+        setError(r.error);
+      }
+    });
+  }
+
+  // Reincluir: quita de Descartados y devuelve al banquillo (de todas las
+  // alineaciones, vía la decisión called_up en el server).
+  function reincludePlayer(playerId: string) {
+    const prevPos = positions;
+    const prevDisc = discarded;
+    setDiscarded(discarded.filter((d) => d.playerId !== playerId));
+    setPositions([
+      ...positions,
+      { playerId, location: 'bench', positionCode: null, xPct: null, yPct: null },
+    ]);
+    startTransition(async () => {
+      const r = await upsertCallupDecision({
+        event_id: eventId,
+        player_id: playerId,
+        decision: 'called_up',
+        reason: null,
+      });
+      if (r.error) {
+        setPositions(prevPos);
+        setDiscarded(prevDisc);
+        setError(r.error);
+      }
+    });
+  }
+
   function onDragEnd(e: DragEndEvent) {
-    const drop = resolveDrop(String(e.active.id), e.over ? String(e.over.id) : null);
+    const activeId = String(e.active.id);
+    const overId = e.over ? String(e.over.id) : null;
+    const playerId = parsePlayerDragId(activeId);
+    if (!playerId || !overId) return;
+
+    const isDiscarded = discardedIds.has(playerId);
+
+    // Soltar en "Descartados" → pedir motivo (solo si venía de la alineación).
+    if (overId === DISCARDED_ZONE_ID) {
+      if (!isDiscarded) {
+        setDiscardReason('tecnico');
+        setPendingDiscard(playerId);
+      }
+      return;
+    }
+
+    // Un descartado soltado de nuevo en la alineación (banquillo o campo) →
+    // reincluir al banquillo (luego el coach lo coloca en el campo si quiere).
+    if (isDiscarded) {
+      reincludePlayer(playerId);
+      return;
+    }
+
+    // Movimiento normal campo/banquillo.
+    const drop = resolveDrop(activeId, overId);
     if (!drop) return;
     const prev = positions;
     const { next, changed } = applyDrop(prev, drop, formation);
     if (changed.length === 0) return;
 
-    // Bug F: tope de titulares por modalidad (toast + bloqueo en cliente).
     if (
       drop.target.kind === 'field' &&
       exceedsStarters(next.filter((p) => p.location === 'field').length, format)
@@ -572,7 +696,7 @@ export function LineupEditorClient(props: Props) {
       )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <div className="grid gap-3 md:grid-cols-[1fr_2fr]">
+        <div className="grid gap-3 lg:grid-cols-[1fr_2fr_1fr]">
           <section className="flex flex-col gap-2">
             <h3 className="text-sm font-semibold">
               {t('bench')} · {benchPlayers.length}
@@ -600,6 +724,30 @@ export function LineupEditorClient(props: Props) {
               players={fieldPlayers}
               mode="edit"
             />
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <h3 className="text-sm font-semibold">
+              {t('discarded_panel')} · {discarded.length}
+            </h3>
+            <DropZone id={DISCARDED_ZONE_ID}>
+              {discarded.length === 0 ? (
+                <p className="text-xs text-muted-foreground">{t('discarded_empty')}</p>
+              ) : (
+                discarded.map((d) => (
+                  <PlayerPill
+                    key={d.playerId}
+                    playerId={d.playerId}
+                    player={rosterById.get(d.playerId)}
+                    positionLabel={posLabelOf(d.playerId)}
+                    subLabel={reasonLabel(d.reason)}
+                  />
+                ))
+              )}
+            </DropZone>
+            <p className="text-[10px] text-muted-foreground">
+              {t('discarded_hint')}
+            </p>
           </section>
         </div>
       </DndContext>
@@ -693,6 +841,40 @@ export function LineupEditorClient(props: Props) {
           </div>
         )}
       </section>
+
+      {/* Diálogo motivo de descarte */}
+      <Dialog open={pendingDiscard != null} onOpenChange={(o) => !o && setPendingDiscard(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('discard_reason_title')}</DialogTitle>
+            <DialogDescription>{t('discard_reason_body')}</DialogDescription>
+          </DialogHeader>
+          <Select value={discardReason} onValueChange={(v) => setDiscardReason(v as DiscardReason)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DISCARD_REASONS.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {t(`out_reason.${r}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDiscard(null)}>
+              {t('cancel')}
+            </Button>
+            <Button
+              onClick={() => {
+                if (pendingDiscard) confirmDiscard(pendingDiscard, discardReason);
+              }}
+            >
+              {t('discard_confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

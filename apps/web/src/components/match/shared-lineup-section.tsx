@@ -65,6 +65,22 @@ export async function SharedLineupSection({ eventId }: { eventId: string }) {
     .eq('lineup_id', lu.id as string);
   const positions = (posRows ?? []).map((p) => p as unknown as PosShape);
 
+  // Firmar fotos (bucket privado player-photos) para los chips del campo.
+  const photoPaths = positions
+    .map((p) => p.players.photo_url)
+    .filter((p): p is string => p != null);
+  const signed = new Map<string, string>();
+  if (photoPaths.length > 0) {
+    const { data: signedList } = await supabase.storage
+      .from('player-photos')
+      .createSignedUrls(photoPaths, 3600);
+    for (const s of signedList ?? []) {
+      if (s.signedUrl && s.path) signed.set(s.path, s.signedUrl);
+    }
+  }
+  const photoOf = (path: string | null): string | null =>
+    path ? (signed.get(path) ?? null) : null;
+
   const t = await getTranslations('alineacion');
   const posLabel = (pm: PlayerPositionMain): string | null =>
     pm ? t(`pos_short.${pm}`) : null;
@@ -76,7 +92,7 @@ export async function SharedLineupSection({ eventId }: { eventId: string }) {
       label: p.players.last_name || p.players.first_name,
       dorsal: p.players.dorsal,
       positionLabel: posLabel(p.players.position_main),
-      photoUrl: p.players.photo_url,
+      photoUrl: photoOf(p.players.photo_url),
       positionCode: p.position_code,
       xPct: p.x_pct == null ? null : Number(p.x_pct),
       yPct: p.y_pct == null ? null : Number(p.y_pct),

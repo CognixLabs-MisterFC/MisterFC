@@ -1474,6 +1474,12 @@
     "new_lineup_hint": "Create a second lineup (Plan B, Plan C…) with the same called-up players but a different setup.",
     "field_full": "Maximum {max} players on the pitch for this format.",
     "notes_saved": "Notes saved.",
-    "sub_remove_hint": "Remove this planned substitution."
+    "sub_remove_hint": "Remove this planned substitution.",
+    "discarded_panel": "Discarded",
+    "discarded_empty": "No discards. Drag here to discard.",
+    "discarded_hint": "Shared across all lineups for this match.",
+    "discard_reason_title": "Reason for discarding",
+    "discard_reason_body": "The player will be removed from the call-up and from every lineup of this match.",
+    "discard_confirm": "Discard"
   }
 }

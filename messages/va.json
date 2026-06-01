@@ -1474,6 +1474,12 @@
     "new_lineup_hint": "Crear una segona alineació (Pla B, Pla C…) amb els mateixos convocats però distinta distribució.",
     "field_full": "Màxim {max} jugadors al camp per a esta modalitat.",
     "notes_saved": "Notes guardades.",
-    "sub_remove_hint": "Eliminar este canvi programat."
+    "sub_remove_hint": "Eliminar este canvi programat.",
+    "discarded_panel": "Descartats",
+    "discarded_empty": "Sense descarts. Arrossega ací per a descartar.",
+    "discarded_hint": "Compartit per totes les alineacions del partit.",
+    "discard_reason_title": "Motiu del descart",
+    "discard_reason_body": "El jugador eixirà de la convocatòria i de totes les alineacions d'este partit.",
+    "discard_confirm": "Descartar"
   }
 }

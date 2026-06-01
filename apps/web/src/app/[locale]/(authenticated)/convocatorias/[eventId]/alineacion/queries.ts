@@ -5,10 +5,14 @@
  * SQL que la RLS). Roster a la fecha del partido (patrón F4). Si el evento no
  * es válido o el user no gestiona → null (la página hace notFound).
  *
- * Rediseño Lote B': el editor trabaja SOLO con los CONVOCADOS (called_up). El
- * roster que se devuelve ya viene filtrado quitando a los descartados en
- * callup_decisions. Las posiciones (field/bench) son la distribución de esos
- * convocados.
+ * Rediseño Lote B': la CONVOCATORIA es la fuente de verdad del roster. El
+ * editor reparte a los convocados en campo/banquillo y expone un panel
+ * "Descartados" (nivel evento, `callup_decisions`) compartido por TODAS las
+ * alineaciones. Devolvemos el roster COMPLETO (para poder mostrar también a los
+ * descartados) + la lista de descartados con su motivo.
+ *
+ * Las fotos (`players.photo_url`) son rutas del bucket privado `player-photos`:
+ * se firman aquí (server, TTL corto) para que los chips puedan renderizarlas.
  */
 
 import {
@@ -19,12 +23,15 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
+const PHOTO_TTL_SECONDS = 3600;
+
 export type RosterPlayer = {
   playerId: string;
   firstName: string;
   lastName: string;
   dorsal: number | null;
   positionMain: PlayerPositionMain;
+  /** URL firmada de la foto (o null). */
   photoUrl: string | null;
 };
 
@@ -52,6 +59,12 @@ export type LineupPositionRow = {
   yPct: number | null;
 };
 
+/** Descartado a nivel EVENTO (callup_decisions.discarded), no por alineación. */
+export type DiscardedPlayer = {
+  playerId: string;
+  reason: string | null;
+};
+
 export type LineupEditorData = {
   event: {
     id: string;
@@ -65,7 +78,10 @@ export type LineupEditorData = {
     categorySeason: string;
     format: TeamFormat;
   };
+  /** Roster COMPLETO a fecha (incluye descartados, para lookup de nombre/foto). */
   roster: RosterPlayer[];
+  /** Descartados del evento (compartidos por todas las alineaciones). */
+  discarded: DiscardedPlayer[];
   lineups: LineupSummary[];
   selectedLineupId: string | null;
   positions: LineupPositionRow[];
@@ -114,18 +130,20 @@ export async function loadLineupEditor(
   });
   if (canManage !== true) return null;
 
-  // Descartados de la convocatoria — el editor NO los muestra (rediseño B').
+  // Decisiones de convocatoria del evento — descartados (con motivo).
   const { data: decisionRows } = await supabase
     .from('callup_decisions')
-    .select('player_id, decision')
+    .select('player_id, decision, reason')
     .eq('event_id', eventId);
-  const discarded = new Set(
-    (decisionRows ?? [])
-      .filter((d) => (d.decision as string) === 'discarded')
-      .map((d) => d.player_id as string),
-  );
+  const discarded: DiscardedPlayer[] = (decisionRows ?? [])
+    .filter((d) => (d.decision as string) === 'discarded')
+    .map((d) => ({
+      playerId: d.player_id as string,
+      reason: (d.reason as string | null) ?? null,
+    }));
+  const discardedSet = new Set(discarded.map((d) => d.playerId));
 
-  // Roster a la fecha del partido, filtrado a CONVOCADOS (roster − descartados).
+  // Roster COMPLETO a la fecha del partido (incluye descartados).
   const eventDate = event.starts_at.slice(0, 10);
   const { data: rosterRows } = await supabase
     .from('team_members')
@@ -147,18 +165,39 @@ export async function loadLineupEditor(
       photo_url: string | null;
     };
   };
-  const roster: RosterPlayer[] = (rosterRows ?? [])
+  const rosterRaw = (rosterRows ?? [])
     .map((r) => r as unknown as RosterShape)
     .filter((r) => r.left_at == null || r.left_at >= eventDate)
-    .filter((r) => !discarded.has(r.player_id))
     .map((r) => ({
       playerId: r.player_id,
       firstName: r.players.first_name,
       lastName: r.players.last_name ?? '',
       dorsal: r.players.dorsal,
       positionMain: r.players.position_main,
-      photoUrl: r.players.photo_url,
+      photoPath: r.players.photo_url,
     }));
+
+  // Firmar las fotos (bucket privado player-photos) en lote.
+  const photoPaths = rosterRaw
+    .map((r) => r.photoPath)
+    .filter((p): p is string => p != null);
+  const signed = new Map<string, string>();
+  if (photoPaths.length > 0) {
+    const { data: signedList } = await supabase.storage
+      .from('player-photos')
+      .createSignedUrls(photoPaths, PHOTO_TTL_SECONDS);
+    for (const s of signedList ?? []) {
+      if (s.signedUrl && s.path) signed.set(s.path, s.signedUrl);
+    }
+  }
+  const roster: RosterPlayer[] = rosterRaw.map((r) => ({
+    playerId: r.playerId,
+    firstName: r.firstName,
+    lastName: r.lastName,
+    dorsal: r.dorsal,
+    positionMain: r.positionMain,
+    photoUrl: r.photoPath ? (signed.get(r.photoPath) ?? null) : null,
+  }));
 
   // Alineaciones del evento.
   const { data: lineupRows } = await supabase
@@ -208,7 +247,7 @@ export async function loadLineupEditor(
     positions = (posRows ?? [])
       .map((p) => p as unknown as PosShape)
       // Defensa: nunca mostrar a un descartado aunque quedara una fila vieja.
-      .filter((p) => !discarded.has(p.player_id))
+      .filter((p) => !discardedSet.has(p.player_id))
       .map((p) => ({
         playerId: p.player_id,
         location: p.location,
@@ -267,6 +306,7 @@ export async function loadLineupEditor(
       format: event.teams.format,
     },
     roster,
+    discarded,
     lineups,
     selectedLineupId: selected?.id ?? null,
     positions,
