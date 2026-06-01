@@ -1531,5 +1531,19 @@
       "generic": "Something went wrong. Please try again."
     },
     "empty_no_permission": "You do not have permission to create formations. Ask a club coordinator or admin."
+  },
+  "positions": {
+    "GK": "GK",
+    "RB": "RB",
+    "CB": "CB",
+    "LB": "LB",
+    "DM": "DM",
+    "CM": "CM",
+    "RM": "RM",
+    "LM": "LM",
+    "AM": "AM",
+    "RW": "RW",
+    "LW": "LW",
+    "ST": "ST"
   }
 }

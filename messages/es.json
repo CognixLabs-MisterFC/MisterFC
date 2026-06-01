@@ -1530,5 +1530,19 @@
       "generic": "Algo salió mal. Inténtalo de nuevo."
     },
     "empty_no_permission": "No tienes permiso para crear formaciones. Habla con un coordinador o admin del club."
+  },
+  "positions": {
+    "GK": "POR",
+    "RB": "LD",
+    "CB": "DFC",
+    "LB": "LI",
+    "DM": "MCD",
+    "CM": "MC",
+    "RM": "MD",
+    "LM": "MI",
+    "AM": "MP",
+    "RW": "ED",
+    "LW": "EI",
+    "ST": "DC"
   }
 }

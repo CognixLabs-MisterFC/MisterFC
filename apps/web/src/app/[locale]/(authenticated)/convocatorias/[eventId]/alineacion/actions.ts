@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import {
+  calledUpOnPlace,
+  calledUpOnRemove,
   createLineupSchema,
   createPlannedSubSchema,
   createSupabaseServerClient,
@@ -18,6 +20,7 @@ import {
   setLineupVisibilitySchema,
   setTacticalNotesSchema,
   upsertLineupPositionSchema,
+  type CallupDecision,
   type PlayerPositionMain,
   type TeamFormat,
 } from '@misterfc/core';
@@ -91,6 +94,72 @@ async function teamFormatOfEvent(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// BUG 2 — propagación alineación → convocatoria (called_up).
+//
+// Al colocar a un jugador en campo/banquillo queda CONVOCADO; al sacarlo de la
+// alineación sin descartarlo, se limpia su called_up (no "convocado fantasma").
+// Regla 6.6: si la convocatoria está PUBLICADA no auto-sincronizamos en
+// silencio — el coach reabre/republica desde la convocatoria.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function isCallupPublished(supabase: Supa, eventId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('match_callup_meta')
+    .select('published_at')
+    .eq('event_id', eventId)
+    .maybeSingle();
+  return (data?.published_at as string | null | undefined) != null;
+}
+
+/** Marca called_up al colocar en campo/banquillo (solo en borrador). No pisa un
+ * descarte existente (el descarte manda hasta reincluir). */
+async function propagateCalledUp(
+  supabase: Supa,
+  eventId: string,
+  playerId: string,
+): Promise<void> {
+  const published = await isCallupPublished(supabase, eventId);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  const { data: existing } = await supabase
+    .from('callup_decisions')
+    .select('decision')
+    .eq('event_id', eventId)
+    .eq('player_id', playerId)
+    .maybeSingle();
+  const op = calledUpOnPlace(
+    (existing?.decision as CallupDecision | undefined) ?? null,
+    published,
+  );
+  if (op !== 'insert_called_up') return;
+  await supabase.from('callup_decisions').insert({
+    event_id: eventId,
+    player_id: playerId,
+    decision: 'called_up',
+    decided_by: user.id,
+  });
+}
+
+/** Limpia el called_up al sacar a un jugador de la alineación (solo en
+ * borrador). No toca descartes. */
+async function clearCalledUpOnRemoval(
+  supabase: Supa,
+  eventId: string,
+  playerId: string,
+): Promise<void> {
+  const published = await isCallupPublished(supabase, eventId);
+  if (calledUpOnRemove(published) !== 'delete_called_up') return;
+  await supabase
+    .from('callup_decisions')
+    .delete()
+    .eq('event_id', eventId)
+    .eq('player_id', playerId)
+    .eq('decision', 'called_up');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // createLineup — crea la cabecera y siembra el banquillo con los CONVOCADOS.
 //
 // Rediseño Lote B': la alineación distribuye a los convocados (called_up), no a
@@ -159,6 +228,26 @@ export async function createLineup(input: unknown): Promise<LineupActionState> {
           location: 'bench' as const,
         })),
       );
+
+      // BUG 2 — los sembrados al banquillo quedan CONVOCADOS en la convocatoria
+      // (solo en borrador; regla 6.6). Marca called_up a los que aún no tienen
+      // ninguna decisión; no pisa descartes.
+      if (!(await isCallupPublished(supabase, event_id))) {
+        const decided = new Set(
+          (decisions ?? []).map((d) => d.player_id as string),
+        );
+        const toMark = calledUp.filter((pid) => !decided.has(pid));
+        if (toMark.length > 0) {
+          await supabase.from('callup_decisions').insert(
+            toMark.map((pid) => ({
+              event_id,
+              player_id: pid,
+              decision: 'called_up' as const,
+              decided_by: user.id,
+            })),
+          );
+        }
+      }
     }
   }
 
@@ -234,6 +323,9 @@ export async function upsertLineupPosition(input: unknown): Promise<LineupAction
     if (error) return { error: mapPgErr(error.message, error.code) };
   }
 
+  // BUG 2 — en campo o banquillo → convocado (borrador; respeta 6.6).
+  await propagateCalledUp(supabase, eventId, v.player_id);
+
   revalidate(eventId);
   return { success: true };
 }
@@ -257,6 +349,9 @@ export async function deleteLineupPosition(input: unknown): Promise<LineupAction
     .eq('lineup_id', parsed.data.lineup_id)
     .eq('player_id', parsed.data.player_id);
   if (error) return { error: mapPgErr(error.message, error.code) };
+
+  // BUG 2 — sacar de la alineación sin descartar → limpiar convocado fantasma.
+  await clearCalledUpOnRemoval(supabase, eventId, parsed.data.player_id);
 
   revalidate(eventId);
   return { success: true };

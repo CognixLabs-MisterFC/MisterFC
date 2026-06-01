@@ -1531,5 +1531,19 @@
       "generic": "Alguna cosa ha eixit malament. Torna-ho a provar."
     },
     "empty_no_permission": "No tens permís per a crear formacions. Parla amb un coordinador o admin del club."
+  },
+  "positions": {
+    "GK": "POR",
+    "RB": "LD",
+    "CB": "DFC",
+    "LB": "LI",
+    "DM": "MCD",
+    "CM": "MC",
+    "RM": "MD",
+    "LM": "MI",
+    "AM": "MP",
+    "RW": "ED",
+    "LW": "EI",
+    "ST": "DC"
   }
 }

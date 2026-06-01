@@ -14,8 +14,10 @@ import {
 import {
   blankFormationPositions,
   clampPct,
+  POSITION_KEYS,
   type CoachFormation,
   type CoachFormationPosition,
+  type PositionKey,
   type TeamFormat,
 } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
@@ -33,8 +35,9 @@ import { createFormation, updateFormation } from '../actions';
 
 const FORMATS: TeamFormat[] = ['F7', 'F8', 'F11'];
 
-// Códigos sugeridos para acceso rápido (el campo es libre, max 20 chars).
-const QUICK_CODES = ['POR', 'LD', 'DFC', 'LI', 'MCD', 'MC', 'MD', 'MI', 'MP', 'ED', 'DC', 'EI'];
+// Posiciones canónicas para asignar a cada slot (clave neutra; la etiqueta sale
+// por i18n `positions.<key>`).
+const QUICK_CODES: readonly PositionKey[] = POSITION_KEYS;
 
 type Props = {
   initial?: CoachFormation;
@@ -64,11 +67,13 @@ function Pitch() {
 function PositionChip({
   index,
   pos,
+  label,
   selected,
   onSelect,
 }: {
   index: number;
   pos: CoachFormationPosition;
+  label: string;
   selected: boolean;
   onSelect: (i: number) => void;
 }) {
@@ -98,13 +103,14 @@ function PositionChip({
       {...listeners}
       {...attributes}
     >
-      {pos.position_code || '·'}
+      {label || '·'}
     </button>
   );
 }
 
 export function FormationBuilder({ initial, onClose }: Props) {
   const t = useTranslations('formaciones');
+  const tp = useTranslations('positions');
   const router = useRouter();
   const pitchRef = useRef<HTMLDivElement>(null);
 
@@ -148,12 +154,10 @@ export function FormationBuilder({ initial, onClose }: Props) {
     );
   }
 
-  function setSelectedCode(code: string) {
+  function setSelectedCode(code: PositionKey) {
     if (selected === null) return;
     setPositions((prev) =>
-      prev.map((p, i) =>
-        i === selected ? { ...p, position_code: code.slice(0, 20) } : p,
-      ),
+      prev.map((p, i) => (i === selected ? { ...p, position_code: code } : p)),
     );
   }
 
@@ -229,6 +233,7 @@ export function FormationBuilder({ initial, onClose }: Props) {
               key={i}
               index={i}
               pos={pos}
+              label={tp(pos.position_code)}
               selected={selected === i}
               onSelect={setSelected}
             />
@@ -238,25 +243,20 @@ export function FormationBuilder({ initial, onClose }: Props) {
 
       {selectedPos ? (
         <div className="flex flex-col gap-2 rounded-md border p-3">
-          <Label htmlFor="position-code">{t('field.position_code')}</Label>
-          <Input
-            id="position-code"
-            value={selectedPos.position_code}
-            maxLength={20}
-            onChange={(e) => setSelectedCode(e.target.value)}
-            className="w-32"
-          />
+          <Label>
+            {t('field.position_code')}: {tp(selectedPos.position_code)}
+          </Label>
           <div className="flex flex-wrap gap-1">
             {QUICK_CODES.map((c) => (
               <Button
                 key={c}
                 type="button"
                 size="sm"
-                variant="outline"
+                variant={selectedPos.position_code === c ? 'default' : 'outline'}
                 className="h-7 px-2 text-xs"
                 onClick={() => setSelectedCode(c)}
               >
-                {c}
+                {tp(c)}
               </Button>
             ))}
           </div>

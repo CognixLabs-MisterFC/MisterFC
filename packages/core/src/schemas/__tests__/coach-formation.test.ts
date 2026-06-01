@@ -24,20 +24,22 @@ describe('coachFormationPositionSchema', () => {
     expect(r.success).toBe(true);
   });
 
-  it('rechaza position_code vacío', () => {
-    const r = coachFormationPositionSchema.safeParse({
-      position_code: '',
-      x_pct: 50,
-      y_pct: 50,
-    });
-    expect(r.success).toBe(false);
-    if (!r.success)
-      expect(r.error.issues[0]?.message).toBe('position_code_required');
+  it('rechaza un código no canónico (texto ES legacy o vacío)', () => {
+    for (const bad of ['', 'DFC', 'DF1']) {
+      const r = coachFormationPositionSchema.safeParse({
+        position_code: bad,
+        x_pct: 50,
+        y_pct: 50,
+      });
+      expect(r.success).toBe(false);
+      if (!r.success)
+        expect(r.error.issues[0]?.message).toBe('position_code_invalid');
+    }
   });
 
   it('rechaza coordenadas fuera de [0,100]', () => {
     const r = coachFormationPositionSchema.safeParse({
-      position_code: 'DF1',
+      position_code: 'CB',
       x_pct: 120,
       y_pct: 50,
     });

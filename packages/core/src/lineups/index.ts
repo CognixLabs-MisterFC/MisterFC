@@ -61,9 +61,23 @@ export {
   blankFormationPositions,
   clampPct,
   placeOnFormation,
+  coachFormationToFormation,
+  positionKeyOfSlotCode,
 } from './coach-formations';
 export type {
   CoachFormation,
   CoachFormationPosition,
   FormationPlacement,
 } from './coach-formations';
+
+export {
+  POSITION_KEYS,
+  isPositionKey,
+  roleFromPositionKey,
+  normalizePositionCode,
+  DEFAULT_POSITION_KEY,
+} from './positions';
+export type { PositionKey } from './positions';
+
+export { calledUpOnPlace, calledUpOnRemove } from './callup-sync';
+export type { CallupDecision, CalledUpOp } from './callup-sync';

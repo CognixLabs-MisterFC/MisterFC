@@ -6,10 +6,18 @@
  * ({position_code, x_pct, y_pct}) igual que el JSONB persistido en BD.
  */
 
-import type { Formation, TeamFormat } from './types';
+import type { Formation, FormationSlot, SlotRole, TeamFormat } from './types';
 import { defaultFormation } from './formations';
+import {
+  type PositionKey,
+  roleFromPositionKey,
+} from './positions';
 
-/** Un hueco de la plantilla (forma del JSONB en coach_formations.positions). */
+/**
+ * Un hueco de la plantilla (forma del JSONB en coach_formations.positions).
+ * `position_code` almacena una CLAVE NEUTRA canónica ([[PositionKey]]), no una
+ * etiqueta localizada — la etiqueta visible sale por i18n (BUG 1).
+ */
 export interface CoachFormationPosition {
   position_code: string;
   x_pct: number;
@@ -24,12 +32,30 @@ export interface CoachFormation {
   positions: CoachFormationPosition[];
 }
 
+/**
+ * Clave canónica de un slot del catálogo según su rol y su posición horizontal
+ * (x: 0 izquierda … 100 derecha). Permite sembrar plantillas nuevas con claves
+ * neutras específicas (LB/CB/RB…) en vez de los códigos estructurales GK/DF1.
+ */
+function keyFromRoleAndX(role: SlotRole, xPct: number): PositionKey {
+  switch (role) {
+    case 'GK':
+      return 'GK';
+    case 'DF':
+      return xPct < 38 ? 'LB' : xPct > 62 ? 'RB' : 'CB';
+    case 'MF':
+      return xPct < 33 ? 'LM' : xPct > 67 ? 'RM' : 'CM';
+    case 'FW':
+      return xPct < 38 ? 'LW' : xPct > 62 ? 'RW' : 'ST';
+  }
+}
+
 /** Convierte una formación del catálogo en posiciones editables (semilla). */
 export function positionsFromFormation(
   formation: Formation,
 ): CoachFormationPosition[] {
   return formation.slots.map((s) => ({
-    position_code: s.code,
+    position_code: keyFromRoleAndX(s.role, s.xPct),
     x_pct: s.xPct,
     y_pct: s.yPct,
   }));
@@ -38,12 +64,45 @@ export function positionsFromFormation(
 /**
  * Layout inicial al crear una formación nueva para una modalidad: parte del
  * preset por defecto del catálogo (F7→1-3-3, F8→1-3-3-1, F11→4-4-2), que ya
- * trae el nº de posiciones correcto. El coach las arrastra desde ahí.
+ * trae el nº de posiciones correcto, con claves canónicas. El coach las arrastra
+ * desde ahí.
  */
 export function blankFormationPositions(
   format: TeamFormat,
 ): CoachFormationPosition[] {
   return positionsFromFormation(defaultFormation(format));
+}
+
+/**
+ * F6.10 (fix BUG 3) — sintetiza un `Formation` a partir de una plantilla del
+ * entrenador, para que el editor de alineación renderice SU layout real (sus
+ * x/y) en mode='edit'. Cada slot recibe un código ÚNICO (`<key>_<n>`) porque la
+ * misma clave puede repetirse (dos CB), y el match jugador↔slot usa ese código.
+ * `code` de la formación = el id de la coach_formation (no es del catálogo).
+ */
+export function coachFormationToFormation(cf: CoachFormation): Formation {
+  const seen: Record<string, number> = {};
+  const slots: FormationSlot[] = cf.positions.map((p) => {
+    const key = p.position_code;
+    seen[key] = (seen[key] ?? 0) + 1;
+    return {
+      code: `${key}_${seen[key]}`,
+      role: roleFromPositionKey(key as PositionKey),
+      xPct: p.x_pct,
+      yPct: p.y_pct,
+    };
+  });
+  return { code: cf.id, label: cf.name, format: cf.format, slots };
+}
+
+/**
+ * Extrae la clave de posición ([[PositionKey]]) de un código de slot sintetizado
+ * por [[coachFormationToFormation]] (`<key>_<n>` → `<key>`). Para etiquetar el
+ * slot vía i18n. Si no tiene el sufijo, devuelve el código tal cual.
+ */
+export function positionKeyOfSlotCode(slotCode: string): string {
+  const i = slotCode.lastIndexOf('_');
+  return i > 0 ? slotCode.slice(0, i) : slotCode;
 }
 
 /** Acota un porcentaje a [0,100] con 2 decimales (drag sobre el campo). */

@@ -8,17 +8,17 @@
 
 import { z } from 'zod';
 import { startersFor } from '../lineups/rules';
+import { POSITION_KEYS } from '../lineups/positions';
 import type { TeamFormat } from '../lineups/types';
 
 export const COACH_FORMATION_FORMATS = ['F7', 'F8', 'F11'] as const;
 
-/** Un hueco de la plantilla, tal cual se guarda en el JSONB. */
+/**
+ * Un hueco de la plantilla, tal cual se guarda en el JSONB. `position_code` es
+ * una clave canónica neutra ([[PositionKey]]); la etiqueta visible va por i18n.
+ */
 export const coachFormationPositionSchema = z.object({
-  position_code: z
-    .string()
-    .trim()
-    .min(1, { message: 'position_code_required' })
-    .max(20, { message: 'position_code_too_long' }),
+  position_code: z.enum(POSITION_KEYS, { message: 'position_code_invalid' }),
   x_pct: z
     .number()
     .min(0, { message: 'coord_out_of_range' })
