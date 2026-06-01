@@ -64,6 +64,7 @@ import {
   createPlannedSub,
   deletePlannedSub,
   setLineupFormation,
+  setLineupName,
   setLineupOfficial,
   setLineupVisibility,
   setTacticalNotes,
@@ -276,6 +277,14 @@ export function LineupEditorClient(props: Props) {
   );
   const [plannedSubs, setPlannedSubs] = useState<PlannedSubVM[]>(initialPlannedSubs);
 
+  // Renombrado inline del nombre de la alineación (Bug BB).
+  const currentLineupName = useMemo(
+    () => lineups.find((l) => l.id === selectedLineupId)?.name ?? '',
+    [lineups, selectedLineupId],
+  );
+  const [name, setName] = useState(currentLineupName);
+  const [editingName, setEditingName] = useState(false);
+
   // Diálogo de motivo de descarte (drag banquillo/campo → Descartados).
   const [pendingDiscard, setPendingDiscard] = useState<string | null>(null);
   const [discardReason, setDiscardReason] = useState<DiscardReason>('tecnico');
@@ -285,11 +294,6 @@ export function LineupEditorClient(props: Props) {
   const [subOut, setSubOut] = useState('');
   const [subIn, setSubIn] = useState('');
 
-  const [newName, setNewName] = useState('Titular');
-  const [newFormation, setNewFormation] = useState<string>(
-    defaultFormation(format).code,
-  );
-
   const formations = useMemo(() => formationsForFormat(format), [format]);
   const maxStarters = startersFor(format);
 
@@ -298,57 +302,39 @@ export function LineupEditorClient(props: Props) {
     useSensor(KeyboardSensor),
   );
 
-  // ── Estado vacío: crear primera alineación ───────────────────────────────
+  // Bug BB — el server auto-crea el borrador ("Plan A" + primera formación), así
+  // que el editor se abre directo. Este fallback solo aparece si la auto-creación
+  // no fue posible (p.ej. sesión expirada).
   if (selectedLineupId == null) {
     return (
-      <div className="flex max-w-md flex-col gap-3 rounded-lg border border-border p-4">
-        <p className="text-sm text-muted-foreground">{t('empty_hint')}</p>
-        <label className="text-xs font-medium">{t('name_label')}</label>
-        <Input value={newName} onChange={(e) => setNewName(e.target.value)} maxLength={60} />
-        <label className="text-xs font-medium">{t('formation_label')}</label>
-        <Select value={newFormation} onValueChange={setNewFormation}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {formations.map((f) => (
-              <SelectItem key={f.code} value={f.code}>
-                {f.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          disabled={pending || newName.trim().length === 0}
-          onClick={() =>
-            startTransition(async () => {
-              setError(null);
-              const r = await createLineup({
-                event_id: eventId,
-                name: newName.trim(),
-                formation_code: newFormation,
-              });
-              if (r.error) {
-                setError(r.error);
-                return;
-              }
-              if (r.lineupId) router.push(`${pathname}?lineup=${r.lineupId}`);
-            })
-          }
-        >
-          {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
-          {t('create')}
-        </Button>
-        {error && (
-          <p className="text-xs text-destructive" role="alert">
-            {t(`errors.${error}` as 'errors.generic')}
-          </p>
-        )}
-      </div>
+      <p
+        className="rounded-lg border border-border p-4 text-sm text-muted-foreground"
+        role="alert"
+      >
+        {t('prepare_failed')}
+      </p>
     );
   }
 
   const lineupId = selectedLineupId;
+
+  function saveName() {
+    setEditingName(false);
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === currentLineupName) {
+      setName(currentLineupName);
+      return;
+    }
+    startTransition(async () => {
+      const r = await setLineupName({ lineup_id: lineupId, name: trimmed });
+      if (r.error) {
+        setName(currentLineupName);
+        setError(r.error);
+      } else {
+        router.refresh();
+      }
+    });
+  }
   const formation = getFormation(formationCode);
 
   const fieldPlayers: FieldEditorPlayer[] = positions
@@ -604,6 +590,38 @@ export function LineupEditorClient(props: Props) {
     <div className="flex flex-col gap-3">
       {/* Controles superiores */}
       <div className="flex flex-wrap items-center gap-3">
+        {/* Nombre editable inline (Bug BB) */}
+        {editingName ? (
+          <Input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={saveName}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveName();
+              if (e.key === 'Escape') {
+                setName(currentLineupName);
+                setEditingName(false);
+              }
+            }}
+            maxLength={60}
+            className="h-8 w-40 font-semibold"
+          />
+        ) : (
+          <Hint label={t('rename_hint')}>
+            <button
+              type="button"
+              onClick={() => {
+                setName(currentLineupName);
+                setEditingName(true);
+              }}
+              className="rounded px-1.5 py-1 text-sm font-semibold hover:bg-muted"
+            >
+              {name || currentLineupName || t('name_label')}
+            </button>
+          </Hint>
+        )}
+
         {lineups.length > 1 && (
           <Select value={lineupId} onValueChange={(id) => router.push(`${pathname}?lineup=${id}`)}>
             <SelectTrigger className="w-44">

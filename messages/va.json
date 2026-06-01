@@ -1480,6 +1480,8 @@
     "discarded_hint": "Compartit per totes les alineacions del partit.",
     "discard_reason_title": "Motiu del descart",
     "discard_reason_body": "El jugador eixirà de la convocatòria i de totes les alineacions d'este partit.",
-    "discard_confirm": "Descartar"
+    "discard_confirm": "Descartar",
+    "rename_hint": "Fes clic per a reanomenar esta alineació.",
+    "prepare_failed": "No s'ha pogut preparar l'alineació. Recarrega la pàgina."
   }
 }

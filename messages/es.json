@@ -1479,6 +1479,8 @@
     "discarded_hint": "Compartido por todas las alineaciones del partido.",
     "discard_reason_title": "Motivo del descarte",
     "discard_reason_body": "El jugador saldrá de la convocatoria y de todas las alineaciones de este partido.",
-    "discard_confirm": "Descartar"
+    "discard_confirm": "Descartar",
+    "rename_hint": "Haz clic para renombrar esta alineación.",
+    "prepare_failed": "No se pudo preparar la alineación. Recarga la página."
   }
 }

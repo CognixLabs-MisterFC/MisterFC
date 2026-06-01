@@ -17,6 +17,8 @@ export {
   getFormation,
   formationsForFormat,
   defaultFormation,
+  defaultLineupDraft,
+  DEFAULT_LINEUP_NAME,
 } from './formations';
 
 export {

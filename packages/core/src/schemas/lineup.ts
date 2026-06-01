@@ -30,6 +30,12 @@ export const setLineupFormationSchema = z.object({
 });
 export type SetLineupFormationInput = z.infer<typeof setLineupFormationSchema>;
 
+export const renameLineupSchema = z.object({
+  lineup_id: uuid,
+  name: z.string().trim().min(1, { message: 'name_required' }).max(60, { message: 'name_too_long' }),
+});
+export type RenameLineupInput = z.infer<typeof renameLineupSchema>;
+
 export const setLineupOfficialSchema = z.object({
   lineup_id: uuid,
   is_official: z.boolean(),

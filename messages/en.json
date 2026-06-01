@@ -1480,6 +1480,8 @@
     "discarded_hint": "Shared across all lineups for this match.",
     "discard_reason_title": "Reason for discarding",
     "discard_reason_body": "The player will be removed from the call-up and from every lineup of this match.",
-    "discard_confirm": "Discard"
+    "discard_confirm": "Discard",
+    "rename_hint": "Click to rename this lineup.",
+    "prepare_failed": "Could not prepare the lineup. Reload the page."
   }
 }

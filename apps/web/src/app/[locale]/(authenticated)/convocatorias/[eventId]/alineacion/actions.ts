@@ -11,6 +11,7 @@ import {
   exceedsStarters,
   getFormation,
   remapToFormation,
+  renameLineupSchema,
   roleFromPosition,
   setLineupFormationSchema,
   setLineupOfficialSchema,
@@ -288,6 +289,30 @@ export async function setLineupOfficial(input: unknown): Promise<LineupActionSta
   const { error } = await supabase
     .from('lineups')
     .update({ is_official })
+    .eq('id', lineup_id);
+  if (error) return { error: mapPgErr(error.message, error.code) };
+
+  revalidate(eventId);
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// setLineupName (Bug BB) — renombrar inline la alineación desde el header.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function setLineupName(input: unknown): Promise<LineupActionState> {
+  const parsed = renameLineupSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { lineup_id, name } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const eventId = await eventIdOfLineup(supabase, lineup_id);
+  if (!eventId) return { error: 'not_found' };
+
+  const { error } = await supabase
+    .from('lineups')
+    .update({ name })
     .eq('id', lineup_id);
   if (error) return { error: mapPgErr(error.message, error.code) };
 

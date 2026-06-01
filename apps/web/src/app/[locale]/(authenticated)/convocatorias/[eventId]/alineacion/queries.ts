@@ -17,6 +17,7 @@
 
 import {
   createSupabaseServerClient,
+  defaultLineupDraft,
   type LineupLocation,
   type PlayerPositionMain,
   type TeamFormat,
@@ -223,6 +224,50 @@ export async function loadLineupEditor(
       isOfficial: l.is_official,
       visibility: l.visibility,
     }));
+
+  // Bug BB — sin alineación previa: auto-crear el borrador ("Plan A" + primera
+  // formación de la modalidad) y sembrar el banquillo con los convocados, para
+  // abrir el editor directamente (sin prompt intermedio).
+  if (lineups.length === 0) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const draft = defaultLineupDraft(event.teams.format);
+      const { data: created } = await supabase
+        .from('lineups')
+        .insert({
+          event_id: eventId,
+          name: draft.name,
+          formation_code: draft.formationCode,
+          created_by: user.id,
+        })
+        .select('id, name, formation_code, is_official, visibility')
+        .maybeSingle();
+      if (created) {
+        const createdId = created.id as string;
+        const calledUp = roster
+          .filter((r) => !discardedSet.has(r.playerId))
+          .map((r) => r.playerId);
+        if (calledUp.length > 0) {
+          await supabase.from('lineup_positions').insert(
+            calledUp.map((pid) => ({
+              lineup_id: createdId,
+              player_id: pid,
+              location: 'bench' as const,
+            })),
+          );
+        }
+        lineups.push({
+          id: createdId,
+          name: created.name as string,
+          formationCode: created.formation_code as string,
+          isOfficial: created.is_official as boolean,
+          visibility: created.visibility as 'staff' | 'team',
+        });
+      }
+    }
+  }
 
   // Alineación seleccionada: la pedida (si existe) → la oficial → la primera.
   const selected =
