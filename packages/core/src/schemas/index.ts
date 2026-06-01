@@ -191,3 +191,16 @@ export type {
   DeleteLineupPositionInput,
   UpsertLineupPositionInput,
 } from './lineup';
+
+export {
+  COACH_FORMATION_FORMATS,
+  coachFormationPositionSchema,
+  createCoachFormationSchema,
+  updateCoachFormationSchema,
+  deleteCoachFormationSchema,
+} from './coach-formation';
+export type {
+  CreateCoachFormationInput,
+  UpdateCoachFormationInput,
+  DeleteCoachFormationInput,
+} from './coach-formation';

@@ -106,7 +106,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F3 | Calendario y eventos | 6–9 h | 2–3 | ☑ |
 | F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h (Lote A ≈4–5 h ☑ + Lote B ≈5–8 h ☑) | 3 | ☑ |
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☐ |
-| F6 | Alineaciones y planificación del partido | 12–19 h | 4–5 | ☐ |
+| F6 | Alineaciones y planificación del partido | 12–19 h | 4–5 | ☑ |
 | F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☐ |
 | F8 | Valoraciones del partido y del entrenamiento | 8–13 h | 3–4 | ☐ |
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☐ |
@@ -335,7 +335,7 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **6.7** Banquillo del partido: titulares + reservas + fuera convocatoria, con drag&drop bidireccional campo↔banquillo — 1–2 h `[hecho 2026-05-31]`
 - **6.8** Cambios programados: minuto + jugador que sale + jugador que entra + razón, lista ordenada visible en el editor — 1–2 h `[hecho 2026-05-31]`
 - **6.9** Notas tácticas del partido: bloque libre + objetivos + indicaciones por jugador o por fase — 1 h `[hecho 2026-05-31]` (tabla solo-staff `lineup_tactical_notes`)
-- **6.10** Plantillas personalizadas de formación — 3–5 h. El entrenador crea formaciones propias arrastrando círculos sobre el campo SVG, las guarda con nombre y las reutiliza en alineaciones de cualquier partido. **Modelo**: tabla `coach_formations` (`id`, `owner_profile_id`, `name`, `format` F7/F8/F11, `positions` JSONB de `{position_code, x_pct, y_pct}`, `created_at`, `updated_at`). **UI**: ruta `/perfil/formaciones` con CRUD; el selector de formación del editor de alineaciones añade un grupo "Mis formaciones" junto al catálogo predefinido. **RLS**: cada coach gestiona solo las suyas; admin/coord puede listar las del club. **Out of scope**: compartir formaciones entre coaches → futuro.
+- **6.10** Plantillas personalizadas de formación — 3–5 h `[hecho 2026-06-01]`. El entrenador crea formaciones propias arrastrando círculos sobre el campo SVG, las guarda con nombre y las reutiliza en alineaciones de cualquier partido. **Modelo**: tabla `coach_formations` (`id`, `owner_profile_id`, `club_id`, `name`, `format` F7/F8/F11, `positions` JSONB de `{position_code, x_pct, y_pct}` validado por trigger, `created_at`, `updated_at`; unique `(owner, format, name)`). **UI**: ruta `/perfil/formaciones` con CRUD; el selector de formación del editor de alineaciones añade un grupo "Mis formaciones" junto al catálogo predefinido (adopta el layout como coordenadas de los `lineup_positions`). **RLS**: cada coach gestiona solo las suyas (INSERT exige `can_create_lineups`); admin/coord lista las del club; DELETE owner+admin. **Out of scope**: compartir formaciones entre coaches → futuro.
 
 > **Lote A entregado 2026-05-31** (PR #33): 6.1–6.5 + 6.7. Spec `docs/specs/6.0-alineaciones.md`, ADR-0012 (modelo normalizado) y ADR-0013 (catálogo en código). Lote B pendiente: 6.6 (import convocatoria), 6.8 (cambios programados), 6.9 (notas tácticas) + visibilidad/compartir con familia + mejoras (posición primaria, reglas por modalidad, fix "+Nueva").
 

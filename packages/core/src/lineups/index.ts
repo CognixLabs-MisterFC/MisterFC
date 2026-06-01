@@ -55,3 +55,15 @@ export {
   exceedsStarters,
 } from './rules';
 export type { ModalityRules } from './rules';
+
+export {
+  positionsFromFormation,
+  blankFormationPositions,
+  clampPct,
+  placeOnFormation,
+} from './coach-formations';
+export type {
+  CoachFormation,
+  CoachFormationPosition,
+  FormationPlacement,
+} from './coach-formations';

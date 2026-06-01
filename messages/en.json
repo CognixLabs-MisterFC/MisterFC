@@ -278,7 +278,8 @@
       "avatar_empty": "El archivo está vacío.",
       "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
       "avatar_remove_failed": "No hemos podido quitar la foto."
-    }
+    },
+    "manage_formations": "My formations"
   },
   "categorias": {
     "title": "Categorías",
@@ -1482,6 +1483,51 @@
     "discard_reason_body": "The player will be removed from the call-up and from every lineup of this match.",
     "discard_confirm": "Discard",
     "rename_hint": "Click to rename this lineup.",
-    "prepare_failed": "Could not prepare the lineup. Reload the page."
+    "prepare_failed": "Could not prepare the lineup. Reload the page.",
+    "formation_catalog": "Catalogue",
+    "formation_mine": "My formations"
+  },
+  "formaciones": {
+    "title": "My formations",
+    "subtitle": "Create and reuse your own formation templates in the lineup editor.",
+    "empty": "You have no formations yet. Create one with “New formation”.",
+    "builder_hint": "Drag each position onto the pitch. Tap one to change its code.",
+    "select_chip_hint": "Tap a position on the pitch to edit its code.",
+    "positions_count": "{count} positions",
+    "filter": {
+      "all": "All"
+    },
+    "actions": {
+      "new": "New formation",
+      "edit": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…"
+    },
+    "field": {
+      "name": "Name",
+      "name_placeholder": "e.g. My 1-3-3-1",
+      "format": "Format",
+      "position_code": "Position code"
+    },
+    "delete": {
+      "title": "Delete formation",
+      "description": "Delete “{name}”? This action cannot be undone."
+    },
+    "toast": {
+      "created": "Formation created",
+      "updated": "Formation updated",
+      "deleted": "Formation deleted"
+    },
+    "errors": {
+      "forbidden": "You do not have permission for this action.",
+      "invalid": "Invalid data.",
+      "not_found": "Formation not found.",
+      "name_taken": "You already have a formation with that name in that format.",
+      "positions_invalid": "Positions are not valid for the format.",
+      "name_required": "Name is required.",
+      "generic": "Something went wrong. Please try again."
+    }
   }
 }

@@ -23,10 +23,12 @@ import {
   getFormation,
   parsePlayerDragId,
   playerDraggableId,
+  placeOnFormation,
   remapToFormation,
   resolveDrop,
   roleFromPosition,
   startersFor,
+  type CoachFormation,
   type PlayerPositionMain,
   type PositionAssignment,
   type TeamFormat,
@@ -53,7 +55,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -120,6 +124,8 @@ type Props = {
   initialPositions: PositionAssignment[];
   initialTacticalNotes: string | null;
   initialPlannedSubs: PlannedSubVM[];
+  /** F6.10 — plantillas personalizadas del coach para esta modalidad. */
+  coachFormations: CoachFormation[];
 };
 
 function shortLabel(p: RosterPlayerVM | undefined, playerId: string): string {
@@ -236,6 +242,7 @@ export function LineupEditorClient(props: Props) {
     initialPositions,
     initialTacticalNotes,
     initialPlannedSubs,
+    coachFormations,
   } = props;
 
   const t = useTranslations('alineacion');
@@ -517,6 +524,61 @@ export function LineupEditorClient(props: Props) {
     });
   }
 
+  // F6.10 — adopta una plantilla personalizada del coach como layout del campo.
+  // Coloca a los jugadores (primero los que ya están en campo, luego rellena
+  // desde el banquillo) en las N posiciones de la plantilla, asignando a cada
+  // uno su position_code + coordenadas. No cambia lineups.formation_code: el
+  // layout queda persistido en las coordenadas de cada lineup_position.
+  function onCoachFormationChange(cf: CoachFormation) {
+    const fieldIds = positions.filter((p) => p.location === 'field').map((p) => p.playerId);
+    const benchIds = positions.filter((p) => p.location === 'bench').map((p) => p.playerId);
+    const { placed } = placeOnFormation(fieldIds, benchIds, cf.positions);
+    const slotByPlayer = new Map(placed.map((p) => [p.playerId, p.position]));
+
+    const prev = positions;
+    const optimistic = positions.map((p) => {
+      const slot = slotByPlayer.get(p.playerId);
+      if (slot) {
+        return {
+          ...p,
+          location: 'field' as const,
+          positionCode: slot.position_code,
+          xPct: slot.x_pct,
+          yPct: slot.y_pct,
+        };
+      }
+      return { ...p, location: 'bench' as const, positionCode: null, xPct: null, yPct: null };
+    });
+
+    const changed = optimistic
+      .filter((p) => {
+        const before = prev.find((x) => x.playerId === p.playerId);
+        return (
+          before &&
+          (before.location !== p.location ||
+            before.positionCode !== p.positionCode ||
+            before.xPct !== p.xPct ||
+            before.yPct !== p.yPct)
+        );
+      })
+      .map((p) => p.playerId);
+
+    setPositions(optimistic);
+    persist(optimistic, changed, prev);
+  }
+
+  // Dispatcher del Select de formación: catálogo ('code') o plantilla
+  // personalizada ('custom:<id>').
+  function onFormationSelect(value: string) {
+    if (value.startsWith('custom:')) {
+      const id = value.slice('custom:'.length);
+      const cf = coachFormations.find((f) => f.id === id);
+      if (cf) onCoachFormationChange(cf);
+      return;
+    }
+    onFormationChange(value);
+  }
+
   function onToggleOfficial(value: boolean) {
     startTransition(async () => {
       const r = await setLineupOfficial({ lineup_id: lineupId, is_official: value });
@@ -641,16 +703,29 @@ export function LineupEditorClient(props: Props) {
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{t('formation_label')}</span>
           <Hint label={t('formation_hint')}>
-            <Select value={formationCode} onValueChange={onFormationChange}>
+            <Select value={formationCode} onValueChange={onFormationSelect}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {formations.map((f) => (
-                  <SelectItem key={f.code} value={f.code}>
-                    {f.label}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  <SelectLabel>{t('formation_catalog')}</SelectLabel>
+                  {formations.map((f) => (
+                    <SelectItem key={f.code} value={f.code}>
+                      {f.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+                {coachFormations.length > 0 && (
+                  <SelectGroup>
+                    <SelectLabel>{t('formation_mine')}</SelectLabel>
+                    {coachFormations.map((f) => (
+                      <SelectItem key={f.id} value={`custom:${f.id}`}>
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                )}
               </SelectContent>
             </Select>
           </Hint>

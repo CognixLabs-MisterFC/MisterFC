@@ -330,6 +330,54 @@ export type Database = {
         }
         Relationships: []
       }
+      coach_formations: {
+        Row: {
+          club_id: string
+          created_at: string
+          format: string
+          id: string
+          name: string
+          owner_profile_id: string
+          positions: Json
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          format: string
+          id?: string
+          name: string
+          owner_profile_id: string
+          positions: Json
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          format?: string
+          id?: string
+          name?: string
+          owner_profile_id?: string
+          positions?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_formations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coach_formations_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           club_id: string
