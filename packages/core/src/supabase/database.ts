@@ -788,6 +788,268 @@ export type Database = {
           },
         ]
       }
+      match_events: {
+        Row: {
+          clock_seconds: number
+          club_id: string
+          created_at: string
+          created_by: string
+          display_minute: number | null
+          event_id: string
+          id: string
+          metadata: Json
+          period: string
+          player_id: string | null
+          related_player_id: string | null
+          rival_dorsal: number | null
+          side: string
+          type: string
+          updated_at: string
+          x_pct: number | null
+          y_pct: number | null
+        }
+        Insert: {
+          clock_seconds: number
+          club_id: string
+          created_at?: string
+          created_by: string
+          display_minute?: number | null
+          event_id: string
+          id?: string
+          metadata?: Json
+          period?: string
+          player_id?: string | null
+          related_player_id?: string | null
+          rival_dorsal?: number | null
+          side: string
+          type: string
+          updated_at?: string
+          x_pct?: number | null
+          y_pct?: number | null
+        }
+        Update: {
+          clock_seconds?: number
+          club_id?: string
+          created_at?: string
+          created_by?: string
+          display_minute?: number | null
+          event_id?: string
+          id?: string
+          metadata?: Json
+          period?: string
+          player_id?: string | null
+          related_player_id?: string | null
+          rival_dorsal?: number | null
+          side?: string
+          type?: string
+          updated_at?: string
+          x_pct?: number | null
+          y_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_events_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_related_player_id_fkey"
+            columns: ["related_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_periods: {
+        Row: {
+          accumulated_seconds: number
+          base_offset_seconds: number
+          created_at: string
+          ended: boolean
+          event_id: string
+          id: string
+          last_started_at: string | null
+          ordinal: number
+          period: string
+          running: boolean
+          updated_at: string
+        }
+        Insert: {
+          accumulated_seconds?: number
+          base_offset_seconds?: number
+          created_at?: string
+          ended?: boolean
+          event_id: string
+          id?: string
+          last_started_at?: string | null
+          ordinal: number
+          period: string
+          running?: boolean
+          updated_at?: string
+        }
+        Update: {
+          accumulated_seconds?: number
+          base_offset_seconds?: number
+          created_at?: string
+          ended?: boolean
+          event_id?: string
+          id?: string
+          last_started_at?: string | null
+          ordinal?: number
+          period?: string
+          running?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_periods_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_starters: {
+        Row: {
+          created_at: string
+          event_id: string
+          player_id: string
+          position_code: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          player_id: string
+          position_code?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          player_id?: string
+          position_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_starters_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_starters_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      match_state: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          club_id: string
+          created_at: string
+          event_id: string
+          goals_against: number | null
+          goals_for: number | null
+          lock_heartbeat_at: string | null
+          operator_profile_id: string | null
+          post_match_notes: string | null
+          reopened_count: number
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          club_id: string
+          created_at?: string
+          event_id: string
+          goals_against?: number | null
+          goals_for?: number | null
+          lock_heartbeat_at?: string | null
+          operator_profile_id?: string | null
+          post_match_notes?: string | null
+          reopened_count?: number
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          club_id?: string
+          created_at?: string
+          event_id?: string
+          goals_against?: number | null
+          goals_for?: number | null
+          lock_heartbeat_at?: string | null
+          operator_profile_id?: string | null
+          post_match_notes?: string | null
+          reopened_count?: number
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_state_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_state_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_state_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_state_operator_profile_id_fkey"
+            columns: ["operator_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memberships: {
         Row: {
           club_id: string
@@ -1375,6 +1637,42 @@ export type Database = {
         Returns: string
       }
       current_user_email: { Args: never; Returns: string }
+      match_assert_event: {
+        Args: { p_event_id: string }
+        Returns: {
+          all_day: boolean
+          category_id: string | null
+          club_id: string
+          created_at: string
+          created_by: string
+          ends_at: string | null
+          id: string
+          location_address: string | null
+          location_name: string | null
+          notes: string | null
+          opponent_name: string | null
+          parent_event_id: string | null
+          recurrence_rule: Json | null
+          starts_at: string
+          team_id: string | null
+          title: string
+          type: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      match_assert_player_in_team: {
+        Args: {
+          p_event: Database["public"]["Tables"]["events"]["Row"]
+          p_player_id: string
+        }
+        Returns: undefined
+      }
       unaccent: { Args: { "": string }; Returns: string }
       user_active_team_for_staff: {
         Args: { p_club_id: string }
@@ -1398,6 +1696,7 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: boolean
       }
+      user_can_record_match: { Args: { p_event_id: string }; Returns: boolean }
       user_can_see_player: { Args: { p_player_id: string }; Returns: boolean }
       user_can_see_player_medical: {
         Args: { p_player_id: string }
