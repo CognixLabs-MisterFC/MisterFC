@@ -170,14 +170,24 @@ export type {
 export {
   createLineupSchema,
   setLineupFormationSchema,
+  renameLineupSchema,
   setLineupOfficialSchema,
+  setLineupVisibilitySchema,
+  setTacticalNotesSchema,
+  createPlannedSubSchema,
+  deletePlannedSubSchema,
   deleteLineupPositionSchema,
   upsertLineupPositionSchema,
 } from './lineup';
 export type {
   CreateLineupInput,
   SetLineupFormationInput,
+  RenameLineupInput,
   SetLineupOfficialInput,
+  SetLineupVisibilityInput,
+  SetTacticalNotesInput,
+  CreatePlannedSubInput,
+  DeletePlannedSubInput,
   DeleteLineupPositionInput,
   UpsertLineupPositionInput,
 } from './lineup';

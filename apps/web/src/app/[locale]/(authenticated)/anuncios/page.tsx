@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { GlobalAnnouncementForm } from './global-announcement-form';
+import { MarkNotificationsRead } from '@/components/notifications/mark-notifications-read';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -127,6 +128,7 @@ export default async function AnunciosGlobalesPage({
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <MarkNotificationsRead types={['new_announcement']} />
       <div className="flex items-center gap-3">
         <Megaphone className="size-6" aria-hidden />
         <div className="flex flex-col">

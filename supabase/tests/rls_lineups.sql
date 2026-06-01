@@ -10,8 +10,7 @@
 --   Constraints (superuser, RLS bypass):
 --     C1. field sin position_code → check_violation.
 --     C2. bench con position_code → check_violation.
---     C3a. field con out_reason → check_violation.
---     C3b. out sin out_reason → check_violation.
+--     C3. location='out' (ya no existe, rediseño B') → check_violation.
 --     C4. bench con coords → check_violation.
 --     C5. unique (lineup_id, player_id) — mismo jugador dos veces → 23505.
 --     C6. una sola oficial por evento (índice parcial) → 23505.
@@ -117,24 +116,13 @@ begin
   end;
 end $$;
 
--- C3a. field con out_reason.
-do $$
-begin
-  begin
-    insert into public.lineup_positions (lineup_id, player_id, location, position_code, out_reason)
-      values ('66ee0000-7777-0001-0000-000000000000', '66ee0000-3333-0000-0000-000000000001', 'field', 'GK', 'tecnico');
-    raise exception 'FAIL [C3a]: field con out_reason debería rechazarse';
-  exception when check_violation then null;
-  end;
-end $$;
-
--- C3b. out sin out_reason.
+-- C3. location='out' ya no existe (rediseño Lote B') → check_violation.
 do $$
 begin
   begin
     insert into public.lineup_positions (lineup_id, player_id, location)
       values ('66ee0000-7777-0001-0000-000000000000', '66ee0000-3333-0000-0000-000000000001', 'out');
-    raise exception 'FAIL [C3b]: out sin out_reason debería rechazarse';
+    raise exception 'FAIL [C3]: location=out debería rechazarse (solo field/bench)';
   exception when check_violation then null;
   end;
 end $$;
@@ -156,8 +144,8 @@ insert into public.lineup_positions (lineup_id, player_id, location)
 do $$
 begin
   begin
-    insert into public.lineup_positions (lineup_id, player_id, location, out_reason)
-      values ('66ee0000-7777-0001-0000-000000000000', '66ee0000-3333-0000-0000-000000000002', 'out', 'fisico');
+    insert into public.lineup_positions (lineup_id, player_id, location)
+      values ('66ee0000-7777-0001-0000-000000000000', '66ee0000-3333-0000-0000-000000000002', 'bench');
     raise exception 'FAIL [C5]: mismo jugador dos veces en el lineup debería rechazarse';
   exception when unique_violation then null;
   end;

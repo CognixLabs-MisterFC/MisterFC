@@ -1168,8 +1168,10 @@
         "event_without_team": "El partido no tiene equipo asignado.",
         "cannot_unpublish": "Una vez publicada, no se puede dejar como borrador.",
         "forbidden": "No tienes permiso para publicar esta convocatoria.",
-        "generic": "No se pudo guardar. Reintenta."
-      }
+        "generic": "No se pudo guardar. Reintenta.",
+        "too_many_called_up": "Hay {overflow} convocado(s) de más (máx {max}). Descarta jugadores antes de publicar."
+      },
+      "go_to_editor": "Ir al editor de alineación"
     },
     "detail": {
       "back": "Volver a convocatorias",
@@ -1187,6 +1189,14 @@
       "not_in_roster": "No estabas en el equipo a la fecha del partido.",
       "not_linked": "Esta cuenta no está vinculada a este jugador.",
       "edit_lineup": "Editar alineación"
+    },
+    "republish": {
+      "pending": "Hay cambios sin publicar.",
+      "publish_changes": "Publicar cambios",
+      "done": "Cambios publicados. Se ha notificado a las familias.",
+      "error": "No se pudieron publicar los cambios.",
+      "too_many": "Demasiados convocados ({overflow} de más, máx. {max}). Descarta a alguien antes de publicar.",
+      "event_started": "El partido ya ha empezado."
     }
   },
   "mensajes": {
@@ -1428,7 +1438,49 @@
       "position_code_coherence": "Posición incoherente con la zona.",
       "out_reason_coherence": "Falta el motivo de descarte.",
       "coords_only_field": "Coordenadas solo válidas en el campo.",
-      "generic": "No se pudo guardar. Inténtalo de nuevo."
-    }
+      "generic": "No se pudo guardar. Inténtalo de nuevo.",
+      "too_many_starters": "Demasiados titulares en el campo para esta modalidad."
+    },
+    "pos_short": {
+      "goalkeeper": "POR",
+      "defender": "DEF",
+      "midfielder": "MED",
+      "forward": "DEL"
+    },
+    "share_label": "Compartir con equipo",
+    "resync": "Resincronizar",
+    "planned_subs": "Cambios programados",
+    "sub_minute": "Min",
+    "sub_out": "Sale",
+    "sub_in": "Entra",
+    "sub_add": "Añadir",
+    "sub_line": "Min {minute}: sale {out} → entra {in}",
+    "tactical_notes": "Notas tácticas",
+    "tactical_notes_placeholder": "Presión, vigilancias, objetivos por fases…",
+    "tactical_notes_staff_only": "Solo visible para el cuerpo técnico.",
+    "save_notes": "Guardar notas",
+    "confirm_published_title": "Convocatoria publicada",
+    "confirm_published_body": "La convocatoria ya está publicada. ¿Aplicar también los cambios de convocados/descartes a la convocatoria?",
+    "cancel": "Cancelar",
+    "confirm_apply": "Aplicar",
+    "auto_discarded": "{n} marcado(s) como no convocado",
+    "auto_called_up": "{n} marcado(s) como convocado",
+    "resync_done": "Resincronizado: {out} a fuera, {bench} a banquillo",
+    "official_lineup_title": "Alineación oficial",
+    "share_hint": "Actívalo para que jugadores y familias vean esta alineación oficial. Las notas tácticas siempre quedan ocultas.",
+    "official_hint": "Marca esta como la alineación oficial del partido (solo puede haber una).",
+    "formation_hint": "Cambia el sistema de juego; los titulares se reubican automáticamente.",
+    "new_lineup_hint": "Crear una segunda alineación (Plan B, Plan C…) con los mismos convocados pero distinta distribución.",
+    "field_full": "Máximo {max} jugadores en el campo para esta modalidad.",
+    "notes_saved": "Notas guardadas.",
+    "sub_remove_hint": "Eliminar este cambio programado.",
+    "discarded_panel": "Descartados",
+    "discarded_empty": "Sin descartes. Arrastra aquí para descartar.",
+    "discarded_hint": "Compartido por todas las alineaciones del partido.",
+    "discard_reason_title": "Motivo del descarte",
+    "discard_reason_body": "El jugador saldrá de la convocatoria y de todas las alineaciones de este partido.",
+    "discard_confirm": "Descartar",
+    "rename_hint": "Haz clic para renombrar esta alineación.",
+    "prepare_failed": "No se pudo preparar la alineación. Recarga la página."
   }
 }

@@ -113,7 +113,9 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 > **Ampliada 2026-05-29**: F6 pasa de "Editor de alineaciones F7/F8/F11" → "Alineaciones y planificación del partido" con 4 subfases adicionales (6.6 importar convocatoria, 6.7 banquillo, 6.8 cambios programados, 6.9 notas tácticas). Pieza central `<MatchFieldEditor>` sienta la base reutilizable para F7 — ver [ADR-0009](../decisions/ADR-0009-f6-f7-match-field-editor-compartido.md).
 
-> **Lote A entregado 2026-05-31** (PR #33): modelo + catálogo + `<MatchFieldEditor>` + página/editor del staff + permisos. Subfases 6.1–6.5 y 6.7 cerradas. Spec [6.0](../specs/6.0-alineaciones.md), ADR-0012 / ADR-0013. Lote B (6.6, 6.8, 6.9 + compartir con familia) pendiente.
+> **Lote A entregado 2026-05-31** (PR #33): modelo + catálogo + `<MatchFieldEditor>` + página/editor del staff + permisos. Subfases 6.1–6.5 y 6.7 cerradas. Spec [6.0](../specs/6.0-alineaciones.md), ADR-0012 / ADR-0013.
+
+> **Rediseño Lote B' 2026-06-01** (PR #34): la **convocatoria es la única fuente de verdad del roster**. La alineación trabaja SOBRE los convocados (called_up) y solo los distribuye en campo/banquillo — se elimina la zona "fuera" y `out_reason` de `lineup_positions` (migración `20260609000000`, las filas `out` migradas a `callup_decisions`). Sync ahora **unidireccional** convocatoria→alineaciones (descartar quita al jugador de todas las alineaciones; convocar lo añade al banquillo). Bugs cerrados: F (tope titulares por modalidad), G (re-publicar convocatoria con notificación `callup_updated`), B (tooltips), D (badge in_app por tipo + push). Mejora I (foto del jugador en los chips).
 
 | Subfase | Estado | Resumen | Spec |
 |---|---|---|---|
@@ -121,11 +123,12 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 6.2 | ☑ 2026-05-31 | Catálogo de formaciones F7 / F8 / F11 en código (ADR-0013) + geometría | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
 | 6.3 | ☑ 2026-05-31 | Editor visual drag&drop — `<MatchFieldEditor>` (mode edit/readonly/live-overlay) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
 | 6.4 | ☑ 2026-05-31 | Múltiples alineaciones por partido + marcar oficial (una por evento) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
-| 6.5 | ☑ 2026-05-31 | Lista de "fuera de convocatoria" con motivo (`out_reason`) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
-| 6.6 | ☐ pendiente | Importar plantilla desde convocatoria F4 (Sí/Duda → disponibles, No/descarte → no) | [docs/specs/6.6-importar-convocatoria.md](../specs/6.6-importar-convocatoria.md) |
-| 6.7 | ☑ 2026-05-31 | Banquillo del partido + drag&drop bidireccional campo↔banquillo↔fuera | [docs/specs/6.7-banquillo.md](../specs/6.7-banquillo.md) |
-| 6.8 | ☐ pendiente | Cambios programados (minuto + jugador out/in + razón) | [docs/specs/6.8-cambios-programados.md](../specs/6.8-cambios-programados.md) |
-| 6.9 | ☐ pendiente | Notas tácticas del partido (bloque libre + por jugador / fase) | [docs/specs/6.9-notas-tacticas.md](../specs/6.9-notas-tacticas.md) |
+| 6.5 | ☑ 2026-05-31 · ↻ B' | Descartes: ahora son decisión de **convocatoria** (`callup_decisions`), no zona de la alineación (rediseño 2026-06-01 eliminó `out`/`out_reason`) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
+| 6.6 | ☑ 2026-05-31 · ↻ B' | Sync **unidireccional** convocatoria→alineaciones (descartar quita; convocar añade a banquillo de todas) | [docs/specs/6.6-importar-convocatoria.md](../specs/6.6-importar-convocatoria.md) |
+| 6.7 | ☑ 2026-05-31 · ↻ B' | Banquillo del partido + drag&drop campo↔banquillo (sin zona "fuera") | [docs/specs/6.7-banquillo.md](../specs/6.7-banquillo.md) |
+| 6.8 | ☑ 2026-05-31 | Cambios programados (`planned_substitutions`, solo-staff) | [docs/specs/6.8-cambios-programados.md](../specs/6.8-cambios-programados.md) |
+| 6.9 | ☑ 2026-05-31 | Notas tácticas (`lineup_tactical_notes`, solo-staff) + visibilidad equipo/familia | [docs/specs/6.9-notas-tacticas.md](../specs/6.9-notas-tacticas.md) |
+| 6.10 | ☐ pendiente | Plantillas personalizadas de formación (tabla `coach_formations`, ruta `/perfil/formaciones`, grupo "Mis formaciones" en el selector del editor) | — |
 
 ## Fase 11 — Subfases pendientes
 

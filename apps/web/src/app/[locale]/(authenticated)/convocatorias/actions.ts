@@ -2,12 +2,72 @@
 
 import { revalidatePath } from 'next/cache';
 import {
+  calledUpOverflow,
+  createSupabaseAdminClient,
   createSupabaseServerClient,
+  maxCalledUpFor,
   publishCallupSchema,
   upsertCallupDecisionSchema,
   upsertCallupResponseSchema,
+  type TeamFormat,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+
+type SupaClient = ReturnType<typeof createSupabaseServerClient>;
+
+/**
+ * F6 Mejora 3 — devuelve un estado de error si el nº de convocados (roster a
+ * fecha del partido − descartados en callup_decisions) excede el máximo de la
+ * modalidad del equipo. null si cabe. "Convocados" = los que el coach lleva,
+ * no los que respondieron "no" (esos son no-disponibles por respuesta propia).
+ */
+async function checkCalledUpLimit(
+  supabase: SupaClient,
+  eventId: string
+): Promise<PublishCallupState | null> {
+  const { data: ev } = await supabase
+    .from('events')
+    .select('team_id, starts_at, teams!inner(format)')
+    .eq('id', eventId)
+    .maybeSingle();
+  const teamId = (ev?.team_id as string | null) ?? null;
+  if (!ev || !teamId) return null;
+  const format = (ev as unknown as { teams: { format: TeamFormat } }).teams
+    .format;
+  const eventDate = (ev.starts_at as string).slice(0, 10);
+
+  const { data: tms } = await supabase
+    .from('team_members')
+    .select('player_id, joined_at, left_at')
+    .eq('team_id', teamId)
+    .lte('joined_at', eventDate);
+  type TM = { player_id: string; joined_at: string; left_at: string | null };
+  const rosterIds = (tms ?? [])
+    .map((r) => r as unknown as TM)
+    .filter((r) => r.left_at == null || r.left_at >= eventDate)
+    .map((r) => r.player_id);
+
+  const { data: decs } = await supabase
+    .from('callup_decisions')
+    .select('player_id, decision')
+    .eq('event_id', eventId);
+  const discarded = new Set(
+    (decs ?? [])
+      .filter((d) => (d.decision as string) === 'discarded')
+      .map((d) => d.player_id as string)
+  );
+  const calledUp = rosterIds.filter((id) => !discarded.has(id)).length;
+
+  const overflow = calledUpOverflow(calledUp, format);
+  if (overflow > 0) {
+    return {
+      error: 'too_many_called_up',
+      overflow,
+      maxCalledUp: maxCalledUpFor(format),
+    };
+  }
+  return null;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // publishCallup (F4.4)
@@ -34,10 +94,15 @@ export type PublishCallupState = {
     | 'event_not_match'
     | 'event_without_team'
     | 'cannot_unpublish'
+    | 'too_many_called_up'
     | 'forbidden'
     | 'generic';
   success?: boolean;
   published?: boolean;
+  /** Sobrante de convocados sobre el máximo de la modalidad (F6 Mejora 3). */
+  overflow?: number;
+  /** Máximo de convocados de la modalidad (para el mensaje). */
+  maxCalledUp?: number;
 };
 
 function mapPublishErr(
@@ -100,6 +165,13 @@ export async function publishCallup(
     .eq('event_id', event_id)
     .maybeSingle();
 
+  // F6 Mejora 3 — al PUBLICAR (transición a publicada), bloquear si el nº de
+  // convocados (roster a fecha − descartados) excede el máximo de la modalidad.
+  if (publish && existing?.published_at == null) {
+    const gate = await checkCalledUpLimit(supabase, event_id);
+    if (gate) return gate;
+  }
+
   const payloadCommon = {
     meeting_at,
     meeting_location,
@@ -144,7 +216,7 @@ export async function publishCallup(
   const isFirstPublish = publish && (existing?.published_at == null);
   if (isFirstPublish) {
     try {
-      await notifyCallupPublished(supabase, event_id);
+      await notifyCallup(event_id, 'callup_published');
     } catch (e) {
       // No bloquear el publish por fallo de notificación.
       console.error('notify callup_published error', e);
@@ -154,54 +226,160 @@ export async function publishCallup(
   return { success: true, published: !!finalPublished };
 }
 
-async function notifyCallupPublished(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
+// ─────────────────────────────────────────────────────────────────────────────
+// republishCallup (Bug G) — re-publica una convocatoria ya publicada tras
+// cambios del cuerpo técnico, notificando a jugadores/familias (callup_updated).
+// Permitido hasta events.starts_at. Re-aplica el tope de convocados por modalidad.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type RepublishState = {
+  error?:
+    | 'not_found'
+    | 'not_published'
+    | 'event_started'
+    | 'too_many_called_up'
+    | 'forbidden'
+    | 'generic';
+  success?: boolean;
+  overflow?: number;
+  maxCalledUp?: number;
+};
+
+export async function republishCallup(eventId: string): Promise<RepublishState> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: meta } = await supabase
+    .from('match_callup_meta')
+    .select('published_at')
+    .eq('event_id', eventId)
+    .maybeSingle();
+  if (!meta) return { error: 'not_found' };
+  if (meta.published_at == null) return { error: 'not_published' };
+
+  // No re-publicar un partido ya empezado.
+  const { data: ev } = await supabase
+    .from('events')
+    .select('starts_at')
+    .eq('id', eventId)
+    .maybeSingle();
+  if (ev?.starts_at && new Date(ev.starts_at).getTime() < Date.now()) {
+    return { error: 'event_started' };
+  }
+
+  // Re-aplica el tope de convocados de la modalidad antes de re-publicar.
+  const gate = await checkCalledUpLimit(supabase, eventId);
+  if (gate) {
+    return {
+      error: 'too_many_called_up',
+      overflow: gate.overflow,
+      maxCalledUp: gate.maxCalledUp,
+    };
+  }
+
+  const { error } = await supabase
+    .from('match_callup_meta')
+    .update({ published_at: new Date().toISOString() })
+    .eq('event_id', eventId);
+  if (error) {
+    return { error: error.code === '42501' ? 'forbidden' : 'generic' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/convocatorias', 'page');
+  revalidatePath(`/[locale]/(authenticated)/convocatorias/${eventId}`, 'page');
+  revalidatePath('/[locale]/(authenticated)/calendario', 'page');
+
+  try {
+    await notifyCallup(eventId, 'callup_updated', String(Date.now()));
+  } catch (e) {
+    console.error('notify callup_updated error', e);
+  }
+
+  return { success: true };
+}
+
+type CallupEvent = {
+  id: string;
+  team_id: string;
+  title: string;
+  opponent_name: string | null;
+  starts_at: string;
+};
+
+/**
+ * Destinatarios de una notificación de convocatoria: profiles vinculados (vía
+ * player_accounts) a jugadores del roster activo a la fecha del partido.
+ */
+async function callupRecipients(
   eventId: string,
-): Promise<void> {
-  const { data: event } = await supabase
+): Promise<{ event: CallupEvent; userIds: string[] } | null> {
+  // Admin client (service role): la resolución de destinatarios NO debe quedar
+  // limitada por la RLS del cuerpo técnico sobre player_accounts (Bug CC: si el
+  // coach no veía las cuentas vinculadas, no se generaba ninguna notificación).
+  const admin = createSupabaseAdminClient();
+
+  const { data: event } = await admin
     .from('events')
     .select('id, team_id, title, opponent_name, starts_at')
     .eq('id', eventId)
     .maybeSingle();
-  if (!event?.team_id) return;
+  if (!event?.team_id) return null;
 
   const eventDate = event.starts_at.slice(0, 10);
-  const { data: tms } = await supabase
+  const { data: tms } = await admin
     .from('team_members')
     .select('player_id, joined_at, left_at')
     .eq('team_id', event.team_id)
     .lte('joined_at', eventDate);
-  type TM = {
-    player_id: string;
-    joined_at: string;
-    left_at: string | null;
-  };
+  type TM = { player_id: string; joined_at: string; left_at: string | null };
   const rosterIds = (tms ?? [])
     .map((r) => r as unknown as TM)
     .filter((r) => r.left_at == null || r.left_at >= eventDate)
     .map((r) => r.player_id);
-  if (rosterIds.length === 0) return;
+  if (rosterIds.length === 0) return null;
 
-  const { data: pas } = await supabase
+  const { data: pas } = await admin
     .from('player_accounts')
     .select('profile_id')
     .in('player_id', rosterIds);
-  const recipientUserIds = Array.from(
+  const userIds = Array.from(
     new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
   ) as string[];
-  if (recipientUserIds.length === 0) return;
+  if (userIds.length === 0) return null;
+
+  return { event: event as CallupEvent, userIds };
+}
+
+/**
+ * Emite la notificación de convocatoria publicada (`callup_published`) o
+ * actualizada (`callup_updated`, Bug D/G). `dedupeToken` distingue cada
+ * publicación: en re-publicaciones se pasa un token único para que la
+ * notificación NO quede deduplicada con la anterior.
+ */
+async function notifyCallup(
+  eventId: string,
+  kind: 'callup_published' | 'callup_updated',
+  dedupeToken?: string,
+): Promise<void> {
+  const r = await callupRecipients(eventId);
+  if (!r) return;
+  const { event, userIds } = r;
 
   const oppLabel = event.opponent_name ?? '';
-  const title = oppLabel
-    ? `Convocatoria: ${event.title} vs ${oppLabel}`
-    : `Convocatoria: ${event.title}`;
+  const matchLabel = oppLabel ? `${event.title} vs ${oppLabel}` : event.title;
+  const prefixEs =
+    kind === 'callup_updated' ? 'Convocatoria actualizada' : 'Convocatoria';
+  const title = `${prefixEs}: ${matchLabel}`;
   const body = `Partido el ${new Date(event.starts_at).toLocaleString('es-ES')}`;
+  const base = dedupeToken
+    ? `${kind}:${eventId}:${dedupeToken}`
+    : `${kind}:${eventId}`;
 
   const { emitNotificationFanOut } = await import('@/lib/notify-bus');
   await emitNotificationFanOut(
-    recipientUserIds.map((u) => ({ user_id: u })),
+    userIds.map((u) => ({ user_id: u })),
     {
-      type: 'callup_published',
+      type: kind,
       in_app_payload: {
         event_id: eventId,
         deep_link: `/es/convocatorias/${eventId}`,
@@ -210,11 +388,57 @@ async function notifyCallupPublished(
         title,
         body,
         deep_link: `/es/convocatorias/${eventId}`,
-        tag: `callup_published:${eventId}`,
+        tag: `${kind}:${eventId}`,
       },
-      dedupe_base_prefix: `callup_published:${eventId}`,
+      dedupe_base_prefix: base,
     },
   );
+}
+
+/**
+ * PART 2.4 — sincroniza la convocatoria HACIA las alineaciones del partido.
+ * Descartar → quita al jugador de lineup_positions de TODAS las alineaciones.
+ * Convocar → lo añade al banquillo de todas las que no lo tengan. Best-effort:
+ * un fallo aquí no debe romper la decisión de convocatoria.
+ */
+async function syncLineupsForDecision(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  eventId: string,
+  playerId: string,
+  calledUp: boolean,
+): Promise<void> {
+  const { data: lus } = await supabase
+    .from('lineups')
+    .select('id')
+    .eq('event_id', eventId);
+  const lineupIds = (lus ?? []).map((l) => l.id as string);
+  if (lineupIds.length === 0) return;
+
+  if (!calledUp) {
+    await supabase
+      .from('lineup_positions')
+      .delete()
+      .in('lineup_id', lineupIds)
+      .eq('player_id', playerId);
+    return;
+  }
+
+  const { data: present } = await supabase
+    .from('lineup_positions')
+    .select('lineup_id')
+    .eq('player_id', playerId)
+    .in('lineup_id', lineupIds);
+  const have = new Set((present ?? []).map((r) => r.lineup_id as string));
+  const missing = lineupIds.filter((id) => !have.has(id));
+  if (missing.length > 0) {
+    await supabase.from('lineup_positions').insert(
+      missing.map((lid) => ({
+        lineup_id: lid,
+        player_id: playerId,
+        location: 'bench' as const,
+      })),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -402,9 +626,25 @@ export async function upsertCallupDecision(
     if (error) return { error: mapDecisionPgErr(error.message, error.code) };
   }
 
+  // PART 2.4 — propaga el descarte/convocatoria a las alineaciones del partido.
+  try {
+    await syncLineupsForDecision(
+      supabase,
+      parsed.data.event_id,
+      parsed.data.player_id,
+      parsed.data.decision === 'called_up',
+    );
+  } catch (e) {
+    console.error('syncLineupsForDecision error', e);
+  }
+
   revalidatePath('/[locale]/(authenticated)/convocatorias', 'page');
   revalidatePath(
     `/[locale]/(authenticated)/convocatorias/${parsed.data.event_id}`,
+    'page'
+  );
+  revalidatePath(
+    `/[locale]/(authenticated)/convocatorias/${parsed.data.event_id}/alineacion`,
     'page'
   );
   return { success: true };
@@ -430,8 +670,21 @@ export async function clearCallupDecision(
     if (error.code === '42501') return { error: 'forbidden' };
     return { error: 'generic' };
   }
+
+  // Quitar la decisión = el jugador vuelve a convocado por defecto → al
+  // banquillo de las alineaciones (PART 2.4).
+  try {
+    await syncLineupsForDecision(supabase, eventId, playerId, true);
+  } catch (e) {
+    console.error('syncLineupsForDecision error', e);
+  }
+
   revalidatePath(
     `/[locale]/(authenticated)/convocatorias/${eventId}`,
+    'page'
+  );
+  revalidatePath(
+    `/[locale]/(authenticated)/convocatorias/${eventId}/alineacion`,
     'page'
   );
   return { success: true };

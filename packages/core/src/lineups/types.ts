@@ -38,23 +38,19 @@ export interface Formation {
   slots: FormationSlot[];
 }
 
-/** Zona del jugador dentro de la alineación (lineup_positions.location). */
-export type LineupLocation = 'field' | 'bench' | 'out';
+/**
+ * Zona del jugador DENTRO de la alineación (lineup_positions.location).
+ *
+ * Rediseño Lote B': solo field/bench. La alineación trabaja sobre los
+ * jugadores CONVOCADOS (called_up en callup_decisions) y solo los distribuye
+ * en campo (titular) o banquillo (suplente). Descartar a un jugador ya NO es
+ * una zona de la alineación: es una decisión de convocatoria.
+ */
+export type LineupLocation = 'field' | 'bench';
 
 export const LINEUP_LOCATIONS: readonly LineupLocation[] = [
   'field',
   'bench',
-  'out',
-] as const;
-
-/** Motivo de "fuera de convocatoria" (lineup_positions.out_reason). */
-export type OutReason = 'tecnico' | 'fisico' | 'disciplinario' | 'personal';
-
-export const OUT_REASONS: readonly OutReason[] = [
-  'tecnico',
-  'fisico',
-  'disciplinario',
-  'personal',
 ] as const;
 
 /**
@@ -69,6 +65,4 @@ export interface PositionAssignment {
   /** Solo en field. */
   xPct: number | null;
   yPct: number | null;
-  /** Solo en out. */
-  outReason: OutReason | null;
 }

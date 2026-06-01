@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { getFormation } from '../formations';
 import {
   BENCH_ZONE_ID,
-  OUT_ZONE_ID,
   applyDrop,
   fieldSlotDroppableId,
   playerDraggableId,
@@ -19,7 +18,6 @@ function bench(playerId: string): PositionAssignment {
     positionCode: null,
     xPct: null,
     yPct: null,
-    outReason: null,
   };
 }
 
@@ -28,9 +26,8 @@ describe('resolveDrop', () => {
     const r = resolveDrop(playerDraggableId('p1'), fieldSlotDroppableId('GK'));
     expect(r).toEqual({ playerId: 'p1', target: { kind: 'field', slotCode: 'GK' } });
   });
-  it('resuelve drop al banquillo y a fuera', () => {
+  it('resuelve drop al banquillo', () => {
     expect(resolveDrop(playerDraggableId('p1'), BENCH_ZONE_ID)?.target).toEqual({ kind: 'bench' });
-    expect(resolveDrop(playerDraggableId('p1'), OUT_ZONE_ID)?.target).toEqual({ kind: 'out' });
   });
   it('devuelve null si el over no es zona o el active no es jugador', () => {
     expect(resolveDrop(playerDraggableId('p1'), 'algo-raro')).toBeNull();
@@ -59,7 +56,7 @@ describe('applyDrop', () => {
 
   it('al soltar sobre un slot ocupado por otro, lo desplaza al banquillo (swap)', () => {
     const start: PositionAssignment[] = [
-      { playerId: 'titular', location: 'field', positionCode: 'GK', xPct: 50, yPct: 94, outReason: null },
+      { playerId: 'titular', location: 'field', positionCode: 'GK', xPct: 50, yPct: 94 },
       bench('suplente'),
     ];
     const { next, changed } = applyDrop(
@@ -78,28 +75,11 @@ describe('applyDrop', () => {
 
   it('mover al banquillo limpia posición y coords', () => {
     const start: PositionAssignment[] = [
-      { playerId: 'p1', location: 'field', positionCode: 'GK', xPct: 50, yPct: 94, outReason: null },
+      { playerId: 'p1', location: 'field', positionCode: 'GK', xPct: 50, yPct: 94 },
     ];
     const { next } = applyDrop(start, { playerId: 'p1', target: { kind: 'bench' } }, f433);
     const me = next[0]!;
-    expect(me).toMatchObject({ location: 'bench', positionCode: null, xPct: null, yPct: null, outReason: null });
-  });
-
-  it('mover a fuera aplica out_reason por defecto y conserva el existente', () => {
-    const r1 = applyDrop([bench('p1')], { playerId: 'p1', target: { kind: 'out' } }, f433);
-    expect(r1.next[0]!.location).toBe('out');
-    expect(r1.next[0]!.outReason).toBe('tecnico');
-
-    const already: PositionAssignment[] = [
-      { playerId: 'p1', location: 'out', positionCode: null, xPct: null, yPct: null, outReason: 'fisico' },
-    ];
-    const r2 = applyDrop(already, { playerId: 'p1', target: { kind: 'out' } }, f433);
-    expect(r2.next[0]!.outReason).toBe('fisico');
-  });
-
-  it('out_reason por defecto configurable', () => {
-    const r = applyDrop([bench('p1')], { playerId: 'p1', target: { kind: 'out' } }, f433, 'disciplinario');
-    expect(r.next[0]!.outReason).toBe('disciplinario');
+    expect(me).toMatchObject({ location: 'bench', positionCode: null, xPct: null, yPct: null });
   });
 
   it('drop de un jugador inexistente es no-op', () => {

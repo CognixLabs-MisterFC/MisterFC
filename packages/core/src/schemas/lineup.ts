@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { getFormation } from '../lineups/formations';
-import { LINEUP_LOCATIONS, OUT_REASONS } from '../lineups/types';
+import { LINEUP_LOCATIONS } from '../lineups/types';
 
 const uuid = z.string().uuid({ message: 'invalid_id' });
 
@@ -30,6 +30,12 @@ export const setLineupFormationSchema = z.object({
 });
 export type SetLineupFormationInput = z.infer<typeof setLineupFormationSchema>;
 
+export const renameLineupSchema = z.object({
+  lineup_id: uuid,
+  name: z.string().trim().min(1, { message: 'name_required' }).max(60, { message: 'name_too_long' }),
+});
+export type RenameLineupInput = z.infer<typeof renameLineupSchema>;
+
 export const setLineupOfficialSchema = z.object({
   lineup_id: uuid,
   is_official: z.boolean(),
@@ -42,10 +48,44 @@ export const deleteLineupPositionSchema = z.object({
 });
 export type DeleteLineupPositionInput = z.infer<typeof deleteLineupPositionSchema>;
 
+export const setLineupVisibilitySchema = z.object({
+  lineup_id: uuid,
+  visibility: z.enum(['staff', 'team'], { message: 'visibility_invalid' }),
+});
+export type SetLineupVisibilityInput = z.infer<typeof setLineupVisibilitySchema>;
+
+export const setTacticalNotesSchema = z.object({
+  lineup_id: uuid,
+  notes: z
+    .string()
+    .max(2000, { message: 'notes_too_long' })
+    .nullable()
+    .transform((v) => (v != null && v.trim().length === 0 ? null : v)),
+});
+export type SetTacticalNotesInput = z.infer<typeof setTacticalNotesSchema>;
+
+export const createPlannedSubSchema = z
+  .object({
+    lineup_id: uuid,
+    minute_planned: z.number().int().min(0, { message: 'minute_invalid' }).max(120, { message: 'minute_invalid' }),
+    player_out_id: uuid,
+    player_in_id: uuid,
+    position_code_target: z.string().min(1).max(20).nullable().optional().default(null),
+  })
+  .refine((v) => v.player_out_id !== v.player_in_id, {
+    message: 'same_player',
+    path: ['player_in_id'],
+  });
+export type CreatePlannedSubInput = z.infer<typeof createPlannedSubSchema>;
+
+export const deletePlannedSubSchema = z.object({ id: uuid });
+export type DeletePlannedSubInput = z.infer<typeof deletePlannedSubSchema>;
+
 /**
  * Upsert de la posición de un jugador. Las refinements replican los CHECK de
- * BD (coherencia location ↔ position_code / out_reason / coords) para fallar
- * temprano con un mensaje claro en vez de un error de constraint genérico.
+ * BD (coherencia location ↔ position_code / coords) para fallar temprano con un
+ * mensaje claro en vez de un error de constraint genérico. Rediseño Lote B':
+ * solo field/bench, sin out_reason.
  */
 export const upsertLineupPositionSchema = z
   .object({
@@ -55,16 +95,11 @@ export const upsertLineupPositionSchema = z
     position_code: z.string().min(1).max(20).nullable().optional().default(null),
     x_pct: z.number().min(0).max(100).nullable().optional().default(null),
     y_pct: z.number().min(0).max(100).nullable().optional().default(null),
-    out_reason: z.enum(OUT_REASONS, { message: 'out_reason_invalid' }).nullable().optional().default(null),
   })
   .refine(
     (v) =>
       v.location === 'field' ? v.position_code != null : v.position_code == null,
     { message: 'position_code_coherence', path: ['position_code'] },
-  )
-  .refine(
-    (v) => (v.location === 'out' ? v.out_reason != null : v.out_reason == null),
-    { message: 'out_reason_coherence', path: ['out_reason'] },
   )
   .refine(
     (v) => v.location === 'field' || (v.x_pct == null && v.y_pct == null),

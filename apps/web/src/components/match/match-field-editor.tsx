@@ -36,13 +36,13 @@ import { cn } from '@/lib/utils';
 
 // Ids de drag&drop centralizados en @misterfc/core/lineups/editor (compartidos
 // con el cliente de la página). El droppable de slot es `lineup-slot:<code>`;
-// el draggable de jugador `lineup-player:<id>`; las zonas banquillo/fuera usan
-// BENCH_ZONE_ID / OUT_ZONE_ID. Se re-exportan para consumidores del componente.
+// el draggable de jugador `lineup-player:<id>`; el banquillo usa BENCH_ZONE_ID.
+// Se re-exportan para consumidores del componente. (Rediseño Lote B': ya no hay
+// zona "out".)
 export {
   FIELD_SLOT_PREFIX,
   PLAYER_DRAG_PREFIX,
   BENCH_ZONE_ID,
-  OUT_ZONE_ID,
   fieldSlotDroppableId,
   playerDraggableId,
   parseFieldSlotId,
@@ -60,6 +60,10 @@ export interface FieldEditorPlayer {
   /** Nombre corto a mostrar en el chip (p.ej. "A. Pérez"). */
   label: string;
   dorsal: number | null;
+  /** Posición primaria del jugador (POR/DEF/MED/DEL) — Mejora 1. */
+  positionLabel?: string | null;
+  /** Foto del jugador (players.photo_url) — Mejora I. Fallback: dorsal. */
+  photoUrl?: string | null;
   /** Slot del preset que ocupa este jugador. */
   positionCode: string | null;
   /** Coordenadas propias; si null se usan las del slot del preset. */
@@ -99,10 +103,22 @@ function ChipBody({
         hover && 'opacity-90',
       )}
     >
-      <div className="flex size-9 items-center justify-center rounded-full border-2 border-white bg-emerald-700 text-sm font-bold text-white shadow-md">
-        {player.dorsal ?? '·'}
+      <div className="relative size-9 overflow-hidden rounded-full border-2 border-white bg-emerald-700 shadow-md">
+        {player.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={player.photoUrl}
+            alt=""
+            className="size-full object-cover"
+          />
+        ) : (
+          <span className="flex size-full items-center justify-center text-sm font-bold text-white">
+            {player.dorsal ?? '·'}
+          </span>
+        )}
       </div>
       <span className="max-w-16 truncate rounded bg-black/55 px-1 text-[10px] leading-tight text-white">
+        {player.positionLabel ? `${player.positionLabel} · ` : ''}
         {player.label}
       </span>
     </div>

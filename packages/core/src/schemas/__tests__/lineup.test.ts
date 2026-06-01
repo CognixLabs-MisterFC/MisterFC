@@ -51,18 +51,10 @@ describe('upsertLineupPositionSchema — coherencia location ↔ campos', () => 
     if (!bad.success) expect(bad.error.issues[0]?.message).toBe('position_code_coherence');
   });
 
-  it('out exige out_reason', () => {
-    const ok = upsertLineupPositionSchema.safeParse({ ...base, location: 'out', out_reason: 'tecnico' });
-    expect(ok.success).toBe(true);
+  it('rechaza location "out" (ya no existe en el modelo)', () => {
     const bad = upsertLineupPositionSchema.safeParse({ ...base, location: 'out' });
     expect(bad.success).toBe(false);
-    if (!bad.success) expect(bad.error.issues[0]?.message).toBe('out_reason_coherence');
-  });
-
-  it('field no admite out_reason', () => {
-    const bad = upsertLineupPositionSchema.safeParse({ ...base, location: 'field', position_code: 'GK', out_reason: 'tecnico' });
-    expect(bad.success).toBe(false);
-    if (!bad.success) expect(bad.error.issues[0]?.message).toBe('out_reason_coherence');
+    if (!bad.success) expect(bad.error.issues[0]?.message).toBe('location_invalid');
   });
 
   it('coords solo en field', () => {

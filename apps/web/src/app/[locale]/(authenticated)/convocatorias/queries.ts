@@ -85,6 +85,7 @@ export type CallupDecisionRow = {
   reason: string | null;
   decided_by: string;
   decided_at: string;
+  updated_at: string;
 };
 
 export type CallupPlayerRow = {
@@ -116,6 +117,11 @@ export type CallupDetail = {
   /** Player IDs que el user actual puede manejar (responder por). */
   ownedPlayerIds: string[];
   canManage: boolean;
+  /**
+   * Bug G — la convocatoria está publicada y hay decisiones del cuerpo técnico
+   * modificadas DESPUÉS de la última publicación (cambios sin publicar).
+   */
+  hasUnpublishedChanges: boolean;
 };
 
 const COACH_ROLES: ReadonlyArray<Role> = [
@@ -504,13 +510,23 @@ export async function loadCallupDetail(
   const { data: rawDecisions } = await supabase
     .from('callup_decisions')
     .select(
-      'player_id, decision, reason, decided_by, decided_at'
+      'player_id, decision, reason, decided_by, decided_at, updated_at'
     )
     .eq('event_id', eventId);
   const decisions = new Map<string, CallupDecisionRow>();
   for (const d of (rawDecisions ?? []) as CallupDecisionRow[]) {
     decisions.set(d.player_id, d);
   }
+
+  // Bug G — ¿hay decisiones cambiadas después de la última publicación?
+  const publishedTs = meta?.published_at
+    ? Date.parse(meta.published_at)
+    : null;
+  const hasUnpublishedChanges =
+    publishedTs != null &&
+    Array.from(decisions.values()).some(
+      (d) => Date.parse(d.updated_at) > publishedTs,
+    );
 
   // canManage refleja la lógica del helper SQL `user_can_manage_callup`
   // (migración 20260603): admin/coord del club, principal vía team_staff.
@@ -552,6 +568,7 @@ export async function loadCallupDetail(
     decisions,
     ownedPlayerIds,
     canManage,
+    hasUnpublishedChanges,
   };
 }
 

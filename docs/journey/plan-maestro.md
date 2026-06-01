@@ -106,7 +106,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F3 | Calendario y eventos | 6–9 h | 2–3 | ☑ |
 | F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h (Lote A ≈4–5 h ☑ + Lote B ≈5–8 h ☑) | 3 | ☑ |
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☐ |
-| F6 | Alineaciones y planificación del partido | 9–14 h | 3–4 | ☐ |
+| F6 | Alineaciones y planificación del partido | 12–19 h | 4–5 | ☐ |
 | F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☐ |
 | F8 | Valoraciones del partido y del entrenamiento | 8–13 h | 3–4 | ☐ |
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☐ |
@@ -117,13 +117,15 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F14 | RGPD para menores y seguridad | 12–18 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
 | F16 | Beta cerrada con primer club | 9–15 h (subfases 16.0–16.4 6–10 h + F16.x bulk-invite +3–5 h) | 3–4 | ☐ |
-| **TOTAL Ola 1** | | **173–268 h** | **63–82** | |
+| **TOTAL Ola 1** | | **176–273 h** | **64–83** | |
 
 > **Cambio 2026-05-29**: F2 reabierta como "extendida" con F2.10 (listado global de jugadores) y F2.11 (gestión global de cuerpo técnico). F16 incorpora F16.x (bulk-invite por email, depende de F16.0 SMTP propio). El lote inicial de F2 (subfases 2.0–2.9) sigue cerrado operacionalmente; lo que se reabre es el alcance. Delta acumulado sobre el plan original: +11–19 h (159–243 → 170–262).
 
 > **Cambio 2026-05-29 (planificación)**: F6 ampliada de "Alineaciones del partido" → "Alineaciones y planificación del partido" con 4 nuevas subfases (F6.6 importar convocatoria, F6.7 banquillo, F6.8 cambios programados, F6.9 notas tácticas) y nota arquitectural sobre `<MatchFieldEditor>` reutilizable en F7. Delta F6: 6–9 h / 2–3 sesiones → 9–14 h / 3–4 sesiones (+3–5 h, +1 sesión). Ver [ADR-0009](../decisions/ADR-0009-f6-f7-match-field-editor-compartido.md).
 
 > **Cambio 2026-05-30 (deuda diferida → plan)**: 3 puntos de deuda registrados en `known-issues.md` movidos a subfases concretas + 1 ejecutado en el mismo PR. F11 +1 subfase (11.9 capabilities agrupadas por dominio) → 12–16 h ⇒ 13–18 h. F14 +2 subfases (14.9 RLS capabilities por team_staff, 14.10 RLS events team-isolation) → 10–14 h ⇒ 12–18 h. La 4ª deuda (housekeeping redirect 308 `/mi-plantilla` → `/mis-equipos`) se ejecutó en este mismo PR — app en beta cerrada con piloto único, sin bookmarks externos a la URL antigua, riesgo de breakage = 0. Delta total Ola 1: +3–6 h (170–262 → 173–268).
+
+> **Cambio 2026-05-31 (extensión F6.10)**: F6 +1 subfase (6.10 plantillas personalizadas de formación, tabla `coach_formations`) → 9–14 h / 3–4 sesiones ⇒ 12–19 h / 4–5 sesiones. Delta total Ola 1: +3–5 h (173–268 → 176–273), +1 sesión (63–82 → 64–83). Se planifica junto al Lote B de F6 (mismo PR de plan).
 
 ---
 
@@ -310,9 +312,9 @@ ADRs cerrados con la fase: ADR-0005 (recurrencia A), ADR-0006 (componente propio
 
 **Objetivo**: editor visual de alineación y planificación pre-partido. Cubre alineación titular (campo) + banquillo + cambios programados + notas tácticas, no solo el lineup básico. Toma como input la convocatoria publicada de F4 y entrega al staff una preparación completa antes del pitido inicial. La pieza visual central (`<MatchFieldEditor>`) sienta la fundación reutilizable para F7.
 
-**Horas**: 9–14 h · **Sesiones**: 3–4
+**Horas**: 12–19 h · **Sesiones**: 4–5
 
-**Criterio de cierre**: entrenador parte de la convocatoria F4, monta titular vía drag&drop, organiza banquillo y "fuera de convocatoria", programa cambios con minuto + razón, deja notas tácticas. Decide qué alineación es oficial y si se publica al equipo o se mantiene privada del cuerpo técnico.
+**Criterio de cierre**: entrenador parte de la convocatoria F4, monta titular vía drag&drop, organiza banquillo y "fuera de convocatoria", programa cambios con minuto + razón, deja notas tácticas. Decide qué alineación es oficial y si se publica al equipo o se mantiene privada del cuerpo técnico. Puede guardar formaciones propias y reutilizarlas.
 
 **Riesgo**: bajo–medio. El componente `<MatchFieldEditor>` requiere cuidar el drag&drop bidireccional campo↔banquillo y será reutilizado por F7.
 
@@ -329,12 +331,15 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **6.3** Editor visual con drag & drop (campo SVG, snap a posiciones del preset) — 2–3 h. **Aquí nace `<MatchFieldEditor>`.** `[hecho 2026-05-31]`
 - **6.4** Múltiples alineaciones por partido (titular, plan B, segunda parte) — 1 h `[hecho 2026-05-31]`
 - **6.5** Lista de "fuera de convocatoria" con motivo (técnico, físico, disciplinario) — 1 h `[hecho 2026-05-31]`
-- **6.6** Importar plantilla desde convocatoria F4 (Sí/Duda → disponibles, No/descarte → no disponibles) — 30 min. **Dependencias**: F4 cerrada.
+- **6.6** Importar plantilla desde convocatoria F4 (Sí/Duda → disponibles, No/descarte → no disponibles) — 30 min. **Dependencias**: F4 cerrada. `[hecho 2026-05-31]` (Lote B: sync bidireccional alineación↔convocatoria — auto-marca descarte/convocado + reimport explícito)
 - **6.7** Banquillo del partido: titulares + reservas + fuera convocatoria, con drag&drop bidireccional campo↔banquillo — 1–2 h `[hecho 2026-05-31]`
-- **6.8** Cambios programados: minuto + jugador que sale + jugador que entra + razón, lista ordenada visible en el editor — 1–2 h
-- **6.9** Notas tácticas del partido: bloque libre + objetivos + indicaciones por jugador o por fase — 1 h
+- **6.8** Cambios programados: minuto + jugador que sale + jugador que entra + razón, lista ordenada visible en el editor — 1–2 h `[hecho 2026-05-31]`
+- **6.9** Notas tácticas del partido: bloque libre + objetivos + indicaciones por jugador o por fase — 1 h `[hecho 2026-05-31]` (tabla solo-staff `lineup_tactical_notes`)
+- **6.10** Plantillas personalizadas de formación — 3–5 h. El entrenador crea formaciones propias arrastrando círculos sobre el campo SVG, las guarda con nombre y las reutiliza en alineaciones de cualquier partido. **Modelo**: tabla `coach_formations` (`id`, `owner_profile_id`, `name`, `format` F7/F8/F11, `positions` JSONB de `{position_code, x_pct, y_pct}`, `created_at`, `updated_at`). **UI**: ruta `/perfil/formaciones` con CRUD; el selector de formación del editor de alineaciones añade un grupo "Mis formaciones" junto al catálogo predefinido. **RLS**: cada coach gestiona solo las suyas; admin/coord puede listar las del club. **Out of scope**: compartir formaciones entre coaches → futuro.
 
-> **Lote A entregado 2026-05-31** (PR #33): 6.1–6.5 + 6.7. Spec `docs/specs/6.0-alineaciones.md`, ADR-0012 (modelo normalizado) y ADR-0013 (catálogo en código). Lote B pendiente: 6.6 (import convocatoria), 6.8 (cambios programados), 6.9 (notas tácticas) + visibilidad/compartir con familia.
+> **Lote A entregado 2026-05-31** (PR #33): 6.1–6.5 + 6.7. Spec `docs/specs/6.0-alineaciones.md`, ADR-0012 (modelo normalizado) y ADR-0013 (catálogo en código). Lote B pendiente: 6.6 (import convocatoria), 6.8 (cambios programados), 6.9 (notas tácticas) + visibilidad/compartir con familia + mejoras (posición primaria, reglas por modalidad, fix "+Nueva").
+
+> **Extensión 2026-05-31 — F6.10 (plantillas personalizadas de formación)**: nueva subfase 3–5 h. F6 pasa de 9–14 h / 3–4 sesiones → **12–19 h / 4–5 sesiones**. Delta Ola 1: +3–5 h (173–268 → 176–273). Ver §5 y [ADR-0013](../decisions/ADR-0013-catalogo-formaciones-en-codigo.md) (el catálogo base sigue en código; las plantillas del coach sí van a BD por ser datos de usuario, justo el caso que ADR-0013 reservaba para tabla).
 
 ---
 

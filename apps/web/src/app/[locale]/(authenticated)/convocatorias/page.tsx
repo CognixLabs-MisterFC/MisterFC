@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { MarkNotificationsRead } from '@/components/notifications/mark-notifications-read';
 import { loadUpcomingCallups } from './queries';
 import type { Role } from '../jugadores/queries';
 
@@ -59,6 +60,7 @@ export default async function ConvocatoriasPage({ params }: Props) {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
+      <MarkNotificationsRead types={['callup_published', 'callup_updated']} />
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
         <p className="mt-1 text-sm text-muted-foreground">

@@ -8,16 +8,17 @@ export type {
   FormationSlot,
   Formation,
   LineupLocation,
-  OutReason,
   PositionAssignment,
 } from './types';
-export { LINEUP_LOCATIONS, OUT_REASONS } from './types';
+export { LINEUP_LOCATIONS } from './types';
 
 export {
   FORMATIONS,
   getFormation,
   formationsForFormat,
   defaultFormation,
+  defaultLineupDraft,
+  DEFAULT_LINEUP_NAME,
 } from './formations';
 
 export {
@@ -36,7 +37,6 @@ export {
   FIELD_SLOT_PREFIX,
   PLAYER_DRAG_PREFIX,
   BENCH_ZONE_ID,
-  OUT_ZONE_ID,
   fieldSlotDroppableId,
   playerDraggableId,
   parseFieldSlotId,
@@ -45,3 +45,13 @@ export {
   applyDrop,
 } from './editor';
 export type { DropTarget, ResolvedDrop, ApplyDropResult } from './editor';
+
+export {
+  MODALITY_RULES,
+  modalityRules,
+  startersFor,
+  maxCalledUpFor,
+  calledUpOverflow,
+  exceedsStarters,
+} from './rules';
+export type { ModalityRules } from './rules';

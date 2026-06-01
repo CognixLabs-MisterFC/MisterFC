@@ -23,8 +23,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PublishCallupDialog } from '../_components/publish-callup-dialog';
+import { RepublishBanner } from '../_components/republish-banner';
 import { ResponseButtons } from '../_components/response-buttons';
 import { DecisionButtons } from '../_components/decision-buttons';
+import { SharedLineupSection } from '@/components/match/shared-lineup-section';
 import { loadCallupDetail } from '../queries';
 import type { Role } from '../../jugadores/queries';
 
@@ -86,8 +88,16 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
   const tResponse = await getTranslations('convocatorias.response');
   const tDecision = await getTranslations('convocatorias.decision');
 
-  const { event, roster, meta, responses, decisions, ownedPlayerIds, canManage } =
-    detail;
+  const {
+    event,
+    roster,
+    meta,
+    responses,
+    decisions,
+    ownedPlayerIds,
+    canManage,
+    hasUnpublishedChanges,
+  } = detail;
 
   const isPlayer = role === 'jugador';
   const isPublished = meta?.published_at != null;
@@ -173,6 +183,10 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {canManage && hasUnpublishedChanges && (
+        <RepublishBanner eventId={event.id} />
+      )}
 
       {meta && (
         <Card>
@@ -345,6 +359,9 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
           </CardContent>
         </Card>
       )}
+
+      {/* F6 Lote B — alineación oficial compartida (solo si visibility=team). */}
+      {isPlayer && <SharedLineupSection eventId={event.id} />}
 
       {/* Resumen de descartes técnicos */}
       {!isPlayer && decisions.size > 0 && (

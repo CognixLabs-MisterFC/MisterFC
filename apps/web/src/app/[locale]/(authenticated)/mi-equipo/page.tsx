@@ -24,6 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { SharedLineupSection } from '@/components/match/shared-lineup-section';
 import { TeamSelectorWrapper } from './team-selector-wrapper';
 
 type Props = {
@@ -205,6 +206,10 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
     5,
   );
 
+  // F6 Lote B — alineación oficial compartida del próximo partido (si la hay
+  // y es visibility=team; la sección se auto-oculta vía RLS si no).
+  const nextMatchId = upcoming.find((e) => e.type === 'match')?.id ?? null;
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <div className="flex flex-col gap-1">
@@ -228,6 +233,8 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
           }))}
         />
       )}
+
+      {nextMatchId && <SharedLineupSection eventId={nextMatchId} />}
 
       <Card>
         <CardHeader>

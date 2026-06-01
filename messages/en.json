@@ -1169,8 +1169,10 @@
         "event_without_team": "The match has no team assigned.",
         "cannot_unpublish": "Once published, the callup cannot become a draft again.",
         "forbidden": "You don't have permission to publish this callup.",
-        "generic": "Could not save. Retry."
-      }
+        "generic": "Could not save. Retry.",
+        "too_many_called_up": "There are {overflow} too many called up (max {max}). Discard players before publishing."
+      },
+      "go_to_editor": "Go to lineup editor"
     },
     "detail": {
       "back": "Back to callups",
@@ -1188,6 +1190,14 @@
       "not_in_roster": "You weren't in the team on the match date.",
       "not_linked": "This account isn't linked to this player.",
       "edit_lineup": "Edit lineup"
+    },
+    "republish": {
+      "pending": "There are unpublished changes.",
+      "publish_changes": "Publish changes",
+      "done": "Changes published. Families have been notified.",
+      "error": "Couldn't publish the changes.",
+      "too_many": "Too many called up ({overflow} over, max {max}). Discard someone before publishing.",
+      "event_started": "The match has already started."
     }
   },
   "mensajes": {
@@ -1429,7 +1439,49 @@
       "position_code_coherence": "Position inconsistent with zone.",
       "out_reason_coherence": "Exclusion reason missing.",
       "coords_only_field": "Coordinates only valid on the field.",
-      "generic": "Couldn’t save. Try again."
-    }
+      "generic": "Couldn’t save. Try again.",
+      "too_many_starters": "Too many starters on the pitch for this format."
+    },
+    "pos_short": {
+      "goalkeeper": "GK",
+      "defender": "DF",
+      "midfielder": "MF",
+      "forward": "FW"
+    },
+    "share_label": "Share with team",
+    "resync": "Resync",
+    "planned_subs": "Planned subs",
+    "sub_minute": "Min",
+    "sub_out": "Out",
+    "sub_in": "In",
+    "sub_add": "Add",
+    "sub_line": "Min {minute}: {out} → {in}",
+    "tactical_notes": "Tactical notes",
+    "tactical_notes_placeholder": "Pressing, marking, phase goals…",
+    "tactical_notes_staff_only": "Only visible to the coaching staff.",
+    "save_notes": "Save notes",
+    "confirm_published_title": "Call-up published",
+    "confirm_published_body": "The call-up is already published. Apply the called-up/discarded changes to it too?",
+    "cancel": "Cancel",
+    "confirm_apply": "Apply",
+    "auto_discarded": "{n} marked as not called up",
+    "auto_called_up": "{n} marked as called up",
+    "resync_done": "Resynced: {out} to out, {bench} to bench",
+    "official_lineup_title": "Official lineup",
+    "share_hint": "Turn on so players and families can see this official lineup. Tactical notes always stay hidden.",
+    "official_hint": "Mark this as the official lineup for the match (only one allowed).",
+    "formation_hint": "Change the formation; starters are repositioned automatically.",
+    "new_lineup_hint": "Create a second lineup (Plan B, Plan C…) with the same called-up players but a different setup.",
+    "field_full": "Maximum {max} players on the pitch for this format.",
+    "notes_saved": "Notes saved.",
+    "sub_remove_hint": "Remove this planned substitution.",
+    "discarded_panel": "Discarded",
+    "discarded_empty": "No discards. Drag here to discard.",
+    "discarded_hint": "Shared across all lineups for this match.",
+    "discard_reason_title": "Reason for discarding",
+    "discard_reason_body": "The player will be removed from the call-up and from every lineup of this match.",
+    "discard_confirm": "Discard",
+    "rename_hint": "Click to rename this lineup.",
+    "prepare_failed": "Could not prepare the lineup. Reload the page."
   }
 }

@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegister } from '@/components/service-worker-register';
 import { AuthHashHandler } from '@/components/auth-hash-handler';
+import { Toaster } from '@/components/ui/sonner';
 import '../globals.css';
 
 const inter = Inter({
@@ -64,6 +65,7 @@ export default async function LocaleLayout({
           <AuthHashHandler />
         </Suspense>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <Toaster />
         <ServiceWorkerRegister />
       </body>
     </html>
