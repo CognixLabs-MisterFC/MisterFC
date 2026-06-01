@@ -32,3 +32,19 @@ export function playerInitials(
   if (!b) return a || '?';
   return `${b}${a}`.slice(0, 2);
 }
+
+/**
+ * Iniciales para el placeholder del avatar del jugador (Mejora I), en orden
+ * NOMBRE + APELLIDO: avatarInitials('Pedro', 'Sánchez') → 'PS'. Si no hay datos
+ * devuelve '·'. (Distinto de playerInitials, que va apellido-primero como los
+ * listados.)
+ */
+export function avatarInitials(
+  first: string | null | undefined,
+  last: string | null | undefined
+): string {
+  const a = (first ?? '').trim().charAt(0).toUpperCase();
+  const b = (last ?? '').trim().charAt(0).toUpperCase();
+  const s = `${a}${b}`;
+  return s.length > 0 ? s : '·';
+}
