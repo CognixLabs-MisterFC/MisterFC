@@ -191,3 +191,17 @@ export function defaultFormation(format: TeamFormat): Formation {
   if (!first) throw new Error(`no formations for format ${format}`);
   return first;
 }
+
+/** Nombre por defecto de la primera alineación auto-creada (Bug BB). */
+export const DEFAULT_LINEUP_NAME = 'Plan A';
+
+/**
+ * Defaults para auto-crear el borrador de alineación al entrar a /alineacion sin
+ * ninguna previa (Bug BB): "Plan A" + la primera formación del catálogo para la
+ * modalidad (F7→1-3-3, F8→1-3-3-1, F11→4-4-2). Sin paso intermedio.
+ */
+export function defaultLineupDraft(
+  format: TeamFormat,
+): { name: string; formationCode: string } {
+  return { name: DEFAULT_LINEUP_NAME, formationCode: defaultFormation(format).code };
+}

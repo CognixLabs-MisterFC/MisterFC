@@ -170,6 +170,7 @@ export type {
 export {
   createLineupSchema,
   setLineupFormationSchema,
+  renameLineupSchema,
   setLineupOfficialSchema,
   setLineupVisibilitySchema,
   setTacticalNotesSchema,
@@ -181,6 +182,7 @@ export {
 export type {
   CreateLineupInput,
   SetLineupFormationInput,
+  RenameLineupInput,
   SetLineupOfficialInput,
   SetLineupVisibilityInput,
   SetTacticalNotesInput,

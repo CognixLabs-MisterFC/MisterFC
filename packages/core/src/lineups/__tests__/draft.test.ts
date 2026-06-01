@@ -12,6 +12,6 @@ describe('defaultLineupDraft (auto-crear borrador, Bug BB)', () => {
   it('primera formación del catálogo por modalidad', () => {
     expect(defaultLineupDraft('F7').formationCode).toBe('1-3-3');
     expect(defaultLineupDraft('F8').formationCode).toBe('1-3-3-1');
-    expect(defaultLineupDraft('F11').formationCode).toBe('4-3-3');
+    expect(defaultLineupDraft('F11').formationCode).toBe('4-4-2');
   });
 });
