@@ -119,6 +119,9 @@ export async function NextMatchPanel({
       ? t('state.awaiting_confirmations.label', {
           x: next.confirmed,
           y: next.calledUp,
+          a: next.yes,
+          b: next.no,
+          c: next.maybe,
         })
       : t(`state.${next.state}.label`);
   const ctaLabel = t(`state.${next.state}.cta`);

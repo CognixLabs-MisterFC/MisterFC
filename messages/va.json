@@ -144,7 +144,7 @@
           "cta": "Preparar convocatòria"
         },
         "awaiting_confirmations": {
-          "label": "Esperant confirmació ({x}/{y})",
+          "label": "Contestat {x}/{y} (Sí:{a} No:{b} Dubte:{c})",
           "cta": "Veure convocatòria"
         },
         "needs_lineup": {

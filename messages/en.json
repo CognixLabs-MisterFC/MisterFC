@@ -144,7 +144,7 @@
           "cta": "Prepare call-up"
         },
         "awaiting_confirmations": {
-          "label": "Awaiting confirmation ({x}/{y})",
+          "label": "Answered {x}/{y} (Yes:{a} No:{b} Maybe:{c})",
           "cta": "View call-up"
         },
         "needs_lineup": {

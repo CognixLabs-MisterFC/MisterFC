@@ -33,6 +33,10 @@ export type CoachNextMatch = {
   confirmed: number;
   /** Total de convocados (Y). */
   calledUp: number;
+  /** Desglose de respuestas entre convocados. */
+  yes: number;
+  no: number;
+  maybe: number;
 };
 
 export type PlayerPendingCallup = {
@@ -143,10 +147,25 @@ export async function loadCoachNextMatch(
 
   const { data: respRows } = await supabase
     .from('callup_responses')
-    .select('player_id')
+    .select('player_id, status')
     .eq('event_id', ev.id);
-  const respondedSet = new Set((respRows ?? []).map((r) => r.player_id as string));
-  const confirmed = calledUpIds.filter((pid) => respondedSet.has(pid)).length;
+  // Mapa respuesta por jugador (solo convocados cuentan).
+  const calledUpSet = new Set(calledUpIds);
+  const statusByPlayer = new Map<string, string>();
+  for (const r of respRows ?? []) {
+    if (calledUpSet.has(r.player_id as string)) {
+      statusByPlayer.set(r.player_id as string, r.status as string);
+    }
+  }
+  const confirmed = statusByPlayer.size;
+  let yes = 0;
+  let no = 0;
+  let maybe = 0;
+  for (const s of statusByPlayer.values()) {
+    if (s === 'yes') yes += 1;
+    else if (s === 'no') no += 1;
+    else if (s === 'maybe') maybe += 1;
+  }
 
   // Máquina de estados (orden de prioridad).
   let state: CoachMatchState;
@@ -171,6 +190,9 @@ export async function loadCoachNextMatch(
     state,
     confirmed,
     calledUp,
+    yes,
+    no,
+    maybe,
   };
 }
 
