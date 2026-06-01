@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { NextMatchPanel } from './next-match-panel';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -165,6 +166,15 @@ export default async function Home({ params }: Props) {
           {t('your_role', { role: tRoles(role) })}
         </p>
       </div>
+
+      {/* F7.12 — Panel del próximo partido (coach) / aviso de convocatoria
+          pendiente (jugador). Admin/coord no lo ven. */}
+      <NextMatchPanel
+        role={role as Parameters<typeof NextMatchPanel>[0]['role']}
+        clubId={clubId}
+        membershipId={ctx.activeClub.membershipId}
+        locale={locale}
+      />
 
       {/* Grid de cards rol-aware */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

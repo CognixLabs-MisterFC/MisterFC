@@ -367,6 +367,9 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **7.8** Línea de tiempo del partido editable — 1–2 h
 - **7.9** Cierre del partido y consolidación de stats al perfil del jugador — 1–2 h
 - **7.10** Jugadores rivales destacados y notas post-partido — 30 min
+- **7.12** Panel de próximo partido en Inicio (estado + CTA al paso que toca; aviso de convocatoria pendiente para jugador/familia; admin no lo ve) — 1–2 h
+
+> El desglose autoritativo y la renumeración de subfases de F7 (incl. *Tiempo de juego por jugador* como 7.8) viven en [docs/specs/7.0-toma-datos-en-directo.md](../specs/7.0-toma-datos-en-directo.md) §8. La **7.12** (panel en Inicio) lee datos existentes (F4/F6/F7.1), sin migración.
 
 ---
 

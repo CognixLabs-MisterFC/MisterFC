@@ -135,6 +135,36 @@
         "title": "Convocatòries per publicar",
         "cta": "{count, plural, =1 {1 partit sense convocatòria →} other {# partits sense convocatòria →}}"
       }
+    },
+    "next_match": {
+      "title": "Pròxim partit",
+      "state": {
+        "prepare_callup": {
+          "label": "Falta preparar la convocatòria",
+          "cta": "Preparar convocatòria"
+        },
+        "awaiting_confirmations": {
+          "label": "Esperant confirmació ({x}/{y})",
+          "cta": "Veure convocatòria"
+        },
+        "needs_lineup": {
+          "label": "Falta l’alineació oficial",
+          "cta": "Crear alineació"
+        },
+        "ready": {
+          "label": "Preparat per al partit",
+          "cta": "En directe"
+        },
+        "post_match": {
+          "label": "Postpartit pendent",
+          "cta": "Postpartit (pròximament)"
+        }
+      },
+      "player_pending": {
+        "title": "Convocatòria pendent",
+        "desc": "Tens una convocatòria pendent de confirmar.",
+        "cta": "Confirmar disponibilitat"
+      }
     }
   },
   "invitations": {

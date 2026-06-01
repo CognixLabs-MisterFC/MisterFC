@@ -134,6 +134,36 @@
         "title": "Convocatorias por publicar",
         "cta": "{count, plural, =1 {1 partido sin convocatoria →} other {# partidos sin convocatoria →}}"
       }
+    },
+    "next_match": {
+      "title": "Próximo partido",
+      "state": {
+        "prepare_callup": {
+          "label": "Falta preparar la convocatoria",
+          "cta": "Preparar convocatoria"
+        },
+        "awaiting_confirmations": {
+          "label": "Esperando confirmación ({x}/{y})",
+          "cta": "Ver convocatoria"
+        },
+        "needs_lineup": {
+          "label": "Falta la alineación oficial",
+          "cta": "Crear alineación"
+        },
+        "ready": {
+          "label": "Preparado para el partido",
+          "cta": "En directo"
+        },
+        "post_match": {
+          "label": "Postpartido pendiente",
+          "cta": "Postpartido (próximamente)"
+        }
+      },
+      "player_pending": {
+        "title": "Convocatoria pendiente",
+        "desc": "Tienes una convocatoria pendiente de confirmar.",
+        "cta": "Confirmar disponibilidad"
+      }
     }
   },
   "shell": {
