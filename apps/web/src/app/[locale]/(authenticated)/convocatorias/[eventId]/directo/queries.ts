@@ -63,6 +63,27 @@ export type LiveBenchPlayer = {
   photoUrl: string | null;
 };
 
+/**
+ * Evento del RIVAL ya registrado (F7.6). El rival no tiene roster (§3.4): se
+ * identifica por dorsal + nota libre. `side='rival'`.
+ */
+export type LiveRivalEvent = {
+  id: string;
+  type:
+    | 'goal'
+    | 'yellow_card'
+    | 'red_card'
+    | 'foul'
+    | 'corner'
+    | 'offside'
+    | 'shot';
+  dorsal: number | null;
+  note: string | null;
+  clockSeconds: number;
+  displayMinute: number | null;
+  period: PeriodKind;
+};
+
 /** Sustitución registrada (F7.5): SALE `out`, ENTRA `in`, con nombres. */
 export type LiveSubstitution = {
   id: string;
@@ -120,6 +141,13 @@ export type MatchLiveData = {
   substitutions: LiveSubstitution[];
   /** Jugadores marcados AUSENTES para este partido (F7.5, match_absences). */
   absentIds: string[];
+  /** Eventos del RIVAL (F7.6), más recientes primero. */
+  rivalEvents: LiveRivalEvent[];
+  /**
+   * F7.6 — cambios corridos: ¿puede un jugador sustituido VOLVER a entrar? Flag
+   * de la categoría (`categories.allow_reentry`). Lo lee `deriveSquad`.
+   */
+  allowReentry: boolean;
 };
 
 export async function loadMatchLive(
@@ -133,7 +161,7 @@ export async function loadMatchLive(
     .from('events')
     .select(
       `id, club_id, team_id, type, title, opponent_name, starts_at,
-       teams!inner(name, color, format, categories!inner(name, season, half_duration_minutes))`,
+       teams!inner(name, color, format, categories!inner(name, season, half_duration_minutes, allow_reentry))`,
     )
     .eq('id', eventId)
     .maybeSingle();
@@ -158,6 +186,7 @@ export async function loadMatchLive(
         name: string;
         season: string;
         half_duration_minutes: number | null;
+        allow_reentry: boolean;
       };
     };
   };
@@ -396,6 +425,50 @@ export async function loadMatchLive(
     .eq('event_id', eventId);
   const absentIds = (absRows ?? []).map((r) => r.player_id as string);
 
+  // Eventos del RIVAL (F7.6): por dorsal + nota libre (metadata.note), recientes
+  // primero. Sin embed de players (el rival no tiene roster, §3.4).
+  const RIVAL_DISPLAY_TYPES = [
+    'goal',
+    'yellow_card',
+    'red_card',
+    'foul',
+    'corner',
+    'offside',
+    'shot',
+  ];
+  const { data: rivalRows, error: rivalErr } = await supabase
+    .from('match_events')
+    .select('id, type, rival_dorsal, metadata, clock_seconds, display_minute, period')
+    .eq('event_id', eventId)
+    .eq('side', 'rival')
+    .in('type', RIVAL_DISPLAY_TYPES)
+    .order('clock_seconds', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(60);
+  if (rivalErr) console.error('[directo] error cargando eventos rival:', rivalErr);
+
+  type RivalRowShape = {
+    id: string;
+    type: LiveRivalEvent['type'];
+    rival_dorsal: number | null;
+    metadata: { note?: string } | null;
+    clock_seconds: number;
+    display_minute: number | null;
+    period: PeriodKind;
+  };
+  const rivalEvents: LiveRivalEvent[] = (rivalRows ?? []).map((row) => {
+    const r = row as unknown as RivalRowShape;
+    return {
+      id: r.id,
+      type: r.type,
+      dorsal: r.rival_dorsal,
+      note: r.metadata?.note ?? null,
+      clockSeconds: r.clock_seconds,
+      displayMinute: r.display_minute,
+      period: r.period,
+    };
+  });
+
   return {
     event: {
       id: event.id,
@@ -421,5 +494,7 @@ export async function loadMatchLive(
     benchPlayers,
     substitutions,
     absentIds,
+    rivalEvents,
+    allowReentry: event.teams.categories.allow_reentry,
   };
 }

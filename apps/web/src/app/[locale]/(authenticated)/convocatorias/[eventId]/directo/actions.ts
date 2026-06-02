@@ -33,12 +33,14 @@ import {
   matchEventRefSchema,
   nextPeriodAfter,
   isExpelled,
+  isFieldEventType,
   pauseClockPatch,
   type PeriodKind,
   type PlayerEventType,
   playerEventClockFields,
   registerFieldEventSchema,
   registerPlayerEventSchema,
+  registerRivalEventSchema,
   registerSubstitutionSchema,
   resolveCardOutcome,
   resumeClockPatch,
@@ -646,7 +648,24 @@ async function loadLiveSquad(supabase: Supa, eventId: string) {
     .eq('event_id', eventId);
   const absent = (absRows ?? []).map((r) => r.player_id as string);
 
-  return deriveSquad({ slots, bench, subs, expelled, absent });
+  // F7.6 — cambios corridos: la elegibilidad del que ENTRA depende del flag de
+  // la categoría (un jugador que salió reentra solo si está permitido).
+  const allowReentry = await loadAllowReentry(supabase, eventId);
+
+  return deriveSquad({ slots, bench, subs, expelled, absent, allowReentry });
+}
+
+/** F7.6 — flag `allow_reentry` de la categoría del equipo del partido. */
+async function loadAllowReentry(supabase: Supa, eventId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('events')
+    .select('teams!inner(categories!inner(allow_reentry))')
+    .eq('id', eventId)
+    .maybeSingle();
+  type Shape = { teams: { categories: { allow_reentry: boolean } } } | null;
+  const flag = (data as unknown as Shape)?.teams?.categories?.allow_reentry;
+  // Defensivo: si no se puede leer, NO permitimos reentrada (regla estándar).
+  return flag ?? false;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -796,6 +815,78 @@ export async function registerFieldEvent(
       period,
       clock_seconds: clockSeconds,
       display_minute: displayMinute,
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// registerRivalEvent — F7.6: evento del RIVAL. El rival no tiene roster (§3.4):
+// se registra por DORSAL (1–99) + nota libre opcional, `side='rival'`, SIN
+// jugador. Tipos aplicables: gol, amarilla, roja, falta, córner, fuera de juego,
+// tiro. Coordenadas OPCIONALES y solo en tipos de campo (córner/falta/fuera de
+// juego/tiro). clock/period/display_minute derivados del reloj de 7.7. Las
+// tarjetas/expulsión del rival son informativas (no hay squad rival que gestionar).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function registerRivalEvent(
+  input: unknown,
+): Promise<RegisterEventState> {
+  const parsed = registerRivalEventSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, type, rival_dorsal, note, x_pct, y_pct } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
+
+  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
+
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  const { ms } = now();
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(periods, ms);
+
+  // Coordenadas solo válidas en tipos de campo (el CHECK de 7.1 lo impone): para
+  // gol/amarilla/roja van NULL aunque lleguen (defensivo).
+  const isField = isFieldEventType(type);
+  const xPct = isField && x_pct !== undefined ? x_pct : null;
+  const yPct = isField && y_pct !== undefined ? y_pct : null;
+
+  const trimmed = note?.trim();
+  const metadata = trimmed ? { note: trimmed } : {};
+
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId,
+      created_by: user.id,
+      side: 'rival',
+      type,
+      rival_dorsal,
+      x_pct: xPct,
+      y_pct: yPct,
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+      metadata,
     },
     { onConflict: 'id', ignoreDuplicates: true },
   );

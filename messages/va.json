@@ -1685,11 +1685,27 @@
       "available": "Disponible",
       "entered": "En camp",
       "expelled": "Expulsat",
-      "absent": "Absent"
+      "absent": "Absent",
+      "out": "Fora"
     },
     "absent_marked": "{player} marcat com a absent.",
     "absent_undone": "{player} torna a estar disponible.",
     "absent_title": "Absents (no venen)",
-    "absent_undo_aria": "Llevar l'absència de {player}"
+    "absent_undo_aria": "Llevar l'absència de {player}",
+    "rival_panel_title": "Rival",
+    "rival_events_title": "Esdeveniments del rival",
+    "rival_dorsal_label": "Dorsal",
+    "rival_dorsal_placeholder": "Núm.",
+    "rival_note_label": "Nota (opcional)",
+    "rival_note_placeholder": "p. ex. davanter ràpid",
+    "rival_hint": "Posa el dorsal i toca l'esdeveniment del rival.",
+    "rival_dorsal_required": "Indica el dorsal del rival (1–99).",
+    "rival_registered": "Rival #{dorsal}: {event} ({minute}')",
+    "rival_no_events": "Encara no hi ha esdeveniments del rival.",
+    "rival_expelled": "Expulsat",
+    "stats_title": "Estadístiques",
+    "stats_placeholder": "El detall per jugador arriba en la pròxima entrega.",
+    "reentry_on": "Canvis correguts",
+    "reentry_off": "Sense reentrada"
   }
 }

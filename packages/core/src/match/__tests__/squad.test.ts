@@ -21,17 +21,20 @@ describe('deriveSquad — sin cambios', () => {
 });
 
 describe('deriveSquad — sustitución', () => {
-  it('entra ocupa el hueco del que sale; sale desaparece y no vuelve', () => {
+  it('entra ocupa el hueco del que sale; sale pasa al banquillo', () => {
     const sq = deriveSquad({ ...base, subs: [{ out: 'T2', in: 'S1' }] });
     expect(sq.onFieldIds).toEqual(['T1', 'S1', 'T3']);
     // S1 ocupa la posición de T2 (DF).
     const s1 = sq.onField.find((p) => p.playerId === 'S1');
     expect(s1?.positionCode).toBe('DF');
     expect(s1?.xPct).toBe(30);
-    // T2 no está ni en campo ni en banquillo; S1 ya no es elegible.
+    // T2 salió: no está en campo, figura en el banquillo y (sin cambios corridos)
+    // no puede reentrar. S1 ya está en campo → no aparece en el banquillo.
     expect(sq.onFieldIds).not.toContain('T2');
+    expect(sq.bench.find((b) => b.playerId === 'T2')?.status).toBe('out');
+    expect(sq.bench.find((b) => b.playerId === 'S1')).toBeUndefined();
+    // Solo S2 (suplente sin estrenar) es elegible.
     expect(sq.eligibleInIds).toEqual(['S2']);
-    expect(sq.bench.find((b) => b.playerId === 'S1')?.status).toBe('entered');
   });
 
   it('doble cambio encadenado sobre el mismo hueco', () => {
@@ -43,9 +46,56 @@ describe('deriveSquad — sustitución', () => {
       ],
     });
     expect(sq.onFieldIds).toEqual(['T1', 'T2', 'S2']);
-    expect(sq.eligibleInIds).toEqual([]); // ambos suplentes ya pasaron
-    expect(sq.bench.find((b) => b.playerId === 'S1')?.status).toBe('entered');
-    expect(sq.bench.find((b) => b.playerId === 'S2')?.status).toBe('entered');
+    expect(sq.eligibleInIds).toEqual([]); // sin cambios corridos, nadie reentra
+    // T3 y S1 salieron y no reentran; S2 está en campo.
+    expect(sq.bench.find((b) => b.playerId === 'T3')?.status).toBe('out');
+    expect(sq.bench.find((b) => b.playerId === 'S1')?.status).toBe('out');
+    expect(sq.bench.find((b) => b.playerId === 'S2')).toBeUndefined();
+  });
+});
+
+describe('deriveSquad — cambios corridos (allowReentry)', () => {
+  it('un jugador que salió puede VOLVER a entrar con el flag activado', () => {
+    const sq = deriveSquad({
+      ...base,
+      subs: [{ out: 'T2', in: 'S1' }],
+      allowReentry: true,
+    });
+    // T2 salió pero puede reentrar; S2 sin estrenar también.
+    expect(sq.bench.find((b) => b.playerId === 'T2')?.status).toBe('available');
+    expect(sq.eligibleInIds).toEqual(['S2', 'T2']);
+  });
+
+  it('reentrada efectiva: T2 vuelve por S1 ocupando el hueco', () => {
+    const sq = deriveSquad({
+      ...base,
+      subs: [
+        { out: 'T2', in: 'S1' }, // sale T2, entra S1 (hueco DF)
+        { out: 'S1', in: 'T2' }, // sale S1, vuelve T2 al mismo hueco
+      ],
+      allowReentry: true,
+    });
+    expect(sq.onFieldIds).toEqual(['T1', 'T2', 'T3']);
+    const t2 = sq.onField.find((p) => p.playerId === 'T2');
+    expect(t2?.positionCode).toBe('DF');
+    // S1 salió pero puede volver a entrar (cambios corridos).
+    expect(sq.bench.find((b) => b.playerId === 'S1')?.status).toBe('available');
+  });
+
+  it('expulsado y ausente NUNCA reentran aunque el flag esté activado', () => {
+    const sq = deriveSquad({
+      ...base,
+      subs: [{ out: 'T1', in: 'S1' }],
+      expelled: ['T2'],
+      absent: ['T3'],
+      allowReentry: true,
+    });
+    expect(sq.bench.find((b) => b.playerId === 'T2')?.status).toBe('expelled');
+    expect(sq.bench.find((b) => b.playerId === 'T3')?.status).toBe('absent');
+    expect(sq.eligibleInIds).not.toContain('T2');
+    expect(sq.eligibleInIds).not.toContain('T3');
+    // T1 salió por cambio → reentrada permitida.
+    expect(sq.bench.find((b) => b.playerId === 'T1')?.status).toBe('available');
   });
 });
 
@@ -53,6 +103,7 @@ describe('deriveSquad — expulsado (no vuelve, no elegible)', () => {
   it('titular expulsado deja su hueco vacío y no es elegible para nada', () => {
     const sq = deriveSquad({ ...base, expelled: ['T1'] });
     expect(sq.onFieldIds).toEqual(['T2', 'T3']); // T1 fuera
+    expect(sq.bench.find((b) => b.playerId === 'T1')?.status).toBe('expelled');
   });
 
   it('suplente que entró y luego es expulsado: fuera del campo, banquillo=expelled', () => {
@@ -79,7 +130,7 @@ describe('deriveSquad — ausente (no viene)', () => {
     expect(sq.onFieldIds).toEqual(['T1', 'T2']);
   });
 
-  it('absent manda sobre entered/expelled en el estado del banquillo', () => {
+  it('absent manda sobre out/expelled en el estado del banquillo', () => {
     const sq = deriveSquad({
       ...base,
       subs: [{ out: 'T1', in: 'S1' }],
@@ -99,6 +150,6 @@ describe('deriveSquad — hidratación desde lo persistido', () => {
       absent: ['S2'],
     });
     expect(persisted.onFieldIds).toEqual(['S1', 'T3']);
-    expect(persisted.eligibleInIds).toEqual([]); // S1 entró, S2 ausente
+    expect(persisted.eligibleInIds).toEqual([]); // S1 entró, S2 ausente, sin reentrada
   });
 });

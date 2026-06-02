@@ -6,7 +6,11 @@
  */
 
 import { z } from 'zod';
-import { FIELD_EVENT_TYPES, PLAYER_EVENT_TYPES } from '../match/event';
+import {
+  FIELD_EVENT_TYPES,
+  PLAYER_EVENT_TYPES,
+  RIVAL_EVENT_TYPES,
+} from '../match/event';
 
 const uuid = z.string().uuid({ message: 'invalid_id' });
 const pct = z
@@ -69,3 +73,28 @@ export const setAbsenceSchema = z.object({
   absent: z.boolean(),
 });
 export type SetAbsenceInput = z.infer<typeof setAbsenceSchema>;
+
+/**
+ * F7.6 — evento del RIVAL. El rival no tiene roster (§3.4): se identifica por
+ * DORSAL (1–99) + nota libre opcional. `side='rival'`, sin jugador. Las
+ * coordenadas (x/y) son OPCIONALES (eventos sobre el campo) y solo válidas para
+ * los tipos de campo (córner/falta/fuera de juego/tiro); el trigger de 7.1 es la
+ * última línea. `clock_seconds`/`period`/`display_minute` los deriva el servidor.
+ */
+export const registerRivalEventSchema = z.object({
+  event_id: uuid,
+  id: uuid,
+  type: z.enum(RIVAL_EVENT_TYPES as unknown as [string, ...string[]], {
+    message: 'type_invalid',
+  }),
+  rival_dorsal: z
+    .number({ message: 'dorsal_range' })
+    .int({ message: 'dorsal_range' })
+    .min(1, { message: 'dorsal_range' })
+    .max(99, { message: 'dorsal_range' }),
+  // Nota libre opcional (hasta 200 chars); '' se trata como ausente.
+  note: z.string().trim().max(200, { message: 'note_too_long' }).optional(),
+  x_pct: pct.optional(),
+  y_pct: pct.optional(),
+});
+export type RegisterRivalEventInput = z.infer<typeof registerRivalEventSchema>;

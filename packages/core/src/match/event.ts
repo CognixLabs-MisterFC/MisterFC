@@ -48,6 +48,35 @@ export function isFieldEventType(value: string): value is FieldEventType {
 }
 
 /**
+ * Tipos de match_events aplicables al RIVAL (7.6). El rival NO tiene roster
+ * (decisión §3.4): se registra por dorsal + texto libre, `side='rival'`. No hay
+ * `assist` (no enlazamos asistencias del rival) ni `substitution` (no gestionamos
+ * su banquillo). Las tarjetas/expulsión del rival son informativas.
+ */
+export type RivalEventType =
+  | 'goal'
+  | 'yellow_card'
+  | 'red_card'
+  | 'foul'
+  | 'corner'
+  | 'offside'
+  | 'shot';
+
+export const RIVAL_EVENT_TYPES: readonly RivalEventType[] = [
+  'goal',
+  'yellow_card',
+  'red_card',
+  'foul',
+  'corner',
+  'offside',
+  'shot',
+] as const;
+
+export function isRivalEventType(value: string): value is RivalEventType {
+  return (RIVAL_EVENT_TYPES as readonly string[]).includes(value);
+}
+
+/**
  * ¿El jugador está expulsado? Estado DERIVADO de sus tarjetas (F7.3, spec §3.4
  * bis): tiene **1 roja directa** O **2 amarillas**. No existe un evento de roja
  * "automática" por doble amarilla: la expulsión por dos amarillas es un estado,

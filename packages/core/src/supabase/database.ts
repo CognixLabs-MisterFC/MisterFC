@@ -264,6 +264,7 @@ export type Database = {
       }
       categories: {
         Row: {
+          allow_reentry: boolean
           club_id: string
           created_at: string
           half_duration_minutes: number
@@ -273,6 +274,7 @@ export type Database = {
           season: string
         }
         Insert: {
+          allow_reentry?: boolean
           club_id: string
           created_at?: string
           half_duration_minutes?: number
@@ -282,6 +284,7 @@ export type Database = {
           season: string
         }
         Update: {
+          allow_reentry?: boolean
           club_id?: string
           created_at?: string
           half_duration_minutes?: number

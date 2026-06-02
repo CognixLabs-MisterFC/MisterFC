@@ -1,16 +1,20 @@
 'use client';
 
 /**
- * F7.2/7.3 — Pantalla de toma de datos en directo (HORIZONTAL, tablet/portátil
- * táctil tipo Chromebook): cronómetro completo (7.7), campo, paleta de símbolos
- * e interruptor equipo/rival.
+ * F7.2–7.6 — Pantalla de toma de datos en directo (HORIZONTAL, tablet/portátil
+ * táctil tipo Chromebook).
  *
- * Monta <MatchFieldEditor mode='live-overlay'> (NO lo reescribe). F7.3 cablea
- * onPlayerClick DE VERDAD: con un símbolo de jugador seleccionado (gol,
- * asistencia, amarilla, roja), tocar un jugador del campo registra una fila en
- * match_events (side='own') con clock_seconds/period/display_minute derivados
- * del reloj de 7.7. Registro OPTIMISTA + lista de "últimos eventos". Editar/
- * borrar es la línea de tiempo (7.9); los eventos de campo, 7.4; cambios, 7.5.
+ * F7.6 — RIVAL EN LA MISMA PANTALLA (sin toggle equipo/rival). Columnas a lo
+ * ancho: [nuestros eventos] · [banquillo] · [campo] · [rival] · [eventos del
+ * rival], con una franja de ESTADÍSTICAS abajo (placeholder hasta 7.8). El rival
+ * NO tiene roster (§3.4): se registra por DORSAL + nota libre, side='rival'.
+ * Persiste e hidrata igual que lo nuestro. Las tarjetas del rival son
+ * informativas (no hay banquillo rival que gestionar).
+ *
+ * Reaprovecha el patrón estable de 7.3–7.5: registro OPTIMISTA + hidratación
+ * desde match_events persistidos, y `deriveSquad` para el once vivo — ahora con
+ * CAMBIOS CORRIDOS (`allowReentry`, flag de la categoría): un jugador que salió
+ * puede volver a entrar si la categoría lo permite.
  */
 
 import { useState, useTransition } from 'react';
@@ -41,7 +45,9 @@ import {
   isPlayerEventType,
   mergeLiveEvents,
   resolveCardOutcome,
+  RIVAL_EVENT_TYPES,
   type ClockPeriod,
+  type RivalEventType,
   type Sub,
   type TeamFormat,
 } from '@misterfc/core';
@@ -56,20 +62,19 @@ import type {
   LiveBenchPlayer,
   LiveFieldPlayer,
   LiveMatchEvent,
+  LiveRivalEvent,
   LiveSubstitution,
 } from '../queries';
 import {
   registerFieldEvent,
   registerPlayerEvent,
+  registerRivalEvent,
   registerSubstitution,
   setPlayerAbsent,
 } from '../actions';
 import { MatchClock, MatchClockOverlay } from './match-clock';
 
-type MatchSide = 'own' | 'rival';
-
-// Tipos de evento de la paleta (coinciden con match_events.type de F7.1). El
-// DRAG real de estos símbolos llega en 7.3/7.4; aquí son botones seleccionables.
+// Tipos de evento de la paleta propia (coinciden con match_events.type de F7.1).
 const EVENT_TYPES = [
   'goal',
   'assist',
@@ -116,10 +121,12 @@ type Props = {
   benchPlayers: LiveBenchPlayer[];
   substitutions: LiveSubstitution[];
   absentIds: string[];
+  rivalEvents: LiveRivalEvent[];
+  allowReentry: boolean;
 };
 
-// Herramienta seleccionada en la paleta: un tipo de evento, o 'absent' (quitar
-// al que no viene, F7.5 — no es un match_event, es una baja).
+// Herramienta seleccionada en la paleta propia: un tipo de evento, o 'absent'
+// (quitar al que no viene, F7.5 — no es un match_event, es una baja).
 type Tool = EventType | 'absent';
 
 // Hora actual (ms) del instante del evento. A nivel de módulo a propósito: solo
@@ -142,23 +149,24 @@ export function LiveCaptureClient({
   benchPlayers,
   substitutions,
   absentIds,
+  rivalEvents,
+  allowReentry,
 }: Props) {
   const t = useTranslations('partido_directo');
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const [side, setSide] = useState<MatchSide>('own');
   const [selectedEvent, setSelectedEvent] = useState<Tool | null>(null);
-  // Eventos registrados en este cliente aún no reflejados por el servidor
-  // (registro optimista, OVERLAY). Se superponen a los persistidos por id; nunca
-  // los borran. La fuente de verdad es `recentEvents` (match_events persistidos),
-  // que ahora SÍ se cargan (el embed de players estaba ambiguo → venía vacío).
+  // Overlays optimistas (OVERLAY sobre lo persistido; nunca lo borran — la
+  // verdad se recompone al refrescar). Ver invariante de hidratación de 7.3.
   const [optimistic, setOptimistic] = useState<LiveMatchEvent[]>([]);
-  // F7.5 — overlays optimistas de sustituciones y ausencias (mismo principio:
-  // superponen a lo persistido; la verdad se recompone al refrescar).
   const [optimisticSubs, setOptimisticSubs] = useState<LiveSubstitution[]>([]);
+  const [optimisticRival, setOptimisticRival] = useState<LiveRivalEvent[]>([]);
   const [absentOverride, setAbsentOverride] = useState<Record<string, boolean>>({});
   // Jugador del campo elegido para SALIR (paso 1 de la sustitución).
   const [subOut, setSubOut] = useState<string | null>(null);
+  // F7.6 — registro del rival: dorsal + nota libre.
+  const [rivalDorsal, setRivalDorsal] = useState('');
+  const [rivalNote, setRivalNote] = useState('');
 
   // Sin alineación oficial no hay once que pintar (no auto-marcamos ninguna ni
   // hacemos fallback a "la última"): empty-state claro con CTA al editor.
@@ -181,13 +189,12 @@ export function LiveCaptureClient({
   }
 
   // Lista mostrada = PERSISTIDOS (autoritativos) + OVERLAY optimista (dedupe por
-  // id). Los persistidos nunca se borran; lo optimista solo se superpone hasta
-  // que el servidor lo confirma. Más recientes primero.
+  // id). Más recientes primero.
   const events: LiveMatchEvent[] = mergeLiveEvents(recentEvents, optimistic);
+  const rivalAll: LiveRivalEvent[] = mergeLiveEvents(rivalEvents, optimisticRival);
 
-  // Expulsados = estado DERIVADO de TODOS los eventos (1 roja O 2 amarillas,
-  // §3.4 bis): SALEN del campo y no reciben más eventos. Se recomputa al hidratar
-  // → un expulsado sigue fuera tras recargar/volver.
+  // Expulsados PROPIOS = estado DERIVADO de TODOS los eventos (1 roja O 2
+  // amarillas, §3.4 bis). Se recomputa al hidratar.
   const expelledIds = deriveExpelledPlayers(events);
 
   // Datos (nombre/dorsal/foto) de TODO el convocado, para pintar a quien entra.
@@ -200,10 +207,7 @@ export function LiveCaptureClient({
   for (const p of benchPlayers)
     playerInfo.set(p.playerId, { label: p.label, dorsal: p.dorsal, photoUrl: p.photoUrl });
 
-  // F7.5 — estado vivo del once, derivado de lo PERSISTIDO + overlay optimista:
-  //   subs = persistidas + optimistas (dedupe por id, orden cronológico);
-  //   ausentes = persistidas con override optimista;
-  //   expulsados = de los eventos.
+  // Once vivo derivado de lo PERSISTIDO + overlay optimista.
   const allSubs = [...substitutions];
   for (const s of optimisticSubs) {
     if (!allSubs.some((x) => x.id === s.id)) allSubs.push(s);
@@ -228,10 +232,10 @@ export function LiveCaptureClient({
     subs: subsForSquad,
     expelled: expelledIds,
     absent: absentSet,
+    allowReentry,
   });
 
-  // Jugadores EN EL CAMPO ahora (titulares + entrados, menos salidos/expulsados/
-  // ausentes), con nombre/dorsal/foto de quien ocupe el hueco.
+  // Jugadores EN EL CAMPO ahora, con nombre/dorsal/foto de quien ocupe el hueco.
   const players: FieldEditorPlayer[] = squad.onField.map((slot) => {
     const info = playerInfo.get(slot.playerId);
     return {
@@ -252,20 +256,32 @@ export function LiveCaptureClient({
     .map((pid) => ({ playerId: pid, ...(playerInfo.get(pid) ?? { label: pid.slice(0, 4), dorsal: null, photoUrl: null }) }))
     .sort((a, b) => (a.dorsal ?? 99) - (b.dorsal ?? 99));
 
-  // Tipos de eventos propios ya registrados de un jugador (para la regla de
-  // tarjetas en el cliente; el servidor es el autoritativo).
+  // Rival: dorsales expulsados (informativo) — 1 roja O 2 amarillas por dorsal.
+  const rivalCardsByDorsal = new Map<number, string[]>();
+  for (const e of rivalAll) {
+    if (e.dorsal == null) continue;
+    if (e.type === 'yellow_card' || e.type === 'red_card') {
+      const arr = rivalCardsByDorsal.get(e.dorsal) ?? [];
+      arr.push(e.type);
+      rivalCardsByDorsal.set(e.dorsal, arr);
+    }
+  }
+  const rivalExpelledDorsals = new Set(
+    [...rivalCardsByDorsal.entries()].filter(([, types]) => isExpelled(types)).map(([d]) => d),
+  );
+
+  // Tipos de eventos propios ya registrados de un jugador (regla de tarjetas en
+  // el cliente; el servidor es el autoritativo).
   function ownTypesOf(playerId: string): string[] {
     return events.filter((e) => e.playerId === playerId).map((e) => e.type);
   }
 
-  // F7.3 — registrar un evento sobre un jugador propio. side/clock/period los
-  // resuelve el servidor; aquí pintamos optimista y confirmamos con refresh.
+  // F7.3 — registrar un evento sobre un jugador propio.
   function handlePlayerClick(playerId: string) {
     if (!selectedEvent) {
       toast.info(t('register_select_event'));
       return;
     }
-    // F7.5 — "quitar al que no viene": no exige partido en vivo.
     if (selectedEvent === 'absent') {
       markAbsent(playerId, true);
       return;
@@ -274,7 +290,6 @@ export function LiveCaptureClient({
       toast.warning(t('register_not_live'));
       return;
     }
-    // F7.5 — sustitución: tocar un jugador del campo lo marca como QUE SALE.
     if (selectedEvent === 'substitution') {
       if (!onFieldIds.has(playerId)) {
         toast.info(t('sub_pick_out'));
@@ -293,7 +308,6 @@ export function LiveCaptureClient({
     const p = fieldPlayers.find((x) => x.playerId === playerId);
     const label = p?.label ?? playerId.slice(0, 4);
 
-    // Regla de tarjetas/expulsión (espejo del servidor, para feedback inmediato).
     const priorTypes = ownTypesOf(playerId);
     const outcome = resolveCardOutcome(priorTypes, type);
     if (outcome.kind === 'blocked') {
@@ -301,16 +315,12 @@ export function LiveCaptureClient({
       return;
     }
 
-    // id de cliente → reintento idempotente (§10). Reloj optimista con el motor
-    // de 7.7; el servidor recalcula el autoritativo al insertar.
     const id = crypto.randomUUID();
     const clockSeconds = clockSecondsAt(periods, eventNowMs());
     const cur = currentPeriod(periods);
     const period = cur?.period ?? 'first_half';
     const displayMinute = toDisplayMinute(clockSeconds);
 
-    // La 2ª amarilla se registra como una amarilla MÁS (no se crea roja): la
-    // expulsión es estado derivado (1 roja O 2 amarillas) → sale del campo solo.
     const optimisticRow: LiveMatchEvent = {
       id,
       type,
@@ -323,7 +333,7 @@ export function LiveCaptureClient({
     };
     const expelledNow = isExpelled([...priorTypes, type]);
     setOptimistic((prev) => [optimisticRow, ...prev]);
-    setSelectedEvent(null); // evita doble registro accidental en el siguiente toque
+    setSelectedEvent(null);
 
     startTransition(async () => {
       const res = await registerPlayerEvent({
@@ -356,7 +366,7 @@ export function LiveCaptureClient({
   }
 
   // F7.4 — registrar un evento sobre el CÉSPED (córner, falta, fuera de juego,
-  // tiro) por ubicación (x/y), sin jugador. Mismo flujo optimista que 7.3.
+  // tiro) por ubicación (x/y), sin jugador.
   function handleFieldClick(xPct: number, yPct: number) {
     if (matchStatus !== 'live') {
       toast.warning(t('register_not_live'));
@@ -381,7 +391,7 @@ export function LiveCaptureClient({
     const optimisticRow: LiveMatchEvent = {
       id,
       type,
-      playerId: null, // evento de campo: por ubicación, sin jugador
+      playerId: null,
       playerLabel: '',
       dorsal: null,
       clockSeconds,
@@ -414,8 +424,7 @@ export function LiveCaptureClient({
     });
   }
 
-  // F7.5 — "quitar al que no viene" / deshacer: marca o desmarca ausencia.
-  // Optimista (override) + persistencia. No exige partido en vivo.
+  // F7.5 — "quitar al que no viene" / deshacer.
   function markAbsent(playerId: string, absent: boolean) {
     setAbsentOverride((prev) => ({ ...prev, [playerId]: absent }));
     setSelectedEvent(null);
@@ -437,7 +446,7 @@ export function LiveCaptureClient({
     });
   }
 
-  // F7.5 — completar la sustitución: SALE `outId`, ENTRA `inId` (paso 2).
+  // F7.5 — completar la sustitución: SALE `outId`, ENTRA `inId`.
   function completeSub(outId: string, inId: string) {
     const id = crypto.randomUUID();
     const clockSeconds = clockSecondsAt(periods, eventNowMs());
@@ -478,13 +487,12 @@ export function LiveCaptureClient({
     });
   }
 
-  // F7.5 — clic en un suplente del banquillo.
+  // F7.5 — clic en un jugador del banquillo (suplente o el que salió y puede volver).
   function handleBenchClick(playerId: string) {
     if (selectedEvent === 'absent') {
       markAbsent(playerId, true);
       return;
     }
-    // En medio de una sustitución: el suplente elegible ENTRA por el que sale.
     if (subOut) {
       if (!eligibleInIds.has(playerId)) {
         toast.warning(t('sub_not_eligible'));
@@ -496,51 +504,121 @@ export function LiveCaptureClient({
     toast.info(t('sub_hint'));
   }
 
+  // F7.6 — registrar un evento del RIVAL (por dorsal + nota libre).
+  function registerRival(type: RivalEventType) {
+    if (matchStatus !== 'live') {
+      toast.warning(t('register_not_live'));
+      return;
+    }
+    const dorsalNum = Number(rivalDorsal);
+    if (!Number.isInteger(dorsalNum) || dorsalNum < 1 || dorsalNum > 99) {
+      toast.warning(t('rival_dorsal_required'));
+      return;
+    }
+
+    const id = crypto.randomUUID();
+    const clockSeconds = clockSecondsAt(periods, eventNowMs());
+    const cur = currentPeriod(periods);
+    const period = cur?.period ?? 'first_half';
+    const displayMinute = toDisplayMinute(clockSeconds);
+    const note = rivalNote.trim() || null;
+
+    const optimisticRow: LiveRivalEvent = {
+      id,
+      type,
+      dorsal: dorsalNum,
+      note,
+      clockSeconds,
+      displayMinute,
+      period,
+    };
+    setOptimisticRival((prev) => [optimisticRow, ...prev]);
+    setRivalNote('');
+
+    startTransition(async () => {
+      const res = await registerRivalEvent({
+        event_id: eventId,
+        id,
+        type,
+        rival_dorsal: dorsalNum,
+        note: note ?? undefined,
+      });
+      if (res.error) {
+        setOptimisticRival((prev) => prev.filter((e) => e.id !== id));
+        toast.error(t(`event_error.${res.error}`));
+        return;
+      }
+      toast.success(
+        t('rival_registered', {
+          event: t(`event.${type}`),
+          dorsal: dorsalNum,
+          minute: displayMinute,
+        }),
+      );
+      router.refresh();
+    });
+  }
+
   return (
     <div className="flex flex-col gap-3">
-      {/* Barra superior: cronómetro completo (F7.7) y toggle equipo/rival. */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card/40 p-3">
+      {/* Cronómetro completo (F7.7). */}
+      <div className="rounded-lg border border-border bg-card/40 p-3">
         <MatchClock
           eventId={eventId}
           status={matchStatus}
           periods={periods}
           halfDurationMinutes={halfDurationMinutes}
         />
+      </div>
 
-        {/* Interruptor equipo / rival (segmented). */}
-        <div
-          role="group"
-          aria-label={t('side_label')}
-          className="inline-flex rounded-md border border-border p-0.5"
+      {/* Paleta de eventos PROPIOS (toolbar horizontal). */}
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card/40 p-2">
+        <span className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {t('palette_title')}
+        </span>
+        {EVENT_TYPES.map((ev) => {
+          const Icon = EVENT_ICON[ev];
+          const active = selectedEvent === ev;
+          return (
+            <button
+              key={ev}
+              type="button"
+              onClick={() => setSelectedEvent(active ? null : ev)}
+              aria-pressed={active}
+              className={cn(
+                'flex touch-none items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors',
+                active
+                  ? 'border-primary bg-primary/10 text-foreground'
+                  : 'border-border text-muted-foreground hover:bg-muted',
+              )}
+            >
+              <Icon className={cn('size-4', EVENT_ICON_CLASS[ev])} aria-hidden />
+              <span>{t(`event.${ev}`)}</span>
+            </button>
+          );
+        })}
+        {/* F7.5 — herramienta "quitar al que no viene" (no es match_event). */}
+        <button
+          type="button"
+          onClick={() => setSelectedEvent(selectedEvent === 'absent' ? null : 'absent')}
+          aria-pressed={selectedEvent === 'absent'}
+          className={cn(
+            'flex touch-none items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors',
+            selectedEvent === 'absent'
+              ? 'border-amber-500 bg-amber-500/10 text-foreground'
+              : 'border-border text-muted-foreground hover:bg-muted',
+          )}
         >
-          <button
-            type="button"
-            onClick={() => setSide('own')}
-            aria-pressed={side === 'own'}
-            className={cn(
-              'rounded px-3 py-1.5 text-sm font-medium transition-colors',
-              side === 'own'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted',
-            )}
-          >
-            {t('side_own')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSide('rival')}
-            aria-pressed={side === 'rival'}
-            className={cn(
-              'rounded px-3 py-1.5 text-sm font-medium transition-colors',
-              side === 'rival'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted',
-            )}
-          >
-            {t('side_rival')}
-            {opponentName ? ` · ${opponentName}` : ''}
-          </button>
-        </div>
+          <UserMinus className="size-4" aria-hidden />
+          <span>{t('tool_absent')}</span>
+        </button>
+        <span className="ml-auto max-w-xs text-[11px] leading-tight text-muted-foreground">
+          {selectedEvent === 'substitution'
+            ? t('sub_hint')
+            : selectedEvent === 'absent'
+              ? t('absent_hint')
+              : t('palette_hint')}
+        </span>
       </div>
 
       {/* F7.5 — sustitución en curso: aviso de quién sale + cancelar. */}
@@ -558,99 +636,19 @@ export function LiveCaptureClient({
         </div>
       )}
 
-      {/* Cuerpo: paleta | campo | panel lateral. En táctil horizontal las tres
-          columnas conviven; en pantallas estrechas se apilan. */}
-      <div className="flex flex-col gap-3 lg:flex-row">
-        {/* Paleta de símbolos de eventos. */}
-        <div className="rounded-lg border border-border bg-card/40 p-3 lg:w-44 lg:shrink-0">
+      {/* Cuerpo a lo ancho: [nuestros eventos] · [banquillo] · [campo] · [rival]
+          · [eventos del rival]. En táctil horizontal conviven; en estrecho se
+          apilan. */}
+      <div className="flex flex-col gap-3 xl:flex-row">
+        {/* Columna 1 — nuestros eventos. */}
+        <div className="rounded-lg border border-border bg-card/40 p-3 xl:order-1 xl:w-48 xl:shrink-0">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {t('palette_title')}
+            {t('recent_events_title')}
           </p>
-          <div className="grid grid-cols-3 gap-2 lg:grid-cols-2">
-            {EVENT_TYPES.map((ev) => {
-              const Icon = EVENT_ICON[ev];
-              const active = selectedEvent === ev;
-              return (
-                <button
-                  key={ev}
-                  type="button"
-                  onClick={() => setSelectedEvent(active ? null : ev)}
-                  aria-pressed={active}
-                  className={cn(
-                    'flex touch-none flex-col items-center gap-1 rounded-md border p-2 text-[11px] font-medium transition-colors',
-                    active
-                      ? 'border-primary bg-primary/10 text-foreground'
-                      : 'border-border text-muted-foreground hover:bg-muted',
-                  )}
-                >
-                  <Icon
-                    className={cn('size-5', EVENT_ICON_CLASS[ev])}
-                    aria-hidden
-                  />
-                  <span className="text-center leading-tight">
-                    {t(`event.${ev}`)}
-                  </span>
-                </button>
-              );
-            })}
-            {/* F7.5 — herramienta "quitar al que no viene" (no es match_event). */}
-            <button
-              type="button"
-              onClick={() => setSelectedEvent(selectedEvent === 'absent' ? null : 'absent')}
-              aria-pressed={selectedEvent === 'absent'}
-              className={cn(
-                'flex touch-none flex-col items-center gap-1 rounded-md border p-2 text-[11px] font-medium transition-colors',
-                selectedEvent === 'absent'
-                  ? 'border-amber-500 bg-amber-500/10 text-foreground'
-                  : 'border-border text-muted-foreground hover:bg-muted',
-              )}
-            >
-              <UserMinus className="size-5" aria-hidden />
-              <span className="text-center leading-tight">{t('tool_absent')}</span>
-            </button>
-          </div>
-          <p className="mt-3 text-[11px] leading-tight text-muted-foreground">
-            {selectedEvent === 'substitution'
-              ? t('sub_hint')
-              : selectedEvent === 'absent'
-                ? t('absent_hint')
-                : t('palette_hint')}
-          </p>
-        </div>
-
-        {/* Campo con el once oficial. live-overlay: clic en jugador/césped +
-            overlay del cronómetro como children. */}
-        <div className="flex min-w-0 flex-1 items-start justify-center rounded-lg border border-border bg-card/20 p-3">
-          <MatchFieldEditor
-            format={format}
-            formationCode={formationCode}
-            players={players}
-            mode="live-overlay"
-            onPlayerClick={handlePlayerClick}
-            onFieldClick={handleFieldClick}
-            // Horizontal: el límite es la altura → dimensionamos por alto
-            // (w-auto/max-w-none neutralizan w-full/max-w-md del componente; el
-            // aspect-[2/3] base deriva la anchura).
-            className="h-[56vh] max-h-[56vh] w-auto max-w-none"
-          >
-            {/* Mini-reloj de solo lectura sobre el campo (slot children). */}
-            <MatchClockOverlay periods={periods} />
-          </MatchFieldEditor>
-        </div>
-
-        {/* Panel lateral: bando rival (7.6) o lista de eventos propios (7.3). */}
-        <div className="rounded-lg border border-border bg-card/40 p-3 lg:w-56 lg:shrink-0">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {side === 'own' ? t('recent_events_title') : t('panel_rival_title')}
-          </p>
-          {side === 'rival' ? (
-            <p className="text-sm text-muted-foreground">
-              {t('panel_rival_hint')}
-            </p>
-          ) : events.length === 0 ? (
+          {events.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('no_events_yet')}</p>
           ) : (
-            <ul className="flex max-h-[60vh] flex-col gap-1 overflow-y-auto">
+            <ul className="flex max-h-[52vh] flex-col gap-1 overflow-y-auto">
               {events.map((ev) => {
                 const Icon = EVENT_ICON[ev.type];
                 return (
@@ -672,10 +670,7 @@ export function LiveCaptureClient({
                           {ev.playerLabel}
                         </>
                       ) : (
-                        // Evento de campo (7.4): sin jugador → mostramos el tipo.
-                        <span className="text-muted-foreground">
-                          {t(`event.${ev.type}`)}
-                        </span>
+                        <span className="text-muted-foreground">{t(`event.${ev.type}`)}</span>
                       )}
                     </span>
                     <span className="sr-only">{t(`event.${ev.type}`)}</span>
@@ -685,88 +680,215 @@ export function LiveCaptureClient({
             </ul>
           )}
         </div>
-      </div>
 
-      {/* F7.5 — BANQUILLO: suplentes con su estado. En sustitución (sale elegido)
-          los disponibles ENTRAN; con la herramienta "ausente" se marca la baja. */}
-      <div className="rounded-lg border border-border bg-card/40 p-3">
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t('bench_title')}
-        </p>
-        {squad.bench.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t('bench_empty')}</p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {squad.bench.map((b) => {
-              const info = playerInfo.get(b.playerId);
-              const label = info?.label ?? b.playerId.slice(0, 4);
-              const dorsal = info?.dorsal ?? null;
-              const clickable =
-                selectedEvent === 'absent' ||
-                (subOut != null && b.status === 'available');
-              return (
-                <button
-                  key={b.playerId}
-                  type="button"
-                  disabled={!clickable}
-                  onClick={() => handleBenchClick(b.playerId)}
-                  className={cn(
-                    'flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm transition-colors',
-                    clickable
-                      ? 'border-primary/50 hover:bg-primary/10'
-                      : 'border-border',
-                    b.status === 'available' && 'text-foreground',
-                    b.status !== 'available' && 'text-muted-foreground',
-                  )}
-                >
-                  {dorsal != null && (
-                    <span className="font-mono text-xs tabular-nums">{dorsal}</span>
-                  )}
-                  <span className="truncate">{label}</span>
-                  {b.status !== 'available' && (
-                    <span
-                      className={cn(
-                        'rounded px-1 text-[10px] uppercase',
-                        b.status === 'expelled' && 'bg-red-500/15 text-red-600 dark:text-red-400',
-                        b.status === 'absent' && 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
-                        b.status === 'entered' && 'bg-muted text-muted-foreground',
-                      )}
-                    >
-                      {t(`bench_status.${b.status}`)}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Ausentes (titulares + suplentes): deshacer la baja. */}
-        {absentList.length > 0 && (
-          <div className="mt-3 border-t border-border/60 pt-2">
-            <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-              {t('absent_title')}
+        {/* Columna 2 — banquillo (suplentes + los que salieron). */}
+        <div className="rounded-lg border border-border bg-card/40 p-3 xl:order-2 xl:w-44 xl:shrink-0">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t('bench_title')}
             </p>
+            <span
+              className={cn(
+                'rounded px-1.5 py-0.5 text-[10px] uppercase',
+                allowReentry
+                  ? 'bg-primary/10 text-primary'
+                  : 'bg-muted text-muted-foreground',
+              )}
+            >
+              {allowReentry ? t('reentry_on') : t('reentry_off')}
+            </span>
+          </div>
+          {squad.bench.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('bench_empty')}</p>
+          ) : (
             <div className="flex flex-wrap gap-2">
-              {absentList.map((p) => (
-                <button
-                  key={p.playerId}
-                  type="button"
-                  onClick={() => markAbsent(p.playerId, false)}
-                  className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
-                  aria-label={t('absent_undo_aria', { player: p.label })}
-                >
-                  <RotateCcw className="size-3" aria-hidden />
-                  {p.dorsal != null ? `${p.dorsal} · ` : ''}
-                  {p.label}
-                </button>
-              ))}
+              {squad.bench.map((b) => {
+                const info = playerInfo.get(b.playerId);
+                const label = info?.label ?? b.playerId.slice(0, 4);
+                const dorsal = info?.dorsal ?? null;
+                const clickable =
+                  selectedEvent === 'absent' ||
+                  (subOut != null && b.status === 'available');
+                return (
+                  <button
+                    key={b.playerId}
+                    type="button"
+                    disabled={!clickable}
+                    onClick={() => handleBenchClick(b.playerId)}
+                    className={cn(
+                      'flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm transition-colors',
+                      clickable ? 'border-primary/50 hover:bg-primary/10' : 'border-border',
+                      b.status === 'available' ? 'text-foreground' : 'text-muted-foreground',
+                    )}
+                  >
+                    {dorsal != null && (
+                      <span className="font-mono text-xs tabular-nums">{dorsal}</span>
+                    )}
+                    <span className="truncate">{label}</span>
+                    {b.status !== 'available' && (
+                      <span
+                        className={cn(
+                          'rounded px-1 text-[10px] uppercase',
+                          b.status === 'expelled' && 'bg-red-500/15 text-red-600 dark:text-red-400',
+                          b.status === 'absent' && 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+                          b.status === 'out' && 'bg-muted text-muted-foreground',
+                        )}
+                      >
+                        {t(`bench_status.${b.status}`)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Ausentes (titulares + suplentes): deshacer la baja. */}
+          {absentList.length > 0 && (
+            <div className="mt-3 border-t border-border/60 pt-2">
+              <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                {t('absent_title')}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {absentList.map((p) => (
+                  <button
+                    key={p.playerId}
+                    type="button"
+                    onClick={() => markAbsent(p.playerId, false)}
+                    className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+                    aria-label={t('absent_undo_aria', { player: p.label })}
+                  >
+                    <RotateCcw className="size-3" aria-hidden />
+                    {p.dorsal != null ? `${p.dorsal} · ` : ''}
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Columna 3 — campo (centro). */}
+        <div className="flex min-w-0 flex-1 items-start justify-center rounded-lg border border-border bg-card/20 p-3 xl:order-3">
+          <MatchFieldEditor
+            format={format}
+            formationCode={formationCode}
+            players={players}
+            mode="live-overlay"
+            onPlayerClick={handlePlayerClick}
+            onFieldClick={handleFieldClick}
+            className="h-[50vh] max-h-[50vh] w-auto max-w-none"
+          >
+            <MatchClockOverlay periods={periods} />
+          </MatchFieldEditor>
+        </div>
+
+        {/* Columna 4 — RIVAL: registro por dorsal + nota libre (F7.6). */}
+        <div className="rounded-lg border border-border bg-card/40 p-3 xl:order-4 xl:w-52 xl:shrink-0">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {opponentName ? `${t('rival_panel_title')} · ${opponentName}` : t('rival_panel_title')}
+          </p>
+          <div className="flex flex-col gap-2">
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="w-12 shrink-0">{t('rival_dorsal_label')}</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={rivalDorsal}
+                onChange={(e) =>
+                  setRivalDorsal(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))
+                }
+                placeholder={t('rival_dorsal_placeholder')}
+                className="w-16 rounded-md border border-border bg-background px-2 py-1 text-center text-base font-mono tabular-nums text-foreground"
+                aria-label={t('rival_dorsal_label')}
+              />
+            </label>
+            <input
+              type="text"
+              value={rivalNote}
+              onChange={(e) => setRivalNote(e.target.value.slice(0, 200))}
+              placeholder={t('rival_note_placeholder')}
+              className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground"
+              aria-label={t('rival_note_label')}
+            />
+            <p className="text-[11px] leading-tight text-muted-foreground">{t('rival_hint')}</p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {RIVAL_EVENT_TYPES.map((ev) => {
+                const Icon = EVENT_ICON[ev];
+                return (
+                  <button
+                    key={ev}
+                    type="button"
+                    onClick={() => registerRival(ev)}
+                    className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+                  >
+                    <Icon className={cn('size-4', EVENT_ICON_CLASS[ev])} aria-hidden />
+                    <span className="truncate">{t(`event.${ev}`)}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Columna 5 — eventos del rival (F7.6). */}
+        <div className="rounded-lg border border-border bg-card/40 p-3 xl:order-5 xl:w-48 xl:shrink-0">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {t('rival_events_title')}
+          </p>
+          {rivalAll.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('rival_no_events')}</p>
+          ) : (
+            <ul className="flex max-h-[52vh] flex-col gap-1 overflow-y-auto">
+              {rivalAll.map((ev) => {
+                const Icon = EVENT_ICON[ev.type];
+                const expelled = ev.dorsal != null && rivalExpelledDorsals.has(ev.dorsal);
+                return (
+                  <li
+                    key={ev.id}
+                    className="flex items-center gap-2 rounded-md border border-border/60 bg-background/40 px-2 py-1 text-sm"
+                  >
+                    <span className="w-7 shrink-0 text-right font-mono text-xs tabular-nums text-muted-foreground">
+                      {ev.displayMinute ?? Math.floor(ev.clockSeconds / 60)}&#39;
+                    </span>
+                    <Icon
+                      className={cn('size-4 shrink-0', EVENT_ICON_CLASS[ev.type])}
+                      aria-hidden
+                    />
+                    <span className="min-w-0 flex-1 truncate">
+                      {ev.dorsal != null && (
+                        <span className="font-mono tabular-nums">#{ev.dorsal}</span>
+                      )}
+                      {ev.note ? (
+                        <span className="text-muted-foreground"> · {ev.note}</span>
+                      ) : (
+                        <span className="text-muted-foreground"> · {t(`event.${ev.type}`)}</span>
+                      )}
+                    </span>
+                    {expelled && (
+                      <span className="shrink-0 rounded bg-red-500/15 px-1 text-[10px] uppercase text-red-600 dark:text-red-400">
+                        {t('rival_expelled')}
+                      </span>
+                    )}
+                    <span className="sr-only">{t(`event.${ev.type}`)}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
 
-      <p className="text-center text-xs text-muted-foreground lg:hidden">
+      {/* Franja de ESTADÍSTICAS (placeholder; el detalle por jugador es 7.8). */}
+      <div className="rounded-lg border border-dashed border-border bg-card/20 p-3 text-center">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {t('stats_title')}
+        </p>
+        <p className="mt-1 text-sm text-muted-foreground">{t('stats_placeholder')}</p>
+      </div>
+
+      <p className="text-center text-xs text-muted-foreground xl:hidden">
         {t('landscape_hint')}
       </p>
       <p className="text-center text-[11px] text-muted-foreground">
