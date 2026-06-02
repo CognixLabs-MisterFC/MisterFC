@@ -15,7 +15,6 @@
 import {
   createSupabaseServerClient,
   defaultLineupDraft,
-  displayMinute as toDisplayMinute,
   getFormation,
   type ClockPeriod,
   type LivePositions,
@@ -88,7 +87,7 @@ export type LiveRivalEvent = {
 
 /**
  * Cambio de formación en directo (F7.6b) para "Últimos eventos". Fuente única:
- * match_state.live_formation_log (no match_events; ver §7.6b ter).
+ * match_events type='formation_change' con metadata {from,to} (ver §7.6b ter).
  */
 export type LiveFormationChange = {
   id: string;
@@ -315,7 +314,7 @@ export async function loadMatchLive(
   // desde `periods` (recuperable tras recarga, §6).
   const { data: stateRow } = await supabase
     .from('match_state')
-    .select('status, live_formation_code, live_positions, live_formation_log')
+    .select('status, live_formation_code, live_positions')
     .eq('event_id', eventId)
     .maybeSingle();
   const matchStatus =
@@ -325,23 +324,6 @@ export async function loadMatchLive(
   // el campo tras recargar/volver. Override sobre el slot oficial.
   const liveFormationCode = (stateRow?.live_formation_code as string | null) ?? null;
   const livePositions = (stateRow?.live_positions as LivePositions | null) ?? {};
-  // Cambios de formación (histórico) → "Últimos eventos". Fuente única.
-  type FormationLogRow = {
-    from: string | null;
-    to: string;
-    clock_seconds: number;
-    period: PeriodKind;
-  };
-  const formationLog =
-    (stateRow?.live_formation_log as FormationLogRow[] | null) ?? [];
-  const formationChanges: LiveFormationChange[] = formationLog.map((e, i) => ({
-    id: `fc-${i}-${e.clock_seconds}`,
-    from: e.from ?? null,
-    to: e.to,
-    clockSeconds: e.clock_seconds,
-    displayMinute: toDisplayMinute(e.clock_seconds),
-    period: e.period,
-  }));
 
   const { data: periodRows } = await supabase
     .from('match_periods')
@@ -511,6 +493,37 @@ export async function loadMatchLive(
       type: r.type,
       dorsal: r.rival_dorsal,
       note: r.metadata?.note ?? null,
+      clockSeconds: r.clock_seconds,
+      displayMinute: r.display_minute,
+      period: r.period,
+    };
+  });
+
+  // Cambios de formación (F7.6b) → "Últimos eventos". FUENTE ÚNICA: match_events
+  // type='formation_change' con metadata {from,to}. Más recientes primero.
+  const { data: fcRows, error: fcErr } = await supabase
+    .from('match_events')
+    .select('id, metadata, clock_seconds, display_minute, period')
+    .eq('event_id', eventId)
+    .eq('side', 'own')
+    .eq('type', 'formation_change')
+    .order('clock_seconds', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (fcErr) console.error('[directo] error cargando cambios de formación:', fcErr);
+
+  type FcRowShape = {
+    id: string;
+    metadata: { from?: string | null; to?: string } | null;
+    clock_seconds: number;
+    display_minute: number | null;
+    period: PeriodKind;
+  };
+  const formationChanges: LiveFormationChange[] = (fcRows ?? []).map((row) => {
+    const r = row as unknown as FcRowShape;
+    return {
+      id: r.id,
+      from: r.metadata?.from ?? null,
+      to: r.metadata?.to ?? '—',
       clockSeconds: r.clock_seconds,
       displayMinute: r.display_minute,
       period: r.period,

@@ -218,7 +218,7 @@ export function LiveCaptureClient({
   const rivalAll: LiveRivalEvent[] = mergeLiveEvents(rivalEvents, optimisticRival);
 
   // F7.6b — "Últimos eventos" = eventos propios + CAMBIOS DE TÁCTICA (fuente
-  // única: live_formation_log), intercalados por reloj (más recientes primero).
+  // única: match_events 'formation_change'), intercalados por reloj (recientes 1º).
   const allFormationChanges = mergeLiveEvents(formationChanges, optimisticFormationChanges);
   type TimelineItem =
     | { kind: 'event'; clockSeconds: number; ev: LiveMatchEvent }
@@ -656,11 +656,14 @@ export function LiveCaptureClient({
     }));
     const assigned = assignPlayersToFormation(current, formation);
     const fromCode = currentFormationCode;
+    // id de cliente: el optimista y el match_event persistido comparten id →
+    // mergeLiveEvents deduplica al hidratar (no hay fila duplicada).
+    const id = crypto.randomUUID();
     const clockSeconds = clockSecondsAt(periods, eventNowMs());
     const cur = currentPeriod(periods);
     const period = cur?.period ?? 'first_half';
     const changeRow: LiveFormationChange = {
-      id: crypto.randomUUID(),
+      id,
       from: fromCode,
       to: code,
       clockSeconds,
@@ -673,19 +676,16 @@ export function LiveCaptureClient({
     setOptimisticPositions((p) => ({ ...p, ...assigned }));
     setOptimisticFormationChanges((p) => [...p, changeRow]);
     startTransition(async () => {
-      const res = await changeFormation({ event_id: eventId, formation_code: code });
+      const res = await changeFormation({ event_id: eventId, id, formation_code: code });
       if (res.error) {
         setOptimisticFormation(prevFormation);
         setOptimisticPositions(prevPositions);
-        setOptimisticFormationChanges((p) => p.filter((c) => c.id !== changeRow.id));
+        setOptimisticFormationChanges((p) => p.filter((c) => c.id !== id));
         toast.error(t(`event_error.${res.error}`));
         return;
       }
       toast.success(t('formation_changed', { formation: code }));
-      await router.refresh();
-      // Lo persistido (live_formation_log) ya es autoritativo → soltamos el
-      // overlay para no duplicar la fila en "Últimos eventos".
-      setOptimisticFormationChanges([]);
+      router.refresh();
     });
   }
 

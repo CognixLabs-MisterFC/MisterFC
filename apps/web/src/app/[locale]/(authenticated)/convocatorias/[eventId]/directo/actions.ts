@@ -920,31 +920,21 @@ export async function registerRivalEvent(
 // decidiendo QUIÉN está en el campo (subs/expulsiones/ausencias).
 // ─────────────────────────────────────────────────────────────────────────────
 
-type FormationLogEntry = {
-  from: string | null;
-  to: string;
-  clock_seconds: number;
-  period: PeriodKind;
-};
-
 type LiveTactics = {
   liveFormationCode: string | null;
   livePositions: LivePositions;
-  liveFormationLog: FormationLogEntry[];
 };
 
 /** Carga el estado táctico vivo de match_state (vacío si aún no hay fila). */
 async function loadLiveTactics(supabase: Supa, eventId: string): Promise<LiveTactics> {
   const { data } = await supabase
     .from('match_state')
-    .select('live_formation_code, live_positions, live_formation_log')
+    .select('live_formation_code, live_positions')
     .eq('event_id', eventId)
     .maybeSingle();
   return {
     liveFormationCode: (data?.live_formation_code as string | null) ?? null,
     livePositions: (data?.live_positions as LivePositions | null) ?? {},
-    liveFormationLog:
-      (data?.live_formation_log as LiveTactics['liveFormationLog'] | null) ?? [],
   };
 }
 
@@ -996,7 +986,7 @@ export async function movePlayer(input: unknown): Promise<RegisterEventState> {
 export async function changeFormation(input: unknown): Promise<RegisterEventState> {
   const parsed = changeFormationSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
-  const { event_id, formation_code } = parsed.data;
+  const { event_id, id, formation_code } = parsed.data;
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
@@ -1004,6 +994,14 @@ export async function changeFormation(input: unknown): Promise<RegisterEventStat
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
 
   if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
 
@@ -1053,24 +1051,37 @@ export async function changeFormation(input: unknown): Promise<RegisterEventStat
     return { success: true };
   }
 
-  // Fuente ÚNICA del histórico de cambios de formación (no usamos match_events:
-  // su CHECK de `type` no admite 'formation_change' y la spec pide sin migración).
-  const { clockSeconds, period } = playerEventClockFields(periods, now().ms);
-  const nextLog: FormationLogEntry[] = [
-    ...tactics.liveFormationLog,
-    { from: fromCode, to: formation_code, clock_seconds: clockSeconds, period },
-  ];
-
-  const { error } = await supabase
+  // Materializa la formación/posiciones vivas (para pintar el campo al hidratar).
+  const { error: stateErr } = await supabase
     .from('match_state')
     .update({
       live_formation_code: formation_code,
       live_positions: nextPositions as unknown as Json,
-      live_formation_log: nextLog as unknown as Json,
     })
     .eq('event_id', event_id);
+  if (stateErr) return { error: mapEventErr(stateErr.message, stateErr.code) };
+
+  // FUENTE ÚNICA del histórico: el cambio de táctica es un match_event de tipo
+  // 'formation_change' (evento de equipo, sin jugador), con metadata {from,to}.
+  // id de cliente → reintento idempotente (§10).
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(periods, now().ms);
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId,
+      created_by: user.id,
+      side: 'own',
+      type: 'formation_change',
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+      metadata: { from: fromCode, to: formation_code },
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
   if (error) return { error: mapEventErr(error.message, error.code) };
 
   revalidate(event_id);
-  return { success: true };
+  return { success: true, eventRowId: id };
 }

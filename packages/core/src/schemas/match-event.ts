@@ -117,6 +117,8 @@ export type MovePlayerInput = z.infer<typeof movePlayerSchema>;
  */
 export const changeFormationSchema = z.object({
   event_id: uuid,
+  // id de cliente (UUID) → el cambio se persiste como match_event idempotente.
+  id: uuid,
   formation_code: z.string().min(1, { message: 'formation_required' }).max(40),
 });
 export type ChangeFormationInput = z.infer<typeof changeFormationSchema>;
