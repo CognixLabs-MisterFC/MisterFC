@@ -81,32 +81,26 @@ describe('playerEventClockFields', () => {
   });
 });
 
-describe('resolveCardOutcome — tarjetas y expulsión (F7.3)', () => {
-  it('1ª amarilla: se registra, sin roja automática', () => {
-    expect(resolveCardOutcome([], 'yellow_card')).toEqual({
-      kind: 'register',
-      autoRed: false,
-    });
+describe('resolveCardOutcome — tarjetas y expulsión (F7.3, §3.4 bis)', () => {
+  it('1ª amarilla: se registra (sin roja, no expulsado todavía)', () => {
+    expect(resolveCardOutcome([], 'yellow_card')).toEqual({ kind: 'register' });
   });
 
-  it('2ª amarilla al mismo jugador → registra + roja automática (expulsión)', () => {
+  it('2ª amarilla: se registra como amarilla MÁS (NO genera roja)', () => {
+    // El jugador queda con 2 amarillas → expulsado por estado derivado, pero el
+    // desenlace de registrar es una amarilla normal: no hay evento de roja.
     expect(resolveCardOutcome(['yellow_card'], 'yellow_card')).toEqual({
       kind: 'register',
-      autoRed: true,
     });
   });
 
-  it('roja directa (sin tarjetas previas) → se registra, sin auto-roja', () => {
-    expect(resolveCardOutcome([], 'red_card')).toEqual({
-      kind: 'register',
-      autoRed: false,
-    });
+  it('roja directa (sin tarjetas previas) → se registra', () => {
+    expect(resolveCardOutcome([], 'red_card')).toEqual({ kind: 'register' });
   });
 
-  it('roja directa con una amarilla previa → se registra (no es doble amarilla)', () => {
+  it('roja directa con una amarilla previa → se registra', () => {
     expect(resolveCardOutcome(['yellow_card'], 'red_card')).toEqual({
       kind: 'register',
-      autoRed: false,
     });
   });
 
@@ -117,14 +111,16 @@ describe('resolveCardOutcome — tarjetas y expulsión (F7.3)', () => {
     });
   });
 
-  it('jugador ya expulsado por doble amarilla (amarilla+roja) → bloquea otra roja', () => {
-    expect(resolveCardOutcome(['yellow_card', 'red_card'], 'red_card')).toEqual({
-      kind: 'blocked',
-      reason: 'player_expelled',
-    });
+  it('jugador con 2 amarillas (expulsado) → bloquea cualquier evento, incl. roja', () => {
+    for (const t of ['goal', 'assist', 'yellow_card', 'red_card'] as const) {
+      expect(resolveCardOutcome(['yellow_card', 'yellow_card'], t)).toEqual({
+        kind: 'blocked',
+        reason: 'player_expelled',
+      });
+    }
   });
 
-  it('expulsado NO puede recibir gol/asistencia/amarilla', () => {
+  it('expulsado por roja NO puede recibir gol/asistencia/amarilla', () => {
     for (const t of ['goal', 'assist', 'yellow_card'] as const) {
       expect(resolveCardOutcome(['red_card'], t)).toEqual({
         kind: 'blocked',
@@ -134,15 +130,20 @@ describe('resolveCardOutcome — tarjetas y expulsión (F7.3)', () => {
   });
 
   it('gol/asistencia de un jugador no expulsado se registran sin más', () => {
-    expect(resolveCardOutcome(['goal'], 'assist')).toEqual({
-      kind: 'register',
-      autoRed: false,
-    });
+    expect(resolveCardOutcome(['goal'], 'assist')).toEqual({ kind: 'register' });
   });
+});
 
-  it('isExpelled refleja la presencia de roja', () => {
+describe('isExpelled — estado derivado (1 roja O 2 amarillas)', () => {
+  it('sin tarjetas / 1 amarilla → no expulsado', () => {
     expect(isExpelled([])).toBe(false);
     expect(isExpelled(['yellow_card'])).toBe(false);
+    expect(isExpelled(['goal', 'assist'])).toBe(false);
+  });
+  it('2 amarillas → expulsado (sin fila de roja)', () => {
+    expect(isExpelled(['yellow_card', 'yellow_card'])).toBe(true);
+  });
+  it('1 roja directa → expulsado', () => {
     expect(isExpelled(['red_card'])).toBe(true);
     expect(isExpelled(['yellow_card', 'red_card'])).toBe(true);
   });

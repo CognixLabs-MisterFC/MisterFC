@@ -18,9 +18,5 @@ export const registerPlayerEventSchema = z.object({
     message: 'type_invalid',
   }),
   player_id: uuid,
-  // id para la roja AUTOMÁTICA de doble amarilla (si aplica): el cliente lo
-  // genera para reconciliar su fila optimista con la del servidor. Opcional;
-  // el servidor decide de forma autoritativa si la crea.
-  auto_red_id: uuid.optional(),
 });
 export type RegisterPlayerEventInput = z.infer<typeof registerPlayerEventSchema>;

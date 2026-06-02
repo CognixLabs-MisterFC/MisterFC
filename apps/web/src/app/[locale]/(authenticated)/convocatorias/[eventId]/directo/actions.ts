@@ -29,6 +29,7 @@ import {
   endPeriodPatch,
   matchEventRefSchema,
   nextPeriodAfter,
+  isExpelled,
   pauseClockPatch,
   type PeriodKind,
   type PlayerEventType,
@@ -443,10 +444,12 @@ export async function adjustClock(input: unknown): Promise<ClockActionState> {
 // (§10). Asistencia: enlaza al ÚLTIMO gol propio vía metadata.goal_event_id
 // (§7.3); si no hay gol previo, se registra sin enlace (no se bloquea).
 //
-// Expulsión (regla F7.3, añadida a la spec §3.4): 2ª amarilla → roja automática;
-// jugador con roja NO recibe más eventos (bloquea 2ª roja y cualquier otro). La
-// decisión la calcula el motor puro `resolveCardOutcome`. La roja queda en
-// match_events → 7.8 dejará de sumarle minutos y 7.5 impedirá que vuelva.
+// Expulsión (regla F7.3, spec §3.4 bis): la expulsión es un ESTADO DERIVADO
+// (1 roja O 2 amarillas), NO una fila de roja aparte. Un jugador ya expulsado no
+// recibe más eventos (bloquea la 2ª roja y cualquier otro). La 2ª amarilla se
+// registra como una amarilla más. La decisión la calcula el motor puro
+// `resolveCardOutcome`. De cara a 7.8 (minutos) y 7.5 (volver), la "salida" se
+// lee del estado derivado, no de una roja explícita.
 // Editar/borrar es la línea de tiempo (7.9); aquí solo se registra.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -464,9 +467,7 @@ export type RegisterEventState = {
   error?: EventActionError;
   success?: boolean;
   eventRowId?: string;
-  /** Se registró además la roja automática por doble amarilla. */
-  autoRed?: boolean;
-  /** El jugador queda expulsado tras este evento (roja directa o doble amarilla). */
+  /** El jugador queda expulsado tras este evento (1 roja O 2 amarillas). */
   expelled?: boolean;
 };
 
@@ -487,7 +488,7 @@ export async function registerPlayerEvent(
 ): Promise<RegisterEventState> {
   const parsed = registerPlayerEventSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
-  const { event_id, id, type, player_id, auto_red_id } = parsed.data;
+  const { event_id, id, type, player_id } = parsed.data;
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
@@ -556,40 +557,11 @@ export async function registerPlayerEvent(
   );
   if (error) return { error: mapEventErr(error.message, error.code) };
 
-  // Doble amarilla → roja automática. Idempotente: solo se crea si tras la
-  // amarilla NO hay ya una roja del jugador (un reintento no la duplica).
-  let autoRed = false;
-  if (outcome.autoRed) {
-    const after = await loadPlayerOwnEventTypes(supabase, event_id, player_id);
-    if (!after.includes('red_card')) {
-      const { error: redErr } = await supabase.from('match_events').upsert(
-        {
-          ...(auto_red_id ? { id: auto_red_id } : {}),
-          event_id,
-          club_id: clubId,
-          created_by: user.id,
-          side: 'own' as const,
-          type: 'red_card' as const,
-          player_id,
-          period,
-          clock_seconds: clockSeconds,
-          display_minute: displayMinute,
-          metadata: { reason: 'second_yellow' },
-        },
-        auto_red_id ? { onConflict: 'id', ignoreDuplicates: true } : undefined,
-      );
-      if (redErr) return { error: mapEventErr(redErr.message, redErr.code) };
-    }
-    autoRed = true;
-  }
+  // Expulsado = estado DERIVADO tras añadir este evento (1 roja O 2 amarillas).
+  const expelled = isExpelled([...existingTypes, type]);
 
   revalidate(event_id);
-  return {
-    success: true,
-    eventRowId: id,
-    autoRed,
-    expelled: type === 'red_card' || autoRed,
-  };
+  return { success: true, eventRowId: id, expelled };
 }
 
 /** Tipos de eventos PROPIOS (side='own') ya registrados de un jugador. */

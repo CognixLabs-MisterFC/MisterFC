@@ -31,6 +31,7 @@ import {
   clockSecondsAt,
   currentPeriod,
   displayMinute as toDisplayMinute,
+  isExpelled,
   isPlayerEventType,
   resolveCardOutcome,
   type ClockPeriod,
@@ -145,10 +146,21 @@ export function LiveCaptureClient({
     ...recentEvents,
   ];
 
-  // Jugadores expulsados (tienen roja): SALEN del campo (§3.4, regla F7.3) y no
-  // pueden recibir más eventos. Mostrarlos en un banquillo "como expulsado" es 7.5.
+  // Tipos de eventos propios por jugador (para la regla de tarjetas/expulsión).
+  const typesByPlayer = new Map<string, string[]>();
+  for (const e of events) {
+    if (!e.playerId) continue;
+    const arr = typesByPlayer.get(e.playerId) ?? [];
+    arr.push(e.type);
+    typesByPlayer.set(e.playerId, arr);
+  }
+
+  // Expulsados = estado DERIVADO (1 roja O 2 amarillas, §3.4 bis): SALEN del campo
+  // y no reciben más eventos. Mostrarlos en un banquillo "como expulsado" es 7.5.
   const expelledIds = new Set(
-    events.filter((e) => e.type === 'red_card' && e.playerId).map((e) => e.playerId!),
+    [...typesByPlayer.entries()]
+      .filter(([, types]) => isExpelled(types))
+      .map(([playerId]) => playerId),
   );
 
   const players: FieldEditorPlayer[] = fieldPlayers
@@ -166,7 +178,7 @@ export function LiveCaptureClient({
   // Tipos de eventos propios ya registrados de un jugador (para la regla de
   // tarjetas en el cliente; el servidor es el autoritativo).
   function ownTypesOf(playerId: string): string[] {
-    return events.filter((e) => e.playerId === playerId).map((e) => e.type);
+    return typesByPlayer.get(playerId) ?? [];
   }
 
   // F7.3 — registrar un evento sobre un jugador propio. side/clock/period los
@@ -190,7 +202,8 @@ export function LiveCaptureClient({
     const label = p?.label ?? playerId.slice(0, 4);
 
     // Regla de tarjetas/expulsión (espejo del servidor, para feedback inmediato).
-    const outcome = resolveCardOutcome(ownTypesOf(playerId), type);
+    const priorTypes = ownTypesOf(playerId);
+    const outcome = resolveCardOutcome(priorTypes, type);
     if (outcome.kind === 'blocked') {
       toast.warning(t(`event_error.${outcome.reason}`));
       return;
@@ -203,16 +216,21 @@ export function LiveCaptureClient({
     const cur = currentPeriod(periods);
     const period = cur?.period ?? 'first_half';
     const displayMinute = toDisplayMinute(clockSeconds);
-    const base = { playerId, playerLabel: label, dorsal: p?.dorsal ?? null, clockSeconds, displayMinute, period };
 
-    const optimisticRows: LiveMatchEvent[] = [{ id, type, ...base }];
-    // Doble amarilla → roja automática: la pintamos optimista (el jugador sale
-    // del campo al instante). El servidor decide de forma autoritativa.
-    const autoRedId = outcome.autoRed ? crypto.randomUUID() : undefined;
-    if (autoRedId) {
-      optimisticRows.push({ id: autoRedId, type: 'red_card', ...base });
-    }
-    setOptimistic((prev) => [...optimisticRows, ...prev]);
+    // La 2ª amarilla se registra como una amarilla MÁS (no se crea roja): la
+    // expulsión es estado derivado (1 roja O 2 amarillas) → sale del campo solo.
+    const optimisticRow: LiveMatchEvent = {
+      id,
+      type,
+      playerId,
+      playerLabel: label,
+      dorsal: p?.dorsal ?? null,
+      clockSeconds,
+      displayMinute,
+      period,
+    };
+    const expelledNow = isExpelled([...priorTypes, type]);
+    setOptimistic((prev) => [optimisticRow, ...prev]);
     setSelectedEvent(null); // evita doble registro accidental en el siguiente toque
 
     startTransition(async () => {
@@ -221,17 +239,16 @@ export function LiveCaptureClient({
         id,
         type,
         player_id: playerId,
-        ...(autoRedId ? { auto_red_id: autoRedId } : {}),
       });
       if (res.error) {
-        const ids = new Set(optimisticRows.map((r) => r.id));
-        setOptimistic((prev) => prev.filter((e) => !ids.has(e.id)));
+        setOptimistic((prev) => prev.filter((e) => e.id !== id));
         toast.error(t(`event_error.${res.error}`));
         return;
       }
-      if (res.autoRed) {
+      const expelled = res.expelled ?? expelledNow;
+      if (expelled && type === 'yellow_card') {
         toast.success(t('event_expelled_double_yellow', { player: label }));
-      } else if (res.expelled) {
+      } else if (expelled) {
         toast.success(t('event_expelled_red', { player: label, minute: displayMinute }));
       } else {
         toast.success(

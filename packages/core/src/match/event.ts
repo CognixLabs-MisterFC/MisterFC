@@ -30,38 +30,43 @@ export function isPlayerEventType(value: string): value is PlayerEventType {
 }
 
 /**
+ * ¿El jugador está expulsado? Estado DERIVADO de sus tarjetas (F7.3, spec §3.4
+ * bis): tiene **1 roja directa** O **2 amarillas**. No existe un evento de roja
+ * "automática" por doble amarilla: la expulsión por dos amarillas es un estado,
+ * no una fila aparte en `match_events`.
+ */
+export function isExpelled(existingTypes: readonly string[]): boolean {
+  if (existingTypes.includes('red_card')) return true;
+  return existingTypes.filter((t) => t === 'yellow_card').length >= 2;
+}
+
+/**
  * Desenlace de registrar una tarjeta/evento sobre un jugador, según su historial
- * de tarjetas en el partido (regla de expulsión, F7.3 — añadida a la spec §3.4):
+ * de tarjetas en el partido (regla de expulsión, F7.3 — spec §3.4 bis):
  *
- *  - 2ª amarilla al mismo jugador ⇒ expulsión automática (además de la amarilla,
- *    se registra la roja correspondiente, `autoRed`).
- *  - 1 roja directa ⇒ expulsado.
- *  - Un jugador YA expulsado (tiene roja) NO puede recibir más eventos (ni una 2ª
- *    roja, ni gol/asistencia/amarilla) ⇒ `blocked: 'player_expelled'`.
+ *  - Un jugador YA expulsado (1 roja O 2 amarillas) NO puede recibir más eventos
+ *    (ni una 2ª roja, ni gol/asistencia/amarilla) ⇒ `blocked: 'player_expelled'`.
+ *  - En cualquier otro caso se registra el evento tal cual. La 2ª amarilla se
+ *    registra como una amarilla MÁS (deja al jugador con 2 → expulsado por estado
+ *    derivado); NO se crea ninguna roja.
  *
  * Pura y testeable: recibe los tipos de eventos PROPIOS ya registrados de ese
  * jugador y el tipo nuevo; no toca BD ni reloj.
  */
 export type CardOutcome =
   | { kind: 'blocked'; reason: 'player_expelled' }
-  | { kind: 'register'; autoRed: boolean };
+  | { kind: 'register' };
 
 export function resolveCardOutcome(
   existingTypes: readonly string[],
-  newType: PlayerEventType,
+  // newType se mantiene en la firma por claridad de intención y simetría con el
+  // historial; la decisión depende solo del estado previo (ya expulsado o no).
+  _newType: PlayerEventType,
 ): CardOutcome {
-  const hasRed = existingTypes.includes('red_card');
-  if (hasRed) return { kind: 'blocked', reason: 'player_expelled' };
-
-  const yellows = existingTypes.filter((t) => t === 'yellow_card').length;
-  // Esta amarilla sería la 2ª → doble amarilla = expulsión.
-  const autoRed = newType === 'yellow_card' && yellows >= 1;
-  return { kind: 'register', autoRed };
-}
-
-/** ¿El jugador está expulsado? (tiene una roja propia registrada). */
-export function isExpelled(existingTypes: readonly string[]): boolean {
-  return existingTypes.includes('red_card');
+  if (isExpelled(existingTypes)) {
+    return { kind: 'blocked', reason: 'player_expelled' };
+  }
+  return { kind: 'register' };
 }
 
 /** Campos de tiempo de un evento que ocurre AHORA (§3.4/§6), derivados del reloj. */
