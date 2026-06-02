@@ -24,10 +24,19 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 const PHOTO_TTL_SECONDS = 3600;
 
-/** Evento propio ya registrado, para la lista de "últimos eventos" (F7.3). */
+/** Evento propio ya registrado, para la lista de "últimos eventos" (F7.3/7.4). */
 export type LiveMatchEvent = {
   id: string;
-  type: 'goal' | 'assist' | 'yellow_card' | 'red_card';
+  type:
+    | 'goal'
+    | 'assist'
+    | 'yellow_card'
+    | 'red_card'
+    | 'corner'
+    | 'foul'
+    | 'offside'
+    | 'shot';
+  /** null en eventos sobre el campo (7.4): se ubican por coordenadas, sin jugador. */
   playerId: string | null;
   playerLabel: string;
   dorsal: number | null;
@@ -230,8 +239,18 @@ export async function loadMatchLive(
     ended: r.ended as boolean,
   }));
 
-  // Eventos propios sobre jugador ya registrados (F7.3), recientes primero.
-  const PLAYER_EVENT_TYPES = ['goal', 'assist', 'yellow_card', 'red_card'];
+  // Eventos propios ya registrados (F7.3 sobre jugador + F7.4 sobre campo),
+  // recientes primero. Excluye 'substitution' (es 7.5, otra UI).
+  const DISPLAY_EVENT_TYPES = [
+    'goal',
+    'assist',
+    'yellow_card',
+    'red_card',
+    'corner',
+    'foul',
+    'offside',
+    'shot',
+  ];
   // OJO: match_events tiene DOS FKs a players (player_id y related_player_id),
   // así que el embed `players(...)` es AMBIGUO y PostgREST lo rechaza (PGRST201)
   // → data null → lista vacía. Hay que desambiguar por el FK de player_id.
@@ -243,7 +262,7 @@ export async function loadMatchLive(
     )
     .eq('event_id', eventId)
     .eq('side', 'own')
-    .in('type', PLAYER_EVENT_TYPES)
+    .in('type', DISPLAY_EVENT_TYPES)
     .order('clock_seconds', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(30);
@@ -255,7 +274,7 @@ export async function loadMatchLive(
 
   type EventRowShape = {
     id: string;
-    type: 'goal' | 'assist' | 'yellow_card' | 'red_card';
+    type: LiveMatchEvent['type'];
     player_id: string | null;
     clock_seconds: number;
     display_minute: number | null;

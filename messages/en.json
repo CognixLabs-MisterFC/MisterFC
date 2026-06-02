@@ -1650,7 +1650,7 @@
     "clock_half_overtime": "Half {elapsed} · added time (suggested {target})",
     "register_not_live": "Start the match to record events.",
     "register_select_event": "Select an event from the palette first.",
-    "register_not_player_event": "That event isn't recorded on a player (coming in a later delivery).",
+    "register_not_player_event": "That event goes on the pitch: tap the field.",
     "event_registered": "Recorded: {event} · {player} ({minute}')",
     "recent_events_title": "Recent events",
     "no_events_yet": "No events recorded yet.",
@@ -1665,6 +1665,8 @@
       "player_expelled": "That player is sent off; they can't receive more events."
     },
     "event_expelled_double_yellow": "Sent off (two yellows): {player}",
-    "event_expelled_red": "Sent off (red): {player} ({minute}')"
+    "event_expelled_red": "Sent off (red): {player} ({minute}')",
+    "register_not_field_event": "That event goes on a player: tap a player.",
+    "event_registered_field": "Recorded: {event} ({minute}')"
   }
 }

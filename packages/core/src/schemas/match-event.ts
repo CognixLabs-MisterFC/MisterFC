@@ -6,9 +6,13 @@
  */
 
 import { z } from 'zod';
-import { PLAYER_EVENT_TYPES } from '../match/event';
+import { FIELD_EVENT_TYPES, PLAYER_EVENT_TYPES } from '../match/event';
 
 const uuid = z.string().uuid({ message: 'invalid_id' });
+const pct = z
+  .number()
+  .min(0, { message: 'pct_range' })
+  .max(100, { message: 'pct_range' });
 
 export const registerPlayerEventSchema = z.object({
   event_id: uuid,
@@ -20,3 +24,19 @@ export const registerPlayerEventSchema = z.object({
   player_id: uuid,
 });
 export type RegisterPlayerEventInput = z.infer<typeof registerPlayerEventSchema>;
+
+/**
+ * F7.4 — evento sobre el CÉSPED (córner, falta, fuera de juego, tiro). Lleva
+ * coordenadas (0–100) y no jugador. `side`/`clock_seconds`/`period`/
+ * `display_minute` los deriva el servidor (igual que 7.3).
+ */
+export const registerFieldEventSchema = z.object({
+  event_id: uuid,
+  id: uuid,
+  type: z.enum(FIELD_EVENT_TYPES as unknown as [string, ...string[]], {
+    message: 'type_invalid',
+  }),
+  x_pct: pct,
+  y_pct: pct,
+});
+export type RegisterFieldEventInput = z.infer<typeof registerFieldEventSchema>;

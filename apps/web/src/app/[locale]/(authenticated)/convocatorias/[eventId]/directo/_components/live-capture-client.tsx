@@ -33,6 +33,7 @@ import {
   deriveExpelledPlayers,
   displayMinute as toDisplayMinute,
   isExpelled,
+  isFieldEventType,
   isPlayerEventType,
   mergeLiveEvents,
   resolveCardOutcome,
@@ -47,7 +48,7 @@ import { Button } from '@/components/ui/button';
 import { Link, useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import type { LiveFieldPlayer, LiveMatchEvent } from '../queries';
-import { registerPlayerEvent } from '../actions';
+import { registerFieldEvent, registerPlayerEvent } from '../actions';
 import { MatchClock, MatchClockOverlay } from './match-clock';
 
 type MatchSide = 'own' | 'rival';
@@ -253,14 +254,63 @@ export function LiveCaptureClient({
     });
   }
 
+  // F7.4 — registrar un evento sobre el CÉSPED (córner, falta, fuera de juego,
+  // tiro) por ubicación (x/y), sin jugador. Mismo flujo optimista que 7.3.
   function handleFieldClick(xPct: number, yPct: number) {
-    toast.info(
-      t('stub_field', {
-        event: selectedEvent ? t(`event.${selectedEvent}`) : t('no_event'),
-        x: Math.round(xPct),
-        y: Math.round(yPct),
-      }),
-    );
+    if (matchStatus !== 'live') {
+      toast.warning(t('register_not_live'));
+      return;
+    }
+    if (!selectedEvent) {
+      toast.info(t('register_select_event'));
+      return;
+    }
+    if (!isFieldEventType(selectedEvent)) {
+      toast.info(t('register_not_field_event'));
+      return;
+    }
+
+    const type = selectedEvent;
+    const id = crypto.randomUUID();
+    const clockSeconds = clockSecondsAt(periods, Date.now());
+    const cur = currentPeriod(periods);
+    const period = cur?.period ?? 'first_half';
+    const displayMinute = toDisplayMinute(clockSeconds);
+
+    const optimisticRow: LiveMatchEvent = {
+      id,
+      type,
+      playerId: null, // evento de campo: por ubicación, sin jugador
+      playerLabel: '',
+      dorsal: null,
+      clockSeconds,
+      displayMinute,
+      period,
+    };
+    setOptimistic((prev) => [optimisticRow, ...prev]);
+    setSelectedEvent(null);
+
+    startTransition(async () => {
+      const res = await registerFieldEvent({
+        event_id: eventId,
+        id,
+        type,
+        x_pct: xPct,
+        y_pct: yPct,
+      });
+      if (res.error) {
+        setOptimistic((prev) => prev.filter((e) => e.id !== id));
+        toast.error(t(`event_error.${res.error}`));
+        return;
+      }
+      toast.success(
+        t('event_registered_field', {
+          event: t(`event.${type}`),
+          minute: displayMinute,
+        }),
+      );
+      router.refresh();
+    });
   }
 
   return (
@@ -399,8 +449,17 @@ export function LiveCaptureClient({
                       aria-hidden
                     />
                     <span className="min-w-0 flex-1 truncate">
-                      {ev.dorsal != null ? `${ev.dorsal} · ` : ''}
-                      {ev.playerLabel}
+                      {ev.playerId ? (
+                        <>
+                          {ev.dorsal != null ? `${ev.dorsal} · ` : ''}
+                          {ev.playerLabel}
+                        </>
+                      ) : (
+                        // Evento de campo (7.4): sin jugador → mostramos el tipo.
+                        <span className="text-muted-foreground">
+                          {t(`event.${ev.type}`)}
+                        </span>
+                      )}
                     </span>
                     <span className="sr-only">{t(`event.${ev.type}`)}</span>
                   </li>
