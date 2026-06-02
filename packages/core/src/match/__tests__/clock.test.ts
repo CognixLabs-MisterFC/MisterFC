@@ -142,6 +142,24 @@ describe('clockSecondsAt — segunda parte / prórroga (monótono)', () => {
     expect(next?.running).toBe(true);
   });
 
+  it('categoría Alevín (30 min/parte): la 2ª arranca en 30:00, NO en 45:00', () => {
+    // El motor NO conoce la duración de categoría: el base_offset sale del
+    // juego REAL acumulado. Un Alevín que cierra la 1ª a 30:00 (1800s) continúa
+    // la 2ª desde 1800, no desde 2700. Nada asume 45.
+    const firstHalf = period({ accumulatedSeconds: 1800, ended: true });
+    const next = buildNextPeriod([firstHalf], at(0), T0_ISO);
+    expect(next?.period).toBe('second_half');
+    expect(next?.baseOffsetSeconds).toBe(1800); // 30:00, no 2700
+    const secondHalf = period({
+      period: 'second_half',
+      ordinal: 2,
+      baseOffsetSeconds: 1800,
+      running: true,
+      lastStartedAt: T0_ISO,
+    });
+    expect(clockSecondsAt([firstHalf, secondHalf], at(60))).toBe(1860); // 31:00
+  });
+
   it('el orden del array no altera el reloj (máximo robusto)', () => {
     const first = period({ accumulatedSeconds: 2700, ended: true });
     const second = period({

@@ -65,6 +65,7 @@ export default async function MatchLivePage({ params }: Props) {
         hasOfficialLineup={data.hasOfficialLineup}
         matchStatus={data.matchStatus}
         periods={data.periods}
+        halfDurationMinutes={data.event.halfDurationMinutes}
       />
     </div>
   );

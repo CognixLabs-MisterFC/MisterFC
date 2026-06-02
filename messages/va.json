@@ -1645,6 +1645,8 @@
       "period_mismatch": "Eixe període no és el següent; recarrega la pantalla.",
       "all_periods_played": "Ja s'han jugat tots els períodes.",
       "generic": "Alguna cosa ha anat malament. Torna-ho a provar."
-    }
+    },
+    "clock_half_progress": "Part {elapsed} / {target} suggerit",
+    "clock_half_overtime": "Part {elapsed} · prolongació (suggerit {target})"
   }
 }

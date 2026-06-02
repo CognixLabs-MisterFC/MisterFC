@@ -82,6 +82,7 @@ type Props = {
   hasOfficialLineup: boolean;
   matchStatus: 'not_started' | 'live' | 'closed';
   periods: ClockPeriod[];
+  halfDurationMinutes: number;
 };
 
 export function LiveCaptureClient({
@@ -94,6 +95,7 @@ export function LiveCaptureClient({
   hasOfficialLineup,
   matchStatus,
   periods,
+  halfDurationMinutes,
 }: Props) {
   const t = useTranslations('partido_directo');
   const [side, setSide] = useState<MatchSide>('own');
@@ -155,7 +157,12 @@ export function LiveCaptureClient({
     <div className="flex flex-col gap-3">
       {/* Barra superior: cronómetro completo (F7.7) y toggle equipo/rival. */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card/40 p-3">
-        <MatchClock eventId={eventId} status={matchStatus} periods={periods} />
+        <MatchClock
+          eventId={eventId}
+          status={matchStatus}
+          periods={periods}
+          halfDurationMinutes={halfDurationMinutes}
+        />
 
         {/* Interruptor equipo / rival (segmented). */}
         <div

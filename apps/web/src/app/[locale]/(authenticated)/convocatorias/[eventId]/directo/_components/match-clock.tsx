@@ -33,6 +33,7 @@ import {
   isAtBreak,
   isClockRunning,
   nextPeriodAfter,
+  periodClockSeconds,
 } from '@misterfc/core';
 import { useRouter } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -52,7 +53,13 @@ type Props = {
   eventId: string;
   status: 'not_started' | 'live' | 'closed';
   periods: ClockPeriod[];
+  /** Duración SUGERIDA de cada tiempo (min), de la categoría del equipo. */
+  halfDurationMinutes: number;
 };
+
+// Tiempos a los que aplica la duración sugerida de la categoría. La prórroga y
+// los penaltis no tienen duración "de categoría" definida → solo se cuentan.
+const HALF_PERIODS: ReadonlyArray<PeriodKind> = ['first_half', 'second_half'];
 
 // Botones de ajuste manual (segundos). Táctil: pocos y grandes.
 const ADJUST_STEPS = [-60, -10, 10, 60] as const;
@@ -86,7 +93,12 @@ function useTickingNow(active: boolean): number | null {
   );
 }
 
-export function MatchClock({ eventId, status, periods }: Props) {
+export function MatchClock({
+  eventId,
+  status,
+  periods,
+  halfDurationMinutes,
+}: Props) {
   const t = useTranslations('partido_directo');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -120,7 +132,22 @@ export function MatchClock({ eventId, status, periods }: Props) {
   const hasStarted = periods.length > 0 && status !== 'not_started';
   // Servidor / primer paint: reloj plegado (frozenNow) → hidratación estable.
   // Cliente: tiempo real del tick.
-  const seconds = clockSecondsAt(periods, now ?? frozenNow(periods));
+  const effectiveNow = now ?? frozenNow(periods);
+  const seconds = clockSecondsAt(periods, effectiveNow);
+
+  // Progreso de la PARTE actual vs su duración sugerida por la CATEGORÍA
+  // (§3.2/§6): tiempo dentro del periodo = reloj del periodo − su base_offset.
+  // No se impone: si supera lo sugerido, se marca como prolongación, no se corta.
+  const suggestedHalfSeconds = halfDurationMinutes * 60;
+  const showHalfProgress =
+    hasStarted &&
+    status !== 'closed' &&
+    !atBreak &&
+    cur != null &&
+    !cur.ended &&
+    HALF_PERIODS.includes(cur.period);
+  const periodElapsed = cur ? periodClockSeconds(cur, effectiveNow) - cur.baseOffsetSeconds : 0;
+  const overSuggested = showHalfProgress && periodElapsed > suggestedHalfSeconds;
 
   const periodLabel = (p: PeriodKind) => t(`period.${p}`);
 
@@ -175,6 +202,29 @@ export function MatchClock({ eventId, status, periods }: Props) {
           </span>
         )}
       </div>
+
+      {/* Progreso de la parte vs duración sugerida por la categoría (§3.2/§6).
+          Solo referencia: el operador puede prolongar. Demuestra que el reloj
+          lee half_duration_minutes (Alevín 30, juvenil 45…), no un valor fijo. */}
+      {showHalfProgress && (
+        <span
+          className={cn(
+            'text-xs tabular-nums',
+            overSuggested ? 'font-medium text-amber-600 dark:text-amber-400' : 'text-muted-foreground',
+          )}
+          suppressHydrationWarning
+        >
+          {overSuggested
+            ? t('clock_half_overtime', {
+                elapsed: formatClock(periodElapsed),
+                target: formatClock(suggestedHalfSeconds),
+              })
+            : t('clock_half_progress', {
+                elapsed: formatClock(periodElapsed),
+                target: formatClock(suggestedHalfSeconds),
+              })}
+        </span>
+      )}
 
       {/* Controles según el estado. */}
       <div className="flex flex-wrap items-center gap-2">

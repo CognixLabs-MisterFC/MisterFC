@@ -1644,6 +1644,8 @@
       "period_mismatch": "Ese periodo no es el siguiente; recarga la pantalla.",
       "all_periods_played": "Ya se han jugado todos los periodos.",
       "generic": "Algo salió mal. Inténtalo de nuevo."
-    }
+    },
+    "clock_half_progress": "Parte {elapsed} / {target} sugerido",
+    "clock_half_overtime": "Parte {elapsed} · prolongación (sugerido {target})"
   }
 }

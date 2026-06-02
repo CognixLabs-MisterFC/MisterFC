@@ -47,6 +47,13 @@ export type MatchLiveData = {
     categoryName: string;
     categorySeason: string;
     format: TeamFormat;
+    /**
+     * Duración SUGERIDA de cada tiempo (min), de la categoría del equipo
+     * (F4.9). El reloj no la impone (el operador prolonga libremente), solo la
+     * muestra como referencia (§3.2/§6). Depende de la categoría: Alevín 30,
+     * juvenil/amateur 45… nunca un valor fijo.
+     */
+    halfDurationMinutes: number;
   };
   /** Formación del once mostrado (oficial si existe; si no, default de la modalidad). */
   formationCode: string;
@@ -74,7 +81,7 @@ export async function loadMatchLive(
     .from('events')
     .select(
       `id, club_id, team_id, type, title, opponent_name, starts_at,
-       teams!inner(name, color, format, categories!inner(name, season))`,
+       teams!inner(name, color, format, categories!inner(name, season, half_duration_minutes))`,
     )
     .eq('id', eventId)
     .maybeSingle();
@@ -95,7 +102,11 @@ export async function loadMatchLive(
       name: string;
       color: string;
       format: TeamFormat;
-      categories: { name: string; season: string };
+      categories: {
+        name: string;
+        season: string;
+        half_duration_minutes: number | null;
+      };
     };
   };
   const event = ev as unknown as EventShape;
@@ -215,6 +226,8 @@ export async function loadMatchLive(
       categoryName: event.teams.categories.name,
       categorySeason: event.teams.categories.season,
       format: event.teams.format,
+      // La columna es NOT NULL default 45; el ?? es solo defensivo.
+      halfDurationMinutes: event.teams.categories.half_duration_minutes ?? 45,
     },
     formationCode,
     fieldPlayers,
