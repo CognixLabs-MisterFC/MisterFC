@@ -28,6 +28,8 @@ import {
   Flag,
   Footprints,
   Goal,
+  LayoutGrid,
+  Move,
   RotateCcw,
   Square,
   Target,
@@ -35,11 +37,15 @@ import {
   X,
 } from 'lucide-react';
 import {
+  assignPlayersToFormation,
+  clampPct,
   clockSecondsAt,
   currentPeriod,
   deriveExpelledPlayers,
   deriveSquad,
   displayMinute as toDisplayMinute,
+  formationsForFormat,
+  getFormation,
   isExpelled,
   isFieldEventType,
   isPlayerEventType,
@@ -47,6 +53,7 @@ import {
   resolveCardOutcome,
   RIVAL_EVENT_TYPES,
   type ClockPeriod,
+  type LivePositions,
   type RivalEventType,
   type Sub,
   type TeamFormat,
@@ -61,11 +68,14 @@ import { cn } from '@/lib/utils';
 import type {
   LiveBenchPlayer,
   LiveFieldPlayer,
+  LiveFormationChange,
   LiveMatchEvent,
   LiveRivalEvent,
   LiveSubstitution,
 } from '../queries';
 import {
+  changeFormation,
+  movePlayer,
   registerFieldEvent,
   registerPlayerEvent,
   registerRivalEvent,
@@ -123,6 +133,9 @@ type Props = {
   absentIds: string[];
   rivalEvents: LiveRivalEvent[];
   allowReentry: boolean;
+  liveFormationCode: string | null;
+  livePositions: LivePositions;
+  formationChanges: LiveFormationChange[];
 };
 
 // Herramienta seleccionada en la paleta propia: un tipo de evento, o 'absent'
@@ -151,11 +164,22 @@ export function LiveCaptureClient({
   absentIds,
   rivalEvents,
   allowReentry,
+  liveFormationCode,
+  livePositions,
+  formationChanges,
 }: Props) {
   const t = useTranslations('partido_directo');
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [selectedEvent, setSelectedEvent] = useState<Tool | null>(null);
+  // F7.6b — modo táctica (arrastrar para mover) vs captura de eventos (clic).
+  const [tacticsMode, setTacticsMode] = useState(false);
+  // Overlays optimistas del estado táctico (posiciones + formación).
+  const [optimisticPositions, setOptimisticPositions] = useState<LivePositions>({});
+  const [optimisticFormation, setOptimisticFormation] = useState<string | null>(null);
+  const [optimisticFormationChanges, setOptimisticFormationChanges] = useState<
+    LiveFormationChange[]
+  >([]);
   // Overlays optimistas (OVERLAY sobre lo persistido; nunca lo borran — la
   // verdad se recompone al refrescar). Ver invariante de hidratación de 7.3.
   const [optimistic, setOptimistic] = useState<LiveMatchEvent[]>([]);
@@ -193,6 +217,21 @@ export function LiveCaptureClient({
   const events: LiveMatchEvent[] = mergeLiveEvents(recentEvents, optimistic);
   const rivalAll: LiveRivalEvent[] = mergeLiveEvents(rivalEvents, optimisticRival);
 
+  // F7.6b — "Últimos eventos" = eventos propios + CAMBIOS DE TÁCTICA (fuente
+  // única: match_events 'formation_change'), intercalados por reloj (recientes 1º).
+  const allFormationChanges = mergeLiveEvents(formationChanges, optimisticFormationChanges);
+  type TimelineItem =
+    | { kind: 'event'; clockSeconds: number; ev: LiveMatchEvent }
+    | { kind: 'formation'; clockSeconds: number; fc: LiveFormationChange };
+  const timeline: TimelineItem[] = [
+    ...events.map((ev) => ({ kind: 'event' as const, clockSeconds: ev.clockSeconds, ev })),
+    ...allFormationChanges.map((fc) => ({
+      kind: 'formation' as const,
+      clockSeconds: fc.clockSeconds,
+      fc,
+    })),
+  ].sort((a, b) => b.clockSeconds - a.clockSeconds);
+
   // Expulsados PROPIOS = estado DERIVADO de TODOS los eventos (1 roja O 2
   // amarillas, §3.4 bis). Se recomputa al hidratar.
   const expelledIds = deriveExpelledPlayers(events);
@@ -221,6 +260,14 @@ export function LiveCaptureClient({
     else absentSet.delete(pid);
   }
 
+  // F7.6b — estado táctico EFECTIVO = persistido + overlay optimista. La
+  // formación viva manda sobre la oficial; las posiciones movidas hacen override
+  // del slot oficial. Todo se hidrata al recargar (no es efímero).
+  const effectiveLivePositions: LivePositions = { ...livePositions, ...optimisticPositions };
+  const currentFormationCode = optimisticFormation ?? liveFormationCode ?? formationCode;
+
+  // `deriveSquad` resuelve la posición efectiva de cada hueco (incl. herencia: el
+  // que entra hereda la posición ACTUAL del que salió por la cadena de ocupantes).
   const squad = deriveSquad({
     slots: fieldPlayers.map((p) => ({
       playerId: p.playerId,
@@ -233,9 +280,11 @@ export function LiveCaptureClient({
     expelled: expelledIds,
     absent: absentSet,
     allowReentry,
+    positions: effectiveLivePositions,
   });
 
-  // Jugadores EN EL CAMPO ahora, con nombre/dorsal/foto de quien ocupe el hueco.
+  // Jugadores EN EL CAMPO ahora, con nombre/dorsal/foto de quien ocupe el hueco;
+  // la posición ya viene resuelta por deriveSquad (viva/heredada/slot oficial).
   const players: FieldEditorPlayer[] = squad.onField.map((slot) => {
     const info = playerInfo.get(slot.playerId);
     return {
@@ -559,6 +608,87 @@ export function LiveCaptureClient({
     });
   }
 
+  // F7.6b — mover un jugador del campo: nueva posición (x/y) optimista + persistir.
+  function handlePlayerMove(playerId: string, xPct: number, yPct: number) {
+    if (matchStatus !== 'live') {
+      toast.warning(t('register_not_live'));
+      return;
+    }
+    const prev = optimisticPositions;
+    const positionCode =
+      optimisticPositions[playerId]?.positionCode ??
+      livePositions[playerId]?.positionCode ??
+      null;
+    setOptimisticPositions((p) => ({
+      ...p,
+      [playerId]: { positionCode, xPct: clampPct(xPct), yPct: clampPct(yPct) },
+    }));
+    startTransition(async () => {
+      const res = await movePlayer({
+        event_id: eventId,
+        player_id: playerId,
+        x_pct: clampPct(xPct),
+        y_pct: clampPct(yPct),
+      });
+      if (res.error) {
+        setOptimisticPositions(prev);
+        toast.error(t(`event_error.${res.error}`));
+        return;
+      }
+      router.refresh();
+    });
+  }
+
+  // F7.6b — cambiar la formación entera: recoloca a los del campo en los nuevos
+  // slots (optimista) + persistir. Reusa el reparto puro de @misterfc/core.
+  function handleChangeFormation(code: string) {
+    if (code === currentFormationCode) return;
+    if (matchStatus !== 'live') {
+      toast.warning(t('register_not_live'));
+      return;
+    }
+    const formation = getFormation(code);
+    if (!formation) return;
+    const current = players.map((p) => ({
+      playerId: p.playerId,
+      xPct: p.xPct ?? 50,
+      yPct: p.yPct ?? 50,
+    }));
+    const assigned = assignPlayersToFormation(current, formation);
+    const fromCode = currentFormationCode;
+    // id de cliente: el optimista y el match_event persistido comparten id →
+    // mergeLiveEvents deduplica al hidratar (no hay fila duplicada).
+    const id = crypto.randomUUID();
+    const clockSeconds = clockSecondsAt(periods, eventNowMs());
+    const cur = currentPeriod(periods);
+    const period = cur?.period ?? 'first_half';
+    const changeRow: LiveFormationChange = {
+      id,
+      from: fromCode,
+      to: code,
+      clockSeconds,
+      displayMinute: toDisplayMinute(clockSeconds),
+      period,
+    };
+    const prevPositions = optimisticPositions;
+    const prevFormation = optimisticFormation;
+    setOptimisticFormation(code);
+    setOptimisticPositions((p) => ({ ...p, ...assigned }));
+    setOptimisticFormationChanges((p) => [...p, changeRow]);
+    startTransition(async () => {
+      const res = await changeFormation({ event_id: eventId, id, formation_code: code });
+      if (res.error) {
+        setOptimisticFormation(prevFormation);
+        setOptimisticPositions(prevPositions);
+        setOptimisticFormationChanges((p) => p.filter((c) => c.id !== id));
+        toast.error(t(`event_error.${res.error}`));
+        return;
+      }
+      toast.success(t('formation_changed', { formation: code }));
+      router.refresh();
+    });
+  }
+
   return (
     <div className="flex flex-col gap-3">
       {/* Cronómetro completo (F7.7). */}
@@ -612,12 +742,52 @@ export function LiveCaptureClient({
           <UserMinus className="size-4" aria-hidden />
           <span>{t('tool_absent')}</span>
         </button>
+
+        {/* F7.6b — separador + modo táctica (mover/cambiar formación). */}
+        <span className="mx-1 h-6 w-px bg-border" aria-hidden />
+        <button
+          type="button"
+          onClick={() => {
+            setTacticsMode((v) => !v);
+            setSelectedEvent(null);
+          }}
+          aria-pressed={tacticsMode}
+          className={cn(
+            'flex touch-none items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors',
+            tacticsMode
+              ? 'border-primary bg-primary/10 text-foreground'
+              : 'border-border text-muted-foreground hover:bg-muted',
+          )}
+        >
+          <Move className="size-4" aria-hidden />
+          <span>{t('tactics_tool')}</span>
+        </button>
+        {tacticsMode && (
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span>{t('formation_label')}</span>
+            <select
+              value={currentFormationCode}
+              onChange={(e) => handleChangeFormation(e.target.value)}
+              className="rounded-md border border-border bg-background px-2 py-1 text-sm text-foreground"
+              aria-label={t('formation_label')}
+            >
+              {formationsForFormat(format).map((f) => (
+                <option key={f.code} value={f.code}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
         <span className="ml-auto max-w-xs text-[11px] leading-tight text-muted-foreground">
-          {selectedEvent === 'substitution'
-            ? t('sub_hint')
-            : selectedEvent === 'absent'
-              ? t('absent_hint')
-              : t('palette_hint')}
+          {tacticsMode
+            ? t('tactics_hint')
+            : selectedEvent === 'substitution'
+              ? t('sub_hint')
+              : selectedEvent === 'absent'
+                ? t('absent_hint')
+                : t('palette_hint')}
         </span>
       </div>
 
@@ -645,11 +815,32 @@ export function LiveCaptureClient({
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t('recent_events_title')}
           </p>
-          {events.length === 0 ? (
+          {timeline.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('no_events_yet')}</p>
           ) : (
             <ul className="flex max-h-[52vh] flex-col gap-1 overflow-y-auto">
-              {events.map((ev) => {
+              {timeline.map((item) => {
+                if (item.kind === 'formation') {
+                  const fc = item.fc;
+                  return (
+                    <li
+                      key={fc.id}
+                      className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-sm"
+                    >
+                      <span className="w-7 shrink-0 text-right font-mono text-xs tabular-nums text-muted-foreground">
+                        {fc.displayMinute ?? Math.floor(fc.clockSeconds / 60)}&#39;
+                      </span>
+                      <LayoutGrid className="size-4 shrink-0 text-primary" aria-hidden />
+                      <span className="min-w-0 flex-1 truncate">
+                        {t('formation_change_event', {
+                          from: fc.from ?? '—',
+                          to: fc.to,
+                        })}
+                      </span>
+                    </li>
+                  );
+                }
+                const ev = item.ev;
                 const Icon = EVENT_ICON[ev.type];
                 return (
                   <li
@@ -772,12 +963,16 @@ export function LiveCaptureClient({
         <div className="flex min-w-0 flex-1 items-start justify-center rounded-lg border border-border bg-card/20 p-3 xl:order-3">
           <MatchFieldEditor
             format={format}
-            formationCode={formationCode}
+            formationCode={currentFormationCode}
             players={players}
-            mode="live-overlay"
+            mode={tacticsMode ? 'live-tactics' : 'live-overlay'}
             onPlayerClick={handlePlayerClick}
             onFieldClick={handleFieldClick}
-            className="h-[50vh] max-h-[50vh] w-auto max-w-none"
+            onPlayerMove={handlePlayerMove}
+            className={cn(
+              'h-[50vh] max-h-[50vh] w-auto max-w-none',
+              tacticsMode && 'ring-2 ring-primary',
+            )}
           >
             <MatchClockOverlay periods={periods} />
           </MatchFieldEditor>

@@ -1664,7 +1664,8 @@
       "generic": "Couldn't record the event. Please try again.",
       "player_expelled": "That player is sent off; they can't receive more events.",
       "player_not_on_field": "That player isn't on the field.",
-      "player_not_eligible": "That substitute can't come on."
+      "player_not_eligible": "That substitute can't come on.",
+      "formation_invalid": "That formation is not valid for this format."
     },
     "event_expelled_double_yellow": "Sent off (two yellows): {player}",
     "event_expelled_red": "Sent off (red): {player} ({minute}')",
@@ -1706,6 +1707,11 @@
     "stats_title": "Statistics",
     "stats_placeholder": "Per-player detail arrives in the next delivery.",
     "reentry_on": "Rolling subs",
-    "reentry_off": "No re-entry"
+    "reentry_off": "No re-entry",
+    "tactics_tool": "Move/Tactics",
+    "tactics_hint": "Drag a player to reposition; change the formation with the selector.",
+    "formation_label": "Formation",
+    "formation_changed": "Formation changed to {formation}.",
+    "formation_change_event": "Tactics change: {from} → {to}"
   }
 }

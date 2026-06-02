@@ -17,6 +17,7 @@ import {
   defaultLineupDraft,
   getFormation,
   type ClockPeriod,
+  type LivePositions,
   type PeriodKind,
   type TeamFormat,
 } from '@misterfc/core';
@@ -79,6 +80,19 @@ export type LiveRivalEvent = {
     | 'shot';
   dorsal: number | null;
   note: string | null;
+  clockSeconds: number;
+  displayMinute: number | null;
+  period: PeriodKind;
+};
+
+/**
+ * Cambio de formación en directo (F7.6b) para "Últimos eventos". Fuente única:
+ * match_events type='formation_change' con metadata {from,to} (ver §7.6b ter).
+ */
+export type LiveFormationChange = {
+  id: string;
+  from: string | null;
+  to: string;
   clockSeconds: number;
   displayMinute: number | null;
   period: PeriodKind;
@@ -148,6 +162,18 @@ export type MatchLiveData = {
    * de la categoría (`categories.allow_reentry`). Lo lee `deriveSquad`.
    */
   allowReentry: boolean;
+  /**
+   * F7.6b — formación EN JUEGO ahora (null → la oficial de F6). Se cambia en
+   * directo y persiste en match_state.
+   */
+  liveFormationCode: string | null;
+  /**
+   * F7.6b — posiciones vivas por jugador (override sobre el slot oficial), de
+   * mover jugadores / cambiar formación. Persiste e hidrata.
+   */
+  livePositions: LivePositions;
+  /** F7.6b — cambios de formación en directo (para "Últimos eventos"). */
+  formationChanges: LiveFormationChange[];
 };
 
 export async function loadMatchLive(
@@ -288,12 +314,16 @@ export async function loadMatchLive(
   // desde `periods` (recuperable tras recarga, §6).
   const { data: stateRow } = await supabase
     .from('match_state')
-    .select('status')
+    .select('status, live_formation_code, live_positions')
     .eq('event_id', eventId)
     .maybeSingle();
   const matchStatus =
     (stateRow?.status as 'not_started' | 'live' | 'closed' | undefined) ??
     'not_started';
+  // F7.6b — estado táctico vivo (formación + posiciones movidas), para hidratar
+  // el campo tras recargar/volver. Override sobre el slot oficial.
+  const liveFormationCode = (stateRow?.live_formation_code as string | null) ?? null;
+  const livePositions = (stateRow?.live_positions as LivePositions | null) ?? {};
 
   const { data: periodRows } = await supabase
     .from('match_periods')
@@ -469,6 +499,37 @@ export async function loadMatchLive(
     };
   });
 
+  // Cambios de formación (F7.6b) → "Últimos eventos". FUENTE ÚNICA: match_events
+  // type='formation_change' con metadata {from,to}. Más recientes primero.
+  const { data: fcRows, error: fcErr } = await supabase
+    .from('match_events')
+    .select('id, metadata, clock_seconds, display_minute, period')
+    .eq('event_id', eventId)
+    .eq('side', 'own')
+    .eq('type', 'formation_change')
+    .order('clock_seconds', { ascending: false })
+    .order('created_at', { ascending: false });
+  if (fcErr) console.error('[directo] error cargando cambios de formación:', fcErr);
+
+  type FcRowShape = {
+    id: string;
+    metadata: { from?: string | null; to?: string } | null;
+    clock_seconds: number;
+    display_minute: number | null;
+    period: PeriodKind;
+  };
+  const formationChanges: LiveFormationChange[] = (fcRows ?? []).map((row) => {
+    const r = row as unknown as FcRowShape;
+    return {
+      id: r.id,
+      from: r.metadata?.from ?? null,
+      to: r.metadata?.to ?? '—',
+      clockSeconds: r.clock_seconds,
+      displayMinute: r.display_minute,
+      period: r.period,
+    };
+  });
+
   return {
     event: {
       id: event.id,
@@ -496,5 +557,8 @@ export async function loadMatchLive(
     absentIds,
     rivalEvents,
     allowReentry: event.teams.categories.allow_reentry,
+    liveFormationCode,
+    livePositions,
+    formationChanges,
   };
 }

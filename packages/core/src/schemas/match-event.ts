@@ -98,3 +98,27 @@ export const registerRivalEventSchema = z.object({
   y_pct: pct.optional(),
 });
 export type RegisterRivalEventInput = z.infer<typeof registerRivalEventSchema>;
+
+/**
+ * F7.6b — mover a un jugador del campo a una nueva posición (x/y 0–100). La
+ * nueva posición se guarda en el estado táctico vivo (match_state.live_positions).
+ */
+export const movePlayerSchema = z.object({
+  event_id: uuid,
+  player_id: uuid,
+  x_pct: pct,
+  y_pct: pct,
+});
+export type MovePlayerInput = z.infer<typeof movePlayerSchema>;
+
+/**
+ * F7.6b — cambiar la formación entera en directo. `formation_code` se valida
+ * contra el catálogo de F6 (y la modalidad del equipo) en la server action.
+ */
+export const changeFormationSchema = z.object({
+  event_id: uuid,
+  // id de cliente (UUID) → el cambio se persiste como match_event idempotente.
+  id: uuid,
+  formation_code: z.string().min(1, { message: 'formation_required' }).max(40),
+});
+export type ChangeFormationInput = z.infer<typeof changeFormationSchema>;

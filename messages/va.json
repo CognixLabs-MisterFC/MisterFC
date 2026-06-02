@@ -1664,7 +1664,8 @@
       "generic": "No s'ha pogut registrar l'esdeveniment. Torna-ho a provar.",
       "player_expelled": "Eixe jugador està expulsat; no pot rebre més esdeveniments.",
       "player_not_on_field": "Eixe jugador no està en el camp.",
-      "player_not_eligible": "Eixe suplent no pot entrar."
+      "player_not_eligible": "Eixe suplent no pot entrar.",
+      "formation_invalid": "Eixa formació no és vàlida per a la modalitat."
     },
     "event_expelled_double_yellow": "Expulsat per doble groga: {player}",
     "event_expelled_red": "Expulsat (roja): {player} ({minute}')",
@@ -1706,6 +1707,11 @@
     "stats_title": "Estadístiques",
     "stats_placeholder": "El detall per jugador arriba en la pròxima entrega.",
     "reentry_on": "Canvis correguts",
-    "reentry_off": "Sense reentrada"
+    "reentry_off": "Sense reentrada",
+    "tactics_tool": "Moure/Tàctica",
+    "tactics_hint": "Arrossega un jugador per recol·locar-lo; canvia la formació amb el selector.",
+    "formation_label": "Formació",
+    "formation_changed": "Formació canviada a {formation}.",
+    "formation_change_event": "Canvi de tàctica: {from} → {to}"
   }
 }

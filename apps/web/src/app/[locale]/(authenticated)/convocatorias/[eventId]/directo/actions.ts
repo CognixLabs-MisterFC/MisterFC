@@ -21,7 +21,9 @@ import { revalidatePath } from 'next/cache';
 import {
   adjustClockPatch,
   adjustClockSchema,
+  assignPlayersToFormation,
   buildNextPeriod,
+  changeFormationSchema,
   type ClockMutation,
   type ClockPeriod,
   createSupabaseServerClient,
@@ -29,8 +31,15 @@ import {
   deriveExpelledPlayers,
   deriveSquad,
   endPeriodPatch,
+  type FieldPlayerPos,
   type FieldSlot,
+  formationsForFormat,
+  getFormation,
+  type Json,
+  type LivePositions,
   matchEventRefSchema,
+  moveLivePlayer,
+  movePlayerSchema,
   nextPeriodAfter,
   isExpelled,
   isFieldEventType,
@@ -47,6 +56,7 @@ import {
   setAbsenceSchema,
   startNextPeriodSchema,
   type Sub,
+  type TeamFormat,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -472,6 +482,7 @@ type EventActionError =
   | 'player_expelled'
   | 'player_not_on_field'
   | 'player_not_eligible'
+  | 'formation_invalid'
   | 'generic';
 
 export type RegisterEventState = {
@@ -728,6 +739,11 @@ export async function registerSubstitution(
   );
   if (error) return { error: mapEventErr(error.message, error.code) };
 
+  // F7.6b — continuidad táctica: el que ENTRA hereda la posición VIVA del que
+  // sale. NO se transfiere aquí: `deriveSquad` lo resuelve por la cadena de
+  // ocupantes del hueco (el que entra hereda la posición del que salió), tanto
+  // en optimista como al hidratar. Mantener una sola lógica evita divergencias.
+
   revalidate(event_id);
   return { success: true, eventRowId: id };
 }
@@ -887,6 +903,180 @@ export async function registerRivalEvent(
       clock_seconds: clockSeconds,
       display_minute: displayMinute,
       metadata,
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F7.6b — Táctica en directo (solo nuestro equipo): mover jugadores + cambiar
+// formación. El estado vivo (formación + posiciones) se guarda en match_state
+// (live_formation_code/live_positions), SIN tocar match_starters ni la
+// alineación oficial. Persiste e hidrata al recargar. deriveSquad sigue
+// decidiendo QUIÉN está en el campo (subs/expulsiones/ausencias).
+// ─────────────────────────────────────────────────────────────────────────────
+
+type LiveTactics = {
+  liveFormationCode: string | null;
+  livePositions: LivePositions;
+};
+
+/** Carga el estado táctico vivo de match_state (vacío si aún no hay fila). */
+async function loadLiveTactics(supabase: Supa, eventId: string): Promise<LiveTactics> {
+  const { data } = await supabase
+    .from('match_state')
+    .select('live_formation_code, live_positions')
+    .eq('event_id', eventId)
+    .maybeSingle();
+  return {
+    liveFormationCode: (data?.live_formation_code as string | null) ?? null,
+    livePositions: (data?.live_positions as LivePositions | null) ?? {},
+  };
+}
+
+/** Modalidad del equipo del partido (para validar la formación del catálogo). */
+async function loadTeamFormat(
+  supabase: Supa,
+  eventId: string,
+): Promise<TeamFormat | null> {
+  const { data } = await supabase
+    .from('events')
+    .select('teams!inner(format)')
+    .eq('id', eventId)
+    .maybeSingle();
+  type Shape = { teams: { format: TeamFormat } } | null;
+  return (data as unknown as Shape)?.teams?.format ?? null;
+}
+
+export async function movePlayer(input: unknown): Promise<RegisterEventState> {
+  const parsed = movePlayerSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, player_id, x_pct, y_pct } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
+
+  // Solo se mueve a quien está EN EL CAMPO (derivado de lo persistido).
+  const squad = await loadLiveSquad(supabase, event_id);
+  if (!squad.onFieldIds.includes(player_id)) return { error: 'player_not_on_field' };
+
+  const tactics = await loadLiveTactics(supabase, event_id);
+  const nextPositions = moveLivePlayer(tactics.livePositions, player_id, x_pct, y_pct);
+
+  const { error } = await supabase
+    .from('match_state')
+    .update({ live_positions: nextPositions as unknown as Json })
+    .eq('event_id', event_id);
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true };
+}
+
+export async function changeFormation(input: unknown): Promise<RegisterEventState> {
+  const parsed = changeFormationSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, formation_code } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
+
+  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
+
+  // La formación debe existir en el catálogo de F6 Y ser de la modalidad del
+  // equipo (no metemos una F11 en un equipo F7).
+  const format = await loadTeamFormat(supabase, event_id);
+  const formation = getFormation(formation_code);
+  if (!format || !formation || formation.format !== format) {
+    return { error: 'formation_invalid' };
+  }
+  if (!formationsForFormat(format).some((f) => f.code === formation_code)) {
+    return { error: 'formation_invalid' };
+  }
+
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  // Recoloca a los que están EN EL CAMPO en los slots de la nueva formación,
+  // partiendo de su posición ACTUAL (viva si la habían movido, si no la oficial).
+  const squad = await loadLiveSquad(supabase, event_id);
+  const tactics = await loadLiveTactics(supabase, event_id);
+  const current: FieldPlayerPos[] = squad.onField.map((p) => {
+    const ov = tactics.livePositions[p.playerId];
+    return {
+      playerId: p.playerId,
+      xPct: ov?.xPct ?? p.xPct ?? 50,
+      yPct: ov?.yPct ?? p.yPct ?? 50,
+    };
+  });
+  const assigned = assignPlayersToFormation(current, formation);
+  const nextPositions: LivePositions = { ...tactics.livePositions, ...assigned };
+
+  // `from` = formación EN JUEGO antes del cambio: la viva, o la oficial de F6.
+  let fromCode = tactics.liveFormationCode;
+  if (!fromCode) {
+    const { data: official } = await supabase
+      .from('lineups')
+      .select('formation_code')
+      .eq('event_id', event_id)
+      .eq('is_official', true)
+      .maybeSingle();
+    fromCode = (official?.formation_code as string | null) ?? null;
+  }
+  if (fromCode === formation_code) {
+    // Sin cambio real: no registramos un evento vacío.
+    revalidate(event_id);
+    return { success: true };
+  }
+
+  // Materializa la formación/posiciones vivas (para pintar el campo al hidratar).
+  const { error: stateErr } = await supabase
+    .from('match_state')
+    .update({
+      live_formation_code: formation_code,
+      live_positions: nextPositions as unknown as Json,
+    })
+    .eq('event_id', event_id);
+  if (stateErr) return { error: mapEventErr(stateErr.message, stateErr.code) };
+
+  // FUENTE ÚNICA del histórico: el cambio de táctica es un match_event de tipo
+  // 'formation_change' (evento de equipo, sin jugador), con metadata {from,to}.
+  // id de cliente → reintento idempotente (§10).
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(periods, now().ms);
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId,
+      created_by: user.id,
+      side: 'own',
+      type: 'formation_change',
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+      metadata: { from: fromCode, to: formation_code },
     },
     { onConflict: 'id', ignoreDuplicates: true },
   );

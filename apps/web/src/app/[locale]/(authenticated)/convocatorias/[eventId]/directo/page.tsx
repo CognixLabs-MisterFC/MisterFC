@@ -79,6 +79,9 @@ export default async function MatchLivePage({ params }: Props) {
         absentIds={data.absentIds}
         rivalEvents={data.rivalEvents}
         allowReentry={data.allowReentry}
+        liveFormationCode={data.liveFormationCode}
+        livePositions={data.livePositions}
+        formationChanges={data.formationChanges}
       />
     </div>
   );
