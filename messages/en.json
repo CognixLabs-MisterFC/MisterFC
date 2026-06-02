@@ -1711,6 +1711,7 @@
     "tactics_tool": "Move/Tactics",
     "tactics_hint": "Drag a player to reposition; change the formation with the selector.",
     "formation_label": "Formation",
-    "formation_changed": "Formation changed to {formation}."
+    "formation_changed": "Formation changed to {formation}.",
+    "formation_change_event": "Tactics change: {from} → {to}"
   }
 }

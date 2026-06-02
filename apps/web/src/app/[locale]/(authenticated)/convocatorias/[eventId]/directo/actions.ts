@@ -740,19 +740,9 @@ export async function registerSubstitution(
   if (error) return { error: mapEventErr(error.message, error.code) };
 
   // F7.6b — continuidad táctica: el que ENTRA hereda la posición VIVA del que
-  // sale (si la habían movido / recolocado por cambio de formación). Sin
-  // override del que sale, deriveSquad ya le da el slot oficial del que salió.
-  const tactics = await loadLiveTactics(supabase, event_id);
-  const outPos = tactics.livePositions[player_out_id];
-  if (outPos) {
-    const nextPositions: LivePositions = { ...tactics.livePositions };
-    nextPositions[player_in_id] = outPos;
-    delete nextPositions[player_out_id];
-    await supabase
-      .from('match_state')
-      .update({ live_positions: nextPositions as unknown as Json })
-      .eq('event_id', event_id);
-  }
+  // sale. NO se transfiere aquí: `deriveSquad` lo resuelve por la cadena de
+  // ocupantes del hueco (el que entra hereda la posición del que salió), tanto
+  // en optimista como al hidratar. Mantener una sola lógica evita divergencias.
 
   revalidate(event_id);
   return { success: true, eventRowId: id };
@@ -930,10 +920,17 @@ export async function registerRivalEvent(
 // decidiendo QUIÉN está en el campo (subs/expulsiones/ausencias).
 // ─────────────────────────────────────────────────────────────────────────────
 
+type FormationLogEntry = {
+  from: string | null;
+  to: string;
+  clock_seconds: number;
+  period: PeriodKind;
+};
+
 type LiveTactics = {
   liveFormationCode: string | null;
   livePositions: LivePositions;
-  liveFormationLog: Array<{ code: string; clock_seconds: number; period: PeriodKind }>;
+  liveFormationLog: FormationLogEntry[];
 };
 
 /** Carga el estado táctico vivo de match_state (vacío si aún no hay fila). */
@@ -1039,10 +1036,29 @@ export async function changeFormation(input: unknown): Promise<RegisterEventStat
   const assigned = assignPlayersToFormation(current, formation);
   const nextPositions: LivePositions = { ...tactics.livePositions, ...assigned };
 
+  // `from` = formación EN JUEGO antes del cambio: la viva, o la oficial de F6.
+  let fromCode = tactics.liveFormationCode;
+  if (!fromCode) {
+    const { data: official } = await supabase
+      .from('lineups')
+      .select('formation_code')
+      .eq('event_id', event_id)
+      .eq('is_official', true)
+      .maybeSingle();
+    fromCode = (official?.formation_code as string | null) ?? null;
+  }
+  if (fromCode === formation_code) {
+    // Sin cambio real: no registramos un evento vacío.
+    revalidate(event_id);
+    return { success: true };
+  }
+
+  // Fuente ÚNICA del histórico de cambios de formación (no usamos match_events:
+  // su CHECK de `type` no admite 'formation_change' y la spec pide sin migración).
   const { clockSeconds, period } = playerEventClockFields(periods, now().ms);
-  const nextLog = [
+  const nextLog: FormationLogEntry[] = [
     ...tactics.liveFormationLog,
-    { code: formation_code, clock_seconds: clockSeconds, period },
+    { from: fromCode, to: formation_code, clock_seconds: clockSeconds, period },
   ];
 
   const { error } = await supabase

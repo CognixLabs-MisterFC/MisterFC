@@ -15,6 +15,7 @@
 import {
   createSupabaseServerClient,
   defaultLineupDraft,
+  displayMinute as toDisplayMinute,
   getFormation,
   type ClockPeriod,
   type LivePositions,
@@ -80,6 +81,19 @@ export type LiveRivalEvent = {
     | 'shot';
   dorsal: number | null;
   note: string | null;
+  clockSeconds: number;
+  displayMinute: number | null;
+  period: PeriodKind;
+};
+
+/**
+ * Cambio de formación en directo (F7.6b) para "Últimos eventos". Fuente única:
+ * match_state.live_formation_log (no match_events; ver §7.6b ter).
+ */
+export type LiveFormationChange = {
+  id: string;
+  from: string | null;
+  to: string;
   clockSeconds: number;
   displayMinute: number | null;
   period: PeriodKind;
@@ -159,6 +173,8 @@ export type MatchLiveData = {
    * mover jugadores / cambiar formación. Persiste e hidrata.
    */
   livePositions: LivePositions;
+  /** F7.6b — cambios de formación en directo (para "Últimos eventos"). */
+  formationChanges: LiveFormationChange[];
 };
 
 export async function loadMatchLive(
@@ -299,7 +315,7 @@ export async function loadMatchLive(
   // desde `periods` (recuperable tras recarga, §6).
   const { data: stateRow } = await supabase
     .from('match_state')
-    .select('status, live_formation_code, live_positions')
+    .select('status, live_formation_code, live_positions, live_formation_log')
     .eq('event_id', eventId)
     .maybeSingle();
   const matchStatus =
@@ -309,6 +325,23 @@ export async function loadMatchLive(
   // el campo tras recargar/volver. Override sobre el slot oficial.
   const liveFormationCode = (stateRow?.live_formation_code as string | null) ?? null;
   const livePositions = (stateRow?.live_positions as LivePositions | null) ?? {};
+  // Cambios de formación (histórico) → "Últimos eventos". Fuente única.
+  type FormationLogRow = {
+    from: string | null;
+    to: string;
+    clock_seconds: number;
+    period: PeriodKind;
+  };
+  const formationLog =
+    (stateRow?.live_formation_log as FormationLogRow[] | null) ?? [];
+  const formationChanges: LiveFormationChange[] = formationLog.map((e, i) => ({
+    id: `fc-${i}-${e.clock_seconds}`,
+    from: e.from ?? null,
+    to: e.to,
+    clockSeconds: e.clock_seconds,
+    displayMinute: toDisplayMinute(e.clock_seconds),
+    period: e.period,
+  }));
 
   const { data: periodRows } = await supabase
     .from('match_periods')
@@ -513,5 +546,6 @@ export async function loadMatchLive(
     allowReentry: event.teams.categories.allow_reentry,
     liveFormationCode,
     livePositions,
+    formationChanges,
   };
 }

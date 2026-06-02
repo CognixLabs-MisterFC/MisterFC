@@ -28,6 +28,7 @@ import {
   Flag,
   Footprints,
   Goal,
+  LayoutGrid,
   Move,
   RotateCcw,
   Square,
@@ -67,6 +68,7 @@ import { cn } from '@/lib/utils';
 import type {
   LiveBenchPlayer,
   LiveFieldPlayer,
+  LiveFormationChange,
   LiveMatchEvent,
   LiveRivalEvent,
   LiveSubstitution,
@@ -133,6 +135,7 @@ type Props = {
   allowReentry: boolean;
   liveFormationCode: string | null;
   livePositions: LivePositions;
+  formationChanges: LiveFormationChange[];
 };
 
 // Herramienta seleccionada en la paleta propia: un tipo de evento, o 'absent'
@@ -163,6 +166,7 @@ export function LiveCaptureClient({
   allowReentry,
   liveFormationCode,
   livePositions,
+  formationChanges,
 }: Props) {
   const t = useTranslations('partido_directo');
   const router = useRouter();
@@ -173,6 +177,9 @@ export function LiveCaptureClient({
   // Overlays optimistas del estado táctico (posiciones + formación).
   const [optimisticPositions, setOptimisticPositions] = useState<LivePositions>({});
   const [optimisticFormation, setOptimisticFormation] = useState<string | null>(null);
+  const [optimisticFormationChanges, setOptimisticFormationChanges] = useState<
+    LiveFormationChange[]
+  >([]);
   // Overlays optimistas (OVERLAY sobre lo persistido; nunca lo borran — la
   // verdad se recompone al refrescar). Ver invariante de hidratación de 7.3.
   const [optimistic, setOptimistic] = useState<LiveMatchEvent[]>([]);
@@ -210,6 +217,21 @@ export function LiveCaptureClient({
   const events: LiveMatchEvent[] = mergeLiveEvents(recentEvents, optimistic);
   const rivalAll: LiveRivalEvent[] = mergeLiveEvents(rivalEvents, optimisticRival);
 
+  // F7.6b — "Últimos eventos" = eventos propios + CAMBIOS DE TÁCTICA (fuente
+  // única: live_formation_log), intercalados por reloj (más recientes primero).
+  const allFormationChanges = mergeLiveEvents(formationChanges, optimisticFormationChanges);
+  type TimelineItem =
+    | { kind: 'event'; clockSeconds: number; ev: LiveMatchEvent }
+    | { kind: 'formation'; clockSeconds: number; fc: LiveFormationChange };
+  const timeline: TimelineItem[] = [
+    ...events.map((ev) => ({ kind: 'event' as const, clockSeconds: ev.clockSeconds, ev })),
+    ...allFormationChanges.map((fc) => ({
+      kind: 'formation' as const,
+      clockSeconds: fc.clockSeconds,
+      fc,
+    })),
+  ].sort((a, b) => b.clockSeconds - a.clockSeconds);
+
   // Expulsados PROPIOS = estado DERIVADO de TODOS los eventos (1 roja O 2
   // amarillas, §3.4 bis). Se recomputa al hidratar.
   const expelledIds = deriveExpelledPlayers(events);
@@ -238,6 +260,14 @@ export function LiveCaptureClient({
     else absentSet.delete(pid);
   }
 
+  // F7.6b — estado táctico EFECTIVO = persistido + overlay optimista. La
+  // formación viva manda sobre la oficial; las posiciones movidas hacen override
+  // del slot oficial. Todo se hidrata al recargar (no es efímero).
+  const effectiveLivePositions: LivePositions = { ...livePositions, ...optimisticPositions };
+  const currentFormationCode = optimisticFormation ?? liveFormationCode ?? formationCode;
+
+  // `deriveSquad` resuelve la posición efectiva de cada hueco (incl. herencia: el
+  // que entra hereda la posición ACTUAL del que salió por la cadena de ocupantes).
   const squad = deriveSquad({
     slots: fieldPlayers.map((p) => ({
       playerId: p.playerId,
@@ -250,27 +280,21 @@ export function LiveCaptureClient({
     expelled: expelledIds,
     absent: absentSet,
     allowReentry,
+    positions: effectiveLivePositions,
   });
 
-  // F7.6b — estado táctico EFECTIVO = persistido + overlay optimista. La
-  // formación viva manda sobre la oficial; las posiciones movidas hacen override
-  // del slot oficial. Todo se hidrata al recargar (no es efímero).
-  const effectiveLivePositions: LivePositions = { ...livePositions, ...optimisticPositions };
-  const currentFormationCode = optimisticFormation ?? liveFormationCode ?? formationCode;
-
-  // Jugadores EN EL CAMPO ahora, con nombre/dorsal/foto de quien ocupe el hueco
-  // y su posición VIVA (movida/recolocada) si existe; si no, la del slot oficial.
+  // Jugadores EN EL CAMPO ahora, con nombre/dorsal/foto de quien ocupe el hueco;
+  // la posición ya viene resuelta por deriveSquad (viva/heredada/slot oficial).
   const players: FieldEditorPlayer[] = squad.onField.map((slot) => {
     const info = playerInfo.get(slot.playerId);
-    const ov = effectiveLivePositions[slot.playerId];
     return {
       playerId: slot.playerId,
       label: info?.label ?? slot.playerId.slice(0, 4),
       dorsal: info?.dorsal ?? null,
       photoUrl: info?.photoUrl ?? null,
-      positionCode: ov?.positionCode ?? slot.positionCode,
-      xPct: ov?.xPct ?? slot.xPct,
-      yPct: ov?.yPct ?? slot.yPct,
+      positionCode: slot.positionCode,
+      xPct: slot.xPct,
+      yPct: slot.yPct,
     };
   });
 
@@ -631,20 +655,37 @@ export function LiveCaptureClient({
       yPct: p.yPct ?? 50,
     }));
     const assigned = assignPlayersToFormation(current, formation);
+    const fromCode = currentFormationCode;
+    const clockSeconds = clockSecondsAt(periods, eventNowMs());
+    const cur = currentPeriod(periods);
+    const period = cur?.period ?? 'first_half';
+    const changeRow: LiveFormationChange = {
+      id: crypto.randomUUID(),
+      from: fromCode,
+      to: code,
+      clockSeconds,
+      displayMinute: toDisplayMinute(clockSeconds),
+      period,
+    };
     const prevPositions = optimisticPositions;
     const prevFormation = optimisticFormation;
     setOptimisticFormation(code);
     setOptimisticPositions((p) => ({ ...p, ...assigned }));
+    setOptimisticFormationChanges((p) => [...p, changeRow]);
     startTransition(async () => {
       const res = await changeFormation({ event_id: eventId, formation_code: code });
       if (res.error) {
         setOptimisticFormation(prevFormation);
         setOptimisticPositions(prevPositions);
+        setOptimisticFormationChanges((p) => p.filter((c) => c.id !== changeRow.id));
         toast.error(t(`event_error.${res.error}`));
         return;
       }
       toast.success(t('formation_changed', { formation: code }));
-      router.refresh();
+      await router.refresh();
+      // Lo persistido (live_formation_log) ya es autoritativo → soltamos el
+      // overlay para no duplicar la fila en "Últimos eventos".
+      setOptimisticFormationChanges([]);
     });
   }
 
@@ -774,11 +815,32 @@ export function LiveCaptureClient({
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t('recent_events_title')}
           </p>
-          {events.length === 0 ? (
+          {timeline.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('no_events_yet')}</p>
           ) : (
             <ul className="flex max-h-[52vh] flex-col gap-1 overflow-y-auto">
-              {events.map((ev) => {
+              {timeline.map((item) => {
+                if (item.kind === 'formation') {
+                  const fc = item.fc;
+                  return (
+                    <li
+                      key={fc.id}
+                      className="flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-sm"
+                    >
+                      <span className="w-7 shrink-0 text-right font-mono text-xs tabular-nums text-muted-foreground">
+                        {fc.displayMinute ?? Math.floor(fc.clockSeconds / 60)}&#39;
+                      </span>
+                      <LayoutGrid className="size-4 shrink-0 text-primary" aria-hidden />
+                      <span className="min-w-0 flex-1 truncate">
+                        {t('formation_change_event', {
+                          from: fc.from ?? '—',
+                          to: fc.to,
+                        })}
+                      </span>
+                    </li>
+                  );
+                }
+                const ev = item.ev;
                 const Icon = EVENT_ICON[ev.type];
                 return (
                   <li

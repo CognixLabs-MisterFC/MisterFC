@@ -1711,6 +1711,7 @@
     "tactics_tool": "Moure/Tàctica",
     "tactics_hint": "Arrossega un jugador per recol·locar-lo; canvia la formació amb el selector.",
     "formation_label": "Formació",
-    "formation_changed": "Formació canviada a {formation}."
+    "formation_changed": "Formació canviada a {formation}.",
+    "formation_change_event": "Canvi de tàctica: {from} → {to}"
   }
 }

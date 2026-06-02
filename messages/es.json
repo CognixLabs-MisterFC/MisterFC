@@ -1710,6 +1710,7 @@
     "tactics_tool": "Mover/Táctica",
     "tactics_hint": "Arrastra a un jugador para recolocarlo; cambia la formación con el selector.",
     "formation_label": "Formación",
-    "formation_changed": "Formación cambiada a {formation}."
+    "formation_changed": "Formación cambiada a {formation}.",
+    "formation_change_event": "Cambio de táctica: {from} → {to}"
   }
 }

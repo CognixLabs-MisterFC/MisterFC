@@ -81,6 +81,7 @@ export default async function MatchLivePage({ params }: Props) {
         allowReentry={data.allowReentry}
         liveFormationCode={data.liveFormationCode}
         livePositions={data.livePositions}
+        formationChanges={data.formationChanges}
       />
     </div>
   );

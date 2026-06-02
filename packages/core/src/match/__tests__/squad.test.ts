@@ -141,6 +141,47 @@ describe('deriveSquad — ausente (no viene)', () => {
   });
 });
 
+describe('deriveSquad — posiciones vivas (F7.6b)', () => {
+  it('el ocupante movido usa su posición viva, no la del slot', () => {
+    const sq = deriveSquad({
+      ...base,
+      positions: { T2: { positionCode: 'CB', xPct: 12, yPct: 55 } },
+    });
+    const t2 = sq.onField.find((p) => p.playerId === 'T2');
+    expect(t2?.xPct).toBe(12);
+    expect(t2?.yPct).toBe(55);
+    // Sin override, T1 sigue en su slot oficial.
+    expect(sq.onField.find((p) => p.playerId === 'T1')?.yPct).toBe(95);
+  });
+
+  it('el que ENTRA hereda la posición ACTUAL (movida) del que SALE', () => {
+    // T2 estaba movido a (12,55); entra S1 por T2 → S1 hereda (12,55), no el slot.
+    const sq = deriveSquad({
+      ...base,
+      subs: [{ out: 'T2', in: 'S1' }],
+      positions: { T2: { positionCode: 'CB', xPct: 12, yPct: 55 } },
+    });
+    const s1 = sq.onField.find((p) => p.playerId === 'S1');
+    expect(s1?.xPct).toBe(12);
+    expect(s1?.yPct).toBe(55);
+    expect(s1?.positionCode).toBe('CB');
+  });
+
+  it('la posición viva del que entra (si la tiene) manda sobre la heredada', () => {
+    const sq = deriveSquad({
+      ...base,
+      subs: [{ out: 'T2', in: 'S1' }],
+      positions: {
+        T2: { positionCode: 'CB', xPct: 12, yPct: 55 },
+        S1: { positionCode: 'LB', xPct: 88, yPct: 60 },
+      },
+    });
+    const s1 = sq.onField.find((p) => p.playerId === 'S1');
+    expect(s1?.xPct).toBe(88);
+    expect(s1?.yPct).toBe(60);
+  });
+});
+
 describe('deriveSquad — hidratación desde lo persistido', () => {
   it('mismo resultado recomputando solo desde subs/expelled/absent (sin optimista)', () => {
     const persisted = deriveSquad({

@@ -60,6 +60,13 @@ export interface Squad {
   eligibleInIds: string[];
 }
 
+/** Posición VIVA (movida / recolocada) de un jugador, override del slot oficial. */
+export interface LivePos {
+  positionCode: string | null;
+  xPct: number;
+  yPct: number;
+}
+
 export interface DeriveSquadParams {
   /** Huecos del campo = posiciones de campo de la alineación oficial (titulares). */
   slots: readonly FieldSlot[];
@@ -77,33 +84,67 @@ export interface DeriveSquadParams {
    * una vez sustituido, no reentra) — las categorías de base lo traen activado.
    */
   allowReentry?: boolean;
+  /**
+   * F7.6b — posiciones VIVAS por jugador (mover/cambiar formación). La posición
+   * en el campo de cada hueco se resuelve siguiendo a su ocupante: si el ocupante
+   * actual tiene posición viva se usa esa; si no (p.ej. acaba de entrar por
+   * sustitución), HEREDA la del último ocupante anterior del hueco que la tenga
+   * (la posición ACTUAL del que salió, no la original del once); si nadie del
+   * hueco fue movido, la del slot oficial.
+   */
+  positions?: Readonly<Record<string, LivePos>>;
 }
 
 export function deriveSquad(params: DeriveSquadParams): Squad {
   const expelled = new Set(params.expelled);
   const absent = new Set(params.absent);
   const allowReentry = params.allowReentry ?? false;
+  const positions = params.positions ?? {};
 
-  // Ocupante actual de cada hueco: arranca con el titular y va cambiando con las
-  // sustituciones (el que entra ocupa el hueco del que sale).
-  const occupants: { occupant: string; slot: FieldSlot }[] = params.slots.map(
-    (slot) => ({ occupant: slot.playerId, slot }),
+  // Por cada hueco, la CADENA de ocupantes (titular → entrados sucesivos). El
+  // ocupante actual es el último de la cadena; la cadena permite que el que entra
+  // herede la posición viva del que salió (F7.6b).
+  const lanes: { chain: string[]; slot: FieldSlot }[] = params.slots.map(
+    (slot) => ({ chain: [slot.playerId], slot }),
   );
   for (const sub of params.subs) {
-    const target = occupants.find((o) => o.occupant === sub.out);
-    if (target) target.occupant = sub.in; // si no está en campo, se ignora (defensivo)
+    const lane = lanes.find((l) => l.chain[l.chain.length - 1] === sub.out);
+    if (lane) lane.chain.push(sub.in); // si no está en campo, se ignora (defensivo)
   }
+
+  // Posición efectiva del hueco: la viva del ocupante actual; si no, la del
+  // ocupante anterior más reciente que la tuviera; si no, la del slot oficial.
+  function resolvePos(lane: { chain: string[]; slot: FieldSlot }): FieldSlot {
+    for (let i = lane.chain.length - 1; i >= 0; i -= 1) {
+      const pid = lane.chain[i];
+      const lp = pid ? positions[pid] : undefined;
+      if (lp) {
+        return {
+          playerId: lane.chain[lane.chain.length - 1] ?? lane.slot.playerId,
+          positionCode: lp.positionCode ?? lane.slot.positionCode,
+          xPct: lp.xPct,
+          yPct: lp.yPct,
+        };
+      }
+    }
+    return {
+      playerId: lane.chain[lane.chain.length - 1] ?? lane.slot.playerId,
+      positionCode: lane.slot.positionCode,
+      xPct: lane.slot.xPct,
+      yPct: lane.slot.yPct,
+    };
+  }
+
+  const occupants = lanes.map((lane) => ({
+    occupant: lane.chain[lane.chain.length - 1] ?? lane.slot.playerId,
+    lane,
+  }));
 
   // En el campo: el ocupante de cada hueco, salvo expulsados/ausentes (hueco
   // vacío hasta que el operador meta a otro por sustitución).
   const onField: FieldSlot[] = occupants
     .filter((o) => !expelled.has(o.occupant) && !absent.has(o.occupant))
-    .map((o) => ({
-      playerId: o.occupant,
-      positionCode: o.slot.positionCode,
-      xPct: o.slot.xPct,
-      yPct: o.slot.yPct,
-    }));
+    .map((o) => resolvePos(o.lane));
   const onFieldIds = onField.map((p) => p.playerId);
   const onFieldSet = new Set(onFieldIds);
 
