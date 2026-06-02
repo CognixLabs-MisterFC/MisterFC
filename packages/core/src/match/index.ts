@@ -30,6 +30,8 @@ export {
   isPlayerEventType,
   FIELD_EVENT_TYPES,
   isFieldEventType,
+  RIVAL_EVENT_TYPES,
+  isRivalEventType,
   playerEventClockFields,
   resolveCardOutcome,
   isExpelled,
@@ -39,6 +41,7 @@ export {
 export type {
   PlayerEventType,
   FieldEventType,
+  RivalEventType,
   PlayerEventClockFields,
   CardOutcome,
 } from './event';

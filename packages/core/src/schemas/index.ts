@@ -221,10 +221,12 @@ export {
   registerFieldEventSchema,
   registerSubstitutionSchema,
   setAbsenceSchema,
+  registerRivalEventSchema,
 } from './match-event';
 export type {
   RegisterPlayerEventInput,
   RegisterFieldEventInput,
   RegisterSubstitutionInput,
   SetAbsenceInput,
+  RegisterRivalEventInput,
 } from './match-event';

@@ -77,6 +77,8 @@ export default async function MatchLivePage({ params }: Props) {
         benchPlayers={data.benchPlayers}
         substitutions={data.substitutions}
         absentIds={data.absentIds}
+        rivalEvents={data.rivalEvents}
+        allowReentry={data.allowReentry}
       />
     </div>
   );

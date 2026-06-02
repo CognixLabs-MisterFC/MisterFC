@@ -1684,11 +1684,27 @@
       "available": "Disponible",
       "entered": "En campo",
       "expelled": "Expulsado",
-      "absent": "Ausente"
+      "absent": "Ausente",
+      "out": "Fuera"
     },
     "absent_marked": "{player} marcado como ausente.",
     "absent_undone": "{player} vuelve a estar disponible.",
     "absent_title": "Ausentes (no vienen)",
-    "absent_undo_aria": "Quitar la ausencia de {player}"
+    "absent_undo_aria": "Quitar la ausencia de {player}",
+    "rival_panel_title": "Rival",
+    "rival_events_title": "Eventos del rival",
+    "rival_dorsal_label": "Dorsal",
+    "rival_dorsal_placeholder": "Nº",
+    "rival_note_label": "Nota (opcional)",
+    "rival_note_placeholder": "p. ej. delantero rápido",
+    "rival_hint": "Pon el dorsal y toca el evento del rival.",
+    "rival_dorsal_required": "Indica el dorsal del rival (1–99).",
+    "rival_registered": "Rival #{dorsal}: {event} ({minute}')",
+    "rival_no_events": "Aún no hay eventos del rival.",
+    "rival_expelled": "Expulsado",
+    "stats_title": "Estadísticas",
+    "stats_placeholder": "El detalle por jugador llega en la próxima entrega.",
+    "reentry_on": "Cambios corridos",
+    "reentry_off": "Sin reentrada"
   }
 }

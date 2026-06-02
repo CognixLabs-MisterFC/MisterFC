@@ -1685,11 +1685,27 @@
       "available": "Available",
       "entered": "On field",
       "expelled": "Sent off",
-      "absent": "Absent"
+      "absent": "Absent",
+      "out": "Off"
     },
     "absent_marked": "{player} marked as absent.",
     "absent_undone": "{player} is available again.",
     "absent_title": "Absent (no-shows)",
-    "absent_undo_aria": "Remove {player}'s absence"
+    "absent_undo_aria": "Remove {player}'s absence",
+    "rival_panel_title": "Opponent",
+    "rival_events_title": "Opponent events",
+    "rival_dorsal_label": "Number",
+    "rival_dorsal_placeholder": "No.",
+    "rival_note_label": "Note (optional)",
+    "rival_note_placeholder": "e.g. fast striker",
+    "rival_hint": "Enter the number and tap the opponent event.",
+    "rival_dorsal_required": "Enter the opponent's shirt number (1–99).",
+    "rival_registered": "Opponent #{dorsal}: {event} ({minute}')",
+    "rival_no_events": "No opponent events yet.",
+    "rival_expelled": "Sent off",
+    "stats_title": "Statistics",
+    "stats_placeholder": "Per-player detail arrives in the next delivery.",
+    "reentry_on": "Rolling subs",
+    "reentry_off": "No re-entry"
   }
 }
