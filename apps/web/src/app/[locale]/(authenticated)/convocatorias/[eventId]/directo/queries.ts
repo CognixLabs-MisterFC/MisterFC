@@ -17,6 +17,7 @@ import {
   defaultLineupDraft,
   getFormation,
   type ClockPeriod,
+  type LivePositions,
   type PeriodKind,
   type TeamFormat,
 } from '@misterfc/core';
@@ -148,6 +149,16 @@ export type MatchLiveData = {
    * de la categoría (`categories.allow_reentry`). Lo lee `deriveSquad`.
    */
   allowReentry: boolean;
+  /**
+   * F7.6b — formación EN JUEGO ahora (null → la oficial de F6). Se cambia en
+   * directo y persiste en match_state.
+   */
+  liveFormationCode: string | null;
+  /**
+   * F7.6b — posiciones vivas por jugador (override sobre el slot oficial), de
+   * mover jugadores / cambiar formación. Persiste e hidrata.
+   */
+  livePositions: LivePositions;
 };
 
 export async function loadMatchLive(
@@ -288,12 +299,16 @@ export async function loadMatchLive(
   // desde `periods` (recuperable tras recarga, §6).
   const { data: stateRow } = await supabase
     .from('match_state')
-    .select('status')
+    .select('status, live_formation_code, live_positions')
     .eq('event_id', eventId)
     .maybeSingle();
   const matchStatus =
     (stateRow?.status as 'not_started' | 'live' | 'closed' | undefined) ??
     'not_started';
+  // F7.6b — estado táctico vivo (formación + posiciones movidas), para hidratar
+  // el campo tras recargar/volver. Override sobre el slot oficial.
+  const liveFormationCode = (stateRow?.live_formation_code as string | null) ?? null;
+  const livePositions = (stateRow?.live_positions as LivePositions | null) ?? {};
 
   const { data: periodRows } = await supabase
     .from('match_periods')
@@ -496,5 +511,7 @@ export async function loadMatchLive(
     absentIds,
     rivalEvents,
     allowReentry: event.teams.categories.allow_reentry,
+    liveFormationCode,
+    livePositions,
   };
 }

@@ -14,20 +14,32 @@
  *                      helpers exportados aquí abajo y persiste el movimiento.
  *   - 'readonly'     → estático, sin drag. Para la vista de familia/jugador y
  *                      la previsualización de notas (Lote B).
- *   - 'live-overlay' → STUB para F7: estático + clic en jugador/césped + slot
- *                      para overlays (`children`). El drag de eventos lo añade
- *                      F7 encima; aquí solo se exponen los callbacks.
+ *   - 'live-overlay' → F7: estático + clic en jugador/césped + slot para
+ *                      overlays (`children`). El drag de eventos lo añade F7.
+ *   - 'live-tactics' → F7.6b: chips arrastrables LIBREMENTE (no a slots) para
+ *                      recolocar en directo. DndContext propio (no necesita uno
+ *                      externo); al soltar reporta la nueva posición x/y (0–100)
+ *                      vía `onPlayerMove`. Sin clic de evento.
  *
  * El componente solo conoce jugadores y posiciones. NO tiene lógica de eventos
  * de partido (ADR-0009).
  */
 
-import { type ReactNode, useId } from 'react';
-import { useDraggable, useDroppable } from '@dnd-kit/core';
+import { type ReactNode, useId, useRef } from 'react';
+import {
+  DndContext,
+  type DragEndEvent,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import {
   fieldSlotDroppableId,
   getFormation,
+  parsePlayerDragId,
   playerDraggableId,
   type Formation,
   type TeamFormat,
@@ -53,7 +65,7 @@ export {
 // Tipos públicos
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type FieldMode = 'edit' | 'readonly' | 'live-overlay';
+export type FieldMode = 'edit' | 'readonly' | 'live-overlay' | 'live-tactics';
 
 export interface FieldEditorPlayer {
   playerId: string;
@@ -90,6 +102,8 @@ export interface MatchFieldEditorProps {
   mode?: FieldMode;
   onPlayerClick?: (playerId: string) => void;
   onFieldClick?: (xPct: number, yPct: number) => void;
+  /** F7.6b — modo 'live-tactics': nueva posición (0–100) al soltar un chip. */
+  onPlayerMove?: (playerId: string, xPct: number, yPct: number) => void;
   onPlayerHover?: (playerId: string | null) => void;
   /** Overlays absolutos sobre el campo (cronómetro/paleta de F7). */
   children?: ReactNode;
@@ -291,14 +305,22 @@ export function MatchFieldEditor({
   mode = 'readonly',
   onPlayerClick,
   onFieldClick,
+  onPlayerMove,
   onPlayerHover,
   children,
   className,
 }: MatchFieldEditorProps) {
   const labelId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
   const formation = formationOverride ?? getFormation(formationCode);
   const byCode = new Map(
     players.filter((p) => p.positionCode).map((p) => [p.positionCode!, p]),
+  );
+
+  // F7.6b — sensor con umbral de 8px: distingue un toque (sin efecto) de un
+  // arrastre real para recolocar en táctil.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
 
   function handleFieldClick(e: React.MouseEvent<HTMLDivElement>) {
@@ -312,10 +334,32 @@ export function MatchFieldEditor({
     );
   }
 
+  // F7.6b — al soltar un chip en 'live-tactics': nueva posición = posición
+  // actual + desplazamiento en píxeles convertido a % del campo. Se acota fuera.
+  function handleTacticsDragEnd(e: DragEndEvent) {
+    if (!onPlayerMove) return;
+    const playerId = parsePlayerDragId(String(e.active.id));
+    if (!playerId) return;
+    const rect = rootRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0 || rect.height === 0) return;
+    const player = players.find((p) => p.playerId === playerId);
+    if (!player) return;
+    const cur = slotCoords(formation, player);
+    if (!cur) return;
+    const xPct = cur.x + (e.delta.x / rect.width) * 100;
+    const yPct = cur.y + (e.delta.y / rect.height) * 100;
+    onPlayerMove(
+      playerId,
+      Math.round(xPct * 100) / 100,
+      Math.round(yPct * 100) / 100,
+    );
+  }
+
   return (
     <div
       role="group"
       aria-labelledby={labelId}
+      ref={rootRef}
       className={cn(
         'relative mx-auto aspect-[2/3] w-full max-w-md overflow-hidden rounded-lg',
         className,
@@ -334,35 +378,54 @@ export function MatchFieldEditor({
         </p>
       )}
 
-      {mode === 'edit' && formation
-        ? // Edit: todos los slots del preset, drop targets + chips arrastrables.
-          formation.slots.map((slot) => (
-            <EditableSlot
-              key={slot.code}
-              slotCode={slot.code}
-              slotLabel={slotLabels?.[slot.code] ?? slot.code}
-              xPct={slot.xPct}
-              yPct={slot.yPct}
-              player={byCode.get(slot.code)}
-              onHover={onPlayerHover}
-            />
-          ))
-        : // readonly / live-overlay / sin formación: chips estáticos.
-          players.map((player) => {
+      {mode === 'edit' && formation ? (
+        // Edit: todos los slots del preset, drop targets + chips arrastrables.
+        formation.slots.map((slot) => (
+          <EditableSlot
+            key={slot.code}
+            slotCode={slot.code}
+            slotLabel={slotLabels?.[slot.code] ?? slot.code}
+            xPct={slot.xPct}
+            yPct={slot.yPct}
+            player={byCode.get(slot.code)}
+            onHover={onPlayerHover}
+          />
+        ))
+      ) : mode === 'live-tactics' ? (
+        // F7.6b: chips arrastrables LIBREMENTE para recolocar en directo.
+        <DndContext sensors={sensors} onDragEnd={handleTacticsDragEnd}>
+          {players.map((player) => {
             const c = slotCoords(formation, player);
             if (!c) return null;
             return (
-              <StaticChip
+              <div
                 key={player.playerId}
-                player={player}
-                xPct={c.x}
-                yPct={c.y}
-                clickable={mode === 'live-overlay' && !!onPlayerClick}
-                onClick={onPlayerClick}
-                onHover={onPlayerHover}
-              />
+                className="absolute -translate-x-1/2 -translate-y-1/2"
+                style={{ left: `${c.x}%`, top: `${c.y}%` }}
+              >
+                <DraggableChip player={player} onHover={onPlayerHover} />
+              </div>
             );
           })}
+        </DndContext>
+      ) : (
+        // readonly / live-overlay / sin formación: chips estáticos.
+        players.map((player) => {
+          const c = slotCoords(formation, player);
+          if (!c) return null;
+          return (
+            <StaticChip
+              key={player.playerId}
+              player={player}
+              xPct={c.x}
+              yPct={c.y}
+              clickable={mode === 'live-overlay' && !!onPlayerClick}
+              onClick={onPlayerClick}
+              onHover={onPlayerHover}
+            />
+          );
+        })
+      )}
 
       {/* Overlays externos (F7): cronómetro, paleta de eventos, etc. */}
       {children}

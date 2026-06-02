@@ -1663,7 +1663,8 @@
       "generic": "No se pudo registrar el evento. Inténtalo de nuevo.",
       "player_expelled": "Ese jugador está expulsado; no puede recibir más eventos.",
       "player_not_on_field": "Ese jugador no está en el campo.",
-      "player_not_eligible": "Ese suplente no puede entrar."
+      "player_not_eligible": "Ese suplente no puede entrar.",
+      "formation_invalid": "Esa formación no es válida para la modalidad."
     },
     "event_expelled_double_yellow": "Expulsado por doble amarilla: {player}",
     "event_expelled_red": "Expulsado (roja): {player} ({minute}')",
@@ -1705,6 +1706,10 @@
     "stats_title": "Estadísticas",
     "stats_placeholder": "El detalle por jugador llega en la próxima entrega.",
     "reentry_on": "Cambios corridos",
-    "reentry_off": "Sin reentrada"
+    "reentry_off": "Sin reentrada",
+    "tactics_tool": "Mover/Táctica",
+    "tactics_hint": "Arrastra a un jugador para recolocarlo; cambia la formación con el selector.",
+    "formation_label": "Formación",
+    "formation_changed": "Formación cambiada a {formation}."
   }
 }

@@ -55,3 +55,8 @@ export type {
   Squad,
   DeriveSquadParams,
 } from './squad';
+
+// Nota: `clampPct` ya se exporta desde lineups (coach-formations); aquí solo lo
+// usamos internamente en tactics, no lo re-exportamos para evitar el choque.
+export { moveLivePlayer, assignPlayersToFormation } from './tactics';
+export type { LivePosition, LivePositions, FieldPlayerPos } from './tactics';

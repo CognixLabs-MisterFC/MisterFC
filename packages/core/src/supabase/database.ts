@@ -1015,6 +1015,9 @@ export type Database = {
           event_id: string
           goals_against: number | null
           goals_for: number | null
+          live_formation_code: string | null
+          live_formation_log: Json
+          live_positions: Json
           lock_heartbeat_at: string | null
           operator_profile_id: string | null
           post_match_notes: string | null
@@ -1031,6 +1034,9 @@ export type Database = {
           event_id: string
           goals_against?: number | null
           goals_for?: number | null
+          live_formation_code?: string | null
+          live_formation_log?: Json
+          live_positions?: Json
           lock_heartbeat_at?: string | null
           operator_profile_id?: string | null
           post_match_notes?: string | null
@@ -1047,6 +1053,9 @@ export type Database = {
           event_id?: string
           goals_against?: number | null
           goals_for?: number | null
+          live_formation_code?: string | null
+          live_formation_log?: Json
+          live_positions?: Json
           lock_heartbeat_at?: string | null
           operator_profile_id?: string | null
           post_match_notes?: string | null
