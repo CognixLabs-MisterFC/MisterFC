@@ -1661,11 +1661,34 @@
       "no_period": "Inicia el partido para registrar eventos.",
       "player_not_in_team": "Ese jugador no pertenece al equipo en este partido.",
       "generic": "No se pudo registrar el evento. Inténtalo de nuevo.",
-      "player_expelled": "Ese jugador está expulsado; no puede recibir más eventos."
+      "player_expelled": "Ese jugador está expulsado; no puede recibir más eventos.",
+      "player_not_on_field": "Ese jugador no está en el campo.",
+      "player_not_eligible": "Ese suplente no puede entrar."
     },
     "event_expelled_double_yellow": "Expulsado por doble amarilla: {player}",
     "event_expelled_red": "Expulsado (roja): {player} ({minute}')",
     "register_not_field_event": "Ese evento va sobre un jugador: tócalo en el campo.",
-    "event_registered_field": "Registrado: {event} ({minute}')"
+    "event_registered_field": "Registrado: {event} ({minute}')",
+    "tool_absent": "No viene",
+    "absent_hint": "Toca a un convocado (campo o banquillo) para marcarlo como ausente.",
+    "sub_hint": "Cambio: toca quién SALE (campo) y luego quién ENTRA (banquillo).",
+    "sub_pick_out": "Toca un jugador del campo para que salga.",
+    "sub_pick_in": "Ahora toca al suplente que entra.",
+    "sub_out_label": "Sale: {player} · elige quién entra del banquillo.",
+    "sub_cancel": "Cancelar",
+    "sub_not_eligible": "Ese suplente no puede entrar (expulsado, ausente o ya entró).",
+    "sub_registered": "Cambio: sale {out}, entra {in} ({minute}')",
+    "bench_title": "Banquillo",
+    "bench_empty": "Sin suplentes en la alineación oficial.",
+    "bench_status": {
+      "available": "Disponible",
+      "entered": "En campo",
+      "expelled": "Expulsado",
+      "absent": "Ausente"
+    },
+    "absent_marked": "{player} marcado como ausente.",
+    "absent_undone": "{player} vuelve a estar disponible.",
+    "absent_title": "Ausentes (no vienen)",
+    "absent_undo_aria": "Quitar la ausencia de {player}"
   }
 }

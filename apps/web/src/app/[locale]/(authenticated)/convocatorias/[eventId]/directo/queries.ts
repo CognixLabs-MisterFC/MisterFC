@@ -55,6 +55,26 @@ export type LiveFieldPlayer = {
   yPct: number | null;
 };
 
+/** Suplente de la alineación oficial (banquillo, F7.5). */
+export type LiveBenchPlayer = {
+  playerId: string;
+  label: string;
+  dorsal: number | null;
+  photoUrl: string | null;
+};
+
+/** Sustitución registrada (F7.5): SALE `out`, ENTRA `in`, con nombres. */
+export type LiveSubstitution = {
+  id: string;
+  outId: string;
+  inId: string;
+  outLabel: string;
+  inLabel: string;
+  clockSeconds: number;
+  displayMinute: number | null;
+  period: PeriodKind;
+};
+
 export type MatchLiveData = {
   event: {
     id: string;
@@ -94,6 +114,12 @@ export type MatchLiveData = {
    * Solo lectura aquí (editar/borrar es la línea de tiempo, 7.9).
    */
   recentEvents: LiveMatchEvent[];
+  /** Suplentes de la alineación oficial (banquillo, F7.5). */
+  benchPlayers: LiveBenchPlayer[];
+  /** Sustituciones registradas (F7.5), orden cronológico (clock_seconds asc). */
+  substitutions: LiveSubstitution[];
+  /** Jugadores marcados AUSENTES para este partido (F7.5, match_absences). */
+  absentIds: string[];
 };
 
 export async function loadMatchLive(
@@ -153,23 +179,26 @@ export async function loadMatchLive(
 
   let formationCode = officialRow?.formation_code ?? null;
   let fieldPlayers: LiveFieldPlayer[] = [];
+  let benchPlayers: LiveBenchPlayer[] = [];
 
   if (officialRow) {
     const lineupId = officialRow.id as string;
+    // F7.5: cargamos campo Y banquillo (location in field/bench) de una vez.
     const { data: posRows } = await supabase
       .from('lineup_positions')
       .select(
-        `player_id, position_code, x_pct, y_pct,
+        `player_id, position_code, x_pct, y_pct, location,
          players!inner(first_name, last_name, dorsal, photo_url)`,
       )
       .eq('lineup_id', lineupId)
-      .eq('location', 'field');
+      .in('location', ['field', 'bench']);
 
     type PosShape = {
       player_id: string;
       position_code: string | null;
       x_pct: number | string | null;
       y_pct: number | string | null;
+      location: 'field' | 'bench';
       players: {
         first_name: string;
         last_name: string | null;
@@ -179,7 +208,7 @@ export async function loadMatchLive(
     };
     const raw = (posRows ?? []).map((p) => p as unknown as PosShape);
 
-    // Firmar fotos (bucket privado) en lote.
+    // Firmar fotos (bucket privado) en lote (campo + banquillo).
     const photoPaths = raw
       .map((r) => r.players.photo_url)
       .filter((p): p is string => p != null);
@@ -193,17 +222,32 @@ export async function loadMatchLive(
       }
     }
 
-    fieldPlayers = raw.map((r) => ({
-      playerId: r.player_id,
-      label: r.players.last_name || r.players.first_name || r.player_id.slice(0, 4),
-      dorsal: r.players.dorsal,
-      photoUrl: r.players.photo_url
-        ? (signed.get(r.players.photo_url) ?? null)
-        : null,
-      positionCode: r.position_code,
-      xPct: r.x_pct == null ? null : Number(r.x_pct),
-      yPct: r.y_pct == null ? null : Number(r.y_pct),
-    }));
+    const labelOf = (r: PosShape) =>
+      r.players.last_name || r.players.first_name || r.player_id.slice(0, 4);
+    const photoOf = (r: PosShape) =>
+      r.players.photo_url ? (signed.get(r.players.photo_url) ?? null) : null;
+
+    fieldPlayers = raw
+      .filter((r) => r.location === 'field')
+      .map((r) => ({
+        playerId: r.player_id,
+        label: labelOf(r),
+        dorsal: r.players.dorsal,
+        photoUrl: photoOf(r),
+        positionCode: r.position_code,
+        xPct: r.x_pct == null ? null : Number(r.x_pct),
+        yPct: r.y_pct == null ? null : Number(r.y_pct),
+      }));
+
+    benchPlayers = raw
+      .filter((r) => r.location === 'bench')
+      .map((r) => ({
+        playerId: r.player_id,
+        label: labelOf(r),
+        dorsal: r.players.dorsal,
+        photoUrl: photoOf(r),
+      }))
+      .sort((a, b) => (a.dorsal ?? 99) - (b.dorsal ?? 99));
   }
 
   // Sin formación oficial: default de la modalidad (campo vacío pero coherente).
@@ -303,6 +347,55 @@ export async function loadMatchLive(
     };
   });
 
+  // Sustituciones (F7.5): orden cronológico (asc) para derivar campo/banquillo.
+  // Embed desambiguado de los DOS jugadores (sale=player_id, entra=related).
+  const { data: subRows, error: subErr } = await supabase
+    .from('match_events')
+    .select(
+      `id, player_id, related_player_id, clock_seconds, display_minute, period,
+       out:players!match_events_player_id_fkey(first_name, last_name, dorsal),
+       in:players!match_events_related_player_id_fkey(first_name, last_name, dorsal)`,
+    )
+    .eq('event_id', eventId)
+    .eq('side', 'own')
+    .eq('type', 'substitution')
+    .order('clock_seconds', { ascending: true });
+  if (subErr) console.error('[directo] error cargando sustituciones:', subErr);
+
+  type PlayerMini = { first_name: string; last_name: string | null; dorsal: number | null } | null;
+  type SubRowShape = {
+    id: string;
+    player_id: string | null;
+    related_player_id: string | null;
+    clock_seconds: number;
+    display_minute: number | null;
+    period: PeriodKind;
+    out: PlayerMini;
+    in: PlayerMini;
+  };
+  const nameOf = (p: PlayerMini, fallback: string | null) =>
+    p?.last_name || p?.first_name || (fallback ? fallback.slice(0, 4) : '—');
+  const substitutions: LiveSubstitution[] = (subRows ?? [])
+    .map((row) => row as unknown as SubRowShape)
+    .filter((r) => r.player_id && r.related_player_id)
+    .map((r) => ({
+      id: r.id,
+      outId: r.player_id as string,
+      inId: r.related_player_id as string,
+      outLabel: nameOf(r.out, r.player_id),
+      inLabel: nameOf(r.in, r.related_player_id),
+      clockSeconds: r.clock_seconds,
+      displayMinute: r.display_minute,
+      period: r.period,
+    }));
+
+  // Ausencias (F7.5, match_absences).
+  const { data: absRows } = await supabase
+    .from('match_absences')
+    .select('player_id')
+    .eq('event_id', eventId);
+  const absentIds = (absRows ?? []).map((r) => r.player_id as string);
+
   return {
     event: {
       id: event.id,
@@ -325,5 +418,8 @@ export async function loadMatchLive(
     matchStatus,
     periods,
     recentEvents,
+    benchPlayers,
+    substitutions,
+    absentIds,
   };
 }

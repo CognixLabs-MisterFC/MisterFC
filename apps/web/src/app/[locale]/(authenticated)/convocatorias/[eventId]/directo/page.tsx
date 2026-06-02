@@ -74,6 +74,9 @@ export default async function MatchLivePage({ params }: Props) {
         periods={data.periods}
         halfDurationMinutes={data.event.halfDurationMinutes}
         recentEvents={data.recentEvents}
+        benchPlayers={data.benchPlayers}
+        substitutions={data.substitutions}
+        absentIds={data.absentIds}
       />
     </div>
   );

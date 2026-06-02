@@ -731,6 +731,39 @@ export type Database = {
           },
         ]
       }
+      match_absences: {
+        Row: {
+          created_at: string
+          event_id: string
+          player_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          player_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_absences_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_absences_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_callup_meta: {
         Row: {
           created_at: string

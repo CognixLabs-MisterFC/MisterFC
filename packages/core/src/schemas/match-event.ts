@@ -40,3 +40,32 @@ export const registerFieldEventSchema = z.object({
   y_pct: pct,
 });
 export type RegisterFieldEventInput = z.infer<typeof registerFieldEventSchema>;
+
+/**
+ * F7.5 — sustitución: SALE `player_out_id`, ENTRA `player_in_id`. Se persiste
+ * como match_event type='substitution'. El servidor valida que el que sale esté
+ * en campo y el que entra sea elegible (no expulsado/ausente/ya entrado).
+ */
+export const registerSubstitutionSchema = z
+  .object({
+    event_id: uuid,
+    id: uuid,
+    player_out_id: uuid,
+    player_in_id: uuid,
+  })
+  .refine((v) => v.player_out_id !== v.player_in_id, {
+    message: 'same_player',
+    path: ['player_in_id'],
+  });
+export type RegisterSubstitutionInput = z.infer<typeof registerSubstitutionSchema>;
+
+/**
+ * F7.5 — "quitar al que no viene": marca/desmarca a un convocado como AUSENTE
+ * para este partido (reversible). Se persiste en match_absences.
+ */
+export const setAbsenceSchema = z.object({
+  event_id: uuid,
+  player_id: uuid,
+  absent: z.boolean(),
+});
+export type SetAbsenceInput = z.infer<typeof setAbsenceSchema>;
