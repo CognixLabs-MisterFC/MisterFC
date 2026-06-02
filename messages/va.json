@@ -1586,7 +1586,7 @@
     "side_own": "Equip",
     "side_rival": "Rival",
     "palette_title": "Esdeveniments",
-    "palette_hint": "Selecciona un esdeveniment. Arrossegar-lo al jugador o al camp arriba en la pròxima entrega.",
+    "palette_hint": "Selecciona un esdeveniment i toca un jugador per a registrar-lo. Els esdeveniments sobre el camp arriben en una pròxima entrega.",
     "event": {
       "goal": "Gol",
       "assist": "Assistència",
@@ -1647,6 +1647,21 @@
       "generic": "Alguna cosa ha anat malament. Torna-ho a provar."
     },
     "clock_half_progress": "Part {elapsed} / {target} suggerit",
-    "clock_half_overtime": "Part {elapsed} · prolongació (suggerit {target})"
+    "clock_half_overtime": "Part {elapsed} · prolongació (suggerit {target})",
+    "register_not_live": "Inicia el partit per a registrar esdeveniments.",
+    "register_select_event": "Selecciona primer un esdeveniment de la paleta.",
+    "register_not_player_event": "Eixe esdeveniment no va sobre un jugador (arriba en una pròxima entrega).",
+    "event_registered": "Registrat: {event} · {player} ({minute}')",
+    "recent_events_title": "Últims esdeveniments",
+    "no_events_yet": "Encara no hi ha esdeveniments registrats.",
+    "event_error": {
+      "forbidden": "No tens permís per a registrar esdeveniments.",
+      "invalid": "Dades no vàlides.",
+      "not_found": "Partit no trobat.",
+      "not_live": "El partit no està en joc.",
+      "no_period": "Inicia el partit per a registrar esdeveniments.",
+      "player_not_in_team": "Eixe jugador no pertany a l'equip en este partit.",
+      "generic": "No s'ha pogut registrar l'esdeveniment. Torna-ho a provar."
+    }
   }
 }

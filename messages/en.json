@@ -1586,7 +1586,7 @@
     "side_own": "Team",
     "side_rival": "Opponent",
     "palette_title": "Events",
-    "palette_hint": "Pick an event. Dragging it onto a player or the pitch comes in the next drop.",
+    "palette_hint": "Select an event and tap a player to record it. Field events come in a later delivery.",
     "event": {
       "goal": "Goal",
       "assist": "Assist",
@@ -1647,6 +1647,21 @@
       "generic": "Something went wrong. Please try again."
     },
     "clock_half_progress": "Half {elapsed} / {target} suggested",
-    "clock_half_overtime": "Half {elapsed} · added time (suggested {target})"
+    "clock_half_overtime": "Half {elapsed} · added time (suggested {target})",
+    "register_not_live": "Start the match to record events.",
+    "register_select_event": "Select an event from the palette first.",
+    "register_not_player_event": "That event isn't recorded on a player (coming in a later delivery).",
+    "event_registered": "Recorded: {event} · {player} ({minute}')",
+    "recent_events_title": "Recent events",
+    "no_events_yet": "No events recorded yet.",
+    "event_error": {
+      "forbidden": "You don't have permission to record events.",
+      "invalid": "Invalid data.",
+      "not_found": "Match not found.",
+      "not_live": "The match is not in play.",
+      "no_period": "Start the match to record events.",
+      "player_not_in_team": "That player isn't on the team for this match.",
+      "generic": "Couldn't record the event. Please try again."
+    }
   }
 }

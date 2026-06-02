@@ -66,6 +66,7 @@ export default async function MatchLivePage({ params }: Props) {
         matchStatus={data.matchStatus}
         periods={data.periods}
         halfDurationMinutes={data.event.halfDurationMinutes}
+        recentEvents={data.recentEvents}
       />
     </div>
   );

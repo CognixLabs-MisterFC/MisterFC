@@ -1585,7 +1585,7 @@
     "side_own": "Equipo",
     "side_rival": "Rival",
     "palette_title": "Eventos",
-    "palette_hint": "Selecciona un evento. Arrastrarlo al jugador o al campo llega en la próxima entrega.",
+    "palette_hint": "Selecciona un evento y toca a un jugador para registrarlo. Los eventos sobre el campo llegan en la próxima entrega.",
     "event": {
       "goal": "Gol",
       "assist": "Asistencia",
@@ -1646,6 +1646,21 @@
       "generic": "Algo salió mal. Inténtalo de nuevo."
     },
     "clock_half_progress": "Parte {elapsed} / {target} sugerido",
-    "clock_half_overtime": "Parte {elapsed} · prolongación (sugerido {target})"
+    "clock_half_overtime": "Parte {elapsed} · prolongación (sugerido {target})",
+    "register_not_live": "Inicia el partido para registrar eventos.",
+    "register_select_event": "Selecciona primero un evento de la paleta.",
+    "register_not_player_event": "Ese evento no va sobre un jugador (llega en una próxima entrega).",
+    "event_registered": "Registrado: {event} · {player} ({minute}')",
+    "recent_events_title": "Últimos eventos",
+    "no_events_yet": "Aún no hay eventos registrados.",
+    "event_error": {
+      "forbidden": "No tienes permiso para registrar eventos.",
+      "invalid": "Datos no válidos.",
+      "not_found": "Partido no encontrado.",
+      "not_live": "El partido no está en juego.",
+      "no_period": "Inicia el partido para registrar eventos.",
+      "player_not_in_team": "Ese jugador no pertenece al equipo en este partido.",
+      "generic": "No se pudo registrar el evento. Inténtalo de nuevo."
+    }
   }
 }

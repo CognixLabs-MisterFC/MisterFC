@@ -24,6 +24,18 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 const PHOTO_TTL_SECONDS = 3600;
 
+/** Evento propio ya registrado, para la lista de "últimos eventos" (F7.3). */
+export type LiveMatchEvent = {
+  id: string;
+  type: 'goal' | 'assist' | 'yellow_card' | 'red_card';
+  playerId: string | null;
+  playerLabel: string;
+  dorsal: number | null;
+  clockSeconds: number;
+  displayMinute: number | null;
+  period: PeriodKind;
+};
+
 export type LiveFieldPlayer = {
   playerId: string;
   label: string;
@@ -68,6 +80,11 @@ export type MatchLiveData = {
    * partir de estas filas → sobrevive a recargas. Vacío hasta "Iniciar partido".
    */
   periods: ClockPeriod[];
+  /**
+   * Eventos propios sobre jugador ya registrados (F7.3), más recientes primero.
+   * Solo lectura aquí (editar/borrar es la línea de tiempo, 7.9).
+   */
+  recentEvents: LiveMatchEvent[];
 };
 
 export async function loadMatchLive(
@@ -213,6 +230,52 @@ export async function loadMatchLive(
     ended: r.ended as boolean,
   }));
 
+  // Eventos propios sobre jugador ya registrados (F7.3), recientes primero.
+  const PLAYER_EVENT_TYPES = ['goal', 'assist', 'yellow_card', 'red_card'];
+  const { data: eventRows } = await supabase
+    .from('match_events')
+    .select(
+      `id, type, player_id, clock_seconds, display_minute, period,
+       players(first_name, last_name, dorsal)`,
+    )
+    .eq('event_id', eventId)
+    .eq('side', 'own')
+    .in('type', PLAYER_EVENT_TYPES)
+    .order('clock_seconds', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  type EventRowShape = {
+    id: string;
+    type: 'goal' | 'assist' | 'yellow_card' | 'red_card';
+    player_id: string | null;
+    clock_seconds: number;
+    display_minute: number | null;
+    period: PeriodKind;
+    players: {
+      first_name: string;
+      last_name: string | null;
+      dorsal: number | null;
+    } | null;
+  };
+  const recentEvents: LiveMatchEvent[] = (eventRows ?? []).map((row) => {
+    const r = row as unknown as EventRowShape;
+    const label =
+      r.players?.last_name ||
+      r.players?.first_name ||
+      (r.player_id ? r.player_id.slice(0, 4) : '—');
+    return {
+      id: r.id,
+      type: r.type,
+      playerId: r.player_id,
+      playerLabel: label,
+      dorsal: r.players?.dorsal ?? null,
+      clockSeconds: r.clock_seconds,
+      displayMinute: r.display_minute,
+      period: r.period,
+    };
+  });
+
   return {
     event: {
       id: event.id,
@@ -234,5 +297,6 @@ export async function loadMatchLive(
     hasOfficialLineup: officialRow != null,
     matchStatus,
     periods,
+    recentEvents,
   };
 }
