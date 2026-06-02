@@ -24,3 +24,18 @@ export type {
   ClockMutation,
   NewPeriod,
 } from './clock';
+
+export {
+  PLAYER_EVENT_TYPES,
+  isPlayerEventType,
+  playerEventClockFields,
+  resolveCardOutcome,
+  isExpelled,
+  mergeLiveEvents,
+  deriveExpelledPlayers,
+} from './event';
+export type {
+  PlayerEventType,
+  PlayerEventClockFields,
+  CardOutcome,
+} from './event';

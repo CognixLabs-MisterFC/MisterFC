@@ -29,8 +29,13 @@ import {
   endPeriodPatch,
   matchEventRefSchema,
   nextPeriodAfter,
+  isExpelled,
   pauseClockPatch,
   type PeriodKind,
+  type PlayerEventType,
+  playerEventClockFields,
+  registerPlayerEventSchema,
+  resolveCardOutcome,
   resumeClockPatch,
   startNextPeriodSchema,
 } from '@misterfc/core';
@@ -427,4 +432,149 @@ export async function adjustClock(input: unknown): Promise<ClockActionState> {
 
   revalidate(event_id);
   return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// registerPlayerEvent — F7.3: registra un evento SOBRE UN JUGADOR propio.
+//
+// El cliente solo manda (id, type, player_id): `side='own'`, `clock_seconds`,
+// `period` y `display_minute` los DERIVA el servidor del reloj de 7.7 (motor
+// de @misterfc/core), no el cliente → fiable e inmune al skew del dispositivo.
+// El `id` lo genera el cliente (UUID) → reintento idempotente con upsert/ignore
+// (§10). Asistencia: enlaza al ÚLTIMO gol propio vía metadata.goal_event_id
+// (§7.3); si no hay gol previo, se registra sin enlace (no se bloquea).
+//
+// Expulsión (regla F7.3, spec §3.4 bis): la expulsión es un ESTADO DERIVADO
+// (1 roja O 2 amarillas), NO una fila de roja aparte. Un jugador ya expulsado no
+// recibe más eventos (bloquea la 2ª roja y cualquier otro). La 2ª amarilla se
+// registra como una amarilla más. La decisión la calcula el motor puro
+// `resolveCardOutcome`. De cara a 7.8 (minutos) y 7.5 (volver), la "salida" se
+// lee del estado derivado, no de una roja explícita.
+// Editar/borrar es la línea de tiempo (7.9); aquí solo se registra.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type EventActionError =
+  | 'forbidden'
+  | 'invalid'
+  | 'not_found'
+  | 'not_live'
+  | 'no_period'
+  | 'player_not_in_team'
+  | 'player_expelled'
+  | 'generic';
+
+export type RegisterEventState = {
+  error?: EventActionError;
+  success?: boolean;
+  eventRowId?: string;
+  /** El jugador queda expulsado tras este evento (1 roja O 2 amarillas). */
+  expelled?: boolean;
+};
+
+function mapEventErr(
+  message: string | undefined,
+  code: string | undefined,
+): EventActionError {
+  if (code === '42501') return 'forbidden';
+  if (!message) return 'generic';
+  if (message.includes('player_not_in_team_at_event')) return 'player_not_in_team';
+  if (message.includes('event_not_match')) return 'invalid';
+  if (message.includes('event_without_team')) return 'invalid';
+  return 'generic';
+}
+
+export async function registerPlayerEvent(
+  input: unknown,
+): Promise<RegisterEventState> {
+  const parsed = registerPlayerEventSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, type, player_id } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  // club_id y created_by los DERIVA/forza el trigger de 7.1, pero el tipo Insert
+  // los exige: created_by = usuario; club_id del evento.
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
+
+  // Solo con el partido EN VIVO (necesitamos un reloj corriendo/parado).
+  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
+
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  // Historial de tarjetas/eventos propios de ESE jugador → regla de expulsión.
+  const existingTypes = await loadPlayerOwnEventTypes(supabase, event_id, player_id);
+  const outcome = resolveCardOutcome(existingTypes, type as PlayerEventType);
+  if (outcome.kind === 'blocked') return { error: outcome.reason };
+
+  // clock_seconds / period / display_minute autoritativos (hora del servidor).
+  const { ms } = now();
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(periods, ms);
+
+  // Asistencia → enlaza al último gol propio registrado (§7.3).
+  let metadata: { goal_event_id?: string } = {};
+  if (type === 'assist') {
+    const { data: lastGoal } = await supabase
+      .from('match_events')
+      .select('id')
+      .eq('event_id', event_id)
+      .eq('side', 'own')
+      .eq('type', 'goal')
+      .order('clock_seconds', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (lastGoal?.id) metadata = { goal_event_id: lastGoal.id as string };
+  }
+
+  // upsert con ignoreDuplicates: reintentar con el mismo id no duplica (§10).
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId, // el trigger lo deriva; lo pasamos por el NOT NULL.
+      created_by: user.id, // idem (el trigger fuerza auth.uid()).
+      side: 'own',
+      type,
+      player_id,
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+      metadata,
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  // Expulsado = estado DERIVADO tras añadir este evento (1 roja O 2 amarillas).
+  const expelled = isExpelled([...existingTypes, type]);
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id, expelled };
+}
+
+/** Tipos de eventos PROPIOS (side='own') ya registrados de un jugador. */
+async function loadPlayerOwnEventTypes(
+  supabase: Supa,
+  eventId: string,
+  playerId: string,
+): Promise<string[]> {
+  const { data } = await supabase
+    .from('match_events')
+    .select('type')
+    .eq('event_id', eventId)
+    .eq('side', 'own')
+    .eq('player_id', playerId);
+  return (data ?? []).map((r) => r.type as string);
 }

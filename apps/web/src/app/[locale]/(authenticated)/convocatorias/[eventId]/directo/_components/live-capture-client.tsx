@@ -1,18 +1,19 @@
 'use client';
 
 /**
- * F7.2 — Armazón de la pantalla de toma de datos en directo (HORIZONTAL,
- * tablet/portátil táctil tipo Chromebook). SOLO layout: cronómetro (display
- * básico; la lógica avanzada es 7.7), campo, paleta de símbolos de eventos e
- * interruptor equipo/rival.
+ * F7.2/7.3 — Pantalla de toma de datos en directo (HORIZONTAL, tablet/portátil
+ * táctil tipo Chromebook): cronómetro completo (7.7), campo, paleta de símbolos
+ * e interruptor equipo/rival.
  *
- * Monta <MatchFieldEditor mode='live-overlay'> (NO lo reescribe): el cronómetro
- * va como overlay absoluto en `children`, y los callbacks onPlayerClick /
- * onFieldClick quedan CABLEADOS como stubs preparados para 7.3 (eventos sobre
- * jugador) y 7.4 (eventos sobre el campo). Aquí no se registra ni persiste nada.
+ * Monta <MatchFieldEditor mode='live-overlay'> (NO lo reescribe). F7.3 cablea
+ * onPlayerClick DE VERDAD: con un símbolo de jugador seleccionado (gol,
+ * asistencia, amarilla, roja), tocar un jugador del campo registra una fila en
+ * match_events (side='own') con clock_seconds/period/display_minute derivados
+ * del reloj de 7.7. Registro OPTIMISTA + lista de "últimos eventos". Editar/
+ * borrar es la línea de tiempo (7.9); los eventos de campo, 7.4; cambios, 7.5.
  */
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
@@ -26,15 +27,27 @@ import {
   Square,
   Target,
 } from 'lucide-react';
-import type { ClockPeriod, TeamFormat } from '@misterfc/core';
+import {
+  clockSecondsAt,
+  currentPeriod,
+  deriveExpelledPlayers,
+  displayMinute as toDisplayMinute,
+  isExpelled,
+  isPlayerEventType,
+  mergeLiveEvents,
+  resolveCardOutcome,
+  type ClockPeriod,
+  type TeamFormat,
+} from '@misterfc/core';
 import {
   MatchFieldEditor,
   type FieldEditorPlayer,
 } from '@/components/match/match-field-editor';
 import { Button } from '@/components/ui/button';
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
-import type { LiveFieldPlayer } from '../queries';
+import type { LiveFieldPlayer, LiveMatchEvent } from '../queries';
+import { registerPlayerEvent } from '../actions';
 import { MatchClock, MatchClockOverlay } from './match-clock';
 
 type MatchSide = 'own' | 'rival';
@@ -83,6 +96,7 @@ type Props = {
   matchStatus: 'not_started' | 'live' | 'closed';
   periods: ClockPeriod[];
   halfDurationMinutes: number;
+  recentEvents: LiveMatchEvent[];
 };
 
 export function LiveCaptureClient({
@@ -96,10 +110,18 @@ export function LiveCaptureClient({
   matchStatus,
   periods,
   halfDurationMinutes,
+  recentEvents,
 }: Props) {
   const t = useTranslations('partido_directo');
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const [side, setSide] = useState<MatchSide>('own');
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
+  // Eventos registrados en este cliente aún no reflejados por el servidor
+  // (registro optimista, OVERLAY). Se superponen a los persistidos por id; nunca
+  // los borran. La fuente de verdad es `recentEvents` (match_events persistidos),
+  // que ahora SÍ se cargan (el embed de players estaba ambiguo → venía vacío).
+  const [optimistic, setOptimistic] = useState<LiveMatchEvent[]>([]);
 
   // Sin alineación oficial no hay once que pintar (no auto-marcamos ninguna ni
   // hacemos fallback a "la última"): empty-state claro con CTA al editor.
@@ -121,26 +143,114 @@ export function LiveCaptureClient({
     );
   }
 
-  const players: FieldEditorPlayer[] = fieldPlayers.map((p) => ({
-    playerId: p.playerId,
-    label: p.label,
-    dorsal: p.dorsal,
-    photoUrl: p.photoUrl,
-    positionCode: p.positionCode,
-    xPct: p.xPct,
-    yPct: p.yPct,
-  }));
+  // Lista mostrada = PERSISTIDOS (autoritativos) + OVERLAY optimista (dedupe por
+  // id). Los persistidos nunca se borran; lo optimista solo se superpone hasta
+  // que el servidor lo confirma. Más recientes primero.
+  const events: LiveMatchEvent[] = mergeLiveEvents(recentEvents, optimistic);
 
-  // Stubs de 7.2 — demuestran que live-overlay está cableado. La creación real
-  // del evento (selección de jugador/coordenada → match_events) llega en 7.3/7.4.
+  // Expulsados = estado DERIVADO de TODOS los eventos (1 roja O 2 amarillas,
+  // §3.4 bis): SALEN del campo y no reciben más eventos. Se recomputa al hidratar
+  // → un expulsado sigue fuera tras recargar/volver. Banquillo "expulsado" es 7.5.
+  const expelledIds = deriveExpelledPlayers(events);
+
+  const players: FieldEditorPlayer[] = fieldPlayers
+    .filter((p) => !expelledIds.has(p.playerId))
+    .map((p) => ({
+      playerId: p.playerId,
+      label: p.label,
+      dorsal: p.dorsal,
+      photoUrl: p.photoUrl,
+      positionCode: p.positionCode,
+      xPct: p.xPct,
+      yPct: p.yPct,
+    }));
+
+  // Tipos de eventos propios ya registrados de un jugador (para la regla de
+  // tarjetas en el cliente; el servidor es el autoritativo).
+  function ownTypesOf(playerId: string): string[] {
+    return events.filter((e) => e.playerId === playerId).map((e) => e.type);
+  }
+
+  // F7.3 — registrar un evento sobre un jugador propio. side/clock/period los
+  // resuelve el servidor; aquí pintamos optimista y confirmamos con refresh.
   function handlePlayerClick(playerId: string) {
+    if (matchStatus !== 'live') {
+      toast.warning(t('register_not_live'));
+      return;
+    }
+    if (!selectedEvent) {
+      toast.info(t('register_select_event'));
+      return;
+    }
+    if (!isPlayerEventType(selectedEvent)) {
+      toast.info(t('register_not_player_event'));
+      return;
+    }
+
+    const type = selectedEvent;
     const p = fieldPlayers.find((x) => x.playerId === playerId);
-    toast.info(
-      t('stub_player', {
-        event: selectedEvent ? t(`event.${selectedEvent}`) : t('no_event'),
-        player: p?.label ?? playerId,
-      }),
-    );
+    const label = p?.label ?? playerId.slice(0, 4);
+
+    // Regla de tarjetas/expulsión (espejo del servidor, para feedback inmediato).
+    const priorTypes = ownTypesOf(playerId);
+    const outcome = resolveCardOutcome(priorTypes, type);
+    if (outcome.kind === 'blocked') {
+      toast.warning(t(`event_error.${outcome.reason}`));
+      return;
+    }
+
+    // id de cliente → reintento idempotente (§10). Reloj optimista con el motor
+    // de 7.7; el servidor recalcula el autoritativo al insertar.
+    const id = crypto.randomUUID();
+    const clockSeconds = clockSecondsAt(periods, Date.now());
+    const cur = currentPeriod(periods);
+    const period = cur?.period ?? 'first_half';
+    const displayMinute = toDisplayMinute(clockSeconds);
+
+    // La 2ª amarilla se registra como una amarilla MÁS (no se crea roja): la
+    // expulsión es estado derivado (1 roja O 2 amarillas) → sale del campo solo.
+    const optimisticRow: LiveMatchEvent = {
+      id,
+      type,
+      playerId,
+      playerLabel: label,
+      dorsal: p?.dorsal ?? null,
+      clockSeconds,
+      displayMinute,
+      period,
+    };
+    const expelledNow = isExpelled([...priorTypes, type]);
+    setOptimistic((prev) => [optimisticRow, ...prev]);
+    setSelectedEvent(null); // evita doble registro accidental en el siguiente toque
+
+    startTransition(async () => {
+      const res = await registerPlayerEvent({
+        event_id: eventId,
+        id,
+        type,
+        player_id: playerId,
+      });
+      if (res.error) {
+        setOptimistic((prev) => prev.filter((e) => e.id !== id));
+        toast.error(t(`event_error.${res.error}`));
+        return;
+      }
+      const expelled = res.expelled ?? expelledNow;
+      if (expelled && type === 'yellow_card') {
+        toast.success(t('event_expelled_double_yellow', { player: label }));
+      } else if (expelled) {
+        toast.success(t('event_expelled_red', { player: label, minute: displayMinute }));
+      } else {
+        toast.success(
+          t('event_registered', {
+            event: t(`event.${type}`),
+            player: label,
+            minute: displayMinute,
+          }),
+        );
+      }
+      router.refresh();
+    });
   }
 
   function handleFieldClick(xPct: number, yPct: number) {
@@ -261,19 +371,42 @@ export function LiveCaptureClient({
           </MatchFieldEditor>
         </div>
 
-        {/* Panel lateral: contexto del bando activo (placeholder de 7.6/7.8). */}
+        {/* Panel lateral: bando rival (7.6) o lista de eventos propios (7.3). */}
         <div className="rounded-lg border border-border bg-card/40 p-3 lg:w-56 lg:shrink-0">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {side === 'own' ? t('panel_own_title') : t('panel_rival_title')}
+            {side === 'own' ? t('recent_events_title') : t('panel_rival_title')}
           </p>
           {side === 'rival' ? (
             <p className="text-sm text-muted-foreground">
               {t('panel_rival_hint')}
             </p>
+          ) : events.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('no_events_yet')}</p>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              {t('panel_own_hint', { count: players.length })}
-            </p>
+            <ul className="flex max-h-[60vh] flex-col gap-1 overflow-y-auto">
+              {events.map((ev) => {
+                const Icon = EVENT_ICON[ev.type];
+                return (
+                  <li
+                    key={ev.id}
+                    className="flex items-center gap-2 rounded-md border border-border/60 bg-background/40 px-2 py-1 text-sm"
+                  >
+                    <span className="w-7 shrink-0 text-right font-mono text-xs tabular-nums text-muted-foreground">
+                      {ev.displayMinute ?? Math.floor(ev.clockSeconds / 60)}&#39;
+                    </span>
+                    <Icon
+                      className={cn('size-4 shrink-0', EVENT_ICON_CLASS[ev.type])}
+                      aria-hidden
+                    />
+                    <span className="min-w-0 flex-1 truncate">
+                      {ev.dorsal != null ? `${ev.dorsal} · ` : ''}
+                      {ev.playerLabel}
+                    </span>
+                    <span className="sr-only">{t(`event.${ev.type}`)}</span>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </div>
       </div>

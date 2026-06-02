@@ -215,3 +215,6 @@ export type {
   StartNextPeriodInput,
   AdjustClockInput,
 } from './match-clock';
+
+export { registerPlayerEventSchema } from './match-event';
+export type { RegisterPlayerEventInput } from './match-event';
