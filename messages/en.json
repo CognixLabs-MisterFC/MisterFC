@@ -135,6 +135,36 @@
         "title": "Call-ups to publish",
         "cta": "{count, plural, =1 {1 match without call-up →} other {# matches without call-up →}}"
       }
+    },
+    "next_match": {
+      "title": "Next match",
+      "state": {
+        "prepare_callup": {
+          "label": "Call-up not prepared yet",
+          "cta": "Prepare call-up"
+        },
+        "awaiting_confirmations": {
+          "label": "Answered {x}/{y} (Yes:{a} No:{b} Maybe:{c})",
+          "cta": "View call-up"
+        },
+        "needs_lineup": {
+          "label": "Official lineup missing",
+          "cta": "Create lineup"
+        },
+        "ready": {
+          "label": "Ready for the match",
+          "cta": "Live"
+        },
+        "post_match": {
+          "label": "Post-match pending",
+          "cta": "Post-match (coming soon)"
+        }
+      },
+      "player_pending": {
+        "title": "Pending call-up",
+        "desc": "You have a call-up pending confirmation.",
+        "cta": "Confirm availability"
+      }
     }
   },
   "invitations": {
