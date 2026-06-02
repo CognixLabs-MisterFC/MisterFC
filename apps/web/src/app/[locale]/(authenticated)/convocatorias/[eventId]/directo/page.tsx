@@ -8,6 +8,13 @@ import { loadMatchLive } from './queries';
 import { LiveCaptureClient } from './_components/live-capture-client';
 import type { Role } from '../../../jugadores/queries';
 
+// F7.3: la captura en vivo debe HIDRATARSE siempre desde los match_events
+// persistidos (eventos, expulsiones, reloj) al entrar/recargar/volver. Forzamos
+// render dinámico sin cache de ruta para que cada visita lea el estado real y no
+// un RSC cacheado de una visita anterior (que reaparecería sin eventos).
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 type Props = {
   params: Promise<{ locale: string; eventId: string }>;
 };

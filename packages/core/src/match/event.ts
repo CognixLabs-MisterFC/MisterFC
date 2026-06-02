@@ -41,6 +41,44 @@ export function isExpelled(existingTypes: readonly string[]): boolean {
 }
 
 /**
+ * Fusiona los eventos PERSISTIDOS (autoritativos, fuente de hidratación) con los
+ * OPTIMISTAS (aparición instantánea). Los persistidos mandan: un optimista solo
+ * se superpone si su `id` aún no está persistido (dedupe por id) → lo optimista
+ * nunca borra ni reemplaza lo cargado (F7.3, invariante de hidratación). Los
+ * optimistas (más nuevos) van delante; el orden de `persisted` se respeta.
+ */
+export function mergeLiveEvents<T extends { id: string }>(
+  persisted: readonly T[],
+  optimistic: readonly T[],
+): T[] {
+  const persistedIds = new Set(persisted.map((e) => e.id));
+  const overlay = optimistic.filter((o) => !persistedIds.has(o.id));
+  return [...overlay, ...persisted];
+}
+
+/**
+ * Conjunto de jugadores EXPULSADOS derivado de TODOS los eventos (1 roja O 2
+ * amarillas por jugador). Se recomputa al hidratar → un expulsado sigue
+ * expulsado tras recargar/volver, no reaparece en el campo.
+ */
+export function deriveExpelledPlayers(
+  events: readonly { type: string; playerId: string | null }[],
+): Set<string> {
+  const typesByPlayer = new Map<string, string[]>();
+  for (const e of events) {
+    if (!e.playerId) continue;
+    const arr = typesByPlayer.get(e.playerId);
+    if (arr) arr.push(e.type);
+    else typesByPlayer.set(e.playerId, [e.type]);
+  }
+  const expelled = new Set<string>();
+  for (const [playerId, types] of typesByPlayer) {
+    if (isExpelled(types)) expelled.add(playerId);
+  }
+  return expelled;
+}
+
+/**
  * Desenlace de registrar una tarjeta/evento sobre un jugador, según su historial
  * de tarjetas en el partido (regla de expulsión, F7.3 — spec §3.4 bis):
  *

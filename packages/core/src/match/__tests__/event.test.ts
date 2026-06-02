@@ -4,6 +4,8 @@ import {
   PLAYER_EVENT_TYPES,
   isPlayerEventType,
   isExpelled,
+  deriveExpelledPlayers,
+  mergeLiveEvents,
   playerEventClockFields,
   resolveCardOutcome,
 } from '../event';
@@ -146,5 +148,73 @@ describe('isExpelled — estado derivado (1 roja O 2 amarillas)', () => {
   it('1 roja directa → expulsado', () => {
     expect(isExpelled(['red_card'])).toBe(true);
     expect(isExpelled(['yellow_card', 'red_card'])).toBe(true);
+  });
+});
+
+// Regresión F7.3: hidratación desde los persistidos + overlay optimista.
+type Ev = { id: string; type: string; playerId: string | null };
+
+describe('mergeLiveEvents — persistidos autoritativos + overlay optimista', () => {
+  it('solo persistidos (tras recargar/volver): se muestran todos', () => {
+    const persisted: Ev[] = [
+      { id: 'r', type: 'red_card', playerId: 'X' },
+      { id: 'g', type: 'goal', playerId: 'X' },
+    ];
+    expect(mergeLiveEvents(persisted, [])).toEqual(persisted);
+  });
+
+  it('optimista aún no persistido se SUPERPONE delante (no reemplaza)', () => {
+    const persisted: Ev[] = [{ id: 'g', type: 'goal', playerId: 'X' }];
+    const optimistic: Ev[] = [{ id: 'y', type: 'yellow_card', playerId: 'X' }];
+    expect(mergeLiveEvents(persisted, optimistic)).toEqual([
+      { id: 'y', type: 'yellow_card', playerId: 'X' },
+      { id: 'g', type: 'goal', playerId: 'X' },
+    ]);
+  });
+
+  it('optimista ya persistido (mismo id) NO duplica: gana el persistido', () => {
+    const persisted: Ev[] = [{ id: 'g', type: 'goal', playerId: 'X' }];
+    const optimistic: Ev[] = [{ id: 'g', type: 'goal', playerId: 'X' }];
+    expect(mergeLiveEvents(persisted, optimistic)).toEqual(persisted);
+  });
+
+  it('lo optimista NUNCA borra lo persistido (overlay vacío → persistidos intactos)', () => {
+    const persisted: Ev[] = [
+      { id: 'a', type: 'goal', playerId: 'X' },
+      { id: 'b', type: 'red_card', playerId: 'Y' },
+    ];
+    // Aunque el cliente "olvide" sus optimistas (remontaje), los persistidos siguen.
+    expect(mergeLiveEvents(persisted, [])).toHaveLength(2);
+  });
+});
+
+describe('deriveExpelledPlayers — recomputado desde TODOS los eventos', () => {
+  it('expulsado por 2 amarillas y por 1 roja; los eventos NO se pierden', () => {
+    const events: Ev[] = [
+      { id: '1', type: 'goal', playerId: 'X' }, // X marca
+      { id: '2', type: 'yellow_card', playerId: 'X' },
+      { id: '3', type: 'yellow_card', playerId: 'X' }, // X expulsado (2 amarillas)
+      { id: '4', type: 'red_card', playerId: 'Y' }, // Y expulsado (roja)
+      { id: '5', type: 'goal', playerId: 'Z' },
+    ];
+    const expelled = deriveExpelledPlayers(events);
+    expect(expelled.has('X')).toBe(true);
+    expect(expelled.has('Y')).toBe(true);
+    expect(expelled.has('Z')).toBe(false);
+  });
+
+  it('tras hidratar solo desde persistidos, el expulsado SIGUE expulsado (no reaparece)', () => {
+    // Simula recargar/volver: solo persistidos, sin estado optimista.
+    const persisted: Ev[] = [
+      { id: '1', type: 'yellow_card', playerId: 'X' },
+      { id: '2', type: 'yellow_card', playerId: 'X' },
+    ];
+    const events = mergeLiveEvents(persisted, []);
+    expect(deriveExpelledPlayers(events).has('X')).toBe(true);
+  });
+
+  it('eventos sin jugador (rival/equipo) se ignoran', () => {
+    const events: Ev[] = [{ id: '1', type: 'red_card', playerId: null }];
+    expect(deriveExpelledPlayers(events).size).toBe(0);
   });
 });

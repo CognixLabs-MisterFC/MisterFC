@@ -13,7 +13,7 @@
  * borrar es la línea de tiempo (7.9); los eventos de campo, 7.4; cambios, 7.5.
  */
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
@@ -30,9 +30,11 @@ import {
 import {
   clockSecondsAt,
   currentPeriod,
+  deriveExpelledPlayers,
   displayMinute as toDisplayMinute,
   isExpelled,
   isPlayerEventType,
+  mergeLiveEvents,
   resolveCardOutcome,
   type ClockPeriod,
   type TeamFormat,
@@ -116,8 +118,21 @@ export function LiveCaptureClient({
   const [side, setSide] = useState<MatchSide>('own');
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   // Eventos registrados en este cliente aún no reflejados por el servidor
-  // (registro optimista). Se deduplican por id contra `recentEvents`.
+  // (registro optimista, OVERLAY). Se superponen a los persistidos por id; nunca
+  // los borran. La fuente de verdad es `recentEvents` (match_events persistidos).
   const [optimistic, setOptimistic] = useState<LiveMatchEvent[]>([]);
+
+  // Hidratar SIEMPRE desde los match_events persistidos al entrar/volver: en
+  // navegación soft el RSC podría venir cacheado de una visita anterior, así que
+  // forzamos una recarga de datos del servidor al montar (una vez). Junto con la
+  // página dinámica (force-dynamic), garantiza que la lista, la expulsión y el
+  // campo se reconstruyan desde lo persistido al re-entrar.
+  const hydrated = useRef(false);
+  useEffect(() => {
+    if (hydrated.current) return;
+    hydrated.current = true;
+    router.refresh();
+  }, [router]);
 
   // Sin alineación oficial no hay once que pintar (no auto-marcamos ninguna ni
   // hacemos fallback a "la última"): empty-state claro con CTA al editor.
@@ -139,29 +154,15 @@ export function LiveCaptureClient({
     );
   }
 
-  // Lista mostrada: optimistas aún no confirmados por el servidor + los del
-  // servidor (dedupe por id). Más recientes primero (clock_seconds desc).
-  const events: LiveMatchEvent[] = [
-    ...optimistic.filter((o) => !recentEvents.some((r) => r.id === o.id)),
-    ...recentEvents,
-  ];
+  // Lista mostrada = PERSISTIDOS (autoritativos) + OVERLAY optimista (dedupe por
+  // id). Los persistidos nunca se borran; lo optimista solo se superpone hasta
+  // que el servidor lo confirma. Más recientes primero.
+  const events: LiveMatchEvent[] = mergeLiveEvents(recentEvents, optimistic);
 
-  // Tipos de eventos propios por jugador (para la regla de tarjetas/expulsión).
-  const typesByPlayer = new Map<string, string[]>();
-  for (const e of events) {
-    if (!e.playerId) continue;
-    const arr = typesByPlayer.get(e.playerId) ?? [];
-    arr.push(e.type);
-    typesByPlayer.set(e.playerId, arr);
-  }
-
-  // Expulsados = estado DERIVADO (1 roja O 2 amarillas, §3.4 bis): SALEN del campo
-  // y no reciben más eventos. Mostrarlos en un banquillo "como expulsado" es 7.5.
-  const expelledIds = new Set(
-    [...typesByPlayer.entries()]
-      .filter(([, types]) => isExpelled(types))
-      .map(([playerId]) => playerId),
-  );
+  // Expulsados = estado DERIVADO de TODOS los eventos (1 roja O 2 amarillas,
+  // §3.4 bis): SALEN del campo y no reciben más eventos. Se recomputa al hidratar
+  // → un expulsado sigue fuera tras recargar/volver. Banquillo "expulsado" es 7.5.
+  const expelledIds = deriveExpelledPlayers(events);
 
   const players: FieldEditorPlayer[] = fieldPlayers
     .filter((p) => !expelledIds.has(p.playerId))
@@ -178,7 +179,7 @@ export function LiveCaptureClient({
   // Tipos de eventos propios ya registrados de un jugador (para la regla de
   // tarjetas en el cliente; el servidor es el autoritativo).
   function ownTypesOf(playerId: string): string[] {
-    return typesByPlayer.get(playerId) ?? [];
+    return events.filter((e) => e.playerId === playerId).map((e) => e.type);
   }
 
   // F7.3 — registrar un evento sobre un jugador propio. side/clock/period los

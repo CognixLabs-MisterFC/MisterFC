@@ -31,6 +31,8 @@ export {
   playerEventClockFields,
   resolveCardOutcome,
   isExpelled,
+  mergeLiveEvents,
+  deriveExpelledPlayers,
 } from './event';
 export type {
   PlayerEventType,
