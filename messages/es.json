@@ -1609,6 +1609,43 @@
     "scope_note": "Pantalla de captura en directo. El registro de eventos se activa en las siguientes entregas.",
     "empty_title": "Sin alineación oficial",
     "empty_desc": "Marca una alineación como oficial para registrar el partido en directo.",
-    "empty_cta": "Crear/abrir alineación"
+    "empty_cta": "Crear/abrir alineación",
+    "status_closed": "Cerrado",
+    "clock_break": "Descanso",
+    "clock_full_time": "Fin del tiempo reglamentario",
+    "clock_paused_in": "Pausa · {period}",
+    "clock_minute": "Min {minute}",
+    "clock_start_match": "Iniciar partido",
+    "clock_start_period": "Iniciar {period}",
+    "clock_close_hint": "El cierre del partido llega en una próxima entrega.",
+    "clock_pause": "Pausar",
+    "clock_resume": "Reanudar",
+    "clock_end_period": "Fin de la parte",
+    "clock_end_match_time": "Finalizar tiempo",
+    "clock_adjust_label": "Ajuste manual del reloj",
+    "clock_adjust_by": "Ajustar {seconds} segundos",
+    "period": {
+      "first_half": "1ª parte",
+      "second_half": "2ª parte",
+      "extra_first": "Prórroga 1",
+      "extra_second": "Prórroga 2",
+      "penalties": "Penaltis"
+    },
+    "clock_error": {
+      "forbidden": "No tienes permiso para controlar el reloj.",
+      "invalid": "Datos no válidos.",
+      "not_found": "Partido no encontrado.",
+      "no_official_lineup": "Marca una alineación oficial antes de iniciar el partido.",
+      "already_closed": "El partido ya está cerrado.",
+      "not_live": "El partido no está en juego.",
+      "no_period": "No hay ningún periodo activo.",
+      "period_running": "Termina la parte actual antes de empezar la siguiente.",
+      "period_ended": "Esa parte ya terminó; inicia la siguiente.",
+      "period_mismatch": "Ese periodo no es el siguiente; recarga la pantalla.",
+      "all_periods_played": "Ya se han jugado todos los periodos.",
+      "generic": "Algo salió mal. Inténtalo de nuevo."
+    },
+    "clock_half_progress": "Parte {elapsed} / {target} sugerido",
+    "clock_half_overtime": "Parte {elapsed} · prolongación (sugerido {target})"
   }
 }

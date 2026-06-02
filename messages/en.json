@@ -1610,6 +1610,43 @@
     "scope_note": "Live capture screen. Event recording is enabled in the next drops.",
     "empty_title": "No official lineup",
     "empty_desc": "Mark a lineup as official to record the match live.",
-    "empty_cta": "Create/open lineup"
+    "empty_cta": "Create/open lineup",
+    "status_closed": "Closed",
+    "clock_break": "Half-time",
+    "clock_full_time": "Full time",
+    "clock_paused_in": "Paused · {period}",
+    "clock_minute": "Min {minute}",
+    "clock_start_match": "Start match",
+    "clock_start_period": "Start {period}",
+    "clock_close_hint": "Closing the match comes in a later delivery.",
+    "clock_pause": "Pause",
+    "clock_resume": "Resume",
+    "clock_end_period": "End period",
+    "clock_end_match_time": "End match time",
+    "clock_adjust_label": "Manual clock adjustment",
+    "clock_adjust_by": "Adjust {seconds} seconds",
+    "period": {
+      "first_half": "1st half",
+      "second_half": "2nd half",
+      "extra_first": "Extra time 1",
+      "extra_second": "Extra time 2",
+      "penalties": "Penalties"
+    },
+    "clock_error": {
+      "forbidden": "You don't have permission to control the clock.",
+      "invalid": "Invalid data.",
+      "not_found": "Match not found.",
+      "no_official_lineup": "Mark an official lineup before starting the match.",
+      "already_closed": "The match is already closed.",
+      "not_live": "The match is not in play.",
+      "no_period": "There is no active period.",
+      "period_running": "End the current period before starting the next one.",
+      "period_ended": "That period already ended; start the next one.",
+      "period_mismatch": "That period isn't the next one; reload the screen.",
+      "all_periods_played": "All periods have already been played.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "clock_half_progress": "Half {elapsed} / {target} suggested",
+    "clock_half_overtime": "Half {elapsed} · added time (suggested {target})"
   }
 }

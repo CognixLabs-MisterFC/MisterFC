@@ -1610,6 +1610,43 @@
     "scope_note": "Pantalla de captura en directe. El registre d’esdeveniments s’activa en les pròximes entregues.",
     "empty_title": "Sense alineació oficial",
     "empty_desc": "Marca una alineació com a oficial per a registrar el partit en directe.",
-    "empty_cta": "Crear/obrir alineació"
+    "empty_cta": "Crear/obrir alineació",
+    "status_closed": "Tancat",
+    "clock_break": "Descans",
+    "clock_full_time": "Fi del temps reglamentari",
+    "clock_paused_in": "Pausa · {period}",
+    "clock_minute": "Min {minute}",
+    "clock_start_match": "Iniciar partit",
+    "clock_start_period": "Iniciar {period}",
+    "clock_close_hint": "El tancament del partit arriba en una pròxima entrega.",
+    "clock_pause": "Pausar",
+    "clock_resume": "Reprendre",
+    "clock_end_period": "Fi de la part",
+    "clock_end_match_time": "Finalitzar temps",
+    "clock_adjust_label": "Ajust manual del rellotge",
+    "clock_adjust_by": "Ajustar {seconds} segons",
+    "period": {
+      "first_half": "1a part",
+      "second_half": "2a part",
+      "extra_first": "Pròrroga 1",
+      "extra_second": "Pròrroga 2",
+      "penalties": "Penals"
+    },
+    "clock_error": {
+      "forbidden": "No tens permís per a controlar el rellotge.",
+      "invalid": "Dades no vàlides.",
+      "not_found": "Partit no trobat.",
+      "no_official_lineup": "Marca una alineació oficial abans d'iniciar el partit.",
+      "already_closed": "El partit ja està tancat.",
+      "not_live": "El partit no està en joc.",
+      "no_period": "No hi ha cap període actiu.",
+      "period_running": "Finalitza la part actual abans de començar la següent.",
+      "period_ended": "Eixa part ja ha acabat; inicia la següent.",
+      "period_mismatch": "Eixe període no és el següent; recarrega la pantalla.",
+      "all_periods_played": "Ja s'han jugat tots els períodes.",
+      "generic": "Alguna cosa ha anat malament. Torna-ho a provar."
+    },
+    "clock_half_progress": "Part {elapsed} / {target} suggerit",
+    "clock_half_overtime": "Part {elapsed} · prolongació (suggerit {target})"
   }
 }
