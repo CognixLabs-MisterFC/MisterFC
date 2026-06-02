@@ -232,11 +232,14 @@ export async function loadMatchLive(
 
   // Eventos propios sobre jugador ya registrados (F7.3), recientes primero.
   const PLAYER_EVENT_TYPES = ['goal', 'assist', 'yellow_card', 'red_card'];
-  const { data: eventRows } = await supabase
+  // OJO: match_events tiene DOS FKs a players (player_id y related_player_id),
+  // así que el embed `players(...)` es AMBIGUO y PostgREST lo rechaza (PGRST201)
+  // → data null → lista vacía. Hay que desambiguar por el FK de player_id.
+  const { data: eventRows, error: eventRowsError } = await supabase
     .from('match_events')
     .select(
       `id, type, player_id, clock_seconds, display_minute, period,
-       players(first_name, last_name, dorsal)`,
+       players!match_events_player_id_fkey(first_name, last_name, dorsal)`,
     )
     .eq('event_id', eventId)
     .eq('side', 'own')
@@ -244,6 +247,11 @@ export async function loadMatchLive(
     .order('clock_seconds', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(30);
+  // No tragar el fallo en silencio: si la carga de eventos falla, que quede en
+  // los logs del servidor (antes esto enmascaraba el embed ambiguo → lista vacía).
+  if (eventRowsError) {
+    console.error('[directo] error cargando match_events:', eventRowsError);
+  }
 
   type EventRowShape = {
     id: string;

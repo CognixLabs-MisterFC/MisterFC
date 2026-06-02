@@ -13,7 +13,7 @@
  * borrar es la línea de tiempo (7.9); los eventos de campo, 7.4; cambios, 7.5.
  */
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
@@ -119,20 +119,9 @@ export function LiveCaptureClient({
   const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
   // Eventos registrados en este cliente aún no reflejados por el servidor
   // (registro optimista, OVERLAY). Se superponen a los persistidos por id; nunca
-  // los borran. La fuente de verdad es `recentEvents` (match_events persistidos).
+  // los borran. La fuente de verdad es `recentEvents` (match_events persistidos),
+  // que ahora SÍ se cargan (el embed de players estaba ambiguo → venía vacío).
   const [optimistic, setOptimistic] = useState<LiveMatchEvent[]>([]);
-
-  // Hidratar SIEMPRE desde los match_events persistidos al entrar/volver: en
-  // navegación soft el RSC podría venir cacheado de una visita anterior, así que
-  // forzamos una recarga de datos del servidor al montar (una vez). Junto con la
-  // página dinámica (force-dynamic), garantiza que la lista, la expulsión y el
-  // campo se reconstruyan desde lo persistido al re-entrar.
-  const hydrated = useRef(false);
-  useEffect(() => {
-    if (hydrated.current) return;
-    hydrated.current = true;
-    router.refresh();
-  }, [router]);
 
   // Sin alineación oficial no hay once que pintar (no auto-marcamos ninguna ni
   // hacemos fallback a "la última"): empty-state claro con CTA al editor.
