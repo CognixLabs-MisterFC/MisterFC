@@ -3,7 +3,9 @@ import { type ClockPeriod } from '../clock';
 import {
   PLAYER_EVENT_TYPES,
   isPlayerEventType,
+  isExpelled,
   playerEventClockFields,
+  resolveCardOutcome,
 } from '../event';
 
 const T0_ISO = '2026-06-02T16:00:00.000Z';
@@ -76,5 +78,72 @@ describe('playerEventClockFields', () => {
       period: 'first_half',
       displayMinute: 0,
     });
+  });
+});
+
+describe('resolveCardOutcome — tarjetas y expulsión (F7.3)', () => {
+  it('1ª amarilla: se registra, sin roja automática', () => {
+    expect(resolveCardOutcome([], 'yellow_card')).toEqual({
+      kind: 'register',
+      autoRed: false,
+    });
+  });
+
+  it('2ª amarilla al mismo jugador → registra + roja automática (expulsión)', () => {
+    expect(resolveCardOutcome(['yellow_card'], 'yellow_card')).toEqual({
+      kind: 'register',
+      autoRed: true,
+    });
+  });
+
+  it('roja directa (sin tarjetas previas) → se registra, sin auto-roja', () => {
+    expect(resolveCardOutcome([], 'red_card')).toEqual({
+      kind: 'register',
+      autoRed: false,
+    });
+  });
+
+  it('roja directa con una amarilla previa → se registra (no es doble amarilla)', () => {
+    expect(resolveCardOutcome(['yellow_card'], 'red_card')).toEqual({
+      kind: 'register',
+      autoRed: false,
+    });
+  });
+
+  it('2ª roja al mismo jugador → BLOQUEADA (player_expelled)', () => {
+    expect(resolveCardOutcome(['red_card'], 'red_card')).toEqual({
+      kind: 'blocked',
+      reason: 'player_expelled',
+    });
+  });
+
+  it('jugador ya expulsado por doble amarilla (amarilla+roja) → bloquea otra roja', () => {
+    expect(resolveCardOutcome(['yellow_card', 'red_card'], 'red_card')).toEqual({
+      kind: 'blocked',
+      reason: 'player_expelled',
+    });
+  });
+
+  it('expulsado NO puede recibir gol/asistencia/amarilla', () => {
+    for (const t of ['goal', 'assist', 'yellow_card'] as const) {
+      expect(resolveCardOutcome(['red_card'], t)).toEqual({
+        kind: 'blocked',
+        reason: 'player_expelled',
+      });
+    }
+  });
+
+  it('gol/asistencia de un jugador no expulsado se registran sin más', () => {
+    expect(resolveCardOutcome(['goal'], 'assist')).toEqual({
+      kind: 'register',
+      autoRed: false,
+    });
+  });
+
+  it('isExpelled refleja la presencia de roja', () => {
+    expect(isExpelled([])).toBe(false);
+    expect(isExpelled(['yellow_card'])).toBe(false);
+    expect(isExpelled(['red_card'])).toBe(true);
+    expect(isExpelled(['yellow_card', 'red_card'])).toBe(true);
   });
 });

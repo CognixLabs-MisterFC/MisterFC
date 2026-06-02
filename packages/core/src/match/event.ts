@@ -29,6 +29,41 @@ export function isPlayerEventType(value: string): value is PlayerEventType {
   return (PLAYER_EVENT_TYPES as readonly string[]).includes(value);
 }
 
+/**
+ * Desenlace de registrar una tarjeta/evento sobre un jugador, según su historial
+ * de tarjetas en el partido (regla de expulsión, F7.3 — añadida a la spec §3.4):
+ *
+ *  - 2ª amarilla al mismo jugador ⇒ expulsión automática (además de la amarilla,
+ *    se registra la roja correspondiente, `autoRed`).
+ *  - 1 roja directa ⇒ expulsado.
+ *  - Un jugador YA expulsado (tiene roja) NO puede recibir más eventos (ni una 2ª
+ *    roja, ni gol/asistencia/amarilla) ⇒ `blocked: 'player_expelled'`.
+ *
+ * Pura y testeable: recibe los tipos de eventos PROPIOS ya registrados de ese
+ * jugador y el tipo nuevo; no toca BD ni reloj.
+ */
+export type CardOutcome =
+  | { kind: 'blocked'; reason: 'player_expelled' }
+  | { kind: 'register'; autoRed: boolean };
+
+export function resolveCardOutcome(
+  existingTypes: readonly string[],
+  newType: PlayerEventType,
+): CardOutcome {
+  const hasRed = existingTypes.includes('red_card');
+  if (hasRed) return { kind: 'blocked', reason: 'player_expelled' };
+
+  const yellows = existingTypes.filter((t) => t === 'yellow_card').length;
+  // Esta amarilla sería la 2ª → doble amarilla = expulsión.
+  const autoRed = newType === 'yellow_card' && yellows >= 1;
+  return { kind: 'register', autoRed };
+}
+
+/** ¿El jugador está expulsado? (tiene una roja propia registrada). */
+export function isExpelled(existingTypes: readonly string[]): boolean {
+  return existingTypes.includes('red_card');
+}
+
 /** Campos de tiempo de un evento que ocurre AHORA (§3.4/§6), derivados del reloj. */
 export interface PlayerEventClockFields {
   /** Segundos absolutos de juego (cálculo fiable de minutos, §6). */

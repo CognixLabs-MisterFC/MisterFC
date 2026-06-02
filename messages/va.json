@@ -1661,7 +1661,10 @@
       "not_live": "El partit no està en joc.",
       "no_period": "Inicia el partit per a registrar esdeveniments.",
       "player_not_in_team": "Eixe jugador no pertany a l'equip en este partit.",
-      "generic": "No s'ha pogut registrar l'esdeveniment. Torna-ho a provar."
-    }
+      "generic": "No s'ha pogut registrar l'esdeveniment. Torna-ho a provar.",
+      "player_expelled": "Eixe jugador està expulsat; no pot rebre més esdeveniments."
+    },
+    "event_expelled_double_yellow": "Expulsat per doble groga: {player}",
+    "event_expelled_red": "Expulsat (roja): {player} ({minute}')"
   }
 }

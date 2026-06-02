@@ -32,6 +32,7 @@ import {
   currentPeriod,
   displayMinute as toDisplayMinute,
   isPlayerEventType,
+  resolveCardOutcome,
   type ClockPeriod,
   type TeamFormat,
 } from '@misterfc/core';
@@ -137,22 +138,36 @@ export function LiveCaptureClient({
     );
   }
 
-  const players: FieldEditorPlayer[] = fieldPlayers.map((p) => ({
-    playerId: p.playerId,
-    label: p.label,
-    dorsal: p.dorsal,
-    photoUrl: p.photoUrl,
-    positionCode: p.positionCode,
-    xPct: p.xPct,
-    yPct: p.yPct,
-  }));
-
   // Lista mostrada: optimistas aún no confirmados por el servidor + los del
   // servidor (dedupe por id). Más recientes primero (clock_seconds desc).
   const events: LiveMatchEvent[] = [
     ...optimistic.filter((o) => !recentEvents.some((r) => r.id === o.id)),
     ...recentEvents,
   ];
+
+  // Jugadores expulsados (tienen roja): SALEN del campo (§3.4, regla F7.3) y no
+  // pueden recibir más eventos. Mostrarlos en un banquillo "como expulsado" es 7.5.
+  const expelledIds = new Set(
+    events.filter((e) => e.type === 'red_card' && e.playerId).map((e) => e.playerId!),
+  );
+
+  const players: FieldEditorPlayer[] = fieldPlayers
+    .filter((p) => !expelledIds.has(p.playerId))
+    .map((p) => ({
+      playerId: p.playerId,
+      label: p.label,
+      dorsal: p.dorsal,
+      photoUrl: p.photoUrl,
+      positionCode: p.positionCode,
+      xPct: p.xPct,
+      yPct: p.yPct,
+    }));
+
+  // Tipos de eventos propios ya registrados de un jugador (para la regla de
+  // tarjetas en el cliente; el servidor es el autoritativo).
+  function ownTypesOf(playerId: string): string[] {
+    return events.filter((e) => e.playerId === playerId).map((e) => e.type);
+  }
 
   // F7.3 — registrar un evento sobre un jugador propio. side/clock/period los
   // resuelve el servidor; aquí pintamos optimista y confirmamos con refresh.
@@ -174,22 +189,30 @@ export function LiveCaptureClient({
     const p = fieldPlayers.find((x) => x.playerId === playerId);
     const label = p?.label ?? playerId.slice(0, 4);
 
+    // Regla de tarjetas/expulsión (espejo del servidor, para feedback inmediato).
+    const outcome = resolveCardOutcome(ownTypesOf(playerId), type);
+    if (outcome.kind === 'blocked') {
+      toast.warning(t(`event_error.${outcome.reason}`));
+      return;
+    }
+
     // id de cliente → reintento idempotente (§10). Reloj optimista con el motor
     // de 7.7; el servidor recalcula el autoritativo al insertar.
     const id = crypto.randomUUID();
     const clockSeconds = clockSecondsAt(periods, Date.now());
     const cur = currentPeriod(periods);
-    const optimisticRow: LiveMatchEvent = {
-      id,
-      type,
-      playerId,
-      playerLabel: label,
-      dorsal: p?.dorsal ?? null,
-      clockSeconds,
-      displayMinute: toDisplayMinute(clockSeconds),
-      period: cur?.period ?? 'first_half',
-    };
-    setOptimistic((prev) => [optimisticRow, ...prev]);
+    const period = cur?.period ?? 'first_half';
+    const displayMinute = toDisplayMinute(clockSeconds);
+    const base = { playerId, playerLabel: label, dorsal: p?.dorsal ?? null, clockSeconds, displayMinute, period };
+
+    const optimisticRows: LiveMatchEvent[] = [{ id, type, ...base }];
+    // Doble amarilla → roja automática: la pintamos optimista (el jugador sale
+    // del campo al instante). El servidor decide de forma autoritativa.
+    const autoRedId = outcome.autoRed ? crypto.randomUUID() : undefined;
+    if (autoRedId) {
+      optimisticRows.push({ id: autoRedId, type: 'red_card', ...base });
+    }
+    setOptimistic((prev) => [...optimisticRows, ...prev]);
     setSelectedEvent(null); // evita doble registro accidental en el siguiente toque
 
     startTransition(async () => {
@@ -198,19 +221,27 @@ export function LiveCaptureClient({
         id,
         type,
         player_id: playerId,
+        ...(autoRedId ? { auto_red_id: autoRedId } : {}),
       });
       if (res.error) {
-        setOptimistic((prev) => prev.filter((e) => e.id !== id));
+        const ids = new Set(optimisticRows.map((r) => r.id));
+        setOptimistic((prev) => prev.filter((e) => !ids.has(e.id)));
         toast.error(t(`event_error.${res.error}`));
         return;
       }
-      toast.success(
-        t('event_registered', {
-          event: t(`event.${type}`),
-          player: label,
-          minute: toDisplayMinute(clockSeconds),
-        }),
-      );
+      if (res.autoRed) {
+        toast.success(t('event_expelled_double_yellow', { player: label }));
+      } else if (res.expelled) {
+        toast.success(t('event_expelled_red', { player: label, minute: displayMinute }));
+      } else {
+        toast.success(
+          t('event_registered', {
+            event: t(`event.${type}`),
+            player: label,
+            minute: displayMinute,
+          }),
+        );
+      }
       router.refresh();
     });
   }

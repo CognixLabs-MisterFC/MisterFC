@@ -1660,7 +1660,10 @@
       "not_live": "El partido no está en juego.",
       "no_period": "Inicia el partido para registrar eventos.",
       "player_not_in_team": "Ese jugador no pertenece al equipo en este partido.",
-      "generic": "No se pudo registrar el evento. Inténtalo de nuevo."
-    }
+      "generic": "No se pudo registrar el evento. Inténtalo de nuevo.",
+      "player_expelled": "Ese jugador está expulsado; no puede recibir más eventos."
+    },
+    "event_expelled_double_yellow": "Expulsado por doble amarilla: {player}",
+    "event_expelled_red": "Expulsado (roja): {player} ({minute}')"
   }
 }

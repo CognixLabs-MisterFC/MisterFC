@@ -227,7 +227,16 @@ function StaticChip({
         clickable && 'cursor-pointer',
       )}
       style={{ left: `${xPct}%`, top: `${yPct}%` }}
-      onClick={clickable ? () => onClick?.(player.playerId) : undefined}
+      onClick={
+        clickable
+          ? (e) => {
+              // Evita que el clic burbujee al contenedor y dispare también
+              // onFieldClick (un toque sobre un jugador es SOLO de jugador).
+              e.stopPropagation();
+              onClick?.(player.playerId);
+            }
+          : undefined
+      }
       onMouseEnter={() => onHover?.(player.playerId)}
       onMouseLeave={() => onHover?.(null)}
     >

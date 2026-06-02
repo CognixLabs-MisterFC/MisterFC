@@ -29,5 +29,11 @@ export {
   PLAYER_EVENT_TYPES,
   isPlayerEventType,
   playerEventClockFields,
+  resolveCardOutcome,
+  isExpelled,
 } from './event';
-export type { PlayerEventType, PlayerEventClockFields } from './event';
+export type {
+  PlayerEventType,
+  PlayerEventClockFields,
+  CardOutcome,
+} from './event';

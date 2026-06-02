@@ -31,8 +31,10 @@ import {
   nextPeriodAfter,
   pauseClockPatch,
   type PeriodKind,
+  type PlayerEventType,
   playerEventClockFields,
   registerPlayerEventSchema,
+  resolveCardOutcome,
   resumeClockPatch,
   startNextPeriodSchema,
 } from '@misterfc/core';
@@ -440,6 +442,11 @@ export async function adjustClock(input: unknown): Promise<ClockActionState> {
 // El `id` lo genera el cliente (UUID) → reintento idempotente con upsert/ignore
 // (§10). Asistencia: enlaza al ÚLTIMO gol propio vía metadata.goal_event_id
 // (§7.3); si no hay gol previo, se registra sin enlace (no se bloquea).
+//
+// Expulsión (regla F7.3, añadida a la spec §3.4): 2ª amarilla → roja automática;
+// jugador con roja NO recibe más eventos (bloquea 2ª roja y cualquier otro). La
+// decisión la calcula el motor puro `resolveCardOutcome`. La roja queda en
+// match_events → 7.8 dejará de sumarle minutos y 7.5 impedirá que vuelva.
 // Editar/borrar es la línea de tiempo (7.9); aquí solo se registra.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -450,12 +457,17 @@ type EventActionError =
   | 'not_live'
   | 'no_period'
   | 'player_not_in_team'
+  | 'player_expelled'
   | 'generic';
 
 export type RegisterEventState = {
   error?: EventActionError;
   success?: boolean;
   eventRowId?: string;
+  /** Se registró además la roja automática por doble amarilla. */
+  autoRed?: boolean;
+  /** El jugador queda expulsado tras este evento (roja directa o doble amarilla). */
+  expelled?: boolean;
 };
 
 function mapEventErr(
@@ -475,7 +487,7 @@ export async function registerPlayerEvent(
 ): Promise<RegisterEventState> {
   const parsed = registerPlayerEventSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
-  const { event_id, id, type, player_id } = parsed.data;
+  const { event_id, id, type, player_id, auto_red_id } = parsed.data;
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
@@ -499,6 +511,11 @@ export async function registerPlayerEvent(
 
   const periods = await loadPeriods(supabase, event_id);
   if (periods.length === 0) return { error: 'no_period' };
+
+  // Historial de tarjetas/eventos propios de ESE jugador → regla de expulsión.
+  const existingTypes = await loadPlayerOwnEventTypes(supabase, event_id, player_id);
+  const outcome = resolveCardOutcome(existingTypes, type as PlayerEventType);
+  if (outcome.kind === 'blocked') return { error: outcome.reason };
 
   // clock_seconds / period / display_minute autoritativos (hora del servidor).
   const { ms } = now();
@@ -539,6 +556,53 @@ export async function registerPlayerEvent(
   );
   if (error) return { error: mapEventErr(error.message, error.code) };
 
+  // Doble amarilla → roja automática. Idempotente: solo se crea si tras la
+  // amarilla NO hay ya una roja del jugador (un reintento no la duplica).
+  let autoRed = false;
+  if (outcome.autoRed) {
+    const after = await loadPlayerOwnEventTypes(supabase, event_id, player_id);
+    if (!after.includes('red_card')) {
+      const { error: redErr } = await supabase.from('match_events').upsert(
+        {
+          ...(auto_red_id ? { id: auto_red_id } : {}),
+          event_id,
+          club_id: clubId,
+          created_by: user.id,
+          side: 'own' as const,
+          type: 'red_card' as const,
+          player_id,
+          period,
+          clock_seconds: clockSeconds,
+          display_minute: displayMinute,
+          metadata: { reason: 'second_yellow' },
+        },
+        auto_red_id ? { onConflict: 'id', ignoreDuplicates: true } : undefined,
+      );
+      if (redErr) return { error: mapEventErr(redErr.message, redErr.code) };
+    }
+    autoRed = true;
+  }
+
   revalidate(event_id);
-  return { success: true, eventRowId: id };
+  return {
+    success: true,
+    eventRowId: id,
+    autoRed,
+    expelled: type === 'red_card' || autoRed,
+  };
+}
+
+/** Tipos de eventos PROPIOS (side='own') ya registrados de un jugador. */
+async function loadPlayerOwnEventTypes(
+  supabase: Supa,
+  eventId: string,
+  playerId: string,
+): Promise<string[]> {
+  const { data } = await supabase
+    .from('match_events')
+    .select('type')
+    .eq('event_id', eventId)
+    .eq('side', 'own')
+    .eq('player_id', playerId);
+  return (data ?? []).map((r) => r.type as string);
 }
