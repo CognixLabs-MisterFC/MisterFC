@@ -1650,7 +1650,7 @@
     "clock_half_overtime": "Part {elapsed} · prolongació (suggerit {target})",
     "register_not_live": "Inicia el partit per a registrar esdeveniments.",
     "register_select_event": "Selecciona primer un esdeveniment de la paleta.",
-    "register_not_player_event": "Eixe esdeveniment no va sobre un jugador (arriba en una pròxima entrega).",
+    "register_not_player_event": "Eixe esdeveniment va sobre el camp: toca la gespa.",
     "event_registered": "Registrat: {event} · {player} ({minute}')",
     "recent_events_title": "Últims esdeveniments",
     "no_events_yet": "Encara no hi ha esdeveniments registrats.",
@@ -1665,6 +1665,8 @@
       "player_expelled": "Eixe jugador està expulsat; no pot rebre més esdeveniments."
     },
     "event_expelled_double_yellow": "Expulsat per doble groga: {player}",
-    "event_expelled_red": "Expulsat (roja): {player} ({minute}')"
+    "event_expelled_red": "Expulsat (roja): {player} ({minute}')",
+    "register_not_field_event": "Eixe esdeveniment va sobre un jugador: toca'l al camp.",
+    "event_registered_field": "Registrat: {event} ({minute}')"
   }
 }

@@ -28,6 +28,8 @@ export type {
 export {
   PLAYER_EVENT_TYPES,
   isPlayerEventType,
+  FIELD_EVENT_TYPES,
+  isFieldEventType,
   playerEventClockFields,
   resolveCardOutcome,
   isExpelled,
@@ -36,6 +38,7 @@ export {
 } from './event';
 export type {
   PlayerEventType,
+  FieldEventType,
   PlayerEventClockFields,
   CardOutcome,
 } from './event';

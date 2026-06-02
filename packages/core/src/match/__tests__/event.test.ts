@@ -3,6 +3,8 @@ import { type ClockPeriod } from '../clock';
 import {
   PLAYER_EVENT_TYPES,
   isPlayerEventType,
+  FIELD_EVENT_TYPES,
+  isFieldEventType,
   isExpelled,
   deriveExpelledPlayers,
   mergeLiveEvents,
@@ -35,6 +37,22 @@ describe('isPlayerEventType', () => {
     for (const t of ['corner', 'foul', 'offside', 'shot', 'substitution']) {
       expect(isPlayerEventType(t)).toBe(false);
     }
+  });
+});
+
+describe('isFieldEventType (7.4)', () => {
+  it('acepta los 4 eventos sobre el campo', () => {
+    expect(FIELD_EVENT_TYPES).toEqual(['corner', 'foul', 'offside', 'shot']);
+    for (const t of FIELD_EVENT_TYPES) expect(isFieldEventType(t)).toBe(true);
+  });
+  it('rechaza eventos de jugador / cambio', () => {
+    for (const t of ['goal', 'assist', 'yellow_card', 'red_card', 'substitution']) {
+      expect(isFieldEventType(t)).toBe(false);
+    }
+  });
+  it('jugador y campo son disjuntos', () => {
+    for (const t of PLAYER_EVENT_TYPES) expect(isFieldEventType(t)).toBe(false);
+    for (const t of FIELD_EVENT_TYPES) expect(isPlayerEventType(t)).toBe(false);
   });
 });
 

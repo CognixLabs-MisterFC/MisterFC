@@ -1649,7 +1649,7 @@
     "clock_half_overtime": "Parte {elapsed} · prolongación (sugerido {target})",
     "register_not_live": "Inicia el partido para registrar eventos.",
     "register_select_event": "Selecciona primero un evento de la paleta.",
-    "register_not_player_event": "Ese evento no va sobre un jugador (llega en una próxima entrega).",
+    "register_not_player_event": "Ese evento va sobre el campo: toca el césped.",
     "event_registered": "Registrado: {event} · {player} ({minute}')",
     "recent_events_title": "Últimos eventos",
     "no_events_yet": "Aún no hay eventos registrados.",
@@ -1664,6 +1664,8 @@
       "player_expelled": "Ese jugador está expulsado; no puede recibir más eventos."
     },
     "event_expelled_double_yellow": "Expulsado por doble amarilla: {player}",
-    "event_expelled_red": "Expulsado (roja): {player} ({minute}')"
+    "event_expelled_red": "Expulsado (roja): {player} ({minute}')",
+    "register_not_field_event": "Ese evento va sobre un jugador: tócalo en el campo.",
+    "event_registered_field": "Registrado: {event} ({minute}')"
   }
 }

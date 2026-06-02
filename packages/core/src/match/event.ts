@@ -30,6 +30,24 @@ export function isPlayerEventType(value: string): value is PlayerEventType {
 }
 
 /**
+ * Tipos de match_events que se registran TOCANDO el CÉSPED (7.4): llevan
+ * `x_pct`/`y_pct` (0–100, equipo atacando hacia arriba, §3.4) y NO un jugador
+ * por ubicación. La spec no ata el "tiro" a un jugador (coords por ubicación).
+ */
+export type FieldEventType = 'corner' | 'foul' | 'offside' | 'shot';
+
+export const FIELD_EVENT_TYPES: readonly FieldEventType[] = [
+  'corner',
+  'foul',
+  'offside',
+  'shot',
+] as const;
+
+export function isFieldEventType(value: string): value is FieldEventType {
+  return (FIELD_EVENT_TYPES as readonly string[]).includes(value);
+}
+
+/**
  * ¿El jugador está expulsado? Estado DERIVADO de sus tarjetas (F7.3, spec §3.4
  * bis): tiene **1 roja directa** O **2 amarillas**. No existe un evento de roja
  * "automática" por doble amarilla: la expulsión por dos amarillas es un estado,
