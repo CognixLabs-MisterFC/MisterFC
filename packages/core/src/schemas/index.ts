@@ -204,3 +204,14 @@ export type {
   UpdateCoachFormationInput,
   DeleteCoachFormationInput,
 } from './coach-formation';
+
+export {
+  matchEventRefSchema,
+  startNextPeriodSchema,
+  adjustClockSchema,
+} from './match-clock';
+export type {
+  MatchEventRefInput,
+  StartNextPeriodInput,
+  AdjustClockInput,
+} from './match-clock';

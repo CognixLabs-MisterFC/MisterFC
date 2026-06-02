@@ -63,6 +63,8 @@ export default async function MatchLivePage({ params }: Props) {
         formationCode={data.formationCode}
         fieldPlayers={data.fieldPlayers}
         hasOfficialLineup={data.hasOfficialLineup}
+        matchStatus={data.matchStatus}
+        periods={data.periods}
       />
     </div>
   );

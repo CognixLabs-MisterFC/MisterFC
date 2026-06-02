@@ -16,6 +16,8 @@ import {
   createSupabaseServerClient,
   defaultLineupDraft,
   getFormation,
+  type ClockPeriod,
+  type PeriodKind,
   type TeamFormat,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -52,6 +54,13 @@ export type MatchLiveData = {
   fieldPlayers: LiveFieldPlayer[];
   /** ¿Existe alineación oficial? (UI muestra aviso si no.) */
   hasOfficialLineup: boolean;
+  /** Estado de la sesión de captura (F7.7). 'not_started' si aún no hay fila. */
+  matchStatus: 'not_started' | 'live' | 'closed';
+  /**
+   * Periodos del reloj (F7.7, §3.2/§6). El cliente reconstruye el cronómetro a
+   * partir de estas filas → sobrevive a recargas. Vacío hasta "Iniciar partido".
+   */
+  periods: ClockPeriod[];
 };
 
 export async function loadMatchLive(
@@ -165,6 +174,34 @@ export async function loadMatchLive(
     formationCode = defaultLineupDraft(event.teams.format).formationCode;
   }
 
+  // Estado de la sesión + reloj (F7.7). El cliente reconstruye el cronómetro
+  // desde `periods` (recuperable tras recarga, §6).
+  const { data: stateRow } = await supabase
+    .from('match_state')
+    .select('status')
+    .eq('event_id', eventId)
+    .maybeSingle();
+  const matchStatus =
+    (stateRow?.status as 'not_started' | 'live' | 'closed' | undefined) ??
+    'not_started';
+
+  const { data: periodRows } = await supabase
+    .from('match_periods')
+    .select(
+      'period, ordinal, base_offset_seconds, accumulated_seconds, running, last_started_at, ended',
+    )
+    .eq('event_id', eventId)
+    .order('ordinal', { ascending: true });
+  const periods: ClockPeriod[] = (periodRows ?? []).map((r) => ({
+    period: r.period as PeriodKind,
+    ordinal: r.ordinal as number,
+    baseOffsetSeconds: r.base_offset_seconds as number,
+    accumulatedSeconds: r.accumulated_seconds as number,
+    running: r.running as boolean,
+    lastStartedAt: (r.last_started_at as string | null) ?? null,
+    ended: r.ended as boolean,
+  }));
+
   return {
     event: {
       id: event.id,
@@ -182,5 +219,7 @@ export async function loadMatchLive(
     formationCode,
     fieldPlayers,
     hasOfficialLineup: officialRow != null,
+    matchStatus,
+    periods,
   };
 }

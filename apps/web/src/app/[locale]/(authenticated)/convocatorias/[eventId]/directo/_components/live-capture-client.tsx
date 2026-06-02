@@ -25,18 +25,17 @@ import {
   Goal,
   Square,
   Target,
-  Timer,
 } from 'lucide-react';
-import type { TeamFormat } from '@misterfc/core';
+import type { ClockPeriod, TeamFormat } from '@misterfc/core';
 import {
   MatchFieldEditor,
   type FieldEditorPlayer,
 } from '@/components/match/match-field-editor';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import type { LiveFieldPlayer } from '../queries';
+import { MatchClock, MatchClockOverlay } from './match-clock';
 
 type MatchSide = 'own' | 'rival';
 
@@ -81,6 +80,8 @@ type Props = {
   formationCode: string;
   fieldPlayers: LiveFieldPlayer[];
   hasOfficialLineup: boolean;
+  matchStatus: 'not_started' | 'live' | 'closed';
+  periods: ClockPeriod[];
 };
 
 export function LiveCaptureClient({
@@ -91,6 +92,8 @@ export function LiveCaptureClient({
   formationCode,
   fieldPlayers,
   hasOfficialLineup,
+  matchStatus,
+  periods,
 }: Props) {
   const t = useTranslations('partido_directo');
   const [side, setSide] = useState<MatchSide>('own');
@@ -150,23 +153,9 @@ export function LiveCaptureClient({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Barra superior: cronómetro (display), estado y toggle equipo/rival. */}
+      {/* Barra superior: cronómetro completo (F7.7) y toggle equipo/rival. */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card/40 p-3">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Timer className="size-5 text-muted-foreground" aria-hidden />
-            <span
-              className="font-mono text-3xl font-semibold tabular-nums"
-              aria-label={t('clock_label')}
-            >
-              00:00
-            </span>
-          </div>
-          <Badge variant="secondary">{t('status_not_started')}</Badge>
-          <span className="text-xs text-muted-foreground">
-            {t('clock_hint')}
-          </span>
-        </div>
+        <MatchClock eventId={eventId} status={matchStatus} periods={periods} />
 
         {/* Interruptor equipo / rival (segmented). */}
         <div
@@ -260,10 +249,8 @@ export function LiveCaptureClient({
             // aspect-[2/3] base deriva la anchura).
             className="h-[68vh] max-h-[68vh] w-auto max-w-none"
           >
-            {/* Overlay absoluto (demuestra el slot `children` de live-overlay). */}
-            <div className="pointer-events-none absolute left-1/2 top-2 -translate-x-1/2 rounded-full bg-black/55 px-3 py-0.5 font-mono text-sm font-semibold tabular-nums text-white">
-              00:00
-            </div>
+            {/* Mini-reloj de solo lectura sobre el campo (slot children). */}
+            <MatchClockOverlay periods={periods} />
           </MatchFieldEditor>
         </div>
 
