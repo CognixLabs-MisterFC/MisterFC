@@ -26,7 +26,10 @@ import {
   type ClockPeriod,
   createSupabaseServerClient,
   currentPeriod,
+  deriveExpelledPlayers,
+  deriveSquad,
   endPeriodPatch,
+  type FieldSlot,
   matchEventRefSchema,
   nextPeriodAfter,
   isExpelled,
@@ -36,9 +39,12 @@ import {
   playerEventClockFields,
   registerFieldEventSchema,
   registerPlayerEventSchema,
+  registerSubstitutionSchema,
   resolveCardOutcome,
   resumeClockPatch,
+  setAbsenceSchema,
   startNextPeriodSchema,
+  type Sub,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -462,6 +468,8 @@ type EventActionError =
   | 'no_period'
   | 'player_not_in_team'
   | 'player_expelled'
+  | 'player_not_on_field'
+  | 'player_not_eligible'
   | 'generic';
 
 export type RegisterEventState = {
@@ -578,6 +586,164 @@ async function loadPlayerOwnEventTypes(
     .eq('side', 'own')
     .eq('player_id', playerId);
   return (data ?? []).map((r) => r.type as string);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F7.5 — estado vivo del once (campo/banquillo) para validar la sustitución en
+// el servidor. Carga lo persistido y deriva con el motor puro `deriveSquad`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function loadLiveSquad(supabase: Supa, eventId: string) {
+  // Huecos del campo + suplentes: de la alineación OFICIAL.
+  const { data: official } = await supabase
+    .from('lineups')
+    .select('id')
+    .eq('event_id', eventId)
+    .eq('is_official', true)
+    .maybeSingle();
+  const slots: FieldSlot[] = [];
+  const bench: string[] = [];
+  if (official?.id) {
+    const { data: positions } = await supabase
+      .from('lineup_positions')
+      .select('player_id, position_code, x_pct, y_pct, location')
+      .eq('lineup_id', official.id as string);
+    for (const p of positions ?? []) {
+      if (p.location === 'field') {
+        slots.push({
+          playerId: p.player_id as string,
+          positionCode: (p.position_code as string | null) ?? null,
+          xPct: p.x_pct == null ? null : Number(p.x_pct),
+          yPct: p.y_pct == null ? null : Number(p.y_pct),
+        });
+      } else if (p.location === 'bench') {
+        bench.push(p.player_id as string);
+      }
+    }
+  }
+
+  // Sustituciones (orden cronológico) + tarjetas (expulsión) + ausencias.
+  const { data: ownEvents } = await supabase
+    .from('match_events')
+    .select('type, player_id, related_player_id, clock_seconds')
+    .eq('event_id', eventId)
+    .eq('side', 'own')
+    .order('clock_seconds', { ascending: true });
+  const subs: Sub[] = [];
+  const cardTypesByPlayer: { type: string; playerId: string | null }[] = [];
+  for (const e of ownEvents ?? []) {
+    if (e.type === 'substitution' && e.player_id && e.related_player_id) {
+      subs.push({ out: e.player_id as string, in: e.related_player_id as string });
+    } else if (e.type === 'yellow_card' || e.type === 'red_card') {
+      cardTypesByPlayer.push({ type: e.type as string, playerId: e.player_id as string | null });
+    }
+  }
+  const expelled = deriveExpelledPlayers(cardTypesByPlayer);
+
+  const { data: absRows } = await supabase
+    .from('match_absences')
+    .select('player_id')
+    .eq('event_id', eventId);
+  const absent = (absRows ?? []).map((r) => r.player_id as string);
+
+  return deriveSquad({ slots, bench, subs, expelled, absent });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// registerSubstitution — F7.5: SALE player_out (en campo) ENTRA player_in
+// (suplente elegible). Persiste un match_event type='substitution'
+// (player_id=sale, related_player_id=entra) con el reloj de 7.7.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function registerSubstitution(
+  input: unknown,
+): Promise<RegisterEventState> {
+  const parsed = registerSubstitutionSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, player_out_id, player_in_id } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
+
+  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
+
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  // El que SALE debe estar en campo; el que ENTRA, elegible (suplente no
+  // expulsado/ausente/ya-entrado). Derivado de lo persistido (autoritativo).
+  const squad = await loadLiveSquad(supabase, event_id);
+  if (!squad.onFieldIds.includes(player_out_id)) return { error: 'player_not_on_field' };
+  if (!squad.eligibleInIds.includes(player_in_id)) return { error: 'player_not_eligible' };
+
+  const { ms } = now();
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(periods, ms);
+
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId,
+      created_by: user.id,
+      side: 'own',
+      type: 'substitution',
+      player_id: player_out_id,
+      related_player_id: player_in_id,
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// setPlayerAbsent — F7.5: "quitar al que no viene". Marca/desmarca a un
+// convocado como AUSENTE para este partido (match_absences). Reversible.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function setPlayerAbsent(input: unknown): Promise<RegisterEventState> {
+  const parsed = setAbsenceSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, player_id, absent } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // No exige partido en vivo: una baja de última hora puede marcarse antes de
+  // iniciar. RLS (user_can_record_match) + el trigger validan permiso y roster.
+  if (absent) {
+    const { error } = await supabase
+      .from('match_absences')
+      .upsert({ event_id, player_id }, { onConflict: 'event_id,player_id', ignoreDuplicates: true });
+    if (error) return { error: mapEventErr(error.message, error.code) };
+  } else {
+    const { error } = await supabase
+      .from('match_absences')
+      .delete()
+      .eq('event_id', event_id)
+      .eq('player_id', player_id);
+    if (error) return { error: mapEventErr(error.message, error.code) };
+  }
+
+  revalidate(event_id);
+  return { success: true };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

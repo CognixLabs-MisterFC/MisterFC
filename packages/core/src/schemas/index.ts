@@ -216,8 +216,15 @@ export type {
   AdjustClockInput,
 } from './match-clock';
 
-export { registerPlayerEventSchema, registerFieldEventSchema } from './match-event';
+export {
+  registerPlayerEventSchema,
+  registerFieldEventSchema,
+  registerSubstitutionSchema,
+  setAbsenceSchema,
+} from './match-event';
 export type {
   RegisterPlayerEventInput,
   RegisterFieldEventInput,
+  RegisterSubstitutionInput,
+  SetAbsenceInput,
 } from './match-event';

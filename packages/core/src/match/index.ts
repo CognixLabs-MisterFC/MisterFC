@@ -42,3 +42,13 @@ export type {
   PlayerEventClockFields,
   CardOutcome,
 } from './event';
+
+export { deriveSquad } from './squad';
+export type {
+  FieldSlot,
+  Sub,
+  BenchStatus,
+  BenchEntry,
+  Squad,
+  DeriveSquadParams,
+} from './squad';

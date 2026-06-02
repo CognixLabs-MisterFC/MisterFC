@@ -24,13 +24,17 @@ import {
   Flag,
   Footprints,
   Goal,
+  RotateCcw,
   Square,
   Target,
+  UserMinus,
+  X,
 } from 'lucide-react';
 import {
   clockSecondsAt,
   currentPeriod,
   deriveExpelledPlayers,
+  deriveSquad,
   displayMinute as toDisplayMinute,
   isExpelled,
   isFieldEventType,
@@ -38,6 +42,7 @@ import {
   mergeLiveEvents,
   resolveCardOutcome,
   type ClockPeriod,
+  type Sub,
   type TeamFormat,
 } from '@misterfc/core';
 import {
@@ -47,8 +52,18 @@ import {
 import { Button } from '@/components/ui/button';
 import { Link, useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
-import type { LiveFieldPlayer, LiveMatchEvent } from '../queries';
-import { registerFieldEvent, registerPlayerEvent } from '../actions';
+import type {
+  LiveBenchPlayer,
+  LiveFieldPlayer,
+  LiveMatchEvent,
+  LiveSubstitution,
+} from '../queries';
+import {
+  registerFieldEvent,
+  registerPlayerEvent,
+  registerSubstitution,
+  setPlayerAbsent,
+} from '../actions';
 import { MatchClock, MatchClockOverlay } from './match-clock';
 
 type MatchSide = 'own' | 'rival';
@@ -98,7 +113,19 @@ type Props = {
   periods: ClockPeriod[];
   halfDurationMinutes: number;
   recentEvents: LiveMatchEvent[];
+  benchPlayers: LiveBenchPlayer[];
+  substitutions: LiveSubstitution[];
+  absentIds: string[];
 };
+
+// Herramienta seleccionada en la paleta: un tipo de evento, o 'absent' (quitar
+// al que no viene, F7.5 — no es un match_event, es una baja).
+type Tool = EventType | 'absent';
+
+// Hora actual (ms) del instante del evento. A nivel de módulo a propósito: solo
+// se invoca desde event handlers (registrar/cambiar), donde leer el reloj es
+// correcto; así no la confunde el análisis de pureza de render.
+const eventNowMs = () => Date.now();
 
 export function LiveCaptureClient({
   eventId,
@@ -112,17 +139,26 @@ export function LiveCaptureClient({
   periods,
   halfDurationMinutes,
   recentEvents,
+  benchPlayers,
+  substitutions,
+  absentIds,
 }: Props) {
   const t = useTranslations('partido_directo');
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [side, setSide] = useState<MatchSide>('own');
-  const [selectedEvent, setSelectedEvent] = useState<EventType | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Tool | null>(null);
   // Eventos registrados en este cliente aún no reflejados por el servidor
   // (registro optimista, OVERLAY). Se superponen a los persistidos por id; nunca
   // los borran. La fuente de verdad es `recentEvents` (match_events persistidos),
   // que ahora SÍ se cargan (el embed de players estaba ambiguo → venía vacío).
   const [optimistic, setOptimistic] = useState<LiveMatchEvent[]>([]);
+  // F7.5 — overlays optimistas de sustituciones y ausencias (mismo principio:
+  // superponen a lo persistido; la verdad se recompone al refrescar).
+  const [optimisticSubs, setOptimisticSubs] = useState<LiveSubstitution[]>([]);
+  const [absentOverride, setAbsentOverride] = useState<Record<string, boolean>>({});
+  // Jugador del campo elegido para SALIR (paso 1 de la sustitución).
+  const [subOut, setSubOut] = useState<string | null>(null);
 
   // Sin alineación oficial no hay once que pintar (no auto-marcamos ninguna ni
   // hacemos fallback a "la última"): empty-state claro con CTA al editor.
@@ -151,20 +187,70 @@ export function LiveCaptureClient({
 
   // Expulsados = estado DERIVADO de TODOS los eventos (1 roja O 2 amarillas,
   // §3.4 bis): SALEN del campo y no reciben más eventos. Se recomputa al hidratar
-  // → un expulsado sigue fuera tras recargar/volver. Banquillo "expulsado" es 7.5.
+  // → un expulsado sigue fuera tras recargar/volver.
   const expelledIds = deriveExpelledPlayers(events);
 
-  const players: FieldEditorPlayer[] = fieldPlayers
-    .filter((p) => !expelledIds.has(p.playerId))
-    .map((p) => ({
+  // Datos (nombre/dorsal/foto) de TODO el convocado, para pintar a quien entra.
+  const playerInfo = new Map<
+    string,
+    { label: string; dorsal: number | null; photoUrl: string | null }
+  >();
+  for (const p of fieldPlayers)
+    playerInfo.set(p.playerId, { label: p.label, dorsal: p.dorsal, photoUrl: p.photoUrl });
+  for (const p of benchPlayers)
+    playerInfo.set(p.playerId, { label: p.label, dorsal: p.dorsal, photoUrl: p.photoUrl });
+
+  // F7.5 — estado vivo del once, derivado de lo PERSISTIDO + overlay optimista:
+  //   subs = persistidas + optimistas (dedupe por id, orden cronológico);
+  //   ausentes = persistidas con override optimista;
+  //   expulsados = de los eventos.
+  const allSubs = [...substitutions];
+  for (const s of optimisticSubs) {
+    if (!allSubs.some((x) => x.id === s.id)) allSubs.push(s);
+  }
+  allSubs.sort((a, b) => a.clockSeconds - b.clockSeconds);
+  const subsForSquad: Sub[] = allSubs.map((s) => ({ out: s.outId, in: s.inId }));
+
+  const absentSet = new Set(absentIds);
+  for (const [pid, isAbsent] of Object.entries(absentOverride)) {
+    if (isAbsent) absentSet.add(pid);
+    else absentSet.delete(pid);
+  }
+
+  const squad = deriveSquad({
+    slots: fieldPlayers.map((p) => ({
       playerId: p.playerId,
-      label: p.label,
-      dorsal: p.dorsal,
-      photoUrl: p.photoUrl,
       positionCode: p.positionCode,
       xPct: p.xPct,
       yPct: p.yPct,
-    }));
+    })),
+    bench: benchPlayers.map((p) => p.playerId),
+    subs: subsForSquad,
+    expelled: expelledIds,
+    absent: absentSet,
+  });
+
+  // Jugadores EN EL CAMPO ahora (titulares + entrados, menos salidos/expulsados/
+  // ausentes), con nombre/dorsal/foto de quien ocupe el hueco.
+  const players: FieldEditorPlayer[] = squad.onField.map((slot) => {
+    const info = playerInfo.get(slot.playerId);
+    return {
+      playerId: slot.playerId,
+      label: info?.label ?? slot.playerId.slice(0, 4),
+      dorsal: info?.dorsal ?? null,
+      photoUrl: info?.photoUrl ?? null,
+      positionCode: slot.positionCode,
+      xPct: slot.xPct,
+      yPct: slot.yPct,
+    };
+  });
+
+  const onFieldIds = new Set(squad.onFieldIds);
+  const eligibleInIds = new Set(squad.eligibleInIds);
+  // Ausentes (titulares + suplentes) para poder deshacer la baja.
+  const absentList = [...absentSet]
+    .map((pid) => ({ playerId: pid, ...(playerInfo.get(pid) ?? { label: pid.slice(0, 4), dorsal: null, photoUrl: null }) }))
+    .sort((a, b) => (a.dorsal ?? 99) - (b.dorsal ?? 99));
 
   // Tipos de eventos propios ya registrados de un jugador (para la regla de
   // tarjetas en el cliente; el servidor es el autoritativo).
@@ -175,12 +261,27 @@ export function LiveCaptureClient({
   // F7.3 — registrar un evento sobre un jugador propio. side/clock/period los
   // resuelve el servidor; aquí pintamos optimista y confirmamos con refresh.
   function handlePlayerClick(playerId: string) {
+    if (!selectedEvent) {
+      toast.info(t('register_select_event'));
+      return;
+    }
+    // F7.5 — "quitar al que no viene": no exige partido en vivo.
+    if (selectedEvent === 'absent') {
+      markAbsent(playerId, true);
+      return;
+    }
     if (matchStatus !== 'live') {
       toast.warning(t('register_not_live'));
       return;
     }
-    if (!selectedEvent) {
-      toast.info(t('register_select_event'));
+    // F7.5 — sustitución: tocar un jugador del campo lo marca como QUE SALE.
+    if (selectedEvent === 'substitution') {
+      if (!onFieldIds.has(playerId)) {
+        toast.info(t('sub_pick_out'));
+        return;
+      }
+      setSubOut(playerId);
+      toast.info(t('sub_pick_in'));
       return;
     }
     if (!isPlayerEventType(selectedEvent)) {
@@ -203,7 +304,7 @@ export function LiveCaptureClient({
     // id de cliente → reintento idempotente (§10). Reloj optimista con el motor
     // de 7.7; el servidor recalcula el autoritativo al insertar.
     const id = crypto.randomUUID();
-    const clockSeconds = clockSecondsAt(periods, Date.now());
+    const clockSeconds = clockSecondsAt(periods, eventNowMs());
     const cur = currentPeriod(periods);
     const period = cur?.period ?? 'first_half';
     const displayMinute = toDisplayMinute(clockSeconds);
@@ -272,7 +373,7 @@ export function LiveCaptureClient({
 
     const type = selectedEvent;
     const id = crypto.randomUUID();
-    const clockSeconds = clockSecondsAt(periods, Date.now());
+    const clockSeconds = clockSecondsAt(periods, eventNowMs());
     const cur = currentPeriod(periods);
     const period = cur?.period ?? 'first_half';
     const displayMinute = toDisplayMinute(clockSeconds);
@@ -311,6 +412,88 @@ export function LiveCaptureClient({
       );
       router.refresh();
     });
+  }
+
+  // F7.5 — "quitar al que no viene" / deshacer: marca o desmarca ausencia.
+  // Optimista (override) + persistencia. No exige partido en vivo.
+  function markAbsent(playerId: string, absent: boolean) {
+    setAbsentOverride((prev) => ({ ...prev, [playerId]: absent }));
+    setSelectedEvent(null);
+    if (subOut === playerId) setSubOut(null);
+    const label = playerInfo.get(playerId)?.label ?? playerId.slice(0, 4);
+    startTransition(async () => {
+      const res = await setPlayerAbsent({ event_id: eventId, player_id: playerId, absent });
+      if (res.error) {
+        setAbsentOverride((prev) => {
+          const next = { ...prev };
+          delete next[playerId];
+          return next;
+        });
+        toast.error(t(`event_error.${res.error}`));
+        return;
+      }
+      toast.success(t(absent ? 'absent_marked' : 'absent_undone', { player: label }));
+      router.refresh();
+    });
+  }
+
+  // F7.5 — completar la sustitución: SALE `outId`, ENTRA `inId` (paso 2).
+  function completeSub(outId: string, inId: string) {
+    const id = crypto.randomUUID();
+    const clockSeconds = clockSecondsAt(periods, eventNowMs());
+    const cur = currentPeriod(periods);
+    const period = cur?.period ?? 'first_half';
+    const displayMinute = toDisplayMinute(clockSeconds);
+    const outLabel = playerInfo.get(outId)?.label ?? outId.slice(0, 4);
+    const inLabel = playerInfo.get(inId)?.label ?? inId.slice(0, 4);
+
+    const optimisticSub: LiveSubstitution = {
+      id,
+      outId,
+      inId,
+      outLabel,
+      inLabel,
+      clockSeconds,
+      displayMinute,
+      period,
+    };
+    setOptimisticSubs((prev) => [...prev, optimisticSub]);
+    setSubOut(null);
+    setSelectedEvent(null);
+
+    startTransition(async () => {
+      const res = await registerSubstitution({
+        event_id: eventId,
+        id,
+        player_out_id: outId,
+        player_in_id: inId,
+      });
+      if (res.error) {
+        setOptimisticSubs((prev) => prev.filter((s) => s.id !== id));
+        toast.error(t(`event_error.${res.error}`));
+        return;
+      }
+      toast.success(t('sub_registered', { out: outLabel, in: inLabel, minute: displayMinute }));
+      router.refresh();
+    });
+  }
+
+  // F7.5 — clic en un suplente del banquillo.
+  function handleBenchClick(playerId: string) {
+    if (selectedEvent === 'absent') {
+      markAbsent(playerId, true);
+      return;
+    }
+    // En medio de una sustitución: el suplente elegible ENTRA por el que sale.
+    if (subOut) {
+      if (!eligibleInIds.has(playerId)) {
+        toast.warning(t('sub_not_eligible'));
+        return;
+      }
+      completeSub(subOut, playerId);
+      return;
+    }
+    toast.info(t('sub_hint'));
   }
 
   return (
@@ -360,6 +543,21 @@ export function LiveCaptureClient({
         </div>
       </div>
 
+      {/* F7.5 — sustitución en curso: aviso de quién sale + cancelar. */}
+      {subOut && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm">
+          <span>
+            {t('sub_out_label', {
+              player: playerInfo.get(subOut)?.label ?? subOut.slice(0, 4),
+            })}
+          </span>
+          <Button size="sm" variant="ghost" onClick={() => setSubOut(null)}>
+            <X className="size-4" aria-hidden />
+            <span>{t('sub_cancel')}</span>
+          </Button>
+        </div>
+      )}
+
       {/* Cuerpo: paleta | campo | panel lateral. En táctil horizontal las tres
           columnas conviven; en pantallas estrechas se apilan. */}
       <div className="flex flex-col gap-3 lg:flex-row">
@@ -395,9 +593,28 @@ export function LiveCaptureClient({
                 </button>
               );
             })}
+            {/* F7.5 — herramienta "quitar al que no viene" (no es match_event). */}
+            <button
+              type="button"
+              onClick={() => setSelectedEvent(selectedEvent === 'absent' ? null : 'absent')}
+              aria-pressed={selectedEvent === 'absent'}
+              className={cn(
+                'flex touch-none flex-col items-center gap-1 rounded-md border p-2 text-[11px] font-medium transition-colors',
+                selectedEvent === 'absent'
+                  ? 'border-amber-500 bg-amber-500/10 text-foreground'
+                  : 'border-border text-muted-foreground hover:bg-muted',
+              )}
+            >
+              <UserMinus className="size-5" aria-hidden />
+              <span className="text-center leading-tight">{t('tool_absent')}</span>
+            </button>
           </div>
           <p className="mt-3 text-[11px] leading-tight text-muted-foreground">
-            {t('palette_hint')}
+            {selectedEvent === 'substitution'
+              ? t('sub_hint')
+              : selectedEvent === 'absent'
+                ? t('absent_hint')
+                : t('palette_hint')}
           </p>
         </div>
 
@@ -414,7 +631,7 @@ export function LiveCaptureClient({
             // Horizontal: el límite es la altura → dimensionamos por alto
             // (w-auto/max-w-none neutralizan w-full/max-w-md del componente; el
             // aspect-[2/3] base deriva la anchura).
-            className="h-[68vh] max-h-[68vh] w-auto max-w-none"
+            className="h-[56vh] max-h-[56vh] w-auto max-w-none"
           >
             {/* Mini-reloj de solo lectura sobre el campo (slot children). */}
             <MatchClockOverlay periods={periods} />
@@ -468,6 +685,85 @@ export function LiveCaptureClient({
             </ul>
           )}
         </div>
+      </div>
+
+      {/* F7.5 — BANQUILLO: suplentes con su estado. En sustitución (sale elegido)
+          los disponibles ENTRAN; con la herramienta "ausente" se marca la baja. */}
+      <div className="rounded-lg border border-border bg-card/40 p-3">
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {t('bench_title')}
+        </p>
+        {squad.bench.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t('bench_empty')}</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {squad.bench.map((b) => {
+              const info = playerInfo.get(b.playerId);
+              const label = info?.label ?? b.playerId.slice(0, 4);
+              const dorsal = info?.dorsal ?? null;
+              const clickable =
+                selectedEvent === 'absent' ||
+                (subOut != null && b.status === 'available');
+              return (
+                <button
+                  key={b.playerId}
+                  type="button"
+                  disabled={!clickable}
+                  onClick={() => handleBenchClick(b.playerId)}
+                  className={cn(
+                    'flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm transition-colors',
+                    clickable
+                      ? 'border-primary/50 hover:bg-primary/10'
+                      : 'border-border',
+                    b.status === 'available' && 'text-foreground',
+                    b.status !== 'available' && 'text-muted-foreground',
+                  )}
+                >
+                  {dorsal != null && (
+                    <span className="font-mono text-xs tabular-nums">{dorsal}</span>
+                  )}
+                  <span className="truncate">{label}</span>
+                  {b.status !== 'available' && (
+                    <span
+                      className={cn(
+                        'rounded px-1 text-[10px] uppercase',
+                        b.status === 'expelled' && 'bg-red-500/15 text-red-600 dark:text-red-400',
+                        b.status === 'absent' && 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+                        b.status === 'entered' && 'bg-muted text-muted-foreground',
+                      )}
+                    >
+                      {t(`bench_status.${b.status}`)}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Ausentes (titulares + suplentes): deshacer la baja. */}
+        {absentList.length > 0 && (
+          <div className="mt-3 border-t border-border/60 pt-2">
+            <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+              {t('absent_title')}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {absentList.map((p) => (
+                <button
+                  key={p.playerId}
+                  type="button"
+                  onClick={() => markAbsent(p.playerId, false)}
+                  className="flex items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+                  aria-label={t('absent_undo_aria', { player: p.label })}
+                >
+                  <RotateCcw className="size-3" aria-hidden />
+                  {p.dorsal != null ? `${p.dorsal} · ` : ''}
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <p className="text-center text-xs text-muted-foreground lg:hidden">

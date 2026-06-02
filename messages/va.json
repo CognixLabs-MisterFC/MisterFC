@@ -1662,11 +1662,34 @@
       "no_period": "Inicia el partit per a registrar esdeveniments.",
       "player_not_in_team": "Eixe jugador no pertany a l'equip en este partit.",
       "generic": "No s'ha pogut registrar l'esdeveniment. Torna-ho a provar.",
-      "player_expelled": "Eixe jugador està expulsat; no pot rebre més esdeveniments."
+      "player_expelled": "Eixe jugador està expulsat; no pot rebre més esdeveniments.",
+      "player_not_on_field": "Eixe jugador no està en el camp.",
+      "player_not_eligible": "Eixe suplent no pot entrar."
     },
     "event_expelled_double_yellow": "Expulsat per doble groga: {player}",
     "event_expelled_red": "Expulsat (roja): {player} ({minute}')",
     "register_not_field_event": "Eixe esdeveniment va sobre un jugador: toca'l al camp.",
-    "event_registered_field": "Registrat: {event} ({minute}')"
+    "event_registered_field": "Registrat: {event} ({minute}')",
+    "tool_absent": "No ve",
+    "absent_hint": "Toca un convocat (camp o banqueta) per a marcar-lo com a absent.",
+    "sub_hint": "Canvi: toca qui IX (camp) i després qui ENTRA (banqueta).",
+    "sub_pick_out": "Toca un jugador del camp perquè isca.",
+    "sub_pick_in": "Ara toca el suplent que entra.",
+    "sub_out_label": "Ix: {player} · tria qui entra de la banqueta.",
+    "sub_cancel": "Cancel·lar",
+    "sub_not_eligible": "Eixe suplent no pot entrar (expulsat, absent o ja ha entrat).",
+    "sub_registered": "Canvi: ix {out}, entra {in} ({minute}')",
+    "bench_title": "Banqueta",
+    "bench_empty": "Sense suplents en l'alineació oficial.",
+    "bench_status": {
+      "available": "Disponible",
+      "entered": "En camp",
+      "expelled": "Expulsat",
+      "absent": "Absent"
+    },
+    "absent_marked": "{player} marcat com a absent.",
+    "absent_undone": "{player} torna a estar disponible.",
+    "absent_title": "Absents (no venen)",
+    "absent_undo_aria": "Llevar l'absència de {player}"
   }
 }

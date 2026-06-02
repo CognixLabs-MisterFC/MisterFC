@@ -1662,11 +1662,34 @@
       "no_period": "Start the match to record events.",
       "player_not_in_team": "That player isn't on the team for this match.",
       "generic": "Couldn't record the event. Please try again.",
-      "player_expelled": "That player is sent off; they can't receive more events."
+      "player_expelled": "That player is sent off; they can't receive more events.",
+      "player_not_on_field": "That player isn't on the field.",
+      "player_not_eligible": "That substitute can't come on."
     },
     "event_expelled_double_yellow": "Sent off (two yellows): {player}",
     "event_expelled_red": "Sent off (red): {player} ({minute}')",
     "register_not_field_event": "That event goes on a player: tap a player.",
-    "event_registered_field": "Recorded: {event} ({minute}')"
+    "event_registered_field": "Recorded: {event} ({minute}')",
+    "tool_absent": "No-show",
+    "absent_hint": "Tap a called-up player (field or bench) to mark them absent.",
+    "sub_hint": "Substitution: tap who goes OFF (field), then who comes ON (bench).",
+    "sub_pick_out": "Tap a player on the field to take them off.",
+    "sub_pick_in": "Now tap the substitute coming on.",
+    "sub_out_label": "Off: {player} · pick who comes on from the bench.",
+    "sub_cancel": "Cancel",
+    "sub_not_eligible": "That substitute can't come on (sent off, absent or already used).",
+    "sub_registered": "Sub: {out} off, {in} on ({minute}')",
+    "bench_title": "Bench",
+    "bench_empty": "No substitutes in the official lineup.",
+    "bench_status": {
+      "available": "Available",
+      "entered": "On field",
+      "expelled": "Sent off",
+      "absent": "Absent"
+    },
+    "absent_marked": "{player} marked as absent.",
+    "absent_undone": "{player} is available again.",
+    "absent_title": "Absent (no-shows)",
+    "absent_undo_aria": "Remove {player}'s absence"
   }
 }
