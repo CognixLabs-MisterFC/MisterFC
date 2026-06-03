@@ -60,3 +60,12 @@ export type {
 // usamos internamente en tactics, no lo re-exportamos para evitar el choque.
 export { moveLivePlayer, assignPlayersToFormation } from './tactics';
 export type { LivePosition, LivePositions, FieldPlayerPos } from './tactics';
+
+export {
+  ROLLING_REGIME,
+  DEFAULT_REGIME,
+  limitedRegime,
+  canRegisterSubstitution,
+  subsRemaining,
+} from './regime';
+export type { RegimeType, SubstitutionRegime } from './regime';

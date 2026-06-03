@@ -368,7 +368,9 @@
       "name": "Nombre",
       "format": "Formato",
       "color": "Color",
-      "color_help": "Color identificativo en calendarios y vistas del equipo."
+      "color_help": "Color identificativo en calendarios y vistas del equipo.",
+      "division": "Division",
+      "division_help": "Sets the team's substitution regime."
     },
     "delete": {
       "title": "¿Eliminar el equipo?",
@@ -380,7 +382,21 @@
       "format_invalid": "Formato no válido",
       "color_invalid": "Color no válido",
       "forbidden": "No tienes permiso para hacer esto.",
-      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo."
+      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo.",
+      "division_invalid": "Division not valid for the category."
+    },
+    "divisions": {
+      "preferente": "Preferent",
+      "primera": "1st",
+      "segunda": "2nd",
+      "tercera": "3rd",
+      "autonomica": "Regional",
+      "honor": "Honor",
+      "unica": "Single"
+    },
+    "division_regime": {
+      "rolling": "Rolling subs",
+      "limited": "{max} subs"
     }
   },
   "roles": {
@@ -1665,7 +1681,8 @@
       "player_expelled": "That player is sent off; they can't receive more events.",
       "player_not_on_field": "That player isn't on the field.",
       "player_not_eligible": "That substitute can't come on.",
-      "formation_invalid": "That formation is not valid for this format."
+      "formation_invalid": "That formation is not valid for this format.",
+      "sub_limit_reached": "Substitution limit reached for this category."
     },
     "event_expelled_double_yellow": "Sent off (two yellows): {player}",
     "event_expelled_red": "Sent off (red): {player} ({minute}')",
@@ -1712,6 +1729,7 @@
     "tactics_hint": "Drag a player to reposition; change the formation with the selector.",
     "formation_label": "Formation",
     "formation_changed": "Formation changed to {formation}.",
-    "formation_change_event": "Tactics change: {from} → {to}"
+    "formation_change_event": "Tactics change: {from} → {to}",
+    "subs_count": "Subs {n}/{max}"
   }
 }

@@ -23,11 +23,13 @@ import {
   adjustClockSchema,
   assignPlayersToFormation,
   buildNextPeriod,
+  canRegisterSubstitution,
   changeFormationSchema,
   type ClockMutation,
   type ClockPeriod,
   createSupabaseServerClient,
   currentPeriod,
+  DEFAULT_REGIME,
   deriveExpelledPlayers,
   deriveSquad,
   endPeriodPatch,
@@ -52,6 +54,7 @@ import {
   registerRivalEventSchema,
   registerSubstitutionSchema,
   resolveCardOutcome,
+  type SubstitutionRegime,
   resumeClockPatch,
   setAbsenceSchema,
   startNextPeriodSchema,
@@ -483,6 +486,7 @@ type EventActionError =
   | 'player_not_on_field'
   | 'player_not_eligible'
   | 'formation_invalid'
+  | 'sub_limit_reached'
   | 'generic';
 
 export type RegisterEventState = {
@@ -659,24 +663,60 @@ async function loadLiveSquad(supabase: Supa, eventId: string) {
     .eq('event_id', eventId);
   const absent = (absRows ?? []).map((r) => r.player_id as string);
 
-  // F7.6 — cambios corridos: la elegibilidad del que ENTRA depende del flag de
-  // la categoría (un jugador que salió reentra solo si está permitido).
-  const allowReentry = await loadAllowReentry(supabase, eventId);
+  // F7.6c — la elegibilidad del que ENTRA (reentrada) depende del RÉGIMEN de
+  // cambios de (categoría, división) del equipo.
+  const regime = await loadRegime(supabase, eventId);
 
-  return deriveSquad({ slots, bench, subs, expelled, absent, allowReentry });
+  return deriveSquad({
+    slots,
+    bench,
+    subs,
+    expelled,
+    absent,
+    allowReentry: regime.allowReentry,
+  });
 }
 
-/** F7.6 — flag `allow_reentry` de la categoría del equipo del partido. */
-async function loadAllowReentry(supabase: Supa, eventId: string): Promise<boolean> {
+/**
+ * F7.6c — régimen de cambios del equipo del partido, resuelto desde
+ * (categories.kind, teams.division) contra la tabla `substitution_regimes`.
+ * Si no hay fila (p.ej. categoría adulta sin división cargada) → DEFAULT_REGIME.
+ */
+async function loadRegime(supabase: Supa, eventId: string): Promise<SubstitutionRegime> {
   const { data } = await supabase
     .from('events')
-    .select('teams!inner(categories!inner(allow_reentry))')
+    .select('teams!inner(division, categories!inner(kind))')
     .eq('id', eventId)
     .maybeSingle();
-  type Shape = { teams: { categories: { allow_reentry: boolean } } } | null;
-  const flag = (data as unknown as Shape)?.teams?.categories?.allow_reentry;
-  // Defensivo: si no se puede leer, NO permitimos reentrada (regla estándar).
-  return flag ?? false;
+  type Shape = { teams: { division: string | null; categories: { kind: string | null } } } | null;
+  const team = (data as unknown as Shape)?.teams;
+  const kind = team?.categories?.kind ?? null;
+  const division = team?.division ?? null;
+  if (!kind || !division) return DEFAULT_REGIME;
+
+  const { data: row } = await supabase
+    .from('substitution_regimes')
+    .select('regime_type, max_subs, allow_reentry')
+    .eq('category_kind', kind)
+    .eq('division', division)
+    .maybeSingle();
+  if (!row) return DEFAULT_REGIME;
+  return {
+    type: row.regime_type as SubstitutionRegime['type'],
+    maxSubs: (row.max_subs as number | null) ?? null,
+    allowReentry: row.allow_reentry as boolean,
+  };
+}
+
+/** Nº de sustituciones ya registradas del equipo (desde match_events, §7.6c). */
+async function countSubstitutions(supabase: Supa, eventId: string): Promise<number> {
+  const { count } = await supabase
+    .from('match_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('event_id', eventId)
+    .eq('side', 'own')
+    .eq('type', 'substitution');
+  return count ?? 0;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -711,6 +751,13 @@ export async function registerSubstitution(
 
   const periods = await loadPeriods(supabase, event_id);
   if (periods.length === 0) return { error: 'no_period' };
+
+  // F7.6c — régimen LIMITADO: tope de sustituciones (cuenta desde match_events,
+  // no estado efímero). En corrido no hay tope. La reentrada del que entra ya la
+  // filtra loadLiveSquad (régimen.allowReentry vía deriveSquad).
+  const regime = await loadRegime(supabase, event_id);
+  const subsSoFar = await countSubstitutions(supabase, event_id);
+  if (!canRegisterSubstitution(regime, subsSoFar)) return { error: 'sub_limit_reached' };
 
   // El que SALE debe estar en campo; el que ENTRA, elegible (suplente no
   // expulsado/ausente/ya-entrado). Derivado de lo persistido (autoritativo).

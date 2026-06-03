@@ -40,16 +40,32 @@ export default async function CategoryDetailPage({ params }: Props) {
 
   const { data: category } = await supabase
     .from('categories')
-    .select('id, name, season, club_id')
+    .select('id, name, season, club_id, kind')
     .eq('id', categoryId)
     .maybeSingle();
 
   if (!category) notFound();
   if (category.club_id !== ctx.activeClub.club.id) notFound();
 
+  // F7.6c — divisiones disponibles para esta categoría (régimen de cambios). El
+  // catálogo es substitution_regimes (fuente única). Vacío si la categoría no
+  // tiene divisiones (p.ej. adultas) → el selector no se muestra.
+  const { data: regimeRows } = category.kind
+    ? await supabase
+        .from('substitution_regimes')
+        .select('division, regime_type, max_subs')
+        .eq('category_kind', category.kind)
+        .order('ordinal', { ascending: true })
+    : { data: [] };
+  const divisions = (regimeRows ?? []).map((r) => ({
+    value: r.division as string,
+    regimeType: r.regime_type as 'rolling' | 'limited',
+    maxSubs: (r.max_subs as number | null) ?? null,
+  }));
+
   const { data: teamsData } = await supabase
     .from('teams')
-    .select('id, name, format, color')
+    .select('id, name, format, color, division')
     .eq('category_id', categoryId)
     .order('name', { ascending: true });
 
@@ -71,7 +87,7 @@ export default async function CategoryDetailPage({ params }: Props) {
               {t('subtitle', { season: category.season })}
             </p>
           </div>
-          <TeamDialog mode="create" categoryId={categoryId} />
+          <TeamDialog mode="create" categoryId={categoryId} divisions={divisions} />
         </div>
       </div>
 
@@ -114,11 +130,13 @@ export default async function CategoryDetailPage({ params }: Props) {
                   <TeamDialog
                     mode="edit"
                     categoryId={categoryId}
+                    divisions={divisions}
                     team={{
                       id: team.id,
                       name: team.name,
                       format: team.format as (typeof TEAM_FORMATS)[number],
                       color: team.color,
+                      division: team.division as string | null,
                     }}
                   />
                   <TeamDeleteButton teamId={team.id} teamName={team.name} />

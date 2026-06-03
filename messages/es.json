@@ -302,7 +302,9 @@
       "name": "Nombre",
       "format": "Formato",
       "color": "Color",
-      "color_help": "Color identificativo en calendarios y vistas del equipo."
+      "color_help": "Color identificativo en calendarios y vistas del equipo.",
+      "division": "División",
+      "division_help": "Define el régimen de cambios del equipo."
     },
     "delete": {
       "title": "¿Eliminar el equipo?",
@@ -314,7 +316,21 @@
       "format_invalid": "Formato no válido",
       "color_invalid": "Color no válido",
       "forbidden": "No tienes permiso para hacer esto.",
-      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo."
+      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo.",
+      "division_invalid": "División no válida para la categoría."
+    },
+    "divisions": {
+      "preferente": "Preferente",
+      "primera": "1ª",
+      "segunda": "2ª",
+      "tercera": "3ª",
+      "autonomica": "Autonómica",
+      "honor": "Liga Honor",
+      "unica": "Única"
+    },
+    "division_regime": {
+      "rolling": "Cambios corridos",
+      "limited": "{max} cambios"
     }
   },
   "invitations": {
@@ -1664,7 +1680,8 @@
       "player_expelled": "Ese jugador está expulsado; no puede recibir más eventos.",
       "player_not_on_field": "Ese jugador no está en el campo.",
       "player_not_eligible": "Ese suplente no puede entrar.",
-      "formation_invalid": "Esa formación no es válida para la modalidad."
+      "formation_invalid": "Esa formación no es válida para la modalidad.",
+      "sub_limit_reached": "Máximo de cambios alcanzado para esta categoría."
     },
     "event_expelled_double_yellow": "Expulsado por doble amarilla: {player}",
     "event_expelled_red": "Expulsado (roja): {player} ({minute}')",
@@ -1711,6 +1728,7 @@
     "tactics_hint": "Arrastra a un jugador para recolocarlo; cambia la formación con el selector.",
     "formation_label": "Formación",
     "formation_changed": "Formación cambiada a {formation}.",
-    "formation_change_event": "Cambio de táctica: {from} → {to}"
+    "formation_change_event": "Cambio de táctica: {from} → {to}",
+    "subs_count": "Cambios {n}/{max}"
   }
 }

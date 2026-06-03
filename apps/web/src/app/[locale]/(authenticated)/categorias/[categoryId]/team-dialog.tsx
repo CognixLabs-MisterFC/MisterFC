@@ -30,22 +30,43 @@ import {
 
 type Mode = 'create' | 'edit';
 
+type Division = {
+  value: string;
+  regimeType: 'rolling' | 'limited';
+  maxSubs: number | null;
+};
+
 type Props = {
   mode: Mode;
   categoryId: string;
+  /** F7.6c — divisiones de la categoría (régimen de cambios). Vacío → sin selector. */
+  divisions: Division[];
   team?: {
     id: string;
     name: string;
     format: (typeof TEAM_FORMATS)[number];
     color: string;
+    division: string | null;
   };
 };
 
 const DEFAULT_COLOR = '#10B981';
+const NO_DIVISION = '__none__';
 
-export function TeamDialog({ mode, categoryId, team }: Props) {
+export function TeamDialog({ mode, categoryId, divisions, team }: Props) {
   const t = useTranslations('equipos');
   const [open, setOpen] = useState(false);
+
+  // F7.6c — etiqueta de cada división + su régimen para el selector.
+  const divisionLabel = (d: Division) => {
+    const name = t(`divisions.${d.value}`);
+    const tag =
+      d.regimeType === 'rolling'
+        ? t('division_regime.rolling')
+        : t('division_regime.limited', { max: d.maxSubs ?? 0 });
+    return `${name} · ${tag}`;
+  };
+  const defaultDivision = team?.division ?? divisions[0]?.value ?? NO_DIVISION;
 
   const action =
     mode === 'edit' && team
@@ -117,6 +138,27 @@ export function TeamDialog({ mode, categoryId, team }: Props) {
               </SelectContent>
             </Select>
           </div>
+
+          {divisions.length > 0 && (
+            <div className="grid gap-2">
+              <Label htmlFor="team-division">{t('field.division')}</Label>
+              <Select name="division" defaultValue={defaultDivision}>
+                <SelectTrigger id="team-division">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {divisions.map((d) => (
+                    <SelectItem key={d.value} value={d.value}>
+                      {divisionLabel(d)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {t('field.division_help')}
+              </p>
+            </div>
+          )}
 
           <div className="grid gap-2">
             <Label htmlFor="team-color">{t('field.color')}</Label>

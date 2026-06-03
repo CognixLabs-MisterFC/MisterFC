@@ -37,11 +37,25 @@ export const categorySchema = z.object({
 
 export type CategoryInput = z.infer<typeof categorySchema>;
 
+/**
+ * División (slug) en la que juega el equipo (F7.6c). Opcional: las categorías
+ * sin divisiones cargadas (p.ej. adultas) no la exigen. '' se trata como ausente.
+ * La validez del slug para la categoría la comprueba la server action contra
+ * `substitution_regimes` (catálogo de divisiones por categoría).
+ */
+const divisionField = z
+  .string()
+  .trim()
+  .max(40, { message: 'division_invalid' })
+  .optional()
+  .transform((v) => (v ? v : undefined));
+
 /** Equipo dentro de una categoría. */
 export const teamSchema = z.object({
   name: nameField,
   format: formatField,
   color: colorField,
+  division: divisionField,
 });
 
 export type TeamInput = z.infer<typeof teamSchema>;
