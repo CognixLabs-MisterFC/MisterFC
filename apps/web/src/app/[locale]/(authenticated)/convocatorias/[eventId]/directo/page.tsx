@@ -82,6 +82,8 @@ export default async function MatchLivePage({ params }: Props) {
         liveFormationCode={data.liveFormationCode}
         livePositions={data.livePositions}
         formationChanges={data.formationChanges}
+        starterIds={data.starterIds}
+        statEvents={data.statEvents}
       />
     </div>
   );

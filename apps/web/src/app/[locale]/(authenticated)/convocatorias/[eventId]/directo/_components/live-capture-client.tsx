@@ -55,6 +55,7 @@ import {
   RIVAL_EVENT_TYPES,
   type ClockPeriod,
   type LivePositions,
+  type MatchEventLite,
   type RivalEventType,
   type Sub,
   type SubstitutionRegime,
@@ -73,6 +74,7 @@ import type {
   LiveFormationChange,
   LiveMatchEvent,
   LiveRivalEvent,
+  LiveStatEvent,
   LiveSubstitution,
 } from '../queries';
 import {
@@ -85,6 +87,7 @@ import {
   setPlayerAbsent,
 } from '../actions';
 import { MatchClock, MatchClockOverlay } from './match-clock';
+import { PlayerStatsStrip, type StatsPlayer } from './player-stats-strip';
 
 // Tipos de evento de la paleta propia (coinciden con match_events.type de F7.1).
 const EVENT_TYPES = [
@@ -138,6 +141,10 @@ type Props = {
   liveFormationCode: string | null;
   livePositions: LivePositions;
   formationChanges: LiveFormationChange[];
+  /** F7.8 — once inicial congelado (match_starters): base de los minutos (§6). */
+  starterIds: string[];
+  /** F7.8 — eventos propios contables (gol/asistencia/tarjetas), lista completa. */
+  statEvents: LiveStatEvent[];
 };
 
 // Herramienta seleccionada en la paleta propia: un tipo de evento, o 'absent'
@@ -169,6 +176,8 @@ export function LiveCaptureClient({
   liveFormationCode,
   livePositions,
   formationChanges,
+  starterIds,
+  statEvents,
 }: Props) {
   const t = useTranslations('partido_directo');
   const router = useRouter();
@@ -323,6 +332,57 @@ export function LiveCaptureClient({
   const rivalExpelledDorsals = new Set(
     [...rivalCardsByDorsal.entries()].filter(([, types]) => isExpelled(types)).map(([d]) => d),
   );
+
+  // F7.8 — datos de la TABLA de tiempo de juego y stats por jugador. Vista
+  // calculada en vivo (no materializa nada; eso es 7.10). Eventos contables
+  // COMPLETOS (statEvents, sin el limit de recentEvents) + overlay optimista,
+  // deduplicados por id. El motor puro de core hace el cálculo de minutos.
+  const CARD_STAT_TYPES = ['goal', 'assist', 'yellow_card', 'red_card'] as const;
+  const optimisticStat: LiveStatEvent[] = optimistic
+    .filter(
+      (e): e is LiveMatchEvent & { type: LiveStatEvent['type'] } =>
+        e.playerId != null &&
+        (CARD_STAT_TYPES as readonly string[]).includes(e.type),
+    )
+    .map((e) => ({
+      id: e.id,
+      type: e.type,
+      playerId: e.playerId,
+      clockSeconds: e.clockSeconds,
+    }));
+  const statAll = mergeLiveEvents(statEvents, optimisticStat);
+  const statEngineEvents: MatchEventLite[] = [
+    ...allSubs.map((s) => ({
+      type: 'substitution',
+      playerId: s.outId,
+      relatedPlayerId: s.inId,
+      clockSeconds: s.clockSeconds,
+    })),
+    ...statAll.map((e) => ({
+      type: e.type,
+      playerId: e.playerId,
+      clockSeconds: e.clockSeconds,
+    })),
+  ];
+  // Convocado a mostrar = once oficial + banquillo (+ titulares congelados que no
+  // figuren, defensivo), en orden de visualización, sin duplicados.
+  const statsRoster: StatsPlayer[] = [];
+  const seenRoster = new Set<string>();
+  for (const p of [...fieldPlayers, ...benchPlayers]) {
+    if (seenRoster.has(p.playerId)) continue;
+    seenRoster.add(p.playerId);
+    statsRoster.push({ playerId: p.playerId, label: p.label, dorsal: p.dorsal });
+  }
+  for (const pid of starterIds) {
+    if (seenRoster.has(pid)) continue;
+    seenRoster.add(pid);
+    const info = playerInfo.get(pid);
+    statsRoster.push({
+      playerId: pid,
+      label: info?.label ?? pid.slice(0, 4),
+      dorsal: info?.dorsal ?? null,
+    });
+  }
 
   // Tipos de eventos propios ya registrados de un jugador (regla de tarjetas en
   // el cliente; el servidor es el autoritativo).
@@ -1090,13 +1150,16 @@ export function LiveCaptureClient({
         </div>
       </div>
 
-      {/* Franja de ESTADÍSTICAS (placeholder; el detalle por jugador es 7.8). */}
-      <div className="rounded-lg border border-dashed border-border bg-card/20 p-3 text-center">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {t('stats_title')}
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground">{t('stats_placeholder')}</p>
-      </div>
+      {/* Franja de ESTADÍSTICAS — tiempo de juego y stats por jugador (F7.8). */}
+      <PlayerStatsStrip
+        periods={periods}
+        matchStatus={matchStatus}
+        players={statsRoster}
+        starterIds={starterIds}
+        events={statEngineEvents}
+        absentIds={[...absentSet]}
+        expelledIds={[...expelledIds]}
+      />
 
       <p className="text-center text-xs text-muted-foreground xl:hidden">
         {t('landscape_hint')}

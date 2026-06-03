@@ -69,3 +69,17 @@ export {
   subsRemaining,
 } from './regime';
 export type { RegimeType, SubstitutionRegime } from './regime';
+
+export {
+  computePlayingSeconds,
+  countPlayerEvents,
+  computePlayerMatchStats,
+  flagLowPlaytime,
+  leastPlayedIds,
+} from './playing-time';
+export type {
+  MatchEventLite,
+  PlayingTimeInput,
+  PlayerEventCounts,
+  PlayerMatchStats,
+} from './playing-time';
