@@ -14,11 +14,13 @@
 
 import {
   createSupabaseServerClient,
+  DEFAULT_REGIME,
   defaultLineupDraft,
   getFormation,
   type ClockPeriod,
   type LivePositions,
   type PeriodKind,
+  type SubstitutionRegime,
   type TeamFormat,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -158,10 +160,11 @@ export type MatchLiveData = {
   /** Eventos del RIVAL (F7.6), más recientes primero. */
   rivalEvents: LiveRivalEvent[];
   /**
-   * F7.6 — cambios corridos: ¿puede un jugador sustituido VOLVER a entrar? Flag
-   * de la categoría (`categories.allow_reentry`). Lo lee `deriveSquad`.
+   * F7.6c — régimen de cambios del equipo (categoría + división): tipo
+   * (rolling/limited), tope (maxSubs) y reentrada. Lo usa `deriveSquad`
+   * (reentrada), el tope de cambios y el indicador "Cambios corridos / n/7".
    */
-  allowReentry: boolean;
+  regime: SubstitutionRegime;
   /**
    * F7.6b — formación EN JUEGO ahora (null → la oficial de F6). Se cambia en
    * directo y persiste en match_state.
@@ -187,7 +190,7 @@ export async function loadMatchLive(
     .from('events')
     .select(
       `id, club_id, team_id, type, title, opponent_name, starts_at,
-       teams!inner(name, color, format, categories!inner(name, season, half_duration_minutes, allow_reentry))`,
+       teams!inner(name, color, format, division, categories!inner(name, season, half_duration_minutes, kind))`,
     )
     .eq('id', eventId)
     .maybeSingle();
@@ -208,11 +211,12 @@ export async function loadMatchLive(
       name: string;
       color: string;
       format: TeamFormat;
+      division: string | null;
       categories: {
         name: string;
         season: string;
         half_duration_minutes: number | null;
-        allow_reentry: boolean;
+        kind: string | null;
       };
     };
   };
@@ -530,6 +534,27 @@ export async function loadMatchLive(
     };
   });
 
+  // F7.6c — régimen de cambios desde (categoría.kind, equipo.división) contra la
+  // tabla de referencia. Sin fila (p.ej. categoría adulta) → DEFAULT_REGIME.
+  let regime: SubstitutionRegime = DEFAULT_REGIME;
+  const kind = event.teams.categories.kind;
+  const division = event.teams.division;
+  if (kind && division) {
+    const { data: regimeRow } = await supabase
+      .from('substitution_regimes')
+      .select('regime_type, max_subs, allow_reentry')
+      .eq('category_kind', kind)
+      .eq('division', division)
+      .maybeSingle();
+    if (regimeRow) {
+      regime = {
+        type: regimeRow.regime_type as SubstitutionRegime['type'],
+        maxSubs: (regimeRow.max_subs as number | null) ?? null,
+        allowReentry: regimeRow.allow_reentry as boolean,
+      };
+    }
+  }
+
   return {
     event: {
       id: event.id,
@@ -556,7 +581,7 @@ export async function loadMatchLive(
     substitutions,
     absentIds,
     rivalEvents,
-    allowReentry: event.teams.categories.allow_reentry,
+    regime,
     liveFormationCode,
     livePositions,
     formationChanges,

@@ -264,31 +264,31 @@ export type Database = {
       }
       categories: {
         Row: {
-          allow_reentry: boolean
           club_id: string
           created_at: string
           half_duration_minutes: number
           id: string
+          kind: string | null
           name: string
           order_idx: number
           season: string
         }
         Insert: {
-          allow_reentry?: boolean
           club_id: string
           created_at?: string
           half_duration_minutes?: number
           id?: string
+          kind?: string | null
           name: string
           order_idx?: number
           season: string
         }
         Update: {
-          allow_reentry?: boolean
           club_id?: string
           created_at?: string
           half_duration_minutes?: number
           id?: string
+          kind?: string | null
           name?: string
           order_idx?: number
           season?: string
@@ -1476,6 +1476,33 @@ export type Database = {
           },
         ]
       }
+      substitution_regimes: {
+        Row: {
+          allow_reentry: boolean
+          category_kind: string
+          division: string
+          max_subs: number | null
+          ordinal: number
+          regime_type: string
+        }
+        Insert: {
+          allow_reentry: boolean
+          category_kind: string
+          division: string
+          max_subs?: number | null
+          ordinal?: number
+          regime_type: string
+        }
+        Update: {
+          allow_reentry?: boolean
+          category_kind?: string
+          division?: string
+          max_subs?: number | null
+          ordinal?: number
+          regime_type?: string
+        }
+        Relationships: []
+      }
       team_members: {
         Row: {
           created_at: string
@@ -1574,6 +1601,7 @@ export type Database = {
           category_id: string
           color: string
           created_at: string
+          division: string | null
           format: string
           id: string
           name: string
@@ -1582,6 +1610,7 @@ export type Database = {
           category_id: string
           color?: string
           created_at?: string
+          division?: string | null
           format: string
           id?: string
           name: string
@@ -1590,6 +1619,7 @@ export type Database = {
           category_id?: string
           color?: string
           created_at?: string
+          division?: string | null
           format?: string
           id?: string
           name?: string

@@ -12,9 +12,9 @@
  * informativas (no hay banquillo rival que gestionar).
  *
  * Reaprovecha el patrón estable de 7.3–7.5: registro OPTIMISTA + hidratación
- * desde match_events persistidos, y `deriveSquad` para el once vivo — ahora con
- * CAMBIOS CORRIDOS (`allowReentry`, flag de la categoría): un jugador que salió
- * puede volver a entrar si la categoría lo permite.
+ * desde match_events persistidos, y `deriveSquad` para el once vivo — con el
+ * RÉGIMEN de cambios de 7.6c (de la categoría+división del equipo): corrido
+ * (ilimitado + reentrada) o limitado (tope de cambios + sin reentrada).
  */
 
 import { useState, useTransition } from 'react';
@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import {
   assignPlayersToFormation,
+  canRegisterSubstitution,
   clampPct,
   clockSecondsAt,
   currentPeriod,
@@ -56,6 +57,7 @@ import {
   type LivePositions,
   type RivalEventType,
   type Sub,
+  type SubstitutionRegime,
   type TeamFormat,
 } from '@misterfc/core';
 import {
@@ -132,7 +134,7 @@ type Props = {
   substitutions: LiveSubstitution[];
   absentIds: string[];
   rivalEvents: LiveRivalEvent[];
-  allowReentry: boolean;
+  regime: SubstitutionRegime;
   liveFormationCode: string | null;
   livePositions: LivePositions;
   formationChanges: LiveFormationChange[];
@@ -163,7 +165,7 @@ export function LiveCaptureClient({
   substitutions,
   absentIds,
   rivalEvents,
-  allowReentry,
+  regime,
   liveFormationCode,
   livePositions,
   formationChanges,
@@ -253,6 +255,9 @@ export function LiveCaptureClient({
   }
   allSubs.sort((a, b) => a.clockSeconds - b.clockSeconds);
   const subsForSquad: Sub[] = allSubs.map((s) => ({ out: s.outId, in: s.inId }));
+  // F7.6c — cambios hechos (cuenta de sustituciones) para el tope del régimen.
+  const subsSoFar = allSubs.length;
+  const canSub = canRegisterSubstitution(regime, subsSoFar);
 
   const absentSet = new Set(absentIds);
   for (const [pid, isAbsent] of Object.entries(absentOverride)) {
@@ -279,7 +284,7 @@ export function LiveCaptureClient({
     subs: subsForSquad,
     expelled: expelledIds,
     absent: absentSet,
-    allowReentry,
+    allowReentry: regime.allowReentry,
     positions: effectiveLivePositions,
   });
 
@@ -340,6 +345,11 @@ export function LiveCaptureClient({
       return;
     }
     if (selectedEvent === 'substitution') {
+      // F7.6c — régimen limitado: bloquea iniciar el cambio nº (max+1).
+      if (!canSub) {
+        toast.warning(t('event_error.sub_limit_reached'));
+        return;
+      }
       if (!onFieldIds.has(playerId)) {
         toast.info(t('sub_pick_out'));
         return;
@@ -878,15 +888,20 @@ export function LiveCaptureClient({
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {t('bench_title')}
             </p>
+            {/* F7.6c — indicador del régimen: corrido o "Cambios n/max". */}
             <span
               className={cn(
                 'rounded px-1.5 py-0.5 text-[10px] uppercase',
-                allowReentry
+                regime.type === 'rolling'
                   ? 'bg-primary/10 text-primary'
-                  : 'bg-muted text-muted-foreground',
+                  : canSub
+                    ? 'bg-muted text-muted-foreground'
+                    : 'bg-red-500/15 text-red-600 dark:text-red-400',
               )}
             >
-              {allowReentry ? t('reentry_on') : t('reentry_off')}
+              {regime.type === 'rolling'
+                ? t('reentry_on')
+                : t('subs_count', { n: subsSoFar, max: regime.maxSubs ?? 0 })}
             </span>
           </div>
           {squad.bench.length === 0 ? (
