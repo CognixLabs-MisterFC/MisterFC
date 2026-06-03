@@ -8,6 +8,11 @@ import {
   isClockRunning,
   isAtBreak,
   nextPeriodAfter,
+  nextRegularPeriod,
+  nextExtraPeriod,
+  canFinishMatch,
+  isRegularPeriod,
+  isExtraPeriod,
   buildNextPeriod,
   pauseClockPatch,
   resumeClockPatch,
@@ -291,6 +296,104 @@ describe('isAtBreak', () => {
       period({ period: p, ordinal: i + 1, ended: true }),
     );
     expect(isAtBreak(all)).toBe(false);
+  });
+});
+
+// F7.7b — flujo de periodos: 2 partes → finalizar; prórroga OPCIONAL.
+describe('flujo de periodos (7.7b): regular vs prórroga + finalizar', () => {
+  const ended = (p: ClockPeriod['period'], ordinal: number) =>
+    period({ period: p, ordinal, ended: true });
+  const running = (p: ClockPeriod['period'], ordinal: number) =>
+    period({ period: p, ordinal, running: true, lastStartedAt: T0_ISO });
+
+  it('clasifica periodos regulares vs prórroga', () => {
+    expect(isRegularPeriod('first_half')).toBe(true);
+    expect(isRegularPeriod('second_half')).toBe(true);
+    expect(isExtraPeriod('extra_first')).toBe(true);
+    expect(isExtraPeriod('extra_second')).toBe(true);
+    // Penaltis no es prórroga jugable (no entra en el flujo).
+    expect(isExtraPeriod('penalties')).toBe(false);
+    expect(isRegularPeriod('extra_first')).toBe(false);
+  });
+
+  it('nextRegularPeriod: 1ª → 2ª → null (tras la 2ª no fuerza prórroga)', () => {
+    expect(nextRegularPeriod([])).toEqual({ period: 'first_half', ordinal: 1 });
+    expect(nextRegularPeriod([ended('first_half', 1)])).toEqual({
+      period: 'second_half',
+      ordinal: 2,
+    });
+    expect(
+      nextRegularPeriod([ended('first_half', 1), ended('second_half', 2)]),
+    ).toBeNull();
+  });
+
+  it('nextExtraPeriod: solo tras el tiempo reglamentario; 1ª → 2ª → null', () => {
+    // Antes de acabar el reglamentario no hay prórroga disponible.
+    expect(nextExtraPeriod([ended('first_half', 1)])).toBeNull();
+    // Tras la 2ª parte → 1ª prórroga.
+    expect(
+      nextExtraPeriod([ended('first_half', 1), ended('second_half', 2)]),
+    ).toEqual({ period: 'extra_first', ordinal: 3 });
+    // Tras la 1ª prórroga → 2ª prórroga.
+    expect(
+      nextExtraPeriod([
+        ended('first_half', 1),
+        ended('second_half', 2),
+        ended('extra_first', 3),
+      ]),
+    ).toEqual({ period: 'extra_second', ordinal: 4 });
+    // Tras la 2ª prórroga → no hay más prórroga (penaltis no se ofrece).
+    expect(
+      nextExtraPeriod([
+        ended('first_half', 1),
+        ended('second_half', 2),
+        ended('extra_first', 3),
+        ended('extra_second', 4),
+      ]),
+    ).toBeNull();
+  });
+
+  it('canFinishMatch: solo con el reglamentario cubierto y sin reloj corriendo', () => {
+    expect(canFinishMatch([])).toBe(false);
+    // En el descanso (solo 1ª parte) NO se puede finalizar.
+    expect(canFinishMatch([ended('first_half', 1)])).toBe(false);
+    // 2ª parte corriendo → no.
+    expect(canFinishMatch([ended('first_half', 1), running('second_half', 2)])).toBe(false);
+    // 2ª parte terminada → SÍ (acción principal: finalizar; prórroga opcional).
+    expect(canFinishMatch([ended('first_half', 1), ended('second_half', 2)])).toBe(true);
+  });
+
+  it('flujo por defecto: 2 partes → FINALIZAR (sin prórroga forzada)', () => {
+    // Arranque.
+    let periods: ClockPeriod[] = [running('first_half', 1)];
+    expect(canFinishMatch(periods)).toBe(false);
+    // Fin 1ª → descanso → siguiente regular = 2ª parte.
+    periods = [ended('first_half', 1)];
+    expect(nextRegularPeriod(periods)).toEqual({ period: 'second_half', ordinal: 2 });
+    expect(nextExtraPeriod(periods)).toBeNull();
+    // 2ª parte y su fin.
+    periods = [ended('first_half', 1), ended('second_half', 2)];
+    // Ya no hay regular pendiente; se puede finalizar; la prórroga es opcional.
+    expect(nextRegularPeriod(periods)).toBeNull();
+    expect(canFinishMatch(periods)).toBe(true);
+    expect(nextExtraPeriod(periods)).toEqual({ period: 'extra_first', ordinal: 3 });
+  });
+
+  it('con prórroga: 4 periodos → FINALIZAR', () => {
+    let periods: ClockPeriod[] = [
+      ended('first_half', 1),
+      ended('second_half', 2),
+    ];
+    // Añadir prórroga (1ª) y terminarla.
+    periods = [...periods, ended('extra_first', 3)];
+    expect(canFinishMatch(periods)).toBe(true); // puede finalizar entre prórrogas
+    expect(nextExtraPeriod(periods)).toEqual({ period: 'extra_second', ordinal: 4 });
+    // 2ª prórroga y su fin → 4 periodos jugados.
+    periods = [...periods, ended('extra_second', 4)];
+    expect(periods).toHaveLength(4);
+    expect(canFinishMatch(periods)).toBe(true);
+    expect(nextExtraPeriod(periods)).toBeNull(); // no se fuerza nada más
+    expect(nextRegularPeriod(periods)).toBeNull();
   });
 });
 
