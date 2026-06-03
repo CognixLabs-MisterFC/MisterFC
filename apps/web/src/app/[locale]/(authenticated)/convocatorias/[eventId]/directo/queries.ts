@@ -48,6 +48,19 @@ export type LiveMatchEvent = {
   period: PeriodKind;
 };
 
+/**
+ * F7.8 — Evento propio CONTABLE para la tabla de stats por jugador (gol,
+ * asistencia, tarjetas). Lista COMPLETA (sin el `limit` de `recentEvents`, que es
+ * solo display) para que goles/tarjetas/minutos no se trunquen. El `red_card`
+ * además cierra el tramo de minutos del jugador (§6).
+ */
+export type LiveStatEvent = {
+  id: string;
+  type: 'goal' | 'assist' | 'yellow_card' | 'red_card';
+  playerId: string | null;
+  clockSeconds: number;
+};
+
 export type LiveFieldPlayer = {
   playerId: string;
   label: string;
@@ -177,6 +190,17 @@ export type MatchLiveData = {
   livePositions: LivePositions;
   /** F7.6b — cambios de formación en directo (para "Últimos eventos"). */
   formationChanges: LiveFormationChange[];
+  /**
+   * F7.8 — once inicial congelado (match_starters): base del cálculo de minutos
+   * (§6). Un titular cuenta desde el pitido (clock 0).
+   */
+  starterIds: string[];
+  /**
+   * F7.8 — eventos propios CONTABLES (gol/asistencia/tarjetas), lista completa
+   * para la tabla de tiempo de juego y stats por jugador. Vista calculada, no
+   * materializa nada (eso es 7.10).
+   */
+  statEvents: LiveStatEvent[];
 };
 
 export async function loadMatchLive(
@@ -459,6 +483,31 @@ export async function loadMatchLive(
     .eq('event_id', eventId);
   const absentIds = (absRows ?? []).map((r) => r.player_id as string);
 
+  // F7.8 — once inicial congelado (match_starters): base de los minutos (§6).
+  const { data: starterRows } = await supabase
+    .from('match_starters')
+    .select('player_id')
+    .eq('event_id', eventId);
+  const starterIds = (starterRows ?? []).map((r) => r.player_id as string);
+
+  // F7.8 — eventos propios CONTABLES (gol/asistencia/tarjetas), COMPLETOS (sin
+  // limit, a diferencia de recentEvents que es solo display). Alimentan la tabla
+  // de tiempo de juego (red_card cierra el tramo) y los conteos por jugador.
+  const STAT_EVENT_TYPES = ['goal', 'assist', 'yellow_card', 'red_card'];
+  const { data: statRows, error: statErr } = await supabase
+    .from('match_events')
+    .select('id, type, player_id, clock_seconds')
+    .eq('event_id', eventId)
+    .eq('side', 'own')
+    .in('type', STAT_EVENT_TYPES);
+  if (statErr) console.error('[directo] error cargando stats de jugador:', statErr);
+  const statEvents: LiveStatEvent[] = (statRows ?? []).map((r) => ({
+    id: r.id as string,
+    type: r.type as LiveStatEvent['type'],
+    playerId: (r.player_id as string | null) ?? null,
+    clockSeconds: r.clock_seconds as number,
+  }));
+
   // Eventos del RIVAL (F7.6): por dorsal + nota libre (metadata.note), recientes
   // primero. Sin embed de players (el rival no tiene roster, §3.4).
   const RIVAL_DISPLAY_TYPES = [
@@ -585,5 +634,7 @@ export async function loadMatchLive(
     liveFormationCode,
     livePositions,
     formationChanges,
+    starterIds,
+    statEvents,
   };
 }
