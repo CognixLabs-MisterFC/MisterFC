@@ -35,3 +35,33 @@ export function calledUpOnPlace(
 export function calledUpOnRemove(published: boolean): CalledUpOp {
   return published ? 'noop' : 'delete_called_up';
 }
+
+/** Roster agrupado en CONVOCADOS vs NO CONVOCADOS (descartados). */
+export interface CallupGroups<T> {
+  /** Convocados = todo el roster MENOS los descartados (titulares + suplentes). */
+  calledUp: T[];
+  /** No convocados = solo los descartados explícitamente. */
+  discarded: T[];
+}
+
+/**
+ * Agrupa el roster en convocados / no convocados según la definición canónica de
+ * la app: **convocados = roster − descartados** (lo que el coach lleva), **no
+ * convocados = solo los descartados** en `callup_decisions`. Un jugador sin
+ * decisión explícita (p.ej. un suplente que entró a la alineación con la
+ * convocatoria ya publicada, sin fila `called_up`) cuenta como CONVOCADO: no
+ * está descartado. Pura y agnóstica del tipo de elemento (`decisionOf` extrae la
+ * decisión de cada uno). Preserva el orden de entrada.
+ */
+export function groupRosterByCallup<T>(
+  roster: readonly T[],
+  decisionOf: (item: T) => CallupDecision | null,
+): CallupGroups<T> {
+  const calledUp: T[] = [];
+  const discarded: T[] = [];
+  for (const item of roster) {
+    if (decisionOf(item) === 'discarded') discarded.push(item);
+    else calledUp.push(item);
+  }
+  return { calledUp, discarded };
+}

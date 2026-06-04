@@ -12,7 +12,7 @@ import {
   Truck,
   XCircle,
 } from 'lucide-react';
-import { formatPlayerName } from '@misterfc/core';
+import { formatPlayerName, groupRosterByCallup } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -374,7 +374,11 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
       {/* F6 Lote B — alineación oficial compartida (solo si visibility=team). */}
       {isPlayer && <SharedLineupSection eventId={event.id} />}
 
-      {/* Resumen de descartes técnicos */}
+      {/* Resumen de la convocatoria: convocados (titulares + suplentes = roster
+          MENOS descartados) vs no convocados (solo los descartados). Un convocado
+          puede no tener fila called_up explícita (p.ej. un suplente que entró a la
+          alineación con la convocatoria ya publicada): igualmente cuenta, porque
+          no está descartado. */}
       {!isPlayer && decisions.size > 0 && (
         <Card>
           <CardHeader>
@@ -383,43 +387,48 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-2 text-sm sm:grid-cols-2">
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  {tDecision('called_up')}
-                </p>
-                <ul className="mt-1 flex flex-col gap-1">
-                  {roster
-                    .map((p) => ({ p, d: decisions.get(p.id) }))
-                    .filter((x) => x.d?.decision === 'called_up')
-                    .map(({ p }) => (
-                      <li key={p.id} className="text-sm">
-                        {formatPlayerName(p.first_name, p.last_name)}
-                      </li>
-                    ))}
-                </ul>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  {tDecision('discarded')}
-                </p>
-                <ul className="mt-1 flex flex-col gap-1">
-                  {roster
-                    .map((p) => ({ p, d: decisions.get(p.id) }))
-                    .filter((x) => x.d?.decision === 'discarded')
-                    .map(({ p, d }) => (
-                      <li key={p.id} className="text-sm">
-                        {formatPlayerName(p.first_name, p.last_name)}
-                        {d?.reason && (
-                          <span className="ml-1 text-xs italic text-muted-foreground">
-                            · {d.reason}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            </div>
+            {(() => {
+              const groups = groupRosterByCallup(
+                roster,
+                (p) => decisions.get(p.id)?.decision ?? null,
+              );
+              return (
+                <div className="grid gap-2 text-sm sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      {tDecision('called_up')}
+                    </p>
+                    <ul className="mt-1 flex flex-col gap-1">
+                      {groups.calledUp.map((p) => (
+                        <li key={p.id} className="text-sm">
+                          {formatPlayerName(p.first_name, p.last_name)}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      {tDecision('discarded')}
+                    </p>
+                    <ul className="mt-1 flex flex-col gap-1">
+                      {groups.discarded.map((p) => {
+                        const d = decisions.get(p.id);
+                        return (
+                          <li key={p.id} className="text-sm">
+                            {formatPlayerName(p.first_name, p.last_name)}
+                            {d?.reason && (
+                              <span className="ml-1 text-xs italic text-muted-foreground">
+                                · {d.reason}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       )}

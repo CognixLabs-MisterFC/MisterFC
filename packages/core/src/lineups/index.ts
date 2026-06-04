@@ -79,5 +79,13 @@ export {
 } from './positions';
 export type { PositionKey } from './positions';
 
-export { calledUpOnPlace, calledUpOnRemove } from './callup-sync';
-export type { CallupDecision, CalledUpOp } from './callup-sync';
+export {
+  calledUpOnPlace,
+  calledUpOnRemove,
+  groupRosterByCallup,
+} from './callup-sync';
+export type {
+  CallupDecision,
+  CalledUpOp,
+  CallupGroups,
+} from './callup-sync';
