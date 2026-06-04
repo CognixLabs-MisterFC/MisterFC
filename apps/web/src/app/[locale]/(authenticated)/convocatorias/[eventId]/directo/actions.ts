@@ -43,6 +43,7 @@ import {
   moveLivePlayer,
   movePlayerSchema,
   nextPeriodAfter,
+  nextRegularPeriod,
   isExpelled,
   isFieldEventType,
   pauseClockPatch,
@@ -79,6 +80,7 @@ type ActionError =
   | 'period_ended'
   | 'period_mismatch'
   | 'all_periods_played'
+  | 'regulation_incomplete'
   | 'generic';
 
 export type ClockActionState = {
@@ -421,6 +423,60 @@ export async function startNextPeriod(input: unknown): Promise<ClockActionState>
     last_started_at: built.lastStartedAt,
     ended: built.ended,
   });
+  if (error) return { error: mapPgErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// finishMatch — "Finalizar partido" (F7.7b): marca el partido como TERMINADO
+// (match_state.status → 'closed') y para el reloj. La prórroga es OPCIONAL: el
+// flujo por defecto es 1ª → 2ª → finalizar; NO se fuerzan los periodos extra.
+//
+// Requiere que el tiempo reglamentario esté cubierto (2ª parte jugada): si aún
+// queda una parte regular por jugar → 'regulation_incomplete'. Si quedara un
+// periodo en curso (sin terminar), lo termina antes de cerrar (pliega lo corrido)
+// para dejar `clock_seconds` consistente para 7.8/7.10. Idempotente: si ya está
+// cerrado, no hace nada. La CONSOLIDACIÓN de stats y el reabrir son 7.10, que se
+// apoyarán en este estado 'closed'; aquí NO se materializa match_player_stats.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function finishMatch(input: unknown): Promise<ClockActionState> {
+  const parsed = matchEventRefSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const status = await loadStatus(supabase, event_id);
+  if (status === 'closed') {
+    revalidate(event_id);
+    return { success: true }; // ya terminado (idempotente)
+  }
+  if (status !== 'live') return { error: 'not_live' };
+
+  const periods = await loadPeriods(supabase, event_id);
+  // No se finaliza con una parte regular aún pendiente (antes de la 2ª parte).
+  if (nextRegularPeriod(periods) !== null) return { error: 'regulation_incomplete' };
+
+  // Parar el reloj: terminar el periodo en curso si quedara sin terminar (pliega
+  // lo corrido). Tras esto, canFinishMatch ya se cumple por construcción.
+  const cur = currentPeriod(periods) as PeriodRow | null;
+  if (cur && !cur.ended) {
+    const { ms } = now();
+    const { error } = await supabase
+      .from('match_periods')
+      .update(toPeriodRow(endPeriodPatch(cur, ms)))
+      .eq('id', cur.id);
+    if (error) return { error: mapPgErr(error.message, error.code) };
+  }
+
+  const { error } = await supabase
+    .from('match_state')
+    .update({ status: 'closed' })
+    .eq('event_id', event_id);
   if (error) return { error: mapPgErr(error.message, error.code) };
 
   revalidate(event_id);

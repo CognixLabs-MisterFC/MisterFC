@@ -171,6 +171,70 @@ export function nextPeriodAfter(
 }
 
 /**
+ * Periodos REGULARES (siempre se juegan): 1ª y 2ª parte. La duración sugerida de
+ * cada uno sale de `categories.half_duration_minutes` (§3.2).
+ */
+export const REGULAR_PERIODS: readonly PeriodKind[] = [
+  'first_half',
+  'second_half',
+] as const;
+
+/**
+ * Periodos OPCIONALES de prórroga (F7.7b): solo si el operador la añade. La
+ * tanda de penaltis (`penalties`) NO entra en este flujo (no es tiempo jugado);
+ * queda en el catálogo del reloj pero no se ofrece como prórroga.
+ */
+export const EXTRA_PERIODS: readonly PeriodKind[] = [
+  'extra_first',
+  'extra_second',
+] as const;
+
+export function isRegularPeriod(period: PeriodKind): boolean {
+  return (REGULAR_PERIODS as readonly string[]).includes(period);
+}
+
+export function isExtraPeriod(period: PeriodKind): boolean {
+  return (EXTRA_PERIODS as readonly string[]).includes(period);
+}
+
+/**
+ * Siguiente periodo REGULAR a crear (F7.7b): 1ª parte si no hay ninguno, 2ª parte
+ * tras la 1ª; `null` una vez jugada la 2ª (el tiempo reglamentario está cubierto
+ * → la acción principal pasa a "Finalizar partido", no a forzar prórroga).
+ */
+export function nextRegularPeriod(
+  periods: readonly ClockPeriod[],
+): { period: PeriodKind; ordinal: number } | null {
+  const next = nextPeriodAfter(periods);
+  return next && isRegularPeriod(next.period) ? next : null;
+}
+
+/**
+ * Siguiente periodo de PRÓRROGA a crear (F7.7b), si el operador decide añadirla:
+ * 1ª prórroga tras la 2ª parte, 2ª prórroga tras la 1ª prórroga; `null` cuando ya
+ * no hay más prórroga disponible (ni antes de acabar el tiempo reglamentario).
+ */
+export function nextExtraPeriod(
+  periods: readonly ClockPeriod[],
+): { period: PeriodKind; ordinal: number } | null {
+  const next = nextPeriodAfter(periods);
+  return next && isExtraPeriod(next.period) ? next : null;
+}
+
+/**
+ * ¿Se puede FINALIZAR el partido ya (F7.7b)? Sí cuando el tiempo reglamentario
+ * está cubierto (la 2ª parte existe y terminó), el cronómetro no corre y no queda
+ * ningún periodo a medias (todos los creados están terminados). Permite finalizar
+ * tras la 2ª parte y tras cualquier prórroga, sin forzar la prórroga.
+ */
+export function canFinishMatch(periods: readonly ClockPeriod[]): boolean {
+  if (isClockRunning(periods)) return false;
+  const secondHalf = periods.find((p) => p.period === 'second_half');
+  if (!secondHalf || !secondHalf.ended) return false;
+  return periods.every((p) => p.ended);
+}
+
+/**
  * Construye el periodo siguiente, ARRANCÁNDOLO (running). Sirve tanto para
  * "Iniciar partido" (periods vacío → first_half) como para empezar 2ª parte o
  * prórroga. `baseOffset` = reloj absoluto actual (el periodo previo ya debe

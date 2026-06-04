@@ -17,6 +17,7 @@
 import {
   useCallback,
   useRef,
+  useState,
   useSyncExternalStore,
   useTransition,
 } from 'react';
@@ -32,7 +33,8 @@ import {
   formatClock,
   isAtBreak,
   isClockRunning,
-  nextPeriodAfter,
+  nextExtraPeriod,
+  nextRegularPeriod,
   periodClockSeconds,
 } from '@misterfc/core';
 import { useRouter } from '@/i18n/navigation';
@@ -42,6 +44,7 @@ import { cn } from '@/lib/utils';
 import {
   adjustClock,
   endPeriod,
+  finishMatch,
   pauseClock,
   resumeClock,
   startMatch,
@@ -105,6 +108,9 @@ export function MatchClock({
 
   const running = isClockRunning(periods);
   const now = useTickingNow(running);
+  // F7.7b — confirmación de "Finalizar partido" (acción significativa; 7.10
+  // permitirá reabrir). Dos pasos en línea, sin diálogo modal.
+  const [confirmFinish, setConfirmFinish] = useState(false);
 
   // Evita refrescos en cascada si llegan varias acciones seguidas.
   const refreshing = useRef(false);
@@ -128,8 +134,17 @@ export function MatchClock({
 
   const cur = currentPeriod(periods);
   const atBreak = isAtBreak(periods);
-  const next = nextPeriodAfter(periods);
+  // F7.7b — flujo por defecto 1ª → 2ª → finalizar; la prórroga es OPCIONAL.
+  // `regularNext` = la 2ª parte tras la 1ª (null tras la 2ª); `extraNext` = la
+  // prórroga que se podría AÑADIR (null si no procede).
+  const regularNext = nextRegularPeriod(periods);
+  const extraNext = nextExtraPeriod(periods);
   const hasStarted = periods.length > 0 && status !== 'not_started';
+  // En un periodo (corriendo o en pausa, sin terminar) vs en una pausa de
+  // decisión (periodo terminado y reloj parado).
+  const inPeriod = hasStarted && status === 'live' && cur != null && !cur.ended;
+  const atDecision =
+    hasStarted && status === 'live' && cur != null && cur.ended && !running;
   // Servidor / primer paint: reloj plegado (frozenNow) → hidratación estable.
   // Cliente: tiempo real del tick.
   const effectiveNow = now ?? frozenNow(periods);
@@ -160,13 +175,15 @@ export function MatchClock({
   } else if (!hasStarted) {
     phaseLabel = t('status_not_started');
     phaseTone = 'idle';
-  } else if (atBreak) {
+  } else if (atDecision && regularNext) {
+    // Pausa entre la 1ª y la 2ª parte → descanso.
     phaseLabel = t('clock_break');
     phaseTone = 'break';
-  } else if (!next && cur?.ended) {
-    phaseLabel = t('clock_full_time');
+  } else if (atDecision) {
+    // Tiempo reglamentario (o prórroga) cumplido: finalizar o añadir prórroga.
+    phaseLabel = t('clock_regulation_over');
     phaseTone = 'done';
-  } else if (cur) {
+  } else if (inPeriod && cur) {
     phaseLabel = running
       ? periodLabel(cur.period)
       : t('clock_paused_in', { period: periodLabel(cur.period) });
@@ -226,25 +243,74 @@ export function MatchClock({
         </span>
       )}
 
-      {/* Controles según el estado. */}
+      {/* Controles según el estado (F7.7b: 2 partes → finalizar; prórroga opcional). */}
       <div className="flex flex-wrap items-center gap-2">
         {status === 'closed' ? null : !hasStarted ? (
           <Button size="sm" disabled={pending} onClick={() => run(() => startMatch({ event_id: eventId }))}>
             <Play className="size-4" aria-hidden />
             <span>{t('clock_start_match')}</span>
           </Button>
-        ) : atBreak && next ? (
+        ) : atDecision && regularNext ? (
+          // Descanso: arrancar la 2ª parte (acción principal del flujo regular).
           <Button
             size="sm"
             disabled={pending}
-            onClick={() => run(() => startNextPeriod({ event_id: eventId, period: next.period }))}
+            onClick={() =>
+              run(() => startNextPeriod({ event_id: eventId, period: regularNext.period }))
+            }
           >
             <Play className="size-4" aria-hidden />
-            <span>{t('clock_start_period', { period: periodLabel(next.period) })}</span>
+            <span>{t('clock_start_period', { period: periodLabel(regularNext.period) })}</span>
           </Button>
-        ) : !next && cur?.ended ? (
-          <span className="text-xs text-muted-foreground">{t('clock_close_hint')}</span>
-        ) : (
+        ) : atDecision ? (
+          // Tiempo reglamentario (o prórroga) cumplido: FINALIZAR (principal) y,
+          // opcionalmente, AÑADIR PRÓRROGA (secundario). Nunca se fuerza la prórroga.
+          confirmFinish ? (
+            <>
+              <span className="text-sm">{t('clock_finish_confirm')}</span>
+              <Button
+                size="sm"
+                disabled={pending}
+                onClick={() => run(() => finishMatch({ event_id: eventId }))}
+              >
+                <Square className="size-4" aria-hidden />
+                <span>{t('clock_finish_yes')}</span>
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={pending}
+                onClick={() => setConfirmFinish(false)}
+              >
+                <span>{t('clock_finish_cancel')}</span>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button size="sm" disabled={pending} onClick={() => setConfirmFinish(true)}>
+                <Square className="size-4" aria-hidden />
+                <span>{t('clock_finish_match')}</span>
+              </Button>
+              {extraNext && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={() =>
+                    run(() => startNextPeriod({ event_id: eventId, period: extraNext.period }))
+                  }
+                >
+                  <Plus className="size-4" aria-hidden />
+                  <span>
+                    {extraNext.period === 'extra_first'
+                      ? t('clock_add_extra')
+                      : t('clock_start_period', { period: periodLabel(extraNext.period) })}
+                  </span>
+                </Button>
+              )}
+            </>
+          )
+        ) : inPeriod ? (
           <>
             {running ? (
               <Button
@@ -272,12 +338,12 @@ export function MatchClock({
               disabled={pending}
               onClick={() => run(() => endPeriod({ event_id: eventId }))}
             >
-              {next ? (
+              {regularNext ? (
                 <SkipForward className="size-4" aria-hidden />
               ) : (
                 <Square className="size-4" aria-hidden />
               )}
-              <span>{next ? t('clock_end_period') : t('clock_end_match_time')}</span>
+              <span>{t('clock_end_period')}</span>
             </Button>
 
             {/* Ajuste manual (§6). */}
@@ -307,7 +373,7 @@ export function MatchClock({
               ))}
             </div>
           </>
-        )}
+        ) : null}
       </div>
     </div>
   );
