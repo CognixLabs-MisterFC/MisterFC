@@ -34,6 +34,8 @@ export interface MatchEventLite {
   relatedPlayerId?: string | null;
   /** Segundos absolutos de juego del evento (§6). */
   clockSeconds: number;
+  /** `metadata.outcome` (F7.7c): un `penalty` con `outcome='scored'` cuenta como gol. */
+  outcome?: string | null;
 }
 
 export interface PlayingTimeInput {
@@ -124,9 +126,17 @@ export interface PlayerEventCounts {
   redCards: number;
 }
 
-/** Cuenta goles/asistencias/tarjetas por jugador desde los eventos (side='own'). */
+/**
+ * Cuenta goles/asistencias/tarjetas por jugador desde los eventos (side='own').
+ * Un `penalty` con `outcome='scored'` cuenta como GOL (F7.7c, regla única
+ * `isMatchGoal`); la tanda (`shootout_penalty`) no cuenta como gol del partido.
+ */
 export function countPlayerEvents(
-  events: readonly { type: string; playerId: string | null }[],
+  events: readonly {
+    type: string;
+    playerId: string | null;
+    outcome?: string | null;
+  }[],
 ): Map<string, PlayerEventCounts> {
   const counts = new Map<string, PlayerEventCounts>();
   const bump = (playerId: string, key: keyof PlayerEventCounts) => {
@@ -139,6 +149,8 @@ export function countPlayerEvents(
   for (const e of events) {
     if (!e.playerId) continue;
     if (e.type === 'goal') bump(e.playerId, 'goals');
+    else if (e.type === 'penalty' && e.outcome === 'scored')
+      bump(e.playerId, 'goals');
     else if (e.type === 'assist') bump(e.playerId, 'assists');
     else if (e.type === 'yellow_card') bump(e.playerId, 'yellowCards');
     else if (e.type === 'red_card') bump(e.playerId, 'redCards');

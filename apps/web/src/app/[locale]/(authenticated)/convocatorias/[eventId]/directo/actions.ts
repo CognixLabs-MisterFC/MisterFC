@@ -51,8 +51,11 @@ import {
   type PlayerEventType,
   playerEventClockFields,
   registerFieldEventSchema,
+  registerPenaltySchema,
   registerPlayerEventSchema,
   registerRivalEventSchema,
+  registerRivalPenaltySchema,
+  registerShootoutKickSchema,
   registerSubstitutionSchema,
   resolveCardOutcome,
   type SubstitutionRegime,
@@ -1006,6 +1009,169 @@ export async function registerRivalEvent(
       clock_seconds: clockSeconds,
       display_minute: displayMinute,
       metadata,
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F7.7c — Penaltis. Tres acciones que comparten el patrón de inserción:
+//   registerPenalty       — penalti propio durante el partido (sobre jugador).
+//   registerRivalPenalty  — penalti del rival durante el partido (por dorsal).
+//   registerShootoutKick   — lanzamiento de la TANDA (propio o rival).
+// El resultado va en metadata.outcome. side/clock_seconds/period/display_minute
+// los deriva el servidor (reloj de 7.7). Un penalti marcado cuenta como gol vía
+// el motor puro (isMatchGoal / countPlayerEvents); NO se inserta un goal aparte.
+// La tanda no suma minutos ni goles del partido (tipo aparte).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function registerPenalty(input: unknown): Promise<RegisterEventState> {
+  const parsed = registerPenaltySchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, player_id, outcome } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
+
+  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  // Un jugador ya expulsado no puede lanzar (coherente con la regla de 7.3).
+  const existingTypes = await loadPlayerOwnEventTypes(supabase, event_id, player_id);
+  if (isExpelled(existingTypes)) return { error: 'player_expelled' };
+
+  const { ms } = now();
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(periods, ms);
+
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId,
+      created_by: user.id,
+      side: 'own',
+      type: 'penalty',
+      player_id,
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+      metadata: { outcome },
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+export async function registerRivalPenalty(input: unknown): Promise<RegisterEventState> {
+  const parsed = registerRivalPenaltySchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, rival_dorsal, outcome } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
+
+  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  const { ms } = now();
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(periods, ms);
+
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId,
+      created_by: user.id,
+      side: 'rival',
+      type: 'penalty',
+      rival_dorsal,
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+      metadata: { outcome },
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+export async function registerShootoutKick(input: unknown): Promise<RegisterEventState> {
+  const parsed = registerShootoutKickSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, side, player_id, rival_dorsal, outcome } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
+
+  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  const { ms } = now();
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(periods, ms);
+
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId,
+      created_by: user.id,
+      side,
+      type: 'shootout_penalty',
+      player_id: side === 'own' ? (player_id ?? null) : null,
+      rival_dorsal: side === 'rival' ? (rival_dorsal ?? null) : null,
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+      metadata: { outcome },
     },
     { onConflict: 'id', ignoreDuplicates: true },
   );

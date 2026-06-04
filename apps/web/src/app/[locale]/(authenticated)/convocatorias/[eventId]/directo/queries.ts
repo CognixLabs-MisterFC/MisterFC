@@ -38,7 +38,8 @@ export type LiveMatchEvent = {
     | 'corner'
     | 'foul'
     | 'offside'
-    | 'shot';
+    | 'shot'
+    | 'penalty';
   /** null en eventos sobre el campo (7.4): se ubican por coordenadas, sin jugador. */
   playerId: string | null;
   playerLabel: string;
@@ -46,6 +47,8 @@ export type LiveMatchEvent = {
   clockSeconds: number;
   displayMinute: number | null;
   period: PeriodKind;
+  /** F7.7c — `metadata.outcome` de un `penalty` (marcado/parado/fuera). */
+  outcome: string | null;
 };
 
 /**
@@ -56,9 +59,11 @@ export type LiveMatchEvent = {
  */
 export type LiveStatEvent = {
   id: string;
-  type: 'goal' | 'assist' | 'yellow_card' | 'red_card';
+  type: 'goal' | 'assist' | 'yellow_card' | 'red_card' | 'penalty';
   playerId: string | null;
   clockSeconds: number;
+  /** F7.7c — `metadata.outcome` de un `penalty` (un 'scored' cuenta como gol). */
+  outcome: string | null;
 };
 
 export type LiveFieldPlayer = {
@@ -92,12 +97,29 @@ export type LiveRivalEvent = {
     | 'foul'
     | 'corner'
     | 'offside'
-    | 'shot';
+    | 'shot'
+    | 'penalty';
   dorsal: number | null;
   note: string | null;
   clockSeconds: number;
   displayMinute: number | null;
   period: PeriodKind;
+  /** F7.7c — `metadata.outcome` de un `penalty` del rival (marcado/parado/fuera). */
+  outcome: string | null;
+};
+
+/**
+ * F7.7c — lanzamiento de la TANDA de penaltis (desempate, `shootout_penalty`).
+ * De nuestro bando (`playerId`) o del rival (`dorsal`). NO cuenta como gol del
+ * partido ni suma minutos; su marcador es aparte.
+ */
+export type LiveShootoutKick = {
+  id: string;
+  side: 'own' | 'rival';
+  playerId: string | null;
+  dorsal: number | null;
+  outcome: string | null;
+  clockSeconds: number;
 };
 
 /**
@@ -196,11 +218,13 @@ export type MatchLiveData = {
    */
   starterIds: string[];
   /**
-   * F7.8 — eventos propios CONTABLES (gol/asistencia/tarjetas), lista completa
-   * para la tabla de tiempo de juego y stats por jugador. Vista calculada, no
-   * materializa nada (eso es 7.10).
+   * F7.8 — eventos propios CONTABLES (gol/asistencia/tarjetas + penaltis), lista
+   * completa para la tabla de tiempo de juego y stats por jugador. Vista
+   * calculada, no materializa nada (eso es 7.10).
    */
   statEvents: LiveStatEvent[];
+  /** F7.7c — lanzamientos de la TANDA de penaltis (ambos bandos), orden cronológico. */
+  shootoutKicks: LiveShootoutKick[];
 };
 
 export async function loadMatchLive(
@@ -381,6 +405,7 @@ export async function loadMatchLive(
     'foul',
     'offside',
     'shot',
+    'penalty',
   ];
   // OJO: match_events tiene DOS FKs a players (player_id y related_player_id),
   // así que el embed `players(...)` es AMBIGUO y PostgREST lo rechaza (PGRST201)
@@ -388,7 +413,7 @@ export async function loadMatchLive(
   const { data: eventRows, error: eventRowsError } = await supabase
     .from('match_events')
     .select(
-      `id, type, player_id, clock_seconds, display_minute, period,
+      `id, type, player_id, clock_seconds, display_minute, period, metadata,
        players!match_events_player_id_fkey(first_name, last_name, dorsal)`,
     )
     .eq('event_id', eventId)
@@ -410,6 +435,7 @@ export async function loadMatchLive(
     clock_seconds: number;
     display_minute: number | null;
     period: PeriodKind;
+    metadata: { outcome?: string } | null;
     players: {
       first_name: string;
       last_name: string | null;
@@ -431,6 +457,7 @@ export async function loadMatchLive(
       clockSeconds: r.clock_seconds,
       displayMinute: r.display_minute,
       period: r.period,
+      outcome: r.metadata?.outcome ?? null,
     };
   });
 
@@ -493,10 +520,16 @@ export async function loadMatchLive(
   // F7.8 — eventos propios CONTABLES (gol/asistencia/tarjetas), COMPLETOS (sin
   // limit, a diferencia de recentEvents que es solo display). Alimentan la tabla
   // de tiempo de juego (red_card cierra el tramo) y los conteos por jugador.
-  const STAT_EVENT_TYPES = ['goal', 'assist', 'yellow_card', 'red_card'];
+  const STAT_EVENT_TYPES = [
+    'goal',
+    'assist',
+    'yellow_card',
+    'red_card',
+    'penalty',
+  ];
   const { data: statRows, error: statErr } = await supabase
     .from('match_events')
-    .select('id, type, player_id, clock_seconds')
+    .select('id, type, player_id, clock_seconds, metadata')
     .eq('event_id', eventId)
     .eq('side', 'own')
     .in('type', STAT_EVENT_TYPES);
@@ -505,6 +538,25 @@ export async function loadMatchLive(
     id: r.id as string,
     type: r.type as LiveStatEvent['type'],
     playerId: (r.player_id as string | null) ?? null,
+    clockSeconds: r.clock_seconds as number,
+    outcome: ((r.metadata as { outcome?: string } | null)?.outcome) ?? null,
+  }));
+
+  // F7.7c — lanzamientos de la TANDA (ambos bandos), orden cronológico.
+  const { data: shootoutRows, error: shootoutErr } = await supabase
+    .from('match_events')
+    .select('id, side, player_id, rival_dorsal, metadata, clock_seconds')
+    .eq('event_id', eventId)
+    .eq('type', 'shootout_penalty')
+    .order('clock_seconds', { ascending: true })
+    .order('created_at', { ascending: true });
+  if (shootoutErr) console.error('[directo] error cargando tanda:', shootoutErr);
+  const shootoutKicks: LiveShootoutKick[] = (shootoutRows ?? []).map((r) => ({
+    id: r.id as string,
+    side: r.side as 'own' | 'rival',
+    playerId: (r.player_id as string | null) ?? null,
+    dorsal: (r.rival_dorsal as number | null) ?? null,
+    outcome: ((r.metadata as { outcome?: string } | null)?.outcome) ?? null,
     clockSeconds: r.clock_seconds as number,
   }));
 
@@ -518,6 +570,7 @@ export async function loadMatchLive(
     'corner',
     'offside',
     'shot',
+    'penalty',
   ];
   const { data: rivalRows, error: rivalErr } = await supabase
     .from('match_events')
@@ -534,7 +587,7 @@ export async function loadMatchLive(
     id: string;
     type: LiveRivalEvent['type'];
     rival_dorsal: number | null;
-    metadata: { note?: string } | null;
+    metadata: { note?: string; outcome?: string } | null;
     clock_seconds: number;
     display_minute: number | null;
     period: PeriodKind;
@@ -549,6 +602,7 @@ export async function loadMatchLive(
       clockSeconds: r.clock_seconds,
       displayMinute: r.display_minute,
       period: r.period,
+      outcome: r.metadata?.outcome ?? null,
     };
   });
 
@@ -636,5 +690,6 @@ export async function loadMatchLive(
     formationChanges,
     starterIds,
     statEvents,
+    shootoutKicks,
   };
 }

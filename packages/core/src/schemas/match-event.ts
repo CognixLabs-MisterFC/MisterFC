@@ -11,6 +11,7 @@ import {
   PLAYER_EVENT_TYPES,
   RIVAL_EVENT_TYPES,
 } from '../match/event';
+import { PENALTY_OUTCOMES, SHOOTOUT_OUTCOMES } from '../match/score';
 
 const uuid = z.string().uuid({ message: 'invalid_id' });
 const pct = z
@@ -98,6 +99,67 @@ export const registerRivalEventSchema = z.object({
   y_pct: pct.optional(),
 });
 export type RegisterRivalEventInput = z.infer<typeof registerRivalEventSchema>;
+
+/**
+ * F7.7c — PENALTI durante el partido sobre un jugador propio. Resultado en
+ * `metadata.outcome` (marcado/parado/fuera). Un penalti marcado cuenta como gol
+ * (no se registra un `goal` aparte). `side`/`clock_seconds`/`period`/
+ * `display_minute` los deriva el servidor.
+ */
+export const registerPenaltySchema = z.object({
+  event_id: uuid,
+  id: uuid,
+  player_id: uuid,
+  outcome: z.enum(PENALTY_OUTCOMES as unknown as [string, ...string[]], {
+    message: 'outcome_invalid',
+  }),
+});
+export type RegisterPenaltyInput = z.infer<typeof registerPenaltySchema>;
+
+/** F7.7c — PENALTI del RIVAL (por dorsal). Mismo outcome que el propio. */
+export const registerRivalPenaltySchema = z.object({
+  event_id: uuid,
+  id: uuid,
+  rival_dorsal: z
+    .number({ message: 'dorsal_range' })
+    .int({ message: 'dorsal_range' })
+    .min(1, { message: 'dorsal_range' })
+    .max(99, { message: 'dorsal_range' }),
+  outcome: z.enum(PENALTY_OUTCOMES as unknown as [string, ...string[]], {
+    message: 'outcome_invalid',
+  }),
+});
+export type RegisterRivalPenaltyInput = z.infer<typeof registerRivalPenaltySchema>;
+
+/**
+ * F7.7c — lanzamiento de la TANDA de penaltis (desempate). De NUESTRO bando
+ * (`player_id`) o del RIVAL (`rival_dorsal`), nunca ambos. Resultado
+ * marcado/fallado. NO cuenta como gol del partido ni suma minutos.
+ */
+export const registerShootoutKickSchema = z
+  .object({
+    event_id: uuid,
+    id: uuid,
+    side: z.enum(['own', 'rival'], { message: 'side_invalid' }),
+    player_id: uuid.optional(),
+    rival_dorsal: z
+      .number()
+      .int()
+      .min(1, { message: 'dorsal_range' })
+      .max(99, { message: 'dorsal_range' })
+      .optional(),
+    outcome: z.enum(SHOOTOUT_OUTCOMES as unknown as [string, ...string[]], {
+      message: 'outcome_invalid',
+    }),
+  })
+  .refine(
+    (v) =>
+      v.side === 'own'
+        ? v.player_id != null && v.rival_dorsal == null
+        : v.rival_dorsal != null && v.player_id == null,
+    { message: 'actor_side_mismatch', path: ['side'] },
+  );
+export type RegisterShootoutKickInput = z.infer<typeof registerShootoutKickSchema>;
 
 /**
  * F7.6b — mover a un jugador del campo a una nueva posición (x/y 0–100). La

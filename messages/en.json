@@ -1612,7 +1612,8 @@
       "corner": "Corner",
       "foul": "Foul",
       "offside": "Offside",
-      "shot": "Shot"
+      "shot": "Shot",
+      "penalty": "Penalty"
     },
     "no_event": "no event",
     "stub_player": "{event} on {player} — recording comes in the next drop",
@@ -1636,6 +1637,7 @@
     "clock_regulation_over": "Time up",
     "clock_finish_match": "Finish match",
     "clock_add_extra": "Add extra time",
+    "clock_shootout": "Penalty shootout",
     "clock_finish_confirm": "Finish the match?",
     "clock_finish_yes": "Yes, finish",
     "clock_finish_cancel": "Cancel",
@@ -1725,6 +1727,26 @@
     "rival_registered": "Opponent #{dorsal}: {event} ({minute}')",
     "rival_no_events": "No opponent events yet.",
     "rival_expelled": "Sent off",
+    "penalty_outcome": {
+      "scored": "scored",
+      "saved": "saved",
+      "missed": "missed"
+    },
+    "penalty_pick_own": "{player}'s penalty: outcome?",
+    "penalty_pick_rival": "Opponent #{dorsal} penalty: outcome?",
+    "penalty_registered": "Penalty {outcome} · {player} ({minute}')",
+    "rival_penalty_registered": "Penalty {outcome} · opponent #{dorsal} ({minute}')",
+    "shootout_title": "Penalty shootout",
+    "shootout_score": "Shootout: {own}-{rival}",
+    "shootout_leader": "{team} winning the shootout",
+    "shootout_finish": "Close shootout and finish",
+    "shootout_finished": "Match finished · {winner} win on penalties",
+    "shootout_pick_shooter": "Pick taker",
+    "shootout_tied": "The shootout is tied; keep taking kicks.",
+    "shootout_outcome": {
+      "scored": "Scored",
+      "missed": "Missed"
+    },
     "stats_title": "Statistics",
     "stats_empty": "No players to show yet.",
     "stats_col_player": "Player",
