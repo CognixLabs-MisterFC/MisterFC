@@ -23,7 +23,7 @@ import {
 } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { Minus, Pause, Play, Plus, SkipForward, Square, Timer } from 'lucide-react';
+import { Flag, Minus, Pause, Play, Plus, SkipForward, Square, Timer } from 'lucide-react';
 import {
   type ClockPeriod,
   type PeriodKind,
@@ -58,6 +58,10 @@ type Props = {
   periods: ClockPeriod[];
   /** Duración SUGERIDA de cada tiempo (min), de la categoría del equipo. */
   halfDurationMinutes: number;
+  /** F7.7c — abrir la tanda de penaltis (desempate) desde el flujo de fin. */
+  onOpenShootout?: () => void;
+  /** F7.7c — ¿la tanda ya está abierta? (oculta el botón de entrada). */
+  shootoutOpen?: boolean;
 };
 
 // Tiempos a los que aplica la duración sugerida de la categoría. La prórroga y
@@ -101,6 +105,8 @@ export function MatchClock({
   status,
   periods,
   halfDurationMinutes,
+  onOpenShootout,
+  shootoutOpen,
 }: Props) {
   const t = useTranslations('partido_directo');
   const router = useRouter();
@@ -306,6 +312,18 @@ export function MatchClock({
                       ? t('clock_add_extra')
                       : t('clock_start_period', { period: periodLabel(extraNext.period) })}
                   </span>
+                </Button>
+              )}
+              {/* F7.7c — tanda de penaltis: SOLO tras la prórroga (sin más extra). */}
+              {!extraNext && onOpenShootout && !shootoutOpen && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={onOpenShootout}
+                >
+                  <Flag className="size-4" aria-hidden />
+                  <span>{t('clock_shootout')}</span>
                 </Button>
               )}
             </>

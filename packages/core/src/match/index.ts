@@ -90,3 +90,21 @@ export type {
   PlayerEventCounts,
   PlayerMatchStats,
 } from './playing-time';
+
+export {
+  PENALTY_OUTCOMES,
+  isPenaltyOutcome,
+  SHOOTOUT_OUTCOMES,
+  isShootoutOutcome,
+  isMatchGoal,
+  computeScore,
+  computeShootout,
+} from './score';
+export type {
+  Side,
+  PenaltyOutcome,
+  ShootoutOutcome,
+  ScoreEvent,
+  MatchScore,
+  ShootoutTally,
+} from './score';

@@ -24,6 +24,7 @@ import {
   AlertTriangle,
   ArrowLeftRight,
   Ban,
+  CircleDot,
   ClipboardList,
   Flag,
   Footprints,
@@ -41,6 +42,7 @@ import {
   canRegisterSubstitution,
   clampPct,
   clockSecondsAt,
+  computeScore,
   currentPeriod,
   deriveExpelledPlayers,
   deriveSquad,
@@ -51,12 +53,15 @@ import {
   isFieldEventType,
   isPlayerEventType,
   mergeLiveEvents,
+  PENALTY_OUTCOMES,
   resolveCardOutcome,
   RIVAL_EVENT_TYPES,
   type ClockPeriod,
   type LivePositions,
   type MatchEventLite,
+  type PenaltyOutcome,
   type RivalEventType,
+  type ScoreEvent,
   type Sub,
   type SubstitutionRegime,
   type TeamFormat,
@@ -74,6 +79,7 @@ import type {
   LiveFormationChange,
   LiveMatchEvent,
   LiveRivalEvent,
+  LiveShootoutKick,
   LiveStatEvent,
   LiveSubstitution,
 } from '../queries';
@@ -81,13 +87,16 @@ import {
   changeFormation,
   movePlayer,
   registerFieldEvent,
+  registerPenalty,
   registerPlayerEvent,
   registerRivalEvent,
+  registerRivalPenalty,
   registerSubstitution,
   setPlayerAbsent,
 } from '../actions';
 import { MatchClock, MatchClockOverlay } from './match-clock';
 import { PlayerStatsStrip, type StatsPlayer } from './player-stats-strip';
+import { ShootoutPanel } from './shootout-panel';
 
 // Tipos de evento de la paleta propia (coinciden con match_events.type de F7.1).
 const EVENT_TYPES = [
@@ -95,6 +104,7 @@ const EVENT_TYPES = [
   'assist',
   'yellow_card',
   'red_card',
+  'penalty',
   'substitution',
   'corner',
   'foul',
@@ -108,6 +118,7 @@ const EVENT_ICON: Record<EventType, typeof Goal> = {
   assist: Footprints,
   yellow_card: Square,
   red_card: Square,
+  penalty: CircleDot,
   substitution: ArrowLeftRight,
   corner: Flag,
   foul: AlertTriangle,
@@ -124,6 +135,7 @@ const EVENT_ICON_CLASS: Partial<Record<EventType, string>> = {
 type Props = {
   eventId: string;
   eventType: 'match' | 'friendly';
+  teamName: string;
   opponentName: string | null;
   format: TeamFormat;
   formationCode: string;
@@ -145,6 +157,8 @@ type Props = {
   starterIds: string[];
   /** F7.8 — eventos propios contables (gol/asistencia/tarjetas), lista completa. */
   statEvents: LiveStatEvent[];
+  /** F7.7c — lanzamientos de la tanda de penaltis (ambos bandos). */
+  shootoutKicks: LiveShootoutKick[];
 };
 
 // Herramienta seleccionada en la paleta propia: un tipo de evento, o 'absent'
@@ -159,6 +173,7 @@ const eventNowMs = () => Date.now();
 export function LiveCaptureClient({
   eventId,
   eventType,
+  teamName,
   opponentName,
   format,
   formationCode,
@@ -178,6 +193,7 @@ export function LiveCaptureClient({
   formationChanges,
   starterIds,
   statEvents,
+  shootoutKicks,
 }: Props) {
   const t = useTranslations('partido_directo');
   const router = useRouter();
@@ -202,6 +218,13 @@ export function LiveCaptureClient({
   // F7.6 — registro del rival: dorsal + nota libre.
   const [rivalDorsal, setRivalDorsal] = useState('');
   const [rivalNote, setRivalNote] = useState('');
+  // F7.7c — penalti pendiente de elegir RESULTADO (marcado/parado/fuera). Propio
+  // (player) o rival (dorsal). null = no hay selector abierto.
+  const [pendingPenalty, setPendingPenalty] = useState<
+    { side: 'own'; playerId: string; label: string } | { side: 'rival'; dorsal: number } | null
+  >(null);
+  // F7.7c — tanda de penaltis abierta (entrar desde el flujo de fin de partido).
+  const [shootoutOpen, setShootoutOpen] = useState(false);
 
   // Sin alineación oficial no hay once que pintar (no auto-marcamos ninguna ni
   // hacemos fallback a "la última"): empty-state claro con CTA al editor.
@@ -337,7 +360,14 @@ export function LiveCaptureClient({
   // calculada en vivo (no materializa nada; eso es 7.10). Eventos contables
   // COMPLETOS (statEvents, sin el limit de recentEvents) + overlay optimista,
   // deduplicados por id. El motor puro de core hace el cálculo de minutos.
-  const CARD_STAT_TYPES = ['goal', 'assist', 'yellow_card', 'red_card'] as const;
+  // Incluye 'penalty' (F7.7c): un penalti marcado cuenta como gol del jugador.
+  const CARD_STAT_TYPES = [
+    'goal',
+    'assist',
+    'yellow_card',
+    'red_card',
+    'penalty',
+  ] as const;
   const optimisticStat: LiveStatEvent[] = optimistic
     .filter(
       (e): e is LiveMatchEvent & { type: LiveStatEvent['type'] } =>
@@ -349,6 +379,7 @@ export function LiveCaptureClient({
       type: e.type,
       playerId: e.playerId,
       clockSeconds: e.clockSeconds,
+      outcome: e.outcome,
     }));
   const statAll = mergeLiveEvents(statEvents, optimisticStat);
   const statEngineEvents: MatchEventLite[] = [
@@ -362,8 +393,21 @@ export function LiveCaptureClient({
       type: e.type,
       playerId: e.playerId,
       clockSeconds: e.clockSeconds,
+      outcome: e.outcome,
     })),
   ];
+
+  // F7.7c — MARCADOR del partido (NUESTRO X – Y RIVAL): goles + penaltis marcados
+  // de cada bando (la tanda NO cuenta). Derivado de lo persistido + optimista →
+  // se actualiza en vivo y sobrevive a F5.
+  const scoreEvents: ScoreEvent[] = [
+    ...statAll.map((e) => ({ side: 'own' as const, type: e.type, outcome: e.outcome })),
+    ...rivalAll.map((e) => ({ side: 'rival' as const, type: e.type, outcome: e.outcome })),
+  ];
+  const score = computeScore(scoreEvents);
+  // F7.7c — ¿mostrar la tanda? Si se abrió desde el flujo de fin, o si ya hay
+  // lanzamientos persistidos (sobrevive a F5).
+  const showShootout = shootoutOpen || shootoutKicks.length > 0;
   // Convocado a mostrar = once oficial + banquillo (+ titulares congelados que no
   // figuren, defensivo), en orden de visualización, sin duplicados.
   const statsRoster: StatsPlayer[] = [];
@@ -418,6 +462,17 @@ export function LiveCaptureClient({
       toast.info(t('sub_pick_in'));
       return;
     }
+    if (selectedEvent === 'penalty') {
+      // F7.7c — un penalti exige elegir RESULTADO: abrimos el selector.
+      const prior = ownTypesOf(playerId);
+      if (isExpelled(prior)) {
+        toast.warning(t('event_error.player_expelled'));
+        return;
+      }
+      const label = playerInfo.get(playerId)?.label ?? playerId.slice(0, 4);
+      setPendingPenalty({ side: 'own', playerId, label });
+      return;
+    }
     if (!isPlayerEventType(selectedEvent)) {
       toast.info(t('register_not_player_event'));
       return;
@@ -449,6 +504,7 @@ export function LiveCaptureClient({
       clockSeconds,
       displayMinute,
       period,
+      outcome: null,
     };
     const expelledNow = isExpelled([...priorTypes, type]);
     setOptimistic((prev) => [optimisticRow, ...prev]);
@@ -516,6 +572,7 @@ export function LiveCaptureClient({
       clockSeconds,
       displayMinute,
       period,
+      outcome: null,
     };
     setOptimistic((prev) => [optimisticRow, ...prev]);
     setSelectedEvent(null);
@@ -650,6 +707,7 @@ export function LiveCaptureClient({
       clockSeconds,
       displayMinute,
       period,
+      outcome: null,
     };
     setOptimisticRival((prev) => [optimisticRow, ...prev]);
     setRivalNote('');
@@ -676,6 +734,109 @@ export function LiveCaptureClient({
       );
       router.refresh();
     });
+  }
+
+  // F7.7c — abrir el selector de resultado de un penalti del RIVAL (por dorsal).
+  function openRivalPenalty() {
+    if (matchStatus !== 'live') {
+      toast.warning(t('register_not_live'));
+      return;
+    }
+    const dorsalNum = Number(rivalDorsal);
+    if (!Number.isInteger(dorsalNum) || dorsalNum < 1 || dorsalNum > 99) {
+      toast.warning(t('rival_dorsal_required'));
+      return;
+    }
+    setPendingPenalty({ side: 'rival', dorsal: dorsalNum });
+  }
+
+  // F7.7c — confirmar el RESULTADO del penalti pendiente (marcado/parado/fuera).
+  // Un 'scored' cuenta como gol vía el motor (no se registra un goal aparte).
+  function confirmPenalty(outcome: PenaltyOutcome) {
+    const pp = pendingPenalty;
+    if (!pp) return;
+    if (matchStatus !== 'live') {
+      toast.warning(t('register_not_live'));
+      setPendingPenalty(null);
+      return;
+    }
+    const id = crypto.randomUUID();
+    const clockSeconds = clockSecondsAt(periods, eventNowMs());
+    const cur = currentPeriod(periods);
+    const period = cur?.period ?? 'first_half';
+    const displayMinute = toDisplayMinute(clockSeconds);
+    setPendingPenalty(null);
+    setSelectedEvent(null);
+    const outcomeLabel = t(`penalty_outcome.${outcome}`);
+
+    if (pp.side === 'own') {
+      const optimisticRow: LiveMatchEvent = {
+        id,
+        type: 'penalty',
+        playerId: pp.playerId,
+        playerLabel: pp.label,
+        dorsal: playerInfo.get(pp.playerId)?.dorsal ?? null,
+        clockSeconds,
+        displayMinute,
+        period,
+        outcome,
+      };
+      setOptimistic((prev) => [optimisticRow, ...prev]);
+      startTransition(async () => {
+        const res = await registerPenalty({
+          event_id: eventId,
+          id,
+          player_id: pp.playerId,
+          outcome,
+        });
+        if (res.error) {
+          setOptimistic((prev) => prev.filter((e) => e.id !== id));
+          toast.error(t(`event_error.${res.error}`));
+          return;
+        }
+        toast.success(
+          t('penalty_registered', {
+            outcome: outcomeLabel,
+            player: pp.label,
+            minute: displayMinute,
+          }),
+        );
+        router.refresh();
+      });
+    } else {
+      const optimisticRow: LiveRivalEvent = {
+        id,
+        type: 'penalty',
+        dorsal: pp.dorsal,
+        note: null,
+        clockSeconds,
+        displayMinute,
+        period,
+        outcome,
+      };
+      setOptimisticRival((prev) => [optimisticRow, ...prev]);
+      startTransition(async () => {
+        const res = await registerRivalPenalty({
+          event_id: eventId,
+          id,
+          rival_dorsal: pp.dorsal,
+          outcome,
+        });
+        if (res.error) {
+          setOptimisticRival((prev) => prev.filter((e) => e.id !== id));
+          toast.error(t(`event_error.${res.error}`));
+          return;
+        }
+        toast.success(
+          t('rival_penalty_registered', {
+            outcome: outcomeLabel,
+            dorsal: pp.dorsal,
+            minute: displayMinute,
+          }),
+        );
+        router.refresh();
+      });
+    }
   }
 
   // F7.6b — mover un jugador del campo: nueva posición (x/y) optimista + persistir.
@@ -761,6 +922,20 @@ export function LiveCaptureClient({
 
   return (
     <div className="flex flex-col gap-3">
+      {/* F7.7c — MARCADOR: NUESTRO X – Y RIVAL (goles + penaltis marcados),
+          derivado en vivo de match_events. */}
+      <div className="flex items-center justify-center gap-4 rounded-lg border border-border bg-card/60 px-4 py-2">
+        <span className="min-w-0 flex-1 truncate text-right text-sm font-medium">
+          {teamName}
+        </span>
+        <span className="shrink-0 font-mono text-3xl font-bold tabular-nums">
+          {score.own} <span className="text-muted-foreground">–</span> {score.rival}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-left text-sm font-medium text-muted-foreground">
+          {opponentName ?? t('rival_panel_title')}
+        </span>
+      </div>
+
       {/* Cronómetro completo (F7.7). */}
       <div className="rounded-lg border border-border bg-card/40 p-3">
         <MatchClock
@@ -768,8 +943,23 @@ export function LiveCaptureClient({
           status={matchStatus}
           periods={periods}
           halfDurationMinutes={halfDurationMinutes}
+          onOpenShootout={() => setShootoutOpen(true)}
+          shootoutOpen={showShootout}
         />
       </div>
+
+      {/* F7.7c — TANDA de penaltis (desempate tras la prórroga). */}
+      {showShootout && (
+        <ShootoutPanel
+          eventId={eventId}
+          matchStatus={matchStatus}
+          teamName={teamName}
+          opponentName={opponentName}
+          players={statsRoster}
+          periods={periods}
+          shootoutKicks={shootoutKicks}
+        />
+      )}
 
       {/* Paleta de eventos PROPIOS (toolbar horizontal). */}
       <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card/40 p-2">
@@ -876,6 +1066,33 @@ export function LiveCaptureClient({
         </div>
       )}
 
+      {/* F7.7c — penalti pendiente: elegir RESULTADO (marcado/parado/fuera). */}
+      {pendingPenalty && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm">
+          <span>
+            {pendingPenalty.side === 'own'
+              ? t('penalty_pick_own', { player: pendingPenalty.label })
+              : t('penalty_pick_rival', { dorsal: pendingPenalty.dorsal })}
+          </span>
+          <div className="flex items-center gap-1.5">
+            {PENALTY_OUTCOMES.map((o) => (
+              <Button
+                key={o}
+                size="sm"
+                variant={o === 'scored' ? 'default' : 'outline'}
+                onClick={() => confirmPenalty(o)}
+              >
+                {t(`penalty_outcome.${o}`)}
+              </Button>
+            ))}
+            <Button size="sm" variant="ghost" onClick={() => setPendingPenalty(null)}>
+              <X className="size-4" aria-hidden />
+              <span>{t('sub_cancel')}</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Cuerpo a lo ancho: [nuestros eventos] · [banquillo] · [campo] · [rival]
           · [eventos del rival]. En táctil horizontal conviven; en estrecho se
           apilan. */}
@@ -929,6 +1146,12 @@ export function LiveCaptureClient({
                         <>
                           {ev.dorsal != null ? `${ev.dorsal} · ` : ''}
                           {ev.playerLabel}
+                          {ev.type === 'penalty' && ev.outcome && (
+                            <span className="text-muted-foreground">
+                              {' · '}
+                              {t('event.penalty')} {t(`penalty_outcome.${ev.outcome}`)}
+                            </span>
+                          )}
                         </>
                       ) : (
                         <span className="text-muted-foreground">{t(`event.${ev.type}`)}</span>
@@ -1098,6 +1321,15 @@ export function LiveCaptureClient({
                   </button>
                 );
               })}
+              {/* F7.7c — penalti del rival: abre el selector de resultado. */}
+              <button
+                type="button"
+                onClick={openRivalPenalty}
+                className="col-span-2 flex items-center justify-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+              >
+                <CircleDot className="size-4" aria-hidden />
+                <span className="truncate">{t('event.penalty')}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -1130,7 +1362,12 @@ export function LiveCaptureClient({
                       {ev.dorsal != null && (
                         <span className="font-mono tabular-nums">#{ev.dorsal}</span>
                       )}
-                      {ev.note ? (
+                      {ev.type === 'penalty' && ev.outcome ? (
+                        <span className="text-muted-foreground">
+                          {' · '}
+                          {t('event.penalty')} {t(`penalty_outcome.${ev.outcome}`)}
+                        </span>
+                      ) : ev.note ? (
                         <span className="text-muted-foreground"> · {ev.note}</span>
                       ) : (
                         <span className="text-muted-foreground"> · {t(`event.${ev.type}`)}</span>

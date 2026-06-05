@@ -65,6 +65,7 @@ export default async function MatchLivePage({ params }: Props) {
       <LiveCaptureClient
         eventId={eventId}
         eventType={data.event.type}
+        teamName={data.event.teamName}
         opponentName={data.event.opponentName}
         format={data.event.format}
         formationCode={data.formationCode}
@@ -84,6 +85,7 @@ export default async function MatchLivePage({ params }: Props) {
         formationChanges={data.formationChanges}
         starterIds={data.starterIds}
         statEvents={data.statEvents}
+        shootoutKicks={data.shootoutKicks}
       />
     </div>
   );

@@ -1611,7 +1611,8 @@
       "corner": "Córner",
       "foul": "Falta",
       "offside": "Fuera de juego",
-      "shot": "Tiro"
+      "shot": "Tiro",
+      "penalty": "Penalti"
     },
     "no_event": "ningún evento",
     "stub_player": "{event} sobre {player} — el registro llega en la próxima entrega",
@@ -1635,6 +1636,7 @@
     "clock_regulation_over": "Tiempo cumplido",
     "clock_finish_match": "Finalizar partido",
     "clock_add_extra": "Añadir prórroga",
+    "clock_shootout": "Tanda de penaltis",
     "clock_finish_confirm": "¿Finalizar el partido?",
     "clock_finish_yes": "Sí, finalizar",
     "clock_finish_cancel": "Cancelar",
@@ -1724,6 +1726,26 @@
     "rival_registered": "Rival #{dorsal}: {event} ({minute}')",
     "rival_no_events": "Aún no hay eventos del rival.",
     "rival_expelled": "Expulsado",
+    "penalty_outcome": {
+      "scored": "marcado",
+      "saved": "parado",
+      "missed": "fuera"
+    },
+    "penalty_pick_own": "Penalti de {player}: ¿resultado?",
+    "penalty_pick_rival": "Penalti del rival #{dorsal}: ¿resultado?",
+    "penalty_registered": "Penalti {outcome} · {player} ({minute}')",
+    "rival_penalty_registered": "Penalti {outcome} · rival #{dorsal} ({minute}')",
+    "shootout_title": "Tanda de penaltis",
+    "shootout_score": "Penaltis: {own}-{rival}",
+    "shootout_leader": "Gana {team} por penaltis",
+    "shootout_finish": "Cerrar tanda y finalizar",
+    "shootout_finished": "Partido finalizado · gana {winner} por penaltis",
+    "shootout_pick_shooter": "Elige lanzador",
+    "shootout_tied": "La tanda está empatada; sigue lanzando.",
+    "shootout_outcome": {
+      "scored": "Marcado",
+      "missed": "Fallado"
+    },
     "stats_title": "Estadísticas",
     "stats_empty": "Aún no hay jugadores que mostrar.",
     "stats_col_player": "Jugador",

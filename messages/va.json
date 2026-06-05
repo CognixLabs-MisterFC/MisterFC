@@ -1612,7 +1612,8 @@
       "corner": "Córner",
       "foul": "Falta",
       "offside": "Fora de joc",
-      "shot": "Tir"
+      "shot": "Tir",
+      "penalty": "Penal"
     },
     "no_event": "cap esdeveniment",
     "stub_player": "{event} sobre {player} — el registre arriba en la pròxima entrega",
@@ -1636,6 +1637,7 @@
     "clock_regulation_over": "Temps complit",
     "clock_finish_match": "Finalitzar el partit",
     "clock_add_extra": "Afegir pròrroga",
+    "clock_shootout": "Tanda de penals",
     "clock_finish_confirm": "Finalitzar el partit?",
     "clock_finish_yes": "Sí, finalitzar",
     "clock_finish_cancel": "Cancel·lar",
@@ -1725,6 +1727,26 @@
     "rival_registered": "Rival #{dorsal}: {event} ({minute}')",
     "rival_no_events": "Encara no hi ha esdeveniments del rival.",
     "rival_expelled": "Expulsat",
+    "penalty_outcome": {
+      "scored": "marcat",
+      "saved": "parat",
+      "missed": "fora"
+    },
+    "penalty_pick_own": "Penal de {player}: resultat?",
+    "penalty_pick_rival": "Penal del rival #{dorsal}: resultat?",
+    "penalty_registered": "Penal {outcome} · {player} ({minute}')",
+    "rival_penalty_registered": "Penal {outcome} · rival #{dorsal} ({minute}')",
+    "shootout_title": "Tanda de penals",
+    "shootout_score": "Penals: {own}-{rival}",
+    "shootout_leader": "Guanya {team} als penals",
+    "shootout_finish": "Tancar la tanda i finalitzar",
+    "shootout_finished": "Partit finalitzat · guanya {winner} als penals",
+    "shootout_pick_shooter": "Tria el llançador",
+    "shootout_tied": "La tanda està empatada; segueix llançant.",
+    "shootout_outcome": {
+      "scored": "Marcat",
+      "missed": "Fallat"
+    },
     "stats_title": "Estadístiques",
     "stats_empty": "Encara no hi ha jugadors per mostrar.",
     "stats_col_player": "Jugador",
