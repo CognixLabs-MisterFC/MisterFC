@@ -49,6 +49,10 @@ export type LiveMatchEvent = {
   period: PeriodKind;
   /** F7.7c — `metadata.outcome` de un `penalty` (marcado/parado/fuera). */
   outcome: string | null;
+  /** F7.4b — `metadata.foul_kind` de un `foul` (committed/received). */
+  foulKind: string | null;
+  /** F7.4b — `metadata.corner_side` de un `corner` (for/against). */
+  cornerSide: string | null;
 };
 
 /**
@@ -106,6 +110,20 @@ export type LiveRivalEvent = {
   period: PeriodKind;
   /** F7.7c — `metadata.outcome` de un `penalty` del rival (marcado/parado/fuera). */
   outcome: string | null;
+};
+
+/**
+ * F7.4b — evento de equipo CONTABLE (falta/córner) para los contadores. Lista
+ * completa (sin el `limit` de `recentEvents`). La falta lleva `playerId` (quien
+ * la comete o la recibe) y `foulKind`; el córner, `cornerSide`.
+ */
+export type LiveTeamEvent = {
+  id: string;
+  type: 'foul' | 'corner';
+  playerId: string | null;
+  foulKind: string | null;
+  cornerSide: string | null;
+  clockSeconds: number;
 };
 
 /**
@@ -225,6 +243,11 @@ export type MatchLiveData = {
   statEvents: LiveStatEvent[];
   /** F7.7c — lanzamientos de la TANDA de penaltis (ambos bandos), orden cronológico. */
   shootoutKicks: LiveShootoutKick[];
+  /**
+   * F7.4b — eventos de equipo (faltas/córners) COMPLETOS para los contadores
+   * (faltas propias/recibidas, córners a favor/en contra). Derivado, sobrevive a F5.
+   */
+  teamEvents: LiveTeamEvent[];
 };
 
 export async function loadMatchLive(
@@ -435,7 +458,7 @@ export async function loadMatchLive(
     clock_seconds: number;
     display_minute: number | null;
     period: PeriodKind;
-    metadata: { outcome?: string } | null;
+    metadata: { outcome?: string; foul_kind?: string; corner_side?: string } | null;
     players: {
       first_name: string;
       last_name: string | null;
@@ -458,6 +481,8 @@ export async function loadMatchLive(
       displayMinute: r.display_minute,
       period: r.period,
       outcome: r.metadata?.outcome ?? null,
+      foulKind: r.metadata?.foul_kind ?? null,
+      cornerSide: r.metadata?.corner_side ?? null,
     };
   });
 
@@ -559,6 +584,26 @@ export async function loadMatchLive(
     outcome: ((r.metadata as { outcome?: string } | null)?.outcome) ?? null,
     clockSeconds: r.clock_seconds as number,
   }));
+
+  // F7.4b — faltas/córners propios COMPLETOS (sin limit) para los contadores.
+  const { data: teamRows, error: teamErr } = await supabase
+    .from('match_events')
+    .select('id, type, player_id, metadata, clock_seconds')
+    .eq('event_id', eventId)
+    .eq('side', 'own')
+    .in('type', ['foul', 'corner']);
+  if (teamErr) console.error('[directo] error cargando faltas/córners:', teamErr);
+  const teamEvents: LiveTeamEvent[] = (teamRows ?? []).map((r) => {
+    const meta = (r.metadata as { foul_kind?: string; corner_side?: string } | null) ?? null;
+    return {
+      id: r.id as string,
+      type: r.type as 'foul' | 'corner',
+      playerId: (r.player_id as string | null) ?? null,
+      foulKind: meta?.foul_kind ?? null,
+      cornerSide: meta?.corner_side ?? null,
+      clockSeconds: r.clock_seconds as number,
+    };
+  });
 
   // Eventos del RIVAL (F7.6): por dorsal + nota libre (metadata.note), recientes
   // primero. Sin embed de players (el rival no tiene roster, §3.4).
@@ -691,5 +736,6 @@ export async function loadMatchLive(
     starterIds,
     statEvents,
     shootoutKicks,
+    teamEvents,
   };
 }

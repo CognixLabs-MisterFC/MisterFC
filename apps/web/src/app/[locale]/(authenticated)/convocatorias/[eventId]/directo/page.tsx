@@ -86,6 +86,7 @@ export default async function MatchLivePage({ params }: Props) {
         starterIds={data.starterIds}
         statEvents={data.statEvents}
         shootoutKicks={data.shootoutKicks}
+        teamEvents={data.teamEvents}
       />
     </div>
   );

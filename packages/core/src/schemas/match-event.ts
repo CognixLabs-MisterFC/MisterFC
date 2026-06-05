@@ -12,6 +12,7 @@ import {
   RIVAL_EVENT_TYPES,
 } from '../match/event';
 import { PENALTY_OUTCOMES, SHOOTOUT_OUTCOMES } from '../match/score';
+import { FOUL_KINDS, CORNER_SIDES } from '../match/team-events';
 
 const uuid = z.string().uuid({ message: 'invalid_id' });
 const pct = z
@@ -99,6 +100,38 @@ export const registerRivalEventSchema = z.object({
   y_pct: pct.optional(),
 });
 export type RegisterRivalEventInput = z.infer<typeof registerRivalEventSchema>;
+
+/**
+ * F7.4b — FALTA detallada (sobre jugador + ubicación). `kind='committed'`: la
+ * comete nuestro `player_id`; `kind='received'`: la recibe nuestro `player_id`
+ * (la comete el rival). Lleva coordenadas (0–100). `side='own'`,
+ * `metadata.foul_kind`; `clock_seconds`/`period`/`display_minute` los deriva el
+ * servidor.
+ */
+export const registerFoulSchema = z.object({
+  event_id: uuid,
+  id: uuid,
+  player_id: uuid,
+  kind: z.enum(FOUL_KINDS as unknown as [string, ...string[]], {
+    message: 'foul_kind_invalid',
+  }),
+  x_pct: pct,
+  y_pct: pct,
+});
+export type RegisterFoulInput = z.infer<typeof registerFoulSchema>;
+
+/**
+ * F7.4b — CÓRNER con su bando: `corner_side='for'` (a favor) / `'against'` (en
+ * contra). Sin jugador ni coordenadas. `side='own'`, `metadata.corner_side`.
+ */
+export const registerCornerSchema = z.object({
+  event_id: uuid,
+  id: uuid,
+  corner_side: z.enum(CORNER_SIDES as unknown as [string, ...string[]], {
+    message: 'corner_side_invalid',
+  }),
+});
+export type RegisterCornerInput = z.infer<typeof registerCornerSchema>;
 
 /**
  * F7.7c — PENALTI durante el partido sobre un jugador propio. Resultado en
