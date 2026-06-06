@@ -229,6 +229,11 @@ export {
   registerShootoutKickSchema,
   movePlayerSchema,
   changeFormationSchema,
+  deleteMatchEventSchema,
+  updateEventMinuteSchema,
+  updateEventActorSchema,
+  addTimelineEventSchema,
+  TIMELINE_ADD_TYPES,
 } from './match-event';
 export type {
   RegisterPlayerEventInput,
@@ -243,4 +248,8 @@ export type {
   RegisterShootoutKickInput,
   MovePlayerInput,
   ChangeFormationInput,
+  DeleteMatchEventInput,
+  UpdateEventMinuteInput,
+  UpdateEventActorInput,
+  AddTimelineEventInput,
 } from './match-event';

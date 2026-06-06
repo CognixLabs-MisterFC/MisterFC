@@ -19,16 +19,19 @@
 
 import { revalidatePath } from 'next/cache';
 import {
+  addTimelineEventSchema,
   adjustClockPatch,
   adjustClockSchema,
   assignPlayersToFormation,
   buildNextPeriod,
   canRegisterSubstitution,
   changeFormationSchema,
+  clockFieldsForMinute,
   type ClockMutation,
   type ClockPeriod,
   createSupabaseServerClient,
   currentPeriod,
+  deleteMatchEventSchema,
   DEFAULT_REGIME,
   deriveExpelledPlayers,
   deriveSquad,
@@ -66,6 +69,8 @@ import {
   startNextPeriodSchema,
   type Sub,
   type TeamFormat,
+  updateEventActorSchema,
+  updateEventMinuteSchema,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -548,6 +553,7 @@ type EventActionError =
   | 'player_not_eligible'
   | 'formation_invalid'
   | 'sub_limit_reached'
+  | 'not_editable'
   | 'generic';
 
 export type RegisterEventState = {
@@ -1283,6 +1289,229 @@ export async function registerShootoutKick(input: unknown): Promise<RegisterEven
       clock_seconds: clockSeconds,
       display_minute: displayMinute,
       metadata: { outcome },
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F7.9 — Línea de tiempo EDITABLE. Cuatro operaciones que mutan `match_events`;
+// minutos (7.8), marcador/penaltis (7.7c), contadores (7.4b) y expulsiones (7.3)
+// se REDERIVAN de los eventos resultantes — NO hay estado paralelo, así que tras
+// cada edición basta revalidar para que la pantalla recalcule todo y sobreviva a
+// F5. Accesible EN VIVO y TRAS finalizar (status 'live' o 'closed'); no antes de
+// iniciar (no hay reloj). El gate autoritativo sigue siendo la RLS
+// (user_can_record_match) + los triggers de 7.1; aquí validamos forma + coherencia.
+//
+// "Cambiar el minuto" recalcula clock_seconds/period del MINUTO elegido con el
+// motor del reloj (clockFieldsForMinute), inverso de display_minute. La validación
+// de estados imposibles (findTimelineIssues) AVISA en la UI sin bloquear (spec 7.9).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Estado que permite editar la línea de tiempo: en vivo o ya finalizado. */
+async function loadEditableStatus(
+  supabase: Supa,
+  eventId: string,
+): Promise<'live' | 'closed' | null> {
+  const status = await loadStatus(supabase, eventId);
+  return status === 'live' || status === 'closed' ? status : null;
+}
+
+// deleteMatchEvent — borra un evento de la línea de tiempo (por su id de cliente).
+export async function deleteMatchEvent(input: unknown): Promise<RegisterEventState> {
+  const parsed = deleteMatchEventSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  if ((await loadEditableStatus(supabase, event_id)) == null) return { error: 'not_editable' };
+
+  const { error } = await supabase
+    .from('match_events')
+    .delete()
+    .eq('event_id', event_id)
+    .eq('id', id);
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+// updateMatchEventMinute — reancla un evento a otro MINUTO (recalcula el reloj).
+export async function updateMatchEventMinute(input: unknown): Promise<RegisterEventState> {
+  const parsed = updateEventMinuteSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, display_minute } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  if ((await loadEditableStatus(supabase, event_id)) == null) return { error: 'not_editable' };
+
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  // clock_seconds/period del minuto elegido, coherentes con el catálogo del reloj.
+  const { clockSeconds, period, displayMinute } = clockFieldsForMinute(periods, display_minute);
+
+  const { error } = await supabase
+    .from('match_events')
+    .update({
+      clock_seconds: clockSeconds,
+      period,
+      display_minute: displayMinute,
+    })
+    .eq('event_id', event_id)
+    .eq('id', id);
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+// updateMatchEventActor — cambia el jugador propio / dorsal rival / (sub) los
+// jugadores implicados. Solo aplica los campos coherentes con el side/type de la
+// fila (no rompe el CHECK actor_by_side ni related_only_sub).
+export async function updateMatchEventActor(input: unknown): Promise<RegisterEventState> {
+  const parsed = updateEventActorSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, player_id, related_player_id, rival_dorsal } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  if ((await loadEditableStatus(supabase, event_id)) == null) return { error: 'not_editable' };
+
+  const { data: row } = await supabase
+    .from('match_events')
+    .select('side, type')
+    .eq('event_id', event_id)
+    .eq('id', id)
+    .maybeSingle();
+  if (!row) return { error: 'not_found' };
+
+  const patch: {
+    player_id?: string;
+    related_player_id?: string;
+    rival_dorsal?: number;
+  } = {};
+  if (row.side === 'own') {
+    if (player_id) patch.player_id = player_id;
+    // El segundo jugador (entra) solo en sustituciones (related_only_sub).
+    if (row.type === 'substitution' && related_player_id) {
+      patch.related_player_id = related_player_id;
+    }
+  } else if (rival_dorsal != null) {
+    patch.rival_dorsal = rival_dorsal;
+  }
+  if (Object.keys(patch).length === 0) return { error: 'invalid' };
+
+  const { error } = await supabase
+    .from('match_events')
+    .update(patch)
+    .eq('event_id', event_id)
+    .eq('id', id);
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+// addMatchEvent — ALTA de un evento olvidado en un minuto dado. Reusa el mismo
+// modelo que las register* (mismo type, mismo metadata) pero con clock derivado
+// del MINUTO elegido (no de "ahora"). Las sustituciones, cambios de formación y la
+// tanda tienen su propia UI/derivación y no se dan de alta aquí.
+export async function addMatchEvent(input: unknown): Promise<RegisterEventState> {
+  const parsed = addTimelineEventSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const {
+    event_id,
+    id,
+    side,
+    type,
+    display_minute,
+    player_id,
+    rival_dorsal,
+    outcome,
+    foul_kind,
+    corner_side,
+    x_pct,
+    y_pct,
+    note,
+  } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
+
+  if ((await loadEditableStatus(supabase, event_id)) == null) return { error: 'not_editable' };
+
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  const { clockSeconds, period, displayMinute } = clockFieldsForMinute(periods, display_minute);
+
+  // Falta y córner SIEMPRE son de nuestro panel (side='own' con su bando, §7.4b).
+  const effectiveSide: 'own' | 'rival' =
+    type === 'foul' || type === 'corner' ? 'own' : side;
+
+  // Actor coherente con el bando. offside/shot/corner propios van por ubicación
+  // (sin jugador); el resto de tipos propios llevan jugador.
+  const ownByLocation = type === 'offside' || type === 'shot' || type === 'corner';
+  const finalPlayerId =
+    effectiveSide === 'own' && !ownByLocation ? (player_id ?? null) : null;
+  const finalDorsal = effectiveSide === 'rival' ? (rival_dorsal ?? null) : null;
+
+  // Coordenadas solo en tipos de campo (foul/offside/shot); el córner no lleva.
+  const isFieldCoords = type === 'foul' || type === 'offside' || type === 'shot';
+  const xPct = isFieldCoords && x_pct !== undefined ? x_pct : null;
+  const yPct = isFieldCoords && y_pct !== undefined ? y_pct : null;
+
+  const metadata: {
+    outcome?: string;
+    foul_kind?: string;
+    corner_side?: string;
+    note?: string;
+  } = {};
+  if (type === 'penalty' && outcome) metadata.outcome = outcome;
+  if (type === 'foul' && foul_kind) metadata.foul_kind = foul_kind;
+  if (type === 'corner' && corner_side) metadata.corner_side = corner_side;
+  const trimmed = note?.trim();
+  if (effectiveSide === 'rival' && trimmed) metadata.note = trimmed;
+
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId,
+      created_by: user.id,
+      side: effectiveSide,
+      type,
+      player_id: finalPlayerId,
+      rival_dorsal: finalDorsal,
+      x_pct: xPct,
+      y_pct: yPct,
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+      metadata,
     },
     { onConflict: 'id', ignoreDuplicates: true },
   );

@@ -1782,6 +1782,44 @@
     "formation_label": "Formación",
     "formation_changed": "Formación cambiada a {formation}.",
     "formation_change_event": "Cambio de táctica: {from} → {to}",
-    "subs_count": "Cambios {n}/{max}"
+    "subs_count": "Cambios {n}/{max}",
+    "timeline": {
+      "title": "Línea de tiempo",
+      "count": "· {n} eventos",
+      "empty": "Aún no hay eventos.",
+      "hint": "Edita el minuto o el jugador, borra o añade un evento olvidado. Minutos, marcador y contadores se recalculan solos.",
+      "add": "Añadir evento",
+      "add_cancel": "Cancelar",
+      "add_submit": "Añadir",
+      "error": "No se pudo guardar",
+      "issues_title": "{n} aviso(s) de coherencia",
+      "side_own": "Nuestro",
+      "side_rival": "Rival",
+      "edit": "Editar",
+      "delete": "Borrar",
+      "confirm_delete": "¿Borrar este evento de la línea de tiempo?",
+      "field_minute": "Minuto",
+      "field_player": "Jugador",
+      "field_player_out": "Sale",
+      "field_player_in": "Entra",
+      "field_dorsal": "Dorsal rival",
+      "field_type": "Tipo",
+      "field_side": "Bando",
+      "field_outcome": "Resultado",
+      "field_foul_kind": "Falta",
+      "field_corner_side": "Córner",
+      "save_minute": "Guardar minuto",
+      "save_player": "Guardar jugador",
+      "save_player_in": "Guardar el que entra",
+      "save_dorsal": "Guardar dorsal",
+      "sub_arrow": "{out} → {in}",
+      "shootout": "Penalti (tanda)",
+      "issue": {
+        "absent_has_event": "Evento de un jugador ausente",
+        "event_after_expulsion": "Evento posterior a la expulsión",
+        "sub_in_absent": "Cambio que mete a un ausente",
+        "sub_in_expelled": "Cambio que mete a un expulsado"
+      }
+    }
   }
 }
