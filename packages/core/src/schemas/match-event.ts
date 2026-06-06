@@ -194,6 +194,155 @@ export const registerShootoutKickSchema = z
   );
 export type RegisterShootoutKickInput = z.infer<typeof registerShootoutKickSchema>;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// F7.9 — Línea de tiempo editable: borrar, cambiar minuto, cambiar jugador y
+// añadir un evento olvidado. Todas mutan `match_events`; minutos/marcador/
+// contadores/expulsiones se REDERIVAN de los eventos (no hay estado paralelo).
+// El servidor sigue derivando los campos de tiempo (clock_seconds/period) del
+// MINUTO elegido vía el motor del reloj; el cliente solo manda el minuto.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const dorsalSchema = z
+  .number({ message: 'dorsal_range' })
+  .int({ message: 'dorsal_range' })
+  .min(1, { message: 'dorsal_range' })
+  .max(99, { message: 'dorsal_range' });
+
+/** Minuto de marcador editable (coherente con el CHECK display_minute 0–130). */
+const minuteSchema = z
+  .number({ message: 'minute_range' })
+  .int({ message: 'minute_range' })
+  .min(0, { message: 'minute_range' })
+  .max(130, { message: 'minute_range' });
+
+/** F7.9 — borrar un evento de la línea de tiempo (por su id de cliente). */
+export const deleteMatchEventSchema = z.object({ event_id: uuid, id: uuid });
+export type DeleteMatchEventInput = z.infer<typeof deleteMatchEventSchema>;
+
+/** F7.9 — reanclar un evento a otro MINUTO (el servidor recalcula clock/period). */
+export const updateEventMinuteSchema = z.object({
+  event_id: uuid,
+  id: uuid,
+  display_minute: minuteSchema,
+});
+export type UpdateEventMinuteInput = z.infer<typeof updateEventMinuteSchema>;
+
+/**
+ * F7.9 — cambiar el ACTOR de un evento: jugador propio (`player_id`), dorsal
+ * rival (`rival_dorsal`) o, en una sustitución, el que sale (`player_id`) y/o el
+ * que entra (`related_player_id`). El servidor lee la fila para aplicar solo los
+ * campos coherentes con el `side`/`type` (no viola los CHECK actor_by_side).
+ */
+export const updateEventActorSchema = z
+  .object({
+    event_id: uuid,
+    id: uuid,
+    player_id: uuid.optional(),
+    related_player_id: uuid.optional(),
+    rival_dorsal: dorsalSchema.optional(),
+  })
+  .refine(
+    (v) =>
+      v.player_id != null || v.related_player_id != null || v.rival_dorsal != null,
+    { message: 'actor_required' },
+  );
+export type UpdateEventActorInput = z.infer<typeof updateEventActorSchema>;
+
+/**
+ * F7.9 — AÑADIR un evento olvidado en un minuto dado. Tipos soportados (los de
+ * actor claro + faltas/córners; las sustituciones, cambios de formación y la
+ * tanda tienen su propia UI y NO se dan de alta aquí). Reglas por tipo:
+ *   - goal/assist/yellow_card/red_card: propio → `player_id`; rival → `rival_dorsal`.
+ *     (`assist` solo propio.)
+ *   - penalty: propio → `player_id`; rival → `rival_dorsal`; requiere `outcome`.
+ *   - foul: SIEMPRE propio; requiere `player_id` + `foul_kind`; coords opcionales.
+ *   - corner: SIEMPRE propio; requiere `corner_side`.
+ *   - offside/shot: propio (por ubicación, coords opcionales, sin jugador) o
+ *     rival (`rival_dorsal`).
+ */
+export const TIMELINE_ADD_TYPES = [
+  'goal',
+  'assist',
+  'yellow_card',
+  'red_card',
+  'penalty',
+  'foul',
+  'corner',
+  'offside',
+  'shot',
+] as const;
+
+export const addTimelineEventSchema = z
+  .object({
+    event_id: uuid,
+    id: uuid,
+    side: z.enum(['own', 'rival'], { message: 'side_invalid' }),
+    type: z.enum(TIMELINE_ADD_TYPES as unknown as [string, ...string[]], {
+      message: 'type_invalid',
+    }),
+    display_minute: minuteSchema,
+    player_id: uuid.optional(),
+    rival_dorsal: dorsalSchema.optional(),
+    outcome: z
+      .enum(PENALTY_OUTCOMES as unknown as [string, ...string[]], {
+        message: 'outcome_invalid',
+      })
+      .optional(),
+    foul_kind: z
+      .enum(FOUL_KINDS as unknown as [string, ...string[]], {
+        message: 'foul_kind_invalid',
+      })
+      .optional(),
+    corner_side: z
+      .enum(CORNER_SIDES as unknown as [string, ...string[]], {
+        message: 'corner_side_invalid',
+      })
+      .optional(),
+    x_pct: pct.optional(),
+    y_pct: pct.optional(),
+    note: z.string().trim().max(200, { message: 'note_too_long' }).optional(),
+  })
+  .superRefine((v, ctx) => {
+    const ownActor = ['goal', 'assist', 'yellow_card', 'red_card'];
+    if (v.type === 'corner') {
+      if (v.side !== 'own')
+        ctx.addIssue({ code: 'custom', message: 'corner_own_only', path: ['side'] });
+      if (!v.corner_side)
+        ctx.addIssue({ code: 'custom', message: 'corner_side_required', path: ['corner_side'] });
+      return;
+    }
+    if (v.type === 'foul') {
+      if (v.side !== 'own')
+        ctx.addIssue({ code: 'custom', message: 'foul_own_only', path: ['side'] });
+      if (!v.player_id)
+        ctx.addIssue({ code: 'custom', message: 'player_required', path: ['player_id'] });
+      if (!v.foul_kind)
+        ctx.addIssue({ code: 'custom', message: 'foul_kind_required', path: ['foul_kind'] });
+      return;
+    }
+    if (v.type === 'penalty') {
+      if (!v.outcome)
+        ctx.addIssue({ code: 'custom', message: 'outcome_required', path: ['outcome'] });
+    }
+    if (v.type === 'assist' && v.side !== 'own') {
+      ctx.addIssue({ code: 'custom', message: 'assist_own_only', path: ['side'] });
+    }
+    // Actor coherente con el bando para los tipos con actor.
+    const needsActor =
+      ownActor.includes(v.type) || v.type === 'penalty' || v.type === 'offside' || v.type === 'shot';
+    if (needsActor) {
+      if (v.side === 'own') {
+        // offside/shot propios van por UBICACIÓN (sin jugador); el resto sí lo exigen.
+        const fieldByLocation = v.type === 'offside' || v.type === 'shot';
+        if (!fieldByLocation && !v.player_id)
+          ctx.addIssue({ code: 'custom', message: 'player_required', path: ['player_id'] });
+      } else if (!v.rival_dorsal) {
+        ctx.addIssue({ code: 'custom', message: 'dorsal_required', path: ['rival_dorsal'] });
+      }
+    }
+  });
+export type AddTimelineEventInput = z.infer<typeof addTimelineEventSchema>;
+
 /**
  * F7.6b — mover a un jugador del campo a una nueva posición (x/y 0–100). La
  * nueva posición se guarda en el estado táctico vivo (match_state.live_positions).

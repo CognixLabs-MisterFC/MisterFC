@@ -1783,6 +1783,44 @@
     "formation_label": "Formation",
     "formation_changed": "Formation changed to {formation}.",
     "formation_change_event": "Tactics change: {from} → {to}",
-    "subs_count": "Subs {n}/{max}"
+    "subs_count": "Subs {n}/{max}",
+    "timeline": {
+      "title": "Timeline",
+      "count": "· {n} events",
+      "empty": "No events yet.",
+      "hint": "Edit the minute or player, delete, or add a forgotten event. Minutes, score and counters recompute automatically.",
+      "add": "Add event",
+      "add_cancel": "Cancel",
+      "add_submit": "Add",
+      "error": "Couldn't save",
+      "issues_title": "{n} consistency warning(s)",
+      "side_own": "Us",
+      "side_rival": "Opponent",
+      "edit": "Edit",
+      "delete": "Delete",
+      "confirm_delete": "Delete this timeline event?",
+      "field_minute": "Minute",
+      "field_player": "Player",
+      "field_player_out": "Off",
+      "field_player_in": "On",
+      "field_dorsal": "Opponent number",
+      "field_type": "Type",
+      "field_side": "Side",
+      "field_outcome": "Outcome",
+      "field_foul_kind": "Foul",
+      "field_corner_side": "Corner",
+      "save_minute": "Save minute",
+      "save_player": "Save player",
+      "save_player_in": "Save incoming",
+      "save_dorsal": "Save number",
+      "sub_arrow": "{out} → {in}",
+      "shootout": "Penalty (shootout)",
+      "issue": {
+        "absent_has_event": "Event for an absent player",
+        "event_after_expulsion": "Event after sending-off",
+        "sub_in_absent": "Sub brings on an absent player",
+        "sub_in_expelled": "Sub brings on a sent-off player"
+      }
+    }
   }
 }

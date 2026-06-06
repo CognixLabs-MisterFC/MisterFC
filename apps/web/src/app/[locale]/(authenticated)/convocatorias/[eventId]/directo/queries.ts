@@ -153,6 +153,45 @@ export type LiveFormationChange = {
   period: PeriodKind;
 };
 
+/**
+ * F7.9 — entrada de la LÍNEA DE TIEMPO editable: una fila de `match_events`
+ * (propia o rival, cualquier tipo) con todo lo necesario para mostrarla, editarla
+ * y borrarla. Es la lista COMPLETA, en orden cronológico (clock_seconds asc). La
+ * edición muta `match_events`; minutos/marcador/contadores/expulsiones se
+ * rederivan de aquí (no hay estado paralelo).
+ */
+export type TimelineEntry = {
+  id: string;
+  side: 'own' | 'rival';
+  type: string;
+  /** Jugador propio (null en rival y en eventos por ubicación). */
+  playerId: string | null;
+  playerLabel: string | null;
+  dorsal: number | null;
+  /** Dorsal del rival (side='rival'). */
+  rivalDorsal: number | null;
+  /** Sustitución: el que ENTRA. */
+  relatedPlayerId: string | null;
+  relatedPlayerLabel: string | null;
+  clockSeconds: number;
+  displayMinute: number | null;
+  period: PeriodKind;
+  outcome: string | null;
+  foulKind: string | null;
+  cornerSide: string | null;
+  note: string | null;
+  /** formation_change: metadata.from / metadata.to. */
+  formationFrom: string | null;
+  formationTo: string | null;
+};
+
+/** F7.9 — jugador del roster (convocatoria) para los selectores de la línea. */
+export type RosterPlayer = {
+  playerId: string;
+  label: string;
+  dorsal: number | null;
+};
+
 /** Sustitución registrada (F7.5): SALE `out`, ENTRA `in`, con nombres. */
 export type LiveSubstitution = {
   id: string;
@@ -248,6 +287,13 @@ export type MatchLiveData = {
    * (faltas propias/recibidas, córners a favor/en contra). Derivado, sobrevive a F5.
    */
   teamEvents: LiveTeamEvent[];
+  /**
+   * F7.9 — LÍNEA DE TIEMPO completa (todos los eventos, ambos bandos), orden
+   * cronológico. Fuente única para editar/borrar/añadir; todo lo demás se rederiva.
+   */
+  timeline: TimelineEntry[];
+  /** F7.9 — roster (convocatoria: campo + banquillo) para los selectores de jugador. */
+  rosterPlayers: RosterPlayer[];
 };
 
 export async function loadMatchLive(
@@ -682,6 +728,87 @@ export async function loadMatchLive(
     };
   });
 
+  // F7.9 — LÍNEA DE TIEMPO completa: TODOS los eventos del partido (ambos bandos,
+  // cualquier tipo), orden cronológico (clock asc). Embeds desambiguados de los
+  // dos jugadores (actor=player_id, related=related_player_id). Sin limit: es la
+  // fuente para editar/borrar/añadir y para rederivar todo.
+  const { data: tlRows, error: tlErr } = await supabase
+    .from('match_events')
+    .select(
+      `id, side, type, player_id, rival_dorsal, related_player_id,
+       clock_seconds, display_minute, period, metadata,
+       actor:players!match_events_player_id_fkey(first_name, last_name, dorsal),
+       related:players!match_events_related_player_id_fkey(first_name, last_name, dorsal)`,
+    )
+    .eq('event_id', eventId)
+    .order('clock_seconds', { ascending: true })
+    .order('created_at', { ascending: true });
+  if (tlErr) console.error('[directo] error cargando línea de tiempo:', tlErr);
+
+  type TlRowShape = {
+    id: string;
+    side: 'own' | 'rival';
+    type: string;
+    player_id: string | null;
+    rival_dorsal: number | null;
+    related_player_id: string | null;
+    clock_seconds: number;
+    display_minute: number | null;
+    period: PeriodKind;
+    metadata: {
+      outcome?: string;
+      foul_kind?: string;
+      corner_side?: string;
+      note?: string;
+      from?: string | null;
+      to?: string;
+    } | null;
+    actor: { first_name: string; last_name: string | null; dorsal: number | null } | null;
+    related: { first_name: string; last_name: string | null; dorsal: number | null } | null;
+  };
+  const labelOfMini = (
+    p: { first_name: string; last_name: string | null } | null,
+    fallback: string | null,
+  ) => p?.last_name || p?.first_name || (fallback ? fallback.slice(0, 4) : null);
+  const timeline: TimelineEntry[] = (tlRows ?? []).map((row) => {
+    const r = row as unknown as TlRowShape;
+    return {
+      id: r.id,
+      side: r.side,
+      type: r.type,
+      playerId: r.player_id,
+      playerLabel: labelOfMini(r.actor, r.player_id),
+      dorsal: r.actor?.dorsal ?? null,
+      rivalDorsal: r.rival_dorsal,
+      relatedPlayerId: r.related_player_id,
+      relatedPlayerLabel: labelOfMini(r.related, r.related_player_id),
+      clockSeconds: r.clock_seconds,
+      displayMinute: r.display_minute,
+      period: r.period,
+      outcome: r.metadata?.outcome ?? null,
+      foulKind: r.metadata?.foul_kind ?? null,
+      cornerSide: r.metadata?.corner_side ?? null,
+      note: r.metadata?.note ?? null,
+      formationFrom: r.metadata?.from ?? null,
+      formationTo: r.metadata?.to ?? null,
+    };
+  });
+
+  // F7.9 — roster para los selectores: la convocatoria (campo + banquillo de la
+  // alineación oficial), deduplicado por jugador y ordenado por dorsal.
+  const rosterMap = new Map<string, RosterPlayer>();
+  for (const p of fieldPlayers) {
+    rosterMap.set(p.playerId, { playerId: p.playerId, label: p.label, dorsal: p.dorsal });
+  }
+  for (const p of benchPlayers) {
+    if (!rosterMap.has(p.playerId)) {
+      rosterMap.set(p.playerId, { playerId: p.playerId, label: p.label, dorsal: p.dorsal });
+    }
+  }
+  const rosterPlayers: RosterPlayer[] = [...rosterMap.values()].sort(
+    (a, b) => (a.dorsal ?? 99) - (b.dorsal ?? 99),
+  );
+
   // F7.6c — régimen de cambios desde (categoría.kind, equipo.división) contra la
   // tabla de referencia. Sin fila (p.ej. categoría adulta) → DEFAULT_REGIME.
   let regime: SubstitutionRegime = DEFAULT_REGIME;
@@ -737,5 +864,7 @@ export async function loadMatchLive(
     statEvents,
     shootoutKicks,
     teamEvents,
+    timeline,
+    rosterPlayers,
   };
 }

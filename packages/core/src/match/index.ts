@@ -123,3 +123,18 @@ export type {
   TeamEventLite,
   TeamEventTallies,
 } from './team-events';
+
+export {
+  periodAtClock,
+  clockFieldsForMinute,
+  sortTimeline,
+  findTimelineIssues,
+} from './timeline';
+export type {
+  MinuteClockFields,
+  TimelineOrderable,
+  TimelineEventLite,
+  TimelineContext,
+  TimelineIssueCode,
+  TimelineIssue,
+} from './timeline';

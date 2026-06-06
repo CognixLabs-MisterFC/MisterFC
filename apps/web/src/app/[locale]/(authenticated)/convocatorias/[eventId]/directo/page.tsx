@@ -6,6 +6,7 @@ import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { loadMatchLive } from './queries';
 import { LiveCaptureClient } from './_components/live-capture-client';
+import { TimelineEditor } from './_components/timeline-editor';
 import type { Role } from '../../../jugadores/queries';
 
 // F7.3: la captura en vivo debe HIDRATARSE siempre desde los match_events
@@ -87,6 +88,15 @@ export default async function MatchLivePage({ params }: Props) {
         statEvents={data.statEvents}
         shootoutKicks={data.shootoutKicks}
         teamEvents={data.teamEvents}
+      />
+
+      <TimelineEditor
+        eventId={eventId}
+        matchStatus={data.matchStatus}
+        timeline={data.timeline}
+        rosterPlayers={data.rosterPlayers}
+        periods={data.periods}
+        absentIds={data.absentIds}
       />
     </div>
   );
