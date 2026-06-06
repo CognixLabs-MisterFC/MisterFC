@@ -1826,6 +1826,22 @@
     "clock_reopen": "Reopen match",
     "clock_reopen_confirm": "Reopen the match to edit?",
     "clock_reopen_yes": "Yes, reopen",
-    "clock_reopen_cancel": "Cancel"
+    "clock_reopen_cancel": "Cancel",
+    "rivals": {
+      "title": "Players to watch",
+      "empty": "No highlighted opponents yet.",
+      "error": "Couldn't save",
+      "field_dorsal": "Number",
+      "field_note": "What stands out",
+      "note_placeholder": "fast, tough, dangerous…",
+      "add": "Add",
+      "save": "Save",
+      "edit": "Edit",
+      "delete": "Remove",
+      "cancel": "Cancel",
+      "notes_title": "Match notes",
+      "notes_placeholder": "General match notes…",
+      "notes_save": "Save notes"
+    }
   }
 }

@@ -343,6 +343,39 @@ export const addTimelineEventSchema = z
   });
 export type AddTimelineEventInput = z.infer<typeof addTimelineEventSchema>;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// F7.11 — Rivales destacados + notas del partido (solo de ESTE partido).
+//   upsertRivalHighlight — destacar un dorsal rival (1–99) con una nota libre
+//                          (añadir/editar; upsert por (event_id, dorsal)).
+//   deleteRivalHighlight — quitar el destacado de un dorsal.
+//   setMatchNotes        — notas generales del partido (match_state.post_match_notes).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const upsertRivalHighlightSchema = z.object({
+  event_id: uuid,
+  dorsal: dorsalSchema,
+  // Lo que destaca (rápido, duro, peligroso…); 1–200 chars, '' no vale.
+  note: z
+    .string()
+    .trim()
+    .min(1, { message: 'note_required' })
+    .max(200, { message: 'note_too_long' }),
+});
+export type UpsertRivalHighlightInput = z.infer<typeof upsertRivalHighlightSchema>;
+
+export const deleteRivalHighlightSchema = z.object({
+  event_id: uuid,
+  dorsal: dorsalSchema,
+});
+export type DeleteRivalHighlightInput = z.infer<typeof deleteRivalHighlightSchema>;
+
+export const setMatchNotesSchema = z.object({
+  event_id: uuid,
+  // Notas libres del partido; '' borra (queda en null). Hasta 4000 (CHECK 7.1).
+  notes: z.string().trim().max(4000, { message: 'notes_too_long' }),
+});
+export type SetMatchNotesInput = z.infer<typeof setMatchNotesSchema>;
+
 /**
  * F7.6b — mover a un jugador del campo a una nueva posición (x/y 0–100). La
  * nueva posición se guarda en el estado táctico vivo (match_state.live_positions).

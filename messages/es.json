@@ -1825,6 +1825,22 @@
     "clock_reopen": "Reabrir partido",
     "clock_reopen_confirm": "¿Reabrir el partido para editar?",
     "clock_reopen_yes": "Sí, reabrir",
-    "clock_reopen_cancel": "Cancelar"
+    "clock_reopen_cancel": "Cancelar",
+    "rivals": {
+      "title": "Rivales destacados",
+      "empty": "Sin rivales destacados todavía.",
+      "error": "No se pudo guardar",
+      "field_dorsal": "Dorsal",
+      "field_note": "Lo que destaca",
+      "note_placeholder": "rápido, duro, peligroso…",
+      "add": "Añadir",
+      "save": "Guardar",
+      "edit": "Editar",
+      "delete": "Quitar",
+      "cancel": "Cancelar",
+      "notes_title": "Notas del partido",
+      "notes_placeholder": "Notas generales del partido…",
+      "notes_save": "Guardar notas"
+    }
   }
 }

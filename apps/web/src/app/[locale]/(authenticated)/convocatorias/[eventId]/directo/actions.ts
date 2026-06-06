@@ -69,11 +69,14 @@ import {
   type SubstitutionRegime,
   resumeClockPatch,
   setAbsenceSchema,
+  setMatchNotesSchema,
   startNextPeriodSchema,
   type Sub,
   type TeamFormat,
   updateEventActorSchema,
   updateEventMinuteSchema,
+  upsertRivalHighlightSchema,
+  deleteRivalHighlightSchema,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -1875,4 +1878,78 @@ export async function changeFormation(input: unknown): Promise<RegisterEventStat
 
   revalidate(event_id);
   return { success: true, eventRowId: id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F7.11 — Rivales destacados + notas del partido (solo de ESTE partido).
+//
+// Rivales destacados: marcar un dorsal rival (1–99) con una nota (rápido, duro,
+// peligroso…). Añadir/editar = upsert por (event_id, dorsal); borrar por dorsal.
+// Se puede destacar cualquier dorsal (no hace falta que tenga eventos).
+// Notas del partido: texto libre en match_state.post_match_notes ('' → null).
+//
+// Disponibles EN VIVO y TRAS finalizar (status 'live' o 'closed'); el gate
+// autoritativo es la RLS (user_can_record_match) + el trigger del evento. Persiste
+// e hidrata → sobrevive a F5. No tocan match_player_stats ni el marcador.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function upsertRivalHighlight(input: unknown): Promise<RegisterEventState> {
+  const parsed = upsertRivalHighlightSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, dorsal, note } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  if ((await loadEditableStatus(supabase, event_id)) == null) return { error: 'not_editable' };
+
+  const { error } = await supabase
+    .from('match_rival_highlights')
+    .upsert({ event_id, dorsal, note }, { onConflict: 'event_id,dorsal' });
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true };
+}
+
+export async function deleteRivalHighlight(input: unknown): Promise<RegisterEventState> {
+  const parsed = deleteRivalHighlightSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, dorsal } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  if ((await loadEditableStatus(supabase, event_id)) == null) return { error: 'not_editable' };
+
+  const { error } = await supabase
+    .from('match_rival_highlights')
+    .delete()
+    .eq('event_id', event_id)
+    .eq('dorsal', dorsal);
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true };
+}
+
+export async function setMatchNotes(input: unknown): Promise<RegisterEventState> {
+  const parsed = setMatchNotesSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, notes } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  if ((await loadEditableStatus(supabase, event_id)) == null) return { error: 'not_editable' };
+
+  const trimmed = notes.trim();
+  const { error } = await supabase
+    .from('match_state')
+    .update({ post_match_notes: trimmed.length > 0 ? trimmed : null })
+    .eq('event_id', event_id);
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true };
 }

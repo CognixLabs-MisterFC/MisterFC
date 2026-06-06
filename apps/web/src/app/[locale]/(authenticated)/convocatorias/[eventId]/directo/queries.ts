@@ -192,6 +192,12 @@ export type RosterPlayer = {
   dorsal: number | null;
 };
 
+/** F7.11 — rival destacado de este partido: dorsal + nota (rápido, duro…). */
+export type RivalHighlight = {
+  dorsal: number;
+  note: string;
+};
+
 /** Sustitución registrada (F7.5): SALE `out`, ENTRA `in`, con nombres. */
 export type LiveSubstitution = {
   id: string;
@@ -294,6 +300,10 @@ export type MatchLiveData = {
   timeline: TimelineEntry[];
   /** F7.9 — roster (convocatoria: campo + banquillo) para los selectores de jugador. */
   rosterPlayers: RosterPlayer[];
+  /** F7.11 — rivales destacados de este partido (dorsal + nota), orden por dorsal. */
+  rivalHighlights: RivalHighlight[];
+  /** F7.11 — notas generales del partido (match_state.post_match_notes). */
+  matchNotes: string;
 };
 
 export async function loadMatchLive(
@@ -435,7 +445,7 @@ export async function loadMatchLive(
   // desde `periods` (recuperable tras recarga, §6).
   const { data: stateRow } = await supabase
     .from('match_state')
-    .select('status, live_formation_code, live_positions')
+    .select('status, live_formation_code, live_positions, post_match_notes')
     .eq('event_id', eventId)
     .maybeSingle();
   const matchStatus =
@@ -809,6 +819,20 @@ export async function loadMatchLive(
     (a, b) => (a.dorsal ?? 99) - (b.dorsal ?? 99),
   );
 
+  // F7.11 — rivales destacados (dorsal + nota), orden por dorsal. Notas del
+  // partido desde match_state.post_match_notes.
+  const { data: highlightRows, error: hlErr } = await supabase
+    .from('match_rival_highlights')
+    .select('dorsal, note')
+    .eq('event_id', eventId)
+    .order('dorsal', { ascending: true });
+  if (hlErr) console.error('[directo] error cargando rivales destacados:', hlErr);
+  const rivalHighlights: RivalHighlight[] = (highlightRows ?? []).map((r) => ({
+    dorsal: r.dorsal as number,
+    note: r.note as string,
+  }));
+  const matchNotes = (stateRow?.post_match_notes as string | null) ?? '';
+
   // F7.6c — régimen de cambios desde (categoría.kind, equipo.división) contra la
   // tabla de referencia. Sin fila (p.ej. categoría adulta) → DEFAULT_REGIME.
   let regime: SubstitutionRegime = DEFAULT_REGIME;
@@ -866,5 +890,7 @@ export async function loadMatchLive(
     teamEvents,
     timeline,
     rosterPlayers,
+    rivalHighlights,
+    matchNotes,
   };
 }

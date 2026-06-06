@@ -1056,6 +1056,38 @@ export type Database = {
           },
         ]
       }
+      match_rival_highlights: {
+        Row: {
+          created_at: string
+          dorsal: number
+          event_id: string
+          note: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dorsal: number
+          event_id: string
+          note: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dorsal?: number
+          event_id?: string
+          note?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_rival_highlights_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_starters: {
         Row: {
           created_at: string
