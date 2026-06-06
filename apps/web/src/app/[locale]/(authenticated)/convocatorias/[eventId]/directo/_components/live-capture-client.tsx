@@ -32,6 +32,7 @@ import {
   LayoutGrid,
   Move,
   RotateCcw,
+  ShieldAlert,
   Square,
   Target,
   UserMinus,
@@ -43,6 +44,7 @@ import {
   clampPct,
   clockSecondsAt,
   computeScore,
+  computeTeamEventTallies,
   currentPeriod,
   deriveExpelledPlayers,
   deriveSquad,
@@ -63,6 +65,7 @@ import {
   type RivalEventType,
   type ScoreEvent,
   type Sub,
+  type TeamEventLite,
   type SubstitutionRegime,
   type TeamFormat,
 } from '@misterfc/core';
@@ -82,11 +85,14 @@ import type {
   LiveShootoutKick,
   LiveStatEvent,
   LiveSubstitution,
+  LiveTeamEvent,
 } from '../queries';
 import {
   changeFormation,
   movePlayer,
+  registerCorner,
   registerFieldEvent,
+  registerFoul,
   registerPenalty,
   registerPlayerEvent,
   registerRivalEvent,
@@ -98,7 +104,10 @@ import { MatchClock, MatchClockOverlay } from './match-clock';
 import { PlayerStatsStrip, type StatsPlayer } from './player-stats-strip';
 import { ShootoutPanel } from './shootout-panel';
 
-// Tipos de evento de la paleta propia (coinciden con match_events.type de F7.1).
+// Herramientas de la barra superior. F7.4b (reorg): faltas y córners salen de
+// aquí y se reparten entre los paneles "Mis eventos" (a favor) y "Eventos rival"
+// (en contra), con su etiqueta. Tiro y fuera de juego siguen siendo toque sobre
+// el césped desde la barra.
 const EVENT_TYPES = [
   'goal',
   'assist',
@@ -106,28 +115,33 @@ const EVENT_TYPES = [
   'red_card',
   'penalty',
   'substitution',
-  'corner',
-  'foul',
   'offside',
   'shot',
 ] as const;
 type EventType = (typeof EVENT_TYPES)[number];
 
-const EVENT_ICON: Record<EventType, typeof Goal> = {
+// Icono por clave (herramientas de paleta + tipos de match_events para la
+// línea de tiempo); índice abierto para no atarse al union.
+const EVENT_ICON: Record<string, typeof Goal> = {
   goal: Goal,
   assist: Footprints,
   yellow_card: Square,
   red_card: Square,
   penalty: CircleDot,
   substitution: ArrowLeftRight,
-  corner: Flag,
-  foul: AlertTriangle,
   offside: Ban,
   shot: Target,
+  foul: AlertTriangle,
+  foul_for: ShieldAlert,
+  foul_against: AlertTriangle,
+  corner: Flag,
+  corner_for: Flag,
+  corner_against: Flag,
 };
+const iconFor = (key: string): typeof Goal => EVENT_ICON[key] ?? Goal;
 
 // Color del icono para las tarjetas (resto hereda el color del botón).
-const EVENT_ICON_CLASS: Partial<Record<EventType, string>> = {
+const EVENT_ICON_CLASS: Partial<Record<string, string>> = {
   yellow_card: 'fill-amber-400 text-amber-500',
   red_card: 'fill-red-500 text-red-600',
 };
@@ -159,11 +173,15 @@ type Props = {
   statEvents: LiveStatEvent[];
   /** F7.7c — lanzamientos de la tanda de penaltis (ambos bandos). */
   shootoutKicks: LiveShootoutKick[];
+  /** F7.4b — faltas/córners propios (completos) para los contadores. */
+  teamEvents: LiveTeamEvent[];
 };
 
-// Herramienta seleccionada en la paleta propia: un tipo de evento, o 'absent'
-// (quitar al que no viene, F7.5 — no es un match_event, es una baja).
-type Tool = EventType | 'absent';
+// Herramienta seleccionada: un tipo de la barra, 'absent' (quitar al que no
+// viene, F7.5) o una FALTA (F7.4b): 'foul_for' (a favor = la que recibimos) /
+// 'foul_against' (en contra = la que cometemos). Ambas: tocar a nuestro jugador
+// + ubicación; el botón vive en el panel correspondiente, no en la barra.
+type Tool = EventType | 'absent' | 'foul_for' | 'foul_against';
 
 // Hora actual (ms) del instante del evento. A nivel de módulo a propósito: solo
 // se invoca desde event handlers (registrar/cambiar), donde leer el reloj es
@@ -194,6 +212,7 @@ export function LiveCaptureClient({
   starterIds,
   statEvents,
   shootoutKicks,
+  teamEvents,
 }: Props) {
   const t = useTranslations('partido_directo');
   const router = useRouter();
@@ -225,6 +244,11 @@ export function LiveCaptureClient({
   >(null);
   // F7.7c — tanda de penaltis abierta (entrar desde el flujo de fin de partido).
   const [shootoutOpen, setShootoutOpen] = useState(false);
+  // F7.4b — falta pendiente de UBICACIÓN: ya elegido el jugador (comete/recibe),
+  // falta tocar el césped. null = no hay falta a medias.
+  const [pendingFoul, setPendingFoul] = useState<
+    { kind: 'committed' | 'received'; playerId: string; label: string } | null
+  >(null);
 
   // Sin alineación oficial no hay once que pintar (no auto-marcamos ninguna ni
   // hacemos fallback a "la última"): empty-state claro con CTA al editor.
@@ -408,6 +432,33 @@ export function LiveCaptureClient({
   // F7.7c — ¿mostrar la tanda? Si se abrió desde el flujo de fin, o si ya hay
   // lanzamientos persistidos (sobrevive a F5).
   const showShootout = shootoutOpen || shootoutKicks.length > 0;
+
+  // F7.4b — contadores de faltas (propias/recibidas) y córners (a favor/contra),
+  // de faltas/córners propios COMPLETOS (teamEvents) + overlay optimista.
+  const optimisticTeam: LiveTeamEvent[] = optimistic
+    .filter(
+      (e): e is LiveMatchEvent & { type: 'foul' | 'corner' } =>
+        e.type === 'foul' || e.type === 'corner',
+    )
+    .map((e) => ({
+      id: e.id,
+      type: e.type,
+      playerId: e.playerId,
+      foulKind: e.foulKind,
+      cornerSide: e.cornerSide,
+      clockSeconds: e.clockSeconds,
+    }));
+  const teamAll = mergeLiveEvents(teamEvents, optimisticTeam);
+  const tallies = computeTeamEventTallies(
+    teamAll.map(
+      (e): TeamEventLite => ({
+        type: e.type,
+        playerId: e.playerId,
+        foulKind: e.foulKind,
+        cornerSide: e.cornerSide,
+      }),
+    ),
+  );
   // Convocado a mostrar = once oficial + banquillo (+ titulares congelados que no
   // figuren, defensivo), en orden de visualización, sin duplicados.
   const statsRoster: StatsPlayer[] = [];
@@ -473,6 +524,16 @@ export function LiveCaptureClient({
       setPendingPenalty({ side: 'own', playerId, label });
       return;
     }
+    if (selectedEvent === 'foul_for' || selectedEvent === 'foul_against') {
+      // F7.4b — falta: 1º el jugador NUESTRO (recibe/comete), 2º la ubicación.
+      // a favor ('foul_for') = la que nos hacen (received, jugador que la recibe);
+      // en contra ('foul_against') = la que cometemos (committed, quien la comete).
+      const label = playerInfo.get(playerId)?.label ?? playerId.slice(0, 4);
+      const kind = selectedEvent === 'foul_for' ? 'received' : 'committed';
+      setPendingFoul({ kind, playerId, label });
+      toast.info(t('foul_pick_location'));
+      return;
+    }
     if (!isPlayerEventType(selectedEvent)) {
       toast.info(t('register_not_player_event'));
       return;
@@ -505,6 +566,8 @@ export function LiveCaptureClient({
       displayMinute,
       period,
       outcome: null,
+      foulKind: null,
+      cornerSide: null,
     };
     const expelledNow = isExpelled([...priorTypes, type]);
     setOptimistic((prev) => [optimisticRow, ...prev]);
@@ -540,15 +603,26 @@ export function LiveCaptureClient({
     });
   }
 
-  // F7.4 — registrar un evento sobre el CÉSPED (córner, falta, fuera de juego,
-  // tiro) por ubicación (x/y), sin jugador.
+  // F7.4 / 7.4b — registrar un evento sobre el CÉSPED (tiro, fuera de juego) por
+  // ubicación (x/y), sin jugador; y la FALTA (7.4b) que ya tiene jugador elegido
+  // y solo le falta la ubicación.
   function handleFieldClick(xPct: number, yPct: number) {
     if (matchStatus !== 'live') {
       toast.warning(t('register_not_live'));
       return;
     }
+    // F7.4b — falta con jugador ya elegido: este toque fija la ubicación.
+    if (pendingFoul) {
+      completeFoul(pendingFoul, xPct, yPct);
+      return;
+    }
     if (!selectedEvent) {
       toast.info(t('register_select_event'));
+      return;
+    }
+    if (selectedEvent === 'foul_for' || selectedEvent === 'foul_against') {
+      // Falta sin jugador todavía: hay que tocar primero al jugador.
+      toast.info(t('foul_pick_player'));
       return;
     }
     if (!isFieldEventType(selectedEvent)) {
@@ -573,6 +647,8 @@ export function LiveCaptureClient({
       displayMinute,
       period,
       outcome: null,
+      foulKind: null,
+      cornerSide: null,
     };
     setOptimistic((prev) => [optimisticRow, ...prev]);
     setSelectedEvent(null);
@@ -780,6 +856,8 @@ export function LiveCaptureClient({
         displayMinute,
         period,
         outcome,
+        foulKind: null,
+        cornerSide: null,
       };
       setOptimistic((prev) => [optimisticRow, ...prev]);
       startTransition(async () => {
@@ -837,6 +915,104 @@ export function LiveCaptureClient({
         router.refresh();
       });
     }
+  }
+
+  // F7.4b — completar una falta (jugador ya elegido) con su ubicación x/y.
+  function completeFoul(
+    foul: { kind: 'committed' | 'received'; playerId: string; label: string },
+    xPct: number,
+    yPct: number,
+  ) {
+    const id = crypto.randomUUID();
+    const clockSeconds = clockSecondsAt(periods, eventNowMs());
+    const cur = currentPeriod(periods);
+    const period = cur?.period ?? 'first_half';
+    const displayMinute = toDisplayMinute(clockSeconds);
+    const x = clampPct(xPct);
+    const y = clampPct(yPct);
+    setPendingFoul(null);
+    setSelectedEvent(null);
+
+    const optimisticRow: LiveMatchEvent = {
+      id,
+      type: 'foul',
+      playerId: foul.playerId,
+      playerLabel: foul.label,
+      dorsal: playerInfo.get(foul.playerId)?.dorsal ?? null,
+      clockSeconds,
+      displayMinute,
+      period,
+      outcome: null,
+      foulKind: foul.kind,
+      cornerSide: null,
+    };
+    setOptimistic((prev) => [optimisticRow, ...prev]);
+
+    startTransition(async () => {
+      const res = await registerFoul({
+        event_id: eventId,
+        id,
+        player_id: foul.playerId,
+        kind: foul.kind,
+        x_pct: x,
+        y_pct: y,
+      });
+      if (res.error) {
+        setOptimistic((prev) => prev.filter((e) => e.id !== id));
+        toast.error(t(`event_error.${res.error}`));
+        return;
+      }
+      toast.success(
+        t(foul.kind === 'committed' ? 'foul_committed_registered' : 'foul_received_registered', {
+          player: foul.label,
+          minute: displayMinute,
+        }),
+      );
+      router.refresh();
+    });
+  }
+
+  // F7.4b — córner con bando (a favor / en contra). Sin jugador ni ubicación.
+  function registerCornerSide(cornerSide: 'for' | 'against') {
+    if (matchStatus !== 'live') {
+      toast.warning(t('register_not_live'));
+      return;
+    }
+    const id = crypto.randomUUID();
+    const clockSeconds = clockSecondsAt(periods, eventNowMs());
+    const cur = currentPeriod(periods);
+    const period = cur?.period ?? 'first_half';
+    const displayMinute = toDisplayMinute(clockSeconds);
+
+    const optimisticRow: LiveMatchEvent = {
+      id,
+      type: 'corner',
+      playerId: null,
+      playerLabel: '',
+      dorsal: null,
+      clockSeconds,
+      displayMinute,
+      period,
+      outcome: null,
+      foulKind: null,
+      cornerSide,
+    };
+    setOptimistic((prev) => [optimisticRow, ...prev]);
+
+    startTransition(async () => {
+      const res = await registerCorner({ event_id: eventId, id, corner_side: cornerSide });
+      if (res.error) {
+        setOptimistic((prev) => prev.filter((e) => e.id !== id));
+        toast.error(t(`event_error.${res.error}`));
+        return;
+      }
+      toast.success(
+        t(cornerSide === 'for' ? 'corner_for_registered' : 'corner_against_registered', {
+          minute: displayMinute,
+        }),
+      );
+      router.refresh();
+    });
   }
 
   // F7.6b — mover un jugador del campo: nueva posición (x/y) optimista + persistir.
@@ -936,6 +1112,26 @@ export function LiveCaptureClient({
         </span>
       </div>
 
+      {/* F7.4b — contadores de faltas y córners (a favor / en contra). A favor =
+          la falta que NOS hacen (recibida) / el córner a favor; en contra = la
+          que cometemos / el córner en contra. */}
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-lg border border-border bg-card/40 px-3 py-1.5 text-xs">
+        <span className="flex items-center gap-1.5">
+          <AlertTriangle className="size-3.5 text-muted-foreground" aria-hidden />
+          <span className="text-muted-foreground">{t('counter_fouls')}:</span>
+          <span className="font-mono font-semibold tabular-nums">
+            {t('counter_split', { a: tallies.foulsReceived, b: tallies.foulsCommitted })}
+          </span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Flag className="size-3.5 text-muted-foreground" aria-hidden />
+          <span className="text-muted-foreground">{t('counter_corners')}:</span>
+          <span className="font-mono font-semibold tabular-nums">
+            {t('counter_split', { a: tallies.cornersFor, b: tallies.cornersAgainst })}
+          </span>
+        </span>
+      </div>
+
       {/* Cronómetro completo (F7.7). */}
       <div className="rounded-lg border border-border bg-card/40 p-3">
         <MatchClock
@@ -967,7 +1163,7 @@ export function LiveCaptureClient({
           {t('palette_title')}
         </span>
         {EVENT_TYPES.map((ev) => {
-          const Icon = EVENT_ICON[ev];
+          const Icon = iconFor(ev);
           const active = selectedEvent === ev;
           return (
             <button
@@ -1047,9 +1243,26 @@ export function LiveCaptureClient({
               ? t('sub_hint')
               : selectedEvent === 'absent'
                 ? t('absent_hint')
-                : t('palette_hint')}
+                : selectedEvent === 'foul_for' || selectedEvent === 'foul_against'
+                  ? t('foul_hint')
+                  : t('palette_hint')}
         </span>
       </div>
+
+      {/* F7.4b — falta en curso: jugador elegido, falta la ubicación. */}
+      {pendingFoul && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm">
+          <span>
+            {t(pendingFoul.kind === 'committed' ? 'foul_loc_committed' : 'foul_loc_received', {
+              player: pendingFoul.label,
+            })}
+          </span>
+          <Button size="sm" variant="ghost" onClick={() => setPendingFoul(null)}>
+            <X className="size-4" aria-hidden />
+            <span>{t('sub_cancel')}</span>
+          </Button>
+        </div>
+      )}
 
       {/* F7.5 — sustitución en curso: aviso de quién sale + cancelar. */}
       {subOut && (
@@ -1102,6 +1315,34 @@ export function LiveCaptureClient({
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t('recent_events_title')}
           </p>
+          {/* F7.4b — a FAVOR: córner a favor (directo) + falta a favor (la que nos
+              hacen): tocar a nuestro jugador que la recibe + ubicación. */}
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => registerCornerSide('for')}
+              className="flex touch-none items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+            >
+              <Flag className="size-3.5" aria-hidden />
+              <span>{t('event.corner_for')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedEvent(selectedEvent === 'foul_for' ? null : 'foul_for')
+              }
+              aria-pressed={selectedEvent === 'foul_for'}
+              className={cn(
+                'flex touch-none items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                selectedEvent === 'foul_for'
+                  ? 'border-primary bg-primary/10 text-foreground'
+                  : 'border-border text-muted-foreground hover:bg-muted',
+              )}
+            >
+              <ShieldAlert className="size-3.5" aria-hidden />
+              <span>{t('foul_received')}</span>
+            </button>
+          </div>
           {timeline.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('no_events_yet')}</p>
           ) : (
@@ -1128,7 +1369,7 @@ export function LiveCaptureClient({
                   );
                 }
                 const ev = item.ev;
-                const Icon = EVENT_ICON[ev.type];
+                const Icon = iconFor(ev.type);
                 return (
                   <li
                     key={ev.id}
@@ -1152,7 +1393,17 @@ export function LiveCaptureClient({
                               {t('event.penalty')} {t(`penalty_outcome.${ev.outcome}`)}
                             </span>
                           )}
+                          {ev.type === 'foul' && (
+                            <span className="text-muted-foreground">
+                              {' · '}
+                              {t(ev.foulKind === 'received' ? 'foul_received' : 'foul_committed')}
+                            </span>
+                          )}
                         </>
+                      ) : ev.type === 'corner' ? (
+                        <span className="text-muted-foreground">
+                          {t(ev.cornerSide === 'against' ? 'event.corner_against' : 'event.corner_for')}
+                        </span>
                       ) : (
                         <span className="text-muted-foreground">{t(`event.${ev.type}`)}</span>
                       )}
@@ -1308,7 +1559,7 @@ export function LiveCaptureClient({
             <p className="text-[11px] leading-tight text-muted-foreground">{t('rival_hint')}</p>
             <div className="grid grid-cols-2 gap-1.5">
               {RIVAL_EVENT_TYPES.map((ev) => {
-                const Icon = EVENT_ICON[ev];
+                const Icon = iconFor(ev);
                 return (
                   <button
                     key={ev}
@@ -1331,6 +1582,35 @@ export function LiveCaptureClient({
                 <span className="truncate">{t('event.penalty')}</span>
               </button>
             </div>
+
+            {/* F7.4b — en CONTRA: córner en contra (directo) + falta en contra (la
+                que cometemos): tocar a NUESTRO jugador que la comete + ubicación. */}
+            <div className="grid grid-cols-2 gap-1.5 border-t border-border/60 pt-2">
+              <button
+                type="button"
+                onClick={() => registerCornerSide('against')}
+                className="flex items-center justify-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+              >
+                <Flag className="size-4" aria-hidden />
+                <span className="truncate">{t('event.corner_against')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedEvent(selectedEvent === 'foul_against' ? null : 'foul_against')
+                }
+                aria-pressed={selectedEvent === 'foul_against'}
+                className={cn(
+                  'flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors',
+                  selectedEvent === 'foul_against'
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'border-border text-muted-foreground hover:bg-muted',
+                )}
+              >
+                <AlertTriangle className="size-4" aria-hidden />
+                <span className="truncate">{t('foul_committed')}</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1344,7 +1624,7 @@ export function LiveCaptureClient({
           ) : (
             <ul className="flex max-h-[52vh] flex-col gap-1 overflow-y-auto">
               {rivalAll.map((ev) => {
-                const Icon = EVENT_ICON[ev.type];
+                const Icon = iconFor(ev.type);
                 const expelled = ev.dorsal != null && rivalExpelledDorsals.has(ev.dorsal);
                 return (
                   <li

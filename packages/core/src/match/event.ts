@@ -57,17 +57,16 @@ export type RivalEventType =
   | 'goal'
   | 'yellow_card'
   | 'red_card'
-  | 'foul'
-  | 'corner'
   | 'offside'
   | 'shot';
 
+// F7.4b: `foul` y `corner` salen del panel rival; la falta que nos hacen ("falta
+// rival", atribuida a nuestro receptor + ubicación) y el "córner en contra" se
+// registran desde la paleta propia con su bando (una sola fuente, sin duplicar).
 export const RIVAL_EVENT_TYPES: readonly RivalEventType[] = [
   'goal',
   'yellow_card',
   'red_card',
-  'foul',
-  'corner',
   'offside',
   'shot',
 ] as const;

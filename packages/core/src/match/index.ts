@@ -108,3 +108,18 @@ export type {
   MatchScore,
   ShootoutTally,
 } from './score';
+
+export {
+  FOUL_KINDS,
+  isFoulKind,
+  CORNER_SIDES,
+  isCornerSide,
+  computeTeamEventTallies,
+  foulsByPlayer,
+} from './team-events';
+export type {
+  FoulKind,
+  CornerSide,
+  TeamEventLite,
+  TeamEventTallies,
+} from './team-events';

@@ -50,7 +50,9 @@ import {
   type PeriodKind,
   type PlayerEventType,
   playerEventClockFields,
+  registerCornerSchema,
   registerFieldEventSchema,
+  registerFoulSchema,
   registerPenaltySchema,
   registerPlayerEventSchema,
   registerRivalEventSchema,
@@ -1009,6 +1011,115 @@ export async function registerRivalEvent(
       clock_seconds: clockSeconds,
       display_minute: displayMinute,
       metadata,
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F7.4b — Falta detallada (sobre jugador + ubicación) y córner con bando.
+//   registerFoul   — falta propia ('committed', player=comete) o falta rival
+//                    ('received', player=recibe), con x/y. side='own'.
+//   registerCorner — córner a favor/en contra (sin jugador ni coords). side='own'.
+// El bando va en metadata (foul_kind / corner_side); el tipo de match_events
+// sigue siendo 'foul'/'corner' (no hace falta migrar). clock_seconds/period/
+// display_minute los deriva el servidor.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function registerFoul(input: unknown): Promise<RegisterEventState> {
+  const parsed = registerFoulSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, player_id, kind, x_pct, y_pct } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
+
+  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  const { ms } = now();
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(periods, ms);
+
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId,
+      created_by: user.id,
+      side: 'own',
+      type: 'foul',
+      player_id,
+      x_pct,
+      y_pct,
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+      metadata: { foul_kind: kind },
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+export async function registerCorner(input: unknown): Promise<RegisterEventState> {
+  const parsed = registerCornerSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, corner_side } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
+
+  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  const { ms } = now();
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(periods, ms);
+
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId,
+      created_by: user.id,
+      side: 'own',
+      type: 'corner',
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+      metadata: { corner_side },
     },
     { onConflict: 'id', ignoreDuplicates: true },
   );
