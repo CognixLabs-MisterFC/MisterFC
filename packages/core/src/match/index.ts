@@ -116,6 +116,7 @@ export {
   isCornerSide,
   computeTeamEventTallies,
   foulsByPlayer,
+  foulsReceivedByPlayer,
 } from './team-events';
 export type {
   FoulKind,
@@ -138,3 +139,11 @@ export type {
   TimelineIssueCode,
   TimelineIssue,
 } from './timeline';
+
+export { consolidateMatch } from './consolidation';
+export type {
+  ConsolidationEvent,
+  ConsolidatedPlayerStat,
+  MatchConsolidation,
+  ConsolidationInput,
+} from './consolidation';

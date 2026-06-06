@@ -86,3 +86,22 @@ export function foulsByPlayer(
   }
   return counts;
 }
+
+/**
+ * Faltas RECIBIDAS atribuidas a cada jugador propio (`foul_kind='received'`,
+ * §7.4b: `player_id` = quien la recibe). Espejo de `foulsByPlayer` para la
+ * consolidación al cierre (7.10). Las cometidas (incluido el `foul` legacy sin
+ * `foul_kind`) no entran aquí.
+ */
+export function foulsReceivedByPlayer(
+  events: readonly TeamEventLite[],
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const e of events) {
+    if (e.type !== 'foul') continue;
+    if (e.foulKind !== 'received') continue;
+    if (!e.playerId) continue;
+    counts.set(e.playerId, (counts.get(e.playerId) ?? 0) + 1);
+  }
+  return counts;
+}

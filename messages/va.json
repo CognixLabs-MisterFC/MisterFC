@@ -1821,6 +1821,11 @@
         "sub_in_absent": "Canvi que fica un absent",
         "sub_in_expelled": "Canvi que fica un expulsat"
       }
-    }
+    },
+    "stats_consolidated": "Partit tancat · estadístiques consolidades",
+    "clock_reopen": "Reobrir partit",
+    "clock_reopen_confirm": "Reobrir el partit per a editar?",
+    "clock_reopen_yes": "Sí, reobrir",
+    "clock_reopen_cancel": "Cancel·la"
   }
 }

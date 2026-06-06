@@ -1821,6 +1821,11 @@
         "sub_in_absent": "Sub brings on an absent player",
         "sub_in_expelled": "Sub brings on a sent-off player"
       }
-    }
+    },
+    "stats_consolidated": "Match closed · stats consolidated",
+    "clock_reopen": "Reopen match",
+    "clock_reopen_confirm": "Reopen the match to edit?",
+    "clock_reopen_yes": "Yes, reopen",
+    "clock_reopen_cancel": "Cancel"
   }
 }

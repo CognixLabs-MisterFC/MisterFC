@@ -27,8 +27,11 @@ import {
   canRegisterSubstitution,
   changeFormationSchema,
   clockFieldsForMinute,
+  clockSecondsAt,
   type ClockMutation,
   type ClockPeriod,
+  consolidateMatch,
+  type ConsolidationEvent,
   createSupabaseServerClient,
   currentPeriod,
   deleteMatchEventSchema,
@@ -440,16 +443,146 @@ export async function startNextPeriod(input: unknown): Promise<ClockActionState>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// F7.10 — Consolidación al cierre: materializa match_player_stats + marcador.
+//
+// REUSA el motor puro `consolidateMatch` (que a su vez compone 7.8/7.4b/7.7c):
+// los mismos valores que la tabla en vivo, sin recalcular con lógica nueva. Hace
+// delete+reinsert de la cara del partido (§5.3) → re-cerrar tras editar (línea de
+// tiempo 7.9) sobrescribe consistentemente, sin filas obsoletas. Guarda el
+// marcador final en match_state.goals_for/goals_against y la tanda (si la hubo)
+// en shootout_for/against. Todo deriva de match_events/match_starters/
+// match_periods → robusto y repetible.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function consolidateAndPersist(
+  supabase: Supa,
+  eventId: string,
+  closedBy: string,
+): Promise<ActionError | null> {
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id, team_id')
+    .eq('id', eventId)
+    .maybeSingle();
+  if (!ev || ev.team_id == null) return 'invalid';
+  const clubId = ev.club_id as string;
+  const teamId = ev.team_id as string;
+
+  // Once congelado + todos los eventos + reloj final + ausencias.
+  const { data: starterRows } = await supabase
+    .from('match_starters')
+    .select('player_id')
+    .eq('event_id', eventId);
+  const starterIds = (starterRows ?? []).map((r) => r.player_id as string);
+
+  const { data: evRows } = await supabase
+    .from('match_events')
+    .select('side, type, player_id, related_player_id, clock_seconds, metadata')
+    .eq('event_id', eventId);
+  const events: ConsolidationEvent[] = (evRows ?? []).map((r) => {
+    const meta = (r.metadata as { outcome?: string; foul_kind?: string } | null) ?? null;
+    return {
+      side: r.side as 'own' | 'rival',
+      type: r.type as string,
+      playerId: (r.player_id as string | null) ?? null,
+      relatedPlayerId: (r.related_player_id as string | null) ?? null,
+      clockSeconds: r.clock_seconds as number,
+      outcome: meta?.outcome ?? null,
+      foulKind: meta?.foul_kind ?? null,
+    };
+  });
+
+  const periods = await loadPeriods(supabase, eventId);
+  const matchClockSeconds = clockSecondsAt(periods, now().ms);
+
+  const { data: absRows } = await supabase
+    .from('match_absences')
+    .select('player_id')
+    .eq('event_id', eventId);
+  const absentIds = (absRows ?? []).map((r) => r.player_id as string);
+
+  // rosterIds = los que participaron: titulares + cualquier jugador propio con
+  // evento + los que entraron por sustitución (orden estable: titulares primero).
+  const ordered: string[] = [];
+  const seen = new Set<string>();
+  const add = (id: string | null | undefined) => {
+    if (id && !seen.has(id)) {
+      seen.add(id);
+      ordered.push(id);
+    }
+  };
+  for (const id of starterIds) add(id);
+  for (const e of events) {
+    if (e.side !== 'own') continue;
+    add(e.playerId);
+    if (e.type === 'substitution') add(e.relatedPlayerId);
+  }
+
+  const { players, score, shootout } = consolidateMatch({
+    starterIds,
+    events,
+    matchClockSeconds,
+    absentIds,
+    rosterIds: ordered,
+  });
+
+  // Delete + reinsert de la cara del partido (consistente al re-cerrar, §5.3).
+  const { error: delErr } = await supabase
+    .from('match_player_stats')
+    .delete()
+    .eq('event_id', eventId);
+  if (delErr) return mapPgErr(delErr.message, delErr.code);
+
+  if (players.length > 0) {
+    const rows = players.map((p) => ({
+      event_id: eventId,
+      player_id: p.playerId,
+      club_id: clubId, // el trigger lo deriva; lo pasamos por el NOT NULL.
+      team_id: teamId,
+      started: p.started,
+      minutes_played: p.minutesPlayed,
+      goals: p.goals,
+      assists: p.assists,
+      yellow_cards: p.yellowCards,
+      red_cards: p.redCards,
+      shots: p.shots,
+      fouls_committed: p.foulsCommitted,
+      fouls_received: p.foulsReceived,
+      penalties_scored: p.penaltiesScored,
+      penalties_missed: p.penaltiesMissed,
+    }));
+    const { error: insErr } = await supabase.from('match_player_stats').insert(rows);
+    if (insErr) return mapPgErr(insErr.message, insErr.code);
+  }
+
+  // Marcador final (y tanda si la hubo) en la cabecera de sesión.
+  const { error: scoreErr } = await supabase
+    .from('match_state')
+    .update({
+      goals_for: score.own,
+      goals_against: score.rival,
+      shootout_for: shootout ? shootout.own : null,
+      shootout_against: shootout ? shootout.rival : null,
+      closed_at: now().iso,
+      closed_by: closedBy,
+    })
+    .eq('event_id', eventId);
+  if (scoreErr) return mapPgErr(scoreErr.message, scoreErr.code);
+
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // finishMatch — "Finalizar partido" (F7.7b): marca el partido como TERMINADO
-// (match_state.status → 'closed') y para el reloj. La prórroga es OPCIONAL: el
-// flujo por defecto es 1ª → 2ª → finalizar; NO se fuerzan los periodos extra.
+// (match_state.status → 'closed'), para el reloj y CONSOLIDA (7.10).
 //
 // Requiere que el tiempo reglamentario esté cubierto (2ª parte jugada): si aún
 // queda una parte regular por jugar → 'regulation_incomplete'. Si quedara un
 // periodo en curso (sin terminar), lo termina antes de cerrar (pliega lo corrido)
-// para dejar `clock_seconds` consistente para 7.8/7.10. Idempotente: si ya está
-// cerrado, no hace nada. La CONSOLIDACIÓN de stats y el reabrir son 7.10, que se
-// apoyarán en este estado 'closed'; aquí NO se materializa match_player_stats.
+// para dejar `clock_seconds` consistente. Idempotente: si ya está cerrado, no
+// hace nada. Al cerrar, materializa match_player_stats + marcador final (7.10,
+// `consolidateAndPersist`). El reabrir (`reopenMatch`) vuelve a editable y el
+// re-cierre re-materializa (delete+reinsert).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function finishMatch(input: unknown): Promise<ClockActionState> {
@@ -459,6 +592,10 @@ export async function finishMatch(input: unknown): Promise<ClockActionState> {
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
 
   const status = await loadStatus(supabase, event_id);
   if (status === 'closed') {
@@ -486,6 +623,51 @@ export async function finishMatch(input: unknown): Promise<ClockActionState> {
   const { error } = await supabase
     .from('match_state')
     .update({ status: 'closed' })
+    .eq('event_id', event_id);
+  if (error) return { error: mapPgErr(error.message, error.code) };
+
+  // F7.10 — consolidar al cerrar (stats por jugador + marcador final).
+  const consolidateErr = await consolidateAndPersist(supabase, event_id, user.id);
+  if (consolidateErr) return { error: consolidateErr };
+
+  revalidate(event_id);
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// reopenMatch — "Reabrir partido" (F7.10): de 'closed' vuelve a 'live' (editable
+// de nuevo: captura en vivo + línea de tiempo 7.9), incrementa reopened_count y
+// limpia el sello de cierre. La consolidación previa queda; al volver a finalizar
+// se RE-MATERIALIZA (delete+reinsert). UI con confirmación en dos pasos.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function reopenMatch(input: unknown): Promise<ClockActionState> {
+  const parsed = matchEventRefSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: stateRow } = await supabase
+    .from('match_state')
+    .select('status, reopened_count')
+    .eq('event_id', event_id)
+    .maybeSingle();
+  if (!stateRow) return { error: 'not_found' };
+  if (stateRow.status !== 'closed') {
+    revalidate(event_id);
+    return { success: true }; // no estaba cerrado (idempotente)
+  }
+
+  const { error } = await supabase
+    .from('match_state')
+    .update({
+      status: 'live',
+      reopened_count: ((stateRow.reopened_count as number | null) ?? 0) + 1,
+      closed_at: null,
+      closed_by: null,
+    })
     .eq('event_id', event_id);
   if (error) return { error: mapPgErr(error.message, error.code) };
 
