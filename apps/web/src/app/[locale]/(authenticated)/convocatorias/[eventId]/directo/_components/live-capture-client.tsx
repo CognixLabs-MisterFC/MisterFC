@@ -104,19 +104,16 @@ import { MatchClock, MatchClockOverlay } from './match-clock';
 import { PlayerStatsStrip, type StatsPlayer } from './player-stats-strip';
 import { ShootoutPanel } from './shootout-panel';
 
-// Herramientas SELECCIONABLES de la paleta propia (necesitan un objetivo: tocar
-// jugador y/o ubicación). F7.4b: la "falta" genérica se divide en falta propia
-// (comete) / falta rival (recibe), ambas con jugador + ubicación; el córner pasa
-// a botones directos (a favor / en contra), abajo. Tiro y fuera de juego siguen
-// igual (toque sobre el césped).
+// Herramientas de la barra superior. F7.4b (reorg): faltas y córners salen de
+// aquí y se reparten entre los paneles "Mis eventos" (a favor) y "Eventos rival"
+// (en contra), con su etiqueta. Tiro y fuera de juego siguen siendo toque sobre
+// el césped desde la barra.
 const EVENT_TYPES = [
   'goal',
   'assist',
   'yellow_card',
   'red_card',
   'penalty',
-  'foul_own',
-  'foul_against',
   'substitution',
   'offside',
   'shot',
@@ -135,8 +132,8 @@ const EVENT_ICON: Record<string, typeof Goal> = {
   offside: Ban,
   shot: Target,
   foul: AlertTriangle,
-  foul_own: AlertTriangle,
-  foul_against: ShieldAlert,
+  foul_for: ShieldAlert,
+  foul_against: AlertTriangle,
   corner: Flag,
   corner_for: Flag,
   corner_against: Flag,
@@ -180,9 +177,11 @@ type Props = {
   teamEvents: LiveTeamEvent[];
 };
 
-// Herramienta seleccionada en la paleta propia: un tipo de evento, o 'absent'
-// (quitar al que no viene, F7.5 — no es un match_event, es una baja).
-type Tool = EventType | 'absent';
+// Herramienta seleccionada: un tipo de la barra, 'absent' (quitar al que no
+// viene, F7.5) o una FALTA (F7.4b): 'foul_for' (a favor = la que recibimos) /
+// 'foul_against' (en contra = la que cometemos). Ambas: tocar a nuestro jugador
+// + ubicación; el botón vive en el panel correspondiente, no en la barra.
+type Tool = EventType | 'absent' | 'foul_for' | 'foul_against';
 
 // Hora actual (ms) del instante del evento. A nivel de módulo a propósito: solo
 // se invoca desde event handlers (registrar/cambiar), donde leer el reloj es
@@ -525,10 +524,12 @@ export function LiveCaptureClient({
       setPendingPenalty({ side: 'own', playerId, label });
       return;
     }
-    if (selectedEvent === 'foul_own' || selectedEvent === 'foul_against') {
-      // F7.4b — falta: 1º el jugador (comete/recibe), 2º la ubicación (césped).
+    if (selectedEvent === 'foul_for' || selectedEvent === 'foul_against') {
+      // F7.4b — falta: 1º el jugador NUESTRO (recibe/comete), 2º la ubicación.
+      // a favor ('foul_for') = la que nos hacen (received, jugador que la recibe);
+      // en contra ('foul_against') = la que cometemos (committed, quien la comete).
       const label = playerInfo.get(playerId)?.label ?? playerId.slice(0, 4);
-      const kind = selectedEvent === 'foul_own' ? 'committed' : 'received';
+      const kind = selectedEvent === 'foul_for' ? 'received' : 'committed';
       setPendingFoul({ kind, playerId, label });
       toast.info(t('foul_pick_location'));
       return;
@@ -619,7 +620,7 @@ export function LiveCaptureClient({
       toast.info(t('register_select_event'));
       return;
     }
-    if (selectedEvent === 'foul_own' || selectedEvent === 'foul_against') {
+    if (selectedEvent === 'foul_for' || selectedEvent === 'foul_against') {
       // Falta sin jugador todavía: hay que tocar primero al jugador.
       toast.info(t('foul_pick_player'));
       return;
@@ -1111,20 +1112,22 @@ export function LiveCaptureClient({
         </span>
       </div>
 
-      {/* F7.4b — contadores de faltas y córners (propias/recibidas · a favor/contra). */}
+      {/* F7.4b — contadores de faltas y córners (a favor / en contra). A favor =
+          la falta que NOS hacen (recibida) / el córner a favor; en contra = la
+          que cometemos / el córner en contra. */}
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-lg border border-border bg-card/40 px-3 py-1.5 text-xs">
         <span className="flex items-center gap-1.5">
           <AlertTriangle className="size-3.5 text-muted-foreground" aria-hidden />
           <span className="text-muted-foreground">{t('counter_fouls')}:</span>
           <span className="font-mono font-semibold tabular-nums">
-            {t('counter_for_against', { a: tallies.foulsCommitted, b: tallies.foulsReceived })}
+            {t('counter_split', { a: tallies.foulsReceived, b: tallies.foulsCommitted })}
           </span>
         </span>
         <span className="flex items-center gap-1.5">
           <Flag className="size-3.5 text-muted-foreground" aria-hidden />
           <span className="text-muted-foreground">{t('counter_corners')}:</span>
           <span className="font-mono font-semibold tabular-nums">
-            {t('counter_for_against', { a: tallies.cornersFor, b: tallies.cornersAgainst })}
+            {t('counter_split', { a: tallies.cornersFor, b: tallies.cornersAgainst })}
           </span>
         </span>
       </div>
@@ -1180,18 +1183,6 @@ export function LiveCaptureClient({
             </button>
           );
         })}
-        {/* F7.4b — córner a favor / en contra: acción directa (sin objetivo). */}
-        {(['for', 'against'] as const).map((cs) => (
-          <button
-            key={`corner_${cs}`}
-            type="button"
-            onClick={() => registerCornerSide(cs)}
-            className="flex touch-none items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
-          >
-            <Flag className="size-4" aria-hidden />
-            <span>{t(cs === 'for' ? 'event.corner_for' : 'event.corner_against')}</span>
-          </button>
-        ))}
         {/* F7.5 — herramienta "quitar al que no viene" (no es match_event). */}
         <button
           type="button"
@@ -1252,7 +1243,7 @@ export function LiveCaptureClient({
               ? t('sub_hint')
               : selectedEvent === 'absent'
                 ? t('absent_hint')
-                : selectedEvent === 'foul_own' || selectedEvent === 'foul_against'
+                : selectedEvent === 'foul_for' || selectedEvent === 'foul_against'
                   ? t('foul_hint')
                   : t('palette_hint')}
         </span>
@@ -1324,6 +1315,34 @@ export function LiveCaptureClient({
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t('recent_events_title')}
           </p>
+          {/* F7.4b — a FAVOR: córner a favor (directo) + falta a favor (la que nos
+              hacen): tocar a nuestro jugador que la recibe + ubicación. */}
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              onClick={() => registerCornerSide('for')}
+              className="flex touch-none items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+            >
+              <Flag className="size-3.5" aria-hidden />
+              <span>{t('event.corner_for')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setSelectedEvent(selectedEvent === 'foul_for' ? null : 'foul_for')
+              }
+              aria-pressed={selectedEvent === 'foul_for'}
+              className={cn(
+                'flex touch-none items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                selectedEvent === 'foul_for'
+                  ? 'border-primary bg-primary/10 text-foreground'
+                  : 'border-border text-muted-foreground hover:bg-muted',
+              )}
+            >
+              <ShieldAlert className="size-3.5" aria-hidden />
+              <span>{t('foul_received')}</span>
+            </button>
+          </div>
           {timeline.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('no_events_yet')}</p>
           ) : (
@@ -1561,6 +1580,35 @@ export function LiveCaptureClient({
               >
                 <CircleDot className="size-4" aria-hidden />
                 <span className="truncate">{t('event.penalty')}</span>
+              </button>
+            </div>
+
+            {/* F7.4b — en CONTRA: córner en contra (directo) + falta en contra (la
+                que cometemos): tocar a NUESTRO jugador que la comete + ubicación. */}
+            <div className="grid grid-cols-2 gap-1.5 border-t border-border/60 pt-2">
+              <button
+                type="button"
+                onClick={() => registerCornerSide('against')}
+                className="flex items-center justify-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+              >
+                <Flag className="size-4" aria-hidden />
+                <span className="truncate">{t('event.corner_against')}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedEvent(selectedEvent === 'foul_against' ? null : 'foul_against')
+                }
+                aria-pressed={selectedEvent === 'foul_against'}
+                className={cn(
+                  'flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors',
+                  selectedEvent === 'foul_against'
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'border-border text-muted-foreground hover:bg-muted',
+                )}
+              >
+                <AlertTriangle className="size-4" aria-hidden />
+                <span className="truncate">{t('foul_committed')}</span>
               </button>
             </div>
           </div>
