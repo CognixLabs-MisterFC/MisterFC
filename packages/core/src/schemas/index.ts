@@ -234,6 +234,9 @@ export {
   updateEventActorSchema,
   addTimelineEventSchema,
   TIMELINE_ADD_TYPES,
+  upsertRivalHighlightSchema,
+  deleteRivalHighlightSchema,
+  setMatchNotesSchema,
 } from './match-event';
 export type {
   RegisterPlayerEventInput,
@@ -252,4 +255,7 @@ export type {
   UpdateEventMinuteInput,
   UpdateEventActorInput,
   AddTimelineEventInput,
+  UpsertRivalHighlightInput,
+  DeleteRivalHighlightInput,
+  SetMatchNotesInput,
 } from './match-event';

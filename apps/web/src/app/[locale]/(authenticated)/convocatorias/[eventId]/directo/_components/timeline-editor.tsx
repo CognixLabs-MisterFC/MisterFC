@@ -14,7 +14,7 @@
  * Accesible en vivo y tras finalizar (status 'live' o 'closed').
  */
 
-import { useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { AlertTriangle, Pencil, Plus, Trash2, X } from 'lucide-react';
 import {
@@ -71,6 +71,21 @@ export function TimelineEditor({
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+
+  // Caja de altura fija con scroll: mantener visible el evento más RECIENTE
+  // (la línea va en orden ascendente → el más nuevo queda abajo). Al montar y
+  // cuando la lista CRECE (se añade un evento), bajamos al fondo. En borrados o
+  // ediciones (la longitud no aumenta) no forzamos scroll.
+  const listRef = useRef<HTMLOListElement | null>(null);
+  const prevLenRef = useRef(0);
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    if (timeline.length >= prevLenRef.current) {
+      el.scrollTop = el.scrollHeight;
+    }
+    prevLenRef.current = timeline.length;
+  }, [timeline.length]);
 
   // Estados imposibles (avisar, no romper): se calculan sobre la línea actual.
   const issues = useMemo<TimelineIssue[]>(
@@ -220,7 +235,10 @@ export function TimelineEditor({
       {timeline.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('timeline.empty')}</p>
       ) : (
-        <ol className="flex flex-col">
+        <ol
+          ref={listRef}
+          className="flex max-h-[22rem] flex-col overflow-y-auto"
+        >
           {timeline.map((e) => {
             const evIssues = issuesByEvent.get(e.id) ?? [];
             const isEditing = editingId === e.id;
