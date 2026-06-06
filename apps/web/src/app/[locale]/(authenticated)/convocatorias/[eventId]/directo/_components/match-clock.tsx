@@ -23,7 +23,18 @@ import {
 } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { Flag, Minus, Pause, Play, Plus, SkipForward, Square, Timer } from 'lucide-react';
+import {
+  CheckCircle2,
+  Flag,
+  Minus,
+  Pause,
+  Play,
+  Plus,
+  RotateCcw,
+  SkipForward,
+  Square,
+  Timer,
+} from 'lucide-react';
 import {
   type ClockPeriod,
   type PeriodKind,
@@ -46,6 +57,7 @@ import {
   endPeriod,
   finishMatch,
   pauseClock,
+  reopenMatch,
   resumeClock,
   startMatch,
   startNextPeriod,
@@ -114,9 +126,10 @@ export function MatchClock({
 
   const running = isClockRunning(periods);
   const now = useTickingNow(running);
-  // F7.7b — confirmación de "Finalizar partido" (acción significativa; 7.10
-  // permitirá reabrir). Dos pasos en línea, sin diálogo modal.
+  // F7.7b — confirmación de "Finalizar partido" (acción significativa). Dos
+  // pasos en línea, sin diálogo modal. F7.10 — ídem para "Reabrir partido".
   const [confirmFinish, setConfirmFinish] = useState(false);
+  const [confirmReopen, setConfirmReopen] = useState(false);
 
   // Evita refrescos en cascada si llegan varias acciones seguidas.
   const refreshing = useRef(false);
@@ -251,7 +264,46 @@ export function MatchClock({
 
       {/* Controles según el estado (F7.7b: 2 partes → finalizar; prórroga opcional). */}
       <div className="flex flex-wrap items-center gap-2">
-        {status === 'closed' ? null : !hasStarted ? (
+        {status === 'closed' ? (
+          // F7.10 — partido cerrado: aviso de consolidación + reabrir (2 pasos).
+          <>
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+              <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
+              {t('stats_consolidated')}
+            </span>
+            {confirmReopen ? (
+              <>
+                <span className="text-sm">{t('clock_reopen_confirm')}</span>
+                <Button
+                  size="sm"
+                  disabled={pending}
+                  onClick={() => run(() => reopenMatch({ event_id: eventId }))}
+                >
+                  <RotateCcw className="size-4" aria-hidden />
+                  <span>{t('clock_reopen_yes')}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={pending}
+                  onClick={() => setConfirmReopen(false)}
+                >
+                  <span>{t('clock_reopen_cancel')}</span>
+                </Button>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={pending}
+                onClick={() => setConfirmReopen(true)}
+              >
+                <RotateCcw className="size-4" aria-hidden />
+                <span>{t('clock_reopen')}</span>
+              </Button>
+            )}
+          </>
+        ) : !hasStarted ? (
           <Button size="sm" disabled={pending} onClick={() => run(() => startMatch({ event_id: eventId }))}>
             <Play className="size-4" aria-hidden />
             <span>{t('clock_start_match')}</span>

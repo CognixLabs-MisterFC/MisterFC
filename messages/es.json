@@ -1820,6 +1820,11 @@
         "sub_in_absent": "Cambio que mete a un ausente",
         "sub_in_expelled": "Cambio que mete a un expulsado"
       }
-    }
+    },
+    "stats_consolidated": "Partido cerrado · estadísticas consolidadas",
+    "clock_reopen": "Reabrir partido",
+    "clock_reopen_confirm": "¿Reabrir el partido para editar?",
+    "clock_reopen_yes": "Sí, reabrir",
+    "clock_reopen_cancel": "Cancelar"
   }
 }

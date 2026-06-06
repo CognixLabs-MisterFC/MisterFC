@@ -970,6 +970,92 @@ export type Database = {
           },
         ]
       }
+      match_player_stats: {
+        Row: {
+          assists: number
+          club_id: string
+          computed_at: string
+          event_id: string
+          fouls_committed: number
+          fouls_received: number
+          goals: number
+          minutes_played: number
+          penalties_missed: number
+          penalties_scored: number
+          player_id: string
+          red_cards: number
+          shots: number
+          started: boolean
+          team_id: string
+          yellow_cards: number
+        }
+        Insert: {
+          assists?: number
+          club_id: string
+          computed_at?: string
+          event_id: string
+          fouls_committed?: number
+          fouls_received?: number
+          goals?: number
+          minutes_played?: number
+          penalties_missed?: number
+          penalties_scored?: number
+          player_id: string
+          red_cards?: number
+          shots?: number
+          started?: boolean
+          team_id: string
+          yellow_cards?: number
+        }
+        Update: {
+          assists?: number
+          club_id?: string
+          computed_at?: string
+          event_id?: string
+          fouls_committed?: number
+          fouls_received?: number
+          goals?: number
+          minutes_played?: number
+          penalties_missed?: number
+          penalties_scored?: number
+          player_id?: string
+          red_cards?: number
+          shots?: number
+          started?: boolean
+          team_id?: string
+          yellow_cards?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_player_stats_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_player_stats_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_player_stats_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_player_stats_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_starters: {
         Row: {
           created_at: string
@@ -1021,6 +1107,8 @@ export type Database = {
           operator_profile_id: string | null
           post_match_notes: string | null
           reopened_count: number
+          shootout_against: number | null
+          shootout_for: number | null
           started_at: string | null
           status: string
           updated_at: string
@@ -1039,6 +1127,8 @@ export type Database = {
           operator_profile_id?: string | null
           post_match_notes?: string | null
           reopened_count?: number
+          shootout_against?: number | null
+          shootout_for?: number | null
           started_at?: string | null
           status?: string
           updated_at?: string
@@ -1057,6 +1147,8 @@ export type Database = {
           operator_profile_id?: string | null
           post_match_notes?: string | null
           reopened_count?: number
+          shootout_against?: number | null
+          shootout_for?: number | null
           started_at?: string | null
           status?: string
           updated_at?: string
