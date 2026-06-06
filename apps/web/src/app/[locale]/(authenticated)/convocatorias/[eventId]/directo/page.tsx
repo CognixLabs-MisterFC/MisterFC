@@ -7,7 +7,10 @@ import { Button } from '@/components/ui/button';
 import { loadMatchLive } from './queries';
 import { LiveCaptureClient } from './_components/live-capture-client';
 import { TimelineEditor } from './_components/timeline-editor';
-import { RivalNotesPanel } from './_components/rival-notes-panel';
+import {
+  RivalHighlightsPanel,
+  MatchNotesPanel,
+} from './_components/rival-notes-panel';
 import type { Role } from '../../../jugadores/queries';
 
 // F7.3: la captura en vivo debe HIDRATARSE siempre desde los match_events
@@ -91,6 +94,14 @@ export default async function MatchLivePage({ params }: Props) {
         teamEvents={data.teamEvents}
       />
 
+      {/* F7.11 — rivales destacados ENCIMA de la línea de tiempo. */}
+      <RivalHighlightsPanel
+        eventId={eventId}
+        matchStatus={data.matchStatus}
+        rivalHighlights={data.rivalHighlights}
+        opponentName={data.event.opponentName}
+      />
+
       <TimelineEditor
         eventId={eventId}
         matchStatus={data.matchStatus}
@@ -100,12 +111,11 @@ export default async function MatchLivePage({ params }: Props) {
         absentIds={data.absentIds}
       />
 
-      <RivalNotesPanel
+      {/* Notas del partido, debajo de la línea de tiempo. */}
+      <MatchNotesPanel
         eventId={eventId}
         matchStatus={data.matchStatus}
-        rivalHighlights={data.rivalHighlights}
         matchNotes={data.matchNotes}
-        opponentName={data.event.opponentName}
       />
     </div>
   );
