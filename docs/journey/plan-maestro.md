@@ -105,9 +105,9 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F2 | Plantilla y cuerpo técnico | 19–32 h (lote inicial 14–23 h ≈18–20 h real ☑ + ext. F2.10/F2.11 +5–9 h ☐) | 6–9 | ⟳ ext. |
 | F3 | Calendario y eventos | 6–9 h | 2–3 | ☑ |
 | F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h (Lote A ≈4–5 h ☑ + Lote B ≈5–8 h ☑) | 3 | ☑ |
-| F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☐ |
+| F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☑ |
 | F6 | Alineaciones y planificación del partido | 12–19 h | 4–5 | ☑ |
-| F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☐ |
+| F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☑ |
 | F8 | Valoraciones del partido y del entrenamiento | 8–13 h | 3–4 | ☐ |
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☐ |
 | F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☐ |
@@ -347,6 +347,8 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Objetivo**: pantalla dedicada para tablet/desktop con drag & drop de símbolos sobre jugadores y campo. Registro completo de eventos del propio equipo y del rival, línea de tiempo editable, cronómetro avanzado.
 
+**Estado**: ☑ **Cerrada (2026-06-07)** — todas las subfases entregadas (7.1–7.12 + refinamientos 7.4b/7.6b/7.6c/7.7b/7.7c) + mejoras pre-cierre (7.13/7.14/7.15) + fix RLS/pgTAP (#54). Detalle de cierre en [docs/specs/7.0-toma-datos-en-directo.md](../specs/7.0-toma-datos-en-directo.md) §16.
+
 **Horas**: 10–14 h · **Sesiones**: 4–5
 
 **Criterio de cierre**: operador puede registrar todos los eventos del partido (gol, asistencia, tarjeta, sustitución, corner, falta, fuera de juego, tiro a puerta) con un gesto de arrastrar y soltar. Funciona en iPad apaisado y portátil. Línea de tiempo editable. Cierre del partido consolida stats al perfil del jugador.
@@ -357,17 +359,21 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Subfases**:
 
-- **7.1** Modelo `match_events` extendido (type, side, player_id?, rival_dorsal?, minute, second_half, x_pct?, y_pct?, metadata) — 1 h
-- **7.2** Layout iPad apaisado / desktop (cronómetro + campo + paleta + toggle rival) — 1–2 h
-- **7.3** Drag & drop: eventos sobre jugador (gol, asistencia, tarjetas amarilla/roja) — 2–3 h
-- **7.4** Drag & drop: eventos sobre campo (corner, falta, fuera juego, tiro) con ubicación — 1–2 h
-- **7.5** Sustituciones (2-step: sale → entra) — 1 h
-- **7.6** Eventos del equipo rival (toggle + panel rival) — 1 h
-- **7.7** Iniciar partido + cronómetro completo (motor de reloj puro, descanso, prórroga, ajuste manual, recuperable tras recarga) — **ADELANTADA: se implementa ANTES de 7.3** (ver nota) — 1–2 h
-- **7.8** Línea de tiempo del partido editable — 1–2 h
-- **7.9** Cierre del partido y consolidación de stats al perfil del jugador — 1–2 h
-- **7.10** Jugadores rivales destacados y notas post-partido — 30 min
-- **7.12** Panel de próximo partido en Inicio (estado + CTA al paso que toca; aviso de convocatoria pendiente para jugador/familia; admin no lo ve) — 1–2 h
+> **Numeración autoritativa (renumber §8 del spec, aplicada en cierre 2026-06-07)**: la subfase nueva *Tiempo de juego por jugador* entró como **7.8**, desplazando *Línea de tiempo* → **7.9**, *Cierre/consolidación* → **7.10** y *Rivales destacados + notas* → **7.11**. Las sub-letras (7.4b/7.6b/7.6c/7.7b/7.7c) son refinamientos cerrados sobre la marcha.
+
+- **7.1** [hecho 2026-06-01] Modelo `match_events` extendido (type, side, player_id?, rival_dorsal?, clock_seconds, period, x_pct?, y_pct?, metadata) + tablas de sesión/reloj (#36)
+- **7.2** [hecho 2026-06-01] Armazón de la pantalla `/directo` (cronómetro + campo + paleta) (#37)
+- **7.3** [hecho 2026-06-02] Eventos sobre el jugador (gol, asistencia, tarjetas) + regla de expulsión derivada (#40)
+- **7.4** [hecho 2026-06-02] Eventos sobre el campo (córner, falta, fuera de juego, tiro) con ubicación (#41) · **7.4b** [hecho 2026-06-06] faltas detalladas + córner a favor/en contra (#50)
+- **7.5** [hecho 2026-06-02] Sustituciones (2-step: sale → entra) + banquillo + "quitar al que no viene" (#42)
+- **7.6** [hecho 2026-06-02] Rival en la misma pantalla + eventos del rival + cambios corridos (#43) · **7.6b** [hecho 2026-06-03] mover jugadores + cambiar formación en vivo (#44) · **7.6c** [hecho 2026-06-03] régimen de cambios por categoría + división (#45)
+- **7.7** [hecho 2026-06-02] Iniciar partido + cronómetro completo (motor de reloj puro, descanso, prórroga, ajuste, recuperable) — **ADELANTADA antes de 7.3** (#39) · **7.7b** [hecho 2026-06-04] flujo de periodos + finalizar partido (#47) · **7.7c** [hecho 2026-06-06] penaltis (evento + tanda) y marcador (#49)
+- **7.8** [hecho 2026-06-03] *(NUEVA)* Tiempo de juego y stats por jugador en vivo (#46)
+- **7.9** [hecho 2026-06-06] Línea de tiempo del partido editable (#51)
+- **7.10** [hecho 2026-06-07] Cierre del partido y consolidación de stats (`match_player_stats`) + reabrir (#52)
+- **7.11** [hecho 2026-06-07] Jugadores rivales destacados + notas del partido (#53)
+- **7.12** [hecho 2026-06-02] Panel de próximo partido en Inicio (estado + CTA al paso que toca; aviso de convocatoria pendiente para jugador/familia; admin no lo ve) (#38)
+- **Fix RLS / pgTAP** [hecho 2026-06-07] recursión `team_staff`↔`invitations` (helper `user_is_principal_of_team`), policy INSERT de `capabilities` recreada y test B8 de `training_attendance` corregido; runner pgTAP en verde (#54)
 
 **Mejoras pre-cierre F7 (2026-06-07):**
 
@@ -598,6 +604,21 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **16.3** Recogida estructurada de feedback (cuestionarios + observación) — 1–2 h
 - **16.4** Retro final + backlog priorizado para iteraciones — 1–2 h
 - **16.x** Importación masiva de jugadores con invitación por email. Wizard tipo F2.9 con columnas `email` + `team` (Excel/CSV). Genera filas en `invitations` reutilizando el modelo de F1.6 y dispara los emails vía el SMTP propio configurado en F16.0. **Estrictamente depende de F16.0** — sin SMTP propio el rate limit de Supabase Auth (~2–4 emails/h) bloquearía el envío bulk tras 3–5 invitaciones, dejando el resto en estado fallido. Spec `docs/specs/16.x-bulk-invite-excel.md`. **Estimación**: 3–5 h. **Depende**: F16.0 (SMTP propio configurado y verificado).
+
+---
+
+## Backlog / futuro (sin fase asignada)
+
+Bloques de funcionalidad acordados como pendientes pero **sin número de fase fijado todavía**: entran donde mejor encajen según prioridad (puede ser una fase nueva, una extensión de fase existente, o Ola 2/3).
+
+### Gestión de entrenamientos
+
+Bloque que agrupa todo lo relativo al ciclo de vida del entrenamiento más allá del marcado de asistencia que ya existe (F4). Candidato a fase propia o a extender F4/F12. Incluye, entre otros:
+
+- **Confirmación de asistencia a entrenos por familias/jugadores** *(el #3 aplazado de las mejoras pre-cierre de F7, 2026-06-07)*: que el jugador/familia confirme si acudirá a cada entrenamiento (igual que la respuesta a convocatorias de partido en F4), de modo que el cuerpo técnico vea previsiones antes del entreno. Reusa el patrón `callup_responses` (respuesta del jugador) sobre eventos `training`. La asistencia **real** (post-entreno, `training_attendance`) ya existe en F4; esto añade la **previsión** previa.
+- Otras piezas a definir: planificación/series de entrenos, objetivos por sesión, vínculo con el planificador de sesiones (F12) y con la biblioteca de ejercicios (F11).
+
+> Nota: la mejora 7.14 (asistencia lun–vie en la convocatoria) ya muestra la asistencia **registrada** de la semana; la confirmación previa por familias/jugadores es lo que queda pendiente aquí.
 
 ---
 
