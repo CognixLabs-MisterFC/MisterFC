@@ -16,6 +16,10 @@ import { userCanMessageInClub } from '@/lib/messaging-permissions';
 import { PlayerForm } from './player-form';
 import { MedicalNotesForm } from './medical-notes-form';
 import { PlayerPhotoUploader } from './player-photo-uploader';
+import {
+  PlayerNotesSection,
+  type PlayerNoteItem,
+} from './player-notes-section';
 
 type Props = {
   params: Promise<{ locale: string; playerId: string }>;
@@ -71,6 +75,38 @@ export default async function PlayerDetailPage({ params }: Props) {
       .eq('id', player.id)
       .maybeSingle();
     medicalNotes = row?.medical_notes ?? null;
+  }
+
+  // F7 mejora — Notas por jugador (solo cuerpo técnico). El helper SQL es la
+  // autoridad (cuerpo técnico del jugador + admin/coord; NO familia).
+  const { data: canSeeNotes } = await supabase.rpc(
+    'user_can_access_player_notes',
+    { p_player_id: player.id },
+  );
+  let playerNotes: PlayerNoteItem[] = [];
+  if (canSeeNotes) {
+    const { data: noteRows } = await supabase
+      .from('player_notes')
+      .select(
+        'id, note, created_at, profiles!player_notes_author_profile_id_fkey(full_name)',
+      )
+      .eq('player_id', player.id)
+      .order('created_at', { ascending: false });
+    type NoteShape = {
+      id: string;
+      note: string;
+      created_at: string;
+      profiles: { full_name: string | null } | null;
+    };
+    playerNotes = (noteRows ?? []).map((r) => {
+      const n = r as unknown as NoteShape;
+      return {
+        id: n.id,
+        note: n.note,
+        createdAt: n.created_at,
+        authorName: n.profiles?.full_name ?? null,
+      };
+    });
   }
 
   // Signed URL para la foto actual (server side, TTL corto)
@@ -182,6 +218,21 @@ export default async function PlayerDetailPage({ params }: Props) {
               playerId={player.id}
               initial={medicalNotes}
               canEdit={canManage}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {canSeeNotes && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('notes.section')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PlayerNotesSection
+              playerId={player.id}
+              notes={playerNotes}
+              locale={locale}
             />
           </CardContent>
         </Card>

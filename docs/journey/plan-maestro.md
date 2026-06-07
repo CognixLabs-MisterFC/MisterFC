@@ -369,6 +369,12 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **7.10** Jugadores rivales destacados y notas post-partido — 30 min
 - **7.12** Panel de próximo partido en Inicio (estado + CTA al paso que toca; aviso de convocatoria pendiente para jugador/familia; admin no lo ve) — 1–2 h
 
+**Mejoras pre-cierre F7 (2026-06-07):**
+
+- **7.13** [hecho 2026-06-07] Notas por jugador (persistentes, equipo propio). Tabla nueva `player_notes` (helper `user_can_access_player_notes` SECURITY DEFINER, sin recursión RLS). Añadir/editar/borrar tocando al jugador en `/directo` (origen = partido) y desde la ficha del jugador (lista con fecha + autor). Solo cuerpo técnico/admin/coord; NO jugador/familia. Migración `20260621000000_player_notes.sql`.
+- **7.14** [hecho 2026-06-07] Asistencia a entrenos (lun–vie) en la convocatoria: junto al jugador, `(asistidos/total)` de los entrenos de la semana del partido. Motor puro `computeWeeklyTrainingAttendance` (Vitest) sobre `training_attendance` + eventos de entreno; oculto si no hubo entrenos esa semana. Sin migración.
+- **7.15** [hecho 2026-06-07] Contraste de la agenda: el texto de los eventos pasa a color de texto principal (negro en claro) — los tonos claros previos no se leían sobre los fondos suaves. Solo estilo.
+
 > El desglose autoritativo y la renumeración de subfases de F7 (incl. *Tiempo de juego por jugador* como 7.8) viven en [docs/specs/7.0-toma-datos-en-directo.md](../specs/7.0-toma-datos-en-directo.md) §8. La **7.12** (panel en Inicio) lee datos existentes (F4/F6/F7.1), sin migración.
 
 > **Reordenación (2026-06-02): 7.7 va ANTES de 7.3.** Todo evento (`match_events`) exige `clock_seconds` absoluto NOT NULL (§6), y registrar eventos requiere antes un partido en juego (`match_state='live'`) con el once congelado (`match_starters`) y un cronómetro corriendo (`match_periods`). Como ese arranque + reloj no lo construía ninguna subfase entre 7.2 y 7.7, se adelanta **7.7 (Iniciar partido + cronómetro completo)** y 7.3 se apoya sobre él. El modelo ya existe (7.1) → sin migración nueva. El motor de reloj puro vive en `packages/core/src/match/clock.ts` (testeado con Vitest, §15).

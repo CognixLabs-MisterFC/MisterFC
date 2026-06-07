@@ -34,6 +34,7 @@ import {
   RotateCcw,
   ShieldAlert,
   Square,
+  StickyNote,
   Target,
   UserMinus,
   X,
@@ -100,6 +101,7 @@ import {
   registerSubstitution,
   setPlayerAbsent,
 } from '../actions';
+import { createPlayerNote } from '../../../../jugadores/player-notes-actions';
 import { MatchClock, MatchClockOverlay } from './match-clock';
 import { PlayerStatsStrip, type StatsPlayer } from './player-stats-strip';
 import { ShootoutPanel } from './shootout-panel';
@@ -181,7 +183,7 @@ type Props = {
 // viene, F7.5) o una FALTA (F7.4b): 'foul_for' (a favor = la que recibimos) /
 // 'foul_against' (en contra = la que cometemos). Ambas: tocar a nuestro jugador
 // + ubicación; el botón vive en el panel correspondiente, no en la barra.
-type Tool = EventType | 'absent' | 'foul_for' | 'foul_against';
+type Tool = EventType | 'absent' | 'foul_for' | 'foul_against' | 'note';
 
 // Hora actual (ms) del instante del evento. A nivel de módulo a propósito: solo
 // se invoca desde event handlers (registrar/cambiar), donde leer el reloj es
@@ -249,6 +251,12 @@ export function LiveCaptureClient({
   const [pendingFoul, setPendingFoul] = useState<
     { kind: 'committed' | 'received'; playerId: string; label: string } | null
   >(null);
+
+  // Mejora F7 — nota de jugador pendiente: elegido el jugador, falta escribir.
+  const [pendingNote, setPendingNote] = useState<
+    { playerId: string; label: string } | null
+  >(null);
+  const [noteDraft, setNoteDraft] = useState('');
 
   // Sin alineación oficial no hay once que pintar (no auto-marcamos ninguna ni
   // hacemos fallback a "la última"): empty-state claro con CTA al editor.
@@ -495,6 +503,14 @@ export function LiveCaptureClient({
       markAbsent(playerId, true);
       return;
     }
+    if (selectedEvent === 'note') {
+      // Mejora F7 — nota persistente del jugador. Disponible en vivo y tras
+      // finalizar (no exige 'live'); la guarda la RLS por cuerpo técnico.
+      const label = playerInfo.get(playerId)?.label ?? playerId.slice(0, 4);
+      setPendingNote({ playerId, label });
+      setNoteDraft('');
+      return;
+    }
     if (matchStatus !== 'live') {
       toast.warning(t('register_not_live'));
       return;
@@ -695,6 +711,29 @@ export function LiveCaptureClient({
       }
       toast.success(t(absent ? 'absent_marked' : 'absent_undone', { player: label }));
       router.refresh();
+    });
+  }
+
+  // Mejora F7 — guardar la nota persistente del jugador (origen = este partido).
+  function saveNote() {
+    if (!pendingNote) return;
+    const { playerId, label } = pendingNote;
+    const note = noteDraft.trim();
+    if (note.length === 0) return;
+    startTransition(async () => {
+      const res = await createPlayerNote({
+        player_id: playerId,
+        note,
+        match_event_id: eventId,
+      });
+      if (res.error) {
+        toast.error(t('note_error'));
+        return;
+      }
+      toast.success(t('note_saved', { player: label }));
+      setPendingNote(null);
+      setNoteDraft('');
+      setSelectedEvent(null);
     });
   }
 
@@ -1198,6 +1237,21 @@ export function LiveCaptureClient({
           <UserMinus className="size-4" aria-hidden />
           <span>{t('tool_absent')}</span>
         </button>
+        {/* Mejora F7 — nota de jugador (persistente): tocar al jugador y escribir. */}
+        <button
+          type="button"
+          onClick={() => setSelectedEvent(selectedEvent === 'note' ? null : 'note')}
+          aria-pressed={selectedEvent === 'note'}
+          className={cn(
+            'flex touch-none items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors',
+            selectedEvent === 'note'
+              ? 'border-primary bg-primary/10 text-foreground'
+              : 'border-border text-muted-foreground hover:bg-muted',
+          )}
+        >
+          <StickyNote className="size-4" aria-hidden />
+          <span>{t('tool_note')}</span>
+        </button>
 
         {/* F7.6b — separador + modo táctica (mover/cambiar formación). */}
         <span className="mx-1 h-6 w-px bg-border" aria-hidden />
@@ -1299,6 +1353,45 @@ export function LiveCaptureClient({
               </Button>
             ))}
             <Button size="sm" variant="ghost" onClick={() => setPendingPenalty(null)}>
+              <X className="size-4" aria-hidden />
+              <span>{t('sub_cancel')}</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Mejora F7 — editor inline de nota del jugador (persistente). */}
+      {pendingNote && (
+        <div className="flex flex-col gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-sm">
+          <span className="text-xs font-medium text-muted-foreground">
+            {t('note_for', { player: pendingNote.label })}
+          </span>
+          <textarea
+            rows={2}
+            maxLength={2000}
+            autoFocus
+            value={noteDraft}
+            placeholder={t('note_placeholder')}
+            onChange={(e) => setNoteDraft(e.target.value)}
+            className="resize-y rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+          />
+          <div className="flex items-center gap-1.5">
+            <Button
+              size="sm"
+              disabled={noteDraft.trim().length === 0}
+              onClick={saveNote}
+            >
+              <StickyNote className="size-4" aria-hidden />
+              <span>{t('note_save')}</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setPendingNote(null);
+                setNoteDraft('');
+              }}
+            >
               <X className="size-4" aria-hidden />
               <span>{t('sub_cancel')}</span>
             </Button>
