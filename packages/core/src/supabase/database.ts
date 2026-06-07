@@ -1914,6 +1914,10 @@ export type Database = {
         Args: { p_conversation_id: string }
         Returns: boolean
       }
+      user_is_principal_of_team: {
+        Args: { p_team_id: string }
+        Returns: boolean
+      }
       user_is_staff_of_team: { Args: { p_team_id: string }; Returns: boolean }
       user_owns_player_account: {
         Args: { p_player_id: string }
