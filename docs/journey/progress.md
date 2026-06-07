@@ -11,9 +11,9 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 2 | Estructura del club, plantilla y cuerpo técnico | ⟳ extendida 2026-05-29 | 2026-05-28 | lote inicial 2026-05-29 |
 | 3 | Calendario unificado y comunicación básica | ☑ completada | 2026-05-29 | 2026-05-29 |
 | 4 | Asistencia y convocatorias | ☑ Lote A + B entregados | 2026-05-29 | 2026-05-29 |
-| 5 | Mensajería interna y push notifications | ☐ pendiente | — | — |
+| 5 | Mensajería interna y push notifications | ☑ completada | 2026-05-30 | 2026-05-31 |
 | 6 | Alineaciones y planificación del partido (ampliada 2026-05-29) | ☑ completada | 2026-05-31 | 2026-06-01 |
-| 7 | Pantalla de toma de datos del partido (live) | ☐ pendiente | — | — |
+| 7 | Pantalla de toma de datos del partido (live) | ☑ completada | 2026-06-01 | 2026-06-07 |
 | 8 | Valoraciones de partido y entrenamiento | ☐ pendiente | — | — |
 | 9 | Perfil del jugador y evolución multi-temporada | ☐ pendiente | — | — |
 | 10 | Dashboard ejecutivo del club | ☐ pendiente | — | — |
@@ -131,6 +131,41 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 6.10 | ☑ 2026-06-01 | Plantillas personalizadas de formación: tabla `coach_formations` (positions JSONB validado por trigger, unique `(owner, format, name)`, RLS owner∪admin/coord), ruta `/perfil/formaciones` (CRUD + editor drag&drop), grupo "Mis formaciones" en el selector del editor de alineación (adopta el layout) | [docs/specs/6.0-alineaciones.md](../specs/6.0-alineaciones.md) |
 
 > **F6.10 entregada 2026-06-01** (PR pendiente): migración `20260610000000_coach_formations.sql`. Helpers de dominio en `packages/core` (`placeOnFormation`, `blankFormationPositions`, schema Zod con validación de nº de posiciones por modalidad). pgTAP `rls_coach_formations` (validación trigger + RLS SELECT/INSERT/DELETE por rol). Con esto **F6 queda cerrada** (6.1–6.10).
+
+## Fase 7 — Subfases entregadas
+
+> **Numeración autoritativa** (renumber §8 del spec): la subfase nueva *Tiempo de juego por jugador* entró como **7.8**, desplazando *Línea de tiempo* → 7.9, *Cierre* → 7.10, *Rivales* → 7.11. Las sub-letras (7.4b/7.6b/7.6c/7.7b/7.7c) son refinamientos sobre la marcha. Detalle de cierre en [docs/specs/7.0-toma-datos-en-directo.md](../specs/7.0-toma-datos-en-directo.md) §16.
+
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| 7.1 | 2026-06-01 | #36 | Modelo `match_events` + tablas de sesión/reloj/once (`match_state`, `match_periods`, `match_starters`) + RLS `user_can_record_match` |
+| 7.2 | 2026-06-01 | #37 | Armazón de la pantalla `/directo` (cronómetro + campo + paleta) |
+| 7.3 | 2026-06-02 | #40 | Eventos sobre el jugador (gol, asistencia, tarjetas) + regla de expulsión derivada |
+| 7.4 | 2026-06-02 | #41 | Eventos sobre el campo (córner, falta, fuera de juego, tiro) con ubicación |
+| 7.4b | 2026-06-06 | #50 | Faltas detalladas (committed/received + jugador + ubicación) + córner a favor/en contra |
+| 7.5 | 2026-06-02 | #42 | Sustituciones (2-step) + banquillo + "quitar al que no viene" |
+| 7.6 | 2026-06-02 | #43 | Rival en la misma pantalla + eventos del rival + cambios corridos |
+| 7.6b | 2026-06-03 | #44 | Mover jugadores + cambiar formación en vivo (estado táctico en `match_state`) |
+| 7.6c | 2026-06-03 | #45 | Régimen de sustituciones por categoría + división |
+| 7.7 | 2026-06-02 | #39 | Iniciar partido + cronómetro completo (motor puro, descanso, prórroga, ajuste, recuperable) — adelantada antes de 7.3 |
+| 7.7b | 2026-06-04 | #47 | Flujo de periodos (1ª→2ª→finalizar; prórroga opcional) + finalizar partido |
+| 7.7c | 2026-06-06 | #49 | Penaltis (evento durante el partido + tanda de desempate) y marcador |
+| 7.8 | 2026-06-03 | #46 | *(NUEVA)* Tiempo de juego y stats por jugador en vivo (vista calculada) |
+| 7.9 | 2026-06-06 | #51 | Línea de tiempo del partido editable (borrar/minuto/jugador/añadir) |
+| 7.10 | 2026-06-07 | #52 | Cierre + consolidación `match_player_stats` + reabrir partido |
+| 7.11 | 2026-06-07 | #53 | Rivales destacados + notas del partido |
+| 7.12 | 2026-06-02 | #38 | Panel de próximo partido en Inicio |
+| 7.13 | 2026-06-07 | #55 | Notas por jugador (persistentes): tabla `player_notes`, tocar jugador en `/directo` + ficha (fecha + autor); solo cuerpo técnico |
+| 7.14 | 2026-06-07 | #55 | Asistencia a entrenos (lun–vie) en la convocatoria `(asistidos/total)`; motor puro, sin migración |
+| 7.15 | 2026-06-07 | #55 | Contraste de la agenda: texto de eventos a color principal (negro en claro) |
+| Fix RLS/pgTAP | 2026-06-07 | #54 | Recursión `team_staff`↔`invitations` (helper `user_is_principal_of_team`), policy INSERT `capabilities` recreada, test B8 `training_attendance` corregido; runner pgTAP en verde |
+
+## Fase 7 — Cierre
+
+- **Inicio / Fin**: 2026-06-01 / 2026-06-07. Dentro del presupuesto (10–14 h).
+- **PRs**: #36–#53 (subfases) + #54 (fix pgTAP) + #55 (mejoras pre-cierre 7.13/7.14/7.15). NO mergeados por el agente (los mergea el responsable).
+- **Migraciones**: `match_events` (#36) + ampliaciones de CHECK (formation_change, penalty/shootout) + `match_absences` + `substitution_regimes`/`teams.division` + `match_player_stats` + `match_rival_highlights` + `player_notes` + fix RLS (recursión + capabilities). Todas por CLI, sin editar aplicadas.
+- **Tests**: motor puro de F7 en `@misterfc/core/match` + `@misterfc/core/attendance` (reloj, minutos, marcador/penaltis, contadores, línea de tiempo, consolidación, asistencia semanal); runner pgTAP completo en verde tras el fix #54.
 
 ## Fase 11 — Subfases pendientes
 
