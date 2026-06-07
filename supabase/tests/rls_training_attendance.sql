@@ -235,28 +235,33 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- B8: UPDATE legal cambia code + notes y bumpa updated_at
+-- B8: UPDATE legal cambia code + notes y el trigger SELLA updated_at.
+--
+-- Nota: el trigger fija updated_at := now(), y now() = transaction_timestamp() es
+-- CONSTANTE dentro de la transacción que envuelve este test (BEGIN…ROLLBACK), así
+-- que NO se puede exigir que updated_at "avance" intra-transacción (pg_sleep no
+-- mueve now()). En producción cada request es su propia transacción y sí avanza.
+-- Aquí verificamos lo comprobable: que el UPDATE legal aplica code/notes y que el
+-- trigger dejó updated_at = now() (sellado en la fila).
 -- ─────────────────────────────────────────────────────────────────────────────
 do $$
-declare prev timestamptz;
-        next timestamptz;
+declare v_code    text;
+        v_notes   text;
+        v_updated timestamptz;
 begin
-  select updated_at into prev
-    from public.training_attendance
-   where event_id = '77ee0000-0000-0000-0000-000000000001';
-
-  perform pg_sleep(0.01);
-
   update public.training_attendance
      set code = 'ausente_con_aviso', notes = 'cita médica'
    where event_id = '77ee0000-0000-0000-0000-000000000001';
 
-  select updated_at into next
+  select code, notes, updated_at into v_code, v_notes, v_updated
     from public.training_attendance
    where event_id = '77ee0000-0000-0000-0000-000000000001';
 
-  if next <= prev then
-    raise exception 'FAIL [B8]: updated_at no avanzó tras UPDATE';
+  if v_code <> 'ausente_con_aviso' or v_notes is distinct from 'cita médica' then
+    raise exception 'FAIL [B8]: UPDATE legal no aplicó code/notes (code=%, notes=%)', v_code, v_notes;
+  end if;
+  if v_updated is distinct from now() then
+    raise exception 'FAIL [B8]: el trigger no selló updated_at = now() (got=%)', v_updated;
   end if;
 end $$;
 
