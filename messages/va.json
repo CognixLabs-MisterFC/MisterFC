@@ -592,6 +592,18 @@
       "prev": "Anterior",
       "next": "Següent",
       "page_of": "Pàgina {current} de {total}"
+    },
+    "notes": {
+      "section": "Notes del jugador",
+      "add": "Afig nota",
+      "edit": "Edita",
+      "delete": "Esborra",
+      "save": "Guarda",
+      "cancel": "Cancel·la",
+      "empty": "Encara no hi ha notes.",
+      "placeholder": "Observació del jugador (ràpid, millora en…, actitud…)",
+      "error": "No s'ha pogut guardar",
+      "confirm_delete": "Esborrar esta nota?"
     }
   },
   "equipo_detalle": {
@@ -1237,7 +1249,8 @@
       "not_in_roster": "No estaves a l'equip en la data del partit.",
       "not_linked": "Este compte no està vinculat a este jugador.",
       "edit_lineup": "Editar alineació",
-      "live_capture": "En directe"
+      "live_capture": "En directe",
+      "training_attendance_hint": "Assistència als entrenaments (dl–dv) de la setmana del partit"
     },
     "republish": {
       "pending": "Hi ha canvis sense publicar.",
@@ -1842,6 +1855,12 @@
       "notes_title": "Notes del partit",
       "notes_placeholder": "Notes generals del partit…",
       "notes_save": "Guarda notes"
-    }
+    },
+    "tool_note": "Nota",
+    "note_for": "Nota per a {player}",
+    "note_placeholder": "Observació (ràpid, millora en…, actitud…)",
+    "note_save": "Guarda nota",
+    "note_saved": "Nota guardada per a {player}",
+    "note_error": "No s'ha pogut guardar la nota"
   }
 }

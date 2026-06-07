@@ -238,6 +238,17 @@ export {
   deleteRivalHighlightSchema,
   setMatchNotesSchema,
 } from './match-event';
+
+export {
+  createPlayerNoteSchema,
+  updatePlayerNoteSchema,
+  deletePlayerNoteSchema,
+} from './player-notes';
+export type {
+  CreatePlayerNoteInput,
+  UpdatePlayerNoteInput,
+  DeletePlayerNoteInput,
+} from './player-notes';
 export type {
   RegisterPlayerEventInput,
   RegisterFieldEventInput,

@@ -1464,6 +1464,78 @@ export type Database = {
           },
         ]
       }
+      player_notes: {
+        Row: {
+          author_profile_id: string
+          club_id: string
+          created_at: string
+          id: string
+          match_event_id: string | null
+          note: string
+          player_id: string
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_profile_id: string
+          club_id: string
+          created_at?: string
+          id?: string
+          match_event_id?: string | null
+          note: string
+          player_id: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_profile_id?: string
+          club_id?: string
+          created_at?: string
+          id?: string
+          match_event_id?: string | null
+          note?: string
+          player_id?: string
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_notes_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_notes_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_notes_match_event_id_fkey"
+            columns: ["match_event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_notes_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_notes_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           club_id: string
@@ -1873,6 +1945,10 @@ export type Database = {
       user_active_team_for_staff: {
         Args: { p_club_id: string }
         Returns: string
+      }
+      user_can_access_player_notes: {
+        Args: { p_player_id: string }
+        Returns: boolean
       }
       user_can_create_coach_formations: {
         Args: { p_club_id: string }

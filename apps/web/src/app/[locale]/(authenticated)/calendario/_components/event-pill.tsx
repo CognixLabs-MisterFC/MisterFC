@@ -27,12 +27,16 @@ const TYPE_ICONS = {
   other: Circle,
 } as const;
 
+// Fondo + borde por tipo. El TEXTO va aparte (text-foreground): los tonos claros
+// previos (text-*-200/100) sobre estos fondos muy suaves (/15) no se leían en el
+// tema claro. text-foreground = negro en claro (y blanco en oscuro), legible en
+// ambos. El icono y el borde izquierdo siguen aportando el color del tipo/equipo.
 const TYPE_BG: Record<CalendarEvent['type'], string> = {
-  training: 'bg-emerald-500/15 text-emerald-200 border-emerald-500/40',
-  match: 'bg-sky-500/15 text-sky-200 border-sky-500/40',
-  tournament: 'bg-amber-500/15 text-amber-100 border-amber-500/40',
-  friendly: 'bg-indigo-500/15 text-indigo-200 border-indigo-500/40',
-  other: 'bg-zinc-500/15 text-zinc-200 border-zinc-500/40',
+  training: 'bg-emerald-500/15 border-emerald-500/40',
+  match: 'bg-sky-500/15 border-sky-500/40',
+  tournament: 'bg-amber-500/15 border-amber-500/40',
+  friendly: 'bg-indigo-500/15 border-indigo-500/40',
+  other: 'bg-zinc-500/15 border-zinc-500/40',
 };
 
 export function EventPill({
@@ -56,7 +60,7 @@ export function EventPill({
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          'group flex w-full items-center gap-1.5 overflow-hidden rounded border px-1.5 py-1 text-left text-xs transition hover:opacity-90',
+          'group flex w-full items-center gap-1.5 overflow-hidden rounded border px-1.5 py-1 text-left text-xs text-foreground transition hover:opacity-90',
           TYPE_BG[event.type],
           layout === 'pill' && 'truncate',
           layout === 'block' && 'rounded-md py-1.5',

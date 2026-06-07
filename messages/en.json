@@ -592,6 +592,18 @@
       "prev": "Previous",
       "next": "Next",
       "page_of": "Page {current} of {total}"
+    },
+    "notes": {
+      "section": "Player notes",
+      "add": "Add note",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel",
+      "empty": "No notes yet.",
+      "placeholder": "Player observation (fast, improving at…, attitude…)",
+      "error": "Couldn't save",
+      "confirm_delete": "Delete this note?"
     }
   },
   "equipo_detalle": {
@@ -1237,7 +1249,8 @@
       "not_in_roster": "You weren't in the team on the match date.",
       "not_linked": "This account isn't linked to this player.",
       "edit_lineup": "Edit lineup",
-      "live_capture": "Live"
+      "live_capture": "Live",
+      "training_attendance_hint": "Training attendance (Mon–Fri) for the match week"
     },
     "republish": {
       "pending": "There are unpublished changes.",
@@ -1842,6 +1855,12 @@
       "notes_title": "Match notes",
       "notes_placeholder": "General match notes…",
       "notes_save": "Save notes"
-    }
+    },
+    "tool_note": "Note",
+    "note_for": "Note for {player}",
+    "note_placeholder": "Observation (fast, improving at…, attitude…)",
+    "note_save": "Save note",
+    "note_saved": "Note saved for {player}",
+    "note_error": "Couldn't save the note"
   }
 }

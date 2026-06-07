@@ -10,9 +10,13 @@
  */
 
 import {
+  type AttendanceCode,
+  type AttendanceMark,
   type CallupDecisionKind,
   type CallupResponseStatus,
+  type TrainingDay,
   type TransportMode,
+  computeWeeklyTrainingAttendance,
   createSupabaseServerClient,
   getCurrentUser,
 } from '@misterfc/core';
@@ -137,6 +141,15 @@ export type CallupDetail = {
    * modificadas DESPUÉS de la última publicación (cambios sin publicar).
    */
   hasUnpublishedChanges: boolean;
+  /**
+   * Mejora F7 — asistencia a los entrenos LUNES–VIERNES de la semana del partido.
+   * `byPlayer[playerId]` = {attended,total}. `totalTrainings`=0 → no hubo entrenos
+   * esa semana (la UI oculta el dato). Solo se computa para el cuerpo técnico.
+   */
+  weeklyTraining: {
+    totalTrainings: number;
+    byPlayer: Record<string, { attended: number; total: number }>;
+  };
 };
 
 const COACH_ROLES: ReadonlyArray<Role> = [
@@ -568,6 +581,58 @@ export async function loadCallupDetail(
   );
   const canRecordMatch = canRecordMatchRaw === true;
 
+  // Mejora F7 — asistencia a entrenos L–V de la semana del partido. Solo para el
+  // cuerpo técnico (el jugador/familia no ve la asistencia de los demás; además
+  // su RLS no leería training_attendance ajena). Se traen los entrenos del equipo
+  // en una ventana amplia alrededor del partido y el motor puro filtra a L–V de la
+  // semana y cuenta. Fechas civiles en zona Europe/Madrid.
+  const toMadridDate = (iso: string) =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(
+      new Date(iso),
+    );
+  const weeklyTraining: CallupDetail['weeklyTraining'] = {
+    totalTrainings: 0,
+    byPlayer: {},
+  };
+  if (scope.kind !== 'player') {
+    const matchDate = toMadridDate(event.starts_at);
+    const lo = new Date(event.starts_at);
+    lo.setDate(lo.getDate() - 8);
+    const hi = new Date(event.starts_at);
+    hi.setDate(hi.getDate() + 7);
+    const { data: trainRows } = await supabase
+      .from('events')
+      .select('id, starts_at')
+      .eq('team_id', event.team_id)
+      .eq('type', 'training')
+      .gte('starts_at', lo.toISOString())
+      .lte('starts_at', hi.toISOString());
+    const trainings: TrainingDay[] = (trainRows ?? []).map((r) => ({
+      id: r.id as string,
+      date: toMadridDate(r.starts_at as string),
+    }));
+    if (trainings.length > 0) {
+      const trainingIds = trainings.map((t) => t.id);
+      const { data: attRows } = await supabase
+        .from('training_attendance')
+        .select('player_id, event_id, code')
+        .in('event_id', trainingIds);
+      const attendance: AttendanceMark[] = (attRows ?? []).map((r) => ({
+        playerId: r.player_id as string,
+        eventId: r.event_id as string,
+        code: r.code as AttendanceCode,
+      }));
+      const computed = computeWeeklyTrainingAttendance({
+        matchDate,
+        trainings,
+        attendance,
+        rosterIds: visibleRoster.map((r) => r.players.id),
+      });
+      weeklyTraining.totalTrainings = computed.totalTrainings;
+      for (const [pid, v] of computed.byPlayer) weeklyTraining.byPlayer[pid] = v;
+    }
+  }
+
   return {
     event: {
       id: event.id,
@@ -603,6 +668,7 @@ export async function loadCallupDetail(
     canManageLineup,
     canRecordMatch,
     hasUnpublishedChanges,
+    weeklyTraining,
   };
 }
 

@@ -5,6 +5,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardList,
+  Dumbbell,
   HelpCircle,
   MapPin,
   Megaphone,
@@ -100,6 +101,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
     canManageLineup,
     canRecordMatch,
     hasUnpublishedChanges,
+    weeklyTraining,
   } = detail;
 
   const isPlayer = role === 'jugador';
@@ -338,6 +340,20 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                         </span>
                         <span className="flex items-center gap-2 text-xs text-muted-foreground">
                           {p.dorsal != null && <span>#{p.dorsal}</span>}
+                          {/* Mejora F7 — asistencia a entrenos L–V de la semana
+                              del partido (asistidos/total). Oculto si no hubo
+                              entrenos esa semana. */}
+                          {weeklyTraining.totalTrainings > 0 && (
+                            <span
+                              className="inline-flex items-center gap-1 rounded bg-muted px-1 font-mono tabular-nums"
+                              title={tDetail('training_attendance_hint')}
+                            >
+                              <Dumbbell className="size-3" aria-hidden />
+                              {(weeklyTraining.byPlayer[p.id]?.attended ?? 0)}/
+                              {weeklyTraining.byPlayer[p.id]?.total ??
+                                weeklyTraining.totalTrainings}
+                            </span>
+                          )}
                           {resp && RespIcon && (
                             <span className="flex items-center gap-1">
                               <RespIcon className="size-3" aria-hidden />
