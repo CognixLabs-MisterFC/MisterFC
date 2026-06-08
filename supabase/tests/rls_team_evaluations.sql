@@ -9,6 +9,7 @@
 --   Trigger / constraints (superuser):
 --     C1. team eval sobre TRAINING        → check_violation (event_not_a_match).
 --     C2. rating 11                        → check_violation (CHECK).
+--     C5. rating NULL (obligatorio)        → not_null_violation.
 --     C3. team eval sobre match (rating 7) → OK; club_id/team_id derivados.
 --     C4. event_id inmutable en UPDATE     → check_violation.
 --   RLS (role-switched):
@@ -20,6 +21,13 @@
 --     R6. flag ON: jugador (self p1), familia (parent p1) y jugador de OTRO
 --         jugador del mismo equipo (self p2) ven la colectiva (TEAM-scoped).
 --     R7. flag ON: jugador de OTRO equipo/club NO la ve.
+--     R8. flag ON: staff de OTRO equipo del MISMO club NO la ve (no team-scoped) → 0.
+--     R9. principal ACTUALIZA (staff CRUD - update)       → OK.
+--     R10. ayudante (team_staff) actualiza                → OK (recorder).
+--     R11. admin del club actualiza                       → OK (recorder club-wide).
+--     R12. jugador intenta actualizar la colectiva        → RLS filtra (0 filas).
+--     R13. jugador intenta borrar la colectiva            → RLS filtra (0 filas).
+--     R14. principal BORRA (staff CRUD - delete)          → OK (1 fila).
 
 begin;
 
@@ -34,6 +42,7 @@ insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, r
   ('99f90000-aaaa-0005-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'familia-f83-a@ts.test',   now(), '{}'::jsonb, now(), now()),
   ('99f90000-aaaa-0008-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador2-f83-a@ts.test',  now(), '{}'::jsonb, now(), now()),
   ('99f90000-aaaa-0006-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'staff-team2-f83@ts.test', now(), '{}'::jsonb, now(), now()),
+  ('99f90000-aaaa-0007-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayudante-f83-a@ts.test',  now(), '{}'::jsonb, now(), now()),
   ('99f90000-bbbb-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-f83-b@ts.test',     now(), '{}'::jsonb, now(), now());
 
 insert into public.memberships (id, profile_id, club_id, role) values
@@ -43,6 +52,7 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('99f90000-5550-0005-0000-000000000000', '99f90000-aaaa-0005-0000-000000000000', '99f90000-0000-0000-0000-000000000001', 'jugador'),
   ('99f90000-5550-0008-0000-000000000000', '99f90000-aaaa-0008-0000-000000000000', '99f90000-0000-0000-0000-000000000001', 'jugador'),
   ('99f90000-5550-0006-0000-000000000000', '99f90000-aaaa-0006-0000-000000000000', '99f90000-0000-0000-0000-000000000001', 'entrenador_principal'),
+  ('99f90000-5550-0009-0000-000000000000', '99f90000-aaaa-0007-0000-000000000000', '99f90000-0000-0000-0000-000000000001', 'entrenador_ayudante'),
   ('99f90000-5550-0007-0000-000000000000', '99f90000-bbbb-0001-0000-000000000000', '99f90000-0000-0000-0000-000000000002', 'admin_club');
 
 insert into public.categories (id, club_id, name, season) values
@@ -54,6 +64,7 @@ insert into public.teams (id, category_id, name, format, color) values
 
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('99f90000-0ee1-0001-0000-000000000000', '99f90000-5550-0002-0000-000000000000', 'entrenador_principal'),
+  ('99f90000-0ee1-0001-0000-000000000000', '99f90000-5550-0009-0000-000000000000', 'entrenador_ayudante'),
   ('99f90000-0ee1-0002-0000-000000000000', '99f90000-5550-0006-0000-000000000000', 'entrenador_principal');
 
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
@@ -95,6 +106,15 @@ do $$ begin
       values ('99f90000-0ee0-0001-0000-000000000000', 11, '99f90000-aaaa-0002-0000-000000000000');
     raise exception 'FAIL [C2]: rating 11 debería rechazarse';
   exception when check_violation then null; end;
+end $$;
+
+-- C5. rating NULL (obligatorio en la colectiva) → not_null_violation.
+do $$ begin
+  begin
+    insert into public.team_evaluations (event_id, comment, created_by)
+      values ('99f90000-0ee0-0001-0000-000000000000', 'sin nota', '99f90000-aaaa-0002-0000-000000000000');
+    raise exception 'FAIL [C5]: colectiva sin rating debería rechazarse';
+  exception when not_null_violation then null; end;
 end $$;
 
 -- C3. team eval sobre match rating 7 → OK; club_id/team_id derivados (ignora lo pasado).
@@ -236,6 +256,96 @@ declare n int;
 begin
   select count(*) into n from public.team_evaluations where event_id = '99f90000-0ee0-0001-0000-000000000000';
   if n <> 0 then raise exception 'FAIL [R7]: ajeno al equipo/club no debería ver la colectiva (got %)', n; end if;
+end $$;
+reset role;
+
+-- R8. staff de OTRO equipo del MISMO club NO ve la colectiva de team1 (no team-scoped) → 0.
+--     (flag ON desde R6; sigue 0 porque no es recorder ni cuenta de un jugador de team1).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '99f90000-aaaa-0006-0000-000000000000';
+do $$
+declare n int;
+begin
+  select count(*) into n from public.team_evaluations where event_id = '99f90000-0ee0-0001-0000-000000000000';
+  if n <> 0 then raise exception 'FAIL [R8]: staff de otro equipo del mismo club no debería ver la colectiva (got %)', n; end if;
+end $$;
+reset role;
+
+-- R9. principal ACTUALIZA la colectiva (staff CRUD - update) → OK.
+set local role authenticated;
+set local "request.jwt.claim.sub" to '99f90000-aaaa-0002-0000-000000000000';
+do $$
+declare n int;
+begin
+  update public.team_evaluations set rating = 6, comment = 'revisada'
+    where event_id = '99f90000-0ee0-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL [R9]: principal debería poder actualizar la colectiva (filas %)', n; end if;
+end $$;
+reset role;
+
+-- R10. entrenador AYUDANTE (team_staff) actualiza la colectiva → OK (recorder).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '99f90000-aaaa-0007-0000-000000000000';
+do $$
+declare n int;
+begin
+  update public.team_evaluations set comment = 'ajuste del ayudante'
+    where event_id = '99f90000-0ee0-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL [R10]: el ayudante debería poder actualizar la colectiva (filas %)', n; end if;
+exception when insufficient_privilege then
+  raise exception 'FAIL [R10]: el ayudante (team_staff) debería ser recorder';
+end $$;
+reset role;
+
+-- R11. admin del club actualiza la colectiva → OK (admin es recorder club-wide).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '99f90000-aaaa-0001-0000-000000000000';
+do $$
+declare n int;
+begin
+  update public.team_evaluations set rating = 7
+    where event_id = '99f90000-0ee0-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL [R11]: admin debería poder actualizar la colectiva (filas %)', n; end if;
+end $$;
+reset role;
+
+-- R12. jugador intenta ACTUALIZAR la colectiva → la RLS filtra (0 filas, sin efecto).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '99f90000-aaaa-0004-0000-000000000000';
+do $$
+declare n int;
+begin
+  update public.team_evaluations set rating = 1
+    where event_id = '99f90000-0ee0-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL [R12]: jugador no debería poder actualizar la colectiva (filas %)', n; end if;
+exception when insufficient_privilege then null; end $$;
+reset role;
+
+-- R13. jugador intenta BORRAR la colectiva → la RLS filtra (0 filas, sin efecto).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '99f90000-aaaa-0004-0000-000000000000';
+do $$
+declare n int;
+begin
+  delete from public.team_evaluations where event_id = '99f90000-0ee0-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL [R13]: jugador no debería poder borrar la colectiva (filas %)', n; end if;
+exception when insufficient_privilege then null; end $$;
+reset role;
+
+-- R14. principal BORRA la colectiva (staff CRUD - delete) → OK (1 fila).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '99f90000-aaaa-0002-0000-000000000000';
+do $$
+declare n int;
+begin
+  delete from public.team_evaluations where event_id = '99f90000-0ee0-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL [R14]: principal debería poder borrar la colectiva (filas %)', n; end if;
 end $$;
 reset role;
 

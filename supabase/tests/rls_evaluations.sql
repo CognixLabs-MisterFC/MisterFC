@@ -17,6 +17,7 @@
 --     C7.  player ajeno al team del evento           → check_violation (player_not_in_team_at_event).
 --     C8.  dos MVP en el mismo evento                → unique_violation (índice parcial).
 --     C9.  event_id inmutable en UPDATE              → check_violation.
+--     C9b. created_by inmutable en UPDATE            → check_violation.
 --     C10. post_match_done se resetea al reabrir      → status live ⇒ post_match_done=false.
 --   Triggers evaluation_private_notes (independiente de evaluations, superuser):
 --     CP1. nota privada en match SIN valoración previa  → OK; club/team derivados.
@@ -33,16 +34,30 @@
 --     R8.  flag ON: jugador y familia ven SU valoración (1 fila).
 --     R9.  flag ON: jugador NO ve la valoración de un compañero (player-scoped) → 0.
 --     R10. staff ve la valoración con flag OFF (no depende del flag).
+--     R18. flag ON: familia NO ve la de un compañero (player-scoped, D2) → 0.
+--     R19. staff de OTRO equipo (mismo club) NO lee las valoraciones → 0.
+--     R20. entrenador AYUDANTE (team_staff) actualiza               → OK (recorder).
+--     R21. principal ACTUALIZA (staff CRUD - update)                → OK.
+--     R22. jugador intenta actualizar su valoración                 → RLS filtra (0 filas).
+--     R23. jugador intenta borrar su valoración                     → RLS filtra (0 filas).
+--     R24. principal BORRA (staff CRUD - delete)                    → OK (1 fila).
 --   RLS evaluation_private_notes:
 --     R11. principal inserta nota privada            → OK; created_by forzado.
 --     R12. jugador (flag ON) lee notas privadas       → 0 filas (NUNCA expuesta).
 --     R12b. familia (flag ON) lee notas privadas      → 0 filas (NUNCA expuesta).
 --     R13. jugador inserta nota privada               → forbidden (42501).
+--     R25. staff de OTRO equipo lee la nota privada    → 0 filas.
+--     R26. principal ACTUALIZA la nota privada         → OK (staff CRUD).
+--     R27. principal BORRA la nota privada             → OK (staff CRUD).
 --   RLS club_settings:
 --     R14. admin upsert club_settings                 → OK.
 --     R15. coordinador escribe club_settings          → forbidden (42501) (D10: solo admin).
 --     R16. coordinador lee club_settings              → OK (1 fila).
 --     R17. jugador lee club_settings                  → 0 filas.
+--     R28. entrenador (staff no-admin) escribe el flag → RLS filtra (0 filas).
+--     R29. entrenador lee club_settings                → 0 filas (SELECT solo admin+coord).
+--     R30. jugador escribe el flag                     → RLS filtra (0 filas).
+--     R31. el flag sigue en false tras R28/R30.
 
 begin;
 
@@ -58,6 +73,7 @@ insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, r
   ('88f80000-aaaa-0004-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-f8-a@ts.test',   now(), '{}'::jsonb, now(), now()),
   ('88f80000-aaaa-0005-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'familia-f8-a@ts.test',   now(), '{}'::jsonb, now(), now()),
   ('88f80000-aaaa-0006-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'staff-team2-f8@ts.test', now(), '{}'::jsonb, now(), now()),
+  ('88f80000-aaaa-0007-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayudante-f8-a@ts.test',  now(), '{}'::jsonb, now(), now()),
   ('88f80000-bbbb-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-f8-b@ts.test',     now(), '{}'::jsonb, now(), now());
 
 insert into public.memberships (id, profile_id, club_id, role) values
@@ -67,6 +83,7 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('88f80000-5550-0004-0000-000000000000', '88f80000-aaaa-0004-0000-000000000000', '88f80000-0000-0000-0000-000000000001', 'jugador'),
   ('88f80000-5550-0005-0000-000000000000', '88f80000-aaaa-0005-0000-000000000000', '88f80000-0000-0000-0000-000000000001', 'jugador'),
   ('88f80000-5550-0006-0000-000000000000', '88f80000-aaaa-0006-0000-000000000000', '88f80000-0000-0000-0000-000000000001', 'entrenador_principal'),
+  ('88f80000-5550-0008-0000-000000000000', '88f80000-aaaa-0007-0000-000000000000', '88f80000-0000-0000-0000-000000000001', 'entrenador_ayudante'),
   ('88f80000-5550-0007-0000-000000000000', '88f80000-bbbb-0001-0000-000000000000', '88f80000-0000-0000-0000-000000000002', 'admin_club');
 
 insert into public.categories (id, club_id, name, season) values
@@ -76,9 +93,10 @@ insert into public.teams (id, category_id, name, format, color) values
   ('88f80000-0ee1-0001-0000-000000000000', '88f80000-0dd0-0001-0000-000000000000', 'Team 1', 'F7', '#0EA5E9'),
   ('88f80000-0ee1-0002-0000-000000000000', '88f80000-0dd0-0001-0000-000000000000', 'Team 2', 'F7', '#F59E0B');
 
--- principal → team1; staff-team2 → team2.
+-- principal + ayudante → team1; staff-team2 → team2.
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('88f80000-0ee1-0001-0000-000000000000', '88f80000-5550-0002-0000-000000000000', 'entrenador_principal'),
+  ('88f80000-0ee1-0001-0000-000000000000', '88f80000-5550-0008-0000-000000000000', 'entrenador_ayudante'),
   ('88f80000-0ee1-0002-0000-000000000000', '88f80000-5550-0006-0000-000000000000', 'entrenador_principal');
 
 -- players: p1, p2 en team1; pX solo en team2 (ajeno al roster de team1).
@@ -195,6 +213,15 @@ do $$ begin
     update public.evaluations set event_id = '88f80000-0ee0-0002-0000-000000000000'
       where event_id = '88f80000-0ee0-0001-0000-000000000000' and player_id = '88f80000-0c00-0001-0000-000000000000';
     raise exception 'FAIL [C9]: event_id no debería poder cambiar';
+  exception when check_violation then null; end;
+end $$;
+
+-- C9b. created_by inmutable en UPDATE → check_violation.
+do $$ begin
+  begin
+    update public.evaluations set created_by = '88f80000-aaaa-0003-0000-000000000000'
+      where event_id = '88f80000-0ee0-0001-0000-000000000000' and player_id = '88f80000-0c00-0001-0000-000000000000';
+    raise exception 'FAIL [C9b]: created_by no debería poder cambiar';
   exception when check_violation then null; end;
 end $$;
 
@@ -418,6 +445,98 @@ begin
 end $$;
 reset role;
 
+-- R18. familia (flag ON) NO ve la valoración de un compañero (player-scoped, D2).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0005-0000-000000000000';
+do $$
+declare n int;
+begin
+  select count(*) into n from public.evaluations
+    where player_id = '88f80000-0c00-0002-0000-000000000000';
+  if n <> 0 then raise exception 'FAIL [R18]: familia no debería ver valoraciones de un compañero (got %)', n; end if;
+end $$;
+reset role;
+
+-- R19. staff de OTRO equipo (mismo club) NO lee las valoraciones del partido de team1
+--      (no es recorder de ese evento ni cuenta de sus jugadores). Independiente del flag.
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0006-0000-000000000000';
+do $$
+declare n int;
+begin
+  select count(*) into n from public.evaluations
+    where event_id = '88f80000-0ee0-0001-0000-000000000000';
+  if n <> 0 then raise exception 'FAIL [R19]: staff de otro equipo no debería ver las valoraciones (got %)', n; end if;
+end $$;
+reset role;
+
+-- R20. entrenador AYUDANTE del team (team_staff activo) es recorder → puede ACTUALIZAR.
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0007-0000-000000000000';
+do $$
+declare n int;
+begin
+  update public.evaluations set comment = 'ajuste del ayudante'
+    where event_id = '88f80000-0ee0-0001-0000-000000000000' and player_id = '88f80000-0c00-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL [R20]: el ayudante debería poder actualizar (filas afectadas %)', n; end if;
+exception when insufficient_privilege then
+  raise exception 'FAIL [R20]: el ayudante (team_staff) debería ser recorder';
+end $$;
+reset role;
+
+-- R21. principal ACTUALIZA la valoración (staff CRUD - update) → OK.
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0002-0000-000000000000';
+do $$
+declare n int;
+begin
+  update public.evaluations set rating = 9
+    where event_id = '88f80000-0ee0-0001-0000-000000000000' and player_id = '88f80000-0c00-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL [R21]: principal debería poder actualizar (filas %)', n; end if;
+end $$;
+reset role;
+
+-- R22. jugador intenta ACTUALIZAR su valoración → la RLS filtra (0 filas, sin efecto).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0004-0000-000000000000';
+do $$
+declare n int;
+begin
+  update public.evaluations set rating = 1
+    where event_id = '88f80000-0ee0-0001-0000-000000000000' and player_id = '88f80000-0c00-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL [R22]: jugador no debería poder actualizar su valoración (filas %)', n; end if;
+exception when insufficient_privilege then null; end $$;
+reset role;
+
+-- R23. jugador intenta BORRAR su valoración → la RLS filtra (0 filas, sin efecto).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0004-0000-000000000000';
+do $$
+declare n int;
+begin
+  delete from public.evaluations
+    where event_id = '88f80000-0ee0-0001-0000-000000000000' and player_id = '88f80000-0c00-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL [R23]: jugador no debería poder borrar su valoración (filas %)', n; end if;
+exception when insufficient_privilege then null; end $$;
+reset role;
+
+-- R24. principal BORRA una valoración (staff CRUD - delete) → OK (1 fila).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0002-0000-000000000000';
+do $$
+declare n int;
+begin
+  delete from public.evaluations
+    where event_id = '88f80000-0ee0-0001-0000-000000000000' and player_id = '88f80000-0c00-0002-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL [R24]: principal debería poder borrar (filas %)', n; end if;
+end $$;
+reset role;
+
 -- ── RLS evaluation_private_notes ─────────────────────────────────────────────
 
 -- R11. principal inserta nota privada (event match, p1) → OK; created_by forzado.
@@ -472,6 +591,44 @@ do $$ begin
 end $$;
 reset role;
 
+-- R25. staff de OTRO equipo (mismo club) NO lee la nota privada de team1 → 0.
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0006-0000-000000000000';
+do $$
+declare n int;
+begin
+  select count(*) into n from public.evaluation_private_notes
+    where event_id = '88f80000-0ee0-0001-0000-000000000000';
+  if n <> 0 then raise exception 'FAIL [R25]: staff de otro equipo no debería leer la nota privada (got %)', n; end if;
+end $$;
+reset role;
+
+-- R26. principal ACTUALIZA la nota privada (staff CRUD) → OK (1 fila).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0002-0000-000000000000';
+do $$
+declare n int;
+begin
+  update public.evaluation_private_notes set note = 'actualizada'
+    where event_id = '88f80000-0ee0-0001-0000-000000000000' and player_id = '88f80000-0c00-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL [R26]: principal debería poder actualizar la nota privada (filas %)', n; end if;
+end $$;
+reset role;
+
+-- R27. principal BORRA la nota privada (staff CRUD) → OK (1 fila).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0002-0000-000000000000';
+do $$
+declare n int;
+begin
+  delete from public.evaluation_private_notes
+    where event_id = '88f80000-0ee0-0001-0000-000000000000' and player_id = '88f80000-0c00-0001-0000-000000000000';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL [R27]: principal debería poder borrar la nota privada (filas %)', n; end if;
+end $$;
+reset role;
+
 -- ── RLS club_settings ────────────────────────────────────────────────────────
 
 -- R14. admin upsert club_settings → OK.
@@ -519,6 +676,56 @@ declare n int;
 begin
   select count(*) into n from public.club_settings where club_id = '88f80000-0000-0000-0000-000000000001';
   if n <> 0 then raise exception 'FAIL [R17]: jugador no debería leer club_settings (got %)', n; end if;
+end $$;
+reset role;
+
+-- R28. entrenador principal (staff, no admin) escribe club_settings → la RLS filtra
+--      (0 filas; el flag sigue false). Solo el admin escribe (D10).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0002-0000-000000000000';
+do $$
+declare n int;
+begin
+  update public.club_settings set evaluations_player_visibility = true
+    where club_id = '88f80000-0000-0000-0000-000000000001';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL [R28]: el staff no-admin no debería poder cambiar el flag (filas %)', n; end if;
+exception when insufficient_privilege then null; end $$;
+reset role;
+
+-- R29. entrenador principal lee club_settings → 0 filas (SELECT solo admin+coord).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0002-0000-000000000000';
+do $$
+declare n int;
+begin
+  select count(*) into n from public.club_settings where club_id = '88f80000-0000-0000-0000-000000000001';
+  if n <> 0 then raise exception 'FAIL [R29]: el entrenador no debería leer club_settings (got %)', n; end if;
+end $$;
+reset role;
+
+-- R30. jugador escribe club_settings → la RLS filtra (0 filas; sigue false).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0004-0000-000000000000';
+do $$
+declare n int;
+begin
+  update public.club_settings set evaluations_player_visibility = true
+    where club_id = '88f80000-0000-0000-0000-000000000001';
+  get diagnostics n = row_count;
+  if n <> 0 then raise exception 'FAIL [R30]: el jugador no debería poder cambiar el flag (filas %)', n; end if;
+exception when insufficient_privilege then null; end $$;
+reset role;
+
+-- R31. tras R28/R30, el flag sigue en false (nadie no-admin lo cambió).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0001-0000-000000000000';
+do $$
+declare v boolean;
+begin
+  select evaluations_player_visibility into v from public.club_settings
+    where club_id = '88f80000-0000-0000-0000-000000000001';
+  if v is distinct from false then raise exception 'FAIL [R31]: el flag debería seguir en false (got %)', v; end if;
 end $$;
 reset role;
 
