@@ -9,3 +9,4 @@ export * from './team-view/index';
 export * from './lineups/index';
 export * from './match/index';
 export * from './attendance/index';
+export * from './player-profile/index';

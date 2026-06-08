@@ -474,7 +474,26 @@
       "basic_data": "Datos básicos",
       "medical": "Notas médicas",
       "history": "Trayectoria en el club",
-      "family": "Familia"
+      "family": "Familia",
+      "season_stats": "Estadístiques de la temporada"
+    },
+    "stats": {
+      "season_label": "Temporada",
+      "empty": "Sense estadístiques de partit en esta temporada.",
+      "label": {
+        "matches": "Partits",
+        "starts": "Titularitats",
+        "minutes": "Minuts",
+        "goals": "Gols",
+        "assists": "Assistències",
+        "shots": "Tirs",
+        "yellow_cards": "Grogues",
+        "red_cards": "Roges",
+        "fouls_committed": "Faltes comeses",
+        "fouls_received": "Faltes rebudes",
+        "penalties_scored": "Penals marcats",
+        "penalties_missed": "Penals fallats"
+      }
     },
     "history": {
       "empty": "Sin asignaciones a equipos todavía.",
