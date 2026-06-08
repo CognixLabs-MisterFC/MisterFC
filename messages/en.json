@@ -474,7 +474,26 @@
       "basic_data": "Datos básicos",
       "medical": "Notas médicas",
       "history": "Trayectoria en el club",
-      "family": "Familia"
+      "family": "Familia",
+      "season_stats": "Season stats"
+    },
+    "stats": {
+      "season_label": "Season",
+      "empty": "No match stats in this season.",
+      "label": {
+        "matches": "Matches",
+        "starts": "Starts",
+        "minutes": "Minutes",
+        "goals": "Goals",
+        "assists": "Assists",
+        "shots": "Shots",
+        "yellow_cards": "Yellow cards",
+        "red_cards": "Red cards",
+        "fouls_committed": "Fouls committed",
+        "fouls_received": "Fouls received",
+        "penalties_scored": "Penalties scored",
+        "penalties_missed": "Penalties missed"
+      }
     },
     "history": {
       "empty": "Sin asignaciones a equipos todavía.",

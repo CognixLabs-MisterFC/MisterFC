@@ -1,7 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft } from 'lucide-react';
-import { createSupabaseServerClient } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  sumMatchStats,
+  type MatchStatRow,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -20,9 +24,11 @@ import {
   PlayerNotesSection,
   type PlayerNoteItem,
 } from './player-notes-section';
+import { PlayerSeasonStats } from './player-season-stats';
 
 type Props = {
   params: Promise<{ locale: string; playerId: string }>;
+  searchParams: Promise<{ season?: string }>;
 };
 
 const ROLES_THAT_CAN_MANAGE: ReadonlyArray<string> = [
@@ -33,8 +39,9 @@ const ROLES_THAT_CAN_MANAGE: ReadonlyArray<string> = [
 
 const PLAYER_PHOTO_TTL_SECONDS = 600; // 10 min
 
-export default async function PlayerDetailPage({ params }: Props) {
+export default async function PlayerDetailPage({ params, searchParams }: Props) {
   const { locale, playerId } = await params;
+  const { season: seasonParam } = await searchParams;
   setRequestLocale(locale);
 
   const ctx = await loadShellContext();
@@ -127,6 +134,46 @@ export default async function PlayerDetailPage({ params }: Props) {
     .eq('player_id', player.id)
     .order('joined_at', { ascending: false });
 
+  // F9.1 — Stats agregadas por temporada (vista staff). Las temporadas salen de la
+  // trayectoria; la temporada por defecto es la del equipo activo (o la más
+  // reciente). La RLS de match_player_stats recorta a quien puede leer (staff).
+  type HistTeam = {
+    name: string;
+    categories: { name: string; season: string };
+  } | null;
+  const seasonsSet = new Set<string>();
+  let activeSeasonFromHistory: string | null = null;
+  for (const h of history ?? []) {
+    const tm = (h.teams ?? null) as HistTeam;
+    const s = tm?.categories?.season;
+    if (s) {
+      seasonsSet.add(s);
+      if (h.left_at === null) activeSeasonFromHistory = s;
+    }
+  }
+  const seasons = Array.from(seasonsSet).sort((a, b) => b.localeCompare(a));
+  const activeSeason =
+    (seasonParam && seasons.includes(seasonParam) ? seasonParam : null) ??
+    activeSeasonFromHistory ??
+    seasons[0] ??
+    null;
+
+  let aggregatedStats = sumMatchStats([]);
+  if (activeSeason) {
+    // Acotar por temporada vía team → category.season (match_player_stats.team_id
+    // es el del partido; el embed !inner filtra las filas por esa temporada).
+    const { data: statRows } = await supabase
+      .from('match_player_stats')
+      .select(
+        'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, teams!inner(categories!inner(season))'
+      )
+      .eq('player_id', player.id)
+      .eq('teams.categories.season', activeSeason);
+    aggregatedStats = sumMatchStats(
+      (statRows ?? []) as unknown as MatchStatRow[]
+    );
+  }
+
   // Familia: cuentas vinculadas + invitaciones pendientes (F2.4)
   const { data: linkedAccounts } = await supabase
     .from('player_accounts')
@@ -205,6 +252,19 @@ export default async function PlayerDetailPage({ params }: Props) {
         </CardHeader>
         <CardContent>
           <PlayerForm playerId={player.id} initial={player} canEdit={canManage} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('section.season_stats')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PlayerSeasonStats
+            stats={aggregatedStats}
+            seasons={seasons}
+            activeSeason={activeSeason}
+          />
         </CardContent>
       </Card>
 
