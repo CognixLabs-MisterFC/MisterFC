@@ -501,6 +501,14 @@
           "partial": "Partial"
         }
       },
+      "evolution": {
+        "title": "Rating evolution",
+        "individual": "Individual rating",
+        "collective": "Team rating",
+        "table_caption": "Rating per match in the season",
+        "col_date": "Date",
+        "col_match": "Match"
+      },
       "label": {
         "matches": "Matches",
         "starts": "Starts",

@@ -501,6 +501,14 @@
           "partial": "Parcial"
         }
       },
+      "evolution": {
+        "title": "Evolució de la valoració",
+        "individual": "Nota individual",
+        "collective": "Valoració de l'equip",
+        "table_caption": "Valoració per partit en la temporada",
+        "col_date": "Data",
+        "col_match": "Partit"
+      },
       "label": {
         "matches": "Partits",
         "starts": "Titularitats",

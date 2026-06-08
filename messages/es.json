@@ -500,6 +500,14 @@
           "partial": "Parcial"
         }
       },
+      "evolution": {
+        "title": "Evolución de la valoración",
+        "individual": "Nota individual",
+        "collective": "Valoración del equipo",
+        "table_caption": "Valoración por partido en la temporada",
+        "col_date": "Fecha",
+        "col_match": "Partido"
+      },
       "label": {
         "matches": "Partidos",
         "starts": "Titularidades",
