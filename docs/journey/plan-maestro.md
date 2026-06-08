@@ -108,7 +108,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☑ |
 | F6 | Alineaciones y planificación del partido | 12–19 h | 4–5 | ☑ |
 | F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☑ |
-| F8 | Valoraciones del partido y del entrenamiento | 8–13 h | 3–4 | ☐ |
+| F8 | Valoraciones del partido | 8–13 h | 3–4 | ☑ |
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☐ |
 | F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☐ |
 | F11 | Biblioteca de ejercicios | 13–18 h | 5–6 | ☐ |
@@ -387,32 +387,46 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 ---
 
-### Fase 8 — Valoraciones del partido y del entrenamiento
+### Fase 8 — Valoraciones del partido
 
-**Objetivo**: sistema de valoraciones para partidos y entrenamientos: 1-10 + notas individuales, MVP, visibilidad configurable.
+> **Título cambiado en el cierre (2026-06-08): "Valoraciones del partido y del entrenamiento" → "Valoraciones del partido".** Los **entrenamientos quedan FUERA de F8** — decisión de producto tomada durante la implementación (ver [spec 8.0 §14](../specs/8.0-valoraciones.md) y [ADR-0015](../decisions/ADR-0015-f8-descope-entrenamientos-valoracion-colectiva.md)). **No re-añadir la valoración de entrenamientos desde el plan antiguo**: si se retoma, es una fase/extensión nueva con su propio alcance. F8 solo cubre el **partido** (individual + colectiva).
 
-**Horas**: 8–13 h · **Sesiones**: 3–4
+**Objetivo**: sistema de valoraciones del **partido**: nota individual 1-10 + comentario + MVP por jugador, valoración colectiva del equipo, nota privada del cuerpo técnico, y visibilidad configurable por club hacia jugadores/familias.
 
-**Criterio de cierre**: entrenador puede valorar a cada jugador tras un partido (1-10 + notas + MVP) y tras un entrenamiento. Configuración por club de qué pueden ver jugadores y familias.
+**Estado**: ☑ **Cerrada (2026-06-08)** — todas las subfases entregadas (8.1–8.6) y verificadas (typecheck · lint · test · build + barrido pgTAP en verde). Detalle de cierre en [docs/specs/8.0-valoraciones.md](../specs/8.0-valoraciones.md) §14.
+
+**Horas**: 8–13 h · **Sesiones**: 3–4 · **PRs**: #58 (8.1), #59 (8.2), #60 (8.3 obsoleta, ver nota), #61 (8.3 colectiva), #62 (8.4), #63 (8.5), #64 (8.6).
+
+**Criterio de cierre**: entrenador puede valorar a cada jugador tras un partido (1-10 + comentario + MVP), valorar al equipo en conjunto, y dejar una nota privada interna por jugador. El admin del club configura si jugadores y familias ven sus valoraciones (OFF por defecto). RLS cubierta por pgTAP. *(La pantalla donde el jugador/familia VE su valoración se entrega en **F9** — F8 abrió el permiso a nivel de datos.)*
 
 **Riesgo**: medio-bajo. Decisión sensible: qué ven jugadores y familias.
 
 **Dependencias**: Fase 7 cerrada.
 
-**Subfases**:
+**Subfases** (reescritas a la realidad implementada):
 
-- **8.1** Modelo `evaluations` unificada (event_id, player_id, rating 1-10, notes, visibility, is_mvp) — 30 min
-- **8.2** UI valoración post-partido (slider 1-10, notas, MVP) — 1–2 h
-- **8.3** UI valoración post-entrenamiento — 2–3 h
-- **8.4** Designación de MVP y notas privadas — 1 h
-- **8.5** Configuración de visibilidad por club — 1 h
-- **8.6** Tests de RLS de valoraciones — 1 h
+- **8.1** Modelo de datos — `evaluations` (por jugador: rating 1-10 + comentario + MVP, obligatorio en partido a nivel de fila) + `evaluation_private_notes` (nota privada, tabla aparte por column-leak) + `team_evaluations` (colectiva) + `club_settings` (flag de visibilidad) + `match_state.post_match_done` (cierre del ciclo) + 2 helpers + triggers + RLS — #58
+- **8.2** UI post-partido — valoración **individual** por jugador (1-10 + comentario + MVP), `match_player_stats` como contexto de solo lectura, "Completar valoraciones" (`post_match_done`) — #59
+- **8.3** Valoración **colectiva** del partido (`team_evaluations`, una por partido, 1-10 + comentario; **coexiste** con la individual, lectura team-scoped) — #61. *(Antes esta subfase era "UI post-entrenamiento"; **cambiada** al descopar los entrenos. El PR #60 con la valoración de entreno quedó **obsoleto** y no se mergea.)*
+- **8.4** Nota privada del entrenador por jugador y partido (tabla `evaluation_private_notes`, **desacoplada** de la valoración individual — migración `20260624000000` quitó la FK a `evaluations`; nunca visible a jugador/familia) — #62
+- **8.5** Configuración de visibilidad por club — pantalla `/ajustes`, toggle `club_settings.evaluations_player_visibility` (opt-in, **default OFF**, lo escribe **solo el admin**, D10) — #63
+- **8.6** Barrido pgTAP completo de RLS de valoraciones (matriz tabla × rol × operación + cruce del flag sobre individual y colectiva) — #64
 
 ---
 
 ### Fase 9 — Perfil del jugador, evolución y reportes
 
 **Objetivo**: vista de perfil deportivo del jugador con stats agregadas, ratios, evolución intra-temporada y multi-temporada, badges y reportes mensuales en PDF exportables.
+
+> **Requisito heredado de F8 (anotado en el cierre de F8, 2026-06-08)**: el perfil del jugador debe **agregar TODO** lo que producen las fases de partido:
+> - **Estadísticas** del partido (F7 — `match_player_stats`).
+> - **Valoraciones** del partido: **individual** (`evaluations`: rating + comentario + MVP) y **colectiva** del equipo (`team_evaluations`).
+> - **Comentarios visibles** (campo `comment` de `evaluations`) y **comentarios privados** (`evaluation_private_notes`).
+> - **Notas de jugador** transversales (7.13 — `player_notes`).
+>
+> Con **dos vistas diferenciadas**: la del **entrenador/cuerpo técnico** lo ve **todo** (incluido lo privado: notas privadas + `player_notes`); la del **jugador/familia** solo lo permitido (su valoración individual + la colectiva + el comentario visible + el MVP, **y solo si el club activó la visibilidad** — flag `club_settings.evaluations_player_visibility`). Nunca lo privado.
+>
+> **F8 solo abrió el permiso a nivel de datos** (RLS: la lectura de jugador/familia ya cumple la policy con el flag ON). **La pantalla donde el jugador/familia VE su valoración se entrega en F9** — F8 no construyó ninguna vista de lectura para ellos.
 
 **Horas**: 16–32 h · **Sesiones**: 6–8
 
