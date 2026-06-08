@@ -14,7 +14,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 5 | Mensajería interna y push notifications | ☑ completada | 2026-05-30 | 2026-05-31 |
 | 6 | Alineaciones y planificación del partido (ampliada 2026-05-29) | ☑ completada | 2026-05-31 | 2026-06-01 |
 | 7 | Pantalla de toma de datos del partido (live) | ☑ completada | 2026-06-01 | 2026-06-07 |
-| 8 | Valoraciones de partido y entrenamiento | ☐ pendiente | — | — |
+| 8 | Valoraciones del partido | ☑ completada | 2026-06-08 | 2026-06-08 |
 | 9 | Perfil del jugador y evolución multi-temporada | ☐ pendiente | — | — |
 | 10 | Dashboard ejecutivo del club | ☐ pendiente | — | — |
 | 11 | Biblioteca de ejercicios | ☐ pendiente | — | — |
@@ -166,6 +166,27 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **PRs**: #36–#53 (subfases) + #54 (fix pgTAP) + #55 (mejoras pre-cierre 7.13/7.14/7.15). NO mergeados por el agente (los mergea el responsable).
 - **Migraciones**: `match_events` (#36) + ampliaciones de CHECK (formation_change, penalty/shootout) + `match_absences` + `substitution_regimes`/`teams.division` + `match_player_stats` + `match_rival_highlights` + `player_notes` + fix RLS (recursión + capabilities). Todas por CLI, sin editar aplicadas.
 - **Tests**: motor puro de F7 en `@misterfc/core/match` + `@misterfc/core/attendance` (reloj, minutos, marcador/penaltis, contadores, línea de tiempo, consolidación, asistencia semanal); runner pgTAP completo en verde tras el fix #54.
+
+## Fase 8 — Subfases entregadas
+
+> **Descope (2026-06-08)**: los **entrenamientos quedaron FUERA de F8** (título cambiado a "Valoraciones del partido"). La 8.3 pasó de "post-entrenamiento" a **valoración colectiva del partido**. Detalle en [docs/specs/8.0-valoraciones.md](../specs/8.0-valoraciones.md) §14 y [ADR-0015](../decisions/ADR-0015-f8-descope-entrenamientos-valoracion-colectiva.md).
+
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| 8.1 | 2026-06-08 | #58 | Modelo: `evaluations` (rating 1-10 + comentario + MVP) + `evaluation_private_notes` + `team_evaluations` + `club_settings` + `match_state.post_match_done` + helpers (`user_is_account_of_player`, `club_evaluations_visible`) + triggers + RLS. ADR-0014 |
+| 8.2 | 2026-06-08 | #59 | UI post-partido `/convocatorias/[eventId]/post-partido`: valoración **individual** por jugador (1-10 + comentario + MVP), `match_player_stats` como contexto de solo lectura, "Completar valoraciones" (`post_match_done`) |
+| 8.3 | 2026-06-08 | #61 | Valoración **colectiva** del partido (`team_evaluations`, una por partido, lectura team-scoped; **coexiste** con la individual). PR #60 (valoración de entreno) **obsoleto**, no se mergea |
+| 8.4 | 2026-06-08 | #62 | Nota privada del entrenador por jugador y partido (`evaluation_private_notes`), **desacoplada** de la valoración individual (migración `20260624000000` quitó la FK); nunca visible a jugador/familia |
+| 8.5 | 2026-06-08 | #63 | Config de visibilidad por club: pantalla `/ajustes` + toggle `evaluations_player_visibility` (opt-in, default OFF, solo admin — D10) |
+| 8.6 | 2026-06-08 | #64 | Barrido pgTAP completo de RLS (matriz tabla × rol × operación + cruce del flag sobre individual y colectiva) |
+
+## Fase 8 — Cierre
+
+- **Inicio / Fin**: 2026-06-08 / 2026-06-08. Dentro del presupuesto (8–13 h).
+- **PRs**: #58–#64. PR #60 (valoración de entreno) quedó obsoleto al descopar entrenamientos — no se mergea. NO mergeados por el agente (los mergea el responsable).
+- **Migraciones** (todas por CLI, sin editar las aplicadas): `20260622000000_evaluations.sql` (evaluations + evaluation_private_notes + club_settings + post_match_done + helpers), `20260623000000_team_evaluations.sql` (colectiva), `20260624000000_evaluation_private_notes_decouple.sql` (quita la FK de la nota privada → integridad por trigger).
+- **Tests**: schemas Zod de valoración en `@misterfc/core` (Vitest); barrido pgTAP en `supabase/tests/rls_evaluations.sql` + `rls_team_evaluations.sql` + `rls_evaluations_crossflag.sql` — toda la matriz de visibilidad en verde.
+- **Fuera de alcance / a F9**: la pantalla donde el jugador/familia VE su valoración (F8 solo abrió el permiso a nivel de datos). Valoración de **entrenamientos**: descopada, no planificada (fase/extensión futura si se retoma).
 
 ## Fase 11 — Subfases pendientes
 
