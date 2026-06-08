@@ -249,6 +249,20 @@ export type {
   UpdatePlayerNoteInput,
   DeletePlayerNoteInput,
 } from './player-notes';
+
+export {
+  RATING_MIN,
+  RATING_MAX,
+  EVALUATION_COMMENT_MAX,
+  upsertEvaluationSchema,
+  deleteEvaluationSchema,
+  setPostMatchDoneSchema,
+} from './evaluation';
+export type {
+  UpsertEvaluationInput,
+  DeleteEvaluationInput,
+  SetPostMatchDoneInput,
+} from './evaluation';
 export type {
   RegisterPlayerEventInput,
   RegisterFieldEventInput,

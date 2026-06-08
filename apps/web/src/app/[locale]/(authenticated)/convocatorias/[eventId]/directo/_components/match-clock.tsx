@@ -33,6 +33,7 @@ import {
   RotateCcw,
   SkipForward,
   Square,
+  Star,
   Timer,
 } from 'lucide-react';
 import {
@@ -48,7 +49,7 @@ import {
   nextRegularPeriod,
   periodClockSeconds,
 } from '@misterfc/core';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -271,6 +272,13 @@ export function MatchClock({
               <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
               {t('stats_consolidated')}
             </span>
+            {/* F8.2 — CTA a la etapa de valoraciones (post-partido). */}
+            <Button asChild size="sm" disabled={pending}>
+              <Link href={`/convocatorias/${eventId}/post-partido`}>
+                <Star className="size-4" aria-hidden />
+                <span>{t('go_post_match')}</span>
+              </Link>
+            </Button>
             {confirmReopen ? (
               <>
                 <span className="text-sm">{t('clock_reopen_confirm')}</span>

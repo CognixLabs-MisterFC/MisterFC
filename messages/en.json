@@ -1250,6 +1250,7 @@
       "not_linked": "This account isn't linked to this player.",
       "edit_lineup": "Edit lineup",
       "live_capture": "Live",
+      "post_match": "Post-match",
       "training_attendance_hint": "Training attendance (Mon–Fri) for the match week"
     },
     "republish": {
@@ -1836,6 +1837,7 @@
       }
     },
     "stats_consolidated": "Match closed · stats consolidated",
+    "go_post_match": "Go to ratings",
     "clock_reopen": "Reopen match",
     "clock_reopen_confirm": "Reopen the match to edit?",
     "clock_reopen_yes": "Yes, reopen",
@@ -1862,5 +1864,54 @@
     "note_save": "Save note",
     "note_saved": "Note saved for {player}",
     "note_error": "Couldn't save the note"
+  },
+  "post_partido": {
+    "back": "Back to call-up",
+    "title": "Match ratings",
+    "subtitle": "Rate each player with a score, comment and MVP. Stats are context, not mixed with your rating.",
+    "not_finished_title": "The match isn't finished yet",
+    "not_finished_hint": "Finish the match from the live screen to open ratings.",
+    "reopened_title": "The match has been reopened",
+    "reopened_hint": "Stats are stale until you finish it again. Your ratings are kept.",
+    "go_live": "Go to the live screen",
+    "final_score": "Final score",
+    "no_players": "No players with recorded participation in this match.",
+    "starter": "Starter",
+    "did_not_play": "Did not play",
+    "mvp": "MVP",
+    "rating": "Score",
+    "comment_placeholder": "Comment for the player (optional)…",
+    "save": "Save",
+    "saved": "Saved",
+    "clear": "Clear",
+    "unsaved": "Unsaved",
+    "completed": "Ratings completed",
+    "reopen_stage": "Mark as pending",
+    "complete": "Complete ratings",
+    "complete_confirm": "Close the ratings stage?",
+    "complete_yes": "Yes, complete",
+    "complete_cancel": "Cancel",
+    "valued_count": "{valued} of {total} rated",
+    "stat": {
+      "minutes": "Minutes played",
+      "goals": "Goals",
+      "assists": "Assists",
+      "shots": "Shots",
+      "yellow": "Yellow cards",
+      "red": "Red cards",
+      "fouls_committed": "Fouls committed",
+      "fouls_received": "Fouls received",
+      "penalties": "Penalties (scored/taken)"
+    },
+    "error": {
+      "rating_required": "In a match the score (1-10) is required.",
+      "empty": "Add at least a score, comment or MVP.",
+      "mvp_taken": "There's already another MVP in this match.",
+      "forbidden": "You don't have permission to rate this match.",
+      "invalid": "Invalid data.",
+      "not_closed": "The match isn't finished.",
+      "unauthenticated": "Invalid session.",
+      "generic": "Couldn't save. Please try again."
+    }
   }
 }

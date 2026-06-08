@@ -1250,6 +1250,7 @@
       "not_linked": "Este compte no està vinculat a este jugador.",
       "edit_lineup": "Editar alineació",
       "live_capture": "En directe",
+      "post_match": "Post-partit",
       "training_attendance_hint": "Assistència als entrenaments (dl–dv) de la setmana del partit"
     },
     "republish": {
@@ -1836,6 +1837,7 @@
       }
     },
     "stats_consolidated": "Partit tancat · estadístiques consolidades",
+    "go_post_match": "Anar a valoracions",
     "clock_reopen": "Reobrir partit",
     "clock_reopen_confirm": "Reobrir el partit per a editar?",
     "clock_reopen_yes": "Sí, reobrir",
@@ -1862,5 +1864,54 @@
     "note_save": "Guarda nota",
     "note_saved": "Nota guardada per a {player}",
     "note_error": "No s'ha pogut guardar la nota"
+  },
+  "post_partido": {
+    "back": "Tornar a la convocatòria",
+    "title": "Valoracions del partit",
+    "subtitle": "Posa nota, comentari i MVP a cada jugador. Les estadístiques són context, no es barregen amb la teua valoració.",
+    "not_finished_title": "El partit encara no està finalitzat",
+    "not_finished_hint": "Finalitza el partit des de la pantalla en directe per a obrir les valoracions.",
+    "reopened_title": "El partit s'ha reobert",
+    "reopened_hint": "Les estadístiques queden obsoletes fins que el tornes a finalitzar. Les teues valoracions es conserven.",
+    "go_live": "Anar a la pantalla en directe",
+    "final_score": "Resultat final",
+    "no_players": "No hi ha jugadors amb participació registrada en este partit.",
+    "starter": "Titular",
+    "did_not_play": "No va participar",
+    "mvp": "MVP",
+    "rating": "Nota",
+    "comment_placeholder": "Comentari per al jugador (opcional)…",
+    "save": "Guardar",
+    "saved": "Guardat",
+    "clear": "Esborrar",
+    "unsaved": "Sense guardar",
+    "completed": "Valoracions completades",
+    "reopen_stage": "Marcar com a pendent",
+    "complete": "Completar valoracions",
+    "complete_confirm": "Tancar l'etapa de valoracions?",
+    "complete_yes": "Sí, completar",
+    "complete_cancel": "Cancel·lar",
+    "valued_count": "{valued} de {total} valorats",
+    "stat": {
+      "minutes": "Minuts jugats",
+      "goals": "Gols",
+      "assists": "Assistències",
+      "shots": "Tirs",
+      "yellow": "Targetes grogues",
+      "red": "Targetes roges",
+      "fouls_committed": "Faltes comeses",
+      "fouls_received": "Faltes rebudes",
+      "penalties": "Penals (marcats/llançats)"
+    },
+    "error": {
+      "rating_required": "En un partit la nota (1-10) és obligatòria.",
+      "empty": "Afig almenys nota, comentari o MVP.",
+      "mvp_taken": "Ja hi ha un altre MVP en este partit.",
+      "forbidden": "No tens permís per a valorar este partit.",
+      "invalid": "Dades no vàlides.",
+      "not_closed": "El partit no està finalitzat.",
+      "unauthenticated": "Sessió no vàlida.",
+      "generic": "No s'ha pogut guardar. Torna-ho a provar."
+    }
   }
 }

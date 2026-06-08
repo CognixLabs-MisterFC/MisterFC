@@ -137,6 +137,12 @@ export type CallupDetail = {
    */
   canRecordMatch: boolean;
   /**
+   * F8.2 — estado de la sesión de captura del partido (match_state.status).
+   * 'not_started' si no hay fila. Habilita el paso "Post-partido" del stepper
+   * cuando es 'closed' (partido finalizado → valoraciones abiertas).
+   */
+  matchStatus: 'not_started' | 'live' | 'closed';
+  /**
    * Bug G — la convocatoria está publicada y hay decisiones del cuerpo técnico
    * modificadas DESPUÉS de la última publicación (cambios sin publicar).
    */
@@ -581,6 +587,19 @@ export async function loadCallupDetail(
   );
   const canRecordMatch = canRecordMatchRaw === true;
 
+  // F8.2 — estado del partido para habilitar el paso "Post-partido" del stepper.
+  let matchStatus: CallupDetail['matchStatus'] = 'not_started';
+  if (canRecordMatch) {
+    const { data: stateRow } = await supabase
+      .from('match_state')
+      .select('status')
+      .eq('event_id', eventId)
+      .maybeSingle();
+    matchStatus =
+      (stateRow?.status as CallupDetail['matchStatus'] | undefined) ??
+      'not_started';
+  }
+
   // Mejora F7 — asistencia a entrenos L–V de la semana del partido. Solo para el
   // cuerpo técnico (el jugador/familia no ve la asistencia de los demás; además
   // su RLS no leería training_attendance ajena). Se traen los entrenos del equipo
@@ -667,6 +686,7 @@ export async function loadCallupDetail(
     canManage,
     canManageLineup,
     canRecordMatch,
+    matchStatus,
     hasUnpublishedChanges,
     weeklyTraining,
   };
