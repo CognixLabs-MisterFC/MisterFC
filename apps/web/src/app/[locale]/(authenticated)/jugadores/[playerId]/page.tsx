@@ -4,7 +4,10 @@ import { ArrowLeft } from 'lucide-react';
 import {
   createSupabaseServerClient,
   sumMatchStats,
+  derivedRatios,
+  attendanceBreakdown,
   type MatchStatRow,
+  type AttendanceRow,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -174,6 +177,23 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     );
   }
 
+  // F9.2 — Ratios derivados (puro, sobre los agregados) + desglose de asistencia
+  // a entrenos de la temporada (query directa; bucket de ADR-0007 en core). La
+  // RLS de training_attendance ya recorta la lectura.
+  const ratios = derivedRatios(aggregatedStats);
+  let attendance = attendanceBreakdown([]);
+  if (activeSeason) {
+    const { data: attRows } = await supabase
+      .from('training_attendance')
+      .select('code, events!inner(type, teams!inner(categories!inner(season)))')
+      .eq('player_id', player.id)
+      .eq('events.type', 'training')
+      .eq('events.teams.categories.season', activeSeason);
+    attendance = attendanceBreakdown(
+      (attRows ?? []) as unknown as AttendanceRow[]
+    );
+  }
+
   // Familia: cuentas vinculadas + invitaciones pendientes (F2.4)
   const { data: linkedAccounts } = await supabase
     .from('player_accounts')
@@ -262,6 +282,8 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
         <CardContent>
           <PlayerSeasonStats
             stats={aggregatedStats}
+            ratios={ratios}
+            attendance={attendance}
             seasons={seasons}
             activeSeason={activeSeason}
           />

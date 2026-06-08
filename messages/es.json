@@ -478,7 +478,28 @@
     },
     "stats": {
       "season_label": "Temporada",
-      "empty": "Sin estadísticas de partido en esta temporada.",
+      "empty": "Sin datos de partido ni asistencia en esta temporada.",
+      "totals_title": "Totales",
+      "ratios_title": "Ratios",
+      "attendance_title": "Asistencia a entrenamientos",
+      "ratio": {
+        "goals_per_match": "Goles/partido",
+        "goals_per_90": "Goles/90′",
+        "assists_per_match": "Asistencias/partido",
+        "minutes_per_match": "Minutos/partido",
+        "start_rate": "% titularidad",
+        "cards_per_match": "Tarjetas/partido"
+      },
+      "attendance": {
+        "present_pct": "presencia",
+        "total": "{count} entrenos registrados",
+        "bucket": {
+          "present": "Presente",
+          "justified": "Falta justificada",
+          "unjustified": "Falta injustificada",
+          "partial": "Parcial"
+        }
+      },
       "label": {
         "matches": "Partidos",
         "starts": "Titularidades",
