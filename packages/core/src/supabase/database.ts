@@ -303,6 +303,35 @@ export type Database = {
           },
         ]
       }
+      club_settings: {
+        Row: {
+          club_id: string
+          created_at: string
+          evaluations_player_visibility: boolean
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          evaluations_player_visibility?: boolean
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          evaluations_player_visibility?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_settings_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: true
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clubs: {
         Row: {
           created_at: string
@@ -426,6 +455,126 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluation_private_notes: {
+        Row: {
+          created_at: string
+          created_by: string
+          event_id: string
+          note: string
+          player_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          event_id: string
+          note: string
+          player_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          event_id?: string
+          note?: string
+          player_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluation_private_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluation_private_notes_event_id_player_id_fkey"
+            columns: ["event_id", "player_id"]
+            isOneToOne: true
+            referencedRelation: "evaluations"
+            referencedColumns: ["event_id", "player_id"]
+          },
+        ]
+      }
+      evaluations: {
+        Row: {
+          club_id: string
+          comment: string | null
+          created_at: string
+          created_by: string
+          event_id: string
+          event_type: string
+          is_mvp: boolean
+          player_id: string
+          rating: number | null
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          comment?: string | null
+          created_at?: string
+          created_by: string
+          event_id: string
+          event_type: string
+          is_mvp?: boolean
+          player_id: string
+          rating?: number | null
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          comment?: string | null
+          created_at?: string
+          created_by?: string
+          event_id?: string
+          event_type?: string
+          is_mvp?: boolean
+          player_id?: string
+          rating?: number | null
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1137,6 +1286,7 @@ export type Database = {
           live_positions: Json
           lock_heartbeat_at: string | null
           operator_profile_id: string | null
+          post_match_done: boolean
           post_match_notes: string | null
           reopened_count: number
           shootout_against: number | null
@@ -1157,6 +1307,7 @@ export type Database = {
           live_positions?: Json
           lock_heartbeat_at?: string | null
           operator_profile_id?: string | null
+          post_match_done?: boolean
           post_match_notes?: string | null
           reopened_count?: number
           shootout_against?: number | null
@@ -1177,6 +1328,7 @@ export type Database = {
           live_positions?: Json
           lock_heartbeat_at?: string | null
           operator_profile_id?: string | null
+          post_match_done?: boolean
           post_match_notes?: string | null
           reopened_count?: number
           shootout_against?: number | null
@@ -1900,6 +2052,10 @@ export type Database = {
           sent_at: string
         }[]
       }
+      club_evaluations_visible: {
+        Args: { p_club_id: string }
+        Returns: boolean
+      }
       create_club_with_admin: {
         Args: { p_locale?: string; p_name: string; p_slug: string }
         Returns: string
@@ -1984,6 +2140,10 @@ export type Database = {
       }
       user_has_capability_in_club: {
         Args: { p_capability: string; p_club_id: string }
+        Returns: boolean
+      }
+      user_is_account_of_player: {
+        Args: { p_player_id: string }
         Returns: boolean
       }
       user_is_conversation_participant: {
