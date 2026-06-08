@@ -1881,6 +1881,8 @@
     "mvp": "MVP",
     "rating": "Score",
     "comment_placeholder": "Comment for the player (optional)…",
+    "team_title": "Team rating",
+    "team_comment_placeholder": "Match comment for the whole team (optional)…",
     "save": "Save",
     "saved": "Saved",
     "clear": "Clear",
@@ -1905,6 +1907,7 @@
     },
     "error": {
       "rating_required": "In a match the score (1-10) is required.",
+      "team_rating_required": "The team rating needs a score (1-10).",
       "empty": "Add at least a score, comment or MVP.",
       "mvp_taken": "There's already another MVP in this match.",
       "forbidden": "You don't have permission to rate this match.",

@@ -257,11 +257,15 @@ export {
   upsertEvaluationSchema,
   deleteEvaluationSchema,
   setPostMatchDoneSchema,
+  upsertTeamEvaluationSchema,
+  deleteTeamEvaluationSchema,
 } from './evaluation';
 export type {
   UpsertEvaluationInput,
   DeleteEvaluationInput,
   SetPostMatchDoneInput,
+  UpsertTeamEvaluationInput,
+  DeleteTeamEvaluationInput,
 } from './evaluation';
 export type {
   RegisterPlayerEventInput,

@@ -23,6 +23,7 @@ import {
   Loader2,
   Radio,
   Star,
+  Users,
 } from 'lucide-react';
 import { RATING_MIN, RATING_MAX, formatPlayerName } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
@@ -32,9 +33,12 @@ import {
   upsertEvaluation,
   deleteEvaluation,
   setPostMatchDone,
+  upsertTeamEvaluation,
+  deleteTeamEvaluation,
 } from '../actions';
 
 type MatchStatus = 'not_started' | 'live' | 'closed';
+type TeamEvaluation = { rating: number; comment: string | null } | null;
 
 type Draft = { rating: number | null; comment: string; isMvp: boolean };
 
@@ -67,12 +71,14 @@ export function PostMatchClient({
   postMatchDone,
   score,
   players,
+  teamEvaluation,
 }: {
   eventId: string;
   matchStatus: MatchStatus;
   postMatchDone: boolean;
   score: { own: number | null; against: number | null };
   players: PostMatchPlayer[];
+  teamEvaluation: TeamEvaluation;
 }) {
   const t = useTranslations('post_partido');
 
@@ -104,6 +110,7 @@ export function PostMatchClient({
       postMatchDone={postMatchDone}
       score={score}
       players={players}
+      teamEvaluation={teamEvaluation}
       t={t}
     />
   );
@@ -114,12 +121,14 @@ function PostMatchForm({
   postMatchDone,
   score,
   players,
+  teamEvaluation,
   t,
 }: {
   eventId: string;
   postMatchDone: boolean;
   score: { own: number | null; against: number | null };
   players: PostMatchPlayer[];
+  teamEvaluation: TeamEvaluation;
   t: ReturnType<typeof useTranslations>;
 }) {
   // Estado editable por jugador + baseline (lo guardado) para detectar cambios.
@@ -232,6 +241,14 @@ function PostMatchForm({
           </span>
         </p>
       )}
+
+      {/* F8.3 — valoración COLECTIVA del equipo, encima del listado individual e
+          independiente de él. */}
+      <TeamEvaluationSection
+        eventId={eventId}
+        initial={teamEvaluation}
+        t={t}
+      />
 
       {players.length === 0 ? (
         <p className="rounded-lg border border-border bg-card/30 p-4 text-sm text-muted-foreground">
@@ -418,6 +435,143 @@ function PostMatchForm({
               {t('complete')}
             </Button>
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * F8.3 — Valoración COLECTIVA del equipo (una por partido). Independiente del
+ * listado individual: nota 1-10 (obligatoria) + comentario. Guardado directo,
+ * sin recargar.
+ */
+function TeamEvaluationSection({
+  eventId,
+  initial,
+  t,
+}: {
+  eventId: string;
+  initial: { rating: number; comment: string | null } | null;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const [rating, setRating] = useState<number | null>(initial?.rating ?? null);
+  const [comment, setComment] = useState<string>(initial?.comment ?? '');
+  const [base, setBase] = useState<{ rating: number | null; comment: string }>({
+    rating: initial?.rating ?? null,
+    comment: initial?.comment ?? '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const hasEval = base.rating != null;
+  const dirty =
+    rating !== base.rating || comment.trim() !== base.comment.trim();
+
+  async function save() {
+    if (rating == null) {
+      setError('team_rating_required');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    const res = await upsertTeamEvaluation({
+      event_id: eventId,
+      rating,
+      comment: comment.trim() === '' ? null : comment.trim(),
+    });
+    setSaving(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    setBase({ rating, comment: comment.trim() });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1800);
+  }
+
+  async function remove() {
+    setSaving(true);
+    setError(null);
+    const res = await deleteTeamEvaluation({ event_id: eventId });
+    setSaving(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    setRating(null);
+    setComment('');
+    setBase({ rating: null, comment: '' });
+  }
+
+  return (
+    <div className="rounded-lg border border-border bg-card/50 p-3">
+      <p className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold">
+        <Users className="size-4" aria-hidden />
+        {t('team_title')}
+      </p>
+      <div className="mb-2 flex flex-wrap items-center gap-1">
+        <span className="mr-1 text-xs text-muted-foreground">{t('rating')}</span>
+        {RATINGS.map((n) => {
+          const sel = rating === n;
+          return (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setRating(sel ? null : n)}
+              aria-pressed={sel}
+              className={`size-8 rounded-md border text-sm font-medium tabular-nums transition-colors ${
+                sel
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border hover:bg-muted'
+              }`}
+            >
+              {n}
+            </button>
+          );
+        })}
+      </div>
+      <textarea
+        rows={2}
+        maxLength={2000}
+        value={comment}
+        placeholder={t('team_comment_placeholder')}
+        onChange={(e) => setComment(e.target.value)}
+        className="w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+      />
+      {error && (
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+          {t(`error.${error}`)}
+        </p>
+      )}
+      <div className="mt-2 flex items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          disabled={saving || !dirty || rating == null}
+          onClick={save}
+        >
+          {saving ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : saved ? (
+            <Check className="size-4" aria-hidden />
+          ) : null}
+          {saved ? t('saved') : t('save')}
+        </Button>
+        {hasEval && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={saving}
+            onClick={remove}
+          >
+            {t('clear')}
+          </Button>
+        )}
+        {dirty && !saving && (
+          <span className="text-xs text-muted-foreground">{t('unsaved')}</span>
         )}
       </div>
     </div>

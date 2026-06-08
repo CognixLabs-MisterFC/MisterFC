@@ -70,6 +70,7 @@ export default async function PostMatchPage({ params }: Props) {
         postMatchDone={data.postMatchDone}
         score={data.score}
         players={data.players}
+        teamEvaluation={data.teamEvaluation}
       />
     </div>
   );

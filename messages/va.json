@@ -1881,6 +1881,8 @@
     "mvp": "MVP",
     "rating": "Nota",
     "comment_placeholder": "Comentari per al jugador (opcional)…",
+    "team_title": "Valoració col·lectiva de l'equip",
+    "team_comment_placeholder": "Comentari del partit per a tot l'equip (opcional)…",
     "save": "Guardar",
     "saved": "Guardat",
     "clear": "Esborrar",
@@ -1905,6 +1907,7 @@
     },
     "error": {
       "rating_required": "En un partit la nota (1-10) és obligatòria.",
+      "team_rating_required": "La valoració col·lectiva necessita una nota (1-10).",
       "empty": "Afig almenys nota, comentari o MVP.",
       "mvp_taken": "Ja hi ha un altre MVP en este partit.",
       "forbidden": "No tens permís per a valorar este partit.",

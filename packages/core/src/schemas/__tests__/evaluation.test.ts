@@ -3,6 +3,8 @@ import {
   upsertEvaluationSchema,
   deleteEvaluationSchema,
   setPostMatchDoneSchema,
+  upsertTeamEvaluationSchema,
+  deleteTeamEvaluationSchema,
 } from '../evaluation';
 
 const EV = '11111111-1111-4111-8111-111111111111';
@@ -85,5 +87,39 @@ describe('deleteEvaluationSchema / setPostMatchDoneSchema', () => {
   it('setPostMatchDone exige event_id uuid + done boolean', () => {
     expect(setPostMatchDoneSchema.safeParse({ event_id: EV, done: true }).success).toBe(true);
     expect(setPostMatchDoneSchema.safeParse({ event_id: EV, done: 'yes' }).success).toBe(false);
+  });
+});
+
+describe('upsertTeamEvaluationSchema (colectiva)', () => {
+  it('acepta event_id + rating 1-10 + comentario (recorta)', () => {
+    const r = upsertTeamEvaluationSchema.safeParse({
+      event_id: EV,
+      rating: 7,
+      comment: '  buen partido de equipo  ',
+    });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.rating).toBe(7);
+      expect(r.data.comment).toBe('buen partido de equipo');
+    }
+  });
+
+  it('rating es OBLIGATORIO (no nullable) y 1..10 entero', () => {
+    expect(upsertTeamEvaluationSchema.safeParse({ event_id: EV, comment: 'x' }).success).toBe(false);
+    expect(upsertTeamEvaluationSchema.safeParse({ event_id: EV, rating: null, comment: 'x' }).success).toBe(false);
+    for (const rating of [0, 11, 5.5]) {
+      expect(upsertTeamEvaluationSchema.safeParse({ event_id: EV, rating, comment: null }).success).toBe(false);
+    }
+  });
+
+  it('normaliza comentario vacío a null y permite null', () => {
+    const r = upsertTeamEvaluationSchema.safeParse({ event_id: EV, rating: 6, comment: '   ' });
+    expect(r.success && r.data.comment).toBe(null);
+    expect(upsertTeamEvaluationSchema.safeParse({ event_id: EV, rating: 6, comment: null }).success).toBe(true);
+  });
+
+  it('deleteTeamEvaluation exige event_id uuid', () => {
+    expect(deleteTeamEvaluationSchema.safeParse({ event_id: EV }).success).toBe(true);
+    expect(deleteTeamEvaluationSchema.safeParse({ event_id: 'x' }).success).toBe(false);
   });
 });

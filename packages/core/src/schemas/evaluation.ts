@@ -52,3 +52,22 @@ export const setPostMatchDoneSchema = z.object({
 export type UpsertEvaluationInput = z.infer<typeof upsertEvaluationSchema>;
 export type DeleteEvaluationInput = z.infer<typeof deleteEvaluationSchema>;
 export type SetPostMatchDoneInput = z.infer<typeof setPostMatchDoneSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F8.3 — Valoración COLECTIVA del partido (tabla team_evaluations, una por
+// partido). Coexiste con la individual. A diferencia de la individual, `rating`
+// es OBLIGATORIO (1-10): no hay valoración colectiva sin número.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const upsertTeamEvaluationSchema = z.object({
+  event_id: z.string().uuid(),
+  rating: z.number().int().min(RATING_MIN).max(RATING_MAX),
+  comment: commentField,
+});
+
+export const deleteTeamEvaluationSchema = z.object({
+  event_id: z.string().uuid(),
+});
+
+export type UpsertTeamEvaluationInput = z.infer<typeof upsertTeamEvaluationSchema>;
+export type DeleteTeamEvaluationInput = z.infer<typeof deleteTeamEvaluationSchema>;
