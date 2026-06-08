@@ -264,7 +264,8 @@
       "anuncios": "Anuncis del club",
       "mi_equipo": "El meu equip",
       "formaciones": "Formacions",
-      "ajustes": "Ajustos del club"
+      "ajustes": "Ajustos del club",
+      "mi_ficha": "La meua fitxa"
     }
   },
   "perfil": {
@@ -1991,6 +1992,26 @@
       "not_closed": "El partit no està finalitzat.",
       "unauthenticated": "Sessió no vàlida.",
       "generic": "No s'ha pogut guardar. Torna-ho a provar."
+    }
+  },
+  "mi_ficha": {
+    "title": "La meua fitxa",
+    "subtitle_one": "El teu expedient esportiu: estadístiques, assistència i valoracions.",
+    "subtitle_many": "Expedient esportiu: estadístiques, assistència i valoracions.",
+    "no_player": "El teu compte encara no està vinculat a cap jugador.",
+    "player_selector": "Jugador",
+    "section": {
+      "stats": "Estadístiques de la temporada",
+      "evaluations": "Valoracions"
+    },
+    "evaluations": {
+      "title": "Valoracions per partit",
+      "avg": "mitjana",
+      "rated_count": "{count, plural, =0 {sense partits valorats} one {# partit valorat} other {# partits valorats}}",
+      "mvp_count": "{count, plural, one {# MVP} other {# MVP}}",
+      "mvp": "MVP",
+      "individual": "Individual",
+      "collective": "Equip"
     }
   }
 }
