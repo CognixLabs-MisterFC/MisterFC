@@ -109,7 +109,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F6 | Alineaciones y planificación del partido | 12–19 h | 4–5 | ☑ |
 | F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☑ |
 | F8 | Valoraciones del partido | 8–13 h | 3–4 | ☑ |
-| F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☐ |
+| F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | 🔄 núcleo ✅ |
 | F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☐ |
 | F11 | Biblioteca de ejercicios | 13–18 h | 5–6 | ☐ |
 | F12 | Planificador de sesiones | 12–20 h | 4–6 | ☐ |
@@ -428,24 +428,34 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 >
 > **F8 solo abrió el permiso a nivel de datos** (RLS: la lectura de jugador/familia ya cumple la policy con el flag ON). **La pantalla donde el jugador/familia VE su valoración se entrega en F9** — F8 no construyó ninguna vista de lectura para ellos.
 
-**Horas**: 16–32 h · **Sesiones**: 6–8
+**Estado**: 🔄 **EN PROGRESO — núcleo completo (2026-06-09)**. El **núcleo** (9.1/9.2/9.3/9.5) está **entregado y verificado** (typecheck · lint · test · build + pgTAP en verde); el **segundo tramo** (9.4/9.6/9.7/9.8) **queda pendiente** → F9 **NO está cerrada del todo** (cierre de milestone, no de fase). Detalle de cierre del núcleo en [docs/specs/9.0-perfil-jugador.md](../specs/9.0-perfil-jugador.md) §15.
 
-**Criterio de cierre**: cada jugador tiene su perfil deportivo completo. Gráfico de evolución intra-temporada y comparativa multi-temporada. Reportes mensuales en PDF que el entrenador puede descargar e imprimir para entregar a familias. Vista restringida para familias.
+**Horas**: 16–32 h plan · **Sesiones**: 6–8 · núcleo entregado en ≈4 sesiones · **PRs del núcleo**: #67 (9.1), #68 (9.2), #69 (9.3), #70 (9.5). **Migración del núcleo**: `20260625000000_match_player_stats_player_select.sql` (policy SELECT player-scoped, D9-1).
 
-**Riesgo**: medio. PDF y multi-temporada son las partes exigentes.
+**Criterio de cierre** (fase completa): cada jugador tiene su perfil deportivo completo. Gráfico de evolución intra-temporada **(✅ núcleo)** y comparativa multi-temporada **(⏳ segundo tramo)**. Reportes mensuales en PDF que el entrenador puede descargar e imprimir para entregar a familias **(⏳ segundo tramo)**. Vista restringida para familias **(✅ núcleo)**.
+
+**Riesgo**: medio. PDF y multi-temporada son las partes exigentes — **ambas quedan en el segundo tramo**.
 
 **Dependencias**: Fase 8 cerrada.
 
 **Subfases**:
 
-- **9.1** Perfil deportivo del jugador con stats agregadas — 2 h
-- **9.2** Stats derivadas y desglose de asistencia por código — 1–2 h
-- **9.3** Gráfico de evolución intra-temporada de valoraciones — 1–2 h
-- **9.4** Evolución multi-temporada del jugador (comparativa por temporadas) — 3–5 h
-- **9.5** Vista para familia (acceso restringido) — 1 h
-- **9.6** Tracking de logros (badges automáticos: MVP del mes, +10 goles, etc.) — 1 h
-- **9.7** Reportes mensuales del jugador en PDF (descargables/imprimibles, no email) — 5–8 h
-- **9.8** Reportes de equipo en PDF (resumen mensual) — 2–4 h
+**Núcleo — entregado (especificado en [spec 9.0](../specs/9.0-perfil-jugador.md)):**
+
+- **9.1** ✅ Perfil deportivo del jugador con stats agregadas (vista staff, extiende `/jugadores/[playerId]`; agregación por query directa, sin vistas materializadas — D9-C; selector de temporada; helpers en `@misterfc/core/player-profile`) — #67
+- **9.2** ✅ Stats derivadas (ratios) + desglose de asistencia por código (cálculo puro, reusa los buckets de ADR-0007) — #68
+- **9.3** ✅ Gráfico de evolución intra-temporada de la valoración (recharts, **ADR-0016**; nota individual + colectiva como contexto; huecos para partidos sin valorar; tabla `sr-only` equivalente) — #69
+- **9.5** ✅ Vista jugador/familia — ruta nueva `/mi-ficha` (resolución vía `player_accounts` + selector si hay varios) reutilizando los bloques del staff; **policy SELECT nueva en `match_player_stats`** (`user_is_account_of_player`, sin flag — 🔒 D9-1) + pgTAP. Stats/ratios/asistencia SIEMPRE; valoraciones solo con el flag del club ON; nunca lo privado — #70
+
+**Segundo tramo — pendiente (aún SIN especificar; necesitará su propio spec/extensión al abordarlo):**
+
+- **9.4** ☐ Evolución multi-temporada del jugador (comparativa por temporadas) — 3–5 h
+- **9.6** ☐ Tracking de logros (badges automáticos: MVP del mes, +10 goles, etc.) — 1 h
+- **9.7** ☐ Reportes mensuales del jugador en PDF (descargables/imprimibles, no email) — 5–8 h
+- **9.8** ☐ Reportes de equipo en PDF (resumen mensual) — 2–4 h
+- ☐ **Entrada de menú dedicada "Estadísticas / agregadas por equipo"** para el cuerpo técnico (en el núcleo el expediente del staff se alcanza vía `/jugadores`; la entrada agregada por equipo se decidió dejar para este tramo — spec 9.0 §8.1).
+
+> **Ya listo para reaprovechar en el segundo tramo** (el núcleo se diseñó para no rehacerlo): **recharts** ya integrado (ADR-0016) y el **componente de gráfico reutilizable** (`rating-evolution-chart.tsx`) → 9.4 alimenta la misma línea con series multi-temporada; la **tabla `sr-only`** equivalente del gráfico y la disciplina **"la pantalla ES el reporte"** (datos desacoplados de la presentación en `@misterfc/core/player-profile`, bloques print-friendly, `?season=` como parámetro) → base directa del PDF de 9.7/9.8; los **helpers de agregación** ya aceptan `season` como parámetro → 9.4 itera temporadas sin lógica nueva.
 
 ---
 
@@ -459,7 +469,7 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Riesgo**: bajo. Reusa stats ya generadas en fases anteriores.
 
-**Dependencias**: Fase 9 cerrada.
+**Dependencias**: Fase 9 cerrada. *(Nota 2026-06-09: el **núcleo de F9 está hecho** — stats agregadas, ratios, evolución y vista jugador/familia ya disponibles y reutilizables — pero **F9 no está cerrada del todo**: faltan el multi-temporada y los PDF del segundo tramo. F10 puede apoyarse en los agregados/helpers del núcleo; lo que dependa específicamente del multi-temporada o de los reportes PDF espera al cierre completo de F9.)*
 
 **Subfases**:
 

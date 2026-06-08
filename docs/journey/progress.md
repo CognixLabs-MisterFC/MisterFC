@@ -188,6 +188,34 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Tests**: schemas Zod de valoración en `@misterfc/core` (Vitest); barrido pgTAP en `supabase/tests/rls_evaluations.sql` + `rls_team_evaluations.sql` + `rls_evaluations_crossflag.sql` — toda la matriz de visibilidad en verde.
 - **Fuera de alcance / a F9**: la pantalla donde el jugador/familia VE su valoración (F8 solo abrió el permiso a nivel de datos). Valoración de **entrenamientos**: descopada, no planificada (fase/extensión futura si se retoma).
 
+## Fase 9 — Núcleo entregado 🔄
+
+> **Estado: 🔄 EN PROGRESO** — el **núcleo** (9.1/9.2/9.3/9.5) está entregado y verificado; **F9 NO está cerrada** (falta el segundo tramo: 9.4/9.6/9.7/9.8). Cierre de milestone, no de fase. Especificación del núcleo en [docs/specs/9.0-perfil-jugador.md](../specs/9.0-perfil-jugador.md) (§15 nota de cierre del núcleo). Decisiones de visibilidad **cerradas (2026-06-08)**: 🔒 **D9-1** (stats objetivas SIEMPRE visibles al jugador/familia, sin flag) · 🔒 **D9-2** (asistencia del propio jugador SIEMPRE, sin flag) · 🔒 **D9-3** (colectiva como contexto, con flag ON).
+
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| 9.1 | 2026-06-08 | #67 | Perfil con stats agregadas (vista staff): extiende `/jugadores/[playerId]` con resumen de temporada (SUM de `match_player_stats`); selector de temporada; agregación por **query directa** (no materializada — D9-C); helpers puros en `@misterfc/core/player-profile` |
+| 9.2 | 2026-06-08 | #68 | Stats derivadas (ratios: goles/partido, goles/90′, % titularidad, etc.) + desglose de asistencia por código, **reusando los buckets de [ADR-0007](../decisions/ADR-0007-codigos-asistencia-contrato.md)**; cálculo puro sobre 9.1 |
+| 9.3 | 2026-06-08 | #69 | Evolución intra-temporada (**recharts**, [ADR-0016](../decisions/ADR-0016-recharts-libreria-graficos.md)): línea de la valoración individual + colectiva como contexto; partidos sin valorar = hueco (no 0); componente de gráfico **reutilizable** + tabla `sr-only` equivalente; `next/dynamic` ssr:false (mitiga OOM de build) |
+| 9.5 | 2026-06-09 | #70 | Vista jugador/familia: ruta nueva `/mi-ficha` (resolución vía `player_accounts` + selector si hay varios) **reutilizando** los bloques de 9.1/9.2/9.3; **policy SELECT nueva en `match_player_stats`** (`user_is_account_of_player`, sin flag — 🔒 D9-1) + pgTAP; stats/ratios/asistencia SIEMPRE, valoraciones solo con el flag ON, nunca lo privado; entrada de menú "Mi ficha" |
+
+- **Migración del núcleo** (por CLI, sin editar las aplicadas): `20260625000000_match_player_stats_player_select.sql` — policy SELECT player-scoped sobre `match_player_stats` (D9-1), se combina por OR con la de staff (no la toca).
+- **Tests**: helpers de `player-profile` en `@misterfc/core` (Vitest); pgTAP `supabase/tests/rls_match_player_stats.sql` (jugador/familia leen sus stats sin flag; ajenos no; staff igual; sin INSERT/UPDATE/DELETE; cross-check matriz F8: subjetivo solo con flag, privado nunca). Toda la verificación (typecheck · lint · test · build + `db:test`) en verde.
+- **PRs**: #67–#70. NO mergeados por el agente (los mergea el responsable).
+- **Listo para reaprovechar en el segundo tramo**: recharts (ADR-0016) + el componente de gráfico reutilizable → 9.4 multi-temporada; la tabla `sr-only` + diseño "la pantalla ES el reporte" → 9.7/9.8 PDF; los helpers de agregación ya aceptan `season` → 9.4 itera temporadas sin lógica nueva.
+
+## Fase 9 — Pendiente → segundo tramo
+
+> Aún **SIN especificar** (necesitará su propio spec o extensión del 9.0 cuando se aborde). F9 se cierra del todo cuando esto entre.
+
+| Subfase | Estado | Resumen |
+|---|---|---|
+| 9.4 | ☐ pendiente | Evolución multi-temporada del jugador (comparativa por temporadas) |
+| 9.6 | ☐ pendiente | Tracking de logros (badges automáticos: MVP del mes, +10 goles, etc.) |
+| 9.7 | ☐ pendiente | Reportes mensuales del jugador en PDF (descargables/imprimibles, no email) |
+| 9.8 | ☐ pendiente | Reportes de equipo en PDF (resumen mensual) |
+| — | ☐ pendiente | Entrada de menú dedicada "Estadísticas / agregadas por equipo" para el cuerpo técnico (spec 9.0 §8.1) |
+
 ## Fase 11 — Subfases pendientes
 
 > **+1 subfase 2026-05-30**: deuda diferida (capabilities UI plana) absorbida en F11.9. Ver [plan-maestro.md](plan-maestro.md) §Fase 11.
