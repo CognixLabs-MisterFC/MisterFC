@@ -10,6 +10,7 @@ import {
   MapPin,
   Megaphone,
   Radio,
+  Star,
   Truck,
   XCircle,
 } from 'lucide-react';
@@ -100,6 +101,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
     canManage,
     canManageLineup,
     canRecordMatch,
+    matchStatus,
     hasUnpublishedChanges,
     weeklyTraining,
   } = detail;
@@ -175,6 +177,15 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                 <Link href={`/convocatorias/${event.id}/directo`}>
                   <Radio className="size-4" aria-hidden />
                   <span>{tDetail('live_capture')}</span>
+                </Link>
+              </Button>
+            )}
+            {/* F8.2 — paso "Post-partido", habilitado al finalizar el partido. */}
+            {canRecordMatch && matchStatus === 'closed' && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/convocatorias/${event.id}/post-partido`}>
+                  <Star className="size-4" aria-hidden />
+                  <span>{tDetail('post_match')}</span>
                 </Link>
               </Button>
             )}
