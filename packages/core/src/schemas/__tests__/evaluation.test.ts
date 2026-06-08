@@ -5,6 +5,8 @@ import {
   setPostMatchDoneSchema,
   upsertTeamEvaluationSchema,
   deleteTeamEvaluationSchema,
+  upsertPrivateNoteSchema,
+  deletePrivateNoteSchema,
 } from '../evaluation';
 
 const EV = '11111111-1111-4111-8111-111111111111';
@@ -121,5 +123,28 @@ describe('upsertTeamEvaluationSchema (colectiva)', () => {
   it('deleteTeamEvaluation exige event_id uuid', () => {
     expect(deleteTeamEvaluationSchema.safeParse({ event_id: EV }).success).toBe(true);
     expect(deleteTeamEvaluationSchema.safeParse({ event_id: 'x' }).success).toBe(false);
+  });
+});
+
+describe('upsertPrivateNoteSchema / deletePrivateNoteSchema (nota privada)', () => {
+  it('acepta event_id + player_id + nota (recorta) 1..2000', () => {
+    const r = upsertPrivateNoteSchema.safeParse({
+      event_id: EV,
+      player_id: PL,
+      note: '  ojo con su actitud  ',
+    });
+    expect(r.success && r.data.note).toBe('ojo con su actitud');
+  });
+
+  it('rechaza nota vacía / solo espacios / >2000 / sin ids', () => {
+    expect(upsertPrivateNoteSchema.safeParse({ event_id: EV, player_id: PL, note: '   ' }).success).toBe(false);
+    expect(upsertPrivateNoteSchema.safeParse({ event_id: EV, player_id: PL, note: 'x'.repeat(2001) }).success).toBe(false);
+    expect(upsertPrivateNoteSchema.safeParse({ event_id: EV, player_id: PL }).success).toBe(false);
+    expect(upsertPrivateNoteSchema.safeParse({ event_id: 'no', player_id: PL, note: 'x' }).success).toBe(false);
+  });
+
+  it('deletePrivateNote exige event_id + player_id uuid', () => {
+    expect(deletePrivateNoteSchema.safeParse({ event_id: EV, player_id: PL }).success).toBe(true);
+    expect(deletePrivateNoteSchema.safeParse({ event_id: EV, player_id: 'x' }).success).toBe(false);
   });
 });

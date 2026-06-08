@@ -1882,6 +1882,10 @@
     "comment_placeholder": "Comentario para el jugador (opcional)…",
     "team_title": "Valoración colectiva del equipo",
     "team_comment_placeholder": "Comentario del partido para todo el equipo (opcional)…",
+    "private_note": "Nota privada",
+    "private_note_hint": "interna, no la ve el jugador ni la familia",
+    "private_placeholder": "Nota interna del cuerpo técnico…",
+    "private_save": "Guardar nota",
     "save": "Guardar",
     "saved": "Guardado",
     "clear": "Borrar",
@@ -1907,6 +1911,7 @@
     "error": {
       "rating_required": "En un partido la nota (1-10) es obligatoria.",
       "team_rating_required": "La valoración colectiva necesita una nota (1-10).",
+      "private_empty": "La nota privada no puede estar vacía.",
       "empty": "Añade al menos nota, comentario o MVP.",
       "mvp_taken": "Ya hay otro MVP en este partido.",
       "forbidden": "No tienes permiso para valorar este partido.",

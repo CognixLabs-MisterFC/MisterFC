@@ -1883,6 +1883,10 @@
     "comment_placeholder": "Comentari per al jugador (opcional)…",
     "team_title": "Valoració col·lectiva de l'equip",
     "team_comment_placeholder": "Comentari del partit per a tot l'equip (opcional)…",
+    "private_note": "Nota privada",
+    "private_note_hint": "interna, no la veu el jugador ni la família",
+    "private_placeholder": "Nota interna del cos tècnic…",
+    "private_save": "Guardar nota",
     "save": "Guardar",
     "saved": "Guardat",
     "clear": "Esborrar",
@@ -1908,6 +1912,7 @@
     "error": {
       "rating_required": "En un partit la nota (1-10) és obligatòria.",
       "team_rating_required": "La valoració col·lectiva necessita una nota (1-10).",
+      "private_empty": "La nota privada no pot estar buida.",
       "empty": "Afig almenys nota, comentari o MVP.",
       "mvp_taken": "Ja hi ha un altre MVP en este partit.",
       "forbidden": "No tens permís per a valorar este partit.",

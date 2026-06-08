@@ -71,3 +71,23 @@ export const deleteTeamEvaluationSchema = z.object({
 
 export type UpsertTeamEvaluationInput = z.infer<typeof upsertTeamEvaluationSchema>;
 export type DeleteTeamEvaluationInput = z.infer<typeof deleteTeamEvaluationSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F8.4 — Nota PRIVADA del staff por (event_id, player_id) — tabla
+// evaluation_private_notes (8.1). Interna: nunca visible a jugador/familia.
+// `note` es OBLIGATORIA (1-2000); para borrar se usa deletePrivateNoteSchema.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const upsertPrivateNoteSchema = z.object({
+  event_id: z.string().uuid(),
+  player_id: z.string().uuid(),
+  note: z.string().trim().min(1).max(EVALUATION_COMMENT_MAX),
+});
+
+export const deletePrivateNoteSchema = z.object({
+  event_id: z.string().uuid(),
+  player_id: z.string().uuid(),
+});
+
+export type UpsertPrivateNoteInput = z.infer<typeof upsertPrivateNoteSchema>;
+export type DeletePrivateNoteInput = z.infer<typeof deletePrivateNoteSchema>;
