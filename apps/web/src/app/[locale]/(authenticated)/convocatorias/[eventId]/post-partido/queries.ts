@@ -65,6 +65,8 @@ export type PostMatchData = {
   /** Marcador final materializado al cerrar (7.10). null si no hay. */
   score: { own: number | null; against: number | null };
   players: PostMatchPlayer[];
+  /** F8.3 — valoración COLECTIVA del equipo (una por partido). null si no hay. */
+  teamEvaluation: { rating: number; comment: string | null } | null;
 };
 
 export async function loadPostMatch(
@@ -189,6 +191,19 @@ export async function loadPostMatch(
     });
   }
 
+  // F8.3 — valoración COLECTIVA del equipo (una por partido).
+  const { data: teamEvalRow } = await supabase
+    .from('team_evaluations')
+    .select('rating, comment')
+    .eq('event_id', eventId)
+    .maybeSingle();
+  const teamEvaluation = teamEvalRow
+    ? {
+        rating: teamEvalRow.rating as number,
+        comment: (teamEvalRow.comment as string | null) ?? null,
+      }
+    : null;
+
   return {
     event: {
       id: event.id,
@@ -202,5 +217,6 @@ export async function loadPostMatch(
     postMatchDone,
     score,
     players,
+    teamEvaluation,
   };
 }

@@ -1851,6 +1851,68 @@ export type Database = {
         }
         Relationships: []
       }
+      team_evaluations: {
+        Row: {
+          club_id: string
+          comment: string | null
+          created_at: string
+          created_by: string
+          event_id: string
+          rating: number
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          comment?: string | null
+          created_at?: string
+          created_by: string
+          event_id: string
+          rating: number
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          comment?: string | null
+          created_at?: string
+          created_by?: string
+          event_id?: string
+          rating?: number
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_evaluations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_evaluations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_evaluations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_evaluations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           created_at: string

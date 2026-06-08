@@ -1880,6 +1880,8 @@
     "mvp": "MVP",
     "rating": "Nota",
     "comment_placeholder": "Comentario para el jugador (opcional)…",
+    "team_title": "Valoración colectiva del equipo",
+    "team_comment_placeholder": "Comentario del partido para todo el equipo (opcional)…",
     "save": "Guardar",
     "saved": "Guardado",
     "clear": "Borrar",
@@ -1904,6 +1906,7 @@
     },
     "error": {
       "rating_required": "En un partido la nota (1-10) es obligatoria.",
+      "team_rating_required": "La valoración colectiva necesita una nota (1-10).",
       "empty": "Añade al menos nota, comentario o MVP.",
       "mvp_taken": "Ya hay otro MVP en este partido.",
       "forbidden": "No tienes permiso para valorar este partido.",
