@@ -191,7 +191,8 @@
       "anuncios": "Anuncios del club",
       "mi_equipo": "Mi equipo",
       "formaciones": "Formaciones",
-      "ajustes": "Ajustes del club"
+      "ajustes": "Ajustes del club",
+      "mi_ficha": "Mi ficha"
     }
   },
   "roles": {
@@ -1990,6 +1991,26 @@
       "not_closed": "El partido no está finalizado.",
       "unauthenticated": "Sesión no válida.",
       "generic": "No se pudo guardar. Inténtalo de nuevo."
+    }
+  },
+  "mi_ficha": {
+    "title": "Mi ficha",
+    "subtitle_one": "Tu expediente deportivo: estadísticas, asistencia y valoraciones.",
+    "subtitle_many": "Expediente deportivo: estadísticas, asistencia y valoraciones.",
+    "no_player": "Tu cuenta no está vinculada a ningún jugador todavía.",
+    "player_selector": "Jugador",
+    "section": {
+      "stats": "Estadísticas de la temporada",
+      "evaluations": "Valoraciones"
+    },
+    "evaluations": {
+      "title": "Valoraciones por partido",
+      "avg": "media",
+      "rated_count": "{count, plural, =0 {sin partidos valorados} one {# partido valorado} other {# partidos valorados}}",
+      "mvp_count": "{count, plural, one {# MVP} other {# MVP}}",
+      "mvp": "MVP",
+      "individual": "Individual",
+      "collective": "Equipo"
     }
   }
 }

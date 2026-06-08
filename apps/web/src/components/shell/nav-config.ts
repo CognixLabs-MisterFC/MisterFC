@@ -13,6 +13,7 @@ import {
   Calendar,
   Shield,
   LayoutGrid,
+  LineChart,
   Settings,
   type LucideIcon,
 } from 'lucide-react';
@@ -75,6 +76,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     icon: Shield,
     // F5.8 — Vista equipo para el jugador (compañeros + eventos + anuncios).
     // Solo rol jugador; coaches usan /mis-equipos.
+    roles: ['jugador'],
+  },
+  {
+    key: 'mi_ficha',
+    href: '/mi-ficha',
+    icon: LineChart,
+    // F9.5 — Expediente deportivo del propio jugador (jugador/familia comparten
+    // el rol `jugador`). Stats + ratios + asistencia SIEMPRE (D9-1/D9-2); las
+    // valoraciones solo si el club activó el flag de visibilidad (RLS de F8).
     roles: ['jugador'],
   },
   {

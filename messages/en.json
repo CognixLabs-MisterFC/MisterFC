@@ -264,7 +264,8 @@
       "anuncios": "Club announcements",
       "mi_equipo": "My team",
       "formaciones": "Formations",
-      "ajustes": "Club settings"
+      "ajustes": "Club settings",
+      "mi_ficha": "My profile"
     }
   },
   "perfil": {
@@ -1991,6 +1992,26 @@
       "not_closed": "The match isn't finished.",
       "unauthenticated": "Invalid session.",
       "generic": "Couldn't save. Please try again."
+    }
+  },
+  "mi_ficha": {
+    "title": "My profile",
+    "subtitle_one": "Your sports record: stats, attendance and ratings.",
+    "subtitle_many": "Sports record: stats, attendance and ratings.",
+    "no_player": "Your account isn’t linked to any player yet.",
+    "player_selector": "Player",
+    "section": {
+      "stats": "Season stats",
+      "evaluations": "Ratings"
+    },
+    "evaluations": {
+      "title": "Ratings per match",
+      "avg": "avg",
+      "rated_count": "{count, plural, =0 {no rated matches} one {# rated match} other {# rated matches}}",
+      "mvp_count": "{count, plural, one {# MVP} other {# MVPs}}",
+      "mvp": "MVP",
+      "individual": "Individual",
+      "collective": "Team"
     }
   }
 }
