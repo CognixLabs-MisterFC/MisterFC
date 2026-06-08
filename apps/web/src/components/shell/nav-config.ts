@@ -13,6 +13,7 @@ import {
   Calendar,
   Shield,
   LayoutGrid,
+  Settings,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -180,6 +181,15 @@ export const NAV_ITEMS: readonly NavItem[] = [
     key: 'invitations',
     href: '/invitations',
     icon: Mail,
+    roles: ['admin_club', 'coordinador'],
+  },
+  {
+    key: 'ajustes',
+    href: '/ajustes',
+    icon: Settings,
+    // F8.5 — ajustes del club (visibilidad de valoraciones). Admin/coord ven la
+    // entrada; solo el admin puede cambiar el flag (la page deshabilita el
+    // control para coord y la RLS rechaza la escritura del no-admin).
     roles: ['admin_club', 'coordinador'],
   },
   {

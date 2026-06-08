@@ -263,7 +263,8 @@
       "mensajes": "Missatges",
       "anuncios": "Anuncis del club",
       "mi_equipo": "El meu equip",
-      "formaciones": "Formacions"
+      "formaciones": "Formacions",
+      "ajustes": "Ajustos del club"
     }
   },
   "perfil": {
@@ -309,6 +310,28 @@
       "avatar_empty": "El archivo está vacío.",
       "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
       "avatar_remove_failed": "No hemos podido quitar la foto."
+    }
+  },
+  "ajustes": {
+    "title": "Ajustos del club",
+    "subtitle": "Configuració general del club.",
+    "saving": "Guardant…",
+    "saved": "Guardat",
+    "evaluations_section": {
+      "title": "Valoracions del partit",
+      "description": "Controla què veuen els jugadors i les seues famílies de les valoracions."
+    },
+    "evaluations_visibility": {
+      "label": "Permetre que jugadors i famílies vegen les seues valoracions del partit",
+      "description": "Si ho actives, cada jugador (i la seua família) podrà veure la seua nota individual, el comentari, el MVP i la valoració col·lectiva de cada partit. Les notes privades del cos tècnic no es mostren mai.",
+      "default_hint": "Per defecte està desactivat: les valoracions només les veu el cos tècnic.",
+      "read_only": "Només l'administrador del club pot canviar esta opció."
+    },
+    "error": {
+      "invalid": "No s'ha pogut guardar el canvi.",
+      "forbidden": "Només l'administrador del club pot canviar esta opció.",
+      "no_active_club": "No hi ha cap club actiu.",
+      "generic": "Alguna cosa ha eixit malament. Torna-ho a provar."
     }
   },
   "categorias": {

@@ -261,6 +261,7 @@ export {
   deleteTeamEvaluationSchema,
   upsertPrivateNoteSchema,
   deletePrivateNoteSchema,
+  setEvaluationsVisibilitySchema,
 } from './evaluation';
 export type {
   UpsertEvaluationInput,
@@ -270,6 +271,7 @@ export type {
   DeleteTeamEvaluationInput,
   UpsertPrivateNoteInput,
   DeletePrivateNoteInput,
+  SetEvaluationsVisibilityInput,
 } from './evaluation';
 export type {
   RegisterPlayerEventInput,

@@ -263,7 +263,8 @@
       "mensajes": "Messages",
       "anuncios": "Club announcements",
       "mi_equipo": "My team",
-      "formaciones": "Formations"
+      "formaciones": "Formations",
+      "ajustes": "Club settings"
     }
   },
   "perfil": {
@@ -309,6 +310,28 @@
       "avatar_empty": "El archivo está vacío.",
       "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
       "avatar_remove_failed": "No hemos podido quitar la foto."
+    }
+  },
+  "ajustes": {
+    "title": "Club settings",
+    "subtitle": "General configuration for the club.",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "evaluations_section": {
+      "title": "Match ratings",
+      "description": "Control what players and their families see of the ratings."
+    },
+    "evaluations_visibility": {
+      "label": "Let players and families see their match ratings",
+      "description": "When enabled, each player (and their family) can see their individual score, the comment, the MVP and the team rating for each match. The coaching staff's private notes are never shown.",
+      "default_hint": "Off by default: only the coaching staff can see the ratings.",
+      "read_only": "Only the club admin can change this option."
+    },
+    "error": {
+      "invalid": "Couldn't save the change.",
+      "forbidden": "Only the club admin can change this option.",
+      "no_active_club": "There is no active club.",
+      "generic": "Something went wrong. Please try again."
     }
   },
   "categorias": {
