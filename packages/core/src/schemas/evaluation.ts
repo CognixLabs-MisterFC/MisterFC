@@ -91,3 +91,17 @@ export const deletePrivateNoteSchema = z.object({
 
 export type UpsertPrivateNoteInput = z.infer<typeof upsertPrivateNoteSchema>;
 export type DeletePrivateNoteInput = z.infer<typeof deletePrivateNoteSchema>;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F8.5 — Visibilidad de valoraciones por club (club_settings, 8.1). Flag opt-in
+// (default OFF, D4): si ON, jugador/familia ven SUS valoraciones de partido
+// (individual + colectiva + MVP). Lo escribe SOLO el admin del club (D10, RLS).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const setEvaluationsVisibilitySchema = z.object({
+  visible: z.boolean(),
+});
+
+export type SetEvaluationsVisibilityInput = z.infer<
+  typeof setEvaluationsVisibilitySchema
+>;

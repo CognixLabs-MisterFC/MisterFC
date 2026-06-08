@@ -190,7 +190,8 @@
       "mensajes": "Mensajes",
       "anuncios": "Anuncios del club",
       "mi_equipo": "Mi equipo",
-      "formaciones": "Formaciones"
+      "formaciones": "Formaciones",
+      "ajustes": "Ajustes del club"
     }
   },
   "roles": {
@@ -243,6 +244,28 @@
       "avatar_empty": "El archivo está vacío.",
       "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
       "avatar_remove_failed": "No hemos podido quitar la foto."
+    }
+  },
+  "ajustes": {
+    "title": "Ajustes del club",
+    "subtitle": "Configuración general del club.",
+    "saving": "Guardando…",
+    "saved": "Guardado",
+    "evaluations_section": {
+      "title": "Valoraciones de partido",
+      "description": "Controla qué ven los jugadores y sus familias de las valoraciones."
+    },
+    "evaluations_visibility": {
+      "label": "Permitir que jugadores y familias vean sus valoraciones de partido",
+      "description": "Si lo activas, cada jugador (y su familia) podrá ver su nota individual, el comentario, el MVP y la valoración colectiva de cada partido. Las notas privadas del cuerpo técnico nunca se muestran.",
+      "default_hint": "Por defecto está desactivado: las valoraciones solo las ve el cuerpo técnico.",
+      "read_only": "Solo el administrador del club puede cambiar esta opción."
+    },
+    "error": {
+      "invalid": "No se pudo guardar el cambio.",
+      "forbidden": "Solo el administrador del club puede cambiar esta opción.",
+      "no_active_club": "No hay un club activo.",
+      "generic": "Algo salió mal. Inténtalo de nuevo."
     }
   },
   "categorias": {
