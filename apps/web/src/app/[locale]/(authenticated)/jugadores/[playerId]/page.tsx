@@ -6,8 +6,10 @@ import {
   sumMatchStats,
   derivedRatios,
   attendanceBreakdown,
+  ratingTimeline,
   type MatchStatRow,
   type AttendanceRow,
+  type RatingTimelinePoint,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -194,6 +196,60 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     );
   }
 
+  // F9.3 — Evolución de la valoración: los partidos de la temporada (X = fecha),
+  // con la nota individual (evaluations) y, como contexto, la colectiva
+  // (team_evaluations) de esos mismos eventos. Sin nota → hueco (null), no 0.
+  let evolution: RatingTimelinePoint[] = [];
+  if (activeSeason) {
+    const { data: matchRows } = await supabase
+      .from('match_player_stats')
+      .select(
+        'event_id, events!inner(starts_at, opponent_name, title), teams!inner(categories!inner(season))'
+      )
+      .eq('player_id', player.id)
+      .eq('teams.categories.season', activeSeason);
+    type MatchRow = {
+      event_id: string;
+      events: { starts_at: string; opponent_name: string | null; title: string };
+    };
+    const matches = (matchRows ?? []) as unknown as MatchRow[];
+    if (matches.length > 0) {
+      const eventIds = matches.map((m) => m.event_id);
+      const [{ data: evalRows }, { data: teamRows }] = await Promise.all([
+        supabase
+          .from('evaluations')
+          .select('event_id, rating')
+          .eq('player_id', player.id)
+          .in('event_id', eventIds),
+        supabase
+          .from('team_evaluations')
+          .select('event_id, rating')
+          .in('event_id', eventIds),
+      ]);
+      const ind = new Map<string, number | null>();
+      for (const r of (evalRows ?? []) as Array<{
+        event_id: string;
+        rating: number | null;
+      }>)
+        ind.set(r.event_id, r.rating);
+      const team = new Map<string, number | null>();
+      for (const r of (teamRows ?? []) as Array<{
+        event_id: string;
+        rating: number | null;
+      }>)
+        team.set(r.event_id, r.rating);
+      evolution = ratingTimeline(
+        matches.map((m) => ({
+          eventId: m.event_id,
+          startsAt: m.events.starts_at,
+          label: m.events.opponent_name ?? m.events.title,
+          rating: ind.get(m.event_id) ?? null,
+          teamRating: team.get(m.event_id) ?? null,
+        }))
+      );
+    }
+  }
+
   // Familia: cuentas vinculadas + invitaciones pendientes (F2.4)
   const { data: linkedAccounts } = await supabase
     .from('player_accounts')
@@ -284,6 +340,7 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
             stats={aggregatedStats}
             ratios={ratios}
             attendance={attendance}
+            timeline={evolution}
             seasons={seasons}
             activeSeason={activeSeason}
           />

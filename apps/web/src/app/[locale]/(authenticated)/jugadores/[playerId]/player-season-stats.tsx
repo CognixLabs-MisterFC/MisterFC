@@ -3,17 +3,28 @@
 import { useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import type {
   AggregatedStats,
   DerivedRatios,
   AttendanceBreakdown,
+  RatingTimelinePoint,
 } from '@misterfc/core';
-import { ATTENDANCE_CODES } from '@misterfc/core';
+import { ATTENDANCE_CODES, timelineHasRatings } from '@misterfc/core';
+
+// Carga diferida solo en cliente (ssr:false): mantiene recharts (+d3) fuera del
+// bundle de servidor y del render SSR — ADR-0016 (mitigación del OOM de build).
+const RatingEvolutionChart = dynamic(
+  () => import('./rating-evolution-chart').then((m) => m.RatingEvolutionChart),
+  { ssr: false }
+);
 
 type Props = {
   stats: AggregatedStats;
   ratios: DerivedRatios;
   attendance: AttendanceBreakdown;
+  /** Serie de evolución de la valoración (9.3), ya ordenada por el server. */
+  timeline: RatingTimelinePoint[];
   /** Temporadas de la trayectoria del jugador (desc), para el selector. */
   seasons: string[];
   /** Temporada actualmente mostrada. */
@@ -32,6 +43,7 @@ export function PlayerSeasonStats({
   stats,
   ratios,
   attendance,
+  timeline,
   seasons,
   activeSeason,
 }: Props) {
@@ -83,6 +95,7 @@ export function PlayerSeasonStats({
 
   const hasStats = stats.matches > 0;
   const hasAttendance = attendance.total > 0;
+  const hasEvolution = timelineHasRatings(timeline);
 
   return (
     <div
@@ -113,7 +126,7 @@ export function PlayerSeasonStats({
         </div>
       )}
 
-      {!hasStats && !hasAttendance && (
+      {!hasStats && !hasAttendance && !hasEvolution && (
         <p className="text-sm text-muted-foreground">{t('empty')}</p>
       )}
 
@@ -206,6 +219,15 @@ export function PlayerSeasonStats({
               )
             )}
           </ul>
+        </section>
+      )}
+
+      {hasEvolution && (
+        <section className="flex flex-col gap-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('evolution.title')}
+          </h3>
+          <RatingEvolutionChart points={timeline} />
         </section>
       )}
     </div>
