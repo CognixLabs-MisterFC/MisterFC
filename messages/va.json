@@ -1101,7 +1101,8 @@
       "future_event": "Encara no celebrat",
       "empty_roster": "L'equip no tenia jugadors actius en eixa data.",
       "roster_title": "Plantilla",
-      "read_only": "No tens permís per marcar assistència en este equip."
+      "read_only": "No tens permís per marcar assistència en este equip.",
+      "rate_training": "Valorar entrenament"
     },
     "row": {
       "group_label": "Assistència de {player}",
@@ -1910,6 +1911,27 @@
       "forbidden": "No tens permís per a valorar este partit.",
       "invalid": "Dades no vàlides.",
       "not_closed": "El partit no està finalitzat.",
+      "unauthenticated": "Sessió no vàlida.",
+      "generic": "No s'ha pogut guardar. Torna-ho a provar."
+    }
+  },
+  "valoracion_entreno": {
+    "back": "Tornar a l'entrenament",
+    "title": "Valoracions de l'entrenament",
+    "subtitle": "Posa nota (opcional), comentari i MVP a cada jugador que va assistir.",
+    "no_players": "No hi ha assistents registrats en este entrenament.",
+    "mvp": "MVP",
+    "rating": "Nota",
+    "comment_placeholder": "Comentari per al jugador (opcional)…",
+    "save": "Guardar",
+    "saved": "Guardat",
+    "clear": "Esborrar",
+    "unsaved": "Sense guardar",
+    "error": {
+      "empty": "Afig almenys nota, comentari o MVP.",
+      "mvp_taken": "Ja hi ha un altre MVP en este entrenament.",
+      "forbidden": "No tens permís per a valorar este entrenament.",
+      "invalid": "Dades no vàlides.",
       "unauthenticated": "Sessió no vàlida.",
       "generic": "No s'ha pogut guardar. Torna-ho a provar."
     }

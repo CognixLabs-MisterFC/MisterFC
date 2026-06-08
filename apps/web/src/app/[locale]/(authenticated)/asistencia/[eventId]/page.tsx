@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft, CalendarDays, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Star, Users } from 'lucide-react';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -95,7 +95,7 @@ export default async function AttendanceMarkingPage({ params }: Props) {
             </span>
           </div>
         </CardHeader>
-        <CardContent className="flex items-center justify-between gap-3">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Users className="size-4" aria-hidden />
             <span>
@@ -105,9 +105,21 @@ export default async function AttendanceMarkingPage({ params }: Props) {
               })}
             </span>
           </div>
-          {isFuture && (
-            <Badge variant="secondary">{t('detail.future_event')}</Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {/* F8.3 — valorar el entrenamiento (cuerpo técnico, evento ya
+                celebrado). Flujo ligero, sin ciclo de partido. */}
+            {canRecord && !isFuture && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/asistencia/${event.id}/valoracion`}>
+                  <Star className="size-4" aria-hidden />
+                  <span>{t('detail.rate_training')}</span>
+                </Link>
+              </Button>
+            )}
+            {isFuture && (
+              <Badge variant="secondary">{t('detail.future_event')}</Badge>
+            )}
+          </div>
         </CardContent>
       </Card>
 

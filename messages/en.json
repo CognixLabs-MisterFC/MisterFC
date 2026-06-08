@@ -1101,7 +1101,8 @@
       "future_event": "Not held yet",
       "empty_roster": "The team had no active players on that date.",
       "roster_title": "Roster",
-      "read_only": "You do not have permission to mark attendance for this team."
+      "read_only": "You do not have permission to mark attendance for this team.",
+      "rate_training": "Rate training"
     },
     "row": {
       "group_label": "Attendance for {player}",
@@ -1910,6 +1911,27 @@
       "forbidden": "You don't have permission to rate this match.",
       "invalid": "Invalid data.",
       "not_closed": "The match isn't finished.",
+      "unauthenticated": "Invalid session.",
+      "generic": "Couldn't save. Please try again."
+    }
+  },
+  "valoracion_entreno": {
+    "back": "Back to training",
+    "title": "Training ratings",
+    "subtitle": "Rate each player who attended with an (optional) score, comment and MVP.",
+    "no_players": "No attendees recorded for this training session.",
+    "mvp": "MVP",
+    "rating": "Score",
+    "comment_placeholder": "Comment for the player (optional)…",
+    "save": "Save",
+    "saved": "Saved",
+    "clear": "Clear",
+    "unsaved": "Unsaved",
+    "error": {
+      "empty": "Add at least a score, comment or MVP.",
+      "mvp_taken": "There's already another MVP in this training session.",
+      "forbidden": "You don't have permission to rate this training session.",
+      "invalid": "Invalid data.",
       "unauthenticated": "Invalid session.",
       "generic": "Couldn't save. Please try again."
     }

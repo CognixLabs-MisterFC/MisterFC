@@ -1100,7 +1100,8 @@
       "future_event": "Aún no celebrado",
       "empty_roster": "El equipo no tenía jugadores activos en esa fecha.",
       "roster_title": "Plantilla",
-      "read_only": "No tienes permiso para marcar asistencia en este equipo."
+      "read_only": "No tienes permiso para marcar asistencia en este equipo.",
+      "rate_training": "Valorar entrenamiento"
     },
     "row": {
       "group_label": "Asistencia de {player}",
@@ -1909,6 +1910,27 @@
       "forbidden": "No tienes permiso para valorar este partido.",
       "invalid": "Datos no válidos.",
       "not_closed": "El partido no está finalizado.",
+      "unauthenticated": "Sesión no válida.",
+      "generic": "No se pudo guardar. Inténtalo de nuevo."
+    }
+  },
+  "valoracion_entreno": {
+    "back": "Volver al entrenamiento",
+    "title": "Valoraciones del entrenamiento",
+    "subtitle": "Pon nota (opcional), comentario y MVP a cada jugador que asistió.",
+    "no_players": "No hay asistentes registrados en este entrenamiento.",
+    "mvp": "MVP",
+    "rating": "Nota",
+    "comment_placeholder": "Comentario para el jugador (opcional)…",
+    "save": "Guardar",
+    "saved": "Guardado",
+    "clear": "Borrar",
+    "unsaved": "Sin guardar",
+    "error": {
+      "empty": "Añade al menos nota, comentario o MVP.",
+      "mvp_taken": "Ya hay otro MVP en este entrenamiento.",
+      "forbidden": "No tienes permiso para valorar este entrenamiento.",
+      "invalid": "Datos no válidos.",
       "unauthenticated": "Sesión no válida.",
       "generic": "No se pudo guardar. Inténtalo de nuevo."
     }
