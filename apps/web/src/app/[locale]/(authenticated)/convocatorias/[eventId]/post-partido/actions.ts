@@ -21,6 +21,8 @@ import {
   setPostMatchDoneSchema,
   upsertTeamEvaluationSchema,
   deleteTeamEvaluationSchema,
+  upsertPrivateNoteSchema,
+  deletePrivateNoteSchema,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -28,6 +30,9 @@ type ActionResult = { success?: boolean; error?: string };
 
 function mapErr(message: string | undefined, code: string | undefined): string {
   if (code === '42501') return 'forbidden';
+  // FK de evaluation_private_notes → evaluations: la nota privada exige que el
+  // jugador tenga una valoración individual previa (8.4).
+  if (code === '23503') return 'needs_evaluation';
   if (!message) return 'generic';
   if (message.includes('rating_required_for_match')) return 'rating_required';
   if (message.includes('empty_evaluation')) return 'empty';
@@ -207,6 +212,70 @@ export async function deleteTeamEvaluation(
     .from('team_evaluations')
     .delete()
     .eq('event_id', event_id);
+  if (error) return { error: mapErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F8.4 — Nota PRIVADA del staff por (event_id, player_id). Tabla aparte
+// (evaluation_private_notes, 8.1): interna, nunca visible a jugador/familia. La
+// FK a `evaluations` exige que el jugador tenga ya su valoración individual →
+// el INSERT sin esa fila devuelve 'needs_evaluation' (la UI lo previene).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function upsertPrivateNote(input: unknown): Promise<ActionResult> {
+  const parsed = upsertPrivateNoteSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, player_id, note } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'unauthenticated' };
+
+  // Upsert "a mano": UPDATE del campo mutable; si no había fila, INSERT. No
+  // usamos .upsert() porque tocaría created_by (inmutable: editor ≠ creador).
+  const { data: updated, error: updErr } = await supabase
+    .from('evaluation_private_notes')
+    .update({ note })
+    .eq('event_id', event_id)
+    .eq('player_id', player_id)
+    .select('player_id');
+  if (updErr) return { error: mapErr(updErr.message, updErr.code) };
+
+  if (!updated || updated.length === 0) {
+    const { error: insErr } = await supabase
+      .from('evaluation_private_notes')
+      .insert({
+        event_id,
+        player_id,
+        created_by: user.id, // forzado por el trigger; lo pasamos por el NOT NULL.
+        note,
+      });
+    if (insErr) return { error: mapErr(insErr.message, insErr.code) };
+  }
+
+  revalidate(event_id);
+  return { success: true };
+}
+
+export async function deletePrivateNote(input: unknown): Promise<ActionResult> {
+  const parsed = deletePrivateNoteSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, player_id } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase
+    .from('evaluation_private_notes')
+    .delete()
+    .eq('event_id', event_id)
+    .eq('player_id', player_id);
   if (error) return { error: mapErr(error.message, error.code) };
 
   revalidate(event_id);

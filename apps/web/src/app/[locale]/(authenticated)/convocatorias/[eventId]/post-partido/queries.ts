@@ -47,6 +47,8 @@ export type PostMatchPlayer = {
   stats: PostMatchStats | null;
   /** null si aún no se ha valorado. */
   evaluation: PostMatchEvaluation | null;
+  /** F8.4 — nota privada del staff (interna, nunca visible a jugador/familia). */
+  privateNote: string | null;
 };
 
 export type PostMatchData = {
@@ -158,6 +160,17 @@ export async function loadPostMatch(
     });
   }
 
+  // F8.4 — notas privadas del staff (internas; la RLS impide que lleguen aquí a
+  // jugador/familia, pero esta query solo la usa el post-partido, gateado staff).
+  const { data: privRows } = await supabase
+    .from('evaluation_private_notes')
+    .select('player_id, note')
+    .eq('event_id', eventId);
+  const privByPlayer = new Map<string, string>();
+  for (const r of privRows ?? []) {
+    privByPlayer.set(r.player_id as string, r.note as string);
+  }
+
   // Lista de jugadores = participantes (match_player_stats) ∪ ya valorados.
   const playerIds = new Set<string>([
     ...statsByPlayer.keys(),
@@ -176,6 +189,7 @@ export async function loadPostMatch(
       dorsal: (p.dorsal as number | null) ?? null,
       stats: statsByPlayer.get(p.id as string) ?? null,
       evaluation: evalByPlayer.get(p.id as string) ?? null,
+      privateNote: privByPlayer.get(p.id as string) ?? null,
     }));
     // Orden: titulares primero, luego por dorsal, luego por apellido.
     players.sort((a, b) => {

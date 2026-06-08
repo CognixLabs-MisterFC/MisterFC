@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   Check,
   Loader2,
+  Lock,
   Radio,
   Star,
   Users,
@@ -35,6 +36,8 @@ import {
   setPostMatchDone,
   upsertTeamEvaluation,
   deleteTeamEvaluation,
+  upsertPrivateNote,
+  deletePrivateNote,
 } from '../actions';
 
 type MatchStatus = 'not_started' | 'live' | 'closed';
@@ -380,6 +383,16 @@ function PostMatchForm({
                     </span>
                   )}
                 </div>
+
+                {/* F8.4 — nota privada del staff (interna, nunca visible a
+                    jugador/familia). Separada del comentario visible. */}
+                <PrivateNoteEditor
+                  eventId={eventId}
+                  playerId={p.playerId}
+                  initialNote={p.privateNote}
+                  canEdit={hasEval}
+                  t={t}
+                />
               </li>
             );
           })}
@@ -574,6 +587,128 @@ function TeamEvaluationSection({
           <span className="text-xs text-muted-foreground">{t('unsaved')}</span>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * F8.4 — Nota PRIVADA del staff por jugador (tabla evaluation_private_notes).
+ * Interna: NUNCA visible a jugador/familia. Separada del comentario visible.
+ * La FK a `evaluations` obliga a que el jugador tenga su valoración individual
+ * antes (canEdit = hasEval); si no, se informa sin permitir escribir.
+ */
+function PrivateNoteEditor({
+  eventId,
+  playerId,
+  initialNote,
+  canEdit,
+  t,
+}: {
+  eventId: string;
+  playerId: string;
+  initialNote: string | null;
+  canEdit: boolean;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const [note, setNote] = useState<string>(initialNote ?? '');
+  const [base, setBase] = useState<string>(initialNote ?? '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const dirty = note.trim() !== base.trim();
+  const hasNote = base.trim() !== '';
+
+  async function save() {
+    if (note.trim() === '') {
+      setError('private_empty');
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    const res = await upsertPrivateNote({
+      event_id: eventId,
+      player_id: playerId,
+      note: note.trim(),
+    });
+    setSaving(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    setBase(note.trim());
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1800);
+  }
+
+  async function remove() {
+    setSaving(true);
+    setError(null);
+    const res = await deletePrivateNote({ event_id: eventId, player_id: playerId });
+    setSaving(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    setNote('');
+    setBase('');
+  }
+
+  return (
+    <div className="mt-2 rounded-md border border-dashed border-border bg-muted/30 p-2">
+      <p className="mb-1 inline-flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        <Lock className="size-3" aria-hidden />
+        {t('private_note')}
+        <span className="font-normal normal-case">· {t('private_note_hint')}</span>
+      </p>
+      {!canEdit ? (
+        <p className="text-xs italic text-muted-foreground">
+          {t('private_needs_eval')}
+        </p>
+      ) : (
+        <>
+          <textarea
+            rows={2}
+            maxLength={2000}
+            value={note}
+            placeholder={t('private_placeholder')}
+            onChange={(e) => setNote(e.target.value)}
+            className="w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+          />
+          {error && (
+            <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+              {t(`error.${error}`)}
+            </p>
+          )}
+          <div className="mt-1.5 flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={saving || !dirty || note.trim() === ''}
+              onClick={save}
+            >
+              {saving ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : saved ? (
+                <Check className="size-4" aria-hidden />
+              ) : null}
+              {saved ? t('saved') : t('private_save')}
+            </Button>
+            {hasNote && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={saving}
+                onClick={remove}
+              >
+                {t('clear')}
+              </Button>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

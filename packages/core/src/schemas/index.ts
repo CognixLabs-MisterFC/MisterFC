@@ -259,6 +259,8 @@ export {
   setPostMatchDoneSchema,
   upsertTeamEvaluationSchema,
   deleteTeamEvaluationSchema,
+  upsertPrivateNoteSchema,
+  deletePrivateNoteSchema,
 } from './evaluation';
 export type {
   UpsertEvaluationInput,
@@ -266,6 +268,8 @@ export type {
   SetPostMatchDoneInput,
   UpsertTeamEvaluationInput,
   DeleteTeamEvaluationInput,
+  UpsertPrivateNoteInput,
+  DeletePrivateNoteInput,
 } from './evaluation';
 export type {
   RegisterPlayerEventInput,
