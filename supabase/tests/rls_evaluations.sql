@@ -18,6 +18,10 @@
 --     C8.  dos MVP en el mismo evento                → unique_violation (índice parcial).
 --     C9.  event_id inmutable en UPDATE              → check_violation.
 --     C10. post_match_done se resetea al reabrir      → status live ⇒ post_match_done=false.
+--   Triggers evaluation_private_notes (independiente de evaluations, superuser):
+--     CP1. nota privada en match SIN valoración previa  → OK; club/team derivados.
+--     CP2. nota privada en entreno                      → check_violation (event_not_a_match).
+--     CP3. nota privada jugador ajeno al team           → check_violation (player_not_in_team).
 --   RLS evaluations (role-switched):
 --     R1.  principal del team inserta                → OK; created_by forzado a auth.uid().
 --     R2.  admin del club inserta                     → OK.
@@ -32,6 +36,7 @@
 --   RLS evaluation_private_notes:
 --     R11. principal inserta nota privada            → OK; created_by forzado.
 --     R12. jugador (flag ON) lee notas privadas       → 0 filas (NUNCA expuesta).
+--     R12b. familia (flag ON) lee notas privadas      → 0 filas (NUNCA expuesta).
 --     R13. jugador inserta nota privada               → forbidden (42501).
 --   RLS club_settings:
 --     R14. admin upsert club_settings                 → OK.
@@ -206,6 +211,52 @@ begin
     raise exception 'FAIL [C10]: post_match_done debería resetearse a false al reabrir (got %)', v_done;
   end if;
   delete from public.match_state where event_id = '88f80000-0ee0-0001-0000-000000000000';
+end $$;
+
+-- ── Triggers / constraints evaluation_private_notes (superuser, RLS bypass) ──
+-- La nota privada es INDEPENDIENTE de evaluations (sin FK): la integridad la
+-- impone su propio trigger (partido + jugador en roster + deriva club/team).
+
+-- CP1. nota privada en match SIN valoración individual previa del jugador → OK;
+--      club_id/team_id derivados (ignora lo pasado). Prueba la independencia.
+do $$
+declare v_club uuid; v_team uuid; n int;
+begin
+  -- p2 NO tiene fila en evaluations para este evento.
+  select count(*) into n from public.evaluations
+    where event_id = '88f80000-0ee0-0001-0000-000000000000' and player_id = '88f80000-0c00-0002-0000-000000000000';
+  if n <> 0 then raise exception 'FAIL [CP1 setup]: p2 no debería tener valoración previa (got %)', n; end if;
+
+  insert into public.evaluation_private_notes (event_id, player_id, note, club_id, team_id, created_by)
+    values ('88f80000-0ee0-0001-0000-000000000000', '88f80000-0c00-0002-0000-000000000000', 'apunte interno sin nota individual',
+            '88f80000-0000-0000-0000-000000000002', '88f80000-0ee1-0002-0000-000000000000', '88f80000-aaaa-0002-0000-000000000000')
+    returning club_id, team_id into v_club, v_team;
+  if v_club <> '88f80000-0000-0000-0000-000000000001'
+     or v_team <> '88f80000-0ee1-0001-0000-000000000000' then
+    raise exception 'FAIL [CP1]: club_id/team_id deberían derivarse del evento (got %, %)', v_club, v_team;
+  end if;
+  delete from public.evaluation_private_notes
+    where event_id = '88f80000-0ee0-0001-0000-000000000000' and player_id = '88f80000-0c00-0002-0000-000000000000';
+end $$;
+
+-- CP2. nota privada en un ENTRENO → check_violation (event_not_a_match): solo partidos.
+do $$ begin
+  begin
+    insert into public.evaluation_private_notes (event_id, player_id, note, club_id, team_id, created_by)
+      values ('88f80000-0ee0-0002-0000-000000000000', '88f80000-0c00-0001-0000-000000000000', 'en entreno no',
+              '88f80000-0000-0000-0000-000000000001', '88f80000-0ee1-0001-0000-000000000000', '88f80000-aaaa-0002-0000-000000000000');
+    raise exception 'FAIL [CP2]: nota privada en entreno debería rechazarse';
+  exception when check_violation then null; end;
+end $$;
+
+-- CP3. nota privada para jugador ajeno al team del evento (p3/team2) → check_violation.
+do $$ begin
+  begin
+    insert into public.evaluation_private_notes (event_id, player_id, note, club_id, team_id, created_by)
+      values ('88f80000-0ee0-0001-0000-000000000000', '88f80000-0c00-0003-0000-000000000000', 'jugador ajeno',
+              '88f80000-0000-0000-0000-000000000001', '88f80000-0ee1-0001-0000-000000000000', '88f80000-aaaa-0002-0000-000000000000');
+    raise exception 'FAIL [CP3]: nota privada para jugador ajeno al team debería rechazarse';
+  exception when check_violation then null; end;
 end $$;
 
 -- limpiar la valoración sembrada en C3/C4 para empezar la sección RLS en limpio.
@@ -395,6 +446,17 @@ begin
   select count(*) into n from public.evaluation_private_notes
     where player_id = '88f80000-0c00-0001-0000-000000000000';
   if n <> 0 then raise exception 'FAIL [R12]: jugador NUNCA debería leer notas privadas (got %)', n; end if;
+end $$;
+reset role;
+-- R12b. familia (flag ON) lee notas privadas → 0 filas (NUNCA expuesta).
+set local role authenticated;
+set local "request.jwt.claim.sub" to '88f80000-aaaa-0005-0000-000000000000';
+do $$
+declare n int;
+begin
+  select count(*) into n from public.evaluation_private_notes
+    where player_id = '88f80000-0c00-0001-0000-000000000000';
+  if n <> 0 then raise exception 'FAIL [R12b]: familia NUNCA debería leer notas privadas (got %)', n; end if;
 end $$;
 reset role;
 

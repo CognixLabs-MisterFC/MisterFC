@@ -30,9 +30,6 @@ type ActionResult = { success?: boolean; error?: string };
 
 function mapErr(message: string | undefined, code: string | undefined): string {
   if (code === '42501') return 'forbidden';
-  // FK de evaluation_private_notes → evaluations: la nota privada exige que el
-  // jugador tenga una valoración individual previa (8.4).
-  if (code === '23503') return 'needs_evaluation';
   if (!message) return 'generic';
   if (message.includes('rating_required_for_match')) return 'rating_required';
   if (message.includes('empty_evaluation')) return 'empty';
@@ -220,9 +217,10 @@ export async function deleteTeamEvaluation(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // F8.4 — Nota PRIVADA del staff por (event_id, player_id). Tabla aparte
-// (evaluation_private_notes, 8.1): interna, nunca visible a jugador/familia. La
-// FK a `evaluations` exige que el jugador tenga ya su valoración individual →
-// el INSERT sin esa fila devuelve 'needs_evaluation' (la UI lo previene).
+// (evaluation_private_notes): interna, nunca visible a jugador/familia.
+// INDEPENDIENTE de la valoración individual (no hay FK a `evaluations`): se puede
+// escribir haya o no rating. El trigger valida partido + jugador en roster y
+// deriva club/team; la RLS (user_can_record_match) impone que sea staff.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function upsertPrivateNote(input: unknown): Promise<ActionResult> {
@@ -253,7 +251,11 @@ export async function upsertPrivateNote(input: unknown): Promise<ActionResult> {
       .insert({
         event_id,
         player_id,
-        created_by: user.id, // forzado por el trigger; lo pasamos por el NOT NULL.
+        // club_id/team_id/created_by los DERIVA/fuerza el trigger; se pasan para
+        // cumplir el NOT NULL en el tipo generado (el BEFORE trigger los reescribe).
+        club_id: '00000000-0000-0000-0000-000000000000',
+        team_id: '00000000-0000-0000-0000-000000000000',
+        created_by: user.id,
         note,
       });
     if (insErr) return { error: mapErr(insErr.message, insErr.code) };

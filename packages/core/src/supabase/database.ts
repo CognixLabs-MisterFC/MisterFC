@@ -461,30 +461,43 @@ export type Database = {
       }
       evaluation_private_notes: {
         Row: {
+          club_id: string
           created_at: string
           created_by: string
           event_id: string
           note: string
           player_id: string
+          team_id: string
           updated_at: string
         }
         Insert: {
+          club_id: string
           created_at?: string
           created_by: string
           event_id: string
           note: string
           player_id: string
+          team_id: string
           updated_at?: string
         }
         Update: {
+          club_id?: string
           created_at?: string
           created_by?: string
           event_id?: string
           note?: string
           player_id?: string
+          team_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "evaluation_private_notes_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "evaluation_private_notes_created_by_fkey"
             columns: ["created_by"]
@@ -493,11 +506,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "evaluation_private_notes_event_id_player_id_fkey"
-            columns: ["event_id", "player_id"]
-            isOneToOne: true
-            referencedRelation: "evaluations"
-            referencedColumns: ["event_id", "player_id"]
+            foreignKeyName: "evaluation_private_notes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluation_private_notes_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluation_private_notes_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
           },
         ]
       }

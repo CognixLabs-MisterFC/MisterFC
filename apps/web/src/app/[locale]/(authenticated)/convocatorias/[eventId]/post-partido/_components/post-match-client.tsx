@@ -390,7 +390,6 @@ function PostMatchForm({
                   eventId={eventId}
                   playerId={p.playerId}
                   initialNote={p.privateNote}
-                  canEdit={hasEval}
                   t={t}
                 />
               </li>
@@ -594,20 +593,19 @@ function TeamEvaluationSection({
 /**
  * F8.4 — Nota PRIVADA del staff por jugador (tabla evaluation_private_notes).
  * Interna: NUNCA visible a jugador/familia. Separada del comentario visible.
- * La FK a `evaluations` obliga a que el jugador tenga su valoración individual
- * antes (canEdit = hasEval); si no, se informa sin permitir escribir.
+ * INDEPENDIENTE de la valoración individual: se puede escribir siempre para un
+ * participante, haya o no rating (el entrenador puede dejar un apunte interno sin
+ * ponerle número, o tras valorar solo en colectiva).
  */
 function PrivateNoteEditor({
   eventId,
   playerId,
   initialNote,
-  canEdit,
   t,
 }: {
   eventId: string;
   playerId: string;
   initialNote: string | null;
-  canEdit: boolean;
   t: ReturnType<typeof useTranslations>;
 }) {
   const [note, setNote] = useState<string>(initialNote ?? '');
@@ -661,54 +659,46 @@ function PrivateNoteEditor({
         {t('private_note')}
         <span className="font-normal normal-case">· {t('private_note_hint')}</span>
       </p>
-      {!canEdit ? (
-        <p className="text-xs italic text-muted-foreground">
-          {t('private_needs_eval')}
+      <textarea
+        rows={2}
+        maxLength={2000}
+        value={note}
+        placeholder={t('private_placeholder')}
+        onChange={(e) => setNote(e.target.value)}
+        className="w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
+      />
+      {error && (
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+          {t(`error.${error}`)}
         </p>
-      ) : (
-        <>
-          <textarea
-            rows={2}
-            maxLength={2000}
-            value={note}
-            placeholder={t('private_placeholder')}
-            onChange={(e) => setNote(e.target.value)}
-            className="w-full resize-y rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground"
-          />
-          {error && (
-            <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-              {t(`error.${error}`)}
-            </p>
-          )}
-          <div className="mt-1.5 flex items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={saving || !dirty || note.trim() === ''}
-              onClick={save}
-            >
-              {saving ? (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              ) : saved ? (
-                <Check className="size-4" aria-hidden />
-              ) : null}
-              {saved ? t('saved') : t('private_save')}
-            </Button>
-            {hasNote && (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                disabled={saving}
-                onClick={remove}
-              >
-                {t('clear')}
-              </Button>
-            )}
-          </div>
-        </>
       )}
+      <div className="mt-1.5 flex items-center gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={saving || !dirty || note.trim() === ''}
+          onClick={save}
+        >
+          {saving ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : saved ? (
+            <Check className="size-4" aria-hidden />
+          ) : null}
+          {saved ? t('saved') : t('private_save')}
+        </Button>
+        {hasNote && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={saving}
+            onClick={remove}
+          >
+            {t('clear')}
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
