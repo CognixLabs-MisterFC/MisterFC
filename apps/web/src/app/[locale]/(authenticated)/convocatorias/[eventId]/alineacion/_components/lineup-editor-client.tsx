@@ -25,9 +25,7 @@ import {
   playerDraggableId,
   coachFormationToFormation,
   positionKeyOfSlotCode,
-  remapToFormation,
   resolveDrop,
-  roleFromPosition,
   startersFor,
   type CoachFormation,
   type Formation,
@@ -519,90 +517,34 @@ export function LineupEditorClient(props: Props) {
     persist(next, changed, prev);
   }
 
-  function onFormationChange(code: string) {
-    const next = getFormation(code) ?? defaultFormation(format);
-    const fp = positions
-      .filter((p) => p.location === 'field')
-      .map((p) => ({
-        playerId: p.playerId,
-        role: roleFromPosition(rosterById.get(p.playerId)?.positionMain),
-      }));
-    const { assignments, benched } = remapToFormation(fp, next);
-    const assignMap = new Map(assignments.map((a) => [a.playerId, a]));
-    const benchedSet = new Set(benched);
-    const optimistic = positions.map((p) => {
-      if (assignMap.has(p.playerId)) {
-        const a = assignMap.get(p.playerId)!;
-        return { ...p, location: 'field' as const, positionCode: a.positionCode, xPct: a.xPct, yPct: a.yPct };
-      }
-      if (benchedSet.has(p.playerId)) {
-        return { ...p, location: 'bench' as const, positionCode: null, xPct: null, yPct: null };
-      }
-      return p;
-    });
+  // Fix #8 — seleccionar una formación aplica SOLO el layout (la geometría de
+  // slots, que se deriva de `formationCode`): NO auto-rellena titulares. Todos
+  // los jugadores quedan en el BANQUILLO y los slots del campo quedan VACÍOS para
+  // que el coach los coloque a mano (arrastrar). Vale igual para una formación de
+  // CATÁLOGO (code) y para una plantilla del entrenador (uuid de coach_formations):
+  // en ambos casos el valor seleccionado ES el formation_code que se persiste.
+  //
+  // Antes: el catálogo (onFormationChange) recolocaba a los del campo vía
+  // remapToFormation, y la plantilla del coach (onCoachFormationChange) mapeaba
+  // jugadores a slots por orden y PERSISTÍA cada posición. Ahora ninguna lo hace.
+  function applyFormationLayout(code: string) {
     const prev = positions;
+    const prevCode = formationCode;
+    // Todos al banquillo (sin posición); el campo queda con los slots vacíos.
+    const optimistic = positions.map((p) =>
+      p.location === 'field'
+        ? { ...p, location: 'bench' as const, positionCode: null, xPct: null, yPct: null }
+        : p,
+    );
+    // Solo hay que persistir a los que estaban en el campo (pasan a banquillo);
+    // los que ya estaban en el banquillo no cambian.
+    const changed = prev.filter((p) => p.location === 'field').map((p) => p.playerId);
+
     setPositions(optimistic);
     setFormationCode(code);
     startTransition(async () => {
-      const r = await setLineupFormation({ lineup_id: lineupId, formation_code: code });
-      if (r.error) {
-        setPositions(prev);
-        setFormationCode(formationCode);
-        setError(r.error);
-      }
-    });
-  }
-
-  // F6.10 (fix BUG 3) — adopta una plantilla del entrenador como layout del
-  // campo. Sintetiza el Formation (sus x/y + códigos de slot únicos), coloca a
-  // los jugadores en orden (campo primero, luego banquillo) sobre esos slots y
-  // persiste formation_code = cf.id, de modo que al recargar el editor vuelve a
-  // sintetizar el MISMO layout y los jugadores se pintan y editan sobre él.
-  function onCoachFormationChange(cf: CoachFormation) {
-    const synth = coachFormationToFormation(cf);
-    const fieldIds = positions.filter((p) => p.location === 'field').map((p) => p.playerId);
-    const benchIds = positions.filter((p) => p.location === 'bench').map((p) => p.playerId);
-    const ordered = [...fieldIds, ...benchIds];
-    const slotByPlayer = new Map<string, (typeof synth.slots)[number]>();
-    synth.slots.forEach((slot, i) => {
-      const pid = ordered[i];
-      if (pid) slotByPlayer.set(pid, slot);
-    });
-
-    const prev = positions;
-    const prevCode = formationCode;
-    const optimistic = positions.map((p) => {
-      const slot = slotByPlayer.get(p.playerId);
-      if (slot) {
-        return {
-          ...p,
-          location: 'field' as const,
-          positionCode: slot.code,
-          xPct: slot.xPct,
-          yPct: slot.yPct,
-        };
-      }
-      return { ...p, location: 'bench' as const, positionCode: null, xPct: null, yPct: null };
-    });
-
-    const changed = optimistic
-      .filter((p) => {
-        const before = prev.find((x) => x.playerId === p.playerId);
-        return (
-          before &&
-          (before.location !== p.location ||
-            before.positionCode !== p.positionCode ||
-            before.xPct !== p.xPct ||
-            before.yPct !== p.yPct)
-        );
-      })
-      .map((p) => p.playerId);
-
-    setPositions(optimistic);
-    setFormationCode(cf.id);
-    startTransition(async () => {
       setError(null);
-      const rf = await setLineupFormation({ lineup_id: lineupId, formation_code: cf.id });
+      const rf = await setLineupFormation({ lineup_id: lineupId, formation_code: code });
       if (rf.error) {
         setPositions(prev);
         setFormationCode(prevCode);
@@ -610,35 +552,30 @@ export function LineupEditorClient(props: Props) {
         return;
       }
       for (const pid of changed) {
-        const a = optimistic.find((x) => x.playerId === pid);
-        if (!a) continue;
         const r = await upsertLineupPosition({
           lineup_id: lineupId,
           player_id: pid,
-          location: a.location,
-          position_code: a.positionCode,
-          x_pct: a.xPct,
-          y_pct: a.yPct,
+          location: 'bench',
+          position_code: null,
+          x_pct: null,
+          y_pct: null,
         });
         if (r.error) {
           setPositions(prev);
-          if (r.error === 'too_many_starters') toast.error(t('field_full', { max: maxStarters }));
-          else setError(r.error);
+          setError(r.error);
           return;
         }
       }
     });
   }
 
-  // Dispatcher del Select de formación: catálogo (code del catálogo) o plantilla
-  // del entrenador (value = uuid de coach_formations).
+  // Dispatcher del Select de formación: acepta tanto un code de catálogo como un
+  // uuid de plantilla del coach; en ambos casos solo aplica el layout (geometría),
+  // sin tocar jugadores. El value seleccionado es el formation_code a persistir.
   function onFormationSelect(value: string) {
-    if (getFormation(value)) {
-      onFormationChange(value);
-      return;
-    }
-    const cf = coachFormations.find((f) => f.id === value);
-    if (cf) onCoachFormationChange(cf);
+    const isKnown =
+      !!getFormation(value) || coachFormations.some((f) => f.id === value);
+    if (isKnown) applyFormationLayout(value);
   }
 
   function onToggleOfficial(value: boolean) {
