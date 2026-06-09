@@ -15,7 +15,6 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { AssignTeamDialog } from '../_components/assign-team-dialog';
 import { InviteTutorDialog } from './invite-tutor-dialog';
@@ -30,11 +29,14 @@ import {
   type PlayerNoteItem,
 } from './player-notes-section';
 import { PlayerSeasonStats } from './player-season-stats';
+import { PlayerDetailTabs, type PlayerTabKey } from './player-detail-tabs';
 
 type Props = {
   params: Promise<{ locale: string; playerId: string }>;
-  searchParams: Promise<{ season?: string }>;
+  searchParams: Promise<{ season?: string; tab?: string }>;
 };
+
+const PLAYER_TABS: ReadonlyArray<PlayerTabKey> = ['info', 'stats', 'history'];
 
 const ROLES_THAT_CAN_MANAGE: ReadonlyArray<string> = [
   'admin_club',
@@ -46,8 +48,12 @@ const PLAYER_PHOTO_TTL_SECONDS = 600; // 10 min
 
 export default async function PlayerDetailPage({ params, searchParams }: Props) {
   const { locale, playerId } = await params;
-  const { season: seasonParam } = await searchParams;
+  const { season: seasonParam, tab: tabParam } = await searchParams;
   setRequestLocale(locale);
+
+  const activeTab: PlayerTabKey = PLAYER_TABS.includes(tabParam as PlayerTabKey)
+    ? (tabParam as PlayerTabKey)
+    : 'info';
 
   const ctx = await loadShellContext();
   if (!ctx) redirect(`/${locale}/signin`);
@@ -322,188 +328,211 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('section.basic_data')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PlayerForm playerId={player.id} initial={player} canEdit={canManage} />
-        </CardContent>
-      </Card>
+      <PlayerDetailTabs
+        initialTab={activeTab}
+        labels={{
+          info: t('tabs.info'),
+          stats: t('tabs.stats'),
+          history: t('tabs.history'),
+        }}
+        info={
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('section.basic_data')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PlayerForm
+                  playerId={player.id}
+                  initial={player}
+                  canEdit={canManage}
+                />
+              </CardContent>
+            </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('section.season_stats')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PlayerSeasonStats
-            stats={aggregatedStats}
-            ratios={ratios}
-            attendance={attendance}
-            timeline={evolution}
-            seasons={seasons}
-            activeSeason={activeSeason}
-          />
-        </CardContent>
-      </Card>
+            {canSeeMedical && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('section.medical')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <MedicalNotesForm
+                    playerId={player.id}
+                    initial={medicalNotes}
+                    canEdit={canManage}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
-      {canSeeMedical && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('section.medical')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <MedicalNotesForm
-              playerId={player.id}
-              initial={medicalNotes}
-              canEdit={canManage}
-            />
-          </CardContent>
-        </Card>
-      )}
+            {canSeeNotes && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('notes.section')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <PlayerNotesSection
+                    playerId={player.id}
+                    notes={playerNotes}
+                    locale={locale}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
-      {canSeeNotes && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('notes.section')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PlayerNotesSection
-              playerId={player.id}
-              notes={playerNotes}
-              locale={locale}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-          <CardTitle>{t('section.family')}</CardTitle>
-          {canManage && (
-            <InviteTutorDialog
-              locale={locale}
-              playerId={player.id}
-              playerName={fullName}
-            />
-          )}
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {(linkedAccounts ?? []).length === 0 &&
-          (pendingInvites ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('family.empty')}</p>
-          ) : (
-            <ul className="flex flex-col divide-y divide-border">
-              {(linkedAccounts ?? []).map((acc) => {
-                const profObj = (acc.profiles ?? null) as
-                  | { full_name: string | null }
-                  | null;
-                const name = profObj?.full_name ?? '—';
-                return (
-                  <li
-                    key={acc.id}
-                    className="flex items-center justify-between gap-3 py-2"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {t(`family.relation.${acc.relation}`)}
-                      </span>
-                    </div>
-                    <span className="text-xs text-misterfc-green">
-                      {t('family.linked')}
-                    </span>
-                  </li>
-                );
-              })}
-              {(pendingInvites ?? []).map((inv) => (
-                <li
-                  key={inv.id}
-                  className="flex items-center justify-between gap-3 py-2"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{inv.email}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {inv.player_relation
-                        ? t(`family.relation.${inv.player_relation}`)
-                        : ''}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {t('family.pending')}
-                    </span>
-                    {canManage && (
-                      <CancelInvitationButton
-                        locale={locale}
-                        invitationId={inv.id}
-                        email={inv.email}
-                      />
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-          <CardTitle>{t('section.history')}</CardTitle>
-          {canManage && teamsForDialog.length > 0 && (
-            <AssignTeamDialog
-              playerId={player.id}
-              teams={teamsForDialog}
-              hasActiveAssignment={hasActiveAssignment}
-            />
-          )}
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {(history ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('history.empty')}</p>
-          ) : (
-            <ul className="flex flex-col divide-y divide-border">
-              {(history ?? []).map((h) => {
-                // teams llega como objeto plano (FK con !inner) — el cliente
-                // de Supabase lo tipa como array, hacemos cast seguro.
-                const teamObj = (h.teams ?? null) as
-                  | { name: string; categories: { name: string; season: string } }
-                  | null;
-                const teamName = teamObj?.name ?? '—';
-                const catName = teamObj?.categories?.name ?? '';
-                const season = teamObj?.categories?.season ?? '';
-                const isActive = h.left_at === null;
-                return (
-                  <li
-                    key={h.id}
-                    className="flex items-center justify-between gap-3 py-2"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{teamName}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {catName}
-                        {season ? ` · ${season}` : ''}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      {h.joined_at}
-                      {h.left_at
-                        ? ` → ${h.left_at}`
-                        : ` · ${t('history.active')}`}
-                      {isActive && (
-                        <span className="ml-1 text-misterfc-green">●</span>
-                      )}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
-
-      <Separator />
+            <Card>
+              <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+                <CardTitle>{t('section.family')}</CardTitle>
+                {canManage && (
+                  <InviteTutorDialog
+                    locale={locale}
+                    playerId={player.id}
+                    playerName={fullName}
+                  />
+                )}
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                {(linkedAccounts ?? []).length === 0 &&
+                (pendingInvites ?? []).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t('family.empty')}
+                  </p>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-border">
+                    {(linkedAccounts ?? []).map((acc) => {
+                      const profObj = (acc.profiles ?? null) as
+                        | { full_name: string | null }
+                        | null;
+                      const name = profObj?.full_name ?? '—';
+                      return (
+                        <li
+                          key={acc.id}
+                          className="flex items-center justify-between gap-3 py-2"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {t(`family.relation.${acc.relation}`)}
+                            </span>
+                          </div>
+                          <span className="text-xs text-misterfc-green">
+                            {t('family.linked')}
+                          </span>
+                        </li>
+                      );
+                    })}
+                    {(pendingInvites ?? []).map((inv) => (
+                      <li
+                        key={inv.id}
+                        className="flex items-center justify-between gap-3 py-2"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{inv.email}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {inv.player_relation
+                              ? t(`family.relation.${inv.player_relation}`)
+                              : ''}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            {t('family.pending')}
+                          </span>
+                          {canManage && (
+                            <CancelInvitationButton
+                              locale={locale}
+                              invitationId={inv.id}
+                              email={inv.email}
+                            />
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        }
+        stats={
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('section.season_stats')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PlayerSeasonStats
+                stats={aggregatedStats}
+                ratios={ratios}
+                attendance={attendance}
+                timeline={evolution}
+                seasons={seasons}
+                activeSeason={activeSeason}
+              />
+            </CardContent>
+          </Card>
+        }
+        history={
+          <Card>
+            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+              <CardTitle>{t('section.history')}</CardTitle>
+              {canManage && teamsForDialog.length > 0 && (
+                <AssignTeamDialog
+                  playerId={player.id}
+                  teams={teamsForDialog}
+                  hasActiveAssignment={hasActiveAssignment}
+                />
+              )}
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              {(history ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t('history.empty')}
+                </p>
+              ) : (
+                <ul className="flex flex-col divide-y divide-border">
+                  {(history ?? []).map((h) => {
+                    // teams llega como objeto plano (FK con !inner) — el cliente
+                    // de Supabase lo tipa como array, hacemos cast seguro.
+                    const teamObj = (h.teams ?? null) as
+                      | {
+                          name: string;
+                          categories: { name: string; season: string };
+                        }
+                      | null;
+                    const teamName = teamObj?.name ?? '—';
+                    const catName = teamObj?.categories?.name ?? '';
+                    const season = teamObj?.categories?.season ?? '';
+                    const isActive = h.left_at === null;
+                    return (
+                      <li
+                        key={h.id}
+                        className="flex items-center justify-between gap-3 py-2"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{teamName}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {catName}
+                            {season ? ` · ${season}` : ''}
+                          </span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {h.joined_at}
+                          {h.left_at
+                            ? ` → ${h.left_at}`
+                            : ` · ${t('history.active')}`}
+                          {isActive && (
+                            <span className="ml-1 text-misterfc-green">●</span>
+                          )}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        }
+      />
     </div>
   );
 }
