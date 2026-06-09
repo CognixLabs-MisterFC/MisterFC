@@ -76,18 +76,24 @@ export async function createTeam(
   const supabase = createSupabaseServerClient(adapter);
 
   // Régimen de cambios (7.6c): la división debe ser válida para la categoría.
+  // Rework A (A1): el equipo hereda club_id + season de su categoría (el trigger
+  // teams_derive_from_category los re-fuerza igualmente; los pasamos para
+  // satisfacer el tipo Insert NOT NULL). Comportamiento idéntico al de hoy.
   const { data: cat } = await supabase
     .from('categories')
-    .select('kind')
+    .select('kind, club_id, season')
     .eq('id', categoryId)
     .maybeSingle();
+  if (!cat) return { error: 'generic' };
   const division = parsed.data.division;
-  if (!(await isDivisionValid(supabase, (cat?.kind as string | null) ?? null, division))) {
+  if (!(await isDivisionValid(supabase, (cat.kind as string | null) ?? null, division))) {
     return { error: 'division_invalid' };
   }
 
   const { error } = await supabase.from('teams').insert({
     category_id: categoryId,
+    club_id: cat.club_id as string,
+    season: cat.season as string,
     name: parsed.data.name,
     format: parsed.data.format,
     color: parsed.data.color,
