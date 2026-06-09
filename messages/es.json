@@ -1934,7 +1934,21 @@
     "note_placeholder": "Observación (rápido, mejora en…, actitud…)",
     "note_save": "Guardar nota",
     "note_saved": "Nota guardada para {player}",
-    "note_error": "No se pudo guardar la nota"
+    "note_error": "No se pudo guardar la nota",
+    "player_comments": {
+      "title": "Comentarios de jugadores",
+      "count": "({n})",
+      "error": "No se pudo guardar",
+      "select_player": "Elige un jugador",
+      "placeholder": "Comentario sobre el jugador en este partido…",
+      "add": "Añadir comentario",
+      "empty": "Aún no hay comentarios de jugadores en este partido.",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "edit": "Editar",
+      "delete": "Borrar",
+      "confirm_delete": "¿Borrar este comentario?"
+    }
   },
   "post_partido": {
     "back": "Volver a la convocatoria",

@@ -11,6 +11,7 @@ import {
   RivalHighlightsPanel,
   MatchNotesPanel,
 } from './_components/rival-notes-panel';
+import { PlayerCommentsPanel } from './_components/player-comments-panel';
 import type { Role } from '../../../jugadores/queries';
 
 // F7.3: la captura en vivo debe HIDRATARSE siempre desde los match_events
@@ -94,7 +95,7 @@ export default async function MatchLivePage({ params }: Props) {
         teamEvents={data.teamEvents}
       />
 
-      {/* F7.11 — rivales destacados ENCIMA de la línea de tiempo. */}
+      {/* F7.11 — rivales destacados (scouting), encima de la zona de notas. */}
       <RivalHighlightsPanel
         eventId={eventId}
         matchStatus={data.matchStatus}
@@ -102,6 +103,25 @@ export default async function MatchLivePage({ params }: Props) {
         opponentName={data.event.opponentName}
       />
 
+      {/* #12 — ZONA DE NOTAS por ENCIMA de la línea de tiempo: notas del partido
+          (7.11) + comentarios de jugadores (#11). La línea de tiempo (7.9) va
+          debajo. */}
+      <MatchNotesPanel
+        eventId={eventId}
+        matchStatus={data.matchStatus}
+        matchNotes={data.matchNotes}
+      />
+
+      {/* #11 — comentarios de jugadores de ESTE partido (staff-only, NO atado al
+          estado del partido: visible/editable sin empezar, en juego o cerrado). */}
+      <PlayerCommentsPanel
+        eventId={eventId}
+        locale={locale}
+        comments={data.playerComments}
+        rosterPlayers={data.rosterPlayers}
+      />
+
+      {/* F7.9 — línea de tiempo editable, DEBAJO de la zona de notas. */}
       <TimelineEditor
         eventId={eventId}
         matchStatus={data.matchStatus}
@@ -109,13 +129,6 @@ export default async function MatchLivePage({ params }: Props) {
         rosterPlayers={data.rosterPlayers}
         periods={data.periods}
         absentIds={data.absentIds}
-      />
-
-      {/* Notas del partido, debajo de la línea de tiempo. */}
-      <MatchNotesPanel
-        eventId={eventId}
-        matchStatus={data.matchStatus}
-        matchNotes={data.matchNotes}
       />
     </div>
   );

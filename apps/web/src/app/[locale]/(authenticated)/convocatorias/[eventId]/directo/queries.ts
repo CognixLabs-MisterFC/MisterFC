@@ -192,6 +192,20 @@ export type RosterPlayer = {
   dorsal: number | null;
 };
 
+/**
+ * F7.13 (mejora) — comentario de jugador (player_notes) ORIGINADO en este partido
+ * (match_event_id = este evento). Staff-only (RLS user_can_access_player_notes).
+ */
+export type PlayerComment = {
+  id: string;
+  playerId: string;
+  playerLabel: string;
+  dorsal: number | null;
+  note: string;
+  authorName: string | null;
+  createdAt: string;
+};
+
 /** F7.11 — rival destacado de este partido: dorsal + nota (rápido, duro…). */
 export type RivalHighlight = {
   dorsal: number;
@@ -304,6 +318,8 @@ export type MatchLiveData = {
   rivalHighlights: RivalHighlight[];
   /** F7.11 — notas generales del partido (match_state.post_match_notes). */
   matchNotes: string;
+  /** F7.13 — comentarios de jugadores originados en este partido (staff-only). */
+  playerComments: PlayerComment[];
 };
 
 export async function loadMatchLive(
@@ -833,6 +849,41 @@ export async function loadMatchLive(
   }));
   const matchNotes = (stateRow?.post_match_notes as string | null) ?? '';
 
+  // F7.13 (mejora) — comentarios de jugadores de ESTE partido (player_notes con
+  // match_event_id = este evento). Staff-only por RLS (user_can_access_player_notes);
+  // el embed desambigua el FK de autor. Nombre del jugador desde players.
+  const { data: commentRows, error: commentsErr } = await supabase
+    .from('player_notes')
+    .select(
+      `id, player_id, note, created_at,
+       players!inner(first_name, last_name, dorsal),
+       profiles!player_notes_author_profile_id_fkey(full_name)`,
+    )
+    .eq('match_event_id', eventId)
+    .order('created_at', { ascending: false });
+  if (commentsErr) console.error('[directo] error cargando comentarios de jugadores:', commentsErr);
+  type CommentRowShape = {
+    id: string;
+    player_id: string;
+    note: string;
+    created_at: string;
+    players: { first_name: string; last_name: string | null; dorsal: number | null } | null;
+    profiles: { full_name: string | null } | null;
+  };
+  const playerComments: PlayerComment[] = (commentRows ?? []).map((row) => {
+    const r = row as unknown as CommentRowShape;
+    const label = r.players?.last_name || r.players?.first_name || r.player_id.slice(0, 4);
+    return {
+      id: r.id,
+      playerId: r.player_id,
+      playerLabel: label,
+      dorsal: r.players?.dorsal ?? null,
+      note: r.note,
+      authorName: r.profiles?.full_name ?? null,
+      createdAt: r.created_at,
+    };
+  });
+
   // F7.6c — régimen de cambios desde (categoría.kind, equipo.división) contra la
   // tabla de referencia. Sin fila (p.ej. categoría adulta) → DEFAULT_REGIME.
   let regime: SubstitutionRegime = DEFAULT_REGIME;
@@ -892,5 +943,6 @@ export async function loadMatchLive(
     rosterPlayers,
     rivalHighlights,
     matchNotes,
+    playerComments,
   };
 }

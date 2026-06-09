@@ -1935,7 +1935,21 @@
     "note_placeholder": "Observation (fast, improving at…, attitude…)",
     "note_save": "Save note",
     "note_saved": "Note saved for {player}",
-    "note_error": "Couldn't save the note"
+    "note_error": "Couldn't save the note",
+    "player_comments": {
+      "title": "Player comments",
+      "count": "({n})",
+      "error": "Could not save",
+      "select_player": "Pick a player",
+      "placeholder": "Comment about the player in this match…",
+      "add": "Add comment",
+      "empty": "No player comments for this match yet.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "delete": "Delete",
+      "confirm_delete": "Delete this comment?"
+    }
   },
   "post_partido": {
     "back": "Back to call-up",
