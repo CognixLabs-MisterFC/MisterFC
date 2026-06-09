@@ -1935,7 +1935,21 @@
     "note_placeholder": "Observació (ràpid, millora en…, actitud…)",
     "note_save": "Guarda nota",
     "note_saved": "Nota guardada per a {player}",
-    "note_error": "No s'ha pogut guardar la nota"
+    "note_error": "No s'ha pogut guardar la nota",
+    "player_comments": {
+      "title": "Comentaris de jugadors",
+      "count": "({n})",
+      "error": "No s’ha pogut guardar",
+      "select_player": "Tria un jugador",
+      "placeholder": "Comentari sobre el jugador en aquest partit…",
+      "add": "Afig comentari",
+      "empty": "Encara no hi ha comentaris de jugadors en aquest partit.",
+      "save": "Guarda",
+      "cancel": "Cancel·la",
+      "edit": "Edita",
+      "delete": "Esborra",
+      "confirm_delete": "Esborrar aquest comentari?"
+    }
   },
   "post_partido": {
     "back": "Tornar a la convocatòria",
