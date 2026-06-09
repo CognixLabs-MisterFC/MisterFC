@@ -678,6 +678,11 @@
       "placeholder": "Player observation (fast, improving at…, attitude…)",
       "error": "Couldn't save",
       "confirm_delete": "Delete this note?"
+    },
+    "tabs": {
+      "info": "Personal info",
+      "stats": "Statistics",
+      "history": "History"
     }
   },
   "equipo_detalle": {

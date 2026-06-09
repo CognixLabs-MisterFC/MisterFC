@@ -678,6 +678,11 @@
       "placeholder": "Observació del jugador (ràpid, millora en…, actitud…)",
       "error": "No s'ha pogut guardar",
       "confirm_delete": "Esborrar esta nota?"
+    },
+    "tabs": {
+      "info": "Informació personal",
+      "stats": "Estadístiques",
+      "history": "Trajectòria"
     }
   },
   "equipo_detalle": {
