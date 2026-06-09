@@ -2036,30 +2036,36 @@ export type Database = {
       teams: {
         Row: {
           category_id: string
+          club_id: string
           color: string
           created_at: string
           division: string | null
           format: string
           id: string
           name: string
+          season: string
         }
         Insert: {
           category_id: string
+          club_id: string
           color?: string
           created_at?: string
           division?: string | null
           format: string
           id?: string
           name: string
+          season: string
         }
         Update: {
           category_id?: string
+          club_id?: string
           color?: string
           created_at?: string
           division?: string | null
           format?: string
           id?: string
           name?: string
+          season?: string
         }
         Relationships: [
           {
@@ -2067,6 +2073,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teams_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
             referencedColumns: ["id"]
           },
         ]

@@ -64,7 +64,7 @@ El **régimen de cambios** (`categories.kind` + `teams.division` → `substituti
 
 ### 3.1 `categories` (plantilla permanente) — ESTADO FINAL
 
-> Este es el estado **final** (tras A6 CONTRACT). El rework llega aquí en **dos pasos** (patrón EXPAND→MIGRATE→CONTRACT, §5/§9): en **A1 EXPAND** `season`/`order_idx` solo se hacen **NULLABLE** (no se borran) para no romper los ~20 sitios que aún leen `category.season`; el **DROP + dedup + nueva unicidad** ocurre en **A6 CONTRACT**, cuando ya nadie las lee.
+> Este es el estado **final** (tras A6 CONTRACT). El rework llega aquí en pasos (EXPAND→MIGRATE→CONTRACT, §5/§9): **A1 NO toca `categories`**; en **A4** `season`/`order_idx` se hacen **NULLABLE** (ya migrados los lectores de display en A3, para no romper el typecheck); el **DROP + dedup + nueva unicidad** ocurre en **A6 CONTRACT**, cuando ya nadie las lee.
 
 ```sql
 -- A6 CONTRACT — la categoría queda permanente por club (sin temporada ni orden).
@@ -132,7 +132,9 @@ alter table public.players add column invite_email text
 
 **Por qué no una sola migración**: borrar `categories.season` de golpe rompería el **typecheck** de los ~20 sitios que hoy leen `teams.categories.season` → CI rojo. Se hace en **dos migraciones** (en subfases distintas, §9), con todo el código migrado en medio. **Invariante**: cada subfase = un PR que deja `main` con **CI verde y F9 funcionando**.
 
-### Migración 1 — EXPAND (subfase A1, aditiva, no rompe nada)
+### Migración 1 — EXPAND (subfase A1, aditiva, **SOLO `teams`** — no rompe nada)
+> Ajuste sobre el plan inicial: **A1 NO toca `categories`**. Ablandar `categories.season`/`order_idx` a NULLABLE se hace en **A4** (con la pantalla de plantillas), no aquí: hacerlo en A1 volvería `categories.season` `string | null` y rompería el typecheck de los ~14 lectores de display/DTO aún sin migrar (A3) → CI rojo.
+
 1. **`teams.season` + `teams.club_id`** (nullable de inicio).
 2. **Backfill** desde la categoría actual:
    ```sql
@@ -143,18 +145,10 @@ alter table public.players add column invite_email text
     where c.id = t.category_id;
    ```
 3. **Endurecer `teams`**: `season`/`club_id` → `NOT NULL` + check regex de `season` + FK de `club_id` + `unique(club_id, name, season)` + índice `teams_club_season_idx`.
-4. **Ablandar `categories` (NO borrar)**: `season` y `order_idx` pasan a **NULLABLE**, ajustando el check del regex a "NULL o regex":
-   ```sql
-   alter table public.categories alter column season drop not null;
-   alter table public.categories drop constraint if exists categories_season_check; -- (nombre real a verificar)
-   alter table public.categories add constraint categories_season_check
-     check (season is null or season ~ '^[0-9]{4}-[0-9]{2}$');
-   alter table public.categories alter column order_idx drop not null;
-   ```
-   Los valores **siguen ahí** → todo lo que aún lee `category.season` sigue funcionando. La pantalla de categorías-plantilla (A4) podrá crear categorías **sin** season/orden porque ya son nullable.
+4. **`categories` NO se toca en A1** (sigue con `season`/`order_idx` `NOT NULL` como hoy → todos los lectores actuales siguen funcionando).
 
-### MIGRATE (código, subfases A2→A5, sin DDL)
-Migrar lectura/escritura a `teams.season` (A2 filtros F9, A3 display) y reorientar UI/import (A4 `/equipos` + plantillas, A5 import). Al acabar A5 **nada lee** `categories.season`/`order_idx`.
+### MIGRATE (código, subfases A2→A5, sin DDL salvo A4/A5)
+Migrar lectura/escritura a `teams.season` (A2 filtros F9, A3 display). En **A4** se **ablanda `categories.season`/`order_idx` a NULLABLE** (ya migrados los lectores de display en A3) para que la pantalla de plantillas cree categorías sin season/orden; se reorienta UI (`/equipos` + plantillas). En **A5** se añade `players.invite_email` (import). Al acabar A5 **nada lee** `categories.season`/`order_idx`.
 
 ### Migración 2 — CONTRACT (subfase A6, cuando ya nadie las lee)
 5. **Deduplicar categorías** (colapsar las que solo difieren por temporada). Por `(club_id, lower(name))` se elige **superviviente** (menor `created_at`); se re-apunta `teams.category_id` y `events.category_id`; se conservan `kind`/`half_duration_minutes` (iguales por nombre):
@@ -171,7 +165,8 @@ Migrar lectura/escritura a `teams.season` (A2 filtros F9, A3 display) y reorient
    ```
    *(Datos actuales: 2 categorías de 1 temporada → 0 fusiones; escrita robusta para el caso general.)*
 6. **Quitar de `categories`**: `season`, `order_idx`, `categories_club_season_idx`, actualizar el comentario de tabla, y añadir `categories_club_name_uniq (club_id, lower(name))` (§3.1).
-7. **Verificación post-CONTRACT** (en el spec): `events.category_id` apunta a categorías vivas; sin colisión de la nueva unicidad.
+7. **⚠️ Ajustar el trigger `teams_derive_from_category`** (creado en A1, migración `20260627000001`): **QUITAR el fallback de `season`** (la rama `if new.season is null then new.season := v_cat.season`), porque lee `categories.season` que aquí se borra. En A6 la `season` la aporta SIEMPRE el flujo `/equipos` (A4), así que ya no hace falta el fallback. **La derivación de `club_id` se MANTIENE** (`categories.club_id` sobrevive). Recrear la función con `create or replace` sin esa rama.
+8. **Verificación post-CONTRACT** (en el spec): `events.category_id` apunta a categorías vivas; sin colisión de la nueva unicidad; insertar un team sin `season` ya falla (NOT NULL) en vez de heredarla.
 
 > `players.invite_email` (🔒 O2) entra con el **import (A5)**, no aquí.
 
@@ -230,12 +225,12 @@ Migrar lectura/escritura a `teams.season` (A2 filtros F9, A3 display) y reorient
 
 | Subfase | Tipo | Alcance | Est. |
 |---|---|---|---|
-| **A1** | **EXPAND** | Migración 1 (§5): `teams.season`+`teams.club_id` con backfill + endurecer (`NOT NULL`, regex, FK, `unique(club_id,name,season)`, índice). **`categories.season`/`order_idx` → NULLABLE (no se borran)**. **ADR-0017**. pgTAP de unicidad de equipo. Regenerar `database.ts`. *(Aditiva: no rompe nada; todo lo que lee `category.season` sigue OK.)* | 3–4 h |
+| **A1** | **EXPAND** | Migración 1 (§5): `teams.season`+`teams.club_id` con backfill + endurecer (`NOT NULL`, regex, FK, `unique(club_id,name,season)`, índice). **SOLO `teams` — NO toca `categories`**. Migración 2: **trigger `teams_derive_from_category`** (deriva `club_id` siempre + `season` si NULL desde la categoría, BEFORE → los inserts existentes y los 24 fixtures pasan sin tocarlos). Editar **solo** `categorias/[categoryId]/actions.ts` (pasa `club_id`+`season` de la categoría → satisface el tipo Insert). **ADR-0017**. pgTAP de unicidad de equipo + backfill. Regenerar `database.ts`. | 3–4 h |
 | **A2** | MIGRATE | **F9 a `team.season` (CRÍTICO)**: los 6 filtros + selectores de temporada de `jugadores/[playerId]` y `mi-ficha`. Smoke de las dos fichas. | 2–3 h |
 | **A3** | MIGRATE | **Ripple display/DTO** (~14 puntos §8): cambio mecánico a `teams.season` en listados/cabeceras. | 2–3 h |
-| **A4** | MIGRATE | **`/equipos` + categorías-plantilla** (§6, 🔒O3): listado por temporada + alta (temporada+categoría+división+nombre), pantalla de plantillas (crear/renombrar sin season/orden — ya nullable), nav "Equipos", redirects 308 `/categorias`→`/equipos` y `/categorias/[id]`→`/equipos/plantillas`. **Retira el CRUD viejo de `/categorias` basado en temporada.** Orden por `kind` (🔒O1). i18n. | 4–6 h |
+| **A4** | MIGRATE | **`categories.season`/`order_idx` → NULLABLE** (migración aditiva; ya migrados los lectores de display en A3) **+ `/equipos` + categorías-plantilla** (§6, 🔒O3): listado por temporada + alta (temporada+categoría+división+nombre), pantalla de plantillas (crear/renombrar sin season/orden — funciona porque ya son nullable), nav "Equipos", redirects 308 `/categorias`→`/equipos` y `/categorias/[id]`→`/equipos/plantillas`. **Retira el CRUD viejo de `/categorias` basado en temporada.** Orden por `kind` (🔒O1). i18n. | 4–6 h |
 | **A5** | MIGRATE | **Import** (§7): columna de **equipo por fila** (resolución nombre→team_id en club+temporada) + **`players.invite_email`** (🔒O2); selector de lote como fallback. Migración aditiva de `players.invite_email`. Tests de `@misterfc/core/import`. | 3–4 h |
-| **A6** | **CONTRACT** | Migración 2 (§5): **dedup de categorías** (re-apunta `teams`/`events` a la superviviente) → **quitar `categories.season`+`order_idx`** + índice + comentario → `unique(club_id, lower(name))`. pgTAP (categoría sin season, unicidad por nombre, `events.category_id` coherente). Regenerar `database.ts`. *(Seguro: A2–A5 ya dejaron de leer `category.season`.)* | 2–3 h |
+| **A6** | **CONTRACT** | Migración CONTRACT (§5): **dedup de categorías** (re-apunta `teams`/`events`) → **quitar `categories.season`+`order_idx`** + índice + comentario → `unique(club_id, lower(name))` → **ajustar el trigger `teams_derive_from_category`: quitar el fallback de `season`** (mantener la derivación de `club_id`). pgTAP (categoría sin season, unicidad por nombre, `events.category_id` coherente, insert de team sin season → NOT NULL). Regenerar `database.ts`. *(Seguro: A2–A5 ya dejaron de leer `category.season`.)* | 2–3 h |
 
 **Orden**: **A1 (EXPAND)** → **A2 (F9, crítico)** → A3 → A4 → A5 → **A6 (CONTRACT)**. **Total** ≈ **16–23 h**.
 

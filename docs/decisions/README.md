@@ -29,3 +29,4 @@ Decisiones técnicas con impacto significativo en la arquitectura, el stack o la
 | 0014 | `club_settings`: configuración por club en tabla dedicada | Accepted |
 | 0015 | F8: descope de entrenamientos y valoración colectiva (Opción B) | Accepted |
 | 0016 | Librería de gráficos del cliente: recharts | Accepted |
+| 0017 | Temporada en el equipo; categoría como plantilla permanente | Accepted |
