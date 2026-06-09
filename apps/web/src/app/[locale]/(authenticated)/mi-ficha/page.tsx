@@ -104,17 +104,18 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
   const playerId = activePlayer.id;
 
   // 3) Temporadas de la trayectoria del jugador → selector + default.
+  //    Rework A (A2): la temporada vive en el equipo (teams.season).
   const { data: history } = await supabase
     .from('team_members')
-    .select('left_at, teams!inner(categories!inner(season))')
+    .select('left_at, teams!inner(season)')
     .eq('player_id', playerId)
     .order('joined_at', { ascending: false });
-  type HistTeam = { categories: { season: string } } | null;
+  type HistTeam = { season: string } | null;
   const seasonsSet = new Set<string>();
   let activeSeasonFromHistory: string | null = null;
   for (const h of history ?? []) {
     const tm = (h.teams ?? null) as HistTeam;
-    const s = tm?.categories?.season;
+    const s = tm?.season;
     if (s) {
       seasonsSet.add(s);
       if (h.left_at === null) activeSeasonFromHistory = s;
@@ -133,10 +134,10 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
     const { data: statRows } = await supabase
       .from('match_player_stats')
       .select(
-        'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, teams!inner(categories!inner(season))'
+        'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, teams!inner(season)'
       )
       .eq('player_id', playerId)
-      .eq('teams.categories.season', activeSeason);
+      .eq('teams.season', activeSeason);
     aggregatedStats = sumMatchStats(
       (statRows ?? []) as unknown as MatchStatRow[]
     );
@@ -148,10 +149,10 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
   if (activeSeason) {
     const { data: attRows } = await supabase
       .from('training_attendance')
-      .select('code, events!inner(type, teams!inner(categories!inner(season)))')
+      .select('code, events!inner(type, teams!inner(season))')
       .eq('player_id', playerId)
       .eq('events.type', 'training')
-      .eq('events.teams.categories.season', activeSeason);
+      .eq('events.teams.season', activeSeason);
     attendance = attendanceBreakdown(
       (attRows ?? []) as unknown as AttendanceRow[]
     );
@@ -165,10 +166,10 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
     const { data: matchRows } = await supabase
       .from('match_player_stats')
       .select(
-        'event_id, events!inner(starts_at, opponent_name, title), teams!inner(categories!inner(season))'
+        'event_id, events!inner(starts_at, opponent_name, title), teams!inner(season)'
       )
       .eq('player_id', playerId)
-      .eq('teams.categories.season', activeSeason);
+      .eq('teams.season', activeSeason);
     type MatchRow = {
       event_id: string;
       events: {
