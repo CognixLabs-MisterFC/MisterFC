@@ -6,6 +6,7 @@ import { UserMenu } from './user-menu';
 import { LogoutButton } from './logout-button';
 import { MobileDrawer } from './mobile-drawer';
 import { Sidebar } from './sidebar';
+import { SidebarToggle } from './sidebar-toggle';
 import { ProfileAvatar, initialsOf } from './avatar-image';
 
 type Props = {
@@ -16,6 +17,8 @@ type Props = {
   activeClub: CurrentUserClub;
   locale: string;
   badges?: Partial<Record<string, number>>;
+  /** #9 — estado inicial (desde cookie) del colapso del menú lateral. */
+  sidebarCollapsed?: boolean;
 };
 
 export async function Header({
@@ -26,6 +29,7 @@ export async function Header({
   activeClub,
   locale,
   badges,
+  sidebarCollapsed = false,
 }: Props) {
   const t = await getTranslations('shell');
   const fallback = initialsOf(fullName, user.email ?? '?');
@@ -39,6 +43,9 @@ export async function Header({
         >
           <Sidebar role={activeClub.role} variant="mobile" badges={badges} />
         </MobileDrawer>
+
+        {/* #9 — colapsar/mostrar el menú lateral (solo desktop). */}
+        <SidebarToggle initialCollapsed={sidebarCollapsed} />
 
         <ActiveClubSwitcher
           clubs={clubs}
