@@ -14,8 +14,8 @@
 --   T5. season con formato inválido → check_violation (teams_season_format).
 --   T6. club_id NULL al insertar → el trigger lo DERIVA de la categoría (no se
 --       rechaza; queda = categories.club_id). Denormalización autoritativa.
---   T7. season NULL al insertar → el trigger la hereda de categories.season
---       (fallback transicional de A1).
+--   T7. season NULL al insertar → tras A6 CONTRACT el fallback de season se
+--       retiró (categories.season ya no existe) → not_null_violation.
 
 begin;
 
@@ -23,10 +23,11 @@ insert into public.clubs (id, name, slug) values
   ('a1000000-0000-4000-8000-000000000001', 'Club A1 A', 'club-a1-a'),
   ('a1000000-0000-4000-8000-000000000002', 'Club A1 B', 'club-a1-b');
 
--- Categorías (categories aún tiene season NOT NULL en A1 — no se toca hasta A4/A6).
-insert into public.categories (id, club_id, name, season, kind) values
-  ('a1000000-0dd0-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000001', 'Infantil', '2025-26', 'infantil'),
-  ('a1000000-0dd0-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000002', 'Infantil', '2025-26', 'infantil');
+-- Categorías. Tras A6 CONTRACT, categories ya NO tiene season/order_idx (plantilla
+-- permanente); la temporada vive en teams.season. Por eso el insert no pasa season.
+insert into public.categories (id, club_id, name, kind) values
+  ('a1000000-0dd0-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000001', 'Infantil', 'infantil'),
+  ('a1000000-0dd0-4000-8000-000000000002', 'a1000000-0000-4000-8000-000000000002', 'Infantil', 'infantil');
 
 -- ── T1. Backfill simulado: el team toma season/club_id de su categoría. ───────
 do $$
@@ -87,16 +88,13 @@ begin
   end if;
 end $$;
 
--- ── T7. season NULL → el trigger la hereda de categories.season. ──────────────
-do $$
-declare v_season text;
-begin
-  insert into public.teams (category_id, club_id, name, format, season)
-    values ('a1000000-0dd0-4000-8000-000000000001', null, 'Cadete C', 'F11', null)
-    returning season into v_season;
-  if v_season <> '2025-26' then
-    raise exception 'FAIL [T7]: season NULL debería heredarse de la categoría (got %)', v_season;
-  end if;
+-- ── T7. season NULL → tras A6 ya NO se hereda → not_null_violation. ───────────
+do $$ begin
+  begin
+    insert into public.teams (category_id, club_id, name, format, season)
+      values ('a1000000-0dd0-4000-8000-000000000001', null, 'Cadete C', 'F11', null);
+    raise exception 'FAIL [T7]: season NULL debería fallar por NOT NULL (A6 quitó el fallback)';
+  exception when not_null_violation then null; end;
 end $$;
 
 rollback;

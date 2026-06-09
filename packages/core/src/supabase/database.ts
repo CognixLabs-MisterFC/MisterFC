@@ -270,8 +270,6 @@ export type Database = {
           id: string
           kind: string | null
           name: string
-          order_idx: number | null
-          season: string | null
         }
         Insert: {
           club_id: string
@@ -280,8 +278,6 @@ export type Database = {
           id?: string
           kind?: string | null
           name: string
-          order_idx?: number | null
-          season?: string | null
         }
         Update: {
           club_id?: string
@@ -290,8 +286,6 @@ export type Database = {
           id?: string
           kind?: string | null
           name?: string
-          order_idx?: number | null
-          season?: string | null
         }
         Relationships: [
           {
