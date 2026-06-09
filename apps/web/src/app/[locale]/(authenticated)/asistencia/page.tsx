@@ -26,9 +26,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatsRangeFilter } from './_components/stats-range-filter';
+import { TeamFilter } from './_components/team-filter';
 import {
   loadAsistenciaStats,
   loadRecentTrainings,
+  resolveAsistenciaScope,
   type StatsRange,
 } from './queries';
 import type { Role } from '../jugadores/queries';
@@ -85,36 +87,48 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
   const tCodes = await getTranslations('asistencia.codes');
 
   const range = parseRange(sp.range);
-  const teamId = sp.team && sp.team.length > 0 ? sp.team : undefined;
 
-  const [recent, stats] = await Promise.all([
-    loadRecentTrainings(ctx.activeClub.club.id, role, 30),
-    loadAsistenciaStats(ctx.activeClub.club.id, role, {
-      range,
-      teamId,
-    }),
-  ]);
-
-  // Equipos visibles para el filtro de stats (solo los presentes en datos).
+  // #7 — equipos visibles para el filtro (independiente del filtro activo, para no
+  // colapsar las opciones): admin/coord → todos los del club; coach → los suyos.
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const teamIds = Array.from(
-    new Set([
-      ...recent.map((r) => r.team_id),
-      ...stats.byPlayer.map((p) => p.team_id),
-    ])
-  );
+  const scope = await resolveAsistenciaScope(ctx.activeClub.club.id, role);
   let teamOptions: Array<{ id: string; name: string }> = [];
-  if (teamIds.length > 0) {
+  if (scope.kind === 'all') {
+    const { data: teams } = await supabase
+      .from('teams')
+      .select('id, name, categories!inner(club_id)')
+      .eq('categories.club_id', ctx.activeClub.club.id);
+    teamOptions = (teams ?? []).map((t) => ({
+      id: t.id as string,
+      name: t.name as string,
+    }));
+  } else if (scope.kind === 'restricted' && scope.teamIds.length > 0) {
     const { data: teams } = await supabase
       .from('teams')
       .select('id, name')
-      .in('id', teamIds);
+      .in('id', scope.teamIds);
     teamOptions = (teams ?? []).map((t) => ({
       id: t.id as string,
       name: t.name as string,
     }));
   }
+  teamOptions.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+
+  // Solo aceptamos un team del filtro si está entre los visibles (no rompe scope).
+  const teamId =
+    sp.team && teamOptions.some((o) => o.id === sp.team) ? sp.team : undefined;
+
+  // El filtro de equipo se muestra a admin/coord, y al coach solo si tiene varios.
+  const showTeamFilter = teamOptions.length > 1;
+
+  const [recent, stats] = await Promise.all([
+    loadRecentTrainings(ctx.activeClub.club.id, role, 30, teamId),
+    loadAsistenciaStats(ctx.activeClub.club.id, role, {
+      range,
+      teamId,
+    }),
+  ]);
 
   // Bucketea recent en "pendiente" (marked_count < roster_count) y "ok".
   const pending = recent.filter((r) => r.marked_count < r.roster_count);
@@ -126,9 +140,14 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
+        </div>
+        {showTeamFilter && (
+          <TeamFilter teams={teamOptions} activeTeamId={teamId ?? null} />
+        )}
       </div>
 
       {isCoach && (
@@ -190,6 +209,10 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
               {t('recent.empty')}
             </p>
           ) : (
+            // #7 — por defecto ~10 entrenamientos visibles (más recientes primero,
+            // ya ordenados en la query); el resto queda accesible con scroll (no es
+            // un corte duro). max-h ≈ 10 filas + cabecera.
+            <div className="max-h-[33rem] overflow-y-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -248,6 +271,7 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -260,11 +284,7 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
               {t('stats.subtitle', { total: stats.totalRecorded })}
             </p>
           </div>
-          <StatsRangeFilter
-            active={range}
-            teams={teamOptions}
-            activeTeamId={teamId ?? null}
-          />
+          <StatsRangeFilter active={range} />
         </CardHeader>
         <CardContent className="grid gap-6 md:grid-cols-2">
           <section>

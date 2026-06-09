@@ -149,7 +149,8 @@ export async function resolveAsistenciaScope(
 export async function loadRecentTrainings(
   clubId: string,
   role: Role,
-  rangeDays: number = 30
+  rangeDays: number = 30,
+  teamId?: string
 ): Promise<TrainingEvent[]> {
   const scope = await resolveAsistenciaScope(clubId, role);
   if (scope.kind === 'none') return [];
@@ -196,6 +197,10 @@ export async function loadRecentTrainings(
     if (teamIds.length === 0) return [];
     q = q.in('team_id', teamIds);
   }
+
+  // #7 — filtro opcional por equipo (admin/coord lo eligen en la UI). Intersecta
+  // con el scope (un coach con `.in(teamIds)` + `.eq(teamId)` sigue acotado).
+  if (teamId) q = q.eq('team_id', teamId);
 
   const { data: rawEvents } = await q;
 
