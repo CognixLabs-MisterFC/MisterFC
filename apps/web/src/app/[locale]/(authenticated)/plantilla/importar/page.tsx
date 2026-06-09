@@ -1,6 +1,10 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { createSupabaseServerClient, type Role } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  currentSeason,
+  type Role,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { ImportWizard } from './import-wizard';
@@ -48,22 +52,20 @@ export default async function ImportPlayersPage({ params }: Props) {
     if (!cap?.granted) redirect(`/${locale}`);
   }
 
-  // Equipos del club para el selector "asignar a equipo".
+  // Rework A (A5) — los equipos son por temporada. Tanto el selector de lote como
+  // la resolución de "equipo por fila" operan sobre la TEMPORADA ACTIVA.
+  const season = currentSeason();
   const { data: teamsData } = await supabase
     .from('teams')
-    .select('id, name, categories!inner(name, club_id)')
+    .select('id, name, categories!inner(name)')
+    .eq('club_id', ctx.activeClub.club.id)
+    .eq('season', season)
     .order('name', { ascending: true });
-  const teams = (teamsData ?? [])
-    .filter(
-      (t) =>
-        (t.categories as unknown as { club_id: string }).club_id ===
-        ctx.activeClub.club.id
-    )
-    .map((t) => ({
-      id: t.id,
-      name: t.name,
-      category_name: (t.categories as unknown as { name: string }).name,
-    }));
+  const teams = (teamsData ?? []).map((t) => ({
+    id: t.id,
+    name: t.name,
+    category_name: (t.categories as unknown as { name: string }).name,
+  }));
 
   // Jugadores existentes (solo claves para el dedup en cliente). Tope 5000
   // para que el payload no se dispare en clubs grandes.
@@ -92,6 +94,7 @@ export default async function ImportPlayersPage({ params }: Props) {
         locale={locale}
         teams={teams}
         existing={existing}
+        activeSeason={season}
       />
     </div>
   );

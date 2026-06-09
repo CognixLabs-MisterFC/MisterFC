@@ -1725,6 +1725,7 @@ export type Database = {
           foot: string | null
           height_cm: number | null
           id: string
+          invite_email: string | null
           last_name: string | null
           medical_notes: string | null
           origin: string | null
@@ -1743,6 +1744,7 @@ export type Database = {
           foot?: string | null
           height_cm?: number | null
           id?: string
+          invite_email?: string | null
           last_name?: string | null
           medical_notes?: string | null
           origin?: string | null
@@ -1761,6 +1763,7 @@ export type Database = {
           foot?: string | null
           height_cm?: number | null
           id?: string
+          invite_email?: string | null
           last_name?: string | null
           medical_notes?: string | null
           origin?: string | null

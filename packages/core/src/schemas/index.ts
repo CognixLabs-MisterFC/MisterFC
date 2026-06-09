@@ -98,6 +98,9 @@ export {
   summarize,
   mapHeaders,
   parseTabular,
+  buildTeamNameIndex,
+  resolveTeamName,
+  applyTeamResolution,
 } from '../import';
 
 export {
@@ -143,6 +146,8 @@ export type {
   RowStatus,
   ValidatedRow,
   ExistingPlayer,
+  ImportTeamRef,
+  TeamResolution,
   ParsedTabular,
   ParseTabularError,
 } from '../import';

@@ -19,8 +19,17 @@ export {
   detectDuplicates,
   dedupKey,
   summarize,
+  buildTeamNameIndex,
+  resolveTeamName,
+  applyTeamResolution,
 } from './validate';
-export type { RowStatus, ValidatedRow, ExistingPlayer } from './validate';
+export type {
+  RowStatus,
+  ValidatedRow,
+  ExistingPlayer,
+  ImportTeamRef,
+  TeamResolution,
+} from './validate';
 
 export { mapHeaders, parseTabular } from './parse';
 export type { ParseTabularError, ParsedTabular } from './parse';

@@ -18,6 +18,10 @@ export const PLAYER_IMPORT_COLUMNS = [
   'height_cm',
   'weight_kg',
   'origin',
+  // Rework A (A5) — equipo por fila (nombre; se resuelve a team_id en club +
+  // temporada activa) e email de contacto/invitación (🔒 O2; solo se guarda).
+  'team',
+  'invite_email',
 ] as const;
 
 export type PlayerImportColumn = (typeof PLAYER_IMPORT_COLUMNS)[number];
@@ -353,6 +357,37 @@ const weightKgField = z
   });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Rework A (A5) — equipo por fila + email de contacto/invitación (🔒 O2).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Nombre del equipo por fila (p.ej. "Infantil B"). Opcional: la resolución
+ * nombre → team_id (dentro del club + temporada activa) la hace la capa de
+ * negocio (validate.resolveTeamName); aquí solo se valida que sea texto corto.
+ */
+const teamField = optionalText(80, 'team_too_long');
+
+/**
+ * 🔒 O2 — email de contacto/invitación. Opcional. El regex es el mismo que la
+ * constraint de BD (`players.invite_email`): un @, sin espacios, dominio con
+ * punto. Así todo valor aceptado aquí pasa también la constraint.
+ */
+const INVITE_EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+const inviteEmailField = z
+  .union([z.string(), z.number(), z.null()])
+  .optional()
+  .transform((v) => {
+    if (v === null || v === undefined) return null;
+    const s = String(v).trim();
+    return s.length > 0 ? s : null;
+  })
+  .refine((v) => v === null || v.length <= 254, { message: 'invite_email_invalid' })
+  .refine((v) => v === null || INVITE_EMAIL_RE.test(v), {
+    message: 'invite_email_invalid',
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Row schema — validación relajada per F2.9 hotfix 2026-05-30:
 // solo `first_name` + `date_of_birth` son obligatorios. `last_name` ahora
 // es opcional (NULL en BD) — ver migración 20260603000002.
@@ -369,6 +404,8 @@ export const playerImportRowSchema = z.object({
   height_cm: heightCmField,
   weight_kg: weightKgField,
   origin: optionalText(120, 'origin_too_long'),
+  team: teamField,
+  invite_email: inviteEmailField,
 });
 
 export type PlayerImportRow = z.infer<typeof playerImportRowSchema>;

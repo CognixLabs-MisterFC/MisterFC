@@ -38,6 +38,8 @@ export function PreviewTable({ rows }: Props) {
             </th>
             <th className="px-3 py-2">{t('col.dorsal')}</th>
             <th className="px-3 py-2">{t('col.position_main')}</th>
+            <th className="px-3 py-2">{t('col.team')}</th>
+            <th className="px-3 py-2">{t('col.email')}</th>
             <th className="px-3 py-2">{t('col.status')}</th>
           </tr>
         </thead>
@@ -75,6 +77,10 @@ function RowItem({ row }: { row: ValidatedRow }) {
       <td className="px-3 py-2 align-top">{row.data?.date_of_birth ?? ''}</td>
       <td className="px-3 py-2 align-top">{row.data?.dorsal ?? ''}</td>
       <td className="px-3 py-2 align-top">{row.data?.position_main ?? ''}</td>
+      <td className="px-3 py-2 align-top">{row.data?.team ?? ''}</td>
+      <td className="px-3 py-2 align-top text-muted-foreground">
+        {row.data?.invite_email ?? ''}
+      </td>
       <td className="px-3 py-2 align-top text-xs">
         <span className="font-medium">{t(`status.${row.status}`)}</span>
         {reason && <span className="ml-1 text-zinc-400">— {reason}</span>}

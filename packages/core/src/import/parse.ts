@@ -79,6 +79,21 @@ const HEADER_ALIASES: Record<string, PlayerImportColumn> = {
   origen: 'origin',
   'club anterior': 'origin',
   origin: 'origin',
+  // team (Rework A · A5) — nombre del equipo por fila.
+  equipo: 'team',
+  'equipo destino': 'team',
+  'equipo asignado': 'team',
+  team: 'team',
+  'team name': 'team',
+  // invite_email (Rework A · A5, 🔒 O2) — email de contacto/invitación.
+  email: 'invite_email',
+  correo: 'invite_email',
+  'correo electronico': 'invite_email',
+  'e-mail': 'invite_email',
+  'email familiar': 'invite_email',
+  'email de contacto': 'invite_email',
+  'email contacto': 'invite_email',
+  invite_email: 'invite_email',
 };
 
 export type ParseTabularError =

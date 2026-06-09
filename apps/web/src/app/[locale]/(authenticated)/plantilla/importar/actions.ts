@@ -3,8 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import {
+  buildTeamNameIndex,
   createSupabaseServerClient,
+  currentSeason,
   playerImportPayloadSchema,
+  resolveTeamName,
   type PlayerImportRow,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -104,6 +107,20 @@ export async function importPlayers(
 
   const { rows, team_id } = parsed.data;
 
+  // Rework A (A5) — resolución de equipo por fila contra los equipos del club en
+  // la TEMPORADA ACTIVA (la pertenencia es por temporada). El import NO crea
+  // equipos; el nombre debe casar con uno existente. Autoridad del servidor: se
+  // re-resuelve aquí aunque el cliente ya lo haya validado en el preview.
+  const season = currentSeason();
+  const { data: teamRows } = await supabase
+    .from('teams')
+    .select('id, name')
+    .eq('club_id', clubId)
+    .eq('season', season);
+  const teamIndex = buildTeamNameIndex(
+    (teamRows ?? []).map((t) => ({ id: t.id as string, name: t.name as string }))
+  );
+
   let created = 0;
   let skipped = 0;
   let failed = 0;
@@ -147,6 +164,8 @@ export async function importPlayers(
         height_cm: row.height_cm,
         weight_kg: row.weight_kg,
         origin: row.origin,
+        // 🔒 O2 — email de contacto/invitación; solo se guarda (sin enviar).
+        invite_email: row.invite_email,
       })
       .select('id')
       .single();
@@ -172,10 +191,27 @@ export async function importPlayers(
     created++;
     details.push({ row_index: i, status: 'created', player_id: inserted.id });
 
-    if (team_id) {
+    // Equipo por fila (A5): si la fila trae nombre de equipo, se usa el resuelto;
+    // si no trae (o viene vacío), fallback al equipo del selector de lote.
+    const resolution = resolveTeamName(row.team, teamIndex);
+    let rowTeamId: string | null;
+    if (resolution.kind === 'resolved') {
+      rowTeamId = resolution.teamId;
+    } else if (resolution.kind === 'none') {
+      rowTeamId = team_id; // fallback de lote
+    } else {
+      // not_found: el cliente ya bloquea estas filas en el preview; defensivo.
+      rowTeamId = null;
+      details[details.length - 1] = {
+        ...details[details.length - 1]!,
+        reason: 'team_not_found',
+      };
+    }
+
+    if (rowTeamId) {
       const { error: tmErr } = await supabase.from('team_members').insert({
         player_id: inserted.id,
-        team_id,
+        team_id: rowTeamId,
       });
       // Si team_members falla, el player queda creado sin equipo (no
       // marcamos failed para no falsear el conteo). Lo reflejamos en details
@@ -187,7 +223,7 @@ export async function importPlayers(
         };
         Sentry.captureException(tmErr, {
           tags: { feature: 'import', step: 'team_members_insert' },
-          extra: { row_index: i, player_id: inserted.id, team_id },
+          extra: { row_index: i, player_id: inserted.id, team_id: rowTeamId },
         });
       }
     }
