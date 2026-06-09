@@ -198,7 +198,7 @@ export async function loadCalendarData(
   const { data: rawTeams } = await supabase
     .from('teams')
     .select(
-      'id, name, color, category_id, categories!inner(name, season, club_id, half_duration_minutes)',
+      'id, name, color, season, category_id, categories!inner(name, club_id, half_duration_minutes)',
     )
     .order('name');
 
@@ -206,7 +206,6 @@ export async function loadCalendarData(
     .map((t) => {
       const cat = t.categories as unknown as {
         name: string;
-        season: string;
         club_id: string;
         half_duration_minutes: number;
       };
@@ -216,7 +215,7 @@ export async function loadCalendarData(
         color: t.color as string,
         category_id: t.category_id as string,
         category_name: cat.name,
-        season: cat.season,
+        season: t.season as string,
         club_id: cat.club_id,
         half_duration_minutes: cat.half_duration_minutes ?? 45,
       };

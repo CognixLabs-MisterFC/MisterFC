@@ -159,15 +159,16 @@ async function loadVisibleTeams(
 
   const { data } = await supabase
     .from('teams')
-    .select('id, name, color, category_id, categories!inner(name, season, club_id)')
+    .select('id, name, color, season, category_id, categories!inner(name, club_id)')
     .order('name');
 
   type Row = {
     id: string;
     name: string;
     color: string;
+    season: string;
     category_id: string;
-    categories: { name: string; season: string; club_id: string };
+    categories: { name: string; club_id: string };
   };
 
   const all: TeamOption[] = (data ?? [])
@@ -179,7 +180,7 @@ async function loadVisibleTeams(
       color: r.color,
       category_id: r.category_id,
       category_name: r.categories.name,
-      season: r.categories.season,
+      season: r.season,
     }));
 
   if (scope.kind === 'restricted') {
@@ -279,7 +280,7 @@ export async function loadGlobalPlayers(
     .from('players')
     .select(
       `id, first_name, last_name, date_of_birth, dorsal, position_main,
-       team_members!left(team_id, left_at, teams(id, name, color, categories(id, name, season))),
+       team_members!left(team_id, left_at, teams(id, name, color, season, categories(id, name))),
        player_accounts(profile_id)`,
       { count: 'exact' }
     )
@@ -325,7 +326,8 @@ export async function loadGlobalPlayers(
       id: string;
       name: string;
       color: string;
-      categories: { id: string; name: string; season: string };
+      season: string;
+      categories: { id: string; name: string };
     } | null;
   };
 
@@ -345,7 +347,7 @@ export async function loadGlobalPlayers(
       current_team_color: active?.teams?.color ?? null,
       current_category_id: active?.teams?.categories?.id ?? null,
       current_category_name: active?.teams?.categories?.name ?? null,
-      current_category_season: active?.teams?.categories?.season ?? null,
+      current_category_season: active?.teams?.season ?? null,
       has_account: accounts.length > 0,
     };
   });

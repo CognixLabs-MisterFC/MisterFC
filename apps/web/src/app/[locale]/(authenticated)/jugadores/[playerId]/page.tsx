@@ -136,13 +136,13 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     photoSignedUrl = data?.signedUrl ?? null;
   }
 
-  // Trayectoria (F2.5). Rework A (A2): el embed trae teams.season (la temporada
-  // vive ya en el equipo) además de la categoría (cuyo name/season aún usa el
-  // display de la pestaña Trayectoria — su migración es A3).
+  // Trayectoria (F2.5). Rework A (A3): la temporada se lee ya de teams.season
+  // (también en el display de la pestaña Trayectoria); de la categoría solo
+  // queda el nombre.
   const { data: history } = await supabase
     .from('team_members')
     .select(
-      'id, joined_at, left_at, dorsal_in_team, position_in_team, teams!inner(name, season, categories!inner(name, season))'
+      'id, joined_at, left_at, dorsal_in_team, position_in_team, teams!inner(name, season, categories!inner(name))'
     )
     .eq('player_id', player.id)
     .order('joined_at', { ascending: false });
@@ -153,7 +153,7 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
   type HistTeam = {
     name: string;
     season: string;
-    categories: { name: string; season: string };
+    categories: { name: string };
   } | null;
   const seasonsSet = new Set<string>();
   let activeSeasonFromHistory: string | null = null;
@@ -500,12 +500,13 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
                     const teamObj = (h.teams ?? null) as
                       | {
                           name: string;
-                          categories: { name: string; season: string };
+                          season: string;
+                          categories: { name: string };
                         }
                       | null;
                     const teamName = teamObj?.name ?? '—';
                     const catName = teamObj?.categories?.name ?? '';
-                    const season = teamObj?.categories?.season ?? '';
+                    const season = teamObj?.season ?? '';
                     const isActive = h.left_at === null;
                     return (
                       <li

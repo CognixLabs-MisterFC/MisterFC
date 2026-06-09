@@ -34,15 +34,16 @@ export default async function AnunciosPage({ params }: Props) {
 
   const { data: teamRow } = await supabase
     .from('teams')
-    .select('id, name, category_id, categories!inner(name, season, club_id)')
+    .select('id, name, season, category_id, categories!inner(name, club_id)')
     .eq('id', teamId)
     .maybeSingle();
   if (!teamRow) notFound();
   const team = teamRow as unknown as {
     id: string;
     name: string;
+    season: string;
     category_id: string;
-    categories: { name: string; season: string; club_id: string };
+    categories: { name: string; club_id: string };
   };
   if (team.categories.club_id !== ctx.activeClub.club.id) notFound();
 
@@ -95,7 +96,7 @@ export default async function AnunciosPage({ params }: Props) {
         <div className="flex flex-col">
           <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
           <p className="text-sm text-muted-foreground">
-            {team.name} · {team.categories.name} · {team.categories.season}
+            {team.name} · {team.categories.name} · {team.season}
           </p>
         </div>
       </div>

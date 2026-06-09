@@ -333,7 +333,7 @@ export async function loadMatchLive(
     .from('events')
     .select(
       `id, club_id, team_id, type, title, opponent_name, starts_at,
-       teams!inner(name, color, format, division, categories!inner(name, season, half_duration_minutes, kind))`,
+       teams!inner(name, color, format, division, season, categories!inner(name, half_duration_minutes, kind))`,
     )
     .eq('id', eventId)
     .maybeSingle();
@@ -355,9 +355,9 @@ export async function loadMatchLive(
       color: string;
       format: TeamFormat;
       division: string | null;
+      season: string;
       categories: {
         name: string;
-        season: string;
         half_duration_minutes: number | null;
         kind: string | null;
       };
@@ -916,7 +916,7 @@ export async function loadMatchLive(
       teamName: event.teams.name,
       teamColor: event.teams.color,
       categoryName: event.teams.categories.name,
-      categorySeason: event.teams.categories.season,
+      categorySeason: event.teams.season,
       format: event.teams.format,
       // La columna es NOT NULL default 45; el ?? es solo defensivo.
       halfDurationMinutes: event.teams.categories.half_duration_minutes ?? 45,

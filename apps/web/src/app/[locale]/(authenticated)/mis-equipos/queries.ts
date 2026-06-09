@@ -84,11 +84,11 @@ type StaffTeam = {
     name: string;
     color: string;
     format: string;
+    season: string;
     categories: {
       id: string;
       club_id: string;
       name: string;
-      season: string;
     };
   };
 };
@@ -102,7 +102,7 @@ async function loadStaffTeams(
   const { data } = await supabase
     .from('team_staff')
     .select(
-      'team_id, staff_role, teams!inner(id, name, color, format, categories!inner(id, club_id, name, season))'
+      'team_id, staff_role, teams!inner(id, name, color, format, season, categories!inner(id, club_id, name))'
     )
     .eq('membership_id', membershipId)
     .is('left_at', null);
@@ -183,7 +183,7 @@ export async function loadCoachTeams(
       team_color: s.teams.color,
       team_format: s.teams.format,
       category_name: s.teams.categories.name,
-      category_season: s.teams.categories.season,
+      category_season: s.teams.season,
       staff_role: s.staff_role as
         | 'entrenador_principal'
         | 'entrenador_ayudante',
@@ -355,7 +355,7 @@ export async function loadTeamDetail(
       format: staff.teams.format,
       category_id: staff.teams.categories.id,
       category_name: staff.teams.categories.name,
-      category_season: staff.teams.categories.season,
+      category_season: staff.teams.season,
     },
     staff_role: staff.staff_role as
       | 'entrenador_principal'

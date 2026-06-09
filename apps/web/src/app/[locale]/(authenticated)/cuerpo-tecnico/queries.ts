@@ -140,7 +140,7 @@ async function loadVisibleTeams(
   const { data } = await supabase
     .from('teams')
     .select(
-      'id, name, color, category_id, categories!inner(name, season, club_id)'
+      'id, name, color, season, category_id, categories!inner(name, club_id)'
     )
     .order('name');
 
@@ -148,8 +148,9 @@ async function loadVisibleTeams(
     id: string;
     name: string;
     color: string;
+    season: string;
     category_id: string;
-    categories: { name: string; season: string; club_id: string };
+    categories: { name: string; club_id: string };
   };
 
   const all = (data ?? [])
@@ -161,7 +162,7 @@ async function loadVisibleTeams(
       color: r.color,
       category_id: r.category_id,
       category_name: r.categories.name,
-      season: r.categories.season,
+      season: r.season,
     }));
 
   if (scope.kind === 'restricted') {
@@ -255,7 +256,7 @@ export async function loadCoachList(
     .from('team_staff')
     .select(
       `id, staff_role, joined_at, team_id, membership_id,
-       teams!inner(id, name, color, category_id, categories!inner(id, name, season, club_id)),
+       teams!inner(id, name, color, category_id, season, categories!inner(id, name, club_id)),
        memberships!inner(id, role, club_id, profile_id, profiles!inner(id, full_name, avatar_url))`
     )
     .is('left_at', null);
@@ -277,10 +278,10 @@ export async function loadCoachList(
       name: string;
       color: string;
       category_id: string;
+      season: string;
       categories: {
         id: string;
         name: string;
-        season: string;
         club_id: string;
       };
     };
@@ -318,7 +319,7 @@ export async function loadCoachList(
       team_color: r.teams.color,
       category_id: r.teams.categories.id,
       category_name: r.teams.categories.name,
-      category_season: r.teams.categories.season,
+      category_season: r.teams.season,
       staff_role: r.staff_role,
       joined_at: r.joined_at,
     };
@@ -480,7 +481,8 @@ export async function loadCoachDetail(
       id: string;
       name: string;
       color: string;
-      categories: { name: string; season: string };
+      season: string;
+      categories: { name: string };
     };
   };
 
@@ -488,7 +490,7 @@ export async function loadCoachDetail(
     .from('team_staff')
     .select(
       `id, staff_role, joined_at, left_at, team_id,
-       teams!inner(id, name, color, categories!inner(name, season))`
+       teams!inner(id, name, color, season, categories!inner(name))`
     )
     .eq('membership_id', membershipId)
     .order('joined_at', { ascending: false });
@@ -500,7 +502,7 @@ export async function loadCoachDetail(
     team_name: r.teams.name,
     team_color: r.teams.color,
     category_name: r.teams.categories.name,
-    category_season: r.teams.categories.season,
+    category_season: r.teams.season,
     staff_role: r.staff_role,
     joined_at: r.joined_at,
     left_at: r.left_at,
@@ -522,7 +524,7 @@ export async function loadCoachDetail(
     team_color: a.teams.color,
     category_id: '', // no se usa en la ficha
     category_name: a.teams.categories.name,
-    category_season: a.teams.categories.season,
+    category_season: a.teams.season,
     staff_role: a.staff_role,
     joined_at: a.joined_at,
   }));

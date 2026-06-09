@@ -106,7 +106,7 @@ export async function loadLineupEditor(
     .from('events')
     .select(
       `id, club_id, team_id, type, title, opponent_name, starts_at,
-       teams!inner(name, color, format, categories!inner(name, season))`,
+       teams!inner(name, color, format, season, categories!inner(name))`,
     )
     .eq('id', eventId)
     .maybeSingle();
@@ -124,7 +124,8 @@ export async function loadLineupEditor(
       name: string;
       color: string;
       format: TeamFormat;
-      categories: { name: string; season: string };
+      season: string;
+      categories: { name: string };
     };
   };
   const event = ev as unknown as EventShape;
@@ -375,7 +376,7 @@ export async function loadLineupEditor(
       teamName: event.teams.name,
       teamColor: event.teams.color,
       categoryName: event.teams.categories.name,
-      categorySeason: event.teams.categories.season,
+      categorySeason: event.teams.season,
       format: event.teams.format,
     },
     roster,

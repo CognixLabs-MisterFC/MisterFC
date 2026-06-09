@@ -167,7 +167,7 @@ export async function loadRecentTrainings(
     .from('events')
     .select(
       `id, club_id, team_id, title, starts_at, ends_at,
-       teams!inner(name, color, categories!inner(name, season))`
+       teams!inner(name, color, season, categories!inner(name))`
     )
     .eq('club_id', clubId)
     .eq('type', 'training')
@@ -214,7 +214,8 @@ export async function loadRecentTrainings(
     teams: {
       name: string;
       color: string;
-      categories: { name: string; season: string };
+      season: string;
+      categories: { name: string };
     };
   };
 
@@ -264,7 +265,7 @@ export async function loadRecentTrainings(
       team_name: e.teams.name,
       team_color: e.teams.color,
       category_name: e.teams.categories.name,
-      category_season: e.teams.categories.season,
+      category_season: e.teams.season,
       title: e.title,
       starts_at: e.starts_at,
       ends_at: e.ends_at,
@@ -292,7 +293,7 @@ export async function loadEventAttendance(
     .from('events')
     .select(
       `id, club_id, team_id, type, title, starts_at, ends_at,
-       teams!inner(name, color, categories!inner(name, season))`
+       teams!inner(name, color, season, categories!inner(name))`
     )
     .eq('id', eventId)
     .maybeSingle();
@@ -312,7 +313,8 @@ export async function loadEventAttendance(
     teams: {
       name: string;
       color: string;
-      categories: { name: string; season: string };
+      season: string;
+      categories: { name: string };
     };
   };
   const event = ev as unknown as EventShape;
@@ -390,7 +392,7 @@ export async function loadEventAttendance(
       team_name: event.teams.name,
       team_color: event.teams.color,
       category_name: event.teams.categories.name,
-      category_season: event.teams.categories.season,
+      category_season: event.teams.season,
       title: event.title,
       starts_at: event.starts_at,
       ends_at: event.ends_at,
