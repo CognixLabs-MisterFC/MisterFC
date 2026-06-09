@@ -136,27 +136,30 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     photoSignedUrl = data?.signedUrl ?? null;
   }
 
-  // Trayectoria (F2.5)
+  // Trayectoria (F2.5). Rework A (A2): el embed trae teams.season (la temporada
+  // vive ya en el equipo) además de la categoría (cuyo name/season aún usa el
+  // display de la pestaña Trayectoria — su migración es A3).
   const { data: history } = await supabase
     .from('team_members')
     .select(
-      'id, joined_at, left_at, dorsal_in_team, position_in_team, teams!inner(name, categories!inner(name, season))'
+      'id, joined_at, left_at, dorsal_in_team, position_in_team, teams!inner(name, season, categories!inner(name, season))'
     )
     .eq('player_id', player.id)
     .order('joined_at', { ascending: false });
 
-  // F9.1 — Stats agregadas por temporada (vista staff). Las temporadas salen de la
-  // trayectoria; la temporada por defecto es la del equipo activo (o la más
-  // reciente). La RLS de match_player_stats recorta a quien puede leer (staff).
+  // F9.1 — Stats agregadas por temporada (vista staff). Las temporadas del selector
+  // salen de la trayectoria (Rework A: team.season); la temporada por defecto es la
+  // del equipo activo (o la más reciente). La RLS de match_player_stats recorta.
   type HistTeam = {
     name: string;
+    season: string;
     categories: { name: string; season: string };
   } | null;
   const seasonsSet = new Set<string>();
   let activeSeasonFromHistory: string | null = null;
   for (const h of history ?? []) {
     const tm = (h.teams ?? null) as HistTeam;
-    const s = tm?.categories?.season;
+    const s = tm?.season;
     if (s) {
       seasonsSet.add(s);
       if (h.left_at === null) activeSeasonFromHistory = s;
@@ -171,15 +174,16 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
 
   let aggregatedStats = sumMatchStats([]);
   if (activeSeason) {
-    // Acotar por temporada vía team → category.season (match_player_stats.team_id
-    // es el del partido; el embed !inner filtra las filas por esa temporada).
+    // Acotar por temporada vía team.season (Rework A: la temporada vive en el
+    // equipo; match_player_stats.team_id es el del partido; el embed !inner filtra
+    // las filas por esa temporada).
     const { data: statRows } = await supabase
       .from('match_player_stats')
       .select(
-        'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, teams!inner(categories!inner(season))'
+        'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, teams!inner(season)'
       )
       .eq('player_id', player.id)
-      .eq('teams.categories.season', activeSeason);
+      .eq('teams.season', activeSeason);
     aggregatedStats = sumMatchStats(
       (statRows ?? []) as unknown as MatchStatRow[]
     );
@@ -193,10 +197,10 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
   if (activeSeason) {
     const { data: attRows } = await supabase
       .from('training_attendance')
-      .select('code, events!inner(type, teams!inner(categories!inner(season)))')
+      .select('code, events!inner(type, teams!inner(season))')
       .eq('player_id', player.id)
       .eq('events.type', 'training')
-      .eq('events.teams.categories.season', activeSeason);
+      .eq('events.teams.season', activeSeason);
     attendance = attendanceBreakdown(
       (attRows ?? []) as unknown as AttendanceRow[]
     );
@@ -210,10 +214,10 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     const { data: matchRows } = await supabase
       .from('match_player_stats')
       .select(
-        'event_id, events!inner(starts_at, opponent_name, title), teams!inner(categories!inner(season))'
+        'event_id, events!inner(starts_at, opponent_name, title), teams!inner(season)'
       )
       .eq('player_id', player.id)
-      .eq('teams.categories.season', activeSeason);
+      .eq('teams.season', activeSeason);
     type MatchRow = {
       event_id: string;
       events: { starts_at: string; opponent_name: string | null; title: string };
