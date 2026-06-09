@@ -1210,7 +1210,9 @@
       "viaje": "Viatge",
       "sancionado": "Sancionat",
       "descanso": "Descans (decisió tècnica)"
-    }
+    },
+    "team_filter": "Equip",
+    "team_all": "Tots els equips"
   },
   "convocatorias": {
     "title": "Gestió de partits",

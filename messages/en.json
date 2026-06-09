@@ -1210,7 +1210,9 @@
       "viaje": "Travel",
       "sancionado": "Sanctioned",
       "descanso": "Rest (coaching decision)"
-    }
+    },
+    "team_filter": "Team",
+    "team_all": "All teams"
   },
   "convocatorias": {
     "title": "Match management",

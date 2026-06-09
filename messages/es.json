@@ -1209,7 +1209,9 @@
       "viaje": "Viaje",
       "sancionado": "Sancionado",
       "descanso": "Descanso (decisión técnica)"
-    }
+    },
+    "team_filter": "Equipo",
+    "team_all": "Todos los equipos"
   },
   "convocatorias": {
     "title": "Gestión de partidos",

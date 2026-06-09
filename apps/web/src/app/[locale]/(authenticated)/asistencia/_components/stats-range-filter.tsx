@@ -9,13 +9,12 @@ type Range = (typeof RANGES)[number];
 
 type Props = {
   active: Range;
-  teams: Array<{ id: string; name: string }>;
-  activeTeamId: string | null;
 };
 
-export function StatsRangeFilter({ active, teams, activeTeamId }: Props) {
+// #7 — el filtro por equipo se movió a un control de página (TeamFilter, governa
+// `?team=` para toda la vista). Aquí solo queda el rango temporal de las stats.
+export function StatsRangeFilter({ active }: Props) {
   const t = useTranslations('asistencia.stats.range');
-  const tF = useTranslations('asistencia.stats');
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -28,34 +27,19 @@ export function StatsRangeFilter({ active, teams, activeTeamId }: Props) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="flex items-center gap-1 rounded-md border border-border bg-card/30 p-0.5">
-        {RANGES.map((r) => (
-          <Button
-            key={r}
-            type="button"
-            size="sm"
-            variant={r === active ? 'default' : 'ghost'}
-            className="h-7"
-            onClick={() => setParam('range', r)}
-          >
-            {t(r)}
-          </Button>
-        ))}
-      </div>
-      <select
-        value={activeTeamId ?? ''}
-        onChange={(e) => setParam('team', e.target.value || null)}
-        className="h-8 rounded-md border border-border bg-card/30 px-2 text-sm"
-        aria-label={tF('team_filter')}
-      >
-        <option value="">{tF('team_all')}</option>
-        {teams.map((tm) => (
-          <option key={tm.id} value={tm.id}>
-            {tm.name}
-          </option>
-        ))}
-      </select>
+    <div className="flex items-center gap-1 rounded-md border border-border bg-card/30 p-0.5">
+      {RANGES.map((r) => (
+        <Button
+          key={r}
+          type="button"
+          size="sm"
+          variant={r === active ? 'default' : 'ghost'}
+          className="h-7"
+          onClick={() => setParam('range', r)}
+        >
+          {t(r)}
+        </Button>
+      ))}
     </div>
   );
 }
