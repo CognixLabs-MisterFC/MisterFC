@@ -112,6 +112,82 @@ export function detectDuplicates(
   });
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Rework A (A5) — resolución de equipo por fila (nombre → team_id).
+// La pertenencia es por temporada: la lista `teams` que se pasa aquí debe ser la
+// del club en la TEMPORADA ACTIVA. El import NO crea equipos: si el nombre no
+// resuelve, la fila se marca inválida (`team_not_found`) y no se importa.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Equipo candidato para la resolución por nombre (club + temporada activa). */
+export type ImportTeamRef = { id: string; name: string };
+
+/** Normaliza un nombre de equipo para el match: sin acentos, lowercase, trim. */
+function foldName(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Índice nombre-folded → team_id. Ante nombres duplicados (no debería pasar:
+ * unique(club_id, name, season)), gana el primero.
+ */
+export function buildTeamNameIndex(teams: ImportTeamRef[]): Map<string, string> {
+  const index = new Map<string, string>();
+  for (const t of teams) {
+    const key = foldName(t.name);
+    if (key.length > 0 && !index.has(key)) index.set(key, t.id);
+  }
+  return index;
+}
+
+export type TeamResolution =
+  | { kind: 'none' } // sin columna equipo o vacía → fallback al equipo de lote
+  | { kind: 'resolved'; teamId: string }
+  | { kind: 'not_found' }; // nombre presente que no casa con ningún equipo
+
+/**
+ * Resuelve un nombre de equipo contra el índice de la temporada activa.
+ *   - null/vacío → `none` (la fila usará el equipo del selector de lote).
+ *   - casa → `resolved`.
+ *   - no casa → `not_found` (la UI lo marca como error; no se importa).
+ */
+export function resolveTeamName(
+  name: string | null | undefined,
+  index: Map<string, string>
+): TeamResolution {
+  if (name === null || name === undefined) return { kind: 'none' };
+  const key = foldName(String(name));
+  if (key.length === 0) return { kind: 'none' };
+  const teamId = index.get(key);
+  return teamId ? { kind: 'resolved', teamId } : { kind: 'not_found' };
+}
+
+/**
+ * Marca como inválidas (`team_not_found`) las filas válidas cuyo nombre de equipo
+ * no resuelve a un equipo de la temporada activa. Las filas sin equipo o con
+ * equipo resoluble quedan igual. Pensado para encadenar entre `validateRow` y
+ * `detectDuplicates` en el wizard.
+ */
+export function applyTeamResolution(
+  rows: ValidatedRow[],
+  teams: ImportTeamRef[]
+): ValidatedRow[] {
+  const index = buildTeamNameIndex(teams);
+  return rows.map((row) => {
+    if (row.status !== 'valid' || !row.data) return row;
+    const res = resolveTeamName(row.data.team, index);
+    if (res.kind === 'not_found') {
+      return { ...row, status: 'invalid', reason: 'team_not_found' };
+    }
+    return row;
+  });
+}
+
 /**
  * Resumen para la cabecera del wizard (paso 2) y el resumen final (paso 4).
  */

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import {
   validateRow,
   detectDuplicates,
+  applyTeamResolution,
   summarize,
   type ValidatedRow,
   type ExistingPlayer,
@@ -33,11 +34,13 @@ type Props = {
   locale: string;
   teams: Team[];
   existing: ExistingPlayer[];
+  /** Temporada activa: ámbito de la resolución de "equipo por fila" y del lote. */
+  activeSeason: string;
 };
 
 type Step = 'upload' | 'preview' | 'confirming' | 'result';
 
-export function ImportWizard({ teams, existing }: Props) {
+export function ImportWizard({ teams, existing, activeSeason }: Props) {
   const t = useTranslations('import');
   const [step, setStep] = useState<Step>('upload');
   const [rows, setRows] = useState<ValidatedRow[]>([]);
@@ -59,7 +62,10 @@ export function ImportWizard({ teams, existing }: Props) {
     const validated = parsed.data.rows.map(
       (raw: Record<string, unknown>, i: number) => validateRow(raw, i)
     );
-    const withDedup = detectDuplicates(validated, existing);
+    // Equipo por fila (A5): marca inválidas las filas cuyo nombre de equipo no
+    // resuelva a un equipo de la temporada activa (no se crean equipos al vuelo).
+    const withTeam = applyTeamResolution(validated, teams);
+    const withDedup = detectDuplicates(withTeam, existing);
     setRows(withDedup);
     setUnmappedHeaders(parsed.data.unmapped_headers);
     setStep('preview');
@@ -176,6 +182,9 @@ export function ImportWizard({ teams, existing }: Props) {
                     ))}
                   </SelectContent>
                 </Select>
+                <span className="text-xs text-zinc-500">
+                  {t('team.help', { season: activeSeason })}
+                </span>
               </label>
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={handleReset}>

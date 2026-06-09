@@ -875,7 +875,8 @@
     "team": {
       "label": "Asignar al equipo (opcional)",
       "placeholder": "Sin equipo",
-      "none": "Sin equipo"
+      "none": "Sin equipo",
+      "help": "Se usa para las filas sin columna «Equipo». La resolución por fila y este selector aplican a la temporada {season}."
     },
     "action": {
       "back": "Volver",
@@ -888,7 +889,9 @@
       "dorsal": "Dorsal",
       "position_main": "Posició",
       "status": "Estat",
-      "required_hint": "Camp obligatori"
+      "required_hint": "Camp obligatori",
+      "team": "Equipo",
+      "email": "Email"
     },
     "status": {
       "valid": "OK",
@@ -914,7 +917,10 @@
       "rls": "permiso denegado",
       "duplicate_constraint": "violación de unicidad",
       "team_assign_failed": "creado pero no asignado al equipo",
-      "generic": "fallo del servidor"
+      "generic": "fallo del servidor",
+      "team_not_found": "Equipo no encontrado en la temporada activa. Créalo antes de importar.",
+      "team_too_long": "Nombre de equipo demasiado largo",
+      "invite_email_invalid": "Email no válido"
     },
     "error": {
       "too_large": "Archivo demasiado grande (máx. 5 MB).",
