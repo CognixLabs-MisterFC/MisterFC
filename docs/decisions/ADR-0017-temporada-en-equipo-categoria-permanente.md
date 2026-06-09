@@ -44,3 +44,14 @@ Esta ADR fija la decisión estructural. El **cómo** (migración por pasos, ripp
 ### Fuera de alcance (futuro)
 - Season rollover / clonado de equipos-rosters de una temporada a la siguiente.
 - Persistencia/relación con `seasons` como entidad propia (si algún día se necesita).
+
+## Estado de implementación (2026-06-10) — cerrado
+
+El Rework A está **implementado y cerrado** (A1–A6 en `main`), con el patrón EXPAND→MIGRATE→CONTRACT. Estado **real** y reparto por PR/migración: [spec A.0 §12](../specs/A.0-categorias-equipos.md) y [progress.md → Rework A](../journey/progress.md).
+
+Concreción de esta decisión sobre el **trigger de denormalización** `teams_derive_from_category`:
+
+- **`club_id`**: se deriva **SIEMPRE** de la categoría (denormalización autoritativa, inmutable). Se mantiene de forma permanente.
+- **`season`**: el **fallback transicional ya se retiró en A6 CONTRACT** (migración `20260630000000`), al borrarse `categories.season`. Desde A6 la `season` la aporta **siempre** el flujo `/equipos`; un insert de `teams` sin `season` falla por `NOT NULL` (comportamiento deseado).
+
+Migraciones: `20260627000000` (A1 teams.season/club_id), `20260627000001` (A1 trigger), `20260628000000` (A4 nullable), `20260629000000` (A5 invite_email), `20260630000000` (A6 dedup + drop + unique + trigger sin fallback de season).

@@ -216,6 +216,36 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 9.8 | ☐ pendiente | Reportes de equipo en PDF (resumen mensual) |
 | — | ☐ pendiente | Entrada de menú dedicada "Estadísticas / agregadas por equipo" para el cuerpo técnico (spec 9.0 §8.1) |
 
+## Rework A — categorías ↔ equipos (la temporada vive en el equipo) ✅
+
+> **Mejora estructural, no fase numerada** — intercalada entre el **núcleo de F9** y su segundo tramo (9.4 multi-temporada se apoya en `teams.season`). ✅ **Cerrado 2026-06-10**. La **temporada** baja de la categoría al **equipo**; la **categoría** queda como plantilla permanente del club (`name + kind + half_duration_minutes`, sin season ni orden). Patrón EXPAND→MIGRATE→CONTRACT, cada PR deja `main` verde. Detalle en [plan-maestro.md → Rework A](plan-maestro.md), [spec A.0](../specs/A.0-categorias-equipos.md) y [ADR-0017](../decisions/ADR-0017-temporada-en-equipo-categoria-permanente.md).
+
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| A1 EXPAND | 2026-06-09 | #80 | `teams.season` + `teams.club_id` (aditivo, solo `teams`) + backfill + `NOT NULL`/regex/FK + `unique(club_id,name,season)` + trigger `teams_derive_from_category` (deriva `club_id` siempre; `season` fallback si NULL). ADR-0017 |
+| A2 MIGRATE | 2026-06-09 | #81 | F9 (crítico): 6 filtros + selectores de temporada de `jugadores/[playerId]` y `mi-ficha` → `teams.season` |
+| A3 MIGRATE | 2026-06-09 | #82 | Ripple display/DTO (~14 puntos): listados/cabeceras leen la temporada por `teams.season` |
+| A4 MIGRATE | 2026-06-09 | #83 | `categories.season`/`order_idx` → NULLABLE + `/equipos` (listado por temporada + alta) + `/equipos/plantillas` (sin season/orden) + nav "categorías"→"equipos" + redirects 308 + retirada del CRUD viejo de `/categorias` |
+| A5 MIGRATE | 2026-06-09 | #84 | Import: equipo por fila (resolución nombre→`team_id` en club+temporada activa; no crea equipos) + columna `players.invite_email` (🔒O2, solo guardar) + selector de lote como fallback |
+| A6 CONTRACT | 2026-06-10 | #86 | Dedup de categorías por `(club_id, lower(name))` (re-apunta `teams`/`events`) → DROP `categories.season` + `order_idx` + `unique(club_id, lower(name))` + retirada del fallback de `season` del trigger (la de `club_id` se queda). pgTAP |
+
+**Migraciones** (todas por CLI, sin editar las aplicadas):
+
+| Migración | Subfase | Qué hace |
+|---|---|---|
+| `20260627000000_rework_a1_teams_season_expand` | A1 | `teams.season` + `teams.club_id` + backfill + endurecer + `unique(club_id,name,season)` |
+| `20260627000001_teams_derive_from_category_trigger` | A1 | Trigger BEFORE: deriva `club_id` (siempre) + `season` (fallback si NULL) |
+| `20260628000000_rework_a4_categories_season_nullable` | A4 | `categories.season`/`order_idx` → NULLABLE (check season "NULL o regex") |
+| `20260629000000_rework_a5_players_invite_email` | A5 | `players.invite_email` NULLABLE + check de formato (🔒O2) |
+| `20260630000000_rework_a6_categories_contract` | A6 | Salvaguarda + dedup + DROP `season`/`order_idx` + `unique(club_id,lower(name))` + trigger sin fallback de season |
+
+**Cierre**:
+
+- **PRs**: #80–#84 + #86. NO mergeados por el agente (los mergea el responsable). *(El #85 — A6 apilado sobre la rama de A5 — se cerró solo al borrarse su base en el merge de #84; se rehízo rebaseado a `main` como #86.)*
+- **Verificación**: typecheck · lint · test · build en cada PR; `db:test` (pgTAP contra remoto) en verde tras A6 (`categories_contract.sql` + 25 fixtures ajustados al modelo nuevo).
+- **Estado final**: nada lee `categories.season`; la categoría es plantilla permanente; la temporada vive en `teams.season`.
+- **Fuera de alcance (futuro)**: season rollover / clonado de equipos-rosters entre temporadas; auto-envío real del `invite_email` (solo se persiste).
+
 ## Fase 11 — Subfases pendientes
 
 > **+1 subfase 2026-05-30**: deuda diferida (capabilities UI plana) absorbida en F11.9. Ver [plan-maestro.md](plan-maestro.md) §Fase 11.

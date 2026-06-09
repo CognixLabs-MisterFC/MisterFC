@@ -1,10 +1,10 @@
 # Spec A.0 — Rework A: categorías ↔ equipos (la temporada vive en el EQUIPO)
 
 > Tipo: **REWORK** (no es una fase del Plan Maestro; reestructura modelo + UI ya existentes de F2/F3).
-> Estado: ☐ **borrador para revisión del responsable** (esperando OK antes de implementar). **Nada de código ni migraciones se ha creado con esta spec.**
-> Autor: Iker Milla · Fecha: 2026-06-09
+> Estado: ✅ **DEFINITIVO — implementado y cerrado (2026-06-10)**. Todas las subfases A1–A6 entregadas y verificadas; `main` verde. Nota de cierre con el estado **real** implementado en **§12**.
+> Autor: Iker Milla · Fecha: 2026-06-09 · Cierre: 2026-06-10
 > Depende de: F2 (categories/teams/team_members/players, import), F3 (events), F7.6c (substitution_regimes, categories.kind, teams.division), F9 (fichas que filtran por temporada).
-> ADR asociado (propuesto): **ADR-0017 — Temporada en el equipo; categoría como plantilla permanente** (§11).
+> ADR asociado: **[ADR-0017](../decisions/ADR-0017-temporada-en-equipo-categoria-permanente.md) — Temporada en el equipo; categoría como plantilla permanente** (§11) — Accepted.
 
 ---
 
@@ -246,8 +246,39 @@ Migrar lectura/escritura a `teams.season` (A2 filtros F9, A3 display). En **A4**
 
 ## 11. ADR candidato
 
-- **ADR-0017 — Temporada en el equipo; categoría como plantilla permanente** (siguiente nº libre; último en main es ADR-0016). Decisión con impacto estructural duradero: invierte la relación temporada↔(categoría/equipo) de F2, denormaliza `club_id` en `teams` para la unicidad (D3), y reorienta la navegación al equipo (D4). Escribir al implementar A1.
+- **ADR-0017 — Temporada en el equipo; categoría como plantilla permanente** (siguiente nº libre; último en main es ADR-0016). Decisión con impacto estructural duradero: invierte la relación temporada↔(categoría/equipo) de F2, denormaliza `club_id` en `teams` para la unicidad (D3), y reorienta la navegación al equipo (D4). Escribir al implementar A1. → **Escrito y Accepted**: [ADR-0017](../decisions/ADR-0017-temporada-en-equipo-categoria-permanente.md).
 
 ---
 
-> **Estado del documento**: ☐ borrador para revisión. **Todas las decisiones cerradas**: 🔒 D1–D4 (modelo/nav) y 🔒 O1 (kind→ordinal/NULL), 🔒 O2 (`players.invite_email`, solo guardar; RGPD/destinatario en fase futura), 🔒 O3 (`/equipos` real + redirect 308). Migración y subfases resecuenciadas a **EXPAND→MIGRATE→CONTRACT** (§5/§9) para mantener CI verde y F9 vivo en cada PR. Nada de código ni migraciones creado con esta spec.
+## 12. Nota de cierre (2026-06-10) — estado REAL implementado
+
+> Esta sección refleja **lo que de verdad se construyó**, no el plan inicial. Donde el plan y la realidad difieren, manda esta nota.
+
+**Modelo final (tras A6 CONTRACT)**:
+
+- **`teams`**: gana `season` (`text`, `NOT NULL`, regex `^[0-9]{4}-[0-9]{2}$`) y `club_id` (`uuid`, `NOT NULL`, FK a `clubs`, denormalizado). `unique(club_id, name, season)` + índice `teams_club_season_idx`.
+- **`categories`**: **sin `season` ni `order_idx`** (borradas en A6). Queda como **plantilla permanente**: `name + kind + half_duration_minutes`. Unicidad nueva `unique(club_id, lower(name))` (índice `categories_club_name_uniq`); índice viejo `categories_club_season_idx` eliminado. El orden de listado se deriva del `kind` (no es columna).
+- **`players`**: gana `invite_email` (`text`, NULLABLE, check de formato). 🔒O2: **solo se persiste** desde el import; auto-envío/RGPD/destinatario son fase futura.
+- **`events`**: sin cambios de columnas; la temporada de un evento se deriva por `event → team → teams.season`.
+
+**Decisiones materializadas**:
+
+- 🔒**O1** — `CATEGORY_KIND_ORDER` (+ `CATEGORY_KINDS`, `categoryKindOrdinal`) vive en `@misterfc/core`; la UI ordena las plantillas por `kind` (NULL al final, desempate por nombre, collation `es`).
+- 🔒**O2** — columna `players.invite_email` (no se envía nada).
+- 🔒**O3** — `/equipos` real (listado por temporada + alta = temporada+categoría+división+nombre) + `/equipos/plantillas` (crear/renombrar plantillas) + **redirect 308** `/categorias`→`/equipos` y `/categorias/[id]`→`/equipos/plantillas` (en `next.config.ts`). Nav "categorías"→"equipos".
+
+**Ajustes vs. el plan de §5/§9 (importante)**:
+
+1. **A1 tocó SOLO `teams`** (no `categories`). El plan inicial contemplaba ablandar `categories.season` antes; se movió a **A4** para no volver `categories.season` `string|null` y romper el typecheck de los ~14 lectores de display aún sin migrar. En su lugar A1 añadió el **trigger `teams_derive_from_category`** (BEFORE INSERT/UPDATE): deriva `club_id` **siempre** (denormalización autoritativa) y `season` por **fallback transicional** si llega `NULL` (la de la categoría) — así los writers y los 24 fixtures existentes seguían funcionando sin tocarlos.
+2. **A4** ablandó `categories.season`/`order_idx` a **NULLABLE** (no las borró) para habilitar las categorías-plantilla sin romper CI; el **DROP** real es A6.
+3. **A6 CONTRACT** dedujo categorías por `(club_id, lower(name))` (re-apuntando `teams`/`events`; con los datos reales **0 fusiones**), borró `season`/`order_idx`, creó la unicidad por nombre y **retiró el fallback de `season` del trigger** (la derivación de `club_id` se mantiene). Desde A6, un insert de team sin `season` falla por `NOT NULL` (correcto): la `season` la aporta siempre el flujo `/equipos`.
+
+**Subfases / PRs**: A1 #80 · A2 #81 · A3 #82 · A4 #83 · A5 #84 · A6 #86. *(El #85 — A6 apilado sobre la rama de A5 — se cerró al borrarse su base en el merge de #84; se rehízo rebaseado a `main` como #86.)*
+
+**Verificación**: cada PR con typecheck · lint · test · build en verde; `db:test` (pgTAP contra remoto) en verde tras A6 — `supabase/tests/categories_contract.sql` (unicidad case-insensitive, trigger deriva `club_id` pero ya no `season`, insert sin season → NOT NULL, dedup re-apunta `teams`/`events`) + 25 fixtures existentes ajustados al modelo nuevo.
+
+**Fuera de alcance (futuro)**: season rollover / clonado de equipos-rosters entre temporadas; auto-envío real del `invite_email`.
+
+---
+
+> **Estado del documento**: ✅ **definitivo / cerrado (2026-06-10)**. **Todas las decisiones cerradas**: 🔒 D1–D4 (modelo/nav) y 🔒 O1 (kind→ordinal/NULL), 🔒 O2 (`players.invite_email`, solo guardar; RGPD/destinatario en fase futura), 🔒 O3 (`/equipos` real + redirect 308). Implementado con **EXPAND→MIGRATE→CONTRACT** (§5/§9), CI verde y F9 vivo en cada PR. Estado real implementado en **§12**.
