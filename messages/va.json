@@ -250,7 +250,6 @@
     "user_menu_perfil": "Mi perfil",
     "nav": {
       "home": "Inicio",
-      "categorias": "Categorías",
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
@@ -265,7 +264,8 @@
       "mi_equipo": "El meu equip",
       "formaciones": "Formacions",
       "ajustes": "Ajustos del club",
-      "mi_ficha": "La meua fitxa"
+      "mi_ficha": "La meua fitxa",
+      "equipos": "Equipos"
     },
     "collapse_sidebar": "Amaga el menú",
     "expand_sidebar": "Mostra el menú"
@@ -396,7 +396,10 @@
       "color": "Color",
       "color_help": "Color identificativo en calendarios y vistas del equipo.",
       "division": "Divisió",
-      "division_help": "Definix el règim de canvis de l'equip."
+      "division_help": "Definix el règim de canvis de l'equip.",
+      "season": "Temporada",
+      "season_help": "Formato YYYY-YY, por ejemplo 2025-26.",
+      "category": "Categoría"
     },
     "delete": {
       "title": "¿Eliminar el equipo?",
@@ -409,7 +412,10 @@
       "color_invalid": "Color no válido",
       "forbidden": "No tienes permiso para hacer esto.",
       "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo.",
-      "division_invalid": "Divisió no vàlida per a la categoria."
+      "division_invalid": "Divisió no vàlida per a la categoria.",
+      "category_invalid": "Categoría no válida.",
+      "season_invalid": "Temporada no válida. Usa formato YYYY-YY (ej. 2025-26).",
+      "no_active_club": "No hay club activo."
     },
     "divisions": {
       "preferente": "Preferent",
@@ -423,7 +429,12 @@
     "division_regime": {
       "rolling": "Canvis correguts",
       "limited": "{max} canvis"
-    }
+    },
+    "page_subtitle": "Equipos del club por temporada.",
+    "manage_templates": "Categorías",
+    "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
+    "season_filter": "Temporada",
+    "empty_season": "Aún no hay equipos en la temporada {season}."
   },
   "roles": {
     "admin_club": "Administrador del club",
@@ -2036,5 +2047,60 @@
       "individual": "Individual",
       "collective": "Equip"
     }
+  },
+  "plantillas": {
+    "title": "Categorías",
+    "subtitle": "Plantillas permanentes del club (sin temporada). La temporada vive en el equipo.",
+    "back_to_equipos": "← Volver a equipos",
+    "empty": "Aún no has creado ninguna categoría-plantilla. Empieza por la primera.",
+    "teams_count": "{count, plural, =0 {Sin equipos} one {# equipo} other {# equipos}}",
+    "half_short": "{min} min/tiempo",
+    "actions": {
+      "create": "Nueva categoría",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "cancel": "Cancelar",
+      "save": "Guardar"
+    },
+    "dialog": {
+      "create_title": "Crear categoría",
+      "edit_title": "Editar categoría",
+      "description": "Las categorías son plantillas permanentes del club (sin temporada). Los equipos se crean por temporada en Equipos."
+    },
+    "field": {
+      "name": "Nombre",
+      "kind": "Grupo de edad",
+      "kind_help": "Determina el régimen de cambios y el orden del listado.",
+      "half_duration": "Duración por tiempo (min)",
+      "half_duration_help": "Minutos de cada tiempo de partido (1–90)."
+    },
+    "kind_none": "Sin grupo de edad",
+    "delete": {
+      "title": "¿Eliminar la categoría?",
+      "description": "Vas a eliminar «{name}». Esta acción no se puede deshacer."
+    },
+    "errors": {
+      "name_required": "Pon el nombre de la categoría",
+      "name_too_long": "El nombre no puede superar los 80 caracteres",
+      "kind_invalid": "Grupo de edad no válido",
+      "half_duration_invalid": "Duración no válida. Usa un valor entre 1 y 90.",
+      "name_duplicate": "Ya existe una categoría con ese nombre en el club.",
+      "has_teams": "No se puede eliminar: tiene equipos en alguna temporada.",
+      "no_active_club": "No hay club activo.",
+      "forbidden": "No tienes permiso para hacer esto.",
+      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo."
+    }
+  },
+  "category_kinds": {
+    "querubin": "Querubín",
+    "prebenjamin": "Prebenjamín",
+    "benjamin": "Benjamín",
+    "alevin": "Alevín",
+    "infantil": "Infantil",
+    "cadete": "Cadete",
+    "juvenil": "Juvenil",
+    "amateur": "Amateur",
+    "senior": "Sénior",
+    "veterano": "Veterano"
   }
 }

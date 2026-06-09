@@ -21,7 +21,6 @@ export type FilterTeam = {
 export type FilterCategory = {
   id: string;
   name: string;
-  season: string;
 };
 
 type Props = {
@@ -135,7 +134,7 @@ export function StaffFilters({
             empty={t('empty_category')}
             items={categories.map((c) => ({
               id: c.id,
-              label: `${c.name} · ${c.season}`,
+              label: c.name,
             }))}
             active={activeCategoryIds}
             onToggle={(id) => toggle('category', id, activeCategoryIds)}

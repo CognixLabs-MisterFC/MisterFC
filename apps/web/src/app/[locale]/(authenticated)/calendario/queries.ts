@@ -51,7 +51,6 @@ export type TeamOption = {
 export type CategoryOption = {
   id: string;
   name: string;
-  season: string;
   /** F4.9 — duración por tiempo (min) de la categoría. */
   half_duration_minutes: number;
 };
@@ -227,17 +226,18 @@ export async function loadCalendarData(
       return rest;
     });
 
+  // Rework A (A4) — la categoría es una plantilla permanente sin temporada. El
+  // selector de categoría del calendario ya no muestra/ordena por season (la
+  // temporada vive en el equipo); el filtro sigue siendo por category_id.
   const { data: rawCategories } = await supabase
     .from('categories')
-    .select('id, name, season, half_duration_minutes')
+    .select('id, name, half_duration_minutes')
     .eq('club_id', clubId)
-    .order('season', { ascending: false })
     .order('name');
 
   const categories: CategoryOption[] = (rawCategories ?? []).map((c) => ({
     id: c.id as string,
     name: c.name as string,
-    season: c.season as string,
     half_duration_minutes: (c.half_duration_minutes as number | null) ?? 45,
   }));
 

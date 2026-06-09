@@ -1,7 +1,15 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { teamSchema, createSupabaseServerClient } from '@misterfc/core';
+import {
+  ACTIVE_CLUB_COOKIE_NAME,
+  teamSchema,
+  teamCreateSchema,
+  createSupabaseServerClient,
+  getCurrentUserClubs,
+  resolveActiveClub,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 export type TeamFormState = {
@@ -11,18 +19,22 @@ export type TeamFormState = {
     | 'format_invalid'
     | 'color_invalid'
     | 'division_invalid'
+    | 'category_invalid'
+    | 'season_invalid'
+    | 'no_active_club'
     | 'forbidden'
     | 'generic';
   success?: boolean;
 };
 
-function parseTeamFormData(formData: FormData) {
-  return teamSchema.safeParse({
-    name: formData.get('name'),
-    format: formData.get('format'),
-    color: formData.get('color'),
-    division: formData.get('division') ?? undefined,
-  });
+async function activeClubId(): Promise<string | null> {
+  const adapter = await createCookieAdapter();
+  const clubs = await getCurrentUserClubs(adapter);
+  if (clubs.length === 0) return null;
+  const cookieStore = await cookies();
+  const cookieValue = cookieStore.get(ACTIVE_CLUB_COOKIE_NAME)?.value ?? null;
+  const { active } = resolveActiveClub(clubs, cookieValue);
+  return active?.club.id ?? null;
 }
 
 function mapTeamError(message: string | undefined): TeamFormState {
@@ -31,7 +43,9 @@ function mapTeamError(message: string | undefined): TeamFormState {
     message === 'name_too_long' ||
     message === 'format_invalid' ||
     message === 'color_invalid' ||
-    message === 'division_invalid'
+    message === 'division_invalid' ||
+    message === 'category_invalid' ||
+    message === 'season_invalid'
   ) {
     return { error: message };
   }
@@ -41,10 +55,10 @@ function mapTeamError(message: string | undefined): TeamFormState {
 type Supa = ReturnType<typeof createSupabaseServerClient>;
 
 /**
- * F7.6c — valida que la división elegida exista para la categoría (su `kind`)
- * en el catálogo `substitution_regimes`. Devuelve true si es válida o si no se
- * eligió división (opcional). Si la categoría no tiene divisiones (kind sin
- * filas, p.ej. adultas), solo es válido NO elegir división.
+ * F7.6c — valida que la división elegida exista para la categoría (su `kind`) en
+ * el catálogo `substitution_regimes`. true si es válida o si no se eligió división
+ * (opcional). Si la categoría no tiene divisiones (kind sin filas), solo es válido
+ * NO elegir división.
  */
 async function isDivisionValid(
   supabase: Supa,
@@ -62,38 +76,53 @@ async function isDivisionValid(
   return data != null;
 }
 
+/**
+ * Rework A (A4) — alta de equipo desde /equipos: temporada + categoría + división
+ * + nombre. La categoría debe pertenecer al club activo; `club_id` lo pone el
+ * trigger teams_derive_from_category. `season` la aporta SIEMPRE este flujo.
+ */
 export async function createTeam(
-  categoryId: string,
   _prev: TeamFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<TeamFormState> {
-  const parsed = parseTeamFormData(formData);
+  const parsed = teamCreateSchema.safeParse({
+    category_id: formData.get('category_id'),
+    season: formData.get('season'),
+    name: formData.get('name'),
+    format: formData.get('format'),
+    color: formData.get('color'),
+    division: formData.get('division') ?? undefined,
+  });
   if (!parsed.success) {
     return mapTeamError(parsed.error.issues[0]?.message);
   }
 
+  const clubId = await activeClubId();
+  if (!clubId) return { error: 'no_active_club' };
+
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // Régimen de cambios (7.6c): la división debe ser válida para la categoría.
-  // Rework A (A1): el equipo hereda club_id + season de su categoría (el trigger
-  // teams_derive_from_category los re-fuerza igualmente; los pasamos para
-  // satisfacer el tipo Insert NOT NULL). Comportamiento idéntico al de hoy.
+  // La categoría (plantilla) debe existir y ser del club activo.
   const { data: cat } = await supabase
     .from('categories')
-    .select('kind, club_id, season')
-    .eq('id', categoryId)
+    .select('id, kind, club_id')
+    .eq('id', parsed.data.category_id)
     .maybeSingle();
-  if (!cat) return { error: 'generic' };
+  if (!cat || cat.club_id !== clubId) return { error: 'category_invalid' };
+
   const division = parsed.data.division;
   if (!(await isDivisionValid(supabase, (cat.kind as string | null) ?? null, division))) {
     return { error: 'division_invalid' };
   }
 
+  // club_id es NOT NULL en el tipo Insert; el trigger teams_derive_from_category
+  // lo re-fuerza desde la categoría igualmente. Lo pasamos para satisfacer el tipo
+  // (coincide con el club activo, ya validado contra cat.club_id).
   const { error } = await supabase.from('teams').insert({
-    category_id: categoryId,
-    club_id: cat.club_id as string,
-    season: cat.season as string,
+    category_id: parsed.data.category_id,
+    club_id: clubId,
+    season: parsed.data.season,
     name: parsed.data.name,
     format: parsed.data.format,
     color: parsed.data.color,
@@ -101,16 +130,21 @@ export async function createTeam(
   });
 
   if (error) return { error: 'generic' };
-  revalidatePath('/[locale]/(authenticated)/categorias/[categoryId]', 'page');
+  revalidatePath('/[locale]/(authenticated)/equipos', 'page');
   return { success: true };
 }
 
 export async function updateTeam(
   teamId: string,
   _prev: TeamFormState,
-  formData: FormData
+  formData: FormData,
 ): Promise<TeamFormState> {
-  const parsed = parseTeamFormData(formData);
+  const parsed = teamSchema.safeParse({
+    name: formData.get('name'),
+    format: formData.get('format'),
+    color: formData.get('color'),
+    division: formData.get('division') ?? undefined,
+  });
   if (!parsed.success) {
     return mapTeamError(parsed.error.issues[0]?.message);
   }
@@ -143,7 +177,7 @@ export async function updateTeam(
     .eq('id', teamId);
 
   if (error) return { error: 'generic' };
-  revalidatePath('/[locale]/(authenticated)/categorias/[categoryId]', 'page');
+  revalidatePath('/[locale]/(authenticated)/equipos', 'page');
   return { success: true };
 }
 
@@ -157,6 +191,6 @@ export async function deleteTeam(teamId: string): Promise<DeleteTeamResult> {
 
   const { error } = await supabase.from('teams').delete().eq('id', teamId);
   if (error) return { success: false, error: 'generic' };
-  revalidatePath('/[locale]/(authenticated)/categorias/[categoryId]', 'page');
+  revalidatePath('/[locale]/(authenticated)/equipos', 'page');
   return { success: true };
 }

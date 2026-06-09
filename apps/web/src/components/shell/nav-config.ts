@@ -49,9 +49,11 @@ export const NAV_ITEMS: readonly NavItem[] = [
     ],
   },
   {
-    key: 'categorias',
-    href: '/categorias',
+    key: 'equipos',
+    href: '/equipos',
     icon: FolderKanban,
+    // Rework A (A4) — la nav gira en torno al equipo: listado por temporada +
+    // pantalla de categorías-plantilla. Antes era "Categorías" → /categorias.
     roles: ['admin_club', 'coordinador'],
   },
   {

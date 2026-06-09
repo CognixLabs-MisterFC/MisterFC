@@ -118,7 +118,6 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
           categories={result.visibleCategories.map((c) => ({
             id: c.id,
             name: c.name,
-            season: c.season,
           }))}
           activeStaffRoles={staffRoles}
           activeTeamIds={teamIds}

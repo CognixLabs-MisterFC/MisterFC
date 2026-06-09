@@ -31,11 +31,23 @@ export type { UpdateProfileInput, AvatarUploadInput } from './profile';
 
 export {
   categorySchema,
+  categoryTemplateSchema,
   teamSchema,
+  teamCreateSchema,
   TEAM_FORMATS,
+  CATEGORY_KINDS,
+  CATEGORY_KIND_ORDER,
+  CATEGORY_KIND_ORDER_NULL,
+  categoryKindOrdinal,
   currentSeason,
 } from './club-structure';
-export type { CategoryInput, TeamInput } from './club-structure';
+export type {
+  CategoryInput,
+  CategoryTemplateInput,
+  TeamInput,
+  TeamCreateInput,
+  CategoryKind,
+} from './club-structure';
 
 export {
   createPlayerSchema,
