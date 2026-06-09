@@ -127,6 +127,8 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 > **Cambio 2026-05-31 (extensión F6.10)**: F6 +1 subfase (6.10 plantillas personalizadas de formación, tabla `coach_formations`) → 9–14 h / 3–4 sesiones ⇒ 12–19 h / 4–5 sesiones. Delta total Ola 1: +3–5 h (173–268 → 176–273), +1 sesión (63–82 → 64–83). Se planifica junto al Lote B de F6 (mismo PR de plan).
 
+> **Rework A 2026-06-10 (mejora estructural, no fase numerada)**: ✅ **cerrado**. La **temporada** baja de la categoría al **equipo** y la **categoría** pasa a ser plantilla permanente del club. No es una fase del Plan: es un rework entre el **núcleo de F9** y su **segundo tramo** (la ficha multi-temporada de 9.4 se apoya en `teams.season`). Detalle en §6 (sección **Rework A**, tras la Fase 9) y en la [spec A.0](../specs/A.0-categorias-equipos.md). [ADR-0017](../decisions/ADR-0017-temporada-en-equipo-categoria-permanente.md).
+
 ---
 
 ## 6. Fases (Ola 1)
@@ -456,6 +458,30 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - ☐ **Entrada de menú dedicada "Estadísticas / agregadas por equipo"** para el cuerpo técnico (en el núcleo el expediente del staff se alcanza vía `/jugadores`; la entrada agregada por equipo se decidió dejar para este tramo — spec 9.0 §8.1).
 
 > **Ya listo para reaprovechar en el segundo tramo** (el núcleo se diseñó para no rehacerlo): **recharts** ya integrado (ADR-0016) y el **componente de gráfico reutilizable** (`rating-evolution-chart.tsx`) → 9.4 alimenta la misma línea con series multi-temporada; la **tabla `sr-only`** equivalente del gráfico y la disciplina **"la pantalla ES el reporte"** (datos desacoplados de la presentación en `@misterfc/core/player-profile`, bloques print-friendly, `?season=` como parámetro) → base directa del PDF de 9.7/9.8; los **helpers de agregación** ya aceptan `season` como parámetro → 9.4 itera temporadas sin lógica nueva.
+
+---
+
+### Rework A — categorías ↔ equipos (la temporada vive en el equipo) ✅ [cerrado 2026-06-10]
+
+> **No es una fase numerada**: es un **rework estructural** del modelo de F2/F3, intercalado entre el **núcleo de F9** (#71) y su **segundo tramo** (9.4 multi-temporada se apoya en `teams.season`). Spec: [docs/specs/A.0-categorias-equipos.md](../specs/A.0-categorias-equipos.md) · ADR: [ADR-0017](../decisions/ADR-0017-temporada-en-equipo-categoria-permanente.md).
+
+**Qué cambió**: la **temporada** deja de vivir en la categoría (`categories.season`) y baja al **equipo** (`teams.season`, `NOT NULL`). La **categoría** pasa a ser una **plantilla permanente** del club (`name + kind + half_duration_minutes`, **sin `season` ni `order_idx`**; el orden de listado se deriva del `kind` — constante `CATEGORY_KIND_ORDER`, 🔒O1). "Infantil A 2025-26" e "Infantil A 2026-27" son **equipos distintos** con su propio roster (`team_members`). Unicidad nueva: `unique(club_id, name, season)` en `teams` (con `club_id` denormalizado, D3) y `unique(club_id, lower(name))` en `categories`. La navegación gira en torno al equipo: nuevo `/equipos` (listado por temporada) + `/equipos/plantillas` (categorías-plantilla); `/categorias` → 308.
+
+**Estado**: ✅ **cerrado (2026-06-10)** — patrón **EXPAND → MIGRATE → CONTRACT**, un PR por subfase, cada uno dejando `main` verde (typecheck · lint · test · build) y F9 vivo.
+
+**Subfases / PRs**:
+
+- **A1 EXPAND** — `teams.season` + `teams.club_id` (aditivo, **solo `teams`**) + backfill + endurecer (`NOT NULL`, regex, FK, `unique(club_id,name,season)`) + trigger `teams_derive_from_category` (deriva `club_id` siempre; `season` por fallback si NULL). ADR-0017. — **#80**
+- **A2 MIGRATE** — F9 (crítico): los 6 filtros y selectores de temporada de `jugadores/[playerId]` y `mi-ficha` pasan a `teams.season`. — **#81**
+- **A3 MIGRATE** — ripple display/DTO (~14 puntos): listados/cabeceras leen la temporada por `teams.season`. — **#82**
+- **A4 MIGRATE** — `categories.season`/`order_idx` → **NULLABLE** + `/equipos` (listado por temporada + alta = temporada+categoría+división+nombre) + `/equipos/plantillas` (crear/renombrar, sin season/orden) + nav "categorías"→"equipos" + redirects 308 + retirada del CRUD viejo de `/categorias`. — **#83**
+- **A5 MIGRATE** — import: **equipo por fila** (resolución nombre→`team_id` en club+temporada activa; no crea equipos) + columna **`players.invite_email`** (🔒O2, solo se guarda) + selector de lote como fallback. — **#84**
+- **A6 CONTRACT** — dedup de categorías por `(club_id, lower(name))` (re-apunta `teams`/`events`) → **DROP `categories.season` + `order_idx`** + `unique(club_id, lower(name))` + retirada del **fallback de `season`** del trigger (la derivación de `club_id` se queda). pgTAP. — **#86**
+
+**Fuera de alcance (futuro)**:
+
+- **Season rollover / clonado de equipos-rosters** de una temporada a la siguiente (crear los equipos del año nuevo copiando los del anterior con su plantilla): su propia mini-spec.
+- **Auto-envío real del `invite_email`** desde el import (este rework solo **persiste** el email; el envío, el destinatario y el RGPD son fase posterior — 🔒O2).
 
 ---
 
