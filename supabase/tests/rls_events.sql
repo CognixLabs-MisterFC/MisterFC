@@ -32,15 +32,15 @@ insert into public.clubs (id, name, slug) values
   ('11ab0000-c0c0-0000-0000-000000000001', 'Club Alfa Events', 'alfa-events'),
   ('11ab0000-c1c1-0000-0000-000000000001', 'Club Beta Events', 'beta-events');
 
-insert into public.categories (id, club_id, name, season) values
-  ('22ab0000-0000-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', 'Cat A1', '2025-26'),
-  ('22ab0000-0000-0000-0000-000000000002', '11ab0000-c0c0-0000-0000-000000000001', 'Cat A2', '2025-26'),
-  ('22ab0000-0000-0000-0000-000000000099', '11ab0000-c1c1-0000-0000-000000000001', 'Cat Beta', '2025-26');
+insert into public.categories (id, club_id, name) values
+  ('22ab0000-0000-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', 'Cat A1'),
+  ('22ab0000-0000-0000-0000-000000000002', '11ab0000-c0c0-0000-0000-000000000001', 'Cat A2'),
+  ('22ab0000-0000-0000-0000-000000000099', '11ab0000-c1c1-0000-0000-000000000001', 'Cat Beta');
 
-insert into public.teams (id, category_id, name, format, color) values
-  ('33ab0000-0000-0000-0000-000000000001', '22ab0000-0000-0000-0000-000000000001', 'Team A1', 'F7', '#10B981'),
-  ('33ab0000-0000-0000-0000-000000000002', '22ab0000-0000-0000-0000-000000000002', 'Team A2', 'F11', '#3B82F6'),
-  ('33ab0000-0000-0000-0000-000000000099', '22ab0000-0000-0000-0000-000000000099', 'Team Beta', 'F7', '#EF4444');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('33ab0000-0000-0000-0000-000000000001', '22ab0000-0000-0000-0000-000000000001', 'Team A1', 'F7', '#10B981', '2025-26'),
+  ('33ab0000-0000-0000-0000-000000000002', '22ab0000-0000-0000-0000-000000000002', 'Team A2', 'F11', '#3B82F6', '2025-26'),
+  ('33ab0000-0000-0000-0000-000000000099', '22ab0000-0000-0000-0000-000000000099', 'Team Beta', 'F7', '#EF4444', '2025-26');
 
 insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
   ('44ab0000-1111-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@ev.test', now(), '{}'::jsonb, now(), now()),

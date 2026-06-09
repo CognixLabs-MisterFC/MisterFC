@@ -65,10 +65,10 @@ insert into public.capabilities (membership_id, capability_name, granted) values
 
 -- Team + team_staff: coach3 es PRINCIPAL del team (autoridad de alineaciones
 -- sin capability explícita).
-insert into public.categories (id, club_id, name, season) values
-  ('99cf0000-dddd-0001-0000-000000000000', '99cf0000-0000-0000-0000-000000000001', 'Cat CF A', '2025-26');
-insert into public.teams (id, category_id, name, format, color) values
-  ('99cf0000-eeee-0001-0000-000000000000', '99cf0000-dddd-0001-0000-000000000000', 'Team CF A', 'F7', '#0EA5E9');
+insert into public.categories (id, club_id, name) values
+  ('99cf0000-dddd-0001-0000-000000000000', '99cf0000-0000-0000-0000-000000000001', 'Cat CF A');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('99cf0000-eeee-0001-0000-000000000000', '99cf0000-dddd-0001-0000-000000000000', 'Team CF A', 'F7', '#0EA5E9', '2025-26');
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('99cf0000-eeee-0001-0000-000000000000', '99cf0000-5555-0008-0000-000000000000', 'entrenador_principal');
 

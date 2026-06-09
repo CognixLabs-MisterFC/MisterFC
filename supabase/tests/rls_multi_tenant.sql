@@ -59,11 +59,11 @@ insert into public.clubs (id, name, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Club Alice', 'club-alice-test'),
   ('22222222-2222-2222-2222-222222222222', 'Club Bob', 'club-bob-test');
 
-insert into public.categories (id, club_id, name, season) values
-  ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', 'Prebenjamín', '2025-26');
+insert into public.categories (id, club_id, name) values
+  ('33333333-3333-3333-3333-333333333333', '11111111-1111-1111-1111-111111111111', 'Prebenjamín');
 
-insert into public.teams (id, category_id, name, format) values
-  ('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333', 'Prebenjamín A', 'F7');
+insert into public.teams (id, category_id, name, format, season) values
+  ('44444444-4444-4444-4444-444444444444', '33333333-3333-3333-3333-333333333333', 'Prebenjamín A', 'F7', '2025-26');
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55555555-5555-5555-5555-555555555555', 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'admin_club'),

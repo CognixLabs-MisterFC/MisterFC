@@ -20,12 +20,12 @@ begin;
 insert into public.clubs (id, name, slug) values
   ('11ff0000-0000-0000-0000-000000000001', 'Club Move', 'club-move');
 
-insert into public.categories (id, club_id, name, season) values
-  ('22ff0000-0000-0000-0000-000000000001', '11ff0000-0000-0000-0000-000000000001', 'Cat M', '2025-26');
+insert into public.categories (id, club_id, name) values
+  ('22ff0000-0000-0000-0000-000000000001', '11ff0000-0000-0000-0000-000000000001', 'Cat M');
 
-insert into public.teams (id, category_id, name, format, color) values
-  ('33ff0000-0000-0000-0000-000000000001', '22ff0000-0000-0000-0000-000000000001', 'Origin', 'F7', '#10B981'),
-  ('33ff0000-0000-0000-0000-000000000002', '22ff0000-0000-0000-0000-000000000001', 'Target', 'F7', '#10B981');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('33ff0000-0000-0000-0000-000000000001', '22ff0000-0000-0000-0000-000000000001', 'Origin', 'F7', '#10B981', '2025-26'),
+  ('33ff0000-0000-0000-0000-000000000002', '22ff0000-0000-0000-0000-000000000001', 'Target', 'F7', '#10B981', '2025-26');
 
 insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
   ('44ff0000-aaaa-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-m@ts.test', now(), '{}'::jsonb, now(), now()),

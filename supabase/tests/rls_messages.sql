@@ -20,11 +20,11 @@ begin;
 insert into public.clubs (id, name, slug) values
   ('11111111-1111-4111-8111-1111111100a1', 'Club M', 'club-m-msg');
 
-insert into public.categories (id, club_id, name, season) values
-  ('22222222-2222-4222-8222-2222222200a1', '11111111-1111-4111-8111-1111111100a1', 'Cat M', '2025-26');
+insert into public.categories (id, club_id, name) values
+  ('22222222-2222-4222-8222-2222222200a1', '11111111-1111-4111-8111-1111111100a1', 'Cat M');
 
-insert into public.teams (id, category_id, name, format, color) values
-  ('33333333-3333-4333-8333-3333333300a1', '22222222-2222-4222-8222-2222222200a1', 'Team M', 'F7', '#10B981');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('33333333-3333-4333-8333-3333333300a1', '22222222-2222-4222-8222-2222222200a1', 'Team M', 'F7', '#10B981', '2025-26');
 
 insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
   ('44444444-4444-4444-8444-4444444400a1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'adm-m@msg.test', now(), '{}'::jsonb, now(), now()),

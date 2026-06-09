@@ -55,12 +55,12 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('99f90000-5550-0009-0000-000000000000', '99f90000-aaaa-0007-0000-000000000000', '99f90000-0000-0000-0000-000000000001', 'entrenador_ayudante'),
   ('99f90000-5550-0007-0000-000000000000', '99f90000-bbbb-0001-0000-000000000000', '99f90000-0000-0000-0000-000000000002', 'admin_club');
 
-insert into public.categories (id, club_id, name, season) values
-  ('99f90000-0dd0-0001-0000-000000000000', '99f90000-0000-0000-0000-000000000001', 'Cat F83 A', '2025-26');
+insert into public.categories (id, club_id, name) values
+  ('99f90000-0dd0-0001-0000-000000000000', '99f90000-0000-0000-0000-000000000001', 'Cat F83 A');
 
-insert into public.teams (id, category_id, name, format, color) values
-  ('99f90000-0ee1-0001-0000-000000000000', '99f90000-0dd0-0001-0000-000000000000', 'Team 1', 'F7', '#0EA5E9'),
-  ('99f90000-0ee1-0002-0000-000000000000', '99f90000-0dd0-0001-0000-000000000000', 'Team 2', 'F7', '#F59E0B');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('99f90000-0ee1-0001-0000-000000000000', '99f90000-0dd0-0001-0000-000000000000', 'Team 1', 'F7', '#0EA5E9', '2025-26'),
+  ('99f90000-0ee1-0002-0000-000000000000', '99f90000-0dd0-0001-0000-000000000000', 'Team 2', 'F7', '#F59E0B', '2025-26');
 
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('99f90000-0ee1-0001-0000-000000000000', '99f90000-5550-0002-0000-000000000000', 'entrenador_principal'),

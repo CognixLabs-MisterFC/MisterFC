@@ -17,10 +17,10 @@ begin;
 
 insert into public.clubs (id, name, slug) values
   ('77ff0000-0000-0000-0000-000000000001', 'Club Lote B', 'club-lote-b');
-insert into public.categories (id, club_id, name, season) values
-  ('77ff0000-1111-0000-0000-000000000001', '77ff0000-0000-0000-0000-000000000001', 'Cat LB', '2025-26');
-insert into public.teams (id, category_id, name, format, color) values
-  ('77ff0000-2222-0000-0000-000000000001', '77ff0000-1111-0000-0000-000000000001', 'Team LB', 'F8', '#0EA5E9');
+insert into public.categories (id, club_id, name) values
+  ('77ff0000-1111-0000-0000-000000000001', '77ff0000-0000-0000-0000-000000000001', 'Cat LB');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('77ff0000-2222-0000-0000-000000000001', '77ff0000-1111-0000-0000-000000000001', 'Team LB', 'F8', '#0EA5E9', '2025-26');
 
 -- pA en el team (vinculado a jugadorA); pB fuera del team (vinculado a jugadorB).
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values

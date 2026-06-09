@@ -31,13 +31,13 @@ insert into public.clubs (id, name, slug) values
   ('11ee0000-0000-0000-0000-000000000001', 'Club Att A', 'club-att-a'),
   ('11ee0000-0000-0000-0000-000000000002', 'Club Att B', 'club-att-b');
 
-insert into public.categories (id, club_id, name, season) values
-  ('22ee0000-0000-0000-0000-000000000001', '11ee0000-0000-0000-0000-000000000001', 'Cat Att A', '2025-26'),
-  ('22ee0000-0000-0000-0000-000000000002', '11ee0000-0000-0000-0000-000000000002', 'Cat Att B', '2025-26');
+insert into public.categories (id, club_id, name) values
+  ('22ee0000-0000-0000-0000-000000000001', '11ee0000-0000-0000-0000-000000000001', 'Cat Att A'),
+  ('22ee0000-0000-0000-0000-000000000002', '11ee0000-0000-0000-0000-000000000002', 'Cat Att B');
 
-insert into public.teams (id, category_id, name, format, color) values
-  ('33ee0000-0000-0000-0000-000000000001', '22ee0000-0000-0000-0000-000000000001', 'Team Att A', 'F7', '#10B981'),
-  ('33ee0000-0000-0000-0000-000000000002', '22ee0000-0000-0000-0000-000000000002', 'Team Att B', 'F7', '#10B981');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('33ee0000-0000-0000-0000-000000000001', '22ee0000-0000-0000-0000-000000000001', 'Team Att A', 'F7', '#10B981', '2025-26'),
+  ('33ee0000-0000-0000-0000-000000000002', '22ee0000-0000-0000-0000-000000000002', 'Team Att B', 'F7', '#10B981', '2025-26');
 
 insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
   ('44ee0000-aaaa-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-att-a@ts.test', now(), '{}'::jsonb, now(), now()),
