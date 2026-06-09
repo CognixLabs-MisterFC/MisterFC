@@ -263,7 +263,7 @@ export async function loadUpcomingCallups(
     .from('events')
     .select(
       `id, club_id, team_id, title, opponent_name, starts_at,
-       teams!inner(name, color, categories!inner(name, season))`
+       teams!inner(name, color, season, categories!inner(name))`
     )
     .eq('club_id', clubId)
     .eq('type', 'match')
@@ -303,7 +303,8 @@ export async function loadUpcomingCallups(
     teams: {
       name: string;
       color: string;
-      categories: { name: string; season: string };
+      season: string;
+      categories: { name: string };
     };
   };
   const events = (rawEvents ?? []).map((e) => e as unknown as EventRow);
@@ -413,7 +414,7 @@ export async function loadUpcomingCallups(
       team_name: e.teams.name,
       team_color: e.teams.color,
       category_name: e.teams.categories.name,
-      category_season: e.teams.categories.season,
+      category_season: e.teams.season,
       title: e.title,
       opponent_name: e.opponent_name,
       starts_at: e.starts_at,
@@ -445,7 +446,7 @@ export async function loadCallupDetail(
     .select(
       `id, club_id, team_id, type, title, opponent_name, starts_at,
        location_name, location_address,
-       teams!inner(name, color, categories!inner(name, season))`
+       teams!inner(name, color, season, categories!inner(name))`
     )
     .eq('id', eventId)
     .maybeSingle();
@@ -467,7 +468,8 @@ export async function loadCallupDetail(
     teams: {
       name: string;
       color: string;
-      categories: { name: string; season: string };
+      season: string;
+      categories: { name: string };
     };
   };
   const event = ev as unknown as EventShape;
@@ -660,7 +662,7 @@ export async function loadCallupDetail(
       team_name: event.teams.name,
       team_color: event.teams.color,
       category_name: event.teams.categories.name,
-      category_season: event.teams.categories.season,
+      category_season: event.teams.season,
       title: event.title,
       opponent_name: event.opponent_name,
       starts_at: event.starts_at,

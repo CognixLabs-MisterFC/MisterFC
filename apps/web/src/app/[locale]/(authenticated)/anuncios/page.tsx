@@ -49,13 +49,13 @@ export default async function AnunciosGlobalesPage({
   // Teams del club — para el form (admin/coord) y para el filtro de lista.
   const { data: teamRows } = await supabase
     .from('teams')
-    .select('id, name, categories!inner(name, season, club_id)')
+    .select('id, name, categories!inner(name, club_id)')
     .eq('categories.club_id', clubId)
     .order('name', { ascending: true });
   type TeamRow = {
     id: string;
     name: string;
-    categories: { name: string; season: string; club_id: string };
+    categories: { name: string; club_id: string };
   };
   const teams = (teamRows ?? []) as unknown as TeamRow[];
 

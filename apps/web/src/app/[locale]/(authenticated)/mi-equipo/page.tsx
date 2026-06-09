@@ -79,7 +79,7 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
   const { data: tmRows } = await supabase
     .from('team_members')
     .select(
-      'player_id, team_id, teams!inner(id, name, color, format, category_id, categories!inner(name, season, club_id, half_duration_minutes))',
+      'player_id, team_id, teams!inner(id, name, color, format, category_id, season, categories!inner(name, club_id, half_duration_minutes))',
     )
     .in('player_id', myPlayerIds)
     .is('left_at', null);
@@ -92,9 +92,9 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
       color: string;
       format: string;
       category_id: string;
+      season: string;
       categories: {
         name: string;
-        season: string;
         club_id: string;
         half_duration_minutes: number;
       };
@@ -249,7 +249,7 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
           <CardDescription>
             {t('category_format', {
               category: activeTeam.categories.name,
-              season: activeTeam.categories.season,
+              season: activeTeam.season,
               minutes: activeTeam.categories.half_duration_minutes,
             })}
           </CardDescription>

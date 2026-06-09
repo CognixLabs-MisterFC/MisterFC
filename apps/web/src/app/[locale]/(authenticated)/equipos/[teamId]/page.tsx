@@ -48,7 +48,7 @@ export default async function TeamDetailPage({ params }: Props) {
   const { data: team } = await supabase
     .from('teams')
     .select(
-      'id, name, format, color, category_id, categories!inner(id, name, season, club_id)'
+      'id, name, format, color, season, category_id, categories!inner(id, name, club_id)'
     )
     .eq('id', teamId)
     .maybeSingle();
@@ -57,10 +57,11 @@ export default async function TeamDetailPage({ params }: Props) {
   const category = team.categories as unknown as {
     id: string;
     name: string;
-    season: string;
     club_id: string;
   };
   if (category.club_id !== ctx.activeClub.club.id) notFound();
+  // Rework A (A3): la temporada vive en el equipo (teams.season).
+  const season = team.season as string;
 
   const t = await getTranslations('equipo_detalle');
   const tStaff = await getTranslations('staff');
@@ -162,7 +163,7 @@ export default async function TeamDetailPage({ params }: Props) {
         <div className="flex flex-col">
           <h1 className="text-3xl font-bold tracking-tight">{team.name}</h1>
           <p className="text-sm text-muted-foreground">
-            {category.name} · {category.season} · {team.format}
+            {category.name} · {season} · {team.format}
           </p>
         </div>
         <Button asChild variant="outline" size="sm">
