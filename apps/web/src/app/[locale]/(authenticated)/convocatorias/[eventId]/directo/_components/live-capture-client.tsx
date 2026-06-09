@@ -1436,7 +1436,13 @@ export function LiveCaptureClient({
               <span>{t('foul_received')}</span>
             </button>
           </div>
-          {timeline.length === 0 ? (
+          {/* F7 (fix #10) — con el partido SIN empezar no se muestran eventos:
+              la captura ya está gateada a 'live', pero match_events puede tener
+              filas de una sesión previa / datos sembrados; el panel los ocultaba
+              porque no filtraba por estado. Gateamos la VISUALIZACIÓN a que el
+              partido haya empezado (igual que TimelineEditor, que retorna null en
+              'not_started'). */}
+          {matchStatus === 'not_started' || timeline.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('no_events_yet')}</p>
           ) : (
             <ul className="flex max-h-[52vh] flex-col gap-1 overflow-y-auto">
