@@ -14,10 +14,10 @@ begin;
 
 insert into public.clubs (id, name, slug) values
   ('66ee0000-9000-0000-0000-000000000001', 'Club NoOut', 'club-no-out');
-insert into public.categories (id, club_id, name, season) values
-  ('66ee0000-9100-0000-0000-000000000001', '66ee0000-9000-0000-0000-000000000001', 'Cat NoOut', '2025-26');
-insert into public.teams (id, category_id, name, format, color) values
-  ('66ee0000-9200-0000-0000-000000000001', '66ee0000-9100-0000-0000-000000000001', 'Team NoOut', 'F7', '#0EA5E9');
+insert into public.categories (id, club_id, name) values
+  ('66ee0000-9100-0000-0000-000000000001', '66ee0000-9000-0000-0000-000000000001', 'Cat NoOut');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('66ee0000-9200-0000-0000-000000000001', '66ee0000-9100-0000-0000-000000000001', 'Team NoOut', 'F7', '#0EA5E9', '2025-26');
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
   ('66ee0000-9300-0000-0000-000000000001', '66ee0000-9000-0000-0000-000000000001', 'Uno', 'Campo', '2012-01-01');
 insert into public.team_members (team_id, player_id, joined_at) values

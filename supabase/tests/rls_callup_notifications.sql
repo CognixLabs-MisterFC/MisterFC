@@ -28,10 +28,10 @@ end $$;
 -- Setup mínimo para D2/D3.
 insert into public.clubs (id, name, slug) values
   ('66ee0000-c000-0000-0000-000000000001', 'Club Notif', 'club-notif');
-insert into public.categories (id, club_id, name, season) values
-  ('66ee0000-c100-0000-0000-000000000001', '66ee0000-c000-0000-0000-000000000001', 'Cat Notif', '2025-26');
-insert into public.teams (id, category_id, name, format, color) values
-  ('66ee0000-c200-0000-0000-000000000001', '66ee0000-c100-0000-0000-000000000001', 'Team Notif', 'F8', '#0EA5E9');
+insert into public.categories (id, club_id, name) values
+  ('66ee0000-c100-0000-0000-000000000001', '66ee0000-c000-0000-0000-000000000001', 'Cat Notif');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('66ee0000-c200-0000-0000-000000000001', '66ee0000-c100-0000-0000-000000000001', 'Team Notif', 'F8', '#0EA5E9', '2025-26');
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
   ('66ee0000-c300-0000-0000-00000000000A', '66ee0000-c000-0000-0000-000000000001', 'Ana', 'Roster', '2012-01-01');
 insert into public.team_members (team_id, player_id, joined_at) values

@@ -33,11 +33,11 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('77f80000-5550-0004-0000-000000000000', '77f80000-aaaa-0004-0000-000000000000', '77f80000-0000-0000-0000-000000000001', 'jugador'),
   ('77f80000-5550-0005-0000-000000000000', '77f80000-aaaa-0005-0000-000000000000', '77f80000-0000-0000-0000-000000000001', 'jugador');
 
-insert into public.categories (id, club_id, name, season) values
-  ('77f80000-0dd0-0001-0000-000000000000', '77f80000-0000-0000-0000-000000000001', 'Cat F86', '2025-26');
+insert into public.categories (id, club_id, name) values
+  ('77f80000-0dd0-0001-0000-000000000000', '77f80000-0000-0000-0000-000000000001', 'Cat F86');
 
-insert into public.teams (id, category_id, name, format, color) values
-  ('77f80000-0ee1-0001-0000-000000000000', '77f80000-0dd0-0001-0000-000000000000', 'Team 1', 'F7', '#0EA5E9');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('77f80000-0ee1-0001-0000-000000000000', '77f80000-0dd0-0001-0000-000000000000', 'Team 1', 'F7', '#0EA5E9', '2025-26');
 
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('77f80000-0ee1-0001-0000-000000000000', '77f80000-5550-0002-0000-000000000000', 'entrenador_principal');

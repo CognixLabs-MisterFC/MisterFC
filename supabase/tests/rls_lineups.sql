@@ -35,11 +35,11 @@ begin;
 insert into public.clubs (id, name, slug) values
   ('66ee0000-0000-0000-0000-000000000001', 'Club Lineup A', 'club-lineup-a');
 
-insert into public.categories (id, club_id, name, season) values
-  ('66ee0000-1111-0000-0000-000000000001', '66ee0000-0000-0000-0000-000000000001', 'Cat L-A', '2025-26');
+insert into public.categories (id, club_id, name) values
+  ('66ee0000-1111-0000-0000-000000000001', '66ee0000-0000-0000-0000-000000000001', 'Cat L-A');
 
-insert into public.teams (id, category_id, name, format, color) values
-  ('66ee0000-2222-0000-0000-000000000001', '66ee0000-1111-0000-0000-000000000001', 'Team L-A', 'F7', '#0EA5E9');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('66ee0000-2222-0000-0000-000000000001', '66ee0000-1111-0000-0000-000000000001', 'Team L-A', 'F7', '#0EA5E9', '2025-26');
 
 -- Jugadores: p1/p2/p4 en roster; p3 NO en roster (para T3).
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values

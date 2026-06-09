@@ -21,15 +21,13 @@ values
   ('dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0', 'Club Alfa Photos', 'alfa-photos'),
   ('dddddddd-d1d1-d1d1-d1d1-d1d1d1d1d1d1', 'Club Beta Photos', 'beta-photos');
 
-insert into public.categories (id, club_id, name, season)
-values
-  ('aaaaa111-0000-0000-0000-000000000001', 'dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0', 'Cat A', '2025-26'),
-  ('aaaaa111-0000-0000-0000-000000000002', 'dddddddd-d1d1-d1d1-d1d1-d1d1d1d1d1d1', 'Cat B', '2025-26');
+insert into public.categories (id, club_id, name) values
+  ('aaaaa111-0000-0000-0000-000000000001', 'dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0', 'Cat A'),
+  ('aaaaa111-0000-0000-0000-000000000002', 'dddddddd-d1d1-d1d1-d1d1-d1d1d1d1d1d1', 'Cat B');
 
-insert into public.teams (id, category_id, name, format, color)
-values
-  ('bbbbb111-0000-0000-0000-000000000001', 'aaaaa111-0000-0000-0000-000000000001', 'Team A', 'F7', '#10B981'),
-  ('bbbbb111-0000-0000-0000-000000000002', 'aaaaa111-0000-0000-0000-000000000002', 'Team B', 'F7', '#10B981');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('bbbbb111-0000-0000-0000-000000000001', 'aaaaa111-0000-0000-0000-000000000001', 'Team A', 'F7', '#10B981', '2025-26'),
+  ('bbbbb111-0000-0000-0000-000000000002', 'aaaaa111-0000-0000-0000-000000000002', 'Team B', 'F7', '#10B981', '2025-26');
 
 insert into public.players (id, club_id, first_name, last_name, date_of_birth)
 values
