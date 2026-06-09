@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { deleteCategory } from './actions';
+import { deleteCategoryTemplate } from './actions';
 
 type Props = {
   categoryId: string;
@@ -23,7 +23,7 @@ type Props = {
 };
 
 export function CategoryDeleteButton({ categoryId, categoryName }: Props) {
-  const t = useTranslations('categorias');
+  const t = useTranslations('plantillas');
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -31,12 +31,9 @@ export function CategoryDeleteButton({ categoryId, categoryName }: Props) {
   function onConfirm() {
     setError(null);
     startTransition(async () => {
-      const result = await deleteCategory(categoryId);
-      if (result.success) {
-        setOpen(false);
-      } else {
-        setError(t(`errors.${result.error}`));
-      }
+      const result = await deleteCategoryTemplate(categoryId);
+      if (result.success) setOpen(false);
+      else setError(t(`errors.${result.error}`));
     });
   }
 

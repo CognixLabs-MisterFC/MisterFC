@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, Pencil, Plus } from 'lucide-react';
+import { CATEGORY_KINDS } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,40 +17,51 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  createCategory,
-  updateCategory,
-  type CategoryFormState,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  createCategoryTemplate,
+  updateCategoryTemplate,
+  type CategoryTemplateFormState,
 } from './actions';
 
 type Mode = 'create' | 'edit';
 
+const NO_KIND = '__none__';
+const DEFAULT_HALF = 45;
+
 type Props = {
   mode: Mode;
-  defaultSeason: string;
   category?: {
     id: string;
     name: string;
-    season: string;
-    order_idx: number;
+    kind: string | null;
+    half_duration_minutes: number;
   };
 };
 
-export function CategoryDialog({ mode, defaultSeason, category }: Props) {
-  const t = useTranslations('categorias');
+export function CategoryDialog({ mode, category }: Props) {
+  const t = useTranslations('plantillas');
+  const tk = useTranslations('category_kinds');
   const [open, setOpen] = useState(false);
+  const isEdit = mode === 'edit';
+
+  const [kind, setKind] = useState(category?.kind ?? NO_KIND);
 
   const action =
-    mode === 'edit' && category
-      ? updateCategory.bind(null, category.id)
-      : createCategory;
+    isEdit && category
+      ? updateCategoryTemplate.bind(null, category.id)
+      : createCategoryTemplate;
 
   const [state, formAction, pending] = useActionState<
-    CategoryFormState,
+    CategoryTemplateFormState,
     FormData
   >(action, {});
 
-  // Cierra el dialog al guardar OK. Se hace en render con guard de identidad
-  // para no caer en setState-in-effect (React 19) y evitar cascadas.
   const [lastHandledState, setLastHandledState] = useState(state);
   if (state !== lastHandledState) {
     setLastHandledState(state);
@@ -57,7 +69,6 @@ export function CategoryDialog({ mode, defaultSeason, category }: Props) {
   }
 
   const errorMsg = state.error ? t(`errors.${state.error}`) : null;
-  const isEdit = mode === 'edit';
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -95,28 +106,42 @@ export function CategoryDialog({ mode, defaultSeason, category }: Props) {
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="cat-season">{t('field.season')}</Label>
-            <Input
-              id="cat-season"
-              name="season"
-              required
-              placeholder="2025-26"
-              pattern="[0-9]{4}-[0-9]{2}"
-              defaultValue={category?.season ?? defaultSeason}
+            <Label htmlFor="cat-kind">{t('field.kind')}</Label>
+            <input
+              type="hidden"
+              name="kind"
+              value={kind === NO_KIND ? '' : kind}
             />
-            <p className="text-xs text-muted-foreground">{t('field.season_help')}</p>
+            <Select value={kind} onValueChange={setKind}>
+              <SelectTrigger id="cat-kind">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_KIND}>{t('kind_none')}</SelectItem>
+                {CATEGORY_KINDS.map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {tk(k)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">{t('field.kind_help')}</p>
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="cat-order">{t('field.order_idx')}</Label>
+            <Label htmlFor="cat-half">{t('field.half_duration')}</Label>
             <Input
-              id="cat-order"
-              name="order_idx"
+              id="cat-half"
+              name="half_duration_minutes"
               type="number"
-              min={0}
-              max={9999}
-              defaultValue={category?.order_idx ?? 0}
+              min={1}
+              max={90}
+              required
+              defaultValue={category?.half_duration_minutes ?? DEFAULT_HALF}
             />
+            <p className="text-xs text-muted-foreground">
+              {t('field.half_duration_help')}
+            </p>
           </div>
 
           {errorMsg && (
@@ -126,17 +151,11 @@ export function CategoryDialog({ mode, defaultSeason, category }: Props) {
           )}
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setOpen(false)}
-            >
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               {t('actions.cancel')}
             </Button>
             <Button type="submit" disabled={pending}>
-              {pending && (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              )}
+              {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
               <span>{t('actions.save')}</span>
             </Button>
           </DialogFooter>

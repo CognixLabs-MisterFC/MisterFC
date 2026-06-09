@@ -440,7 +440,7 @@ export function EventDialog({
                   <SelectContent>
                     {categories.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.name} · {c.season}
+                        {c.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

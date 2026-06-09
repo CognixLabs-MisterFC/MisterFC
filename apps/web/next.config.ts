@@ -6,6 +6,25 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@misterfc/core'],
+  // Rework A (A4) — la nav gira en torno al equipo. /categorias se retira:
+  //   · /categorias       → /equipos            (listado de equipos)
+  //   · /categorias/[id]  → /equipos/plantillas (gestión de categorías)
+  // 308 permanente. El locale va siempre en el path (localePrefix: 'always') y
+  // los redirects de next.config se evalúan antes del middleware de next-intl.
+  async redirects() {
+    return [
+      {
+        source: '/:locale/categorias',
+        destination: '/:locale/equipos',
+        permanent: true,
+      },
+      {
+        source: '/:locale/categorias/:categoryId',
+        destination: '/:locale/equipos/plantillas',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 const configWithIntl = withNextIntl(nextConfig);

@@ -152,7 +152,7 @@ export default async function TeamDetailPage({ params }: Props) {
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <div className="flex items-center gap-2">
         <Button asChild variant="ghost" size="sm">
-          <Link href={`/categorias/${category.id}`}>
+          <Link href="/equipos">
             <ArrowLeft className="size-4" aria-hidden />
             <span>{t('back')}</span>
           </Link>

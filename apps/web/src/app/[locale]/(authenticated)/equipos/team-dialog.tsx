@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogFooter,
   DialogHeader,
+  DialogFooter,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
@@ -22,42 +22,70 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  createTeam,
-  updateTeam,
-  type TeamFormState,
-} from './actions';
+import { createTeam, updateTeam, type TeamFormState } from './actions';
 
 type Mode = 'create' | 'edit';
 
-type Division = {
+export type Division = {
   value: string;
   regimeType: 'rolling' | 'limited';
   maxSubs: number | null;
 };
 
+type CategoryOpt = { id: string; name: string; kind: string | null };
+
 type Props = {
   mode: Mode;
-  categoryId: string;
-  /** F7.6c — divisiones de la categoría (régimen de cambios). Vacío → sin selector. */
-  divisions: Division[];
+  /** Catálogo de divisiones por kind (substitution_regimes). */
+  divisionsByKind: Record<string, Division[]>;
+  /** create: temporada por defecto (la seleccionada en el listado). */
+  defaultSeason?: string;
+  /** create: categorías-plantilla del club para el selector. */
+  categories?: CategoryOpt[];
+  /** edit: datos del equipo (la temporada y la categoría no se cambian aquí). */
   team?: {
     id: string;
     name: string;
     format: (typeof TEAM_FORMATS)[number];
     color: string;
     division: string | null;
+    categoryKind: string | null;
   };
 };
 
 const DEFAULT_COLOR = '#10B981';
 const NO_DIVISION = '__none__';
 
-export function TeamDialog({ mode, categoryId, divisions, team }: Props) {
+export function TeamDialog({
+  mode,
+  divisionsByKind,
+  defaultSeason,
+  categories = [],
+  team,
+}: Props) {
   const t = useTranslations('equipos');
   const [open, setOpen] = useState(false);
+  const isEdit = mode === 'edit';
 
-  // F7.6c — etiqueta de cada división + su régimen para el selector.
+  // create: categoría seleccionada → su kind → divisiones disponibles.
+  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? '');
+  const selectedKind = isEdit
+    ? (team?.categoryKind ?? null)
+    : (categories.find((c) => c.id === categoryId)?.kind ?? null);
+  const divisions = selectedKind ? (divisionsByKind[selectedKind] ?? []) : [];
+
+  const [division, setDivision] = useState(
+    team?.division ?? divisions[0]?.value ?? NO_DIVISION,
+  );
+
+  // Al cambiar de categoría en alta, reencuadra la división a la 1ª válida.
+  function onCategoryChange(id: string) {
+    setCategoryId(id);
+    const kind = categories.find((c) => c.id === id)?.kind ?? null;
+    const next = kind ? (divisionsByKind[kind] ?? []) : [];
+    setDivision(next[0]?.value ?? NO_DIVISION);
+  }
+
   const divisionLabel = (d: Division) => {
     const name = t(`divisions.${d.value}`);
     const tag =
@@ -66,28 +94,24 @@ export function TeamDialog({ mode, categoryId, divisions, team }: Props) {
         : t('division_regime.limited', { max: d.maxSubs ?? 0 });
     return `${name} · ${tag}`;
   };
-  const defaultDivision = team?.division ?? divisions[0]?.value ?? NO_DIVISION;
 
   const action =
-    mode === 'edit' && team
-      ? updateTeam.bind(null, team.id)
-      : createTeam.bind(null, categoryId);
+    isEdit && team ? updateTeam.bind(null, team.id) : createTeam;
 
   const [state, formAction, pending] = useActionState<TeamFormState, FormData>(
     action,
-    {}
+    {},
   );
 
-  // Cierra el dialog al guardar OK. Render-time guard (React 19 prohíbe
-  // setState dentro de useEffect; ver category-dialog.tsx para el mismo patrón).
+  // Cierra el dialog al guardar OK (render-time guard, ver patrón en el resto).
   const [lastHandledState, setLastHandledState] = useState(state);
   if (state !== lastHandledState) {
     setLastHandledState(state);
     if (state.success) setOpen(false);
   }
 
-  const isEdit = mode === 'edit';
   const errorMsg = state.error ? t(`errors.${state.error}`) : null;
+  const noCategories = !isEdit && categories.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -97,7 +121,7 @@ export function TeamDialog({ mode, categoryId, divisions, team }: Props) {
             <Pencil className="size-4" aria-hidden />
           </Button>
         ) : (
-          <Button>
+          <Button disabled={noCategories}>
             <Plus className="size-4" aria-hidden />
             <span>{t('actions.create')}</span>
           </Button>
@@ -111,6 +135,42 @@ export function TeamDialog({ mode, categoryId, divisions, team }: Props) {
         </DialogHeader>
 
         <form action={formAction} className="flex flex-col gap-4">
+          {!isEdit && (
+            <>
+              <div className="grid gap-2">
+                <Label htmlFor="team-season">{t('field.season')}</Label>
+                <Input
+                  id="team-season"
+                  name="season"
+                  required
+                  placeholder="2025-26"
+                  pattern="[0-9]{4}-[0-9]{2}"
+                  defaultValue={defaultSeason ?? ''}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t('field.season_help')}
+                </p>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="team-category">{t('field.category')}</Label>
+                <input type="hidden" name="category_id" value={categoryId} />
+                <Select value={categoryId} onValueChange={onCategoryChange}>
+                  <SelectTrigger id="team-category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+
           <div className="grid gap-2">
             <Label htmlFor="team-name">{t('field.name')}</Label>
             <Input
@@ -119,7 +179,7 @@ export function TeamDialog({ mode, categoryId, divisions, team }: Props) {
               required
               maxLength={80}
               defaultValue={team?.name ?? ''}
-              autoFocus
+              autoFocus={isEdit}
             />
           </div>
 
@@ -142,7 +202,8 @@ export function TeamDialog({ mode, categoryId, divisions, team }: Props) {
           {divisions.length > 0 && (
             <div className="grid gap-2">
               <Label htmlFor="team-division">{t('field.division')}</Label>
-              <Select name="division" defaultValue={defaultDivision}>
+              <input type="hidden" name="division" value={division} />
+              <Select value={division} onValueChange={setDivision}>
                 <SelectTrigger id="team-division">
                   <SelectValue />
                 </SelectTrigger>
@@ -183,17 +244,11 @@ export function TeamDialog({ mode, categoryId, divisions, team }: Props) {
           )}
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setOpen(false)}
-            >
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               {t('actions.cancel')}
             </Button>
             <Button type="submit" disabled={pending}>
-              {pending && (
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-              )}
+              {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
               <span>{t('actions.save')}</span>
             </Button>
           </DialogFooter>

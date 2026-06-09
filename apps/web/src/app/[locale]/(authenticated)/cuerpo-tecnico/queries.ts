@@ -65,7 +65,6 @@ export type TeamOption = {
 export type CategoryOption = {
   id: string;
   name: string;
-  season: string;
 };
 
 export type CoachFilters = {
@@ -185,27 +184,24 @@ async function loadVisibleCategories(
         map.set(t.category_id, {
           id: t.category_id,
           name: t.category_name,
-          season: t.season,
         });
       }
     }
-    return [...map.values()].sort((a, b) =>
-      b.season.localeCompare(a.season) || a.name.localeCompare(b.name)
-    );
+    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  // Rework A (A4) — la categoría es plantilla permanente sin temporada; el filtro
+  // de categoría del cuerpo técnico ya no la muestra/ordena por season.
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const { data } = await supabase
     .from('categories')
-    .select('id, name, season')
+    .select('id, name')
     .eq('club_id', clubId)
-    .order('season', { ascending: false })
     .order('name');
   return (data ?? []).map((c) => ({
     id: c.id as string,
     name: c.name as string,
-    season: c.season as string,
   }));
 }
 

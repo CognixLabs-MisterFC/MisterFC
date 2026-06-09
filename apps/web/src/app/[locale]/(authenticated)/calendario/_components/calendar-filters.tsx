@@ -111,7 +111,7 @@ export function CalendarFilters({
             empty={t('filters.empty_category')}
             items={categories.map((c) => ({
               id: c.id,
-              label: `${c.name} · ${c.season}`,
+              label: c.name,
             }))}
             active={activeCategoryIds}
             onToggle={(id) => toggle('category', id, activeCategoryIds)}
