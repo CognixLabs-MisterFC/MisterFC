@@ -193,7 +193,9 @@
       "formaciones": "Formaciones",
       "ajustes": "Ajustes del club",
       "mi_ficha": "Mi ficha"
-    }
+    },
+    "collapse_sidebar": "Ocultar el menú",
+    "expand_sidebar": "Mostrar el menú"
   },
   "roles": {
     "admin_club": "Administrador del club",

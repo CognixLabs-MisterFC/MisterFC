@@ -87,3 +87,12 @@
     font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   }
 }
+
+/* #9 — colapso del menú lateral (global). El shell server-renderiza el atributo
+   desde la cookie (sin flash) y el botón cliente lo alterna. El selector por id
+   tiene más especificidad que las utilidades de Tailwind, así que oculta el aside
+   también en lg (donde es `lg:block`). En móvil el aside ya está oculto. El
+   <main> es flex-1 → ocupa el ancho completo al desaparecer el aside. */
+#app-shell-root[data-sidebar-collapsed='true'] [data-shell-sidebar] {
+  display: none;
+}

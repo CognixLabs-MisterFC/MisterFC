@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
+import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@misterfc/core';
 import type { ShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
+import { SIDEBAR_COLLAPSED_COOKIE } from './sidebar-toggle';
 
 type Props = {
   ctx: ShellContext;
@@ -69,8 +71,19 @@ export async function AppShell({ ctx, locale, children }: Props) {
     anuncios: notifBadges.anuncios,
   };
 
+  // #9 — estado del colapso del menú lateral leído de la cookie en el servidor:
+  // el atributo se renderiza ya correcto (sin flash de hidratación). El botón
+  // (en la cabecera) lo alterna en cliente y persiste la cookie.
+  const cookieStore = await cookies();
+  const sidebarCollapsed =
+    cookieStore.get(SIDEBAR_COLLAPSED_COOKIE)?.value === '1';
+
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div
+      id="app-shell-root"
+      data-sidebar-collapsed={sidebarCollapsed ? 'true' : 'false'}
+      className="flex min-h-screen flex-col bg-background"
+    >
       <Header
         user={ctx.user}
         fullName={ctx.profile.full_name}
@@ -79,9 +92,13 @@ export async function AppShell({ ctx, locale, children }: Props) {
         activeClub={ctx.activeClub}
         locale={locale}
         badges={badges}
+        sidebarCollapsed={sidebarCollapsed}
       />
       <div className="flex flex-1">
-        <aside className="hidden w-60 shrink-0 border-r border-zinc-800 bg-zinc-950 lg:block">
+        <aside
+          data-shell-sidebar
+          className="hidden w-60 shrink-0 border-r border-zinc-800 bg-zinc-950 lg:block"
+        >
           <Sidebar
             role={ctx.activeClub.role}
             variant="desktop"

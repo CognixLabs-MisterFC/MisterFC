@@ -266,7 +266,9 @@
       "formaciones": "Formations",
       "ajustes": "Club settings",
       "mi_ficha": "My profile"
-    }
+    },
+    "collapse_sidebar": "Hide menu",
+    "expand_sidebar": "Show menu"
   },
   "perfil": {
     "title": "Mi perfil",

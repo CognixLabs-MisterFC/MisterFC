@@ -266,7 +266,9 @@
       "formaciones": "Formacions",
       "ajustes": "Ajustos del club",
       "mi_ficha": "La meua fitxa"
-    }
+    },
+    "collapse_sidebar": "Amaga el menú",
+    "expand_sidebar": "Mostra el menú"
   },
   "perfil": {
     "title": "Mi perfil",
