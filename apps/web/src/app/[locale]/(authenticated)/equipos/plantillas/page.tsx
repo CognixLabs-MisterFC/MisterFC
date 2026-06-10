@@ -4,6 +4,7 @@ import { FolderCog } from 'lucide-react';
 import {
   categoryKindOrdinal,
   createSupabaseServerClient,
+  customOverlapsStandardKind,
 } from '@misterfc/core';
 import { Link } from '@/i18n/navigation';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -43,7 +44,7 @@ export default async function PlantillasPage({ params }: Props) {
 
   const { data: categoriesData } = await supabase
     .from('categories')
-    .select('id, name, kind, half_duration_minutes, teams(count)')
+    .select('id, name, kind, half_duration_minutes, is_standard, teams(count)')
     .eq('club_id', clubId);
 
   type Row = {
@@ -51,6 +52,8 @@ export default async function PlantillasPage({ params }: Props) {
     name: string;
     kind: string | null;
     half_duration_minutes: number;
+    is_standard: boolean;
+    overlaps_standard: boolean;
     teams_count: number;
   };
   // Orden derivado de kind (🔒 O1): ordinal del kind, NULL al final; desempate por
@@ -61,6 +64,11 @@ export default async function PlantillasPage({ params }: Props) {
       name: c.name as string,
       kind: (c.kind as string | null) ?? null,
       half_duration_minutes: (c.half_duration_minutes as number | null) ?? 45,
+      is_standard: (c.is_standard as boolean | null) ?? false,
+      overlaps_standard: customOverlapsStandardKind({
+        isStandard: (c.is_standard as boolean | null) ?? false,
+        kind: (c.kind as string | null) ?? null,
+      }),
       teams_count:
         Array.isArray(c.teams) && c.teams[0] && typeof c.teams[0].count === 'number'
           ? c.teams[0].count
@@ -121,10 +129,25 @@ export default async function PlantillasPage({ params }: Props) {
                   {category.kind && (
                     <Badge variant="secondary">{tk(category.kind)}</Badge>
                   )}
+                  {category.is_standard ? (
+                    <Badge variant="default">{t('badge_standard')}</Badge>
+                  ) : (
+                    <Badge variant="outline">{t('badge_custom')}</Badge>
+                  )}
+                  {category.overlaps_standard && (
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500/50 text-amber-600 dark:text-amber-400"
+                      title={t('overlap_hint')}
+                    >
+                      {t('overlap_badge')}
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-1">
                   <CategoryDialog
                     mode="edit"
+                    isStandard={category.is_standard}
                     category={{
                       id: category.id,
                       name: category.name,
@@ -132,10 +155,13 @@ export default async function PlantillasPage({ params }: Props) {
                       half_duration_minutes: category.half_duration_minutes,
                     }}
                   />
-                  <CategoryDeleteButton
-                    categoryId={category.id}
-                    categoryName={category.name}
-                  />
+                  {/* C3: las estándar NO se borran; solo las custom. */}
+                  {!category.is_standard && (
+                    <CategoryDeleteButton
+                      categoryId={category.id}
+                      categoryName={category.name}
+                    />
+                  )}
                 </div>
               </div>
             ))}

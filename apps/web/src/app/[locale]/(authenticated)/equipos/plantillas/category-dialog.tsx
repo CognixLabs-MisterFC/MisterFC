@@ -36,6 +36,7 @@ const DEFAULT_HALF = 45;
 
 type Props = {
   mode: Mode;
+  isStandard?: boolean;
   category?: {
     id: string;
     name: string;
@@ -44,11 +45,14 @@ type Props = {
   };
 };
 
-export function CategoryDialog({ mode, category }: Props) {
+export function CategoryDialog({ mode, isStandard = false, category }: Props) {
   const t = useTranslations('plantillas');
   const tk = useTranslations('category_kinds');
   const [open, setOpen] = useState(false);
   const isEdit = mode === 'edit';
+  // C3: en una categoría estándar, name + kind están bloqueados (solo se edita
+  // half_duration). Los inputs van readOnly/disabled; el servidor lo garantiza.
+  const locked = isEdit && isStandard;
 
   const [kind, setKind] = useState(category?.kind ?? NO_KIND);
 
@@ -93,6 +97,12 @@ export function CategoryDialog({ mode, category }: Props) {
         </DialogHeader>
 
         <form action={formAction} className="flex flex-col gap-4">
+          {locked && (
+            <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+              {t('standard_locked_hint')}
+            </p>
+          )}
+
           <div className="grid gap-2">
             <Label htmlFor="cat-name">{t('field.name')}</Label>
             <Input
@@ -101,7 +111,10 @@ export function CategoryDialog({ mode, category }: Props) {
               required
               maxLength={80}
               defaultValue={category?.name ?? ''}
-              autoFocus
+              autoFocus={!locked}
+              readOnly={locked}
+              aria-readonly={locked}
+              className={locked ? 'cursor-not-allowed opacity-70' : undefined}
             />
           </div>
 
@@ -112,7 +125,7 @@ export function CategoryDialog({ mode, category }: Props) {
               name="kind"
               value={kind === NO_KIND ? '' : kind}
             />
-            <Select value={kind} onValueChange={setKind}>
+            <Select value={kind} onValueChange={setKind} disabled={locked}>
               <SelectTrigger id="cat-kind">
                 <SelectValue />
               </SelectTrigger>

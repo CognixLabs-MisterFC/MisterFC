@@ -4,10 +4,12 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import {
   ACTIVE_CLUB_COOKIE_NAME,
+  assertCategoryDeletable,
   categoryTemplateSchema,
   createSupabaseServerClient,
   getCurrentUserClubs,
   resolveActiveClub,
+  resolveCategoryUpdate,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -121,16 +123,41 @@ export async function updateCategoryTemplate(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  if (await nameTaken(supabase, clubId, parsed.data.name, categoryId)) {
+  // Cargar la fila para conocer is_standard + valores actuales (C3): en una
+  // estándar, name/kind quedan congelados (solo cambia half_duration).
+  const { data: existing, error: loadErr } = await supabase
+    .from('categories')
+    .select('name, kind, is_standard')
+    .eq('id', categoryId)
+    .eq('club_id', clubId)
+    .maybeSingle();
+  if (loadErr) return { error: 'generic' };
+  if (!existing) return { error: 'generic' };
+
+  const effective = resolveCategoryUpdate({
+    isStandard: existing.is_standard,
+    existing: { name: existing.name, kind: existing.kind },
+    input: {
+      name: parsed.data.name,
+      kind: parsed.data.kind,
+      half_duration_minutes: parsed.data.half_duration_minutes,
+    },
+  });
+
+  // Solo comprobar unicidad si el nombre cambia (en estándar no cambia nunca).
+  if (
+    effective.name.toLowerCase() !== existing.name.toLowerCase() &&
+    (await nameTaken(supabase, clubId, effective.name, categoryId))
+  ) {
     return { error: 'name_duplicate' };
   }
 
   const { error } = await supabase
     .from('categories')
     .update({
-      name: parsed.data.name,
-      kind: parsed.data.kind,
-      half_duration_minutes: parsed.data.half_duration_minutes,
+      name: effective.name,
+      kind: effective.kind,
+      half_duration_minutes: effective.half_duration_minutes,
     })
     .eq('id', categoryId)
     .eq('club_id', clubId);
@@ -142,7 +169,7 @@ export async function updateCategoryTemplate(
 
 export type DeleteCategoryTemplateResult =
   | { success: true }
-  | { success: false; error: 'has_teams' | 'forbidden' | 'generic' };
+  | { success: false; error: 'has_teams' | 'is_standard' | 'forbidden' | 'generic' };
 
 export async function deleteCategoryTemplate(
   categoryId: string,
@@ -150,13 +177,27 @@ export async function deleteCategoryTemplate(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // No borrar una plantilla con equipos colgando (en cualquier temporada): el FK
-  // teams.category_id es NOT NULL y la cascada borraría equipos. Avisamos.
+  // C3: las estándar NO se borran; las custom solo si no tienen equipos (el FK
+  // teams.category_id es CASCADE → borrar con equipos destruiría histórico; el
+  // blindaje a nivel BD llega en C4). El servidor es el contrato final.
+  const { data: cat, error: loadErr } = await supabase
+    .from('categories')
+    .select('is_standard')
+    .eq('id', categoryId)
+    .maybeSingle();
+  if (loadErr) return { success: false, error: 'generic' };
+  if (!cat) return { success: false, error: 'generic' };
+
   const { count } = await supabase
     .from('teams')
     .select('id', { count: 'exact', head: true })
     .eq('category_id', categoryId);
-  if ((count ?? 0) > 0) return { success: false, error: 'has_teams' };
+
+  const verdict = assertCategoryDeletable({
+    isStandard: cat.is_standard,
+    teamsCount: count ?? 0,
+  });
+  if (verdict !== 'ok') return { success: false, error: verdict };
 
   const { error } = await supabase
     .from('categories')
