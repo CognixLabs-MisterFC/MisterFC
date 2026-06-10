@@ -89,12 +89,9 @@ export default async function PlantillasPage({ params }: Props) {
         >
           {t('back_to_equipos')}
         </Link>
-        <div className="mt-1 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
-          </div>
-          <CategoryDialog mode="create" />
+        <div className="mt-1">
+          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
         </div>
       </div>
 
@@ -146,7 +143,6 @@ export default async function PlantillasPage({ params }: Props) {
                 </div>
                 <div className="flex items-center gap-1">
                   <CategoryDialog
-                    mode="edit"
                     isStandard={category.is_standard}
                     category={{
                       id: category.id,

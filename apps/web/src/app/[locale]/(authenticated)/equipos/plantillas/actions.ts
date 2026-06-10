@@ -79,35 +79,9 @@ async function nameTaken(
   return (data?.length ?? 0) > 0;
 }
 
-export async function createCategoryTemplate(
-  _prev: CategoryTemplateFormState,
-  formData: FormData,
-): Promise<CategoryTemplateFormState> {
-  const parsed = parse(formData);
-  if (!parsed.success) return mapError(parsed.error.issues[0]?.message);
-
-  const clubId = await activeClubId();
-  if (!clubId) return { error: 'no_active_club' };
-
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-
-  if (await nameTaken(supabase, clubId, parsed.data.name)) {
-    return { error: 'name_duplicate' };
-  }
-
-  // Categoría-plantilla permanente: SIN season ni order_idx (nullable desde A4).
-  const { error } = await supabase.from('categories').insert({
-    club_id: clubId,
-    name: parsed.data.name,
-    kind: parsed.data.kind,
-    half_duration_minutes: parsed.data.half_duration_minutes,
-  });
-
-  if (error) return { error: 'generic' };
-  revalidatePath('/[locale]/(authenticated)/equipos/plantillas', 'page');
-  return { success: true };
-}
+// Rework C · C4 CONTRACT: el alta de categorías se ha retirado. El catálogo es
+// fijo (10 estándar sembradas + custom grandfathered); el club solo crea equipos.
+// La edición (solo half_duration en estándar) vive en updateCategoryTemplate.
 
 export async function updateCategoryTemplate(
   categoryId: string,
