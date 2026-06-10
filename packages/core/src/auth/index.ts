@@ -8,3 +8,4 @@ export {
   resolveActiveClub,
   ACTIVE_CLUB_COOKIE_NAME,
 } from './active-club';
+export { isSamePasswordError } from './password-errors';
