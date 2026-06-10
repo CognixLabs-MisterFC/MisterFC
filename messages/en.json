@@ -226,6 +226,9 @@
     "confirm_label": "Confirm password",
     "set_password_submit": "Accept invitation",
     "set_password_submitting": "Processing…",
+    "signin_summary": "You already have an account with this email. Sign in to join {club} as {role}.",
+    "signin_submit": "Sign in and join",
+    "signin_submitting": "Signing in…",
     "error_wrong_email": "This invitation is for a different email. Sign out and sign in with the invited email.",
     "error_expired": "This invitation has expired. Ask the club admin for a new one.",
     "error_already_accepted": "This invitation has already been accepted.",
@@ -242,7 +245,8 @@
     "error_profile_update_failed": "No hemos podido guardar tu perfil. Inténtalo de nuevo.",
     "error_membership_failed": "No hemos podido vincularte al club. Avisa al admin del club.",
     "error_player_link_failed": "No hemos podido vincularte al jugador. Avisa al admin del club.",
-    "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club."
+    "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club.",
+    "error_wrong_credentials": "Incorrect email or password."
   },
   "shell": {
     "app_name": "MisterFC",

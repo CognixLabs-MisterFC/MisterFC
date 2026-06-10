@@ -430,6 +430,9 @@
     "confirm_label": "Confirma la contraseña",
     "set_password_submit": "Aceptar invitación",
     "set_password_submitting": "Procesando…",
+    "signin_summary": "Ya tienes una cuenta con este correo. Inicia sesión para unirte a {club} como {role}.",
+    "signin_submit": "Iniciar sesión y unirme",
+    "signin_submitting": "Entrando…",
     "error_wrong_email": "Esta invitación es para otro correo. Cierra sesión y entra con el correo de la invitación.",
     "error_expired": "Esta invitación ha caducado. Pide una nueva al admin del club.",
     "error_already_accepted": "Esta invitación ya se ha aceptado.",
@@ -446,7 +449,8 @@
     "error_profile_update_failed": "No hemos podido guardar tu perfil. Inténtalo de nuevo.",
     "error_membership_failed": "No hemos podido vincularte al club. Avisa al admin del club.",
     "error_player_link_failed": "No hemos podido vincularte al jugador. Avisa al admin del club.",
-    "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club."
+    "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club.",
+    "error_wrong_credentials": "Correo o contraseña incorrectos."
   },
   "jugadores": {
     "title": "Jugadores",
