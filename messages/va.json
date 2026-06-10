@@ -450,6 +450,31 @@
       "no_active_season": "No hi ha temporada activa com a base.",
       "generic": "No hem pogut obrir la temporada. Torna-ho a provar."
     },
+    "reassign": {
+      "cta": "Reassignar jugadors",
+      "back": "Tornar a equips",
+      "title": "Reassignar jugadors",
+      "subtitle": "Col·loca els jugadors de cada equip actual en un equip de la temporada en preparació. No es tanca ni es mou res de la temporada activa: el jugador continua en el seu equip actual i queda col·locat en el nou.",
+      "banner": "Col·locant jugadors de {active} en {upcoming}. Les pertinences de {active} no es toquen.",
+      "no_upcoming": "Obri primer la temporada nova des d'Equips per a poder reassignar jugadors.",
+      "no_dest_teams": "La temporada en preparació encara no té equips. Crea'ls abans de reassignar.",
+      "no_source_teams": "No hi ha equips en la temporada {season} dels quals partir.",
+      "no_players": "Aquest equip no té jugadors actius.",
+      "dest_label": "Equip destí",
+      "select_all": "Marcar tots",
+      "unselect_all": "Desmarcar tots",
+      "already_placed": "Ja col·locat",
+      "run": "Col·locar ({count})",
+      "placed_result": "{count, plural, =0 {Ningú nou: ja estaven col·locats.} one {1 jugador col·locat.} other {# jugadors col·locats.}}",
+      "error": {
+        "no_active_club": "No hi ha club actiu.",
+        "no_players": "Marca almenys un jugador.",
+        "forbidden": "Només un administrador del club pot reassignar jugadors.",
+        "dest_team_invalid": "L'equip destí no és vàlid.",
+        "dest_not_upcoming": "El destí ha de ser un equip de la temporada en preparació.",
+        "generic": "No hem pogut col·locar els jugadors. Torna-ho a provar."
+      }
+    },
     "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
     "season_filter": "Temporada",
     "empty_season": "Aún no hay equipos en la temporada {season}."

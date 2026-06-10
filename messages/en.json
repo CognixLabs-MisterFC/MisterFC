@@ -450,6 +450,31 @@
       "no_active_season": "There is no active season to base it on.",
       "generic": "We couldn't open the season. Please try again."
     },
+    "reassign": {
+      "cta": "Reassign players",
+      "back": "Back to teams",
+      "title": "Reassign players",
+      "subtitle": "Place each current team's players into a team of the season being prepared. Nothing in the active season is closed or moved: the player stays in their current team and is also placed in the new one.",
+      "banner": "Placing players from {active} into {upcoming}. {active} memberships are left untouched.",
+      "no_upcoming": "Open the new season from Teams first to be able to reassign players.",
+      "no_dest_teams": "The season being prepared has no teams yet. Create them before reassigning.",
+      "no_source_teams": "There are no teams in the {season} season to start from.",
+      "no_players": "This team has no active players.",
+      "dest_label": "Destination team",
+      "select_all": "Select all",
+      "unselect_all": "Unselect all",
+      "already_placed": "Already placed",
+      "run": "Place ({count})",
+      "placed_result": "{count, plural, =0 {No one new: they were already placed.} one {1 player placed.} other {# players placed.}}",
+      "error": {
+        "no_active_club": "No active club.",
+        "no_players": "Select at least one player.",
+        "forbidden": "Only a club admin can reassign players.",
+        "dest_team_invalid": "The destination team is not valid.",
+        "dest_not_upcoming": "The destination must be a team in the season being prepared.",
+        "generic": "We couldn't place the players. Please try again."
+      }
+    },
     "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
     "season_filter": "Temporada",
     "empty_season": "Aún no hay equipos en la temporada {season}."
