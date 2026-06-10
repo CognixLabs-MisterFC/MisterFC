@@ -435,6 +435,7 @@
       "rolling": "Rolling subs",
       "limited": "{max} subs"
     },
+    "title": "Equipos",
     "page_subtitle": "Equipos del club por temporada.",
     "manage_templates": "Categorías",
     "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
