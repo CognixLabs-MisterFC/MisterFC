@@ -442,6 +442,14 @@
     "title": "Equips",
     "page_subtitle": "Equipos del club por temporada.",
     "manage_templates": "Categorías",
+    "open_season": "Obrir temporada {season}",
+    "upcoming_banner": "Temporada {season} en preparació. Ajusta els equips (afig, lleva o reanomena); els jugadors es reassignen en el pas següent.",
+    "open_season_error": {
+      "no_active_club": "No hi ha club actiu.",
+      "forbidden": "Només un administrador del club pot obrir una temporada.",
+      "no_active_season": "No hi ha temporada activa com a base.",
+      "generic": "No hem pogut obrir la temporada. Torna-ho a provar."
+    },
     "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
     "season_filter": "Temporada",
     "empty_season": "Aún no hay equipos en la temporada {season}."
