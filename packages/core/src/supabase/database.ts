@@ -268,6 +268,7 @@ export type Database = {
           created_at: string
           half_duration_minutes: number
           id: string
+          is_standard: boolean
           kind: string | null
           name: string
         }
@@ -276,6 +277,7 @@ export type Database = {
           created_at?: string
           half_duration_minutes?: number
           id?: string
+          is_standard?: boolean
           kind?: string | null
           name: string
         }
@@ -284,6 +286,7 @@ export type Database = {
           created_at?: string
           half_duration_minutes?: number
           id?: string
+          is_standard?: boolean
           kind?: string | null
           name?: string
         }
@@ -2199,6 +2202,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      seed_standard_categories: { Args: { p_club_id: string }; Returns: number }
       unaccent: { Args: { "": string }; Returns: string }
       user_active_team_for_staff: {
         Args: { p_club_id: string }
