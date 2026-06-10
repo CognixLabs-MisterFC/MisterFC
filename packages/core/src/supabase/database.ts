@@ -2237,6 +2237,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      open_next_season: { Args: { p_club_id: string }; Returns: string }
       seed_standard_categories: { Args: { p_club_id: string }; Returns: number }
       unaccent: { Args: { "": string }; Returns: string }
       user_active_team_for_staff: {

@@ -442,6 +442,14 @@
     "title": "Equipos",
     "page_subtitle": "Equipos del club por temporada.",
     "manage_templates": "Categorías",
+    "open_season": "Open season {season}",
+    "upcoming_banner": "Season {season} in preparation. Adjust the teams (add, remove or rename); players are reassigned in the next step.",
+    "open_season_error": {
+      "no_active_club": "No active club.",
+      "forbidden": "Only a club admin can open a season.",
+      "no_active_season": "There is no active season to base it on.",
+      "generic": "We couldn't open the season. Please try again."
+    },
     "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
     "season_filter": "Temporada",
     "empty_season": "Aún no hay equipos en la temporada {season}."

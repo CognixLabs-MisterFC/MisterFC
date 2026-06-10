@@ -194,3 +194,39 @@ export async function deleteTeam(teamId: string): Promise<DeleteTeamResult> {
   revalidatePath('/[locale]/(authenticated)/equipos', 'page');
   return { success: true };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rework C · C6 — abrir temporada nueva (+ clonar equipos de la activa).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type OpenSeasonState = {
+  ok?: { season: string };
+  error?: 'no_active_club' | 'forbidden' | 'no_active_season' | 'generic';
+};
+
+/**
+ * Abre (o reanuda) la temporada `upcoming` del club y clona la estructura de
+ * equipos de la activa hacia ella. Delega en la función SQL `open_next_season`
+ * (SECURITY DEFINER, idempotente, solo admin_club, no destructiva). Devuelve el
+ * label de la upcoming para que el cliente cambie el filtro a esa temporada.
+ */
+export async function openNextSeason(): Promise<OpenSeasonState> {
+  const clubId = await activeClubId();
+  if (!clubId) return { error: 'no_active_club' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data, error } = await supabase.rpc('open_next_season', {
+    p_club_id: clubId,
+  });
+  if (error) {
+    const msg = error.message ?? '';
+    if (msg.includes('forbidden')) return { error: 'forbidden' };
+    if (msg.includes('no_active_season')) return { error: 'no_active_season' };
+    return { error: 'generic' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/equipos', 'page');
+  return { ok: { season: data as string } };
+}

@@ -5,6 +5,7 @@ import {
   TEAM_FORMATS,
   categoryKindOrdinal,
   createSupabaseServerClient,
+  nextSeasonLabel,
 } from '@misterfc/core';
 import { Link } from '@/i18n/navigation';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -21,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { TeamDialog, type Division } from './team-dialog';
 import { TeamDeleteButton } from './team-delete-button';
 import { SeasonFilter } from './season-filter';
+import { OpenSeasonButton } from './open-season-button';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -84,20 +86,35 @@ export default async function EquiposPage({ params, searchParams }: Props) {
   // temporadas presentes en equipos (y la activa, para crear el 1er equipo).
   const clubActiveSeason = await getActiveSeasonLabel(supabase, clubId);
 
+  // Rework C (C6): temporada en preparación (upcoming), si existe.
+  const { data: upcomingRow } = await supabase
+    .from('seasons')
+    .select('label')
+    .eq('club_id', clubId)
+    .eq('status', 'upcoming')
+    .maybeSingle();
+  const clubUpcomingSeason = (upcomingRow?.label as string | undefined) ?? null;
+
   const { data: seasonRows } = await supabase
     .from('teams')
     .select('season')
     .eq('club_id', clubId);
   const seasonSet = new Set<string>([clubActiveSeason]);
+  if (clubUpcomingSeason) seasonSet.add(clubUpcomingSeason);
   for (const r of seasonRows ?? []) {
     if (r.season) seasonSet.add(r.season as string);
   }
   const seasons = [...seasonSet].sort((a, b) => b.localeCompare(a));
 
+  const isAdmin = ctx.activeClub.role === 'admin_club';
+
   const activeSeason =
     seasonParam && SEASON_RE.test(seasonParam) && seasonSet.has(seasonParam)
       ? seasonParam
       : clubActiveSeason;
+
+  const viewingUpcoming =
+    clubUpcomingSeason !== null && activeSeason === clubUpcomingSeason;
 
   // Equipos de la temporada seleccionada.
   const { data: teamsData } = await supabase
@@ -131,6 +148,10 @@ export default async function EquiposPage({ params, searchParams }: Props) {
               <span>{t('manage_templates')}</span>
             </Link>
           </Button>
+          {/* C6: abrir temporada nueva (admin, solo si aún no hay upcoming). */}
+          {isAdmin && !clubUpcomingSeason && (
+            <OpenSeasonButton nextLabel={nextSeasonLabel(clubActiveSeason)} />
+          )}
           <TeamDialog
             mode="create"
             categories={categories}
@@ -143,6 +164,15 @@ export default async function EquiposPage({ params, searchParams }: Props) {
       <div className="flex items-center justify-between gap-3">
         <SeasonFilter seasons={seasons} activeSeason={activeSeason} />
       </div>
+
+      {viewingUpcoming && (
+        <div
+          className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300"
+          role="status"
+        >
+          {t('upcoming_banner', { season: activeSeason })}
+        </div>
+      )}
 
       {categories.length === 0 && (
         <Card>
