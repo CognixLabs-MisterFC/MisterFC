@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/nextjs';
 import {
   acceptInvitationWithProfileSchema,
   createSupabaseServerClient,
+  isSamePasswordError,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -21,6 +22,12 @@ export type AcceptInvitationState = {
     | 'password_too_short'
     | 'password_mismatch'
     | 'no_session'
+    // B1 — códigos específicos por punto de fallo (antes todo era 'generic').
+    | 'auth_update_failed'
+    | 'profile_update_failed'
+    | 'membership_failed'
+    | 'player_link_failed'
+    | 'team_staff_failed'
     | 'generic';
 };
 
@@ -229,8 +236,12 @@ async function attachToClub(
     // 23505 = unique violation: membership ya existía. No es un error fatal;
     // seguimos para no dejar la invitación colgada en estado pendiente.
     if (mErr.code !== '23505') {
-      logError('membership-insert', mErr, { invitation_id: invitation.id });
-      return { error: 'generic' };
+      logError('membership-insert', mErr, {
+        invitation_id: invitation.id,
+        pg_code: mErr.code,
+        is_rls: mErr.code === '42501',
+      });
+      return { error: 'membership_failed' };
     }
     logStep('membership-insert duplicate-recovered', {
       invitation_id: invitation.id,
@@ -279,8 +290,10 @@ async function attachToClub(
         logError('player-account-insert', paErr, {
           invitation_id: invitation.id,
           player_id: invitation.player_id,
+          pg_code: paErr.code,
+          is_rls: paErr.code === '42501',
         });
-        return { error: 'generic' };
+        return { error: 'player_link_failed' };
       }
       logStep('player-account-insert duplicate-ignored', {
         invitation_id: invitation.id,
@@ -316,8 +329,10 @@ async function attachToClub(
         logError('team-staff-insert', tsErr, {
           invitation_id: invitation.id,
           team_id: invitation.team_id,
+          pg_code: tsErr.code,
+          is_rls: tsErr.code === '42501',
         });
-        return { error: 'generic' };
+        return { error: 'team_staff_failed' };
       }
       logStep('team-staff-insert duplicate-ignored', {
         invitation_id: invitation.id,
@@ -529,13 +544,44 @@ export async function acceptInvitationWithProfile(
       },
     });
     if (updErr) {
-      logError('auth-update', updErr, {
-        invitation_id: gate.invitation.id,
-        user_email_masked: maskEmail(user.email),
-      });
-      return { error: 'generic' };
+      // B1 — IDEMPOTENCIA: si el fallo es "la nueva contraseña es igual a la
+      // actual" (típico tras fijar la contraseña vía recovery y re-teclearla
+      // aquí), NO es fatal: el invitee ya tiene la contraseña que quiere. Pero
+      // el `data` (full_name/dob/locale) puede no haberse aplicado, así que lo
+      // reintentamos sin password para no perder el perfil. El attachToClub
+      // sigue después igual.
+      if (isSamePasswordError(updErr)) {
+        logStep('auth-update same-password-ignored', {
+          invitation_id: gate.invitation.id,
+        });
+        const { error: metaErr } = await supabase.auth.updateUser({
+          data: {
+            full_name: parsed.data.full_name,
+            date_of_birth: parsed.data.date_of_birth,
+            locale,
+          },
+        });
+        if (metaErr) {
+          // El metadata no es crítico (el Paso 2 reescribe profiles igualmente);
+          // logueamos y seguimos.
+          logError('auth-update-metadata-only', metaErr, {
+            invitation_id: gate.invitation.id,
+          });
+        } else {
+          logStep('auth-update metadata-only ok', {
+            invitation_id: gate.invitation.id,
+          });
+        }
+      } else {
+        logError('auth-update', updErr, {
+          invitation_id: gate.invitation.id,
+          user_email_masked: maskEmail(user.email),
+        });
+        return { error: 'auth_update_failed' };
+      }
+    } else {
+      logStep('auth-update ok', { invitation_id: gate.invitation.id });
     }
-    logStep('auth-update ok', { invitation_id: gate.invitation.id });
 
     // Paso 2: UPDATE profiles.
     logStep('profile-update start', { invitation_id: gate.invitation.id });
@@ -551,8 +597,10 @@ export async function acceptInvitationWithProfile(
       logError('profile-update', profErr, {
         invitation_id: gate.invitation.id,
         user_id: user.id,
+        pg_code: profErr.code,
+        is_rls: profErr.code === '42501',
       });
-      return { error: 'generic' };
+      return { error: 'profile_update_failed' };
     }
     logStep('profile-update ok', { invitation_id: gate.invitation.id });
 
