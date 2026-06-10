@@ -9,3 +9,8 @@ export {
   ACTIVE_CLUB_COOKIE_NAME,
 } from './active-club';
 export { isSamePasswordError } from './password-errors';
+export {
+  assertInvitationValid,
+  type InvitationVerdict,
+  type InvitationGateRow,
+} from './invitation-token';

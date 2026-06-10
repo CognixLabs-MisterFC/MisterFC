@@ -4,7 +4,8 @@ import { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   acceptInvitation,
-  acceptInvitationWithProfile,
+  acceptNewInvitee,
+  acceptExistingUser,
   type AcceptInvitationState,
 } from './actions';
 
@@ -66,8 +67,7 @@ export function AcceptWithProfileForm({
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
-    async (prev, formData) =>
-      acceptInvitationWithProfile(locale, token, prev, formData),
+    async (prev, formData) => acceptNewInvitee(locale, token, prev, formData),
     {}
   );
 
@@ -167,6 +167,65 @@ export function AcceptWithProfileForm({
   );
 }
 
+/**
+ * Form para invitee cuyo email YA tenía cuenta (`invited_user_id` NULL). No le
+ * fijamos contraseña por token: inicia sesión con la suya y el token le adjunta
+ * al club. Pide email (readonly) + contraseña.
+ */
+export function SignInToAcceptForm({
+  locale,
+  token,
+  clubName,
+  role,
+  invitedEmail,
+}: CommonProps) {
+  const t = useTranslations('invite');
+  const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
+    async (prev, formData) => acceptExistingUser(locale, token, prev, formData),
+    {}
+  );
+
+  return (
+    <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
+      <p className="text-sm text-zinc-300">
+        {t('signin_summary', { club: clubName, role })}
+      </p>
+
+      <label className="flex flex-col gap-2 text-left">
+        <span className="text-sm font-medium text-zinc-200">{t('email_label')}</span>
+        <input
+          type="email"
+          value={invitedEmail}
+          readOnly
+          aria-readonly="true"
+          className="cursor-not-allowed rounded-md border border-zinc-800 bg-zinc-900/30 px-3 py-2 text-base text-zinc-400 outline-none"
+        />
+      </label>
+
+      <label className="flex flex-col gap-2 text-left">
+        <span className="text-sm font-medium text-zinc-200">{t('password_label')}</span>
+        <input
+          type="password"
+          name="password"
+          required
+          autoComplete="current-password"
+          className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-base text-white outline-none transition focus:border-[#10B981]"
+        />
+      </label>
+
+      {state.error && <ErrorMessage error={state.error} />}
+
+      <button
+        type="submit"
+        disabled={isPending}
+        className="rounded-md bg-[#10B981] px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-[#0EA371] disabled:opacity-60"
+      >
+        {isPending ? t('signin_submitting') : t('signin_submit')}
+      </button>
+    </form>
+  );
+}
+
 function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['error']> }) {
   const t = useTranslations('invite');
   const key =
@@ -182,6 +241,7 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       password_too_short: 'error_password_too_short',
       password_mismatch: 'error_password_mismatch',
       no_session: 'error_no_session',
+      wrong_credentials: 'error_wrong_credentials',
       auth_update_failed: 'error_auth_update_failed',
       profile_update_failed: 'error_profile_update_failed',
       membership_failed: 'error_membership_failed',

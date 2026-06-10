@@ -230,10 +230,13 @@ export async function sendInvitation(
   }
 
   try {
-    const { error: invErr } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
-      redirectTo,
-      data: { invite_pending: true, invitation_id: invite.id },
-    });
+    const { data: inviteData, error: invErr } = await admin.auth.admin.inviteUserByEmail(
+      parsed.data.email,
+      {
+        redirectTo,
+        data: { invite_pending: true, invitation_id: invite.id },
+      },
+    );
 
     if (invErr) {
       // Si el user ya existe (email previo) Supabase devuelve un error.
@@ -290,6 +293,42 @@ export async function sendInvitation(
           extra: { masked_email: maskedEmail, invitation_id: invite.id },
         });
         return { error: 'generic' };
+      }
+    } else {
+      // Cuenta creada por nosotros para esta invitación (aún no reclamada).
+      // Guardamos su auth.users.id en `invited_user_id`: Rework B · B2 lo usa
+      // para fijar la contraseña SOLO sobre esta cuenta al aceptar por token.
+      // Si el email ya existía caímos en la rama `alreadyExists` y NO entramos
+      // aquí → invited_user_id queda NULL → invitee existente (inicia sesión).
+      const invitedUserId = inviteData?.user?.id ?? null;
+      if (invitedUserId) {
+        const { error: linkErr } = await admin
+          .from('invitations')
+          .update({ invited_user_id: invitedUserId })
+          .eq('id', invite.id);
+        if (linkErr) {
+          // No es fatal para el envío del email: logueamos. Sin invited_user_id
+          // el accept tratará al invitee como "existente" (le pedirá sign-in),
+          // peor UX pero no rompe.
+          console.error(
+            '[invitations][invite-email] link_invited_user_failed ' +
+              JSON.stringify({
+                step: 'link_invited_user',
+                masked_email: maskedEmail,
+                invitation_id: invite.id,
+                error: serializeError(linkErr),
+              })
+          );
+          Sentry.captureException(linkErr, {
+            tags: { feature: 'invitations', step: 'link_invited_user' },
+            extra: { masked_email: maskedEmail, invitation_id: invite.id },
+          });
+        } else {
+          console.info('[invitations][invite-email] invited_user_linked', {
+            masked_email: maskedEmail,
+            invitation_id: invite.id,
+          });
+        }
       }
     }
   } catch (thrown) {

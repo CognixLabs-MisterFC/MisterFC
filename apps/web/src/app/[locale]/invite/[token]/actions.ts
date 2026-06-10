@@ -4,10 +4,13 @@ import { redirect, unstable_rethrow } from 'next/navigation';
 import * as Sentry from '@sentry/nextjs';
 import {
   acceptInvitationWithProfileSchema,
+  assertInvitationValid,
+  createSupabaseAdminClient,
   createSupabaseServerClient,
   isSamePasswordError,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { loadInvitationByToken, type LoadedInvitation } from './invite-data';
 
 export type AcceptInvitationState = {
   error?:
@@ -22,6 +25,8 @@ export type AcceptInvitationState = {
     | 'password_too_short'
     | 'password_mismatch'
     | 'no_session'
+    // B2 — credenciales del invitee existente incorrectas (signInWithPassword).
+    | 'wrong_credentials'
     // B1 — códigos específicos por punto de fallo (antes todo era 'generic').
     | 'auth_update_failed'
     | 'profile_update_failed'
@@ -90,111 +95,42 @@ function logError(step: string, error: unknown, extra: Record<string, unknown> =
   });
 }
 
-/**
- * Verifica la invitación y devuelve datos seguros para el caller. Centraliza
- * los chequeos de existencia / expiración / propietario para que las dos
- * server actions (con y sin password) compartan el mismo gate.
- */
-async function loadAndAssertInvitation(token: string): Promise<
-  | {
-      ok: true;
-      invitation: {
-        id: string;
-        club_id: string;
-        role: string;
-        email: string;
-        player_id: string | null;
-        player_relation: string | null;
-        team_id: string | null;
-        team_staff_role: string | null;
-      };
-    }
+// ─────────────────────────────────────────────────────────────────────────────
+// Gate por TOKEN (Rework B · B2)
+//
+// El token es la credencial. Validamos la invitación con el cliente service_role
+// (sin requerir sesión previa) y delegamos los chequeos puros en
+// `assertInvitationValid` (testeado en @misterfc/core). `authedEmail` se pasa
+// solo en los flujos que ya tienen sesión (quick / existing) para exigir que el
+// usuario autenticado coincida con el email invitado.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function gateByToken(
+  token: string,
+  authedEmail?: string | null
+): Promise<
+  | { ok: true; invitation: LoadedInvitation }
   | { ok: false; error: NonNullable<AcceptInvitationState['error']> }
 > {
-  logStep('fetch-invitation entered', { token_prefix: token.slice(0, 8) });
-  const adapter = await createCookieAdapter();
-  logStep('fetch-invitation adapter-ok', { token_prefix: token.slice(0, 8) });
-  const supabase = createSupabaseServerClient(adapter);
-  logStep('fetch-invitation client-ok', { token_prefix: token.slice(0, 8) });
-
-  logStep('fetch-invitation start', { token_prefix: token.slice(0, 8) });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    logStep('fetch-invitation no-session');
-    return { ok: false, error: 'no_session' };
+  logStep('gate fetch', { token_prefix: token.slice(0, 8) });
+  const invitation = await loadInvitationByToken(token);
+  const verdict = assertInvitationValid(invitation, Date.now(), authedEmail);
+  if (verdict !== 'valid') {
+    logStep('gate rejected', { token_prefix: token.slice(0, 8), verdict });
+    return { ok: false, error: verdict };
   }
-
-  const { data: inv, error } = await supabase
-    .from('invitations')
-    .select(
-      'id, email, club_id, role, expires_at, accepted_at, player_id, player_relation, team_id, team_staff_role'
-    )
-    .eq('token', token)
-    .maybeSingle();
-
-  if (error) {
-    logError('fetch-invitation', error, {
-      token_prefix: token.slice(0, 8),
-      user_id: user.id,
-    });
-    return { ok: false, error: 'generic' };
-  }
-  if (!inv) {
-    logStep('fetch-invitation not-found', { token_prefix: token.slice(0, 8) });
-    return { ok: false, error: 'not_found' };
-  }
-  if (inv.accepted_at) {
-    logStep('fetch-invitation already-accepted', { invitation_id: inv.id });
-    return { ok: false, error: 'already_accepted' };
-  }
-  if (new Date(inv.expires_at) < new Date()) {
-    logStep('fetch-invitation expired', {
-      invitation_id: inv.id,
-      expires_at: inv.expires_at,
-    });
-    return { ok: false, error: 'expired' };
-  }
-  if (
-    !user.email ||
-    user.email.trim().toLowerCase() !== inv.email.trim().toLowerCase()
-  ) {
-    logStep('fetch-invitation wrong-email', {
-      invitation_id: inv.id,
-      user_email_masked: maskEmail(user.email),
-      invite_email_masked: maskEmail(inv.email),
-    });
-    return { ok: false, error: 'wrong_email' };
-  }
-
-  logStep('fetch-invitation ok', {
-    invitation_id: inv.id,
-    role: inv.role,
-    has_player_id: !!inv.player_id,
-    has_team_id: !!inv.team_id,
-    has_team_staff_role: !!inv.team_staff_role,
-  });
-
-  return {
-    ok: true,
-    invitation: {
-      id: inv.id,
-      club_id: inv.club_id,
-      role: inv.role,
-      email: inv.email,
-      player_id: inv.player_id,
-      player_relation: inv.player_relation,
-      team_id: inv.team_id,
-      team_staff_role: inv.team_staff_role,
-    },
-  };
+  // assertInvitationValid devolvió 'valid' ⇒ invitation no es null.
+  return { ok: true, invitation: invitation as LoadedInvitation };
 }
 
 /**
- * Inserta membership + (si aplica) vínculo player_accounts + marca invitación
- * como aceptada. Asume que `loadAndAssertInvitation` ha validado todo antes.
+ * Inserta membership + (si aplica) vínculo player_accounts + team_staff y marca
+ * la invitación como aceptada. Corre bajo la sesión del invitee (RLS aplica):
+ * las policies `*_insert_invitee` están diseñadas para que el propio invitee se
+ * auto-inserte. El service_role NO se usa aquí.
+ *
+ * `mark-accepted` es condicional (`accepted_at IS NULL`) para hacer el token
+ * single-use de forma robusta ante doble submit / carreras.
  */
 async function attachToClub(
   invitation: {
@@ -210,9 +146,7 @@ async function attachToClub(
 ): Promise<AcceptInvitationState> {
   logStep('attach-to-club entered', { invitation_id: invitation.id });
   const adapter = await createCookieAdapter();
-  logStep('attach-to-club adapter-ok', { invitation_id: invitation.id });
   const supabase = createSupabaseServerClient(adapter);
-  logStep('attach-to-club client-ok', { invitation_id: invitation.id });
 
   logStep('membership-insert start', {
     invitation_id: invitation.id,
@@ -246,7 +180,6 @@ async function attachToClub(
     logStep('membership-insert duplicate-recovered', {
       invitation_id: invitation.id,
     });
-    // Recuperar el membership ya existente para los inserts posteriores.
     const { data: existing, error: fetchErr } = await supabase
       .from('memberships')
       .select('id')
@@ -255,7 +188,6 @@ async function attachToClub(
       .maybeSingle();
     if (fetchErr) {
       logError('membership-refetch', fetchErr, { invitation_id: invitation.id });
-      // No abortamos: seguimos sin membershipId; team_staff se omite abajo.
     }
     membershipId = existing?.id ?? null;
   } else {
@@ -265,9 +197,7 @@ async function attachToClub(
     });
   }
 
-  // Si la invitación llevaba vinculación a jugador (tutor familiar), insertar
-  // player_accounts. Solo aplicable cuando role=jugador + player_id presente
-  // (el CHECK estructural de la migración F2.4 garantiza el resto).
+  // Vínculo tutor↔jugador (role=jugador + player_id).
   if (
     invitation.role === 'jugador' &&
     invitation.player_id &&
@@ -284,8 +214,6 @@ async function attachToClub(
       relation: invitation.player_relation as 'parent' | 'guardian',
     });
     if (paErr) {
-      // 23505 = vínculo ya existía (caso poco probable: misma pareja
-      // player+profile re-invitada). No abortamos.
       if (paErr.code !== '23505') {
         logError('player-account-insert', paErr, {
           invitation_id: invitation.id,
@@ -299,14 +227,11 @@ async function attachToClub(
         invitation_id: invitation.id,
       });
     } else {
-      logStep('player-account-insert ok', {
-        invitation_id: invitation.id,
-      });
+      logStep('player-account-insert ok', { invitation_id: invitation.id });
     }
   }
 
-  // F2.6: si la invitación llevaba team_id + team_staff_role, insertar
-  // team_staff con la membership_id recién creada (o la existente).
+  // team_staff (team_id + team_staff_role).
   if (invitation.team_id && invitation.team_staff_role && membershipId) {
     logStep('team-staff-insert start', {
       invitation_id: invitation.id,
@@ -324,7 +249,6 @@ async function attachToClub(
         | 'delegado',
     });
     if (tsErr) {
-      // 23505 = vínculo activo ya existía (mismo team+membership). No abortamos.
       if (tsErr.code !== '23505') {
         logError('team-staff-insert', tsErr, {
           invitation_id: invitation.id,
@@ -338,14 +262,9 @@ async function attachToClub(
         invitation_id: invitation.id,
       });
     } else {
-      logStep('team-staff-insert ok', {
-        invitation_id: invitation.id,
-      });
+      logStep('team-staff-insert ok', { invitation_id: invitation.id });
     }
   } else if (invitation.team_id && invitation.team_staff_role && !membershipId) {
-    // Esto solo pasa si tras un 23505 no pudimos recuperar el membership_id.
-    // Sin él, no podemos insertar team_staff — dejamos la invitación
-    // semi-aceptada para que el admin pueda re-vincular manualmente.
     logStep('team-staff-insert skipped-no-membership', {
       invitation_id: invitation.id,
       team_id: invitation.team_id,
@@ -357,16 +276,18 @@ async function attachToClub(
     });
   }
 
+  // Single-use: marca accepted_at solo si seguía pendiente.
   logStep('mark-accepted start', { invitation_id: invitation.id });
-  const { error: acceptErr } = await supabase
+  const { error: acceptErr, count } = await supabase
     .from('invitations')
-    .update({ accepted_at: new Date().toISOString() })
-    .eq('id', invitation.id);
+    .update({ accepted_at: new Date().toISOString() }, { count: 'exact' })
+    .eq('id', invitation.id)
+    .is('accepted_at', null);
   if (acceptErr) {
-    // No es fatal: la membership ya está creada. Logueamos para detectar
-    // invitaciones que quedan visibles como pendientes pese a haber sido
-    // efectivas, y devolvemos OK.
     logError('mark-accepted', acceptErr, { invitation_id: invitation.id });
+  } else if ((count ?? 0) === 0) {
+    // Carrera: otra ejecución ya la marcó. La membership ya existe; no es fatal.
+    logStep('mark-accepted already-marked', { invitation_id: invitation.id });
   } else {
     logStep('mark-accepted ok', { invitation_id: invitation.id });
   }
@@ -375,11 +296,9 @@ async function attachToClub(
 }
 
 /**
- * Flujo "invitee ya tiene password" (p.ej. pertenece a otro club).
- *
- * No pide nada al user, solo confirma con un click. Crea membership y marca
- * invitación como aceptada. No toca el perfil (el invitee ya lo rellenó cuando
- * se registró la primera vez).
+ * Flujo QUICK — el invitee YA tiene sesión activa y su email coincide con la
+ * invitación (lo decide la página). Un click: solo adjunta al club. No toca
+ * contraseña ni perfil.
  */
 export async function acceptInvitation(
   locale: string,
@@ -387,41 +306,21 @@ export async function acceptInvitation(
 ): Promise<AcceptInvitationState> {
   logStep('flow=quick entered', { token_prefix: token.slice(0, 8), locale });
   try {
-    logStep('flow=quick start', { token_prefix: token.slice(0, 8), locale });
-
-    logStep('flow=quick pre-gate');
-    const gate = await loadAndAssertInvitation(token);
-    logStep('flow=quick post-gate', { ok: gate.ok });
-    if (!gate.ok) {
-      if (gate.error === 'no_session') {
-        redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
-      }
-      logStep('flow=quick aborted-by-gate', { gate_error: gate.error });
-      return { error: gate.error };
-    }
-
-    logStep('flow=quick pre-getUser');
     const adapter = await createCookieAdapter();
     const supabase = createSupabaseServerClient(adapter);
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    logStep('flow=quick post-getUser', { has_user: !!user });
     if (!user) {
-      logStep('flow=quick no-session-after-gate');
-      redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
+      logStep('flow=quick no-session');
+      return { error: 'no_session' };
     }
 
-    logStep('flow=quick pre-attach', { invitation_id: gate.invitation.id });
+    const gate = await gateByToken(token, user.email);
+    if (!gate.ok) return { error: gate.error };
+
     const result = await attachToClub(gate.invitation, user.id);
-    logStep('flow=quick post-attach', { has_error: !!result.error });
-    if (result.error) {
-      logStep('flow=quick attach-failed', {
-        invitation_id: gate.invitation.id,
-        error: result.error,
-      });
-      return result;
-    }
+    if (result.error) return result;
 
     logStep('flow=quick success', {
       invitation_id: gate.invitation.id,
@@ -429,9 +328,6 @@ export async function acceptInvitation(
     });
     redirect(`/${locale}`);
   } catch (err) {
-    // unstable_rethrow reenvía señales de framework (NEXT_REDIRECT, NOT_FOUND,
-    // unauthorized) sin loguearlas como fallo. Si llegamos a la línea siguiente
-    // es un throw inesperado de verdad.
     unstable_rethrow(err);
     logError('flow=quick unexpected-throw', err, {
       token_prefix: token.slice(0, 8),
@@ -442,61 +338,38 @@ export async function acceptInvitation(
 }
 
 /**
- * Flujo "invitee viene del email de Supabase Invite — set password + perfil".
+ * Flujo NEW INVITEE (Rework B · B2) — cuenta creada por nosotros vía
+ * inviteUserByEmail y aún no reclamada (`invitations.invited_user_id` presente).
  *
- * El user llegó con sesión temporal (la creó el callback al canjear el OTP).
- * Le pedimos full_name, date_of_birth (opcional), password + confirm.
+ * El token es la credencial; NO se requiere sesión previa ni sobrevivir al
+ * magic link. Pasos:
+ *   1. Validar token (gate).
+ *   2. admin.updateUserById(invited_user_id): fija contraseña + metadata y
+ *      limpia `app_metadata.invite_pending` (estado real, sin flag rancio).
+ *   3. signInWithPassword: crea la sesión del invitee (cookies) con la contraseña
+ *      recién fijada.
+ *   4. UPDATE profiles bajo esa sesión.
+ *   5. attachToClub bajo esa sesión.
  *
- * Acciones:
- *  1. updateUser({ password, data: { full_name, date_of_birth, locale } }) —
- *     fija password y propaga datos a raw_user_meta_data.
- *  2. UPDATE profiles SET full_name, date_of_birth, locale WHERE id = auth.uid()
- *     — el trigger `handle_new_user` ya creó la fila pero solo con los datos
- *     pasados en `inviteUserByEmail` (que NO incluyen full_name). Hacemos UPDATE
- *     explícito para que el perfil quede coherente con lo que el invitee acaba
- *     de introducir.
- *  3. INSERT en memberships + UPDATE invitations.accepted_at.
+ * El service_role solo aparece en (2): es lo único que fija contraseña.
  */
-export async function acceptInvitationWithProfile(
+export async function acceptNewInvitee(
   locale: string,
   token: string,
   _prev: AcceptInvitationState,
   formData: FormData
 ): Promise<AcceptInvitationState> {
-  logStep('flow=with-profile entered', {
-    token_prefix: token.slice(0, 8),
-    locale,
-  });
+  logStep('flow=new entered', { token_prefix: token.slice(0, 8), locale });
   try {
-    logStep('flow=with-profile start', {
-      token_prefix: token.slice(0, 8),
-      locale,
-    });
-
-    logStep('flow=with-profile pre-parse', {
-      has_full_name: formData.get('full_name') !== null,
-      has_date_of_birth: formData.get('date_of_birth') !== null,
-      has_password: formData.get('password') !== null,
-      has_confirm: formData.get('confirm') !== null,
-    });
     const parsed = acceptInvitationWithProfileSchema.safeParse({
       full_name: formData.get('full_name'),
       date_of_birth: formData.get('date_of_birth'),
       password: formData.get('password'),
       confirm: formData.get('confirm'),
     });
-    logStep('flow=with-profile post-parse', { success: parsed.success });
     if (!parsed.success) {
-      const issue = parsed.error.issues[0];
-      const code = issue?.message ?? 'invalid_input';
-      logStep('flow=with-profile invalid-input', {
-        code,
-        issues: parsed.error.issues.map((i) => ({
-          path: i.path,
-          code: i.code,
-          message: i.message,
-        })),
-      });
+      const code = parsed.error.issues[0]?.message ?? 'invalid_input';
+      logStep('flow=new invalid-input', { code });
       if (code === 'full_name_too_short') return { error: 'full_name_too_short' };
       if (code === 'full_name_too_long') return { error: 'full_name_too_long' };
       if (code === 'date_of_birth_invalid') return { error: 'date_of_birth_invalid' };
@@ -505,86 +378,84 @@ export async function acceptInvitationWithProfile(
       return { error: 'invalid_input' };
     }
 
-    logStep('flow=with-profile input-ok', {
-      has_date_of_birth: !!parsed.data.date_of_birth,
-      full_name_len: parsed.data.full_name.length,
-    });
+    const gate = await gateByToken(token);
+    if (!gate.ok) return { error: gate.error };
+    const invitation = gate.invitation;
 
-    logStep('flow=with-profile pre-gate');
-    const gate = await loadAndAssertInvitation(token);
-    logStep('flow=with-profile post-gate', { ok: gate.ok });
-    if (!gate.ok) {
-      if (gate.error === 'no_session') {
-        redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
-      }
-      logStep('flow=with-profile aborted-by-gate', { gate_error: gate.error });
-      return { error: gate.error };
+    if (!invitation.invited_user_id) {
+      // Defensivo: la página solo debería enrutar aquí cuando hay cuenta no
+      // reclamada. Si llega sin invited_user_id es un invitee existente → debe
+      // iniciar sesión, no fijar contraseña (vector de secuestro). Abortamos.
+      logError(
+        'flow=new no-invited-user',
+        new Error('acceptNewInvitee on invitation without invited_user_id'),
+        { invitation_id: invitation.id }
+      );
+      return { error: 'auth_update_failed' };
     }
 
-    logStep('flow=with-profile pre-getUser');
+    const admin = createSupabaseAdminClient();
+
+    // Paso 1+2: fija contraseña + metadata + limpia invite_pending sobre la
+    // cuenta no reclamada que creamos para esta invitación.
+    logStep('flow=new admin-set-password start', { invitation_id: invitation.id });
+    const { error: updErr } = await admin.auth.admin.updateUserById(
+      invitation.invited_user_id,
+      {
+        password: parsed.data.password,
+        user_metadata: {
+          full_name: parsed.data.full_name,
+          date_of_birth: parsed.data.date_of_birth,
+          locale,
+        },
+        app_metadata: { invite_pending: false },
+      }
+    );
+    if (updErr && !isSamePasswordError(updErr)) {
+      logError('flow=new admin-set-password', updErr, {
+        invitation_id: invitation.id,
+        user_email_masked: maskEmail(invitation.email),
+      });
+      return { error: 'auth_update_failed' };
+    }
+    if (updErr) {
+      // Contraseña ya era esa (re-claim idempotente): aseguramos metadata sin tocarla.
+      logStep('flow=new admin-set-password same-password-ignored', {
+        invitation_id: invitation.id,
+      });
+      await admin.auth.admin.updateUserById(invitation.invited_user_id, {
+        user_metadata: {
+          full_name: parsed.data.full_name,
+          date_of_birth: parsed.data.date_of_birth,
+          locale,
+        },
+        app_metadata: { invite_pending: false },
+      });
+    } else {
+      logStep('flow=new admin-set-password ok', { invitation_id: invitation.id });
+    }
+
+    // Paso 3: crea sesión con la contraseña recién fijada.
     const adapter = await createCookieAdapter();
     const supabase = createSupabaseServerClient(adapter);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    logStep('flow=with-profile post-getUser', { has_user: !!user });
-    if (!user) {
-      logStep('flow=with-profile no-session-after-gate');
-      redirect(`/${locale}/signin?next=${encodeURIComponent(`/${locale}/invite/${token}`)}`);
+    logStep('flow=new sign-in start', { invitation_id: invitation.id });
+    const { data: signInData, error: signInErr } =
+      await supabase.auth.signInWithPassword({
+        email: invitation.email,
+        password: parsed.data.password,
+      });
+    const user = signInData?.user ?? null;
+    if (signInErr || !user) {
+      logError('flow=new sign-in', signInErr ?? new Error('no user after sign-in'), {
+        invitation_id: invitation.id,
+        user_email_masked: maskEmail(invitation.email),
+      });
+      return { error: 'auth_update_failed' };
     }
+    logStep('flow=new sign-in ok', { invitation_id: invitation.id });
 
-    // Paso 1: password + metadata en auth.users.
-    logStep('auth-update start', { invitation_id: gate.invitation.id });
-    const { error: updErr } = await supabase.auth.updateUser({
-      password: parsed.data.password,
-      data: {
-        full_name: parsed.data.full_name,
-        date_of_birth: parsed.data.date_of_birth,
-        locale,
-      },
-    });
-    if (updErr) {
-      // B1 — IDEMPOTENCIA: si el fallo es "la nueva contraseña es igual a la
-      // actual" (típico tras fijar la contraseña vía recovery y re-teclearla
-      // aquí), NO es fatal: el invitee ya tiene la contraseña que quiere. Pero
-      // el `data` (full_name/dob/locale) puede no haberse aplicado, así que lo
-      // reintentamos sin password para no perder el perfil. El attachToClub
-      // sigue después igual.
-      if (isSamePasswordError(updErr)) {
-        logStep('auth-update same-password-ignored', {
-          invitation_id: gate.invitation.id,
-        });
-        const { error: metaErr } = await supabase.auth.updateUser({
-          data: {
-            full_name: parsed.data.full_name,
-            date_of_birth: parsed.data.date_of_birth,
-            locale,
-          },
-        });
-        if (metaErr) {
-          // El metadata no es crítico (el Paso 2 reescribe profiles igualmente);
-          // logueamos y seguimos.
-          logError('auth-update-metadata-only', metaErr, {
-            invitation_id: gate.invitation.id,
-          });
-        } else {
-          logStep('auth-update metadata-only ok', {
-            invitation_id: gate.invitation.id,
-          });
-        }
-      } else {
-        logError('auth-update', updErr, {
-          invitation_id: gate.invitation.id,
-          user_email_masked: maskEmail(user.email),
-        });
-        return { error: 'auth_update_failed' };
-      }
-    } else {
-      logStep('auth-update ok', { invitation_id: gate.invitation.id });
-    }
-
-    // Paso 2: UPDATE profiles.
-    logStep('profile-update start', { invitation_id: gate.invitation.id });
+    // Paso 4: profiles bajo la sesión del invitee.
+    logStep('flow=new profile-update start', { invitation_id: invitation.id });
     const { error: profErr } = await supabase
       .from('profiles')
       .update({
@@ -594,44 +465,100 @@ export async function acceptInvitationWithProfile(
       })
       .eq('id', user.id);
     if (profErr) {
-      logError('profile-update', profErr, {
-        invitation_id: gate.invitation.id,
+      logError('flow=new profile-update', profErr, {
+        invitation_id: invitation.id,
         user_id: user.id,
         pg_code: profErr.code,
         is_rls: profErr.code === '42501',
       });
       return { error: 'profile_update_failed' };
     }
-    logStep('profile-update ok', { invitation_id: gate.invitation.id });
+    logStep('flow=new profile-update ok', { invitation_id: invitation.id });
 
-    // Paso 3: membership + accept.
-    logStep('flow=with-profile pre-attach', { invitation_id: gate.invitation.id });
-    const result = await attachToClub(gate.invitation, user.id);
-    logStep('flow=with-profile post-attach', { has_error: !!result.error });
-    if (result.error) {
-      logStep('flow=with-profile attach-failed', {
-        invitation_id: gate.invitation.id,
-        error: result.error,
-      });
-      return result;
-    }
+    // Paso 5: attach.
+    const result = await attachToClub(invitation, user.id);
+    if (result.error) return result;
 
-    logStep('flow=with-profile success', {
-      invitation_id: gate.invitation.id,
-      role: gate.invitation.role,
-      type: gate.invitation.team_id
-        ? 'staff'
-        : gate.invitation.player_id
-          ? 'tutor'
-          : 'generic',
+    logStep('flow=new success', {
+      invitation_id: invitation.id,
+      role: invitation.role,
+      type: invitation.team_id ? 'staff' : invitation.player_id ? 'tutor' : 'generic',
     });
     redirect(`/${locale}`);
   } catch (err) {
-    // unstable_rethrow reenvía señales de framework (NEXT_REDIRECT, NOT_FOUND,
-    // unauthorized) sin loguearlas como fallo. Si llegamos a la línea siguiente
-    // es un throw inesperado de verdad.
     unstable_rethrow(err);
-    logError('flow=with-profile unexpected-throw', err, {
+    logError('flow=new unexpected-throw', err, {
+      token_prefix: token.slice(0, 8),
+      locale,
+    });
+    return { error: 'generic' };
+  }
+}
+
+/**
+ * Flujo EXISTING USER (Rework B · B2) — el email YA tenía cuenta
+ * (`invitations.invited_user_id` NULL). El token NO puede resetear su contraseña
+ * ni crear sesión por sí mismo: el invitee se autentica con SU contraseña y el
+ * token solo le adjunta al club. Cierra el vector de secuestro de cuentas.
+ */
+export async function acceptExistingUser(
+  locale: string,
+  token: string,
+  _prev: AcceptInvitationState,
+  formData: FormData
+): Promise<AcceptInvitationState> {
+  logStep('flow=existing entered', { token_prefix: token.slice(0, 8), locale });
+  try {
+    const password = formData.get('password');
+    if (typeof password !== 'string' || password.length === 0) {
+      return { error: 'invalid_input' };
+    }
+
+    const gate = await gateByToken(token);
+    if (!gate.ok) return { error: gate.error };
+    const invitation = gate.invitation;
+
+    const adapter = await createCookieAdapter();
+    const supabase = createSupabaseServerClient(adapter);
+
+    logStep('flow=existing sign-in start', { invitation_id: invitation.id });
+    const { data: signInData, error: signInErr } =
+      await supabase.auth.signInWithPassword({
+        email: invitation.email,
+        password,
+      });
+    const user = signInData?.user ?? null;
+    if (signInErr || !user) {
+      // Credenciales incorrectas: NO es genérico, es el caso esperado de password mal.
+      logStep('flow=existing wrong-credentials', {
+        invitation_id: invitation.id,
+        user_email_masked: maskEmail(invitation.email),
+      });
+      return { error: 'wrong_credentials' };
+    }
+
+    // Defensa en profundidad: el usuario autenticado debe coincidir con el email
+    // invitado (signInWithPassword usa invitation.email, pero lo reconfirmamos).
+    if (
+      !user.email ||
+      user.email.trim().toLowerCase() !== invitation.email.trim().toLowerCase()
+    ) {
+      logStep('flow=existing email-mismatch', { invitation_id: invitation.id });
+      return { error: 'wrong_email' };
+    }
+    logStep('flow=existing sign-in ok', { invitation_id: invitation.id });
+
+    const result = await attachToClub(invitation, user.id);
+    if (result.error) return result;
+
+    logStep('flow=existing success', {
+      invitation_id: invitation.id,
+      role: invitation.role,
+    });
+    redirect(`/${locale}`);
+  } catch (err) {
+    unstable_rethrow(err);
+    logError('flow=existing unexpected-throw', err, {
       token_prefix: token.slice(0, 8),
       locale,
     });

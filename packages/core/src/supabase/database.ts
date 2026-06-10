@@ -708,6 +708,7 @@ export type Database = {
           email: string
           expires_at: string
           id: string
+          invited_user_id: string | null
           player_id: string | null
           player_relation: string | null
           role: string
@@ -723,6 +724,7 @@ export type Database = {
           email: string
           expires_at?: string
           id?: string
+          invited_user_id?: string | null
           player_id?: string | null
           player_relation?: string | null
           role: string
@@ -738,6 +740,7 @@ export type Database = {
           email?: string
           expires_at?: string
           id?: string
+          invited_user_id?: string | null
           player_id?: string | null
           player_relation?: string | null
           role?: string
