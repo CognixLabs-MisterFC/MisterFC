@@ -1,6 +1,6 @@
 # Spec C.0 — Rework C: categorías estándar fijas + transición de temporada (rollover)
 
-> Estado: **borrador para revisión** · Solo lectura + spec, **cero código/migraciones** en esta tanda.
+> Estado: **decisiones cerradas** (2026-06-10) · Solo spec, **cero código/migraciones** en esta tanda.
 > Autor: auditoría 2026-06-10 sobre el modelo REAL (no de memoria), rama `docs/spec-rework-c`.
 > Precede: Rework A (la temporada vive en el equipo) y Rework B (invitaciones).
 > Cubre dos features (numeración del usuario): **#3 categorías estándar fijas** y **#4 transición de temporada**.
@@ -132,12 +132,12 @@ Cada club arranca con el catálogo estándar sembrado (los `kind` O1, con su `ha
 
 - **Sembrado al crear club:** añadir a `create_club_with_admin` (o un paso post-creación) el INSERT de las N categorías estándar (`name` legible + `kind` + `half_duration` del mapa O1).
 - **Backfill de clubes existentes:** migración que, por cada club, inserta las categorías estándar que le falten (idempotente, por `kind`).
-- **Reconciliación de categorías custom (A4):** los clubs pueden haber creado categorías con nombre libre y `kind` null o repetido. Hay que decidir cómo conviven (ver Decisión D-a). La unicidad `unique(club_id, lower(name))` puede chocar al sembrar si el club ya tiene "Infantil" con otro casing → el sembrado debe ser *upsert por kind*, no por name.
-- **UI de crear categorías:** de "crear/borrar libre" a, como mínimo, **no permitir crear nuevas**; mantener editar `half_duration` (y quizá `name` mostrado/alias). Ver Decisión D-a.
+- **Reconciliación de categorías custom (A4):** los clubs pueden haber creado categorías con nombre libre y `kind` null o repetido. **Se conservan (grandfathering, D-a)**: no se borran ni se migran. La unicidad `unique(club_id, lower(name))` puede chocar al sembrar si el club ya tiene "Infantil" con otro casing → el sembrado es *upsert por kind*, no por name.
+- **UI de crear categorías:** se **retira** el alta de categorías (D-a/C4); el club solo crea equipos. Se mantiene editar `half_duration` de las estándar.
 
 ### 2.3 Naming del catálogo estándar
 
-`kind` es el identificador canónico (querubin…veterano). El `name` visible puede ser el label localizado del `kind` (namespace i18n `category_kinds`). Recomendación: sembrar `name` = label es-ES por defecto (p.ej. "Infantil"), `kind` = canónico. Así el orden por `kind` ya funciona y el club no ve un string técnico.
+`kind` es el identificador canónico (querubin…veterano). El `name` sembrado es el label legible (es-ES / Comunidad Valenciana, p.ej. "Infantil", "Cadete"), con localización vía el namespace i18n `category_kinds`; `kind` = canónico. Así el orden por `kind` ya funciona y el club no ve un string técnico.
 
 ---
 
@@ -159,54 +159,56 @@ Flujo guiado para que el admin pase de 25/26 a 26/27:
 - **Histórico:** no se toca nada de 25/26. Las queries time-aware garantizan que los eventos viejos sigan coherentes.
 - **"Subir de categoría" (Infantil→Cadete):** es solo que el equipo destino cuelga de otra categoría. No hay lógica de edad automática en esta tanda (manual, como pide el encargo).
 
-### 3.3 Lo que falta definir (núcleo de #4)
+### 3.3 Cómo queda definido (núcleo de #4)
 
-- **Qué significa "finalizar temporada"** si no hay tabla de temporadas (Decisión D-b): ¿solo cerrar `left_at` de todas las membresías activas de esa season a una fecha de corte? ¿marcar algo a nivel club?
-- **El modelo de temporada** que haga falta para soportar "activa/finalizada" y para que el rollover sea repetible y auditable (Decisión D-b/D-d).
-- **La UX de reasignación en bloque** (Decisión D-c).
-
----
-
-## 4. Decisiones abiertas (con recomendación; **NO** las cierro yo)
-
-### D-a · ¿Categorías solo las 9/10 fijas, o fijas + custom?
-- **Opción A (solo fijas):** catálogo cerrado = consistencia total, informes comparables, rollover "sube de categoría" trivial. Pero rompe clubs que ya crearon categorías custom en A4 y casos reales (categorías femeninas, "Escuela", grupos especiales).
-- **Opción B (fijas + custom):** las 10 estándar siempre presentes y no borrables; el club puede añadir extras (kind null o repetido). Flexible, no rompe nada.
-- **Recomendación: B (fijas no borrables + custom permitido).** Sembrar las 10 estándar (no borrables, no renombrables el `kind`; editable `half_duration`), permitir custom adicionales con aviso de que quedan fuera de informes estándar. Es la que menos rompe y respeta A4. Marca las estándar con una señal (`kind` no null + flag/columna `is_standard`, o simplemente "tiene kind canónico").
-
-### D-b · ¿Qué es "finalizar temporada" y hace falta una "temporada activa" de club?
-- Hoy no hay estado de temporada; la "actual" se infiere del reloj (`currentSeason()`).
-- **Opción A (sin tabla, derivado):** "finalizar" = acción que cierra `left_at` de las membresías activas de esa season; "actual" sigue siendo derivada. Mínimo cambio, pero no hay registro de quién/cuándo ni de "temporada abierta".
-- **Opción B (tabla `seasons` por club):** `seasons(club_id, label, status: open|closed, started_at, closed_at)` + opcional `clubs.active_season_id`. Da estado explícito, auditoría, y un selector de "temporada activa" coherente en toda la app (en vez del reloj).
-- **Recomendación: B, mínima.** Introducir `seasons` por club con `status` y una `active_season`. Migrar el default del reloj a la temporada activa. Es la pieza que #4 necesita para ser repetible/auditable y para que "finalizar/abrir" signifiquen algo. (El string `teams.season` puede quedarse como denormalización o pasar a `season_id`; ver D-d.)
-
-### D-c · ¿Cómo modelar la reasignación en bloque + la UX?
-- **Recomendación:** un asistente de rollover de una pantalla por **mapeo de equipos**: tabla "Equipo 25/26 → [selector] Equipo 26/27", y bajo cada fila la lista de jugadores con checkbox (todos marcados por defecto) para excluir bajas. Un único submit que, por cada jugador marcado: cierra membresía origen + abre destino con `joined_at = inicio 26/27`. Idempotente y re-ejecutable (si un jugador ya está en destino, no duplica). Server action en lote + (recomendado) una RPC transaccional para atomicidad por equipo.
-- **No** automatizar el ascenso por edad en esta tanda (manual, como pide el encargo). Dejar hueco para sugerencias futuras (Infantil→Cadete por `kind` ordinal +1).
-
-### D-d · Estrategia de migración para #3 (EXPAND→MIGRATE→CONTRACT)
-- Igual patrón que Rework A, para no romper el histórico ni los lectores:
-  - **EXPAND:** (si D-a=B) añadir señal `is_standard` a `categories` (o derivar de kind); sembrar estándar que falten en cada club (backfill idempotente por kind); semilla en `create_club_with_admin`. Aditivo.
-  - **MIGRATE:** UI `/equipos/plantillas` deja de permitir crear categorías estándar nuevas; reconciliar nombres custom que colisionen con estándar (renombrar/fusionar con aviso, **sin** borrar equipos).
-  - **CONTRACT:** (si D-a=A) bloquear creación de categorías por completo y migrar/retirar custom. Si D-a=B, no hay contract de categorías; solo se consolida el catálogo.
+- **"Finalizar temporada"** (D-b): la season saliente pasa a `status = finalized` y se activa la nueva; las membresías activas no movidas se cierran (`left_at`) a una fecha de corte. No borra nada.
+- **Modelo de temporada** (D-b): tabla `seasons(club_id, label, status active|finalized)`, una activa por club, controlada por el admin; los equipos nuevos toman la activa por defecto (se desacopla del reloj `currentSeason()`).
+- **Reasignación en bloque** (D-c): asistente de mapeo equipo→equipo con checklist de jugadores, sobre la mecánica de `assignPlayerToTeam`, idempotente y sin borrar.
 
 ---
 
-## 5. Troceo en subfases (pequeñas, en orden; **#3 antes que #4**)
+## 4. Decisiones (🔒 CERRADAS — 2026-06-10)
 
-> Cada subfase: una migración aditiva como mucho, lectores migrados aparte, contract al final. Verificación typecheck+lint+test+build + pgTAP donde toque. PRs independientes, sin merge automático.
+### 🔒 D-a · Catálogo estándar fijo; el club NO crea categorías; custom preexistentes se conservan
+- Se **siembran las 10 categorías estándar** (los `kind` canónicos O1) por club. Son **no borrables** y su `kind` no se renombra (sí editable `half_duration`).
+- Se **QUITA la creación de categorías por el club**: el club **solo crea equipos** dentro de las categorías.
+- Las **categorías custom preexistentes** (creadas libremente en A4) se **CONSERVAN** (grandfathering, no destructivo): no se borran ni se migran, pero **no se pueden crear nuevas**.
+- Consecuencia: la subfase **CONTRACT deja de ser opcional** — incluye **retirar la UI/acción de crear categorías** (`createCategoryTemplate` + el botón/diálogo de alta) conservando las custom existentes.
 
-**Bloque #3 — categorías estándar**
-- **C1 (EXPAND, aditiva):** catálogo estándar como datos. Helper en core con la lista canónica (reusar O1) + labels i18n. Migración: backfill idempotente que siembra en cada club las categorías estándar que falten (upsert por kind) + (si D-a=B) columna/flag `is_standard`. NO toca UI todavía.
-- **C2 (semilla en creación de club):** ampliar `create_club_with_admin` para sembrar el catálogo al crear club. Test de que un club nuevo nace con las 10 categorías.
-- **C3 (UI plantillas):** `/equipos/plantillas` pasa a catálogo gestionado: estándar no borrables/renombrables (editable `half_duration`); crear nuevas = solo custom (D-a=B) o deshabilitado (D-a=A). Reconciliación visible de custom que colisionen.
-- **C4 (CONTRACT, opcional según D-a):** si se decide "solo fijas", retirar el alta libre y migrar custom.
+### 🔒 D-b · Tabla `seasons` mínima + temporada activa controlada por el admin
+- Nueva tabla por club: **`seasons(club_id, label, status)`** con `status ∈ {active, finalized}` y **una sola `active` por club** (constraint).
+- La **temporada activa la controla el ADMIN** (no el reloj). Los equipos nuevos toman por defecto la **temporada activa** del club.
+- Se **desacopla el default del reloj** `currentSeason()`: deja de ser la fuente del 25/26 por defecto (puede quedar como semilla inicial al sembrar la primera season, pero la UI lee la activa).
 
-**Bloque #4 — rollover (tras #3)**
-- **C5 (modelo de temporada):** (D-b=B) tabla `seasons` por club + `active_season`; backfill desde `distinct teams.season`; migrar `currentSeason()`→temporada activa en los puntos de uso. Aditiva.
-- **C6 (recrear equipos):** acción "abrir temporada N+1" que clona la estructura de equipos de la season activa a la nueva (insert `teams` season nueva), sin tocar los viejos. UI de revisión.
-- **C7 (reasignación en bloque):** asistente mapeo equipo→equipo + selección de jugadores; RPC/serv. action transaccional que cierra membresías origen y abre destino con `joined_at = inicio nueva season`. Idempotente.
-- **C8 (finalizar temporada):** cerrar la season saliente (status closed; cerrar `left_at` de membresías activas que no se hayan movido, a fecha de corte) + cambiar `active_season`. Salvaguardas (confirmación, no borra nada).
+### 🔒 D-c · Asistente de mapeo equipo→equipo, idempotente, sin borrar
+- **Asistente de rollover** de una pantalla por **mapeo de equipos**: "Equipo (season activa) → [selector] Equipo (season nueva)", y bajo cada fila la **lista de jugadores con checkbox** (todos marcados por defecto) para excluir bajas.
+- Un submit que, por jugador marcado, **reutiliza la mecánica de `assignPlayerToTeam`**: cierra la membresía origen (`left_at`) y abre la destino (`joined_at = inicio de la nueva season`).
+- **Idempotente** (si un jugador ya está en destino, no duplica). **Invariante: NUNCA borra** — crear equipo nuevo + mover membresía.
+- **No** hay ascenso automático por edad (manual, como pide el encargo). Hueco para sugerencias futuras (Infantil→Cadete por `kind` ordinal +1).
+
+### 🔒 D-d · Migración de #3 con patrón EXPAND → MIGRATE → CONTRACT
+- Mismo patrón que Rework A, para no romper histórico ni lectores:
+  - **EXPAND:** señal `is_standard` en `categories` (o derivar de `kind` canónico) + backfill idempotente que siembra en cada club los estándar que falten (upsert por `kind`) + semilla en `create_club_with_admin`. Aditivo.
+  - **MIGRATE:** `/equipos/plantillas` pasa a catálogo gestionado; estándar no borrables/renombrables; reconciliación visible de custom (se conservan, sin borrar equipos).
+  - **CONTRACT (no opcional):** retirar la UI/acción de **crear** categorías; las custom existentes se quedan. No destructivo.
+
+---
+
+## 5. Troceo en subfases (pequeñas, en orden)
+
+> **Dependencia global: el bloque #3 (C1–C4) va ANTES que el #4 (C5–C8).** Cada subfase: una migración aditiva como mucho, lectores migrados aparte, contract al final. Verificación typecheck+lint+test+build + pgTAP donde toque. PRs independientes, sin merge automático.
+
+**Bloque #3 — categorías estándar (C1 → C2 → C3 → C4, en orden)**
+- **C1 — EXPAND (aditiva):** catálogo estándar como datos. Helper en core con la lista canónica (reusar O1) + labels i18n. Migración: señal `is_standard` en `categories` (o derivada del `kind` canónico) + backfill idempotente que siembra en cada club los estándar que falten (upsert por `kind`). NO toca UI. *(Depende de: nada.)*
+- **C2 — semilla al crear club:** ampliar `create_club_with_admin` para sembrar el catálogo estándar al crear club. Test: club nuevo nace con las 10 categorías. *(Depende de: C1.)*
+- **C3 — UI plantillas (MIGRATE):** `/equipos/plantillas` pasa a catálogo gestionado: estándar **no borrables/renombrables** (editable `half_duration`); custom preexistentes visibles y conservadas. Aún no se retira el alta (se prepara). *(Depende de: C1–C2.)*
+- **C4 — CONTRACT (no opcional):** retirar la **UI/acción de crear categorías** (`createCategoryTemplate` + diálogo/botón de alta). Las custom existentes se conservan (grandfathering, no destructivo). El club a partir de aquí **solo crea equipos**. *(Depende de: C3.)*
+
+**Bloque #4 — rollover (C5 → C6 → C7 → C8; arranca solo tras C4)**
+- **C5 — modelo de temporada:** tabla `seasons(club_id, label, status active|finalized)` con **una activa por club**; backfill desde `distinct teams.season` (la más reciente = activa); migrar los usos de `currentSeason()` → **temporada activa del club**. Aditiva. *(Depende de: #3 cerrado.)*
+- **C6 — recrear equipos:** acción "abrir temporada nueva" que clona la estructura de equipos de la activa a la nueva (insert `teams` con la season nueva), **sin tocar los viejos**. UI de revisión. *(Depende de: C5.)*
+- **C7 — reasignación en bloque:** asistente de **mapeo equipo→equipo + checklist de jugadores** (D-c); RPC/serv. action que, por jugador, cierra membresía origen y abre destino (`joined_at = inicio nueva season`). **Idempotente, sin borrar.** *(Depende de: C6.)*
+- **C8 — finalizar temporada:** marcar la season saliente `finalized` + activar la nueva; cerrar `left_at` de las membresías activas no movidas, a fecha de corte. Salvaguardas (confirmación; **no borra nada**). *(Depende de: C7.)*
 
 ---
 
@@ -231,4 +233,4 @@ Flujo guiado para que el admin pase de 25/26 a 26/27:
 
 ## 8. ADR candidato
 
-- **ADR-00XX — Modelo de temporada y rollover sin destruir histórico:** categorías estándar por `kind`, temporada como entidad (`seasons` + `active_season`), rollover por *crear-equipo-nuevo + mover-membresía* (cerrar `left_at`/abrir fila), prohibición de borrado de equipos. (Redactar al cerrar D-a/D-b/D-d.)
+- **ADR-00XX — Modelo de temporada y rollover sin destruir histórico:** categorías estándar fijas por `kind` (club no crea categorías, custom A4 grandfathered), temporada como entidad (`seasons` + temporada activa controlada por el admin), rollover por *crear-equipo-nuevo + mover-membresía* (cerrar `left_at`/abrir fila), prohibición de borrado de equipos. Decisiones D-a..D-d cerradas (§4); redactar el ADR al arrancar C1.
