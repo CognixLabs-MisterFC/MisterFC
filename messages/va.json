@@ -435,6 +435,7 @@
       "rolling": "Canvis correguts",
       "limited": "{max} canvis"
     },
+    "title": "Equips",
     "page_subtitle": "Equipos del club por temporada.",
     "manage_templates": "Categorías",
     "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
