@@ -43,6 +43,8 @@ export {
   assertCategoryDeletable,
   resolveCategoryUpdate,
   customOverlapsStandardKind,
+  activeSeasonLabel,
+  nextSeasonLabel,
 } from './club-structure';
 export type {
   CategoryInput,
@@ -51,6 +53,7 @@ export type {
   TeamCreateInput,
   CategoryKind,
   CategoryDeleteVerdict,
+  SeasonStatus,
 } from './club-structure';
 
 export {

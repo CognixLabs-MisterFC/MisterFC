@@ -173,6 +173,37 @@ export function currentSeason(now: Date = new Date()): string {
 }
 
 /**
+ * 🔒 Rework C (C5) — modelo de temporada explícito.
+ *
+ * La "temporada actual" del club es la fila `seasons` con `status='active'`
+ * (fuente de verdad, NO el reloj). `currentSeason()` queda solo como sugeridor de
+ * label (proponer el label de la 1ª season o de la siguiente).
+ */
+export type SeasonStatus = 'active' | 'finalized';
+
+/** Devuelve el label de la temporada activa, o null si no hay ninguna. */
+export function activeSeasonLabel(
+  seasons: ReadonlyArray<{ label: string; status: string }>
+): string | null {
+  const active = seasons.find((s) => s.status === 'active');
+  return active ? active.label : null;
+}
+
+/**
+ * Sugiere el label de la temporada siguiente a partir de un label YYYY-YY.
+ * "2025-26" → "2026-27". Si el label no tiene el formato esperado, cae a
+ * `currentSeason()` (sugerencia segura). No gobierna en qué temporada operamos;
+ * solo PROPONE un label al abrir la siguiente.
+ */
+export function nextSeasonLabel(label: string): string {
+  const m = /^(\d{4})-(\d{2})$/.exec(label.trim());
+  if (!m) return currentSeason();
+  const start = Number(m[1]) + 1;
+  const endTwo = String((start + 1) % 100).padStart(2, '0');
+  return `${start}-${endTwo}`;
+}
+
+/**
  * 🔒 Rework C (C3) — catálogo gestionado de categorías-plantilla.
  *
  * Las categorías estándar (`is_standard=true`) no se borran ni se renombran (ni

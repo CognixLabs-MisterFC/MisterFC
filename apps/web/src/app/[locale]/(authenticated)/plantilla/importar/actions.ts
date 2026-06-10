@@ -5,12 +5,12 @@ import * as Sentry from '@sentry/nextjs';
 import {
   buildTeamNameIndex,
   createSupabaseServerClient,
-  currentSeason,
   playerImportPayloadSchema,
   resolveTeamName,
   type PlayerImportRow,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 import { loadShellContext } from '@/lib/auth-shell';
 
 export type ImportPlayersInput = {
@@ -111,7 +111,7 @@ export async function importPlayers(
   // la TEMPORADA ACTIVA (la pertenencia es por temporada). El import NO crea
   // equipos; el nombre debe casar con uno existente. Autoridad del servidor: se
   // re-resuelve aquí aunque el cliente ya lo haya validado en el preview.
-  const season = currentSeason();
+  const season = await getActiveSeasonLabel(supabase, clubId);
   const { data: teamRows } = await supabase
     .from('teams')
     .select('id, name')
