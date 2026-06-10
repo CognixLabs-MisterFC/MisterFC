@@ -182,6 +182,11 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       password_too_short: 'error_password_too_short',
       password_mismatch: 'error_password_mismatch',
       no_session: 'error_no_session',
+      auth_update_failed: 'error_auth_update_failed',
+      profile_update_failed: 'error_profile_update_failed',
+      membership_failed: 'error_membership_failed',
+      player_link_failed: 'error_player_link_failed',
+      team_staff_failed: 'error_team_staff_failed',
       generic: 'error_generic',
     }[error] ?? 'error_generic';
 

@@ -440,7 +440,12 @@
     "error_password_too_short": "La contraseña debe tener al menos 8 caracteres",
     "error_password_mismatch": "Las contraseñas no coinciden",
     "error_no_session": "Sesión no encontrada. Vuelve a abrir el enlace del email.",
-    "error_generic": "No hemos podido procesar la invitación. Inténtalo de nuevo."
+    "error_generic": "No hemos podido procesar la invitación. Inténtalo de nuevo.",
+    "error_auth_update_failed": "No hemos podido establecer tu contraseña. Inténtalo de nuevo.",
+    "error_profile_update_failed": "No hemos podido guardar tu perfil. Inténtalo de nuevo.",
+    "error_membership_failed": "No hemos podido vincularte al club. Avisa al admin del club.",
+    "error_player_link_failed": "No hemos podido vincularte al jugador. Avisa al admin del club.",
+    "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club."
   },
   "jugadores": {
     "title": "Jugadores",

@@ -237,7 +237,12 @@
     "error_password_too_short": "La contrasenya ha de tenir almenys 8 caràcters",
     "error_password_mismatch": "Les contrasenyes no coincideixen",
     "error_no_session": "Sessió no trobada. Torna a obrir l'enllaç del correu.",
-    "error_generic": "No hem pogut processar la invitació. Torna-ho a provar."
+    "error_generic": "No hem pogut processar la invitació. Torna-ho a provar.",
+    "error_auth_update_failed": "No hemos podido establecer tu contraseña. Inténtalo de nuevo.",
+    "error_profile_update_failed": "No hemos podido guardar tu perfil. Inténtalo de nuevo.",
+    "error_membership_failed": "No hemos podido vincularte al club. Avisa al admin del club.",
+    "error_player_link_failed": "No hemos podido vincularte al jugador. Avisa al admin del club.",
+    "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club."
   },
   "shell": {
     "app_name": "MisterFC",

@@ -237,7 +237,12 @@
     "error_password_too_short": "Password must be at least 8 characters",
     "error_password_mismatch": "Passwords don't match",
     "error_no_session": "Session not found. Please reopen the link from your email.",
-    "error_generic": "We couldn't process the invitation. Please try again."
+    "error_generic": "We couldn't process the invitation. Please try again.",
+    "error_auth_update_failed": "No hemos podido establecer tu contraseña. Inténtalo de nuevo.",
+    "error_profile_update_failed": "No hemos podido guardar tu perfil. Inténtalo de nuevo.",
+    "error_membership_failed": "No hemos podido vincularte al club. Avisa al admin del club.",
+    "error_player_link_failed": "No hemos podido vincularte al jugador. Avisa al admin del club.",
+    "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club."
   },
   "shell": {
     "app_name": "MisterFC",
