@@ -11,6 +11,8 @@ export {
 export { isSamePasswordError } from './password-errors';
 export {
   assertInvitationValid,
+  chooseInviteForm,
   type InvitationVerdict,
   type InvitationGateRow,
+  type InviteFormChoice,
 } from './invitation-token';

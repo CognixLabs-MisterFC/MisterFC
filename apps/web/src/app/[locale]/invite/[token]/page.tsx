@@ -1,5 +1,5 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { getCurrentUser } from '@misterfc/core';
+import { getCurrentUser, chooseInviteForm } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadInvitationForPage } from './invite-data';
 import { AcceptForm, AcceptWithProfileForm, SignInToAcceptForm } from './accept-form';
@@ -28,13 +28,15 @@ function ErrorScreen({ message, tone = 'red' }: { message: string; tone?: 'red' 
  * Validamos el token con el cliente service_role (loadInvitationByToken) y, según
  * el estado REAL, elegimos uno de tres formularios:
  *
- *   1. Sesión activa cuyo email coincide con la invitación  → AcceptForm (1 click).
- *      Cubre al invitee que ya pertenece a otro club (o que ya inició sesión).
- *   2. Cuenta no reclamada creada por nosotros (invited_user_id != null) →
- *      AcceptWithProfileForm: nombre + contraseña UNA vez. La acción fija la
- *      contraseña (admin), crea sesión y adjunta.
- *   3. Email con cuenta preexistente (invited_user_id == null) → SignInToAcceptForm:
- *      inicia sesión con su contraseña; el token solo le adjunta al club.
+ *   1. Usuario YA configurado (con contraseña) cuyo email coincide → AcceptForm
+ *      (1 click). P.ej. un usuario existente aceptando una invitación adicional.
+ *   2. Invitee NUEVO (cuenta no reclamada que creamos, invited_user_id) →
+ *      AcceptWithProfileForm: nombre + contraseña UNA vez. SIEMPRE, aunque ya
+ *      tenga sesión del magic link (si no, entraría sin credenciales: B2b).
+ *   3. Email con cuenta preexistente (invited_user_id == null) y sin sesión →
+ *      SignInToAcceptForm: inicia sesión con su contraseña; el token le adjunta.
+ *
+ * La decisión vive en `chooseInviteForm` (@misterfc/core), pura y testeada.
  */
 export default async function InvitePage({ params }: Props) {
   const { locale, token } = await params;
@@ -54,18 +56,28 @@ export default async function InvitePage({ params }: Props) {
     return <ErrorScreen message={t('error_expired')} />;
   }
 
-  // ¿Hay ya una sesión cuyo email coincide con la invitación? → 1 click.
+  // Estado de la sesión actual (si la hay) para decidir el formulario.
   const adapter = await createCookieAdapter();
   const user = await getCurrentUser(adapter);
   const sessionEmailMatches =
     !!user?.email &&
     user.email.trim().toLowerCase() === inv.email.trim().toLowerCase();
+  const invitePending =
+    (user?.app_metadata as { invite_pending?: boolean } | undefined)
+      ?.invite_pending === true;
+
+  const choice = chooseInviteForm({
+    invitedUserId: inv.invited_user_id,
+    sessionUserId: user?.id ?? null,
+    sessionEmailMatches,
+    invitePending,
+  });
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#0F1B2E] px-6 text-center text-white">
       <div className="flex w-full max-w-md flex-col items-center gap-6">
         <h1 className="text-3xl font-bold text-[#10B981]">{t('title')}</h1>
-        {sessionEmailMatches ? (
+        {choice === 'quick' ? (
           <AcceptForm
             locale={locale}
             token={token}
@@ -73,7 +85,7 @@ export default async function InvitePage({ params }: Props) {
             role={inv.role}
             invitedEmail={inv.email}
           />
-        ) : inv.invited_user_id ? (
+        ) : choice === 'set_password' ? (
           <AcceptWithProfileForm
             locale={locale}
             token={token}
