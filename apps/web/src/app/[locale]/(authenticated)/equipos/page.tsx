@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Shield, FolderCog } from 'lucide-react';
+import { Shield, FolderCog, Users } from 'lucide-react';
 import {
   TEAM_FORMATS,
   categoryKindOrdinal,
@@ -166,11 +166,16 @@ export default async function EquiposPage({ params, searchParams }: Props) {
       </div>
 
       {viewingUpcoming && (
-        <div
-          className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300"
-          role="status"
-        >
-          {t('upcoming_banner', { season: activeSeason })}
+        <div className="flex flex-col gap-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300 sm:flex-row sm:items-center sm:justify-between">
+          <span role="status">{t('upcoming_banner', { season: activeSeason })}</span>
+          {isAdmin && (
+            <Button asChild variant="outline" size="sm">
+              <Link href="/equipos/reasignacion">
+                <Users className="size-4" aria-hidden />
+                <span>{t('reassign.cta')}</span>
+              </Link>
+            </Button>
+          )}
         </div>
       )}
 

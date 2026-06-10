@@ -230,3 +230,59 @@ export async function openNextSeason(): Promise<OpenSeasonState> {
   revalidatePath('/[locale]/(authenticated)/equipos', 'page');
   return { ok: { season: data as string } };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rework C (C7) — reasignación de jugadores en bloque (asistente de mapeo)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type PlacePlayersState = {
+  ok?: { placed: number };
+  error?:
+    | 'no_active_club'
+    | 'no_players'
+    | 'forbidden'
+    | 'dest_team_invalid'
+    | 'dest_not_upcoming'
+    | 'generic';
+};
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Coloca un checklist de jugadores en un equipo de la temporada `upcoming`,
+ * abriendo su membresía activa SIN cerrar ni tocar las de la temporada activa.
+ * Delega en la función SQL `place_players_in_upcoming` (SECURITY DEFINER, solo
+ * admin_club, solo equipos upcoming, idempotente, solo INSERT). Devuelve cuántos
+ * jugadores se colocaron de verdad (los ya colocados se saltan).
+ */
+export async function placePlayersInUpcoming(
+  destTeamId: string,
+  playerIds: string[],
+): Promise<PlacePlayersState> {
+  const clubId = await activeClubId();
+  if (!clubId) return { error: 'no_active_club' };
+
+  if (!UUID_RE.test(destTeamId)) return { error: 'dest_team_invalid' };
+  const ids = [...new Set(playerIds)].filter((id) => UUID_RE.test(id));
+  if (ids.length === 0) return { error: 'no_players' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data, error } = await supabase.rpc('place_players_in_upcoming', {
+    p_club_id: clubId,
+    p_dest_team_id: destTeamId,
+    p_player_ids: ids,
+  });
+  if (error) {
+    const msg = error.message ?? '';
+    if (msg.includes('forbidden')) return { error: 'forbidden' };
+    if (msg.includes('dest_not_upcoming')) return { error: 'dest_not_upcoming' };
+    if (msg.includes('dest_team_invalid')) return { error: 'dest_team_invalid' };
+    return { error: 'generic' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/equipos/reasignacion', 'page');
+  return { ok: { placed: (data as number) ?? 0 } };
+}
