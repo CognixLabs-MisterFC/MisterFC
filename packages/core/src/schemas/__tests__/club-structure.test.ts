@@ -3,6 +3,8 @@ import {
   assertCategoryDeletable,
   resolveCategoryUpdate,
   customOverlapsStandardKind,
+  activeSeasonLabel,
+  nextSeasonLabel,
 } from '../club-structure';
 
 describe('assertCategoryDeletable (C3)', () => {
@@ -57,5 +59,35 @@ describe('customOverlapsStandardKind (C3)', () => {
 
   it('estándar → false (nunca se avisa)', () => {
     expect(customOverlapsStandardKind({ isStandard: true, kind: 'infantil' })).toBe(false);
+  });
+});
+
+describe('activeSeasonLabel (C5)', () => {
+  it('devuelve el label de la activa', () => {
+    expect(
+      activeSeasonLabel([
+        { label: '2024-25', status: 'finalized' },
+        { label: '2025-26', status: 'active' },
+      ])
+    ).toBe('2025-26');
+  });
+
+  it('null si no hay activa', () => {
+    expect(activeSeasonLabel([{ label: '2024-25', status: 'finalized' }])).toBeNull();
+    expect(activeSeasonLabel([])).toBeNull();
+  });
+});
+
+describe('nextSeasonLabel (C5)', () => {
+  it('incrementa el año: 2025-26 → 2026-27', () => {
+    expect(nextSeasonLabel('2025-26')).toBe('2026-27');
+  });
+
+  it('cruce de siglo: 2099-00 → 2100-01', () => {
+    expect(nextSeasonLabel('2099-00')).toBe('2100-01');
+  });
+
+  it('label inválido → cae a currentSeason (no lanza)', () => {
+    expect(nextSeasonLabel('basura')).toMatch(/^\d{4}-\d{2}$/);
   });
 });

@@ -2,10 +2,10 @@ import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import {
   createSupabaseServerClient,
-  currentSeason,
   type Role,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 import { loadShellContext } from '@/lib/auth-shell';
 import { ImportWizard } from './import-wizard';
 
@@ -53,8 +53,9 @@ export default async function ImportPlayersPage({ params }: Props) {
   }
 
   // Rework A (A5) — los equipos son por temporada. Tanto el selector de lote como
-  // la resolución de "equipo por fila" operan sobre la TEMPORADA ACTIVA.
-  const season = currentSeason();
+  // la resolución de "equipo por fila" operan sobre la TEMPORADA ACTIVA del club
+  // (Rework C/C5: la activa de seasons, no el reloj).
+  const season = await getActiveSeasonLabel(supabase, ctx.activeClub.club.id);
   const { data: teamsData } = await supabase
     .from('teams')
     .select('id, name, categories!inner(name)')

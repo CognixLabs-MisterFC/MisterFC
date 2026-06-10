@@ -5,10 +5,10 @@ import {
   TEAM_FORMATS,
   categoryKindOrdinal,
   createSupabaseServerClient,
-  currentSeason,
 } from '@misterfc/core';
 import { Link } from '@/i18n/navigation';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 import { loadShellContext } from '@/lib/auth-shell';
 import {
   Card,
@@ -79,13 +79,16 @@ export default async function EquiposPage({ params, searchParams }: Props) {
     });
   }
 
-  // Temporadas presentes en los equipos del club + la actual (para poder crear el
-  // primer equipo de la temporada en curso aunque aún no haya ninguno).
+  // Rework C (C5): la temporada operativa por defecto es la ACTIVA del club
+  // (seasons.status='active'), no el reloj. El selector ofrece además todas las
+  // temporadas presentes en equipos (y la activa, para crear el 1er equipo).
+  const clubActiveSeason = await getActiveSeasonLabel(supabase, clubId);
+
   const { data: seasonRows } = await supabase
     .from('teams')
     .select('season')
     .eq('club_id', clubId);
-  const seasonSet = new Set<string>(currentSeason() ? [currentSeason()] : []);
+  const seasonSet = new Set<string>([clubActiveSeason]);
   for (const r of seasonRows ?? []) {
     if (r.season) seasonSet.add(r.season as string);
   }
@@ -94,9 +97,7 @@ export default async function EquiposPage({ params, searchParams }: Props) {
   const activeSeason =
     seasonParam && SEASON_RE.test(seasonParam) && seasonSet.has(seasonParam)
       ? seasonParam
-      : seasons.includes(currentSeason())
-        ? currentSeason()
-        : (seasons[0] ?? currentSeason());
+      : clubActiveSeason;
 
   // Equipos de la temporada seleccionada.
   const { data: teamsData } = await supabase

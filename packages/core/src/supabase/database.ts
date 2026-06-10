@@ -1854,6 +1854,41 @@ export type Database = {
           },
         ]
       }
+      seasons: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          label: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          label: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          label?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seasons_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       substitution_regimes: {
         Row: {
           allow_reentry: boolean
