@@ -2070,6 +2070,11 @@
     "empty": "Aún no has creado ninguna categoría-plantilla. Empieza por la primera.",
     "teams_count": "{count, plural, =0 {Sin equipos} one {# equipo} other {# equipos}}",
     "half_short": "{min} min/tiempo",
+    "badge_standard": "Estándar",
+    "badge_custom": "Personalizada",
+    "overlap_badge": "Solapa estándar",
+    "overlap_hint": "Esta categoría coincide en grupo de edad con una estándar pero tiene otro nombre. Revísala.",
+    "standard_locked_hint": "Categoría estándar: el nombre y el grupo de edad están bloqueados. Solo puedes cambiar la duración.",
     "actions": {
       "create": "Nueva categoría",
       "edit": "Editar",
@@ -2101,6 +2106,7 @@
       "half_duration_invalid": "Duración no válida. Usa un valor entre 1 y 90.",
       "name_duplicate": "Ya existe una categoría con ese nombre en el club.",
       "has_teams": "No se puede eliminar: tiene equipos en alguna temporada.",
+      "is_standard": "Las categorías estándar no se pueden eliminar.",
       "no_active_club": "No hay club activo.",
       "forbidden": "No tienes permiso para hacer esto.",
       "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo."

@@ -2071,6 +2071,11 @@
     "empty": "Aún no has creado ninguna categoría-plantilla. Empieza por la primera.",
     "teams_count": "{count, plural, =0 {Sin equipos} one {# equipo} other {# equipos}}",
     "half_short": "{min} min/tiempo",
+    "badge_standard": "Standard",
+    "badge_custom": "Custom",
+    "overlap_badge": "Overlaps standard",
+    "overlap_hint": "This category shares an age group with a standard one but has a different name. Review it.",
+    "standard_locked_hint": "Standard category: name and age group are locked. You can only change the duration.",
     "actions": {
       "create": "Nueva categoría",
       "edit": "Editar",
@@ -2102,6 +2107,7 @@
       "half_duration_invalid": "Duración no válida. Usa un valor entre 1 y 90.",
       "name_duplicate": "Ya existe una categoría con ese nombre en el club.",
       "has_teams": "No se puede eliminar: tiene equipos en alguna temporada.",
+      "is_standard": "Standard categories cannot be deleted.",
       "no_active_club": "No hay club activo.",
       "forbidden": "No tienes permiso para hacer esto.",
       "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo."

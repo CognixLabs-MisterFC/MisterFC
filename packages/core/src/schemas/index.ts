@@ -40,6 +40,9 @@ export {
   CATEGORY_KIND_ORDER_NULL,
   categoryKindOrdinal,
   currentSeason,
+  assertCategoryDeletable,
+  resolveCategoryUpdate,
+  customOverlapsStandardKind,
 } from './club-structure';
 export type {
   CategoryInput,
@@ -47,6 +50,7 @@ export type {
   TeamInput,
   TeamCreateInput,
   CategoryKind,
+  CategoryDeleteVerdict,
 } from './club-structure';
 
 export {

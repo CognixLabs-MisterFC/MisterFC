@@ -171,3 +171,61 @@ export function currentSeason(now: Date = new Date()): string {
   const endTwo = String((start + 1) % 100).padStart(2, '0');
   return `${start}-${endTwo}`;
 }
+
+/**
+ * 🔒 Rework C (C3) — catálogo gestionado de categorías-plantilla.
+ *
+ * Las categorías estándar (`is_standard=true`) no se borran ni se renombran (ni
+ * se cambia su `kind`); solo `half_duration_minutes` es editable. Las custom
+ * (`is_standard=false`) son editables y borrables solo si no tienen equipos (el
+ * FK teams.category_id es CASCADE: borrar con equipos destruiría histórico — el
+ * blindaje a nivel BD llega en C4; aquí el guard es de app/servidor).
+ */
+export type CategoryDeleteVerdict = 'ok' | 'is_standard' | 'has_teams';
+
+export function assertCategoryDeletable(params: {
+  isStandard: boolean;
+  teamsCount: number;
+}): CategoryDeleteVerdict {
+  if (params.isStandard) return 'is_standard';
+  if (params.teamsCount > 0) return 'has_teams';
+  return 'ok';
+}
+
+/**
+ * Resuelve los campos efectivos de un UPDATE de categoría según `is_standard`.
+ * Para una estándar, `name` y `kind` quedan CONGELADOS al valor actual (se ignora
+ * lo que venga del form); solo cambia `half_duration_minutes`. Para una custom,
+ * se aplican los tres campos del input. El servidor es el contrato final: aunque
+ * el cliente bloquee los inputs, aquí se garantiza.
+ */
+export function resolveCategoryUpdate(params: {
+  isStandard: boolean;
+  existing: { name: string; kind: string | null };
+  input: { name: string; kind: string | null; half_duration_minutes: number };
+}): { name: string; kind: string | null; half_duration_minutes: number } {
+  if (params.isStandard) {
+    return {
+      name: params.existing.name,
+      kind: params.existing.kind,
+      half_duration_minutes: params.input.half_duration_minutes,
+    };
+  }
+  return params.input;
+}
+
+/**
+ * ¿Una categoría custom (is_standard=false) solapa un kind estándar? Útil para
+ * avisar en la UI de los "match ambiguos" (kind canónico pero nombre distinto del
+ * canónico) que la reconciliación de C3 deja como custom a propósito.
+ */
+export function customOverlapsStandardKind(params: {
+  isStandard: boolean;
+  kind: string | null;
+}): boolean {
+  if (params.isStandard) return false;
+  return (
+    params.kind !== null &&
+    (CATEGORY_KINDS as readonly string[]).includes(params.kind)
+  );
+}
