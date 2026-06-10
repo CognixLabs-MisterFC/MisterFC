@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Pencil, Plus } from 'lucide-react';
+import { Loader2, Pencil } from 'lucide-react';
 import { CATEGORY_KINDS } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,20 +24,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  createCategoryTemplate,
   updateCategoryTemplate,
   type CategoryTemplateFormState,
 } from './actions';
 
-type Mode = 'create' | 'edit';
-
 const NO_KIND = '__none__';
-const DEFAULT_HALF = 45;
 
 type Props = {
-  mode: Mode;
   isStandard?: boolean;
-  category?: {
+  category: {
     id: string;
     name: string;
     kind: string | null;
@@ -45,21 +40,20 @@ type Props = {
   };
 };
 
-export function CategoryDialog({ mode, isStandard = false, category }: Props) {
+/**
+ * Diálogo de EDICIÓN de categoría-plantilla. Rework C · C4: el alta de categorías
+ * se retiró (el club solo crea equipos); el catálogo es fijo. En una estándar,
+ * name + kind están bloqueados (solo half_duration); el servidor lo garantiza.
+ */
+export function CategoryDialog({ isStandard = false, category }: Props) {
   const t = useTranslations('plantillas');
   const tk = useTranslations('category_kinds');
   const [open, setOpen] = useState(false);
-  const isEdit = mode === 'edit';
-  // C3: en una categoría estándar, name + kind están bloqueados (solo se edita
-  // half_duration). Los inputs van readOnly/disabled; el servidor lo garantiza.
-  const locked = isEdit && isStandard;
+  const locked = isStandard;
 
-  const [kind, setKind] = useState(category?.kind ?? NO_KIND);
+  const [kind, setKind] = useState(category.kind ?? NO_KIND);
 
-  const action =
-    isEdit && category
-      ? updateCategoryTemplate.bind(null, category.id)
-      : createCategoryTemplate;
+  const action = updateCategoryTemplate.bind(null, category.id);
 
   const [state, formAction, pending] = useActionState<
     CategoryTemplateFormState,
@@ -77,22 +71,13 @@ export function CategoryDialog({ mode, isStandard = false, category }: Props) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {isEdit ? (
-          <Button variant="ghost" size="icon" aria-label={t('actions.edit')}>
-            <Pencil className="size-4" aria-hidden />
-          </Button>
-        ) : (
-          <Button>
-            <Plus className="size-4" aria-hidden />
-            <span>{t('actions.create')}</span>
-          </Button>
-        )}
+        <Button variant="ghost" size="icon" aria-label={t('actions.edit')}>
+          <Pencil className="size-4" aria-hidden />
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {isEdit ? t('dialog.edit_title') : t('dialog.create_title')}
-          </DialogTitle>
+          <DialogTitle>{t('dialog.edit_title')}</DialogTitle>
           <DialogDescription>{t('dialog.description')}</DialogDescription>
         </DialogHeader>
 
@@ -110,7 +95,7 @@ export function CategoryDialog({ mode, isStandard = false, category }: Props) {
               name="name"
               required
               maxLength={80}
-              defaultValue={category?.name ?? ''}
+              defaultValue={category.name}
               autoFocus={!locked}
               readOnly={locked}
               aria-readonly={locked}
@@ -150,7 +135,7 @@ export function CategoryDialog({ mode, isStandard = false, category }: Props) {
               min={1}
               max={90}
               required
-              defaultValue={category?.half_duration_minutes ?? DEFAULT_HALF}
+              defaultValue={category.half_duration_minutes}
             />
             <p className="text-xs text-muted-foreground">
               {t('field.half_duration_help')}
