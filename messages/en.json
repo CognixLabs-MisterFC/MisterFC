@@ -475,6 +475,33 @@
         "generic": "We couldn't place the players. Please try again."
       }
     },
+    "finalize": {
+      "cta": "Finalize season",
+      "back": "Back to teams",
+      "title": "Finalize season",
+      "subtitle": "Close the season rollover: the current season becomes historical and the season being prepared becomes the active one. This is the final handover step.",
+      "no_upcoming": "Open the new season from Teams first: you can't finalize without a season to activate.",
+      "summary": "You are about to finalize {active} and activate {upcoming}.",
+      "step_close": "Open memberships of {active} teams are closed at the cut-off date (their history is kept).",
+      "step_activate": "{upcoming} becomes the active season with its teams and already-placed players.",
+      "unplaced_title": "{count, plural, one {1 player with no team in the new season} other {# players with no team in the new season}}",
+      "unplaced_hint": "They are in a current-season team but haven't been placed in any new-season team. It may be intentional (leaving the club) or an oversight. Review them before continuing.",
+      "cutoff_label": "Cut-off date",
+      "cutoff_hint": "Date the current-season memberships are closed at. Defaults to the season end.",
+      "ack": "I understand that the open memberships of {active} will be closed and the season will become historical.",
+      "ack_with_unplaced": "I understand that the open memberships of {active} will be closed (including the {count} players with no team in the new season).",
+      "confirm": "Finalize and activate {upcoming}",
+      "error": {
+        "no_active_club": "No active club.",
+        "cutoff_required": "Provide a cut-off date.",
+        "cutoff_invalid": "The cut-off date is not valid.",
+        "cutoff_too_early": "The cut-off date is earlier than a membership start in the season. Pick a later date.",
+        "forbidden": "Only a club admin can finalize the season.",
+        "no_active_season": "There is no active season to finalize.",
+        "no_upcoming": "There is no season being prepared to activate.",
+        "generic": "We couldn't finalize the season. Please try again."
+      }
+    },
     "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
     "season_filter": "Temporada",
     "empty_season": "Aún no hay equipos en la temporada {season}."

@@ -286,3 +286,59 @@ export async function placePlayersInUpcoming(
   revalidatePath('/[locale]/(authenticated)/equipos/reasignacion', 'page');
   return { ok: { placed: (data as number) ?? 0 } };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rework C (C8) — finalizar temporada (cierre del rollover)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type FinalizeSeasonState = {
+  ok?: { season: string };
+  error?:
+    | 'no_active_club'
+    | 'cutoff_required'
+    | 'cutoff_invalid'
+    | 'cutoff_too_early'
+    | 'forbidden'
+    | 'no_active_season'
+    | 'no_upcoming'
+    | 'generic';
+};
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Finaliza el rollover atómicamente: cierra las membresías abiertas de la
+ * temporada activa a `cutoff`, marca la activa `finalized` y la upcoming
+ * `active`. Delega en la función SQL `finalize_active_season` (SECURITY DEFINER,
+ * solo admin_club, exige una upcoming). Devuelve el label de la nueva activa.
+ */
+export async function finalizeSeason(
+  cutoff: string,
+): Promise<FinalizeSeasonState> {
+  const clubId = await activeClubId();
+  if (!clubId) return { error: 'no_active_club' };
+
+  if (!cutoff) return { error: 'cutoff_required' };
+  if (!DATE_RE.test(cutoff) || Number.isNaN(new Date(cutoff).getTime())) {
+    return { error: 'cutoff_invalid' };
+  }
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data, error } = await supabase.rpc('finalize_active_season', {
+    p_club_id: clubId,
+    p_cutoff: cutoff,
+  });
+  if (error) {
+    const msg = error.message ?? '';
+    if (msg.includes('forbidden')) return { error: 'forbidden' };
+    if (msg.includes('no_upcoming')) return { error: 'no_upcoming' };
+    if (msg.includes('no_active_season')) return { error: 'no_active_season' };
+    if (msg.includes('cutoff_too_early')) return { error: 'cutoff_too_early' };
+    return { error: 'generic' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/equipos', 'page');
+  return { ok: { season: data as string } };
+}

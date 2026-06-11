@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Shield, FolderCog, Users } from 'lucide-react';
+import { Shield, FolderCog, Users, CalendarCheck } from 'lucide-react';
 import {
   TEAM_FORMATS,
   categoryKindOrdinal,
@@ -151,6 +151,15 @@ export default async function EquiposPage({ params, searchParams }: Props) {
           {/* C6: abrir temporada nueva (admin, solo si aún no hay upcoming). */}
           {isAdmin && !clubUpcomingSeason && (
             <OpenSeasonButton nextLabel={nextSeasonLabel(clubActiveSeason)} />
+          )}
+          {/* C8: finalizar el rollover (admin, solo si hay upcoming abierta). */}
+          {isAdmin && clubUpcomingSeason && (
+            <Button asChild variant="outline" size="sm">
+              <Link href="/equipos/finalizar">
+                <CalendarCheck className="size-4" aria-hidden />
+                <span>{t('finalize.cta')}</span>
+              </Link>
+            </Button>
           )}
           <TeamDialog
             mode="create"

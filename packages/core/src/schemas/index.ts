@@ -45,6 +45,7 @@ export {
   customOverlapsStandardKind,
   activeSeasonLabel,
   nextSeasonLabel,
+  seasonEndDate,
 } from './club-structure';
 export type {
   CategoryInput,

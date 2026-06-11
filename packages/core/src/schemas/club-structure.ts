@@ -204,6 +204,21 @@ export function nextSeasonLabel(label: string): string {
 }
 
 /**
+ * 🔒 Rework C (C8) — fecha de corte por defecto al finalizar una temporada.
+ *
+ * Una temporada `YYYY-YY` (fútbol español) corre del 1-ago al 31-jul del año
+ * siguiente; su límite es el 31 de julio de `start+1`. "2025-26" → "2026-07-31".
+ * Devuelve `null` si el label no tiene el formato esperado (el caller decide el
+ * fallback, p.ej. la fecha de hoy). Es solo el DEFAULT: el admin puede ajustarla.
+ */
+export function seasonEndDate(label: string): string | null {
+  const m = /^(\d{4})-(\d{2})$/.exec(label.trim());
+  if (!m) return null;
+  const endYear = Number(m[1]) + 1;
+  return `${endYear}-07-31`;
+}
+
+/**
  * 🔒 Rework C (C3) — catálogo gestionado de categorías-plantilla.
  *
  * Las categorías estándar (`is_standard=true`) no se borran ni se renombran (ni
