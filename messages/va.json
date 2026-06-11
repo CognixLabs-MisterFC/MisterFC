@@ -1267,6 +1267,32 @@
         "generic": "No s'ha pogut guardar el nom."
       }
     },
+    "contact": {
+      "title": "Contacte",
+      "empty": "Sense dades de contacte.",
+      "phone": "Telèfon",
+      "email": "Email de contacte"
+    },
+    "edit_contact": {
+      "action": "Editar contacte",
+      "title": "Editar contacte",
+      "description": "Telèfon i email de contacte gestionats pel club. No és l'email d'accés de l'entrenador.",
+      "field": {
+        "phone": "Telèfon",
+        "contact_email": "Email de contacte",
+        "contact_email_hint": "No és l'email amb què inicia sessió."
+      },
+      "save": "Guardar",
+      "cancel": "Cancel·lar",
+      "errors": {
+        "phone_invalid": "El telèfon no és vàlid (entre 3 i 32 caràcters).",
+        "contact_email_invalid": "L'email de contacte no és vàlid.",
+        "no_active_club": "No hi ha club actiu.",
+        "target_invalid": "Aquest membre no pertany al teu club.",
+        "forbidden": "Només un administrador del club pot editar el contacte.",
+        "generic": "No s'ha pogut guardar el contacte."
+      }
+    },
     "remove": {
       "action": "Llevar de l'equip",
       "title": "Llevar de l'equip",

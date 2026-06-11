@@ -1,6 +1,13 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft, CalendarOff, Settings, Users } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarOff,
+  Mail,
+  Phone,
+  Settings,
+  Users,
+} from 'lucide-react';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -21,6 +28,7 @@ import { today as todayLocal } from '@/lib/calendar-utils';
 import { MoveStaffDialog } from '../_components/move-staff-dialog';
 import { RemoveAssignmentButton } from '../_components/remove-assignment-button';
 import { EditStaffNameDialog } from '../_components/edit-staff-name-dialog';
+import { EditStaffContactDialog } from '../_components/edit-staff-contact-dialog';
 import { loadCoachDetail } from '../queries';
 import type { Role } from '../../jugadores/queries';
 
@@ -144,6 +152,56 @@ export default async function CoachDetailPage({ params }: Props) {
           </p>
         </div>
       </div>
+
+      {/* Bug 2 · 2c: contacto gestionado por el club (solo staff, no público).
+          NO es el email de login. La edición se gatea a admin_club y no a uno mismo. */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+          <CardTitle>{t('contact.title')}</CardTitle>
+          {role === 'admin_club' && coach.profile_id !== ctx.user.id && (
+            <EditStaffContactDialog
+              targetProfileId={coach.profile_id}
+              currentPhone={coach.phone}
+              currentContactEmail={coach.contact_email}
+            />
+          )}
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {coach.phone == null && coach.contact_email == null ? (
+            <p className="text-sm text-muted-foreground">
+              {t('contact.empty')}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2 text-sm">
+              {coach.phone != null && (
+                <div className="flex items-center gap-2">
+                  <Phone
+                    className="size-4 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <a href={`tel:${coach.phone}`} className="hover:underline">
+                    {coach.phone}
+                  </a>
+                </div>
+              )}
+              {coach.contact_email != null && (
+                <div className="flex items-center gap-2">
+                  <Mail
+                    className="size-4 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <a
+                    href={`mailto:${coach.contact_email}`}
+                    className="hover:underline"
+                  >
+                    {coach.contact_email}
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

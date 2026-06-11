@@ -1398,22 +1398,28 @@ export type Database = {
       memberships: {
         Row: {
           club_id: string
+          contact_email: string | null
           created_at: string
           id: string
+          phone: string | null
           profile_id: string
           role: string
         }
         Insert: {
           club_id: string
+          contact_email?: string | null
           created_at?: string
           id?: string
+          phone?: string | null
           profile_id: string
           role: string
         }
         Update: {
           club_id?: string
+          contact_email?: string | null
           created_at?: string
           id?: string
+          phone?: string | null
           profile_id?: string
           role?: string
         }
@@ -2188,6 +2194,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_update_staff_contact: {
+        Args: {
+          p_club_id: string
+          p_contact_email: string
+          p_phone: string
+          p_target_profile_id: string
+        }
+        Returns: undefined
+      }
       admin_update_staff_profile: {
         Args: {
           p_club_id: string

@@ -1266,6 +1266,32 @@
         "generic": "No se pudo guardar el nombre."
       }
     },
+    "contact": {
+      "title": "Contacto",
+      "empty": "Sin datos de contacto.",
+      "phone": "Teléfono",
+      "email": "Email de contacto"
+    },
+    "edit_contact": {
+      "action": "Editar contacto",
+      "title": "Editar contacto",
+      "description": "Teléfono y email de contacto gestionados por el club. No es el email de acceso del entrenador.",
+      "field": {
+        "phone": "Teléfono",
+        "contact_email": "Email de contacto",
+        "contact_email_hint": "No es el email con el que inicia sesión."
+      },
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "errors": {
+        "phone_invalid": "El teléfono no es válido (entre 3 y 32 caracteres).",
+        "contact_email_invalid": "El email de contacto no es válido.",
+        "no_active_club": "No hay club activo.",
+        "target_invalid": "Este miembro no pertenece a tu club.",
+        "forbidden": "Solo un administrador del club puede editar el contacto.",
+        "generic": "No se pudo guardar el contacto."
+      }
+    },
     "remove": {
       "action": "Quitar del equipo",
       "title": "Quitar del equipo",

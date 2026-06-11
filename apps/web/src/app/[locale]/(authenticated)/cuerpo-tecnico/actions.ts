@@ -299,3 +299,91 @@ export async function updateStaffName(
   revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico', 'page');
   return { success: true };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// updateStaffContact (Bug 2 · 2c) — el admin edita el contacto del entrenador
+// (phone / contact_email), gestionado por el club. NO toca el email de login.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const CONTACT_EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+const updateStaffContactSchema = z.object({
+  // Vacío → null (campo opcional gestionado por el club).
+  phone: z
+    .string()
+    .trim()
+    .transform((v) => (v.length > 0 ? v : null))
+    .refine((v) => v === null || (v.length >= 3 && v.length <= 32), {
+      message: 'phone_invalid',
+    }),
+  contact_email: z
+    .string()
+    .trim()
+    .transform((v) => (v.length > 0 ? v : null))
+    .refine((v) => v === null || (v.length <= 254 && CONTACT_EMAIL_RE.test(v)), {
+      message: 'contact_email_invalid',
+    }),
+});
+
+export type UpdateStaffContactState = {
+  error?:
+    | 'phone_invalid'
+    | 'contact_email_invalid'
+    | 'no_active_club'
+    | 'target_invalid'
+    | 'forbidden'
+    | 'generic';
+  success?: boolean;
+};
+
+/**
+ * Bug 2 (2c) — guarda el contacto (phone/contact_email) de un miembro del club.
+ * Delega en la función SQL `admin_update_staff_contact` (SECURITY DEFINER, solo
+ * admin_club, solo target del club, solo esas dos columnas de memberships). NO
+ * toca el email de login (auth.users) ni profiles.
+ */
+export async function updateStaffContact(
+  targetProfileId: string,
+  _prev: UpdateStaffContactState,
+  formData: FormData
+): Promise<UpdateStaffContactState> {
+  const parsed = updateStaffContactSchema.safeParse({
+    phone: formData.get('phone') ?? '',
+    contact_email: formData.get('contact_email') ?? '',
+  });
+  if (!parsed.success) {
+    const code = parsed.error.issues[0]?.message;
+    if (code === 'phone_invalid' || code === 'contact_email_invalid') {
+      return { error: code };
+    }
+    return { error: 'generic' };
+  }
+
+  const clubId = await activeClubId();
+  if (!clubId) return { error: 'no_active_club' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase.rpc('admin_update_staff_contact', {
+    p_club_id: clubId,
+    p_target_profile_id: targetProfileId,
+    // El SQL acepta NULL (campos opcionales) pero el typegen los marca string.
+    p_phone: parsed.data.phone as unknown as string,
+    p_contact_email: parsed.data.contact_email as unknown as string,
+  });
+  if (error) {
+    const msg = error.message ?? '';
+    if (msg.includes('forbidden')) return { error: 'forbidden' };
+    if (msg.includes('target_invalid')) return { error: 'target_invalid' };
+    if (msg.includes('phone_invalid')) return { error: 'phone_invalid' };
+    if (msg.includes('contact_email_invalid')) {
+      return { error: 'contact_email_invalid' };
+    }
+    return { error: 'generic' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico/[membershipId]', 'page');
+  revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico', 'page');
+  return { success: true };
+}

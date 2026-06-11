@@ -1267,6 +1267,32 @@
         "generic": "Could not save the name."
       }
     },
+    "contact": {
+      "title": "Contact",
+      "empty": "No contact details.",
+      "phone": "Phone",
+      "email": "Contact email"
+    },
+    "edit_contact": {
+      "action": "Edit contact",
+      "title": "Edit contact",
+      "description": "Phone and contact email managed by the club. This is not the coach's login email.",
+      "field": {
+        "phone": "Phone",
+        "contact_email": "Contact email",
+        "contact_email_hint": "Not the email used to sign in."
+      },
+      "save": "Save",
+      "cancel": "Cancel",
+      "errors": {
+        "phone_invalid": "The phone is not valid (between 3 and 32 characters).",
+        "contact_email_invalid": "The contact email is not valid.",
+        "no_active_club": "No active club.",
+        "target_invalid": "This member does not belong to your club.",
+        "forbidden": "Only a club admin can edit the contact.",
+        "generic": "Could not save the contact."
+      }
+    },
     "remove": {
       "action": "Remove from team",
       "title": "Remove from team",
