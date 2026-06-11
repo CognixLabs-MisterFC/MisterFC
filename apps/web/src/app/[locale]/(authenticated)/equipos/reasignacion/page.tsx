@@ -17,6 +17,10 @@ import {
   type MappingDestTeam,
   type MappingPlayer,
 } from './team-mapping-card';
+import {
+  PendingPlayersPanel,
+  type PendingPlayer,
+} from './pending-players-panel';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -29,7 +33,7 @@ type TeamRow = {
 type MemberRow = {
   team_id: string;
   player_id: string;
-  players: { first_name: string; last_name: string | null };
+  players: { first_name: string; last_name: string | null; left_club_at: string | null };
 };
 
 export default async function ReasignacionPage({ params }: Props) {
@@ -90,7 +94,7 @@ export default async function ReasignacionPage({ params }: Props) {
   const { data: memberData } = allTeamIds.length
     ? await supabase
         .from('team_members')
-        .select('team_id, player_id, players!inner(first_name, last_name)')
+        .select('team_id, player_id, players!inner(first_name, last_name, left_club_at)')
         .in('team_id', allTeamIds)
         .is('left_at', null)
     : { data: [] as MemberRow[] };
@@ -126,8 +130,29 @@ export default async function ReasignacionPage({ params }: Props) {
   // Destino por defecto: el equipo upcoming con el mismo nombre, si existe.
   const destByName = new Map(destTeams.map((d) => [d.name.toLowerCase(), d.id]));
 
+  // C11b — PENDIENTES: jugadores de la temporada activa (en equipos origen),
+  // activos en el club (NO baja) y aún sin colocar en NINGÚN equipo de la
+  // upcoming. Derivado, sin estado nuevo.
+  const sourceTeamName = new Map(sourceTeams.map((s) => [s.id, s.name]));
+  const placedPlayerIds = new Set(placedTeamsByPlayer.keys());
+  const pendingMap = new Map<string, PendingPlayer>();
+  for (const m of members) {
+    if (!sourceTeamName.has(m.team_id)) continue; // solo equipos origen
+    if (placedPlayerIds.has(m.player_id)) continue; // ya colocado en upcoming
+    if (m.players.left_club_at != null) continue; // de baja → no es pendiente
+    if (pendingMap.has(m.player_id)) continue;
+    pendingMap.set(m.player_id, {
+      id: m.player_id,
+      name: formatPlayerName(m.players.first_name, m.players.last_name),
+      sourceTeam: sourceTeamName.get(m.team_id) ?? '',
+    });
+  }
+  const pendingPlayers = [...pendingMap.values()].sort((a, b) =>
+    a.name.localeCompare(b.name, 'es'),
+  );
+
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div className="flex flex-col gap-2">
         <Button asChild variant="ghost" size="sm" className="-ml-2 self-start">
           <Link href="/equipos">
@@ -187,20 +212,31 @@ export default async function ReasignacionPage({ params }: Props) {
             </Card>
           )}
 
-          {destTeams.length > 0 &&
-            sourceTeams.map((src) => (
-              <TeamMappingCard
-                key={src.id}
-                sourceTeam={{
-                  id: src.id,
-                  name: src.name,
-                  categoryName: src.categories.name,
-                }}
-                players={rosterBySource.get(src.id) ?? []}
+          {destTeams.length > 0 && sourceTeams.length > 0 && (
+            <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
+              <div className="flex flex-col gap-4">
+                {sourceTeams.map((src) => (
+                  <TeamMappingCard
+                    key={src.id}
+                    sourceTeam={{
+                      id: src.id,
+                      name: src.name,
+                      categoryName: src.categories.name,
+                    }}
+                    players={rosterBySource.get(src.id) ?? []}
+                    destTeams={destTeams}
+                    defaultDestId={
+                      destByName.get(src.name.toLowerCase()) ?? null
+                    }
+                  />
+                ))}
+              </div>
+              <PendingPlayersPanel
+                players={pendingPlayers}
                 destTeams={destTeams}
-                defaultDestId={destByName.get(src.name.toLowerCase()) ?? null}
               />
-            ))}
+            </div>
+          )}
         </>
       )}
     </div>

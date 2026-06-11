@@ -473,6 +473,20 @@
       "run": "Place ({count})",
       "placed_result": "{count, plural, =0 {No one new: they were already placed.} one {1 player placed.} other {# players placed.}}",
       "removed_result": "Player removed from the new season.",
+      "pending": {
+        "title": "Pending",
+        "subtitle": "Current-season players not yet placed in the new one (left-club players don't count).",
+        "empty": "No pending players left.",
+        "assign": "Assign",
+        "leave_no_team": "No team",
+        "baja": "Left club",
+        "baja_title": "Mark {name} as left club",
+        "baja_description": "The player will no longer appear in the club's active list. All their history is kept. You can reactivate them anytime.",
+        "reason_label": "Reason (optional)",
+        "reason_placeholder": "e.g. moved away, quit football…",
+        "cancel": "Cancel",
+        "baja_confirm": "Mark left club"
+      },
       "error": {
         "no_active_club": "No active club.",
         "no_players": "Select at least one player.",
@@ -481,6 +495,7 @@
         "dest_not_upcoming": "The destination must be a team in the season being prepared.",
         "team_invalid": "The team is not valid.",
         "not_upcoming": "You can only unassign from the season being prepared.",
+        "player_invalid": "The player does not belong to this club.",
         "generic": "We couldn't complete the operation. Please try again."
       }
     },
@@ -495,6 +510,7 @@
       "step_activate": "{upcoming} becomes the active season with its teams and already-placed players.",
       "unplaced_title": "{count, plural, one {1 player with no team in the new season} other {# players with no team in the new season}}",
       "unplaced_hint": "They are in a current-season team but haven't been placed in any new-season team. It may be intentional (leaving the club) or an oversight. Review them before continuing.",
+      "resolve_unplaced": "Resolve pending",
       "cutoff_label": "Cut-off date",
       "cutoff_hint": "Date the current-season memberships are closed at. Defaults to the season end.",
       "ack": "I understand that the open memberships of {active} will be closed and the season will become historical.",

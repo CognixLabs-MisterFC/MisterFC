@@ -145,6 +145,12 @@ export default async function FinalizarPage({ params }: Props) {
                     </li>
                   ))}
                 </ul>
+                {/* C11b: enlace para resolverlos uno a uno antes de finalizar. */}
+                <Button asChild variant="outline" size="sm" className="self-start">
+                  <Link href="/equipos/reasignacion">
+                    {t('finalize.resolve_unplaced')}
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           )}

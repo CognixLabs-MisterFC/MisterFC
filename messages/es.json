@@ -398,6 +398,20 @@
       "run": "Colocar ({count})",
       "placed_result": "{count, plural, =0 {Nadie nuevo: ya estaban colocados.} one {1 jugador colocado.} other {# jugadores colocados.}}",
       "removed_result": "Jugador desasignado de la temporada nueva.",
+      "pending": {
+        "title": "Pendientes",
+        "subtitle": "Jugadores de la temporada actual aún sin colocar en la nueva (las bajas no cuentan).",
+        "empty": "No quedan jugadores pendientes.",
+        "assign": "Asignar",
+        "leave_no_team": "Sin equipo",
+        "baja": "Baja",
+        "baja_title": "Dar de baja a {name}",
+        "baja_description": "El jugador dejará de aparecer en el listado activo del club. Se conserva todo su histórico. Podrás reactivarlo cuando quieras.",
+        "reason_label": "Razón (opcional)",
+        "reason_placeholder": "Ej. se muda, deja el fútbol…",
+        "cancel": "Cancelar",
+        "baja_confirm": "Dar de baja"
+      },
       "error": {
         "no_active_club": "No hay club activo.",
         "no_players": "Marca al menos un jugador.",
@@ -406,6 +420,7 @@
         "dest_not_upcoming": "El destino debe ser un equipo de la temporada en preparación.",
         "team_invalid": "El equipo no es válido.",
         "not_upcoming": "Solo se puede desasignar de la temporada en preparación.",
+        "player_invalid": "El jugador no pertenece a este club.",
         "generic": "No hemos podido completar la operación. Inténtalo de nuevo."
       }
     },
@@ -420,6 +435,7 @@
       "step_activate": "{upcoming} pasa a ser la temporada activa con sus equipos y jugadores ya colocados.",
       "unplaced_title": "{count, plural, one {1 jugador sin equipo en la nueva temporada} other {# jugadores sin equipo en la nueva temporada}}",
       "unplaced_hint": "Están en un equipo de la temporada actual pero no se han colocado en ninguno de la nueva. Puede ser intencional (dejan el club) o un olvido. Revísalos antes de continuar.",
+      "resolve_unplaced": "Resolver pendientes",
       "cutoff_label": "Fecha de corte",
       "cutoff_hint": "Fecha en que se cierran las fichas de la temporada actual. Por defecto, el final de temporada.",
       "ack": "Entiendo que se cerrarán las fichas abiertas de {active} y la temporada pasará a ser histórica.",
