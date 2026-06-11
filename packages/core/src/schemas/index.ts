@@ -46,6 +46,7 @@ export {
   activeSeasonLabel,
   nextSeasonLabel,
   seasonEndDate,
+  teamsInActiveSeason,
 } from './club-structure';
 export type {
   CategoryInput,

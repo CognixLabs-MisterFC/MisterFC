@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Megaphone, Pin, Globe } from 'lucide-react';
 import { createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -47,10 +48,14 @@ export default async function AnunciosGlobalesPage({
   const canPublish = PUBLISHER_ROLES.includes(ctx.activeClub.role);
 
   // Teams del club — para el form (admin/coord) y para el filtro de lista.
+  // Bug-1: ambos son operativos → solo la temporada activa (sin duplicados del
+  // rollover). El nombre de equipo de cada anuncio sale de su propio embed.
+  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
   const { data: teamRows } = await supabase
     .from('teams')
     .select('id, name, categories!inner(name, club_id)')
     .eq('categories.club_id', clubId)
+    .eq('season', activeSeason)
     .order('name', { ascending: true });
   type TeamRow = {
     id: string;

@@ -6,6 +6,7 @@ import {
   activeSeasonLabel,
   nextSeasonLabel,
   seasonEndDate,
+  teamsInActiveSeason,
 } from '../club-structure';
 
 describe('assertCategoryDeletable (C3)', () => {
@@ -104,5 +105,29 @@ describe('seasonEndDate (C8)', () => {
 
   it('label inválido → null (el caller decide el fallback)', () => {
     expect(seasonEndDate('basura')).toBeNull();
+  });
+});
+
+describe('teamsInActiveSeason (Bug-1 scope)', () => {
+  const teams = [
+    { id: 'a25', name: 'Alevín A', season: '2025-26' },
+    { id: 'a26', name: 'Alevín A', season: '2026-27' }, // mismo nombre, otra temporada
+    { id: 'b26', name: 'Alevín B', season: '2026-27' },
+  ];
+
+  it('devuelve solo los equipos de la temporada activa', () => {
+    const out = teamsInActiveSeason(teams, '2026-27');
+    expect(out.map((t) => t.id)).toEqual(['a26', 'b26']);
+  });
+
+  it('elimina los duplicados por nombre del rollover (un "Alevín A")', () => {
+    const out = teamsInActiveSeason(teams, '2026-27');
+    const alevinA = out.filter((t) => t.name === 'Alevín A');
+    expect(alevinA).toHaveLength(1);
+    expect(alevinA[0]!.season).toBe('2026-27');
+  });
+
+  it('temporada sin equipos → lista vacía', () => {
+    expect(teamsInActiveSeason(teams, '2024-25')).toEqual([]);
   });
 });

@@ -1,8 +1,10 @@
 import {
   TIMEZONE_OLA1,
   createSupabaseServerClient,
+  teamsInActiveSeason,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 import {
   type LocalDay,
   endOfMonth,
@@ -201,7 +203,7 @@ export async function loadCalendarData(
     )
     .order('name');
 
-  const teams: TeamOption[] = (rawTeams ?? [])
+  const allTeams: TeamOption[] = (rawTeams ?? [])
     .map((t) => {
       const cat = t.categories as unknown as {
         name: string;
@@ -225,6 +227,12 @@ export async function loadCalendarData(
       void club_id;
       return rest;
     });
+
+  // Bug-1: selectores/diálogo del calendario son operativos → solo la temporada
+  // activa (sin duplicados del rollover). Los nombres de equipo de cada evento
+  // vienen del embed del propio evento, así que el histórico se sigue mostrando.
+  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
+  const teams: TeamOption[] = teamsInActiveSeason(allTeams, activeSeason);
 
   // Rework A (A4) — la categoría es una plantilla permanente sin temporada. El
   // selector de categoría del calendario ya no muestra/ordena por season (la

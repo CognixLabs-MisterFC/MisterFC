@@ -23,8 +23,10 @@ import {
   type PlayerPosition,
   createSupabaseServerClient,
   getCurrentUser,
+  teamsInActiveSeason,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 
 export type Role =
   | 'admin_club'
@@ -191,11 +193,16 @@ async function loadVisibleTeams(
       season: r.season,
     }));
 
+  // Bug-1: selector operativo → solo la temporada activa (sin duplicados del
+  // rollover). La asignación de jugadores opera sobre la temporada en curso.
+  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
+  const scoped = teamsInActiveSeason(all, activeSeason);
+
   if (scope.kind === 'restricted') {
     const allowed = new Set(scope.teamIds);
-    return all.filter((t) => allowed.has(t.id));
+    return scoped.filter((t) => allowed.has(t.id));
   }
-  return all;
+  return scoped;
 }
 
 /**
