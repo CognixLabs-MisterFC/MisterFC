@@ -53,6 +53,9 @@ export type CoachRow = {
   assignments: CoachTeamAssignment[];
   /** Resumen de caps concedidas, solo para ayudantes (X / 9). */
   caps_granted: number | null;
+  /** Contacto gestionado por el club (Bug 2 · 2c). NO es el email de login. */
+  phone: string | null;
+  contact_email: string | null;
 };
 
 export type TeamOption = {
@@ -260,7 +263,7 @@ export async function loadCoachList(
     .select(
       `id, staff_role, joined_at, team_id, membership_id,
        teams!inner(id, name, color, category_id, season, categories!inner(id, name, club_id)),
-       memberships!inner(id, role, club_id, profile_id, profiles!inner(id, full_name, avatar_url))`
+       memberships!inner(id, role, club_id, profile_id, phone, contact_email, profiles!inner(id, full_name, avatar_url))`
     )
     .is('left_at', null);
 
@@ -293,6 +296,8 @@ export async function loadCoachList(
       role: string;
       club_id: string;
       profile_id: string;
+      phone: string | null;
+      contact_email: string | null;
       profiles: {
         id: string;
         full_name: string | null;
@@ -339,6 +344,8 @@ export async function loadCoachList(
           | 'entrenador_ayudante',
         assignments: [assignment],
         caps_granted: null,
+        phone: (r.memberships.phone as string | null) ?? null,
+        contact_email: (r.memberships.contact_email as string | null) ?? null,
       });
     }
   }
@@ -457,7 +464,7 @@ export async function loadCoachDetail(
   const { data: m } = await supabase
     .from('memberships')
     .select(
-      `id, role, club_id, profile_id, profiles!inner(id, full_name, avatar_url)`
+      `id, role, club_id, profile_id, phone, contact_email, profiles!inner(id, full_name, avatar_url)`
     )
     .eq('id', membershipId)
     .maybeSingle();
@@ -551,6 +558,8 @@ export async function loadCoachDetail(
     club_role: m.role as 'entrenador_principal' | 'entrenador_ayudante',
     assignments,
     caps_granted: capsGranted,
+    phone: (m.phone as string | null) ?? null,
+    contact_email: (m.contact_email as string | null) ?? null,
   };
 
   const allTeams = await loadVisibleTeams(clubId, { kind: 'all' });
