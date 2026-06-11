@@ -1249,6 +1249,24 @@
         "generic": "No s'ha pogut completar el moviment."
       }
     },
+    "edit_name": {
+      "action": "Editar nom",
+      "title": "Editar nom",
+      "description": "Corregeix el nom amb què apareix aquest membre. No afecta el seu email d'accés.",
+      "field": {
+        "name": "Nom complet"
+      },
+      "save": "Guardar",
+      "cancel": "Cancel·lar",
+      "errors": {
+        "name_required": "El nom no pot estar buit.",
+        "name_too_long": "El nom és massa llarg (màx. 120).",
+        "no_active_club": "No hi ha club actiu.",
+        "target_invalid": "Aquest membre no pertany al teu club.",
+        "forbidden": "Només un administrador del club pot editar noms.",
+        "generic": "No s'ha pogut guardar el nom."
+      }
+    },
     "remove": {
       "action": "Llevar de l'equip",
       "title": "Llevar de l'equip",

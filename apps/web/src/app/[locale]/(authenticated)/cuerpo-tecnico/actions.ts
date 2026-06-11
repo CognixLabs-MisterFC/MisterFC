@@ -1,12 +1,26 @@
 'use server';
 
+import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import {
+  ACTIVE_CLUB_COOKIE_NAME,
   TEAM_STAFF_ROLES,
   createSupabaseServerClient,
+  getCurrentUserClubs,
+  resolveActiveClub,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+
+async function activeClubId(): Promise<string | null> {
+  const adapter = await createCookieAdapter();
+  const clubs = await getCurrentUserClubs(adapter);
+  if (clubs.length === 0) return null;
+  const cookieStore = await cookies();
+  const cookieValue = cookieStore.get(ACTIVE_CLUB_COOKIE_NAME)?.value ?? null;
+  const { active } = resolveActiveClub(clubs, cookieValue);
+  return active?.club.id ?? null;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // moveStaffToTeam (F2.11)
@@ -214,5 +228,74 @@ export async function removeStaffAssignment(
       'page'
     );
   }
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// updateStaffName (Bug 2 · 2a) — el admin corrige el nombre de un entrenador
+// ─────────────────────────────────────────────────────────────────────────────
+
+const updateStaffNameSchema = z.object({
+  full_name: z
+    .string()
+    .trim()
+    .min(1, { message: 'name_required' })
+    .max(120, { message: 'name_too_long' }),
+});
+
+export type UpdateStaffNameState = {
+  error?:
+    | 'name_required'
+    | 'name_too_long'
+    | 'no_active_club'
+    | 'target_invalid'
+    | 'forbidden'
+    | 'generic';
+  success?: boolean;
+};
+
+/**
+ * Bug 2 (2a) — corrige el `full_name` (global) de un miembro del club. Delega en
+ * la función SQL `admin_update_staff_profile` (SECURITY DEFINER, solo admin_club,
+ * solo target del club, solo el campo nombre). No relaja profiles_update_self.
+ */
+export async function updateStaffName(
+  targetProfileId: string,
+  _prev: UpdateStaffNameState,
+  formData: FormData
+): Promise<UpdateStaffNameState> {
+  const parsed = updateStaffNameSchema.safeParse({
+    full_name: formData.get('full_name'),
+  });
+  if (!parsed.success) {
+    const code = parsed.error.issues[0]?.message;
+    if (code === 'name_required' || code === 'name_too_long') {
+      return { error: code };
+    }
+    return { error: 'generic' };
+  }
+
+  const clubId = await activeClubId();
+  if (!clubId) return { error: 'no_active_club' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase.rpc('admin_update_staff_profile', {
+    p_club_id: clubId,
+    p_target_profile_id: targetProfileId,
+    p_full_name: parsed.data.full_name,
+  });
+  if (error) {
+    const msg = error.message ?? '';
+    if (msg.includes('forbidden')) return { error: 'forbidden' };
+    if (msg.includes('target_invalid')) return { error: 'target_invalid' };
+    if (msg.includes('name_required')) return { error: 'name_required' };
+    if (msg.includes('name_too_long')) return { error: 'name_too_long' };
+    return { error: 'generic' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico/[membershipId]', 'page');
+  revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico', 'page');
   return { success: true };
 }

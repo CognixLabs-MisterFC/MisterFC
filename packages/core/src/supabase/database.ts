@@ -2188,6 +2188,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_update_staff_profile: {
+        Args: {
+          p_club_id: string
+          p_full_name: string
+          p_target_profile_id: string
+        }
+        Returns: undefined
+      }
       audit_get_conversation: {
         Args: { p_conversation_id: string; p_reason: string }
         Returns: {

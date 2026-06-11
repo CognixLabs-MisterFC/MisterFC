@@ -1249,6 +1249,24 @@
         "generic": "Could not complete the move."
       }
     },
+    "edit_name": {
+      "action": "Edit name",
+      "title": "Edit name",
+      "description": "Fix the name this member is shown with. It does not affect their login email.",
+      "field": {
+        "name": "Full name"
+      },
+      "save": "Save",
+      "cancel": "Cancel",
+      "errors": {
+        "name_required": "The name cannot be empty.",
+        "name_too_long": "The name is too long (max 120).",
+        "no_active_club": "No active club.",
+        "target_invalid": "This member does not belong to your club.",
+        "forbidden": "Only a club admin can edit names.",
+        "generic": "Could not save the name."
+      }
+    },
     "remove": {
       "action": "Remove from team",
       "title": "Remove from team",
