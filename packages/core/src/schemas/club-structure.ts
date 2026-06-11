@@ -204,6 +204,22 @@ export function nextSeasonLabel(label: string): string {
 }
 
 /**
+ * 🔒 Bug-1 (scope de selectores) — filtra una lista de equipos a la temporada
+ * ACTIVA del club. Los selectores OPERATIVOS (mover staff, equipos del
+ * entrenador/jugador, asignar, filtros de calendario/asistencia/anuncios) deben
+ * mostrar solo equipos de la activa: tras el rollover hay equipos con el mismo
+ * nombre en temporadas distintas y, sin este filtro, se ven duplicados.
+ *
+ * Las vistas históricas (trayectoria, ficha de un equipo concreto) NO usan esto.
+ */
+export function teamsInActiveSeason<T extends { season: string }>(
+  teams: ReadonlyArray<T>,
+  activeSeason: string
+): T[] {
+  return teams.filter((t) => t.season === activeSeason);
+}
+
+/**
  * 🔒 Rework C (C8) — fecha de corte por defecto al finalizar una temporada.
  *
  * Una temporada `YYYY-YY` (fútbol español) corre del 1-ago al 31-jul del año

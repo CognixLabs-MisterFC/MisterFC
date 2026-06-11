@@ -17,6 +17,7 @@ import {
   pickLastTrainingWithoutAttendance,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 
 export type CoachTeamCard = {
   team_id: string;
@@ -116,12 +117,21 @@ export async function loadCoachTeams(
   membershipId: string,
   clubId: string
 ): Promise<CoachTeamCard[]> {
-  const staffTeams = await loadStaffTeams(membershipId, clubId);
-  if (staffTeams.length === 0) return [];
-  const teamIds = staffTeams.map((s) => s.team_id);
+  const allStaffTeams = await loadStaffTeams(membershipId, clubId);
+  if (allStaffTeams.length === 0) return [];
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
+
+  // Bug-1: el hub del entrenador es operativo → solo equipos de la temporada
+  // activa (sin duplicados del rollover). La ficha de un equipo concreto
+  // (loadTeamDetail) sigue siendo accesible aunque sea de otra temporada.
+  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
+  const staffTeams = allStaffTeams.filter(
+    (s) => s.teams.season === activeSeason
+  );
+  if (staffTeams.length === 0) return [];
+  const teamIds = staffTeams.map((s) => s.team_id);
 
   const nowIso = new Date().toISOString();
   const horizonIso = new Date(

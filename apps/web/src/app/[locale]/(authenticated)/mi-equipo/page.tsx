@@ -12,8 +12,10 @@ import {
   listTeammates,
   listUpcomingTeamEvents,
   listVisibleAnnouncements,
+  teamsInActiveSeason,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -100,8 +102,17 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
       };
     };
   };
-  const myTeams = ((tmRows ?? []) as unknown as TM[]).filter(
-    (r) => r.teams.categories.club_id === ctx.activeClub.club.id,
+  // Bug-1: "mi equipo" es operativo → solo equipos de la temporada activa.
+  // (Sin esto, un jugador con membresía abierta en 25-26 y 26-27 vería ambos.)
+  const activeSeason = await getActiveSeasonLabel(
+    supabase,
+    ctx.activeClub.club.id,
+  );
+  const myTeams = teamsInActiveSeason(
+    ((tmRows ?? []) as unknown as TM[]).filter(
+      (r) => r.teams.categories.club_id === ctx.activeClub.club.id,
+    ).map((r) => ({ ...r, season: r.teams.season })),
+    activeSeason,
   );
 
   if (myTeams.length === 0) {

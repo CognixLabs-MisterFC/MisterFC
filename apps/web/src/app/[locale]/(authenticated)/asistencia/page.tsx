@@ -8,6 +8,7 @@ import {
 } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 import { Link } from '@/i18n/navigation';
 import {
   Card,
@@ -93,12 +94,19 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const scope = await resolveAsistenciaScope(ctx.activeClub.club.id, role);
+  // Bug-1: el filtro de equipo es operativo → solo la temporada activa (sin
+  // duplicados del rollover).
+  const activeSeason = await getActiveSeasonLabel(
+    supabase,
+    ctx.activeClub.club.id,
+  );
   let teamOptions: Array<{ id: string; name: string }> = [];
   if (scope.kind === 'all') {
     const { data: teams } = await supabase
       .from('teams')
       .select('id, name, categories!inner(club_id)')
-      .eq('categories.club_id', ctx.activeClub.club.id);
+      .eq('categories.club_id', ctx.activeClub.club.id)
+      .eq('season', activeSeason);
     teamOptions = (teams ?? []).map((t) => ({
       id: t.id as string,
       name: t.name as string,
@@ -107,7 +115,8 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
     const { data: teams } = await supabase
       .from('teams')
       .select('id, name')
-      .in('id', scope.teamIds);
+      .in('id', scope.teamIds)
+      .eq('season', activeSeason);
     teamOptions = (teams ?? []).map((t) => ({
       id: t.id as string,
       name: t.name as string,

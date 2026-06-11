@@ -21,8 +21,10 @@ import {
   type TeamStaffRole,
   createSupabaseServerClient,
   getCurrentUser,
+  teamsInActiveSeason,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 import type { Role } from '../jugadores/queries';
 
 export type StaffScope =
@@ -164,11 +166,16 @@ async function loadVisibleTeams(
       season: r.season,
     }));
 
+  // Bug-1: mover staff es operativo → solo equipos de la temporada activa
+  // (evita los duplicados por nombre que dejó el rollover).
+  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
+  const scoped = teamsInActiveSeason(all, activeSeason);
+
   if (scope.kind === 'restricted') {
     const allowed = new Set(scope.teamIds);
-    return all.filter((t) => allowed.has(t.id));
+    return scoped.filter((t) => allowed.has(t.id));
   }
-  return all;
+  return scoped;
 }
 
 async function loadVisibleCategories(
