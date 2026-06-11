@@ -342,3 +342,53 @@ export async function finalizeSeason(
   revalidatePath('/[locale]/(authenticated)/equipos', 'page');
   return { ok: { season: data as string } };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rework C (C9) — desasignar jugador colocado por error en la reasignación
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type UnplacePlayerState = {
+  ok?: { removed: number };
+  error?:
+    | 'no_active_club'
+    | 'team_invalid'
+    | 'not_upcoming'
+    | 'forbidden'
+    | 'generic';
+};
+
+/**
+ * Deshace una colocación de C7: quita la membresía abierta del jugador en un
+ * equipo de la temporada `upcoming` (DELETE, sin histórico). Delega en la función
+ * SQL `unplace_player_from_upcoming` (SECURITY DEFINER, solo admin_club, SOLO
+ * equipos upcoming — jamás active/finalized, idempotente).
+ */
+export async function unplacePlayerFromUpcoming(
+  teamId: string,
+  playerId: string,
+): Promise<UnplacePlayerState> {
+  const clubId = await activeClubId();
+  if (!clubId) return { error: 'no_active_club' };
+  if (!UUID_RE.test(teamId) || !UUID_RE.test(playerId)) {
+    return { error: 'team_invalid' };
+  }
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data, error } = await supabase.rpc('unplace_player_from_upcoming', {
+    p_club_id: clubId,
+    p_team_id: teamId,
+    p_player_id: playerId,
+  });
+  if (error) {
+    const msg = error.message ?? '';
+    if (msg.includes('forbidden')) return { error: 'forbidden' };
+    if (msg.includes('not_upcoming')) return { error: 'not_upcoming' };
+    if (msg.includes('team_invalid')) return { error: 'team_invalid' };
+    return { error: 'generic' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/equipos/reasignacion', 'page');
+  return { ok: { removed: (data as number) ?? 0 } };
+}

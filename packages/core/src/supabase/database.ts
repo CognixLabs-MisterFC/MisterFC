@@ -2252,6 +2252,10 @@ export type Database = {
       }
       seed_standard_categories: { Args: { p_club_id: string }; Returns: number }
       unaccent: { Args: { "": string }; Returns: string }
+      unplace_player_from_upcoming: {
+        Args: { p_club_id: string; p_player_id: string; p_team_id: string }
+        Returns: number
+      }
       user_active_team_for_staff: {
         Args: { p_club_id: string }
         Returns: string

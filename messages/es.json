@@ -388,16 +388,21 @@
       "dest_label": "Equipo destino",
       "select_all": "Marcar todos",
       "unselect_all": "Desmarcar todos",
-      "already_placed": "Ya colocado",
+      "placed_here": "Colocado",
+      "placed_elsewhere": "Colocado en otro equipo",
+      "remove": "Quitar",
       "run": "Colocar ({count})",
       "placed_result": "{count, plural, =0 {Nadie nuevo: ya estaban colocados.} one {1 jugador colocado.} other {# jugadores colocados.}}",
+      "removed_result": "Jugador desasignado de la temporada nueva.",
       "error": {
         "no_active_club": "No hay club activo.",
         "no_players": "Marca al menos un jugador.",
         "forbidden": "Solo un administrador del club puede reasignar jugadores.",
         "dest_team_invalid": "El equipo destino no es válido.",
         "dest_not_upcoming": "El destino debe ser un equipo de la temporada en preparación.",
-        "generic": "No hemos podido colocar a los jugadores. Inténtalo de nuevo."
+        "team_invalid": "El equipo no es válido.",
+        "not_upcoming": "Solo se puede desasignar de la temporada en preparación.",
+        "generic": "No hemos podido completar la operación. Inténtalo de nuevo."
       }
     },
     "finalize": {

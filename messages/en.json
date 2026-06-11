@@ -463,16 +463,21 @@
       "dest_label": "Destination team",
       "select_all": "Select all",
       "unselect_all": "Unselect all",
-      "already_placed": "Already placed",
+      "placed_here": "Placed",
+      "placed_elsewhere": "Placed in another team",
+      "remove": "Remove",
       "run": "Place ({count})",
       "placed_result": "{count, plural, =0 {No one new: they were already placed.} one {1 player placed.} other {# players placed.}}",
+      "removed_result": "Player removed from the new season.",
       "error": {
         "no_active_club": "No active club.",
         "no_players": "Select at least one player.",
         "forbidden": "Only a club admin can reassign players.",
         "dest_team_invalid": "The destination team is not valid.",
         "dest_not_upcoming": "The destination must be a team in the season being prepared.",
-        "generic": "We couldn't place the players. Please try again."
+        "team_invalid": "The team is not valid.",
+        "not_upcoming": "You can only unassign from the season being prepared.",
+        "generic": "We couldn't complete the operation. Please try again."
       }
     },
     "finalize": {

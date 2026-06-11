@@ -463,16 +463,21 @@
       "dest_label": "Equip destí",
       "select_all": "Marcar tots",
       "unselect_all": "Desmarcar tots",
-      "already_placed": "Ja col·locat",
+      "placed_here": "Col·locat",
+      "placed_elsewhere": "Col·locat en un altre equip",
+      "remove": "Llevar",
       "run": "Col·locar ({count})",
       "placed_result": "{count, plural, =0 {Ningú nou: ja estaven col·locats.} one {1 jugador col·locat.} other {# jugadors col·locats.}}",
+      "removed_result": "Jugador desassignat de la temporada nova.",
       "error": {
         "no_active_club": "No hi ha club actiu.",
         "no_players": "Marca almenys un jugador.",
         "forbidden": "Només un administrador del club pot reassignar jugadors.",
         "dest_team_invalid": "L'equip destí no és vàlid.",
         "dest_not_upcoming": "El destí ha de ser un equip de la temporada en preparació.",
-        "generic": "No hem pogut col·locar els jugadors. Torna-ho a provar."
+        "team_invalid": "L'equip no és vàlid.",
+        "not_upcoming": "Només es pot desassignar de la temporada en preparació.",
+        "generic": "No hem pogut completar l'operació. Torna-ho a provar."
       }
     },
     "finalize": {
