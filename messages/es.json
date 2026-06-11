@@ -368,6 +368,10 @@
     "page_subtitle": "Equipos del club por temporada.",
     "manage_templates": "Categorías",
     "open_season": "Abrir temporada {season}",
+    "open_season_confirm_title": "Abrir la temporada {season}",
+    "open_season_confirm_description": "Estás a punto de abrir la temporada {season}. Se creará la temporada nueva y se clonarán los equipos. ¿Confirmar?",
+    "open_season_confirm_cancel": "Cancelar",
+    "open_season_confirm_confirm": "Confirmar",
     "upcoming_banner": "Temporada {season} en preparación. Ajusta los equipos (añade, quita o renombra); los jugadores se reasignan en el siguiente paso.",
     "open_season_error": {
       "no_active_club": "No hay club activo.",
