@@ -20,6 +20,7 @@ import { CalendarAgenda } from '../../calendario/_components/calendar-agenda';
 import { today as todayLocal } from '@/lib/calendar-utils';
 import { MoveStaffDialog } from '../_components/move-staff-dialog';
 import { RemoveAssignmentButton } from '../_components/remove-assignment-button';
+import { EditStaffNameDialog } from '../_components/edit-staff-name-dialog';
 import { loadCoachDetail } from '../queries';
 import type { Role } from '../../jugadores/queries';
 
@@ -114,10 +115,19 @@ export default async function CoachDetailPage({ params }: Props) {
         >
           {initials(coach.full_name)}
         </span>
-        <div className="flex flex-col">
-          <h1 className="text-3xl font-bold tracking-tight">
-            {coach.full_name}
-          </h1>
+        <div className="flex flex-1 flex-col">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">
+              {coach.full_name}
+            </h1>
+            {/* Bug 2 · 2a: solo admin_club, y no para uno mismo (eso va en /perfil). */}
+            {role === 'admin_club' && coach.profile_id !== ctx.user.id && (
+              <EditStaffNameDialog
+                targetProfileId={coach.profile_id}
+                currentName={coach.full_name}
+              />
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">
             {tClubRole(coach.club_role)}
             {coach.club_role === 'entrenador_ayudante' &&

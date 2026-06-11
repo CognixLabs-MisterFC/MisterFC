@@ -1248,6 +1248,24 @@
         "generic": "No se pudo completar el movimiento."
       }
     },
+    "edit_name": {
+      "action": "Editar nombre",
+      "title": "Editar nombre",
+      "description": "Corrige el nombre con el que aparece este miembro. No afecta a su email de acceso.",
+      "field": {
+        "name": "Nombre completo"
+      },
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "errors": {
+        "name_required": "El nombre no puede estar vacío.",
+        "name_too_long": "El nombre es demasiado largo (máx. 120).",
+        "no_active_club": "No hay club activo.",
+        "target_invalid": "Este miembro no pertenece a tu club.",
+        "forbidden": "Solo un administrador del club puede editar nombres.",
+        "generic": "No se pudo guardar el nombre."
+      }
+    },
     "remove": {
       "action": "Quitar del equipo",
       "title": "Quitar del equipo",
