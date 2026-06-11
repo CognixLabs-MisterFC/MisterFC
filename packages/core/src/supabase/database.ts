@@ -1727,6 +1727,8 @@ export type Database = {
           id: string
           invite_email: string | null
           last_name: string | null
+          left_club_at: string | null
+          left_club_reason: string | null
           medical_notes: string | null
           origin: string | null
           photo_url: string | null
@@ -1746,6 +1748,8 @@ export type Database = {
           id?: string
           invite_email?: string | null
           last_name?: string | null
+          left_club_at?: string | null
+          left_club_reason?: string | null
           medical_notes?: string | null
           origin?: string | null
           photo_url?: string | null
@@ -1765,6 +1769,8 @@ export type Database = {
           id?: string
           invite_email?: string | null
           last_name?: string | null
+          left_club_at?: string | null
+          left_club_reason?: string | null
           medical_notes?: string | null
           origin?: string | null
           photo_url?: string | null
@@ -2251,6 +2257,15 @@ export type Database = {
         Returns: number
       }
       seed_standard_categories: { Args: { p_club_id: string }; Returns: number }
+      set_player_left_club: {
+        Args: {
+          p_club_id: string
+          p_left_at: string
+          p_player_id: string
+          p_reason: string
+        }
+        Returns: string
+      }
       unaccent: { Args: { "": string }; Returns: string }
       unplace_player_from_upcoming: {
         Args: { p_club_id: string; p_player_id: string; p_team_id: string }

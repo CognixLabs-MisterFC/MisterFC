@@ -725,6 +725,7 @@
     "empty_filtered": "No players match these filters.",
     "no_team": "No team",
     "has_account": "Account linked",
+    "left_club_badge": "Left club",
     "age_years_short": "{age} yrs",
     "table": {
       "avatar": "Initials",
@@ -747,10 +748,31 @@
       "empty_team": "No visible teams.",
       "search_placeholder": "Search by name or surname…",
       "search_label": "Search players",
-      "search_clear": "Clear search"
+      "search_clear": "Clear search",
+      "no_team_segment": "No team",
+      "show_left_club": "Show left-club"
     },
     "row_actions": {
       "open_card": "Open profile"
+    },
+    "baja": {
+      "action": "Mark left club",
+      "reactivate_action": "Reactivate",
+      "title": "Mark {name} as left club",
+      "description": "The player will no longer appear in the club's active list. All their history (teams, stats) is kept. You can reactivate them anytime.",
+      "reactivate_title": "Reactivate {name}",
+      "reactivate_description": "The player will appear again in the club's active list.",
+      "reason_label": "Reason (optional)",
+      "reason_placeholder": "e.g. moved away, quit football…",
+      "cancel": "Cancel",
+      "confirm": "Mark left club",
+      "reactivate_confirm": "Reactivate",
+      "error": {
+        "no_active_club": "No active club.",
+        "player_invalid": "The player does not belong to this club.",
+        "forbidden": "Only a club admin can mark a player as left or reactivate.",
+        "generic": "We couldn't complete the operation. Please try again."
+      }
     },
     "pagination": {
       "prev": "Previous",

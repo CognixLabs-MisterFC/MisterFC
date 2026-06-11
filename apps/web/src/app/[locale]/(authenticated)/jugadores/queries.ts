@@ -52,6 +52,8 @@ export type PlayerRow = {
   current_category_name: string | null;
   current_category_season: string | null;
   has_account: boolean;
+  /** Rework C (C11a): jugador dado de baja del club (left_club_at no nulo). */
+  is_left_club: boolean;
 };
 
 export type TeamOption = {
@@ -68,6 +70,10 @@ export type GlobalPlayersFilters = {
   years: number[];
   positions: string[];
   teamIds: string[];
+  /** C11a: incluir bajas en el listado (por defecto se ocultan). */
+  showLeftClub: boolean;
+  /** C11a: solo jugadores club-activos SIN equipo (derivado). */
+  noTeam: boolean;
 };
 
 export type GlobalPlayersResult = {
@@ -79,6 +85,8 @@ export type GlobalPlayersResult = {
   visibleYears: number[];
   /** El user puede ejecutar la acción "Asignar a equipo" sobre los visibles. */
   canManage: boolean;
+  /** C11a: nº de jugadores club-activos sin equipo (para el segmento/badge). */
+  noTeamCount: number;
 };
 
 export const PLAYERS_PAGE_SIZE = 50;
@@ -208,6 +216,7 @@ export async function loadGlobalPlayers(
       visibleTeams: [],
       visibleYears: [],
       canManage: false,
+      noTeamCount: 0,
     };
   }
 
@@ -242,6 +251,12 @@ export async function loadGlobalPlayers(
       ? visibleTeamIds
       : teamFilter;
 
+  // C11a: nº de jugadores club-activos sin equipo (solo admin/coord lo gestionan;
+  // para scope restringido no aplica → 0). Excluye bajas siempre.
+  const noTeamIds =
+    scope.kind === 'all' ? await loadNoTeamPlayerIds(clubId) : [];
+  const noTeamCount = noTeamIds.length;
+
   // Si principal/ayudante no tiene equipos asignados → 0 resultados.
   if (scope.kind === 'restricted' && visibleTeamIds.length === 0) {
     return {
@@ -250,6 +265,7 @@ export async function loadGlobalPlayers(
       visibleTeams,
       visibleYears: [],
       canManage: true,
+      noTeamCount,
     };
   }
 
@@ -271,6 +287,25 @@ export async function loadGlobalPlayers(
         visibleTeams,
         visibleYears: [],
         canManage: true,
+        noTeamCount,
+      };
+    }
+  }
+
+  // C11a: el filtro "sin equipo" restringe a los club-activos sin membresía
+  // abierta (intersecta con cualquier restricción de equipo → normalmente vacío).
+  if (filters.noTeam) {
+    allowedPlayerIds = allowedPlayerIds
+      ? allowedPlayerIds.filter((id) => noTeamIds.includes(id))
+      : noTeamIds;
+    if (allowedPlayerIds.length === 0) {
+      return {
+        players: [],
+        total: 0,
+        visibleTeams,
+        visibleYears: [],
+        canManage: true,
+        noTeamCount,
       };
     }
   }
@@ -279,12 +314,18 @@ export async function loadGlobalPlayers(
   let q = supabase
     .from('players')
     .select(
-      `id, first_name, last_name, date_of_birth, dorsal, position_main,
+      `id, first_name, last_name, date_of_birth, dorsal, position_main, left_club_at,
        team_members!left(team_id, left_at, teams(id, name, color, season, categories(id, name))),
        player_accounts(profile_id)`,
       { count: 'exact' }
     )
     .eq('club_id', clubId);
+
+  // C11a: por defecto se ocultan las bajas (left_club_at IS NULL). El toggle
+  // "ver bajas" las incluye para consultar su histórico.
+  if (!filters.showLeftClub) {
+    q = q.is('left_club_at', null);
+  }
 
   if (allowedPlayerIds) {
     q = q.in('id', allowedPlayerIds);
@@ -349,6 +390,7 @@ export async function loadGlobalPlayers(
       current_category_name: active?.teams?.categories?.name ?? null,
       current_category_season: active?.teams?.season ?? null,
       has_account: accounts.length > 0,
+      is_left_club: (p.left_club_at as string | null) != null,
     };
   });
 
@@ -362,7 +404,44 @@ export async function loadGlobalPlayers(
     visibleTeams,
     visibleYears,
     canManage: true,
+    noTeamCount,
   };
+}
+
+/**
+ * C11a — player_ids de jugadores CLUB-ACTIVOS (left_club_at IS NULL) SIN equipo:
+ * sin ningún team_members abierto en equipos del club. Las bajas se excluyen
+ * siempre (no cuentan como "sin equipo"). Derivado, sin columna nueva.
+ */
+async function loadNoTeamPlayerIds(clubId: string): Promise<string[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: activeData } = await supabase
+    .from('players')
+    .select('id')
+    .eq('club_id', clubId)
+    .is('left_club_at', null);
+  const activeIds = (activeData ?? []).map((r) => r.id as string);
+  if (activeIds.length === 0) return [];
+
+  const { data: teamData } = await supabase
+    .from('teams')
+    .select('id')
+    .eq('club_id', clubId);
+  const clubTeamIds = (teamData ?? []).map((r) => r.id as string);
+
+  const withTeam = new Set<string>();
+  if (clubTeamIds.length > 0) {
+    const { data: tmData } = await supabase
+      .from('team_members')
+      .select('player_id')
+      .is('left_at', null)
+      .in('team_id', clubTeamIds);
+    for (const r of tmData ?? []) withTeam.add(r.player_id as string);
+  }
+
+  return activeIds.filter((id) => !withTeam.has(id));
 }
 
 async function loadVisibleYears(

@@ -37,6 +37,8 @@ type Props = {
     position?: string | string[];
     team?: string | string[];
     page?: string;
+    bajas?: string;
+    noteam?: string;
   }>;
 };
 
@@ -114,11 +116,13 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
   const positions = normalizeMulti(sp.position);
   const teamIds = normalizeMulti(sp.team);
   const page = normalizePage(sp.page);
+  const showLeftClub = sp.bajas === '1';
+  const noTeam = sp.noteam === '1';
 
   const result = await loadGlobalPlayers(
     ctx.activeClub.club.id,
     role,
-    { search, years, positions, teamIds },
+    { search, years, positions, teamIds, showLeftClub, noTeam },
     page
   );
 
@@ -158,7 +162,9 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
     search.length > 0 ||
     years.length > 0 ||
     positions.length > 0 ||
-    teamIds.length > 0;
+    teamIds.length > 0 ||
+    noTeam ||
+    showLeftClub;
 
   // URL helpers para la paginación (server-side: <Link> con search params).
   function pageHref(p: number): string {
@@ -167,6 +173,8 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
     for (const y of years) q.append('year', String(y));
     for (const p2 of positions) q.append('position', p2);
     for (const id of teamIds) q.append('team', id);
+    if (showLeftClub) q.set('bajas', '1');
+    if (noTeam) q.set('noteam', '1');
     if (p > 1) q.set('page', String(p));
     const qs = q.toString();
     return `/jugadores${qs.length > 0 ? `?${qs}` : ''}`;
@@ -196,6 +204,9 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
           activeYears={years}
           activePositions={positions}
           activeTeamIds={teamIds}
+          noTeamActive={noTeam}
+          noTeamCount={result.noTeamCount}
+          showLeftClub={showLeftClub}
         />
       </div>
 
@@ -265,6 +276,14 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
                         >
                           <span className="font-medium">
                             {fullName(p.first_name, p.last_name)}
+                            {p.is_left_club && (
+                              <Badge
+                                variant="outline"
+                                className="ml-2 text-[10px] uppercase tracking-wider text-muted-foreground"
+                              >
+                                {t('left_club_badge')}
+                              </Badge>
+                            )}
                           </span>
                           <span className="text-xs text-muted-foreground md:hidden">
                             {y && `${y}`}
@@ -342,7 +361,9 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
                       <TableCell className="text-right">
                         <PlayerRowActions
                           playerId={p.id}
+                          playerName={fullName(p.first_name, p.last_name)}
                           hasActiveTeam={p.current_team_id != null}
+                          isLeftClub={p.is_left_club}
                           teams={teamsForDialog}
                           canManage={canManageVisible}
                         />

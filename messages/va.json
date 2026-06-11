@@ -725,6 +725,7 @@
     "empty_filtered": "No hi ha jugadors que coincidisquen amb estos filtres.",
     "no_team": "Sense equip",
     "has_account": "Compte vinculat",
+    "left_club_badge": "Baixa",
     "age_years_short": "{age} anys",
     "table": {
       "avatar": "Inicials",
@@ -747,10 +748,31 @@
       "empty_team": "No hi ha equips visibles.",
       "search_placeholder": "Cerca per nom o cognom…",
       "search_label": "Cercar jugadors",
-      "search_clear": "Netejar cerca"
+      "search_clear": "Netejar cerca",
+      "no_team_segment": "Sense equip",
+      "show_left_club": "Veure baixes"
     },
     "row_actions": {
       "open_card": "Obrir fitxa"
+    },
+    "baja": {
+      "action": "Donar de baixa",
+      "reactivate_action": "Reactivar",
+      "title": "Donar de baixa a {name}",
+      "description": "El jugador deixarà d'aparèixer en el llistat actiu del club. Es conserva tot el seu historial (equips, estadístiques). Podràs reactivar-lo quan vulgues.",
+      "reactivate_title": "Reactivar {name}",
+      "reactivate_description": "El jugador tornarà a aparèixer en el llistat actiu del club.",
+      "reason_label": "Raó (opcional)",
+      "reason_placeholder": "Ex. es muda, deixa el futbol…",
+      "cancel": "Cancel·lar",
+      "confirm": "Donar de baixa",
+      "reactivate_confirm": "Reactivar",
+      "error": {
+        "no_active_club": "No hi ha club actiu.",
+        "player_invalid": "El jugador no pertany a aquest club.",
+        "forbidden": "Només un administrador del club pot donar de baixa o reactivar.",
+        "generic": "No hem pogut completar l'operació. Torna-ho a provar."
+      }
     },
     "pagination": {
       "prev": "Anterior",
