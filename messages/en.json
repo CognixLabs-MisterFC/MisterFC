@@ -443,6 +443,10 @@
     "page_subtitle": "Equipos del club por temporada.",
     "manage_templates": "Categorías",
     "open_season": "Open season {season}",
+    "open_season_confirm_title": "Open season {season}",
+    "open_season_confirm_description": "You are about to open season {season}. The new season will be created and the teams will be cloned. Confirm?",
+    "open_season_confirm_cancel": "Cancel",
+    "open_season_confirm_confirm": "Confirm",
     "upcoming_banner": "Season {season} in preparation. Adjust the teams (add, remove or rename); players are reassigned in the next step.",
     "open_season_error": {
       "no_active_club": "No active club.",

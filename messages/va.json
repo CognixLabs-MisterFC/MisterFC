@@ -443,6 +443,10 @@
     "page_subtitle": "Equipos del club por temporada.",
     "manage_templates": "Categorías",
     "open_season": "Obrir temporada {season}",
+    "open_season_confirm_title": "Obrir la temporada {season}",
+    "open_season_confirm_description": "Estàs a punt d'obrir la temporada {season}. Es crearà la temporada nova i es clonaran els equips. Confirmar?",
+    "open_season_confirm_cancel": "Cancel·lar",
+    "open_season_confirm_confirm": "Confirmar",
     "upcoming_banner": "Temporada {season} en preparació. Ajusta els equips (afig, lleva o reanomena); els jugadors es reassignen en el pas següent.",
     "open_season_error": {
       "no_active_club": "No hi ha club actiu.",
