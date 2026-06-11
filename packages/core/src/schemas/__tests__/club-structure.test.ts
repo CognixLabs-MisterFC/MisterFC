@@ -5,6 +5,7 @@ import {
   customOverlapsStandardKind,
   activeSeasonLabel,
   nextSeasonLabel,
+  seasonEndDate,
 } from '../club-structure';
 
 describe('assertCategoryDeletable (C3)', () => {
@@ -89,5 +90,19 @@ describe('nextSeasonLabel (C5)', () => {
 
   it('label inválido → cae a currentSeason (no lanza)', () => {
     expect(nextSeasonLabel('basura')).toMatch(/^\d{4}-\d{2}$/);
+  });
+});
+
+describe('seasonEndDate (C8)', () => {
+  it('límite = 31-jul del año de cierre: 2025-26 → 2026-07-31', () => {
+    expect(seasonEndDate('2025-26')).toBe('2026-07-31');
+  });
+
+  it('cruce de siglo: 2099-00 → 2100-07-31', () => {
+    expect(seasonEndDate('2099-00')).toBe('2100-07-31');
+  });
+
+  it('label inválido → null (el caller decide el fallback)', () => {
+    expect(seasonEndDate('basura')).toBeNull();
   });
 });

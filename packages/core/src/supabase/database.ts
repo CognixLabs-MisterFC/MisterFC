@@ -2201,6 +2201,10 @@ export type Database = {
         Returns: string
       }
       current_user_email: { Args: never; Returns: string }
+      finalize_active_season: {
+        Args: { p_club_id: string; p_cutoff: string }
+        Returns: string
+      }
       match_assert_event: {
         Args: { p_event_id: string }
         Returns: {

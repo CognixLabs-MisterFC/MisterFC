@@ -475,6 +475,33 @@
         "generic": "No hem pogut col·locar els jugadors. Torna-ho a provar."
       }
     },
+    "finalize": {
+      "cta": "Finalitzar temporada",
+      "back": "Tornar a equips",
+      "title": "Finalitzar temporada",
+      "subtitle": "Tanca el canvi de temporada: l'actual passa a històrica i la temporada en preparació es converteix en l'activa. És l'últim pas del traspàs.",
+      "no_upcoming": "Obri primer la temporada nova des d'Equips: no es pot finalitzar sense una temporada que activar.",
+      "summary": "Vas a finalitzar {active} i activar {upcoming}.",
+      "step_close": "Es tanquen les fitxes obertes dels equips de {active} a la data de tall (es conserva el seu historial).",
+      "step_activate": "{upcoming} passa a ser la temporada activa amb els seus equips i jugadors ja col·locats.",
+      "unplaced_title": "{count, plural, one {1 jugador sense equip en la nova temporada} other {# jugadors sense equip en la nova temporada}}",
+      "unplaced_hint": "Estan en un equip de la temporada actual però no s'han col·locat en cap de la nova. Pot ser intencional (deixen el club) o un oblit. Revisa'ls abans de continuar.",
+      "cutoff_label": "Data de tall",
+      "cutoff_hint": "Data en què es tanquen les fitxes de la temporada actual. Per defecte, el final de temporada.",
+      "ack": "Entenc que es tancaran les fitxes obertes de {active} i la temporada passarà a ser històrica.",
+      "ack_with_unplaced": "Entenc que es tancaran les fitxes obertes de {active} (inclosos els {count} jugadors sense equip en la nova temporada).",
+      "confirm": "Finalitzar i activar {upcoming}",
+      "error": {
+        "no_active_club": "No hi ha club actiu.",
+        "cutoff_required": "Indica una data de tall.",
+        "cutoff_invalid": "La data de tall no és vàlida.",
+        "cutoff_too_early": "La data de tall és anterior a alguna alta de la temporada. Tria una data posterior.",
+        "forbidden": "Només un administrador del club pot finalitzar la temporada.",
+        "no_active_season": "No hi ha temporada activa que finalitzar.",
+        "no_upcoming": "No hi ha temporada en preparació que activar.",
+        "generic": "No hem pogut finalitzar la temporada. Torna-ho a provar."
+      }
+    },
     "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
     "season_filter": "Temporada",
     "empty_season": "Aún no hay equipos en la temporada {season}."

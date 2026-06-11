@@ -400,6 +400,33 @@
         "generic": "No hemos podido colocar a los jugadores. Inténtalo de nuevo."
       }
     },
+    "finalize": {
+      "cta": "Finalizar temporada",
+      "back": "Volver a equipos",
+      "title": "Finalizar temporada",
+      "subtitle": "Cierra el cambio de temporada: la actual pasa a histórica y la temporada en preparación se convierte en la activa. Es el último paso del traspaso.",
+      "no_upcoming": "Abre primero la temporada nueva desde Equipos: no se puede finalizar sin una temporada que activar.",
+      "summary": "Vas a finalizar {active} y activar {upcoming}.",
+      "step_close": "Se cierran las fichas abiertas de los equipos de {active} a la fecha de corte (su historial se conserva).",
+      "step_activate": "{upcoming} pasa a ser la temporada activa con sus equipos y jugadores ya colocados.",
+      "unplaced_title": "{count, plural, one {1 jugador sin equipo en la nueva temporada} other {# jugadores sin equipo en la nueva temporada}}",
+      "unplaced_hint": "Están en un equipo de la temporada actual pero no se han colocado en ninguno de la nueva. Puede ser intencional (dejan el club) o un olvido. Revísalos antes de continuar.",
+      "cutoff_label": "Fecha de corte",
+      "cutoff_hint": "Fecha en que se cierran las fichas de la temporada actual. Por defecto, el final de temporada.",
+      "ack": "Entiendo que se cerrarán las fichas abiertas de {active} y la temporada pasará a ser histórica.",
+      "ack_with_unplaced": "Entiendo que se cerrarán las fichas abiertas de {active} (incluidos los {count} jugadores sin equipo en la nueva temporada).",
+      "confirm": "Finalizar y activar {upcoming}",
+      "error": {
+        "no_active_club": "No hay club activo.",
+        "cutoff_required": "Indica una fecha de corte.",
+        "cutoff_invalid": "La fecha de corte no es válida.",
+        "cutoff_too_early": "La fecha de corte es anterior a alguna alta de la temporada. Elige una fecha posterior.",
+        "forbidden": "Solo un administrador del club puede finalizar la temporada.",
+        "no_active_season": "No hay temporada activa que finalizar.",
+        "no_upcoming": "No hay temporada en preparación que activar.",
+        "generic": "No hemos podido finalizar la temporada. Inténtalo de nuevo."
+      }
+    },
     "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
     "season_filter": "Temporada",
     "empty_season": "Aún no hay equipos en la temporada {season}."
