@@ -724,6 +724,7 @@
     "empty_filtered": "No hay jugadores que coincidan con estos filtros.",
     "no_team": "Sin equipo",
     "has_account": "Cuenta vinculada",
+    "left_club_badge": "Baja",
     "age_years_short": "{age} años",
     "table": {
       "avatar": "Iniciales",
@@ -746,10 +747,31 @@
       "empty_team": "No hay equipos visibles.",
       "search_placeholder": "Buscar por nombre o apellido…",
       "search_label": "Buscar jugadores",
-      "search_clear": "Limpiar búsqueda"
+      "search_clear": "Limpiar búsqueda",
+      "no_team_segment": "Sin equipo",
+      "show_left_club": "Ver bajas"
     },
     "row_actions": {
       "open_card": "Abrir ficha"
+    },
+    "baja": {
+      "action": "Dar de baja",
+      "reactivate_action": "Reactivar",
+      "title": "Dar de baja a {name}",
+      "description": "El jugador dejará de aparecer en el listado activo del club. Se conserva todo su histórico (equipos, estadísticas). Podrás reactivarlo cuando quieras.",
+      "reactivate_title": "Reactivar a {name}",
+      "reactivate_description": "El jugador volverá a aparecer en el listado activo del club.",
+      "reason_label": "Razón (opcional)",
+      "reason_placeholder": "Ej. se muda, deja el fútbol…",
+      "cancel": "Cancelar",
+      "confirm": "Dar de baja",
+      "reactivate_confirm": "Reactivar",
+      "error": {
+        "no_active_club": "No hay club activo.",
+        "player_invalid": "El jugador no pertenece a este club.",
+        "forbidden": "Solo un administrador del club puede dar de baja o reactivar.",
+        "generic": "No hemos podido completar la operación. Inténtalo de nuevo."
+      }
     },
     "pagination": {
       "prev": "Anterior",

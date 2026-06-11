@@ -534,3 +534,65 @@ export async function inviteTutorForPlayer(
   revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
   return { ok: { email: parsed.data.email } };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Rework C (C11a) — baja / reactivar de jugador (no destructivo)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type LeftClubState = {
+  ok?: { active: boolean };
+  error?: 'no_active_club' | 'player_invalid' | 'forbidden' | 'generic';
+};
+
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Da de baja o reactiva a un jugador (Rework C · C11a). No destructivo: solo
+ * fija/limpia `players.left_club_at` (+ razón); jamás toca team_members/stats/
+ * eventos. Delega en la función SQL `set_player_left_club` (SECURITY DEFINER,
+ * solo admin_club, idempotente, reversible).
+ *
+ * - reactivate=true → reactivar (left_club_at = NULL).
+ * - reactivate=false → baja con `leftAt` (default hoy) + `reason` opcional.
+ */
+export async function setPlayerLeftClub(
+  playerId: string,
+  opts: { reactivate: boolean; leftAt?: string; reason?: string },
+): Promise<LeftClubState> {
+  const clubId = await activeClubId();
+  if (!clubId) return { error: 'no_active_club' };
+
+  let leftAt: string | null;
+  if (opts.reactivate) {
+    leftAt = null;
+  } else {
+    const today = new Date().toISOString().slice(0, 10);
+    leftAt = opts.leftAt && DATE_ONLY_RE.test(opts.leftAt) ? opts.leftAt : today;
+  }
+  const reason =
+    opts.reactivate || !opts.reason || opts.reason.trim().length === 0
+      ? null
+      : opts.reason.trim().slice(0, 500);
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // El typegen de Supabase no expresa args nullables, pero la función SQL acepta
+  // NULL: p_left_at NULL = reactivar; p_reason NULL = sin razón.
+  const { error } = await supabase.rpc('set_player_left_club', {
+    p_club_id: clubId,
+    p_player_id: playerId,
+    p_left_at: leftAt as unknown as string,
+    p_reason: reason as unknown as string,
+  });
+  if (error) {
+    const msg = error.message ?? '';
+    if (msg.includes('forbidden')) return { error: 'forbidden' };
+    if (msg.includes('player_invalid')) return { error: 'player_invalid' };
+    return { error: 'generic' };
+  }
+
+  revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
+  revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
+  return { ok: { active: opts.reactivate } };
+}
