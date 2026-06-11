@@ -96,11 +96,16 @@ export default async function ReasignacionPage({ params }: Props) {
     : { data: [] as MemberRow[] };
   const members = (memberData ?? []) as unknown as MemberRow[];
 
-  // player_ids ya activos en CUALQUIER equipo de la upcoming.
+  // Para cada jugador, en qué equipos de la upcoming está colocado (membresía
+  // abierta). Permite a la tarjeta mostrar "colocar" o "quitar" según el destino.
   const destTeamIdSet = new Set(destTeamRows.map((d) => d.id));
-  const placedInUpcoming = new Set(
-    members.filter((m) => destTeamIdSet.has(m.team_id)).map((m) => m.player_id),
-  );
+  const placedTeamsByPlayer = new Map<string, string[]>();
+  for (const m of members) {
+    if (!destTeamIdSet.has(m.team_id)) continue;
+    const list = placedTeamsByPlayer.get(m.player_id) ?? [];
+    list.push(m.team_id);
+    placedTeamsByPlayer.set(m.player_id, list);
+  }
 
   // Roster por equipo origen.
   const rosterBySource = new Map<string, MappingPlayer[]>();
@@ -110,7 +115,7 @@ export default async function ReasignacionPage({ params }: Props) {
     list.push({
       id: m.player_id,
       name: formatPlayerName(m.players.first_name, m.players.last_name),
-      alreadyPlaced: placedInUpcoming.has(m.player_id),
+      placedTeamIds: placedTeamsByPlayer.get(m.player_id) ?? [],
     });
     rosterBySource.set(m.team_id, list);
   }
