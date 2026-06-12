@@ -1224,6 +1224,38 @@
       }
     }
   },
+  "badges": {
+    "title": "Achievements",
+    "empty": "No achievements in the active season yet.",
+    "name": {
+      "top_scorer_team": "Team top scorer",
+      "top_assister_team": "Top assister",
+      "top_scorer": "Goalscorer",
+      "iron_man": "Iron man",
+      "clean_play": "Fair play",
+      "penalty_killer": "Penalty specialist",
+      "starter_streak": "Starter streak",
+      "perfect_attendance": "Perfect attendance",
+      "mvp_match": "Match MVP",
+      "mvp_season": "Season MVP",
+      "high_rating": "High rating",
+      "veteran": "Veteran"
+    },
+    "legend": {
+      "top_scorer_team": "Top goalscorer of their team this season.",
+      "top_assister_team": "Top assister of their team this season.",
+      "top_scorer": "10 or more goals in the season.",
+      "iron_man": "15 or more games played in the season.",
+      "clean_play": "No red cards and very few yellows per game.",
+      "penalty_killer": "High penalty-conversion rate.",
+      "starter_streak": "Streak of consecutive starts.",
+      "perfect_attendance": "100% training attendance.",
+      "mvp_match": "Times picked match MVP by the coach.",
+      "mvp_season": "Best average rating in their team.",
+      "high_rating": "Average rating of 7.5 or higher.",
+      "veteran": "Career games-played milestones (50/100/200)."
+    }
+  },
   "equipo_stats": {
     "title": "Team statistics",
     "pick_team": "Pick a team to see its statistics.",

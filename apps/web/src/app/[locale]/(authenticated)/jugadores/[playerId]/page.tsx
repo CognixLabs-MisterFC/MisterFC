@@ -13,6 +13,7 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadPlayerCareer } from '@/lib/player-career';
+import { loadPlayerBadges } from '@/lib/player-badges';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +31,7 @@ import {
   type PlayerNoteItem,
 } from './player-notes-section';
 import { PlayerSeasonStats } from './player-season-stats';
+import { PlayerBadges } from './player-badges';
 import { PlayerDetailTabs, type PlayerTabKey } from './player-detail-tabs';
 
 type Props = {
@@ -73,6 +75,7 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
   if (!player || player.club_id !== ctx.activeClub.club.id) notFound();
 
   const t = await getTranslations('jugadores');
+  const tBadges = await getTranslations('badges');
 
   const canManage = ROLES_THAT_CAN_MANAGE.includes(ctx.activeClub.role);
   // canMessage considera además team_staff.staff_role (un ayudante club que
@@ -265,6 +268,14 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
   // jugador + el rating por temporada; el agrupado lo hace core. Alimenta el
   // toggle "Carrera" de PlayerSeasonStats.
   const career = await loadPlayerCareer(supabase, player.id);
+
+  // F9.6 (9.B-5) — Badges (logros) derivadas al vuelo. showRating se computa en
+  // el helper desde club_settings; multi-equipo → unión por equipo (D2).
+  const badges = await loadPlayerBadges(supabase, {
+    playerId: player.id,
+    clubId: player.club_id,
+    careerMatches: career.totals.stats.matches,
+  });
 
   // Familia: cuentas vinculadas + invitaciones pendientes (F2.4)
   const { data: linkedAccounts } = await supabase
@@ -465,22 +476,32 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
           </>
         }
         stats={
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('section.season_stats')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <PlayerSeasonStats
-                stats={aggregatedStats}
-                ratios={ratios}
-                attendance={attendance}
-                timeline={evolution}
-                seasons={seasons}
-                activeSeason={activeSeason}
-                career={career}
-              />
-            </CardContent>
-          </Card>
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>{tBadges('title')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PlayerBadges badges={badges} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>{t('section.season_stats')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PlayerSeasonStats
+                  stats={aggregatedStats}
+                  ratios={ratios}
+                  attendance={attendance}
+                  timeline={evolution}
+                  seasons={seasons}
+                  activeSeason={activeSeason}
+                  career={career}
+                />
+              </CardContent>
+            </Card>
+          </>
         }
         history={
           <Card>
