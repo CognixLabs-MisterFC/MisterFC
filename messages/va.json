@@ -1442,6 +1442,25 @@
       "history_title": "Històric",
       "history_empty": "Sense històric previ.",
       "history_active": "Actiu"
+    },
+    "edit_role": {
+      "action": "Canviar rol",
+      "title": "Canviar rol de club",
+      "description": "Canvia el rol amb què aquest membre participa en el club. Afecta els seus permisos en tot el club.",
+      "field": {
+        "role": "Rol de club"
+      },
+      "self_hint": "Estàs canviant el teu propi rol. No pots deixar el club sense cap administrador.",
+      "save": "Guardar",
+      "cancel": "Cancel·lar",
+      "errors": {
+        "role_invalid": "El rol seleccionat no és vàlid.",
+        "would_remove_last_admin": "No pots deixar el club sense cap administrador. Assigna abans un altre administrador del club.",
+        "no_active_club": "No hi ha cap club actiu.",
+        "target_invalid": "Aquest membre no pertany al teu club.",
+        "forbidden": "Només un administrador del club pot canviar rols.",
+        "generic": "No s’ha pogut canviar el rol."
+      }
     }
   },
   "asistencia": {

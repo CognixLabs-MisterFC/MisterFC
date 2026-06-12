@@ -29,6 +29,7 @@ import { MoveStaffDialog } from '../_components/move-staff-dialog';
 import { RemoveAssignmentButton } from '../_components/remove-assignment-button';
 import { EditStaffNameDialog } from '../_components/edit-staff-name-dialog';
 import { EditStaffContactDialog } from '../_components/edit-staff-contact-dialog';
+import { EditStaffRoleDialog } from '../_components/edit-staff-role-dialog';
 import { loadCoachDetail } from '../queries';
 import type { Role } from '../../jugadores/queries';
 
@@ -136,20 +137,31 @@ export default async function CoachDetailPage({ params }: Props) {
               />
             )}
           </div>
-          <p className="text-sm text-muted-foreground">
-            {tClubRole(coach.club_role)}
-            {coach.club_role === 'entrenador_ayudante' &&
-              coach.caps_granted != null && (
-                <>
-                  {' '}
-                  ·{' '}
-                  {t('caps_summary', {
-                    granted: coach.caps_granted,
-                    total: 9,
-                  })}
-                </>
-              )}
-          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-sm text-muted-foreground">
+              {tClubRole(coach.club_role)}
+              {coach.club_role === 'entrenador_ayudante' &&
+                coach.caps_granted != null && (
+                  <>
+                    {' '}
+                    ·{' '}
+                    {t('caps_summary', {
+                      granted: coach.caps_granted,
+                      total: 9,
+                    })}
+                  </>
+                )}
+            </p>
+            {/* Bug 2 · 2b: solo admin_club. La guarda del último admin la
+                impone la función SQL; aquí se muestra el error si aplica. */}
+            {role === 'admin_club' && (
+              <EditStaffRoleDialog
+                targetProfileId={coach.profile_id}
+                currentRole={coach.club_role}
+                isSelf={coach.profile_id === ctx.user.id}
+              />
+            )}
+          </div>
         </div>
       </div>
 
