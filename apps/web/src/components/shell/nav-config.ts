@@ -14,6 +14,7 @@ import {
   Shield,
   LayoutGrid,
   LineChart,
+  BarChart3,
   Settings,
   type LucideIcon,
 } from 'lucide-react';
@@ -97,6 +98,20 @@ export const NAV_ITEMS: readonly NavItem[] = [
     // equipos (lectura); admin/coord además mueve. Ayudante / jugador no
     // ven la entrada.
     roles: ['admin_club', 'coordinador', 'entrenador_principal'],
+  },
+  {
+    key: 'estadisticas_equipo',
+    href: '/estadisticas-equipo',
+    icon: BarChart3,
+    // F9.B-3 — estadísticas agregadas por equipo. Entrada para todo el staff;
+    // el cuerpo técnico (que NO tiene /jugadores) entra aquí a las stats de SUS
+    // equipos. La landing resuelve: 1 equipo → directo, varios → selector.
+    roles: [
+      'admin_club',
+      'coordinador',
+      'entrenador_principal',
+      'entrenador_ayudante',
+    ],
   },
   {
     key: 'calendario',

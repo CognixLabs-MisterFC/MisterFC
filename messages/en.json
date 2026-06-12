@@ -266,6 +266,7 @@
       "import_players": "Importar",
       "calendario": "Calendar",
       "cuerpo_tecnico": "Coaching staff",
+      "estadisticas_equipo": "Team statistics",
       "asistencia": "Attendance",
       "convocatorias": "Match management",
       "mensajes": "Messages",
@@ -1221,6 +1222,38 @@
         "invalid_mode": "Invalid scope.",
         "db": "Delete failed. Try again."
       }
+    }
+  },
+  "equipo_stats": {
+    "title": "Team statistics",
+    "pick_team": "Pick a team to see its statistics.",
+    "no_teams": "You have no teams with statistics in the active season.",
+    "back": "Back to team",
+    "export_pdf": "Export PDF",
+    "by_player_title": "By player",
+    "empty": "This team has no players yet.",
+    "totals_row": "Team total",
+    "col": {
+      "dorsal": "#",
+      "player": "Player",
+      "matches": "GP",
+      "starts": "St",
+      "minutes": "Min",
+      "goals": "G",
+      "assists": "A",
+      "yellow": "YC",
+      "red": "RC",
+      "start_rate": "St %"
+    },
+    "col_full": {
+      "matches": "Games played",
+      "starts": "Starts",
+      "minutes": "Minutes played",
+      "goals": "Goals",
+      "assists": "Assists",
+      "yellow": "Yellow cards",
+      "red": "Red cards",
+      "start_rate": "Start rate"
     }
   },
   "cuerpo_tecnico": {

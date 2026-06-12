@@ -184,6 +184,7 @@
       "import_players": "Importar",
       "calendario": "Calendario",
       "cuerpo_tecnico": "Cuerpo técnico",
+      "estadisticas_equipo": "Estadísticas por equipo",
       "asistencia": "Asistencia",
       "convocatorias": "Gestión de partidos",
       "mensajes": "Mensajes",
@@ -1220,6 +1221,38 @@
         "invalid_mode": "Alcance no válido.",
         "db": "Error al borrar. Inténtalo de nuevo."
       }
+    }
+  },
+  "equipo_stats": {
+    "title": "Estadísticas del equipo",
+    "pick_team": "Elige un equipo para ver sus estadísticas.",
+    "no_teams": "No tienes equipos con estadísticas en la temporada activa.",
+    "back": "Volver al equipo",
+    "export_pdf": "Exportar PDF",
+    "by_player_title": "Por jugador",
+    "empty": "Este equipo aún no tiene jugadores.",
+    "totals_row": "Total equipo",
+    "col": {
+      "dorsal": "#",
+      "player": "Jugador",
+      "matches": "PJ",
+      "starts": "Tit",
+      "minutes": "Min",
+      "goals": "G",
+      "assists": "A",
+      "yellow": "TA",
+      "red": "TR",
+      "start_rate": "% Tit"
+    },
+    "col_full": {
+      "matches": "Partidos jugados",
+      "starts": "Titularidades",
+      "minutes": "Minutos jugados",
+      "goals": "Goles",
+      "assists": "Asistencias",
+      "yellow": "Tarjetas amarillas",
+      "red": "Tarjetas rojas",
+      "start_rate": "% de titularidad"
     }
   },
   "cuerpo_tecnico": {
