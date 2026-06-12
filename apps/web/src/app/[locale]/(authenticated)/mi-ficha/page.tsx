@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { LineChart } from 'lucide-react';
+import { Download, LineChart } from 'lucide-react';
 import {
   createSupabaseServerClient,
   sumMatchStats,
@@ -16,6 +16,7 @@ import { loadPlayerCareer } from '@/lib/player-career';
 import { loadPlayerBadges } from '@/lib/player-badges';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { PlayerSeasonStats } from '../jugadores/[playerId]/player-season-stats';
 import { PlayerBadges } from '../jugadores/[playerId]/player-badges';
 import { PlayerSelector } from './player-selector';
@@ -257,14 +258,24 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-3">
-          <LineChart className="size-6" aria-hidden />
-          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <LineChart className="size-6" aria-hidden />
+            <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {myPlayers.length > 1 ? t('subtitle_many') : t('subtitle_one')}
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {myPlayers.length > 1 ? t('subtitle_many') : t('subtitle_one')}
-        </p>
+        {/* PDF del expediente (9.B-6): mismo Route Handler del jugador, RLS
+            heredada (la familia solo ve lo de su jugador, sin médicas/notas). */}
+        <Button asChild variant="outline" size="sm" className="gap-2">
+          <a href={`/${locale}/jugadores/${playerId}/pdf`}>
+            <Download className="size-4" aria-hidden />
+            <span>{t('export_pdf')}</span>
+          </a>
+        </Button>
       </div>
 
       {myPlayers.length > 1 && (

@@ -100,10 +100,12 @@ export default async function TeamStatsPage({ params }: Props) {
             </p>
           </div>
         </div>
-        {/* Hueco para el PDF de equipo (9.B-7). Deshabilitado hasta entonces. */}
-        <Button variant="outline" size="sm" className="gap-2" disabled>
-          <Download className="size-4" aria-hidden />
-          <span>{t('export_pdf')}</span>
+        {/* PDF de equipo (9.B-7): Route Handler que hereda la RLS. */}
+        <Button asChild variant="outline" size="sm" className="gap-2">
+          <a href={`/${locale}/equipos/${teamId}/estadisticas/pdf`}>
+            <Download className="size-4" aria-hidden />
+            <span>{t('export_pdf')}</span>
+          </a>
         </Button>
       </div>
 
