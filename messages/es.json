@@ -540,6 +540,7 @@
   },
   "jugadores": {
     "title": "Jugadores",
+    "export_pdf": "Exportar PDF",
     "count": "{count, plural, =0 {Sin jugadores todavía} one {1 jugador} other {# jugadores}}",
     "empty": "Aún no hay jugadores en este club. Crea el primero arriba.",
     "create": "Crear jugador",
@@ -1221,6 +1222,42 @@
         "invalid_mode": "Alcance no válido.",
         "db": "Error al borrar. Inténtalo de nuevo."
       }
+    }
+  },
+  "pdf": {
+    "player": {
+      "title": "Expediente del jugador",
+      "file": "expediente",
+      "season_stats": "Estadísticas {season}",
+      "career": "Carrera",
+      "career_totals": "Total carrera",
+      "achievements": "Logros",
+      "no_achievements": "Sin logros en la temporada activa."
+    },
+    "team": {
+      "title": "Estadísticas del equipo",
+      "file": "equipo",
+      "by_player": "Por jugador",
+      "totals_row": "Total equipo",
+      "empty": "Este equipo aún no tiene jugadores."
+    },
+    "col": {
+      "season": "Temporada",
+      "player": "Jugador",
+      "dorsal": "#",
+      "matches": "PJ",
+      "starts": "Tit",
+      "minutes": "Min",
+      "goals": "G",
+      "assists": "A",
+      "yellow": "TA",
+      "red": "TR",
+      "start_rate": "% Tit",
+      "goals_per_match": "G/partido",
+      "goals_per_90": "G/90",
+      "assists_per_match": "Asist/partido",
+      "minutes_per_match": "Min/partido",
+      "rating": "Nota"
     }
   },
   "badges": {
@@ -2288,6 +2325,7 @@
   },
   "mi_ficha": {
     "title": "Mi ficha",
+    "export_pdf": "Exportar PDF",
     "subtitle_one": "Tu expediente deportivo: estadísticas, asistencia y valoraciones.",
     "subtitle_many": "Expediente deportivo: estadísticas, asistencia y valoraciones.",
     "no_player": "Tu cuenta no está vinculada a ningún jugador todavía.",

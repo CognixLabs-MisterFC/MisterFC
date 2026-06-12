@@ -541,6 +541,7 @@
   },
   "jugadores": {
     "title": "Jugadores",
+    "export_pdf": "Export PDF",
     "count": "{count, plural, =0 {Sin jugadores todavía} one {1 jugador} other {# jugadores}}",
     "empty": "Aún no hay jugadores en este club. Crea el primero arriba.",
     "create": "Crear jugador",
@@ -1222,6 +1223,42 @@
         "invalid_mode": "Invalid scope.",
         "db": "Delete failed. Try again."
       }
+    }
+  },
+  "pdf": {
+    "player": {
+      "title": "Player record",
+      "file": "record",
+      "season_stats": "Statistics {season}",
+      "career": "Career",
+      "career_totals": "Career total",
+      "achievements": "Achievements",
+      "no_achievements": "No achievements in the active season."
+    },
+    "team": {
+      "title": "Team statistics",
+      "file": "team",
+      "by_player": "By player",
+      "totals_row": "Team total",
+      "empty": "This team has no players yet."
+    },
+    "col": {
+      "season": "Season",
+      "player": "Player",
+      "dorsal": "#",
+      "matches": "GP",
+      "starts": "St",
+      "minutes": "Min",
+      "goals": "G",
+      "assists": "A",
+      "yellow": "YC",
+      "red": "RC",
+      "start_rate": "St %",
+      "goals_per_match": "G/game",
+      "goals_per_90": "G/90",
+      "assists_per_match": "Ast/game",
+      "minutes_per_match": "Min/game",
+      "rating": "Rating"
     }
   },
   "badges": {
@@ -2289,6 +2326,7 @@
   },
   "mi_ficha": {
     "title": "My profile",
+    "export_pdf": "Export PDF",
     "subtitle_one": "Your sports record: stats, attendance and ratings.",
     "subtitle_many": "Sports record: stats, attendance and ratings.",
     "no_player": "Your account isn’t linked to any player yet.",

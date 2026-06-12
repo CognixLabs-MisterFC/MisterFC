@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 import {
   createSupabaseServerClient,
   sumMatchStats,
@@ -347,6 +347,18 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
             </div>
           )}
         </div>
+        {/* PDF del expediente (9.B-6): Route Handler con RLS heredada. */}
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          className="gap-2 sm:ml-auto"
+        >
+          <a href={`/${locale}/jugadores/${player.id}/pdf`}>
+            <Download className="size-4" aria-hidden />
+            <span>{t('export_pdf')}</span>
+          </a>
+        </Button>
       </div>
 
       <PlayerDetailTabs

@@ -6,6 +6,9 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@misterfc/core'],
+  // F9.B-6/7 — @react-pdf/renderer solo se usa en Route Handlers (runtime
+  // nodejs); se externaliza para que no entre en el bundle de cliente/SSR.
+  serverExternalPackages: ['@react-pdf/renderer'],
   // Rework A (A4) — la nav gira en torno al equipo. /categorias se retira:
   //   · /categorias       → /equipos            (listado de equipos)
   //   · /categorias/[id]  → /equipos/plantillas (gestión de categorías)

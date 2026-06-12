@@ -541,6 +541,7 @@
   },
   "jugadores": {
     "title": "Jugadores",
+    "export_pdf": "Exportar PDF",
     "count": "{count, plural, =0 {Sin jugadores todavía} one {1 jugador} other {# jugadores}}",
     "empty": "Aún no hay jugadores en este club. Crea el primero arriba.",
     "create": "Crear jugador",
@@ -1222,6 +1223,42 @@
         "invalid_mode": "Abast no vàlid.",
         "db": "Error en esborrar. Torna-ho a intentar."
       }
+    }
+  },
+  "pdf": {
+    "player": {
+      "title": "Expedient del jugador",
+      "file": "expedient",
+      "season_stats": "Estadístiques {season}",
+      "career": "Carrera",
+      "career_totals": "Total carrera",
+      "achievements": "Assoliments",
+      "no_achievements": "Sense assoliments en la temporada activa."
+    },
+    "team": {
+      "title": "Estadístiques de l'equip",
+      "file": "equip",
+      "by_player": "Per jugador",
+      "totals_row": "Total equip",
+      "empty": "Aquest equip encara no té jugadors."
+    },
+    "col": {
+      "season": "Temporada",
+      "player": "Jugador",
+      "dorsal": "#",
+      "matches": "PJ",
+      "starts": "Tit",
+      "minutes": "Min",
+      "goals": "G",
+      "assists": "A",
+      "yellow": "TG",
+      "red": "TR",
+      "start_rate": "% Tit",
+      "goals_per_match": "G/partit",
+      "goals_per_90": "G/90",
+      "assists_per_match": "Assist/partit",
+      "minutes_per_match": "Min/partit",
+      "rating": "Nota"
     }
   },
   "badges": {
@@ -2289,6 +2326,7 @@
   },
   "mi_ficha": {
     "title": "La meua fitxa",
+    "export_pdf": "Exportar PDF",
     "subtitle_one": "El teu expedient esportiu: estadístiques, assistència i valoracions.",
     "subtitle_many": "Expedient esportiu: estadístiques, assistència i valoracions.",
     "no_player": "El teu compte encara no està vinculat a cap jugador.",
