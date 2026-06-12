@@ -82,6 +82,12 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 - **Planificado en**: **F14.10** (1–2 h). Cambio del SELECT policy: `team_id IS NULL OR user_is_in_team(team_id)` para roles jugador/ayudante; admin/coord sin cambio. Migración + pgTAP con 4 casos.
 - **Referencia**: `docs/specs/3.0-calendario-eventos.md` §4.6, comentario explícito en `supabase/migrations/20260530000000_events.sql`.
 
+### F15.8 — pgTAP no se ejecuta en CI
+- **Issue original** (2026-06-12, cierre de F9): el CI (`.github/workflows/ci.yml`) corre typecheck · lint · test · build pero **no ejecuta pgTAP**. Además, el sandbox de desarrollo no puede arrancar Docker (`no-new-privileges`, sin root), así que `pnpm db:test` tampoco corre localmente. Los tests pgTAP de funciones/RLS de BD (`supabase/tests/*.sql`) quedan **escritos pero sin ejecución automática**; su validación efectiva ocurre solo al aplicar la migración contra el remoto.
+- **Impacto**: medio y **creciente**. La superficie de funciones SECURITY DEFINER no testeadas en pipeline crece con cada bug/feature de BD (p.ej. Bug 2·2a #106, 2c #107, **2b #116** con su guarda del último admin — todos con pgTAP escrito y sin correr en CI).
+- **Planificado en**: **F15.8** (1–2 h). Job CI con Postgres+pgTAP en contenedor que corra `supabase/tests/*.sql`, o paso programado contra staging. Sin cambio de modelo.
+- **Referencia**: `plan-maestro.md` F15.8, `fase-9-summary.md` (limitación de verificación).
+
 ---
 
 ## Resueltas

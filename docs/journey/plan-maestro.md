@@ -109,7 +109,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F6 | Alineaciones y planificación del partido | 12–19 h | 4–5 | ☑ |
 | F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☑ |
 | F8 | Valoraciones del partido | 8–13 h | 3–4 | ☑ |
-| F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | 🔄 núcleo ✅ |
+| F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☑ |
 | F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☐ |
 | F11 | Biblioteca de ejercicios | 13–18 h | 5–6 | ☐ |
 | F12 | Planificador de sesiones | 12–20 h | 4–6 | ☐ |
@@ -430,11 +430,11 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 >
 > **F8 solo abrió el permiso a nivel de datos** (RLS: la lectura de jugador/familia ya cumple la policy con el flag ON). **La pantalla donde el jugador/familia VE su valoración se entrega en F9** — F8 no construyó ninguna vista de lectura para ellos.
 
-**Estado**: 🔄 **EN PROGRESO — núcleo completo (2026-06-09)**. El **núcleo** (9.1/9.2/9.3/9.5) está **entregado y verificado** (typecheck · lint · test · build + pgTAP en verde); el **segundo tramo** (9.4/9.6/9.7/9.8) **queda pendiente** → F9 **NO está cerrada del todo** (cierre de milestone, no de fase). Detalle de cierre del núcleo en [docs/specs/9.0-perfil-jugador.md](../specs/9.0-perfil-jugador.md) §15.
+**Estado**: ☑ **CERRADA (2026-06-12)** — núcleo (9.1/9.2/9.3/9.5) + segundo tramo 9.B (9.4/9.6/9.7/9.8 + entrada de menú) **entregados y verificados** (typecheck · lint · test · build en verde; ver limitación pgTAP abajo). Resumen ejecutivo en [fase-9-summary.md](fase-9-summary.md). Detalle del núcleo en [spec 9.0 §15](../specs/9.0-perfil-jugador.md); del segundo tramo en [spec 9.B](../specs/9.B-segundo-tramo.md).
 
-**Horas**: 16–32 h plan · **Sesiones**: 6–8 · núcleo entregado en ≈4 sesiones · **PRs del núcleo**: #67 (9.1), #68 (9.2), #69 (9.3), #70 (9.5). **Migración del núcleo**: `20260625000000_match_player_stats_player_select.sql` (policy SELECT player-scoped, D9-1).
+**Horas**: 16–32 h plan · **Sesiones**: 6–8 · **PRs del núcleo**: #67 (9.1), #68 (9.2), #69 (9.3), #70 (9.5). **PRs del segundo tramo**: #108 (spec) + #109 (9.B-0) + #110 (9.B-1) + #111 (9.B-2) + #112 (9.B-3) + #113 (9.B-4) + #114 (9.B-5) + #115 (9.B-6+7). **Migración del núcleo**: `20260625000000_match_player_stats_player_select.sql` (policy SELECT player-scoped, D9-1).
 
-**Criterio de cierre** (fase completa): cada jugador tiene su perfil deportivo completo. Gráfico de evolución intra-temporada **(✅ núcleo)** y comparativa multi-temporada **(⏳ segundo tramo)**. Reportes mensuales en PDF que el entrenador puede descargar e imprimir para entregar a familias **(⏳ segundo tramo)**. Vista restringida para familias **(✅ núcleo)**.
+**Criterio de cierre** (cumplido): cada jugador tiene su perfil deportivo completo. Gráfico de evolución intra-temporada **(✅)** y comparativa multi-temporada **(✅ 9.B-1/2)**. Reportes mensuales en PDF que el entrenador puede descargar e imprimir para entregar a familias **(✅ 9.B-6/7)**. Vista restringida para familias **(✅)**.
 
 **Riesgo**: medio. PDF y multi-temporada son las partes exigentes — **ambas quedan en el segundo tramo**.
 
@@ -449,15 +449,23 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **9.3** ✅ Gráfico de evolución intra-temporada de la valoración (recharts, **ADR-0016**; nota individual + colectiva como contexto; huecos para partidos sin valorar; tabla `sr-only` equivalente) — #69
 - **9.5** ✅ Vista jugador/familia — ruta nueva `/mi-ficha` (resolución vía `player_accounts` + selector si hay varios) reutilizando los bloques del staff; **policy SELECT nueva en `match_player_stats`** (`user_is_account_of_player`, sin flag — 🔒 D9-1) + pgTAP. Stats/ratios/asistencia SIEMPRE; valoraciones solo con el flag del club ON; nunca lo privado — #70
 
-**Segundo tramo — pendiente (aún SIN especificar; necesitará su propio spec/extensión al abordarlo):**
+**Segundo tramo 9.B — entregado (especificado en [spec 9.B](../specs/9.B-segundo-tramo.md)):**
 
-- **9.4** ☐ Evolución multi-temporada del jugador (comparativa por temporadas) — 3–5 h
-- **9.6** ☐ Tracking de logros (badges automáticos: MVP del mes, +10 goles, etc.) — 1 h
-- **9.7** ☐ Reportes mensuales del jugador en PDF (descargables/imprimibles, no email) — 5–8 h
-- **9.8** ☐ Reportes de equipo en PDF (resumen mensual) — 2–4 h
-- ☐ **Entrada de menú dedicada "Estadísticas / agregadas por equipo"** para el cuerpo técnico (en el núcleo el expediente del staff se alcanza vía `/jugadores`; la entrada agregada por equipo se decidió dejar para este tramo — spec 9.0 §8.1).
+> Habilitador previo: **9.B-0** [hecho 2026-06-12] **agregado de stats de equipo por temporada** (`aggregateTeamStats` en core + query) — #109. Lo consumen 9.B-3, 9.B-7 y los badges de equipo.
 
-> **Ya listo para reaprovechar en el segundo tramo** (el núcleo se diseñó para no rehacerlo): **recharts** ya integrado (ADR-0016) y el **componente de gráfico reutilizable** (`rating-evolution-chart.tsx`) → 9.4 alimenta la misma línea con series multi-temporada; la **tabla `sr-only`** equivalente del gráfico y la disciplina **"la pantalla ES el reporte"** (datos desacoplados de la presentación en `@misterfc/core/player-profile`, bloques print-friendly, `?season=` como parámetro) → base directa del PDF de 9.7/9.8; los **helpers de agregación** ya aceptan `season` como parámetro → 9.4 itera temporadas sin lógica nueva.
+- **9.4** ✅ Evolución multi-temporada del jugador (comparativa por temporadas). Core (`careerBySeason`/`careerTotals`/`seasonComparison`) en **9.B-1** [hecho 2026-06-12] #110; UI (toggle Temporada/Carrera + tabla por temporada + gráfico de comparación) en **9.B-2** [hecho 2026-06-12] #111.
+- **9.6** ✅ Tracking de logros (badges automáticos, **sin persistencia** — D6). Core (`evaluateSeasonBadges`/`evaluateCareerBadges` + thresholds fijos) en **9.B-4** [hecho 2026-06-12] #113; UI (sección "Logros", badges rating-sensibles gateadas por el flag — D5) en **9.B-5** [hecho 2026-06-12] #114. **12 badges** implementadas (MVP desdoblada en `mvp_match`/`mvp_season` + `high_rating`; "debutante" diferida — ver diferidos abajo). Catálogo completo en [fase-9-summary.md](fase-9-summary.md).
+- **9.7** ✅ Reportes mensuales del jugador en PDF (descargables/imprimibles, no email — D10) — **9.B-6** [hecho 2026-06-12] #115.
+- **9.8** ✅ Reportes de equipo en PDF (resumen mensual, consume 9.B-0) — **9.B-7** [hecho 2026-06-12] #115 (mismo PR que 9.B-6: comparten infra `@react-pdf/renderer` y branding).
+- **9.B-3** ✅ **Entrada de menú "Estadísticas agregadas por equipo"** para el cuerpo técnico + vista de equipo (consume 9.B-0) — [hecho 2026-06-12] #112.
+
+**Diferidos de F9 (v2 / backlog — ubicados en el roadmap):**
+
+- **Badge "debutante"** ☐ → **backlog de badges**. La regla quedó sin cerrar (primer partido registrado, ± ventana de fechas). Requiere decisión de producto antes de implementar. Sin modelo nuevo (derivado al vuelo como el resto).
+- **Badges absolutas por categoría** ☐ → **refinamiento v2**. Los umbrales absolutos (10 goles; 50/100/200 partidos de `veteran`) no escalan entre benjamines y seniors. v1 usó umbrales únicos + badges relativos (`top_scorer_team`, `mvp_season`) que se autoajustan; v2 puede introducir umbrales por categoría (`categories.kind`). Decisión D4 lo dejó explícitamente abierto.
+- **PDF v2** ☐ → **v2 PDF**. (a) **Gráficos dentro del PDF** (hoy fuera — D8 usa la tabla `sr-only` equivalente). (b) **Escudo del club** en la cabecera: `clubs` **no tiene** columna de logo hoy; cuando se añada (`clubs.logo_url`), la cabecera lo incluye junto al nombre + verde de marca (D9). Ambos son presentación pura sobre el dato ya calculado.
+
+> **Reaprovechamiento confirmado**: el núcleo se diseñó para no rehacerse y así fue — **recharts** + `rating-evolution-chart.tsx` alimentaron la línea multi-temporada (9.B-2); la **tabla `sr-only`** y la disciplina "la pantalla ES el reporte" (datos en `@misterfc/core/player-profile`) fueron base directa de los PDF (9.B-6/7); los **helpers de agregación** aceptaron `season` como parámetro sin lógica nueva. El **agregado de equipo** (9.B-0) se implementó **una vez** y lo reutilizan 9.B-3, 9.B-7 y los badges de equipo.
 
 ---
 
@@ -631,6 +639,7 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **15.5** Tests E2E flujo de valoración + ver perfil — 1 h
 - **15.6** Alertas de Sentry configuradas (threshold + canal) — 1 h
 - **15.7** Runbook operativo (qué hacer si X falla) en `docs/architecture/runbook.md` — 1–2 h
+- **15.8** **pgTAP ejecutado de verdad en CI** (o paso contra el remoto) — 1–2 h. Hoy `.github/workflows/ci.yml` corre typecheck · lint · test · build pero **no ejecuta pgTAP**, y el sandbox de desarrollo no puede arrancar Docker (`no-new-privileges`, sin root) → los tests pgTAP de funciones/RLS de BD quedan **escritos pero sin ejecución automática**, validándose solo al aplicar la migración al remoto. La superficie de riesgo crece con cada función SECURITY DEFINER (Bug 2·2a/2c/2b, helpers de RLS, etc.). Opciones: (a) job CI con `supabase` CLI + Postgres+pgTAP en contenedor que corra `supabase/tests/*.sql`; (b) paso programado contra una BD de staging. Recoge la deuda registrada en `known-issues.md` como "pgTAP no se ejecuta en CI". Sin cambio de modelo — infra/calidad.
 
 ---
 
@@ -669,6 +678,28 @@ Bloque que agrupa todo lo relativo al ciclo de vida del entrenamiento más allá
 - Otras piezas a definir: planificación/series de entrenos, objetivos por sesión, vínculo con el planificador de sesiones (F12) y con la biblioteca de ejercicios (F11).
 
 > Nota: la mejora 7.14 (asistencia lun–vie en la convocatoria) ya muestra la asistencia **registrada** de la semana; la confirmación previa por familias/jugadores es lo que queda pendiente aquí.
+
+---
+
+### Gestión multi-club y plataforma (post-Ola 1)
+
+Bloque de **gobernanza** que hoy no tiene fase porque Ola 1 es beta cerrada **mono-club**. Candidato a **fase posterior propia** (probable Ola 3 / cuando entre el segundo club). Incluye:
+
+- **God user / superuser de plataforma**: rol transversal de Cognix Labs con acceso a **varios clubes** para soporte/operación, por encima del modelo `memberships` (hoy un profile pertenece a un club con un rol). Requiere repensar el alcance de la RLS (un superuser cruza la frontera de club, que es justo lo que F1.7 blinda) → diseño cuidadoso con su propia spec + auditoría de RLS. **No** se cuela en ninguna fase actual: es un cambio de modelo de acceso.
+- **Owner de club** (sucesor natural de la guarda del último admin, Bug 2·2b — PR #116): un **admin protegido no degradable** (el "dueño" del club, distinto de un `admin_club` cualquiera) + **transferencia de propiedad** explícita. Hoy la guarda `would_remove_last_admin` impide quedarse sin admin, pero todos los `admin_club` son intercambiables; el owner añade una capa de propiedad estable y un flujo de traspaso. Encaja junto al god user porque ambos tocan el modelo de roles/propiedad a nivel plataforma.
+
+> Diferido **desde el cierre de F9** (2026-06-12). Sin estimación todavía; entra con su propia spec cuando el multi-club deje de ser hipotético.
+
+### Comunicaciones por email propio (canal email)
+
+Bloque de **comunicaciones/onboarding** que consolida el canal email, hoy disperso entre subfases y reworks. El bootstrap técnico ya está planificado (**F16.0** SMTP propio + **F16.x** bulk-invite); este bloque agrupa lo que va **más allá** del arranque de beta:
+
+- **Remitente verificado del dominio** (Resend/SMTP con dominio propio): no solo "que salgan emails" (F16.0), sino remitente de marca verificado (SPF/DKIM) para entregabilidad real a familias.
+- **Envío masivo a familias con enlace de descarga**: distribuir el **PDF del jugador** (9.7) por email con enlace de descarga — es el destino natural de la decisión **D10** de 9.B (que dejó el PDF en "solo descarga, sin email"). Reusa el agregado/PDF ya construido.
+- **Auto-envío real del `invite_email`** (Rework A5, 🔒O2): el import **persiste** el email del jugador pero **no lo envía**; aquí se cierra el envío de la invitación con su destinatario y su tratamiento RGPD.
+- **Retirada del magic-link**: una vez el canal email propio es fiable, evaluar sustituir/retirar el magic-link de Supabase Auth por el flujo propio.
+
+> Diferido **desde el cierre de F9** (2026-06-12). Cross-ref: **F16.0** (SMTP), **F16.x** (bulk-invite), Rework A "Fuera de alcance" (auto-envío `invite_email`), 9.B **D10** (PDF sin email). Candidato a fase de comunicaciones propia o a extensión de F16 según prioridad de beta.
 
 ---
 
