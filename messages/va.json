@@ -588,6 +588,33 @@
     },
     "stats": {
       "season_label": "Temporada",
+      "mode": {
+        "label": "Veure per",
+        "season": "Temporada",
+        "career": "Carrera"
+      },
+      "career": {
+        "empty": "Sense dades de partit en cap temporada.",
+        "totals_title": "Totals de carrera",
+        "ratios_title": "Ratios de carrera",
+        "by_season_title": "Per temporada",
+        "comparison_title": "Comparació entre temporades",
+        "comparison_caption": "Valor de la mètrica per temporada",
+        "metric_label": "Mètrica",
+        "table": {
+          "season": "Temporada",
+          "rating": "Nota mitjana"
+        },
+        "metric": {
+          "goals": "Gols",
+          "assists": "Assistències",
+          "minutesPlayed": "Minuts",
+          "matches": "Partits",
+          "startRate": "% titularitat",
+          "goalsPer90": "Gols/90′",
+          "rating": "Nota mitjana"
+        }
+      },
       "empty": "Sense dades de partit ni assistència en esta temporada.",
       "totals_title": "Totals",
       "ratios_title": "Ratios",

@@ -12,6 +12,7 @@ import {
   type RatingTimelinePoint,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { loadPlayerCareer } from '@/lib/player-career';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlayerSeasonStats } from '../jugadores/[playerId]/player-season-stats';
@@ -238,6 +239,11 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
     }
   }
 
+  // 7) Carrera multi-temporada (9.B-2). Mismo helper que la vista staff; la RLS
+  //    de F8 deja el rating por temporada en null con el flag de visibilidad OFF
+  //    (las stats SIEMPRE se ven — D9-1). Una query, agrupado en core.
+  const career = await loadPlayerCareer(supabase, playerId);
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex flex-col gap-1">
@@ -272,6 +278,7 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
             timeline={evolution}
             seasons={seasons}
             activeSeason={activeSeason}
+            career={career}
           />
         </CardContent>
       </Card>
