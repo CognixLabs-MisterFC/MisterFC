@@ -266,6 +266,7 @@
       "import_players": "Importar",
       "calendario": "Calendari",
       "cuerpo_tecnico": "Cos tècnic",
+      "estadisticas_equipo": "Estadístiques per equip",
       "asistencia": "Assistència",
       "convocatorias": "Gestió de partits",
       "mensajes": "Missatges",
@@ -1221,6 +1222,38 @@
         "invalid_mode": "Abast no vàlid.",
         "db": "Error en esborrar. Torna-ho a intentar."
       }
+    }
+  },
+  "equipo_stats": {
+    "title": "Estadístiques de l'equip",
+    "pick_team": "Tria un equip per veure les seues estadístiques.",
+    "no_teams": "No tens equips amb estadístiques en la temporada activa.",
+    "back": "Tornar a l'equip",
+    "export_pdf": "Exportar PDF",
+    "by_player_title": "Per jugador",
+    "empty": "Aquest equip encara no té jugadors.",
+    "totals_row": "Total equip",
+    "col": {
+      "dorsal": "#",
+      "player": "Jugador",
+      "matches": "PJ",
+      "starts": "Tit",
+      "minutes": "Min",
+      "goals": "G",
+      "assists": "A",
+      "yellow": "TG",
+      "red": "TR",
+      "start_rate": "% Tit"
+    },
+    "col_full": {
+      "matches": "Partits jugats",
+      "starts": "Titularitats",
+      "minutes": "Minuts jugats",
+      "goals": "Gols",
+      "assists": "Assistències",
+      "yellow": "Targetes grogues",
+      "red": "Targetes roges",
+      "start_rate": "% de titularitat"
     }
   },
   "cuerpo_tecnico": {
