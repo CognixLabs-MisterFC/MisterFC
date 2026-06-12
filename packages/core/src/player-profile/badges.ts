@@ -3,16 +3,22 @@
  * DOM, SIN persistir — D6: se calculan al vuelo desde stats ya existentes).
  *
  * Spec 9.B §3. Dos planos:
- *  - **Relativas al roster** (se autoajustan): pichichi del equipo y top
- *    asistente. Necesitan el contexto del equipo → se evalúan sobre el roster
- *    que viene de `aggregateTeamStats` (9.B-0); NO se recalcula nada.
+ *  - **Relativas al roster** (se autoajustan): pichichi del equipo, top
+ *    asistente y MVP de la TEMPORADA (mejor media del equipo). Necesitan el
+ *    contexto del equipo → se evalúan sobre el roster que viene de
+ *    `aggregateTeamStats` (9.B-0); NO se recalcula nada.
  *  - **Absolutas / por jugador** (umbral fijo): goleador, hombre de hierro,
  *    juego limpio, killer de penaltis, racha de titular (temporada), nota alta y
- *    MVP (rating-sensibles), y veterano (carrera).
+ *    MVP del PARTIDO (conteo de selecciones del entrenador), y veterano (carrera).
+ *
+ * MVP en DOS badges distintas (ambas rating-sensibles): `mvp_match` = nº de
+ * veces elegido MVP del partido por el entrenador (`evaluations.is_mvp`, la
+ * selección REAL, no derivada de la nota); `mvp_season` = mejor media del equipo
+ * (relativa, con suelo de muestras). `high_rating` (nota alta absoluta) es otra.
  *
  * Umbrales FIJOS v1 en `BADGE_THRESHOLDS` (D4): nada hardcodeado disperso.
- * Rating-sensibles (MVP, nota alta): el evaluador recibe `showRating`; con OFF
- * NO se emiten (D5). El server le pasa el flag del club
+ * Rating-sensibles (mvp_match, mvp_season, high_rating): el evaluador recibe
+ * `showRating`; con OFF NO se emiten (D5). El server le pasa el flag del club
  * (`club_settings.evaluations_player_visibility`).
  *
  * No se inventan datos: cada badge se computa de columnas reales de
@@ -38,7 +44,11 @@ export const BADGE_THRESHOLDS = {
   /** Killer de penaltis: intentos mínimos y % de acierto mínimo. */
   PENALTY_KILLER_MIN_ATTEMPTS: 3,
   PENALTY_KILLER_MIN_RATE: 0.8,
-  /** Nota alta: media ≥ … con un mínimo de valoraciones. */
+  /**
+   * Nota alta: media ≥ … con un mínimo de valoraciones. El mínimo de muestras
+   * (`HIGH_RATING_MIN_SAMPLE`) lo reutiliza también la MVP de temporada (mejor
+   * media del equipo) como suelo, para que una única valoración alta no gane.
+   */
   HIGH_RATING_MIN: 7.5,
   HIGH_RATING_MIN_SAMPLE: 5,
   /** Juego limpio: 0 rojas y amarillas/partido ≤ … con un mínimo de partidos. */
@@ -48,8 +58,12 @@ export const BADGE_THRESHOLDS = {
   PERFECT_ATTENDANCE_MIN_SESSIONS: 5,
   /** Pichichi / top asistente del equipo: el líder debe alcanzar al menos … */
   TOP_TEAM_MIN: 1,
-  /** MVP: nivel 1/2/3 según nº de MVP (≥1, ≥3, ≥5). */
-  MVP_LEVELS: [1, 3, 5],
+  /**
+   * MVP del PARTIDO (selección real del entrenador, `evaluations.is_mvp`):
+   * nivel 1/2/3 según el nº de veces elegido MVP (≥1, ≥3, ≥5). NO se deriva de
+   * la nota. La MVP de TEMPORADA es otra badge (mejor media del equipo, relativa).
+   */
+  MVP_MATCH_LEVELS: [1, 3, 5],
   /** Veterano: nivel 1/2/3 según partidos de carrera (50/100/200). */
   VETERAN_LEVELS: [50, 100, 200],
 } as const;
@@ -70,7 +84,8 @@ export type BadgeKind =
   | 'starter_streak'
   | 'perfect_attendance'
   // Rating-sensibles (temporada)
-  | 'mvp'
+  | 'mvp_match' // MVP del partido (conteo de selecciones del entrenador)
+  | 'mvp_season' // MVP de la temporada (mejor media del equipo, relativa)
   | 'high_rating'
   // Carrera
   | 'veteran';
@@ -82,14 +97,15 @@ export interface Badge {
   scope: BadgeScope;
   /** Valor que la otorga (goles, partidos, racha, nota media…) — para la UI. */
   value: number;
-  /** Nivel para badges escalonadas (mvp 1/2/3, veteran 1/2/3). */
+  /** Nivel para badges escalonadas (mvp_match 1/2/3, veteran 1/2/3). */
   level?: number;
 }
 
 export interface BadgeOptions {
   /**
    * Flag del club (`club_settings.evaluations_player_visibility`). Con OFF NO se
-   * emiten badges derivadas de valoraciones (MVP, nota alta) — D5.
+   * emiten badges derivadas de valoraciones (MVP del partido, MVP de temporada,
+   * nota alta) — D5.
    */
   showRating: boolean;
 }
@@ -99,11 +115,15 @@ export interface SeasonBadgeInput {
   playerId: string;
   /** Totales de la temporada (de `aggregateTeamStats(...).perPlayer[i].stats`). */
   stats: AggregatedStats;
-  /** Nº de MVP (`evaluations.is_mvp`) — rating-sensible; omitir → sin MVP. */
-  mvpCount?: number;
+  /**
+   * Nº de veces que el ENTRENADOR lo eligió MVP del partido (`evaluations.is_mvp`,
+   * único por evento) — la selección REAL, no derivada de la nota. Rating-sensible;
+   * omitir → sin MVP del partido.
+   */
+  matchMvpCount?: number;
   /** Nota media de la temporada (`evaluations.rating`) — rating-sensible. */
   avgRating?: number | null;
-  /** Nº de valoraciones (muestra mínima para "nota alta"). */
+  /** Nº de valoraciones (muestra mínima para "nota alta" y "MVP de temporada"). */
   ratingCount?: number;
   /** % de presencia a entrenos en 0..1 (`training_attendance`). */
   attendancePct?: number | null;
@@ -191,6 +211,33 @@ export function evaluateSeasonBadges(
     }
   }
 
+  // MVP de la temporada (RELATIVA, rating-sensible): el de mayor media de su
+  // equipo, con suelo de muestras (≥ HIGH_RATING_MIN_SAMPLE) para que una sola
+  // valoración alta no gane. Empates → todos los líderes. Sin valoraciones (o
+  // nadie alcanza el suelo) → nadie. Solo con el flag ON (D5).
+  if (opts.showRating) {
+    const eligible = roster.filter(
+      (p) =>
+        p.avgRating != null &&
+        (p.ratingCount ?? 0) >= T.HIGH_RATING_MIN_SAMPLE
+    );
+    if (eligible.length > 0) {
+      const maxAvg = eligible.reduce(
+        (m, p) => Math.max(m, p.avgRating as number),
+        -Infinity
+      );
+      for (const p of eligible) {
+        if ((p.avgRating as number) === maxAvg) {
+          push(p.playerId, {
+            kind: 'mvp_season',
+            scope: 'season',
+            value: p.avgRating as number,
+          });
+        }
+      }
+    }
+  }
+
   // — Por jugador —
   for (const p of roster) {
     const s = p.stats;
@@ -258,17 +305,18 @@ export function evaluateSeasonBadges(
 
     // — Rating-sensibles (solo con el flag del club ON, D5) —
     if (opts.showRating) {
-      // MVP: ≥1, nivel por nº.
-      if (p.mvpCount != null && p.mvpCount >= 1) {
-        const level = levelFor(p.mvpCount, T.MVP_LEVELS) ?? 1;
+      // MVP del PARTIDO: nº de selecciones del entrenador (is_mvp), nivel por nº.
+      if (p.matchMvpCount != null && p.matchMvpCount >= 1) {
+        const level = levelFor(p.matchMvpCount, T.MVP_MATCH_LEVELS) ?? 1;
         push(p.playerId, {
-          kind: 'mvp',
+          kind: 'mvp_match',
           scope: 'season',
-          value: p.mvpCount,
+          value: p.matchMvpCount,
           level,
         });
       }
-      // Nota alta: media ≥ umbral con muestra mínima.
+      // Nota alta: media ≥ umbral con muestra mínima (ABSOLUTA, distinta de la
+      // MVP de temporada que es relativa).
       if (
         p.avgRating != null &&
         (p.ratingCount ?? 0) >= T.HIGH_RATING_MIN_SAMPLE &&

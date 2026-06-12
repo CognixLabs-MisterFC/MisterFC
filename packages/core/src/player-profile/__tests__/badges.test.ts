@@ -191,35 +191,52 @@ describe('evaluateSeasonBadges — asistencia perfecta', () => {
 describe('evaluateSeasonBadges — rating-sensibles (flag D5)', () => {
   const ratingPlayer = player('a', {
     stats: stats({ matches: 10 }),
-    mvpCount: 5,
+    matchMvpCount: 5,
     avgRating: 9,
     ratingCount: 10,
   });
 
-  it('flag OFF NO emite MVP ni nota alta', () => {
+  it('flag OFF NO emite NINGUNA de las tres (mvp_match, mvp_season, high_rating)', () => {
     const m = evaluateSeasonBadges([ratingPlayer], OFF);
-    expect(kinds(m, 'a')).not.toContain('mvp');
+    expect(kinds(m, 'a')).not.toContain('mvp_match');
+    expect(kinds(m, 'a')).not.toContain('mvp_season');
     expect(kinds(m, 'a')).not.toContain('high_rating');
   });
 
-  it('flag ON emite MVP y nota alta', () => {
+  it('flag ON emite las tres', () => {
     const m = evaluateSeasonBadges([ratingPlayer], ON);
-    expect(kinds(m, 'a')).toContain('mvp');
+    expect(kinds(m, 'a')).toContain('mvp_match');
+    expect(kinds(m, 'a')).toContain('mvp_season');
     expect(kinds(m, 'a')).toContain('high_rating');
   });
 
-  it('MVP escala de nivel por nº (1/3/5 → 1/2/3)', () => {
+  it('MVP del partido escala de nivel por nº (1/3/5 → 1/2/3)', () => {
     const m = evaluateSeasonBadges(
       [
-        player('one', { mvpCount: 1 }),
-        player('three', { mvpCount: 3 }),
-        player('five', { mvpCount: 5 }),
+        player('one', { matchMvpCount: 1 }),
+        player('three', { matchMvpCount: 3 }),
+        player('five', { matchMvpCount: 5 }),
       ],
       ON
     );
-    expect((m.get('one') ?? []).find((b) => b.kind === 'mvp')?.level).toBe(1);
-    expect((m.get('three') ?? []).find((b) => b.kind === 'mvp')?.level).toBe(2);
-    expect((m.get('five') ?? []).find((b) => b.kind === 'mvp')?.level).toBe(3);
+    expect((m.get('one') ?? []).find((b) => b.kind === 'mvp_match')?.level).toBe(1);
+    expect((m.get('three') ?? []).find((b) => b.kind === 'mvp_match')?.level).toBe(2);
+    expect((m.get('five') ?? []).find((b) => b.kind === 'mvp_match')?.level).toBe(3);
+  });
+
+  it('MVP del partido escala en los bordes [1,3,5]', () => {
+    // 2 → nivel 1 (no llega a 3); 4 → nivel 2 (no llega a 5); 6 → nivel 3.
+    const m = evaluateSeasonBadges(
+      [
+        player('two', { matchMvpCount: 2 }),
+        player('four', { matchMvpCount: 4 }),
+        player('six', { matchMvpCount: 6 }),
+      ],
+      ON
+    );
+    expect((m.get('two') ?? []).find((b) => b.kind === 'mvp_match')?.level).toBe(1);
+    expect((m.get('four') ?? []).find((b) => b.kind === 'mvp_match')?.level).toBe(2);
+    expect((m.get('six') ?? []).find((b) => b.kind === 'mvp_match')?.level).toBe(3);
   });
 
   it('nota alta exige muestra mínima', () => {
@@ -241,6 +258,62 @@ describe('evaluateSeasonBadges — rating-sensibles (flag D5)', () => {
     );
     expect(kinds(m, 'hit')).toContain('high_rating');
     expect(kinds(m, 'miss')).not.toContain('high_rating');
+  });
+});
+
+describe('evaluateSeasonBadges — MVP de temporada (relativa, mejor media)', () => {
+  const FLOOR = BADGE_THRESHOLDS.HIGH_RATING_MIN_SAMPLE;
+
+  it('la recibe el de mayor media del equipo (con muestra suficiente)', () => {
+    const roster = [
+      player('best', { avgRating: 8.5, ratingCount: FLOOR }),
+      player('mid', { avgRating: 7, ratingCount: FLOOR }),
+      player('low', { avgRating: 6, ratingCount: FLOOR }),
+    ];
+    const m = evaluateSeasonBadges(roster, ON);
+    expect(kinds(m, 'best')).toContain('mvp_season');
+    expect(kinds(m, 'mid')).not.toContain('mvp_season');
+    expect(kinds(m, 'low')).not.toContain('mvp_season');
+  });
+
+  it('empate en la mejor media → todos los líderes', () => {
+    const roster = [
+      player('a', { avgRating: 8, ratingCount: FLOOR }),
+      player('b', { avgRating: 8, ratingCount: FLOOR }),
+      player('c', { avgRating: 7, ratingCount: FLOOR }),
+    ];
+    const m = evaluateSeasonBadges(roster, ON);
+    expect(kinds(m, 'a')).toContain('mvp_season');
+    expect(kinds(m, 'b')).toContain('mvp_season');
+    expect(kinds(m, 'c')).not.toContain('mvp_season');
+  });
+
+  it('suelo de muestras: una sola valoración altísima NO gana frente a otro con muestra suficiente', () => {
+    const roster = [
+      // media 10 pero solo con (FLOOR-1) valoraciones → no elegible.
+      player('spike', { avgRating: 10, ratingCount: FLOOR - 1 }),
+      // media 7 con muestra suficiente → es el MVP de temporada.
+      player('steady', { avgRating: 7, ratingCount: FLOOR }),
+    ];
+    const m = evaluateSeasonBadges(roster, ON);
+    expect(kinds(m, 'spike')).not.toContain('mvp_season');
+    expect(kinds(m, 'steady')).toContain('mvp_season');
+  });
+
+  it('sin valoraciones (o nadie alcanza el suelo) → nadie la recibe', () => {
+    const roster = [
+      player('a'),
+      player('b', { avgRating: 9, ratingCount: FLOOR - 1 }),
+    ];
+    const m = evaluateSeasonBadges(roster, ON);
+    expect(kinds(m, 'a')).not.toContain('mvp_season');
+    expect(kinds(m, 'b')).not.toContain('mvp_season');
+  });
+
+  it('con flag OFF no se emite aunque haya medias válidas', () => {
+    const roster = [player('a', { avgRating: 9, ratingCount: FLOOR })];
+    const m = evaluateSeasonBadges(roster, OFF);
+    expect(kinds(m, 'a')).not.toContain('mvp_season');
   });
 });
 
