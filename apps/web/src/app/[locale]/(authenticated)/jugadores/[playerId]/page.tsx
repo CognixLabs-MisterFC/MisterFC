@@ -12,6 +12,7 @@ import {
   type RatingTimelinePoint,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { loadPlayerCareer } from '@/lib/player-career';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -260,6 +261,11 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     }
   }
 
+  // F9.4 (9.B-2) — Carrera multi-temporada: una query con TODAS las filas del
+  // jugador + el rating por temporada; el agrupado lo hace core. Alimenta el
+  // toggle "Carrera" de PlayerSeasonStats.
+  const career = await loadPlayerCareer(supabase, player.id);
+
   // Familia: cuentas vinculadas + invitaciones pendientes (F2.4)
   const { data: linkedAccounts } = await supabase
     .from('player_accounts')
@@ -471,6 +477,7 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
                 timeline={evolution}
                 seasons={seasons}
                 activeSeason={activeSeason}
+                career={career}
               />
             </CardContent>
           </Card>

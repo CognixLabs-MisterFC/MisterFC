@@ -588,6 +588,33 @@
     },
     "stats": {
       "season_label": "Season",
+      "mode": {
+        "label": "View by",
+        "season": "Season",
+        "career": "Career"
+      },
+      "career": {
+        "empty": "No match data in any season.",
+        "totals_title": "Career totals",
+        "ratios_title": "Career ratios",
+        "by_season_title": "By season",
+        "comparison_title": "Season comparison",
+        "comparison_caption": "Metric value per season",
+        "metric_label": "Metric",
+        "table": {
+          "season": "Season",
+          "rating": "Avg. rating"
+        },
+        "metric": {
+          "goals": "Goals",
+          "assists": "Assists",
+          "minutesPlayed": "Minutes",
+          "matches": "Matches",
+          "startRate": "Start rate",
+          "goalsPer90": "Goals/90′",
+          "rating": "Avg. rating"
+        }
+      },
       "empty": "No match or attendance data in this season.",
       "totals_title": "Totals",
       "ratios_title": "Ratios",
