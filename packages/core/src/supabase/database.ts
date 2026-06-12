@@ -2211,6 +2211,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_update_staff_role: {
+        Args: {
+          p_club_id: string
+          p_new_role: string
+          p_target_profile_id: string
+        }
+        Returns: undefined
+      }
       audit_get_conversation: {
         Args: { p_conversation_id: string; p_reason: string }
         Returns: {

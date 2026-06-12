@@ -301,6 +301,83 @@ export async function updateStaffName(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// updateStaffRole (Bug 2 · 2b) — el admin cambia el ROL DE CLUB de un miembro.
+// La guarda del "último admin" vive en la función SQL (would_remove_last_admin).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Roles de club ofrecidos en la ficha de cuerpo técnico. Es un subconjunto del
+ * CHECK de `memberships.role`: NO se ofrece `jugador` aquí (convertir un miembro
+ * del staff en jugador/familia es otro flujo, no una operación de cuerpo técnico).
+ */
+export const STAFF_CLUB_ROLES = [
+  'admin_club',
+  'coordinador',
+  'entrenador_principal',
+  'entrenador_ayudante',
+] as const;
+
+const updateStaffRoleSchema = z.object({
+  new_role: z.enum(STAFF_CLUB_ROLES, { message: 'role_invalid' }),
+});
+
+export type UpdateStaffRoleState = {
+  error?:
+    | 'role_invalid'
+    | 'would_remove_last_admin'
+    | 'no_active_club'
+    | 'target_invalid'
+    | 'forbidden'
+    | 'generic';
+  success?: boolean;
+};
+
+/**
+ * Bug 2 (2b) — cambia el rol de club (`memberships.role`) de un miembro. Delega
+ * en la función SQL `admin_update_staff_role` (SECURITY DEFINER, solo admin_club,
+ * solo target del club, solo la columna role) que además impone la GUARDA de no
+ * dejar el club sin admin_club. No toca auth.users ni profiles.
+ */
+export async function updateStaffRole(
+  targetProfileId: string,
+  _prev: UpdateStaffRoleState,
+  formData: FormData
+): Promise<UpdateStaffRoleState> {
+  const parsed = updateStaffRoleSchema.safeParse({
+    new_role: formData.get('new_role'),
+  });
+  if (!parsed.success) {
+    return { error: 'role_invalid' };
+  }
+
+  const clubId = await activeClubId();
+  if (!clubId) return { error: 'no_active_club' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase.rpc('admin_update_staff_role', {
+    p_club_id: clubId,
+    p_target_profile_id: targetProfileId,
+    p_new_role: parsed.data.new_role,
+  });
+  if (error) {
+    const msg = error.message ?? '';
+    if (msg.includes('would_remove_last_admin')) {
+      return { error: 'would_remove_last_admin' };
+    }
+    if (msg.includes('forbidden')) return { error: 'forbidden' };
+    if (msg.includes('target_invalid')) return { error: 'target_invalid' };
+    if (msg.includes('role_invalid')) return { error: 'role_invalid' };
+    return { error: 'generic' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico/[membershipId]', 'page');
+  revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico', 'page');
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // updateStaffContact (Bug 2 · 2c) — el admin edita el contacto del entrenador
 // (phone / contact_email), gestionado por el club. NO toca el email de login.
 // ─────────────────────────────────────────────────────────────────────────────

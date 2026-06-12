@@ -1442,6 +1442,25 @@
       "history_title": "History",
       "history_empty": "No prior history.",
       "history_active": "Active"
+    },
+    "edit_role": {
+      "action": "Change role",
+      "title": "Change club role",
+      "description": "Change the role this member holds in the club. It affects their permissions across the whole club.",
+      "field": {
+        "role": "Club role"
+      },
+      "self_hint": "You are changing your own role. You cannot leave the club without any administrator.",
+      "save": "Save",
+      "cancel": "Cancel",
+      "errors": {
+        "role_invalid": "The selected role is not valid.",
+        "would_remove_last_admin": "You cannot leave the club without any administrator. Assign another club administrator first.",
+        "no_active_club": "No active club.",
+        "target_invalid": "This member does not belong to your club.",
+        "forbidden": "Only a club administrator can change roles.",
+        "generic": "The role could not be changed."
+      }
     }
   },
   "asistencia": {

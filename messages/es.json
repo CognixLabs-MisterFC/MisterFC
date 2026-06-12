@@ -1441,6 +1441,25 @@
       "history_title": "Histórico",
       "history_empty": "Sin histórico previo.",
       "history_active": "Activo"
+    },
+    "edit_role": {
+      "action": "Cambiar rol",
+      "title": "Cambiar rol de club",
+      "description": "Cambia el rol con el que este miembro participa en el club. Afecta a sus permisos en todo el club.",
+      "field": {
+        "role": "Rol de club"
+      },
+      "self_hint": "Estás cambiando tu propio rol. No puedes dejar el club sin ningún administrador.",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "errors": {
+        "role_invalid": "El rol seleccionado no es válido.",
+        "would_remove_last_admin": "No puedes dejar el club sin ningún administrador. Asigna antes otro administrador del club.",
+        "no_active_club": "No hay club activo.",
+        "target_invalid": "Este miembro no pertenece a tu club.",
+        "forbidden": "Solo un administrador del club puede cambiar roles.",
+        "generic": "No se pudo cambiar el rol."
+      }
     }
   },
   "asistencia": {
