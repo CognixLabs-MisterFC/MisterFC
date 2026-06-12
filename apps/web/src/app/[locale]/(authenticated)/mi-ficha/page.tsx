@@ -13,9 +13,11 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadPlayerCareer } from '@/lib/player-career';
+import { loadPlayerBadges } from '@/lib/player-badges';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlayerSeasonStats } from '../jugadores/[playerId]/player-season-stats';
+import { PlayerBadges } from '../jugadores/[playerId]/player-badges';
 import { PlayerSelector } from './player-selector';
 import {
   PlayerEvaluationsDetail,
@@ -244,6 +246,15 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
   //    (las stats SIEMPRE se ven — D9-1). Una query, agrupado en core.
   const career = await loadPlayerCareer(supabase, playerId);
 
+  // 8) Badges (logros). Mismo helper que la vista staff; showRating se computa
+  //    en servidor desde club_settings (D5: sin flag, no llegan las de rating).
+  const badges = await loadPlayerBadges(supabase, {
+    playerId,
+    clubId: ctx.activeClub.club.id,
+    careerMatches: career.totals.stats.matches,
+  });
+  const tBadges = await getTranslations('badges');
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex flex-col gap-1">
@@ -280,6 +291,15 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
             activeSeason={activeSeason}
             career={career}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{tBadges('title')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PlayerBadges badges={badges} />
         </CardContent>
       </Card>
 

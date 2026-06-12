@@ -1223,6 +1223,38 @@
       }
     }
   },
+  "badges": {
+    "title": "Logros",
+    "empty": "Aún no hay logros en la temporada activa.",
+    "name": {
+      "top_scorer_team": "Pichichi del equipo",
+      "top_assister_team": "Top asistente",
+      "top_scorer": "Goleador",
+      "iron_man": "Hombre de hierro",
+      "clean_play": "Juego limpio",
+      "penalty_killer": "Especialista de penaltis",
+      "starter_streak": "Racha de titular",
+      "perfect_attendance": "Asistencia perfecta",
+      "mvp_match": "MVP del partido",
+      "mvp_season": "MVP de la temporada",
+      "high_rating": "Nota alta",
+      "veteran": "Veterano"
+    },
+    "legend": {
+      "top_scorer_team": "Máximo goleador de su equipo esta temporada.",
+      "top_assister_team": "Máximo asistente de su equipo esta temporada.",
+      "top_scorer": "10 o más goles en la temporada.",
+      "iron_man": "15 o más partidos jugados en la temporada.",
+      "clean_play": "Sin tarjetas rojas y muy pocas amarillas por partido.",
+      "penalty_killer": "Alta efectividad lanzando penaltis.",
+      "starter_streak": "Racha de titularidades consecutivas.",
+      "perfect_attendance": "100% de asistencia a los entrenamientos.",
+      "mvp_match": "Veces elegido MVP del partido por el entrenador.",
+      "mvp_season": "Mejor media de valoración de su equipo.",
+      "high_rating": "Media de valoración de 7,5 o más.",
+      "veteran": "Hitos de partidos jugados a lo largo de su carrera (50/100/200)."
+    }
+  },
   "equipo_stats": {
     "title": "Estadísticas del equipo",
     "pick_team": "Elige un equipo para ver sus estadísticas.",

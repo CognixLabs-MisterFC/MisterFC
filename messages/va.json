@@ -1224,6 +1224,38 @@
       }
     }
   },
+  "badges": {
+    "title": "Assoliments",
+    "empty": "Encara no hi ha assoliments en la temporada activa.",
+    "name": {
+      "top_scorer_team": "Pitxitxi de l'equip",
+      "top_assister_team": "Top assistent",
+      "top_scorer": "Golejador",
+      "iron_man": "Home de ferro",
+      "clean_play": "Joc net",
+      "penalty_killer": "Especialista de penals",
+      "starter_streak": "Ratxa de titular",
+      "perfect_attendance": "Assistència perfecta",
+      "mvp_match": "MVP del partit",
+      "mvp_season": "MVP de la temporada",
+      "high_rating": "Nota alta",
+      "veteran": "Veterà"
+    },
+    "legend": {
+      "top_scorer_team": "Màxim golejador del seu equip esta temporada.",
+      "top_assister_team": "Màxim assistent del seu equip esta temporada.",
+      "top_scorer": "10 o més gols en la temporada.",
+      "iron_man": "15 o més partits jugats en la temporada.",
+      "clean_play": "Sense targetes roges i molt poques grogues per partit.",
+      "penalty_killer": "Alta efectivitat llançant penals.",
+      "starter_streak": "Ratxa de titularitats consecutives.",
+      "perfect_attendance": "100% d'assistència als entrenaments.",
+      "mvp_match": "Vegades triat MVP del partit per l'entrenador.",
+      "mvp_season": "Millor mitjana de valoració del seu equip.",
+      "high_rating": "Mitjana de valoració de 7,5 o més.",
+      "veteran": "Fites de partits jugats al llarg de la seua carrera (50/100/200)."
+    }
+  },
   "equipo_stats": {
     "title": "Estadístiques de l'equip",
     "pick_team": "Tria un equip per veure les seues estadístiques.",
