@@ -4,6 +4,14 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 ## Activas
 
+### Convocatoria — los jugadores del banquillo no quedan marcados como convocados
+- **Detectado en**: 2026-06-14.
+- **Estado**: PENDIENTE — resolver tras cerrar F10.
+- **Síntoma**: en la convocatoria se eligen titulares y descartados. Al lanzarla, los titulares aparecen como convocados y los descartados como descartados, pero los jugadores del **banquillo** (los que no son ni titulares ni descartados) **no** aparecen como convocados.
+- **Esperado**: convocados = titulares + banquillo; descartados aparte.
+- **Pendiente**: localizar el punto exacto (UI de convocatoria / estado guardado al lanzar) al abordarlo.
+- **Plan**: resolver tras cerrar F10, en su propio PR.
+
 ### InviteStaffDialog — el form no resetea estado entre invitaciones consecutivas
 - **Detectado en**: 2026-05-29, cierre de F2 (revisión post-lote-D).
 - **Síntoma**: al invitar a un segundo miembro del staff sin cerrar el dialog, el banner del envío anterior sigue visible y los inputs no se limpian.
