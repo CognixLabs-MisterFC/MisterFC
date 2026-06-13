@@ -104,6 +104,11 @@
     "error_generic": "We couldn't create the club. Please try again."
   },
   "home": {
+    "dashboard_card": {
+      "title": "Executive dashboard",
+      "body": "Club-wide overview: squad, results, attendance, alerts and rankings.",
+      "cta": "Open the dashboard →"
+    },
     "signed_in_as": "Signed in as {email}",
     "your_clubs": "Your clubs",
     "no_clubs": "You don't belong to any club yet.",
@@ -259,6 +264,7 @@
     "user_menu_perfil": "Mi perfil",
     "nav": {
       "home": "Inicio",
+      "dashboard": "Dashboard",
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
@@ -1292,6 +1298,29 @@
       "high_rating": "Average rating of 7.5 or higher.",
       "veteran": "Career games-played milestones (50/100/200)."
     }
+  },
+  "dashboard": {
+    "title": "Executive dashboard",
+    "subtitle": "{club} · {season} season",
+    "coming_soon": "Coming soon.",
+    "census": {
+      "title": "Club squad",
+      "total_players": "active players",
+      "by_category": "By category",
+      "by_team": "By team",
+      "empty": "No teams in the active season yet.",
+      "next_phase_note": "The comparison with the previous season and the links to the squad and coaching staff arrive in the next delivery.",
+      "col": {
+        "category": "Category",
+        "team": "Team",
+        "teams": "Teams",
+        "players": "Players"
+      }
+    },
+    "results": { "title": "Results by team" },
+    "attendance": { "title": "Training attendance" },
+    "alerts": { "title": "Alerts" },
+    "rankings": { "title": "Rankings" }
   },
   "equipo_stats": {
     "title": "Team statistics",

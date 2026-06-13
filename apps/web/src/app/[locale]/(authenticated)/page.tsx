@@ -1,5 +1,11 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Calendar, ClipboardCheck, Megaphone, MessageSquare } from 'lucide-react';
+import {
+  Calendar,
+  ClipboardCheck,
+  Megaphone,
+  MessageSquare,
+  LayoutDashboard,
+} from 'lucide-react';
 import { createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -297,14 +303,26 @@ export default async function Home({ params }: Props) {
           </Card>
         )}
 
-        {/* Admin / coord dashboard placeholder */}
+        {/* Admin / coord — acceso al dashboard ejecutivo (F10). La home NO se
+            sustituye; solo enlaza al dashboard club-wide. */}
         {isAdminLike && (
           <Card className="md:col-span-2">
             <CardHeader>
-              <CardTitle className="text-base">{t('next_steps_title')}</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <LayoutDashboard className="size-4" aria-hidden />
+                {t('dashboard_card.title')}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm text-muted-foreground">
-              <p>{t('next_steps_body')}</p>
+            <CardContent className="text-sm">
+              <p className="mb-2 text-muted-foreground">
+                {t('dashboard_card.body')}
+              </p>
+              <Link
+                href="/dashboard"
+                className="text-misterfc-green hover:underline"
+              >
+                {t('dashboard_card.cta')}
+              </Link>
             </CardContent>
           </Card>
         )}

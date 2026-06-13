@@ -13,6 +13,7 @@ import {
   Calendar,
   Shield,
   LayoutGrid,
+  LayoutDashboard,
   LineChart,
   BarChart3,
   Settings,
@@ -48,6 +49,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
       'entrenador_ayudante',
       'jugador',
     ],
+  },
+  {
+    key: 'dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    // F10 — Dashboard ejecutivo del club. Solo dirección (admin/coord); el
+    // gating real es en servidor (la page redirige), esto solo oculta la entrada.
+    roles: ['admin_club', 'coordinador'],
   },
   {
     key: 'equipos',

@@ -104,6 +104,11 @@
     "error_generic": "No hem pogut crear el club. Torna-ho a provar."
   },
   "home": {
+    "dashboard_card": {
+      "title": "Tauler executiu",
+      "body": "Visió global del club: plantilla, resultats, assistència, alertes i rànquings.",
+      "cta": "Obrir el tauler →"
+    },
     "signed_in_as": "Sessió iniciada com {email}",
     "your_clubs": "Els teus clubs",
     "no_clubs": "Encara no pertanys a cap club.",
@@ -259,6 +264,7 @@
     "user_menu_perfil": "Mi perfil",
     "nav": {
       "home": "Inicio",
+      "dashboard": "Tauler",
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
@@ -1292,6 +1298,29 @@
       "high_rating": "Mitjana de valoració de 7,5 o més.",
       "veteran": "Fites de partits jugats al llarg de la seua carrera (50/100/200)."
     }
+  },
+  "dashboard": {
+    "title": "Tauler executiu",
+    "subtitle": "{club} · temporada {season}",
+    "coming_soon": "Pròximament.",
+    "census": {
+      "title": "Plantilla del club",
+      "total_players": "jugadors actius",
+      "by_category": "Per categoria",
+      "by_team": "Per equip",
+      "empty": "Encara no hi ha equips en la temporada activa.",
+      "next_phase_note": "La comparativa amb la temporada anterior i els enllaços a la plantilla i al cos tècnic arriben en la pròxima entrega.",
+      "col": {
+        "category": "Categoria",
+        "team": "Equip",
+        "teams": "Equips",
+        "players": "Jugadors"
+      }
+    },
+    "results": { "title": "Resultats per equip" },
+    "attendance": { "title": "Assistència als entrenaments" },
+    "alerts": { "title": "Alertes" },
+    "rankings": { "title": "Rànquings" }
   },
   "equipo_stats": {
     "title": "Estadístiques de l'equip",
