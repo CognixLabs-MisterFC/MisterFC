@@ -1309,12 +1309,18 @@
       "by_category": "By category",
       "by_team": "By team",
       "empty": "No teams in the active season yet.",
-      "next_phase_note": "The comparison with the previous season and the links to the squad and coaching staff arrive in the next delivery.",
+      "previous_total": "{season} season: {count} players",
+      "no_previous": "No previous season to compare against.",
+      "links": {
+        "players": "View full squad",
+        "staff": "View coaching staff"
+      },
       "col": {
         "category": "Category",
         "team": "Team",
         "teams": "Teams",
-        "players": "Players"
+        "players": "Players",
+        "delta": "Δ"
       }
     },
     "results": { "title": "Results by team" },

@@ -1309,12 +1309,18 @@
       "by_category": "Per categoria",
       "by_team": "Per equip",
       "empty": "Encara no hi ha equips en la temporada activa.",
-      "next_phase_note": "La comparativa amb la temporada anterior i els enllaços a la plantilla i al cos tècnic arriben en la pròxima entrega.",
+      "previous_total": "Temporada {season}: {count} jugadors",
+      "no_previous": "Sense temporada anterior amb què comparar.",
+      "links": {
+        "players": "Veure plantilla completa",
+        "staff": "Veure cos tècnic"
+      },
       "col": {
         "category": "Categoria",
         "team": "Equip",
         "teams": "Equips",
-        "players": "Jugadors"
+        "players": "Jugadors",
+        "delta": "Δ"
       }
     },
     "results": { "title": "Resultats per equip" },
