@@ -108,6 +108,11 @@
     "your_role": "Tu rol aquí es {role}.",
     "next_steps_title": "Siguientes pasos",
     "next_steps_body": "Empieza creando categorías y equipos en el menú lateral. Después podrás dar de alta jugadores y configurar al cuerpo técnico.",
+    "dashboard_card": {
+      "title": "Dashboard ejecutivo",
+      "body": "Visión global del club: plantilla, resultados, asistencia, alertas y rankings.",
+      "cta": "Abrir el dashboard →"
+    },
     "cards": {
       "messages": {
         "title": "Mensajes sin leer",
@@ -177,6 +182,7 @@
     "user_menu_perfil": "Mi perfil",
     "nav": {
       "home": "Inicio",
+      "dashboard": "Dashboard",
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
       "jugadores": "Plantilla",
@@ -1291,6 +1297,29 @@
       "high_rating": "Media de valoración de 7,5 o más.",
       "veteran": "Hitos de partidos jugados a lo largo de su carrera (50/100/200)."
     }
+  },
+  "dashboard": {
+    "title": "Dashboard ejecutivo",
+    "subtitle": "{club} · temporada {season}",
+    "coming_soon": "Próximamente.",
+    "census": {
+      "title": "Plantilla del club",
+      "total_players": "jugadores activos",
+      "by_category": "Por categoría",
+      "by_team": "Por equipo",
+      "empty": "Aún no hay equipos en la temporada activa.",
+      "next_phase_note": "La comparativa con la temporada anterior y los enlaces a la plantilla y al cuerpo técnico llegan en la próxima entrega.",
+      "col": {
+        "category": "Categoría",
+        "team": "Equipo",
+        "teams": "Equipos",
+        "players": "Jugadores"
+      }
+    },
+    "results": { "title": "Resultados por equipo" },
+    "attendance": { "title": "Asistencia a entrenamientos" },
+    "alerts": { "title": "Alertas" },
+    "rankings": { "title": "Rankings" }
   },
   "equipo_stats": {
     "title": "Estadísticas del equipo",
