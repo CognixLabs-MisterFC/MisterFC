@@ -1308,12 +1308,18 @@
       "by_category": "Por categoría",
       "by_team": "Por equipo",
       "empty": "Aún no hay equipos en la temporada activa.",
-      "next_phase_note": "La comparativa con la temporada anterior y los enlaces a la plantilla y al cuerpo técnico llegan en la próxima entrega.",
+      "previous_total": "Temporada {season}: {count} jugadores",
+      "no_previous": "Sin temporada anterior con la que comparar.",
+      "links": {
+        "players": "Ver plantilla completa",
+        "staff": "Ver cuerpo técnico"
+      },
       "col": {
         "category": "Categoría",
         "team": "Equipo",
         "teams": "Equipos",
-        "players": "Jugadores"
+        "players": "Jugadores",
+        "delta": "Δ"
       }
     },
     "results": { "title": "Resultados por equipo" },
