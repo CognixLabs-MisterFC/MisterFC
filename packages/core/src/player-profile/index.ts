@@ -4,3 +4,4 @@ export * from './timeline';
 export * from './team-aggregate';
 export * from './badges';
 export * from './career';
+export * from './club';
