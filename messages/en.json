@@ -1323,7 +1323,30 @@
         "delta": "Δ"
       }
     },
-    "results": { "title": "Results by team" },
+    "results": {
+      "title": "Results by team",
+      "empty": "No teams in the active season yet.",
+      "only_closed_note": "Only closed matches with a recorded score are counted.",
+      "closed_without_score": "{count, plural, =1 {1 closed match without a score is not counted.} other {# closed matches without a score are not counted.}}",
+      "col": {
+        "played": "P",
+        "wins": "W",
+        "draws": "D",
+        "losses": "L",
+        "goals_for": "GF",
+        "goals_against": "GA",
+        "goal_diff": "GD"
+      },
+      "col_full": {
+        "played": "Played",
+        "wins": "Wins",
+        "draws": "Draws",
+        "losses": "Losses",
+        "goals_for": "Goals for",
+        "goals_against": "Goals against",
+        "goal_diff": "Goal difference"
+      }
+    },
     "attendance": { "title": "Training attendance" },
     "alerts": { "title": "Alerts" },
     "rankings": { "title": "Rankings" }
