@@ -19,6 +19,7 @@ import {
   aggregateClubStats,
   aggregateTeamResults,
   clubAttendanceAgg,
+  clubRankings,
   formatPlayerName,
   activeSeasonLabel,
   currentSeason,
@@ -30,6 +31,9 @@ import {
   type TeamResults,
   type ClubAttendanceRow,
   type ClubAttendanceAgg,
+  type CategoryStatRow,
+  type CategoryEvalRow,
+  type CategoryRankings,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -305,4 +309,118 @@ export async function loadClubAttendance(teamIds: readonly string[]): Promise<Cl
   }
 
   return { agg, playerNames, playerTeamId };
+}
+
+type TeamCategoryRow = {
+  id: string;
+  category_id: string;
+  categories: { name: string };
+};
+type StatGoalsRow = { player_id: string; goals: number; team_id: string };
+type EvalRow = {
+  player_id: string;
+  rating: number | null;
+  is_mvp: boolean;
+  team_id: string;
+};
+
+/** Rankings por categoría + nombres de los jugadores que aparecen. */
+export interface ClubRankingsData {
+  byCategory: CategoryRankings[];
+  /** playerId → nombre formateado (solo los que salen en algún ranking). */
+  playerNames: Record<string, string>;
+}
+
+/**
+ * F10.6 — Rankings POR CATEGORÍA (D5): goleadores, MVPs y mejor media.
+ *
+ * Sin N+1: tres lecturas con `IN (teamIds)` (teams→categoría, match_player_stats,
+ * evaluations) + una cuarta para los nombres de los jugadores que SALEN en los
+ * rankings (identidad, no matemática). La categoría se resuelve desde el equipo
+ * (`teams.category_id` → `categories.name`) con un map en memoria; los goles y
+ * valoraciones se atribuyen a la categoría del equipo con el que se registraron.
+ * La agregación (top-N con empates, suelo de muestras) la hace `clubRankings`.
+ *
+ * D6: NO se gatea por `club_settings.evaluations_player_visibility`. El dashboard
+ * es admin/coord, que ya leen `evaluations` por la RLS (`user_can_record_match`);
+ * los rankings de rating se muestran siempre (ruptura deliberada de la regla de
+ * F9, documentada en la spec 10.0 §6).
+ *
+ * RLS heredada: `match_player_stats_select` y `evaluations_select` (ambas vía
+ * `user_can_record_match`) — sin políticas nuevas.
+ */
+export async function loadClubRankings(teamIds: readonly string[]): Promise<ClubRankingsData> {
+  if (teamIds.length === 0) return { byCategory: [], playerNames: {} };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // teamId → categoría (id + nombre).
+  const { data: rawTeams } = await supabase
+    .from('teams')
+    .select('id, category_id, categories!inner(name)')
+    .in('id', teamIds);
+  const teamCategory = new Map<string, { id: string; name: string }>();
+  for (const t of (rawTeams ?? []) as unknown as TeamCategoryRow[]) {
+    teamCategory.set(t.id, { id: t.category_id, name: t.categories.name });
+  }
+
+  const [{ data: rawStats }, { data: rawEvals }] = await Promise.all([
+    supabase.from('match_player_stats').select('player_id, goals, team_id').in('team_id', teamIds),
+    supabase
+      .from('evaluations')
+      .select('player_id, rating, is_mvp, team_id')
+      .in('team_id', teamIds),
+  ]);
+
+  const statRows: CategoryStatRow[] = [];
+  for (const r of (rawStats ?? []) as unknown as StatGoalsRow[]) {
+    const cat = teamCategory.get(r.team_id);
+    if (!cat) continue;
+    statRows.push({
+      categoryId: cat.id,
+      categoryName: cat.name,
+      playerId: r.player_id,
+      goals: r.goals,
+    });
+  }
+
+  const evalRows: CategoryEvalRow[] = [];
+  for (const r of (rawEvals ?? []) as unknown as EvalRow[]) {
+    const cat = teamCategory.get(r.team_id);
+    if (!cat) continue;
+    evalRows.push({
+      categoryId: cat.id,
+      categoryName: cat.name,
+      playerId: r.player_id,
+      rating: r.rating,
+      isMvp: r.is_mvp,
+    });
+  }
+
+  const byCategory = clubRankings(statRows, evalRows);
+
+  // Nombres solo de los jugadores que aparecen en algún ranking.
+  const ids = new Set<string>();
+  for (const c of byCategory) {
+    for (const e of c.topScorers) ids.add(e.playerId);
+    for (const e of c.topMvps) ids.add(e.playerId);
+    for (const e of c.bestAvgRating) ids.add(e.playerId);
+  }
+  const playerNames: Record<string, string> = {};
+  if (ids.size > 0) {
+    const { data: players } = await supabase
+      .from('players')
+      .select('id, first_name, last_name')
+      .in('id', Array.from(ids));
+    for (const p of (players ?? []) as unknown as {
+      id: string;
+      first_name: string;
+      last_name: string | null;
+    }[]) {
+      playerNames[p.id] = formatPlayerName(p.first_name, p.last_name);
+    }
+  }
+
+  return { byCategory, playerNames };
 }

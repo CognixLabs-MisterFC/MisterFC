@@ -25,7 +25,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { redirect } from 'next/navigation';
-import type { Role, ClubCensus } from '@misterfc/core';
+import type { Role, ClubCensus, RankingEntry } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +37,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { loadClubDashboardBase, loadClubResults, loadClubAttendance } from './queries';
+import {
+  loadClubDashboardBase,
+  loadClubResults,
+  loadClubAttendance,
+  loadClubRankings,
+} from './queries';
 import { AttendanceTrend } from './attendance-trend';
 
 type Props = {
@@ -106,6 +111,7 @@ export default async function DashboardPage({ params }: Props) {
   const { season, census, previousCensus } = await loadClubDashboardBase(ctx.activeClub.club.id);
   const results = await loadClubResults(season.teamIds);
   const attendance = await loadClubAttendance(season.teamIds);
+  const rankings = await loadClubRankings(season.teamIds);
 
   const hasPrevious = previousCensus != null;
   const categoryRows = buildCategoryComparison(census, previousCensus);
@@ -126,6 +132,9 @@ export default async function DashboardPage({ params }: Props) {
     present: p.present,
     total: p.total,
   }));
+
+  // Rankings por categoría indexados por id, para pintar en el orden del censo.
+  const rankingsByCat = new Map(rankings.byCategory.map((c) => [c.categoryId, c]));
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
@@ -444,19 +453,123 @@ export default async function DashboardPage({ params }: Props) {
         </CardContent>
       </Card>
 
-      {/* ── Placeholders de las secciones que llegan en 10.5–10.6 ── */}
+      {/* ── Sección RANKINGS por categoría (10.6, D5/D6) ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Medal className="size-4" aria-hidden />
+            {t('rankings.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-6">
+          {census.byCategory.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('rankings.empty')}</p>
+          ) : (
+            census.byCategory.map((cat) => {
+              const r = rankingsByCat.get(cat.categoryId);
+              return (
+                <div key={cat.categoryId} className="flex flex-col gap-3">
+                  <h2 className="text-sm font-semibold">{cat.categoryName}</h2>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <RankingMiniTable
+                      title={t('rankings.scorers')}
+                      entries={r?.topScorers ?? []}
+                      names={rankings.playerNames}
+                      valueHeader={t('rankings.col.goals')}
+                      empty={t('rankings.none')}
+                    />
+                    <RankingMiniTable
+                      title={t('rankings.mvps')}
+                      entries={r?.topMvps ?? []}
+                      names={rankings.playerNames}
+                      valueHeader={t('rankings.col.mvps')}
+                      empty={t('rankings.none')}
+                    />
+                    <RankingMiniTable
+                      title={t('rankings.best_avg')}
+                      entries={r?.bestAvgRating ?? []}
+                      names={rankings.playerNames}
+                      valueHeader={t('rankings.col.avg')}
+                      sampleLabel={t('rankings.sample')}
+                      decimals
+                      empty={t('rankings.none')}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── Placeholder de la sección que llega en 10.5 ── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <PlaceholderCard
           icon={<TriangleAlert className="size-4" aria-hidden />}
           title={t('alerts.title')}
           soon={t('coming_soon')}
         />
-        <PlaceholderCard
-          icon={<Medal className="size-4" aria-hidden />}
-          title={t('rankings.title')}
-          soon={t('coming_soon')}
-        />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Mini-tabla de un ranking (goleadores / MVPs / mejor media) de una categoría.
+ * Muestra posición (con empates), jugador y valor. En "mejor media" el valor va
+ * con un decimal y se anota el nº de muestras entre paréntesis.
+ */
+function RankingMiniTable({
+  title,
+  entries,
+  names,
+  valueHeader,
+  sampleLabel,
+  decimals = false,
+  empty,
+}: {
+  title: string;
+  entries: RankingEntry[];
+  names: Record<string, string>;
+  valueHeader: string;
+  sampleLabel?: string;
+  decimals?: boolean;
+  empty: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</h3>
+      {entries.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-8 text-right">#</TableHead>
+              <TableHead>{/* jugador */}</TableHead>
+              <TableHead className="text-right">{valueHeader}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {entries.map((e) => (
+              <TableRow key={e.playerId}>
+                <TableCell className="text-right tabular-nums text-muted-foreground">
+                  {e.rank}
+                </TableCell>
+                <TableCell className="font-medium">{names[e.playerId] ?? '—'}</TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {decimals ? e.value.toFixed(1) : e.value}
+                  {sampleLabel != null && e.sample != null && (
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      ({e.sample} {sampleLabel})
+                    </span>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }
