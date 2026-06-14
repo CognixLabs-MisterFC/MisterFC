@@ -1369,7 +1369,20 @@
       }
     },
     "alerts": { "title": "Alertes" },
-    "rankings": { "title": "Rànquings" }
+    "rankings": {
+      "title": "Rànquings",
+      "empty": "Encara no hi ha categories en la temporada activa.",
+      "none": "Sense dades.",
+      "scorers": "Golejadors",
+      "mvps": "MVPs",
+      "best_avg": "Millor valoració mitjana",
+      "sample": "val.",
+      "col": {
+        "goals": "Gols",
+        "mvps": "MVP",
+        "avg": "Mitjana"
+      }
+    }
   },
   "equipo_stats": {
     "title": "Estadístiques de l'equip",

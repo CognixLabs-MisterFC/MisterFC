@@ -1369,7 +1369,20 @@
       }
     },
     "alerts": { "title": "Alerts" },
-    "rankings": { "title": "Rankings" }
+    "rankings": {
+      "title": "Rankings",
+      "empty": "No categories in the active season yet.",
+      "none": "No data.",
+      "scorers": "Top scorers",
+      "mvps": "MVPs",
+      "best_avg": "Best average rating",
+      "sample": "ratings",
+      "col": {
+        "goals": "Goals",
+        "mvps": "MVP",
+        "avg": "Avg"
+      }
+    }
   },
   "equipo_stats": {
     "title": "Team statistics",
