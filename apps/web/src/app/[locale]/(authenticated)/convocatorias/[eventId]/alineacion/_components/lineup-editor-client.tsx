@@ -24,6 +24,7 @@ import {
   parsePlayerDragId,
   playerDraggableId,
   coachFormationToFormation,
+  formatPlayerNameNatural,
   positionKeyOfSlotCode,
   resolveDrop,
   startersFor,
@@ -137,9 +138,11 @@ type Props = {
   coachFormations: CoachFormation[];
 };
 
+// Ficha de la alineación: nombre en orden natural "Nombre Apellido" (no solo el
+// apellido). Maneja huecos vía el helper de core; si no hay datos, cae al id.
 function shortLabel(p: RosterPlayerVM | undefined, playerId: string): string {
   if (!p) return playerId.slice(0, 4);
-  return p.lastName || p.firstName || playerId.slice(0, 4);
+  return formatPlayerNameNatural(p.firstName, p.lastName) || playerId.slice(0, 4);
 }
 
 /**

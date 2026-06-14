@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { avatarInitials, formatPlayerName, playerInitials } from '../name';
+import {
+  avatarInitials,
+  formatPlayerName,
+  formatPlayerNameNatural,
+  playerInitials,
+} from '../name';
 
 describe('formatPlayerName', () => {
   it('apellido, nombre cuando hay ambos', () => {
@@ -8,6 +13,24 @@ describe('formatPlayerName', () => {
   it('solo el nombre si no hay apellido', () => {
     expect(formatPlayerName('Pepe', null)).toBe('Pepe');
     expect(formatPlayerName('Pepe', '   ')).toBe('Pepe');
+  });
+});
+
+describe('formatPlayerNameNatural (orden natural — nombre apellido)', () => {
+  it('nombre apellido cuando hay ambos', () => {
+    expect(formatPlayerNameNatural('Pepe', 'Gómez')).toBe('Pepe Gómez');
+  });
+  it('solo el nombre si no hay apellido', () => {
+    expect(formatPlayerNameNatural('Pepe', null)).toBe('Pepe');
+    expect(formatPlayerNameNatural('Pepe', '   ')).toBe('Pepe');
+  });
+  it('solo el apellido si no hay nombre', () => {
+    expect(formatPlayerNameNatural('', 'Gómez')).toBe('Gómez');
+    expect(formatPlayerNameNatural(null, 'Gómez')).toBe('Gómez');
+  });
+  it('sin datos → cadena vacía (el consumidor decide el fallback)', () => {
+    expect(formatPlayerNameNatural(null, null)).toBe('');
+    expect(formatPlayerNameNatural('  ', '  ')).toBe('');
   });
 });
 
