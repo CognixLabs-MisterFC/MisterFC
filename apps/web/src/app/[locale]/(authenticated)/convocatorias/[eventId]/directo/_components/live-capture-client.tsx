@@ -61,6 +61,7 @@ import {
   RIVAL_EVENT_TYPES,
   type ClockPeriod,
   type LivePositions,
+  type ManageableMatchType,
   type MatchEventLite,
   type PenaltyOutcome,
   type RivalEventType,
@@ -150,7 +151,7 @@ const EVENT_ICON_CLASS: Partial<Record<string, string>> = {
 
 type Props = {
   eventId: string;
-  eventType: 'match' | 'friendly';
+  eventType: ManageableMatchType;
   teamName: string;
   opponentName: string | null;
   format: TeamFormat;

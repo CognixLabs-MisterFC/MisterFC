@@ -43,6 +43,7 @@ import {
   type FieldSlot,
   formationsForFormat,
   getFormation,
+  isManageableMatchType,
   type Json,
   type LivePositions,
   matchEventRefSchema,
@@ -207,7 +208,7 @@ export async function startMatch(input: unknown): Promise<ClockActionState> {
     .eq('id', event_id)
     .maybeSingle();
   if (!ev) return { error: 'not_found' };
-  if (ev.type !== 'match' && ev.type !== 'friendly') return { error: 'invalid' };
+  if (!isManageableMatchType(ev.type as string)) return { error: 'invalid' };
   if (ev.team_id == null) return { error: 'invalid' };
   const clubId = ev.club_id as string;
 

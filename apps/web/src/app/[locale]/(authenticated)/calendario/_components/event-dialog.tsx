@@ -16,6 +16,7 @@ import {
   type EventType,
   type RecurrenceRuleInput,
   countOccurrences,
+  isManageableMatchType,
   TIMEZONE_OLA1,
   computeEndsAt,
   HALFTIME_BREAK_MINUTES,
@@ -749,8 +750,9 @@ export function EventDialog({
                 </Link>
               </Button>
             )}
-          {/* F4.4 entry point: si es un partido, link a la convocatoria. */}
-          {isEdit && event && event.type === 'match' && (
+          {/* F4.4 entry point: si es un partido gestionable (oficial, amistoso
+              o torneo), link a la convocatoria. */}
+          {isEdit && event && isManageableMatchType(event.type) && (
             <Button asChild variant="outline" size="sm">
               <Link
                 href={`/convocatorias/${event.id}`}

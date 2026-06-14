@@ -17,7 +17,9 @@ import {
   DEFAULT_REGIME,
   defaultLineupDraft,
   getFormation,
+  isManageableMatchType,
   type ClockPeriod,
+  type ManageableMatchType,
   type LivePositions,
   type PeriodKind,
   type SubstitutionRegime,
@@ -229,7 +231,7 @@ export type MatchLiveData = {
     id: string;
     teamId: string;
     title: string;
-    type: 'match' | 'friendly';
+    type: ManageableMatchType;
     opponentName: string | null;
     startsAt: string;
     teamName: string;
@@ -339,14 +341,14 @@ export async function loadMatchLive(
     .maybeSingle();
   if (!ev) return null;
   if ((ev.club_id as string) !== clubId) return null;
-  // F7 admite partido y amistoso (no entrenamientos ni otros).
-  if (ev.type !== 'match' && ev.type !== 'friendly') return null;
+  // F7 admite partido, amistoso y torneo (no entrenamientos ni otros).
+  if (!isManageableMatchType(ev.type as string)) return null;
   if (ev.team_id == null) return null;
 
   type EventShape = {
     id: string;
     team_id: string;
-    type: 'match' | 'friendly';
+    type: ManageableMatchType;
     title: string;
     opponent_name: string | null;
     starts_at: string;
