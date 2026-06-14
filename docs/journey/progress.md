@@ -15,8 +15,8 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 6 | Alineaciones y planificación del partido (ampliada 2026-05-29) | ☑ completada | 2026-05-31 | 2026-06-01 |
 | 7 | Pantalla de toma de datos del partido (live) | ☑ completada | 2026-06-01 | 2026-06-07 |
 | 8 | Valoraciones del partido | ☑ completada | 2026-06-08 | 2026-06-08 |
-| 9 | Perfil del jugador y evolución multi-temporada | ☐ pendiente | — | — |
-| 10 | Dashboard ejecutivo del club | ☐ pendiente | — | — |
+| 9 | Perfil del jugador y evolución multi-temporada | ☑ completada | 2026-06-08 | 2026-06-12 |
+| 10 | Dashboard ejecutivo del club | ☑ completada | 2026-06-13 | 2026-06-14 |
 | 11 | Biblioteca de ejercicios | ☐ pendiente | — | — |
 | 12 | Planificador de sesiones con plantillas microciclo | ☐ pendiente | — | — |
 | 13 | Pizarra táctica 2D con animación | ☐ pendiente | — | — |
@@ -245,6 +245,29 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Verificación**: typecheck · lint · test · build en cada PR; `db:test` (pgTAP contra remoto) en verde tras A6 (`categories_contract.sql` + 25 fixtures ajustados al modelo nuevo).
 - **Estado final**: nada lee `categories.season`; la categoría es plantilla permanente; la temporada vive en `teams.season`.
 - **Fuera de alcance (futuro)**: season rollover / clonado de equipos-rosters entre temporadas; auto-envío real del `invite_email` (solo se persiste).
+
+## Fase 10 — Subfases entregadas ✅
+
+> **Cerrada 2026-06-14.** Dashboard ejecutivo del club (`/dashboard`, solo admin_club/coordinador). Spec íntegra [10.0](../specs/10.0-dashboard-ejecutivo.md) (**Variante A**: agregación por query directa + helpers puros, sin BD nueva). Cierre detallado en [fase-10-summary.md](fase-10-summary.md). La **10.0** (helpers core) se añadió como habilitador y la **10.1** del roadmap ("vistas materializadas") se reinterpretó como agregación en helpers (`DT1`).
+
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| — (spec) | 2026-06-13 | #118 | `docs(f10)`: spec del dashboard (cierra `D1`–`D7`, `DT1`–`DT3`; troceo Variante A; verificación RLS club-wide + existencia F2.10/F2.11) |
+| 10.0 | 2026-06-13 | #119 | Helpers de agregación club-wide en core (puros + Vitest): `aggregateClubStats`, `aggregateTeamResults` (`D2`), `clubAttendanceAgg` (media/ranking/tendencia), `clubRankings` (por categoría, `D5`) |
+| 10.1 | 2026-06-13 | #120 | Ruta `/dashboard` + nav role-aware + gating server-side + loader base + censo (loaders sin N+1, `IN(teamIds)`, RLS heredada) |
+| 10.2 | 2026-06-13 | #121 | Plantilla: total + distribución por categoría/equipo + comparativa con temporada anterior (`D1`); enlaces a `/jugadores` (F2.10) y `/cuerpo-tecnico` (F2.11), no los duplica |
+| 10.3 | 2026-06-14 | #123 | Resultados acumulados por equipo (W-D-L / GF-GA, `D2`: solo `closed`; GF/GA null ≠ 0) |
+| 10.4 | 2026-06-14 | #125 | Asistencia: media + ranking + tendencia por semana (recharts `dynamic(ssr:false)` + tabla `sr-only`, patrón 9.B-2) |
+| 10.6 | 2026-06-14 | #126 | Rankings por categoría (goleadores, MVPs, mejor media; `D5`); **no** gateados por el flag de visibilidad (`D6`) |
+| 10.5 | 2026-06-14 | #127 | Alertas: baja asistencia (`D3`: <60% y ≥5 sesiones) + inactivos (`D4`: ni stats ni asistencia). Estado "todo en orden" en verde. **Cierra F10** |
+
+## Fase 10 — Cierre
+
+- **Inicio / Fin**: 2026-06-13 / 2026-06-14. Estimación 6–8 h. *(Nota de fidelidad: la agregación club-wide fue **net-new** pese al "reúso/riesgo bajo" del roadmap; pudo rozar el extremo alto — ya anticipado en la spec §0/§11.)*
+- **PRs**: #118 (spec) + #119–#127. NO mergeados por el agente (los mergea el responsable).
+- **Migraciones**: **ninguna**. F10 no crea tablas/vistas/funciones/políticas (`DT1`/`DT3`) → sin pgTAP nuevo; la limitación pgTAP-fuera-de-CI (F15.8) no aplica a esta fase.
+- **Tests**: helpers puros de `@misterfc/core/player-profile/club` en Vitest (censo, resultados con GF/GA null y partidos no cerrados, asistencia con tendencia y suelo de muestra, rankings por categoría con empates, límites exactos de `D3`/`D4`). typecheck · lint · test · build en verde en cada PR.
+- **Diferidos**: export PDF del dashboard (`D7`, infra 9.B reutilizable); vistas materializadas como optimización futura (`DT1`); selector libre de temporada (`D1`, v2).
 
 ## Fase 11 — Subfases pendientes
 

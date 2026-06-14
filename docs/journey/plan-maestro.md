@@ -111,7 +111,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☑ |
 | F8 | Valoraciones del partido | 8–13 h | 3–4 | ☑ |
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☑ |
-| F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☐ |
+| F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☑ |
 | F11 | Biblioteca de ejercicios | 13–18 h | 5–6 | ☐ |
 | F11B | Pizarra táctica en vivo (sobre la alineación) | 6–9 h (preliminar) | 2–3 | ☐ |
 | F12 | Planificador de sesiones | 12–20 h | 4–6 | ☐ |
@@ -501,22 +501,27 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Objetivo**: pantalla agregada del club para admin_club y coordinadores. Visión global del estado del club: plantilla, resultados, asistencia, alertas y rankings.
 
-**Horas**: 6–8 h · **Sesiones**: 2–3
+**Estado**: ☑ **Cerrada (2026-06-14)** — todas las subfases entregadas (10.1–10.6) y verificadas (typecheck · lint · test · build en verde). **Sin BD nueva** → sin migraciones ni pgTAP (`DT1`/`DT3`). Spec íntegra de la fase en [docs/specs/10.0-dashboard-ejecutivo.md](../specs/10.0-dashboard-ejecutivo.md); cierre detallado en [fase-10-summary.md](fase-10-summary.md).
 
-**Criterio de cierre**: admin del club puede entrar al dashboard y ver de un vistazo: total de jugadores, distribución por categoría/equipo, resultados acumulados, % asistencia a entrenamientos, alertas de jugadores con baja asistencia, ranking de goleadores y MVPs.
+**Horas**: 6–8 h · **Sesiones**: 2–3 · **PRs**: #118 (spec) + #119 (10.0), #120 (10.1), #121 (10.2), #123 (10.3), #125 (10.4), #126 (10.6), #127 (10.5). NO mergeados por el agente (los mergea el responsable).
 
-**Riesgo**: bajo. Reusa stats ya generadas en fases anteriores.
+**Criterio de cierre**: admin del club puede entrar al dashboard y ver de un vistazo: total de jugadores, distribución por categoría/equipo, resultados acumulados, % asistencia a entrenamientos, alertas de jugadores con baja asistencia, ranking de goleadores y MVPs. ✅
+
+**Riesgo**: bajo *(en la práctica la agregación club-wide fue net-new; ver nota de fidelidad en [fase-10-summary.md](fase-10-summary.md))*. Reusa el **patrón** D9-C (helpers puros + loaders) y piezas de F9 (recharts + tabla `sr-only`, buckets de asistencia), no la lógica de agregación.
 
 **Dependencias**: Fase 9 cerrada. *(Nota 2026-06-09: el **núcleo de F9 está hecho** — stats agregadas, ratios, evolución y vista jugador/familia ya disponibles y reutilizables — pero **F9 no está cerrada del todo**: faltan el multi-temporada y los PDF del segundo tramo. F10 puede apoyarse en los agregados/helpers del núcleo; lo que dependa específicamente del multi-temporada o de los reportes PDF espera al cierre completo de F9.)*
 
-**Subfases**:
+**Decisiones cerradas** (spec §6): `DT1` no materializar (helpers puros, MV diferida) · `DT2` cálculo en `@misterfc/core`, loaders delegan · `DT3` RLS heredada (sin políticas nuevas) · `D1` temporada activa + comparativa (selector libre → v2) · `D2` solo partidos `closed`, GF/GA null ≠ 0 · `D3` baja asistencia <60% y ≥5 sesiones · `D4` inactivo sin stats ni asistencia · `D5` rankings por categoría · `D6` rankings de rating **no** gateados por el flag (público admin/coord) · `D7` export PDF diferido.
 
-- **10.1** Modelo de stats agregadas del club + cache (vistas materializadas) — 1 h
-- **10.2** Sección de plantilla del club: **solo stats agregadas** — totales, distribución por categoría/equipo, comparativa temporadas. El listado completo de jugadores con filtros vive en **F2.10**, y el listado de cuerpo técnico en **F2.11**. F10.2 enlaza a ambas; no las duplica. — 1 h
-- **10.3** Sección de resultados acumulados por equipo — 1 h
-- **10.4** Sección de asistencia a entrenamientos (media, ranking, tendencia) — 1–2 h
-- **10.5** Alertas: bajas de asistencia y jugadores inactivos — 1 h
-- **10.6** Sección de rankings (goleadores, MVPs, mejor valoración media) — 1 h
+**Subfases** (con el troceo Variante A realmente implementado — la 10.0 helpers core se añadió como habilitador; la 10.1 del roadmap "vistas materializadas" se reinterpretó como agregación en helpers, `DT1`):
+
+- **10.0** Helpers de agregación club-wide en core (puros + Vitest): `aggregateClubStats`, `aggregateTeamResults`, `clubAttendanceAgg`, `clubRankings` — #119 `[hecho 2026-06-13]`
+- **10.1** Ruta `/dashboard` + nav role-aware + gating server-side + loader base + censo (loaders sin N+1, `IN(teamIds)`, RLS heredada) — #120 `[hecho 2026-06-13]`
+- **10.2** Sección de plantilla del club: **solo stats agregadas** — totales, distribución por categoría/equipo, comparativa con la temporada anterior. El listado completo de jugadores con filtros vive en **F2.10**, y el listado de cuerpo técnico en **F2.11**. F10.2 enlaza a ambas; no las duplica. — #121 `[hecho 2026-06-13]`
+- **10.3** Sección de resultados acumulados por equipo (W-D-L / GF-GA, `D2`) — #123 `[hecho 2026-06-14]`
+- **10.4** Sección de asistencia a entrenamientos (media, ranking, tendencia — recharts + tabla `sr-only`) — #125 `[hecho 2026-06-14]`
+- **10.6** Sección de rankings por categoría (goleadores, MVPs, mejor valoración media; `D5`/`D6`) — #126 `[hecho 2026-06-14]`
+- **10.5** Alertas: baja asistencia (`D3`) + jugadores inactivos (`D4`). **Cierra F10.** — #127 `[hecho 2026-06-14]`
 
 ---
 
