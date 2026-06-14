@@ -405,8 +405,9 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
           MENOS descartados) vs no convocados (solo los descartados). Un convocado
           puede no tener fila called_up explícita (p.ej. un suplente que entró a la
           alineación con la convocatoria ya publicada): igualmente cuenta, porque
-          no está descartado. */}
-      {!isPlayer && decisions.size > 0 && (
+          no está descartado. Se muestra siempre que haya roster, aunque no haya
+          ninguna decisión todavía (entonces convocados = roster entero). */}
+      {!isPlayer && roster.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">

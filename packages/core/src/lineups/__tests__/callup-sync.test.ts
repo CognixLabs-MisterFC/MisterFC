@@ -79,3 +79,42 @@ describe('groupRosterByCallup (convocados = roster − descartados)', () => {
     expect(discarded).toEqual([]);
   });
 });
+
+// Contador DERIVADO de "Gestión de partidos": replica cómo lo usa
+// loadCallupMatches — rosterIds (vigente) + Set de descartados. Garantiza:
+// banquillo (sin fila) cuenta; descartado del roster no; descartado que YA NO
+// está en el roster no resta (no aparece en rosterIds).
+describe('contador derivado de la lista (roster vigente − descartados ∩ roster)', () => {
+  const countCalledUp = (rosterIds: string[], discarded: Set<string>) =>
+    groupRosterByCallup(rosterIds, (pid) =>
+      discarded.has(pid) ? 'discarded' : null
+    );
+
+  it('banquillo (sin fila called_up) cuenta como convocado', () => {
+    const { calledUp } = countCalledUp(
+      ['titular', 'banquillo'],
+      new Set<string>() // ninguna decisión
+    );
+    expect(calledUp).toEqual(['titular', 'banquillo']);
+    expect(calledUp).toHaveLength(2);
+  });
+
+  it('descartado del roster no cuenta como convocado', () => {
+    const { calledUp, discarded } = countCalledUp(
+      ['titular', 'banquillo', 'fuera'],
+      new Set(['fuera'])
+    );
+    expect(calledUp).toEqual(['titular', 'banquillo']);
+    expect(discarded).toEqual(['fuera']);
+  });
+
+  it('descartado que ya NO está en el roster no resta', () => {
+    // 'ex' está descartado pero ya dejó el equipo → no está en rosterIds.
+    const { calledUp, discarded } = countCalledUp(
+      ['titular', 'banquillo'],
+      new Set(['ex'])
+    );
+    expect(calledUp).toEqual(['titular', 'banquillo']); // 2, no 1
+    expect(discarded).toEqual([]); // 'ex' no aparece
+  });
+});

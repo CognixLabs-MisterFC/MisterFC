@@ -20,6 +20,7 @@ import {
   computeWeeklyTrainingAttendance,
   createSupabaseServerClient,
   getCurrentUser,
+  groupRosterByCallup,
   isManageableMatchType,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -349,24 +350,25 @@ export async function loadUpcomingCallups(
     responsesByEvent.set(r.event_id, list);
   }
 
-  // Decisions
+  // Decisiones. Solo nos interesan los DESCARTADOS por jugador: "convocado" es
+  // DERIVADO (roster − descartados), igual que groupRosterByCallup / el contador
+  // del home. Las filas explícitas 'called_up' NO se cuentan aquí (un suplente
+  // suele no tenerla); se quedan para el sync alineación↔convocatoria.
   const { data: rawDecisions } = await supabase
     .from('callup_decisions')
-    .select('event_id, decision')
+    .select('event_id, player_id, decision')
     .in('event_id', eventIds);
-  type DecShape = { event_id: string; decision: CallupDecisionKind };
-  const decisionsByEvent = new Map<
-    string,
-    { called_up: number; discarded: number }
-  >();
+  type DecShape = {
+    event_id: string;
+    player_id: string;
+    decision: CallupDecisionKind;
+  };
+  const discardedByEvent = new Map<string, Set<string>>();
   for (const d of (rawDecisions ?? []) as DecShape[]) {
-    const cur = decisionsByEvent.get(d.event_id) ?? {
-      called_up: 0,
-      discarded: 0,
-    };
-    if (d.decision === 'called_up') cur.called_up++;
-    else cur.discarded++;
-    decisionsByEvent.set(d.event_id, cur);
+    if (d.decision !== 'discarded') continue;
+    const cur = discardedByEvent.get(d.event_id) ?? new Set<string>();
+    cur.add(d.player_id);
+    discardedByEvent.set(d.event_id, cur);
   }
 
   // Roster snapshot por team.
@@ -385,12 +387,16 @@ export async function loadUpcomingCallups(
 
   return events.map((e) => {
     const eventDate = e.starts_at.slice(0, 10);
-    const rosterCount = roster.filter(
-      (r) =>
-        r.team_id === e.team_id &&
-        r.joined_at <= eventDate &&
-        (r.left_at == null || r.left_at >= eventDate)
-    ).length;
+    // Roster VIGENTE del evento (por team + ventana de fechas).
+    const rosterIds = roster
+      .filter(
+        (r) =>
+          r.team_id === e.team_id &&
+          r.joined_at <= eventDate &&
+          (r.left_at == null || r.left_at >= eventDate)
+      )
+      .map((r) => r.player_id);
+    const rosterCount = rosterIds.length;
 
     const responses = responsesByEvent.get(e.id) ?? [];
     const respCount = { yes: 0, maybe: 0, no: 0 };
@@ -404,9 +410,16 @@ export async function loadUpcomingCallups(
         myResponse = r.status;
       }
     }
-    const decisions = decisionsByEvent.get(e.id) ?? {
-      called_up: 0,
-      discarded: 0,
+    // Convocados DERIVADOS = roster − descartados (definición canónica,
+    // groupRosterByCallup). Intersecta con el roster vigente: un descartado que
+    // ya no está en el equipo no resta (no aparece en rosterIds).
+    const discardedSet = discardedByEvent.get(e.id) ?? new Set<string>();
+    const groups = groupRosterByCallup(rosterIds, (pid) =>
+      discardedSet.has(pid) ? 'discarded' : null
+    );
+    const decisions = {
+      called_up: groups.calledUp.length,
+      discarded: groups.discarded.length,
     };
     const meta = metaByEvent.get(e.id) ?? null;
 
