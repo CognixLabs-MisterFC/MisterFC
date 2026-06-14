@@ -1368,7 +1368,19 @@
         "sample": "{present} de {total} presents"
       }
     },
-    "alerts": { "title": "Alertes" },
+    "alerts": {
+      "title": "Alertes",
+      "all_clear": "Tot en ordre: sense alertes en la temporada activa.",
+      "none": "Cap.",
+      "criteria": "Baixa assistència: menys del 60 % amb almenys 5 sessions. Inactiu: sense partits ni assistència en tota la temporada.",
+      "low_attendance": "Baixa assistència ({count})",
+      "inactive": "Jugadors inactius ({count})",
+      "col": {
+        "player": "Jugador",
+        "pct": "% assist.",
+        "sessions": "Sessions"
+      }
+    },
     "rankings": {
       "title": "Rànquings",
       "empty": "Encara no hi ha categories en la temporada activa.",

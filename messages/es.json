@@ -1367,7 +1367,19 @@
         "sample": "{present} de {total} presentes"
       }
     },
-    "alerts": { "title": "Alertas" },
+    "alerts": {
+      "title": "Alertas",
+      "all_clear": "Todo en orden: sin alertas en la temporada activa.",
+      "none": "Ninguna.",
+      "criteria": "Baja asistencia: menos del 60 % con al menos 5 sesiones. Inactivo: sin partidos ni asistencia en toda la temporada.",
+      "low_attendance": "Baja asistencia ({count})",
+      "inactive": "Jugadores inactivos ({count})",
+      "col": {
+        "player": "Jugador",
+        "pct": "% asist.",
+        "sessions": "Sesiones"
+      }
+    },
     "rankings": {
       "title": "Rankings",
       "empty": "Aún no hay categorías en la temporada activa.",

@@ -21,6 +21,7 @@ import {
   Trophy,
   ClipboardCheck,
   TriangleAlert,
+  CircleCheck,
   Medal,
   ArrowRight,
 } from 'lucide-react';
@@ -42,6 +43,7 @@ import {
   loadClubResults,
   loadClubAttendance,
   loadClubRankings,
+  loadClubAlerts,
 } from './queries';
 import { AttendanceTrend } from './attendance-trend';
 
@@ -112,6 +114,7 @@ export default async function DashboardPage({ params }: Props) {
   const results = await loadClubResults(season.teamIds);
   const attendance = await loadClubAttendance(season.teamIds);
   const rankings = await loadClubRankings(season.teamIds);
+  const alerts = await loadClubAlerts(season.teamIds);
 
   const hasPrevious = previousCensus != null;
   const categoryRows = buildCategoryComparison(census, previousCensus);
@@ -502,14 +505,90 @@ export default async function DashboardPage({ params }: Props) {
         </CardContent>
       </Card>
 
-      {/* ── Placeholder de la sección que llega en 10.5 ── */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <PlaceholderCard
-          icon={<TriangleAlert className="size-4" aria-hidden />}
-          title={t('alerts.title')}
-          soon={t('coming_soon')}
-        />
-      </div>
+      {/* ── Sección ALERTAS (10.5, D3/D4) ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <TriangleAlert className="size-4" aria-hidden />
+            {t('alerts.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-6">
+          {alerts.lowAttendance.length === 0 && alerts.inactive.length === 0 ? (
+            <p className="flex items-center gap-2 text-sm text-misterfc-green">
+              <CircleCheck className="size-4" aria-hidden />
+              {t('alerts.all_clear')}
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Baja asistencia (D3) */}
+              <div className="flex flex-col gap-2">
+                <h2 className="text-sm font-semibold">
+                  {t('alerts.low_attendance', { count: alerts.lowAttendance.length })}
+                </h2>
+                {alerts.lowAttendance.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t('alerts.none')}</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('alerts.col.player')}</TableHead>
+                        <TableHead>{t('census.col.team')}</TableHead>
+                        <TableHead className="text-right">{t('alerts.col.pct')}</TableHead>
+                        <TableHead className="text-right">{t('alerts.col.sessions')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {alerts.lowAttendance.map((a) => (
+                        <TableRow key={a.playerId}>
+                          <TableCell className="font-medium">{a.name}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {teamNameById.get(a.teamId) ?? '—'}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums text-red-500">
+                            {pctLabel(a.presentPct)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">{a.sessions}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+
+              {/* Inactivos (D4) */}
+              <div className="flex flex-col gap-2">
+                <h2 className="text-sm font-semibold">
+                  {t('alerts.inactive', { count: alerts.inactive.length })}
+                </h2>
+                {alerts.inactive.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t('alerts.none')}</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('alerts.col.player')}</TableHead>
+                        <TableHead>{t('census.col.team')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {alerts.inactive.map((a) => (
+                        <TableRow key={a.playerId}>
+                          <TableCell className="font-medium">{a.name}</TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {teamNameById.get(a.teamId) ?? '—'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground">{t('alerts.criteria')}</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -598,27 +677,5 @@ function Delta({ current, previous }: { current: number; previous: number }) {
       {up ? '+' : '−'}
       {Math.abs(diff)}
     </span>
-  );
-}
-
-function PlaceholderCard({
-  icon,
-  title,
-  soon,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  soon: string;
-}) {
-  return (
-    <Card className="border-dashed opacity-80">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base text-muted-foreground">
-          {icon}
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">{soon}</CardContent>
-    </Card>
   );
 }

@@ -4,12 +4,16 @@ import {
   aggregateTeamResults,
   clubAttendanceAgg,
   clubRankings,
+  lowAttendanceAlerts,
+  inactivePlayers,
+  CLUB_ALERT_THRESHOLDS,
   type ClubTeam,
   type ClubMember,
   type MatchResultRow,
   type ClubAttendanceRow,
   type CategoryStatRow,
   type CategoryEvalRow,
+  type AttendanceSample,
 } from '../club';
 import { BADGE_THRESHOLDS } from '../badges';
 import type { AttendanceCode } from '../../schemas/attendance';
@@ -429,5 +433,78 @@ describe('clubRankings', () => {
     ];
     const [c1] = clubRankings(stats, []);
     expect(c1!.topScorers.map((s) => s.playerId)).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. clubAlerts — lowAttendanceAlerts (D3) + inactivePlayers (D4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function sample(playerId: string, presentPct: number | null, sessions: number): AttendanceSample {
+  return { playerId, presentPct, sessions };
+}
+
+describe('lowAttendanceAlerts (D3)', () => {
+  it('marca % < 60% con ≥ 5 sesiones; ordena de peor a mejor', () => {
+    const out = lowAttendanceAlerts([
+      sample('p1', 0.5, 6), // alerta
+      sample('p2', 0.3, 10), // alerta (peor)
+      sample('p3', 0.8, 8), // ok
+    ]);
+    expect(out.map((a) => a.playerId)).toEqual(['p2', 'p1']);
+  });
+
+  it('60% exacto NO dispara (umbral estricto)', () => {
+    expect(lowAttendanceAlerts([sample('p1', 0.6, 8)])).toEqual([]);
+  });
+
+  it('justo por debajo de 60% con exactamente 5 sesiones SÍ dispara', () => {
+    const out = lowAttendanceAlerts([sample('p1', 0.59, 5)]);
+    expect(out).toEqual([{ playerId: 'p1', presentPct: 0.59, sessions: 5 }]);
+  });
+
+  it('menos de 5 sesiones NO dispara aunque el % sea bajo (suelo de muestra)', () => {
+    expect(lowAttendanceAlerts([sample('p1', 0.2, 4)])).toEqual([]);
+  });
+
+  it('presentPct null (sin sesiones) NO dispara', () => {
+    expect(lowAttendanceAlerts([sample('p1', null, 0)])).toEqual([]);
+  });
+
+  it('umbrales por defecto = CLUB_ALERT_THRESHOLDS', () => {
+    expect(CLUB_ALERT_THRESHOLDS.LOW_ATTENDANCE_MAX_PCT).toBe(0.6);
+    expect(CLUB_ALERT_THRESHOLDS.LOW_ATTENDANCE_MIN_SESSIONS).toBe(5);
+  });
+
+  it('permite override de umbrales', () => {
+    const out = lowAttendanceAlerts([sample('p1', 0.7, 3)], {
+      maxPct: 0.75,
+      minSessions: 3,
+    });
+    expect(out.map((a) => a.playerId)).toEqual(['p1']);
+  });
+});
+
+describe('inactivePlayers (D4)', () => {
+  it('inactivo = en roster pero sin match stats NI asistencia', () => {
+    const roster = ['p1', 'p2', 'p3', 'p4'];
+    const withStats = new Set(['p1']); // jugó
+    const withAtt = new Set(['p2']); // entrenó
+    // p3 sin nada → inactivo; p4 sin nada → inactivo
+    expect(inactivePlayers(roster, withStats, withAtt)).toEqual(['p3', 'p4']);
+  });
+
+  it('basta UNA señal (stats O asistencia) para NO ser inactivo', () => {
+    const roster = ['p1', 'p2'];
+    expect(inactivePlayers(roster, new Set(['p1']), new Set(['p2']))).toEqual([]);
+  });
+
+  it('deduplica ids del roster y conserva el orden', () => {
+    const roster = ['p2', 'p1', 'p2', 'p1'];
+    expect(inactivePlayers(roster, new Set(), new Set())).toEqual(['p2', 'p1']);
+  });
+
+  it('roster vacío → sin inactivos', () => {
+    expect(inactivePlayers([], new Set(['p1']), new Set())).toEqual([]);
   });
 });
