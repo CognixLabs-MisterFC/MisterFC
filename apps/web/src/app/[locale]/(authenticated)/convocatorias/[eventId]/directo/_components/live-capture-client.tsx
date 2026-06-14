@@ -1222,6 +1222,33 @@ export function LiveCaptureClient({
             </button>
           );
         })}
+        {/* F7.4b — córner / falta A FAVOR, junto al resto de eventos propios. El
+            "en contra" sigue en la columna del rival. Córner = acción directa;
+            falta a favor = toggle que pide nuestro jugador (recibe) + ubicación. */}
+        <button
+          type="button"
+          onClick={() => registerCornerSide('for')}
+          className="flex touch-none items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+        >
+          <Flag className="size-4" aria-hidden />
+          <span>{t('event.corner_for')}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            setSelectedEvent(selectedEvent === 'foul_for' ? null : 'foul_for')
+          }
+          aria-pressed={selectedEvent === 'foul_for'}
+          className={cn(
+            'flex touch-none items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors',
+            selectedEvent === 'foul_for'
+              ? 'border-primary bg-primary/10 text-foreground'
+              : 'border-border text-muted-foreground hover:bg-muted',
+          )}
+        >
+          <ShieldAlert className="size-4" aria-hidden />
+          <span>{t('foul_received')}</span>
+        </button>
         {/* F7.5 — herramienta "quitar al que no viene" (no es match_event). */}
         <button
           type="button"
@@ -1408,34 +1435,6 @@ export function LiveCaptureClient({
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {t('recent_events_title')}
           </p>
-          {/* F7.4b — a FAVOR: córner a favor (directo) + falta a favor (la que nos
-              hacen): tocar a nuestro jugador que la recibe + ubicación. */}
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            <button
-              type="button"
-              onClick={() => registerCornerSide('for')}
-              className="flex touch-none items-center gap-1.5 rounded-md border border-border px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
-            >
-              <Flag className="size-3.5" aria-hidden />
-              <span>{t('event.corner_for')}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setSelectedEvent(selectedEvent === 'foul_for' ? null : 'foul_for')
-              }
-              aria-pressed={selectedEvent === 'foul_for'}
-              className={cn(
-                'flex touch-none items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
-                selectedEvent === 'foul_for'
-                  ? 'border-primary bg-primary/10 text-foreground'
-                  : 'border-border text-muted-foreground hover:bg-muted',
-              )}
-            >
-              <ShieldAlert className="size-3.5" aria-hidden />
-              <span>{t('foul_received')}</span>
-            </button>
-          </div>
           {/* F7 (fix #10) — con el partido SIN empezar no se muestran eventos:
               la captura ya está gateada a 'live', pero match_events puede tener
               filas de una sesión previa / datos sembrados; el panel los ocultaba
