@@ -10,18 +10,22 @@
  *
  * 10.2 añade la comparativa de plantilla con la temporada ANTERIOR (D1): se
  * calcula su censo con el MISMO patrón (teams + team_members, dos lecturas, sin
- * iterar por equipo). El resto de secciones (resultados, asistencia, alertas,
- * rankings) añadirán su carga en 10.3–10.6 reusando `teamIds`.
+ * iterar por equipo). 10.3 añade los resultados acumulados por equipo (D2). El
+ * resto de secciones (asistencia, alertas, rankings) añadirán su carga en
+ * 10.4–10.6 reusando `teamIds`.
  */
 
 import {
   aggregateClubStats,
+  aggregateTeamResults,
   activeSeasonLabel,
   currentSeason,
   createSupabaseServerClient,
   type ClubTeam,
   type ClubMember,
   type ClubCensus,
+  type MatchResultRow,
+  type TeamResults,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -147,4 +151,51 @@ export async function loadClubDashboardBase(clubId: string): Promise<ClubDashboa
     census: active.census,
     previousCensus,
   };
+}
+
+/** Tipos de evento que cuentan como "partido" (spec 10.0 §4.2; D2). */
+const MATCH_EVENT_TYPES = ['match', 'friendly', 'tournament'] as const;
+
+type MatchStateRow = {
+  status: MatchResultRow['status'];
+  goals_for: number | null;
+  goals_against: number | null;
+  events: { team_id: string | null };
+};
+
+/**
+ * F10.3 — Resultados acumulados por equipo de la temporada activa (D2).
+ *
+ * UNA query (sin N+1): lee `match_state` (status + marcador) uniendo con
+ * `events!inner` para filtrar por `events.team_id IN (teamIds)` y por los tipos
+ * de partido. `match_state` es 1:1 con el evento; los eventos sin sesión de
+ * captura no tienen fila → no cuentan como resultado. La decisión D2 (solo
+ * `status='closed'`, marcador null no suma) la aplica `aggregateTeamResults` en
+ * core; `teamIds` dirige la salida (una entrada por equipo, a ceros si no jugó).
+ *
+ * RLS heredada: `match_state_select` (`user_can_record_match`) deja a admin/coord
+ * leer todo su club — sin políticas nuevas.
+ */
+export async function loadClubResults(teamIds: readonly string[]): Promise<TeamResults[]> {
+  if (teamIds.length === 0) return [];
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('match_state')
+    .select('status, goals_for, goals_against, events!inner(team_id, type)')
+    .in('events.team_id', teamIds)
+    .in('events.type', MATCH_EVENT_TYPES as unknown as string[]);
+
+  const rows: MatchResultRow[] = ((data ?? []) as unknown as MatchStateRow[])
+    .filter((r) => r.events.team_id != null)
+    .map((r) => ({
+      teamId: r.events.team_id as string,
+      status: r.status,
+      goalsFor: r.goals_for,
+      goalsAgainst: r.goals_against,
+    }));
+
+  return aggregateTeamResults(teamIds, rows);
 }

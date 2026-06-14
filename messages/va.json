@@ -1323,7 +1323,30 @@
         "delta": "Δ"
       }
     },
-    "results": { "title": "Resultats per equip" },
+    "results": {
+      "title": "Resultats per equip",
+      "empty": "Encara no hi ha equips en la temporada activa.",
+      "only_closed_note": "Només es comptabilitzen partits tancats amb marcador registrat.",
+      "closed_without_score": "{count, plural, =1 {1 partit tancat sense marcador no computa.} other {# partits tancats sense marcador no computen.}}",
+      "col": {
+        "played": "PJ",
+        "wins": "V",
+        "draws": "E",
+        "losses": "D",
+        "goals_for": "GF",
+        "goals_against": "GC",
+        "goal_diff": "DG"
+      },
+      "col_full": {
+        "played": "Partits jugats",
+        "wins": "Victòries",
+        "draws": "Empats",
+        "losses": "Derrotes",
+        "goals_for": "Gols a favor",
+        "goals_against": "Gols en contra",
+        "goal_diff": "Diferència de gols"
+      }
+    },
     "attendance": { "title": "Assistència als entrenaments" },
     "alerts": { "title": "Alertes" },
     "rankings": { "title": "Rànquings" }

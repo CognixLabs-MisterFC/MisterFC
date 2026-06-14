@@ -37,7 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { loadClubDashboardBase } from './queries';
+import { loadClubDashboardBase, loadClubResults } from './queries';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -103,9 +103,15 @@ export default async function DashboardPage({ params }: Props) {
 
   const t = await getTranslations('dashboard');
   const { season, census, previousCensus } = await loadClubDashboardBase(ctx.activeClub.club.id);
+  const results = await loadClubResults(season.teamIds);
 
   const hasPrevious = previousCensus != null;
   const categoryRows = buildCategoryComparison(census, previousCensus);
+
+  // Resultados por teamId, para pintar la tabla en el orden (categoría/nombre)
+  // del censo. Total de "cerrados sin marcador" del club, para la nota D2.
+  const resultsByTeam = new Map(results.map((r) => [r.teamId, r]));
+  const closedWithoutScore = results.reduce((acc, r) => acc + r.closedWithoutScore, 0);
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
@@ -247,13 +253,81 @@ export default async function DashboardPage({ params }: Props) {
         </CardContent>
       </Card>
 
-      {/* ── Placeholders de las secciones que llegan en 10.3–10.6 ── */}
+      {/* ── Sección RESULTADOS por equipo (10.3, D2) ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Trophy className="size-4" aria-hidden />
+            {t('results.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {census.byTeam.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('results.empty')}</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('census.col.team')}</TableHead>
+                  <TableHead className="text-right" title={t('results.col_full.played')}>
+                    {t('results.col.played')}
+                  </TableHead>
+                  <TableHead className="text-right" title={t('results.col_full.wins')}>
+                    {t('results.col.wins')}
+                  </TableHead>
+                  <TableHead className="text-right" title={t('results.col_full.draws')}>
+                    {t('results.col.draws')}
+                  </TableHead>
+                  <TableHead className="text-right" title={t('results.col_full.losses')}>
+                    {t('results.col.losses')}
+                  </TableHead>
+                  <TableHead className="text-right" title={t('results.col_full.goals_for')}>
+                    {t('results.col.goals_for')}
+                  </TableHead>
+                  <TableHead className="text-right" title={t('results.col_full.goals_against')}>
+                    {t('results.col.goals_against')}
+                  </TableHead>
+                  <TableHead className="text-right" title={t('results.col_full.goal_diff')}>
+                    {t('results.col.goal_diff')}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {census.byTeam.map((tm) => {
+                  const r = resultsByTeam.get(tm.teamId);
+                  const gd = r ? r.goalDifference : 0;
+                  return (
+                    <TableRow key={tm.teamId}>
+                      <TableCell className="font-medium">{tm.teamName}</TableCell>
+                      <TableCell className="text-right tabular-nums">{r?.played ?? 0}</TableCell>
+                      <TableCell className="text-right tabular-nums">{r?.wins ?? 0}</TableCell>
+                      <TableCell className="text-right tabular-nums">{r?.draws ?? 0}</TableCell>
+                      <TableCell className="text-right tabular-nums">{r?.losses ?? 0}</TableCell>
+                      <TableCell className="text-right tabular-nums">{r?.goalsFor ?? 0}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {r?.goalsAgainst ?? 0}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {gd > 0 ? `+${gd}` : gd}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+
+          {/* D2: solo computan partidos cerrados con marcador; los demás se avisan. */}
+          <p className="text-xs text-muted-foreground">
+            {closedWithoutScore > 0
+              ? t('results.closed_without_score', { count: closedWithoutScore })
+              : t('results.only_closed_note')}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* ── Placeholders de las secciones que llegan en 10.4–10.6 ── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <PlaceholderCard
-          icon={<Trophy className="size-4" aria-hidden />}
-          title={t('results.title')}
-          soon={t('coming_soon')}
-        />
         <PlaceholderCard
           icon={<ClipboardCheck className="size-4" aria-hidden />}
           title={t('attendance.title')}

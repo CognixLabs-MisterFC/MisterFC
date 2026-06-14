@@ -1322,7 +1322,30 @@
         "delta": "Δ"
       }
     },
-    "results": { "title": "Resultados por equipo" },
+    "results": {
+      "title": "Resultados por equipo",
+      "empty": "Aún no hay equipos en la temporada activa.",
+      "only_closed_note": "Solo se contabilizan partidos cerrados con marcador registrado.",
+      "closed_without_score": "{count, plural, =1 {1 partido cerrado sin marcador no computa.} other {# partidos cerrados sin marcador no computan.}}",
+      "col": {
+        "played": "PJ",
+        "wins": "V",
+        "draws": "E",
+        "losses": "D",
+        "goals_for": "GF",
+        "goals_against": "GC",
+        "goal_diff": "DG"
+      },
+      "col_full": {
+        "played": "Partidos jugados",
+        "wins": "Victorias",
+        "draws": "Empates",
+        "losses": "Derrotas",
+        "goals_for": "Goles a favor",
+        "goals_against": "Goles en contra",
+        "goal_diff": "Diferencia de goles"
+      }
+    },
     "attendance": { "title": "Asistencia a entrenamientos" },
     "alerts": { "title": "Alertas" },
     "rankings": { "title": "Rankings" }
