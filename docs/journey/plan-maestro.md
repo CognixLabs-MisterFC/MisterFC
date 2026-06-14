@@ -87,6 +87,7 @@ Asumiendo ritmo sostenido de 2–3 h/día efectivas y 5 días/semana:
 | 10–12 | 9 | Perfil del jugador + evolución multi-temporada + reportes mensuales PDF |
 | 13 | 10 | Dashboard ejecutivo del club |
 | 14–15 | 11–12 | Biblioteca de ejercicios + planificador con plantillas microciclo |
+| (intercalada 11→12) | 11B | Pizarra táctica en vivo sobre la alineación real — se ejecuta **tras F11 y antes de F12** |
 | 16–18 | 13 | Pizarra táctica con animación + modo presentación iPad |
 | 19 | 14 | RGPD: consentimiento parental, audit log, derechos |
 | 20 | 15 | Testing E2E + observabilidad + runbook |
@@ -112,12 +113,13 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☑ |
 | F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☐ |
 | F11 | Biblioteca de ejercicios | 13–18 h | 5–6 | ☐ |
+| F11B | Pizarra táctica en vivo (sobre la alineación) | 6–9 h (preliminar) | 2–3 | ☐ |
 | F12 | Planificador de sesiones | 12–20 h | 4–6 | ☐ |
 | F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☐ |
 | F14 | RGPD para menores y seguridad | 12–18 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
 | F16 | Beta cerrada con primer club | 9–15 h (subfases 16.0–16.4 6–10 h + F16.x bulk-invite +3–5 h) | 3–4 | ☐ |
-| **TOTAL Ola 1** | | **176–273 h** | **64–83** | |
+| **TOTAL Ola 1** | | **182–282 h** | **66–86** | |
 
 > **Cambio 2026-05-29**: F2 reabierta como "extendida" con F2.10 (listado global de jugadores) y F2.11 (gestión global de cuerpo técnico). F16 incorpora F16.x (bulk-invite por email, depende de F16.0 SMTP propio). El lote inicial de F2 (subfases 2.0–2.9) sigue cerrado operacionalmente; lo que se reabre es el alcance. Delta acumulado sobre el plan original: +11–19 h (159–243 → 170–262).
 
@@ -128,6 +130,8 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 > **Cambio 2026-05-31 (extensión F6.10)**: F6 +1 subfase (6.10 plantillas personalizadas de formación, tabla `coach_formations`) → 9–14 h / 3–4 sesiones ⇒ 12–19 h / 4–5 sesiones. Delta total Ola 1: +3–5 h (173–268 → 176–273), +1 sesión (63–82 → 64–83). Se planifica junto al Lote B de F6 (mismo PR de plan).
 
 > **Rework A 2026-06-10 (mejora estructural, no fase numerada)**: ✅ **cerrado**. La **temporada** baja de la categoría al **equipo** y la **categoría** pasa a ser plantilla permanente del club. No es una fase del Plan: es un rework entre el **núcleo de F9** y su **segundo tramo** (la ficha multi-temporada de 9.4 se apoya en `teams.season`). Detalle en §6 (sección **Rework A**, tras la Fase 9) y en la [spec A.0](../specs/A.0-categorias-equipos.md). [ADR-0017](../decisions/ADR-0017-temporada-en-equipo-categoria-permanente.md).
+
+> **Cambio 2026-06-14 (fase intercalada F11B)**: nueva fase **F11B — Pizarra táctica en vivo (sobre la alineación)**, insertada **después de F11 y antes de F12** con etiqueta `F11B` para **no renumerar F12–F16**. Reutiliza `<MatchFieldEditor>` (F6) + la capa de dibujo/PitchEditor (F11) — no duplica componentes de campo. Depende solo de F11; F12/F13 no se ven afectadas. Estimación preliminar +6–9 h / 2–3 sesiones. Delta total Ola 1: +6–9 h (176–273 → 182–282), +2–3 sesiones (64–83 → 66–86). Detalle en §6 (Fase 11B, tras la Fase 11).
 
 ---
 
@@ -542,6 +546,38 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 ---
 
+### Fase 11B — Pizarra táctica en vivo (sobre la alineación)
+
+> **Fase intercalada (no renumera F12–F16)**: se inserta **después de F11 y antes de F12**. Lleva etiqueta `F11B` (no número correlativo) precisamente para **no renumerar** las fases existentes. Añadida 2026-06-14.
+
+**Objetivo**: tablero táctico para usar **en directo** durante el partido o el entrenamiento. Carga la **alineación real** con sus jugadores ya colocados en el campo y permite **dibujar encima** (flechas, balón, líneas de movimiento, trazo libre) para mostrar las jugadas a los jugadores **en el momento**. Pensado para tablet. Es **distinto de F12/F13**: aquellas sirven para **diseñar** jugadas/sesiones de entrenamiento; F11B es para **presentar en vivo** sobre la alineación real (sin animación por frames ni playbook — eso sigue en F13).
+
+**Horas**: ~6–9 h (estimación **preliminar**, a refinar al escribir su spec) · **Sesiones**: 2–3
+
+**Estado**: ☐ pendiente.
+
+**Criterio de cierre**: el cuerpo técnico abre la pizarra desde la pantalla de partido en vivo (F7) o desde la alineación, ve el **once real** sobre el campo y puede trazar flechas, mover el balón, dibujar líneas de movimiento y trazo libre **sobre esa alineación** para explicar la jugada en el momento, en tablet. Sin persistencia de playbook ni animación por frames (ámbito de F13).
+
+**Riesgo**: medio. El grueso del trabajo es **integrar la capa de dibujo de F11 sobre la alineación real** de `<MatchFieldEditor>`; el reto es la interacción táctil en directo, no construir un campo nuevo (ya existe).
+
+**Dependencias**: **Fase 11 cerrada** (reusa la capa de dibujo / PitchEditor de F11). **No afecta a F12/F13** — todas dependen solo de F11.
+
+**Reúso (NO duplica componentes de campo)**:
+
+- **`<MatchFieldEditor>`** (F6.3): campo SVG + fichas de jugadores + carga de la alineación real.
+- **PitchEditor / capa de dibujo de F11** (F11.5): flechas, balón, líneas de movimiento, trazo libre.
+
+**Accesos**: desde la **pantalla de partido en vivo (F7)** y desde la **alineación** (F6).
+
+**Subfases** (preliminar, se concretan al escribir la spec):
+
+- **11B.1** Montar la pizarra cargando la alineación real (`<MatchFieldEditor>` con el once colocado) — 1–2 h
+- **11B.2** Capa de dibujo sobre la alineación (reusa PitchEditor F11: flechas, balón, líneas de movimiento, trazo libre) — 2–3 h
+- **11B.3** Accesos desde partido en vivo (F7) y desde la alineación (F6) — 1 h
+- **11B.4** Modo presentación táctil para tablet (pantalla limpia, trazos sobre el once) — 1–2 h
+
+---
+
 ### Fase 12 — Planificador de sesiones
 
 **Objetivo**: construir sesiones de entrenamiento por bloques arrastrando ejercicios de la biblioteca. Vista microciclo, exportación PDF, publicación al equipo, plantillas reutilizables de microciclo.
@@ -569,6 +605,8 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 ### Fase 13 — Pizarra táctica y jugadas (modo iPad)
 
 **Objetivo**: pizarra táctica 2D con animación por frames para diseñar jugadas. Biblioteca de jugadas del equipo. Modo presentación iPad para vestuario.
+
+> **Frontera con F11B**: F13 es el **autor de jugadas** — playbook **animado por frames**, biblioteca de jugadas del equipo y modo presentación iPad para vestuario (diseño, no directo). La **presentación en vivo sobre la alineación real** durante el partido/entreno es **F11B**, no F13.
 
 **Horas**: 12–16 h · **Sesiones**: 5–6
 
