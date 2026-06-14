@@ -20,6 +20,8 @@ import {
   aggregateTeamResults,
   clubAttendanceAgg,
   clubRankings,
+  lowAttendanceAlerts,
+  inactivePlayers,
   formatPlayerName,
   activeSeasonLabel,
   currentSeason,
@@ -423,4 +425,132 @@ export async function loadClubRankings(teamIds: readonly string[]): Promise<Club
   }
 
   return { byCategory, playerNames };
+}
+
+type RosterIdentityRow = {
+  player_id: string;
+  team_id: string;
+  players: { first_name: string; last_name: string | null };
+};
+type AttendanceAlertRow = {
+  player_id: string;
+  code: ClubAttendanceRow['code'];
+  event_id: string;
+  events: { team_id: string | null; starts_at: string };
+};
+
+/** Una alerta con identidad resuelta (nombre + equipo). */
+export interface LowAttendanceAlertItem {
+  playerId: string;
+  name: string;
+  teamId: string;
+  presentPct: number;
+  sessions: number;
+}
+export interface InactiveAlertItem {
+  playerId: string;
+  name: string;
+  teamId: string;
+}
+export interface ClubAlertsData {
+  lowAttendance: LowAttendanceAlertItem[];
+  inactive: InactiveAlertItem[];
+}
+
+/**
+ * F10.5 — Alertas del club (D3 baja asistencia + D4 inactivos).
+ *
+ * Sin N+1: tres lecturas con `IN (teamIds)` —
+ *  1. roster activo (`team_members` left_at IS NULL + `players` para identidad),
+ *  2. asistencia (`training_attendance` + `events!inner` type=training) →
+ *     `clubAttendanceAgg` da % y sesiones por jugador,
+ *  3. presencia en `match_player_stats` (set de jugadores que han jugado).
+ * Con eso se alimentan los helpers puros `lowAttendanceAlerts` y
+ * `inactivePlayers`. La identidad (nombre/equipo) sale del roster, que cubre
+ * también a los inactivos (que no aparecen en asistencia ni en stats).
+ *
+ * Solo se alerta de jugadores del roster ACTIVO (los que se fueron no son ruido
+ * accionable). RLS heredada (`team_members`/`players`/`training_attendance`/
+ * `match_player_stats` select) — sin políticas nuevas.
+ */
+export async function loadClubAlerts(teamIds: readonly string[]): Promise<ClubAlertsData> {
+  if (teamIds.length === 0) return { lowAttendance: [], inactive: [] };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // 1) Roster activo + identidad.
+  const { data: rawRoster } = await supabase
+    .from('team_members')
+    .select('player_id, team_id, players!inner(first_name, last_name)')
+    .in('team_id', teamIds)
+    .is('left_at', null);
+  const rosterRows = (rawRoster ?? []) as unknown as RosterIdentityRow[];
+
+  const identity = new Map<string, { name: string; teamId: string }>();
+  const rosterPlayerIds: string[] = [];
+  for (const r of rosterRows) {
+    rosterPlayerIds.push(r.player_id);
+    if (!identity.has(r.player_id)) {
+      identity.set(r.player_id, {
+        name: formatPlayerName(r.players.first_name, r.players.last_name),
+        teamId: r.team_id,
+      });
+    }
+  }
+  const rosterSet = new Set(rosterPlayerIds);
+
+  // 2) Asistencia + 3) presencia en match_player_stats (en paralelo).
+  const [{ data: rawAtt }, { data: rawStats }] = await Promise.all([
+    supabase
+      .from('training_attendance')
+      .select('player_id, code, event_id, events!inner(team_id, type, starts_at)')
+      .eq('events.type', 'training')
+      .in('events.team_id', teamIds),
+    supabase.from('match_player_stats').select('player_id').in('team_id', teamIds),
+  ]);
+
+  const attRows: ClubAttendanceRow[] = ((rawAtt ?? []) as unknown as AttendanceAlertRow[])
+    .filter((r) => r.events.team_id != null)
+    .map((r) => ({
+      eventId: r.event_id,
+      eventDate: r.events.starts_at,
+      teamId: r.events.team_id as string,
+      playerId: r.player_id,
+      code: r.code,
+    }));
+  const agg = clubAttendanceAgg(attRows);
+  const withAttendance = new Set(agg.playerRanking.map((p) => p.playerId));
+  const withMatchStats = new Set(
+    ((rawStats ?? []) as unknown as { player_id: string }[]).map((r) => r.player_id),
+  );
+
+  // D3 — baja asistencia (solo jugadores del roster activo).
+  const samples = agg.playerRanking
+    .filter((p) => rosterSet.has(p.playerId))
+    .map((p) => ({
+      playerId: p.playerId,
+      presentPct: p.breakdown.presentPct,
+      sessions: p.breakdown.total,
+    }));
+  const lowAttendance: LowAttendanceAlertItem[] = lowAttendanceAlerts(samples).map((a) => ({
+    playerId: a.playerId,
+    name: identity.get(a.playerId)?.name ?? '—',
+    teamId: identity.get(a.playerId)?.teamId ?? '',
+    presentPct: a.presentPct,
+    sessions: a.sessions,
+  }));
+
+  // D4 — inactivos (en roster, sin stats NI asistencia).
+  const inactive: InactiveAlertItem[] = inactivePlayers(
+    rosterPlayerIds,
+    withMatchStats,
+    withAttendance,
+  ).map((id) => ({
+    playerId: id,
+    name: identity.get(id)?.name ?? '—',
+    teamId: identity.get(id)?.teamId ?? '',
+  }));
+
+  return { lowAttendance, inactive };
 }

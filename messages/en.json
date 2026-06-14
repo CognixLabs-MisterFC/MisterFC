@@ -1368,7 +1368,19 @@
         "sample": "{present} of {total} present"
       }
     },
-    "alerts": { "title": "Alerts" },
+    "alerts": {
+      "title": "Alerts",
+      "all_clear": "All clear: no alerts in the active season.",
+      "none": "None.",
+      "criteria": "Low attendance: below 60% with at least 5 sessions. Inactive: no matches or attendance all season.",
+      "low_attendance": "Low attendance ({count})",
+      "inactive": "Inactive players ({count})",
+      "col": {
+        "player": "Player",
+        "pct": "Att. %",
+        "sessions": "Sessions"
+      }
+    },
     "rankings": {
       "title": "Rankings",
       "empty": "No categories in the active season yet.",

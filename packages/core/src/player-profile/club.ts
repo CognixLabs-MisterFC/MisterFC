@@ -574,3 +574,92 @@ export function clubRankings(
       };
     });
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. clubAlerts — baja asistencia (D3) + jugadores inactivos (D4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Umbrales de las alertas del dashboard (spec 10.0 §4.2; D3). Fijos v1,
+ * documentados aquí (mismo estilo que `BADGE_THRESHOLDS`); configurables más
+ * adelante si producto lo pide.
+ */
+export const CLUB_ALERT_THRESHOLDS = {
+  /** Baja asistencia: % de presencia ESTRICTAMENTE menor que … (0..1). */
+  LOW_ATTENDANCE_MAX_PCT: 0.6,
+  /** … con al menos N sesiones registradas (suelo de muestra, evita falsos
+   * positivos de quien apenas tiene entrenos). */
+  LOW_ATTENDANCE_MIN_SESSIONS: 5,
+} as const;
+
+/** Muestra de asistencia de un jugador (de `clubAttendanceAgg`). */
+export interface AttendanceSample {
+  playerId: string;
+  /** present / total en 0..1; `null` si no tiene sesiones. */
+  presentPct: number | null;
+  /** nº de sesiones registradas (= `breakdown.total`). */
+  sessions: number;
+}
+
+/** Una alerta de baja asistencia (D3). */
+export interface LowAttendanceAlert {
+  playerId: string;
+  presentPct: number;
+  sessions: number;
+}
+
+/**
+ * D3 — jugadores con baja asistencia: `presentPct < LOW_ATTENDANCE_MAX_PCT`
+ * **y** `sessions >= LOW_ATTENDANCE_MIN_SESSIONS`. `presentPct null` (sin
+ * sesiones) NO dispara (no hay dato). Ordenado de peor a mejor (% asc; desempate
+ * por más sesiones, luego id). 10.5 aplica el umbral; los agregados crudos vienen
+ * de `clubAttendanceAgg` (10.0/10.4).
+ */
+export function lowAttendanceAlerts(
+  samples: readonly AttendanceSample[],
+  thresholds: {
+    maxPct?: number;
+    minSessions?: number;
+  } = {},
+): LowAttendanceAlert[] {
+  const maxPct = thresholds.maxPct ?? CLUB_ALERT_THRESHOLDS.LOW_ATTENDANCE_MAX_PCT;
+  const minSessions = thresholds.minSessions ?? CLUB_ALERT_THRESHOLDS.LOW_ATTENDANCE_MIN_SESSIONS;
+
+  return samples
+    .filter(
+      (s): s is AttendanceSample & { presentPct: number } =>
+        s.presentPct != null && s.presentPct < maxPct && s.sessions >= minSessions,
+    )
+    .map((s) => ({
+      playerId: s.playerId,
+      presentPct: s.presentPct,
+      sessions: s.sessions,
+    }))
+    .sort(
+      (a, b) =>
+        a.presentPct - b.presentPct ||
+        b.sessions - a.sessions ||
+        (a.playerId < b.playerId ? -1 : a.playerId > b.playerId ? 1 : 0),
+    );
+}
+
+/**
+ * D4 — jugadores INACTIVOS: están en el roster de la temporada activa pero no
+ * tienen NINGUNA fila en `match_player_stats` NI en `training_attendance` en toda
+ * la temporada (un "fantasma"). Devuelve los `playerId` distintos del roster que
+ * no aparecen en ninguno de los dos conjuntos, conservando el orden del roster.
+ */
+export function inactivePlayers(
+  rosterPlayerIds: readonly string[],
+  withMatchStats: ReadonlySet<string>,
+  withAttendance: ReadonlySet<string>,
+): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const id of rosterPlayerIds) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    if (!withMatchStats.has(id) && !withAttendance.has(id)) out.push(id);
+  }
+  return out;
+}
