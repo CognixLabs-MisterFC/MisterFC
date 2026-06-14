@@ -18,6 +18,7 @@
 import {
   createSupabaseServerClient,
   defaultLineupDraft,
+  isManageableMatchType,
   type CoachFormation,
   type CoachFormationPosition,
   type LineupLocation,
@@ -112,7 +113,8 @@ export async function loadLineupEditor(
     .maybeSingle();
   if (!ev) return null;
   if ((ev.club_id as string) !== clubId) return null;
-  if (ev.type !== 'match' || ev.team_id == null) return null;
+  if (!isManageableMatchType(ev.type as string) || ev.team_id == null)
+    return null;
 
   type EventShape = {
     id: string;

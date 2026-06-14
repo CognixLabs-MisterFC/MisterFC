@@ -16,9 +16,11 @@ import {
   type CallupResponseStatus,
   type TrainingDay,
   type TransportMode,
+  MANAGEABLE_MATCH_TYPES,
   computeWeeklyTrainingAttendance,
   createSupabaseServerClient,
   getCurrentUser,
+  isManageableMatchType,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import type { Role } from '../jugadores/queries';
@@ -266,7 +268,7 @@ export async function loadUpcomingCallups(
        teams!inner(name, color, season, categories!inner(name))`
     )
     .eq('club_id', clubId)
-    .eq('type', 'match')
+    .in('type', MANAGEABLE_MATCH_TYPES)
     .gte('starts_at', nowIso)
     .lte('starts_at', untilIso)
     .order('starts_at', { ascending: true })
@@ -453,7 +455,7 @@ export async function loadCallupDetail(
 
   if (!ev) return null;
   if ((ev.club_id as string) !== clubId) return null;
-  if (ev.type !== 'match') return null;
+  if (!isManageableMatchType(ev.type as string)) return null;
   if (ev.team_id == null) return null;
 
   type EventShape = {
