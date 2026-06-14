@@ -1347,7 +1347,27 @@
         "goal_diff": "Goal difference"
       }
     },
-    "attendance": { "title": "Training attendance" },
+    "attendance": {
+      "title": "Training attendance",
+      "empty": "No attendance recorded in the active season yet.",
+      "club_avg": "club average ({sessions} records)",
+      "by_team": "Average by team",
+      "ranking": "Player ranking",
+      "col": {
+        "player": "Player",
+        "sessions": "Sessions",
+        "pct": "Att. %"
+      },
+      "trend": {
+        "title": "Weekly trend",
+        "empty": "Not enough data for the trend.",
+        "caption": "Attendance % by week",
+        "col_week": "Week",
+        "col_sample": "Present / total",
+        "pct": "Attendance %",
+        "sample": "{present} of {total} present"
+      }
+    },
     "alerts": { "title": "Alerts" },
     "rankings": { "title": "Rankings" }
   },
