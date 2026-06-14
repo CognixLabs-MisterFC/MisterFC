@@ -15,7 +15,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 6 | Alineaciones y planificación del partido (ampliada 2026-05-29) | ☑ completada | 2026-05-31 | 2026-06-01 |
 | 7 | Pantalla de toma de datos del partido (live) | ☑ completada | 2026-06-01 | 2026-06-07 |
 | 8 | Valoraciones del partido | ☑ completada | 2026-06-08 | 2026-06-08 |
-| 9 | Perfil del jugador y evolución multi-temporada | ☐ pendiente | — | — |
+| 9 | Perfil del jugador y evolución multi-temporada | ☑ completada | 2026-06-08 | 2026-06-12 |
 | 10 | Dashboard ejecutivo del club | ☑ completada | 2026-06-13 | 2026-06-14 |
 | 11 | Biblioteca de ejercicios | ☐ pendiente | — | — |
 | 12 | Planificador de sesiones con plantillas microciclo | ☐ pendiente | — | — |
