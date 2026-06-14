@@ -37,7 +37,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { loadClubDashboardBase, loadClubResults } from './queries';
+import { loadClubDashboardBase, loadClubResults, loadClubAttendance } from './queries';
+import { AttendanceTrend } from './attendance-trend';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -104,6 +105,7 @@ export default async function DashboardPage({ params }: Props) {
   const t = await getTranslations('dashboard');
   const { season, census, previousCensus } = await loadClubDashboardBase(ctx.activeClub.club.id);
   const results = await loadClubResults(season.teamIds);
+  const attendance = await loadClubAttendance(season.teamIds);
 
   const hasPrevious = previousCensus != null;
   const categoryRows = buildCategoryComparison(census, previousCensus);
@@ -112,6 +114,18 @@ export default async function DashboardPage({ params }: Props) {
   // del censo. Total de "cerrados sin marcador" del club, para la nota D2.
   const resultsByTeam = new Map(results.map((r) => [r.teamId, r]));
   const closedWithoutScore = results.reduce((acc, r) => acc + r.closedWithoutScore, 0);
+
+  // Asistencia: nombre de equipo por id (del censo activo) para etiquetar y
+  // breakdown por equipo indexado por id.
+  const teamNameById = new Map(census.byTeam.map((tm) => [tm.teamId, tm.teamName]));
+  const attByTeam = new Map(attendance.agg.byTeam.map((tm) => [tm.teamId, tm.breakdown]));
+  const clubPct = attendance.agg.club.presentPct;
+  const trendPoints = attendance.agg.trendByWeek.map((p) => ({
+    label: p.key,
+    pct: (p.presentPct ?? 0) * 100,
+    present: p.present,
+    total: p.total,
+  }));
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
@@ -326,13 +340,112 @@ export default async function DashboardPage({ params }: Props) {
         </CardContent>
       </Card>
 
-      {/* ── Placeholders de las secciones que llegan en 10.4–10.6 ── */}
+      {/* ── Sección ASISTENCIA a entrenamientos (10.4) ── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <ClipboardCheck className="size-4" aria-hidden />
+            {t('attendance.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-6">
+          {attendance.agg.club.total === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('attendance.empty')}</p>
+          ) : (
+            <>
+              {/* Media del club */}
+              <div className="flex flex-col gap-1">
+                <p className="text-4xl font-bold tabular-nums">{pctLabel(clubPct)}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t('attendance.club_avg', { sessions: attendance.agg.club.total })}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {/* Media por equipo */}
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-sm font-semibold">{t('attendance.by_team')}</h2>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t('census.col.team')}</TableHead>
+                        <TableHead className="text-right">{t('attendance.col.sessions')}</TableHead>
+                        <TableHead className="text-right">{t('attendance.col.pct')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {census.byTeam.map((tm) => {
+                        const b = attByTeam.get(tm.teamId);
+                        return (
+                          <TableRow key={tm.teamId}>
+                            <TableCell className="font-medium">{tm.teamName}</TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {b?.total ?? 0}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {pctLabel(b?.presentPct ?? null)}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Ranking de jugadores por % presencia */}
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-sm font-semibold">{t('attendance.ranking')}</h2>
+                  <div className="max-h-96 overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>{t('attendance.col.player')}</TableHead>
+                          <TableHead>{t('census.col.team')}</TableHead>
+                          <TableHead className="text-right">
+                            {t('attendance.col.sessions')}
+                          </TableHead>
+                          <TableHead className="text-right">{t('attendance.col.pct')}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {attendance.agg.playerRanking.map((p) => (
+                          <TableRow key={p.playerId}>
+                            <TableCell className="font-medium">
+                              {attendance.playerNames[p.playerId] ?? '—'}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {teamNameById.get(attendance.playerTeamId[p.playerId] ?? '') ?? '—'}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {p.breakdown.total}
+                            </TableCell>
+                            <TableCell className="text-right tabular-nums">
+                              {pctLabel(p.breakdown.presentPct)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tendencia semanal */}
+              <div className="flex flex-col gap-2">
+                <h2 className="text-sm font-semibold">{t('attendance.trend.title')}</h2>
+                {trendPoints.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t('attendance.trend.empty')}</p>
+                ) : (
+                  <AttendanceTrend points={trendPoints} />
+                )}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── Placeholders de las secciones que llegan en 10.5–10.6 ── */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <PlaceholderCard
-          icon={<ClipboardCheck className="size-4" aria-hidden />}
-          title={t('attendance.title')}
-          soon={t('coming_soon')}
-        />
         <PlaceholderCard
           icon={<TriangleAlert className="size-4" aria-hidden />}
           title={t('alerts.title')}
@@ -346,6 +459,11 @@ export default async function DashboardPage({ params }: Props) {
       </div>
     </div>
   );
+}
+
+/** Formatea un % en 0..1 → "NN%" (redondeado), o "—" si es null. */
+function pctLabel(p: number | null): string {
+  return p == null ? '—' : `${Math.round(p * 100)}%`;
 }
 
 /**

@@ -1347,7 +1347,27 @@
         "goal_diff": "Diferència de gols"
       }
     },
-    "attendance": { "title": "Assistència als entrenaments" },
+    "attendance": {
+      "title": "Assistència als entrenaments",
+      "empty": "Encara no hi ha assistència registrada en la temporada activa.",
+      "club_avg": "mitjana del club ({sessions} registres)",
+      "by_team": "Mitjana per equip",
+      "ranking": "Rànquing de jugadors",
+      "col": {
+        "player": "Jugador",
+        "sessions": "Sessions",
+        "pct": "% assist."
+      },
+      "trend": {
+        "title": "Tendència setmanal",
+        "empty": "Sense dades suficients per a la tendència.",
+        "caption": "% d'assistència per setmana",
+        "col_week": "Setmana",
+        "col_sample": "Presents / total",
+        "pct": "% assistència",
+        "sample": "{present} de {total} presents"
+      }
+    },
     "alerts": { "title": "Alertes" },
     "rankings": { "title": "Rànquings" }
   },

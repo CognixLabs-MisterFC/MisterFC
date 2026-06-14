@@ -1346,7 +1346,27 @@
         "goal_diff": "Diferencia de goles"
       }
     },
-    "attendance": { "title": "Asistencia a entrenamientos" },
+    "attendance": {
+      "title": "Asistencia a entrenamientos",
+      "empty": "Aún no hay asistencia registrada en la temporada activa.",
+      "club_avg": "media del club ({sessions} registros)",
+      "by_team": "Media por equipo",
+      "ranking": "Ranking de jugadores",
+      "col": {
+        "player": "Jugador",
+        "sessions": "Sesiones",
+        "pct": "% asist."
+      },
+      "trend": {
+        "title": "Tendencia semanal",
+        "empty": "Sin datos suficientes para la tendencia.",
+        "caption": "% de asistencia por semana",
+        "col_week": "Semana",
+        "col_sample": "Presentes / total",
+        "pct": "% asistencia",
+        "sample": "{present} de {total} presentes"
+      }
+    },
     "alerts": { "title": "Alertas" },
     "rankings": { "title": "Rankings" }
   },

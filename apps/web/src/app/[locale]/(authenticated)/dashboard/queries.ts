@@ -18,6 +18,8 @@
 import {
   aggregateClubStats,
   aggregateTeamResults,
+  clubAttendanceAgg,
+  formatPlayerName,
   activeSeasonLabel,
   currentSeason,
   createSupabaseServerClient,
@@ -26,6 +28,8 @@ import {
   type ClubCensus,
   type MatchResultRow,
   type TeamResults,
+  type ClubAttendanceRow,
+  type ClubAttendanceAgg,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -198,4 +202,107 @@ export async function loadClubResults(teamIds: readonly string[]): Promise<TeamR
     }));
 
   return aggregateTeamResults(teamIds, rows);
+}
+
+type AttendanceJoinRow = {
+  player_id: string;
+  code: ClubAttendanceRow['code'];
+  event_id: string;
+  events: { team_id: string | null; starts_at: string };
+};
+
+/** Asistencia agregada del club + identidad de jugadores para el ranking. */
+export interface ClubAttendanceData {
+  agg: ClubAttendanceAgg;
+  /** playerId → nombre formateado (para el ranking). */
+  playerNames: Record<string, string>;
+  /** playerId → teamId con más asistencia registrada (para etiquetar el ranking). */
+  playerTeamId: Record<string, string>;
+}
+
+/**
+ * F10.4 — Asistencia a entrenamientos de la temporada activa.
+ *
+ * UNA query principal (sin N+1): `training_attendance` uniendo `events!inner`
+ * (type='training', team_id IN(teamIds)). Como los equipos son season-scoped,
+ * filtrar por team_id ya acota a la temporada activa. Se delega en
+ * `clubAttendanceAgg` (core): media de club, media por equipo, ranking por %
+ * presencia y tendencia (por evento y por semana ISO).
+ *
+ * Una segunda query (IN, constante) trae los nombres de los jugadores del
+ * ranking — la agregación es por id; los nombres son identidad, no matemática.
+ * `playerTeamId` se deriva de las propias filas (equipo con más registros).
+ *
+ * RLS heredada: `training_attendance_select_member` deja a admin/coord leer todo
+ * su club — sin políticas nuevas.
+ */
+export async function loadClubAttendance(teamIds: readonly string[]): Promise<ClubAttendanceData> {
+  const empty: ClubAttendanceData = {
+    agg: clubAttendanceAgg([]),
+    playerNames: {},
+    playerTeamId: {},
+  };
+  if (teamIds.length === 0) return empty;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('training_attendance')
+    .select('player_id, code, event_id, events!inner(team_id, type, starts_at)')
+    .eq('events.type', 'training')
+    .in('events.team_id', teamIds);
+
+  const joinRows = ((data ?? []) as unknown as AttendanceJoinRow[]).filter(
+    (r) => r.events.team_id != null,
+  );
+
+  const rows: ClubAttendanceRow[] = joinRows.map((r) => ({
+    eventId: r.event_id,
+    eventDate: r.events.starts_at,
+    teamId: r.events.team_id as string,
+    playerId: r.player_id,
+    code: r.code,
+  }));
+
+  const agg = clubAttendanceAgg(rows);
+
+  // playerTeamId: para cada jugador, el equipo donde más registros tiene.
+  const teamCountByPlayer = new Map<string, Map<string, number>>();
+  for (const r of rows) {
+    const m = teamCountByPlayer.get(r.playerId) ?? new Map<string, number>();
+    m.set(r.teamId, (m.get(r.teamId) ?? 0) + 1);
+    teamCountByPlayer.set(r.playerId, m);
+  }
+  const playerTeamId: Record<string, string> = {};
+  for (const [playerId, counts] of teamCountByPlayer) {
+    let best = '';
+    let bestN = -1;
+    for (const [teamId, n] of counts) {
+      if (n > bestN) {
+        best = teamId;
+        bestN = n;
+      }
+    }
+    playerTeamId[playerId] = best;
+  }
+
+  // Nombres de los jugadores del ranking (una query con IN).
+  const playerIds = agg.playerRanking.map((p) => p.playerId);
+  const playerNames: Record<string, string> = {};
+  if (playerIds.length > 0) {
+    const { data: players } = await supabase
+      .from('players')
+      .select('id, first_name, last_name')
+      .in('id', playerIds);
+    for (const p of (players ?? []) as unknown as {
+      id: string;
+      first_name: string;
+      last_name: string | null;
+    }[]) {
+      playerNames[p.id] = formatPlayerName(p.first_name, p.last_name);
+    }
+  }
+
+  return { agg, playerNames, playerTeamId };
 }
