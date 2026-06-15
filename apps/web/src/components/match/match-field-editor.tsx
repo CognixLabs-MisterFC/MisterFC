@@ -45,6 +45,7 @@ import {
   type TeamFormat,
 } from '@misterfc/core';
 import { cn } from '@/lib/utils';
+import { FieldMarkings } from './field-markings';
 
 // Ids de drag&drop centralizados en @misterfc/core/lineups/editor (compartidos
 // con el cliente de la página). El droppable de slot es `lineup-slot:<code>`;
@@ -259,28 +260,6 @@ function StaticChip({
   );
 }
 
-/** Marcas del campo (SVG decorativo, no interactivo). Atacando hacia arriba. */
-function Pitch() {
-  return (
-    <svg
-      viewBox="0 0 100 150"
-      preserveAspectRatio="none"
-      className="absolute inset-0 size-full"
-      aria-hidden
-    >
-      <rect x="0" y="0" width="100" height="150" fill="#15803d" />
-      <g fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.6">
-        <rect x="3" y="3" width="94" height="144" />
-        <line x1="3" y1="75" x2="97" y2="75" />
-        <circle cx="50" cy="75" r="11" />
-        {/* Área propia (abajo) y rival (arriba). */}
-        <rect x="22" y="123" width="56" height="24" />
-        <rect x="22" y="3" width="56" height="24" />
-      </g>
-    </svg>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Componente principal
 // ─────────────────────────────────────────────────────────────────────────────
@@ -369,7 +348,7 @@ export function MatchFieldEditor({
       <span id={labelId} className="sr-only">
         {`Campo ${format} · formación ${formationCode}`}
       </span>
-      <Pitch />
+      <FieldMarkings />
 
       {/* Degradación elegante si la formación no está en el catálogo. */}
       {!formation && (
