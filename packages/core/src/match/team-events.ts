@@ -105,3 +105,119 @@ export function foulsReceivedByPlayer(
   }
   return counts;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F7.x (X.0) — Agregados de equipo del PARTIDO (a favor / en contra de ambos
+// bandos). PURO, deriva solo de `match_events`. La vista de estadísticas del
+// partido (X.1) lo consume; el marcador NO va aquí (eso es `computeScore`).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Proyección mínima de un `match_event` para los agregados de equipo. Cubre los
+ * dos ejes del modelo real:
+ *  - `side` ('own'/'rival') → bando que ES SUJETO del evento. Lo usan tiro,
+ *    tarjeta y offside (el del rival se captura con `side='rival'`,
+ *    `RIVAL_EVENT_TYPES`).
+ *  - `metadata` → córner (`corner_side` for/against) y falta (`foul_kind`
+ *    committed/received) se capturan SIEMPRE con `side='own'`; el bando se
+ *    deriva del metadata, no del `side`.
+ */
+export interface MatchTeamStatEvent {
+  side: 'own' | 'rival';
+  type: string;
+  /** `metadata.foul_kind` (solo `foul`): 'committed' | 'received'. */
+  foulKind?: string | null;
+  /** `metadata.corner_side` (solo `corner`): 'for' | 'against'. */
+  cornerSide?: string | null;
+}
+
+/**
+ * Par de contadores por bando. Convención **única y consistente** para todas las
+ * métricas: `own` = el evento es atribuible a NUESTRO equipo (lo ejecutamos /
+ * cometemos / recibimos la tarjeta…); `rival` = atribuible al RIVAL.
+ *
+ * Mapeo a "a favor / en contra" que hará la UI (X.1), por métrica:
+ *  - córners: `own` = a favor · `rival` = en contra.
+ *  - faltas:  `own` = cometidas por nosotros (en contra) · `rival` = cometidas
+ *             por el rival = las que recibimos (a favor).
+ *  - tiros / tarjetas / offsides: `own` = nuestros · `rival` = del rival.
+ */
+export interface MatchSidePair {
+  own: number;
+  rival: number;
+}
+
+/** Agregados de equipo de un partido (ambos bandos). */
+export interface MatchTeamStats {
+  /** Córners: `own` = a favor (`corner_side='for'`/legacy), `rival` = en contra. */
+  corners: MatchSidePair;
+  /** Faltas: `own` = cometidas por nosotros, `rival` = cometidas por el rival. */
+  fouls: MatchSidePair;
+  /** Tiros (`type='shot'`; no incluye penaltis): `own`/`rival` por `side`. */
+  shots: MatchSidePair;
+  yellowCards: MatchSidePair;
+  redCards: MatchSidePair;
+  offsides: MatchSidePair;
+}
+
+/**
+ * Agrega los eventos de equipo de un partido en contadores a favor/en contra de
+ * ambos bandos. Determinista, deriva solo de `match_events`.
+ *
+ *  - **Córners y faltas**: reusa `computeTeamEventTallies` (córner/falta se
+ *    capturan siempre con `side='own'` + metadata; defaults de compat: `foul`
+ *    sin `foul_kind` → cometida; `corner` sin `corner_side` → a favor). Se filtra
+ *    a `side='own'` defensivamente (no existen filas rival de córner/falta).
+ *  - **Tiros, tarjetas (amarilla/roja) y offsides**: por `side` (propio vs
+ *    rival; el rival llega con `side='rival'`, `RIVAL_EVENT_TYPES`).
+ *
+ * El marcador no se calcula aquí (ver `computeScore`).
+ */
+export function aggregateMatchTeamStats(
+  events: readonly MatchTeamStatEvent[],
+): MatchTeamStats {
+  // Córners y faltas propias (siempre side='own' con metadata) → reusa el motor
+  // existente para no duplicar la lógica de for/against ni los defaults legacy.
+  const ownTally = computeTeamEventTallies(
+    events.filter((e) => e.side === 'own'),
+  );
+
+  // Tiros / tarjetas / offsides: el sujeto es el `side` del evento.
+  const shots: MatchSidePair = { own: 0, rival: 0 };
+  const yellowCards: MatchSidePair = { own: 0, rival: 0 };
+  const redCards: MatchSidePair = { own: 0, rival: 0 };
+  const offsides: MatchSidePair = { own: 0, rival: 0 };
+
+  const bump = (pair: MatchSidePair, side: 'own' | 'rival') => {
+    if (side === 'rival') pair.rival += 1;
+    else pair.own += 1;
+  };
+
+  for (const e of events) {
+    switch (e.type) {
+      case 'shot':
+        bump(shots, e.side);
+        break;
+      case 'yellow_card':
+        bump(yellowCards, e.side);
+        break;
+      case 'red_card':
+        bump(redCards, e.side);
+        break;
+      case 'offside':
+        bump(offsides, e.side);
+        break;
+      default:
+        break;
+    }
+  }
+
+  return {
+    corners: { own: ownTally.cornersFor, rival: ownTally.cornersAgainst },
+    fouls: { own: ownTally.foulsCommitted, rival: ownTally.foulsReceived },
+    shots,
+    yellowCards,
+    redCards,
+    offsides,
+  };
+}
