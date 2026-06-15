@@ -1761,6 +1761,7 @@
       "edit_lineup": "Edit lineup",
       "live_capture": "Live",
       "post_match": "Post-match",
+      "match_stats": "Statistics",
       "training_attendance_hint": "Training attendance (Mon–Fri) for the match week"
     },
     "republish": {
@@ -2389,9 +2390,57 @@
       "confirm_delete": "Delete this comment?"
     }
   },
+  "estadisticas_partido": {
+    "title": "Match statistics",
+    "back": "Back to match",
+    "section_players": "Per player",
+    "section_my_player": "Your player",
+    "empty_family": "No statistics: your player didn't take part or the match isn't closed yet.",
+    "empty_no_players": "No player took part in this match.",
+    "family_note": "You only see your player's statistics.",
+    "starter_yes": "Starter",
+    "starter_no": "Sub",
+    "sort_by": "Sort by this column",
+    "col": {
+      "player": "Player",
+      "started": "Starter",
+      "minutes": "Minutes",
+      "minutes_short": "Min",
+      "goals": "Goals",
+      "goals_short": "G",
+      "assists": "Assists",
+      "assists_short": "A",
+      "yellow": "Yellow cards",
+      "yellow_short": "YC",
+      "red": "Red cards",
+      "red_short": "RC",
+      "shots": "Shots",
+      "shots_short": "Sh",
+      "fouls_committed": "Fouls committed",
+      "fouls_committed_short": "FC",
+      "fouls_received": "Fouls received",
+      "fouls_received_short": "FR",
+      "pens_scored": "Penalties scored",
+      "pens_scored_short": "PS",
+      "pens_missed": "Penalties missed",
+      "pens_missed_short": "PM"
+    },
+    "team": {
+      "title": "Team",
+      "us": "Us",
+      "them": "Opponent",
+      "corners": "Corners",
+      "fouls": "Fouls",
+      "shots": "Shots",
+      "yellow": "Yellow cards",
+      "red": "Red cards",
+      "offsides": "Offsides"
+    }
+  },
   "post_partido": {
     "back": "Back to call-up",
     "title": "Match ratings",
+    "view_stats": "Match statistics",
     "subtitle": "Rate each player with a score, comment and MVP. Stats are context, not mixed with your rating.",
     "not_finished_title": "The match isn't finished yet",
     "not_finished_hint": "Finish the match from the live screen to open ratings.",

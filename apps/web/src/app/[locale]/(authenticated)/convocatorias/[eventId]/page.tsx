@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import {
   ArrowLeft,
+  BarChart3,
   CalendarDays,
   CheckCircle2,
   ClipboardList,
@@ -186,6 +187,15 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                 <Link href={`/convocatorias/${event.id}/post-partido`}>
                   <Star className="size-4" aria-hidden />
                   <span>{tDetail('post_match')}</span>
+                </Link>
+              </Button>
+            )}
+            {/* F7.x — vista de estadísticas del partido (partido cerrado). */}
+            {canRecordMatch && matchStatus === 'closed' && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/convocatorias/${event.id}/estadisticas`}>
+                  <BarChart3 className="size-4" aria-hidden />
+                  <span>{tDetail('match_stats')}</span>
                 </Link>
               </Button>
             )}
@@ -400,6 +410,18 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
 
       {/* F6 Lote B — alineación oficial compartida (solo si visibility=team). */}
       {isPlayer && <SharedLineupSection eventId={event.id} />}
+
+      {/* F7.x — acceso del jugador/familia a las estadísticas de su jugador. */}
+      {isPlayer && (
+        <div>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/convocatorias/${event.id}/estadisticas`}>
+              <BarChart3 className="size-4" aria-hidden />
+              <span>{tDetail('match_stats')}</span>
+            </Link>
+          </Button>
+        </div>
+      )}
 
       {/* Resumen de la convocatoria: convocados (titulares + suplentes = roster
           MENOS descartados) vs no convocados (solo los descartados). Un convocado

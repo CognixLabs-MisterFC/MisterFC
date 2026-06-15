@@ -155,4 +155,24 @@ describe('aggregateMatchTeamStats — agregados de equipo del partido (F7.x X.0)
       offsides: { own: 0, rival: 0 },
     });
   });
+
+  it('aislamiento: cada tipo solo incrementa su propia métrica (sin cross-leak)', () => {
+    const shotOnly = aggregateMatchTeamStats([{ side: 'own', type: 'shot' }]);
+    expect(shotOnly.shots).toEqual({ own: 1, rival: 0 });
+    expect(shotOnly.corners).toEqual({ own: 0, rival: 0 });
+    expect(shotOnly.fouls).toEqual({ own: 0, rival: 0 });
+    expect(shotOnly.offsides).toEqual({ own: 0, rival: 0 });
+
+    const yellowRival = aggregateMatchTeamStats([
+      { side: 'rival', type: 'yellow_card' },
+    ]);
+    expect(yellowRival.yellowCards).toEqual({ own: 0, rival: 1 });
+    expect(yellowRival.redCards).toEqual({ own: 0, rival: 0 });
+
+    const offsideOwn = aggregateMatchTeamStats([
+      { side: 'own', type: 'offside' },
+    ]);
+    expect(offsideOwn.offsides).toEqual({ own: 1, rival: 0 });
+    expect(offsideOwn.shots).toEqual({ own: 0, rival: 0 });
+  });
 });
