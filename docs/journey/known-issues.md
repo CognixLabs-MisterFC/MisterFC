@@ -61,19 +61,6 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
   - Opcional: añadir `pnpm format:check` al workflow CI (`.github/workflows/ci.yml`).
   - Opcional: husky pre-commit con `lint-staged`.
 
-### Tiros no se atribuyen por jugador (la columna existe pero sale 0)
-- **Detectado en**: 2026-06-15, durante F7.x (vista de estadísticas del partido).
-- **Síntoma**: en la tabla por jugador la columna de **tiros** existe pero sale **0 por jugador**, mientras que el **panel de agregados de equipo sí cuenta tiros** (a favor/en contra). El dato se registra a nivel de equipo pero no aterriza en `match_player_stats.shots`.
-- **Causa (probable)**: **captura/consolidación (F7)**, no UI. F7.x solo lee lo consolidado; si `match_player_stats.shots` viene a 0 es porque el evento `shot` no se asocia al jugador en la captura o no se materializa por jugador en `consolidateMatch`. El agregado de equipo (`aggregateMatchTeamStats` sobre `match_events`) cuenta bien porque opera sobre los eventos crudos.
-- **Impacto**: dato incompleto en la tabla por jugador (los tiros individuales no se ven). No afecta al panel de equipo ni al resto de columnas.
-- **Plan**: **revisar entre F7.x y F11**, en la capa de captura/consolidación de F7 (no en F7.x). Probablemente se arregla con el mismo cambio del ítem siguiente (pasar el tiro a evento + jugador).
-
-### Click en el campo innecesario para falta / fuera de juego / tiro
-- **Detectado en**: 2026-06-15, durante F7.x (al revisar el directo de F7).
-- **Síntoma**: en el directo, algunos eventos piden un **click en el campo** (posición x/y) que no aporta. El **córner** sí debe mantener el click (sirve de confirmación de la acción), pero **falta / fuera de juego / tiro** deberían pasar a un flujo de **evento + jugador sin click** en el campo.
-- **Impacto**: UX/fricción en la captura en vivo; no funcional.
-- **Plan**: **revisar entre F7.x y F11**. Mantener el click solo en córner; convertir falta/fuera de juego/tiro a evento + jugador. **El cambio del tiro a evento + jugador probablemente arregla también el ítem anterior** (atribución de tiros por jugador): al asociar el `shot` a un jugador, la consolidación ya podrá materializar `match_player_stats.shots`.
-
 ## Planificadas en plan-maestro
 
 > Entradas que dejan de ser "deuda activa" porque han pasado a subfase concreta del plan-maestro con horas presupuestadas. El detalle del plan vive en [plan-maestro.md](plan-maestro.md); aquí solo el cross-reference al issue original para no perder el rastro de por qué entró al plan.
@@ -104,6 +91,19 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 ---
 
 ## Resueltas
+
+### Tiros no se atribuían por jugador (la columna salía 0) — resuelto en PR #140 (2026-06-15)
+- **Detectado en**: 2026-06-15, durante F7.x (vista de estadísticas del partido). Era entrada activa ("revisar entre F7.x y F11").
+- **Síntoma**: en la tabla por jugador la columna de **tiros** salía **0 por jugador**, mientras que el **panel de agregados de equipo sí contaba tiros** (a favor/en contra).
+- **Causa raíz**: **captura**, no consolidación. El tiro se registraba *por ubicación, sin `player_id`* (`registerFieldEvent`). La consolidación (`consolidateMatch`) ya mapea `shot`→jugador, pero descarta los eventos sin `player_id` → 0 por jugador. El agregado de equipo (`aggregateMatchTeamStats` sobre `match_events`) contaba bien porque opera sobre los eventos crudos por `side`.
+- **Fix**: el tiro pasa a registrarse **tocando al jugador** (ver ítem siguiente, mismo PR) → lleva `player_id` y la consolidación materializa `match_player_stats.shots` por jugador. **Sin tocar la consolidación ni BD** (los CHECK ya admiten `player_id` en own-side). **Solo de aquí en adelante**: los tiros ya guardados sin jugador siguen a 0 por jugador (el total de equipo sigue correcto); re-cerrar no los recupera.
+- **Tests**: `consolidation.test.ts` (+2): cuenta `shots` por jugador con `player_id`; un tiro sin `player_id` no se atribuye a nadie (guarda de la causa).
+
+### Click en el campo innecesario para falta / fuera de juego / tiro — resuelto en PR #140 (2026-06-15)
+- **Detectado en**: 2026-06-15, durante F7.x (al revisar el directo de F7). Era entrada activa ("revisar entre F7.x y F11").
+- **Síntoma**: en el directo, falta / fuera de juego / tiro pedían un **click en el campo** (posición x/y) que no aportaba.
+- **Fix**: tiro/offside/falta se registran **al tocar al jugador**, sin click en el campo. core: `PLAYER_FIELD_EVENT_TYPES` + `registerPlayerFieldEventSchema` (player_id, sin coords) y `registerFoulSchema` con coords opcionales; web: nueva acción `registerPlayerFieldEvent` (sin lógica de tarjetas) y `registerFoul` inserta coords `?? null`; cliente: tiro/offside/falta por toque de jugador, eliminado `pendingFoul`/`completeFoul`/banner. **Córner SIN cambios** (botón a favor/en contra, sin jugador ni posición). Sin BD (los CHECK ya admiten coords nulas).
+- **Tests**: `schemas/__tests__/match-event.test.ts` (nuevo, 9): tiro/offside con jugador y sin coords; rechazo de corner/foul/goal y de `player_id` ausente; falta con/sin coords y rechazo de kind/coords inválidos.
 
 ### Convocatoria — los jugadores del banquillo no quedaban marcados como convocados — resuelto en PR #132 (2026-06-14)
 - **Detectado en**: 2026-06-14. Era entrada activa hasta el cierre de F10.
