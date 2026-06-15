@@ -8,7 +8,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 |---|---|---|---|---|
 | 0 | Bootstrap del repositorio y andamiaje | ☑ completada | 2026-05-26 | 2026-05-27 |
 | 1 | Identidad, Auth y modelo de roles base | ☑ completada | 2026-05-27 | 2026-05-28 |
-| 2 | Estructura del club, plantilla y cuerpo técnico | ⟳ extendida 2026-05-29 | 2026-05-28 | lote inicial 2026-05-29 |
+| 2 | Estructura del club, plantilla y cuerpo técnico | ☑ completada | 2026-05-28 | extensión 2026-06-15 |
 | 3 | Calendario unificado y comunicación básica | ☑ completada | 2026-05-29 | 2026-05-29 |
 | 4 | Asistencia y convocatorias | ☑ Lote A + B entregados | 2026-05-29 | 2026-05-29 |
 | 5 | Mensajería interna y push notifications | ☑ completada | 2026-05-30 | 2026-05-31 |
@@ -43,11 +43,11 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 2.8 | 2026-05-28 | Vista `/mi-plantilla` read-only del entrenador |
 | 2.9 | 2026-05-29 | Import masivo CSV/Excel (wizard 4 pasos, primer Vitest del repo) |
 
-### Fase 2 — Subfases pendientes (extensión)
+### Fase 2 — Subfases de la extensión (☑ cerrada)
 
 | Subfase | Estado | Resumen | Spec |
 |---|---|---|---|
-| 2.10 | ☐ pendiente | Listado global de jugadores del club con filtros + asignación individual a equipo | [docs/specs/2.10-listado-global-jugadores.md](../specs/2.10-listado-global-jugadores.md) |
+| 2.10 | ☑ 2026-05-29 (PR #21) | Listado global de jugadores del club con filtros + asignación individual a equipo. Ampliada: rework-A (#82), baja/C11a (#103), fix selectores (#105). Marcada en el tracker el 2026-06-15. | [docs/specs/2.10-listado-global-jugadores.md](../specs/2.10-listado-global-jugadores.md) |
 | 2.11 | ☑ 2026-05-29 | Gestión global de cuerpo técnico (`/cuerpo-tecnico`): listado + ficha con agenda F3 + acción mover staff (reuso `team_staff` joined_at/left_at) | [docs/specs/2.11-gestion-global-cuerpo-tecnico.md](../specs/2.11-gestion-global-cuerpo-tecnico.md) |
 
 ## Fase 5 — Subfases entregadas
