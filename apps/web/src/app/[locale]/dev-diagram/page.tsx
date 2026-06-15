@@ -4,9 +4,11 @@ import type { Diagram } from '@misterfc/core';
 import { DiagramView, isDegradedField } from '@/components/match/diagram-view';
 
 /**
- * F11.5a — Harness visual del renderer de diagramas. Solo desarrollo (en
- * producción → 404). Ejerce TODOS los tipos de elemento para poder ojear la
- * notación. No es UI de producto.
+ * F11.5a — Harness visual del renderer de diagramas. Visible en local y en los
+ * previews de Vercel; oculto SOLO en producción real. Se gatea por `VERCEL_ENV`
+ * (no `NODE_ENV`, que vale 'production' también en los previews → 404earía el
+ * preview). Ejerce TODOS los tipos de elemento para poder ojear la notación. No
+ * es UI de producto.
  */
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +47,9 @@ const SAMPLE_MEDIO: Diagram = { ...SAMPLE, field: { kind: 'medio', orientation: 
 export default async function DevDiagramPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  if (process.env.NODE_ENV === 'production') notFound();
+  // Oculto solo en producción REAL; visible en local (VERCEL_ENV undefined) y en
+  // los previews de Vercel (VERCEL_ENV='preview') para poder revisarlo.
+  if (process.env.VERCEL_ENV === 'production') notFound();
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-8 p-6">
