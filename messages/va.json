@@ -281,7 +281,8 @@
       "formaciones": "Formacions",
       "ajustes": "Ajustos del club",
       "mi_ficha": "La meua fitxa",
-      "equipos": "Equipos"
+      "equipos": "Equipos",
+      "ejercicios": "Exercicis"
     },
     "collapse_sidebar": "Amaga el menú",
     "expand_sidebar": "Mostra el menú"
@@ -2610,5 +2611,80 @@
     "amateur": "Amateur",
     "senior": "Sénior",
     "veterano": "Veterano"
+  },
+  "ejercicios": {
+    "title": "Exercicis",
+    "count": "{count, plural, =0 {Encara no hi ha exercicis} one {1 exercici} other {# exercicis}}",
+    "empty": "Encara no hi ha exercicis a la biblioteca del club.",
+    "empty_filtered": "No hi ha exercicis que coincidisquen amb estos filtres.",
+    "minutes": "{count} min",
+    "mine": "Teu",
+    "status": {
+      "draft": "Esborrany",
+      "proposed": "Proposat",
+      "published": "Publicat",
+      "rejected": "Rebutjat"
+    },
+    "filters": {
+      "label": "Filtres",
+      "title": "Filtrar exercicis",
+      "clear": "Netejar",
+      "tactical": "Objectiu tàctic",
+      "technical": "Objectiu tècnic",
+      "category": "Categoria",
+      "intensity": "Intensitat",
+      "space_type": "Espai",
+      "search_placeholder": "Buscar per nom…",
+      "search_label": "Buscar exercicis",
+      "search_clear": "Netejar busca"
+    },
+    "tactical": {
+      "posesion": "Possessió",
+      "salida_de_balon": "Eixida de pilota",
+      "progresion": "Progressió",
+      "ocupacion_del_espacio": "Ocupació de l'espai",
+      "lineas_de_pase": "Línies de passe",
+      "cambio_de_orientacion": "Canvi d'orientació",
+      "superioridad": "Superioritat",
+      "apoyos_y_desmarques": "Suports i desmarcatges",
+      "accion_combinativa": "Acció combinativa",
+      "amplitud_y_profundidad": "Amplitud i profunditat",
+      "juego_por_bandas": "Joc per bandes",
+      "centros": "Centrades",
+      "finalizacion": "Finalització",
+      "presion_tras_perdida": "Pressió després de pèrdua",
+      "repliegue": "Replegament",
+      "basculacion": "Basculació",
+      "coberturas_y_vigilancias": "Cobertures i vigilàncies",
+      "transicion_ofensiva": "Transició ofensiva",
+      "transicion_defensiva": "Transició defensiva",
+      "balon_parado": "Pilota parada"
+    },
+    "technical": {
+      "control": "Control",
+      "pase": "Passe",
+      "recepcion": "Recepció",
+      "conduccion": "Conducció",
+      "regate": "Regat",
+      "golpeo": "Colpeig",
+      "tiro": "Tir",
+      "cabeceo": "Rematada de cap"
+    },
+    "intensity_values": {
+      "baja": "Baixa",
+      "media": "Mitjana",
+      "alta": "Alta"
+    },
+    "space_types": {
+      "campo_completo": "Camp complet",
+      "medio_campo": "Mig camp",
+      "cuarto_campo": "Quart de camp",
+      "reducido": "Reduït"
+    },
+    "pagination": {
+      "prev": "Anterior",
+      "next": "Següent",
+      "page_of": "Pàgina {current} de {total}"
+    }
   }
 }

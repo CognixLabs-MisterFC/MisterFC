@@ -199,7 +199,8 @@
       "formaciones": "Formaciones",
       "ajustes": "Ajustes del club",
       "mi_ficha": "Mi ficha",
-      "equipos": "Equipos"
+      "equipos": "Equipos",
+      "ejercicios": "Ejercicios"
     },
     "collapse_sidebar": "Ocultar el menú",
     "expand_sidebar": "Mostrar el menú"
@@ -2609,5 +2610,80 @@
     "amateur": "Amateur",
     "senior": "Sénior",
     "veterano": "Veterano"
+  },
+  "ejercicios": {
+    "title": "Ejercicios",
+    "count": "{count, plural, =0 {Sin ejercicios todavía} one {1 ejercicio} other {# ejercicios}}",
+    "empty": "Aún no hay ejercicios en la biblioteca del club.",
+    "empty_filtered": "No hay ejercicios que coincidan con estos filtros.",
+    "minutes": "{count} min",
+    "mine": "Tuyo",
+    "status": {
+      "draft": "Borrador",
+      "proposed": "Propuesto",
+      "published": "Publicado",
+      "rejected": "Rechazado"
+    },
+    "filters": {
+      "label": "Filtros",
+      "title": "Filtrar ejercicios",
+      "clear": "Limpiar",
+      "tactical": "Objetivo táctico",
+      "technical": "Objetivo técnico",
+      "category": "Categoría",
+      "intensity": "Intensidad",
+      "space_type": "Espacio",
+      "search_placeholder": "Buscar por nombre…",
+      "search_label": "Buscar ejercicios",
+      "search_clear": "Limpiar búsqueda"
+    },
+    "tactical": {
+      "posesion": "Posesión",
+      "salida_de_balon": "Salida de balón",
+      "progresion": "Progresión",
+      "ocupacion_del_espacio": "Ocupación del espacio",
+      "lineas_de_pase": "Líneas de pase",
+      "cambio_de_orientacion": "Cambio de orientación",
+      "superioridad": "Superioridad",
+      "apoyos_y_desmarques": "Apoyos y desmarques",
+      "accion_combinativa": "Acción combinativa",
+      "amplitud_y_profundidad": "Amplitud y profundidad",
+      "juego_por_bandas": "Juego por bandas",
+      "centros": "Centros",
+      "finalizacion": "Finalización",
+      "presion_tras_perdida": "Presión tras pérdida",
+      "repliegue": "Repliegue",
+      "basculacion": "Basculación",
+      "coberturas_y_vigilancias": "Coberturas y vigilancias",
+      "transicion_ofensiva": "Transición ofensiva",
+      "transicion_defensiva": "Transición defensiva",
+      "balon_parado": "Balón parado"
+    },
+    "technical": {
+      "control": "Control",
+      "pase": "Pase",
+      "recepcion": "Recepción",
+      "conduccion": "Conducción",
+      "regate": "Regate",
+      "golpeo": "Golpeo",
+      "tiro": "Tiro",
+      "cabeceo": "Cabeceo"
+    },
+    "intensity_values": {
+      "baja": "Baja",
+      "media": "Media",
+      "alta": "Alta"
+    },
+    "space_types": {
+      "campo_completo": "Campo completo",
+      "medio_campo": "Medio campo",
+      "cuarto_campo": "Cuarto de campo",
+      "reducido": "Reducido"
+    },
+    "pagination": {
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "page_of": "Página {current} de {total}"
+    }
   }
 }

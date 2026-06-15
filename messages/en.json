@@ -281,7 +281,8 @@
       "formaciones": "Formations",
       "ajustes": "Club settings",
       "mi_ficha": "My profile",
-      "equipos": "Equipos"
+      "equipos": "Equipos",
+      "ejercicios": "Exercises"
     },
     "collapse_sidebar": "Hide menu",
     "expand_sidebar": "Show menu"
@@ -2610,5 +2611,80 @@
     "amateur": "Amateur",
     "senior": "Sénior",
     "veterano": "Veterano"
+  },
+  "ejercicios": {
+    "title": "Exercises",
+    "count": "{count, plural, =0 {No exercises yet} one {1 exercise} other {# exercises}}",
+    "empty": "There are no exercises in the club library yet.",
+    "empty_filtered": "No exercises match these filters.",
+    "minutes": "{count} min",
+    "mine": "Yours",
+    "status": {
+      "draft": "Draft",
+      "proposed": "Proposed",
+      "published": "Published",
+      "rejected": "Rejected"
+    },
+    "filters": {
+      "label": "Filters",
+      "title": "Filter exercises",
+      "clear": "Clear",
+      "tactical": "Tactical objective",
+      "technical": "Technical objective",
+      "category": "Category",
+      "intensity": "Intensity",
+      "space_type": "Space",
+      "search_placeholder": "Search by name…",
+      "search_label": "Search exercises",
+      "search_clear": "Clear search"
+    },
+    "tactical": {
+      "posesion": "Possession",
+      "salida_de_balon": "Build-up",
+      "progresion": "Progression",
+      "ocupacion_del_espacio": "Space occupation",
+      "lineas_de_pase": "Passing lines",
+      "cambio_de_orientacion": "Switch of play",
+      "superioridad": "Numerical superiority",
+      "apoyos_y_desmarques": "Support & runs",
+      "accion_combinativa": "Combination play",
+      "amplitud_y_profundidad": "Width & depth",
+      "juego_por_bandas": "Wing play",
+      "centros": "Crosses",
+      "finalizacion": "Finishing",
+      "presion_tras_perdida": "Counter-pressing",
+      "repliegue": "Defensive retreat",
+      "basculacion": "Defensive shifting",
+      "coberturas_y_vigilancias": "Cover & balance",
+      "transicion_ofensiva": "Attacking transition",
+      "transicion_defensiva": "Defensive transition",
+      "balon_parado": "Set pieces"
+    },
+    "technical": {
+      "control": "Control",
+      "pase": "Passing",
+      "recepcion": "Receiving",
+      "conduccion": "Ball carrying",
+      "regate": "Take-on",
+      "golpeo": "Striking",
+      "tiro": "Shooting",
+      "cabeceo": "Heading"
+    },
+    "intensity_values": {
+      "baja": "Low",
+      "media": "Medium",
+      "alta": "High"
+    },
+    "space_types": {
+      "campo_completo": "Full pitch",
+      "medio_campo": "Half pitch",
+      "cuarto_campo": "Quarter pitch",
+      "reducido": "Small-sided"
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "page_of": "Page {current} of {total}"
+    }
   }
 }
