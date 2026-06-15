@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useRouter } from '@/i18n/navigation';
+import { FieldMarkings } from '@/components/match/field-markings';
 import { createFormation, updateFormation } from '../actions';
 
 const FORMATS: TeamFormat[] = ['F7', 'F8', 'F11'];
@@ -43,26 +44,6 @@ type Props = {
   initial?: CoachFormation;
   onClose: () => void;
 };
-
-function Pitch() {
-  return (
-    <svg
-      viewBox="0 0 100 150"
-      preserveAspectRatio="none"
-      className="absolute inset-0 size-full"
-      aria-hidden
-    >
-      <rect x="0" y="0" width="100" height="150" fill="#15803d" />
-      <g fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.6">
-        <rect x="3" y="3" width="94" height="144" />
-        <line x1="3" y1="75" x2="97" y2="75" />
-        <circle cx="50" cy="75" r="11" />
-        <rect x="22" y="123" width="56" height="24" />
-        <rect x="22" y="3" width="56" height="24" />
-      </g>
-    </svg>
-  );
-}
 
 function PositionChip({
   index,
@@ -227,7 +208,7 @@ export function FormationBuilder({ initial, onClose }: Props) {
           ref={pitchRef}
           className="relative mx-auto aspect-[2/3] w-full max-w-sm overflow-hidden rounded-lg"
         >
-          <Pitch />
+          <FieldMarkings />
           {positions.map((pos, i) => (
             <PositionChip
               key={i}
