@@ -1264,7 +1264,34 @@
       "goals_per_90": "G/90",
       "assists_per_match": "Assist/partit",
       "minutes_per_match": "Min/partit",
-      "rating": "Nota"
+      "rating": "Nota",
+      "starter": "Tit",
+      "shots": "Tir",
+      "fouls_committed": "FC",
+      "fouls_received": "FR",
+      "pens_scored": "PM",
+      "pens_missed": "PF"
+    },
+    "match": {
+      "title": "Estadístiques del partit",
+      "file": "partit",
+      "score": "Marcador",
+      "by_player": "Per jugador",
+      "section_my_player": "El teu jugador",
+      "starter_yes": "Sí",
+      "empty": "Cap jugador va participar en aquest partit.",
+      "family_note": "Només veus les estadístiques del teu jugador.",
+      "team": {
+        "title": "Equip",
+        "us": "Nosaltres",
+        "them": "Rival",
+        "corners": "Còrners",
+        "fouls": "Faltes",
+        "shots": "Tirs",
+        "yellow": "Targetes grogues",
+        "red": "Targetes roges",
+        "offsides": "Fores de joc"
+      }
     }
   },
   "badges": {
@@ -2436,7 +2463,8 @@
       "yellow": "Targetes grogues",
       "red": "Targetes roges",
       "offsides": "Fores de joc"
-    }
+    },
+    "export_pdf": "Exportar PDF"
   },
   "post_partido": {
     "back": "Tornar a la convocatòria",

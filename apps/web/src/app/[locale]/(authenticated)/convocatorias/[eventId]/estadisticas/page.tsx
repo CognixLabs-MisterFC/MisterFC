@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Download } from 'lucide-react';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -88,7 +88,22 @@ export default async function MatchStatsPage({ params }: Props) {
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
-      {BackBar}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Button asChild variant="ghost" size="sm">
+          <Link href={`/convocatorias/${eventId}`}>
+            <ArrowLeft className="size-4" aria-hidden />
+            <span>{t('back')}</span>
+          </Link>
+        </Button>
+        {/* PDF del partido (X.3): Route Handler que hereda la RLS (staff full /
+            familia su hijo). */}
+        <Button asChild variant="outline" size="sm" className="gap-2">
+          <a href={`/${locale}/convocatorias/${eventId}/estadisticas/pdf`}>
+            <Download className="size-4" aria-hidden />
+            <span>{t('export_pdf')}</span>
+          </a>
+        </Button>
+      </div>
 
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">{t('title')}</h1>

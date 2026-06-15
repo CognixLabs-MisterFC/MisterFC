@@ -1264,7 +1264,34 @@
       "goals_per_90": "G/90",
       "assists_per_match": "Ast/game",
       "minutes_per_match": "Min/game",
-      "rating": "Rating"
+      "rating": "Rating",
+      "starter": "St",
+      "shots": "Sh",
+      "fouls_committed": "FC",
+      "fouls_received": "FR",
+      "pens_scored": "PS",
+      "pens_missed": "PM"
+    },
+    "match": {
+      "title": "Match statistics",
+      "file": "match",
+      "score": "Score",
+      "by_player": "By player",
+      "section_my_player": "Your player",
+      "starter_yes": "Yes",
+      "empty": "No player took part in this match.",
+      "family_note": "You only see your player’s statistics.",
+      "team": {
+        "title": "Team",
+        "us": "Us",
+        "them": "Opponent",
+        "corners": "Corners",
+        "fouls": "Fouls",
+        "shots": "Shots",
+        "yellow": "Yellow cards",
+        "red": "Red cards",
+        "offsides": "Offsides"
+      }
     }
   },
   "badges": {
@@ -2436,7 +2463,8 @@
       "yellow": "Yellow cards",
       "red": "Red cards",
       "offsides": "Offsides"
-    }
+    },
+    "export_pdf": "Export PDF"
   },
   "post_partido": {
     "back": "Back to call-up",
