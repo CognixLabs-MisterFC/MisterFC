@@ -103,7 +103,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 |---|---|---|---|---|
 | F0 | Bootstrap y fundamentos | 4–5 h | 2 | ☑ |
 | F1 | Modelo de datos y auth multi-rol con permisos configurables | 12–17 h | 5–6 | ☑ |
-| F2 | Plantilla y cuerpo técnico | 19–32 h (lote inicial 14–23 h ≈18–20 h real ☑ + ext. F2.10/F2.11 +5–9 h ☐) | 6–9 | ⟳ ext. |
+| F2 | Plantilla y cuerpo técnico | 19–32 h (lote inicial 14–23 h ≈18–20 h real ☑ + ext. F2.10/F2.11 +5–9 h ☑) | 6–9 | ☑ |
 | F3 | Calendario y eventos | 6–9 h | 2–3 | ☑ |
 | F4 | Asistencia a entrenamientos y convocatorias de partido | 9–13 h (Lote A ≈4–5 h ☑ + Lote B ≈5–8 h ☑) | 3 | ☑ |
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☑ |
@@ -189,13 +189,13 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 ---
 
-### Fase 2 — Plantilla y cuerpo técnico ⟳ extendida 2026-05-29
+### Fase 2 — Plantilla y cuerpo técnico ☑ cerrada (extensión cerrada 2026-06-15)
 
-> **Estado**: lote inicial (2.0–2.9) ☑ cerrado 2026-05-29 y sin cambios. **Extensión** (2.10–2.11) ☐ pendiente, añadida tras feedback de uso real. La extensión no reabre código de las subfases cerradas; añade nuevas vistas globales sobre los modelos ya existentes.
+> **Estado**: lote inicial (2.0–2.9) ☑ cerrado 2026-05-29 y sin cambios. **Extensión** (2.10–2.11) ☑ cerrada — la 2.11 entregó el 2026-05-29 y la 2.10 ya estaba en `main` desde el PR #21 (2026-05-29), solo faltaba marcarla en el tracker (corregido 2026-06-15). La extensión no reabre código de las subfases cerradas; añade nuevas vistas globales sobre los modelos ya existentes. **Con esto F2 queda cerrada** (desbloquea F11).
 
 **Objetivo**: implementar la gestión completa del club: CRUD de categorías, equipos, jugadores y staff. Configuración de permisos para entrenadores ayudantes. Importación masiva desde CSV/Excel. **Vistas globales** (listado y gestión cross-equipo) en la extensión.
 
-**Horas**: 19–32 h total · **Lote inicial 2.0–2.9**: estimado 14–23 h · real ≈18–20 h ☑ · **Extensión 2.10–2.11**: estimado +5–9 h ☐ · **Sesiones**: 6–9 · **PRs lote inicial**: #10–#16.
+**Horas**: 19–32 h total · **Lote inicial 2.0–2.9**: estimado 14–23 h · real ≈18–20 h ☑ · **Extensión 2.10–2.11**: estimado +5–9 h ☑ · **Sesiones**: 6–9 · **PRs lote inicial**: #10–#16 · **PRs extensión**: #21 (2.10) + #22 (2.11).
 
 **Cierre del lote inicial** (sigue válido): admin/coord pueden montar la jerarquía completa del club (categorías → equipos → jugadores → staff). Familias se vinculan a menores vía invitación. Capabilities del ayudante editables desde UI. Importación masiva CSV/Excel con dedup + RLS validada por pgTAP. Resumen ejecutivo en [fase-2-summary.md](fase-2-summary.md).
 
@@ -218,9 +218,9 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 - **2.8** [hecho 2026-05-28] Vista `/mi-plantilla` para entrenadores (read-only). Resuelve equipo activo vía `team_staff` activos del user; soporta multi-equipo con TeamSelector; filtros por posición sin estado server.
 - **2.9** [hecho 2026-05-29] Importación masiva CSV/Excel (spec `docs/specs/2.9-import-csv.md`). Wizard 4 pasos (`/plantilla/importar`), plantilla XLSX+CSV pre-generadas en `public/import-templates/`, parsing cliente (papaparse + read-excel-file), dedup `(lower(first_name), lower(last_name), date_of_birth, club_id)`, server action loop fila-a-fila. Primer Vitest del repo en `packages/core/src/import/__tests__/` (25 tests).
 
-**Extensión post-feedback (☐ pendiente, añadidas 2026-05-29)**:
+**Extensión post-feedback (☑ cerrada, añadidas 2026-05-29)**:
 
-- **2.10** Listado global de jugadores del club con filtros (búsqueda por nombre, año de nacimiento, posición, equipo) y acción de asignación individual a equipo. Spec `docs/specs/2.10-listado-global-jugadores.md`. **Reusa** tablas `players` + `team_members` + `teams` + `categories` (cero modelo nuevo). UI Server Component sobre DataTable shadcn. **Estimación**: 2–4 h. **Depende**: F2 (lote inicial) cerrada — cumplido.
+- **2.10** [hecho 2026-05-29 (PR #21)] Listado global de jugadores del club con filtros (búsqueda por nombre, año de nacimiento, posición, equipo) y acción de asignación individual a equipo. Spec `docs/specs/2.10-listado-global-jugadores.md`. **Reusa** tablas `players` + `team_members` + `teams` + `categories` (cero modelo nuevo). UI Server Component sobre DataTable shadcn. **Ampliada después**: rework-A leyendo la temporada por `teams.season` (#82), modelo de baja + superficie en `/jugadores` con toggle "ver bajas" y filtro "sin equipo" (C11a, #103), fix de selectores a la temporada activa (#105). Marcado en el tracker el 2026-06-15 (estaba en `main` pero figuraba ☐).
 - **2.11** [hecho 2026-05-29] Gestión global del cuerpo técnico (`/cuerpo-tecnico`): listado del club con filtros (búsqueda, función staff, equipo, categoría) y ficha individual con equipos activos + agenda F3 (28 días, reuso `loadCalendarData` + `CalendarAgenda`) + histórico. Server action `moveStaffToTeam` (cierra fila origen, abre destino, valida principal único). pgTAP `rls_move_staff.sql` (4 casos). Sin modelo nuevo: reusa `team_staff` + `memberships` + `capabilities` + `events`.
 
 ---

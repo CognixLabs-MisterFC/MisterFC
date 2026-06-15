@@ -4,14 +4,6 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 ## Activas
 
-### Convocatoria — los jugadores del banquillo no quedan marcados como convocados
-- **Detectado en**: 2026-06-14.
-- **Estado**: PENDIENTE — resolver tras cerrar F10.
-- **Síntoma**: en la convocatoria se eligen titulares y descartados. Al lanzarla, los titulares aparecen como convocados y los descartados como descartados, pero los jugadores del **banquillo** (los que no son ni titulares ni descartados) **no** aparecen como convocados.
-- **Esperado**: convocados = titulares + banquillo; descartados aparte.
-- **Pendiente**: localizar el punto exacto (UI de convocatoria / estado guardado al lanzar) al abordarlo.
-- **Plan**: resolver tras cerrar F10, en su propio PR.
-
 ### InviteStaffDialog — el form no resetea estado entre invitaciones consecutivas
 - **Detectado en**: 2026-05-29, cierre de F2 (revisión post-lote-D).
 - **Síntoma**: al invitar a un segundo miembro del staff sin cerrar el dialog, el banner del envío anterior sigue visible y los inputs no se limpian.
@@ -99,6 +91,30 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 ---
 
 ## Resueltas
+
+### Convocatoria — los jugadores del banquillo no quedaban marcados como convocados — resuelto en PR #132 (2026-06-14)
+- **Detectado en**: 2026-06-14. Era entrada activa hasta el cierre de F10.
+- **Síntoma**: al lanzar la convocatoria, los titulares aparecían como convocados y los descartados como descartados, pero el **banquillo** (ni titulares ni descartados) no se contaba como convocado.
+- **Causa raíz**: doble fuente de verdad. El contador de "Gestión de partidos" contaba filas explícitas `callup_decisions.decision='called_up'`, mientras el resto del app usa la definición canónica derivada `convocados = roster − descartados` (`groupRosterByCallup`). El banquillo no suele tener fila explícita → se infra-contaba.
+- **Fix**: el contador de la lista (`loadCallupMatches`) deriva con `groupRosterByCallup` sobre el roster vigente del evento (intersecando los descartados con el roster); el resumen del detalle se muestra siempre que haya roster (antes se ocultaba con `decisions.size === 0`). Sin tocar datos/modelo: las convocatorias ya lanzadas se ven correctas al instante. Las filas explícitas `called_up` se conservan para el sync alineación↔convocatoria.
+- **Tests**: `callup-sync.test.ts` (+3): banquillo cuenta, descartado del roster no, descartado fuera del roster no resta.
+
+### Directo — córner/falta "a favor" aparecían fijos en "Últimos eventos" — resuelto en PR #130 (2026-06-14)
+- **Detectado/resuelto**: 2026-06-14 (no llegó a registrarse como entrada activa; constancia aquí).
+- **Síntoma**: el panel "Últimos eventos" de la pantalla de directo (F7) mostraba fijo "córner a favor" y "falta a favor".
+- **Causa raíz**: eran **botones de captura** colocados dentro de la columna "Últimos eventos" (entre el título y la lista), por lo que parecían entradas falsas permanentes. No eran datos ni mock; la lista en sí arrancaba vacía.
+- **Fix (solo UI)**: se movieron los botones "córner a favor" / "falta a favor" a la **paleta de eventos propios**, junto a penalty/tarjetas. La columna "Últimos eventos" queda solo con título + lista (arranca en `no_events_yet` y se puebla con eventos reales). Los "en contra" siguen en la columna del rival.
+
+### Alineación — la ficha del jugador mostraba solo el apellido — resuelto en PR #129 (2026-06-14)
+- **Detectado/resuelto**: 2026-06-14 (no llegó a registrarse como entrada activa; constancia aquí).
+- **Síntoma**: en la preparación de la alineación la ficha del jugador mostraba solo el apellido (o el nombre si no había apellido), en vez de "Nombre Apellido".
+- **Fix**: nuevo helper puro `formatPlayerNameNatural` en `@misterfc/core` (orden natural, frente a `formatPlayerName` que es "Apellido, Nombre" de listado; maneja huecos sin espacios sobrantes); el `shortLabel` del editor de alineación lo reusa. Solo UI, con Vitest. El layout del chip ya truncaba.
+
+### Amistosos (y torneos) no eran gestionables como los oficiales — resuelto en PR #131 (2026-06-14)
+- **Detectado/resuelto**: 2026-06-14 (no llegó a registrarse como entrada activa; constancia aquí).
+- **Síntoma**: los partidos amistosos (y de torneo) no aparecían en "Gestión de partidos" ni se podían gestionar (alineación, directo), pese a que `events.type` incluye `match`/`friendly`/`tournament`.
+- **Causa raíz**: filtros de `type` fijados a `'match'` de forma inconsistente (la capa de directo ya admitía `'friendly'`; el resto no; `'tournament'` quedaba fuera en todos lados).
+- **Fix (solo ampliar filtros)**: constante/guard compartidos `MANAGEABLE_MATCH_TYPES` / `isManageableMatchType` en `@misterfc/core` como fuente única, usados en los 5 puntos del recorrido (lista, detalle, alineación, directo loader+acción, enlace del calendario). Sin BD/migraciones/modelo; los partidos ya creados se gestionan al instante. Con Vitest del guard.
 
 ### F4b — redirect 308 `/mi-plantilla` → `/mis-equipos` retirado (2026-05-30, chore/diferida-a-plan)
 - **Issue original** (2026-05-29, F4 Lote B): `apps/web/next.config.ts` mantenía un par de redirects 308 desde `/[locale]/mi-plantilla` para no romper bookmarks o links externos a la ruta vieja. Plan original: borrar a partir de 2026-06-28 tras 30 días de gracia.
