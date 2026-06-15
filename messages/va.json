@@ -2393,6 +2393,7 @@
   "estadisticas_partido": {
     "title": "Estadístiques del partit",
     "back": "Tornar al partit",
+    "timeline_title": "Línia de temps",
     "section_players": "Per jugador",
     "section_my_player": "El teu jugador",
     "empty_family": "Sense estadístiques: el teu jugador no va participar o el partit encara no està tancat.",

@@ -2392,6 +2392,7 @@
   "estadisticas_partido": {
     "title": "Estadísticas del partido",
     "back": "Volver al partido",
+    "timeline_title": "Línea de tiempo",
     "section_players": "Por jugador",
     "section_my_player": "Tu jugador",
     "empty_family": "Sin estadísticas: tu jugador no participó o el partido aún no está cerrado.",

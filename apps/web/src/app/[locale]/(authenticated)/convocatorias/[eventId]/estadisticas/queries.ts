@@ -21,11 +21,13 @@
 import {
   aggregateMatchTeamStats,
   createSupabaseServerClient,
+  formatPlayerNameNatural,
   type MatchTeamStatEvent,
   type MatchTeamStats,
   type TeamFormat,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import type { MatchTimelineEntry } from '@/components/match/match-timeline';
 import type { Role } from '../../../jugadores/queries';
 
 const STAFF_ROLES: ReadonlyArray<Role> = [
@@ -74,6 +76,7 @@ export type MatchStatsResult =
             score: { own: number | null; against: number | null };
             players: MatchStatRow[];
             team: MatchTeamStats;
+            timeline: MatchTimelineEntry[];
           }
         | {
             viewer: 'family';
@@ -253,25 +256,77 @@ export async function loadMatchStats(
     players = sortRows(stats.map((s) => toRow(s, names.get(s.player_id))));
   }
 
-  // Agregados de equipo (ambos bandos) desde match_events (X.0).
+  // match_events del partido en UNA carga: alimenta los agregados de equipo
+  // (X.0) y la línea de tiempo read-only (X.2). Dos FKs a players (actor y el
+  // que entra en una sustitución) vía alias del join.
   const { data: eventRows } = await supabase
     .from('match_events')
-    .select('side, type, metadata')
-    .eq('event_id', eventId);
+    .select(
+      `id, side, type, player_id, rival_dorsal, related_player_id,
+       clock_seconds, display_minute, metadata,
+       actor:players!match_events_player_id_fkey(first_name, last_name, dorsal),
+       sub_in:players!match_events_related_player_id_fkey(first_name, last_name, dorsal)`,
+    )
+    .eq('event_id', eventId)
+    .order('clock_seconds', { ascending: true })
+    .order('created_at', { ascending: true });
+  type PlayerJoin = {
+    first_name: string;
+    last_name: string | null;
+    dorsal: number | null;
+  } | null;
   type RawEvent = {
+    id: string;
     side: 'own' | 'rival';
     type: string;
-    metadata: { foul_kind?: string | null; corner_side?: string | null } | null;
+    player_id: string | null;
+    rival_dorsal: number | null;
+    related_player_id: string | null;
+    clock_seconds: number;
+    display_minute: number | null;
+    metadata: {
+      foul_kind?: string | null;
+      corner_side?: string | null;
+      outcome?: string | null;
+      from?: string | null;
+      to?: string | null;
+    } | null;
+    actor: PlayerJoin;
+    sub_in: PlayerJoin;
   };
-  const teamEvents: MatchTeamStatEvent[] = (
-    (eventRows ?? []) as unknown as RawEvent[]
-  ).map((r) => ({
+  const raw = (eventRows ?? []) as unknown as RawEvent[];
+
+  // Agregados de equipo (ambos bandos) — X.0.
+  const teamEvents: MatchTeamStatEvent[] = raw.map((r) => ({
     side: r.side,
     type: r.type,
     foulKind: r.metadata?.foul_kind ?? null,
     cornerSide: r.metadata?.corner_side ?? null,
   }));
   const team = aggregateMatchTeamStats(teamEvents);
+
+  // Línea de tiempo read-only — X.2. Etiqueta del actor = "dorsal · Nombre Apellido".
+  const labelOf = (p: PlayerJoin, dorsal: number | null): string | null => {
+    if (!p) return null;
+    const name = formatPlayerNameNatural(p.first_name, p.last_name);
+    const d = dorsal ?? p.dorsal;
+    return d != null ? `${d} · ${name}` : name;
+  };
+  const timeline: MatchTimelineEntry[] = raw.map((r) => ({
+    id: r.id,
+    side: r.side,
+    type: r.type,
+    displayMinute: r.display_minute,
+    clockSeconds: r.clock_seconds,
+    playerLabel: labelOf(r.actor, null),
+    rivalDorsal: r.rival_dorsal,
+    relatedPlayerLabel: labelOf(r.sub_in, null),
+    outcome: r.metadata?.outcome ?? null,
+    foulKind: r.metadata?.foul_kind ?? null,
+    cornerSide: r.metadata?.corner_side ?? null,
+    formationFrom: r.metadata?.from ?? null,
+    formationTo: r.metadata?.to ?? null,
+  }));
 
   return {
     status: 'ok',
@@ -284,6 +339,7 @@ export async function loadMatchStats(
       },
       players,
       team,
+      timeline,
     },
   };
 }
