@@ -1263,7 +1263,34 @@
       "goals_per_90": "G/90",
       "assists_per_match": "Asist/partido",
       "minutes_per_match": "Min/partido",
-      "rating": "Nota"
+      "rating": "Nota",
+      "starter": "Tit",
+      "shots": "Tir",
+      "fouls_committed": "FC",
+      "fouls_received": "FR",
+      "pens_scored": "PM",
+      "pens_missed": "PF"
+    },
+    "match": {
+      "title": "Estadísticas del partido",
+      "file": "partido",
+      "score": "Marcador",
+      "by_player": "Por jugador",
+      "section_my_player": "Tu jugador",
+      "starter_yes": "Sí",
+      "empty": "Ningún jugador participó en este partido.",
+      "family_note": "Solo ves las estadísticas de tu jugador.",
+      "team": {
+        "title": "Equipo",
+        "us": "Nosotros",
+        "them": "Rival",
+        "corners": "Córners",
+        "fouls": "Faltas",
+        "shots": "Tiros",
+        "yellow": "Tarjetas amarillas",
+        "red": "Tarjetas rojas",
+        "offsides": "Fueras de juego"
+      }
     }
   },
   "badges": {
@@ -2435,7 +2462,8 @@
       "yellow": "Tarjetas amarillas",
       "red": "Tarjetas rojas",
       "offsides": "Fueras de juego"
-    }
+    },
+    "export_pdf": "Exportar PDF"
   },
   "post_partido": {
     "back": "Volver a la convocatoria",
