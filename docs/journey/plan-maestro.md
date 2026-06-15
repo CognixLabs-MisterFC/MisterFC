@@ -110,7 +110,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☑ |
 | F6 | Alineaciones y planificación del partido | 12–19 h | 4–5 | ☑ |
 | F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☑ |
-| F7.x | Vista de estadísticas del partido (extensión F7/F8) | 3–5 h (v1) | 1–2 | ☐ |
+| F7.x | Vista de estadísticas del partido (extensión F7/F8) | 3–5 h (v1) | 1–2 | ☑ (2026-06-15) |
 | F8 | Valoraciones del partido | 8–13 h | 3–4 | ☑ |
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☑ |
 | F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☑ |
@@ -405,6 +405,8 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Horas**: 3–5 h (v1) · **Sesiones**: 1–2 · **Schedulable** (pequeña; recomendable antes o junto a F11).
 
+**Estado**: ☑ **Cerrada (2026-06-15)** — v1 (X.0 + X.1) entregada y, además, X.2 (timeline) y X.3 (export PDF). Todas las subfases verificadas (typecheck · lint · test · build en verde). PRs: #135 (X.0), #136 (X.1), #137 (X.2), #138 (X.3).
+
 **Criterio de cierre (v1)**: dado un partido cerrado, staff ve la tabla por jugador (titulares primero, ordenable) + el panel de equipo; familia/jugador ve solo la fila de su hijo. typecheck · lint · test · build en verde.
 
 **Riesgo**: bajo. El scoping confirmó que **el grueso ya está capturado** (F7); la feature es la vista de consulta, no captura nueva.
@@ -413,12 +415,12 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Decisiones cerradas** (spec §6): `D1` sub-ruta `/convocatorias/[eventId]/estadisticas`, solo cerrados · `D2` tabla con todo `match_player_stats`, titulares primero · `D3` agregados de equipo a favor/en contra de ambos bandos (helper nuevo `aggregateMatchTeamStats`, sin migración) · `D4` staff ve todo, familia solo su hijo sin panel de equipo (sin RLS nueva; abrir `match_events` a familia = freno, fuera de v1) · `D5` solo lo capturado (tiros a puerta/portero/posesión/xG fuera) · `DT` cálculo en helpers puros de core, sin BD nueva.
 
-**Subfases** (v1 = X.0 + X.1):
+**Subfases** (v1 = X.0 + X.1; X.2 y X.3 entregadas además):
 
-- **X.0** Helper de core `aggregateMatchTeamStats` (agregados de equipo a favor/en contra, incl. rival y offsides, desde `match_events`) + Vitest. Pequeño: `computeTeamEventTallies` ya cubre córners/faltas propios. — 1 h
-- **X.1** Ruta `/convocatorias/[eventId]/estadisticas` + loader (`match_player_stats` + `match_events`, sin N+1) + gating (cerrado + rol) + tabla por jugador + panel de equipo (ambos bandos) + vista familia (solo la fila de su hijo) + enlaces de entrada + i18n es/en/va. — 2–4 h
-- **X.2** *(siguiente, no v1)* Línea de tiempo del partido read-only (reusa la de directo).
-- **X.3** *(futuro opcional)* Export PDF del partido (reusa infra PDF de 9.B).
+- **X.0** ☑ Helper de core `aggregateMatchTeamStats` (agregados de equipo a favor/en contra, incl. rival y offsides, desde `match_events`) + Vitest. Pequeño: `computeTeamEventTallies` ya cubre córners/faltas propios. — 1 h — #135
+- **X.1** ☑ Ruta `/convocatorias/[eventId]/estadisticas` + loader (`match_player_stats` + `match_events`, sin N+1) + gating (cerrado + rol) + tabla por jugador + panel de equipo (ambos bandos) + vista familia (solo la fila de su hijo) + enlaces de entrada + i18n es/en/va. — 2–4 h — #136
+- **X.2** ☑ Línea de tiempo del partido read-only (reusa la representación e i18n de la timeline de directo; solo staff). — #137
+- **X.3** ☑ Export PDF del partido (reusa la infra PDF de 9.B; staff full / familia su hijo; sin timeline). — #138
 
 ---
 
