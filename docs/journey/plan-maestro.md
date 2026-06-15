@@ -83,6 +83,7 @@ Asumiendo ritmo sostenido de 2–3 h/día efectivas y 5 días/semana:
 | 5 | 5 | Mensajería interna y push notifications |
 | 6 | 6 | Editor de alineaciones F7/F8/F11 operativo |
 | 7–8 | 7 | Pantalla de toma de datos en directo del partido (iPad/desktop) |
+| (extensión F7/F8) | 7.x | Vista de estadísticas del partido (consulta, schedulable; recomendable antes o junto a F11) |
 | 9 | 8 | Valoraciones de partido y de entrenamiento |
 | 10–12 | 9 | Perfil del jugador + evolución multi-temporada + reportes mensuales PDF |
 | 13 | 10 | Dashboard ejecutivo del club |
@@ -109,6 +110,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F5 | Mensajería interna y notificaciones push | 8–12 h | 3–4 | ☑ |
 | F6 | Alineaciones y planificación del partido | 12–19 h | 4–5 | ☑ |
 | F7 | Toma de datos en directo del partido | 10–14 h | 4–5 | ☑ |
+| F7.x | Vista de estadísticas del partido (extensión F7/F8) | 3–5 h (v1) | 1–2 | ☐ |
 | F8 | Valoraciones del partido | 8–13 h | 3–4 | ☑ |
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☑ |
 | F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☑ |
@@ -119,7 +121,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F14 | RGPD para menores y seguridad | 12–18 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
 | F16 | Beta cerrada con primer club | 9–15 h (subfases 16.0–16.4 6–10 h + F16.x bulk-invite +3–5 h) | 3–4 | ☐ |
-| **TOTAL Ola 1** | | **182–282 h** | **66–86** | |
+| **TOTAL Ola 1** | | **185–287 h** | **67–88** | |
 
 > **Cambio 2026-05-29**: F2 reabierta como "extendida" con F2.10 (listado global de jugadores) y F2.11 (gestión global de cuerpo técnico). F16 incorpora F16.x (bulk-invite por email, depende de F16.0 SMTP propio). El lote inicial de F2 (subfases 2.0–2.9) sigue cerrado operacionalmente; lo que se reabre es el alcance. Delta acumulado sobre el plan original: +11–19 h (159–243 → 170–262).
 
@@ -132,6 +134,8 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 > **Rework A 2026-06-10 (mejora estructural, no fase numerada)**: ✅ **cerrado**. La **temporada** baja de la categoría al **equipo** y la **categoría** pasa a ser plantilla permanente del club. No es una fase del Plan: es un rework entre el **núcleo de F9** y su **segundo tramo** (la ficha multi-temporada de 9.4 se apoya en `teams.season`). Detalle en §6 (sección **Rework A**, tras la Fase 9) y en la [spec A.0](../specs/A.0-categorias-equipos.md). [ADR-0017](../decisions/ADR-0017-temporada-en-equipo-categoria-permanente.md).
 
 > **Cambio 2026-06-14 (fase intercalada F11B)**: nueva fase **F11B — Pizarra táctica en vivo (sobre la alineación)**, insertada **después de F11 y antes de F12** con etiqueta `F11B` para **no renumerar F12–F16**. Reutiliza `<MatchFieldEditor>` (F6) + la capa de dibujo/PitchEditor (F11) — no duplica componentes de campo. Depende solo de F11; F12/F13 no se ven afectadas. Estimación preliminar +6–9 h / 2–3 sesiones. Delta total Ola 1: +6–9 h (176–273 → 182–282), +2–3 sesiones (64–83 → 66–86). Detalle en §6 (Fase 11B, tras la Fase 11).
+
+> **Cambio 2026-06-15 (extensión F7.x)**: nueva **F7.x — Vista de estadísticas del partido**, extensión de F7/F8 con etiqueta `F7.x` para **no renumerar F8–F16**. Es la **cara de consulta** por partido de lo que F7 ya captura (`match_player_stats` + `match_events`); v1 sin BD/RLS nueva. **Schedulable** (pequeña), recomendable antes o junto a F11. Estimación v1 +3–5 h / 1–2 sesiones. Delta total Ola 1: +3–5 h (182–282 → 185–287), +1–2 sesiones (66–86 → 67–88). Spec [7.x](../specs/7.x-estadisticas-partido.md). Detalle en §6 (Fase 7.x, tras la Fase 7).
 
 ---
 
@@ -390,6 +394,31 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 > El desglose autoritativo y la renumeración de subfases de F7 (incl. *Tiempo de juego por jugador* como 7.8) viven en [docs/specs/7.0-toma-datos-en-directo.md](../specs/7.0-toma-datos-en-directo.md) §8. La **7.12** (panel en Inicio) lee datos existentes (F4/F6/F7.1), sin migración.
 
 > **Reordenación (2026-06-02): 7.7 va ANTES de 7.3.** Todo evento (`match_events`) exige `clock_seconds` absoluto NOT NULL (§6), y registrar eventos requiere antes un partido en juego (`match_state='live'`) con el once congelado (`match_starters`) y un cronómetro corriendo (`match_periods`). Como ese arranque + reloj no lo construía ninguna subfase entre 7.2 y 7.7, se adelanta **7.7 (Iniciar partido + cronómetro completo)** y 7.3 se apoya sobre él. El modelo ya existe (7.1) → sin migración nueva. El motor de reloj puro vive en `packages/core/src/match/clock.ts` (testeado con Vitest, §15).
+
+---
+
+### Fase 7.x — Vista de estadísticas del partido
+
+> **Extensión de F7/F8 (no fase nueva)**: etiqueta `F7.x` para **no renumerar F8–F16**. Añadida 2026-06-15. Es la **cara de consulta** por partido de lo que F7 ya captura. Spec completa en [docs/specs/7.x-estadisticas-partido.md](../specs/7.x-estadisticas-partido.md).
+
+**Objetivo**: vista de estadísticas **por partido** en `/convocatorias/[eventId]/estadisticas` (solo partidos cerrados): tabla por jugador con todo lo que ya consolida `match_player_stats` (minutos, titular, goles, asistencias, tarjetas, tiros, faltas cometidas/recibidas, penaltis) + panel de agregados de equipo a favor/en contra de ambos bandos (córners, faltas, tiros, tarjetas, offsides) + marcador. Familia/jugador ve solo la fila de su hijo (sin panel de equipo).
+
+**Horas**: 3–5 h (v1) · **Sesiones**: 1–2 · **Schedulable** (pequeña; recomendable antes o junto a F11).
+
+**Criterio de cierre (v1)**: dado un partido cerrado, staff ve la tabla por jugador (titulares primero, ordenable) + el panel de equipo; familia/jugador ve solo la fila de su hijo. typecheck · lint · test · build en verde.
+
+**Riesgo**: bajo. El scoping confirmó que **el grueso ya está capturado** (F7); la feature es la vista de consulta, no captura nueva.
+
+**Dependencias**: F7 cerrada (✅). No depende de F8/F9/F10.
+
+**Decisiones cerradas** (spec §6): `D1` sub-ruta `/convocatorias/[eventId]/estadisticas`, solo cerrados · `D2` tabla con todo `match_player_stats`, titulares primero · `D3` agregados de equipo a favor/en contra de ambos bandos (helper nuevo `aggregateMatchTeamStats`, sin migración) · `D4` staff ve todo, familia solo su hijo sin panel de equipo (sin RLS nueva; abrir `match_events` a familia = freno, fuera de v1) · `D5` solo lo capturado (tiros a puerta/portero/posesión/xG fuera) · `DT` cálculo en helpers puros de core, sin BD nueva.
+
+**Subfases** (v1 = X.0 + X.1):
+
+- **X.0** Helper de core `aggregateMatchTeamStats` (agregados de equipo a favor/en contra, incl. rival y offsides, desde `match_events`) + Vitest. Pequeño: `computeTeamEventTallies` ya cubre córners/faltas propios. — 1 h
+- **X.1** Ruta `/convocatorias/[eventId]/estadisticas` + loader (`match_player_stats` + `match_events`, sin N+1) + gating (cerrado + rol) + tabla por jugador + panel de equipo (ambos bandos) + vista familia (solo la fila de su hijo) + enlaces de entrada + i18n es/en/va. — 2–4 h
+- **X.2** *(siguiente, no v1)* Línea de tiempo del partido read-only (reusa la de directo).
+- **X.3** *(futuro opcional)* Export PDF del partido (reusa infra PDF de 9.B).
 
 ---
 
