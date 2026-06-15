@@ -1761,6 +1761,7 @@
       "edit_lineup": "Editar alineació",
       "live_capture": "En directe",
       "post_match": "Post-partit",
+      "match_stats": "Estadístiques",
       "training_attendance_hint": "Assistència als entrenaments (dl–dv) de la setmana del partit"
     },
     "republish": {
@@ -2389,9 +2390,57 @@
       "confirm_delete": "Esborrar aquest comentari?"
     }
   },
+  "estadisticas_partido": {
+    "title": "Estadístiques del partit",
+    "back": "Tornar al partit",
+    "section_players": "Per jugador",
+    "section_my_player": "El teu jugador",
+    "empty_family": "Sense estadístiques: el teu jugador no va participar o el partit encara no està tancat.",
+    "empty_no_players": "Cap jugador va participar en aquest partit.",
+    "family_note": "Només veus les estadístiques del teu jugador.",
+    "starter_yes": "Titular",
+    "starter_no": "Supl.",
+    "sort_by": "Ordenar per aquesta columna",
+    "col": {
+      "player": "Jugador",
+      "started": "Titular",
+      "minutes": "Minuts",
+      "minutes_short": "Min",
+      "goals": "Gols",
+      "goals_short": "G",
+      "assists": "Assistències",
+      "assists_short": "A",
+      "yellow": "Targetes grogues",
+      "yellow_short": "TG",
+      "red": "Targetes roges",
+      "red_short": "TR",
+      "shots": "Tirs",
+      "shots_short": "Tir",
+      "fouls_committed": "Faltes comeses",
+      "fouls_committed_short": "FC",
+      "fouls_received": "Faltes rebudes",
+      "fouls_received_short": "FR",
+      "pens_scored": "Penals marcats",
+      "pens_scored_short": "PM",
+      "pens_missed": "Penals fallats",
+      "pens_missed_short": "PF"
+    },
+    "team": {
+      "title": "Equip",
+      "us": "Nosaltres",
+      "them": "Rival",
+      "corners": "Córners",
+      "fouls": "Faltes",
+      "shots": "Tirs",
+      "yellow": "Targetes grogues",
+      "red": "Targetes roges",
+      "offsides": "Fores de joc"
+    }
+  },
   "post_partido": {
     "back": "Tornar a la convocatòria",
     "title": "Valoracions del partit",
+    "view_stats": "Estadístiques del partit",
     "subtitle": "Posa nota, comentari i MVP a cada jugador. Les estadístiques són context, no es barregen amb la teua valoració.",
     "not_finished_title": "El partit encara no està finalitzat",
     "not_finished_hint": "Finalitza el partit des de la pantalla en directe per a obrir les valoracions.",

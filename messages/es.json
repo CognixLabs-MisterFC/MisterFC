@@ -1760,6 +1760,7 @@
       "edit_lineup": "Editar alineación",
       "live_capture": "En directo",
       "post_match": "Post-partido",
+      "match_stats": "Estadísticas",
       "training_attendance_hint": "Asistencia a entrenos (lun–vie) de la semana del partido"
     },
     "republish": {
@@ -2388,9 +2389,57 @@
       "confirm_delete": "¿Borrar este comentario?"
     }
   },
+  "estadisticas_partido": {
+    "title": "Estadísticas del partido",
+    "back": "Volver al partido",
+    "section_players": "Por jugador",
+    "section_my_player": "Tu jugador",
+    "empty_family": "Sin estadísticas: tu jugador no participó o el partido aún no está cerrado.",
+    "empty_no_players": "Ningún jugador participó en este partido.",
+    "family_note": "Solo ves las estadísticas de tu jugador.",
+    "starter_yes": "Titular",
+    "starter_no": "Supl.",
+    "sort_by": "Ordenar por esta columna",
+    "col": {
+      "player": "Jugador",
+      "started": "Titular",
+      "minutes": "Minutos",
+      "minutes_short": "Min",
+      "goals": "Goles",
+      "goals_short": "G",
+      "assists": "Asistencias",
+      "assists_short": "A",
+      "yellow": "Tarjetas amarillas",
+      "yellow_short": "TA",
+      "red": "Tarjetas rojas",
+      "red_short": "TR",
+      "shots": "Tiros",
+      "shots_short": "Tir",
+      "fouls_committed": "Faltas cometidas",
+      "fouls_committed_short": "FC",
+      "fouls_received": "Faltas recibidas",
+      "fouls_received_short": "FR",
+      "pens_scored": "Penaltis marcados",
+      "pens_scored_short": "PM",
+      "pens_missed": "Penaltis fallados",
+      "pens_missed_short": "PF"
+    },
+    "team": {
+      "title": "Equipo",
+      "us": "Nosotros",
+      "them": "Rival",
+      "corners": "Córners",
+      "fouls": "Faltas",
+      "shots": "Tiros",
+      "yellow": "Tarjetas amarillas",
+      "red": "Tarjetas rojas",
+      "offsides": "Fueras de juego"
+    }
+  },
   "post_partido": {
     "back": "Volver a la convocatoria",
     "title": "Valoraciones del partido",
+    "view_stats": "Estadísticas del partido",
     "subtitle": "Pon nota, comentario y MVP a cada jugador. Las estadísticas son contexto, no se mezclan con tu valoración.",
     "not_finished_title": "El partido aún no está finalizado",
     "not_finished_hint": "Finaliza el partido desde la pantalla en directo para abrir las valoraciones.",
