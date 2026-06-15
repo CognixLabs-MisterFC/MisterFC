@@ -117,12 +117,16 @@ export {
   computeTeamEventTallies,
   foulsByPlayer,
   foulsReceivedByPlayer,
+  aggregateMatchTeamStats,
 } from './team-events';
 export type {
   FoulKind,
   CornerSide,
   TeamEventLite,
   TeamEventTallies,
+  MatchTeamStatEvent,
+  MatchSidePair,
+  MatchTeamStats,
 } from './team-events';
 
 export {
