@@ -2393,6 +2393,7 @@
   "estadisticas_partido": {
     "title": "Match statistics",
     "back": "Back to match",
+    "timeline_title": "Timeline",
     "section_players": "Per player",
     "section_my_player": "Your player",
     "empty_family": "No statistics: your player didn't take part or the match isn't closed yet.",

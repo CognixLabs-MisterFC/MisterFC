@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import type { MatchTeamStats } from '@misterfc/core';
+import { MatchTimeline } from '@/components/match/match-timeline';
 import { loadMatchStats } from './queries';
 import { PlayerStatsTable } from './_components/player-stats-table';
 import type { Role } from '../../../jugadores/queries';
@@ -126,6 +127,17 @@ export default async function MatchStatsPage({ params }: Props) {
       </Card>
 
       {view.viewer === 'staff' && <TeamPanel team={view.team} />}
+
+      {view.viewer === 'staff' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t('timeline_title')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MatchTimeline entries={view.timeline} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
