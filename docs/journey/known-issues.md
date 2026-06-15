@@ -61,6 +61,19 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
   - Opcional: añadir `pnpm format:check` al workflow CI (`.github/workflows/ci.yml`).
   - Opcional: husky pre-commit con `lint-staged`.
 
+### Tiros no se atribuyen por jugador (la columna existe pero sale 0)
+- **Detectado en**: 2026-06-15, durante F7.x (vista de estadísticas del partido).
+- **Síntoma**: en la tabla por jugador la columna de **tiros** existe pero sale **0 por jugador**, mientras que el **panel de agregados de equipo sí cuenta tiros** (a favor/en contra). El dato se registra a nivel de equipo pero no aterriza en `match_player_stats.shots`.
+- **Causa (probable)**: **captura/consolidación (F7)**, no UI. F7.x solo lee lo consolidado; si `match_player_stats.shots` viene a 0 es porque el evento `shot` no se asocia al jugador en la captura o no se materializa por jugador en `consolidateMatch`. El agregado de equipo (`aggregateMatchTeamStats` sobre `match_events`) cuenta bien porque opera sobre los eventos crudos.
+- **Impacto**: dato incompleto en la tabla por jugador (los tiros individuales no se ven). No afecta al panel de equipo ni al resto de columnas.
+- **Plan**: **revisar entre F7.x y F11**, en la capa de captura/consolidación de F7 (no en F7.x). Probablemente se arregla con el mismo cambio del ítem siguiente (pasar el tiro a evento + jugador).
+
+### Click en el campo innecesario para falta / fuera de juego / tiro
+- **Detectado en**: 2026-06-15, durante F7.x (al revisar el directo de F7).
+- **Síntoma**: en el directo, algunos eventos piden un **click en el campo** (posición x/y) que no aporta. El **córner** sí debe mantener el click (sirve de confirmación de la acción), pero **falta / fuera de juego / tiro** deberían pasar a un flujo de **evento + jugador sin click** en el campo.
+- **Impacto**: UX/fricción en la captura en vivo; no funcional.
+- **Plan**: **revisar entre F7.x y F11**. Mantener el click solo en córner; convertir falta/fuera de juego/tiro a evento + jugador. **El cambio del tiro a evento + jugador probablemente arregla también el ítem anterior** (atribución de tiros por jugador): al asociar el `shot` a un jugador, la consolidación ya podrá materializar `match_player_stats.shots`.
+
 ## Planificadas en plan-maestro
 
 > Entradas que dejan de ser "deuda activa" porque han pasado a subfase concreta del plan-maestro con horas presupuestadas. El detalle del plan vive en [plan-maestro.md](plan-maestro.md); aquí solo el cross-reference al issue original para no perder el rastro de por qué entró al plan.
