@@ -8,12 +8,13 @@
  *
  * Coordenadas: `x_pct`/`y_pct` (y `w_pct`/`h_pct`) son % 0–100 en ambos ejes. El
  * mapeo a unidades de la viewBox está PARAMETRIZADO por las dimensiones del lienzo
- * (`x = x_pct/100 · canvasW`, `y = y_pct/100 · canvasH`), con completo = 100×150.
- * Así medio campo (100×75) entra solo pasando otras dimensiones, sin tocar lógica.
+ * (`x = x_pct/100 · canvasW`, `y = y_pct/100 · canvasH`): completo = 100×150,
+ * medio = 100×75. Las MISMAS dimensiones se pasan a `<FieldMarkings>` y al mapeo,
+ * para que marcas y elementos cuadren (en medio, y_pct 0–100 → 0–75).
  *
- * Campo: hoy `<FieldMarkings>` solo ofrece COMPLETO + VERTICAL ("atacando arriba").
- * `medio` y `horizontal` DEGRADAN a completo+vertical (el aviso lo muestra el
- * harness vía `isDegradedField`). Seguimiento inmediato: medio + vertical.
+ * Campo: `<FieldMarkings>` ofrece COMPLETO + VERTICAL y MEDIO + VERTICAL ("atacando
+ * arriba"). La orientación `horizontal` (ambos kinds) todavía DEGRADA a
+ * completo+vertical (el aviso lo muestra el harness vía `isDegradedField`).
  *
  * Mapeo semántica→visual de la flecha: el renderer es DUEÑO del mapeo (la spec deja
  * el aspecto a discreción). Está en `ARROW_DASH`, fácil de ajustar.
@@ -24,17 +25,24 @@ import type { Diagram, DiagramElement } from '@misterfc/core';
 import { cn } from '@/lib/utils';
 import { FieldMarkings } from './field-markings';
 
-// Dimensiones de lienzo por tipo de campo (unidades de viewBox). El mapeo de
-// coords está parametrizado por estas dimensiones (ver `mx`/`my`); cuando llegue
-// medio campo se añade `medio: { w: 100, h: 75 }` y se selecciona por field.kind,
-// sin tocar la lógica de mapeo.
+// Dimensiones de lienzo por kind (unidades de viewBox). El mapeo de coords está
+// parametrizado por estas dimensiones (ver `mx`/`my`) y se selecciona por
+// field.kind, sin lógica de mapeo distinta por campo.
 const CANVAS = {
   completo: { w: 100, h: 150 },
+  medio: { w: 100, h: 75 },
 } as const;
 
-/** ¿El lienzo pedido se está degradando a completo+vertical? (lo usa el harness). */
+// aspect-ratio del contenedor por kind (= w/h del lienzo): 2/3 completo, 4/3 medio.
+const ASPECT: Record<keyof typeof CANVAS, string> = {
+  completo: 'aspect-[2/3]',
+  medio: 'aspect-[4/3]',
+};
+
+/** ¿El lienzo pedido se está degradando a completo+vertical? (lo usa el harness).
+ *  Soportados: completo+vertical y medio+vertical. Degrada cualquier `horizontal`. */
 export function isDegradedField(field: Diagram['field']): boolean {
-  return field.kind !== 'completo' || field.orientation !== 'vertical';
+  return field.orientation !== 'vertical';
 }
 
 // Colores de jugador por rol (leyenda pág. 3). Fácil de ajustar.
@@ -191,15 +199,18 @@ function renderElement(
 }
 
 export function DiagramView({ diagram, className }: { diagram: Diagram; className?: string }) {
-  // Solo existe el lienzo 'completo'; medio/horizontal degradan a completo+vertical
+  // Degradación: la orientación `horizontal` (ambos kinds) cae a completo+vertical
   // (hueco conocido de FieldMarkings — ver cabecera; el aviso lo da el harness).
-  const { w, h } = CANVAS.completo;
+  const kind: keyof typeof CANVAS = isDegradedField(diagram.field) ? 'completo' : diagram.field.kind;
+  const { w, h } = CANVAS[kind];
   const mx = (v: number) => (v / 100) * w;
   const my = (v: number) => (v / 100) * h;
 
   return (
-    <div className={cn('relative mx-auto aspect-[2/3] w-full max-w-md overflow-hidden rounded-lg', className)}>
-      <FieldMarkings />
+    <div
+      className={cn('relative mx-auto w-full max-w-md overflow-hidden rounded-lg', ASPECT[kind], className)}
+    >
+      <FieldMarkings kind={kind} />
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="absolute inset-0 size-full">
         <defs>
           <marker

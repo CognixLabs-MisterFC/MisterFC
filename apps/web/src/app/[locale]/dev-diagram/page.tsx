@@ -41,7 +41,8 @@ const SAMPLE: Diagram = {
   ],
 };
 
-// Misma escena pero pidiendo medio campo → debe DEGRADAR a completo+vertical.
+// Misma escena pero sobre MEDIO campo (vertical). Ya renderiza de verdad sobre la
+// mitad atacante; el mismo set de elementos permite comparar ambos lienzos.
 const SAMPLE_MEDIO: Diagram = { ...SAMPLE, field: { kind: 'medio', orientation: 'vertical' } };
 
 export default async function DevDiagramPage({ params }: Props) {
@@ -67,11 +68,11 @@ export default async function DevDiagramPage({ params }: Props) {
         </div>
 
         <div>
-          <h2 className="mb-2 text-sm font-medium">Campo medio (degradado)</h2>
+          <h2 className="mb-2 text-sm font-medium">Campo medio · vertical</h2>
           {isDegradedField(SAMPLE_MEDIO.field) ? (
             <p className="mb-2 max-w-xs rounded bg-amber-100 px-2 py-1 text-xs text-amber-800">
-              «medio / horizontal» aún no tiene marcas propias → degradado a
-              completo + vertical. Seguimiento: medio + vertical.
+              «horizontal» aún no tiene marcas propias → degradado a
+              completo + vertical.
             </p>
           ) : null}
           <DiagramView diagram={SAMPLE_MEDIO} className="max-w-xs" />
