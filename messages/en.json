@@ -944,6 +944,10 @@
     "can_manage_calendar": {
       "label": "Manage calendar",
       "description": "Can create, edit and delete team events. Without this, can only view the calendar."
+    },
+    "can_create_exercises": {
+      "label": "Create exercises",
+      "description": "Can create and propose exercises for the club library. Publishing is approved by the admin."
     }
   },
   "mis_equipos": {

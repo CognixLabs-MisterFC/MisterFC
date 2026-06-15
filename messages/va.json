@@ -944,6 +944,10 @@
     "can_manage_calendar": {
       "label": "Gestionar calendari",
       "description": "Pot crear, editar i esborrar esdeveniments de l'equip. Sense açò, només pot veure el calendari."
+    },
+    "can_create_exercises": {
+      "label": "Crear exercicis",
+      "description": "Pot crear i proposar exercicis per a la biblioteca del club. La publicació l'aprova l'admin."
     }
   },
   "mis_equipos": {

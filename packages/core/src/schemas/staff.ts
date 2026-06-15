@@ -48,6 +48,9 @@ export const CAPABILITY_NAMES = [
   'can_mark_attendance',
   // F4 — gestión de convocatorias de partido. Añadido en F4.3.
   'can_manage_callups',
+  // F11 — crear/proponer ejercicios de la biblioteca. Añadido en F11.1b. La
+  // aprobación/publicación NO es capability: la gatea el rol Admin del club.
+  'can_create_exercises',
 ] as const;
 
 export type CapabilityName = (typeof CAPABILITY_NAMES)[number];

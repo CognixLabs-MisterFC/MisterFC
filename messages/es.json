@@ -943,6 +943,10 @@
     "can_manage_calendar": {
       "label": "Gestionar calendario",
       "description": "Puede crear, editar y borrar eventos del equipo. Sin esto, solo puede ver el calendario."
+    },
+    "can_create_exercises": {
+      "label": "Crear ejercicios",
+      "description": "Puede crear y proponer ejercicios para la biblioteca del club. La publicación la aprueba el admin."
     }
   },
   "mis_equipos": {
