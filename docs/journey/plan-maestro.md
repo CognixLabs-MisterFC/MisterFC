@@ -558,7 +558,7 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 ### Fase 11 — Biblioteca de ejercicios
 
-> **Spec**: [docs/specs/11.0-biblioteca-ejercicios.md](../specs/11.0-biblioteca-ejercicios.md) (2026-06-15). Decisiones cerradas (D1–D7) + máquina de estados (metodología del club) + esquema del diagrama (contrato F11B/F12/F13) + troceo reordenado. **Decisión abierta**: vocabulario de `objetivos_tacticos` (D4-OPEN).
+> **Spec**: [docs/specs/11.0-biblioteca-ejercicios.md](../specs/11.0-biblioteca-ejercicios.md) (2026-06-15). Decisiones cerradas (D1–D7, todas) + máquina de estados (metodología del club) + esquema del diagrama (contrato F11B/F12/F13) + objetivos en dos ejes (táctico + técnico, modelo B) + troceo reordenado.
 
 **Objetivo**: sistema completo de gestión de ejercicios: categorización rica, filtros, ficha detallada, editor visual para crear ejercicios propios.
 
