@@ -37,6 +37,8 @@ export {
   isPlayerEventType,
   FIELD_EVENT_TYPES,
   isFieldEventType,
+  PLAYER_FIELD_EVENT_TYPES,
+  isPlayerFieldEventType,
   RIVAL_EVENT_TYPES,
   isRivalEventType,
   playerEventClockFields,
@@ -48,6 +50,7 @@ export {
 export type {
   PlayerEventType,
   FieldEventType,
+  PlayerFieldEventType,
   RivalEventType,
   PlayerEventClockFields,
   CardOutcome,

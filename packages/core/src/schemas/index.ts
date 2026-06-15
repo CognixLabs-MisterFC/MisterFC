@@ -245,6 +245,7 @@ export type {
 export {
   registerPlayerEventSchema,
   registerFieldEventSchema,
+  registerPlayerFieldEventSchema,
   registerSubstitutionSchema,
   setAbsenceSchema,
   registerRivalEventSchema,
@@ -302,6 +303,7 @@ export type {
 export type {
   RegisterPlayerEventInput,
   RegisterFieldEventInput,
+  RegisterPlayerFieldEventInput,
   RegisterSubstitutionInput,
   SetAbsenceInput,
   RegisterRivalEventInput,

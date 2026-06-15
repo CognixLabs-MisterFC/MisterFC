@@ -126,6 +126,30 @@ describe('consolidateMatch — tanda de penaltis', () => {
   });
 });
 
+describe('consolidateMatch — tiros por jugador (F-bug captura)', () => {
+  it('cuenta shots por jugador cuando el evento lleva player_id', () => {
+    const events: ConsolidationEvent[] = [
+      ...baseEvents(),
+      { side: 'own', type: 'shot', playerId: P1, clockSeconds: 1200 },
+      { side: 'own', type: 'shot', playerId: P1, clockSeconds: 1500 },
+      { side: 'own', type: 'shot', playerId: P3, clockSeconds: 4200 },
+    ];
+    const c = consolidateMatch({ starterIds: STARTERS, events, matchClockSeconds: CLOCK, rosterIds: ROSTER });
+    expect(c.players.find((r) => r.playerId === P1)!.shots).toBe(2);
+    expect(c.players.find((r) => r.playerId === P3)!.shots).toBe(1);
+    expect(c.players.find((r) => r.playerId === P2)!.shots).toBe(0);
+  });
+
+  it('un tiro SIN player_id no se atribuye a nadie (causa raíz del bug #1)', () => {
+    const events: ConsolidationEvent[] = [
+      ...baseEvents(),
+      { side: 'own', type: 'shot', playerId: null, clockSeconds: 1200 },
+    ];
+    const c = consolidateMatch({ starterIds: STARTERS, events, matchClockSeconds: CLOCK, rosterIds: ROSTER });
+    expect(c.players.reduce((s, r) => s + r.shots, 0)).toBe(0);
+  });
+});
+
 describe('consolidateMatch — re-cierre tras editar (determinista, sobrescribe)', () => {
   it('mismos eventos → misma consolidación (idempotente)', () => {
     const a = consolidateMatch({ starterIds: STARTERS, events: baseEvents(), matchClockSeconds: CLOCK, rosterIds: ROSTER });

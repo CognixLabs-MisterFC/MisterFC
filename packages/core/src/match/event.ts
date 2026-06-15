@@ -48,6 +48,25 @@ export function isFieldEventType(value: string): value is FieldEventType {
 }
 
 /**
+ * Tipos de campo que SÍ se atribuyen a un jugador propio: tiro y fuera de juego.
+ * Se registran TOCANDO al jugador (como un gol), sin ubicación — antes iban por
+ * coordenadas sin jugador, lo que dejaba `match_player_stats.shots` a 0 por
+ * jugador (la consolidación ya mapea `shot`→jugador, solo le faltaba el actor).
+ * La FALTA tiene su propio flujo (lleva `foul_kind`); el CÓRNER es de equipo
+ * (sin jugador) → ninguno entra aquí.
+ */
+export type PlayerFieldEventType = 'offside' | 'shot';
+
+export const PLAYER_FIELD_EVENT_TYPES: readonly PlayerFieldEventType[] = [
+  'offside',
+  'shot',
+] as const;
+
+export function isPlayerFieldEventType(value: string): value is PlayerFieldEventType {
+  return (PLAYER_FIELD_EVENT_TYPES as readonly string[]).includes(value);
+}
+
+/**
  * Tipos de match_events aplicables al RIVAL (7.6). El rival NO tiene roster
  * (decisión §3.4): se registra por dorsal + texto libre, `side='rival'`. No hay
  * `assist` (no enlazamos asistencias del rival) ni `substitution` (no gestionamos

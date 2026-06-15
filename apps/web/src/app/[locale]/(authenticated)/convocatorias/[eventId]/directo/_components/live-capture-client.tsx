@@ -53,8 +53,8 @@ import {
   formationsForFormat,
   getFormation,
   isExpelled,
-  isFieldEventType,
   isPlayerEventType,
+  isPlayerFieldEventType,
   mergeLiveEvents,
   PENALTY_OUTCOMES,
   resolveCardOutcome,
@@ -93,10 +93,10 @@ import {
   changeFormation,
   movePlayer,
   registerCorner,
-  registerFieldEvent,
   registerFoul,
   registerPenalty,
   registerPlayerEvent,
+  registerPlayerFieldEvent,
   registerRivalEvent,
   registerRivalPenalty,
   registerSubstitution,
@@ -247,11 +247,6 @@ export function LiveCaptureClient({
   >(null);
   // F7.7c — tanda de penaltis abierta (entrar desde el flujo de fin de partido).
   const [shootoutOpen, setShootoutOpen] = useState(false);
-  // F7.4b — falta pendiente de UBICACIÓN: ya elegido el jugador (comete/recibe),
-  // falta tocar el césped. null = no hay falta a medias.
-  const [pendingFoul, setPendingFoul] = useState<
-    { kind: 'committed' | 'received'; playerId: string; label: string } | null
-  >(null);
 
   // Mejora F7 — nota de jugador pendiente: elegido el jugador, falta escribir.
   const [pendingNote, setPendingNote] = useState<
@@ -542,13 +537,17 @@ export function LiveCaptureClient({
       return;
     }
     if (selectedEvent === 'foul_for' || selectedEvent === 'foul_against') {
-      // F7.4b — falta: 1º el jugador NUESTRO (recibe/comete), 2º la ubicación.
-      // a favor ('foul_for') = la que nos hacen (received, jugador que la recibe);
-      // en contra ('foul_against') = la que cometemos (committed, quien la comete).
+      // F-bug captura — falta: se registra al TOCAR a nuestro jugador, sin click
+      // en el campo. a favor ('foul_for') = la que nos hacen (received, jugador
+      // que la recibe); en contra ('foul_against') = la que cometemos (committed).
       const label = playerInfo.get(playerId)?.label ?? playerId.slice(0, 4);
       const kind = selectedEvent === 'foul_for' ? 'received' : 'committed';
-      setPendingFoul({ kind, playerId, label });
-      toast.info(t('foul_pick_location'));
+      registerFoulForPlayer(kind, playerId, label);
+      return;
+    }
+    // F-bug captura — tiro / fuera de juego: por TOQUE de jugador, sin ubicación.
+    if (isPlayerFieldEventType(selectedEvent)) {
+      registerPlayerFieldForPlayer(selectedEvent, playerId);
       return;
     }
     if (!isPlayerEventType(selectedEvent)) {
@@ -620,77 +619,19 @@ export function LiveCaptureClient({
     });
   }
 
-  // F7.4 / 7.4b — registrar un evento sobre el CÉSPED (tiro, fuera de juego) por
-  // ubicación (x/y), sin jugador; y la FALTA (7.4b) que ya tiene jugador elegido
-  // y solo le falta la ubicación.
-  function handleFieldClick(xPct: number, yPct: number) {
+  // F-bug captura — ya NO se registra nada tocando el césped: tiro/offside/falta
+  // van por TOQUE de jugador y el córner por botón. El toque en el campo solo
+  // guía. (El arrastre de jugadores en modo táctico es onPlayerMove, aparte.)
+  function handleFieldClick() {
     if (matchStatus !== 'live') {
       toast.warning(t('register_not_live'));
-      return;
-    }
-    // F7.4b — falta con jugador ya elegido: este toque fija la ubicación.
-    if (pendingFoul) {
-      completeFoul(pendingFoul, xPct, yPct);
       return;
     }
     if (!selectedEvent) {
       toast.info(t('register_select_event'));
       return;
     }
-    if (selectedEvent === 'foul_for' || selectedEvent === 'foul_against') {
-      // Falta sin jugador todavía: hay que tocar primero al jugador.
-      toast.info(t('foul_pick_player'));
-      return;
-    }
-    if (!isFieldEventType(selectedEvent)) {
-      toast.info(t('register_not_field_event'));
-      return;
-    }
-
-    const type = selectedEvent;
-    const id = crypto.randomUUID();
-    const clockSeconds = clockSecondsAt(periods, eventNowMs());
-    const cur = currentPeriod(periods);
-    const period = cur?.period ?? 'first_half';
-    const displayMinute = toDisplayMinute(clockSeconds);
-
-    const optimisticRow: LiveMatchEvent = {
-      id,
-      type,
-      playerId: null,
-      playerLabel: '',
-      dorsal: null,
-      clockSeconds,
-      displayMinute,
-      period,
-      outcome: null,
-      foulKind: null,
-      cornerSide: null,
-    };
-    setOptimistic((prev) => [optimisticRow, ...prev]);
-    setSelectedEvent(null);
-
-    startTransition(async () => {
-      const res = await registerFieldEvent({
-        event_id: eventId,
-        id,
-        type,
-        x_pct: xPct,
-        y_pct: yPct,
-      });
-      if (res.error) {
-        setOptimistic((prev) => prev.filter((e) => e.id !== id));
-        toast.error(t(`event_error.${res.error}`));
-        return;
-      }
-      toast.success(
-        t('event_registered_field', {
-          event: t(`event.${type}`),
-          minute: displayMinute,
-        }),
-      );
-      router.refresh();
-    });
+    toast.info(t('register_tap_player'));
   }
 
   // F7.5 — "quitar al que no viene" / deshacer.
@@ -957,33 +898,32 @@ export function LiveCaptureClient({
     }
   }
 
-  // F7.4b — completar una falta (jugador ya elegido) con su ubicación x/y.
-  function completeFoul(
-    foul: { kind: 'committed' | 'received'; playerId: string; label: string },
-    xPct: number,
-    yPct: number,
+  // F-bug captura — FALTA por TOQUE de jugador (sin ubicación). El bando ya viene
+  // resuelto en `kind` (received = a favor / committed = en contra). coords =
+  // null (opcionales en el schema; el CHECK las admite nulas).
+  function registerFoulForPlayer(
+    kind: 'committed' | 'received',
+    playerId: string,
+    label: string,
   ) {
     const id = crypto.randomUUID();
     const clockSeconds = clockSecondsAt(periods, eventNowMs());
     const cur = currentPeriod(periods);
     const period = cur?.period ?? 'first_half';
     const displayMinute = toDisplayMinute(clockSeconds);
-    const x = clampPct(xPct);
-    const y = clampPct(yPct);
-    setPendingFoul(null);
     setSelectedEvent(null);
 
     const optimisticRow: LiveMatchEvent = {
       id,
       type: 'foul',
-      playerId: foul.playerId,
-      playerLabel: foul.label,
-      dorsal: playerInfo.get(foul.playerId)?.dorsal ?? null,
+      playerId,
+      playerLabel: label,
+      dorsal: playerInfo.get(playerId)?.dorsal ?? null,
       clockSeconds,
       displayMinute,
       period,
       outcome: null,
-      foulKind: foul.kind,
+      foulKind: kind,
       cornerSide: null,
     };
     setOptimistic((prev) => [optimisticRow, ...prev]);
@@ -992,10 +932,8 @@ export function LiveCaptureClient({
       const res = await registerFoul({
         event_id: eventId,
         id,
-        player_id: foul.playerId,
-        kind: foul.kind,
-        x_pct: x,
-        y_pct: y,
+        player_id: playerId,
+        kind,
       });
       if (res.error) {
         setOptimistic((prev) => prev.filter((e) => e.id !== id));
@@ -1003,8 +941,62 @@ export function LiveCaptureClient({
         return;
       }
       toast.success(
-        t(foul.kind === 'committed' ? 'foul_committed_registered' : 'foul_received_registered', {
-          player: foul.label,
+        t(kind === 'committed' ? 'foul_committed_registered' : 'foul_received_registered', {
+          player: label,
+          minute: displayMinute,
+        }),
+      );
+      router.refresh();
+    });
+  }
+
+  // F-bug captura — TIRO / FUERA DE JUEGO por TOQUE de jugador (sin ubicación,
+  // sin lógica de tarjetas). Dar player_id al tiro es lo que arregla #1 (la
+  // consolidación ya cuenta shots por jugador).
+  function registerPlayerFieldForPlayer(
+    type: 'offside' | 'shot',
+    playerId: string,
+  ) {
+    const info = playerInfo.get(playerId);
+    const label = info?.label ?? playerId.slice(0, 4);
+    const id = crypto.randomUUID();
+    const clockSeconds = clockSecondsAt(periods, eventNowMs());
+    const cur = currentPeriod(periods);
+    const period = cur?.period ?? 'first_half';
+    const displayMinute = toDisplayMinute(clockSeconds);
+    setSelectedEvent(null);
+
+    const optimisticRow: LiveMatchEvent = {
+      id,
+      type,
+      playerId,
+      playerLabel: label,
+      dorsal: info?.dorsal ?? null,
+      clockSeconds,
+      displayMinute,
+      period,
+      outcome: null,
+      foulKind: null,
+      cornerSide: null,
+    };
+    setOptimistic((prev) => [optimisticRow, ...prev]);
+
+    startTransition(async () => {
+      const res = await registerPlayerFieldEvent({
+        event_id: eventId,
+        id,
+        type,
+        player_id: playerId,
+      });
+      if (res.error) {
+        setOptimistic((prev) => prev.filter((e) => e.id !== id));
+        toast.error(t(`event_error.${res.error}`));
+        return;
+      }
+      toast.success(
+        t('event_registered', {
+          event: t(`event.${type}`),
+          player: label,
           minute: displayMinute,
         }),
       );
@@ -1330,21 +1322,6 @@ export function LiveCaptureClient({
                   : t('palette_hint')}
         </span>
       </div>
-
-      {/* F7.4b — falta en curso: jugador elegido, falta la ubicación. */}
-      {pendingFoul && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm">
-          <span>
-            {t(pendingFoul.kind === 'committed' ? 'foul_loc_committed' : 'foul_loc_received', {
-              player: pendingFoul.label,
-            })}
-          </span>
-          <Button size="sm" variant="ghost" onClick={() => setPendingFoul(null)}>
-            <X className="size-4" aria-hidden />
-            <span>{t('sub_cancel')}</span>
-          </Button>
-        </div>
-      )}
 
       {/* F7.5 — sustitución en curso: aviso de quién sale + cancelar. */}
       {subOut && (

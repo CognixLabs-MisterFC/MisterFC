@@ -2154,7 +2154,7 @@
     "side_own": "Team",
     "side_rival": "Opponent",
     "palette_title": "Events",
-    "palette_hint": "Select an event and tap a player to record it. Field events come in a later delivery.",
+    "palette_hint": "Select an event and tap a player to record it.",
     "event": {
       "goal": "Goal",
       "assist": "Assist",
@@ -2290,7 +2290,7 @@
     "penalty_pick_rival": "Opponent #{dorsal} penalty: outcome?",
     "penalty_registered": "Penalty {outcome} · {player} ({minute}')",
     "rival_penalty_registered": "Penalty {outcome} · opponent #{dorsal} ({minute}')",
-    "foul_hint": "Tap OUR player (wins / commits), then the spot on the pitch.",
+    "foul_hint": "Tap OUR player (wins / commits) to log the foul.",
     "foul_pick_location": "Now tap the spot of the foul on the pitch.",
     "foul_pick_player": "Tap our player involved in the foul first.",
     "foul_loc_committed": "Foul against, by {player}: tap the location.",
@@ -2415,7 +2415,8 @@
       "edit": "Edit",
       "delete": "Delete",
       "confirm_delete": "Delete this comment?"
-    }
+    },
+    "register_tap_player": "Tap a player to log the event."
   },
   "estadisticas_partido": {
     "title": "Match statistics",
