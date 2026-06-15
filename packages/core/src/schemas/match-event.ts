@@ -9,6 +9,7 @@ import { z } from 'zod';
 import {
   FIELD_EVENT_TYPES,
   PLAYER_EVENT_TYPES,
+  PLAYER_FIELD_EVENT_TYPES,
   RIVAL_EVENT_TYPES,
 } from '../match/event';
 import { PENALTY_OUTCOMES, SHOOTOUT_OUTCOMES } from '../match/score';
@@ -46,6 +47,26 @@ export const registerFieldEventSchema = z.object({
   y_pct: pct,
 });
 export type RegisterFieldEventInput = z.infer<typeof registerFieldEventSchema>;
+
+/**
+ * F-bug captura — TIRO / FUERA DE JUEGO atribuidos AL JUGADOR (sin click en el
+ * campo). Se registran tocando a nuestro jugador (como un gol): `side='own'`,
+ * `player_id`, SIN coordenadas. No pasa por `registerPlayerEventSchema` porque
+ * ese flujo aplica la lógica de tarjetas/expulsión (7.3) que aquí no toca. El
+ * tiro con `player_id` es lo que permite a la consolidación materializar
+ * `match_player_stats.shots` por jugador.
+ */
+export const registerPlayerFieldEventSchema = z.object({
+  event_id: uuid,
+  id: uuid,
+  type: z.enum(PLAYER_FIELD_EVENT_TYPES as unknown as [string, ...string[]], {
+    message: 'type_invalid',
+  }),
+  player_id: uuid,
+});
+export type RegisterPlayerFieldEventInput = z.infer<
+  typeof registerPlayerFieldEventSchema
+>;
 
 /**
  * F7.5 — sustitución: SALE `player_out_id`, ENTRA `player_in_id`. Se persiste
@@ -104,9 +125,10 @@ export type RegisterRivalEventInput = z.infer<typeof registerRivalEventSchema>;
 /**
  * F7.4b — FALTA detallada (sobre jugador + ubicación). `kind='committed'`: la
  * comete nuestro `player_id`; `kind='received'`: la recibe nuestro `player_id`
- * (la comete el rival). Lleva coordenadas (0–100). `side='own'`,
- * `metadata.foul_kind`; `clock_seconds`/`period`/`display_minute` los deriva el
- * servidor.
+ * (la comete el rival). `side='own'`, `metadata.foul_kind`; `clock_seconds`/
+ * `period`/`display_minute` los deriva el servidor. Las coordenadas (0–100) son
+ * OPCIONALES: la falta se registra al TOCAR al jugador, sin click en el campo
+ * (el CHECK `match_events_coords_field_only` admite coords nulas).
  */
 export const registerFoulSchema = z.object({
   event_id: uuid,
@@ -115,8 +137,8 @@ export const registerFoulSchema = z.object({
   kind: z.enum(FOUL_KINDS as unknown as [string, ...string[]], {
     message: 'foul_kind_invalid',
   }),
-  x_pct: pct,
-  y_pct: pct,
+  x_pct: pct.optional(),
+  y_pct: pct.optional(),
 });
 export type RegisterFoulInput = z.infer<typeof registerFoulSchema>;
 

@@ -2154,7 +2154,7 @@
     "side_own": "Equip",
     "side_rival": "Rival",
     "palette_title": "Esdeveniments",
-    "palette_hint": "Selecciona un esdeveniment i toca un jugador per a registrar-lo. Els esdeveniments sobre el camp arriben en una pròxima entrega.",
+    "palette_hint": "Selecciona un esdeveniment i toca un jugador per a registrar-lo.",
     "event": {
       "goal": "Gol",
       "assist": "Assistència",
@@ -2290,7 +2290,7 @@
     "penalty_pick_rival": "Penal del rival #{dorsal}: resultat?",
     "penalty_registered": "Penal {outcome} · {player} ({minute}')",
     "rival_penalty_registered": "Penal {outcome} · rival #{dorsal} ({minute}')",
-    "foul_hint": "Toca el NOSTRE jugador (rep / comet) i després la ubicació al camp.",
+    "foul_hint": "Toca el NOSTRE jugador (rep / comet) per registrar la falta.",
     "foul_pick_location": "Ara toca la ubicació de la falta al camp.",
     "foul_pick_player": "Toca primer el nostre jugador de la falta.",
     "foul_loc_committed": "Falta en contra de {player}: toca la ubicació.",
@@ -2415,7 +2415,8 @@
       "edit": "Edita",
       "delete": "Esborra",
       "confirm_delete": "Esborrar aquest comentari?"
-    }
+    },
+    "register_tap_player": "Toca un jugador per registrar l'esdeveniment."
   },
   "estadisticas_partido": {
     "title": "Estadístiques del partit",

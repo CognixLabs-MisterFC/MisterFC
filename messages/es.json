@@ -2153,7 +2153,7 @@
     "side_own": "Equipo",
     "side_rival": "Rival",
     "palette_title": "Eventos",
-    "palette_hint": "Selecciona un evento y toca a un jugador para registrarlo. Los eventos sobre el campo llegan en la próxima entrega.",
+    "palette_hint": "Selecciona un evento y toca a un jugador para registrarlo.",
     "event": {
       "goal": "Gol",
       "assist": "Asistencia",
@@ -2289,7 +2289,7 @@
     "penalty_pick_rival": "Penalti del rival #{dorsal}: ¿resultado?",
     "penalty_registered": "Penalti {outcome} · {player} ({minute}')",
     "rival_penalty_registered": "Penalti {outcome} · rival #{dorsal} ({minute}')",
-    "foul_hint": "Toca a NUESTRO jugador (recibe / comete) y luego la ubicación en el campo.",
+    "foul_hint": "Toca a NUESTRO jugador (recibe / comete) para registrar la falta.",
     "foul_pick_location": "Ahora toca la ubicación de la falta en el campo.",
     "foul_pick_player": "Toca primero a nuestro jugador de la falta.",
     "foul_loc_committed": "Falta en contra de {player}: toca la ubicación.",
@@ -2414,7 +2414,8 @@
       "edit": "Editar",
       "delete": "Borrar",
       "confirm_delete": "¿Borrar este comentario?"
-    }
+    },
+    "register_tap_player": "Toca a un jugador para registrar el evento."
   },
   "estadisticas_partido": {
     "title": "Estadísticas del partido",

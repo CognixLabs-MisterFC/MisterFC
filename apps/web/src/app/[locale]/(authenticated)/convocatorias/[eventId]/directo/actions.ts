@@ -62,6 +62,7 @@ import {
   registerFoulSchema,
   registerPenaltySchema,
   registerPlayerEventSchema,
+  registerPlayerFieldEventSchema,
   registerRivalEventSchema,
   registerRivalPenaltySchema,
   registerShootoutKickSchema,
@@ -1141,6 +1142,65 @@ export async function registerFieldEvent(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// registerPlayerFieldEvent — F-bug captura: TIRO / FUERA DE JUEGO atribuidos AL
+// JUGADOR (sin click en el campo). Mismo patrón que 7.3 pero SIN lógica de
+// tarjetas/expulsión (no aplica a tiro/offside) y SIN coordenadas: side='own',
+// type, player_id; clock/period/display_minute los deriva el servidor. El tiro
+// con player_id es lo que permite a la consolidación (7.10) materializar
+// match_player_stats.shots por jugador.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function registerPlayerFieldEvent(
+  input: unknown,
+): Promise<RegisterEventState> {
+  const parsed = registerPlayerFieldEventSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id, id, type, player_id } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('club_id')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  const clubId = ev.club_id as string;
+
+  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
+  const periods = await loadPeriods(supabase, event_id);
+  if (periods.length === 0) return { error: 'no_period' };
+
+  const { ms } = now();
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(periods, ms);
+
+  const { error } = await supabase.from('match_events').upsert(
+    {
+      id,
+      event_id,
+      club_id: clubId,
+      created_by: user.id,
+      side: 'own',
+      type,
+      player_id,
+      period,
+      clock_seconds: clockSeconds,
+      display_minute: displayMinute,
+    },
+    { onConflict: 'id', ignoreDuplicates: true },
+  );
+  if (error) return { error: mapEventErr(error.message, error.code) };
+
+  revalidate(event_id);
+  return { success: true, eventRowId: id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // registerRivalEvent — F7.6: evento del RIVAL. El rival no tiene roster (§3.4):
 // se registra por DORSAL (1–99) + nota libre opcional, `side='rival'`, SIN
 // jugador. Tipos aplicables: gol, amarilla, roja, falta, córner, fuera de juego,
@@ -1258,8 +1318,8 @@ export async function registerFoul(input: unknown): Promise<RegisterEventState> 
       side: 'own',
       type: 'foul',
       player_id,
-      x_pct,
-      y_pct,
+      x_pct: x_pct ?? null,
+      y_pct: y_pct ?? null,
       period,
       clock_seconds: clockSeconds,
       display_minute: displayMinute,
