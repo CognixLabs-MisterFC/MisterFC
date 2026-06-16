@@ -45,6 +45,13 @@ export function isDegradedField(field: Diagram['field']): boolean {
   return field.orientation !== 'vertical';
 }
 
+/** Clase tailwind de aspect-ratio del lienzo para un `field` (tras degradar).
+ *  El editor (11.5b) la usa para fijar el contenedor que envuelve a
+ *  `<DiagramView fill>` + la capa de interacción. */
+export function fieldAspectClass(field: Diagram['field']): string {
+  return ASPECT[isDegradedField(field) ? 'completo' : field.kind];
+}
+
 // Colores de jugador por rol (leyenda pág. 3). Fácil de ajustar.
 const ROLE_FILL: Record<string, string> = {
   atacante: '#dc2626', // rojo
@@ -198,7 +205,19 @@ function renderElement(
   }
 }
 
-export function DiagramView({ diagram, className }: { diagram: Diagram; className?: string }) {
+export function DiagramView({
+  diagram,
+  className,
+  fill = false,
+}: {
+  diagram: Diagram;
+  className?: string;
+  /** Rellena el contenedor padre (absolute inset-0) en vez de imponer su propio
+   *  aspect-ratio/ancho. Lo usa el editor (11.5b) para superponer la capa de
+   *  interacción sobre el MISMO lienzo sin duplicar el pintado. El padre debe
+   *  fijar el aspect-ratio del kind. */
+  fill?: boolean;
+}) {
   // Degradación: la orientación `horizontal` (ambos kinds) cae a completo+vertical
   // (hueco conocido de FieldMarkings — ver cabecera; el aviso lo da el harness).
   const kind: keyof typeof CANVAS = isDegradedField(diagram.field) ? 'completo' : diagram.field.kind;
@@ -208,7 +227,12 @@ export function DiagramView({ diagram, className }: { diagram: Diagram; classNam
 
   return (
     <div
-      className={cn('relative mx-auto w-full max-w-md overflow-hidden rounded-lg', ASPECT[kind], className)}
+      className={cn(
+        fill
+          ? 'absolute inset-0 size-full overflow-hidden'
+          : cn('relative mx-auto w-full max-w-md overflow-hidden rounded-lg', ASPECT[kind]),
+        className,
+      )}
     >
       <FieldMarkings kind={kind} />
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="absolute inset-0 size-full">
