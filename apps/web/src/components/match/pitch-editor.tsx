@@ -43,6 +43,7 @@ import {
   type PlayerRole,
   type ArrowStyle,
   type StrokeKind,
+  type ElementSize,
 } from '@misterfc/core';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -80,6 +81,23 @@ const STROKE_OPTIONS: ReadonlyArray<{ stroke: StrokeKind; label: string }> = [
   { stroke: 'solid', label: 'Sólida' },
   { stroke: 'dashed', label: 'Discontinua' },
 ];
+// Orden de presentación acordado: Grande / Mediano / Pequeño (default Mediano).
+const SIZE_OPTIONS: ReadonlyArray<{ size: ElementSize; label: string }> = [
+  { size: 'lg', label: 'Grande' },
+  { size: 'md', label: 'Mediano' },
+  { size: 'sm', label: 'Pequeño' },
+];
+// Tipos de PUNTO (llevan size). flecha/línea/zona van por geometría.
+const SIZE_CAPABLE = new Set<DiagramElement['type']>([
+  'jugador',
+  'balon',
+  'cono',
+  'aro',
+  'gol_conduccion',
+  'porteria',
+  'miniporteria',
+  'texto',
+]);
 
 const round2 = (v: number): number => Math.round(v * 100) / 100;
 const DRAW_MIN_DIST = 1.5; // % mínimo de arrastre para confirmar un dibujo
@@ -248,6 +266,23 @@ export function PitchEditor({
         >
           <Redo2 className="size-4" aria-hidden />
         </Button>
+      </div>
+
+      {/* Tamaño del próximo elemento de punto (debajo de las herramientas, encima de Campo) */}
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">Tamaño</span>
+        {SIZE_OPTIONS.map((o) => (
+          <Button
+            key={o.size}
+            type="button"
+            size="sm"
+            variant={state.nextSize === o.size ? 'default' : 'outline'}
+            onClick={() => dispatch({ type: 'SET_NEXT_SIZE', size: o.size })}
+            aria-pressed={state.nextSize === o.size}
+          >
+            {o.label}
+          </Button>
+        ))}
       </div>
 
       {/* Config del próximo elemento + selector de campo */}
@@ -469,6 +504,20 @@ export function PitchEditor({
             >
               {STROKE_OPTIONS.map((o) => (
                 <option key={o.stroke} value={o.stroke}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          )}
+          {SIZE_CAPABLE.has(selected.type) && (
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={'size' in selected ? selected.size ?? 'md' : 'md'}
+              onChange={(e) => dispatch({ type: 'UPDATE_SIZE', id: selected.id, size: e.target.value as ElementSize })}
+              aria-label="Tamaño"
+            >
+              {SIZE_OPTIONS.map((o) => (
+                <option key={o.size} value={o.size}>
                   {o.label}
                 </option>
               ))}

@@ -37,6 +37,7 @@ import {
   type PlayerRole,
   type ArrowStyle,
   type StrokeKind,
+  type ElementSize,
   type DiagramPoint,
 } from './diagram';
 
@@ -78,6 +79,8 @@ export type PitchEditorState = {
   nextText: string;
   nextArrowStyle: ArrowStyle;
   nextStroke: StrokeKind;
+  /** Tamaño del próximo elemento de punto (default 'md' = tamaño actual). */
+  nextSize: ElementSize;
   past: Snapshot[];
   future: Snapshot[];
   counter: number;
@@ -91,6 +94,7 @@ export type PitchAction =
   | { type: 'SET_NEXT_TEXT'; text: string }
   | { type: 'SET_NEXT_ARROW_STYLE'; style: ArrowStyle }
   | { type: 'SET_NEXT_STROKE'; stroke: StrokeKind }
+  | { type: 'SET_NEXT_SIZE'; size: ElementSize }
   | { type: 'PLACE'; x_pct: number; y_pct: number }
   // Confirmación de un dibujo (rubber-band) — 1 paso de undo cada uno.
   | { type: 'ADD_ARROW'; from: DiagramPoint; to: DiagramPoint }
@@ -104,6 +108,7 @@ export type PitchAction =
   | { type: 'UPDATE_TEXT'; id: string; text: string }
   | { type: 'UPDATE_ARROW_STYLE'; id: string; style: ArrowStyle }
   | { type: 'UPDATE_STROKE'; id: string; stroke: StrokeKind }
+  | { type: 'UPDATE_SIZE'; id: string; size: ElementSize }
   | { type: 'UNDO' }
   | { type: 'REDO' };
 
@@ -133,6 +138,7 @@ export function initEditorState(diagram?: Diagram): PitchEditorState {
     nextText: '',
     nextArrowStyle: 'pase',
     nextStroke: 'solid',
+    nextSize: 'md',
     past: [],
     future: [],
     counter: maxIdCounter(elements),
@@ -161,27 +167,30 @@ function buildPointElement(
   x_pct: number,
   y_pct: number,
 ): DiagramElement | null {
+  // `size` solo se guarda si no es el default 'md' (mantiene la forma limpia y
+  // retrocompatible: ausente = md).
+  const sz = state.nextSize !== 'md' ? { size: state.nextSize } : {};
   switch (state.tool) {
     case 'jugador': {
       const label = state.nextLabel.trim();
       return label
-        ? { type: 'jugador', id, x_pct, y_pct, role: state.nextRole, label }
-        : { type: 'jugador', id, x_pct, y_pct, role: state.nextRole };
+        ? { type: 'jugador', id, x_pct, y_pct, role: state.nextRole, label, ...sz }
+        : { type: 'jugador', id, x_pct, y_pct, role: state.nextRole, ...sz };
     }
     case 'balon':
-      return { type: 'balon', id, x_pct, y_pct };
+      return { type: 'balon', id, x_pct, y_pct, ...sz };
     case 'cono':
-      return { type: 'cono', id, x_pct, y_pct };
+      return { type: 'cono', id, x_pct, y_pct, ...sz };
     case 'aro':
-      return { type: 'aro', id, x_pct, y_pct };
+      return { type: 'aro', id, x_pct, y_pct, ...sz };
     case 'gol_conduccion':
-      return { type: 'gol_conduccion', id, x_pct, y_pct };
+      return { type: 'gol_conduccion', id, x_pct, y_pct, ...sz };
     case 'porteria':
-      return { type: 'porteria', id, x_pct, y_pct };
+      return { type: 'porteria', id, x_pct, y_pct, ...sz };
     case 'miniporteria':
-      return { type: 'miniporteria', id, x_pct, y_pct };
+      return { type: 'miniporteria', id, x_pct, y_pct, ...sz };
     case 'texto':
-      return { type: 'texto', id, x_pct, y_pct, text: state.nextText.trim() || DEFAULT_TEXT_LABEL };
+      return { type: 'texto', id, x_pct, y_pct, text: state.nextText.trim() || DEFAULT_TEXT_LABEL, ...sz };
     default:
       return null;
   }
@@ -248,6 +257,8 @@ export function pitchEditorReducer(
       return { ...state, nextArrowStyle: action.style };
     case 'SET_NEXT_STROKE':
       return { ...state, nextStroke: action.stroke };
+    case 'SET_NEXT_SIZE':
+      return { ...state, nextSize: action.size };
     case 'SELECT':
       return {
         ...state,
@@ -413,6 +424,22 @@ export function pitchEditorReducer(
       if (!el || (el.type !== 'linea' && el.type !== 'zona')) return state;
       const next = state.elements.slice();
       next[idx] = { ...el, stroke: action.stroke };
+      return { ...state, elements: next, past: pushPast(state.past, state.elements), future: [] };
+    }
+
+    case 'UPDATE_SIZE': {
+      const idx = state.elements.findIndex((e) => e.id === action.id);
+      const el = state.elements[idx];
+      // Solo los elementos de PUNTO llevan `size` (= los nombres de POINT_TOOLS).
+      if (!el || !(POINT_TOOLS as readonly string[]).includes(el.type)) return state;
+      const next = state.elements.slice();
+      if (action.size === 'md') {
+        // md = default → se elimina la clave (forma limpia).
+        const { size: _drop, ...rest } = el as DiagramElement & { size?: ElementSize };
+        next[idx] = rest as DiagramElement;
+      } else {
+        next[idx] = { ...el, size: action.size } as DiagramElement;
+      }
       return { ...state, elements: next, past: pushPast(state.past, state.elements), future: [] };
     }
 

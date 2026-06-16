@@ -196,3 +196,36 @@ describe('elementAnchors — seam de frames (posición separable)', () => {
     expect(elementAnchors({ type: 'linea', id: 'l', points: pts })).toEqual(pts);
   });
 });
+
+// ── Tamaño de elemento (size, aditivo y retrocompatible) ────────────────────
+
+describe('parseDiagram — size de elementos de punto', () => {
+  const base: Diagram = { version: DIAGRAM_VERSION, field: { kind: 'completo', orientation: 'vertical' }, elements: [] };
+
+  it('acepta un elemento de punto SIN size (retrocompatible)', () => {
+    const d: Diagram = { ...base, elements: [{ type: 'balon', id: 'b1', x_pct: 50, y_pct: 50 }] };
+    expect(parseDiagram(d).success).toBe(true);
+  });
+
+  it('acepta size sm/md/lg en cada tipo de punto', () => {
+    for (const size of ['sm', 'md', 'lg'] as const) {
+      const d: Diagram = {
+        ...base,
+        elements: [
+          { type: 'jugador', id: 'j', x_pct: 10, y_pct: 10, role: 'atacante', size },
+          { type: 'cono', id: 'c', x_pct: 20, y_pct: 20, size },
+          { type: 'texto', id: 't', x_pct: 30, y_pct: 30, text: 'X', size },
+        ],
+      };
+      expect(parseDiagram(d).success).toBe(true);
+    }
+  });
+
+  it('rechaza un size inválido', () => {
+    const d = {
+      ...base,
+      elements: [{ type: 'balon', id: 'b1', x_pct: 50, y_pct: 50, size: 'xl' }],
+    };
+    expect(parseDiagram(d).success).toBe(false);
+  });
+});

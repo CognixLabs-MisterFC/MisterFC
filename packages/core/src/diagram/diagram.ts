@@ -49,6 +49,11 @@ export type ArrowStyle = (typeof ARROW_STYLES)[number];
 export const STROKE_KINDS = ['solid', 'dashed'] as const;
 export type StrokeKind = (typeof STROKE_KINDS)[number];
 
+/** Tamaño visual (clave `size`) de los elementos de PUNTO. Opcional; ausente =
+ *  'md' (tamaño actual). En `texto` escala la fuente. La etiqueta se localiza. */
+export const ELEMENT_SIZES = ['sm', 'md', 'lg'] as const;
+export type ElementSize = (typeof ELEMENT_SIZES)[number];
+
 export const FIELD_KINDS = ['completo', 'medio'] as const;
 export type FieldKind = (typeof FIELD_KINDS)[number];
 
@@ -71,6 +76,9 @@ const elementId = z
 const pointSchema = z.object({ x_pct: pct, y_pct: pct });
 export type DiagramPoint = z.infer<typeof pointSchema>;
 
+/** Tamaño opcional de los elementos de punto (ausente = 'md'). */
+const sized = { size: z.enum(ELEMENT_SIZES).optional() };
+
 /** Campos comunes de un elemento anclado por un único punto. */
 const anchored = { id: elementId, x_pct: pct, y_pct: pct };
 
@@ -84,18 +92,20 @@ const rotation = z
 const jugadorSchema = z.object({
   type: z.literal('jugador'),
   ...anchored,
+  ...sized,
   role: z.enum(PLAYER_ROLES),
   label: z.string().max(40, { message: 'label_too_long' }).optional(),
 });
-const balonSchema = z.object({ type: z.literal('balon'), ...anchored });
-const conoSchema = z.object({ type: z.literal('cono'), ...anchored });
-const aroSchema = z.object({ type: z.literal('aro'), ...anchored });
-const golConduccionSchema = z.object({ type: z.literal('gol_conduccion'), ...anchored });
-const porteriaSchema = z.object({ type: z.literal('porteria'), ...anchored, rotation });
-const miniporteriaSchema = z.object({ type: z.literal('miniporteria'), ...anchored, rotation });
+const balonSchema = z.object({ type: z.literal('balon'), ...anchored, ...sized });
+const conoSchema = z.object({ type: z.literal('cono'), ...anchored, ...sized });
+const aroSchema = z.object({ type: z.literal('aro'), ...anchored, ...sized });
+const golConduccionSchema = z.object({ type: z.literal('gol_conduccion'), ...anchored, ...sized });
+const porteriaSchema = z.object({ type: z.literal('porteria'), ...anchored, ...sized, rotation });
+const miniporteriaSchema = z.object({ type: z.literal('miniporteria'), ...anchored, ...sized, rotation });
 const textoSchema = z.object({
   type: z.literal('texto'),
   ...anchored,
+  ...sized,
   text: z.string().min(1, { message: 'text_required' }).max(120, { message: 'text_too_long' }),
 });
 
