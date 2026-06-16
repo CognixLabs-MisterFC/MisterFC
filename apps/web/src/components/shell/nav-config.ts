@@ -11,6 +11,7 @@ import {
   Megaphone,
   Upload,
   Calendar,
+  Dumbbell,
   Shield,
   LayoutGrid,
   LayoutDashboard,
@@ -173,6 +174,20 @@ export const NAV_ITEMS: readonly NavItem[] = [
     // F6.10 — plantillas personalizadas de formación del coach. Visible para
     // staff (admin/coord + entrenadores); la page gatea el botón "Nueva" y la
     // RLS gatea el INSERT según la autoridad de alineaciones.
+    roles: [
+      'admin_club',
+      'coordinador',
+      'entrenador_principal',
+      'entrenador_ayudante',
+    ],
+  },
+  {
+    key: 'ejercicios',
+    href: '/ejercicios',
+    icon: Dumbbell,
+    // F11.3 — biblioteca de ejercicios del club. Visible para todo el staff
+    // (admin/coord + entrenadores); la RLS de 11.1 decide qué ve cada uno
+    // (publicados del club + los propios; admin además propuestos/rechazados).
     roles: [
       'admin_club',
       'coordinador',

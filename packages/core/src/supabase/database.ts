@@ -702,6 +702,112 @@ export type Database = {
           },
         ]
       }
+      exercises: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          archived_at: string | null
+          base_duration: number | null
+          categories: string[]
+          club_id: string
+          coaching_points: string | null
+          created_at: string
+          description: string | null
+          diagram: Json | null
+          id: string
+          intensity: string | null
+          name: string
+          objective: string | null
+          owner_profile_id: string
+          physical_focus: string | null
+          players: string | null
+          rejection_reason: string | null
+          space_dimensions: string | null
+          space_type: string | null
+          status: string
+          tactical_objectives: string[]
+          technical_objectives: string[]
+          updated_at: string
+          variants: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string | null
+          base_duration?: number | null
+          categories?: string[]
+          club_id: string
+          coaching_points?: string | null
+          created_at?: string
+          description?: string | null
+          diagram?: Json | null
+          id?: string
+          intensity?: string | null
+          name: string
+          objective?: string | null
+          owner_profile_id: string
+          physical_focus?: string | null
+          players?: string | null
+          rejection_reason?: string | null
+          space_dimensions?: string | null
+          space_type?: string | null
+          status?: string
+          tactical_objectives?: string[]
+          technical_objectives?: string[]
+          updated_at?: string
+          variants?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string | null
+          base_duration?: number | null
+          categories?: string[]
+          club_id?: string
+          coaching_points?: string | null
+          created_at?: string
+          description?: string | null
+          diagram?: Json | null
+          id?: string
+          intensity?: string | null
+          name?: string
+          objective?: string | null
+          owner_profile_id?: string
+          physical_focus?: string | null
+          players?: string | null
+          rejection_reason?: string | null
+          space_dimensions?: string | null
+          space_type?: string | null
+          status?: string
+          tactical_objectives?: string[]
+          technical_objectives?: string[]
+          updated_at?: string
+          variants?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exercises_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercises_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exercises_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -2314,6 +2420,10 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: boolean
       }
+      user_can_create_exercises: {
+        Args: { p_club_id: string }
+        Returns: boolean
+      }
       user_can_manage_callup: { Args: { p_event_id: string }; Returns: boolean }
       user_can_manage_event: {
         Args: { p_club_id: string; p_team_id: string }
@@ -2322,6 +2432,10 @@ export type Database = {
       user_can_manage_lineup: { Args: { p_event_id: string }; Returns: boolean }
       user_can_manage_player: {
         Args: { p_player_id: string }
+        Returns: boolean
+      }
+      user_can_publish_methodology: {
+        Args: { p_club_id: string }
         Returns: boolean
       }
       user_can_record_attendance: {
@@ -2398,6 +2512,7 @@ export type Database = {
         | "callup_published"
         | "training_reminder"
         | "callup_updated"
+        | "exercise_rejected"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -2550,6 +2665,7 @@ export const Constants = {
         "callup_published",
         "training_reminder",
         "callup_updated",
+        "exercise_rejected",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },
