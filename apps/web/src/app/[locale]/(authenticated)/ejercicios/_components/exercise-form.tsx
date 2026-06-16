@@ -1,11 +1,15 @@
 'use client';
 
 /**
- * F11.6 — Formulario de crear ejercicio (flujo A). Solo `name` es obligatorio;
- * todo lo demás (incluido el diagrama) es opcional. Integra <PitchEditor> como un
- * campo más. El estado objetivo lo decide la ACCIÓN del botón pulsado; el rol solo
- * cambia qué botones se ofrecen (entrenador: borrador/proponer; Admin: publicar).
- * La RLS/trigger de 11.1 son el gate real.
+ * F11.6 — Formulario de crear/editar ejercicio (flujo A). Solo `name` es
+ * obligatorio; todo lo demás (incluido el diagrama) es opcional. Integra
+ * <PitchEditor> como un campo más. El estado objetivo lo decide la ACCIÓN del
+ * botón pulsado; el rol/estado actual deciden qué botones se ofrecen. La
+ * RLS/trigger de 11.1 son el gate real.
+ *
+ * Modo: sin `initial` = crear; con `initial` = editar (pre-rellena todos los
+ * campos + el diagrama). Editar solo aplica a borrador/propuesto propios (el
+ * guard de la page lo asegura). Aprobar/rechazar NO está aquí (es 11.7).
  */
 
 import { useState, useTransition } from 'react';
@@ -18,6 +22,7 @@ import {
   EXERCISE_INTENSITIES,
   EXERCISE_SPACE_TYPES,
   type ExerciseFormAction,
+  type MethodologyStatus,
   type Diagram,
 } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
@@ -35,7 +40,30 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n/navigation';
 import { PitchEditor } from '@/components/match/pitch-editor';
-import { createExercise } from '../actions';
+import { createExercise, updateExercise } from '../actions';
+
+/** Valores iniciales al EDITAR (campos del form + id + estado actual). */
+export type ExerciseFormInitial = {
+  id: string;
+  status: MethodologyStatus;
+  name: string;
+  categories: string[];
+  tactical_objectives: string[];
+  technical_objectives: string[];
+  physical_focus: string | null;
+  intensity: string | null;
+  space_type: string | null;
+  space_dimensions: string | null;
+  base_duration: number | null;
+  objective: string | null;
+  description: string | null;
+  coaching_points: string | null;
+  variants: string | null;
+  players: string | null;
+  diagram: Diagram | null;
+};
+
+type ActionButton = { action: ExerciseFormAction; label: string; primary: boolean };
 
 // Sentinela para "sin valor" en los Select de un solo valor (Radix no admite '').
 const NONE = '__none__';
@@ -77,7 +105,13 @@ function ChipGroup({ label, options, selected, onToggle, labelFor }: ChipGroupPr
   );
 }
 
-export function ExerciseForm({ isAdmin }: { isAdmin: boolean }) {
+export function ExerciseForm({
+  isAdmin,
+  initial,
+}: {
+  isAdmin: boolean;
+  initial?: ExerciseFormInitial;
+}) {
   const t = useTranslations('ejercicios');
   const tForm = useTranslations('ejercicios.form');
   const tTactical = useTranslations('ejercicios.tactical');
@@ -86,26 +120,53 @@ export function ExerciseForm({ isAdmin }: { isAdmin: boolean }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  const [name, setName] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
-  const [tactical, setTactical] = useState<string[]>([]);
-  const [technical, setTechnical] = useState<string[]>([]);
-  const [physicalFocus, setPhysicalFocus] = useState('');
-  const [intensity, setIntensity] = useState<string>(NONE);
-  const [spaceType, setSpaceType] = useState<string>(NONE);
-  const [spaceDimensions, setSpaceDimensions] = useState('');
-  const [baseDuration, setBaseDuration] = useState('');
-  const [objective, setObjective] = useState('');
-  const [description, setDescription] = useState('');
-  const [coachingPoints, setCoachingPoints] = useState('');
-  const [variants, setVariants] = useState('');
-  const [players, setPlayers] = useState('');
-  const [diagram, setDiagram] = useState<Diagram | null>(null);
+  const [name, setName] = useState(initial?.name ?? '');
+  const [categories, setCategories] = useState<string[]>(initial?.categories ?? []);
+  const [tactical, setTactical] = useState<string[]>(initial?.tactical_objectives ?? []);
+  const [technical, setTechnical] = useState<string[]>(initial?.technical_objectives ?? []);
+  const [physicalFocus, setPhysicalFocus] = useState(initial?.physical_focus ?? '');
+  const [intensity, setIntensity] = useState<string>(initial?.intensity ?? NONE);
+  const [spaceType, setSpaceType] = useState<string>(initial?.space_type ?? NONE);
+  const [spaceDimensions, setSpaceDimensions] = useState(initial?.space_dimensions ?? '');
+  const [baseDuration, setBaseDuration] = useState(
+    initial?.base_duration != null ? String(initial.base_duration) : ''
+  );
+  const [objective, setObjective] = useState(initial?.objective ?? '');
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [coachingPoints, setCoachingPoints] = useState(initial?.coaching_points ?? '');
+  const [variants, setVariants] = useState(initial?.variants ?? '');
+  const [players, setPlayers] = useState(initial?.players ?? '');
+  const [diagram, setDiagram] = useState<Diagram | null>(initial?.diagram ?? null);
 
   const nameMissing = name.trim().length === 0;
 
   function toggle(list: string[], setList: (v: string[]) => void, value: string) {
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+  }
+
+  // Botones según modo (crear/editar), estado actual y rol. Aprobar/rechazar de
+  // un propuesto NO está aquí (11.7): editar un propuesto solo "Guarda cambios".
+  function actionButtons(): ActionButton[] {
+    if (!initial) {
+      const draft: ActionButton = {
+        action: 'save_draft',
+        label: tForm('actions.save_draft'),
+        primary: false,
+      };
+      return isAdmin
+        ? [draft, { action: 'publish', label: tForm('actions.publish'), primary: true }]
+        : [draft, { action: 'propose', label: tForm('actions.propose'), primary: true }];
+    }
+    if (initial.status === 'proposed') {
+      return [{ action: 'propose', label: tForm('actions.save_changes'), primary: true }];
+    }
+    // Editando un borrador.
+    const btns: ActionButton[] = [
+      { action: 'save_draft', label: tForm('actions.save_draft'), primary: false },
+      { action: 'propose', label: tForm('actions.propose'), primary: !isAdmin },
+    ];
+    if (isAdmin) btns.push({ action: 'publish', label: tForm('actions.publish'), primary: true });
+    return btns;
   }
 
   function submit(action: ExerciseFormAction) {
@@ -114,7 +175,7 @@ export function ExerciseForm({ isAdmin }: { isAdmin: boolean }) {
       return;
     }
     startTransition(async () => {
-      const res = await createExercise({
+      const payload = {
         action,
         name,
         categories,
@@ -131,14 +192,17 @@ export function ExerciseForm({ isAdmin }: { isAdmin: boolean }) {
         variants,
         players,
         diagram,
-      });
+      };
+      const res = initial
+        ? await updateExercise({ ...payload, id: initial.id })
+        : await createExercise(payload);
 
       if (res.error) {
         toast.error(tForm(`errors.${res.error}`));
         return;
       }
-      toast.success(tForm('toast.created'));
-      router.push(`/ejercicios/${res.id}`);
+      toast.success(initial ? tForm('toast.updated') : tForm('toast.created'));
+      router.push(`/ejercicios/${res.id ?? initial?.id}`);
     });
   }
 
@@ -303,29 +367,22 @@ export function ExerciseForm({ isAdmin }: { isAdmin: boolean }) {
           <CardTitle className="text-base">{tForm('sections.diagram')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <PitchEditor onChange={setDiagram} />
+          <PitchEditor initialDiagram={initial?.diagram ?? undefined} onChange={setDiagram} />
         </CardContent>
       </Card>
 
-      {/* Acciones según rol. Ambos pueden guardar borrador; la acción primaria
-          difiere: Admin publica directo, entrenador propone. */}
+      {/* Acciones según modo/estado/rol (ver actionButtons). */}
       <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 border-t bg-background/80 py-3 backdrop-blur">
-        <Button
-          variant="outline"
-          onClick={() => submit('save_draft')}
-          disabled={pending || nameMissing}
-        >
-          {tForm('actions.save_draft')}
-        </Button>
-        {isAdmin ? (
-          <Button onClick={() => submit('publish')} disabled={pending || nameMissing}>
-            {tForm('actions.publish')}
+        {actionButtons().map((b) => (
+          <Button
+            key={b.action}
+            variant={b.primary ? 'default' : 'outline'}
+            onClick={() => submit(b.action)}
+            disabled={pending || nameMissing}
+          >
+            {b.label}
           </Button>
-        ) : (
-          <Button onClick={() => submit('propose')} disabled={pending || nameMissing}>
-            {tForm('actions.propose')}
-          </Button>
-        )}
+        ))}
       </div>
     </div>
   );

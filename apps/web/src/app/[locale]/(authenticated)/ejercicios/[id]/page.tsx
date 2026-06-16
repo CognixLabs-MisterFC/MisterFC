@@ -7,6 +7,7 @@ import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DiagramView } from '@/components/match/diagram-view';
+import { ExerciseActions } from '../_components/exercise-actions';
 import { loadExercise } from '../queries';
 
 type Props = {
@@ -65,13 +66,21 @@ export default async function EjercicioDetailPage({ params }: Props) {
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-4">
-      <Link
-        href="/ejercicios"
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-        {tDetail('back')}
-      </Link>
+      <div className="flex items-center justify-between gap-3">
+        <Link
+          href="/ejercicios"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          {tDetail('back')}
+        </Link>
+        <ExerciseActions
+          id={exercise.id}
+          status={exercise.status}
+          isOwner={exercise.is_owner}
+          isAdmin={role === 'admin_club'}
+        />
+      </div>
 
       {/* Cabecera: nombre + estado */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">

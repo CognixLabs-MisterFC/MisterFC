@@ -126,6 +126,38 @@ export const createExerciseSchema = exerciseFormSchema.extend({
 
 export type CreateExerciseInput = z.infer<typeof createExerciseSchema>;
 
+// El esquema de edición añade el id del ejercicio a editar.
+export const updateExerciseSchema = createExerciseSchema.extend({
+  id: z.string().uuid({ message: 'id_invalid' }),
+});
+
+export type UpdateExerciseInput = z.infer<typeof updateExerciseSchema>;
+
+/** Esquema mínimo de las acciones de ciclo de vida sin formulario
+ *  (proponer-desde-ficha, borrar, archivar). */
+export const exerciseIdSchema = z.object({
+  id: z.string().uuid({ message: 'id_invalid' }),
+});
+
+export type ExerciseIdInput = z.infer<typeof exerciseIdSchema>;
+
+/**
+ * Estado objetivo al EDITAR, según el estado ACTUAL (defensa contra fugas del
+ * ciclo a 11.7). Desde 'draft' se permite el set completo (save_draft/propose/
+ * publish-si-admin). Desde 'proposed' SOLO se puede seguir propuesto ("Guardar
+ * cambios"); aquí el Admin NO aprueba/rechaza (eso es 11.7). Otros estados
+ * (published/rejected) no son editables en esta subfase → null.
+ */
+export function statusForUpdate(
+  current: MethodologyStatus,
+  action: ExerciseFormAction,
+  isAdmin: boolean
+): MethodologyStatus | null {
+  if (current === 'draft') return statusForAction(action, isAdmin);
+  if (current === 'proposed') return action === 'propose' ? 'proposed' : null;
+  return null;
+}
+
 // ── Mapeo a columnas de `exercises` ───────────────────────────────────────────
 /** Columnas de la tabla `exercises` que escribe el formulario (sin auditoría). */
 export type ExerciseColumns = {

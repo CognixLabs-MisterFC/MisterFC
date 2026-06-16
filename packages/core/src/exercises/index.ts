@@ -24,13 +24,18 @@ export type {
 export {
   EXERCISE_FORM_ACTIONS,
   statusForAction,
+  statusForUpdate,
   exerciseFormSchema,
   createExerciseSchema,
+  updateExerciseSchema,
+  exerciseIdSchema,
   toExerciseColumns,
 } from './exercise-form';
 export type {
   ExerciseFormAction,
   ExerciseFormInput,
   CreateExerciseInput,
+  UpdateExerciseInput,
+  ExerciseIdInput,
   ExerciseColumns,
 } from './exercise-form';
