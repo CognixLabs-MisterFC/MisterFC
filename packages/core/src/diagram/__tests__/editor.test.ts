@@ -235,3 +235,164 @@ describe('pitchEditorReducer — undo/redo', () => {
     expect(parsed.success).toBe(true);
   });
 });
+
+// ── PR2 — elementos dibujados (flecha / línea / zona) ───────────────────────
+
+describe('pitchEditorReducer — dibujos (ADD_*)', () => {
+  it('ADD_ARROW captura geometría + style de la config; queda seleccionado y válido', () => {
+    const s = run(
+      initEditorState(),
+      { type: 'SET_TOOL', tool: 'flecha' },
+      { type: 'SET_NEXT_ARROW_STYLE', style: 'conduccion' },
+      { type: 'ADD_ARROW', from: { x_pct: 10, y_pct: 20 }, to: { x_pct: 60, y_pct: 70 } },
+    );
+    expect(s.elements[0]).toMatchObject({
+      type: 'flecha',
+      from: { x_pct: 10, y_pct: 20 },
+      to: { x_pct: 60, y_pct: 70 },
+      style: 'conduccion',
+    });
+    expect(s.selectedId).toBe('el-1');
+    expect(parseDiagram(toDiagram(s)).success).toBe(true);
+  });
+
+  it('ADD_LINE crea un segmento de 2 puntos con el stroke de la config', () => {
+    const s = run(
+      initEditorState(),
+      { type: 'SET_NEXT_STROKE', stroke: 'dashed' },
+      { type: 'ADD_LINE', from: { x_pct: 5, y_pct: 5 }, to: { x_pct: 50, y_pct: 5 } },
+    );
+    const el = s.elements[0];
+    expect(el?.type).toBe('linea');
+    expect(el).toMatchObject({ stroke: 'dashed' });
+    if (el?.type === 'linea') expect(el.points).toHaveLength(2);
+    expect(parseDiagram(toDiagram(s)).success).toBe(true);
+  });
+
+  it('ADD_ZONA normaliza esquina→esquina a x/y (mínimos) + w/h (absolutos)', () => {
+    const s = run(
+      initEditorState(),
+      { type: 'ADD_ZONA', from: { x_pct: 80, y_pct: 70 }, to: { x_pct: 30, y_pct: 20 } },
+    );
+    expect(s.elements[0]).toMatchObject({
+      type: 'zona',
+      x_pct: 30,
+      y_pct: 20,
+      w_pct: 50,
+      h_pct: 50,
+      stroke: 'solid',
+    });
+    expect(parseDiagram(toDiagram(s)).success).toBe(true);
+  });
+
+  it('ADD_* clampa las coordenadas fuera de rango', () => {
+    const s = run(
+      initEditorState(),
+      { type: 'ADD_ARROW', from: { x_pct: -10, y_pct: 50 }, to: { x_pct: 130, y_pct: 50 } },
+    );
+    expect(s.elements[0]).toMatchObject({ from: { x_pct: 0 }, to: { x_pct: 100 } });
+  });
+
+  it('SET_NEXT_ARROW_STYLE / SET_NEXT_STROKE no tocan el historial', () => {
+    const s = run(
+      initEditorState(),
+      { type: 'SET_NEXT_ARROW_STYLE', style: 'desmarque' },
+      { type: 'SET_NEXT_STROKE', stroke: 'dashed' },
+    );
+    expect(s.past).toHaveLength(0);
+    expect(s.nextArrowStyle).toBe('desmarque');
+    expect(s.nextStroke).toBe('dashed');
+  });
+});
+
+describe('pitchEditorReducer — TRANSLATE de dibujados', () => {
+  it('traslada TODOS los puntos de una flecha y acota el delta (preserva forma)', () => {
+    const placed = run(
+      initEditorState(),
+      { type: 'ADD_ARROW', from: { x_pct: 10, y_pct: 10 }, to: { x_pct: 30, y_pct: 40 } },
+    );
+    // dx=-50 se acota a -10 (minX=10); dy=+5 cabe entero.
+    const moved = pitchEditorReducer(placed, { type: 'TRANSLATE', id: 'el-1', dx: -50, dy: 5 });
+    expect(moved.elements[0]).toMatchObject({
+      from: { x_pct: 0, y_pct: 15 },
+      to: { x_pct: 20, y_pct: 45 },
+    });
+    expect(moved.past).toHaveLength(2); // ADD + TRANSLATE
+    expect(parseDiagram(toDiagram(moved)).success).toBe(true);
+  });
+
+  it('TRANSLATE de una zona mueve su origen y conserva w/h', () => {
+    const placed = run(
+      initEditorState(),
+      { type: 'ADD_ZONA', from: { x_pct: 10, y_pct: 10 }, to: { x_pct: 30, y_pct: 30 } },
+    );
+    const moved = pitchEditorReducer(placed, { type: 'TRANSLATE', id: 'el-1', dx: 5, dy: 5 });
+    expect(moved.elements[0]).toMatchObject({ x_pct: 15, y_pct: 15, w_pct: 20, h_pct: 20 });
+  });
+
+  it('TRANSLATE sobre id inexistente o delta acotado a 0 es no-op', () => {
+    const placed = run(
+      initEditorState(),
+      { type: 'ADD_LINE', from: { x_pct: 0, y_pct: 0 }, to: { x_pct: 10, y_pct: 10 } },
+    );
+    expect(pitchEditorReducer(placed, { type: 'TRANSLATE', id: 'nope', dx: 5, dy: 5 })).toBe(placed);
+    // minX=0 → dx negativo se acota a 0; dy negativo igual → no-op.
+    expect(pitchEditorReducer(placed, { type: 'TRANSLATE', id: 'el-1', dx: -5, dy: -5 })).toBe(placed);
+  });
+});
+
+describe('pitchEditorReducer — edición de style/stroke', () => {
+  it('UPDATE_ARROW_STYLE cambia el estilo de una flecha; no-flecha = no-op', () => {
+    const arrow = run(
+      initEditorState(),
+      { type: 'ADD_ARROW', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 2, y_pct: 2 } },
+    );
+    const upd = pitchEditorReducer(arrow, { type: 'UPDATE_ARROW_STYLE', id: 'el-1', style: 'desmarque' });
+    expect(upd.elements[0]).toMatchObject({ style: 'desmarque' });
+
+    const cono = run(initEditorState(), { type: 'SET_TOOL', tool: 'cono' }, { type: 'PLACE', x_pct: 5, y_pct: 5 });
+    expect(pitchEditorReducer(cono, { type: 'UPDATE_ARROW_STYLE', id: 'el-1', style: 'pase' })).toBe(cono);
+  });
+
+  it('UPDATE_STROKE cambia el stroke de línea y zona; otro tipo = no-op', () => {
+    const linea = run(
+      initEditorState(),
+      { type: 'ADD_LINE', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 2, y_pct: 2 } },
+    );
+    expect(
+      pitchEditorReducer(linea, { type: 'UPDATE_STROKE', id: 'el-1', stroke: 'dashed' }).elements[0],
+    ).toMatchObject({ stroke: 'dashed' });
+
+    const zona = run(
+      initEditorState(),
+      { type: 'ADD_ZONA', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 9, y_pct: 9 } },
+    );
+    expect(
+      pitchEditorReducer(zona, { type: 'UPDATE_STROKE', id: 'el-1', stroke: 'dashed' }).elements[0],
+    ).toMatchObject({ stroke: 'dashed' });
+
+    const arrow = run(
+      initEditorState(),
+      { type: 'ADD_ARROW', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 2, y_pct: 2 } },
+    );
+    expect(pitchEditorReducer(arrow, { type: 'UPDATE_STROKE', id: 'el-1', stroke: 'dashed' })).toBe(arrow);
+  });
+});
+
+describe('pitchEditorReducer — undo/redo y borrado con dibujados', () => {
+  it('deshace/rehace un dibujo y borra elementos dibujados', () => {
+    let s = run(
+      initEditorState(),
+      { type: 'ADD_ARROW', from: { x_pct: 10, y_pct: 10 }, to: { x_pct: 20, y_pct: 20 } },
+      { type: 'ADD_ZONA', from: { x_pct: 30, y_pct: 30 }, to: { x_pct: 50, y_pct: 50 } },
+    );
+    expect(s.elements).toHaveLength(2);
+    s = pitchEditorReducer(s, { type: 'UNDO' }); // quita la zona
+    expect(s.elements).toHaveLength(1);
+    s = pitchEditorReducer(s, { type: 'REDO' });
+    expect(s.elements).toHaveLength(2);
+    s = pitchEditorReducer(s, { type: 'DELETE', id: 'el-1' }); // borra la flecha
+    expect(s.elements.map((e) => e.id)).toEqual(['el-2']);
+    expect(parseDiagram(toDiagram(s)).success).toBe(true);
+  });
+});

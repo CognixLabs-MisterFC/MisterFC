@@ -36,10 +36,11 @@ export {
   UNDO_LIMIT,
   DEFAULT_TEXT_LABEL,
   POINT_TOOLS,
+  DRAW_TOOLS,
   initEditorState,
   toDiagram,
   canUndo,
   canRedo,
   pitchEditorReducer,
 } from './editor';
-export type { PointTool, PitchTool, PitchEditorState, PitchAction } from './editor';
+export type { PointTool, DrawTool, PitchTool, PitchEditorState, PitchAction } from './editor';

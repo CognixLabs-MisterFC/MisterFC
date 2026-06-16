@@ -35,6 +35,9 @@ import {
   type DiagramField,
   type FieldKind,
   type PlayerRole,
+  type ArrowStyle,
+  type StrokeKind,
+  type DiagramPoint,
 } from './diagram';
 
 export const UNDO_LIMIT = 50;
@@ -55,7 +58,12 @@ export const POINT_TOOLS = [
   'texto',
 ] as const;
 export type PointTool = (typeof POINT_TOOLS)[number];
-export type PitchTool = 'select' | PointTool;
+
+/** Herramientas de PR2: elementos DIBUJADOS por arrastre (from→to). */
+export const DRAW_TOOLS = ['flecha', 'linea', 'zona'] as const;
+export type DrawTool = (typeof DRAW_TOOLS)[number];
+
+export type PitchTool = 'select' | PointTool | DrawTool;
 
 type Snapshot = DiagramElement[];
 
@@ -64,10 +72,12 @@ export type PitchEditorState = {
   elements: DiagramElement[];
   selectedId: string | null;
   tool: PitchTool;
-  /** Config del PRÓXIMO elemento a colocar (barra de herramientas). */
+  /** Config del PRÓXIMO elemento a colocar/dibujar (barra de herramientas). */
   nextRole: PlayerRole;
   nextLabel: string;
   nextText: string;
+  nextArrowStyle: ArrowStyle;
+  nextStroke: StrokeKind;
   past: Snapshot[];
   future: Snapshot[];
   counter: number;
@@ -79,12 +89,21 @@ export type PitchAction =
   | { type: 'SET_NEXT_ROLE'; role: PlayerRole }
   | { type: 'SET_NEXT_LABEL'; label: string }
   | { type: 'SET_NEXT_TEXT'; text: string }
+  | { type: 'SET_NEXT_ARROW_STYLE'; style: ArrowStyle }
+  | { type: 'SET_NEXT_STROKE'; stroke: StrokeKind }
   | { type: 'PLACE'; x_pct: number; y_pct: number }
+  // Confirmación de un dibujo (rubber-band) — 1 paso de undo cada uno.
+  | { type: 'ADD_ARROW'; from: DiagramPoint; to: DiagramPoint }
+  | { type: 'ADD_LINE'; from: DiagramPoint; to: DiagramPoint }
+  | { type: 'ADD_ZONA'; from: DiagramPoint; to: DiagramPoint }
   | { type: 'SELECT'; id: string | null }
   | { type: 'MOVE'; id: string; x_pct: number; y_pct: number }
+  | { type: 'TRANSLATE'; id: string; dx: number; dy: number }
   | { type: 'DELETE'; id: string }
   | { type: 'UPDATE_LABEL'; id: string; label: string }
   | { type: 'UPDATE_TEXT'; id: string; text: string }
+  | { type: 'UPDATE_ARROW_STYLE'; id: string; style: ArrowStyle }
+  | { type: 'UPDATE_STROKE'; id: string; stroke: StrokeKind }
   | { type: 'UNDO' }
   | { type: 'REDO' };
 
@@ -112,6 +131,8 @@ export function initEditorState(diagram?: Diagram): PitchEditorState {
     nextRole: 'atacante',
     nextLabel: '',
     nextText: '',
+    nextArrowStyle: 'pase',
+    nextStroke: 'solid',
     past: [],
     future: [],
     counter: maxIdCounter(elements),
@@ -166,6 +187,47 @@ function buildPointElement(
   }
 }
 
+const clampPoint = (p: DiagramPoint): DiagramPoint => ({
+  x_pct: clampPct(p.x_pct),
+  y_pct: clampPct(p.y_pct),
+});
+
+/** Puntos geométricos que deben permanecer en [0,100] al trasladar un elemento.
+ *  (zona se ancla por su esquina origen; w/h se preservan). */
+function clampAnchors(el: DiagramElement): DiagramPoint[] {
+  switch (el.type) {
+    case 'flecha':
+    case 'cota':
+      return [el.from, el.to];
+    case 'linea':
+      return el.points;
+    case 'zona':
+      return [{ x_pct: el.x_pct, y_pct: el.y_pct }];
+    default:
+      return [{ x_pct: el.x_pct, y_pct: el.y_pct }];
+  }
+}
+
+/** Aplica un desplazamiento (ya acotado) a TODOS los puntos del elemento. */
+function applyTranslate(el: DiagramElement, dx: number, dy: number): DiagramElement {
+  const shift = (p: DiagramPoint): DiagramPoint => clampPoint({ x_pct: p.x_pct + dx, y_pct: p.y_pct + dy });
+  switch (el.type) {
+    case 'flecha':
+    case 'cota':
+      return { ...el, from: shift(el.from), to: shift(el.to) };
+    case 'linea':
+      return { ...el, points: el.points.map(shift) };
+    case 'zona': {
+      const o = shift({ x_pct: el.x_pct, y_pct: el.y_pct });
+      return { ...el, x_pct: o.x_pct, y_pct: o.y_pct };
+    }
+    default: {
+      const o = shift({ x_pct: el.x_pct, y_pct: el.y_pct });
+      return { ...el, x_pct: o.x_pct, y_pct: o.y_pct };
+    }
+  }
+}
+
 export function pitchEditorReducer(
   state: PitchEditorState,
   action: PitchAction,
@@ -182,6 +244,10 @@ export function pitchEditorReducer(
       return { ...state, nextLabel: action.label };
     case 'SET_NEXT_TEXT':
       return { ...state, nextText: action.text };
+    case 'SET_NEXT_ARROW_STYLE':
+      return { ...state, nextArrowStyle: action.style };
+    case 'SET_NEXT_STROKE':
+      return { ...state, nextStroke: action.stroke };
     case 'SELECT':
       return {
         ...state,
@@ -205,6 +271,70 @@ export function pitchEditorReducer(
       };
     }
 
+    // ── Confirmación de dibujos (rubber-band → 1 paso de historial) ───────────
+    case 'ADD_ARROW': {
+      const counter = state.counter + 1;
+      const id = `el-${counter}`;
+      const el: DiagramElement = {
+        type: 'flecha',
+        id,
+        from: clampPoint(action.from),
+        to: clampPoint(action.to),
+        style: state.nextArrowStyle,
+      };
+      return {
+        ...state,
+        elements: [...state.elements, el],
+        past: pushPast(state.past, state.elements),
+        future: [],
+        counter,
+        selectedId: id,
+      };
+    }
+
+    case 'ADD_LINE': {
+      const counter = state.counter + 1;
+      const id = `el-${counter}`;
+      const el: DiagramElement = {
+        type: 'linea',
+        id,
+        points: [clampPoint(action.from), clampPoint(action.to)],
+        stroke: state.nextStroke,
+      };
+      return {
+        ...state,
+        elements: [...state.elements, el],
+        past: pushPast(state.past, state.elements),
+        future: [],
+        counter,
+        selectedId: id,
+      };
+    }
+
+    case 'ADD_ZONA': {
+      const counter = state.counter + 1;
+      const id = `el-${counter}`;
+      const a = clampPoint(action.from);
+      const b = clampPoint(action.to);
+      const el: DiagramElement = {
+        type: 'zona',
+        id,
+        x_pct: Math.min(a.x_pct, b.x_pct),
+        y_pct: Math.min(a.y_pct, b.y_pct),
+        w_pct: Math.abs(b.x_pct - a.x_pct),
+        h_pct: Math.abs(b.y_pct - a.y_pct),
+        stroke: state.nextStroke,
+      };
+      return {
+        ...state,
+        elements: [...state.elements, el],
+        past: pushPast(state.past, state.elements),
+        future: [],
+        counter,
+        selectedId: id,
+      };
+    }
+
     case 'MOVE': {
       const idx = state.elements.findIndex((e) => e.id === action.id);
       const el = state.elements[idx];
@@ -213,6 +343,24 @@ export function pitchEditorReducer(
       const moved = { ...el, x_pct: clampPct(action.x_pct), y_pct: clampPct(action.y_pct) };
       const next = state.elements.slice();
       next[idx] = moved;
+      return { ...state, elements: next, past: pushPast(state.past, state.elements), future: [] };
+    }
+
+    // Traslada un elemento ENTERO por un desplazamiento (drag de dibujados).
+    // Acota el delta para que ningún punto de anclaje salga de [0,100] (preserva
+    // la forma en vez de distorsionarla en el borde).
+    case 'TRANSLATE': {
+      const idx = state.elements.findIndex((e) => e.id === action.id);
+      const el = state.elements[idx];
+      if (!el) return state;
+      const anchors = clampAnchors(el);
+      const xs = anchors.map((p) => p.x_pct);
+      const ys = anchors.map((p) => p.y_pct);
+      const dx = Math.max(-Math.min(...xs), Math.min(100 - Math.max(...xs), action.dx));
+      const dy = Math.max(-Math.min(...ys), Math.min(100 - Math.max(...ys), action.dy));
+      if (dx === 0 && dy === 0) return state;
+      const next = state.elements.slice();
+      next[idx] = applyTranslate(el, dx, dy);
       return { ...state, elements: next, past: pushPast(state.past, state.elements), future: [] };
     }
 
@@ -247,6 +395,24 @@ export function pitchEditorReducer(
       const updated: DiagramElement = { ...el, text: action.text.trim() || DEFAULT_TEXT_LABEL };
       const next = state.elements.slice();
       next[idx] = updated;
+      return { ...state, elements: next, past: pushPast(state.past, state.elements), future: [] };
+    }
+
+    case 'UPDATE_ARROW_STYLE': {
+      const idx = state.elements.findIndex((e) => e.id === action.id);
+      const el = state.elements[idx];
+      if (!el || el.type !== 'flecha') return state;
+      const next = state.elements.slice();
+      next[idx] = { ...el, style: action.style };
+      return { ...state, elements: next, past: pushPast(state.past, state.elements), future: [] };
+    }
+
+    case 'UPDATE_STROKE': {
+      const idx = state.elements.findIndex((e) => e.id === action.id);
+      const el = state.elements[idx];
+      if (!el || (el.type !== 'linea' && el.type !== 'zona')) return state;
+      const next = state.elements.slice();
+      next[idx] = { ...el, stroke: action.stroke };
       return { ...state, elements: next, past: pushPast(state.past, state.elements), future: [] };
     }
 

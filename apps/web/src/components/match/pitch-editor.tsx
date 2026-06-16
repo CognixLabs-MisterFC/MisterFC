@@ -1,27 +1,25 @@
 'use client';
 
 /**
- * F11.5b (PR1) — <PitchEditor>. Editor visual del diagrama de un ejercicio.
+ * F11.5b — <PitchEditor>. Editor visual del diagrama de un ejercicio.
  *
  * Construye ENCIMA del renderer read-only <DiagramView> (11.5a): éste pinta el
- * campo y los elementos (con `fill`, ocupando el contenedor); el editor solo
- * superpone la CAPA DE INTERACCIÓN (handles arrastrables + clic para colocar).
- * No duplica el pintado.
+ * campo y los elementos (con `fill`); el editor superpone solo la CAPA DE
+ * INTERACCIÓN (handles + clic para colocar + rubber-band para dibujar).
  *
- * Todo el ESTADO vive en el reducer PURO `pitchEditorReducer` de @misterfc/core
- * (testeado sin DOM). Aquí solo: traducir gestos del DOM a acciones y aplicar el
- * transform de dnd-kit para el preview local del arrastre. Al soltar se confirma
- * con UN solo MOVE (la granularidad del undo la decide el reducer).
+ * Todo el ESTADO documental vive en el reducer PURO `pitchEditorReducer` de
+ * @misterfc/core (testeado sin DOM). El dibujo EN CURSO (rubber-band) es estado
+ * EFÍMERO local (no entra al reducer ni al historial); al soltar se confirma con
+ * UNA acción (ADD_ARROW/ADD_LINE/ADD_ZONA) = 1 paso de undo.
  *
- * PR1: elementos de punto (jugador/balón/cono/aro/portería/miniportería/
- * gol_conducción/texto) + seleccionar/mover/borrar + undo/redo + selector de
- * campo (completo|medio). Flecha/línea/zona dibujadas llegan en PR2.
+ * PR1: elementos de punto + seleccionar/mover/borrar + undo/redo + campo.
+ * PR2: flecha/línea/zona dibujadas (arrastrar) + mover (trasladar) + editar
+ * style/stroke inline.
  *
- * Salida: `toDiagram(state)`, un Diagram que SIEMPRE pasa parseDiagram; se emite
- * por `onChange` para el consumidor (el harness y, en 11.6, el form de ejercicio).
+ * Salida: `toDiagram(state)`, un Diagram que SIEMPRE pasa parseDiagram.
  */
 
-import { useEffect, useReducer, useRef } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import {
   DndContext,
   type DragEndEvent,
@@ -38,19 +36,20 @@ import {
   toDiagram,
   canUndo,
   canRedo,
+  DRAW_TOOLS,
   type Diagram,
   type DiagramElement,
   type PitchTool,
   type PlayerRole,
+  type ArrowStyle,
+  type StrokeKind,
 } from '@misterfc/core';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DiagramView, fieldAspectClass } from './diagram-view';
 
-// Chrome del editor (dev/reusable). En 11.6 el form puede envolver estas
-// etiquetas con i18n si hace falta; aquí van directas para no acoplar el
-// componente al sistema de traducciones todavía.
+// Chrome del editor (dev/reusable). En 11.6 el form puede envolver con i18n.
 const TOOL_BUTTONS: ReadonlyArray<{ tool: PitchTool; label: string }> = [
   { tool: 'select', label: 'Seleccionar' },
   { tool: 'jugador', label: 'Jugador' },
@@ -61,6 +60,9 @@ const TOOL_BUTTONS: ReadonlyArray<{ tool: PitchTool; label: string }> = [
   { tool: 'miniporteria', label: 'Miniportería' },
   { tool: 'gol_conduccion', label: 'Gol cond.' },
   { tool: 'texto', label: 'Texto' },
+  { tool: 'flecha', label: 'Flecha' },
+  { tool: 'linea', label: 'Línea' },
+  { tool: 'zona', label: 'Zona' },
 ];
 
 const ROLE_OPTIONS: ReadonlyArray<{ role: PlayerRole; label: string }> = [
@@ -69,14 +71,57 @@ const ROLE_OPTIONS: ReadonlyArray<{ role: PlayerRole; label: string }> = [
   { role: 'comodin', label: 'Comodín' },
   { role: 'portero', label: 'Portero' },
 ];
+const ARROW_STYLE_OPTIONS: ReadonlyArray<{ style: ArrowStyle; label: string }> = [
+  { style: 'pase', label: 'Pase' },
+  { style: 'conduccion', label: 'Conducción' },
+  { style: 'desmarque', label: 'Desmarque' },
+];
+const STROKE_OPTIONS: ReadonlyArray<{ stroke: StrokeKind; label: string }> = [
+  { stroke: 'solid', label: 'Sólida' },
+  { stroke: 'dashed', label: 'Discontinua' },
+];
 
 const round2 = (v: number): number => Math.round(v * 100) / 100;
+const DRAW_MIN_DIST = 1.5; // % mínimo de arrastre para confirmar un dibujo
 
-/** Elementos con ancla de un punto (los movibles/colocables en PR1). */
-function isPointElement(
+const POINT_TYPES = new Set<DiagramElement['type']>([
+  'jugador',
+  'balon',
+  'cono',
+  'aro',
+  'gol_conduccion',
+  'porteria',
+  'miniporteria',
+  'texto',
+]);
+const isPointElement = (
   el: DiagramElement,
-): el is Extract<DiagramElement, { x_pct: number; y_pct: number }> {
-  return 'x_pct' in el && 'y_pct' in el;
+): el is Extract<DiagramElement, { x_pct: number; y_pct: number; type: never }> | Extract<DiagramElement, { type: 'jugador' }> =>
+  POINT_TYPES.has(el.type);
+
+type Pt = { x: number; y: number };
+
+/** Caja contenedora del elemento (en %), para el hit-target de los dibujados. */
+function elementBBox(el: DiagramElement): { x: number; y: number; w: number; h: number } {
+  switch (el.type) {
+    case 'flecha':
+    case 'cota': {
+      const x = Math.min(el.from.x_pct, el.to.x_pct);
+      const y = Math.min(el.from.y_pct, el.to.y_pct);
+      return { x, y, w: Math.abs(el.to.x_pct - el.from.x_pct), h: Math.abs(el.to.y_pct - el.from.y_pct) };
+    }
+    case 'linea': {
+      const xs = el.points.map((p) => p.x_pct);
+      const ys = el.points.map((p) => p.y_pct);
+      const x = Math.min(...xs);
+      const y = Math.min(...ys);
+      return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
+    }
+    case 'zona':
+      return { x: el.x_pct, y: el.y_pct, w: el.w_pct, h: el.h_pct };
+    default:
+      return { x: 0, y: 0, w: 0, h: 0 };
+  }
 }
 
 export function PitchEditor({
@@ -91,17 +136,19 @@ export function PitchEditor({
   const [state, dispatch] = useReducer(pitchEditorReducer, initialDiagram, initEditorState);
   const rootRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(
-    // Umbral de 8px: distingue un clic (seleccionar) de un arrastre (mover).
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   );
+  // Dibujo en curso (rubber-band): EFÍMERO, no entra al reducer ni al historial.
+  const [draw, setDraw] = useState<{ from: Pt; to: Pt } | null>(null);
 
   const diagram = toDiagram(state);
+  const isDrawTool = (DRAW_TOOLS as readonly string[]).includes(state.tool);
 
   useEffect(() => {
     onChange?.(toDiagram(state));
   }, [state, onChange]);
 
-  function pctFromEvent(clientX: number, clientY: number): { x: number; y: number } | null {
+  function pctFromEvent(clientX: number, clientY: number): Pt | null {
     const rect = rootRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0 || rect.height === 0) return null;
     return {
@@ -110,9 +157,8 @@ export function PitchEditor({
     };
   }
 
-  // Clic en el fondo del campo: colocar (herramienta activa) o deseleccionar.
-  // Los handles hacen stopPropagation, así que aquí solo llegan clics "vacíos".
   function handleBackgroundClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (isDrawTool) return; // el dibujo lo gestionan los pointer handlers
     if (state.tool === 'select') {
       dispatch({ type: 'SELECT', id: null });
       return;
@@ -121,19 +167,46 @@ export function PitchEditor({
     if (pt) dispatch({ type: 'PLACE', x_pct: pt.x, y_pct: pt.y });
   }
 
-  // Al soltar: nueva posición = actual + desplazamiento (px → %), acotada.
+  // ── Rubber-band (solo herramientas de dibujo) ──────────────────────────────
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (!isDrawTool) return;
+    if ((e.target as HTMLElement).closest('[data-handle]')) return; // no sobre un handle
+    const pt = pctFromEvent(e.clientX, e.clientY);
+    if (!pt) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDraw({ from: pt, to: pt });
+  }
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!draw) return;
+    const pt = pctFromEvent(e.clientX, e.clientY);
+    if (pt) setDraw((d) => (d ? { ...d, to: pt } : null));
+  }
+  function handlePointerUp() {
+    if (!draw) return;
+    const { from, to } = draw;
+    setDraw(null);
+    if (Math.hypot(to.x - from.x, to.y - from.y) < DRAW_MIN_DIST) return; // ignora clic/microdrag
+    const fromP = { x_pct: from.x, y_pct: from.y };
+    const toP = { x_pct: to.x, y_pct: to.y };
+    if (state.tool === 'flecha') dispatch({ type: 'ADD_ARROW', from: fromP, to: toP });
+    else if (state.tool === 'linea') dispatch({ type: 'ADD_LINE', from: fromP, to: toP });
+    else if (state.tool === 'zona') dispatch({ type: 'ADD_ZONA', from: fromP, to: toP });
+  }
+
+  // ── Mover (drop): punto → MOVE absoluto; dibujado → TRANSLATE por delta ─────
   function handleDragEnd(e: DragEndEvent) {
     const id = String(e.active.id);
     const el = state.elements.find((x) => x.id === id);
-    if (!el || !isPointElement(el)) return;
+    if (!el) return;
     const rect = rootRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0 || rect.height === 0) return;
-    dispatch({
-      type: 'MOVE',
-      id,
-      x_pct: round2(el.x_pct + (e.delta.x / rect.width) * 100),
-      y_pct: round2(el.y_pct + (e.delta.y / rect.height) * 100),
-    });
+    const dx = (e.delta.x / rect.width) * 100;
+    const dy = (e.delta.y / rect.height) * 100;
+    if (isPointElement(el)) {
+      dispatch({ type: 'MOVE', id, x_pct: round2(el.x_pct + dx), y_pct: round2(el.y_pct + dy) });
+    } else {
+      dispatch({ type: 'TRANSLATE', id, dx: round2(dx), dy: round2(dy) });
+    }
   }
 
   const selected = state.elements.find((e) => e.id === state.selectedId) ?? null;
@@ -234,6 +307,42 @@ export function PitchEditor({
             />
           </>
         )}
+
+        {state.tool === 'flecha' && (
+          <>
+            <div className="mx-1 h-6 w-px bg-border" aria-hidden />
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={state.nextArrowStyle}
+              onChange={(e) => dispatch({ type: 'SET_NEXT_ARROW_STYLE', style: e.target.value as ArrowStyle })}
+              aria-label="Estilo de flecha"
+            >
+              {ARROW_STYLE_OPTIONS.map((o) => (
+                <option key={o.style} value={o.style}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+
+        {(state.tool === 'linea' || state.tool === 'zona') && (
+          <>
+            <div className="mx-1 h-6 w-px bg-border" aria-hidden />
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={state.nextStroke}
+              onChange={(e) => dispatch({ type: 'SET_NEXT_STROKE', stroke: e.target.value as StrokeKind })}
+              aria-label="Trazo"
+            >
+              {STROKE_OPTIONS.map((o) => (
+                <option key={o.stroke} value={o.stroke}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
       </div>
 
       {/* Campo: renderer read-only + capa de interacción */}
@@ -241,17 +350,58 @@ export function PitchEditor({
         ref={rootRef}
         data-testid="pitch-field"
         className={cn(
-          'relative mx-auto w-full max-w-md overflow-hidden rounded-lg border',
+          'relative mx-auto w-full max-w-md touch-none overflow-hidden rounded-lg border',
           fieldAspectClass(state.field),
           state.tool !== 'select' && 'cursor-crosshair',
         )}
         onClick={handleBackgroundClick}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
       >
         <DiagramView diagram={diagram} fill />
+
+        {/* Preview del dibujo en curso (no interactivo) */}
+        {draw && (
+          <svg
+            className="pointer-events-none absolute inset-0 size-full"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            {state.tool === 'zona' ? (
+              <rect
+                x={Math.min(draw.from.x, draw.to.x)}
+                y={Math.min(draw.from.y, draw.to.y)}
+                width={Math.abs(draw.to.x - draw.from.x)}
+                height={Math.abs(draw.to.y - draw.from.y)}
+                fill="rgba(255,255,255,0.12)"
+                stroke="#fff"
+                strokeWidth={1.5}
+                strokeDasharray="3 2"
+                vectorEffect="non-scaling-stroke"
+              />
+            ) : (
+              <line
+                x1={draw.from.x}
+                y1={draw.from.y}
+                x2={draw.to.x}
+                y2={draw.to.y}
+                stroke="#fff"
+                strokeWidth={1.5}
+                strokeDasharray={state.tool === 'linea' ? '3 2' : undefined}
+                vectorEffect="non-scaling-stroke"
+              />
+            )}
+          </svg>
+        )}
+
+        {/* Handles de seleccionar/mover SOLO en modo Seleccionar: con una
+            herramienta de colocar/dibujar activa, el clic/arrastre siempre
+            coloca o dibuja (no agarra elementos existentes). */}
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-          {state.elements.map((el) =>
+          {state.tool === 'select' && state.elements.map((el) =>
             isPointElement(el) ? (
-              <ElementHandle
+              <PointHandle
                 key={el.id}
                 id={el.id}
                 xPct={el.x_pct}
@@ -259,15 +409,24 @@ export function PitchEditor({
                 selected={state.selectedId === el.id}
                 onSelect={() => dispatch({ type: 'SELECT', id: el.id })}
               />
-            ) : null,
+            ) : (
+              <DrawnHandle
+                key={el.id}
+                id={el.id}
+                bbox={elementBBox(el)}
+                selected={state.selectedId === el.id}
+                onSelect={() => dispatch({ type: 'SELECT', id: el.id })}
+              />
+            ),
           )}
         </DndContext>
       </div>
 
-      {/* Editor inline del elemento seleccionado (textos libres + borrar) */}
+      {/* Editor inline del seleccionado */}
       {selected && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm">
           <span className="font-medium capitalize">{selected.type}</span>
+
           {selected.type === 'jugador' && (
             <Input
               key={selected.id}
@@ -287,6 +446,35 @@ export function PitchEditor({
               aria-label="Texto"
             />
           )}
+          {selected.type === 'flecha' && (
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={selected.style}
+              onChange={(e) => dispatch({ type: 'UPDATE_ARROW_STYLE', id: selected.id, style: e.target.value as ArrowStyle })}
+              aria-label="Estilo de flecha"
+            >
+              {ARROW_STYLE_OPTIONS.map((o) => (
+                <option key={o.style} value={o.style}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          )}
+          {(selected.type === 'linea' || selected.type === 'zona') && (
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={selected.stroke ?? 'solid'}
+              onChange={(e) => dispatch({ type: 'UPDATE_STROKE', id: selected.id, stroke: e.target.value as StrokeKind })}
+              aria-label="Trazo"
+            >
+              {STROKE_OPTIONS.map((o) => (
+                <option key={o.stroke} value={o.stroke}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          )}
+
           <Button
             type="button"
             size="sm"
@@ -303,10 +491,9 @@ export function PitchEditor({
   );
 }
 
-/** Handle arrastrable sobre un elemento de punto. El centrado va en el wrapper
- *  (left/top %) y el transform de dnd en el botón, para no pisar el translate
- *  de centrado durante el arrastre. */
-function ElementHandle({
+/** Handle de punto: centrado en (x,y); el transform de dnd va en el botón para
+ *  no pisar el translate de centrado. Transparente salvo selección. */
+function PointHandle({
   id,
   xPct,
   yPct,
@@ -328,11 +515,9 @@ function ElementHandle({
       <button
         type="button"
         ref={setNodeRef}
+        data-handle
         style={{ transform: CSS.Translate.toString(transform) }}
         className={cn(
-          // Hit-target TRANSPARENTE en reposo: solo se ve el elemento que pinta
-          // <DiagramView>. Sigue capturando clic/arrastre (transparent != none).
-          // Realce (anillo) SOLO en el seleccionado; leve feedback al pasar el ratón.
           'size-7 cursor-grab touch-none rounded-full border-2 border-transparent bg-transparent',
           'active:cursor-grabbing hover:bg-white/10',
           selected && 'border-white bg-white/20 ring-2 ring-white hover:bg-white/20',
@@ -347,5 +532,53 @@ function ElementHandle({
         {...attributes}
       />
     </div>
+  );
+}
+
+/** Hit-target de un elemento dibujado: caja transparente sobre su bbox (con un
+ *  pequeño margen para poder agarrar líneas finas). Realce dashed al seleccionar. */
+function DrawnHandle({
+  id,
+  bbox,
+  selected,
+  onSelect,
+}: {
+  id: string;
+  bbox: { x: number; y: number; w: number; h: number };
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
+  const PAD = 2.5;
+  const x = Math.max(0, bbox.x - PAD);
+  const y = Math.max(0, bbox.y - PAD);
+  const w = bbox.w + 2 * PAD;
+  const h = bbox.h + 2 * PAD;
+  return (
+    <button
+      type="button"
+      ref={setNodeRef}
+      data-handle
+      style={{
+        left: `${x}%`,
+        top: `${y}%`,
+        width: `${w}%`,
+        height: `${h}%`,
+        transform: CSS.Translate.toString(transform),
+      }}
+      className={cn(
+        'absolute cursor-grab touch-none rounded-sm border-2 border-transparent bg-transparent',
+        'active:cursor-grabbing hover:bg-white/5',
+        selected && 'border-dashed border-white bg-white/5',
+        isDragging && 'z-20 opacity-80',
+      )}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
+      aria-label={`Elemento ${id}`}
+      {...listeners}
+      {...attributes}
+    />
   );
 }
