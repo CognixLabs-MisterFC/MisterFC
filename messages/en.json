@@ -2737,18 +2737,43 @@
       "actions": {
         "save_draft": "Save draft",
         "propose": "Propose",
-        "publish": "Publish"
+        "publish": "Publish",
+        "save_changes": "Save changes"
       },
       "errors": {
         "name_required": "Name is required.",
         "forbidden": "You don't have permission for this action.",
         "invalid": "Check the form fields.",
         "name_taken": "An exercise with that name already exists.",
-        "generic": "Couldn't save. Please try again."
+        "generic": "Couldn't save. Please try again.",
+        "not_found": "Exercise not found."
       },
       "toast": {
-        "created": "Exercise saved."
-      }
+        "created": "Exercise saved.",
+        "updated": "Changes saved."
+      },
+      "edit_title": "Edit exercise",
+      "back_to_card": "Back to exercise"
+    },
+    "actions": {
+      "edit": "Edit",
+      "propose": "Propose",
+      "delete": "Delete",
+      "archive": "Archive"
+    },
+    "confirm": {
+      "delete_title": "Delete exercise?",
+      "delete_desc": "This can’t be undone. The exercise will be permanently removed.",
+      "archive_title": "Archive exercise?",
+      "archive_desc": "The published exercise will be archived and will no longer appear in the library.",
+      "cancel": "Cancel",
+      "confirm_delete": "Delete",
+      "confirm_archive": "Archive"
+    },
+    "toast": {
+      "proposed": "Exercise proposed.",
+      "deleted": "Exercise deleted.",
+      "archived": "Exercise archived."
     }
   },
   "entrenamientos": {

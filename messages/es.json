@@ -2736,18 +2736,43 @@
       "actions": {
         "save_draft": "Guardar borrador",
         "propose": "Proponer",
-        "publish": "Publicar"
+        "publish": "Publicar",
+        "save_changes": "Guardar cambios"
       },
       "errors": {
         "name_required": "El nombre es obligatorio.",
         "forbidden": "No tienes permiso para esta acción.",
         "invalid": "Revisa los datos del formulario.",
         "name_taken": "Ya existe un ejercicio con ese nombre.",
-        "generic": "No se pudo guardar. Inténtalo de nuevo."
+        "generic": "No se pudo guardar. Inténtalo de nuevo.",
+        "not_found": "No se encontró el ejercicio."
       },
       "toast": {
-        "created": "Ejercicio guardado."
-      }
+        "created": "Ejercicio guardado.",
+        "updated": "Cambios guardados."
+      },
+      "edit_title": "Editar ejercicio",
+      "back_to_card": "Volver a la ficha"
+    },
+    "actions": {
+      "edit": "Editar",
+      "propose": "Proponer",
+      "delete": "Borrar",
+      "archive": "Archivar"
+    },
+    "confirm": {
+      "delete_title": "¿Borrar el ejercicio?",
+      "delete_desc": "Esta acción no se puede deshacer. Se eliminará el ejercicio de forma permanente.",
+      "archive_title": "¿Archivar el ejercicio?",
+      "archive_desc": "El ejercicio publicado se archivará y dejará de aparecer en la biblioteca.",
+      "cancel": "Cancelar",
+      "confirm_delete": "Borrar",
+      "confirm_archive": "Archivar"
+    },
+    "toast": {
+      "proposed": "Ejercicio propuesto.",
+      "deleted": "Ejercicio borrado.",
+      "archived": "Ejercicio archivado."
     }
   },
   "entrenamientos": {

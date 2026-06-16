@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   exerciseFormSchema,
   createExerciseSchema,
+  updateExerciseSchema,
+  exerciseIdSchema,
   statusForAction,
+  statusForUpdate,
   toExerciseColumns,
   type ExerciseFormInput,
 } from '../exercise-form';
@@ -105,6 +108,50 @@ describe('F11.6 — createExerciseSchema: incluye la acción', () => {
     expect(createExerciseSchema.safeParse({ ...minimal, action: 'propose' }).success).toBe(true);
     expect(createExerciseSchema.safeParse({ ...minimal, action: 'nope' }).success).toBe(false);
     expect(createExerciseSchema.safeParse(minimal).success).toBe(false);
+  });
+});
+
+const UUID = '11111111-1111-4111-8111-111111111111';
+
+describe('F11.6 PR2 — updateExerciseSchema: id + acción', () => {
+  it('exige id uuid válido y acción', () => {
+    expect(
+      updateExerciseSchema.safeParse({ ...minimal, id: UUID, action: 'propose' }).success
+    ).toBe(true);
+    expect(
+      updateExerciseSchema.safeParse({ ...minimal, id: 'no-uuid', action: 'propose' }).success
+    ).toBe(false);
+    expect(updateExerciseSchema.safeParse({ ...minimal, action: 'propose' }).success).toBe(false);
+  });
+});
+
+describe('F11.6 PR2 — exerciseIdSchema: acciones sin formulario', () => {
+  it('acepta un id uuid y rechaza lo demás', () => {
+    expect(exerciseIdSchema.safeParse({ id: UUID }).success).toBe(true);
+    expect(exerciseIdSchema.safeParse({ id: 'x' }).success).toBe(false);
+    expect(exerciseIdSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('F11.6 PR2 — statusForUpdate: estado objetivo por estado actual', () => {
+  it('desde draft: set completo (publish solo Admin)', () => {
+    expect(statusForUpdate('draft', 'save_draft', false)).toBe('draft');
+    expect(statusForUpdate('draft', 'propose', false)).toBe('proposed');
+    expect(statusForUpdate('draft', 'publish', true)).toBe('published');
+    expect(statusForUpdate('draft', 'publish', false)).toBeNull();
+  });
+
+  it('desde proposed: SOLO sigue propuesto (sin aprobar aquí, eso es 11.7)', () => {
+    expect(statusForUpdate('proposed', 'propose', false)).toBe('proposed');
+    expect(statusForUpdate('proposed', 'propose', true)).toBe('proposed');
+    // Ni el Admin publica desde el editor de un propuesto.
+    expect(statusForUpdate('proposed', 'publish', true)).toBeNull();
+    expect(statusForUpdate('proposed', 'save_draft', false)).toBeNull();
+  });
+
+  it('published/rejected no son editables aquí', () => {
+    expect(statusForUpdate('published', 'save_draft', true)).toBeNull();
+    expect(statusForUpdate('rejected', 'propose', false)).toBeNull();
   });
 });
 

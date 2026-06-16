@@ -2737,18 +2737,43 @@
       "actions": {
         "save_draft": "Guardar esborrany",
         "propose": "Proposar",
-        "publish": "Publicar"
+        "publish": "Publicar",
+        "save_changes": "Guardar canvis"
       },
       "errors": {
         "name_required": "El nom és obligatori.",
         "forbidden": "No tens permís per a esta acció.",
         "invalid": "Revisa les dades del formulari.",
         "name_taken": "Ja existix un exercici amb eixe nom.",
-        "generic": "No s'ha pogut guardar. Torna-ho a provar."
+        "generic": "No s'ha pogut guardar. Torna-ho a provar.",
+        "not_found": "No s’ha trobat l’exercici."
       },
       "toast": {
-        "created": "Exercici guardat."
-      }
+        "created": "Exercici guardat.",
+        "updated": "Canvis guardats."
+      },
+      "edit_title": "Editar exercici",
+      "back_to_card": "Tornar a la fitxa"
+    },
+    "actions": {
+      "edit": "Editar",
+      "propose": "Proposar",
+      "delete": "Esborrar",
+      "archive": "Arxivar"
+    },
+    "confirm": {
+      "delete_title": "Esborrar l’exercici?",
+      "delete_desc": "Esta acció no es pot desfer. L’exercici s’eliminarà permanentment.",
+      "archive_title": "Arxivar l’exercici?",
+      "archive_desc": "L’exercici publicat s’arxivarà i deixarà d’aparéixer en la biblioteca.",
+      "cancel": "Cancel·lar",
+      "confirm_delete": "Esborrar",
+      "confirm_archive": "Arxivar"
+    },
+    "toast": {
+      "proposed": "Exercici proposat.",
+      "deleted": "Exercici esborrat.",
+      "archived": "Exercici arxivat."
     }
   },
   "entrenamientos": {
