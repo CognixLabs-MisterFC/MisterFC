@@ -30,3 +30,16 @@ export type {
   DiagramField,
   Diagram,
 } from './diagram';
+
+// F11.5b — Reducer puro del editor (PitchEditor).
+export {
+  UNDO_LIMIT,
+  DEFAULT_TEXT_LABEL,
+  POINT_TOOLS,
+  initEditorState,
+  toDiagram,
+  canUndo,
+  canRedo,
+  pitchEditorReducer,
+} from './editor';
+export type { PointTool, PitchTool, PitchEditorState, PitchAction } from './editor';
