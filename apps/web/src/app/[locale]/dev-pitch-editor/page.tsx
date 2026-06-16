@@ -20,10 +20,10 @@ export default async function DevPitchEditorPage({ params }: Props) {
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 p-6">
       <header>
-        <h1 className="text-xl font-semibold">Harness — editor de diagramas (F11.5b · PR1)</h1>
+        <h1 className="text-xl font-semibold">Harness — editor de diagramas (F11.5b)</h1>
         <p className="text-sm text-muted-foreground">
-          Solo desarrollo. Coloca elementos de punto, arrástralos para mover, selecciónalos para
-          editar etiqueta/texto o borrar, y deshaz/rehaz. Flecha/línea/zona llegan en PR2.
+          Solo desarrollo. Coloca elementos de punto (clic) o dibuja flecha/línea/zona (arrastrar);
+          selecciónalos para mover, editar (etiqueta/texto/estilo/trazo) o borrar, y deshaz/rehaz.
         </p>
       </header>
       <PitchEditorHarness />
