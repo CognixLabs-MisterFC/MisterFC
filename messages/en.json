@@ -2685,6 +2685,22 @@
       "prev": "Previous",
       "next": "Next",
       "page_of": "Page {current} of {total}"
+    },
+    "detail": {
+      "back": "Back to list",
+      "objective": "Objective",
+      "rules": "Rules / Setup",
+      "coaching_points": "Focus on",
+      "variants": "Variations",
+      "players": "Players",
+      "physical_focus": "Physical focus",
+      "intensity": "Intensity",
+      "tactical": "Tactical objectives",
+      "technical": "Technical objectives",
+      "diagram": "Diagram",
+      "approved_by_at": "Approved by {name} · {date}",
+      "published_note": "Published",
+      "rejected_reason": "Rejection reason"
     }
   }
 }

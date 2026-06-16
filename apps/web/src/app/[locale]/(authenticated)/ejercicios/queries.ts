@@ -20,6 +20,8 @@ import {
   type ExerciseIntensity,
   type ExerciseSpaceType,
   type MethodologyStatus,
+  type Diagram,
+  parseDiagram,
   createSupabaseServerClient,
   getCurrentUser,
 } from '@misterfc/core';
@@ -117,4 +119,90 @@ export async function loadExercises(
   }));
 
   return { exercises, total: count ?? 0 };
+}
+
+// ── Ficha (11.4) ─────────────────────────────────────────────────────────────
+
+export type ExerciseDetail = {
+  id: string;
+  name: string;
+  status: MethodologyStatus;
+  categories: string[];
+  tactical_objectives: string[];
+  technical_objectives: string[];
+  physical_focus: string | null;
+  intensity: ExerciseIntensity | null;
+  space_type: ExerciseSpaceType | null;
+  space_dimensions: string | null;
+  base_duration: number | null;
+  description: string | null;
+  objective: string | null;
+  coaching_points: string | null;
+  variants: string | null;
+  players: string | null;
+  /** Escena validada (parseDiagram). null si no hay o no es válida → se omite. */
+  diagram: Diagram | null;
+  approved_at: string | null;
+  approved_by_name: string | null;
+  rejection_reason: string | null;
+  created_at: string;
+  is_owner: boolean;
+};
+
+/**
+ * Carga UN ejercicio por id, CONFIANDO en la RLS: si el user no puede verlo, la
+ * RLS no devuelve fila → null (la page hace notFound). No reimplementa permisos.
+ * Se scopea al club activo por seguridad de contexto (un id de otro club → null).
+ */
+export async function loadExercise(
+  clubId: string,
+  id: string
+): Promise<ExerciseDetail | null> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const user = await getCurrentUser(adapter);
+
+  const { data } = await supabase
+    .from('exercises')
+    .select(
+      `id, name, status, categories, tactical_objectives, technical_objectives,
+       physical_focus, intensity, space_type, space_dimensions, base_duration,
+       description, objective, coaching_points, variants, players, diagram,
+       approved_at, rejection_reason, created_at, owner_profile_id,
+       approved_by_profile:profiles!exercises_approved_by_fkey(full_name)`
+    )
+    .eq('id', id)
+    .eq('club_id', clubId)
+    .is('archived_at', null)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  const parsed = data.diagram != null ? parseDiagram(data.diagram) : null;
+  const approver = data.approved_by_profile as { full_name: string | null } | null;
+
+  return {
+    id: data.id as string,
+    name: data.name as string,
+    status: data.status as MethodologyStatus,
+    categories: (data.categories as string[] | null) ?? [],
+    tactical_objectives: (data.tactical_objectives as string[] | null) ?? [],
+    technical_objectives: (data.technical_objectives as string[] | null) ?? [],
+    physical_focus: (data.physical_focus as string | null) ?? null,
+    intensity: (data.intensity as ExerciseIntensity | null) ?? null,
+    space_type: (data.space_type as ExerciseSpaceType | null) ?? null,
+    space_dimensions: (data.space_dimensions as string | null) ?? null,
+    base_duration: (data.base_duration as number | null) ?? null,
+    description: (data.description as string | null) ?? null,
+    objective: (data.objective as string | null) ?? null,
+    coaching_points: (data.coaching_points as string | null) ?? null,
+    variants: (data.variants as string | null) ?? null,
+    players: (data.players as string | null) ?? null,
+    diagram: parsed && parsed.success ? parsed.data : null,
+    approved_at: (data.approved_at as string | null) ?? null,
+    approved_by_name: approver?.full_name ?? null,
+    rejection_reason: (data.rejection_reason as string | null) ?? null,
+    created_at: data.created_at as string,
+    is_owner: user != null && data.owner_profile_id === user.id,
+  };
 }
