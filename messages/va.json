@@ -2701,6 +2701,53 @@
       "approved_by_at": "Aprovat per {name} · {date}",
       "published_note": "Publicat",
       "rejected_reason": "Motiu del rebuig"
+    },
+    "create": "Crear exercici",
+    "form": {
+      "new_title": "Nou exercici",
+      "forbidden": "No tens permís per a crear exercicis en este club.",
+      "sections": {
+        "objectives": "Objectius",
+        "params": "Paràmetres",
+        "development": "Desenvolupament",
+        "diagram": "Diagrama"
+      },
+      "fields": {
+        "name": "Nom",
+        "categories": "Categories",
+        "tactical": "Objectius tàctics",
+        "technical": "Objectius tècnics",
+        "physical_focus": "Aspecte físic",
+        "intensity": "Intensitat",
+        "space_type": "Espai",
+        "space_dimensions": "Dimensions",
+        "base_duration": "Duració (min)",
+        "objective": "Objectiu",
+        "description": "Regles / Desenvolupament",
+        "coaching_points": "Incidir en",
+        "variants": "Variants",
+        "players": "Jugadors"
+      },
+      "placeholders": {
+        "name": "Ex. Rondo 4v2",
+        "none": "Sense especificar",
+        "space_dimensions": "Ex. 20x20 m"
+      },
+      "actions": {
+        "save_draft": "Guardar esborrany",
+        "propose": "Proposar",
+        "publish": "Publicar"
+      },
+      "errors": {
+        "name_required": "El nom és obligatori.",
+        "forbidden": "No tens permís per a esta acció.",
+        "invalid": "Revisa les dades del formulari.",
+        "name_taken": "Ja existix un exercici amb eixe nom.",
+        "generic": "No s'ha pogut guardar. Torna-ho a provar."
+      },
+      "toast": {
+        "created": "Exercici guardat."
+      }
     }
   }
 }

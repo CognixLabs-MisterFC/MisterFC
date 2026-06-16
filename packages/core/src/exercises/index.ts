@@ -19,3 +19,18 @@ export type {
   ExerciseSpaceType,
   MethodologyStatus,
 } from './exercises';
+
+// F11.6 — Formulario de ejercicio (schema + lógica pura de guardado).
+export {
+  EXERCISE_FORM_ACTIONS,
+  statusForAction,
+  exerciseFormSchema,
+  createExerciseSchema,
+  toExerciseColumns,
+} from './exercise-form';
+export type {
+  ExerciseFormAction,
+  ExerciseFormInput,
+  CreateExerciseInput,
+  ExerciseColumns,
+} from './exercise-form';

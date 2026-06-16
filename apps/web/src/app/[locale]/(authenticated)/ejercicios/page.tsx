@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Dumbbell, Clock } from 'lucide-react';
-import type { Role, MethodologyStatus } from '@misterfc/core';
+import { Dumbbell, Clock, Plus } from 'lucide-react';
+import { type Role, type MethodologyStatus, createSupabaseServerClient } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
+import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +63,14 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
   const role = ctx.activeClub.role as Role;
   if (!ALLOWED_VIEW_ROLES.includes(role)) redirect(`/${locale}`);
 
+  // Autoría → muestra el botón "Crear" (una sola RPC, junto a la query del listado).
+  // Es defensa en profundidad para la UX: la RLS de INSERT es el gate real.
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const { data: canCreate } = await supabase.rpc('user_can_create_exercises', {
+    p_club_id: ctx.activeClub.club.id,
+  });
+
   const t = await getTranslations('ejercicios');
   const tStatus = await getTranslations('ejercicios.status');
   const tTactical = await getTranslations('ejercicios.tactical');
@@ -105,11 +114,21 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t('count', { count: result.total })}
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t('count', { count: result.total })}
+          </p>
+        </div>
+        {canCreate && (
+          <Button asChild>
+            <Link href="/ejercicios/nuevo">
+              <Plus className="size-4" aria-hidden />
+              {t('create')}
+            </Link>
+          </Button>
+        )}
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

@@ -2701,6 +2701,53 @@
       "approved_by_at": "Approved by {name} · {date}",
       "published_note": "Published",
       "rejected_reason": "Rejection reason"
+    },
+    "create": "Create exercise",
+    "form": {
+      "new_title": "New exercise",
+      "forbidden": "You don't have permission to create exercises in this club.",
+      "sections": {
+        "objectives": "Objectives",
+        "params": "Parameters",
+        "development": "Development",
+        "diagram": "Diagram"
+      },
+      "fields": {
+        "name": "Name",
+        "categories": "Categories",
+        "tactical": "Tactical objectives",
+        "technical": "Technical objectives",
+        "physical_focus": "Physical focus",
+        "intensity": "Intensity",
+        "space_type": "Space",
+        "space_dimensions": "Dimensions",
+        "base_duration": "Duration (min)",
+        "objective": "Objective",
+        "description": "Rules / Development",
+        "coaching_points": "Coaching points",
+        "variants": "Variations",
+        "players": "Players"
+      },
+      "placeholders": {
+        "name": "e.g. 4v2 rondo",
+        "none": "Unspecified",
+        "space_dimensions": "e.g. 20x20 m"
+      },
+      "actions": {
+        "save_draft": "Save draft",
+        "propose": "Propose",
+        "publish": "Publish"
+      },
+      "errors": {
+        "name_required": "Name is required.",
+        "forbidden": "You don't have permission for this action.",
+        "invalid": "Check the form fields.",
+        "name_taken": "An exercise with that name already exists.",
+        "generic": "Couldn't save. Please try again."
+      },
+      "toast": {
+        "created": "Exercise saved."
+      }
     }
   }
 }
