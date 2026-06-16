@@ -239,6 +239,7 @@ export function PitchEditor({
       {/* Campo: renderer read-only + capa de interacción */}
       <div
         ref={rootRef}
+        data-testid="pitch-field"
         className={cn(
           'relative mx-auto w-full max-w-md overflow-hidden rounded-lg border',
           fieldAspectClass(state.field),
@@ -329,8 +330,12 @@ function ElementHandle({
         ref={setNodeRef}
         style={{ transform: CSS.Translate.toString(transform) }}
         className={cn(
-          'size-7 cursor-grab touch-none rounded-full border-2 active:cursor-grabbing',
-          selected ? 'border-white bg-white/30 ring-2 ring-white' : 'border-white/50 bg-white/10',
+          // Hit-target TRANSPARENTE en reposo: solo se ve el elemento que pinta
+          // <DiagramView>. Sigue capturando clic/arrastre (transparent != none).
+          // Realce (anillo) SOLO en el seleccionado; leve feedback al pasar el ratón.
+          'size-7 cursor-grab touch-none rounded-full border-2 border-transparent bg-transparent',
+          'active:cursor-grabbing hover:bg-white/10',
+          selected && 'border-white bg-white/20 ring-2 ring-white hover:bg-white/20',
           isDragging && 'z-20 opacity-80',
         )}
         onClick={(e) => {
