@@ -21,7 +21,7 @@
  */
 
 import type { ReactNode } from 'react';
-import type { Diagram, DiagramElement } from '@misterfc/core';
+import type { Diagram, DiagramElement, ElementSize } from '@misterfc/core';
 import { cn } from '@/lib/utils';
 import { FieldMarkings } from './field-markings';
 
@@ -69,6 +69,11 @@ const ARROW_DASH: Record<string, string | undefined> = {
 
 const INK = '#1f2937';
 
+// Factor de escala del glifo por `size` (md = tamaño actual). Lo aplica el
+// renderer a los elementos de PUNTO; en `texto` escala la fuente.
+const SIZE_SCALE: Record<ElementSize, number> = { sm: 0.7, md: 1, lg: 1.4 };
+const scaleOf = (size: ElementSize | undefined): number => SIZE_SCALE[size ?? 'md'];
+
 /** Pinta UN elemento en unidades de viewBox ya mapeadas. No es un componente
  *  (se llama como función) → no infringe la regla "componentes en render". */
 function renderElement(
@@ -80,54 +85,63 @@ function renderElement(
     case 'jugador': {
       const cx = mx(el.x_pct);
       const cy = my(el.y_pct);
+      const s = scaleOf(el.size);
       return (
         <>
-          <circle cx={cx} cy={cy} r={3.4} fill={ROLE_FILL[el.role]} stroke="#fff" strokeWidth={0.5} />
+          <circle cx={cx} cy={cy} r={3.4 * s} fill={ROLE_FILL[el.role]} stroke="#fff" strokeWidth={0.5} />
           {el.label ? (
-            <text x={cx} y={cy + 6.2} fontSize={3} textAnchor="middle" fill={INK}>
+            <text x={cx} y={cy + 6.2 * s} fontSize={3 * s} textAnchor="middle" fill={INK}>
               {el.label}
             </text>
           ) : null}
         </>
       );
     }
-    case 'balon':
-      return <circle cx={mx(el.x_pct)} cy={my(el.y_pct)} r={1.8} fill="#fff" stroke="#111" strokeWidth={0.4} />;
+    case 'balon': {
+      const s = scaleOf(el.size);
+      return <circle cx={mx(el.x_pct)} cy={my(el.y_pct)} r={1.8 * s} fill="#fff" stroke="#111" strokeWidth={0.4} />;
+    }
     case 'cono': {
       const x = mx(el.x_pct);
       const y = my(el.y_pct);
+      const s = scaleOf(el.size);
       return (
         <polygon
-          points={`${x},${y - 2.6} ${x - 2.4},${y + 2} ${x + 2.4},${y + 2}`}
+          points={`${x},${y - 2.6 * s} ${x - 2.4 * s},${y + 2 * s} ${x + 2.4 * s},${y + 2 * s}`}
           fill="#f59e0b"
           stroke="#b45309"
           strokeWidth={0.3}
         />
       );
     }
-    case 'aro':
+    case 'aro': {
+      const s = scaleOf(el.size);
       return (
-        <circle cx={mx(el.x_pct)} cy={my(el.y_pct)} r={2.8} fill="none" stroke="#f59e0b" strokeWidth={0.9} />
+        <circle cx={mx(el.x_pct)} cy={my(el.y_pct)} r={2.8 * s} fill="none" stroke="#f59e0b" strokeWidth={0.9} />
       );
+    }
     case 'gol_conduccion': {
       const x = mx(el.x_pct);
       const y = my(el.y_pct);
-      return <rect x={x - 1.6} y={y - 1.6} width={3.2} height={3.2} fill="#2563eb" />;
+      const h = 1.6 * scaleOf(el.size);
+      return <rect x={x - h} y={y - h} width={h * 2} height={h * 2} fill="#2563eb" />;
     }
     case 'porteria':
     case 'miniporteria': {
       const x = mx(el.x_pct);
       const y = my(el.y_pct);
-      const w = el.type === 'porteria' ? 12 : 7;
+      const s = scaleOf(el.size);
+      const w = (el.type === 'porteria' ? 12 : 7) * s;
+      const hh = 0.9 * s;
       const transform = el.rotation ? `rotate(${el.rotation} ${x} ${y})` : undefined;
-      return <rect x={x - w / 2} y={y - 0.9} width={w} height={1.8} fill="#111827" transform={transform} />;
+      return <rect x={x - w / 2} y={y - hh} width={w} height={hh * 2} fill="#111827" transform={transform} />;
     }
     case 'texto':
       return (
         <text
           x={mx(el.x_pct)}
           y={my(el.y_pct)}
-          fontSize={4}
+          fontSize={4 * scaleOf(el.size)}
           fontWeight="bold"
           textAnchor="middle"
           fill={INK}

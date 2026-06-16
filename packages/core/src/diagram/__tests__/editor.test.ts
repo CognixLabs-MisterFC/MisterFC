@@ -396,3 +396,60 @@ describe('pitchEditorReducer — undo/redo y borrado con dibujados', () => {
     expect(parseDiagram(toDiagram(s)).success).toBe(true);
   });
 });
+
+// ── Tamaño (size) de elementos de punto ─────────────────────────────────────
+
+describe('pitchEditorReducer — size', () => {
+  it('coloca con el tamaño seleccionado; md (default) no añade la clave', () => {
+    const lg = run(
+      initEditorState(),
+      { type: 'SET_TOOL', tool: 'balon' },
+      { type: 'SET_NEXT_SIZE', size: 'lg' },
+      { type: 'PLACE', x_pct: 50, y_pct: 50 },
+    );
+    expect(lg.elements[0]).toMatchObject({ type: 'balon', size: 'lg' });
+    expect(parseDiagram(toDiagram(lg)).success).toBe(true);
+
+    const md = place(initEditorState(), 'cono'); // nextSize default md
+    expect(md.elements[0]).not.toHaveProperty('size');
+  });
+
+  it('SET_NEXT_SIZE no toca el historial', () => {
+    const s = run(initEditorState(), { type: 'SET_NEXT_SIZE', size: 'sm' });
+    expect(s.past).toHaveLength(0);
+    expect(s.nextSize).toBe('sm');
+  });
+
+  it('UPDATE_SIZE cambia el tamaño (1 paso) y md elimina la clave', () => {
+    const placed = place(initEditorState(), 'jugador');
+    const big = pitchEditorReducer(placed, { type: 'UPDATE_SIZE', id: 'el-1', size: 'lg' });
+    expect(big.elements[0]).toMatchObject({ size: 'lg' });
+    expect(big.past).toHaveLength(2); // PLACE + UPDATE_SIZE
+    const back = pitchEditorReducer(big, { type: 'UPDATE_SIZE', id: 'el-1', size: 'md' });
+    expect(back.elements[0]).not.toHaveProperty('size');
+    expect(parseDiagram(toDiagram(back)).success).toBe(true);
+  });
+
+  it('UPDATE_SIZE se deshace/rehace', () => {
+    const placed = run(
+      initEditorState(),
+      { type: 'SET_TOOL', tool: 'aro' },
+      { type: 'PLACE', x_pct: 10, y_pct: 10 },
+    );
+    let s = pitchEditorReducer(placed, { type: 'UPDATE_SIZE', id: 'el-1', size: 'sm' });
+    expect(s.elements[0]).toMatchObject({ size: 'sm' });
+    s = pitchEditorReducer(s, { type: 'UNDO' });
+    expect(s.elements[0]).not.toHaveProperty('size');
+    s = pitchEditorReducer(s, { type: 'REDO' });
+    expect(s.elements[0]).toMatchObject({ size: 'sm' });
+  });
+
+  it('UPDATE_SIZE sobre un elemento dibujado (no-punto) o id inexistente es no-op', () => {
+    const arrow = run(
+      initEditorState(),
+      { type: 'ADD_ARROW', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 9, y_pct: 9 } },
+    );
+    expect(pitchEditorReducer(arrow, { type: 'UPDATE_SIZE', id: 'el-1', size: 'lg' })).toBe(arrow);
+    expect(pitchEditorReducer(arrow, { type: 'UPDATE_SIZE', id: 'nope', size: 'lg' })).toBe(arrow);
+  });
+});
