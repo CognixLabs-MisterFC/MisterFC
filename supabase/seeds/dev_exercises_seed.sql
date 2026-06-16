@@ -8,6 +8,10 @@
 -- Idempotente: usa ids fijos (on conflict do nothing) y nombres con prefijo
 -- "[SEED] " para poder borrarlos de un golpe (ver runbook al final).
 --
+-- El "[SEED] Rondo 4v2" lleva un DIAGRAM de ejemplo (contrato 11.0, campo
+-- medio+vertical) + bloques de texto largos, para revisar la ficha 11.4 entera
+-- (incluida la sección de representación gráfica).
+--
 -- Cómo elige destino: el PRIMER club existente y un admin_club de ese club como
 -- autor (para los publicados). Si no hay club/admin, no hace nada (raise notice).
 --
@@ -101,6 +105,32 @@ begin
      array['senior']::text[], array['balon_parado']::text[], array['cabeceo']::text[],
      'media', 'medio_campo', 12, 'rejected', null, null, 'Faltan los movimientos de los bloqueadores; revisar y reenviar.')
   on conflict (id) do nothing;
+
+  -- Enriquecemos el "Rondo 4v2" con un DIAGRAM de ejemplo (contrato 11.0, campo
+  -- MEDIO+vertical para ejercitar también ese lienzo en la ficha) y los bloques
+  -- de texto largos, para poder revisar la ficha 11.4 al completo. Idempotente:
+  -- se reaplica sin efecto si ya existe.
+  update public.exercises set
+    physical_focus  = 'Resistencia aeróbica ligera',
+    space_dimensions = '20 × 20 m',
+    coaching_points = E'Orientar el cuerpo al lado contrario del defensor.\nJugar a un toque cuando llega la presión.\nAmplitud máxima de los exteriores.',
+    variants        = E'4v2 con dos comodines neutrales.\nLimitar a dos toques.\nAñadir portería para finalizar tras 6 pases.',
+    players         = '6 jugadores (4 atacantes + 2 defensores).',
+    diagram         = '{
+      "version": 1,
+      "field": { "kind": "medio", "orientation": "vertical" },
+      "elements": [
+        { "type": "jugador", "id": "a1", "x_pct": 25, "y_pct": 72, "role": "atacante", "label": "1" },
+        { "type": "jugador", "id": "a2", "x_pct": 75, "y_pct": 72, "role": "atacante", "label": "2" },
+        { "type": "jugador", "id": "a3", "x_pct": 20, "y_pct": 38, "role": "atacante", "label": "3" },
+        { "type": "jugador", "id": "a4", "x_pct": 80, "y_pct": 38, "role": "atacante", "label": "4" },
+        { "type": "jugador", "id": "d1", "x_pct": 45, "y_pct": 55, "role": "defensor" },
+        { "type": "jugador", "id": "d2", "x_pct": 58, "y_pct": 55, "role": "defensor" },
+        { "type": "balon", "id": "b1", "x_pct": 27, "y_pct": 70 },
+        { "type": "flecha", "id": "f1", "from": { "x_pct": 27, "y_pct": 70 }, "to": { "x_pct": 73, "y_pct": 70 }, "style": "pase" }
+      ]
+    }'::jsonb
+  where id = 'd0000000-0000-4000-8000-000000000001';
 
   alter table public.exercises enable trigger trg_exercises_validate;
 

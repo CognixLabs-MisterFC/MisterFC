@@ -2685,6 +2685,22 @@
       "prev": "Anterior",
       "next": "Següent",
       "page_of": "Pàgina {current} de {total}"
+    },
+    "detail": {
+      "back": "Tornar al llistat",
+      "objective": "Objectiu",
+      "rules": "Regles / Desenvolupament",
+      "coaching_points": "Incidir en",
+      "variants": "Variants",
+      "players": "Jugadors",
+      "physical_focus": "Aspecte físic",
+      "intensity": "Intensitat",
+      "tactical": "Objectius tàctics",
+      "technical": "Objectius tècnics",
+      "diagram": "Representació gràfica",
+      "approved_by_at": "Aprovat per {name} · {date}",
+      "published_note": "Publicat",
+      "rejected_reason": "Motiu del rebuig"
     }
   }
 }
