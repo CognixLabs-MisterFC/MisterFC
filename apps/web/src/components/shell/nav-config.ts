@@ -7,11 +7,9 @@ import {
   UserRound,
   Users,
   UsersRound,
-  ClipboardCheck,
   Megaphone,
   Upload,
   Calendar,
-  Dumbbell,
   GraduationCap,
   Shield,
   LayoutGrid,
@@ -33,32 +31,17 @@ export type NavItem = {
 };
 
 /**
- * Sección agrupadora (sin destino propio): un encabezado con sus entradas
- * anidadas. Ej. "Entrenamientos" → Ejercicios (F11) + Sesiones (F12). El
- * encabezado se muestra si el rol ve AL MENOS una de sus entradas.
- */
-export type NavSection = {
-  /** Clave i18n bajo `shell.nav.<key>` (etiqueta del encabezado). */
-  key: string;
-  icon: LucideIcon;
-  items: NavItem[];
-};
-
-/** Una entrada del menú: enlace suelto o sección con hijos. */
-export type NavEntry = NavItem | NavSection;
-
-export function isNavSection(entry: NavEntry): entry is NavSection {
-  return 'items' in entry;
-}
-
-/**
  * Entradas del menú lateral, ordenadas según aparecen.
  *
  * Solo entradas cuyo destino exista en el lote actual. Las que aún no
  * tienen implementación (plantilla del club, staff, mi ficha) se añaden
  * cuando llegan sus lotes para que el menú no acabe en 404.
+ *
+ * "Entrenamientos" es un HUB (una sola entrada → /entrenamientos): sus
+ * sub-áreas (Ejercicios, Asistencia, y más adelante Sesiones/F12) se presentan
+ * DENTRO del hub, no como hijos en el sidebar. Así el sidebar queda compacto.
  */
-export const NAV_ENTRIES: readonly NavEntry[] = [
+export const NAV_ITEMS: readonly NavItem[] = [
   {
     key: 'home',
     href: '',
@@ -157,12 +140,14 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
     ],
   },
   {
-    key: 'asistencia',
-    href: '/asistencia',
-    icon: ClipboardCheck,
-    // Asistencia: cuerpo técnico marca, jugador/familia ve solo lo suyo.
-    // El ayudante necesita `can_mark_attendance` para que la page muestre
-    // datos; la nav se le enseña igual y la propia page filtra.
+    key: 'entrenamientos',
+    href: '/entrenamientos',
+    icon: GraduationCap,
+    // HUB de entrenamientos: agrupa Ejercicios (F11) y Asistencia (vive aquí
+    // porque la asistencia se confirma para los entrenamientos), y a futuro las
+    // Sesiones (F12). Visible para todos los roles que ven AL MENOS una sub-área
+    // (asistencia la ve también el jugador). El gating fino lo aplica cada
+    // tarjeta del hub y el guard de cada ruta.
     roles: [
       'admin_club',
       'coordinador',
@@ -199,28 +184,6 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
       'coordinador',
       'entrenador_principal',
       'entrenador_ayudante',
-    ],
-  },
-  {
-    // Sección "Entrenamientos": agrupa Ejercicios (F11) y, más adelante, las
-    // Sesiones (F12). El encabezado no navega; cuelgan de él sus entradas.
-    key: 'entrenamientos',
-    icon: GraduationCap,
-    items: [
-      {
-        key: 'ejercicios',
-        href: '/ejercicios',
-        icon: Dumbbell,
-        // F11.3 — biblioteca de ejercicios del club. Visible para todo el staff
-        // (admin/coord + entrenadores); la RLS de 11.1 decide qué ve cada uno
-        // (publicados del club + los propios; admin además propuestos/rechazados).
-        roles: [
-          'admin_club',
-          'coordinador',
-          'entrenador_principal',
-          'entrenador_ayudante',
-        ],
-      },
     ],
   },
   {
@@ -285,16 +248,6 @@ export const NAV_ENTRIES: readonly NavEntry[] = [
   },
 ] as const;
 
-/**
- * Entradas visibles para un rol. En las secciones filtra los hijos por rol y
- * descarta la sección si queda sin hijos visibles.
- */
-export function navEntriesForRole(role: Role): NavEntry[] {
-  return NAV_ENTRIES.flatMap((entry): NavEntry[] => {
-    if (isNavSection(entry)) {
-      const items = entry.items.filter((item) => item.roles.includes(role));
-      return items.length > 0 ? [{ ...entry, items }] : [];
-    }
-    return entry.roles.includes(role) ? [entry] : [];
-  });
+export function navItemsForRole(role: Role): NavItem[] {
+  return NAV_ITEMS.filter((item) => item.roles.includes(role));
 }

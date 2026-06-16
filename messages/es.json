@@ -2749,5 +2749,19 @@
         "created": "Ejercicio guardado."
       }
     }
+  },
+  "entrenamientos": {
+    "title": "Entrenamientos",
+    "subtitle": "Recursos y gestión de los entrenamientos del club.",
+    "cards": {
+      "ejercicios": {
+        "title": "Ejercicios",
+        "description": "Biblioteca de ejercicios del club."
+      },
+      "asistencia": {
+        "title": "Asistencia",
+        "description": "Confirma y consulta la asistencia a los entrenamientos."
+      }
+    }
   }
 }

@@ -2750,5 +2750,19 @@
         "created": "Exercise saved."
       }
     }
+  },
+  "entrenamientos": {
+    "title": "Training",
+    "subtitle": "Resources and management for the club's training sessions.",
+    "cards": {
+      "ejercicios": {
+        "title": "Exercises",
+        "description": "Club exercise library."
+      },
+      "asistencia": {
+        "title": "Attendance",
+        "description": "Confirm and review training attendance."
+      }
+    }
   }
 }
