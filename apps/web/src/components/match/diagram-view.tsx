@@ -86,9 +86,10 @@ function renderElement(
       const cx = mx(el.x_pct);
       const cy = my(el.y_pct);
       const s = scaleOf(el.size);
+      // Radio base reducido un 25% (2.55 = 3.4 × 0.75); sm/lg escalan desde aquí.
       return (
         <>
-          <circle cx={cx} cy={cy} r={3.4 * s} fill={ROLE_FILL[el.role]} stroke="#fff" strokeWidth={0.5} />
+          <circle cx={cx} cy={cy} r={2.55 * s} fill={ROLE_FILL[el.role]} stroke="#fff" strokeWidth={0.5} />
           {el.label ? (
             <text x={cx} y={cy + 6.2 * s} fontSize={3 * s} textAnchor="middle" fill={INK}>
               {el.label}

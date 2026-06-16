@@ -200,7 +200,8 @@
       "ajustes": "Ajustes del club",
       "mi_ficha": "Mi ficha",
       "equipos": "Equipos",
-      "ejercicios": "Ejercicios"
+      "ejercicios": "Ejercicios",
+      "entrenamientos": "Entrenamientos"
     },
     "collapse_sidebar": "Ocultar el menú",
     "expand_sidebar": "Mostrar el menú"
@@ -2700,6 +2701,67 @@
       "approved_by_at": "Aprobado por {name} · {date}",
       "published_note": "Publicado",
       "rejected_reason": "Motivo del rechazo"
+    },
+    "create": "Crear ejercicio",
+    "form": {
+      "new_title": "Nuevo ejercicio",
+      "forbidden": "No tienes permiso para crear ejercicios en este club.",
+      "sections": {
+        "objectives": "Objetivos",
+        "params": "Parámetros",
+        "development": "Desarrollo",
+        "diagram": "Diagrama"
+      },
+      "fields": {
+        "name": "Nombre",
+        "categories": "Categorías",
+        "tactical": "Objetivos tácticos",
+        "technical": "Objetivos técnicos",
+        "physical_focus": "Aspecto físico",
+        "intensity": "Intensidad",
+        "space_type": "Espacio",
+        "space_dimensions": "Dimensiones",
+        "base_duration": "Duración (min)",
+        "objective": "Objetivo",
+        "description": "Reglas / Desarrollo",
+        "coaching_points": "Incidir en",
+        "variants": "Variantes",
+        "players": "Jugadores"
+      },
+      "placeholders": {
+        "name": "Ej. Rondo 4v2",
+        "none": "Sin especificar",
+        "space_dimensions": "Ej. 20x20 m"
+      },
+      "actions": {
+        "save_draft": "Guardar borrador",
+        "propose": "Proponer",
+        "publish": "Publicar"
+      },
+      "errors": {
+        "name_required": "El nombre es obligatorio.",
+        "forbidden": "No tienes permiso para esta acción.",
+        "invalid": "Revisa los datos del formulario.",
+        "name_taken": "Ya existe un ejercicio con ese nombre.",
+        "generic": "No se pudo guardar. Inténtalo de nuevo."
+      },
+      "toast": {
+        "created": "Ejercicio guardado."
+      }
+    }
+  },
+  "entrenamientos": {
+    "title": "Entrenamientos",
+    "subtitle": "Recursos y gestión de los entrenamientos del club.",
+    "cards": {
+      "ejercicios": {
+        "title": "Ejercicios",
+        "description": "Biblioteca de ejercicios del club."
+      },
+      "asistencia": {
+        "title": "Asistencia",
+        "description": "Confirma y consulta la asistencia a los entrenamientos."
+      }
     }
   }
 }

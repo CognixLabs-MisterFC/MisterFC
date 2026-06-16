@@ -7,11 +7,10 @@ import {
   UserRound,
   Users,
   UsersRound,
-  ClipboardCheck,
   Megaphone,
   Upload,
   Calendar,
-  Dumbbell,
+  GraduationCap,
   Shield,
   LayoutGrid,
   LayoutDashboard,
@@ -22,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export type NavItem = {
-  /** Clave i18n bajo `shell.nav.<key>.label` */
+  /** Clave i18n bajo `shell.nav.<key>` */
   key: string;
   /** Path tras `/{locale}` (ej. `/categorias`). Sin trailing slash. */
   href: string;
@@ -37,6 +36,10 @@ export type NavItem = {
  * Solo entradas cuyo destino exista en el lote actual. Las que aún no
  * tienen implementación (plantilla del club, staff, mi ficha) se añaden
  * cuando llegan sus lotes para que el menú no acabe en 404.
+ *
+ * "Entrenamientos" es un HUB (una sola entrada → /entrenamientos): sus
+ * sub-áreas (Ejercicios, Asistencia, y más adelante Sesiones/F12) se presentan
+ * DENTRO del hub, no como hijos en el sidebar. Así el sidebar queda compacto.
  */
 export const NAV_ITEMS: readonly NavItem[] = [
   {
@@ -137,12 +140,14 @@ export const NAV_ITEMS: readonly NavItem[] = [
     ],
   },
   {
-    key: 'asistencia',
-    href: '/asistencia',
-    icon: ClipboardCheck,
-    // Asistencia: cuerpo técnico marca, jugador/familia ve solo lo suyo.
-    // El ayudante necesita `can_mark_attendance` para que la page muestre
-    // datos; la nav se le enseña igual y la propia page filtra.
+    key: 'entrenamientos',
+    href: '/entrenamientos',
+    icon: GraduationCap,
+    // HUB de entrenamientos: agrupa Ejercicios (F11) y Asistencia (vive aquí
+    // porque la asistencia se confirma para los entrenamientos), y a futuro las
+    // Sesiones (F12). Visible para todos los roles que ven AL MENOS una sub-área
+    // (asistencia la ve también el jugador). El gating fino lo aplica cada
+    // tarjeta del hub y el guard de cada ruta.
     roles: [
       'admin_club',
       'coordinador',
@@ -174,20 +179,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
     // F6.10 — plantillas personalizadas de formación del coach. Visible para
     // staff (admin/coord + entrenadores); la page gatea el botón "Nueva" y la
     // RLS gatea el INSERT según la autoridad de alineaciones.
-    roles: [
-      'admin_club',
-      'coordinador',
-      'entrenador_principal',
-      'entrenador_ayudante',
-    ],
-  },
-  {
-    key: 'ejercicios',
-    href: '/ejercicios',
-    icon: Dumbbell,
-    // F11.3 — biblioteca de ejercicios del club. Visible para todo el staff
-    // (admin/coord + entrenadores); la RLS de 11.1 decide qué ve cada uno
-    // (publicados del club + los propios; admin además propuestos/rechazados).
     roles: [
       'admin_club',
       'coordinador',
