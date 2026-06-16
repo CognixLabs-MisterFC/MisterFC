@@ -12,6 +12,7 @@ import {
   Upload,
   Calendar,
   Dumbbell,
+  GraduationCap,
   Shield,
   LayoutGrid,
   LayoutDashboard,
@@ -22,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export type NavItem = {
-  /** Clave i18n bajo `shell.nav.<key>.label` */
+  /** Clave i18n bajo `shell.nav.<key>` */
   key: string;
   /** Path tras `/{locale}` (ej. `/categorias`). Sin trailing slash. */
   href: string;
@@ -32,13 +33,32 @@ export type NavItem = {
 };
 
 /**
+ * Sección agrupadora (sin destino propio): un encabezado con sus entradas
+ * anidadas. Ej. "Entrenamientos" → Ejercicios (F11) + Sesiones (F12). El
+ * encabezado se muestra si el rol ve AL MENOS una de sus entradas.
+ */
+export type NavSection = {
+  /** Clave i18n bajo `shell.nav.<key>` (etiqueta del encabezado). */
+  key: string;
+  icon: LucideIcon;
+  items: NavItem[];
+};
+
+/** Una entrada del menú: enlace suelto o sección con hijos. */
+export type NavEntry = NavItem | NavSection;
+
+export function isNavSection(entry: NavEntry): entry is NavSection {
+  return 'items' in entry;
+}
+
+/**
  * Entradas del menú lateral, ordenadas según aparecen.
  *
  * Solo entradas cuyo destino exista en el lote actual. Las que aún no
  * tienen implementación (plantilla del club, staff, mi ficha) se añaden
  * cuando llegan sus lotes para que el menú no acabe en 404.
  */
-export const NAV_ITEMS: readonly NavItem[] = [
+export const NAV_ENTRIES: readonly NavEntry[] = [
   {
     key: 'home',
     href: '',
@@ -182,17 +202,25 @@ export const NAV_ITEMS: readonly NavItem[] = [
     ],
   },
   {
-    key: 'ejercicios',
-    href: '/ejercicios',
-    icon: Dumbbell,
-    // F11.3 — biblioteca de ejercicios del club. Visible para todo el staff
-    // (admin/coord + entrenadores); la RLS de 11.1 decide qué ve cada uno
-    // (publicados del club + los propios; admin además propuestos/rechazados).
-    roles: [
-      'admin_club',
-      'coordinador',
-      'entrenador_principal',
-      'entrenador_ayudante',
+    // Sección "Entrenamientos": agrupa Ejercicios (F11) y, más adelante, las
+    // Sesiones (F12). El encabezado no navega; cuelgan de él sus entradas.
+    key: 'entrenamientos',
+    icon: GraduationCap,
+    items: [
+      {
+        key: 'ejercicios',
+        href: '/ejercicios',
+        icon: Dumbbell,
+        // F11.3 — biblioteca de ejercicios del club. Visible para todo el staff
+        // (admin/coord + entrenadores); la RLS de 11.1 decide qué ve cada uno
+        // (publicados del club + los propios; admin además propuestos/rechazados).
+        roles: [
+          'admin_club',
+          'coordinador',
+          'entrenador_principal',
+          'entrenador_ayudante',
+        ],
+      },
     ],
   },
   {
@@ -257,6 +285,16 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
 ] as const;
 
-export function navItemsForRole(role: Role): NavItem[] {
-  return NAV_ITEMS.filter((item) => item.roles.includes(role));
+/**
+ * Entradas visibles para un rol. En las secciones filtra los hijos por rol y
+ * descarta la sección si queda sin hijos visibles.
+ */
+export function navEntriesForRole(role: Role): NavEntry[] {
+  return NAV_ENTRIES.flatMap((entry): NavEntry[] => {
+    if (isNavSection(entry)) {
+      const items = entry.items.filter((item) => item.roles.includes(role));
+      return items.length > 0 ? [{ ...entry, items }] : [];
+    }
+    return entry.roles.includes(role) ? [entry] : [];
+  });
 }

@@ -307,25 +307,24 @@ export function ExerciseForm({ isAdmin }: { isAdmin: boolean }) {
         </CardContent>
       </Card>
 
-      {/* Acciones (según rol) */}
+      {/* Acciones según rol. Ambos pueden guardar borrador; la acción primaria
+          difiere: Admin publica directo, entrenador propone. */}
       <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 border-t bg-background/80 py-3 backdrop-blur">
+        <Button
+          variant="outline"
+          onClick={() => submit('save_draft')}
+          disabled={pending || nameMissing}
+        >
+          {tForm('actions.save_draft')}
+        </Button>
         {isAdmin ? (
           <Button onClick={() => submit('publish')} disabled={pending || nameMissing}>
             {tForm('actions.publish')}
           </Button>
         ) : (
-          <>
-            <Button
-              variant="outline"
-              onClick={() => submit('save_draft')}
-              disabled={pending || nameMissing}
-            >
-              {tForm('actions.save_draft')}
-            </Button>
-            <Button onClick={() => submit('propose')} disabled={pending || nameMissing}>
-              {tForm('actions.propose')}
-            </Button>
-          </>
+          <Button onClick={() => submit('propose')} disabled={pending || nameMissing}>
+            {tForm('actions.propose')}
+          </Button>
         )}
       </div>
     </div>

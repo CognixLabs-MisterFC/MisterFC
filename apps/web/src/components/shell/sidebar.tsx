@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import type { Role } from '@misterfc/core';
 import { SidebarNavLink } from './sidebar-nav-link';
-import { navItemsForRole } from './nav-config';
+import { navEntriesForRole, isNavSection, type NavItem } from './nav-config';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -19,7 +19,23 @@ type Props = {
 
 export async function Sidebar({ role, variant, badges }: Props) {
   const t = await getTranslations('shell');
-  const items = navItemsForRole(role);
+  const entries = navEntriesForRole(role);
+
+  // El icono se resuelve aquí en el server y se pasa como ReactNode ya resuelto.
+  // Pasar la función `icon` directamente cruzaría la frontera RSC (lucide es
+  // forwardRef) y rompería el render ("Functions cannot be passed...").
+  function renderLink(item: NavItem) {
+    const Icon = item.icon;
+    return (
+      <SidebarNavLink
+        key={item.key}
+        href={item.href || '/'}
+        icon={<Icon className="size-4 shrink-0" aria-hidden />}
+        label={t(`nav.${item.key}`)}
+        badge={badges?.[item.key]}
+      />
+    );
+  }
 
   return (
     <nav
@@ -35,21 +51,22 @@ export async function Sidebar({ role, variant, badges }: Props) {
         </span>
       </div>
 
-      {items.map((item) => {
-        const Icon = item.icon;
-        return (
-          <SidebarNavLink
-            key={item.key}
-            href={item.href || '/'}
-            // El icono se renderiza aquí en el server y se pasa como ReactNode
-            // ya resuelto. Pasar `item.icon` directamente cruzaría la frontera
-            // RSC con una función (lucide es forwardRef) y rompería el render
-            // con "Functions cannot be passed directly to Client Components".
-            icon={<Icon className="size-4 shrink-0" aria-hidden />}
-            label={t(`nav.${item.key}`)}
-            badge={badges?.[item.key]}
-          />
-        );
+      {entries.map((entry) => {
+        if (isNavSection(entry)) {
+          const SectionIcon = entry.icon;
+          return (
+            <div key={entry.key} className="flex flex-col gap-1">
+              <div className="flex items-center gap-2 px-3 pb-0.5 pt-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <SectionIcon className="size-3.5 shrink-0" aria-hidden />
+                {t(`nav.${entry.key}`)}
+              </div>
+              <div className="flex flex-col gap-1 border-l border-border/60 pl-2">
+                {entry.items.map(renderLink)}
+              </div>
+            </div>
+          );
+        }
+        return renderLink(entry);
       })}
     </nav>
   );
