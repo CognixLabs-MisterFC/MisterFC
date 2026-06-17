@@ -21,7 +21,7 @@
  */
 
 import type { ReactNode } from 'react';
-import type { Diagram, DiagramElement, ElementSize } from '@misterfc/core';
+import type { Diagram, DiagramElement, ElementSize, StrokeColor } from '@misterfc/core';
 import { cn } from '@/lib/utils';
 import { FieldMarkings } from './field-markings';
 
@@ -68,6 +68,13 @@ const ARROW_DASH: Record<string, string | undefined> = {
 };
 
 const INK = '#1f2937';
+
+// F11B.0 — color de trazo opcional (flecha/linea). Ausente = INK (negro).
+const STROKE_COLOR_HEX: Record<StrokeColor, string> = { blue: '#2563eb', red: '#dc2626' };
+const strokeColorOf = (c: StrokeColor | undefined): string => (c ? STROKE_COLOR_HEX[c] : INK);
+/** Id del marcador de punta de flecha por color (uno por color en <defs>). */
+const arrowheadId = (c: StrokeColor | undefined): string =>
+  c ? `diagram-arrowhead-${c}` : 'diagram-arrowhead';
 
 // Factor de escala del glifo por `size` (md = tamaño actual). Lo aplica el
 // renderer a los elementos de PUNTO; en `texto` escala la fuente.
@@ -157,10 +164,10 @@ function renderElement(
           y1={my(el.from.y_pct)}
           x2={mx(el.to.x_pct)}
           y2={my(el.to.y_pct)}
-          stroke={INK}
+          stroke={strokeColorOf(el.color)}
           strokeWidth={0.8}
           strokeDasharray={ARROW_DASH[el.style]}
-          markerEnd="url(#diagram-arrowhead)"
+          markerEnd={`url(#${arrowheadId(el.color)})`}
         />
       );
     case 'linea': {
@@ -169,7 +176,7 @@ function renderElement(
         <polyline
           points={pts}
           fill="none"
-          stroke={INK}
+          stroke={strokeColorOf(el.color)}
           strokeWidth={0.8}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -256,17 +263,23 @@ export function DiagramView({
       <FieldMarkings kind={kind} />
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="absolute inset-0 size-full">
         <defs>
-          <marker
-            id="diagram-arrowhead"
-            markerUnits="userSpaceOnUse"
-            markerWidth={4}
-            markerHeight={4}
-            refX={3}
-            refY={2}
-            orient="auto"
-          >
-            <path d="M0,0 L4,2 L0,4 z" fill={INK} />
-          </marker>
+          {/* Un marcador por color de trazo (negro por defecto + blue/red). El
+              `fill` del marcador debe casar con el color de la flecha (los
+              marcadores no heredan el stroke de la línea de forma fiable). */}
+          {([undefined, 'blue', 'red'] as const).map((c) => (
+            <marker
+              key={c ?? 'default'}
+              id={arrowheadId(c)}
+              markerUnits="userSpaceOnUse"
+              markerWidth={4}
+              markerHeight={4}
+              refX={3}
+              refY={2}
+              orient="auto"
+            >
+              <path d="M0,0 L4,2 L0,4 z" fill={strokeColorOf(c)} />
+            </marker>
+          ))}
         </defs>
         {diagram.elements.map((el) => (
           <g key={el.id}>{renderElement(el, mx, my)}</g>

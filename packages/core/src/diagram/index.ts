@@ -10,6 +10,7 @@ export {
   ARROW_STYLES,
   STROKE_KINDS,
   ZONE_FILLS,
+  STROKE_COLORS,
   ELEMENT_SIZES,
   FIELD_KINDS,
   FIELD_ORIENTATIONS,
@@ -25,6 +26,7 @@ export type {
   ArrowStyle,
   StrokeKind,
   ZoneFill,
+  StrokeColor,
   ElementSize,
   FieldKind,
   FieldOrientation,
@@ -35,16 +37,20 @@ export type {
   Diagram,
 } from './diagram';
 
+// F11B.0 — Simplificación del trazo a mano alzada (dibujo libre).
+export { simplifyStroke, DEFAULT_SIMPLIFY_EPSILON } from './simplify';
+
 // F11.5b — Reducer puro del editor (PitchEditor).
 export {
   UNDO_LIMIT,
   DEFAULT_TEXT_LABEL,
   POINT_TOOLS,
   DRAW_TOOLS,
+  FREEHAND_TOOL,
   initEditorState,
   toDiagram,
   canUndo,
   canRedo,
   pitchEditorReducer,
 } from './editor';
-export type { PointTool, DrawTool, PitchTool, PitchEditorState, PitchAction } from './editor';
+export type { PointTool, DrawTool, FreehandTool, PitchTool, PitchEditorState, PitchAction } from './editor';

@@ -2866,5 +2866,13 @@
         "description": "Teams by season and club categories."
       }
     }
+  },
+  "pitchEditor": {
+    "color": {
+      "black": "Black",
+      "blue": "Blue",
+      "red": "Red",
+      "aria": "Stroke color"
+    }
   }
 }

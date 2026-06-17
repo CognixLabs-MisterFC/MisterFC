@@ -20,6 +20,7 @@
  */
 
 import { useEffect, useReducer, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   DndContext,
   type DragEndEvent,
@@ -36,14 +37,18 @@ import {
   toDiagram,
   canUndo,
   canRedo,
+  simplifyStroke,
   DRAW_TOOLS,
+  FREEHAND_TOOL,
   type Diagram,
   type DiagramElement,
+  type DiagramPoint,
   type PitchTool,
   type PlayerRole,
   type ArrowStyle,
   type StrokeKind,
   type ZoneFill,
+  type StrokeColor,
   type ElementSize,
 } from '@misterfc/core';
 import { cn } from '@/lib/utils';
@@ -64,8 +69,15 @@ const TOOL_BUTTONS: ReadonlyArray<{ tool: PitchTool; label: string }> = [
   { tool: 'texto', label: 'Texto' },
   { tool: 'flecha', label: 'Flecha' },
   { tool: 'linea', label: 'Línea' },
+  { tool: FREEHAND_TOOL, label: 'Dibujo libre' },
   { tool: 'zona', label: 'Zona' },
 ];
+
+// Color de trazo de flecha/linea/dibujo libre. 'black' = sin color = negro (default).
+const colorFromSelect = (v: string): StrokeColor | null =>
+  v === 'blue' ? 'blue' : v === 'red' ? 'red' : null;
+// Herramientas que admiten color de trazo (flecha + linea + dibujo libre).
+const COLOR_TOOLS = new Set<PitchTool>(['flecha', 'linea', FREEHAND_TOOL]);
 
 const ROLE_OPTIONS: ReadonlyArray<{ role: PlayerRole; label: string }> = [
   { role: 'atacante', label: 'Atacante' },
@@ -158,6 +170,14 @@ export function PitchEditor({
   onChange?: (diagram: Diagram) => void;
   className?: string;
 }) {
+  // i18n: en F11B.0 solo se localizan las ETIQUETAS DE COLOR (D9 completa = 11B.1).
+  const tColor = useTranslations('pitchEditor.color');
+  const COLOR_OPTIONS: ReadonlyArray<{ value: 'black' | StrokeColor; label: string }> = [
+    { value: 'black', label: tColor('black') },
+    { value: 'blue', label: tColor('blue') },
+    { value: 'red', label: tColor('red') },
+  ];
+
   const [state, dispatch] = useReducer(pitchEditorReducer, initialDiagram, initEditorState);
   const rootRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(
@@ -165,9 +185,14 @@ export function PitchEditor({
   );
   // Dibujo en curso (rubber-band): EFÍMERO, no entra al reducer ni al historial.
   const [draw, setDraw] = useState<{ from: Pt; to: Pt } | null>(null);
+  // Trazo a mano alzada en curso (F11B.0): EFÍMERO, se simplifica al soltar.
+  const [freehand, setFreehand] = useState<Pt[] | null>(null);
 
   const diagram = toDiagram(state);
-  const isDrawTool = (DRAW_TOOLS as readonly string[]).includes(state.tool);
+  const isRubberTool = (DRAW_TOOLS as readonly string[]).includes(state.tool);
+  const isFreehandTool = state.tool === FREEHAND_TOOL;
+  // Cualquier herramienta que captura el puntero (rubber-band o mano alzada).
+  const isDrawTool = isRubberTool || isFreehandTool;
 
   useEffect(() => {
     onChange?.(toDiagram(state));
@@ -192,21 +217,46 @@ export function PitchEditor({
     if (pt) dispatch({ type: 'PLACE', x_pct: pt.x, y_pct: pt.y });
   }
 
-  // ── Rubber-band (solo herramientas de dibujo) ──────────────────────────────
+  // ── Captura por puntero (rubber-band o mano alzada) ────────────────────────
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (!isDrawTool) return;
     if ((e.target as HTMLElement).closest('[data-handle]')) return; // no sobre un handle
     const pt = pctFromEvent(e.clientX, e.clientY);
     if (!pt) return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    setDraw({ from: pt, to: pt });
+    if (isFreehandTool) setFreehand([pt]);
+    else setDraw({ from: pt, to: pt });
   }
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!draw) return;
     const pt = pctFromEvent(e.clientX, e.clientY);
-    if (pt) setDraw((d) => (d ? { ...d, to: pt } : null));
+    if (!pt) return;
+    if (freehand) {
+      // Muestrea el recorrido; decima por distancia mínima para no saturar.
+      setFreehand((pts) => {
+        if (!pts) return pts;
+        const last = pts[pts.length - 1];
+        if (last && Math.hypot(pt.x - last.x, pt.y - last.y) < 0.4) return pts;
+        return [...pts, pt];
+      });
+    } else if (draw) {
+      setDraw((d) => (d ? { ...d, to: pt } : null));
+    }
   }
   function handlePointerUp() {
+    // Trazo a mano alzada: simplifica y confirma como un `linea` (1 paso de undo).
+    if (freehand) {
+      const pts = freehand;
+      setFreehand(null);
+      if (pts.length < 2) return;
+      const total = pts.reduce(
+        (acc, p, i) => (i === 0 ? 0 : acc + Math.hypot(p.x - pts[i - 1]!.x, p.y - pts[i - 1]!.y)),
+        0,
+      );
+      if (total < DRAW_MIN_DIST) return; // ignora un toque/microtrazo
+      const points: DiagramPoint[] = simplifyStroke(pts.map((p) => ({ x_pct: p.x, y_pct: p.y })));
+      if (points.length >= 2) dispatch({ type: 'ADD_FREEHAND', points });
+      return;
+    }
     if (!draw) return;
     const { from, to } = draw;
     setDraw(null);
@@ -400,6 +450,21 @@ export function PitchEditor({
             ))}
           </select>
         )}
+
+        {COLOR_TOOLS.has(state.tool) && (
+          <select
+            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            value={state.nextColor ?? 'black'}
+            onChange={(e) => dispatch({ type: 'SET_NEXT_COLOR', color: colorFromSelect(e.target.value) })}
+            aria-label={tColor('aria')}
+          >
+            {COLOR_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Campo: renderer read-only + capa de interacción */}
@@ -417,6 +482,25 @@ export function PitchEditor({
         onPointerUp={handlePointerUp}
       >
         <DiagramView diagram={diagram} fill />
+
+        {/* Preview del trazo a mano alzada en curso (no interactivo) */}
+        {freehand && freehand.length >= 2 && (
+          <svg
+            className="pointer-events-none absolute inset-0 size-full"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+          >
+            <polyline
+              points={freehand.map((p) => `${p.x},${p.y}`).join(' ')}
+              fill="none"
+              stroke="#fff"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+        )}
 
         {/* Preview del dibujo en curso (no interactivo) */}
         {draw && (
@@ -539,6 +623,20 @@ export function PitchEditor({
               aria-label="Relleno"
             >
               {FILL_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          )}
+          {(selected.type === 'flecha' || selected.type === 'linea') && (
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={selected.color ?? 'black'}
+              onChange={(e) => dispatch({ type: 'UPDATE_COLOR', id: selected.id, color: colorFromSelect(e.target.value) })}
+              aria-label={tColor('aria')}
+            >
+              {COLOR_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>

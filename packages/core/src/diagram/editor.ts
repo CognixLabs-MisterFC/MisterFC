@@ -38,6 +38,7 @@ import {
   type ArrowStyle,
   type StrokeKind,
   type ZoneFill,
+  type StrokeColor,
   type ElementSize,
   type DiagramPoint,
 } from './diagram';
@@ -65,7 +66,12 @@ export type PointTool = (typeof POINT_TOOLS)[number];
 export const DRAW_TOOLS = ['flecha', 'linea', 'zona'] as const;
 export type DrawTool = (typeof DRAW_TOOLS)[number];
 
-export type PitchTool = 'select' | PointTool | DrawTool;
+/** F11B.0 — Dibujo libre (trazo a mano alzada). Produce un `linea` con todo el
+ *  recorrido muestreado/simplificado; el glue captura los puntos por pointer. */
+export const FREEHAND_TOOL = 'dibujo_libre' as const;
+export type FreehandTool = typeof FREEHAND_TOOL;
+
+export type PitchTool = 'select' | PointTool | DrawTool | FreehandTool;
 
 type Snapshot = DiagramElement[];
 
@@ -80,6 +86,8 @@ export type PitchEditorState = {
   nextText: string;
   nextArrowStyle: ArrowStyle;
   nextStroke: StrokeKind;
+  /** Color de trazo del PRÓXIMO flecha/linea/dibujo libre (null = negro; default). */
+  nextColor: StrokeColor | null;
   /** Relleno de la PRÓXIMA zona (null = Ninguno = contorno; default). */
   nextFill: ZoneFill | null;
   /** Tamaño del próximo elemento de punto (default 'md' = tamaño actual). */
@@ -97,6 +105,7 @@ export type PitchAction =
   | { type: 'SET_NEXT_TEXT'; text: string }
   | { type: 'SET_NEXT_ARROW_STYLE'; style: ArrowStyle }
   | { type: 'SET_NEXT_STROKE'; stroke: StrokeKind }
+  | { type: 'SET_NEXT_COLOR'; color: StrokeColor | null }
   | { type: 'SET_NEXT_FILL'; fill: ZoneFill | null }
   | { type: 'SET_NEXT_SIZE'; size: ElementSize }
   | { type: 'PLACE'; x_pct: number; y_pct: number }
@@ -104,6 +113,8 @@ export type PitchAction =
   | { type: 'ADD_ARROW'; from: DiagramPoint; to: DiagramPoint }
   | { type: 'ADD_LINE'; from: DiagramPoint; to: DiagramPoint }
   | { type: 'ADD_ZONA'; from: DiagramPoint; to: DiagramPoint }
+  // Confirmación de un trazo a mano alzada (puntos ya simplificados) — 1 paso.
+  | { type: 'ADD_FREEHAND'; points: DiagramPoint[] }
   | { type: 'SELECT'; id: string | null }
   | { type: 'MOVE'; id: string; x_pct: number; y_pct: number }
   | { type: 'TRANSLATE'; id: string; dx: number; dy: number }
@@ -112,6 +123,7 @@ export type PitchAction =
   | { type: 'UPDATE_TEXT'; id: string; text: string }
   | { type: 'UPDATE_ARROW_STYLE'; id: string; style: ArrowStyle }
   | { type: 'UPDATE_STROKE'; id: string; stroke: StrokeKind }
+  | { type: 'UPDATE_COLOR'; id: string; color: StrokeColor | null }
   | { type: 'UPDATE_FILL'; id: string; fill: ZoneFill | null }
   | { type: 'UPDATE_SIZE'; id: string; size: ElementSize }
   | { type: 'UNDO' }
@@ -143,6 +155,7 @@ export function initEditorState(diagram?: Diagram): PitchEditorState {
     nextText: '',
     nextArrowStyle: 'pase',
     nextStroke: 'solid',
+    nextColor: null,
     nextFill: null,
     nextSize: 'md',
     past: [],
@@ -263,6 +276,8 @@ export function pitchEditorReducer(
       return { ...state, nextArrowStyle: action.style };
     case 'SET_NEXT_STROKE':
       return { ...state, nextStroke: action.stroke };
+    case 'SET_NEXT_COLOR':
+      return { ...state, nextColor: action.color };
     case 'SET_NEXT_FILL':
       return { ...state, nextFill: action.fill };
     case 'SET_NEXT_SIZE':
@@ -294,12 +309,15 @@ export function pitchEditorReducer(
     case 'ADD_ARROW': {
       const counter = state.counter + 1;
       const id = `el-${counter}`;
+      // `color` solo se guarda si no es negro (null) → forma limpia, retrocompat.
+      const colorProp = state.nextColor ? { color: state.nextColor } : {};
       const el: DiagramElement = {
         type: 'flecha',
         id,
         from: clampPoint(action.from),
         to: clampPoint(action.to),
         style: state.nextArrowStyle,
+        ...colorProp,
       };
       return {
         ...state,
@@ -314,11 +332,38 @@ export function pitchEditorReducer(
     case 'ADD_LINE': {
       const counter = state.counter + 1;
       const id = `el-${counter}`;
+      const colorProp = state.nextColor ? { color: state.nextColor } : {};
       const el: DiagramElement = {
         type: 'linea',
         id,
         points: [clampPoint(action.from), clampPoint(action.to)],
         stroke: state.nextStroke,
+        ...colorProp,
+      };
+      return {
+        ...state,
+        elements: [...state.elements, el],
+        past: pushPast(state.past, state.elements),
+        future: [],
+        counter,
+        selectedId: id,
+      };
+    }
+
+    // F11B.0 — Trazo a mano alzada: los puntos llegan YA simplificados (≤500) del
+    // glue. Se clampan a [0,100] y se confirma como un `linea`. Min 2 puntos
+    // (requisito del contrato); si llega menos, se ignora.
+    case 'ADD_FREEHAND': {
+      if (action.points.length < 2) return state;
+      const counter = state.counter + 1;
+      const id = `el-${counter}`;
+      const colorProp = state.nextColor ? { color: state.nextColor } : {};
+      const el: DiagramElement = {
+        type: 'linea',
+        id,
+        points: action.points.map(clampPoint),
+        stroke: state.nextStroke,
+        ...colorProp,
       };
       return {
         ...state,
@@ -435,6 +480,22 @@ export function pitchEditorReducer(
       if (!el || (el.type !== 'linea' && el.type !== 'zona')) return state;
       const next = state.elements.slice();
       next[idx] = { ...el, stroke: action.stroke };
+      return { ...state, elements: next, past: pushPast(state.past, state.elements), future: [] };
+    }
+
+    case 'UPDATE_COLOR': {
+      const idx = state.elements.findIndex((e) => e.id === action.id);
+      const el = state.elements[idx];
+      // Solo flecha y linea llevan `color`.
+      if (!el || (el.type !== 'flecha' && el.type !== 'linea')) return state;
+      const next = state.elements.slice();
+      if (action.color === null) {
+        // Negro → se elimina la clave (forma limpia: ausente = negro).
+        const { color: _drop, ...rest } = el;
+        next[idx] = rest;
+      } else {
+        next[idx] = { ...el, color: action.color };
+      }
       return { ...state, elements: next, past: pushPast(state.past, state.elements), future: [] };
     }
 
