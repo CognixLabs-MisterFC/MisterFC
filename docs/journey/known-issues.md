@@ -67,6 +67,14 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
   - Opcional: añadir `pnpm format:check` al workflow CI (`.github/workflows/ci.yml`).
   - Opcional: husky pre-commit con `lint-staged`.
 
+### F11B — diferidos de la pizarra táctica (no pendientes de F11B)
+- **Detectado en**: 2026-06-17, cierre de F11B. Decisiones de alcance tomadas durante el build; F11B se cierra completa, esto queda como backlog (no bloquea).
+- **Export PNG del modo ONCE REAL**: el "Descargar imagen" (11B.3) funciona en blanco/ejercicio (SVG puro → canvas). En el once real los chips son **HTML/CSS** sobre `<MatchFieldEditor>` y las fotos de jugador son **signed URLs cross-origin** → **taint del canvas** al rasterizar. **Vía futura**: servir las fotos con cabeceras **CORS** + `crossorigin` en el `<img>` (o `html-to-image`/proxy), o re-render server-side del once. Mientras, el botón de export **no aparece** en once-real.
+- **Grosor de trazo variable (D3)** → backlog. v1 usa grosor fijo. Ampliaría el contrato (`width?` en flecha/linea), como hizo `color?`.
+- **Goma fina por trazo (D4)** → backlog. v1 ofrece "Limpiar todo" + borrar-seleccionado; falta una goma que borre un trazo al tocarlo.
+- **Picker de evento en la pizarra standalone**: hoy al once real se entra **solo** desde la alineación (F6) / directo (F7) vía `?event=`. Un **selector de partido** desde `/pizarra` (como el picker de ejercicio de 11B.1) queda pendiente.
+- **Referencia**: `docs/specs/11B.0-pizarra-tactica.md`, `apps/web/src/components/match/pitch-editor.tsx` (`<PitchBoard>` `showExport`), `apps/web/src/app/[locale]/(authenticated)/pizarra/`.
+
 ## Planificadas en plan-maestro
 
 > Entradas que dejan de ser "deuda activa" porque han pasado a subfase concreta del plan-maestro con horas presupuestadas. El detalle del plan vive en [plan-maestro.md](plan-maestro.md); aquí solo el cross-reference al issue original para no perder el rastro de por qué entró al plan.

@@ -115,7 +115,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☑ |
 | F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☑ |
 | F11 | Biblioteca de ejercicios | 13–18 h | 5–6 | ☑ (2026-06-17) |
-| F11B | Pizarra táctica en vivo (sobre la alineación) | 6–9 h (preliminar) | 2–3 | ☐ |
+| F11B | Pizarra táctica en vivo (sobre la alineación) | 6–9 h (preliminar) | 2–3 | ☑ (2026-06-17) |
 | F12 | Planificador de sesiones | 12–20 h | 4–6 | ☐ |
 | F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☐ |
 | F14 | RGPD para menores y seguridad | 12–18 h | 4–5 | ☐ |
@@ -594,9 +594,9 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Objetivo**: pizarra táctica **efímera** para explicar jugadas **en el momento** (tablet/desktop) sobre tres fondos — **en blanco**, sobre un **ejercicio** de la biblioteca, o sobre la **alineación real** del partido — con **todas** las herramientas de F11 + **dibujo libre** y **color de trazo**. Es **distinto de F12/F13**: aquellas sirven para **diseñar** jugadas/sesiones; F11B es para **presentar en vivo** (sin animación por frames, playbook ni persistencia — eso sigue en F13).
 
-**Horas**: ~6–9 h (estimación **preliminar**, a refinar al escribir su spec) · **Sesiones**: 2–3
+**Horas**: ~6–9 h (estimación **preliminar**) · **Sesiones**: 2–3
 
-**Estado**: ☐ pendiente.
+**Estado**: ☑ **completada (2026-06-17)** — PRs #161 (spec) + #162–#165. Detalle por subfase en [progress.md → Fase 11B](progress.md). Diferidos en [known-issues.md](known-issues.md).
 
 **Criterio de cierre**: el cuerpo técnico abre la pizarra desde la pantalla de partido en vivo (F7) o desde la alineación, ve el **once real** sobre el campo y puede trazar flechas, mover el balón, dibujar líneas de movimiento y trazo libre **sobre esa alineación** para explicar la jugada en el momento, en tablet. Sin persistencia de playbook ni animación por frames (ámbito de F13).
 
@@ -613,10 +613,10 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Subfases** (troceo definitivo — [spec 11B.0](../specs/11B.0-pizarra-tactica.md) §8; main verde en cada paso):
 
-- **11B.0** Dibujo libre + extensión de color *(core nuevo + reúso)*: `color?` aditivo en flecha/linea (retrocompat, beneficia a F11/F13) + acción `ADD_FREEHAND` + helper de simplificación de trazo (Vitest) + herramienta "Dibujo libre" y selector de color en `<PitchEditor>`. Contrato `linea` y renderer ya admiten N puntos.
-- **11B.1** Pizarra efímera (blanco / mostrar ejercicio) *(reúso + ruta nueva)*: ruta `/pizarra` (solo staff), selector de modo, carga por `?exercise=`, "Limpiar todo", **i18n es/en/va** del PitchEditor, tarjeta en hub Entrenamientos, acceso desde la ficha del ejercicio. Sin persistencia.
-- **11B.2** Capa de dibujo sobre el **once real** *(lo nuevo de F11B)*: capa de F11 sobre `<MatchFieldEditor>` readonly con la alineación real (loader reusado de la página de alineación); accesos desde F6 (alineación) y F7 (directo); completo + vertical.
-- **11B.3** Pulido táctil + accesos + export opcional *(pulido)*: verificación en tablet, accesos finales y, si se aprueba, "descargar imagen" del momento (efímero, no BD).
+- **11B.0** `[hecho 2026-06-17]` (#162) Dibujo libre + extensión de color *(core nuevo + reúso)*: `color?` aditivo en flecha/linea (retrocompat, beneficia a F11/F13) + acción `ADD_FREEHAND` + helper de simplificación de trazo (Vitest) + herramienta "Dibujo libre" y selector de color en `<PitchEditor>`. Contrato `linea` y renderer ya admiten N puntos.
+- **11B.1** `[hecho 2026-06-17]` (#163) Pizarra efímera (blanco / mostrar ejercicio) *(reúso + ruta nueva)*: ruta `/pizarra` (solo staff), selector de modo + picker de la biblioteca, carga por `?exercise=`, "Limpiar todo" (`CLEAR`), **i18n completa del PitchEditor** (D9), tarjeta en hub Entrenamientos, acceso desde la ficha del ejercicio. Sin persistencia.
+- **11B.2** `[hecho 2026-06-17]` (#164) Capa de dibujo sobre el **once real** *(lo nuevo de F11B)*: se extrae `<PitchBoard>` (render-prop de fondo) + `<DiagramView showField={false}>`; loader read-only `loadBoardLineup` (alineación oficial, sin crear borrador); accesos desde F6 (alineación) y F7 (directo); `/pizarra?event=`; completo + vertical.
+- **11B.3** `[hecho 2026-06-17]` (#165) Pulido *(export + táctil)*: **export PNG** ("Descargar imagen", snapshot SVG→canvas, efímero) en blanco/ejercicio + pulido táctil (once real con `pointer-events-none`). Export del once real **diferido** (taint del canvas por fotos cross-origin) → known-issues.
 
 > El **modo presentación iPad** (pantalla limpia full-screen) de la lista preliminar pasa a **F13** (presentación de jugadas), fuera del alcance efímero de F11B.
 

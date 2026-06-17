@@ -18,6 +18,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 9 | Perfil del jugador y evolución multi-temporada | ☑ completada | 2026-06-08 | 2026-06-12 |
 | 10 | Dashboard ejecutivo del club | ☑ completada | 2026-06-13 | 2026-06-14 |
 | 11 | Biblioteca de ejercicios | ☑ completada | 2026-06-15 | 2026-06-17 |
+| 11B | Pizarra táctica en vivo (sobre la alineación) | ☑ completada | 2026-06-17 | 2026-06-17 |
 | 12 | Planificador de sesiones con plantillas microciclo | ☐ pendiente | — | — |
 | 13 | Pizarra táctica 2D con animación | ☐ pendiente | — | — |
 | 14 | RGPD para menores | ☐ pendiente | — | — |
@@ -308,6 +309,25 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Tests**: contrato del diagrama + reducer del editor + lógica de formulario/estados/import-export en Vitest (`@misterfc/core`); pgTAP de RLS de `exercises` (verificado **contra el remoto** — ver F15.8). Total suite core ≈ 790.
 - **Reuso para F12**: el "ciclo de metodología del club" (`draft→proposed→published/rejected`, helpers `user_can_publish_methodology`) queda como pieza reutilizable por las plantillas de sesión (§7 de la spec).
 - **Follow-ups** (en [known-issues.md](known-issues.md)): pasada de nav (patrón hub al resto del menú, antes de F12); animación por frames → F13 (el ejercicio estático = un frame; el contrato ya es frame-extensible).
+
+## Fase 11B — Subfases entregadas ✅
+
+> **Cerrada 2026-06-17.** Pizarra táctica **efímera** para explicar jugadas en el momento (tablet/desktop) sobre tres fondos: **en blanco**, sobre un **ejercicio** de la biblioteca, o sobre el **once real** del partido. Reusa la capa de dibujo de F11 (`<PitchBoard>`, extraído del `<PitchEditor>`) y `<MatchFieldEditor>` (F6) — sin duplicar componentes de campo. **Sin persistencia** (guardar/animar = F13). Spec [11B.0](../specs/11B.0-pizarra-tactica.md).
+
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| 11B.0 | 2026-06-17 | #162 | Dibujo libre (`ADD_FREEHAND` + helper `simplifyStroke` en core) + **color de trazo** aditivo (`color?` en flecha/linea, retrocompat → beneficia a F11/F13); contrato `linea` y renderer ya admitían N puntos |
+| 11B.1 | 2026-06-17 | #163 | Ruta `/pizarra` (solo staff) modos **en blanco / desde ejercicio** (`?exercise=` + picker de la biblioteca), "Limpiar todo" (`CLEAR`), **i18n completa del PitchEditor** (D9), tarjeta en hub Entrenamientos + acceso desde la ficha |
+| 11B.2 | 2026-06-17 | #164 | Capa de dibujo sobre el **once real**: se extrae `<PitchBoard>` (render-prop de fondo) + `<DiagramView showField={false}>`; loader read-only `loadBoardLineup` (alineación oficial, sin crear borrador); accesos desde alineación (F6) y directo (F7); `/pizarra?event=` |
+| 11B.3 | 2026-06-17 | #165 | **Export PNG** ("Descargar imagen", snapshot SVG→canvas, efímero) en blanco/ejercicio + pulido táctil (once real con `pointer-events-none` → dibujo con dedo sin scroll) |
+
+## Fase 11B — Cierre
+
+- **Inicio / Fin**: 2026-06-17 / 2026-06-17. PRs **#161** (spec ligera) + **#162–#165**. Cada PR con typecheck · lint · build (+ unit en 11B.0) en verde; la UI autenticada se validó en preview (la ruta `/pizarra` está tras auth/SSO).
+- **Migraciones**: **ninguna**. Todo aditivo: extensión del contrato del diagrama (`color?` opcional, retrocompatible) + acciones del reducer (`ADD_FREEHAND`, `CLEAR`) + UI/rutas. La pizarra es **efímera** (sin BD ni `localStorage`).
+- **Tests**: ampliación de la suite core de F11 (`simplifyStroke`, `ADD_FREEHAND`, `color`, `CLEAR` en el reducer; +color opcional/válido/inválido en el contrato) — Vitest en verde (suite core ≈ 811).
+- **Reuso confirmado**: `<PitchBoard>` (capa de interacción/dibujo) quedó como pieza reutilizable montable sobre cualquier fondo (`<DiagramView>` o `<MatchFieldEditor>`); la base frame-extensible del contrato sigue intacta para **F13**.
+- **Diferidos** (en [known-issues.md](known-issues.md), NO pendientes de F11B): export PNG del **once real** (taint del canvas por fotos cross-origin), **grosor de trazo** variable (D3), **goma fina** por trazo (D4), **picker de evento** en la pizarra standalone.
 
 ## Fase 14 — Subfases pendientes
 
