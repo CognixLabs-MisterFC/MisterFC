@@ -510,3 +510,87 @@ describe('pitchEditorReducer — size', () => {
     expect(pitchEditorReducer(arrow, { type: 'UPDATE_SIZE', id: 'nope', size: 'lg' })).toBe(arrow);
   });
 });
+
+// F11B.0 — Dibujo libre (ADD_FREEHAND) ----------------------------------------
+describe('pitchEditorReducer — ADD_FREEHAND (dibujo libre)', () => {
+  const stroke = [
+    { x_pct: 5, y_pct: 5 },
+    { x_pct: 20, y_pct: 30 },
+    { x_pct: 40, y_pct: 10 },
+  ];
+
+  it('crea un `linea` con todo el recorrido, 1 paso de undo, queda seleccionado y la salida es válida', () => {
+    const s = run(initEditorState(), { type: 'ADD_FREEHAND', points: stroke });
+    expect(s.elements).toHaveLength(1);
+    const el = s.elements[0]!;
+    expect(el.type).toBe('linea');
+    if (el.type === 'linea') expect(el.points).toEqual(stroke);
+    expect(s.selectedId).toBe('el-1');
+    expect(s.past).toHaveLength(1);
+    expect(parseDiagram(toDiagram(s)).success).toBe(true);
+  });
+
+  it('ignora un trazo de menos de 2 puntos (no-op)', () => {
+    const s = initEditorState();
+    expect(pitchEditorReducer(s, { type: 'ADD_FREEHAND', points: [{ x_pct: 1, y_pct: 1 }] })).toBe(s);
+    expect(pitchEditorReducer(s, { type: 'ADD_FREEHAND', points: [] })).toBe(s);
+  });
+
+  it('clampa los puntos fuera de rango a [0,100]', () => {
+    const s = run(initEditorState(), {
+      type: 'ADD_FREEHAND',
+      points: [{ x_pct: -10, y_pct: 50 }, { x_pct: 120, y_pct: 50 }],
+    });
+    const el = s.elements[0]!;
+    if (el.type === 'linea') expect(el.points).toEqual([{ x_pct: 0, y_pct: 50 }, { x_pct: 100, y_pct: 50 }]);
+    expect(parseDiagram(toDiagram(s)).success).toBe(true);
+  });
+
+  it('undo/redo deshace y rehace el trazo entero', () => {
+    let s = run(initEditorState(), { type: 'ADD_FREEHAND', points: stroke });
+    s = pitchEditorReducer(s, { type: 'UNDO' });
+    expect(s.elements).toHaveLength(0);
+    s = pitchEditorReducer(s, { type: 'REDO' });
+    expect(s.elements).toHaveLength(1);
+    expect(s.elements[0]?.type).toBe('linea');
+  });
+});
+
+// F11B.0 — Color de trazo (flecha / linea / dibujo libre) ---------------------
+describe('pitchEditorReducer — color de trazo', () => {
+  it('estado inicial sin color (nextColor = null)', () => {
+    expect(initEditorState().nextColor).toBeNull();
+  });
+
+  it('SET_NEXT_COLOR aplica a flecha, linea y dibujo libre nuevos', () => {
+    const base = pitchEditorReducer(initEditorState(), { type: 'SET_NEXT_COLOR', color: 'red' });
+    const arrow = pitchEditorReducer(base, { type: 'ADD_ARROW', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 9, y_pct: 9 } });
+    expect(arrow.elements[0]).toMatchObject({ type: 'flecha', color: 'red' });
+
+    const line = pitchEditorReducer(base, { type: 'ADD_LINE', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 9, y_pct: 9 } });
+    expect(line.elements[0]).toMatchObject({ type: 'linea', color: 'red' });
+
+    const free = pitchEditorReducer(base, { type: 'ADD_FREEHAND', points: [{ x_pct: 1, y_pct: 1 }, { x_pct: 9, y_pct: 9 }] });
+    expect(free.elements[0]).toMatchObject({ type: 'linea', color: 'red' });
+  });
+
+  it('sin color seleccionado, la clave NO aparece (ausente = negro)', () => {
+    const arrow = run(initEditorState(), { type: 'ADD_ARROW', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 9, y_pct: 9 } });
+    expect(arrow.elements[0]).not.toHaveProperty('color');
+  });
+
+  it('UPDATE_COLOR fija y limpia el color (null elimina la clave); salida válida', () => {
+    let s = run(initEditorState(), { type: 'ADD_ARROW', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 9, y_pct: 9 } });
+    s = pitchEditorReducer(s, { type: 'UPDATE_COLOR', id: 'el-1', color: 'blue' });
+    expect(s.elements[0]).toMatchObject({ color: 'blue' });
+    expect(parseDiagram(toDiagram(s)).success).toBe(true);
+    s = pitchEditorReducer(s, { type: 'UPDATE_COLOR', id: 'el-1', color: null });
+    expect(s.elements[0]).not.toHaveProperty('color');
+  });
+
+  it('UPDATE_COLOR sobre un elemento sin color (zona/punto) o id inexistente es no-op', () => {
+    const withZona = run(initEditorState(), { type: 'ADD_ZONA', from: { x_pct: 10, y_pct: 10 }, to: { x_pct: 30, y_pct: 30 } });
+    expect(pitchEditorReducer(withZona, { type: 'UPDATE_COLOR', id: 'el-1', color: 'red' })).toBe(withZona);
+    expect(pitchEditorReducer(withZona, { type: 'UPDATE_COLOR', id: 'nope', color: 'red' })).toBe(withZona);
+  });
+});

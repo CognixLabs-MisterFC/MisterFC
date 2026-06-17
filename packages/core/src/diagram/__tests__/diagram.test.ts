@@ -252,3 +252,54 @@ describe('parseDiagram — relleno de la zona', () => {
     expect(parseDiagram(zona({ fill: true })).success).toBe(false);
   });
 });
+
+// F11B.0 — color de trazo opcional en flecha y linea (aditivo, retrocompat).
+describe('color de trazo (F11B.0)', () => {
+  const flecha = (extra: Record<string, unknown> = {}) => ({
+    version: DIAGRAM_VERSION,
+    field: { kind: 'completo', orientation: 'vertical' },
+    elements: [
+      { type: 'flecha', id: 'f1', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 9, y_pct: 9 }, style: 'pase', ...extra },
+    ],
+  });
+  const linea = (extra: Record<string, unknown> = {}) => ({
+    version: DIAGRAM_VERSION,
+    field: { kind: 'completo', orientation: 'vertical' },
+    elements: [
+      { type: 'linea', id: 'l1', points: [{ x_pct: 1, y_pct: 1 }, { x_pct: 9, y_pct: 9 }], ...extra },
+    ],
+  });
+
+  it('acepta flecha/linea SIN color (retrocompatible)', () => {
+    expect(parseDiagram(flecha()).success).toBe(true);
+    expect(parseDiagram(linea()).success).toBe(true);
+  });
+
+  it('acepta color blue/red en flecha y linea', () => {
+    for (const c of ['blue', 'red'] as const) {
+      expect(parseDiagram(flecha({ color: c })).success).toBe(true);
+      expect(parseDiagram(linea({ color: c })).success).toBe(true);
+    }
+  });
+
+  it('rechaza un color inválido', () => {
+    expect(parseDiagram(flecha({ color: 'black' })).success).toBe(false); // negro = ausencia, no valor
+    expect(parseDiagram(flecha({ color: 'verde' })).success).toBe(false);
+    expect(parseDiagram(linea({ color: 'azul' })).success).toBe(false);
+    expect(parseDiagram(linea({ color: true })).success).toBe(false);
+  });
+
+  it('color NO es válido en otros elementos (zona)', () => {
+    const zonaConColor = {
+      version: DIAGRAM_VERSION,
+      field: { kind: 'completo', orientation: 'vertical' },
+      elements: [
+        { type: 'zona', id: 'z1', x_pct: 10, y_pct: 10, w_pct: 20, h_pct: 20, stroke: 'solid', color: 'blue' },
+      ],
+    };
+    // El campo extra `color` se descarta (no rompe), pero no queda en el dato.
+    const res = parseDiagram(zonaConColor);
+    expect(res.success).toBe(true);
+    if (res.success) expect(res.data.elements[0]).not.toHaveProperty('color');
+  });
+});

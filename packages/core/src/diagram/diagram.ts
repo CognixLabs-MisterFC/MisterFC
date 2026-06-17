@@ -55,6 +55,13 @@ export type StrokeKind = (typeof STROKE_KINDS)[number];
 export const ZONE_FILLS = ['green'] as const;
 export type ZoneFill = (typeof ZONE_FILLS)[number];
 
+/** Color de trazo (clave `color`) de flecha y línea (incl. trazo libre, F11B.0).
+ *  Opcional y ADITIVO: AUSENTE = negro (color por defecto del renderer); valores
+ *  extra `blue`/`red`. Primitiva visual (en inglés); la etiqueta se localiza.
+ *  Retrocompatible: los diagramas sin `color` siguen siendo válidos. */
+export const STROKE_COLORS = ['blue', 'red'] as const;
+export type StrokeColor = (typeof STROKE_COLORS)[number];
+
 /** Tamaño visual (clave `size`) de los elementos de PUNTO. Opcional; ausente =
  *  'md' (tamaño actual). En `texto` escala la fuente. La etiqueta se localiza. */
 export const ELEMENT_SIZES = ['sm', 'md', 'lg'] as const;
@@ -121,6 +128,7 @@ const flechaSchema = z.object({
   from: pointSchema,
   to: pointSchema,
   style: z.enum(ARROW_STYLES), // semántica de dominio
+  color: z.enum(STROKE_COLORS).optional(), // primitiva visual; ausente = negro
 });
 
 const lineaSchema = z.object({
@@ -131,6 +139,7 @@ const lineaSchema = z.object({
     .min(2, { message: 'linea_min_points' })
     .max(MAX_LINE_POINTS, { message: 'linea_too_many_points' }),
   stroke: z.enum(STROKE_KINDS).optional(), // primitiva visual, opcional
+  color: z.enum(STROKE_COLORS).optional(), // primitiva visual; ausente = negro
 });
 
 const zonaSchema = z.object({

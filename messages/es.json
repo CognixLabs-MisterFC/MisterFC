@@ -2865,5 +2865,13 @@
         "description": "Equipos por temporada y categorías del club."
       }
     }
+  },
+  "pitchEditor": {
+    "color": {
+      "black": "Negro",
+      "blue": "Azul",
+      "red": "Rojo",
+      "aria": "Color de trazo"
+    }
   }
 }

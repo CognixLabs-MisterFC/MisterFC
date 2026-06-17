@@ -2866,5 +2866,13 @@
         "description": "Equips per temporada i categories del club."
       }
     }
+  },
+  "pitchEditor": {
+    "color": {
+      "black": "Negre",
+      "blue": "Blau",
+      "red": "Roig",
+      "aria": "Color del traç"
+    }
   }
 }
