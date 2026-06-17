@@ -624,6 +624,8 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 ### Fase 12 — Planificador de sesiones
 
+> **Spec (2026-06-18)**: [docs/specs/12.0-planificador-sesiones.md](../specs/12.0-planificador-sesiones.md) fija las decisiones **D1–D8**, el **modelo** (`sessions`/`session_blocks`/`session_block_exercises`) y el **troceo definitivo (12.1–12.6)**, que **sustituye** la lista histórica de abajo. Claves: sesiones = **creación directa** (sin ciclo de aprobación, D2); bloques de **catálogo fijo** sembrados (D1); `visibility staff/team` para jugador/familia (D3, cierra D7 de F11); plantillas vía `is_template` que **clonan** una sesión (D5, sin microciclo entero); PDF sin diagramas (D6).
+
 **Objetivo**: construir sesiones de entrenamiento por bloques arrastrando ejercicios de la biblioteca. Vista microciclo, exportación PDF, publicación al equipo, plantillas reutilizables de microciclo.
 
 **Horas**: 12–20 h · **Sesiones**: 4–6
@@ -634,15 +636,16 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Dependencias**: Fase 11 cerrada (reusa PitchEditor).
 
-**Subfases**:
+**Subfases** (troceo definitivo — [spec 12.0](../specs/12.0-planificador-sesiones.md) §7; main verde en cada paso):
 
-- **12.1** Modelo `sessions` y `session_blocks` — 1 h
-- **12.2** Editor de sesión por bloques (calentamiento, principal, vuelta a la calma) — 2–3 h
-- **12.3** Vista microciclo semanal — 1–2 h
-- **12.4** Plan de temporada (macro + mesociclos) — 1–2 h
-- **12.5** Publicación de sesión al equipo (visible para jugadores) — 1 h
-- **12.6** Exportación a PDF para imprimir — 1–2 h
-- **12.7** Plantillas de microciclo reutilizables (guardar y aplicar) — 4–8 h
+- **12.1** Modelo `sessions`/`session_blocks`/`session_block_exercises` + RLS + trigger simple + helper `user_can_create_sessions` + pgTAP + catálogo de bloques en core + siembra del esqueleto *(nuevo; saca el riesgo)*
+- **12.2** Editor de sesión: cabecera + bloques sembrados + picker filtrado (categoría+objetivos, reúsa 11.3/11B.1) + overrides del día + reordenar; gating `can_create_sessions` *(reúso fuerte)*
+- **12.3** Listado + vista semana/microciclo *(reúsa F2.10)*
+- **12.4** Publicar al equipo + vista jugador/familia (`visibility`, `/mi-equipo` read-only, + opcional `event_id`) — cierra D7 de F11
+- **12.5** PDF de sesión *(reúsa 9.B; sin diagramas)*
+- **12.6** Plantillas (`is_template`: guardar/crear desde plantilla, clona; sin ciclo)
+
+> Núcleo entregable = 12.1–12.5; 12.6 es el extra. **Plan de temporada estructurado (macro/meso)** y **microciclo entero** → backlog (spec §9). La lista histórica de subfases (12.1–12.7 con "plan de temporada" y "microciclo reutilizable") queda **sustituida** por este troceo.
 
 ---
 
