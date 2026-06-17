@@ -267,7 +267,7 @@
       "dashboard": "Dashboard",
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
-      "jugadores": "Plantilla",
+      "jugadores": "Players",
       "mis_equipos": "My teams",
       "import_players": "Importar",
       "calendario": "Calendar",
@@ -283,7 +283,9 @@
       "mi_ficha": "My profile",
       "equipos": "Equipos",
       "ejercicios": "Exercises",
-      "entrenamientos": "Training"
+      "entrenamientos": "Training",
+      "partidos": "Matches",
+      "plantilla": "Squad"
     },
     "collapse_sidebar": "Hide menu",
     "expand_sidebar": "Show menu"
@@ -2822,6 +2824,46 @@
       "asistencia": {
         "title": "Attendance",
         "description": "Confirm and review training attendance."
+      }
+    }
+  },
+  "partidos": {
+    "title": "Matches",
+    "subtitle": "Call-ups, formations and team stats.",
+    "cards": {
+      "convocatorias": {
+        "title": "Match management",
+        "description": "Call up, set lineups and record team matches."
+      },
+      "formaciones": {
+        "title": "Formations",
+        "description": "Custom formation templates for the coaching staff."
+      },
+      "estadisticas_equipo": {
+        "title": "Team stats",
+        "description": "Aggregated results and metrics by team."
+      }
+    }
+  },
+  "plantilla": {
+    "title": "Squad",
+    "subtitle": "Players, coaching staff and club structure.",
+    "cards": {
+      "jugadores": {
+        "title": "Players",
+        "description": "Full club squad with filters."
+      },
+      "import_players": {
+        "title": "Import",
+        "description": "Bulk-add players from Excel/CSV."
+      },
+      "cuerpo_tecnico": {
+        "title": "Coaching staff",
+        "description": "Manage staff and their teams."
+      },
+      "equipos": {
+        "title": "Teams",
+        "description": "Teams by season and club categories."
       }
     }
   }

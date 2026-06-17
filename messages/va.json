@@ -267,7 +267,7 @@
       "dashboard": "Tauler",
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
-      "jugadores": "Plantilla",
+      "jugadores": "Jugadors",
       "mis_equipos": "Els meus equips",
       "import_players": "Importar",
       "calendario": "Calendari",
@@ -283,7 +283,9 @@
       "mi_ficha": "La meua fitxa",
       "equipos": "Equipos",
       "ejercicios": "Exercicis",
-      "entrenamientos": "Entrenaments"
+      "entrenamientos": "Entrenaments",
+      "partidos": "Partits",
+      "plantilla": "Plantilla"
     },
     "collapse_sidebar": "Amaga el menú",
     "expand_sidebar": "Mostra el menú"
@@ -2822,6 +2824,46 @@
       "asistencia": {
         "title": "Assistència",
         "description": "Confirma i consulta l'assistència als entrenaments."
+      }
+    }
+  },
+  "partidos": {
+    "title": "Partits",
+    "subtitle": "Convocatòries, formacions i estadístiques de l’equip.",
+    "cards": {
+      "convocatorias": {
+        "title": "Gestió de partits",
+        "description": "Convoca, alinea i registra els partits de l’equip."
+      },
+      "formaciones": {
+        "title": "Formacions",
+        "description": "Plantilles de formació personalitzades del cos tècnic."
+      },
+      "estadisticas_equipo": {
+        "title": "Estadístiques per equip",
+        "description": "Resultats i mètriques agregades per equip."
+      }
+    }
+  },
+  "plantilla": {
+    "title": "Plantilla",
+    "subtitle": "Jugadors, cos tècnic i estructura del club.",
+    "cards": {
+      "jugadores": {
+        "title": "Jugadors",
+        "description": "Plantilla completa del club amb filtres."
+      },
+      "import_players": {
+        "title": "Importar",
+        "description": "Alta massiva de jugadors des d’Excel/CSV."
+      },
+      "cuerpo_tecnico": {
+        "title": "Cos tècnic",
+        "description": "Gestió del personal i els seus equips."
+      },
+      "equipos": {
+        "title": "Equips",
+        "description": "Equips per temporada i categories del club."
       }
     }
   }

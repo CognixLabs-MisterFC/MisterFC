@@ -185,7 +185,7 @@
       "dashboard": "Dashboard",
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
-      "jugadores": "Plantilla",
+      "jugadores": "Jugadores",
       "mis_equipos": "Mis equipos",
       "import_players": "Importar",
       "calendario": "Calendario",
@@ -201,7 +201,9 @@
       "mi_ficha": "Mi ficha",
       "equipos": "Equipos",
       "ejercicios": "Ejercicios",
-      "entrenamientos": "Entrenamientos"
+      "entrenamientos": "Entrenamientos",
+      "partidos": "Partidos",
+      "plantilla": "Plantilla"
     },
     "collapse_sidebar": "Ocultar el menú",
     "expand_sidebar": "Mostrar el menú"
@@ -2821,6 +2823,46 @@
       "asistencia": {
         "title": "Asistencia",
         "description": "Confirma y consulta la asistencia a los entrenamientos."
+      }
+    }
+  },
+  "partidos": {
+    "title": "Partidos",
+    "subtitle": "Convocatorias, formaciones y estadísticas del equipo.",
+    "cards": {
+      "convocatorias": {
+        "title": "Gestión de partidos",
+        "description": "Convoca, alinea y registra los partidos del equipo."
+      },
+      "formaciones": {
+        "title": "Formaciones",
+        "description": "Plantillas de formación personalizadas del cuerpo técnico."
+      },
+      "estadisticas_equipo": {
+        "title": "Estadísticas por equipo",
+        "description": "Resultados y métricas agregadas por equipo."
+      }
+    }
+  },
+  "plantilla": {
+    "title": "Plantilla",
+    "subtitle": "Jugadores, cuerpo técnico y estructura del club.",
+    "cards": {
+      "jugadores": {
+        "title": "Jugadores",
+        "description": "Plantilla completa del club con filtros."
+      },
+      "import_players": {
+        "title": "Importar",
+        "description": "Alta masiva de jugadores desde Excel/CSV."
+      },
+      "cuerpo_tecnico": {
+        "title": "Cuerpo técnico",
+        "description": "Gestión del staff y sus equipos."
+      },
+      "equipos": {
+        "title": "Equipos",
+        "description": "Equipos por temporada y categorías del club."
       }
     }
   }
