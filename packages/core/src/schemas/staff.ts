@@ -55,6 +55,47 @@ export const CAPABILITY_NAMES = [
 
 export type CapabilityName = (typeof CAPABILITY_NAMES)[number];
 
+/**
+ * F11.9 — Agrupación por DOMINIO de las capabilities, solo para presentación del
+ * panel del ayudante (sin cambio de modelo). El orden de los dominios y de las
+ * capabilities dentro de cada uno es el de visualización. La etiqueta del dominio
+ * se localiza (`capabilities.domains.<key>`). Invariante: cada CAPABILITY_NAME
+ * aparece EXACTAMENTE una vez (lo cubre un test) → al añadir una capability nueva
+ * hay que ubicarla aquí. Asistencia vive en "Entrenamientos" (casa con el nav).
+ */
+export const CAPABILITY_DOMAINS = [
+  {
+    key: 'entrenamientos',
+    capabilities: ['can_create_exercises', 'can_create_sessions', 'can_mark_attendance'],
+  },
+  {
+    key: 'partidos',
+    capabilities: [
+      'can_create_lineups',
+      'can_create_plays',
+      'can_register_match_events',
+      'can_manage_callups',
+    ],
+  },
+  {
+    key: 'calendario',
+    capabilities: ['can_manage_calendar'],
+  },
+  {
+    key: 'jugadores',
+    capabilities: ['can_manage_squad', 'can_see_medical', 'can_evaluate'],
+  },
+  {
+    key: 'comunicacion',
+    capabilities: ['can_message_families'],
+  },
+] as const satisfies ReadonlyArray<{
+  key: string;
+  capabilities: readonly CapabilityName[];
+}>;
+
+export type CapabilityDomainKey = (typeof CAPABILITY_DOMAINS)[number]['key'];
+
 export const updateCapabilitySchema = z.object({
   membership_id: z.string().uuid({ message: 'membership_invalid' }),
   capability_name: z.enum(CAPABILITY_NAMES, {

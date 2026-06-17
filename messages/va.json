@@ -950,6 +950,21 @@
     "can_create_exercises": {
       "label": "Crear exercicis",
       "description": "Pot crear i proposar exercicis per a la biblioteca del club. La publicació l'aprova l'admin."
+    },
+    "domains": {
+      "entrenamientos": "Entrenaments",
+      "partidos": "Partits",
+      "calendario": "Calendari",
+      "jugadores": "Jugadors / Plantilla",
+      "comunicacion": "Comunicació"
+    },
+    "can_mark_attendance": {
+      "label": "Registrar assistència",
+      "description": "Pot passar llista i registrar l’assistència als entrenaments. Sense açò, només pot consultar-la."
+    },
+    "can_manage_callups": {
+      "label": "Gestionar convocatòries",
+      "description": "Pot crear i gestionar les convocatòries de partit. Sense açò, només pot veure-les."
     }
   },
   "mis_equipos": {

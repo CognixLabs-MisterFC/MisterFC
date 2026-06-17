@@ -950,6 +950,21 @@
     "can_create_exercises": {
       "label": "Create exercises",
       "description": "Can create and propose exercises for the club library. Publishing is approved by the admin."
+    },
+    "domains": {
+      "entrenamientos": "Training",
+      "partidos": "Matches",
+      "calendario": "Calendar",
+      "jugadores": "Players / Squad",
+      "comunicacion": "Communication"
+    },
+    "can_mark_attendance": {
+      "label": "Record attendance",
+      "description": "Can take the roll and record training attendance. Without this, can only view it."
+    },
+    "can_manage_callups": {
+      "label": "Manage call-ups",
+      "description": "Can create and manage match call-ups. Without this, can only view them."
     }
   },
   "mis_equipos": {
