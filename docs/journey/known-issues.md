@@ -4,6 +4,12 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 ## Activas
 
+### Nav — aplicar el patrón "hub" al resto del menú (reducir el sidebar)
+- **Detectado en**: 2026-06-17, cierre de F11 (al montar el hub "Entrenamientos" en F11.6 → reorg).
+- **Contexto**: en F11 se introdujo el patrón **hub** (una entrada en el sidebar → página que agrupa sub-áreas como tarjetas): "Entrenamientos" reúne Ejercicios + Asistencia y dejará sitio a Sesiones (F12). El sidebar plano sigue largo en el resto del menú.
+- **Plan**: una **pasada de nav** que aplique el mismo patrón hub a otras áreas afines para compactar el sidebar, **antes de F12** (que añadirá Sesiones bajo Entrenamientos). Solo presentación/IA de navegación, sin modelo ni permisos.
+- **Referencia**: hub `entrenamientos` en `apps/web/src/app/[locale]/(authenticated)/entrenamientos/`, `nav-config.ts`.
+
 ### InviteStaffDialog — el form no resetea estado entre invitaciones consecutivas
 - **Detectado en**: 2026-05-29, cierre de F2 (revisión post-lote-D).
 - **Síntoma**: al invitar a un segundo miembro del staff sin cerrar el dialog, el banner del envío anterior sigue visible y los inputs no se limpian.
@@ -65,10 +71,10 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 > Entradas que dejan de ser "deuda activa" porque han pasado a subfase concreta del plan-maestro con horas presupuestadas. El detalle del plan vive en [plan-maestro.md](plan-maestro.md); aquí solo el cross-reference al issue original para no perder el rastro de por qué entró al plan.
 
-### F11.9 — Capabilities UI plana → agrupar por dominio
-- **Issue original** (2026-05-29, spec 4.0 §D4): la lista plana de capabilities (11 switches en `/equipos/[teamId]/staff/[membershipId]/capabilities`) degrada UX cuando crezca a 13–15 con F6/F8/F10. Pre-deuda de UX, sin impacto en BD ni runtime.
-- **Planificado en**: **F11.9** (1–2 h). Subgrupos colapsables `squad / match / calendar / attendance / comms`. Sin cambio de modelo.
-- **Referencia**: `docs/specs/2.7-capabilities-ui.md` §8, `docs/specs/4.0-asistencia-convocatorias.md` §D4.
+### F13 — Animación por frames de la jugada (el diagrama de F11 = un frame)
+- **Issue original** (2026-06-15, spec 11.0 §4.2 / cierre F11 2026-06-17): el diagrama del ejercicio (F11) es una **escena estática**. El contrato de `@misterfc/core` se diseñó **frame-extensible**: cada elemento tiene `id` ESTABLE y su posición es separable (`elementAnchors`), de modo que F13 pueda envolver la escena en frames e interpolar posiciones por `id` entre frames. El `Diagram` estático de F11 equivale a **un frame**.
+- **Planificado en**: **F13** (Pizarra táctica 2D con animación). El tipo de los frames lo decide F13 (no se compromete en F11). Reusa `<DiagramView>`/`<PitchEditor>` como base.
+- **Referencia**: `docs/specs/11.0-biblioteca-ejercicios.md` §4.2 ("Frame-extensibilidad (F13)") + `elementAnchors` en `packages/core/src/diagram/diagram.ts`.
 
 ### F14.9 — RLS capabilities cross-team
 - **Issue original** (2026-05-28, F2.7): el policy `capabilities_update` (F1.7) acepta admin/coord/principal del **club** sin filtrar por equipo. Un entrenador principal del Equipo A puede modificar caps de un ayudante asignado solo al Equipo B. La RLS sigue siendo la autoridad y el server action no chequea pertenencia por equipo.
@@ -86,11 +92,18 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 - **Issue original** (2026-06-12, cierre de F9): el CI (`.github/workflows/ci.yml`) corre typecheck · lint · test · build pero **no ejecuta pgTAP**. Además, el sandbox de desarrollo no puede arrancar Docker (`no-new-privileges`, sin root), así que `pnpm db:test` tampoco corre localmente. Los tests pgTAP de funciones/RLS de BD (`supabase/tests/*.sql`) quedan **escritos pero sin ejecución automática**; su validación efectiva ocurre solo al aplicar la migración contra el remoto.
 - **Impacto**: medio y **creciente**. La superficie de funciones SECURITY DEFINER no testeadas en pipeline crece con cada bug/feature de BD (p.ej. Bug 2·2a #106, 2c #107, **2b #116** con su guarda del último admin — todos con pgTAP escrito y sin correr en CI).
 - **Planificado en**: **F15.8** (1–2 h). Job CI con Postgres+pgTAP en contenedor que corra `supabase/tests/*.sql`, o paso programado contra staging. Sin cambio de modelo.
+- **Vigente en F11** (2026-06-17): el pgTAP de RLS de `exercises` (`supabase/tests/rls_exercises.sql`) sigue el mismo patrón — escrito y **verificado aplicando la migración contra el remoto**, no en CI. Otra instancia que se beneficiará del job de F15.8.
 - **Referencia**: `plan-maestro.md` F15.8, `fase-9-summary.md` (limitación de verificación).
 
 ---
 
 ## Resueltas
+
+### F11.9 — Capabilities UI plana → agrupada por dominio — resuelto en PR #157 (2026-06-17)
+- **Issue original** (2026-05-29, spec 4.0 §D4): la lista plana de capabilities en `/equipos/[teamId]/staff/[membershipId]/capabilities` degradaba UX al crecer (12 switches tras F6/F8/F10/F11).
+- **Fix**: `CAPABILITY_DOMAINS` en `@misterfc/core` (5 dominios: Entrenamientos —incluye asistencia, casa con el nav—, Partidos, Calendario, Jugadores/Plantilla, Comunicación) + panel renderizado por dominio con cabeceras. Conceder/revocar **idéntico** (mismo toggle, misma RLS). Test puro: cada capability aparece exactamente una vez. **Sin modelo, sin nueva capability, sin tocar permisos.**
+- **De propina**: se añadieron los labels i18n de `can_mark_attendance` y `can_manage_callups`, que **no existían en ninguna locale** (el panel plano los mostraba sin texto).
+- **Referencia**: `docs/specs/2.7-capabilities-ui.md` §8, `docs/specs/4.0-asistencia-convocatorias.md` §D4.
 
 ### Tiros no se atribuían por jugador (la columna salía 0) — resuelto en PR #140 (2026-06-15)
 - **Detectado en**: 2026-06-15, durante F7.x (vista de estadísticas del partido). Era entrada activa ("revisar entre F7.x y F11").

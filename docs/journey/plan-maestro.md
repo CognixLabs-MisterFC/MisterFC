@@ -114,7 +114,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F8 | Valoraciones del partido | 8–13 h | 3–4 | ☑ |
 | F9 | Perfil del jugador, evolución y reportes | 16–32 h | 6–8 | ☑ |
 | F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☑ |
-| F11 | Biblioteca de ejercicios | 13–18 h | 5–6 | ☐ |
+| F11 | Biblioteca de ejercicios | 13–18 h | 5–6 | ☑ (2026-06-17) |
 | F11B | Pizarra táctica en vivo (sobre la alineación) | 6–9 h (preliminar) | 2–3 | ☐ |
 | F12 | Planificador de sesiones | 12–20 h | 4–6 | ☐ |
 | F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☐ |
@@ -557,6 +557,8 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 ---
 
 ### Fase 11 — Biblioteca de ejercicios
+
+> **☑ F11 cerrada 2026-06-17** (PRs #142–#157). El alcance **ejecutado sigue el troceo de la spec** (§9), que reordena/redefine respecto a esta lista histórica de subfases: p. ej. **11.7** pasó a ser *estados/metodología: aprobar/rechazar + cola de revisión + bucle de corrección* (no "privados vs compartidos", superado por la máquina de estados `draft→proposed→published/rejected`); **11.2** quedó **sin seed** (el club crea su metodología por el flujo de 11.6); y se añadieron, aditivos, **tamaño de elemento** y **zona con relleno verde**. Detalle por subfase + PR + fecha en [progress.md → Fase 11](progress.md). Follow-ups en [known-issues.md](known-issues.md) (pasada de nav; frames → F13).
 
 > **Spec**: [docs/specs/11.0-biblioteca-ejercicios.md](../specs/11.0-biblioteca-ejercicios.md) (2026-06-15). Decisiones cerradas (D1–D7, todas) + máquina de estados (metodología del club) + esquema del diagrama (contrato F11B/F12/F13) + objetivos en dos ejes (táctico + técnico, modelo B) + troceo reordenado.
 
