@@ -179,13 +179,17 @@ function renderElement(
     }
     case 'zona': {
       const dashed = el.stroke === 'dashed';
+      // Relleno opcional SEMI-TRANSPARENTE: deja ver jugadores/balón encima. Solo
+      // 'green' por ahora; ausente = sin relleno (contorno actual).
+      const fill = el.fill === 'green' ? '#22c55e' : 'none';
       return (
         <rect
           x={mx(el.x_pct)}
           y={my(el.y_pct)}
           width={mx(el.w_pct)}
           height={my(el.h_pct)}
-          fill="none"
+          fill={fill}
+          fillOpacity={el.fill === 'green' ? 0.25 : undefined}
           stroke={dashed ? '#dc2626' : INK}
           strokeWidth={0.7}
           strokeDasharray={dashed ? '3 2' : undefined}

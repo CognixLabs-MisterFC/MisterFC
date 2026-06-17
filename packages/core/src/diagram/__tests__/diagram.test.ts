@@ -229,3 +229,26 @@ describe('parseDiagram — size de elementos de punto', () => {
     expect(parseDiagram(d).success).toBe(false);
   });
 });
+
+// ── Relleno de la zona (fill, aditivo y retrocompatible) ────────────────────
+
+describe('parseDiagram — relleno de la zona', () => {
+  const base: Diagram = { version: DIAGRAM_VERSION, field: { kind: 'completo', orientation: 'vertical' }, elements: [] };
+  const zona = (extra: Record<string, unknown>) => ({
+    ...base,
+    elements: [{ type: 'zona', id: 'z', x_pct: 10, y_pct: 10, w_pct: 20, h_pct: 20, stroke: 'solid', ...extra }],
+  });
+
+  it('acepta una zona SIN fill (retrocompatible: contorno)', () => {
+    expect(parseDiagram(zona({})).success).toBe(true);
+  });
+
+  it('acepta una zona con fill="green"', () => {
+    expect(parseDiagram(zona({ fill: 'green' })).success).toBe(true);
+  });
+
+  it('rechaza un fill inválido', () => {
+    expect(parseDiagram(zona({ fill: 'rojo' })).success).toBe(false);
+    expect(parseDiagram(zona({ fill: true })).success).toBe(false);
+  });
+});

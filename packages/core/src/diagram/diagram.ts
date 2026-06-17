@@ -49,6 +49,12 @@ export type ArrowStyle = (typeof ARROW_STYLES)[number];
 export const STROKE_KINDS = ['solid', 'dashed'] as const;
 export type StrokeKind = (typeof STROKE_KINDS)[number];
 
+/** Relleno visual (clave `fill`) de la zona. Ausente = sin relleno (contorno).
+ *  Primitiva de presentación (en inglés); la etiqueta visible se localiza.
+ *  Enum (no boolean) para extender a más colores sin romper el contrato. */
+export const ZONE_FILLS = ['green'] as const;
+export type ZoneFill = (typeof ZONE_FILLS)[number];
+
 /** Tamaño visual (clave `size`) de los elementos de PUNTO. Opcional; ausente =
  *  'md' (tamaño actual). En `texto` escala la fuente. La etiqueta se localiza. */
 export const ELEMENT_SIZES = ['sm', 'md', 'lg'] as const;
@@ -135,6 +141,7 @@ const zonaSchema = z.object({
   w_pct: pct,
   h_pct: pct,
   stroke: z.enum(STROKE_KINDS), // primitiva visual
+  fill: z.enum(ZONE_FILLS).optional(), // relleno opcional (ausente = contorno)
 });
 
 const cotaSchema = z.object({
