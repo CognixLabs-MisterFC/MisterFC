@@ -188,9 +188,9 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Tests**: schemas Zod de valoración en `@misterfc/core` (Vitest); barrido pgTAP en `supabase/tests/rls_evaluations.sql` + `rls_team_evaluations.sql` + `rls_evaluations_crossflag.sql` — toda la matriz de visibilidad en verde.
 - **Fuera de alcance / a F9**: la pantalla donde el jugador/familia VE su valoración (F8 solo abrió el permiso a nivel de datos). Valoración de **entrenamientos**: descopada, no planificada (fase/extensión futura si se retoma).
 
-## Fase 9 — Núcleo entregado 🔄
+## Fase 9 — Subfases entregadas ✅
 
-> **Estado: 🔄 EN PROGRESO** — el **núcleo** (9.1/9.2/9.3/9.5) está entregado y verificado; **F9 NO está cerrada** (falta el segundo tramo: 9.4/9.6/9.7/9.8). Cierre de milestone, no de fase. Especificación del núcleo en [docs/specs/9.0-perfil-jugador.md](../specs/9.0-perfil-jugador.md) (§15 nota de cierre del núcleo). Decisiones de visibilidad **cerradas (2026-06-08)**: 🔒 **D9-1** (stats objetivas SIEMPRE visibles al jugador/familia, sin flag) · 🔒 **D9-2** (asistencia del propio jugador SIEMPRE, sin flag) · 🔒 **D9-3** (colectiva como contexto, con flag ON).
+> **Cerrada 2026-06-12.** El **núcleo** (9.1/9.2/9.3/9.5) y el **segundo tramo 9.B** (9.4/9.6/9.7/9.8 + entrada de menú de stats por equipo) están **entregados y verificados** (typecheck · lint · test · build en verde; limitación pgTAP en CI = F15.8). Alineado con la tabla principal (☑ completada) y con [plan-maestro.md → Fase 9](plan-maestro.md). Especificación del núcleo en [docs/specs/9.0-perfil-jugador.md](../specs/9.0-perfil-jugador.md) (§15); del segundo tramo en [docs/specs/9.B-segundo-tramo.md](../specs/9.B-segundo-tramo.md). Resumen ejecutivo en [fase-9-summary.md](fase-9-summary.md). Decisiones de visibilidad **cerradas (2026-06-08)**: 🔒 **D9-1** (stats objetivas SIEMPRE visibles al jugador/familia, sin flag) · 🔒 **D9-2** (asistencia del propio jugador SIEMPRE, sin flag) · 🔒 **D9-3** (colectiva como contexto, con flag ON).
 
 | Subfase | Cierre | PR | Resumen |
 |---|---|---|---|
@@ -204,17 +204,27 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **PRs**: #67–#70. NO mergeados por el agente (los mergea el responsable).
 - **Listo para reaprovechar en el segundo tramo**: recharts (ADR-0016) + el componente de gráfico reutilizable → 9.4 multi-temporada; la tabla `sr-only` + diseño "la pantalla ES el reporte" → 9.7/9.8 PDF; los helpers de agregación ya aceptan `season` → 9.4 itera temporadas sin lógica nueva.
 
-## Fase 9 — Pendiente → segundo tramo
+## Fase 9 — Segundo tramo 9.B entregado ✅
 
-> Aún **SIN especificar** (necesitará su propio spec o extensión del 9.0 cuando se aborde). F9 se cierra del todo cuando esto entre.
+> **Entregado 2026-06-12** (PRs #108 spec + #109–#115). Especificado en [docs/specs/9.B-segundo-tramo.md](../specs/9.B-segundo-tramo.md). Con esto **F9 queda cerrada**. Habilitador previo **9.B-0** (`aggregateTeamStats` en core + query, #109): lo consumen 9.B-3, 9.B-7 y los badges de equipo.
 
-| Subfase | Estado | Resumen |
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| 9.4 | ☑ 2026-06-12 | #110 (core 9.B-1) + #111 (UI 9.B-2) | Evolución multi-temporada del jugador (`careerBySeason`/`careerTotals`/`seasonComparison`; toggle Temporada/Carrera + tabla por temporada + gráfico de comparación) |
+| 9.6 | ☑ 2026-06-12 | #113 (core 9.B-4) + #114 (UI 9.B-5) | Tracking de logros (badges automáticos **sin persistencia** — D6; 12 badges; las rating-sensibles gateadas por el flag — D5) |
+| 9.7 | ☑ 2026-06-12 | #115 (9.B-6) | Reportes mensuales del jugador en PDF (descargables/imprimibles, no email — D10; `@react-pdf/renderer`) |
+| 9.8 | ☑ 2026-06-12 | #115 (9.B-7) | Reportes de equipo en PDF (resumen mensual; consume 9.B-0; comparte infra PDF + branding con 9.7) |
+| — | ☑ 2026-06-12 | #112 (9.B-3) | Entrada de menú "Estadísticas agregadas por equipo" para el cuerpo técnico + vista de equipo (consume 9.B-0; spec 9.0 §8.1) |
+
+### Fase 9 — Diferidos (backlog, NO pendientes de F9)
+
+> F9 **está cerrada**; estos puntos se sacaron del alcance deliberadamente y viven en el backlog (no bloquean el cierre). Detalle en [plan-maestro.md → Diferidos de F9](plan-maestro.md).
+
+| Diferido | Destino | Por qué |
 |---|---|---|
-| 9.4 | ☐ pendiente | Evolución multi-temporada del jugador (comparativa por temporadas) |
-| 9.6 | ☐ pendiente | Tracking de logros (badges automáticos: MVP del mes, +10 goles, etc.) |
-| 9.7 | ☐ pendiente | Reportes mensuales del jugador en PDF (descargables/imprimibles, no email) |
-| 9.8 | ☐ pendiente | Reportes de equipo en PDF (resumen mensual) |
-| — | ☐ pendiente | Entrada de menú dedicada "Estadísticas / agregadas por equipo" para el cuerpo técnico (spec 9.0 §8.1) |
+| Badge "debutante" | Backlog de badges | Regla sin cerrar (primer partido ± ventana de fechas); requiere decisión de producto. Sin modelo nuevo. |
+| Badges absolutas por categoría | Refinamiento v2 | Umbrales absolutos (10 goles; 50/100/200 partidos) no escalan entre benjamines y seniors; v1 usó umbrales únicos + badges relativos auto-ajustables. D4 lo dejó abierto. |
+| PDF v2 | v2 PDF | (a) gráficos dentro del PDF (hoy tabla `sr-only` equivalente — D8); (b) escudo del club en cabecera (falta `clubs.logo_url`). Presentación pura sobre el dato ya calculado. |
 
 ## Rework A — categorías ↔ equipos (la temporada vive en el equipo) ✅
 
