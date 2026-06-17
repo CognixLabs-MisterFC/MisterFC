@@ -17,7 +17,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 8 | Valoraciones del partido | ☑ completada | 2026-06-08 | 2026-06-08 |
 | 9 | Perfil del jugador y evolución multi-temporada | ☑ completada | 2026-06-08 | 2026-06-12 |
 | 10 | Dashboard ejecutivo del club | ☑ completada | 2026-06-13 | 2026-06-14 |
-| 11 | Biblioteca de ejercicios | ☐ pendiente | — | — |
+| 11 | Biblioteca de ejercicios | ☑ completada | 2026-06-15 | 2026-06-17 |
 | 12 | Planificador de sesiones con plantillas microciclo | ☐ pendiente | — | — |
 | 13 | Pizarra táctica 2D con animación | ☐ pendiente | — | — |
 | 14 | RGPD para menores | ☐ pendiente | — | — |
@@ -269,13 +269,35 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Tests**: helpers puros de `@misterfc/core/player-profile/club` en Vitest (censo, resultados con GF/GA null y partidos no cerrados, asistencia con tendencia y suelo de muestra, rankings por categoría con empates, límites exactos de `D3`/`D4`). typecheck · lint · test · build en verde en cada PR.
 - **Diferidos**: export PDF del dashboard (`D7`, infra 9.B reutilizable); vistas materializadas como optimización futura (`DT1`); selector libre de temporada (`D1`, v2).
 
-## Fase 11 — Subfases pendientes
+## Fase 11 — Subfases entregadas ✅
 
-> **+1 subfase 2026-05-30**: deuda diferida (capabilities UI plana) absorbida en F11.9. Ver [plan-maestro.md](plan-maestro.md) §Fase 11.
+> **Cerrada 2026-06-17.** Biblioteca de ejercicios del club: contrato del diagrama + modelo `exercises` con ciclo de metodología (`draft → proposed → published/rejected` + `archived`), editor visual `<PitchEditor>`, CRUD propio, aprobación del Admin con cola de revisión + bucle de corrección, import/export JSON. Spec íntegra [11.0](../specs/11.0-biblioteca-ejercicios.md). Orden de ejecución reordenado para sacar el riesgo pronto (§9 de la spec), `main` verde en cada PR.
 
-| Subfase | Estado | Resumen |
-|---|---|---|
-| 11.9 | ☐ pendiente | Agrupar capabilities por dominio en panel del ayudante (squad / match / calendar / attendance / comms) |
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| — (spec) | 2026-06-15 | #142 | `docs(f11)`: spec biblioteca de ejercicios (modelo + ciclo + diagrama + troceo) |
+| 11.0 | 2026-06-15 | #143 | Contrato PURO del diagrama en `@misterfc/core` (Zod, coords %, ids estables/frame-extensible) + Vitest |
+| 11.5a | 2026-06-15 | #144 | Renderer read-only del diagrama (`<DiagramView>`, SVG sobre `FieldMarkings`) |
+| 11.1 (+11.1b) | 2026-06-15 | #145 | Modelo `exercises` + trigger de validación + RLS por estado + pgTAP + capability `can_create_exercises` (backfill `granted=false`) |
+| 11.5a | 2026-06-16 | #146 | Renderer: medio campo + orientación vertical |
+| 11.3 | 2026-06-16 | #147 | Listado con filtros (táctico/técnico/categoría/intensidad/espacio), reúsa patrón F2.10; RLS = gate |
+| 11.4 | 2026-06-16 | #148 | Ficha read-only del ejercicio (campos + diagrama) |
+| 11.5b | 2026-06-16 | #149, #150 | Editor `<PitchEditor>`: reducer puro (PR1 puntos + seleccionar/mover/borrar + undo/redo) + dibujados flecha/línea/zona (PR2) |
+| (tamaños) | 2026-06-16 | #151 | Tamaño seleccionable (sm/md/lg) de elementos de punto (contrato + renderer + editor) |
+| 11.6 | 2026-06-17 | #152, #153 | Crear (PR1: formulario + editor integrado + guardar) + editar/proponer/borrar/archivar (PR2: ciclo de vida) |
+| (zona verde) | 2026-06-17 | #154 | Zona con relleno verde semi-transparente (contrato + renderer + editor) |
+| 11.7 | 2026-06-17 | #155 | Estados/metodología: aprobar/rechazar (motivo) + cola de revisión (Admin) + notificación `exercise_rejected` (F5) + bucle de corrección (editar y reproponer un rechazado) |
+| 11.8 | 2026-06-17 | #156 | Import/export individual a JSON (envoltorio versionado, solo contenido; valida antes de crear) |
+| 11.9 | 2026-06-17 | #157 | Agrupar capabilities por dominio en el panel del ayudante (Entrenamientos / Partidos / Calendario / Jugadores·Plantilla / Comunicación); fix de labels i18n ausentes |
+| 11.2 | — | — | Catálogo inicial **SIN seed** (subfase vacía de datos): el club crea su metodología por el flujo normal de 11.6 |
+
+## Fase 11 — Cierre
+
+- **Inicio / Fin**: 2026-06-15 / 2026-06-17. PRs **#142–#157** (cada uno con typecheck · lint · test · build en verde; varias subfases verificadas además en el harness CDP / build local servido, al estar el preview tras el SSO de Vercel).
+- **Migraciones**: 11.1 (`exercises` + RLS + trigger + helpers de ciclo) y 11.1b (EXPAND del CHECK de `capabilities` + backfill `granted=false`) + enum `exercise_rejected`. El resto de subfases **aditivas sin modelo** (contrato/editor/UI). El **bucle de corrección de 11.7 no necesitó migración**: la RLS de 11.1 ya permitía al autor editar un `rejected` y la transición `rejected→proposed`.
+- **Tests**: contrato del diagrama + reducer del editor + lógica de formulario/estados/import-export en Vitest (`@misterfc/core`); pgTAP de RLS de `exercises` (verificado **contra el remoto** — ver F15.8). Total suite core ≈ 790.
+- **Reuso para F12**: el "ciclo de metodología del club" (`draft→proposed→published/rejected`, helpers `user_can_publish_methodology`) queda como pieza reutilizable por las plantillas de sesión (§7 de la spec).
+- **Follow-ups** (en [known-issues.md](known-issues.md)): pasada de nav (patrón hub al resto del menú, antes de F12); animación por frames → F13 (el ejercicio estático = un frame; el contrato ya es frame-extensible).
 
 ## Fase 14 — Subfases pendientes
 
