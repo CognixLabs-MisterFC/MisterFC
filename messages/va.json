@@ -2958,6 +2958,9 @@
     "pick_hint": "Tria un exercici per a carregar-lo.",
     "pick_placeholder": "Triar exercici",
     "search_placeholder": "Cercar exercici…",
-    "no_results": "Sense resultats"
+    "no_results": "Sense resultats",
+    "once_subtitle": "Dibuixa sobre l onze de {match}. No es guarda res.",
+    "once_empty": "Aquesta alineació no té jugadors al camp.",
+    "open_board": "Pissarra"
   }
 }

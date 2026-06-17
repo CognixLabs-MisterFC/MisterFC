@@ -1,25 +1,25 @@
 'use client';
 
 /**
- * F11.5b — <PitchEditor>. Editor visual del diagrama de un ejercicio.
+ * F11.5b / F11B — Editor visual del diagrama (capa de interacción reutilizable).
  *
- * Construye ENCIMA del renderer read-only <DiagramView> (11.5a): éste pinta el
- * campo y los elementos (con `fill`); el editor superpone solo la CAPA DE
- * INTERACCIÓN (handles + clic para colocar + rubber-band para dibujar).
+ * `<PitchBoard>` es el núcleo: estado (reducer PURO `pitchEditorReducer`), barra
+ * de herramientas y la CAPA DE INTERACCIÓN (handles + clic para colocar +
+ * rubber-band + trazo libre). El FONDO del campo lo provee el consumidor con el
+ * render-prop `renderField` — así la MISMA capa de dibujo sirve sobre:
+ *   - `<DiagramView>` (campo del ejercicio) → `<PitchEditor>` (F11, default).
+ *   - `<MatchFieldEditor>` (once real) → pizarra F11B.2.
+ * Los dibujos confirmados se pintan SIEMPRE con `<DiagramView showField={false}>`
+ * (solo elementos) encima del fondo, sin duplicar las marcas del campo.
  *
- * Todo el ESTADO documental vive en el reducer PURO `pitchEditorReducer` de
- * @misterfc/core (testeado sin DOM). El dibujo EN CURSO (rubber-band) es estado
- * EFÍMERO local (no entra al reducer ni al historial); al soltar se confirma con
- * UNA acción (ADD_ARROW/ADD_LINE/ADD_ZONA) = 1 paso de undo.
- *
- * PR1: elementos de punto + seleccionar/mover/borrar + undo/redo + campo.
- * PR2: flecha/línea/zona dibujadas (arrastrar) + mover (trasladar) + editar
- * style/stroke inline.
+ * El dibujo EN CURSO (rubber-band / mano alzada) es estado EFÍMERO local (no
+ * entra al reducer ni al historial); al soltar se confirma con UNA acción
+ * (ADD_ARROW/ADD_LINE/ADD_ZONA/ADD_FREEHAND) = 1 paso de undo.
  *
  * Salida: `toDiagram(state)`, un Diagram que SIEMPRE pasa parseDiagram.
  */
 
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   DndContext,
@@ -42,6 +42,7 @@ import {
   FREEHAND_TOOL,
   type Diagram,
   type DiagramElement,
+  type DiagramField,
   type DiagramPoint,
   type PitchTool,
   type PlayerRole,
@@ -144,10 +145,19 @@ function elementBBox(el: DiagramElement): { x: number; y: number; w: number; h: 
   }
 }
 
-export function PitchEditor({
+/** Fondo del campo: lo provee el consumidor. Recibe el diagrama y el campo
+ *  actuales; debe rellenar el contenedor (absolute inset-0). */
+export type RenderField = (args: { diagram: Diagram; field: DiagramField }) => ReactNode;
+
+/** Fondo por defecto (F11): el propio `<DiagramView>` pinta campo + elementos. */
+const defaultRenderField: RenderField = ({ diagram }) => <DiagramView diagram={diagram} fill />;
+
+export function PitchBoard({
   initialDiagram,
   onChange,
   showClear = false,
+  renderField = defaultRenderField,
+  lockFieldKind = false,
   className,
 }: {
   initialDiagram?: Diagram;
@@ -155,6 +165,10 @@ export function PitchEditor({
   /** Muestra el botón "Limpiar todo" en la barra (F11B.1, pizarra). Off por
    *  defecto para no alterar el editor de ejercicios de F11. */
   showClear?: boolean;
+  /** Fondo del campo. Default = `<DiagramView>` (F11). F11B.2 pasa el once real. */
+  renderField?: RenderField;
+  /** Oculta el selector Completo/Medio (F11B.2: once real fijo completo). */
+  lockFieldKind?: boolean;
   className?: string;
 }) {
   // D9 (F11B.1): todas las etiquetas del editor se localizan aquí.
@@ -339,23 +353,27 @@ export function PitchEditor({
 
       {/* Config del próximo elemento + selector de campo */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-xs uppercase tracking-wider text-muted-foreground">{t('field.label')}</span>
-        <Button
-          type="button"
-          size="sm"
-          variant={state.field.kind === 'completo' ? 'default' : 'outline'}
-          onClick={() => dispatch({ type: 'SET_FIELD_KIND', kind: 'completo' })}
-        >
-          {t('field.completo')}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={state.field.kind === 'medio' ? 'default' : 'outline'}
-          onClick={() => dispatch({ type: 'SET_FIELD_KIND', kind: 'medio' })}
-        >
-          {t('field.medio')}
-        </Button>
+        {!lockFieldKind && (
+          <>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">{t('field.label')}</span>
+            <Button
+              type="button"
+              size="sm"
+              variant={state.field.kind === 'completo' ? 'default' : 'outline'}
+              onClick={() => dispatch({ type: 'SET_FIELD_KIND', kind: 'completo' })}
+            >
+              {t('field.completo')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={state.field.kind === 'medio' ? 'default' : 'outline'}
+              onClick={() => dispatch({ type: 'SET_FIELD_KIND', kind: 'medio' })}
+            >
+              {t('field.medio')}
+            </Button>
+          </>
+        )}
 
         {state.tool === 'jugador' && (
           <>
@@ -476,7 +494,7 @@ export function PitchEditor({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        <DiagramView diagram={diagram} fill />
+        {renderField({ diagram, field: state.field })}
 
         {/* Preview del trazo a mano alzada en curso (no interactivo) */}
         {freehand && freehand.length >= 2 && (
@@ -669,6 +687,20 @@ export function PitchEditor({
       )}
     </div>
   );
+}
+
+/**
+ * F11 — Editor de diagramas de un ejercicio. Wrapper fino de `<PitchBoard>` con
+ * el campo por defecto (`<DiagramView>`). Es lo que usan el form de ejercicio
+ * (11.6) y el harness `/dev-pitch-editor`.
+ */
+export function PitchEditor(props: {
+  initialDiagram?: Diagram;
+  onChange?: (diagram: Diagram) => void;
+  showClear?: boolean;
+  className?: string;
+}) {
+  return <PitchBoard {...props} />;
 }
 
 /** Handle de punto: centrado en (x,y); el transform de dnd va en el botón para

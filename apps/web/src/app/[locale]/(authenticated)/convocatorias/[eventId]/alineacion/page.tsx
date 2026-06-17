@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, PenTool } from 'lucide-react';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ export default async function LineupPage({ params, searchParams }: Props) {
   if (!data) notFound();
 
   const t = await getTranslations('alineacion');
+  const tPizarra = await getTranslations('pizarra');
   const selected = data.lineups.find((l) => l.id === data.selectedLineupId);
 
   return (
@@ -51,6 +52,13 @@ export default async function LineupPage({ params, searchParams }: Props) {
           <Link href={`/convocatorias/${eventId}`}>
             <ArrowLeft className="size-4" aria-hidden />
             <span>{t('back')}</span>
+          </Link>
+        </Button>
+        {/* F11B.2 — abrir la pizarra táctica sobre el once de este partido. */}
+        <Button asChild variant="outline" size="sm" className="ml-auto gap-1">
+          <Link href={`/pizarra?event=${eventId}`}>
+            <PenTool className="size-4" aria-hidden />
+            <span>{tPizarra('open_board')}</span>
           </Link>
         </Button>
       </div>
