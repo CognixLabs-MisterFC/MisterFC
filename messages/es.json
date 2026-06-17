@@ -2762,7 +2762,9 @@
       "archive": "Archivar",
       "approve": "Aprobar",
       "reject": "Rechazar",
-      "edit_repropose": "Editar y reproponer"
+      "edit_repropose": "Editar y reproponer",
+      "export": "Exportar",
+      "import": "Importar"
     },
     "confirm": {
       "delete_title": "¿Borrar el ejercicio?",
@@ -2782,7 +2784,8 @@
       "deleted": "Ejercicio borrado.",
       "archived": "Ejercicio archivado.",
       "approved": "Ejercicio publicado.",
-      "rejected": "Ejercicio rechazado."
+      "rejected": "Ejercicio rechazado.",
+      "imported": "Ejercicio importado."
     },
     "review": {
       "title": "Pendientes de revisión"

@@ -7,6 +7,7 @@ import {
   updateExerciseSchema,
   exerciseIdSchema,
   rejectExerciseSchema,
+  parseExerciseImport,
   statusForAction,
   statusForUpdate,
   toExerciseColumns,
@@ -192,6 +193,18 @@ export async function archiveExercise(input: unknown): Promise<ExerciseActionSta
 
   revalidateExercises();
   return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F11.8 — Importar: valida el envoltorio + cada campo + diagram ANTES de crear;
+// si el JSON es inválido NO crea nada. Importar = crear → reusa createExercise
+// (alta como borrador del importador; gatea user_can_create_exercises + RLS).
+// ─────────────────────────────────────────────────────────────────────────────
+export async function importExercise(input: unknown): Promise<ExerciseActionState> {
+  const parsed = parseExerciseImport(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  return createExercise({ ...parsed.data.exercise, action: 'save_draft' });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

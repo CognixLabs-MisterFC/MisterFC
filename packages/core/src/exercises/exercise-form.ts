@@ -229,3 +229,85 @@ export function toExerciseColumns(
     status,
   };
 }
+
+// ── Importar / exportar (11.8) ────────────────────────────────────────────────
+/** Versión del envoltorio de exportación (independiente del contrato del diagrama). */
+export const EXERCISE_EXPORT_VERSION = 1 as const;
+
+/**
+ * Envoltorio de import/export: SOLO contenido (sin id/owner/club/ciclo/timestamps).
+ * El `exercise` se valida con el MISMO `exerciseFormSchema` (incluye `parseDiagram`
+ * vía `diagramSchema`), así un import válido es exactamente un alta de borrador.
+ */
+export const exerciseExportSchema = z.object({
+  version: z.literal(EXERCISE_EXPORT_VERSION),
+  exercise: exerciseFormSchema,
+});
+
+export type ExerciseExport = z.infer<typeof exerciseExportSchema>;
+
+/** Contenido de un ejercicio tal como llega de la ficha (campos nullable de BD). */
+export type ExerciseExportContent = {
+  name: string;
+  categories: string[];
+  tactical_objectives: string[];
+  technical_objectives: string[];
+  physical_focus: string | null;
+  intensity: string | null;
+  space_type: string | null;
+  space_dimensions: string | null;
+  base_duration: number | null;
+  description: string | null;
+  objective: string | null;
+  coaching_points: string | null;
+  variants: string | null;
+  players: string | null;
+  diagram: Diagram | null;
+};
+
+/**
+ * Construye el JSON exportable: envoltorio versionado + SOLO contenido. Omite los
+ * opcionales vacíos (null) para un JSON limpio; los arrays van siempre. El
+ * resultado vuelve a pasar `exerciseFormSchema` (round-trip import).
+ */
+export function buildExerciseExport(content: ExerciseExportContent): ExerciseExport {
+  const exercise: ExerciseFormInput = {
+    name: content.name,
+    categories: content.categories.filter((c): c is CategoryKind =>
+      (CATEGORY_KINDS as readonly string[]).includes(c)
+    ),
+    tactical_objectives: content.tactical_objectives.filter((c) =>
+      (TACTICAL_OBJECTIVES as readonly string[]).includes(c)
+    ) as ExerciseFormInput['tactical_objectives'],
+    technical_objectives: content.technical_objectives.filter((c) =>
+      (TECHNICAL_OBJECTIVES as readonly string[]).includes(c)
+    ) as ExerciseFormInput['technical_objectives'],
+    ...(content.physical_focus != null ? { physical_focus: content.physical_focus } : {}),
+    ...(content.intensity != null
+      ? { intensity: content.intensity as ExerciseIntensity }
+      : {}),
+    ...(content.space_type != null
+      ? { space_type: content.space_type as ExerciseSpaceType }
+      : {}),
+    ...(content.space_dimensions != null ? { space_dimensions: content.space_dimensions } : {}),
+    ...(content.base_duration != null ? { base_duration: content.base_duration } : {}),
+    ...(content.description != null ? { description: content.description } : {}),
+    ...(content.objective != null ? { objective: content.objective } : {}),
+    ...(content.coaching_points != null ? { coaching_points: content.coaching_points } : {}),
+    ...(content.variants != null ? { variants: content.variants } : {}),
+    ...(content.players != null ? { players: content.players } : {}),
+    ...(content.diagram != null && content.diagram.elements.length > 0
+      ? { diagram: content.diagram }
+      : {}),
+  };
+  return { version: EXERCISE_EXPORT_VERSION, exercise };
+}
+
+/**
+ * Valida un JSON importado (envoltorio + cada campo + diagrama). NO lanza:
+ * devuelve el contenido validado o el error de zod. La capa de app lo da de alta
+ * como borrador del importador.
+ */
+export function parseExerciseImport(input: unknown) {
+  return exerciseExportSchema.safeParse(input);
+}

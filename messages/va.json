@@ -2763,7 +2763,9 @@
       "archive": "Arxivar",
       "approve": "Aprovar",
       "reject": "Rebutjar",
-      "edit_repropose": "Editar i reproposar"
+      "edit_repropose": "Editar i reproposar",
+      "export": "Exportar",
+      "import": "Importar"
     },
     "confirm": {
       "delete_title": "Esborrar l’exercici?",
@@ -2783,7 +2785,8 @@
       "deleted": "Exercici esborrat.",
       "archived": "Exercici arxivat.",
       "approved": "Exercici publicat.",
-      "rejected": "Exercici rebutjat."
+      "rejected": "Exercici rebutjat.",
+      "imported": "Exercici importat."
     },
     "review": {
       "title": "Pendents de revisió"
