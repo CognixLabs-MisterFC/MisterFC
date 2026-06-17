@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 import type { Role } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
-import { loadExercise } from '../ejercicios/queries';
+import { loadExercise, loadBoardExercises } from '../ejercicios/queries';
 import { PizarraClient } from './_components/pizarra-client';
 
 type Props = {
@@ -46,5 +46,14 @@ export default async function PizarraPage({ params, searchParams }: Props) {
     }
   }
 
-  return <PizarraClient exerciseDiagram={exerciseDiagram} exerciseName={exerciseName} />;
+  // Lista para el picker: ejercicios visibles del club con diagrama (RLS aplica).
+  const exercises = await loadBoardExercises(ctx.activeClub.club.id);
+
+  return (
+    <PizarraClient
+      exerciseDiagram={exerciseDiagram}
+      exerciseName={exerciseName}
+      exercises={exercises}
+    />
+  );
 }

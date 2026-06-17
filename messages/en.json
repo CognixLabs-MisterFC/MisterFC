@@ -2954,6 +2954,10 @@
     "mode_blank": "Blank",
     "mode_exercise": "From exercise",
     "from_exercise": "Showing: {name}",
-    "open_exercise": "Open in board"
+    "open_exercise": "Open in board",
+    "pick_hint": "Choose an exercise to load it.",
+    "pick_placeholder": "Choose exercise",
+    "search_placeholder": "Search exercise…",
+    "no_results": "No results"
   }
 }

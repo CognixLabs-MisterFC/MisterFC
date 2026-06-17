@@ -2953,6 +2953,10 @@
     "mode_blank": "En blanco",
     "mode_exercise": "Desde ejercicio",
     "from_exercise": "Mostrando: {name}",
-    "open_exercise": "Abrir en pizarra"
+    "open_exercise": "Abrir en pizarra",
+    "pick_hint": "Elige un ejercicio para cargarlo.",
+    "pick_placeholder": "Elegir ejercicio",
+    "search_placeholder": "Buscar ejercicio…",
+    "no_results": "Sin resultados"
   }
 }

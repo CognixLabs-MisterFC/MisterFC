@@ -2954,6 +2954,10 @@
     "mode_blank": "En blanc",
     "mode_exercise": "Des d exercici",
     "from_exercise": "Mostrant: {name}",
-    "open_exercise": "Obrir en pissarra"
+    "open_exercise": "Obrir en pissarra",
+    "pick_hint": "Tria un exercici per a carregar-lo.",
+    "pick_placeholder": "Triar exercici",
+    "search_placeholder": "Cercar exercici…",
+    "no_results": "Sense resultats"
   }
 }
