@@ -25,11 +25,15 @@ export function OnceBoard({ lineup }: { lineup: BoardLineup }) {
   // Fondo = once real + los dibujos confirmados (solo elementos) encima.
   const renderField: RenderField = ({ diagram }) => (
     <>
+      {/* Fondo NO interactivo: `pointer-events-none` deja que TODO toque/clic
+          (incluido sobre los chips) llegue a la capa de dibujo del board; con el
+          `touch-none` del contenedor evita scroll/zoom accidental en tablet. */}
       <MatchFieldEditor
         format={lineup.event.format}
         formationCode={lineup.formationCode}
         players={lineup.players}
         mode="readonly"
+        className="pointer-events-none"
       />
       <DiagramView diagram={diagram} fill showField={false} />
     </>

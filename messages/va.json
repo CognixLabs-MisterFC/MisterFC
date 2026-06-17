@@ -2929,7 +2929,8 @@
       "undo": "Desfés",
       "redo": "Refés",
       "delete": "Esborrar",
-      "clear_all": "Netejar tot"
+      "clear_all": "Netejar tot",
+      "download_image": "Descarregar imatge"
     },
     "aria": {
       "role": "Rol del jugador",

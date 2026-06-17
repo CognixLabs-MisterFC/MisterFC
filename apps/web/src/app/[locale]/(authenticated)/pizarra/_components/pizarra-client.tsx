@@ -81,7 +81,7 @@ export function PizarraClient({
         <p className="text-sm text-muted-foreground">{t('pick_hint')}</p>
       )}
 
-      <PitchEditor key={editorKey} initialDiagram={initial} showClear />
+      <PitchEditor key={editorKey} initialDiagram={initial} showClear showExport />
     </div>
   );
 }
