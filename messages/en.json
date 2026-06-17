@@ -2929,7 +2929,8 @@
       "undo": "Undo",
       "redo": "Redo",
       "delete": "Delete",
-      "clear_all": "Clear all"
+      "clear_all": "Clear all",
+      "download_image": "Download image"
     },
     "aria": {
       "role": "Player role",

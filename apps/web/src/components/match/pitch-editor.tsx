@@ -30,7 +30,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { Undo2, Redo2, Trash2, Eraser } from 'lucide-react';
+import { Undo2, Redo2, Trash2, Eraser, Download } from 'lucide-react';
 import {
   pitchEditorReducer,
   initEditorState,
@@ -105,6 +105,22 @@ const SIZE_CAPABLE = new Set<DiagramElement['type']>([
 const round2 = (v: number): number => Math.round(v * 100) / 100;
 const DRAW_MIN_DIST = 1.5; // % mínimo de arrastre para confirmar un dibujo
 
+/** F11B.3 — Rasteriza un <svg> del DOM a una Image, fijando tamaño explícito
+ *  (las clases CSS no aplican en el data-URL; viewBox + width/height mandan). */
+function svgToImage(svg: SVGSVGElement, w: number, h: number): Promise<HTMLImageElement> {
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  clone.setAttribute('width', String(w));
+  clone.setAttribute('height', String(h));
+  const xml = new XMLSerializer().serializeToString(clone);
+  const src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(xml)}`;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
 const POINT_TYPES = new Set<DiagramElement['type']>([
   'jugador',
   'balon',
@@ -156,6 +172,7 @@ export function PitchBoard({
   initialDiagram,
   onChange,
   showClear = false,
+  showExport = false,
   renderField = defaultRenderField,
   lockFieldKind = false,
   className,
@@ -165,6 +182,10 @@ export function PitchBoard({
   /** Muestra el botón "Limpiar todo" en la barra (F11B.1, pizarra). Off por
    *  defecto para no alterar el editor de ejercicios de F11. */
   showClear?: boolean;
+  /** Muestra "Descargar imagen" (F11B.3). Solo para fondos SVG puros
+   *  (blanco/ejercicio): el snapshot serializa las capas <svg>. NO usar en el
+   *  once real (chips HTML/CSS + fotos cross-origin no se compositan — diferido). */
+  showExport?: boolean;
   /** Fondo del campo. Default = `<DiagramView>` (F11). F11B.2 pasa el once real. */
   renderField?: RenderField;
   /** Oculta el selector Completo/Medio (F11B.2: once real fijo completo). */
@@ -280,6 +301,37 @@ export function PitchBoard({
     }
   }
 
+  // F11B.3 — Snapshot a PNG: serializa las capas <svg> del board (campo +
+  // dibujos) y las compone en un canvas. Efímero (no persiste). Solo en fondos
+  // SVG puros (blanco/ejercicio); el once real no se exporta aún (chips HTML).
+  async function handleExport() {
+    const root = rootRef.current;
+    if (!root) return;
+    const rect = root.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const scale = 2; // nitidez
+    const W = Math.round(rect.width * scale);
+    const H = Math.round(rect.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const svgs = Array.from(root.querySelectorAll('svg'));
+    for (const svg of svgs) {
+      try {
+        const img = await svgToImage(svg, rect.width, rect.height);
+        ctx.drawImage(img, 0, 0, W, H);
+      } catch {
+        // Si una capa no rasteriza, se omite (no bloquea el resto del PNG).
+      }
+    }
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = 'pizarra.png';
+    a.click();
+  }
+
   const selected = state.elements.find((e) => e.id === state.selectedId) ?? null;
 
   return (
@@ -330,6 +382,20 @@ export function PitchBoard({
           >
             <Eraser className="size-4" aria-hidden />
             {t('actions.clear_all')}
+          </Button>
+        )}
+        {showExport && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-1"
+            onClick={() => {
+              void handleExport();
+            }}
+          >
+            <Download className="size-4" aria-hidden />
+            {t('actions.download_image')}
           </Button>
         )}
       </div>
@@ -698,6 +764,7 @@ export function PitchEditor(props: {
   initialDiagram?: Diagram;
   onChange?: (diagram: Diagram) => void;
   showClear?: boolean;
+  showExport?: boolean;
   className?: string;
 }) {
   return <PitchBoard {...props} />;

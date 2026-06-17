@@ -2928,7 +2928,8 @@
       "undo": "Deshacer",
       "redo": "Rehacer",
       "delete": "Borrar",
-      "clear_all": "Limpiar todo"
+      "clear_all": "Limpiar todo",
+      "download_image": "Descargar imagen"
     },
     "aria": {
       "role": "Rol del jugador",
