@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExercisesSearchInput } from './_components/exercises-search-input';
 import { ExercisesFilters } from './_components/exercises-filters';
+import { ExerciseImportButton } from './_components/exercise-import-button';
 import { EXERCISES_PAGE_SIZE, loadExercises } from './queries';
 
 type Props = {
@@ -132,12 +133,15 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
           </p>
         </div>
         {canCreate && !isReview && (
-          <Button asChild>
-            <Link href="/ejercicios/nuevo">
-              <Plus className="size-4" aria-hidden />
-              {t('create')}
-            </Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <ExerciseImportButton />
+            <Button asChild>
+              <Link href="/ejercicios/nuevo">
+                <Plus className="size-4" aria-hidden />
+                {t('create')}
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
 

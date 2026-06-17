@@ -2763,7 +2763,9 @@
       "archive": "Archive",
       "approve": "Approve",
       "reject": "Reject",
-      "edit_repropose": "Edit & re-propose"
+      "edit_repropose": "Edit & re-propose",
+      "export": "Export",
+      "import": "Import"
     },
     "confirm": {
       "delete_title": "Delete exercise?",
@@ -2783,7 +2785,8 @@
       "deleted": "Exercise deleted.",
       "archived": "Exercise archived.",
       "approved": "Exercise published.",
-      "rejected": "Exercise rejected."
+      "rejected": "Exercise rejected.",
+      "imported": "Exercise imported."
     },
     "review": {
       "title": "Pending review"

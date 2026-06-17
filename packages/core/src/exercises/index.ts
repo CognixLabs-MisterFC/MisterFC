@@ -31,6 +31,10 @@ export {
   exerciseIdSchema,
   rejectExerciseSchema,
   toExerciseColumns,
+  EXERCISE_EXPORT_VERSION,
+  exerciseExportSchema,
+  buildExerciseExport,
+  parseExerciseImport,
 } from './exercise-form';
 export type {
   ExerciseFormAction,
@@ -40,4 +44,6 @@ export type {
   ExerciseIdInput,
   RejectExerciseInput,
   ExerciseColumns,
+  ExerciseExport,
+  ExerciseExportContent,
 } from './exercise-form';

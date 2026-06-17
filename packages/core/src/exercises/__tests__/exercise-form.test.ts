@@ -8,7 +8,11 @@ import {
   statusForAction,
   statusForUpdate,
   toExerciseColumns,
+  EXERCISE_EXPORT_VERSION,
+  buildExerciseExport,
+  parseExerciseImport,
   type ExerciseFormInput,
+  type ExerciseExportContent,
 } from '../exercise-form';
 import { DIAGRAM_VERSION, type Diagram } from '../../diagram/diagram';
 
@@ -224,5 +228,88 @@ describe('F11.6 — toExerciseColumns: mapeo a columnas', () => {
       elements: [{ type: 'cono', id: 'el-1', x_pct: 10, y_pct: 10 }],
     };
     expect(toExerciseColumns({ ...full, diagram: d }, 'draft').diagram).toEqual(d);
+  });
+});
+
+describe('F11.8 — buildExerciseExport: envoltorio versionado + solo contenido', () => {
+  const content: ExerciseExportContent = {
+    name: 'Rondo 4v2',
+    categories: ['alevin'],
+    tactical_objectives: ['posesion'],
+    technical_objectives: ['pase'],
+    physical_focus: null,
+    intensity: 'media',
+    space_type: 'reducido',
+    space_dimensions: '20x20',
+    base_duration: 15,
+    description: 'desc',
+    objective: null,
+    coaching_points: null,
+    variants: null,
+    players: null,
+    diagram: null,
+  };
+
+  it('envuelve con version y omite los opcionales nulos', () => {
+    const out = buildExerciseExport(content);
+    expect(out.version).toBe(EXERCISE_EXPORT_VERSION);
+    expect(out.exercise.name).toBe('Rondo 4v2');
+    expect(out.exercise.intensity).toBe('media');
+    expect(out.exercise.base_duration).toBe(15);
+    expect('physical_focus' in out.exercise).toBe(false);
+    expect('objective' in out.exercise).toBe(false);
+    expect('diagram' in out.exercise).toBe(false);
+  });
+
+  it('NO incluye campos de BD/ciclo (round-trip válido)', () => {
+    const out = buildExerciseExport(content);
+    const keys = Object.keys(out.exercise);
+    for (const banned of ['id', 'owner_profile_id', 'club_id', 'status', 'approved_by', 'created_at', 'archived_at']) {
+      expect(keys).not.toContain(banned);
+    }
+    // El contenido exportado vuelve a validar como formulario.
+    expect(exerciseFormSchema.safeParse(out.exercise).success).toBe(true);
+  });
+
+  it('incluye el diagrama si tiene elementos', () => {
+    const d: Diagram = {
+      version: DIAGRAM_VERSION,
+      field: { kind: 'medio', orientation: 'vertical' },
+      elements: [{ type: 'balon', id: 'el-1', x_pct: 40, y_pct: 40 }],
+    };
+    const out = buildExerciseExport({ ...content, diagram: d });
+    expect(out.exercise.diagram).toEqual(d);
+  });
+});
+
+describe('F11.8 — parseExerciseImport: validación del JSON importado', () => {
+  const valid = {
+    version: EXERCISE_EXPORT_VERSION,
+    exercise: { name: 'Importado', tactical_objectives: ['posesion'] },
+  };
+
+  it('acepta un envoltorio válido y devuelve el contenido', () => {
+    const r = parseExerciseImport(valid);
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.exercise.name).toBe('Importado');
+  });
+
+  it('rechaza version incorrecta o ausente', () => {
+    expect(parseExerciseImport({ version: 99, exercise: { name: 'X' } }).success).toBe(false);
+    expect(parseExerciseImport({ exercise: { name: 'X' } }).success).toBe(false);
+  });
+
+  it('rechaza contenido inválido (sin name)', () => {
+    expect(
+      parseExerciseImport({ version: EXERCISE_EXPORT_VERSION, exercise: {} }).success
+    ).toBe(false);
+  });
+
+  it('rechaza un diagrama corrupto', () => {
+    const r = parseExerciseImport({
+      version: EXERCISE_EXPORT_VERSION,
+      exercise: { name: 'X', diagram: { version: 1, field: {}, elements: [{ type: 'nope' }] } },
+    });
+    expect(r.success).toBe(false);
   });
 });

@@ -6,8 +6,10 @@ import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { buildExerciseExport } from '@misterfc/core';
 import { DiagramView } from '@/components/match/diagram-view';
 import { ExerciseActions } from '../_components/exercise-actions';
+import { ExerciseExportButton } from '../_components/exercise-export-button';
 import { loadExercise } from '../queries';
 
 type Props = {
@@ -74,12 +76,15 @@ export default async function EjercicioDetailPage({ params }: Props) {
           <ArrowLeft className="size-4" aria-hidden />
           {tDetail('back')}
         </Link>
-        <ExerciseActions
-          id={exercise.id}
-          status={exercise.status}
-          isOwner={exercise.is_owner}
-          isAdmin={role === 'admin_club'}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <ExerciseExportButton data={buildExerciseExport(exercise)} />
+          <ExerciseActions
+            id={exercise.id}
+            status={exercise.status}
+            isOwner={exercise.is_owner}
+            isAdmin={role === 'admin_club'}
+          />
+        </div>
       </div>
 
       {/* Cabecera: nombre + estado */}
