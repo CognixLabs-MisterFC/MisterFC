@@ -590,7 +590,9 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 > **Fase intercalada (no renumera F12–F16)**: se inserta **después de F11 y antes de F12**. Lleva etiqueta `F11B` (no número correlativo) precisamente para **no renumerar** las fases existentes. Añadida 2026-06-14.
 
-**Objetivo**: tablero táctico para usar **en directo** durante el partido o el entrenamiento. Carga la **alineación real** con sus jugadores ya colocados en el campo y permite **dibujar encima** (flechas, balón, líneas de movimiento, trazo libre) para mostrar las jugadas a los jugadores **en el momento**. Pensado para tablet. Es **distinto de F12/F13**: aquellas sirven para **diseñar** jugadas/sesiones de entrenamiento; F11B es para **presentar en vivo** sobre la alineación real (sin animación por frames ni playbook — eso sigue en F13).
+> **Spec ligera (2026-06-17)**: [docs/specs/11B.0-pizarra-tactica.md](../specs/11B.0-pizarra-tactica.md) fija las decisiones **D1–D10** y el **troceo definitivo** (11B.0–11B.3), que **sustituye** la lista preliminar de abajo. **Alcance ampliado por el usuario**: además del once real, la pizarra tiene modo **en blanco** y modo **mostrar un ejercicio**; **dibujo libre** a mano alzada + **color de trazo** {negro/azul/rojo}; **efímero puro** (guardar/animar = F13; modo presentación iPad también → F13).
+
+**Objetivo**: pizarra táctica **efímera** para explicar jugadas **en el momento** (tablet/desktop) sobre tres fondos — **en blanco**, sobre un **ejercicio** de la biblioteca, o sobre la **alineación real** del partido — con **todas** las herramientas de F11 + **dibujo libre** y **color de trazo**. Es **distinto de F12/F13**: aquellas sirven para **diseñar** jugadas/sesiones; F11B es para **presentar en vivo** (sin animación por frames, playbook ni persistencia — eso sigue en F13).
 
 **Horas**: ~6–9 h (estimación **preliminar**, a refinar al escribir su spec) · **Sesiones**: 2–3
 
@@ -609,12 +611,14 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Accesos**: desde la **pantalla de partido en vivo (F7)** y desde la **alineación** (F6).
 
-**Subfases** (preliminar, se concretan al escribir la spec):
+**Subfases** (troceo definitivo — [spec 11B.0](../specs/11B.0-pizarra-tactica.md) §8; main verde en cada paso):
 
-- **11B.1** Montar la pizarra cargando la alineación real (`<MatchFieldEditor>` con el once colocado) — 1–2 h
-- **11B.2** Capa de dibujo sobre la alineación (reusa PitchEditor F11: flechas, balón, líneas de movimiento, trazo libre) — 2–3 h
-- **11B.3** Accesos desde partido en vivo (F7) y desde la alineación (F6) — 1 h
-- **11B.4** Modo presentación táctil para tablet (pantalla limpia, trazos sobre el once) — 1–2 h
+- **11B.0** Dibujo libre + extensión de color *(core nuevo + reúso)*: `color?` aditivo en flecha/linea (retrocompat, beneficia a F11/F13) + acción `ADD_FREEHAND` + helper de simplificación de trazo (Vitest) + herramienta "Dibujo libre" y selector de color en `<PitchEditor>`. Contrato `linea` y renderer ya admiten N puntos.
+- **11B.1** Pizarra efímera (blanco / mostrar ejercicio) *(reúso + ruta nueva)*: ruta `/pizarra` (solo staff), selector de modo, carga por `?exercise=`, "Limpiar todo", **i18n es/en/va** del PitchEditor, tarjeta en hub Entrenamientos, acceso desde la ficha del ejercicio. Sin persistencia.
+- **11B.2** Capa de dibujo sobre el **once real** *(lo nuevo de F11B)*: capa de F11 sobre `<MatchFieldEditor>` readonly con la alineación real (loader reusado de la página de alineación); accesos desde F6 (alineación) y F7 (directo); completo + vertical.
+- **11B.3** Pulido táctil + accesos + export opcional *(pulido)*: verificación en tablet, accesos finales y, si se aprueba, "descargar imagen" del momento (efímero, no BD).
+
+> El **modo presentación iPad** (pantalla limpia full-screen) de la lista preliminar pasa a **F13** (presentación de jugadas), fuera del alcance efímero de F11B.
 
 ---
 
