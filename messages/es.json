@@ -949,6 +949,21 @@
     "can_create_exercises": {
       "label": "Crear ejercicios",
       "description": "Puede crear y proponer ejercicios para la biblioteca del club. La publicación la aprueba el admin."
+    },
+    "domains": {
+      "entrenamientos": "Entrenamientos",
+      "partidos": "Partidos",
+      "calendario": "Calendario",
+      "jugadores": "Jugadores / Plantilla",
+      "comunicacion": "Comunicación"
+    },
+    "can_mark_attendance": {
+      "label": "Registrar asistencia",
+      "description": "Puede pasar lista y registrar la asistencia a los entrenamientos. Sin esto, solo puede consultarla."
+    },
+    "can_manage_callups": {
+      "label": "Gestionar convocatorias",
+      "description": "Puede crear y gestionar las convocatorias de partido. Sin esto, solo puede verlas."
     }
   },
   "mis_equipos": {

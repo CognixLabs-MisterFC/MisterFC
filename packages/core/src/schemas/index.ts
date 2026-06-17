@@ -88,12 +88,14 @@ export {
   updateCapabilitySchema,
   TEAM_STAFF_ROLES,
   CAPABILITY_NAMES,
+  CAPABILITY_DOMAINS,
 } from './staff';
 export type {
   SendStaffInvitationInput,
   UpdateCapabilityInput,
   TeamStaffRole,
   CapabilityName,
+  CapabilityDomainKey,
 } from './staff';
 
 export {

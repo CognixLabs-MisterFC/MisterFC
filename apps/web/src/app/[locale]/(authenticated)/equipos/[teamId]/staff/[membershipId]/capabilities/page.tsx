@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft } from 'lucide-react';
-import { CAPABILITY_NAMES, createSupabaseServerClient } from '@misterfc/core';
+import { CAPABILITY_DOMAINS, createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -117,16 +117,25 @@ export default async function CapabilitiesPage({ params }: Props) {
         <p className="text-xs text-muted-foreground">{t('read_only')}</p>
       )}
 
-      <div className="flex flex-col gap-3">
-        {CAPABILITY_NAMES.map((name) => (
-          <CapabilityToggle
-            key={name}
-            teamId={teamId}
-            membershipId={membershipId}
-            capabilityName={name}
-            initial={caps.get(name) ?? false}
-            canEdit={canEdit}
-          />
+      {/* Capabilities agrupadas por dominio (11.9). El modelo no cambia: cada
+          toggle concede/revoca igual; solo se reorganiza la presentación. */}
+      <div className="flex flex-col gap-6">
+        {CAPABILITY_DOMAINS.map((domain) => (
+          <section key={domain.key} className="flex flex-col gap-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t(`domains.${domain.key}`)}
+            </h2>
+            {domain.capabilities.map((name) => (
+              <CapabilityToggle
+                key={name}
+                teamId={teamId}
+                membershipId={membershipId}
+                capabilityName={name}
+                initial={caps.get(name) ?? false}
+                canEdit={canEdit}
+              />
+            ))}
+          </section>
         ))}
       </div>
 
