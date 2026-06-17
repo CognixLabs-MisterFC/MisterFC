@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import type { Role } from '@misterfc/core';
 import { SidebarNavLink } from './sidebar-nav-link';
-import { navItemsForRole } from './nav-config';
+import { resolveNav } from './nav-config';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -19,7 +19,7 @@ type Props = {
 
 export async function Sidebar({ role, variant, badges }: Props) {
   const t = await getTranslations('shell');
-  const items = navItemsForRole(role);
+  const items = resolveNav(role);
 
   return (
     <nav

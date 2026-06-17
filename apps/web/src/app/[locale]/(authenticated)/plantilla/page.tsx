@@ -10,11 +10,12 @@ type Props = {
 };
 
 /**
- * HUB "Entrenamientos": Ejercicios (F11) + Asistencia [+ Sesiones F12]. La fuente
- * de roles/hijos es `nav-config` (misma que el sidebar), así el hub y la nav no
- * divergen. Enlaza a las rutas existentes (no las mueve).
+ * HUB "Plantilla": Jugadores, Importar, Cuerpo técnico y Equipos. Roles/hijos
+ * desde `nav-config` (misma fuente que el sidebar); las rutas existentes no se
+ * mueven (`/plantilla/importar` sigue donde estaba). El gating fino queda en
+ * cada ruta destino.
  */
-export default async function EntrenamientosPage({ params }: Props) {
+export default async function PlantillaPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
 
@@ -22,10 +23,10 @@ export default async function EntrenamientosPage({ params }: Props) {
   if (!ctx) redirect(`/${locale}/signin`);
 
   const role = ctx.activeClub.role as Role;
-  const children = getHubChildren('entrenamientos', role);
+  const children = getHubChildren('plantilla', role);
   if (children.length === 0) redirect(`/${locale}`);
 
-  const t = await getTranslations('entrenamientos');
+  const t = await getTranslations('plantilla');
   const items = children.map((c) => ({
     key: c.key,
     href: c.href,

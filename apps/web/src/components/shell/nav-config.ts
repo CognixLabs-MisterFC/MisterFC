@@ -11,6 +11,7 @@ import {
   Upload,
   Calendar,
   GraduationCap,
+  Swords,
   Shield,
   LayoutGrid,
   LayoutDashboard,
@@ -20,10 +21,11 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export type NavItem = {
-  /** Clave i18n bajo `shell.nav.<key>` */
+/** Enlace simple del menú (hoja). */
+export type NavLink = {
+  /** Clave i18n bajo `shell.nav.<key>`. */
   key: string;
-  /** Path tras `/{locale}` (ej. `/categorias`). Sin trailing slash. */
+  /** Path tras `/{locale}` (ej. `/jugadores`). Sin trailing slash. */
   href: string;
   icon: LucideIcon;
   /** Roles que ven esta entrada. */
@@ -31,223 +33,135 @@ export type NavItem = {
 };
 
 /**
- * Entradas del menú lateral, ordenadas según aparecen.
+ * HUB: una sola entrada en el sidebar → su PÁGINA (con tarjetas) agrupa los
+ * hijos. El sidebar NO despliega los hijos; el detalle vive en la página-hub
+ * (patrón "Entrenamientos"). `href` es la ruta de la página-hub. Los `roles` se
+ * DERIVAN de los hijos (un hub se ve si el rol ve ≥1 hijo).
  *
- * Solo entradas cuyo destino exista en el lote actual. Las que aún no
- * tienen implementación (plantilla del club, staff, mi ficha) se añaden
- * cuando llegan sus lotes para que el menú no acabe en 404.
- *
- * "Entrenamientos" es un HUB (una sola entrada → /entrenamientos): sus
- * sub-áreas (Ejercicios, Asistencia, y más adelante Sesiones/F12) se presentan
- * DENTRO del hub, no como hijos en el sidebar. Así el sidebar queda compacto.
+ * Regla del HIJO ÚNICO: si para un rol solo hay UN hijo visible, el sidebar
+ * enlaza DIRECTO a ese hijo (sin pasar por la página-hub de una sola tarjeta).
  */
-export const NAV_ITEMS: readonly NavItem[] = [
+export type NavHub = {
+  key: string;
+  href: string;
+  icon: LucideIcon;
+  children: NavLink[];
+};
+
+export type NavEntry = NavLink | NavHub;
+
+export function isNavHub(entry: NavEntry): entry is NavHub {
+  return 'children' in entry;
+}
+
+// Conjuntos de roles reutilizados.
+const ALL: Role[] = [
+  'admin_club',
+  'coordinador',
+  'entrenador_principal',
+  'entrenador_ayudante',
+  'jugador',
+];
+const STAFF: Role[] = ['admin_club', 'coordinador', 'entrenador_principal', 'entrenador_ayudante'];
+const DIRECCION: Role[] = ['admin_club', 'coordinador'];
+
+/**
+ * Entradas del menú lateral, en orden. Mezcla enlaces simples y HUBS. Los hubs
+ * "Entrenamientos", "Partidos" y "Plantilla" compactan el sidebar: su detalle
+ * vive en la página-hub (tarjetas que enlazan a las rutas EXISTENTES, sin
+ * moverlas). El gating por rol/capability de cada sub-área se preserva: lo
+ * decide el `roles` del hijo + el guard/RLS de su ruta.
+ */
+export const NAV: readonly NavEntry[] = [
+  { key: 'home', href: '', icon: Home, roles: ALL },
+  // Dirección: dashboard ejecutivo (top-level; el gating real es server-side).
+  { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard, roles: DIRECCION },
+
+  // HUB Plantilla — jugadores + importar + cuerpo técnico + equipos.
   {
-    key: 'home',
-    href: '',
-    icon: Home,
-    roles: [
-      'admin_club',
-      'coordinador',
-      'entrenador_principal',
-      'entrenador_ayudante',
-      'jugador',
-    ],
-  },
-  {
-    key: 'dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    // F10 — Dashboard ejecutivo del club. Solo dirección (admin/coord); el
-    // gating real es en servidor (la page redirige), esto solo oculta la entrada.
-    roles: ['admin_club', 'coordinador'],
-  },
-  {
-    key: 'equipos',
-    href: '/equipos',
-    icon: FolderKanban,
-    // Rework A (A4) — la nav gira en torno al equipo: listado por temporada +
-    // pantalla de categorías-plantilla. Antes era "Categorías" → /categorias.
-    roles: ['admin_club', 'coordinador'],
-  },
-  {
-    key: 'jugadores',
-    href: '/jugadores',
+    key: 'plantilla',
+    href: '/plantilla',
     icon: Users,
-    // admin/coord ven la plantilla completa del club.
-    roles: ['admin_club', 'coordinador'],
-  },
-  {
-    key: 'mis_equipos',
-    href: '/mis-equipos',
-    icon: Shield,
-    // Hub multi-equipo del coach: lista de equipos + accesos contextuales
-    // a convocatoria, asistencia y calendario del equipo.
-    // Admin/coord NO tienen `/mis-equipos`: usan `/jugadores` global.
-    roles: ['entrenador_principal', 'entrenador_ayudante'],
-  },
-  {
-    key: 'mi_equipo',
-    href: '/mi-equipo',
-    icon: Shield,
-    // F5.8 — Vista equipo para el jugador (compañeros + eventos + anuncios).
-    // Solo rol jugador; coaches usan /mis-equipos.
-    roles: ['jugador'],
-  },
-  {
-    key: 'mi_ficha',
-    href: '/mi-ficha',
-    icon: LineChart,
-    // F9.5 — Expediente deportivo del propio jugador (jugador/familia comparten
-    // el rol `jugador`). Stats + ratios + asistencia SIEMPRE (D9-1/D9-2); las
-    // valoraciones solo si el club activó el flag de visibilidad (RLS de F8).
-    roles: ['jugador'],
-  },
-  {
-    key: 'cuerpo_tecnico',
-    href: '/cuerpo-tecnico',
-    icon: UsersRound,
-    // Gestión global del cuerpo técnico. Principal ve los staff de SUS
-    // equipos (lectura); admin/coord además mueve. Ayudante / jugador no
-    // ven la entrada.
-    roles: ['admin_club', 'coordinador', 'entrenador_principal'],
-  },
-  {
-    key: 'estadisticas_equipo',
-    href: '/estadisticas-equipo',
-    icon: BarChart3,
-    // F9.B-3 — estadísticas agregadas por equipo. Entrada para todo el staff;
-    // el cuerpo técnico (que NO tiene /jugadores) entra aquí a las stats de SUS
-    // equipos. La landing resuelve: 1 equipo → directo, varios → selector.
-    roles: [
-      'admin_club',
-      'coordinador',
-      'entrenador_principal',
-      'entrenador_ayudante',
+    children: [
+      // admin/coord ven la plantilla completa del club.
+      { key: 'jugadores', href: '/jugadores', icon: Users, roles: DIRECCION },
+      // Import masivo: roles que SIEMPRE pueden; la page chequea capability del ayudante.
+      { key: 'import_players', href: '/plantilla/importar', icon: Upload, roles: ['admin_club', 'coordinador', 'entrenador_principal'] },
+      // Gestión global del cuerpo técnico (principal: lectura de SUS equipos).
+      { key: 'cuerpo_tecnico', href: '/cuerpo-tecnico', icon: UsersRound, roles: ['admin_club', 'coordinador', 'entrenador_principal'] },
+      // Estructura: listado de equipos por temporada + categorías-plantilla.
+      { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: DIRECCION },
     ],
   },
-  {
-    key: 'calendario',
-    href: '/calendario',
-    icon: Calendar,
-    // Calendario visible para todos los roles (cada uno ve filtrado en UI).
-    roles: [
-      'admin_club',
-      'coordinador',
-      'entrenador_principal',
-      'entrenador_ayudante',
-      'jugador',
-    ],
-  },
+
+  // Vistas de equipo por rol (top-level simples; no entran en hubs de staff).
+  { key: 'mis_equipos', href: '/mis-equipos', icon: Shield, roles: ['entrenador_principal', 'entrenador_ayudante'] },
+  { key: 'mi_equipo', href: '/mi-equipo', icon: Shield, roles: ['jugador'] },
+  { key: 'mi_ficha', href: '/mi-ficha', icon: LineChart, roles: ['jugador'] },
+
+  // HUB Entrenamientos — ejercicios (staff) + asistencia (todos) [+ sesiones F12].
   {
     key: 'entrenamientos',
     href: '/entrenamientos',
     icon: GraduationCap,
-    // HUB de entrenamientos: agrupa Ejercicios (F11) y Asistencia (vive aquí
-    // porque la asistencia se confirma para los entrenamientos), y a futuro las
-    // Sesiones (F12). Visible para todos los roles que ven AL MENOS una sub-área
-    // (asistencia la ve también el jugador). El gating fino lo aplica cada
-    // tarjeta del hub y el guard de cada ruta.
-    roles: [
-      'admin_club',
-      'coordinador',
-      'entrenador_principal',
-      'entrenador_ayudante',
-      'jugador',
+    children: [
+      { key: 'ejercicios', href: '/ejercicios', icon: GraduationCap, roles: STAFF },
+      { key: 'asistencia', href: '/asistencia', icon: Calendar, roles: ALL },
     ],
   },
+
+  // HUB Partidos — gestión de partidos (todos) + formaciones (staff) + stats (staff).
   {
-    key: 'convocatorias',
-    href: '/convocatorias',
-    icon: Megaphone,
-    // Convocatorias de partido. Todos los roles ven entrada; la page
-    // diferencia vista jugador/familia (responder) vs cuerpo técnico
-    // (publicar + descartar). Ayudante necesita can_manage_callups para
-    // las acciones de gestión; la entrada le aparece igual.
-    roles: [
-      'admin_club',
-      'coordinador',
-      'entrenador_principal',
-      'entrenador_ayudante',
-      'jugador',
+    key: 'partidos',
+    href: '/partidos',
+    icon: Swords,
+    children: [
+      { key: 'convocatorias', href: '/convocatorias', icon: Megaphone, roles: ALL },
+      { key: 'formaciones', href: '/formaciones', icon: LayoutGrid, roles: STAFF },
+      { key: 'estadisticas_equipo', href: '/estadisticas-equipo', icon: BarChart3, roles: STAFF },
     ],
   },
-  {
-    key: 'formaciones',
-    href: '/formaciones',
-    icon: LayoutGrid,
-    // F6.10 — plantillas personalizadas de formación del coach. Visible para
-    // staff (admin/coord + entrenadores); la page gatea el botón "Nueva" y la
-    // RLS gatea el INSERT según la autoridad de alineaciones.
-    roles: [
-      'admin_club',
-      'coordinador',
-      'entrenador_principal',
-      'entrenador_ayudante',
-    ],
-  },
-  {
-    key: 'import_players',
-    href: '/plantilla/importar',
-    icon: Upload,
-    // Entrenadores con `can_manage_squad` también podrían usarlo. Esta nav lo
-    // dejamos restringido a roles que SIEMPRE pueden; la page hace el check
-    // de capability para el ayudante.
-    roles: ['admin_club', 'coordinador', 'entrenador_principal'],
-  },
-  {
-    key: 'anuncios',
-    href: '/anuncios',
-    icon: Megaphone,
-    // Anuncios globales del club. Admin/coord pueden publicar club-wide
-    // o seleccionar varios teams; coaches usan /equipos/[teamId]/anuncios
-    // para su team específico.
-    roles: ['admin_club', 'coordinador'],
-  },
-  {
-    key: 'mensajes',
-    href: '/mensajes',
-    icon: MessageSquare,
-    // Mensajería 1:1. Cualquier rol puede tener conversaciones (coach inicia;
-    // jugador/familia recibe y responde). El badge de no leídos lo gestiona
-    // la propia /mensajes; aquí solo entry point.
-    roles: [
-      'admin_club',
-      'coordinador',
-      'entrenador_principal',
-      'entrenador_ayudante',
-      'jugador',
-    ],
-  },
-  {
-    key: 'invitations',
-    href: '/invitations',
-    icon: Mail,
-    roles: ['admin_club', 'coordinador'],
-  },
-  {
-    key: 'ajustes',
-    href: '/ajustes',
-    icon: Settings,
-    // F8.5 — ajustes del club (visibilidad de valoraciones). Admin/coord ven la
-    // entrada; solo el admin puede cambiar el flag (la page deshabilita el
-    // control para coord y la RLS rechaza la escritura del no-admin).
-    roles: ['admin_club', 'coordinador'],
-  },
-  {
-    key: 'perfil',
-    href: '/perfil',
-    icon: UserRound,
-    roles: [
-      'admin_club',
-      'coordinador',
-      'entrenador_principal',
-      'entrenador_ayudante',
-      'jugador',
-    ],
-  },
+
+  { key: 'calendario', href: '/calendario', icon: Calendar, roles: ALL },
+  { key: 'mensajes', href: '/mensajes', icon: MessageSquare, roles: ALL },
+
+  // Dirección: comunicación club-wide + administración (top-level).
+  { key: 'anuncios', href: '/anuncios', icon: Megaphone, roles: DIRECCION },
+  { key: 'invitations', href: '/invitations', icon: Mail, roles: DIRECCION },
+  { key: 'ajustes', href: '/ajustes', icon: Settings, roles: DIRECCION },
+
+  { key: 'perfil', href: '/perfil', icon: UserRound, roles: ALL },
 ] as const;
 
-export function navItemsForRole(role: Role): NavItem[] {
-  return NAV_ITEMS.filter((item) => item.roles.includes(role));
+/** Item ya resuelto para pintar en el sidebar (un único enlace). */
+export type ResolvedNavItem = { key: string; href: string; icon: LucideIcon };
+
+/**
+ * Resuelve el menú para un rol. Los hubs colapsan a enlace directo cuando el rol
+ * solo ve un hijo (regla del hijo único), y se omiten si no ve ninguno.
+ */
+export function resolveNav(role: Role): ResolvedNavItem[] {
+  const out: ResolvedNavItem[] = [];
+  for (const entry of NAV) {
+    if (isNavHub(entry)) {
+      const visible = entry.children.filter((c) => c.roles.includes(role));
+      if (visible.length === 0) continue;
+      if (visible.length === 1) {
+        const c = visible[0]!;
+        out.push({ key: c.key, href: c.href, icon: c.icon });
+      } else {
+        out.push({ key: entry.key, href: entry.href, icon: entry.icon });
+      }
+    } else if (entry.roles.includes(role)) {
+      out.push({ key: entry.key, href: entry.href, icon: entry.icon });
+    }
+  }
+  return out;
+}
+
+/** Hijos de un hub visibles para un rol (lo usan las páginas-hub para sus tarjetas). */
+export function getHubChildren(hubKey: string, role: Role): NavLink[] {
+  const hub = NAV.find((e) => isNavHub(e) && e.key === hubKey);
+  if (!hub || !isNavHub(hub)) return [];
+  return hub.children.filter((c) => c.roles.includes(role));
 }
