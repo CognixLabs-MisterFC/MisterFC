@@ -2957,6 +2957,9 @@
     "pick_hint": "Elige un ejercicio para cargarlo.",
     "pick_placeholder": "Elegir ejercicio",
     "search_placeholder": "Buscar ejercicio…",
-    "no_results": "Sin resultados"
+    "no_results": "Sin resultados",
+    "once_subtitle": "Dibuja sobre el once de {match}. Nada se guarda.",
+    "once_empty": "Esta alineación no tiene jugadores en el campo.",
+    "open_board": "Pizarra"
   }
 }

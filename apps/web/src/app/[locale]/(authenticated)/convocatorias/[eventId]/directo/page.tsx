@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, PenTool } from 'lucide-react';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -50,16 +50,26 @@ export default async function MatchLivePage({ params }: Props) {
   if (!data) notFound();
 
   const t = await getTranslations('partido_directo');
+  const tPizarra = await getTranslations('pizarra');
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button asChild variant="ghost" size="sm">
-          <Link href={`/convocatorias/${eventId}`}>
-            <ArrowLeft className="size-4" aria-hidden />
-            <span>{t('back')}</span>
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <Link href={`/convocatorias/${eventId}`}>
+              <ArrowLeft className="size-4" aria-hidden />
+              <span>{t('back')}</span>
+            </Link>
+          </Button>
+          {/* F11B.2 — pizarra táctica sobre el once de este partido. */}
+          <Button asChild variant="outline" size="sm" className="gap-1">
+            <Link href={`/pizarra?event=${eventId}`}>
+              <PenTool className="size-4" aria-hidden />
+              <span>{tPizarra('open_board')}</span>
+            </Link>
+          </Button>
+        </div>
         <p className="text-sm text-muted-foreground">
           {data.event.title}
           {data.event.opponentName ? ` · vs ${data.event.opponentName}` : ''}

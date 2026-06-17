@@ -235,6 +235,7 @@ export function DiagramView({
   diagram,
   className,
   fill = false,
+  showField = true,
 }: {
   diagram: Diagram;
   className?: string;
@@ -243,6 +244,10 @@ export function DiagramView({
    *  interacción sobre el MISMO lienzo sin duplicar el pintado. El padre debe
    *  fijar el aspect-ratio del kind. */
   fill?: boolean;
+  /** Si false, NO pinta `<FieldMarkings>`: solo los elementos (SVG transparente).
+   *  Lo usa F11B.2 para superponer los dibujos sobre OTRO campo (el once real de
+   *  `<MatchFieldEditor>`) sin duplicar las marcas del campo. */
+  showField?: boolean;
 }) {
   // Degradación: la orientación `horizontal` (ambos kinds) cae a completo+vertical
   // (hueco conocido de FieldMarkings — ver cabecera; el aviso lo da el harness).
@@ -260,7 +265,7 @@ export function DiagramView({
         className,
       )}
     >
-      <FieldMarkings kind={kind} />
+      {showField && <FieldMarkings kind={kind} />}
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className="absolute inset-0 size-full">
         <defs>
           {/* Un marcador por color de trazo (negro por defecto + blue/red). El
