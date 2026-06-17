@@ -29,6 +29,7 @@ export {
   createExerciseSchema,
   updateExerciseSchema,
   exerciseIdSchema,
+  rejectExerciseSchema,
   toExerciseColumns,
 } from './exercise-form';
 export type {
@@ -37,5 +38,6 @@ export type {
   CreateExerciseInput,
   UpdateExerciseInput,
   ExerciseIdInput,
+  RejectExerciseInput,
   ExerciseColumns,
 } from './exercise-form';

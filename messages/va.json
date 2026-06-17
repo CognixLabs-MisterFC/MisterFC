@@ -2738,7 +2738,8 @@
         "save_draft": "Guardar esborrany",
         "propose": "Proposar",
         "publish": "Publicar",
-        "save_changes": "Guardar canvis"
+        "save_changes": "Guardar canvis",
+        "repropose": "Reproposar"
       },
       "errors": {
         "name_required": "El nom és obligatori.",
@@ -2759,7 +2760,10 @@
       "edit": "Editar",
       "propose": "Proposar",
       "delete": "Esborrar",
-      "archive": "Arxivar"
+      "archive": "Arxivar",
+      "approve": "Aprovar",
+      "reject": "Rebutjar",
+      "edit_repropose": "Editar i reproposar"
     },
     "confirm": {
       "delete_title": "Esborrar l’exercici?",
@@ -2768,12 +2772,25 @@
       "archive_desc": "L’exercici publicat s’arxivarà i deixarà d’aparéixer en la biblioteca.",
       "cancel": "Cancel·lar",
       "confirm_delete": "Esborrar",
-      "confirm_archive": "Arxivar"
+      "confirm_archive": "Arxivar",
+      "reject_title": "Rebutjar l’exercici",
+      "reject_desc": "Indica a l’autor per què es rebutja perquè puga corregir-lo i tornar a proposar-lo.",
+      "reject_reason_label": "Motiu del rebuig",
+      "reject_reason_placeholder": "Ex. Falta definir l’espai i els objectius."
     },
     "toast": {
       "proposed": "Exercici proposat.",
       "deleted": "Exercici esborrat.",
-      "archived": "Exercici arxivat."
+      "archived": "Exercici arxivat.",
+      "approved": "Exercici publicat.",
+      "rejected": "Exercici rebutjat."
+    },
+    "review": {
+      "title": "Pendents de revisió"
+    },
+    "tabs": {
+      "library": "Biblioteca",
+      "review": "Pendents de revisió"
     }
   },
   "entrenamientos": {

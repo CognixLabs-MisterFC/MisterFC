@@ -2737,7 +2737,8 @@
         "save_draft": "Guardar borrador",
         "propose": "Proponer",
         "publish": "Publicar",
-        "save_changes": "Guardar cambios"
+        "save_changes": "Guardar cambios",
+        "repropose": "Reproponer"
       },
       "errors": {
         "name_required": "El nombre es obligatorio.",
@@ -2758,7 +2759,10 @@
       "edit": "Editar",
       "propose": "Proponer",
       "delete": "Borrar",
-      "archive": "Archivar"
+      "archive": "Archivar",
+      "approve": "Aprobar",
+      "reject": "Rechazar",
+      "edit_repropose": "Editar y reproponer"
     },
     "confirm": {
       "delete_title": "¿Borrar el ejercicio?",
@@ -2767,12 +2771,25 @@
       "archive_desc": "El ejercicio publicado se archivará y dejará de aparecer en la biblioteca.",
       "cancel": "Cancelar",
       "confirm_delete": "Borrar",
-      "confirm_archive": "Archivar"
+      "confirm_archive": "Archivar",
+      "reject_title": "Rechazar el ejercicio",
+      "reject_desc": "Indica al autor por qué se rechaza para que pueda corregirlo y volver a proponerlo.",
+      "reject_reason_label": "Motivo del rechazo",
+      "reject_reason_placeholder": "Ej. Falta definir el espacio y los objetivos."
     },
     "toast": {
       "proposed": "Ejercicio propuesto.",
       "deleted": "Ejercicio borrado.",
-      "archived": "Ejercicio archivado."
+      "archived": "Ejercicio archivado.",
+      "approved": "Ejercicio publicado.",
+      "rejected": "Ejercicio rechazado."
+    },
+    "review": {
+      "title": "Pendientes de revisión"
+    },
+    "tabs": {
+      "library": "Biblioteca",
+      "review": "Pendientes de revisión"
     }
   },
   "entrenamientos": {

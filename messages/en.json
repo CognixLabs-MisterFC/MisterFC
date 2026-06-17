@@ -2738,7 +2738,8 @@
         "save_draft": "Save draft",
         "propose": "Propose",
         "publish": "Publish",
-        "save_changes": "Save changes"
+        "save_changes": "Save changes",
+        "repropose": "Re-propose"
       },
       "errors": {
         "name_required": "Name is required.",
@@ -2759,7 +2760,10 @@
       "edit": "Edit",
       "propose": "Propose",
       "delete": "Delete",
-      "archive": "Archive"
+      "archive": "Archive",
+      "approve": "Approve",
+      "reject": "Reject",
+      "edit_repropose": "Edit & re-propose"
     },
     "confirm": {
       "delete_title": "Delete exercise?",
@@ -2768,12 +2772,25 @@
       "archive_desc": "The published exercise will be archived and will no longer appear in the library.",
       "cancel": "Cancel",
       "confirm_delete": "Delete",
-      "confirm_archive": "Archive"
+      "confirm_archive": "Archive",
+      "reject_title": "Reject exercise",
+      "reject_desc": "Tell the author why it’s rejected so they can fix it and propose it again.",
+      "reject_reason_label": "Rejection reason",
+      "reject_reason_placeholder": "e.g. Define the space and objectives."
     },
     "toast": {
       "proposed": "Exercise proposed.",
       "deleted": "Exercise deleted.",
-      "archived": "Exercise archived."
+      "archived": "Exercise archived.",
+      "approved": "Exercise published.",
+      "rejected": "Exercise rejected."
+    },
+    "review": {
+      "title": "Pending review"
+    },
+    "tabs": {
+      "library": "Library",
+      "review": "Pending review"
     }
   },
   "entrenamientos": {

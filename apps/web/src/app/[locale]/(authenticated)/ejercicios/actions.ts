@@ -1,10 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import * as Sentry from '@sentry/nextjs';
 import {
   createExerciseSchema,
   updateExerciseSchema,
   exerciseIdSchema,
+  rejectExerciseSchema,
   statusForAction,
   statusForUpdate,
   toExerciseColumns,
@@ -108,13 +110,16 @@ export async function updateExercise(input: unknown): Promise<ExerciseActionStat
     .maybeSingle();
   if (!current) return { error: 'not_found' };
 
-  const status = statusForUpdate(current.status as MethodologyStatus, action, isAdmin);
+  const currentStatus = current.status as MethodologyStatus;
+  const status = statusForUpdate(currentStatus, action, isAdmin);
   if (status === null) return { error: 'forbidden' };
 
   const columns = toExerciseColumns(parsed.data, status);
+  // Al corregir un rechazado y reproponerlo/guardarlo, limpia el motivo previo.
+  const clearReason = currentStatus === 'rejected' && status !== 'rejected';
   const { data: updated, error } = await supabase
     .from('exercises')
-    .update(columns)
+    .update(clearReason ? { ...columns, rejection_reason: null } : columns)
     .eq('id', id)
     .select('id')
     .maybeSingle();
@@ -187,4 +192,89 @@ export async function archiveExercise(input: unknown): Promise<ExerciseActionSta
 
   revalidateExercises();
   return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F11.7 — Ciclo de metodología: aprobar / rechazar (solo Admin). El trigger de
+// 11.1 sella approved_by/at al publicar y exige motivo + Admin al rechazar; la
+// RLS UPDATE deja al Admin transicionar. Aquí confiamos en ese gate.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Aprobar un propuesto → publicado. El trigger setea approved_by/approved_at. */
+export async function approveExercise(input: unknown): Promise<ExerciseActionState> {
+  const parsed = exerciseIdSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: updated, error } = await supabase
+    .from('exercises')
+    .update({ status: 'published' })
+    .eq('id', parsed.data.id)
+    .select('id')
+    .maybeSingle();
+
+  if (error) return { error: mapPgErr(error.code) };
+  if (!updated) return { error: 'not_found' };
+
+  revalidateExercises();
+  return { success: true, id: parsed.data.id };
+}
+
+/** Rechazar un propuesto → rechazado, con motivo OBLIGATORIO. Notifica al autor
+ *  (exercise_rejected) reusando el bus de notificaciones (F5). `locale` solo se
+ *  usa para el deep-link de la notificación. */
+export async function rejectExercise(
+  input: unknown,
+  locale: string
+): Promise<ExerciseActionState> {
+  const parsed = rejectExerciseSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const { id, reason } = parsed.data;
+
+  const { data: updated, error } = await supabase
+    .from('exercises')
+    .update({ status: 'rejected', rejection_reason: reason })
+    .eq('id', id)
+    .select('id, name, owner_profile_id')
+    .maybeSingle();
+
+  if (error) return { error: mapPgErr(error.code) };
+  if (!updated) return { error: 'not_found' };
+
+  // Notifica al autor (no bloquea el rechazo si el bus falla).
+  try {
+    const { emitNotification } = await import('@/lib/notify-bus');
+    const deepLink = `/${locale}/ejercicios/${id}`;
+    await emitNotification({
+      user_id: updated.owner_profile_id as string,
+      type: 'exercise_rejected',
+      in_app_payload: {
+        exercise_id: id,
+        exercise_name: updated.name as string,
+        reason,
+        deep_link: deepLink,
+      },
+      push_payload: {
+        title: updated.name as string,
+        body: reason,
+        deep_link: deepLink,
+        tag: `exercise_rejected:${id}`,
+      },
+      // Único por rechazo: un re-rechazo tras corregir debe volver a avisar.
+      dedupe_base: `exercise_rejected:${id}:${Date.now()}`,
+    });
+  } catch (notifyErr) {
+    Sentry.captureException(notifyErr, {
+      tags: { feature: 'exercises', step: 'notify_reject' },
+      extra: { exercise_id: id },
+    });
+  }
+
+  revalidateExercises();
+  return { success: true, id };
 }

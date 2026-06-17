@@ -4,6 +4,7 @@ import { Dumbbell, Clock, Plus } from 'lucide-react';
 import { type Role, type MethodologyStatus, createSupabaseServerClient } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { cn } from '@/lib/utils';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ type Props = {
     intensity?: string | string[];
     space?: string | string[];
     page?: string;
+    review?: string;
   }>;
 };
 
@@ -84,10 +86,15 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
   const spaceType = normalizeMulti(sp.space);
   const page = normalizePage(sp.page);
 
+  // Cola de revisión (11.7): solo Admin (user_can_publish_methodology = Admin).
+  const canReview = role === 'admin_club';
+  const isReview = canReview && sp.review === '1';
+
   const result = await loadExercises(
     ctx.activeClub.club.id,
     { search, tactical, technical, categories, intensity, spaceType },
-    page
+    page,
+    isReview
   );
 
   const totalPages = Math.max(1, Math.ceil(result.total / EXERCISES_PAGE_SIZE));
@@ -107,6 +114,7 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
     for (const v of categories) q.append('category', v);
     for (const v of intensity) q.append('intensity', v);
     for (const v of spaceType) q.append('space', v);
+    if (isReview) q.set('review', '1');
     if (p > 1) q.set('page', String(p));
     const qs = q.toString();
     return `/ejercicios${qs.length > 0 ? `?${qs}` : ''}`;
@@ -116,12 +124,14 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {isReview ? t('review.title') : t('title')}
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {t('count', { count: result.total })}
           </p>
         </div>
-        {canCreate && (
+        {canCreate && !isReview && (
           <Button asChild>
             <Link href="/ejercicios/nuevo">
               <Plus className="size-4" aria-hidden />
@@ -130,6 +140,34 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
           </Button>
         )}
       </div>
+
+      {/* Pestañas Biblioteca / Pendientes de revisión (solo Admin) */}
+      {canReview && (
+        <div className="flex gap-2 border-b">
+          <Link
+            href="/ejercicios"
+            className={cn(
+              'border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+              isReview
+                ? 'border-transparent text-muted-foreground hover:text-foreground'
+                : 'border-primary text-foreground'
+            )}
+          >
+            {t('tabs.library')}
+          </Link>
+          <Link
+            href="/ejercicios?review=1"
+            className={cn(
+              'border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+              isReview
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {t('tabs.review')}
+          </Link>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <ExercisesSearchInput />

@@ -60,7 +60,10 @@ export type ExerciseListResult = {
 export async function loadExercises(
   clubId: string,
   filters: ExerciseListFilters,
-  page: number
+  page: number,
+  /** Cola de revisión (11.7): solo propuestos. La RLS ya restringe a Admin/autor
+   *  ver propuestos; para la cola del Admin la page solo activa esto si es Admin. */
+  proposedOnly = false
 ): Promise<ExerciseListResult> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
@@ -83,6 +86,8 @@ export async function loadExercises(
     )
     .eq('club_id', clubId)
     .is('archived_at', null);
+
+  if (proposedOnly) q = q.eq('status', 'proposed');
 
   if (filters.search.trim().length > 0) {
     const escaped = filters.search.trim().replace(/[%_,]/g, (m) => `\\${m}`);
