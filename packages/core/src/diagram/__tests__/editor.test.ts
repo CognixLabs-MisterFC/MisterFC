@@ -556,6 +556,27 @@ describe('pitchEditorReducer — ADD_FREEHAND (dibujo libre)', () => {
   });
 });
 
+// F11B.1 — CLEAR ("Limpiar todo") --------------------------------------------
+describe('pitchEditorReducer — CLEAR', () => {
+  it('vacía la escena en 1 paso de undo y conserva el campo', () => {
+    let s = place(place(initEditorState(), 'balon', 10, 10), 'cono', 20, 20);
+    s = pitchEditorReducer(s, { type: 'SET_FIELD_KIND', kind: 'medio' });
+    expect(s.elements).toHaveLength(2);
+    s = pitchEditorReducer(s, { type: 'CLEAR' });
+    expect(s.elements).toHaveLength(0);
+    expect(s.selectedId).toBeNull();
+    expect(s.field.kind).toBe('medio');
+    // Undo restaura los elementos.
+    s = pitchEditorReducer(s, { type: 'UNDO' });
+    expect(s.elements).toHaveLength(2);
+  });
+
+  it('CLEAR sobre una escena vacía es no-op (no ensucia el historial)', () => {
+    const s = initEditorState();
+    expect(pitchEditorReducer(s, { type: 'CLEAR' })).toBe(s);
+  });
+});
+
 // F11B.0 — Color de trazo (flecha / linea / dibujo libre) ---------------------
 describe('pitchEditorReducer — color de trazo', () => {
   it('estado inicial sin color (nextColor = null)', () => {
