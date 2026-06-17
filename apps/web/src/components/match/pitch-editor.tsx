@@ -43,6 +43,7 @@ import {
   type PlayerRole,
   type ArrowStyle,
   type StrokeKind,
+  type ZoneFill,
   type ElementSize,
 } from '@misterfc/core';
 import { cn } from '@/lib/utils';
@@ -81,6 +82,12 @@ const STROKE_OPTIONS: ReadonlyArray<{ stroke: StrokeKind; label: string }> = [
   { stroke: 'solid', label: 'Sólida' },
   { stroke: 'dashed', label: 'Discontinua' },
 ];
+// Relleno de la zona ('none' = sin relleno = contorno; default). Solo verde por ahora.
+const FILL_OPTIONS: ReadonlyArray<{ value: 'none' | ZoneFill; label: string }> = [
+  { value: 'none', label: 'Ninguno' },
+  { value: 'green', label: 'Verde' },
+];
+const fillFromSelect = (v: string): ZoneFill | null => (v === 'green' ? 'green' : null);
 // Orden de presentación acordado: Grande / Mediano / Pequeño (default Mediano).
 const SIZE_OPTIONS: ReadonlyArray<{ size: ElementSize; label: string }> = [
   { size: 'lg', label: 'Grande' },
@@ -378,6 +385,21 @@ export function PitchEditor({
             </select>
           </>
         )}
+
+        {state.tool === 'zona' && (
+          <select
+            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+            value={state.nextFill ?? 'none'}
+            onChange={(e) => dispatch({ type: 'SET_NEXT_FILL', fill: fillFromSelect(e.target.value) })}
+            aria-label="Relleno"
+          >
+            {FILL_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Campo: renderer read-only + capa de interacción */}
@@ -409,7 +431,7 @@ export function PitchEditor({
                 y={Math.min(draw.from.y, draw.to.y)}
                 width={Math.abs(draw.to.x - draw.from.x)}
                 height={Math.abs(draw.to.y - draw.from.y)}
-                fill="rgba(255,255,255,0.12)"
+                fill={state.nextFill === 'green' ? 'rgba(34,197,94,0.25)' : 'rgba(255,255,255,0.12)'}
                 stroke="#fff"
                 strokeWidth={1.5}
                 strokeDasharray="3 2"
@@ -504,6 +526,20 @@ export function PitchEditor({
             >
               {STROKE_OPTIONS.map((o) => (
                 <option key={o.stroke} value={o.stroke}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          )}
+          {selected.type === 'zona' && (
+            <select
+              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              value={selected.fill ?? 'none'}
+              onChange={(e) => dispatch({ type: 'UPDATE_FILL', id: selected.id, fill: fillFromSelect(e.target.value) })}
+              aria-label="Relleno"
+            >
+              {FILL_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
                   {o.label}
                 </option>
               ))}

@@ -379,6 +379,63 @@ describe('pitchEditorReducer — edición de style/stroke', () => {
   });
 });
 
+describe('pitchEditorReducer — relleno de la zona (fill verde)', () => {
+  it('por defecto la zona no lleva fill (contorno)', () => {
+    const s = run(
+      initEditorState(),
+      { type: 'ADD_ZONA', from: { x_pct: 10, y_pct: 10 }, to: { x_pct: 30, y_pct: 30 } },
+    );
+    expect(s.elements[0]).not.toHaveProperty('fill');
+    expect(parseDiagram(toDiagram(s)).success).toBe(true);
+  });
+
+  it('SET_NEXT_FILL no toca el historial y dibuja la zona con ese relleno', () => {
+    const s = run(
+      initEditorState(),
+      { type: 'SET_NEXT_FILL', fill: 'green' },
+      { type: 'ADD_ZONA', from: { x_pct: 10, y_pct: 10 }, to: { x_pct: 30, y_pct: 30 } },
+    );
+    expect(s.nextFill).toBe('green');
+    expect(s.elements[0]).toMatchObject({ type: 'zona', fill: 'green' });
+    expect(s.past).toHaveLength(1); // solo ADD_ZONA
+    expect(parseDiagram(toDiagram(s)).success).toBe(true);
+  });
+
+  it('UPDATE_FILL fija y limpia el relleno (1 paso de undo); no-zona = no-op', () => {
+    const zona = run(
+      initEditorState(),
+      { type: 'ADD_ZONA', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 9, y_pct: 9 } },
+    );
+    const green = pitchEditorReducer(zona, { type: 'UPDATE_FILL', id: 'el-1', fill: 'green' });
+    expect(green.elements[0]).toMatchObject({ fill: 'green' });
+    expect(green.past).toHaveLength(2); // ADD + UPDATE_FILL
+    expect(parseDiagram(toDiagram(green)).success).toBe(true);
+
+    const cleared = pitchEditorReducer(green, { type: 'UPDATE_FILL', id: 'el-1', fill: null });
+    expect(cleared.elements[0]).not.toHaveProperty('fill');
+    expect(parseDiagram(toDiagram(cleared)).success).toBe(true);
+
+    const arrow = run(
+      initEditorState(),
+      { type: 'ADD_ARROW', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 2, y_pct: 2 } },
+    );
+    expect(pitchEditorReducer(arrow, { type: 'UPDATE_FILL', id: 'el-1', fill: 'green' })).toBe(arrow);
+  });
+
+  it('undo/redo del cambio de relleno', () => {
+    const green = run(
+      initEditorState(),
+      { type: 'ADD_ZONA', from: { x_pct: 1, y_pct: 1 }, to: { x_pct: 9, y_pct: 9 } },
+      { type: 'UPDATE_FILL', id: 'el-1', fill: 'green' },
+    );
+    const undone = pitchEditorReducer(green, { type: 'UNDO' });
+    expect(undone.elements[0]).not.toHaveProperty('fill');
+    const redone = pitchEditorReducer(undone, { type: 'REDO' });
+    expect(redone.elements[0]).toMatchObject({ fill: 'green' });
+    expect(parseDiagram(toDiagram(redone)).success).toBe(true);
+  });
+});
+
 describe('pitchEditorReducer — undo/redo y borrado con dibujados', () => {
   it('deshace/rehace un dibujo y borra elementos dibujados', () => {
     let s = run(

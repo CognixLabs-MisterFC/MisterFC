@@ -37,6 +37,7 @@ import {
   type PlayerRole,
   type ArrowStyle,
   type StrokeKind,
+  type ZoneFill,
   type ElementSize,
   type DiagramPoint,
 } from './diagram';
@@ -79,6 +80,8 @@ export type PitchEditorState = {
   nextText: string;
   nextArrowStyle: ArrowStyle;
   nextStroke: StrokeKind;
+  /** Relleno de la PRÓXIMA zona (null = Ninguno = contorno; default). */
+  nextFill: ZoneFill | null;
   /** Tamaño del próximo elemento de punto (default 'md' = tamaño actual). */
   nextSize: ElementSize;
   past: Snapshot[];
@@ -94,6 +97,7 @@ export type PitchAction =
   | { type: 'SET_NEXT_TEXT'; text: string }
   | { type: 'SET_NEXT_ARROW_STYLE'; style: ArrowStyle }
   | { type: 'SET_NEXT_STROKE'; stroke: StrokeKind }
+  | { type: 'SET_NEXT_FILL'; fill: ZoneFill | null }
   | { type: 'SET_NEXT_SIZE'; size: ElementSize }
   | { type: 'PLACE'; x_pct: number; y_pct: number }
   // Confirmación de un dibujo (rubber-band) — 1 paso de undo cada uno.
@@ -108,6 +112,7 @@ export type PitchAction =
   | { type: 'UPDATE_TEXT'; id: string; text: string }
   | { type: 'UPDATE_ARROW_STYLE'; id: string; style: ArrowStyle }
   | { type: 'UPDATE_STROKE'; id: string; stroke: StrokeKind }
+  | { type: 'UPDATE_FILL'; id: string; fill: ZoneFill | null }
   | { type: 'UPDATE_SIZE'; id: string; size: ElementSize }
   | { type: 'UNDO' }
   | { type: 'REDO' };
@@ -138,6 +143,7 @@ export function initEditorState(diagram?: Diagram): PitchEditorState {
     nextText: '',
     nextArrowStyle: 'pase',
     nextStroke: 'solid',
+    nextFill: null,
     nextSize: 'md',
     past: [],
     future: [],
@@ -257,6 +263,8 @@ export function pitchEditorReducer(
       return { ...state, nextArrowStyle: action.style };
     case 'SET_NEXT_STROKE':
       return { ...state, nextStroke: action.stroke };
+    case 'SET_NEXT_FILL':
+      return { ...state, nextFill: action.fill };
     case 'SET_NEXT_SIZE':
       return { ...state, nextSize: action.size };
     case 'SELECT':
@@ -327,6 +335,8 @@ export function pitchEditorReducer(
       const id = `el-${counter}`;
       const a = clampPoint(action.from);
       const b = clampPoint(action.to);
+      // `fill` solo se guarda si no es null (forma limpia: ausente = contorno).
+      const fillProp = state.nextFill ? { fill: state.nextFill } : {};
       const el: DiagramElement = {
         type: 'zona',
         id,
@@ -335,6 +345,7 @@ export function pitchEditorReducer(
         w_pct: Math.abs(b.x_pct - a.x_pct),
         h_pct: Math.abs(b.y_pct - a.y_pct),
         stroke: state.nextStroke,
+        ...fillProp,
       };
       return {
         ...state,
@@ -424,6 +435,21 @@ export function pitchEditorReducer(
       if (!el || (el.type !== 'linea' && el.type !== 'zona')) return state;
       const next = state.elements.slice();
       next[idx] = { ...el, stroke: action.stroke };
+      return { ...state, elements: next, past: pushPast(state.past, state.elements), future: [] };
+    }
+
+    case 'UPDATE_FILL': {
+      const idx = state.elements.findIndex((e) => e.id === action.id);
+      const el = state.elements[idx];
+      if (!el || el.type !== 'zona') return state;
+      const next = state.elements.slice();
+      if (action.fill === null) {
+        // Ninguno → se elimina la clave (forma limpia: ausente = contorno).
+        const { fill: _drop, ...rest } = el;
+        next[idx] = rest;
+      } else {
+        next[idx] = { ...el, fill: action.fill };
+      }
       return { ...state, elements: next, past: pushPast(state.past, state.elements), future: [] };
     }
 
