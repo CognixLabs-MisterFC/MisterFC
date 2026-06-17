@@ -30,7 +30,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { Undo2, Redo2, Trash2 } from 'lucide-react';
+import { Undo2, Redo2, Trash2, Eraser } from 'lucide-react';
 import {
   pitchEditorReducer,
   initEditorState,
@@ -56,21 +56,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DiagramView, fieldAspectClass } from './diagram-view';
 
-// Chrome del editor (dev/reusable). En 11.6 el form puede envolver con i18n.
-const TOOL_BUTTONS: ReadonlyArray<{ tool: PitchTool; label: string }> = [
-  { tool: 'select', label: 'Seleccionar' },
-  { tool: 'jugador', label: 'Jugador' },
-  { tool: 'balon', label: 'Balón' },
-  { tool: 'cono', label: 'Cono' },
-  { tool: 'aro', label: 'Aro' },
-  { tool: 'porteria', label: 'Portería' },
-  { tool: 'miniporteria', label: 'Miniportería' },
-  { tool: 'gol_conduccion', label: 'Gol cond.' },
-  { tool: 'texto', label: 'Texto' },
-  { tool: 'flecha', label: 'Flecha' },
-  { tool: 'linea', label: 'Línea' },
-  { tool: FREEHAND_TOOL, label: 'Dibujo libre' },
-  { tool: 'zona', label: 'Zona' },
+// Chrome del editor: orden de las herramientas/opciones. Las ETIQUETAS se
+// localizan en render con `useTranslations('pitchEditor')` (D9, F11B.1).
+const TOOL_ORDER: ReadonlyArray<PitchTool> = [
+  'select',
+  'jugador',
+  'balon',
+  'cono',
+  'aro',
+  'porteria',
+  'miniporteria',
+  'gol_conduccion',
+  'texto',
+  'flecha',
+  'linea',
+  FREEHAND_TOOL,
+  'zona',
 ];
 
 // Color de trazo de flecha/linea/dibujo libre. 'black' = sin color = negro (default).
@@ -78,34 +79,16 @@ const colorFromSelect = (v: string): StrokeColor | null =>
   v === 'blue' ? 'blue' : v === 'red' ? 'red' : null;
 // Herramientas que admiten color de trazo (flecha + linea + dibujo libre).
 const COLOR_TOOLS = new Set<PitchTool>(['flecha', 'linea', FREEHAND_TOOL]);
+const COLOR_VALUES: ReadonlyArray<'black' | StrokeColor> = ['black', 'blue', 'red'];
 
-const ROLE_OPTIONS: ReadonlyArray<{ role: PlayerRole; label: string }> = [
-  { role: 'atacante', label: 'Atacante' },
-  { role: 'defensor', label: 'Defensor' },
-  { role: 'comodin', label: 'Comodín' },
-  { role: 'portero', label: 'Portero' },
-];
-const ARROW_STYLE_OPTIONS: ReadonlyArray<{ style: ArrowStyle; label: string }> = [
-  { style: 'pase', label: 'Pase' },
-  { style: 'conduccion', label: 'Conducción' },
-  { style: 'desmarque', label: 'Desmarque' },
-];
-const STROKE_OPTIONS: ReadonlyArray<{ stroke: StrokeKind; label: string }> = [
-  { stroke: 'solid', label: 'Sólida' },
-  { stroke: 'dashed', label: 'Discontinua' },
-];
+const ROLE_ORDER: ReadonlyArray<PlayerRole> = ['atacante', 'defensor', 'comodin', 'portero'];
+const ARROW_STYLE_ORDER: ReadonlyArray<ArrowStyle> = ['pase', 'conduccion', 'desmarque'];
+const STROKE_ORDER: ReadonlyArray<StrokeKind> = ['solid', 'dashed'];
 // Relleno de la zona ('none' = sin relleno = contorno; default). Solo verde por ahora.
-const FILL_OPTIONS: ReadonlyArray<{ value: 'none' | ZoneFill; label: string }> = [
-  { value: 'none', label: 'Ninguno' },
-  { value: 'green', label: 'Verde' },
-];
+const FILL_VALUES: ReadonlyArray<'none' | ZoneFill> = ['none', 'green'];
 const fillFromSelect = (v: string): ZoneFill | null => (v === 'green' ? 'green' : null);
 // Orden de presentación acordado: Grande / Mediano / Pequeño (default Mediano).
-const SIZE_OPTIONS: ReadonlyArray<{ size: ElementSize; label: string }> = [
-  { size: 'lg', label: 'Grande' },
-  { size: 'md', label: 'Mediano' },
-  { size: 'sm', label: 'Pequeño' },
-];
+const SIZE_ORDER: ReadonlyArray<ElementSize> = ['lg', 'md', 'sm'];
 // Tipos de PUNTO (llevan size). flecha/línea/zona van por geometría.
 const SIZE_CAPABLE = new Set<DiagramElement['type']>([
   'jugador',
@@ -164,19 +147,18 @@ function elementBBox(el: DiagramElement): { x: number; y: number; w: number; h: 
 export function PitchEditor({
   initialDiagram,
   onChange,
+  showClear = false,
   className,
 }: {
   initialDiagram?: Diagram;
   onChange?: (diagram: Diagram) => void;
+  /** Muestra el botón "Limpiar todo" en la barra (F11B.1, pizarra). Off por
+   *  defecto para no alterar el editor de ejercicios de F11. */
+  showClear?: boolean;
   className?: string;
 }) {
-  // i18n: en F11B.0 solo se localizan las ETIQUETAS DE COLOR (D9 completa = 11B.1).
-  const tColor = useTranslations('pitchEditor.color');
-  const COLOR_OPTIONS: ReadonlyArray<{ value: 'black' | StrokeColor; label: string }> = [
-    { value: 'black', label: tColor('black') },
-    { value: 'blue', label: tColor('blue') },
-    { value: 'red', label: tColor('red') },
-  ];
+  // D9 (F11B.1): todas las etiquetas del editor se localizan aquí.
+  const t = useTranslations('pitchEditor');
 
   const [state, dispatch] = useReducer(pitchEditorReducer, initialDiagram, initEditorState);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -290,16 +272,16 @@ export function PitchEditor({
     <div className={cn('flex flex-col gap-3', className)}>
       {/* Barra de herramientas */}
       <div className="flex flex-wrap items-center gap-2">
-        {TOOL_BUTTONS.map((b) => (
+        {TOOL_ORDER.map((tool) => (
           <Button
-            key={b.tool}
+            key={tool}
             type="button"
             size="sm"
-            variant={state.tool === b.tool ? 'default' : 'outline'}
-            onClick={() => dispatch({ type: 'SET_TOOL', tool: b.tool })}
-            aria-pressed={state.tool === b.tool}
+            variant={state.tool === tool ? 'default' : 'outline'}
+            onClick={() => dispatch({ type: 'SET_TOOL', tool })}
+            aria-pressed={state.tool === tool}
           >
-            {b.label}
+            {t(`tools.${tool}`)}
           </Button>
         ))}
         <div className="mx-1 h-6 w-px bg-border" aria-hidden />
@@ -309,7 +291,7 @@ export function PitchEditor({
           variant="outline"
           disabled={!canUndo(state)}
           onClick={() => dispatch({ type: 'UNDO' })}
-          aria-label="Deshacer"
+          aria-label={t('actions.undo')}
         >
           <Undo2 className="size-4" aria-hidden />
         </Button>
@@ -319,39 +301,52 @@ export function PitchEditor({
           variant="outline"
           disabled={!canRedo(state)}
           onClick={() => dispatch({ type: 'REDO' })}
-          aria-label="Rehacer"
+          aria-label={t('actions.redo')}
         >
           <Redo2 className="size-4" aria-hidden />
         </Button>
+        {showClear && (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="gap-1"
+            disabled={state.elements.length === 0}
+            onClick={() => dispatch({ type: 'CLEAR' })}
+          >
+            <Eraser className="size-4" aria-hidden />
+            {t('actions.clear_all')}
+          </Button>
+        )}
       </div>
 
       {/* Tamaño del próximo elemento de punto (debajo de las herramientas, encima de Campo) */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-xs uppercase tracking-wider text-muted-foreground">Tamaño</span>
-        {SIZE_OPTIONS.map((o) => (
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">{t('size_label')}</span>
+        {SIZE_ORDER.map((size) => (
           <Button
-            key={o.size}
+            key={size}
             type="button"
             size="sm"
-            variant={state.nextSize === o.size ? 'default' : 'outline'}
-            onClick={() => dispatch({ type: 'SET_NEXT_SIZE', size: o.size })}
-            aria-pressed={state.nextSize === o.size}
+            variant={state.nextSize === size ? 'default' : 'outline'}
+            onClick={() => dispatch({ type: 'SET_NEXT_SIZE', size })}
+            aria-pressed={state.nextSize === size}
           >
-            {o.label}
+            {t(`sizes.${size}`)}
           </Button>
         ))}
       </div>
 
       {/* Config del próximo elemento + selector de campo */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-xs uppercase tracking-wider text-muted-foreground">Campo</span>
+        <span className="text-xs uppercase tracking-wider text-muted-foreground">{t('field.label')}</span>
         <Button
           type="button"
           size="sm"
           variant={state.field.kind === 'completo' ? 'default' : 'outline'}
           onClick={() => dispatch({ type: 'SET_FIELD_KIND', kind: 'completo' })}
         >
-          Completo
+          {t('field.completo')}
         </Button>
         <Button
           type="button"
@@ -359,7 +354,7 @@ export function PitchEditor({
           variant={state.field.kind === 'medio' ? 'default' : 'outline'}
           onClick={() => dispatch({ type: 'SET_FIELD_KIND', kind: 'medio' })}
         >
-          Medio
+          {t('field.medio')}
         </Button>
 
         {state.tool === 'jugador' && (
@@ -369,20 +364,20 @@ export function PitchEditor({
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={state.nextRole}
               onChange={(e) => dispatch({ type: 'SET_NEXT_ROLE', role: e.target.value as PlayerRole })}
-              aria-label="Rol del jugador"
+              aria-label={t('aria.role')}
             >
-              {ROLE_OPTIONS.map((r) => (
-                <option key={r.role} value={r.role}>
-                  {r.label}
+              {ROLE_ORDER.map((role) => (
+                <option key={role} value={role}>
+                  {t(`roles.${role}`)}
                 </option>
               ))}
             </select>
             <Input
               className="h-9 w-28"
-              placeholder="Etiqueta"
+              placeholder={t('placeholders.label')}
               value={state.nextLabel}
               onChange={(e) => dispatch({ type: 'SET_NEXT_LABEL', label: e.target.value })}
-              aria-label="Etiqueta del próximo jugador"
+              aria-label={t('aria.next_label')}
             />
           </>
         )}
@@ -392,10 +387,10 @@ export function PitchEditor({
             <div className="mx-1 h-6 w-px bg-border" aria-hidden />
             <Input
               className="h-9 w-40"
-              placeholder="Texto"
+              placeholder={t('placeholders.text')}
               value={state.nextText}
               onChange={(e) => dispatch({ type: 'SET_NEXT_TEXT', text: e.target.value })}
-              aria-label="Texto del próximo elemento"
+              aria-label={t('aria.next_text')}
             />
           </>
         )}
@@ -407,11 +402,11 @@ export function PitchEditor({
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={state.nextArrowStyle}
               onChange={(e) => dispatch({ type: 'SET_NEXT_ARROW_STYLE', style: e.target.value as ArrowStyle })}
-              aria-label="Estilo de flecha"
+              aria-label={t('aria.arrow_style')}
             >
-              {ARROW_STYLE_OPTIONS.map((o) => (
-                <option key={o.style} value={o.style}>
-                  {o.label}
+              {ARROW_STYLE_ORDER.map((style) => (
+                <option key={style} value={style}>
+                  {t(`arrow_styles.${style}`)}
                 </option>
               ))}
             </select>
@@ -425,11 +420,11 @@ export function PitchEditor({
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={state.nextStroke}
               onChange={(e) => dispatch({ type: 'SET_NEXT_STROKE', stroke: e.target.value as StrokeKind })}
-              aria-label="Trazo"
+              aria-label={t('aria.stroke')}
             >
-              {STROKE_OPTIONS.map((o) => (
-                <option key={o.stroke} value={o.stroke}>
-                  {o.label}
+              {STROKE_ORDER.map((stroke) => (
+                <option key={stroke} value={stroke}>
+                  {t(`strokes.${stroke}`)}
                 </option>
               ))}
             </select>
@@ -441,11 +436,11 @@ export function PitchEditor({
             className="h-9 rounded-md border border-input bg-background px-2 text-sm"
             value={state.nextFill ?? 'none'}
             onChange={(e) => dispatch({ type: 'SET_NEXT_FILL', fill: fillFromSelect(e.target.value) })}
-            aria-label="Relleno"
+            aria-label={t('aria.fill')}
           >
-            {FILL_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
+            {FILL_VALUES.map((v) => (
+              <option key={v} value={v}>
+                {t(`fills.${v}`)}
               </option>
             ))}
           </select>
@@ -456,11 +451,11 @@ export function PitchEditor({
             className="h-9 rounded-md border border-input bg-background px-2 text-sm"
             value={state.nextColor ?? 'black'}
             onChange={(e) => dispatch({ type: 'SET_NEXT_COLOR', color: colorFromSelect(e.target.value) })}
-            aria-label={tColor('aria')}
+            aria-label={t('color.aria')}
           >
-            {COLOR_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
+            {COLOR_VALUES.map((v) => (
+              <option key={v} value={v}>
+                {t(`color.${v}`)}
               </option>
             ))}
           </select>
@@ -549,6 +544,7 @@ export function PitchEditor({
                 yPct={el.y_pct}
                 selected={state.selectedId === el.id}
                 onSelect={() => dispatch({ type: 'SELECT', id: el.id })}
+                ariaLabel={t('aria.element', { type: t(`tools.${el.type}`) })}
               />
             ) : (
               <DrawnHandle
@@ -557,6 +553,7 @@ export function PitchEditor({
                 bbox={elementBBox(el)}
                 selected={state.selectedId === el.id}
                 onSelect={() => dispatch({ type: 'SELECT', id: el.id })}
+                ariaLabel={t('aria.element', { type: t(`tools.${el.type}`) })}
               />
             ),
           )}
@@ -566,16 +563,16 @@ export function PitchEditor({
       {/* Editor inline del seleccionado */}
       {selected && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm">
-          <span className="font-medium capitalize">{selected.type}</span>
+          <span className="font-medium">{t(`tools.${selected.type}`)}</span>
 
           {selected.type === 'jugador' && (
             <Input
               key={selected.id}
               className="h-9 w-32"
-              placeholder="Etiqueta"
+              placeholder={t('placeholders.label')}
               defaultValue={selected.label ?? ''}
               onBlur={(e) => dispatch({ type: 'UPDATE_LABEL', id: selected.id, label: e.target.value })}
-              aria-label="Etiqueta del jugador"
+              aria-label={t('aria.label')}
             />
           )}
           {selected.type === 'texto' && (
@@ -584,7 +581,7 @@ export function PitchEditor({
               className="h-9 w-48"
               defaultValue={selected.text}
               onBlur={(e) => dispatch({ type: 'UPDATE_TEXT', id: selected.id, text: e.target.value })}
-              aria-label="Texto"
+              aria-label={t('aria.text')}
             />
           )}
           {selected.type === 'flecha' && (
@@ -592,11 +589,11 @@ export function PitchEditor({
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={selected.style}
               onChange={(e) => dispatch({ type: 'UPDATE_ARROW_STYLE', id: selected.id, style: e.target.value as ArrowStyle })}
-              aria-label="Estilo de flecha"
+              aria-label={t('aria.arrow_style')}
             >
-              {ARROW_STYLE_OPTIONS.map((o) => (
-                <option key={o.style} value={o.style}>
-                  {o.label}
+              {ARROW_STYLE_ORDER.map((style) => (
+                <option key={style} value={style}>
+                  {t(`arrow_styles.${style}`)}
                 </option>
               ))}
             </select>
@@ -606,11 +603,11 @@ export function PitchEditor({
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={selected.stroke ?? 'solid'}
               onChange={(e) => dispatch({ type: 'UPDATE_STROKE', id: selected.id, stroke: e.target.value as StrokeKind })}
-              aria-label="Trazo"
+              aria-label={t('aria.stroke')}
             >
-              {STROKE_OPTIONS.map((o) => (
-                <option key={o.stroke} value={o.stroke}>
-                  {o.label}
+              {STROKE_ORDER.map((stroke) => (
+                <option key={stroke} value={stroke}>
+                  {t(`strokes.${stroke}`)}
                 </option>
               ))}
             </select>
@@ -620,11 +617,11 @@ export function PitchEditor({
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={selected.fill ?? 'none'}
               onChange={(e) => dispatch({ type: 'UPDATE_FILL', id: selected.id, fill: fillFromSelect(e.target.value) })}
-              aria-label="Relleno"
+              aria-label={t('aria.fill')}
             >
-              {FILL_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
+              {FILL_VALUES.map((v) => (
+                <option key={v} value={v}>
+                  {t(`fills.${v}`)}
                 </option>
               ))}
             </select>
@@ -634,11 +631,11 @@ export function PitchEditor({
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={selected.color ?? 'black'}
               onChange={(e) => dispatch({ type: 'UPDATE_COLOR', id: selected.id, color: colorFromSelect(e.target.value) })}
-              aria-label={tColor('aria')}
+              aria-label={t('color.aria')}
             >
-              {COLOR_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
+              {COLOR_VALUES.map((v) => (
+                <option key={v} value={v}>
+                  {t(`color.${v}`)}
                 </option>
               ))}
             </select>
@@ -648,11 +645,11 @@ export function PitchEditor({
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={'size' in selected ? selected.size ?? 'md' : 'md'}
               onChange={(e) => dispatch({ type: 'UPDATE_SIZE', id: selected.id, size: e.target.value as ElementSize })}
-              aria-label="Tamaño"
+              aria-label={t('aria.size')}
             >
-              {SIZE_OPTIONS.map((o) => (
-                <option key={o.size} value={o.size}>
-                  {o.label}
+              {SIZE_ORDER.map((size) => (
+                <option key={size} value={size}>
+                  {t(`sizes.${size}`)}
                 </option>
               ))}
             </select>
@@ -666,7 +663,7 @@ export function PitchEditor({
             onClick={() => dispatch({ type: 'DELETE', id: selected.id })}
           >
             <Trash2 className="size-4" aria-hidden />
-            Borrar
+            {t('actions.delete')}
           </Button>
         </div>
       )}
@@ -682,12 +679,14 @@ function PointHandle({
   yPct,
   selected,
   onSelect,
+  ariaLabel,
 }: {
   id: string;
   xPct: number;
   yPct: number;
   selected: boolean;
   onSelect: () => void;
+  ariaLabel: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
   return (
@@ -710,7 +709,7 @@ function PointHandle({
           e.stopPropagation();
           onSelect();
         }}
-        aria-label={`Elemento ${id}`}
+        aria-label={ariaLabel}
         {...listeners}
         {...attributes}
       />
@@ -725,11 +724,13 @@ function DrawnHandle({
   bbox,
   selected,
   onSelect,
+  ariaLabel,
 }: {
   id: string;
   bbox: { x: number; y: number; w: number; h: number };
   selected: boolean;
   onSelect: () => void;
+  ariaLabel: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
   const PAD = 2.5;
@@ -759,7 +760,7 @@ function DrawnHandle({
         e.stopPropagation();
         onSelect();
       }}
-      aria-label={`Elemento ${id}`}
+      aria-label={ariaLabel}
       {...listeners}
       {...attributes}
     />

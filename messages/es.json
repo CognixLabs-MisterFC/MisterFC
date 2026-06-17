@@ -203,7 +203,8 @@
       "ejercicios": "Ejercicios",
       "entrenamientos": "Entrenamientos",
       "partidos": "Partidos",
-      "plantilla": "Plantilla"
+      "plantilla": "Plantilla",
+      "pizarra": "Pizarra"
     },
     "collapse_sidebar": "Ocultar el menú",
     "expand_sidebar": "Mostrar el menú"
@@ -2823,6 +2824,10 @@
       "asistencia": {
         "title": "Asistencia",
         "description": "Confirma y consulta la asistencia a los entrenamientos."
+      },
+      "pizarra": {
+        "title": "Pizarra táctica",
+        "description": "Pizarra efímera para explicar jugadas (en blanco o desde un ejercicio)."
       }
     }
   },
@@ -2872,6 +2877,86 @@
       "blue": "Azul",
       "red": "Rojo",
       "aria": "Color de trazo"
+    },
+    "tools": {
+      "select": "Seleccionar",
+      "jugador": "Jugador",
+      "balon": "Balón",
+      "cono": "Cono",
+      "aro": "Aro",
+      "porteria": "Portería",
+      "miniporteria": "Miniportería",
+      "gol_conduccion": "Gol cond.",
+      "texto": "Texto",
+      "flecha": "Flecha",
+      "linea": "Línea",
+      "dibujo_libre": "Dibujo libre",
+      "zona": "Zona",
+      "cota": "Cota"
+    },
+    "roles": {
+      "atacante": "Atacante",
+      "defensor": "Defensor",
+      "comodin": "Comodín",
+      "portero": "Portero"
+    },
+    "arrow_styles": {
+      "pase": "Pase",
+      "conduccion": "Conducción",
+      "desmarque": "Desmarque"
+    },
+    "strokes": {
+      "solid": "Sólida",
+      "dashed": "Discontinua"
+    },
+    "fills": {
+      "none": "Ninguno",
+      "green": "Verde"
+    },
+    "sizes": {
+      "lg": "Grande",
+      "md": "Mediano",
+      "sm": "Pequeño"
+    },
+    "field": {
+      "label": "Campo",
+      "completo": "Completo",
+      "medio": "Medio"
+    },
+    "size_label": "Tamaño",
+    "actions": {
+      "undo": "Deshacer",
+      "redo": "Rehacer",
+      "delete": "Borrar",
+      "clear_all": "Limpiar todo"
+    },
+    "aria": {
+      "role": "Rol del jugador",
+      "next_label": "Etiqueta del próximo jugador",
+      "next_text": "Texto del próximo elemento",
+      "label": "Etiqueta del jugador",
+      "text": "Texto",
+      "arrow_style": "Estilo de flecha",
+      "stroke": "Trazo",
+      "fill": "Relleno",
+      "size": "Tamaño",
+      "element": "Elemento {type}"
+    },
+    "placeholders": {
+      "label": "Etiqueta",
+      "text": "Texto"
     }
+  },
+  "pizarra": {
+    "title": "Pizarra táctica",
+    "subtitle": "Efímera: nada se guarda. Dibuja sobre el campo para explicar la jugada.",
+    "mode_blank": "En blanco",
+    "mode_exercise": "Desde ejercicio",
+    "from_exercise": "Mostrando: {name}",
+    "open_exercise": "Abrir en pizarra",
+    "pick_hint": "Elige un ejercicio para cargarlo.",
+    "pick_placeholder": "Elegir ejercicio",
+    "search_placeholder": "Buscar ejercicio…",
+    "no_results": "Sin resultados"
   }
 }

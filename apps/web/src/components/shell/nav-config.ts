@@ -11,6 +11,7 @@ import {
   Upload,
   Calendar,
   GraduationCap,
+  PenTool,
   Swords,
   Shield,
   LayoutGrid,
@@ -106,6 +107,8 @@ export const NAV: readonly NavEntry[] = [
     icon: GraduationCap,
     children: [
       { key: 'ejercicios', href: '/ejercicios', icon: GraduationCap, roles: STAFF },
+      // Pizarra táctica efímera (F11B) — solo staff.
+      { key: 'pizarra', href: '/pizarra', icon: PenTool, roles: STAFF },
       { key: 'asistencia', href: '/asistencia', icon: Calendar, roles: ALL },
     ],
   },

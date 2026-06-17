@@ -285,7 +285,8 @@
       "ejercicios": "Exercicis",
       "entrenamientos": "Entrenaments",
       "partidos": "Partits",
-      "plantilla": "Plantilla"
+      "plantilla": "Plantilla",
+      "pizarra": "Pissarra"
     },
     "collapse_sidebar": "Amaga el menú",
     "expand_sidebar": "Mostra el menú"
@@ -2824,6 +2825,10 @@
       "asistencia": {
         "title": "Assistència",
         "description": "Confirma i consulta l'assistència als entrenaments."
+      },
+      "pizarra": {
+        "title": "Pissarra tàctica",
+        "description": "Pissarra efímera per a explicar jugades (en blanc o des d un exercici)."
       }
     }
   },
@@ -2873,6 +2878,86 @@
       "blue": "Blau",
       "red": "Roig",
       "aria": "Color del traç"
+    },
+    "tools": {
+      "select": "Seleccionar",
+      "jugador": "Jugador",
+      "balon": "Pilota",
+      "cono": "Con",
+      "aro": "Cèrcol",
+      "porteria": "Porteria",
+      "miniporteria": "Miniporteria",
+      "gol_conduccion": "Gol cond.",
+      "texto": "Text",
+      "flecha": "Fletxa",
+      "linea": "Línia",
+      "dibujo_libre": "Dibuix lliure",
+      "zona": "Zona",
+      "cota": "Cota"
+    },
+    "roles": {
+      "atacante": "Atacant",
+      "defensor": "Defensor",
+      "comodin": "Comodí",
+      "portero": "Porter"
+    },
+    "arrow_styles": {
+      "pase": "Passada",
+      "conduccion": "Conducció",
+      "desmarque": "Desmarcatge"
+    },
+    "strokes": {
+      "solid": "Sòlida",
+      "dashed": "Discontínua"
+    },
+    "fills": {
+      "none": "Cap",
+      "green": "Verd"
+    },
+    "sizes": {
+      "lg": "Gran",
+      "md": "Mitjà",
+      "sm": "Xicotet"
+    },
+    "field": {
+      "label": "Camp",
+      "completo": "Complet",
+      "medio": "Mig"
+    },
+    "size_label": "Mida",
+    "actions": {
+      "undo": "Desfés",
+      "redo": "Refés",
+      "delete": "Esborrar",
+      "clear_all": "Netejar tot"
+    },
+    "aria": {
+      "role": "Rol del jugador",
+      "next_label": "Etiqueta del pròxim jugador",
+      "next_text": "Text del pròxim element",
+      "label": "Etiqueta del jugador",
+      "text": "Text",
+      "arrow_style": "Estil de fletxa",
+      "stroke": "Traç",
+      "fill": "Farciment",
+      "size": "Mida",
+      "element": "Element {type}"
+    },
+    "placeholders": {
+      "label": "Etiqueta",
+      "text": "Text"
     }
+  },
+  "pizarra": {
+    "title": "Pissarra tàctica",
+    "subtitle": "Efímera: no es guarda res. Dibuixa sobre el camp per a explicar la jugada.",
+    "mode_blank": "En blanc",
+    "mode_exercise": "Des d exercici",
+    "from_exercise": "Mostrant: {name}",
+    "open_exercise": "Obrir en pissarra",
+    "pick_hint": "Tria un exercici per a carregar-lo.",
+    "pick_placeholder": "Triar exercici",
+    "search_placeholder": "Cercar exercici…",
+    "no_results": "Sense resultats"
   }
 }

@@ -285,7 +285,8 @@
       "ejercicios": "Exercises",
       "entrenamientos": "Training",
       "partidos": "Matches",
-      "plantilla": "Squad"
+      "plantilla": "Squad",
+      "pizarra": "Tactics board"
     },
     "collapse_sidebar": "Hide menu",
     "expand_sidebar": "Show menu"
@@ -2824,6 +2825,10 @@
       "asistencia": {
         "title": "Attendance",
         "description": "Confirm and review training attendance."
+      },
+      "pizarra": {
+        "title": "Tactics board",
+        "description": "Ephemeral board to explain plays (blank or from an exercise)."
       }
     }
   },
@@ -2873,6 +2878,86 @@
       "blue": "Blue",
       "red": "Red",
       "aria": "Stroke color"
+    },
+    "tools": {
+      "select": "Select",
+      "jugador": "Player",
+      "balon": "Ball",
+      "cono": "Cone",
+      "aro": "Hoop",
+      "porteria": "Goal",
+      "miniporteria": "Mini-goal",
+      "gol_conduccion": "Dribble goal",
+      "texto": "Text",
+      "flecha": "Arrow",
+      "linea": "Line",
+      "dibujo_libre": "Freehand",
+      "zona": "Zone",
+      "cota": "Distance"
+    },
+    "roles": {
+      "atacante": "Attacker",
+      "defensor": "Defender",
+      "comodin": "Joker",
+      "portero": "Goalkeeper"
+    },
+    "arrow_styles": {
+      "pase": "Pass",
+      "conduccion": "Dribble",
+      "desmarque": "Run"
+    },
+    "strokes": {
+      "solid": "Solid",
+      "dashed": "Dashed"
+    },
+    "fills": {
+      "none": "None",
+      "green": "Green"
+    },
+    "sizes": {
+      "lg": "Large",
+      "md": "Medium",
+      "sm": "Small"
+    },
+    "field": {
+      "label": "Field",
+      "completo": "Full",
+      "medio": "Half"
+    },
+    "size_label": "Size",
+    "actions": {
+      "undo": "Undo",
+      "redo": "Redo",
+      "delete": "Delete",
+      "clear_all": "Clear all"
+    },
+    "aria": {
+      "role": "Player role",
+      "next_label": "Next player label",
+      "next_text": "Next element text",
+      "label": "Player label",
+      "text": "Text",
+      "arrow_style": "Arrow style",
+      "stroke": "Stroke",
+      "fill": "Fill",
+      "size": "Size",
+      "element": "{type} element"
+    },
+    "placeholders": {
+      "label": "Label",
+      "text": "Text"
     }
+  },
+  "pizarra": {
+    "title": "Tactics board",
+    "subtitle": "Ephemeral: nothing is saved. Draw on the pitch to explain the play.",
+    "mode_blank": "Blank",
+    "mode_exercise": "From exercise",
+    "from_exercise": "Showing: {name}",
+    "open_exercise": "Open in board",
+    "pick_hint": "Choose an exercise to load it.",
+    "pick_placeholder": "Choose exercise",
+    "search_placeholder": "Search exercise…",
+    "no_results": "No results"
   }
 }

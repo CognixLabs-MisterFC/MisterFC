@@ -119,6 +119,7 @@ export type PitchAction =
   | { type: 'MOVE'; id: string; x_pct: number; y_pct: number }
   | { type: 'TRANSLATE'; id: string; dx: number; dy: number }
   | { type: 'DELETE'; id: string }
+  | { type: 'CLEAR' }
   | { type: 'UPDATE_LABEL'; id: string; label: string }
   | { type: 'UPDATE_TEXT'; id: string; text: string }
   | { type: 'UPDATE_ARROW_STYLE'; id: string; style: ArrowStyle }
@@ -437,6 +438,19 @@ export function pitchEditorReducer(
         ...state,
         elements: state.elements.filter((e) => e.id !== action.id),
         selectedId: state.selectedId === action.id ? null : state.selectedId,
+        past: pushPast(state.past, state.elements),
+        future: [],
+      };
+    }
+
+    // F11B.1 — "Limpiar todo": vacía la escena (1 paso de undo). No-op si ya
+    // está vacía (no ensucia el historial). Conserva campo/herramienta/config.
+    case 'CLEAR': {
+      if (state.elements.length === 0) return state;
+      return {
+        ...state,
+        elements: [],
+        selectedId: null,
         past: pushPast(state.past, state.elements),
         future: [],
       };

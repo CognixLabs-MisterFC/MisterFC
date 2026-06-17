@@ -211,3 +211,28 @@ export async function loadExercise(
     is_owner: user != null && data.owner_profile_id === user.id,
   };
 }
+
+/** Item ligero para el picker de la pizarra (F11B.1): ejercicios visibles que
+ *  TIENEN diagrama. */
+export type BoardExercise = { id: string; name: string };
+
+/**
+ * F11B.1 — Lista (id, name) de los ejercicios del club CON diagrama que el
+ * usuario puede ver (la RLS decide la visibilidad por estado/rol; aquí solo se
+ * scopea al club y se excluyen archivados y los que no tienen diagrama). Alimenta
+ * el picker de la pizarra. Sin paginación: el set por club es modesto.
+ */
+export async function loadBoardExercises(clubId: string): Promise<BoardExercise[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('exercises')
+    .select('id, name')
+    .eq('club_id', clubId)
+    .is('archived_at', null)
+    .not('diagram', 'is', null)
+    .order('name', { ascending: true });
+
+  return (data ?? []).map((e) => ({ id: e.id as string, name: e.name as string }));
+}

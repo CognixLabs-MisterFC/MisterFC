@@ -1,10 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft, Clock, Maximize, Activity, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Clock, Maximize, Activity, CheckCircle2, XCircle, PenTool } from 'lucide-react';
 import type { Role, MethodologyStatus } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { buildExerciseExport } from '@misterfc/core';
 import { DiagramView } from '@/components/match/diagram-view';
@@ -50,6 +51,7 @@ export default async function EjercicioDetailPage({ params }: Props) {
   const tTactical = await getTranslations('ejercicios.tactical');
   const tTechnical = await getTranslations('ejercicios.technical');
   const tCategory = await getTranslations('category_kinds');
+  const tPizarra = await getTranslations('pizarra');
 
   const spaceLabel = exercise.space_type
     ? [t(`space_types.${exercise.space_type}`), exercise.space_dimensions]
@@ -163,8 +165,16 @@ export default async function EjercicioDetailPage({ params }: Props) {
       {/* Representación gráfica (omitida con gracia si no hay diagrama) */}
       {exercise.diagram && (
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
             <CardTitle className="text-base">{tDetail('diagram')}</CardTitle>
+            {/* Abrir el diagrama en la pizarra táctica efímera (F11B) para
+                explicarlo/anotarlo en vivo. Solo staff (la ficha ya lo es). */}
+            <Button asChild size="sm" variant="outline" className="gap-1">
+              <Link href={`/pizarra?exercise=${exercise.id}`}>
+                <PenTool className="size-4" aria-hidden />
+                {tPizarra('open_exercise')}
+              </Link>
+            </Button>
           </CardHeader>
           <CardContent>
             <DiagramView diagram={exercise.diagram} />
