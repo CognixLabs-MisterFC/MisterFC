@@ -4,6 +4,7 @@ import {
   createExerciseSchema,
   updateExerciseSchema,
   exerciseIdSchema,
+  rejectExerciseSchema,
   statusForAction,
   statusForUpdate,
   toExerciseColumns,
@@ -149,9 +150,30 @@ describe('F11.6 PR2 — statusForUpdate: estado objetivo por estado actual', () 
     expect(statusForUpdate('proposed', 'save_draft', false)).toBeNull();
   });
 
-  it('published/rejected no son editables aquí', () => {
+  it('desde rejected: el autor corrige y reprone (como draft, sin publicar)', () => {
+    expect(statusForUpdate('rejected', 'propose', false)).toBe('proposed');
+    expect(statusForUpdate('rejected', 'save_draft', false)).toBe('draft');
+    // Ni el Admin publica desde el editor de un rechazado.
+    expect(statusForUpdate('rejected', 'publish', true)).toBeNull();
+  });
+
+  it('published no es editable aquí', () => {
     expect(statusForUpdate('published', 'save_draft', true)).toBeNull();
-    expect(statusForUpdate('rejected', 'propose', false)).toBeNull();
+    expect(statusForUpdate('published', 'propose', true)).toBeNull();
+  });
+});
+
+describe('F11.7 — rejectExerciseSchema: motivo obligatorio', () => {
+  it('exige id uuid y motivo no vacío', () => {
+    expect(rejectExerciseSchema.safeParse({ id: UUID, reason: 'Falta el objetivo' }).success).toBe(true);
+    expect(rejectExerciseSchema.safeParse({ id: UUID, reason: '   ' }).success).toBe(false);
+    expect(rejectExerciseSchema.safeParse({ id: UUID }).success).toBe(false);
+    expect(rejectExerciseSchema.safeParse({ id: 'x', reason: 'ok' }).success).toBe(false);
+  });
+
+  it('recorta el motivo', () => {
+    const r = rejectExerciseSchema.safeParse({ id: UUID, reason: '  corrige el espacio  ' });
+    expect(r.success && r.data.reason).toBe('corrige el espacio');
   });
 });
 

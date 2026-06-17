@@ -141,12 +141,25 @@ export const exerciseIdSchema = z.object({
 
 export type ExerciseIdInput = z.infer<typeof exerciseIdSchema>;
 
+/** Rechazo (11.7): exige motivo no vacío (el trigger de 11.1 también lo exige). */
+export const rejectExerciseSchema = z.object({
+  id: z.string().uuid({ message: 'id_invalid' }),
+  reason: z
+    .string()
+    .trim()
+    .min(1, { message: 'reason_required' })
+    .max(2000, { message: 'reason_too_long' }),
+});
+
+export type RejectExerciseInput = z.infer<typeof rejectExerciseSchema>;
+
 /**
  * Estado objetivo al EDITAR, según el estado ACTUAL (defensa contra fugas del
- * ciclo a 11.7). Desde 'draft' se permite el set completo (save_draft/propose/
- * publish-si-admin). Desde 'proposed' SOLO se puede seguir propuesto ("Guardar
- * cambios"); aquí el Admin NO aprueba/rechaza (eso es 11.7). Otros estados
- * (published/rejected) no son editables en esta subfase → null.
+ * ciclo de aprobación). Desde 'draft' el set completo (save_draft/propose/
+ * publish-si-admin). Desde 'proposed' SOLO sigue propuesto ("Guardar cambios").
+ * Desde 'rejected' el autor corrige y reprone: como 'draft' pero SIN publicar
+ * (publish no aplica; aprobar es la acción del Admin, no la edición). 'published'
+ * no es editable aquí. Aprobar/rechazar NO pasan por aquí (acciones dedicadas).
  */
 export function statusForUpdate(
   current: MethodologyStatus,
@@ -155,6 +168,7 @@ export function statusForUpdate(
 ): MethodologyStatus | null {
   if (current === 'draft') return statusForAction(action, isAdmin);
   if (current === 'proposed') return action === 'propose' ? 'proposed' : null;
+  if (current === 'rejected') return action === 'publish' ? null : statusForAction(action, false);
   return null;
 }
 

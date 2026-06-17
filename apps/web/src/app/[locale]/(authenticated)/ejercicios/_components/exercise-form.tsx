@@ -160,6 +160,13 @@ export function ExerciseForm({
     if (initial.status === 'proposed') {
       return [{ action: 'propose', label: tForm('actions.save_changes'), primary: true }];
     }
+    if (initial.status === 'rejected') {
+      // Corregir un rechazado: guardar como borrador o reproponer (11.7).
+      return [
+        { action: 'save_draft', label: tForm('actions.save_draft'), primary: false },
+        { action: 'propose', label: tForm('actions.repropose'), primary: true },
+      ];
+    }
     // Editando un borrador.
     const btns: ActionButton[] = [
       { action: 'save_draft', label: tForm('actions.save_draft'), primary: false },

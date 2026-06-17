@@ -32,10 +32,14 @@ export default async function EditarEjercicioPage({ params }: Props) {
   // No visible / no existe / otro club → 404 (confía en la RLS de 11.1).
   if (!exercise) notFound();
 
-  // Solo el autor edita SUS borrador/propuesto. Publicado/rechazado/ajeno → a la
-  // ficha (read-only). No reimplementa permisos: la RLS volverá a gatear al guardar.
+  // El autor edita SUS borrador/propuesto/rechazado (rechazado: corrige y
+  // reprone, 11.7). Publicado/ajeno → a la ficha (read-only). No reimplementa
+  // permisos: la RLS volverá a gatear al guardar.
   const editable =
-    exercise.is_owner && (exercise.status === 'draft' || exercise.status === 'proposed');
+    exercise.is_owner &&
+    (exercise.status === 'draft' ||
+      exercise.status === 'proposed' ||
+      exercise.status === 'rejected');
   if (!editable) redirect(`/${locale}/ejercicios/${id}`);
 
   const tForm = await getTranslations('ejercicios.form');
