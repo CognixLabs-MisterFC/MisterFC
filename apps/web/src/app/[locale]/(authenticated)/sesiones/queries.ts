@@ -9,6 +9,7 @@
 
 import {
   type SessionBlockType,
+  type SessionVisibility,
   addDaysIso,
   createSupabaseServerClient,
   getCurrentUser,
@@ -153,6 +154,50 @@ export async function loadSessionsWeek(
     }));
 }
 
+// ── Sesiones publicadas del equipo (12.4 — vista jugador/familia) ────────────
+export type PublishedSessionRow = {
+  id: string;
+  title: string | null;
+  session_date: string;
+  total_minutes: number | null;
+};
+
+/**
+ * Sesiones PUBLICADAS (visibility='team') de UN equipo a partir de `fromIso`
+ * (próximas, incluido hoy), ordenadas por fecha ascendente. La RLS de 12.1
+ * (user_is_team_member_account) es el gate real: solo devuelve filas que el
+ * jugador/familia puede ver; los filtros explícitos refuerzan la intención.
+ */
+export async function loadPublishedSessionsForTeam(
+  clubId: string,
+  teamId: string,
+  fromIso: string,
+  limit = 10
+): Promise<PublishedSessionRow[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('sessions')
+    .select('id, title, session_date, total_minutes')
+    .eq('club_id', clubId)
+    .eq('team_id', teamId)
+    .eq('is_template', false)
+    .eq('visibility', 'team')
+    .gte('session_date', fromIso)
+    .order('session_date', { ascending: true })
+    .limit(limit);
+
+  return (data ?? [])
+    .filter((s) => s.session_date != null)
+    .map((s) => ({
+      id: s.id as string,
+      title: (s.title as string | null) ?? null,
+      session_date: s.session_date as string,
+      total_minutes: (s.total_minutes as number | null) ?? null,
+    }));
+}
+
 // ── Sesión para editar (cabecera + bloques + tareas) ─────────────────────────
 export type SessionTaskForEdit = {
   id: string;
@@ -187,6 +232,8 @@ export type SessionForEdit = {
   microcycle: string | null;
   total_minutes: number | null;
   is_template: boolean;
+  /** 'staff' = borrador; 'team' = publicada al equipo (12.4). */
+  visibility: SessionVisibility;
   is_owner: boolean;
   blocks: SessionBlockForEdit[];
 };
@@ -210,7 +257,7 @@ export async function loadSessionForEdit(
     .select(
       `id, team_id, session_date, title, objective_physical,
        tactical_objectives, technical_objectives, mesocycle, microcycle,
-       total_minutes, is_template, owner_profile_id,
+       total_minutes, is_template, visibility, owner_profile_id,
        team:teams ( category:categories ( kind ) ),
        session_blocks (
          id, block_type, title, notes, order_idx,
@@ -280,9 +327,47 @@ export async function loadSessionForEdit(
     microcycle: (data.microcycle as string | null) ?? null,
     total_minutes: (data.total_minutes as number | null) ?? null,
     is_template: (data.is_template as boolean | null) ?? false,
+    visibility: ((data.visibility as string | null) ?? 'staff') as SessionVisibility,
     is_owner: user != null && data.owner_profile_id === user.id,
     blocks,
   };
+}
+
+// ── Meta de ejercicios de una sesión visible (12.4 — vista jugador/familia) ──
+export type SessionExerciseMeta = {
+  exercise_id: string;
+  name: string;
+  tactical_objectives: string[];
+  technical_objectives: string[];
+};
+
+/**
+ * Nombre + objetivos de los ejercicios referenciados por una sesión que el user
+ * PUEDE ver. Vía el RPC SECURITY DEFINER `session_exercise_meta` (12.4): el
+ * jugador/familia no puede leer `exercises` (RLS staff), así que el embed normal no
+ * resuelve el nombre. El RPC expone SOLO nombre/objetivos y solo de los ejercicios
+ * de esa sesión, gateado por user_can_see_session. Devuelve un mapa por exercise_id.
+ */
+export async function loadSessionExerciseMeta(
+  sessionId: string
+): Promise<Map<string, SessionExerciseMeta>> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase.rpc('session_exercise_meta', {
+    p_session_id: sessionId,
+  });
+
+  const map = new Map<string, SessionExerciseMeta>();
+  for (const r of data ?? []) {
+    map.set(r.exercise_id as string, {
+      exercise_id: r.exercise_id as string,
+      name: (r.name as string | null) ?? '',
+      tactical_objectives: (r.tactical_objectives as string[] | null) ?? [],
+      technical_objectives: (r.technical_objectives as string[] | null) ?? [],
+    });
+  }
+  return map;
 }
 
 // ── Ejercicios elegibles para el picker (12.2b) ──────────────────────────────

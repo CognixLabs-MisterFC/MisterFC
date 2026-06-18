@@ -2025,9 +2025,25 @@
         "title": "Mis convocatorias",
         "description": "Confirma o rechaza tus convocatorias de partido.",
         "cta": "Ir a convocatorias →"
+      },
+      "sessions": {
+        "title": "Próximas sesiones",
+        "empty": "No hay sesiones publicadas.",
+        "untitled": "Sesión",
+        "minutes": "{count} min"
       }
     },
-    "no_team": "No estás asignado a ningún equipo todavía. Habla con el coordinador del club."
+    "no_team": "No estás asignado a ningún equipo todavía. Habla con el coordinador del club.",
+    "session": {
+      "back": "Volver a mi equipo",
+      "untitled": "Sesión",
+      "minutes": "{count} min",
+      "tactical": "Objetivos tácticos",
+      "technical": "Objetivos técnicos",
+      "physical": "Objetivo físico",
+      "no_exercises": "Sin ejercicios.",
+      "exercise_fallback": "Ejercicio"
+    }
   },
   "alineacion": {
     "title": "Alineación",
@@ -3064,6 +3080,16 @@
       "next": "Semana siguiente",
       "untitled": "Sesión",
       "minutes": "{count} min"
+    },
+    "publish": {
+      "label": "Publicar al equipo",
+      "draft": "Borrador",
+      "published": "Publicada",
+      "no_team": "Asigna un equipo para poder publicar la sesión.",
+      "help_draft": "Solo el cuerpo técnico la ve. Publícala para compartirla con el equipo.",
+      "help_published": "Visible para jugadores y familias del equipo.",
+      "toast_published": "Sesión publicada al equipo",
+      "toast_unpublished": "Sesión vuelta a borrador"
     }
   }
 }

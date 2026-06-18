@@ -133,6 +133,17 @@ export const updateSessionHeaderSchema = sessionHeaderSchema
 
 export type UpdateSessionHeaderInput = z.infer<typeof updateSessionHeaderSchema>;
 
+// ── Publicar / despublicar al equipo (12.4) ────────────────────────────────────
+// `visibility` se cambia con su PROPIA acción (no en la cabecera): publicar es una
+// intención distinta de editar campos, con efecto inmediato (D3/D7). 'staff' =
+// borrador (default); 'team' = visible read-only para jugadores y familias del
+// team_id. El gate (owner∪admin) es la RLS de UPDATE de 12.1.
+export const setSessionVisibilitySchema = z.object({
+  id: z.string().uuid({ message: 'id_invalid' }),
+  visibility: sessionVisibilitySchema,
+});
+export type SetSessionVisibilityInput = z.infer<typeof setSessionVisibilitySchema>;
+
 /** Columnas de `sessions` que escribe la cabecera (sin auditoría, ciclo ni total). */
 export type SessionHeaderColumns = {
   team_id: string | null;

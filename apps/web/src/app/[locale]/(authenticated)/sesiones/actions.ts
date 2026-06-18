@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import {
   createSessionSchema,
   updateSessionHeaderSchema,
+  setSessionVisibilitySchema,
   toSessionHeaderColumns,
   addBlockTaskSchema,
   updateBlockTaskSchema,
@@ -131,6 +132,37 @@ export async function updateSessionHeader(input: unknown): Promise<SessionAction
   if (!updated) return { error: 'not_found' };
 
   revalidateSessions();
+  return { success: true, id: parsed.data.id };
+}
+
+/**
+ * F12.4 — Publica/despublica una sesión al equipo (visibility 'staff'↔'team').
+ * Publicar la hace visible read-only para jugadores y familias del team_id (D3).
+ * Confía en la RLS de UPDATE (owner∪admin) como gate; si no se edita, not_found.
+ * Revalida también /mi-equipo (la superficie del jugador/familia).
+ */
+export async function setSessionVisibility(input: unknown): Promise<SessionActionState> {
+  const parsed = setSessionVisibilitySchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: updated, error } = await supabase
+    .from('sessions')
+    .update({ visibility: parsed.data.visibility })
+    .eq('id', parsed.data.id)
+    .select('id')
+    .maybeSingle();
+
+  if (error) return { error: mapPgErr(error.code) };
+  if (!updated) return { error: 'not_found' };
+
+  revalidateSessions();
+  revalidatePath('/[locale]/(authenticated)/mi-equipo', 'page');
   return { success: true, id: parsed.data.id };
 }
 

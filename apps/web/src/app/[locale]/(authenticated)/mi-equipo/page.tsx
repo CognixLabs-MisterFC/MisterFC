@@ -2,8 +2,10 @@ import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import {
   Calendar,
+  Dumbbell,
   Megaphone,
   ClipboardList,
+  Clock,
   Shield,
   Users,
 } from 'lucide-react';
@@ -27,6 +29,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { SharedLineupSection } from '@/components/match/shared-lineup-section';
+import { loadPublishedSessionsForTeam } from '../sesiones/queries';
 import { TeamSelectorWrapper } from './team-selector-wrapper';
 
 type Props = {
@@ -217,6 +220,15 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
     5,
   );
 
+  // 7) F12.4 — Sesiones publicadas (visibility=team) del team activo, próximas
+  //    (incluido hoy). La RLS de 12.1 es el gate; aquí solo se piden las del team.
+  const todayIso = new Date(nowMs).toISOString().slice(0, 10);
+  const publishedSessions = await loadPublishedSessionsForTeam(
+    ctx.activeClub.club.id,
+    activeTeam.id,
+    todayIso,
+  );
+
   // F6 Lote B — alineación oficial compartida del próximo partido (si la hay
   // y es visibility=team; la sección se auto-oculta vía RLS si no).
   const nextMatchId = upcoming.find((e) => e.type === 'match')?.id ?? null;
@@ -330,6 +342,46 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
                       {e.opponent_name && ` · vs ${e.opponent_name}`}
                       {e.location_name && ` · ${e.location_name}`}
                     </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Dumbbell className="size-4" aria-hidden />
+              {t('cards.sessions.title')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            {publishedSessions.length === 0 ? (
+              <p className="text-muted-foreground">{t('cards.sessions.empty')}</p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-border">
+                {publishedSessions.map((s) => (
+                  <li key={s.id} className="py-2 first:pt-0 last:pb-0">
+                    <Link
+                      href={`/mi-equipo/sesiones/${s.id}`}
+                      className="flex flex-col gap-0.5 rounded-md p-1 -mx-1 hover:bg-zinc-900/50"
+                    >
+                      <span className="font-medium">
+                        {s.title ?? t('cards.sessions.untitled')}
+                      </span>
+                      <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                        <span>
+                          {new Date(`${s.session_date}T00:00:00`).toLocaleDateString(locale)}
+                        </span>
+                        {s.total_minutes != null && (
+                          <span className="inline-flex items-center gap-1">
+                            <Clock className="size-3" aria-hidden />
+                            {t('cards.sessions.minutes', { count: s.total_minutes })}
+                          </span>
+                        )}
+                      </span>
+                    </Link>
                   </li>
                 ))}
               </ul>
