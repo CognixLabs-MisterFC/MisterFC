@@ -3013,13 +3013,33 @@
       "generic": "Algo salió mal. Inténtalo de nuevo."
     },
     "blocks": {
-      "empty": "Sin ejercicios todavía."
+      "empty": "Sin ejercicios todavía.",
+      "total": "Tiempo total",
+      "minutes": "{count} min",
+      "duration": "Duración",
+      "duration_ph": "min",
+      "series": "Series",
+      "series_ph": "2x8'",
+      "notes": "Notas",
+      "notes_ph": "Notas del día",
+      "remove": "Quitar ejercicio",
+      "reorder_block": "Reordenar bloque",
+      "reorder_task": "Reordenar ejercicio"
     },
     "block_types": {
       "calentamiento": "Calentamiento",
       "complementaria": "Parte complementaria",
       "principal": "Parte principal",
       "vuelta_a_la_calma": "Vuelta a la calma"
+    },
+    "picker": {
+      "add": "Añadir ejercicio",
+      "search": "Buscar ejercicio…",
+      "filters": "Filtros",
+      "category": "Categoría",
+      "tactical": "Objetivos tácticos",
+      "technical": "Objetivos técnicos",
+      "empty": "No hay ejercicios que coincidan."
     }
   }
 }

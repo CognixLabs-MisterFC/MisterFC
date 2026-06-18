@@ -2592,6 +2592,14 @@ export type Database = {
         }
         Returns: number
       }
+      reorder_session_blocks: {
+        Args: { p_block_ids: string[]; p_session_id: string }
+        Returns: undefined
+      }
+      reorder_session_tasks: {
+        Args: { p_block_id: string; p_task_ids: string[] }
+        Returns: undefined
+      }
       seed_standard_categories: { Args: { p_club_id: string }; Returns: number }
       set_player_left_club: {
         Args: {

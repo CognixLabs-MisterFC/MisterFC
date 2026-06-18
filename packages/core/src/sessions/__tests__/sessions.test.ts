@@ -15,6 +15,12 @@ import {
   createSessionSchema,
   updateSessionHeaderSchema,
   toSessionHeaderColumns,
+  addBlockTaskSchema,
+  updateBlockTaskSchema,
+  toTaskOverrideColumns,
+  reorderBlocksSchema,
+  reorderTasksSchema,
+  sumTaskMinutes,
 } from '../session-form';
 
 describe('F12 — SESSION_BLOCK_TYPES (catálogo fijo, D1)', () => {
@@ -167,12 +173,13 @@ describe('F12.2 — updateSessionHeaderSchema + toSessionHeaderColumns', () => {
     expect(updateSessionHeaderSchema.safeParse({ id }).success).toBe(true);
   });
 
-  it('NO admite visibility (publicar = 12.4): se ignora', () => {
-    const r = updateSessionHeaderSchema.parse({ id, visibility: 'team' });
+  it('NO admite visibility (publicar = 12.4) ni total_minutes (derivado): se ignoran', () => {
+    const r = updateSessionHeaderSchema.parse({ id, visibility: 'team', total_minutes: '90' });
     expect('visibility' in r).toBe(false);
+    expect('total_minutes' in r).toBe(false);
   });
 
-  it('mapea a columnas normalizando vacíos a null', () => {
+  it('mapea a columnas normalizando vacíos a null (sin total_minutes)', () => {
     const parsed = updateSessionHeaderSchema.parse({
       id,
       title: '  ',
@@ -182,7 +189,6 @@ describe('F12.2 — updateSessionHeaderSchema + toSessionHeaderColumns', () => {
       tactical_objectives: ['posesion'],
       mesocycle: 'Meso 1',
       microcycle: '   ',
-      total_minutes: '90',
     });
     const cols = toSessionHeaderColumns(parsed);
     expect(cols.title).toBeNull();
@@ -192,11 +198,66 @@ describe('F12.2 — updateSessionHeaderSchema + toSessionHeaderColumns', () => {
     expect(cols.objective_physical).toBe('Resistencia');
     expect(cols.tactical_objectives).toEqual(['posesion']);
     expect(cols.technical_objectives).toEqual([]);
-    expect(cols.total_minutes).toBe(90);
+    expect('total_minutes' in cols).toBe(false);
   });
 
   it('team_id null se conserva como null (sin equipo)', () => {
     const cols = toSessionHeaderColumns(updateSessionHeaderSchema.parse({ id, team_id: null }));
     expect(cols.team_id).toBeNull();
+  });
+});
+
+describe('F12.2b — tareas: add / update overrides / id', () => {
+  const block = '44444444-4444-4444-8444-444444444444';
+  const exercise = '55555555-5555-4555-8555-555555555555';
+  const id = '66666666-6666-4666-8666-666666666666';
+
+  it('addBlockTaskSchema exige block_id + exercise_id uuid', () => {
+    expect(addBlockTaskSchema.safeParse({ block_id: block, exercise_id: exercise }).success).toBe(true);
+    expect(addBlockTaskSchema.safeParse({ block_id: block }).success).toBe(false);
+    expect(addBlockTaskSchema.safeParse({ block_id: 'x', exercise_id: exercise }).success).toBe(false);
+  });
+
+  it('updateBlockTaskSchema + toTaskOverrideColumns normaliza el override del día', () => {
+    const parsed = updateBlockTaskSchema.parse({
+      id,
+      duration_min: '18',
+      series: "2 x 8'",
+      notes: '  ',
+    });
+    const cols = toTaskOverrideColumns(parsed);
+    expect(cols.duration_min).toBe(18);
+    expect(cols.series).toBe("2 x 8'");
+    expect(cols.notes).toBeNull();
+  });
+
+  it('updateBlockTaskSchema acepta overrides vacíos (todo null)', () => {
+    const cols = toTaskOverrideColumns(updateBlockTaskSchema.parse({ id }));
+    expect(cols).toEqual({ duration_min: null, series: null, notes: null });
+  });
+});
+
+describe('F12.2b — reorder schemas', () => {
+  const a = '77777777-7777-4777-8777-777777777777';
+  const b = '88888888-8888-4888-8888-888888888888';
+
+  it('reorderBlocksSchema exige session_id + lista no vacía de uuids', () => {
+    expect(reorderBlocksSchema.safeParse({ session_id: a, block_ids: [a, b] }).success).toBe(true);
+    expect(reorderBlocksSchema.safeParse({ session_id: a, block_ids: [] }).success).toBe(false);
+    expect(reorderBlocksSchema.safeParse({ session_id: a, block_ids: ['x'] }).success).toBe(false);
+  });
+
+  it('reorderTasksSchema exige block_id + lista no vacía de uuids', () => {
+    expect(reorderTasksSchema.safeParse({ block_id: a, task_ids: [a] }).success).toBe(true);
+    expect(reorderTasksSchema.safeParse({ block_id: a, task_ids: [] }).success).toBe(false);
+  });
+});
+
+describe('F12.2b — sumTaskMinutes (total derivado en cliente)', () => {
+  it('suma ignorando null/undefined', () => {
+    expect(sumTaskMinutes([10, 20, null, 5])).toBe(35);
+    expect(sumTaskMinutes([null, undefined])).toBeNull();
+    expect(sumTaskMinutes([])).toBeNull();
+    expect(sumTaskMinutes([0])).toBe(0);
   });
 });

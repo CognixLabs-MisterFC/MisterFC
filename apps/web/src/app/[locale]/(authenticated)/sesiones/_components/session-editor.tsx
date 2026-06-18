@@ -1,10 +1,9 @@
 'use client';
 
 /**
- * F12.2a — Editor de sesión: CABECERA editable (persiste) + BLOQUES sembrados
- * mostrados con sus tareas (read-structure). El picker de ejercicios, los overrides
- * editables, la suma automática de total_minutes y el reordenar (dnd-kit) llegan en
- * 12.2b — por eso los bloques se ven vacíos: es lo esperado.
+ * F12.2 — Editor de sesión: CABECERA editable (persiste) + BLOQUES interactivos
+ * (12.2b: picker, overrides, reordenar — en <BlocksEditor>). El total_minutes ya no
+ * es manual: lo deriva la suma de los duration_min (mostrado en <BlocksEditor>).
  *
  * Reúsa el `ChipGroup` compartido (extraído de F11) para los objetivos, y los
  * vocabularios/etiquetas de objetivos de `ejercicios.*` (mismo set que F11, D8).
@@ -26,23 +25,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { ChipGroup } from '@/components/ui/chip-group';
 import { useRouter } from '@/i18n/navigation';
 import { updateSessionHeader } from '../actions';
-import type { SessionForEdit, ClubTeam } from '../queries';
+import { BlocksEditor } from './blocks-editor';
+import type { SessionForEdit, ClubTeam, PickableExercise } from '../queries';
 
 const NO_TEAM = '__none__';
 
 export function SessionEditor({
   session,
   teams,
+  pickable,
 }: {
   session: SessionForEdit;
   teams: ClubTeam[];
+  pickable: PickableExercise[];
 }) {
   const t = useTranslations('sesiones');
-  const tBlocks = useTranslations('sesiones.block_types');
   const tTactical = useTranslations('ejercicios.tactical');
   const tTechnical = useTranslations('ejercicios.technical');
   const router = useRouter();
@@ -56,9 +56,6 @@ export function SessionEditor({
   const [technical, setTechnical] = useState<string[]>(session.technical_objectives);
   const [meso, setMeso] = useState(session.mesocycle ?? '');
   const [micro, setMicro] = useState(session.microcycle ?? '');
-  const [totalMinutes, setTotalMinutes] = useState(
-    session.total_minutes != null ? String(session.total_minutes) : ''
-  );
 
   function toggle(list: string[], setList: (v: string[]) => void, value: string) {
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
@@ -76,7 +73,6 @@ export function SessionEditor({
         technical_objectives: technical,
         mesocycle: meso,
         microcycle: micro,
-        total_minutes: totalMinutes,
       });
       if (res.error) {
         toast.error(t(`errors.${res.error}`));
@@ -107,12 +103,7 @@ export function SessionEditor({
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="date">{t('fields.date')}</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+            <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="flex flex-col gap-2">
             <Label>{t('fields.team')}</Label>
@@ -171,7 +162,7 @@ export function SessionEditor({
         <CardHeader className="pb-2">
           <CardTitle className="text-base">{t('sections.planning')}</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-3">
+        <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <Label htmlFor="meso">{t('fields.mesocycle')}</Label>
             <Input id="meso" value={meso} onChange={(e) => setMeso(e.target.value)} maxLength={200} />
@@ -180,60 +171,18 @@ export function SessionEditor({
             <Label htmlFor="micro">{t('fields.microcycle')}</Label>
             <Input id="micro" value={micro} onChange={(e) => setMicro(e.target.value)} maxLength={200} />
           </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="total_minutes">{t('fields.total_minutes')}</Label>
-            <Input
-              id="total_minutes"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={600}
-              value={totalMinutes}
-              onChange={(e) => setTotalMinutes(e.target.value)}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Bloques sembrados (read-structure en 12.2a) */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">{t('sections.blocks')}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {session.blocks.map((block) => (
-            <div key={block.id} className="rounded-lg border p-3">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{tBlocks(block.block_type)}</Badge>
-                {block.title ? (
-                  <span className="text-sm font-medium">{block.title}</span>
-                ) : null}
-              </div>
-              {block.tasks.length === 0 ? (
-                <p className="mt-2 text-xs text-muted-foreground">{t('blocks.empty')}</p>
-              ) : (
-                <ul className="mt-2 flex flex-col gap-1">
-                  {block.tasks.map((task) => (
-                    <li key={task.id} className="flex items-center justify-between text-sm">
-                      <span>{task.exercise_name}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {task.series ?? (task.duration_min != null ? `${task.duration_min}'` : '')}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
         </CardContent>
       </Card>
 
       {/* Guardar cabecera */}
-      <div className="sticky bottom-0 flex flex-wrap items-center justify-end gap-2 border-t bg-background/80 py-3 backdrop-blur">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <Button onClick={save} disabled={pending}>
           {t('actions.save')}
         </Button>
       </div>
+
+      {/* Bloques interactivos (picker + overrides + reordenar) */}
+      <BlocksEditor session={session} pickable={pickable} />
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { type Role } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
-import { loadSessionForEdit, loadClubTeams } from '../../queries';
+import { loadSessionForEdit, loadClubTeams, loadPickableExercises } from '../../queries';
 import { SessionEditor } from '../../_components/session-editor';
 
 type Props = { params: Promise<{ locale: string; id: string }> };
@@ -32,9 +32,10 @@ export default async function EditarSesionPage({ params }: Props) {
   if (!STAFF_ROLES.includes(role)) redirect(`/${locale}`);
 
   const clubId = ctx.activeClub.club.id;
-  const [session, teams] = await Promise.all([
+  const [session, teams, pickable] = await Promise.all([
     loadSessionForEdit(clubId, id),
     loadClubTeams(clubId),
+    loadPickableExercises(clubId),
   ]);
   if (!session) notFound();
 
@@ -50,7 +51,7 @@ export default async function EditarSesionPage({ params }: Props) {
         {t('back')}
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">{t('edit_title')}</h1>
-      <SessionEditor session={session} teams={teams} />
+      <SessionEditor session={session} teams={teams} pickable={pickable} />
     </div>
   );
 }
