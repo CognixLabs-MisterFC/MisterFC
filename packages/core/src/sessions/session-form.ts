@@ -104,3 +104,67 @@ export const sessionBlockSchema = z.object({
 });
 
 export type SessionBlockInput = z.infer<typeof sessionBlockSchema>;
+
+// ── Crear sesión (12.2) ───────────────────────────────────────────────────────
+// El alta es mínima: equipo destino (opcional) y fecha (opcional → la capa de app
+// la fija a hoy). La cabecera se rellena después en el editor. La SIEMBRA del
+// esqueleto la hace la capa de app con buildDefaultSkeleton().
+const teamIdSchema = z.string().uuid({ message: 'team_id_invalid' }).nullish();
+
+export const createSessionSchema = z.object({
+  team_id: teamIdSchema,
+  session_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'date_invalid' })
+    .nullish(),
+});
+
+export type CreateSessionInput = z.infer<typeof createSessionSchema>;
+
+// ── Editar cabecera (12.2) ────────────────────────────────────────────────────
+// Cabecera + id + team_id. NO incluye `visibility` (publicar al equipo = 12.4);
+// la sesión permanece en 'staff' hasta entonces.
+export const updateSessionHeaderSchema = sessionHeaderSchema
+  .omit({ visibility: true })
+  .extend({
+    id: z.string().uuid({ message: 'id_invalid' }),
+    team_id: teamIdSchema,
+  });
+
+export type UpdateSessionHeaderInput = z.infer<typeof updateSessionHeaderSchema>;
+
+/** Columnas de `sessions` que escribe la cabecera (sin auditoría ni ciclo). */
+export type SessionHeaderColumns = {
+  team_id: string | null;
+  session_date: string | null;
+  title: string | null;
+  objective_physical: string | null;
+  tactical_objectives: string[];
+  technical_objectives: string[];
+  mesocycle: string | null;
+  microcycle: string | null;
+  total_minutes: number | null;
+};
+
+const orNull = <T>(v: T | undefined | null): T | null => (v == null ? null : v);
+
+/**
+ * Mapea los datos validados de la cabecera a las columnas de `sessions`. Puro y
+ * testeable: la auditoría (owner/club/updated_at) la añade el trigger/capa de app.
+ * No toca `is_template` ni `visibility` (fuera de 12.2a).
+ */
+export function toSessionHeaderColumns(
+  data: UpdateSessionHeaderInput
+): SessionHeaderColumns {
+  return {
+    team_id: orNull(data.team_id),
+    session_date: orNull(data.session_date),
+    title: orNull(data.title),
+    objective_physical: orNull(data.objective_physical),
+    tactical_objectives: data.tactical_objectives,
+    technical_objectives: data.technical_objectives,
+    mesocycle: orNull(data.mesocycle),
+    microcycle: orNull(data.microcycle),
+    total_minutes: orNull(data.total_minutes),
+  };
+}

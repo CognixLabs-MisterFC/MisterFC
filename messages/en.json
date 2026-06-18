@@ -286,7 +286,8 @@
       "entrenamientos": "Training",
       "partidos": "Matches",
       "plantilla": "Squad",
-      "pizarra": "Tactics board"
+      "pizarra": "Tactics board",
+      "sesiones": "Sessions"
     },
     "collapse_sidebar": "Hide menu",
     "expand_sidebar": "Show menu"
@@ -2829,6 +2830,10 @@
       "pizarra": {
         "title": "Tactics board",
         "description": "Ephemeral board to explain plays (blank or from an exercise)."
+      },
+      "sesiones": {
+        "title": "Sessions",
+        "description": "Plan training sessions by blocks."
       }
     }
   },
@@ -2963,5 +2968,59 @@
     "once_subtitle": "Draw over the lineup of {match}. Nothing is saved.",
     "once_empty": "This lineup has no players on the pitch.",
     "open_board": "Tactics board"
+  },
+  "sesiones": {
+    "title": "Sessions",
+    "subtitle": "Plan the club's training sessions.",
+    "new": "New session",
+    "new_title": "New session",
+    "edit_title": "Edit session",
+    "back": "Back to sessions",
+    "forbidden": "You don't have permission to create or edit sessions.",
+    "list_coming_soon": "The session list is coming soon. Create a new session to get started.",
+    "sections": {
+      "header": "Header",
+      "objectives": "Objectives",
+      "planning": "Planning",
+      "blocks": "Blocks"
+    },
+    "fields": {
+      "title": "Title",
+      "date": "Date",
+      "team": "Team",
+      "team_none": "No team",
+      "objective_physical": "Physical objective",
+      "tactical": "Tactical objectives",
+      "technical": "Technical objectives",
+      "mesocycle": "Mesocycle",
+      "microcycle": "Microcycle",
+      "total_minutes": "Total time (min)"
+    },
+    "placeholders": {
+      "title": "e.g. Counter-pressing session"
+    },
+    "actions": {
+      "create": "Create session",
+      "save": "Save changes"
+    },
+    "toast": {
+      "created": "Session created",
+      "updated": "Changes saved"
+    },
+    "errors": {
+      "forbidden": "You don't have permission for this action.",
+      "invalid": "Check the form data.",
+      "not_found": "Session not found.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "blocks": {
+      "empty": "No exercises yet."
+    },
+    "block_types": {
+      "calentamiento": "Warm-up",
+      "complementaria": "Complementary part",
+      "principal": "Main part",
+      "vuelta_a_la_calma": "Cool-down"
+    }
   }
 }

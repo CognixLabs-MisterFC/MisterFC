@@ -2007,6 +2007,205 @@ export type Database = {
           },
         ]
       }
+      session_block_exercises: {
+        Row: {
+          block_id: string
+          club_id: string
+          duration_min: number | null
+          exercise_id: string
+          id: string
+          notes: string | null
+          order_idx: number
+          series: string | null
+          session_id: string
+        }
+        Insert: {
+          block_id: string
+          club_id: string
+          duration_min?: number | null
+          exercise_id: string
+          id?: string
+          notes?: string | null
+          order_idx: number
+          series?: string | null
+          session_id: string
+        }
+        Update: {
+          block_id?: string
+          club_id?: string
+          duration_min?: number | null
+          exercise_id?: string
+          id?: string
+          notes?: string | null
+          order_idx?: number
+          series?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_block_exercises_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "session_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_block_exercises_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_block_exercises_exercise_id_fkey"
+            columns: ["exercise_id"]
+            isOneToOne: false
+            referencedRelation: "exercises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_block_exercises_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_blocks: {
+        Row: {
+          block_type: string
+          club_id: string
+          id: string
+          notes: string | null
+          order_idx: number
+          session_id: string
+          title: string | null
+        }
+        Insert: {
+          block_type: string
+          club_id: string
+          id?: string
+          notes?: string | null
+          order_idx: number
+          session_id: string
+          title?: string | null
+        }
+        Update: {
+          block_type?: string
+          club_id?: string
+          id?: string
+          notes?: string | null
+          order_idx?: number
+          session_id?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_blocks_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_blocks_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sessions: {
+        Row: {
+          club_id: string
+          created_at: string
+          event_id: string | null
+          id: string
+          is_template: boolean
+          mesocycle: string | null
+          microcycle: string | null
+          objective_physical: string | null
+          owner_profile_id: string
+          session_date: string | null
+          tactical_objectives: string[]
+          team_id: string | null
+          technical_objectives: string[]
+          title: string | null
+          total_minutes: number | null
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          is_template?: boolean
+          mesocycle?: string | null
+          microcycle?: string | null
+          objective_physical?: string | null
+          owner_profile_id: string
+          session_date?: string | null
+          tactical_objectives?: string[]
+          team_id?: string | null
+          technical_objectives?: string[]
+          title?: string | null
+          total_minutes?: number | null
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          is_template?: boolean
+          mesocycle?: string | null
+          microcycle?: string | null
+          objective_physical?: string | null
+          owner_profile_id?: string
+          session_date?: string | null
+          tactical_objectives?: string[]
+          team_id?: string | null
+          technical_objectives?: string[]
+          title?: string | null
+          total_minutes?: number | null
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       substitution_regimes: {
         Row: {
           allow_reentry: boolean
@@ -2424,6 +2623,14 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: boolean
       }
+      user_can_create_sessions: {
+        Args: { p_club_id: string }
+        Returns: boolean
+      }
+      user_can_edit_session: {
+        Args: { p_session_id: string }
+        Returns: boolean
+      }
       user_can_manage_callup: { Args: { p_event_id: string }; Returns: boolean }
       user_can_manage_event: {
         Args: { p_club_id: string; p_team_id: string }
@@ -2448,6 +2655,7 @@ export type Database = {
         Args: { p_player_id: string }
         Returns: boolean
       }
+      user_can_see_session: { Args: { p_session_id: string }; Returns: boolean }
       user_can_see_shared_lineup: {
         Args: { p_event_id: string }
         Returns: boolean
@@ -2473,6 +2681,10 @@ export type Database = {
         Returns: boolean
       }
       user_is_staff_of_team: { Args: { p_team_id: string }; Returns: boolean }
+      user_is_team_member_account: {
+        Args: { p_team_id: string }
+        Returns: boolean
+      }
       user_owns_player_account: {
         Args: { p_player_id: string }
         Returns: boolean

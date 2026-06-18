@@ -11,6 +11,7 @@ import {
   Upload,
   Calendar,
   GraduationCap,
+  ClipboardList,
   PenTool,
   Swords,
   Shield,
@@ -107,6 +108,8 @@ export const NAV: readonly NavEntry[] = [
     icon: GraduationCap,
     children: [
       { key: 'ejercicios', href: '/ejercicios', icon: GraduationCap, roles: STAFF },
+      // Planificador de sesiones (F12) — solo staff.
+      { key: 'sesiones', href: '/sesiones', icon: ClipboardList, roles: STAFF },
       // Pizarra táctica efímera (F11B) — solo staff.
       { key: 'pizarra', href: '/pizarra', icon: PenTool, roles: STAFF },
       { key: 'asistencia', href: '/asistencia', icon: Calendar, roles: ALL },

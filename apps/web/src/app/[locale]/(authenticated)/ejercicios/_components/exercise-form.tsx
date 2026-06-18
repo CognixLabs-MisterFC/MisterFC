@@ -37,7 +37,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { ChipGroup } from '@/components/ui/chip-group';
 import { useRouter } from '@/i18n/navigation';
 import { PitchEditor } from '@/components/match/pitch-editor';
 import { createExercise, updateExercise } from '../actions';
@@ -67,43 +67,6 @@ type ActionButton = { action: ExerciseFormAction; label: string; primary: boolea
 
 // Sentinela para "sin valor" en los Select de un solo valor (Radix no admite '').
 const NONE = '__none__';
-
-type ChipGroupProps = {
-  label: string;
-  options: readonly string[];
-  selected: string[];
-  onToggle: (value: string) => void;
-  labelFor: (value: string) => string;
-};
-
-function ChipGroup({ label, options, selected, onToggle, labelFor }: ChipGroupProps) {
-  return (
-    <div className="flex flex-col gap-2">
-      <Label>{label}</Label>
-      <div className="flex flex-wrap gap-1.5">
-        {options.map((opt) => {
-          const on = selected.includes(opt);
-          return (
-            <button
-              key={opt}
-              type="button"
-              aria-pressed={on}
-              onClick={() => onToggle(opt)}
-              className={cn(
-                'rounded-full border px-3 py-1 text-xs transition-colors',
-                on
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-input bg-background text-muted-foreground hover:border-foreground/40'
-              )}
-            >
-              {labelFor(opt)}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 export function ExerciseForm({
   isAdmin,

@@ -204,7 +204,8 @@
       "entrenamientos": "Entrenamientos",
       "partidos": "Partidos",
       "plantilla": "Plantilla",
-      "pizarra": "Pizarra"
+      "pizarra": "Pizarra",
+      "sesiones": "Sesiones"
     },
     "collapse_sidebar": "Ocultar el menú",
     "expand_sidebar": "Mostrar el menú"
@@ -2828,6 +2829,10 @@
       "pizarra": {
         "title": "Pizarra táctica",
         "description": "Pizarra efímera para explicar jugadas (en blanco o desde un ejercicio)."
+      },
+      "sesiones": {
+        "title": "Sesiones",
+        "description": "Planifica las sesiones de entrenamiento por bloques."
       }
     }
   },
@@ -2962,5 +2967,59 @@
     "once_subtitle": "Dibuja sobre el once de {match}. Nada se guarda.",
     "once_empty": "Esta alineación no tiene jugadores en el campo.",
     "open_board": "Pizarra"
+  },
+  "sesiones": {
+    "title": "Sesiones",
+    "subtitle": "Planifica las sesiones de entrenamiento del club.",
+    "new": "Nueva sesión",
+    "new_title": "Nueva sesión",
+    "edit_title": "Editar sesión",
+    "back": "Volver a sesiones",
+    "forbidden": "No tienes permiso para crear o editar sesiones.",
+    "list_coming_soon": "El listado de sesiones llegará pronto. Crea una nueva sesión para empezar.",
+    "sections": {
+      "header": "Cabecera",
+      "objectives": "Objetivos",
+      "planning": "Planificación",
+      "blocks": "Bloques"
+    },
+    "fields": {
+      "title": "Título",
+      "date": "Fecha",
+      "team": "Equipo",
+      "team_none": "Sin equipo",
+      "objective_physical": "Objetivo físico",
+      "tactical": "Objetivos tácticos",
+      "technical": "Objetivos técnicos",
+      "mesocycle": "Mesociclo",
+      "microcycle": "Microciclo",
+      "total_minutes": "Tiempo total (min)"
+    },
+    "placeholders": {
+      "title": "Ej. Sesión de presión tras pérdida"
+    },
+    "actions": {
+      "create": "Crear sesión",
+      "save": "Guardar cambios"
+    },
+    "toast": {
+      "created": "Sesión creada",
+      "updated": "Cambios guardados"
+    },
+    "errors": {
+      "forbidden": "No tienes permiso para esta acción.",
+      "invalid": "Revisa los datos del formulario.",
+      "not_found": "No se encontró la sesión.",
+      "generic": "Algo salió mal. Inténtalo de nuevo."
+    },
+    "blocks": {
+      "empty": "Sin ejercicios todavía."
+    },
+    "block_types": {
+      "calentamiento": "Calentamiento",
+      "complementaria": "Parte complementaria",
+      "principal": "Parte principal",
+      "vuelta_a_la_calma": "Vuelta a la calma"
+    }
   }
 }
