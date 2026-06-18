@@ -3014,13 +3014,31 @@
       "generic": "Something went wrong. Please try again."
     },
     "blocks": {
-      "empty": "No exercises yet."
+      "empty": "No exercises yet.",
+      "total": "Total time",
+      "minutes": "{count} min",
+      "duration": "Duration",
+      "duration_ph": "min",
+      "series": "Sets",
+      "series_ph": "2x8'",
+      "notes": "Notes",
+      "notes_ph": "Notes for the day",
+      "remove": "Remove exercise",
+      "reorder_block": "Reorder block",
+      "reorder_task": "Reorder exercise"
     },
     "block_types": {
       "calentamiento": "Warm-up",
       "complementaria": "Complementary part",
       "principal": "Main part",
       "vuelta_a_la_calma": "Cool-down"
+    },
+    "picker": {
+      "add": "Add exercise",
+      "search": "Search exercise…",
+      "empty": "No matching exercises.",
+      "show_all": "Show all",
+      "show_recommended": "Show recommended"
     }
   }
 }

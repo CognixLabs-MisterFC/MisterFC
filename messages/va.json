@@ -3014,13 +3014,31 @@
       "generic": "Alguna cosa ha eixit malament. Torna-ho a provar."
     },
     "blocks": {
-      "empty": "Sense exercicis encara."
+      "empty": "Sense exercicis encara.",
+      "total": "Temps total",
+      "minutes": "{count} min",
+      "duration": "Duració",
+      "duration_ph": "min",
+      "series": "Sèries",
+      "series_ph": "2x8'",
+      "notes": "Notes",
+      "notes_ph": "Notes del dia",
+      "remove": "Llevar exercici",
+      "reorder_block": "Reordenar bloc",
+      "reorder_task": "Reordenar exercici"
     },
     "block_types": {
       "calentamiento": "Escalfament",
       "complementaria": "Part complementària",
       "principal": "Part principal",
       "vuelta_a_la_calma": "Tornada a la calma"
+    },
+    "picker": {
+      "add": "Afegir exercici",
+      "search": "Cerca exercici…",
+      "empty": "No hi ha exercicis que coincidisquen.",
+      "show_all": "Veure tots",
+      "show_recommended": "Veure recomanats"
     }
   }
 }

@@ -5,6 +5,13 @@ import {
   createSessionSchema,
   updateSessionHeaderSchema,
   toSessionHeaderColumns,
+  addBlockTaskSchema,
+  updateBlockTaskSchema,
+  toTaskOverrideColumns,
+  blockTaskIdSchema,
+  reorderBlocksSchema,
+  reorderTasksSchema,
+  moveTaskSchema,
   buildDefaultSkeleton,
   createSupabaseServerClient,
 } from '@misterfc/core';
@@ -125,4 +132,166 @@ export async function updateSessionHeader(input: unknown): Promise<SessionAction
 
   revalidateSessions();
   return { success: true, id: parsed.data.id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F12.2b — Tareas del bloque (añadir/editar overrides/quitar) + reordenar.
+// session_id/club_id de la tarea los DERIVA el trigger de 12.1; total_minutes lo
+// recalcula el trigger de 12.2b. La RLS (user_can_edit_session) es el gate real.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type SessionTaskActionState = {
+  error?: ActionError;
+  success?: boolean;
+  /** id de la tarea creada (addBlockTask). */
+  id?: string;
+};
+
+/** Añade un ejercicio al final de un bloque (overrides del día vacíos). */
+export async function addBlockTask(input: unknown): Promise<SessionTaskActionState> {
+  const parsed = addBlockTaskSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const { block_id, exercise_id } = parsed.data;
+
+  // session_id/club_id de la tarea: el trigger de 12.1 los deriva del bloque, pero
+  // el tipo Insert los exige (NOT NULL sin default) → los leemos del bloque (RLS
+  // decide si se ve) y los pasamos; el trigger los re-deriva al mismo valor.
+  const { data: block } = await supabase
+    .from('session_blocks')
+    .select('session_id, club_id')
+    .eq('id', block_id)
+    .maybeSingle();
+  if (!block) return { error: 'not_found' };
+
+  // Siguiente order_idx del bloque (huecos OK; el orden lo normaliza reorder).
+  const { data: last } = await supabase
+    .from('session_block_exercises')
+    .select('order_idx')
+    .eq('block_id', block_id)
+    .order('order_idx', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const nextIdx = ((last?.order_idx as number | null) ?? -1) + 1;
+
+  const { data: created, error } = await supabase
+    .from('session_block_exercises')
+    .insert({
+      block_id,
+      session_id: block.session_id,
+      club_id: block.club_id,
+      exercise_id,
+      order_idx: nextIdx,
+    })
+    .select('id')
+    .maybeSingle();
+
+  if (error) return { error: mapPgErr(error.code) };
+  const id = created?.id as string | undefined;
+  if (!id) return { error: 'generic' };
+
+  revalidateSessions();
+  return { success: true, id };
+}
+
+/** Edita los overrides del día de una tarea (duración/series/notas). */
+export async function updateBlockTask(input: unknown): Promise<SessionTaskActionState> {
+  const parsed = updateBlockTaskSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: updated, error } = await supabase
+    .from('session_block_exercises')
+    .update(toTaskOverrideColumns(parsed.data))
+    .eq('id', parsed.data.id)
+    .select('id')
+    .maybeSingle();
+
+  if (error) return { error: mapPgErr(error.code) };
+  if (!updated) return { error: 'not_found' };
+
+  revalidateSessions();
+  return { success: true, id: parsed.data.id };
+}
+
+/** Quita una tarea de un bloque (borra el join). */
+export async function removeBlockTask(input: unknown): Promise<SessionTaskActionState> {
+  const parsed = blockTaskIdSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase
+    .from('session_block_exercises')
+    .delete()
+    .eq('id', parsed.data.id);
+
+  if (error) return { error: mapPgErr(error.code) };
+
+  revalidateSessions();
+  return { success: true };
+}
+
+/** Reordena los bloques de la sesión (RPC: una sentencia, UNIQUE deferrable). */
+export async function reorderBlocks(input: unknown): Promise<SessionActionState> {
+  const parsed = reorderBlocksSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase.rpc('reorder_session_blocks', {
+    p_session_id: parsed.data.session_id,
+    p_block_ids: parsed.data.block_ids,
+  });
+
+  if (error) return { error: mapPgErr(error.code) };
+
+  revalidateSessions();
+  return { success: true, id: parsed.data.session_id };
+}
+
+/** Reordena las tareas dentro de un bloque (RPC: una sentencia, UNIQUE deferrable). */
+export async function reorderTasks(input: unknown): Promise<SessionActionState> {
+  const parsed = reorderTasksSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase.rpc('reorder_session_tasks', {
+    p_block_id: parsed.data.block_id,
+    p_task_ids: parsed.data.task_ids,
+  });
+
+  if (error) return { error: mapPgErr(error.code) };
+
+  revalidateSessions();
+  return { success: true, id: parsed.data.block_id };
+}
+
+/** Mueve una tarea a otro bloque de la misma sesión (RPC: cambia block_id +
+ *  reindexa el destino en una sentencia). */
+export async function moveTask(input: unknown): Promise<SessionActionState> {
+  const parsed = moveTaskSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase.rpc('move_session_task', {
+    p_task_id: parsed.data.task_id,
+    p_to_block_id: parsed.data.to_block_id,
+    p_dest_ids: parsed.data.dest_ids,
+  });
+
+  if (error) return { error: mapPgErr(error.code) };
+
+  revalidateSessions();
+  return { success: true, id: parsed.data.task_id };
 }

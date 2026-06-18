@@ -67,6 +67,8 @@ export type SessionBlockForEdit = {
 export type SessionForEdit = {
   id: string;
   team_id: string | null;
+  /** `kind` de la categoría del equipo (CATEGORY_KIND), default del filtro del picker. */
+  team_category_kind: string | null;
   session_date: string | null;
   title: string | null;
   objective_physical: string | null;
@@ -100,6 +102,7 @@ export async function loadSessionForEdit(
       `id, team_id, session_date, title, objective_physical,
        tactical_objectives, technical_objectives, mesocycle, microcycle,
        total_minutes, is_template, owner_profile_id,
+       team:teams ( category:categories ( kind ) ),
        session_blocks (
          id, block_type, title, notes, order_idx,
          session_block_exercises (
@@ -113,6 +116,8 @@ export async function loadSessionForEdit(
     .maybeSingle();
 
   if (!data) return null;
+
+  const team = data.team as { category: { kind: string | null } | null } | null;
 
   type RawTask = {
     id: string;
@@ -156,6 +161,7 @@ export async function loadSessionForEdit(
   return {
     id: data.id as string,
     team_id: (data.team_id as string | null) ?? null,
+    team_category_kind: team?.category?.kind ?? null,
     session_date: (data.session_date as string | null) ?? null,
     title: (data.title as string | null) ?? null,
     objective_physical: (data.objective_physical as string | null) ?? null,
@@ -168,4 +174,38 @@ export async function loadSessionForEdit(
     is_owner: user != null && data.owner_profile_id === user.id,
     blocks,
   };
+}
+
+// ── Ejercicios elegibles para el picker (12.2b) ──────────────────────────────
+export type PickableExercise = {
+  id: string;
+  name: string;
+  categories: string[];
+  tactical_objectives: string[];
+  technical_objectives: string[];
+};
+
+/**
+ * Ejercicios del club que el usuario puede ver (la RLS decide), no archivados, con
+ * sus taxonomías para FILTRAR en cliente (categoría del equipo + objetivos — D8).
+ * Sin paginación: el set por club es modesto (como loadBoardExercises de 11B.1).
+ */
+export async function loadPickableExercises(clubId: string): Promise<PickableExercise[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('exercises')
+    .select('id, name, categories, tactical_objectives, technical_objectives')
+    .eq('club_id', clubId)
+    .is('archived_at', null)
+    .order('name', { ascending: true });
+
+  return (data ?? []).map((e) => ({
+    id: e.id as string,
+    name: e.name as string,
+    categories: (e.categories as string[] | null) ?? [],
+    tactical_objectives: (e.tactical_objectives as string[] | null) ?? [],
+    technical_objectives: (e.technical_objectives as string[] | null) ?? [],
+  }));
 }

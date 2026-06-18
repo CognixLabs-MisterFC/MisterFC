@@ -122,10 +122,10 @@ export const createSessionSchema = z.object({
 export type CreateSessionInput = z.infer<typeof createSessionSchema>;
 
 // ── Editar cabecera (12.2) ────────────────────────────────────────────────────
-// Cabecera + id + team_id. NO incluye `visibility` (publicar al equipo = 12.4);
-// la sesión permanece en 'staff' hasta entonces.
+// Cabecera + id + team_id. NO incluye `visibility` (publicar = 12.4) ni
+// `total_minutes` (desde 12.2b es DERIVADO de la suma de duration_min vía trigger).
 export const updateSessionHeaderSchema = sessionHeaderSchema
-  .omit({ visibility: true })
+  .omit({ visibility: true, total_minutes: true })
   .extend({
     id: z.string().uuid({ message: 'id_invalid' }),
     team_id: teamIdSchema,
@@ -133,7 +133,7 @@ export const updateSessionHeaderSchema = sessionHeaderSchema
 
 export type UpdateSessionHeaderInput = z.infer<typeof updateSessionHeaderSchema>;
 
-/** Columnas de `sessions` que escribe la cabecera (sin auditoría ni ciclo). */
+/** Columnas de `sessions` que escribe la cabecera (sin auditoría, ciclo ni total). */
 export type SessionHeaderColumns = {
   team_id: string | null;
   session_date: string | null;
@@ -143,7 +143,6 @@ export type SessionHeaderColumns = {
   technical_objectives: string[];
   mesocycle: string | null;
   microcycle: string | null;
-  total_minutes: number | null;
 };
 
 const orNull = <T>(v: T | undefined | null): T | null => (v == null ? null : v);
@@ -151,7 +150,7 @@ const orNull = <T>(v: T | undefined | null): T | null => (v == null ? null : v);
 /**
  * Mapea los datos validados de la cabecera a las columnas de `sessions`. Puro y
  * testeable: la auditoría (owner/club/updated_at) la añade el trigger/capa de app.
- * No toca `is_template` ni `visibility` (fuera de 12.2a).
+ * No toca `is_template`, `visibility` ni `total_minutes` (derivado por trigger).
  */
 export function toSessionHeaderColumns(
   data: UpdateSessionHeaderInput
@@ -165,6 +164,83 @@ export function toSessionHeaderColumns(
     technical_objectives: data.technical_objectives,
     mesocycle: orNull(data.mesocycle),
     microcycle: orNull(data.microcycle),
-    total_minutes: orNull(data.total_minutes),
   };
+}
+
+// ── Tareas del bloque (12.2b) ─────────────────────────────────────────────────
+/** Añadir un ejercicio a un bloque (overrides del día vacíos por defecto). */
+export const addBlockTaskSchema = z.object({
+  block_id: z.string().uuid({ message: 'block_id_invalid' }),
+  exercise_id: z.string().uuid({ message: 'exercise_id_invalid' }),
+});
+export type AddBlockTaskInput = z.infer<typeof addBlockTaskSchema>;
+
+/** Editar los overrides del día de una tarea (duración/series/notas). */
+export const updateBlockTaskSchema = z.object({
+  id: z.string().uuid({ message: 'id_invalid' }),
+  duration_min: minutesSchema,
+  series: optText(60),
+  notes: optText(2000),
+});
+export type UpdateBlockTaskInput = z.infer<typeof updateBlockTaskSchema>;
+
+/** Columnas de override del día de `session_block_exercises`. */
+export type TaskOverrideColumns = {
+  duration_min: number | null;
+  series: string | null;
+  notes: string | null;
+};
+
+export function toTaskOverrideColumns(data: UpdateBlockTaskInput): TaskOverrideColumns {
+  return {
+    duration_min: orNull(data.duration_min),
+    series: orNull(data.series),
+    notes: orNull(data.notes),
+  };
+}
+
+/** Quitar una tarea de un bloque. */
+export const blockTaskIdSchema = z.object({
+  id: z.string().uuid({ message: 'id_invalid' }),
+});
+export type BlockTaskIdInput = z.infer<typeof blockTaskIdSchema>;
+
+// ── Reordenar (12.2b) ─────────────────────────────────────────────────────────
+const uuidArray = z.array(z.string().uuid({ message: 'id_invalid' })).min(1, { message: 'empty' });
+
+export const reorderBlocksSchema = z.object({
+  session_id: z.string().uuid({ message: 'session_id_invalid' }),
+  block_ids: uuidArray,
+});
+export type ReorderBlocksInput = z.infer<typeof reorderBlocksSchema>;
+
+export const reorderTasksSchema = z.object({
+  block_id: z.string().uuid({ message: 'block_id_invalid' }),
+  task_ids: uuidArray,
+});
+export type ReorderTasksInput = z.infer<typeof reorderTasksSchema>;
+
+/** Mover una tarea a otro bloque (misma sesión) + orden final del destino. */
+export const moveTaskSchema = z.object({
+  task_id: z.string().uuid({ message: 'task_id_invalid' }),
+  to_block_id: z.string().uuid({ message: 'block_id_invalid' }),
+  dest_ids: uuidArray,
+});
+export type MoveTaskInput = z.infer<typeof moveTaskSchema>;
+
+/**
+ * Suma de los minutos del día de un conjunto de tareas (cabecera = total
+ * derivado). Ignora los `null`. Devuelve `null` si no hay ningún minuto (para
+ * mostrar "—" en vez de 0). Espeja el trigger SQL session_recompute_total.
+ */
+export function sumTaskMinutes(durations: ReadonlyArray<number | null | undefined>): number | null {
+  let total = 0;
+  let any = false;
+  for (const d of durations) {
+    if (typeof d === 'number') {
+      total += d;
+      any = true;
+    }
+  }
+  return any ? total : null;
 }

@@ -2583,6 +2583,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      move_session_task: {
+        Args: { p_dest_ids: string[]; p_task_id: string; p_to_block_id: string }
+        Returns: undefined
+      }
       open_next_season: { Args: { p_club_id: string }; Returns: string }
       place_players_in_upcoming: {
         Args: {
@@ -2591,6 +2595,14 @@ export type Database = {
           p_player_ids: string[]
         }
         Returns: number
+      }
+      reorder_session_blocks: {
+        Args: { p_block_ids: string[]; p_session_id: string }
+        Returns: undefined
+      }
+      reorder_session_tasks: {
+        Args: { p_block_id: string; p_task_ids: string[] }
+        Returns: undefined
       }
       seed_standard_categories: { Args: { p_club_id: string }; Returns: number }
       set_player_left_club: {
