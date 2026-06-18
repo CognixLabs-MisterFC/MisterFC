@@ -13,20 +13,28 @@ import {
   getCurrentUser,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 
 // ── Equipos del club (selector de la cabecera) ───────────────────────────────
 export type ClubTeam = { id: string; name: string; season: string };
 
-/** Equipos del club activo (id, name, season) para el selector de equipo destino. */
+/**
+ * Equipos del club destinables a una sesión: SOLO los de la temporada ACTIVA
+ * (seasons.status='active', vía getActiveSeasonLabel — Rework C5). Los equipos de
+ * temporadas finalizadas son históricos del rollover y no deben aparecer en el
+ * selector de "Nueva sesión"/cabecera.
+ */
 export async function loadClubTeams(clubId: string): Promise<ClubTeam[]> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
+
+  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
 
   const { data } = await supabase
     .from('teams')
     .select('id, name, season')
     .eq('club_id', clubId)
-    .order('season', { ascending: false })
+    .eq('season', activeSeason)
     .order('name', { ascending: true });
 
   return (data ?? []).map((t) => ({
