@@ -20,7 +20,13 @@ export {
   sessionHeaderSchema,
   sessionTaskSchema,
   sessionBlockSchema,
+  createSessionSchema,
+  updateSessionHeaderSchema,
+  toSessionHeaderColumns,
   type SessionHeaderInput,
   type SessionTaskInput,
   type SessionBlockInput,
+  type CreateSessionInput,
+  type UpdateSessionHeaderInput,
+  type SessionHeaderColumns,
 } from './session-form';

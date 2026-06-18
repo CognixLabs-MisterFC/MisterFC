@@ -286,7 +286,8 @@
       "entrenamientos": "Entrenaments",
       "partidos": "Partits",
       "plantilla": "Plantilla",
-      "pizarra": "Pissarra"
+      "pizarra": "Pissarra",
+      "sesiones": "Sessions"
     },
     "collapse_sidebar": "Amaga el menú",
     "expand_sidebar": "Mostra el menú"
@@ -2829,6 +2830,10 @@
       "pizarra": {
         "title": "Pissarra tàctica",
         "description": "Pissarra efímera per a explicar jugades (en blanc o des d un exercici)."
+      },
+      "sesiones": {
+        "title": "Sessions",
+        "description": "Planifica les sessions d'entrenament per blocs."
       }
     }
   },
@@ -2963,5 +2968,59 @@
     "once_subtitle": "Dibuixa sobre l onze de {match}. No es guarda res.",
     "once_empty": "Aquesta alineació no té jugadors al camp.",
     "open_board": "Pissarra"
+  },
+  "sesiones": {
+    "title": "Sessions",
+    "subtitle": "Planifica les sessions d'entrenament del club.",
+    "new": "Nova sessió",
+    "new_title": "Nova sessió",
+    "edit_title": "Editar sessió",
+    "back": "Tornar a sessions",
+    "forbidden": "No tens permís per a crear o editar sessions.",
+    "list_coming_soon": "El llistat de sessions arribarà prompte. Crea una nova sessió per a començar.",
+    "sections": {
+      "header": "Capçalera",
+      "objectives": "Objectius",
+      "planning": "Planificació",
+      "blocks": "Blocs"
+    },
+    "fields": {
+      "title": "Títol",
+      "date": "Data",
+      "team": "Equip",
+      "team_none": "Sense equip",
+      "objective_physical": "Objectiu físic",
+      "tactical": "Objectius tàctics",
+      "technical": "Objectius tècnics",
+      "mesocycle": "Mesocicle",
+      "microcycle": "Microcicle",
+      "total_minutes": "Temps total (min)"
+    },
+    "placeholders": {
+      "title": "Ex. Sessió de pressió després de pèrdua"
+    },
+    "actions": {
+      "create": "Crear sessió",
+      "save": "Guardar canvis"
+    },
+    "toast": {
+      "created": "Sessió creada",
+      "updated": "Canvis guardats"
+    },
+    "errors": {
+      "forbidden": "No tens permís per a aquesta acció.",
+      "invalid": "Revisa les dades del formulari.",
+      "not_found": "No s'ha trobat la sessió.",
+      "generic": "Alguna cosa ha eixit malament. Torna-ho a provar."
+    },
+    "blocks": {
+      "empty": "Sense exercicis encara."
+    },
+    "block_types": {
+      "calentamiento": "Escalfament",
+      "complementaria": "Part complementària",
+      "principal": "Part principal",
+      "vuelta_a_la_calma": "Tornada a la calma"
+    }
   }
 }

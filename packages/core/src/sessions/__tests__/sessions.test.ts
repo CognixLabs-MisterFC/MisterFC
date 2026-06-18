@@ -12,6 +12,9 @@ import {
   sessionTaskSchema,
   sessionBlockSchema,
   sessionBlockTypeSchema,
+  createSessionSchema,
+  updateSessionHeaderSchema,
+  toSessionHeaderColumns,
 } from '../session-form';
 
 describe('F12 — SESSION_BLOCK_TYPES (catálogo fijo, D1)', () => {
@@ -136,5 +139,64 @@ describe('F12 — sessionBlockSchema', () => {
     expect(r.tasks).toEqual([]);
     expect(sessionBlockSchema.safeParse({ block_type: 'x' }).success).toBe(false);
     expect(sessionBlockTypeSchema.safeParse('vuelta_a_la_calma').success).toBe(true);
+  });
+});
+
+describe('F12.2 — createSessionSchema (alta mínima)', () => {
+  it('acepta un objeto vacío (equipo y fecha opcionales)', () => {
+    expect(createSessionSchema.safeParse({}).success).toBe(true);
+  });
+
+  it('acepta team_id uuid y fecha YYYY-MM-DD; rechaza basura', () => {
+    expect(
+      createSessionSchema.safeParse({
+        team_id: '11111111-1111-4111-8111-111111111111',
+        session_date: '2026-09-10',
+      }).success
+    ).toBe(true);
+    expect(createSessionSchema.safeParse({ team_id: 'nope' }).success).toBe(false);
+    expect(createSessionSchema.safeParse({ session_date: '10-09-2026' }).success).toBe(false);
+  });
+});
+
+describe('F12.2 — updateSessionHeaderSchema + toSessionHeaderColumns', () => {
+  const id = '22222222-2222-4222-8222-222222222222';
+
+  it('exige id uuid', () => {
+    expect(updateSessionHeaderSchema.safeParse({}).success).toBe(false);
+    expect(updateSessionHeaderSchema.safeParse({ id }).success).toBe(true);
+  });
+
+  it('NO admite visibility (publicar = 12.4): se ignora', () => {
+    const r = updateSessionHeaderSchema.parse({ id, visibility: 'team' });
+    expect('visibility' in r).toBe(false);
+  });
+
+  it('mapea a columnas normalizando vacíos a null', () => {
+    const parsed = updateSessionHeaderSchema.parse({
+      id,
+      title: '  ',
+      session_date: '2026-09-10',
+      team_id: '33333333-3333-4333-8333-333333333333',
+      objective_physical: 'Resistencia',
+      tactical_objectives: ['posesion'],
+      mesocycle: 'Meso 1',
+      microcycle: '   ',
+      total_minutes: '90',
+    });
+    const cols = toSessionHeaderColumns(parsed);
+    expect(cols.title).toBeNull();
+    expect(cols.microcycle).toBeNull();
+    expect(cols.session_date).toBe('2026-09-10');
+    expect(cols.team_id).toBe('33333333-3333-4333-8333-333333333333');
+    expect(cols.objective_physical).toBe('Resistencia');
+    expect(cols.tactical_objectives).toEqual(['posesion']);
+    expect(cols.technical_objectives).toEqual([]);
+    expect(cols.total_minutes).toBe(90);
+  });
+
+  it('team_id null se conserva como null (sin equipo)', () => {
+    const cols = toSessionHeaderColumns(updateSessionHeaderSchema.parse({ id, team_id: null }));
+    expect(cols.team_id).toBeNull();
   });
 });
