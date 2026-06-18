@@ -2026,9 +2026,24 @@
         "title": "My callups",
         "description": "Confirm or decline your match callups.",
         "cta": "Go to callups →"
+      },
+      "sessions": {
+        "title": "Upcoming sessions",
+        "empty": "No published sessions.",
+        "untitled": "Session",
+        "minutes": "{count} min"
       }
     },
-    "no_team": "You're not assigned to any team yet. Reach out to your club coordinator."
+    "no_team": "You're not assigned to any team yet. Reach out to your club coordinator.",
+    "session": {
+      "back": "Back to my team",
+      "untitled": "Session",
+      "minutes": "{count} min",
+      "tactical": "Tactical objectives",
+      "technical": "Technical objectives",
+      "physical": "Physical objective",
+      "no_exercises": "No exercises."
+    }
   },
   "alineacion": {
     "title": "Lineup",
@@ -3065,6 +3080,16 @@
       "next": "Next week",
       "untitled": "Session",
       "minutes": "{count} min"
+    },
+    "publish": {
+      "label": "Publish to team",
+      "draft": "Draft",
+      "published": "Published",
+      "no_team": "Assign a team to publish the session.",
+      "help_draft": "Only staff can see it. Publish it to share with the team.",
+      "help_published": "Visible to the team's players and families.",
+      "toast_published": "Session published to the team",
+      "toast_unpublished": "Session set back to draft"
     }
   }
 }

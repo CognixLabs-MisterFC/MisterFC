@@ -29,6 +29,7 @@ import { ChipGroup } from '@/components/ui/chip-group';
 import { useRouter } from '@/i18n/navigation';
 import { updateSessionHeader } from '../actions';
 import { BlocksEditor } from './blocks-editor';
+import { PublishControl } from './publish-control';
 import type { SessionForEdit, ClubTeam, PickableExercise } from '../queries';
 
 const NO_TEAM = '__none__';
@@ -180,6 +181,13 @@ export function SessionEditor({
           {t('actions.save')}
         </Button>
       </div>
+
+      {/* Publicar al equipo (12.4) — sobre el team_id persistido. */}
+      <PublishControl
+        sessionId={session.id}
+        visibility={session.visibility}
+        hasTeam={session.team_id != null}
+      />
 
       {/* Bloques interactivos (picker + overrides + reordenar) */}
       <BlocksEditor session={session} pickable={pickable} />

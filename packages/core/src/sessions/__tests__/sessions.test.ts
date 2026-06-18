@@ -20,6 +20,7 @@ import {
   sessionBlockTypeSchema,
   createSessionSchema,
   updateSessionHeaderSchema,
+  setSessionVisibilitySchema,
   toSessionHeaderColumns,
   addBlockTaskSchema,
   updateBlockTaskSchema,
@@ -211,6 +212,21 @@ describe('F12.2 — updateSessionHeaderSchema + toSessionHeaderColumns', () => {
   it('team_id null se conserva como null (sin equipo)', () => {
     const cols = toSessionHeaderColumns(updateSessionHeaderSchema.parse({ id, team_id: null }));
     expect(cols.team_id).toBeNull();
+  });
+});
+
+describe('F12.4 — setSessionVisibilitySchema (publicar/despublicar)', () => {
+  const id = '44444444-4444-4444-8444-444444444444';
+
+  it('acepta visibility staff o team con id uuid', () => {
+    expect(setSessionVisibilitySchema.safeParse({ id, visibility: 'staff' }).success).toBe(true);
+    expect(setSessionVisibilitySchema.safeParse({ id, visibility: 'team' }).success).toBe(true);
+  });
+
+  it('rechaza visibility desconocida o id no uuid', () => {
+    expect(setSessionVisibilitySchema.safeParse({ id, visibility: 'public' }).success).toBe(false);
+    expect(setSessionVisibilitySchema.safeParse({ id: 'x', visibility: 'team' }).success).toBe(false);
+    expect(setSessionVisibilitySchema.safeParse({ id }).success).toBe(false);
   });
 });
 

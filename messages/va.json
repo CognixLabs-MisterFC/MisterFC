@@ -2026,9 +2026,24 @@
         "title": "Les meves convocatòries",
         "description": "Confirma o rebutja les teves convocatòries de partit.",
         "cta": "Anar a convocatòries →"
+      },
+      "sessions": {
+        "title": "Pròximes sessions",
+        "empty": "No hi ha sessions publicades.",
+        "untitled": "Sessió",
+        "minutes": "{count} min"
       }
     },
-    "no_team": "Encara no estàs assignat a cap equip. Parla amb el coordinador del club."
+    "no_team": "Encara no estàs assignat a cap equip. Parla amb el coordinador del club.",
+    "session": {
+      "back": "Tornar al meu equip",
+      "untitled": "Sessió",
+      "minutes": "{count} min",
+      "tactical": "Objectius tàctics",
+      "technical": "Objectius tècnics",
+      "physical": "Objectiu físic",
+      "no_exercises": "Sense exercicis."
+    }
   },
   "alineacion": {
     "title": "Alineació",
@@ -3065,6 +3080,16 @@
       "next": "Setmana següent",
       "untitled": "Sessió",
       "minutes": "{count} min"
+    },
+    "publish": {
+      "label": "Publicar a l'equip",
+      "draft": "Esborrany",
+      "published": "Publicada",
+      "no_team": "Assigna un equip per a poder publicar la sessió.",
+      "help_draft": "Només el cos tècnic la veu. Publica-la per a compartir-la amb l'equip.",
+      "help_published": "Visible per a jugadors i famílies de l'equip.",
+      "toast_published": "Sessió publicada a l'equip",
+      "toast_unpublished": "Sessió tornada a esborrany"
     }
   }
 }
