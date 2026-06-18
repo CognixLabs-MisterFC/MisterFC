@@ -9,9 +9,13 @@ export {
   buildDefaultSkeleton,
   isSessionBlockType,
   isSessionVisibility,
+  canRecommend,
+  isRecommendedExercise,
   type SessionBlockType,
   type SessionVisibility,
   type SeededBlock,
+  type RecommendableExercise,
+  type RecommendCriteria,
 } from './sessions';
 
 export {

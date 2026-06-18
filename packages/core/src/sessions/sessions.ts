@@ -60,6 +60,50 @@ export function buildDefaultSkeleton(): SeededBlock[] {
   }));
 }
 
+// ── Recomendación de ejercicios para el picker (12.2b) ───────────────────────
+/** Forma mínima de un ejercicio para decidir si encaja con la sesión. */
+export type RecommendableExercise = {
+  categories: string[];
+  tactical_objectives: string[];
+  technical_objectives: string[];
+};
+
+/** Criterio de la sesión: categoría del equipo (CATEGORY_KIND, o null si la
+ *  categoría no tiene `kind` — p.ej. categoría custom) + objetivos de la cabecera. */
+export type RecommendCriteria = {
+  category: string | null;
+  tactical: string[];
+  technical: string[];
+};
+
+/** ¿Hay criterio suficiente para recomendar? (sin objetivos no se recomienda). */
+export function canRecommend(c: RecommendCriteria): boolean {
+  return c.tactical.length + c.technical.length > 0;
+}
+
+/**
+ * ¿Es el ejercicio RECOMENDADO para la sesión? Cumple AMBAS:
+ *  - comparte ≥1 objetivo (táctico o técnico) con los objetivos de la sesión, Y
+ *  - su categoría incluye la categoría del equipo de la sesión.
+ * Si la categoría del equipo es desconocida (`category` null — p.ej. categoría sin
+ * `kind`), NO se exige la categoría (se recomienda solo por objetivos) para no
+ * vaciar la lista por un dato faltante. Sin objetivos de sesión → no recomienda.
+ */
+export function isRecommendedExercise(
+  ex: RecommendableExercise,
+  c: RecommendCriteria
+): boolean {
+  const sessionObjectives = [...c.tactical, ...c.technical];
+  if (sessionObjectives.length === 0) return false;
+
+  const exObjectives = [...ex.tactical_objectives, ...ex.technical_objectives];
+  const sharesObjective = exObjectives.some((o) => sessionObjectives.includes(o));
+  if (!sharesObjective) return false;
+
+  if (c.category != null && !ex.categories.includes(c.category)) return false;
+  return true;
+}
+
 // ── Type guards ───────────────────────────────────────────────────────────────
 export function isSessionBlockType(v: string): v is SessionBlockType {
   return (SESSION_BLOCK_TYPES as readonly string[]).includes(v);

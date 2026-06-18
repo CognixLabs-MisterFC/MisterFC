@@ -6,6 +6,8 @@ import {
   buildDefaultSkeleton,
   isSessionBlockType,
   isSessionVisibility,
+  canRecommend,
+  isRecommendedExercise,
 } from '../sessions';
 import {
   sessionHeaderSchema,
@@ -257,6 +259,56 @@ describe('F12.2b — reorder schemas', () => {
     expect(moveTaskSchema.safeParse({ task_id: a, to_block_id: b, dest_ids: [a] }).success).toBe(true);
     expect(moveTaskSchema.safeParse({ task_id: a, to_block_id: b, dest_ids: [] }).success).toBe(false);
     expect(moveTaskSchema.safeParse({ task_id: 'x', to_block_id: b, dest_ids: [a] }).success).toBe(false);
+  });
+});
+
+describe('F12.2b — isRecommendedExercise / canRecommend', () => {
+  // Caso real (club de pruebas): único ejercicio "Rondo 4x1".
+  const rondo = {
+    categories: ['infantil', 'alevin'],
+    tactical_objectives: ['posesion'],
+    technical_objectives: ['control', 'pase'],
+  };
+
+  it('canRecommend solo si hay objetivos de sesión', () => {
+    expect(canRecommend({ category: 'infantil', tactical: [], technical: [] })).toBe(false);
+    expect(canRecommend({ category: null, tactical: ['posesion'], technical: [] })).toBe(true);
+    expect(canRecommend({ category: null, tactical: [], technical: ['pase'] })).toBe(true);
+  });
+
+  it('recomendado = categoría incluida Y comparte objetivo (caso infantil + posesion)', () => {
+    expect(
+      isRecommendedExercise(rondo, { category: 'infantil', tactical: ['posesion'], technical: [] })
+    ).toBe(true);
+    expect(
+      isRecommendedExercise(rondo, { category: 'infantil', tactical: [], technical: ['pase'] })
+    ).toBe(true);
+  });
+
+  it('NO recomendado si la categoría del equipo no está en el ejercicio', () => {
+    // 'cadete' no está en {infantil,alevin} aunque comparta objetivo.
+    expect(
+      isRecommendedExercise(rondo, { category: 'cadete', tactical: ['posesion'], technical: [] })
+    ).toBe(false);
+  });
+
+  it('NO recomendado si no comparte ningún objetivo (aunque la categoría encaje)', () => {
+    expect(
+      isRecommendedExercise(rondo, { category: 'infantil', tactical: ['repliegue'], technical: ['tiro'] })
+    ).toBe(false);
+  });
+
+  it('sin objetivos de sesión → nunca recomendado', () => {
+    expect(isRecommendedExercise(rondo, { category: 'infantil', tactical: [], technical: [] })).toBe(false);
+  });
+
+  it('categoría desconocida (null, p.ej. kind null) → recomienda solo por objetivos', () => {
+    expect(
+      isRecommendedExercise(rondo, { category: null, tactical: ['posesion'], technical: [] })
+    ).toBe(true);
+    expect(
+      isRecommendedExercise(rondo, { category: null, tactical: ['repliegue'], technical: [] })
+    ).toBe(false);
   });
 });
 

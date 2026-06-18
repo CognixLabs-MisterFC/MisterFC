@@ -11,14 +11,11 @@
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Search } from 'lucide-react';
+import { canRecommend, isRecommendedExercise } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type { PickableExercise } from '../queries';
-
-function overlaps(a: string[], b: string[]): boolean {
-  return a.some((x) => b.includes(x));
-}
 
 export function ExercisePicker({
   exercises,
@@ -40,29 +37,25 @@ export function ExercisePicker({
   const [q, setQ] = useState('');
   const [showAll, setShowAll] = useState(false);
 
-  // ¿Hay criterio de recomendación? (si la sesión no tiene objetivos ni categoría,
-  // "recomendados" = todos y el toggle no aporta nada).
-  const hasCriteria =
-    !!defaultCategory || defaultTactical.length > 0 || defaultTechnical.length > 0;
-
-  function isRecommended(e: PickableExercise): boolean {
-    if (defaultCategory && !e.categories.includes(defaultCategory)) return false;
-    if (defaultTactical.length > 0 && !overlaps(defaultTactical, e.tactical_objectives)) return false;
-    if (defaultTechnical.length > 0 && !overlaps(defaultTechnical, e.technical_objectives)) return false;
-    return true;
-  }
+  // Criterio de recomendación de la sesión (categoría del equipo + objetivos). Sin
+  // objetivos no se puede recomendar (canRecommend=false → se muestran todos).
+  const criteria = useMemo(
+    () => ({ category: defaultCategory, tactical: defaultTactical, technical: defaultTechnical }),
+    [defaultCategory, defaultTactical, defaultTechnical]
+  );
+  const recommendable = canRecommend(criteria);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return exercises
       .filter((e) => {
         if (needle && !e.name.toLowerCase().includes(needle)) return false;
-        if (!showAll && hasCriteria && !isRecommended(e)) return false;
+        // Por defecto SOLO recomendados (cuando hay criterio); "Ver todos" lo amplía.
+        if (!showAll && recommendable && !isRecommendedExercise(e, criteria)) return false;
         return true;
       })
       .slice(0, 50);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [exercises, q, showAll, hasCriteria, defaultCategory, defaultTactical, defaultTechnical]);
+  }, [exercises, q, showAll, recommendable, criteria]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -92,7 +85,7 @@ export function ExercisePicker({
             {filtered.length === 0 ? (
               <div className="flex flex-col items-center gap-2 px-1 py-4 text-center">
                 <p className="text-xs text-muted-foreground">{t('empty')}</p>
-                {!showAll && hasCriteria ? (
+                {!showAll && recommendable ? (
                   <button
                     type="button"
                     onClick={() => setShowAll(true)}
@@ -123,7 +116,7 @@ export function ExercisePicker({
           </div>
 
           {/* "Ver todos" discreto: solo tiene sentido si hay recomendación activa. */}
-          {hasCriteria ? (
+          {recommendable ? (
             <button
               type="button"
               onClick={() => setShowAll((v) => !v)}
