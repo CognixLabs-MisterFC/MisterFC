@@ -2977,7 +2977,6 @@
     "edit_title": "Editar sessió",
     "back": "Tornar a sessions",
     "forbidden": "No tens permís per a crear o editar sessions.",
-    "list_coming_soon": "El llistat de sessions arribarà prompte. Crea una nova sessió per a començar.",
     "sections": {
       "header": "Capçalera",
       "objectives": "Objectius",
@@ -3039,6 +3038,33 @@
       "empty": "No hi ha exercicis que coincidisquen.",
       "show_all": "Veure tots",
       "show_recommended": "Veure recomanats"
+    },
+    "tabs": {
+      "list": "Llistat",
+      "week": "Setmana"
+    },
+    "list": {
+      "search_placeholder": "Cerca per títol…",
+      "search_label": "Cerca sessions",
+      "search_clear": "Netejar cerca",
+      "team_all": "Tots els equips",
+      "date_from": "Des de",
+      "date_to": "Fins a",
+      "clear": "Llevar filtres",
+      "empty": "Encara no hi ha sessions. Crea la primera.",
+      "empty_filtered": "No hi ha sessions amb eixos filtres.",
+      "untitled": "Sessió sense títol",
+      "minutes": "{count} min",
+      "page_of": "Pàgina {current} de {total}",
+      "prev": "Anterior",
+      "next": "Següent"
+    },
+    "week": {
+      "no_team": "No hi ha equips en la temporada activa.",
+      "prev": "Setmana anterior",
+      "next": "Setmana següent",
+      "untitled": "Sessió",
+      "minutes": "{count} min"
     }
   }
 }

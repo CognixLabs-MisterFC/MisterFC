@@ -9,6 +9,7 @@
 
 import {
   type SessionBlockType,
+  addDaysIso,
   createSupabaseServerClient,
   getCurrentUser,
 } from '@misterfc/core';
@@ -42,6 +43,114 @@ export async function loadClubTeams(clubId: string): Promise<ClubTeam[]> {
     name: t.name as string,
     season: t.season as string,
   }));
+}
+
+// ── Listado de sesiones (12.3, patrón F2.10) ─────────────────────────────────
+export const SESSIONS_PAGE_SIZE = 20;
+
+export type SessionListRow = {
+  id: string;
+  title: string | null;
+  session_date: string | null;
+  team_name: string | null;
+  total_minutes: number | null;
+};
+
+export type SessionListFilters = {
+  search: string;
+  teamId: string | null;
+  from: string | null;
+  to: string | null;
+};
+
+export type SessionListResult = { sessions: SessionListRow[]; total: number };
+
+/**
+ * Lista las sesiones REALES del club (is_template=false), CONFIANDO en la RLS.
+ * Filtros por título (ilike), equipo y rango de fechas; paginación con .range()
+ * (patrón F2.10). Orden por fecha descendente.
+ */
+export async function loadSessions(
+  clubId: string,
+  filters: SessionListFilters,
+  page: number
+): Promise<SessionListResult> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  let q = supabase
+    .from('sessions')
+    .select('id, title, session_date, total_minutes, team:teams(name)', { count: 'exact' })
+    .eq('club_id', clubId)
+    .eq('is_template', false);
+
+  if (filters.search.trim().length > 0) {
+    const escaped = filters.search.trim().replace(/[%_,]/g, (m) => `\\${m}`);
+    q = q.ilike('title', `%${escaped}%`);
+  }
+  if (filters.teamId) q = q.eq('team_id', filters.teamId);
+  if (filters.from) q = q.gte('session_date', filters.from);
+  if (filters.to) q = q.lte('session_date', filters.to);
+
+  const from = (page - 1) * SESSIONS_PAGE_SIZE;
+  const to = from + SESSIONS_PAGE_SIZE - 1;
+  q = q.order('session_date', { ascending: false, nullsFirst: false }).range(from, to);
+
+  const { data, count } = await q;
+
+  const sessions: SessionListRow[] = (data ?? []).map((s) => {
+    const team = s.team as { name: string } | null;
+    return {
+      id: s.id as string,
+      title: (s.title as string | null) ?? null,
+      session_date: (s.session_date as string | null) ?? null,
+      team_name: team?.name ?? null,
+      total_minutes: (s.total_minutes as number | null) ?? null,
+    };
+  });
+
+  return { sessions, total: count ?? 0 };
+}
+
+// ── Vista semana / microciclo (12.3) ─────────────────────────────────────────
+export type SessionWeekRow = {
+  id: string;
+  title: string | null;
+  session_date: string;
+  total_minutes: number | null;
+};
+
+/**
+ * Sesiones de UN equipo en la semana [mondayIso, mondayIso+7). RLS = gate. Para la
+ * vista microciclo (read-only): la page agrupa por día con weekDaysIso.
+ */
+export async function loadSessionsWeek(
+  clubId: string,
+  teamId: string,
+  mondayIso: string
+): Promise<SessionWeekRow[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const endIso = addDaysIso(mondayIso, 7); // exclusivo
+
+  const { data } = await supabase
+    .from('sessions')
+    .select('id, title, session_date, total_minutes')
+    .eq('club_id', clubId)
+    .eq('is_template', false)
+    .eq('team_id', teamId)
+    .gte('session_date', mondayIso)
+    .lt('session_date', endIso)
+    .order('session_date', { ascending: true });
+
+  return (data ?? [])
+    .filter((s) => s.session_date != null)
+    .map((s) => ({
+      id: s.id as string,
+      title: (s.title as string | null) ?? null,
+      session_date: s.session_date as string,
+      total_minutes: (s.total_minutes as number | null) ?? null,
+    }));
 }
 
 // ── Sesión para editar (cabecera + bloques + tareas) ─────────────────────────
