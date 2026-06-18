@@ -8,6 +8,10 @@ import {
   isSessionVisibility,
   canRecommend,
   isRecommendedExercise,
+  isIsoDate,
+  addDaysIso,
+  mondayOfWeek,
+  weekDaysIso,
 } from '../sessions';
 import {
   sessionHeaderSchema,
@@ -309,6 +313,36 @@ describe('F12.2b — isRecommendedExercise / canRecommend', () => {
     expect(
       isRecommendedExercise(rondo, { category: null, tactical: ['repliegue'], technical: [] })
     ).toBe(false);
+  });
+});
+
+describe('F12.3 — helpers de semana', () => {
+  it('isIsoDate valida YYYY-MM-DD', () => {
+    expect(isIsoDate('2026-06-18')).toBe(true);
+    expect(isIsoDate('2026-13-01')).toBe(false);
+    expect(isIsoDate('18/06/2026')).toBe(false);
+    expect(isIsoDate('2026-02-30')).toBe(false);
+  });
+
+  it('addDaysIso suma/resta días cruzando meses y años', () => {
+    expect(addDaysIso('2026-06-18', 1)).toBe('2026-06-19');
+    expect(addDaysIso('2026-06-30', 1)).toBe('2026-07-01');
+    expect(addDaysIso('2026-01-01', -1)).toBe('2025-12-31');
+    expect(addDaysIso('2026-06-18', 7)).toBe('2026-06-25');
+  });
+
+  it('mondayOfWeek devuelve el lunes (jueves 2026-06-18 → lunes 2026-06-15)', () => {
+    expect(mondayOfWeek('2026-06-18')).toBe('2026-06-15'); // jueves
+    expect(mondayOfWeek('2026-06-15')).toBe('2026-06-15'); // lunes
+    expect(mondayOfWeek('2026-06-21')).toBe('2026-06-15'); // domingo
+    expect(mondayOfWeek('2026-06-22')).toBe('2026-06-22'); // lunes siguiente
+  });
+
+  it('weekDaysIso da 7 días consecutivos desde el lunes', () => {
+    const days = weekDaysIso('2026-06-15');
+    expect(days).toHaveLength(7);
+    expect(days[0]).toBe('2026-06-15');
+    expect(days[6]).toBe('2026-06-21');
   });
 });
 

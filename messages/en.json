@@ -2977,7 +2977,6 @@
     "edit_title": "Edit session",
     "back": "Back to sessions",
     "forbidden": "You don't have permission to create or edit sessions.",
-    "list_coming_soon": "The session list is coming soon. Create a new session to get started.",
     "sections": {
       "header": "Header",
       "objectives": "Objectives",
@@ -3039,6 +3038,33 @@
       "empty": "No matching exercises.",
       "show_all": "Show all",
       "show_recommended": "Show recommended"
+    },
+    "tabs": {
+      "list": "List",
+      "week": "Week"
+    },
+    "list": {
+      "search_placeholder": "Search by title…",
+      "search_label": "Search sessions",
+      "search_clear": "Clear search",
+      "team_all": "All teams",
+      "date_from": "From",
+      "date_to": "To",
+      "clear": "Clear filters",
+      "empty": "No sessions yet. Create the first one.",
+      "empty_filtered": "No sessions match those filters.",
+      "untitled": "Untitled session",
+      "minutes": "{count} min",
+      "page_of": "Page {current} of {total}",
+      "prev": "Previous",
+      "next": "Next"
+    },
+    "week": {
+      "no_team": "No teams in the active season.",
+      "prev": "Previous week",
+      "next": "Next week",
+      "untitled": "Session",
+      "minutes": "{count} min"
     }
   }
 }

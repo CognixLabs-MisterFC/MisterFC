@@ -104,6 +104,37 @@ export function isRecommendedExercise(
   return true;
 }
 
+// ── Semana / microciclo (12.3) ───────────────────────────────────────────────
+// Fechas como string YYYY-MM-DD; cálculo en UTC para evitar desfases de zona.
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** ¿Es una fecha YYYY-MM-DD válida? */
+export function isIsoDate(s: string): boolean {
+  if (!DATE_RE.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}
+
+/** Suma `n` días a una fecha YYYY-MM-DD (n puede ser negativo). */
+export function addDaysIso(dateIso: string, n: number): string {
+  const d = new Date(`${dateIso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Lunes (inicio de semana) de la semana que contiene `dateIso`. */
+export function mondayOfWeek(dateIso: string): string {
+  const d = new Date(`${dateIso}T00:00:00Z`);
+  const dow = d.getUTCDay(); // 0=domingo … 6=sábado
+  const diff = dow === 0 ? -6 : 1 - dow;
+  return addDaysIso(dateIso, diff);
+}
+
+/** Los 7 días (lunes→domingo) de la semana que empieza en `mondayIso`. */
+export function weekDaysIso(mondayIso: string): string[] {
+  return Array.from({ length: 7 }, (_, i) => addDaysIso(mondayIso, i));
+}
+
 // ── Type guards ───────────────────────────────────────────────────────────────
 export function isSessionBlockType(v: string): v is SessionBlockType {
   return (SESSION_BLOCK_TYPES as readonly string[]).includes(v);

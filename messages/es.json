@@ -2976,7 +2976,6 @@
     "edit_title": "Editar sesión",
     "back": "Volver a sesiones",
     "forbidden": "No tienes permiso para crear o editar sesiones.",
-    "list_coming_soon": "El listado de sesiones llegará pronto. Crea una nueva sesión para empezar.",
     "sections": {
       "header": "Cabecera",
       "objectives": "Objetivos",
@@ -3038,6 +3037,33 @@
       "empty": "No hay ejercicios que coincidan.",
       "show_all": "Ver todos",
       "show_recommended": "Ver recomendados"
+    },
+    "tabs": {
+      "list": "Listado",
+      "week": "Semana"
+    },
+    "list": {
+      "search_placeholder": "Buscar por título…",
+      "search_label": "Buscar sesiones",
+      "search_clear": "Limpiar búsqueda",
+      "team_all": "Todos los equipos",
+      "date_from": "Desde",
+      "date_to": "Hasta",
+      "clear": "Quitar filtros",
+      "empty": "Aún no hay sesiones. Crea la primera.",
+      "empty_filtered": "No hay sesiones con esos filtros.",
+      "untitled": "Sesión sin título",
+      "minutes": "{count} min",
+      "page_of": "Página {current} de {total}",
+      "prev": "Anterior",
+      "next": "Siguiente"
+    },
+    "week": {
+      "no_team": "No hay equipos en la temporada activa.",
+      "prev": "Semana anterior",
+      "next": "Semana siguiente",
+      "untitled": "Sesión",
+      "minutes": "{count} min"
     }
   }
 }
