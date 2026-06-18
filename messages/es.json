@@ -3039,7 +3039,9 @@
       "category": "Categoría",
       "tactical": "Objetivos tácticos",
       "technical": "Objetivos técnicos",
-      "empty": "No hay ejercicios que coincidan."
+      "empty": "No hay ejercicios que coincidan.",
+      "recommended": "Recomendados",
+      "show_all": "Ver todos"
     }
   }
 }

@@ -220,6 +220,14 @@ export const reorderTasksSchema = z.object({
 });
 export type ReorderTasksInput = z.infer<typeof reorderTasksSchema>;
 
+/** Mover una tarea a otro bloque (misma sesión) + orden final del destino. */
+export const moveTaskSchema = z.object({
+  task_id: z.string().uuid({ message: 'task_id_invalid' }),
+  to_block_id: z.string().uuid({ message: 'block_id_invalid' }),
+  dest_ids: uuidArray,
+});
+export type MoveTaskInput = z.infer<typeof moveTaskSchema>;
+
 /**
  * Suma de los minutos del día de un conjunto de tareas (cabecera = total
  * derivado). Ignora los `null`. Devuelve `null` si no hay ningún minuto (para

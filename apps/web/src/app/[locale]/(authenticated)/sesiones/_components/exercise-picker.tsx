@@ -48,13 +48,24 @@ export function ExercisePicker({
 
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
+  // Filtros VISIBLES por defecto: el picker abre ya filtrado a los RECOMENDADOS por
+  // la sesión (categoría del equipo + objetivos — D8), ajustables o ampliables.
+  const [showFilters, setShowFilters] = useState(true);
   const [cats, setCats] = useState<string[]>(defaultCategory ? [defaultCategory] : []);
   const [tactical, setTactical] = useState<string[]>(defaultTactical);
   const [technical, setTechnical] = useState<string[]>(defaultTechnical);
 
+  const anyFilterActive = cats.length + tactical.length + technical.length > 0;
+
   function toggle(list: string[], setList: (v: string[]) => void, value: string) {
     setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+  }
+
+  function clearFilters() {
+    setCats([]);
+    setTactical([]);
+    setTechnical([]);
+    setShowFilters(true);
   }
 
   const filtered = useMemo(() => {
@@ -94,14 +105,25 @@ export function ExercisePicker({
             />
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowFilters((v) => !v)}
-            className="inline-flex items-center gap-1 self-start text-xs text-muted-foreground hover:text-foreground"
-          >
-            <SlidersHorizontal className="size-3.5" aria-hidden />
-            {t('filters')}
-          </button>
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <SlidersHorizontal className="size-3.5" aria-hidden />
+              {anyFilterActive ? t('recommended') : t('filters')}
+            </button>
+            {anyFilterActive ? (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                {t('show_all')}
+              </button>
+            ) : null}
+          </div>
 
           {showFilters ? (
             <div className="flex max-h-48 flex-col gap-3 overflow-y-auto rounded-md border p-2">
@@ -131,7 +153,18 @@ export function ExercisePicker({
 
           <div className="max-h-64 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="px-1 py-4 text-center text-xs text-muted-foreground">{t('empty')}</p>
+              <div className="flex flex-col items-center gap-2 px-1 py-4 text-center">
+                <p className="text-xs text-muted-foreground">{t('empty')}</p>
+                {anyFilterActive ? (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    {t('show_all')}
+                  </button>
+                ) : null}
+              </div>
             ) : (
               <ul className="flex flex-col">
                 {filtered.map((e) => (

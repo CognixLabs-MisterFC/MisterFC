@@ -1,15 +1,15 @@
 'use client';
 
 /**
- * F12.2b — Editor de BLOQUES de la sesión: añadir ejercicios (picker filtrado),
- * editar los overrides del día (duración/series/notas) inline, quitar tareas y
- * REORDENAR bloques y tareas con dnd-kit (ratón + táctil + teclado). El
- * total_minutes de la cabecera = suma de los duration_min (derivado; aquí se
- * muestra en vivo con sumTaskMinutes y el trigger lo persiste).
+ * F12.2b — Editor de BLOQUES: añadir ejercicios (picker filtrado), editar overrides
+ * del día inline, quitar tareas y REORDENAR bloques, reordenar tareas dentro de un
+ * bloque y MOVER tareas ENTRE bloques con dnd-kit (un único DndContext
+ * multi-contenedor; ratón + táctil + teclado). total_minutes = suma de duration_min
+ * (derivado; aquí en vivo con sumTaskMinutes, el trigger lo persiste).
  *
  * Estado local de `blocks` como fuente durante la edición: las mutaciones llaman a
- * las server actions (RLS = gate) y actualizan el estado; el reorden es optimista
- * y persiste en segundo plano (revierte con refresh si falla).
+ * las server actions (RLS = gate) y actualizan el estado; el drag es optimista y
+ * persiste en segundo plano (revierte con refresh si falla).
  */
 
 import { useState, useTransition } from 'react';
@@ -19,7 +19,7 @@ import {
   DndContext,
   KeyboardSensor,
   PointerSensor,
-  closestCenter,
+  closestCorners,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -45,6 +45,7 @@ import {
   removeBlockTask,
   reorderBlocks,
   reorderTasks,
+  moveTask,
 } from '../actions';
 import type {
   SessionForEdit,
@@ -52,13 +53,6 @@ import type {
   SessionTaskForEdit,
   PickableExercise,
 } from '../queries';
-
-function useDragSensors() {
-  return useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-}
 
 // ── Fila de tarea (override del día editable + drag handle + quitar) ──────────
 function TaskRow({
@@ -143,6 +137,8 @@ function TaskRow({
 }
 
 // ── Bloque sortable (cabecera con handle + tareas sortables + picker) ─────────
+// El DndContext es ÚNICO (vive en BlocksEditor): aquí solo se declara el
+// SortableContext de las tareas del bloque y el bloque como item sortable/droppable.
 function SortableBlock({
   block,
   blockLabel,
@@ -153,7 +149,6 @@ function SortableBlock({
   onAddTask,
   onUpdateTask,
   onRemoveTask,
-  onReorderTasks,
   pending,
 }: {
   block: SessionBlockForEdit;
@@ -165,24 +160,12 @@ function SortableBlock({
   onAddTask: (blockId: string, exerciseId: string, name: string) => void;
   onUpdateTask: (blockId: string, taskId: string, patch: { duration_min: string; series: string; notes: string }) => void;
   onRemoveTask: (blockId: string, taskId: string) => void;
-  onReorderTasks: (blockId: string, orderedTaskIds: string[]) => void;
   pending: boolean;
 }) {
   const t = useTranslations('sesiones.blocks');
-  const sensors = useDragSensors();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: block.id,
   });
-
-  function onTaskDragEnd(e: DragEndEvent) {
-    const { active, over } = e;
-    if (!over || active.id === over.id) return;
-    const ids = block.tasks.map((x) => x.id);
-    const from = ids.indexOf(active.id as string);
-    const to = ids.indexOf(over.id as string);
-    if (from < 0 || to < 0) return;
-    onReorderTasks(block.id, arrayMove(ids, from, to));
-  }
 
   return (
     <div
@@ -205,24 +188,24 @@ function SortableBlock({
       </div>
 
       <div className="mt-2 flex flex-col gap-2">
-        {block.tasks.length === 0 ? (
-          <p className="text-xs text-muted-foreground">{t('empty')}</p>
-        ) : (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onTaskDragEnd}>
-            <SortableContext items={block.tasks.map((x) => x.id)} strategy={verticalListSortingStrategy}>
-              <ul className="flex flex-col gap-1.5">
-                {block.tasks.map((task) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    onUpdate={(id, patch) => onUpdateTask(block.id, id, patch)}
-                    onRemove={(id) => onRemoveTask(block.id, id)}
-                  />
-                ))}
-              </ul>
-            </SortableContext>
-          </DndContext>
-        )}
+        <SortableContext items={block.tasks.map((x) => x.id)} strategy={verticalListSortingStrategy}>
+          {block.tasks.length === 0 ? (
+            <p className="rounded-md border border-dashed py-3 text-center text-xs text-muted-foreground">
+              {t('empty')}
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-1.5">
+              {block.tasks.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onUpdate={(id, patch) => onUpdateTask(block.id, id, patch)}
+                  onRemove={(id) => onRemoveTask(block.id, id)}
+                />
+              ))}
+            </ul>
+          )}
+        </SortableContext>
 
         <div>
           <ExercisePicker
@@ -239,7 +222,7 @@ function SortableBlock({
   );
 }
 
-// ── Editor de bloques (orquesta estado + mutaciones + reorden de bloques) ─────
+// ── Editor de bloques (estado + mutaciones + dnd multi-contenedor) ────────────
 export function BlocksEditor({
   session,
   pickable,
@@ -250,7 +233,10 @@ export function BlocksEditor({
   const t = useTranslations('sesiones');
   const tBlocks = useTranslations('sesiones.block_types');
   const router = useRouter();
-  const sensors = useDragSensors();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
   const [blocks, setBlocks] = useState<SessionBlockForEdit[]>(session.blocks);
   const [pending, startTransition] = useTransition();
 
@@ -261,31 +247,82 @@ export function BlocksEditor({
     router.refresh();
   }
 
-  function onBlockDragEnd(e: DragEndEvent) {
-    const { active, over } = e;
-    if (!over || active.id === over.id) return;
-    const ids = blocks.map((b) => b.id);
-    const from = ids.indexOf(active.id as string);
-    const to = ids.indexOf(over.id as string);
-    if (from < 0 || to < 0) return;
-    const next = arrayMove(blocks, from, to);
-    setBlocks(next);
-    startTransition(async () => {
-      const res = await reorderBlocks({ session_id: session.id, block_ids: next.map((b) => b.id) });
-      if (res.error) fail(res.error);
-    });
-  }
+  const isBlockId = (id: string) => blocks.some((b) => b.id === id);
+  const blockOfTask = (taskId: string) => blocks.find((b) => b.tasks.some((x) => x.id === taskId));
 
-  function onReorderTasks(blockId: string, orderedTaskIds: string[]) {
+  function onDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // ── Reordenar BLOQUES ──
+    if (isBlockId(activeId)) {
+      if (activeId === overId || !isBlockId(overId)) return;
+      const ids = blocks.map((b) => b.id);
+      const from = ids.indexOf(activeId);
+      const to = ids.indexOf(overId);
+      if (from < 0 || to < 0) return;
+      const next = arrayMove(blocks, from, to);
+      setBlocks(next);
+      startTransition(async () => {
+        const res = await reorderBlocks({ session_id: session.id, block_ids: next.map((b) => b.id) });
+        if (res.error) fail(res.error);
+      });
+      return;
+    }
+
+    // ── Tareas ──
+    const fromBlock = blockOfTask(activeId);
+    if (!fromBlock) return;
+    const toBlockId = isBlockId(overId) ? overId : blockOfTask(overId)?.id;
+    if (!toBlockId) return;
+    const toBlock = blocks.find((b) => b.id === toBlockId)!;
+
+    if (fromBlock.id === toBlockId) {
+      // Reordenar dentro del bloque.
+      if (activeId === overId) return;
+      const ids = fromBlock.tasks.map((x) => x.id);
+      const from = ids.indexOf(activeId);
+      const to = isBlockId(overId) ? ids.length - 1 : ids.indexOf(overId);
+      if (from < 0 || to < 0 || from === to) return;
+      const newIds = arrayMove(ids, from, to);
+      setBlocks((prev) =>
+        prev.map((b) =>
+          b.id !== fromBlock.id ? b : { ...b, tasks: newIds.map((id) => b.tasks.find((x) => x.id === id)!) }
+        )
+      );
+      startTransition(async () => {
+        const res = await reorderTasks({ block_id: fromBlock.id, task_ids: newIds });
+        if (res.error) fail(res.error);
+      });
+      return;
+    }
+
+    // Mover entre bloques.
+    const moving = fromBlock.tasks.find((x) => x.id === activeId)!;
+    let insertIdx = toBlock.tasks.length;
+    if (!isBlockId(overId)) {
+      const oi = toBlock.tasks.findIndex((x) => x.id === overId);
+      if (oi >= 0) insertIdx = oi;
+    }
+    const newToTasks = [...toBlock.tasks];
+    newToTasks.splice(insertIdx, 0, moving);
     setBlocks((prev) =>
       prev.map((b) =>
-        b.id !== blockId
-          ? b
-          : { ...b, tasks: orderedTaskIds.map((id) => b.tasks.find((x) => x.id === id)!).filter(Boolean) }
+        b.id === fromBlock.id
+          ? { ...b, tasks: b.tasks.filter((x) => x.id !== activeId) }
+          : b.id === toBlockId
+            ? { ...b, tasks: newToTasks }
+            : b
       )
     );
     startTransition(async () => {
-      const res = await reorderTasks({ block_id: blockId, task_ids: orderedTaskIds });
+      const res = await moveTask({
+        task_id: activeId,
+        to_block_id: toBlockId,
+        dest_ids: newToTasks.map((x) => x.id),
+      });
       if (res.error) fail(res.error);
     });
   }
@@ -377,7 +414,7 @@ export function BlocksEditor({
         </span>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onBlockDragEnd}>
+        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
           <SortableContext items={blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
             {blocks.map((block) => (
               <SortableBlock
@@ -391,7 +428,6 @@ export function BlocksEditor({
                 onAddTask={onAddTask}
                 onUpdateTask={onUpdateTask}
                 onRemoveTask={onRemoveTask}
-                onReorderTasks={onReorderTasks}
                 pending={pending}
               />
             ))}

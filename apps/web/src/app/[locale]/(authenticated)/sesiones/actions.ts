@@ -11,6 +11,7 @@ import {
   blockTaskIdSchema,
   reorderBlocksSchema,
   reorderTasksSchema,
+  moveTaskSchema,
   buildDefaultSkeleton,
   createSupabaseServerClient,
 } from '@misterfc/core';
@@ -272,4 +273,25 @@ export async function reorderTasks(input: unknown): Promise<SessionActionState> 
 
   revalidateSessions();
   return { success: true, id: parsed.data.block_id };
+}
+
+/** Mueve una tarea a otro bloque de la misma sesión (RPC: cambia block_id +
+ *  reindexa el destino en una sentencia). */
+export async function moveTask(input: unknown): Promise<SessionActionState> {
+  const parsed = moveTaskSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase.rpc('move_session_task', {
+    p_task_id: parsed.data.task_id,
+    p_to_block_id: parsed.data.to_block_id,
+    p_dest_ids: parsed.data.dest_ids,
+  });
+
+  if (error) return { error: mapPgErr(error.code) };
+
+  revalidateSessions();
+  return { success: true, id: parsed.data.task_id };
 }

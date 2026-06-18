@@ -20,6 +20,7 @@ import {
   toTaskOverrideColumns,
   reorderBlocksSchema,
   reorderTasksSchema,
+  moveTaskSchema,
   sumTaskMinutes,
 } from '../session-form';
 
@@ -250,6 +251,12 @@ describe('F12.2b — reorder schemas', () => {
   it('reorderTasksSchema exige block_id + lista no vacía de uuids', () => {
     expect(reorderTasksSchema.safeParse({ block_id: a, task_ids: [a] }).success).toBe(true);
     expect(reorderTasksSchema.safeParse({ block_id: a, task_ids: [] }).success).toBe(false);
+  });
+
+  it('moveTaskSchema exige task_id + to_block_id + dest_ids no vacío', () => {
+    expect(moveTaskSchema.safeParse({ task_id: a, to_block_id: b, dest_ids: [a] }).success).toBe(true);
+    expect(moveTaskSchema.safeParse({ task_id: a, to_block_id: b, dest_ids: [] }).success).toBe(false);
+    expect(moveTaskSchema.safeParse({ task_id: 'x', to_block_id: b, dest_ids: [a] }).success).toBe(false);
   });
 });
 

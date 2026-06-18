@@ -3040,7 +3040,9 @@
       "category": "Category",
       "tactical": "Tactical objectives",
       "technical": "Technical objectives",
-      "empty": "No matching exercises."
+      "empty": "No matching exercises.",
+      "recommended": "Recommended",
+      "show_all": "Show all"
     }
   }
 }

@@ -2583,6 +2583,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      move_session_task: {
+        Args: { p_dest_ids: string[]; p_task_id: string; p_to_block_id: string }
+        Returns: undefined
+      }
       open_next_season: { Args: { p_club_id: string }; Returns: string }
       place_players_in_upcoming: {
         Args: {

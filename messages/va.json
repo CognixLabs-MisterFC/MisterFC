@@ -3040,7 +3040,9 @@
       "category": "Categoria",
       "tactical": "Objectius tàctics",
       "technical": "Objectius tècnics",
-      "empty": "No hi ha exercicis que coincidisquen."
+      "empty": "No hi ha exercicis que coincidisquen.",
+      "recommended": "Recomanats",
+      "show_all": "Veure tots"
     }
   }
 }

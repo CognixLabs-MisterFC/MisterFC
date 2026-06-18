@@ -29,6 +29,7 @@ export {
   blockTaskIdSchema,
   reorderBlocksSchema,
   reorderTasksSchema,
+  moveTaskSchema,
   sumTaskMinutes,
   type SessionHeaderInput,
   type SessionTaskInput,
@@ -42,4 +43,5 @@ export {
   type BlockTaskIdInput,
   type ReorderBlocksInput,
   type ReorderTasksInput,
+  type MoveTaskInput,
 } from './session-form';
