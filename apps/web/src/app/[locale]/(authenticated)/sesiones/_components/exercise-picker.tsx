@@ -1,25 +1,19 @@
 'use client';
 
 /**
- * F12.2b — Picker de ejercicios para añadir a un bloque. Reúsa el patrón del picker
- * de la pizarra (11B.1: Popover + buscador) + los filtros de la biblioteca (11.3:
- * categoría + objetivos). Pre-filtra por la CATEGORÍA del equipo de la sesión y los
- * OBJETIVOS de la cabecera (D8), ajustables por el entrenador. Filtra en cliente
- * (el set por club es modesto). Al elegir → onPick(id, name).
+ * F12.2b — Picker de ejercicios para añadir a un bloque. La RECOMENDACIÓN es
+ * implícita: la sesión ya tiene categoría (del equipo) + objetivos táctico/técnico,
+ * así que al abrir muestra DIRECTAMENTE los ejercicios que encajan (sin controles de
+ * filtro que aplicar). Solo un buscador por nombre + un "Ver todos" discreto por si
+ * alguna vez se quiere uno que no encaje. Filtra en cliente (set por club modesto).
  */
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, Search, SlidersHorizontal } from 'lucide-react';
-import {
-  CATEGORY_KINDS,
-  TACTICAL_OBJECTIVES,
-  TECHNICAL_OBJECTIVES,
-} from '@misterfc/core';
+import { Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ChipGroup } from '@/components/ui/chip-group';
 import type { PickableExercise } from '../queries';
 
 function overlaps(a: string[], b: string[]): boolean {
@@ -42,30 +36,20 @@ export function ExercisePicker({
   disabled?: boolean;
 }) {
   const t = useTranslations('sesiones.picker');
-  const tCategory = useTranslations('category_kinds');
-  const tTactical = useTranslations('ejercicios.tactical');
-  const tTechnical = useTranslations('ejercicios.technical');
-
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
-  // Filtros VISIBLES por defecto: el picker abre ya filtrado a los RECOMENDADOS por
-  // la sesión (categoría del equipo + objetivos — D8), ajustables o ampliables.
-  const [showFilters, setShowFilters] = useState(true);
-  const [cats, setCats] = useState<string[]>(defaultCategory ? [defaultCategory] : []);
-  const [tactical, setTactical] = useState<string[]>(defaultTactical);
-  const [technical, setTechnical] = useState<string[]>(defaultTechnical);
+  const [showAll, setShowAll] = useState(false);
 
-  const anyFilterActive = cats.length + tactical.length + technical.length > 0;
+  // ¿Hay criterio de recomendación? (si la sesión no tiene objetivos ni categoría,
+  // "recomendados" = todos y el toggle no aporta nada).
+  const hasCriteria =
+    !!defaultCategory || defaultTactical.length > 0 || defaultTechnical.length > 0;
 
-  function toggle(list: string[], setList: (v: string[]) => void, value: string) {
-    setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
-  }
-
-  function clearFilters() {
-    setCats([]);
-    setTactical([]);
-    setTechnical([]);
-    setShowFilters(true);
+  function isRecommended(e: PickableExercise): boolean {
+    if (defaultCategory && !e.categories.includes(defaultCategory)) return false;
+    if (defaultTactical.length > 0 && !overlaps(defaultTactical, e.tactical_objectives)) return false;
+    if (defaultTechnical.length > 0 && !overlaps(defaultTechnical, e.technical_objectives)) return false;
+    return true;
   }
 
   const filtered = useMemo(() => {
@@ -73,13 +57,12 @@ export function ExercisePicker({
     return exercises
       .filter((e) => {
         if (needle && !e.name.toLowerCase().includes(needle)) return false;
-        if (cats.length > 0 && !overlaps(cats, e.categories)) return false;
-        if (tactical.length > 0 && !overlaps(tactical, e.tactical_objectives)) return false;
-        if (technical.length > 0 && !overlaps(technical, e.technical_objectives)) return false;
+        if (!showAll && hasCriteria && !isRecommended(e)) return false;
         return true;
       })
       .slice(0, 50);
-  }, [exercises, q, cats, tactical, technical]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exercises, q, showAll, hasCriteria, defaultCategory, defaultTactical, defaultTechnical]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -105,60 +88,14 @@ export function ExercisePicker({
             />
           </div>
 
-          <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setShowFilters((v) => !v)}
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <SlidersHorizontal className="size-3.5" aria-hidden />
-              {anyFilterActive ? t('recommended') : t('filters')}
-            </button>
-            {anyFilterActive ? (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                {t('show_all')}
-              </button>
-            ) : null}
-          </div>
-
-          {showFilters ? (
-            <div className="flex max-h-48 flex-col gap-3 overflow-y-auto rounded-md border p-2">
-              <ChipGroup
-                label={t('category')}
-                options={CATEGORY_KINDS}
-                selected={cats}
-                onToggle={(v) => toggle(cats, setCats, v)}
-                labelFor={(v) => tCategory(v)}
-              />
-              <ChipGroup
-                label={t('tactical')}
-                options={TACTICAL_OBJECTIVES}
-                selected={tactical}
-                onToggle={(v) => toggle(tactical, setTactical, v)}
-                labelFor={(v) => tTactical(v)}
-              />
-              <ChipGroup
-                label={t('technical')}
-                options={TECHNICAL_OBJECTIVES}
-                selected={technical}
-                onToggle={(v) => toggle(technical, setTechnical, v)}
-                labelFor={(v) => tTechnical(v)}
-              />
-            </div>
-          ) : null}
-
           <div className="max-h-64 overflow-y-auto">
             {filtered.length === 0 ? (
               <div className="flex flex-col items-center gap-2 px-1 py-4 text-center">
                 <p className="text-xs text-muted-foreground">{t('empty')}</p>
-                {anyFilterActive ? (
+                {!showAll && hasCriteria ? (
                   <button
                     type="button"
-                    onClick={clearFilters}
+                    onClick={() => setShowAll(true)}
                     className="text-xs font-medium text-primary hover:underline"
                   >
                     {t('show_all')}
@@ -184,6 +121,17 @@ export function ExercisePicker({
               </ul>
             )}
           </div>
+
+          {/* "Ver todos" discreto: solo tiene sentido si hay recomendación activa. */}
+          {hasCriteria ? (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="self-center text-xs text-muted-foreground hover:text-foreground hover:underline"
+            >
+              {showAll ? t('show_recommended') : t('show_all')}
+            </button>
+          ) : null}
         </div>
       </PopoverContent>
     </Popover>

@@ -3036,13 +3036,9 @@
     "picker": {
       "add": "Add exercise",
       "search": "Search exercise…",
-      "filters": "Filters",
-      "category": "Category",
-      "tactical": "Tactical objectives",
-      "technical": "Technical objectives",
       "empty": "No matching exercises.",
-      "recommended": "Recommended",
-      "show_all": "Show all"
+      "show_all": "Show all",
+      "show_recommended": "Show recommended"
     }
   }
 }

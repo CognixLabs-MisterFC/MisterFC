@@ -3036,13 +3036,9 @@
     "picker": {
       "add": "Afegir exercici",
       "search": "Cerca exercici…",
-      "filters": "Filtres",
-      "category": "Categoria",
-      "tactical": "Objectius tàctics",
-      "technical": "Objectius tècnics",
       "empty": "No hi ha exercicis que coincidisquen.",
-      "recommended": "Recomanats",
-      "show_all": "Veure tots"
+      "show_all": "Veure tots",
+      "show_recommended": "Veure recomanats"
     }
   }
 }
