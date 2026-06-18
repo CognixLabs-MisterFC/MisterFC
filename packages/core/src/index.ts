@@ -12,3 +12,4 @@ export * from './diagram/index';
 export * from './exercises/index';
 export * from './attendance/index';
 export * from './player-profile/index';
+export * from './sessions/index';
