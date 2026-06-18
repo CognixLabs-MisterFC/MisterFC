@@ -2042,7 +2042,8 @@
       "tactical": "Tactical objectives",
       "technical": "Technical objectives",
       "physical": "Physical objective",
-      "no_exercises": "No exercises."
+      "no_exercises": "No exercises.",
+      "exercise_fallback": "Exercise"
     }
   },
   "alineacion": {

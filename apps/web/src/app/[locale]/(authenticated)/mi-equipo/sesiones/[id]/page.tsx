@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { loadSessionForEdit } from '../../../sesiones/queries';
+import { loadSessionForEdit, loadSessionExerciseMeta } from '../../../sesiones/queries';
 
 type Props = { params: Promise<{ locale: string; id: string }> };
 
@@ -32,6 +32,11 @@ export default async function MiEquipoSesionPage({ params }: Props) {
   // Defensa en profundidad: aunque la RLS ya filtra, una sesión no publicada
   // (borrador) nunca debe abrirse desde la vista del jugador/familia.
   if (!session || session.visibility !== 'team' || session.is_template) notFound();
+
+  // El jugador/familia no puede leer `exercises` (RLS staff) → el nombre del
+  // ejercicio no se resuelve en loadSessionForEdit. El RPC session_exercise_meta
+  // (12.4) trae nombre + objetivos de forma segura para esta sesión visible.
+  const exMeta = await loadSessionExerciseMeta(id);
 
   const t = await getTranslations('mi_equipo.session');
   const tBlocks = await getTranslations('sesiones.block_types');
@@ -129,21 +134,38 @@ export default async function MiEquipoSesionPage({ params }: Props) {
               <p className="text-muted-foreground">{t('no_exercises')}</p>
             ) : (
               <ul className="flex flex-col divide-y divide-border">
-                {block.tasks.map((task) => (
-                  <li
-                    key={task.id}
-                    className="flex flex-col gap-0.5 py-2 first:pt-0 last:pb-0"
-                  >
-                    <span className="font-medium">{task.exercise_name}</span>
-                    <span className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
-                      {task.duration_min != null && (
-                        <span>{t('minutes', { count: task.duration_min })}</span>
+                {block.tasks.map((task) => {
+                  const meta = exMeta.get(task.exercise_id);
+                  const name = meta?.name || task.exercise_name || t('exercise_fallback');
+                  const objectives = [
+                    ...(meta?.tactical_objectives ?? []).map((o) => tTactical(o)),
+                    ...(meta?.technical_objectives ?? []).map((o) => tTechnical(o)),
+                  ];
+                  return (
+                    <li
+                      key={task.id}
+                      className="flex flex-col gap-1 py-2 first:pt-0 last:pb-0"
+                    >
+                      <span className="font-medium">{name}</span>
+                      {objectives.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {objectives.map((o) => (
+                            <Badge key={o} variant="outline" className="text-[11px]">
+                              {o}
+                            </Badge>
+                          ))}
+                        </div>
                       )}
-                      {task.series && <span>{task.series}</span>}
-                      {task.notes && <span>{task.notes}</span>}
-                    </span>
-                  </li>
-                ))}
+                      <span className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
+                        {task.duration_min != null && (
+                          <span>{t('minutes', { count: task.duration_min })}</span>
+                        )}
+                        {task.series && <span>{task.series}</span>}
+                        {task.notes && <span>{task.notes}</span>}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>

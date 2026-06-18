@@ -2605,6 +2605,15 @@ export type Database = {
         Returns: undefined
       }
       seed_standard_categories: { Args: { p_club_id: string }; Returns: number }
+      session_exercise_meta: {
+        Args: { p_session_id: string }
+        Returns: {
+          exercise_id: string
+          name: string
+          tactical_objectives: string[]
+          technical_objectives: string[]
+        }[]
+      }
       set_player_left_club: {
         Args: {
           p_club_id: string

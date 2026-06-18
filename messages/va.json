@@ -2042,7 +2042,8 @@
       "tactical": "Objectius tàctics",
       "technical": "Objectius tècnics",
       "physical": "Objectiu físic",
-      "no_exercises": "Sense exercicis."
+      "no_exercises": "Sense exercicis.",
+      "exercise_fallback": "Exercici"
     }
   },
   "alineacion": {

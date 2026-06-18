@@ -333,6 +333,43 @@ export async function loadSessionForEdit(
   };
 }
 
+// ── Meta de ejercicios de una sesión visible (12.4 — vista jugador/familia) ──
+export type SessionExerciseMeta = {
+  exercise_id: string;
+  name: string;
+  tactical_objectives: string[];
+  technical_objectives: string[];
+};
+
+/**
+ * Nombre + objetivos de los ejercicios referenciados por una sesión que el user
+ * PUEDE ver. Vía el RPC SECURITY DEFINER `session_exercise_meta` (12.4): el
+ * jugador/familia no puede leer `exercises` (RLS staff), así que el embed normal no
+ * resuelve el nombre. El RPC expone SOLO nombre/objetivos y solo de los ejercicios
+ * de esa sesión, gateado por user_can_see_session. Devuelve un mapa por exercise_id.
+ */
+export async function loadSessionExerciseMeta(
+  sessionId: string
+): Promise<Map<string, SessionExerciseMeta>> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase.rpc('session_exercise_meta', {
+    p_session_id: sessionId,
+  });
+
+  const map = new Map<string, SessionExerciseMeta>();
+  for (const r of data ?? []) {
+    map.set(r.exercise_id as string, {
+      exercise_id: r.exercise_id as string,
+      name: (r.name as string | null) ?? '',
+      tactical_objectives: (r.tactical_objectives as string[] | null) ?? [],
+      technical_objectives: (r.technical_objectives as string[] | null) ?? [],
+    });
+  }
+  return map;
+}
+
 // ── Ejercicios elegibles para el picker (12.2b) ──────────────────────────────
 export type PickableExercise = {
   id: string;
