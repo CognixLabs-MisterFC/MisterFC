@@ -1317,6 +1317,43 @@
         "red": "Red cards",
         "offsides": "Offsides"
       }
+    },
+    "session": {
+      "title": "Session sheet",
+      "file": "session",
+      "team": "Team",
+      "date": "Date",
+      "name": "Session",
+      "physical": "Physical obj.",
+      "total": "Total time",
+      "mesocycle": "Mesocycle",
+      "microcycle": "Microcycle",
+      "tactical": "Tactical obj.",
+      "technical": "Technical obj.",
+      "empty_block": "No exercises.",
+      "description": "Rules & guidelines",
+      "objective": "Task objective",
+      "coaching_points": "Coaching points",
+      "exercise_objectives": "Exercise objectives",
+      "graphic": "Diagram",
+      "graphic_omitted": "(no diagram)",
+      "players": "Players",
+      "space_label": "Space",
+      "time": "Time",
+      "variants": "Variation",
+      "day_notes": "Notes for the day",
+      "block": {
+        "calentamiento": "Warm-up",
+        "complementaria": "Complementary part",
+        "principal": "Main part",
+        "vuelta_a_la_calma": "Cool-down"
+      },
+      "space_type": {
+        "campo_completo": "Full pitch",
+        "medio_campo": "Half pitch",
+        "cuarto_campo": "Quarter pitch",
+        "reducido": "Small-sided"
+      }
     }
   },
   "badges": {
@@ -3016,7 +3053,8 @@
     },
     "actions": {
       "create": "Create session",
-      "save": "Save changes"
+      "save": "Save changes",
+      "download_pdf": "Download PDF"
     },
     "toast": {
       "created": "Session created",

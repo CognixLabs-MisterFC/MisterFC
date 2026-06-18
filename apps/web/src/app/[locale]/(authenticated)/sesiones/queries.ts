@@ -370,6 +370,167 @@ export async function loadSessionExerciseMeta(
   return map;
 }
 
+// ── Sesión para PDF (12.5 — hoja de sesión, staff) ───────────────────────────
+// El PDF (D6) replica el anexo: cabecera + bloques + tareas con TODOS los campos
+// de la tarea del anexo, que el modelo `exercises` (F11.1) ya cubre (description,
+// objective, coaching_points, variants, players, space_*, base_duration). El staff
+// SÍ puede leer `exercises` (RLS), así que aquí se embebe directo (sin el RPC de
+// 12.4, que es para jugador/familia).
+export type SessionPdfTask = {
+  exercise_name: string;
+  duration_min: number | null;
+  series: string | null;
+  notes: string | null; // override del día
+  description: string | null;
+  objective: string | null;
+  coaching_points: string | null;
+  variants: string | null;
+  players: string | null;
+  space_type: string | null;
+  space_dimensions: string | null;
+  base_duration: number | null;
+  tactical_objectives: string[];
+  technical_objectives: string[];
+};
+
+export type SessionPdfBlock = {
+  block_type: SessionBlockType;
+  title: string | null;
+  notes: string | null;
+  total_minutes: number | null; // suma de las tareas (override o base)
+  tasks: SessionPdfTask[];
+};
+
+export type SessionForPdf = {
+  team_name: string | null;
+  category_name: string | null;
+  season: string | null;
+  session_date: string | null;
+  title: string | null;
+  objective_physical: string | null;
+  tactical_objectives: string[];
+  technical_objectives: string[];
+  total_minutes: number | null;
+  mesocycle: string | null;
+  microcycle: string | null;
+  blocks: SessionPdfBlock[];
+};
+
+export async function loadSessionForPdf(
+  clubId: string,
+  id: string
+): Promise<SessionForPdf | null> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('sessions')
+    .select(
+      `id, session_date, title, objective_physical,
+       tactical_objectives, technical_objectives, mesocycle, microcycle,
+       total_minutes,
+       team:teams ( name, season, category:categories ( name ) ),
+       session_blocks (
+         block_type, title, notes, order_idx,
+         session_block_exercises (
+           order_idx, duration_min, series, notes,
+           exercise:exercises (
+             name, description, objective, coaching_points, variants, players,
+             space_type, space_dimensions, base_duration,
+             tactical_objectives, technical_objectives
+           )
+         )
+       )`
+    )
+    .eq('id', id)
+    .eq('club_id', clubId)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  const team = data.team as
+    | { name: string | null; season: string | null; category: { name: string | null } | null }
+    | null;
+
+  type RawTask = {
+    order_idx: number;
+    duration_min: number | null;
+    series: string | null;
+    notes: string | null;
+    exercise: {
+      name: string | null;
+      description: string | null;
+      objective: string | null;
+      coaching_points: string | null;
+      variants: string | null;
+      players: string | null;
+      space_type: string | null;
+      space_dimensions: string | null;
+      base_duration: number | null;
+      tactical_objectives: string[] | null;
+      technical_objectives: string[] | null;
+    } | null;
+  };
+  type RawBlock = {
+    block_type: string;
+    title: string | null;
+    notes: string | null;
+    order_idx: number;
+    session_block_exercises: RawTask[] | null;
+  };
+
+  const blocks: SessionPdfBlock[] = ((data.session_blocks as RawBlock[] | null) ?? [])
+    .slice()
+    .sort((a, b2) => a.order_idx - b2.order_idx)
+    .map((b) => {
+      const tasks: SessionPdfTask[] = (b.session_block_exercises ?? [])
+        .slice()
+        .sort((a, b2) => a.order_idx - b2.order_idx)
+        .map((tk) => ({
+          exercise_name: tk.exercise?.name ?? '',
+          duration_min: tk.duration_min,
+          series: tk.series,
+          notes: tk.notes,
+          description: tk.exercise?.description ?? null,
+          objective: tk.exercise?.objective ?? null,
+          coaching_points: tk.exercise?.coaching_points ?? null,
+          variants: tk.exercise?.variants ?? null,
+          players: tk.exercise?.players ?? null,
+          space_type: tk.exercise?.space_type ?? null,
+          space_dimensions: tk.exercise?.space_dimensions ?? null,
+          base_duration: tk.exercise?.base_duration ?? null,
+          tactical_objectives: tk.exercise?.tactical_objectives ?? [],
+          technical_objectives: tk.exercise?.technical_objectives ?? [],
+        }));
+      // Tiempo del bloque = suma de la duración del día (o base) de sus tareas.
+      const mins = tasks
+        .map((tk) => tk.duration_min ?? tk.base_duration)
+        .filter((n): n is number => typeof n === 'number');
+      return {
+        block_type: b.block_type as SessionBlockType,
+        title: b.title,
+        notes: b.notes,
+        total_minutes: mins.length > 0 ? mins.reduce((s, n) => s + n, 0) : null,
+        tasks,
+      };
+    });
+
+  return {
+    team_name: team?.name ?? null,
+    category_name: team?.category?.name ?? null,
+    season: team?.season ?? null,
+    session_date: (data.session_date as string | null) ?? null,
+    title: (data.title as string | null) ?? null,
+    objective_physical: (data.objective_physical as string | null) ?? null,
+    tactical_objectives: (data.tactical_objectives as string[] | null) ?? [],
+    technical_objectives: (data.technical_objectives as string[] | null) ?? [],
+    total_minutes: (data.total_minutes as number | null) ?? null,
+    mesocycle: (data.mesocycle as string | null) ?? null,
+    microcycle: (data.microcycle as string | null) ?? null,
+    blocks,
+  };
+}
+
 // ── Ejercicios elegibles para el picker (12.2b) ──────────────────────────────
 export type PickableExercise = {
   id: string;
