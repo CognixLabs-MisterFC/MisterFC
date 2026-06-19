@@ -170,7 +170,11 @@ describe('F11.6 PR2 — statusForUpdate: estado objetivo por estado actual', () 
     expect(statusForUpdate('rejected', 'publish', true)).toBeNull();
   });
 
-  it('published no es editable aquí', () => {
+  it('desde published (12.7a): SOLO el Admin edita en sitio y sigue publicado', () => {
+    expect(statusForUpdate('published', 'publish', true)).toBe('published');
+    // El no-Admin no puede editar un publicado.
+    expect(statusForUpdate('published', 'publish', false)).toBeNull();
+    // El Admin no lo "despublica" con otras acciones (defensa: solo 'publish').
     expect(statusForUpdate('published', 'save_draft', true)).toBeNull();
     expect(statusForUpdate('published', 'propose', true)).toBeNull();
   });

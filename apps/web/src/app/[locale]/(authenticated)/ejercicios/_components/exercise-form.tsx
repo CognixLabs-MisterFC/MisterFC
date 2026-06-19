@@ -127,6 +127,11 @@ export function ExerciseForm({
     if (initial.status === 'proposed') {
       return [{ action: 'propose', label: tForm('actions.save_changes'), primary: true }];
     }
+    if (initial.status === 'published') {
+      // Solo el Admin llega aquí (guard de la page). Editar el canon en sitio: sigue
+      // publicado (statusForUpdate published → 'publish' mantiene 'published').
+      return [{ action: 'publish', label: tForm('actions.save_changes'), primary: true }];
+    }
     if (initial.status === 'rejected') {
       // Corregir un rechazado: guardar como borrador o reproponer (11.7).
       return [

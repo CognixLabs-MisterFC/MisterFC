@@ -160,10 +160,13 @@ export type RejectExerciseInput = z.infer<typeof rejectExerciseSchema>;
 /**
  * Estado objetivo al EDITAR, según el estado ACTUAL (defensa contra fugas del
  * ciclo de aprobación). Desde 'draft' el set completo (save_draft/propose/
- * publish-si-admin). Desde 'proposed' SOLO sigue propuesto ("Guardar cambios").
- * Desde 'rejected' el autor corrige y reprone: como 'draft' pero SIN publicar
- * (publish no aplica; aprobar es la acción del Admin, no la edición). 'published'
- * no es editable aquí. Aprobar/rechazar NO pasan por aquí (acciones dedicadas).
+ * publish-si-admin). Desde 'proposed' SOLO sigue propuesto ("Guardar cambios") —
+ * lo edita el autor o el Admin (que revisa antes de aprobar). Desde 'rejected' el
+ * autor corrige y reprone: como 'draft' pero SIN publicar. Desde 'published' SOLO
+ * el Admin (dueño de la metodología del club) puede editar el canon EN SITIO y
+ * sigue publicado — necesario para mantener la biblioteca ya publicada (p.ej.
+ * etiquetar la fase, 12.7a); un no-Admin no puede (null). Aprobar/rechazar NO
+ * pasan por aquí (acciones dedicadas).
  */
 export function statusForUpdate(
   current: MethodologyStatus,
@@ -173,6 +176,7 @@ export function statusForUpdate(
   if (current === 'draft') return statusForAction(action, isAdmin);
   if (current === 'proposed') return action === 'propose' ? 'proposed' : null;
   if (current === 'rejected') return action === 'publish' ? null : statusForAction(action, false);
+  if (current === 'published') return isAdmin && action === 'publish' ? 'published' : null;
   return null;
 }
 
