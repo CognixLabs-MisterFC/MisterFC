@@ -28,6 +28,9 @@ import {
   reorderBlocksSchema,
   reorderTasksSchema,
   moveTaskSchema,
+  saveAsTemplateSchema,
+  createFromTemplateSchema,
+  sessionIdSchema,
   sumTaskMinutes,
 } from '../session-form';
 
@@ -329,6 +332,38 @@ describe('F12.2b — isRecommendedExercise / canRecommend', () => {
     expect(
       isRecommendedExercise(rondo, { category: null, tactical: ['repliegue'], technical: [] })
     ).toBe(false);
+  });
+});
+
+describe('F12.6 — plantillas: clonado (schemas)', () => {
+  const id = '99999999-9999-4999-8999-999999999999';
+  const team = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+  it('saveAsTemplateSchema exige source_id uuid + título no vacío (≤120)', () => {
+    expect(saveAsTemplateSchema.safeParse({ source_id: id, title: 'Microciclo tipo' }).success).toBe(true);
+    expect(saveAsTemplateSchema.safeParse({ source_id: id, title: '   ' }).success).toBe(false);
+    expect(saveAsTemplateSchema.safeParse({ source_id: id }).success).toBe(false);
+    expect(saveAsTemplateSchema.safeParse({ source_id: 'x', title: 'A' }).success).toBe(false);
+    expect(saveAsTemplateSchema.safeParse({ source_id: id, title: 'a'.repeat(121) }).success).toBe(false);
+  });
+
+  it('saveAsTemplateSchema recorta el título', () => {
+    expect(saveAsTemplateSchema.parse({ source_id: id, title: '  Plan A  ' }).title).toBe('Plan A');
+  });
+
+  it('createFromTemplateSchema exige template_id uuid; equipo/fecha opcionales', () => {
+    expect(createFromTemplateSchema.safeParse({ template_id: id }).success).toBe(true);
+    expect(
+      createFromTemplateSchema.safeParse({ template_id: id, team_id: team, session_date: '2026-09-10' }).success
+    ).toBe(true);
+    expect(createFromTemplateSchema.safeParse({ template_id: id, team_id: null }).success).toBe(true);
+    expect(createFromTemplateSchema.safeParse({ template_id: 'x' }).success).toBe(false);
+    expect(createFromTemplateSchema.safeParse({ template_id: id, session_date: '10/09/2026' }).success).toBe(false);
+  });
+
+  it('sessionIdSchema exige id uuid', () => {
+    expect(sessionIdSchema.safeParse({ id }).success).toBe(true);
+    expect(sessionIdSchema.safeParse({ id: 'nope' }).success).toBe(false);
   });
 });
 

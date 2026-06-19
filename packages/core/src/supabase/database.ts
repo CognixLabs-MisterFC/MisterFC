@@ -2534,6 +2534,16 @@ export type Database = {
           sent_at: string
         }[]
       }
+      clone_session: {
+        Args: {
+          p_is_template: boolean
+          p_session_date?: string
+          p_source_id: string
+          p_team_id?: string
+          p_title?: string
+        }
+        Returns: string
+      }
       club_evaluations_visible: {
         Args: { p_club_id: string }
         Returns: boolean
