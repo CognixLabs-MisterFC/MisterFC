@@ -719,6 +719,7 @@ export type Database = {
           name: string
           objective: string | null
           owner_profile_id: string
+          phases: string[]
           physical_focus: string | null
           players: string | null
           rejection_reason: string | null
@@ -746,6 +747,7 @@ export type Database = {
           name: string
           objective?: string | null
           owner_profile_id: string
+          phases?: string[]
           physical_focus?: string | null
           players?: string | null
           rejection_reason?: string | null
@@ -773,6 +775,7 @@ export type Database = {
           name?: string
           objective?: string | null
           owner_profile_id?: string
+          phases?: string[]
           physical_focus?: string | null
           players?: string | null
           rejection_reason?: string | null
