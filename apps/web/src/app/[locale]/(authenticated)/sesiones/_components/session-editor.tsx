@@ -31,6 +31,7 @@ import { useRouter } from '@/i18n/navigation';
 import { updateSessionHeader } from '../actions';
 import { BlocksEditor } from './blocks-editor';
 import { PublishControl } from './publish-control';
+import { SaveAsTemplateDialog } from './save-as-template-dialog';
 import type { SessionForEdit, ClubTeam, PickableExercise } from '../queries';
 
 const NO_TEAM = '__none__';
@@ -177,7 +178,7 @@ export function SessionEditor({
         </CardContent>
       </Card>
 
-      {/* Guardar cabecera + descargar PDF (12.5, staff) */}
+      {/* Guardar cabecera + guardar como plantilla (12.6) + descargar PDF (12.5) */}
       <div className="flex flex-wrap items-center justify-end gap-2">
         <Button asChild variant="outline" className="gap-2">
           <a href={`/${locale}/sesiones/${session.id}/pdf`}>
@@ -185,17 +186,24 @@ export function SessionEditor({
             {t('actions.download_pdf')}
           </a>
         </Button>
+        {/* Una plantilla no se vuelve a guardar como plantilla. */}
+        {session.is_template ? null : (
+          <SaveAsTemplateDialog sessionId={session.id} defaultName={title} />
+        )}
         <Button onClick={save} disabled={pending}>
           {t('actions.save')}
         </Button>
       </div>
 
-      {/* Publicar al equipo (12.4) — sobre el team_id persistido. */}
-      <PublishControl
-        sessionId={session.id}
-        visibility={session.visibility}
-        hasTeam={session.team_id != null}
-      />
+      {/* Publicar al equipo (12.4) — sobre el team_id persistido. Las plantillas no se
+          publican (solo staff, sin equipo — 12.1). */}
+      {session.is_template ? null : (
+        <PublishControl
+          sessionId={session.id}
+          visibility={session.visibility}
+          hasTeam={session.team_id != null}
+        />
+      )}
 
       {/* Bloques interactivos (picker + overrides + reordenar) */}
       <BlocksEditor session={session} pickable={pickable} />
