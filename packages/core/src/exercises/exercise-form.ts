@@ -33,6 +33,8 @@ import {
   type ExerciseSpaceType,
   type MethodologyStatus,
 } from './exercises';
+// La FASE (12.7a) reúsa el catálogo de tipos de bloque de las sesiones (12.1).
+import { SESSION_BLOCK_TYPES, type SessionBlockType } from '../sessions/sessions';
 
 // ── Acciones de guardado del formulario ──────────────────────────────────────
 export const EXERCISE_FORM_ACTIONS = ['save_draft', 'propose', 'publish'] as const;
@@ -107,6 +109,8 @@ export const exerciseFormSchema = z.object({
   technical_objectives: z
     .array(z.enum(TECHNICAL_OBJECTIVES, { message: 'technical_invalid' }))
     .default([]),
+  // Fase(s) de la sesión para las que sirve (12.7a). Vacío = cualquier fase.
+  phases: z.array(z.enum(SESSION_BLOCK_TYPES, { message: 'phase_invalid' })).default([]),
   physical_focus: optText(2000),
   intensity: z.enum(EXERCISE_INTENSITIES, { message: 'intensity_invalid' }).nullish(),
   space_type: z.enum(EXERCISE_SPACE_TYPES, { message: 'space_type_invalid' }).nullish(),
@@ -184,6 +188,7 @@ export type ExerciseColumns = {
   categories: CategoryKind[];
   tactical_objectives: string[];
   technical_objectives: string[];
+  phases: SessionBlockType[];
   physical_focus: string | null;
   intensity: ExerciseIntensity | null;
   space_type: ExerciseSpaceType | null;
@@ -220,6 +225,7 @@ export function toExerciseColumns(
     categories: data.categories,
     tactical_objectives: data.tactical_objectives,
     technical_objectives: data.technical_objectives,
+    phases: data.phases,
     physical_focus: orNull(data.physical_focus),
     intensity: orNull(data.intensity),
     space_type: orNull(data.space_type),
@@ -252,6 +258,7 @@ export type ExerciseExportContent = {
   categories: string[];
   tactical_objectives: string[];
   technical_objectives: string[];
+  phases: string[];
   physical_focus: string | null;
   intensity: string | null;
   space_type: string | null;
@@ -282,6 +289,9 @@ export function buildExerciseExport(content: ExerciseExportContent): ExerciseExp
     technical_objectives: content.technical_objectives.filter((c) =>
       (TECHNICAL_OBJECTIVES as readonly string[]).includes(c)
     ) as ExerciseFormInput['technical_objectives'],
+    phases: content.phases.filter((c) =>
+      (SESSION_BLOCK_TYPES as readonly string[]).includes(c)
+    ) as ExerciseFormInput['phases'],
     ...(content.physical_focus != null ? { physical_focus: content.physical_focus } : {}),
     ...(content.intensity != null
       ? { intensity: content.intensity as ExerciseIntensity }
