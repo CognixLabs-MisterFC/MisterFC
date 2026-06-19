@@ -11,6 +11,7 @@ export {
   isSessionVisibility,
   canRecommend,
   isRecommendedExercise,
+  sessionDateFromEventStart,
   isIsoDate,
   addDaysIso,
   mondayOfWeek,
@@ -42,6 +43,7 @@ export {
   saveAsTemplateSchema,
   createFromTemplateSchema,
   sessionIdSchema,
+  planSessionForEventSchema,
   sumTaskMinutes,
   type SessionHeaderInput,
   type SessionTaskInput,
@@ -60,4 +62,5 @@ export {
   type SaveAsTemplateInput,
   type CreateFromTemplateInput,
   type SessionIdInput,
+  type PlanSessionForEventInput,
 } from './session-form';

@@ -13,6 +13,9 @@
  * etiqueta visible se localiza vía i18n). Puro: sin DOM, sin BD, sin React.
  */
 
+import { zonedFields } from '../events/tz';
+import { TIMEZONE_OLA1 } from '../events/types';
+
 // ── Tipos de bloque (catálogo FIJO en v1 — D1) ───────────────────────────────
 // Estilo CATEGORY_KINDS: el conjunto cerrado de bloques de una sesión. Añadir/
 // quitar tipos o catálogo configurable por club = backlog (futuro F17).
@@ -155,6 +158,23 @@ export function mondayOfWeek(dateIso: string): string {
 /** Los 7 días (lunes→domingo) de la semana que empieza en `mondayIso`. */
 export function weekDaysIso(mondayIso: string): string[] {
   return Array.from({ length: 7 }, (_, i) => addDaysIso(mondayIso, i));
+}
+
+// ── Link sesión ↔ entrenamiento (12.8a) ──────────────────────────────────────
+/**
+ * Deriva la fecha de la sesión (YYYY-MM-DD) desde el `starts_at` (ISO/timestamptz)
+ * de un evento de entrenamiento, en la zona horaria del club. Así un entrenamiento
+ * a las 23:30 (hora local) cae en su día local correcto, no en el del UTC. Reúsa
+ * `zonedFields` (events/tz). Por defecto Europe/Madrid (TIMEZONE_OLA1, Ola 1).
+ */
+export function sessionDateFromEventStart(
+  startsAtIso: string,
+  timeZone: string = TIMEZONE_OLA1
+): string {
+  const { year, month, day } = zonedFields(new Date(startsAtIso), timeZone);
+  const m = String(month + 1).padStart(2, '0');
+  const d = String(day).padStart(2, '0');
+  return `${year}-${m}-${d}`;
 }
 
 // ── Type guards ───────────────────────────────────────────────────────────────

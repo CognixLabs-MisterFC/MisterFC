@@ -117,9 +117,20 @@ export const createSessionSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'date_invalid' })
     .nullish(),
+  // 12.8a — vincular a un evento de entrenamiento. Si se pasa, la capa de app
+  // HEREDA fecha/equipo del evento (autoritativo) e ignora team_id/session_date.
+  event_id: z.string().uuid({ message: 'event_id_invalid' }).nullish(),
 });
 
 export type CreateSessionInput = z.infer<typeof createSessionSchema>;
+
+// ── Planificar sesión desde un evento (12.8a) ─────────────────────────────────
+/** Link-or-create desde el calendario: el botón "Planificar sesión" de un
+ *  entrenamiento. event_id obligatorio. */
+export const planSessionForEventSchema = z.object({
+  event_id: z.string().uuid({ message: 'event_id_invalid' }),
+});
+export type PlanSessionForEventInput = z.infer<typeof planSessionForEventSchema>;
 
 // ── Editar cabecera (12.2) ────────────────────────────────────────────────────
 // Cabecera + id + team_id. NO incluye `visibility` (publicar = 12.4) ni
