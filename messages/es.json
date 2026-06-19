@@ -3094,7 +3094,8 @@
     },
     "tabs": {
       "list": "Listado",
-      "week": "Semana"
+      "week": "Semana",
+      "templates": "Plantillas"
     },
     "list": {
       "search_placeholder": "Buscar por título…",
@@ -3128,6 +3129,28 @@
       "help_published": "Visible para jugadores y familias del equipo.",
       "toast_published": "Sesión publicada al equipo",
       "toast_unpublished": "Sesión vuelta a borrador"
+    },
+    "templates": {
+      "save_as": "Guardar como plantilla",
+      "save_help": "Crea una plantilla reutilizable a partir de esta sesión (bloques y ejercicios incluidos). No guarda la fecha ni el equipo.",
+      "name": "Nombre de la plantilla",
+      "name_ph": "Ej. Microciclo competitivo",
+      "save": "Guardar plantilla",
+      "cancel": "Cancelar",
+      "toast_saved": "Plantilla guardada",
+      "start_from": "Cómo empezar",
+      "mode_blank": "En blanco",
+      "mode_template": "Desde plantilla",
+      "template": "Plantilla",
+      "untitled": "Plantilla sin título",
+      "empty": "Aún no hay plantillas.",
+      "empty_help": "Guarda una sesión como plantilla desde su editor para reutilizar sus bloques y ejercicios.",
+      "minutes": "{count} min",
+      "use": "Usar",
+      "delete": "Eliminar",
+      "delete_title": "¿Eliminar la plantilla?",
+      "delete_description": "Se eliminará la plantilla «{name}» con sus bloques y ejercicios. Esta acción no se puede deshacer.",
+      "toast_deleted": "Plantilla eliminada"
     }
   }
 }

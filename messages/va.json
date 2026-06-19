@@ -3095,7 +3095,8 @@
     },
     "tabs": {
       "list": "Llistat",
-      "week": "Setmana"
+      "week": "Setmana",
+      "templates": "Plantilles"
     },
     "list": {
       "search_placeholder": "Cerca per títol…",
@@ -3129,6 +3130,28 @@
       "help_published": "Visible per a jugadors i famílies de l'equip.",
       "toast_published": "Sessió publicada a l'equip",
       "toast_unpublished": "Sessió tornada a esborrany"
+    },
+    "templates": {
+      "save_as": "Guardar com a plantilla",
+      "save_help": "Crea una plantilla reutilitzable a partir d'esta sessió (blocs i exercicis inclosos). No guarda la data ni l'equip.",
+      "name": "Nom de la plantilla",
+      "name_ph": "Ex. Microcicle competitiu",
+      "save": "Guardar plantilla",
+      "cancel": "Cancel·lar",
+      "toast_saved": "Plantilla guardada",
+      "start_from": "Com començar",
+      "mode_blank": "En blanc",
+      "mode_template": "Des de plantilla",
+      "template": "Plantilla",
+      "untitled": "Plantilla sense títol",
+      "empty": "Encara no hi ha plantilles.",
+      "empty_help": "Guarda una sessió com a plantilla des del seu editor per a reutilitzar-ne els blocs i exercicis.",
+      "minutes": "{count} min",
+      "use": "Usar",
+      "delete": "Eliminar",
+      "delete_title": "Eliminar la plantilla?",
+      "delete_description": "S'eliminarà la plantilla «{name}» amb els seus blocs i exercicis. Esta acció no es pot desfer.",
+      "toast_deleted": "Plantilla eliminada"
     }
   }
 }
