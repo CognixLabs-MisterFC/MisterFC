@@ -1220,12 +1220,14 @@
         "no_active_club": "No hi ha club actiu.",
         "cross_club": "L'equip o categoria no pertany a este club.",
         "not_found": "L'esdeveniment ja no existeix o no és accessible.",
-        "db": "Error en guardar. Torna-ho a intentar."
+        "db": "Error en guardar. Torna-ho a intentar.",
+        "plan_failed": "No s'ha pogut planificar la sessió. Torna-ho a provar."
       },
       "save": "Guardar",
       "cancel": "Cancel·lar",
       "mark_attendance": "Registrar assistència",
-      "open_callup": "Convocatòria"
+      "open_callup": "Convocatòria",
+      "plan_session": "Planificar sessió"
     },
     "delete": {
       "trigger": "Esborrar",

@@ -1220,12 +1220,14 @@
         "no_active_club": "No active club.",
         "cross_club": "Team or category does not belong to this club.",
         "not_found": "The event no longer exists or is not accessible.",
-        "db": "Save failed. Try again."
+        "db": "Save failed. Try again.",
+        "plan_failed": "Could not plan the session. Try again."
       },
       "save": "Save",
       "cancel": "Cancel",
       "mark_attendance": "Mark attendance",
-      "open_callup": "Callup"
+      "open_callup": "Callup",
+      "plan_session": "Plan session"
     },
     "delete": {
       "trigger": "Delete",
