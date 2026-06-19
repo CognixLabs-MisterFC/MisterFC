@@ -23,6 +23,7 @@ type Props = {
     category?: string | string[];
     intensity?: string | string[];
     space?: string | string[];
+    phase?: string | string[];
     page?: string;
     review?: string;
   }>;
@@ -85,6 +86,7 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
   const categories = normalizeMulti(sp.category);
   const intensity = normalizeMulti(sp.intensity);
   const spaceType = normalizeMulti(sp.space);
+  const phases = normalizeMulti(sp.phase);
   const page = normalizePage(sp.page);
 
   // Cola de revisión (11.7): solo Admin (user_can_publish_methodology = Admin).
@@ -93,7 +95,7 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
 
   const result = await loadExercises(
     ctx.activeClub.club.id,
-    { search, tactical, technical, categories, intensity, spaceType },
+    { search, tactical, technical, categories, intensity, spaceType, phases },
     page,
     isReview
   );
@@ -105,7 +107,8 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
     technical.length > 0 ||
     categories.length > 0 ||
     intensity.length > 0 ||
-    spaceType.length > 0;
+    spaceType.length > 0 ||
+    phases.length > 0;
 
   function pageHref(p: number): string {
     const q = new URLSearchParams();
@@ -115,6 +118,7 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
     for (const v of categories) q.append('category', v);
     for (const v of intensity) q.append('intensity', v);
     for (const v of spaceType) q.append('space', v);
+    for (const v of phases) q.append('phase', v);
     if (isReview) q.set('review', '1');
     if (p > 1) q.set('page', String(p));
     const qs = q.toString();
@@ -181,6 +185,7 @@ export default async function EjerciciosPage({ params, searchParams }: Props) {
           activeCategories={categories}
           activeIntensity={intensity}
           activeSpaceType={spaceType}
+          activePhases={phases}
         />
       </div>
 

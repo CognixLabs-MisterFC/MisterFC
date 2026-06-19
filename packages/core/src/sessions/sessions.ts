@@ -60,47 +60,69 @@ export function buildDefaultSkeleton(): SeededBlock[] {
   }));
 }
 
-// ── Recomendación de ejercicios para el picker (12.2b) ───────────────────────
-/** Forma mínima de un ejercicio para decidir si encaja con la sesión. */
+// ── Recomendación de ejercicios para el picker (12.2b + fase-aware 12.7a) ─────
+/** Forma mínima de un ejercicio para decidir si encaja con un bloque de la sesión. */
 export type RecommendableExercise = {
   categories: string[];
   tactical_objectives: string[];
   technical_objectives: string[];
+  /** Fases (tipos de bloque) para las que sirve el ejercicio (12.7a). Vacío =
+   *  cualquier fase. */
+  phases: string[];
 };
 
-/** Criterio de la sesión: categoría del equipo (CATEGORY_KIND, o null si la
- *  categoría no tiene `kind` — p.ej. categoría custom) + objetivos de la cabecera. */
+/** Criterio del BLOQUE concreto que se está rellenando: su fase (tipo de bloque) +
+ *  la categoría del equipo (CATEGORY_KIND, o null si la categoría no tiene `kind`) +
+ *  los objetivos de la cabecera de la sesión. */
 export type RecommendCriteria = {
+  phase: SessionBlockType | null;
   category: string | null;
   tactical: string[];
   technical: string[];
 };
 
-/** ¿Hay criterio suficiente para recomendar? (sin objetivos no se recomienda). */
+/**
+ * ¿Hay criterio suficiente para que la recomendación FILTRE algo? Con la regla
+ * fase-aware (12.7a) basta con conocer la fase del bloque (siempre la hay en el
+ * picker) o tener categoría/objetivos. Sin nada de eso, no se filtra (se ven todos).
+ */
 export function canRecommend(c: RecommendCriteria): boolean {
-  return c.tactical.length + c.technical.length > 0;
+  return c.phase != null || c.category != null || c.tactical.length + c.technical.length > 0;
 }
 
 /**
- * ¿Es el ejercicio RECOMENDADO para la sesión? Cumple AMBAS:
- *  - comparte ≥1 objetivo (táctico o técnico) con los objetivos de la sesión, Y
- *  - su categoría incluye la categoría del equipo de la sesión.
- * Si la categoría del equipo es desconocida (`category` null — p.ej. categoría sin
- * `kind`), NO se exige la categoría (se recomienda solo por objetivos) para no
- * vaciar la lista por un dato faltante. Sin objetivos de sesión → no recomienda.
+ * ¿Es el ejercicio RECOMENDADO para un bloque de tipo `c.phase`? (regla 12.7a)
+ * Cumple las TRES cláusulas (cada una pasa también si el ejercicio no tiene ese dato):
+ *  1. fase: el ejercicio tiene la fase del bloque  O  no tiene ninguna fase.
+ *  2. categoría: la categoría del equipo encaja  O  el ejercicio no tiene categoría
+ *     (o la categoría del equipo es desconocida → no se exige).
+ *  3. objetivos: comparte ≥1 objetivo táctico/técnico con la sesión  O  el ejercicio
+ *     no tiene objetivos.
+ * Así un ejercicio de calentamiento SIN objetivos sale en el bloque de calentamiento,
+ * y uno con objetivo de la parte principal sale en el principal.
  */
 export function isRecommendedExercise(
   ex: RecommendableExercise,
   c: RecommendCriteria
 ): boolean {
-  const sessionObjectives = [...c.tactical, ...c.technical];
-  if (sessionObjectives.length === 0) return false;
+  // 1. Fase del bloque.
+  const phaseOk = c.phase == null || ex.phases.length === 0 || ex.phases.includes(c.phase);
+  if (!phaseOk) return false;
 
+  // 2. Categoría del equipo.
+  const categoryOk =
+    c.category == null || ex.categories.length === 0 || ex.categories.includes(c.category);
+  if (!categoryOk) return false;
+
+  // 3. Objetivos de la sesión.
   const exObjectives = [...ex.tactical_objectives, ...ex.technical_objectives];
-  const sharesObjective = exObjectives.some((o) => sessionObjectives.includes(o));
-  if (!sharesObjective) return false;
+  const sessionObjectives = [...c.tactical, ...c.technical];
+  const objectivesOk =
+    exObjectives.length === 0 ||
+    sessionObjectives.length === 0 ||
+    exObjectives.some((o) => sessionObjectives.includes(o));
+  if (!objectivesOk) return false;
 
-  if (c.category != null && !ex.categories.includes(c.category)) return false;
   return true;
 }
 

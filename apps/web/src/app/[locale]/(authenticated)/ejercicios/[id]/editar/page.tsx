@@ -33,13 +33,17 @@ export default async function EditarEjercicioPage({ params }: Props) {
   if (!exercise) notFound();
 
   // El autor edita SUS borrador/propuesto/rechazado (rechazado: corrige y
-  // reprone, 11.7). Publicado/ajeno → a la ficha (read-only). No reimplementa
-  // permisos: la RLS volverá a gatear al guardar.
+  // reprone, 11.7). El Admin (dueño de la metodología del club) edita además los
+  // PROPUESTOS y PUBLICADOS del club (12.7a: poder etiquetar/ajustar la biblioteca
+  // ya publicada). No reimplementa permisos: la RLS/trigger de 11.1 gatea al
+  // guardar (un draft ajeno ni siquiera es visible → notFound antes de aquí).
+  const isAdmin = role === 'admin_club';
   const editable =
-    exercise.is_owner &&
-    (exercise.status === 'draft' ||
-      exercise.status === 'proposed' ||
-      exercise.status === 'rejected');
+    (exercise.is_owner &&
+      (exercise.status === 'draft' ||
+        exercise.status === 'proposed' ||
+        exercise.status === 'rejected')) ||
+    (isAdmin && (exercise.status === 'proposed' || exercise.status === 'published'));
   if (!editable) redirect(`/${locale}/ejercicios/${id}`);
 
   const tForm = await getTranslations('ejercicios.form');
@@ -63,6 +67,7 @@ export default async function EditarEjercicioPage({ params }: Props) {
           categories: exercise.categories,
           tactical_objectives: exercise.tactical_objectives,
           technical_objectives: exercise.technical_objectives,
+          phases: exercise.phases,
           physical_focus: exercise.physical_focus,
           intensity: exercise.intensity,
           space_type: exercise.space_type,

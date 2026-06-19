@@ -210,6 +210,7 @@ function SortableBlock({
         <div>
           <ExercisePicker
             exercises={pickable}
+            phase={block.block_type}
             defaultCategory={defaultCategory}
             defaultTactical={defaultTactical}
             defaultTechnical={defaultTechnical}

@@ -9,6 +9,7 @@ import {
   TECHNICAL_OBJECTIVES,
   EXERCISE_INTENSITIES,
   EXERCISE_SPACE_TYPES,
+  SESSION_BLOCK_TYPES,
 } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,7 +19,7 @@ import {
 } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 
-type UrlKey = 'tactical' | 'technical' | 'category' | 'intensity' | 'space';
+type UrlKey = 'tactical' | 'technical' | 'category' | 'intensity' | 'space' | 'phase';
 
 type Props = {
   activeTactical: string[];
@@ -26,6 +27,7 @@ type Props = {
   activeCategories: string[];
   activeIntensity: string[];
   activeSpaceType: string[];
+  activePhases: string[];
 };
 
 /** Filtros multi-select en la URL (patrón F2.10). Vocabularios de @misterfc/core;
@@ -36,6 +38,7 @@ export function ExercisesFilters({
   activeCategories,
   activeIntensity,
   activeSpaceType,
+  activePhases,
 }: Props) {
   const t = useTranslations('ejercicios.filters');
   const tTactical = useTranslations('ejercicios.tactical');
@@ -43,6 +46,7 @@ export function ExercisesFilters({
   const tCategory = useTranslations('category_kinds');
   const tIntensity = useTranslations('ejercicios.intensity_values');
   const tSpace = useTranslations('ejercicios.space_types');
+  const tPhase = useTranslations('sesiones.block_types');
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -64,7 +68,7 @@ export function ExercisesFilters({
 
   function clearAll() {
     const next = new URLSearchParams(params);
-    for (const k of ['tactical', 'technical', 'category', 'intensity', 'space', 'q', 'page']) {
+    for (const k of ['tactical', 'technical', 'category', 'intensity', 'space', 'phase', 'q', 'page']) {
       next.delete(k);
     }
     router.replace(`${pathname}?${next.toString()}`);
@@ -75,7 +79,8 @@ export function ExercisesFilters({
     activeTechnical.length +
     activeCategories.length +
     activeIntensity.length +
-    activeSpaceType.length;
+    activeSpaceType.length +
+    activePhases.length;
 
   return (
     <Popover>
@@ -124,6 +129,12 @@ export function ExercisesFilters({
             items={CATEGORY_KINDS.map((v) => ({ id: v, label: tCategory(v) }))}
             active={activeCategories}
             onToggle={(id) => toggle('category', id, activeCategories)}
+          />
+          <FilterGroup
+            title={t('phase')}
+            items={SESSION_BLOCK_TYPES.map((v) => ({ id: v, label: tPhase(v) }))}
+            active={activePhases}
+            onToggle={(id) => toggle('phase', id, activePhases)}
           />
           <FilterGroup
             title={t('intensity')}

@@ -285,53 +285,133 @@ describe('F12.2b — reorder schemas', () => {
   });
 });
 
-describe('F12.2b — isRecommendedExercise / canRecommend', () => {
-  // Caso real (club de pruebas): único ejercicio "Rondo 4x1".
+describe('F12.7a — isRecommendedExercise / canRecommend (fase-aware)', () => {
+  // Ejercicio principal con objetivos y categorías.
   const rondo = {
     categories: ['infantil', 'alevin'],
     tactical_objectives: ['posesion'],
     technical_objectives: ['control', 'pase'],
+    phases: ['principal'],
+  };
+  // Ejercicio de calentamiento SIN objetivos ni categorías (genérico).
+  const movilidad = {
+    categories: [] as string[],
+    tactical_objectives: [] as string[],
+    technical_objectives: [] as string[],
+    phases: ['calentamiento'],
   };
 
-  it('canRecommend solo si hay objetivos de sesión', () => {
-    expect(canRecommend({ category: 'infantil', tactical: [], technical: [] })).toBe(false);
-    expect(canRecommend({ category: null, tactical: ['posesion'], technical: [] })).toBe(true);
-    expect(canRecommend({ category: null, tactical: [], technical: ['pase'] })).toBe(true);
-  });
-
-  it('recomendado = categoría incluida Y comparte objetivo (caso infantil + posesion)', () => {
+  it('canRecommend: con fase (siempre en el picker), categoría u objetivos', () => {
     expect(
-      isRecommendedExercise(rondo, { category: 'infantil', tactical: ['posesion'], technical: [] })
+      canRecommend({ phase: 'principal', category: null, tactical: [], technical: [] })
     ).toBe(true);
     expect(
-      isRecommendedExercise(rondo, { category: 'infantil', tactical: [], technical: ['pase'] })
+      canRecommend({ phase: null, category: 'infantil', tactical: [], technical: [] })
+    ).toBe(true);
+    expect(
+      canRecommend({ phase: null, category: null, tactical: ['posesion'], technical: [] })
+    ).toBe(true);
+    expect(canRecommend({ phase: null, category: null, tactical: [], technical: [] })).toBe(false);
+  });
+
+  it('calentamiento SIN objetivos → recomendado en el bloque de calentamiento', () => {
+    expect(
+      isRecommendedExercise(movilidad, {
+        phase: 'calentamiento',
+        category: 'infantil',
+        tactical: ['posesion'],
+        technical: [],
+      })
     ).toBe(true);
   });
 
-  it('NO recomendado si la categoría del equipo no está en el ejercicio', () => {
-    // 'cadete' no está en {infantil,alevin} aunque comparta objetivo.
+  it('calentamiento NO sale en el bloque principal (la fase no encaja)', () => {
     expect(
-      isRecommendedExercise(rondo, { category: 'cadete', tactical: ['posesion'], technical: [] })
+      isRecommendedExercise(movilidad, {
+        phase: 'principal',
+        category: 'infantil',
+        tactical: ['posesion'],
+        technical: [],
+      })
     ).toBe(false);
   });
 
-  it('NO recomendado si no comparte ningún objetivo (aunque la categoría encaje)', () => {
+  it('principal con objetivo → recomendado en el bloque principal cuando comparte objetivo', () => {
     expect(
-      isRecommendedExercise(rondo, { category: 'infantil', tactical: ['repliegue'], technical: ['tiro'] })
-    ).toBe(false);
-  });
-
-  it('sin objetivos de sesión → nunca recomendado', () => {
-    expect(isRecommendedExercise(rondo, { category: 'infantil', tactical: [], technical: [] })).toBe(false);
-  });
-
-  it('categoría desconocida (null, p.ej. kind null) → recomienda solo por objetivos', () => {
-    expect(
-      isRecommendedExercise(rondo, { category: null, tactical: ['posesion'], technical: [] })
+      isRecommendedExercise(rondo, {
+        phase: 'principal',
+        category: 'infantil',
+        tactical: ['posesion'],
+        technical: [],
+      })
     ).toBe(true);
+  });
+
+  it('NO recomendado si el ejercicio tiene fase pero NO la del bloque', () => {
     expect(
-      isRecommendedExercise(rondo, { category: null, tactical: ['repliegue'], technical: [] })
+      isRecommendedExercise(rondo, {
+        phase: 'vuelta_a_la_calma',
+        category: 'infantil',
+        tactical: ['posesion'],
+        technical: [],
+      })
     ).toBe(false);
+  });
+
+  it('ejercicio SIN fase encaja en CUALQUIER bloque', () => {
+    const sinFase = { ...rondo, phases: [] as string[] };
+    expect(
+      isRecommendedExercise(sinFase, {
+        phase: 'vuelta_a_la_calma',
+        category: 'infantil',
+        tactical: ['posesion'],
+        technical: [],
+      })
+    ).toBe(true);
+  });
+
+  it('NO recomendado si la categoría del equipo no está en el ejercicio (con categoría)', () => {
+    expect(
+      isRecommendedExercise(rondo, {
+        phase: 'principal',
+        category: 'cadete',
+        tactical: ['posesion'],
+        technical: [],
+      })
+    ).toBe(false);
+  });
+
+  it('NO recomendado si el ejercicio TIENE objetivos pero no comparte ninguno con la sesión', () => {
+    expect(
+      isRecommendedExercise(rondo, {
+        phase: 'principal',
+        category: 'infantil',
+        tactical: ['repliegue'],
+        technical: ['tiro'],
+      })
+    ).toBe(false);
+  });
+
+  it('sesión SIN objetivos → no filtra por objetivos (sale igualmente, dirige la fase)', () => {
+    expect(
+      isRecommendedExercise(rondo, {
+        phase: 'principal',
+        category: 'infantil',
+        tactical: [],
+        technical: [],
+      })
+    ).toBe(true);
+  });
+
+  it('categoría del equipo desconocida (null) → no se exige categoría', () => {
+    expect(
+      isRecommendedExercise(rondo, {
+        phase: 'principal',
+        category: null,
+        tactical: ['posesion'],
+        technical: [],
+      })
+    ).toBe(true);
   });
 });
 

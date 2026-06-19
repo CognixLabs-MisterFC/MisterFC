@@ -11,7 +11,7 @@
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Search } from 'lucide-react';
-import { canRecommend, isRecommendedExercise } from '@misterfc/core';
+import { canRecommend, isRecommendedExercise, type SessionBlockType } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -19,6 +19,7 @@ import type { PickableExercise } from '../queries';
 
 export function ExercisePicker({
   exercises,
+  phase,
   defaultCategory,
   defaultTactical,
   defaultTechnical,
@@ -26,6 +27,8 @@ export function ExercisePicker({
   disabled,
 }: {
   exercises: PickableExercise[];
+  /** Fase del bloque que se está rellenando (12.7a) — dirige la recomendación. */
+  phase: SessionBlockType;
   defaultCategory: string | null;
   defaultTactical: string[];
   defaultTechnical: string[];
@@ -37,11 +40,12 @@ export function ExercisePicker({
   const [q, setQ] = useState('');
   const [showAll, setShowAll] = useState(false);
 
-  // Criterio de recomendación de la sesión (categoría del equipo + objetivos). Sin
-  // objetivos no se puede recomendar (canRecommend=false → se muestran todos).
+  // Criterio de recomendación del BLOQUE (12.7a): fase del bloque + categoría del
+  // equipo + objetivos de la sesión. La recomendación es fase-aware, así que con
+  // solo la fase ya filtra (un ejercicio sin fase encaja en cualquiera).
   const criteria = useMemo(
-    () => ({ category: defaultCategory, tactical: defaultTactical, technical: defaultTechnical }),
-    [defaultCategory, defaultTactical, defaultTechnical]
+    () => ({ phase, category: defaultCategory, tactical: defaultTactical, technical: defaultTechnical }),
+    [phase, defaultCategory, defaultTactical, defaultTechnical]
   );
   const recommendable = canRecommend(criteria);
 

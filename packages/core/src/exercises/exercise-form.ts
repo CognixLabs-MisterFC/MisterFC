@@ -33,6 +33,8 @@ import {
   type ExerciseSpaceType,
   type MethodologyStatus,
 } from './exercises';
+// La FASE (12.7a) reúsa el catálogo de tipos de bloque de las sesiones (12.1).
+import { SESSION_BLOCK_TYPES, type SessionBlockType } from '../sessions/sessions';
 
 // ── Acciones de guardado del formulario ──────────────────────────────────────
 export const EXERCISE_FORM_ACTIONS = ['save_draft', 'propose', 'publish'] as const;
@@ -107,6 +109,8 @@ export const exerciseFormSchema = z.object({
   technical_objectives: z
     .array(z.enum(TECHNICAL_OBJECTIVES, { message: 'technical_invalid' }))
     .default([]),
+  // Fase(s) de la sesión para las que sirve (12.7a). Vacío = cualquier fase.
+  phases: z.array(z.enum(SESSION_BLOCK_TYPES, { message: 'phase_invalid' })).default([]),
   physical_focus: optText(2000),
   intensity: z.enum(EXERCISE_INTENSITIES, { message: 'intensity_invalid' }).nullish(),
   space_type: z.enum(EXERCISE_SPACE_TYPES, { message: 'space_type_invalid' }).nullish(),
@@ -156,10 +160,13 @@ export type RejectExerciseInput = z.infer<typeof rejectExerciseSchema>;
 /**
  * Estado objetivo al EDITAR, según el estado ACTUAL (defensa contra fugas del
  * ciclo de aprobación). Desde 'draft' el set completo (save_draft/propose/
- * publish-si-admin). Desde 'proposed' SOLO sigue propuesto ("Guardar cambios").
- * Desde 'rejected' el autor corrige y reprone: como 'draft' pero SIN publicar
- * (publish no aplica; aprobar es la acción del Admin, no la edición). 'published'
- * no es editable aquí. Aprobar/rechazar NO pasan por aquí (acciones dedicadas).
+ * publish-si-admin). Desde 'proposed' SOLO sigue propuesto ("Guardar cambios") —
+ * lo edita el autor o el Admin (que revisa antes de aprobar). Desde 'rejected' el
+ * autor corrige y reprone: como 'draft' pero SIN publicar. Desde 'published' SOLO
+ * el Admin (dueño de la metodología del club) puede editar el canon EN SITIO y
+ * sigue publicado — necesario para mantener la biblioteca ya publicada (p.ej.
+ * etiquetar la fase, 12.7a); un no-Admin no puede (null). Aprobar/rechazar NO
+ * pasan por aquí (acciones dedicadas).
  */
 export function statusForUpdate(
   current: MethodologyStatus,
@@ -169,6 +176,7 @@ export function statusForUpdate(
   if (current === 'draft') return statusForAction(action, isAdmin);
   if (current === 'proposed') return action === 'propose' ? 'proposed' : null;
   if (current === 'rejected') return action === 'publish' ? null : statusForAction(action, false);
+  if (current === 'published') return isAdmin && action === 'publish' ? 'published' : null;
   return null;
 }
 
@@ -184,6 +192,7 @@ export type ExerciseColumns = {
   categories: CategoryKind[];
   tactical_objectives: string[];
   technical_objectives: string[];
+  phases: SessionBlockType[];
   physical_focus: string | null;
   intensity: ExerciseIntensity | null;
   space_type: ExerciseSpaceType | null;
@@ -220,6 +229,7 @@ export function toExerciseColumns(
     categories: data.categories,
     tactical_objectives: data.tactical_objectives,
     technical_objectives: data.technical_objectives,
+    phases: data.phases,
     physical_focus: orNull(data.physical_focus),
     intensity: orNull(data.intensity),
     space_type: orNull(data.space_type),
@@ -252,6 +262,7 @@ export type ExerciseExportContent = {
   categories: string[];
   tactical_objectives: string[];
   technical_objectives: string[];
+  phases: string[];
   physical_focus: string | null;
   intensity: string | null;
   space_type: string | null;
@@ -282,6 +293,9 @@ export function buildExerciseExport(content: ExerciseExportContent): ExerciseExp
     technical_objectives: content.technical_objectives.filter((c) =>
       (TECHNICAL_OBJECTIVES as readonly string[]).includes(c)
     ) as ExerciseFormInput['technical_objectives'],
+    phases: content.phases.filter((c) =>
+      (SESSION_BLOCK_TYPES as readonly string[]).includes(c)
+    ) as ExerciseFormInput['phases'],
     ...(content.physical_focus != null ? { physical_focus: content.physical_focus } : {}),
     ...(content.intensity != null
       ? { intensity: content.intensity as ExerciseIntensity }

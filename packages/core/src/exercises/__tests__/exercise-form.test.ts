@@ -60,6 +60,15 @@ describe('F11.6 — exerciseFormSchema: validación', () => {
     expect(bad.success).toBe(false);
   });
 
+  it('phases (12.7a): vacío por defecto, acepta tipos de bloque y rechaza inválidos', () => {
+    const def = exerciseFormSchema.safeParse(minimal);
+    expect(def.success && def.data.phases).toEqual([]);
+    expect(
+      exerciseFormSchema.safeParse({ ...minimal, phases: ['calentamiento', 'principal'] }).success
+    ).toBe(true);
+    expect(exerciseFormSchema.safeParse({ ...minimal, phases: ['inventada'] }).success).toBe(false);
+  });
+
   it('intensity/space_type solo aceptan valores del vocabulario', () => {
     expect(exerciseFormSchema.safeParse({ ...minimal, intensity: 'alta' }).success).toBe(true);
     expect(exerciseFormSchema.safeParse({ ...minimal, intensity: 'brutal' }).success).toBe(false);
@@ -161,7 +170,11 @@ describe('F11.6 PR2 — statusForUpdate: estado objetivo por estado actual', () 
     expect(statusForUpdate('rejected', 'publish', true)).toBeNull();
   });
 
-  it('published no es editable aquí', () => {
+  it('desde published (12.7a): SOLO el Admin edita en sitio y sigue publicado', () => {
+    expect(statusForUpdate('published', 'publish', true)).toBe('published');
+    // El no-Admin no puede editar un publicado.
+    expect(statusForUpdate('published', 'publish', false)).toBeNull();
+    // El Admin no lo "despublica" con otras acciones (defensa: solo 'publish').
     expect(statusForUpdate('published', 'save_draft', true)).toBeNull();
     expect(statusForUpdate('published', 'propose', true)).toBeNull();
   });
@@ -192,6 +205,7 @@ describe('F11.6 — toExerciseColumns: mapeo a columnas', () => {
     categories: ['alevin'],
     tactical_objectives: ['posesion'],
     technical_objectives: ['pase'],
+    phases: ['principal'],
     physical_focus: undefined,
     intensity: 'media',
     space_type: 'reducido',
@@ -210,6 +224,7 @@ describe('F11.6 — toExerciseColumns: mapeo a columnas', () => {
     expect(cols.intensity).toBe('media');
     expect(cols.base_duration).toBe(15);
     expect(cols.categories).toEqual(['alevin']);
+    expect(cols.phases).toEqual(['principal']);
   });
 
   it('un diagrama sin elementos no se persiste (→ null)', () => {
@@ -237,6 +252,7 @@ describe('F11.8 — buildExerciseExport: envoltorio versionado + solo contenido'
     categories: ['alevin'],
     tactical_objectives: ['posesion'],
     technical_objectives: ['pase'],
+    phases: ['principal'],
     physical_focus: null,
     intensity: 'media',
     space_type: 'reducido',
@@ -259,6 +275,16 @@ describe('F11.8 — buildExerciseExport: envoltorio versionado + solo contenido'
     expect('physical_focus' in out.exercise).toBe(false);
     expect('objective' in out.exercise).toBe(false);
     expect('diagram' in out.exercise).toBe(false);
+    expect(out.exercise.phases).toEqual(['principal']);
+  });
+
+  it('sanea las fases invalidas y conserva las validas (round-trip)', () => {
+    const out = buildExerciseExport({
+      ...content,
+      phases: ['principal', 'inventada', 'calentamiento'],
+    });
+    expect(out.exercise.phases).toEqual(['principal', 'calentamiento']);
+    expect(exerciseFormSchema.safeParse(out.exercise).success).toBe(true);
   });
 
   it('NO incluye campos de BD/ciclo (round-trip válido)', () => {

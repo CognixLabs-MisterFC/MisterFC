@@ -49,8 +49,12 @@ export function ExerciseActions({ id, status, isOwner, isAdmin }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  // Quién puede qué (mirror de la política de 11.1).
-  const canEdit = isOwner && (status === 'draft' || status === 'proposed' || status === 'rejected');
+  // Quién puede qué (mirror de la política de 11.1 + 12.7a).
+  // Autor: sus draft/proposed/rejected. Admin (dueño de la metodología): además los
+  // propuestos y publicados del club (para ajustar la biblioteca, p.ej. la fase).
+  const canEdit =
+    (isOwner && (status === 'draft' || status === 'proposed' || status === 'rejected')) ||
+    (isAdmin && (status === 'proposed' || status === 'published'));
   const canPropose = isOwner && status === 'draft';
   const canDelete =
     (isOwner && (status === 'draft' || status === 'proposed' || status === 'rejected')) ||
