@@ -50,6 +50,9 @@ export type ExerciseListFilters = {
   categories: string[];
   intensity: string[];
   spaceType: string[];
+  /** Fase(s) (tipo de bloque) — 12.7a. Solape: el ejercicio coincide si sirve para
+   *  alguna de las fases marcadas. */
+  phases: string[];
 };
 
 export type ExerciseListResult = {
@@ -99,6 +102,7 @@ export async function loadExercises(
   if (filters.tactical.length > 0) q = q.overlaps('tactical_objectives', filters.tactical);
   if (filters.technical.length > 0) q = q.overlaps('technical_objectives', filters.technical);
   if (filters.categories.length > 0) q = q.overlaps('categories', filters.categories);
+  if (filters.phases.length > 0) q = q.overlaps('phases', filters.phases);
 
   if (intensity.length > 0) q = q.in('intensity', intensity);
   if (spaceType.length > 0) q = q.in('space_type', spaceType);
@@ -135,6 +139,7 @@ export type ExerciseDetail = {
   categories: string[];
   tactical_objectives: string[];
   technical_objectives: string[];
+  phases: string[];
   physical_focus: string | null;
   intensity: ExerciseIntensity | null;
   space_type: ExerciseSpaceType | null;
@@ -170,7 +175,7 @@ export async function loadExercise(
   const { data } = await supabase
     .from('exercises')
     .select(
-      `id, name, status, categories, tactical_objectives, technical_objectives,
+      `id, name, status, categories, tactical_objectives, technical_objectives, phases,
        physical_focus, intensity, space_type, space_dimensions, base_duration,
        description, objective, coaching_points, variants, players, diagram,
        approved_at, rejection_reason, created_at, owner_profile_id,
@@ -193,6 +198,7 @@ export async function loadExercise(
     categories: (data.categories as string[] | null) ?? [],
     tactical_objectives: (data.tactical_objectives as string[] | null) ?? [],
     technical_objectives: (data.technical_objectives as string[] | null) ?? [],
+    phases: (data.phases as string[] | null) ?? [],
     physical_focus: (data.physical_focus as string | null) ?? null,
     intensity: (data.intensity as ExerciseIntensity | null) ?? null,
     space_type: (data.space_type as ExerciseSpaceType | null) ?? null,

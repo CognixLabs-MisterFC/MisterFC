@@ -21,6 +21,7 @@ import {
   TECHNICAL_OBJECTIVES,
   EXERCISE_INTENSITIES,
   EXERCISE_SPACE_TYPES,
+  SESSION_BLOCK_TYPES,
   type ExerciseFormAction,
   type MethodologyStatus,
   type Diagram,
@@ -50,6 +51,7 @@ export type ExerciseFormInitial = {
   categories: string[];
   tactical_objectives: string[];
   technical_objectives: string[];
+  phases: string[];
   physical_focus: string | null;
   intensity: string | null;
   space_type: string | null;
@@ -80,6 +82,7 @@ export function ExerciseForm({
   const tTactical = useTranslations('ejercicios.tactical');
   const tTechnical = useTranslations('ejercicios.technical');
   const tCategory = useTranslations('category_kinds');
+  const tPhase = useTranslations('sesiones.block_types');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -87,6 +90,7 @@ export function ExerciseForm({
   const [categories, setCategories] = useState<string[]>(initial?.categories ?? []);
   const [tactical, setTactical] = useState<string[]>(initial?.tactical_objectives ?? []);
   const [technical, setTechnical] = useState<string[]>(initial?.technical_objectives ?? []);
+  const [phases, setPhases] = useState<string[]>(initial?.phases ?? []);
   const [physicalFocus, setPhysicalFocus] = useState(initial?.physical_focus ?? '');
   const [intensity, setIntensity] = useState<string>(initial?.intensity ?? NONE);
   const [spaceType, setSpaceType] = useState<string>(initial?.space_type ?? NONE);
@@ -151,6 +155,7 @@ export function ExerciseForm({
         categories,
         tactical_objectives: tactical,
         technical_objectives: technical,
+        phases,
         physical_focus: physicalFocus,
         intensity: intensity === NONE ? null : intensity,
         space_type: spaceType === NONE ? null : spaceType,
@@ -201,6 +206,16 @@ export function ExerciseForm({
             selected={categories}
             onToggle={(v) => toggle(categories, setCategories, v)}
             labelFor={(v) => tCategory(v)}
+          />
+
+          {/* Fase(s) de la sesión (12.7a). Vacío = sirve para cualquier fase. */}
+          <ChipGroup
+            label={tForm('fields.phases')}
+            description={tForm('fields.phases_help')}
+            options={SESSION_BLOCK_TYPES}
+            selected={phases}
+            onToggle={(v) => toggle(phases, setPhases, v)}
+            labelFor={(v) => tPhase(v)}
           />
         </CardContent>
       </Card>

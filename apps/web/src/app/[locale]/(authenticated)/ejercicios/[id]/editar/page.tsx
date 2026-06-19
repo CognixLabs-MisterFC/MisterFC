@@ -63,6 +63,7 @@ export default async function EditarEjercicioPage({ params }: Props) {
           categories: exercise.categories,
           tactical_objectives: exercise.tactical_objectives,
           technical_objectives: exercise.technical_objectives,
+          phases: exercise.phases,
           physical_focus: exercise.physical_focus,
           intensity: exercise.intensity,
           space_type: exercise.space_type,

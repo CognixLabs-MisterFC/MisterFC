@@ -11,16 +11,26 @@ import { cn } from '@/lib/utils';
 
 export type ChipGroupProps = {
   label: string;
+  /** Texto de ayuda opcional bajo la etiqueta. */
+  description?: string;
   options: readonly string[];
   selected: string[];
   onToggle: (value: string) => void;
   labelFor: (value: string) => string;
 };
 
-export function ChipGroup({ label, options, selected, onToggle, labelFor }: ChipGroupProps) {
+export function ChipGroup({
+  label,
+  description,
+  options,
+  selected,
+  onToggle,
+  labelFor,
+}: ChipGroupProps) {
   return (
     <div className="flex flex-col gap-2">
       <Label>{label}</Label>
+      {description ? <p className="-mt-1 text-xs text-muted-foreground">{description}</p> : null}
       <div className="flex flex-wrap gap-1.5">
         {options.map((opt) => {
           const on = selected.includes(opt);
