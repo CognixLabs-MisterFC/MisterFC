@@ -2708,7 +2708,8 @@
       "space_type": "Espacio",
       "search_placeholder": "Buscar por nombre…",
       "search_label": "Buscar ejercicios",
-      "search_clear": "Limpiar búsqueda"
+      "search_clear": "Limpiar búsqueda",
+      "phase": "Fase"
     },
     "tactical": {
       "posesion": "Posesión",
@@ -2798,7 +2799,9 @@
         "description": "Reglas / Desarrollo",
         "coaching_points": "Incidir en",
         "variants": "Variantes",
-        "players": "Jugadores"
+        "players": "Jugadores",
+        "phases": "Fase de la sesión",
+        "phases_help": "¿Para qué parte(s) de la sesión sirve? Vacío = cualquier fase."
       },
       "placeholders": {
         "name": "Ej. Rondo 4v2",

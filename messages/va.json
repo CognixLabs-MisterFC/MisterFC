@@ -2709,7 +2709,8 @@
       "space_type": "Espai",
       "search_placeholder": "Buscar per nom…",
       "search_label": "Buscar exercicis",
-      "search_clear": "Netejar busca"
+      "search_clear": "Netejar busca",
+      "phase": "Fase"
     },
     "tactical": {
       "posesion": "Possessió",
@@ -2799,7 +2800,9 @@
         "description": "Regles / Desenvolupament",
         "coaching_points": "Incidir en",
         "variants": "Variants",
-        "players": "Jugadors"
+        "players": "Jugadors",
+        "phases": "Fase de la sessió",
+        "phases_help": "Per a quina(es) part(s) de la sessió serveix? Buit = qualsevol fase."
       },
       "placeholders": {
         "name": "Ex. Rondo 4v2",
