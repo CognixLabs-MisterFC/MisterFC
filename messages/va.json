@@ -1317,6 +1317,43 @@
         "red": "Targetes roges",
         "offsides": "Fores de joc"
       }
+    },
+    "session": {
+      "title": "Full de sessió",
+      "file": "sessio",
+      "team": "Equip",
+      "date": "Data",
+      "name": "Sessió",
+      "physical": "Obj. físic",
+      "total": "Temps total",
+      "mesocycle": "Mesocicle",
+      "microcycle": "Microcicle",
+      "tactical": "Obj. tàctic",
+      "technical": "Obj. tècnic",
+      "empty_block": "Sense exercicis.",
+      "description": "Descripció de regles-normes",
+      "objective": "Objectiu de la tasca",
+      "coaching_points": "Incidir en",
+      "exercise_objectives": "Objectius de l'exercici",
+      "graphic": "Representació gràfica",
+      "graphic_omitted": "(sense diagrama)",
+      "players": "Jugadors",
+      "space_label": "Espai",
+      "time": "Temps",
+      "variants": "Variant",
+      "day_notes": "Notes del dia",
+      "block": {
+        "calentamiento": "Escalfament",
+        "complementaria": "Part complementària",
+        "principal": "Part principal",
+        "vuelta_a_la_calma": "Tornada a la calma"
+      },
+      "space_type": {
+        "campo_completo": "Camp complet",
+        "medio_campo": "Mig camp",
+        "cuarto_campo": "Quart de camp",
+        "reducido": "Reduït"
+      }
     }
   },
   "badges": {
@@ -3016,7 +3053,8 @@
     },
     "actions": {
       "create": "Crear sessió",
-      "save": "Guardar canvis"
+      "save": "Guardar canvis",
+      "download_pdf": "Descarregar PDF"
     },
     "toast": {
       "created": "Sessió creada",

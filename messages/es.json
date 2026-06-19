@@ -1316,6 +1316,43 @@
         "red": "Tarjetas rojas",
         "offsides": "Fueras de juego"
       }
+    },
+    "session": {
+      "title": "Hoja de sesión",
+      "file": "sesion",
+      "team": "Equipo",
+      "date": "Fecha",
+      "name": "Sesión",
+      "physical": "Obj. físico",
+      "total": "Tiempo total",
+      "mesocycle": "Mesociclo",
+      "microcycle": "Microciclo",
+      "tactical": "Obj. táctico",
+      "technical": "Obj. técnico",
+      "empty_block": "Sin ejercicios.",
+      "description": "Descripción de reglas-normas",
+      "objective": "Objetivo de la tarea",
+      "coaching_points": "Incidir en",
+      "exercise_objectives": "Objetivos del ejercicio",
+      "graphic": "Representación gráfica",
+      "graphic_omitted": "(sin diagrama)",
+      "players": "Jugadores",
+      "space_label": "Espacio",
+      "time": "Tiempo",
+      "variants": "Variante",
+      "day_notes": "Notas del día",
+      "block": {
+        "calentamiento": "Calentamiento",
+        "complementaria": "Parte complementaria",
+        "principal": "Parte principal",
+        "vuelta_a_la_calma": "Vuelta a la calma"
+      },
+      "space_type": {
+        "campo_completo": "Campo completo",
+        "medio_campo": "Medio campo",
+        "cuarto_campo": "Cuarto de campo",
+        "reducido": "Reducido"
+      }
     }
   },
   "badges": {
@@ -3015,7 +3052,8 @@
     },
     "actions": {
       "create": "Crear sesión",
-      "save": "Guardar cambios"
+      "save": "Guardar cambios",
+      "download_pdf": "Descargar PDF"
     },
     "toast": {
       "created": "Sesión creada",

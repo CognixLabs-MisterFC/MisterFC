@@ -10,8 +10,9 @@
  */
 
 import { useState, useTransition } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { toast } from 'sonner';
+import { Download } from 'lucide-react';
 import { TACTICAL_OBJECTIVES, TECHNICAL_OBJECTIVES } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +47,7 @@ export function SessionEditor({
   const t = useTranslations('sesiones');
   const tTactical = useTranslations('ejercicios.tactical');
   const tTechnical = useTranslations('ejercicios.technical');
+  const locale = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -175,8 +177,14 @@ export function SessionEditor({
         </CardContent>
       </Card>
 
-      {/* Guardar cabecera */}
+      {/* Guardar cabecera + descargar PDF (12.5, staff) */}
       <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button asChild variant="outline" className="gap-2">
+          <a href={`/${locale}/sesiones/${session.id}/pdf`}>
+            <Download className="size-4" aria-hidden />
+            {t('actions.download_pdf')}
+          </a>
+        </Button>
         <Button onClick={save} disabled={pending}>
           {t('actions.save')}
         </Button>
