@@ -2802,7 +2802,9 @@
         "variants": "Variants",
         "players": "Jugadors",
         "phases": "Fase de la sessió",
-        "phases_help": "Per a quina(es) part(s) de la sessió serveix? Buit = qualsevol fase."
+        "phases_help": "Per a quina(es) part(s) de la sessió serveix? Buit = qualsevol fase.",
+        "with_field": "Amb camp tàctic",
+        "no_field_hint": "Exercici només de text, sense pissarra (estiraments, carrera…)."
       },
       "placeholders": {
         "name": "Ex. Rondo 4v2",

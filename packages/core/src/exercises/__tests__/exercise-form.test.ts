@@ -87,6 +87,16 @@ describe('F11.6 — exerciseFormSchema: validación', () => {
     expect(exerciseFormSchema.safeParse({ ...minimal, base_duration: -5 }).success).toBe(false);
   });
 
+  it('12.7b — ejercicio SIN campo (solo texto): válido y diagram → null', () => {
+    const textOnly = { name: 'Estiramientos', description: 'Tren inferior 8 min' };
+    const r = exerciseFormSchema.safeParse(textOnly);
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.diagram == null).toBe(true);
+      expect(toExerciseColumns(r.data, 'draft').diagram).toBeNull();
+    }
+  });
+
   it('acepta un diagrama válido y rechaza uno malformado', () => {
     const diagram: Diagram = {
       version: DIAGRAM_VERSION,
