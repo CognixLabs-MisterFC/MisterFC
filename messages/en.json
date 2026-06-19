@@ -2802,7 +2802,9 @@
         "variants": "Variations",
         "players": "Players",
         "phases": "Session phase",
-        "phases_help": "Which part(s) of the session is it for? Empty = any phase."
+        "phases_help": "Which part(s) of the session is it for? Empty = any phase.",
+        "with_field": "With tactical field",
+        "no_field_hint": "Text-only exercise, no board (stretching, running…)."
       },
       "placeholders": {
         "name": "e.g. 4v2 rondo",

@@ -2801,7 +2801,9 @@
         "variants": "Variantes",
         "players": "Jugadores",
         "phases": "Fase de la sesión",
-        "phases_help": "¿Para qué parte(s) de la sesión sirve? Vacío = cualquier fase."
+        "phases_help": "¿Para qué parte(s) de la sesión sirve? Vacío = cualquier fase.",
+        "with_field": "Con campo táctico",
+        "no_field_hint": "Ejercicio solo de texto, sin pizarra (estiramientos, carrera…)."
       },
       "placeholders": {
         "name": "Ej. Rondo 4v2",

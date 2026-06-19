@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import { ChipGroup } from '@/components/ui/chip-group';
 import { useRouter } from '@/i18n/navigation';
 import { PitchEditor } from '@/components/match/pitch-editor';
@@ -104,6 +105,9 @@ export function ExerciseForm({
   const [variants, setVariants] = useState(initial?.variants ?? '');
   const [players, setPlayers] = useState(initial?.players ?? '');
   const [diagram, setDiagram] = useState<Diagram | null>(initial?.diagram ?? null);
+  // 12.7b — "Con campo / Sin campo (solo texto)". Al crear, por defecto con campo
+  // (comportamiento previo). Al editar, depende de si el ejercicio tenía diagrama.
+  const [withField, setWithField] = useState<boolean>(initial ? initial.diagram != null : true);
 
   const nameMissing = name.trim().length === 0;
 
@@ -171,7 +175,8 @@ export function ExerciseForm({
         coaching_points: coachingPoints,
         variants,
         players,
-        diagram,
+        // Sin campo → no se persiste diagrama (solo texto).
+        diagram: withField ? diagram : null,
       };
       const res = initial
         ? await updateExercise({ ...payload, id: initial.id })
@@ -351,13 +356,25 @@ export function ExerciseForm({
         </CardContent>
       </Card>
 
-      {/* Diagrama (opcional) */}
+      {/* Diagrama (opcional) — 12.7b: con campo / sin campo (solo texto). */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">{tForm('sections.diagram')}</CardTitle>
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="text-base">{tForm('sections.diagram')}</CardTitle>
+            <div className="flex items-center gap-2">
+              <Switch id="with-field" checked={withField} onCheckedChange={setWithField} />
+              <Label htmlFor="with-field" className="cursor-pointer text-sm font-normal">
+                {tForm('fields.with_field')}
+              </Label>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <PitchEditor initialDiagram={initial?.diagram ?? undefined} onChange={setDiagram} />
+          {withField ? (
+            <PitchEditor initialDiagram={initial?.diagram ?? undefined} onChange={setDiagram} />
+          ) : (
+            <p className="text-sm text-muted-foreground">{tForm('fields.no_field_hint')}</p>
+          )}
         </CardContent>
       </Card>
 
