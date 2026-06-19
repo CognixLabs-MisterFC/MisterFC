@@ -343,6 +343,7 @@ export default async function CoachDetailPage({ params }: Props) {
                 teams={calendarData.teams}
                 categories={calendarData.categories}
                 role={role}
+                canCreateSessions={false}
               />
               <div className="flex justify-end">
                 <Button asChild variant="outline" size="sm">

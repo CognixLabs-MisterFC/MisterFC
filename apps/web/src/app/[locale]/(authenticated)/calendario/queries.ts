@@ -377,3 +377,15 @@ export async function loadEvent(eventId: string): Promise<CalendarEvent | null> 
 export function dayToIsoParam(day: LocalDay): string {
   return toIsoDate(day);
 }
+
+/**
+ * F12.8a — ¿puede el usuario CREAR sesiones en el club? (capacidad distinta de
+ * gestionar el calendario). Gatea el botón "Planificar sesión" de un entrenamiento.
+ * Vía RPC user_can_create_sessions (12.1); la RLS/action es el gate real.
+ */
+export async function loadCanCreateSessions(clubId: string): Promise<boolean> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const { data } = await supabase.rpc('user_can_create_sessions', { p_club_id: clubId });
+  return data === true;
+}

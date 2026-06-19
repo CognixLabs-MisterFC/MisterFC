@@ -26,6 +26,7 @@ type Props = {
   teams: TeamOption[];
   categories: CategoryOption[];
   role: string;
+  canCreateSessions: boolean;
 };
 
 export async function CalendarWeek({
@@ -37,6 +38,7 @@ export async function CalendarWeek({
   teams,
   categories,
   role,
+  canCreateSessions,
 }: Props) {
   const t = await getTranslations('calendario');
 
@@ -110,6 +112,7 @@ export async function CalendarWeek({
                     canManage={canManage}
                     manageableTeamIds={manageableTeamIds}
                     canManageClubEvents={canManageClubEvents}
+                    canCreateSessions={canCreateSessions}
                     teams={teams}
                     categories={categories}
                   />

@@ -8,8 +8,10 @@ import {
   Megaphone,
   Plus,
   Calendar as CalendarIcon,
+  NotebookPen,
 } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
+import { planSessionForEvent } from '../../sesiones/actions';
 import {
   EVENT_TYPES,
   type EventInput,
@@ -70,6 +72,8 @@ type Props = {
   canManageClubEvents: boolean;
   teams: TeamOption[];
   categories: CategoryOption[];
+  /** 12.8a — puede planificar sesiones (botón "Planificar sesión" en training de equipo). */
+  canCreateSessions?: boolean;
   /** Opcional: trigger custom. Si no se provee, el componente provee un botón "Nuevo". */
   triggerLabel?: string;
 };
@@ -91,6 +95,7 @@ export function EventDialog({
   canManageClubEvents,
   teams,
   categories,
+  canCreateSessions = false,
   triggerLabel,
 }: Props) {
   const t = useTranslations('calendario');
@@ -106,6 +111,24 @@ export function EventDialog({
 
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  // 12.8a — "Planificar sesión": link-or-create de la sesión del entrenamiento y
+  // redirige a su editor. La acción es idempotente (1:1) y deriva fecha/equipo del
+  // evento; la RLS/autoría es el gate real.
+  function planSession() {
+    if (!event) return;
+    setError(null);
+    startTransition(async () => {
+      const res = await planSessionForEvent({ event_id: event.id });
+      if (res.error || !res.id) {
+        setError(tErrors('plan_failed'));
+        return;
+      }
+      setOpen(false);
+      router.push(`/sesiones/${res.id}/editar`);
+    });
+  }
 
   // ── Estado del form ─────────────────────────────────────────────────────
   const initialKind: TargetKind = useMemo(() => {
@@ -748,6 +771,28 @@ export function EventDialog({
                   <ClipboardList className="size-4" aria-hidden />
                   <span>{t('dialog.mark_attendance')}</span>
                 </Link>
+              </Button>
+            )}
+          {/* F12.8a entry point: si es un entrenamiento DE EQUIPO y el user puede
+              crear sesiones, "Planificar sesión" (link-or-create + abre el editor). */}
+          {isEdit &&
+            event &&
+            event.type === 'training' &&
+            event.team_id != null &&
+            canCreateSessions && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={planSession}
+                disabled={pending}
+              >
+                {pending ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : (
+                  <NotebookPen className="size-4" aria-hidden />
+                )}
+                <span>{t('dialog.plan_session')}</span>
               </Button>
             )}
           {/* F4.4 entry point: si es un partido gestionable (oficial, amistoso

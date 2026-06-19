@@ -27,6 +27,7 @@ type Props = {
   teams: TeamOption[];
   categories: CategoryOption[];
   role: string;
+  canCreateSessions: boolean;
 };
 
 const MAX_PILLS_PER_CELL = 3;
@@ -40,6 +41,7 @@ export async function CalendarMonth({
   teams,
   categories,
   role,
+  canCreateSessions,
 }: Props) {
   const t = await getTranslations('calendario');
 
@@ -118,6 +120,7 @@ export async function CalendarMonth({
                       canManage={canManage}
                       manageableTeamIds={manageableTeamIds}
                       canManageClubEvents={canManageClubEvents}
+                      canCreateSessions={canCreateSessions}
                       teams={teams}
                       categories={categories}
                     />
