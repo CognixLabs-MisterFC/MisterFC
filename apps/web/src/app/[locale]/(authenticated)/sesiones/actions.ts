@@ -16,6 +16,8 @@ import {
   saveAsTemplateSchema,
   createFromTemplateSchema,
   sessionIdSchema,
+  planSessionForEventSchema,
+  sessionDateFromEventStart,
   buildDefaultSkeleton,
   createSupabaseServerClient,
 } from '@misterfc/core';
@@ -56,6 +58,10 @@ function todayIso(): string {
  * con `buildDefaultSkeleton()` de core. Si la siembra falla tras crear la cabecera,
  * borra la cabecera para no dejar una sesión sin bloques (best-effort). Devuelve
  * el id para redirigir al editor.
+ *
+ * 12.8a — si se pasa `event_id` (vincular a un entrenamiento), HEREDA fecha y equipo
+ * del evento (autoritativo, leído server-side) e ignora los team_id/session_date del
+ * input. El evento debe ser un `training` del club activo.
  */
 export async function createSession(input: unknown): Promise<SessionActionState> {
   const parsed = createSessionSchema.safeParse(input);
@@ -74,13 +80,33 @@ export async function createSession(input: unknown): Promise<SessionActionState>
   });
   if (!canCreate) return { error: 'forbidden' };
 
+  // Valores por defecto (alta manual). Si hay event_id, se sobrescriben con los del
+  // evento (12.8a).
+  let teamId = parsed.data.team_id ?? null;
+  let sessionDate = parsed.data.session_date ?? todayIso();
+  let eventId: string | null = null;
+
+  if (parsed.data.event_id) {
+    const { data: ev } = await supabase
+      .from('events')
+      .select('starts_at, team_id, type, club_id')
+      .eq('id', parsed.data.event_id)
+      .maybeSingle();
+    // Solo se vincula a un entrenamiento del club activo.
+    if (!ev || ev.club_id !== clubId || ev.type !== 'training') return { error: 'invalid' };
+    eventId = parsed.data.event_id;
+    teamId = (ev.team_id as string | null) ?? null;
+    sessionDate = sessionDateFromEventStart(ev.starts_at as string);
+  }
+
   const { data: created, error } = await supabase
     .from('sessions')
     .insert({
       owner_profile_id: ctx.user.id,
       club_id: clubId,
-      team_id: parsed.data.team_id ?? null,
-      session_date: parsed.data.session_date ?? todayIso(),
+      team_id: teamId,
+      session_date: sessionDate,
+      event_id: eventId,
     })
     .select('id')
     .maybeSingle();
@@ -107,6 +133,31 @@ export async function createSession(input: unknown): Promise<SessionActionState>
 
   revalidateSessions();
   return { success: true, id };
+}
+
+/**
+ * F12.8a — "Planificar sesión" desde un evento de entrenamiento del calendario.
+ * LINK-OR-CREATE (idempotente, 1:1): si el evento ya tiene una sesión vinculada,
+ * devuelve su id; si no, crea una nueva (heredando fecha/equipo del evento y
+ * sembrando el esqueleto) vía createSession. El botón redirige al editor con el id.
+ */
+export async function planSessionForEvent(input: unknown): Promise<SessionActionState> {
+  const parsed = planSessionForEventSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // ¿Ya hay sesión vinculada a este evento? (RLS = gate; el staff ve las del club).
+  const { data: existing } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('event_id', parsed.data.event_id)
+    .eq('is_template', false)
+    .maybeSingle();
+  if (existing?.id) return { success: true, id: existing.id as string };
+
+  return createSession({ event_id: parsed.data.event_id });
 }
 
 /**

@@ -8,6 +8,7 @@ import {
   isSessionVisibility,
   canRecommend,
   isRecommendedExercise,
+  sessionDateFromEventStart,
   isIsoDate,
   addDaysIso,
   mondayOfWeek,
@@ -31,6 +32,7 @@ import {
   saveAsTemplateSchema,
   createFromTemplateSchema,
   sessionIdSchema,
+  planSessionForEventSchema,
   sumTaskMinutes,
 } from '../session-form';
 
@@ -173,6 +175,37 @@ describe('F12.2 — createSessionSchema (alta mínima)', () => {
     ).toBe(true);
     expect(createSessionSchema.safeParse({ team_id: 'nope' }).success).toBe(false);
     expect(createSessionSchema.safeParse({ session_date: '10-09-2026' }).success).toBe(false);
+  });
+
+  it('12.8a — acepta event_id uuid (opcional) y rechaza basura', () => {
+    expect(
+      createSessionSchema.safeParse({ event_id: '11111111-1111-4111-8111-111111111111' }).success
+    ).toBe(true);
+    expect(createSessionSchema.safeParse({ event_id: 'nope' }).success).toBe(false);
+  });
+});
+
+describe('F12.8a — planSessionForEventSchema + sessionDateFromEventStart', () => {
+  it('planSessionForEventSchema exige event_id uuid', () => {
+    expect(
+      planSessionForEventSchema.safeParse({ event_id: '11111111-1111-4111-8111-111111111111' }).success
+    ).toBe(true);
+    expect(planSessionForEventSchema.safeParse({}).success).toBe(false);
+    expect(planSessionForEventSchema.safeParse({ event_id: 'x' }).success).toBe(false);
+  });
+
+  it('deriva la fecha en TZ del club (Europe/Madrid) del starts_at', () => {
+    // Mediodía UTC → mismo día local.
+    expect(sessionDateFromEventStart('2026-06-20T17:00:00Z')).toBe('2026-06-20');
+    // Verano (UTC+2): 23:30Z = 01:30 local del día siguiente.
+    expect(sessionDateFromEventStart('2026-06-19T23:30:00Z')).toBe('2026-06-20');
+    // Invierno (UTC+1): 23:30Z = 00:30 local del día siguiente.
+    expect(sessionDateFromEventStart('2026-01-15T23:30:00Z')).toBe('2026-01-16');
+  });
+
+  it('acepta TZ explícita', () => {
+    // En UTC, 23:30Z sigue siendo el mismo día.
+    expect(sessionDateFromEventStart('2026-06-19T23:30:00Z', 'UTC')).toBe('2026-06-19');
   });
 });
 

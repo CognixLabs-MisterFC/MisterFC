@@ -17,6 +17,8 @@ type Props = {
   canManageClubEvents: boolean;
   teams: TeamOption[];
   categories: CategoryOption[];
+  /** 12.8a — puede planificar sesiones (botón en eventos training de equipo). */
+  canCreateSessions: boolean;
 };
 
 const TYPE_ICONS = {
@@ -48,6 +50,7 @@ export function EventPill({
   canManageClubEvents,
   teams,
   categories,
+  canCreateSessions,
 }: Props) {
   const t = useTranslations('calendario.types');
   const [open, setOpen] = useState(false);
@@ -98,6 +101,7 @@ export function EventPill({
         canManageClubEvents={canManageClubEvents}
         teams={teams}
         categories={categories}
+        canCreateSessions={canCreateSessions}
       />
     </>
   );

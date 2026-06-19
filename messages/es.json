@@ -1219,12 +1219,14 @@
         "no_active_club": "No hay club activo.",
         "cross_club": "El equipo o categoría no pertenece a este club.",
         "not_found": "El evento no existe o ya no es accesible.",
-        "db": "Error al guardar. Inténtalo de nuevo."
+        "db": "Error al guardar. Inténtalo de nuevo.",
+        "plan_failed": "No se pudo planificar la sesión. Inténtalo de nuevo."
       },
       "save": "Guardar",
       "cancel": "Cancelar",
       "mark_attendance": "Registrar asistencia",
-      "open_callup": "Convocatoria"
+      "open_callup": "Convocatoria",
+      "plan_session": "Planificar sesión"
     },
     "delete": {
       "trigger": "Borrar",

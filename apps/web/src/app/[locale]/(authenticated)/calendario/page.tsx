@@ -16,6 +16,7 @@ import {
   computeRange,
   loadCalendarData,
   loadManageableTeams,
+  loadCanCreateSessions,
   type CalendarFilters as Filters,
 } from './queries';
 
@@ -73,6 +74,10 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
   const canCreateAny =
     canManageClubEvents || manageableTeamIds.length > 0;
 
+  // 12.8a — ¿puede planificar sesiones? (botón "Planificar sesión" en eventos
+  // training de equipo). Capacidad distinta de gestionar el calendario.
+  const canCreateSessions = await loadCanCreateSessions(ctx.activeClub.club.id);
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -115,6 +120,7 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
           teams={teams}
           categories={categories}
           role={ctx.activeClub.role}
+          canCreateSessions={canCreateSessions}
         />
       )}
       {view === 'week' && (
@@ -127,6 +133,7 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
           teams={teams}
           categories={categories}
           role={ctx.activeClub.role}
+          canCreateSessions={canCreateSessions}
         />
       )}
       {view === 'agenda' && (
@@ -138,6 +145,7 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
           teams={teams}
           categories={categories}
           role={ctx.activeClub.role}
+          canCreateSessions={canCreateSessions}
         />
       )}
     </div>
