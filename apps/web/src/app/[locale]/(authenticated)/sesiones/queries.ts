@@ -113,6 +113,38 @@ export async function loadSessions(
   return { sessions, total: count ?? 0 };
 }
 
+// ── Plantillas del club (12.6 — pestaña "Plantillas", solo staff) ────────────
+export type TemplateRow = {
+  id: string;
+  title: string | null;
+  total_minutes: number | null;
+  created_at: string;
+};
+
+/**
+ * Lista las PLANTILLAS del club (is_template=true), CONFIANDO en la RLS: las
+ * plantillas solo las ve el staff (jugador/familia nunca — 12.1). Orden por fecha de
+ * creación descendente. Sin paginación: el set de plantillas por club es modesto.
+ */
+export async function loadTemplates(clubId: string): Promise<TemplateRow[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('sessions')
+    .select('id, title, total_minutes, created_at')
+    .eq('club_id', clubId)
+    .eq('is_template', true)
+    .order('created_at', { ascending: false });
+
+  return (data ?? []).map((s) => ({
+    id: s.id as string,
+    title: (s.title as string | null) ?? null,
+    total_minutes: (s.total_minutes as number | null) ?? null,
+    created_at: s.created_at as string,
+  }));
+}
+
 // ── Vista semana / microciclo (12.3) ─────────────────────────────────────────
 export type SessionWeekRow = {
   id: string;

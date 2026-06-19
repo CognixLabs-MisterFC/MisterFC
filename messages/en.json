@@ -3095,7 +3095,8 @@
     },
     "tabs": {
       "list": "List",
-      "week": "Week"
+      "week": "Week",
+      "templates": "Templates"
     },
     "list": {
       "search_placeholder": "Search by title…",
@@ -3129,6 +3130,28 @@
       "help_published": "Visible to the team's players and families.",
       "toast_published": "Session published to the team",
       "toast_unpublished": "Session set back to draft"
+    },
+    "templates": {
+      "save_as": "Save as template",
+      "save_help": "Create a reusable template from this session (blocks and exercises included). It won't store the date or team.",
+      "name": "Template name",
+      "name_ph": "e.g. Competitive microcycle",
+      "save": "Save template",
+      "cancel": "Cancel",
+      "toast_saved": "Template saved",
+      "start_from": "How to start",
+      "mode_blank": "Blank",
+      "mode_template": "From template",
+      "template": "Template",
+      "untitled": "Untitled template",
+      "empty": "No templates yet.",
+      "empty_help": "Save a session as a template from its editor to reuse its blocks and exercises.",
+      "minutes": "{count} min",
+      "use": "Use",
+      "delete": "Delete",
+      "delete_title": "Delete template?",
+      "delete_description": "The template “{name}” and its blocks and exercises will be deleted. This action cannot be undone.",
+      "toast_deleted": "Template deleted"
     }
   }
 }

@@ -239,6 +239,37 @@ export const moveTaskSchema = z.object({
 });
 export type MoveTaskInput = z.infer<typeof moveTaskSchema>;
 
+// ── Plantillas (12.6 — D5) ────────────────────────────────────────────────────
+// Clonado vía el RPC clone_session (atómico). Dos direcciones, dos schemas:
+//   · GUARDAR COMO PLANTILLA: nombre obligatorio (la plantilla SÍ se identifica por
+//     su título); el clon se crea con is_template=true, sin fecha/equipo.
+//   · CREAR DESDE PLANTILLA: equipo (opcional) + fecha (opcional → hoy en la capa de
+//     app); el clon se crea con is_template=false. NO siembra el esqueleto (D5).
+
+/** Guardar la sesión actual como plantilla (nombre requerido). */
+export const saveAsTemplateSchema = z.object({
+  source_id: z.string().uuid({ message: 'source_id_invalid' }),
+  title: z.string().trim().min(1, { message: 'title_required' }).max(120, { message: 'too_long' }),
+});
+export type SaveAsTemplateInput = z.infer<typeof saveAsTemplateSchema>;
+
+/** Crear una sesión real desde una plantilla (elige equipo + fecha). */
+export const createFromTemplateSchema = z.object({
+  template_id: z.string().uuid({ message: 'template_id_invalid' }),
+  team_id: teamIdSchema,
+  session_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'date_invalid' })
+    .nullish(),
+});
+export type CreateFromTemplateInput = z.infer<typeof createFromTemplateSchema>;
+
+/** Borrar una plantilla (o sesión) por id. */
+export const sessionIdSchema = z.object({
+  id: z.string().uuid({ message: 'id_invalid' }),
+});
+export type SessionIdInput = z.infer<typeof sessionIdSchema>;
+
 /**
  * Suma de los minutos del día de un conjunto de tareas (cabecera = total
  * derivado). Ignora los `null`. Devuelve `null` si no hay ningún minuto (para

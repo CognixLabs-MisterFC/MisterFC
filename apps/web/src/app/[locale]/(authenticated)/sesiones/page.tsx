@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Plus, ClipboardList, Clock } from 'lucide-react';
+import { Plus, ClipboardList, Clock, BookMarked, FilePlus2 } from 'lucide-react';
 import {
   type Role,
   createSupabaseServerClient,
@@ -19,11 +19,13 @@ import { Badge } from '@/components/ui/badge';
 import { SessionsSearchInput } from './_components/sessions-search-input';
 import { TeamSelect } from './_components/team-select';
 import { SessionDateRange } from './_components/session-date-range';
+import { DeleteTemplateButton } from './_components/delete-template-button';
 import {
   SESSIONS_PAGE_SIZE,
   loadSessions,
   loadSessionsWeek,
   loadClubTeams,
+  loadTemplates,
 } from './queries';
 
 type Props = {
@@ -69,6 +71,7 @@ export default async function SesionesPage({ params, searchParams }: Props) {
   const tList = await getTranslations('sesiones.list');
   const tWeek = await getTranslations('sesiones.week');
   const tTabs = await getTranslations('sesiones.tabs');
+  const tTpl = await getTranslations('sesiones.templates');
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
@@ -77,13 +80,15 @@ export default async function SesionesPage({ params, searchParams }: Props) {
     loadClubTeams(clubId),
   ]);
 
-  const view = sp.view === 'semana' ? 'semana' : 'lista';
+  const view =
+    sp.view === 'semana' ? 'semana' : sp.view === 'plantillas' ? 'plantillas' : 'lista';
   const teamParam = sp.team && teams.some((tm) => tm.id === sp.team) ? sp.team : null;
 
-  // Enlaces de las pestañas (preservan el equipo seleccionado).
+  // Enlaces de las pestañas (preservan el equipo seleccionado donde aplica).
   const teamQs = teamParam ? `&team=${teamParam}` : '';
   const listHref = `/sesiones${teamParam ? `?team=${teamParam}` : ''}`;
   const weekHref = `/sesiones?view=semana${teamQs}`;
+  const templatesHref = '/sesiones?view=plantillas';
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
@@ -126,11 +131,24 @@ export default async function SesionesPage({ params, searchParams }: Props) {
         >
           {tTabs('week')}
         </Link>
+        <Link
+          href={templatesHref}
+          className={cn(
+            'border-b-2 px-3 py-2 text-sm font-medium transition-colors',
+            view === 'plantillas'
+              ? 'border-primary text-foreground'
+              : 'border-transparent text-muted-foreground hover:text-foreground'
+          )}
+        >
+          {tTabs('templates')}
+        </Link>
       </div>
 
       {view === 'lista'
         ? await ListView({ clubId, teams, teamParam, sp, locale, tList })
-        : await WeekView({ clubId, teams, teamParam, weekParam: sp.week, locale, tWeek })}
+        : view === 'semana'
+          ? await WeekView({ clubId, teams, teamParam, weekParam: sp.week, locale, tWeek })
+          : await TemplatesView({ clubId, locale, canCreate: canCreate === true, tTpl })}
     </div>
   );
 }
@@ -364,5 +382,71 @@ async function WeekView({
         })}
       </div>
     </>
+  );
+}
+
+// ── Vista PLANTILLAS (12.6) ───────────────────────────────────────────────────
+async function TemplatesView({
+  clubId,
+  locale,
+  canCreate,
+  tTpl,
+}: {
+  clubId: string;
+  locale: string;
+  canCreate: boolean;
+  tTpl: Awaited<ReturnType<typeof getTranslations>>;
+}) {
+  const templates = await loadTemplates(clubId);
+  const fmt = new Intl.DateTimeFormat(INTL_LOCALE[locale] ?? 'es-ES', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+
+  if (templates.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+          <BookMarked className="size-10 text-muted-foreground" aria-hidden />
+          <p className="text-sm text-muted-foreground">{tTpl('empty')}</p>
+          <p className="max-w-sm text-xs text-muted-foreground">{tTpl('empty_help')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <ul className="flex flex-col gap-2">
+      {templates.map((tpl) => {
+        const name = tpl.title ?? tTpl('untitled');
+        return (
+          <li
+            key={tpl.id}
+            className="flex items-center justify-between gap-3 rounded-lg border p-3"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{name}</p>
+              <p className="text-xs text-muted-foreground">
+                {fmt.format(new Date(tpl.created_at))}
+                {tpl.total_minutes != null ? ` · ${tTpl('minutes', { count: tpl.total_minutes })}` : ''}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              {canCreate ? (
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/sesiones/nueva?template=${tpl.id}`}>
+                    <FilePlus2 className="size-4" aria-hidden />
+                    {tTpl('use')}
+                  </Link>
+                </Button>
+              ) : null}
+              <DeleteTemplateButton templateId={tpl.id} templateName={name} />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

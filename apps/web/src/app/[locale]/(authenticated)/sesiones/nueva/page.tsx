@@ -6,10 +6,13 @@ import { loadShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent } from '@/components/ui/card';
-import { loadClubTeams } from '../queries';
+import { loadClubTeams, loadTemplates } from '../queries';
 import { NuevaSesionForm } from '../_components/nueva-sesion-form';
 
-type Props = { params: Promise<{ locale: string }> };
+type Props = {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ template?: string }>;
+};
 
 const STAFF_ROLES: ReadonlyArray<Role> = [
   'admin_club',
@@ -23,8 +26,9 @@ const STAFF_ROLES: ReadonlyArray<Role> = [
  * esqueleto + redirige al editor. Gating can_create_sessions (RPC) al cargar
  * (defensa en profundidad; la RLS es el gate real).
  */
-export default async function NuevaSesionPage({ params }: Props) {
+export default async function NuevaSesionPage({ params, searchParams }: Props) {
   const { locale } = await params;
+  const { template } = await searchParams;
   setRequestLocale(locale);
 
   const ctx = await loadShellContext();
@@ -61,7 +65,10 @@ export default async function NuevaSesionPage({ params }: Props) {
     );
   }
 
-  const teams = await loadClubTeams(ctx.activeClub.club.id);
+  const [teams, templates] = await Promise.all([
+    loadClubTeams(ctx.activeClub.club.id),
+    loadTemplates(ctx.activeClub.club.id),
+  ]);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
@@ -73,7 +80,7 @@ export default async function NuevaSesionPage({ params }: Props) {
         {t('back')}
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">{t('new_title')}</h1>
-      <NuevaSesionForm teams={teams} />
+      <NuevaSesionForm teams={teams} templates={templates} initialTemplateId={template} />
     </div>
   );
 }

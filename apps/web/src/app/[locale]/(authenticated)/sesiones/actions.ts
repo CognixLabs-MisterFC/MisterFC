@@ -13,6 +13,9 @@ import {
   reorderBlocksSchema,
   reorderTasksSchema,
   moveTaskSchema,
+  saveAsTemplateSchema,
+  createFromTemplateSchema,
+  sessionIdSchema,
   buildDefaultSkeleton,
   createSupabaseServerClient,
 } from '@misterfc/core';
@@ -305,6 +308,85 @@ export async function reorderTasks(input: unknown): Promise<SessionActionState> 
 
   revalidateSessions();
   return { success: true, id: parsed.data.block_id };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F12.6 — Plantillas: guardar como plantilla / crear desde plantilla / borrar.
+// El clonado es ATÓMICO vía el RPC clone_session (12.6); la RLS de 12.1 es el gate
+// real. Pre-check de autoría como en createSession (defensa en profundidad).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Guarda la sesión actual como una plantilla nueva (is_template, sin fecha/equipo). */
+export async function saveSessionAsTemplate(input: unknown): Promise<SessionActionState> {
+  const parsed = saveAsTemplateSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: id, error } = await supabase.rpc('clone_session', {
+    p_source_id: parsed.data.source_id,
+    p_is_template: true,
+    p_title: parsed.data.title,
+  });
+
+  if (error) return { error: mapPgErr(error.code) };
+  if (!id) return { error: 'generic' };
+
+  revalidateSessions();
+  return { success: true, id: id as string };
+}
+
+/**
+ * Crea una sesión REAL desde una plantilla (clona bloques + ejercicios a la fecha +
+ * equipo elegidos). NO siembra el esqueleto por defecto (lo hace el clonado: copia
+ * los bloques de la plantilla). Devuelve el id para redirigir al editor.
+ */
+export async function createSessionFromTemplate(input: unknown): Promise<SessionActionState> {
+  const parsed = createFromTemplateSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: id, error } = await supabase.rpc('clone_session', {
+    p_source_id: parsed.data.template_id,
+    p_is_template: false,
+    p_session_date: parsed.data.session_date ?? todayIso(),
+    p_team_id: parsed.data.team_id ?? undefined,
+  });
+
+  if (error) return { error: mapPgErr(error.code) };
+  if (!id) return { error: 'generic' };
+
+  revalidateSessions();
+  return { success: true, id: id as string };
+}
+
+/** Borra una plantilla (RLS de DELETE = gate: owner∪admin). */
+export async function deleteTemplate(input: unknown): Promise<SessionActionState> {
+  const parsed = sessionIdSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase
+    .from('sessions')
+    .delete()
+    .eq('id', parsed.data.id)
+    .eq('is_template', true);
+
+  if (error) return { error: mapPgErr(error.code) };
+
+  revalidateSessions();
+  return { success: true };
 }
 
 /** Mueve una tarea a otro bloque de la misma sesión (RPC: cambia block_id +
