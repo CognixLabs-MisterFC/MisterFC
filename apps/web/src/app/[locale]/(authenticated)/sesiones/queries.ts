@@ -570,6 +570,8 @@ export type PickableExercise = {
   categories: string[];
   tactical_objectives: string[];
   technical_objectives: string[];
+  /** Fases (tipos de bloque) para las que sirve el ejercicio (12.7a). */
+  phases: string[];
 };
 
 /**
@@ -583,7 +585,7 @@ export async function loadPickableExercises(clubId: string): Promise<PickableExe
 
   const { data } = await supabase
     .from('exercises')
-    .select('id, name, categories, tactical_objectives, technical_objectives')
+    .select('id, name, categories, tactical_objectives, technical_objectives, phases')
     .eq('club_id', clubId)
     .is('archived_at', null)
     .order('name', { ascending: true });
@@ -594,5 +596,6 @@ export async function loadPickableExercises(clubId: string): Promise<PickableExe
     categories: (e.categories as string[] | null) ?? [],
     tactical_objectives: (e.tactical_objectives as string[] | null) ?? [],
     technical_objectives: (e.technical_objectives as string[] | null) ?? [],
+    phases: (e.phases as string[] | null) ?? [],
   }));
 }
