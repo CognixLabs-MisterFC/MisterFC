@@ -18,7 +18,12 @@ yarn-error.log*
 .env
 .env.local
 .env*.local
+# direnv: config local por máquina/cuenta (no versionar). Plantilla: .envrc.example
+.envrc
 .envrc.local
+
+# Notas locales por máquina (no versionar). Versionado: known-issues.md
+docs/journey/known-issues.local.md
 
 # OS
 .DS_Store
