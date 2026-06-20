@@ -4,12 +4,14 @@ import { useMemo, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   ClipboardList,
+  ClipboardCheck,
   Loader2,
   Megaphone,
   Plus,
   Calendar as CalendarIcon,
 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
+import { Badge } from '@/components/ui/badge';
 import { PlanSessionDialog } from './plan-session-dialog';
 import {
   EVENT_TYPES,
@@ -362,6 +364,14 @@ export function EventDialog({
               ? t('dialog.readonly_description')
               : t('dialog.description')}
           </DialogDescription>
+          {/* F12.9 — badge "sesión planificada" cuando el entrenamiento ya tiene
+              sesión vinculada visible para el usuario (RLS-aware). */}
+          {isEdit && event?.type === 'training' && event.has_session && (
+            <Badge variant="secondary" className="mt-1 w-fit gap-1">
+              <ClipboardCheck className="size-3" aria-hidden />
+              <span>{t('session_planned')}</span>
+            </Badge>
+          )}
         </DialogHeader>
 
         <div className="grid max-h-[60vh] gap-4 overflow-y-auto pr-1">

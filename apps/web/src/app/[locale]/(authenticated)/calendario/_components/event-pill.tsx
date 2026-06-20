@@ -2,7 +2,14 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Dumbbell, Trophy, Handshake, Circle, Goal } from 'lucide-react';
+import {
+  Dumbbell,
+  Trophy,
+  Handshake,
+  Circle,
+  Goal,
+  ClipboardCheck,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatTime } from '@/lib/calendar-utils';
 import { EventDialog } from './event-dialog';
@@ -53,6 +60,7 @@ export function EventPill({
   canCreateSessions,
 }: Props) {
   const t = useTranslations('calendario.types');
+  const tc = useTranslations('calendario');
   const [open, setOpen] = useState(false);
 
   const Icon = TYPE_ICONS[event.type];
@@ -77,6 +85,20 @@ export function EventPill({
         aria-label={`${event.title} — ${t(event.type)}`}
       >
         <Icon className="size-3 shrink-0" aria-hidden />
+        {/* F12.9 — indicador "sesión planificada": junto al icono de pesas, solo
+            en entrenamientos con sesión vinculada visible (RLS-aware). */}
+        {event.type === 'training' && event.has_session && (
+          <span
+            className="inline-flex shrink-0"
+            title={tc('session_planned')}
+            aria-label={tc('session_planned')}
+          >
+            <ClipboardCheck
+              className="size-3 text-emerald-600 dark:text-emerald-400"
+              aria-hidden
+            />
+          </span>
+        )}
         {!event.all_day && (
           <span className="shrink-0 font-mono text-[10px] opacity-80">
             {formatTime(event.starts_at, locale)}

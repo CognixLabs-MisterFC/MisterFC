@@ -37,6 +37,10 @@ export type CalendarEvent = {
   team_name: string | null;
   team_color: string | null;
   category_name: string | null;
+  /** F12.9 — el entrenamiento tiene una sesión vinculada que el usuario PUEDE
+   *  VER (RLS de 12.1: staff ve cualquiera del club; jugador/familia solo si está
+   *  publicada). Solo aplica a type='training'; en el resto es false. */
+  has_session: boolean;
 };
 
 export type TeamOption = {
@@ -192,8 +196,20 @@ export async function loadCalendarData(
       team_name: team?.name ?? null,
       team_color: team?.color ?? null,
       category_name: cat?.name ?? team?.categories?.name ?? null,
+      has_session: false,
     };
   });
+
+  // F12.9 — marca los entrenamientos con sesión vinculada VISIBLE para el usuario.
+  // La RLS de `sessions` (12.1) es el filtro: el staff ve las del club; el
+  // jugador/familia solo las publicadas (visibility='team'). Un único lookup.
+  const trainingIds = events
+    .filter((e) => e.type === 'training')
+    .map((e) => e.id);
+  const plannedIds = await loadPlannedEventIds(supabase, trainingIds);
+  for (const e of events) {
+    if (plannedIds.has(e.id)) e.has_session = true;
+  }
 
   // Teams + categories del club para los selectores de filtro y dialog.
   const { data: rawTeams } = await supabase
@@ -250,6 +266,29 @@ export async function loadCalendarData(
   }));
 
   return { events, teams, categories };
+}
+
+/**
+ * F12.9 — IDs de eventos (entrenamientos) que tienen una sesión REAL vinculada
+ * VISIBLE para el usuario actual. RLS-aware: confía en la RLS de `sessions` (12.1)
+ * — el staff ve las del club, el jugador/familia solo las publicadas. Un solo
+ * SELECT acotado a los ids pasados; devuelve el conjunto presente.
+ */
+async function loadPlannedEventIds(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  eventIds: string[]
+): Promise<Set<string>> {
+  if (eventIds.length === 0) return new Set();
+  const { data } = await supabase
+    .from('sessions')
+    .select('event_id')
+    .in('event_id', eventIds)
+    .eq('is_template', false);
+  return new Set(
+    (data ?? [])
+      .map((r) => r.event_id as string | null)
+      .filter((id): id is string => id != null)
+  );
 }
 
 /**
@@ -348,6 +387,19 @@ export async function loadEvent(eventId: string): Promise<CalendarEvent | null> 
     categories: { name: string } | null;
   } | null;
   const cat = data.categories as unknown as { name: string } | null;
+
+  // F12.9 — ¿tiene sesión vinculada visible? (RLS = gate). Solo para trainings.
+  let hasSession = false;
+  if (data.type === 'training') {
+    const { data: s } = await supabase
+      .from('sessions')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('is_template', false)
+      .maybeSingle();
+    hasSession = s != null;
+  }
+
   return {
     id: data.id as string,
     club_id: data.club_id as string,
@@ -368,6 +420,7 @@ export async function loadEvent(eventId: string): Promise<CalendarEvent | null> 
     team_name: team?.name ?? null,
     team_color: team?.color ?? null,
     category_name: cat?.name ?? team?.categories?.name ?? null,
+    has_session: hasSession,
   };
 }
 
