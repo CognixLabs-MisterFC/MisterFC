@@ -3,7 +3,11 @@
     "app_name": "MisterFC",
     "welcome": "Bienvenido a MisterFC",
     "tagline": "Gestión, metodología y desarrollo deportivo para entrenadores de fútbol base y amateur.",
-    "footer": "Cognix Labs · v0.0.0"
+    "footer": "Cognix Labs · v0.0.0",
+    "fullscreen": {
+      "enter": "Pantalla completa",
+      "exit": "Salir de pantalla completa"
+    }
   },
   "auth": {
     "signin": {
