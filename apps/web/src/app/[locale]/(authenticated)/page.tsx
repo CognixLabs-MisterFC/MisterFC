@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { NextMatchPanel } from './next-match-panel';
+import { TrainingAlertPanel } from './training-alert-panel';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -177,6 +178,15 @@ export default async function Home({ params }: Props) {
           pendiente (jugador). Admin/coord no lo ven. */}
       <NextMatchPanel
         role={role as Parameters<typeof NextMatchPanel>[0]['role']}
+        clubId={clubId}
+        membershipId={ctx.activeClub.membershipId}
+        locale={locale}
+      />
+
+      {/* F12.8b — Alerta de entrenamientos <48h sin sesión planificada (cuerpo
+          técnico = sus equipos; admin/coord = club). El panel se oculta si no hay. */}
+      <TrainingAlertPanel
+        role={role}
         clubId={clubId}
         membershipId={ctx.activeClub.membershipId}
         locale={locale}
