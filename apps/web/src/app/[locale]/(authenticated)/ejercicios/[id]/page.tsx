@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { buildExerciseExport } from '@misterfc/core';
-import { DiagramView } from '@/components/match/diagram-view';
+import { DiagramFullscreenViewer } from './_components/diagram-fullscreen-viewer';
 import { ExerciseActions } from '../_components/exercise-actions';
 import { ExerciseExportButton } from '../_components/exercise-export-button';
 import { loadExercise } from '../queries';
@@ -177,7 +177,7 @@ export default async function EjercicioDetailPage({ params }: Props) {
             </Button>
           </CardHeader>
           <CardContent>
-            <DiagramView diagram={exercise.diagram} />
+            <DiagramFullscreenViewer diagram={exercise.diagram} />
           </CardContent>
         </Card>
       )}

@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PitchEditor } from '@/components/match/pitch-editor';
+import { FullscreenContainer } from '@/components/ui/fullscreen-container';
 import type { BoardExercise } from '../../ejercicios/queries';
 
 type Mode = 'blank' | 'exercise';
@@ -81,7 +82,10 @@ export function PizarraClient({
         <p className="text-sm text-muted-foreground">{t('pick_hint')}</p>
       )}
 
-      <PitchEditor key={editorKey} initialDiagram={initial} showClear showExport />
+      {/* F13.0 — la pizarra sigue EDITABLE en pantalla completa (solo más grande). */}
+      <FullscreenContainer>
+        <PitchEditor key={editorKey} initialDiagram={initial} showClear showExport />
+      </FullscreenContainer>
     </div>
   );
 }
