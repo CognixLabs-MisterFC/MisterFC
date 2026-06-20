@@ -6,9 +6,10 @@
  * Envuelve cualquier contenido (la pizarra editable F11B, el visor de diagramas
  * read-only, …) y le añade un botón de entrar/salir. En fullscreen aplica un
  * overlay `fixed inset-0` (sirve tanto para la Fullscreen API nativa como para el
- * fallback CSS de iOS Safari, ver useFullscreen) con fondo del tema y un botón de
- * salir grande y táctil. NO remonta el contenido al alternar (no se pierde el
- * estado efímero del editor). Salida también con Esc.
+ * fallback CSS de iOS Safari, ver useFullscreen) con fondo del tema: el contenido
+ * LLENA la pantalla y el botón de salir FLOTA pequeño en la esquina (no come
+ * layout). NO remonta el contenido al alternar (no se pierde el estado efímero del
+ * editor). Salida también con Esc.
  */
 
 import { type ReactNode } from 'react';
@@ -33,50 +34,43 @@ export function FullscreenContainer({
   const t = useTranslations('common.fullscreen');
   const { ref, isFullscreen, enter, exit } = useFullscreen<HTMLDivElement>();
 
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        'flex flex-col gap-2',
-        isFullscreen &&
-          'fixed inset-0 z-50 overflow-auto bg-background p-3 sm:p-4',
-        className
-      )}
-    >
-      <div className="flex justify-end">
-        {isFullscreen ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            className="gap-2"
-            onClick={exit}
-            aria-label={t('exit')}
-          >
-            <Minimize2 className="size-5" aria-hidden />
-            {t('exit')}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="gap-1"
-            onClick={enter}
-            aria-label={t('enter')}
-          >
-            <Maximize2 className="size-4" aria-hidden />
-            {t('enter')}
-          </Button>
-        )}
+  if (isFullscreen) {
+    return (
+      <div ref={ref} className={cn('fixed inset-0 z-50 bg-background', className)}>
+        <div className={cn('flex h-full w-full flex-col', contentClassName)}>
+          {children({ isFullscreen })}
+        </div>
+        {/* Salir: botón pequeño flotante en la esquina (no ocupa layout). */}
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="absolute right-3 top-3 z-20 shadow-md"
+          onClick={exit}
+          aria-label={t('exit')}
+        >
+          <Minimize2 className="size-5" aria-hidden />
+        </Button>
       </div>
-      <div
-        className={cn(
-          'flex flex-col',
-          isFullscreen && 'min-h-0 flex-1',
-          contentClassName
-        )}
-      >
+    );
+  }
+
+  return (
+    <div ref={ref} className={cn('flex flex-col gap-2', className)}>
+      <div className="flex justify-end">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1"
+          onClick={enter}
+          aria-label={t('enter')}
+        >
+          <Maximize2 className="size-4" aria-hidden />
+          {t('enter')}
+        </Button>
+      </div>
+      <div className={cn('flex flex-col', contentClassName)}>
         {children({ isFullscreen })}
       </div>
     </div>

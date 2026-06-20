@@ -96,6 +96,7 @@ export function PizarraClient({
             showExport
             fill={isFullscreen}
             fillRotationDeg={isFullscreen && isLandscape ? 90 : 0}
+            cleanChrome={isFullscreen}
           />
         )}
       </FullscreenContainer>

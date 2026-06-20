@@ -30,7 +30,7 @@ import {
   useSensors,
 } from '@dnd-kit/core';
 import { CSS, type Transform } from '@dnd-kit/utilities';
-import { Undo2, Redo2, Trash2, Eraser, Download } from 'lucide-react';
+import { Undo2, Redo2, Trash2, Eraser, Download, SlidersHorizontal, X } from 'lucide-react';
 import {
   pitchEditorReducer,
   initEditorState,
@@ -178,6 +178,7 @@ export function PitchBoard({
   lockFieldKind = false,
   fill = false,
   fillRotationDeg = 0,
+  cleanChrome = false,
   className,
 }: {
   initialDiagram?: Diagram;
@@ -199,6 +200,10 @@ export function PitchBoard({
   /** F13.0 — gira la unidad-campo (campo+tinta) como bloque rígido: 90 = apaisado.
    *  Las coordenadas NO se mutan; el puntero/drag compensan la rotación. */
   fillRotationDeg?: 0 | 90;
+  /** F13.0 — modo LIMPIO (fullscreen pizarra): oculta el toolbar; herramienta por
+   *  defecto = mano alzada; las herramientas salen en una paleta flotante a un
+   *  toque. Off por defecto: la vista normal del editor no cambia. */
+  cleanChrome?: boolean;
   className?: string;
 }) {
   // D9 (F11B.1): todas las etiquetas del editor se localizan aquí.
@@ -225,6 +230,27 @@ export function PitchBoard({
     fieldAspectNum,
     fill ? fillRotationDeg : 0,
   );
+
+  // F13.0 — modo limpio: paleta de herramientas flotante (cerrada por defecto).
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // F13.0 (Regla #11) — al ENTRAR en modo limpio la herramienta pasa a mano alzada
+  // (dibujar es la acción por defecto); al SALIR se restaura la anterior. El tool
+  // vive en el reducer, así que se orquesta con un effect sobre `cleanChrome` (se
+  // lee el tool actual como snapshot en la transición, no como dependencia).
+  const prevToolRef = useRef<PitchTool | null>(null);
+  useEffect(() => {
+    if (cleanChrome) {
+      prevToolRef.current = state.tool; // snapshot al entrar
+      dispatch({ type: 'SET_TOOL', tool: FREEHAND_TOOL });
+    } else if (prevToolRef.current != null) {
+      const prev = prevToolRef.current;
+      prevToolRef.current = null;
+      dispatch({ type: 'SET_TOOL', tool: prev });
+    }
+    // Solo reacciona a entrar/salir del modo limpio; el tool es snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleanChrome]);
 
   const diagram = toDiagram(state);
   const isRubberTool = (DRAW_TOOLS as readonly string[]).includes(state.tool);
@@ -376,10 +402,19 @@ export function PitchBoard({
   const selected = state.elements.find((e) => e.id === state.selectedId) ?? null;
 
   return (
-    <div className={cn('flex flex-col gap-3', fill && 'h-full min-h-0', className)}>
-      {/* Barra de herramientas */}
-      <div className="flex flex-wrap items-center gap-2">
-        {TOOL_ORDER.map((tool) => (
+    <div
+      className={cn(
+        'flex flex-col gap-3',
+        fill && 'h-full min-h-0',
+        cleanChrome && 'relative',
+        className,
+      )}
+    >
+      {/* Barra de herramientas (oculta en modo limpio: F13.0 → paleta flotante) */}
+      {!cleanChrome && (
+        <>
+        <div className="flex flex-wrap items-center gap-2">
+          {TOOL_ORDER.map((tool) => (
           <Button
             key={tool}
             type="button"
@@ -585,7 +620,9 @@ export function PitchBoard({
             ))}
           </select>
         )}
-      </div>
+        </div>
+        </>
+      )}
 
       {/* Campo: renderer read-only + capa de interacción.
           F13.0: en `fill` el campo se escala-a-llenar (y rota como bloque rígido
@@ -699,8 +736,81 @@ export function PitchBoard({
         </div>
       </div>
 
-      {/* Editor inline del seleccionado */}
-      {selected && (
+      {/* F13.0 — modo limpio: herramientas a un toque. Botón flotante + paleta
+          compacta que FLOTA sobre el campo (no ocupa layout); al elegir una
+          herramienta se cierra para volver a la vista limpia. */}
+      {cleanChrome && (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="absolute bottom-4 right-3 z-20 shadow-md"
+            onClick={() => setPaletteOpen((o) => !o)}
+            aria-label={t('clean_tools')}
+            aria-expanded={paletteOpen}
+          >
+            {paletteOpen ? (
+              <X className="size-5" aria-hidden />
+            ) : (
+              <SlidersHorizontal className="size-5" aria-hidden />
+            )}
+          </Button>
+          {paletteOpen && (
+            <div className="absolute bottom-16 right-3 z-20 flex max-w-[92vw] flex-wrap items-center gap-1.5 rounded-lg border bg-background/95 p-2 shadow-lg backdrop-blur">
+              {TOOL_ORDER.map((tool) => (
+                <Button
+                  key={tool}
+                  type="button"
+                  size="sm"
+                  variant={state.tool === tool ? 'default' : 'outline'}
+                  onClick={() => {
+                    dispatch({ type: 'SET_TOOL', tool });
+                    setPaletteOpen(false);
+                  }}
+                  aria-pressed={state.tool === tool}
+                >
+                  {t(`tools.${tool}`)}
+                </Button>
+              ))}
+              <div className="mx-1 h-6 w-px bg-border" aria-hidden />
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                disabled={!canUndo(state)}
+                onClick={() => dispatch({ type: 'UNDO' })}
+                aria-label={t('actions.undo')}
+              >
+                <Undo2 className="size-4" aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                disabled={!canRedo(state)}
+                onClick={() => dispatch({ type: 'REDO' })}
+                aria-label={t('actions.redo')}
+              >
+                <Redo2 className="size-4" aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                disabled={state.elements.length === 0}
+                onClick={() => dispatch({ type: 'CLEAR' })}
+                aria-label={t('actions.clear_all')}
+              >
+                <Eraser className="size-4" aria-hidden />
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Editor inline del seleccionado (oculto en modo limpio) */}
+      {selected && !cleanChrome && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm">
           <span className="font-medium">{t(`tools.${selected.type}`)}</span>
 
@@ -824,6 +934,8 @@ export function PitchEditor(props: {
   fill?: boolean;
   /** F13.0 — rota la unidad-campo 90° (apaisado). */
   fillRotationDeg?: 0 | 90;
+  /** F13.0 — modo limpio (fullscreen pizarra): toolbar oculto + paleta flotante. */
+  cleanChrome?: boolean;
   className?: string;
 }) {
   return <PitchBoard {...props} />;

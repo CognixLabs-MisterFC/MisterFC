@@ -2965,6 +2965,7 @@
     }
   },
   "pitchEditor": {
+    "clean_tools": "Tools",
     "color": {
       "black": "Black",
       "blue": "Blue",
