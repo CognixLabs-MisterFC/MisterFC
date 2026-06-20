@@ -75,6 +75,16 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 - **Picker de evento en la pizarra standalone**: hoy al once real se entra **solo** desde la alineación (F6) / directo (F7) vía `?event=`. Un **selector de partido** desde `/pizarra` (como el picker de ejercicio de 11B.1) queda pendiente.
 - **Referencia**: `docs/specs/11B.0-pizarra-tactica.md`, `apps/web/src/components/match/pitch-editor.tsx` (`<PitchBoard>` `showExport`), `apps/web/src/app/[locale]/(authenticated)/pizarra/`.
 
+### F12 — diferidos del planificador de sesiones (no pendientes de F12)
+- **Detectado en**: 2026-06-20, cierre de F12. Decisiones de alcance tomadas durante el build (D1–D6); F12 se cierra completa, esto queda como backlog (no bloquea).
+- **Selector "evento vinculado" + desvincular explícito en el EDITOR de sesión (D2/D6)**: hoy la sesión se vincula a un entrenamiento **desde el evento** (12.8/12.8a: crear desde el evento o vincular una existente). Falta el camino inverso en el editor de la sesión (elegir/quitar el evento vinculado). Desvincular hoy solo ocurre **implícitamente** al borrar el evento (`ON DELETE SET NULL`).
+- **Sync de `session_date` al reprogramar el evento (D5)**: al vincular se **copia** la fecha del evento a la sesión; si luego se mueve el entrenamiento, la fecha de la sesión **no se re-sincroniza** (quedan desfasadas hasta editar a mano).
+- **Planificar sesión en trainings de CATEGORÍA / CLUB (D3)**: hoy "Planificar sesión", el badge (12.9) y la alerta <48h (12.8b) solo aplican a trainings **de equipo** (`team_id` no nulo). Los entrenamientos de categoría/club quedan fuera.
+- **Diagramas en el PDF de sesión (D6)**: el PDF (12.5) imprime los ejercicios con sus campos pero **sin** representación gráfica del diagrama ("(sin diagrama)"). Rasterizar el diagrama al PDF queda como follow-up.
+- **Estructura de bloques configurable por club (D1 → F17)**: el catálogo de tipos de bloque y el esqueleto sembrado son **fijos en core** (`SESSION_BLOCK_TYPES` / `DEFAULT_SESSION_SKELETON`). Permitir que cada club defina su propia estructura → F17.
+- **pgTAP fuera de CI (F15.8, ya logueado)**: la RLS de `sessions` (12.1) se verificó con pgTAP **contra el remoto**, no en CI — ver la entrada F15.8 más abajo.
+- **Referencia**: `docs/specs/12.0-planificador-sesiones.md`, `packages/core/src/sessions/`, `apps/web/src/app/[locale]/(authenticated)/sesiones/` + `calendario/_components/plan-session-dialog.tsx`.
+
 ## Planificadas en plan-maestro
 
 > Entradas que dejan de ser "deuda activa" porque han pasado a subfase concreta del plan-maestro con horas presupuestadas. El detalle del plan vive en [plan-maestro.md](plan-maestro.md); aquí solo el cross-reference al issue original para no perder el rastro de por qué entró al plan.

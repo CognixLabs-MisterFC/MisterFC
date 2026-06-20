@@ -19,7 +19,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 10 | Dashboard ejecutivo del club | ☑ completada | 2026-06-13 | 2026-06-14 |
 | 11 | Biblioteca de ejercicios | ☑ completada | 2026-06-15 | 2026-06-17 |
 | 11B | Pizarra táctica en vivo (sobre la alineación) | ☑ completada | 2026-06-17 | 2026-06-17 |
-| 12 | Planificador de sesiones con plantillas microciclo | ☐ pendiente | — | — |
+| 12 | Planificador de sesiones con plantillas microciclo | ☑ completada | 2026-06-18 | 2026-06-20 |
 | 13 | Pizarra táctica 2D con animación | ☐ pendiente | — | — |
 | 14 | RGPD para menores | ☐ pendiente | — | — |
 | 15 | Testing E2E, observabilidad y runbook | ☐ pendiente | — | — |
@@ -328,6 +328,35 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Tests**: ampliación de la suite core de F11 (`simplifyStroke`, `ADD_FREEHAND`, `color`, `CLEAR` en el reducer; +color opcional/válido/inválido en el contrato) — Vitest en verde (suite core ≈ 811).
 - **Reuso confirmado**: `<PitchBoard>` (capa de interacción/dibujo) quedó como pieza reutilizable montable sobre cualquier fondo (`<DiagramView>` o `<MatchFieldEditor>`); la base frame-extensible del contrato sigue intacta para **F13**.
 - **Diferidos** (en [known-issues.md](known-issues.md), NO pendientes de F11B): export PNG del **once real** (taint del canvas por fotos cross-origin), **grosor de trazo** variable (D3), **goma fina** por trazo (D4), **picker de evento** en la pizarra standalone.
+
+## Fase 12 — Subfases entregadas ✅
+
+> **Cerrada 2026-06-20.** Planificador de sesiones de entrenamiento: modelo `sessions / session_blocks / session_block_exercises` con RLS por estado y triggers, editor (cabecera + bloques + picker con recomendación + overrides del día), listado y vista semana/microciclo, publicar al equipo (vista read-only de jugador/familia), PDF de la hoja de sesión, plantillas (`clone_session`), ejercicios fase-aware (12.7) y enganche con la agenda (12.8 + 12.9). Spec íntegra [12.0](../specs/12.0-planificador-sesiones.md), decisiones D1–D8 + diferidos al final de esta sección. `main` verde en cada PR.
+
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| — (spec) | 2026-06-18 | #167 | `docs(f12)`: spec del planificador (D1–D8 + modelo + troceo) |
+| 12.1 | 2026-06-18 | #168 | Modelo `sessions` / `session_blocks` / `session_block_exercises` + RLS por estado + triggers (derivación club/total) + helpers + pgTAP |
+| 12.2a | 2026-06-18 | #169 | Editor: crear sesión + cabecera + bloques (esqueleto estándar) + persistencia |
+| 12.2b | 2026-06-18 | #170 | Picker de ejercicios filtrado + overrides del día (duración/series/notas) + reordenar bloques/tareas (RPCs UNIQUE deferrable). **Cierra 12.2** |
+| 12.3 | 2026-06-18 | #171 | Listado de sesiones (filtros, patrón F2.10) + vista semana/microciclo |
+| 12.4 | 2026-06-19 | #172 | Publicar al equipo (`visibility staff↔team`) + vista read-only de jugador/familia (RPC `session_exercise_meta`) |
+| 12.5 | 2026-06-19 | #173 | PDF de la hoja de sesión |
+| 12.6 | 2026-06-19 | #174 | Plantillas: `clone_session` (atómico) — guardar como plantilla / crear desde plantilla / borrar |
+| 12.7a | 2026-06-19 | #175 | Ejercicios: **fase/bloque** + recomendación **fase-aware** (`RecommendableExercise.phases`, `RecommendCriteria.phase`) |
+| 12.7b | 2026-06-19 | #176 | Ejercicios **sin campo** (solo texto): toggle con/sin diagrama. **Cierra 12.7** |
+| 12.8a | 2026-06-20 | #177 | Link sesión↔entrenamiento: botón "Planificar sesión" en el evento (link-or-create, hereda fecha/equipo) + UNIQUE parcial `sessions(event_id)` |
+| 12.8 (vincular) | 2026-06-20 | #178 | Vincular una sesión **existente** (suelta) a un entrenamiento desde el evento (D2); copia `session_date` del evento; respeta el 1:1 |
+| 12.9 | 2026-06-20 | #179 | Badge "sesión planificada" en el calendario (mes/semana/agenda + diálogo), **RLS-aware** (staff ve cualquiera; jugador/familia solo publicada) |
+| 12.8b | 2026-06-20 | #180 | Alerta <48h "entrenamiento sin sesión planificada" en Inicio (audiencia D4: coach=sus equipos, admin/coord=club). **Cierra 12.8 y F12** |
+
+## Fase 12 — Cierre
+
+- **Inicio / Fin**: 2026-06-18 / 2026-06-20. PRs **#167–#180** (cada uno con typecheck · lint · test · build en verde; la UI autenticada se validó en preview, tras el SSO de Vercel).
+- **Migraciones**: 12.1 (`sessions` + `session_blocks` + `session_block_exercises` + RLS + triggers + helpers), RPCs de reordenado/movido (12.2b), `session_exercise_meta` (12.4), `clone_session` (12.6) y el UNIQUE parcial `sessions(event_id) WHERE event_id IS NOT NULL` (12.8a). 12.7/12.8 (vincular)/12.9/12.8b fueron **aditivas sin migración** (lógica/UI/queries; 12.9 y 12.8b solo se apoyan en la RLS de 12.1).
+- **Tests**: schemas y helpers del planificador (cabecera, tareas/overrides, esqueleto, plantillas, link/vincular, `sessionDateFromEventStart`) en Vitest (`@misterfc/core`); pgTAP de RLS de `sessions` (verificado **contra el remoto** — ver F15.8). Total suite core ≈ 867.
+- **Reuso**: el "ciclo de metodología del club" de F11 sirvió de molde para la visibilidad de la sesión; el patrón "equipos del staff" del home (F7.12) se reutilizó en la alerta 12.8b; el lookup RLS-aware de 12.9 (`loadPlannedEventIds`) se reusó en 12.8b.
+- **Diferidos** (en [known-issues.md](known-issues.md), NO pendientes de F12): selector "evento vinculado" + desvincular explícito en el editor (D2/D6); sync de `session_date` al reprogramar el evento (D5); planificación en trainings de categoría/club (D3); diagramas en el PDF (D6); estructura de bloques configurable por club (D1 → F17); pgTAP fuera de CI (F15.8, ya logueado).
 
 ## Fase 14 — Subfases pendientes
 
