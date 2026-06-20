@@ -1221,13 +1221,31 @@
         "cross_club": "Team or category does not belong to this club.",
         "not_found": "The event no longer exists or is not accessible.",
         "db": "Save failed. Try again.",
-        "plan_failed": "Could not plan the session. Try again."
+        "plan_failed": "Could not plan the session. Try again.",
+        "link_failed": "Could not link the session. Try again.",
+        "link_conflict": "That session is already linked to another training."
       },
       "save": "Save",
       "cancel": "Cancel",
       "mark_attendance": "Mark attendance",
       "open_callup": "Callup",
-      "plan_session": "Plan session"
+      "plan": {
+        "trigger": "Plan session",
+        "title": "Plan session",
+        "description": "Create a new session for this training or link an existing one.",
+        "already_linked": "This training already has a linked session.",
+        "open_session": "Open session",
+        "create_new": "Create new",
+        "create_new_hint": "Creates a session with the standard skeleton and the training date.",
+        "create_new_cta": "Create new",
+        "link_existing": "Link an existing one",
+        "link_existing_hint": "Sessions of this team with no training assigned.",
+        "select_placeholder": "Choose a session",
+        "link_cta": "Link",
+        "no_candidates": "No unlinked sessions for this team.",
+        "untitled": "(untitled)",
+        "cancel": "Cancel"
+      }
     },
     "delete": {
       "trigger": "Delete",

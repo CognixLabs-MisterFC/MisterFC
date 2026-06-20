@@ -44,6 +44,7 @@ export {
   createFromTemplateSchema,
   sessionIdSchema,
   planSessionForEventSchema,
+  linkSessionToEventSchema,
   sumTaskMinutes,
   type SessionHeaderInput,
   type SessionTaskInput,
@@ -63,4 +64,5 @@ export {
   type CreateFromTemplateInput,
   type SessionIdInput,
   type PlanSessionForEventInput,
+  type LinkSessionToEventInput,
 } from './session-form';

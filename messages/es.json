@@ -1220,13 +1220,31 @@
         "cross_club": "El equipo o categoría no pertenece a este club.",
         "not_found": "El evento no existe o ya no es accesible.",
         "db": "Error al guardar. Inténtalo de nuevo.",
-        "plan_failed": "No se pudo planificar la sesión. Inténtalo de nuevo."
+        "plan_failed": "No se pudo planificar la sesión. Inténtalo de nuevo.",
+        "link_failed": "No se pudo vincular la sesión. Inténtalo de nuevo.",
+        "link_conflict": "Esa sesión ya está vinculada a otro entrenamiento."
       },
       "save": "Guardar",
       "cancel": "Cancelar",
       "mark_attendance": "Registrar asistencia",
       "open_callup": "Convocatoria",
-      "plan_session": "Planificar sesión"
+      "plan": {
+        "trigger": "Planificar sesión",
+        "title": "Planificar sesión",
+        "description": "Crea una sesión nueva para este entrenamiento o vincula una ya existente.",
+        "already_linked": "Este entrenamiento ya tiene una sesión vinculada.",
+        "open_session": "Abrir sesión",
+        "create_new": "Crear nueva",
+        "create_new_hint": "Crea una sesión con el esqueleto estándar y la fecha del entrenamiento.",
+        "create_new_cta": "Crear nueva",
+        "link_existing": "Vincular una existente",
+        "link_existing_hint": "Sesiones de este equipo sin entrenamiento asignado.",
+        "select_placeholder": "Elige una sesión",
+        "link_cta": "Vincular",
+        "no_candidates": "No hay sesiones sueltas de este equipo.",
+        "untitled": "(sin título)",
+        "cancel": "Cancelar"
+      }
     },
     "delete": {
       "trigger": "Borrar",

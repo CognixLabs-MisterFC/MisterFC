@@ -33,6 +33,7 @@ import {
   createFromTemplateSchema,
   sessionIdSchema,
   planSessionForEventSchema,
+  linkSessionToEventSchema,
   sumTaskMinutes,
 } from '../session-form';
 
@@ -206,6 +207,18 @@ describe('F12.8a — planSessionForEventSchema + sessionDateFromEventStart', () 
   it('acepta TZ explícita', () => {
     // En UTC, 23:30Z sigue siendo el mismo día.
     expect(sessionDateFromEventStart('2026-06-19T23:30:00Z', 'UTC')).toBe('2026-06-19');
+  });
+});
+
+describe('F12.8 (D2) — linkSessionToEventSchema', () => {
+  const sid = '33333333-3333-4333-8333-333333333333';
+  const eid = '44444444-4444-4444-8444-444444444444';
+
+  it('exige session_id y event_id uuid', () => {
+    expect(linkSessionToEventSchema.safeParse({ session_id: sid, event_id: eid }).success).toBe(true);
+    expect(linkSessionToEventSchema.safeParse({ session_id: sid }).success).toBe(false);
+    expect(linkSessionToEventSchema.safeParse({ event_id: eid }).success).toBe(false);
+    expect(linkSessionToEventSchema.safeParse({ session_id: 'x', event_id: eid }).success).toBe(false);
   });
 });
 

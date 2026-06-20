@@ -17,6 +17,7 @@ import {
   createFromTemplateSchema,
   sessionIdSchema,
   planSessionForEventSchema,
+  linkSessionToEventSchema,
   sessionDateFromEventStart,
   buildDefaultSkeleton,
   createSupabaseServerClient,
@@ -30,7 +31,7 @@ import { loadShellContext } from '@/lib/auth-shell';
 // reimplementan permisos. Sin ciclo de estados (D2): creación directa.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type ActionError = 'forbidden' | 'invalid' | 'not_found' | 'generic';
+type ActionError = 'forbidden' | 'invalid' | 'not_found' | 'conflict' | 'generic';
 
 export type SessionActionState = {
   error?: ActionError;
@@ -158,6 +159,128 @@ export async function planSessionForEvent(input: unknown): Promise<SessionAction
   if (existing?.id) return { success: true, id: existing.id as string };
 
   return createSession({ event_id: parsed.data.event_id });
+}
+
+/** Sesión candidata a vincular: suelta (sin evento) del mismo equipo. */
+export type LinkableSession = {
+  id: string;
+  title: string | null;
+  session_date: string | null;
+};
+
+export type PlanSessionOptionsState = {
+  error?: ActionError;
+  /** Si el evento ya tiene una sesión vinculada, su id (camino "abrir"). */
+  linkedSessionId?: string | null;
+  /** Sesiones de ese equipo sin evento (camino "vincular existente"). */
+  candidates?: LinkableSession[];
+};
+
+/**
+ * F12.8 (D2) — Opciones del flujo "Planificar sesión" de un entrenamiento:
+ *  · si ya tiene sesión vinculada → su id (la UI ofrece abrirla);
+ *  · si no → las sesiones SUELTAS (event_id null, is_template=false) del MISMO
+ *    equipo, candidatas a vincular. RLS = gate (el staff ve las del club).
+ */
+export async function loadPlanSessionOptions(input: unknown): Promise<PlanSessionOptionsState> {
+  const parsed = planSessionForEventSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const clubId = ctx.activeClub.club.id;
+
+  // El evento debe ser un entrenamiento DE EQUIPO del club activo.
+  const { data: ev } = await supabase
+    .from('events')
+    .select('team_id, type, club_id')
+    .eq('id', parsed.data.event_id)
+    .maybeSingle();
+  if (!ev || ev.club_id !== clubId || ev.type !== 'training') return { error: 'invalid' };
+  const teamId = (ev.team_id as string | null) ?? null;
+  if (!teamId) return { error: 'invalid' };
+
+  // ¿Ya hay sesión vinculada?
+  const { data: linked } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('event_id', parsed.data.event_id)
+    .eq('is_template', false)
+    .maybeSingle();
+  if (linked?.id) return { linkedSessionId: linked.id as string, candidates: [] };
+
+  // Sesiones sueltas del mismo equipo (sin evento), más recientes primero.
+  const { data: rows } = await supabase
+    .from('sessions')
+    .select('id, title, session_date')
+    .eq('club_id', clubId)
+    .eq('team_id', teamId)
+    .eq('is_template', false)
+    .is('event_id', null)
+    .order('session_date', { ascending: false, nullsFirst: false })
+    .limit(100);
+
+  const candidates: LinkableSession[] = (rows ?? []).map((s) => ({
+    id: s.id as string,
+    title: (s.title as string | null) ?? null,
+    session_date: (s.session_date as string | null) ?? null,
+  }));
+
+  return { linkedSessionId: null, candidates };
+}
+
+/**
+ * F12.8 (D2) — Vincula una sesión EXISTENTE (suelta) a un entrenamiento. Set
+ * event_id + session_date = fecha del evento (consistencia). Respeta el 1:1: solo
+ * actualiza sesiones del club, no plantilla y AÚN sin evento; un choque con el
+ * UNIQUE (event_id ya usado) → 'conflict'. La RLS de UPDATE es el gate real.
+ */
+export async function linkSessionToEvent(input: unknown): Promise<SessionActionState> {
+  const parsed = linkSessionToEventSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const clubId = ctx.activeClub.club.id;
+
+  // Lee el evento (autoritativo): training de equipo del club activo + su fecha.
+  const { data: ev } = await supabase
+    .from('events')
+    .select('starts_at, team_id, type, club_id')
+    .eq('id', parsed.data.event_id)
+    .maybeSingle();
+  if (!ev || ev.club_id !== clubId || ev.type !== 'training') return { error: 'invalid' };
+  const teamId = (ev.team_id as string | null) ?? null;
+  if (!teamId) return { error: 'invalid' };
+  const sessionDate = sessionDateFromEventStart(ev.starts_at as string);
+
+  // Solo vincula sesiones del club, del MISMO equipo, no plantilla y SIN evento
+  // (event_id null). Si la fila no encaja → not_found; si choca el UNIQUE → conflict.
+  const { data: updated, error } = await supabase
+    .from('sessions')
+    .update({ event_id: parsed.data.event_id, session_date: sessionDate })
+    .eq('id', parsed.data.session_id)
+    .eq('club_id', clubId)
+    .eq('team_id', teamId)
+    .eq('is_template', false)
+    .is('event_id', null)
+    .select('id')
+    .maybeSingle();
+
+  if (error) {
+    if (error.code === '23505') return { error: 'conflict' };
+    return { error: mapPgErr(error.code) };
+  }
+  if (!updated) return { error: 'not_found' };
+
+  revalidateSessions();
+  return { success: true, id: parsed.data.session_id };
 }
 
 /**
