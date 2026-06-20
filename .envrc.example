@@ -1,0 +1,39 @@
+# MisterFC — plantilla de direnv (config LOCAL por máquina/cuenta).
+#
+# Cópiala a `.envrc` (que está gitignored) y rellena tus valores; luego
+# `direnv allow` una vez. NO pongas secretos aquí ni en `.envrc`: las claves
+# reales van en `.env.local` (también gitignored), que direnv carga con dotenv.
+#
+#   cp .envrc.example .envrc && direnv allow
+#
+# El token de GitHub NO se hardcodea: se lee en runtime del store local de `gh`.
+
+# ── Cuenta GitHub correcta de forma fiable (sin depender del "active account"
+#    global de gh). Exporta GH_TOKEN leído del store de gh para este repo. ──
+if command -v gh >/dev/null; then
+  _gh_user="<tu-usuario-github>"
+  _tok="$(GH_TOKEN= gh auth token --user "$_gh_user" 2>/dev/null || true)"
+  if [ -n "$_tok" ]; then
+    export GH_TOKEN="$_tok"
+  else
+    gh auth switch --user "$_gh_user" >/dev/null 2>&1 || true
+  fi
+  unset _gh_user _tok
+fi
+
+# ── Identidad git per-repo ──
+export GIT_AUTHOR_NAME="<Tu Nombre>"
+export GIT_AUTHOR_EMAIL="<tu-email>"
+export GIT_COMMITTER_NAME="<Tu Nombre>"
+export GIT_COMMITTER_EMAIL="<tu-email>"
+
+# ── pnpm en PATH (por si la shell no lo trae) ──
+export PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+
+# ── Carga de variables de entorno locales (secretos reales aquí, NO en este fichero) ──
+[ -f .env.local ] && dotenv .env.local
+[ -f apps/web/.env.local ] && dotenv apps/web/.env.local
