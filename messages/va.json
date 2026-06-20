@@ -141,6 +141,10 @@
         "cta": "{count, plural, =1 {1 partit sense convocatòria →} other {# partits sense convocatòria →}}"
       }
     },
+    "training_alert": {
+      "title": "{count, plural, one {Entrenament sense sessió planificada} other {Entrenaments sense sessió planificada (#)}}",
+      "desc": "Estos entrenaments comencen en menys de 48 h i encara no tenen una sessió vinculada."
+    },
     "next_match": {
       "title": "Pròxim partit",
       "state": {

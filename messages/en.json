@@ -141,6 +141,10 @@
         "cta": "{count, plural, =1 {1 match without call-up →} other {# matches without call-up →}}"
       }
     },
+    "training_alert": {
+      "title": "{count, plural, one {Training without a planned session} other {Trainings without a planned session (#)}}",
+      "desc": "These trainings start in less than 48h and still have no linked session."
+    },
     "next_match": {
       "title": "Next match",
       "state": {
