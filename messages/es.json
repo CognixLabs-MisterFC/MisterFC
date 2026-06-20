@@ -1122,6 +1122,7 @@
   "calendario": {
     "title": "Calendario",
     "subtitle": "Entrenamientos, partidos, torneos y otros eventos del club.",
+    "session_planned": "Sesión planificada",
     "nav": {
       "prev": "Anterior",
       "next": "Siguiente",

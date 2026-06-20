@@ -1123,6 +1123,7 @@
   "calendario": {
     "title": "Calendari",
     "subtitle": "Entrenaments, partits, tornejos i altres esdeveniments del club.",
+    "session_planned": "Sessió planificada",
     "nav": {
       "prev": "Anterior",
       "next": "Següent",

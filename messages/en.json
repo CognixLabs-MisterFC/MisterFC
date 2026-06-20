@@ -1123,6 +1123,7 @@
   "calendario": {
     "title": "Calendar",
     "subtitle": "Trainings, matches, tournaments and other club events.",
+    "session_planned": "Session planned",
     "nav": {
       "prev": "Previous",
       "next": "Next",
