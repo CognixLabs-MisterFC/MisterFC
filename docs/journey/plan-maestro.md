@@ -116,7 +116,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F10 | Dashboard ejecutivo del club | 6–8 h | 2–3 | ☑ |
 | F11 | Biblioteca de ejercicios | 13–18 h | 5–6 | ☑ (2026-06-17) |
 | F11B | Pizarra táctica en vivo (sobre la alineación) | 6–9 h (preliminar) | 2–3 | ☑ (2026-06-17) |
-| F12 | Planificador de sesiones | 12–20 h | 4–6 | ☐ |
+| F12 | Planificador de sesiones | 12–20 h | 4–6 | ☑ (2026-06-20) |
 | F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☐ |
 | F14 | RGPD para menores y seguridad | 12–18 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
@@ -623,6 +623,8 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 ---
 
 ### Fase 12 — Planificador de sesiones
+
+> **Estado**: ☑ **CERRADA (2026-06-20)** — troceo 12.1–12.6 entregado y, además, **12.7** (ejercicios fase-aware + sin campo), **12.8** (agenda: link/vincular sesión↔entrenamiento + alerta <48h) y **12.9** (badge "sesión planificada"). Todas verificadas (typecheck · lint · test · build en verde; UI validada en preview tras SSO). PRs **#167–#180**. Detalle de cierre y tabla de subfases en [progress.md → Fase 12](progress.md). Diferidos registrados en [known-issues.md](known-issues.md).
 
 > **Spec (2026-06-18)**: [docs/specs/12.0-planificador-sesiones.md](../specs/12.0-planificador-sesiones.md) fija las decisiones **D1–D8**, el **modelo** (`sessions`/`session_blocks`/`session_block_exercises`) y el **troceo definitivo (12.1–12.6)**, que **sustituye** la lista histórica de abajo. Claves: sesiones = **creación directa** (sin ciclo de aprobación, D2); bloques de **catálogo fijo** sembrados (D1); `visibility staff/team` para jugador/familia (D3, cierra D7 de F11); plantillas vía `is_template` que **clonan** una sesión (D5, sin microciclo entero); PDF sin diagramas (D6).
 
