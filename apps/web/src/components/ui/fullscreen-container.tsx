@@ -23,7 +23,8 @@ export function FullscreenContainer({
   className,
   contentClassName,
 }: {
-  children: ReactNode;
+  /** Render-prop: recibe `isFullscreen` para adaptar el contenido (fill/rotación). */
+  children: (state: { isFullscreen: boolean }) => ReactNode;
   /** Clases del contenedor (en modo normal). */
   className?: string;
   /** Clases del área de contenido. */
@@ -69,8 +70,14 @@ export function FullscreenContainer({
           </Button>
         )}
       </div>
-      <div className={cn(isFullscreen && 'min-h-0 flex-1', contentClassName)}>
-        {children}
+      <div
+        className={cn(
+          'flex flex-col',
+          isFullscreen && 'min-h-0 flex-1',
+          contentClassName
+        )}
+      >
+        {children({ isFullscreen })}
       </div>
     </div>
   );
