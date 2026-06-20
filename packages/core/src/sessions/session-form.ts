@@ -132,6 +132,15 @@ export const planSessionForEventSchema = z.object({
 });
 export type PlanSessionForEventInput = z.infer<typeof planSessionForEventSchema>;
 
+// ── Vincular una sesión EXISTENTE a un evento (12.8 — D2) ──────────────────────
+/** Vincular (set event_id) una sesión suelta de ese equipo a un entrenamiento.
+ *  La capa de app respeta el 1:1 (UNIQUE event_id) y copia la fecha del evento. */
+export const linkSessionToEventSchema = z.object({
+  session_id: z.string().uuid({ message: 'session_id_invalid' }),
+  event_id: z.string().uuid({ message: 'event_id_invalid' }),
+});
+export type LinkSessionToEventInput = z.infer<typeof linkSessionToEventSchema>;
+
 // ── Editar cabecera (12.2) ────────────────────────────────────────────────────
 // Cabecera + id + team_id. NO incluye `visibility` (publicar = 12.4) ni
 // `total_minutes` (desde 12.2b es DERIVADO de la suma de duration_min vía trigger).
