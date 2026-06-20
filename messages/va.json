@@ -1221,13 +1221,31 @@
         "cross_club": "L'equip o categoria no pertany a este club.",
         "not_found": "L'esdeveniment ja no existeix o no és accessible.",
         "db": "Error en guardar. Torna-ho a intentar.",
-        "plan_failed": "No s'ha pogut planificar la sessió. Torna-ho a provar."
+        "plan_failed": "No s'ha pogut planificar la sessió. Torna-ho a provar.",
+        "link_failed": "No s'ha pogut vincular la sessió. Torna-ho a provar.",
+        "link_conflict": "Eixa sessió ja està vinculada a un altre entrenament."
       },
       "save": "Guardar",
       "cancel": "Cancel·lar",
       "mark_attendance": "Registrar assistència",
       "open_callup": "Convocatòria",
-      "plan_session": "Planificar sessió"
+      "plan": {
+        "trigger": "Planificar sessió",
+        "title": "Planificar sessió",
+        "description": "Crea una sessió nova per a este entrenament o vincula'n una d'existent.",
+        "already_linked": "Este entrenament ja té una sessió vinculada.",
+        "open_session": "Obrir sessió",
+        "create_new": "Crear nova",
+        "create_new_hint": "Crea una sessió amb l'esquelet estàndard i la data de l'entrenament.",
+        "create_new_cta": "Crear nova",
+        "link_existing": "Vincular-ne una d'existent",
+        "link_existing_hint": "Sessions d'este equip sense entrenament assignat.",
+        "select_placeholder": "Tria una sessió",
+        "link_cta": "Vincular",
+        "no_candidates": "No hi ha sessions soltes d'este equip.",
+        "untitled": "(sense títol)",
+        "cancel": "Cancel·lar"
+      }
     },
     "delete": {
       "trigger": "Esborrar",
