@@ -112,6 +112,8 @@ export const NAV: readonly NavEntry[] = [
       { key: 'sesiones', href: '/sesiones', icon: ClipboardList, roles: STAFF },
       // Pizarra táctica efímera (F11B) — solo staff.
       { key: 'pizarra', href: '/pizarra', icon: PenTool, roles: STAFF },
+      // Playbook de jugadas animadas (F13) — solo staff.
+      { key: 'jugadas', href: '/jugadas', icon: Swords, roles: STAFF },
       { key: 'asistencia', href: '/asistencia', icon: Calendar, roles: ALL },
     ],
   },

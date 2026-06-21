@@ -2921,7 +2921,58 @@
       "sesiones": {
         "title": "Sessions",
         "description": "Plan training sessions by blocks."
+      },
+      "jugadas": {
+        "title": "Plays",
+        "description": "Create and animate the team's tactical plays (playbook)."
       }
+    }
+  },
+  "jugadas": {
+    "title": "Plays",
+    "subtitle": "Team playbook: frame-by-frame animated plays.",
+    "new": "New play",
+    "new_title": "New play",
+    "edit_title": "Edit play",
+    "back": "Back to plays",
+    "create": "Create",
+    "save": "Save",
+    "untitled": "(untitled)",
+    "no_teams": "There are no active-season teams to create plays for.",
+    "fields": {
+      "name": "Name",
+      "name_ph": "Overlap down the wing",
+      "team": "Team",
+      "team_ph": "Choose a team",
+      "visibility": "Visibility",
+      "description": "Description",
+      "description_ph": "How to run the play…"
+    },
+    "visibility": {
+      "staff": "Staff only",
+      "team": "Team"
+    },
+    "frames": {
+      "title": "Frames",
+      "add": "Add frame",
+      "frame": "Frame {n}",
+      "duration": "Transition duration",
+      "duration_ms": "ms",
+      "remove": "Remove frame",
+      "max": "At most {max} frames per play."
+    },
+    "list": {
+      "empty": "No plays yet. Create the first one.",
+      "frame_count": "{count, plural, =1 {# frame} other {# frames}}"
+    },
+    "toast": {
+      "saved": "Play saved"
+    },
+    "errors": {
+      "forbidden": "Permission denied",
+      "invalid": "Invalid data",
+      "not_found": "Not found",
+      "generic": "Error saving"
     }
   },
   "partidos": {

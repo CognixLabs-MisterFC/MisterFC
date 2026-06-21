@@ -2921,7 +2921,58 @@
       "sesiones": {
         "title": "Sessions",
         "description": "Planifica les sessions d'entrenament per blocs."
+      },
+      "jugadas": {
+        "title": "Jugades",
+        "description": "Crea i anima jugades tàctiques de l'equip (playbook)."
       }
+    }
+  },
+  "jugadas": {
+    "title": "Jugades",
+    "subtitle": "Playbook de l'equip: jugades animades per fotogrames.",
+    "new": "Nova jugada",
+    "new_title": "Nova jugada",
+    "edit_title": "Editar jugada",
+    "back": "Tornar a jugades",
+    "create": "Crear",
+    "save": "Guardar",
+    "untitled": "(sense títol)",
+    "no_teams": "No hi ha equips de la temporada activa per a crear jugades.",
+    "fields": {
+      "name": "Nom",
+      "name_ph": "Entrada en profunditat per banda",
+      "team": "Equip",
+      "team_ph": "Tria un equip",
+      "visibility": "Visibilitat",
+      "description": "Descripció",
+      "description_ph": "Com executar la jugada…"
+    },
+    "visibility": {
+      "staff": "Només staff",
+      "team": "Equip"
+    },
+    "frames": {
+      "title": "Fotogrames",
+      "add": "Afegir fotograma",
+      "frame": "Fotograma {n}",
+      "duration": "Durada de transició",
+      "duration_ms": "ms",
+      "remove": "Llevar fotograma",
+      "max": "Màxim {max} fotogrames per jugada."
+    },
+    "list": {
+      "empty": "Encara no hi ha jugades. Crea la primera.",
+      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogrames}}"
+    },
+    "toast": {
+      "saved": "Jugada guardada"
+    },
+    "errors": {
+      "forbidden": "Permís denegat",
+      "invalid": "Dades no vàlides",
+      "not_found": "No trobada",
+      "generic": "Error en guardar"
     }
   },
   "partidos": {
