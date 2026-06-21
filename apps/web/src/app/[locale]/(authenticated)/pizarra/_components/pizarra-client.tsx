@@ -18,6 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PitchEditor } from '@/components/match/pitch-editor';
+import { FullscreenContainer } from '@/components/ui/fullscreen-container';
+import { useIsLandscape } from '@/hooks/use-is-landscape';
 import type { BoardExercise } from '../../ejercicios/queries';
 
 type Mode = 'blank' | 'exercise';
@@ -33,6 +35,7 @@ export function PizarraClient({
 }) {
   const t = useTranslations('pizarra');
   const router = useRouter();
+  const isLandscape = useIsLandscape();
   const hasExercise = exerciseDiagram != null;
   const [mode, setMode] = useState<Mode>(hasExercise ? 'exercise' : 'blank');
 
@@ -81,7 +84,22 @@ export function PizarraClient({
         <p className="text-sm text-muted-foreground">{t('pick_hint')}</p>
       )}
 
-      <PitchEditor key={editorKey} initialDiagram={initial} showClear showExport />
+      {/* F13.0 — la pizarra sigue EDITABLE en pantalla completa; el campo se
+          escala-a-llenar y, en apaisado, gira como bloque rígido (las coords no
+          se mutan). El editor NO se remonta al entrar/salir (no se pierde el dibujo). */}
+      <FullscreenContainer>
+        {({ isFullscreen }) => (
+          <PitchEditor
+            key={editorKey}
+            initialDiagram={initial}
+            showClear
+            showExport
+            fill={isFullscreen}
+            fillRotationDeg={isFullscreen && isLandscape ? 90 : 0}
+            cleanChrome={isFullscreen}
+          />
+        )}
+      </FullscreenContainer>
     </div>
   );
 }

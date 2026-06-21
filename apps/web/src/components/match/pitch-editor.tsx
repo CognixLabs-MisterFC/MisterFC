@@ -29,8 +29,8 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
-import { Undo2, Redo2, Trash2, Eraser, Download } from 'lucide-react';
+import { CSS, type Transform } from '@dnd-kit/utilities';
+import { Undo2, Redo2, Trash2, Eraser, Download, SlidersHorizontal, X } from 'lucide-react';
 import {
   pitchEditorReducer,
   initEditorState,
@@ -55,7 +55,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DiagramView, fieldAspectClass } from './diagram-view';
+import { useFitBox } from '@/hooks/use-fit-box';
+import { DiagramView, fieldAspectClass, isDegradedField } from './diagram-view';
 
 // Chrome del editor: orden de las herramientas/opciones. Las ETIQUETAS se
 // localizan en render con `useTranslations('pitchEditor')` (D9, F11B.1).
@@ -175,6 +176,9 @@ export function PitchBoard({
   showExport = false,
   renderField = defaultRenderField,
   lockFieldKind = false,
+  fill = false,
+  fillRotationDeg = 0,
+  cleanChrome = false,
   className,
 }: {
   initialDiagram?: Diagram;
@@ -190,6 +194,16 @@ export function PitchBoard({
   renderField?: RenderField;
   /** Oculta el selector Completo/Medio (F11B.2: once real fijo completo). */
   lockFieldKind?: boolean;
+  /** F13.0 — el campo LLENA el alto disponible (en vez de `max-w-md`). Para
+   *  fullscreen. Off por defecto: no altera ningún uso existente del editor. */
+  fill?: boolean;
+  /** F13.0 — gira la unidad-campo (campo+tinta) como bloque rígido: 90 = apaisado.
+   *  Las coordenadas NO se mutan; el puntero/drag compensan la rotación. */
+  fillRotationDeg?: 0 | 90;
+  /** F13.0 — modo LIMPIO (fullscreen pizarra): oculta el toolbar; herramienta por
+   *  defecto = mano alzada; las herramientas salen en una paleta flotante a un
+   *  toque. Off por defecto: la vista normal del editor no cambia. */
+  cleanChrome?: boolean;
   className?: string;
 }) {
   // D9 (F11B.1): todas las etiquetas del editor se localizan aquí.
@@ -205,6 +219,39 @@ export function PitchBoard({
   // Trazo a mano alzada en curso (F11B.0): EFÍMERO, se simplifica al soltar.
   const [freehand, setFreehand] = useState<Pt[] | null>(null);
 
+  // F13.0 — fill/rotación de la unidad-campo (fullscreen). Aspecto = w/h del
+  // lienzo (completo 2/3, medio 4/3; degrada a 2/3). Off → no se mide nada útil.
+  const fieldAspectNum = isDegradedField(state.field)
+    ? 2 / 3
+    : state.field.kind === 'medio'
+      ? 4 / 3
+      : 2 / 3;
+  const { containerRef: fitRef, style: fitStyle } = useFitBox(
+    fieldAspectNum,
+    fill ? fillRotationDeg : 0,
+  );
+
+  // F13.0 — modo limpio: paleta de herramientas flotante (cerrada por defecto).
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // F13.0 (Regla #11) — al ENTRAR en modo limpio la herramienta pasa a mano alzada
+  // (dibujar es la acción por defecto); al SALIR se restaura la anterior. El tool
+  // vive en el reducer, así que se orquesta con un effect sobre `cleanChrome` (se
+  // lee el tool actual como snapshot en la transición, no como dependencia).
+  const prevToolRef = useRef<PitchTool | null>(null);
+  useEffect(() => {
+    if (cleanChrome) {
+      prevToolRef.current = state.tool; // snapshot al entrar
+      dispatch({ type: 'SET_TOOL', tool: FREEHAND_TOOL });
+    } else if (prevToolRef.current != null) {
+      const prev = prevToolRef.current;
+      prevToolRef.current = null;
+      dispatch({ type: 'SET_TOOL', tool: prev });
+    }
+    // Solo reacciona a entrar/salir del modo limpio; el tool es snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cleanChrome]);
+
   const diagram = toDiagram(state);
   const isRubberTool = (DRAW_TOOLS as readonly string[]).includes(state.tool);
   const isFreehandTool = state.tool === FREEHAND_TOOL;
@@ -215,9 +262,27 @@ export function PitchBoard({
     onChange?.(toDiagram(state));
   }, [state, onChange]);
 
+  // F13.0 — ¿la unidad-campo está rotada 90° (fullscreen apaisado)? El puntero y
+  // el drag compensan la rotación para que las coords % no se muten.
+  const rotated = fill && fillRotationDeg === 90;
+
   function pctFromEvent(clientX: number, clientY: number): Pt | null {
     const rect = rootRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0 || rect.height === 0) return null;
+    if (rotated) {
+      // rect = AABB de la unidad rotada: rect.width = alto pre-rotación (h),
+      // rect.height = ancho (w). Des-rotamos el punto respecto al centro.
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = clientX - cx;
+      const dy = clientY - cy;
+      const wEl = rect.height; // ancho pre-rotación
+      const hEl = rect.width; // alto pre-rotación
+      return {
+        x: round2(((dy + wEl / 2) / wEl) * 100),
+        y: round2(((-dx + hEl / 2) / hEl) * 100),
+      };
+    }
     return {
       x: round2(((clientX - rect.left) / rect.width) * 100),
       y: round2(((clientY - rect.top) / rect.height) * 100),
@@ -292,8 +357,10 @@ export function PitchBoard({
     if (!el) return;
     const rect = rootRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0 || rect.height === 0) return;
-    const dx = (e.delta.x / rect.width) * 100;
-    const dy = (e.delta.y / rect.height) * 100;
+    // Rotado: el delta de pantalla se des-rota a coords del campo (rect ya es el
+    // AABB rotado → wEl = rect.height, hEl = rect.width).
+    const dx = rotated ? (e.delta.y / rect.height) * 100 : (e.delta.x / rect.width) * 100;
+    const dy = rotated ? (-e.delta.x / rect.width) * 100 : (e.delta.y / rect.height) * 100;
     if (isPointElement(el)) {
       dispatch({ type: 'MOVE', id, x_pct: round2(el.x_pct + dx), y_pct: round2(el.y_pct + dy) });
     } else {
@@ -335,10 +402,19 @@ export function PitchBoard({
   const selected = state.elements.find((e) => e.id === state.selectedId) ?? null;
 
   return (
-    <div className={cn('flex flex-col gap-3', className)}>
-      {/* Barra de herramientas */}
-      <div className="flex flex-wrap items-center gap-2">
-        {TOOL_ORDER.map((tool) => (
+    <div
+      className={cn(
+        'flex flex-col gap-3',
+        fill && 'h-full min-h-0',
+        cleanChrome && 'relative',
+        className,
+      )}
+    >
+      {/* Barra de herramientas (oculta en modo limpio: F13.0 → paleta flotante) */}
+      {!cleanChrome && (
+        <>
+        <div className="flex flex-wrap items-center gap-2">
+          {TOOL_ORDER.map((tool) => (
           <Button
             key={tool}
             type="button"
@@ -544,23 +620,36 @@ export function PitchBoard({
             ))}
           </select>
         )}
-      </div>
+        </div>
+        </>
+      )}
 
-      {/* Campo: renderer read-only + capa de interacción */}
+      {/* Campo: renderer read-only + capa de interacción.
+          F13.0: en `fill` el campo se escala-a-llenar (y rota como bloque rígido
+          en apaisado) dentro de `fitRef`; si no, layout original intacto
+          (wrapper con `display:contents` → cero impacto). */}
       <div
-        ref={rootRef}
-        data-testid="pitch-field"
+        ref={fitRef}
         className={cn(
-          'relative mx-auto w-full max-w-md touch-none overflow-hidden rounded-lg border',
-          fieldAspectClass(state.field),
-          state.tool !== 'select' && 'cursor-crosshair',
+          fill ? 'flex min-h-0 flex-1 items-center justify-center' : 'contents',
         )}
-        onClick={handleBackgroundClick}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
       >
-        {renderField({ diagram, field: state.field })}
+        <div
+          ref={rootRef}
+          data-testid="pitch-field"
+          className={cn(
+            'relative touch-none overflow-hidden rounded-lg border',
+            !fill && 'mx-auto w-full max-w-md',
+            !fill && fieldAspectClass(state.field),
+            state.tool !== 'select' && 'cursor-crosshair',
+          )}
+          style={fill ? fitStyle : undefined}
+          onClick={handleBackgroundClick}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        >
+          {renderField({ diagram, field: state.field })}
 
         {/* Preview del trazo a mano alzada en curso (no interactivo) */}
         {freehand && freehand.length >= 2 && (
@@ -629,6 +718,7 @@ export function PitchBoard({
                 selected={state.selectedId === el.id}
                 onSelect={() => dispatch({ type: 'SELECT', id: el.id })}
                 ariaLabel={t('aria.element', { type: t(`tools.${el.type}`) })}
+                rotated={rotated}
               />
             ) : (
               <DrawnHandle
@@ -638,14 +728,89 @@ export function PitchBoard({
                 selected={state.selectedId === el.id}
                 onSelect={() => dispatch({ type: 'SELECT', id: el.id })}
                 ariaLabel={t('aria.element', { type: t(`tools.${el.type}`) })}
+                rotated={rotated}
               />
             ),
           )}
         </DndContext>
+        </div>
       </div>
 
-      {/* Editor inline del seleccionado */}
-      {selected && (
+      {/* F13.0 — modo limpio: herramientas a un toque. Botón flotante + paleta
+          compacta que FLOTA sobre el campo (no ocupa layout); al elegir una
+          herramienta se cierra para volver a la vista limpia. */}
+      {cleanChrome && (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="absolute bottom-4 right-3 z-20 shadow-md"
+            onClick={() => setPaletteOpen((o) => !o)}
+            aria-label={t('clean_tools')}
+            aria-expanded={paletteOpen}
+          >
+            {paletteOpen ? (
+              <X className="size-5" aria-hidden />
+            ) : (
+              <SlidersHorizontal className="size-5" aria-hidden />
+            )}
+          </Button>
+          {paletteOpen && (
+            <div className="absolute bottom-16 right-3 z-20 flex max-w-[92vw] flex-wrap items-center gap-1.5 rounded-lg border bg-background/95 p-2 shadow-lg backdrop-blur">
+              {TOOL_ORDER.map((tool) => (
+                <Button
+                  key={tool}
+                  type="button"
+                  size="sm"
+                  variant={state.tool === tool ? 'default' : 'outline'}
+                  onClick={() => {
+                    dispatch({ type: 'SET_TOOL', tool });
+                    setPaletteOpen(false);
+                  }}
+                  aria-pressed={state.tool === tool}
+                >
+                  {t(`tools.${tool}`)}
+                </Button>
+              ))}
+              <div className="mx-1 h-6 w-px bg-border" aria-hidden />
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                disabled={!canUndo(state)}
+                onClick={() => dispatch({ type: 'UNDO' })}
+                aria-label={t('actions.undo')}
+              >
+                <Undo2 className="size-4" aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                disabled={!canRedo(state)}
+                onClick={() => dispatch({ type: 'REDO' })}
+                aria-label={t('actions.redo')}
+              >
+                <Redo2 className="size-4" aria-hidden />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                disabled={state.elements.length === 0}
+                onClick={() => dispatch({ type: 'CLEAR' })}
+                aria-label={t('actions.clear_all')}
+              >
+                <Eraser className="size-4" aria-hidden />
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Editor inline del seleccionado (oculto en modo limpio) */}
+      {selected && !cleanChrome && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm">
           <span className="font-medium">{t(`tools.${selected.type}`)}</span>
 
@@ -765,6 +930,12 @@ export function PitchEditor(props: {
   onChange?: (diagram: Diagram) => void;
   showClear?: boolean;
   showExport?: boolean;
+  /** F13.0 — el campo llena el alto disponible (fullscreen). */
+  fill?: boolean;
+  /** F13.0 — rota la unidad-campo 90° (apaisado). */
+  fillRotationDeg?: 0 | 90;
+  /** F13.0 — modo limpio (fullscreen pizarra): toolbar oculto + paleta flotante. */
+  cleanChrome?: boolean;
   className?: string;
 }) {
   return <PitchBoard {...props} />;
@@ -772,6 +943,18 @@ export function PitchEditor(props: {
 
 /** Handle de punto: centrado en (x,y); el transform de dnd va en el botón para
  *  no pisar el translate de centrado. Transparente salvo selección. */
+/** F13.0 — transform del handle durante el drag. Si la unidad-campo está rotada
+ *  90° (fullscreen apaisado), el delta de dnd (px de pantalla) se re-expresa en el
+ *  marco local del campo rotado para que el preview siga al dedo. */
+function handleDragTransform(
+  transform: Transform | null,
+  rotated: boolean,
+): string | undefined {
+  if (!transform) return undefined;
+  if (rotated) return `translate3d(${transform.y}px, ${-transform.x}px, 0)`;
+  return CSS.Translate.toString(transform);
+}
+
 function PointHandle({
   id,
   xPct,
@@ -779,6 +962,7 @@ function PointHandle({
   selected,
   onSelect,
   ariaLabel,
+  rotated = false,
 }: {
   id: string;
   xPct: number;
@@ -786,6 +970,7 @@ function PointHandle({
   selected: boolean;
   onSelect: () => void;
   ariaLabel: string;
+  rotated?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
   return (
@@ -797,7 +982,7 @@ function PointHandle({
         type="button"
         ref={setNodeRef}
         data-handle
-        style={{ transform: CSS.Translate.toString(transform) }}
+        style={{ transform: handleDragTransform(transform, rotated) }}
         className={cn(
           'size-7 cursor-grab touch-none rounded-full border-2 border-transparent bg-transparent',
           'active:cursor-grabbing hover:bg-white/10',
@@ -824,12 +1009,14 @@ function DrawnHandle({
   selected,
   onSelect,
   ariaLabel,
+  rotated = false,
 }: {
   id: string;
   bbox: { x: number; y: number; w: number; h: number };
   selected: boolean;
   onSelect: () => void;
   ariaLabel: string;
+  rotated?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id });
   const PAD = 2.5;
@@ -847,7 +1034,7 @@ function DrawnHandle({
         top: `${y}%`,
         width: `${w}%`,
         height: `${h}%`,
-        transform: CSS.Translate.toString(transform),
+        transform: handleDragTransform(transform, rotated),
       }}
       className={cn(
         'absolute cursor-grab touch-none rounded-sm border-2 border-transparent bg-transparent',
