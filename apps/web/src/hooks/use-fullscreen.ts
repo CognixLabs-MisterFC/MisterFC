@@ -1,24 +1,31 @@
 'use client';
 
 /**
- * F13.0 — Fullscreen reutilizable con fallback.
+ * F13.0 — Fullscreen reutilizable, robusto en todos los entornos.
  *
- * Usa la Fullscreen API nativa (true fullscreen, para proyectar/iPad) cuando el
- * elemento la soporta; si no (notablemente **iOS Safari**, que no permite
- * `requestFullscreen` en elementos sueltos) cae a un **overlay CSS** que el
- * consumidor pinta con `fixed inset-0` mirando `isFullscreen`. Así funciona en
- * móvil/tablet sí o sí. Salida con Esc (nativo lo hace solo; en fallback lo
- * gestiona este hook) y con botón (el consumidor llama a `exit`).
+ * El **overlay CSS** (`isFullscreen` → el consumidor pinta `fixed inset-0`) es la
+ * FUENTE DE VERDAD: `enter()` lo activa de forma SÍNCRONA, así que el modo limpio
+ * se renderiza siempre (móvil/tablet, iframe del preview, etc.). Además, como
+ * EXTRA, se pide la Fullscreen API nativa (proyectar/iPad real) en best-effort: si
+ * el navegador la concede, mejor; si la resuelve sin entrar, la rechaza o no la
+ * soporta (iOS Safari), da igual — el overlay ya cubre.
+ *
+ * Bug previo: delegábamos `isFullscreen` al evento `fullscreenchange`; si
+ * `requestFullscreen()` resolvía SIN entrar (headless / iframe) no había rechazo
+ * (no saltaba el fallback) ni evento → el modo limpio nunca se activaba.
+ *
+ * Salida: con `exit()` (botón) y con Esc. El overlay es INDEPENDIENTE del estado
+ * de fullscreen nativo: NO se sincroniza con `fullscreenchange` porque algunos
+ * navegadores entran y salen del fullscreen nativo de forma espuria (disparando
+ * `fullscreenchange` con `fullscreenElement=null`), lo que apagaría el overlay y
+ * devolvería el toolbar. El botón de salir siempre está visible.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type UseFullscreen<T extends HTMLElement> = {
-  /** Adjuntar al contenedor que va a pantalla completa. */
   ref: React.RefObject<T | null>;
   isFullscreen: boolean;
-  /** true cuando se usa el overlay CSS (no la Fullscreen API nativa). */
-  usingFallback: boolean;
   enter: () => void;
   exit: () => void;
   toggle: () => void;
@@ -29,63 +36,36 @@ export function useFullscreen<
 >(): UseFullscreen<T> {
   const ref = useRef<T>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [usingFallback, setUsingFallback] = useState(false);
 
   const enter = useCallback(() => {
     const el = ref.current;
     if (!el) return;
-    if (typeof el.requestFullscreen === 'function') {
-      // Nativa: el estado lo sincroniza el listener de `fullscreenchange`.
-      el.requestFullscreen().catch(() => {
-        setUsingFallback(true);
-        setIsFullscreen(true);
-      });
-    } else {
-      // iOS Safari y otros: overlay CSS.
-      setUsingFallback(true);
-      setIsFullscreen(true);
-    }
+    setIsFullscreen(true); // overlay = fuente de verdad (síncrono, siempre fiable)
+    // Extra best-effort: fullscreen real del navegador si está disponible.
+    el.requestFullscreen?.().catch(() => {});
   }, []);
 
   const exit = useCallback(() => {
-    if (usingFallback) {
-      setUsingFallback(false);
-      setIsFullscreen(false);
-      return;
-    }
+    setIsFullscreen(false);
     if (typeof document !== 'undefined' && document.fullscreenElement) {
       void document.exitFullscreen().catch(() => {});
     }
-    setIsFullscreen(false);
-  }, [usingFallback]);
+  }, []);
 
   const toggle = useCallback(() => {
     if (isFullscreen) exit();
     else enter();
   }, [isFullscreen, enter, exit]);
 
-  // Nativa: sincroniza cuando el navegador entra/sale (incluido Esc o gesto).
+  // Esc cierra el overlay (y, de paso, el fullscreen nativo si lo hubiera).
   useEffect(() => {
-    if (usingFallback) return;
-    const onChange = () => {
-      setIsFullscreen(document.fullscreenElement === ref.current);
-    };
-    document.addEventListener('fullscreenchange', onChange);
-    return () => document.removeEventListener('fullscreenchange', onChange);
-  }, [usingFallback]);
-
-  // Fallback: Esc cierra el overlay (la API nativa ya lo hace por su cuenta).
-  useEffect(() => {
-    if (!usingFallback || !isFullscreen) return;
+    if (!isFullscreen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setUsingFallback(false);
-        setIsFullscreen(false);
-      }
+      if (e.key === 'Escape') exit();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [usingFallback, isFullscreen]);
+  }, [isFullscreen, exit]);
 
-  return { ref, isFullscreen, usingFallback, enter, exit, toggle };
+  return { ref, isFullscreen, enter, exit, toggle };
 }
