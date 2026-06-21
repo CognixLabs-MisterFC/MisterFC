@@ -1908,6 +1908,7 @@ export type Database = {
         Row: {
           club_id: string
           created_at: string
+          description: string | null
           id: string
           name: string | null
           owner_profile_id: string
@@ -1919,6 +1920,7 @@ export type Database = {
         Insert: {
           club_id: string
           created_at?: string
+          description?: string | null
           id?: string
           name?: string | null
           owner_profile_id: string
@@ -1930,6 +1932,7 @@ export type Database = {
         Update: {
           club_id?: string
           created_at?: string
+          description?: string | null
           id?: string
           name?: string | null
           owner_profile_id?: string
