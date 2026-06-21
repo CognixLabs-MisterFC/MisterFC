@@ -38,6 +38,7 @@ import {
   canUndo,
   canRedo,
   simplifyStroke,
+  smoothPathD,
   DRAW_TOOLS,
   FREEHAND_TOOL,
   type Diagram,
@@ -105,6 +106,9 @@ const SIZE_CAPABLE = new Set<DiagramElement['type']>([
 
 const round2 = (v: number): number => Math.round(v * 100) / 100;
 const DRAW_MIN_DIST = 1.5; // % mínimo de arrastre para confirmar un dibujo
+// % mínimo entre muestras del trazo a mano alzada: evita duplicados de los
+// sub-eventos (getCoalescedEvents) sin perder fidelidad de la curva.
+const FREEHAND_MIN_SAMPLE = 0.25;
 
 /** F11B.3 — Rasteriza un <svg> del DOM a una Image, fijando tamaño explícito
  *  (las clases CSS no aplican en el data-URL; viewBox + width/height mandan). */
@@ -310,17 +314,34 @@ export function PitchBoard({
     else setDraw({ from: pt, to: pt });
   }
   function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    const pt = pctFromEvent(e.clientX, e.clientY);
-    if (!pt) return;
     if (freehand) {
-      // Muestrea el recorrido; decima por distancia mínima para no saturar.
+      // Añade TODOS los puntos intermedios que el navegador agrupó en este frame
+      // (getCoalescedEvents) → trazo más denso y fiel, no solo un punto por frame.
+      // Fallback al evento único si la API no está disponible (p.ej. tests/jsdom).
+      const native = e.nativeEvent;
+      const events =
+        typeof native.getCoalescedEvents === 'function'
+          ? native.getCoalescedEvents()
+          : [];
+      const sources = events.length > 0 ? events : [native];
       setFreehand((pts) => {
         if (!pts) return pts;
-        const last = pts[pts.length - 1];
-        if (last && Math.hypot(pt.x - last.x, pt.y - last.y) < 0.4) return pts;
-        return [...pts, pt];
+        const out = [...pts];
+        for (const ev of sources) {
+          const pt = pctFromEvent(ev.clientX, ev.clientY);
+          if (!pt) continue;
+          const last = out[out.length - 1];
+          // Decima por distancia mínima para no meter duplicados.
+          if (last && Math.hypot(pt.x - last.x, pt.y - last.y) < FREEHAND_MIN_SAMPLE) continue;
+          out.push(pt);
+        }
+        return out.length === pts.length ? pts : out;
       });
-    } else if (draw) {
+      return;
+    }
+    if (draw) {
+      const pt = pctFromEvent(e.clientX, e.clientY);
+      if (!pt) return;
       setDraw((d) => (d ? { ...d, to: pt } : null));
     }
   }
@@ -658,8 +679,8 @@ export function PitchBoard({
             viewBox="0 0 100 100"
             preserveAspectRatio="none"
           >
-            <polyline
-              points={freehand.map((p) => `${p.x},${p.y}`).join(' ')}
+            <path
+              d={smoothPathD(freehand)}
               fill="none"
               stroke="#fff"
               strokeWidth={1.5}

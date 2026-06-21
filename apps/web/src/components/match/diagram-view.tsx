@@ -22,6 +22,7 @@
 
 import type { ReactNode } from 'react';
 import type { Diagram, DiagramElement, ElementSize, StrokeColor } from '@misterfc/core';
+import { smoothPathD } from '@misterfc/core';
 import { cn } from '@/lib/utils';
 import { FieldMarkings } from './field-markings';
 
@@ -171,10 +172,12 @@ function renderElement(
         />
       );
     case 'linea': {
-      const pts = el.points.map((p) => `${mx(p.x_pct)},${my(p.y_pct)}`).join(' ');
+      // Generador COMPARTIDO: suaviza el dibujo libre (≥3 puntos) con curvas y
+      // deja recta la línea recta (2 puntos). Mismo `d` que pinta el editor.
+      const d = smoothPathD(el.points.map((p) => ({ x: mx(p.x_pct), y: my(p.y_pct) })));
       return (
-        <polyline
-          points={pts}
+        <path
+          d={d}
           fill="none"
           stroke={strokeColorOf(el.color)}
           strokeWidth={0.8}

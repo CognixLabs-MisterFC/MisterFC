@@ -40,6 +40,10 @@ export type {
 // F11B.0 — Simplificación del trazo a mano alzada (dibujo libre).
 export { simplifyStroke, DEFAULT_SIMPLIFY_EPSILON } from './simplify';
 
+// F11B — Generador compartido del path SVG (suavizado del trazo a mano alzada).
+export { smoothPathD } from './path';
+export type { PathPoint } from './path';
+
 // F11.5b — Reducer puro del editor (PitchEditor).
 export {
   UNDO_LIMIT,
