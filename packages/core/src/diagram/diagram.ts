@@ -178,8 +178,10 @@ export const diagramElementSchema = z.discriminatedUnion('type', [
 export type DiagramElement = z.infer<typeof diagramElementSchema>;
 export type DiagramElementType = DiagramElement['type'];
 
-/** Lienzo que el renderer debe pintar (independiente de `space_type` del ejercicio). */
-const fieldSchema = z.object({
+/** Lienzo que el renderer debe pintar (independiente de `space_type` del ejercicio).
+ *  Exportado (aditivo, sin cambiar su forma) para que F13 lo reutilice como el
+ *  campo común de una jugada (`playSchema`) sin redefinirlo. */
+export const fieldSchema = z.object({
   kind: z.enum(FIELD_KINDS),
   orientation: z.enum(FIELD_ORIENTATIONS).default('vertical'),
 });
