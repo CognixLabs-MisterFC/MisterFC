@@ -44,6 +44,23 @@ export { simplifyStroke, DEFAULT_SIMPLIFY_EPSILON } from './simplify';
 export { smoothPathD } from './path';
 export type { PathPoint } from './path';
 
+// F13.1a — Contrato de la jugada animada (playbook) + interpolación.
+export {
+  PLAY_VERSION,
+  MAX_FRAMES,
+  DEFAULT_FRAME_MS,
+  MIN_FRAME_MS,
+  MAX_FRAME_MS,
+  playSchema,
+  parsePlay,
+  isPlay,
+  emptyPlay,
+  addFrame,
+  playDurationMs,
+  sceneAtTime,
+} from './play';
+export type { Play, PlayFrame, Scene, SceneElement } from './play';
+
 // F11.5b — Reducer puro del editor (PitchEditor).
 export {
   UNDO_LIMIT,
