@@ -1904,6 +1904,64 @@ export type Database = {
           },
         ]
       }
+      plays: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          name: string | null
+          owner_profile_id: string
+          play: Json
+          team_id: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          owner_profile_id: string
+          play: Json
+          team_id: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          name?: string | null
+          owner_profile_id?: string
+          play?: Json
+          team_id?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plays_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plays_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plays_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -2657,6 +2715,7 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: boolean
       }
+      user_can_create_plays: { Args: { p_team_id: string }; Returns: boolean }
       user_can_create_sessions: {
         Args: { p_club_id: string }
         Returns: boolean
@@ -2719,6 +2778,7 @@ export type Database = {
         Args: { p_team_id: string }
         Returns: boolean
       }
+      user_is_team_staff: { Args: { p_team_id: string }; Returns: boolean }
       user_owns_player_account: {
         Args: { p_player_id: string }
         Returns: boolean
