@@ -2968,9 +2968,11 @@
       "frame_count": "{count, plural, =1 {# frame} other {# frames}}"
     },
     "playback": {
+      "title": "Playback",
       "play": "Play",
       "stop": "Stop",
-      "playing": "Playing…"
+      "playing": "Playing…",
+      "need_frames": "Add at least 2 frames to animate the play"
     },
     "toast": {
       "saved": "Play saved"

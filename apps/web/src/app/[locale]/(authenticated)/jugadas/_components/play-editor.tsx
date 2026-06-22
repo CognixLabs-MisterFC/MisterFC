@@ -68,6 +68,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Hint } from '@/components/ui/tooltip';
 import { PitchEditor } from '@/components/match/pitch-editor';
 import { DiagramView } from '@/components/match/diagram-view';
 import type { PlayForEdit, PlayVisibility } from '../queries';
@@ -163,6 +164,8 @@ export function PlayEditor({ play: initial }: { play: PlayForEdit }) {
   const currentPlay: Play = { version: PLAY_VERSION, field, frames: items.map((it) => it.frame) };
   const { scene, playing, previewing, total, play: startPlayback, stop: stopPlayback } =
     usePlayback(currentPlay);
+  // Con < 2 frames la jugada dura 0 → no hay animación posible.
+  const canAnimate = total > 0;
 
   /**
    * Eleva la escena editada al frame activo (y sincroniza el field común).
@@ -407,26 +410,37 @@ export function PlayEditor({ play: initial }: { play: PlayForEdit }) {
 
       {/* ── Reproducción (F13.3) + board del frame activo ──────────────────── */}
       <section className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
+        {/* Barra de reproducción: SIEMPRE visible mientras se edita la jugada.
+            Con < 2 frames no hay nada que animar (duración 0) → el Play queda
+            visible pero DESHABILITADO, con tooltip + texto inline (no oculto). */}
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-sm font-medium">{t('playback.title')}</h2>
           {previewing ? (
-            <Button type="button" size="sm" variant="outline" onClick={stopPlayback}>
+            <Button type="button" size="sm" onClick={stopPlayback}>
               <StopIcon className="size-4" aria-hidden />
               {t('playback.stop')}
             </Button>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={startPlayback}
-              disabled={total <= 0}
-            >
+          ) : canAnimate ? (
+            <Button type="button" size="sm" onClick={startPlayback}>
               <PlayIcon className="size-4" aria-hidden />
               {t('playback.play')}
             </Button>
+          ) : (
+            <Hint label={t('playback.need_frames')}>
+              {/* Botón deshabilitado no emite eventos → el span es el trigger del
+                  tooltip (focusable en táctil/teclado). */}
+              <span tabIndex={0} className="inline-flex">
+                <Button type="button" size="sm" disabled aria-disabled>
+                  <PlayIcon className="size-4" aria-hidden />
+                  {t('playback.play')}
+                </Button>
+              </span>
+            </Hint>
           )}
           {playing ? (
             <span className="text-sm text-muted-foreground">{t('playback.playing')}</span>
+          ) : !canAnimate ? (
+            <span className="text-sm text-muted-foreground">{t('playback.need_frames')}</span>
           ) : null}
         </div>
 
