@@ -86,6 +86,7 @@ import type { PlayForEdit, PlayVisibility } from '../queries';
 import { updatePlay } from '../actions';
 import { usePlayback, PLAYBACK_SPEEDS } from './use-playback';
 import { PlayDeleteButton } from './play-delete-button';
+import { PlaybackFullscreen } from './playback-fullscreen';
 
 /** ms → "1,2 s" para la lectura de tiempo de la barra de reproducción. */
 function formatSeconds(ms: number): string {
@@ -521,6 +522,8 @@ export function PlayEditor({
               </span>
             </Hint>
           )}
+          {/* Pantalla completa (presentación read-only; adelanta parte de 13.7). */}
+          <PlaybackFullscreen play={currentPlay} />
         </div>
 
         {/* SCRUB: barra para moverse por la animación + lectura de tiempo. */}
