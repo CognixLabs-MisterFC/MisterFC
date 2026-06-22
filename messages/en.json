@@ -2967,6 +2967,11 @@
       "empty": "No plays yet. Create the first one.",
       "frame_count": "{count, plural, =1 {# frame} other {# frames}}"
     },
+    "playback": {
+      "play": "Play",
+      "stop": "Stop",
+      "playing": "Playing…"
+    },
     "toast": {
       "saved": "Play saved"
     },

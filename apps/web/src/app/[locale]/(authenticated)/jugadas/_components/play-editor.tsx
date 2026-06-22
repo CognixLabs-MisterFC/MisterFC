@@ -25,7 +25,7 @@
 import { useCallback, useRef, useState, useSyncExternalStore, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { Plus, Copy, Trash2, Save, GripVertical } from 'lucide-react';
+import { Plus, Copy, Trash2, Save, GripVertical, Play as PlayIcon, Square as StopIcon } from 'lucide-react';
 import {
   DndContext,
   KeyboardSensor,
@@ -69,8 +69,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { PitchEditor } from '@/components/match/pitch-editor';
+import { DiagramView } from '@/components/match/diagram-view';
 import type { PlayForEdit, PlayVisibility } from '../queries';
 import { updatePlay } from '../actions';
+import { usePlayback } from './use-playback';
 
 /** Frame + id de cliente (estable para dnd/remount; NO se persiste). */
 type FrameItem = { id: string; frame: PlayFrame };
@@ -156,6 +158,11 @@ export function PlayEditor({ play: initial }: { play: PlayForEdit }) {
   );
 
   const activeItem = items.find((it) => it.id === activeId) ?? items[0]!;
+
+  // Reproducción (F13.3): interpola la jugada ACTUAL (frames editados en vivo).
+  const currentPlay: Play = { version: PLAY_VERSION, field, frames: items.map((it) => it.frame) };
+  const { scene, playing, previewing, total, play: startPlayback, stop: stopPlayback } =
+    usePlayback(currentPlay);
 
   /**
    * Eleva la escena editada al frame activo (y sincroniza el field común).
@@ -398,14 +405,42 @@ export function PlayEditor({ play: initial }: { play: PlayForEdit }) {
         </div>
       </section>
 
-      {/* ── Board del frame activo ─────────────────────────────────────────── */}
-      <section>
-        <PitchEditor
-          key={activeId}
-          initialDiagram={frameToDiagram(field, activeItem.frame)}
-          onChange={onFrameChange}
-          showClear
-        />
+      {/* ── Reproducción (F13.3) + board del frame activo ──────────────────── */}
+      <section className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          {previewing ? (
+            <Button type="button" size="sm" variant="outline" onClick={stopPlayback}>
+              <StopIcon className="size-4" aria-hidden />
+              {t('playback.stop')}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={startPlayback}
+              disabled={total <= 0}
+            >
+              <PlayIcon className="size-4" aria-hidden />
+              {t('playback.play')}
+            </Button>
+          )}
+          {playing ? (
+            <span className="text-sm text-muted-foreground">{t('playback.playing')}</span>
+          ) : null}
+        </div>
+
+        {previewing ? (
+          // Reproducción read-only: <DiagramView> honra la opacidad (fade) de la Scene.
+          <DiagramView diagram={scene} />
+        ) : (
+          <PitchEditor
+            key={activeId}
+            initialDiagram={frameToDiagram(field, activeItem.frame)}
+            onChange={onFrameChange}
+            showClear
+          />
+        )}
       </section>
 
       {/* ── Guardar ────────────────────────────────────────────────────────── */}

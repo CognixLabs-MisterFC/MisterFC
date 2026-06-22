@@ -21,7 +21,7 @@
  */
 
 import type { ReactNode } from 'react';
-import type { Diagram, DiagramElement, ElementSize, StrokeColor } from '@misterfc/core';
+import type { Diagram, DiagramElement, ElementSize, StrokeColor, Scene, SceneElement } from '@misterfc/core';
 import { smoothPathD } from '@misterfc/core';
 import { cn } from '@/lib/utils';
 import { FieldMarkings } from './field-markings';
@@ -240,7 +240,10 @@ export function DiagramView({
   fill = false,
   showField = true,
 }: {
-  diagram: Diagram;
+  /** Acepta un `Diagram` (escena estática F11) o una `Scene` (salida de
+   *  `sceneAtTime`, F13.3): un `Diagram` es asignable a `Scene` (la `opacity` por
+   *  elemento es opcional), así que los usos actuales no cambian. */
+  diagram: Diagram | Scene;
   className?: string;
   /** Rellena el contenedor padre (absolute inset-0) en vez de imponer su propio
    *  aspect-ratio/ancho. Lo usa el editor (11.5b) para superponer la capa de
@@ -289,8 +292,12 @@ export function DiagramView({
             </marker>
           ))}
         </defs>
-        {diagram.elements.map((el) => (
-          <g key={el.id}>{renderElement(el, mx, my)}</g>
+        {/* `opacity` por elemento (fade de aparición/desaparición de la Scene, F13.3).
+            Ausente = 1 (los Diagram estáticos no la traen → sin cambios). */}
+        {(diagram.elements as SceneElement[]).map((el) => (
+          <g key={el.id} opacity={el.opacity}>
+            {renderElement(el, mx, my)}
+          </g>
         ))}
       </svg>
     </div>
