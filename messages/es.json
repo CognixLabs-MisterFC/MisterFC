@@ -2920,7 +2920,58 @@
       "sesiones": {
         "title": "Sesiones",
         "description": "Planifica las sesiones de entrenamiento por bloques."
+      },
+      "jugadas": {
+        "title": "Jugadas",
+        "description": "Crea y anima jugadas tácticas del equipo (playbook)."
       }
+    }
+  },
+  "jugadas": {
+    "title": "Jugadas",
+    "subtitle": "Playbook del equipo: jugadas animadas por fotogramas.",
+    "new": "Nueva jugada",
+    "new_title": "Nueva jugada",
+    "edit_title": "Editar jugada",
+    "back": "Volver a jugadas",
+    "create": "Crear",
+    "save": "Guardar",
+    "untitled": "(sin título)",
+    "no_teams": "No hay equipos de la temporada activa para crear jugadas.",
+    "fields": {
+      "name": "Nombre",
+      "name_ph": "Entrada en profundidad por banda",
+      "team": "Equipo",
+      "team_ph": "Elige un equipo",
+      "visibility": "Visibilidad",
+      "description": "Descripción",
+      "description_ph": "Cómo ejecutar la jugada…"
+    },
+    "visibility": {
+      "staff": "Solo staff",
+      "team": "Equipo"
+    },
+    "frames": {
+      "title": "Fotogramas",
+      "add": "Añadir fotograma",
+      "frame": "Fotograma {n}",
+      "duration": "Duración de transición",
+      "duration_ms": "ms",
+      "remove": "Quitar fotograma",
+      "max": "Máximo {max} fotogramas por jugada."
+    },
+    "list": {
+      "empty": "Aún no hay jugadas. Crea la primera.",
+      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogramas}}"
+    },
+    "toast": {
+      "saved": "Jugada guardada"
+    },
+    "errors": {
+      "forbidden": "Permiso denegado",
+      "invalid": "Datos no válidos",
+      "not_found": "No encontrada",
+      "generic": "Error al guardar"
     }
   },
   "partidos": {
