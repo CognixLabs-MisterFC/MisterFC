@@ -2964,7 +2964,18 @@
     },
     "list": {
       "empty": "Aún no hay jugadas. Crea la primera.",
-      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogramas}}"
+      "empty_filtered": "No hay jugadas con esos filtros.",
+      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogramas}}",
+      "search_placeholder": "Buscar por nombre…",
+      "search_label": "Buscar jugadas",
+      "search_clear": "Limpiar búsqueda",
+      "team_all": "Todos los equipos",
+      "visibility_all": "Toda visibilidad",
+      "updated": "Actualizada {date}",
+      "clear": "Quitar filtros",
+      "page_of": "Página {current} de {total}",
+      "prev": "Anterior",
+      "next": "Siguiente"
     },
     "playback": {
       "title": "Reproducción",

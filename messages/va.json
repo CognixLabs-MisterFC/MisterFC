@@ -2965,7 +2965,18 @@
     },
     "list": {
       "empty": "Encara no hi ha jugades. Crea la primera.",
-      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogrames}}"
+      "empty_filtered": "No hi ha jugades amb eixos filtres.",
+      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogrames}}",
+      "search_placeholder": "Cercar per nom…",
+      "search_label": "Cercar jugades",
+      "search_clear": "Netejar cerca",
+      "team_all": "Tots els equips",
+      "visibility_all": "Tota la visibilitat",
+      "updated": "Actualitzada {date}",
+      "clear": "Llevar filtres",
+      "page_of": "Pàgina {current} de {total}",
+      "prev": "Anterior",
+      "next": "Següent"
     },
     "playback": {
       "title": "Reproducció",
