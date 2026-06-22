@@ -11,7 +11,7 @@
  * Guardar valida con `parsePlay` en la server action.
  */
 
-import { useState, useTransition } from 'react';
+import { useCallback, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Plus, Trash2, Save } from 'lucide-react';
@@ -65,11 +65,18 @@ export function PlayEditor({ play: initial }: { play: PlayForEdit }) {
 
   const activeFrame = frames[active] ?? frames[0]!;
 
-  /** Eleva la escena editada al frame activo (y sincroniza el field común). */
-  function onFrameChange(d: Diagram) {
+  /**
+   * Eleva la escena editada al frame activo (y sincroniza el field común).
+   * MEMOIZADO: <PitchEditor> tiene un efecto `onChange` con deps `[state, onChange]`;
+   * si esta función cambiara de identidad en cada render, el efecto se re-ejecutaría
+   * en bucle (cada llamada hace setState aquí → re-render → nueva identidad → …) y
+   * React reventaría con "Maximum update depth exceeded". Solo depende de `active`
+   * (y al cambiar `active` el editor se remonta por `key`, así que es estable).
+   */
+  const onFrameChange = useCallback((d: Diagram) => {
     setField(d.field);
     setFrames((prev) => prev.map((f, i) => (i === active ? { ...f, elements: d.elements } : f)));
-  }
+  }, [active]);
 
   function addFrameAt() {
     if (frames.length >= MAX_FRAMES) {
