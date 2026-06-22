@@ -676,6 +676,14 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **13.7** Modo presentación iPad (pantalla completa, sin distracciones) — 2 h
 - **13.8** Exportar jugada como vídeo o GIF — 1–2 h
 
+**Backlog (sin programar)**:
+
+- **Incluir jugadas en sesiones de entrenamiento ("entrenar jugadas")** — integración **F12 ↔ F13**. Que una sesión de entrenamiento pueda incluir **jugadas** del playbook (F13) como ítems, junto a los ejercicios. Posicionada **después de 13.5** (requiere poder elegir una jugada del playbook). Necesita **mini-análisis** antes de implementar:
+  - **Enlace bloque ↔ jugada**: join paralelo `session_block_plays` vs. ítem polimórfico (ejercicio | jugada) en el bloque de sesión.
+  - **Picker** para elegir la jugada desde el playbook del equipo.
+  - **PDF de la sesión**: cómo aparece la jugada (¿frame estático / secuencia de frames / enlace?).
+  - **Vista de jugador/familia**: cómo se muestra la jugada incluida en la sesión.
+
 ---
 
 ### Fase 14 — RGPD para menores y seguridad
