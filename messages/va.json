@@ -2967,6 +2967,13 @@
       "empty": "Encara no hi ha jugades. Crea la primera.",
       "frame_count": "{count, plural, =1 {# fotograma} other {# fotogrames}}"
     },
+    "playback": {
+      "title": "Reproducció",
+      "play": "Reproduir",
+      "stop": "Detindre",
+      "playing": "Reproduint…",
+      "need_frames": "Afig almenys 2 frames per a animar la jugada"
+    },
     "toast": {
       "saved": "Jugada guardada"
     },
