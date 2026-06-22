@@ -2954,6 +2954,8 @@
     "frames": {
       "title": "Fotogramas",
       "add": "Añadir fotograma",
+      "duplicate": "Duplicar",
+      "reorder": "Reordenar fotograma",
       "frame": "Fotograma {n}",
       "duration": "Duración de transición",
       "duration_ms": "ms",
