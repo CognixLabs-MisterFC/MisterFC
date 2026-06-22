@@ -2970,9 +2970,20 @@
     "playback": {
       "title": "Reproducció",
       "play": "Reproduir",
+      "pause": "Pausar",
       "stop": "Detindre",
+      "loop": "Repetir en bucle",
+      "speed": "Velocitat",
+      "speed_x": "{x}×",
+      "scrub": "Posició de la reproducció",
       "playing": "Reproduint…",
       "need_frames": "Afig almenys 2 frames per a animar la jugada"
+    },
+    "delete": {
+      "action": "Esborrar",
+      "cancel": "Cancel·lar",
+      "title": "Esborrar la jugada?",
+      "description": "S'esborrarà «{name}» de manera permanent. Aquesta acció no es pot desfer."
     },
     "toast": {
       "saved": "Jugada guardada"

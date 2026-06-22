@@ -50,15 +50,18 @@ export type PlayListRow = {
   visibility: PlayVisibility;
   frame_count: number;
   updated_at: string;
+  /** ¿El usuario actual es el autor? (para gatear el borrado por fila; la RLS es el gate real). */
+  is_owner: boolean;
 };
 
 export async function loadPlays(clubId: string): Promise<PlayListRow[]> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
+  const user = await getCurrentUser(adapter);
 
   const { data } = await supabase
     .from('plays')
-    .select('id, name, visibility, updated_at, play, team:teams(name)')
+    .select('id, name, visibility, updated_at, play, owner_profile_id, team:teams(name)')
     .eq('club_id', clubId)
     .order('updated_at', { ascending: false });
 
@@ -72,6 +75,7 @@ export async function loadPlays(clubId: string): Promise<PlayListRow[]> {
       visibility: p.visibility as PlayVisibility,
       frame_count: parsed.success ? parsed.data.frames.length : 0,
       updated_at: p.updated_at as string,
+      is_owner: !!user && p.owner_profile_id === user.id,
     };
   });
 }
