@@ -2955,6 +2955,8 @@
     "frames": {
       "title": "Frames",
       "add": "Add frame",
+      "duplicate": "Duplicate",
+      "reorder": "Reorder frame",
       "frame": "Frame {n}",
       "duration": "Transition duration",
       "duration_ms": "ms",
