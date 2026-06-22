@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { loadPlays } from './queries';
+import { PlayDeleteButton } from './_components/play-delete-button';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -17,6 +18,9 @@ const STAFF_ROLES: ReadonlyArray<Role> = [
   'entrenador_principal',
   'entrenador_ayudante',
 ];
+
+/** Borrar jugada = autor∪admin/coord (la RLS es el gate real; aquí solo el UI). */
+const DELETE_ANY_ROLES: ReadonlyArray<Role> = ['admin_club', 'coordinador'];
 
 /**
  * F13.2a — Listado MÍNIMO de jugadas (la biblioteca completa con filtros es 13.5).
@@ -33,6 +37,7 @@ export default async function JugadasPage({ params }: Props) {
 
   const t = await getTranslations('jugadas');
   const plays = await loadPlays(ctx.activeClub.club.id);
+  const canDeleteAny = DELETE_ANY_ROLES.includes(role);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
@@ -59,10 +64,13 @@ export default async function JugadasPage({ params }: Props) {
       ) : (
         <ul className="flex flex-col gap-2">
           {plays.map((p) => (
-            <li key={p.id}>
+            <li
+              key={p.id}
+              className="flex items-center gap-2 rounded-lg border p-3 transition-colors hover:bg-muted"
+            >
               <Link
                 href={`/jugadas/${p.id}/editar`}
-                className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:bg-muted"
+                className="flex min-w-0 flex-1 items-center justify-between gap-3"
               >
                 <div className="min-w-0">
                   <p className="truncate font-medium">{p.name ?? t('untitled')}</p>
@@ -74,6 +82,9 @@ export default async function JugadasPage({ params }: Props) {
                   {t(`visibility.${p.visibility}`)}
                 </Badge>
               </Link>
+              {(canDeleteAny || p.is_owner) && (
+                <PlayDeleteButton playId={p.id} playName={p.name} compact />
+              )}
             </li>
           ))}
         </ul>

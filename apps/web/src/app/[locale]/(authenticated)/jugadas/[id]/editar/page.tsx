@@ -16,6 +16,9 @@ const STAFF_ROLES: ReadonlyArray<Role> = [
   'entrenador_ayudante',
 ];
 
+/** Borrar jugada = autor∪admin/coord (la RLS es el gate real; aquí solo el UI). */
+const DELETE_ANY_ROLES: ReadonlyArray<Role> = ['admin_club', 'coordinador'];
+
 /**
  * F13.2a — Editor de jugada. Carga cabecera + jsonb `play`; la RLS decide la
  * visibilidad (si no se ve → notFound). Guardar lo gatea la RLS (autor∪admin/coord).
@@ -33,6 +36,8 @@ export default async function EditarJugadaPage({ params }: Props) {
   const play = await loadPlayForEdit(ctx.activeClub.club.id, id);
   if (!play) notFound();
 
+  const canDelete = DELETE_ANY_ROLES.includes(role) || play.is_owner;
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-4">
       <Link
@@ -43,7 +48,7 @@ export default async function EditarJugadaPage({ params }: Props) {
         {t('back')}
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">{t('edit_title')}</h1>
-      <PlayEditor play={play} />
+      <PlayEditor play={play} canDelete={canDelete} />
     </div>
   );
 }

@@ -2970,9 +2970,20 @@
     "playback": {
       "title": "Playback",
       "play": "Play",
+      "pause": "Pause",
       "stop": "Stop",
+      "loop": "Loop",
+      "speed": "Speed",
+      "speed_x": "{x}×",
+      "scrub": "Playback position",
       "playing": "Playing…",
       "need_frames": "Add at least 2 frames to animate the play"
+    },
+    "delete": {
+      "action": "Delete",
+      "cancel": "Cancel",
+      "title": "Delete this play?",
+      "description": "“{name}” will be permanently deleted. This action cannot be undone."
     },
     "toast": {
       "saved": "Play saved"

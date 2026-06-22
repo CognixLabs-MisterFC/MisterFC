@@ -2969,9 +2969,20 @@
     "playback": {
       "title": "Reproducción",
       "play": "Reproducir",
+      "pause": "Pausar",
       "stop": "Detener",
+      "loop": "Repetir en bucle",
+      "speed": "Velocidad",
+      "speed_x": "{x}×",
+      "scrub": "Posición de la reproducción",
       "playing": "Reproduciendo…",
       "need_frames": "Añade al menos 2 frames para animar la jugada"
+    },
+    "delete": {
+      "action": "Borrar",
+      "cancel": "Cancelar",
+      "title": "¿Borrar la jugada?",
+      "description": "Se borrará «{name}» de forma permanente. Esta acción no se puede deshacer."
     },
     "toast": {
       "saved": "Jugada guardada"

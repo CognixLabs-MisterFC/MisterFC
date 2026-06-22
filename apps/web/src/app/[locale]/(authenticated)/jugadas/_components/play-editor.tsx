@@ -25,7 +25,17 @@
 import { useCallback, useRef, useState, useSyncExternalStore, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { Plus, Copy, Trash2, Save, GripVertical, Play as PlayIcon, Square as StopIcon } from 'lucide-react';
+import {
+  Plus,
+  Copy,
+  Trash2,
+  Save,
+  GripVertical,
+  Play as PlayIcon,
+  Pause as PauseIcon,
+  Square as StopIcon,
+  Repeat as RepeatIcon,
+} from 'lucide-react';
 import {
   DndContext,
   KeyboardSensor,
@@ -69,11 +79,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Hint } from '@/components/ui/tooltip';
+import { Slider } from '@/components/ui/slider';
 import { PitchEditor } from '@/components/match/pitch-editor';
 import { DiagramView } from '@/components/match/diagram-view';
 import type { PlayForEdit, PlayVisibility } from '../queries';
 import { updatePlay } from '../actions';
-import { usePlayback } from './use-playback';
+import { usePlayback, PLAYBACK_SPEEDS } from './use-playback';
+import { PlayDeleteButton } from './play-delete-button';
+
+/** ms → "1,2 s" para la lectura de tiempo de la barra de reproducción. */
+function formatSeconds(ms: number): string {
+  return `${(ms / 1000).toFixed(1)}s`;
+}
 
 /** Frame + id de cliente (estable para dnd/remount; NO se persiste). */
 type FrameItem = { id: string; frame: PlayFrame };
@@ -122,7 +139,13 @@ function SortableFrameChip({
   );
 }
 
-export function PlayEditor({ play: initial }: { play: PlayForEdit }) {
+export function PlayEditor({
+  play: initial,
+  canDelete = false,
+}: {
+  play: PlayForEdit;
+  canDelete?: boolean;
+}) {
   const t = useTranslations('jugadas');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -162,10 +185,21 @@ export function PlayEditor({ play: initial }: { play: PlayForEdit }) {
 
   // Reproducción (F13.3): interpola la jugada ACTUAL (frames editados en vivo).
   const currentPlay: Play = { version: PLAY_VERSION, field, frames: items.map((it) => it.frame) };
-  const { scene, playing, previewing, total, play: startPlayback, stop: stopPlayback } =
-    usePlayback(currentPlay);
-  // Con < 2 frames la jugada dura 0 → no hay animación posible.
-  const canAnimate = total > 0;
+  const {
+    scene,
+    playing,
+    previewing,
+    t: tNow,
+    total,
+    canAnimate,
+    loop,
+    speed,
+    toggle: togglePlayback,
+    stop: stopPlayback,
+    seek,
+    setLoop,
+    setSpeed,
+  } = usePlayback(currentPlay);
 
   /**
    * Eleva la escena editada al frame activo (y sincroniza el field común).
@@ -408,23 +442,73 @@ export function PlayEditor({ play: initial }: { play: PlayForEdit }) {
         </div>
       </section>
 
-      {/* ── Reproducción (F13.3) + board del frame activo ──────────────────── */}
-      <section className="flex flex-col gap-2">
+      {/* ── Reproducción (F13.3/F13.4) + board del frame activo ─────────────── */}
+      <section className="flex flex-col gap-3">
         {/* Barra de reproducción: SIEMPRE visible mientras se edita la jugada.
             Con < 2 frames no hay nada que animar (duración 0) → el Play queda
             visible pero DESHABILITADO, con tooltip + texto inline (no oculto). */}
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-sm font-medium">{t('playback.title')}</h2>
-          {previewing ? (
-            <Button type="button" size="sm" onClick={stopPlayback}>
-              <StopIcon className="size-4" aria-hidden />
-              {t('playback.stop')}
-            </Button>
-          ) : canAnimate ? (
-            <Button type="button" size="sm" onClick={startPlayback}>
-              <PlayIcon className="size-4" aria-hidden />
-              {t('playback.play')}
-            </Button>
+          {canAnimate ? (
+            <>
+              <Button type="button" size="sm" onClick={togglePlayback}>
+                {playing ? (
+                  <>
+                    <PauseIcon className="size-4" aria-hidden />
+                    {t('playback.pause')}
+                  </>
+                ) : (
+                  <>
+                    <PlayIcon className="size-4" aria-hidden />
+                    {t('playback.play')}
+                  </>
+                )}
+              </Button>
+              <Hint label={t('playback.stop')}>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={stopPlayback}
+                  disabled={!previewing}
+                  aria-label={t('playback.stop')}
+                >
+                  <StopIcon className="size-4" aria-hidden />
+                </Button>
+              </Hint>
+              {/* LOOP (toggle): activo = variante sólida. */}
+              <Hint label={t('playback.loop')}>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant={loop ? 'default' : 'outline'}
+                  onClick={() => setLoop(!loop)}
+                  aria-pressed={loop}
+                  aria-label={t('playback.loop')}
+                >
+                  <RepeatIcon className="size-4" aria-hidden />
+                </Button>
+              </Hint>
+              {/* VELOCIDAD: multiplicador del avance de t. */}
+              <div
+                className="inline-flex items-center gap-1"
+                role="group"
+                aria-label={t('playback.speed')}
+              >
+                {PLAYBACK_SPEEDS.map((s) => (
+                  <Button
+                    key={s}
+                    type="button"
+                    size="sm"
+                    variant={speed === s ? 'default' : 'outline'}
+                    onClick={() => setSpeed(s)}
+                    aria-pressed={speed === s}
+                  >
+                    {t('playback.speed_x', { x: s })}
+                  </Button>
+                ))}
+              </div>
+            </>
           ) : (
             <Hint label={t('playback.need_frames')}>
               {/* Botón deshabilitado no emite eventos → el span es el trigger del
@@ -437,12 +521,27 @@ export function PlayEditor({ play: initial }: { play: PlayForEdit }) {
               </span>
             </Hint>
           )}
-          {playing ? (
-            <span className="text-sm text-muted-foreground">{t('playback.playing')}</span>
-          ) : !canAnimate ? (
-            <span className="text-sm text-muted-foreground">{t('playback.need_frames')}</span>
-          ) : null}
         </div>
+
+        {/* SCRUB: barra para moverse por la animación + lectura de tiempo. */}
+        {canAnimate ? (
+          <div className="flex items-center gap-3">
+            <Slider
+              aria-label={t('playback.scrub')}
+              min={0}
+              max={total}
+              step={10}
+              value={[tNow]}
+              onValueChange={([v]) => seek(v ?? 0)}
+              className="max-w-md"
+            />
+            <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
+              {formatSeconds(tNow)} / {formatSeconds(total)}
+            </span>
+          </div>
+        ) : (
+          <span className="text-sm text-muted-foreground">{t('playback.need_frames')}</span>
+        )}
 
         {previewing ? (
           // Reproducción read-only: <DiagramView> honra la opacidad (fade) de la Scene.
@@ -457,8 +556,17 @@ export function PlayEditor({ play: initial }: { play: PlayForEdit }) {
         )}
       </section>
 
-      {/* ── Guardar ────────────────────────────────────────────────────────── */}
-      <div className="flex justify-end">
+      {/* ── Borrar (F13.4) + Guardar ───────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-2">
+        {canDelete ? (
+          <PlayDeleteButton
+            playId={initial.id}
+            playName={name.trim() === '' ? null : name.trim()}
+            redirectToList
+          />
+        ) : (
+          <span />
+        )}
         <Button type="button" onClick={save} disabled={pending}>
           <Save className="size-4" aria-hidden />
           {t('save')}
