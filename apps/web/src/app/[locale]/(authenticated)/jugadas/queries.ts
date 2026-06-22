@@ -42,7 +42,9 @@ export async function loadClubTeams(clubId: string): Promise<ClubTeam[]> {
   }));
 }
 
-// ── Listado (mínimo; la biblioteca completa con filtros es 13.5) ──────────────
+// ── Biblioteca de jugadas (F13.5: búsqueda + filtros + paginación) ────────────
+export const PLAYS_PAGE_SIZE = 20;
+
 export type PlayListRow = {
   id: string;
   name: string | null;
@@ -54,18 +56,50 @@ export type PlayListRow = {
   is_owner: boolean;
 };
 
-export async function loadPlays(clubId: string): Promise<PlayListRow[]> {
+export type PlayListFilters = {
+  search: string;
+  teamId: string | null;
+  visibility: PlayVisibility | null;
+};
+
+export type PlayListResult = { plays: PlayListRow[]; total: number };
+
+/**
+ * Lista la biblioteca de jugadas del club, CONFIANDO en la RLS (13.1b: staff ve
+ * las de su club/equipos). Filtros por nombre (ilike), equipo y visibilidad;
+ * paginación con .range() y count exacto (patrón F2.10, igual que /sesiones).
+ * Orden por `updated_at` descendente.
+ */
+export async function loadPlays(
+  clubId: string,
+  filters: PlayListFilters,
+  page: number,
+): Promise<PlayListResult> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const user = await getCurrentUser(adapter);
 
-  const { data } = await supabase
+  let q = supabase
     .from('plays')
-    .select('id, name, visibility, updated_at, play, owner_profile_id, team:teams(name)')
-    .eq('club_id', clubId)
-    .order('updated_at', { ascending: false });
+    .select('id, name, visibility, updated_at, play, owner_profile_id, team:teams(name)', {
+      count: 'exact',
+    })
+    .eq('club_id', clubId);
 
-  return (data ?? []).map((p) => {
+  if (filters.search.trim().length > 0) {
+    const escaped = filters.search.trim().replace(/[%_,]/g, (m) => `\\${m}`);
+    q = q.ilike('name', `%${escaped}%`);
+  }
+  if (filters.teamId) q = q.eq('team_id', filters.teamId);
+  if (filters.visibility) q = q.eq('visibility', filters.visibility);
+
+  const from = (page - 1) * PLAYS_PAGE_SIZE;
+  const to = from + PLAYS_PAGE_SIZE - 1;
+  q = q.order('updated_at', { ascending: false }).range(from, to);
+
+  const { data, count } = await q;
+
+  const plays: PlayListRow[] = (data ?? []).map((p) => {
     const team = p.team as { name: string } | null;
     const parsed = parsePlay(p.play);
     return {
@@ -78,6 +112,8 @@ export async function loadPlays(clubId: string): Promise<PlayListRow[]> {
       is_owner: !!user && p.owner_profile_id === user.id,
     };
   });
+
+  return { plays, total: count ?? 0 };
 }
 
 // ── Una jugada para el editor ────────────────────────────────────────────────

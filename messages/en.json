@@ -2965,7 +2965,18 @@
     },
     "list": {
       "empty": "No plays yet. Create the first one.",
-      "frame_count": "{count, plural, =1 {# frame} other {# frames}}"
+      "empty_filtered": "No plays match those filters.",
+      "frame_count": "{count, plural, =1 {# frame} other {# frames}}",
+      "search_placeholder": "Search by name…",
+      "search_label": "Search plays",
+      "search_clear": "Clear search",
+      "team_all": "All teams",
+      "visibility_all": "All visibility",
+      "updated": "Updated {date}",
+      "clear": "Clear filters",
+      "page_of": "Page {current} of {total}",
+      "prev": "Previous",
+      "next": "Next"
     },
     "playback": {
       "title": "Playback",
