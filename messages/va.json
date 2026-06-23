@@ -2098,6 +2098,12 @@
         "empty": "No hi ha sessions publicades.",
         "untitled": "Sessió",
         "minutes": "{count} min"
+      },
+      "playbook": {
+        "title": "Playbook",
+        "empty": "Encara no hi ha jugades compartides.",
+        "untitled": "Jugada",
+        "frame_count": "{count, plural, =1 {# fotograma} other {# fotogrames}}"
       }
     },
     "no_team": "Encara no estàs assignat a cap equip. Parla amb el coordinador del club.",
@@ -2995,6 +3001,10 @@
       "cancel": "Cancel·lar",
       "title": "Esborrar la jugada?",
       "description": "S'esborrarà «{name}» de manera permanent. Aquesta acció no es pot desfer."
+    },
+    "notify": {
+      "title": "Nova jugada al playbook",
+      "body": "El teu entrenador ha compartit «{name}»."
     },
     "toast": {
       "saved": "Jugada guardada"

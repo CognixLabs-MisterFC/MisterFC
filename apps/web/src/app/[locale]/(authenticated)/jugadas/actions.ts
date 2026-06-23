@@ -2,6 +2,8 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import { getTranslations } from 'next-intl/server';
+import * as Sentry from '@sentry/nextjs';
 import { parsePlay, emptyPlay, createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -41,6 +43,7 @@ const updatePlaySchema = z.object({
   description: z.string().trim().max(2000).nullable(),
   visibility: z.enum(['staff', 'team']),
   play: z.unknown(), // forma fuerte = parsePlay (abajo)
+  locale: z.string().min(2).max(5), // para deep_link + texto de la notificación
 });
 
 /**
@@ -110,14 +113,85 @@ export async function updatePlay(input: unknown): Promise<PlayActionState> {
       play: play.data,
     })
     .eq('id', parsed.data.id)
-    .select('id')
+    .select('id, team_id, name, visibility')
     .maybeSingle();
 
   if (error) return { error: mapPgErr(error.code) };
   if (!updated) return { error: 'not_found' };
 
+  // F13.6 (Parte B) — al quedar en 'team' (publicar), notifica a jugadores/
+  // familias del equipo. Decisión B: re-notifica en CADA publicación (puede haber
+  // cambios), por eso el dedupe_base lleva un token único de tiempo → nunca se
+  // colapsa con publicaciones anteriores. No bloquea el guardado si falla.
+  if (updated.visibility === 'team') {
+    try {
+      await notifyPlayPublished(
+        supabase,
+        updated.id as string,
+        updated.team_id as string,
+        (updated.name as string | null) ?? null,
+        parsed.data.locale,
+      );
+    } catch (notifyErr) {
+      Sentry.captureException(notifyErr, {
+        tags: { feature: 'plays', step: 'notify_publish' },
+        extra: { play_id: parsed.data.id },
+      });
+    }
+  }
+
   revalidatePlays();
   return { success: true, id: parsed.data.id };
+}
+
+/**
+ * F13.6 — Notifica a jugadores/familias del equipo que una jugada está publicada.
+ * Mismo patrón que los anuncios de equipo (F5.7): team_members activos →
+ * player_accounts → profile_ids → emitNotificationFanOut. El texto (push) se
+ * localiza con el locale de quien publica. dedupe_base único por publicación
+ * (token de tiempo) para re-notificar siempre (Parte B, a propósito).
+ */
+async function notifyPlayPublished(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  playId: string,
+  teamId: string,
+  playName: string | null,
+  locale: string,
+): Promise<void> {
+  const { data: tms } = await supabase
+    .from('team_members')
+    .select('player_id')
+    .eq('team_id', teamId)
+    .is('left_at', null);
+  const playerIds = (tms ?? []).map((r) => r.player_id);
+  if (playerIds.length === 0) return;
+
+  const { data: pas } = await supabase
+    .from('player_accounts')
+    .select('profile_id')
+    .in('player_id', playerIds);
+  const recipientUserIds = Array.from(
+    new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
+  ) as string[];
+  if (recipientUserIds.length === 0) return;
+
+  const t = await getTranslations({ locale, namespace: 'jugadas.notify' });
+  const name = playName ?? (await getTranslations({ locale, namespace: 'jugadas' }))('untitled');
+  const title = t('title');
+  const body = t('body', { name });
+  const deepLink = `/${locale}/mi-equipo/jugadas/${playId}`;
+  const token = String(Date.now()); // re-notifica en cada publicación (B)
+
+  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+  await emitNotificationFanOut(
+    recipientUserIds.map((u) => ({ user_id: u })),
+    {
+      type: 'play_published',
+      in_app_payload: { play_id: playId, team_id: teamId, deep_link: deepLink },
+      push_payload: { title, body, deep_link: deepLink, tag: `play:${playId}` },
+      dedupe_base_prefix: `play_published:${playId}:${token}`,
+    },
+  );
 }
 
 /** Borra una jugada (autor∪admin/coord, gate = RLS). */

@@ -158,3 +158,67 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
     is_owner: user?.id === (data.owner_profile_id as string),
   };
 }
+
+// ── Playbook del jugador/familia (F13.6, read-only) ───────────────────────────
+export type PlaybookRow = {
+  id: string;
+  name: string | null;
+  frame_count: number;
+  updated_at: string;
+};
+
+/**
+ * Jugadas PUBLICADAS (visibility='team') del equipo, para el Playbook del
+ * jugador/familia. Confía en la RLS (13.1b): el jugador solo ve las team de su
+ * equipo. Orden por `updated_at` desc.
+ */
+export async function loadTeamPlaybook(clubId: string, teamId: string): Promise<PlaybookRow[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('plays')
+    .select('id, name, play, updated_at')
+    .eq('club_id', clubId)
+    .eq('team_id', teamId)
+    .eq('visibility', 'team')
+    .order('updated_at', { ascending: false });
+
+  return (data ?? []).map((p) => {
+    const parsed = parsePlay(p.play);
+    return {
+      id: p.id as string,
+      name: (p.name as string | null) ?? null,
+      frame_count: parsed.success ? parsed.data.frames.length : 0,
+      updated_at: p.updated_at as string,
+    };
+  });
+}
+
+export type TeamPlay = { id: string; name: string | null; play: Play };
+
+/**
+ * Una jugada para la vista READ-ONLY del jugador/familia. Confía en la RLS, más
+ * una defensa explícita: solo si visibility='team' (igual que el visor de sesiones
+ * del jugador). Devuelve null si no existe / no es visible.
+ */
+export async function loadTeamPlay(clubId: string, id: string): Promise<TeamPlay | null> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('plays')
+    .select('id, name, visibility, play')
+    .eq('id', id)
+    .eq('club_id', clubId)
+    .maybeSingle();
+
+  if (!data || data.visibility !== 'team') return null;
+
+  const parsed = parsePlay(data.play);
+  return {
+    id: data.id as string,
+    name: (data.name as string | null) ?? null,
+    play: parsed.success ? parsed.data : emptyPlay(),
+  };
+}

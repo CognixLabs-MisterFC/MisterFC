@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Clock,
   Shield,
+  Swords,
   Users,
 } from 'lucide-react';
 import {
@@ -30,6 +31,7 @@ import {
 } from '@/components/ui/card';
 import { SharedLineupSection } from '@/components/match/shared-lineup-section';
 import { loadPublishedSessionsForTeam } from '../sesiones/queries';
+import { loadTeamPlaybook } from '../jugadas/queries';
 import { TeamSelectorWrapper } from './team-selector-wrapper';
 
 type Props = {
@@ -229,6 +231,10 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
     todayIso,
   );
 
+  // F13.6 — Playbook: jugadas publicadas (visibility=team) del team activo. La RLS
+  // de 13.1b es el gate; aquí solo se piden las del team.
+  const playbook = await loadTeamPlaybook(ctx.activeClub.club.id, activeTeam.id);
+
   // F6 Lote B — alineación oficial compartida del próximo partido (si la hay
   // y es visibility=team; la sección se auto-oculta vía RLS si no).
   const nextMatchId = upcoming.find((e) => e.type === 'match')?.id ?? null;
@@ -380,6 +386,38 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
                             {t('cards.sessions.minutes', { count: s.total_minutes })}
                           </span>
                         )}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Swords className="size-4" aria-hidden />
+              {t('cards.playbook.title')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            {playbook.length === 0 ? (
+              <p className="text-muted-foreground">{t('cards.playbook.empty')}</p>
+            ) : (
+              <ul className="flex flex-col divide-y divide-border">
+                {playbook.map((p) => (
+                  <li key={p.id} className="py-2 first:pt-0 last:pb-0">
+                    <Link
+                      href={`/mi-equipo/jugadas/${p.id}`}
+                      className="flex flex-col gap-0.5 rounded-md p-1 -mx-1 hover:bg-zinc-900/50"
+                    >
+                      <span className="font-medium">
+                        {p.name ?? t('cards.playbook.untitled')}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {t('cards.playbook.frame_count', { count: p.frame_count })}
                       </span>
                     </Link>
                   </li>

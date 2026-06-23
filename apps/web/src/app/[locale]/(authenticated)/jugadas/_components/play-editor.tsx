@@ -23,7 +23,7 @@
  */
 
 import { useCallback, useRef, useState, useSyncExternalStore, useTransition } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { toast } from 'sonner';
 import {
   Plus,
@@ -148,6 +148,7 @@ export function PlayEditor({
   canDelete?: boolean;
 }) {
   const t = useTranslations('jugadas');
+  const locale = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -290,6 +291,7 @@ export function PlayEditor({
         description: description.trim() === '' ? null : description.trim(),
         visibility,
         play: playload,
+        locale, // F13.6 — para deep_link + texto de la notificación al publicar
       });
       if (res.error) {
         toast.error(t(`errors.${res.error}`));

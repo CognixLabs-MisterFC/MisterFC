@@ -2098,6 +2098,12 @@
         "empty": "No published sessions.",
         "untitled": "Session",
         "minutes": "{count} min"
+      },
+      "playbook": {
+        "title": "Playbook",
+        "empty": "No plays shared yet.",
+        "untitled": "Play",
+        "frame_count": "{count, plural, =1 {# frame} other {# frames}}"
       }
     },
     "no_team": "You're not assigned to any team yet. Reach out to your club coordinator.",
@@ -2995,6 +3001,10 @@
       "cancel": "Cancel",
       "title": "Delete this play?",
       "description": "“{name}” will be permanently deleted. This action cannot be undone."
+    },
+    "notify": {
+      "title": "New play in the playbook",
+      "body": "Your coach has shared “{name}”."
     },
     "toast": {
       "saved": "Play saved"
