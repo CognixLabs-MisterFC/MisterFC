@@ -8,9 +8,14 @@
  * la pizarra). El campo se pinta READ-ONLY con <DiagramView> del frame interpolado
  * (presentar, no editar — D8). Instancia de reproducción PROPIA e independiente del
  * editor. Controles mínimos y discretos: Play/Pause + Salir (y Esc, vía useFullscreen).
- * Gestos/swipe entre frames quedan fuera (13.7).
+ *
+ * F13.7 — control TÁCTIL por gestos (modo presentación iPad), SOLO aquí (no en el
+ * editor ni en el reproductor embebido): swipe ← → cambia de frame (snap, sin
+ * animar) y tap = play/pause. Conviven con los botones (gesto = extra). Sin scrub
+ * en fullscreen → el swipe horizontal no choca con él.
  */
 
+import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Maximize2, Minimize2, Play as PlayIcon, Pause as PauseIcon } from 'lucide-react';
 import type { Play } from '@misterfc/core';
@@ -21,12 +26,41 @@ import { useFitBox } from '@/hooks/use-fit-box';
 import { useIsLandscape } from '@/hooks/use-is-landscape';
 import { usePlayback } from './use-playback';
 
+// Gestos (13.7): umbral de swipe horizontal y tope para considerarlo "tap".
+const SWIPE_MIN_PX = 40;
+const TAP_MAX_PX = 10;
+
 export function PlaybackFullscreen({ play }: { play: Play }) {
   const t = useTranslations('jugadas');
   const tf = useTranslations('common.fullscreen');
   const { ref, isFullscreen, enter, exit } = useFullscreen<HTMLDivElement>();
   const isLandscape = useIsLandscape();
-  const { scene, playing, canAnimate, toggle, stop } = usePlayback(play);
+  const { scene, playing, canAnimate, toggle, stop, nextFrame, prevFrame, frameIndex, frameCount } =
+    usePlayback(play);
+
+  // Gestos sobre la ZONA DEL CAMPO (13.7, solo presentación). Pointer Events →
+  // funciona en táctil (iPad) y con ratón (drag) sin código aparte. Los botones
+  // Play/Pause y Salir son hermanos absolutos → no pasan por aquí. No hay scrub
+  // en fullscreen, así que el swipe horizontal no choca con él (el scrub vive en
+  // el reproductor embebido). Swipe ← → = frame siguiente/anterior (snap, sin
+  // animar); tap = play/pause.
+  const downRef = useRef<{ x: number; y: number } | null>(null);
+  const onPointerDown = (e: React.PointerEvent) => {
+    downRef.current = { x: e.clientX, y: e.clientY };
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const d = downRef.current;
+    downRef.current = null;
+    if (!d) return;
+    const dx = e.clientX - d.x;
+    const dy = e.clientY - d.y;
+    if (Math.abs(dx) > SWIPE_MIN_PX && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) nextFrame();
+      else prevFrame();
+    } else if (Math.abs(dx) < TAP_MAX_PX && Math.abs(dy) < TAP_MAX_PX) {
+      toggle();
+    }
+  };
 
   // Aspecto (w/h) del lienzo: completo 2/3, medio 4/3 (degradado → 2/3). En apaisado
   // gira la unidad rígida 90° para que el lado largo siga el lado largo de la pantalla.
@@ -50,8 +84,22 @@ export function PlaybackFullscreen({ play }: { play: Play }) {
       >
         {isFullscreen && (
           <>
-            {/* Campo grande, escalado-a-llenar sin deformar (read-only). */}
-            <div ref={containerRef} className="flex min-h-0 flex-1 items-center justify-center p-2">
+            {/* Indicador de frame (presentación frame a frame). */}
+            {canAnimate && frameCount > 1 ? (
+              <div className="absolute left-3 top-3 z-20 rounded-md bg-background/80 px-2 py-1 text-xs tabular-nums text-muted-foreground shadow">
+                {t('playback.frame_indicator', { current: frameIndex + 1, total: frameCount })}
+              </div>
+            ) : null}
+
+            {/* Campo grande, escalado-a-llenar sin deformar (read-only). Capa de
+                GESTOS (13.7): swipe ← → cambia de frame, tap = play/pause. `touch-none`
+                evita que el navegador robe el swipe (pan/zoom). */}
+            <div
+              ref={containerRef}
+              className="flex min-h-0 flex-1 touch-none select-none items-center justify-center p-2"
+              onPointerDown={canAnimate ? onPointerDown : undefined}
+              onPointerUp={canAnimate ? onPointerUp : undefined}
+            >
               <div style={style} className="relative">
                 <DiagramView diagram={scene} fill />
               </div>

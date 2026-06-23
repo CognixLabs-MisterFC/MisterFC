@@ -20,7 +20,28 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { playDurationMs, sceneAtTime, type Play, type Scene } from '@misterfc/core';
+import { playDurationMs, sceneAtTime, DEFAULT_FRAME_MS, type Play, type Scene } from '@misterfc/core';
+
+/** Instante (ms) de INICIO de cada frame: start[0]=0; start[i]=start[i-1]+dur(i-1).
+ *  La duración del último frame no cuenta (no hay transición después) → start[n-1]
+ *  = playDurationMs(play). Longitud = nº de frames. */
+function frameStartsOf(play: Play): number[] {
+  const starts = [0];
+  for (let i = 0; i < play.frames.length - 1; i++) {
+    starts.push(starts[i]! + (play.frames[i]!.duration_ms ?? DEFAULT_FRAME_MS));
+  }
+  return starts;
+}
+
+/** Índice del frame cuyo inicio es <= t (el frame "actual"). */
+function frameIndexAt(starts: number[], t: number): number {
+  let idx = 0;
+  for (let i = 0; i < starts.length; i++) {
+    if (starts[i]! <= t + 1) idx = i;
+    else break;
+  }
+  return idx;
+}
 
 export const PLAYBACK_SPEEDS = [0.5, 1, 2] as const;
 export type PlaybackSpeed = (typeof PLAYBACK_SPEEDS)[number];
@@ -52,6 +73,16 @@ export type Playback = {
   setLoop: (v: boolean) => void;
   /** Fija la velocidad. */
   setSpeed: (v: PlaybackSpeed) => void;
+  /** Nº de frames de la jugada. */
+  frameCount: number;
+  /** Índice (0-based) del frame actual según `t`. */
+  frameIndex: number;
+  /** Salta (PAUSADO) al inicio de un frame; lo clampa a [0, frameCount-1]. */
+  gotoFrame: (i: number) => void;
+  /** Salta al frame siguiente (snap, pausado). Para presentar frame a frame. */
+  nextFrame: () => void;
+  /** Salta al frame anterior (snap, pausado). */
+  prevFrame: () => void;
 };
 
 export function usePlayback(play: Play): Playback {
@@ -62,6 +93,8 @@ export function usePlayback(play: Play): Playback {
 
   const total = playDurationMs(play);
   const canAnimate = total > 0;
+  const frameStarts = frameStartsOf(play);
+  const frameCount = play.frames.length;
 
   // Acumulador del instante dentro del bucle rAF (no se lee/escribe en render).
   const tRef = useRef(0);
@@ -72,6 +105,7 @@ export function usePlayback(play: Play): Playback {
   const loopRef = useRef(loop);
   const speedRef = useRef<number>(speed);
   const totalRef = useRef(total);
+  const frameStartsRef = useRef<number[]>(frameStarts);
   useEffect(() => {
     loopRef.current = loop;
   }, [loop]);
@@ -81,6 +115,9 @@ export function usePlayback(play: Play): Playback {
   useEffect(() => {
     totalRef.current = total;
   }, [total]);
+  useEffect(() => {
+    frameStartsRef.current = frameStarts;
+  });
 
   const cancel = () => {
     if (rafRef.current != null) {
@@ -151,11 +188,34 @@ export function usePlayback(play: Play): Playback {
     lastTsRef.current = null; // reancla el reloj para no “saltar” en el próximo tick
   }, []);
 
+  /** Salta PAUSADO al inicio de un frame (snap, sin animar). Para presentar
+   *  frame a frame con gestos (13.7): predecible, sin interpolar la transición. */
+  const gotoFrame = useCallback((i: number) => {
+    const starts = frameStartsRef.current;
+    if (starts.length === 0) return;
+    const ci = i < 0 ? 0 : i >= starts.length ? starts.length - 1 : i;
+    cancel();
+    setPlaying(false);
+    tRef.current = starts[ci]!;
+    setT(starts[ci]!);
+  }, []);
+
+  const nextFrame = useCallback(() => {
+    const starts = frameStartsRef.current;
+    gotoFrame(frameIndexAt(starts, tRef.current) + 1);
+  }, [gotoFrame]);
+
+  const prevFrame = useCallback(() => {
+    const starts = frameStartsRef.current;
+    gotoFrame(frameIndexAt(starts, tRef.current) - 1);
+  }, [gotoFrame]);
+
   // Limpieza: cancela el rAF al desmontar.
   useEffect(() => () => cancel(), []);
 
   const scene = sceneAtTime(play, t);
   const previewing = playing || t > 0;
+  const frameIndex = frameIndexAt(frameStarts, t);
 
   return {
     scene,
@@ -171,5 +231,10 @@ export function usePlayback(play: Play): Playback {
     seek,
     setLoop,
     setSpeed,
+    frameCount,
+    frameIndex,
+    gotoFrame,
+    nextFrame,
+    prevFrame,
   };
 }

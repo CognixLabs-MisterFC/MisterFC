@@ -2994,7 +2994,8 @@
       "speed_x": "{x}×",
       "scrub": "Playback position",
       "playing": "Playing…",
-      "need_frames": "Add at least 2 frames to animate the play"
+      "need_frames": "Add at least 2 frames to animate the play",
+      "frame_indicator": "Frame {current} / {total}"
     },
     "delete": {
       "action": "Delete",
