@@ -587,8 +587,59 @@
     "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club.",
     "error_wrong_credentials": "Correo o contraseña incorrectos."
   },
+  "informes": {
+    "title": "Informes de desarrollo",
+    "season": "Temporada",
+    "back_to_player": "Volver al jugador",
+    "back_to_reports": "Volver a los informes",
+    "no_team_for_season": "El jugador no tiene equipo en esta temporada.",
+    "no_report": "Sin informe todavía.",
+    "create": "Crear informe",
+    "edit": "Editar",
+    "shared": "Compartido",
+    "draft": "Borrador",
+    "save": "Guardar",
+    "saved": "Guardado",
+    "comment_overall": "Comentario global",
+    "comment_placeholder": "Comentario (opcional)",
+    "axis": {
+      "tecnica_tactica": "Técnica/Táctica",
+      "fisica": "Física",
+      "psicologica": "Psicológica",
+      "social": "Social"
+    },
+    "axis_short": {
+      "tecnica_tactica": "Téc/Tác",
+      "fisica": "Fís",
+      "psicologica": "Psi",
+      "social": "Soc"
+    },
+    "period": {
+      "inicial": "Inicial (septiembre)",
+      "diciembre": "Diciembre",
+      "marzo": "Marzo",
+      "junio": "Junio"
+    },
+    "score": {
+      "none": "Sin puntuar",
+      "descriptor": {
+        "1": "Muy por debajo",
+        "2": "Por debajo",
+        "3": "En el nivel esperado",
+        "4": "Por encima",
+        "5": "Excelente"
+      }
+    },
+    "errors": {
+      "invalid": "Revisa los campos del informe.",
+      "forbidden": "No tienes permiso para editar este informe.",
+      "not_found": "No se encontró el informe.",
+      "generic": "No se pudo guardar. Inténtalo de nuevo."
+    }
+  },
   "jugadores": {
     "title": "Jugadores",
+    "development_reports": "Informes de desarrollo",
     "export_pdf": "Exportar PDF",
     "count": "{count, plural, =0 {Sin jugadores todavía} one {1 jugador} other {# jugadores}}",
     "empty": "Aún no hay jugadores en este club. Crea el primero arriba.",

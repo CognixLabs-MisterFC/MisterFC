@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft, Download, ClipboardList } from 'lucide-react';
 import {
   createSupabaseServerClient,
   sumMatchStats,
@@ -347,18 +347,24 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
             </div>
           )}
         </div>
-        {/* PDF del expediente (9.B-6): Route Handler con RLS heredada. */}
-        <Button
-          asChild
-          variant="outline"
-          size="sm"
-          className="gap-2 sm:ml-auto"
-        >
-          <a href={`/${locale}/jugadores/${player.id}/pdf`}>
-            <Download className="size-4" aria-hidden />
-            <span>{t('export_pdf')}</span>
-          </a>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+          {/* F13.10b — Informes de desarrollo (staff incl. ayudante, D13). */}
+          {(canManage || ctx.activeClub.role === 'entrenador_ayudante') && (
+            <Button asChild variant="outline" size="sm" className="gap-2">
+              <Link href={`/jugadores/${player.id}/informes`}>
+                <ClipboardList className="size-4" aria-hidden />
+                <span>{t('development_reports')}</span>
+              </Link>
+            </Button>
+          )}
+          {/* PDF del expediente (9.B-6): Route Handler con RLS heredada. */}
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <a href={`/${locale}/jugadores/${player.id}/pdf`}>
+              <Download className="size-4" aria-hidden />
+              <span>{t('export_pdf')}</span>
+            </a>
+          </Button>
+        </div>
       </div>
 
       <PlayerDetailTabs
