@@ -621,39 +621,75 @@
       "achieved": "Conseguido",
       "dropped": "Descartado"
     },
-    "axis": {
-      "tecnica_tactica": "Técnica/Táctica",
-      "fisica": "Física",
-      "psicologica": "Psicológica",
-      "social": "Social"
-    },
-    "axis_short": {
-      "tecnica_tactica": "Téc/Tác",
-      "fisica": "Fís",
-      "psicologica": "Psi",
-      "social": "Soc"
-    },
     "period": {
       "inicial": "Inicial (septiembre)",
       "diciembre": "Diciembre",
       "marzo": "Marzo",
       "junio": "Junio"
     },
-    "score": {
-      "none": "Sin puntuar",
-      "descriptor": {
-        "1": "Muy por debajo",
-        "2": "Por debajo",
-        "3": "En el nivel esperado",
-        "4": "Por encima",
-        "5": "Excelente"
-      }
-    },
     "errors": {
       "invalid": "Revisa los campos del informe.",
       "forbidden": "No tienes permiso para editar este informe.",
       "not_found": "No se encontró el informe.",
       "generic": "No se pudo guardar. Inténtalo de nuevo."
+    },
+    "team_valuation": "Valoración de equipo",
+    "team_valuation_done": "Valoración de equipo creada",
+    "team_valuation_pending": "Valoración de equipo pendiente",
+    "team_comment": "Comentario de equipo",
+    "team_block_title": "Valoración de equipo (de este periodo)",
+    "team_block_missing": "Aún no hay valoración de equipo para este periodo. Puedes guardar el informe individual igualmente; se enlazará cuando la crees.",
+    "edit_team_valuation": "Editar valoración",
+    "create_team_valuation": "Crear la valoración de equipo",
+    "individual_report": "Informe individual",
+    "group_average": "Media",
+    "overall_average": "Media global",
+    "visibility_label": "Visibilidad",
+    "visibility": {
+      "staff": "Solo cuerpo técnico",
+      "team": "Visible para la familia"
+    },
+    "cat_group": {
+      "tecnico": "Técnico",
+      "tactico": "Táctico",
+      "fisico": "Físico",
+      "actitud": "Actitud",
+      "rendimiento_colectivo": "Rendimiento colectivo",
+      "dinamica_grupo": "Dinámica de grupo",
+      "evolucion_equipo": "Evolución del equipo"
+    },
+    "cat": {
+      "control_orientado": "Control orientado",
+      "pase": "Pase",
+      "conduccion": "Conducción",
+      "regate": "Regate",
+      "finalizacion": "Finalización",
+      "primer_toque": "Primer toque",
+      "comprension_juego": "Comprensión del juego",
+      "toma_decisiones": "Toma de decisiones",
+      "ocupacion_espacios": "Ocupación de espacios",
+      "lectura_tactica": "Lectura táctica",
+      "juego_sin_balon": "Juego sin balón",
+      "coordinacion": "Coordinación",
+      "agilidad": "Agilidad",
+      "velocidad": "Velocidad",
+      "resistencia": "Resistencia",
+      "explosividad": "Explosividad",
+      "compromiso": "Compromiso",
+      "motivacion": "Motivación",
+      "concentracion": "Concentración",
+      "companerismo": "Compañerismo",
+      "liderazgo": "Liderazgo",
+      "evolucion": "Evolución",
+      "organizacion_defensiva": "Organización defensiva",
+      "organizacion_ofensiva": "Organización ofensiva",
+      "transiciones": "Transiciones",
+      "balon_parado": "Balón parado",
+      "cohesion_ambiente": "Cohesión y ambiente",
+      "actitud_competitiva": "Actitud competitiva",
+      "disciplina_compromiso": "Disciplina y compromiso",
+      "progresion_periodo_anterior": "Progresión respecto al periodo anterior",
+      "cumplimiento_objetivos": "Cumplimiento de objetivos"
     }
   },
   "jugadores": {

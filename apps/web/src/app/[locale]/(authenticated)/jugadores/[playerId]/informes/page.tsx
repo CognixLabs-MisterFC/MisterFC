@@ -19,13 +19,11 @@ import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SeasonSelect } from './_components/season-select';
-import { ObjectivesSection } from './_components/objectives-section';
 import {
   loadClubSeasons,
   resolvePlayerTeamForSeason,
   loadReportsByPeriod,
-  loadPlayerObjectives,
-  loadTeamObjectives,
+  loadTeamReportPeriods,
 } from './queries';
 
 type Props = {
@@ -77,10 +75,8 @@ export default async function InformesListPage({ params, searchParams }: Props) 
   const team = await resolvePlayerTeamForSeason(supabase, playerId, selectedLabel);
   const seasonId = selectedSeason?.id ?? null;
   const reports = seasonId ? await loadReportsByPeriod(supabase, playerId, seasonId) : new Map();
-  const playerObjectives =
-    seasonId ? await loadPlayerObjectives(supabase, playerId, seasonId) : [];
-  const teamObjectives =
-    team && seasonId ? await loadTeamObjectives(supabase, team.teamId, seasonId) : [];
+  const teamReportPeriods =
+    team && seasonId ? await loadTeamReportPeriods(supabase, team.teamId, seasonId) : new Set<string>();
 
   const fullName = `${player.first_name} ${player.last_name ?? ''}`.trim();
   const canEdit = !team || !selectedSeason?.id ? false : true;
@@ -133,40 +129,37 @@ export default async function InformesListPage({ params, searchParams }: Props) 
                   ) : null}
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3 text-sm">
-                  <p className="text-muted-foreground">
-                    {r ? t('has_report') : t('no_report')}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-muted-foreground">
+                      {r ? t('has_report') : t('no_report')}
+                    </p>
+                    {canEdit ? (
+                      <Button asChild variant={r ? 'outline' : 'default'} size="sm">
+                        <Link href={`/jugadores/${playerId}/informes/${period}?season=${encodeURIComponent(selectedLabel)}`}>
+                          {r ? t('edit') : t('create')}
+                        </Link>
+                      </Button>
+                    ) : null}
+                  </div>
                   {canEdit ? (
-                    <Button asChild variant={r ? 'outline' : 'default'} size="sm" className="self-start">
-                      <Link href={`/jugadores/${playerId}/informes/${period}?season=${encodeURIComponent(selectedLabel)}`}>
-                        {r ? t('edit') : t('create')}
-                      </Link>
-                    </Button>
+                    <div className="flex items-center justify-between gap-2 border-t pt-3">
+                      <p className="text-xs text-muted-foreground">
+                        {teamReportPeriods.has(period)
+                          ? t('team_valuation_done')
+                          : t('team_valuation_pending')}
+                      </p>
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/jugadores/${playerId}/informes/equipo/${period}?season=${encodeURIComponent(selectedLabel)}`}>
+                          {t('team_valuation')}
+                        </Link>
+                      </Button>
+                    </div>
                   ) : null}
                 </CardContent>
               </Card>
             );
           })}
         </div>
-
-        {seasonId ? (
-          <>
-            <ObjectivesSection
-              kind="player"
-              items={playerObjectives}
-              playerId={playerId}
-              teamId={team.teamId}
-              seasonId={seasonId}
-            />
-            <ObjectivesSection
-              kind="team"
-              items={teamObjectives}
-              playerId={playerId}
-              teamId={team.teamId}
-              seasonId={seasonId}
-            />
-          </>
-        ) : null}
         </>
       )}
     </div>

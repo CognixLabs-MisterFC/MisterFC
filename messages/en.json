@@ -622,39 +622,75 @@
       "achieved": "Achieved",
       "dropped": "Dropped"
     },
-    "axis": {
-      "tecnica_tactica": "Technical/Tactical",
-      "fisica": "Physical",
-      "psicologica": "Psychological",
-      "social": "Social"
-    },
-    "axis_short": {
-      "tecnica_tactica": "Tec/Tac",
-      "fisica": "Phy",
-      "psicologica": "Psy",
-      "social": "Soc"
-    },
     "period": {
       "inicial": "Initial (September)",
       "diciembre": "December",
       "marzo": "March",
       "junio": "June"
     },
-    "score": {
-      "none": "Not rated",
-      "descriptor": {
-        "1": "Well below",
-        "2": "Below",
-        "3": "At expected level",
-        "4": "Above",
-        "5": "Excellent"
-      }
-    },
     "errors": {
       "invalid": "Check the report fields.",
       "forbidden": "You don't have permission to edit this report.",
       "not_found": "Report not found.",
       "generic": "Couldn't save. Please try again."
+    },
+    "team_valuation": "Team valuation",
+    "team_valuation_done": "Team valuation created",
+    "team_valuation_pending": "Team valuation pending",
+    "team_comment": "Team comment",
+    "team_block_title": "Team valuation (this period)",
+    "team_block_missing": "There is no team valuation for this period yet. You can still save the individual report; it will be linked once you create it.",
+    "edit_team_valuation": "Edit valuation",
+    "create_team_valuation": "Create the team valuation",
+    "individual_report": "Individual report",
+    "group_average": "Average",
+    "overall_average": "Overall average",
+    "visibility_label": "Visibility",
+    "visibility": {
+      "staff": "Coaching staff only",
+      "team": "Visible to the family"
+    },
+    "cat_group": {
+      "tecnico": "Technical",
+      "tactico": "Tactical",
+      "fisico": "Physical",
+      "actitud": "Attitude",
+      "rendimiento_colectivo": "Collective performance",
+      "dinamica_grupo": "Group dynamics",
+      "evolucion_equipo": "Team evolution"
+    },
+    "cat": {
+      "control_orientado": "Oriented control",
+      "pase": "Passing",
+      "conduccion": "Ball carrying",
+      "regate": "Take-ons",
+      "finalizacion": "Finishing",
+      "primer_toque": "First touch",
+      "comprension_juego": "Game understanding",
+      "toma_decisiones": "Decision making",
+      "ocupacion_espacios": "Use of space",
+      "lectura_tactica": "Tactical reading",
+      "juego_sin_balon": "Off-the-ball play",
+      "coordinacion": "Coordination",
+      "agilidad": "Agility",
+      "velocidad": "Speed",
+      "resistencia": "Endurance",
+      "explosividad": "Explosiveness",
+      "compromiso": "Commitment",
+      "motivacion": "Motivation",
+      "concentracion": "Concentration",
+      "companerismo": "Camaraderie",
+      "liderazgo": "Leadership",
+      "evolucion": "Progress",
+      "organizacion_defensiva": "Defensive organisation",
+      "organizacion_ofensiva": "Attacking organisation",
+      "transiciones": "Transitions",
+      "balon_parado": "Set pieces",
+      "cohesion_ambiente": "Cohesion & atmosphere",
+      "actitud_competitiva": "Competitive attitude",
+      "disciplina_compromiso": "Discipline & commitment",
+      "progresion_periodo_anterior": "Progress vs previous period",
+      "cumplimiento_objetivos": "Objective achievement"
     }
   },
   "jugadores": {
