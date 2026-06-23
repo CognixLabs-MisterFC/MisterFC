@@ -603,6 +603,22 @@
     "saved": "Guardat",
     "comment_overall": "Comentari global",
     "comment_placeholder": "Comentari (opcional)",
+    "objectives_individual": "Objectius individuals",
+    "objectives_team": "Objectius de l'equip",
+    "no_objectives": "Sense objectius encara.",
+    "add_objective": "Afegir objectiu",
+    "objective_title": "Títol",
+    "objective_description": "Descripció",
+    "objective_status": "Estat",
+    "objective_created_period": "Període de creació",
+    "cancel": "Cancel·lar",
+    "delete": "Esborrar",
+    "confirm_delete": "Esborrar este objectiu?",
+    "status": {
+      "open": "Obert",
+      "achieved": "Aconseguit",
+      "dropped": "Descartat"
+    },
     "axis": {
       "tecnica_tactica": "Tècnica/Tàctica",
       "fisica": "Física",

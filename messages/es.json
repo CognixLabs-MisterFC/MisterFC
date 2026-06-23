@@ -602,6 +602,22 @@
     "saved": "Guardado",
     "comment_overall": "Comentario global",
     "comment_placeholder": "Comentario (opcional)",
+    "objectives_individual": "Objetivos individuales",
+    "objectives_team": "Objetivos del equipo",
+    "no_objectives": "Sin objetivos todavía.",
+    "add_objective": "Añadir objetivo",
+    "objective_title": "Título",
+    "objective_description": "Descripción",
+    "objective_status": "Estado",
+    "objective_created_period": "Periodo de creación",
+    "cancel": "Cancelar",
+    "delete": "Borrar",
+    "confirm_delete": "¿Borrar este objetivo?",
+    "status": {
+      "open": "Abierto",
+      "achieved": "Conseguido",
+      "dropped": "Descartado"
+    },
     "axis": {
       "tecnica_tactica": "Técnica/Táctica",
       "fisica": "Física",

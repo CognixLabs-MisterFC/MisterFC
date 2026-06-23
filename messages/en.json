@@ -603,6 +603,22 @@
     "saved": "Saved",
     "comment_overall": "Overall comment",
     "comment_placeholder": "Comment (optional)",
+    "objectives_individual": "Individual objectives",
+    "objectives_team": "Team objectives",
+    "no_objectives": "No objectives yet.",
+    "add_objective": "Add objective",
+    "objective_title": "Title",
+    "objective_description": "Description",
+    "objective_status": "Status",
+    "objective_created_period": "Created in period",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "confirm_delete": "Delete this objective?",
+    "status": {
+      "open": "Open",
+      "achieved": "Achieved",
+      "dropped": "Dropped"
+    },
     "axis": {
       "tecnica_tactica": "Technical/Tactical",
       "fisica": "Physical",

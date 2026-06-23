@@ -20,7 +20,14 @@ import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SeasonSelect } from './_components/season-select';
-import { loadClubSeasons, resolvePlayerTeamForSeason, loadReportsByPeriod } from './queries';
+import { ObjectivesSection } from './_components/objectives-section';
+import {
+  loadClubSeasons,
+  resolvePlayerTeamForSeason,
+  loadReportsByPeriod,
+  loadPlayerObjectives,
+  loadTeamObjectives,
+} from './queries';
 
 type Props = {
   params: Promise<{ locale: string; playerId: string }>;
@@ -69,10 +76,12 @@ export default async function InformesListPage({ params, searchParams }: Props) 
   const selectedSeason = seasonOptions.find((s) => s.label === selectedLabel) ?? null;
 
   const team = await resolvePlayerTeamForSeason(supabase, playerId, selectedLabel);
-  const reports =
-    selectedSeason && selectedSeason.id
-      ? await loadReportsByPeriod(supabase, playerId, selectedSeason.id)
-      : new Map();
+  const seasonId = selectedSeason?.id ?? null;
+  const reports = seasonId ? await loadReportsByPeriod(supabase, playerId, seasonId) : new Map();
+  const playerObjectives =
+    seasonId ? await loadPlayerObjectives(supabase, playerId, seasonId) : [];
+  const teamObjectives =
+    team && seasonId ? await loadTeamObjectives(supabase, team.teamId, seasonId) : [];
 
   const fullName = `${player.first_name} ${player.last_name ?? ''}`.trim();
   const canEdit = !team || !selectedSeason?.id ? false : true;
@@ -106,6 +115,7 @@ export default async function InformesListPage({ params, searchParams }: Props) 
           </CardContent>
         </Card>
       ) : (
+        <>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {DEVELOPMENT_PERIODS.map((period) => {
             const r = reports.get(period);
@@ -150,6 +160,26 @@ export default async function InformesListPage({ params, searchParams }: Props) 
             );
           })}
         </div>
+
+        {seasonId ? (
+          <>
+            <ObjectivesSection
+              kind="player"
+              items={playerObjectives}
+              playerId={playerId}
+              teamId={team.teamId}
+              seasonId={seasonId}
+            />
+            <ObjectivesSection
+              kind="team"
+              items={teamObjectives}
+              playerId={playerId}
+              teamId={team.teamId}
+              seasonId={seasonId}
+            />
+          </>
+        ) : null}
+        </>
       )}
     </div>
   );
