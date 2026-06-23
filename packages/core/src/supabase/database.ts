@@ -456,6 +456,108 @@ export type Database = {
           },
         ]
       }
+      development_reports: {
+        Row: {
+          club_id: string
+          comment_fisica: string | null
+          comment_overall: string | null
+          comment_psicologica: string | null
+          comment_social: string | null
+          comment_tecnica_tactica: string | null
+          created_at: string
+          created_by: string
+          id: string
+          period: string
+          player_id: string
+          score_fisica: number | null
+          score_psicologica: number | null
+          score_social: number | null
+          score_tecnica_tactica: number | null
+          season_id: string
+          team_id: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          club_id: string
+          comment_fisica?: string | null
+          comment_overall?: string | null
+          comment_psicologica?: string | null
+          comment_social?: string | null
+          comment_tecnica_tactica?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          period: string
+          player_id: string
+          score_fisica?: number | null
+          score_psicologica?: number | null
+          score_social?: number | null
+          score_tecnica_tactica?: number | null
+          season_id: string
+          team_id: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          club_id?: string
+          comment_fisica?: string | null
+          comment_overall?: string | null
+          comment_psicologica?: string | null
+          comment_social?: string | null
+          comment_tecnica_tactica?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          period?: string
+          player_id?: string
+          score_fisica?: number | null
+          score_psicologica?: number | null
+          score_social?: number | null
+          score_tecnica_tactica?: number | null
+          season_id?: string
+          team_id?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_reports_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_reports_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_reports_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_reports_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_reports_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evaluation_private_notes: {
         Row: {
           club_id: string
@@ -1830,6 +1932,77 @@ export type Database = {
           },
         ]
       }
+      player_objectives: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_period: string
+          description: string | null
+          id: string
+          player_id: string
+          season_id: string
+          status: string
+          team_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          created_period: string
+          description?: string | null
+          id?: string
+          player_id: string
+          season_id: string
+          status?: string
+          team_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_period?: string
+          description?: string | null
+          id?: string
+          player_id?: string
+          season_id?: string
+          status?: string
+          team_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_objectives_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_objectives_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_objectives_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_objectives_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           club_id: string
@@ -2407,6 +2580,64 @@ export type Database = {
           },
         ]
       }
+      team_objectives: {
+        Row: {
+          club_id: string
+          created_at: string
+          description: string | null
+          id: string
+          season_id: string
+          status: string
+          team_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          season_id: string
+          status?: string
+          team_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          season_id?: string
+          status?: string
+          team_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_objectives_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_objectives_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_objectives_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_staff: {
         Row: {
           created_at: string
@@ -2617,6 +2848,14 @@ export type Database = {
         Returns: string
       }
       current_user_email: { Args: never; Returns: string }
+      development_report_shared_for_player: {
+        Args: { p_player_id: string; p_season_id: string }
+        Returns: boolean
+      }
+      development_report_shared_for_team: {
+        Args: { p_season_id: string; p_team_id: string }
+        Returns: boolean
+      }
       finalize_active_season: {
         Args: { p_club_id: string; p_cutoff: string }
         Returns: string
@@ -2712,6 +2951,10 @@ export type Database = {
       }
       user_can_create_coach_formations: {
         Args: { p_club_id: string }
+        Returns: boolean
+      }
+      user_can_create_development_reports: {
+        Args: { p_team_id: string }
         Returns: boolean
       }
       user_can_create_exercises: {
@@ -2824,6 +3067,7 @@ export type Database = {
         | "exercise_rejected"
         | "play_published"
         | "event_updated"
+        | "development_report_published"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -2979,6 +3223,7 @@ export const Constants = {
         "exercise_rejected",
         "play_published",
         "event_updated",
+        "development_report_published",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },
