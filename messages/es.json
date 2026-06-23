@@ -108,6 +108,22 @@
     "error_generic": "No hemos podido crear el club. Inténtalo de nuevo."
   },
   "home": {
+    "feed": {
+      "title": "Novedades",
+      "new_announcement": "Nuevo anuncio",
+      "callup_published": "Nueva convocatoria",
+      "callup_updated": "Convocatoria actualizada",
+      "new_message": "Nuevo mensaje",
+      "play_published": "Nueva jugada en el playbook",
+      "exercise_rejected": "Ejercicio rechazado",
+      "exercise_rejected_named": "Ejercicio rechazado: {name}",
+      "match_callup_reminder": "Tienes una convocatoria pendiente de confirmar",
+      "match_callup_reminder_named": "Convocatoria pendiente: {title}",
+      "attendance_pending_reminder": "Asistencia pendiente de registrar",
+      "attendance_pending_reminder_named": "Asistencia pendiente: {title}",
+      "training_reminder": "Recordatorio de entrenamiento",
+      "generic": "Tienes una novedad"
+    },
     "welcome": "Bienvenido a {club}",
     "your_role": "Tu rol aquí es {role}.",
     "next_steps_title": "Siguientes pasos",

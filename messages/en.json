@@ -108,6 +108,22 @@
     "error_generic": "We couldn't create the club. Please try again."
   },
   "home": {
+    "feed": {
+      "title": "What's new",
+      "new_announcement": "New announcement",
+      "callup_published": "New call-up",
+      "callup_updated": "Call-up updated",
+      "new_message": "New message",
+      "play_published": "New play in the playbook",
+      "exercise_rejected": "Exercise rejected",
+      "exercise_rejected_named": "Exercise rejected: {name}",
+      "match_callup_reminder": "You have a call-up awaiting confirmation",
+      "match_callup_reminder_named": "Call-up pending: {title}",
+      "attendance_pending_reminder": "Attendance pending",
+      "attendance_pending_reminder_named": "Attendance pending: {title}",
+      "training_reminder": "Training reminder",
+      "generic": "You have an update"
+    },
     "dashboard_card": {
       "title": "Executive dashboard",
       "body": "Club-wide overview: squad, results, attendance, alerts and rankings.",
