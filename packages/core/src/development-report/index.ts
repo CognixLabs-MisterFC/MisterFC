@@ -1,9 +1,8 @@
 /**
- * F13.10a — API pública del dominio "Informe de desarrollo" (development report).
+ * F13.10 (rework) — API pública del dominio "Informe de desarrollo".
  */
 
 export {
-  DEVELOPMENT_AXES,
   DEVELOPMENT_SCORE_MIN,
   DEVELOPMENT_SCORE_MAX,
   DEVELOPMENT_PERIODS,
@@ -12,21 +11,29 @@ export {
   DEVELOPMENT_COMMENT_MAX,
   OBJECTIVE_TITLE_MAX,
   OBJECTIVE_DESCRIPTION_MAX,
-  isDevelopmentAxis,
+  DEVELOPMENT_REPORT_CATALOG,
+  TEAM_REPORT_CATALOG,
+  catalogItemIds,
   isDevelopmentPeriod,
+  computeGroupAverages,
+  developmentScoresSchema,
+  teamScoresSchema,
   upsertDevelopmentReportSchema,
   deleteDevelopmentReportSchema,
+  upsertTeamDevelopmentReportSchema,
   upsertPlayerObjectiveSchema,
   upsertTeamObjectiveSchema,
   deleteObjectiveSchema,
 } from './development-report';
 export type {
-  DevelopmentAxis,
   DevelopmentPeriod,
   ObjectiveStatus,
   DevelopmentVisibility,
+  Catalog,
+  CatalogGroup,
   UpsertDevelopmentReportInput,
   DeleteDevelopmentReportInput,
+  UpsertTeamDevelopmentReportInput,
   UpsertPlayerObjectiveInput,
   UpsertTeamObjectiveInput,
   DeleteObjectiveInput,

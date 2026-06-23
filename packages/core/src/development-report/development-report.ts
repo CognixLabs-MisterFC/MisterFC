@@ -1,38 +1,31 @@
 /**
- * F13.10a — Contrato del dominio "Informe de desarrollo" (development report).
+ * F13.10 (rework) — Contrato del dominio "Informe de desarrollo".
  *
- * Informe trimestral de desarrollo del jugador por temporada: 4 ejes ("4 corners"
- * del fútbol de cantera) puntuados 1–5 + comentarios, en 4 periodos comparables
- * (inicial/diciembre/marzo/junio). Objetivos individuales (del jugador) y de
- * equipo, con estado. Molde: plays/sessions (constantes + zod + barrel). Aquí
- * solo el contrato puro (sin BD ni React). NO confundir con `evaluations` (F8),
- * que es la nota 1–10 por partido — es otro dominio.
+ * Modelo real (definido con el usuario): valoración de EQUIPO (común por
+ * equipo×season×periodo) + INFORME INDIVIDUAL (por jugador×season×periodo) que
+ * referencia a la del equipo. Las puntuaciones son por ÍTEM (escala 1–10) en un
+ * `scores` jsonb validado contra un CATÁLOGO versionado (no columnas). Las medias
+ * por grupo se calculan en core (computeGroupAverages). NO confundir con
+ * `evaluations` (F8, nota 1–10 por partido).
+ *
+ * Sustituye al esquema de 4 corners de 13.10a (que se elimina en el rework).
  */
 
 import { z } from 'zod';
 
-/** Los 4 ejes ("4 corners", FA inglesa) — vocabulario fijo y uniforme (D2/D11). */
-export const DEVELOPMENT_AXES = [
-  'tecnica_tactica',
-  'fisica',
-  'psicologica',
-  'social',
-] as const;
-export type DevelopmentAxis = (typeof DEVELOPMENT_AXES)[number];
-
-/** Escala de puntuación por eje (1–5, con descriptores en i18n). */
+// ── Escala y periodos ──────────────────────────────────────────────────────────
 export const DEVELOPMENT_SCORE_MIN = 1;
-export const DEVELOPMENT_SCORE_MAX = 5;
+export const DEVELOPMENT_SCORE_MAX = 10;
 
-/** Los 4 periodos fijos de la temporada (D4). El orden ES el cronológico. */
+/** Los 4 periodos fijos de la temporada. El orden ES el cronológico. */
 export const DEVELOPMENT_PERIODS = ['inicial', 'diciembre', 'marzo', 'junio'] as const;
 export type DevelopmentPeriod = (typeof DEVELOPMENT_PERIODS)[number];
 
-/** Estado de un objetivo (D6). */
+/** Estado de un objetivo. */
 export const OBJECTIVE_STATUSES = ['open', 'achieved', 'dropped'] as const;
 export type ObjectiveStatus = (typeof OBJECTIVE_STATUSES)[number];
 
-/** Compartir por informe (D8/D14): 'staff' (privado) ↔ 'team' (lo ve la familia). */
+/** Compartir por informe: 'staff' (privado) ↔ 'team' (lo ve la familia). */
 export const DEVELOPMENT_VISIBILITIES = ['staff', 'team'] as const;
 export type DevelopmentVisibility = (typeof DEVELOPMENT_VISIBILITIES)[number];
 
@@ -40,27 +33,87 @@ export const DEVELOPMENT_COMMENT_MAX = 2000;
 export const OBJECTIVE_TITLE_MAX = 200;
 export const OBJECTIVE_DESCRIPTION_MAX = 2000;
 
-export function isDevelopmentAxis(v: unknown): v is DevelopmentAxis {
-  return typeof v === 'string' && (DEVELOPMENT_AXES as readonly string[]).includes(v);
+// ── Catálogos (grupos → ítems). Versionados; las labels viven en i18n por id. ───
+export type CatalogGroup = { readonly id: string; readonly items: readonly string[] };
+export type Catalog = { readonly version: number; readonly groups: readonly CatalogGroup[] };
+
+/** Catálogo del INFORME INDIVIDUAL: 4 grupos (técnico/táctico/físico/actitud). */
+export const DEVELOPMENT_REPORT_CATALOG = {
+  version: 1,
+  groups: [
+    {
+      id: 'tecnico',
+      items: ['control_orientado', 'pase', 'conduccion', 'regate', 'finalizacion', 'primer_toque'],
+    },
+    {
+      id: 'tactico',
+      items: ['comprension_juego', 'toma_decisiones', 'ocupacion_espacios', 'lectura_tactica', 'juego_sin_balon'],
+    },
+    {
+      id: 'fisico',
+      items: ['coordinacion', 'agilidad', 'velocidad', 'resistencia', 'explosividad'],
+    },
+    {
+      id: 'actitud',
+      items: ['compromiso', 'motivacion', 'concentracion', 'companerismo', 'liderazgo', 'evolucion'],
+    },
+  ],
+} as const satisfies Catalog;
+
+/** Catálogo de la VALORACIÓN DE EQUIPO: 3 grupos. */
+export const TEAM_REPORT_CATALOG = {
+  version: 1,
+  groups: [
+    {
+      id: 'rendimiento_colectivo',
+      items: ['organizacion_defensiva', 'organizacion_ofensiva', 'transiciones', 'balon_parado'],
+    },
+    {
+      id: 'dinamica_grupo',
+      items: ['cohesion_ambiente', 'actitud_competitiva', 'disciplina_compromiso'],
+    },
+    {
+      id: 'evolucion_equipo',
+      items: ['progresion_periodo_anterior', 'cumplimiento_objetivos'],
+    },
+  ],
+} as const satisfies Catalog;
+
+/** Conjunto de ids de ítem válidos de un catálogo. */
+export function catalogItemIds(catalog: Catalog): string[] {
+  return catalog.groups.flatMap((g) => [...g.items]);
 }
+
 export function isDevelopmentPeriod(v: unknown): v is DevelopmentPeriod {
   return typeof v === 'string' && (DEVELOPMENT_PERIODS as readonly string[]).includes(v);
 }
 
+/** Medias por grupo (media de los ítems puntuados; null si ninguno) + media global. */
+export function computeGroupAverages(
+  catalog: Catalog,
+  scores: Record<string, number>,
+): { perGroup: Record<string, number | null>; overall: number | null } {
+  const perGroup: Record<string, number | null> = {};
+  let allSum = 0;
+  let allCount = 0;
+  for (const g of catalog.groups) {
+    let sum = 0;
+    let count = 0;
+    for (const item of g.items) {
+      const v = scores[item];
+      if (typeof v === 'number') {
+        sum += v;
+        count += 1;
+        allSum += v;
+        allCount += 1;
+      }
+    }
+    perGroup[g.id] = count > 0 ? sum / count : null;
+  }
+  return { perGroup, overall: allCount > 0 ? allSum / allCount : null };
+}
+
 // ── Primitivas zod ────────────────────────────────────────────────────────────
-
-/** Puntuación de un eje: entero 1–5 o null (vacío → null). */
-const scoreField = z.preprocess(
-  (v) => (v === '' || v === undefined ? null : v),
-  z
-    .number()
-    .int()
-    .min(DEVELOPMENT_SCORE_MIN)
-    .max(DEVELOPMENT_SCORE_MAX)
-    .nullable(),
-);
-
-/** Comentario libre: texto recortado o null (vacío → null). */
 const commentField = z.preprocess(
   (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
   z.string().trim().min(1).max(DEVELOPMENT_COMMENT_MAX).nullable(),
@@ -70,23 +123,31 @@ const periodSchema = z.enum(DEVELOPMENT_PERIODS, { message: 'period_invalid' });
 const visibilitySchema = z.enum(DEVELOPMENT_VISIBILITIES, { message: 'visibility_invalid' });
 const objectiveStatusSchema = z.enum(OBJECTIVE_STATUSES, { message: 'status_invalid' });
 
-// ── Informe de desarrollo ──────────────────────────────────────────────────────
+/** Schema de `scores` (item_id → 1..10) validado contra un catálogo: enteros en
+ *  rango y SOLO ids del catálogo (parcial: no hace falta puntuar todos). */
+function scoresSchemaForCatalog(catalog: Catalog) {
+  const ids = new Set(catalogItemIds(catalog));
+  return z
+    .record(
+      z.string(),
+      z.number().int().min(DEVELOPMENT_SCORE_MIN).max(DEVELOPMENT_SCORE_MAX),
+    )
+    .refine((obj) => Object.keys(obj).every((k) => ids.has(k)), {
+      message: 'unknown_score_item',
+    });
+}
 
-/** Crear/editar un informe de un periodo. `id` presente = update. */
+export const developmentScoresSchema = scoresSchemaForCatalog(DEVELOPMENT_REPORT_CATALOG);
+export const teamScoresSchema = scoresSchemaForCatalog(TEAM_REPORT_CATALOG);
+
+// ── Informe individual ──────────────────────────────────────────────────────────
 export const upsertDevelopmentReportSchema = z.object({
   id: z.string().uuid().optional(),
   player_id: z.string().uuid(),
   team_id: z.string().uuid(),
   season_id: z.string().uuid(),
   period: periodSchema,
-  score_tecnica_tactica: scoreField,
-  score_fisica: scoreField,
-  score_psicologica: scoreField,
-  score_social: scoreField,
-  comment_tecnica_tactica: commentField,
-  comment_fisica: commentField,
-  comment_psicologica: commentField,
-  comment_social: commentField,
+  scores: developmentScoresSchema.default({}),
   comment_overall: commentField,
   visibility: visibilitySchema.default('staff'),
 });
@@ -95,9 +156,19 @@ export type UpsertDevelopmentReportInput = z.infer<typeof upsertDevelopmentRepor
 export const deleteDevelopmentReportSchema = z.object({ id: z.string().uuid() });
 export type DeleteDevelopmentReportInput = z.infer<typeof deleteDevelopmentReportSchema>;
 
-// ── Objetivos ───────────────────────────────────────────────────────────────────
+// ── Valoración de equipo ─────────────────────────────────────────────────────────
+export const upsertTeamDevelopmentReportSchema = z.object({
+  id: z.string().uuid().optional(),
+  team_id: z.string().uuid(),
+  season_id: z.string().uuid(),
+  period: periodSchema,
+  scores: teamScoresSchema.default({}),
+  comment: commentField,
+  visibility: visibilitySchema.default('staff'),
+});
+export type UpsertTeamDevelopmentReportInput = z.infer<typeof upsertTeamDevelopmentReportSchema>;
 
-/** Objetivo individual de un jugador en una temporada. */
+// ── Objetivos (sin cambios respecto a 13.10a) ────────────────────────────────────
 export const upsertPlayerObjectiveSchema = z.object({
   id: z.string().uuid().optional(),
   player_id: z.string().uuid(),
@@ -110,7 +181,6 @@ export const upsertPlayerObjectiveSchema = z.object({
 });
 export type UpsertPlayerObjectiveInput = z.infer<typeof upsertPlayerObjectiveSchema>;
 
-/** Objetivo grupal de un equipo en una temporada (sin periodo: vive toda la temporada). */
 export const upsertTeamObjectiveSchema = z.object({
   id: z.string().uuid().optional(),
   team_id: z.string().uuid(),

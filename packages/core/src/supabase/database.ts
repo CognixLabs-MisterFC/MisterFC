@@ -459,64 +459,46 @@ export type Database = {
       development_reports: {
         Row: {
           club_id: string
-          comment_fisica: string | null
           comment_overall: string | null
-          comment_psicologica: string | null
-          comment_social: string | null
-          comment_tecnica_tactica: string | null
           created_at: string
           created_by: string
           id: string
           period: string
           player_id: string
-          score_fisica: number | null
-          score_psicologica: number | null
-          score_social: number | null
-          score_tecnica_tactica: number | null
+          scores: Json
           season_id: string
           team_id: string
+          team_report_id: string | null
           updated_at: string
           visibility: string
         }
         Insert: {
           club_id: string
-          comment_fisica?: string | null
           comment_overall?: string | null
-          comment_psicologica?: string | null
-          comment_social?: string | null
-          comment_tecnica_tactica?: string | null
           created_at?: string
           created_by: string
           id?: string
           period: string
           player_id: string
-          score_fisica?: number | null
-          score_psicologica?: number | null
-          score_social?: number | null
-          score_tecnica_tactica?: number | null
+          scores?: Json
           season_id: string
           team_id: string
+          team_report_id?: string | null
           updated_at?: string
           visibility?: string
         }
         Update: {
           club_id?: string
-          comment_fisica?: string | null
           comment_overall?: string | null
-          comment_psicologica?: string | null
-          comment_social?: string | null
-          comment_tecnica_tactica?: string | null
           created_at?: string
           created_by?: string
           id?: string
           period?: string
           player_id?: string
-          score_fisica?: number | null
-          score_psicologica?: number | null
-          score_social?: number | null
-          score_tecnica_tactica?: number | null
+          scores?: Json
           season_id?: string
           team_id?: string
+          team_report_id?: string | null
           updated_at?: string
           visibility?: string
         }
@@ -554,6 +536,13 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_reports_team_report_id_fkey"
+            columns: ["team_report_id"]
+            isOneToOne: false
+            referencedRelation: "team_development_reports"
             referencedColumns: ["id"]
           },
         ]
@@ -2469,6 +2458,77 @@ export type Database = {
           regime_type?: string
         }
         Relationships: []
+      }
+      team_development_reports: {
+        Row: {
+          club_id: string
+          comment: string | null
+          created_at: string
+          created_by: string
+          id: string
+          period: string
+          scores: Json
+          season_id: string
+          team_id: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          club_id: string
+          comment?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          period: string
+          scores?: Json
+          season_id: string
+          team_id: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          club_id?: string
+          comment?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          period?: string
+          scores?: Json
+          season_id?: string
+          team_id?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_development_reports_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_development_reports_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_development_reports_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_development_reports_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_evaluations: {
         Row: {

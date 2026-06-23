@@ -17,14 +17,7 @@ export type DevelopmentReportRow = {
   id: string;
   period: string;
   visibility: string;
-  score_tecnica_tactica: number | null;
-  score_fisica: number | null;
-  score_psicologica: number | null;
-  score_social: number | null;
-  comment_tecnica_tactica: string | null;
-  comment_fisica: string | null;
-  comment_psicologica: string | null;
-  comment_social: string | null;
+  scores: Record<string, number>;
   comment_overall: string | null;
 };
 
@@ -106,12 +99,10 @@ export async function loadReportsByPeriod(
 ): Promise<Map<string, DevelopmentReportRow>> {
   const { data } = await supabase
     .from('development_reports')
-    .select(
-      'id, period, visibility, score_tecnica_tactica, score_fisica, score_psicologica, score_social, comment_tecnica_tactica, comment_fisica, comment_psicologica, comment_social, comment_overall',
-    )
+    .select('id, period, visibility, scores, comment_overall')
     .eq('player_id', playerId)
     .eq('season_id', seasonId);
   const map = new Map<string, DevelopmentReportRow>();
-  for (const r of (data ?? []) as DevelopmentReportRow[]) map.set(r.period, r);
+  for (const r of (data ?? []) as unknown as DevelopmentReportRow[]) map.set(r.period, r);
   return map;
 }

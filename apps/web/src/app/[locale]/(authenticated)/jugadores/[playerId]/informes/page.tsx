@@ -9,7 +9,6 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft } from 'lucide-react';
 import {
   createSupabaseServerClient,
-  DEVELOPMENT_AXES,
   DEVELOPMENT_PERIODS,
   type Role,
 } from '@misterfc/core';
@@ -134,20 +133,9 @@ export default async function InformesListPage({ params, searchParams }: Props) 
                   ) : null}
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3 text-sm">
-                  {r ? (
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground tabular-nums">
-                      {DEVELOPMENT_AXES.map((axis) => {
-                        const v = r[`score_${axis}` as keyof typeof r] as number | null;
-                        return (
-                          <span key={axis}>
-                            {t(`axis_short.${axis}`)} {v ?? '—'}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">{t('no_report')}</p>
-                  )}
+                  <p className="text-muted-foreground">
+                    {r ? t('has_report') : t('no_report')}
+                  </p>
                   {canEdit ? (
                     <Button asChild variant={r ? 'outline' : 'default'} size="sm" className="self-start">
                       <Link href={`/jugadores/${playerId}/informes/${period}?season=${encodeURIComponent(selectedLabel)}`}>

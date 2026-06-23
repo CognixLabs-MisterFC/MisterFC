@@ -1,25 +1,23 @@
 /**
- * F13.10b-1 — Editor de un Informe de desarrollo (un periodo) de un jugador.
- * Gate D13. Resuelve temporada (default activa) + equipo del jugador en esa
- * temporada y carga el informe existente (si lo hay) para precargar el formulario.
+ * F13.10 (rework) — Editor de un periodo: PLACEHOLDER temporal "en reconstrucción".
+ *
+ * Tras el rework del modelo (4 corners → catálogos jsonb 1–10 + valoración de
+ * equipo), el editor de puntuaciones se rehace de una pieza (equipo + individual)
+ * en el siguiente paso. Aquí solo se mantiene la navegación y se avisa de que el
+ * editor está en reconstrucción. Los OBJETIVOS siguen gestionándose en el listado.
  */
 
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft } from 'lucide-react';
-import {
-  createSupabaseServerClient,
-  isDevelopmentPeriod,
-  type Role,
-} from '@misterfc/core';
+import { ArrowLeft, Hammer } from 'lucide-react';
+import { createSupabaseServerClient, isDevelopmentPeriod, type Role } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { getActiveSeasonLabel } from '@/lib/active-season';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { DevelopmentReportForm } from '../_components/development-report-form';
-import { loadClubSeasons, resolvePlayerTeamForSeason, loadReportsByPeriod } from '../queries';
+import { loadClubSeasons, resolvePlayerTeamForSeason } from '../queries';
 
 type Props = {
   params: Promise<{ locale: string; playerId: string; period: string }>;
@@ -61,33 +59,10 @@ export default async function InformeEditorPage({ params, searchParams }: Props)
   const activeLabel = await getActiveSeasonLabel(supabase, clubId);
   const selectedLabel =
     seasonParam && seasons.some((s) => s.label === seasonParam) ? seasonParam : activeLabel;
-  const season = seasons.find((s) => s.label === selectedLabel) ?? null;
   const team = await resolvePlayerTeamForSeason(supabase, playerId, selectedLabel);
 
   const backHref = `/jugadores/${playerId}/informes?season=${encodeURIComponent(selectedLabel)}`;
   const fullName = `${player.first_name} ${player.last_name ?? ''}`.trim();
-
-  // Sin temporada en la tabla canónica o sin equipo esa temporada → no editable.
-  if (!season?.id || !team) {
-    return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        <Button asChild variant="ghost" size="sm" className="self-start">
-          <Link href={backHref}>
-            <ArrowLeft className="size-4" aria-hidden />
-            <span>{t('back_to_reports')}</span>
-          </Link>
-        </Button>
-        <Card>
-          <CardContent className="py-8 text-center text-sm text-muted-foreground">
-            {t('no_team_for_season')}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const reports = await loadReportsByPeriod(supabase, playerId, season.id);
-  const existing = reports.get(period) ?? null;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -101,38 +76,18 @@ export default async function InformeEditorPage({ params, searchParams }: Props)
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          {t(`period.${period}`)}
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t(`period.${period}`)}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {fullName} · {team.teamName} · {selectedLabel}
+          {fullName}
+          {team ? ` · ${team.teamName}` : ''} · {selectedLabel}
         </p>
       </div>
 
       <Card>
-        <CardContent className="pt-6">
-          <DevelopmentReportForm
-            playerId={playerId}
-            teamId={team.teamId}
-            seasonId={season.id}
-            period={period}
-            initial={
-              existing
-                ? {
-                    score_tecnica_tactica: existing.score_tecnica_tactica,
-                    score_fisica: existing.score_fisica,
-                    score_psicologica: existing.score_psicologica,
-                    score_social: existing.score_social,
-                    comment_tecnica_tactica: existing.comment_tecnica_tactica,
-                    comment_fisica: existing.comment_fisica,
-                    comment_psicologica: existing.comment_psicologica,
-                    comment_social: existing.comment_social,
-                    comment_overall: existing.comment_overall,
-                  }
-                : null
-            }
-            canEdit
-          />
+        <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+          <Hammer className="size-10 text-muted-foreground" aria-hidden />
+          <p className="text-sm font-medium">{t('editor_rework_title')}</p>
+          <p className="max-w-sm text-sm text-muted-foreground">{t('editor_rework_body')}</p>
         </CardContent>
       </Card>
     </div>

@@ -319,7 +319,7 @@ do $$
 declare n int;
 begin
   set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000d","role":"authenticated"}';
-  update public.development_reports set score_fisica = 4 where id = 'd1e00000-0000-4000-8000-0000000000c1';
+  update public.development_reports set comment_overall = 'edit ok' where id = 'd1e00000-0000-4000-8000-0000000000c1';
   get diagnostics n = row_count;
   if n <> 1 then raise exception 'FAIL [U1]: staff del team no pudo editar informe'; end if;
 end $$;
@@ -329,7 +329,7 @@ do $$
 declare n int;
 begin
   set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000f","role":"authenticated"}';
-  update public.development_reports set score_fisica = 1 where id = 'd1e00000-0000-4000-8000-0000000000c2';
+  update public.development_reports set comment_overall = 'hack' where id = 'd1e00000-0000-4000-8000-0000000000c2';
   get diagnostics n = row_count;
   if n <> 0 then raise exception 'FAIL [U2]: jugador editó el informe team'; end if;
 end $$;
@@ -368,6 +368,84 @@ begin
   delete from public.development_reports where id = 'd1e00000-0000-4000-8000-0000000000c2';
   get diagnostics n = row_count;
   if n <> 0 then raise exception 'FAIL [D2]: jugador borró el informe team'; end if;
+end $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- VALORACIÓN DE EQUIPO (team_development_reports) + ENLACE team_report_id
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- TR1: AYUDANTE (staff Team A) crea valoración de equipo → OK (D13)
+do $$
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000d","role":"authenticated"}';
+  insert into public.team_development_reports (id, club_id, team_id, season_id, period, created_by)
+  values ('d1f00000-0000-4000-8000-000000000001', 'd1c00000-0000-4000-8000-000000000001', 'd1700000-0000-4000-8000-000000000001', 'd15ea000-0000-4000-8000-000000000001', 'marzo', 'd1a00000-0000-4000-8000-00000000000d');
+exception when others then
+  raise exception 'FAIL [TR1]: ayudante no pudo crear valoración de equipo: %', sqlerrm;
+end $$;
+
+-- TR2: jugador crea valoración de equipo → rechazado
+do $$
+declare ok boolean := false;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000f","role":"authenticated"}';
+  begin
+    insert into public.team_development_reports (club_id, team_id, season_id, period, created_by)
+    values ('d1c00000-0000-4000-8000-000000000001', 'd1700000-0000-4000-8000-000000000001', 'd15ea000-0000-4000-8000-000000000001', 'junio', 'd1a00000-0000-4000-8000-00000000000f');
+  exception when insufficient_privilege then ok := true;
+  end;
+  if not ok then raise exception 'FAIL [TR2]: jugador pudo crear valoración de equipo'; end if;
+end $$;
+
+-- TR3: backfill — al crear la valoración de equipo de 'diciembre', el informe
+-- individual c2 (player f, diciembre) enlaza su team_report_id (trigger AFTER INSERT).
+do $$
+declare v_link uuid;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000a","role":"authenticated"}';
+  insert into public.team_development_reports (id, club_id, team_id, season_id, period, created_by)
+  values ('d1f00000-0000-4000-8000-000000000002', 'd1c00000-0000-4000-8000-000000000001', 'd1700000-0000-4000-8000-000000000001', 'd15ea000-0000-4000-8000-000000000001', 'diciembre', 'd1a00000-0000-4000-8000-00000000000a');
+  select team_report_id into v_link from public.development_reports where id = 'd1e00000-0000-4000-8000-0000000000c2';
+  if v_link is distinct from 'd1f00000-0000-4000-8000-000000000002' then
+    raise exception 'FAIL [TR3]: backfill no enlazó team_report_id (quedó %)', v_link;
+  end if;
+end $$;
+
+-- TR4: al INSERTAR un informe individual cuando ya existe la valoración de equipo
+-- de ese periodo ('inicial'), el trigger del individual enlaza team_report_id.
+do $$
+declare v_link uuid;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000a","role":"authenticated"}';
+  insert into public.team_development_reports (id, club_id, team_id, season_id, period, visibility, created_by)
+  values ('d1f00000-0000-4000-8000-000000000003', 'd1c00000-0000-4000-8000-000000000001', 'd1700000-0000-4000-8000-000000000001', 'd15ea000-0000-4000-8000-000000000001', 'inicial', 'team', 'd1a00000-0000-4000-8000-00000000000a');
+  insert into public.development_reports (id, club_id, team_id, player_id, season_id, period, created_by)
+  values ('d1e00000-0000-4000-8000-0000000000e1', 'd1c00000-0000-4000-8000-000000000001', 'd1700000-0000-4000-8000-000000000001', 'd1500000-0000-4000-8000-00000000000f', 'd15ea000-0000-4000-8000-000000000001', 'inicial', 'd1a00000-0000-4000-8000-00000000000a');
+  select team_report_id into v_link from public.development_reports where id = 'd1e00000-0000-4000-8000-0000000000e1';
+  if v_link is distinct from 'd1f00000-0000-4000-8000-000000000003' then
+    raise exception 'FAIL [TR4]: el individual no enlazó la valoración de equipo (quedó %)', v_link;
+  end if;
+end $$;
+
+-- TR5: visibility — jugador de Team A ve la valoración de equipo 'inicial' (team)
+-- pero NO la de 'marzo' (staff).
+do $$
+declare n int;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000f","role":"authenticated"}';
+  select count(*) into n from public.team_development_reports where id = 'd1f00000-0000-4000-8000-000000000003';
+  if n <> 1 then raise exception 'FAIL [TR5a]: jugador no ve la valoración de equipo compartida'; end if;
+  select count(*) into n from public.team_development_reports where id = 'd1f00000-0000-4000-8000-000000000001';
+  if n <> 0 then raise exception 'FAIL [TR5b]: jugador ve valoración de equipo staff'; end if;
+end $$;
+
+-- TR6: admin de club B no ve valoraciones de equipo de club A.
+do $$
+declare n int;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1b00000-0000-4000-8000-00000000000a","role":"authenticated"}';
+  select count(*) into n from public.team_development_reports where team_id = 'd1700000-0000-4000-8000-000000000001';
+  if n <> 0 then raise exception 'FAIL [TR6]: admin ajeno ve valoraciones de equipo de club A'; end if;
 end $$;
 
 reset role;
