@@ -60,6 +60,44 @@ export async function resolvePlayerTeamForSeason(
   return { teamId: active.team_id, teamName: active.teams?.name ?? '' };
 }
 
+export type ObjectiveRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  created_period?: string;
+};
+
+/** Objetivos INDIVIDUALES del jugador en una temporada. */
+export async function loadPlayerObjectives(
+  supabase: Supa,
+  playerId: string,
+  seasonId: string,
+): Promise<ObjectiveRow[]> {
+  const { data } = await supabase
+    .from('player_objectives')
+    .select('id, title, description, status, created_period')
+    .eq('player_id', playerId)
+    .eq('season_id', seasonId)
+    .order('created_at', { ascending: true });
+  return (data ?? []) as ObjectiveRow[];
+}
+
+/** Objetivos GRUPALES del equipo en una temporada (compartidos por el equipo). */
+export async function loadTeamObjectives(
+  supabase: Supa,
+  teamId: string,
+  seasonId: string,
+): Promise<ObjectiveRow[]> {
+  const { data } = await supabase
+    .from('team_objectives')
+    .select('id, title, description, status')
+    .eq('team_id', teamId)
+    .eq('season_id', seasonId)
+    .order('created_at', { ascending: true });
+  return (data ?? []) as ObjectiveRow[];
+}
+
 /** Informes del jugador en una temporada, indexados por periodo. */
 export async function loadReportsByPeriod(
   supabase: Supa,
