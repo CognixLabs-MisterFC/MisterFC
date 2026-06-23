@@ -588,8 +588,59 @@
     "entrenador_ayudante": "Entrenador ayudante",
     "jugador": "Jugador / Familia"
   },
+  "informes": {
+    "title": "Informes de desenvolupament",
+    "season": "Temporada",
+    "back_to_player": "Tornar al jugador",
+    "back_to_reports": "Tornar als informes",
+    "no_team_for_season": "El jugador no té equip en esta temporada.",
+    "no_report": "Sense informe encara.",
+    "create": "Crear informe",
+    "edit": "Editar",
+    "shared": "Compartit",
+    "draft": "Esborrany",
+    "save": "Guardar",
+    "saved": "Guardat",
+    "comment_overall": "Comentari global",
+    "comment_placeholder": "Comentari (opcional)",
+    "axis": {
+      "tecnica_tactica": "Tècnica/Tàctica",
+      "fisica": "Física",
+      "psicologica": "Psicològica",
+      "social": "Social"
+    },
+    "axis_short": {
+      "tecnica_tactica": "Tèc/Tàc",
+      "fisica": "Fís",
+      "psicologica": "Psi",
+      "social": "Soc"
+    },
+    "period": {
+      "inicial": "Inicial (setembre)",
+      "diciembre": "Desembre",
+      "marzo": "Març",
+      "junio": "Juny"
+    },
+    "score": {
+      "none": "Sense puntuar",
+      "descriptor": {
+        "1": "Molt per davall",
+        "2": "Per davall",
+        "3": "En el nivell esperat",
+        "4": "Per damunt",
+        "5": "Excel·lent"
+      }
+    },
+    "errors": {
+      "invalid": "Revisa els camps de l'informe.",
+      "forbidden": "No tens permís per editar este informe.",
+      "not_found": "No s'ha trobat l'informe.",
+      "generic": "No s'ha pogut guardar. Torna-ho a provar."
+    }
+  },
   "jugadores": {
     "title": "Jugadores",
+    "development_reports": "Informes de desenvolupament",
     "export_pdf": "Exportar PDF",
     "count": "{count, plural, =0 {Sin jugadores todavía} one {1 jugador} other {# jugadores}}",
     "empty": "Aún no hay jugadores en este club. Crea el primero arriba.",

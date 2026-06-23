@@ -588,8 +588,59 @@
     "entrenador_ayudante": "Entrenador ayudante",
     "jugador": "Jugador / Familia"
   },
+  "informes": {
+    "title": "Development reports",
+    "season": "Season",
+    "back_to_player": "Back to player",
+    "back_to_reports": "Back to reports",
+    "no_team_for_season": "The player has no team in this season.",
+    "no_report": "No report yet.",
+    "create": "Create report",
+    "edit": "Edit",
+    "shared": "Shared",
+    "draft": "Draft",
+    "save": "Save",
+    "saved": "Saved",
+    "comment_overall": "Overall comment",
+    "comment_placeholder": "Comment (optional)",
+    "axis": {
+      "tecnica_tactica": "Technical/Tactical",
+      "fisica": "Physical",
+      "psicologica": "Psychological",
+      "social": "Social"
+    },
+    "axis_short": {
+      "tecnica_tactica": "Tec/Tac",
+      "fisica": "Phy",
+      "psicologica": "Psy",
+      "social": "Soc"
+    },
+    "period": {
+      "inicial": "Initial (September)",
+      "diciembre": "December",
+      "marzo": "March",
+      "junio": "June"
+    },
+    "score": {
+      "none": "Not rated",
+      "descriptor": {
+        "1": "Well below",
+        "2": "Below",
+        "3": "At expected level",
+        "4": "Above",
+        "5": "Excellent"
+      }
+    },
+    "errors": {
+      "invalid": "Check the report fields.",
+      "forbidden": "You don't have permission to edit this report.",
+      "not_found": "Report not found.",
+      "generic": "Couldn't save. Please try again."
+    }
+  },
   "jugadores": {
     "title": "Jugadores",
+    "development_reports": "Development reports",
     "export_pdf": "Export PDF",
     "count": "{count, plural, =0 {Sin jugadores todavía} one {1 jugador} other {# jugadores}}",
     "empty": "Aún no hay jugadores en este club. Crea el primero arriba.",
