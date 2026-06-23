@@ -193,11 +193,14 @@ export async function updateEvent(
 
   const { data: existing } = await supabase
     .from('events')
-    .select('id, starts_at, parent_event_id')
+    .select(
+      'id, type, team_id, starts_at, ends_at, location_name, location_address, parent_event_id',
+    )
     .eq('id', eventId)
     .maybeSingle();
   if (!existing) return { success: false, error: 'not_found' };
 
+  const editor = await getCurrentUser(adapter);
   const targetCols = targetToColumns(data.target);
 
   const patch = {
@@ -254,8 +257,113 @@ export async function updateEvent(
     }
   }
 
+  // F13.9c — avisa a jugadores/familias del equipo si cambia horario o lugar de
+  // un ENTRENAMIENTO. El horario solo se aplica en modo 'single' (los modos de
+  // serie no tocan starts_at/ends_at); el lugar se aplica en todos los modos.
+  // Los partidos ya tienen su propio flujo (callup_updated) → aquí solo training.
+  const isTraining = existing.type === 'training';
+  const sameInstant = (a: string | null, b: string | null): boolean =>
+    (a == null ? null : new Date(a).getTime()) === (b == null ? null : new Date(b).getTime());
+  const dateTimeChanged =
+    mode === 'single' &&
+    (!sameInstant(data.starts_at, existing.starts_at as string | null) ||
+      !sameInstant(data.ends_at ?? null, existing.ends_at as string | null));
+  const locationChanged =
+    (data.location_name ?? null) !== (existing.location_name as string | null) ||
+    (data.location_address ?? null) !== (existing.location_address as string | null);
+
+  if (isTraining && existing.team_id && (dateTimeChanged || locationChanged)) {
+    // El horario notificado es el realmente aplicado (en modos de serie se
+    // mantiene el existente). No bloquea el guardado si el bus falla.
+    const effectiveStartsAt =
+      mode === 'single' ? data.starts_at : (existing.starts_at as string);
+    try {
+      await notifyEventUpdated(supabase, {
+        id: eventId,
+        teamId: existing.team_id as string,
+        title: data.title,
+        startsAt: effectiveStartsAt,
+        locationName: data.location_name ?? null,
+        editorId: editor?.id ?? null,
+      });
+    } catch {
+      // best-effort; el evento ya se guardó.
+    }
+  }
+
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');
   return { success: true, event_id: eventId };
+}
+
+/**
+ * F13.9c — fan-out de "entrenamiento actualizado" a jugadores/familias del
+ * equipo (team_members → player_accounts), reusando el bus F5.7 igual que
+ * play_published/callup. Excluye al editor. dedupe por el contenido del cambio
+ * (horario+lugar) → re-guardar lo mismo no duplica, un cambio real sí notifica.
+ * El texto in_app del feed lo construye el mapper (13.9a) en el idioma del
+ * lector; el push va en es (como callup/recordatorios).
+ */
+async function notifyEventUpdated(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  ev: {
+    id: string;
+    teamId: string;
+    title: string;
+    startsAt: string;
+    locationName: string | null;
+    editorId: string | null;
+  },
+): Promise<void> {
+  const { data: tms } = await supabase
+    .from('team_members')
+    .select('player_id')
+    .eq('team_id', ev.teamId)
+    .is('left_at', null);
+  const playerIds = (tms ?? []).map((r) => r.player_id);
+  if (playerIds.length === 0) return;
+
+  const { data: pas } = await supabase
+    .from('player_accounts')
+    .select('profile_id')
+    .in('player_id', playerIds);
+  const recipients = Array.from(
+    new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
+  ).filter((u) => u !== ev.editorId) as string[];
+  if (recipients.length === 0) return;
+
+  const whenEs = new Date(ev.startsAt).toLocaleString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: TZ,
+  });
+  const title = `Entrenamiento actualizado: ${ev.title}`;
+  const body = ev.locationName ? `${whenEs} · ${ev.locationName}` : whenEs;
+  const changeToken = `${ev.startsAt}|${ev.locationName ?? ''}`;
+
+  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+  await emitNotificationFanOut(
+    recipients.map((u) => ({ user_id: u })),
+    {
+      type: 'event_updated',
+      in_app_payload: {
+        event_id: ev.id,
+        team_id: ev.teamId,
+        title: ev.title,
+        starts_at: ev.startsAt,
+        deep_link: '/calendario',
+      },
+      push_payload: {
+        title,
+        body,
+        deep_link: '/es/calendario',
+        tag: `event_updated:${ev.id}`,
+      },
+      dedupe_base_prefix: `event_updated:${ev.id}:${changeToken}`,
+    },
+  );
 }
 
 /**

@@ -2823,6 +2823,7 @@ export type Database = {
         | "callup_updated"
         | "exercise_rejected"
         | "play_published"
+        | "event_updated"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -2977,6 +2978,7 @@ export const Constants = {
         "callup_updated",
         "exercise_rejected",
         "play_published",
+        "event_updated",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },

@@ -133,6 +133,8 @@
       "attendance_pending_reminder": "Attendance pending",
       "attendance_pending_reminder_named": "Attendance pending: {title}",
       "training_reminder": "Training reminder",
+      "event_updated": "Training updated",
+      "event_updated_named": "Training updated: {title}",
       "generic": "You have an update"
     },
     "dashboard_card": {

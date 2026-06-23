@@ -133,6 +133,8 @@
       "attendance_pending_reminder": "Asistencia pendiente de registrar",
       "attendance_pending_reminder_named": "Asistencia pendiente: {title}",
       "training_reminder": "Recordatorio de entrenamiento",
+      "event_updated": "Entrenamiento actualizado",
+      "event_updated_named": "Entrenamiento actualizado: {title}",
       "generic": "Tienes una novedad"
     },
     "welcome": "Bienvenido a {club}",
