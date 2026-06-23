@@ -107,9 +107,20 @@
     "error_already_in_a_club": "You already belong to a club. Go back to home.",
     "error_generic": "We couldn't create the club. Please try again."
   },
+  "novedades": {
+    "title": "What's new",
+    "subtitle": "All your recent updates.",
+    "empty": "You have no updates.",
+    "page_of": "Page {current} of {total}",
+    "prev": "Previous",
+    "next": "Next"
+  },
   "home": {
     "feed": {
       "title": "What's new",
+      "mark_all": "Mark all as read",
+      "marking": "Marking…",
+      "view_all": "View all →",
       "new_announcement": "New announcement",
       "callup_published": "New call-up",
       "callup_updated": "Call-up updated",

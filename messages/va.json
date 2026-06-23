@@ -107,9 +107,20 @@
     "error_already_in_a_club": "Ja pertanys a un club. Torna a l'inici.",
     "error_generic": "No hem pogut crear el club. Torna-ho a provar."
   },
+  "novedades": {
+    "title": "Novetats",
+    "subtitle": "Totes les teues novetats recents.",
+    "empty": "No tens novetats.",
+    "page_of": "Pàgina {current} de {total}",
+    "prev": "Anterior",
+    "next": "Següent"
+  },
   "home": {
     "feed": {
       "title": "Novetats",
+      "mark_all": "Marca-les totes com a llegides",
+      "marking": "Marcant…",
+      "view_all": "Veure-les totes →",
       "new_announcement": "Nou anunci",
       "callup_published": "Nova convocatòria",
       "callup_updated": "Convocatòria actualitzada",
