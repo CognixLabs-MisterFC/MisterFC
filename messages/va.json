@@ -622,39 +622,75 @@
       "achieved": "Aconseguit",
       "dropped": "Descartat"
     },
-    "axis": {
-      "tecnica_tactica": "Tècnica/Tàctica",
-      "fisica": "Física",
-      "psicologica": "Psicològica",
-      "social": "Social"
-    },
-    "axis_short": {
-      "tecnica_tactica": "Tèc/Tàc",
-      "fisica": "Fís",
-      "psicologica": "Psi",
-      "social": "Soc"
-    },
     "period": {
       "inicial": "Inicial (setembre)",
       "diciembre": "Desembre",
       "marzo": "Març",
       "junio": "Juny"
     },
-    "score": {
-      "none": "Sense puntuar",
-      "descriptor": {
-        "1": "Molt per davall",
-        "2": "Per davall",
-        "3": "En el nivell esperat",
-        "4": "Per damunt",
-        "5": "Excel·lent"
-      }
-    },
     "errors": {
       "invalid": "Revisa els camps de l'informe.",
       "forbidden": "No tens permís per editar este informe.",
       "not_found": "No s'ha trobat l'informe.",
       "generic": "No s'ha pogut guardar. Torna-ho a provar."
+    },
+    "team_valuation": "Valoració d'equip",
+    "team_valuation_done": "Valoració d'equip creada",
+    "team_valuation_pending": "Valoració d'equip pendent",
+    "team_comment": "Comentari d'equip",
+    "team_block_title": "Valoració d'equip (d'aquest període)",
+    "team_block_missing": "Encara no hi ha valoració d'equip per a aquest període. Pots desar l'informe individual igualment; s'enllaçarà quan la crees.",
+    "edit_team_valuation": "Editar valoració",
+    "create_team_valuation": "Crear la valoració d'equip",
+    "individual_report": "Informe individual",
+    "group_average": "Mitjana",
+    "overall_average": "Mitjana global",
+    "visibility_label": "Visibilitat",
+    "visibility": {
+      "staff": "Només cos tècnic",
+      "team": "Visible per a la família"
+    },
+    "cat_group": {
+      "tecnico": "Tècnic",
+      "tactico": "Tàctic",
+      "fisico": "Físic",
+      "actitud": "Actitud",
+      "rendimiento_colectivo": "Rendiment col·lectiu",
+      "dinamica_grupo": "Dinàmica de grup",
+      "evolucion_equipo": "Evolució de l'equip"
+    },
+    "cat": {
+      "control_orientado": "Control orientat",
+      "pase": "Passada",
+      "conduccion": "Conducció",
+      "regate": "Regat",
+      "finalizacion": "Finalització",
+      "primer_toque": "Primer toc",
+      "comprension_juego": "Comprensió del joc",
+      "toma_decisiones": "Presa de decisions",
+      "ocupacion_espacios": "Ocupació d'espais",
+      "lectura_tactica": "Lectura tàctica",
+      "juego_sin_balon": "Joc sense pilota",
+      "coordinacion": "Coordinació",
+      "agilidad": "Agilitat",
+      "velocidad": "Velocitat",
+      "resistencia": "Resistència",
+      "explosividad": "Explosivitat",
+      "compromiso": "Compromís",
+      "motivacion": "Motivació",
+      "concentracion": "Concentració",
+      "companerismo": "Companyonia",
+      "liderazgo": "Lideratge",
+      "evolucion": "Evolució",
+      "organizacion_defensiva": "Organització defensiva",
+      "organizacion_ofensiva": "Organització ofensiva",
+      "transiciones": "Transicions",
+      "balon_parado": "Pilota aturada",
+      "cohesion_ambiente": "Cohesió i ambient",
+      "actitud_competitiva": "Actitud competitiva",
+      "disciplina_compromiso": "Disciplina i compromís",
+      "progresion_periodo_anterior": "Progressió respecte al període anterior",
+      "cumplimiento_objetivos": "Compliment d'objectius"
     }
   },
   "jugadores": {

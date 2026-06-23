@@ -21,6 +21,23 @@ export type DevelopmentReportRow = {
   comment_overall: string | null;
 };
 
+/** Informe individual de un jugador en un periodo concreto (para el editor). */
+export type IndividualReport = {
+  id: string;
+  scores: Record<string, number>;
+  comment_overall: string | null;
+  visibility: string;
+  team_report_id: string | null;
+};
+
+/** Valoración de equipo de un periodo concreto (para el editor / bloque fijo). */
+export type TeamReport = {
+  id: string;
+  scores: Record<string, number>;
+  comment: string | null;
+  visibility: string;
+};
+
 /** Temporadas del club (tabla canónica), más recientes primero. */
 export async function loadClubSeasons(supabase: Supa, clubId: string): Promise<ClubSeason[]> {
   const { data } = await supabase
@@ -91,6 +108,40 @@ export async function loadTeamObjectives(
   return (data ?? []) as ObjectiveRow[];
 }
 
+/** Informe individual de un jugador en un periodo (para el editor). */
+export async function loadIndividualReport(
+  supabase: Supa,
+  playerId: string,
+  seasonId: string,
+  period: string,
+): Promise<IndividualReport | null> {
+  const { data } = await supabase
+    .from('development_reports')
+    .select('id, scores, comment_overall, visibility, team_report_id')
+    .eq('player_id', playerId)
+    .eq('season_id', seasonId)
+    .eq('period', period)
+    .maybeSingle();
+  return (data as unknown as IndividualReport | null) ?? null;
+}
+
+/** Valoración de equipo de un periodo (para el editor de equipo y el bloque fijo). */
+export async function loadTeamReport(
+  supabase: Supa,
+  teamId: string,
+  seasonId: string,
+  period: string,
+): Promise<TeamReport | null> {
+  const { data } = await supabase
+    .from('team_development_reports')
+    .select('id, scores, comment, visibility')
+    .eq('team_id', teamId)
+    .eq('season_id', seasonId)
+    .eq('period', period)
+    .maybeSingle();
+  return (data as unknown as TeamReport | null) ?? null;
+}
+
 /** Informes del jugador en una temporada, indexados por periodo. */
 export async function loadReportsByPeriod(
   supabase: Supa,
@@ -105,4 +156,18 @@ export async function loadReportsByPeriod(
   const map = new Map<string, DevelopmentReportRow>();
   for (const r of (data ?? []) as unknown as DevelopmentReportRow[]) map.set(r.period, r);
   return map;
+}
+
+/** Periodos del equipo (en una temporada) que ya tienen valoración de equipo. */
+export async function loadTeamReportPeriods(
+  supabase: Supa,
+  teamId: string,
+  seasonId: string,
+): Promise<Set<string>> {
+  const { data } = await supabase
+    .from('team_development_reports')
+    .select('period')
+    .eq('team_id', teamId)
+    .eq('season_id', seasonId);
+  return new Set(((data ?? []) as Array<{ period: string }>).map((r) => r.period));
 }
