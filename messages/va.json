@@ -133,6 +133,8 @@
       "attendance_pending_reminder": "Assistència pendent de registrar",
       "attendance_pending_reminder_named": "Assistència pendent: {title}",
       "training_reminder": "Recordatori d'entrenament",
+      "event_updated": "Entrenament actualitzat",
+      "event_updated_named": "Entrenament actualitzat: {title}",
       "generic": "Tens una novetat"
     },
     "dashboard_card": {

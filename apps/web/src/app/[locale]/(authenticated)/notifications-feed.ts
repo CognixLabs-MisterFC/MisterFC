@@ -81,6 +81,7 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
       return XCircle;
     case 'attendance_pending_reminder':
     case 'training_reminder':
+    case 'event_updated':
       return CalendarClock;
     default:
       return Bell;
@@ -116,6 +117,10 @@ function textFor(t: Translate, type: string, payload: Record<string, unknown> | 
     }
     case 'training_reminder':
       return t('training_reminder');
+    case 'event_updated': {
+      const title = str(payload, 'title');
+      return title ? t('event_updated_named', { title }) : t('event_updated');
+    }
     default:
       return t('generic');
   }
@@ -164,6 +169,11 @@ function hrefFor(type: string, payload: Record<string, unknown> | null): string 
     case 'attendance_pending_reminder': {
       const id = str(payload, 'event_id');
       derived = id ? `/asistencia/${id}` : null;
+      break;
+    }
+    case 'event_updated': {
+      // No hay vista de evento por jugador → al calendario (accesible a todos).
+      derived = '/calendario';
       break;
     }
     default:
