@@ -113,6 +113,28 @@ export function computeGroupAverages(
   return { perGroup, overall: allCount > 0 ? allSum / allCount : null };
 }
 
+/** Nº de ítems del catálogo con puntuación numérica (1–10). */
+export function countScoredItems(scores: Record<string, number>, catalog: Catalog): number {
+  return catalogItemIds(catalog).filter((id) => typeof scores[id] === 'number').length;
+}
+
+/** "Completado" = TODOS los ítems del catálogo puntuados. Solo cuenta las
+ *  puntuaciones numéricas; comentario y objetivos NO condicionan el estado. */
+export function isReportComplete(scores: Record<string, number>, catalog: Catalog): boolean {
+  const ids = catalogItemIds(catalog);
+  return ids.length > 0 && ids.every((id) => typeof scores[id] === 'number');
+}
+
+/** Estado calculado de un informe a partir de sus puntuaciones (no es un campo). */
+export type ReportStatus = 'not_started' | 'in_progress' | 'completed';
+export function reportStatus(scores: Record<string, number>, catalog: Catalog): ReportStatus {
+  const total = catalogItemIds(catalog).length;
+  const scored = countScoredItems(scores, catalog);
+  if (scored === 0) return 'not_started';
+  if (scored >= total) return 'completed';
+  return 'in_progress';
+}
+
 // ── Primitivas zod ────────────────────────────────────────────────────────────
 const commentField = z.preprocess(
   (v) => (typeof v === 'string' && v.trim() === '' ? null : v),

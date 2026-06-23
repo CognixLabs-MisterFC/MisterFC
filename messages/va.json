@@ -691,6 +691,22 @@
       "disciplina_compromiso": "Disciplina i compromís",
       "progresion_periodo_anterior": "Progressió respecte al període anterior",
       "cumplimiento_objetivos": "Compliment d'objectius"
+    },
+    "back_to_team": "Tornar a l'equip",
+    "back_to_team_reports": "Tornar als informes de l'equip",
+    "period_label": "Període",
+    "no_season_for_team": "L'equip no té una temporada vàlida configurada.",
+    "roster_empty": "L'equip no té jugadors actius.",
+    "col_subject": "Concepte",
+    "col_status": "Estat",
+    "col_deadline": "Data límit",
+    "col_action": "Acció",
+    "open_editor": "Obrir",
+    "go_to_team_panel": "Panell de l'equip",
+    "report_status": {
+      "not_started": "Sense iniciar",
+      "in_progress": "En procés",
+      "completed": "Completat"
     }
   },
   "jugadores": {
@@ -1001,7 +1017,8 @@
     "back": "Volver a la categoría",
     "roster_title": "Jugadores activos",
     "roster_empty": "Aún no hay jugadores asignados a este equipo.",
-    "announcements_link": "Anuncis"
+    "announcements_link": "Anuncis",
+    "development_reports_link": "Informes"
   },
   "staff": {
     "title": "Cuerpo técnico",

@@ -85,7 +85,7 @@ export async function upsertTeamDevelopmentReport(
     if (error) return { error: mapPgErr(error.code) };
   }
 
-  revalidateInformes(strField(formData, 'player_id'));
+  revalidateTeamInformes(d.team_id);
   return { success: true };
 }
 
@@ -137,6 +137,7 @@ export async function upsertDevelopmentReport(
   }
 
   revalidateInformes(d.player_id);
+  revalidateTeamInformes(d.team_id);
   return { success: true };
 }
 
@@ -149,6 +150,11 @@ export type ObjectiveState = {
 
 function revalidateInformes(playerId: string) {
   revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}/informes`, 'page');
+}
+
+/** Panel de informes a nivel equipo (el estado por fila depende de las scores). */
+function revalidateTeamInformes(teamId: string) {
+  revalidatePath(`/[locale]/(authenticated)/equipos/${teamId}/informes`, 'page');
 }
 
 const txtOrNull = (formData: FormData, key: string): string | null => {

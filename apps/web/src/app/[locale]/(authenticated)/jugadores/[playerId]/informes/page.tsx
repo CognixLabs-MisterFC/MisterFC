@@ -23,7 +23,6 @@ import {
   loadClubSeasons,
   resolvePlayerTeamForSeason,
   loadReportsByPeriod,
-  loadTeamReportPeriods,
 } from './queries';
 
 type Props = {
@@ -75,8 +74,6 @@ export default async function InformesListPage({ params, searchParams }: Props) 
   const team = await resolvePlayerTeamForSeason(supabase, playerId, selectedLabel);
   const seasonId = selectedSeason?.id ?? null;
   const reports = seasonId ? await loadReportsByPeriod(supabase, playerId, seasonId) : new Map();
-  const teamReportPeriods =
-    team && seasonId ? await loadTeamReportPeriods(supabase, team.teamId, seasonId) : new Set<string>();
 
   const fullName = `${player.first_name} ${player.last_name ?? ''}`.trim();
   const canEdit = !team || !selectedSeason?.id ? false : true;
@@ -111,6 +108,11 @@ export default async function InformesListPage({ params, searchParams }: Props) 
         </Card>
       ) : (
         <>
+        <div className="flex justify-end">
+          <Button asChild variant="ghost" size="sm">
+            <Link href={`/equipos/${team.teamId}/informes`}>{t('go_to_team_panel')}</Link>
+          </Button>
+        </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {DEVELOPMENT_PERIODS.map((period) => {
             const r = reports.get(period);
@@ -141,20 +143,6 @@ export default async function InformesListPage({ params, searchParams }: Props) 
                       </Button>
                     ) : null}
                   </div>
-                  {canEdit ? (
-                    <div className="flex items-center justify-between gap-2 border-t pt-3">
-                      <p className="text-xs text-muted-foreground">
-                        {teamReportPeriods.has(period)
-                          ? t('team_valuation_done')
-                          : t('team_valuation_pending')}
-                      </p>
-                      <Button asChild variant="ghost" size="sm">
-                        <Link href={`/jugadores/${playerId}/informes/equipo/${period}?season=${encodeURIComponent(selectedLabel)}`}>
-                          {t('team_valuation')}
-                        </Link>
-                      </Button>
-                    </div>
-                  ) : null}
                 </CardContent>
               </Card>
             );
