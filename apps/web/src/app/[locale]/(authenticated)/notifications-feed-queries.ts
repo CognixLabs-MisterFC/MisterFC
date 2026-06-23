@@ -19,6 +19,9 @@ import type { InAppNotificationRow } from './notifications-feed';
 /** Cuántas novedades muestra el panel de Inicio. */
 export const FEED_LIMIT = 6;
 
+/** Tamaño de página de /novedades (patrón F2.10, igual que otras listas). */
+export const NOVEDADES_PAGE_SIZE = 20;
+
 export async function loadNotificationFeed(
   limit: number = FEED_LIMIT,
 ): Promise<InAppNotificationRow[]> {
@@ -33,4 +36,41 @@ export async function loadNotificationFeed(
     .limit(limit);
 
   return (data ?? []) as InAppNotificationRow[];
+}
+
+/**
+ * F13.9b — página completa de novedades, paginada server-side (.range() + count
+ * exacto, patrón F2.10). La RLS select-own filtra por usuario.
+ */
+export async function loadNotificationsPage(
+  page: number,
+): Promise<{ rows: InAppNotificationRow[]; total: number }> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const from = (page - 1) * NOVEDADES_PAGE_SIZE;
+  const to = from + NOVEDADES_PAGE_SIZE - 1;
+  const { data, count } = await supabase
+    .from('notifications')
+    .select('id, type, payload, status, created_at', { count: 'exact' })
+    .eq('channel', 'in_app')
+    .order('created_at', { ascending: false })
+    .range(from, to);
+
+  return { rows: (data ?? []) as InAppNotificationRow[], total: count ?? 0 };
+}
+
+/** F13.9b — nº de novedades NO leídas (in_app pending) del usuario. Decide si
+ *  mostrar el botón "marcar todas" en el panel y la página. */
+export async function countUnreadNotifications(): Promise<number> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { count } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('channel', 'in_app')
+    .eq('status', 'pending');
+
+  return count ?? 0;
 }
