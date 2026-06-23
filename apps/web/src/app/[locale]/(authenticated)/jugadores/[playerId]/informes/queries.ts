@@ -157,17 +157,3 @@ export async function loadReportsByPeriod(
   for (const r of (data ?? []) as unknown as DevelopmentReportRow[]) map.set(r.period, r);
   return map;
 }
-
-/** Periodos del equipo (en una temporada) que ya tienen valoración de equipo. */
-export async function loadTeamReportPeriods(
-  supabase: Supa,
-  teamId: string,
-  seasonId: string,
-): Promise<Set<string>> {
-  const { data } = await supabase
-    .from('team_development_reports')
-    .select('period')
-    .eq('team_id', teamId)
-    .eq('season_id', seasonId);
-  return new Set(((data ?? []) as Array<{ period: string }>).map((r) => r.period));
-}

@@ -27,13 +27,11 @@ const SELECT_CLASS =
   'rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring disabled:opacity-60';
 
 export function TeamReportEditor({
-  playerId,
   teamId,
   seasonId,
   period,
   initial,
 }: {
-  playerId: string;
   teamId: string;
   seasonId: string;
   period: string;
@@ -68,7 +66,6 @@ export function TeamReportEditor({
       <CardContent>
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           {initial ? <input type="hidden" name="id" value={initial.id} /> : null}
-          <input type="hidden" name="player_id" value={playerId} />
           <input type="hidden" name="team_id" value={teamId} />
           <input type="hidden" name="season_id" value={seasonId} />
           <input type="hidden" name="period" value={period} />

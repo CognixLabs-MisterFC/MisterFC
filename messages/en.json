@@ -691,6 +691,22 @@
       "disciplina_compromiso": "Discipline & commitment",
       "progresion_periodo_anterior": "Progress vs previous period",
       "cumplimiento_objetivos": "Objective achievement"
+    },
+    "back_to_team": "Back to team",
+    "back_to_team_reports": "Back to team reports",
+    "period_label": "Period",
+    "no_season_for_team": "The team has no valid season configured.",
+    "roster_empty": "The team has no active players.",
+    "col_subject": "Item",
+    "col_status": "Status",
+    "col_deadline": "Deadline",
+    "col_action": "Action",
+    "open_editor": "Open",
+    "go_to_team_panel": "Team panel",
+    "report_status": {
+      "not_started": "Not started",
+      "in_progress": "In progress",
+      "completed": "Completed"
     }
   },
   "jugadores": {
@@ -1001,7 +1017,8 @@
     "back": "Volver a la categoría",
     "roster_title": "Jugadores activos",
     "roster_empty": "Aún no hay jugadores asignados a este equipo.",
-    "announcements_link": "Announcements"
+    "announcements_link": "Announcements",
+    "development_reports_link": "Reports"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -1134,7 +1151,8 @@
       "convocar_next": "Call up players for {when}",
       "view_active_callups": "{count, plural, =0 {Team callups} one {1 active callup} other {# active callups}}",
       "mark_last_attendance": "Mark last training attendance",
-      "open_calendar": "Open team calendar"
+      "open_calendar": "Open team calendar",
+      "development_reports": "Development reports"
     },
     "upcoming": {
       "title": "Upcoming events",

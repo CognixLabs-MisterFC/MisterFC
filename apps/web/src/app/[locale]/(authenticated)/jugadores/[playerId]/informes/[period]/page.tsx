@@ -80,7 +80,7 @@ export default async function InformeEditorPage({ params, searchParams }: Props)
   const seasonId = selectedSeason?.id ?? null;
 
   const backHref = `/jugadores/${playerId}/informes?season=${encodeURIComponent(selectedLabel)}`;
-  const teamHref = `/jugadores/${playerId}/informes/equipo/${period}?season=${encodeURIComponent(selectedLabel)}`;
+  const teamHref = team ? `/equipos/${team.teamId}/informes/equipo/${period}` : backHref;
   const fullName = `${player.first_name} ${player.last_name ?? ''}`.trim();
 
   const report =

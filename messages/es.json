@@ -690,6 +690,22 @@
       "disciplina_compromiso": "Disciplina y compromiso",
       "progresion_periodo_anterior": "Progresión respecto al periodo anterior",
       "cumplimiento_objetivos": "Cumplimiento de objetivos"
+    },
+    "back_to_team": "Volver al equipo",
+    "back_to_team_reports": "Volver a los informes del equipo",
+    "period_label": "Periodo",
+    "no_season_for_team": "El equipo no tiene una temporada válida configurada.",
+    "roster_empty": "El equipo no tiene jugadores activos.",
+    "col_subject": "Concepto",
+    "col_status": "Estado",
+    "col_deadline": "Fecha límite",
+    "col_action": "Acción",
+    "open_editor": "Abrir",
+    "go_to_team_panel": "Ver panel del equipo",
+    "report_status": {
+      "not_started": "Sin iniciar",
+      "in_progress": "En proceso",
+      "completed": "Completado"
     }
   },
   "jugadores": {
@@ -1000,7 +1016,8 @@
     "back": "Volver a la categoría",
     "roster_title": "Jugadores activos",
     "roster_empty": "Aún no hay jugadores asignados a este equipo.",
-    "announcements_link": "Anuncios"
+    "announcements_link": "Anuncios",
+    "development_reports_link": "Informes"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -1133,7 +1150,8 @@
       "convocar_next": "Convocar al partido del {when}",
       "view_active_callups": "{count, plural, =0 {Convocatorias del equipo} one {1 convocatoria activa} other {# convocatorias activas}}",
       "mark_last_attendance": "Marcar asistencia del último entreno",
-      "open_calendar": "Ver calendario del equipo"
+      "open_calendar": "Ver calendario del equipo",
+      "development_reports": "Informes de desarrollo"
     },
     "upcoming": {
       "title": "Próximos eventos",

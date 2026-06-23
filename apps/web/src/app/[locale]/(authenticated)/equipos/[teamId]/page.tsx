@@ -26,6 +26,14 @@ const ROLES_THAT_CAN_MANAGE_STAFF: ReadonlyArray<string> = [
   'coordinador',
 ];
 
+// Gate D13 (acceso a informes de desarrollo): staff del club, incl. ayudante.
+const STAFF_ROLES: ReadonlyArray<string> = [
+  'admin_club',
+  'coordinador',
+  'entrenador_principal',
+  'entrenador_ayudante',
+];
+
 function ageFromDob(dob: string): number {
   const d = new Date(dob);
   const now = new Date();
@@ -166,11 +174,20 @@ export default async function TeamDetailPage({ params }: Props) {
             {category.name} · {season} · {team.format}
           </p>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/equipos/${teamId}/anuncios`}>
-            <span>{t('announcements_link')}</span>
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {STAFF_ROLES.includes(ctx.activeClub.role) && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/equipos/${teamId}/informes`}>
+                <span>{t('development_reports_link')}</span>
+              </Link>
+            </Button>
+          )}
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/equipos/${teamId}/anuncios`}>
+              <span>{t('announcements_link')}</span>
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card>
