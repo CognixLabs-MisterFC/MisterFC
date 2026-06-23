@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/card';
 import { NextMatchPanel } from './next-match-panel';
 import { TrainingAlertPanel } from './training-alert-panel';
+import { NotificationsPanel } from './notifications-panel';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -191,6 +192,10 @@ export default async function Home({ params }: Props) {
         membershipId={ctx.activeClub.membershipId}
         locale={locale}
       />
+
+      {/* F13.9a — Bandeja de novedades (feed in_app). Para todos los roles; la
+          RLS filtra por usuario. Se oculta si no hay nada. No marca leído. */}
+      <NotificationsPanel locale={locale} />
 
       {/* Grid de cards rol-aware */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

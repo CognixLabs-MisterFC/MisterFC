@@ -108,6 +108,22 @@
     "error_generic": "No hem pogut crear el club. Torna-ho a provar."
   },
   "home": {
+    "feed": {
+      "title": "Novetats",
+      "new_announcement": "Nou anunci",
+      "callup_published": "Nova convocatòria",
+      "callup_updated": "Convocatòria actualitzada",
+      "new_message": "Nou missatge",
+      "play_published": "Nova jugada al playbook",
+      "exercise_rejected": "Exercici rebutjat",
+      "exercise_rejected_named": "Exercici rebutjat: {name}",
+      "match_callup_reminder": "Tens una convocatòria pendent de confirmar",
+      "match_callup_reminder_named": "Convocatòria pendent: {title}",
+      "attendance_pending_reminder": "Assistència pendent de registrar",
+      "attendance_pending_reminder_named": "Assistència pendent: {title}",
+      "training_reminder": "Recordatori d'entrenament",
+      "generic": "Tens una novetat"
+    },
     "dashboard_card": {
       "title": "Tauler executiu",
       "body": "Visió global del club: plantilla, resultats, assistència, alertes i rànquings.",
