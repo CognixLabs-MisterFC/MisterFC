@@ -2994,7 +2994,8 @@
       "speed_x": "{x}×",
       "scrub": "Posició de la reproducció",
       "playing": "Reproduint…",
-      "need_frames": "Afig almenys 2 frames per a animar la jugada"
+      "need_frames": "Afig almenys 2 frames per a animar la jugada",
+      "frame_indicator": "Frame {current} / {total}"
     },
     "delete": {
       "action": "Esborrar",

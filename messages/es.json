@@ -2993,7 +2993,8 @@
       "speed_x": "{x}×",
       "scrub": "Posición de la reproducción",
       "playing": "Reproduciendo…",
-      "need_frames": "Añade al menos 2 frames para animar la jugada"
+      "need_frames": "Añade al menos 2 frames para animar la jugada",
+      "frame_indicator": "Frame {current} / {total}"
     },
     "delete": {
       "action": "Borrar",
