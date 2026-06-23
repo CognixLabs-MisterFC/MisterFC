@@ -1150,7 +1150,8 @@
       "convocar_next": "Convocar al partido del {when}",
       "view_active_callups": "{count, plural, =0 {Convocatorias del equipo} one {1 convocatoria activa} other {# convocatorias activas}}",
       "mark_last_attendance": "Marcar asistencia del último entreno",
-      "open_calendar": "Ver calendario del equipo"
+      "open_calendar": "Ver calendario del equipo",
+      "development_reports": "Informes de desarrollo"
     },
     "upcoming": {
       "title": "Próximos eventos",

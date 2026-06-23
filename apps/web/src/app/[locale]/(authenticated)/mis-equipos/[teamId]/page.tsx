@@ -156,6 +156,12 @@ export default async function TeamDetailPage({ params, searchParams }: Props) {
               </span>
             </Link>
           </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/equipos/${detail.team.id}/informes`}>
+              <ClipboardList className="size-4" aria-hidden />
+              <span>{t('actions.development_reports')}</span>
+            </Link>
+          </Button>
           {detail.last_training_without_attendance && (
             <Button asChild variant="outline" size="sm">
               <Link

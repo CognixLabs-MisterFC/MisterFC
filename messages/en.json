@@ -1151,7 +1151,8 @@
       "convocar_next": "Call up players for {when}",
       "view_active_callups": "{count, plural, =0 {Team callups} one {1 active callup} other {# active callups}}",
       "mark_last_attendance": "Mark last training attendance",
-      "open_calendar": "Open team calendar"
+      "open_calendar": "Open team calendar",
+      "development_reports": "Development reports"
     },
     "upcoming": {
       "title": "Upcoming events",
