@@ -137,8 +137,14 @@ export default async function InformesListPage({ params, searchParams }: Props) 
                     </p>
                     {canEdit ? (
                       <Button asChild variant={r ? 'outline' : 'default'} size="sm">
-                        <Link href={`/jugadores/${playerId}/informes/${period}?season=${encodeURIComponent(selectedLabel)}`}>
-                          {r ? t('edit') : t('create')}
+                        <Link
+                          href={
+                            r
+                              ? `/jugadores/${playerId}/informes/${period}?season=${encodeURIComponent(selectedLabel)}`
+                              : `/jugadores/${playerId}/informes/${period}/editar?season=${encodeURIComponent(selectedLabel)}`
+                          }
+                        >
+                          {r ? t('view') : t('create')}
                         </Link>
                       </Button>
                     ) : null}

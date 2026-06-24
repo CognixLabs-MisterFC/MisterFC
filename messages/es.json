@@ -706,6 +706,29 @@
       "not_started": "Sin iniciar",
       "in_progress": "En proceso",
       "completed": "Completado"
+    },
+    "back_to_report": "Volver al informe",
+    "edit_report": "Editar informe",
+    "view": "Ver",
+    "status_label": "Estado",
+    "evolution_title": "Evolución",
+    "evolution_empty": "Aún no hay datos para la evolución.",
+    "age": "{age} años",
+    "period_short": {
+      "inicial": "Inicial",
+      "diciembre": "Dic",
+      "marzo": "Mar",
+      "junio": "Jun"
+    },
+    "ficha": {
+      "stat": {
+        "matches": "Partidos",
+        "minutes": "Minutos",
+        "goals": "Goles",
+        "assists": "Asistencias",
+        "cards": "Tarjetas",
+        "attendance": "Asistencia"
+      }
     }
   },
   "jugadores": {
