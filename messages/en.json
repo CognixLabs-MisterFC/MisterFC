@@ -738,7 +738,8 @@
     "notify": {
       "title": "Development report shared",
       "body": "The {period} report is now available."
-    }
+    },
+    "download_pdf": "Download PDF"
   },
   "jugadores": {
     "title": "Jugadores",
@@ -1567,6 +1568,12 @@
         "cuarto_campo": "Quarter pitch",
         "reducido": "Small-sided"
       }
+    },
+    "development": {
+      "title": "Development report",
+      "file": "development-report",
+      "group_label": "Group",
+      "stats_title": "Season stats"
     }
   },
   "badges": {

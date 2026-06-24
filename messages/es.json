@@ -737,7 +737,8 @@
     "notify": {
       "title": "Informe de desarrollo compartido",
       "body": "Ya puedes ver el informe del periodo {period}."
-    }
+    },
+    "download_pdf": "Descargar PDF"
   },
   "jugadores": {
     "title": "Jugadores",
@@ -1566,6 +1567,12 @@
         "cuarto_campo": "Cuarto de campo",
         "reducido": "Reducido"
       }
+    },
+    "development": {
+      "title": "Informe de desarrollo",
+      "file": "informe-desarrollo",
+      "group_label": "Grupo",
+      "stats_title": "Estadísticas de la temporada"
     }
   },
   "badges": {

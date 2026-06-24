@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Download } from 'lucide-react';
 import {
   createSupabaseServerClient,
   DEVELOPMENT_PERIODS,
@@ -9,6 +9,7 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   ReportFichaView,
@@ -68,6 +69,7 @@ export default async function MiInformePage({ params, searchParams }: Props) {
   if (ctx.activeClub.role !== 'jugador') redirect(`/${locale}`);
 
   const t = await getTranslations('mi_informe');
+  const tInf = await getTranslations('informes');
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
@@ -252,6 +254,16 @@ export default async function MiInformePage({ params, searchParams }: Props) {
         )}
         {devReportPeriods.length > 1 && devFicha && (
           <ReportPeriodSelect periods={devReportPeriods} current={devFicha.period} />
+        )}
+        {devFicha && (
+          <Button asChild variant="outline" size="sm" className="ml-auto gap-2">
+            <a
+              href={`/${locale}/jugadores/${playerId}/informes/${devFicha.period}/pdf?season=${encodeURIComponent(devFicha.seasonLabel)}`}
+            >
+              <Download className="size-4" aria-hidden />
+              <span>{tInf('download_pdf')}</span>
+            </a>
+          </Button>
         )}
       </div>
 
