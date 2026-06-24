@@ -448,6 +448,85 @@ begin
   if n <> 0 then raise exception 'FAIL [TR6]: admin ajeno ve valoraciones de equipo de club A'; end if;
 end $$;
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- F13.10d — Compartir: SELECT scope-JUGADOR (no team-wide) + bloque de equipo
+-- visible para la familia vía informe individual publicado (helper).
+-- ─────────────────────────────────────────────────────────────────────────────
+reset role;  -- fixtures nuevos como owner (sin RLS)
+
+-- jugador B en Team A, con cuenta familiar jugB (misma familia-tier que jugA, otro jugador)
+insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
+  ('d1a00000-0000-4000-8000-0000000000eb', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugB@dr.test', now(), '{}'::jsonb, now(), now());
+insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
+  ('d1500000-0000-4000-8000-0000000000eb', 'd1c00000-0000-4000-8000-000000000001', 'Bruno', 'B', '2012-01-01');
+insert into public.team_members (team_id, player_id, joined_at) values
+  ('d1700000-0000-4000-8000-000000000001', 'd1500000-0000-4000-8000-0000000000eb', '2025-09-01');
+insert into public.memberships (id, profile_id, club_id, role) values
+  ('d1550000-0000-4000-8000-0000000000eb', 'd1a00000-0000-4000-8000-0000000000eb', 'd1c00000-0000-4000-8000-000000000001', 'jugador');
+insert into public.player_accounts (player_id, profile_id, relation) values
+  ('d1500000-0000-4000-8000-0000000000eb', 'd1a00000-0000-4000-8000-0000000000eb', 'self');
+
+-- informe publicado (team) de B en Team A (trigger off para fijar visibility)
+alter table public.development_reports disable trigger trg_development_reports_validate;
+insert into public.development_reports (id, club_id, team_id, player_id, season_id, period, visibility, created_by) values
+  ('d1e00000-0000-4000-8000-0000000000eb', 'd1c00000-0000-4000-8000-000000000001', 'd1700000-0000-4000-8000-000000000001', 'd1500000-0000-4000-8000-0000000000eb', 'd15ea000-0000-4000-8000-000000000001', 'junio', 'team', 'd1a00000-0000-4000-8000-00000000000d');
+alter table public.development_reports enable trigger trg_development_reports_validate;
+set local role authenticated;
+
+-- SH1: jugA (familia de A) NO ve el informe publicado de B (estrechamiento scope-jugador).
+do $$
+declare n int;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000f","role":"authenticated"}';
+  select count(*) into n from public.development_reports where id = 'd1e00000-0000-4000-8000-0000000000eb';
+  if n <> 0 then raise exception 'FAIL [SH1]: familia de A ve informe publicado de OTRO jugador del equipo (sobre-exposición)'; end if;
+end $$;
+
+-- SH2: jugB (familia de B) SÍ ve su informe publicado.
+do $$
+declare n int;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-0000000000eb","role":"authenticated"}';
+  select count(*) into n from public.development_reports where id = 'd1e00000-0000-4000-8000-0000000000eb';
+  if n <> 1 then raise exception 'FAIL [SH2]: familia de B no ve su informe publicado'; end if;
+end $$;
+
+-- SH3-setup: publicamos un informe individual de A en 'marzo' (se enlaza a la
+-- valoración de equipo de marzo d1f1, que es 'staff').
+do $$
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000d","role":"authenticated"}';
+  insert into public.development_reports (id, club_id, team_id, player_id, season_id, period, visibility, created_by)
+  values ('d1e00000-0000-4000-8000-0000000000ec', 'd1c00000-0000-4000-8000-000000000001', 'd1700000-0000-4000-8000-000000000001',
+          'd1500000-0000-4000-8000-00000000000f', 'd15ea000-0000-4000-8000-000000000001', 'marzo', 'team',
+          'd1a00000-0000-4000-8000-00000000000d');
+exception when others then raise exception 'FAIL [SH3-setup]: no se pudo crear informe marzo: %', sqlerrm;
+end $$;
+
+-- SH3: la familia de A ve la valoración de equipo (staff) de marzo SOLO por tener
+-- su informe individual publicado y enlazado (helper user_can_see_team_report_via_published).
+do $$
+declare n int; v_link uuid;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000d","role":"authenticated"}';
+  select team_report_id into v_link from public.development_reports where id = 'd1e00000-0000-4000-8000-0000000000ec';
+  if v_link is distinct from 'd1f00000-0000-4000-8000-000000000001' then
+    raise exception 'FAIL [SH3-link]: el informe de marzo no se enlazó a la valoración de equipo (quedó %)', v_link;
+  end if;
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000f","role":"authenticated"}';
+  select count(*) into n from public.team_development_reports where id = 'd1f00000-0000-4000-8000-000000000001';
+  if n <> 1 then raise exception 'FAIL [SH3]: la familia no ve la valoración de equipo enlazada a su informe publicado'; end if;
+end $$;
+
+-- SH4: jugB, sin informe publicado en marzo, NO ve la valoración de equipo de marzo.
+do $$
+declare n int;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-0000000000eb","role":"authenticated"}';
+  select count(*) into n from public.team_development_reports where id = 'd1f00000-0000-4000-8000-000000000001';
+  if n <> 0 then raise exception 'FAIL [SH4]: familia sin informe publicado ve la valoración de equipo (helper demasiado abierto)'; end if;
+end $$;
+
 reset role;
 
 rollback;

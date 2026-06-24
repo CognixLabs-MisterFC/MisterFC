@@ -730,6 +730,13 @@
         "cards": "Targetes",
         "attendance": "Assistència"
       }
+    },
+    "publish": "Compartir amb la família",
+    "unpublish": "Deixar de compartir",
+    "publish_hint": "Per compartir aquest informe amb la família, usa el botó Publicar de la fitxa.",
+    "notify": {
+      "title": "Informe de desenvolupament compartit",
+      "body": "Ja pots veure l'informe del període {period}."
     }
   },
   "jugadores": {

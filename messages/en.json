@@ -730,6 +730,13 @@
         "cards": "Cards",
         "attendance": "Attendance"
       }
+    },
+    "publish": "Share with family",
+    "unpublish": "Stop sharing",
+    "publish_hint": "To share this report with the family, use the Publish button on the report view.",
+    "notify": {
+      "title": "Development report shared",
+      "body": "The {period} report is now available."
     }
   },
   "jugadores": {

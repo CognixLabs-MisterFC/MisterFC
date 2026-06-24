@@ -42,6 +42,7 @@ import {
 import { ScoreGrid } from '../_components/score-grid';
 import { PositionField } from '../_components/position-field';
 import { GroupRadarChart, EvolutionChart } from '../_components/report-charts';
+import { PublishToggle } from '../_components/publish-toggle';
 
 type Props = {
   params: Promise<{ locale: string; playerId: string; period: string }>;
@@ -207,12 +208,23 @@ export default async function InformeFichaPage({ params, searchParams }: Props) 
             <span>{t('back_to_reports')}</span>
           </Link>
         </Button>
-        <Button asChild size="sm">
-          <Link href={editHref}>
-            <Pencil className="size-4" aria-hidden />
-            <span>{t('edit_report')}</span>
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {report ? (
+            <PublishToggle
+              reportId={report.id}
+              playerId={playerId}
+              period={period}
+              locale={locale}
+              initialVisibility={report.visibility}
+            />
+          ) : null}
+          <Button asChild size="sm">
+            <Link href={editHref}>
+              <Pencil className="size-4" aria-hidden />
+              <span>{t('edit_report')}</span>
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {!team || !seasonId ? (
