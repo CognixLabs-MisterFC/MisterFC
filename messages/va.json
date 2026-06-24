@@ -318,6 +318,7 @@
       "formaciones": "Formacions",
       "ajustes": "Ajustos del club",
       "mi_ficha": "La meua fitxa",
+      "mi_informe": "Informe de desenvolupament",
       "equipos": "Equipos",
       "ejercicios": "Exercicis",
       "entrenamientos": "Entrenaments",
@@ -2830,7 +2831,8 @@
     "player_selector": "Jugador",
     "section": {
       "stats": "Estadístiques de la temporada",
-      "evaluations": "Valoracions"
+      "evaluations": "Valoracions",
+      "development_reports": "Informes de desenvolupament"
     },
     "evaluations": {
       "title": "Valoracions per partit",
@@ -2840,7 +2842,14 @@
       "mvp": "MVP",
       "individual": "Individual",
       "collective": "Equip"
-    }
+    },
+    "report_period_label": "Període",
+    "season_label": "Temporada"
+  },
+  "mi_informe": {
+    "title": "Informe de desenvolupament",
+    "no_player": "El teu compte encara no està vinculat a cap jugador.",
+    "no_reports": "Encara no hi ha informes de desenvolupament publicats."
   },
   "plantillas": {
     "title": "Categorías",

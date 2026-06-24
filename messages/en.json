@@ -318,6 +318,7 @@
       "formaciones": "Formations",
       "ajustes": "Club settings",
       "mi_ficha": "My profile",
+      "mi_informe": "Development report",
       "equipos": "Equipos",
       "ejercicios": "Exercises",
       "entrenamientos": "Training",
@@ -2830,7 +2831,8 @@
     "player_selector": "Player",
     "section": {
       "stats": "Season stats",
-      "evaluations": "Ratings"
+      "evaluations": "Ratings",
+      "development_reports": "Development reports"
     },
     "evaluations": {
       "title": "Ratings per match",
@@ -2840,7 +2842,14 @@
       "mvp": "MVP",
       "individual": "Individual",
       "collective": "Team"
-    }
+    },
+    "report_period_label": "Period",
+    "season_label": "Season"
+  },
+  "mi_informe": {
+    "title": "Development report",
+    "no_player": "Your account isn’t linked to any player yet.",
+    "no_reports": "No development reports published yet."
   },
   "plantillas": {
     "title": "Categorías",

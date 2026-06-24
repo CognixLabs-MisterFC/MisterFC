@@ -7,6 +7,8 @@ import {
   derivedRatios,
   attendanceBreakdown,
   ratingTimeline,
+  PLAYER_POSITIONS,
+  type PlayerPosition,
   type MatchStatRow,
   type AttendanceRow,
   type RatingTimelinePoint,
@@ -19,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlayerSeasonStats } from '../jugadores/[playerId]/player-season-stats';
 import { PlayerBadges } from '../jugadores/[playerId]/player-badges';
+import { FichaHeader } from '../jugadores/[playerId]/informes/_components/ficha-header';
 import { PlayerSelector } from './player-selector';
 import {
   PlayerEvaluationsDetail,
@@ -30,6 +33,19 @@ type Props = {
   searchParams: Promise<{ player?: string; season?: string }>;
 };
 
+const PHOTO_TTL = 3600;
+
+function ageFromDob(dob: string | null): number | null {
+  if (!dob) return null;
+  const d = new Date(dob);
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  let age = now.getUTCFullYear() - d.getUTCFullYear();
+  const m = now.getUTCMonth() - d.getUTCMonth();
+  if (m < 0 || (m === 0 && now.getUTCDate() < d.getUTCDate())) age--;
+  return age;
+}
+
 /**
  * F9.5 — Vista jugador/familia del expediente deportivo (`/mi-ficha`).
  *
@@ -38,6 +54,10 @@ type Props = {
  * 9.1/9.2/9.3 (`PlayerSeasonStats`: totales + ratios + asistencia + gráfico de
  * evolución) y añade el bloque de valoraciones (rating + comentario VISIBLE + MVP
  * + colectiva).
+ *
+ * F13.10d — la cabecera de identidad reusa la del informe (`FichaHeader`): foto +
+ * dorsal + edad/pie/posición + mini-campo. Los INFORMES DE DESARROLLO viven en su
+ * propia ruta (`/mi-informe`), enlazada desde el menú lateral (solo jugador).
  *
  * Matriz de visibilidad (spec 9.0 §3):
  *  - SIEMPRE (objetivo propio, 🔒 D9-1/D9-2, sin flag): stats, ratios, asistencia.
@@ -106,6 +126,27 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
   const activePlayer =
     myPlayers.find((p) => p.id === playerParam) ?? myPlayers[0]!;
   const playerId = activePlayer.id;
+
+  // 2b) Datos de identidad del jugador para la cabecera (reusa la del informe).
+  const { data: playerRow } = await supabase
+    .from('players')
+    .select(
+      'first_name, last_name, date_of_birth, dorsal, position_main, positions_secondary, foot, photo_url'
+    )
+    .eq('id', playerId)
+    .maybeSingle();
+  let headerPhotoUrl: string | null = null;
+  if (playerRow?.photo_url) {
+    const { data: signed } = await supabase.storage
+      .from('player-photos')
+      .createSignedUrl(playerRow.photo_url, PHOTO_TTL);
+    headerPhotoUrl = signed?.signedUrl ?? null;
+  }
+  const headerPrimaryPos = (PLAYER_POSITIONS as readonly string[]).includes(
+    playerRow?.position_main ?? ''
+  )
+    ? (playerRow!.position_main as PlayerPosition)
+    : null;
 
   // 3) Temporadas de la trayectoria del jugador → selector + default.
   //    Rework A (A2): la temporada vive en el equipo (teams.season).
@@ -286,11 +327,30 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
         />
       )}
 
+      {/* Cabecera de identidad (reusa la del informe de desarrollo). */}
+      <Card>
+        <CardContent className="pt-6">
+          <FichaHeader
+            data={{
+              fullName: activePlayer.name,
+              initials:
+                (playerRow?.first_name?.[0] ?? '') +
+                (playerRow?.last_name?.[0] ?? ''),
+              photoUrl: headerPhotoUrl,
+              dorsal: playerRow?.dorsal ?? null,
+              age: ageFromDob(playerRow?.date_of_birth ?? null),
+              primaryPos: headerPrimaryPos,
+              secondaryPos: (playerRow?.positions_secondary ?? []) as string[],
+              foot: playerRow?.foot ?? null,
+              subtitle: activeSeason,
+            }}
+          />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
-          <CardTitle>
-            {myPlayers.length > 1 ? activePlayer.name : t('section.stats')}
-          </CardTitle>
+          <CardTitle>{t('section.stats')}</CardTitle>
         </CardHeader>
         <CardContent>
           <PlayerSeasonStats
