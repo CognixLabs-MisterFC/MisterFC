@@ -94,6 +94,8 @@ export const NAV: readonly NavEntry[] = [
       { key: 'cuerpo_tecnico', href: '/cuerpo-tecnico', icon: UsersRound, roles: ['admin_club', 'coordinador', 'entrenador_principal'] },
       // Estructura: listado de equipos por temporada + categorías-plantilla.
       { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: DIRECCION },
+      // F13.10g — centro de mando de campañas de informes (admin/coord).
+      { key: 'informes_dev', href: '/plantilla/informes', icon: ClipboardList, roles: DIRECCION },
     ],
   },
 

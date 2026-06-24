@@ -135,7 +135,9 @@
       "training_reminder": "Recordatorio de entrenamiento",
       "event_updated": "Entrenamiento actualizado",
       "event_updated_named": "Entrenamiento actualizado: {title}",
-      "generic": "Tienes una novedad"
+      "generic": "Tienes una novedad",
+      "development_report_published": "Se ha publicado un informe de desarrollo",
+      "evaluation_campaign_launched": "Campaña de evaluación abierta"
     },
     "welcome": "Bienvenido a {club}",
     "your_role": "Tu rol aquí es {role}.",
@@ -206,6 +208,13 @@
         "desc": "Tienes una convocatoria pendiente de confirmar.",
         "cta": "Confirmar disponibilidad"
       }
+    },
+    "campaign_alert": {
+      "title": "Campañas de evaluación abiertas ({count})",
+      "item": "{period}: {count} informes pendientes",
+      "due": "Fecha límite: {date} · quedan {days} días",
+      "overdue": "Fecha límite vencida: {date}",
+      "cta": "Ir a redactar"
     }
   },
   "shell": {
@@ -745,7 +754,37 @@
       "title": "Informe de desarrollo compartido",
       "body": "Ya puedes ver el informe del periodo {period}."
     },
-    "download_pdf": "Descargar PDF"
+    "download_pdf": "Descargar PDF",
+    "campaign": {
+      "title": "Informes de jugadores",
+      "subtitle": "Centro de mando de las campañas de evaluación del club.",
+      "no_active_season": "No hay una temporada activa en el club.",
+      "completed_of": "{done}/{total} informes completados",
+      "col_team": "Equipo",
+      "col_coaches": "Entrenador/es",
+      "col_progress": "Progreso",
+      "no_teams": "No hay equipos en la temporada activa.",
+      "status": {
+        "none": "Sin configurar",
+        "draft": "Borrador",
+        "launched": "Lanzada",
+        "published": "Publicada"
+      },
+      "due_date_label": "Fecha límite",
+      "launch": "Lanzar campaña",
+      "launch_hint": "Fija una fecha límite para poder lanzar la campaña.",
+      "read_only": "Solo el administrador del club puede configurar y lanzar.",
+      "error": {
+        "invalid": "Datos no válidos.",
+        "forbidden": "Solo el administrador puede hacerlo.",
+        "no_campaign": "Configura primero una fecha límite.",
+        "generic": "Algo salió mal. Inténtalo de nuevo."
+      }
+    },
+    "campaign_alert": {
+      "notify_title": "Campaña {period} abierta",
+      "notify_body": "A redactar los informes. Fecha límite: {date}."
+    }
   },
   "jugadores": {
     "title": "Jugadores",
@@ -3259,6 +3298,10 @@
       "equipos": {
         "title": "Equipos",
         "description": "Equipos por temporada y categorías del club."
+      },
+      "informes_dev": {
+        "title": "Informes",
+        "description": "Campañas de evaluación: progreso, fechas y publicación."
       }
     }
   },

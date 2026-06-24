@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/card';
 import { NextMatchPanel } from './next-match-panel';
 import { TrainingAlertPanel } from './training-alert-panel';
+import { CampaignAlertPanel } from './campaign-alert-panel';
 import { NotificationsPanel } from './notifications-panel';
 
 type Props = {
@@ -187,6 +188,15 @@ export default async function Home({ params }: Props) {
       {/* F12.8b — Alerta de entrenamientos <48h sin sesión planificada (cuerpo
           técnico = sus equipos; admin/coord = club). El panel se oculta si no hay. */}
       <TrainingAlertPanel
+        role={role}
+        clubId={clubId}
+        membershipId={ctx.activeClub.membershipId}
+        locale={locale}
+      />
+
+      {/* F13.10g — Alerta de campaña de evaluación abierta con informes pendientes
+          (cuerpo técnico = sus equipos; admin/coord = club). Se oculta si no hay. */}
+      <CampaignAlertPanel
         role={role}
         clubId={clubId}
         membershipId={ctx.activeClub.membershipId}
