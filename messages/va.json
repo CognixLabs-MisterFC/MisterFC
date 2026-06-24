@@ -707,6 +707,29 @@
       "not_started": "Sense iniciar",
       "in_progress": "En procés",
       "completed": "Completat"
+    },
+    "back_to_report": "Tornar a l'informe",
+    "edit_report": "Editar informe",
+    "view": "Veure",
+    "status_label": "Estat",
+    "evolution_title": "Evolució",
+    "evolution_empty": "Encara no hi ha dades d'evolució.",
+    "age": "{age} anys",
+    "period_short": {
+      "inicial": "Inicial",
+      "diciembre": "Des",
+      "marzo": "Març",
+      "junio": "Juny"
+    },
+    "ficha": {
+      "stat": {
+        "matches": "Partits",
+        "minutes": "Minuts",
+        "goals": "Gols",
+        "assists": "Assistències",
+        "cards": "Targetes",
+        "attendance": "Assistència"
+      }
     }
   },
   "jugadores": {
