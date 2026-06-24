@@ -236,6 +236,7 @@
       "formaciones": "Formaciones",
       "ajustes": "Ajustes del club",
       "mi_ficha": "Mi ficha",
+      "mi_informe": "Informe de desarrollo",
       "equipos": "Equipos",
       "ejercicios": "Ejercicios",
       "entrenamientos": "Entrenamientos",
@@ -2841,7 +2842,13 @@
       "individual": "Individual",
       "collective": "Equipo"
     },
-    "report_period_label": "Periodo"
+    "report_period_label": "Periodo",
+    "season_label": "Temporada"
+  },
+  "mi_informe": {
+    "title": "Informe de desarrollo",
+    "no_player": "Tu cuenta no está vinculada a ningún jugador todavía.",
+    "no_reports": "Todavía no hay informes de desarrollo publicados."
   },
   "plantillas": {
     "title": "Categorías",

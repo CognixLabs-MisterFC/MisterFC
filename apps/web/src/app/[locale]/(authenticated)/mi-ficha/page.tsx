@@ -7,7 +7,6 @@ import {
   derivedRatios,
   attendanceBreakdown,
   ratingTimeline,
-  DEVELOPMENT_PERIODS,
   PLAYER_POSITIONS,
   type PlayerPosition,
   type MatchStatRow,
@@ -22,20 +21,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlayerSeasonStats } from '../jugadores/[playerId]/player-season-stats';
 import { PlayerBadges } from '../jugadores/[playerId]/player-badges';
-import {
-  ReportFichaView,
-  type ReportFichaData,
-} from '../jugadores/[playerId]/informes/_components/report-ficha-view';
-import {
-  resolvePlayerTeamForSeason,
-  loadIndividualReport,
-  loadPlayerObjectives,
-  loadTeamObjectives,
-  loadFichaStats,
-  loadPlayerEvolution,
-} from '../jugadores/[playerId]/informes/queries';
+import { FichaHeader } from '../jugadores/[playerId]/informes/_components/ficha-header';
 import { PlayerSelector } from './player-selector';
-import { ReportPeriodSelect } from './report-period-select';
 import {
   PlayerEvaluationsDetail,
   type MatchEvaluation,
@@ -43,10 +30,10 @@ import {
 
 type Props = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ player?: string; season?: string; informe?: string }>;
+  searchParams: Promise<{ player?: string; season?: string }>;
 };
 
-const REPORT_PHOTO_TTL = 3600;
+const PHOTO_TTL = 3600;
 
 function ageFromDob(dob: string | null): number | null {
   if (!dob) return null;
@@ -68,6 +55,10 @@ function ageFromDob(dob: string | null): number | null {
  * evolución) y añade el bloque de valoraciones (rating + comentario VISIBLE + MVP
  * + colectiva).
  *
+ * F13.10d — la cabecera de identidad reusa la del informe (`FichaHeader`): foto +
+ * dorsal + edad/pie/posición + mini-campo. Los INFORMES DE DESARROLLO viven en su
+ * propia ruta (`/mi-informe`), enlazada desde el menú lateral (solo jugador).
+ *
  * Matriz de visibilidad (spec 9.0 §3):
  *  - SIEMPRE (objetivo propio, 🔒 D9-1/D9-2, sin flag): stats, ratios, asistencia.
  *    Las stats las habilita la policy nueva `match_player_stats_select_player`.
@@ -79,7 +70,7 @@ function ageFromDob(dob: string | null): number | null {
  */
 export default async function MiFichaPage({ params, searchParams }: Props) {
   const { locale } = await params;
-  const { player: playerParam, season: seasonParam, informe: informeParam } = await searchParams;
+  const { player: playerParam, season: seasonParam } = await searchParams;
   setRequestLocale(locale);
 
   const ctx = await loadShellContext();
@@ -135,6 +126,27 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
   const activePlayer =
     myPlayers.find((p) => p.id === playerParam) ?? myPlayers[0]!;
   const playerId = activePlayer.id;
+
+  // 2b) Datos de identidad del jugador para la cabecera (reusa la del informe).
+  const { data: playerRow } = await supabase
+    .from('players')
+    .select(
+      'first_name, last_name, date_of_birth, dorsal, position_main, positions_secondary, foot, photo_url'
+    )
+    .eq('id', playerId)
+    .maybeSingle();
+  let headerPhotoUrl: string | null = null;
+  if (playerRow?.photo_url) {
+    const { data: signed } = await supabase.storage
+      .from('player-photos')
+      .createSignedUrl(playerRow.photo_url, PHOTO_TTL);
+    headerPhotoUrl = signed?.signedUrl ?? null;
+  }
+  const headerPrimaryPos = (PLAYER_POSITIONS as readonly string[]).includes(
+    playerRow?.position_main ?? ''
+  )
+    ? (playerRow!.position_main as PlayerPosition)
+    : null;
 
   // 3) Temporadas de la trayectoria del jugador → selector + default.
   //    Rework A (A2): la temporada vive en el equipo (teams.season).
@@ -285,94 +297,6 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
   });
   const tBadges = await getTranslations('badges');
 
-  // 9) F13.10d — Informes de desarrollo PUBLICADOS (visibility='team'; la RLS de
-  //    PR1 ya recorta a SOLO los del propio jugador). Selector de periodo →
-  //    ficha rediseñada en read-only (mismo componente que la vista staff).
-  let devReportPeriods: string[] = [];
-  let devFicha: ReportFichaData | null = null;
-  if (activeSeason) {
-    const { data: seasonRow } = await supabase
-      .from('seasons')
-      .select('id')
-      .eq('club_id', ctx.activeClub.club.id)
-      .eq('label', activeSeason)
-      .maybeSingle();
-    const seasonId = (seasonRow?.id as string | undefined) ?? null;
-    if (seasonId) {
-      const { data: pubRows } = await supabase
-        .from('development_reports')
-        .select('period')
-        .eq('player_id', playerId)
-        .eq('season_id', seasonId);
-      const pubSet = new Set((pubRows ?? []).map((r) => r.period as string));
-      devReportPeriods = DEVELOPMENT_PERIODS.filter((p) => pubSet.has(p));
-      const selPeriod =
-        informeParam && devReportPeriods.includes(informeParam)
-          ? informeParam
-          : devReportPeriods[0];
-      if (selPeriod) {
-        const { data: pl } = await supabase
-          .from('players')
-          .select('first_name, last_name, date_of_birth, dorsal, position_main, positions_secondary, foot, photo_url')
-          .eq('id', playerId)
-          .maybeSingle();
-        const team = await resolvePlayerTeamForSeason(supabase, playerId, activeSeason);
-        const [report, playerObjectives, teamObjectives, stats, evolution] = await Promise.all([
-          loadIndividualReport(supabase, playerId, seasonId, selPeriod),
-          loadPlayerObjectives(supabase, playerId, seasonId),
-          team ? loadTeamObjectives(supabase, team.teamId, seasonId) : Promise.resolve([]),
-          loadFichaStats(supabase, playerId, activeSeason),
-          loadPlayerEvolution(supabase, playerId, seasonId),
-        ]);
-        // Bloque de equipo: por el id enlazado (la RLS helper de PR1 lo permite).
-        let teamReport: { scores: Record<string, number>; comment: string | null } | null = null;
-        if (report?.team_report_id) {
-          const { data: tr } = await supabase
-            .from('team_development_reports')
-            .select('scores, comment')
-            .eq('id', report.team_report_id)
-            .maybeSingle();
-          if (tr) {
-            teamReport = {
-              scores: (tr.scores as Record<string, number>) ?? {},
-              comment: (tr.comment as string | null) ?? null,
-            };
-          }
-        }
-        let photoUrl: string | null = null;
-        if (pl?.photo_url) {
-          const { data: signed } = await supabase.storage
-            .from('player-photos')
-            .createSignedUrl(pl.photo_url, REPORT_PHOTO_TTL);
-          photoUrl = signed?.signedUrl ?? null;
-        }
-        const primaryPos = (PLAYER_POSITIONS as readonly string[]).includes(pl?.position_main ?? '')
-          ? (pl!.position_main as PlayerPosition)
-          : null;
-        devFicha = {
-          fullName: activePlayer.name,
-          initials: (pl?.first_name?.[0] ?? '') + (pl?.last_name?.[0] ?? ''),
-          photoUrl,
-          dorsal: pl?.dorsal ?? null,
-          age: ageFromDob(pl?.date_of_birth ?? null),
-          primaryPos,
-          secondaryPos: (pl?.positions_secondary ?? []) as string[],
-          foot: pl?.foot ?? null,
-          teamName: team?.teamName ?? '',
-          seasonLabel: activeSeason,
-          period: selPeriod,
-          stats,
-          scores: report?.scores ?? {},
-          commentOverall: report?.comment_overall ?? null,
-          teamReport,
-          playerObjectives,
-          teamObjectives,
-          evolution,
-        };
-      }
-    }
-  }
-
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex items-start justify-between gap-3">
@@ -403,11 +327,30 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
         />
       )}
 
+      {/* Cabecera de identidad (reusa la del informe de desarrollo). */}
+      <Card>
+        <CardContent className="pt-6">
+          <FichaHeader
+            data={{
+              fullName: activePlayer.name,
+              initials:
+                (playerRow?.first_name?.[0] ?? '') +
+                (playerRow?.last_name?.[0] ?? ''),
+              photoUrl: headerPhotoUrl,
+              dorsal: playerRow?.dorsal ?? null,
+              age: ageFromDob(playerRow?.date_of_birth ?? null),
+              primaryPos: headerPrimaryPos,
+              secondaryPos: (playerRow?.positions_secondary ?? []) as string[],
+              foot: playerRow?.foot ?? null,
+              subtitle: activeSeason,
+            }}
+          />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
-          <CardTitle>
-            {myPlayers.length > 1 ? activePlayer.name : t('section.stats')}
-          </CardTitle>
+          <CardTitle>{t('section.stats')}</CardTitle>
         </CardHeader>
         <CardContent>
           <PlayerSeasonStats
@@ -421,20 +364,6 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
           />
         </CardContent>
       </Card>
-
-      {devReportPeriods.length > 0 && devFicha && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-            <CardTitle>{t('section.development_reports')}</CardTitle>
-            {devReportPeriods.length > 1 && (
-              <ReportPeriodSelect periods={devReportPeriods} current={devFicha.period} />
-            )}
-          </CardHeader>
-          <CardContent>
-            <ReportFichaView data={devFicha} />
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>

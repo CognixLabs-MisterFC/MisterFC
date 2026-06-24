@@ -16,6 +16,8 @@ type Props = {
   locale: string;
   activePlayerId: string;
   players: { id: string; name: string }[];
+  /** Ruta destino (tras `/{locale}`). Por defecto `/mi-ficha`; `/mi-informe` la reusa. */
+  basePath?: string;
 };
 
 /**
@@ -23,14 +25,19 @@ type Props = {
  * Navega con `?player=` y deja que el server recalcule (se descarta `season`
  * porque cada jugador tiene su propia trayectoria/temporadas).
  */
-export function PlayerSelector({ locale, activePlayerId, players }: Props) {
+export function PlayerSelector({
+  locale,
+  activePlayerId,
+  players,
+  basePath = '/mi-ficha',
+}: Props) {
   const t = useTranslations('mi_ficha');
   const router = useRouter();
   const [, startTransition] = useTransition();
 
   function onChange(next: string) {
     startTransition(() => {
-      router.push(`/${locale}/mi-ficha?player=${next}`);
+      router.push(`/${locale}${basePath}?player=${next}`);
     });
   }
 

@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * F13.10d — Selector de periodo de los informes PUBLICADOS en /mi-ficha. Solo
+ * F13.10d — Selector de periodo de los informes PUBLICADOS en /mi-informe. Solo
  * lista los periodos compartidos (visibility='team'). Escribe ?informe= y recarga,
- * preservando ?player= y ?season=. Patrón del selector de temporada de /mi-ficha.
+ * preservando ?player= y ?season=.
  */
 
 import { useTransition } from 'react';

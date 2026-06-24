@@ -19,6 +19,7 @@ import {
   LayoutDashboard,
   LineChart,
   BarChart3,
+  FileText,
   Settings,
   type LucideIcon,
 } from 'lucide-react';
@@ -100,6 +101,8 @@ export const NAV: readonly NavEntry[] = [
   { key: 'mis_equipos', href: '/mis-equipos', icon: Shield, roles: ['entrenador_principal', 'entrenador_ayudante'] },
   { key: 'mi_equipo', href: '/mi-equipo', icon: Shield, roles: ['jugador'] },
   { key: 'mi_ficha', href: '/mi-ficha', icon: LineChart, roles: ['jugador'] },
+  // Informe de desarrollo (familia/jugador): ruta propia, fuera de /mi-ficha.
+  { key: 'mi_informe', href: '/mi-informe', icon: FileText, roles: ['jugador'] },
 
   // HUB Entrenamientos — ejercicios (staff) + asistencia (todos) [+ sesiones F12].
   {

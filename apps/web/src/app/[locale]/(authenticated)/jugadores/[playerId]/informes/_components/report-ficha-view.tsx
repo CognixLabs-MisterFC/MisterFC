@@ -16,11 +16,10 @@ import {
   type PlayerPosition,
 } from '@misterfc/core';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { scoreClasses, formatScore } from '@/lib/score-color';
 import { ScoreGrid } from './score-grid';
-import { PositionField } from './position-field';
+import { FichaHeader } from './ficha-header';
 import { GroupRadarChart, EvolutionChart } from './report-charts';
 import type { FichaStats, PeriodAverages, ObjectiveRow } from '../queries';
 
@@ -53,8 +52,6 @@ export type ReportFichaData = {
 
 export async function ReportFichaView({ data }: { data: ReportFichaData }) {
   const t = await getTranslations('informes');
-  const tPos = await getTranslations('jugadores.positions');
-  const tFoot = await getTranslations('jugadores.feet');
 
   const { perGroup, overall } = computeGroupAverages(DEVELOPMENT_REPORT_CATALOG, data.scores);
   const status = reportStatus(data.scores, DEVELOPMENT_REPORT_CATALOG);
@@ -114,33 +111,19 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
       {/* ── CABECERA ───────────────────────────────────────────────── */}
       <Card>
         <CardContent className="flex flex-col gap-5 pt-6">
-          <div className="flex flex-wrap items-start gap-4">
-            <Avatar className="size-20 border border-border">
-              {data.photoUrl ? <AvatarImage src={data.photoUrl} alt={data.fullName} /> : null}
-              <AvatarFallback className="text-lg">{data.initials}</AvatarFallback>
-            </Avatar>
-
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-2xl font-bold tracking-tight">{data.fullName}</h2>
-                {data.dorsal != null ? (
-                  <span className="rounded-md bg-misterfc-green/15 px-2 py-0.5 text-sm font-semibold text-misterfc-green">
-                    #{data.dorsal}
-                  </span>
-                ) : null}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {data.teamName} · {data.seasonLabel} · {t(`period.${data.period}`)}
-              </p>
-              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                {data.age != null ? <span>{t('age', { age: data.age })}</span> : null}
-                {data.primaryPos ? <span>{tPos(data.primaryPos)}</span> : null}
-                {data.foot ? <span>{tFoot(data.foot)}</span> : null}
-              </div>
-            </div>
-
-            <PositionField primary={data.primaryPos} secondary={data.secondaryPos} />
-          </div>
+          <FichaHeader
+            data={{
+              fullName: data.fullName,
+              initials: data.initials,
+              photoUrl: data.photoUrl,
+              dorsal: data.dorsal,
+              age: data.age,
+              primaryPos: data.primaryPos,
+              secondaryPos: data.secondaryPos,
+              foot: data.foot,
+              subtitle: `${data.teamName} · ${data.seasonLabel} · ${t(`period.${data.period}`)}`,
+            }}
+          />
 
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             {statCards.map((c) => (
