@@ -9,11 +9,7 @@
 import { useState, useTransition, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
-import {
-  DEVELOPMENT_REPORT_CATALOG,
-  DEVELOPMENT_VISIBILITIES,
-  DEVELOPMENT_COMMENT_MAX,
-} from '@misterfc/core';
+import { DEVELOPMENT_REPORT_CATALOG, DEVELOPMENT_COMMENT_MAX } from '@misterfc/core';
 import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -22,9 +18,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScoreGrid } from './score-grid';
 import { upsertDevelopmentReport, type ReportState } from '../actions';
 import type { IndividualReport } from '../queries';
-
-const SELECT_CLASS =
-  'rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring disabled:opacity-60';
 
 export function IndividualReportEditor({
   playerId,
@@ -87,21 +80,7 @@ export function IndividualReportEditor({
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="ind-visibility">{t('visibility_label')}</Label>
-            <select
-              id="ind-visibility"
-              name="visibility"
-              defaultValue={initial?.visibility ?? 'staff'}
-              className={SELECT_CLASS}
-            >
-              {DEVELOPMENT_VISIBILITIES.map((v) => (
-                <option key={v} value={v}>
-                  {t(`visibility.${v}`)}
-                </option>
-              ))}
-            </select>
-          </div>
+          <p className="text-xs text-muted-foreground">{t('publish_hint')}</p>
 
           {error && (
             <p className="text-sm text-destructive" role="alert">

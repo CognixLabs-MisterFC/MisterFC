@@ -729,6 +729,13 @@
         "cards": "Tarjetas",
         "attendance": "Asistencia"
       }
+    },
+    "publish": "Publicar a la familia",
+    "unpublish": "Dejar de compartir",
+    "publish_hint": "Para compartir este informe con la familia, usa el botón Publicar de la ficha.",
+    "notify": {
+      "title": "Informe de desarrollo compartido",
+      "body": "Ya puedes ver el informe del periodo {period}."
     }
   },
   "jugadores": {

@@ -16,6 +16,7 @@ import {
   upsertTeamDevelopmentReportSchema,
   createSupabaseServerClient,
 } from '@misterfc/core';
+import { getTranslations } from 'next-intl/server';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 
@@ -118,7 +119,9 @@ export async function upsertDevelopmentReport(
   if (d.id) {
     const { error } = await supabase
       .from('development_reports')
-      .update({ scores: d.scores, comment_overall: d.comment_overall, visibility: d.visibility })
+      // visibility NO se toca al editar: publicar/despublicar es acción aparte
+      // (setReportVisibility, F13.10d) para no cambiar el estado de compartido sin querer.
+      .update({ scores: d.scores, comment_overall: d.comment_overall })
       .eq('id', d.id);
     if (error) return { error: mapPgErr(error.code) };
   } else {
@@ -277,4 +280,88 @@ export async function deleteObjective(
 
   revalidateInformes(playerId);
   return { success: true };
+}
+
+// ── Compartir con la familia (F13.10d): publicar/despublicar + notificar ─────────
+
+export type PublishState = {
+  error?: 'invalid' | 'forbidden' | 'generic';
+  success?: boolean;
+  visibility?: 'staff' | 'team';
+};
+
+/** Notifica a las cuentas (familia/jugador) del jugador que su informe se publicó.
+ *  Re-notifica en cada publicación (token por publicación) con dedupe (molde 13.6). */
+async function notifyReportPublished(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  playerId: string,
+  reportId: string,
+  period: string,
+  locale: string,
+  nowMs: number,
+): Promise<void> {
+  const { data: pas } = await supabase
+    .from('player_accounts')
+    .select('profile_id')
+    .eq('player_id', playerId);
+  const recipients = Array.from(
+    new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
+  ) as string[];
+  if (recipients.length === 0) return;
+
+  const t = await getTranslations({ locale, namespace: 'informes.notify' });
+  const tPeriod = await getTranslations({ locale, namespace: 'informes.period' });
+  const periodLabel = tPeriod(period as 'inicial');
+  const title = t('title');
+  const body = t('body', { period: periodLabel });
+  const deepLink = `/${locale}/mi-ficha?player=${playerId}`;
+
+  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+  await emitNotificationFanOut(
+    recipients.map((u) => ({ user_id: u })),
+    {
+      type: 'development_report_published',
+      in_app_payload: { player_id: playerId, report_id: reportId, deep_link: deepLink },
+      push_payload: { title, body, deep_link: deepLink, tag: `devreport:${reportId}` },
+      dedupe_base_prefix: `development_report_published:${reportId}:${nowMs}`,
+    },
+  );
+}
+
+/** Publica (visibility='team') o despublica ('staff') un informe individual.
+ *  Al publicar, notifica a la familia/jugador. Gate real = RLS (update). */
+export async function setReportVisibility(
+  _prev: PublishState,
+  formData: FormData,
+): Promise<PublishState> {
+  const id = strField(formData, 'id');
+  const playerId = strField(formData, 'player_id');
+  const period = strField(formData, 'period');
+  const locale = strField(formData, 'locale') || 'es';
+  const visibility = strField(formData, 'visibility');
+  if (
+    !/^[0-9a-f-]{36}$/i.test(id) ||
+    (visibility !== 'team' && visibility !== 'staff')
+  ) {
+    return { error: 'invalid' };
+  }
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase
+    .from('development_reports')
+    .update({ visibility })
+    .eq('id', id);
+  if (error) return { error: mapPgErr(error.code) };
+
+  if (visibility === 'team') {
+    // nowMs inyectado por la action (no Date.now en módulo) — re-notifica por publicación.
+    await notifyReportPublished(supabase, playerId, id, period, locale, Date.now());
+  }
+
+  revalidateInformes(playerId);
+  return { success: true, visibility };
 }
