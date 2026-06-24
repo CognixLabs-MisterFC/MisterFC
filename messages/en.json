@@ -135,7 +135,9 @@
       "training_reminder": "Training reminder",
       "event_updated": "Training updated",
       "event_updated_named": "Training updated: {title}",
-      "generic": "You have an update"
+      "generic": "You have an update",
+      "development_report_published": "A development report was published",
+      "evaluation_campaign_launched": "Evaluation campaign opened"
     },
     "dashboard_card": {
       "title": "Executive dashboard",
@@ -207,6 +209,13 @@
         "desc": "You have a call-up pending confirmation.",
         "cta": "Confirm availability"
       }
+    },
+    "campaign_alert": {
+      "title": "Open evaluation campaigns ({count})",
+      "item": "{period}: {count} reports pending",
+      "due": "Deadline: {date} · {days} days left",
+      "overdue": "Deadline passed: {date}",
+      "cta": "Go write"
     }
   },
   "invitations": {
@@ -395,6 +404,13 @@
       "forbidden": "Only the club admin can change this option.",
       "no_active_club": "There is no active club.",
       "generic": "Something went wrong. Please try again."
+    },
+    "assessment_deadlines": {
+      "title": "Assessment deadlines",
+      "description": "Set the deadline to complete and publish the reports for each period of the active season.",
+      "season": "Season {season}",
+      "hint": "Leave a date blank to remove it. For now it is informational only (alerts and tracking come later); it does not block editing after the date.",
+      "no_active_season": "There is no active season in the club."
     }
   },
   "categorias": {
@@ -739,7 +755,37 @@
       "title": "Development report shared",
       "body": "The {period} report is now available."
     },
-    "download_pdf": "Download PDF"
+    "download_pdf": "Download PDF",
+    "campaign": {
+      "title": "Player reports",
+      "subtitle": "Command center for the club's evaluation campaigns.",
+      "no_active_season": "There is no active season in the club.",
+      "completed_of": "{done}/{total} reports completed",
+      "col_team": "Team",
+      "col_coaches": "Coach(es)",
+      "col_progress": "Progress",
+      "no_teams": "No teams in the active season.",
+      "status": {
+        "none": "Not set",
+        "draft": "Draft",
+        "launched": "Launched",
+        "published": "Published"
+      },
+      "due_date_label": "Deadline",
+      "launch": "Launch campaign",
+      "launch_hint": "Set a deadline to launch the campaign.",
+      "read_only": "Only the club admin can configure and launch.",
+      "error": {
+        "invalid": "Invalid data.",
+        "forbidden": "Only the admin can do this.",
+        "no_campaign": "Set a deadline first.",
+        "generic": "Something went wrong. Try again."
+      }
+    },
+    "campaign_alert": {
+      "notify_title": "{period} campaign open",
+      "notify_body": "Time to write the reports. Deadline: {date}."
+    }
   },
   "jugadores": {
     "title": "Jugadores",
@@ -3253,6 +3299,10 @@
       "equipos": {
         "title": "Teams",
         "description": "Teams by season and club categories."
+      },
+      "informes_dev": {
+        "title": "Reports",
+        "description": "Evaluation campaigns: progress, deadlines and publishing."
       }
     }
   },

@@ -22,7 +22,9 @@ import {
   Bell,
   CalendarClock,
   ClipboardCheck,
+  ClipboardList,
   Clapperboard,
+  FileText,
   Megaphone,
   MessageSquare,
   XCircle,
@@ -83,6 +85,10 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
     case 'training_reminder':
     case 'event_updated':
       return CalendarClock;
+    case 'development_report_published':
+      return FileText;
+    case 'evaluation_campaign_launched':
+      return ClipboardList;
     default:
       return Bell;
   }
@@ -121,6 +127,10 @@ function textFor(t: Translate, type: string, payload: Record<string, unknown> | 
       const title = str(payload, 'title');
       return title ? t('event_updated_named', { title }) : t('event_updated');
     }
+    case 'development_report_published':
+      return t('development_report_published');
+    case 'evaluation_campaign_launched':
+      return t('evaluation_campaign_launched');
     default:
       return t('generic');
   }

@@ -215,3 +215,50 @@ export type UpsertTeamObjectiveInput = z.infer<typeof upsertTeamObjectiveSchema>
 
 export const deleteObjectiveSchema = z.object({ id: z.string().uuid() });
 export type DeleteObjectiveInput = z.infer<typeof deleteObjectiveSchema>;
+
+// ── F13.10g — Campaña de evaluaciones (por club×temporada×periodo) ────────────────
+// Año acotado a 2000–2100: un <input type="date"> nativo emite años intermedios
+// válidos (p.ej. '0020' camino de '2026'); este guard impide guardar esos años.
+const ymdField = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'date_invalid')
+  .refine((s) => {
+    const year = Number(s.slice(0, 4));
+    return year >= 2000 && year <= 2100;
+  }, 'date_invalid');
+
+/** Estados de la campaña: configurada → lanzada → publicada (terminal). */
+export const ASSESSMENT_CAMPAIGN_STATUSES = ['draft', 'launched', 'published'] as const;
+export type AssessmentCampaignStatus = (typeof ASSESSMENT_CAMPAIGN_STATUSES)[number];
+
+/** Configura/actualiza la campaña de un periodo: fecha límite (o null para borrarla)
+ *  y, opcionalmente, el estado. El avance de estado real (lanzar/publicar) tiene sus
+ *  propias acciones en GB/GC; aquí el schema cubre la edición de la fecha. */
+export const upsertAssessmentCampaignSchema = z.object({
+  season_id: z.string().uuid(),
+  period: periodSchema,
+  due_date: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+    ymdField.nullable(),
+  ),
+  status: z.enum(ASSESSMENT_CAMPAIGN_STATUSES).optional(),
+});
+export type UpsertAssessmentCampaignInput = z.infer<typeof upsertAssessmentCampaignSchema>;
+
+/** Días desde `todayYmd` hasta `dueYmd` (negativo = vencida). Ambos en formato
+ *  YYYY-MM-DD; el llamante calcula "hoy" en el huso del club (Europe/Madrid, D6). */
+export function daysUntil(dueYmd: string, todayYmd: string): number {
+  const due = Date.parse(`${dueYmd}T00:00:00Z`);
+  const today = Date.parse(`${todayYmd}T00:00:00Z`);
+  if (Number.isNaN(due) || Number.isNaN(today)) return NaN;
+  return Math.round((due - today) / 86_400_000);
+}
+
+/** Estado visual de una fecha límite respecto a hoy: vencida / próxima / ok. */
+export type DeadlineState = 'overdue' | 'soon' | 'ok';
+export function deadlineState(daysLeft: number, soonThresholdDays = 7): DeadlineState {
+  if (Number.isNaN(daysLeft)) return 'ok';
+  if (daysLeft < 0) return 'overdue';
+  if (daysLeft <= soonThresholdDays) return 'soon';
+  return 'ok';
+}

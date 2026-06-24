@@ -135,7 +135,9 @@
       "training_reminder": "Recordatori d'entrenament",
       "event_updated": "Entrenament actualitzat",
       "event_updated_named": "Entrenament actualitzat: {title}",
-      "generic": "Tens una novetat"
+      "generic": "Tens una novetat",
+      "development_report_published": "S'ha publicat un informe de desenvolupament",
+      "evaluation_campaign_launched": "Campanya d'avaluació oberta"
     },
     "dashboard_card": {
       "title": "Tauler executiu",
@@ -207,6 +209,13 @@
         "desc": "Tens una convocatòria pendent de confirmar.",
         "cta": "Confirmar disponibilitat"
       }
+    },
+    "campaign_alert": {
+      "title": "Campanyes d'avaluació obertes ({count})",
+      "item": "{period}: {count} informes pendents",
+      "due": "Data límit: {date} · queden {days} dies",
+      "overdue": "Data límit vençuda: {date}",
+      "cta": "Anar a redactar"
     }
   },
   "invitations": {
@@ -395,6 +404,13 @@
       "forbidden": "Només l'administrador del club pot canviar esta opció.",
       "no_active_club": "No hi ha cap club actiu.",
       "generic": "Alguna cosa ha eixit malament. Torna-ho a provar."
+    },
+    "assessment_deadlines": {
+      "title": "Dates límit d’avaluacions",
+      "description": "Fixa la data límit per completar i publicar els informes de cada període de la temporada activa.",
+      "season": "Temporada {season}",
+      "hint": "Deixa una data en blanc per llevar-la. De moment només informa (alertes i seguiment arriben després); no bloqueja editar després de la data.",
+      "no_active_season": "No hi ha cap temporada activa al club."
     }
   },
   "categorias": {
@@ -739,7 +755,37 @@
       "title": "Informe de desenvolupament compartit",
       "body": "Ja pots veure l'informe del període {period}."
     },
-    "download_pdf": "Descarregar PDF"
+    "download_pdf": "Descarregar PDF",
+    "campaign": {
+      "title": "Informes de jugadors",
+      "subtitle": "Centre de comandament de les campanyes d'avaluació del club.",
+      "no_active_season": "No hi ha cap temporada activa al club.",
+      "completed_of": "{done}/{total} informes completats",
+      "col_team": "Equip",
+      "col_coaches": "Entrenador/s",
+      "col_progress": "Progrés",
+      "no_teams": "No hi ha equips en la temporada activa.",
+      "status": {
+        "none": "Sense configurar",
+        "draft": "Esborrany",
+        "launched": "Llançada",
+        "published": "Publicada"
+      },
+      "due_date_label": "Data límit",
+      "launch": "Llançar campanya",
+      "launch_hint": "Fixa una data límit per poder llançar la campanya.",
+      "read_only": "Només l'administrador del club pot configurar i llançar.",
+      "error": {
+        "invalid": "Dades no vàlides.",
+        "forbidden": "Només l'administrador pot fer-ho.",
+        "no_campaign": "Configura primer una data límit.",
+        "generic": "Alguna cosa ha anat malament. Torna-ho a provar."
+      }
+    },
+    "campaign_alert": {
+      "notify_title": "Campanya {period} oberta",
+      "notify_body": "A redactar els informes. Data límit: {date}."
+    }
   },
   "jugadores": {
     "title": "Jugadores",
@@ -3253,6 +3299,10 @@
       "equipos": {
         "title": "Equips",
         "description": "Equips per temporada i categories del club."
+      },
+      "informes_dev": {
+        "title": "Informes",
+        "description": "Campanyes d'avaluació: progrés, dates i publicació."
       }
     }
   },

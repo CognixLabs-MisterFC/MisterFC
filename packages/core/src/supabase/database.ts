@@ -75,6 +75,70 @@ export type Database = {
           },
         ]
       }
+      assessment_campaigns: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_by: string
+          due_date: string
+          id: string
+          launched_at: string | null
+          period: string
+          published_at: string | null
+          season_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          created_by: string
+          due_date: string
+          id?: string
+          launched_at?: string | null
+          period: string
+          published_at?: string | null
+          season_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_by?: string
+          due_date?: string
+          id?: string
+          launched_at?: string | null
+          period?: string
+          published_at?: string | null
+          season_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_deadlines_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_deadlines_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_deadlines_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -3059,6 +3123,10 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: boolean
       }
+      user_can_see_team_report_via_published: {
+        Args: { p_team_report_id: string }
+        Returns: boolean
+      }
       user_has_capability: {
         Args: { p_capability: string; p_membership_id: string }
         Returns: boolean
@@ -3128,6 +3196,7 @@ export type Database = {
         | "play_published"
         | "event_updated"
         | "development_report_published"
+        | "evaluation_campaign_launched"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -3284,6 +3353,7 @@ export const Constants = {
         "play_published",
         "event_updated",
         "development_report_published",
+        "evaluation_campaign_launched",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },

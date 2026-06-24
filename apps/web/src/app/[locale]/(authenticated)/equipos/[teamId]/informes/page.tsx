@@ -16,6 +16,8 @@ import {
   createSupabaseServerClient,
   isDevelopmentPeriod,
   reportStatus,
+  daysUntil,
+  deadlineState,
   DEVELOPMENT_REPORT_CATALOG,
   TEAM_REPORT_CATALOG,
   type ReportStatus,
@@ -23,6 +25,7 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
+import { cn } from '@/lib/utils';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -107,6 +110,45 @@ export default async function TeamReportsPage({ params, searchParams }: Props) {
     <Badge variant={STATUS_VARIANT[s]}>{t(`report_status.${s}`)}</Badge>
   );
 
+  // F13.10g — Fecha límite del periodo (club×temporada×periodo, misma para todas
+  // las filas). Se realza si está vencida/próxima. "Hoy" en Europe/Madrid (D6).
+  let deadlineYmd: string | null = null;
+  if (seasonId) {
+    const { data: dl } = await supabase
+      .from('assessment_campaigns')
+      .select('due_date')
+      .eq('season_id', seasonId)
+      .eq('period', period)
+      .maybeSingle();
+    deadlineYmd = (dl?.due_date as string | undefined) ?? null;
+  }
+  const todayMadrid = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(
+    new Date(),
+  );
+  const dState = deadlineYmd ? deadlineState(daysUntil(deadlineYmd, todayMadrid)) : null;
+  const deadlineLabel = deadlineYmd
+    ? new Intl.DateTimeFormat(locale, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'Europe/Madrid',
+      }).format(new Date(`${deadlineYmd}T00:00:00Z`))
+    : null;
+  const deadlineCell = deadlineLabel ? (
+    <span
+      className={cn(
+        'text-sm',
+        dState === 'overdue' && 'font-medium text-red-600 dark:text-red-400',
+        dState === 'soon' && 'font-medium text-amber-600 dark:text-amber-400',
+        dState === 'ok' && 'text-foreground',
+      )}
+    >
+      {deadlineLabel}
+    </span>
+  ) : (
+    <span className="text-muted-foreground">—</span>
+  );
+
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
       <div className="flex items-center gap-2">
@@ -151,7 +193,7 @@ export default async function TeamReportsPage({ params, searchParams }: Props) {
                 <TableRow className="bg-muted/30">
                   <TableCell className="font-medium">{t('team_valuation')}</TableCell>
                   <TableCell>{renderStatus(teamStatus)}</TableCell>
-                  <TableCell className="text-muted-foreground">—</TableCell>
+                  <TableCell>{deadlineCell}</TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="outline" size="sm">
                       <Link href={teamEditHref}>{t('open_editor')}</Link>
@@ -182,7 +224,7 @@ export default async function TeamReportsPage({ params, searchParams }: Props) {
                           ) : null}
                         </TableCell>
                         <TableCell>{renderStatus(status)}</TableCell>
-                        <TableCell className="text-muted-foreground">—</TableCell>
+                        <TableCell>{deadlineCell}</TableCell>
                         <TableCell className="text-right">
                           <Button asChild variant="outline" size="sm">
                             <Link
