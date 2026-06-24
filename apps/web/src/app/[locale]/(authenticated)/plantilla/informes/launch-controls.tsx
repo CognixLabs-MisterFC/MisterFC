@@ -3,6 +3,11 @@
 /**
  * F13.10g-GB — Controles de la campaña de un periodo: fija la fecha límite (admin)
  * y la LANZA (draft→launched, avisa a entrenadores). Coord lo ve deshabilitado.
+ *
+ * La fecha se guarda en onBlur (no en cada cambio): un <input type="date"> nativo
+ * emite valores VÁLIDOS intermedios mientras tecleas el año (p.ej. "0020" antes de
+ * "2026"); guardar en cada onChange + re-render interrumpía el tecleo y fijaba un
+ * año erróneo. Commit al perder el foco, con la fecha completa.
  */
 
 import { useState, useTransition } from 'react';
@@ -25,6 +30,7 @@ export function LaunchControls({ seasonId, period, locale, initialDueDate, statu
   const t = useTranslations('informes.campaign');
   const router = useRouter();
   const [dueDate, setDueDate] = useState(initialDueDate);
+  const [lastSaved, setLastSaved] = useState(initialDueDate);
   const [saving, startSave] = useTransition();
   const [launching, startLaunch] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -32,9 +38,11 @@ export function LaunchControls({ seasonId, period, locale, initialDueDate, statu
 
   const isDraft = status === 'draft';
 
-  function onDateChange(next: string) {
-    const prev = dueDate;
-    setDueDate(next);
+  /** Commit de la fecha (onBlur): solo si cambió y es completa o vacía. */
+  function commit(next: string) {
+    if (next === lastSaved) return;
+    // Fecha incompleta (el navegador deja '' si no es válida): no guardamos aún.
+    if (next !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(next)) return;
     setError(null);
     setSaved(false);
     startSave(async () => {
@@ -44,10 +52,11 @@ export function LaunchControls({ seasonId, period, locale, initialDueDate, statu
         due_date: next === '' ? null : next,
       });
       if (res.error) {
-        setDueDate(prev);
+        setDueDate(lastSaved); // revert
         setError(res.error);
         return;
       }
+      setLastSaved(next);
       setSaved(true);
       setTimeout(() => setSaved(false), 1800);
       router.refresh();
@@ -74,8 +83,11 @@ export function LaunchControls({ seasonId, period, locale, initialDueDate, statu
           <input
             type="date"
             value={dueDate}
-            disabled={!canEdit || saving || !isDraft}
-            onChange={(e) => onDateChange(e.target.value)}
+            min="2000-01-01"
+            max="2100-12-31"
+            disabled={!canEdit || !isDraft}
+            onChange={(e) => setDueDate(e.target.value)}
+            onBlur={(e) => commit(e.target.value)}
             className="rounded-md border border-input bg-transparent px-2 py-1 text-sm outline-none focus-visible:border-ring disabled:opacity-60"
           />
           {saving && <Loader2 className="size-3 animate-spin text-muted-foreground" aria-hidden />}
@@ -85,7 +97,7 @@ export function LaunchControls({ seasonId, period, locale, initialDueDate, statu
         </label>
 
         {canEdit && isDraft && (
-          <Button size="sm" onClick={onLaunch} disabled={launching || dueDate === ''}>
+          <Button size="sm" onClick={onLaunch} disabled={launching || lastSaved === ''}>
             {launching ? (
               <Loader2 className="size-4 animate-spin" aria-hidden />
             ) : (
@@ -96,7 +108,7 @@ export function LaunchControls({ seasonId, period, locale, initialDueDate, statu
         )}
       </div>
 
-      {canEdit && isDraft && dueDate === '' && (
+      {canEdit && isDraft && lastSaved === '' && (
         <p className="text-xs text-muted-foreground">{t('launch_hint')}</p>
       )}
       {!canEdit && (
@@ -104,9 +116,7 @@ export function LaunchControls({ seasonId, period, locale, initialDueDate, statu
           <Lock className="size-3" aria-hidden /> {t('read_only')}
         </p>
       )}
-      {error && (
-        <p className="text-xs text-red-600 dark:text-red-400">{t(`error.${error}`)}</p>
-      )}
+      {error && <p className="text-xs text-red-600 dark:text-red-400">{t(`error.${error}`)}</p>}
     </div>
   );
 }

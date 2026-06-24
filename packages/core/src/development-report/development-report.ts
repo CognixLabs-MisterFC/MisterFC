@@ -217,7 +217,15 @@ export const deleteObjectiveSchema = z.object({ id: z.string().uuid() });
 export type DeleteObjectiveInput = z.infer<typeof deleteObjectiveSchema>;
 
 // ── F13.10g — Campaña de evaluaciones (por club×temporada×periodo) ────────────────
-const ymdField = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date_invalid');
+// Año acotado a 2000–2100: un <input type="date"> nativo emite años intermedios
+// válidos (p.ej. '0020' camino de '2026'); este guard impide guardar esos años.
+const ymdField = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'date_invalid')
+  .refine((s) => {
+    const year = Number(s.slice(0, 4));
+    return year >= 2000 && year <= 2100;
+  }, 'date_invalid');
 
 /** Estados de la campaña: configurada → lanzada → publicada (terminal). */
 export const ASSESSMENT_CAMPAIGN_STATUSES = ['draft', 'launched', 'published'] as const;
