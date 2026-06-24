@@ -2829,7 +2829,8 @@
     "player_selector": "Jugador",
     "section": {
       "stats": "Estadísticas de la temporada",
-      "evaluations": "Valoraciones"
+      "evaluations": "Valoraciones",
+      "development_reports": "Informes de desarrollo"
     },
     "evaluations": {
       "title": "Valoraciones por partido",
@@ -2839,7 +2840,8 @@
       "mvp": "MVP",
       "individual": "Individual",
       "collective": "Equipo"
-    }
+    },
+    "report_period_label": "Periodo"
   },
   "plantillas": {
     "title": "Categorías",

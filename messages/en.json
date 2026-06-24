@@ -2830,7 +2830,8 @@
     "player_selector": "Player",
     "section": {
       "stats": "Season stats",
-      "evaluations": "Ratings"
+      "evaluations": "Ratings",
+      "development_reports": "Development reports"
     },
     "evaluations": {
       "title": "Ratings per match",
@@ -2840,7 +2841,8 @@
       "mvp": "MVP",
       "individual": "Individual",
       "collective": "Team"
-    }
+    },
+    "report_period_label": "Period"
   },
   "plantillas": {
     "title": "Categorías",
