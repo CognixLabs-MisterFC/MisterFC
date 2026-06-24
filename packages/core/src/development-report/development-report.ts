@@ -215,3 +215,35 @@ export type UpsertTeamObjectiveInput = z.infer<typeof upsertTeamObjectiveSchema>
 
 export const deleteObjectiveSchema = z.object({ id: z.string().uuid() });
 export type DeleteObjectiveInput = z.infer<typeof deleteObjectiveSchema>;
+
+// ── F13.10g — Fechas límite de la campaña de evaluaciones ─────────────────────────
+const ymdField = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date_invalid');
+
+/** Fija (o borra, due_date=null) la fecha límite de un periodo de una temporada. */
+export const setAssessmentDeadlineSchema = z.object({
+  season_id: z.string().uuid(),
+  period: periodSchema,
+  due_date: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+    ymdField.nullable(),
+  ),
+});
+export type SetAssessmentDeadlineInput = z.infer<typeof setAssessmentDeadlineSchema>;
+
+/** Días desde `todayYmd` hasta `dueYmd` (negativo = vencida). Ambos en formato
+ *  YYYY-MM-DD; el llamante calcula "hoy" en el huso del club (Europe/Madrid, D6). */
+export function daysUntil(dueYmd: string, todayYmd: string): number {
+  const due = Date.parse(`${dueYmd}T00:00:00Z`);
+  const today = Date.parse(`${todayYmd}T00:00:00Z`);
+  if (Number.isNaN(due) || Number.isNaN(today)) return NaN;
+  return Math.round((due - today) / 86_400_000);
+}
+
+/** Estado visual de una fecha límite respecto a hoy: vencida / próxima / ok. */
+export type DeadlineState = 'overdue' | 'soon' | 'ok';
+export function deadlineState(daysLeft: number, soonThresholdDays = 7): DeadlineState {
+  if (Number.isNaN(daysLeft)) return 'ok';
+  if (daysLeft < 0) return 'overdue';
+  if (daysLeft <= soonThresholdDays) return 'soon';
+  return 'ok';
+}

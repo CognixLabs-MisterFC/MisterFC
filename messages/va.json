@@ -395,6 +395,13 @@
       "forbidden": "Només l'administrador del club pot canviar esta opció.",
       "no_active_club": "No hi ha cap club actiu.",
       "generic": "Alguna cosa ha eixit malament. Torna-ho a provar."
+    },
+    "assessment_deadlines": {
+      "title": "Dates límit d’avaluacions",
+      "description": "Fixa la data límit per completar i publicar els informes de cada període de la temporada activa.",
+      "season": "Temporada {season}",
+      "hint": "Deixa una data en blanc per llevar-la. De moment només informa (alertes i seguiment arriben després); no bloqueja editar després de la data.",
+      "no_active_season": "No hi ha cap temporada activa al club."
     }
   },
   "categorias": {

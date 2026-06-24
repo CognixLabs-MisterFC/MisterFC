@@ -75,6 +75,61 @@ export type Database = {
           },
         ]
       }
+      assessment_deadlines: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_by: string
+          due_date: string
+          id: string
+          period: string
+          season_id: string
+          updated_at: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          created_by: string
+          due_date: string
+          id?: string
+          period: string
+          season_id: string
+          updated_at?: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_by?: string
+          due_date?: string
+          id?: string
+          period?: string
+          season_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assessment_deadlines_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_deadlines_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assessment_deadlines_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -3057,6 +3112,10 @@ export type Database = {
       user_can_see_session: { Args: { p_session_id: string }; Returns: boolean }
       user_can_see_shared_lineup: {
         Args: { p_event_id: string }
+        Returns: boolean
+      }
+      user_can_see_team_report_via_published: {
+        Args: { p_team_report_id: string }
         Returns: boolean
       }
       user_has_capability: {

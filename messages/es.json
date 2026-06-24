@@ -320,6 +320,13 @@
       "forbidden": "Solo el administrador del club puede cambiar esta opción.",
       "no_active_club": "No hay un club activo.",
       "generic": "Algo salió mal. Inténtalo de nuevo."
+    },
+    "assessment_deadlines": {
+      "title": "Fechas límite de evaluaciones",
+      "description": "Fija la fecha límite para completar y publicar los informes de cada periodo de la temporada activa.",
+      "season": "Temporada {season}",
+      "hint": "Deja una fecha en blanco para quitarla. Por ahora solo informa (alertas y seguimiento llegan después); no bloquea editar tras la fecha.",
+      "no_active_season": "No hay una temporada activa en el club."
     }
   },
   "categorias": {

@@ -18,8 +18,10 @@ import {
   getCurrentUserClubs,
   resolveActiveClub,
   setEvaluationsVisibilitySchema,
+  setAssessmentDeadlineSchema,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { loadShellContext } from '@/lib/auth-shell';
 
 type ActionResult = { success?: boolean; error?: string };
 
@@ -55,6 +57,49 @@ export async function setEvaluationsVisibility(
     );
   if (error) {
     return { error: error.code === '42501' ? 'forbidden' : 'generic' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/ajustes', 'page');
+  return { success: true };
+}
+
+/**
+ * F13.10g-0 — Fija (o borra, due_date vacío/null) la fecha límite de un periodo de
+ * la temporada. La autoridad la impone la RLS de assessment_deadlines (escritura
+ * solo admin_club → 42501 → 'forbidden'). El trigger fuerza club_id/created_by.
+ */
+export async function setAssessmentDeadline(input: unknown): Promise<ActionResult> {
+  const parsed = setAssessmentDeadlineSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { season_id, period, due_date } = parsed.data;
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'no_active_club' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  if (due_date === null) {
+    // Borrar la fecha del periodo (vuelve a "sin fecha").
+    const { error } = await supabase
+      .from('assessment_deadlines')
+      .delete()
+      .eq('season_id', season_id)
+      .eq('period', period);
+    if (error) return { error: error.code === '42501' ? 'forbidden' : 'generic' };
+  } else {
+    // Upsert por (season_id, period). club_id/created_by los deriva/fuerza el trigger.
+    const { error } = await supabase.from('assessment_deadlines').upsert(
+      {
+        club_id: ctx.activeClub.club.id,
+        season_id,
+        period,
+        due_date,
+        created_by: ctx.user.id,
+      },
+      { onConflict: 'season_id,period' },
+    );
+    if (error) return { error: error.code === '42501' ? 'forbidden' : 'generic' };
   }
 
   revalidatePath('/[locale]/(authenticated)/ajustes', 'page');

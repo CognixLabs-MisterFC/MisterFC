@@ -27,6 +27,9 @@ export {
   upsertPlayerObjectiveSchema,
   upsertTeamObjectiveSchema,
   deleteObjectiveSchema,
+  setAssessmentDeadlineSchema,
+  daysUntil,
+  deadlineState,
 } from './development-report';
 export type {
   DevelopmentPeriod,
@@ -41,4 +44,6 @@ export type {
   UpsertPlayerObjectiveInput,
   UpsertTeamObjectiveInput,
   DeleteObjectiveInput,
+  SetAssessmentDeadlineInput,
+  DeadlineState,
 } from './development-report';

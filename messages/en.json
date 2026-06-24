@@ -395,6 +395,13 @@
       "forbidden": "Only the club admin can change this option.",
       "no_active_club": "There is no active club.",
       "generic": "Something went wrong. Please try again."
+    },
+    "assessment_deadlines": {
+      "title": "Assessment deadlines",
+      "description": "Set the deadline to complete and publish the reports for each period of the active season.",
+      "season": "Season {season}",
+      "hint": "Leave a date blank to remove it. For now it is informational only (alerts and tracking come later); it does not block editing after the date.",
+      "no_active_season": "There is no active season in the club."
     }
   },
   "categorias": {
