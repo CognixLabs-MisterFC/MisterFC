@@ -7,7 +7,7 @@
 
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { ArrowLeft, Pencil, Download } from 'lucide-react';
 import {
   createSupabaseServerClient,
   isDevelopmentPeriod,
@@ -139,6 +139,14 @@ export default async function InformeFichaPage({ params, searchParams }: Props) 
               locale={locale}
               initialVisibility={report.visibility}
             />
+          ) : null}
+          {report ? (
+            <Button asChild variant="outline" size="sm">
+              <a href={`/${locale}/jugadores/${playerId}/informes/${period}/pdf${seasonQs}`}>
+                <Download className="size-4" aria-hidden />
+                <span>{t('download_pdf')}</span>
+              </a>
+            </Button>
           ) : null}
           <Button asChild size="sm">
             <Link href={editHref}>

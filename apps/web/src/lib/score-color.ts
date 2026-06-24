@@ -44,6 +44,24 @@ export function scoreHex(value: number | null | undefined): string {
   return HEX[scoreLevel(value)];
 }
 
+/**
+ * F13.10e — Relleno para celdas de PDF (@react-pdf). El PDF va sobre fondo BLANCO,
+ * así que aquí los tonos son claros (no los translúcidos del tema oscuro): fondo
+ * suave + texto oscuro legible, mismo tramo de color (rojo/ámbar/verde/verde intenso).
+ */
+const PDF_FILL: Record<ScoreLevel, { bg: string; fg: string }> = {
+  none: { bg: '#F1F5F9', fg: '#475569' }, // slate
+  low: { bg: '#FEE2E2', fg: '#B91C1C' }, // red
+  mid: { bg: '#FEF3C7', fg: '#B45309' }, // amber
+  high: { bg: '#D1FAE5', fg: '#047857' }, // emerald
+  top: { bg: '#A7F3D0', fg: '#065F46' }, // emerald (más intenso)
+};
+
+/** Fondo + texto (hex) para una nota en una celda de PDF (fondo claro). */
+export function scorePdfFill(value: number | null | undefined): { bg: string; fg: string } {
+  return PDF_FILL[scoreLevel(value)];
+}
+
 /** Formatea una nota/media: entero tal cual, media con 1 decimal, null → '—'. */
 export function formatScore(value: number | null | undefined): string {
   if (value == null || Number.isNaN(value)) return '—';

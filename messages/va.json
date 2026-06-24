@@ -738,7 +738,8 @@
     "notify": {
       "title": "Informe de desenvolupament compartit",
       "body": "Ja pots veure l'informe del període {period}."
-    }
+    },
+    "download_pdf": "Descarregar PDF"
   },
   "jugadores": {
     "title": "Jugadores",
@@ -1567,6 +1568,12 @@
         "cuarto_campo": "Quart de camp",
         "reducido": "Reduït"
       }
+    },
+    "development": {
+      "title": "Informe de desenvolupament",
+      "file": "informe-desenvolupament",
+      "group_label": "Grup",
+      "stats_title": "Estadístiques de la temporada"
     }
   },
   "badges": {
