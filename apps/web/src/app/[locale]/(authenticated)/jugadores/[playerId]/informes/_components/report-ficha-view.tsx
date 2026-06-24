@@ -54,7 +54,7 @@ export type ReportFichaData = {
 export async function ReportFichaView({ data }: { data: ReportFichaData }) {
   const t = await getTranslations('informes');
   const tPos = await getTranslations('jugadores.positions');
-  const tFoot = await getTranslations('jugadores.foot_options');
+  const tFoot = await getTranslations('jugadores.feet');
 
   const { perGroup, overall } = computeGroupAverages(DEVELOPMENT_REPORT_CATALOG, data.scores);
   const status = reportStatus(data.scores, DEVELOPMENT_REPORT_CATALOG);
