@@ -27,7 +27,8 @@ export {
   upsertPlayerObjectiveSchema,
   upsertTeamObjectiveSchema,
   deleteObjectiveSchema,
-  setAssessmentDeadlineSchema,
+  ASSESSMENT_CAMPAIGN_STATUSES,
+  upsertAssessmentCampaignSchema,
   daysUntil,
   deadlineState,
 } from './development-report';
@@ -44,6 +45,7 @@ export type {
   UpsertPlayerObjectiveInput,
   UpsertTeamObjectiveInput,
   DeleteObjectiveInput,
-  SetAssessmentDeadlineInput,
+  AssessmentCampaignStatus,
+  UpsertAssessmentCampaignInput,
   DeadlineState,
 } from './development-report';

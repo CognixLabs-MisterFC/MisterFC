@@ -12,7 +12,6 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { ClubSettingsForm } from './club-settings-form';
-import { DeadlinesForm } from './deadlines-form';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -46,26 +45,6 @@ export default async function AjustesPage({ params }: Props) {
   const visible = settings?.evaluations_player_visibility ?? false;
   const canEdit = ctx.activeClub.role === 'admin_club';
 
-  // F13.10g — Temporada activa + fechas límite de evaluaciones por periodo.
-  const { data: activeSeason } = await supabase
-    .from('seasons')
-    .select('id, label')
-    .eq('club_id', ctx.activeClub.club.id)
-    .eq('status', 'active')
-    .order('label', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  let deadlinesInitial: Record<string, string> = {};
-  if (activeSeason) {
-    const { data: dls } = await supabase
-      .from('assessment_deadlines')
-      .select('period, due_date')
-      .eq('season_id', activeSeason.id);
-    deadlinesInitial = Object.fromEntries(
-      (dls ?? []).map((d) => [d.period as string, (d.due_date as string) ?? '']),
-    );
-  }
-
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div className="flex items-center gap-3">
@@ -83,27 +62,6 @@ export default async function AjustesPage({ params }: Props) {
         </CardHeader>
         <CardContent>
           <ClubSettingsForm initialVisible={visible} canEdit={canEdit} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('assessment_deadlines.title')}</CardTitle>
-          <CardDescription>{t('assessment_deadlines.description')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {activeSeason ? (
-            <DeadlinesForm
-              seasonId={activeSeason.id}
-              seasonLabel={activeSeason.label}
-              initial={deadlinesInitial}
-              canEdit={canEdit}
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              {t('assessment_deadlines.no_active_season')}
-            </p>
-          )}
         </CardContent>
       </Card>
     </div>

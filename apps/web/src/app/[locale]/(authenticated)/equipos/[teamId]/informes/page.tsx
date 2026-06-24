@@ -115,7 +115,7 @@ export default async function TeamReportsPage({ params, searchParams }: Props) {
   let deadlineYmd: string | null = null;
   if (seasonId) {
     const { data: dl } = await supabase
-      .from('assessment_deadlines')
+      .from('assessment_campaigns')
       .select('due_date')
       .eq('season_id', seasonId)
       .eq('period', period)

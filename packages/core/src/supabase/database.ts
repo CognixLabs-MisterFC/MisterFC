@@ -75,15 +75,18 @@ export type Database = {
           },
         ]
       }
-      assessment_deadlines: {
+      assessment_campaigns: {
         Row: {
           club_id: string
           created_at: string
           created_by: string
           due_date: string
           id: string
+          launched_at: string | null
           period: string
+          published_at: string | null
           season_id: string
+          status: string
           updated_at: string
         }
         Insert: {
@@ -92,8 +95,11 @@ export type Database = {
           created_by: string
           due_date: string
           id?: string
+          launched_at?: string | null
           period: string
+          published_at?: string | null
           season_id: string
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -102,8 +108,11 @@ export type Database = {
           created_by?: string
           due_date?: string
           id?: string
+          launched_at?: string | null
           period?: string
+          published_at?: string | null
           season_id?: string
+          status?: string
           updated_at?: string
         }
         Relationships: [

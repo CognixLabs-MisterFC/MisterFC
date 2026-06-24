@@ -216,19 +216,26 @@ export type UpsertTeamObjectiveInput = z.infer<typeof upsertTeamObjectiveSchema>
 export const deleteObjectiveSchema = z.object({ id: z.string().uuid() });
 export type DeleteObjectiveInput = z.infer<typeof deleteObjectiveSchema>;
 
-// ── F13.10g — Fechas límite de la campaña de evaluaciones ─────────────────────────
+// ── F13.10g — Campaña de evaluaciones (por club×temporada×periodo) ────────────────
 const ymdField = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date_invalid');
 
-/** Fija (o borra, due_date=null) la fecha límite de un periodo de una temporada. */
-export const setAssessmentDeadlineSchema = z.object({
+/** Estados de la campaña: configurada → lanzada → publicada (terminal). */
+export const ASSESSMENT_CAMPAIGN_STATUSES = ['draft', 'launched', 'published'] as const;
+export type AssessmentCampaignStatus = (typeof ASSESSMENT_CAMPAIGN_STATUSES)[number];
+
+/** Configura/actualiza la campaña de un periodo: fecha límite (o null para borrarla)
+ *  y, opcionalmente, el estado. El avance de estado real (lanzar/publicar) tiene sus
+ *  propias acciones en GB/GC; aquí el schema cubre la edición de la fecha. */
+export const upsertAssessmentCampaignSchema = z.object({
   season_id: z.string().uuid(),
   period: periodSchema,
   due_date: z.preprocess(
     (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
     ymdField.nullable(),
   ),
+  status: z.enum(ASSESSMENT_CAMPAIGN_STATUSES).optional(),
 });
-export type SetAssessmentDeadlineInput = z.infer<typeof setAssessmentDeadlineSchema>;
+export type UpsertAssessmentCampaignInput = z.infer<typeof upsertAssessmentCampaignSchema>;
 
 /** Días desde `todayYmd` hasta `dueYmd` (negativo = vencida). Ambos en formato
  *  YYYY-MM-DD; el llamante calcula "hoy" en el huso del club (Europe/Madrid, D6). */
