@@ -1,13 +1,14 @@
 /**
- * F13.10e — Documento PDF del INFORME DE DESARROLLO (jugador×temporada×periodo).
- * Replica la ficha (ReportFichaView) adaptada a @react-pdf: solo presentación
- * (recibe datos ya cargados + traductores). Reusa el branding 9.B (PdfShell) y los
- * tokens de color por nota (score-color → scorePdfFill, fondos de celda claros).
+ * F13.10e / F13.10h-PDF — Documento PDF del INFORME DE DESARROLLO
+ * (jugador×temporada×periodo). Replica la ficha (ReportFichaView) adaptada a
+ * @react-pdf: solo presentación (recibe datos ya cargados + traductores). Reusa el
+ * branding 9.B (PdfShell) y los tokens de color por nota (scorePdfFill).
  *
- * D8/D10: @react-pdf NO renderiza recharts/SVG complejo → el radar y el gráfico de
- * líneas NO van al PDF; la evolución es una TABLA comparativa de las 4 medias de
- * grupo a lo largo de los periodos. La foto/mini-campo se omiten (placeholder de
- * iniciales + posición como texto).
+ * F13.10h-PDF — alineado al nuevo orden de la ficha (7 secciones), objetivos con
+ * estado DERIVADO + 2 comentarios, stats con ratios. Los GRÁFICOS van en SVG
+ * NATIVO (radar + líneas de evolución individual y de equipo) — ver
+ * report-charts-pdf; revierte la antigua D10 (que los dejaba como tabla). La
+ * foto/mini-campo se omiten (placeholder de iniciales + posición como texto).
  */
 
 import { View, Text, StyleSheet, type DocumentProps } from '@react-pdf/renderer';
@@ -15,6 +16,7 @@ import type { ReactElement } from 'react';
 import {
   computeGroupAverages,
   reportStatus,
+  objectiveDisplayState,
   DEVELOPMENT_REPORT_CATALOG,
   TEAM_REPORT_CATALOG,
   DEVELOPMENT_PERIODS,
@@ -22,12 +24,34 @@ import {
 } from '@misterfc/core';
 import { scorePdfFill } from '@/lib/score-color';
 import { PdfShell, pdfStyles, BRAND_NAVY, type Translator } from './shared';
-import type { FichaStats, PeriodAverages, ObjectiveRow } from
+import { RadarPdf, EvolutionLinesPdf } from './report-charts-pdf';
+import type { FichaStats, PeriodAverages, TeamPeriodAverages, ObjectiveRow } from
   '@/app/[locale]/(authenticated)/jugadores/[playerId]/informes/queries';
 
 const NA = '—';
 const BORDER = '#E2E8F0';
 const MUTED = '#64748B';
+
+/** Series (clave→color) de los gráficos de evolución (idénticas a la ficha, H-3). */
+const INDIV_SERIES = [
+  { key: 'tecnico', color: '#34d399' },
+  { key: 'tactico', color: '#60a5fa' },
+  { key: 'fisico', color: '#fbbf24' },
+  { key: 'actitud', color: '#c084fc' },
+];
+const TEAM_SERIES = [
+  { key: 'rendimiento_colectivo', color: '#34d399' },
+  { key: 'dinamica_grupo', color: '#60a5fa' },
+  { key: 'evolucion_equipo', color: '#fbbf24' },
+];
+
+/** Color por estado mostrado del objetivo (equivalente PDF de OBJ_STATE_CLASS). */
+const OBJ_STATE_PDF: Record<string, { bg: string; fg: string; border: string }> = {
+  nuevo: { bg: '#EFF6FF', fg: '#1D4ED8', border: '#BFDBFE' },
+  en_proceso: { bg: '#FFFBEB', fg: '#B45309', border: '#FDE68A' },
+  conseguido: { bg: '#ECFDF5', fg: '#047857', border: '#A7F3D0' },
+  descartado: { bg: '#FEF2F2', fg: '#B91C1C', border: '#FECACA' },
+};
 
 const s = StyleSheet.create({
   // Cabecera de identidad.
@@ -88,17 +112,27 @@ const s = StyleSheet.create({
   evCell: { flex: 1, paddingVertical: 4, textAlign: 'center', fontFamily: 'Helvetica-Bold', fontSize: 9 },
   // Objetivos.
   objItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
+    gap: 2,
     borderWidth: 1,
     borderColor: BORDER,
     borderRadius: 3,
-    paddingVertical: 3,
+    paddingVertical: 4,
     paddingHorizontal: 6,
     marginBottom: 3,
   },
+  objHeadRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 6 },
   objTitle: { fontSize: 8.5, flex: 1 },
-  objStatus: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', marginLeft: 8 },
+  objBadge: {
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold',
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingVertical: 1,
+    paddingHorizontal: 5,
+  },
+  objComment: { fontSize: 8, lineHeight: 1.3, color: '#334155' },
+  objCommentLabel: { fontFamily: 'Helvetica-Bold', color: MUTED },
   comment: { fontSize: 8.5, lineHeight: 1.35, color: '#1E293B' },
   commentLabel: { fontSize: 7.5, fontFamily: 'Helvetica-Bold', color: MUTED, marginBottom: 2 },
 });
@@ -175,6 +209,7 @@ export interface DevelopmentReportPdfProps {
   playerObjectives: ObjectiveRow[];
   teamObjectives: ObjectiveRow[];
   evolution: PeriodAverages[];
+  teamEvolution: TeamPeriodAverages[];
   stats: FichaStats;
 }
 
@@ -183,9 +218,13 @@ export function DevelopmentReportPdfDocument(
 ): ReactElement<DocumentProps> {
   const { t, tInf } = props;
 
-  const { overall } = computeGroupAverages(DEVELOPMENT_REPORT_CATALOG, props.scores);
+  const { perGroup, overall } = computeGroupAverages(DEVELOPMENT_REPORT_CATALOG, props.scores);
   const status = reportStatus(props.scores, DEVELOPMENT_REPORT_CATALOG);
   const overallFill = scorePdfFill(overall);
+  const radarAxes = DEVELOPMENT_REPORT_CATALOG.groups.map((g) => ({
+    label: tInf(`cat_group.${g.id}`),
+    value: perGroup[g.id] ?? null,
+  }));
 
   const metaParts = [
     props.age != null ? tInf('age', { age: props.age }) : null,
@@ -200,33 +239,65 @@ export function DevelopmentReportPdfDocument(
     tInf(`period.${props.period}`),
   ].filter(Boolean) as string[];
 
-  const GROUP_KEYS = ['tecnico', 'tactico', 'fisico', 'actitud'] as const;
+  const indivSeries = INDIV_SERIES.map((sd) => ({ ...sd, label: tInf(`cat_group.${sd.key}`) }));
+  const teamSeries = TEAM_SERIES.map((sd) => ({ ...sd, label: tInf(`cat_group.${sd.key}`) }));
+  const evolutionHasData = props.evolution.some(
+    (e) => e.tecnico != null || e.tactico != null || e.fisico != null || e.actitud != null,
+  );
+  const teamEvolutionHasData = props.teamEvolution.some(
+    (e) => e.rendimiento_colectivo != null || e.dinamica_grupo != null || e.evolucion_equipo != null,
+  );
 
+  // F13.10h-PDF — objetivos con estado DERIVADO + 2 comentarios (proyección /
+  // revisión), igual que la ficha. El status persistido sigue siendo crudo.
   const renderObjectives = (items: ObjectiveRow[]) =>
     items.length === 0 ? (
       <Text style={pdfStyles.emptyText}>{tInf('no_objectives')}</Text>
     ) : (
-      items.map((o) => (
-        <View key={o.id} style={s.objItem}>
-          <Text style={s.objTitle}>{o.title}</Text>
-          <Text style={s.objStatus}>{tInf(`status.${o.status}`)}</Text>
-        </View>
-      ))
+      items.map((o) => {
+        const state = objectiveDisplayState(o.status, o.created_period, props.period);
+        const c = OBJ_STATE_PDF[state]!;
+        return (
+          <View key={o.id} style={s.objItem}>
+            <View style={s.objHeadRow}>
+              <Text
+                style={[
+                  s.objTitle,
+                  state === 'descartado' ? { textDecoration: 'line-through', color: MUTED } : {},
+                ]}
+              >
+                {o.title}
+              </Text>
+              <Text style={[s.objBadge, { backgroundColor: c.bg, color: c.fg, borderColor: c.border }]}>
+                {tInf(`obj_state.${state}`)}
+              </Text>
+            </View>
+            {o.description ? (
+              <Text style={s.objComment}>
+                <Text style={s.objCommentLabel}>{tInf('objective_description')}: </Text>
+                {o.description}
+              </Text>
+            ) : null}
+            {o.review_comment ? (
+              <Text style={s.objComment}>
+                <Text style={s.objCommentLabel}>{tInf('objective_review')}: </Text>
+                {o.review_comment}
+              </Text>
+            ) : null}
+          </View>
+        );
+      })
     );
 
+  const ratio = (num: number, den: number) => (den > 0 ? `${num}/${den}` : NA);
   const statCards: Array<{ key: string; value: string }> = [
     { key: 'matches', value: String(props.stats.matches) },
+    { key: 'callups', value: ratio(props.stats.calledUp, props.stats.totalMatches) },
     { key: 'minutes', value: String(props.stats.minutes) },
     { key: 'goals', value: String(props.stats.goals) },
     { key: 'assists', value: String(props.stats.assists) },
     { key: 'cards', value: String(props.stats.yellow + props.stats.red) },
-    {
-      key: 'attendance',
-      value:
-        props.stats.attendancePresentPct == null
-          ? NA
-          : `${Math.round(props.stats.attendancePresentPct * 100)}%`,
-    },
+    { key: 'attendance', value: ratio(props.stats.trainingsAttended, props.stats.totalTrainings) },
   ];
 
   return (
@@ -235,7 +306,7 @@ export function DevelopmentReportPdfDocument(
       title={`${t('title')} — ${props.playerName}`}
       subtitle={subtitleParts.join('  ·  ')}
     >
-      {/* Cabecera de identidad */}
+      {/* ── 1 · Datos del jugador + stats (con ratios) ──────────────── */}
       <View style={s.headerCard}>
         <View style={s.avatar}>
           <Text style={s.avatarText}>{props.initials || '—'}</Text>
@@ -245,8 +316,16 @@ export function DevelopmentReportPdfDocument(
           {metaParts.length > 0 ? <Text style={s.metaLine}>{metaParts.join('  ·  ')}</Text> : null}
         </View>
       </View>
+      <View style={[pdfStyles.kvGrid, { marginTop: 4 }]}>
+        {statCards.map((c) => (
+          <View key={c.key} style={pdfStyles.kvCard}>
+            <Text style={pdfStyles.kvValue}>{c.value}</Text>
+            <Text style={pdfStyles.kvLabel}>{tInf(`ficha.stat.${c.key}`)}</Text>
+          </View>
+        ))}
+      </View>
 
-      {/* Resumen: media global + estado */}
+      {/* ── 2 · Puntuación + radar ───────────────────────────────────── */}
       <Text style={pdfStyles.sectionTitle}>{tInf('overall_average')}</Text>
       <View style={s.summaryRow}>
         <View style={[s.overallBox, { backgroundColor: overallFill.bg }]}>
@@ -257,9 +336,45 @@ export function DevelopmentReportPdfDocument(
           <Text style={pdfStyles.bold}>{tInf(`report_status.${status}`)}</Text>
         </Text>
       </View>
+      <RadarPdf axes={radarAxes} />
 
-      {/* Grupos del informe individual (coloreados) */}
-      <Text style={pdfStyles.sectionTitle}>{tInf('individual_report')}</Text>
+      {/* ── 3 · Objetivos (individuales + grupales) ──────────────────── */}
+      <Text style={pdfStyles.sectionTitle} wrap={false}>{tInf('objectives_title')}</Text>
+      <Text style={s.commentLabel}>{tInf('objectives_individual')}</Text>
+      {renderObjectives(props.playerObjectives)}
+      <View style={{ marginTop: 4 }}>
+        <Text style={s.commentLabel}>{tInf('objectives_team')}</Text>
+        {renderObjectives(props.teamObjectives)}
+      </View>
+
+      {/* ── 4 · Evolución individual (líneas SVG) ────────────────────── */}
+      <Text style={pdfStyles.sectionTitle}>{tInf('evolution_title')}</Text>
+      {evolutionHasData ? (
+        <EvolutionLinesPdf
+          rows={props.evolution}
+          periods={DEVELOPMENT_PERIODS}
+          periodLabel={(p) => tInf(`period_short.${p}`)}
+          series={indivSeries}
+        />
+      ) : (
+        <Text style={pdfStyles.emptyText}>{tInf('evolution_empty')}</Text>
+      )}
+
+      {/* ── 5 · Evolución de equipo (líneas SVG) ─────────────────────── */}
+      <Text style={pdfStyles.sectionTitle}>{tInf('team_evolution_title')}</Text>
+      {teamEvolutionHasData ? (
+        <EvolutionLinesPdf
+          rows={props.teamEvolution}
+          periods={DEVELOPMENT_PERIODS}
+          periodLabel={(p) => tInf(`period_short.${p}`)}
+          series={teamSeries}
+        />
+      ) : (
+        <Text style={pdfStyles.emptyText}>{tInf('evolution_empty')}</Text>
+      )}
+
+      {/* ── 6 · Resultados individuales (4 grupos) ───────────────────── */}
+      <Text style={pdfStyles.sectionTitle}>{tInf('results_individual')}</Text>
       <CatalogTable catalog={DEVELOPMENT_REPORT_CATALOG} scores={props.scores} tInf={tInf} />
       {props.commentOverall ? (
         <View style={{ marginTop: 6 }}>
@@ -268,43 +383,8 @@ export function DevelopmentReportPdfDocument(
         </View>
       ) : null}
 
-      {/* Objetivos individuales */}
-      <Text style={pdfStyles.sectionTitle}>{tInf('objectives_individual')}</Text>
-      {renderObjectives(props.playerObjectives)}
-
-      {/* Evolución: tabla comparativa de las 4 medias de grupo por periodo */}
-      <Text style={pdfStyles.sectionTitle}>{tInf('evolution_title')}</Text>
-      <View style={pdfStyles.table}>
-        <View style={pdfStyles.headRow}>
-          <Text style={[pdfStyles.cellHead, { flex: 1.4 }]}>{t('group_label')}</Text>
-          {DEVELOPMENT_PERIODS.map((p) => (
-            <Text key={p} style={[pdfStyles.cellHead, { flex: 1, textAlign: 'center' }]}>
-              {tInf(`period_short.${p}`)}
-            </Text>
-          ))}
-        </View>
-        {GROUP_KEYS.map((gk, gi) => (
-          <View key={gk} style={gi === GROUP_KEYS.length - 1 ? s.evRowLast : s.evRow}>
-            <Text style={s.evGroupCell}>{tInf(`cat_group.${gk}`)}</Text>
-            {DEVELOPMENT_PERIODS.map((p) => {
-              const row = props.evolution.find((e) => e.period === p);
-              const val = row ? row[gk] : null;
-              const fill = scorePdfFill(val);
-              return (
-                <Text
-                  key={p}
-                  style={[s.evCell, { backgroundColor: fill.bg, color: fill.fg }]}
-                >
-                  {fmt(val)}
-                </Text>
-              );
-            })}
-          </View>
-        ))}
-      </View>
-
-      {/* Valoración de equipo del periodo */}
-      <Text style={pdfStyles.sectionTitle}>{tInf('team_block_title')}</Text>
+      {/* ── 7 · Resultados de equipo (3 grupos) ──────────────────────── */}
+      <Text style={pdfStyles.sectionTitle}>{tInf('results_team')}</Text>
       {props.teamReport ? (
         <>
           <CatalogTable catalog={TEAM_REPORT_CATALOG} scores={props.teamReport.scores} tInf={tInf} />
@@ -314,25 +394,10 @@ export function DevelopmentReportPdfDocument(
               <Text style={s.comment}>{props.teamReport.comment}</Text>
             </View>
           ) : null}
-          <View style={{ marginTop: 6 }}>
-            <Text style={s.commentLabel}>{tInf('objectives_team')}</Text>
-            {renderObjectives(props.teamObjectives)}
-          </View>
         </>
       ) : (
         <Text style={pdfStyles.emptyText}>{tInf('team_block_missing')}</Text>
       )}
-
-      {/* Stats agregadas de la temporada */}
-      <Text style={pdfStyles.sectionTitle}>{t('stats_title')}</Text>
-      <View style={pdfStyles.kvGrid}>
-        {statCards.map((c) => (
-          <View key={c.key} style={pdfStyles.kvCard}>
-            <Text style={pdfStyles.kvValue}>{c.value}</Text>
-            <Text style={pdfStyles.kvLabel}>{tInf(`ficha.stat.${c.key}`)}</Text>
-          </View>
-        ))}
-      </View>
     </PdfShell>
   );
 }
