@@ -29,6 +29,7 @@ import {
   loadTeamObjectives,
   loadFichaStats,
   loadPlayerEvolution,
+  loadTeamEvolution,
 } from '../../queries';
 import { DevelopmentReportPdfDocument } from '@/lib/pdf/development-report-pdf';
 import { pdfResponse, slugForFile, type Translator } from '@/lib/pdf/shared';
@@ -105,11 +106,12 @@ export async function GET(
     }
   }
 
-  const [playerObjectives, teamObjectives, stats, evolution] = await Promise.all([
+  const [playerObjectives, teamObjectives, stats, evolution, teamEvolution] = await Promise.all([
     loadPlayerObjectives(supabase, playerId, seasonId),
     team ? loadTeamObjectives(supabase, team.teamId, seasonId) : Promise.resolve([]),
     loadFichaStats(supabase, playerId, seasonLabel, team?.teamId ?? null),
     loadPlayerEvolution(supabase, playerId, seasonId),
+    team ? loadTeamEvolution(supabase, team.teamId, seasonId) : Promise.resolve([]),
   ]);
 
   const { data: club } = await supabase.from('clubs').select('name').eq('id', clubId).maybeSingle();
@@ -157,6 +159,7 @@ export async function GET(
     teamObjectives,
     stats,
     evolution,
+    teamEvolution,
   });
 
   return pdfResponse(
