@@ -19,6 +19,10 @@
 --   R2. RLS INSERT: jugador NO puede insertar (forbidden via policy).
 --   R3. RLS INSERT: ayudante sin can_mark_attendance NO puede.
 --   R4. RLS INSERT: ayudante con can_mark_attendance + staff activo SÍ puede.
+--   R5. RLS INSERT: PRINCIPAL del EQUIPO con rol de CLUB = ayudante y
+--       can_mark_attendance=false SÍ puede (regresión del bug: la rama
+--       "principal" mira team_staff.staff_role, no memberships.role).
+--   R6. RLS UPDATE: ese mismo principal-de-equipo SÍ puede actualizar.
 
 begin;
 
@@ -48,7 +52,10 @@ insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, r
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55ee0000-aaaa-1111-1111-111111111111', '44ee0000-aaaa-1111-1111-111111111111', '11ee0000-0000-0000-0000-000000000001', 'admin_club'),
-  ('55ee0000-aaaa-3333-3333-333333333333', '44ee0000-aaaa-3333-3333-333333333333', '11ee0000-0000-0000-0000-000000000001', 'entrenador_principal'),
+  -- 3333 es PRINCIPAL del equipo (team_staff) pero su rol de CLUB es ayudante:
+  -- reproduce el caso coach7 (un equipo solo admite un principal activo, por eso
+  -- reusamos este actor en vez de añadir un segundo principal al mismo team).
+  ('55ee0000-aaaa-3333-3333-333333333333', '44ee0000-aaaa-3333-3333-333333333333', '11ee0000-0000-0000-0000-000000000001', 'entrenador_ayudante'),
   ('55ee0000-aaaa-4444-4444-444444444444', '44ee0000-aaaa-4444-4444-444444444444', '11ee0000-0000-0000-0000-000000000001', 'entrenador_ayudante'),
   ('55ee0000-aaaa-9999-9999-999999999999', '44ee0000-aaaa-9999-9999-999999999999', '11ee0000-0000-0000-0000-000000000001', 'jugador'),
   ('55ee0000-bbbb-1111-1111-111111111111', '44ee0000-bbbb-1111-1111-111111111111', '11ee0000-0000-0000-0000-000000000002', 'admin_club');
@@ -366,6 +373,60 @@ begin
      '44ee0000-aaaa-4444-4444-444444444444');
 exception when others then
   raise exception 'FAIL [R4]: ayudante con cap debería poder insertar: %', sqlerrm;
+end $$;
+
+reset role;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- R5: PRINCIPAL DE EQUIPO con rol de CLUB = ayudante y can_mark_attendance=false
+--     → SÍ puede INSERT (regresión del bug). Demuestra que la rama "principal"
+--     mira team_staff.staff_role, NO memberships.role, y que NO depende de la
+--     capability.
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Garantiza que NO se apoya en la capability (el trigger la sembró en false; lo
+-- reafirmamos por si acaso) — debe pasar por la rama "principal de equipo".
+update public.capabilities
+   set granted = false
+ where membership_id = '55ee0000-aaaa-3333-3333-333333333333'
+   and capability_name = 'can_mark_attendance';
+
+-- Limpia la fila que dejó R4 para insertar de cero.
+delete from public.training_attendance
+ where event_id = '77ee0000-0000-0000-0000-000000000001';
+
+set local role authenticated;
+set local "request.jwt.claim.sub" to '44ee0000-aaaa-3333-3333-333333333333';
+
+do $$
+begin
+  insert into public.training_attendance (event_id, player_id, code, recorded_by) values
+    ('77ee0000-0000-0000-0000-000000000001',
+     '66ee0000-0000-0000-0000-000000000001',
+     'presente',
+     '44ee0000-aaaa-3333-3333-333333333333');
+exception when others then
+  raise exception 'FAIL [R5]: principal de equipo (rol de club ayudante) debería poder insertar: %', sqlerrm;
+end $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- R6: ese mismo principal-de-equipo puede UPDATE.
+-- ─────────────────────────────────────────────────────────────────────────────
+do $$
+declare v_code text;
+begin
+  update public.training_attendance
+     set code = 'ausente'
+   where event_id = '77ee0000-0000-0000-0000-000000000001'
+     and player_id = '66ee0000-0000-0000-0000-000000000001';
+
+  select code into v_code
+    from public.training_attendance
+   where event_id = '77ee0000-0000-0000-0000-000000000001'
+     and player_id = '66ee0000-0000-0000-0000-000000000001';
+
+  if v_code is distinct from 'ausente' then
+    raise exception 'FAIL [R6]: principal de equipo debería poder actualizar (code=%)', v_code;
+  end if;
 end $$;
 
 reset role;

@@ -82,13 +82,6 @@ export type AsistenciaScope =
   | { kind: 'player'; playerIds: string[] }
   | { kind: 'none' };
 
-const WRITE_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
-
 /**
  * Determina el scope de visibilidad del user para asistencia.
  *  - admin / coord → all
@@ -373,12 +366,17 @@ export async function loadEventAttendance(
     attendance.set(r.player_id, r);
   }
 
-  // canRecord: roles staff con team activo correspondiente. La policy en BD
-  // es la verdad; aquí lo precomputamos para esconder/mostrar UI.
-  const canRecord =
-    WRITE_ROLES.includes(role) &&
-    (scope.kind === 'all' ||
-      (scope.kind === 'restricted' && scope.teamIds.includes(event.team_id)));
+  // canRecord: MISMA verdad que la RLS. Llamamos al helper SECURITY DEFINER
+  // user_can_record_attendance por RPC (mismo patrón que user_can_see_player_medical)
+  // para no divergir de la policy: admin/coord del club ∪ principal del EQUIPO del
+  // evento (team_staff) ∪ capability can_mark_attendance + staff del equipo.
+  // (Antes se usaba WRITE_ROLES + scope, que era más laxo que la RLS y mostraba
+  //  chips habilitados que luego fallaban con 'forbidden' — bug del principal de
+  //  equipo con rol de club ayudante.)
+  const { data: canRec } = await supabase.rpc('user_can_record_attendance', {
+    p_event_id: event.id,
+  });
+  const canRecord = canRec === true;
 
   // Pre-computed aquí (server) para no llamar Date.now() en el render del
   // page.tsx — react-hooks/purity lo flagea aunque sea un Server Component.
