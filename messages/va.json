@@ -762,11 +762,12 @@
     "ficha": {
       "stat": {
         "matches": "Partits",
+        "callups": "Convocatòries",
         "minutes": "Minuts",
         "goals": "Gols",
         "assists": "Assistències",
         "cards": "Targetes",
-        "attendance": "Assistència"
+        "attendance": "Entrenaments"
       }
     },
     "publish": "Compartir amb la família",

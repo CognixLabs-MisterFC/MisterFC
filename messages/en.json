@@ -762,11 +762,12 @@
     "ficha": {
       "stat": {
         "matches": "Matches",
+        "callups": "Call-ups",
         "minutes": "Minutes",
         "goals": "Goals",
         "assists": "Assists",
         "cards": "Cards",
-        "attendance": "Attendance"
+        "attendance": "Trainings"
       }
     },
     "publish": "Share with family",

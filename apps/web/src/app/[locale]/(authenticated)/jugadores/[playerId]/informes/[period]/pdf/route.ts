@@ -108,7 +108,7 @@ export async function GET(
   const [playerObjectives, teamObjectives, stats, evolution] = await Promise.all([
     loadPlayerObjectives(supabase, playerId, seasonId),
     team ? loadTeamObjectives(supabase, team.teamId, seasonId) : Promise.resolve([]),
-    loadFichaStats(supabase, playerId, seasonLabel),
+    loadFichaStats(supabase, playerId, seasonLabel, team?.teamId ?? null),
     loadPlayerEvolution(supabase, playerId, seasonId),
   ]);
 

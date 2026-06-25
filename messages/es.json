@@ -761,11 +761,12 @@
     "ficha": {
       "stat": {
         "matches": "Partidos",
+        "callups": "Convocatorias",
         "minutes": "Minutos",
         "goals": "Goles",
         "assists": "Asistencias",
         "cards": "Tarjetas",
-        "attendance": "Asistencia"
+        "attendance": "Entrenos"
       }
     },
     "publish": "Publicar a la familia",
