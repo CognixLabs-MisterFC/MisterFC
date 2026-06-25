@@ -118,6 +118,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F11B | Pizarra táctica en vivo (sobre la alineación) | 6–9 h (preliminar) | 2–3 | ☑ (2026-06-17) |
 | F12 | Planificador de sesiones | 12–20 h | 4–6 | ☑ (2026-06-20) |
 | F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☐ |
+| F13.10 | Informes de desarrollo y campaña de evaluaciones (extensión de F8/F9 — **NO** es la pizarra) | — | — | ☑ (2026-06-25) |
 | F14 | RGPD para menores y seguridad | 12–18 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
 | F16 | Beta cerrada con primer club | 9–15 h (subfases 16.0–16.4 6–10 h + F16.x bulk-invite +3–5 h) | 3–4 | ☐ |
@@ -136,6 +137,8 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 > **Cambio 2026-06-14 (fase intercalada F11B)**: nueva fase **F11B — Pizarra táctica en vivo (sobre la alineación)**, insertada **después de F11 y antes de F12** con etiqueta `F11B` para **no renumerar F12–F16**. Reutiliza `<MatchFieldEditor>` (F6) + la capa de dibujo/PitchEditor (F11) — no duplica componentes de campo. Depende solo de F11; F12/F13 no se ven afectadas. Estimación preliminar +6–9 h / 2–3 sesiones. Delta total Ola 1: +6–9 h (176–273 → 182–282), +2–3 sesiones (64–83 → 66–86). Detalle en §6 (Fase 11B, tras la Fase 11).
 
 > **Cambio 2026-06-15 (extensión F7.x)**: nueva **F7.x — Vista de estadísticas del partido**, extensión de F7/F8 con etiqueta `F7.x` para **no renumerar F8–F16**. Es la **cara de consulta** por partido de lo que F7 ya captura (`match_player_stats` + `match_events`); v1 sin BD/RLS nueva. **Schedulable** (pequeña), recomendable antes o junto a F11. Estimación v1 +3–5 h / 1–2 sesiones. Delta total Ola 1: +3–5 h (182–282 → 185–287), +1–2 sesiones (66–86 → 67–88). Spec [7.x](../specs/7.x-estadisticas-partido.md). Detalle en §6 (Fase 7.x, tras la Fase 7).
+
+> **Cambio 2026-06-25 (cierre F13.10 — desambiguación de numeración)**: ⚠️ **`F13.10` NO es parte de la F13 — Pizarra de jugadas** (13.1–13.8, que **sigue ☐ pendiente, sin construir**). "F13.10" es una **etiqueta heredada del desarrollo** para los informes de desarrollo + campaña de evaluaciones (PRs #200–#221), que en realidad es una **extensión de F8 (valoraciones) y F9 (perfil del jugador)**. Se mantiene el nombre por **trazabilidad** con los 22 PRs / ramas / memory ya escritos (**Opción C**: no renumerar, igual que F11B/F7.x se etiquetaron aparte). Se registra como **bloque entregado independiente**: fila `F13.10 ☑` en la tabla, sección §6 (tras la Fase 13), spec [13.10](../specs/13.10-informes-desarrollo.md) y [fase-13.10-summary.md](fase-13.10-summary.md). Sin delta de horas (entregado, no estimado a futuro).
 
 ---
 
@@ -683,6 +686,42 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
   - **Picker** para elegir la jugada desde el playbook del equipo.
   - **PDF de la sesión**: cómo aparece la jugada (¿frame estático / secuencia de frames / enlace?).
   - **Vista de jugador/familia**: cómo se muestra la jugada incluida en la sesión.
+
+---
+
+### Fase 13.10 — Informes de desarrollo y campaña de evaluaciones ☑
+
+> ⚠️ **NO es la pizarra de F13.** Etiqueta heredada del desarrollo; es una **extensión de F8/F9** (informe de desarrollo periódico del jugador + campaña que lo coordina). Ver nota de cambio 2026-06-25 arriba. La F13-pizarra (13.1–13.8) sigue ☐.
+
+**Cerrada 2026-06-25.** PRs **#200–#221** (16 subfases). Detalle completo en [fase-13.10-summary.md](fase-13.10-summary.md) y spec [13.10](../specs/13.10-informes-desarrollo.md).
+
+**Decisiones cerradas**:
+
+| ID | Decisión |
+|---|---|
+| D-PDF | Gráficos del PDF como **SVG nativo** (radar + líneas de evolución), no tablas ni recharts. **Revierte la antigua D10** ("PDF solo tablas"). |
+| D-7secciones | Ficha y PDF con **7 secciones** en orden fijo. |
+| D-objetivos | Estado **derivado** (`objectiveDisplayState`: `open/achieved/dropped` + `created_period` → `nuevo/en_proceso/conseguido/descartado`) sobre `status` crudo; **2 comentarios** por objetivo (proyección `description` + revisión `review_comment`); `created_period` inmutable. |
+| D-ratios | Estadísticas como **ratio** (convocados/total partidos, entrenos/total). |
+| D-PDF-1 | **Oficial** = `events.type` ∈ (`match`, `tournament`); **Amistoso** = `friendly`. |
+| D-PDF-3 | Solo el bloque de partido se segrega (2 columnas); **convocatorias y entrenos = totales**. |
+| D-familia | Evolución de equipo para la familia limitada por RLS (`user_can_see_team_report_via_published`). |
+
+**Backlog (sin programar)**:
+
+- **F13B — GESTIÓN DE PARTIDOS** *(NUEVO, no existía en el repo)*. Agrupa:
+  1. **Distinción liga / copa** (`competition_type`) en estadísticas y PDF. Hoy el PDF solo separa Oficial/Amistoso por `events.type`; **no hay campo de competición** en el modelo.
+  2. **Sección "no-convocatorias" (H-5)** de la ficha de desarrollo, con **decisión pendiente** + **mini-análisis**:
+     - *Opción 1 (sin migración)*: mostrar el `reason` (texto libre ≤500) tal cual ya se guarda en `callup_decisions`.
+     - *Opción 2 (con migración)*: `discard_reason_kind` (enum tecnico/fisico/disciplinario/personal) + `discard_note` (texto) + **arreglar el diálogo de descarte** para guardar ambos por separado.
+     - **Modelo verificado (Regla #11)**: hoy `callup_decisions` tiene **un solo campo `reason`** (texto), no motivo+nota separados → H-5 **bloqueada** hasta decidir Opción 1 vs 2.
+- **Reutilizar jugadores entre equipos** *(NUEVO, no registrado en ningún sitio)*: mover/compartir un jugador entre equipos del club **sin recrearlo**. Pendiente de **mini-análisis** (modelo de pertenencia jugador↔equipo, RLS, historial por temporada).
+
+**Cross-refs**:
+
+- **Incluir jugadas en sesiones (F12↔F13, #192)** — ya en el backlog de la Fase 13 (arriba). Depende de F13-pizarra (13.5 playbook).
+- **Reutilizar jugadas** — parte de **F13-pizarra pendiente** (13.5 biblioteca + 13.6 compartir).
+- **Revalidar ratios de familia si F14.10** cierra `events_select` por equipo — registrado en [known-issues.md](known-issues.md) (los denominadores de H-4 dependen de que `events` SELECT siga abierto al club).
 
 ---
 

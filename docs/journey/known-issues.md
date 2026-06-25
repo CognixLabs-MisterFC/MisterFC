@@ -4,6 +4,12 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 
 ## Activas
 
+### F13.10/F14.10 — revalidar ratios de familia si se cierra `events_select` por equipo
+- **Detectado en**: 2026-06-25, cierre de F13.10 (subfase H-4, stats como ratio).
+- **Contexto**: los **denominadores** de las estadísticas de la ficha de desarrollo (convocados / **total de partidos del equipo**, entrenos asistidos / **total de entrenos**) se cuentan desde `events` del equipo en la temporada. Hoy funcionan **porque** la policy `events_select_member` está abierta a cualquier miembro autenticado del club (la misma apertura que **F14.10** quiere cerrar).
+- **Plan**: cuando se aborde **F14.10** (aislamiento de `events` team-a-team), **revalidar** que la familia/jugador siga pudiendo contar los eventos del equipo de su hijo para los ratios; si la nueva RLS lo recorta, exponer el total por una vía RLS-aware (helper o `count` server-side con el cliente de servicio acotado al equipo del informe publicado). Sin esto, los ratios mostrarían un denominador incompleto.
+- **Referencia**: `loadFichaStats` en `apps/web/src/app/[locale]/(authenticated)/jugadores/[playerId]/informes/queries.ts`; spec [13.10 §6](../specs/13.10-informes-desarrollo.md); F14.10 abajo.
+
 ### Nav — aplicar el patrón "hub" al resto del menú (reducir el sidebar)
 - **Detectado en**: 2026-06-17, cierre de F11 (al montar el hub "Entrenamientos" en F11.6 → reorg).
 - **Contexto**: en F11 se introdujo el patrón **hub** (una entrada en el sidebar → página que agrupa sub-áreas como tarjetas): "Entrenamientos" reúne Ejercicios + Asistencia y dejará sitio a Sesiones (F12). El sidebar plano sigue largo en el resto del menú.

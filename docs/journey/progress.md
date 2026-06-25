@@ -21,6 +21,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 11B | Pizarra táctica en vivo (sobre la alineación) | ☑ completada | 2026-06-17 | 2026-06-17 |
 | 12 | Planificador de sesiones con plantillas microciclo | ☑ completada | 2026-06-18 | 2026-06-20 |
 | 13 | Pizarra táctica 2D con animación | ☐ pendiente | — | — |
+| 13.10 | Informes de desarrollo y campaña (extensión F8/F9 — **NO** la pizarra) | ☑ completada | 2026-06-23 | 2026-06-25 |
 | 14 | RGPD para menores | ☐ pendiente | — | — |
 | 15 | Testing E2E, observabilidad y runbook | ☐ pendiente | — | — |
 | 16 | Beta cerrada con primer club | ☐ pendiente | — | — |
@@ -357,6 +358,37 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Tests**: schemas y helpers del planificador (cabecera, tareas/overrides, esqueleto, plantillas, link/vincular, `sessionDateFromEventStart`) en Vitest (`@misterfc/core`); pgTAP de RLS de `sessions` (verificado **contra el remoto** — ver F15.8). Total suite core ≈ 867.
 - **Reuso**: el "ciclo de metodología del club" de F11 sirvió de molde para la visibilidad de la sesión; el patrón "equipos del staff" del home (F7.12) se reutilizó en la alerta 12.8b; el lookup RLS-aware de 12.9 (`loadPlannedEventIds`) se reusó en 12.8b.
 - **Diferidos** (en [known-issues.md](known-issues.md), NO pendientes de F12): selector "evento vinculado" + desvincular explícito en el editor (D2/D6); sync de `session_date` al reprogramar el evento (D5); planificación en trainings de categoría/club (D3); diagramas en el PDF (D6); estructura de bloques configurable por club (D1 → F17); pgTAP fuera de CI (F15.8, ya logueado).
+
+## Fase 13.10 — Subfases entregadas
+
+> ⚠️ **NO es la pizarra de F13** (13.1–13.8, sigue ☐). "F13.10" es etiqueta heredada del desarrollo: informes de desarrollo + campaña, **extensión de F8/F9**. Detalle: [fase-13.10-summary.md](fase-13.10-summary.md), spec [13.10](../specs/13.10-informes-desarrollo.md), [plan-maestro.md](plan-maestro.md) §Fase 13.10.
+
+| Subfase | Fecha | PR | Resumen |
+|---|---|---|---|
+| 13.10a | 2026-06-23 | #200 | Modelo `development_reports` + `*_objectives` + RLS base |
+| 13.10b | 2026-06-23 | #203 | Rework del modelo a equipo + individual sobre catálogo JSON |
+| 13.10b | 2026-06-23 | #204 | Editor real del informe (equipo + individual) |
+| 13.10c | 2026-06-23 | #205 | Pantalla de informes a nivel equipo (tabla equipo + jugadores) |
+| 13.10d | 2026-06-24 | #206 | Rediseño visual de la ficha + gráfico de evolución |
+| 13.10d | 2026-06-24 | #207 | Compartir informe con la familia: RLS + publicar + notificar |
+| 13.10d | 2026-06-24 | #209 | Separar el informe de `/mi-ficha` (ruta + nav propios) |
+| 13.10e | 2026-06-24 | #210 | PDF inicial del informe (jugador × temporada × periodo) |
+| 13.10g-GB | 2026-06-24 | #213 | Campaña: card en Plantilla + centro de mando + lanzar + alerta |
+| 13.10g-GC | 2026-06-25 | #214 | Publicación masiva de la campaña (RPC `publish_campaign`) |
+| 13.10g-GD | 2026-06-25 | #215 | Alerta a ≤7 días de la fecha límite (urgencia in-app) → cierra F13.10g |
+| 13.10h-1 | 2026-06-25 | #216 | Objetivos: estados derivados + comentario de revisión (modelo) |
+| 13.10h-2 | 2026-06-25 | #217 | Reorden de la ficha a 7 secciones + estados en el editor |
+| 13.10h-3 | 2026-06-25 | #218 | Gráfico de evolución de EQUIPO (sección 5) |
+| 13.10h-4 | 2026-06-25 | #219 | Estadísticas como ratio (convocados/total, entrenos/total) |
+| 13.10h-PDF-1+2 | 2026-06-25 | #220 | PDF a 7 secciones + gráficos SVG nativos |
+| 13.10h-PDF-3 | 2026-06-25 | #221 | Segregación Oficial/Amistoso en el PDF → cierra F13.10h |
+
+## Fase 13.10 — Cierre
+
+- **Inicio / Fin**: 2026-06-23 / 2026-06-25. PRs **#200–#221** (cada uno con typecheck · lint · test · build en verde; la UI autenticada y el PDF se validaron en preview).
+- **Migraciones** (todas aplicadas al remoto vía `pnpm db:push`): `development_reports` + objetivos + RLS · rework a catálogo JSON (`team_development_reports`) · share (`user_can_see_team_report_via_published`) · `assessment_campaigns` (status draft→launched→published) · `publish_campaign` (RPC) · `objectives_review_comment` (`review_comment` + `created_period`). Append-only; pgTAP escrito y verificado **contra el remoto** (F15.8).
+- **Decisiones**: PDF con gráficos SVG nativos (revierte D10); ficha/PDF de 7 secciones; objetivos con estado derivado + 2 comentarios; stats como ratio; PDF Oficial/Amistoso; evolución de equipo para la familia por RLS. Ver [summary](fase-13.10-summary.md).
+- **Diferidos**: F13B (liga/copa + no-convocatorias H-5), reutilizar jugadores entre equipos, revalidar ratios de familia si F14.10 — en [plan-maestro.md](plan-maestro.md) §Fase 13.10 y [known-issues.md](known-issues.md).
 
 ## Fase 14 — Subfases pendientes
 
