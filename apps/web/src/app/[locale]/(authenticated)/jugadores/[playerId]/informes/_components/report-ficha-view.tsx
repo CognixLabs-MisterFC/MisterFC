@@ -73,19 +73,16 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
   const { perGroup, overall } = computeGroupAverages(DEVELOPMENT_REPORT_CATALOG, data.scores);
   const status = reportStatus(data.scores, DEVELOPMENT_REPORT_CATALOG);
 
+  // F13.10h-4 — ratio "num/den"; '—' si no hay denominador (sin equipo/eventos).
+  const ratio = (num: number, den: number) => (den > 0 ? `${num}/${den}` : '—');
   const statCards: Array<{ key: string; value: string }> = [
     { key: 'matches', value: String(data.stats.matches) },
+    { key: 'callups', value: ratio(data.stats.calledUp, data.stats.totalMatches) },
     { key: 'minutes', value: String(data.stats.minutes) },
     { key: 'goals', value: String(data.stats.goals) },
     { key: 'assists', value: String(data.stats.assists) },
     { key: 'cards', value: String(data.stats.yellow + data.stats.red) },
-    {
-      key: 'attendance',
-      value:
-        data.stats.attendancePresentPct == null
-          ? '—'
-          : `${Math.round(data.stats.attendancePresentPct * 100)}%`,
-    },
+    { key: 'attendance', value: ratio(data.stats.trainingsAttended, data.stats.totalTrainings) },
   ];
 
   const radarData = DEVELOPMENT_REPORT_CATALOG.groups.map((g) => ({

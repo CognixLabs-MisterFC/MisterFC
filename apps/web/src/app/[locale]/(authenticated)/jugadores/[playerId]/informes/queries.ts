@@ -183,13 +183,28 @@ export type FichaStats = {
   startRate: number | null;
   attendancePresentPct: number | null;
   attendanceTotal: number;
+  /** F13.10h-4 — ratios del equipo en la temporada (numerador/denominador). */
+  calledUp: number; // partidos a los que el jugador fue convocado (decision='called_up')
+  totalMatches: number; // total de partidos del equipo en la temporada
+  trainingsAttended: number; // entrenos a los que asistió (bucket 'present')
+  totalTrainings: number; // total de entrenos del equipo en la temporada
 };
 
-/** Stats de la temporada (por team.season label), reusando los agregadores de core. */
+/**
+ * Stats de la temporada (por team.season label), reusando los agregadores de core.
+ *
+ * F13.10h-4 — añade los ratios de convocatorias y asistencia: los NUMERADORES
+ * salen de datos del jugador (callup_decisions / training_attendance bucket
+ * present); los DENOMINADORES son el total de eventos del EQUIPO en la temporada,
+ * contados sobre la tabla `events` (sin tabla nueva ni migración). RLS: `events` y
+ * `callup_decisions` son legibles por cualquier miembro del club (incluida la
+ * familia), así que los ratios se computan igual en staff y familia.
+ */
 export async function loadFichaStats(
   supabase: Supa,
   playerId: string,
   seasonLabel: string,
+  teamId: string | null,
 ): Promise<FichaStats> {
   const { data: statRows } = await supabase
     .from('match_player_stats')
@@ -209,6 +224,36 @@ export async function loadFichaStats(
     .eq('events.teams.season', seasonLabel);
   const att = attendanceBreakdown((attRows ?? []) as unknown as AttendanceRow[]);
 
+  // Denominadores (total de partidos/entrenos del equipo) + convocatorias del
+  // jugador. Solo si conocemos el equipo de la temporada.
+  let calledUp = 0;
+  let totalMatches = 0;
+  let totalTrainings = 0;
+  if (teamId) {
+    const [matchesRes, trainingsRes, calledUpRes] = await Promise.all([
+      supabase
+        .from('events')
+        .select('id', { count: 'exact', head: true })
+        .eq('team_id', teamId)
+        .eq('type', 'match'),
+      supabase
+        .from('events')
+        .select('id', { count: 'exact', head: true })
+        .eq('team_id', teamId)
+        .eq('type', 'training'),
+      supabase
+        .from('callup_decisions')
+        .select('event_id, events!inner(team_id, type)', { count: 'exact', head: true })
+        .eq('player_id', playerId)
+        .eq('decision', 'called_up')
+        .eq('events.team_id', teamId)
+        .eq('events.type', 'match'),
+    ]);
+    totalMatches = matchesRes.count ?? 0;
+    totalTrainings = trainingsRes.count ?? 0;
+    calledUp = calledUpRes.count ?? 0;
+  }
+
   return {
     matches: agg.matches,
     minutes: agg.minutesPlayed,
@@ -219,6 +264,10 @@ export async function loadFichaStats(
     startRate: ratios.startRate,
     attendancePresentPct: att.presentPct,
     attendanceTotal: att.total,
+    calledUp,
+    totalMatches,
+    trainingsAttended: att.perBucket.present,
+    totalTrainings,
   };
 }
 

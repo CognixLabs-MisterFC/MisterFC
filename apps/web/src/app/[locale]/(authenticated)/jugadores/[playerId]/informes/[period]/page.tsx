@@ -115,7 +115,7 @@ export default async function InformeFichaPage({ params, searchParams }: Props) 
     team && seasonId ? await loadTeamObjectives(supabase, team.teamId, seasonId) : [];
   const playerObjectives =
     seasonId ? await loadPlayerObjectives(supabase, playerId, seasonId) : [];
-  const stats = await loadFichaStats(supabase, playerId, selectedLabel);
+  const stats = await loadFichaStats(supabase, playerId, selectedLabel, team?.teamId ?? null);
   const evolution = seasonId ? await loadPlayerEvolution(supabase, playerId, seasonId) : [];
   const teamEvolution =
     team && seasonId ? await loadTeamEvolution(supabase, team.teamId, seasonId) : [];

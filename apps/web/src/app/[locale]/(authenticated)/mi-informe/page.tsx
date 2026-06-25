@@ -181,7 +181,7 @@ export default async function MiInformePage({ params, searchParams }: Props) {
             loadIndividualReport(supabase, playerId, seasonId, selPeriod),
             loadPlayerObjectives(supabase, playerId, seasonId),
             team ? loadTeamObjectives(supabase, team.teamId, seasonId) : Promise.resolve([]),
-            loadFichaStats(supabase, playerId, activeSeason),
+            loadFichaStats(supabase, playerId, activeSeason, team?.teamId ?? null),
             loadPlayerEvolution(supabase, playerId, seasonId),
             team ? loadTeamEvolution(supabase, team.teamId, seasonId) : Promise.resolve([]),
           ]);
