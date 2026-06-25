@@ -527,6 +527,62 @@ begin
   if n <> 0 then raise exception 'FAIL [SH4]: familia sin informe publicado ve la valoración de equipo (helper demasiado abierto)'; end if;
 end $$;
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- F13.10h-1 — review_comment + created_period en team_objectives
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- H1: team_objectives.created_period backfillea a 'inicial' (insert seed sin valor)
+do $$
+declare v text;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000c","role":"authenticated"}';
+  select created_period into v from public.team_objectives where id = 'd10c0000-0000-4000-8000-0000000000a1';
+  if v is distinct from 'inicial' then
+    raise exception 'FAIL [H1]: created_period de team_objective no quedó en inicial (quedó %)', v;
+  end if;
+end $$;
+
+-- H2: created_period inmutable en team_objectives (trigger lo bloquea)
+do $$
+declare ok boolean := false;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000c","role":"authenticated"}';
+  begin
+    update public.team_objectives set created_period = 'junio'
+     where id = 'd10c0000-0000-4000-8000-0000000000a1';
+  exception when check_violation then ok := true;
+  end;
+  if not ok then raise exception 'FAIL [H2]: se pudo cambiar created_period de un team_objective'; end if;
+end $$;
+
+-- H3: staff del team puede fijar review_comment en objetivo individual y grupal
+do $$
+declare n int;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000c","role":"authenticated"}';
+  update public.player_objectives set review_comment = 'ha mejorado el pase'
+   where id = 'd10b0000-0000-4000-8000-0000000000f1';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL [H3a]: staff no pudo fijar review_comment individual'; end if;
+  update public.team_objectives set review_comment = 'mejor salida de balón'
+   where id = 'd10c0000-0000-4000-8000-0000000000a1';
+  get diagnostics n = row_count;
+  if n <> 1 then raise exception 'FAIL [H3b]: staff no pudo fijar review_comment grupal'; end if;
+end $$;
+
+-- H4: review_comment vacío ('') viola el check de longitud (1..2000)
+do $$
+declare ok boolean := false;
+begin
+  set local "request.jwt.claims" = '{"sub":"d1a00000-0000-4000-8000-00000000000c","role":"authenticated"}';
+  begin
+    update public.player_objectives set review_comment = ''
+     where id = 'd10b0000-0000-4000-8000-0000000000f1';
+  exception when check_violation then ok := true;
+  end;
+  if not ok then raise exception 'FAIL [H4]: se aceptó review_comment vacío'; end if;
+end $$;
+
 reset role;
 
 rollback;
