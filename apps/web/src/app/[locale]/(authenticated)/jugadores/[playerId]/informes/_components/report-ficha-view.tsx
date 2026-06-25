@@ -1,16 +1,24 @@
 /**
  * F13.10 — Cuerpo de la FICHA del informe (read-only), COMPARTIDO por la vista
- * staff ([period]) y la vista familia (/mi-ficha). Recibe los datos ya cargados y
- * pinta: cabecera (foto + dorsal + edad/pie/posición + mini-campo) + stats de
- * temporada + resumen (media global + estado) + radar + grupos coloreados +
- * comentario + objetivos con color + evolución + bloque de equipo. Sin controles
- * de edición/publicación (esos los añade la página staff por fuera).
+ * staff ([period]) y la vista familia (/mi-ficha). Sin controles de edición.
+ *
+ * F13.10h-2 — Orden de secciones (definido por el usuario):
+ *  1. Datos del jugador (cabecera + stats).
+ *  2. Puntuación y gráfico (media global + radar).
+ *  3. Objetivos (individuales + grupales): estado DERIVADO (objectiveDisplayState)
+ *     + sus dos comentarios etiquetados (proyección = description, revisión =
+ *     review_comment), color por estado.
+ *  4. Evolución individual (gráfico existente).
+ *  5. Evolución de equipo (hueco reservado; lo completa un trozo posterior).
+ *  6. Resultados individuales (4 grupos con color).
+ *  7. Resultados de equipo (3 grupos con color).
  */
 
 import { getTranslations } from 'next-intl/server';
 import {
   reportStatus,
   computeGroupAverages,
+  objectiveDisplayState,
   DEVELOPMENT_REPORT_CATALOG,
   TEAM_REPORT_CATALOG,
   type PlayerPosition,
@@ -18,16 +26,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { scoreClasses, formatScore } from '@/lib/score-color';
+import { OBJ_STATE_CLASS } from '@/lib/objective-display';
 import { ScoreGrid } from './score-grid';
 import { FichaHeader } from './ficha-header';
 import { GroupRadarChart, EvolutionChart } from './report-charts';
 import type { FichaStats, PeriodAverages, ObjectiveRow } from '../queries';
-
-const OBJ_STATUS_CLASS: Record<string, string> = {
-  open: 'bg-muted text-muted-foreground border-border',
-  achieved: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  dropped: 'bg-red-500/10 text-red-300/80 border-red-500/20 line-through',
-};
 
 export type ReportFichaData = {
   fullName: string;
@@ -90,19 +93,47 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
     items.length === 0 ? (
       <p className="text-sm text-muted-foreground">{t('no_objectives')}</p>
     ) : (
-      <ul className="flex flex-col gap-1.5">
-        {items.map((o) => (
-          <li
-            key={o.id}
-            className={cn(
-              'flex items-center justify-between gap-2 rounded-md border px-3 py-1.5 text-sm',
-              OBJ_STATUS_CLASS[o.status] ?? OBJ_STATUS_CLASS.open,
-            )}
-          >
-            <span>{o.title}</span>
-            <span className="shrink-0 text-xs font-medium">{t(`status.${o.status}`)}</span>
-          </li>
-        ))}
+      <ul className="flex flex-col gap-2">
+        {items.map((o) => {
+          const state = objectiveDisplayState(o.status, o.created_period, data.period);
+          return (
+            <li
+              key={o.id}
+              className="flex flex-col gap-1 rounded-md border bg-card/40 px-3 py-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={cn(
+                    'text-sm font-medium',
+                    state === 'descartado' && 'line-through opacity-80',
+                  )}
+                >
+                  {o.title}
+                </span>
+                <span
+                  className={cn(
+                    'shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium',
+                    OBJ_STATE_CLASS[state],
+                  )}
+                >
+                  {t(`obj_state.${state}`)}
+                </span>
+              </div>
+              {o.description ? (
+                <p className="text-xs">
+                  <span className="font-medium text-foreground">{t('objective_description')}: </span>
+                  <span className="text-muted-foreground">{o.description}</span>
+                </p>
+              ) : null}
+              {o.review_comment ? (
+                <p className="text-xs">
+                  <span className="font-medium text-foreground">{t('objective_review')}: </span>
+                  <span className="text-muted-foreground">{o.review_comment}</span>
+                </p>
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     );
 
@@ -165,31 +196,24 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
         </CardContent>
       </Card>
 
-      {/* ── GRUPOS ──────────────────────────────────────────────────── */}
+      {/* ── 3 · OBJETIVOS (individuales + grupales) ─────────────────── */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t('individual_report')}</CardTitle>
+          <CardTitle className="text-base">{t('objectives_title')}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <ScoreGrid catalog={DEVELOPMENT_REPORT_CATALOG} initial={data.scores} readOnly />
-          {data.commentOverall ? (
-            <div className="flex flex-col gap-1">
-              <span className="text-sm font-medium">{t('comment_overall')}</span>
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">{data.commentOverall}</p>
-            </div>
-          ) : null}
+        <CardContent className="flex flex-col gap-5">
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium">{t('objectives_individual')}</span>
+            {renderObjectives(data.playerObjectives)}
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium">{t('objectives_team')}</span>
+            {renderObjectives(data.teamObjectives)}
+          </div>
         </CardContent>
       </Card>
 
-      {/* ── OBJETIVOS INDIVIDUALES ──────────────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t('objectives_individual')}</CardTitle>
-        </CardHeader>
-        <CardContent>{renderObjectives(data.playerObjectives)}</CardContent>
-      </Card>
-
-      {/* ── EVOLUCIÓN MULTI-PERIODO ─────────────────────────────────── */}
+      {/* ── 4 · EVOLUCIÓN INDIVIDUAL ────────────────────────────────── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t('evolution_title')}</CardTitle>
@@ -203,10 +227,36 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
         </CardContent>
       </Card>
 
-      {/* ── BLOQUE DE EQUIPO ────────────────────────────────────────── */}
+      {/* ── 5 · EVOLUCIÓN DE EQUIPO (hueco reservado, trozo posterior) ── */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">{t('team_block_title')}</CardTitle>
+          <CardTitle className="text-base">{t('team_evolution_title')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">{t('coming_soon')}</p>
+        </CardContent>
+      </Card>
+
+      {/* ── 6 · RESULTADOS INDIVIDUALES (4 grupos) ──────────────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t('results_individual')}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <ScoreGrid catalog={DEVELOPMENT_REPORT_CATALOG} initial={data.scores} readOnly />
+          {data.commentOverall ? (
+            <div className="flex flex-col gap-1">
+              <span className="text-sm font-medium">{t('comment_overall')}</span>
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">{data.commentOverall}</p>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      {/* ── 7 · RESULTADOS DE EQUIPO (3 grupos) ─────────────────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t('results_team')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {data.teamReport ? (
@@ -220,10 +270,6 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
                   </p>
                 </div>
               ) : null}
-              <div className="flex flex-col gap-2">
-                <span className="text-sm font-medium">{t('objectives_team')}</span>
-                {renderObjectives(data.teamObjectives)}
-              </div>
             </>
           ) : (
             <p className="text-sm text-muted-foreground">{t('team_block_missing')}</p>

@@ -9,17 +9,14 @@
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { Trash2 } from 'lucide-react';
+import { objectiveDisplayState } from '@misterfc/core';
 import { useRouter } from '@/i18n/navigation';
+import { cn } from '@/lib/utils';
+import { OBJ_STATE_CLASS } from '@/lib/objective-display';
 import { Button } from '@/components/ui/button';
 import { ObjectiveForm } from './objective-form';
 import { deleteObjective } from '../actions';
 import type { ObjectiveRow } from '../queries';
-
-const STATUS_CLASS: Record<string, string> = {
-  open: 'bg-muted text-muted-foreground',
-  achieved: 'bg-misterfc-green/15 text-misterfc-green',
-  dropped: 'bg-destructive/15 text-destructive',
-};
 
 export function ObjectiveItem({
   kind,
@@ -27,17 +24,21 @@ export function ObjectiveItem({
   playerId,
   teamId,
   seasonId,
+  period,
 }: {
   kind: 'player' | 'team';
   item: ObjectiveRow;
   playerId: string;
   teamId: string;
   seasonId: string;
+  /** Periodo del informe que se está editando: deriva el estado mostrado. */
+  period: string;
 }) {
   const t = useTranslations('informes');
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [pending, start] = useTransition();
+  const state = objectiveDisplayState(item.status, item.created_period, period);
 
   if (editing) {
     return (
@@ -68,13 +69,29 @@ export function ObjectiveItem({
     <div className="flex items-start justify-between gap-3 rounded-lg border p-3">
       <div className="min-w-0">
         <p className="flex flex-wrap items-center gap-2 font-medium">
-          <span className="break-words">{item.title}</span>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${STATUS_CLASS[item.status] ?? ''}`}>
-            {t(`status.${item.status}`)}
+          <span className={cn('break-words', state === 'descartado' && 'line-through opacity-80')}>
+            {item.title}
+          </span>
+          <span
+            className={cn(
+              'shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium',
+              OBJ_STATE_CLASS[state],
+            )}
+          >
+            {t(`obj_state.${state}`)}
           </span>
         </p>
         {item.description ? (
-          <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+          <p className="mt-1 text-sm">
+            <span className="font-medium text-foreground">{t('objective_description')}: </span>
+            <span className="text-muted-foreground">{item.description}</span>
+          </p>
+        ) : null}
+        {item.review_comment ? (
+          <p className="mt-1 text-sm">
+            <span className="font-medium text-foreground">{t('objective_review')}: </span>
+            <span className="text-muted-foreground">{item.review_comment}</span>
+          </p>
         ) : null}
       </div>
       <div className="flex shrink-0 gap-1">
