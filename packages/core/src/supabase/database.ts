@@ -1993,6 +1993,7 @@ export type Database = {
           description: string | null
           id: string
           player_id: string
+          review_comment: string | null
           season_id: string
           status: string
           team_id: string
@@ -2006,6 +2007,7 @@ export type Database = {
           description?: string | null
           id?: string
           player_id: string
+          review_comment?: string | null
           season_id: string
           status?: string
           team_id: string
@@ -2019,6 +2021,7 @@ export type Database = {
           description?: string | null
           id?: string
           player_id?: string
+          review_comment?: string | null
           season_id?: string
           status?: string
           team_id?: string
@@ -2708,8 +2711,10 @@ export type Database = {
         Row: {
           club_id: string
           created_at: string
+          created_period: string
           description: string | null
           id: string
+          review_comment: string | null
           season_id: string
           status: string
           team_id: string
@@ -2719,8 +2724,10 @@ export type Database = {
         Insert: {
           club_id: string
           created_at?: string
+          created_period?: string
           description?: string | null
           id?: string
+          review_comment?: string | null
           season_id: string
           status?: string
           team_id: string
@@ -2730,8 +2737,10 @@ export type Database = {
         Update: {
           club_id?: string
           created_at?: string
+          created_period?: string
           description?: string | null
           id?: string
+          review_comment?: string | null
           season_id?: string
           status?: string
           team_id?: string

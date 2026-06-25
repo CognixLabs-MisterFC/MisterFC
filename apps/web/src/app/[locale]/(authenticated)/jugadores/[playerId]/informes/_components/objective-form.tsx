@@ -87,7 +87,19 @@ export function ObjectiveForm({
           rows={2}
           maxLength={2000}
           defaultValue={initial?.description ?? ''}
-          placeholder={t('comment_placeholder')}
+          placeholder={t('objective_description_hint')}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <Label htmlFor="obj-review">{t('objective_review')}</Label>
+        <Textarea
+          id="obj-review"
+          name="review_comment"
+          rows={2}
+          maxLength={2000}
+          defaultValue={initial?.review_comment ?? ''}
+          placeholder={t('objective_review_hint')}
         />
       </div>
 
@@ -108,25 +120,24 @@ export function ObjectiveForm({
           </select>
         </div>
 
-        {kind === 'player' &&
-          (initial ? (
-            <input
-              type="hidden"
-              name="created_period"
-              value={initial.created_period ?? 'inicial'}
-            />
-          ) : (
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="obj-period">{t('objective_created_period')}</Label>
-              <select id="obj-period" name="created_period" defaultValue="inicial" className={SELECT_CLASS}>
-                {DEVELOPMENT_PERIODS.map((p) => (
-                  <option key={p} value={p}>
-                    {t(`period.${p}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
+        {initial ? (
+          <input
+            type="hidden"
+            name="created_period"
+            value={initial.created_period ?? 'inicial'}
+          />
+        ) : (
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="obj-period">{t('objective_created_period')}</Label>
+            <select id="obj-period" name="created_period" defaultValue="inicial" className={SELECT_CLASS}>
+              {DEVELOPMENT_PERIODS.map((p) => (
+                <option key={p} value={p}>
+                  {t(`period.${p}`)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {error && (

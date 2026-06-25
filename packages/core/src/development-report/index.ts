@@ -7,6 +7,8 @@ export {
   DEVELOPMENT_SCORE_MAX,
   DEVELOPMENT_PERIODS,
   OBJECTIVE_STATUSES,
+  OBJECTIVE_DISPLAY_STATES,
+  objectiveDisplayState,
   DEVELOPMENT_VISIBILITIES,
   DEVELOPMENT_COMMENT_MAX,
   OBJECTIVE_TITLE_MAX,
@@ -35,6 +37,7 @@ export {
 export type {
   DevelopmentPeriod,
   ObjectiveStatus,
+  ObjectiveDisplayState,
   DevelopmentVisibility,
   Catalog,
   CatalogGroup,

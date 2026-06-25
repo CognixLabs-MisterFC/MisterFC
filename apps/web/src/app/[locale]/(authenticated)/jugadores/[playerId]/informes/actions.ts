@@ -179,6 +179,7 @@ export async function upsertPlayerObjective(
     season_id: strField(formData, 'season_id'),
     title: strField(formData, 'title'),
     description: txtOrNull(formData, 'description'),
+    review_comment: txtOrNull(formData, 'review_comment'),
     status: strField(formData, 'status'),
     created_period: strField(formData, 'created_period'),
   };
@@ -192,10 +193,15 @@ export async function upsertPlayerObjective(
   const supabase = createSupabaseServerClient(adapter);
 
   if (d.id) {
-    // created_period es inmutable → solo title/description/status.
+    // created_period es inmutable → solo title/description/review_comment/status.
     const { error } = await supabase
       .from('player_objectives')
-      .update({ title: d.title, description: d.description, status: d.status })
+      .update({
+        title: d.title,
+        description: d.description,
+        review_comment: d.review_comment,
+        status: d.status,
+      })
       .eq('id', d.id);
     if (error) return { error: mapPgErr(error.code) };
   } else {
@@ -206,6 +212,7 @@ export async function upsertPlayerObjective(
       season_id: d.season_id,
       title: d.title,
       description: d.description,
+      review_comment: d.review_comment,
       status: d.status,
       created_period: d.created_period,
     });
@@ -229,7 +236,9 @@ export async function upsertTeamObjective(
     season_id: strField(formData, 'season_id'),
     title: strField(formData, 'title'),
     description: txtOrNull(formData, 'description'),
+    review_comment: txtOrNull(formData, 'review_comment'),
     status: strField(formData, 'status'),
+    created_period: strField(formData, 'created_period'),
   };
   const parsed = upsertTeamObjectiveSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
@@ -241,9 +250,15 @@ export async function upsertTeamObjective(
   const supabase = createSupabaseServerClient(adapter);
 
   if (d.id) {
+    // created_period es inmutable → solo title/description/review_comment/status.
     const { error } = await supabase
       .from('team_objectives')
-      .update({ title: d.title, description: d.description, status: d.status })
+      .update({
+        title: d.title,
+        description: d.description,
+        review_comment: d.review_comment,
+        status: d.status,
+      })
       .eq('id', d.id);
     if (error) return { error: mapPgErr(error.code) };
   } else {
@@ -253,7 +268,9 @@ export async function upsertTeamObjective(
       season_id: d.season_id,
       title: d.title,
       description: d.description,
+      review_comment: d.review_comment,
       status: d.status,
+      created_period: d.created_period,
     });
     if (error) return { error: mapPgErr(error.code) };
   }

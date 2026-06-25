@@ -84,6 +84,7 @@ export type ObjectiveRow = {
   id: string;
   title: string;
   description: string | null;
+  review_comment: string | null;
   status: string;
   created_period?: string;
 };
@@ -96,7 +97,7 @@ export async function loadPlayerObjectives(
 ): Promise<ObjectiveRow[]> {
   const { data } = await supabase
     .from('player_objectives')
-    .select('id, title, description, status, created_period')
+    .select('id, title, description, review_comment, status, created_period')
     .eq('player_id', playerId)
     .eq('season_id', seasonId)
     .order('created_at', { ascending: true });
@@ -111,7 +112,7 @@ export async function loadTeamObjectives(
 ): Promise<ObjectiveRow[]> {
   const { data } = await supabase
     .from('team_objectives')
-    .select('id, title, description, status')
+    .select('id, title, description, review_comment, status, created_period')
     .eq('team_id', teamId)
     .eq('season_id', seasonId)
     .order('created_at', { ascending: true });

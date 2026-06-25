@@ -21,9 +21,37 @@ export const DEVELOPMENT_SCORE_MAX = 10;
 export const DEVELOPMENT_PERIODS = ['inicial', 'diciembre', 'marzo', 'junio'] as const;
 export type DevelopmentPeriod = (typeof DEVELOPMENT_PERIODS)[number];
 
-/** Estado de un objetivo. */
+/** Estado de un objetivo (columna persistida). */
 export const OBJECTIVE_STATUSES = ['open', 'achieved', 'dropped'] as const;
 export type ObjectiveStatus = (typeof OBJECTIVE_STATUSES)[number];
+
+/**
+ * Estado MOSTRADO de un objetivo (derivado, no es columna): combina el status
+ * persistido con el periodo de creación y el periodo del informe en que se mira.
+ */
+export const OBJECTIVE_DISPLAY_STATES = ['nuevo', 'en_proceso', 'conseguido', 'descartado'] as const;
+export type ObjectiveDisplayState = (typeof OBJECTIVE_DISPLAY_STATES)[number];
+
+/**
+ * Deriva el estado mostrado de un objetivo (F13.10h-1):
+ *  · status 'dropped'  → 'descartado'
+ *  · status 'achieved' → 'conseguido'
+ *  · status 'open' y created_period ANTERIOR al periodo actual → 'en_proceso'
+ *  · status 'open' en otro caso (creado en el periodo actual, o sin situar) → 'nuevo'
+ * Reusable por app y PDF; no toca el enum persistido.
+ */
+export function objectiveDisplayState(
+  status: ObjectiveStatus | string | null | undefined,
+  createdPeriod: DevelopmentPeriod | string | null | undefined,
+  currentPeriod: DevelopmentPeriod | string | null | undefined,
+): ObjectiveDisplayState {
+  if (status === 'dropped') return 'descartado';
+  if (status === 'achieved') return 'conseguido';
+  const created = DEVELOPMENT_PERIODS.indexOf(createdPeriod as DevelopmentPeriod);
+  const current = DEVELOPMENT_PERIODS.indexOf(currentPeriod as DevelopmentPeriod);
+  if (created >= 0 && current >= 0 && created < current) return 'en_proceso';
+  return 'nuevo';
+}
 
 /** Compartir por informe: 'staff' (privado) ↔ 'team' (lo ve la familia). */
 export const DEVELOPMENT_VISIBILITIES = ['staff', 'team'] as const;
@@ -190,7 +218,9 @@ export const upsertTeamDevelopmentReportSchema = z.object({
 });
 export type UpsertTeamDevelopmentReportInput = z.infer<typeof upsertTeamDevelopmentReportSchema>;
 
-// ── Objetivos (sin cambios respecto a 13.10a) ────────────────────────────────────
+// ── Objetivos (F13.10h-1: + review_comment; created_period también en equipo) ─────
+// description = proyección ("qué se va a trabajar"); review_comment = revisión
+// ("qué se ha conseguido / evolución").
 export const upsertPlayerObjectiveSchema = z.object({
   id: z.string().uuid().optional(),
   player_id: z.string().uuid(),
@@ -198,6 +228,7 @@ export const upsertPlayerObjectiveSchema = z.object({
   season_id: z.string().uuid(),
   title: z.string().trim().min(1).max(OBJECTIVE_TITLE_MAX),
   description: commentField,
+  review_comment: commentField,
   status: objectiveStatusSchema.default('open'),
   created_period: periodSchema,
 });
@@ -209,7 +240,9 @@ export const upsertTeamObjectiveSchema = z.object({
   season_id: z.string().uuid(),
   title: z.string().trim().min(1).max(OBJECTIVE_TITLE_MAX),
   description: commentField,
+  review_comment: commentField,
   status: objectiveStatusSchema.default('open'),
+  created_period: periodSchema,
 });
 export type UpsertTeamObjectiveInput = z.infer<typeof upsertTeamObjectiveSchema>;
 
