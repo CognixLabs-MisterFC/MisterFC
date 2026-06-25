@@ -778,8 +778,15 @@
         "invalid": "Datos no válidos.",
         "forbidden": "Solo el administrador puede hacerlo.",
         "no_campaign": "Configura primero una fecha límite.",
-        "generic": "Algo salió mal. Inténtalo de nuevo."
-      }
+        "generic": "Algo salió mal. Inténtalo de nuevo.",
+        "not_launched": "La campaña no está lanzada."
+      },
+      "publish_all": "Publicar todo",
+      "publish_all_hint": "Publica a las familias los informes completos del periodo. Los incompletos no se publican.",
+      "publish_all_confirm_title": "¿Publicar los informes del periodo?",
+      "publish_all_confirm_body": "Se publicarán {done} informes completos a las familias. {pending} quedarán sin publicar por estar incompletos. Esta acción no se puede deshacer.",
+      "publish_all_cancel": "Cancelar",
+      "publish_all_confirm": "Publicar todo"
     },
     "campaign_alert": {
       "notify_title": "Campaña {period} abierta",

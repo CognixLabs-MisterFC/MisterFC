@@ -779,8 +779,15 @@
         "invalid": "Dades no vàlides.",
         "forbidden": "Només l'administrador pot fer-ho.",
         "no_campaign": "Configura primer una data límit.",
-        "generic": "Alguna cosa ha anat malament. Torna-ho a provar."
-      }
+        "generic": "Alguna cosa ha anat malament. Torna-ho a provar.",
+        "not_launched": "La campanya no està llançada."
+      },
+      "publish_all": "Publicar tot",
+      "publish_all_hint": "Publica a les famílies els informes complets del període. Els incomplets no es publiquen.",
+      "publish_all_confirm_title": "Publicar els informes del període?",
+      "publish_all_confirm_body": "Es publicaran {done} informes complets a les famílies. {pending} quedaran sense publicar per estar incomplets. Aquesta acció no es pot desfer.",
+      "publish_all_cancel": "Cancel·lar",
+      "publish_all_confirm": "Publicar tot"
     },
     "campaign_alert": {
       "notify_title": "Campanya {period} oberta",

@@ -779,8 +779,15 @@
         "invalid": "Invalid data.",
         "forbidden": "Only the admin can do this.",
         "no_campaign": "Set a deadline first.",
-        "generic": "Something went wrong. Try again."
-      }
+        "generic": "Something went wrong. Try again.",
+        "not_launched": "The campaign isn't launched."
+      },
+      "publish_all": "Publish all",
+      "publish_all_hint": "Publishes the period's completed reports to families. Incomplete ones aren't published.",
+      "publish_all_confirm_title": "Publish the period's reports?",
+      "publish_all_confirm_body": "{done} completed reports will be published to families. {pending} will remain unpublished because they're incomplete. This can't be undone.",
+      "publish_all_cancel": "Cancel",
+      "publish_all_confirm": "Publish all"
     },
     "campaign_alert": {
       "notify_title": "{period} campaign open",
