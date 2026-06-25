@@ -767,7 +767,10 @@
         "assists": "Asistencias",
         "cards": "Tarjetas",
         "attendance": "Entrenos"
-      }
+      },
+      "match_block": "Estadísticas de partido",
+      "official": "Oficial",
+      "friendly": "Amistoso"
     },
     "publish": "Publicar a la familia",
     "unpublish": "Dejar de compartir",

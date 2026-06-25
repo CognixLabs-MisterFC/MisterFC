@@ -271,6 +271,52 @@ export async function loadFichaStats(
   };
 }
 
+/** Bloque de stats de partido (para segregar oficial/amistoso en el PDF, PDF-3). */
+export type PdfMatchStats = {
+  matches: number;
+  minutes: number;
+  goals: number;
+  assists: number;
+  cards: number;
+};
+export type PdfMatchStatsSplit = { oficial: PdfMatchStats; amistoso: PdfMatchStats };
+
+const toPdfMatchStats = (rows: MatchStatRow[]): PdfMatchStats => {
+  const a = sumMatchStats(rows);
+  return {
+    matches: a.matches,
+    minutes: a.minutesPlayed,
+    goals: a.goals,
+    assists: a.assists,
+    cards: a.yellowCards + a.redCards,
+  };
+};
+
+/**
+ * F13.10h-PDF-3 — Stats de partido del jugador SEGREGADAS por tipo de evento
+ * (D-PDF-1): Oficial = events.type ∈ ('match','tournament'); Amistoso =
+ * ('friendly'); se ignoran training/other. NO distingue liga/copa (eso es F13B):
+ * solo parte por events.type. Solo para el PDF; la ficha usa loadFichaStats.
+ */
+export async function loadFichaMatchStatsByType(
+  supabase: Supa,
+  playerId: string,
+  seasonLabel: string,
+): Promise<PdfMatchStatsSplit> {
+  const { data } = await supabase
+    .from('match_player_stats')
+    .select(
+      'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, events!inner(type), teams!inner(season)',
+    )
+    .eq('player_id', playerId)
+    .eq('teams.season', seasonLabel);
+
+  const rows = (data ?? []) as unknown as Array<MatchStatRow & { events: { type: string } }>;
+  const oficial = rows.filter((r) => r.events?.type === 'match' || r.events?.type === 'tournament');
+  const amistoso = rows.filter((r) => r.events?.type === 'friendly');
+  return { oficial: toPdfMatchStats(oficial), amistoso: toPdfMatchStats(amistoso) };
+}
+
 /** Medias de grupo por periodo (los 4 periodos; null donde no hay informe). */
 export type PeriodAverages = {
   period: string;

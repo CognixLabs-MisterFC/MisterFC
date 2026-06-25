@@ -768,7 +768,10 @@
         "assists": "Assists",
         "cards": "Cards",
         "attendance": "Trainings"
-      }
+      },
+      "match_block": "Match stats",
+      "official": "Official",
+      "friendly": "Friendly"
     },
     "publish": "Share with family",
     "unpublish": "Stop sharing",

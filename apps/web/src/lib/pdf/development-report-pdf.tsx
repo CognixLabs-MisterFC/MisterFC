@@ -25,8 +25,13 @@ import {
 import { scorePdfFill } from '@/lib/score-color';
 import { PdfShell, pdfStyles, BRAND_NAVY, type Translator } from './shared';
 import { RadarPdf, EvolutionLinesPdf } from './report-charts-pdf';
-import type { FichaStats, PeriodAverages, TeamPeriodAverages, ObjectiveRow } from
-  '@/app/[locale]/(authenticated)/jugadores/[playerId]/informes/queries';
+import type {
+  FichaStats,
+  PdfMatchStatsSplit,
+  PeriodAverages,
+  TeamPeriodAverages,
+  ObjectiveRow,
+} from '@/app/[locale]/(authenticated)/jugadores/[playerId]/informes/queries';
 
 const NA = '—';
 const BORDER = '#E2E8F0';
@@ -211,6 +216,8 @@ export interface DevelopmentReportPdfProps {
   evolution: PeriodAverages[];
   teamEvolution: TeamPeriodAverages[];
   stats: FichaStats;
+  /** Bloque de partido segregado por tipo (PDF-3: oficial vs amistoso). */
+  matchStatsByType: PdfMatchStatsSplit;
 }
 
 export function DevelopmentReportPdfDocument(
@@ -290,13 +297,18 @@ export function DevelopmentReportPdfDocument(
     );
 
   const ratio = (num: number, den: number) => (den > 0 ? `${num}/${den}` : NA);
-  const statCards: Array<{ key: string; value: string }> = [
-    { key: 'matches', value: String(props.stats.matches) },
+  // Bloque de partido segregado oficial/amistoso (PDF-3).
+  const { oficial, amistoso } = props.matchStatsByType;
+  const matchRows: Array<{ key: string; oficial: number; amistoso: number }> = [
+    { key: 'matches', oficial: oficial.matches, amistoso: amistoso.matches },
+    { key: 'minutes', oficial: oficial.minutes, amistoso: amistoso.minutes },
+    { key: 'goals', oficial: oficial.goals, amistoso: amistoso.goals },
+    { key: 'assists', oficial: oficial.assists, amistoso: amistoso.assists },
+    { key: 'cards', oficial: oficial.cards, amistoso: amistoso.cards },
+  ];
+  // Totales NO segregados (convocatorias + entrenos).
+  const totalCards: Array<{ key: string; value: string }> = [
     { key: 'callups', value: ratio(props.stats.calledUp, props.stats.totalMatches) },
-    { key: 'minutes', value: String(props.stats.minutes) },
-    { key: 'goals', value: String(props.stats.goals) },
-    { key: 'assists', value: String(props.stats.assists) },
-    { key: 'cards', value: String(props.stats.yellow + props.stats.red) },
     { key: 'attendance', value: ratio(props.stats.trainingsAttended, props.stats.totalTrainings) },
   ];
 
@@ -316,8 +328,28 @@ export function DevelopmentReportPdfDocument(
           {metaParts.length > 0 ? <Text style={s.metaLine}>{metaParts.join('  ·  ')}</Text> : null}
         </View>
       </View>
+      {/* Bloque de partido segregado: Oficial vs Amistoso */}
+      <View style={[pdfStyles.table, { marginTop: 4 }]}>
+        <View style={pdfStyles.headRow}>
+          <Text style={[pdfStyles.cellHead, { flex: 1.4 }]}>{tInf('ficha.match_block')}</Text>
+          <Text style={[pdfStyles.cellHead, { flex: 1, textAlign: 'center' }]}>
+            {tInf('ficha.official')}
+          </Text>
+          <Text style={[pdfStyles.cellHead, { flex: 1, textAlign: 'center' }]}>
+            {tInf('ficha.friendly')}
+          </Text>
+        </View>
+        {matchRows.map((r) => (
+          <View key={r.key} style={s.itemRow}>
+            <Text style={s.itemName}>{tInf(`ficha.stat.${r.key}`)}</Text>
+            <Text style={s.evCell}>{String(r.oficial)}</Text>
+            <Text style={s.evCell}>{String(r.amistoso)}</Text>
+          </View>
+        ))}
+      </View>
+      {/* Totales no segregados: convocatorias + entrenos */}
       <View style={[pdfStyles.kvGrid, { marginTop: 4 }]}>
-        {statCards.map((c) => (
+        {totalCards.map((c) => (
           <View key={c.key} style={pdfStyles.kvCard}>
             <Text style={pdfStyles.kvValue}>{c.value}</Text>
             <Text style={pdfStyles.kvLabel}>{tInf(`ficha.stat.${c.key}`)}</Text>
