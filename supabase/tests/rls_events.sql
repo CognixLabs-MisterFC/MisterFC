@@ -18,6 +18,10 @@
 --   R9  INSERT como entrenador_principal de evento a nivel club (team_id NULL) → rechazado.
 --   R10 INSERT como jugador → rechazado.
 --   R11 UPDATE como entrenador_principal de su equipo → OK.
+--   R14 INSERT como PRINCIPAL del EQUIPO con rol de club ayudante y sin
+--       can_manage_calendar → OK (regresión del bug: la rama "principal" mira
+--       team_staff.staff_role, no memberships.role).
+--   R15 UPDATE / R16 DELETE por ese mismo principal-de-equipo → OK.
 --   R12 DELETE como jugador → rechazado.
 --   R13 DELETE cascade: borrar parent borra children.
 --   H1  user_can_manage_event() devuelve true/false según rol/cap/team.
@@ -56,7 +60,10 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('55ab0000-1111-0000-0000-000000000001', '44ab0000-1111-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', 'admin_club'),
   ('55ab0000-2222-0000-0000-000000000001', '44ab0000-2222-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', 'coordinador'),
   ('55ab0000-3333-0000-0000-000000000001', '44ab0000-3333-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', 'entrenador_principal'),
-  ('55ab0000-3333-0000-0000-000000000002', '44ab0000-3333-0000-0000-000000000002', '11ab0000-c0c0-0000-0000-000000000001', 'entrenador_principal'),
+  -- principal-a2 es PRINCIPAL del Team A2 (team_staff) pero su rol de CLUB es
+  -- ayudante: reproduce el caso coach7 (un equipo solo admite un principal activo,
+  -- por eso reusamos este actor en vez de añadir un segundo principal a A2).
+  ('55ab0000-3333-0000-0000-000000000002', '44ab0000-3333-0000-0000-000000000002', '11ab0000-c0c0-0000-0000-000000000001', 'entrenador_ayudante'),
   ('55ab0000-4444-0000-0000-000000000001', '44ab0000-4444-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', 'entrenador_ayudante'),
   ('55ab0000-4444-0000-0000-000000000002', '44ab0000-4444-0000-0000-000000000002', '11ab0000-c0c0-0000-0000-000000000001', 'entrenador_ayudante'),
   ('55ab0000-5555-0000-0000-000000000001', '44ab0000-5555-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', 'jugador'),
@@ -499,6 +506,51 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- R14/R15/R16 — PRINCIPAL del EQUIPO con rol de CLUB ayudante y SIN
+-- can_manage_calendar → puede INSERT/UPDATE/DELETE eventos de su equipo (A2).
+-- Regresión del bug: la rama "principal" mira team_staff.staff_role.
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Garantiza que NO se apoya en la capability (debe pasar por la rama principal).
+update public.capabilities
+   set granted = false
+ where membership_id = '55ab0000-3333-0000-0000-000000000002'
+   and capability_name = 'can_manage_calendar';
+
+set local "request.jwt.claims" = '{"sub":"44ab0000-3333-0000-0000-000000000002","role":"authenticated"}';
+
+-- R14 — INSERT en su equipo (A2) → OK
+do $$
+declare v_id uuid;
+begin
+  insert into public.events (club_id, team_id, type, title, starts_at, created_by)
+  values (
+    '11ab0000-c0c0-0000-0000-000000000001',
+    '33ab0000-0000-0000-0000-000000000002',
+    'training', 'R14 principal-equipo (club ayudante)',
+    '2026-05-15 18:00:00+02',
+    '44ab0000-3333-0000-0000-000000000002'
+  ) returning id into v_id;
+
+  -- R15 — UPDATE → OK
+  update public.events set title = 'R15 actualizado' where id = v_id;
+  if (select title from public.events where id = v_id) <> 'R15 actualizado' then
+    raise exception 'FAIL [R15]: principal de equipo no pudo UPDATE su evento';
+  end if;
+
+  -- R16 — DELETE → OK
+  delete from public.events where id = v_id;
+  if exists (select 1 from public.events where id = v_id) then
+    raise exception 'FAIL [R16]: principal de equipo no pudo DELETE su evento';
+  end if;
+exception when others then
+  if sqlstate = '42501' then
+    raise exception 'FAIL [R14/R15/R16]: principal de equipo (rol de club ayudante) debería poder gestionar eventos de su equipo: %', sqlerrm;
+  else
+    raise;
+  end if;
+end $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- H1 — user_can_manage_event helper
 -- ─────────────────────────────────────────────────────────────────────────────
 set local role authenticated;
@@ -578,6 +630,17 @@ begin
   ) into got;
   if got is not false then
     raise exception 'FAIL [H1.g]: principal no debería poder manage evento de club (got=%)', got;
+  end if;
+
+  -- principal del EQUIPO con rol de club ayudante → true en su equipo (A2)
+  perform set_config('request.jwt.claims',
+    '{"sub":"44ab0000-3333-0000-0000-000000000002","role":"authenticated"}', true);
+  select public.user_can_manage_event(
+    '11ab0000-c0c0-0000-0000-000000000001',
+    '33ab0000-0000-0000-0000-000000000002'
+  ) into got;
+  if got is not true then
+    raise exception 'FAIL [H1.h]: principal de equipo (rol club ayudante) debería poder manage su equipo (got=%)', got;
   end if;
 end $$;
 

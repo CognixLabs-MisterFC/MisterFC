@@ -314,48 +314,24 @@ export async function loadManageableTeams(
     return { manageableTeamIds: [], canManageClubEvents: false };
   }
 
+  // Staff (principal o ayudante): la RLS es la verdad. Preguntamos al helper
+  // user_can_manage_event por equipo (mismo patrón que canRecord en asistencia)
+  // en vez de decidir por memberships.role. Así un principal del EQUIPO con rol
+  // de club ayudante (que la rama (B) de la RLS reconoce vía
+  // user_is_principal_of_team) NO se queda sin el botón, y un ayudante sin
+  // can_manage_calendar tampoco lo ve. Eventos a nivel club (team_id null) solo
+  // los gestionan admin/coord, ya cubiertos arriba.
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // Cuando role es ayudante, además verificamos can_manage_calendar.
-  if (role === 'entrenador_ayudante') {
-    const { data: caps } = await supabase
-      .from('capabilities')
-      .select('granted, memberships!inner(profile_id, club_id)')
-      .eq('capability_name', 'can_manage_calendar')
-      .eq('granted', true);
-    type Row = {
-      granted: boolean;
-      memberships: { profile_id: string; club_id: string };
-    };
-    const hasCap = (caps ?? []).some((r) => {
-      const row = r as unknown as Row;
-      return row.memberships.club_id === clubId && row.granted;
-    });
-    if (!hasCap) {
-      return { manageableTeamIds: [], canManageClubEvents: false };
-    }
-  }
-
-  // Teams donde el user actual es staff activo. Reutiliza user_is_staff_of_team
-  // implícito vía RLS sobre team_staff (filtra a su propio profile).
-  const { data: { user } = { user: null } } = await supabase.auth.getUser();
-  if (!user) return { manageableTeamIds: [], canManageClubEvents: false };
-
-  const { data: rawStaff } = await supabase
-    .from('team_staff')
-    .select('team_id, memberships!inner(profile_id, club_id)')
-    .is('left_at', null);
-  type StaffRow = {
-    team_id: string;
-    memberships: { profile_id: string; club_id: string };
-  };
-  const manageableTeamIds = (rawStaff ?? [])
-    .map((r) => r as unknown as StaffRow)
-    .filter(
-      (r) => r.memberships.profile_id === user.id && r.memberships.club_id === clubId
+  const checks = await Promise.all(
+    teams.map((t) =>
+      supabase
+        .rpc('user_can_manage_event', { p_club_id: clubId, p_team_id: t.id })
+        .then(({ data }) => (data === true ? t.id : null))
     )
-    .map((r) => r.team_id);
+  );
+  const manageableTeamIds = checks.filter((id): id is string => id !== null);
 
   return { manageableTeamIds, canManageClubEvents: false };
 }
