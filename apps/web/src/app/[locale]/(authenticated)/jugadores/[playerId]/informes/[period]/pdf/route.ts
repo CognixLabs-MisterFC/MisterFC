@@ -28,6 +28,7 @@ import {
   loadPlayerObjectives,
   loadTeamObjectives,
   loadFichaStats,
+  loadFichaMatchStatsByType,
   loadPlayerEvolution,
   loadTeamEvolution,
 } from '../../queries';
@@ -106,13 +107,15 @@ export async function GET(
     }
   }
 
-  const [playerObjectives, teamObjectives, stats, evolution, teamEvolution] = await Promise.all([
-    loadPlayerObjectives(supabase, playerId, seasonId),
-    team ? loadTeamObjectives(supabase, team.teamId, seasonId) : Promise.resolve([]),
-    loadFichaStats(supabase, playerId, seasonLabel, team?.teamId ?? null),
-    loadPlayerEvolution(supabase, playerId, seasonId),
-    team ? loadTeamEvolution(supabase, team.teamId, seasonId) : Promise.resolve([]),
-  ]);
+  const [playerObjectives, teamObjectives, stats, matchStatsByType, evolution, teamEvolution] =
+    await Promise.all([
+      loadPlayerObjectives(supabase, playerId, seasonId),
+      team ? loadTeamObjectives(supabase, team.teamId, seasonId) : Promise.resolve([]),
+      loadFichaStats(supabase, playerId, seasonLabel, team?.teamId ?? null),
+      loadFichaMatchStatsByType(supabase, playerId, seasonLabel),
+      loadPlayerEvolution(supabase, playerId, seasonId),
+      team ? loadTeamEvolution(supabase, team.teamId, seasonId) : Promise.resolve([]),
+    ]);
 
   const { data: club } = await supabase.from('clubs').select('name').eq('id', clubId).maybeSingle();
   const clubName = club?.name ?? 'MisterFC';
@@ -158,6 +161,7 @@ export async function GET(
     playerObjectives,
     teamObjectives,
     stats,
+    matchStatsByType,
     evolution,
     teamEvolution,
   });
