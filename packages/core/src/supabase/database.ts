@@ -3033,6 +3033,12 @@ export type Database = {
         }
         Returns: number
       }
+      publish_campaign: {
+        Args: { p_period: string; p_season_id: string }
+        Returns: {
+          player_id: string
+        }[]
+      }
       reorder_session_blocks: {
         Args: { p_block_ids: string[]; p_session_id: string }
         Returns: undefined

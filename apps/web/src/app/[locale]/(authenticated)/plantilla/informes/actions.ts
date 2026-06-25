@@ -18,10 +18,22 @@ import {
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 
-type ActionResult = { error?: 'invalid' | 'forbidden' | 'no_campaign' | 'generic'; success?: boolean };
+type ActionResult = {
+  error?: 'invalid' | 'forbidden' | 'no_campaign' | 'not_launched' | 'generic';
+  success?: boolean;
+  published?: number;
+};
 
 function mapErr(code: string | undefined): 'forbidden' | 'generic' {
   return code === '42501' ? 'forbidden' : 'generic';
+}
+
+/** Mapea el SQLSTATE de la RPC publish_campaign a un error de UI. */
+function mapPublishErr(code: string | undefined): ActionResult['error'] {
+  if (code === '42501') return 'forbidden';
+  if (code === '23514') return 'not_launched'; // check_violation: campaña no lanzada
+  if (code === 'P0002' || code === '23503') return 'no_campaign'; // no_data_found / FK season
+  return 'generic';
 }
 
 function revalidate() {
@@ -172,4 +184,80 @@ async function notifyCoachesLaunched(
       dedupe_base_prefix: `evaluation_campaign_launched:${seasonId}:${period}`,
     },
   );
+}
+
+/**
+ * Publica en masa la campaña del periodo (RPC publish_campaign: solo completos →
+ * visibility='team', campaña→published) y notifica a cada familia/jugador publicado.
+ */
+export async function publishCampaign(input: unknown): Promise<ActionResult> {
+  const data = (input ?? {}) as { season_id?: string; period?: string; locale?: string };
+  const seasonId = String(data.season_id ?? '');
+  const period = String(data.period ?? '');
+  const locale = String(data.locale ?? 'es');
+  if (!/^[0-9a-f-]{36}$/i.test(seasonId) || !isDevelopmentPeriod(period)) {
+    return { error: 'invalid' };
+  }
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+  const supabase = createSupabaseServerClient(await createCookieAdapter());
+
+  const { data: rows, error } = await supabase.rpc('publish_campaign', {
+    p_season_id: seasonId,
+    p_period: period,
+  });
+  if (error) return { error: mapPublishErr(error.code) };
+
+  const playerIds = Array.from(
+    new Set(((rows ?? []) as Array<{ player_id: string }>).map((r) => r.player_id).filter(Boolean)),
+  );
+  if (playerIds.length > 0) {
+    await notifyPlayersPublished(supabase, playerIds, period, locale, Date.now());
+  }
+
+  revalidate();
+  return { success: true, published: playerIds.length };
+}
+
+/** Una notificación development_report_published por jugador publicado (D5). */
+async function notifyPlayersPublished(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  playerIds: string[],
+  period: string,
+  locale: string,
+  nowMs: number,
+): Promise<void> {
+  const { data: pas } = await supabase
+    .from('player_accounts')
+    .select('player_id, profile_id')
+    .in('player_id', playerIds);
+  const accountsByPlayer = new Map<string, Set<string>>();
+  for (const r of (pas ?? []) as Array<{ player_id: string; profile_id: string }>) {
+    if (!r.profile_id) continue;
+    const set = accountsByPlayer.get(r.player_id) ?? new Set<string>();
+    set.add(r.profile_id);
+    accountsByPlayer.set(r.player_id, set);
+  }
+  if (accountsByPlayer.size === 0) return;
+
+  const t = await getTranslations({ locale, namespace: 'informes.notify' });
+  const tPeriod = await getTranslations({ locale, namespace: 'informes.period' });
+  const periodLabel = tPeriod(period as 'inicial');
+  const title = t('title');
+  const body = t('body', { period: periodLabel });
+
+  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+  for (const [playerId, profiles] of accountsByPlayer) {
+    const deepLink = `/${locale}/mi-informe?player=${playerId}`;
+    await emitNotificationFanOut(
+      Array.from(profiles).map((u) => ({ user_id: u })),
+      {
+        type: 'development_report_published',
+        in_app_payload: { player_id: playerId, deep_link: deepLink },
+        push_payload: { title, body, deep_link: deepLink, tag: `devreport:${playerId}` },
+        dedupe_base_prefix: `development_report_published:${playerId}:${nowMs}`,
+      },
+    );
+  }
 }

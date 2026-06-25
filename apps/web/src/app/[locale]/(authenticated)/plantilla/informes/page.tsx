@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/table';
 import { PeriodSelect } from '../../equipos/[teamId]/informes/_components/period-select';
 import { LaunchControls } from './launch-controls';
+import { PublishAllButton } from './publish-all-button';
 import {
   loadActiveSeason,
   loadCampaign,
@@ -111,7 +112,7 @@ export default async function CampaignCommandPage({ params, searchParams }: Prop
               <CardTitle className="text-base">{t(`period.${period}`)}</CardTitle>
               <Badge variant={STATUS_VARIANT[status]}>{t(`campaign.status.${status}`)}</Badge>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-4">
               <LaunchControls
                 seasonId={season.id}
                 period={period}
@@ -120,6 +121,18 @@ export default async function CampaignCommandPage({ params, searchParams }: Prop
                 status={(campaign?.status ?? 'draft') as 'draft' | 'launched' | 'published'}
                 canEdit={canEdit}
               />
+              {canEdit && status === 'launched' && (
+                <div className="flex flex-col gap-1 border-t border-border pt-3">
+                  <PublishAllButton
+                    seasonId={season.id}
+                    period={period}
+                    locale={locale}
+                    completed={totals.completed}
+                    pending={totals.total - totals.completed}
+                  />
+                  <p className="text-xs text-muted-foreground">{t('campaign.publish_all_hint')}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
