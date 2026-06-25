@@ -18,12 +18,6 @@ type Props = {
   params: Promise<{ locale: string; teamId: string; membershipId: string }>;
 };
 
-const ROLES_THAT_CAN_EDIT_CAPS: ReadonlyArray<string> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-];
-
 export default async function CapabilitiesPage({ params }: Props) {
   const { locale, teamId, membershipId } = await params;
   setRequestLocale(locale);
@@ -56,7 +50,19 @@ export default async function CapabilitiesPage({ params }: Props) {
     (membership.profiles as unknown as { full_name: string | null })
       .full_name ?? '—';
 
-  const canEdit = ROLES_THAT_CAN_EDIT_CAPS.includes(ctx.activeClub.role);
+  // canEdit refleja la MISMA condición que la RLS capabilities_update (F14.9):
+  // admin/coord del club, o principal de un equipo del que este staff también es
+  // miembro (vía RPC user_is_principal_of_assistant_team). Evita mostrar toggles
+  // que la RLS rechazaría (p.ej. un principal de OTRO equipo).
+  const role = ctx.activeClub.role;
+  let canEdit = role === 'admin_club' || role === 'coordinador';
+  if (!canEdit) {
+    const { data: isPrincipalOfTeam } = await supabase.rpc(
+      'user_is_principal_of_assistant_team',
+      { p_membership_id: membershipId }
+    );
+    canEdit = isPrincipalOfTeam === true;
+  }
   const isAssistant = membership.role === 'entrenador_ayudante';
 
   // Si no es ayudante, mensaje sin toggles (spec §6).
