@@ -184,6 +184,7 @@ export default async function InformeEditorPage({ params, searchParams }: Props)
             playerId={playerId}
             teamId={team.teamId}
             seasonId={seasonId}
+            period={period}
           />
         </>
       )}

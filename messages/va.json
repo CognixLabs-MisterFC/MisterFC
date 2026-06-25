@@ -634,12 +634,29 @@
     "objective_review": "Revisió / evolució",
     "objective_review_hint": "Què s'ha aconseguit respecte al període anterior (opcional)",
     "objective_status": "Estat",
+    "objective_status_hint": "«Nou» i «en procés» s'assignen automàticament segons el període de creació; ací tries si l'objectiu segueix actiu, s'ha aconseguit o es descarta.",
     "objective_created_period": "Període de creació",
+    "objectives_title": "Objectius",
+    "results_individual": "Resultats individuals",
+    "results_team": "Resultats d'equip",
+    "team_evolution_title": "Evolució de l'equip",
+    "coming_soon": "Pròximament.",
     "cancel": "Cancel·lar",
     "delete": "Esborrar",
     "confirm_delete": "Esborrar este objectiu?",
     "status": {
       "open": "Obert",
+      "achieved": "Aconseguit",
+      "dropped": "Descartat"
+    },
+    "obj_state": {
+      "nuevo": "Nou",
+      "en_proceso": "En procés",
+      "conseguido": "Aconseguit",
+      "descartado": "Descartat"
+    },
+    "obj_status_choice": {
+      "open": "Actiu (nou / en procés)",
       "achieved": "Aconseguit",
       "dropped": "Descartat"
     },

@@ -98,7 +98,7 @@ export default async function TeamValuationEditorPage({ params }: Props) {
             period={period}
             initial={teamReport}
           />
-          <ObjectivesSection kind="team" items={teamObjectives} playerId="" teamId={teamId} seasonId={seasonId} />
+          <ObjectivesSection kind="team" items={teamObjectives} playerId="" teamId={teamId} seasonId={seasonId} period={period} />
         </>
       )}
     </div>

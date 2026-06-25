@@ -114,7 +114,7 @@ export function ObjectiveForm({
           >
             {OBJECTIVE_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {t(`status.${s}`)}
+                {t(`obj_status_choice.${s}`)}
               </option>
             ))}
           </select>
@@ -139,6 +139,8 @@ export function ObjectiveForm({
           </div>
         )}
       </div>
+
+      <p className="text-xs text-muted-foreground">{t('objective_status_hint')}</p>
 
       {error && (
         <p className="text-sm text-destructive" role="alert">

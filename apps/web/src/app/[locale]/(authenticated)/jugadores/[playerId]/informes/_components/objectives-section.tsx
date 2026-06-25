@@ -21,12 +21,15 @@ export function ObjectivesSection({
   playerId,
   teamId,
   seasonId,
+  period,
 }: {
   kind: 'player' | 'team';
   items: ObjectiveRow[];
   playerId: string;
   teamId: string;
   seasonId: string;
+  /** Periodo del informe en edición (deriva el estado mostrado de cada objetivo). */
+  period: string;
 }) {
   const t = useTranslations('informes');
   const [adding, setAdding] = useState(false);
@@ -50,6 +53,7 @@ export function ObjectivesSection({
               playerId={playerId}
               teamId={teamId}
               seasonId={seasonId}
+              period={period}
             />
           ))
         )}

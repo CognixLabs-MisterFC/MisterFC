@@ -634,12 +634,29 @@
     "objective_review": "Review / progress",
     "objective_review_hint": "What has been achieved since the previous period (optional)",
     "objective_status": "Status",
+    "objective_status_hint": "“New” and “in progress” are set automatically from the creation period; here you choose whether the objective is still active, achieved, or dropped.",
     "objective_created_period": "Created in period",
+    "objectives_title": "Objectives",
+    "results_individual": "Individual results",
+    "results_team": "Team results",
+    "team_evolution_title": "Team evolution",
+    "coming_soon": "Coming soon.",
     "cancel": "Cancel",
     "delete": "Delete",
     "confirm_delete": "Delete this objective?",
     "status": {
       "open": "Open",
+      "achieved": "Achieved",
+      "dropped": "Dropped"
+    },
+    "obj_state": {
+      "nuevo": "New",
+      "en_proceso": "In progress",
+      "conseguido": "Achieved",
+      "descartado": "Dropped"
+    },
+    "obj_status_choice": {
+      "open": "Active (new / in progress)",
       "achieved": "Achieved",
       "dropped": "Dropped"
     },

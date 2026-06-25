@@ -633,12 +633,29 @@
     "objective_review": "Revisión / evolución",
     "objective_review_hint": "Qué se ha conseguido respecto al periodo anterior (opcional)",
     "objective_status": "Estado",
+    "objective_status_hint": "«Nuevo» y «en proceso» se asignan automáticamente según el periodo de creación; aquí eliges si el objetivo sigue activo, se ha conseguido o se descarta.",
     "objective_created_period": "Periodo de creación",
+    "objectives_title": "Objetivos",
+    "results_individual": "Resultados individuales",
+    "results_team": "Resultados de equipo",
+    "team_evolution_title": "Evolución del equipo",
+    "coming_soon": "Próximamente.",
     "cancel": "Cancelar",
     "delete": "Borrar",
     "confirm_delete": "¿Borrar este objetivo?",
     "status": {
       "open": "Abierto",
+      "achieved": "Conseguido",
+      "dropped": "Descartado"
+    },
+    "obj_state": {
+      "nuevo": "Nuevo",
+      "en_proceso": "En proceso",
+      "conseguido": "Conseguido",
+      "descartado": "Descartado"
+    },
+    "obj_status_choice": {
+      "open": "Activo (nuevo / en proceso)",
       "achieved": "Conseguido",
       "dropped": "Descartado"
     },
