@@ -1,11 +1,14 @@
 'use client';
 
 /**
- * F13.10f (adelantado) — Evolución multi-periodo: líneas de las 4 medias de grupo
- * del jugador a lo largo de los periodos (inicial→junio). Progresión INDIVIDUAL
- * (el jugador contra sí mismo); NO se compara con el equipo. Con 1 periodo con
- * datos se ve el punto; con ≥2, la línea. Huecos (null) no se interpolan. Se carga
- * con ssr:false (ADR-0016) desde report-charts.
+ * F13.10f / F13.10h-3 — Evolución multi-periodo: líneas de las medias de grupo a
+ * lo largo de los periodos (inicial→junio). Progresión contra UNO MISMO (jugador
+ * o equipo); NO compara entre sujetos. Con 1 periodo con datos se ve el punto; con
+ * ≥2, la línea. Huecos (null) no se interpolan. Se carga con ssr:false (ADR-0016).
+ *
+ * H-3: parametrizado por `series` (clave de grupo + color) para reusarlo tanto con
+ * los 4 grupos del catálogo individual como con los 3 del de equipo. Los datos son
+ * filas planas `{ period, [groupId]: media|null }`.
  */
 
 import {
@@ -19,26 +22,19 @@ import {
   Legend,
 } from 'recharts';
 
-export type EvolutionDatum = {
-  period: string; // etiqueta del periodo (eje X)
-  tecnico: number | null;
-  tactico: number | null;
-  fisico: number | null;
-  actitud: number | null;
-};
+/** Fila plana: etiqueta de periodo (eje X) + una media por grupo. */
+export type EvolutionDatum = { period: string } & Record<string, number | string | null>;
 
-const SERIES: Array<{ key: keyof EvolutionDatum; color: string }> = [
-  { key: 'tecnico', color: '#34d399' }, // emerald
-  { key: 'tactico', color: '#60a5fa' }, // blue
-  { key: 'fisico', color: '#fbbf24' }, // amber
-  { key: 'actitud', color: '#c084fc' }, // purple
-];
+/** Serie de una línea: clave del grupo en los datos + color del trazo. */
+export type EvolutionSeries = { key: string; color: string };
 
 export function ReportEvolution({
   data,
+  series,
   labels,
 }: {
   data: EvolutionDatum[];
+  series: EvolutionSeries[];
   labels: Record<string, string>;
 }) {
   return (
@@ -59,7 +55,7 @@ export function ReportEvolution({
             wrapperStyle={{ fontSize: 12 }}
             formatter={(value) => labels[String(value)] ?? String(value)}
           />
-          {SERIES.map((s) => (
+          {series.map((s) => (
             <Line
               key={s.key}
               type="monotone"

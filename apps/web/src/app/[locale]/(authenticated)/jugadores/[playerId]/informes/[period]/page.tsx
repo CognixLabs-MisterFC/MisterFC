@@ -30,6 +30,7 @@ import {
   loadTeamObjectives,
   loadFichaStats,
   loadPlayerEvolution,
+  loadTeamEvolution,
 } from '../queries';
 import { PublishToggle } from '../_components/publish-toggle';
 import { ReportFichaView } from '../_components/report-ficha-view';
@@ -116,6 +117,8 @@ export default async function InformeFichaPage({ params, searchParams }: Props) 
     seasonId ? await loadPlayerObjectives(supabase, playerId, seasonId) : [];
   const stats = await loadFichaStats(supabase, playerId, selectedLabel);
   const evolution = seasonId ? await loadPlayerEvolution(supabase, playerId, seasonId) : [];
+  const teamEvolution =
+    team && seasonId ? await loadTeamEvolution(supabase, team.teamId, seasonId) : [];
 
   const primaryPos = (PLAYER_POSITIONS as readonly string[]).includes(player.position_main ?? '')
     ? (player.position_main as PlayerPosition)
@@ -186,6 +189,7 @@ export default async function InformeFichaPage({ params, searchParams }: Props) 
             playerObjectives,
             teamObjectives,
             evolution,
+            teamEvolution,
           }}
         />
       )}

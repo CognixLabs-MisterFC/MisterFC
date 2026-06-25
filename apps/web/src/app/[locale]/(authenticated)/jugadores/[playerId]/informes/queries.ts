@@ -15,6 +15,7 @@ import {
   computeGroupAverages,
   DEVELOPMENT_PERIODS,
   DEVELOPMENT_REPORT_CATALOG,
+  TEAM_REPORT_CATALOG,
   type MatchStatRow,
   type AttendanceRow,
 } from '@misterfc/core';
@@ -255,6 +256,51 @@ export async function loadPlayerEvolution(
       tactico: perGroup.tactico ?? null,
       fisico: perGroup.fisico ?? null,
       actitud: perGroup.actitud ?? null,
+    };
+  });
+}
+
+/** Medias de los 3 grupos del catálogo de EQUIPO por periodo (null si no hay). */
+export type TeamPeriodAverages = {
+  period: string;
+  rendimiento_colectivo: number | null;
+  dinamica_grupo: number | null;
+  evolucion_equipo: number | null;
+};
+
+/**
+ * F13.10h-3 — Evolución del EQUIPO: medias de los 3 grupos del TEAM_REPORT_CATALOG
+ * a lo largo de los periodos, leyendo las team_development_reports del
+ * equipo×temporada. Mismo patrón que loadPlayerEvolution (progresión contra uno
+ * mismo, no comparativa entre equipos). La RLS decide qué periodos ve cada rol:
+ * staff/coord ven todos; la familia, solo aquellos cuya valoración de equipo está
+ * expuesta vía informe del hijo publicado (user_can_see_team_report_via_published).
+ */
+export async function loadTeamEvolution(
+  supabase: Supa,
+  teamId: string,
+  seasonId: string,
+): Promise<TeamPeriodAverages[]> {
+  const { data } = await supabase
+    .from('team_development_reports')
+    .select('period, scores')
+    .eq('team_id', teamId)
+    .eq('season_id', seasonId);
+  const byPeriod = new Map<string, Record<string, number>>();
+  for (const r of (data ?? []) as Array<{ period: string; scores: Record<string, number> }>) {
+    byPeriod.set(r.period, r.scores ?? {});
+  }
+  return DEVELOPMENT_PERIODS.map((p) => {
+    const scores = byPeriod.get(p);
+    if (!scores) {
+      return { period: p, rendimiento_colectivo: null, dinamica_grupo: null, evolucion_equipo: null };
+    }
+    const { perGroup } = computeGroupAverages(TEAM_REPORT_CATALOG, scores);
+    return {
+      period: p,
+      rendimiento_colectivo: perGroup.rendimiento_colectivo ?? null,
+      dinamica_grupo: perGroup.dinamica_grupo ?? null,
+      evolucion_equipo: perGroup.evolucion_equipo ?? null,
     };
   });
 }

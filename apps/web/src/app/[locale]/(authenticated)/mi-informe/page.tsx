@@ -22,6 +22,7 @@ import {
   loadTeamObjectives,
   loadFichaStats,
   loadPlayerEvolution,
+  loadTeamEvolution,
 } from '../jugadores/[playerId]/informes/queries';
 import { PlayerSelector } from '../mi-ficha/player-selector';
 import { ReportPeriodSelect } from './report-period-select';
@@ -175,13 +176,14 @@ export default async function MiInformePage({ params, searchParams }: Props) {
           .eq('id', playerId)
           .maybeSingle();
         const team = await resolvePlayerTeamForSeason(supabase, playerId, activeSeason);
-        const [report, playerObjectives, teamObjectives, stats, evolution] =
+        const [report, playerObjectives, teamObjectives, stats, evolution, teamEvolution] =
           await Promise.all([
             loadIndividualReport(supabase, playerId, seasonId, selPeriod),
             loadPlayerObjectives(supabase, playerId, seasonId),
             team ? loadTeamObjectives(supabase, team.teamId, seasonId) : Promise.resolve([]),
             loadFichaStats(supabase, playerId, activeSeason),
             loadPlayerEvolution(supabase, playerId, seasonId),
+            team ? loadTeamEvolution(supabase, team.teamId, seasonId) : Promise.resolve([]),
           ]);
         // Bloque de equipo: por el id enlazado (la RLS helper de PR1 lo permite).
         let teamReport: { scores: Record<string, number>; comment: string | null } | null =
@@ -230,6 +232,7 @@ export default async function MiInformePage({ params, searchParams }: Props) {
           playerObjectives,
           teamObjectives,
           evolution,
+          teamEvolution,
         };
       }
     }
