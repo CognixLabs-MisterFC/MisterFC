@@ -30,7 +30,20 @@ import { OBJ_STATE_CLASS } from '@/lib/objective-display';
 import { ScoreGrid } from './score-grid';
 import { FichaHeader } from './ficha-header';
 import { GroupRadarChart, EvolutionChart } from './report-charts';
-import type { FichaStats, PeriodAverages, ObjectiveRow } from '../queries';
+import type { FichaStats, PeriodAverages, TeamPeriodAverages, ObjectiveRow } from '../queries';
+
+/** Series (clave de grupo → color) del gráfico de evolución individual y de equipo. */
+const INDIV_EVOLUTION_SERIES = [
+  { key: 'tecnico', color: '#34d399' },
+  { key: 'tactico', color: '#60a5fa' },
+  { key: 'fisico', color: '#fbbf24' },
+  { key: 'actitud', color: '#c084fc' },
+];
+const TEAM_EVOLUTION_SERIES = [
+  { key: 'rendimiento_colectivo', color: '#34d399' },
+  { key: 'dinamica_grupo', color: '#60a5fa' },
+  { key: 'evolucion_equipo', color: '#fbbf24' },
+];
 
 export type ReportFichaData = {
   fullName: string;
@@ -51,6 +64,7 @@ export type ReportFichaData = {
   playerObjectives: ObjectiveRow[];
   teamObjectives: ObjectiveRow[];
   evolution: PeriodAverages[];
+  teamEvolution: TeamPeriodAverages[];
 };
 
 export async function ReportFichaView({ data }: { data: ReportFichaData }) {
@@ -87,6 +101,19 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
   const evolutionData = data.evolution.map((e) => ({ ...e, period: t(`period_short.${e.period}`) }));
   const evolutionHasData = data.evolution.some(
     (e) => e.tecnico != null || e.tactico != null || e.fisico != null || e.actitud != null,
+  );
+
+  const teamGroupLabels: Record<string, string> = {
+    rendimiento_colectivo: t('cat_group.rendimiento_colectivo'),
+    dinamica_grupo: t('cat_group.dinamica_grupo'),
+    evolucion_equipo: t('cat_group.evolucion_equipo'),
+  };
+  const teamEvolutionData = data.teamEvolution.map((e) => ({
+    ...e,
+    period: t(`period_short.${e.period}`),
+  }));
+  const teamEvolutionHasData = data.teamEvolution.some(
+    (e) => e.rendimiento_colectivo != null || e.dinamica_grupo != null || e.evolucion_equipo != null,
   );
 
   const renderObjectives = (items: ObjectiveRow[]) =>
@@ -220,20 +247,32 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
         </CardHeader>
         <CardContent>
           {evolutionHasData ? (
-            <EvolutionChart data={evolutionData} labels={groupLabels} />
+            <EvolutionChart
+              data={evolutionData}
+              series={INDIV_EVOLUTION_SERIES}
+              labels={groupLabels}
+            />
           ) : (
             <p className="text-sm text-muted-foreground">{t('evolution_empty')}</p>
           )}
         </CardContent>
       </Card>
 
-      {/* ── 5 · EVOLUCIÓN DE EQUIPO (hueco reservado, trozo posterior) ── */}
+      {/* ── 5 · EVOLUCIÓN DE EQUIPO (3 grupos del catálogo de equipo) ── */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">{t('team_evolution_title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">{t('coming_soon')}</p>
+          {teamEvolutionHasData ? (
+            <EvolutionChart
+              data={teamEvolutionData}
+              series={TEAM_EVOLUTION_SERIES}
+              labels={teamGroupLabels}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">{t('evolution_empty')}</p>
+          )}
         </CardContent>
       </Card>
 
