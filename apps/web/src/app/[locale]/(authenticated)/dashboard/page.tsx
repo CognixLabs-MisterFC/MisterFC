@@ -26,7 +26,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { redirect } from 'next/navigation';
-import type { Role, ClubCensus, RankingEntry } from '@misterfc/core';
+import { daysUntil, deadlineState, type Role, type ClubCensus, type RankingEntry } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +44,7 @@ import {
   loadClubAttendance,
   loadClubRankings,
   loadClubAlerts,
+  loadCampaignDeadlineAlerts,
 } from './queries';
 import { AttendanceTrend } from './attendance-trend';
 
@@ -110,11 +111,25 @@ export default async function DashboardPage({ params }: Props) {
   if (!DASHBOARD_ROLES.includes(role)) redirect(`/${locale}`);
 
   const t = await getTranslations('dashboard');
+  const tPeriod = await getTranslations('informes.period');
   const { season, census, previousCensus } = await loadClubDashboardBase(ctx.activeClub.club.id);
   const results = await loadClubResults(season.teamIds);
   const attendance = await loadClubAttendance(season.teamIds);
   const rankings = await loadClubRankings(season.teamIds);
   const alerts = await loadClubAlerts(season.teamIds);
+  const campaignAlerts = await loadCampaignDeadlineAlerts(ctx.activeClub.club.id, season.teamIds);
+
+  // GD — solo las campañas "por vencer" (≤7 días) o ya vencidas urgen en el
+  // dashboard; el resto de lanzadas no se listan aquí. Cómputo en Europe/Madrid.
+  const todayMadrid = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(
+    new Date(),
+  );
+  const urgentCampaigns = campaignAlerts
+    .map((c) => {
+      const left = daysUntil(c.dueDate, todayMadrid);
+      return { ...c, left, state: deadlineState(left) };
+    })
+    .filter((c) => c.state !== 'ok');
 
   const hasPrevious = previousCensus != null;
   const categoryRows = buildCategoryComparison(census, previousCensus);
@@ -514,13 +529,63 @@ export default async function DashboardPage({ params }: Props) {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          {alerts.lowAttendance.length === 0 && alerts.inactive.length === 0 ? (
+          {alerts.lowAttendance.length === 0 &&
+          alerts.inactive.length === 0 &&
+          urgentCampaigns.length === 0 ? (
             <p className="flex items-center gap-2 text-sm text-misterfc-green">
               <CircleCheck className="size-4" aria-hidden />
               {t('alerts.all_clear')}
             </p>
           ) : (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <>
+              {/* GD — Campañas de evaluación por vencer (≤7 días) o vencidas. */}
+              {urgentCampaigns.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-sm font-semibold">
+                    {t('alerts.campaigns', { count: urgentCampaigns.length })}
+                  </h2>
+                  <ul className="flex flex-col divide-y divide-border">
+                    {urgentCampaigns.map((c) => (
+                      <li
+                        key={c.period}
+                        className="flex flex-wrap items-center justify-between gap-2 py-2"
+                      >
+                        <div className="flex flex-col">
+                          <span className="font-medium">{tPeriod(c.period as 'inicial')}</span>
+                          <span
+                            className={
+                              c.state === 'overdue'
+                                ? 'text-xs font-semibold text-red-500'
+                                : 'text-xs font-semibold text-amber-600 dark:text-amber-400'
+                            }
+                          >
+                            {c.state === 'overdue'
+                              ? t('alerts.campaign_overdue', {
+                                  days: Math.abs(c.left),
+                                  pending: c.pending,
+                                  teams: c.pendingTeams,
+                                })
+                              : t('alerts.campaign_soon', {
+                                  days: Math.max(0, c.left),
+                                  pending: c.pending,
+                                  teams: c.pendingTeams,
+                                })}
+                          </span>
+                        </div>
+                        <Link
+                          href="/plantilla/informes"
+                          className="text-sm font-medium text-misterfc-green hover:underline"
+                        >
+                          {t('alerts.campaign_link')}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {(alerts.lowAttendance.length > 0 || alerts.inactive.length > 0) && (
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               {/* Baja asistencia (D3) */}
               <div className="flex flex-col gap-2">
                 <h2 className="text-sm font-semibold">
@@ -584,7 +649,9 @@ export default async function DashboardPage({ params }: Props) {
                   </Table>
                 )}
               </div>
-            </div>
+                </div>
+              )}
+            </>
           )}
           <p className="text-xs text-muted-foreground">{t('alerts.criteria')}</p>
         </CardContent>

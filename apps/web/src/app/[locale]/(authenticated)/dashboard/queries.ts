@@ -25,6 +25,8 @@ import {
   formatPlayerName,
   activeSeasonLabel,
   currentSeason,
+  reportStatus,
+  DEVELOPMENT_REPORT_CATALOG,
   createSupabaseServerClient,
   type ClubTeam,
   type ClubMember,
@@ -553,4 +555,116 @@ export async function loadClubAlerts(teamIds: readonly string[]): Promise<ClubAl
   }));
 
   return { lowAttendance, inactive };
+}
+
+/** Aviso de vencimiento de una campaña de evaluación lanzada (D8, GD). */
+export interface CampaignDeadlineAlert {
+  period: string;
+  /** Fecha límite en formato YYYY-MM-DD (la urgencia la calcula la vista). */
+  dueDate: string;
+  /** Jugadores del roster activo sin informe completo (únicos, D6). */
+  pending: number;
+  /** Equipos del club con ≥1 informe pendiente del periodo. */
+  pendingTeams: number;
+}
+
+/**
+ * F13.10g-GD — Campañas LANZADAS con informes pendientes, para el aviso de
+ * "campañas por vencer" del dashboard ejecutivo (admin/coord). Sin migración:
+ * lee `assessment_campaigns` (status='launched') de la temporada activa y deriva
+ * el progreso del MISMO modo que el centro de mando (roster activo de `teamIds`
+ * vs `development_reports` completos, D6). No filtra por urgencia: la vista
+ * decide qué realzar con `daysUntil`/`deadlineState` (Europe/Madrid). RLS
+ * heredada (admin/coord ven su club) — sin políticas nuevas.
+ */
+export async function loadCampaignDeadlineAlerts(
+  clubId: string,
+  teamIds: readonly string[],
+): Promise<CampaignDeadlineAlert[]> {
+  if (teamIds.length === 0) return [];
+  const supabase = createSupabaseServerClient(await createCookieAdapter());
+
+  // Temporada activa (id) del club.
+  const { data: season } = await supabase
+    .from('seasons')
+    .select('id')
+    .eq('club_id', clubId)
+    .eq('status', 'active')
+    .order('label', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!season) return [];
+  const seasonId = season.id as string;
+
+  // Campañas lanzadas con fecha límite.
+  const { data: campaignRows } = await supabase
+    .from('assessment_campaigns')
+    .select('period, due_date')
+    .eq('season_id', seasonId)
+    .eq('status', 'launched');
+  const launched = ((campaignRows ?? []) as Array<{ period: string; due_date: string | null }>)
+    .filter((c) => c.due_date)
+    .map((c) => ({ period: c.period, dueDate: c.due_date as string }));
+  if (launched.length === 0) return [];
+
+  // Roster activo por equipo (player_id únicos por equipo).
+  const { data: rosterRows } = await supabase
+    .from('team_members')
+    .select('player_id, team_id')
+    .in('team_id', teamIds)
+    .is('left_at', null);
+  const rosterByTeam = new Map<string, Set<string>>();
+  const rosterIds = new Set<string>();
+  for (const r of (rosterRows ?? []) as Array<{ player_id: string; team_id: string }>) {
+    rosterIds.add(r.player_id);
+    const set = rosterByTeam.get(r.team_id) ?? new Set<string>();
+    set.add(r.player_id);
+    rosterByTeam.set(r.team_id, set);
+  }
+  if (rosterIds.size === 0) return [];
+
+  // Informes completados por periodo (de esos equipos / roster).
+  const periods = launched.map((l) => l.period);
+  const { data: reportRows } = await supabase
+    .from('development_reports')
+    .select('player_id, period, scores')
+    .eq('season_id', seasonId)
+    .in('team_id', teamIds)
+    .in('period', periods);
+  const completedByPeriod = new Map<string, Set<string>>();
+  for (const r of (reportRows ?? []) as Array<{
+    player_id: string;
+    period: string;
+    scores: Record<string, number>;
+  }>) {
+    if (
+      rosterIds.has(r.player_id) &&
+      reportStatus(r.scores ?? {}, DEVELOPMENT_REPORT_CATALOG) === 'completed'
+    ) {
+      const set = completedByPeriod.get(r.period) ?? new Set<string>();
+      set.add(r.player_id);
+      completedByPeriod.set(r.period, set);
+    }
+  }
+
+  return launched
+    .map((l) => {
+      const completed = completedByPeriod.get(l.period) ?? new Set<string>();
+      // Pendientes únicos (un jugador en dos equipos cuenta una vez).
+      let pending = 0;
+      for (const pid of rosterIds) if (!completed.has(pid)) pending++;
+      // Equipos con al menos un pendiente.
+      let pendingTeams = 0;
+      for (const members of rosterByTeam.values()) {
+        let teamPending = false;
+        for (const pid of members)
+          if (!completed.has(pid)) {
+            teamPending = true;
+            break;
+          }
+        if (teamPending) pendingTeams++;
+      }
+      return { period: l.period, dueDate: l.dueDate, pending, pendingTeams };
+    })
+    .filter((a) => a.pending > 0);
 }

@@ -214,7 +214,8 @@
       "title": "Campanyes d'avaluació obertes ({count})",
       "item": "{period}: {count} informes pendents",
       "due": "Data límit: {date} · queden {days} dies",
-      "overdue": "Data límit vençuda: {date}",
+      "due_soon": "Queden {days} dies! · {date}",
+      "overdue_days": "Vençuda fa {days} dies · {date}",
       "cta": "Anar a redactar"
     }
   },
@@ -1737,6 +1738,10 @@
       "criteria": "Baixa assistència: menys del 60 % amb almenys 5 sessions. Inactiu: sense partits ni assistència en tota la temporada.",
       "low_attendance": "Baixa assistència ({count})",
       "inactive": "Jugadors inactius ({count})",
+      "campaigns": "Campanyes d'avaluació a punt de vèncer ({count})",
+      "campaign_soon": "Queden {days} dies · {pending} informes pendents en {teams} equips",
+      "campaign_overdue": "Vençuda fa {days} dies · {pending} informes pendents en {teams} equips",
+      "campaign_link": "Gestionar campanya",
       "col": {
         "player": "Jugador",
         "pct": "% assist.",

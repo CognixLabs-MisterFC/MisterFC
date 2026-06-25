@@ -214,7 +214,8 @@
       "title": "Open evaluation campaigns ({count})",
       "item": "{period}: {count} reports pending",
       "due": "Deadline: {date} · {days} days left",
-      "overdue": "Deadline passed: {date}",
+      "due_soon": "{days} days left! · {date}",
+      "overdue_days": "Overdue by {days} days · {date}",
       "cta": "Go write"
     }
   },
@@ -1737,6 +1738,10 @@
       "criteria": "Low attendance: below 60% with at least 5 sessions. Inactive: no matches or attendance all season.",
       "low_attendance": "Low attendance ({count})",
       "inactive": "Inactive players ({count})",
+      "campaigns": "Evaluation campaigns due soon ({count})",
+      "campaign_soon": "{days} days left · {pending} reports pending across {teams} teams",
+      "campaign_overdue": "Overdue by {days} days · {pending} reports pending across {teams} teams",
+      "campaign_link": "Manage campaign",
       "col": {
         "player": "Player",
         "pct": "Att. %",
