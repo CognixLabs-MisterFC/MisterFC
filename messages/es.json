@@ -213,7 +213,8 @@
       "title": "Campañas de evaluación abiertas ({count})",
       "item": "{period}: {count} informes pendientes",
       "due": "Fecha límite: {date} · quedan {days} días",
-      "overdue": "Fecha límite vencida: {date}",
+      "due_soon": "¡Quedan {days} días! · {date}",
+      "overdue_days": "Vencida hace {days} días · {date}",
       "cta": "Ir a redactar"
     }
   },
@@ -1736,6 +1737,10 @@
       "criteria": "Baja asistencia: menos del 60 % con al menos 5 sesiones. Inactivo: sin partidos ni asistencia en toda la temporada.",
       "low_attendance": "Baja asistencia ({count})",
       "inactive": "Jugadores inactivos ({count})",
+      "campaigns": "Campañas de evaluación por vencer ({count})",
+      "campaign_soon": "Quedan {days} días · {pending} informes pendientes en {teams} equipos",
+      "campaign_overdue": "Vencida hace {days} días · {pending} informes pendientes en {teams} equipos",
+      "campaign_link": "Gestionar campaña",
       "col": {
         "player": "Jugador",
         "pct": "% asist.",

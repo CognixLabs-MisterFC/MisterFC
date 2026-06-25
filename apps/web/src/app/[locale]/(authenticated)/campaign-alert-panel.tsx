@@ -3,6 +3,11 @@
  * pendientes. Server, rol-aware (la query decide la audiencia, molde 12.8b):
  * entrenadores ven sus equipos; admin/coord, el club; jugador/familia, nada. Si no
  * hay pendientes, no se muestra. Enlaza a "Mis equipos" para redactar.
+ *
+ * F13.10g-GD — Refina la URGENCIA: cuando faltan ≤7 días para la fecha límite
+ * (deadlineState='soon') o ya está vencida ('overdue'), la alerta se realza
+ * (ámbar/rojo) y el texto pasa a "¡Quedan X días!" / "Vencida hace X días". Todo
+ * server-side sobre la due_date (Europe/Madrid); SIN fila de notificación (D8).
  */
 
 import { getTranslations } from 'next-intl/server';
@@ -36,8 +41,17 @@ export async function CampaignAlertPanel({ role, clubId, membershipId, locale }:
       timeZone: 'Europe/Madrid',
     }).format(new Date(`${ymd}T00:00:00Z`));
 
+  // GD — la urgencia del conjunto tiñe el borde de la card: rojo si hay alguna
+  // vencida, ámbar si alguna entra en los ≤7 días, neutro si todas van holgadas.
+  const states = alerts.map((a) => deadlineState(daysUntil(a.dueDate, todayMadrid)));
+  const cardBorder = states.includes('overdue')
+    ? 'border-red-500/50'
+    : states.includes('soon')
+      ? 'border-amber-500/50'
+      : 'border-border';
+
   return (
-    <Card className="border-amber-500/40">
+    <Card className={cardBorder}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
           <ClipboardList className="size-4" aria-hidden />
@@ -61,15 +75,17 @@ export async function CampaignAlertPanel({ role, clubId, membershipId, locale }:
                   <span
                     className={
                       state === 'overdue'
-                        ? 'text-xs font-medium text-red-600 dark:text-red-400'
+                        ? 'text-xs font-semibold text-red-600 dark:text-red-400'
                         : state === 'soon'
-                          ? 'text-xs font-medium text-amber-600 dark:text-amber-400'
+                          ? 'text-xs font-semibold text-amber-600 dark:text-amber-400'
                           : 'text-xs text-muted-foreground'
                     }
                   >
                     {state === 'overdue'
-                      ? t('overdue', { date: fmtDate(a.dueDate) })
-                      : t('due', { date: fmtDate(a.dueDate), days: Math.max(0, left) })}
+                      ? t('overdue_days', { days: Math.abs(left), date: fmtDate(a.dueDate) })
+                      : state === 'soon'
+                        ? t('due_soon', { days: Math.max(0, left), date: fmtDate(a.dueDate) })
+                        : t('due', { date: fmtDate(a.dueDate), days: Math.max(0, left) })}
                   </span>
                 </div>
                 <Link
