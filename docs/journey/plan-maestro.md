@@ -721,7 +721,7 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 - **Incluir jugadas en sesiones (F12↔F13, #192)** — ya en el backlog de la Fase 13 (arriba). Depende de F13-pizarra (13.5 playbook).
 - **Reutilizar jugadas** — parte de **F13-pizarra pendiente** (13.5 biblioteca + 13.6 compartir).
-- **Revalidar ratios de familia si F14.10** cierra `events_select` por equipo — registrado en [known-issues.md](known-issues.md) (los denominadores de H-4 dependen de que `events` SELECT siga abierto al club).
+- ~~**Revalidar ratios de familia si F14.10** cierra `events_select` por equipo~~ — **RESUELTO (PR #226)**: la policy `events_select` incluye `user_is_team_member_account`, así que la familia sigue contando los eventos del equipo de su hijo; verificado en vivo. Borde `left_at` anotado en [known-issues.md](known-issues.md).
 
 ---
 
@@ -747,8 +747,8 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **14.6** Derecho de rectificación (UI para editar) — ya cubierto en Fase 2, validar — 30 min
 - **14.7** Derecho de supresión (borrado lógico con plazo de gracia) — 2 h
 - **14.8** Política de privacidad y términos versionados en la app — 1–2 h
-- **14.9** Endurecer RLS de `capabilities` a `team_staff` específico — 1–2 h. Hoy las RLS permiten que un entrenador_principal del club edite las capabilities de cualquier ayudante de cualquier equipo del club. Debe filtrar al `team_staff` concreto al que pertenece ese ayudante (un principal solo puede tocar las capabilities de los ayudantes activos en sus propios equipos). Migración con drop+create de las policies de `capabilities` + helper `user_is_principal_of_assistant_team(membership_id)` (SECURITY DEFINER) + pgTAP con 4 casos. Recoge la deuda registrada en `known-issues.md` como "F2.7 capabilities cross-team". Sin cambio de UI.
-- **14.10** Endurecer RLS de `events` para aislamiento equipo-a-equipo — 1–2 h. Hoy la RLS de `events` solo verifica miembro del club; el filtrado "jugador ve solo eventos de su equipo" es UX, no seguridad. Un jugador autenticado puede listar via API todos los eventos del club. Cambio: predicate SELECT añade `(team_id IS NULL OR user_is_in_team(team_id))` cuando el rol es jugador/ayudante. Migración + pgTAP con 4 casos (jugador del team A no ve evento del team B; ayudante sin team_staff no ve nada; admin/coord ven todo del club; eventos globales sin team_id siguen visibles). Recoge la deuda registrada en `known-issues.md` como "F3 events RLS visibilidad".
+- **14.9** `[resuelto 2026-06-26, PR #225]` Endurecer RLS de `capabilities` a `team_staff` específico. **Adelantado en la auditoría de permisos** (no esperó a F14): helper `user_is_principal_of_assistant_team(membership_id)` (SECURITY DEFINER, anti-escalada) + recreación de `capabilities_update` **y** `capabilities_select` filtrando por equipo + pgTAP + UI por RPC. Ver [known-issues.md → Auditoría de permisos](../journey/known-issues.md).
+- **14.10** `[resuelto 2026-06-26, PR #226]` Endurecer RLS de `events` para aislamiento equipo-a-equipo. **Adelantado en la auditoría de permisos**: policy `events_select` con 4 ramas (admin/coord → club; `team_id IS NULL` → miembro; equipo → `user_is_staff_of_team`; equipo → familia vía `user_is_team_member_account`). Los ratios H-4 de la familia se preservan sin RPC. pgTAP + verificación en vivo. Borde `left_at` anotado. Ver [known-issues.md](../journey/known-issues.md).
 
 ---
 

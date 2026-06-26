@@ -2,12 +2,41 @@
 
 Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original; abordar en su propio PR.
 
+## Auditoría de permisos (2026-06-26) — CERRADA
+
+Barrido sistemático de **todas las acciones × roles** (asistencia, convocatorias, alineaciones, calendario/eventos, sesiones, ejercicios, jugadas, partido/estadísticas, valoraciones, informes de desarrollo+campaña+objetivos, jugadores/plantilla, capabilities, cuerpo técnico, mensajería, anuncios) buscando:
+- el patrón **"rol de CLUB (`memberships.role`) vs rol de EQUIPO (`team_staff.staff_role`)"** — helpers RLS que gateaban "principal" por el rol de club, bloqueando a un principal de equipo cuyo rol de club es ayudante;
+- **sobre-exposición** (un rol ve/hace algo indebido) y **sub-exposición** (un rol no puede algo que debería).
+
+**Resultado:** solo **2 instancias vivas** del patrón club-vs-equipo (asistencia y eventos); el resto de helpers de equipo (alineaciones, sesiones, ejercicios, jugadas, convocatorias) ya miraban `team_staff` correctamente. Todo lo detectado quedó **arreglado** (abajo). **No reabrir esta auditoría ni re-preguntar lo ya decidido.**
+
+### Arreglado
+
+| Hallazgo | Causa | Cierre |
+|---|---|---|
+| Bug asistencia | `user_can_record_attendance` usaba rol de club | → `user_is_principal_of_team` (PR #223) |
+| Bug eventos | `user_can_manage_event` usaba rol de club | → `user_is_principal_of_team` (PR #224) |
+| F14.9 capabilities cross-team | un principal podía editar caps de ayudante de otro equipo | → `user_is_principal_of_assistant_team` + `capabilities_update`/`_select` por equipo (PR #225) |
+| F14.10 events SELECT abierto | cualquier miembro listaba eventos de cualquier equipo | → policy `events_select` con aislamiento por equipo; ratios de familia preservados vía `user_is_team_member_account` (PR #226) |
+
+**F14.9 y F14.10 dejan de ser deuda de F14** (resueltos; ver entradas marcadas RESUELTO abajo).
+
+### Decisiones de negocio cerradas (NO son bugs — NO tocar)
+
+- **Gestión de plantilla** (`players`/`team_members`): es función de **CLUB** — admin/coord/principal-de-club ∪ capability `can_manage_squad`. Confirmado, se queda como está.
+- **Informes de desarrollo**: los redacta **cualquier staff del equipo** (principal **y** ayudante, vía `user_is_team_staff` en `user_can_create_development_reports`). Confirmado, se queda como está.
+
+### Deuda menor pendiente (no bloqueante)
+
+- **Gates de UI por lista de roles** (`post-partido` `STAFF_ROLES`, `capabilities` `ROLES_THAT_CAN_EDIT_CAPS`): migrar a RPC para evitar divergencia UI↔RLS. Severidad **cosmética** (la verdad la pone la RLS). Limpieza **oportunista** al tocar esas pantallas.
+- **Borde `left_at`** en `events_select`: la familia de un jugador que causó baja deja de ver/contar ratios de esa temporada; si en el futuro se necesita, relajar el helper de familia a "miembro en esa temporada". (Detalle en F14.10 abajo.)
+
 ## Activas
 
-### F13.10/F14.10 — revalidar ratios de familia si se cierra `events_select` por equipo
+### F13.10/F14.10 — revalidar ratios de familia si se cierra `events_select` por equipo ✅ RESUELTO (2026-06-26)
 - **Detectado en**: 2026-06-25, cierre de F13.10 (subfase H-4, stats como ratio).
-- **Contexto**: los **denominadores** de las estadísticas de la ficha de desarrollo (convocados / **total de partidos del equipo**, entrenos asistidos / **total de entrenos**) se cuentan desde `events` del equipo en la temporada. Hoy funcionan **porque** la policy `events_select_member` está abierta a cualquier miembro autenticado del club (la misma apertura que **F14.10** quiere cerrar).
-- **Plan**: cuando se aborde **F14.10** (aislamiento de `events` team-a-team), **revalidar** que la familia/jugador siga pudiendo contar los eventos del equipo de su hijo para los ratios; si la nueva RLS lo recorta, exponer el total por una vía RLS-aware (helper o `count` server-side con el cliente de servicio acotado al equipo del informe publicado). Sin esto, los ratios mostrarían un denominador incompleto.
+- **Contexto**: los **denominadores** de las estadísticas de la ficha de desarrollo se cuentan desde `events` del equipo. El riesgo era que al cerrar `events_select` (F14.10) la familia dejara de poder contarlos.
+- **Resuelto en** (PR #226): la nueva policy `events_select` incluye una rama `user_is_team_member_account(team_id)`, así que la familia sigue viendo (y contando) los eventos del equipo de su hijo **sin** necesidad de RPC. **Verificado en vivo** (familia real Infantil B: total_matches=3, total_trainings=6 ≠ 0; equipo ajeno = 0). No se tocó `loadFichaStats` ni la UI. Borde `left_at` anotado en F14.10 abajo.
 - **Referencia**: `loadFichaStats` en `apps/web/src/app/[locale]/(authenticated)/jugadores/[playerId]/informes/queries.ts`; spec [13.10 §6](../specs/13.10-informes-desarrollo.md); F14.10 abajo.
 
 ### Nav — aplicar el patrón "hub" al resto del menú (reducir el sidebar)
@@ -100,11 +129,10 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 - **Planificado en**: **F13** (Pizarra táctica 2D con animación). El tipo de los frames lo decide F13 (no se compromete en F11). Reusa `<DiagramView>`/`<PitchEditor>` como base.
 - **Referencia**: `docs/specs/11.0-biblioteca-ejercicios.md` §4.2 ("Frame-extensibilidad (F13)") + `elementAnchors` en `packages/core/src/diagram/diagram.ts`.
 
-### F14.9 — RLS capabilities cross-team
-- **Issue original** (2026-05-28, F2.7): el policy `capabilities_update` (F1.7) acepta admin/coord/principal del **club** sin filtrar por equipo. Un entrenador principal del Equipo A puede modificar caps de un ayudante asignado solo al Equipo B. La RLS sigue siendo la autoridad y el server action no chequea pertenencia por equipo.
-- **Impacto en beta**: bajo (el primer club piloto opera con pocos equipos cuyos principales son la misma persona).
-- **Planificado en**: **F14.9** (1–2 h). Helper `user_is_principal_of_assistant_team(membership_id)` + drop/create de policies de `capabilities` filtrando por `team_staff` específico + pgTAP con 4 casos. Sin cambio de modelo.
-- **Referencia**: `docs/specs/2.7-capabilities-ui.md` §8.
+### F14.9 — RLS capabilities cross-team ✅ RESUELTO (2026-06-26)
+- **Issue original** (2026-05-28, F2.7): el policy `capabilities_update` aceptaba admin/coord/principal del **club** sin filtrar por equipo. Un entrenador principal del Equipo A podía modificar caps de un ayudante asignado solo al Equipo B.
+- **Resuelto en** (PR #225, auditoría de permisos): helper `user_is_principal_of_assistant_team(membership_id)` (security definer, excluye la auto-edición) + recreación de `capabilities_update` **y** `capabilities_select` (admin/coord ∪ principal del equipo del ayudante). UI por RPC. pgTAP (T3/T3b/T7/T8…). Sin cambio de modelo. Detalle en la sección **Auditoría de permisos**.
+- **Referencia**: `docs/specs/2.7-capabilities-ui.md` §8, `supabase/migrations/20260807000000_fix_capabilities_update_cross_team.sql`.
 
 ### F14.10 — RLS events team-isolation ✅ RESUELTO (2026-06-26)
 - **Issue original** (2026-05-29, spec 3.0 §4.6): la policy `events_select_member` abría SELECT a cualquier miembro autenticado del club. Un jugador del Equipo A podía listar via API eventos del Equipo B. El filtrado "jugador ve solo eventos de su equipo" era **UX, no seguridad**. Decisión deliberada de Ola 1.
