@@ -20,7 +20,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 11 | Biblioteca de ejercicios | ☑ completada | 2026-06-15 | 2026-06-17 |
 | 11B | Pizarra táctica en vivo (sobre la alineación) | ☑ completada | 2026-06-17 | 2026-06-17 |
 | 12 | Planificador de sesiones con plantillas microciclo | ☑ completada | 2026-06-18 | 2026-06-20 |
-| 13 | Pizarra táctica 2D con animación | ☐ pendiente | — | — |
+| 13 | Pizarra táctica 2D con animación | ☑ completada | 2026-06-26 | 2026-06-27 |
 | 13.10 | Informes de desarrollo y campaña (extensión F8/F9 — **NO** la pizarra) | ☑ completada | 2026-06-23 | 2026-06-25 |
 | 14 | RGPD para menores | ☐ pendiente | — | — |
 | 15 | Testing E2E, observabilidad y runbook | ☐ pendiente | — | — |
@@ -30,11 +30,11 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 ## Estado actual (2026-06-26)
 
+- **F13 — Pizarra de jugadas (13.1–13.7)** — **cerrada** (2026-06-27). El contrato/editor/animación/reproducción/fullscreen ya existían (build original de `plays`); la **serie JR** (ADR-0019, **#229–#232**) los reorganizó a **banco del club + ciclo de aprobación** (proponer/aprobar/rechazar), **playbook por equipo** y **compartir con la familia** (con índice del playbook del jugador). **13.8 (exportar vídeo/GIF) descartado y eliminado del roadmap.**
 - **F13.10** (Informes de desarrollo y campaña de evaluaciones) — **cerrada** (#200–#221). Ver [fase-13.10-summary.md](fase-13.10-summary.md) y [spec 13.10](../specs/13.10-informes-desarrollo.md).
 - **Auditoría de permisos** — **cerrada** (2026-06-26). Barrido acciones×roles del patrón rol-de-club vs rol-de-equipo + sobre/sub-exposición. 4 hallazgos arreglados (PRs #223 asistencia, #224 eventos, #225 F14.9 capabilities cross-team, #226 F14.10 events SELECT). **F14.9 y F14.10 dejan de ser deuda de F14.** 2 decisiones de negocio cerradas (plantilla = club; informes = cualquier staff del equipo). Detalle en [known-issues.md → Auditoría de permisos](known-issues.md).
 
 **Pendiente (backlog, sin programar salvo F14):**
-- **F13-pizarra** (13.1–13.8): jugadas animadas + playbook + reutilizar jugadas. Sigue ☐.
 - **F13B** (nuevo): liga/copa (`competition_type`) en stats/PDF + sección **no-convocatorias (H-5)** con su decisión Opción 1/2. En backlog de [plan-maestro.md](plan-maestro.md).
 - **Reutilizar jugadores** entre equipos (nuevo). En backlog.
 - **Jugadas en sesión** (F12↔F13, #192). En backlog.
@@ -374,9 +374,26 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Reuso**: el "ciclo de metodología del club" de F11 sirvió de molde para la visibilidad de la sesión; el patrón "equipos del staff" del home (F7.12) se reutilizó en la alerta 12.8b; el lookup RLS-aware de 12.9 (`loadPlannedEventIds`) se reusó en 12.8b.
 - **Diferidos** (en [known-issues.md](known-issues.md), NO pendientes de F12): selector "evento vinculado" + desvincular explícito en el editor (D2/D6); sync de `session_date` al reprogramar el evento (D5); planificación en trainings de categoría/club (D3); diagramas en el PDF (D6); estructura de bloques configurable por club (D1 → F17); pgTAP fuera de CI (F15.8, ya logueado).
 
+## Fase 13 — Pizarra de jugadas (cierre)
+
+> **Cerrada 2026-06-27.** Núcleo entregable = **13.0–13.7** (spec [13.0](../specs/13.0-pizarra-jugadas-animadas.md)). El **contrato de jugada / editor por frames / animación / reproducción / fullscreen** ya existían (build original de `plays`). La **serie JR** (ADR-0019) reorganizó el "envoltorio" de team-scoped a **banco del club + ciclo de aprobación + `team_plays`**, cerrando la fase.
+
+| Subfase | Estado | Entregado por |
+|---|---|---|
+| 13.1–13.4 (contrato/editor/animación/reproducción) | ☑ | build original `plays`; modelo reorganizado por **JR-0 #229** |
+| 13.5 Biblioteca/playbook | ☑ | **JR-1 #230** (banco del club + ciclo proponer/aprobar/rechazar) |
+| 13.6 Compartir con equipo/familia | ☑ | **JR-2 #231** (`team_plays` + `shared_with_family`) + **#232** (índice del playbook del jugador) |
+| 13.7 Modo presentación / fullscreen | ☑ | build original `plays` |
+| ~~13.8 Exportar vídeo/GIF~~ | ❌ descartado | eliminado del roadmap (no diferido) |
+
+- **Reutilizar jugadas** entre equipos = entregado por el modelo de banco (cualquier equipo selecciona del banco vía `team_plays`).
+- **Backlog que sigue abierto**: jugadas en sesiones (F12↔F13, #192, ahora desbloqueado), F13B (liga/copa + no-convocatorias H-5), reutilizar **jugadores** entre equipos.
+
+---
+
 ## Fase 13.10 — Subfases entregadas
 
-> ⚠️ **NO es la pizarra de F13** (13.1–13.8, sigue ☐). "F13.10" es etiqueta heredada del desarrollo: informes de desarrollo + campaña, **extensión de F8/F9**. Detalle: [fase-13.10-summary.md](fase-13.10-summary.md), spec [13.10](../specs/13.10-informes-desarrollo.md), [plan-maestro.md](plan-maestro.md) §Fase 13.10.
+> ⚠️ **NO es la pizarra de F13** (13.1–13.7, cerrada 2026-06-27 por las JR #229–#232). "F13.10" es etiqueta heredada del desarrollo: informes de desarrollo + campaña, **extensión de F8/F9**. Detalle: [fase-13.10-summary.md](fase-13.10-summary.md), spec [13.10](../specs/13.10-informes-desarrollo.md), [plan-maestro.md](plan-maestro.md) §Fase 13.10.
 
 | Subfase | Fecha | PR | Resumen |
 |---|---|---|---|

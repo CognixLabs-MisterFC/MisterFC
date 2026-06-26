@@ -124,10 +124,10 @@ Barrido sistemático de **todas las acciones × roles** (asistencia, convocatori
 
 > Entradas que dejan de ser "deuda activa" porque han pasado a subfase concreta del plan-maestro con horas presupuestadas. El detalle del plan vive en [plan-maestro.md](plan-maestro.md); aquí solo el cross-reference al issue original para no perder el rastro de por qué entró al plan.
 
-### F13 — Animación por frames de la jugada (el diagrama de F11 = un frame)
+### F13 — Animación por frames de la jugada (el diagrama de F11 = un frame) ✅ RESUELTO (2026-06-27)
 - **Issue original** (2026-06-15, spec 11.0 §4.2 / cierre F11 2026-06-17): el diagrama del ejercicio (F11) es una **escena estática**. El contrato de `@misterfc/core` se diseñó **frame-extensible**: cada elemento tiene `id` ESTABLE y su posición es separable (`elementAnchors`), de modo que F13 pueda envolver la escena en frames e interpolar posiciones por `id` entre frames. El `Diagram` estático de F11 equivale a **un frame**.
-- **Planificado en**: **F13** (Pizarra táctica 2D con animación). El tipo de los frames lo decide F13 (no se compromete en F11). Reusa `<DiagramView>`/`<PitchEditor>` como base.
-- **Referencia**: `docs/specs/11.0-biblioteca-ejercicios.md` §4.2 ("Frame-extensibilidad (F13)") + `elementAnchors` en `packages/core/src/diagram/diagram.ts`.
+- **Resuelto en**: **F13 cerrada (2026-06-27)** — pizarra de jugadas animada por frames entregada (contrato `play`/`frames` + `sceneAtTime`, editor por frame, reproducción). El modelo/scope lo redefinió ADR-0019 / JR #229–#232 (banco del club + ciclo + `team_plays`). Reusa `<DiagramView>`/`<PitchEditor>`.
+- **Referencia**: `docs/specs/11.0-biblioteca-ejercicios.md` §4.2 ("Frame-extensibilidad (F13)") + `elementAnchors` en `packages/core/src/diagram/diagram.ts`; [spec 13.0](../specs/13.0-pizarra-jugadas-animadas.md) + [ADR-0019](../decisions/ADR-0019-jugadas-banco-club-aprobacion.md).
 
 ### F14.9 — RLS capabilities cross-team ✅ RESUELTO (2026-06-26)
 - **Issue original** (2026-05-28, F2.7): el policy `capabilities_update` aceptaba admin/coord/principal del **club** sin filtrar por equipo. Un entrenador principal del Equipo A podía modificar caps de un ayudante asignado solo al Equipo B.
