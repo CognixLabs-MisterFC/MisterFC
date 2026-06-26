@@ -3158,6 +3158,10 @@ export type Database = {
         Args: { p_conversation_id: string }
         Returns: boolean
       }
+      user_is_principal_of_assistant_team: {
+        Args: { p_membership_id: string }
+        Returns: boolean
+      }
       user_is_principal_of_team: {
         Args: { p_team_id: string }
         Returns: boolean
