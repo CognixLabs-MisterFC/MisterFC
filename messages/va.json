@@ -2382,7 +2382,9 @@
         "title": "Playbook",
         "empty": "Encara no hi ha jugades compartides.",
         "untitled": "Jugada",
-        "frame_count": "{count, plural, =1 {# fotograma} other {# fotogrames}}"
+        "frame_count": "{count, plural, =1 {# fotograma} other {# fotogrames}}",
+        "count": "{count, plural, =1 {# jugada} other {# jugades}}",
+        "view_all": "Veure el playbook →"
       }
     },
     "no_team": "Encara no estàs assignat a cap equip. Parla amb el coordinador del club.",
@@ -2395,6 +2397,10 @@
       "physical": "Objectiu físic",
       "no_exercises": "Sense exercicis.",
       "exercise_fallback": "Exercici"
+    },
+    "playbook": {
+      "title": "Playbook",
+      "subtitle": "Jugades que el teu entrenador ha compartit amb l'equip."
     }
   },
   "alineacion": {
