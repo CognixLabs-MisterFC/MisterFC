@@ -137,7 +137,11 @@
       "event_updated_named": "Entrenament actualitzat: {title}",
       "generic": "Tens una novetat",
       "development_report_published": "S'ha publicat un informe de desenvolupament",
-      "evaluation_campaign_launched": "Campanya d'avaluació oberta"
+      "evaluation_campaign_launched": "Campanya d'avaluació oberta",
+      "play_approved": "Jugada publicada",
+      "play_approved_named": "Jugada publicada: {name}",
+      "play_rejected": "Jugada rebutjada",
+      "play_rejected_named": "Jugada rebutjada: {name}"
     },
     "dashboard_card": {
       "title": "Tauler executiu",
@@ -3229,15 +3233,8 @@
     "fields": {
       "name": "Nom",
       "name_ph": "Entrada en profunditat per banda",
-      "team": "Equip",
-      "team_ph": "Tria un equip",
-      "visibility": "Visibilitat",
       "description": "Descripció",
       "description_ph": "Com executar la jugada…"
-    },
-    "visibility": {
-      "staff": "Només staff",
-      "team": "Equip"
     },
     "frames": {
       "title": "Fotogrames",
@@ -3257,13 +3254,12 @@
       "search_placeholder": "Cercar per nom…",
       "search_label": "Cercar jugades",
       "search_clear": "Netejar cerca",
-      "team_all": "Tots els equips",
-      "visibility_all": "Tota la visibilitat",
       "updated": "Actualitzada {date}",
       "clear": "Llevar filtres",
       "page_of": "Pàgina {current} de {total}",
       "prev": "Anterior",
-      "next": "Següent"
+      "next": "Següent",
+      "status_all": "Tots els estats"
     },
     "playback": {
       "title": "Reproducció",
@@ -3289,14 +3285,56 @@
       "body": "El teu entrenador ha compartit «{name}»."
     },
     "toast": {
-      "saved": "Jugada guardada"
+      "saved": "Jugada guardada",
+      "proposed": "Jugada proposta.",
+      "approved": "Jugada publicada.",
+      "rejected": "Jugada rebutjada.",
+      "archived": "Jugada arxivada."
     },
     "errors": {
       "forbidden": "Permís denegat",
       "invalid": "Dades no vàlides",
       "not_found": "No trobada",
       "generic": "Error en guardar"
-    }
+    },
+    "status": {
+      "draft": "Esborrany",
+      "proposed": "Proposta",
+      "published": "Publicada",
+      "rejected": "Rebutjada",
+      "archived": "Arxivada"
+    },
+    "actions": {
+      "propose": "Proposar",
+      "repropose": "Reproposar",
+      "approve": "Aprovar",
+      "publish": "Publicar",
+      "reject": "Rebutjar",
+      "archive": "Arxivar"
+    },
+    "confirm": {
+      "reject_title": "Rebutjar la jugada",
+      "reject_desc": "Indica a l'autor per què es rebutja perquè la puga corregir i tornar a proposar.",
+      "reject_reason_label": "Motiu del rebuig",
+      "reject_reason_placeholder": "Ex. Falten els moviments de la segona fase.",
+      "cancel": "Cancel·lar",
+      "archive_title": "Voleu arxivar la jugada?",
+      "archive_desc": "La jugada publicada s'arxivarà i deixarà d'aparéixer a la biblioteca.",
+      "confirm_archive": "Arxivar"
+    },
+    "tabs": {
+      "library": "Biblioteca",
+      "review": "Pendents de revisió"
+    },
+    "review": {
+      "title": "Pendents de revisió"
+    },
+    "detail": {
+      "approved_by_at": "Aprovada per {name} · {date}",
+      "published_note": "Publicada",
+      "rejected_reason": "Motiu del rebuig"
+    },
+    "read_only": "Només lectura"
   },
   "partidos": {
     "title": "Partits",

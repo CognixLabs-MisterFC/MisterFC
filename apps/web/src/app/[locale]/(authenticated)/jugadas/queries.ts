@@ -1,9 +1,11 @@
 /**
- * F13.2 — Queries del editor de jugadas (playbook).
+ * JR-1 — Queries de la biblioteca de jugadas (banco del club con ciclo, ADR-0019).
  *
- * Lee de `plays` (F13.1b) CONFIANDO en la RLS: no reimplementa permisos. La RLS
- * decide la visibilidad (autor/staff del club/staff del equipo; jugador/familia
- * solo `visibility='team'`). Aquí solo se scopea al club activo.
+ * Lee de `plays` CONFIANDO en la RLS por estado (JR-0): no reimplementa permisos.
+ * La RLS decide QUÉ filas se ven (borrador→autor; propuesta/rechazada→autor∪
+ * aprobador; publicada→todo el staff). Aquí solo se scopea al club y se aplican
+ * los filtros de UI (búsqueda + estado). El playbook de familia (loadTeamPlaybook
+ * / loadTeamPlay) sigue sobre `team_plays` (JR-2) y no cambia aquí.
  */
 
 import {
@@ -12,44 +14,22 @@ import {
   createSupabaseServerClient,
   getCurrentUser,
   type Play,
+  type MethodologyStatus,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { getActiveSeasonLabel } from '@/lib/active-season';
 
-/** Visibilidad de la jugada (columna de BD `plays.visibility`, D2). */
-export type PlayVisibility = 'staff' | 'team';
-
-// ── Equipos del club (selector del alta) ─────────────────────────────────────
-export type ClubTeam = { id: string; name: string; season: string };
-
-/** Equipos destinables a una jugada: SOLO los de la temporada ACTIVA. */
-export async function loadClubTeams(clubId: string): Promise<ClubTeam[]> {
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
-
-  const { data } = await supabase
-    .from('teams')
-    .select('id, name, season')
-    .eq('club_id', clubId)
-    .eq('season', activeSeason)
-    .order('name', { ascending: true });
-
-  return (data ?? []).map((t) => ({
-    id: t.id as string,
-    name: t.name as string,
-    season: t.season as string,
-  }));
-}
-
-// ── Biblioteca de jugadas (F13.5: búsqueda + filtros + paginación) ────────────
+// ── Biblioteca de jugadas (búsqueda + filtro por estado + paginación) ─────────
 export const PLAYS_PAGE_SIZE = 20;
+
+/** Filtro de estado de la UI: los 4 estados del ciclo + 'archived' (archived_at). */
+export type PlayStatusFilter = MethodologyStatus | 'archived';
 
 export type PlayListRow = {
   id: string;
   name: string | null;
-  team_name: string | null;
-  visibility: PlayVisibility;
+  status: MethodologyStatus;
+  /** Publicada y archivada (archived_at != null) → badge propio. */
+  archived: boolean;
   frame_count: number;
   updated_at: string;
   /** ¿El usuario actual es el autor? (para gatear el borrado por fila; la RLS es el gate real). */
@@ -58,34 +38,42 @@ export type PlayListRow = {
 
 export type PlayListFilters = {
   search: string;
-  teamId: string | null;
-  visibility: PlayVisibility | null;
+  status: PlayStatusFilter | null;
 };
 
 export type PlayListResult = { plays: PlayListRow[]; total: number };
 
 /**
- * Lista la biblioteca de jugadas del club, CONFIANDO en la RLS (13.1b: staff ve
- * las de su club/equipos). Filtros por nombre (ilike), equipo y visibilidad;
- * paginación con .range() y count exacto (patrón F2.10, igual que /sesiones).
- * Orden por `updated_at` descendente.
+ * Lista la biblioteca de jugadas del club, CONFIANDO en la RLS (JR-0: el staff ve
+ * las publicadas; autor/aprobador ven además las del ciclo). Filtros por nombre
+ * (ilike) y por estado; paginación con .range() + count exacto (patrón F2.10).
+ * Orden por `updated_at` descendente. Por defecto excluye archivadas (salvo que el
+ * filtro sea 'archived'). `proposedOnly` (cola de revisión) fuerza status='proposed'.
  */
 export async function loadPlays(
   clubId: string,
   filters: PlayListFilters,
   page: number,
+  proposedOnly = false,
 ): Promise<PlayListResult> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const user = await getCurrentUser(adapter);
 
-  // JR-0: plays pasa a banco del club (sin team_id/visibility). Los filtros por
-  // equipo/visibilidad quedan como NO-OP hasta JR-1/JR-2 (la pantalla aún los
-  // ofrece pero no recortan); team_name/visibility se rellenan con placeholders.
   let q = supabase
     .from('plays')
-    .select('id, name, updated_at, play, owner_profile_id', { count: 'exact' })
+    .select('id, name, status, updated_at, play, owner_profile_id, archived_at', { count: 'exact' })
     .eq('club_id', clubId);
+
+  if (proposedOnly) {
+    // Cola de revisión: solo propuestas vivas.
+    q = q.eq('status', 'proposed').is('archived_at', null);
+  } else if (filters.status === 'archived') {
+    q = q.not('archived_at', 'is', null);
+  } else {
+    q = q.is('archived_at', null);
+    if (filters.status != null) q = q.eq('status', filters.status);
+  }
 
   if (filters.search.trim().length > 0) {
     const escaped = filters.search.trim().replace(/[%_,]/g, (m) => `\\${m}`);
@@ -103,8 +91,8 @@ export async function loadPlays(
     return {
       id: p.id as string,
       name: (p.name as string | null) ?? null,
-      team_name: null, // JR-1/JR-2: el banco es del club; el equipo vive en team_plays
-      visibility: 'staff', // JR-2: la visibilidad a familia pasa a team_plays.shared_with_family
+      status: p.status as MethodologyStatus,
+      archived: (p.archived_at as string | null) != null,
       frame_count: parsed.success ? parsed.data.frames.length : 0,
       updated_at: p.updated_at as string,
       is_owner: !!user && p.owner_profile_id === user.id,
@@ -119,9 +107,13 @@ export type PlayForEdit = {
   id: string;
   name: string | null;
   description: string | null;
-  team_id: string;
-  team_name: string | null;
-  visibility: PlayVisibility;
+  status: MethodologyStatus;
+  /** Publicada y archivada. */
+  archived: boolean;
+  /** Motivo del último rechazo (si status='rejected'). */
+  rejection_reason: string | null;
+  approved_at: string | null;
+  approved_by_name: string | null;
   play: Play;
   is_owner: boolean;
 };
@@ -133,7 +125,11 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
 
   const { data } = await supabase
     .from('plays')
-    .select('id, name, description, owner_profile_id, play')
+    .select(
+      `id, name, description, status, archived_at, rejection_reason, approved_at,
+       owner_profile_id, play,
+       approved_by_profile:profiles!plays_approved_by_fkey(full_name)`,
+    )
     .eq('id', id)
     .eq('club_id', clubId)
     .maybeSingle();
@@ -141,14 +137,17 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
   if (!data) return null;
 
   const parsed = parsePlay(data.play);
+  const approver = data.approved_by_profile as { full_name: string | null } | null;
 
   return {
     id: data.id as string,
     name: (data.name as string | null) ?? null,
     description: (data.description as string | null) ?? null,
-    team_id: '', // JR-0: la jugada es del club; placeholder hasta rehacer el editor (JR-1)
-    team_name: null,
-    visibility: 'staff', // JR-2: visibilidad a familia pasa a team_plays
+    status: data.status as MethodologyStatus,
+    archived: (data.archived_at as string | null) != null,
+    rejection_reason: (data.rejection_reason as string | null) ?? null,
+    approved_at: (data.approved_at as string | null) ?? null,
+    approved_by_name: approver?.full_name ?? null,
     // La forma fuerte está garantizada por parsePlay al guardar; si por lo que
     // fuese el jsonb no parsea, se cae a una jugada vacía válida (no rompe el UI).
     play: parsed.success ? parsed.data : emptyPlay(),
@@ -166,9 +165,9 @@ export type PlaybookRow = {
 
 /**
  * Jugadas del playbook del equipo COMPARTIDAS con la familia, para el Playbook del
- * jugador/familia. JR-0: ahora vía `team_plays` (shared_with_family=true) en vez de
- * `plays.visibility`. Confía en la RLS de team_plays (familia ve solo las
- * compartidas de su equipo). Orden por `updated_at` de la jugada desc.
+ * jugador/familia. JR-0: vía `team_plays` (shared_with_family=true). Confía en la
+ * RLS de team_plays (familia ve solo las compartidas de su equipo). Orden por
+ * `updated_at` de la jugada desc. (Sin cambios en JR-1; el alta de team_plays es JR-2.)
  */
 export async function loadTeamPlaybook(_clubId: string, teamId: string): Promise<PlaybookRow[]> {
   const adapter = await createCookieAdapter();

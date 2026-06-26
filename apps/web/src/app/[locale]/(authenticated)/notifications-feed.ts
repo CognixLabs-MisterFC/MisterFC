@@ -21,6 +21,7 @@ import type { ComponentType } from 'react';
 import {
   Bell,
   CalendarClock,
+  CheckCircle2,
   ClipboardCheck,
   ClipboardList,
   Clapperboard,
@@ -79,7 +80,10 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
       return MessageSquare;
     case 'play_published':
       return Clapperboard;
+    case 'play_approved':
+      return CheckCircle2;
     case 'exercise_rejected':
+    case 'play_rejected':
       return XCircle;
     case 'attendance_pending_reminder':
     case 'training_reminder':
@@ -107,6 +111,14 @@ function textFor(t: Translate, type: string, payload: Record<string, unknown> | 
       return t('new_message');
     case 'play_published':
       return t('play_published');
+    case 'play_approved': {
+      const name = str(payload, 'play_name');
+      return name ? t('play_approved_named', { name }) : t('play_approved');
+    }
+    case 'play_rejected': {
+      const name = str(payload, 'play_name');
+      return name ? t('play_rejected_named', { name }) : t('play_rejected');
+    }
     case 'exercise_rejected': {
       const name = str(payload, 'exercise_name');
       return name ? t('exercise_rejected_named', { name }) : t('exercise_rejected');
@@ -162,6 +174,13 @@ function hrefFor(type: string, payload: Record<string, unknown> | null): string 
       const id = str(payload, 'play_id');
       // jugadores/familia → visor read-only del playbook (13.6), no el editor.
       derived = id ? `/mi-equipo/jugadas/${id}` : null;
+      break;
+    }
+    case 'play_approved':
+    case 'play_rejected': {
+      // El destinatario es el PROPONENTE (staff) → editor de la jugada (JR-1).
+      const id = str(payload, 'play_id');
+      derived = id ? `/jugadas/${id}/editar` : null;
       break;
     }
     case 'new_message': {

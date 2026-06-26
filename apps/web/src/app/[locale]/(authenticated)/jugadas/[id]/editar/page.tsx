@@ -16,12 +16,15 @@ const STAFF_ROLES: ReadonlyArray<Role> = [
   'entrenador_ayudante',
 ];
 
-/** Borrar jugada = autor∪admin/coord (la RLS es el gate real; aquí solo el UI). */
-const DELETE_ANY_ROLES: ReadonlyArray<Role> = ['admin_club', 'coordinador'];
+/** Aprobar/archivar = admin∪coordinador (= user_can_approve_plays, D1). */
+const APPROVER_ROLES: ReadonlyArray<Role> = ['admin_club', 'coordinador'];
 
 /**
- * F13.2a — Editor de jugada. Carga cabecera + jsonb `play`; la RLS decide la
- * visibilidad (si no se ve → notFound). Guardar lo gatea la RLS (autor∪admin/coord).
+ * JR-1 (ADR-0019) — Editor de jugada del banco del club + ciclo de aprobación en la
+ * cabecera. Carga cabecera + jsonb `play` + estado; la RLS decide la visibilidad
+ * (si no se ve → notFound). Editar contenido lo gatea la RLS (autor de no-publicada
+ * ∪ aprobador); las transiciones (proponer/aprobar/rechazar/archivar) van por las
+ * acciones de ciclo. El editor de frames/animación no cambia.
  */
 export default async function EditarJugadaPage({ params }: Props) {
   const { locale, id } = await params;
@@ -36,7 +39,13 @@ export default async function EditarJugadaPage({ params }: Props) {
   const play = await loadPlayForEdit(ctx.activeClub.club.id, id);
   if (!play) notFound();
 
-  const canDelete = DELETE_ANY_ROLES.includes(role) || play.is_owner;
+  const isApprover = APPROVER_ROLES.includes(role);
+  const isOwner = play.is_owner;
+  // Editar contenido = mirror de la RLS UPDATE de JR-0: aprobador, o autor de una
+  // jugada NO publicada. Una publicada solo la edita en sitio el aprobador.
+  const canEdit = isApprover || (isOwner && play.status !== 'published');
+  // Borrar = autor∪aprobador de NO publicada (las publicadas se archivan).
+  const canDelete = (isApprover || isOwner) && play.status !== 'published';
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-4">
@@ -48,7 +57,13 @@ export default async function EditarJugadaPage({ params }: Props) {
         {t('back')}
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">{t('edit_title')}</h1>
-      <PlayEditor play={play} canDelete={canDelete} />
+      <PlayEditor
+        play={play}
+        canDelete={canDelete}
+        canEdit={canEdit}
+        isOwner={isOwner}
+        isApprover={isApprover}
+      />
     </div>
   );
 }
