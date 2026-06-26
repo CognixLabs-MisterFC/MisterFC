@@ -1132,7 +1132,8 @@
     "roster_title": "Jugadores activos",
     "roster_empty": "Aún no hay jugadores asignados a este equipo.",
     "announcements_link": "Anuncis",
-    "development_reports_link": "Informes"
+    "development_reports_link": "Informes",
+    "playbook_link": "Playbook"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -1266,7 +1267,8 @@
       "view_active_callups": "{count, plural, =0 {Convocatòries de l'equip} one {1 convocatòria activa} other {# convocatòries actives}}",
       "mark_last_attendance": "Marcar assistència de l'últim entrenament",
       "open_calendar": "Veure calendari de l'equip",
-      "development_reports": "Informes de desenvolupament"
+      "development_reports": "Informes de desenvolupament",
+      "manage_playbook": "Playbook de l'equip"
     },
     "upcoming": {
       "title": "Pròxims esdeveniments",
@@ -3603,6 +3605,37 @@
       "delete_title": "Eliminar la plantilla?",
       "delete_description": "S'eliminarà la plantilla «{name}» amb els seus blocs i exercicis. Esta acció no es pot desfer.",
       "toast_deleted": "Plantilla eliminada"
+    }
+  },
+  "playbook_equipo": {
+    "back": "Tornar a l'equip",
+    "title": "Playbook de l'equip",
+    "subtitle": "Jugades del banc del club seleccionades per a aquest equip",
+    "share_label": "Compartir amb la família",
+    "remove": "Llevar",
+    "shared_badge": "Compartida",
+    "not_shared_badge": "Només staff",
+    "selected": {
+      "title": "Jugades de l'equip",
+      "empty": "Aquest equip encara no té jugades. Afig-les del banc."
+    },
+    "add": {
+      "title": "Afegir del banc",
+      "empty": "No hi ha jugades publicades per a afegir.",
+      "action": "Afegir",
+      "search_hint": "Cerca al banc del club",
+      "truncated": "Mostrant els primers resultats. Afina la cerca per veure'n més."
+    },
+    "confirm_remove": {
+      "title": "Voleu llevar-la del playbook?",
+      "description": "Es llevarà «{name}» del playbook d'aquest equip. La jugada continua al banc del club.",
+      "cancel": "Cancel·lar"
+    },
+    "toast": {
+      "shared": "Compartida amb la família.",
+      "unshared": "Ha deixat de compartir-se.",
+      "removed": "Llevada de l'equip.",
+      "added": "Afegida a l'equip."
     }
   }
 }

@@ -19,6 +19,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   Megaphone,
+  Swords,
   UserRound,
 } from 'lucide-react';
 import { PLAYER_POSITIONS, formatPlayerName } from '@misterfc/core';
@@ -160,6 +161,12 @@ export default async function TeamDetailPage({ params, searchParams }: Props) {
             <Link href={`/equipos/${detail.team.id}/informes`}>
               <ClipboardList className="size-4" aria-hidden />
               <span>{t('actions.development_reports')}</span>
+            </Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/equipos/${detail.team.id}/jugadas`}>
+              <Swords className="size-4" aria-hidden />
+              <span>{t('actions.manage_playbook')}</span>
             </Link>
           </Button>
           {detail.last_training_without_attendance && (

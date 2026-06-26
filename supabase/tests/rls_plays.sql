@@ -403,6 +403,30 @@ begin
   if n <> 1 then raise exception 'FAIL [TP4b]: la familia no ve la selección compartida (n=%)', n; end if;
 end $$;
 
+-- TP6 (JR-2 fix): la familia VE la JUGADA publicada compartida con su equipo
+--      (plays_select por team_plays.shared_with_family). La selección quedó
+--      shared_with_family=true tras TP4.
+do $$
+declare n int;
+begin
+  set local "request.jwt.claims" = '{"sub":"b1a00000-0000-4000-8000-00000000000f","role":"authenticated"}';  -- familia
+  select count(*) into n from public.plays where id = 'b1900000-0000-4000-8000-0000000000b1';
+  if n <> 1 then raise exception 'FAIL [TP6]: la familia NO ve la jugada publicada compartida (n=%)', n; end if;
+end $$;
+
+-- TP7 (JR-2 fix): al dejar de compartir, la familia DEJA de ver la jugada.
+do $$
+declare n int;
+begin
+  set local "request.jwt.claims" = '{"sub":"b1a00000-0000-4000-8000-00000000000d","role":"authenticated"}';  -- staff
+  update public.team_plays set shared_with_family = false
+   where team_id = 'b1700000-0000-4000-8000-000000000001' and play_id = 'b1900000-0000-4000-8000-0000000000b1';
+
+  set local "request.jwt.claims" = '{"sub":"b1a00000-0000-4000-8000-00000000000f","role":"authenticated"}';  -- familia
+  select count(*) into n from public.plays where id = 'b1900000-0000-4000-8000-0000000000b1';
+  if n <> 0 then raise exception 'FAIL [TP7]: la familia ve la jugada tras dejar de compartir (n=%)', n; end if;
+end $$;
+
 -- TP5: staff del Team A quita la selección → OK
 do $$
 declare n int;

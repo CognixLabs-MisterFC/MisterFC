@@ -182,6 +182,13 @@ export default async function TeamDetailPage({ params }: Props) {
               </Link>
             </Button>
           )}
+          {STAFF_ROLES.includes(ctx.activeClub.role) && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/equipos/${teamId}/jugadas`}>
+                <span>{t('playbook_link')}</span>
+              </Link>
+            </Button>
+          )}
           <Button asChild variant="outline" size="sm">
             <Link href={`/equipos/${teamId}/anuncios`}>
               <span>{t('announcements_link')}</span>

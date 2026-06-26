@@ -155,6 +155,107 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
   };
 }
 
+// ── Playbook del equipo (JR-2, gestión por staff) ─────────────────────────────
+export type TeamSelectedPlay = {
+  play_id: string;
+  name: string | null;
+  frame_count: number;
+  shared_with_family: boolean;
+  updated_at: string;
+};
+
+/**
+ * JR-2 — Jugadas que un EQUIPO ha seleccionado del banco (todas, con su flag
+ * shared_with_family), para que el staff gestione su playbook. La RLS de team_plays
+ * (JR-0) decide quién ve qué: staff del equipo ∪ admin/coord ven TODAS; la familia
+ * solo las compartidas (esta vista es para staff). Orden por jugada desc.
+ */
+export async function loadTeamSelectedPlays(teamId: string): Promise<TeamSelectedPlay[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('team_plays')
+    .select('play_id, shared_with_family, play:plays!inner(id, name, play, updated_at)')
+    .eq('team_id', teamId);
+
+  const rows = (data ?? [])
+    .map((tp) => {
+      const p = tp.play as unknown as
+        | { id: string; name: string | null; play: unknown; updated_at: string }
+        | null;
+      if (!p) return null;
+      const parsed = parsePlay(p.play);
+      return {
+        play_id: p.id,
+        name: p.name ?? null,
+        frame_count: parsed.success ? parsed.data.frames.length : 0,
+        shared_with_family: tp.shared_with_family as boolean,
+        updated_at: p.updated_at,
+      } satisfies TeamSelectedPlay;
+    })
+    .filter((r): r is TeamSelectedPlay => r != null);
+  rows.sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
+  return rows;
+}
+
+export type AddablePlay = {
+  id: string;
+  name: string | null;
+  frame_count: number;
+  updated_at: string;
+};
+
+/** Tope de resultados del buscador del banco (set modesto por club; con búsqueda basta). */
+export const ADDABLE_PLAYS_LIMIT = 50;
+
+/**
+ * JR-2 — Jugadas PUBLICADAS del banco del club (no archivadas) que el equipo AÚN NO
+ * tiene en su playbook, para el añadir-del-banco del staff. Búsqueda por nombre.
+ * La RLS deja ver las publicadas a todo el staff del club; aquí solo se scopea y se
+ * excluyen las ya seleccionadas. Limitado a ADDABLE_PLAYS_LIMIT (con búsqueda basta).
+ */
+export async function loadAddablePublishedPlays(
+  clubId: string,
+  teamId: string,
+  search: string,
+): Promise<AddablePlay[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: existing } = await supabase
+    .from('team_plays')
+    .select('play_id')
+    .eq('team_id', teamId);
+  const have = new Set((existing ?? []).map((r) => r.play_id as string));
+
+  let q = supabase
+    .from('plays')
+    .select('id, name, play, updated_at')
+    .eq('club_id', clubId)
+    .eq('status', 'published')
+    .is('archived_at', null);
+
+  if (search.trim().length > 0) {
+    const escaped = search.trim().replace(/[%_,]/g, (m) => `\\${m}`);
+    q = q.ilike('name', `%${escaped}%`);
+  }
+  q = q.order('updated_at', { ascending: false }).limit(ADDABLE_PLAYS_LIMIT);
+
+  const { data } = await q;
+  return (data ?? [])
+    .filter((p) => !have.has(p.id as string))
+    .map((p) => {
+      const parsed = parsePlay(p.play);
+      return {
+        id: p.id as string,
+        name: (p.name as string | null) ?? null,
+        frame_count: parsed.success ? parsed.data.frames.length : 0,
+        updated_at: p.updated_at as string,
+      };
+    });
+}
+
 // ── Playbook del jugador/familia (F13.6, read-only) ───────────────────────────
 export type PlaybookRow = {
   id: string;
