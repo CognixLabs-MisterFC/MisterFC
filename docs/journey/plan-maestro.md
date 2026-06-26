@@ -117,7 +117,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F11 | Biblioteca de ejercicios | 13–18 h | 5–6 | ☑ (2026-06-17) |
 | F11B | Pizarra táctica en vivo (sobre la alineación) | 6–9 h (preliminar) | 2–3 | ☑ (2026-06-17) |
 | F12 | Planificador de sesiones | 12–20 h | 4–6 | ☑ (2026-06-20) |
-| F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☐ |
+| F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☑ (2026-06-27) |
 | F13.10 | Informes de desarrollo y campaña de evaluaciones (extensión de F8/F9 — **NO** es la pizarra) | — | — | ☑ (2026-06-25) |
 | F14 | RGPD para menores y seguridad | 12–18 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
@@ -138,7 +138,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 
 > **Cambio 2026-06-15 (extensión F7.x)**: nueva **F7.x — Vista de estadísticas del partido**, extensión de F7/F8 con etiqueta `F7.x` para **no renumerar F8–F16**. Es la **cara de consulta** por partido de lo que F7 ya captura (`match_player_stats` + `match_events`); v1 sin BD/RLS nueva. **Schedulable** (pequeña), recomendable antes o junto a F11. Estimación v1 +3–5 h / 1–2 sesiones. Delta total Ola 1: +3–5 h (182–282 → 185–287), +1–2 sesiones (66–86 → 67–88). Spec [7.x](../specs/7.x-estadisticas-partido.md). Detalle en §6 (Fase 7.x, tras la Fase 7).
 
-> **Cambio 2026-06-25 (cierre F13.10 — desambiguación de numeración)**: ⚠️ **`F13.10` NO es parte de la F13 — Pizarra de jugadas** (13.1–13.8, que **sigue ☐ pendiente, sin construir**). "F13.10" es una **etiqueta heredada del desarrollo** para los informes de desarrollo + campaña de evaluaciones (PRs #200–#221), que en realidad es una **extensión de F8 (valoraciones) y F9 (perfil del jugador)**. Se mantiene el nombre por **trazabilidad** con los 22 PRs / ramas / memory ya escritos (**Opción C**: no renumerar, igual que F11B/F7.x se etiquetaron aparte). Se registra como **bloque entregado independiente**: fila `F13.10 ☑` en la tabla, sección §6 (tras la Fase 13), spec [13.10](../specs/13.10-informes-desarrollo.md) y [fase-13.10-summary.md](fase-13.10-summary.md). Sin delta de horas (entregado, no estimado a futuro).
+> **Cambio 2026-06-25 (cierre F13.10 — desambiguación de numeración)**: ⚠️ **`F13.10` NO es parte de la F13 — Pizarra de jugadas** (13.1–13.7, **cerrada 2026-06-27** por las JR #229–#232). "F13.10" es una **etiqueta heredada del desarrollo** para los informes de desarrollo + campaña de evaluaciones (PRs #200–#221), que en realidad es una **extensión de F8 (valoraciones) y F9 (perfil del jugador)**. Se mantiene el nombre por **trazabilidad** con los 22 PRs / ramas / memory ya escritos (**Opción C**: no renumerar, igual que F11B/F7.x se etiquetaron aparte). Se registra como **bloque entregado independiente**: fila `F13.10 ☑` en la tabla, sección §6 (tras la Fase 13), spec [13.10](../specs/13.10-informes-desarrollo.md) y [fase-13.10-summary.md](fase-13.10-summary.md). Sin delta de horas (entregado, no estimado a futuro).
 
 ---
 
@@ -654,7 +654,9 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 ---
 
-### Fase 13 — Pizarra táctica y jugadas (modo iPad)
+### Fase 13 — Pizarra táctica y jugadas (modo iPad) ☑ cerrada (2026-06-27)
+
+> **Cerrada 2026-06-27.** El contrato de jugada / editor por frames / animación / reproducción / fullscreen ya existían (build original de `plays`). La **serie JR** (ADR-0019, PRs **#229–#232**) reorganizó el "envoltorio" a **banco del club + ciclo de aprobación** (proponer/aprobar/rechazar), **playbook por equipo** (`team_plays`) y **compartir con la familia** (+ índice del playbook del jugador). Las subfases 13.1–13.7 quedan entregadas; **13.8 (exportar vídeo/GIF) se descartó y se elimina del roadmap**.
 
 **Objetivo**: pizarra táctica 2D con animación por frames para diseñar jugadas. Biblioteca de jugadas del equipo. Modo presentación iPad para vestuario.
 
@@ -670,14 +672,13 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Subfases**:
 
-- **13.1** Modelo `plays` con frames — 1 h
-- **13.2** Editor de jugada: pizarra + timeline de frames — 3–4 h
-- **13.3** Animación entre frames (interpolación de posiciones) — 2–3 h
-- **13.4** Reproducción de jugada (play/pause/scrub) — 1–2 h
-- **13.5** Biblioteca de jugadas del equipo (playbook) — 2 h
-- **13.6** Compartir jugada con el equipo (visible para jugadores) — 1 h
-- **13.7** Modo presentación iPad (pantalla completa, sin distracciones) — 2 h
-- **13.8** Exportar jugada como vídeo o GIF — 1–2 h
+- **13.1** Modelo `plays` con frames — 1 h ☑ (reorganizado a banco de club + ciclo, JR-0 #229)
+- **13.2** Editor de jugada: pizarra + timeline de frames — 3–4 h ☑
+- **13.3** Animación entre frames (interpolación de posiciones) — 2–3 h ☑
+- **13.4** Reproducción de jugada (play/pause/scrub) — 1–2 h ☑
+- **13.5** Biblioteca de jugadas del equipo (playbook) — 2 h ☑ (banco del club + ciclo de revisión, JR-1 #230)
+- **13.6** Compartir jugada con el equipo / familia — 1 h ☑ (playbook por equipo + compartir con familia, JR-2 #231; índice del playbook del jugador #232)
+- **13.7** Modo presentación iPad (pantalla completa, sin distracciones) — 2 h ☑
 
 **Backlog (sin programar)**:
 
@@ -691,7 +692,7 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 ### Fase 13.10 — Informes de desarrollo y campaña de evaluaciones ☑
 
-> ⚠️ **NO es la pizarra de F13.** Etiqueta heredada del desarrollo; es una **extensión de F8/F9** (informe de desarrollo periódico del jugador + campaña que lo coordina). Ver nota de cambio 2026-06-25 arriba. La F13-pizarra (13.1–13.8) sigue ☐.
+> ⚠️ **NO es la pizarra de F13.** Etiqueta heredada del desarrollo; es una **extensión de F8/F9** (informe de desarrollo periódico del jugador + campaña que lo coordina). Ver nota de cambio 2026-06-25 arriba. La F13-pizarra (13.1–13.7) quedó **cerrada 2026-06-27** (JR #229–#232).
 
 **Cerrada 2026-06-25.** PRs **#200–#221** (16 subfases). Detalle completo en [fase-13.10-summary.md](fase-13.10-summary.md) y spec [13.10](../specs/13.10-informes-desarrollo.md).
 
@@ -719,8 +720,8 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Cross-refs**:
 
-- **Incluir jugadas en sesiones (F12↔F13, #192)** — ya en el backlog de la Fase 13 (arriba). Depende de F13-pizarra (13.5 playbook).
-- **Reutilizar jugadas** — parte de **F13-pizarra pendiente** (13.5 biblioteca + 13.6 compartir).
+- **Incluir jugadas en sesiones (F12↔F13, #192)** — sigue en backlog. Su dependencia (playbook por equipo, 13.5/13.6) **ya está entregada** (JR #229–#232), así que queda desbloqueada para análisis/implementación.
+- **Reutilizar jugadas** — **entregado** con F13: el banco de jugadas es del club (`plays` + ciclo) y cualquier equipo selecciona del banco vía `team_plays` (JR #229–#232).
 - ~~**Revalidar ratios de familia si F14.10** cierra `events_select` por equipo~~ — **RESUELTO (PR #226)**: la policy `events_select` incluye `user_is_team_member_account`, así que la familia sigue contando los eventos del equipo de su hijo; verificado en vivo. Borde `left_at` anotado en [known-issues.md](known-issues.md).
 
 ---
