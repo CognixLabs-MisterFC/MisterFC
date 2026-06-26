@@ -83,6 +83,22 @@ update public.capabilities
  where membership_id = '55ab0000-4444-0000-0000-000000000001'
    and capability_name = 'can_manage_calendar';
 
+-- F14.10 — Fixtures para los tests de SELECT por equipo.
+-- Jugador 'jugador@ev.test' (44ab..5555) es cuenta familiar de un jugador
+-- miembro ACTIVO del Team A1. Eventos dedicados: A1 (training+match), A2
+-- (training) y uno a nivel club (team_id NULL).
+insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
+  ('abf00000-0000-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', 'Sel', 'Player', '2014-01-01');
+insert into public.team_members (team_id, player_id, joined_at) values
+  ('33ab0000-0000-0000-0000-000000000001', 'abf00000-0000-0000-0000-000000000001', (current_date - interval '30 days')::date);
+insert into public.player_accounts (player_id, profile_id, relation) values
+  ('abf00000-0000-0000-0000-000000000001', '44ab0000-5555-0000-0000-000000000001', 'parent');
+insert into public.events (id, club_id, team_id, type, title, starts_at, created_by) values
+  ('abe10000-0000-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', '33ab0000-0000-0000-0000-000000000001', 'training', 'sel A1 training', '2026-05-10 18:00:00+02', '44ab0000-1111-0000-0000-000000000001'),
+  ('abe10000-0000-0000-0000-000000000002', '11ab0000-c0c0-0000-0000-000000000001', '33ab0000-0000-0000-0000-000000000001', 'match',    'sel A1 match',    '2026-05-11 18:00:00+02', '44ab0000-1111-0000-0000-000000000001'),
+  ('abe20000-0000-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', '33ab0000-0000-0000-0000-000000000002', 'training', 'sel A2 training', '2026-05-10 18:00:00+02', '44ab0000-1111-0000-0000-000000000001'),
+  ('abec0000-0000-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', null,                                    'other',    'sel club-wide',   '2026-05-12 18:00:00+02', '44ab0000-1111-0000-0000-000000000001');
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- C1 — INSERT con campos válidos como admin_club
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -240,17 +256,65 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- R1 — SELECT como miembro del club ve eventos
+-- R1 — SELECT por equipo (F14.10): jugador/familia ve SU equipo (A1) + eventos
+-- de club (team_id NULL), pero NO los de otro equipo (A2).
 -- ─────────────────────────────────────────────────────────────────────────────
 set local role authenticated;
 set local "request.jwt.claims" = '{"sub":"44ab0000-5555-0000-0000-000000000001","role":"authenticated"}';
 do $$
-declare cnt int;
+declare cnt_a1 int; cnt_a2 int; cnt_club int;
 begin
-  select count(*) into cnt from public.events
-   where club_id = '11ab0000-c0c0-0000-0000-000000000001';
-  if cnt = 0 then
-    raise exception 'FAIL [R1]: jugador del club no ve ningún evento (cnt=%)', cnt;
+  select count(*) into cnt_a1 from public.events where team_id = '33ab0000-0000-0000-0000-000000000001';
+  select count(*) into cnt_a2 from public.events where team_id = '33ab0000-0000-0000-0000-000000000002';
+  select count(*) into cnt_club from public.events
+   where club_id = '11ab0000-c0c0-0000-0000-000000000001' and team_id is null;
+  if cnt_a1 = 0 then
+    raise exception 'FAIL [R1a]: jugador no ve eventos de SU equipo A1 (cnt=%)', cnt_a1;
+  end if;
+  if cnt_a2 <> 0 then
+    raise exception 'FAIL [R1b]: jugador ve eventos de OTRO equipo A2 (cnt=%)', cnt_a2;
+  end if;
+  if cnt_club = 0 then
+    raise exception 'FAIL [R1c]: jugador no ve eventos a nivel club (team_id NULL) (cnt=%)', cnt_club;
+  end if;
+end $$;
+
+-- R1d — denominadores H-4: la familia PUEDE contar match/training de su equipo (≠ 0)
+do $$
+declare n_match int; n_train int;
+begin
+  select count(*) into n_match from public.events
+   where team_id = '33ab0000-0000-0000-0000-000000000001' and type = 'match';
+  select count(*) into n_train from public.events
+   where team_id = '33ab0000-0000-0000-0000-000000000001' and type = 'training';
+  if n_match = 0 or n_train = 0 then
+    raise exception 'FAIL [R1d]: denominadores H-4 en 0 para la familia (match=%, train=%)', n_match, n_train;
+  end if;
+end $$;
+
+-- R1e — staff (principal de A1, no admin/coord) ve su equipo (A1), NO otro (A2)
+set local "request.jwt.claims" = '{"sub":"44ab0000-3333-0000-0000-000000000001","role":"authenticated"}';
+do $$
+declare cnt_a1 int; cnt_a2 int;
+begin
+  select count(*) into cnt_a1 from public.events where team_id = '33ab0000-0000-0000-0000-000000000001';
+  select count(*) into cnt_a2 from public.events where team_id = '33ab0000-0000-0000-0000-000000000002';
+  if cnt_a1 = 0 then
+    raise exception 'FAIL [R1e]: staff no ve eventos de SU equipo A1';
+  end if;
+  if cnt_a2 <> 0 then
+    raise exception 'FAIL [R1f]: staff ve eventos de OTRO equipo A2 (cnt=%)', cnt_a2;
+  end if;
+end $$;
+
+-- R1g — admin del club ve TODO el club (incluido A2)
+set local "request.jwt.claims" = '{"sub":"44ab0000-1111-0000-0000-000000000001","role":"authenticated"}';
+do $$
+declare cnt_a2 int;
+begin
+  select count(*) into cnt_a2 from public.events where team_id = '33ab0000-0000-0000-0000-000000000002';
+  if cnt_a2 = 0 then
+    raise exception 'FAIL [R1g]: admin no ve eventos del equipo A2 del club';
   end if;
 end $$;
 
@@ -641,6 +705,29 @@ begin
   ) into got;
   if got is not true then
     raise exception 'FAIL [H1.h]: principal de equipo (rol club ayudante) debería poder manage su equipo (got=%)', got;
+  end if;
+end $$;
+
+reset role;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- R17 — borde left_at: tras causar baja en el equipo, el jugador/familia deja de
+-- ver los eventos de ese equipo (helper "miembro ACTIVO"). Conocido y anotado en
+-- known-issues.md.
+-- ─────────────────────────────────────────────────────────────────────────────
+update public.team_members
+   set left_at = (current_date - interval '1 day')::date
+ where team_id = '33ab0000-0000-0000-0000-000000000001'
+   and player_id = 'abf00000-0000-0000-0000-000000000001';
+
+set local role authenticated;
+set local "request.jwt.claims" = '{"sub":"44ab0000-5555-0000-0000-000000000001","role":"authenticated"}';
+do $$
+declare cnt_a1 int;
+begin
+  select count(*) into cnt_a1 from public.events where team_id = '33ab0000-0000-0000-0000-000000000001';
+  if cnt_a1 <> 0 then
+    raise exception 'FAIL [R17]: jugador con left_at sigue viendo eventos del equipo (cnt=%)', cnt_a1;
   end if;
 end $$;
 

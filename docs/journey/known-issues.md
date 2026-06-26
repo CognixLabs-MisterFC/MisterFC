@@ -106,11 +106,11 @@ Cosas detectadas mientras se trabaja en otra cosa. No mezclar en su PR original;
 - **Planificado en**: **F14.9** (1–2 h). Helper `user_is_principal_of_assistant_team(membership_id)` + drop/create de policies de `capabilities` filtrando por `team_staff` específico + pgTAP con 4 casos. Sin cambio de modelo.
 - **Referencia**: `docs/specs/2.7-capabilities-ui.md` §8.
 
-### F14.10 — RLS events team-isolation
-- **Issue original** (2026-05-29, spec 3.0 §4.6): la policy `events_select_member` abre SELECT a cualquier miembro autenticado del club. Un jugador del Equipo A puede listar via API eventos del Equipo B. El filtrado "jugador ve solo eventos de su equipo" es **UX, no seguridad**. Decisión deliberada de Ola 1.
-- **Impacto en beta**: bajo (datos semi-públicos intra-club: título + fecha + lugar). Datos sensibles tienen su propia RLS.
-- **Planificado en**: **F14.10** (1–2 h). Cambio del SELECT policy: `team_id IS NULL OR user_is_in_team(team_id)` para roles jugador/ayudante; admin/coord sin cambio. Migración + pgTAP con 4 casos.
-- **Referencia**: `docs/specs/3.0-calendario-eventos.md` §4.6, comentario explícito en `supabase/migrations/20260530000000_events.sql`.
+### F14.10 — RLS events team-isolation ✅ RESUELTO (2026-06-26)
+- **Issue original** (2026-05-29, spec 3.0 §4.6): la policy `events_select_member` abría SELECT a cualquier miembro autenticado del club. Un jugador del Equipo A podía listar via API eventos del Equipo B. El filtrado "jugador ve solo eventos de su equipo" era **UX, no seguridad**. Decisión deliberada de Ola 1.
+- **Resuelto en**: migración `20260808000000_events_select_team_isolation.sql` (policy `events_select` con 4 ramas: admin/coord → club; `team_id IS NULL` → cualquier miembro; eventos de equipo → `user_is_staff_of_team`; eventos de equipo → familia/jugador vía `user_is_team_member_account`). pgTAP en `rls_events.sql` (R1a–R1g, R17). Los conteos de la ficha de desarrollo (ratios H-4) se preservan sin RPC porque la familia ve los eventos del equipo de su hijo vía `user_is_team_member_account`.
+- **Borde pendiente (left_at)**: la visibilidad usa **miembro ACTIVO** (`team_members.left_at IS NULL`). Un jugador que causó baja deja de ver los eventos de ese equipo, y su familia deja de poder contar los denominadores de un informe de una **temporada pasada/cerrada**. Aceptable v1. Si en el futuro la familia debe ver ratios de temporadas pasadas, **relajar** el branch de familia a "miembro en esa temporada" (p.ej. helper que mire `team_members` del `team` de esa temporada sin exigir `left_at IS NULL`, o que acote por la temporada del informe). Probado en R17.
+- **Referencia**: `docs/specs/3.0-calendario-eventos.md` §4.6, `supabase/migrations/20260808000000_events_select_team_isolation.sql`.
 
 ### F15.8 — pgTAP no se ejecuta en CI
 - **Issue original** (2026-06-12, cierre de F9): el CI (`.github/workflows/ci.yml`) corre typecheck · lint · test · build pero **no ejecuta pgTAP**. Además, el sandbox de desarrollo no puede arrancar Docker (`no-new-privileges`, sin root), así que `pnpm db:test` tampoco corre localmente. Los tests pgTAP de funciones/RLS de BD (`supabase/tests/*.sql`) quedan **escritos pero sin ejecución automática**; su validación efectiva ocurre solo al aplicar la migración contra el remoto.
