@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Link, useRouter } from '@/i18n/navigation';
+import { useRouter } from '@/i18n/navigation';
 import type { TeamSelectedPlay, AddablePlay } from '../../../../jugadas/queries';
 import { addPlayToTeam, removePlayFromTeam, setPlayShared } from '../actions';
 
@@ -95,17 +95,14 @@ export function TeamPlaybookManager({
                 const shared = sharedOverride[p.play_id] ?? p.shared_with_family;
                 return (
                   <li key={p.play_id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    <Link
-                      href={`/jugadas/${p.play_id}/editar`}
-                      className="min-w-0 flex-1 rounded-md p-1 -mx-1 hover:bg-muted"
-                    >
+                    <div className="min-w-0 flex-1">
                       <span className="block truncate font-medium">
                         {p.name ?? tJ('untitled')}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {tList('frame_count', { count: p.frame_count })}
                       </span>
-                    </Link>
+                    </div>
                     {canManage ? (
                       <div className="flex items-center gap-2">
                         <Label
@@ -167,17 +164,14 @@ export function TeamPlaybookManager({
                 <ul className="flex flex-col divide-y divide-border">
                   {addable.map((p) => (
                     <li key={p.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                      <Link
-                        href={`/jugadas/${p.id}/editar`}
-                        className="min-w-0 flex-1 rounded-md p-1 -mx-1 hover:bg-muted"
-                      >
+                      <div className="min-w-0 flex-1">
                         <span className="block truncate font-medium">
                           {p.name ?? tJ('untitled')}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {tList('frame_count', { count: p.frame_count })}
                         </span>
-                      </Link>
+                      </div>
                       <Button
                         size="sm"
                         variant="outline"
@@ -217,8 +211,9 @@ function RemoveButton({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon" disabled={disabled} aria-label={labels.trigger}>
+        <Button variant="outline" size="sm" disabled={disabled}>
           <Trash2 className="size-4 text-destructive" aria-hidden />
+          {labels.trigger}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
