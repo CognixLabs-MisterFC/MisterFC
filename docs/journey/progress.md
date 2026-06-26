@@ -28,6 +28,21 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 ---
 
+## Estado actual (2026-06-26)
+
+- **F13.10** (Informes de desarrollo y campaña de evaluaciones) — **cerrada** (#200–#221). Ver [fase-13.10-summary.md](fase-13.10-summary.md) y [spec 13.10](../specs/13.10-informes-desarrollo.md).
+- **Auditoría de permisos** — **cerrada** (2026-06-26). Barrido acciones×roles del patrón rol-de-club vs rol-de-equipo + sobre/sub-exposición. 4 hallazgos arreglados (PRs #223 asistencia, #224 eventos, #225 F14.9 capabilities cross-team, #226 F14.10 events SELECT). **F14.9 y F14.10 dejan de ser deuda de F14.** 2 decisiones de negocio cerradas (plantilla = club; informes = cualquier staff del equipo). Detalle en [known-issues.md → Auditoría de permisos](known-issues.md).
+
+**Pendiente (backlog, sin programar salvo F14):**
+- **F13-pizarra** (13.1–13.8): jugadas animadas + playbook + reutilizar jugadas. Sigue ☐.
+- **F13B** (nuevo): liga/copa (`competition_type`) en stats/PDF + sección **no-convocatorias (H-5)** con su decisión Opción 1/2. En backlog de [plan-maestro.md](plan-maestro.md).
+- **Reutilizar jugadores** entre equipos (nuevo). En backlog.
+- **Jugadas en sesión** (F12↔F13, #192). En backlog.
+- **F14 — RGPD para menores**: pendiente (consentimiento parental, audit log, derechos). F14.9/F14.10 ya **no** forman parte (resueltas en la auditoría).
+- Deuda menor: gates de UI por lista de roles → migrar a RPC (cosmético); borde `left_at` en `events_select` (familia de temporadas pasadas).
+
+---
+
 ## Fase 2 — Subfases entregadas
 
 > **F2 extendida 2026-05-29** con nuevas subfases (2.10, 2.11) tras feedback de uso real. Lote inicial (2.0–2.9) **sigue cerrado y sin cambios**; lo que se reabre es el alcance, no el código entregado. Ver [plan-maestro.md](plan-maestro.md) §Fase 2.
@@ -396,8 +411,8 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 | Subfase | Estado | Resumen |
 |---|---|---|
-| 14.9 | ☐ pendiente | Endurecer RLS de `capabilities` a `team_staff` específico (un principal solo edita ayudantes de SUS equipos) |
-| 14.10 | ☐ pendiente | Endurecer RLS de `events` para aislamiento team-a-team (jugador del equipo A no ve eventos del equipo B vía API) |
+| 14.9 | ☑ resuelta (2026-06-26, PR #225) | RLS de `capabilities` por `team_staff` (un principal solo edita ayudantes de SUS equipos). Adelantada en la auditoría de permisos. |
+| 14.10 | ☑ resuelta (2026-06-26, PR #226) | RLS de `events` con aislamiento team-a-team (jugador del equipo A no ve eventos del equipo B). Adelantada en la auditoría de permisos. |
 
 ## Fase 16 — Subfases pendientes (anticipadas)
 
