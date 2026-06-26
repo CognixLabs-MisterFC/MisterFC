@@ -79,19 +79,18 @@ export async function loadPlays(
   const supabase = createSupabaseServerClient(adapter);
   const user = await getCurrentUser(adapter);
 
+  // JR-0: plays pasa a banco del club (sin team_id/visibility). Los filtros por
+  // equipo/visibilidad quedan como NO-OP hasta JR-1/JR-2 (la pantalla aún los
+  // ofrece pero no recortan); team_name/visibility se rellenan con placeholders.
   let q = supabase
     .from('plays')
-    .select('id, name, visibility, updated_at, play, owner_profile_id, team:teams(name)', {
-      count: 'exact',
-    })
+    .select('id, name, updated_at, play, owner_profile_id', { count: 'exact' })
     .eq('club_id', clubId);
 
   if (filters.search.trim().length > 0) {
     const escaped = filters.search.trim().replace(/[%_,]/g, (m) => `\\${m}`);
     q = q.ilike('name', `%${escaped}%`);
   }
-  if (filters.teamId) q = q.eq('team_id', filters.teamId);
-  if (filters.visibility) q = q.eq('visibility', filters.visibility);
 
   const from = (page - 1) * PLAYS_PAGE_SIZE;
   const to = from + PLAYS_PAGE_SIZE - 1;
@@ -100,13 +99,12 @@ export async function loadPlays(
   const { data, count } = await q;
 
   const plays: PlayListRow[] = (data ?? []).map((p) => {
-    const team = p.team as { name: string } | null;
     const parsed = parsePlay(p.play);
     return {
       id: p.id as string,
       name: (p.name as string | null) ?? null,
-      team_name: team?.name ?? null,
-      visibility: p.visibility as PlayVisibility,
+      team_name: null, // JR-1/JR-2: el banco es del club; el equipo vive en team_plays
+      visibility: 'staff', // JR-2: la visibilidad a familia pasa a team_plays.shared_with_family
       frame_count: parsed.success ? parsed.data.frames.length : 0,
       updated_at: p.updated_at as string,
       is_owner: !!user && p.owner_profile_id === user.id,
@@ -135,23 +133,22 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
 
   const { data } = await supabase
     .from('plays')
-    .select('id, name, description, team_id, visibility, owner_profile_id, play, team:teams(name)')
+    .select('id, name, description, owner_profile_id, play')
     .eq('id', id)
     .eq('club_id', clubId)
     .maybeSingle();
 
   if (!data) return null;
 
-  const team = data.team as { name: string } | null;
   const parsed = parsePlay(data.play);
 
   return {
     id: data.id as string,
     name: (data.name as string | null) ?? null,
     description: (data.description as string | null) ?? null,
-    team_id: data.team_id as string,
-    team_name: team?.name ?? null,
-    visibility: data.visibility as PlayVisibility,
+    team_id: '', // JR-0: la jugada es del club; placeholder hasta rehacer el editor (JR-1)
+    team_name: null,
+    visibility: 'staff', // JR-2: visibilidad a familia pasa a team_plays
     // La forma fuerte está garantizada por parsePlay al guardar; si por lo que
     // fuese el jsonb no parsea, se cae a una jugada vacía válida (no rompe el UI).
     play: parsed.success ? parsed.data : emptyPlay(),
@@ -168,52 +165,65 @@ export type PlaybookRow = {
 };
 
 /**
- * Jugadas PUBLICADAS (visibility='team') del equipo, para el Playbook del
- * jugador/familia. Confía en la RLS (13.1b): el jugador solo ve las team de su
- * equipo. Orden por `updated_at` desc.
+ * Jugadas del playbook del equipo COMPARTIDAS con la familia, para el Playbook del
+ * jugador/familia. JR-0: ahora vía `team_plays` (shared_with_family=true) en vez de
+ * `plays.visibility`. Confía en la RLS de team_plays (familia ve solo las
+ * compartidas de su equipo). Orden por `updated_at` de la jugada desc.
  */
-export async function loadTeamPlaybook(clubId: string, teamId: string): Promise<PlaybookRow[]> {
+export async function loadTeamPlaybook(_clubId: string, teamId: string): Promise<PlaybookRow[]> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
   const { data } = await supabase
-    .from('plays')
-    .select('id, name, play, updated_at')
-    .eq('club_id', clubId)
+    .from('team_plays')
+    .select('play:plays!inner(id, name, play, updated_at)')
     .eq('team_id', teamId)
-    .eq('visibility', 'team')
-    .order('updated_at', { ascending: false });
+    .eq('shared_with_family', true);
 
-  return (data ?? []).map((p) => {
-    const parsed = parsePlay(p.play);
-    return {
-      id: p.id as string,
-      name: (p.name as string | null) ?? null,
-      frame_count: parsed.success ? parsed.data.frames.length : 0,
-      updated_at: p.updated_at as string,
-    };
-  });
+  const rows = (data ?? [])
+    .map((tp) => tp.play as unknown as { id: string; name: string | null; play: unknown; updated_at: string } | null)
+    .filter((p): p is { id: string; name: string | null; play: unknown; updated_at: string } => p != null)
+    .map((p) => {
+      const parsed = parsePlay(p.play);
+      return {
+        id: p.id,
+        name: p.name ?? null,
+        frame_count: parsed.success ? parsed.data.frames.length : 0,
+        updated_at: p.updated_at,
+      };
+    });
+  rows.sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
+  return rows;
 }
 
 export type TeamPlay = { id: string; name: string | null; play: Play };
 
 /**
- * Una jugada para la vista READ-ONLY del jugador/familia. Confía en la RLS, más
- * una defensa explícita: solo si visibility='team' (igual que el visor de sesiones
- * del jugador). Devuelve null si no existe / no es visible.
+ * Una jugada para la vista READ-ONLY del jugador/familia. JR-0: la defensa pasa a
+ * `team_plays` — solo es visible si está en el playbook de algún equipo del jugador
+ * con shared_with_family=true (la RLS de team_plays lo garantiza). Devuelve null si
+ * no existe / no está compartida con la familia.
  */
 export async function loadTeamPlay(clubId: string, id: string): Promise<TeamPlay | null> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
+  const { data: share } = await supabase
+    .from('team_plays')
+    .select('play_id')
+    .eq('play_id', id)
+    .eq('shared_with_family', true)
+    .limit(1)
+    .maybeSingle();
+  if (!share) return null;
+
   const { data } = await supabase
     .from('plays')
-    .select('id, name, visibility, play')
+    .select('id, name, play')
     .eq('id', id)
     .eq('club_id', clubId)
     .maybeSingle();
-
-  if (!data || data.visibility !== 'team') return null;
+  if (!data) return null;
 
   const parsed = parsePlay(data.play);
   return {

@@ -2135,6 +2135,9 @@ export type Database = {
       }
       plays: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
+          archived_at: string | null
           club_id: string
           created_at: string
           description: string | null
@@ -2142,11 +2145,14 @@ export type Database = {
           name: string | null
           owner_profile_id: string
           play: Json
-          team_id: string
+          rejection_reason: string | null
+          status: string
           updated_at: string
-          visibility: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string | null
           club_id: string
           created_at?: string
           description?: string | null
@@ -2154,11 +2160,14 @@ export type Database = {
           name?: string | null
           owner_profile_id: string
           play: Json
-          team_id: string
+          rejection_reason?: string | null
+          status?: string
           updated_at?: string
-          visibility?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string | null
           club_id?: string
           created_at?: string
           description?: string | null
@@ -2166,11 +2175,18 @@ export type Database = {
           name?: string | null
           owner_profile_id?: string
           play?: Json
-          team_id?: string
+          rejection_reason?: string | null
+          status?: string
           updated_at?: string
-          visibility?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "plays_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "plays_club_id_fkey"
             columns: ["club_id"]
@@ -2183,13 +2199,6 @@ export type Database = {
             columns: ["owner_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "plays_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -2771,6 +2780,65 @@ export type Database = {
           },
         ]
       }
+      team_plays: {
+        Row: {
+          added_by: string | null
+          club_id: string
+          created_at: string
+          id: string
+          play_id: string
+          shared_with_family: boolean
+          team_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          club_id: string
+          created_at?: string
+          id?: string
+          play_id: string
+          shared_with_family?: boolean
+          team_id: string
+        }
+        Update: {
+          added_by?: string | null
+          club_id?: string
+          created_at?: string
+          id?: string
+          play_id?: string
+          shared_with_family?: boolean
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_plays_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_plays_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_plays_play_id_fkey"
+            columns: ["play_id"]
+            isOneToOne: false
+            referencedRelation: "plays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_plays_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_staff: {
         Row: {
           created_at: string
@@ -3088,6 +3156,7 @@ export type Database = {
         Args: { p_player_id: string }
         Returns: boolean
       }
+      user_can_approve_plays: { Args: { p_club_id: string }; Returns: boolean }
       user_can_create_coach_formations: {
         Args: { p_club_id: string }
         Returns: boolean
@@ -3100,7 +3169,7 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: boolean
       }
-      user_can_create_plays: { Args: { p_team_id: string }; Returns: boolean }
+      user_can_create_plays: { Args: { p_club_id: string }; Returns: boolean }
       user_can_create_sessions: {
         Args: { p_club_id: string }
         Returns: boolean
