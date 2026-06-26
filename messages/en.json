@@ -1132,7 +1132,8 @@
     "roster_title": "Jugadores activos",
     "roster_empty": "Aún no hay jugadores asignados a este equipo.",
     "announcements_link": "Announcements",
-    "development_reports_link": "Reports"
+    "development_reports_link": "Reports",
+    "playbook_link": "Playbook"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -1266,7 +1267,8 @@
       "view_active_callups": "{count, plural, =0 {Team callups} one {1 active callup} other {# active callups}}",
       "mark_last_attendance": "Mark last training attendance",
       "open_calendar": "Open team calendar",
-      "development_reports": "Development reports"
+      "development_reports": "Development reports",
+      "manage_playbook": "Team playbook"
     },
     "upcoming": {
       "title": "Upcoming events",
@@ -3603,6 +3605,37 @@
       "delete_title": "Delete template?",
       "delete_description": "The template “{name}” and its blocks and exercises will be deleted. This action cannot be undone.",
       "toast_deleted": "Template deleted"
+    }
+  },
+  "playbook_equipo": {
+    "back": "Back to team",
+    "title": "Team playbook",
+    "subtitle": "Club bank plays selected for this team",
+    "share_label": "Share with family",
+    "remove": "Remove",
+    "shared_badge": "Shared",
+    "not_shared_badge": "Staff only",
+    "selected": {
+      "title": "Team plays",
+      "empty": "This team has no plays yet. Add them from the bank."
+    },
+    "add": {
+      "title": "Add from bank",
+      "empty": "No published plays to add.",
+      "action": "Add",
+      "search_hint": "Search the club bank",
+      "truncated": "Showing the first results. Refine your search to see more."
+    },
+    "confirm_remove": {
+      "title": "Remove from playbook?",
+      "description": "“{name}” will be removed from this team’s playbook. The play stays in the club bank.",
+      "cancel": "Cancel"
+    },
+    "toast": {
+      "shared": "Shared with family.",
+      "unshared": "No longer shared.",
+      "removed": "Removed from team.",
+      "added": "Added to team."
     }
   }
 }

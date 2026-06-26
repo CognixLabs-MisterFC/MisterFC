@@ -1131,7 +1131,8 @@
     "roster_title": "Jugadores activos",
     "roster_empty": "Aún no hay jugadores asignados a este equipo.",
     "announcements_link": "Anuncios",
-    "development_reports_link": "Informes"
+    "development_reports_link": "Informes",
+    "playbook_link": "Playbook"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -1265,7 +1266,8 @@
       "view_active_callups": "{count, plural, =0 {Convocatorias del equipo} one {1 convocatoria activa} other {# convocatorias activas}}",
       "mark_last_attendance": "Marcar asistencia del último entreno",
       "open_calendar": "Ver calendario del equipo",
-      "development_reports": "Informes de desarrollo"
+      "development_reports": "Informes de desarrollo",
+      "manage_playbook": "Playbook del equipo"
     },
     "upcoming": {
       "title": "Próximos eventos",
@@ -3602,6 +3604,37 @@
       "delete_title": "¿Eliminar la plantilla?",
       "delete_description": "Se eliminará la plantilla «{name}» con sus bloques y ejercicios. Esta acción no se puede deshacer.",
       "toast_deleted": "Plantilla eliminada"
+    }
+  },
+  "playbook_equipo": {
+    "back": "Volver al equipo",
+    "title": "Playbook del equipo",
+    "subtitle": "Jugadas del banco del club seleccionadas para este equipo",
+    "share_label": "Compartir con familia",
+    "remove": "Quitar",
+    "shared_badge": "Compartida",
+    "not_shared_badge": "Solo staff",
+    "selected": {
+      "title": "Jugadas del equipo",
+      "empty": "Este equipo aún no tiene jugadas. Añádelas del banco."
+    },
+    "add": {
+      "title": "Añadir del banco",
+      "empty": "No hay jugadas publicadas para añadir.",
+      "action": "Añadir",
+      "search_hint": "Buscar en el banco del club",
+      "truncated": "Mostrando los primeros resultados. Afina la búsqueda para ver más."
+    },
+    "confirm_remove": {
+      "title": "¿Quitar del playbook?",
+      "description": "Se quitará «{name}» del playbook de este equipo. La jugada sigue en el banco del club.",
+      "cancel": "Cancelar"
+    },
+    "toast": {
+      "shared": "Compartida con la familia.",
+      "unshared": "Dejó de compartirse.",
+      "removed": "Quitada del equipo.",
+      "added": "Añadida al equipo."
     }
   }
 }
