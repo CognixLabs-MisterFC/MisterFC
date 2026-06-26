@@ -5,7 +5,6 @@ import { type Role } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { NuevaJugadaForm } from '../_components/nueva-jugada-form';
-import { loadClubTeams } from '../queries';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -17,8 +16,9 @@ const STAFF_ROLES: ReadonlyArray<Role> = [
 ];
 
 /**
- * F13.2a — Alta de jugada. Solo staff. El gate real de creación (per-team) lo
- * aplica `createPlay` (RLS/`user_can_create_plays`); aquí no se muta en el GET.
+ * JR-1 (ADR-0019) — Alta de jugada (borrador del club). Solo staff. El gate real de
+ * creación (club-scoped) lo aplica `createPlay` (RLS/`user_can_create_plays`); aquí
+ * no se muta en el GET.
  */
 export default async function NuevaJugadaPage({ params }: Props) {
   const { locale } = await params;
@@ -30,7 +30,6 @@ export default async function NuevaJugadaPage({ params }: Props) {
   if (!STAFF_ROLES.includes(role)) redirect(`/${locale}`);
 
   const t = await getTranslations('jugadas');
-  const teams = await loadClubTeams(ctx.activeClub.club.id);
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-4">
@@ -42,7 +41,7 @@ export default async function NuevaJugadaPage({ params }: Props) {
         {t('back')}
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">{t('new_title')}</h1>
-      <NuevaJugadaForm teams={teams} />
+      <NuevaJugadaForm />
     </div>
   );
 }

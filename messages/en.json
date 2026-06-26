@@ -137,7 +137,11 @@
       "event_updated_named": "Training updated: {title}",
       "generic": "You have an update",
       "development_report_published": "A development report was published",
-      "evaluation_campaign_launched": "Evaluation campaign opened"
+      "evaluation_campaign_launched": "Evaluation campaign opened",
+      "play_approved": "Play published",
+      "play_approved_named": "Play published: {name}",
+      "play_rejected": "Play rejected",
+      "play_rejected_named": "Play rejected: {name}"
     },
     "dashboard_card": {
       "title": "Executive dashboard",
@@ -3229,15 +3233,8 @@
     "fields": {
       "name": "Name",
       "name_ph": "Overlap down the wing",
-      "team": "Team",
-      "team_ph": "Choose a team",
-      "visibility": "Visibility",
       "description": "Description",
       "description_ph": "How to run the play…"
-    },
-    "visibility": {
-      "staff": "Staff only",
-      "team": "Team"
     },
     "frames": {
       "title": "Frames",
@@ -3257,13 +3254,12 @@
       "search_placeholder": "Search by name…",
       "search_label": "Search plays",
       "search_clear": "Clear search",
-      "team_all": "All teams",
-      "visibility_all": "All visibility",
       "updated": "Updated {date}",
       "clear": "Clear filters",
       "page_of": "Page {current} of {total}",
       "prev": "Previous",
-      "next": "Next"
+      "next": "Next",
+      "status_all": "All statuses"
     },
     "playback": {
       "title": "Playback",
@@ -3289,14 +3285,56 @@
       "body": "Your coach has shared “{name}”."
     },
     "toast": {
-      "saved": "Play saved"
+      "saved": "Play saved",
+      "proposed": "Play proposed.",
+      "approved": "Play published.",
+      "rejected": "Play rejected.",
+      "archived": "Play archived."
     },
     "errors": {
       "forbidden": "Permission denied",
       "invalid": "Invalid data",
       "not_found": "Not found",
       "generic": "Error saving"
-    }
+    },
+    "status": {
+      "draft": "Draft",
+      "proposed": "Proposed",
+      "published": "Published",
+      "rejected": "Rejected",
+      "archived": "Archived"
+    },
+    "actions": {
+      "propose": "Propose",
+      "repropose": "Repropose",
+      "approve": "Approve",
+      "publish": "Publish",
+      "reject": "Reject",
+      "archive": "Archive"
+    },
+    "confirm": {
+      "reject_title": "Reject play",
+      "reject_desc": "Tell the author why it's rejected so they can fix it and propose it again.",
+      "reject_reason_label": "Rejection reason",
+      "reject_reason_placeholder": "E.g. The second-phase movements are missing.",
+      "cancel": "Cancel",
+      "archive_title": "Archive play?",
+      "archive_desc": "The published play will be archived and removed from the library.",
+      "confirm_archive": "Archive"
+    },
+    "tabs": {
+      "library": "Library",
+      "review": "Pending review"
+    },
+    "review": {
+      "title": "Pending review"
+    },
+    "detail": {
+      "approved_by_at": "Approved by {name} · {date}",
+      "published_note": "Published",
+      "rejected_reason": "Rejection reason"
+    },
+    "read_only": "Read only"
   },
   "partidos": {
     "title": "Matches",

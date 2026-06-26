@@ -23,7 +23,7 @@
  */
 
 import { useCallback, useRef, useState, useSyncExternalStore, useTransition } from 'react';
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   Plus,
@@ -71,22 +71,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { Hint } from '@/components/ui/tooltip';
 import { Slider } from '@/components/ui/slider';
 import { PitchEditor } from '@/components/match/pitch-editor';
 import { DiagramView } from '@/components/match/diagram-view';
-import type { PlayForEdit, PlayVisibility } from '../queries';
+import type { PlayForEdit } from '../queries';
 import { updatePlay } from '../actions';
 import { usePlayback, PLAYBACK_SPEEDS } from './use-playback';
 import { PlayDeleteButton } from './play-delete-button';
+import { PlayCycleActions } from './play-cycle-actions';
 import { PlaybackFullscreen } from './playback-fullscreen';
+
+// Estado → variante visual del badge (la etiqueta se localiza por i18n).
+const STATUS_VARIANT: Record<
+  PlayForEdit['status'],
+  'default' | 'secondary' | 'outline' | 'destructive'
+> = {
+  published: 'default',
+  proposed: 'secondary',
+  draft: 'outline',
+  rejected: 'destructive',
+};
 
 /** ms → "1,2 s" para la lectura de tiempo de la barra de reproducción. */
 function formatSeconds(ms: number): string {
@@ -143,19 +149,25 @@ function SortableFrameChip({
 export function PlayEditor({
   play: initial,
   canDelete = false,
+  canEdit = false,
+  isOwner = false,
+  isApprover = false,
 }: {
   play: PlayForEdit;
   canDelete?: boolean;
+  /** ¿Puede editar el CONTENIDO? (autor de no-publicada ∪ aprobador). Si no, solo lectura. */
+  canEdit?: boolean;
+  isOwner?: boolean;
+  isApprover?: boolean;
 }) {
   const t = useTranslations('jugadas');
-  const locale = useLocale();
+  const tStatus = useTranslations('jugadas.status');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  // Cabecera editable (el equipo es inmutable → solo se muestra).
+  // Cabecera editable (name/description). El estado/ciclo se gestiona aparte.
   const [name, setName] = useState(initial.name ?? '');
   const [description, setDescription] = useState(initial.description ?? '');
-  const [visibility, setVisibility] = useState<PlayVisibility>(initial.visibility);
 
   // Jugada: field común + frames con id de cliente. Ids iniciales deterministas.
   const [field, setField] = useState<DiagramField>(initial.play.field);
@@ -289,9 +301,7 @@ export function PlayEditor({
         id: initial.id,
         name: name.trim() === '' ? null : name.trim(),
         description: description.trim() === '' ? null : description.trim(),
-        visibility,
         play: playload,
-        locale, // F13.6 — para deep_link + texto de la notificación al publicar
       });
       if (res.error) {
         toast.error(t(`errors.${res.error}`));
@@ -304,6 +314,45 @@ export function PlayEditor({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* ── Estado + acciones de ciclo (JR-1) ──────────────────────────────── */}
+      <section className="flex flex-wrap items-center justify-between gap-3">
+        <Badge
+          variant={initial.archived ? 'outline' : STATUS_VARIANT[initial.status]}
+          className="text-[10px] uppercase tracking-wider"
+        >
+          {initial.archived ? tStatus('archived') : tStatus(initial.status)}
+        </Badge>
+        <PlayCycleActions
+          id={initial.id}
+          status={initial.status}
+          archived={initial.archived}
+          isOwner={isOwner}
+          isApprover={isApprover}
+        />
+      </section>
+
+      {/* Aviso de rechazo: el autor ve el motivo para corregir y reproponer. */}
+      {initial.status === 'rejected' && initial.rejection_reason ? (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
+          <p className="font-medium">{t('detail.rejected_reason')}</p>
+          <p className="mt-1 whitespace-pre-wrap text-muted-foreground">
+            {initial.rejection_reason}
+          </p>
+        </div>
+      ) : null}
+
+      {/* Nota de publicación (aprobada): por quién y cuándo. */}
+      {initial.status === 'published' && initial.approved_at ? (
+        <p className="text-sm text-muted-foreground">
+          {initial.approved_by_name
+            ? t('detail.approved_by_at', {
+                name: initial.approved_by_name,
+                date: new Date(initial.approved_at).toLocaleDateString(),
+              })
+            : t('detail.published_note')}
+        </p>
+      ) : null}
+
       {/* ── Cabecera ───────────────────────────────────────────────────────── */}
       <section className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
@@ -314,24 +363,8 @@ export function PlayEditor({
             onChange={(e) => setName(e.target.value)}
             placeholder={t('fields.name_ph')}
             maxLength={120}
+            disabled={!canEdit}
           />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>{t('fields.team')}</Label>
-          {/* El equipo es inmutable tras crear (trigger 13.1b) → solo lectura. */}
-          <Input value={initial.team_name ?? '—'} disabled readOnly />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="play-visibility">{t('fields.visibility')}</Label>
-          <Select value={visibility} onValueChange={(v) => setVisibility(v as PlayVisibility)}>
-            <SelectTrigger id="play-visibility">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="staff">{t('visibility.staff')}</SelectItem>
-              <SelectItem value="team">{t('visibility.team')}</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
         <div className="flex flex-col gap-1.5 sm:col-span-2">
           <Label htmlFor="play-description">{t('fields.description')}</Label>
@@ -341,6 +374,7 @@ export function PlayEditor({
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t('fields.description_ph')}
             rows={2}
+            disabled={!canEdit}
           />
         </div>
       </section>
@@ -572,10 +606,14 @@ export function PlayEditor({
         ) : (
           <span />
         )}
-        <Button type="button" onClick={save} disabled={pending}>
-          <Save className="size-4" aria-hidden />
-          {t('save')}
-        </Button>
+        {canEdit ? (
+          <Button type="button" onClick={save} disabled={pending}>
+            <Save className="size-4" aria-hidden />
+            {t('save')}
+          </Button>
+        ) : (
+          <span className="text-sm text-muted-foreground">{t('read_only')}</span>
+        )}
       </div>
     </div>
   );

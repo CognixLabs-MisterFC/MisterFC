@@ -1,8 +1,10 @@
 'use client';
 
 /**
- * F13.5 — Filtro de visibilidad (staff/team) que escribe ?visibility= en la URL
- * (preserva el resto de params, resetea page). Patrón F2.10, igual que TeamSelect.
+ * JR-1 — Filtro por ESTADO del ciclo (borrador/propuesta/publicada/rechazada/
+ * archivada) que escribe ?status= en la URL (preserva el resto de params, resetea
+ * page). Sustituye al filtro de visibilidad de JR-0 (el modelo es banco del club
+ * con estados, no por equipo). Patrón F2.10.
  */
 
 import { useTranslations } from 'next-intl';
@@ -15,11 +17,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { PlayVisibility } from '../queries';
+import type { PlayStatusFilter } from '../queries';
 
 const ALL = '__all__';
+const OPTIONS: ReadonlyArray<PlayStatusFilter> = [
+  'draft',
+  'proposed',
+  'published',
+  'rejected',
+  'archived',
+];
 
-export function PlayVisibilitySelect({ current }: { current: PlayVisibility | null }) {
+export function PlayStatusSelect({ current }: { current: PlayStatusFilter | null }) {
   const t = useTranslations('jugadas');
   const tList = useTranslations('jugadas.list');
   const router = useRouter();
@@ -29,8 +38,8 @@ export function PlayVisibilitySelect({ current }: { current: PlayVisibility | nu
 
   function onValueChange(value: string) {
     const np = new URLSearchParams(params);
-    if (value === ALL) np.delete('visibility');
-    else np.set('visibility', value);
+    if (value === ALL) np.delete('status');
+    else np.set('status', value);
     np.delete('page');
     startTransition(() => router.replace(`${pathname}?${np.toString()}`));
   }
@@ -38,12 +47,15 @@ export function PlayVisibilitySelect({ current }: { current: PlayVisibility | nu
   return (
     <Select value={current ?? ALL} onValueChange={onValueChange}>
       <SelectTrigger className="w-44">
-        <SelectValue placeholder={tList('visibility_all')} />
+        <SelectValue placeholder={tList('status_all')} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value={ALL}>{tList('visibility_all')}</SelectItem>
-        <SelectItem value="staff">{t('visibility.staff')}</SelectItem>
-        <SelectItem value="team">{t('visibility.team')}</SelectItem>
+        <SelectItem value={ALL}>{tList('status_all')}</SelectItem>
+        {OPTIONS.map((s) => (
+          <SelectItem key={s} value={s}>
+            {t(`status.${s}`)}
+          </SelectItem>
+        ))}
       </SelectContent>
     </Select>
   );

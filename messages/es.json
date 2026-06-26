@@ -137,7 +137,11 @@
       "event_updated_named": "Entrenamiento actualizado: {title}",
       "generic": "Tienes una novedad",
       "development_report_published": "Se ha publicado un informe de desarrollo",
-      "evaluation_campaign_launched": "Campaña de evaluación abierta"
+      "evaluation_campaign_launched": "Campaña de evaluación abierta",
+      "play_approved": "Jugada publicada",
+      "play_approved_named": "Jugada publicada: {name}",
+      "play_rejected": "Jugada rechazada",
+      "play_rejected_named": "Jugada rechazada: {name}"
     },
     "welcome": "Bienvenido a {club}",
     "your_role": "Tu rol aquí es {role}.",
@@ -3228,15 +3232,8 @@
     "fields": {
       "name": "Nombre",
       "name_ph": "Entrada en profundidad por banda",
-      "team": "Equipo",
-      "team_ph": "Elige un equipo",
-      "visibility": "Visibilidad",
       "description": "Descripción",
       "description_ph": "Cómo ejecutar la jugada…"
-    },
-    "visibility": {
-      "staff": "Solo staff",
-      "team": "Equipo"
     },
     "frames": {
       "title": "Fotogramas",
@@ -3256,13 +3253,12 @@
       "search_placeholder": "Buscar por nombre…",
       "search_label": "Buscar jugadas",
       "search_clear": "Limpiar búsqueda",
-      "team_all": "Todos los equipos",
-      "visibility_all": "Toda visibilidad",
       "updated": "Actualizada {date}",
       "clear": "Quitar filtros",
       "page_of": "Página {current} de {total}",
       "prev": "Anterior",
-      "next": "Siguiente"
+      "next": "Siguiente",
+      "status_all": "Todos los estados"
     },
     "playback": {
       "title": "Reproducción",
@@ -3288,14 +3284,56 @@
       "body": "Tu entrenador ha compartido «{name}»."
     },
     "toast": {
-      "saved": "Jugada guardada"
+      "saved": "Jugada guardada",
+      "proposed": "Jugada propuesta.",
+      "approved": "Jugada publicada.",
+      "rejected": "Jugada rechazada.",
+      "archived": "Jugada archivada."
     },
     "errors": {
       "forbidden": "Permiso denegado",
       "invalid": "Datos no válidos",
       "not_found": "No encontrada",
       "generic": "Error al guardar"
-    }
+    },
+    "status": {
+      "draft": "Borrador",
+      "proposed": "Propuesta",
+      "published": "Publicada",
+      "rejected": "Rechazada",
+      "archived": "Archivada"
+    },
+    "actions": {
+      "propose": "Proponer",
+      "repropose": "Reproponer",
+      "approve": "Aprobar",
+      "publish": "Publicar",
+      "reject": "Rechazar",
+      "archive": "Archivar"
+    },
+    "confirm": {
+      "reject_title": "Rechazar la jugada",
+      "reject_desc": "Indica al autor por qué se rechaza para que pueda corregirla y volver a proponerla.",
+      "reject_reason_label": "Motivo del rechazo",
+      "reject_reason_placeholder": "Ej. Faltan los movimientos de la segunda fase.",
+      "cancel": "Cancelar",
+      "archive_title": "¿Archivar la jugada?",
+      "archive_desc": "La jugada publicada se archivará y dejará de aparecer en la biblioteca.",
+      "confirm_archive": "Archivar"
+    },
+    "tabs": {
+      "library": "Biblioteca",
+      "review": "Pendientes de revisión"
+    },
+    "review": {
+      "title": "Pendientes de revisión"
+    },
+    "detail": {
+      "approved_by_at": "Aprobada por {name} · {date}",
+      "published_note": "Publicada",
+      "rejected_reason": "Motivo del rechazo"
+    },
+    "read_only": "Solo lectura"
   },
   "partidos": {
     "title": "Partidos",
