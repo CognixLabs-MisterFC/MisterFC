@@ -2381,7 +2381,9 @@
         "title": "Playbook",
         "empty": "Aún no hay jugadas compartidas.",
         "untitled": "Jugada",
-        "frame_count": "{count, plural, =1 {# fotograma} other {# fotogramas}}"
+        "frame_count": "{count, plural, =1 {# fotograma} other {# fotogramas}}",
+        "count": "{count, plural, =1 {# jugada} other {# jugadas}}",
+        "view_all": "Ver playbook →"
       }
     },
     "no_team": "No estás asignado a ningún equipo todavía. Habla con el coordinador del club.",
@@ -2394,6 +2396,10 @@
       "physical": "Objetivo físico",
       "no_exercises": "Sin ejercicios.",
       "exercise_fallback": "Ejercicio"
+    },
+    "playbook": {
+      "title": "Playbook",
+      "subtitle": "Jugadas que tu entrenador ha compartido con el equipo."
     }
   },
   "alineacion": {

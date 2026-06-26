@@ -395,37 +395,38 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Swords className="size-4" aria-hidden />
-              {t('cards.playbook.title')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">
-            {playbook.length === 0 ? (
-              <p className="text-muted-foreground">{t('cards.playbook.empty')}</p>
-            ) : (
-              <ul className="flex flex-col divide-y divide-border">
-                {playbook.map((p) => (
-                  <li key={p.id} className="py-2 first:pt-0 last:pb-0">
-                    <Link
-                      href={`/mi-equipo/jugadas/${p.id}`}
-                      className="flex flex-col gap-0.5 rounded-md p-1 -mx-1 hover:bg-zinc-900/50"
-                    >
-                      <span className="font-medium">
-                        {p.name ?? t('cards.playbook.untitled')}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {t('cards.playbook.frame_count', { count: p.frame_count })}
-                      </span>
-                    </Link>
+        {/* F13.6/JR — Card RESUMEN: recuento + teaser; el listado vive en la
+            página /mi-equipo/jugadas. Si no hay jugadas compartidas, no se pinta. */}
+        {playbook.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Swords className="size-4" aria-hidden />
+                {t('cards.playbook.title')}
+              </CardTitle>
+              <CardDescription>
+                {t('cards.playbook.count', { count: playbook.length })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm">
+              <ul className="flex flex-col gap-0.5">
+                {playbook.slice(0, 2).map((p) => (
+                  <li key={p.id} className="truncate text-muted-foreground">
+                    {p.name ?? t('cards.playbook.untitled')}
                   </li>
                 ))}
               </ul>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+            <CardFooter>
+              <Link
+                href={`/mi-equipo/jugadas?team=${activeTeam.id}`}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                {t('cards.playbook.view_all')}
+              </Link>
+            </CardFooter>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

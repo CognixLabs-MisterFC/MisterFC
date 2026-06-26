@@ -2382,7 +2382,9 @@
         "title": "Playbook",
         "empty": "No plays shared yet.",
         "untitled": "Play",
-        "frame_count": "{count, plural, =1 {# frame} other {# frames}}"
+        "frame_count": "{count, plural, =1 {# frame} other {# frames}}",
+        "count": "{count, plural, =1 {# play} other {# plays}}",
+        "view_all": "View playbook →"
       }
     },
     "no_team": "You're not assigned to any team yet. Reach out to your club coordinator.",
@@ -2395,6 +2397,10 @@
       "physical": "Physical objective",
       "no_exercises": "No exercises.",
       "exercise_fallback": "Exercise"
+    },
+    "playbook": {
+      "title": "Playbook",
+      "subtitle": "Plays your coach has shared with the team."
     }
   },
   "alineacion": {
