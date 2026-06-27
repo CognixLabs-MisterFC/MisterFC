@@ -120,6 +120,10 @@ export type PlayForEdit = {
   /** Tipo de estrategia (null en jugadas previas; obligatorio en el editor). */
   strategy_type: StrategyType | null;
   is_owner: boolean;
+  /** Si esta jugada es una PROPUESTA de cambios, id de la jugada publicada original. */
+  source_play_id: string | null;
+  /** Nombre de la jugada original (para el aviso "propuesta sobre «X»"). */
+  source_name: string | null;
 };
 
 export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayForEdit | null> {
@@ -131,7 +135,7 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
     .from('plays')
     .select(
       `id, name, description, status, archived_at, rejection_reason, approved_at,
-       owner_profile_id, play, strategy_type,
+       owner_profile_id, play, strategy_type, source_play_id,
        approved_by_profile:profiles!plays_approved_by_fkey(full_name)`,
     )
     .eq('id', id)
@@ -142,6 +146,19 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
 
   const parsed = parsePlay(data.play);
   const approver = data.approved_by_profile as { full_name: string | null } | null;
+
+  // Si es una propuesta de cambios, resolvemos el nombre de la original (visible por
+  // RLS: es publicada). Query aparte para no depender de un self-join de PostgREST.
+  const sourcePlayId = (data.source_play_id as string | null) ?? null;
+  let sourceName: string | null = null;
+  if (sourcePlayId) {
+    const { data: src } = await supabase
+      .from('plays')
+      .select('name')
+      .eq('id', sourcePlayId)
+      .maybeSingle();
+    sourceName = (src?.name as string | null) ?? null;
+  }
 
   return {
     id: data.id as string,
@@ -157,7 +174,21 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
     play: parsed.success ? parsed.data : emptyPlay(),
     strategy_type: (data.strategy_type as StrategyType | null) ?? null,
     is_owner: user?.id === (data.owner_profile_id as string),
+    source_play_id: sourcePlayId,
+    source_name: sourceName,
   };
+}
+
+/**
+ * ¿El usuario puede crear/proponer jugadas en el club? (= helper SQL JR-0; lo usa la
+ * página de edición para decidir si ofrecer "Proponer cambios" a un no-aprobador
+ * sobre una jugada publicada). La RLS de INSERT sigue siendo el gate real.
+ */
+export async function userCanCreatePlays(clubId: string): Promise<boolean> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const { data } = await supabase.rpc('user_can_create_plays', { p_club_id: clubId });
+  return data === true;
 }
 
 // ── Playbook del equipo (JR-2, gestión por staff) ─────────────────────────────

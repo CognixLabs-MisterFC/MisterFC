@@ -30,6 +30,7 @@ import {
   Copy,
   Trash2,
   Save,
+  Send,
   GripVertical,
   Play as PlayIcon,
   Pause as PauseIcon,
@@ -86,7 +87,7 @@ import {
 import { PitchEditor } from '@/components/match/pitch-editor';
 import { DiagramView } from '@/components/match/diagram-view';
 import type { PlayForEdit } from '../queries';
-import { updatePlay } from '../actions';
+import { updatePlay, proposePlayChanges } from '../actions';
 import { usePlayback, PLAYBACK_SPEEDS } from './use-playback';
 import { PlayDeleteButton } from './play-delete-button';
 import { PlayCycleActions } from './play-cycle-actions';
@@ -159,6 +160,7 @@ export function PlayEditor({
   play: initial,
   canDelete = false,
   canEdit = false,
+  canPropose = false,
   isOwner = false,
   isApprover = false,
 }: {
@@ -166,6 +168,10 @@ export function PlayEditor({
   canDelete?: boolean;
   /** ¿Puede editar el CONTENIDO? (autor de no-publicada ∪ aprobador). Si no, solo lectura. */
   canEdit?: boolean;
+  /** ¿Puede PROPONER cambios? (no-aprobador con autoría sobre una jugada publicada).
+   *  Edita el formulario en local y al guardar crea una COPIA 'proposed' (no toca la
+   *  original). Excluyente con canEdit. */
+  canPropose?: boolean;
   isOwner?: boolean;
   isApprover?: boolean;
 }) {
@@ -180,6 +186,10 @@ export function PlayEditor({
   // lectura" mudo, explicamos el motivo (hace falta aprobación del coordinador). No
   // cambia el permiso (la página ya pone canEdit=false); solo aclara la experiencia.
   const designLocked = !canEdit && initial.status === 'published';
+  // En modo "proponer cambios" el formulario SÍ es editable en local (los cambios no
+  // se guardan en la original: al enviar crean una copia 'proposed'). Si no, la
+  // editabilidad del formulario = canEdit.
+  const formEditable = canEdit || canPropose;
 
   // Cabecera editable (name/description). El estado/ciclo se gestiona aparte.
   const [name, setName] = useState(initial.name ?? '');
@@ -221,6 +231,15 @@ export function PlayEditor({
 
   // Reproducción (F13.3): interpola la jugada ACTUAL (frames editados en vivo).
   const currentPlay: Play = { version: PLAY_VERSION, field, frames: items.map((it) => it.frame) };
+
+  // ¿Hay cambios respecto a la jugada cargada? (para habilitar "Proponer cambios":
+  // no tiene sentido proponer una copia idéntica). Compara cabecera + tipo + diseño.
+  const dirty =
+    name !== (initial.name ?? '') ||
+    description !== (initial.description ?? '') ||
+    strategyType !== (initial.strategy_type ?? '') ||
+    JSON.stringify({ field, frames: currentPlay.frames }) !==
+      JSON.stringify({ field: initial.play.field, frames: initial.play.frames });
   const {
     scene,
     playing,
@@ -341,6 +360,35 @@ export function PlayEditor({
     });
   }
 
+  /**
+   * "Proponer cambios" sobre una jugada PUBLICADA: crea una COPIA 'proposed' con los
+   * cambios del proponente (la original no se toca) y lleva al editor de la copia,
+   * que ya entra en la cola de revisión del coordinador.
+   */
+  function propose() {
+    if (strategyType === '') {
+      toast.error(t('errors.strategy_required'));
+      return;
+    }
+    const playload: Play = { version: PLAY_VERSION, field, frames: items.map((it) => it.frame) };
+    startTransition(async () => {
+      const res = await proposePlayChanges({
+        id: initial.id,
+        name: name.trim() === '' ? null : name.trim(),
+        description: description.trim() === '' ? null : description.trim(),
+        play: playload,
+        strategy_type: strategyType,
+      });
+      if (res.error) {
+        toast.error(t(`errors.${res.error}`));
+        return;
+      }
+      toast.success(t('toast.proposed'));
+      if (res.id) router.push(`/jugadas/${res.id}/editar`);
+      else router.refresh();
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
       {/* ── Estado + acciones de ciclo (JR-1) ──────────────────────────────── */}
@@ -382,9 +430,27 @@ export function PlayEditor({
         </p>
       ) : null}
 
-      {/* Aviso de diseño bloqueado: un no-aprobador no puede editar el diseño de una
-          jugada publicada → explicamos el motivo (en vez de un no-op mudo). */}
-      {designLocked ? (
+      {/* Nota de propuesta: esta jugada nació como "proponer cambios" sobre otra. */}
+      {initial.source_play_id ? (
+        <div className="rounded-lg border border-sky-500/40 bg-sky-500/10 p-3 text-sm">
+          <p className="font-medium">{t('detail.proposal_title')}</p>
+          <p className="mt-1 text-muted-foreground">
+            {initial.source_name
+              ? t('detail.proposal_of_named', { name: initial.source_name })
+              : t('detail.proposal_of')}
+          </p>
+        </div>
+      ) : null}
+
+      {/* Diseño bloqueado: un no-aprobador no puede editar en sitio una jugada
+          publicada. Si ADEMÁS puede crear jugadas → le ofrecemos PROPONER cambios
+          (banner con instrucción); si no, el aviso de solo lectura de #242. */}
+      {canPropose ? (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+          <p className="font-medium">{t('detail.propose_title')}</p>
+          <p className="mt-1 text-muted-foreground">{t('detail.propose_note')}</p>
+        </div>
+      ) : designLocked ? (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
           <p className="font-medium">{t('detail.design_locked_title')}</p>
           <p className="mt-1 text-muted-foreground">{t('detail.design_locked_note')}</p>
@@ -401,7 +467,7 @@ export function PlayEditor({
             onChange={(e) => setName(e.target.value)}
             placeholder={t('fields.name_ph')}
             maxLength={120}
-            disabled={!canEdit}
+            disabled={!formEditable}
           />
         </div>
         <div className="flex flex-col gap-1.5 sm:col-span-2">
@@ -412,7 +478,7 @@ export function PlayEditor({
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t('fields.description_ph')}
             rows={2}
-            disabled={!canEdit}
+            disabled={!formEditable}
           />
         </div>
       </section>
@@ -427,7 +493,7 @@ export function PlayEditor({
           <Select
             value={strategyType || undefined}
             onValueChange={(v) => setStrategyType(v as StrategyType)}
-            disabled={!canEdit}
+            disabled={!formEditable}
           >
             <SelectTrigger id="play-strategy">
               <SelectValue placeholder={t('fields.strategy_type_ph')} />
@@ -675,6 +741,17 @@ export function PlayEditor({
             <Save className="size-4" aria-hidden />
             {t('save')}
           </Button>
+        ) : canPropose ? (
+          // Proponer cambios: deshabilitado hasta que haya cambios (no proponer una
+          // copia idéntica). El tooltip explica el requisito cuando está inhabilitado.
+          <Hint label={dirty ? t('propose.hint') : t('propose.need_changes')}>
+            <span tabIndex={0} className="inline-flex">
+              <Button type="button" onClick={propose} disabled={pending || !dirty}>
+                <Send className="size-4" aria-hidden />
+                {t('propose.button')}
+              </Button>
+            </span>
+          </Hint>
         ) : (
           <span className="text-sm text-muted-foreground">
             {designLocked ? t('detail.design_locked_short') : t('read_only')}

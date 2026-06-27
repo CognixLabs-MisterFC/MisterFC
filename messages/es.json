@@ -3300,7 +3300,7 @@
     },
     "toast": {
       "saved": "Jugada guardada",
-      "proposed": "Jugada propuesta.",
+      "proposed": "Propuesta enviada para revisión.",
       "approved": "Jugada publicada.",
       "rejected": "Jugada rechazada.",
       "archived": "Jugada archivada."
@@ -3351,7 +3351,12 @@
       "rejected_reason": "Motivo del rechazo",
       "design_locked_title": "Diseño bloqueado",
       "design_locked_note": "Esta jugada está publicada. Para modificar su diseño hace falta la aprobación de un coordinador o administrador.",
-      "design_locked_short": "Requiere aprobación del coordinador"
+      "design_locked_short": "Requiere aprobación del coordinador",
+      "propose_title": "Proponer cambios",
+      "propose_note": "No puedes editar en sitio una jugada publicada, pero puedes proponer tus cambios: se creará una copia para que el coordinador la revise. La original sigue publicada e intacta.",
+      "proposal_title": "Propuesta de cambios",
+      "proposal_of_named": "Propuesta de cambios sobre «{name}» (pendiente de revisión del coordinador).",
+      "proposal_of": "Propuesta de cambios sobre una jugada publicada (pendiente de revisión)."
     },
     "read_only": "Solo lectura",
     "strategy": {
@@ -3371,6 +3376,11 @@
       "brazo_horizontal": "Brazo en horizontal",
       "tocarse_pecho": "Tocarse el pecho",
       "puno_alto": "Puño en alto"
+    },
+    "propose": {
+      "button": "Proponer cambios",
+      "hint": "Se creará una copia para revisión del coordinador. La original no se toca.",
+      "need_changes": "Haz algún cambio para poder proponerlo."
     }
   },
   "partidos": {
