@@ -37,7 +37,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 **Pendiente (backlog, sin programar salvo F14):**
 - **F13B** (nuevo): liga/copa (`competition_type`) en stats/PDF + sección **no-convocatorias (H-5)** con su decisión Opción 1/2. En backlog de [plan-maestro.md](plan-maestro.md).
 - **Reutilizar jugadores** entre equipos (nuevo). En backlog.
-- **Jugadas en sesión** (F12↔F13, #192). En backlog.
+- **Jugadas en sesión (serie JS, F12↔F13, #192)** — **entregada** (2026-06-27, #234/#236/#237/#238). Ver subfases abajo.
 - **F14 — RGPD para menores**: pendiente (consentimiento parental, audit log, derechos). F14.9/F14.10 ya **no** forman parte (resueltas en la auditoría).
 - Deuda menor: gates de UI por lista de roles → migrar a RPC (cosmético); borde `left_at` en `events_select` (familia de temporadas pasadas).
 
@@ -387,7 +387,36 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | ~~13.8 Exportar vídeo/GIF~~ | ❌ descartado | eliminado del roadmap (no diferido) |
 
 - **Reutilizar jugadas** entre equipos = entregado por el modelo de banco (cualquier equipo selecciona del banco vía `team_plays`).
-- **Backlog que sigue abierto**: jugadas en sesiones (F12↔F13, #192, ahora desbloqueado), F13B (liga/copa + no-convocatorias H-5), reutilizar **jugadores** entre equipos.
+- **Backlog que sigue abierto**: F13B (liga/copa + no-convocatorias H-5), reutilizar **jugadores** entre equipos.
+
+---
+
+## Jugadas en sesión (serie JS, F12↔F13 #192) — entregada
+
+> **Cerrada 2026-06-27.** Una sesión de entrenamiento puede incluir **jugadas del
+> playbook del equipo** como ítems de un bloque, junto a los ejercicios. Modelo,
+> editor, PDF y vista jugador/familia. Sustituye la nota de backlog "Incluir jugadas
+> en sesiones" de [plan-maestro.md](plan-maestro.md) §Fase 13.
+
+| Subfase | Fecha | PR | Resumen |
+|---|---|---|---|
+| JS-0 modelo | 2026-06-27 | #234 | tabla `session_block_plays` (join paralelo, espejo de `session_block_exercises`) + trigger (deriva session/club, block_id mutable intra-sesión) + RLS (D6 estricta para familia; INSERT exige jugada en el playbook del equipo) + RPC `reorder_session_block_plays` + `total_minutes` suma jugadas (D8) + pgTAP |
+| JS-1 editor | 2026-06-27 | #236 | picker desde el playbook del equipo + acciones add/update/remove/reorder + sub-lista "Jugadas a entrenar" en cada bloque (overrides + abrir visor + quitar) |
+| Fix permisos + UI | 2026-06-27 | #236 | el **staff del equipo** (principal/ayudante) puede editar/publicar/borrar sesiones de su equipo: `user_can_edit_session` + `sessions_update` + `sessions_delete` con `user_is_staff_of_team` (Opción A); plantillas siguen owner∪admin. Botones "Añadir ejercicio/jugada" juntos |
+| JS-2 PDF | 2026-06-27 | #237 | jugadas en el PDF de sesión (nombre + nº frames + duración/notas del día; hueco gráfico como ejercicios) |
+| JS-3 vista familia | 2026-06-27 | #238 | `/mi-equipo/sesiones/[id]`: jugadas tras los ejercicios, **solo las `shared_with_family`** (D6 estricta), clicables al visor `/mi-equipo/jugadas/[id]` |
+
+**Decisiones cerradas (análisis previo + implementación):**
+- **D1** — Enlace = **join paralelo** `session_block_plays` (no ítem polimórfico): no toca los ejercicios; cada grupo con su `order_idx` independiente.
+- **D2** — La jugada se añade a un **bloque** (como el ejercicio).
+- **D3** — Render **ejercicios primero, jugadas después**; reorden **dentro de cada grupo** (no se intercalan).
+- **D4** — Picker desde el **playbook del equipo de la sesión** (todas las seleccionadas, sin importar `shared_with_family`); **plantillas (sin equipo) no admiten jugadas**.
+- **D6** — Visibilidad familia **estricta**: solo ve las jugadas `shared_with_family` (RLS a nivel de fila); las no compartidas no aparecen.
+- **D7** — Overrides del día = **`duration_min` + `notes`** (sin `series`).
+- **D8** — El `duration_min` de las jugadas **suma a `total_minutes`** de la sesión (trigger recalcula ejercicios ∪ jugadas).
+- *(Nota: D5 "PDF mínimo" se cumple en JS-2; imagen del frame 0 queda como follow-up, igual que rasterizar diagramas de ejercicio.)*
+
+**Deuda detectada en el barrido del fix de permisos** (no bloqueante): `announcements` UPDATE/DELETE gobernado por rol de club (no reconoce al principal del equipo) → anotada en [known-issues.md](known-issues.md#announcements-updatedelete--gobernado-por-rol-de-club-no-contempla-al-principal-del-equipo-deuda-menor).
 
 ---
 

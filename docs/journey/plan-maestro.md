@@ -682,11 +682,7 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Backlog (sin programar)**:
 
-- **Incluir jugadas en sesiones de entrenamiento ("entrenar jugadas")** — integración **F12 ↔ F13**. Que una sesión de entrenamiento pueda incluir **jugadas** del playbook (F13) como ítems, junto a los ejercicios. Posicionada **después de 13.5** (requiere poder elegir una jugada del playbook). Necesita **mini-análisis** antes de implementar:
-  - **Enlace bloque ↔ jugada**: join paralelo `session_block_plays` vs. ítem polimórfico (ejercicio | jugada) en el bloque de sesión.
-  - **Picker** para elegir la jugada desde el playbook del equipo.
-  - **PDF de la sesión**: cómo aparece la jugada (¿frame estático / secuencia de frames / enlace?).
-  - **Vista de jugador/familia**: cómo se muestra la jugada incluida en la sesión.
+- **Incluir jugadas en sesiones de entrenamiento ("entrenar jugadas")** — integración **F12 ↔ F13**. ✅ **ENTREGADA (2026-06-27, serie JS)**: una sesión puede incluir jugadas del playbook del equipo como ítems de un bloque (modelo `session_block_plays`, editor, PDF y vista jugador/familia). PRs **#234** (JS-0 modelo), **#236** (JS-1 editor + fix permisos staff-de-equipo + UI), **#237** (JS-2 PDF), **#238** (JS-3 vista familia). Decisiones D1–D8 y subfases en [progress.md](progress.md) §"Jugadas en sesión (serie JS)". El mini-análisis previo resolvió: join paralelo (D1), a nivel de bloque (D2), picker del playbook del equipo (D4), familia estricta (D6).
 
 ---
 
@@ -720,7 +716,7 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Cross-refs**:
 
-- **Incluir jugadas en sesiones (F12↔F13, #192)** — sigue en backlog. Su dependencia (playbook por equipo, 13.5/13.6) **ya está entregada** (JR #229–#232), así que queda desbloqueada para análisis/implementación.
+- **Incluir jugadas en sesiones (F12↔F13, #192)** — ✅ **entregada (2026-06-27, serie JS)**: #234/#236/#237/#238. Detalle en [progress.md](progress.md) §"Jugadas en sesión (serie JS)".
 - **Reutilizar jugadas** — **entregado** con F13: el banco de jugadas es del club (`plays` + ciclo) y cualquier equipo selecciona del banco vía `team_plays` (JR #229–#232).
 - ~~**Revalidar ratios de familia si F14.10** cierra `events_select` por equipo~~ — **RESUELTO (PR #226)**: la policy `events_select` incluye `user_is_team_member_account`, así que la familia sigue contando los eventos del equipo de su hijo; verificado en vivo. Borde `left_at` anotado en [known-issues.md](known-issues.md).
 
