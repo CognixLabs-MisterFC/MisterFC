@@ -32,7 +32,7 @@ import { updateSessionHeader } from '../actions';
 import { BlocksEditor } from './blocks-editor';
 import { PublishControl } from './publish-control';
 import { SaveAsTemplateDialog } from './save-as-template-dialog';
-import type { SessionForEdit, ClubTeam, PickableExercise } from '../queries';
+import type { SessionForEdit, ClubTeam, PickableExercise, AddableSessionPlay } from '../queries';
 
 const NO_TEAM = '__none__';
 
@@ -40,10 +40,12 @@ export function SessionEditor({
   session,
   teams,
   pickable,
+  addablePlays,
 }: {
   session: SessionForEdit;
   teams: ClubTeam[];
   pickable: PickableExercise[];
+  addablePlays: AddableSessionPlay[];
 }) {
   const t = useTranslations('sesiones');
   const tTactical = useTranslations('ejercicios.tactical');
@@ -206,7 +208,7 @@ export function SessionEditor({
       )}
 
       {/* Bloques interactivos (picker + overrides + reordenar) */}
-      <BlocksEditor session={session} pickable={pickable} />
+      <BlocksEditor session={session} pickable={pickable} addablePlays={addablePlays} />
     </div>
   );
 }

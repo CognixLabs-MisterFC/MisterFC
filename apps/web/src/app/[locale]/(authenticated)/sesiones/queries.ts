@@ -13,6 +13,7 @@ import {
   addDaysIso,
   createSupabaseServerClient,
   getCurrentUser,
+  parsePlay,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
@@ -241,6 +242,17 @@ export type SessionTaskForEdit = {
   notes: string | null;
 };
 
+// JS-1 — jugada del playbook añadida a un bloque (override del día: duración/notas).
+export type SessionBlockPlayForEdit = {
+  id: string;
+  play_id: string;
+  play_name: string;
+  frame_count: number;
+  order_idx: number;
+  duration_min: number | null;
+  notes: string | null;
+};
+
 export type SessionBlockForEdit = {
   id: string;
   block_type: SessionBlockType;
@@ -248,6 +260,7 @@ export type SessionBlockForEdit = {
   notes: string | null;
   order_idx: number;
   tasks: SessionTaskForEdit[];
+  plays: SessionBlockPlayForEdit[];
 };
 
 export type SessionForEdit = {
@@ -296,6 +309,10 @@ export async function loadSessionForEdit(
          session_block_exercises (
            id, exercise_id, order_idx, duration_min, series, notes,
            exercise:exercises ( name )
+         ),
+         session_block_plays (
+           id, play_id, order_idx, duration_min, notes,
+           play:plays ( name, play )
          )
        )`
     )
@@ -316,6 +333,14 @@ export async function loadSessionForEdit(
     notes: string | null;
     exercise: { name: string } | null;
   };
+  type RawBlockPlay = {
+    id: string;
+    play_id: string;
+    order_idx: number;
+    duration_min: number | null;
+    notes: string | null;
+    play: { name: string | null; play: unknown } | null;
+  };
   type RawBlock = {
     id: string;
     block_type: string;
@@ -323,6 +348,7 @@ export async function loadSessionForEdit(
     notes: string | null;
     order_idx: number;
     session_block_exercises: RawTask[] | null;
+    session_block_plays: RawBlockPlay[] | null;
   };
 
   const blocks: SessionBlockForEdit[] = ((data.session_blocks as RawBlock[] | null) ?? [])
@@ -342,6 +368,20 @@ export async function loadSessionForEdit(
           series: t.series,
           notes: t.notes,
         }))
+        .sort((a, b2) => a.order_idx - b2.order_idx),
+      plays: (b.session_block_plays ?? [])
+        .map((p) => {
+          const parsed = parsePlay(p.play?.play);
+          return {
+            id: p.id,
+            play_id: p.play_id,
+            play_name: p.play?.name ?? '',
+            frame_count: parsed.success ? parsed.data.frames.length : 0,
+            order_idx: p.order_idx,
+            duration_min: p.duration_min,
+            notes: p.notes,
+          };
+        })
         .sort((a, b2) => a.order_idx - b2.order_idx),
     }))
     .sort((a, b2) => a.order_idx - b2.order_idx);
@@ -598,4 +638,66 @@ export async function loadPickableExercises(clubId: string): Promise<PickableExe
     technical_objectives: (e.technical_objectives as string[] | null) ?? [],
     phases: (e.phases as string[] | null) ?? [],
   }));
+}
+
+// ── Jugadas elegibles para el picker de la sesión (JS-1) ──────────────────────
+export type AddableSessionPlay = {
+  id: string;
+  name: string | null;
+  frame_count: number;
+  updated_at: string;
+};
+
+/** Tope de resultados del picker de jugadas (el playbook por equipo es modesto). */
+export const ADDABLE_SESSION_PLAYS_LIMIT = 50;
+
+/**
+ * JS-1 — Jugadas del PLAYBOOK del equipo de la sesión (team_plays ⋈ plays de
+ * `teamId`), candidatas a añadir a un bloque. TODAS las seleccionadas, sin importar
+ * `shared_with_family` (entrenar ≠ compartir). Búsqueda por nombre; se excluyen las
+ * de `excludeIds` (las ya añadidas a la sesión/bloque). La RLS de team_plays/plays
+ * es el gate. Limitado a ADDABLE_SESSION_PLAYS_LIMIT (con búsqueda basta). Si la
+ * sesión no tiene equipo (plantilla), no hay playbook → [] (D4).
+ */
+export async function loadAddablePlaysForSession(
+  clubId: string,
+  teamId: string | null,
+  search: string,
+  excludeIds: string[] = []
+): Promise<AddableSessionPlay[]> {
+  if (!teamId) return [];
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('team_plays')
+    .select('play:plays!inner(id, name, play, updated_at, club_id, status, archived_at)')
+    .eq('team_id', teamId);
+
+  const exclude = new Set(excludeIds);
+  const needle = search.trim().toLowerCase();
+
+  const rows = (data ?? [])
+    .map((tp) => {
+      const p = tp.play as unknown as
+        | { id: string; name: string | null; play: unknown; updated_at: string; club_id: string; status: string; archived_at: string | null }
+        | null;
+      if (!p) return null;
+      // Defensa en profundidad: solo del club activo (la RLS ya lo asegura).
+      if (p.club_id !== clubId) return null;
+      if (exclude.has(p.id)) return null;
+      if (needle && !(p.name ?? '').toLowerCase().includes(needle)) return null;
+      const parsed = parsePlay(p.play);
+      return {
+        id: p.id,
+        name: p.name ?? null,
+        frame_count: parsed.success ? parsed.data.frames.length : 0,
+        updated_at: p.updated_at,
+      } satisfies AddableSessionPlay;
+    })
+    .filter((r): r is AddableSessionPlay => r != null);
+
+  rows.sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
+  return rows.slice(0, ADDABLE_SESSION_PLAYS_LIMIT);
 }

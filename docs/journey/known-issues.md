@@ -33,6 +33,12 @@ Barrido sistemático de **todas las acciones × roles** (asistencia, convocatori
 
 ## Activas
 
+### `announcements` UPDATE/DELETE — gobernado por rol de CLUB, no contempla al principal del equipo (deuda menor)
+- **Detectado en**: 2026-06-27, barrido del fix de edición de sesiones por staff del equipo (PR #236, Opción A).
+- **Contexto**: tras alinear sesiones con "staff del equipo ∪ owner ∪ admin", se revisaron otros write-paths de recursos de equipo. En `announcements`, el **INSERT** (`announcements_insert_managers`) **sí** reconoce al principal del equipo vía `team_staff` (rama `EXISTS team_staff … staff_role='entrenador_principal'`), pero **UPDATE/DELETE** (`announcements_update_author_or_manager` / `announcements_delete_author_or_manager`) usan **`user_role_in_club(club_id) IN (admin_club, coordinador, entrenador_principal)`** — es el **rol de CLUB**, no `team_staff`. Efecto: un entrenador con rol de club `entrenador_ayudante` que es **principal de su equipo** puede crear y editar **sus propios** anuncios (rama `author_profile_id = auth.uid()`), pero **no moderar** (editar/borrar) los anuncios de **otros** en su equipo. Bajo impacto.
+- **Patrón**: el mismo "owner∪admin/rol-de-club sin contemplar `team_staff`" que se arregló en sesiones (PR #236) y antes en asistencia (#223) / eventos (#224). Aquí queda como **deuda menor** a decidir: ¿el principal/ayudante del equipo debe poder moderar los anuncios de su equipo? Si sí, alinear las policies UPDATE/DELETE con una rama `user_is_staff_of_team(team_id)` (solo para anuncios con `team_id` no nulo; los globales siguen admin/coord).
+- **Referencia**: policies `announcements_update_author_or_manager` / `announcements_delete_author_or_manager` (`supabase/migrations/20260605000001_announcements_global_and_team_staff_rls.sql` y posteriores). **NO arreglado** (solo anotado).
+
 ### F13.10/F14.10 — revalidar ratios de familia si se cierra `events_select` por equipo ✅ RESUELTO (2026-06-26)
 - **Detectado en**: 2026-06-25, cierre de F13.10 (subfase H-4, stats como ratio).
 - **Contexto**: los **denominadores** de las estadísticas de la ficha de desarrollo se cuentan desde `events` del equipo. El riesgo era que al cerrar `events_select` (F14.10) la familia dejara de poder contarlos.
