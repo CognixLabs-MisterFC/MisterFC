@@ -13,7 +13,8 @@
 import { useState, useTransition } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { toast } from 'sonner';
-import { Plus, Trash2, Swords } from 'lucide-react';
+import { Plus, Trash2, Swords, Pencil } from 'lucide-react';
+import type { PlaySignalId } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -30,9 +31,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { SignalIcon } from '@/components/plays/signal-icon';
 import { useRouter } from '@/i18n/navigation';
 import type { TeamSelectedPlay, AddablePlay } from '../../../../jugadas/queries';
-import { addPlayToTeam, removePlayFromTeam, setPlayShared } from '../actions';
+import { addPlayToTeam, removePlayFromTeam, setPlayShared, setPlaySignal } from '../actions';
+import { SignalPickerDialog } from './signal-picker-dialog';
 
 export function TeamPlaybookManager({
   teamId,
@@ -52,9 +55,17 @@ export function TeamPlaybookManager({
   const tList = useTranslations('jugadas.list');
   const locale = useLocale();
   const router = useRouter();
+  const tSignal = useTranslations('jugadas.signals');
   const [pending, startTransition] = useTransition();
   // Optimista para el switch de compartir (evita parpadeo hasta el refresh).
   const [sharedOverride, setSharedOverride] = useState<Record<string, boolean>>({});
+  // Selector de seña: añadir una jugada nueva al equipo (mode 'add') o cambiar la
+  // seña de una ya añadida (mode 'change', con la seña actual preseleccionada).
+  const [picker, setPicker] = useState<
+    | { mode: 'add'; playId: string; name: string | null }
+    | { mode: 'change'; playId: string; name: string | null; current: PlaySignalId | null }
+    | null
+  >(null);
 
   function run(fn: () => Promise<{ error?: string; success?: boolean }>, okMsg: string) {
     startTransition(async () => {
@@ -74,6 +85,27 @@ export function TeamPlaybookManager({
       () => setPlayShared({ teamId, playId, shared: next }, locale),
       next ? t('toast.shared') : t('toast.unshared'),
     );
+  }
+
+  // Confirmación del selector de seña: añade la jugada (con seña) o cambia su seña.
+  function onPickSignal(signalId: PlaySignalId) {
+    if (!picker) return;
+    const { mode, playId } = picker;
+    const fn =
+      mode === 'add'
+        ? () => addPlayToTeam({ teamId, playId, signalId })
+        : () => setPlaySignal({ teamId, playId, signalId });
+    const okMsg = mode === 'add' ? t('toast.added') : t('signal.toast_set');
+    startTransition(async () => {
+      const res = await fn();
+      if (res.error) {
+        toast.error(tJ(`errors.${res.error}`));
+        return;
+      }
+      toast.success(okMsg);
+      setPicker(null);
+      router.refresh();
+    });
   }
 
   return (
@@ -103,6 +135,50 @@ export function TeamPlaybookManager({
                         {tList('frame_count', { count: p.frame_count })}
                       </span>
                     </div>
+                    {/* Seña del equipo (cada equipo elige la suya). Clic = cambiarla. */}
+                    {canManage ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={pending}
+                        onClick={() =>
+                          setPicker({
+                            mode: 'change',
+                            playId: p.play_id,
+                            name: p.name,
+                            current: p.signal_id,
+                          })
+                        }
+                        className="h-auto shrink-0 gap-1.5 py-1.5"
+                        title={t('signal.change')}
+                      >
+                        {p.signal_id ? (
+                          <>
+                            <SignalIcon
+                              signalId={p.signal_id}
+                              className="size-6 text-foreground"
+                            />
+                            <span className="hidden text-xs sm:inline">
+                              {tSignal(p.signal_id)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-xs text-destructive">{t('signal.none')}</span>
+                        )}
+                        <Pencil className="size-3.5 text-muted-foreground" aria-hidden />
+                      </Button>
+                    ) : (
+                      p.signal_id && (
+                        <span
+                          className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground"
+                          title={tSignal(p.signal_id)}
+                        >
+                          <SignalIcon signalId={p.signal_id} className="size-6 text-foreground" />
+                          <span className="hidden sm:inline">{tSignal(p.signal_id)}</span>
+                        </span>
+                      )
+                    )}
                     {canManage ? (
                       <div className="flex items-center gap-2">
                         <Label
@@ -176,9 +252,7 @@ export function TeamPlaybookManager({
                         size="sm"
                         variant="outline"
                         disabled={pending}
-                        onClick={() =>
-                          run(() => addPlayToTeam({ teamId, playId: p.id }), t('toast.added'))
-                        }
+                        onClick={() => setPicker({ mode: 'add', playId: p.id, name: p.name })}
                       >
                         <Plus className="size-4" aria-hidden />
                         {t('add.action')}
@@ -194,6 +268,25 @@ export function TeamPlaybookManager({
           </CardContent>
         </Card>
       )}
+
+      {/* Selector de seña (añadir / cambiar). La seña es obligatoria. El `key`
+          remonta el diálogo por jugada → siembra la selección sin efecto. */}
+      <SignalPickerDialog
+        key={picker ? `${picker.mode}:${picker.playId}` : 'none'}
+        open={picker !== null}
+        onOpenChange={(o) => {
+          if (!o) setPicker(null);
+        }}
+        title={picker?.mode === 'change' ? t('signal.change') : t('signal.pick_title')}
+        description={
+          picker
+            ? t('signal.pick_description', { name: picker.name ?? tJ('untitled') })
+            : undefined
+        }
+        initial={picker?.mode === 'change' ? picker.current : null}
+        pending={pending}
+        onConfirm={onPickSignal}
+      />
     </div>
   );
 }

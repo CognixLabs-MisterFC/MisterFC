@@ -3,7 +3,13 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
-import { parsePlay, emptyPlay, createSupabaseServerClient, type Role } from '@misterfc/core';
+import {
+  parsePlay,
+  emptyPlay,
+  createSupabaseServerClient,
+  STRATEGY_TYPES,
+  type Role,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 
@@ -48,6 +54,10 @@ const updatePlaySchema = z.object({
   name: z.string().trim().min(1).max(120).nullable(),
   description: z.string().trim().max(2000).nullable(),
   play: z.unknown(), // forma fuerte = parsePlay (abajo)
+  // Jugada de estrategia: el TIPO es de la jugada (igual para todos los equipos) y
+  // es OBLIGATORIO aquí. La SEÑA NO va aquí: es por equipo y se elige al añadir/
+  // gestionar la jugada en el playbook del equipo (team_plays).
+  strategy_type: z.enum(STRATEGY_TYPES),
 });
 
 /** Rechazo: exige motivo no vacío (el trigger de JR-0 también lo exige). */
@@ -121,6 +131,7 @@ export async function updatePlay(input: unknown): Promise<PlayActionState> {
       name: parsed.data.name,
       description: parsed.data.description,
       play: play.data,
+      strategy_type: parsed.data.strategy_type,
     })
     .eq('id', parsed.data.id)
     .select('id')

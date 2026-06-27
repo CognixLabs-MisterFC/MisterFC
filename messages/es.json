@@ -3246,7 +3246,9 @@
       "name": "Nombre",
       "name_ph": "Entrada en profundidad por banda",
       "description": "Descripción",
-      "description_ph": "Cómo ejecutar la jugada…"
+      "description_ph": "Cómo ejecutar la jugada…",
+      "strategy_type": "Tipo de estrategia",
+      "strategy_type_ph": "Elige el tipo"
     },
     "frames": {
       "title": "Fotogramas",
@@ -3307,7 +3309,8 @@
       "forbidden": "Permiso denegado",
       "invalid": "Datos no válidos",
       "not_found": "No encontrada",
-      "generic": "Error al guardar"
+      "generic": "Error al guardar",
+      "strategy_required": "Elige el tipo de estrategia antes de guardar."
     },
     "status": {
       "draft": "Borrador",
@@ -3346,7 +3349,25 @@
       "published_note": "Publicada",
       "rejected_reason": "Motivo del rechazo"
     },
-    "read_only": "Solo lectura"
+    "read_only": "Solo lectura",
+    "strategy": {
+      "corner": "Córner",
+      "falta": "Falta",
+      "saque_banda": "Saque de banda",
+      "saque_centro": "Saque de centro"
+    },
+    "signals": {
+      "brazo_derecho_arriba": "Brazo derecho arriba",
+      "brazo_izquierdo_arriba": "Brazo izquierdo arriba",
+      "dos_brazos_arriba": "Dos brazos arriba",
+      "tocarse_cabeza": "Tocarse la cabeza",
+      "brazos_cruzados_pecho": "Brazos cruzados",
+      "mano_cadera": "Mano en la cadera",
+      "senalar_suelo": "Señalar al suelo",
+      "brazo_horizontal": "Brazo en horizontal",
+      "tocarse_pecho": "Tocarse el pecho",
+      "puno_alto": "Puño en alto"
+    }
   },
   "partidos": {
     "title": "Partidos",
@@ -3663,6 +3684,15 @@
       "unshared": "Dejó de compartirse.",
       "removed": "Quitada del equipo.",
       "added": "Añadida al equipo."
+    },
+    "signal": {
+      "pick_title": "Elige la seña",
+      "pick_description": "Seña que tu equipo usará para «{name}».",
+      "change": "Cambiar seña",
+      "none": "Sin seña",
+      "cancel": "Cancelar",
+      "confirm": "Guardar",
+      "toast_set": "Seña actualizada."
     }
   }
 }

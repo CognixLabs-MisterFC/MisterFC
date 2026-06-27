@@ -14,3 +14,4 @@ export * from './attendance/index';
 export * from './player-profile/index';
 export * from './sessions/index';
 export * from './development-report/index';
+export * from './plays/index';

@@ -3247,7 +3247,9 @@
       "name": "Name",
       "name_ph": "Overlap down the wing",
       "description": "Description",
-      "description_ph": "How to run the play…"
+      "description_ph": "How to run the play…",
+      "strategy_type": "Strategy type",
+      "strategy_type_ph": "Choose the type"
     },
     "frames": {
       "title": "Frames",
@@ -3308,7 +3310,8 @@
       "forbidden": "Permission denied",
       "invalid": "Invalid data",
       "not_found": "Not found",
-      "generic": "Error saving"
+      "generic": "Error saving",
+      "strategy_required": "Choose the strategy type before saving."
     },
     "status": {
       "draft": "Draft",
@@ -3347,7 +3350,25 @@
       "published_note": "Published",
       "rejected_reason": "Rejection reason"
     },
-    "read_only": "Read only"
+    "read_only": "Read only",
+    "strategy": {
+      "corner": "Corner",
+      "falta": "Free kick",
+      "saque_banda": "Throw-in",
+      "saque_centro": "Kick-off"
+    },
+    "signals": {
+      "brazo_derecho_arriba": "Right arm up",
+      "brazo_izquierdo_arriba": "Left arm up",
+      "dos_brazos_arriba": "Both arms up",
+      "tocarse_cabeza": "Touch head",
+      "brazos_cruzados_pecho": "Arms crossed",
+      "mano_cadera": "Hand on hip",
+      "senalar_suelo": "Point to ground",
+      "brazo_horizontal": "Arm horizontal",
+      "tocarse_pecho": "Touch chest",
+      "puno_alto": "Fist up"
+    }
   },
   "partidos": {
     "title": "Matches",
@@ -3664,6 +3685,15 @@
       "unshared": "No longer shared.",
       "removed": "Removed from team.",
       "added": "Added to team."
+    },
+    "signal": {
+      "pick_title": "Choose the signal",
+      "pick_description": "Signal your team will use for “{name}”.",
+      "change": "Change signal",
+      "none": "No signal",
+      "cancel": "Cancel",
+      "confirm": "Save",
+      "toast_set": "Signal updated."
     }
   }
 }

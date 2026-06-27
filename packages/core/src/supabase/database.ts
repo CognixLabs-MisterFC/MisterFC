@@ -2147,6 +2147,7 @@ export type Database = {
           play: Json
           rejection_reason: string | null
           status: string
+          strategy_type: string | null
           updated_at: string
         }
         Insert: {
@@ -2162,6 +2163,7 @@ export type Database = {
           play: Json
           rejection_reason?: string | null
           status?: string
+          strategy_type?: string | null
           updated_at?: string
         }
         Update: {
@@ -2177,6 +2179,7 @@ export type Database = {
           play?: Json
           rejection_reason?: string | null
           status?: string
+          strategy_type?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2850,6 +2853,7 @@ export type Database = {
           id: string
           play_id: string
           shared_with_family: boolean
+          signal_id: string | null
           team_id: string
         }
         Insert: {
@@ -2859,6 +2863,7 @@ export type Database = {
           id?: string
           play_id: string
           shared_with_family?: boolean
+          signal_id?: string | null
           team_id: string
         }
         Update: {
@@ -2868,6 +2873,7 @@ export type Database = {
           id?: string
           play_id?: string
           shared_with_family?: boolean
+          signal_id?: string | null
           team_id?: string
         }
         Relationships: [

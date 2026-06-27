@@ -4,7 +4,11 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { getTranslations } from 'next-intl/server';
 import * as Sentry from '@sentry/nextjs';
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  createSupabaseAdminClient,
+  PLAY_SIGNAL_IDS,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 
@@ -35,17 +39,29 @@ function revalidateTeamPlaybook(teamId: string) {
   revalidatePath('/[locale]/(authenticated)/mi-equipo', 'page');
 }
 
-const addSchema = z.object({ teamId: z.string().uuid(), playId: z.string().uuid() });
-const removeSchema = addSchema;
+// La SEÑA es OBLIGATORIA al añadir la jugada al playbook del equipo (cada equipo
+// elige su gesto del catálogo de 10). El CHECK de BD es defensa en profundidad.
+const addSchema = z.object({
+  teamId: z.string().uuid(),
+  playId: z.string().uuid(),
+  signalId: z.enum(PLAY_SIGNAL_IDS),
+});
+const removeSchema = z.object({ teamId: z.string().uuid(), playId: z.string().uuid() });
 const shareSchema = z.object({
   teamId: z.string().uuid(),
   playId: z.string().uuid(),
   shared: z.boolean(),
 });
+const signalSchema = z.object({
+  teamId: z.string().uuid(),
+  playId: z.string().uuid(),
+  signalId: z.enum(PLAY_SIGNAL_IDS),
+});
 
-/** Añade una jugada PUBLICADA del banco al playbook del equipo. club_id y added_by
- *  los deriva el trigger team_plays_validate (JR-0). RLS = gate (staff del equipo +
- *  jugada publicada del club). */
+/** Añade una jugada PUBLICADA del banco al playbook del equipo, con la SEÑA que ese
+ *  equipo usará (obligatoria). club_id y added_by los deriva el trigger
+ *  team_plays_validate (JR-0). RLS = gate (staff del equipo + jugada publicada del
+ *  club). */
 export async function addPlayToTeam(input: unknown): Promise<TeamPlayActionState> {
   const parsed = addSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
@@ -62,9 +78,36 @@ export async function addPlayToTeam(input: unknown): Promise<TeamPlayActionState
     team_id: parsed.data.teamId,
     play_id: parsed.data.playId,
     club_id: ctx.activeClub.club.id,
+    signal_id: parsed.data.signalId,
   });
 
   if (error) return { error: mapPgErr(error.code) };
+
+  revalidateTeamPlaybook(parsed.data.teamId);
+  return { success: true };
+}
+
+/** Cambia la seña que el equipo usa para una jugada ya en su playbook. La seña es
+ *  obligatoria (no se puede dejar vacía). El trigger team_plays_validate mantiene
+ *  inmutables team_id/play_id; signal_id es libre de actualizar. RLS = gate (staff
+ *  del equipo). */
+export async function setPlaySignal(input: unknown): Promise<TeamPlayActionState> {
+  const parsed = signalSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: updated, error } = await supabase
+    .from('team_plays')
+    .update({ signal_id: parsed.data.signalId })
+    .eq('team_id', parsed.data.teamId)
+    .eq('play_id', parsed.data.playId)
+    .select('play_id')
+    .maybeSingle();
+
+  if (error) return { error: mapPgErr(error.code) };
+  if (!updated) return { error: 'not_found' };
 
   revalidateTeamPlaybook(parsed.data.teamId);
   return { success: true };

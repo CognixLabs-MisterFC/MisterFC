@@ -60,10 +60,12 @@ import {
   MIN_FRAME_MS,
   MAX_FRAME_MS,
   DEFAULT_FRAME_MS,
+  STRATEGY_TYPES,
   type Diagram,
   type DiagramField,
   type Play,
   type PlayFrame,
+  type StrategyType,
 } from '@misterfc/core';
 import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n/navigation';
@@ -74,6 +76,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Hint } from '@/components/ui/tooltip';
 import { Slider } from '@/components/ui/slider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { PitchEditor } from '@/components/match/pitch-editor';
 import { DiagramView } from '@/components/match/diagram-view';
 import type { PlayForEdit } from '../queries';
@@ -162,12 +171,19 @@ export function PlayEditor({
 }) {
   const t = useTranslations('jugadas');
   const tStatus = useTranslations('jugadas.status');
+  const tStrategy = useTranslations('jugadas.strategy');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   // Cabecera editable (name/description). El estado/ciclo se gestiona aparte.
   const [name, setName] = useState(initial.name ?? '');
   const [description, setDescription] = useState(initial.description ?? '');
+  // Jugada de estrategia: el TIPO es de la jugada (obligatorio al guardar). '' = sin
+  // elegir (jugadas previas vienen NULL → fuerzan a completarlo al editar). La SEÑA
+  // NO va aquí: es por equipo y se elige en el playbook del equipo (team_plays).
+  const [strategyType, setStrategyType] = useState<StrategyType | ''>(
+    initial.strategy_type ?? '',
+  );
 
   // Jugada: field común + frames con id de cliente. Ids iniciales deterministas.
   const [field, setField] = useState<DiagramField>(initial.play.field);
@@ -295,6 +311,12 @@ export function PlayEditor({
   }
 
   function save() {
+    // El tipo de estrategia es obligatorio (jugada de estrategia). Aviso claro antes
+    // de llamar a la action (que también lo valida con zod). La seña no va aquí.
+    if (strategyType === '') {
+      toast.error(t('errors.strategy_required'));
+      return;
+    }
     const playload: Play = { version: PLAY_VERSION, field, frames: items.map((it) => it.frame) };
     startTransition(async () => {
       const res = await updatePlay({
@@ -302,6 +324,7 @@ export function PlayEditor({
         name: name.trim() === '' ? null : name.trim(),
         description: description.trim() === '' ? null : description.trim(),
         play: playload,
+        strategy_type: strategyType,
       });
       if (res.error) {
         toast.error(t(`errors.${res.error}`));
@@ -376,6 +399,32 @@ export function PlayEditor({
             rows={2}
             disabled={!canEdit}
           />
+        </div>
+      </section>
+
+      {/* ── Estrategia: tipo (obligatorio) ─────────────────────────────────── */}
+      {/* La seña NO va aquí: es por equipo y se elige en el playbook del equipo. */}
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5 sm:max-w-xs">
+          <Label htmlFor="play-strategy">
+            {t('fields.strategy_type')} <span className="text-destructive">*</span>
+          </Label>
+          <Select
+            value={strategyType || undefined}
+            onValueChange={(v) => setStrategyType(v as StrategyType)}
+            disabled={!canEdit}
+          >
+            <SelectTrigger id="play-strategy">
+              <SelectValue placeholder={t('fields.strategy_type_ph')} />
+            </SelectTrigger>
+            <SelectContent>
+              {STRATEGY_TYPES.map((st) => (
+                <SelectItem key={st} value={st}>
+                  {tStrategy(st)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </section>
 

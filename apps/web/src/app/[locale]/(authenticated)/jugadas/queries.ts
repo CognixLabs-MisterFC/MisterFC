@@ -15,6 +15,8 @@ import {
   getCurrentUser,
   type Play,
   type MethodologyStatus,
+  type StrategyType,
+  type PlaySignalId,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -115,6 +117,8 @@ export type PlayForEdit = {
   approved_at: string | null;
   approved_by_name: string | null;
   play: Play;
+  /** Tipo de estrategia (null en jugadas previas; obligatorio en el editor). */
+  strategy_type: StrategyType | null;
   is_owner: boolean;
 };
 
@@ -127,7 +131,7 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
     .from('plays')
     .select(
       `id, name, description, status, archived_at, rejection_reason, approved_at,
-       owner_profile_id, play,
+       owner_profile_id, play, strategy_type,
        approved_by_profile:profiles!plays_approved_by_fkey(full_name)`,
     )
     .eq('id', id)
@@ -151,6 +155,7 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
     // La forma fuerte está garantizada por parsePlay al guardar; si por lo que
     // fuese el jsonb no parsea, se cae a una jugada vacía válida (no rompe el UI).
     play: parsed.success ? parsed.data : emptyPlay(),
+    strategy_type: (data.strategy_type as StrategyType | null) ?? null,
     is_owner: user?.id === (data.owner_profile_id as string),
   };
 }
@@ -161,6 +166,8 @@ export type TeamSelectedPlay = {
   name: string | null;
   frame_count: number;
   shared_with_family: boolean;
+  /** Seña que ESTE equipo usa para la jugada (null = pendiente de elegir). */
+  signal_id: PlaySignalId | null;
   updated_at: string;
 };
 
@@ -176,7 +183,7 @@ export async function loadTeamSelectedPlays(teamId: string): Promise<TeamSelecte
 
   const { data } = await supabase
     .from('team_plays')
-    .select('play_id, shared_with_family, play:plays!inner(id, name, play, updated_at)')
+    .select('play_id, shared_with_family, signal_id, play:plays!inner(id, name, play, updated_at)')
     .eq('team_id', teamId);
 
   const rows = (data ?? [])
@@ -191,6 +198,7 @@ export async function loadTeamSelectedPlays(teamId: string): Promise<TeamSelecte
         name: p.name ?? null,
         frame_count: parsed.success ? parsed.data.frames.length : 0,
         shared_with_family: tp.shared_with_family as boolean,
+        signal_id: (tp.signal_id as PlaySignalId | null) ?? null,
         updated_at: p.updated_at,
       } satisfies TeamSelectedPlay;
     })
