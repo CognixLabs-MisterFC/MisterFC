@@ -2398,7 +2398,10 @@
       "technical": "Objectius tècnics",
       "physical": "Objectiu físic",
       "no_exercises": "Sense exercicis.",
-      "exercise_fallback": "Exercici"
+      "exercise_fallback": "Exercici",
+      "plays_heading": "Jugades a entrenar",
+      "play_untitled": "Jugada sense títol",
+      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogrames}}"
     },
     "playbook": {
       "title": "Playbook",
