@@ -56,8 +56,12 @@ export async function GET(
     locale,
     namespace: 'ejercicios.technical',
   })) as unknown as Translator;
+  const tSignal = (await getTranslations({
+    locale,
+    namespace: 'jugadas.signals',
+  })) as unknown as Translator;
 
-  const doc = SessionPdfDocument({ t, tTactical, tTechnical, clubName, session });
+  const doc = SessionPdfDocument({ t, tTactical, tTechnical, tSignal, clubName, session });
 
   const datePart = session.session_date ?? 'sesion';
   const namePart = session.title ?? session.team_name ?? 'sesion';

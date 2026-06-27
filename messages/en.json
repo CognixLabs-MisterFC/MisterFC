@@ -1653,7 +1653,8 @@
         "reducido": "Small-sided"
       },
       "plays_heading": "Plays to train",
-      "frames_label": "Frames"
+      "frames_label": "Frames",
+      "signal_label": "Signal"
     },
     "development": {
       "title": "Development report",
