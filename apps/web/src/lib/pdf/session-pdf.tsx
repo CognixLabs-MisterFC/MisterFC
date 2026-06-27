@@ -14,6 +14,7 @@ import { View, Text, StyleSheet, type DocumentProps } from '@react-pdf/renderer'
 import type { ReactElement } from 'react';
 import { PdfShell, type Translator } from './shared';
 import { SignalPdf } from './signal-pdf';
+import { DiagramPdf, hasDrawableDiagram } from './diagram-pdf';
 import type { SessionForPdf, SessionPdfTask, SessionPdfPlay } from
   '@/app/[locale]/(authenticated)/sesiones/queries';
 
@@ -256,9 +257,15 @@ export function SessionPdfDocument(props: SessionPdfProps): ReactElement<Documen
                   </View>
                   <View style={s.colLast}>
                     <Text style={s.colHead}>{t('session.graphic')}</Text>
-                    <View style={s.graphic}>
-                      <Text style={s.muted}>{t('session.graphic_omitted')}</Text>
-                    </View>
+                    {hasDrawableDiagram(task.diagram) ? (
+                      <View style={s.graphic}>
+                        <DiagramPdf diagram={task.diagram!} width={120} />
+                      </View>
+                    ) : (
+                      <View style={s.graphic}>
+                        <Text style={s.muted}>{t('session.graphic_omitted')}</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
 
@@ -326,9 +333,15 @@ export function SessionPdfDocument(props: SessionPdfProps): ReactElement<Documen
                     </View>
                     <View style={s.colLast}>
                       <Text style={s.colHead}>{t('session.graphic')}</Text>
-                      <View style={s.graphic}>
-                        <Text style={s.muted}>{t('session.graphic_omitted')}</Text>
-                      </View>
+                      {hasDrawableDiagram(play.diagram) ? (
+                        <View style={s.graphic}>
+                          <DiagramPdf diagram={play.diagram!} width={120} />
+                        </View>
+                      ) : (
+                        <View style={s.graphic}>
+                          <Text style={s.muted}>{t('session.graphic_omitted')}</Text>
+                        </View>
+                      )}
                     </View>
                   </View>
                 </View>

@@ -11,11 +11,15 @@ import {
   type SessionBlockType,
   type SessionVisibility,
   type PlaySignalId,
+  type Diagram,
+  type Scene,
   addDaysIso,
   createSupabaseServerClient,
   createSupabaseAdminClient,
   getCurrentUser,
   parsePlay,
+  parseDiagram,
+  sceneAtTime,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
@@ -465,6 +469,8 @@ export type SessionPdfTask = {
   base_duration: number | null;
   tactical_objectives: string[];
   technical_objectives: string[];
+  // A2 (tanda 3) — diagrama del campo del ejercicio (null si no tiene/ no parsea).
+  diagram: Diagram | null;
 };
 
 // JS-2 — jugada del bloque en el PDF (D5 mínimo: nombre + nº frames + override del día).
@@ -475,6 +481,8 @@ export type SessionPdfPlay = {
   duration_min: number | null;
   notes: string | null;
   signal_id: PlaySignalId | null;
+  // A2 (tanda 3) — dibujo del campo = frame 0 de la animación (null si sin frames).
+  diagram: Scene | null;
 };
 
 export type SessionPdfBlock = {
@@ -522,7 +530,7 @@ export async function loadSessionForPdf(
            exercise:exercises (
              name, description, objective, coaching_points, variants, players,
              space_type, space_dimensions, base_duration,
-             tactical_objectives, technical_objectives
+             tactical_objectives, technical_objectives, diagram
            )
          ),
          session_block_plays (
@@ -558,6 +566,7 @@ export async function loadSessionForPdf(
       base_duration: number | null;
       tactical_objectives: string[] | null;
       technical_objectives: string[] | null;
+      diagram: unknown;
     } | null;
   };
   type RawPdfPlay = {
@@ -628,18 +637,28 @@ export async function loadSessionForPdf(
           base_duration: tk.exercise?.base_duration ?? null,
           tactical_objectives: tk.exercise?.tactical_objectives ?? [],
           technical_objectives: tk.exercise?.technical_objectives ?? [],
+          diagram: (() => {
+            const d = parseDiagram(tk.exercise?.diagram);
+            return d.success ? d.data : null;
+          })(),
         }));
       const plays: SessionPdfPlay[] = (b.session_block_plays ?? [])
         .slice()
         .sort((a, b2) => a.order_idx - b2.order_idx)
         .map((p) => {
           const parsed = parsePlay(p.play?.play);
+          // Dibujo del campo = frame 0 de la animación (sceneAtTime en t=0).
+          const diagram =
+            parsed.success && parsed.data.frames.length > 0
+              ? sceneAtTime(parsed.data, 0)
+              : null;
           return {
             play_name: p.play?.name ?? '',
             frame_count: parsed.success ? parsed.data.frames.length : 0,
             duration_min: p.duration_min,
             notes: p.notes,
             signal_id: p.play?.id ? (signalByPlayId.get(p.play.id) ?? null) : null,
+            diagram,
           };
         });
       // Tiempo del bloque = duración del día (o base) de las tareas + duración de las
