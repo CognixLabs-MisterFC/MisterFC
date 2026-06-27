@@ -3310,7 +3310,8 @@
       "invalid": "Datos no válidos",
       "not_found": "No encontrada",
       "generic": "Error al guardar",
-      "strategy_required": "Elige el tipo de estrategia antes de guardar."
+      "strategy_required": "Elige el tipo de estrategia antes de guardar.",
+      "design_locked": "Modificar el diseño de una jugada publicada requiere la aprobación de un coordinador o administrador."
     },
     "status": {
       "draft": "Borrador",
@@ -3347,7 +3348,10 @@
     "detail": {
       "approved_by_at": "Aprobada por {name} · {date}",
       "published_note": "Publicada",
-      "rejected_reason": "Motivo del rechazo"
+      "rejected_reason": "Motivo del rechazo",
+      "design_locked_title": "Diseño bloqueado",
+      "design_locked_note": "Esta jugada está publicada. Para modificar su diseño hace falta la aprobación de un coordinador o administrador.",
+      "design_locked_short": "Requiere aprobación del coordinador"
     },
     "read_only": "Solo lectura",
     "strategy": {

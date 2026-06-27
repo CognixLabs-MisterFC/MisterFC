@@ -3311,7 +3311,8 @@
       "invalid": "Invalid data",
       "not_found": "Not found",
       "generic": "Error saving",
-      "strategy_required": "Choose the strategy type before saving."
+      "strategy_required": "Choose the strategy type before saving.",
+      "design_locked": "Editing the design of a published play requires approval from a coordinator or administrator."
     },
     "status": {
       "draft": "Draft",
@@ -3348,7 +3349,10 @@
     "detail": {
       "approved_by_at": "Approved by {name} · {date}",
       "published_note": "Published",
-      "rejected_reason": "Rejection reason"
+      "rejected_reason": "Rejection reason",
+      "design_locked_title": "Design locked",
+      "design_locked_note": "This play is published. Editing its design requires approval from a coordinator or administrator.",
+      "design_locked_short": "Requires coordinator approval"
     },
     "read_only": "Read only",
     "strategy": {
