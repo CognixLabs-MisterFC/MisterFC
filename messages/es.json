@@ -1650,7 +1650,9 @@
         "medio_campo": "Medio campo",
         "cuarto_campo": "Cuarto de campo",
         "reducido": "Reducido"
-      }
+      },
+      "plays_heading": "Jugadas a entrenar",
+      "frames_label": "Fotogramas"
     },
     "development": {
       "title": "Informe de desarrollo",

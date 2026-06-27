@@ -1651,7 +1651,9 @@
         "medio_campo": "Mig camp",
         "cuarto_campo": "Quart de camp",
         "reducido": "Reduït"
-      }
+      },
+      "plays_heading": "Jugades a entrenar",
+      "frames_label": "Fotogrames"
     },
     "development": {
       "title": "Informe de desenvolupament",

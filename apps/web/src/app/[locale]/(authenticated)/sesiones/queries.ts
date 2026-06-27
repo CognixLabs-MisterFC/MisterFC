@@ -465,12 +465,21 @@ export type SessionPdfTask = {
   technical_objectives: string[];
 };
 
+// JS-2 — jugada del bloque en el PDF (D5 mínimo: nombre + nº frames + override del día).
+export type SessionPdfPlay = {
+  play_name: string;
+  frame_count: number;
+  duration_min: number | null;
+  notes: string | null;
+};
+
 export type SessionPdfBlock = {
   block_type: SessionBlockType;
   title: string | null;
   notes: string | null;
-  total_minutes: number | null; // suma de las tareas (override o base)
+  total_minutes: number | null; // suma de tareas (override o base) + jugadas (duration_min)
   tasks: SessionPdfTask[];
+  plays: SessionPdfPlay[];
 };
 
 export type SessionForPdf = {
@@ -511,6 +520,10 @@ export async function loadSessionForPdf(
              space_type, space_dimensions, base_duration,
              tactical_objectives, technical_objectives
            )
+         ),
+         session_block_plays (
+           order_idx, duration_min, notes,
+           play:plays ( name, play )
          )
        )`
     )
@@ -543,12 +556,19 @@ export async function loadSessionForPdf(
       technical_objectives: string[] | null;
     } | null;
   };
+  type RawPdfPlay = {
+    order_idx: number;
+    duration_min: number | null;
+    notes: string | null;
+    play: { name: string | null; play: unknown } | null;
+  };
   type RawBlock = {
     block_type: string;
     title: string | null;
     notes: string | null;
     order_idx: number;
     session_block_exercises: RawTask[] | null;
+    session_block_plays: RawPdfPlay[] | null;
   };
 
   const blocks: SessionPdfBlock[] = ((data.session_blocks as RawBlock[] | null) ?? [])
@@ -574,16 +594,31 @@ export async function loadSessionForPdf(
           tactical_objectives: tk.exercise?.tactical_objectives ?? [],
           technical_objectives: tk.exercise?.technical_objectives ?? [],
         }));
-      // Tiempo del bloque = suma de la duración del día (o base) de sus tareas.
-      const mins = tasks
-        .map((tk) => tk.duration_min ?? tk.base_duration)
-        .filter((n): n is number => typeof n === 'number');
+      const plays: SessionPdfPlay[] = (b.session_block_plays ?? [])
+        .slice()
+        .sort((a, b2) => a.order_idx - b2.order_idx)
+        .map((p) => {
+          const parsed = parsePlay(p.play?.play);
+          return {
+            play_name: p.play?.name ?? '',
+            frame_count: parsed.success ? parsed.data.frames.length : 0,
+            duration_min: p.duration_min,
+            notes: p.notes,
+          };
+        });
+      // Tiempo del bloque = duración del día (o base) de las tareas + duración de las
+      // jugadas (D8: lo mismo que persiste la BD en total_minutes de la sesión).
+      const mins = [
+        ...tasks.map((tk) => tk.duration_min ?? tk.base_duration),
+        ...plays.map((p) => p.duration_min),
+      ].filter((n): n is number => typeof n === 'number');
       return {
         block_type: b.block_type as SessionBlockType,
         title: b.title,
         notes: b.notes,
         total_minutes: mins.length > 0 ? mins.reduce((s, n) => s + n, 0) : null,
         tasks,
+        plays,
       };
     });
 
