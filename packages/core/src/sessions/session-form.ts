@@ -259,6 +259,48 @@ export const moveTaskSchema = z.object({
 });
 export type MoveTaskInput = z.infer<typeof moveTaskSchema>;
 
+// ── Jugadas del bloque (JS-1, F12↔F13) ───────────────────────────────────────
+/** Añadir una jugada del playbook a un bloque (overrides del día vacíos). */
+export const addBlockPlaySchema = z.object({
+  block_id: z.string().uuid({ message: 'block_id_invalid' }),
+  play_id: z.string().uuid({ message: 'play_id_invalid' }),
+});
+export type AddBlockPlayInput = z.infer<typeof addBlockPlaySchema>;
+
+/** Editar los overrides del día de una jugada en sesión (duración/notas — D7). */
+export const updateBlockPlaySchema = z.object({
+  id: z.string().uuid({ message: 'id_invalid' }),
+  duration_min: minutesSchema,
+  notes: optText(2000),
+});
+export type UpdateBlockPlayInput = z.infer<typeof updateBlockPlaySchema>;
+
+/** Columnas de override del día de `session_block_plays`. */
+export type PlayOverrideColumns = {
+  duration_min: number | null;
+  notes: string | null;
+};
+
+export function toPlayOverrideColumns(data: UpdateBlockPlayInput): PlayOverrideColumns {
+  return {
+    duration_min: orNull(data.duration_min),
+    notes: orNull(data.notes),
+  };
+}
+
+/** Quitar una jugada de un bloque. */
+export const blockPlayIdSchema = z.object({
+  id: z.string().uuid({ message: 'id_invalid' }),
+});
+export type BlockPlayIdInput = z.infer<typeof blockPlayIdSchema>;
+
+/** Reordenar las jugadas dentro de un bloque. */
+export const reorderBlockPlaysSchema = z.object({
+  block_id: z.string().uuid({ message: 'block_id_invalid' }),
+  play_ids: uuidArray,
+});
+export type ReorderBlockPlaysInput = z.infer<typeof reorderBlockPlaysSchema>;
+
 // ── Plantillas (12.6 — D5) ────────────────────────────────────────────────────
 // Clonado vía el RPC clone_session (atómico). Dos direcciones, dos schemas:
 //   · GUARDAR COMO PLANTILLA: nombre obligatorio (la plantilla SÍ se identifica por

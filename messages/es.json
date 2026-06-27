@@ -3536,7 +3536,15 @@
       "notes_ph": "Notas del día",
       "remove": "Quitar ejercicio",
       "reorder_block": "Reordenar bloque",
-      "reorder_task": "Reordenar ejercicio"
+      "reorder_task": "Reordenar ejercicio",
+      "plays_heading": "Jugadas a entrenar",
+      "plays_empty": "Sin jugadas todavía.",
+      "play_untitled": "Jugada sin título",
+      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogramas}}",
+      "move_up": "Subir",
+      "move_down": "Bajar",
+      "open_play": "Abrir jugada",
+      "remove_play": "Quitar jugada"
     },
     "block_types": {
       "calentamiento": "Calentamiento",
@@ -3610,6 +3618,15 @@
       "delete_title": "¿Eliminar la plantilla?",
       "delete_description": "Se eliminará la plantilla «{name}» con sus bloques y ejercicios. Esta acción no se puede deshacer.",
       "toast_deleted": "Plantilla eliminada"
+    },
+    "play_picker": {
+      "add": "Añadir jugada",
+      "search": "Buscar jugada…",
+      "empty": "No hay jugadas que coincidan.",
+      "empty_playbook": "Este equipo no tiene jugadas en su playbook.",
+      "no_team": "Asigna un equipo a la sesión para añadir jugadas.",
+      "untitled": "Jugada sin título",
+      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogramas}}"
     }
   },
   "playbook_equipo": {

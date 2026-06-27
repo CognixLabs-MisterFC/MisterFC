@@ -13,6 +13,11 @@ import {
   reorderBlocksSchema,
   reorderTasksSchema,
   moveTaskSchema,
+  addBlockPlaySchema,
+  updateBlockPlaySchema,
+  toPlayOverrideColumns,
+  blockPlayIdSchema,
+  reorderBlockPlaysSchema,
   saveAsTemplateSchema,
   createFromTemplateSchema,
   sessionIdSchema,
@@ -561,6 +566,129 @@ export async function deleteTemplate(input: unknown): Promise<SessionActionState
 
   revalidateSessions();
   return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// JS-1 (F12↔F13) — Jugadas del bloque (añadir del playbook / overrides / quitar /
+// reordenar). session_id/club_id los DERIVA el trigger de JS-0; total_minutes lo
+// recalcula el trigger de JS-0 (suma ejercicios ∪ jugadas). La RLS
+// (user_can_edit_session + jugada en el playbook del equipo de la sesión) es el gate.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type SessionPlayActionState = {
+  error?: ActionError;
+  success?: boolean;
+  /** id de la fila creada (addPlayToBlock). */
+  id?: string;
+};
+
+/** Añade una jugada del playbook al final de un bloque (overrides del día vacíos). */
+export async function addPlayToBlock(input: unknown): Promise<SessionPlayActionState> {
+  const parsed = addBlockPlaySchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const { block_id, play_id } = parsed.data;
+
+  // session_id/club_id los deriva el trigger del bloque, pero el tipo Insert los
+  // exige (NOT NULL sin default) → se leen del bloque (RLS decide si se ve) y se
+  // pasan; el trigger los re-deriva al mismo valor.
+  const { data: block } = await supabase
+    .from('session_blocks')
+    .select('session_id, club_id')
+    .eq('id', block_id)
+    .maybeSingle();
+  if (!block) return { error: 'not_found' };
+
+  // Siguiente order_idx del bloque (huecos OK; el orden lo normaliza reorder).
+  const { data: last } = await supabase
+    .from('session_block_plays')
+    .select('order_idx')
+    .eq('block_id', block_id)
+    .order('order_idx', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const nextIdx = ((last?.order_idx as number | null) ?? -1) + 1;
+
+  const { data: created, error } = await supabase
+    .from('session_block_plays')
+    .insert({
+      block_id,
+      session_id: block.session_id,
+      club_id: block.club_id,
+      play_id,
+      order_idx: nextIdx,
+    })
+    .select('id')
+    .maybeSingle();
+
+  if (error) return { error: mapPgErr(error.code) };
+  const id = created?.id as string | undefined;
+  if (!id) return { error: 'generic' };
+
+  revalidateSessions();
+  return { success: true, id };
+}
+
+/** Edita los overrides del día de una jugada en sesión (duración/notas — D7). */
+export async function updateBlockPlay(input: unknown): Promise<SessionPlayActionState> {
+  const parsed = updateBlockPlaySchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data: updated, error } = await supabase
+    .from('session_block_plays')
+    .update(toPlayOverrideColumns(parsed.data))
+    .eq('id', parsed.data.id)
+    .select('id')
+    .maybeSingle();
+
+  if (error) return { error: mapPgErr(error.code) };
+  if (!updated) return { error: 'not_found' };
+
+  revalidateSessions();
+  return { success: true, id: parsed.data.id };
+}
+
+/** Quita una jugada de un bloque (borra el join). */
+export async function removePlayFromBlock(input: unknown): Promise<SessionPlayActionState> {
+  const parsed = blockPlayIdSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase
+    .from('session_block_plays')
+    .delete()
+    .eq('id', parsed.data.id);
+
+  if (error) return { error: mapPgErr(error.code) };
+
+  revalidateSessions();
+  return { success: true };
+}
+
+/** Reordena las jugadas dentro de un bloque (RPC: una sentencia, UNIQUE deferrable). */
+export async function reorderBlockPlays(input: unknown): Promise<SessionActionState> {
+  const parsed = reorderBlockPlaysSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase.rpc('reorder_session_block_plays', {
+    p_block_id: parsed.data.block_id,
+    p_play_ids: parsed.data.play_ids,
+  });
+
+  if (error) return { error: mapPgErr(error.code) };
+
+  revalidateSessions();
+  return { success: true, id: parsed.data.block_id };
 }
 
 /** Mueve una tarea a otro bloque de la misma sesión (RPC: cambia block_id +

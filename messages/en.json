@@ -3537,7 +3537,15 @@
       "notes_ph": "Notes for the day",
       "remove": "Remove exercise",
       "reorder_block": "Reorder block",
-      "reorder_task": "Reorder exercise"
+      "reorder_task": "Reorder exercise",
+      "plays_heading": "Plays to train",
+      "plays_empty": "No plays yet.",
+      "play_untitled": "Untitled play",
+      "frame_count": "{count, plural, =1 {# frame} other {# frames}}",
+      "move_up": "Move up",
+      "move_down": "Move down",
+      "open_play": "Open play",
+      "remove_play": "Remove play"
     },
     "block_types": {
       "calentamiento": "Warm-up",
@@ -3611,6 +3619,15 @@
       "delete_title": "Delete template?",
       "delete_description": "The template “{name}” and its blocks and exercises will be deleted. This action cannot be undone.",
       "toast_deleted": "Template deleted"
+    },
+    "play_picker": {
+      "add": "Add play",
+      "search": "Search play…",
+      "empty": "No matching plays.",
+      "empty_playbook": "This team has no plays in its playbook.",
+      "no_team": "Assign a team to the session to add plays.",
+      "untitled": "Untitled play",
+      "frame_count": "{count, plural, =1 {# frame} other {# frames}}"
     }
   },
   "playbook_equipo": {

@@ -3537,7 +3537,15 @@
       "notes_ph": "Notes del dia",
       "remove": "Llevar exercici",
       "reorder_block": "Reordenar bloc",
-      "reorder_task": "Reordenar exercici"
+      "reorder_task": "Reordenar exercici",
+      "plays_heading": "Jugades a entrenar",
+      "plays_empty": "Sense jugades encara.",
+      "play_untitled": "Jugada sense títol",
+      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogrames}}",
+      "move_up": "Pujar",
+      "move_down": "Baixar",
+      "open_play": "Obrir jugada",
+      "remove_play": "Llevar jugada"
     },
     "block_types": {
       "calentamiento": "Escalfament",
@@ -3611,6 +3619,15 @@
       "delete_title": "Eliminar la plantilla?",
       "delete_description": "S'eliminarà la plantilla «{name}» amb els seus blocs i exercicis. Esta acció no es pot desfer.",
       "toast_deleted": "Plantilla eliminada"
+    },
+    "play_picker": {
+      "add": "Afegir jugada",
+      "search": "Cerca jugada…",
+      "empty": "No hi ha jugades que coincidisquen.",
+      "empty_playbook": "Aquest equip no té jugades al seu playbook.",
+      "no_team": "Assigna un equip a la sessió per a afegir jugades.",
+      "untitled": "Jugada sense títol",
+      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogrames}}"
     }
   },
   "playbook_equipo": {

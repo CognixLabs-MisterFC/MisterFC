@@ -4,7 +4,12 @@ import { ArrowLeft } from 'lucide-react';
 import { type Role } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
-import { loadSessionForEdit, loadClubTeams, loadPickableExercises } from '../../queries';
+import {
+  loadSessionForEdit,
+  loadClubTeams,
+  loadPickableExercises,
+  loadAddablePlaysForSession,
+} from '../../queries';
 import { SessionEditor } from '../../_components/session-editor';
 
 type Props = { params: Promise<{ locale: string; id: string }> };
@@ -39,6 +44,10 @@ export default async function EditarSesionPage({ params }: Props) {
   ]);
   if (!session) notFound();
 
+  // JS-1 — playbook del equipo de la sesión para el picker de jugadas (D4: [] si no
+  // hay equipo). Carga tras resolver la sesión (necesita su team_id).
+  const addablePlays = await loadAddablePlaysForSession(clubId, session.team_id, '', []);
+
   const t = await getTranslations('sesiones');
 
   return (
@@ -51,7 +60,12 @@ export default async function EditarSesionPage({ params }: Props) {
         {t('back')}
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">{t('edit_title')}</h1>
-      <SessionEditor session={session} teams={teams} pickable={pickable} />
+      <SessionEditor
+        session={session}
+        teams={teams}
+        pickable={pickable}
+        addablePlays={addablePlays}
+      />
     </div>
   );
 }

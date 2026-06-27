@@ -32,13 +32,14 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, ExternalLink, GripVertical, X } from 'lucide-react';
 import { sumTaskMinutes } from '@misterfc/core';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { ExercisePicker } from './exercise-picker';
+import { PlayPicker } from './play-picker';
 import {
   addBlockTask,
   updateBlockTask,
@@ -46,12 +47,18 @@ import {
   reorderBlocks,
   reorderTasks,
   moveTask,
+  addPlayToBlock,
+  updateBlockPlay,
+  removePlayFromBlock,
+  reorderBlockPlays,
 } from '../actions';
 import type {
   SessionForEdit,
   SessionBlockForEdit,
   SessionTaskForEdit,
+  SessionBlockPlayForEdit,
   PickableExercise,
+  AddableSessionPlay,
 } from '../queries';
 
 // ── Fila de tarea (override del día editable + drag handle + quitar) ──────────
@@ -136,6 +143,103 @@ function TaskRow({
   );
 }
 
+// ── Fila de jugada (sub-lista "Jugadas a entrenar", D3): override del día + abrir
+//    visor/editor + subir/bajar + quitar. No es drag (lista separada de las tareas).
+function PlayRow({
+  play,
+  isFirst,
+  isLast,
+  onUpdate,
+  onMove,
+  onRemove,
+}: {
+  play: SessionBlockPlayForEdit;
+  isFirst: boolean;
+  isLast: boolean;
+  onUpdate: (id: string, patch: { duration_min: string; notes: string }) => void;
+  onMove: (id: string, dir: -1 | 1) => void;
+  onRemove: (id: string) => void;
+}) {
+  const t = useTranslations('sesiones.blocks');
+  const [duration, setDuration] = useState(
+    play.duration_min != null ? String(play.duration_min) : ''
+  );
+  const [notes, setNotes] = useState(play.notes ?? '');
+
+  function persist() {
+    onUpdate(play.id, { duration_min: duration, notes });
+  }
+
+  return (
+    <li className="flex flex-wrap items-center gap-2 rounded-md border bg-background p-2">
+      <div className="flex flex-col">
+        <button
+          type="button"
+          onClick={() => onMove(play.id, -1)}
+          disabled={isFirst}
+          aria-label={t('move_up')}
+          className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+        >
+          <ChevronUp className="size-3.5" aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => onMove(play.id, 1)}
+          disabled={isLast}
+          aria-label={t('move_down')}
+          className="text-muted-foreground hover:text-foreground disabled:opacity-30"
+        >
+          <ChevronDown className="size-3.5" aria-hidden />
+        </button>
+      </div>
+      <span className="min-w-0 flex-1 truncate text-sm">
+        {play.play_name || t('play_untitled')}
+      </span>
+      <Badge variant="outline" className="shrink-0 text-xs font-normal">
+        {t('frame_count', { count: play.frame_count })}
+      </Badge>
+      <Input
+        type="number"
+        inputMode="numeric"
+        min={0}
+        max={600}
+        value={duration}
+        onChange={(e) => setDuration(e.target.value)}
+        onBlur={persist}
+        placeholder={t('duration_ph')}
+        className="w-16"
+        aria-label={t('duration')}
+      />
+      <Input
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        onBlur={persist}
+        placeholder={t('notes_ph')}
+        maxLength={2000}
+        className="w-32"
+        aria-label={t('notes')}
+      />
+      <Link
+        href={`/jugadas/${play.play_id}/editar`}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={t('open_play')}
+        className="text-muted-foreground hover:text-foreground"
+      >
+        <ExternalLink className="size-4" aria-hidden />
+      </Link>
+      <button
+        type="button"
+        onClick={() => onRemove(play.id)}
+        aria-label={t('remove_play')}
+        className="text-muted-foreground hover:text-destructive"
+      >
+        <X className="size-4" aria-hidden />
+      </button>
+    </li>
+  );
+}
+
 // ── Bloque sortable (cabecera con handle + tareas sortables + picker) ─────────
 // El DndContext es ÚNICO (vive en BlocksEditor): aquí solo se declara el
 // SortableContext de las tareas del bloque y el bloque como item sortable/droppable.
@@ -143,23 +247,35 @@ function SortableBlock({
   block,
   blockLabel,
   pickable,
+  addablePlays,
+  hasTeam,
   defaultCategory,
   defaultTactical,
   defaultTechnical,
   onAddTask,
   onUpdateTask,
   onRemoveTask,
+  onAddPlay,
+  onUpdatePlay,
+  onMovePlay,
+  onRemovePlay,
   pending,
 }: {
   block: SessionBlockForEdit;
   blockLabel: string;
   pickable: PickableExercise[];
+  addablePlays: AddableSessionPlay[];
+  hasTeam: boolean;
   defaultCategory: string | null;
   defaultTactical: string[];
   defaultTechnical: string[];
   onAddTask: (blockId: string, exerciseId: string, name: string) => void;
   onUpdateTask: (blockId: string, taskId: string, patch: { duration_min: string; series: string; notes: string }) => void;
   onRemoveTask: (blockId: string, taskId: string) => void;
+  onAddPlay: (blockId: string, playId: string, name: string) => void;
+  onUpdatePlay: (blockId: string, playRowId: string, patch: { duration_min: string; notes: string }) => void;
+  onMovePlay: (blockId: string, playRowId: string, dir: -1 | 1) => void;
+  onRemovePlay: (blockId: string, playRowId: string) => void;
   pending: boolean;
 }) {
   const t = useTranslations('sesiones.blocks');
@@ -187,36 +303,72 @@ function SortableBlock({
         {block.title ? <span className="text-sm font-medium">{block.title}</span> : null}
       </div>
 
-      <div className="mt-2 flex flex-col gap-2">
-        <SortableContext items={block.tasks.map((x) => x.id)} strategy={verticalListSortingStrategy}>
-          {block.tasks.length === 0 ? (
-            <p className="rounded-md border border-dashed py-3 text-center text-xs text-muted-foreground">
-              {t('empty')}
+      <div className="mt-2 flex flex-col gap-3">
+        {/* Ejercicios */}
+        <div className="flex flex-col gap-2">
+          <SortableContext items={block.tasks.map((x) => x.id)} strategy={verticalListSortingStrategy}>
+            {block.tasks.length === 0 ? (
+              <p className="rounded-md border border-dashed py-3 text-center text-xs text-muted-foreground">
+                {t('empty')}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1.5">
+                {block.tasks.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    onUpdate={(id, patch) => onUpdateTask(block.id, id, patch)}
+                    onRemove={(id) => onRemoveTask(block.id, id)}
+                  />
+                ))}
+              </ul>
+            )}
+          </SortableContext>
+
+          <div>
+            <ExercisePicker
+              exercises={pickable}
+              phase={block.block_type}
+              defaultCategory={defaultCategory}
+              defaultTactical={defaultTactical}
+              defaultTechnical={defaultTechnical}
+              onPick={(id, name) => onAddTask(block.id, id, name)}
+              disabled={pending}
+            />
+          </div>
+        </div>
+
+        {/* Jugadas a entrenar (D3) — sub-lista separada del playbook del equipo */}
+        <div className="flex flex-col gap-2 border-t pt-3">
+          <p className="text-xs font-medium text-muted-foreground">{t('plays_heading')}</p>
+          {block.plays.length === 0 ? (
+            <p className="rounded-md border border-dashed py-2 text-center text-xs text-muted-foreground">
+              {t('plays_empty')}
             </p>
           ) : (
             <ul className="flex flex-col gap-1.5">
-              {block.tasks.map((task) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  onUpdate={(id, patch) => onUpdateTask(block.id, id, patch)}
-                  onRemove={(id) => onRemoveTask(block.id, id)}
+              {block.plays.map((play, i) => (
+                <PlayRow
+                  key={play.id}
+                  play={play}
+                  isFirst={i === 0}
+                  isLast={i === block.plays.length - 1}
+                  onUpdate={(id, patch) => onUpdatePlay(block.id, id, patch)}
+                  onMove={(id, dir) => onMovePlay(block.id, id, dir)}
+                  onRemove={(id) => onRemovePlay(block.id, id)}
                 />
               ))}
             </ul>
           )}
-        </SortableContext>
-
-        <div>
-          <ExercisePicker
-            exercises={pickable}
-            phase={block.block_type}
-            defaultCategory={defaultCategory}
-            defaultTactical={defaultTactical}
-            defaultTechnical={defaultTechnical}
-            onPick={(id, name) => onAddTask(block.id, id, name)}
-            disabled={pending}
-          />
+          <div>
+            <PlayPicker
+              plays={addablePlays}
+              excludeIds={block.plays.map((p) => p.play_id)}
+              hasTeam={hasTeam}
+              onPick={(id, name) => onAddPlay(block.id, id, name)}
+              disabled={pending}
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -227,9 +379,11 @@ function SortableBlock({
 export function BlocksEditor({
   session,
   pickable,
+  addablePlays,
 }: {
   session: SessionForEdit;
   pickable: PickableExercise[];
+  addablePlays: AddableSessionPlay[];
 }) {
   const t = useTranslations('sesiones');
   const tBlocks = useTranslations('sesiones.block_types');
@@ -241,7 +395,13 @@ export function BlocksEditor({
   const [blocks, setBlocks] = useState<SessionBlockForEdit[]>(session.blocks);
   const [pending, startTransition] = useTransition();
 
-  const total = sumTaskMinutes(blocks.flatMap((b) => b.tasks.map((x) => x.duration_min)));
+  const hasTeam = session.team_id != null;
+
+  // D8 — total = duración de ejercicios ∪ jugadas (la BD lo persiste igual).
+  const total = sumTaskMinutes([
+    ...blocks.flatMap((b) => b.tasks.map((x) => x.duration_min)),
+    ...blocks.flatMap((b) => b.plays.map((x) => x.duration_min)),
+  ]);
 
   function fail(err: string | undefined) {
     toast.error(t(`errors.${err ?? 'generic'}`));
@@ -406,6 +566,103 @@ export function BlocksEditor({
     });
   }
 
+  // ── Jugadas del bloque (JS-1) ──
+  function onAddPlay(blockId: string, playId: string, name: string) {
+    const frameCount = addablePlays.find((p) => p.id === playId)?.frame_count ?? 0;
+    startTransition(async () => {
+      const res = await addPlayToBlock({ block_id: blockId, play_id: playId });
+      if (res.error || !res.id) {
+        fail(res.error);
+        return;
+      }
+      const newId = res.id;
+      setBlocks((prev) =>
+        prev.map((b) =>
+          b.id !== blockId
+            ? b
+            : {
+                ...b,
+                plays: [
+                  ...b.plays,
+                  {
+                    id: newId,
+                    play_id: playId,
+                    play_name: name,
+                    frame_count: frameCount,
+                    order_idx: b.plays.length,
+                    duration_min: null,
+                    notes: null,
+                  },
+                ],
+              }
+        )
+      );
+    });
+  }
+
+  function onRemovePlay(blockId: string, playRowId: string) {
+    setBlocks((prev) =>
+      prev.map((b) => (b.id !== blockId ? b : { ...b, plays: b.plays.filter((x) => x.id !== playRowId) }))
+    );
+    startTransition(async () => {
+      const res = await removePlayFromBlock({ id: playRowId });
+      if (res.error) fail(res.error);
+    });
+  }
+
+  function onUpdatePlay(
+    blockId: string,
+    playRowId: string,
+    patch: { duration_min: string; notes: string }
+  ) {
+    const durationNum = patch.duration_min.trim() === '' ? null : Number(patch.duration_min);
+    setBlocks((prev) =>
+      prev.map((b) =>
+        b.id !== blockId
+          ? b
+          : {
+              ...b,
+              plays: b.plays.map((x) =>
+                x.id !== playRowId
+                  ? x
+                  : {
+                      ...x,
+                      duration_min: durationNum != null && !Number.isNaN(durationNum) ? durationNum : null,
+                      notes: patch.notes.trim() === '' ? null : patch.notes,
+                    }
+              ),
+            }
+      )
+    );
+    startTransition(async () => {
+      const res = await updateBlockPlay({
+        id: playRowId,
+        duration_min: patch.duration_min,
+        notes: patch.notes,
+      });
+      if (res.error) fail(res.error);
+    });
+  }
+
+  function onMovePlay(blockId: string, playRowId: string, dir: -1 | 1) {
+    const block = blocks.find((b) => b.id === blockId);
+    if (!block) return;
+    const ids = block.plays.map((p) => p.id);
+    const from = ids.indexOf(playRowId);
+    const to = from + dir;
+    if (from < 0 || to < 0 || to >= ids.length) return;
+    const newIds = arrayMove(ids, from, to);
+    setBlocks((prev) =>
+      prev.map((b) =>
+        b.id !== blockId ? b : { ...b, plays: newIds.map((id) => b.plays.find((x) => x.id === id)!) }
+      )
+    );
+    startTransition(async () => {
+      const res = await reorderBlockPlays({ block_id: blockId, play_ids: newIds });
+      if (res.error) fail(res.error);
+    });
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
@@ -423,12 +680,18 @@ export function BlocksEditor({
                 block={block}
                 blockLabel={tBlocks(block.block_type)}
                 pickable={pickable}
+                addablePlays={addablePlays}
+                hasTeam={hasTeam}
                 defaultCategory={session.team_category_kind}
                 defaultTactical={session.tactical_objectives}
                 defaultTechnical={session.technical_objectives}
                 onAddTask={onAddTask}
                 onUpdateTask={onUpdateTask}
                 onRemoveTask={onRemoveTask}
+                onAddPlay={onAddPlay}
+                onUpdatePlay={onUpdatePlay}
+                onMovePlay={onMovePlay}
+                onRemovePlay={onRemovePlay}
                 pending={pending}
               />
             ))}
