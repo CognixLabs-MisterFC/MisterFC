@@ -3311,7 +3311,8 @@
       "invalid": "Dades no vàlides",
       "not_found": "No trobada",
       "generic": "Error en guardar",
-      "strategy_required": "Tria el tipus d’estratègia abans de guardar."
+      "strategy_required": "Tria el tipus d’estratègia abans de guardar.",
+      "design_locked": "Modificar el disseny d’una jugada publicada requereix l’aprovació d’un coordinador o administrador."
     },
     "status": {
       "draft": "Esborrany",
@@ -3348,7 +3349,10 @@
     "detail": {
       "approved_by_at": "Aprovada per {name} · {date}",
       "published_note": "Publicada",
-      "rejected_reason": "Motiu del rebuig"
+      "rejected_reason": "Motiu del rebuig",
+      "design_locked_title": "Disseny bloquejat",
+      "design_locked_note": "Aquesta jugada està publicada. Per a modificar-ne el disseny cal l’aprovació d’un coordinador o administrador.",
+      "design_locked_short": "Requereix aprovació del coordinador"
     },
     "read_only": "Només lectura",
     "strategy": {

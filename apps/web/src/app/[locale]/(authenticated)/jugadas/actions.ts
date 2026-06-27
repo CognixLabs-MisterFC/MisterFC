@@ -21,7 +21,7 @@ import { loadShellContext } from '@/lib/auth-shell';
 // claros. La forma del jsonb la valida `parsePlay`. El editor/animación no cambian.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type ActionError = 'forbidden' | 'invalid' | 'not_found' | 'generic';
+type ActionError = 'forbidden' | 'invalid' | 'not_found' | 'generic' | 'design_locked';
 
 export type PlayActionState = {
   error?: ActionError;
@@ -124,6 +124,22 @@ export async function updatePlay(input: unknown): Promise<PlayActionState> {
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
+
+  // Pre-check de UX (defensa en profundidad; el gate real sigue siendo la RLS): el
+  // diseño de una jugada PUBLICADA solo lo edita en sitio un aprobador (ciclo de
+  // aprobación, JR-0). Para un no-aprobador la RLS de UPDATE filtraría la fila y el
+  // resultado sería un no-op mudo (0 filas → 'not_found' confuso). Lo detectamos
+  // antes y devolvemos un error claro. NO tocamos la RLS ni el ciclo.
+  const isApprover = APPROVER_ROLES.includes(ctx.activeClub.role as Role);
+  if (!isApprover) {
+    const { data: current } = await supabase
+      .from('plays')
+      .select('status')
+      .eq('id', parsed.data.id)
+      .maybeSingle();
+    if (!current) return { error: 'not_found' };
+    if (current.status === 'published') return { error: 'design_locked' };
+  }
 
   const { data: updated, error } = await supabase
     .from('plays')

@@ -175,6 +175,12 @@ export function PlayEditor({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
+  // El diseño de una jugada PUBLICADA solo lo edita en sitio un aprobador (ciclo de
+  // aprobación, JR-0). Para el resto es solo lectura → en vez de un genérico "Solo
+  // lectura" mudo, explicamos el motivo (hace falta aprobación del coordinador). No
+  // cambia el permiso (la página ya pone canEdit=false); solo aclara la experiencia.
+  const designLocked = !canEdit && initial.status === 'published';
+
   // Cabecera editable (name/description). El estado/ciclo se gestiona aparte.
   const [name, setName] = useState(initial.name ?? '');
   const [description, setDescription] = useState(initial.description ?? '');
@@ -374,6 +380,15 @@ export function PlayEditor({
               })
             : t('detail.published_note')}
         </p>
+      ) : null}
+
+      {/* Aviso de diseño bloqueado: un no-aprobador no puede editar el diseño de una
+          jugada publicada → explicamos el motivo (en vez de un no-op mudo). */}
+      {designLocked ? (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+          <p className="font-medium">{t('detail.design_locked_title')}</p>
+          <p className="mt-1 text-muted-foreground">{t('detail.design_locked_note')}</p>
+        </div>
       ) : null}
 
       {/* ── Cabecera ───────────────────────────────────────────────────────── */}
@@ -661,7 +676,9 @@ export function PlayEditor({
             {t('save')}
           </Button>
         ) : (
-          <span className="text-sm text-muted-foreground">{t('read_only')}</span>
+          <span className="text-sm text-muted-foreground">
+            {designLocked ? t('detail.design_locked_short') : t('read_only')}
+          </span>
         )}
       </div>
     </div>
