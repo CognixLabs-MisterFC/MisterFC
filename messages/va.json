@@ -3247,7 +3247,10 @@
       "name": "Nom",
       "name_ph": "Entrada en profunditat per banda",
       "description": "Descripció",
-      "description_ph": "Com executar la jugada…"
+      "description_ph": "Com executar la jugada…",
+      "strategy_type": "Tipus d’estratègia",
+      "strategy_type_ph": "Tria el tipus",
+      "signal": "Senya"
     },
     "frames": {
       "title": "Fotogrames",
@@ -3308,7 +3311,8 @@
       "forbidden": "Permís denegat",
       "invalid": "Dades no vàlides",
       "not_found": "No trobada",
-      "generic": "Error en guardar"
+      "generic": "Error en guardar",
+      "strategy_signal_required": "Tria el tipus d’estratègia i la senya abans de guardar."
     },
     "status": {
       "draft": "Esborrany",
@@ -3347,7 +3351,25 @@
       "published_note": "Publicada",
       "rejected_reason": "Motiu del rebuig"
     },
-    "read_only": "Només lectura"
+    "read_only": "Només lectura",
+    "strategy": {
+      "corner": "Córner",
+      "falta": "Falta",
+      "saque_banda": "Traure de banda",
+      "saque_centro": "Traure de centre"
+    },
+    "signals": {
+      "brazo_derecho_arriba": "Braç dret amunt",
+      "brazo_izquierdo_arriba": "Braç esquerre amunt",
+      "dos_brazos_arriba": "Dos braços amunt",
+      "tocarse_cabeza": "Tocar-se el cap",
+      "brazos_cruzados_pecho": "Braços creuats",
+      "mano_cadera": "Mà al maluc",
+      "senalar_suelo": "Assenyalar el terra",
+      "brazo_horizontal": "Braç en horitzontal",
+      "tocarse_pecho": "Tocar-se el pit",
+      "puno_alto": "Puny amunt"
+    }
   },
   "partidos": {
     "title": "Partits",

@@ -15,6 +15,8 @@ import {
   getCurrentUser,
   type Play,
   type MethodologyStatus,
+  type StrategyType,
+  type PlaySignalId,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -115,6 +117,10 @@ export type PlayForEdit = {
   approved_at: string | null;
   approved_by_name: string | null;
   play: Play;
+  /** Tipo de estrategia (null en jugadas previas; obligatorio en el editor). */
+  strategy_type: StrategyType | null;
+  /** Seña del catálogo (null en jugadas previas; obligatorio en el editor). */
+  signal_id: PlaySignalId | null;
   is_owner: boolean;
 };
 
@@ -127,7 +133,7 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
     .from('plays')
     .select(
       `id, name, description, status, archived_at, rejection_reason, approved_at,
-       owner_profile_id, play,
+       owner_profile_id, play, strategy_type, signal_id,
        approved_by_profile:profiles!plays_approved_by_fkey(full_name)`,
     )
     .eq('id', id)
@@ -151,6 +157,8 @@ export async function loadPlayForEdit(clubId: string, id: string): Promise<PlayF
     // La forma fuerte está garantizada por parsePlay al guardar; si por lo que
     // fuese el jsonb no parsea, se cae a una jugada vacía válida (no rompe el UI).
     play: parsed.success ? parsed.data : emptyPlay(),
+    strategy_type: (data.strategy_type as StrategyType | null) ?? null,
+    signal_id: (data.signal_id as PlaySignalId | null) ?? null,
     is_owner: user?.id === (data.owner_profile_id as string),
   };
 }

@@ -2146,7 +2146,9 @@ export type Database = {
           owner_profile_id: string
           play: Json
           rejection_reason: string | null
+          signal_id: string | null
           status: string
+          strategy_type: string | null
           updated_at: string
         }
         Insert: {
@@ -2161,7 +2163,9 @@ export type Database = {
           owner_profile_id: string
           play: Json
           rejection_reason?: string | null
+          signal_id?: string | null
           status?: string
+          strategy_type?: string | null
           updated_at?: string
         }
         Update: {
@@ -2176,7 +2180,9 @@ export type Database = {
           owner_profile_id?: string
           play?: Json
           rejection_reason?: string | null
+          signal_id?: string | null
           status?: string
+          strategy_type?: string | null
           updated_at?: string
         }
         Relationships: [
