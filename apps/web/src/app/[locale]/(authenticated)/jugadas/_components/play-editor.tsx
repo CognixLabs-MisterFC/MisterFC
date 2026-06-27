@@ -61,13 +61,11 @@ import {
   MAX_FRAME_MS,
   DEFAULT_FRAME_MS,
   STRATEGY_TYPES,
-  PLAY_SIGNAL_CATALOG,
   type Diagram,
   type DiagramField,
   type Play,
   type PlayFrame,
   type StrategyType,
-  type PlaySignalId,
 } from '@misterfc/core';
 import { cn } from '@/lib/utils';
 import { useRouter } from '@/i18n/navigation';
@@ -87,7 +85,6 @@ import {
 } from '@/components/ui/select';
 import { PitchEditor } from '@/components/match/pitch-editor';
 import { DiagramView } from '@/components/match/diagram-view';
-import { SignalIcon } from '@/components/plays/signal-icon';
 import type { PlayForEdit } from '../queries';
 import { updatePlay } from '../actions';
 import { usePlayback, PLAYBACK_SPEEDS } from './use-playback';
@@ -175,19 +172,18 @@ export function PlayEditor({
   const t = useTranslations('jugadas');
   const tStatus = useTranslations('jugadas.status');
   const tStrategy = useTranslations('jugadas.strategy');
-  const tSignal = useTranslations('jugadas.signals');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   // Cabecera editable (name/description). El estado/ciclo se gestiona aparte.
   const [name, setName] = useState(initial.name ?? '');
   const [description, setDescription] = useState(initial.description ?? '');
-  // Jugada de estrategia: tipo + seña (obligatorios al guardar). '' = sin elegir
-  // (jugadas previas vienen NULL → fuerzan a completarlas al editar).
+  // Jugada de estrategia: el TIPO es de la jugada (obligatorio al guardar). '' = sin
+  // elegir (jugadas previas vienen NULL → fuerzan a completarlo al editar). La SEÑA
+  // NO va aquí: es por equipo y se elige en el playbook del equipo (team_plays).
   const [strategyType, setStrategyType] = useState<StrategyType | ''>(
     initial.strategy_type ?? '',
   );
-  const [signalId, setSignalId] = useState<PlaySignalId | ''>(initial.signal_id ?? '');
 
   // Jugada: field común + frames con id de cliente. Ids iniciales deterministas.
   const [field, setField] = useState<DiagramField>(initial.play.field);
@@ -315,10 +311,10 @@ export function PlayEditor({
   }
 
   function save() {
-    // Tipo + seña son obligatorios (jugada de estrategia). Aviso claro antes de
-    // llamar a la action (que también lo valida con zod).
-    if (strategyType === '' || signalId === '') {
-      toast.error(t('errors.strategy_signal_required'));
+    // El tipo de estrategia es obligatorio (jugada de estrategia). Aviso claro antes
+    // de llamar a la action (que también lo valida con zod). La seña no va aquí.
+    if (strategyType === '') {
+      toast.error(t('errors.strategy_required'));
       return;
     }
     const playload: Play = { version: PLAY_VERSION, field, frames: items.map((it) => it.frame) };
@@ -329,7 +325,6 @@ export function PlayEditor({
         description: description.trim() === '' ? null : description.trim(),
         play: playload,
         strategy_type: strategyType,
-        signal_id: signalId,
       });
       if (res.error) {
         toast.error(t(`errors.${res.error}`));
@@ -407,7 +402,8 @@ export function PlayEditor({
         </div>
       </section>
 
-      {/* ── Estrategia: tipo + seña (obligatorios) ─────────────────────────── */}
+      {/* ── Estrategia: tipo (obligatorio) ─────────────────────────────────── */}
+      {/* La seña NO va aquí: es por equipo y se elige en el playbook del equipo. */}
       <section className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5 sm:max-w-xs">
           <Label htmlFor="play-strategy">
@@ -429,35 +425,6 @@ export function PlayEditor({
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <Label>
-            {t('fields.signal')} <span className="text-destructive">*</span>
-          </Label>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {PLAY_SIGNAL_CATALOG.map((sgn) => {
-              const selected = sgn.id === signalId;
-              return (
-                <button
-                  type="button"
-                  key={sgn.id}
-                  onClick={() => setSignalId(sgn.id)}
-                  disabled={!canEdit}
-                  aria-pressed={selected}
-                  title={tSignal(sgn.labelKey)}
-                  className={cn(
-                    'flex flex-col items-center gap-1 rounded-md border p-2 text-center text-[10px] leading-tight transition-colors',
-                    selected ? 'border-primary bg-primary/10' : 'hover:bg-muted',
-                    !canEdit && 'cursor-not-allowed opacity-60',
-                  )}
-                >
-                  <SignalIcon signalId={sgn.id} className="size-10 text-foreground" />
-                  <span>{tSignal(sgn.labelKey)}</span>
-                </button>
-              );
-            })}
-          </div>
         </div>
       </section>
 

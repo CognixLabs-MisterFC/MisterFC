@@ -3249,8 +3249,7 @@
       "description": "Descripció",
       "description_ph": "Com executar la jugada…",
       "strategy_type": "Tipus d’estratègia",
-      "strategy_type_ph": "Tria el tipus",
-      "signal": "Senya"
+      "strategy_type_ph": "Tria el tipus"
     },
     "frames": {
       "title": "Fotogrames",
@@ -3312,7 +3311,7 @@
       "invalid": "Dades no vàlides",
       "not_found": "No trobada",
       "generic": "Error en guardar",
-      "strategy_signal_required": "Tria el tipus d’estratègia i la senya abans de guardar."
+      "strategy_required": "Tria el tipus d’estratègia abans de guardar."
     },
     "status": {
       "draft": "Esborrany",
@@ -3686,6 +3685,15 @@
       "unshared": "Ha deixat de compartir-se.",
       "removed": "Llevada de l'equip.",
       "added": "Afegida a l'equip."
+    },
+    "signal": {
+      "pick_title": "Tria la senya",
+      "pick_description": "Senya que el teu equip utilitzarà per a «{name}».",
+      "change": "Canviar senya",
+      "none": "Sense senya",
+      "cancel": "Cancel·la",
+      "confirm": "Guarda",
+      "toast_set": "Senya actualitzada."
     }
   }
 }

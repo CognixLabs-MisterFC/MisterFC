@@ -3249,8 +3249,7 @@
       "description": "Description",
       "description_ph": "How to run the play…",
       "strategy_type": "Strategy type",
-      "strategy_type_ph": "Choose the type",
-      "signal": "Signal"
+      "strategy_type_ph": "Choose the type"
     },
     "frames": {
       "title": "Frames",
@@ -3312,7 +3311,7 @@
       "invalid": "Invalid data",
       "not_found": "Not found",
       "generic": "Error saving",
-      "strategy_signal_required": "Choose the strategy type and the signal before saving."
+      "strategy_required": "Choose the strategy type before saving."
     },
     "status": {
       "draft": "Draft",
@@ -3686,6 +3685,15 @@
       "unshared": "No longer shared.",
       "removed": "Removed from team.",
       "added": "Added to team."
+    },
+    "signal": {
+      "pick_title": "Choose the signal",
+      "pick_description": "Signal your team will use for “{name}”.",
+      "change": "Change signal",
+      "none": "No signal",
+      "cancel": "Cancel",
+      "confirm": "Save",
+      "toast_set": "Signal updated."
     }
   }
 }

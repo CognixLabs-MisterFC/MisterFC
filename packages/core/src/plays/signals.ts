@@ -1,10 +1,14 @@
 /**
  * Señas/pictogramas de jugadas de estrategia (TANDA 1) — PURO `@misterfc/core`.
  *
- * Las jugadas del banco del club (ADR-0019) son jugadas de ESTRATEGIA. Cada jugada
- * lleva dos campos obligatorios (en el formulario):
+ * Las jugadas del banco del club (ADR-0019) son jugadas de ESTRATEGIA. El modelo
+ * reparte dos conceptos en dos tablas:
  *   · `strategy_type` — tipo de estrategia (corner | falta | saque_banda | saque_centro).
+ *     Vive en la JUGADA (`plays`): es igual para todos los equipos. Obligatorio en el
+ *     editor de la jugada del club.
  *   · `signal_id`     — una seña del catálogo fijo de 10 (el gesto que hace el jugador).
+ *     Vive en `team_plays`: la MISMA jugada la usan varios equipos y CADA EQUIPO elige
+ *     su propia seña. Obligatoria al añadir/gestionar la jugada en el playbook del equipo.
  *
  * El catálogo se modela como DATOS neutros (sin JSX): cada seña es un monigote
  * esquemático descrito con primitivas (`line`/`circle`/`path`) sobre un viewBox

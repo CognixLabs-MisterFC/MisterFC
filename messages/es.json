@@ -3248,8 +3248,7 @@
       "description": "Descripción",
       "description_ph": "Cómo ejecutar la jugada…",
       "strategy_type": "Tipo de estrategia",
-      "strategy_type_ph": "Elige el tipo",
-      "signal": "Seña"
+      "strategy_type_ph": "Elige el tipo"
     },
     "frames": {
       "title": "Fotogramas",
@@ -3311,7 +3310,7 @@
       "invalid": "Datos no válidos",
       "not_found": "No encontrada",
       "generic": "Error al guardar",
-      "strategy_signal_required": "Elige el tipo de estrategia y la seña antes de guardar."
+      "strategy_required": "Elige el tipo de estrategia antes de guardar."
     },
     "status": {
       "draft": "Borrador",
@@ -3685,6 +3684,15 @@
       "unshared": "Dejó de compartirse.",
       "removed": "Quitada del equipo.",
       "added": "Añadida al equipo."
+    },
+    "signal": {
+      "pick_title": "Elige la seña",
+      "pick_description": "Seña que tu equipo usará para «{name}».",
+      "change": "Cambiar seña",
+      "none": "Sin seña",
+      "cancel": "Cancelar",
+      "confirm": "Guardar",
+      "toast_set": "Seña actualizada."
     }
   }
 }
