@@ -3301,7 +3301,7 @@
     },
     "toast": {
       "saved": "Play saved",
-      "proposed": "Play proposed.",
+      "proposed": "Proposal sent for review.",
       "approved": "Play published.",
       "rejected": "Play rejected.",
       "archived": "Play archived."
@@ -3352,7 +3352,12 @@
       "rejected_reason": "Rejection reason",
       "design_locked_title": "Design locked",
       "design_locked_note": "This play is published. Editing its design requires approval from a coordinator or administrator.",
-      "design_locked_short": "Requires coordinator approval"
+      "design_locked_short": "Requires coordinator approval",
+      "propose_title": "Propose changes",
+      "propose_note": "You can’t edit a published play in place, but you can propose your changes: a copy will be created for the coordinator to review. The original stays published and untouched.",
+      "proposal_title": "Change proposal",
+      "proposal_of_named": "Change proposal for “{name}” (pending coordinator review).",
+      "proposal_of": "Change proposal for a published play (pending review)."
     },
     "read_only": "Read only",
     "strategy": {
@@ -3372,6 +3377,11 @@
       "brazo_horizontal": "Arm horizontal",
       "tocarse_pecho": "Touch chest",
       "puno_alto": "Fist up"
+    },
+    "propose": {
+      "button": "Propose changes",
+      "hint": "A copy will be created for the coordinator to review. The original is left untouched.",
+      "need_changes": "Make a change to propose it."
     }
   },
   "partidos": {

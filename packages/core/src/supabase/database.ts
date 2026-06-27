@@ -2146,6 +2146,7 @@ export type Database = {
           owner_profile_id: string
           play: Json
           rejection_reason: string | null
+          source_play_id: string | null
           status: string
           strategy_type: string | null
           updated_at: string
@@ -2162,6 +2163,7 @@ export type Database = {
           owner_profile_id: string
           play: Json
           rejection_reason?: string | null
+          source_play_id?: string | null
           status?: string
           strategy_type?: string | null
           updated_at?: string
@@ -2178,6 +2180,7 @@ export type Database = {
           owner_profile_id?: string
           play?: Json
           rejection_reason?: string | null
+          source_play_id?: string | null
           status?: string
           strategy_type?: string | null
           updated_at?: string
@@ -2202,6 +2205,13 @@ export type Database = {
             columns: ["owner_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plays_source_play_id_fkey"
+            columns: ["source_play_id"]
+            isOneToOne: false
+            referencedRelation: "plays"
             referencedColumns: ["id"]
           },
         ]

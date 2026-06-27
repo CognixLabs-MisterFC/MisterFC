@@ -3301,7 +3301,7 @@
     },
     "toast": {
       "saved": "Jugada guardada",
-      "proposed": "Jugada proposta.",
+      "proposed": "Proposta enviada per a revisió.",
       "approved": "Jugada publicada.",
       "rejected": "Jugada rebutjada.",
       "archived": "Jugada arxivada."
@@ -3352,7 +3352,12 @@
       "rejected_reason": "Motiu del rebuig",
       "design_locked_title": "Disseny bloquejat",
       "design_locked_note": "Aquesta jugada està publicada. Per a modificar-ne el disseny cal l’aprovació d’un coordinador o administrador.",
-      "design_locked_short": "Requereix aprovació del coordinador"
+      "design_locked_short": "Requereix aprovació del coordinador",
+      "propose_title": "Proposar canvis",
+      "propose_note": "No pots editar in situ una jugada publicada, però pots proposar els teus canvis: es crearà una còpia perquè el coordinador la revise. L’original continua publicada i intacta.",
+      "proposal_title": "Proposta de canvis",
+      "proposal_of_named": "Proposta de canvis sobre «{name}» (pendent de revisió del coordinador).",
+      "proposal_of": "Proposta de canvis sobre una jugada publicada (pendent de revisió)."
     },
     "read_only": "Només lectura",
     "strategy": {
@@ -3372,6 +3377,11 @@
       "brazo_horizontal": "Braç en horitzontal",
       "tocarse_pecho": "Tocar-se el pit",
       "puno_alto": "Puny amunt"
+    },
+    "propose": {
+      "button": "Proposar canvis",
+      "hint": "Es crearà una còpia perquè el coordinador la revise. L’original no es toca.",
+      "need_changes": "Fes algun canvi per a poder proposar-lo."
     }
   },
   "partidos": {

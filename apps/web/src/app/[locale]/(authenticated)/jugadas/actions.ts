@@ -160,6 +160,67 @@ export async function updatePlay(input: unknown): Promise<PlayActionState> {
   return { success: true, id: parsed.data.id };
 }
 
+/**
+ * "Proponer cambios" sobre una jugada PUBLICADA (salida para el no-aprobador que ve
+ * el banner #242). En vez de editar en sitio (lo que el ciclo reserva a aprobadores),
+ * crea una COPIA NUEVA en 'proposed' con los cambios del proponente (owner = él) y
+ * `source_play_id` = la original. La ORIGINAL no se toca y sigue 'published' en uso.
+ * La copia entra en la cola de revisión existente (status='proposed'); el coordinador
+ * la aprueba/rechaza con el ciclo de siempre. Mismas reglas de alta que cualquier
+ * jugada: plays_insert (owner=auth.uid() AND user_can_create_plays) + trigger JR-0.
+ */
+export async function proposePlayChanges(input: unknown): Promise<PlayActionState> {
+  const parsed = updatePlaySchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const play = parsePlay(parsed.data.play);
+  if (!play.success) return { error: 'invalid' };
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // La original debe existir, ser visible y estar PUBLICADA: solo se "proponen
+  // cambios" sobre publicadas (el resto se edita por el flujo normal del ciclo).
+  const { data: source } = await supabase
+    .from('plays')
+    .select('id, club_id, status')
+    .eq('id', parsed.data.id)
+    .maybeSingle();
+  if (!source) return { error: 'not_found' };
+  if (source.status !== 'published') return { error: 'invalid' };
+
+  // Pre-check claro de autoría (la RLS de INSERT sigue siendo el gate real).
+  const { data: canCreate } = await supabase.rpc('user_can_create_plays', {
+    p_club_id: source.club_id as string,
+  });
+  if (!canCreate) return { error: 'forbidden' };
+
+  const { data: created, error } = await supabase
+    .from('plays')
+    .insert({
+      owner_profile_id: ctx.user.id, // el trigger igualmente fuerza auth.uid()
+      club_id: source.club_id as string,
+      name: parsed.data.name,
+      description: parsed.data.description,
+      play: play.data,
+      status: 'proposed',
+      strategy_type: parsed.data.strategy_type,
+      source_play_id: source.id as string,
+    })
+    .select('id')
+    .maybeSingle();
+
+  if (error) return { error: mapPgErr(error.code) };
+  const id = created?.id as string | undefined;
+  if (!id) return { error: 'generic' };
+
+  revalidatePlays();
+  return { success: true, id };
+}
+
 /** Proponer desde el editor: borrador→propuesta por el autor (el trigger solo
  *  gatea →publicada/rechazada al aprobador, así que esta transición la hace el
  *  autor). RLS = gate. */
