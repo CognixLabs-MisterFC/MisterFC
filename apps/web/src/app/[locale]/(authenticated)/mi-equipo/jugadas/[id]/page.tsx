@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SignalIcon } from '@/components/plays/signal-icon';
 import { loadTeamPlay } from '../../../jugadas/queries';
 import { PlayViewer } from '../../../jugadas/_components/play-viewer';
 
@@ -29,6 +30,7 @@ export default async function MiEquipoJugadaPage({ params }: Props) {
 
   const t = await getTranslations('mi_equipo');
   const tJ = await getTranslations('jugadas');
+  const tSig = await getTranslations('jugadas.signals');
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
@@ -43,6 +45,22 @@ export default async function MiEquipoJugadaPage({ params }: Props) {
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">{play.name ?? tJ('untitled')}</CardTitle>
+          {/* Seña del equipo (TANDA 2): pictograma + etiqueta del gesto. */}
+          {play.signal_id ? (
+            <div className="mt-2 flex items-center gap-2">
+              <SignalIcon
+                signalId={play.signal_id}
+                className="size-8 shrink-0 text-foreground"
+                title={tSig(play.signal_id)}
+              />
+              <div className="flex flex-col">
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {tJ('fields.signal')}
+                </span>
+                <span className="text-sm font-medium">{tSig(play.signal_id)}</span>
+              </div>
+            </div>
+          ) : null}
         </CardHeader>
         <CardContent>
           <PlayViewer play={play.play} />

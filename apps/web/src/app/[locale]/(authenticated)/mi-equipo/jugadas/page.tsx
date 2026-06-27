@@ -8,6 +8,7 @@ import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
+import { SignalIcon } from '@/components/plays/signal-icon';
 import { loadTeamPlaybook } from '../../jugadas/queries';
 
 type Props = {
@@ -33,6 +34,7 @@ export default async function MiEquipoPlaybookPage({ params, searchParams }: Pro
   if (ctx.activeClub.role !== 'jugador') redirect(`/${locale}`);
 
   const t = await getTranslations('mi_equipo');
+  const tSig = await getTranslations('jugadas.signals');
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const clubId = ctx.activeClub.club.id;
@@ -126,8 +128,17 @@ export default async function MiEquipoPlaybookPage({ params, searchParams }: Pro
                 href={`/mi-equipo/jugadas/${p.id}`}
                 className="flex items-center justify-between gap-3 rounded-lg border p-3 transition-colors hover:border-foreground/30"
               >
-                <span className="min-w-0 truncate font-medium">
-                  {p.name ?? t('cards.playbook.untitled')}
+                <span className="flex min-w-0 items-center gap-2">
+                  {p.signal_id ? (
+                    <SignalIcon
+                      signalId={p.signal_id}
+                      className="size-6 shrink-0 text-foreground"
+                      title={tSig(p.signal_id)}
+                    />
+                  ) : null}
+                  <span className="min-w-0 truncate font-medium">
+                    {p.name ?? t('cards.playbook.untitled')}
+                  </span>
                 </span>
                 <span className="shrink-0 text-xs text-muted-foreground">
                   {t('cards.playbook.frame_count', { count: p.frame_count })}

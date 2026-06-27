@@ -10,8 +10,10 @@
 import {
   type SessionBlockType,
   type SessionVisibility,
+  type PlaySignalId,
   addDaysIso,
   createSupabaseServerClient,
+  createSupabaseAdminClient,
   getCurrentUser,
   parsePlay,
 } from '@misterfc/core';
@@ -466,11 +468,13 @@ export type SessionPdfTask = {
 };
 
 // JS-2 — jugada del bloque en el PDF (D5 mínimo: nombre + nº frames + override del día).
+// TANDA 2 — + seña del equipo de la sesión (team_plays.signal_id; null si sin asignar).
 export type SessionPdfPlay = {
   play_name: string;
   frame_count: number;
   duration_min: number | null;
   notes: string | null;
+  signal_id: PlaySignalId | null;
 };
 
 export type SessionPdfBlock = {
@@ -507,7 +511,7 @@ export async function loadSessionForPdf(
   const { data } = await supabase
     .from('sessions')
     .select(
-      `id, session_date, title, objective_physical,
+      `id, team_id, session_date, title, objective_physical,
        tactical_objectives, technical_objectives, mesocycle, microcycle,
        total_minutes,
        team:teams ( name, season, category:categories ( name ) ),
@@ -523,7 +527,7 @@ export async function loadSessionForPdf(
          ),
          session_block_plays (
            order_idx, duration_min, notes,
-           play:plays ( name, play )
+           play:plays ( id, name, play )
          )
        )`
     )
@@ -560,7 +564,7 @@ export async function loadSessionForPdf(
     order_idx: number;
     duration_min: number | null;
     notes: string | null;
-    play: { name: string | null; play: unknown } | null;
+    play: { id: string; name: string | null; play: unknown } | null;
   };
   type RawBlock = {
     block_type: string;
@@ -571,7 +575,38 @@ export async function loadSessionForPdf(
     session_block_plays: RawPdfPlay[] | null;
   };
 
-  const blocks: SessionPdfBlock[] = ((data.session_blocks as RawBlock[] | null) ?? [])
+  // Seña POR EQUIPO (TANDA 2): la sesión tiene team_id → buscamos en team_plays la
+  // seña que ESE equipo usa para cada jugada de la sesión. Usamos admin client (read
+  // acotado a team_id + play_ids) porque la RLS de team_plays exige ser staff DEL
+  // equipo y quien genera el PDF puede ser admin/coord que no lo es → así el
+  // pictograma sale siempre que exista. Si una jugada no tiene seña para el equipo,
+  // queda null (se omite el pictograma). La sesión ya está autorizada arriba.
+  const rawBlocks = (data.session_blocks as RawBlock[] | null) ?? [];
+  const sessionTeamId = (data.team_id as string | null) ?? null;
+  const playIds = Array.from(
+    new Set(
+      rawBlocks.flatMap((b) =>
+        (b.session_block_plays ?? []).map((p) => p.play?.id).filter((x): x is string => !!x),
+      ),
+    ),
+  );
+  const signalByPlayId = new Map<string, PlaySignalId | null>();
+  if (sessionTeamId && playIds.length > 0) {
+    const admin = createSupabaseAdminClient();
+    const { data: tps } = await admin
+      .from('team_plays')
+      .select('play_id, signal_id')
+      .eq('team_id', sessionTeamId)
+      .in('play_id', playIds);
+    for (const tp of tps ?? []) {
+      signalByPlayId.set(
+        tp.play_id as string,
+        (tp.signal_id as PlaySignalId | null) ?? null,
+      );
+    }
+  }
+
+  const blocks: SessionPdfBlock[] = rawBlocks
     .slice()
     .sort((a, b2) => a.order_idx - b2.order_idx)
     .map((b) => {
@@ -604,6 +639,7 @@ export async function loadSessionForPdf(
             frame_count: parsed.success ? parsed.data.frames.length : 0,
             duration_min: p.duration_min,
             notes: p.notes,
+            signal_id: p.play?.id ? (signalByPlayId.get(p.play.id) ?? null) : null,
           };
         });
       // Tiempo del bloque = duración del día (o base) de las tareas + duración de las

@@ -1653,7 +1653,8 @@
         "reducido": "Reduït"
       },
       "plays_heading": "Jugades a entrenar",
-      "frames_label": "Fotogrames"
+      "frames_label": "Fotogrames",
+      "signal_label": "Senya"
     },
     "development": {
       "title": "Informe de desenvolupament",

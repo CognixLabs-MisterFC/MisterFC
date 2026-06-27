@@ -1652,7 +1652,8 @@
         "reducido": "Reducido"
       },
       "plays_heading": "Jugadas a entrenar",
-      "frames_label": "Fotogramas"
+      "frames_label": "Fotogramas",
+      "signal_label": "Seña"
     },
     "development": {
       "title": "Informe de desarrollo",

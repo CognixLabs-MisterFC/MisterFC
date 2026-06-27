@@ -13,6 +13,7 @@
 import { View, Text, StyleSheet, type DocumentProps } from '@react-pdf/renderer';
 import type { ReactElement } from 'react';
 import { PdfShell, type Translator } from './shared';
+import { SignalPdf } from './signal-pdf';
 import type { SessionForPdf, SessionPdfTask, SessionPdfPlay } from
   '@/app/[locale]/(authenticated)/sesiones/queries';
 
@@ -83,6 +84,9 @@ const s = StyleSheet.create({
 
   graphic: { alignItems: 'center', justifyContent: 'center', minHeight: 44 },
 
+  // Pictograma de la seña + etiqueta (jugada del bloque, TANDA 2).
+  signalRow: { flexDirection: 'row', alignItems: 'center' },
+
   // Sub-rótulo discreto de las jugadas del bloque (tras los ejercicios).
   playsHeading: {
     fontSize: 7,
@@ -126,12 +130,14 @@ export interface SessionPdfProps {
   tTactical: Translator;
   /** Etiquetas de objetivos técnicos (ejercicios.technical). */
   tTechnical: Translator;
+  /** Etiquetas de las señas (jugadas.signals) para los pictogramas de jugada. */
+  tSignal: Translator;
   clubName: string;
   session: SessionForPdf;
 }
 
 export function SessionPdfDocument(props: SessionPdfProps): ReactElement<DocumentProps> {
-  const { t, tTactical, tTechnical, session } = props;
+  const { t, tTactical, tTechnical, tSignal, session } = props;
 
   const dateLabel = session.session_date ?? NA;
   const tacticalLabels = session.tactical_objectives.map((o) => tTactical(o)).join(', ');
@@ -299,6 +305,21 @@ export function SessionPdfDocument(props: SessionPdfProps): ReactElement<Documen
                   <View style={s.taskBody}>
                     <View style={s.col}>
                       <Field label={t('session.frames_label')} value={String(play.frame_count)} />
+                    </View>
+                    {/* Seña del equipo (TANDA 2): pictograma + etiqueta. Si la jugada
+                        no tiene seña asignada para el equipo de la sesión, se omite. */}
+                    <View style={s.col}>
+                      <Text style={s.colHead}>{t('session.signal_label')}</Text>
+                      {play.signal_id ? (
+                        <View style={s.signalRow}>
+                          <SignalPdf signalId={play.signal_id} size={20} />
+                          <Text style={[s.text, { marginLeft: 4 }]}>
+                            {tSignal(play.signal_id)}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={s.muted}>{NA}</Text>
+                      )}
                     </View>
                     <View style={s.col}>
                       <Field label={t('session.day_notes')} value={play.notes} />
