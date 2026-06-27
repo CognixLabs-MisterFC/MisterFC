@@ -2374,6 +2374,68 @@ export type Database = {
           },
         ]
       }
+      session_block_plays: {
+        Row: {
+          block_id: string
+          club_id: string
+          duration_min: number | null
+          id: string
+          notes: string | null
+          order_idx: number
+          play_id: string
+          session_id: string
+        }
+        Insert: {
+          block_id: string
+          club_id: string
+          duration_min?: number | null
+          id?: string
+          notes?: string | null
+          order_idx: number
+          play_id: string
+          session_id: string
+        }
+        Update: {
+          block_id?: string
+          club_id?: string
+          duration_min?: number | null
+          id?: string
+          notes?: string | null
+          order_idx?: number
+          play_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_block_plays_block_id_fkey"
+            columns: ["block_id"]
+            isOneToOne: false
+            referencedRelation: "session_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_block_plays_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_block_plays_play_id_fkey"
+            columns: ["play_id"]
+            isOneToOne: false
+            referencedRelation: "plays"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_block_plays_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_blocks: {
         Row: {
           block_type: string
@@ -3115,6 +3177,10 @@ export type Database = {
         Returns: {
           player_id: string
         }[]
+      }
+      reorder_session_block_plays: {
+        Args: { p_block_id: string; p_play_ids: string[] }
+        Returns: undefined
       }
       reorder_session_blocks: {
         Args: { p_block_ids: string[]; p_session_id: string }
