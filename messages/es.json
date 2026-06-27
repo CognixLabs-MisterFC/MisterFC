@@ -2397,7 +2397,10 @@
       "technical": "Objetivos técnicos",
       "physical": "Objetivo físico",
       "no_exercises": "Sin ejercicios.",
-      "exercise_fallback": "Ejercicio"
+      "exercise_fallback": "Ejercicio",
+      "plays_heading": "Jugadas a entrenar",
+      "play_untitled": "Jugada sin título",
+      "frame_count": "{count, plural, =1 {# fotograma} other {# fotogramas}}"
     },
     "playbook": {
       "title": "Playbook",

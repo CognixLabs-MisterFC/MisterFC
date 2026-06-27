@@ -168,6 +168,38 @@ export default async function MiEquipoSesionPage({ params }: Props) {
                 })}
               </ul>
             )}
+
+            {/* Jugadas a entrenar (JS-3, D6 estricta): la RLS de JS-0 ya filtra a solo
+                las compartidas con la familia. Cada una abre el visor read-only. */}
+            {block.plays.length > 0 && (
+              <div className="mt-3 flex flex-col gap-1.5 border-t pt-3">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t('plays_heading')}
+                </span>
+                <ul className="flex flex-col divide-y divide-border">
+                  {block.plays.map((play) => (
+                    <li key={play.id} className="py-2 first:pt-0 last:pb-0">
+                      <Link
+                        href={`/mi-equipo/jugadas/${play.play_id}`}
+                        className="flex items-center justify-between gap-3 hover:text-foreground"
+                      >
+                        <span className="flex min-w-0 flex-col">
+                          <span className="truncate font-medium">
+                            {play.play_name || t('play_untitled')}
+                          </span>
+                          {play.notes && (
+                            <span className="text-xs text-muted-foreground">{play.notes}</span>
+                          )}
+                        </span>
+                        <span className="shrink-0 text-xs text-muted-foreground">
+                          {t('frame_count', { count: play.frame_count })}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardContent>
         </Card>
       ))}

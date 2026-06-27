@@ -2398,7 +2398,10 @@
       "technical": "Technical objectives",
       "physical": "Physical objective",
       "no_exercises": "No exercises.",
-      "exercise_fallback": "Exercise"
+      "exercise_fallback": "Exercise",
+      "plays_heading": "Plays to train",
+      "play_untitled": "Untitled play",
+      "frame_count": "{count, plural, =1 {# frame} other {# frames}}"
     },
     "playbook": {
       "title": "Playbook",
