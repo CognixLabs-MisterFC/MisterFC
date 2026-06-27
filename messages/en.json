@@ -1651,7 +1651,9 @@
         "medio_campo": "Half pitch",
         "cuarto_campo": "Quarter pitch",
         "reducido": "Small-sided"
-      }
+      },
+      "plays_heading": "Plays to train",
+      "frames_label": "Frames"
     },
     "development": {
       "title": "Development report",

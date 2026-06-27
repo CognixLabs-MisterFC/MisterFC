@@ -13,7 +13,7 @@
 import { View, Text, StyleSheet, type DocumentProps } from '@react-pdf/renderer';
 import type { ReactElement } from 'react';
 import { PdfShell, type Translator } from './shared';
-import type { SessionForPdf, SessionPdfTask } from
+import type { SessionForPdf, SessionPdfTask, SessionPdfPlay } from
   '@/app/[locale]/(authenticated)/sesiones/queries';
 
 const NA = '—';
@@ -82,6 +82,16 @@ const s = StyleSheet.create({
   kvValue: { fontSize: 8, marginTop: 1 },
 
   graphic: { alignItems: 'center', justifyContent: 'center', minHeight: 44 },
+
+  // Sub-rótulo discreto de las jugadas del bloque (tras los ejercicios).
+  playsHeading: {
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    marginTop: 8,
+    marginBottom: 2,
+  },
 });
 
 /** Celda de texto con rótulo; muestra "—" si no hay valor. */
@@ -104,6 +114,10 @@ function taskTime(task: SessionPdfTask): string {
   if (min != null) parts.push(`${min}'`);
   if (task.series && task.series.trim()) parts.push(task.series.trim());
   return parts.join('  ·  ');
+}
+
+function playTime(play: SessionPdfPlay): string {
+  return play.duration_min != null ? `${play.duration_min}'` : '';
 }
 
 export interface SessionPdfProps {
@@ -270,6 +284,36 @@ export function SessionPdfDocument(props: SessionPdfProps): ReactElement<Documen
               </View>
             ))
           )}
+
+          {/* Jugadas del bloque (JS-2, D5): tras los ejercicios. El PDF no anima →
+              nombre + nº de frames + duración/notas del día + hueco gráfico. */}
+          {block.plays.length > 0 ? (
+            <View>
+              <Text style={s.playsHeading}>{t('session.plays_heading')}</Text>
+              {block.plays.map((play, pi) => (
+                <View key={`play-${pi}`} wrap={false}>
+                  <View style={s.taskBand}>
+                    <Text style={s.taskBandText}>{play.play_name || NA}</Text>
+                    <Text style={s.taskBandText}>{playTime(play)}</Text>
+                  </View>
+                  <View style={s.taskBody}>
+                    <View style={s.col}>
+                      <Field label={t('session.frames_label')} value={String(play.frame_count)} />
+                    </View>
+                    <View style={s.col}>
+                      <Field label={t('session.day_notes')} value={play.notes} />
+                    </View>
+                    <View style={s.colLast}>
+                      <Text style={s.colHead}>{t('session.graphic')}</Text>
+                      <View style={s.graphic}>
+                        <Text style={s.muted}>{t('session.graphic_omitted')}</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : null}
         </View>
       ))}
     </PdfShell>
