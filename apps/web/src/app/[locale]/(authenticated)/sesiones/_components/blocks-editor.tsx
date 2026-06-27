@@ -303,49 +303,33 @@ function SortableBlock({
         {block.title ? <span className="text-sm font-medium">{block.title}</span> : null}
       </div>
 
-      <div className="mt-2 flex flex-col gap-3">
-        {/* Ejercicios */}
-        <div className="flex flex-col gap-2">
-          <SortableContext items={block.tasks.map((x) => x.id)} strategy={verticalListSortingStrategy}>
-            {block.tasks.length === 0 ? (
-              <p className="rounded-md border border-dashed py-3 text-center text-xs text-muted-foreground">
-                {t('empty')}
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-1.5">
-                {block.tasks.map((task) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    onUpdate={(id, patch) => onUpdateTask(block.id, id, patch)}
-                    onRemove={(id) => onRemoveTask(block.id, id)}
-                  />
-                ))}
-              </ul>
-            )}
-          </SortableContext>
-
-          <div>
-            <ExercisePicker
-              exercises={pickable}
-              phase={block.block_type}
-              defaultCategory={defaultCategory}
-              defaultTactical={defaultTactical}
-              defaultTechnical={defaultTechnical}
-              onPick={(id, name) => onAddTask(block.id, id, name)}
-              disabled={pending}
-            />
-          </div>
-        </div>
-
-        {/* Jugadas a entrenar (D3) — sub-lista separada del playbook del equipo */}
-        <div className="flex flex-col gap-2 border-t pt-3">
-          <p className="text-xs font-medium text-muted-foreground">{t('plays_heading')}</p>
-          {block.plays.length === 0 ? (
-            <p className="rounded-md border border-dashed py-2 text-center text-xs text-muted-foreground">
-              {t('plays_empty')}
+      <div className="mt-2 flex flex-col gap-2">
+        {/* Ejercicios primero */}
+        <SortableContext items={block.tasks.map((x) => x.id)} strategy={verticalListSortingStrategy}>
+          {block.tasks.length === 0 ? (
+            <p className="rounded-md border border-dashed py-3 text-center text-xs text-muted-foreground">
+              {t('empty')}
             </p>
           ) : (
+            <ul className="flex flex-col gap-1.5">
+              {block.tasks.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onUpdate={(id, patch) => onUpdateTask(block.id, id, patch)}
+                  onRemove={(id) => onRemoveTask(block.id, id)}
+                />
+              ))}
+            </ul>
+          )}
+        </SortableContext>
+
+        {/* Jugadas a entrenar (D3): sub-lista discreta debajo, solo si hay */}
+        {block.plays.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <p className="px-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              {t('plays_heading')}
+            </p>
             <ul className="flex flex-col gap-1.5">
               {block.plays.map((play, i) => (
                 <PlayRow
@@ -359,16 +343,27 @@ function SortableBlock({
                 />
               ))}
             </ul>
-          )}
-          <div>
-            <PlayPicker
-              plays={addablePlays}
-              excludeIds={block.plays.map((p) => p.play_id)}
-              hasTeam={hasTeam}
-              onPick={(id, name) => onAddPlay(block.id, id, name)}
-              disabled={pending}
-            />
           </div>
+        )}
+
+        {/* Pickers juntos: añadir ejercicio + añadir jugada, lado a lado */}
+        <div className="flex flex-wrap gap-2">
+          <ExercisePicker
+            exercises={pickable}
+            phase={block.block_type}
+            defaultCategory={defaultCategory}
+            defaultTactical={defaultTactical}
+            defaultTechnical={defaultTechnical}
+            onPick={(id, name) => onAddTask(block.id, id, name)}
+            disabled={pending}
+          />
+          <PlayPicker
+            plays={addablePlays}
+            excludeIds={block.plays.map((p) => p.play_id)}
+            hasTeam={hasTeam}
+            onPick={(id, name) => onAddPlay(block.id, id, name)}
+            disabled={pending}
+          />
         </div>
       </div>
     </div>
