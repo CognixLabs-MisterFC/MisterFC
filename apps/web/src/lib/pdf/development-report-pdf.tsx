@@ -85,6 +85,9 @@ const s = StyleSheet.create({
   metaLine: { fontSize: 8, color: MUTED, marginTop: 2 },
   // Resumen media global + estado.
   summaryRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 },
+  radarsRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-start' },
+  radarCol: { alignItems: 'center' },
+  radarLabel: { fontSize: 8, fontFamily: 'Helvetica-Bold', color: '#475569', marginBottom: 2 },
   overallBox: {
     minWidth: 44,
     borderRadius: 4,
@@ -232,6 +235,16 @@ export function DevelopmentReportPdfDocument(
     label: tInf(`cat_group.${g.id}`),
     value: perGroup[g.id] ?? null,
   }));
+  // C1 — segunda red: medias de los grupos del EQUIPO (si hay valoración de equipo).
+  const teamPerGroup = props.teamReport
+    ? computeGroupAverages(TEAM_REPORT_CATALOG, props.teamReport.scores).perGroup
+    : null;
+  const teamRadarAxes = teamPerGroup
+    ? TEAM_REPORT_CATALOG.groups.map((g) => ({
+        label: tInf(`cat_group.${g.id}`),
+        value: teamPerGroup[g.id] ?? null,
+      }))
+    : null;
 
   const metaParts = [
     props.age != null ? tInf('age', { age: props.age }) : null,
@@ -368,7 +381,20 @@ export function DevelopmentReportPdfDocument(
           <Text style={pdfStyles.bold}>{tInf(`report_status.${status}`)}</Text>
         </Text>
       </View>
-      <RadarPdf axes={radarAxes} />
+      {/* Dos redes lado a lado: individual + equipo (cada una con su etiqueta). La
+          de equipo solo si hay valoración de equipo en el periodo (C1). */}
+      <View style={s.radarsRow}>
+        <View style={s.radarCol}>
+          <Text style={s.radarLabel}>{tInf('radar_individual')}</Text>
+          <RadarPdf axes={radarAxes} />
+        </View>
+        {teamRadarAxes ? (
+          <View style={s.radarCol}>
+            <Text style={s.radarLabel}>{tInf('radar_team')}</Text>
+            <RadarPdf axes={teamRadarAxes} />
+          </View>
+        ) : null}
+      </View>
 
       {/* ── 3 · Objetivos (individuales + grupales) ──────────────────── */}
       <Text style={pdfStyles.sectionTitle} wrap={false}>{tInf('objectives_title')}</Text>
