@@ -405,6 +405,8 @@ export function PlayEditor({
           archived={initial.archived}
           isOwner={isOwner}
           isApprover={isApprover}
+          sourcePlayId={initial.source_play_id}
+          sourceName={initial.source_name}
         />
       </section>
 

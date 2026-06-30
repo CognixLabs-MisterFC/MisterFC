@@ -14,7 +14,7 @@
 import { useState, useTransition } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { toast } from 'sonner';
-import { Send, Archive, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
+import { Send, Archive, CheckCircle2, XCircle, RotateCcw, Replace } from 'lucide-react';
 import type { MethodologyStatus } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,7 +31,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useRouter } from '@/i18n/navigation';
-import { proposePlay, reproposePlay, approvePlay, rejectPlay, archivePlay } from '../actions';
+import {
+  proposePlay,
+  reproposePlay,
+  approvePlay,
+  rejectPlay,
+  archivePlay,
+  resolvePlayProposal,
+} from '../actions';
 
 type Props = {
   id: string;
@@ -39,9 +46,21 @@ type Props = {
   archived: boolean;
   isOwner: boolean;
   isApprover: boolean;
+  /** Si la jugada es una PROPUESTA de cambios (#243), id de la original (B1: A/B). */
+  sourcePlayId?: string | null;
+  /** Nombre de la original (para el botón "sustituir «X»"). */
+  sourceName?: string | null;
 };
 
-export function PlayCycleActions({ id, status, archived, isOwner, isApprover }: Props) {
+export function PlayCycleActions({
+  id,
+  status,
+  archived,
+  isOwner,
+  isApprover,
+  sourcePlayId = null,
+  sourceName = null,
+}: Props) {
   const t = useTranslations('jugadas');
   const locale = useLocale();
   const router = useRouter();
@@ -78,16 +97,60 @@ export function PlayCycleActions({ id, status, archived, isOwner, isApprover }: 
     <div className="flex flex-wrap items-center gap-2">
       {canReview && (
         <>
-          <Button
-            size="sm"
-            disabled={pending}
-            onClick={() =>
-              run(() => approvePlay({ id }, locale), t('toast.approved'), () => router.refresh())
-            }
-          >
-            <CheckCircle2 className="size-4" aria-hidden />
-            {t('actions.approve')}
-          </Button>
+          {sourcePlayId ? (
+            // B1 — Propuesta de cambios: el aprobador elige A (sustituir) o B (nueva).
+            <>
+              <ConfirmAction
+                trigger={
+                  <Button size="sm" disabled={pending}>
+                    <Replace className="size-4" aria-hidden />
+                    {t('actions.approve_replace')}
+                  </Button>
+                }
+                title={t('confirm.replace_title')}
+                description={
+                  sourceName
+                    ? t('confirm.replace_desc_named', { name: sourceName })
+                    : t('confirm.replace_desc')
+                }
+                cancel={t('confirm.cancel')}
+                confirm={t('actions.approve_replace')}
+                onConfirm={() =>
+                  run(
+                    () => resolvePlayProposal({ id, mode: 'replace' }, locale),
+                    t('toast.replaced'),
+                    () => router.refresh(),
+                  )
+                }
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={pending}
+                onClick={() =>
+                  run(
+                    () => resolvePlayProposal({ id, mode: 'new' }, locale),
+                    t('toast.approved'),
+                    () => router.refresh(),
+                  )
+                }
+              >
+                <CheckCircle2 className="size-4" aria-hidden />
+                {t('actions.approve_new')}
+              </Button>
+            </>
+          ) : (
+            <Button
+              size="sm"
+              disabled={pending}
+              onClick={() =>
+                run(() => approvePlay({ id }, locale), t('toast.approved'), () => router.refresh())
+              }
+            >
+              <CheckCircle2 className="size-4" aria-hidden />
+              {t('actions.approve')}
+            </Button>
+          )}
           <RejectDialog
             disabled={pending}
             labels={{

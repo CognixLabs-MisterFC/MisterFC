@@ -141,7 +141,9 @@
       "play_approved": "Play published",
       "play_approved_named": "Play published: {name}",
       "play_rejected": "Play rejected",
-      "play_rejected_named": "Play rejected: {name}"
+      "play_rejected_named": "Play rejected: {name}",
+      "play_updated": "Play updated",
+      "play_updated_named": "The play “{name}” has been updated"
     },
     "dashboard_card": {
       "title": "Executive dashboard",
@@ -3305,7 +3307,8 @@
       "proposed": "Proposal sent for review.",
       "approved": "Play published.",
       "rejected": "Play rejected.",
-      "archived": "Play archived."
+      "archived": "Play archived.",
+      "replaced": "Play replaced and proposal applied"
     },
     "errors": {
       "forbidden": "Permission denied",
@@ -3328,7 +3331,9 @@
       "approve": "Approve",
       "publish": "Publish",
       "reject": "Reject",
-      "archive": "Archive"
+      "archive": "Archive",
+      "approve_replace": "Approve and replace",
+      "approve_new": "Publish as new"
     },
     "confirm": {
       "reject_title": "Reject play",
@@ -3338,7 +3343,10 @@
       "cancel": "Cancel",
       "archive_title": "Archive play?",
       "archive_desc": "The published play will be archived and removed from the library.",
-      "confirm_archive": "Archive"
+      "confirm_archive": "Archive",
+      "replace_title": "Replace the original play",
+      "replace_desc": "The proposal’s changes are applied onto the original play (it stays the same play). The proposal is removed and the teams that have it in their playbook are notified.",
+      "replace_desc_named": "The changes are applied onto “{name}” (it stays the same play). The proposal is removed and the teams that have it in their playbook are notified."
     },
     "tabs": {
       "library": "Library",

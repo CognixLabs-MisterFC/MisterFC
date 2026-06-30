@@ -141,7 +141,9 @@
       "play_approved": "Jugada publicada",
       "play_approved_named": "Jugada publicada: {name}",
       "play_rejected": "Jugada rebutjada",
-      "play_rejected_named": "Jugada rebutjada: {name}"
+      "play_rejected_named": "Jugada rebutjada: {name}",
+      "play_updated": "Jugada actualitzada",
+      "play_updated_named": "S’ha actualitzat la jugada «{name}»"
     },
     "dashboard_card": {
       "title": "Tauler executiu",
@@ -3305,7 +3307,8 @@
       "proposed": "Proposta enviada per a revisió.",
       "approved": "Jugada publicada.",
       "rejected": "Jugada rebutjada.",
-      "archived": "Jugada arxivada."
+      "archived": "Jugada arxivada.",
+      "replaced": "Jugada substituïda i proposta aplicada"
     },
     "errors": {
       "forbidden": "Permís denegat",
@@ -3328,7 +3331,9 @@
       "approve": "Aprovar",
       "publish": "Publicar",
       "reject": "Rebutjar",
-      "archive": "Arxivar"
+      "archive": "Arxivar",
+      "approve_replace": "Aprovar i substituir",
+      "approve_new": "Publicar com a nova"
     },
     "confirm": {
       "reject_title": "Rebutjar la jugada",
@@ -3338,7 +3343,10 @@
       "cancel": "Cancel·lar",
       "archive_title": "Voleu arxivar la jugada?",
       "archive_desc": "La jugada publicada s'arxivarà i deixarà d'aparéixer a la biblioteca.",
-      "confirm_archive": "Arxivar"
+      "confirm_archive": "Arxivar",
+      "replace_title": "Substituir la jugada original",
+      "replace_desc": "Els canvis de la proposta es bolquen sobre la jugada original (continua sent la mateixa). La proposta s’elimina i s’avisa els equips que la tenen al seu playbook.",
+      "replace_desc_named": "Els canvis es bolquen sobre «{name}» (continua sent la mateixa jugada). La proposta s’elimina i s’avisa els equips que la tenen al seu playbook."
     },
     "tabs": {
       "library": "Biblioteca",
