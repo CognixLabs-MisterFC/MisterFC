@@ -79,6 +79,7 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
     case 'new_message':
       return MessageSquare;
     case 'play_published':
+    case 'play_updated':
       return Clapperboard;
     case 'play_approved':
       return CheckCircle2;
@@ -114,6 +115,10 @@ function textFor(t: Translate, type: string, payload: Record<string, unknown> | 
     case 'play_approved': {
       const name = str(payload, 'play_name');
       return name ? t('play_approved_named', { name }) : t('play_approved');
+    }
+    case 'play_updated': {
+      const name = str(payload, 'play_name');
+      return name ? t('play_updated_named', { name }) : t('play_updated');
     }
     case 'play_rejected': {
       const name = str(payload, 'play_name');
@@ -177,8 +182,10 @@ function hrefFor(type: string, payload: Record<string, unknown> | null): string 
       break;
     }
     case 'play_approved':
-    case 'play_rejected': {
-      // El destinatario es el PROPONENTE (staff) → editor de la jugada (JR-1).
+    case 'play_rejected':
+    case 'play_updated': {
+      // Destinatario staff → editor de la jugada del banco (JR-1; read-only si no
+      // es aprobador). En play_updated apunta a la original ya actualizada.
       const id = str(payload, 'play_id');
       derived = id ? `/jugadas/${id}/editar` : null;
       break;

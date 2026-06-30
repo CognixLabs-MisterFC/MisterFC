@@ -141,7 +141,9 @@
       "play_approved": "Jugada publicada",
       "play_approved_named": "Jugada publicada: {name}",
       "play_rejected": "Jugada rechazada",
-      "play_rejected_named": "Jugada rechazada: {name}"
+      "play_rejected_named": "Jugada rechazada: {name}",
+      "play_updated": "Jugada actualizada",
+      "play_updated_named": "Se ha actualizado la jugada «{name}»"
     },
     "welcome": "Bienvenido a {club}",
     "your_role": "Tu rol aquí es {role}.",
@@ -3304,7 +3306,8 @@
       "proposed": "Propuesta enviada para revisión.",
       "approved": "Jugada publicada.",
       "rejected": "Jugada rechazada.",
-      "archived": "Jugada archivada."
+      "archived": "Jugada archivada.",
+      "replaced": "Jugada sustituida y propuesta aplicada"
     },
     "errors": {
       "forbidden": "Permiso denegado",
@@ -3327,7 +3330,9 @@
       "approve": "Aprobar",
       "publish": "Publicar",
       "reject": "Rechazar",
-      "archive": "Archivar"
+      "archive": "Archivar",
+      "approve_replace": "Aprobar y sustituir",
+      "approve_new": "Publicar como nueva"
     },
     "confirm": {
       "reject_title": "Rechazar la jugada",
@@ -3337,7 +3342,10 @@
       "cancel": "Cancelar",
       "archive_title": "¿Archivar la jugada?",
       "archive_desc": "La jugada publicada se archivará y dejará de aparecer en la biblioteca.",
-      "confirm_archive": "Archivar"
+      "confirm_archive": "Archivar",
+      "replace_title": "Sustituir la jugada original",
+      "replace_desc": "Los cambios de la propuesta se vuelcan sobre la jugada original (sigue siendo la misma). La propuesta se elimina y se avisa a los equipos que la tienen en su playbook.",
+      "replace_desc_named": "Los cambios se vuelcan sobre «{name}» (sigue siendo la misma jugada). La propuesta se elimina y se avisa a los equipos que la tienen en su playbook."
     },
     "tabs": {
       "library": "Biblioteca",

@@ -7,6 +7,7 @@ import {
   parsePlay,
   emptyPlay,
   createSupabaseServerClient,
+  createSupabaseAdminClient,
   STRATEGY_TYPES,
   type Role,
 } from '@misterfc/core';
@@ -326,6 +327,124 @@ export async function approvePlay(input: unknown, locale: string): Promise<PlayA
 
   revalidatePlays();
   return { success: true, id };
+}
+
+const resolveProposalSchema = z.object({
+  id: z.string().uuid(),
+  mode: z.enum(['replace', 'new']),
+});
+
+/**
+ * B1 (v2 de propuestas) — al APROBAR una propuesta de cambios (con source_play_id),
+ * el coordinador elige:
+ *   · mode='new'     → la propuesta pasa a published como jugada propia (= v1; la
+ *                      original intacta; source_play_id se conserva como "derivada de").
+ *   · mode='replace' → SUSTITUIR: la RPC vuelca la propuesta sobre la original (mismo
+ *                      registro published; team_plays/señas intactos) y consume la
+ *                      propuesta, atómicamente. Avisa al STAFF de los equipos que tienen
+ *                      la jugada (play_updated) + al proponente (play_approved).
+ * Gate: aprobador (la RPC lo revalida en BD). `locale` solo para los deep-links.
+ */
+export async function resolvePlayProposal(
+  input: unknown,
+  locale: string,
+): Promise<PlayActionState> {
+  const parsed = resolveProposalSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+  if (!APPROVER_ROLES.includes(ctx.activeClub.role as Role)) return { error: 'forbidden' };
+
+  // (B) Publicar como jugada nueva = el approve de siempre (la original no se toca).
+  if (parsed.data.mode === 'new') {
+    return approvePlay({ id: parsed.data.id }, locale);
+  }
+
+  // (A) Sustituir la original: volcado + consumo, atómico, en la RPC.
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const { data: result, error } = await supabase
+    .rpc('replace_play_with_proposal', { p_proposal_id: parsed.data.id })
+    .maybeSingle();
+
+  if (error) return { error: mapPgErr(error.code) };
+  if (!result) return { error: 'not_found' };
+
+  const originalId = result.original_id as string;
+  const playName = (result.play_name as string | null) ?? '';
+  const ownerId = result.proposal_owner_id as string;
+
+  // Notificaciones (no bloquean la aprobación si el bus falla). Admin client para
+  // resolver el staff de los equipos (la RLS de team_plays/team_staff exige ser staff
+  // DEL equipo y el aprobador puede no serlo). La sustitución ya está autorizada.
+  try {
+    const { emitNotification, emitNotificationFanOut } = await import('@/lib/notify-bus');
+    const admin = createSupabaseAdminClient();
+    const deepLink = `/${locale}/jugadas/${originalId}/editar`;
+
+    // 1) Staff de los equipos que tienen la jugada en su playbook → "actualizada".
+    const { data: tps } = await admin
+      .from('team_plays')
+      .select('team_id')
+      .eq('play_id', originalId);
+    const teamIds = [...new Set((tps ?? []).map((r) => r.team_id as string))];
+    let staffIds: string[] = [];
+    if (teamIds.length > 0) {
+      const { data: staff } = await admin
+        .from('team_staff')
+        .select('membership:memberships!inner(profile_id)')
+        .in('team_id', teamIds)
+        .is('left_at', null);
+      staffIds = [
+        ...new Set(
+          (staff ?? [])
+            .map((s) => (s.membership as { profile_id: string } | null)?.profile_id)
+            .filter((p): p is string => !!p),
+        ),
+      ].filter((p) => p !== ctx.user.id && p !== ownerId);
+    }
+    if (staffIds.length > 0) {
+      await emitNotificationFanOut(
+        staffIds.map((user_id) => ({ user_id })),
+        {
+          type: 'play_updated',
+          in_app_payload: { play_id: originalId, play_name: playName, deep_link: deepLink },
+          push_payload: {
+            title: playName,
+            body: '',
+            deep_link: deepLink,
+            tag: `play_updated:${originalId}`,
+          },
+          dedupe_base_prefix: `play_updated:${originalId}:${Date.now()}`,
+        },
+      );
+    }
+
+    // 2) Al proponente: su propuesta se aprobó (apunta ya a la original sustituida).
+    if (ownerId !== ctx.user.id) {
+      await emitNotification({
+        user_id: ownerId,
+        type: 'play_approved',
+        in_app_payload: { play_id: originalId, play_name: playName, deep_link: deepLink },
+        push_payload: {
+          title: playName,
+          body: '',
+          deep_link: deepLink,
+          tag: `play_approved:${originalId}`,
+        },
+        dedupe_base: `play_approved:${originalId}:${Date.now()}`,
+      });
+    }
+  } catch (notifyErr) {
+    Sentry.captureException(notifyErr, {
+      tags: { feature: 'plays', step: 'notify_replace' },
+      extra: { play_id: originalId },
+    });
+  }
+
+  revalidatePlays();
+  return { success: true, id: originalId };
 }
 
 /** Rechazar un propuesto → rechazado, con motivo OBLIGATORIO (solo aprobador).

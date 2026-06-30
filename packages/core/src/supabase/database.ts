@@ -3206,6 +3206,14 @@ export type Database = {
         Args: { p_block_id: string; p_task_ids: string[] }
         Returns: undefined
       }
+      replace_play_with_proposal: {
+        Args: { p_proposal_id: string }
+        Returns: {
+          original_id: string
+          play_name: string
+          proposal_owner_id: string
+        }[]
+      }
       seed_standard_categories: { Args: { p_club_id: string }; Returns: number }
       session_exercise_meta: {
         Args: { p_session_id: string }
@@ -3369,6 +3377,7 @@ export type Database = {
         | "evaluation_campaign_launched"
         | "play_approved"
         | "play_rejected"
+        | "play_updated"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -3528,6 +3537,7 @@ export const Constants = {
         "evaluation_campaign_launched",
         "play_approved",
         "play_rejected",
+        "play_updated",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },
