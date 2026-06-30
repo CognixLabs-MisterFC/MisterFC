@@ -822,7 +822,10 @@
     "campaign_alert": {
       "notify_title": "Campaña {period} abierta",
       "notify_body": "A redactar los informes. Fecha límite: {date}."
-    }
+    },
+    "radar_individual": "Individual",
+    "radar_team": "Equipo",
+    "radar_team_empty": "Sin valoración de equipo en este periodo"
   },
   "jugadores": {
     "title": "Jugadores",

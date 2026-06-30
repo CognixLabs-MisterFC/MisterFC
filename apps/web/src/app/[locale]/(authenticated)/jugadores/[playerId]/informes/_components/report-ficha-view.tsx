@@ -89,6 +89,16 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
     group: t(`cat_group.${g.id}`),
     value: perGroup[g.id] ?? 0,
   }));
+  // C1 — segunda red: medias de los grupos del EQUIPO (si hay valoración de equipo).
+  const teamPerGroup = data.teamReport
+    ? computeGroupAverages(TEAM_REPORT_CATALOG, data.teamReport.scores).perGroup
+    : null;
+  const teamRadarData = teamPerGroup
+    ? TEAM_REPORT_CATALOG.groups.map((g) => ({
+        group: t(`cat_group.${g.id}`),
+        value: teamPerGroup[g.id] ?? 0,
+      }))
+    : null;
   const groupLabels: Record<string, string> = {
     tecnico: t('cat_group.tecnico'),
     tactico: t('cat_group.tactico'),
@@ -194,9 +204,9 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
         </CardContent>
       </Card>
 
-      {/* ── RESUMEN + RADAR ─────────────────────────────────────────── */}
+      {/* ── RESUMEN + REDES (individual + equipo, C1) ───────────────── */}
       <Card>
-        <CardContent className="grid grid-cols-1 gap-4 pt-6 sm:grid-cols-2">
+        <CardContent className="flex flex-col gap-4 pt-6">
           <div className="flex flex-col justify-center gap-3">
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground">{t('overall_average')}</span>
@@ -214,8 +224,23 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
               <span className="font-medium">{t(`report_status.${status}`)}</span>
             </p>
           </div>
-          <div>
-            <GroupRadarChart data={radarData} />
+          {/* Dos redes lado a lado, cada una etiquetada (ejes distintos: individual
+              = 4 corners; equipo = 3 grupos). La de equipo solo si hay valoración. */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1">
+              <span className="text-center text-sm font-medium">{t('radar_individual')}</span>
+              <GroupRadarChart data={radarData} />
+            </div>
+            {teamRadarData ? (
+              <div className="flex flex-col gap-1">
+                <span className="text-center text-sm font-medium">{t('radar_team')}</span>
+                <GroupRadarChart data={teamRadarData} />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
+                {t('radar_team_empty')}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

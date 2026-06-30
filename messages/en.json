@@ -823,7 +823,10 @@
     "campaign_alert": {
       "notify_title": "{period} campaign open",
       "notify_body": "Time to write the reports. Deadline: {date}."
-    }
+    },
+    "radar_individual": "Individual",
+    "radar_team": "Team",
+    "radar_team_empty": "No team assessment for this period"
   },
   "jugadores": {
     "title": "Jugadores",

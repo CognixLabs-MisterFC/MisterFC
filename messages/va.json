@@ -823,7 +823,10 @@
     "campaign_alert": {
       "notify_title": "Campanya {period} oberta",
       "notify_body": "A redactar els informes. Data límit: {date}."
-    }
+    },
+    "radar_individual": "Individual",
+    "radar_team": "Equip",
+    "radar_team_empty": "Sense valoració d’equip en aquest període"
   },
   "jugadores": {
     "title": "Jugadores",
