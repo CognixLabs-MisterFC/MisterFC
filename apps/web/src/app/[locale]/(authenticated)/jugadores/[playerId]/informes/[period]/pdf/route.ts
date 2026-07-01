@@ -66,7 +66,7 @@ export async function GET(
   // Jugador (RLS: staff del club lo ve; la familia ve a su jugador).
   const { data: player } = await supabase
     .from('players')
-    .select('first_name, last_name, club_id, date_of_birth, dorsal, position_main, foot')
+    .select('first_name, last_name, club_id, date_of_birth, dorsal, position_main, positions_secondary, foot')
     .eq('id', playerId)
     .maybeSingle();
   if (!player || player.club_id !== clubId) return new Response('Not found', { status: 404 });
@@ -151,6 +151,8 @@ export async function GET(
     dorsal: player.dorsal,
     positionLabel: primaryPos ? tPos(primaryPos) : null,
     footLabel: validFoot ? tFoot(player.foot as string) : null,
+    primaryPos,
+    secondaryPos: (player.positions_secondary ?? []) as string[],
     age: ageFromDob(player.date_of_birth),
     teamName: team?.teamName ?? '',
     seasonLabel,

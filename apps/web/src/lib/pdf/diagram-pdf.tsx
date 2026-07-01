@@ -235,8 +235,9 @@ function renderElement(
   }
 }
 
-/** Marcas del campo (port de `FieldMarkings`), dentro del mismo Svg. */
-function fieldMarkings(kind: keyof typeof CANVAS): React.ReactElement {
+/** Marcas del campo (port de `FieldMarkings`), dentro del mismo Svg. EXPORTADO para
+ *  reutilizarlo en otros mini-campos del PDF (p.ej. el campo de posición, C2). */
+export function fieldMarkings(kind: 'completo' | 'medio'): React.ReactElement {
   const line = { stroke: '#ffffff', strokeOpacity: 0.5, strokeWidth: 0.6 } as const;
   if (kind === 'medio') {
     return (

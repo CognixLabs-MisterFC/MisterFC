@@ -21,10 +21,12 @@ import {
   TEAM_REPORT_CATALOG,
   DEVELOPMENT_PERIODS,
   type Catalog,
+  type PlayerPosition,
 } from '@misterfc/core';
 import { scorePdfFill } from '@/lib/score-color';
 import { PdfShell, pdfStyles, BRAND_NAVY, type Translator } from './shared';
 import { RadarPdf, EvolutionLinesPdf } from './report-charts-pdf';
+import { PositionFieldPdf } from './position-field-pdf';
 import type {
   FichaStats,
   PdfMatchStatsSplit,
@@ -207,6 +209,9 @@ export interface DevelopmentReportPdfProps {
   /** Etiquetas ya traducidas en el server (posición principal / pie). */
   positionLabel: string | null;
   footLabel: string | null;
+  /** Posición principal + secundarias (valores crudos) para el mini-campo (C2). */
+  primaryPos: PlayerPosition | null;
+  secondaryPos: string[];
   age: number | null;
   teamName: string;
   seasonLabel: string;
@@ -340,6 +345,9 @@ export function DevelopmentReportPdfDocument(
           <Text style={s.playerName}>{props.playerName}</Text>
           {metaParts.length > 0 ? <Text style={s.metaLine}>{metaParts.join('  ·  ')}</Text> : null}
         </View>
+        {/* Mini-campo con la posición (principal sólida + secundarias tenues, C2).
+            Se omite limpio si el jugador no tiene posición asignada. */}
+        <PositionFieldPdf primary={props.primaryPos} secondary={props.secondaryPos} width={64} />
       </View>
       {/* Bloque de partido segregado: Oficial vs Amistoso */}
       <View style={[pdfStyles.table, { marginTop: 4 }]}>
