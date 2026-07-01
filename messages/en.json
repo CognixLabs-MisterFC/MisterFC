@@ -816,6 +816,13 @@
         "cards": "Cards",
         "attendance": "Trainings"
       },
+      "promotions": {
+        "title": "With higher teams",
+        "highlight_train": "{count, plural, one {Trained # time with {team}} other {Trained # times with {team}}}",
+        "highlight_match": "{count, plural, one {Played # match with {team}} other {Played # matches with {team}}}",
+        "kind_train": "Trained",
+        "kind_match": "Played"
+      },
       "match_block": "Match stats",
       "official": "Official",
       "friendly": "Friendly"
