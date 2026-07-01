@@ -722,6 +722,22 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 ---
 
+### Bloque D — Subir jugadores a equipos superiores ☑ [cerrado 2026-07-01]
+
+> Feature transversal sobre F3/F4/F6/F7/F13.10. Modelo `player_promotions`: la
+> subida se registra ligada a un evento del equipo superior (no mueve al jugador
+> de su equipo base, regla #1). Análisis previo D0 (matriz + decisiones D1–D9);
+> el alcance viró de "solo aviso" (opción 3) a "integración plena" (opción 1) en D2.1.
+> Detalle: [bloque-D-summary.md](bloque-D-summary.md).
+
+- **D1** ✅ Modelo + jerarquía en BD: tabla `player_promotions`, `category_kind_ordinal` (materializa `CATEGORY_KIND_ORDER` de core en BD), `is_promotion_target_superior`, trigger "solo superior", RLS (staff base/superior ∪ admin/coord ∪ familia) + pgTAP — #249 `[hecho 2026-07-01]`
+- **D2** ✅ Alta desde UI (`PromotePlayerDialog` en el evento de calendario) + notificación `player_promoted` a la familia (`player_accounts`) + aviso de conflicto de fecha (RPC `promotion_conflicts`, avisar-no-bloquear) + RPC `promotion_candidates` (gated) — #250 `[hecho 2026-07-01]`
+- **D2.1** ✅ Integración opción 1: helper aditivo `player_promoted_to_event` en los 5 sitios con check de roster → el subido cuenta en convocatoria/asistencia/alineación/captura; badge "Subido · {equipo}"; botón subir también en convocatoria; filtro del picker (nombre/equipo); pgTAP 15 comprobaciones — #251 `[hecho 2026-07-01]`
+- **D3** ✅ Seguimiento en la ficha web (`loadFichaStats.promotions`: highlight agregado + lista), visible a staff y familia por la RLS de D1 — #252 `[hecho 2026-07-01]`
+- **D4** ✅ Mismo seguimiento en el PDF del informe (reusa `stats.promotions`, sin query nueva). **Cierra el bloque D.** — #253 `[hecho 2026-07-01]`
+
+---
+
 ### Fase 14 — RGPD para menores y seguridad
 
 **Objetivo**: cumplimiento RGPD para datos de menores: consentimiento parental explícito, audit log de accesos a datos sensibles, derechos del usuario (acceso, rectificación, supresión, portabilidad). Además: endurecimiento de RLS en políticas hoy demasiado permisivas (F2.7 capabilities, F3 events).
