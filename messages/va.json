@@ -816,6 +816,13 @@
         "cards": "Targetes",
         "attendance": "Entrenaments"
       },
+      "promotions": {
+        "title": "Amb equips superiors",
+        "highlight_train": "{count, plural, one {Va entrenar # vegada amb el {team}} other {Va entrenar # vegades amb el {team}}}",
+        "highlight_match": "{count, plural, one {Va jugar # partit amb el {team}} other {Va jugar # partits amb el {team}}}",
+        "kind_train": "Va entrenar",
+        "kind_match": "Va jugar"
+      },
       "match_block": "Estadístiques de partit",
       "official": "Oficial",
       "friendly": "Amistós"

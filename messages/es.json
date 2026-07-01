@@ -815,6 +815,13 @@
         "cards": "Tarjetas",
         "attendance": "Entrenos"
       },
+      "promotions": {
+        "title": "Con equipos superiores",
+        "highlight_train": "{count, plural, one {Entrenó # vez con el {team}} other {Entrenó # veces con el {team}}}",
+        "highlight_match": "{count, plural, one {Jugó # partido con el {team}} other {Jugó # partidos con el {team}}}",
+        "kind_train": "Entrenó",
+        "kind_match": "Jugó"
+      },
       "match_block": "Estadísticas de partido",
       "official": "Oficial",
       "friendly": "Amistoso"

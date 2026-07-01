@@ -14,7 +14,8 @@
  *  7. Resultados de equipo (3 grupos con color).
  */
 
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
+import { ArrowUpCircle } from 'lucide-react';
 import {
   reportStatus,
   computeGroupAverages,
@@ -23,6 +24,7 @@ import {
   TEAM_REPORT_CATALOG,
   type PlayerPosition,
 } from '@misterfc/core';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { scoreClasses, formatScore } from '@/lib/score-color';
@@ -69,6 +71,17 @@ export type ReportFichaData = {
 
 export async function ReportFichaView({ data }: { data: ReportFichaData }) {
   const t = await getTranslations('informes');
+  const locale = await getLocale();
+
+  // D3 — formateo de fecha de las subidas (fecha corta + hora, TZ del proyecto).
+  const fmtPromoDate = (iso: string) =>
+    new Intl.DateTimeFormat(locale, {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Europe/Madrid',
+    }).format(new Date(iso));
 
   const { perGroup, overall } = computeGroupAverages(DEVELOPMENT_REPORT_CATALOG, data.scores);
   const status = reportStatus(data.scores, DEVELOPMENT_REPORT_CATALOG);
@@ -203,6 +216,61 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
           </div>
         </CardContent>
       </Card>
+
+      {/* ── SUBIDAS A EQUIPOS SUPERIORES (D3) ───────────────────────── */}
+      {data.stats.promotions.items.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ArrowUpCircle className="size-4" aria-hidden />
+              {t('ficha.promotions.title')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {/* Highlight agregado por equipo superior + kind. */}
+            <ul className="flex flex-col gap-1 text-sm">
+              {data.stats.promotions.byTeam.map((g) => (
+                <li key={g.teamName} className="flex flex-col">
+                  {g.train > 0 && (
+                    <span>
+                      {t('ficha.promotions.highlight_train', {
+                        count: g.train,
+                        team: g.teamName,
+                      })}
+                    </span>
+                  )}
+                  {g.match > 0 && (
+                    <span>
+                      {t('ficha.promotions.highlight_match', {
+                        count: g.match,
+                        team: g.teamName,
+                      })}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+
+            {/* Detalle: fecha · equipo superior · entrenó/jugó (fecha desc). */}
+            <ul className="flex flex-col divide-y divide-border">
+              {data.stats.promotions.items.map((it) => (
+                <li
+                  key={it.eventId}
+                  className="flex items-center justify-between gap-2 py-2 text-sm"
+                >
+                  <span className="tabular-nums">{fmtPromoDate(it.startsAt)}</span>
+                  <span className="min-w-0 flex-1 truncate text-muted-foreground">
+                    {it.teamName}
+                  </span>
+                  <Badge variant="outline">
+                    {t(`ficha.promotions.kind_${it.kind}`)}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── RESUMEN + REDES (individual + equipo, C1) ───────────────── */}
       <Card>

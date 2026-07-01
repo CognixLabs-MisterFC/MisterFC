@@ -173,6 +173,29 @@ export async function loadReportsByPeriod(
 // ── Ficha (F13.10 rediseño): stats agregadas de temporada + evolución ───────────
 
 /** Subconjunto de stats ya disponibles en player-profile, para la cabecera. */
+/** D3 — una subida concreta (detalle de la lista de promociones). */
+export type FichaPromotionItem = {
+  eventId: string;
+  startsAt: string;
+  kind: 'train' | 'match';
+  teamName: string;
+};
+
+/** D3 — agregado por equipo superior (para el highlight legible). */
+export type FichaPromotionGroup = {
+  teamName: string;
+  train: number;
+  match: number;
+};
+
+/** D3 — seguimiento de subidas a equipos superiores en la temporada. */
+export type FichaPromotions = {
+  trainCount: number;
+  matchCount: number;
+  byTeam: FichaPromotionGroup[];
+  items: FichaPromotionItem[];
+};
+
 export type FichaStats = {
   matches: number;
   minutes: number;
@@ -188,6 +211,8 @@ export type FichaStats = {
   totalMatches: number; // total de partidos del equipo en la temporada
   trainingsAttended: number; // entrenos a los que asistió (bucket 'present')
   totalTrainings: number; // total de entrenos del equipo en la temporada
+  /** D3 — subidas a equipos superiores (seguimiento). Vacío si no hay. */
+  promotions: FichaPromotions;
 };
 
 /**
@@ -254,6 +279,44 @@ export async function loadFichaStats(
     calledUp = calledUpRes.count ?? 0;
   }
 
+  // D3 — subidas del jugador a equipos SUPERIORES en la temporada (player_promotions
+  // → events → teams filtrado por season). RLS de D1: la familia ve las de su
+  // jugador (siempre), el staff base/superior y admin/coord también.
+  const { data: promoRows } = await supabase
+    .from('player_promotions')
+    .select('event_id, kind, events!inner(starts_at, teams!inner(name, season))')
+    .eq('player_id', playerId)
+    .eq('events.teams.season', seasonLabel);
+  type PromoRow = {
+    event_id: string;
+    kind: string;
+    events: { starts_at: string; teams: { name: string } };
+  };
+  const promoItems: FichaPromotionItem[] = ((promoRows ?? []) as unknown as PromoRow[])
+    .map((r) => ({
+      eventId: r.event_id,
+      startsAt: r.events.starts_at,
+      kind: (r.kind === 'train' ? 'train' : 'match') as 'train' | 'match',
+      teamName: r.events.teams.name,
+    }))
+    .sort((a, b) => (a.startsAt < b.startsAt ? 1 : a.startsAt > b.startsAt ? -1 : 0));
+
+  const byTeamMap = new Map<string, FichaPromotionGroup>();
+  for (const it of promoItems) {
+    const g = byTeamMap.get(it.teamName) ?? { teamName: it.teamName, train: 0, match: 0 };
+    if (it.kind === 'train') g.train += 1;
+    else g.match += 1;
+    byTeamMap.set(it.teamName, g);
+  }
+  const promotions: FichaPromotions = {
+    trainCount: promoItems.filter((i) => i.kind === 'train').length,
+    matchCount: promoItems.filter((i) => i.kind === 'match').length,
+    byTeam: Array.from(byTeamMap.values()).sort((a, b) =>
+      a.teamName.localeCompare(b.teamName, 'es', { sensitivity: 'base' }),
+    ),
+    items: promoItems,
+  };
+
   return {
     matches: agg.matches,
     minutes: agg.minutesPlayed,
@@ -268,6 +331,7 @@ export async function loadFichaStats(
     totalMatches,
     trainingsAttended: att.perBucket.present,
     totalTrainings,
+    promotions,
   };
 }
 
