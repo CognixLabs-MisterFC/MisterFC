@@ -1,4 +1,36 @@
 {
+  "promotions": {
+    "trigger": "Subir jugador",
+    "title": "Subir a un equipo superior",
+    "description": "Sube un jugador de un equipo inferior para {kind} con el {team}.",
+    "description_generic": "Sube un jugador de un equipo inferior a este evento.",
+    "no_candidates": "No hay jugadores de equipos inferiores que puedan subir a este evento.",
+    "kind": {
+      "train": "entrenar",
+      "match": "jugar"
+    },
+    "field": {
+      "player": "Jugador",
+      "player_placeholder": "Elige un jugador…"
+    },
+    "conflict": {
+      "title": "Este jugador ya tiene un evento a esa hora",
+      "confirm_hint": "Puedes subirlo de todas formas."
+    },
+    "confirm": "Subir jugador",
+    "confirm_anyway": "Subir de todas formas",
+    "cancel": "Cancelar",
+    "errors": {
+      "load_failed": "No se pudieron cargar los jugadores. Inténtalo de nuevo.",
+      "invalid_input": "Revisa los datos.",
+      "forbidden": "No tienes permiso para subir jugadores a este evento.",
+      "not_superior": "El equipo del evento no es superior al equipo del jugador.",
+      "not_promotable": "Este tipo de evento no admite subidas.",
+      "cross_club": "El jugador no pertenece a este club.",
+      "already": "Este jugador ya está subido a este evento.",
+      "db": "No se pudo registrar la subida. Inténtalo de nuevo."
+    }
+  },
   "common": {
     "app_name": "MisterFC",
     "welcome": "Bienvenido a MisterFC",
@@ -143,7 +175,11 @@
       "play_rejected": "Jugada rechazada",
       "play_rejected_named": "Jugada rechazada: {name}",
       "play_updated": "Jugada actualizada",
-      "play_updated_named": "Se ha actualizado la jugada «{name}»"
+      "play_updated_named": "Se ha actualizado la jugada «{name}»",
+      "player_promoted_train": "Convocado para entrenar con un equipo superior",
+      "player_promoted_train_named": "Convocado para entrenar con el {team}",
+      "player_promoted_match": "Convocado para jugar con un equipo superior",
+      "player_promoted_match_named": "Convocado para jugar con el {team}"
     },
     "welcome": "Bienvenido a {club}",
     "your_role": "Tu rol aquí es {role}.",

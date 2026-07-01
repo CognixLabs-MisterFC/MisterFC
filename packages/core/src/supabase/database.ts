@@ -3262,6 +3262,28 @@ export type Database = {
         }
         Returns: number
       }
+      promotion_candidates: {
+        Args: { p_event_id: string }
+        Returns: {
+          base_category_name: string
+          base_team_name: string
+          dorsal: number
+          first_name: string
+          last_name: string
+          player_id: string
+        }[]
+      }
+      promotion_conflicts: {
+        Args: { p_event_id: string; p_player_id: string }
+        Returns: {
+          ends_at: string
+          event_id: string
+          source: string
+          starts_at: string
+          team_name: string
+          title: string
+        }[]
+      }
       publish_campaign: {
         Args: { p_period: string; p_season_id: string }
         Returns: {
@@ -3452,6 +3474,7 @@ export type Database = {
         | "play_approved"
         | "play_rejected"
         | "play_updated"
+        | "player_promoted"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -3612,6 +3635,7 @@ export const Constants = {
         "play_approved",
         "play_rejected",
         "play_updated",
+        "player_promoted",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },
