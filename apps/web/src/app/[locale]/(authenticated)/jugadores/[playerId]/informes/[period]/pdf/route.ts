@@ -166,6 +166,7 @@ export async function GET(
     matchStatsByType,
     evolution,
     teamEvolution,
+    locale,
   });
 
   return pdfResponse(
