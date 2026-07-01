@@ -226,6 +226,8 @@ export interface DevelopmentReportPdfProps {
   stats: FichaStats;
   /** Bloque de partido segregado por tipo (PDF-3: oficial vs amistoso). */
   matchStatsByType: PdfMatchStatsSplit;
+  /** D4 — locale para formatear las fechas de las subidas (seguimiento). */
+  locale: string;
 }
 
 export function DevelopmentReportPdfDocument(
@@ -330,6 +332,28 @@ export function DevelopmentReportPdfDocument(
     { key: 'attendance', value: ratio(props.stats.trainingsAttended, props.stats.totalTrainings) },
   ];
 
+  // D4 — subidas a equipos superiores (mismos datos que la ficha web, D3).
+  const promo = props.stats.promotions;
+  const promoHighlights: string[] = [];
+  for (const g of promo.byTeam) {
+    if (g.train > 0)
+      promoHighlights.push(
+        tInf('ficha.promotions.highlight_train', { count: g.train, team: g.teamName }),
+      );
+    if (g.match > 0)
+      promoHighlights.push(
+        tInf('ficha.promotions.highlight_match', { count: g.match, team: g.teamName }),
+      );
+  }
+  const fmtPromoDate = (iso: string) =>
+    new Intl.DateTimeFormat(props.locale, {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Europe/Madrid',
+    }).format(new Date(iso));
+
   return (
     <PdfShell
       clubName={props.clubName}
@@ -377,6 +401,31 @@ export function DevelopmentReportPdfDocument(
           </View>
         ))}
       </View>
+
+      {/* Subidas a equipos superiores (D4). Se omite limpio si no hay ninguna. */}
+      {promo.items.length > 0 ? (
+        <>
+          <Text style={pdfStyles.sectionTitle} wrap={false}>
+            {tInf('ficha.promotions.title')}
+          </Text>
+          {promoHighlights.map((h) => (
+            <Text key={h} style={{ fontSize: 9, marginBottom: 2 }}>
+              {h}
+            </Text>
+          ))}
+          <View style={[pdfStyles.table, { marginTop: 2 }]}>
+            {promo.items.map((it) => (
+              <View key={it.eventId} style={s.itemRow}>
+                <Text style={[s.itemName, { flex: 1.2 }]}>{fmtPromoDate(it.startsAt)}</Text>
+                <Text style={[s.itemName, { flex: 2 }, pdfStyles.muted]}>{it.teamName}</Text>
+                <Text style={[s.itemName, { flex: 1, textAlign: 'right' }]}>
+                  {tInf(`ficha.promotions.kind_${it.kind}`)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </>
+      ) : null}
 
       {/* ── 2 · Puntuación + radar ───────────────────────────────────── */}
       <Text style={pdfStyles.sectionTitle}>{tInf('overall_average')}</Text>
