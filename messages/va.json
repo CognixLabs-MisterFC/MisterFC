@@ -5,13 +5,18 @@
     "description": "Puja un jugador d'un equip inferior per a {kind} amb el {team}.",
     "description_generic": "Puja un jugador d'un equip inferior a aquest esdeveniment.",
     "no_candidates": "No hi ha jugadors d'equips inferiors que puguen pujar a aquest esdeveniment.",
+    "no_matches": "Cap jugador coincideix amb el filtre.",
+    "badge": "Pujat",
+    "badge_from": "Pujat · {team}",
     "kind": {
       "train": "entrenar",
       "match": "jugar"
     },
     "field": {
       "player": "Jugador",
-      "player_placeholder": "Tria un jugador…"
+      "player_placeholder": "Tria un jugador…",
+      "search_placeholder": "Cerca per nom…",
+      "team_filter_all": "Tots els equips"
     },
     "conflict": {
       "title": "Aquest jugador ja té un esdeveniment a eixa hora",

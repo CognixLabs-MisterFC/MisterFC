@@ -9,7 +9,8 @@ import {
   formatPlayerName,
   otherChipLabel,
 } from '@misterfc/core';
-import { ChevronDown, Loader2, Undo2 } from 'lucide-react';
+import { ArrowUpCircle, ChevronDown, Loader2, Undo2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -75,10 +76,13 @@ export function AttendanceRow({
     first_name: string;
     last_name: string;
     dorsal: number | null;
+    is_promoted?: boolean;
+    from_team_name?: string | null;
   };
 }) {
   const t = useTranslations('asistencia.codes');
   const tRow = useTranslations('asistencia.row');
+  const tPromo = useTranslations('promotions');
   const [optimistic, setOptimistic] = useState<AttendanceCode | null>(
     initialCode
   );
@@ -132,8 +136,18 @@ export function AttendanceRow({
           {initials(player.first_name, player.last_name)}
         </span>
         <div className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium">
-            {formatPlayerName(player.first_name, player.last_name)}
+          <span className="flex items-center gap-2">
+            <span className="truncate text-sm font-medium">
+              {formatPlayerName(player.first_name, player.last_name)}
+            </span>
+            {player.is_promoted && (
+              <Badge variant="outline" className="gap-1 text-[10px]">
+                <ArrowUpCircle className="size-3" aria-hidden />
+                {player.from_team_name
+                  ? tPromo('badge_from', { team: player.from_team_name })
+                  : tPromo('badge')}
+              </Badge>
+            )}
           </span>
           {player.dorsal != null && (
             <span className="text-xs text-muted-foreground">

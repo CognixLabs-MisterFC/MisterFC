@@ -336,12 +336,22 @@ async function callupRecipients(
     .map((r) => r as unknown as TM)
     .filter((r) => r.left_at == null || r.left_at >= eventDate)
     .map((r) => r.player_id);
-  if (rosterIds.length === 0) return null;
+
+  // D2.1 — los jugadores SUBIDOS a este evento cuentan como convocados → reciben
+  // la notificación nativa de convocatoria como un miembro más.
+  const { data: promo } = await admin
+    .from('player_promotions')
+    .select('player_id')
+    .eq('event_id', eventId);
+  const allPlayerIds = Array.from(
+    new Set([...rosterIds, ...((promo ?? []).map((r) => r.player_id))]),
+  );
+  if (allPlayerIds.length === 0) return null;
 
   const { data: pas } = await admin
     .from('player_accounts')
     .select('profile_id')
-    .in('player_id', rosterIds);
+    .in('player_id', allPlayerIds);
   const userIds = Array.from(
     new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
   ) as string[];

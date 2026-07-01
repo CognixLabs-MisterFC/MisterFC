@@ -138,6 +138,8 @@ export default async function AttendanceMarkingPage({ params }: Props) {
                       first_name: p.first_name,
                       last_name: p.last_name,
                       dorsal: p.dorsal,
+                      is_promoted: p.is_promoted,
+                      from_team_name: p.from_team_name,
                     }}
                   />
                 );

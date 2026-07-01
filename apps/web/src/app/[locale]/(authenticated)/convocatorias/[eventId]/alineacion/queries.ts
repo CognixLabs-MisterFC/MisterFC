@@ -37,6 +37,10 @@ export type RosterPlayer = {
   positionMain: PlayerPositionMain;
   /** URL firmada de la foto (o null). */
   photoUrl: string | null;
+  /** D2.1 — true si el jugador está SUBIDO a este evento (no es del roster). */
+  isPromoted?: boolean;
+  /** D2.1 — nombre del equipo base del jugador subido (para el badge). */
+  fromTeamName?: string | null;
 };
 
 export type LineupSummary = {
@@ -173,7 +177,7 @@ export async function loadLineupEditor(
       photo_url: string | null;
     };
   };
-  const rosterRaw = (rosterRows ?? [])
+  const rosterBase = (rosterRows ?? [])
     .map((r) => r as unknown as RosterShape)
     .filter((r) => r.left_at == null || r.left_at >= eventDate)
     .map((r) => ({
@@ -183,7 +187,47 @@ export async function loadLineupEditor(
       dorsal: r.players.dorsal,
       positionMain: r.players.position_main,
       photoPath: r.players.photo_url,
+      isPromoted: false,
+      fromTeamName: null as string | null,
     }));
+
+  // D2.1 — jugadores SUBIDOS a este evento (player_promotions): alineables como
+  // uno más, sin estar en team_members. Se unen al roster con su equipo base.
+  const { data: promoRows } = await supabase
+    .from('player_promotions')
+    .select(
+      'player_id, players!inner(id, first_name, last_name, dorsal, position_main, photo_url, team_members(left_at, teams(name)))'
+    )
+    .eq('event_id', event.id);
+  type PromoShape = {
+    player_id: string;
+    players: {
+      id: string;
+      first_name: string;
+      last_name: string | null;
+      dorsal: number | null;
+      position_main: PlayerPositionMain;
+      photo_url: string | null;
+      team_members: { left_at: string | null; teams: { name: string } | null }[];
+    };
+  };
+  const rosterPromoted = (promoRows ?? [])
+    .map((r) => r as unknown as PromoShape)
+    .filter((r) => !rosterBase.some((rb) => rb.playerId === r.player_id))
+    .map((r) => {
+      const base = (r.players.team_members ?? []).find((tm) => tm.left_at == null);
+      return {
+        playerId: r.player_id,
+        firstName: r.players.first_name,
+        lastName: r.players.last_name ?? '',
+        dorsal: r.players.dorsal,
+        positionMain: r.players.position_main,
+        photoPath: r.players.photo_url,
+        isPromoted: true,
+        fromTeamName: base?.teams?.name ?? null,
+      };
+    });
+  const rosterRaw = [...rosterBase, ...rosterPromoted];
 
   // Firmar las fotos (bucket privado player-photos) en lote.
   const photoPaths = rosterRaw
@@ -205,6 +249,8 @@ export async function loadLineupEditor(
     dorsal: r.dorsal,
     positionMain: r.positionMain,
     photoUrl: r.photoPath ? (signed.get(r.photoPath) ?? null) : null,
+    isPromoted: r.isPromoted,
+    fromTeamName: r.fromTeamName,
   }));
 
   // Alineaciones del evento.

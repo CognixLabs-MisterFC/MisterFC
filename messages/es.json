@@ -5,13 +5,18 @@
     "description": "Sube un jugador de un equipo inferior para {kind} con el {team}.",
     "description_generic": "Sube un jugador de un equipo inferior a este evento.",
     "no_candidates": "No hay jugadores de equipos inferiores que puedan subir a este evento.",
+    "no_matches": "Ningún jugador coincide con el filtro.",
+    "badge": "Subido",
+    "badge_from": "Subido · {team}",
     "kind": {
       "train": "entrenar",
       "match": "jugar"
     },
     "field": {
       "player": "Jugador",
-      "player_placeholder": "Elige un jugador…"
+      "player_placeholder": "Elige un jugador…",
+      "search_placeholder": "Buscar por nombre…",
+      "team_filter_all": "Todos los equipos"
     },
     "conflict": {
       "title": "Este jugador ya tiene un evento a esa hora",
