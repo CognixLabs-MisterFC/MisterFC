@@ -3262,6 +3262,10 @@ export type Database = {
         }
         Returns: number
       }
+      player_promoted_to_event: {
+        Args: { p_event_id: string; p_player_id: string }
+        Returns: boolean
+      }
       promotion_candidates: {
         Args: { p_event_id: string }
         Returns: {

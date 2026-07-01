@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import {
   ArrowLeft,
+  ArrowUpCircle,
   BarChart3,
   CalendarDays,
   CheckCircle2,
@@ -27,6 +28,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PublishCallupDialog } from '../_components/publish-callup-dialog';
+import { PromotePlayerDialog } from '../../calendario/_components/promote-player-dialog';
 import { RepublishBanner } from '../_components/republish-banner';
 import { ResponseButtons } from '../_components/response-buttons';
 import { DecisionButtons } from '../_components/decision-buttons';
@@ -91,6 +93,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
   const tTransport = await getTranslations('convocatorias.transport');
   const tResponse = await getTranslations('convocatorias.response');
   const tDecision = await getTranslations('convocatorias.decision');
+  const tPromo = await getTranslations('promotions');
 
   const {
     event,
@@ -165,6 +168,9 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
             {isPublished ? t('published') : t('draft')}
           </Badge>
           <div className="flex flex-wrap items-center gap-2">
+            {canManage && (
+              <PromotePlayerDialog eventId={event.id} locale={locale} />
+            )}
             {canManageLineup && (
               <Button asChild variant="outline" size="sm">
                 <Link href={`/convocatorias/${event.id}/alineacion`}>
@@ -306,6 +312,14 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                             #{p.dorsal}
                           </span>
                         )}
+                        {p.is_promoted && (
+                          <Badge variant="outline" className="gap-1 text-[10px]">
+                            <ArrowUpCircle className="size-3" aria-hidden />
+                            {p.from_team_name
+                              ? tPromo('badge_from', { team: p.from_team_name })
+                              : tPromo('badge')}
+                          </Badge>
+                        )}
                       </div>
                       {ownedPlayerIds.includes(p.id) ? (
                         <ResponseButtons
@@ -356,8 +370,18 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                         {initials(p.first_name, p.last_name)}
                       </span>
                       <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-sm font-medium">
-                          {formatPlayerName(p.first_name, p.last_name)}
+                        <span className="flex items-center gap-2">
+                          <span className="truncate text-sm font-medium">
+                            {formatPlayerName(p.first_name, p.last_name)}
+                          </span>
+                          {p.is_promoted && (
+                            <Badge variant="outline" className="gap-1 text-[10px]">
+                              <ArrowUpCircle className="size-3" aria-hidden />
+                              {p.from_team_name
+                                ? tPromo('badge_from', { team: p.from_team_name })
+                                : tPromo('badge')}
+                            </Badge>
+                          )}
                         </span>
                         <span className="flex items-center gap-2 text-xs text-muted-foreground">
                           {p.dorsal != null && <span>#{p.dorsal}</span>}

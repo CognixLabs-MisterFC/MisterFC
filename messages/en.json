@@ -5,13 +5,18 @@
     "description": "Call up a player from a lower team to {kind} with {team}.",
     "description_generic": "Call up a player from a lower team to this event.",
     "no_candidates": "There are no players from lower teams eligible for this event.",
+    "no_matches": "No player matches the filter.",
+    "badge": "Called up",
+    "badge_from": "Called up · {team}",
     "kind": {
       "train": "train",
       "match": "play"
     },
     "field": {
       "player": "Player",
-      "player_placeholder": "Choose a player…"
+      "player_placeholder": "Choose a player…",
+      "search_placeholder": "Search by name…",
+      "team_filter_all": "All teams"
     },
     "conflict": {
       "title": "This player already has an event at that time",

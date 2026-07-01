@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -57,6 +58,8 @@ export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
   const [selectedId, setSelectedId] = useState<string>('');
   const [conflicts, setConflicts] = useState<PromotionConflict[]>([]);
   const [conflictsChecked, setConflictsChecked] = useState(false);
+  const [search, setSearch] = useState('');
+  const [teamFilter, setTeamFilter] = useState<string>('');
 
   function fmt(iso: string): string {
     return new Intl.DateTimeFormat(locale, {
@@ -77,6 +80,8 @@ export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
     setSelectedId('');
     setConflicts([]);
     setConflictsChecked(false);
+    setSearch('');
+    setTeamFilter('');
     setOpen(true);
     startTransition(async () => {
       const res = await loadPromotionCandidates(eventId);
@@ -128,6 +133,19 @@ export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
   const kindLabel = event?.kind ? t(`kind.${event.kind}`) : '';
   const loading = pending && !loaded && !error;
 
+  // PASO 2 — filtro del picker: equipos base distintos + búsqueda por nombre.
+  const teams = Array.from(
+    new Set(candidates.map((c) => c.base_team_name).filter((n): n is string => !!n)),
+  ).sort((a, b) => a.localeCompare(b, locale, { sensitivity: 'base' }));
+  const q = search.trim().toLowerCase();
+  const filtered = candidates.filter((c) => {
+    const name = `${c.first_name} ${c.last_name}`.toLowerCase();
+    return (
+      (q === '' || name.includes(q)) &&
+      (teamFilter === '' || c.base_team_name === teamFilter)
+    );
+  });
+
   return (
     <>
       <Button type="button" variant="outline" size="sm" onClick={openAndLoad}>
@@ -157,20 +175,52 @@ export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
             <p className="py-4 text-sm text-muted-foreground">{t('no_candidates')}</p>
           ) : (
             <div className="grid gap-4 py-2">
+              {/* PASO 2 — búsqueda por nombre + filtro por equipo base. */}
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t('field.search_placeholder')}
+                  aria-label={t('field.search_placeholder')}
+                />
+                {teams.length > 1 && (
+                  <Select
+                    value={teamFilter || '__all__'}
+                    onValueChange={(v) => setTeamFilter(v === '__all__' ? '' : v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">{t('field.team_filter_all')}</SelectItem>
+                      {teams.map((tm) => (
+                        <SelectItem key={tm} value={tm}>
+                          {tm}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
               <div className="grid gap-2">
                 <p className="text-sm font-medium">{t('field.player')}</p>
-                <Select value={selectedId} onValueChange={onSelect}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('field.player_placeholder')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {candidates.map((c) => (
-                      <SelectItem key={c.player_id} value={c.player_id}>
-                        {candidateLabel(c)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {filtered.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t('no_matches')}</p>
+                ) : (
+                  <Select value={selectedId} onValueChange={onSelect}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t('field.player_placeholder')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filtered.map((c) => (
+                        <SelectItem key={c.player_id} value={c.player_id}>
+                          {candidateLabel(c)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               {/* Aviso de conflicto de fecha (NO bloquea). */}

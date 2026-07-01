@@ -100,6 +100,10 @@ export type CallupPlayerRow = {
   first_name: string;
   last_name: string;
   dorsal: number | null;
+  /** D2.1 — true si el jugador está SUBIDO a este evento (no es del roster). */
+  is_promoted?: boolean;
+  /** D2.1 — nombre del equipo base del jugador subido (para el badge). */
+  from_team_name?: string | null;
 };
 
 export type CallupDetail = {
@@ -522,16 +526,56 @@ export async function loadCallupDetail(
     (r) => r.left_at == null || r.left_at >= eventDate
   );
 
+  // D2.1 — jugadores SUBIDOS a este evento (player_promotions): cuentan como
+  // miembros de la convocatoria sin estar en team_members. Se traen aparte y se
+  // unen al roster, marcados con su equipo base de origen.
+  const { data: promoRows } = await supabase
+    .from('player_promotions')
+    .select(
+      'player_id, players!inner(id, first_name, last_name, dorsal, team_members(left_at, teams(name)))'
+    )
+    .eq('event_id', event.id);
+  type PromoShape = {
+    player_id: string;
+    players: {
+      id: string;
+      first_name: string;
+      last_name: string;
+      dorsal: number | null;
+      team_members: { left_at: string | null; teams: { name: string } | null }[];
+    };
+  };
+  const promotedInfo = new Map<string, string | null>();
+  const promotedRoster: RosterShape[] = (promoRows ?? [])
+    .map((r) => r as unknown as PromoShape)
+    .filter((r) => !activeRoster.some((ar) => ar.player_id === r.player_id))
+    .map((r) => {
+      const base = (r.players.team_members ?? []).find((tm) => tm.left_at == null);
+      promotedInfo.set(r.player_id, base?.teams?.name ?? null);
+      return {
+        player_id: r.player_id,
+        joined_at: eventDate,
+        left_at: null,
+        players: {
+          id: r.players.id,
+          first_name: r.players.first_name,
+          last_name: r.players.last_name,
+          dorsal: r.players.dorsal,
+        },
+      };
+    });
+  const fullRoster = [...activeRoster, ...promotedRoster];
+
   // Filtrar a propios si jugador.
   const visibleRoster =
     scope.kind === 'player'
-      ? activeRoster.filter((r) => scope.playerIds.includes(r.player_id))
-      : activeRoster;
+      ? fullRoster.filter((r) => scope.playerIds.includes(r.player_id))
+      : fullRoster;
 
   const ownedPlayerIds =
     scope.kind === 'player'
       ? scope.playerIds.filter((pid) =>
-          activeRoster.some((r) => r.player_id === pid)
+          fullRoster.some((r) => r.player_id === pid)
         )
       : [];
 
@@ -690,6 +734,8 @@ export async function loadCallupDetail(
         first_name: r.players.first_name,
         last_name: r.players.last_name,
         dorsal: r.players.dorsal,
+        is_promoted: promotedInfo.has(r.players.id),
+        from_team_name: promotedInfo.get(r.players.id) ?? null,
       }))
       .sort((a, b) =>
         (a.last_name ?? '').localeCompare(b.last_name ?? '', 'es', {
