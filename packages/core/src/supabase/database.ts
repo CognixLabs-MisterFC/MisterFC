@@ -2059,6 +2059,75 @@ export type Database = {
           },
         ]
       }
+      player_promotions: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_by: string | null
+          event_id: string
+          id: string
+          kind: string
+          player_id: string
+          team_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          created_by?: string | null
+          event_id: string
+          id?: string
+          kind: string
+          player_id: string
+          team_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_by?: string | null
+          event_id?: string
+          id?: string
+          kind?: string
+          player_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_promotions_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_promotions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_promotions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_promotions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_promotions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           club_id: string
@@ -3108,6 +3177,7 @@ export type Database = {
           sent_at: string
         }[]
       }
+      category_kind_ordinal: { Args: { p_kind: string }; Returns: number }
       clone_session: {
         Args: {
           p_is_template: boolean
@@ -3138,6 +3208,10 @@ export type Database = {
       finalize_active_season: {
         Args: { p_club_id: string; p_cutoff: string }
         Returns: string
+      }
+      is_promotion_target_superior: {
+        Args: { p_event_id: string; p_player_id: string }
+        Returns: boolean
       }
       match_assert_event: {
         Args: { p_event_id: string }
