@@ -451,6 +451,35 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Decisiones**: PDF con gráficos SVG nativos (revierte D10); ficha/PDF de 7 secciones; objetivos con estado derivado + 2 comentarios; stats como ratio; PDF Oficial/Amistoso; evolución de equipo para la familia por RLS. Ver [summary](fase-13.10-summary.md).
 - **Diferidos**: F13B (liga/copa + no-convocatorias H-5), reutilizar jugadores entre equipos, revalidar ratios de familia si F14.10 — en [plan-maestro.md](plan-maestro.md) §Fase 13.10 y [known-issues.md](known-issues.md).
 
+## Bloque D — Subir jugadores a equipos superiores ☑ (2026-07-01)
+
+> Feature transversal (extiende F3/F4/F6/F7/F13.10 + bus F5.7). Un jugador puede
+> ENTRENAR o JUGAR con un equipo SUPERIOR sin salir de su equipo base: la subida
+> se REGISTRA (tabla `player_promotions`), integra al jugador en el evento como
+> uno más y se muestra como seguimiento en ficha y PDF. Modelo dedicado (regla #1:
+> no se tocan `team_members`). Detalle: [bloque-D-summary.md](bloque-D-summary.md).
+
+| Subfase | Fecha | PR | Resumen |
+|---|---|---|---|
+| D1 | 2026-07-01 | #249 | Modelo `player_promotions` + jerarquía de superioridad en BD (`category_kind_ordinal` materializado desde TS + `is_promotion_target_superior`) + trigger "solo superior" + RLS + pgTAP |
+| D2 | 2026-07-01 | #250 | Alta desde UI (`PromotePlayerDialog` en evento de calendario) + notificación `player_promoted` a la familia + aviso de conflicto de fecha (RPC `promotion_conflicts`, avisar-no-bloquear) |
+| D2.1 | 2026-07-01 | #251 | Giro opción 3→1: el subido se integra en convocatoria/asistencia/alineación/captura como uno más (enfoque aditivo `player_promoted_to_event` en los 5 sitios con check de roster) + botón subir en convocatoria + filtro del picker (nombre/equipo). pgTAP 15 comprobaciones |
+| D3 | 2026-07-01 | #252 | Seguimiento en la ficha web (highlight "entrenó/jugó N veces con X" + lista), visible a staff y familia |
+| D4 | 2026-07-01 | #253 | Mismo seguimiento en el PDF del informe |
+
+## Bloque D — Cierre
+
+- **Inicio / Fin**: 2026-07-01 / 2026-07-01. PRs **#249–#253** (cada uno con typecheck · lint en verde; UI y PDF validados en preview de Vercel).
+- **Migraciones** (todas aplicadas al remoto vía `pnpm db:push`, append-only):
+  `20260817000000_player_promotions` (tabla + `category_kind_ordinal` + `is_promotion_target_superior` + trigger + RLS) ·
+  `20260818000000_notification_type_player_promoted` (enum) ·
+  `20260818000001_promotion_rpcs` (`promotion_candidates`, `promotion_conflicts`) ·
+  `20260819000000_promoted_player_eligibility` (helper `player_promoted_to_event` + `create-or-replace` aditivo de los 5 triggers de roster).
+  pgTAP escrito y verificado **contra el remoto** (`rls_player_promotions`, `rls_promoted_eligibility`).
+- **Decisiones**: superioridad = categoría manda O (misma categoría + división superior); modelo B (tabla dedicada, no se tocan `team_members`); entrenar/jugar derivado de `event.type`; invariante "1 equipo base" (0 dobles-roster verificado, sin constraint nueva); conflicto = avisar-no-bloquear; integración opción 1 vía **roster ∪ promociones** aditivo y scoped al `event_id`; `player_promoted` mantenida (aviso inmediato + único para entrenos); permisos = staff del equipo superior ∪ admin/coord (explícitos); orden de kind materializado en BD.
+- **Nota técnica**: los **5 triggers de roster** (`callup_responses_validate`, `callup_decisions_validate`, `training_attendance_validate_insert`, `lineup_positions_validate`, `match_assert_player_in_team`) se ampliaron de forma **ADITIVA** — su predicado de elegibilidad es ahora `roster ∪ player_promotions(event)`. **Quien toque estos triggers en el futuro debe preservar la rama de promociones** (`player_promoted_to_event`). Ver [rls-policies.md](../architecture/rls-policies.md).
+- **Diferidos / known-issues**: sin deuda nueva detectada.
+
 ## Fase 14 — Subfases pendientes
 
 > **+2 subfases 2026-05-30**: deuda diferida de RLS absorbida (F2.7 capabilities cross-team, F3 events visibilidad). Ver [plan-maestro.md](plan-maestro.md) §Fase 14.
