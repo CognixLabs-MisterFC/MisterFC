@@ -19,6 +19,7 @@
 
 import type { ComponentType } from 'react';
 import {
+  ArrowUpCircle,
   Bell,
   CalendarClock,
   CheckCircle2,
@@ -90,6 +91,8 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
     case 'training_reminder':
     case 'event_updated':
       return CalendarClock;
+    case 'player_promoted':
+      return ArrowUpCircle;
     case 'development_report_published':
       return FileText;
     case 'evaluation_campaign_launched':
@@ -143,6 +146,13 @@ function textFor(t: Translate, type: string, payload: Record<string, unknown> | 
     case 'event_updated': {
       const title = str(payload, 'title');
       return title ? t('event_updated_named', { title }) : t('event_updated');
+    }
+    case 'player_promoted': {
+      const team = str(payload, 'team_name');
+      const key = str(payload, 'kind') === 'train'
+        ? 'player_promoted_train'
+        : 'player_promoted_match';
+      return team ? t(`${key}_named`, { team }) : t(key);
     }
     case 'development_report_published':
       return t('development_report_published');
@@ -207,7 +217,8 @@ function hrefFor(type: string, payload: Record<string, unknown> | null): string 
       derived = id ? `/asistencia/${id}` : null;
       break;
     }
-    case 'event_updated': {
+    case 'event_updated':
+    case 'player_promoted': {
       // No hay vista de evento por jugador → al calendario (accesible a todos).
       derived = '/calendario';
       break;

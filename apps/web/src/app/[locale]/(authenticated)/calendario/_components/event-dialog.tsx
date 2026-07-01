@@ -13,6 +13,7 @@ import {
 import { Link } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
 import { PlanSessionDialog } from './plan-session-dialog';
+import { PromotePlayerDialog } from './promote-player-dialog';
 import {
   EVENT_TYPES,
   type EventInput,
@@ -777,6 +778,20 @@ export function EventDialog({
                 onNavigate={() => setOpen(false)}
               />
             )}
+          {/* D2 entry point: "Subir jugador" a este evento desde un equipo
+              inferior. Solo en eventos de EQUIPO promocionables (no 'other') y si
+              el user gestiona el evento. La RLS/RPC recorta candidatos y permiso. */}
+          {isEdit &&
+            event &&
+            event.team_id != null &&
+            event.type !== 'other' &&
+            canManage && (
+              <PromotePlayerDialog
+                eventId={event.id}
+                locale={locale}
+                onDone={() => setOpen(false)}
+              />
+            )}
           {/* F4.4 entry point: si es un partido gestionable (oficial, amistoso
               o torneo), link a la convocatoria. */}
           {isEdit && event && isManageableMatchType(event.type) && (
@@ -810,9 +825,6 @@ export function EventDialog({
       </DialogContent>
     </Dialog>
   );
-
-  // Locale is forwarded to subcomponents; unused suppressed via void.
-  void locale;
 }
 
 function TargetButton({

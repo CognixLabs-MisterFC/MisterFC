@@ -1,4 +1,36 @@
 {
+  "promotions": {
+    "trigger": "Pujar jugador",
+    "title": "Pujar a un equip superior",
+    "description": "Puja un jugador d'un equip inferior per a {kind} amb el {team}.",
+    "description_generic": "Puja un jugador d'un equip inferior a aquest esdeveniment.",
+    "no_candidates": "No hi ha jugadors d'equips inferiors que puguen pujar a aquest esdeveniment.",
+    "kind": {
+      "train": "entrenar",
+      "match": "jugar"
+    },
+    "field": {
+      "player": "Jugador",
+      "player_placeholder": "Tria un jugador…"
+    },
+    "conflict": {
+      "title": "Aquest jugador ja té un esdeveniment a eixa hora",
+      "confirm_hint": "Pots pujar-lo igualment."
+    },
+    "confirm": "Pujar jugador",
+    "confirm_anyway": "Pujar igualment",
+    "cancel": "Cancel·lar",
+    "errors": {
+      "load_failed": "No s'han pogut carregar els jugadors. Torna-ho a provar.",
+      "invalid_input": "Revisa les dades.",
+      "forbidden": "No tens permís per a pujar jugadors a aquest esdeveniment.",
+      "not_superior": "L'equip de l'esdeveniment no és superior al del jugador.",
+      "not_promotable": "Aquest tipus d'esdeveniment no admet pujades.",
+      "cross_club": "El jugador no pertany a aquest club.",
+      "already": "Aquest jugador ja està pujat a aquest esdeveniment.",
+      "db": "No s'ha pogut registrar la pujada. Torna-ho a provar."
+    }
+  },
   "common": {
     "app_name": "MisterFC",
     "welcome": "Benvingut a MisterFC",
@@ -143,7 +175,11 @@
       "play_rejected": "Jugada rebutjada",
       "play_rejected_named": "Jugada rebutjada: {name}",
       "play_updated": "Jugada actualitzada",
-      "play_updated_named": "S’ha actualitzat la jugada «{name}»"
+      "play_updated_named": "S’ha actualitzat la jugada «{name}»",
+      "player_promoted_train": "Convocat per a entrenar amb un equip superior",
+      "player_promoted_train_named": "Convocat per a entrenar amb el {team}",
+      "player_promoted_match": "Convocat per a jugar amb un equip superior",
+      "player_promoted_match_named": "Convocat per a jugar amb el {team}"
     },
     "dashboard_card": {
       "title": "Tauler executiu",
