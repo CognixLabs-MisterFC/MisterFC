@@ -1501,6 +1501,7 @@
       "edit_title": "Editar esdeveniment",
       "description": "Òmpli les dades. Els camps opcionals pots deixar-los en blanc.",
       "readonly_description": "No tens permís per editar este esdeveniment.",
+      "tournament_hint": "El torneig crea una convocatòria única i el seu 1r partit. Ací introduïxes el rival, la data i el lloc d'eixe primer creuament; els següents partits s'afigen després.",
       "field": {
         "type": "Tipus",
         "title": "Títol",

@@ -117,6 +117,7 @@ export {
 export {
   recurrenceRuleSchema,
   eventInputSchema,
+  tournamentInputSchema,
   updateEventModes,
   deleteEventModes,
   EVENT_TARGET_KINDS,
@@ -124,6 +125,7 @@ export {
 export type {
   RecurrenceRuleInput,
   EventInput,
+  TournamentInput,
   UpdateEventMode,
   DeleteEventMode,
 } from './event';

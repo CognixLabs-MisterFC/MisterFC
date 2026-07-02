@@ -10,7 +10,7 @@ import {
   Plus,
   Calendar as CalendarIcon,
 } from 'lucide-react';
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
 import { PlanSessionDialog } from './plan-session-dialog';
 import { PromotePlayerDialog } from './promote-player-dialog';
@@ -19,6 +19,7 @@ import {
   type EventInput,
   type EventType,
   type RecurrenceRuleInput,
+  type TournamentInput,
   countOccurrences,
   isManageableMatchType,
   TIMEZONE_OLA1,
@@ -50,7 +51,7 @@ import {
   localInputToIso,
   parseIsoDate,
 } from '@/lib/calendar-utils';
-import { createEvent, updateEvent } from '../actions';
+import { createEvent, createTournament, updateEvent } from '../actions';
 import type {
   CalendarEvent,
   CategoryOption,
@@ -103,6 +104,7 @@ export function EventDialog({
   const t = useTranslations('calendario');
   const tTypes = useTranslations('calendario.types');
   const tErrors = useTranslations('calendario.dialog.errors');
+  const router = useRouter();
 
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
@@ -247,6 +249,9 @@ export function EventDialog({
     startsAt,
   ]);
 
+  // F13B — alta de torneo: rama dedicada del form (createTournament).
+  const isTournamentNew = mode === 'new' && type === 'tournament';
+
   function buildInput(): EventInput | null {
     if (!title.trim()) return null;
     let target: EventInput['target'];
@@ -298,8 +303,59 @@ export function EventDialog({
     };
   }
 
+  // F13B (T-1) — Alta de torneo: construye el input de createTournament a partir
+  // de los mismos campos del form (título = nombre del torneo; fecha/rival/lugar =
+  // del 1er partido). Exige un EQUIPO (la convocatoria/partido necesitan team_id).
+  function buildTournamentInput(): TournamentInput | null {
+    if (!title.trim()) return null;
+    if (targetKind !== 'team' || !teamId) return null;
+    let startIso: string;
+    let endIso: string | null;
+    try {
+      startIso = localInputToIso(startsAt);
+      endIso = effectiveEndsAt ? localInputToIso(effectiveEndsAt) : null;
+    } catch {
+      return null;
+    }
+    return {
+      team_id: teamId,
+      title: title.trim(),
+      starts_at: startIso,
+      ends_at: endIso,
+      all_day: allDay,
+      location_name:
+        locationName.trim().length > 0 ? locationName.trim() : null,
+      location_address:
+        locationAddress.trim().length > 0 ? locationAddress.trim() : null,
+      opponent_name:
+        opponentName.trim().length > 0 ? opponentName.trim() : null,
+      notes: notes.trim().length > 0 ? notes.trim() : null,
+    };
+  }
+
   function submit() {
     setError(null);
+
+    // Rama torneo (solo alta): crea cabecera + 1er partido y navega a la
+    // convocatoria de la cabecera para preparar la plantilla.
+    if (isTournamentNew) {
+      const tInput = buildTournamentInput();
+      if (!tInput) {
+        setError(tErrors('invalid_input'));
+        return;
+      }
+      startTransition(async () => {
+        const result = await createTournament(tInput);
+        if (!result.success) {
+          setError(tErrors(result.error));
+          return;
+        }
+        setOpen(false);
+        router.push(`/convocatorias/${result.event_id}`);
+      });
+      return;
+    }
+
     const input = buildInput();
     if (!input) {
       setError(tErrors('invalid_input'));
@@ -549,7 +605,7 @@ export function EventDialog({
             </div>
           </div>
 
-          {(type === 'match' || type === 'friendly') && (
+          {(type === 'match' || type === 'friendly' || isTournamentNew) && (
             <div className="grid gap-2">
               <Label htmlFor="ev-opp">{t('dialog.field.opponent_name')}</Label>
               <Input
@@ -559,6 +615,11 @@ export function EventDialog({
                 maxLength={120}
                 disabled={readonly}
               />
+              {isTournamentNew && (
+                <p className="text-xs text-muted-foreground">
+                  {t('dialog.tournament_hint')}
+                </p>
+              )}
             </div>
           )}
 
@@ -574,8 +635,9 @@ export function EventDialog({
             />
           </div>
 
-          {/* Recurrencia: solo en modo new (no se permite cambiar la regla en edit en F3) */}
-          {mode === 'new' && !readonly && (
+          {/* Recurrencia: solo en modo new (no se permite cambiar la regla en edit en F3).
+              Un torneo no es una serie recurrente → oculta en alta de torneo. */}
+          {mode === 'new' && !readonly && !isTournamentNew && (
             <div className="rounded-md border border-border p-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

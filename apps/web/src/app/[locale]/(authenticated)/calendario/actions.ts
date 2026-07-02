@@ -10,6 +10,7 @@ import {
   getCurrentUser,
   getCurrentUserClubs,
   resolveActiveClub,
+  tournamentInputSchema,
   TIMEZONE_OLA1,
   type EventInput,
 } from '@misterfc/core';
@@ -160,6 +161,98 @@ export async function createEvent(
 
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');
   return { success: true, event_id: parent.id as string };
+}
+
+/**
+ * F13B (T-1) — Alta de un TORNEO. Crea ATÓMICAMENTE (secuencia con rollback
+ * manual, como createEvent con la serie) dos eventos del mismo equipo:
+ *   a) la CABECERA: type='tournament', tournament_id=NULL, round=NULL. Aloja la
+ *      convocatoria única del torneo (los triggers de convocatoria ya aceptan
+ *      tournament). Sin opponent_name (no es un cruce).
+ *   b) el 1er PARTIDO: type='match', tournament_id=cabecera.id, round=1, con el
+ *      rival/lugar/fecha del 1er cruce. Su stack (alineación/directo/valoraciones)
+ *      cuelga de su propio event_id sin relajar triggers (es 'match').
+ * Respeta los CHECK de T-0 (round y tournament_id van juntos; el hijo es 'match').
+ * NO gestiona la convocatoria aquí (eso se hace en la cabecera con el flujo
+ * existente). Devuelve el id de la CABECERA.
+ */
+export async function createTournament(
+  input: unknown
+): Promise<EventActionResult> {
+  const parsed = tournamentInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: 'invalid_input',
+      detail: parsed.error.issues[0]?.message,
+    };
+  }
+  const data = parsed.data;
+
+  const clubId = await getActiveClubId();
+  if (!clubId) return { success: false, error: 'no_active_club' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const user = await getCurrentUser(adapter);
+  if (!user) return { success: false, error: 'forbidden' };
+
+  // a) Cabecera del torneo (sin tournament_id/round → evento normal type=tournament).
+  const { data: header, error: headerErr } = await supabase
+    .from('events')
+    .insert({
+      club_id: clubId,
+      team_id: data.team_id,
+      category_id: null,
+      type: 'tournament',
+      title: data.title,
+      notes: data.notes,
+      starts_at: data.starts_at,
+      ends_at: data.ends_at,
+      all_day: data.all_day,
+      location_name: data.location_name,
+      location_address: data.location_address,
+      created_by: user.id,
+    })
+    .select('id')
+    .single();
+
+  if (headerErr || !header) {
+    if (headerErr?.code === '42501') return { success: false, error: 'forbidden' };
+    if (headerErr?.code === '23514') {
+      return { success: false, error: 'cross_club', detail: headerErr.message };
+    }
+    return { success: false, error: 'db', detail: headerErr?.message };
+  }
+
+  // b) 1er partido del torneo (type=match, tournament_id + round=1 juntos).
+  const { error: matchErr } = await supabase.from('events').insert({
+    club_id: clubId,
+    team_id: data.team_id,
+    category_id: null,
+    type: 'match',
+    title: data.title,
+    notes: null,
+    starts_at: data.starts_at,
+    ends_at: data.ends_at,
+    all_day: data.all_day,
+    location_name: data.location_name,
+    location_address: data.location_address,
+    opponent_name: data.opponent_name,
+    tournament_id: header.id as string,
+    round: 1,
+    created_by: user.id,
+  });
+
+  if (matchErr) {
+    // Rollback manual de la cabecera (no dejar un torneo sin partidos).
+    await supabase.from('events').delete().eq('id', header.id as string);
+    if (matchErr.code === '42501') return { success: false, error: 'forbidden' };
+    return { success: false, error: 'db', detail: matchErr.message };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/calendario', 'page');
+  return { success: true, event_id: header.id as string };
 }
 
 /**
