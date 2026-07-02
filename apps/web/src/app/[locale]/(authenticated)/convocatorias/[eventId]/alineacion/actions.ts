@@ -4,10 +4,12 @@ import { revalidatePath } from 'next/cache';
 import {
   calledUpOnPlace,
   calledUpOnRemove,
+  callupEventIdFor,
   createLineupSchema,
   createPlannedSubSchema,
   createSupabaseServerClient,
   defaultFormation,
+  lineupWritesCallup,
   deleteLineupPositionSchema,
   deletePlannedSubSchema,
   exceedsStarters,
@@ -111,6 +113,23 @@ async function isCallupPublished(supabase: Supa, eventId: string): Promise<boole
   return (data?.published_at as string | null | undefined) != null;
 }
 
+/**
+ * F13B (T-2) — tournament_id del evento (null si no es un partido de torneo).
+ * Se usa para resolver la convocatoria FUENTE (cabecera) y para no escribir la
+ * convocatoria desde la alineación de un partido de torneo.
+ */
+async function eventTournamentId(
+  supabase: Supa,
+  eventId: string,
+): Promise<string | null> {
+  const { data } = await supabase
+    .from('events')
+    .select('tournament_id')
+    .eq('id', eventId)
+    .maybeSingle();
+  return (data?.tournament_id as string | null | undefined) ?? null;
+}
+
 /** Marca called_up al colocar en campo/banquillo (solo en borrador). No pisa un
  * descarte existente (el descarte manda hasta reincluir). */
 async function propagateCalledUp(
@@ -118,6 +137,11 @@ async function propagateCalledUp(
   eventId: string,
   playerId: string,
 ): Promise<void> {
+  // F13B (T-2) — la alineación de un partido de torneo NO escribe convocatoria:
+  // la plantilla se gestiona solo en la cabecera. Solo distribuye.
+  if (!lineupWritesCallup({ tournament_id: await eventTournamentId(supabase, eventId) })) {
+    return;
+  }
   const published = await isCallupPublished(supabase, eventId);
   const {
     data: { user },
@@ -149,6 +173,10 @@ async function clearCalledUpOnRemoval(
   eventId: string,
   playerId: string,
 ): Promise<void> {
+  // F13B (T-2) — idem: un partido de torneo no toca la convocatoria compartida.
+  if (!lineupWritesCallup({ tournament_id: await eventTournamentId(supabase, eventId) })) {
+    return;
+  }
   const published = await isCallupPublished(supabase, eventId);
   if (calledUpOnRemove(published) !== 'delete_called_up') return;
   await supabase
@@ -193,11 +221,17 @@ export async function createLineup(input: unknown): Promise<LineupActionState> {
   // Siembra el banquillo con los convocados (roster a fecha − descartados).
   const { data: ev } = await supabase
     .from('events')
-    .select('team_id, starts_at')
+    .select('team_id, starts_at, tournament_id')
     .eq('id', event_id)
     .maybeSingle();
   if (ev?.team_id) {
     const eventDate = (ev.starts_at as string).slice(0, 10);
+    // F13B (T-2) — la convocatoria se lee de la cabecera si es partido de torneo;
+    // y en ese caso la alineación NO escribe called_up (solo distribuye).
+    const tournamentId = (ev.tournament_id as string | null) ?? null;
+    const callupEventId = callupEventIdFor({ id: event_id, tournament_id: tournamentId });
+    const writesCallup = lineupWritesCallup({ tournament_id: tournamentId });
+
     const { data: tms } = await supabase
       .from('team_members')
       .select('player_id, joined_at, left_at')
@@ -212,7 +246,7 @@ export async function createLineup(input: unknown): Promise<LineupActionState> {
     const { data: decisions } = await supabase
       .from('callup_decisions')
       .select('player_id, decision')
-      .eq('event_id', event_id);
+      .eq('event_id', callupEventId);
     const discarded = new Set(
       (decisions ?? [])
         .filter((d) => (d.decision as string) === 'discarded')
@@ -231,8 +265,9 @@ export async function createLineup(input: unknown): Promise<LineupActionState> {
 
       // BUG 2 — los sembrados al banquillo quedan CONVOCADOS en la convocatoria
       // (solo en borrador; regla 6.6). Marca called_up a los que aún no tienen
-      // ninguna decisión; no pisa descartes.
-      if (!(await isCallupPublished(supabase, event_id))) {
+      // ninguna decisión; no pisa descartes. F13B: NO para partidos de torneo
+      // (su plantilla se maneja solo en la cabecera).
+      if (writesCallup && !(await isCallupPublished(supabase, event_id))) {
         const decided = new Set(
           (decisions ?? []).map((d) => d.player_id as string),
         );

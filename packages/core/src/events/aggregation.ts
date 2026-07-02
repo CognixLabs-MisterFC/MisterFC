@@ -11,6 +11,32 @@
 
 import { isMatchSurfaceType } from './types';
 
+/**
+ * F13B (T-2) — Evento FUENTE de la convocatoria de un evento. Para un partido de
+ * torneo (`tournament_id` no nulo) → la CABECERA del torneo (donde vive la
+ * convocatoria única); para cualquier otro evento → él mismo. Los partidos de
+ * torneo no tienen convocatoria propia: la LEEN por referencia desde la cabecera.
+ */
+export function callupEventIdFor(event: {
+  id: string;
+  tournament_id: string | null;
+}): string {
+  return event.tournament_id ?? event.id;
+}
+
+/**
+ * F13B (T-2) — ¿La alineación de este evento puede ESCRIBIR su convocatoria
+ * (called_up) al colocar/quitar jugadores? Para un partido de torneo NO: su
+ * plantilla se gestiona SOLO en la cabecera, así que la alineación del partido
+ * solo distribuye (nunca escribe convocatoria) y no reintroduce doble verdad.
+ * Para cualquier otro evento, comportamiento clásico (sí escribe).
+ */
+export function lineupWritesCallup(event: {
+  tournament_id: string | null;
+}): boolean {
+  return event.tournament_id == null;
+}
+
 export type DatedEvent = {
   id: string;
   starts_at: string;

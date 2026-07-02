@@ -120,6 +120,9 @@ export type CallupDetail = {
     starts_at: string;
     location_name: string | null;
     location_address: string | null;
+    /** F13B — si NO es null, es un partido de torneo (su convocatoria vive en la
+     * cabecera con este id); la página redirige a la convocatoria de la cabecera. */
+    tournament_id: string | null;
   };
   roster: CallupPlayerRow[];
   meta: CallupMetaRow | null;
@@ -463,7 +466,7 @@ export async function loadCallupDetail(
   const { data: ev } = await supabase
     .from('events')
     .select(
-      `id, club_id, team_id, type, title, opponent_name, starts_at,
+      `id, club_id, team_id, type, tournament_id, title, opponent_name, starts_at,
        location_name, location_address,
        teams!inner(name, color, season, categories!inner(name))`
     )
@@ -479,6 +482,7 @@ export async function loadCallupDetail(
     id: string;
     club_id: string;
     team_id: string;
+    tournament_id: string | null;
     title: string;
     opponent_name: string | null;
     starts_at: string;
@@ -727,6 +731,7 @@ export async function loadCallupDetail(
       starts_at: event.starts_at,
       location_name: event.location_name,
       location_address: event.location_address,
+      tournament_id: event.tournament_id,
     },
     roster: visibleRoster
       .map((r) => ({
