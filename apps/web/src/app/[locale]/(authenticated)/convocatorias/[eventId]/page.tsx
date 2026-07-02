@@ -16,7 +16,11 @@ import {
   Truck,
   XCircle,
 } from 'lucide-react';
-import { formatPlayerName, groupRosterByCallup } from '@misterfc/core';
+import {
+  effectiveCallupDecision,
+  formatPlayerName,
+  groupRosterByCallup,
+} from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -112,6 +116,17 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
 
   const isPlayer = role === 'jugador';
   const isPublished = meta?.published_at != null;
+
+  // Definición CANÓNICA de la app (callup-sync.ts): convocado = roster −
+  // descartados. Un jugador SIN fila `called_up` (p.ej. un suplente sembrado al
+  // banquillo) sigue estando CONVOCADO; solo los `discarded` explícitos restan.
+  // Se agrupa una vez para el resumen; el marcador por jugador usa la misma regla
+  // vía `effectiveCallupDecision`, para que "Convocado" no dependa de una fila
+  // cruda.
+  const callupGroups = groupRosterByCallup(
+    roster,
+    (p) => decisions.get(p.id)?.decision ?? null,
+  );
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-4">
@@ -415,7 +430,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                     <DecisionButtons
                       eventId={event.id}
                       playerId={p.id}
-                      initial={dec?.decision ?? null}
+                      initial={effectiveCallupDecision(dec?.decision ?? null)}
                       initialReason={dec?.reason ?? null}
                       disabled={!canManage}
                     />
@@ -462,10 +477,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
           </CardHeader>
           <CardContent>
             {(() => {
-              const groups = groupRosterByCallup(
-                roster,
-                (p) => decisions.get(p.id)?.decision ?? null,
-              );
+              const groups = callupGroups;
               return (
                 <div className="grid gap-2 text-sm sm:grid-cols-2">
                   <div>

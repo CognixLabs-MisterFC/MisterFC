@@ -36,6 +36,21 @@ export function calledUpOnRemove(published: boolean): CalledUpOp {
   return published ? 'noop' : 'delete_called_up';
 }
 
+/**
+ * Regla canónica ESCALAR: estado efectivo de convocatoria de un jugador a partir
+ * de su fila (o AUSENCIA de fila) en `callup_decisions`. Sin fila → CONVOCADO
+ * (`called_up`); solo `discarded` resta. Es la misma regla que
+ * `groupRosterByCallup` aplica por lista (de hecho, esa la reutiliza). Pensada
+ * para el MARCADOR por jugador (el botón "Convocado" del detalle), que no debe
+ * depender de la presencia de una fila `called_up` explícita: un suplente
+ * sembrado al banquillo sin fila sigue estando convocado.
+ */
+export function effectiveCallupDecision(
+  decision: CallupDecision | null,
+): CallupDecision {
+  return decision === 'discarded' ? 'discarded' : 'called_up';
+}
+
 /** Roster agrupado en CONVOCADOS vs NO CONVOCADOS (descartados). */
 export interface CallupGroups<T> {
   /** Convocados = todo el roster MENOS los descartados (titulares + suplentes). */
@@ -60,8 +75,11 @@ export function groupRosterByCallup<T>(
   const calledUp: T[] = [];
   const discarded: T[] = [];
   for (const item of roster) {
-    if (decisionOf(item) === 'discarded') discarded.push(item);
-    else calledUp.push(item);
+    if (effectiveCallupDecision(decisionOf(item)) === 'discarded') {
+      discarded.push(item);
+    } else {
+      calledUp.push(item);
+    }
   }
   return { calledUp, discarded };
 }

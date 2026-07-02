@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   calledUpOnPlace,
   calledUpOnRemove,
+  effectiveCallupDecision,
   groupRosterByCallup,
   type CallupDecision,
 } from '../callup-sync';
@@ -32,6 +33,44 @@ describe('calledUpOnRemove (BUG 2 — sacar de la alineación → limpiar)', () 
 
   it('publicada → noop (regla 6.6)', () => {
     expect(calledUpOnRemove(true)).toBe('noop');
+  });
+});
+
+// Marcador por jugador del detalle de convocatoria (DecisionButtons.initial):
+// el botón "Convocado" debe resaltarse aunque el jugador NO tenga fila
+// called_up. Regla canónica escalar: sin fila / called_up → convocado; solo
+// discarded → descartado. Regresión del bug "el banquillo no queda convocado".
+describe('effectiveCallupDecision (marcador por jugador = regla canónica)', () => {
+  it('sin fila (banquillo sembrado) → CONVOCADO (called_up)', () => {
+    expect(effectiveCallupDecision(null)).toBe('called_up');
+  });
+
+  it('fila called_up explícita (titular) → CONVOCADO', () => {
+    expect(effectiveCallupDecision('called_up')).toBe('called_up');
+  });
+
+  it('fila discarded → DESCARTADO', () => {
+    expect(effectiveCallupDecision('discarded')).toBe('discarded');
+  });
+
+  it('coincide con groupRosterByCallup (misma regla, un solo origen)', () => {
+    type P = { id: string; decision: CallupDecision | null };
+    const roster: P[] = [
+      { id: 'titular', decision: 'called_up' },
+      { id: 'banquillo', decision: null },
+      { id: 'descartado', decision: 'discarded' },
+    ];
+    const { calledUp, discarded } = groupRosterByCallup(
+      roster,
+      (p) => p.decision,
+    );
+    const calledUpIds = calledUp.map((p) => p.id);
+    const discardedIds = discarded.map((p) => p.id);
+    for (const p of roster) {
+      const eff = effectiveCallupDecision(p.decision);
+      if (eff === 'discarded') expect(discardedIds).toContain(p.id);
+      else expect(calledUpIds).toContain(p.id);
+    }
   });
 });
 
