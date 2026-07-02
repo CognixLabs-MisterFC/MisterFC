@@ -52,6 +52,7 @@ export {
   startersFor,
   maxCalledUpFor,
   calledUpOverflow,
+  calledUpLimitApplies,
   exceedsStarters,
 } from './rules';
 export type { ModalityRules } from './rules';

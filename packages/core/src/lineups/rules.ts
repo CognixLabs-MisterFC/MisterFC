@@ -45,6 +45,16 @@ export function calledUpOverflow(count: number, format: TeamFormat): number {
 }
 
 /**
+ * F13B — ¿aplica el tope de convocados a este tipo de evento? Solo el partido
+ * OFICIAL (`match`) topa por modalidad; un amistoso o un torneo se convocan SIN
+ * límite (número de convocados abierto). Punto único que consumen publishCallup
+ * y republishCallup (vía checkCalledUpLimit).
+ */
+export function calledUpLimitApplies(eventType: string): boolean {
+  return eventType === 'match';
+}
+
+/**
  * Bug F — ¿`fieldCount` titulares en el campo supera el máximo de la modalidad?
  * Usado por el editor (cliente, bloqueo + toast) y el server action.
  */
