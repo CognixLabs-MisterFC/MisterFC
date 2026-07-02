@@ -2,11 +2,14 @@ export {
   EVENT_TYPES,
   MANAGEABLE_MATCH_TYPES,
   isManageableMatchType,
+  MATCH_SURFACE_TYPES,
+  isMatchSurfaceType,
   TIMEZONE_OLA1,
 } from './types';
 export type {
   EventType,
   ManageableMatchType,
+  MatchSurfaceType,
   IsoWeekday,
   WeeklyRecurrenceRule,
   RecurrenceRule,

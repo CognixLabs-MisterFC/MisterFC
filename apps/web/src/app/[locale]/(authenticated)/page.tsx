@@ -6,7 +6,7 @@ import {
   MessageSquare,
   LayoutDashboard,
 } from 'lucide-react';
-import { createSupabaseServerClient } from '@misterfc/core';
+import { MATCH_SURFACE_TYPES, createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -143,7 +143,8 @@ export default async function Home({ params }: Props) {
       const { data: matchRows } = await supabase
         .from('events')
         .select('id, match_callup_meta(published_at)')
-        .eq('type', 'match')
+        // F13B — amistoso también necesita convocatoria: cuenta como pendiente.
+        .in('type', MATCH_SURFACE_TYPES)
         .gte('starts_at', nowIso)
         .lte('starts_at', callupHorizonIso)
         .in('team_id', coachTeamIds);

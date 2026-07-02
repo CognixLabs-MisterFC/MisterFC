@@ -12,7 +12,7 @@
  * avance de estado: el coach pasa a la alineación cuando ya no faltan respuestas.
  */
 
-import { createSupabaseServerClient } from '@misterfc/core';
+import { MATCH_SURFACE_TYPES, createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 export type CoachMatchState =
@@ -82,7 +82,7 @@ export async function loadCoachNextMatch(
     .from('events')
     .select('id, title, opponent_name, starts_at, team_id, type, teams!inner(name)')
     .in('team_id', teamIds)
-    .in('type', ['match', 'friendly'])
+    .in('type', MATCH_SURFACE_TYPES)
     .gte('starts_at', nowIso)
     .order('starts_at', { ascending: true })
     .limit(1);
@@ -229,7 +229,7 @@ export async function loadPlayerPendingCallup(
       'id, title, opponent_name, starts_at, team_id, match_callup_meta(published_at)',
     )
     .in('team_id', teamIds)
-    .in('type', ['match', 'friendly'])
+    .in('type', MATCH_SURFACE_TYPES)
     .gte('starts_at', nowIso)
     .lte('starts_at', horizonIso)
     .order('starts_at', { ascending: true });

@@ -22,7 +22,11 @@ import {
   Swords,
   UserRound,
 } from 'lucide-react';
-import { PLAYER_POSITIONS, formatPlayerName } from '@misterfc/core';
+import {
+  PLAYER_POSITIONS,
+  formatPlayerName,
+  isMatchSurfaceType,
+} from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -197,7 +201,7 @@ export default async function TeamDetailPage({ params, searchParams }: Props) {
           <CardContent className="flex flex-col gap-2 p-0">
             <ul className="flex flex-col divide-y divide-border">
               {detail.upcoming_events.slice(0, 5).map((ev) => {
-                const isMatch = ev.type === 'match';
+                const isMatch = isMatchSurfaceType(ev.type);
                 const href = isMatch
                   ? `/convocatorias/${ev.id}`
                   : `/asistencia/${ev.id}`;

@@ -30,6 +30,7 @@
 
 import { NextResponse } from 'next/server';
 import {
+  MATCH_SURFACE_TYPES,
   buildDedupeKey,
   createSupabaseAdminClient,
   dayBucketMadrid,
@@ -87,14 +88,15 @@ async function handle(req: Request): Promise<NextResponse> {
 
   const inserts: NotificationRow[] = [];
 
-  // 1) Match callup reminders.
+  // 1) Match callup reminders. F13B — amistoso también manda recordatorio de
+  // convocatoria (misma superficie que el oficial).
   const { data: matchRows, error: matchErr } = await supabase
     .from('events')
     .select(
       `id, team_id, title, opponent_name, starts_at,
        match_callup_meta!inner(published_at)`
     )
-    .eq('type', 'match')
+    .in('type', MATCH_SURFACE_TYPES)
     .gte('starts_at', upcomingFromIso)
     .lte('starts_at', upcomingToIso)
     .not('match_callup_meta.published_at', 'is', null);

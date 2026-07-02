@@ -12,6 +12,7 @@
 
 import {
   createSupabaseServerClient,
+  isMatchSurfaceType,
   pickNextEvent,
   pickNextMatchWithoutCallup,
   pickLastTrainingWithoutAttendance,
@@ -47,7 +48,7 @@ export type TeamRosterRow = {
 
 export type TeamUpcomingEvent = {
   id: string;
-  type: 'training' | 'match';
+  type: 'training' | 'match' | 'friendly';
   title: string;
   starts_at: string;
   opponent_name: string | null;
@@ -142,7 +143,7 @@ export async function loadCoachTeams(
   type EventShape = {
     id: string;
     team_id: string;
-    type: 'training' | 'match';
+    type: 'training' | 'match' | 'friendly';
     title: string;
     opponent_name: string | null;
     starts_at: string;
@@ -185,7 +186,8 @@ export async function loadCoachTeams(
     const nextMatch = pickNextEvent(
       teamEvents,
       nowIso,
-      (e) => e.type === 'match'
+      // F13B — el amistoso también es "próximo partido".
+      (e) => isMatchSurfaceType(e.type)
     );
     return {
       team_id: s.team_id,
@@ -242,7 +244,7 @@ export async function loadTeamDetail(
 
   type EventShape = {
     id: string;
-    type: 'training' | 'match';
+    type: 'training' | 'match' | 'friendly';
     title: string;
     opponent_name: string | null;
     starts_at: string;
@@ -284,7 +286,8 @@ export async function loadTeamDetail(
   const past = ((pastTrainings ?? []) as unknown[]) as EventShape[];
 
   const futureMatchIds = future
-    .filter((e) => e.type === 'match')
+    // F13B — amistoso también tiene convocatoria (match_callup_meta).
+    .filter((e) => isMatchSurfaceType(e.type))
     .map((e) => e.id);
   const pastTrainingIds = past.map((e) => e.id);
 
@@ -319,7 +322,7 @@ export async function loadTeamDetail(
     starts_at: e.starts_at,
     opponent_name: e.opponent_name,
     has_callup_published:
-      e.type === 'match' ? publishedSet.has(e.id) : false,
+      isMatchSurfaceType(e.type) ? publishedSet.has(e.id) : false,
   }));
 
   const nextMatchPick = pickNextMatchWithoutCallup(

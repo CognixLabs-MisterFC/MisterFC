@@ -104,6 +104,23 @@ describe('pickNextMatchWithoutCallup', () => {
       pickNextMatchWithoutCallup(events, NOW, new Set(['m1']))
     ).toBeNull();
   });
+
+  // F13B — un amistoso es superficie de partido: cuenta como "próximo partido".
+  test('includes friendly matches (F13B)', () => {
+    const events = [
+      { id: 't1', starts_at: '2026-06-16', type: 'training' },
+      { id: 'f1', starts_at: '2026-06-17', type: 'friendly' },
+      { id: 'm1', starts_at: '2026-06-18', type: 'match' },
+    ];
+    // El amistoso f1 es el más próximo → se elige antes que el oficial m1.
+    expect(pickNextMatchWithoutCallup(events, NOW, new Set())?.id).toBe('f1');
+  });
+
+  // El torneo NO es superficie de partido todavía (fase aparte).
+  test('excludes tournament (own phase)', () => {
+    const events = [{ id: 'to1', starts_at: '2026-06-16', type: 'tournament' }];
+    expect(pickNextMatchWithoutCallup(events, NOW, new Set())).toBeNull();
+  });
 });
 
 describe('pickLastTrainingWithoutAttendance', () => {
