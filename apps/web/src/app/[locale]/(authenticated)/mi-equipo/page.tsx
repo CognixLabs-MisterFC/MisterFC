@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import {
   createSupabaseServerClient,
+  isMatchSurfaceType,
   listTeammates,
   listUpcomingTeamEvents,
   listVisibleAnnouncements,
@@ -237,7 +238,8 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
 
   // F6 Lote B — alineación oficial compartida del próximo partido (si la hay
   // y es visibility=team; la sección se auto-oculta vía RLS si no).
-  const nextMatchId = upcoming.find((e) => e.type === 'match')?.id ?? null;
+  const nextMatchId =
+    upcoming.find((e) => isMatchSurfaceType(e.type))?.id ?? null;
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">

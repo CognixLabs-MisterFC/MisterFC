@@ -38,6 +38,29 @@ export function isManageableMatchType(
 }
 
 /**
+ * Tipos con "superficie de partido" ya soportada de punta a punta: panel/tarjeta
+ * PRÓXIMO PARTIDO, recordatorios de convocatoria, listados de mis-equipos y el
+ * contador del home. Subconjunto de `MANAGEABLE_MATCH_TYPES` que **excluye
+ * `tournament`** a propósito, hasta que el torneo tenga su propio modelo (una
+ * convocatoria para N partidos). NO usar para gatear convocatoria/alineación/
+ * directo (esos aceptan los tres vía `isManageableMatchType`); solo para las
+ * superficies secundarias que hoy asumen un evento = un partido.
+ */
+export const MATCH_SURFACE_TYPES = [
+  'match',
+  'friendly',
+] as const satisfies readonly EventType[];
+
+export type MatchSurfaceType = (typeof MATCH_SURFACE_TYPES)[number];
+
+/** ¿Este tipo de evento tiene superficie de partido (match o amistoso)? */
+export function isMatchSurfaceType(
+  type: string | null | undefined
+): type is MatchSurfaceType {
+  return (MATCH_SURFACE_TYPES as readonly string[]).includes(type ?? '');
+}
+
+/**
  * ISO 0=Monday … 6=Sunday. Mapeable a JS Date.getDay() via `(jsDay+6)%7`.
  */
 export type IsoWeekday = 0 | 1 | 2 | 3 | 4 | 5 | 6;

@@ -9,6 +9,8 @@
  *  - Devuelven `null` cuando no hay candidato (nunca `undefined`).
  */
 
+import { isMatchSurfaceType } from './types';
+
 export type DatedEvent = {
   id: string;
   starts_at: string;
@@ -53,8 +55,10 @@ export function pickLastEventWithin<T extends DatedEvent>(
 }
 
 /**
- * Primer match futuro del team que NO tiene fila en
- * `publishedCallupEventIds`. Devuelve null si no hay match candidato.
+ * Primer partido futuro del team (oficial o amistoso) que NO tiene fila en
+ * `publishedCallupEventIds`. Devuelve null si no hay candidato. Incluye
+ * amistosos (F13B): tienen convocatoria como un oficial. `tournament` queda
+ * fuera hasta su fase (ver `MATCH_SURFACE_TYPES`).
  */
 export function pickNextMatchWithoutCallup<T extends DatedEvent>(
   events: ReadonlyArray<T>,
@@ -64,7 +68,7 @@ export function pickNextMatchWithoutCallup<T extends DatedEvent>(
   return pickNextEvent(
     events,
     nowIso,
-    (e) => e.type === 'match' && !publishedCallupEventIds.has(e.id)
+    (e) => isMatchSurfaceType(e.type) && !publishedCallupEventIds.has(e.id)
   );
 }
 
