@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import {
+  calledUpLimitApplies,
   calledUpOverflow,
   createSupabaseAdminClient,
   createSupabaseServerClient,
@@ -27,11 +28,17 @@ async function checkCalledUpLimit(
 ): Promise<PublishCallupState | null> {
   const { data: ev } = await supabase
     .from('events')
-    .select('team_id, starts_at, teams!inner(format)')
+    .select('type, team_id, starts_at, teams!inner(format)')
     .eq('id', eventId)
     .maybeSingle();
   const teamId = (ev?.team_id as string | null) ?? null;
   if (!ev || !teamId) return null;
+
+  // F13B — el tope de convocados (regla reglamentaria por modalidad) solo aplica
+  // al partido OFICIAL. Un amistoso/torneo se convoca sin límite: saltamos el
+  // chequeo, que cubre publishCallup y republishCallup de una sola vez.
+  if (!calledUpLimitApplies(ev.type as string)) return null;
+
   const format = (ev as unknown as { teams: { format: TeamFormat } }).teams
     .format;
   const eventDate = (ev.starts_at as string).slice(0, 10);
