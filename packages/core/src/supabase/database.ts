@@ -773,9 +773,11 @@ export type Database = {
           opponent_name: string | null
           parent_event_id: string | null
           recurrence_rule: Json | null
+          round: number | null
           starts_at: string
           team_id: string | null
           title: string
+          tournament_id: string | null
           type: string
           updated_at: string
         }
@@ -793,9 +795,11 @@ export type Database = {
           opponent_name?: string | null
           parent_event_id?: string | null
           recurrence_rule?: Json | null
+          round?: number | null
           starts_at: string
           team_id?: string | null
           title: string
+          tournament_id?: string | null
           type: string
           updated_at?: string
         }
@@ -813,9 +817,11 @@ export type Database = {
           opponent_name?: string | null
           parent_event_id?: string | null
           recurrence_rule?: Json | null
+          round?: number | null
           starts_at?: string
           team_id?: string | null
           title?: string
+          tournament_id?: string | null
           type?: string
           updated_at?: string
         }
@@ -853,6 +859,13 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
