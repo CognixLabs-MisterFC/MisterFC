@@ -1500,6 +1500,7 @@
       "edit_title": "Editar evento",
       "description": "Rellena los datos. Los campos opcionales puedes dejarlos en blanco.",
       "readonly_description": "No tienes permiso para editar este evento.",
+      "tournament_hint": "El torneo crea una convocatoria única y su 1er partido. Aquí introduces el rival, la fecha y el lugar de ese primer cruce; los siguientes partidos se añaden después.",
       "field": {
         "type": "Tipo",
         "title": "Título",

@@ -1501,6 +1501,7 @@
       "edit_title": "Edit event",
       "description": "Fill in the details. Optional fields can be left blank.",
       "readonly_description": "You do not have permission to edit this event.",
+      "tournament_hint": "A tournament creates a single call-up and its first match. Enter the opponent, date and venue of that first fixture here; further matches are added later.",
       "field": {
         "type": "Type",
         "title": "Title",
