@@ -82,6 +82,7 @@ export type { PositionKey } from './positions';
 export {
   calledUpOnPlace,
   calledUpOnRemove,
+  effectiveCallupDecision,
   groupRosterByCallup,
 } from './callup-sync';
 export type {
