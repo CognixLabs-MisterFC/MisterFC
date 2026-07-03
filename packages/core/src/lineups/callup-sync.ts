@@ -83,3 +83,47 @@ export function groupRosterByCallup<T>(
   }
   return { calledUp, discarded };
 }
+
+/** Pertenencia histórica del jugador a un equipo (una fila de `team_members`). */
+export interface RosterMembership {
+  /** Fecha civil de alta (YYYY-MM-DD). */
+  joined_at: string;
+  /** Fecha civil de baja (YYYY-MM-DD) o null si sigue activo. */
+  left_at: string | null;
+}
+
+/**
+ * F13.10 (fix ratio de convocatorias) — ratio REAL de convocatorias del jugador
+ * en un universo de partidos, con la definición CANÓNICA (convocado = estaba en
+ * el roster a la fecha del partido y NO fue descartado; sin fila = convocado).
+ *
+ * Numerador y denominador comparten universo y criterio de pertenencia, así que
+ * SIEMPRE `calledUp <= totalMatches` (nunca X>Y):
+ *  - `totalMatches` (Y) = partidos del universo en los que el jugador pertenecía
+ *    al equipo a la fecha (alguna membership cubre esa fecha civil).
+ *  - `calledUp` (X) = de esos, en cuántos NO estaba descartado
+ *    (`discardedEventIds` = eventos con `callup_decisions.decision='discarded'`
+ *    para el jugador). Reutiliza `groupRosterByCallup` (convocado = universo −
+ *    descartados). El caller define el universo (p.ej. oficiales ya jugados).
+ *  Fechas comparadas como strings ISO/`date` (YYYY-MM-DD), orden lexicográfico =
+ *  cronológico. `starts_at` puede ser timestamp: se recorta a los 10 primeros
+ *  chars para comparar contra `joined_at`/`left_at` (fechas civiles).
+ */
+export function callupRatioForPlayer(args: {
+  events: ReadonlyArray<{ id: string; starts_at: string }>;
+  memberships: ReadonlyArray<RosterMembership>;
+  discardedEventIds: ReadonlySet<string>;
+}): { calledUp: number; totalMatches: number } {
+  const { events, memberships, discardedEventIds } = args;
+  const inRosterAt = (dateCivil: string): boolean =>
+    memberships.some(
+      (m) =>
+        m.joined_at <= dateCivil &&
+        (m.left_at == null || m.left_at >= dateCivil),
+    );
+  const inUniverse = events.filter((e) => inRosterAt(e.starts_at.slice(0, 10)));
+  const groups = groupRosterByCallup(inUniverse, (e) =>
+    discardedEventIds.has(e.id) ? 'discarded' : null,
+  );
+  return { calledUp: groups.calledUp.length, totalMatches: inUniverse.length };
+}
