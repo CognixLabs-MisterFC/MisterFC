@@ -35,6 +35,7 @@ export {
   callupEventIdFor,
   lineupWritesCallup,
   nextTournamentRound,
+  consolidateReminderTargets,
   groupCallupsByTournament,
   pickNextEvent,
   pickLastEventWithin,

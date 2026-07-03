@@ -167,6 +167,7 @@
       "exercise_rejected_named": "Exercise rejected: {name}",
       "match_callup_reminder": "You have a call-up awaiting confirmation",
       "match_callup_reminder_named": "Call-up pending: {title}",
+      "match_callup_reminder_tournament": "Tournament {title}: confirm your availability",
       "attendance_pending_reminder": "Attendance pending",
       "attendance_pending_reminder_named": "Attendance pending: {title}",
       "training_reminder": "Training reminder",

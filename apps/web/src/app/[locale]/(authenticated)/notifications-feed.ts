@@ -133,6 +133,12 @@ function textFor(t: Translate, type: string, payload: Record<string, unknown> | 
     }
     case 'match_callup_reminder': {
       const title = str(payload, 'title');
+      // F13B — recordatorio consolidado de torneo: texto genérico (sin rival/hora).
+      if (payload?.is_tournament === true) {
+        return title
+          ? t('match_callup_reminder_tournament', { title })
+          : t('match_callup_reminder');
+      }
       return title ? t('match_callup_reminder_named', { title }) : t('match_callup_reminder');
     }
     case 'attendance_pending_reminder': {

@@ -167,6 +167,7 @@
       "exercise_rejected_named": "Exercici rebutjat: {name}",
       "match_callup_reminder": "Tens una convocatòria pendent de confirmar",
       "match_callup_reminder_named": "Convocatòria pendent: {title}",
+      "match_callup_reminder_tournament": "Torneig {title}: confirma la teua disponibilitat",
       "attendance_pending_reminder": "Assistència pendent de registrar",
       "attendance_pending_reminder_named": "Assistència pendent: {title}",
       "training_reminder": "Recordatori d'entrenament",

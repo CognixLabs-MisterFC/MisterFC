@@ -3,6 +3,7 @@ import {
   callupEventIdFor,
   lineupWritesCallup,
   nextTournamentRound,
+  consolidateReminderTargets,
   groupCallupsByTournament,
   pickNextEvent,
   pickLastEventWithin,
@@ -52,6 +53,61 @@ describe('nextTournamentRound', () => {
 
   test('sin rondas → arranca en 1', () => {
     expect(nextTournamentRound([])).toBe(1);
+  });
+});
+
+// F13B — consolidación de recordatorios (1 por torneo/día/usuario).
+describe('consolidateReminderTargets', () => {
+  const m = (id: string, tournament_id: string | null, starts_at: string) => ({
+    id,
+    tournament_id,
+    starts_at,
+  });
+
+  test('(a) dos sub-partidos del mismo torneo → UN representante (el más temprano)', () => {
+    const targets = consolidateReminderTargets([
+      m('sub-late', 'cab-1', '2026-06-14T18:00:00.000Z'),
+      m('sub-early', 'cab-1', '2026-06-14T10:00:00.000Z'),
+    ]);
+    expect(targets).toHaveLength(1);
+    expect(targets[0]?.id).toBe('sub-early');
+    // (c) el ancla del recordatorio es la CABECERA → deep_link a la convocatoria única.
+    expect(callupEventIdFor(targets[0]!)).toBe('cab-1');
+  });
+
+  test('(b) dos partidos NORMALES del mismo equipo → DOS representantes (sin cambio)', () => {
+    const targets = consolidateReminderTargets([
+      m('n1', null, '2026-06-14T10:00:00.000Z'),
+      m('n2', null, '2026-06-15T10:00:00.000Z'),
+    ]);
+    expect(targets).toHaveLength(2);
+    expect(targets.map((t) => t.id).sort()).toEqual(['n1', 'n2']);
+    // Partido normal → ancla = su propio id.
+    expect(callupEventIdFor(targets[0]!)).toBe(targets[0]!.id);
+  });
+
+  test('mezcla torneo + normales: 1 por torneo + 1 por partido normal', () => {
+    const targets = consolidateReminderTargets([
+      m('sA', 'cab-1', '2026-06-14T10:00:00.000Z'),
+      m('sB', 'cab-1', '2026-06-14T18:00:00.000Z'),
+      m('sC', 'cab-2', '2026-06-15T10:00:00.000Z'),
+      m('n1', null, '2026-06-16T10:00:00.000Z'),
+    ]);
+    // cab-1 (1) + cab-2 (1) + n1 (1) = 3.
+    expect(targets).toHaveLength(3);
+    expect(new Set(targets.map((t) => callupEventIdFor(t)))).toEqual(
+      new Set(['cab-1', 'cab-2', 'n1']),
+    );
+  });
+
+  test('no muta el array de entrada', () => {
+    const input = [
+      m('sB', 'cab-1', '2026-06-14T18:00:00.000Z'),
+      m('sA', 'cab-1', '2026-06-14T10:00:00.000Z'),
+    ];
+    const snapshot = input.map((x) => x.id);
+    consolidateReminderTargets(input);
+    expect(input.map((x) => x.id)).toEqual(snapshot);
   });
 });
 
