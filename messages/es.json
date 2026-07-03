@@ -2113,6 +2113,19 @@
     "count_called_up": "Convocados: {n}",
     "open_player": "Ver convocatoria",
     "open_coach": "Gestionar",
+    "tournament": {
+      "add_match": "Añadir siguiente partido",
+      "add_match_title": "Siguiente partido del torneo",
+      "add_match_description": "Crea el próximo cruce de la eliminatoria. Hereda la convocatoria del torneo; el rival y el lugar puedes dejarlos para después.",
+      "field": {
+        "starts_at": "Fecha y hora",
+        "opponent": "Rival",
+        "opponent_placeholder": "Por determinar",
+        "location": "Lugar",
+        "optional": "opcional"
+      },
+      "cancel": "Cancelar"
+    },
     "transport": {
       "club": "Transporte del club",
       "individual": "Transporte individual",

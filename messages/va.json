@@ -2114,6 +2114,19 @@
     "count_called_up": "Convocats: {n}",
     "open_player": "Veure convocatòria",
     "open_coach": "Gestionar",
+    "tournament": {
+      "add_match": "Afegir següent partit",
+      "add_match_title": "Següent partit del torneig",
+      "add_match_description": "Crea el pròxim encreuament de l'eliminatòria. Hereta la convocatòria del torneig; el rival i el lloc pots deixar-los per a després.",
+      "field": {
+        "starts_at": "Data i hora",
+        "opponent": "Rival",
+        "opponent_placeholder": "Per determinar",
+        "location": "Lloc",
+        "optional": "opcional"
+      },
+      "cancel": "Cancel·lar"
+    },
     "transport": {
       "club": "Transport del club",
       "individual": "Transport individual",

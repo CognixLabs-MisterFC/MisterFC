@@ -116,7 +116,52 @@ async function handle(req: Request): Promise<NextResponse> {
   };
   const matches = (matchRows ?? []).map((r) => r as unknown as MatchRow);
 
-  for (const m of matches) {
+  // F13B (T-4) — los partidos de un TORNEO heredan la convocatoria de la
+  // cabecera: su propia meta está vacía, así que el `!inner` de arriba los deja
+  // fuera y la cabecera es type='tournament' (fuera de MATCH_SURFACE_TYPES). Los
+  // recogemos aparte: sub-partidos (type='match', tournament_id no nulo) en la
+  // ventana cuya CABECERA tiene la convocatoria publicada. El bucle los procesa
+  // igual — `callupEventIdFor(m)` resuelve respuestas/roster contra la cabecera.
+  const { data: tournMatchRows, error: tournErr } = await supabase
+    .from('events')
+    .select('id, team_id, title, opponent_name, starts_at, tournament_id')
+    .eq('type', 'match')
+    .not('tournament_id', 'is', null)
+    .gte('starts_at', upcomingFromIso)
+    .lte('starts_at', upcomingToIso);
+
+  if (tournErr) {
+    return NextResponse.json({ error: tournErr.message }, { status: 500 });
+  }
+
+  const tournMatches = (tournMatchRows ?? []).map(
+    (r) => r as unknown as MatchRow,
+  );
+  const headerIds = Array.from(
+    new Set(
+      tournMatches
+        .map((m) => m.tournament_id)
+        .filter((id): id is string => id != null),
+    ),
+  );
+  const publishedHeaders = new Set<string>();
+  if (headerIds.length > 0) {
+    const { data: hdrMetas } = await supabase
+      .from('match_callup_meta')
+      .select('event_id, published_at')
+      .in('event_id', headerIds)
+      .not('published_at', 'is', null);
+    for (const r of hdrMetas ?? []) {
+      publishedHeaders.add(r.event_id as string);
+    }
+  }
+  const tournMatchesPublished = tournMatches.filter(
+    (m) => m.tournament_id != null && publishedHeaders.has(m.tournament_id),
+  );
+
+  const allMatches = [...matches, ...tournMatchesPublished];
+
+  for (const m of allMatches) {
     if (!m.team_id) continue;
 
     // Roster a fecha del partido (snapshot histórico — el cron tolera el
@@ -329,7 +374,7 @@ async function handle(req: Request): Promise<NextResponse> {
     queued: inserts.length,
     inserted,
     day_bucket: dayBucket,
-    matches_scanned: matches.length,
+    matches_scanned: allMatches.length,
     trainings_scanned: trainings.length,
     push_drain: drainResult,
   });
