@@ -86,6 +86,8 @@ export type LineupEditorData = {
     categoryName: string;
     categorySeason: string;
     format: TeamFormat;
+    /** F13B (T-5) — ronda dentro del torneo (1,2,3…); null si no es de torneo. */
+    round: number | null;
   };
   /** Roster COMPLETO a fecha (incluye descartados, para lookup de nombre/foto). */
   roster: RosterPlayer[];
@@ -113,7 +115,7 @@ export async function loadLineupEditor(
   const { data: ev } = await supabase
     .from('events')
     .select(
-      `id, club_id, team_id, type, tournament_id, title, opponent_name, starts_at,
+      `id, club_id, team_id, type, tournament_id, round, title, opponent_name, starts_at,
        teams!inner(name, color, format, season, categories!inner(name))`,
     )
     .eq('id', eventId)
@@ -127,6 +129,7 @@ export async function loadLineupEditor(
     id: string;
     team_id: string;
     tournament_id: string | null;
+    round: number | null;
     title: string;
     opponent_name: string | null;
     starts_at: string;
@@ -435,6 +438,7 @@ export async function loadLineupEditor(
       categoryName: event.teams.categories.name,
       categorySeason: event.teams.season,
       format: event.teams.format,
+      round: event.round,
     },
     roster,
     discarded,

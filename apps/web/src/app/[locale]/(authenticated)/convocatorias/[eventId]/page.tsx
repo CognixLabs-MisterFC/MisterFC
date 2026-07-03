@@ -124,6 +124,11 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
 
   const isPlayer = role === 'jugador';
   const isPublished = meta?.published_at != null;
+  // F13B (T-5) — la CABECERA de un torneo (type='tournament') NO tiene stack de
+  // partido jugable (alineación/directo/marcador/estadísticas viven en los
+  // sub-partidos). Solo gestiona la convocatoria única + "Añadir siguiente
+  // partido". Se ocultan las acciones de partido en la cabecera.
+  const isTournamentHeader = event.type === 'tournament';
 
   // Definición CANÓNICA de la app (callup-sync.ts): convocado = roster −
   // descartados. Un jugador SIN fila `called_up` (p.ej. un suplente sembrado al
@@ -199,7 +204,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
             {canManage && (
               <PromotePlayerDialog eventId={event.id} locale={locale} />
             )}
-            {canManageLineup && (
+            {canManageLineup && !isTournamentHeader && (
               <Button asChild variant="outline" size="sm">
                 <Link href={`/convocatorias/${event.id}/alineacion`}>
                   <ClipboardList className="size-4" aria-hidden />
@@ -207,7 +212,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                 </Link>
               </Button>
             )}
-            {canRecordMatch && (
+            {canRecordMatch && !isTournamentHeader && (
               <Button asChild variant="outline" size="sm">
                 <Link href={`/convocatorias/${event.id}/directo`}>
                   <Radio className="size-4" aria-hidden />
@@ -216,7 +221,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
               </Button>
             )}
             {/* F8.2 — paso "Post-partido", habilitado al finalizar el partido. */}
-            {canRecordMatch && matchStatus === 'closed' && (
+            {canRecordMatch && !isTournamentHeader && matchStatus === 'closed' && (
               <Button asChild variant="outline" size="sm">
                 <Link href={`/convocatorias/${event.id}/post-partido`}>
                   <Star className="size-4" aria-hidden />
@@ -225,7 +230,7 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
               </Button>
             )}
             {/* F7.x — vista de estadísticas del partido (partido cerrado). */}
-            {canRecordMatch && matchStatus === 'closed' && (
+            {canRecordMatch && !isTournamentHeader && matchStatus === 'closed' && (
               <Button asChild variant="outline" size="sm">
                 <Link href={`/convocatorias/${event.id}/estadisticas`}>
                   <BarChart3 className="size-4" aria-hidden />
@@ -460,11 +465,14 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
         </Card>
       )}
 
-      {/* F6 Lote B — alineación oficial compartida (solo si visibility=team). */}
-      {isPlayer && <SharedLineupSection eventId={event.id} />}
+      {/* F6 Lote B — alineación oficial compartida (solo si visibility=team).
+          F13B (T-5) — la cabecera de torneo no tiene alineación propia. */}
+      {isPlayer && !isTournamentHeader && (
+        <SharedLineupSection eventId={event.id} />
+      )}
 
       {/* F7.x — acceso del jugador/familia a las estadísticas de su jugador. */}
-      {isPlayer && (
+      {isPlayer && !isTournamentHeader && (
         <div>
           <Button asChild variant="outline" size="sm">
             <Link href={`/convocatorias/${event.id}/estadisticas`}>

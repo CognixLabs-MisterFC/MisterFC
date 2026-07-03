@@ -3,6 +3,7 @@ import {
   callupEventIdFor,
   lineupWritesCallup,
   nextTournamentRound,
+  groupCallupsByTournament,
   pickNextEvent,
   pickLastEventWithin,
   pickNextMatchWithoutCallup,
@@ -51,6 +52,71 @@ describe('nextTournamentRound', () => {
 
   test('sin rondas → arranca en 1', () => {
     expect(nextTournamentRound([])).toBe(1);
+  });
+});
+
+// F13B (T-5) — agrupación de "Gestión de partidos" por torneo.
+describe('groupCallupsByTournament', () => {
+  const row = (
+    event_id: string,
+    type: string,
+    tournament_id: string | null,
+    round: number | null,
+    starts_at: string,
+  ) => ({ event_id, type, tournament_id, round, starts_at });
+
+  test('cabecera + sub-partidos → un grupo, partidos por ronda', () => {
+    const rows = [
+      row('h1', 'tournament', null, null, '2026-06-10T10:00:00.000Z'),
+      row('m2', 'match', 'h1', 2, '2026-06-17T10:00:00.000Z'),
+      row('m1', 'match', 'h1', 1, '2026-06-10T10:00:00.000Z'),
+    ];
+    const groups = groupCallupsByTournament(rows);
+    expect(groups).toHaveLength(1);
+    const g = groups[0];
+    expect(g?.kind).toBe('tournament');
+    if (g?.kind !== 'tournament') throw new Error('expected tournament group');
+    expect(g.header.event_id).toBe('h1');
+    expect(g.matches.map((m) => m.event_id)).toEqual(['m1', 'm2']);
+  });
+
+  test('partidos normales quedan sueltos', () => {
+    const rows = [
+      row('a', 'match', null, null, '2026-06-12T10:00:00.000Z'),
+      row('b', 'friendly', null, null, '2026-06-11T10:00:00.000Z'),
+    ];
+    const groups = groupCallupsByTournament(rows);
+    expect(groups.map((g) => g.kind)).toEqual(['single', 'single']);
+    // Ordenados por fecha: b (11) antes que a (12).
+    expect(groups.map((g) => (g.kind === 'single' ? g.match.event_id : ''))).toEqual(['b', 'a']);
+  });
+
+  test('mezcla torneo + suelto ordenados por fecha (cabecera = 1er partido)', () => {
+    const rows = [
+      row('single', 'match', null, null, '2026-06-15T10:00:00.000Z'),
+      row('h1', 'tournament', null, null, '2026-06-10T10:00:00.000Z'),
+      row('m1', 'match', 'h1', 1, '2026-06-10T10:00:00.000Z'),
+    ];
+    const groups = groupCallupsByTournament(rows);
+    expect(groups.map((g) => g.kind)).toEqual(['tournament', 'single']);
+  });
+
+  test('sub-partido huérfano (sin cabecera en rows) → suelto, no se pierde', () => {
+    const rows = [row('m2', 'match', 'h1', 2, '2026-06-17T10:00:00.000Z')];
+    const groups = groupCallupsByTournament(rows);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.kind).toBe('single');
+  });
+
+  test('no muta el array de entrada', () => {
+    const rows = [
+      row('m2', 'match', 'h1', 2, '2026-06-17T10:00:00.000Z'),
+      row('m1', 'match', 'h1', 1, '2026-06-10T10:00:00.000Z'),
+      row('h1', 'tournament', null, null, '2026-06-10T10:00:00.000Z'),
+    ];
+    const snapshot = rows.map((r) => r.event_id);
+    groupCallupsByTournament(rows);
+    expect(rows.map((r) => r.event_id)).toEqual(snapshot);
   });
 });
 

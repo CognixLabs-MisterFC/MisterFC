@@ -65,6 +65,17 @@ export default async function LineupPage({ params, searchParams }: Props) {
 
       <header>
         <h1 className="text-2xl font-semibold">{t('title')}</h1>
+        {/* F13B (T-5) — deja claro que este partido pertenece a un torneo. */}
+        {data.isTournamentMatch && (
+          <p className="mt-1">
+            <span className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 text-xs font-medium text-primary">
+              {t('tournament_label', {
+                name: data.event.title,
+                round: data.event.round ?? 0,
+              })}
+            </span>
+          </p>
+        )}
         <p className="text-sm text-muted-foreground">
           {data.event.title}
           {data.event.opponentName ? ` · vs ${data.event.opponentName}` : ''}

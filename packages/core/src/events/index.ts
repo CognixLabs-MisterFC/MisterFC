@@ -35,12 +35,17 @@ export {
   callupEventIdFor,
   lineupWritesCallup,
   nextTournamentRound,
+  groupCallupsByTournament,
   pickNextEvent,
   pickLastEventWithin,
   pickNextMatchWithoutCallup,
   pickLastTrainingWithoutAttendance,
 } from './aggregation';
-export type { DatedEvent } from './aggregation';
+export type {
+  DatedEvent,
+  CallupGroupable,
+  GroupedCallup,
+} from './aggregation';
 
 export {
   computeEndsAt,
