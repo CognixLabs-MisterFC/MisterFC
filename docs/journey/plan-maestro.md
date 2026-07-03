@@ -119,6 +119,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F12 | Planificador de sesiones | 12–20 h | 4–6 | ☑ (2026-06-20) |
 | F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☑ (2026-06-27) |
 | F13.10 | Informes de desarrollo y campaña de evaluaciones (extensión de F8/F9 — **NO** es la pizarra) | — | — | ☑ (2026-06-25) |
+| F13B | Gestión de partidos (amistoso sin tope + torneo con convocatoria única heredada) | — | — | ☑ (2026-07-03) |
 | F14 | RGPD para menores y seguridad | 12–18 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
 | F16 | Beta cerrada con primer club | 9–15 h (subfases 16.0–16.4 6–10 h + F16.x bulk-invite +3–5 h) | 3–4 | ☐ |
@@ -139,6 +140,8 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 > **Cambio 2026-06-15 (extensión F7.x)**: nueva **F7.x — Vista de estadísticas del partido**, extensión de F7/F8 con etiqueta `F7.x` para **no renumerar F8–F16**. Es la **cara de consulta** por partido de lo que F7 ya captura (`match_player_stats` + `match_events`); v1 sin BD/RLS nueva. **Schedulable** (pequeña), recomendable antes o junto a F11. Estimación v1 +3–5 h / 1–2 sesiones. Delta total Ola 1: +3–5 h (182–282 → 185–287), +1–2 sesiones (66–86 → 67–88). Spec [7.x](../specs/7.x-estadisticas-partido.md). Detalle en §6 (Fase 7.x, tras la Fase 7).
 
 > **Cambio 2026-06-25 (cierre F13.10 — desambiguación de numeración)**: ⚠️ **`F13.10` NO es parte de la F13 — Pizarra de jugadas** (13.1–13.7, **cerrada 2026-06-27** por las JR #229–#232). "F13.10" es una **etiqueta heredada del desarrollo** para los informes de desarrollo + campaña de evaluaciones (PRs #200–#221), que en realidad es una **extensión de F8 (valoraciones) y F9 (perfil del jugador)**. Se mantiene el nombre por **trazabilidad** con los 22 PRs / ramas / memory ya escritos (**Opción C**: no renumerar, igual que F11B/F7.x se etiquetaron aparte). Se registra como **bloque entregado independiente**: fila `F13.10 ☑` en la tabla, sección §6 (tras la Fase 13), spec [13.10](../specs/13.10-informes-desarrollo.md) y [fase-13.10-summary.md](fase-13.10-summary.md). Sin delta de horas (entregado, no estimado a futuro).
+
+> **Cambio 2026-07-03 (cierre F13B — Gestión de partidos)**: ☑ **F13B entregada** con etiqueta de letra (no renumera F14–F16, mismo patrón que F11B/F7.x). ⚠️ **El alcance real NO fue "liga/copa + no-convocatorias H-5"** (la descripción antigua de backlog): esas dos entradas se **retiran** — *liga/copa* (`competition_type`) queda **fuera de alcance** (el modelo de competición es **oficial / amistoso / torneo** vía `events.type`, sin campo de liga/copa) y *no-convocatorias H-5* **no era una feature** sino el **bug** de que el banquillo no quedaba marcado como convocado, ya **resuelto en PR #255** (lector canónico `effectiveCallupDecision`, no-fila = convocado). Lo realmente construido: **(a) Amistoso** gestionado igual que un oficial y **sin límite de convocados** (#256 triggers de convocatoria aceptan `friendly`/`tournament` + el tope solo aplica a `match`; #257 superficies secundarias home/mis-equipos/recordatorios) — 2026-07-02; **(b) Torneo** con enfoque **cabecera + sub-partidos** y **convocatoria única heredada por referencia** (modelo `events.tournament_id` + `round`, avance manual de eliminatoria, UI agrupada), serie **T-0…T-5** = PRs **#258** (T-0 modelo), **#259** (T-1 crear), **#260** (T-2 convocatoria heredada), **#261** (T-4 avance), **#262** (T-5 UI agrupada) — 2026-07-02/03. Detalle en §6 (tras la Fase 13.10) y en [progress.md](progress.md). Sin delta de horas (entregado, no estimado a futuro).
 
 ---
 
@@ -704,14 +707,20 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 | D-PDF-3 | Solo el bloque de partido se segrega (2 columnas); **convocatorias y entrenos = totales**. |
 | D-familia | Evolución de equipo para la familia limitada por RLS (`user_can_see_team_report_via_published`). |
 
+**F13B — Gestión de partidos** ☑ **[cerrada 2026-07-03]** *(NUEVO, no existía en el repo; etiqueta de letra, no renumera F14–F16)*:
+
+> Agrupa la gestión de partidos **no-oficiales** bajo el mismo motor de convocatoria/alineación/directo que el partido oficial. El **modelo de competición es `events.type` ∈ (`match` = oficial, `friendly` = amistoso, `tournament`)** — **no** hay liga/copa (ver abajo). Detalle por PR en [progress.md](progress.md) §"F13B — Gestión de partidos".
+
+- **Amistoso** ☑ **[2026-07-02]** — se gestiona **igual que un oficial** pero **sin límite de convocados**. #256 (los 3 triggers de convocatoria aceptan `friendly`/`tournament`; el tope de convocados `calledUpLimitApplies` solo aplica a `match`) + #257 (superficies secundarias: aparece en "próximo partido" del home, recordatorios y mis-equipos vía `MATCH_SURFACE_TYPES`).
+- **Torneo** ☑ **[2026-07-02/03]** — enfoque **cabecera + sub-partidos** con **convocatoria única heredada por referencia**. Modelo `events.tournament_id` + `round` (la cabecera `type='tournament'` aloja la convocatoria; cada partido `type='match'` cuelga de ella). Serie **T-0…T-5**: #258 (T-0 modelo de agrupación), #259 (T-1 crear torneo = cabecera + 1er partido), #260 (T-2 convocatoria heredada, lecturas → cabecera y escrituras desactivadas en sub-partidos), #261 (T-4 avance manual de eliminatoria: "añadir siguiente partido"), #262 (T-5 UI agrupada en Gestión de partidos + limpieza de la cabecera).
+
+**Descartado del alcance F13B** (la descripción antigua de backlog era incorrecta):
+
+- ~~**Distinción liga / copa** (`competition_type`)~~ — **FUERA DE ALCANCE**. El modelo de competición del proyecto es **oficial / amistoso / torneo** (`events.type`); no se añade un campo liga/copa.
+- ~~**Sección "no-convocatorias" (H-5)**~~ — **no era una feature**: era el **bug** de que los jugadores del **banquillo no quedaban marcados como convocados**. ☑ **RESUELTO en PR #255** (lector canónico `effectiveCallupDecision`: sin fila `called_up` = convocado; solo `discarded` resta). Ver [known-issues.md](known-issues.md).
+
 **Backlog (sin programar)**:
 
-- **F13B — GESTIÓN DE PARTIDOS** *(NUEVO, no existía en el repo)*. Agrupa:
-  1. **Distinción liga / copa** (`competition_type`) en estadísticas y PDF. Hoy el PDF solo separa Oficial/Amistoso por `events.type`; **no hay campo de competición** en el modelo.
-  2. **Sección "no-convocatorias" (H-5)** de la ficha de desarrollo, con **decisión pendiente** + **mini-análisis**:
-     - *Opción 1 (sin migración)*: mostrar el `reason` (texto libre ≤500) tal cual ya se guarda en `callup_decisions`.
-     - *Opción 2 (con migración)*: `discard_reason_kind` (enum tecnico/fisico/disciplinario/personal) + `discard_note` (texto) + **arreglar el diálogo de descarte** para guardar ambos por separado.
-     - **Modelo verificado (Regla #11)**: hoy `callup_decisions` tiene **un solo campo `reason`** (texto), no motivo+nota separados → H-5 **bloqueada** hasta decidir Opción 1 vs 2.
 - **Reutilizar jugadores entre equipos** *(NUEVO, no registrado en ningún sitio)*: mover/compartir un jugador entre equipos del club **sin recrearlo**. Pendiente de **mini-análisis** (modelo de pertenencia jugador↔equipo, RLS, historial por temporada).
 
 **Cross-refs**:

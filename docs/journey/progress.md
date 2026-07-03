@@ -28,14 +28,14 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 ---
 
-## Estado actual (2026-06-26)
+## Estado actual (2026-07-03)
 
 - **F13 — Pizarra de jugadas (13.1–13.7)** — **cerrada** (2026-06-27). El contrato/editor/animación/reproducción/fullscreen ya existían (build original de `plays`); la **serie JR** (ADR-0019, **#229–#232**) los reorganizó a **banco del club + ciclo de aprobación** (proponer/aprobar/rechazar), **playbook por equipo** y **compartir con la familia** (con índice del playbook del jugador). **13.8 (exportar vídeo/GIF) descartado y eliminado del roadmap.**
 - **F13.10** (Informes de desarrollo y campaña de evaluaciones) — **cerrada** (#200–#221). Ver [fase-13.10-summary.md](fase-13.10-summary.md) y [spec 13.10](../specs/13.10-informes-desarrollo.md).
+- **F13B — Gestión de partidos** — **cerrada** (2026-07-02/03). **Amistoso** sin tope de convocados (#256/#257) + **Torneo** con convocatoria única heredada (cabecera + sub-partidos, `events.tournament_id`+`round`, serie T-0…T-5: #258/#259/#260/#261/#262). El bug del banquillo no-convocado se cerró aparte en **#255**. Ver §"F13B — Gestión de partidos" abajo. Alcance real = **oficial/amistoso/torneo** (sin liga/copa).
 - **Auditoría de permisos** — **cerrada** (2026-06-26). Barrido acciones×roles del patrón rol-de-club vs rol-de-equipo + sobre/sub-exposición. 4 hallazgos arreglados (PRs #223 asistencia, #224 eventos, #225 F14.9 capabilities cross-team, #226 F14.10 events SELECT). **F14.9 y F14.10 dejan de ser deuda de F14.** 2 decisiones de negocio cerradas (plantilla = club; informes = cualquier staff del equipo). Detalle en [known-issues.md → Auditoría de permisos](known-issues.md).
 
 **Pendiente (backlog, sin programar salvo F14):**
-- **F13B** (nuevo): liga/copa (`competition_type`) en stats/PDF + sección **no-convocatorias (H-5)** con su decisión Opción 1/2. En backlog de [plan-maestro.md](plan-maestro.md).
 - **Reutilizar jugadores** entre equipos (nuevo). En backlog.
 - **Jugadas en sesión (serie JS, F12↔F13, #192)** — **entregada** (2026-06-27, #234/#236/#237/#238). Ver subfases abajo.
 - **F14 — RGPD para menores**: pendiente (consentimiento parental, audit log, derechos). F14.9/F14.10 ya **no** forman parte (resueltas en la auditoría).
@@ -387,7 +387,8 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | ~~13.8 Exportar vídeo/GIF~~ | ❌ descartado | eliminado del roadmap (no diferido) |
 
 - **Reutilizar jugadas** entre equipos = entregado por el modelo de banco (cualquier equipo selecciona del banco vía `team_plays`).
-- **Backlog que sigue abierto**: F13B (liga/copa + no-convocatorias H-5), reutilizar **jugadores** entre equipos.
+- **F13B — Gestión de partidos** = ☑ **entregada (2026-07-02/03)**: amistoso sin tope (#256/#257) + torneo con convocatoria única heredada (T-0…T-5, #258–#262); el bug del banquillo no-convocado cerró en #255. El alcance antiguo "liga/copa + H-5" **se retiró** (liga/copa fuera de alcance; H-5 era ese bug, ya resuelto). Detalle en §"F13B — Gestión de partidos".
+- **Backlog que sigue abierto**: reutilizar **jugadores** entre equipos.
 
 ---
 
@@ -449,7 +450,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Inicio / Fin**: 2026-06-23 / 2026-06-25. PRs **#200–#221** (cada uno con typecheck · lint · test · build en verde; la UI autenticada y el PDF se validaron en preview).
 - **Migraciones** (todas aplicadas al remoto vía `pnpm db:push`): `development_reports` + objetivos + RLS · rework a catálogo JSON (`team_development_reports`) · share (`user_can_see_team_report_via_published`) · `assessment_campaigns` (status draft→launched→published) · `publish_campaign` (RPC) · `objectives_review_comment` (`review_comment` + `created_period`). Append-only; pgTAP escrito y verificado **contra el remoto** (F15.8).
 - **Decisiones**: PDF con gráficos SVG nativos (revierte D10); ficha/PDF de 7 secciones; objetivos con estado derivado + 2 comentarios; stats como ratio; PDF Oficial/Amistoso; evolución de equipo para la familia por RLS. Ver [summary](fase-13.10-summary.md).
-- **Diferidos**: F13B (liga/copa + no-convocatorias H-5), reutilizar jugadores entre equipos, revalidar ratios de familia si F14.10 — en [plan-maestro.md](plan-maestro.md) §Fase 13.10 y [known-issues.md](known-issues.md).
+- **Diferidos**: reutilizar jugadores entre equipos; revalidar ratios de familia si F14.10 — en [plan-maestro.md](plan-maestro.md) §Fase 13.10 y [known-issues.md](known-issues.md). *(F13B ya no es diferido: **entregada 2026-07-02/03** — amistoso #256/#257 + torneo T-0…T-5 #258–#262; el bug del banquillo cerró en #255. "liga/copa + H-5" retirado del alcance.)*
 
 ## Bloque D — Subir jugadores a equipos superiores ☑ (2026-07-01)
 
@@ -479,6 +480,23 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Decisiones**: superioridad = categoría manda O (misma categoría + división superior); modelo B (tabla dedicada, no se tocan `team_members`); entrenar/jugar derivado de `event.type`; invariante "1 equipo base" (0 dobles-roster verificado, sin constraint nueva); conflicto = avisar-no-bloquear; integración opción 1 vía **roster ∪ promociones** aditivo y scoped al `event_id`; `player_promoted` mantenida (aviso inmediato + único para entrenos); permisos = staff del equipo superior ∪ admin/coord (explícitos); orden de kind materializado en BD.
 - **Nota técnica**: los **5 triggers de roster** (`callup_responses_validate`, `callup_decisions_validate`, `training_attendance_validate_insert`, `lineup_positions_validate`, `match_assert_player_in_team`) se ampliaron de forma **ADITIVA** — su predicado de elegibilidad es ahora `roster ∪ player_promotions(event)`. **Quien toque estos triggers en el futuro debe preservar la rama de promociones** (`player_promoted_to_event`). Ver [rls-policies.md](../architecture/rls-policies.md).
 - **Diferidos / known-issues**: sin deuda nueva detectada.
+
+## F13B — Gestión de partidos ☑ (2026-07-02/03)
+
+> Gestión de partidos **no-oficiales** bajo el **mismo motor** de convocatoria/alineación/directo que el oficial. **Modelo de competición = `events.type` ∈ (`match` oficial, `friendly` amistoso, `tournament`)**. ⚠️ El backlog antiguo describía F13B como "liga/copa (`competition_type`) + no-convocatorias H-5"; ambos **retirados**: liga/copa **fuera de alcance** (no hay campo de competición), y "H-5" **no era feature** sino un **bug** (banquillo no-convocado) ya resuelto.
+
+- **Bug previo (banquillo no-convocado)** — ☑ **#255** (2026-07-02). Al lanzar la convocatoria desde el editor de campo, el banquillo (ni titular ni descartado) no se marcaba convocado. Causa: doble fuente de verdad (fila `called_up` explícita vs derivado). Fix: lector canónico `effectiveCallupDecision` (sin fila = convocado; solo `discarded` resta). Mismo patrón que el contador cerrado antes en #132 (ver [known-issues.md](known-issues.md)).
+- **Amistoso** — ☑ **#256 + #257** (2026-07-02). Se gestiona **igual que un oficial** pero **sin límite de convocados**:
+  - #256: los 3 triggers de convocatoria (`match_callup_meta`/`callup_responses`/`callup_decisions` validate) aceptan `friendly`/`tournament`; el tope `calledUpLimitApplies(eventType)` **solo aplica a `match`**.
+  - #257: superficies secundarias — el amistoso aparece en "próximo partido" del home, recordatorios y mis-equipos vía `MATCH_SURFACE_TYPES` = (`match`,`friendly`).
+- **Torneo** — ☑ **serie T-0…T-5, #258–#262** (2026-07-02/03). Enfoque **cabecera + sub-partidos** con **convocatoria única heredada por referencia**:
+  - **T-0 #258** — modelo de agrupación: `events.tournament_id` (→ cabecera) + `round` + CHECKs (`child_is_match`, `round_iff_tournament`).
+  - **T-1 #259** — crear torneo: acción `createTournament` (cabecera `type='tournament'` + 1er partido `type='match'`, atómico) + modo "Torneo" en el diálogo de evento.
+  - **T-2 #260** — convocatoria heredada: helpers `callupEventIdFor`/`lineupWritesCallup`; las lecturas de convocatoria de un sub-partido → la cabecera; escrituras desactivadas en sub-partidos; `/convocatorias/{sub}` redirige a la cabecera.
+  - **T-4 #261** — avance manual de eliminatoria: `addTournamentMatch` (round = max+1) + "Añadir siguiente partido"; reminders del torneo resueltos vía cabecera.
+  - **T-5 #262** — UI agrupada: `groupCallupsByTournament` (cabecera + rondas) en Gestión de partidos; etiqueta "Torneo · Ronda N" en el drill-in; limpieza de la cabecera (oculta alineación/directo/stats).
+- **Migraciones** (append-only, aplicadas al remoto): `20260820000000_callup_accept_friendly_tournament` (#256) · `20260821000000_events_tournament_grouping` (#258). T-1/T-2/T-4/T-5 sin migración nueva.
+- **CI**: cada PR con `typecheck · lint · test · build` en verde + preview de Vercel. **Sin merge por Claude** (los mergea el operador).
 
 ## Fase 14 — Subfases pendientes
 
