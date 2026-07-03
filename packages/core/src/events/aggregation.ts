@@ -37,6 +37,22 @@ export function lineupWritesCallup(event: {
   return event.tournament_id == null;
 }
 
+/**
+ * F13B (T-4) — Ronda del SIGUIENTE partido de un torneo: `max(round) + 1`. El
+ * avance es MANUAL y el nº de partidos INDETERMINADO, así que cada alta calcula
+ * la ronda a partir de las existentes. Ignora rondas nulas/no finitas. Si aún no
+ * hubiera ninguna (no debería pasar: T-1 crea la ronda 1), empieza en 1.
+ */
+export function nextTournamentRound(
+  existingRounds: ReadonlyArray<number | null>,
+): number {
+  const valid = existingRounds.filter(
+    (r): r is number => typeof r === 'number' && Number.isFinite(r),
+  );
+  if (valid.length === 0) return 1;
+  return Math.max(...valid) + 1;
+}
+
 export type DatedEvent = {
   id: string;
   starts_at: string;

@@ -32,6 +32,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PublishCallupDialog } from '../_components/publish-callup-dialog';
+import { AddTournamentMatchDialog } from '../_components/add-tournament-match-dialog';
 import { PromotePlayerDialog } from '../../calendario/_components/promote-player-dialog';
 import { RepublishBanner } from '../_components/republish-banner';
 import { ResponseButtons } from '../_components/response-buttons';
@@ -190,6 +191,11 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
             {isPublished ? t('published') : t('draft')}
           </Badge>
           <div className="flex flex-wrap items-center gap-2">
+            {/* F13B (T-4) — avance de eliminatoria: solo en la CABECERA del
+                torneo (type='tournament') y para quien gestiona la convocatoria. */}
+            {canManage && event.type === 'tournament' && (
+              <AddTournamentMatchDialog tournamentId={event.id} />
+            )}
             {canManage && (
               <PromotePlayerDialog eventId={event.id} locale={locale} />
             )}

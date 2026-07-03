@@ -34,6 +34,7 @@ export type { Occurrence } from './recurrence';
 export {
   callupEventIdFor,
   lineupWritesCallup,
+  nextTournamentRound,
   pickNextEvent,
   pickLastEventWithin,
   pickNextMatchWithoutCallup,

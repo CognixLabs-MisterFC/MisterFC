@@ -121,6 +121,21 @@ export const tournamentInputSchema = z
   });
 export type TournamentInput = z.infer<typeof tournamentInputSchema>;
 
+/**
+ * F13B (T-4) — alta del SIGUIENTE partido de un torneo existente. La ronda y el
+ * `tournament_id` los pone la acción (no el cliente). La fecha es obligatoria; el
+ * rival y el lugar son opcionales porque el cruce siguiente suele conocerse
+ * después (editable luego con la edición de evento). La convocatoria se hereda de
+ * la cabecera (T-2), así que aquí no hay nada de plantilla.
+ */
+export const tournamentMatchInputSchema = z.object({
+  starts_at: z.string().datetime({ message: 'starts_at_invalid' }),
+  opponent_name: z.string().trim().max(120).nullable().optional(),
+  location_name: z.string().trim().max(160).nullable().optional(),
+  location_address: z.string().trim().max(240).nullable().optional(),
+});
+export type TournamentMatchInput = z.infer<typeof tournamentMatchInputSchema>;
+
 export const updateEventModes = ['single', 'this_and_future', 'series'] as const;
 export type UpdateEventMode = (typeof updateEventModes)[number];
 

@@ -2114,6 +2114,19 @@
     "count_called_up": "Called up: {n}",
     "open_player": "View callup",
     "open_coach": "Manage",
+    "tournament": {
+      "add_match": "Add next match",
+      "add_match_title": "Next tournament match",
+      "add_match_description": "Create the next fixture of the bracket. It inherits the tournament callup; you can fill in the opponent and venue later.",
+      "field": {
+        "starts_at": "Date and time",
+        "opponent": "Opponent",
+        "opponent_placeholder": "To be decided",
+        "location": "Venue",
+        "optional": "optional"
+      },
+      "cancel": "Cancel"
+    },
     "transport": {
       "club": "Club transport",
       "individual": "Individual",

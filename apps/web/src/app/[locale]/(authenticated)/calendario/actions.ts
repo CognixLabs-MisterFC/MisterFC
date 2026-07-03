@@ -10,7 +10,9 @@ import {
   getCurrentUser,
   getCurrentUserClubs,
   resolveActiveClub,
+  nextTournamentRound,
   tournamentInputSchema,
+  tournamentMatchInputSchema,
   TIMEZONE_OLA1,
   type EventInput,
 } from '@misterfc/core';
@@ -253,6 +255,98 @@ export async function createTournament(
 
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');
   return { success: true, event_id: header.id as string };
+}
+
+/**
+ * F13B (T-4) — Añade el SIGUIENTE partido a un torneo existente (avance manual de
+ * la eliminatoria). Inserta un evento `type='match'` con `tournament_id` = la
+ * cabecera y `round` = max(round) + 1, heredando `club_id`/`team_id`/título de la
+ * cabecera. NO crea convocatoria propia: la hereda por referencia de la cabecera
+ * (T-2). El rival y el lugar son OPCIONALES (el cruce siguiente suele conocerse
+ * después → editable luego con la edición de evento). Autorización: la MISMA que
+ * crear un partido de ese equipo — la impone la RLS `events_insert_managers`
+ * (helper `user_can_manage_event`, staff del equipo, NO memberships.role); un
+ * INSERT no autorizado devuelve 42501 → 'forbidden'. Respeta los CHECK de T-0
+ * (`type='match'` + `tournament_id`/`round` no nulos juntos). Devuelve el id del
+ * nuevo partido.
+ */
+export async function addTournamentMatch(
+  tournamentId: string,
+  input: unknown,
+): Promise<EventActionResult> {
+  const parsed = tournamentMatchInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: 'invalid_input',
+      detail: parsed.error.issues[0]?.message,
+    };
+  }
+  const data = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const user = await getCurrentUser(adapter);
+  if (!user) return { success: false, error: 'forbidden' };
+
+  // Cabecera del torneo: debe existir, ser type='tournament' y no colgar de otro
+  // torneo (tournament_id NULL). Hereda club_id/team_id/título.
+  const { data: header, error: headerErr } = await supabase
+    .from('events')
+    .select('id, club_id, team_id, type, tournament_id, title')
+    .eq('id', tournamentId)
+    .maybeSingle();
+  if (headerErr) return { success: false, error: 'db', detail: headerErr.message };
+  if (!header) return { success: false, error: 'not_found' };
+  if (header.type !== 'tournament' || header.tournament_id != null) {
+    return { success: false, error: 'invalid_input', detail: 'not_a_tournament_header' };
+  }
+  if (header.team_id == null) {
+    return { success: false, error: 'invalid_input', detail: 'tournament_without_team' };
+  }
+
+  // Ronda siguiente = max(round) + 1 de los partidos ya existentes del torneo.
+  const { data: rounds, error: roundsErr } = await supabase
+    .from('events')
+    .select('round')
+    .eq('tournament_id', tournamentId);
+  if (roundsErr) return { success: false, error: 'db', detail: roundsErr.message };
+  const nextRound = nextTournamentRound(
+    (rounds ?? []).map((r) => r.round as number | null),
+  );
+
+  const { data: match, error: matchErr } = await supabase
+    .from('events')
+    .insert({
+      club_id: header.club_id as string,
+      team_id: header.team_id as string,
+      category_id: null,
+      type: 'match',
+      title: header.title as string,
+      notes: null,
+      starts_at: data.starts_at,
+      ends_at: null,
+      all_day: false,
+      location_name: data.location_name ?? null,
+      location_address: data.location_address ?? null,
+      opponent_name: data.opponent_name ?? null,
+      tournament_id: tournamentId,
+      round: nextRound,
+      created_by: user.id,
+    })
+    .select('id')
+    .single();
+
+  if (matchErr || !match) {
+    if (matchErr?.code === '42501') return { success: false, error: 'forbidden' };
+    if (matchErr?.code === '23514') {
+      return { success: false, error: 'cross_club', detail: matchErr.message };
+    }
+    return { success: false, error: 'db', detail: matchErr?.message };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/calendario', 'page');
+  return { success: true, event_id: match.id as string };
 }
 
 /**

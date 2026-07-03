@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
   callupEventIdFor,
   lineupWritesCallup,
+  nextTournamentRound,
   pickNextEvent,
   pickLastEventWithin,
   pickNextMatchWithoutCallup,
@@ -30,6 +31,26 @@ describe('lineupWritesCallup', () => {
 
   test('evento normal → sí escribe convocatoria (clásico)', () => {
     expect(lineupWritesCallup({ tournament_id: null })).toBe(true);
+  });
+});
+
+// F13B (T-4) — avance de eliminatoria: ronda del siguiente partido.
+describe('nextTournamentRound', () => {
+  test('una sola ronda (torneo recién creado) → 2', () => {
+    expect(nextTournamentRound([1])).toBe(2);
+  });
+
+  test('varias rondas desordenadas → max + 1', () => {
+    expect(nextTournamentRound([1, 3, 2])).toBe(4);
+  });
+
+  test('ignora rondas nulas/no finitas', () => {
+    expect(nextTournamentRound([1, null, 2])).toBe(3);
+    expect(nextTournamentRound([null])).toBe(1);
+  });
+
+  test('sin rondas → arranca en 1', () => {
+    expect(nextTournamentRound([])).toBe(1);
   });
 });
 

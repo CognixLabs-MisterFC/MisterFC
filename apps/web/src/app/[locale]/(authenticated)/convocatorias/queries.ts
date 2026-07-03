@@ -111,6 +111,9 @@ export type CallupDetail = {
     id: string;
     club_id: string;
     team_id: string;
+    /** F13B — tipo del evento. 'tournament' = cabecera de torneo (aloja la
+     * convocatoria única y permite añadir el siguiente partido). */
+    type: string;
     team_name: string;
     team_color: string;
     category_name: string;
@@ -482,6 +485,7 @@ export async function loadCallupDetail(
     id: string;
     club_id: string;
     team_id: string;
+    type: string;
     tournament_id: string | null;
     title: string;
     opponent_name: string | null;
@@ -722,6 +726,7 @@ export async function loadCallupDetail(
       id: event.id,
       club_id: event.club_id,
       team_id: event.team_id,
+      type: event.type,
       team_name: event.teams.name,
       team_color: event.teams.color,
       category_name: event.teams.categories.name,
