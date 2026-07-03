@@ -4,6 +4,7 @@ import {
   lineupWritesCallup,
   nextTournamentRound,
   consolidateReminderTargets,
+  filterPublishedByAnchor,
   groupCallupsByTournament,
   pickNextEvent,
   pickLastEventWithin,
@@ -108,6 +109,32 @@ describe('consolidateReminderTargets', () => {
     const snapshot = input.map((x) => x.id);
     consolidateReminderTargets(input);
     expect(input.map((x) => x.id)).toEqual(snapshot);
+  });
+});
+
+// F13B — afloramiento en Home: la convocatoria publicada se resuelve por ANCLA.
+describe('filterPublishedByAnchor', () => {
+  const ev = (id: string, tournament_id: string | null) => ({ id, tournament_id });
+
+  test('(b) sub-partido de torneo aflora sii la CABECERA está publicada', () => {
+    const sub = ev('sub-1', 'cab-1');
+    // Publicada la cabecera → aflora.
+    expect(filterPublishedByAnchor([sub], new Set(['cab-1']))).toEqual([sub]);
+    // Publicada solo su meta propia (id del sub) → NO aflora (era el bug).
+    expect(filterPublishedByAnchor([sub], new Set(['sub-1']))).toEqual([]);
+  });
+
+  test('(c) partido normal aflora sii SU propia convocatoria está publicada', () => {
+    const normal = ev('n-1', null);
+    expect(filterPublishedByAnchor([normal], new Set(['n-1']))).toEqual([normal]);
+    expect(filterPublishedByAnchor([normal], new Set(['otro']))).toEqual([]);
+  });
+
+  test('mezcla: solo afloran los de ancla publicada', () => {
+    const events = [ev('sub', 'cab'), ev('n', null)];
+    expect(
+      filterPublishedByAnchor(events, new Set(['cab'])).map((e) => e.id),
+    ).toEqual(['sub']);
   });
 });
 

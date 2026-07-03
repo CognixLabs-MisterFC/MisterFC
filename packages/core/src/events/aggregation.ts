@@ -75,6 +75,20 @@ export function consolidateReminderTargets<
 }
 
 /**
+ * F13B — filtra los eventos cuya convocatoria está PUBLICADA resolviendo el ANCLA
+ * con `callupEventIdFor` (la CABECERA para un sub-partido de torneo, el propio
+ * evento para uno normal). Así un sub-partido de torneo aflora sii la
+ * convocatoria de SU cabecera está publicada (su meta propia está vacía), y uno
+ * normal sii la suya lo está (comportamiento intacto). `publishedAnchorIds` son
+ * los event_id de convocatorias publicadas (ya resueltos a nivel de ancla).
+ */
+export function filterPublishedByAnchor<
+  T extends { id: string; tournament_id: string | null },
+>(events: readonly T[], publishedAnchorIds: ReadonlySet<string>): T[] {
+  return events.filter((e) => publishedAnchorIds.has(callupEventIdFor(e)));
+}
+
+/**
  * F13B (T-5) — Forma mínima para agrupar filas de "Gestión de partidos" por
  * torneo. `type='tournament'` (con `tournament_id` null) es la CABECERA; una fila
  * con `tournament_id` no nulo es un sub-partido de ese torneo; el resto son
