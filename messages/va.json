@@ -2125,7 +2125,11 @@
         "location": "Lloc",
         "optional": "opcional"
       },
-      "cancel": "Cancel·lar"
+      "cancel": "Cancel·lar",
+      "group_matches": "Partits",
+      "group_no_matches": "Encara no hi ha partits.",
+      "group_round": "Ronda {n}",
+      "open_lineup": "Alineació"
     },
     "transport": {
       "club": "Transport del club",
@@ -2478,6 +2482,7 @@
   },
   "alineacion": {
     "title": "Alineació",
+    "tournament_label": "Torneig {name} · Ronda {round}",
     "back": "Tornar a Gestió de partits",
     "empty_hint": "Encara no hi ha alineació per a aquest partit. Crea’n una per començar.",
     "name_label": "Nom",

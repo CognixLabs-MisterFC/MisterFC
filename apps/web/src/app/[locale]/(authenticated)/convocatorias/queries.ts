@@ -45,6 +45,12 @@ export type ConvocatoriasScope =
 export type CallupMatchRow = {
   event_id: string;
   team_id: string;
+  /** F13B (T-5) — tipo del evento: 'tournament' = cabecera de torneo. */
+  type: string;
+  /** F13B (T-5) — cabecera del torneo si es un sub-partido; null en el resto. */
+  tournament_id: string | null;
+  /** F13B (T-5) — ronda del sub-partido (1,2,3…); null si no es de torneo. */
+  round: number | null;
   team_name: string;
   team_color: string;
   category_name: string;
@@ -275,7 +281,7 @@ export async function loadUpcomingCallups(
   let q = supabase
     .from('events')
     .select(
-      `id, club_id, team_id, title, opponent_name, starts_at,
+      `id, club_id, team_id, type, tournament_id, round, title, opponent_name, starts_at,
        teams!inner(name, color, season, categories!inner(name))`
     )
     .eq('club_id', clubId)
@@ -310,6 +316,9 @@ export async function loadUpcomingCallups(
     id: string;
     club_id: string;
     team_id: string;
+    type: string;
+    tournament_id: string | null;
+    round: number | null;
     title: string;
     opponent_name: string | null;
     starts_at: string;
@@ -322,6 +331,37 @@ export async function loadUpcomingCallups(
   };
   const events = (rawEvents ?? []).map((e) => e as unknown as EventRow);
   if (events.length === 0) return [];
+
+  // F13B (T-5) — para agrupar por torneo, la CABECERA (type='tournament', aloja
+  // la convocatoria única) debe estar presente aunque su fecha (= 1er partido)
+  // caiga fuera de la ventana (p.ej. la ronda 1 ya se jugó y solo la 2 es
+  // próxima). Traemos las cabeceras referenciadas por sub-partidos en ventana que
+  // aún no estén en la lista. Misma autorización: son del mismo equipo/scope que
+  // sus sub-partidos (ya filtrados arriba).
+  const presentIds = new Set(events.map((e) => e.id));
+  const missingHeaderIds = Array.from(
+    new Set(
+      events
+        .map((e) => e.tournament_id)
+        .filter((id): id is string => id != null && !presentIds.has(id)),
+    ),
+  );
+  if (missingHeaderIds.length > 0) {
+    const { data: headerRows } = await supabase
+      .from('events')
+      .select(
+        `id, club_id, team_id, type, tournament_id, round, title, opponent_name, starts_at,
+         teams!inner(name, color, season, categories!inner(name))`,
+      )
+      .eq('club_id', clubId)
+      .in('id', missingHeaderIds);
+    for (const h of (headerRows ?? []).map((e) => e as unknown as EventRow)) {
+      if (!presentIds.has(h.id)) {
+        events.push(h);
+        presentIds.add(h.id);
+      }
+    }
+  }
 
   const eventIds = events.map((e) => e.id);
 
@@ -436,6 +476,9 @@ export async function loadUpcomingCallups(
     return {
       event_id: e.id,
       team_id: e.team_id,
+      type: e.type,
+      tournament_id: e.tournament_id,
+      round: e.round,
       team_name: e.teams.name,
       team_color: e.teams.color,
       category_name: e.teams.categories.name,

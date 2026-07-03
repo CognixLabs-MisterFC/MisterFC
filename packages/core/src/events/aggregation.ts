@@ -53,6 +53,90 @@ export function nextTournamentRound(
   return Math.max(...valid) + 1;
 }
 
+/**
+ * F13B (T-5) — Forma mínima para agrupar filas de "Gestión de partidos" por
+ * torneo. `type='tournament'` (con `tournament_id` null) es la CABECERA; una fila
+ * con `tournament_id` no nulo es un sub-partido de ese torneo; el resto son
+ * partidos sueltos (match/friendly normales).
+ */
+export type CallupGroupable = {
+  event_id: string;
+  type: string;
+  tournament_id: string | null;
+  round: number | null;
+  starts_at: string;
+};
+
+export type GroupedCallup<T> =
+  | { kind: 'single'; match: T }
+  | { kind: 'tournament'; header: T; matches: T[] };
+
+/**
+ * F13B (T-5) — Agrupa las filas de convocatoria en unidades: cada torneo como un
+ * grupo (cabecera + sus sub-partidos ordenados por ronda) y cada partido normal
+ * suelto. El orden entre grupos es por fecha ascendente (la cabecera representa al
+ * torneo con su `starts_at`, = 1er partido). Un sub-partido cuya cabecera NO esté
+ * en `rows` (p.ej. la ronda 1 ya pasó y la cabecera cayó fuera de la ventana) se
+ * degrada a `single` para no perderlo; el llamador debería incluir la cabecera
+ * (así el grupo lleva la convocatoria única). NO muta `rows`.
+ */
+export function groupCallupsByTournament<T extends CallupGroupable>(
+  rows: readonly T[],
+): GroupedCallup<T>[] {
+  const headers = new Map<string, T>();
+  const subsByTournament = new Map<string, T[]>();
+  const singles: T[] = [];
+
+  for (const r of rows) {
+    if (r.tournament_id != null) {
+      const arr = subsByTournament.get(r.tournament_id) ?? [];
+      arr.push(r);
+      subsByTournament.set(r.tournament_id, arr);
+    } else if (r.type === 'tournament') {
+      headers.set(r.event_id, r);
+    } else {
+      singles.push(r);
+    }
+  }
+
+  const byRoundThenDate = (a: T, b: T): number => {
+    const ra = a.round ?? Number.MAX_SAFE_INTEGER;
+    const rb = b.round ?? Number.MAX_SAFE_INTEGER;
+    if (ra !== rb) return ra - rb;
+    return a.starts_at.localeCompare(b.starts_at);
+  };
+
+  const keyed: { at: string; order: number; g: GroupedCallup<T> }[] = [];
+  let order = 0;
+
+  for (const [tid, header] of headers) {
+    const matches = (subsByTournament.get(tid) ?? []).slice().sort(byRoundThenDate);
+    subsByTournament.delete(tid);
+    keyed.push({
+      at: header.starts_at,
+      order: order++,
+      g: { kind: 'tournament', header, matches },
+    });
+  }
+
+  // Sub-partidos huérfanos (cabecera fuera de `rows`) → como sueltos, ordenados.
+  for (const arr of subsByTournament.values()) {
+    for (const m of arr) {
+      keyed.push({ at: m.starts_at, order: order++, g: { kind: 'single', match: m } });
+    }
+  }
+
+  for (const s of singles) {
+    keyed.push({ at: s.starts_at, order: order++, g: { kind: 'single', match: s } });
+  }
+
+  keyed.sort((a, b) => {
+    const c = a.at.localeCompare(b.at);
+    return c !== 0 ? c : a.order - b.order;
+  });
+  return keyed.map((k) => k.g);
+}
+
 export type DatedEvent = {
   id: string;
   starts_at: string;
