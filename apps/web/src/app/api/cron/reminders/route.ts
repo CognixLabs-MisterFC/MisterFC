@@ -32,6 +32,7 @@ import { NextResponse } from 'next/server';
 import {
   MATCH_SURFACE_TYPES,
   buildDedupeKey,
+  callupEventIdFor,
   createSupabaseAdminClient,
   dayBucketMadrid,
   type Json,
@@ -93,7 +94,7 @@ async function handle(req: Request): Promise<NextResponse> {
   const { data: matchRows, error: matchErr } = await supabase
     .from('events')
     .select(
-      `id, team_id, title, opponent_name, starts_at,
+      `id, team_id, title, opponent_name, starts_at, tournament_id,
        match_callup_meta!inner(published_at)`
     )
     .in('type', MATCH_SURFACE_TYPES)
@@ -111,6 +112,7 @@ async function handle(req: Request): Promise<NextResponse> {
     title: string;
     opponent_name: string | null;
     starts_at: string;
+    tournament_id: string | null;
   };
   const matches = (matchRows ?? []).map((r) => r as unknown as MatchRow);
 
@@ -138,11 +140,12 @@ async function handle(req: Request): Promise<NextResponse> {
       .map((r) => r.player_id);
     if (rosterIds.length === 0) continue;
 
-    // Responses ya emitidas.
+    // Responses ya emitidas. F13B — un partido de torneo lee/escribe sus
+    // respuestas en la cabecera (convocatoria única).
     const { data: resps } = await supabase
       .from('callup_responses')
       .select('player_id')
-      .eq('event_id', m.id)
+      .eq('event_id', callupEventIdFor(m))
       .in('player_id', rosterIds);
     const respondedIds = new Set(
       (resps ?? []).map((r) => r.player_id as string)

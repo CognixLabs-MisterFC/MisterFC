@@ -12,7 +12,11 @@
  * avance de estado: el coach pasa a la alineación cuando ya no faltan respuestas.
  */
 
-import { MATCH_SURFACE_TYPES, createSupabaseServerClient } from '@misterfc/core';
+import {
+  MATCH_SURFACE_TYPES,
+  callupEventIdFor,
+  createSupabaseServerClient,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 export type CoachMatchState =
@@ -80,7 +84,9 @@ export async function loadCoachNextMatch(
   const nowIso = new Date().toISOString();
   const { data: evRows } = await supabase
     .from('events')
-    .select('id, title, opponent_name, starts_at, team_id, type, teams!inner(name)')
+    .select(
+      'id, title, opponent_name, starts_at, team_id, type, tournament_id, teams!inner(name)',
+    )
     .in('team_id', teamIds)
     .in('type', MATCH_SURFACE_TYPES)
     .gte('starts_at', nowIso)
@@ -92,10 +98,15 @@ export async function loadCoachNextMatch(
     opponent_name: string | null;
     starts_at: string;
     team_id: string;
+    tournament_id: string | null;
     teams: { name: string };
   };
   const ev = (evRows ?? [])[0] as unknown as EvShape | undefined;
   if (!ev) return null;
+
+  // F13B (T-2) — convocatoria (meta/decisiones/respuestas) de la CABECERA si el
+  // próximo partido es de un torneo; si no, del propio evento.
+  const callupEventId = callupEventIdFor(ev);
 
   // Estado del partido (F7.1). Sin fila → not_started.
   const { data: stateRow } = await supabase
@@ -118,7 +129,7 @@ export async function loadCoachNextMatch(
   const { data: metaRow } = await supabase
     .from('match_callup_meta')
     .select('published_at')
-    .eq('event_id', ev.id)
+    .eq('event_id', callupEventId)
     .maybeSingle();
   const published = (metaRow?.published_at as string | null | undefined) != null;
 
@@ -136,7 +147,7 @@ export async function loadCoachNextMatch(
   const { data: decRows } = await supabase
     .from('callup_decisions')
     .select('player_id, decision')
-    .eq('event_id', ev.id);
+    .eq('event_id', callupEventId);
   const discarded = new Set(
     (decRows ?? [])
       .filter((d) => (d.decision as string) === 'discarded')
@@ -148,7 +159,7 @@ export async function loadCoachNextMatch(
   const { data: respRows } = await supabase
     .from('callup_responses')
     .select('player_id, status')
-    .eq('event_id', ev.id);
+    .eq('event_id', callupEventId);
   // Mapa respuesta por jugador (solo convocados cuentan).
   const calledUpSet = new Set(calledUpIds);
   const statusByPlayer = new Map<string, string>();

@@ -11,6 +11,7 @@
  */
 
 import {
+  callupEventIdFor,
   createSupabaseServerClient,
   isMatchSurfaceType,
   pickNextEvent,
@@ -248,6 +249,7 @@ export async function loadTeamDetail(
     title: string;
     opponent_name: string | null;
     starts_at: string;
+    tournament_id: string | null;
   };
 
   type MetaShape = { event_id: string; published_at: string | null };
@@ -267,14 +269,14 @@ export async function loadTeamDetail(
       .is('left_at', null),
     supabase
       .from('events')
-      .select('id, type, title, opponent_name, starts_at')
+      .select('id, type, title, opponent_name, starts_at, tournament_id')
       .eq('team_id', teamId)
       .gte('starts_at', nowIso)
       .lte('starts_at', horizonIso)
       .order('starts_at', { ascending: true }),
     supabase
       .from('events')
-      .select('id, type, title, opponent_name, starts_at')
+      .select('id, type, title, opponent_name, starts_at, tournament_id')
       .eq('team_id', teamId)
       .eq('type', 'training')
       .gte('starts_at', lookbackIso)
@@ -285,19 +287,24 @@ export async function loadTeamDetail(
   const future = ((futureEvents ?? []) as unknown[]) as EventShape[];
   const past = ((pastTrainings ?? []) as unknown[]) as EventShape[];
 
-  const futureMatchIds = future
-    // F13B — amistoso también tiene convocatoria (match_callup_meta).
-    .filter((e) => isMatchSurfaceType(e.type))
-    .map((e) => e.id);
+  // F13B — amistoso también tiene convocatoria; y un partido de TORNEO la hereda
+  // de la cabecera (callupEventIdFor). Consultamos la meta por el evento FUENTE.
+  const futureCallupIds = Array.from(
+    new Set(
+      future
+        .filter((e) => isMatchSurfaceType(e.type))
+        .map((e) => callupEventIdFor(e)),
+    ),
+  );
   const pastTrainingIds = past.map((e) => e.id);
 
   const [{ data: metas }, { data: attendances }] = await Promise.all([
-    futureMatchIds.length === 0
+    futureCallupIds.length === 0
       ? { data: [] as MetaShape[] }
       : supabase
           .from('match_callup_meta')
           .select('event_id, published_at')
-          .in('event_id', futureMatchIds),
+          .in('event_id', futureCallupIds),
     pastTrainingIds.length === 0
       ? { data: [] as AttendanceShape[] }
       : supabase
@@ -322,7 +329,9 @@ export async function loadTeamDetail(
     starts_at: e.starts_at,
     opponent_name: e.opponent_name,
     has_callup_published:
-      isMatchSurfaceType(e.type) ? publishedSet.has(e.id) : false,
+      isMatchSurfaceType(e.type)
+        ? publishedSet.has(callupEventIdFor(e))
+        : false,
   }));
 
   const nextMatchPick = pickNextMatchWithoutCallup(

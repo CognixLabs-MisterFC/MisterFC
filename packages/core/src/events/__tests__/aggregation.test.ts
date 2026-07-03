@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
+  callupEventIdFor,
+  lineupWritesCallup,
   pickNextEvent,
   pickLastEventWithin,
   pickNextMatchWithoutCallup,
@@ -7,6 +9,29 @@ import {
 } from '../aggregation';
 
 const NOW = '2026-06-15T10:00:00.000Z';
+
+// F13B (T-2) — convocatoria heredada por referencia.
+describe('callupEventIdFor', () => {
+  test('partido de torneo → id de la cabecera', () => {
+    expect(
+      callupEventIdFor({ id: 'match-1', tournament_id: 'cabecera-9' }),
+    ).toBe('cabecera-9');
+  });
+
+  test('evento normal (sin tournament_id) → él mismo', () => {
+    expect(callupEventIdFor({ id: 'ev-1', tournament_id: null })).toBe('ev-1');
+  });
+});
+
+describe('lineupWritesCallup', () => {
+  test('partido de torneo → NO escribe convocatoria (solo distribuye)', () => {
+    expect(lineupWritesCallup({ tournament_id: 'cabecera-9' })).toBe(false);
+  });
+
+  test('evento normal → sí escribe convocatoria (clásico)', () => {
+    expect(lineupWritesCallup({ tournament_id: null })).toBe(true);
+  });
+});
 
 describe('pickNextEvent', () => {
   test('returns the earliest future event', () => {

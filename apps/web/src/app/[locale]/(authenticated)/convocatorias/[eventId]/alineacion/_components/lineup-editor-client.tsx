@@ -136,6 +136,13 @@ type Props = {
   initialPlannedSubs: PlannedSubVM[];
   /** F6.10 — plantillas personalizadas del coach para esta modalidad. */
   coachFormations: CoachFormation[];
+  /**
+   * F13B (T-2) — true si este evento es un PARTIDO de torneo: su convocatoria
+   * vive en la cabecera. La alineación solo DISTRIBUYE (campo/banquillo); no
+   * expone descartes ni escribe convocatoria (los descartados que llegan son los
+   * de la cabecera, en modo lectura).
+   */
+  isTournamentMatch: boolean;
 };
 
 // Ficha de la alineación: nombre en orden natural "Nombre Apellido" (no solo el
@@ -255,6 +262,7 @@ export function LineupEditorClient(props: Props) {
     initialTacticalNotes,
     initialPlannedSubs,
     coachFormations,
+    isTournamentMatch,
   } = props;
 
   const t = useTranslations('alineacion');
@@ -432,6 +440,9 @@ export function LineupEditorClient(props: Props) {
   // Descartar (nivel evento): quita de positions, añade a Descartados, persiste
   // la decisión de convocatoria (que el server propaga a todas las alineaciones).
   function confirmDiscard(playerId: string, reason: DiscardReason) {
+    // F13B (T-2) — en un partido de torneo la plantilla se maneja SOLO en la
+    // cabecera: la alineación no descarta (no escribe convocatoria).
+    if (isTournamentMatch) return;
     const prevPos = positions;
     const prevDisc = discarded;
     setPositions(positions.filter((p) => p.playerId !== playerId));
@@ -455,6 +466,8 @@ export function LineupEditorClient(props: Props) {
   // Reincluir: quita de Descartados y devuelve al banquillo (de todas las
   // alineaciones, vía la decisión called_up en el server).
   function reincludePlayer(playerId: string) {
+    // F13B (T-2) — idem: la reinclusión (called_up) se gestiona en la cabecera.
+    if (isTournamentMatch) return;
     const prevPos = positions;
     const prevDisc = discarded;
     setDiscarded(discarded.filter((d) => d.playerId !== playerId));
@@ -823,29 +836,34 @@ export function LineupEditorClient(props: Props) {
             />
           </section>
 
-          <section className="flex flex-col gap-2">
-            <h3 className="text-sm font-semibold">
-              {t('discarded_panel')} · {discarded.length}
-            </h3>
-            <DropZone id={DISCARDED_ZONE_ID}>
-              {discarded.length === 0 ? (
-                <p className="text-xs text-muted-foreground">{t('discarded_empty')}</p>
-              ) : (
-                discarded.map((d) => (
-                  <PlayerPill
-                    key={d.playerId}
-                    playerId={d.playerId}
-                    player={rosterById.get(d.playerId)}
-                    positionLabel={posLabelOf(d.playerId)}
-                    subLabel={reasonLabel(d.reason)}
-                  />
-                ))
-              )}
-            </DropZone>
-            <p className="text-[10px] text-muted-foreground">
-              {t('discarded_hint')}
-            </p>
-          </section>
+          {/* F13B (T-2) — en un partido de torneo la plantilla (convocados/
+              descartados) se gestiona SOLO en la cabecera del torneo; la
+              alineación del partido no expone descartes. */}
+          {!isTournamentMatch && (
+            <section className="flex flex-col gap-2">
+              <h3 className="text-sm font-semibold">
+                {t('discarded_panel')} · {discarded.length}
+              </h3>
+              <DropZone id={DISCARDED_ZONE_ID}>
+                {discarded.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">{t('discarded_empty')}</p>
+                ) : (
+                  discarded.map((d) => (
+                    <PlayerPill
+                      key={d.playerId}
+                      playerId={d.playerId}
+                      player={rosterById.get(d.playerId)}
+                      positionLabel={posLabelOf(d.playerId)}
+                      subLabel={reasonLabel(d.reason)}
+                    />
+                  ))
+                )}
+              </DropZone>
+              <p className="text-[10px] text-muted-foreground">
+                {t('discarded_hint')}
+              </p>
+            </section>
+          )}
         </div>
       </DndContext>
 

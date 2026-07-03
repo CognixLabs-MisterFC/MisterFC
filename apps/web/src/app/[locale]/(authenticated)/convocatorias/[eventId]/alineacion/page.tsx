@@ -88,6 +88,7 @@ export default async function LineupPage({ params, searchParams }: Props) {
         initialTacticalNotes={data.tacticalNotes}
         initialPlannedSubs={data.plannedSubs}
         coachFormations={data.coachFormations}
+        isTournamentMatch={data.isTournamentMatch}
       />
     </div>
   );

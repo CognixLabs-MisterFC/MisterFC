@@ -92,6 +92,13 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
   );
   if (!detail) notFound();
 
+  // F13B (T-2) — un partido de torneo NO tiene convocatoria propia: la única
+  // vive en la cabecera. Redirige a la convocatoria de la cabecera (la del
+  // partido se gestiona desde su alineación/directo, no aquí).
+  if (detail.event.tournament_id) {
+    redirect(`/${locale}/convocatorias/${detail.event.tournament_id}`);
+  }
+
   const t = await getTranslations('convocatorias');
   const tDetail = await getTranslations('convocatorias.detail');
   const tTransport = await getTranslations('convocatorias.transport');

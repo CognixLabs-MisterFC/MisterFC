@@ -16,6 +16,7 @@
  */
 
 import {
+  callupEventIdFor,
   createSupabaseServerClient,
   defaultLineupDraft,
   isManageableMatchType,
@@ -97,6 +98,8 @@ export type LineupEditorData = {
   plannedSubs: PlannedSubRow[];
   /** F6.10 — plantillas del coach para la modalidad del equipo. */
   coachFormations: CoachFormation[];
+  /** F13B (T-2) — true si es un partido de torneo (convocatoria en la cabecera). */
+  isTournamentMatch: boolean;
 };
 
 export async function loadLineupEditor(
@@ -110,7 +113,7 @@ export async function loadLineupEditor(
   const { data: ev } = await supabase
     .from('events')
     .select(
-      `id, club_id, team_id, type, title, opponent_name, starts_at,
+      `id, club_id, team_id, type, tournament_id, title, opponent_name, starts_at,
        teams!inner(name, color, format, season, categories!inner(name))`,
     )
     .eq('id', eventId)
@@ -123,6 +126,7 @@ export async function loadLineupEditor(
   type EventShape = {
     id: string;
     team_id: string;
+    tournament_id: string | null;
     title: string;
     opponent_name: string | null;
     starts_at: string;
@@ -136,17 +140,22 @@ export async function loadLineupEditor(
   };
   const event = ev as unknown as EventShape;
 
+  // F13B (T-2) — la convocatoria (descartados) se lee de la CABECERA si este
+  // evento es un partido de torneo; si no, del propio evento.
+  const callupEventId = callupEventIdFor(event);
+
   // Permiso autoritativo (mismo helper que la RLS).
   const { data: canManage } = await supabase.rpc('user_can_manage_lineup', {
     p_event_id: eventId,
   });
   if (canManage !== true) return null;
 
-  // Decisiones de convocatoria del evento — descartados (con motivo).
+  // Decisiones de convocatoria — descartados (con motivo). Para un partido de
+  // torneo se leen de la cabecera (callupEventId).
   const { data: decisionRows } = await supabase
     .from('callup_decisions')
     .select('player_id, decision, reason')
-    .eq('event_id', eventId);
+    .eq('event_id', callupEventId);
   const discarded: DiscardedPlayer[] = (decisionRows ?? [])
     .filter((d) => (d.decision as string) === 'discarded')
     .map((d) => ({
@@ -435,5 +444,6 @@ export async function loadLineupEditor(
     tacticalNotes,
     plannedSubs,
     coachFormations,
+    isTournamentMatch: event.tournament_id != null,
   };
 }
