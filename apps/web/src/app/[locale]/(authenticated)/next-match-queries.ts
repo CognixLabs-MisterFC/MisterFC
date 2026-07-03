@@ -15,6 +15,7 @@
 import {
   MATCH_SURFACE_TYPES,
   callupEventIdFor,
+  filterPublishedByAnchor,
   createSupabaseServerClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -32,6 +33,10 @@ export type CoachNextMatch = {
   opponentName: string | null;
   startsAt: string;
   teamName: string;
+  /** F13B — cabecera del torneo si es un sub-partido; null en partido normal. */
+  tournamentId: string | null;
+  /** F13B — ronda del sub-partido (1,2,3…); null si no es de torneo. */
+  round: number | null;
   state: CoachMatchState;
   /** Convocados que ya han respondido (X). */
   confirmed: number;
@@ -48,20 +53,13 @@ export type PlayerPendingCallup = {
   title: string;
   opponentName: string | null;
   startsAt: string;
+  /** F13B — cabecera del torneo si es un sub-partido; null en partido normal. */
+  tournamentId: string | null;
+  /** F13B — ronda del sub-partido (1,2,3…); null si no es de torneo. */
+  round: number | null;
   /** Nº de jugadores propios pendientes de responder en este partido. */
   pendingCount: number;
 } | null;
-
-type MetaEmbed =
-  | { published_at: string | null }
-  | { published_at: string | null }[]
-  | null;
-
-function isPublished(meta: MetaEmbed): boolean {
-  if (!meta) return false;
-  if (Array.isArray(meta)) return meta.length > 0 && meta[0]?.published_at != null;
-  return meta.published_at != null;
-}
 
 /**
  * Próximo partido del cuerpo técnico (equipos donde es team_staff activo) con su
@@ -85,7 +83,7 @@ export async function loadCoachNextMatch(
   const { data: evRows } = await supabase
     .from('events')
     .select(
-      'id, title, opponent_name, starts_at, team_id, type, tournament_id, teams!inner(name)',
+      'id, title, opponent_name, starts_at, team_id, type, tournament_id, round, teams!inner(name)',
     )
     .in('team_id', teamIds)
     .in('type', MATCH_SURFACE_TYPES)
@@ -99,6 +97,7 @@ export async function loadCoachNextMatch(
     starts_at: string;
     team_id: string;
     tournament_id: string | null;
+    round: number | null;
     teams: { name: string };
   };
   const ev = (evRows ?? [])[0] as unknown as EvShape | undefined;
@@ -198,6 +197,8 @@ export async function loadCoachNextMatch(
     opponentName: ev.opponent_name,
     startsAt: ev.starts_at,
     teamName: ev.teams.name,
+    tournamentId: ev.tournament_id,
+    round: ev.round,
     state,
     confirmed,
     calledUp,
@@ -237,7 +238,7 @@ export async function loadPlayerPendingCallup(
   const { data: evRows } = await supabase
     .from('events')
     .select(
-      'id, title, opponent_name, starts_at, team_id, match_callup_meta(published_at)',
+      'id, title, opponent_name, starts_at, team_id, type, tournament_id, round',
     )
     .in('team_id', teamIds)
     .in('type', MATCH_SURFACE_TYPES)
@@ -250,18 +251,36 @@ export async function loadPlayerPendingCallup(
     opponent_name: string | null;
     starts_at: string;
     team_id: string;
-    match_callup_meta: MetaEmbed;
+    tournament_id: string | null;
+    round: number | null;
   };
-  const events = (evRows ?? [])
-    .map((e) => e as unknown as EvShape)
-    .filter((e) => isPublished(e.match_callup_meta));
+  const events = (evRows ?? []).map((e) => e as unknown as EvShape);
   if (events.length === 0) return null;
 
-  const eventIds = events.map((e) => e.id);
+  // F13B — la convocatoria (meta/decisiones/respuestas) de un sub-partido de
+  // torneo vive en la CABECERA: resolvemos contra `callupEventIdFor(ev)`. Para un
+  // partido normal es su propio id → comportamiento idéntico. El embed de la meta
+  // del propio evento no serviría (la del sub-partido está vacía), así que la
+  // consultamos por el conjunto de anclas.
+  const anchorOf = new Map<string, string>();
+  for (const e of events) anchorOf.set(e.id, callupEventIdFor(e));
+  const anchorIds = [...new Set(anchorOf.values())];
+
+  const { data: metaRows } = await supabase
+    .from('match_callup_meta')
+    .select('event_id, published_at')
+    .in('event_id', anchorIds)
+    .not('published_at', 'is', null);
+  const publishedAnchors = new Set(
+    (metaRows ?? []).map((m) => m.event_id as string),
+  );
+  const publishedEvents = filterPublishedByAnchor(events, publishedAnchors);
+  if (publishedEvents.length === 0) return null;
+
   const { data: decRows } = await supabase
     .from('callup_decisions')
     .select('event_id, player_id, decision')
-    .in('event_id', eventIds)
+    .in('event_id', anchorIds)
     .in('player_id', playerIds);
   const discarded = new Set(
     (decRows ?? [])
@@ -271,13 +290,15 @@ export async function loadPlayerPendingCallup(
   const { data: respRows } = await supabase
     .from('callup_responses')
     .select('event_id, player_id')
-    .in('event_id', eventIds)
+    .in('event_id', anchorIds)
     .in('player_id', playerIds);
   const responded = new Set(
     (respRows ?? []).map((r) => `${r.event_id as string}:${r.player_id as string}`),
   );
 
-  for (const e of events) {
+  for (const e of publishedEvents) {
+    // Decisiones/respuestas se leen contra el ancla (cabecera si es torneo).
+    const anchorId = callupEventIdFor(e);
     const eventDate = e.starts_at.slice(0, 10);
     const myInTeam = memberships
       .filter(
@@ -289,7 +310,8 @@ export async function loadPlayerPendingCallup(
       .map((m) => m.player_id);
     const pending = myInTeam.filter(
       (pid) =>
-        !discarded.has(`${e.id}:${pid}`) && !responded.has(`${e.id}:${pid}`),
+        !discarded.has(`${anchorId}:${pid}`) &&
+        !responded.has(`${anchorId}:${pid}`),
     );
     if (pending.length > 0) {
       return {
@@ -297,6 +319,8 @@ export async function loadPlayerPendingCallup(
         title: e.title,
         opponentName: e.opponent_name,
         startsAt: e.starts_at,
+        tournamentId: e.tournament_id,
+        round: e.round,
         pendingCount: pending.length,
       };
     }

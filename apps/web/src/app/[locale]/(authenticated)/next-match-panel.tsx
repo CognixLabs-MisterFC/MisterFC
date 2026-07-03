@@ -9,7 +9,7 @@
  */
 
 import { getTranslations } from 'next-intl/server';
-import { CalendarClock, ClipboardCheck } from 'lucide-react';
+import { CalendarClock, ClipboardCheck, Trophy } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -69,6 +69,17 @@ export async function NextMatchPanel({
   locale,
 }: Props) {
   const t = await getTranslations('home.next_match');
+  // F13B — reutiliza la etiqueta de torneo de T-5 (misma clave i18n es/en/va).
+  const tAlineacion = await getTranslations('alineacion');
+
+  // F13B — badge "Torneo {nombre} · Ronda N" para un sub-partido de torneo.
+  // Reusa el patrón/estilo del drill-in de alineación (T-5).
+  const tournamentBadge = (name: string, round: number | null) => (
+    <span className="inline-flex w-fit items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2 py-0.5 text-xs font-medium text-primary">
+      <Trophy className="size-3" aria-hidden />
+      {tAlineacion('tournament_label', { name, round: round ?? 0 })}
+    </span>
+  );
 
   // Admin/coord: no panel (F9 trae el resumen global).
   if (role === 'admin_club' || role === 'coordinador') return null;
@@ -90,6 +101,8 @@ export async function NextMatchPanel({
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm">
           <p className="text-muted-foreground">{t('player_pending.desc')}</p>
+          {pending.tournamentId != null &&
+            tournamentBadge(pending.title, pending.round)}
           <p className="font-medium">
             {pending.title}
             {pending.opponentName ? ` · vs ${pending.opponentName}` : ''}
@@ -138,6 +151,8 @@ export async function NextMatchPanel({
         </Badge>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 text-sm">
+        {next.tournamentId != null &&
+          tournamentBadge(next.title, next.round)}
         <p className="font-medium">
           {next.title}
           {next.opponentName ? ` · vs ${next.opponentName}` : ''}
