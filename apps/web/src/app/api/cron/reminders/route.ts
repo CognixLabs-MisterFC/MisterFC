@@ -33,6 +33,7 @@ import {
   MATCH_SURFACE_TYPES,
   buildDedupeKey,
   callupEventIdFor,
+  consolidateReminderTargets,
   createSupabaseAdminClient,
   dayBucketMadrid,
   type Json,
@@ -161,8 +162,26 @@ async function handle(req: Request): Promise<NextResponse> {
 
   const allMatches = [...matches, ...tournMatchesPublished];
 
-  for (const m of allMatches) {
+  // F13B — CONSOLIDACIÓN de recordatorios de torneo: un representante por ANCLA
+  // de convocatoria (`callupEventIdFor` = cabecera para sub-partidos, propio id
+  // para normales). Un torneo de finde tiene varios sub-partidos en la ventana →
+  // sin consolidar sería 1 aviso por cruce (spam); con esto queda 1 por
+  // torneo/día/usuario. De paso evita repetir roster/respuestas por cada
+  // sub-partido (el insert los descartaría luego por dedupe_key). El
+  // `pendingPlayerIds` es idéntico entre sub-partidos del mismo torneo (mismo
+  // team_id + convocatoria única en la cabecera), así que el representante basta.
+  // Los partidos NORMALES no cambian (cada uno es su propio grupo).
+  const reminderTargets = consolidateReminderTargets(
+    allMatches.filter((m) => m.team_id),
+  );
+
+  for (const m of reminderTargets) {
     if (!m.team_id) continue;
+
+    // Ancla del recordatorio: la cabecera si es un sub-partido de torneo, el
+    // propio evento si es un partido normal.
+    const anchorId = callupEventIdFor(m);
+    const isTournament = m.tournament_id != null;
 
     // Roster a fecha del partido (snapshot histórico — el cron tolera el
     // simple "current roster" porque a 24-48h del partido nadie está
@@ -186,11 +205,11 @@ async function handle(req: Request): Promise<NextResponse> {
     if (rosterIds.length === 0) continue;
 
     // Responses ya emitidas. F13B — un partido de torneo lee/escribe sus
-    // respuestas en la cabecera (convocatoria única).
+    // respuestas en la cabecera (convocatoria única) → se leen contra el ancla.
     const { data: resps } = await supabase
       .from('callup_responses')
       .select('player_id')
-      .eq('event_id', callupEventIdFor(m))
+      .eq('event_id', anchorId)
       .in('player_id', rosterIds);
     const respondedIds = new Set(
       (resps ?? []).map((r) => r.player_id as string)
@@ -214,14 +233,28 @@ async function handle(req: Request): Promise<NextResponse> {
     for (const playerId of pendingPlayerIds) {
       const profiles = profilesByPlayer.get(playerId) ?? [];
       for (const profileId of profiles) {
-        const inAppPayload: Json = {
-          event_id: m.id,
-          player_id: playerId,
-          title: m.title,
-          opponent_name: m.opponent_name,
-          starts_at: m.starts_at,
-          deep_link: `/convocatorias/${m.id}`,
-        };
+        // F13B — payload anclado a la CABECERA cuando es torneo (deep_link a la
+        // convocatoria única) y con texto GENÉRICO del torneo (sin rival ni hora
+        // de un cruce concreto: el sub-partido que "gana" el dedupe es no
+        // determinista). `is_tournament` conmuta el texto del feed in-app
+        // (localizado es/en/va en `home.feed`). Partido normal → ancla = su
+        // propio id → payload/clave idénticos a hoy.
+        const inAppPayload: Json = isTournament
+          ? {
+              event_id: anchorId,
+              player_id: playerId,
+              title: m.title,
+              is_tournament: true,
+              deep_link: `/convocatorias/${anchorId}`,
+            }
+          : {
+              event_id: m.id,
+              player_id: playerId,
+              title: m.title,
+              opponent_name: m.opponent_name,
+              starts_at: m.starts_at,
+              deep_link: `/convocatorias/${m.id}`,
+            };
         inserts.push({
           user_id: profileId,
           type: 'match_callup_reminder',
@@ -230,28 +263,38 @@ async function handle(req: Request): Promise<NextResponse> {
           dedupe_key: buildDedupeKey({
             type: 'match_callup_reminder',
             channel: 'in_app',
-            event_id: m.id,
+            event_id: anchorId,
             day_bucket: dayBucket,
             user_id: profileId,
           }),
         });
-        // Push paralelo — el drainer al final lo procesa.
+        // Push paralelo — el drainer al final lo procesa. El push va en es (como
+        // el resto de recordatorios). Torneo → título = nombre del torneo, body
+        // genérico sin rival/hora.
+        const pushPayload: Json = isTournament
+          ? {
+              title: `Torneo: ${m.title}`,
+              body: `Confirma tu disponibilidad para el torneo`,
+              deep_link: `/es/convocatorias/${anchorId}`,
+              tag: `match_callup_reminder:${anchorId}`,
+            }
+          : {
+              title: m.opponent_name
+                ? `Partido vs ${m.opponent_name}`
+                : `Convocatoria pendiente`,
+              body: `Confirma tu disponibilidad para ${m.title}`,
+              deep_link: `/es/convocatorias/${m.id}`,
+              tag: `match_callup_reminder:${m.id}`,
+            };
         inserts.push({
           user_id: profileId,
           type: 'match_callup_reminder',
           channel: 'push',
-          payload: {
-            title: m.opponent_name
-              ? `Partido vs ${m.opponent_name}`
-              : `Convocatoria pendiente`,
-            body: `Confirma tu disponibilidad para ${m.title}`,
-            deep_link: `/es/convocatorias/${m.id}`,
-            tag: `match_callup_reminder:${m.id}`,
-          },
+          payload: pushPayload,
           dedupe_key: buildDedupeKey({
             type: 'match_callup_reminder',
             channel: 'push',
-            event_id: m.id,
+            event_id: anchorId,
             day_bucket: dayBucket,
             user_id: profileId,
           }),
@@ -375,6 +418,7 @@ async function handle(req: Request): Promise<NextResponse> {
     inserted,
     day_bucket: dayBucket,
     matches_scanned: allMatches.length,
+    reminder_targets: reminderTargets.length,
     trainings_scanned: trainings.length,
     push_drain: drainResult,
   });

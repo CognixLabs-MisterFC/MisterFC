@@ -54,6 +54,27 @@ export function nextTournamentRound(
 }
 
 /**
+ * F13B — CONSOLIDA los partidos candidatos a recordatorio en UN representante por
+ * ANCLA de convocatoria (`callupEventIdFor` = `tournament_id ?? id`). Los
+ * sub-partidos de un mismo torneo comparten cabecera → colapsan a uno solo (el de
+ * `starts_at` más temprano), de modo que el cron emite **1 recordatorio por
+ * torneo/día/usuario** en vez de uno por cruce (evita el spam de los torneos de
+ * finde). Un partido NORMAL tiene ancla = su propio id → es su propio grupo, sin
+ * cambios. Empate de `starts_at` → gana el primero encontrado (estable). No muta.
+ */
+export function consolidateReminderTargets<
+  T extends { id: string; tournament_id: string | null; starts_at: string },
+>(matches: readonly T[]): T[] {
+  const byAnchor = new Map<string, T>();
+  for (const m of matches) {
+    const anchor = callupEventIdFor(m);
+    const cur = byAnchor.get(anchor);
+    if (!cur || m.starts_at < cur.starts_at) byAnchor.set(anchor, m);
+  }
+  return Array.from(byAnchor.values());
+}
+
+/**
  * F13B (T-5) — Forma mínima para agrupar filas de "Gestión de partidos" por
  * torneo. `type='tournament'` (con `tournament_id` null) es la CABECERA; una fila
  * con `tournament_id` no nulo es un sub-partido de ese torneo; el resto son
