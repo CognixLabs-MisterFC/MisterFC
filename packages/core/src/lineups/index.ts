@@ -85,9 +85,11 @@ export {
   calledUpOnRemove,
   effectiveCallupDecision,
   groupRosterByCallup,
+  callupRatioForPlayer,
 } from './callup-sync';
 export type {
   CallupDecision,
   CalledUpOp,
   CallupGroups,
+  RosterMembership,
 } from './callup-sync';

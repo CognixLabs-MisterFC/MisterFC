@@ -13,6 +13,7 @@ import {
   derivedRatios,
   attendanceBreakdown,
   computeGroupAverages,
+  callupRatioForPlayer,
   DEVELOPMENT_PERIODS,
   DEVELOPMENT_REPORT_CATALOG,
   TEAM_REPORT_CATALOG,
@@ -207,8 +208,8 @@ export type FichaStats = {
   attendancePresentPct: number | null;
   attendanceTotal: number;
   /** F13.10h-4 — ratios del equipo en la temporada (numerador/denominador). */
-  calledUp: number; // partidos a los que el jugador fue convocado (decision='called_up')
-  totalMatches: number; // total de partidos del equipo en la temporada
+  calledUp: number; // partidos OFICIALES jugados (pertenecía) en los que fue convocado (canónico: roster − descartados)
+  totalMatches: number; // partidos OFICIALES ya jugados en los que el jugador pertenecía al equipo
   trainingsAttended: number; // entrenos a los que asistió (bucket 'present')
   totalTrainings: number; // total de entrenos del equipo en la temporada
   /** D3 — subidas a equipos superiores (seguimiento). Vacío si no hay. */
@@ -249,34 +250,72 @@ export async function loadFichaStats(
     .eq('events.teams.season', seasonLabel);
   const att = attendanceBreakdown((attRows ?? []) as unknown as AttendanceRow[]);
 
-  // Denominadores (total de partidos/entrenos del equipo) + convocatorias del
-  // jugador. Solo si conocemos el equipo de la temporada.
+  // Ratio de convocatorias (X/Y) + denominador de entrenos. Solo si conocemos el
+  // equipo de la temporada.
+  //
+  // Fix ratio canónico: el numerador ya NO cuenta filas `called_up` explícitas
+  // (infravaloraba al banquillo: sin fila = convocado). Ahora numerador y
+  // denominador comparten el MISMO universo y criterio de pertenencia, así que
+  // nunca X>Y. Decisiones de producto cerradas:
+  //  (i)   universo = partidos YA JUGADOS (starts_at <= now); futuros NO cuentan.
+  //  (ii)  solo OFICIALES: type='match' AND tournament_id IS NULL (excluye
+  //        amistosos y torneos → su desglose es F9B).
+  //  (iii) el jugador cuenta en un partido solo si pertenecía al equipo a esa
+  //        fecha (team_members joined/left). El cálculo canónico lo hace
+  //        `callupRatioForPlayer` en memoria (reusa groupRosterByCallup).
   let calledUp = 0;
   let totalMatches = 0;
   let totalTrainings = 0;
   if (teamId) {
-    const [matchesRes, trainingsRes, calledUpRes] = await Promise.all([
-      supabase
-        .from('events')
-        .select('id', { count: 'exact', head: true })
-        .eq('team_id', teamId)
-        .eq('type', 'match'),
-      supabase
-        .from('events')
-        .select('id', { count: 'exact', head: true })
-        .eq('team_id', teamId)
-        .eq('type', 'training'),
-      supabase
-        .from('callup_decisions')
-        .select('event_id, events!inner(team_id, type)', { count: 'exact', head: true })
-        .eq('player_id', playerId)
-        .eq('decision', 'called_up')
-        .eq('events.team_id', teamId)
-        .eq('events.type', 'match'),
-    ]);
-    totalMatches = matchesRes.count ?? 0;
+    const nowIso = new Date().toISOString();
+    const [officialRes, trainingsRes, membershipRes, discardedRes] =
+      await Promise.all([
+        // Universo (denominador): partidos oficiales YA JUGADOS del equipo.
+        supabase
+          .from('events')
+          .select('id, starts_at')
+          .eq('team_id', teamId)
+          .eq('type', 'match')
+          .is('tournament_id', null)
+          .lte('starts_at', nowIso),
+        supabase
+          .from('events')
+          .select('id', { count: 'exact', head: true })
+          .eq('team_id', teamId)
+          .eq('type', 'training'),
+        // Pertenencia histórica del jugador a ESTE equipo (puede tener varias filas).
+        supabase
+          .from('team_members')
+          .select('joined_at, left_at')
+          .eq('player_id', playerId)
+          .eq('team_id', teamId),
+        // Descartes del jugador en ESE universo (oficiales ya jugados del equipo).
+        supabase
+          .from('callup_decisions')
+          .select('event_id, events!inner(team_id, type, tournament_id, starts_at)')
+          .eq('player_id', playerId)
+          .eq('decision', 'discarded')
+          .eq('events.team_id', teamId)
+          .eq('events.type', 'match')
+          .is('events.tournament_id', null)
+          .lte('events.starts_at', nowIso),
+      ]);
+
     totalTrainings = trainingsRes.count ?? 0;
-    calledUp = calledUpRes.count ?? 0;
+
+    type EvRow = { id: string; starts_at: string };
+    type TmRow = { joined_at: string; left_at: string | null };
+    type DecRow = { event_id: string };
+    const discardedEventIds = new Set(
+      ((discardedRes.data ?? []) as unknown as DecRow[]).map((d) => d.event_id),
+    );
+    const ratio = callupRatioForPlayer({
+      events: (officialRes.data ?? []) as unknown as EvRow[],
+      memberships: (membershipRes.data ?? []) as unknown as TmRow[],
+      discardedEventIds,
+    });
+    calledUp = ratio.calledUp;
+    totalMatches = ratio.totalMatches;
   }
 
   // D3 — subidas del jugador a equipos SUPERIORES en la temporada (player_promotions

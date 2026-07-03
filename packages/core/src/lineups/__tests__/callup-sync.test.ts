@@ -4,6 +4,7 @@ import {
   calledUpOnRemove,
   effectiveCallupDecision,
   groupRosterByCallup,
+  callupRatioForPlayer,
   type CallupDecision,
 } from '../callup-sync';
 
@@ -155,5 +156,78 @@ describe('contador derivado de la lista (roster vigente − descartados ∩ rost
     );
     expect(calledUp).toEqual(['titular', 'banquillo']); // 2, no 1
     expect(discarded).toEqual([]); // 'ex' no aparece
+  });
+});
+
+describe('callupRatioForPlayer (ratio de convocatorias canónico)', () => {
+  // Universo de partidos oficiales ya jugados (el caller ya filtró type/fecha).
+  const evs = [
+    { id: 'e1', starts_at: '2026-01-10T18:00:00.000Z' },
+    { id: 'e2', starts_at: '2026-02-10T18:00:00.000Z' },
+    { id: 'e3', starts_at: '2026-03-10T18:00:00.000Z' },
+  ];
+  // Toda la temporada en el equipo.
+  const fullSeason = [{ joined_at: '2026-01-01', left_at: null }];
+
+  it('(a) banquillo SIN fila de decisión cuenta como convocado', () => {
+    // Sin descartes → convocado en los 3.
+    const r = callupRatioForPlayer({
+      events: evs,
+      memberships: fullSeason,
+      discardedEventIds: new Set(),
+    });
+    expect(r).toEqual({ calledUp: 3, totalMatches: 3 });
+  });
+
+  it('(b) descartado en un partido NO cuenta como convocado (pero sí en el total)', () => {
+    const r = callupRatioForPlayer({
+      events: evs,
+      memberships: fullSeason,
+      discardedEventIds: new Set(['e2']),
+    });
+    expect(r).toEqual({ calledUp: 2, totalMatches: 3 });
+  });
+
+  it('(c) incorporado a mitad de temporada → denominador solo desde joined_at', () => {
+    // Alta el 2026-02-01 → e1 (enero) queda fuera; e2 y e3 dentro.
+    const r = callupRatioForPlayer({
+      events: evs,
+      memberships: [{ joined_at: '2026-02-01', left_at: null }],
+      discardedEventIds: new Set(),
+    });
+    expect(r).toEqual({ calledUp: 2, totalMatches: 2 });
+  });
+
+  it('baja a mitad de temporada → partidos posteriores a left_at no cuentan', () => {
+    // Baja el 2026-02-15 → e3 (marzo) fuera; e1 y e2 dentro.
+    const r = callupRatioForPlayer({
+      events: evs,
+      memberships: [{ joined_at: '2026-01-01', left_at: '2026-02-15' }],
+      discardedEventIds: new Set(['e1']),
+    });
+    expect(r).toEqual({ calledUp: 1, totalMatches: 2 });
+  });
+
+  it('invariante X<=Y: descartar no puede subir convocados por encima del total', () => {
+    const r = callupRatioForPlayer({
+      events: evs,
+      memberships: fullSeason,
+      discardedEventIds: new Set(['e1', 'e2', 'e3']),
+    });
+    expect(r.calledUp).toBeLessThanOrEqual(r.totalMatches);
+    expect(r).toEqual({ calledUp: 0, totalMatches: 3 });
+  });
+
+  it('varias membresías (baja y re-alta) → cubre las dos ventanas', () => {
+    const r = callupRatioForPlayer({
+      events: evs,
+      memberships: [
+        { joined_at: '2026-01-01', left_at: '2026-01-20' }, // cubre e1
+        { joined_at: '2026-03-01', left_at: null }, // cubre e3
+      ],
+      discardedEventIds: new Set(),
+    });
+    // e2 (febrero) queda en el hueco → fuera.
+    expect(r).toEqual({ calledUp: 2, totalMatches: 2 });
   });
 });
