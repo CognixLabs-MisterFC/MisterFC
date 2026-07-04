@@ -2130,7 +2130,8 @@
       "group_matches": "Matches",
       "group_no_matches": "No matches yet.",
       "group_round": "Round {n}",
-      "open_lineup": "Lineup"
+      "open_lineup": "Lineup",
+      "open_live": "Live"
     },
     "transport": {
       "club": "Club transport",
@@ -2485,6 +2486,7 @@
     "title": "Lineup",
     "tournament_label": "Tournament {name} · Round {round}",
     "back": "Back to match management",
+    "live_capture": "Live",
     "empty_hint": "No lineup yet for this match. Create one to start.",
     "name_label": "Name",
     "formation_label": "Formation",

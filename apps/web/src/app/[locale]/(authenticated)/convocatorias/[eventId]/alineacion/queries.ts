@@ -102,6 +102,13 @@ export type LineupEditorData = {
   coachFormations: CoachFormation[];
   /** F13B (T-2) — true si es un partido de torneo (convocatoria en la cabecera). */
   isTournamentMatch: boolean;
+  /**
+   * F13B (fix acceso directo) — ¿el user puede registrar el partido EN DIRECTO?
+   * (helper SQL `user_can_record_match`, mismo que la RLS y la pantalla /directo).
+   * Gatea el acceso "En directo" desde el editor de alineación (ruta natural
+   * preparar once → jugar), para torneo y partido normal por igual.
+   */
+  canRecordMatch: boolean;
 };
 
 export async function loadLineupEditor(
@@ -152,6 +159,14 @@ export async function loadLineupEditor(
     p_event_id: eventId,
   });
   if (canManage !== true) return null;
+
+  // F13B (fix acceso directo) — autoridad de captura en vivo (mismo helper que la
+  // RLS y la pantalla /directo). Quien edita la alineación normalmente también
+  // puede grabar, pero lo resolvemos con el helper autoritativo en vez de asumir.
+  const { data: canRecordRaw } = await supabase.rpc('user_can_record_match', {
+    p_event_id: eventId,
+  });
+  const canRecordMatch = canRecordRaw === true;
 
   // Decisiones de convocatoria — descartados (con motivo). Para un partido de
   // torneo se leen de la cabecera (callupEventId).
@@ -449,5 +464,6 @@ export async function loadLineupEditor(
     plannedSubs,
     coachFormations,
     isTournamentMatch: event.tournament_id != null,
+    canRecordMatch,
   };
 }

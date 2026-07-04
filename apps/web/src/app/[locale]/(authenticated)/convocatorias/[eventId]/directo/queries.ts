@@ -232,6 +232,8 @@ export type MatchLiveData = {
     teamId: string;
     title: string;
     type: ManageableMatchType;
+    /** F13B (fix acceso directo) — cabecera del torneo si es sub-partido; null si no. */
+    tournamentId: string | null;
     opponentName: string | null;
     startsAt: string;
     teamName: string;
@@ -334,7 +336,7 @@ export async function loadMatchLive(
   const { data: ev } = await supabase
     .from('events')
     .select(
-      `id, club_id, team_id, type, title, opponent_name, starts_at,
+      `id, club_id, team_id, type, tournament_id, title, opponent_name, starts_at,
        teams!inner(name, color, format, division, season, categories!inner(name, half_duration_minutes, kind))`,
     )
     .eq('id', eventId)
@@ -349,6 +351,7 @@ export async function loadMatchLive(
     id: string;
     team_id: string;
     type: ManageableMatchType;
+    tournament_id: string | null;
     title: string;
     opponent_name: string | null;
     starts_at: string;
@@ -913,6 +916,7 @@ export async function loadMatchLive(
       teamId: event.team_id,
       title: event.title,
       type: event.type,
+      tournamentId: event.tournament_id,
       opponentName: event.opponent_name,
       startsAt: event.starts_at,
       teamName: event.teams.name,

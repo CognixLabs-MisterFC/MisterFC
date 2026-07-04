@@ -2129,7 +2129,8 @@
       "group_matches": "Partidos",
       "group_no_matches": "Aún no hay partidos.",
       "group_round": "Ronda {n}",
-      "open_lineup": "Alineación"
+      "open_lineup": "Alineación",
+      "open_live": "En directo"
     },
     "transport": {
       "club": "Transporte del club",
@@ -2484,6 +2485,7 @@
     "title": "Alineación",
     "tournament_label": "Torneo {name} · Ronda {round}",
     "back": "Volver a Gestión de partidos",
+    "live_capture": "En directo",
     "empty_hint": "Aún no hay alineación para este partido. Crea una para empezar.",
     "name_label": "Nombre",
     "formation_label": "Formación",

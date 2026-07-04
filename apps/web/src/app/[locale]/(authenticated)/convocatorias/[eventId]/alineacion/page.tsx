@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft, PenTool } from 'lucide-react';
+import { ArrowLeft, PenTool, Radio } from 'lucide-react';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -61,6 +61,17 @@ export default async function LineupPage({ params, searchParams }: Props) {
             <span>{tPizarra('open_board')}</span>
           </Link>
         </Button>
+        {/* F13B (fix acceso directo) — paso natural preparar once → jugar. Antes
+            esta página no enlazaba al directo para NADIE; ahora sí, para todo
+            partido gestionable (torneo y normal), gateado por canRecordMatch. */}
+        {data.canRecordMatch && (
+          <Button asChild variant="outline" size="sm" className="gap-1">
+            <Link href={`/convocatorias/${eventId}/directo`}>
+              <Radio className="size-4" aria-hidden />
+              <span>{t('live_capture')}</span>
+            </Link>
+          </Button>
+        )}
       </div>
 
       <header>

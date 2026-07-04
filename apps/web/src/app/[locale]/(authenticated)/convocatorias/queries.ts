@@ -70,6 +70,15 @@ export type CallupMatchRow = {
   roster_count: number;
   /** Mi respuesta (jugador/familia) — solo si scope='player'. */
   my_response: CallupResponseStatus | null;
+  /**
+   * F13B (fix acceso directo) — ¿el user puede registrar el partido EN DIRECTO?
+   * Semántica de `user_can_record_match`: admin/coord del club, o cualquier
+   * team_staff activo del equipo. En la lista se DERIVA del scope (la lista ya
+   * restringe a los equipos donde el user es staff), sin RPC por fila. Gatea el
+   * enlace "En directo" del sub-partido de torneo (cuyo botón canónico es
+   * inalcanzable por el redirect a la cabecera).
+   */
+  can_record_match: boolean;
 };
 
 export type CallupMetaRow = {
@@ -435,6 +444,15 @@ export async function loadUpcomingCallups(
   };
   const roster = (rosterRows ?? []).map((r) => r as unknown as RosterRow);
 
+  // F13B (fix acceso directo) — capacidad de registro EN DIRECTO por equipo,
+  // derivada del scope (misma semántica que `user_can_record_match`, sin RPC por
+  // fila): admin/coord ven todo; un staff restringido solo sus equipos (la lista
+  // ya está filtrada a esos equipos, pero lo evaluamos por equipo para ser
+  // exactos); jugador/familia nunca.
+  const canRecordFor = (teamId: string): boolean =>
+    scope.kind === 'all' ||
+    (scope.kind === 'restricted' && scope.teamIds.includes(teamId));
+
   return events.map((e) => {
     const eventDate = e.starts_at.slice(0, 10);
     // Roster VIGENTE del evento (por team + ventana de fechas).
@@ -493,6 +511,7 @@ export async function loadUpcomingCallups(
       decisions_count: decisions,
       roster_count: rosterCount,
       my_response: myResponse,
+      can_record_match: canRecordFor(e.team_id),
     };
   });
 }
