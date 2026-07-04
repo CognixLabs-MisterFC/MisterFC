@@ -2130,7 +2130,8 @@
       "group_matches": "Partits",
       "group_no_matches": "Encara no hi ha partits.",
       "group_round": "Ronda {n}",
-      "open_lineup": "Alineació"
+      "open_lineup": "Alineació",
+      "open_live": "En directe"
     },
     "transport": {
       "club": "Transport del club",
@@ -2485,6 +2486,7 @@
     "title": "Alineació",
     "tournament_label": "Torneig {name} · Ronda {round}",
     "back": "Tornar a Gestió de partits",
+    "live_capture": "En directe",
     "empty_hint": "Encara no hi ha alineació per a aquest partit. Crea’n una per començar.",
     "name_label": "Nom",
     "formation_label": "Formació",

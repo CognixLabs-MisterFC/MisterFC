@@ -4,6 +4,7 @@ import {
   CalendarOff,
   ClipboardList,
   Megaphone,
+  Radio,
   Trophy,
 } from 'lucide-react';
 import { groupCallupsByTournament } from '@misterfc/core';
@@ -229,12 +230,31 @@ export default async function ConvocatoriasPage({ params }: Props) {
                       </span>
                     </div>
                     {!isPlayerView && (
-                      <Button asChild variant="ghost" size="sm">
-                        <Link href={`/convocatorias/${sub.event_id}/alineacion`}>
-                          <ClipboardList className="size-4" aria-hidden />
-                          <span>{tTournament('open_lineup')}</span>
-                        </Link>
-                      </Button>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Button asChild variant="ghost" size="sm">
+                          <Link
+                            href={`/convocatorias/${sub.event_id}/alineacion`}
+                          >
+                            <ClipboardList className="size-4" aria-hidden />
+                            <span>{tTournament('open_lineup')}</span>
+                          </Link>
+                        </Button>
+                        {/* F13B (fix acceso directo) — el botón "En directo"
+                            canónico (página de convocatoria) es inalcanzable
+                            para un sub-partido (rebota a la cabecera), así que
+                            lo exponemos aquí. Mismo gate que un partido normal:
+                            can_record_match (staff). */}
+                        {sub.can_record_match && (
+                          <Button asChild variant="ghost" size="sm">
+                            <Link
+                              href={`/convocatorias/${sub.event_id}/directo`}
+                            >
+                              <Radio className="size-4" aria-hidden />
+                              <span>{tTournament('open_live')}</span>
+                            </Link>
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </li>
                 ))}

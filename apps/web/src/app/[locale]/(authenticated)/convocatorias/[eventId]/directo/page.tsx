@@ -52,12 +52,21 @@ export default async function MatchLivePage({ params }: Props) {
   const t = await getTranslations('partido_directo');
   const tPizarra = await getTranslations('pizarra');
 
+  // F13B (fix acceso directo) — un sub-partido de torneo NO tiene página de
+  // convocatoria propia (rebota a la cabecera); volver ahí atraparía al usuario
+  // en la cabecera. Para torneo, "Volver" apunta a SU alineación (ruta natural);
+  // para un partido normal, a su convocatoria, como siempre.
+  const backHref =
+    data.event.tournamentId != null
+      ? `/convocatorias/${eventId}/alineacion`
+      : `/convocatorias/${eventId}`;
+
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Button asChild variant="ghost" size="sm">
-            <Link href={`/convocatorias/${eventId}`}>
+            <Link href={backHref}>
               <ArrowLeft className="size-4" aria-hidden />
               <span>{t('back')}</span>
             </Link>
