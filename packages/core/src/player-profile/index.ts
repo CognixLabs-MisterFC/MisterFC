@@ -1,5 +1,6 @@
 export * from './aggregate';
 export * from './by-type';
+export * from './team-events';
 export * from './derived';
 export * from './timeline';
 export * from './team-aggregate';

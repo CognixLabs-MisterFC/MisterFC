@@ -15,12 +15,15 @@
 import {
   aggregateTeamStats,
   splitMatchStatsByType,
+  aggregateTeamEventsByType,
   classifyMatchType,
   createSupabaseServerClient,
   type RosterPlayer,
   type PlayerMatchStatRow,
   type MatchStatRowTyped,
   type MatchStatsByType,
+  type TeamEventRow,
+  type TeamEventsAggregate,
   type TeamAggregate,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -33,15 +36,28 @@ export interface TeamMatchesByType {
   torneo: number;
 }
 
+/** Goles del EQUIPO por tipo (Σ match_state.goals_for). */
+export interface TeamGoalsByType {
+  total: number;
+  oficial: number;
+  amistoso: number;
+  torneo: number;
+}
+
 /**
- * F9B-4a — totales del EQUIPO desglosados por tipo (Amistoso/Torneo/Oficial/Total).
- * `stats` = las métricas summables (Σ de match_player_stats) por tipo, con el mismo
- * helper que jugador/informe (splitMatchStatsByType). `matches` = partidos reales
- * (distinct event_id) por tipo — NO la Σ de apariciones de `AggregatedStats.matches`.
+ * F9B-4a/4b — totales del EQUIPO desglosados por tipo (Amistoso/Torneo/Oficial/Total).
+ * `stats` = métricas summables (Σ match_player_stats) por tipo (helper común
+ * splitMatchStatsByType). `matches` = partidos reales (distinct event_id) por tipo.
+ * `events` (4b) = conteos de match_events por tipo (corners/offsides/faltas…) +
+ * total del rival. `goalsFor` (4b) = goles a favor del marcador por tipo;
+ * `goalsAgainst` = goles en contra (columna Rival).
  */
 export interface TeamStatsByType {
   stats: MatchStatsByType;
   matches: TeamMatchesByType;
+  events: TeamEventsAggregate;
+  goalsFor: TeamGoalsByType;
+  goalsAgainst: number;
 }
 
 export interface TeamSeasonStats {
@@ -163,6 +179,59 @@ export async function loadTeamSeasonStats(
     torneo: evByGroup.torneo.size,
   };
 
+  // 4) F9B-4b — eventos de equipo (match_events) del equipo/temporada: corners,
+  // fueras de juego, faltas… (no están en match_player_stats). own + rival. Se
+  // filtra por el equipo del evento padre; RLS = user_can_record_match (staff).
+  const { data: rawEvents } = await supabase
+    .from('match_events')
+    .select('side, type, events!inner(team_id, type, tournament_id)')
+    .eq('events.team_id', teamId);
+  type EvRow = {
+    side: 'own' | 'rival';
+    type: string;
+    events: { type: string; tournament_id: string | null };
+  };
+  const teamEventRows: TeamEventRow[] = (
+    (rawEvents ?? []) as unknown as EvRow[]
+  ).map((r) => ({
+    side: r.side,
+    kind: r.type,
+    eventType: r.events?.type ?? '',
+    tournamentId: r.events?.tournament_id ?? null,
+  }));
+  const events = aggregateTeamEventsByType(teamEventRows);
+
+  // 5) F9B-4b — marcador (match_state) del equipo/temporada: goles a favor por
+  // tipo (fila Goles del equipo, NO la Σ de goles de jugador) + goles en contra
+  // (columna Rival). Misma regla de clasificación.
+  const { data: rawState } = await supabase
+    .from('match_state')
+    .select('goals_for, goals_against, events!inner(team_id, type, tournament_id)')
+    .eq('events.team_id', teamId);
+  type StRow = {
+    goals_for: number | null;
+    goals_against: number | null;
+    events: { type: string; tournament_id: string | null };
+  };
+  const goalsFor: TeamGoalsByType = {
+    total: 0,
+    oficial: 0,
+    amistoso: 0,
+    torneo: 0,
+  };
+  let goalsAgainst = 0;
+  for (const s of (rawState ?? []) as unknown as StRow[]) {
+    const group = classifyMatchType(
+      s.events?.type ?? '',
+      s.events?.tournament_id ?? null,
+    );
+    if (!group) continue;
+    const gf = s.goals_for ?? 0;
+    goalsFor[group] += gf;
+    goalsFor.total += gf;
+    goalsAgainst += s.goals_against ?? 0;
+  }
+
   return {
     team: {
       id: team.id,
@@ -173,6 +242,12 @@ export async function loadTeamSeasonStats(
       category_name: team.categories.name,
     },
     aggregate: aggregateTeamStats(roster, rows),
-    byType: { stats: statsByType, matches: matchesByType },
+    byType: {
+      stats: statsByType,
+      matches: matchesByType,
+      events,
+      goalsFor,
+      goalsAgainst,
+    },
   };
 }
