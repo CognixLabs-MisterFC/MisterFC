@@ -4,10 +4,13 @@ import { ArrowLeft, Download, ClipboardList } from 'lucide-react';
 import {
   createSupabaseServerClient,
   sumMatchStats,
+  splitMatchStatsByType,
   derivedRatios,
   attendanceBreakdown,
   ratingTimeline,
   type MatchStatRow,
+  type MatchStatRowTyped,
+  type MatchStatsByType,
   type AttendanceRow,
   type RatingTimelinePoint,
 } from '@misterfc/core';
@@ -177,6 +180,12 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     null;
 
   let aggregatedStats = sumMatchStats([]);
+  // F9B-3 — desglose por tipo (Amistoso/Torneo/Oficial/Total) del modo Temporada,
+  // reutilizando el MISMO helper de clasificación que el informe
+  // (splitMatchStatsByType, F9B-1). NO se crea un cálculo nuevo: solo se añade el
+  // join events!inner(type, tournament_id) a la query del perfil. El Total del
+  // desglose (oficial+amistoso+torneo) alimenta también los totales/ratios.
+  let matchStatsByType: MatchStatsByType = splitMatchStatsByType([]);
   if (activeSeason) {
     // Acotar por temporada vía team.season (Rework A: la temporada vive en el
     // equipo; match_player_stats.team_id es el del partido; el embed !inner filtra
@@ -184,13 +193,22 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     const { data: statRows } = await supabase
       .from('match_player_stats')
       .select(
-        'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, teams!inner(season)'
+        'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, events!inner(type, tournament_id), teams!inner(season)'
       )
       .eq('player_id', player.id)
       .eq('teams.season', activeSeason);
-    aggregatedStats = sumMatchStats(
-      (statRows ?? []) as unknown as MatchStatRow[]
-    );
+    type StatRowRaw = MatchStatRow & {
+      events: { type: string; tournament_id: string | null };
+    };
+    const typedRows: MatchStatRowTyped[] = (
+      (statRows ?? []) as unknown as StatRowRaw[]
+    ).map((r) => ({
+      ...r,
+      eventType: r.events?.type ?? '',
+      tournamentId: r.events?.tournament_id ?? null,
+    }));
+    matchStatsByType = splitMatchStatsByType(typedRows);
+    aggregatedStats = matchStatsByType.total;
   }
 
   // F9.2 — Ratios derivados (puro, sobre los agregados) + desglose de asistencia
@@ -510,6 +528,7 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
               <CardContent>
                 <PlayerSeasonStats
                   stats={aggregatedStats}
+                  statsByType={matchStatsByType}
                   ratios={ratios}
                   attendance={attendance}
                   timeline={evolution}

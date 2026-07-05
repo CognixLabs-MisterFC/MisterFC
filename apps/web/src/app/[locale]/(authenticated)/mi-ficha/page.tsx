@@ -4,12 +4,15 @@ import { Download, LineChart } from 'lucide-react';
 import {
   createSupabaseServerClient,
   sumMatchStats,
+  splitMatchStatsByType,
   derivedRatios,
   attendanceBreakdown,
   ratingTimeline,
   PLAYER_POSITIONS,
   type PlayerPosition,
   type MatchStatRow,
+  type MatchStatRowTyped,
+  type MatchStatsByType,
   type AttendanceRow,
   type RatingTimelinePoint,
 } from '@misterfc/core';
@@ -174,18 +177,30 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
     null;
 
   // 4) Stats agregadas (SIEMPRE — policy match_player_stats_select_player).
+  // F9B-3 — desglose por tipo (modo Temporada) con el mismo helper que el informe
+  // (splitMatchStatsByType, F9B-1); sin cálculo nuevo, solo el join events.
   let aggregatedStats = sumMatchStats([]);
+  let matchStatsByType: MatchStatsByType = splitMatchStatsByType([]);
   if (activeSeason) {
     const { data: statRows } = await supabase
       .from('match_player_stats')
       .select(
-        'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, teams!inner(season)'
+        'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, events!inner(type, tournament_id), teams!inner(season)'
       )
       .eq('player_id', playerId)
       .eq('teams.season', activeSeason);
-    aggregatedStats = sumMatchStats(
-      (statRows ?? []) as unknown as MatchStatRow[]
-    );
+    type StatRowRaw = MatchStatRow & {
+      events: { type: string; tournament_id: string | null };
+    };
+    const typedRows: MatchStatRowTyped[] = (
+      (statRows ?? []) as unknown as StatRowRaw[]
+    ).map((r) => ({
+      ...r,
+      eventType: r.events?.type ?? '',
+      tournamentId: r.events?.tournament_id ?? null,
+    }));
+    matchStatsByType = splitMatchStatsByType(typedRows);
+    aggregatedStats = matchStatsByType.total;
   }
 
   // 5) Ratios (puro) + asistencia (SIEMPRE — D9-2; query filtra al jugador).
@@ -355,6 +370,7 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
         <CardContent>
           <PlayerSeasonStats
             stats={aggregatedStats}
+            statsByType={matchStatsByType}
             ratios={ratios}
             attendance={attendance}
             timeline={evolution}

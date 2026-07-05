@@ -6,12 +6,17 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import type {
   AggregatedStats,
+  MatchStatsByType,
   DerivedRatios,
   AttendanceBreakdown,
   RatingTimelinePoint,
 } from '@misterfc/core';
 import { ATTENDANCE_CODES, timelineHasRatings } from '@misterfc/core';
 import type { PlayerCareer } from '@/lib/player-career';
+import {
+  MatchStatsByTypeTable,
+  type MatchStatsByTypeRow,
+} from '@/components/stats/match-stats-by-type-table';
 
 // Carga diferida solo en cliente (ssr:false): mantiene recharts (+d3) fuera del
 // bundle de servidor y del render SSR — ADR-0016 (mitigación del OOM de build).
@@ -28,6 +33,8 @@ type Mode = 'season' | 'career';
 
 type Props = {
   stats: AggregatedStats;
+  /** F9B-3 — desglose por tipo (modo Temporada). `total` = el mismo que `stats`. */
+  statsByType: MatchStatsByType;
   ratios: DerivedRatios;
   attendance: AttendanceBreakdown;
   /** Serie de evolución de la valoración (9.3), ya ordenada por el server. */
@@ -87,6 +94,7 @@ function buildRatioCards(
  */
 export function PlayerSeasonStats({
   stats,
+  statsByType,
   ratios,
   attendance,
   timeline,
@@ -96,6 +104,9 @@ export function PlayerSeasonStats({
 }: Props) {
   const t = useTranslations('jugadores.stats');
   const tCode = useTranslations('asistencia.codes');
+  // F9B-3 — etiquetas de columnas + "Tarjetas" reutilizadas del informe (mismas
+  // claves informes.ficha.*), para no divergir del bloque de 4 columnas del PDF/ficha.
+  const tInf = useTranslations('informes');
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -110,8 +121,78 @@ export function PlayerSeasonStats({
     });
   }
 
-  const totals = buildTotals(stats);
   const ratioCards = buildRatioCards(ratios);
+
+  // F9B-3 — desglose de las 12 métricas del perfil por tipo (Amistoso·Torneo·
+  // Oficial·Total), ordenadas por relevancia. Se pinta con el componente
+  // compartido MatchStatsByTypeTable (el mismo del informe). Ratios/asistencia/
+  // evolución/carrera NO cambian.
+  const cellVal = (key: string, agg: AggregatedStats): string => {
+    switch (key) {
+      case 'matches':
+        return String(agg.matches);
+      case 'minutes':
+        return String(agg.minutesPlayed);
+      case 'goals':
+        return String(agg.goals);
+      case 'assists':
+        return String(agg.assists);
+      case 'cards':
+        return String(agg.yellowCards + agg.redCards);
+      case 'start_rate':
+        return pct(agg.matches > 0 ? agg.starts / agg.matches : null);
+      case 'shots':
+        return String(agg.shots);
+      case 'fouls_committed':
+        return String(agg.foulsCommitted);
+      case 'fouls_received':
+        return String(agg.foulsReceived);
+      case 'penalties_scored':
+        return String(agg.penaltiesScored);
+      case 'penalties_missed':
+        return String(agg.penaltiesMissed);
+      case 'starts':
+        return String(agg.starts);
+      default:
+        return na;
+    }
+  };
+  const PROFILE_METRIC_KEYS = [
+    'matches',
+    'minutes',
+    'goals',
+    'assists',
+    'cards',
+    'start_rate',
+    'shots',
+    'fouls_committed',
+    'fouls_received',
+    'penalties_scored',
+    'penalties_missed',
+    'starts',
+  ] as const;
+  const labelFor = (key: string): string =>
+    key === 'cards'
+      ? tInf('ficha.stat.cards')
+      : key === 'start_rate'
+        ? t('ratio.start_rate')
+        : t(`label.${key}`);
+  const byTypeRows: MatchStatsByTypeRow[] = PROFILE_METRIC_KEYS.map((key) => ({
+    key,
+    label: labelFor(key),
+    cells: {
+      amistoso: cellVal(key, statsByType.amistoso),
+      torneo: cellVal(key, statsByType.torneo),
+      oficial: cellVal(key, statsByType.oficial),
+      total: cellVal(key, statsByType.total),
+    },
+  }));
+  const byTypeColumns = {
+    friendly: tInf('ficha.friendly'),
+    tournament: tInf('ficha.tournament'),
+    official: tInf('ficha.official'),
+    total: tInf('ficha.total'),
+  };
 
   const hasStats = stats.matches > 0;
   const hasAttendance = attendance.total > 0;
@@ -189,21 +270,9 @@ export function PlayerSeasonStats({
               <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t('totals_title')}
               </h3>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {totals.map((c) => (
-                  <div
-                    key={c.key}
-                    className="flex flex-col gap-0.5 rounded-lg border border-border bg-card/40 p-3"
-                  >
-                    <span className="text-2xl font-bold tabular-nums">
-                      {c.value}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {t(`label.${c.key}`)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              {/* F9B-3 — totales desglosados por tipo (Amistoso·Torneo·Oficial·
+                  Total), componente compartido con el informe. */}
+              <MatchStatsByTypeTable columns={byTypeColumns} rows={byTypeRows} />
             </section>
           )}
 
