@@ -14,9 +14,13 @@
  *  7. Resultados de equipo (3 grupos con color).
  */
 
-import { Fragment } from 'react';
 import { getTranslations, getLocale } from 'next-intl/server';
 import { ArrowUpCircle } from 'lucide-react';
+import {
+  MatchStatsByTypeTable,
+  type MatchStatsByTypeRow,
+  type MatchStatsByTypeColumns,
+} from '@/components/stats/match-stats-by-type-table';
 import {
   reportStatus,
   computeGroupAverages,
@@ -90,9 +94,11 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
   // F13.10h-4 — ratio "num/den"; '—' si no hay denominador (sin equipo/eventos).
   const ratio = (num: number, den: number) => (den > 0 ? `${num}/${den}` : '—');
 
-  // F9B-2 — desglose de las métricas de partido por tipo. Orden de columnas:
-  // Amistoso · Torneo · Oficial · Total (Oficial = número protagonista). El
-  // desglose lo produce loadFichaStats (F9B-1); aquí solo se pinta.
+  // F9B-2/F9B-3 — desglose de las métricas de partido por tipo, pintado con el
+  // componente compartido MatchStatsByTypeTable (el mismo que usa el perfil).
+  // Orden de columnas: Amistoso · Torneo · Oficial · Total (Oficial = número
+  // protagonista). El desglose lo produce loadFichaStats (F9B-1); aquí solo se
+  // formatea. Informe = 6 métricas + fila Convocatorias (Oficial-only).
   const ms = data.stats.matchStats;
   const pct = (r: number | null) => (r == null ? '—' : `${Math.round(r * 100)}%`);
   const metricValue = (key: string, line: (typeof ms)['total']): string => {
@@ -121,30 +127,35 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
     'cards',
     'starts',
   ] as const;
-  type MatchRow = {
-    key: string;
-    amistoso: string;
-    torneo: string;
-    oficial: string;
-    total: string;
-  };
-  const matchRows: MatchRow[] = MATCH_METRIC_KEYS.map((key) => ({
+  const matchRows: MatchStatsByTypeRow[] = MATCH_METRIC_KEYS.map((key) => ({
     key,
-    amistoso: metricValue(key, ms.amistoso),
-    torneo: metricValue(key, ms.torneo),
-    oficial: metricValue(key, ms.oficial),
-    total: metricValue(key, ms.total),
+    label: t(`ficha.stat.${key}`),
+    cells: {
+      amistoso: metricValue(key, ms.amistoso),
+      torneo: metricValue(key, ms.torneo),
+      oficial: metricValue(key, ms.oficial),
+      total: metricValue(key, ms.total),
+    },
   }));
   // Convocatorias es Oficial-only (callupRatioForPlayer, #266): solo la columna
   // Oficial lleva valor; Amistoso/Torneo/Total → '—'.
-  const callupsRow: MatchRow = {
+  const callupsRow: MatchStatsByTypeRow = {
     key: 'callups',
-    amistoso: '—',
-    torneo: '—',
-    oficial: ratio(data.stats.calledUp, data.stats.totalMatches),
-    total: '—',
+    label: t('ficha.stat.callups'),
+    cells: {
+      amistoso: '—',
+      torneo: '—',
+      oficial: ratio(data.stats.calledUp, data.stats.totalMatches),
+      total: '—',
+    },
   };
-  const allMatchRows: MatchRow[] = [...matchRows, callupsRow];
+  const allMatchRows: MatchStatsByTypeRow[] = [...matchRows, callupsRow];
+  const matchColumns: MatchStatsByTypeColumns = {
+    friendly: t('ficha.friendly'),
+    tournament: t('ficha.tournament'),
+    official: t('ficha.official'),
+    total: t('ficha.total'),
+  };
   const attendanceValue = ratio(
     data.stats.trainingsAttended,
     data.stats.totalTrainings,
@@ -267,45 +278,7 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
           <CardTitle className="text-base">{t('ficha.match_block')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <div className="overflow-x-auto">
-            <div className="grid min-w-[22rem] grid-cols-[minmax(5rem,1.4fr)_repeat(4,minmax(0,1fr))] items-center gap-x-2">
-              {/* Cabecera de columnas */}
-              <span aria-hidden />
-              <span className="pb-1 text-center text-[11px] font-medium text-muted-foreground">
-                {t('ficha.friendly')}
-              </span>
-              <span className="pb-1 text-center text-[11px] font-medium text-muted-foreground">
-                {t('ficha.tournament')}
-              </span>
-              <span className="pb-1 text-center text-xs font-semibold text-foreground">
-                {t('ficha.official')}
-              </span>
-              <span className="pb-1 text-center text-xs font-medium text-muted-foreground">
-                {t('ficha.total')}
-              </span>
-
-              {/* Filas por métrica */}
-              {allMatchRows.map((r) => (
-                <Fragment key={r.key}>
-                  <span className="border-t border-border/60 py-1.5 text-xs text-muted-foreground">
-                    {t(`ficha.stat.${r.key}`)}
-                  </span>
-                  <span className="border-t border-border/60 py-1.5 text-center text-xs tabular-nums text-muted-foreground">
-                    {r.amistoso}
-                  </span>
-                  <span className="border-t border-border/60 py-1.5 text-center text-xs tabular-nums text-muted-foreground">
-                    {r.torneo}
-                  </span>
-                  <span className="border-t border-border/60 py-1.5 text-center text-base font-bold tabular-nums">
-                    {r.oficial}
-                  </span>
-                  <span className="border-t border-border/60 py-1.5 text-center text-base tabular-nums">
-                    {r.total}
-                  </span>
-                </Fragment>
-              ))}
-            </div>
-          </div>
+          <MatchStatsByTypeTable columns={matchColumns} rows={allMatchRows} />
 
           {/* Entrenos: total único (sin desglose por tipo), bloque aparte. */}
           <div className="flex items-center justify-between rounded-lg border border-border bg-card/40 px-3 py-2">
