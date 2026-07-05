@@ -120,6 +120,7 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 | F13 | Pizarra táctica y jugadas (modo iPad) | 12–16 h | 5–6 | ☑ (2026-06-27) |
 | F13.10 | Informes de desarrollo y campaña de evaluaciones (extensión de F8/F9 — **NO** es la pizarra) | — | — | ☑ (2026-06-25) |
 | F13B | Gestión de partidos (amistoso sin tope + torneo con convocatoria única heredada) | — | — | ☑ (2026-07-03) |
+| F9B | Estadísticas por tipo de partido (Amistoso·Torneo·Oficial·Total; extensión de F9) | — | — | ☑ (2026-07-05) |
 | F14 | RGPD para menores y seguridad | 12–18 h | 4–5 | ☐ |
 | F15 | Testing, observabilidad y operaciones | 8–12 h | 3–4 | ☐ |
 | F16 | Beta cerrada con primer club | 9–15 h (subfases 16.0–16.4 6–10 h + F16.x bulk-invite +3–5 h) | 3–4 | ☐ |
@@ -142,6 +143,8 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 > **Cambio 2026-06-25 (cierre F13.10 — desambiguación de numeración)**: ⚠️ **`F13.10` NO es parte de la F13 — Pizarra de jugadas** (13.1–13.7, **cerrada 2026-06-27** por las JR #229–#232). "F13.10" es una **etiqueta heredada del desarrollo** para los informes de desarrollo + campaña de evaluaciones (PRs #200–#221), que en realidad es una **extensión de F8 (valoraciones) y F9 (perfil del jugador)**. Se mantiene el nombre por **trazabilidad** con los 22 PRs / ramas / memory ya escritos (**Opción C**: no renumerar, igual que F11B/F7.x se etiquetaron aparte). Se registra como **bloque entregado independiente**: fila `F13.10 ☑` en la tabla, sección §6 (tras la Fase 13), spec [13.10](../specs/13.10-informes-desarrollo.md) y [fase-13.10-summary.md](fase-13.10-summary.md). Sin delta de horas (entregado, no estimado a futuro).
 
 > **Cambio 2026-07-03 (cierre F13B — Gestión de partidos)**: ☑ **F13B entregada** con etiqueta de letra (no renumera F14–F16, mismo patrón que F11B/F7.x). ⚠️ **El alcance real NO fue "liga/copa + no-convocatorias H-5"** (la descripción antigua de backlog): esas dos entradas se **retiran** — *liga/copa* (`competition_type`) queda **fuera de alcance** (el modelo de competición es **oficial / amistoso / torneo** vía `events.type`, sin campo de liga/copa) y *no-convocatorias H-5* **no era una feature** sino el **bug** de que el banquillo no quedaba marcado como convocado, ya **resuelto en PR #255** (lector canónico `effectiveCallupDecision`, no-fila = convocado). Lo realmente construido: **(a) Amistoso** gestionado igual que un oficial y **sin límite de convocados** (#256 triggers de convocatoria aceptan `friendly`/`tournament` + el tope solo aplica a `match`; #257 superficies secundarias home/mis-equipos/recordatorios) — 2026-07-02; **(b) Torneo** con enfoque **cabecera + sub-partidos** y **convocatoria única heredada por referencia** (modelo `events.tournament_id` + `round`, avance manual de eliminatoria, UI agrupada), serie **T-0…T-5** = PRs **#258** (T-0 modelo), **#259** (T-1 crear), **#260** (T-2 convocatoria heredada), **#261** (T-4 avance), **#262** (T-5 UI agrupada) — 2026-07-02/03. Detalle en §6 (tras la Fase 13.10) y en [progress.md](progress.md). Sin delta de horas (entregado, no estimado a futuro).
+
+> **Cambio 2026-07-05 (cierre F9B — Estadísticas por tipo de partido)**: ☑ **F9B entregada** con etiqueta de letra (**extensión de F9**, no renumera F14–F16; mismo patrón que F13.10/F13B/F11B/F7.x). Es la **cara de consulta** que desglosa lo que F7/F13B ya capturan: toda métrica de partido se parte en **Amistoso · Torneo · Oficial · Total**. **Sin migración** (deriva de `events.type` + `tournament_id` sobre `match_player_stats`/`match_events`/`match_state` ya existentes). Fuente única de clasificación: `splitMatchStatsByType` (core), reutilizada por informe, perfil y equipo. **Decisiones de producto fijadas**: (1) **orden de columnas** = *Amistoso · Torneo · Oficial · Total* (Oficial destacada, en negrita); (2) **Oficial** = `type='match' ∧ tournament_id IS NULL` (Torneo = `match` **con** `tournament_id`; Amistoso = `friendly`; Total = suma de los tres, ignora `training`/`other`); (3) columna **Rival** solo como **total** (sin desglose por tipo), presente solo en la vista de equipo; (4) **goles de equipo = marcador** (`match_state.goals_for`/`goals_against`), no la suma de goles por jugador; se retira el "% titularidad" a nivel de equipo. Serie **F9B-1…F9B-4b** = PRs **#268** (F9B-1 derivación jugador), **#269** (F9B-2 render informe + PDF), **#270** (F9B-3 perfil + `/mi-ficha` + componente compartido `MatchStatsByTypeTable`), **#271** (F9B-4a totales de equipo summables, "Partidos" = `count(distinct event_id)`), **#272** (F9B-4b eventos de equipo corners/offsides/faltas + columna Rival + marcador + PDF de equipo) — todas mergeadas 2026-07-05. Detalle en §6 (tras F13B) y en [progress.md](progress.md). Sin delta de horas (entregado, no estimado a futuro).
 
 ---
 
@@ -473,6 +476,8 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Estado**: ☑ **CERRADA (2026-06-12)** — núcleo (9.1/9.2/9.3/9.5) + segundo tramo 9.B (9.4/9.6/9.7/9.8 + entrada de menú) **entregados y verificados** (typecheck · lint · test · build en verde; ver limitación pgTAP abajo). Resumen ejecutivo en [fase-9-summary.md](fase-9-summary.md). Detalle del núcleo en [spec 9.0 §15](../specs/9.0-perfil-jugador.md); del segundo tramo en [spec 9.B](../specs/9.B-segundo-tramo.md).
 
+> **Extensión posterior — F9B (☑ 2026-07-05)**: el desglose de toda métrica de partido en **Amistoso · Torneo · Oficial · Total** (informe/perfil/equipo + PDFs) se entregó como bloque aparte con etiqueta de letra (PRs #268–#272). No reabre F9. Ver el bloque **F9B** al final de §6 y [progress.md](progress.md) §"F9B — Estadísticas por tipo de partido".
+
 **Horas**: 16–32 h plan · **Sesiones**: 6–8 · **PRs del núcleo**: #67 (9.1), #68 (9.2), #69 (9.3), #70 (9.5). **PRs del segundo tramo**: #108 (spec) + #109 (9.B-0) + #110 (9.B-1) + #111 (9.B-2) + #112 (9.B-3) + #113 (9.B-4) + #114 (9.B-5) + #115 (9.B-6+7). **Migración del núcleo**: `20260625000000_match_player_stats_player_select.sql` (policy SELECT player-scoped, D9-1).
 
 **Criterio de cierre** (cumplido): cada jugador tiene su perfil deportivo completo. Gráfico de evolución intra-temporada **(✅)** y comparativa multi-temporada **(✅ 9.B-1/2)**. Reportes mensuales en PDF que el entrenador puede descargar e imprimir para entregar a familias **(✅ 9.B-6/7)**. Vista restringida para familias **(✅)**.
@@ -728,6 +733,24 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 - **Incluir jugadas en sesiones (F12↔F13, #192)** — ✅ **entregada (2026-06-27, serie JS)**: #234/#236/#237/#238. Detalle en [progress.md](progress.md) §"Jugadas en sesión (serie JS)".
 - **Reutilizar jugadas** — **entregado** con F13: el banco de jugadas es del club (`plays` + ciclo) y cualquier equipo selecciona del banco vía `team_plays` (JR #229–#232).
 - ~~**Revalidar ratios de familia si F14.10** cierra `events_select` por equipo~~ — **RESUELTO (PR #226)**: la policy `events_select` incluye `user_is_team_member_account`, así que la familia sigue contando los eventos del equipo de su hijo; verificado en vivo. Borde `left_at` anotado en [known-issues.md](known-issues.md).
+
+---
+
+**F9B — Estadísticas por tipo de partido** ☑ **[cerrada 2026-07-05]** *(extensión de F9; etiqueta de letra, no renumera F14–F16)*:
+
+> Desglosa **toda métrica de partido en Amistoso · Torneo · Oficial · Total** en las tres vistas de consulta (informe de desarrollo + PDF, perfil del jugador, estadísticas de equipo + PDF). **No añade modelo ni migración**: deriva de `events.type` + `events.tournament_id` sobre `match_player_stats` / `match_events` / `match_state` ya existentes. La **regla de clasificación es única** (`splitMatchStatsByType` en `@misterfc/core`, con tests Vitest) y la comparten informe, perfil y equipo → sin cálculos divergentes. Detalle por PR en [progress.md](progress.md) §"F9B — Estadísticas por tipo de partido".
+
+- **Jugador (informe + perfil)** ☑ — **#268** (F9B-1: derivación `splitMatchStatsByType`; `loadFichaStats` a 4 vías; **corrige la definición de Oficial** = `match ∧ tournament_id IS NULL`) + **#269** (F9B-2: render de 4 columnas en el informe de desarrollo + PDF, Oficial destacada en negrita, convocatorias solo en Oficial) + **#270** (F9B-3: mismo desglose en la pestaña "Estadísticas" del perfil + `/mi-ficha`, y **extracción del componente compartido `MatchStatsByTypeTable`**, usable en árbol Server y Client).
+- **Equipo (estadísticas + PDF)** ☑ — **#271** (F9B-4a: totales de equipo por tipo para las métricas **summables**; **"Partidos" = `count(distinct event_id)`** por tipo, no la suma de comparecencias; se retira la fila `<tfoot>` antigua) + **#272** (F9B-4b: eventos de equipo **corners/offsides/faltas** desde `match_events`; **columna Rival** solo como total; **goles = marcador** `match_state.goals_for`/`goals_against`; paridad en el **PDF de equipo**; se elimina el **% titularidad** a nivel de equipo).
+
+**Decisiones de producto fijadas** (invariantes para vistas futuras):
+
+- **Orden de columnas** = *Amistoso · Torneo · Oficial · Total*. **Oficial** siempre destacada (negrita, tamaño mayor).
+- **Oficial** = `type='match' ∧ tournament_id IS NULL`. **Torneo** = `type='match' ∧ tournament_id IS NOT NULL`. **Amistoso** = `type='friendly'`. **Total** = Amistoso + Torneo + Oficial (ignora `training`/`other`).
+- **Rival** solo como **total** (sin desglose por tipo) y **solo en la vista de equipo**; en informe/perfil el DOM permanece a 4 columnas (columna Rival opcional del componente compartido → regresión-segura, DOM idéntico cuando no se pasa).
+- **Goles de equipo = marcador** (`match_state`), no la Σ de goles por jugador. Sin **% titularidad** agregado a nivel de equipo (se conserva a nivel de jugador).
+
+**Sin cambios** — Modo Carrera del perfil intacto; informe y perfil verificados idénticos (4 columnas) tras la generalización del componente compartido.
 
 ---
 
