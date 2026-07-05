@@ -29,7 +29,6 @@ import { RadarPdf, EvolutionLinesPdf } from './report-charts-pdf';
 import { PositionFieldPdf } from './position-field-pdf';
 import type {
   FichaStats,
-  PdfMatchStatsSplit,
   PeriodAverages,
   TeamPeriodAverages,
   ObjectiveRow,
@@ -224,8 +223,6 @@ export interface DevelopmentReportPdfProps {
   evolution: PeriodAverages[];
   teamEvolution: TeamPeriodAverages[];
   stats: FichaStats;
-  /** Bloque de partido segregado por tipo (PDF-3: oficial vs amistoso). */
-  matchStatsByType: PdfMatchStatsSplit;
   /** D4 — locale para formatear las fechas de las subidas (seguimiento). */
   locale: string;
 }
@@ -317,14 +314,15 @@ export function DevelopmentReportPdfDocument(
     );
 
   const ratio = (num: number, den: number) => (den > 0 ? `${num}/${den}` : NA);
-  // Bloque de partido segregado oficial/amistoso (PDF-3).
-  const { oficial, amistoso } = props.matchStatsByType;
-  const matchRows: Array<{ key: string; oficial: number; amistoso: number }> = [
-    { key: 'matches', oficial: oficial.matches, amistoso: amistoso.matches },
-    { key: 'minutes', oficial: oficial.minutes, amistoso: amistoso.minutes },
-    { key: 'goals', oficial: oficial.goals, amistoso: amistoso.goals },
-    { key: 'assists', oficial: oficial.assists, amistoso: amistoso.assists },
-    { key: 'cards', oficial: oficial.cards, amistoso: amistoso.cards },
+  // F9B-1 — de momento se muestra el TOTAL (mismo número que la ficha web); el
+  // desglose a 4 columnas (props.stats.matchStats.oficial/amistoso/torneo) es F9B-2.
+  const mt = props.stats.matchStats.total;
+  const matchRows: Array<{ key: string; value: number }> = [
+    { key: 'matches', value: mt.matches },
+    { key: 'minutes', value: mt.minutes },
+    { key: 'goals', value: mt.goals },
+    { key: 'assists', value: mt.assists },
+    { key: 'cards', value: mt.yellow + mt.red },
   ];
   // Totales NO segregados (convocatorias + entrenos).
   const totalCards: Array<{ key: string; value: string }> = [
@@ -373,22 +371,19 @@ export function DevelopmentReportPdfDocument(
             Se omite limpio si el jugador no tiene posición asignada. */}
         <PositionFieldPdf primary={props.primaryPos} secondary={props.secondaryPos} width={64} />
       </View>
-      {/* Bloque de partido segregado: Oficial vs Amistoso */}
+      {/* F9B-1 — bloque de partido: TOTAL (una columna). El desglose a 4 columnas
+          Total/Oficial/Amistoso/Torneo llega en F9B-2. */}
       <View style={[pdfStyles.table, { marginTop: 4 }]}>
         <View style={pdfStyles.headRow}>
           <Text style={[pdfStyles.cellHead, { flex: 1.4 }]}>{tInf('ficha.match_block')}</Text>
           <Text style={[pdfStyles.cellHead, { flex: 1, textAlign: 'center' }]}>
-            {tInf('ficha.official')}
-          </Text>
-          <Text style={[pdfStyles.cellHead, { flex: 1, textAlign: 'center' }]}>
-            {tInf('ficha.friendly')}
+            {tInf('ficha.total')}
           </Text>
         </View>
         {matchRows.map((r) => (
           <View key={r.key} style={s.itemRow}>
             <Text style={s.itemName}>{tInf(`ficha.stat.${r.key}`)}</Text>
-            <Text style={s.evCell}>{String(r.oficial)}</Text>
-            <Text style={s.evCell}>{String(r.amistoso)}</Text>
+            <Text style={s.evCell}>{String(r.value)}</Text>
           </View>
         ))}
       </View>

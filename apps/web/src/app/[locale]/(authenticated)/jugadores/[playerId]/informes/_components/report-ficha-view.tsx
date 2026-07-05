@@ -88,13 +88,16 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
 
   // F13.10h-4 — ratio "num/den"; '—' si no hay denominador (sin equipo/eventos).
   const ratio = (num: number, den: number) => (den > 0 ? `${num}/${den}` : '—');
+  // F9B-1 — de momento se muestra el TOTAL (mismo número que antes); el desglose a
+  // 4 columnas Total/Oficial/Amistoso/Torneo (data.stats.matchStats) es F9B-2.
+  const mt = data.stats.matchStats.total;
   const statCards: Array<{ key: string; value: string }> = [
-    { key: 'matches', value: String(data.stats.matches) },
+    { key: 'matches', value: String(mt.matches) },
     { key: 'callups', value: ratio(data.stats.calledUp, data.stats.totalMatches) },
-    { key: 'minutes', value: String(data.stats.minutes) },
-    { key: 'goals', value: String(data.stats.goals) },
-    { key: 'assists', value: String(data.stats.assists) },
-    { key: 'cards', value: String(data.stats.yellow + data.stats.red) },
+    { key: 'minutes', value: String(mt.minutes) },
+    { key: 'goals', value: String(mt.goals) },
+    { key: 'assists', value: String(mt.assists) },
+    { key: 'cards', value: String(mt.yellow + mt.red) },
     { key: 'attendance', value: ratio(data.stats.trainingsAttended, data.stats.totalTrainings) },
   ];
 

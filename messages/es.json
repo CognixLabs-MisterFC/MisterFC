@@ -824,6 +824,7 @@
         "kind_match": "Jugó"
       },
       "match_block": "Estadísticas de partido",
+      "total": "Total",
       "official": "Oficial",
       "friendly": "Amistoso"
     },

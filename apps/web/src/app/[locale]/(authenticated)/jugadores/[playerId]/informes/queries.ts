@@ -9,15 +9,18 @@
 
 import {
   createSupabaseServerClient,
-  sumMatchStats,
   derivedRatios,
   attendanceBreakdown,
   computeGroupAverages,
   callupRatioForPlayer,
+  splitMatchStatsByType,
   DEVELOPMENT_PERIODS,
   DEVELOPMENT_REPORT_CATALOG,
   TEAM_REPORT_CATALOG,
+  type AggregatedStats,
   type MatchStatRow,
+  type MatchStatRowTyped,
+  type MatchStatsByType,
   type AttendanceRow,
 } from '@misterfc/core';
 
@@ -197,7 +200,11 @@ export type FichaPromotions = {
   items: FichaPromotionItem[];
 };
 
-export type FichaStats = {
+/**
+ * F9B — una línea de métricas de partido (por columna: Total/Oficial/Amistoso/
+ * Torneo). `startRate` es derivada (titularidades/partidos de esa columna).
+ */
+export type FichaMatchLine = {
   matches: number;
   minutes: number;
   goals: number;
@@ -205,6 +212,28 @@ export type FichaStats = {
   yellow: number;
   red: number;
   startRate: number | null;
+};
+
+/**
+ * F9B — desglose de las métricas de partido por tipo de evento. `total` = oficial +
+ * amistoso + torneo (ignora 'other'/'training'). Clasificación EXACTA:
+ * Oficial=type='match'∧tournament_id null; Amistoso=type='friendly';
+ * Torneo=type='match'∧tournament_id set. F9B-1 deriva; F9B-2 lo pinta a 4 columnas.
+ */
+export type FichaMatchStatsByType = {
+  total: FichaMatchLine;
+  oficial: FichaMatchLine;
+  amistoso: FichaMatchLine;
+  torneo: FichaMatchLine;
+};
+
+export type FichaStats = {
+  /**
+   * F9B — métricas de partido desglosadas por tipo. Los consumidores muestran de
+   * momento `matchStats.total` (mismo número que el acumulado anterior); el
+   * render a 4 columnas es F9B-2.
+   */
+  matchStats: FichaMatchStatsByType;
   attendancePresentPct: number | null;
   attendanceTotal: number;
   /** F13.10h-4 — ratios del equipo en la temporada (numerador/denominador). */
@@ -215,6 +244,29 @@ export type FichaStats = {
   /** D3 — subidas a equipos superiores (seguimiento). Vacío si no hay. */
   promotions: FichaPromotions;
 };
+
+/** F9B — `AggregatedStats` (core) → línea de la ficha (con `startRate` derivada). */
+function toFichaMatchLine(a: AggregatedStats): FichaMatchLine {
+  return {
+    matches: a.matches,
+    minutes: a.minutesPlayed,
+    goals: a.goals,
+    assists: a.assists,
+    yellow: a.yellowCards,
+    red: a.redCards,
+    startRate: derivedRatios(a).startRate,
+  };
+}
+
+/** F9B — el desglose de core (4× `AggregatedStats`) → shape de la ficha. */
+function toFichaMatchStats(s: MatchStatsByType): FichaMatchStatsByType {
+  return {
+    total: toFichaMatchLine(s.total),
+    oficial: toFichaMatchLine(s.oficial),
+    amistoso: toFichaMatchLine(s.amistoso),
+    torneo: toFichaMatchLine(s.torneo),
+  };
+}
 
 /**
  * Stats de la temporada (por team.season label), reusando los agregadores de core.
@@ -232,15 +284,28 @@ export async function loadFichaStats(
   seasonLabel: string,
   teamId: string | null,
 ): Promise<FichaStats> {
+  // F9B — una sola query con el tipo/torneo del evento (events!inner) para derivar
+  // el desglose Total/Oficial/Amistoso/Torneo en UN punto (antes: acumulado ciego
+  // aquí + un 2-vías divergente solo-PDF). La clasificación EXACTA vive en el helper
+  // puro splitMatchStatsByType.
   const { data: statRows } = await supabase
     .from('match_player_stats')
     .select(
-      'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, teams!inner(season)',
+      'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, events!inner(type, tournament_id), teams!inner(season)',
     )
     .eq('player_id', playerId)
     .eq('teams.season', seasonLabel);
-  const agg = sumMatchStats((statRows ?? []) as unknown as MatchStatRow[]);
-  const ratios = derivedRatios(agg);
+  type StatRowRaw = MatchStatRow & {
+    events: { type: string; tournament_id: string | null };
+  };
+  const typedRows: MatchStatRowTyped[] = (
+    (statRows ?? []) as unknown as StatRowRaw[]
+  ).map((r) => ({
+    ...r,
+    eventType: r.events?.type ?? '',
+    tournamentId: r.events?.tournament_id ?? null,
+  }));
+  const matchStats = toFichaMatchStats(splitMatchStatsByType(typedRows));
 
   const { data: attRows } = await supabase
     .from('training_attendance')
@@ -357,13 +422,7 @@ export async function loadFichaStats(
   };
 
   return {
-    matches: agg.matches,
-    minutes: agg.minutesPlayed,
-    goals: agg.goals,
-    assists: agg.assists,
-    yellow: agg.yellowCards,
-    red: agg.redCards,
-    startRate: ratios.startRate,
+    matchStats,
     attendancePresentPct: att.presentPct,
     attendanceTotal: att.total,
     calledUp,
@@ -374,51 +433,10 @@ export async function loadFichaStats(
   };
 }
 
-/** Bloque de stats de partido (para segregar oficial/amistoso en el PDF, PDF-3). */
-export type PdfMatchStats = {
-  matches: number;
-  minutes: number;
-  goals: number;
-  assists: number;
-  cards: number;
-};
-export type PdfMatchStatsSplit = { oficial: PdfMatchStats; amistoso: PdfMatchStats };
-
-const toPdfMatchStats = (rows: MatchStatRow[]): PdfMatchStats => {
-  const a = sumMatchStats(rows);
-  return {
-    matches: a.matches,
-    minutes: a.minutesPlayed,
-    goals: a.goals,
-    assists: a.assists,
-    cards: a.yellowCards + a.redCards,
-  };
-};
-
-/**
- * F13.10h-PDF-3 — Stats de partido del jugador SEGREGADAS por tipo de evento
- * (D-PDF-1): Oficial = events.type ∈ ('match','tournament'); Amistoso =
- * ('friendly'); se ignoran training/other. NO distingue liga/copa (eso es F13B):
- * solo parte por events.type. Solo para el PDF; la ficha usa loadFichaStats.
- */
-export async function loadFichaMatchStatsByType(
-  supabase: Supa,
-  playerId: string,
-  seasonLabel: string,
-): Promise<PdfMatchStatsSplit> {
-  const { data } = await supabase
-    .from('match_player_stats')
-    .select(
-      'started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, events!inner(type), teams!inner(season)',
-    )
-    .eq('player_id', playerId)
-    .eq('teams.season', seasonLabel);
-
-  const rows = (data ?? []) as unknown as Array<MatchStatRow & { events: { type: string } }>;
-  const oficial = rows.filter((r) => r.events?.type === 'match' || r.events?.type === 'tournament');
-  const amistoso = rows.filter((r) => r.events?.type === 'friendly');
-  return { oficial: toPdfMatchStats(oficial), amistoso: toPdfMatchStats(amistoso) };
-}
+// F9B — `loadFichaMatchStatsByType` (2-vías, solo-PDF, que además clasificaba MAL
+// metiendo torneo en Oficial) se RETIRA: su desglose ahora vive en `loadFichaStats`
+// (`FichaStats.matchStats`, 4 vías con la clasificación correcta), único punto de
+// derivación para ficha web y PDF. F9B-2 pinta las 4 columnas.
 
 /** Medias de grupo por periodo (los 4 periodos; null donde no hay informe). */
 export type PeriodAverages = {
