@@ -1862,6 +1862,7 @@
     "export_pdf": "Exportar PDF",
     "by_player_title": "Per jugador",
     "by_type_title": "Totals de l'equip",
+    "rival": "Rival",
     "empty": "Aquest equip encara no té jugadors.",
     "totals_row": "Total equip",
     "col": {
@@ -1883,8 +1884,10 @@
       "goals": "Gols",
       "assists": "Assistències",
       "shots": "Tirs",
+      "corners": "Còrners",
       "fouls_committed": "Faltes comeses",
       "fouls_received": "Faltes rebudes",
+      "offsides": "Fores de joc",
       "yellow": "Targetes grogues",
       "red": "Targetes roges",
       "penalties_scored": "Penals marcats",

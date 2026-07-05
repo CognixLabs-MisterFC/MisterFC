@@ -17,27 +17,36 @@
 
 import { Fragment } from 'react';
 
-/** Las 4 cifras de una métrica, ya formateadas (p.ej. "3", "75%", "—"). */
+/**
+ * Las cifras de una métrica, ya formateadas (p.ej. "3", "75%", "—"). `rival` es
+ * OPCIONAL (F9B-4b): solo la vista de equipo añade una columna Rival (Total) a la
+ * derecha; informe/perfil no la usan y el DOM queda idéntico.
+ */
 export type MatchTypeCells = {
   amistoso: string;
   torneo: string;
   oficial: string;
   total: string;
+  rival?: string;
 };
 
-/** Una fila = una métrica con su etiqueta traducida y sus 4 cifras. */
+/** Una fila = una métrica con su etiqueta traducida y sus cifras. */
 export type MatchStatsByTypeRow = {
   key: string;
   label: string;
   cells: MatchTypeCells;
 };
 
-/** Etiquetas de las 4 columnas (ya traducidas). */
+/**
+ * Etiquetas de las columnas (ya traducidas). `rival` OPCIONAL: si se pasa, se
+ * añade una 5ª columna "Rival" (Total, sin desglose por tipo) — F9B-4b.
+ */
 export type MatchStatsByTypeColumns = {
   friendly: string;
   tournament: string;
   official: string;
   total: string;
+  rival?: string;
 };
 
 export function MatchStatsByTypeTable({
@@ -47,9 +56,18 @@ export function MatchStatsByTypeTable({
   columns: MatchStatsByTypeColumns;
   rows: MatchStatsByTypeRow[];
 }) {
+  const hasRival = columns.rival != null;
+  // Sin Rival → 4 columnas (informe/perfil, DOM idéntico). Con Rival → 5.
+  const gridCols = hasRival
+    ? 'grid-cols-[minmax(5rem,1.4fr)_repeat(5,minmax(0,1fr))]'
+    : 'grid-cols-[minmax(5rem,1.4fr)_repeat(4,minmax(0,1fr))]';
+  const minW = hasRival ? 'min-w-[26rem]' : 'min-w-[22rem]';
+  // La columna Rival se separa con un borde izquierdo tenue.
+  const rivalSep = 'border-l border-border/60';
+
   return (
     <div className="overflow-x-auto">
-      <div className="grid min-w-[22rem] grid-cols-[minmax(5rem,1.4fr)_repeat(4,minmax(0,1fr))] items-center gap-x-2">
+      <div className={`grid ${minW} ${gridCols} items-center gap-x-2`}>
         {/* Cabecera de columnas (la celda de la esquina va vacía). */}
         <span aria-hidden />
         <span className="pb-1 text-center text-[11px] font-medium text-muted-foreground">
@@ -64,6 +82,13 @@ export function MatchStatsByTypeTable({
         <span className="pb-1 text-center text-xs font-medium text-muted-foreground">
           {columns.total}
         </span>
+        {hasRival && (
+          <span
+            className={`pb-1 text-center text-xs font-medium text-muted-foreground ${rivalSep}`}
+          >
+            {columns.rival}
+          </span>
+        )}
 
         {/* Filas por métrica: Amistoso/Torneo tenues; Oficial destacada; Total al lado. */}
         {rows.map((r) => (
@@ -83,6 +108,13 @@ export function MatchStatsByTypeTable({
             <span className="border-t border-border/60 py-1.5 text-center text-base tabular-nums">
               {r.cells.total}
             </span>
+            {hasRival && (
+              <span
+                className={`border-t border-border/60 py-1.5 text-center text-base tabular-nums text-muted-foreground ${rivalSep}`}
+              >
+                {r.cells.rival ?? '—'}
+              </span>
+            )}
           </Fragment>
         ))}
       </div>

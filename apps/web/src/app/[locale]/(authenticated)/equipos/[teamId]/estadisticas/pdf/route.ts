@@ -13,6 +13,7 @@ import { loadShellContext } from '@/lib/auth-shell';
 import { loadTeamSeasonStats } from '../../team-stats-queries';
 import { userStaffsTeam } from '../../../../estadisticas-equipo/queries';
 import { TeamPdfDocument } from '@/lib/pdf/team-pdf';
+import { buildTeamByTypeRows } from '@/lib/team-stats-rows';
 import { pdfResponse, slugForFile, type Translator } from '@/lib/pdf/shared';
 
 export const runtime = 'nodejs';
@@ -65,6 +66,22 @@ export async function GET(
     namespace: 'pdf',
   })) as unknown as Translator;
 
+  // F9B-4b — filas/columnas del bloque "Totales del equipo" por tipo, con las
+  // MISMAS labels que la web (equipo_stats.col_full + informes.ficha.*), vía el
+  // constructor compartido buildTeamByTypeRows (sin divergencia web/PDF).
+  const tEq = await getTranslations({ locale, namespace: 'equipo_stats' });
+  const tInf = await getTranslations({ locale, namespace: 'informes' });
+  const byTypeRows = buildTeamByTypeRows(data.byType, (key) =>
+    tEq(`col_full.${key}`),
+  );
+  const byTypeColumns = {
+    friendly: tInf('ficha.friendly'),
+    tournament: tInf('ficha.tournament'),
+    official: tInf('ficha.official'),
+    total: tInf('ficha.total'),
+    rival: tEq('rival'),
+  };
+
   const doc = TeamPdfDocument({
     t,
     clubName,
@@ -72,6 +89,9 @@ export async function GET(
     categoryName: data.team.category_name,
     season: data.team.season,
     aggregate: data.aggregate,
+    byTypeTitle: tEq('by_type_title'),
+    byTypeColumns,
+    byTypeRows,
   });
 
   return pdfResponse(

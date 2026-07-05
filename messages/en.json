@@ -1862,6 +1862,7 @@
     "export_pdf": "Export PDF",
     "by_player_title": "By player",
     "by_type_title": "Team totals",
+    "rival": "Opponent",
     "empty": "This team has no players yet.",
     "totals_row": "Team total",
     "col": {
@@ -1883,8 +1884,10 @@
       "goals": "Goals",
       "assists": "Assists",
       "shots": "Shots",
+      "corners": "Corners",
       "fouls_committed": "Fouls committed",
       "fouls_received": "Fouls received",
+      "offsides": "Offsides",
       "yellow": "Yellow cards",
       "red": "Red cards",
       "penalties_scored": "Penalties scored",

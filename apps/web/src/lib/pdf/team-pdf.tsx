@@ -7,6 +7,10 @@
 import { View, Text, type DocumentProps } from '@react-pdf/renderer';
 import type { ReactElement } from 'react';
 import { formatPlayerName, type TeamAggregate } from '@misterfc/core';
+import type {
+  MatchStatsByTypeRow,
+  MatchStatsByTypeColumns,
+} from '@/components/stats/match-stats-by-type-table';
 import { PdfShell, pdfStyles, type Translator } from './shared';
 
 export interface TeamPdfProps {
@@ -16,6 +20,10 @@ export interface TeamPdfProps {
   categoryName: string;
   season: string;
   aggregate: TeamAggregate;
+  /** F9B-4b — bloque "Totales del equipo" por tipo + columna Rival (paridad web). */
+  byTypeTitle: string;
+  byTypeColumns: Required<MatchStatsByTypeColumns>;
+  byTypeRows: MatchStatsByTypeRow[];
 }
 
 const NA = '—';
@@ -25,7 +33,7 @@ export function TeamPdfDocument(
   props: TeamPdfProps
 ): ReactElement<DocumentProps> {
   const { t, aggregate } = props;
-  const { perPlayer, totals, totalsRatios } = aggregate;
+  const { perPlayer } = aggregate;
 
   const headCols: Array<{ key: string; flex: number }> = [
     { key: 'matches', flex: 1 },
@@ -44,6 +52,50 @@ export function TeamPdfDocument(
       title={t('team.title')}
       subtitle={`${props.teamName}  ·  ${props.categoryName}  ·  ${props.season}`}
     >
+      {/* F9B-4b — Totales del equipo por tipo (Amistoso·Torneo·Oficial·Total) +
+          Rival. Oficial en negrita; Amistoso/Torneo/Rival tenues. */}
+      <Text style={pdfStyles.sectionTitle}>{props.byTypeTitle}</Text>
+      <View style={[pdfStyles.table, { marginBottom: 10 }]}>
+        <View style={pdfStyles.headRow}>
+          <Text style={[pdfStyles.cellHead, { flex: 2 }]} />
+          <Text style={[pdfStyles.cellHead, pdfStyles.cellNum, { flex: 1 }]}>
+            {props.byTypeColumns.friendly}
+          </Text>
+          <Text style={[pdfStyles.cellHead, pdfStyles.cellNum, { flex: 1 }]}>
+            {props.byTypeColumns.tournament}
+          </Text>
+          <Text style={[pdfStyles.cellHead, pdfStyles.cellNum, { flex: 1 }]}>
+            {props.byTypeColumns.official}
+          </Text>
+          <Text style={[pdfStyles.cellHead, pdfStyles.cellNum, { flex: 1 }]}>
+            {props.byTypeColumns.total}
+          </Text>
+          <Text style={[pdfStyles.cellHead, pdfStyles.cellNum, { flex: 1 }]}>
+            {props.byTypeColumns.rival}
+          </Text>
+        </View>
+        {props.byTypeRows.map((r) => (
+          <View key={r.key} style={pdfStyles.row}>
+            <Text style={[pdfStyles.cell, { flex: 2 }]}>{r.label}</Text>
+            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.muted, { flex: 1 }]}>
+              {r.cells.amistoso}
+            </Text>
+            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.muted, { flex: 1 }]}>
+              {r.cells.torneo}
+            </Text>
+            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.bold, { flex: 1 }]}>
+              {r.cells.oficial}
+            </Text>
+            <Text style={[pdfStyles.cell, pdfStyles.cellNum, { flex: 1 }]}>
+              {r.cells.total}
+            </Text>
+            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.muted, { flex: 1 }]}>
+              {r.cells.rival ?? NA}
+            </Text>
+          </View>
+        ))}
+      </View>
+
       <Text style={pdfStyles.sectionTitle}>{t('team.by_player')}</Text>
 
       {perPlayer.length === 0 ? (
@@ -81,19 +133,6 @@ export function TeamPdfDocument(
               <Text style={[pdfStyles.cell, pdfStyles.cellNum, { flex: 1.1 }]}>{pct(p.ratios.startRate)}</Text>
             </View>
           ))}
-
-          <View style={pdfStyles.totalsRow}>
-            <Text style={[pdfStyles.cell, { width: 26 }]} />
-            <Text style={[pdfStyles.cell, pdfStyles.bold, { flex: 2.4 }]}>{t('team.totals_row')}</Text>
-            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.bold, { flex: 1 }]}>{totals.matches}</Text>
-            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.bold, { flex: 1 }]}>{totals.starts}</Text>
-            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.bold, { flex: 1 }]}>{totals.minutesPlayed}</Text>
-            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.bold, { flex: 1 }]}>{totals.goals}</Text>
-            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.bold, { flex: 1 }]}>{totals.assists}</Text>
-            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.bold, { flex: 1 }]}>{totals.yellowCards}</Text>
-            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.bold, { flex: 1 }]}>{totals.redCards}</Text>
-            <Text style={[pdfStyles.cell, pdfStyles.cellNum, pdfStyles.bold, { flex: 1.1 }]}>{pct(totalsRatios.startRate)}</Text>
-          </View>
         </View>
       )}
     </PdfShell>
