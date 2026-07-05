@@ -814,6 +814,7 @@
         "goals": "Goles",
         "assists": "Asistencias",
         "cards": "Tarjetas",
+        "starts": "Titularidades",
         "attendance": "Entrenos"
       },
       "promotions": {
@@ -826,7 +827,8 @@
       "match_block": "Estadísticas de partido",
       "total": "Total",
       "official": "Oficial",
-      "friendly": "Amistoso"
+      "friendly": "Amistoso",
+      "tournament": "Torneo"
     },
     "publish": "Publicar a la familia",
     "unpublish": "Dejar de compartir",

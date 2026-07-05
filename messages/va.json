@@ -815,6 +815,7 @@
         "goals": "Gols",
         "assists": "Assistències",
         "cards": "Targetes",
+        "starts": "Titularitats",
         "attendance": "Entrenaments"
       },
       "promotions": {
@@ -827,7 +828,8 @@
       "match_block": "Estadístiques de partit",
       "total": "Total",
       "official": "Oficial",
-      "friendly": "Amistós"
+      "friendly": "Amistós",
+      "tournament": "Torneig"
     },
     "publish": "Compartir amb la família",
     "unpublish": "Deixar de compartir",

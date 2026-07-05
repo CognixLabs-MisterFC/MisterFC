@@ -14,6 +14,7 @@
  *  7. Resultados de equipo (3 grupos con color).
  */
 
+import { Fragment } from 'react';
 import { getTranslations, getLocale } from 'next-intl/server';
 import { ArrowUpCircle } from 'lucide-react';
 import {
@@ -88,18 +89,66 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
 
   // F13.10h-4 — ratio "num/den"; '—' si no hay denominador (sin equipo/eventos).
   const ratio = (num: number, den: number) => (den > 0 ? `${num}/${den}` : '—');
-  // F9B-1 — de momento se muestra el TOTAL (mismo número que antes); el desglose a
-  // 4 columnas Total/Oficial/Amistoso/Torneo (data.stats.matchStats) es F9B-2.
-  const mt = data.stats.matchStats.total;
-  const statCards: Array<{ key: string; value: string }> = [
-    { key: 'matches', value: String(mt.matches) },
-    { key: 'callups', value: ratio(data.stats.calledUp, data.stats.totalMatches) },
-    { key: 'minutes', value: String(mt.minutes) },
-    { key: 'goals', value: String(mt.goals) },
-    { key: 'assists', value: String(mt.assists) },
-    { key: 'cards', value: String(mt.yellow + mt.red) },
-    { key: 'attendance', value: ratio(data.stats.trainingsAttended, data.stats.totalTrainings) },
-  ];
+
+  // F9B-2 — desglose de las métricas de partido por tipo. Orden de columnas:
+  // Amistoso · Torneo · Oficial · Total (Oficial = número protagonista). El
+  // desglose lo produce loadFichaStats (F9B-1); aquí solo se pinta.
+  const ms = data.stats.matchStats;
+  const pct = (r: number | null) => (r == null ? '—' : `${Math.round(r * 100)}%`);
+  const metricValue = (key: string, line: (typeof ms)['total']): string => {
+    switch (key) {
+      case 'matches':
+        return String(line.matches);
+      case 'minutes':
+        return String(line.minutes);
+      case 'goals':
+        return String(line.goals);
+      case 'assists':
+        return String(line.assists);
+      case 'cards':
+        return String(line.yellow + line.red);
+      case 'starts':
+        return pct(line.startRate);
+      default:
+        return '—';
+    }
+  };
+  const MATCH_METRIC_KEYS = [
+    'matches',
+    'minutes',
+    'goals',
+    'assists',
+    'cards',
+    'starts',
+  ] as const;
+  type MatchRow = {
+    key: string;
+    amistoso: string;
+    torneo: string;
+    oficial: string;
+    total: string;
+  };
+  const matchRows: MatchRow[] = MATCH_METRIC_KEYS.map((key) => ({
+    key,
+    amistoso: metricValue(key, ms.amistoso),
+    torneo: metricValue(key, ms.torneo),
+    oficial: metricValue(key, ms.oficial),
+    total: metricValue(key, ms.total),
+  }));
+  // Convocatorias es Oficial-only (callupRatioForPlayer, #266): solo la columna
+  // Oficial lleva valor; Amistoso/Torneo/Total → '—'.
+  const callupsRow: MatchRow = {
+    key: 'callups',
+    amistoso: '—',
+    torneo: '—',
+    oficial: ratio(data.stats.calledUp, data.stats.totalMatches),
+    total: '—',
+  };
+  const allMatchRows: MatchRow[] = [...matchRows, callupsRow];
+  const attendanceValue = ratio(
+    data.stats.trainingsAttended,
+    data.stats.totalTrainings,
+  );
 
   const radarData = DEVELOPMENT_REPORT_CATALOG.groups.map((g) => ({
     group: t(`cat_group.${g.id}`),
@@ -191,7 +240,7 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
     <div className="flex flex-col gap-6">
       {/* ── CABECERA ───────────────────────────────────────────────── */}
       <Card>
-        <CardContent className="flex flex-col gap-5 pt-6">
+        <CardContent className="pt-6">
           <FichaHeader
             data={{
               fullName: data.fullName,
@@ -205,17 +254,67 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
               subtitle: `${data.teamName} · ${data.seasonLabel} · ${t(`period.${data.period}`)}`,
             }}
           />
+        </CardContent>
+      </Card>
 
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-            {statCards.map((c) => (
-              <div
-                key={c.key}
-                className="flex flex-col gap-0.5 rounded-lg border border-border bg-card/40 p-3 text-center"
-              >
-                <span className="text-xl font-bold tabular-nums">{c.value}</span>
-                <span className="text-[11px] text-muted-foreground">{t(`ficha.stat.${c.key}`)}</span>
-              </div>
-            ))}
+      {/* ── ESTADÍSTICAS DE PARTIDO (F9B-2) ─────────────────────────
+          Por métrica, 4 cifras en orden Amistoso · Torneo · Oficial · Total.
+          Jerarquía: Amistoso/Torneo pequeños y tenues; Oficial grande y en
+          negrita (protagonista); Total grande sin negrita. Convocatorias =
+          Oficial-only. Entrenos = total único, en su propio bloque abajo. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t('ficha.match_block')}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="overflow-x-auto">
+            <div className="grid min-w-[22rem] grid-cols-[minmax(5rem,1.4fr)_repeat(4,minmax(0,1fr))] items-center gap-x-2">
+              {/* Cabecera de columnas */}
+              <span aria-hidden />
+              <span className="pb-1 text-center text-[11px] font-medium text-muted-foreground">
+                {t('ficha.friendly')}
+              </span>
+              <span className="pb-1 text-center text-[11px] font-medium text-muted-foreground">
+                {t('ficha.tournament')}
+              </span>
+              <span className="pb-1 text-center text-xs font-semibold text-foreground">
+                {t('ficha.official')}
+              </span>
+              <span className="pb-1 text-center text-xs font-medium text-muted-foreground">
+                {t('ficha.total')}
+              </span>
+
+              {/* Filas por métrica */}
+              {allMatchRows.map((r) => (
+                <Fragment key={r.key}>
+                  <span className="border-t border-border/60 py-1.5 text-xs text-muted-foreground">
+                    {t(`ficha.stat.${r.key}`)}
+                  </span>
+                  <span className="border-t border-border/60 py-1.5 text-center text-xs tabular-nums text-muted-foreground">
+                    {r.amistoso}
+                  </span>
+                  <span className="border-t border-border/60 py-1.5 text-center text-xs tabular-nums text-muted-foreground">
+                    {r.torneo}
+                  </span>
+                  <span className="border-t border-border/60 py-1.5 text-center text-base font-bold tabular-nums">
+                    {r.oficial}
+                  </span>
+                  <span className="border-t border-border/60 py-1.5 text-center text-base tabular-nums">
+                    {r.total}
+                  </span>
+                </Fragment>
+              ))}
+            </div>
+          </div>
+
+          {/* Entrenos: total único (sin desglose por tipo), bloque aparte. */}
+          <div className="flex items-center justify-between rounded-lg border border-border bg-card/40 px-3 py-2">
+            <span className="text-xs text-muted-foreground">
+              {t('ficha.stat.attendance')}
+            </span>
+            <span className="text-base font-semibold tabular-nums">
+              {attendanceValue}
+            </span>
           </div>
         </CardContent>
       </Card>
