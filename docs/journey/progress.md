@@ -33,6 +33,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **F13 — Pizarra de jugadas (13.1–13.7)** — **cerrada** (2026-06-27). El contrato/editor/animación/reproducción/fullscreen ya existían (build original de `plays`); la **serie JR** (ADR-0019, **#229–#232**) los reorganizó a **banco del club + ciclo de aprobación** (proponer/aprobar/rechazar), **playbook por equipo** y **compartir con la familia** (con índice del playbook del jugador). **13.8 (exportar vídeo/GIF) descartado y eliminado del roadmap.**
 - **F13.10** (Informes de desarrollo y campaña de evaluaciones) — **cerrada** (#200–#221). Ver [fase-13.10-summary.md](fase-13.10-summary.md) y [spec 13.10](../specs/13.10-informes-desarrollo.md).
 - **F13B — Gestión de partidos** — **cerrada** (2026-07-02/03). **Amistoso** sin tope de convocados (#256/#257) + **Torneo** con convocatoria única heredada (cabecera + sub-partidos, `events.tournament_id`+`round`, serie T-0…T-5: #258/#259/#260/#261/#262). El bug del banquillo no-convocado se cerró aparte en **#255**. Ver §"F13B — Gestión de partidos" abajo. Alcance real = **oficial/amistoso/torneo** (sin liga/copa).
+- **F9B — Estadísticas por tipo de partido** — **cerrada** (2026-07-05). Toda métrica de partido se desglosa en **Amistoso · Torneo · Oficial · Total** en informe/perfil/equipo + PDFs (serie F9B-1…F9B-4b: #268/#269/#270/#271/#272). **Sin migración** (deriva de `events.type`+`tournament_id`); regla única `splitMatchStatsByType` (core). Ver §"F9B — Estadísticas por tipo de partido" abajo. Extensión de F9 (no la reabre).
 - **Auditoría de permisos** — **cerrada** (2026-06-26). Barrido acciones×roles del patrón rol-de-club vs rol-de-equipo + sobre/sub-exposición. 4 hallazgos arreglados (PRs #223 asistencia, #224 eventos, #225 F14.9 capabilities cross-team, #226 F14.10 events SELECT). **F14.9 y F14.10 dejan de ser deuda de F14.** 2 decisiones de negocio cerradas (plantilla = club; informes = cualquier staff del equipo). Detalle en [known-issues.md → Auditoría de permisos](known-issues.md).
 
 **Pendiente (backlog, sin programar salvo F14):**
@@ -497,6 +498,28 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
   - **T-5 #262** — UI agrupada: `groupCallupsByTournament` (cabecera + rondas) en Gestión de partidos; etiqueta "Torneo · Ronda N" en el drill-in; limpieza de la cabecera (oculta alineación/directo/stats).
 - **Migraciones** (append-only, aplicadas al remoto): `20260820000000_callup_accept_friendly_tournament` (#256) · `20260821000000_events_tournament_grouping` (#258). T-1/T-2/T-4/T-5 sin migración nueva.
 - **CI**: cada PR con `typecheck · lint · test · build` en verde + preview de Vercel. **Sin merge por Claude** (los mergea el operador).
+
+## F9B — Estadísticas por tipo de partido ☑ (2026-07-05)
+
+> **Extensión de F9** (etiqueta de letra, no renumera F14–F16). Desglosa **toda métrica de partido en Amistoso · Torneo · Oficial · Total** en las tres vistas de consulta (informe de desarrollo + PDF, perfil del jugador, estadísticas de equipo + PDF). **Sin migración**: deriva de `events.type` + `events.tournament_id` sobre `match_player_stats` / `match_events` / `match_state`. **Regla de clasificación única** en `@misterfc/core` (`splitMatchStatsByType`, con tests Vitest), compartida por informe, perfil y equipo → sin cálculos divergentes.
+
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| F9B-1 | ☑ 2026-07-05 | #268 | Derivación (jugador): `splitMatchStatsByType`; `loadFichaStats` a 4 vías. **Corrige la definición de Oficial** = `type='match' ∧ tournament_id IS NULL`. Sin render. |
+| F9B-2 | ☑ 2026-07-05 | #269 | Render 4 columnas (Amistoso·Torneo·Oficial·Total) en el informe de desarrollo + PDF; Oficial destacada en negrita; convocatorias solo en la columna Oficial. |
+| F9B-3 | ☑ 2026-07-05 | #270 | Mismo desglose en la pestaña "Estadísticas" del perfil + `/mi-ficha`; **extracción del componente compartido `MatchStatsByTypeTable`** (usable en árbol Server y Client). Modo Carrera sin cambios. |
+| F9B-4a | ☑ 2026-07-05 | #271 | Totales de **equipo** por tipo para métricas summables; **"Partidos" = `count(distinct event_id)`** por tipo (no la Σ de comparecencias); retira la fila `<tfoot>` antigua. |
+| F9B-4b | ☑ 2026-07-05 | #272 | Eventos de equipo **corners/offsides/faltas** (`match_events`) + **columna Rival** (total) + **goles = marcador** (`match_state.goals_for`/`goals_against`) + paridad en el **PDF de equipo**; elimina el **% titularidad** a nivel de equipo. |
+
+**Decisiones de producto fijadas** (invariantes para vistas futuras):
+
+- **Orden de columnas** = *Amistoso · Torneo · Oficial · Total*; **Oficial** siempre destacada (negrita, mayor tamaño).
+- **Oficial** = `type='match' ∧ tournament_id IS NULL` · **Torneo** = `type='match' ∧ tournament_id IS NOT NULL` · **Amistoso** = `type='friendly'` · **Total** = suma de los tres (ignora `training`/`other`).
+- **Rival** solo como **total** (sin desglose por tipo) y **solo en la vista de equipo**. El componente compartido lleva la columna Rival **opcional** → informe/perfil quedan con el DOM idéntico a 4 columnas (regresión-segura).
+- **Goles de equipo = marcador** (`match_state`), no la Σ de goles por jugador. **Sin % titularidad** agregado a nivel de equipo (se conserva a nivel de jugador).
+
+- **Arquitectura**: `splitMatchStatsByType` + `aggregateTeamEventsByType` en core (reusan `classifyMatchType`); util compartido `buildTeamByTypeRows` para que **página web y ruta PDF produzcan filas idénticas** (sin divergencia). Componente presentacional puro `MatchStatsByTypeTable` con columna Rival opcional.
+- **CI**: cada PR con `typecheck · lint · test · build` en verde + preview de Vercel (build web fiado a CI; local agota memoria). **Sin merge por Claude** (los mergea el operador).
 
 ## Fase 14 — Subfases pendientes
 
