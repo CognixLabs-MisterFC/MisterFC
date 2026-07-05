@@ -1861,6 +1861,7 @@
     "back": "Back to team",
     "export_pdf": "Export PDF",
     "by_player_title": "By player",
+    "by_type_title": "Team totals",
     "empty": "This team has no players yet.",
     "totals_row": "Team total",
     "col": {
@@ -1881,8 +1882,13 @@
       "minutes": "Minutes played",
       "goals": "Goals",
       "assists": "Assists",
+      "shots": "Shots",
+      "fouls_committed": "Fouls committed",
+      "fouls_received": "Fouls received",
       "yellow": "Yellow cards",
       "red": "Red cards",
+      "penalties_scored": "Penalties scored",
+      "penalties_missed": "Penalties missed",
       "start_rate": "Start rate"
     }
   },
