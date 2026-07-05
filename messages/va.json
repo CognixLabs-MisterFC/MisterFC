@@ -1861,6 +1861,7 @@
     "back": "Tornar a l'equip",
     "export_pdf": "Exportar PDF",
     "by_player_title": "Per jugador",
+    "by_type_title": "Totals de l'equip",
     "empty": "Aquest equip encara no té jugadors.",
     "totals_row": "Total equip",
     "col": {
@@ -1881,8 +1882,13 @@
       "minutes": "Minuts jugats",
       "goals": "Gols",
       "assists": "Assistències",
+      "shots": "Tirs",
+      "fouls_committed": "Faltes comeses",
+      "fouls_received": "Faltes rebudes",
       "yellow": "Targetes grogues",
       "red": "Targetes roges",
+      "penalties_scored": "Penals marcats",
+      "penalties_missed": "Penals fallats",
       "start_rate": "% de titularitat"
     }
   },

@@ -20,6 +20,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { loadTeamSeasonStats } from '../team-stats-queries';
 import { userStaffsTeam } from '../../../estadisticas-equipo/queries';
+import {
+  MatchStatsByTypeTable,
+  type MatchStatsByTypeRow,
+} from '@/components/stats/match-stats-by-type-table';
 
 type Props = {
   params: Promise<{ locale: string; teamId: string }>;
@@ -57,8 +61,10 @@ export default async function TeamStatsPage({ params }: Props) {
   }
 
   const t = await getTranslations('equipo_stats');
-  const { team, aggregate } = data;
-  const { perPlayer, totals, totalsRatios } = aggregate;
+  // F9B-4a — etiquetas de columnas del desglose reutilizadas del informe/perfil.
+  const tInf = await getTranslations('informes');
+  const { team, aggregate, byType } = data;
+  const { perPlayer } = aggregate;
 
   const na = '—';
   const pct = (v: number | null) => (v == null ? na : `${Math.round(v * 100)}%`);
@@ -74,6 +80,87 @@ export default async function TeamStatsPage({ params }: Props) {
     { key: 'red', align: 'right' },
     { key: 'start_rate', align: 'right' },
   ] as const;
+
+  // F9B-4a — bloque "Totales del equipo" por tipo (Amistoso·Torneo·Oficial·Total),
+  // con el componente compartido (#270). Solo métricas SUMMABLES (Σ de
+  // match_player_stats); corners/offsides/rival/marcador son F9B-4b. La fila
+  // Partidos usa partidos REALES por tipo (distinct event_id), no Σ de apariciones.
+  const cellVal = (
+    key: string,
+    agg: (typeof byType.stats)['total'],
+  ): string => {
+    switch (key) {
+      case 'goals':
+        return String(agg.goals);
+      case 'assists':
+        return String(agg.assists);
+      case 'shots':
+        return String(agg.shots);
+      case 'fouls_committed':
+        return String(agg.foulsCommitted);
+      case 'fouls_received':
+        return String(agg.foulsReceived);
+      case 'yellow':
+        return String(agg.yellowCards);
+      case 'red':
+        return String(agg.redCards);
+      case 'penalties_scored':
+        return String(agg.penaltiesScored);
+      case 'penalties_missed':
+        return String(agg.penaltiesMissed);
+      case 'minutes':
+        return String(agg.minutesPlayed);
+      case 'start_rate':
+        // Titularidad del equipo = Σtitularidades / Σapariciones (denominador
+        // = apariciones, no partidos reales), como el startRate del jugador.
+        return pct(agg.matches > 0 ? agg.starts / agg.matches : null);
+      default:
+        return na;
+    }
+  };
+  const TEAM_METRIC_KEYS = [
+    'goals',
+    'assists',
+    'shots',
+    'fouls_committed',
+    'fouls_received',
+    'yellow',
+    'red',
+    'penalties_scored',
+    'penalties_missed',
+    'minutes',
+    'start_rate',
+  ] as const;
+  // Fila "Partidos": partidos reales por tipo (distinct event_id).
+  const matchesRow: MatchStatsByTypeRow = {
+    key: 'matches',
+    label: t('col_full.matches'),
+    cells: {
+      amistoso: String(byType.matches.amistoso),
+      torneo: String(byType.matches.torneo),
+      oficial: String(byType.matches.oficial),
+      total: String(byType.matches.total),
+    },
+  };
+  const teamByTypeRows: MatchStatsByTypeRow[] = [
+    matchesRow,
+    ...TEAM_METRIC_KEYS.map((key) => ({
+      key,
+      label: t(`col_full.${key}`),
+      cells: {
+        amistoso: cellVal(key, byType.stats.amistoso),
+        torneo: cellVal(key, byType.stats.torneo),
+        oficial: cellVal(key, byType.stats.oficial),
+        total: cellVal(key, byType.stats.total),
+      },
+    })),
+  ];
+  const teamByTypeColumns = {
+    friendly: tInf('ficha.friendly'),
+    tournament: tInf('ficha.tournament'),
+    official: tInf('ficha.official'),
+    total: tInf('ficha.total'),
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
@@ -108,6 +195,24 @@ export default async function TeamStatsPage({ params }: Props) {
           </a>
         </Button>
       </div>
+
+      {/* F9B-4a — Totales del equipo por tipo (Amistoso·Torneo·Oficial·Total),
+          encima de la tabla por jugador. Solo métricas summables (4a). */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('by_type_title')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {perPlayer.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('empty')}</p>
+          ) : (
+            <MatchStatsByTypeTable
+              columns={teamByTypeColumns}
+              rows={teamByTypeRows}
+            />
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -173,36 +278,6 @@ export default async function TeamStatsPage({ params }: Props) {
                     </tr>
                   ))}
                 </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-border font-semibold">
-                    <td className="px-3 py-2" />
-                    <td className="px-3 py-2">{t('totals_row')}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {totals.matches}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {totals.starts}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {totals.minutesPlayed}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {totals.goals}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {totals.assists}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {totals.yellowCards}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {totals.redCards}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {pct(totalsRatios.startRate)}
-                    </td>
-                  </tr>
-                </tfoot>
               </table>
             </div>
           )}

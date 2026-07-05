@@ -1860,6 +1860,7 @@
     "back": "Volver al equipo",
     "export_pdf": "Exportar PDF",
     "by_player_title": "Por jugador",
+    "by_type_title": "Totales del equipo",
     "empty": "Este equipo aún no tiene jugadores.",
     "totals_row": "Total equipo",
     "col": {
@@ -1880,8 +1881,13 @@
       "minutes": "Minutos jugados",
       "goals": "Goles",
       "assists": "Asistencias",
+      "shots": "Tiros",
+      "fouls_committed": "Faltas cometidas",
+      "fouls_received": "Faltas recibidas",
       "yellow": "Tarjetas amarillas",
       "red": "Tarjetas rojas",
+      "penalties_scored": "Penaltis marcados",
+      "penalties_missed": "Penaltis fallados",
       "start_rate": "% de titularidad"
     }
   },

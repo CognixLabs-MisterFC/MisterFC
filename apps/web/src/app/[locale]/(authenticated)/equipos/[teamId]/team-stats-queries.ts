@@ -14,12 +14,35 @@
 
 import {
   aggregateTeamStats,
+  splitMatchStatsByType,
+  classifyMatchType,
   createSupabaseServerClient,
   type RosterPlayer,
   type PlayerMatchStatRow,
+  type MatchStatRowTyped,
+  type MatchStatsByType,
   type TeamAggregate,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+
+/** Nº de PARTIDOS REALES del equipo por tipo (count distinct event_id, no Σ apariciones). */
+export interface TeamMatchesByType {
+  total: number;
+  oficial: number;
+  amistoso: number;
+  torneo: number;
+}
+
+/**
+ * F9B-4a — totales del EQUIPO desglosados por tipo (Amistoso/Torneo/Oficial/Total).
+ * `stats` = las métricas summables (Σ de match_player_stats) por tipo, con el mismo
+ * helper que jugador/informe (splitMatchStatsByType). `matches` = partidos reales
+ * (distinct event_id) por tipo — NO la Σ de apariciones de `AggregatedStats.matches`.
+ */
+export interface TeamStatsByType {
+  stats: MatchStatsByType;
+  matches: TeamMatchesByType;
+}
 
 export interface TeamSeasonStats {
   team: {
@@ -31,6 +54,7 @@ export interface TeamSeasonStats {
     category_name: string;
   };
   aggregate: TeamAggregate;
+  byType: TeamStatsByType;
 }
 
 /**
@@ -88,14 +112,56 @@ export async function loadTeamSeasonStats(
   );
 
   // 3) match_player_stats del equipo (RLS: staff del team / admin / coord).
+  // F9B-4a — se junta events!inner(type, tournament_id) para el desglose por tipo.
   const { data: rawStats } = await supabase
     .from('match_player_stats')
     .select(
-      'player_id, started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed'
+      'player_id, event_id, started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed, events!inner(type, tournament_id)'
     )
     .eq('team_id', teamId);
 
-  const rows = (rawStats ?? []) as unknown as PlayerMatchStatRow[];
+  type RawRow = PlayerMatchStatRow & {
+    event_id: string;
+    events: { type: string; tournament_id: string | null };
+  };
+  const raw = (rawStats ?? []) as unknown as RawRow[];
+
+  // Agregado por jugador + totales (invariante existente): usa solo las columnas de
+  // match_player_stats (los extras event_id/events se ignoran).
+  const rows: PlayerMatchStatRow[] = raw;
+
+  // F9B-4a — desglose por tipo de las métricas summables (Σ de todas las filas del
+  // equipo, sobre todos los jugadores) con el MISMO helper que jugador/informe.
+  const typedRows: MatchStatRowTyped[] = raw.map((r) => ({
+    ...r,
+    eventType: r.events?.type ?? '',
+    tournamentId: r.events?.tournament_id ?? null,
+  }));
+  const statsByType = splitMatchStatsByType(typedRows);
+
+  // Partidos REALES por tipo = count(distinct event_id) por grupo (no Σ apariciones).
+  // Misma regla de clasificación (classifyMatchType, F9B-1) que el resto del desglose.
+  const evByGroup = {
+    total: new Set<string>(),
+    oficial: new Set<string>(),
+    amistoso: new Set<string>(),
+    torneo: new Set<string>(),
+  };
+  for (const r of raw) {
+    const group = classifyMatchType(
+      r.events?.type ?? '',
+      r.events?.tournament_id ?? null,
+    );
+    if (!group) continue;
+    evByGroup[group].add(r.event_id);
+    evByGroup.total.add(r.event_id);
+  }
+  const matchesByType: TeamMatchesByType = {
+    total: evByGroup.total.size,
+    oficial: evByGroup.oficial.size,
+    amistoso: evByGroup.amistoso.size,
+    torneo: evByGroup.torneo.size,
+  };
 
   return {
     team: {
@@ -107,5 +173,6 @@ export async function loadTeamSeasonStats(
       category_name: team.categories.name,
     },
     aggregate: aggregateTeamStats(roster, rows),
+    byType: { stats: statsByType, matches: matchesByType },
   };
 }
