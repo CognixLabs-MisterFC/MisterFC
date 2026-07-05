@@ -28,7 +28,6 @@ import {
   loadPlayerObjectives,
   loadTeamObjectives,
   loadFichaStats,
-  loadFichaMatchStatsByType,
   loadPlayerEvolution,
   loadTeamEvolution,
 } from '../../queries';
@@ -107,12 +106,11 @@ export async function GET(
     }
   }
 
-  const [playerObjectives, teamObjectives, stats, matchStatsByType, evolution, teamEvolution] =
+  const [playerObjectives, teamObjectives, stats, evolution, teamEvolution] =
     await Promise.all([
       loadPlayerObjectives(supabase, playerId, seasonId),
       team ? loadTeamObjectives(supabase, team.teamId, seasonId) : Promise.resolve([]),
       loadFichaStats(supabase, playerId, seasonLabel, team?.teamId ?? null),
-      loadFichaMatchStatsByType(supabase, playerId, seasonLabel),
       loadPlayerEvolution(supabase, playerId, seasonId),
       team ? loadTeamEvolution(supabase, team.teamId, seasonId) : Promise.resolve([]),
     ]);
@@ -163,7 +161,6 @@ export async function GET(
     playerObjectives,
     teamObjectives,
     stats,
-    matchStatsByType,
     evolution,
     teamEvolution,
     locale,

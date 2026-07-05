@@ -825,6 +825,7 @@
         "kind_match": "Played"
       },
       "match_block": "Match stats",
+      "total": "Total",
       "official": "Official",
       "friendly": "Friendly"
     },
