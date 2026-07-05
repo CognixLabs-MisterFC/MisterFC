@@ -815,6 +815,7 @@
         "goals": "Goals",
         "assists": "Assists",
         "cards": "Cards",
+        "starts": "Starts",
         "attendance": "Trainings"
       },
       "promotions": {
@@ -827,7 +828,8 @@
       "match_block": "Match stats",
       "total": "Total",
       "official": "Official",
-      "friendly": "Friendly"
+      "friendly": "Friendly",
+      "tournament": "Tournament"
     },
     "publish": "Share with family",
     "unpublish": "Stop sharing",

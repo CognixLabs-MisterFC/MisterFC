@@ -118,7 +118,18 @@ const s = StyleSheet.create({
   evRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: BORDER },
   evRowLast: { flexDirection: 'row' },
   evGroupCell: { flex: 1.4, paddingVertical: 4, paddingHorizontal: 6, fontSize: 8.5 },
-  evCell: { flex: 1, paddingVertical: 4, textAlign: 'center', fontFamily: 'Helvetica-Bold', fontSize: 9 },
+  // F9B-2 — celdas del bloque de partido por tipo. Amistoso/Torneo tenues y
+  // pequeñas; Oficial destacada (negrita, navy); Total grande sin negrita.
+  mCellMuted: { flex: 1, paddingVertical: 4, textAlign: 'center', fontSize: 8, color: MUTED },
+  mCellOfficial: {
+    flex: 1,
+    paddingVertical: 4,
+    textAlign: 'center',
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 10,
+    color: BRAND_NAVY,
+  },
+  mCellTotal: { flex: 1, paddingVertical: 4, textAlign: 'center', fontSize: 10 },
   // Objetivos.
   objItem: {
     flexDirection: 'column',
@@ -314,19 +325,55 @@ export function DevelopmentReportPdfDocument(
     );
 
   const ratio = (num: number, den: number) => (den > 0 ? `${num}/${den}` : NA);
-  // F9B-1 — de momento se muestra el TOTAL (mismo número que la ficha web); el
-  // desglose a 4 columnas (props.stats.matchStats.oficial/amistoso/torneo) es F9B-2.
-  const mt = props.stats.matchStats.total;
-  const matchRows: Array<{ key: string; value: number }> = [
-    { key: 'matches', value: mt.matches },
-    { key: 'minutes', value: mt.minutes },
-    { key: 'goals', value: mt.goals },
-    { key: 'assists', value: mt.assists },
-    { key: 'cards', value: mt.yellow + mt.red },
-  ];
-  // Totales NO segregados (convocatorias + entrenos).
+  // F9B-2 — bloque de partido a 4 columnas: Amistoso · Torneo · Oficial · Total
+  // (mismo shape matchStats que la ficha web → mismos números por celda). Oficial
+  // destacada (negrita, navy); Amistoso/Torneo en gris claro; Total al lado.
+  const ms = props.stats.matchStats;
+  const pctPdf = (r: number | null) => (r == null ? NA : `${Math.round(r * 100)}%`);
+  const metricVal = (key: string, line: (typeof ms)['total']): string => {
+    switch (key) {
+      case 'matches':
+        return String(line.matches);
+      case 'minutes':
+        return String(line.minutes);
+      case 'goals':
+        return String(line.goals);
+      case 'assists':
+        return String(line.assists);
+      case 'cards':
+        return String(line.yellow + line.red);
+      case 'starts':
+        return pctPdf(line.startRate);
+      default:
+        return NA;
+    }
+  };
+  const MATCH_KEYS = ['matches', 'minutes', 'goals', 'assists', 'cards', 'starts'];
+  type MatchRow = {
+    key: string;
+    amistoso: string;
+    torneo: string;
+    oficial: string;
+    total: string;
+  };
+  const matchRows: MatchRow[] = MATCH_KEYS.map((key) => ({
+    key,
+    amistoso: metricVal(key, ms.amistoso),
+    torneo: metricVal(key, ms.torneo),
+    oficial: metricVal(key, ms.oficial),
+    total: metricVal(key, ms.total),
+  }));
+  // Convocatorias es Oficial-only (#266): valor solo en Oficial, resto '—'.
+  const callupsRow: MatchRow = {
+    key: 'callups',
+    amistoso: NA,
+    torneo: NA,
+    oficial: ratio(props.stats.calledUp, props.stats.totalMatches),
+    total: NA,
+  };
+  const allMatchRows: MatchRow[] = [...matchRows, callupsRow];
+  // Entrenos: total único, sin segregar por tipo (bloque kv aparte).
   const totalCards: Array<{ key: string; value: string }> = [
-    { key: 'callups', value: ratio(props.stats.calledUp, props.stats.totalMatches) },
     { key: 'attendance', value: ratio(props.stats.trainingsAttended, props.stats.totalTrainings) },
   ];
 
@@ -371,19 +418,34 @@ export function DevelopmentReportPdfDocument(
             Se omite limpio si el jugador no tiene posición asignada. */}
         <PositionFieldPdf primary={props.primaryPos} secondary={props.secondaryPos} width={64} />
       </View>
-      {/* F9B-1 — bloque de partido: TOTAL (una columna). El desglose a 4 columnas
-          Total/Oficial/Amistoso/Torneo llega en F9B-2. */}
+      {/* F9B-2 — bloque de partido a 4 columnas: Amistoso · Torneo · Oficial ·
+          Total. Oficial destacada (negrita, navy); Amistoso/Torneo tenues; Total
+          al lado. Convocatorias solo en Oficial. */}
       <View style={[pdfStyles.table, { marginTop: 4 }]}>
         <View style={pdfStyles.headRow}>
-          <Text style={[pdfStyles.cellHead, { flex: 1.4 }]}>{tInf('ficha.match_block')}</Text>
+          <Text style={[pdfStyles.cellHead, { flex: 1.6 }]}>{tInf('ficha.match_block')}</Text>
+          <Text style={[pdfStyles.cellHead, { flex: 1, textAlign: 'center' }]}>
+            {tInf('ficha.friendly')}
+          </Text>
+          <Text style={[pdfStyles.cellHead, { flex: 1, textAlign: 'center' }]}>
+            {tInf('ficha.tournament')}
+          </Text>
+          <Text
+            style={[pdfStyles.cellHead, { flex: 1, textAlign: 'center', color: BRAND_NAVY }]}
+          >
+            {tInf('ficha.official')}
+          </Text>
           <Text style={[pdfStyles.cellHead, { flex: 1, textAlign: 'center' }]}>
             {tInf('ficha.total')}
           </Text>
         </View>
-        {matchRows.map((r) => (
+        {allMatchRows.map((r) => (
           <View key={r.key} style={s.itemRow}>
-            <Text style={s.itemName}>{tInf(`ficha.stat.${r.key}`)}</Text>
-            <Text style={s.evCell}>{String(r.value)}</Text>
+            <Text style={[s.itemName, { flex: 1.6 }]}>{tInf(`ficha.stat.${r.key}`)}</Text>
+            <Text style={s.mCellMuted}>{r.amistoso}</Text>
+            <Text style={s.mCellMuted}>{r.torneo}</Text>
+            <Text style={s.mCellOfficial}>{r.oficial}</Text>
+            <Text style={s.mCellTotal}>{r.total}</Text>
           </View>
         ))}
       </View>
