@@ -2774,6 +2774,48 @@ export type Database = {
           },
         ]
       }
+      team_conversations: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          kind: string
+          last_message_at: string
+          team_id: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          kind?: string
+          last_message_at?: string
+          team_id: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          last_message_at?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_conversations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_conversations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: true
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_evaluations: {
         Row: {
           club_id: string
@@ -3006,6 +3048,45 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender_profile_id: string
+          team_conversation_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender_profile_id: string
+          team_conversation_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender_profile_id?: string
+          team_conversation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_messages_team_conversation_id_fkey"
+            columns: ["team_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "team_conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -3437,6 +3518,11 @@ export type Database = {
         Args: { p_player_id: string }
         Returns: boolean
       }
+      team_chat_member_profile_ids: {
+        Args: { p_team_id: string }
+        Returns: string[]
+      }
+      team_club_id: { Args: { p_team_id: string }; Returns: string }
       user_is_conversation_participant: {
         Args: { p_conversation_id: string }
         Returns: boolean
@@ -3450,6 +3536,14 @@ export type Database = {
         Returns: boolean
       }
       user_is_staff_of_team: { Args: { p_team_id: string }; Returns: boolean }
+      user_is_team_chat_member: {
+        Args: { p_team_id: string }
+        Returns: boolean
+      }
+      user_is_team_chat_member_by_conversation: {
+        Args: { p_conversation_id: string }
+        Returns: boolean
+      }
       user_is_team_member_account: {
         Args: { p_team_id: string }
         Returns: boolean
