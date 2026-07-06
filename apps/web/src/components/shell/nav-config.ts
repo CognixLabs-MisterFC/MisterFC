@@ -101,6 +101,11 @@ export const NAV: readonly NavEntry[] = [
     ],
   },
 
+  // F5B-0 — "Equipos" como pestaña TOP-LEVEL (dirección): acceso directo al
+  // listado de equipos del club por temporada. Coexiste con la tarjeta 'equipos'
+  // del hub Plantilla (misma ruta /equipos; decisión de Jose). Mismos roles.
+  { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: DIRECCION },
+
   // Vistas de equipo por rol (top-level simples; no entran en hubs de staff).
   { key: 'mis_equipos', href: '/mis-equipos', icon: Shield, roles: [...COACH_ROLES] },
   { key: 'mi_equipo', href: '/mi-equipo', icon: Shield, roles: ['jugador'] },
