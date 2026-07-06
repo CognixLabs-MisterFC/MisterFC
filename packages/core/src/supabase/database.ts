@@ -399,6 +399,7 @@ export type Database = {
           id: string
           locale: string
           name: string
+          owner_profile_id: string | null
           settings: Json
           slug: string
           updated_at: string
@@ -408,6 +409,7 @@ export type Database = {
           id?: string
           locale?: string
           name: string
+          owner_profile_id?: string | null
           settings?: Json
           slug: string
           updated_at?: string
@@ -417,11 +419,20 @@ export type Database = {
           id?: string
           locale?: string
           name?: string
+          owner_profile_id?: string | null
           settings?: Json
           slug?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clubs_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coach_formations: {
         Row: {

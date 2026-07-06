@@ -155,6 +155,7 @@ export const sendInvitationSchema = z.object({
   email: emailField,
   role: z.enum([
     'admin_club',
+    'director',
     'coordinador',
     'entrenador_principal',
     'entrenador_ayudante',

@@ -6,6 +6,7 @@ import {
 
 export type Role =
   | 'admin_club'
+  | 'director'
   | 'coordinador'
   | 'entrenador_principal'
   | 'entrenador_ayudante'
