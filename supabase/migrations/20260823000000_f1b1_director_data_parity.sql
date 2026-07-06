@@ -550,9 +550,12 @@ create policy seasons_delete_admin on public.seasons
   for delete to authenticated
   using (public.user_is_admin_or_director(club_id));
 
--- ── 2.4 ASSESSMENT DEADLINES (admin-only → admin+director)
-drop policy if exists assessment_deadlines_insert on public.assessment_deadlines;
-create policy assessment_deadlines_insert on public.assessment_deadlines
+-- ── 2.4 ASSESSMENT CAMPAIGNS (admin-only → admin+director).
+--      Nota: assessment_deadlines fue RENOMBRADA a assessment_campaigns en
+--      20260801 (tabla + policies _insert/_update/_delete). Se opera sobre los
+--      nombres/tabla VIGENTES; cuerpo fiel al del remoto.
+drop policy if exists assessment_campaigns_insert on public.assessment_campaigns;
+create policy assessment_campaigns_insert on public.assessment_campaigns
   for insert to authenticated
   with check (
     created_by = auth.uid()
@@ -561,14 +564,14 @@ create policy assessment_deadlines_insert on public.assessment_deadlines
     )
   );
 
-drop policy if exists assessment_deadlines_update on public.assessment_deadlines;
-create policy assessment_deadlines_update on public.assessment_deadlines
+drop policy if exists assessment_campaigns_update on public.assessment_campaigns;
+create policy assessment_campaigns_update on public.assessment_campaigns
   for update to authenticated
   using (public.user_is_admin_or_director(club_id))
   with check (public.user_is_admin_or_director(club_id));
 
-drop policy if exists assessment_deadlines_delete on public.assessment_deadlines;
-create policy assessment_deadlines_delete on public.assessment_deadlines
+drop policy if exists assessment_campaigns_delete on public.assessment_campaigns;
+create policy assessment_campaigns_delete on public.assessment_campaigns
   for delete to authenticated
   using (public.user_is_admin_or_director(club_id));
 
