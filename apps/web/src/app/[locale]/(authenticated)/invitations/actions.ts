@@ -17,7 +17,11 @@ export type SendInvitationFormState = {
   ok?: { email: string };
 };
 
-const ROLES_ALLOWED_TO_INVITE: Role[] = ['admin_club', 'coordinador'];
+// Quién puede invitar (a roles bajos). director = admin en gestión de roles bajos.
+const ROLES_ALLOWED_TO_INVITE: Role[] = ['admin_club', 'director', 'coordinador'];
+// Roles "altos": invitarlos es EXCLUSIVO del owner del club (F1B-2). La RLS
+// invitations_insert_admin lo impone; este check es el pre-gate server-side.
+const HIGH_ROLES: Role[] = ['admin_club', 'director'];
 
 /**
  * Devuelve un identificador del email seguro para logs (no PII completo).
@@ -112,6 +116,23 @@ export async function sendInvitation(
       roles: memberships.map((m) => m.role),
     });
     return { error: 'forbidden' };
+  }
+
+  // F1B-2: invitar con un rol ALTO (admin_club/director) es exclusivo del owner
+  // del club. Pre-gate server-side (la RLS invitations_insert_admin lo reimpone).
+  if (HIGH_ROLES.includes(parsed.data.role as Role)) {
+    const { data: club } = await supabase
+      .from('clubs')
+      .select('owner_profile_id')
+      .eq('id', authorized.club_id)
+      .single();
+    if (!club || club.owner_profile_id !== user.id) {
+      console.warn('[invitations] forbidden_high_role_requires_owner', {
+        user_id: user.id,
+        role: parsed.data.role,
+      });
+      return { error: 'forbidden' };
+    }
   }
 
   // Paso 2: INSERT en invitations.
