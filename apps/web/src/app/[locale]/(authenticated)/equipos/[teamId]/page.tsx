@@ -188,6 +188,13 @@ export default async function TeamDetailPage({ params }: Props) {
               <span>{t('announcements_link')}</span>
             </Link>
           </Button>
+          {/* F5B-3 — chat de grupo del equipo. La página gatea creación (staff/
+              dirección) vs solo abrir (miembro); la RLS es la autoridad final. */}
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/mensajes/equipo/${teamId}`}>
+              <span>{t('team_chat_link')}</span>
+            </Link>
+          </Button>
         </div>
       </div>
 

@@ -325,3 +325,238 @@ export async function listMessageablePlayers(): Promise<ListMessageablePlayersRe
 
   return { players: (data ?? []) as MessageablePlayer[] };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F5B-3 — Chat de EQUIPO (grupo). Modelo team_conversations/team_messages (F5B-2).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type OpenTeamConversationResult = {
+  ok?: { conversation_id: string };
+  error?: 'forbidden' | 'no_active_club' | 'team_not_in_club' | 'generic';
+};
+
+/**
+ * Abre (o crea si no existe) el hilo de grupo del equipo. Idempotente por
+ * UNIQUE(team_id): si ya existe, devuelve el existente. Crear el hilo lo permite
+ * la RLS solo a staff del equipo o admin/director (para jugadores/familia sin
+ * hilo aún → 'forbidden'). El club_id lo fija el trigger; lo pasamos por
+ * coherencia de tipos.
+ */
+export async function createTeamConversation(
+  locale: string,
+  teamId: string,
+): Promise<OpenTeamConversationResult> {
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const clubId = ctx.activeClub.club.id;
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // ¿Ya existe? La RLS SELECT devuelve la fila solo si el user es miembro.
+  const { data: existing } = await supabase
+    .from('team_conversations')
+    .select('id')
+    .eq('team_id', teamId)
+    .maybeSingle();
+  if (existing?.id) return { ok: { conversation_id: existing.id } };
+
+  const { data: created, error: insErr } = await supabase
+    .from('team_conversations')
+    .insert({ club_id: clubId, team_id: teamId })
+    .select('id')
+    .single();
+
+  if (insErr || !created) {
+    if (insErr?.code === '42501') return { error: 'forbidden' };
+    // 23503/trigger cross-club, etc.
+    if (insErr?.message?.includes('team_conversation_team_not_found')) {
+      return { error: 'team_not_in_club' };
+    }
+    Sentry.captureException(insErr ?? new Error('insert returned null'), {
+      tags: { feature: 'messaging', step: 'create_team_conversation' },
+      extra: { team_id: teamId, club_id: clubId },
+    });
+    return { error: 'generic' };
+  }
+
+  revalidatePath(`/${locale}/mensajes`);
+  revalidatePath(`/${locale}/mensajes/equipo/${teamId}`);
+  return { ok: { conversation_id: created.id } };
+}
+
+export type SendTeamMessageResult = {
+  ok?: { message_id: string };
+  error?:
+    | 'forbidden'
+    | 'invalid_payload'
+    | 'rate_limited'
+    | 'conversation_not_found'
+    | 'generic';
+};
+
+/**
+ * Envía un mensaje al hilo de grupo. La RLS de team_messages valida la
+ * pertenencia (bidireccional — todo miembro escribe); el trigger fuerza sender =
+ * auth.uid(). Tras insertar, notifica al resto de miembros derivados vía
+ * team_chat_member_profile_ids (fan-out), respetando notification_preferences.
+ *
+ * NOTA F5B-4: aquí el director recibe como cualquiera. El filtrado observer
+ * (excluir directores que solo vigilan) se añadirá filtrando `recipients` antes
+ * del fan-out; el punto de extensión ya está aislado abajo.
+ */
+export async function sendTeamMessage(
+  locale: string,
+  input: { team_conversation_id: string; body: string },
+): Promise<SendTeamMessageResult> {
+  const body = typeof input.body === 'string' ? input.body.trim() : '';
+  if (
+    !input.team_conversation_id ||
+    body.length === 0 ||
+    body.length > 2000
+  ) {
+    return { error: 'invalid_payload' };
+  }
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // Resolver la conversación (RLS: solo miembro la ve) + el team para el fan-out.
+  const { data: conv } = await supabase
+    .from('team_conversations')
+    .select('id, team_id, teams!inner(name)')
+    .eq('id', input.team_conversation_id)
+    .maybeSingle();
+  if (!conv) return { error: 'conversation_not_found' };
+  const teamName =
+    (conv as unknown as { teams: { name: string } }).teams?.name ?? '';
+
+  // Rate limit por emisor (mismo límite que el 1:1), contando team_messages.
+  const windowStartIso = new Date(
+    Date.now() - MESSAGE_RATE_LIMIT.windowSeconds * 1000,
+  ).toISOString();
+  const { count } = await supabase
+    .from('team_messages')
+    .select('id', { count: 'exact', head: true })
+    .eq('sender_profile_id', ctx.user.id)
+    .gte('created_at', windowStartIso);
+  if ((count ?? 0) >= MESSAGE_RATE_LIMIT.maxMessages) {
+    return { error: 'rate_limited' };
+  }
+
+  const { data: inserted, error: insErr } = await supabase
+    .from('team_messages')
+    .insert({
+      team_conversation_id: input.team_conversation_id,
+      sender_profile_id: ctx.user.id,
+      body,
+    })
+    .select('id')
+    .single();
+
+  if (insErr || !inserted) {
+    if (insErr?.code === '42501') return { error: 'forbidden' };
+    Sentry.captureException(insErr ?? new Error('insert returned null'), {
+      tags: { feature: 'messaging', step: 'send_team_message' },
+      extra: { team_conversation_id: input.team_conversation_id },
+    });
+    return { error: 'generic' };
+  }
+
+  // Fan-out a los miembros derivados MENOS el emisor. team_chat_member_profile_ids
+  // (SECURITY DEFINER) devuelve staff ∪ jugador/familia vigentes ∪ directores.
+  try {
+    const { data: memberIds } = await supabase.rpc(
+      'team_chat_member_profile_ids',
+      { p_team_id: conv.team_id },
+    );
+    const recipients = ((memberIds ?? []) as string[]).filter(
+      (id) => id !== ctx.user.id,
+    );
+    // [F5B-4] Punto de extensión: aquí se filtrarán los directores en modo
+    // observer antes del fan-out.
+    if (recipients.length > 0) {
+      const senderName = ctx.profile.full_name ?? 'Mensaje nuevo';
+      const preview = body.slice(0, 140);
+      const deepLink = `/${locale}/mensajes/equipo/${conv.team_id}`;
+      const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+      await emitNotificationFanOut(
+        recipients.map((u) => ({ user_id: u })),
+        {
+          type: 'new_message',
+          in_app_payload: {
+            team_conversation_id: input.team_conversation_id,
+            message_id: inserted.id,
+            team_id: conv.team_id,
+            sender_profile_id: ctx.user.id,
+            deep_link: deepLink,
+          },
+          push_payload: {
+            title: teamName ? `${teamName}` : senderName,
+            body: `${senderName}: ${preview}`,
+            deep_link: deepLink,
+            tag: `team_conversation:${input.team_conversation_id}`,
+          },
+          dedupe_base_prefix: `new_message:${inserted.id}`,
+        },
+      );
+    }
+  } catch (notifyErr) {
+    Sentry.captureException(notifyErr, {
+      tags: { feature: 'messaging', step: 'notify_team' },
+      extra: { message_id: inserted.id },
+    });
+  }
+
+  revalidatePath(`/${locale}/mensajes`);
+  revalidatePath(`/${locale}/mensajes/equipo/${conv.team_id}`);
+  return { ok: { message_id: inserted.id } };
+}
+
+export type MessageableTeam = { id: string; name: string };
+export type ListMessageableTeamsResult = {
+  teams?: MessageableTeam[];
+  error?: 'forbidden' | 'generic';
+};
+
+/**
+ * Equipos del club para el selector "Chat de equipo" de /mensajes (P2b). Gated
+ * por userCanMessageInClub (staff/dirección — a los jugadores/familia les basta
+ * el listado de /mensajes, que ya muestra sus grupos). Devuelve los equipos del
+ * club activo (RLS teams = miembro del club los ve); el gate real de crear/abrir
+ * lo impone la RLS de team_conversations + la página del hilo.
+ */
+export async function listMessageableTeams(): Promise<ListMessageableTeamsResult> {
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const clubId = ctx.activeClub.club.id;
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const canMessage = await userCanMessageInClub(supabase, ctx);
+  if (!canMessage) return { error: 'forbidden' };
+
+  const { data, error } = await supabase
+    .from('teams')
+    .select('id, name, categories!inner(club_id)')
+    .eq('categories.club_id', clubId)
+    .order('name', { ascending: true })
+    .limit(500);
+
+  if (error) {
+    Sentry.captureException(error, {
+      tags: { feature: 'messaging', step: 'list_messageable_teams' },
+      extra: { club_id: clubId },
+    });
+    return { error: 'generic' };
+  }
+
+  const teams = ((data ?? []) as Array<{ id: string; name: string }>).map(
+    (t) => ({ id: t.id, name: t.name }),
+  );
+  return { teams };
+}

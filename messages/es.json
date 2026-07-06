@@ -1191,7 +1191,8 @@
     "roster_empty": "Aún no hay jugadores asignados a este equipo.",
     "announcements_link": "Anuncios",
     "development_reports_link": "Informes",
-    "playbook_link": "Playbook"
+    "playbook_link": "Playbook",
+    "team_chat_link": "Chat del equipo"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -2265,7 +2266,8 @@
     "back_to_list": "Volver",
     "list": {
       "title": "Conversaciones",
-      "empty": "Sin conversaciones todavía. Abre una desde la ficha del jugador."
+      "empty": "Sin conversaciones todavía. Abre una desde la ficha del jugador.",
+      "group_label": "Grupo · {team}"
     },
     "thread": {
       "empty": "Aún no hay mensajes. Escribe el primero.",
@@ -2292,6 +2294,20 @@
       "loading": "Cargando jugadores…",
       "empty": "No hay jugadores que coincidan.",
       "error": "No hemos podido cargar los jugadores. Inténtalo de nuevo."
+    },
+    "team_chat": {
+      "title": "Chat del equipo · {team}",
+      "not_started": "El chat de este equipo aún no se ha iniciado.",
+      "start_action": "Iniciar chat del equipo",
+      "start_error": "No hemos podido iniciar el chat. Inténtalo de nuevo."
+    },
+    "new_team_chat": {
+      "action": "Chat de equipo",
+      "title": "Chat de equipo",
+      "search_placeholder": "Buscar equipo…",
+      "loading": "Cargando equipos…",
+      "empty": "No hay equipos que coincidan.",
+      "error": "No hemos podido cargar los equipos. Inténtalo de nuevo."
     }
   },
   "anuncios": {
