@@ -2285,6 +2285,14 @@
       "player_not_in_club": "El jugador no pertany a aquest club.",
       "no_active_club": "No hi ha club actiu.",
       "generic": "No s'ha pogut enviar. Torna-ho a provar."
+    },
+    "new_conversation": {
+      "action": "Nova conversa",
+      "title": "Nova conversa",
+      "search_placeholder": "Cerca jugador…",
+      "loading": "Carregant jugadors…",
+      "empty": "No hi ha jugadors que coincidisquen.",
+      "error": "No hem pogut carregar els jugadors. Torna-ho a provar."
     }
   },
   "anuncios": {

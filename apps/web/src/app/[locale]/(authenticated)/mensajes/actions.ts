@@ -265,3 +265,63 @@ export async function markConversationRead(
   revalidatePath(`/${locale}/mensajes/${conversationId}`);
   return { ok: true };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// listMessageablePlayers (F5B-1) — jugadores del club con los que el user puede
+// iniciar un chat 1:1, para el selector con buscador de /mensajes.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type MessageablePlayer = {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+};
+
+export type ListMessageablePlayersResult = {
+  players?: MessageablePlayer[];
+  error?: 'forbidden' | 'generic';
+};
+
+/**
+ * Devuelve los jugadores ACTIVOS del club activo (baja `left_club_at IS NULL`),
+ * ordenados por nombre, para el selector "Nueva conversación". Solo lectura.
+ *
+ * Alcance: se gatea con `userCanMessageInClub` (mismo criterio que el botón de
+ * la ficha del jugador) y se lee con el cliente del user → la RLS
+ * `players_select_member` limita a los jugadores visibles del club. NO crea
+ * nada; la conversación se abre después con `startConversation` (idempotente).
+ *
+ * El buscador filtra en cliente sobre esta lista (los clubs de la beta son
+ * pequeños; se cap­a a 500 para acotar el payload). Si un club creciera mucho,
+ * migrar a búsqueda por término en servidor.
+ */
+export async function listMessageablePlayers(): Promise<ListMessageablePlayersResult> {
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const clubId = ctx.activeClub.club.id;
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const canMessage = await userCanMessageInClub(supabase, ctx);
+  if (!canMessage) return { error: 'forbidden' };
+
+  const { data, error } = await supabase
+    .from('players')
+    .select('id, first_name, last_name')
+    .eq('club_id', clubId)
+    .is('left_club_at', null)
+    .order('first_name', { ascending: true })
+    .order('last_name', { ascending: true })
+    .limit(500);
+
+  if (error) {
+    Sentry.captureException(error, {
+      tags: { feature: 'messaging', step: 'list_messageable_players' },
+      extra: { club_id: clubId },
+    });
+    return { error: 'generic' };
+  }
+
+  return { players: (data ?? []) as MessageablePlayer[] };
+}

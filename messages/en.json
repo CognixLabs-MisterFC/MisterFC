@@ -2285,6 +2285,14 @@
       "player_not_in_club": "Player doesn't belong to this club.",
       "no_active_club": "No active club.",
       "generic": "Couldn't send. Please try again."
+    },
+    "new_conversation": {
+      "action": "New conversation",
+      "title": "New conversation",
+      "search_placeholder": "Search player…",
+      "loading": "Loading players…",
+      "empty": "No matching players.",
+      "error": "We could not load the players. Please try again."
     }
   },
   "anuncios": {

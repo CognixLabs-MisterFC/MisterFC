@@ -2284,6 +2284,14 @@
       "player_not_in_club": "El jugador no pertenece a este club.",
       "no_active_club": "No hay club activo.",
       "generic": "No se pudo enviar. Inténtalo de nuevo."
+    },
+    "new_conversation": {
+      "action": "Nueva conversación",
+      "title": "Nueva conversación",
+      "search_placeholder": "Buscar jugador…",
+      "loading": "Cargando jugadores…",
+      "empty": "No hay jugadores que coincidan.",
+      "error": "No hemos podido cargar los jugadores. Inténtalo de nuevo."
     }
   },
   "anuncios": {
