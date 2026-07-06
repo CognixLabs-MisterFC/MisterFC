@@ -35,6 +35,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **F13B — Gestión de partidos** — **cerrada** (2026-07-02/03). **Amistoso** sin tope de convocados (#256/#257) + **Torneo** con convocatoria única heredada (cabecera + sub-partidos, `events.tournament_id`+`round`, serie T-0…T-5: #258/#259/#260/#261/#262). El bug del banquillo no-convocado se cerró aparte en **#255**. Ver §"F13B — Gestión de partidos" abajo. Alcance real = **oficial/amistoso/torneo** (sin liga/copa).
 - **F9B — Estadísticas por tipo de partido** — **cerrada** (2026-07-05). Toda métrica de partido se desglosa en **Amistoso · Torneo · Oficial · Total** en informe/perfil/equipo + PDFs (serie F9B-1…F9B-4b: #268/#269/#270/#271/#272). **Sin migración** (deriva de `events.type`+`tournament_id`); regla única `splitMatchStatsByType` (core). Ver §"F9B — Estadísticas por tipo de partido" abajo. Extensión de F9 (no la reabre).
 - **Auditoría de permisos** — **cerrada** (2026-06-26). Barrido acciones×roles del patrón rol-de-club vs rol-de-equipo + sobre/sub-exposición. 4 hallazgos arreglados (PRs #223 asistencia, #224 eventos, #225 F14.9 capabilities cross-team, #226 F14.10 events SELECT). **F14.9 y F14.10 dejan de ser deuda de F14.** 2 decisiones de negocio cerradas (plantilla = club; informes = cualquier staff del equipo). Detalle en [known-issues.md → Auditoría de permisos](known-issues.md).
+- **F1B — Rol director + owner de club** — **cerrada** (2026-07-06). Rol `director` con paridad total de datos con `admin_club` salvo gestionar directores/admins; `admin_club` = **owner único** por club (`clubs.owner_profile_id`, inmutable); roles altos **solo por invitación** (nunca por cambio de rol, ni el owner). Serie F1B-0…F1B-3d + fix: **#274/#275/#276/#277/#278/#279/#280**. **Sin migración de datos** (DDL de policies + columna + helpers). Suite pgTAP consolidada `rls_f1b_director_role.sql` (F1B-4). Ver §"F1B — Rol director + owner de club" abajo. Extensión de F1 (no la reabre); cierra el backlog "Owner de club".
 
 **Pendiente (backlog, sin programar salvo F14):**
 - **Reutilizar jugadores** entre equipos (nuevo). En backlog.
@@ -520,6 +521,31 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 - **Arquitectura**: `splitMatchStatsByType` + `aggregateTeamEventsByType` en core (reusan `classifyMatchType`); util compartido `buildTeamByTypeRows` para que **página web y ruta PDF produzcan filas idénticas** (sin divergencia). Componente presentacional puro `MatchStatsByTypeTable` con columna Rival opcional.
 - **CI**: cada PR con `typecheck · lint · test · build` en verde + preview de Vercel (build web fiado a CI; local agota memoria). **Sin merge por Claude** (los mergea el operador).
+
+## F1B — Rol director + owner de club ☑ (2026-07-06)
+
+> **Extensión de F1** (Identidad, Auth y modelo de roles base; etiqueta de letra, no renumera F14–F16). Cierra el backlog **"Owner de club"**. Rol **`director`** con **paridad total de datos con `admin_club`** salvo gestionar directores/admins; **`admin_club` = owner único** por club (`clubs.owner_profile_id`, inmutable); **roles altos solo por invitación** (nunca por cambio de rol, ni el owner). **Solo DDL** (policies + columna + helpers); sin migración de datos.
+
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| F1B-0 | ☑ 2026-07-06 | #274 | Fundación: `director` = 6º valor de `memberships.role`; columna `clubs.owner_profile_id` (backfill al 1er admin por `created_at`); helper `user_is_club_owner`. **Ninguna policy de permiso cambia aún.** |
+| F1B-1 | ☑ 2026-07-06 | #275 | Paridad de datos: helper `user_is_admin_or_director`; barrido comprehensivo (~40 objetos WRITE) para que `director` escriba donde escribe `admin_club`. Excluye el Grupo B (gestión de roles). |
+| F1B-2 | ☑ 2026-07-06 | #276 | Grupo B: invitar/gestionar roles altos = **solo el owner**; owner inmutable; helpers `membership_role_is_high`, `profile_is_club_owner`. |
+| F1B-2b | ☑ 2026-07-06 | #277 | Subir a director/admin por cambio de rol **rechazado para todos** incluido el owner (`high_role_invite_only`); degradar un alto sigue siendo del owner. |
+| F1B-3a+b | ☑ 2026-07-06 | #278 | UI: `isOwner` en `CurrentUserClub`; constantes de rol centralizadas en `@misterfc/core/auth/roles`; barrido de ~55 ficheros que abre al director gates de UI/navegación. |
+| F1B-3c+d | ☑ 2026-07-06 | #279 | UI crear directores: selector de invitación ofrece `director` **solo al owner**; diálogo de cambio de rol visible a admin/director y solo con roles bajos como destino. |
+| Fix #280 | ☑ 2026-07-06 | #280 | Regresión de F1B-2: la policy de aceptación de invitación usaba un subquery inline a `auth.users` (ilegal para `authenticated`) → `permission denied` rompía el alta de **cualquier** invitado. Vuelto a `current_user_email()`. |
+| F1B-4 | — (pgTAP/docs) | — | Suite pgTAP consolidada `supabase/tests/rls_f1b_director_role.sql` (**43 comprobaciones**, 0 fails, dry-run contra el remoto) + cierre documental. |
+
+**Invariantes del modelo** (para features futuras que toquen roles):
+
+- **`admin_club` = owner único** por club (`clubs.owner_profile_id`). Owner **inmutable** (no degradable ni eliminable, ni por sí mismo) → protección estructural del "último admin".
+- **`director` = paridad TOTAL de datos con `admin_club`** salvo gestionar directores/admins. Gate de datos = `user_is_admin_or_director`; gate de roles altos = `user_is_club_owner`.
+- **Roles altos (director/admin_club) SOLO por invitación**, nunca por cambio de rol — para NADIE, ni el owner. Invitarlos/gestionarlos = exclusivo del owner.
+- **Constantes de rol centralizadas** en `@misterfc/core/auth/roles` (ADMIN/MANAGER/STAFF/COACH/ALL_CLUB); `director` en todas **salvo** COACH. Gates de UI nuevos deben usarlas, no listas locales.
+
+- **Red de pruebas (F1B-4)**: `supabase/tests/rls_f1b_director_role.sql` reúne 5 bloques — aislamiento entre clubs, equivalencia director↔admin, jerarquía (owner/admin-no-owner/director + guard del último admin), anti-regresión del owner (el alta de un director N deja intactos `owner_profile_id`, la membership del owner y su fila auth), y **aceptación de invitación bajo el contexto real del invitee** (rol `authenticated`) para los 5 roles — este último es la red contra la regresión #280. Verificada en dry-run `begin/rollback` contra el remoto (pgTAP no corre en CI; ver Notas).
+- **CI**: cada PR con `typecheck · lint · test · build` en verde + preview de Vercel. **Sin merge por Claude** (los mergea el operador).
 
 ## Fase 14 — Subfases pendientes
 
