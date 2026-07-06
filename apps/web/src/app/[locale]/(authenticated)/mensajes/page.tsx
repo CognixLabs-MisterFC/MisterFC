@@ -4,6 +4,7 @@ import { MessageSquare } from 'lucide-react';
 import { createSupabaseServerClient, formatPlayerName } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
+import { userCanMessageInClub } from '@/lib/messaging-permissions';
 import { Link } from '@/i18n/navigation';
 import {
   Card,
@@ -11,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { NewConversationDialog } from './new-conversation-dialog';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -25,6 +27,10 @@ export default async function MensajesPage({ params }: Props) {
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
+
+  // ¿Puede el user iniciar chats? Mismo criterio que el botón de la ficha del
+  // jugador (admin/coord/principal por rol; ayudante con cap o principal de team).
+  const canMessage = await userCanMessageInClub(supabase, ctx);
 
   // RLS conversations_select_participants ya filtra a las del user.
   const { data: conversationRows } = await supabase
@@ -67,9 +73,12 @@ export default async function MensajesPage({ params }: Props) {
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <MessageSquare className="size-6" aria-hidden />
-        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <MessageSquare className="size-6" aria-hidden />
+          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+        </div>
+        {canMessage && <NewConversationDialog locale={locale} />}
       </div>
 
       <Card>
