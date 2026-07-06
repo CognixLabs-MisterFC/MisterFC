@@ -13,7 +13,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Download } from 'lucide-react';
-import { formatPlayerName, type Role } from '@misterfc/core';
+import { COACH_ROLES, STAFF_ROLES, formatPlayerName, type Role } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -26,17 +26,6 @@ import { buildTeamByTypeRows } from '@/lib/team-stats-rows';
 type Props = {
   params: Promise<{ locale: string; teamId: string }>;
 };
-
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
-const COACH_ROLES: ReadonlyArray<Role> = [
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 export default async function TeamStatsPage({ params }: Props) {
   const { locale, teamId } = await params;

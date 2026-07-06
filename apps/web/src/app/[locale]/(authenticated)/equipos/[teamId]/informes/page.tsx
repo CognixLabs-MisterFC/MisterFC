@@ -19,6 +19,7 @@ import {
   daysUntil,
   deadlineState,
   DEVELOPMENT_REPORT_CATALOG,
+  STAFF_ROLES,
   TEAM_REPORT_CATALOG,
   type ReportStatus,
   type Role,
@@ -51,12 +52,6 @@ type Props = {
   searchParams: Promise<{ period?: string }>;
 };
 
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 const STATUS_VARIANT: Record<ReportStatus, 'outline' | 'secondary' | 'default'> = {
   not_started: 'outline',

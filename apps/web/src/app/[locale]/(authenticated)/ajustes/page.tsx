@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Settings } from 'lucide-react';
-import { createSupabaseServerClient } from '@misterfc/core';
+import { createSupabaseServerClient, ADMIN_ROLES } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import {
@@ -18,7 +18,7 @@ type Props = {
 };
 
 // Admin y coordinador ven la pantalla; SOLO admin puede cambiar el flag (D10).
-const ALLOWED_ROLES = new Set(['admin_club', 'coordinador']);
+const ALLOWED_ROLES = new Set<string>(ADMIN_ROLES);
 
 export default async function AjustesPage({ params }: Props) {
   const { locale } = await params;

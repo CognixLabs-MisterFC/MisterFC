@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft } from 'lucide-react';
-import { type Role } from '@misterfc/core';
+import { type Role, STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -14,12 +14,6 @@ import { SessionEditor } from '../../_components/session-editor';
 
 type Props = { params: Promise<{ locale: string; id: string }> };
 
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 /**
  * F12.2 — Editor de sesión. Carga cabecera + bloques (sembrados) + tareas; la RLS

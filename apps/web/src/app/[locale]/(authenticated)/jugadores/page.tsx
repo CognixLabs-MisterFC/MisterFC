@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { UserRound, Lock } from 'lucide-react';
+import { MANAGER_ROLES, STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -42,18 +43,9 @@ type Props = {
   }>;
 };
 
-const ROLES_THAT_CAN_CREATE: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-];
+const ROLES_THAT_CAN_CREATE = MANAGER_ROLES;
 
-const ALLOWED_VIEW_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
+const ALLOWED_VIEW_ROLES = STAFF_ROLES;
 
 function normalizeMulti(v: string | string[] | undefined): string[] {
   if (v == null) return [];

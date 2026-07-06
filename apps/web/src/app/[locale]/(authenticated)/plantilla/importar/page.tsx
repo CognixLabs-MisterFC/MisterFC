@@ -1,8 +1,8 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import {
+  STAFF_ROLES,
   createSupabaseServerClient,
-  type Role,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
@@ -11,12 +11,7 @@ import { ImportWizard } from './import-wizard';
 
 type Props = { params: Promise<{ locale: string }> };
 
-const ROLES_ALLOWED: Role[] = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
+const ROLES_ALLOWED = STAFF_ROLES;
 
 /**
  * Página del wizard de importación masiva (F2.9).

@@ -17,6 +17,7 @@ import {
   type TrainingDay,
   type TransportMode,
   MANAGEABLE_MATCH_TYPES,
+  STAFF_ROLES,
   computeWeeklyTrainingAttendance,
   createSupabaseServerClient,
   getCurrentUser,
@@ -186,12 +187,7 @@ export type CallupDetail = {
   };
 };
 
-const COACH_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
+const COACH_ROLES = STAFF_ROLES;
 
 export async function resolveConvocatoriasScope(
   clubId: string,

@@ -7,7 +7,7 @@
  */
 
 import { getTranslations } from 'next-intl/server';
-import { createSupabaseServerClient, type Role } from '@misterfc/core';
+import { createSupabaseServerClient, type Role, STAFF_ROLES } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { loadSessionForPdf } from '../../queries';
@@ -17,12 +17,6 @@ import { pdfResponse, slugForFile, type Translator } from '@/lib/pdf/shared';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 export async function GET(
   _req: Request,

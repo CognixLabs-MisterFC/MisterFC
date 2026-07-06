@@ -11,6 +11,7 @@ import { ArrowLeft, Info } from 'lucide-react';
 import {
   createSupabaseServerClient,
   isDevelopmentPeriod,
+  STAFF_ROLES,
   TEAM_REPORT_CATALOG,
   type Role,
 } from '@misterfc/core';
@@ -37,13 +38,6 @@ type Props = {
   params: Promise<{ locale: string; playerId: string; period: string }>;
   searchParams: Promise<{ season?: string }>;
 };
-
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 export default async function InformeEditorPage({ params, searchParams }: Props) {
   const { locale, playerId, period } = await params;

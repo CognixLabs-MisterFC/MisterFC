@@ -7,7 +7,7 @@ import {
   Radio,
   Trophy,
 } from 'lucide-react';
-import { groupCallupsByTournament } from '@misterfc/core';
+import { groupCallupsByTournament, ALL_CLUB_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -26,13 +26,7 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-const ALLOWED: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-  'jugador',
-];
+const ALLOWED: ReadonlyArray<Role> = ALL_CLUB_ROLES;
 
 function fmtDate(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {

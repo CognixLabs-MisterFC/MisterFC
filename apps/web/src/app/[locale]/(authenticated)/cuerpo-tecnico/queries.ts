@@ -17,6 +17,8 @@
  */
 
 import {
+  ADMIN_ROLES,
+  COACH_ROLES,
   TEAM_STAFF_ROLES,
   type TeamStaffRole,
   createSupabaseServerClient,
@@ -88,12 +90,7 @@ export type CoachListResult = {
   canManage: boolean;
 };
 
-const COACH_ROLES: ReadonlyArray<Role> = [
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
-
-const WRITE_ROLES: ReadonlyArray<Role> = ['admin_club', 'coordinador'];
+const WRITE_ROLES = ADMIN_ROLES;
 
 /**
  * Determina el scope de visibilidad del user para listar cuerpo técnico.

@@ -14,18 +14,13 @@ import { Badge } from '@/components/ui/badge';
 import { AttendanceRow } from './_components/attendance-row';
 import { loadEventAttendance } from '../queries';
 import type { Role } from '../../jugadores/queries';
+import { ALL_CLUB_ROLES } from '@misterfc/core';
 
 type Props = {
   params: Promise<{ locale: string; eventId: string }>;
 };
 
-const ALLOWED: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-  'jugador',
-];
+const ALLOWED: ReadonlyArray<Role> = ALL_CLUB_ROLES;
 
 function fmtDate(iso: string, locale: string): string {
   const d = new Date(iso);

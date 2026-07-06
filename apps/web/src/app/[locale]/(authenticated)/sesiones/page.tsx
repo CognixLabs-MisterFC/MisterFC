@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Plus, ClipboardList, Clock, BookMarked, FilePlus2 } from 'lucide-react';
 import {
   type Role,
+  STAFF_ROLES,
   createSupabaseServerClient,
   isIsoDate,
   mondayOfWeek,
@@ -40,13 +41,6 @@ type Props = {
     page?: string;
   }>;
 };
-
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 // Intl no conoce 'va' (valenciano); cae a catalán para formatear fechas.
 const INTL_LOCALE: Record<string, string> = { es: 'es-ES', en: 'en-GB', va: 'ca-ES' };

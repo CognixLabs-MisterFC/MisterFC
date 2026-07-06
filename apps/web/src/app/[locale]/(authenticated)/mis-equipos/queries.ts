@@ -17,6 +17,7 @@ import {
   pickNextEvent,
   pickNextMatchWithoutCallup,
   pickLastTrainingWithoutAttendance,
+  COACH_ROLES,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
@@ -74,10 +75,7 @@ export type TeamDetail = {
   callups_published_count: number;
 };
 
-const STAFF_ROLES = new Set([
-  'entrenador_principal',
-  'entrenador_ayudante',
-]);
+const STAFF_ROLES = new Set<string>(COACH_ROLES);
 
 type StaffTeam = {
   team_id: string;

@@ -10,7 +10,11 @@
  * en 12.8). La ventana 48h se evalúa con starts_at server-side.
  */
 
-import { createSupabaseServerClient } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  ADMIN_ROLES,
+  COACH_ROLES as CORE_COACH_ROLES,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 export type TrainingWithoutSession = {
@@ -20,11 +24,8 @@ export type TrainingWithoutSession = {
   teamName: string | null;
 };
 
-const COACH_ROLES = new Set<string>([
-  'entrenador_principal',
-  'entrenador_ayudante',
-]);
-const ADMIN_LIKE_ROLES = new Set<string>(['admin_club', 'coordinador']);
+const COACH_ROLES = new Set<string>(CORE_COACH_ROLES);
+const ADMIN_LIKE_ROLES = new Set<string>(ADMIN_ROLES);
 
 const WINDOW_HOURS = 48;
 

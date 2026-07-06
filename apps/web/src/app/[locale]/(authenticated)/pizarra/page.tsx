@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
-import type { Role } from '@misterfc/core';
+import { type Role, STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { loadExercise, loadBoardExercises } from '../ejercicios/queries';
 import { loadBoardLineup } from './board-lineup';
@@ -17,13 +17,6 @@ type Props = {
  * si llega `?exercise=<id>`, cargando el diagrama de ese ejercicio (validado por
  * la query existente; la RLS decide si el usuario puede verlo). Nada se guarda.
  */
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
-
 export default async function PizarraPage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);

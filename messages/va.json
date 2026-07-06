@@ -281,6 +281,7 @@
       "email_placeholder": "persona@email.com",
       "role_label": "Rol",
       "role_admin_club": "Administrador del club",
+      "role_director": "Director",
       "role_coordinador": "Coordinador",
       "role_entrenador_principal": "Entrenador principal",
       "role_entrenador_ayudante": "Entrenador ajudant",
@@ -649,6 +650,7 @@
   },
   "roles": {
     "admin_club": "Administrador del club",
+    "director": "Director",
     "coordinador": "Coordinador",
     "entrenador_principal": "Entrenador principal",
     "entrenador_ayudante": "Entrenador ayudante",

@@ -20,6 +20,7 @@ import {
   effectiveCallupDecision,
   formatPlayerName,
   groupRosterByCallup,
+  ALL_CLUB_ROLES,
 } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -45,13 +46,7 @@ type Props = {
   params: Promise<{ locale: string; eventId: string }>;
 };
 
-const ALLOWED: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-  'jugador',
-];
+const ALLOWED: ReadonlyArray<Role> = ALL_CLUB_ROLES;
 
 function fmtDate(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {

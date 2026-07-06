@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { FolderCog } from 'lucide-react';
 import {
+  ADMIN_ROLES,
   categoryKindOrdinal,
   createSupabaseServerClient,
   customOverlapsStandardKind,
@@ -23,7 +24,7 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-const ALLOWED_ROLES = new Set(['admin_club', 'coordinador']);
+const ALLOWED_ROLES = new Set<string>(ADMIN_ROLES);
 
 export default async function PlantillasPage({ params }: Props) {
   const { locale } = await params;

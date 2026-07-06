@@ -12,6 +12,7 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Calendar, Megaphone, Users } from 'lucide-react';
+import { COACH_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +28,9 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-const STAFF_ROLES = ['entrenador_principal', 'entrenador_ayudante'] as const;
+// Semántica LOCAL "entreno este equipo" (principal/ayudante), NO staff de club:
+// mapea a COACH_ROLES (sin director), no a la STAFF_ROLES central.
+const STAFF_ROLES = COACH_ROLES;
 
 function formatDateTime(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
-import { createSupabaseServerClient } from '@misterfc/core';
+import { createSupabaseServerClient, ADMIN_ROLES } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 
@@ -57,7 +57,7 @@ export type CreateGlobalAnnouncementResult = {
   error?: 'forbidden' | 'invalid_payload' | 'generic' | 'audience_required';
 };
 
-const GLOBAL_AUTHOR_ROLES: ReadonlyArray<string> = ['admin_club', 'coordinador'];
+const GLOBAL_AUTHOR_ROLES = ADMIN_ROLES;
 
 /**
  * Solo admin / coordinador. El principal del club NO puede crear anuncios

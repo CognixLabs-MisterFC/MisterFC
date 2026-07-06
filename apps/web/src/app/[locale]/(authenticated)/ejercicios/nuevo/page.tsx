@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Ban } from 'lucide-react';
 import {
   type Role,
+  STAFF_ROLES,
   createSupabaseServerClient,
 } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -17,12 +18,7 @@ type Props = {
 
 // Mismo conjunto que ve la biblioteca; la autoría real la decide
 // user_can_create_exercises (RPC) + la RLS de INSERT.
-const ALLOWED_VIEW_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
+const ALLOWED_VIEW_ROLES = STAFF_ROLES;
 
 export default async function NuevoEjercicioPage({ params }: Props) {
   const { locale } = await params;

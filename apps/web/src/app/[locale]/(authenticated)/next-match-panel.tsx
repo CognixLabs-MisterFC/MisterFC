@@ -9,6 +9,7 @@
  */
 
 import { getTranslations } from 'next-intl/server';
+import { COACH_ROLES as CORE_COACH_ROLES } from '@misterfc/core';
 import { CalendarClock, ClipboardCheck, Trophy } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ import {
   type CoachMatchState,
 } from './next-match-queries';
 
-const COACH_ROLES = new Set<Role>(['entrenador_principal', 'entrenador_ayudante']);
+const COACH_ROLES = new Set<string>(CORE_COACH_ROLES);
 
 // CTA destino por estado. post_match no enlaza (F8 aún no existe).
 function ctaHref(state: CoachMatchState, eventId: string): string | null {

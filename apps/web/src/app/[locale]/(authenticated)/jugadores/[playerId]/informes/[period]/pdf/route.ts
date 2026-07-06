@@ -15,6 +15,7 @@ import {
   createSupabaseServerClient,
   isDevelopmentPeriod,
   PLAYER_POSITIONS,
+  STAFF_ROLES,
   type PlayerPosition,
   type Role,
 } from '@misterfc/core';
@@ -36,13 +37,6 @@ import { pdfResponse, slugForFile, type Translator } from '@/lib/pdf/shared';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 export async function GET(
   req: Request,

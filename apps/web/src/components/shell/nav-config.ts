@@ -1,4 +1,11 @@
-import type { Role } from '@misterfc/core';
+import {
+  type Role,
+  ADMIN_ROLES,
+  MANAGER_ROLES,
+  STAFF_ROLES,
+  COACH_ROLES,
+  ALL_CLUB_ROLES,
+} from '@misterfc/core';
 import {
   Home,
   FolderKanban,
@@ -57,16 +64,11 @@ export function isNavHub(entry: NavEntry): entry is NavHub {
   return 'children' in entry;
 }
 
-// Conjuntos de roles reutilizados.
-const ALL: Role[] = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-  'jugador',
-];
-const STAFF: Role[] = ['admin_club', 'coordinador', 'entrenador_principal', 'entrenador_ayudante'];
-const DIRECCION: Role[] = ['admin_club', 'coordinador'];
+// Conjuntos de roles reutilizados (centralizados en @misterfc/core; 'director'
+// ya incluido donde toca — F1B-3). ALL incluye jugador; DIRECCION = admin-like.
+const ALL: Role[] = [...ALL_CLUB_ROLES];
+const STAFF: Role[] = [...STAFF_ROLES];
+const DIRECCION: Role[] = [...ADMIN_ROLES];
 
 /**
  * Entradas del menú lateral, en orden. Mezcla enlaces simples y HUBS. Los hubs
@@ -89,9 +91,9 @@ export const NAV: readonly NavEntry[] = [
       // admin/coord ven la plantilla completa del club.
       { key: 'jugadores', href: '/jugadores', icon: Users, roles: DIRECCION },
       // Import masivo: roles que SIEMPRE pueden; la page chequea capability del ayudante.
-      { key: 'import_players', href: '/plantilla/importar', icon: Upload, roles: ['admin_club', 'coordinador', 'entrenador_principal'] },
+      { key: 'import_players', href: '/plantilla/importar', icon: Upload, roles: [...MANAGER_ROLES] },
       // Gestión global del cuerpo técnico (principal: lectura de SUS equipos).
-      { key: 'cuerpo_tecnico', href: '/cuerpo-tecnico', icon: UsersRound, roles: ['admin_club', 'coordinador', 'entrenador_principal'] },
+      { key: 'cuerpo_tecnico', href: '/cuerpo-tecnico', icon: UsersRound, roles: [...MANAGER_ROLES] },
       // Estructura: listado de equipos por temporada + categorías-plantilla.
       { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: DIRECCION },
       // F13.10g — centro de mando de campañas de informes (admin/coord).
@@ -100,7 +102,7 @@ export const NAV: readonly NavEntry[] = [
   },
 
   // Vistas de equipo por rol (top-level simples; no entran en hubs de staff).
-  { key: 'mis_equipos', href: '/mis-equipos', icon: Shield, roles: ['entrenador_principal', 'entrenador_ayudante'] },
+  { key: 'mis_equipos', href: '/mis-equipos', icon: Shield, roles: [...COACH_ROLES] },
   { key: 'mi_equipo', href: '/mi-equipo', icon: Shield, roles: ['jugador'] },
   { key: 'mi_ficha', href: '/mi-ficha', icon: LineChart, roles: ['jugador'] },
   // Informe de desarrollo (familia/jugador): ruta propia, fuera de /mi-ficha.

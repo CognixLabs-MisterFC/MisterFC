@@ -8,6 +8,7 @@ import {
   Settings,
   Users,
 } from 'lucide-react';
+import { MANAGER_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -37,11 +38,7 @@ type Props = {
   params: Promise<{ locale: string; membershipId: string }>;
 };
 
-const ALLOWED_VIEW_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-];
+const ALLOWED_VIEW_ROLES = MANAGER_ROLES;
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);

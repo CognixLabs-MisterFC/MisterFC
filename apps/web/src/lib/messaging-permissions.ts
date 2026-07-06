@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { MANAGER_ROLES } from '@misterfc/core';
 import type { ShellContext } from './auth-shell';
 
 /**
@@ -11,11 +12,7 @@ import type { ShellContext } from './auth-shell';
  * solo para decidir si renderizar botones / forms (UX, no seguridad).
  */
 
-const CLUB_LEVEL_MESSAGING_ROLES: ReadonlyArray<string> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-];
+const CLUB_LEVEL_MESSAGING_ROLES: ReadonlyArray<string> = MANAGER_ROLES;
 
 /**
  * ¿Puede este user iniciar conversación / publicar anuncio?

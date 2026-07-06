@@ -26,7 +26,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { redirect } from 'next/navigation';
-import { daysUntil, deadlineState, type Role, type ClubCensus, type RankingEntry } from '@misterfc/core';
+import { daysUntil, deadlineState, ADMIN_ROLES, type Role, type ClubCensus, type RankingEntry } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,7 +53,7 @@ type Props = {
 };
 
 /** Solo dirección ve el dashboard ejecutivo (spec 10.0 §5.0, D6). */
-const DASHBOARD_ROLES: ReadonlyArray<Role> = ['admin_club', 'coordinador'];
+const DASHBOARD_ROLES = ADMIN_ROLES;
 
 /** Fila de la comparativa de plantilla por categoría (activa vs anterior). */
 type CategoryComparisonRow = {

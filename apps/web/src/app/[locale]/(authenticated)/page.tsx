@@ -6,7 +6,12 @@ import {
   MessageSquare,
   LayoutDashboard,
 } from 'lucide-react';
-import { MATCH_SURFACE_TYPES, createSupabaseServerClient } from '@misterfc/core';
+import {
+  MATCH_SURFACE_TYPES,
+  createSupabaseServerClient,
+  ADMIN_ROLES,
+  COACH_ROLES as CORE_COACH_ROLES,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -26,11 +31,8 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-const COACH_ROLES = new Set<string>([
-  'entrenador_principal',
-  'entrenador_ayudante',
-]);
-const ADMIN_LIKE_ROLES = new Set<string>(['admin_club', 'coordinador']);
+const COACH_ROLES = new Set<string>(CORE_COACH_ROLES);
+const ADMIN_LIKE_ROLES = new Set<string>(ADMIN_ROLES);
 
 export default async function Home({ params }: Props) {
   const { locale } = await params;

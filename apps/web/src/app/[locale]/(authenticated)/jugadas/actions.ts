@@ -10,6 +10,7 @@ import {
   createSupabaseAdminClient,
   STRATEGY_TYPES,
   type Role,
+  ADMIN_ROLES,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -31,7 +32,7 @@ export type PlayActionState = {
 };
 
 /** Aprobar/rechazar/archivar = admin∪coordinador (= user_can_approve_plays, D1). */
-const APPROVER_ROLES: ReadonlyArray<Role> = ['admin_club', 'coordinador'];
+const APPROVER_ROLES: ReadonlyArray<Role> = ADMIN_ROLES;
 
 function mapPgErr(code: string | undefined): ActionError {
   if (code === '42501') return 'forbidden'; // RLS

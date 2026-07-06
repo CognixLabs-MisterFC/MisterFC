@@ -28,12 +28,10 @@ import {
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
 
-export type Role =
-  | 'admin_club'
-  | 'coordinador'
-  | 'entrenador_principal'
-  | 'entrenador_ayudante'
-  | 'jugador';
+// Role canónico de core (fuente única; incluye 'director' — F1B). Se importa y
+// re-exporta porque este módulo lo usa internamente y muchas rutas lo importan de aquí.
+import type { Role } from '@misterfc/core';
+export type { Role };
 
 export type VisibilityScope =
   | { kind: 'all' }

@@ -9,7 +9,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft } from 'lucide-react';
-import { createSupabaseServerClient, type Role } from '@misterfc/core';
+import { STAFF_ROLES, createSupabaseServerClient, type Role } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -26,13 +26,6 @@ type Props = {
   params: Promise<{ locale: string; teamId: string }>;
   searchParams: Promise<{ q?: string }>;
 };
-
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 export default async function TeamPlaybookPage({ params, searchParams }: Props) {
   const { locale, teamId } = await params;

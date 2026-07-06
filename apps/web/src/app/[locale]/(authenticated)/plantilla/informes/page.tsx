@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ClipboardList } from 'lucide-react';
 import {
+  ADMIN_ROLES,
   createSupabaseServerClient,
   isDevelopmentPeriod,
   type AssessmentCampaignStatus,
@@ -41,7 +42,7 @@ type Props = {
   searchParams: Promise<{ period?: string }>;
 };
 
-const ADMIN_LIKE: ReadonlyArray<Role> = ['admin_club', 'coordinador'];
+const ADMIN_LIKE = ADMIN_ROLES;
 
 const STATUS_VARIANT: Record<
   AssessmentCampaignStatus | 'none',

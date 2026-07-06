@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Megaphone, Pin, Globe } from 'lucide-react';
-import { createSupabaseServerClient } from '@misterfc/core';
+import { createSupabaseServerClient, ADMIN_ROLES } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -24,7 +24,7 @@ type Props = {
   }>;
 };
 
-const PUBLISHER_ROLES: ReadonlyArray<string> = ['admin_club', 'coordinador'];
+const PUBLISHER_ROLES = ADMIN_ROLES;
 const SCOPE_VALUES: ReadonlyArray<string> = ['all', 'club', 'team'];
 const SINCE_VALUES: ReadonlyArray<string> = ['7d', '30d', 'all'];
 
