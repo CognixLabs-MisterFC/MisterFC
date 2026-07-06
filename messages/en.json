@@ -1192,7 +1192,8 @@
     "roster_empty": "Aún no hay jugadores asignados a este equipo.",
     "announcements_link": "Announcements",
     "development_reports_link": "Reports",
-    "playbook_link": "Playbook"
+    "playbook_link": "Playbook",
+    "team_chat_link": "Team chat"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -2266,7 +2267,8 @@
     "back_to_list": "Back",
     "list": {
       "title": "Conversations",
-      "empty": "No conversations yet. Start one from a player profile."
+      "empty": "No conversations yet. Start one from a player profile.",
+      "group_label": "Group · {team}"
     },
     "thread": {
       "empty": "No messages yet. Write the first one.",
@@ -2293,6 +2295,20 @@
       "loading": "Loading players…",
       "empty": "No matching players.",
       "error": "We could not load the players. Please try again."
+    },
+    "team_chat": {
+      "title": "Team chat · {team}",
+      "not_started": "This team's chat hasn't started yet.",
+      "start_action": "Start team chat",
+      "start_error": "We couldn't start the chat. Please try again."
+    },
+    "new_team_chat": {
+      "action": "Team chat",
+      "title": "Team chat",
+      "search_placeholder": "Search team…",
+      "loading": "Loading teams…",
+      "empty": "No matching teams.",
+      "error": "We couldn't load the teams. Please try again."
     }
   },
   "anuncios": {

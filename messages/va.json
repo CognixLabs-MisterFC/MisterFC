@@ -1192,7 +1192,8 @@
     "roster_empty": "Aún no hay jugadores asignados a este equipo.",
     "announcements_link": "Anuncis",
     "development_reports_link": "Informes",
-    "playbook_link": "Playbook"
+    "playbook_link": "Playbook",
+    "team_chat_link": "Xat de l'equip"
   },
   "staff": {
     "title": "Cuerpo técnico",
@@ -2266,7 +2267,8 @@
     "back_to_list": "Tornar",
     "list": {
       "title": "Converses",
-      "empty": "Encara no hi ha converses. Obre'n una des de la fitxa del jugador."
+      "empty": "Encara no hi ha converses. Obre'n una des de la fitxa del jugador.",
+      "group_label": "Grup · {team}"
     },
     "thread": {
       "empty": "Encara no hi ha missatges. Escriu el primer.",
@@ -2293,6 +2295,20 @@
       "loading": "Carregant jugadors…",
       "empty": "No hi ha jugadors que coincidisquen.",
       "error": "No hem pogut carregar els jugadors. Torna-ho a provar."
+    },
+    "team_chat": {
+      "title": "Xat de l'equip · {team}",
+      "not_started": "El xat d'aquest equip encara no s'ha iniciat.",
+      "start_action": "Iniciar xat de l'equip",
+      "start_error": "No hem pogut iniciar el xat. Torna-ho a provar."
+    },
+    "new_team_chat": {
+      "action": "Xat d'equip",
+      "title": "Xat d'equip",
+      "search_placeholder": "Cerca equip…",
+      "loading": "Carregant equips…",
+      "empty": "No hi ha equips que coincidisquen.",
+      "error": "No hem pogut carregar els equips. Torna-ho a provar."
     }
   },
   "anuncios": {
