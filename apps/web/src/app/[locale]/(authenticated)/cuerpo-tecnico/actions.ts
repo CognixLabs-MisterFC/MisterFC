@@ -306,12 +306,13 @@ export async function updateStaffName(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Roles de club ofrecidos en la ficha de cuerpo técnico. Es un subconjunto del
- * CHECK de `memberships.role`: NO se ofrece `jugador` aquí (convertir un miembro
- * del staff en jugador/familia es otro flujo, no una operación de cuerpo técnico).
+ * Roles de club OFRECIDOS como DESTINO al cambiar el rol de un miembro. Solo
+ * roles BAJOS: los roles altos (director/admin_club) NO se alcanzan por cambio de
+ * rol, solo por INVITACIÓN (F1B-2b — el RPC los rechaza con high_role_invite_only).
+ * Tampoco se ofrece `jugador` (convertir un miembro del staff en jugador/familia
+ * es otro flujo, no una operación de cuerpo técnico).
  */
 export const STAFF_CLUB_ROLES = [
-  'admin_club',
   'coordinador',
   'entrenador_principal',
   'entrenador_ayudante',
@@ -324,6 +325,7 @@ const updateStaffRoleSchema = z.object({
 export type UpdateStaffRoleState = {
   error?:
     | 'role_invalid'
+    | 'high_role_invite_only'
     | 'would_remove_last_admin'
     | 'no_active_club'
     | 'target_invalid'
@@ -365,6 +367,9 @@ export async function updateStaffRole(
     const msg = error.message ?? '';
     if (msg.includes('would_remove_last_admin')) {
       return { error: 'would_remove_last_admin' };
+    }
+    if (msg.includes('high_role_invite_only')) {
+      return { error: 'high_role_invite_only' };
     }
     if (msg.includes('forbidden')) return { error: 'forbidden' };
     if (msg.includes('target_invalid')) return { error: 'target_invalid' };
