@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Globe, Megaphone, Pin } from 'lucide-react';
-import { createSupabaseServerClient } from '@misterfc/core';
+import { createSupabaseServerClient, MANAGER_ROLES } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -17,12 +17,6 @@ import { DeleteAnnouncementButton } from './delete-announcement-button';
 type Props = {
   params: Promise<{ locale: string; announcementId: string }>;
 };
-
-const MANAGER_ROLES: ReadonlyArray<string> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-];
 
 export default async function AnnouncementDetailPage({ params }: Props) {
   const { locale, announcementId } = await params;

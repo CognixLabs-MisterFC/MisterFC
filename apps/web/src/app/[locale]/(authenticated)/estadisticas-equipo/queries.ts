@@ -9,7 +9,11 @@
  * (`/equipos/[teamId]/estadisticas`) consume `loadTeamSeasonStats` (9.B-0).
  */
 
-import { createSupabaseServerClient, type Role } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  COACH_ROLES as CORE_COACH_ROLES,
+  type Role,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
 
@@ -21,10 +25,7 @@ export type StatsTeamCard = {
   season: string;
 };
 
-const COACH_ROLES = new Set<Role>([
-  'entrenador_principal',
-  'entrenador_ayudante',
-]);
+const COACH_ROLES = new Set<Role>(CORE_COACH_ROLES);
 
 /**
  * Equipos (temporada activa) cuyas stats agregadas puede ver el usuario.

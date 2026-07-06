@@ -12,6 +12,7 @@ import {
   createSupabaseServerClient,
   isDevelopmentPeriod,
   PLAYER_POSITIONS,
+  STAFF_ROLES,
   type PlayerPosition,
   type Role,
 } from '@misterfc/core';
@@ -39,13 +40,6 @@ type Props = {
   params: Promise<{ locale: string; playerId: string; period: string }>;
   searchParams: Promise<{ season?: string }>;
 };
-
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 const PHOTO_TTL = 3600;
 

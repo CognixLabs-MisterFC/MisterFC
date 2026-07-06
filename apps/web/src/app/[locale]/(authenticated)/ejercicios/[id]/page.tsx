@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Clock, Maximize, Activity, CheckCircle2, XCircle, PenTool } from 'lucide-react';
-import type { Role, MethodologyStatus } from '@misterfc/core';
+import { type Role, type MethodologyStatus, STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,12 +17,7 @@ type Props = {
   params: Promise<{ locale: string; id: string }>;
 };
 
-const ALLOWED_VIEW_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
+const ALLOWED_VIEW_ROLES = STAFF_ROLES;
 
 const STATUS_VARIANT: Record<MethodologyStatus, 'default' | 'secondary' | 'outline' | 'destructive'> = {
   published: 'default',

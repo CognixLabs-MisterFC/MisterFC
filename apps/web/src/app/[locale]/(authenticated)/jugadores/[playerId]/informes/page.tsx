@@ -10,6 +10,7 @@ import { ArrowLeft } from 'lucide-react';
 import {
   createSupabaseServerClient,
   DEVELOPMENT_PERIODS,
+  STAFF_ROLES,
   type Role,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -29,13 +30,6 @@ type Props = {
   params: Promise<{ locale: string; playerId: string }>;
   searchParams: Promise<{ season?: string }>;
 };
-
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 export default async function InformesListPage({ params, searchParams }: Props) {
   const { locale, playerId } = await params;

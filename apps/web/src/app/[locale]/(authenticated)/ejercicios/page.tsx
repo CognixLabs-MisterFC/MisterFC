@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Dumbbell, Clock, Plus } from 'lucide-react';
-import { type Role, type MethodologyStatus, createSupabaseServerClient } from '@misterfc/core';
+import { type Role, type MethodologyStatus, STAFF_ROLES, createSupabaseServerClient } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { cn } from '@/lib/utils';
@@ -30,12 +30,7 @@ type Props = {
 };
 
 // Todo el staff ve la biblioteca; la RLS de 11.1 decide QUÉ filas. El jugador no.
-const ALLOWED_VIEW_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
+const ALLOWED_VIEW_ROLES = STAFF_ROLES;
 
 // Estado → variante visual del badge. La etiqueta se localiza por i18n.
 const STATUS_VARIANT: Record<MethodologyStatus, 'default' | 'secondary' | 'outline' | 'destructive'> = {

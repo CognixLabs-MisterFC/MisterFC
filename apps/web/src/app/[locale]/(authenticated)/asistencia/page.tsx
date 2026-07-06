@@ -5,6 +5,7 @@ import {
   createSupabaseServerClient,
   formatPlayerName,
   type AttendanceCode,
+  ALL_CLUB_ROLES,
 } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -44,13 +45,7 @@ type Props = {
   }>;
 };
 
-const ALLOWED: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-  'jugador',
-];
+const ALLOWED: ReadonlyArray<Role> = ALL_CLUB_ROLES;
 
 // El filtro de la UI solo expone 3 presets. `custom` existe en el tipo
 // `StatsRange` para soportar un futuro DateRangePicker, pero la URL

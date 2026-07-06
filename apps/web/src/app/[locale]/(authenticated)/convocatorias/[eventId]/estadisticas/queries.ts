@@ -19,6 +19,7 @@
  */
 
 import {
+  STAFF_ROLES,
   aggregateMatchTeamStats,
   createSupabaseServerClient,
   formatPlayerNameNatural,
@@ -29,13 +30,6 @@ import {
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import type { MatchTimelineEntry } from '@/components/match/match-timeline';
 import type { Role } from '../../../jugadores/queries';
-
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 /** Stats consolidadas de un jugador en el partido (espejo de match_player_stats). */
 export type MatchStatRow = {

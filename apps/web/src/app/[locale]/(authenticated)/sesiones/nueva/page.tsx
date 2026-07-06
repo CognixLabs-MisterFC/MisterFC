@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Ban } from 'lucide-react';
-import { type Role, createSupabaseServerClient } from '@misterfc/core';
+import { type Role, createSupabaseServerClient, STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { Link } from '@/i18n/navigation';
@@ -14,12 +14,6 @@ type Props = {
   searchParams: Promise<{ template?: string }>;
 };
 
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 /**
  * F12.2 — "Nueva sesión": alta mínima (equipo + fecha) → crea + siembra el

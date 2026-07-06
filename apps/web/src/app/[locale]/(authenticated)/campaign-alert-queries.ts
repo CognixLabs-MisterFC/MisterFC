@@ -12,6 +12,8 @@ import {
   createSupabaseServerClient,
   reportStatus,
   DEVELOPMENT_REPORT_CATALOG,
+  ADMIN_ROLES,
+  COACH_ROLES as CORE_COACH_ROLES,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -21,8 +23,8 @@ export type CampaignAlert = {
   pending: number;
 };
 
-const COACH_ROLES = new Set<string>(['entrenador_principal', 'entrenador_ayudante']);
-const ADMIN_LIKE_ROLES = new Set<string>(['admin_club', 'coordinador']);
+const COACH_ROLES = new Set<string>(CORE_COACH_ROLES);
+const ADMIN_LIKE_ROLES = new Set<string>(ADMIN_ROLES);
 
 export async function loadCampaignAlerts(
   role: string,

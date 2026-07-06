@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Users } from 'lucide-react';
-import { TEAM_STAFF_ROLES, type TeamStaffRole } from '@misterfc/core';
+import { MANAGER_ROLES, TEAM_STAFF_ROLES, type TeamStaffRole } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -35,11 +35,7 @@ type Props = {
   }>;
 };
 
-const ALLOWED_VIEW_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-];
+const ALLOWED_VIEW_ROLES = MANAGER_ROLES;
 
 function normalizeMulti(v: string | string[] | undefined): string[] {
   if (v == null) return [];

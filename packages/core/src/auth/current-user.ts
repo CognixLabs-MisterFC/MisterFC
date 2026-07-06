@@ -15,6 +15,13 @@ export type Role =
 export type CurrentUserClub = {
   membershipId: string;
   role: Role;
+  /**
+   * F1B — el usuario actual es el OWNER de este club (clubs.owner_profile_id ===
+   * su profile). Solo el owner gestiona directores/admins (gate real server-side
+   * en F1B-2/2b; esto es para condicionar la UI). Booleano derivado: NUNCA se
+   * expone owner_profile_id crudo al front.
+   */
+  isOwner: boolean;
   club: {
     id: string;
     name: string;
@@ -57,7 +64,7 @@ export async function getCurrentUserClubs(
   const { data, error } = await supabase
     .from('memberships')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .select('id, role, club:club_id(id, name, slug)' as any)
+    .select('id, role, club:club_id(id, name, slug, owner_profile_id)' as any)
     .eq('profile_id', user.id);
 
   if (error || !data) return [];
@@ -66,7 +73,12 @@ export async function getCurrentUserClubs(
   type Row = {
     id: string;
     role: Role;
-    club: { id: string; name: string; slug: string } | null;
+    club: {
+      id: string;
+      name: string;
+      slug: string;
+      owner_profile_id: string | null;
+    } | null;
   };
 
   return (data as unknown as Row[])
@@ -74,7 +86,13 @@ export async function getCurrentUserClubs(
     .map((m) => ({
       membershipId: m.id,
       role: m.role,
-      club: m.club,
+      // Booleano derivado; no se propaga owner_profile_id fuera de aquí.
+      isOwner: m.club.owner_profile_id === user.id,
+      club: {
+        id: m.club.id,
+        name: m.club.name,
+        slug: m.club.slug,
+      },
     }))
     .sort((a, b) => a.club.name.localeCompare(b.club.name));
 }

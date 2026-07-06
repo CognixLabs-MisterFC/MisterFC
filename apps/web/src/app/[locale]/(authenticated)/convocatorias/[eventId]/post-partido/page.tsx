@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, BarChart3 } from 'lucide-react';
+import { STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -18,12 +19,6 @@ type Props = {
 };
 
 // Gate grueso de rol; el AUTORITATIVO es el RPC user_can_record_match (queries).
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 export default async function PostMatchPage({ params }: Props) {
   const { locale, eventId } = await params;

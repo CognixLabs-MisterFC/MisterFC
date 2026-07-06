@@ -1,19 +1,13 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft } from 'lucide-react';
-import { type Role } from '@misterfc/core';
+import { type Role, STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { NuevaJugadaForm } from '../_components/nueva-jugada-form';
 
 type Props = { params: Promise<{ locale: string }> };
 
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 /**
  * JR-1 (ADR-0019) — Alta de jugada (borrador del club). Solo staff. El gate real de

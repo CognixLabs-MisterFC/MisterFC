@@ -1,7 +1,12 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Plus, Swords } from 'lucide-react';
-import { type Role, type MethodologyStatus } from '@misterfc/core';
+import {
+  type Role,
+  type MethodologyStatus,
+  STAFF_ROLES,
+  ADMIN_ROLES,
+} from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
@@ -18,15 +23,8 @@ type Props = {
   searchParams: Promise<{ q?: string; status?: string; page?: string; review?: string }>;
 };
 
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
-
 /** Aprobar/revisar/archivar = admin∪coordinador (= user_can_approve_plays, D1). */
-const APPROVER_ROLES: ReadonlyArray<Role> = ['admin_club', 'coordinador'];
+const APPROVER_ROLES: ReadonlyArray<Role> = ADMIN_ROLES;
 
 // Estado → variante visual del badge (la etiqueta se localiza por i18n).
 const STATUS_VARIANT: Record<MethodologyStatus, 'default' | 'secondary' | 'outline' | 'destructive'> = {

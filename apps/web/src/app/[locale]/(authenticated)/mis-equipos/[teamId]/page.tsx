@@ -26,6 +26,7 @@ import {
   PLAYER_POSITIONS,
   formatPlayerName,
   isMatchSurfaceType,
+  COACH_ROLES,
 } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -45,7 +46,9 @@ type Props = {
   searchParams: Promise<{ position?: string }>;
 };
 
-const STAFF_ROLES = ['entrenador_principal', 'entrenador_ayudante'] as const;
+// Semántica LOCAL "entreno este equipo" (principal/ayudante), NO staff de club:
+// mapea a COACH_ROLES (sin director), no a la STAFF_ROLES central.
+const STAFF_ROLES = COACH_ROLES;
 
 function ageFromDob(dob: string): number {
   const d = new Date(dob);

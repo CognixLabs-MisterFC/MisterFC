@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft } from 'lucide-react';
-import type { Role } from '@misterfc/core';
+import { type Role, STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { ExerciseForm } from '../../_components/exercise-form';
@@ -11,12 +11,7 @@ type Props = {
   params: Promise<{ locale: string; id: string }>;
 };
 
-const ALLOWED_VIEW_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
+const ALLOWED_VIEW_ROLES = STAFF_ROLES;
 
 export default async function EditarEjercicioPage({ params }: Props) {
   const { locale, id } = await params;

@@ -15,6 +15,7 @@ import { getTranslations } from 'next-intl/server';
 import {
   createSupabaseServerClient,
   formatPlayerName,
+  STAFF_ROLES,
   type Badge,
   type Role,
 } from '@misterfc/core';
@@ -27,13 +28,6 @@ import { pdfResponse, slugForFile, type Translator } from '@/lib/pdf/shared';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 

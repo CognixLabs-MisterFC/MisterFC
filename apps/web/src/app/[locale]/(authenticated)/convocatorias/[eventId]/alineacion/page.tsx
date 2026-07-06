@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, PenTool, Radio } from 'lucide-react';
+import { STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
@@ -13,12 +14,7 @@ type Props = {
   searchParams: Promise<{ lineup?: string }>;
 };
 
-const MANAGER_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
+const MANAGER_ROLES = STAFF_ROLES;
 
 export default async function LineupPage({ params, searchParams }: Props) {
   const { locale, eventId } = await params;

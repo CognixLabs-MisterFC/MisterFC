@@ -1,7 +1,12 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Settings, UserRound, Users } from 'lucide-react';
-import { createSupabaseServerClient, formatPlayerName } from '@misterfc/core';
+import {
+  ADMIN_ROLES,
+  STAFF_ROLES,
+  createSupabaseServerClient,
+  formatPlayerName,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -21,18 +26,7 @@ type Props = {
   params: Promise<{ locale: string; teamId: string }>;
 };
 
-const ROLES_THAT_CAN_MANAGE_STAFF: ReadonlyArray<string> = [
-  'admin_club',
-  'coordinador',
-];
-
-// Gate D13 (acceso a informes de desarrollo): staff del club, incl. ayudante.
-const STAFF_ROLES: ReadonlyArray<string> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
+const ROLES_THAT_CAN_MANAGE_STAFF = ADMIN_ROLES;
 
 function ageFromDob(dob: string): number {
   const d = new Date(dob);

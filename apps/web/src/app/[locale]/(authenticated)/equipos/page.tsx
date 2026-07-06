@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Shield, FolderCog, Users, CalendarCheck } from 'lucide-react';
 import {
+  ADMIN_ROLES,
   TEAM_FORMATS,
   categoryKindOrdinal,
   createSupabaseServerClient,
@@ -29,7 +30,7 @@ type Props = {
   searchParams: Promise<{ season?: string }>;
 };
 
-const ALLOWED_ROLES = new Set(['admin_club', 'coordinador']);
+const ALLOWED_ROLES = new Set<string>(ADMIN_ROLES);
 const SEASON_RE = /^[0-9]{4}-[0-9]{2}$/;
 
 export default async function EquiposPage({ params, searchParams }: Props) {

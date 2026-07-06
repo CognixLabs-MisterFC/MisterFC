@@ -7,7 +7,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft } from 'lucide-react';
-import { createSupabaseServerClient, isDevelopmentPeriod, type Role } from '@misterfc/core';
+import { STAFF_ROLES, createSupabaseServerClient, isDevelopmentPeriod, type Role } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -24,13 +24,6 @@ import { ObjectivesSection } from '@/app/[locale]/(authenticated)/jugadores/[pla
 type Props = {
   params: Promise<{ locale: string; teamId: string; period: string }>;
 };
-
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
 
 export default async function TeamValuationEditorPage({ params }: Props) {
   const { locale, teamId, period } = await params;

@@ -1,7 +1,7 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft } from 'lucide-react';
-import { type Role } from '@misterfc/core';
+import { type Role, STAFF_ROLES, ADMIN_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { PlayEditor } from '../../_components/play-editor';
@@ -9,15 +9,8 @@ import { loadPlayForEdit, userCanCreatePlays } from '../../queries';
 
 type Props = { params: Promise<{ locale: string; id: string }> };
 
-const STAFF_ROLES: ReadonlyArray<Role> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-];
-
 /** Aprobar/archivar = admin∪coordinador (= user_can_approve_plays, D1). */
-const APPROVER_ROLES: ReadonlyArray<Role> = ['admin_club', 'coordinador'];
+const APPROVER_ROLES: ReadonlyArray<Role> = ADMIN_ROLES;
 
 /**
  * JR-1 (ADR-0019) — Editor de jugada del banco del club + ciclo de aprobación en la

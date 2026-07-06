@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Download, ClipboardList } from 'lucide-react';
 import {
   createSupabaseServerClient,
+  MANAGER_ROLES,
   sumMatchStats,
   splitMatchStatsByType,
   derivedRatios,
@@ -44,11 +45,7 @@ type Props = {
 
 const PLAYER_TABS: ReadonlyArray<PlayerTabKey> = ['info', 'stats', 'history'];
 
-const ROLES_THAT_CAN_MANAGE: ReadonlyArray<string> = [
-  'admin_club',
-  'coordinador',
-  'entrenador_principal',
-];
+const ROLES_THAT_CAN_MANAGE = MANAGER_ROLES;
 
 const PLAYER_PHOTO_TTL_SECONDS = 600; // 10 min
 
