@@ -2026,6 +2026,7 @@
       "errors": {
         "role_invalid": "The selected role is not valid.",
         "would_remove_last_admin": "You cannot leave the club without any administrator. Assign another club administrator first.",
+        "high_role_invite_only": "The director and administrator roles are assigned only by invitation, not by role change.",
         "no_active_club": "No active club.",
         "target_invalid": "This member does not belong to your club.",
         "forbidden": "Only a club administrator can change roles.",
