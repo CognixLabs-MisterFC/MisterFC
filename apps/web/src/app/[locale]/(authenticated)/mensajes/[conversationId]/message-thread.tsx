@@ -1,12 +1,18 @@
 'use client';
 
-import { useState, useTransition, useRef, useEffect } from 'react';
+import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Loader2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { sendMessage } from '../actions';
+import {
+  useVisibleInterval,
+  mergePolledMessages,
+  isNearBottom,
+  CHAT_POLL_INTERVAL_MS,
+} from '@/hooks/use-chat-polling';
+import { sendMessage, fetchConversationMessages } from '../actions';
 
 type Message = {
   id: string;
@@ -43,11 +49,25 @@ export function MessageThread({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // Autoscroll solo si el usuario ya estaba al fondo (no saltar si lee arriba).
+  const stickRef = useRef(true);
   const didRefreshLayoutRef = useRef(false);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages.length]);
+    if (stickRef.current) {
+      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages]);
+
+  // F5B-3b — polling cada ~5s (pausa si la pestaña se oculta). Repinta lo nuevo
+  // (incluidas confirmaciones de lectura) sin recargar; conserva optimistas.
+  const poll = useCallback(async () => {
+    const fresh = await fetchConversationMessages(conversationId);
+    stickRef.current = isNearBottom(scrollRef.current);
+    setMessages((prev) => mergePolledMessages(fresh, prev));
+  }, [conversationId]);
+  useVisibleInterval(poll, CHAT_POLL_INTERVAL_MS);
 
   // Bug I — al abrir la conversación, el page Server Component marca los
   // mensajes recibidos como leídos pero el sidebar (en el layout) ya
@@ -76,6 +96,7 @@ export function MessageThread({
       sent_at: new Date().toISOString(),
       read_at: null,
     };
+    stickRef.current = true; // al enviar, siempre bajar a ver mi mensaje.
     setMessages((prev) => [...prev, optimistic]);
     setDraft('');
     setError(null);
@@ -103,7 +124,10 @@ export function MessageThread({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto">
+      <div
+        ref={scrollRef}
+        className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto"
+      >
         {messages.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             {t('thread.empty')}

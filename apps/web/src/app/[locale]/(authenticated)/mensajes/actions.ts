@@ -560,3 +560,74 @@ export async function listMessageableTeams(): Promise<ListMessageableTeamsResult
   );
   return { teams };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F5B-3b — Refetch ligero de mensajes para el auto-refresco por polling (~5s).
+// Solo lectura; la RLS filtra por pertenencia (1:1 participant / grupo miembro).
+// No revalida ni marca leídos: el hilo abierto solo REPINTA lo nuevo.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ConversationMessage = {
+  id: string;
+  sender_profile_id: string;
+  body: string;
+  sent_at: string;
+  read_at: string | null;
+};
+
+/** Mensajes del hilo 1:1 (para el polling del MessageThread). */
+export async function fetchConversationMessages(
+  conversationId: string,
+): Promise<ConversationMessage[]> {
+  const ctx = await loadShellContext();
+  if (!ctx) return [];
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('messages')
+    .select('id, sender_profile_id, body, sent_at, read_at')
+    .eq('conversation_id', conversationId)
+    .order('sent_at', { ascending: true });
+
+  return (data ?? []) as ConversationMessage[];
+}
+
+export type TeamThreadMessage = {
+  id: string;
+  sender_profile_id: string;
+  sender_name: string;
+  body: string;
+  created_at: string;
+};
+
+/** Mensajes del hilo de grupo (para el polling del TeamMessageThread). */
+export async function fetchTeamMessages(
+  teamConversationId: string,
+): Promise<TeamThreadMessage[]> {
+  const ctx = await loadShellContext();
+  if (!ctx) return [];
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('team_messages')
+    .select('id, sender_profile_id, body, created_at, profiles!inner(full_name)')
+    .eq('team_conversation_id', teamConversationId)
+    .order('created_at', { ascending: true });
+
+  type Row = {
+    id: string;
+    sender_profile_id: string;
+    body: string;
+    created_at: string;
+    profiles: { full_name: string | null };
+  };
+  return ((data ?? []) as unknown as Row[]).map((m) => ({
+    id: m.id,
+    sender_profile_id: m.sender_profile_id,
+    sender_name: m.profiles?.full_name ?? '',
+    body: m.body,
+    created_at: m.created_at,
+  }));
+}

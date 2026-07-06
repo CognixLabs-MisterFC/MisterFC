@@ -1,12 +1,18 @@
 'use client';
 
-import { useState, useTransition, useRef, useEffect } from 'react';
+import { useState, useTransition, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Loader2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { sendTeamMessage } from '../../actions';
+import {
+  useVisibleInterval,
+  mergePolledMessages,
+  isNearBottom,
+  CHAT_POLL_INTERVAL_MS,
+} from '@/hooks/use-chat-polling';
+import { sendTeamMessage, fetchTeamMessages } from '../../actions';
 
 export type TeamMessage = {
   id: string;
@@ -43,11 +49,17 @@ export function TeamMessageThread({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // Si al aplicar cambios el usuario estaba al fondo, autoscroll; si estaba
+  // leyendo arriba, NO saltar. Se decide ANTES de cada setState.
+  const stickRef = useRef(true);
   const didRefreshLayoutRef = useRef(false);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages.length]);
+    if (stickRef.current) {
+      endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages]);
 
   // Igual que el 1:1: refresca el layout una vez tras montar para que el badge
   // del sidebar refleje el estado real. useRef evita el bucle.
@@ -56,6 +68,15 @@ export function TeamMessageThread({
     didRefreshLayoutRef.current = true;
     router.refresh();
   }, [router]);
+
+  // F5B-3b — polling cada ~5s (pausa si la pestaña se oculta). Repinta lo nuevo
+  // sin recargar la página; conserva los optimistas pendientes (dedup por id).
+  const poll = useCallback(async () => {
+    const fresh = await fetchTeamMessages(teamConversationId);
+    stickRef.current = isNearBottom(scrollRef.current);
+    setMessages((prev) => mergePolledMessages(fresh, prev));
+  }, [teamConversationId]);
+  useVisibleInterval(poll, CHAT_POLL_INTERVAL_MS);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -69,6 +90,7 @@ export function TeamMessageThread({
       body: trimmed,
       created_at: new Date().toISOString(),
     };
+    stickRef.current = true; // al enviar, siempre bajar a ver mi mensaje.
     setMessages((prev) => [...prev, optimistic]);
     setDraft('');
     setError(null);
@@ -95,7 +117,10 @@ export function TeamMessageThread({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto">
+      <div
+        ref={scrollRef}
+        className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto"
+      >
         {messages.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             {t('thread.empty')}
