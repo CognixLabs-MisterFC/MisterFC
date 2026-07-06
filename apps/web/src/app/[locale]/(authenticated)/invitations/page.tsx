@@ -14,7 +14,9 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-const ROLES_ALLOWED_TO_INVITE: Role[] = ['admin_club', 'coordinador'];
+// director accede a la página de invitaciones (invita roles bajos). Mostrar/ocultar
+// la opción 'director' según sea owner es F1B-3; el gate de alto es server-side + RLS.
+const ROLES_ALLOWED_TO_INVITE: Role[] = ['admin_club', 'director', 'coordinador'];
 
 export default async function InvitationsPage({ params }: Props) {
   const { locale } = await params;
