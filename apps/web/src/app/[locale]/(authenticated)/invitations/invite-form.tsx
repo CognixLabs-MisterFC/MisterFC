@@ -4,7 +4,14 @@ import { useActionState } from 'react';
 import { useTranslations } from 'next-intl';
 import { sendInvitation, type SendInvitationFormState } from './actions';
 
-export function InviteForm({ locale }: { locale: string }) {
+export function InviteForm({
+  locale,
+  isOwner,
+}: {
+  locale: string;
+  /** F1B-3c — solo el owner del club puede invitar a un rol ALTO (director). */
+  isOwner: boolean;
+}) {
   const t = useTranslations('invitations.form');
   const [state, formAction, isPending] = useActionState<
     SendInvitationFormState,
@@ -32,7 +39,10 @@ export function InviteForm({ locale }: { locale: string }) {
           defaultValue="entrenador_principal"
           className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-base text-white outline-none transition focus:border-[#10B981]"
         >
-          <option value="admin_club">{t('role_admin_club')}</option>
+          {/* Rol ALTO: 'director' solo se OFRECE al owner (F1B-3c). El gate real
+              lo impone el server action + RLS (F1B-2). 'admin_club' NO se ofrece:
+              el admin/owner ya existe y no se crean nuevos por invitación. */}
+          {isOwner && <option value="director">{t('role_director')}</option>}
           <option value="coordinador">{t('role_coordinador')}</option>
           <option value="entrenador_principal">{t('role_entrenador_principal')}</option>
           <option value="entrenador_ayudante">{t('role_entrenador_ayudante')}</option>

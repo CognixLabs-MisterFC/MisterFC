@@ -60,7 +60,7 @@ export default async function InvitationsPage({ params }: Props) {
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-zinc-400">
           {t('new_section_title')}
         </h2>
-        <InviteForm locale={locale} />
+        <InviteForm locale={locale} isOwner={authorized.isOwner} />
       </section>
 
       <section>
