@@ -2774,6 +2774,42 @@ export type Database = {
           },
         ]
       }
+      team_chat_participation: {
+        Row: {
+          mode: string
+          profile_id: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          mode?: string
+          profile_id: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          mode?: string
+          profile_id?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_chat_participation_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_chat_participation_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_conversations: {
         Row: {
           club_id: string
@@ -3541,6 +3577,14 @@ export type Database = {
         Returns: boolean
       }
       user_is_team_chat_member_by_conversation: {
+        Args: { p_conversation_id: string }
+        Returns: boolean
+      }
+      user_can_post_team_chat: {
+        Args: { p_team_id: string }
+        Returns: boolean
+      }
+      user_can_post_team_chat_by_conversation: {
         Args: { p_conversation_id: string }
         Returns: boolean
       }

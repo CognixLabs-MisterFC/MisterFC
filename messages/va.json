@@ -2300,7 +2300,12 @@
       "title": "Xat de l'equip · {team}",
       "not_started": "El xat d'aquest equip encara no s'ha iniciat.",
       "start_action": "Iniciar xat de l'equip",
-      "start_error": "No hem pogut iniciar el xat. Torna-ho a provar."
+      "start_error": "No hem pogut iniciar el xat. Torna-ho a provar.",
+      "participation": {
+        "participate": "Participar",
+        "observe": "Només observar",
+        "observing_note": "Estàs observant aquest xat. Activa'l per a escriure."
+      }
     },
     "new_team_chat": {
       "action": "Xat d'equip",

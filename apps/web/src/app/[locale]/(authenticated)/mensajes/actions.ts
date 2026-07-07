@@ -679,3 +679,66 @@ export async function fetchTeamMessages(
     created_at: m.created_at,
   }));
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F5B-4 — Supervisión: el director activa/desactiva su participación en un chat.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type TeamChatMode = 'observer' | 'active';
+export type SetTeamChatParticipationResult = {
+  ok?: { mode: TeamChatMode };
+  error?: 'forbidden' | 'invalid_payload' | 'generic';
+};
+
+/**
+ * Fija el modo de participación del director/admin en el chat de un equipo:
+ * 'active' (escribe + recibe notificaciones) u 'observer' (solo lee). Upsert en
+ * team_chat_participation. SOLO para admin/director (staff/jugadores participan
+ * por pertenencia derivada y no usan esta tabla). La RLS de la tabla es la
+ * autoridad final; aquí filtramos por rol para no intentar escrituras que la RLS
+ * rechazaría.
+ */
+export async function setTeamChatParticipation(
+  locale: string,
+  input: { team_id: string; mode: TeamChatMode },
+): Promise<SetTeamChatParticipationResult> {
+  if (
+    !input.team_id ||
+    (input.mode !== 'observer' && input.mode !== 'active')
+  ) {
+    return { error: 'invalid_payload' };
+  }
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const isAdminDir =
+    ctx.activeClub.role === 'admin_club' || ctx.activeClub.role === 'director';
+  if (!isAdminDir) return { error: 'forbidden' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase
+    .from('team_chat_participation')
+    .upsert(
+      {
+        profile_id: ctx.user.id,
+        team_id: input.team_id,
+        mode: input.mode,
+      },
+      { onConflict: 'profile_id,team_id' },
+    );
+
+  if (error) {
+    if (error.code === '42501') return { error: 'forbidden' };
+    Sentry.captureException(error, {
+      tags: { feature: 'messaging', step: 'set_team_chat_participation' },
+      extra: { team_id: input.team_id },
+    });
+    return { error: 'generic' };
+  }
+
+  revalidatePath(`/${locale}/mensajes/equipo/${input.team_id}`);
+  return { ok: { mode: input.mode } };
+}
