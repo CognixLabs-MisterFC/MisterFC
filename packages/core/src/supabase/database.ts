@@ -2810,6 +2810,39 @@ export type Database = {
           },
         ]
       }
+      team_conversation_reads: {
+        Row: {
+          last_read_at: string
+          profile_id: string
+          team_conversation_id: string
+        }
+        Insert: {
+          last_read_at?: string
+          profile_id: string
+          team_conversation_id: string
+        }
+        Update: {
+          last_read_at?: string
+          profile_id?: string
+          team_conversation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_conversation_reads_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_conversation_reads_team_conversation_id_fkey"
+            columns: ["team_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "team_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_conversations: {
         Row: {
           club_id: string
@@ -3557,6 +3590,13 @@ export type Database = {
       team_chat_member_profile_ids: {
         Args: { p_team_id: string }
         Returns: string[]
+      }
+      team_chat_unread_counts: {
+        Args: never
+        Returns: {
+          team_conversation_id: string
+          unread: number
+        }[]
       }
       team_club_id: { Args: { p_team_id: string }; Returns: string }
       user_is_conversation_participant: {

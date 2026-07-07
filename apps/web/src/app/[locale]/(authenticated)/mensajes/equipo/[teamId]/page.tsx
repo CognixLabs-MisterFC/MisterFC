@@ -103,6 +103,22 @@ export default async function TeamChatPage({ params }: Props) {
 
   const conversationId = (convRow as { id: string }).id;
 
+  // F5B-5 — Marcar leído al abrir: upsert de la marca de lectura del usuario a
+  // "ahora" (mismo momento que el 1:1 marca read_at). Inline en el Server
+  // Component (Next.js 16 prohíbe revalidatePath durante render); el badge del
+  // listado se recalcula en la próxima navegación a /mensajes. La RLS solo
+  // permite escribir la fila propia y de un chat al que se pertenece.
+  await supabase
+    .from('team_conversation_reads')
+    .upsert(
+      {
+        profile_id: ctx.user.id,
+        team_conversation_id: conversationId,
+        last_read_at: new Date().toISOString(),
+      },
+      { onConflict: 'profile_id,team_conversation_id' },
+    );
+
   // F5B-4 — Supervisión. Para admin/director: modo de participación (default
   // observer sin fila) y si puede escribir (participación 'active'). Staff y
   // jugadores no usan esto: pueden escribir siempre (canPost=true).
