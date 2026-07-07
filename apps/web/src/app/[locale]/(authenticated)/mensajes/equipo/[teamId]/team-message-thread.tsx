@@ -27,6 +27,9 @@ type Props = {
   teamConversationId: string;
   currentUserId: string;
   initialMessages: TeamMessage[];
+  // F5B-4 — false para el director/admin en modo observer: sigue viendo el hilo
+  // (y el polling repinta), pero no puede escribir (además del gate RLS).
+  canPost: boolean;
 };
 
 /**
@@ -41,6 +44,7 @@ export function TeamMessageThread({
   teamConversationId,
   currentUserId,
   initialMessages,
+  canPost,
 }: Props) {
   const t = useTranslations('mensajes');
   const router = useRouter();
@@ -166,7 +170,15 @@ export function TeamMessageThread({
         </p>
       )}
 
-      <form onSubmit={onSubmit} className="flex items-end gap-2">
+      {!canPost ? (
+        <p
+          className="rounded-md border border-dashed border-border px-3 py-2 text-center text-sm text-muted-foreground"
+          role="status"
+        >
+          {t('team_chat.participation.observing_note')}
+        </p>
+      ) : (
+        <form onSubmit={onSubmit} className="flex items-end gap-2">
         <Textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -188,7 +200,8 @@ export function TeamMessageThread({
           )}
           <span className="sr-only">{t('thread.send')}</span>
         </Button>
-      </form>
+        </form>
+      )}
     </div>
   );
 }

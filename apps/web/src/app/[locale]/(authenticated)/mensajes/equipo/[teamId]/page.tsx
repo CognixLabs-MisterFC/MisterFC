@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { TeamMessageThread, type TeamMessage } from './team-message-thread';
 import { StartTeamChatButton } from './start-team-chat-button';
+import { ParticipationToggle } from './participation-toggle';
 
 type Props = {
   params: Promise<{ locale: string; teamId: string }>;
@@ -102,6 +103,29 @@ export default async function TeamChatPage({ params }: Props) {
 
   const conversationId = (convRow as { id: string }).id;
 
+  // F5B-4 — Supervisión. Para admin/director: modo de participación (default
+  // observer sin fila) y si puede escribir (participación 'active'). Staff y
+  // jugadores no usan esto: pueden escribir siempre (canPost=true).
+  const isAdminDir =
+    ctx.activeClub.role === 'admin_club' || ctx.activeClub.role === 'director';
+  let participationMode: 'observer' | 'active' = 'observer';
+  let canPost = true;
+  if (isAdminDir) {
+    const { data: partRow } = await supabase
+      .from('team_chat_participation')
+      .select('mode')
+      .eq('profile_id', ctx.user.id)
+      .eq('team_id', teamId)
+      .maybeSingle();
+    participationMode =
+      ((partRow as { mode: string } | null)?.mode as 'observer' | 'active') ??
+      'observer';
+    const { data: canPostData } = await supabase.rpc('user_can_post_team_chat', {
+      p_team_id: teamId,
+    });
+    canPost = Boolean(canPostData);
+  }
+
   const { data: messageRows } = await supabase
     .from('team_messages')
     .select('id, sender_profile_id, body, created_at, profiles!inner(full_name)')
@@ -129,13 +153,23 @@ export default async function TeamChatPage({ params }: Props) {
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       {header}
       <Card>
-        <CardHeader>{title}</CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          {title}
+          {isAdminDir && (
+            <ParticipationToggle
+              locale={locale}
+              teamId={teamId}
+              mode={participationMode}
+            />
+          )}
+        </CardHeader>
         <CardContent>
           <TeamMessageThread
             locale={locale}
             teamConversationId={conversationId}
             currentUserId={ctx.user.id}
             initialMessages={messages}
+            canPost={canPost}
           />
         </CardContent>
       </Card>

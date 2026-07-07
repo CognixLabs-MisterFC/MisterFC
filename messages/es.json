@@ -2299,7 +2299,12 @@
       "title": "Chat del equipo · {team}",
       "not_started": "El chat de este equipo aún no se ha iniciado.",
       "start_action": "Iniciar chat del equipo",
-      "start_error": "No hemos podido iniciar el chat. Inténtalo de nuevo."
+      "start_error": "No hemos podido iniciar el chat. Inténtalo de nuevo.",
+      "participation": {
+        "participate": "Participar",
+        "observe": "Solo observar",
+        "observing_note": "Estás observando este chat. Actívalo para escribir."
+      }
     },
     "new_team_chat": {
       "action": "Chat de equipo",

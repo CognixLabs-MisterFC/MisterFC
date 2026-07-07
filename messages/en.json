@@ -2300,7 +2300,12 @@
       "title": "Team chat · {team}",
       "not_started": "This team's chat hasn't started yet.",
       "start_action": "Start team chat",
-      "start_error": "We couldn't start the chat. Please try again."
+      "start_error": "We couldn't start the chat. Please try again.",
+      "participation": {
+        "participate": "Join in",
+        "observe": "Observe only",
+        "observing_note": "You're observing this chat. Join in to write."
+      }
     },
     "new_team_chat": {
       "action": "Team chat",
