@@ -11,6 +11,7 @@ import {
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { userCanMessageInClub } from '@/lib/messaging-permissions';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 
 export type StartConversationResult = {
   ok?: { conversation_id: string };
@@ -525,9 +526,21 @@ export type ListMessageableTeamsResult = {
 /**
  * Equipos del club para el selector "Chat de equipo" de /mensajes (P2b). Gated
  * por userCanMessageInClub (staff/dirección — a los jugadores/familia les basta
- * el listado de /mensajes, que ya muestra sus grupos). Devuelve los equipos del
- * club activo (RLS teams = miembro del club los ve); el gate real de crear/abrir
- * lo impone la RLS de team_conversations + la página del hilo.
+ * el listado de /mensajes, que ya muestra sus grupos). El gate real de crear/abrir
+ * lo impone la RLS de team_conversations + la página del hilo; esto solo decide
+ * QUÉ ofrecer para no acabar en callejones sin salida.
+ *
+ * Bug 1 (temporada): `teams` es una fila POR TEMPORADA desde Rework A
+ * (unique(club_id, name, season)), así que sin filtrar por temporada el mismo
+ * equipo aparece repetido una vez por temporada. Se acota a la temporada ACTIVA
+ * del club (seasons.status='active'), igual que el hub de Equipos.
+ *
+ * Bug 2 (scope por rol): quien tiene chat de TODOS los equipos del club es, por
+ * la RLS de F5B-2 (user_is_admin_or_director), solo admin_club/director. El resto
+ * (coordinador y entrenadores) solo es miembro del chat de los equipos que
+ * ENTRENA (team_staff). Por eso se ramifica: admin/director ven todos los equipos
+ * de la temporada activa; los demás, solo los que entrenan en esa temporada —
+ * ofrecer más los llevaría a un hilo que la RLS no les deja abrir.
  */
 export async function listMessageableTeams(): Promise<ListMessageableTeamsResult> {
   const ctx = await loadShellContext();
@@ -540,10 +553,45 @@ export async function listMessageableTeams(): Promise<ListMessageableTeamsResult
   const canMessage = await userCanMessageInClub(supabase, ctx);
   if (!canMessage) return { error: 'forbidden' };
 
-  const { data, error } = await supabase
+  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
+
+  // El rol del user en el club activo ya viene resuelto en el contexto de sesión
+  // (ctx.activeClub.role). Alineamos "ve todos" con la RLS: admin_club/director.
+  const isAdminDir =
+    ctx.activeClub.role === 'admin_club' || ctx.activeClub.role === 'director';
+
+  // Base: equipos del club en la temporada activa (columna denormalizada
+  // teams.club_id, disponible desde A1; sin join a categories).
+  let query = supabase
     .from('teams')
-    .select('id, name, categories!inner(club_id)')
-    .eq('categories.club_id', clubId)
+    .select('id, name')
+    .eq('club_id', clubId)
+    .eq('season', activeSeason);
+
+  if (!isAdminDir) {
+    // Solo los equipos que el usuario entrena (team_staff activo). team_staff
+    // apunta a la fila de team de su temporada, así que el .in() combinado con
+    // .eq('season', activeSeason) deja únicamente sus equipos de la activa.
+    const { data: staffRows, error: staffError } = await supabase
+      .from('team_staff')
+      .select('team_id')
+      .eq('membership_id', ctx.activeClub.membershipId)
+      .is('left_at', null);
+
+    if (staffError) {
+      Sentry.captureException(staffError, {
+        tags: { feature: 'messaging', step: 'list_messageable_teams_staff' },
+        extra: { club_id: clubId },
+      });
+      return { error: 'generic' };
+    }
+
+    const teamIds = (staffRows ?? []).map((r) => r.team_id as string);
+    if (teamIds.length === 0) return { teams: [] };
+    query = query.in('id', teamIds);
+  }
+
+  const { data, error } = await query
     .order('name', { ascending: true })
     .limit(500);
 
