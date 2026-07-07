@@ -45,6 +45,7 @@ import {
   formatClock,
   isAtBreak,
   isClockRunning,
+  matchPhase,
   nextExtraPeriod,
   nextRegularPeriod,
   periodClockSeconds,
@@ -186,24 +187,39 @@ export function MatchClock({
 
   const periodLabel = (p: PeriodKind) => t(`period.${p}`);
 
-  // Etiqueta de estado bajo el reloj.
+  // Etiqueta de estado bajo el reloj. F7B-0: la FASE la deriva el helper puro
+  // compartido `matchPhase` (misma lógica que usará la pantalla de familias),
+  // en vez de recomputarla aquí. El mapeo a strings/tonos reproduce exactamente
+  // lo que se mostraba antes; los controles (botones) siguen su propio flujo.
+  const phase = matchPhase({
+    status,
+    periods,
+    halfDurationMinutes,
+    nowMs: effectiveNow,
+  }).phase;
   let phaseLabel: string;
   let phaseTone: 'idle' | 'live' | 'break' | 'done' = 'idle';
   if (status === 'closed') {
     phaseLabel = t('status_closed');
     phaseTone = 'done';
-  } else if (!hasStarted) {
+  } else if (phase === 'not_started') {
     phaseLabel = t('status_not_started');
     phaseTone = 'idle';
-  } else if (atDecision && regularNext) {
-    // Pausa entre la 1ª y la 2ª parte → descanso.
-    phaseLabel = t('clock_break');
-    phaseTone = 'break';
-  } else if (atDecision) {
-    // Tiempo reglamentario (o prórroga) cumplido: finalizar o añadir prórroga.
+  } else if (phase === 'finished') {
+    // En vivo con todos los periodos agotados (regulación cumplida, sin cerrar).
     phaseLabel = t('clock_regulation_over');
     phaseTone = 'done';
-  } else if (inPeriod && cur) {
+  } else if (phase === 'half_time') {
+    // Descanso si aún queda parte regular (1ª→2ª); si no, regulación cumplida.
+    if (regularNext) {
+      phaseLabel = t('clock_break');
+      phaseTone = 'break';
+    } else {
+      phaseLabel = t('clock_regulation_over');
+      phaseTone = 'done';
+    }
+  } else if (cur) {
+    // En periodo (1ª/2ª/prórroga/penaltis), corriendo o en pausa.
     phaseLabel = running
       ? periodLabel(cur.period)
       : t('clock_paused_in', { period: periodLabel(cur.period) });

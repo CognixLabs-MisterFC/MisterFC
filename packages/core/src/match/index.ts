@@ -154,3 +154,11 @@ export type {
   MatchConsolidation,
   ConsolidationInput,
 } from './consolidation';
+
+export { matchPhase } from './phase';
+export type {
+  MatchStatus,
+  MatchPhaseKind,
+  MatchPhaseInput,
+  MatchPhaseResult,
+} from './phase';
