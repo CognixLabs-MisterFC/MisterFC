@@ -28,7 +28,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 ---
 
-## Estado actual (2026-07-03)
+## Estado actual (2026-07-07)
 
 - **F13 — Pizarra de jugadas (13.1–13.7)** — **cerrada** (2026-06-27). El contrato/editor/animación/reproducción/fullscreen ya existían (build original de `plays`); la **serie JR** (ADR-0019, **#229–#232**) los reorganizó a **banco del club + ciclo de aprobación** (proponer/aprobar/rechazar), **playbook por equipo** y **compartir con la familia** (con índice del playbook del jugador). **13.8 (exportar vídeo/GIF) descartado y eliminado del roadmap.**
 - **F13.10** (Informes de desarrollo y campaña de evaluaciones) — **cerrada** (#200–#221). Ver [fase-13.10-summary.md](fase-13.10-summary.md) y [spec 13.10](../specs/13.10-informes-desarrollo.md).
@@ -36,6 +36,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **F9B — Estadísticas por tipo de partido** — **cerrada** (2026-07-05). Toda métrica de partido se desglosa en **Amistoso · Torneo · Oficial · Total** en informe/perfil/equipo + PDFs (serie F9B-1…F9B-4b: #268/#269/#270/#271/#272). **Sin migración** (deriva de `events.type`+`tournament_id`); regla única `splitMatchStatsByType` (core). Ver §"F9B — Estadísticas por tipo de partido" abajo. Extensión de F9 (no la reabre).
 - **Auditoría de permisos** — **cerrada** (2026-06-26). Barrido acciones×roles del patrón rol-de-club vs rol-de-equipo + sobre/sub-exposición. 4 hallazgos arreglados (PRs #223 asistencia, #224 eventos, #225 F14.9 capabilities cross-team, #226 F14.10 events SELECT). **F14.9 y F14.10 dejan de ser deuda de F14.** 2 decisiones de negocio cerradas (plantilla = club; informes = cualquier staff del equipo). Detalle en [known-issues.md → Auditoría de permisos](known-issues.md).
 - **F1B — Rol director + owner de club** — **cerrada** (2026-07-06). Rol `director` con paridad total de datos con `admin_club` salvo gestionar directores/admins; `admin_club` = **owner único** por club (`clubs.owner_profile_id`, inmutable); roles altos **solo por invitación** (nunca por cambio de rol, ni el owner). Serie F1B-0…F1B-3d + fix: **#274/#275/#276/#277/#278/#279/#280**. **Sin migración de datos** (DDL de policies + columna + helpers). Suite pgTAP consolidada `rls_f1b_director_role.sql` (F1B-4). Ver §"F1B — Rol director + owner de club" abajo. Extensión de F1 (no la reabre); cierra el backlog "Owner de club".
+- **F5B — Comunicación del club (chat de equipo)** — **cerrada** (2026-07-06/07). **Chat de equipo grupal** (F5 era 1:1 + anuncios + push): `team_conversations` + `team_messages` con **miembros derivados** en la RLS (staff ∪ jugador/familia vigentes ∪ admin/director), aislamiento por equipo/club. **Supervisión de dirección** en modo **observer** (`team_chat_participation`; ve todo pero no escribe ni recibe salvo que active el chat), **no-leídos por grupo** (`team_conversation_reads`) y **auto-refresco por polling ~5s** sin realtime. Serie F5B-0…F5B-5 + fix selector: **#282/#283/#284/#285/#287/#286/#288/#289**. **3 migraciones aditivas** (F5B-2/4/5; sin migración de datos). pgTAP dry-run `rls_team_chat_observer.sql` + `rls_team_chat_reads.sql`. Ver §"F5B — Comunicación del club (chat de equipo)" abajo. Extensión de F5 (no la reabre).
 
 **Pendiente (backlog, sin programar salvo F14):**
 - **Reutilizar jugadores** entre equipos (nuevo). En backlog.
@@ -545,6 +546,30 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Constantes de rol centralizadas** en `@misterfc/core/auth/roles` (ADMIN/MANAGER/STAFF/COACH/ALL_CLUB); `director` en todas **salvo** COACH. Gates de UI nuevos deben usarlas, no listas locales.
 
 - **Red de pruebas (F1B-4)**: `supabase/tests/rls_f1b_director_role.sql` reúne 5 bloques — aislamiento entre clubs, equivalencia director↔admin, jerarquía (owner/admin-no-owner/director + guard del último admin), anti-regresión del owner (el alta de un director N deja intactos `owner_profile_id`, la membership del owner y su fila auth), y **aceptación de invitación bajo el contexto real del invitee** (rol `authenticated`) para los 5 roles — este último es la red contra la regresión #280. Verificada en dry-run `begin/rollback` contra el remoto (pgTAP no corre en CI; ver Notas).
+- **CI**: cada PR con `typecheck · lint · test · build` en verde + preview de Vercel. **Sin merge por Claude** (los mergea el operador).
+
+## F5B — Comunicación del club (chat de equipo) ☑ (2026-07-06/07)
+
+> **Extensión de F5** (Mensajería interna; etiqueta de letra, no renumera F14–F16). Añade el **chat de equipo grupal** (F5 era 1:1 + anuncios + push) + mejoras de mensajería. **Modelo separado del 1:1**: `team_conversations` (una por equipo) + `team_messages`, con **miembros DERIVADOS** en la RLS (staff ∪ jugador/familia del roster vigente ∪ admin/director del club), sin tabla de participantes, aislamiento por equipo/club. **Sin realtime** (polling ~5s). **3 migraciones aditivas** (F5B-2/4/5; sin migración de datos).
+
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| F5B-0 | ☑ 2026-07-06 | #282 | Pestaña **"Equipos"** top-level en el sidebar para dirección. |
+| F5B-1 | ☑ 2026-07-06 | #283 | Iniciar chat **1:1** desde Comunicaciones con **buscador de jugadores** del club (`listMessageablePlayers`, gated por `userCanMessageInClub`). |
+| F5B-2 | ☑ 2026-07-06 | #284 | **Modelo de chat de equipo**: `team_conversations` + `team_messages`; helpers de pertenencia derivada `user_is_team_chat_member[_by_conversation]`; RLS bidireccional; resolutor de fan-out `team_chat_member_profile_ids`. |
+| F5B-3 | ☑ 2026-07-06 | #285 | **UI del chat de equipo**: hilo de grupo (optimistic + nombre del emisor), iniciar desde la ficha del equipo y desde Comunicaciones, fan-out de notificaciones (reusa `new_message`). |
+| fix selector | ☑ 2026-07-07 | #287 | El selector de equipos filtra por **rol** (entrenador solo sus equipos vía `team_staff`; director todos) y por **temporada activa** (sin duplicados por temporada tras Rework A). |
+| F5B-3b | ☑ 2026-07-06 | #286 | **Auto-refresco por polling ~5s** (grupo y 1:1) con hook compartido `useVisibleInterval`; pausa al ocultar la pestaña; merge de optimistas; scroll-stick solo si estás al fondo. **Sin Supabase Realtime.** |
+| F5B-4 | ☑ 2026-07-07 | #288 | **Supervisión / observer**: `team_chat_participation`; el director entra en **observer** (ve todo pero no escribe ni recibe) y activa la participación por chat. INSERT y fan-out pasan por `user_can_post_team_chat` (staff/jugadores siempre; director solo si `active`); el **SELECT no cambia**. Toggle "Participar / Solo observar". |
+| F5B-5 | ☑ 2026-07-07 | #289 | **No-leídos por grupo**: `team_conversation_reads` (marca watermark por usuario/chat); RPC `team_chat_unread_counts`; badge en `/mensajes` al nivel del 1:1; el director solo acumula no-leídos donde **participa** (mismo criterio que las notificaciones). |
+
+**Invariantes del modelo** (para features futuras que toquen el chat de equipo):
+
+- **Pertenencia DERIVADA, no materializada**: quién es miembro se computa en la RLS (`user_is_team_chat_member`); no hay tabla de participantes. `team_chat_participation` y `team_conversation_reads` son estado **por usuario** (observer/lectura), no la lista de miembros.
+- **Un único criterio de "participa"**: `user_can_post_team_chat(team)` = staff ∪ jugador/familia ∪ (admin/director **con** `active`). Gobierna **escritura** (RLS INSERT), **notificaciones** (fan-out) y **no-leídos**. El **SELECT es más amplio** (el director ve todo aunque solo observe) y NO se alinea con "participa".
+- **Sin realtime**: la frescura es por **polling ~5s**; una futura mejora de tiempo real sustituye el hook, no el modelo.
+
+- **Red de pruebas**: pgTAP de dry-run `begin/rollback` contra el remoto — `rls_team_chat_observer.sql` (F5B-4: observer ve pero no escribe, active escribe, staff/jugadores no afectados, fan-out excluye observers, aislamiento entre clubs) y `rls_team_chat_reads.sql` (F5B-5: lecturas propias, contador respeta pertenencia, observer no acumula). 0 fails (pgTAP no corre en CI; ver Notas).
 - **CI**: cada PR con `typecheck · lint · test · build` en verde + preview de Vercel. **Sin merge por Claude** (los mergea el operador).
 
 ## Fase 14 — Subfases pendientes
