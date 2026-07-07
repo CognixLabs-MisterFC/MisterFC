@@ -349,6 +349,55 @@
     "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club.",
     "error_wrong_credentials": "Incorrect email or password."
   },
+  "directos": {
+    "title": "Live",
+    "subtitle": "This week's matches",
+    "empty": "No matches this week.",
+    "live": "Live",
+    "vs": "vs",
+    "back": "Back to Live",
+    "not_started_score": "Not started",
+    "phase": {
+      "not_started": "Not started",
+      "first_half": "1st half",
+      "half_time": "Half-time",
+      "second_half": "2nd half",
+      "extra_time": "Extra time",
+      "penalties": "Penalties",
+      "finished": "Full time"
+    },
+    "minute": "{minute}'",
+    "minute_added": "{minute}'+{added}",
+    "field_title": "Line-up",
+    "no_lineup": "No line-up published.",
+    "stats_title": "Stats",
+    "events_title": "Events",
+    "no_events": "No events yet.",
+    "us": "Us",
+    "them": "Rival",
+    "stat": {
+      "goals": "Goals",
+      "shots": "Shots",
+      "corners": "Corners",
+      "fouls": "Fouls",
+      "yellow": "Yellow",
+      "red": "Red",
+      "offsides": "Offsides"
+    },
+    "event": {
+      "goal": "Goal",
+      "assist": "Assist",
+      "yellow_card": "Yellow card",
+      "red_card": "Red card",
+      "corner": "Corner",
+      "foul": "Foul",
+      "offside": "Offside",
+      "shot": "Shot",
+      "penalty": "Penalty",
+      "substitution": "Substitution",
+      "rival": "Rival"
+    }
+  },
   "shell": {
     "app_name": "MisterFC",
     "sidebar_label": "Menú principal",
@@ -360,6 +409,7 @@
     "user_menu_perfil": "Mi perfil",
     "nav": {
       "home": "Inicio",
+      "directos": "Live",
       "dashboard": "Dashboard",
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
