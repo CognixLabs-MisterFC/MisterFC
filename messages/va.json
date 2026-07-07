@@ -349,6 +349,55 @@
     "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club.",
     "error_wrong_credentials": "Correu o contrasenya incorrectes."
   },
+  "directos": {
+    "title": "Directes",
+    "subtitle": "Partits d'aquesta setmana",
+    "empty": "No hi ha partits aquesta setmana.",
+    "live": "En directe",
+    "vs": "vs",
+    "back": "Tornar a Directes",
+    "not_started_score": "Sense començar",
+    "phase": {
+      "not_started": "Sense començar",
+      "first_half": "1a part",
+      "half_time": "Descans",
+      "second_half": "2a part",
+      "extra_time": "Pròrroga",
+      "penalties": "Penals",
+      "finished": "Finalitzat"
+    },
+    "minute": "{minute}'",
+    "minute_added": "{minute}'+{added}",
+    "field_title": "Alineació",
+    "no_lineup": "Sense alineació publicada.",
+    "stats_title": "Estadístiques",
+    "events_title": "Esdeveniments",
+    "no_events": "Encara sense esdeveniments.",
+    "us": "Nosaltres",
+    "them": "Rival",
+    "stat": {
+      "goals": "Gols",
+      "shots": "Xuts",
+      "corners": "Córners",
+      "fouls": "Faltes",
+      "yellow": "Grogues",
+      "red": "Roges",
+      "offsides": "Fores de joc"
+    },
+    "event": {
+      "goal": "Gol",
+      "assist": "Assistència",
+      "yellow_card": "Targeta groga",
+      "red_card": "Targeta roja",
+      "corner": "Córner",
+      "foul": "Falta",
+      "offside": "Fora de joc",
+      "shot": "Xut",
+      "penalty": "Penal",
+      "substitution": "Canvi",
+      "rival": "Rival"
+    }
+  },
   "shell": {
     "app_name": "MisterFC",
     "sidebar_label": "Menú principal",
@@ -360,6 +409,7 @@
     "user_menu_perfil": "Mi perfil",
     "nav": {
       "home": "Inicio",
+      "directos": "Directes",
       "dashboard": "Tauler",
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",

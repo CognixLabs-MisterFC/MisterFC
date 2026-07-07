@@ -20,6 +20,7 @@ import {
   GraduationCap,
   ClipboardList,
   PenTool,
+  Radio,
   Swords,
   Shield,
   LayoutGrid,
@@ -141,6 +142,10 @@ export const NAV: readonly NavEntry[] = [
       { key: 'estadisticas_equipo', href: '/estadisticas-equipo', icon: BarChart3, roles: STAFF },
     ],
   },
+
+  // Directos (F7B-3) — pantalla propia de SOLO LECTURA: partidos de la semana +
+  // marcador/estado/minuto en vivo. Independiente de la gestión de partidos.
+  { key: 'directos', href: '/directos', icon: Radio, roles: ALL },
 
   { key: 'calendario', href: '/calendario', icon: Calendar, roles: ALL },
   { key: 'mensajes', href: '/mensajes', icon: MessageSquare, roles: ALL },

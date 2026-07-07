@@ -266,6 +266,55 @@
       "cta": "Ir a redactar"
     }
   },
+  "directos": {
+    "title": "Directos",
+    "subtitle": "Partidos de esta semana",
+    "empty": "No hay partidos esta semana.",
+    "live": "En directo",
+    "vs": "vs",
+    "back": "Volver a Directos",
+    "not_started_score": "Sin empezar",
+    "phase": {
+      "not_started": "Sin empezar",
+      "first_half": "1ª parte",
+      "half_time": "Descanso",
+      "second_half": "2ª parte",
+      "extra_time": "Prórroga",
+      "penalties": "Penaltis",
+      "finished": "Finalizado"
+    },
+    "minute": "{minute}'",
+    "minute_added": "{minute}'+{added}",
+    "field_title": "Alineación",
+    "no_lineup": "Sin alineación publicada.",
+    "stats_title": "Estadísticas",
+    "events_title": "Eventos",
+    "no_events": "Sin eventos todavía.",
+    "us": "Nosotros",
+    "them": "Rival",
+    "stat": {
+      "goals": "Goles",
+      "shots": "Tiros",
+      "corners": "Córners",
+      "fouls": "Faltas",
+      "yellow": "Amarillas",
+      "red": "Rojas",
+      "offsides": "Fueras de juego"
+    },
+    "event": {
+      "goal": "Gol",
+      "assist": "Asistencia",
+      "yellow_card": "Tarjeta amarilla",
+      "red_card": "Tarjeta roja",
+      "corner": "Córner",
+      "foul": "Falta",
+      "offside": "Fuera de juego",
+      "shot": "Tiro",
+      "penalty": "Penalti",
+      "substitution": "Cambio",
+      "rival": "Rival"
+    }
+  },
   "shell": {
     "app_name": "MisterFC",
     "sidebar_label": "Menú principal",
@@ -277,6 +326,7 @@
     "user_menu_perfil": "Mi perfil",
     "nav": {
       "home": "Inicio",
+      "directos": "Directos",
       "dashboard": "Dashboard",
       "invitations": "Invitaciones",
       "perfil": "Mi perfil",
