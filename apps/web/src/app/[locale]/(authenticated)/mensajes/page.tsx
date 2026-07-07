@@ -74,8 +74,7 @@ export default async function MensajesPage({ params }: Props) {
 
   // F5B-3 — Chats de EQUIPO (grupo). La RLS de team_conversations filtra a los
   // grupos de los que el user es miembro (staff ∪ roster vigente ∪ director del
-  // club). Sin contador de no-leídos por grupo todavía: requiere tracking por
-  // (user, conversación), que no está en el modelo F5B-2 (pendiente, migración).
+  // club).
   const { data: teamConvRows } = await supabase
     .from('team_conversations')
     .select('id, team_id, last_message_at, teams!inner(name)')
@@ -90,17 +89,28 @@ export default async function MensajesPage({ params }: Props) {
   const teamConversations =
     (teamConvRows ?? []) as unknown as TeamConvRow[];
 
+  // F5B-5 — No-leídos por grupo. El RPC (SECURITY DEFINER, acotado a auth.uid())
+  // cuenta team_messages no propios posteriores a la marca de lectura del user,
+  // SOLO en los chats donde participa (staff/jugador siempre; director solo si
+  // 'active' — un director que solo observa NO acumula badges). Los grupos sin
+  // no-leídos no vienen en el resultado (se tratan como 0).
+  const unreadByTeamConvId = new Map<string, number>();
+  const { data: teamUnreadRows } = await supabase.rpc(
+    'team_chat_unread_counts',
+  );
+  for (const r of teamUnreadRows ?? []) {
+    unreadByTeamConvId.set(r.team_conversation_id, r.unread);
+  }
+
   // Lista unificada 1:1 + grupo, ordenada por actividad reciente.
-  type ListItem =
-    | {
-        kind: 'direct';
-        key: string;
-        href: string;
-        title: string;
-        last: string;
-        unread: number;
-      }
-    | { kind: 'group'; key: string; href: string; title: string; last: string };
+  type ListItem = {
+    kind: 'direct' | 'group';
+    key: string;
+    href: string;
+    title: string;
+    last: string;
+    unread: number;
+  };
 
   const items: ListItem[] = [
     ...conversations.map((c): ListItem => ({
@@ -117,6 +127,7 @@ export default async function MensajesPage({ params }: Props) {
       href: `/mensajes/equipo/${tc.team_id}`,
       title: tc.teams?.name ?? '',
       last: tc.last_message_at,
+      unread: unreadByTeamConvId.get(tc.id) ?? 0,
     })),
   ].sort((a, b) => (a.last < b.last ? 1 : a.last > b.last ? -1 : 0));
 
@@ -168,7 +179,7 @@ export default async function MensajesPage({ params }: Props) {
                         </span>
                       </div>
                     </div>
-                    {item.kind === 'direct' && item.unread > 0 && (
+                    {item.unread > 0 && (
                       <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-misterfc-green px-2 text-xs font-semibold text-zinc-900">
                         {item.unread}
                       </span>
