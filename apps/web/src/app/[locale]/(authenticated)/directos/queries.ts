@@ -81,7 +81,7 @@ function countsAsGoal(g: GoalRow): boolean {
 
 /**
  * Partidos (match/friendly, incl. sub-partidos de torneo) de la semana natural
- * del club, con estado y marcador. Orden: en directo primero, luego por hora.
+ * del club, con estado y marcador. Orden: cronológico por hora de inicio.
  */
 export async function loadWeekMatches(clubId: string): Promise<WeekMatch[]> {
   const adapter = await createCookieAdapter();
@@ -197,13 +197,10 @@ export async function loadWeekMatches(clubId: string): Promise<WeekMatch[]> {
     };
   });
 
-  // En directo primero; dentro de cada grupo, por hora de inicio ascendente.
-  return out.sort((a, b) => {
-    const la = a.status === 'live' ? 0 : 1;
-    const lb = b.status === 'live' ? 0 : 1;
-    if (la !== lb) return la - lb;
-    return a.startsAt < b.startsAt ? -1 : a.startsAt > b.startsAt ? 1 : 0;
-  });
+  // Orden cronológico puro por hora de inicio (el estado se ve por el badge).
+  return out.sort((a, b) =>
+    a.startsAt < b.startsAt ? -1 : a.startsAt > b.startsAt ? 1 : 0,
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

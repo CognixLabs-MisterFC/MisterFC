@@ -81,17 +81,34 @@ export function DirectosListClient({ locale, initialMatches }: Props) {
   }, []);
   useVisibleInterval(poll, CHAT_POLL_INTERVAL_MS, anyLive);
 
-  const fmtKickoff = useMemo(
+  // Fecha (día de semana + día) y hora por separado → "Sáb 12 · 10:30".
+  // timeZone fija (Europe/Madrid) para no desajustar entre SSR y cliente.
+  const fmtDate = useMemo(
     () =>
       new Intl.DateTimeFormat(locale, {
         weekday: 'short',
         day: 'numeric',
-        month: 'short',
+        timeZone: 'Europe/Madrid',
+      }),
+    [locale],
+  );
+  const fmtTime = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
         hour: '2-digit',
         minute: '2-digit',
         timeZone: 'Europe/Madrid',
       }),
     [locale],
+  );
+  const kickoff = useCallback(
+    (iso: string) => {
+      const d = new Date(iso);
+      const date = fmtDate.format(d).replace(/,/g, '');
+      const cap = date.charAt(0).toUpperCase() + date.slice(1);
+      return `${cap} · ${fmtTime.format(d)}`;
+    },
+    [fmtDate, fmtTime],
   );
 
   if (matches.length === 0) {
@@ -150,11 +167,9 @@ export function DirectosListClient({ locale, initialMatches }: Props) {
                         </span>
                       )}
                     </div>
-                    {m.status === 'not_started' && (
-                      <span className="text-xs text-muted-foreground">
-                        {fmtKickoff.format(new Date(m.startsAt))}
-                      </span>
-                    )}
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {kickoff(m.startsAt)}
+                    </span>
                   </div>
 
                   <div className="flex shrink-0 flex-col items-end gap-1">
