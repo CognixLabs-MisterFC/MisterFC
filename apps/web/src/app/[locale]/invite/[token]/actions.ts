@@ -11,7 +11,12 @@ import {
   isSamePasswordError,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { loadInvitationByToken, type LoadedInvitation } from './invite-data';
+import {
+  loadInvitationByToken,
+  loadPendingInvitationsForEmail,
+  type LoadedInvitation,
+  type PendingInvitationForBatch,
+} from './invite-data';
 import { loadCurrentLegalDocs, loadAccountConsentStatus } from './consent-data';
 
 /** Flags de aceptación (T&C + Privacidad) enviados por el form del alta (F14-2). */
@@ -100,8 +105,7 @@ function logStep(step: string, payload: Record<string, unknown> = {}) {
 function logError(step: string, error: unknown, extra: Record<string, unknown> = {}) {
   const serialized = serializeError(error);
   console.error(
-    `[invite][accept] ${step} failed ` +
-      JSON.stringify({ ...extra, error: serialized })
+    `[invite][accept] ${step} failed ` + JSON.stringify({ ...extra, error: serialized }),
   );
   Sentry.captureException(error, {
     tags: { feature: 'invitations', step: `accept-${step}` },
@@ -121,7 +125,7 @@ function logError(step: string, error: unknown, extra: Record<string, unknown> =
 
 async function gateByToken(
   token: string,
-  authedEmail?: string | null
+  authedEmail?: string | null,
 ): Promise<
   | { ok: true; invitation: LoadedInvitation }
   | { ok: false; error: NonNullable<AcceptInvitationState['error']> }
@@ -149,13 +153,13 @@ async function gateByToken(
 async function recordAccountConsents(
   supabase: ReturnType<typeof createSupabaseServerClient>,
   profileId: string,
-  accepts: ConsentAccepts
+  accepts: ConsentAccepts,
 ): Promise<AcceptInvitationState> {
   const legal = await loadCurrentLegalDocs();
   const status = await loadAccountConsentStatus(
     profileId,
     legal.terms?.version ?? null,
-    legal.privacy?.version ?? null
+    legal.privacy?.version ?? null,
   );
 
   const h = await headers();
@@ -216,17 +220,20 @@ async function recordAccountConsents(
 
 /**
  * Inserta membership + (si aplica) vínculo player_accounts + team_staff y marca
- * la invitación como aceptada. Corre bajo la sesión del invitee (RLS aplica):
+ * UNA invitación como aceptada. Corre bajo la sesión del invitee (RLS aplica):
  * las policies `*_insert_invitee` están diseñadas para que el propio invitee se
  * auto-inserte. El service_role NO se usa aquí.
  *
  * `mark-accepted` es condicional (`accepted_at IS NULL`) para hacer el token
  * single-use de forma robusta ante doble submit / carreras.
  *
- * F14-2 — ANTES de crear nada, registra los consentimientos obligatorios de
- * cuenta; si faltan, aborta sin escribir membership.
+ * F14-3a — Los consentimientos de cuenta NO se registran aquí: se hacen UNA vez
+ * por lote en `attachAllPending` (no por hijo). Cada paso es idempotente
+ * (membership/player_accounts ignoran 23505; mark-accepted es single-use), así
+ * que reprocesar el lote tras un fallo parcial es seguro.
  */
-async function attachToClub(
+async function attachSingleInvitation(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
   invitation: {
     id: string;
     club_id: string;
@@ -237,15 +244,8 @@ async function attachToClub(
     team_staff_role: string | null;
   },
   profileId: string,
-  accepts: ConsentAccepts
 ): Promise<AcceptInvitationState> {
-  logStep('attach-to-club entered', { invitation_id: invitation.id });
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-
-  // F14-2 — consentimientos obligatorios de cuenta (T&C + Privacidad) primero.
-  const consentResult = await recordAccountConsents(supabase, profileId, accepts);
-  if (consentResult.error) return consentResult;
+  logStep('attach-single entered', { invitation_id: invitation.id });
 
   logStep('membership-insert start', {
     invitation_id: invitation.id,
@@ -297,11 +297,7 @@ async function attachToClub(
   }
 
   // Vínculo tutor↔jugador (role=jugador + player_id).
-  if (
-    invitation.role === 'jugador' &&
-    invitation.player_id &&
-    invitation.player_relation
-  ) {
+  if (invitation.role === 'jugador' && invitation.player_id && invitation.player_relation) {
     logStep('player-account-insert start', {
       invitation_id: invitation.id,
       player_id: invitation.player_id,
@@ -395,6 +391,92 @@ async function attachToClub(
 }
 
 /**
+ * F14-3a — Orquesta el alta MULTI-HIJO. Bajo la sesión del invitee ya autenticado:
+ *
+ *   1. Registra los consentimientos obligatorios de cuenta (T&C + Privacidad) UNA
+ *      vez (no por hijo); si faltan, aborta sin escribir nada.
+ *   2. Carga TODAS las invitaciones pendientes del email del padre EN EL MISMO
+ *      CLUB del token clicado (incluye la propia clicada). El anclaje por
+ *      (email + club_id) es el guard: nunca cruza clubs ni emails ajenos.
+ *   3. Procesa cada una con `attachSingleInvitation`. Un fallo NO detiene el lote
+ *      (idempotencia + single-use hacen seguro el reintento); si alguna falló, se
+ *      devuelve su error para que el padre reintente (las ya hechas no-op).
+ *
+ * Si la carga del lote no devuelve nada (carrera), cae de vuelta a procesar solo
+ * la invitación clicada — así el alta de un único hijo nunca se queda sin efecto.
+ */
+async function attachAllPending(
+  clicked: LoadedInvitation,
+  profileId: string,
+  accepts: ConsentAccepts,
+): Promise<AcceptInvitationState> {
+  logStep('attach-all entered', {
+    invitation_id: clicked.id,
+    club_id: clicked.club_id,
+  });
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // F14-2 — consentimientos obligatorios de cuenta, UNA vez por lote.
+  const consentResult = await recordAccountConsents(supabase, profileId, accepts);
+  if (consentResult.error) return consentResult;
+
+  // Todas las pendientes del padre en ESTE club (incluye la clicada).
+  const pending = await loadPendingInvitationsForEmail(clicked.email, clicked.club_id);
+  const batch: PendingInvitationForBatch[] =
+    pending.length > 0
+      ? pending
+      : [
+          // Fallback defensivo: procesar al menos la clicada.
+          {
+            id: clicked.id,
+            club_id: clicked.club_id,
+            role: clicked.role,
+            player_id: clicked.player_id,
+            player_relation: clicked.player_relation,
+            team_id: clicked.team_id,
+            team_staff_role: clicked.team_staff_role,
+            player_first_name: null,
+            player_last_name: null,
+            team_name: null,
+          },
+        ];
+
+  logStep('attach-all batch', {
+    invitation_id: clicked.id,
+    club_id: clicked.club_id,
+    count: batch.length,
+  });
+
+  let firstError: AcceptInvitationState | null = null;
+  let processed = 0;
+  for (const inv of batch) {
+    const result = await attachSingleInvitation(supabase, inv, profileId);
+    if (result.error) {
+      if (!firstError) firstError = result;
+      logStep('attach-all item-failed', {
+        invitation_id: inv.id,
+        error: result.error,
+      });
+      // Seguimos con el resto del lote: reintentar es seguro (idempotente).
+    } else {
+      processed++;
+    }
+  }
+
+  logStep('attach-all done', {
+    invitation_id: clicked.id,
+    processed,
+    total: batch.length,
+  });
+
+  // Si alguna falló, devolvemos el error para que el padre reintente. Las que ya
+  // se procesaron no se duplican en el reintento (idempotencia + single-use).
+  if (firstError) return firstError;
+  return {};
+}
+
+/**
  * Flujo QUICK — el invitee YA tiene sesión activa y su email coincide con la
  * invitación (lo decide la página). Un click: solo adjunta al club. No toca
  * contraseña ni perfil.
@@ -403,7 +485,7 @@ export async function acceptInvitation(
   locale: string,
   token: string,
   _prev: AcceptInvitationState,
-  formData: FormData
+  formData: FormData,
 ): Promise<AcceptInvitationState> {
   logStep('flow=quick entered', { token_prefix: token.slice(0, 8), locale });
   try {
@@ -420,10 +502,10 @@ export async function acceptInvitation(
     const gate = await gateByToken(token, user.email);
     if (!gate.ok) return { error: gate.error };
 
-    const result = await attachToClub(
+    const result = await attachAllPending(
       gate.invitation,
       user.id,
-      consentAcceptsFromForm(formData)
+      consentAcceptsFromForm(formData),
     );
     if (result.error) return result;
 
@@ -454,7 +536,7 @@ export async function acceptInvitation(
  *   3. signInWithPassword: crea la sesión del invitee (cookies) con la contraseña
  *      recién fijada.
  *   4. UPDATE profiles bajo esa sesión.
- *   5. attachToClub bajo esa sesión.
+ *   5. attachAllPending bajo esa sesión (lote multi-hijo).
  *
  * El service_role solo aparece en (2): es lo único que fija contraseña.
  */
@@ -462,7 +544,7 @@ export async function acceptNewInvitee(
   locale: string,
   token: string,
   _prev: AcceptInvitationState,
-  formData: FormData
+  formData: FormData,
 ): Promise<AcceptInvitationState> {
   logStep('flow=new entered', { token_prefix: token.slice(0, 8), locale });
   try {
@@ -494,7 +576,7 @@ export async function acceptNewInvitee(
       logError(
         'flow=new no-invited-user',
         new Error('acceptNewInvitee on invitation without invited_user_id'),
-        { invitation_id: invitation.id }
+        { invitation_id: invitation.id },
       );
       return { error: 'auth_update_failed' };
     }
@@ -504,18 +586,15 @@ export async function acceptNewInvitee(
     // Paso 1+2: fija contraseña + metadata + limpia invite_pending sobre la
     // cuenta no reclamada que creamos para esta invitación.
     logStep('flow=new admin-set-password start', { invitation_id: invitation.id });
-    const { error: updErr } = await admin.auth.admin.updateUserById(
-      invitation.invited_user_id,
-      {
-        password: parsed.data.password,
-        user_metadata: {
-          full_name: parsed.data.full_name,
-          date_of_birth: parsed.data.date_of_birth,
-          locale,
-        },
-        app_metadata: { invite_pending: false },
-      }
-    );
+    const { error: updErr } = await admin.auth.admin.updateUserById(invitation.invited_user_id, {
+      password: parsed.data.password,
+      user_metadata: {
+        full_name: parsed.data.full_name,
+        date_of_birth: parsed.data.date_of_birth,
+        locale,
+      },
+      app_metadata: { invite_pending: false },
+    });
     if (updErr && !isSamePasswordError(updErr)) {
       logError('flow=new admin-set-password', updErr, {
         invitation_id: invitation.id,
@@ -544,11 +623,10 @@ export async function acceptNewInvitee(
     const adapter = await createCookieAdapter();
     const supabase = createSupabaseServerClient(adapter);
     logStep('flow=new sign-in start', { invitation_id: invitation.id });
-    const { data: signInData, error: signInErr } =
-      await supabase.auth.signInWithPassword({
-        email: invitation.email,
-        password: parsed.data.password,
-      });
+    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+      email: invitation.email,
+      password: parsed.data.password,
+    });
     const user = signInData?.user ?? null;
     if (signInErr || !user) {
       logError('flow=new sign-in', signInErr ?? new Error('no user after sign-in'), {
@@ -580,12 +658,8 @@ export async function acceptNewInvitee(
     }
     logStep('flow=new profile-update ok', { invitation_id: invitation.id });
 
-    // Paso 5: attach (+ consentimientos de cuenta).
-    const result = await attachToClub(
-      invitation,
-      user.id,
-      consentAcceptsFromForm(formData)
-    );
+    // Paso 5: attach de TODO el lote multi-hijo (+ consentimientos de cuenta).
+    const result = await attachAllPending(invitation, user.id, consentAcceptsFromForm(formData));
     if (result.error) return result;
 
     logStep('flow=new success', {
@@ -614,7 +688,7 @@ export async function acceptExistingUser(
   locale: string,
   token: string,
   _prev: AcceptInvitationState,
-  formData: FormData
+  formData: FormData,
 ): Promise<AcceptInvitationState> {
   logStep('flow=existing entered', { token_prefix: token.slice(0, 8), locale });
   try {
@@ -631,11 +705,10 @@ export async function acceptExistingUser(
     const supabase = createSupabaseServerClient(adapter);
 
     logStep('flow=existing sign-in start', { invitation_id: invitation.id });
-    const { data: signInData, error: signInErr } =
-      await supabase.auth.signInWithPassword({
-        email: invitation.email,
-        password,
-      });
+    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+      email: invitation.email,
+      password,
+    });
     const user = signInData?.user ?? null;
     if (signInErr || !user) {
       // Credenciales incorrectas: NO es genérico, es el caso esperado de password mal.
@@ -648,20 +721,13 @@ export async function acceptExistingUser(
 
     // Defensa en profundidad: el usuario autenticado debe coincidir con el email
     // invitado (signInWithPassword usa invitation.email, pero lo reconfirmamos).
-    if (
-      !user.email ||
-      user.email.trim().toLowerCase() !== invitation.email.trim().toLowerCase()
-    ) {
+    if (!user.email || user.email.trim().toLowerCase() !== invitation.email.trim().toLowerCase()) {
       logStep('flow=existing email-mismatch', { invitation_id: invitation.id });
       return { error: 'wrong_email' };
     }
     logStep('flow=existing sign-in ok', { invitation_id: invitation.id });
 
-    const result = await attachToClub(
-      invitation,
-      user.id,
-      consentAcceptsFromForm(formData)
-    );
+    const result = await attachAllPending(invitation, user.id, consentAcceptsFromForm(formData));
     if (result.error) return result;
 
     logStep('flow=existing success', {

@@ -355,6 +355,9 @@
     "consent_view": "view",
     "consent_already": "Already accepted: {doc}",
     "consent_close": "Close",
+    "children_heading": "You'll be registering:",
+    "child_unnamed": "Player",
+    "child_no_team": "No team assigned",
     "error_consent_required": "You must accept the Terms and the Privacy Policy to finish signing up."
   },
   "directos": {

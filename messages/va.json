@@ -355,6 +355,9 @@
     "consent_view": "veure",
     "consent_already": "Ja acceptat: {doc}",
     "consent_close": "Tancar",
+    "children_heading": "Vas a donar d'alta a:",
+    "child_unnamed": "Jugador/a",
+    "child_no_team": "Sense equip assignat",
     "error_consent_required": "Has d'acceptar els Termes i la Política de Privacitat per completar l'alta."
   },
   "directos": {

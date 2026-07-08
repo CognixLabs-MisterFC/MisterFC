@@ -11,6 +11,9 @@ import {
 import { ConsentGate } from './consent-gate';
 import type { AccountConsentDoc } from './consent-data';
 
+/** F14-3a — un hijo pendiente de alta (para pintar una tarjeta por hijo). */
+export type PendingChild = { playerName: string | null; teamName: string | null };
+
 type CommonProps = {
   locale: string;
   token: string;
@@ -22,7 +25,35 @@ type CommonProps = {
   legalPrivacy: AccountConsentDoc | null;
   preAcceptedTerms: boolean;
   preAcceptedPrivacy: boolean;
+  // F14-3a — hijos pendientes de este email/club (alta multi-hijo).
+  pendingChildren: PendingChild[];
 };
+
+/**
+ * F14-3a — Resumen de los hijos que se darán de alta en este mismo paso. Solo
+ * informativo: una tarjeta por hijo con su nombre y (si lo tiene) su equipo. El
+ * backbone procesa TODAS las pendientes del email en este club al aceptar.
+ */
+function ChildrenSummary({ children }: { children: PendingChild[] }) {
+  const t = useTranslations('invite');
+  if (children.length === 0) return null;
+  return (
+    <div className="flex w-full flex-col gap-2 rounded-md border border-zinc-800 bg-zinc-900/40 p-3 text-left">
+      <p className="text-xs font-medium text-zinc-300">{t('children_heading')}</p>
+      <ul className="flex flex-col gap-1">
+        {children.map((child, i) => (
+          <li key={i} className="text-sm text-white">
+            <span className="font-medium">{child.playerName ?? t('child_unnamed')}</span>
+            <span className="text-zinc-500">
+              {' · '}
+              {child.teamName ?? t('child_no_team')}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 /**
  * Form para invitee que YA tiene password (porque pertenece a otro club o se
@@ -39,20 +70,21 @@ export function AcceptForm({
   legalPrivacy,
   preAcceptedTerms,
   preAcceptedPrivacy,
+  pendingChildren,
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
     async (prev, formData) => acceptInvitation(locale, token, prev, formData),
-    {}
+    {},
   );
   const [consentOk, setConsentOk] = useState(false);
 
   return (
     <form action={formAction} className="flex w-full max-w-sm flex-col items-center gap-4">
-      <p className="text-sm text-zinc-300">
-        {t('summary', { club: clubName, role })}
-      </p>
+      <p className="text-sm text-zinc-300">{t('summary', { club: clubName, role })}</p>
       <p className="text-xs text-zinc-500">{t('invited_email_hint', { email: invitedEmail })}</p>
+
+      <ChildrenSummary children={pendingChildren} />
 
       <ConsentGate
         terms={legalTerms}
@@ -96,24 +128,24 @@ export function AcceptWithProfileForm({
   legalPrivacy,
   preAcceptedTerms,
   preAcceptedPrivacy,
+  pendingChildren,
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
     async (prev, formData) => acceptNewInvitee(locale, token, prev, formData),
-    {}
+    {},
   );
 
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [consentOk, setConsentOk] = useState(false);
-  const clientMismatch =
-    password.length > 0 && confirm.length > 0 && password !== confirm;
+  const clientMismatch = password.length > 0 && confirm.length > 0 && password !== confirm;
 
   return (
     <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
-      <p className="text-sm text-zinc-300">
-        {t('set_password_summary', { club: clubName, role })}
-      </p>
+      <p className="text-sm text-zinc-300">{t('set_password_summary', { club: clubName, role })}</p>
+
+      <ChildrenSummary children={pendingChildren} />
 
       <label className="flex flex-col gap-2 text-left">
         <span className="text-sm font-medium text-zinc-200">{t('email_label')}</span>
@@ -223,19 +255,20 @@ export function SignInToAcceptForm({
   legalPrivacy,
   preAcceptedTerms,
   preAcceptedPrivacy,
+  pendingChildren,
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
     async (prev, formData) => acceptExistingUser(locale, token, prev, formData),
-    {}
+    {},
   );
   const [consentOk, setConsentOk] = useState(false);
 
   return (
     <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
-      <p className="text-sm text-zinc-300">
-        {t('signin_summary', { club: clubName, role })}
-      </p>
+      <p className="text-sm text-zinc-300">{t('signin_summary', { club: clubName, role })}</p>
+
+      <ChildrenSummary children={pendingChildren} />
 
       <label className="flex flex-col gap-2 text-left">
         <span className="text-sm font-medium text-zinc-200">{t('email_label')}</span>
