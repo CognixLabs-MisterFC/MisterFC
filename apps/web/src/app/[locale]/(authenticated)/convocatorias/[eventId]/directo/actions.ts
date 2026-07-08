@@ -840,6 +840,12 @@ export async function registerPlayerEvent(
   // Expulsado = estado DERIVADO tras añadir este evento (1 roja O 2 amarillas).
   const expelled = isExpelled([...existingTypes, type]);
 
+  // F7B-P1 — push de GOL a los seguidores del equipo (solo NUESTRO gol).
+  if (type === 'goal') {
+    const { emitGoalPush } = await import('@/lib/goal-notify');
+    await emitGoalPush({ eventId: event_id, goalRowId: id, recorderProfileId: user.id });
+  }
+
   revalidate(event_id);
   return { success: true, eventRowId: id, expelled };
 }
@@ -1440,6 +1446,12 @@ export async function registerPenalty(input: unknown): Promise<RegisterEventStat
     { onConflict: 'id', ignoreDuplicates: true },
   );
   if (error) return { error: mapEventErr(error.message, error.code) };
+
+  // F7B-P1 — un penalti MARCADO cuenta como gol → push a los seguidores.
+  if (outcome === 'scored') {
+    const { emitGoalPush } = await import('@/lib/goal-notify');
+    await emitGoalPush({ eventId: event_id, goalRowId: id, recorderProfileId: user.id });
+  }
 
   revalidate(event_id);
   return { success: true, eventRowId: id };

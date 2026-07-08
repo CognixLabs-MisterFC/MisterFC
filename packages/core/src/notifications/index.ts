@@ -14,3 +14,6 @@ export type {
   SendOutcome,
   NotificationFinalStatus,
 } from './push-drain';
+
+export { formatGoalPush, resolveGoalRecipients } from './goal-push';
+export type { GoalPushInput, GoalPushMessage } from './goal-push';

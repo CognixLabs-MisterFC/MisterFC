@@ -173,6 +173,7 @@
       "training_reminder": "Recordatori d'entrenament",
       "event_updated": "Entrenament actualitzat",
       "event_updated_named": "Entrenament actualitzat: {title}",
+      "goal": "Gol d'un equip que segueixes",
       "generic": "Tens una novetat",
       "development_report_published": "S'ha publicat un informe de desenvolupament",
       "evaluation_campaign_launched": "Campanya d'avaluació oberta",
@@ -353,6 +354,15 @@
     "title": "Directes",
     "subtitle": "Partits d'aquesta setmana",
     "empty": "No hi ha partits aquesta setmana.",
+    "follow": {
+      "cta": "Seguir equips",
+      "title": "Seguir equips",
+      "subtitle": "Rep un avís quan marque un equip que segueixes",
+      "back": "Tornar a Directes",
+      "empty": "No hi ha equips al teu club.",
+      "follow": "Seguir",
+      "following": "Seguint"
+    },
     "live": "En directe",
     "vs": "vs",
     "back": "Tornar a Directes",

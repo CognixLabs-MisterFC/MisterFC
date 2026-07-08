@@ -27,6 +27,7 @@ import {
   ClipboardList,
   Clapperboard,
   FileText,
+  Goal,
   Megaphone,
   MessageSquare,
   XCircle,
@@ -93,6 +94,8 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
       return CalendarClock;
     case 'player_promoted':
       return ArrowUpCircle;
+    case 'goal':
+      return Goal;
     case 'development_report_published':
       return FileText;
     case 'evaluation_campaign_launched':
@@ -164,6 +167,8 @@ function textFor(t: Translate, type: string, payload: Record<string, unknown> | 
       return t('development_report_published');
     case 'evaluation_campaign_launched':
       return t('evaluation_campaign_launched');
+    case 'goal':
+      return t('goal');
     default:
       return t('generic');
   }
@@ -227,6 +232,11 @@ function hrefFor(type: string, payload: Record<string, unknown> | null): string 
     case 'player_promoted': {
       // No hay vista de evento por jugador → al calendario (accesible a todos).
       derived = '/calendario';
+      break;
+    }
+    case 'goal': {
+      const id = str(payload, 'event_id');
+      derived = id ? `/directos/${id}` : null;
       break;
     }
     default:

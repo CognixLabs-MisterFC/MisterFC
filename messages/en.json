@@ -173,6 +173,7 @@
       "training_reminder": "Training reminder",
       "event_updated": "Training updated",
       "event_updated_named": "Training updated: {title}",
+      "goal": "Goal by a team you follow",
       "generic": "You have an update",
       "development_report_published": "A development report was published",
       "evaluation_campaign_launched": "Evaluation campaign opened",
@@ -353,6 +354,15 @@
     "title": "Live",
     "subtitle": "This week's matches",
     "empty": "No matches this week.",
+    "follow": {
+      "cta": "Follow teams",
+      "title": "Follow teams",
+      "subtitle": "Get a push when a team you follow scores",
+      "back": "Back to Live",
+      "empty": "No teams in your club.",
+      "follow": "Follow",
+      "following": "Following"
+    },
     "live": "Live",
     "vs": "vs",
     "back": "Back to Live",
