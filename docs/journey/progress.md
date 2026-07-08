@@ -28,7 +28,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 ---
 
-## Estado actual (2026-07-07)
+## Estado actual (2026-07-08)
 
 - **F13 — Pizarra de jugadas (13.1–13.7)** — **cerrada** (2026-06-27). El contrato/editor/animación/reproducción/fullscreen ya existían (build original de `plays`); la **serie JR** (ADR-0019, **#229–#232**) los reorganizó a **banco del club + ciclo de aprobación** (proponer/aprobar/rechazar), **playbook por equipo** y **compartir con la familia** (con índice del playbook del jugador). **13.8 (exportar vídeo/GIF) descartado y eliminado del roadmap.**
 - **F13.10** (Informes de desarrollo y campaña de evaluaciones) — **cerrada** (#200–#221). Ver [fase-13.10-summary.md](fase-13.10-summary.md) y [spec 13.10](../specs/13.10-informes-desarrollo.md).
@@ -37,6 +37,7 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Auditoría de permisos** — **cerrada** (2026-06-26). Barrido acciones×roles del patrón rol-de-club vs rol-de-equipo + sobre/sub-exposición. 4 hallazgos arreglados (PRs #223 asistencia, #224 eventos, #225 F14.9 capabilities cross-team, #226 F14.10 events SELECT). **F14.9 y F14.10 dejan de ser deuda de F14.** 2 decisiones de negocio cerradas (plantilla = club; informes = cualquier staff del equipo). Detalle en [known-issues.md → Auditoría de permisos](known-issues.md).
 - **F1B — Rol director + owner de club** — **cerrada** (2026-07-06). Rol `director` con paridad total de datos con `admin_club` salvo gestionar directores/admins; `admin_club` = **owner único** por club (`clubs.owner_profile_id`, inmutable); roles altos **solo por invitación** (nunca por cambio de rol, ni el owner). Serie F1B-0…F1B-3d + fix: **#274/#275/#276/#277/#278/#279/#280**. **Sin migración de datos** (DDL de policies + columna + helpers). Suite pgTAP consolidada `rls_f1b_director_role.sql` (F1B-4). Ver §"F1B — Rol director + owner de club" abajo. Extensión de F1 (no la reabre); cierra el backlog "Owner de club".
 - **F5B — Comunicación del club (chat de equipo)** — **cerrada** (2026-07-06/07). **Chat de equipo grupal** (F5 era 1:1 + anuncios + push): `team_conversations` + `team_messages` con **miembros derivados** en la RLS (staff ∪ jugador/familia vigentes ∪ admin/director), aislamiento por equipo/club. **Supervisión de dirección** en modo **observer** (`team_chat_participation`; ve todo pero no escribe ni recibe salvo que active el chat), **no-leídos por grupo** (`team_conversation_reads`) y **auto-refresco por polling ~5s** sin realtime. Serie F5B-0…F5B-5 + fix selector: **#282/#283/#284/#285/#287/#286/#288/#289**. **3 migraciones aditivas** (F5B-2/4/5; sin migración de datos). pgTAP dry-run `rls_team_chat_observer.sql` + `rls_team_chat_reads.sql`. Ver §"F5B — Comunicación del club (chat de equipo)" abajo. Extensión de F5 (no la reabre).
+- **F7B — Pantalla "Directos" + alertas de goles** — **cerrada** (2026-07-07/08). **Sección nueva e independiente** (`/directos`, menú para todos los roles, **solo lectura** — no toca "Gestión de partidos" ni el directo del staff): lista de partidos de la **semana natural** en **orden cronológico** (equipo·categoría·marcador·estado + fecha/hora) y detalle (campo con jugadores + stats + eventos + **minuto en vivo**), refresco por **polling ~5s**. **Todos ven todos los partidos de su club** (aislamiento solo entre clubs); **fase+minuto** derivados de la BD con helper puro **`matchPhase`**. **Seguir equipos** (`team_follows`) → **push de CUALQUIER gol** (nuestro o rival) a los seguidores, mensaje "Gol · {marcador}", nuevo `notification_type 'goal'`. Serie F7B-0…F7B-P1: **#291/#292/#293/#294/#295**. **2 migraciones aditivas** (RLS de lectura F7B-2; `team_follows`+enum `goal` F7B-P1; sin migración de datos). Unit de core + pgTAP dry-run `rls_team_follows.sql`. Ver §"F7B — Pantalla Directos + alertas de goles" abajo. Extensión de F7/F13B (no las reabre).
 
 **Pendiente (backlog, sin programar salvo F14):**
 - **Reutilizar jugadores** entre equipos (nuevo). En backlog.
@@ -570,6 +571,30 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 - **Sin realtime**: la frescura es por **polling ~5s**; una futura mejora de tiempo real sustituye el hook, no el modelo.
 
 - **Red de pruebas**: pgTAP de dry-run `begin/rollback` contra el remoto — `rls_team_chat_observer.sql` (F5B-4: observer ve pero no escribe, active escribe, staff/jugadores no afectados, fan-out excluye observers, aislamiento entre clubs) y `rls_team_chat_reads.sql` (F5B-5: lecturas propias, contador respeta pertenencia, observer no acumula). 0 fails (pgTAP no corre en CI; ver Notas).
+- **CI**: cada PR con `typecheck · lint · test · build` en verde + preview de Vercel. **Sin merge por Claude** (los mergea el operador).
+
+## F7B — Pantalla Directos + alertas de goles ☑ (2026-07-07/08)
+
+> **Extensión de F7** (Toma de datos en directo) **/ F13B** (Gestión de partidos); etiqueta de letra, no renumera F14–F16. Es la **cara de consulta** del directo para **todo el club** (F7 solo lo ve el staff que graba) + **alertas push de goles** a quien sigue un equipo. **Sección nueva e independiente** (`/directos`), **solo lectura**: **no toca** "Gestión de partidos" ni el directo del staff. **2 migraciones aditivas** (RLS de lectura F7B-2; `team_follows` + enum `goal` F7B-P1; sin migración de datos).
+
+| Subfase | Cierre | PR | Resumen |
+|---|---|---|---|
+| F7B-0 | ☑ 2026-07-07 | #291 | **Helper puro `matchPhase`** en core: deriva **fase + minuto de fútbol** desde el **reloj de servidor ya persistido en F7.1** (`match_state.status` + `match_periods`). Sin BD nueva; congela en descanso/fin. |
+| F7B-2 | ☑ 2026-07-07 | #292 | **Abrir la RLS de LECTURA del directo a TODO el club**: `match_state` · `match_events` · `match_periods` · `match_starters` · `lineups` · `lineup_positions` (helper `user_belongs_to_event_club`). **La escritura NO se toca** (sigue exclusiva del staff que graba). Aislamiento estricto entre clubs. |
+| F7B-3 | ☑ 2026-07-07 | #293 | **Pantalla "Directos"** (`/directos`, entrada de menú para **todos los roles**, solo lectura): **lista** de partidos de la **semana natural** (equipo·categoría·marcador·estado vía `matchPhase`) + **detalle** (campo con jugadores reusando `MatchFieldEditor` readonly + stats con `computeScore`/`aggregateMatchTeamStats` + eventos + **minuto en vivo**). Refresco por **polling ~5s** de los vivos. |
+| mejoras lista | ☑ 2026-07-08 | #294 | **Fecha/hora por partido** (Europe/Madrid, "Sáb 12 · 10:30") + **orden cronológico** por hora de inicio (reemplaza "en directo primero"; el estado se ve por el badge). |
+| F7B-P1 | ☑ 2026-07-08 | #295 | **Seguir equipos** (`team_follows`, PK `profile_id`+`team_id`, RLS: filas propias + solo equipos del propio club) con pantalla `/directos/seguir` (todos los equipos del club, toggle Seguir/Siguiendo) + **push de gol** a los seguidores. Nuevo `notification_type 'goal'`. |
+
+**Invariantes / decisiones fijadas** (para features futuras que toquen Directos o el push de gol):
+
+- **"Directos" es sección NUEVA E INDEPENDIENTE**: no modifica "Gestión de partidos" (F13B) ni el **directo del staff** (F7); solo **lectura** sobre lo que F7 ya persiste. El **minuto** lo deriva `matchPhase`, no un realtime.
+- **Visibilidad club-wide con aislamiento entre clubs**: cualquier miembro ve **todos** los partidos de **su** club (marcador, fase/reloj, eventos y **alineación**), sin filtrar por el equipo del hijo; un miembro de otro club no ve nada. La **escritura** del directo sigue intacta (solo staff que graba).
+- **Semana natural lun–dom en orden cronológico**: la lista es puramente por hora de inicio; el estado se comunica por el badge.
+- **Push de gol = CUALQUIER gol del partido** (nuestro **o** rival). El mensaje refleja el **marcador actualizado** (`computeScore` sobre todos los `match_events`): title **"Gol"** + body **"{Local N − M Visitante}"**; deep link `/directos/{eventId}`. Se engancha en los **cuatro** puntos de registro **en vivo** (`registerPlayerEvent` gol · `registerPenalty` marcado · `registerRivalEvent` gol · `registerRivalPenalty` marcado). Excluye al que registra el gol; **dedupe idempotente por fila de gol**; respeta `notification_preferences`/`push_subscriptions` (fan-out `emitNotificationFanOut`, seguidores leídos con service_role).
+- **Seguir / dejar de seguir es el interruptor** del aviso. **No** hay toggle `'goal'` en la matriz de `notification_preferences` (posible mejora, ver [known-issues.md](known-issues.md)).
+- **Solo goles EN VIVO**: la **edición retroactiva** de la línea de tiempo (`addMatchEvent`) **no** emite push (posible mejora, ver [known-issues.md](known-issues.md)).
+
+- **Red de pruebas**: unit de core `formatGoalPush` (mensaje, gol rival, sin rival nombrado) + `resolveGoalRecipients` (excluye al que graba, dedup) + pgTAP de dry-run `rls_team_follows.sql` (seguir equipo propio OK y visible; no escribir fila ajena; no seguir equipo de otro club; solo ver lo propio; el fan-out resuelve los seguidores correctos). 0 fails (pgTAP no corre en CI; ver Notas).
 - **CI**: cada PR con `typecheck · lint · test · build` en verde + preview de Vercel. **Sin merge por Claude** (los mergea el operador).
 
 ## Fase 14 — Subfases pendientes
