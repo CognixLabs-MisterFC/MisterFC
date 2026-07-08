@@ -713,7 +713,14 @@
     "error_membership_failed": "No hemos podido vincularte al club. Avisa al admin del club.",
     "error_player_link_failed": "No hemos podido vincularte al jugador. Avisa al admin del club.",
     "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club.",
-    "error_wrong_credentials": "Correo o contraseña incorrectos."
+    "error_wrong_credentials": "Correo o contraseña incorrectos.",
+    "consent_intro": "Para completar el alta, acepta:",
+    "consent_accept_terms": "Acepto los Términos y Condiciones",
+    "consent_accept_privacy": "Acepto la Política de Privacidad",
+    "consent_view": "ver",
+    "consent_already": "Ya aceptado: {doc}",
+    "consent_close": "Cerrar",
+    "error_consent_required": "Debes aceptar los Términos y la Política de Privacidad para completar el alta."
   },
   "informes": {
     "title": "Informes de desarrollo",

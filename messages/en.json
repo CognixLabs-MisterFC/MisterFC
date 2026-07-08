@@ -348,7 +348,14 @@
     "error_membership_failed": "No hemos podido vincularte al club. Avisa al admin del club.",
     "error_player_link_failed": "No hemos podido vincularte al jugador. Avisa al admin del club.",
     "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club.",
-    "error_wrong_credentials": "Incorrect email or password."
+    "error_wrong_credentials": "Incorrect email or password.",
+    "consent_intro": "To finish signing up, accept:",
+    "consent_accept_terms": "I accept the Terms and Conditions",
+    "consent_accept_privacy": "I accept the Privacy Policy",
+    "consent_view": "view",
+    "consent_already": "Already accepted: {doc}",
+    "consent_close": "Close",
+    "error_consent_required": "You must accept the Terms and the Privacy Policy to finish signing up."
   },
   "directos": {
     "title": "Live",

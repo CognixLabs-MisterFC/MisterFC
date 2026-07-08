@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect, unstable_rethrow } from 'next/navigation';
+import { headers } from 'next/headers';
 import * as Sentry from '@sentry/nextjs';
 import {
   acceptInvitationWithProfileSchema,
@@ -11,6 +12,17 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadInvitationByToken, type LoadedInvitation } from './invite-data';
+import { loadCurrentLegalDocs, loadAccountConsentStatus } from './consent-data';
+
+/** Flags de aceptación (T&C + Privacidad) enviados por el form del alta (F14-2). */
+type ConsentAccepts = { terms: boolean; privacy: boolean };
+
+function consentAcceptsFromForm(formData: FormData): ConsentAccepts {
+  return {
+    terms: formData.get('accept_terms') === 'true',
+    privacy: formData.get('accept_privacy') === 'true',
+  };
+}
 
 export type AcceptInvitationState = {
   error?:
@@ -33,6 +45,8 @@ export type AcceptInvitationState = {
     | 'membership_failed'
     | 'player_link_failed'
     | 'team_staff_failed'
+    // F14-2 — faltan consentimientos obligatorios de cuenta (T&C / privacidad).
+    | 'consent_required'
     | 'generic';
 };
 
@@ -124,6 +138,83 @@ async function gateByToken(
 }
 
 /**
+ * F14-2 — Registra en el ledger `consents` los consentimientos OBLIGATORIOS de
+ * cuenta (T&C + Privacidad) que aún NO estén aceptados en su versión vigente, a
+ * nivel de cuenta (player_id NULL). Corre bajo la sesión del invitee (RLS: el
+ * tutor inserta solo sus filas). ip/user_agent se capturan SIEMPRE en el
+ * servidor (no se confía en el cliente). Idempotente: si ya estaba aceptada la
+ * versión vigente NO reinserta. Si un obligatorio no aceptado llega sin flag →
+ * 'consent_required' (defensivo; el botón del form ya gatea).
+ */
+async function recordAccountConsents(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  profileId: string,
+  accepts: ConsentAccepts
+): Promise<AcceptInvitationState> {
+  const legal = await loadCurrentLegalDocs();
+  const status = await loadAccountConsentStatus(
+    profileId,
+    legal.terms?.version ?? null,
+    legal.privacy?.version ?? null
+  );
+
+  const h = await headers();
+  const fwd = h.get('x-forwarded-for');
+  const ip = fwd ? (fwd.split(',')[0]?.trim() ?? null) : null;
+  const userAgent = h.get('user-agent');
+
+  const rows: {
+    tutor_profile_id: string;
+    player_id: null;
+    consent_type: 'terms_conditions' | 'privacy_policy';
+    granted: true;
+    legal_document_version: number;
+    ip: string | null;
+    user_agent: string | null;
+  }[] = [];
+
+  if (legal.terms && !status.termsAccepted) {
+    if (!accepts.terms) return { error: 'consent_required' };
+    rows.push({
+      tutor_profile_id: profileId,
+      player_id: null,
+      consent_type: 'terms_conditions',
+      granted: true,
+      legal_document_version: legal.terms.version,
+      ip,
+      user_agent: userAgent,
+    });
+  }
+  if (legal.privacy && !status.privacyAccepted) {
+    if (!accepts.privacy) return { error: 'consent_required' };
+    rows.push({
+      tutor_profile_id: profileId,
+      player_id: null,
+      consent_type: 'privacy_policy',
+      granted: true,
+      legal_document_version: legal.privacy.version,
+      ip,
+      user_agent: userAgent,
+    });
+  }
+
+  if (rows.length > 0) {
+    logStep('consent-insert start', { profile_id: profileId, count: rows.length });
+    const { error } = await supabase.from('consents').insert(rows);
+    if (error) {
+      logError('consent-insert', error, {
+        profile_id: profileId,
+        pg_code: error.code,
+        is_rls: error.code === '42501',
+      });
+      return { error: 'generic' };
+    }
+    logStep('consent-insert ok', { profile_id: profileId, count: rows.length });
+  }
+  return {};
+}
+
+/**
  * Inserta membership + (si aplica) vínculo player_accounts + team_staff y marca
  * la invitación como aceptada. Corre bajo la sesión del invitee (RLS aplica):
  * las policies `*_insert_invitee` están diseñadas para que el propio invitee se
@@ -131,6 +222,9 @@ async function gateByToken(
  *
  * `mark-accepted` es condicional (`accepted_at IS NULL`) para hacer el token
  * single-use de forma robusta ante doble submit / carreras.
+ *
+ * F14-2 — ANTES de crear nada, registra los consentimientos obligatorios de
+ * cuenta; si faltan, aborta sin escribir membership.
  */
 async function attachToClub(
   invitation: {
@@ -142,11 +236,16 @@ async function attachToClub(
     team_id: string | null;
     team_staff_role: string | null;
   },
-  profileId: string
+  profileId: string,
+  accepts: ConsentAccepts
 ): Promise<AcceptInvitationState> {
   logStep('attach-to-club entered', { invitation_id: invitation.id });
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
+
+  // F14-2 — consentimientos obligatorios de cuenta (T&C + Privacidad) primero.
+  const consentResult = await recordAccountConsents(supabase, profileId, accepts);
+  if (consentResult.error) return consentResult;
 
   logStep('membership-insert start', {
     invitation_id: invitation.id,
@@ -302,7 +401,9 @@ async function attachToClub(
  */
 export async function acceptInvitation(
   locale: string,
-  token: string
+  token: string,
+  _prev: AcceptInvitationState,
+  formData: FormData
 ): Promise<AcceptInvitationState> {
   logStep('flow=quick entered', { token_prefix: token.slice(0, 8), locale });
   try {
@@ -319,7 +420,11 @@ export async function acceptInvitation(
     const gate = await gateByToken(token, user.email);
     if (!gate.ok) return { error: gate.error };
 
-    const result = await attachToClub(gate.invitation, user.id);
+    const result = await attachToClub(
+      gate.invitation,
+      user.id,
+      consentAcceptsFromForm(formData)
+    );
     if (result.error) return result;
 
     logStep('flow=quick success', {
@@ -475,8 +580,12 @@ export async function acceptNewInvitee(
     }
     logStep('flow=new profile-update ok', { invitation_id: invitation.id });
 
-    // Paso 5: attach.
-    const result = await attachToClub(invitation, user.id);
+    // Paso 5: attach (+ consentimientos de cuenta).
+    const result = await attachToClub(
+      invitation,
+      user.id,
+      consentAcceptsFromForm(formData)
+    );
     if (result.error) return result;
 
     logStep('flow=new success', {
@@ -548,7 +657,11 @@ export async function acceptExistingUser(
     }
     logStep('flow=existing sign-in ok', { invitation_id: invitation.id });
 
-    const result = await attachToClub(invitation, user.id);
+    const result = await attachToClub(
+      invitation,
+      user.id,
+      consentAcceptsFromForm(formData)
+    );
     if (result.error) return result;
 
     logStep('flow=existing success', {

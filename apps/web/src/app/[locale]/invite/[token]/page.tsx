@@ -2,6 +2,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { getCurrentUser, chooseInviteForm } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadInvitationForPage } from './invite-data';
+import { loadCurrentLegalDocs, loadAccountConsentStatus } from './consent-data';
 import { AcceptForm, AcceptWithProfileForm, SignInToAcceptForm } from './accept-form';
 
 type Props = {
@@ -73,6 +74,26 @@ export default async function InvitePage({ params }: Props) {
     invitePending,
   });
 
+  // F14-2 — T&C + Privacidad obligatorios en el paso final del alta. Se lee el
+  // texto vigente (max version) y, si ya hay sesión que coincide, si el tutor ya
+  // los aceptó en esa versión (para no volver a pedirlos ni duplicar filas).
+  const legal = await loadCurrentLegalDocs();
+  const preAccepted =
+    user && sessionEmailMatches
+      ? await loadAccountConsentStatus(
+          user.id,
+          legal.terms?.version ?? null,
+          legal.privacy?.version ?? null,
+        )
+      : { termsAccepted: false, privacyAccepted: false };
+
+  const consentProps = {
+    legalTerms: legal.terms,
+    legalPrivacy: legal.privacy,
+    preAcceptedTerms: preAccepted.termsAccepted,
+    preAcceptedPrivacy: preAccepted.privacyAccepted,
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#0F1B2E] px-6 text-center text-white">
       <div className="flex w-full max-w-md flex-col items-center gap-6">
@@ -84,6 +105,7 @@ export default async function InvitePage({ params }: Props) {
             clubName={inv.club_name}
             role={inv.role}
             invitedEmail={inv.email}
+            {...consentProps}
           />
         ) : choice === 'set_password' ? (
           <AcceptWithProfileForm
@@ -92,6 +114,7 @@ export default async function InvitePage({ params }: Props) {
             clubName={inv.club_name}
             role={inv.role}
             invitedEmail={inv.email}
+            {...consentProps}
           />
         ) : (
           <SignInToAcceptForm
@@ -100,6 +123,7 @@ export default async function InvitePage({ params }: Props) {
             clubName={inv.club_name}
             role={inv.role}
             invitedEmail={inv.email}
+            {...consentProps}
           />
         )}
       </div>

@@ -8,6 +8,8 @@ import {
   acceptExistingUser,
   type AcceptInvitationState,
 } from './actions';
+import { ConsentGate } from './consent-gate';
+import type { AccountConsentDoc } from './consent-data';
 
 type CommonProps = {
   locale: string;
@@ -15,31 +17,56 @@ type CommonProps = {
   clubName: string;
   role: string;
   invitedEmail: string;
+  // F14-2 — consentimientos obligatorios de cuenta (T&C + Privacidad).
+  legalTerms: AccountConsentDoc | null;
+  legalPrivacy: AccountConsentDoc | null;
+  preAcceptedTerms: boolean;
+  preAcceptedPrivacy: boolean;
 };
 
 /**
  * Form para invitee que YA tiene password (porque pertenece a otro club o se
- * registró con anterioridad). No le pedimos nada: solo confirmar.
+ * registró con anterioridad). No le pedimos nada salvo confirmar y, si aún no
+ * los aceptó en versión vigente, los consentimientos de cuenta (F14-2).
  */
-export function AcceptForm({ locale, token, clubName, role, invitedEmail }: CommonProps) {
+export function AcceptForm({
+  locale,
+  token,
+  clubName,
+  role,
+  invitedEmail,
+  legalTerms,
+  legalPrivacy,
+  preAcceptedTerms,
+  preAcceptedPrivacy,
+}: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
-    async () => acceptInvitation(locale, token),
+    async (prev, formData) => acceptInvitation(locale, token, prev, formData),
     {}
   );
+  const [consentOk, setConsentOk] = useState(false);
 
   return (
-    <form action={formAction} className="flex flex-col items-center gap-4">
+    <form action={formAction} className="flex w-full max-w-sm flex-col items-center gap-4">
       <p className="text-sm text-zinc-300">
         {t('summary', { club: clubName, role })}
       </p>
       <p className="text-xs text-zinc-500">{t('invited_email_hint', { email: invitedEmail })}</p>
 
+      <ConsentGate
+        terms={legalTerms}
+        privacy={legalPrivacy}
+        preAcceptedTerms={preAcceptedTerms}
+        preAcceptedPrivacy={preAcceptedPrivacy}
+        onSatisfiedChange={setConsentOk}
+      />
+
       {state.error && <ErrorMessage error={state.error} />}
 
       <button
         type="submit"
-        disabled={isPending}
+        disabled={isPending || !consentOk}
         className="rounded-md bg-[#10B981] px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-[#0EA371] disabled:opacity-60"
       >
         {isPending ? t('submitting') : t('submit')}
@@ -55,6 +82,7 @@ export function AcceptForm({ locale, token, clubName, role, invitedEmail }: Comm
  *   - full_name (obligatorio, >= 2 chars)
  *   - date_of_birth (opcional)
  *   - password (>=8 chars) + confirm
+ *   - consentimientos de cuenta obligatorios (F14-2)
  *
  * Al submit: updateUser + UPDATE profiles + insert membership + accept invitation.
  */
@@ -64,6 +92,10 @@ export function AcceptWithProfileForm({
   clubName,
   role,
   invitedEmail,
+  legalTerms,
+  legalPrivacy,
+  preAcceptedTerms,
+  preAcceptedPrivacy,
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
@@ -73,6 +105,7 @@ export function AcceptWithProfileForm({
 
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [consentOk, setConsentOk] = useState(false);
   const clientMismatch =
     password.length > 0 && confirm.length > 0 && password !== confirm;
 
@@ -149,6 +182,14 @@ export function AcceptWithProfileForm({
         />
       </label>
 
+      <ConsentGate
+        terms={legalTerms}
+        privacy={legalPrivacy}
+        preAcceptedTerms={preAcceptedTerms}
+        preAcceptedPrivacy={preAcceptedPrivacy}
+        onSatisfiedChange={setConsentOk}
+      />
+
       {clientMismatch && (
         <p role="alert" className="text-sm text-amber-400">
           {t('error_password_mismatch')}
@@ -158,7 +199,7 @@ export function AcceptWithProfileForm({
 
       <button
         type="submit"
-        disabled={isPending || clientMismatch}
+        disabled={isPending || clientMismatch || !consentOk}
         className="rounded-md bg-[#10B981] px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-[#0EA371] disabled:opacity-60"
       >
         {isPending ? t('set_password_submitting') : t('set_password_submit')}
@@ -170,7 +211,7 @@ export function AcceptWithProfileForm({
 /**
  * Form para invitee cuyo email YA tenía cuenta (`invited_user_id` NULL). No le
  * fijamos contraseña por token: inicia sesión con la suya y el token le adjunta
- * al club. Pide email (readonly) + contraseña.
+ * al club. Pide email (readonly) + contraseña + consentimientos de cuenta (F14-2).
  */
 export function SignInToAcceptForm({
   locale,
@@ -178,12 +219,17 @@ export function SignInToAcceptForm({
   clubName,
   role,
   invitedEmail,
+  legalTerms,
+  legalPrivacy,
+  preAcceptedTerms,
+  preAcceptedPrivacy,
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
     async (prev, formData) => acceptExistingUser(locale, token, prev, formData),
     {}
   );
+  const [consentOk, setConsentOk] = useState(false);
 
   return (
     <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
@@ -213,11 +259,19 @@ export function SignInToAcceptForm({
         />
       </label>
 
+      <ConsentGate
+        terms={legalTerms}
+        privacy={legalPrivacy}
+        preAcceptedTerms={preAcceptedTerms}
+        preAcceptedPrivacy={preAcceptedPrivacy}
+        onSatisfiedChange={setConsentOk}
+      />
+
       {state.error && <ErrorMessage error={state.error} />}
 
       <button
         type="submit"
-        disabled={isPending}
+        disabled={isPending || !consentOk}
         className="rounded-md bg-[#10B981] px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-[#0EA371] disabled:opacity-60"
       >
         {isPending ? t('signin_submitting') : t('signin_submit')}
@@ -247,6 +301,7 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       membership_failed: 'error_membership_failed',
       player_link_failed: 'error_player_link_failed',
       team_staff_failed: 'error_team_staff_failed',
+      consent_required: 'error_consent_required',
       generic: 'error_generic',
     }[error] ?? 'error_generic';
 
