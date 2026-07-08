@@ -142,6 +142,12 @@ Barrido sistemático de **todas las acciones × roles** (asistencia, convocatori
 - **pgTAP fuera de CI (F15.8, ya logueado)**: la RLS de `sessions` (12.1) se verificó con pgTAP **contra el remoto**, no en CI — ver la entrada F15.8 más abajo.
 - **Referencia**: `docs/specs/12.0-planificador-sesiones.md`, `packages/core/src/sessions/`, `apps/web/src/app/[locale]/(authenticated)/sesiones/` + `calendario/_components/plan-session-dialog.tsx`.
 
+### F7B — mejoras opcionales del push de gol (no pendientes de F7B, no bloquean)
+- **Detectado en**: 2026-07-08, cierre de F7B. Decisiones de alcance tomadas durante el build; F7B se cierra completa, esto queda como backlog (no bloquea).
+- **`'goal'` no está en la matriz de `notification_preferences`**: el interruptor del aviso de gol es **seguir / dejar de seguir** el equipo (`team_follows`), no un toggle por canal en `/perfil/notificaciones`. El tipo respeta el opt-in por defecto (`user_wants_notification` → true si no hay fila), pero no hay fila que el usuario pueda desactivar por canal. **Vía futura**: añadir `'goal'` a `NOTIFICATION_TYPES_LIST` (+ label i18n) si se quiere el control por canal además del seguir/no-seguir.
+- **La edición retroactiva de eventos (`addMatchEvent`) NO emite push**: el aviso solo se dispara en los **cuatro** puntos de registro **en vivo** (`registerPlayerEvent` gol · `registerPenalty` marcado · `registerRivalEvent` gol · `registerRivalPenalty` marcado). Añadir un gol "en diferido" desde la línea de tiempo **no** notifica (decisión: evitar avisos de goles retroactivos). **Vía futura**: enganchar `addMatchEvent` cuando el tipo sea gol si se quisiera notificar también las correcciones.
+- **Referencia**: `apps/web/src/lib/goal-notify.ts`, `packages/core/src/notifications/goal-push.ts`, `apps/web/src/app/[locale]/(authenticated)/convocatorias/[eventId]/directo/actions.ts`, `apps/web/src/app/[locale]/(authenticated)/directos/`.
+
 ## Planificadas en plan-maestro
 
 > Entradas que dejan de ser "deuda activa" porque han pasado a subfase concreta del plan-maestro con horas presupuestadas. El detalle del plan vive en [plan-maestro.md](plan-maestro.md); aquí solo el cross-reference al issue original para no perder el rastro de por qué entró al plan.
