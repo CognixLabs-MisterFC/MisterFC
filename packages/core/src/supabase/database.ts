@@ -491,7 +491,7 @@ export type Database = {
           id: string
           ip: string | null
           legal_document_version: number
-          player_id: string
+          player_id: string | null
           tutor_profile_id: string
           user_agent: string | null
         }
@@ -503,7 +503,7 @@ export type Database = {
           id?: string
           ip?: string | null
           legal_document_version: number
-          player_id: string
+          player_id?: string | null
           tutor_profile_id: string
           user_agent?: string | null
         }
@@ -515,7 +515,7 @@ export type Database = {
           id?: string
           ip?: string | null
           legal_document_version?: number
-          player_id?: string
+          player_id?: string | null
           tutor_profile_id?: string
           user_agent?: string | null
         }

@@ -348,7 +348,14 @@
     "error_membership_failed": "No hemos podido vincularte al club. Avisa al admin del club.",
     "error_player_link_failed": "No hemos podido vincularte al jugador. Avisa al admin del club.",
     "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club.",
-    "error_wrong_credentials": "Correu o contrasenya incorrectes."
+    "error_wrong_credentials": "Correu o contrasenya incorrectes.",
+    "consent_intro": "Per completar l'alta, accepta:",
+    "consent_accept_terms": "Accepte els Termes i Condicions",
+    "consent_accept_privacy": "Accepte la Política de Privacitat",
+    "consent_view": "veure",
+    "consent_already": "Ja acceptat: {doc}",
+    "consent_close": "Tancar",
+    "error_consent_required": "Has d'acceptar els Termes i la Política de Privacitat per completar l'alta."
   },
   "directos": {
     "title": "Directes",
