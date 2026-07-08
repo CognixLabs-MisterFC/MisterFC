@@ -1,0 +1,11 @@
+-- F7B-P1 — nuevo tipo de notificación para el push de GOL.
+--
+-- Se emite a los SEGUIDORES del equipo que marca (team_follows) cuando NUESTRO
+-- equipo (side='own') registra un gol en el directo del staff. Aviso propio
+-- (modelo B, como player_promoted): NO reutiliza la resolución de destinatarios
+-- de convocatorias; los destinatarios son los que siguen el equipo.
+--
+-- Va en su PROPIA migración (separada de team_follows) porque `alter type ... add
+-- value` no puede usarse en la misma transacción en que se añade; aquí solo se
+-- añade el valor y se consume en runtime desde TypeScript.
+alter type public.notification_type add value if not exists 'goal';

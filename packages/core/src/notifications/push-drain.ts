@@ -53,6 +53,8 @@ function defaultTitleForType(type: NotificationType): string {
       return 'Asistencia pendiente';
     case 'training_reminder':
       return 'Recordatorio de entrenamiento';
+    case 'goal':
+      return 'Gol';
     default:
       return 'MisterFC';
   }

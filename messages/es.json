@@ -173,6 +173,7 @@
       "training_reminder": "Recordatorio de entrenamiento",
       "event_updated": "Entrenamiento actualizado",
       "event_updated_named": "Entrenamiento actualizado: {title}",
+      "goal": "Gol en un partido que sigues",
       "generic": "Tienes una novedad",
       "development_report_published": "Se ha publicado un informe de desarrollo",
       "evaluation_campaign_launched": "Campaña de evaluación abierta",
@@ -270,6 +271,15 @@
     "title": "Directos",
     "subtitle": "Partidos de esta semana",
     "empty": "No hay partidos esta semana.",
+    "follow": {
+      "cta": "Seguir equipos",
+      "title": "Seguir equipos",
+      "subtitle": "Recibe un aviso cuando marque un equipo que sigues",
+      "back": "Volver a Directos",
+      "empty": "No hay equipos en tu club.",
+      "follow": "Seguir",
+      "following": "Siguiendo"
+    },
     "live": "En directo",
     "vs": "vs",
     "back": "Volver a Directos",

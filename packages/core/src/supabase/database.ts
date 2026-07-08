@@ -2947,6 +2947,39 @@ export type Database = {
           },
         ]
       }
+      team_follows: {
+        Row: {
+          created_at: string
+          profile_id: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          profile_id: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          profile_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_follows_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_follows_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_members: {
         Row: {
           created_at: string
@@ -3681,6 +3714,7 @@ export type Database = {
         | "play_rejected"
         | "play_updated"
         | "player_promoted"
+        | "goal"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -3842,6 +3876,7 @@ export const Constants = {
         "play_rejected",
         "play_updated",
         "player_promoted",
+        "goal",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },
