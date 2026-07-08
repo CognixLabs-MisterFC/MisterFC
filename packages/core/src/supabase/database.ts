@@ -482,6 +482,60 @@ export type Database = {
           },
         ]
       }
+      consents: {
+        Row: {
+          accepted_at: string
+          consent_type: Database["public"]["Enums"]["consent_type"]
+          created_at: string
+          granted: boolean
+          id: string
+          ip: string | null
+          legal_document_version: number
+          player_id: string
+          tutor_profile_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          accepted_at?: string
+          consent_type: Database["public"]["Enums"]["consent_type"]
+          created_at?: string
+          granted: boolean
+          id?: string
+          ip?: string | null
+          legal_document_version: number
+          player_id: string
+          tutor_profile_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          accepted_at?: string
+          consent_type?: Database["public"]["Enums"]["consent_type"]
+          created_at?: string
+          granted?: boolean
+          id?: string
+          ip?: string | null
+          legal_document_version?: number
+          player_id?: string
+          tutor_profile_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consents_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consents_tutor_profile_id_fkey"
+            columns: ["tutor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           club_id: string
@@ -1069,6 +1123,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      legal_documents: {
+        Row: {
+          body: string
+          created_at: string
+          doc_type: Database["public"]["Enums"]["legal_document_type"]
+          id: string
+          published_at: string
+          title: string
+          version: number
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          doc_type: Database["public"]["Enums"]["legal_document_type"]
+          id?: string
+          published_at?: string
+          title: string
+          version: number
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          doc_type?: Database["public"]["Enums"]["legal_document_type"]
+          id?: string
+          published_at?: string
+          title?: string
+          version?: number
+        }
+        Relationships: []
       }
       lineup_positions: {
         Row: {
@@ -3695,6 +3779,18 @@ export type Database = {
         | "descanso"
       callup_decision_kind: "called_up" | "discarded"
       callup_response_status: "yes" | "maybe" | "no"
+      consent_type:
+        | "privacy_policy"
+        | "terms_conditions"
+        | "image_internal"
+        | "image_social"
+        | "medical_data_processing"
+      legal_document_type:
+        | "privacy_policy"
+        | "terms_conditions"
+        | "image_internal"
+        | "image_social"
+        | "medical_informed_consent"
       notification_channel: "in_app" | "push" | "email"
       notification_status: "pending" | "sent" | "failed" | "skipped"
       notification_type:
@@ -3857,6 +3953,20 @@ export const Constants = {
       ],
       callup_decision_kind: ["called_up", "discarded"],
       callup_response_status: ["yes", "maybe", "no"],
+      consent_type: [
+        "privacy_policy",
+        "terms_conditions",
+        "image_internal",
+        "image_social",
+        "medical_data_processing",
+      ],
+      legal_document_type: [
+        "privacy_policy",
+        "terms_conditions",
+        "image_internal",
+        "image_social",
+        "medical_informed_consent",
+      ],
       notification_channel: ["in_app", "push", "email"],
       notification_status: ["pending", "sent", "failed", "skipped"],
       notification_type: [
