@@ -34,14 +34,14 @@ type CommonProps = {
  * informativo: una tarjeta por hijo con su nombre y (si lo tiene) su equipo. El
  * backbone procesa TODAS las pendientes del email en este club al aceptar.
  */
-function ChildrenSummary({ children }: { children: PendingChild[] }) {
+function ChildrenSummary({ items }: { items: PendingChild[] }) {
   const t = useTranslations('invite');
-  if (children.length === 0) return null;
+  if (items.length === 0) return null;
   return (
     <div className="flex w-full flex-col gap-2 rounded-md border border-zinc-800 bg-zinc-900/40 p-3 text-left">
       <p className="text-xs font-medium text-zinc-300">{t('children_heading')}</p>
       <ul className="flex flex-col gap-1">
-        {children.map((child, i) => (
+        {items.map((child, i) => (
           <li key={i} className="text-sm text-white">
             <span className="font-medium">{child.playerName ?? t('child_unnamed')}</span>
             <span className="text-zinc-500">
@@ -84,7 +84,7 @@ export function AcceptForm({
       <p className="text-sm text-zinc-300">{t('summary', { club: clubName, role })}</p>
       <p className="text-xs text-zinc-500">{t('invited_email_hint', { email: invitedEmail })}</p>
 
-      <ChildrenSummary children={pendingChildren} />
+      <ChildrenSummary items={pendingChildren} />
 
       <ConsentGate
         terms={legalTerms}
@@ -145,7 +145,7 @@ export function AcceptWithProfileForm({
     <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
       <p className="text-sm text-zinc-300">{t('set_password_summary', { club: clubName, role })}</p>
 
-      <ChildrenSummary children={pendingChildren} />
+      <ChildrenSummary items={pendingChildren} />
 
       <label className="flex flex-col gap-2 text-left">
         <span className="text-sm font-medium text-zinc-200">{t('email_label')}</span>
@@ -268,7 +268,7 @@ export function SignInToAcceptForm({
     <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
       <p className="text-sm text-zinc-300">{t('signin_summary', { club: clubName, role })}</p>
 
-      <ChildrenSummary children={pendingChildren} />
+      <ChildrenSummary items={pendingChildren} />
 
       <label className="flex flex-col gap-2 text-left">
         <span className="text-sm font-medium text-zinc-200">{t('email_label')}</span>
