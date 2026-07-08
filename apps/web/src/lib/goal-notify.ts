@@ -1,11 +1,12 @@
 /**
  * F7B-P1 — Push de GOL a los seguidores del equipo.
  *
- * Se llama desde el directo del staff justo tras confirmarse un gol de NUESTRO
- * equipo (side='own': gol de jugada o penalti marcado). Resuelve el marcador
- * actual (computeScore sobre match_events), el nombre del equipo/rival y los
- * seguidores (team_follows), y emite el fan-out. NUNCA lanza: un fallo de push
- * jamás debe tumbar el registro del gol.
+ * Se llama desde el directo del staff justo tras confirmarse CUALQUIER gol del
+ * partido (nuestro o del rival; gol de jugada o penalti marcado). El seguidor
+ * quiere enterarse de todos los goles. Resuelve el marcador actual (computeScore
+ * sobre match_events → refleja el gol recién registrado, marque quien marque),
+ * el nombre del equipo/rival y los seguidores (team_follows), y emite el fan-out.
+ * NUNCA lanza: un fallo de push jamás debe tumbar el registro del gol.
  *
  * Lee con service_role (createSupabaseAdminClient) porque los seguidores son de
  * OTROS usuarios (la RLS de team_follows solo deja ver las filas propias).

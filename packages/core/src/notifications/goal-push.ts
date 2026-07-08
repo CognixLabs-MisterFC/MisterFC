@@ -17,16 +17,17 @@ export type GoalPushInput = {
 export type GoalPushMessage = { title: string; body: string };
 
 /**
- * "Gol {Equipo}" + "{Equipo} N - M {Rival}".
- * Ej: title "Gol Fonteta", body "Fonteta 1 - 0 Valencia".
- * NUESTRO equipo es siempre el local (izquierda). Si no hay rival nombrado, se
- * omite sin dejar espacio colgando.
+ * "Gol" + "{Local N - M Visitante}", con el marcador YA actualizado tras el gol.
+ * Ej: title "Gol", body "Fonteta 1 - 0 Valencia" (marca nuestro equipo) o
+ * "Fonteta 1 - 1 Valencia" (marca el rival). NUESTRO equipo es siempre el local
+ * (izquierda); no se nombra quién marcó, basta el marcador nuevo. Si no hay rival
+ * nombrado, se omite sin dejar espacio colgando.
  */
 export function formatGoalPush(input: GoalPushInput): GoalPushMessage {
   const team = input.teamName.trim();
   const opp = (input.opponentName ?? '').trim();
   const scoreline = `${team} ${input.own} - ${input.rival}${opp ? ` ${opp}` : ''}`;
-  return { title: `Gol ${team}`, body: scoreline };
+  return { title: 'Gol', body: scoreline };
 }
 
 /**

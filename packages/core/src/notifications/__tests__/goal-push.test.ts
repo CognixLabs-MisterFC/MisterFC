@@ -2,21 +2,28 @@ import { describe, it, expect } from 'vitest';
 import { formatGoalPush, resolveGoalRecipients } from '../goal-push';
 
 describe('formatGoalPush', () => {
-  it('formats "Gol {Equipo}" + "{Equipo} N - M {Rival}"', () => {
+  it('formats "Gol" + "{Local N - M Visitante}" when OUR team scores', () => {
     expect(
       formatGoalPush({ teamName: 'Fonteta', opponentName: 'Valencia', own: 1, rival: 0 }),
-    ).toEqual({ title: 'Gol Fonteta', body: 'Fonteta 1 - 0 Valencia' });
+    ).toEqual({ title: 'Gol', body: 'Fonteta 1 - 0 Valencia' });
+  });
+
+  it('reflects a RIVAL goal in the updated scoreline (still emits "Gol")', () => {
+    // Marca el rival → el marcador nuevo es 1 - 1; el título no distingue bando.
+    expect(
+      formatGoalPush({ teamName: 'Fonteta', opponentName: 'Valencia', own: 1, rival: 1 }),
+    ).toEqual({ title: 'Gol', body: 'Fonteta 1 - 1 Valencia' });
   });
 
   it('omits the rival cleanly when there is no opponent name', () => {
     expect(
       formatGoalPush({ teamName: 'Fonteta', opponentName: null, own: 2, rival: 1 }),
-    ).toEqual({ title: 'Gol Fonteta', body: 'Fonteta 2 - 1' });
+    ).toEqual({ title: 'Gol', body: 'Fonteta 2 - 1' });
   });
 
   it('trims stray whitespace in names', () => {
     const m = formatGoalPush({ teamName: '  Fonteta ', opponentName: '  Levante  ', own: 3, rival: 2 });
-    expect(m.title).toBe('Gol Fonteta');
+    expect(m.title).toBe('Gol');
     expect(m.body).toBe('Fonteta 3 - 2 Levante');
   });
 });
