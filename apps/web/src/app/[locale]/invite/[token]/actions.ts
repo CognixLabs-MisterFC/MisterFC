@@ -11,13 +11,7 @@ import {
   isSamePasswordError,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-import {
-  loadInvitationByToken,
-  loadPendingInvitationsForEmail,
-  type LoadedInvitation,
-  type PendingInvitationForBatch,
-} from './invite-data';
-import { loadCurrentLegalDocs, loadAccountConsentStatus } from './consent-data';
+import { loadInvitationByToken, type LoadedInvitation } from './invite-data';
 
 /** Flags de aceptación (T&C + Privacidad) enviados por el form del alta (F14-2). */
 type ConsentAccepts = { terms: boolean; privacy: boolean };
@@ -142,272 +136,20 @@ async function gateByToken(
 }
 
 /**
- * F14-2 — Registra en el ledger `consents` los consentimientos OBLIGATORIOS de
- * cuenta (T&C + Privacidad) que aún NO estén aceptados en su versión vigente, a
- * nivel de cuenta (player_id NULL). Corre bajo la sesión del invitee (RLS: el
- * tutor inserta solo sus filas). ip/user_agent se capturan SIEMPRE en el
- * servidor (no se confía en el cliente). Idempotente: si ya estaba aceptada la
- * versión vigente NO reinserta. Si un obligatorio no aceptado llega sin flag →
- * 'consent_required' (defensivo; el botón del form ya gatea).
- */
-async function recordAccountConsents(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
-  profileId: string,
-  accepts: ConsentAccepts,
-): Promise<AcceptInvitationState> {
-  const legal = await loadCurrentLegalDocs();
-  const status = await loadAccountConsentStatus(
-    profileId,
-    legal.terms?.version ?? null,
-    legal.privacy?.version ?? null,
-  );
-
-  const h = await headers();
-  const fwd = h.get('x-forwarded-for');
-  const ip = fwd ? (fwd.split(',')[0]?.trim() ?? null) : null;
-  const userAgent = h.get('user-agent');
-
-  const rows: {
-    tutor_profile_id: string;
-    player_id: null;
-    consent_type: 'terms_conditions' | 'privacy_policy';
-    granted: true;
-    legal_document_version: number;
-    ip: string | null;
-    user_agent: string | null;
-  }[] = [];
-
-  if (legal.terms && !status.termsAccepted) {
-    if (!accepts.terms) return { error: 'consent_required' };
-    rows.push({
-      tutor_profile_id: profileId,
-      player_id: null,
-      consent_type: 'terms_conditions',
-      granted: true,
-      legal_document_version: legal.terms.version,
-      ip,
-      user_agent: userAgent,
-    });
-  }
-  if (legal.privacy && !status.privacyAccepted) {
-    if (!accepts.privacy) return { error: 'consent_required' };
-    rows.push({
-      tutor_profile_id: profileId,
-      player_id: null,
-      consent_type: 'privacy_policy',
-      granted: true,
-      legal_document_version: legal.privacy.version,
-      ip,
-      user_agent: userAgent,
-    });
-  }
-
-  if (rows.length > 0) {
-    logStep('consent-insert start', { profile_id: profileId, count: rows.length });
-    const { error } = await supabase.from('consents').insert(rows);
-    if (error) {
-      logError('consent-insert', error, {
-        profile_id: profileId,
-        pg_code: error.code,
-        is_rls: error.code === '42501',
-      });
-      return { error: 'generic' };
-    }
-    logStep('consent-insert ok', { profile_id: profileId, count: rows.length });
-  }
-  return {};
-}
-
-/**
- * Inserta membership + (si aplica) vínculo player_accounts + team_staff y marca
- * UNA invitación como aceptada. Corre bajo la sesión del invitee (RLS aplica):
- * las policies `*_insert_invitee` están diseñadas para que el propio invitee se
- * auto-inserte. El service_role NO se usa aquí.
+ * F14-3a — Alta MULTI-HIJO ATÓMICA. Una sola llamada a la RPC
+ * `accept_pending_invitations` = una transacción de Postgres: registra los
+ * consentimientos de cuenta (T&C + Privacidad) y procesa TODAS las invitaciones
+ * pendientes del email del padre en el club del token clicado (membership +
+ * player_accounts + team_staff + mark-accepted). TODO O NADA: un fallo real
+ * revierte el lote completo; la idempotencia por fila tolera el doble submit.
  *
- * `mark-accepted` es condicional (`accepted_at IS NULL`) para hacer el token
- * single-use de forma robusta ante doble submit / carreras.
- *
- * F14-3a — Los consentimientos de cuenta NO se registran aquí: se hacen UNA vez
- * por lote en `attachAllPending` (no por hijo). Cada paso es idempotente
- * (membership/player_accounts ignoran 23505; mark-accepted es single-use), así
- * que reprocesar el lote tras un fallo parcial es seguro.
- */
-async function attachSingleInvitation(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
-  invitation: {
-    id: string;
-    club_id: string;
-    role: string;
-    player_id: string | null;
-    player_relation: string | null;
-    team_id: string | null;
-    team_staff_role: string | null;
-  },
-  profileId: string,
-): Promise<AcceptInvitationState> {
-  logStep('attach-single entered', { invitation_id: invitation.id });
-
-  logStep('membership-insert start', {
-    invitation_id: invitation.id,
-    role: invitation.role,
-    club_id: invitation.club_id,
-  });
-
-  const { data: insertedMembership, error: mErr } = await supabase
-    .from('memberships')
-    .insert({
-      profile_id: profileId,
-      club_id: invitation.club_id,
-      role: invitation.role,
-    })
-    .select('id')
-    .single();
-
-  let membershipId: string | null = insertedMembership?.id ?? null;
-
-  if (mErr) {
-    // 23505 = unique violation: membership ya existía. No es un error fatal;
-    // seguimos para no dejar la invitación colgada en estado pendiente.
-    if (mErr.code !== '23505') {
-      logError('membership-insert', mErr, {
-        invitation_id: invitation.id,
-        pg_code: mErr.code,
-        is_rls: mErr.code === '42501',
-      });
-      return { error: 'membership_failed' };
-    }
-    logStep('membership-insert duplicate-recovered', {
-      invitation_id: invitation.id,
-    });
-    const { data: existing, error: fetchErr } = await supabase
-      .from('memberships')
-      .select('id')
-      .eq('profile_id', profileId)
-      .eq('club_id', invitation.club_id)
-      .maybeSingle();
-    if (fetchErr) {
-      logError('membership-refetch', fetchErr, { invitation_id: invitation.id });
-    }
-    membershipId = existing?.id ?? null;
-  } else {
-    logStep('membership-insert ok', {
-      invitation_id: invitation.id,
-      membership_id: membershipId,
-    });
-  }
-
-  // Vínculo tutor↔jugador (role=jugador + player_id).
-  if (invitation.role === 'jugador' && invitation.player_id && invitation.player_relation) {
-    logStep('player-account-insert start', {
-      invitation_id: invitation.id,
-      player_id: invitation.player_id,
-      relation: invitation.player_relation,
-    });
-    const { error: paErr } = await supabase.from('player_accounts').insert({
-      player_id: invitation.player_id,
-      profile_id: profileId,
-      relation: invitation.player_relation as 'parent' | 'guardian',
-    });
-    if (paErr) {
-      if (paErr.code !== '23505') {
-        logError('player-account-insert', paErr, {
-          invitation_id: invitation.id,
-          player_id: invitation.player_id,
-          pg_code: paErr.code,
-          is_rls: paErr.code === '42501',
-        });
-        return { error: 'player_link_failed' };
-      }
-      logStep('player-account-insert duplicate-ignored', {
-        invitation_id: invitation.id,
-      });
-    } else {
-      logStep('player-account-insert ok', { invitation_id: invitation.id });
-    }
-  }
-
-  // team_staff (team_id + team_staff_role).
-  if (invitation.team_id && invitation.team_staff_role && membershipId) {
-    logStep('team-staff-insert start', {
-      invitation_id: invitation.id,
-      team_id: invitation.team_id,
-      team_staff_role: invitation.team_staff_role,
-      membership_id: membershipId,
-    });
-    const { error: tsErr } = await supabase.from('team_staff').insert({
-      team_id: invitation.team_id,
-      membership_id: membershipId,
-      staff_role: invitation.team_staff_role as
-        | 'entrenador_principal'
-        | 'entrenador_ayudante'
-        | 'preparador_fisico'
-        | 'delegado',
-    });
-    if (tsErr) {
-      if (tsErr.code !== '23505') {
-        logError('team-staff-insert', tsErr, {
-          invitation_id: invitation.id,
-          team_id: invitation.team_id,
-          pg_code: tsErr.code,
-          is_rls: tsErr.code === '42501',
-        });
-        return { error: 'team_staff_failed' };
-      }
-      logStep('team-staff-insert duplicate-ignored', {
-        invitation_id: invitation.id,
-      });
-    } else {
-      logStep('team-staff-insert ok', { invitation_id: invitation.id });
-    }
-  } else if (invitation.team_id && invitation.team_staff_role && !membershipId) {
-    logStep('team-staff-insert skipped-no-membership', {
-      invitation_id: invitation.id,
-      team_id: invitation.team_id,
-    });
-    Sentry.captureMessage('[invite][accept] team-staff skipped: missing membership_id', {
-      level: 'warning',
-      tags: { feature: 'invitations', step: 'accept-team-staff-skipped' },
-      extra: { invitation_id: invitation.id, team_id: invitation.team_id },
-    });
-  }
-
-  // Single-use: marca accepted_at solo si seguía pendiente.
-  logStep('mark-accepted start', { invitation_id: invitation.id });
-  const { error: acceptErr, count } = await supabase
-    .from('invitations')
-    .update({ accepted_at: new Date().toISOString() }, { count: 'exact' })
-    .eq('id', invitation.id)
-    .is('accepted_at', null);
-  if (acceptErr) {
-    logError('mark-accepted', acceptErr, { invitation_id: invitation.id });
-  } else if ((count ?? 0) === 0) {
-    // Carrera: otra ejecución ya la marcó. La membership ya existe; no es fatal.
-    logStep('mark-accepted already-marked', { invitation_id: invitation.id });
-  } else {
-    logStep('mark-accepted ok', { invitation_id: invitation.id });
-  }
-
-  return {};
-}
-
-/**
- * F14-3a — Orquesta el alta MULTI-HIJO. Bajo la sesión del invitee ya autenticado:
- *
- *   1. Registra los consentimientos obligatorios de cuenta (T&C + Privacidad) UNA
- *      vez (no por hijo); si faltan, aborta sin escribir nada.
- *   2. Carga TODAS las invitaciones pendientes del email del padre EN EL MISMO
- *      CLUB del token clicado (incluye la propia clicada). El anclaje por
- *      (email + club_id) es el guard: nunca cruza clubs ni emails ajenos.
- *   3. Procesa cada una con `attachSingleInvitation`. Un fallo NO detiene el lote
- *      (idempotencia + single-use hacen seguro el reintento); si alguna falló, se
- *      devuelve su error para que el padre reintente (las ya hechas no-op).
- *
- * Si la carga del lote no devuelve nada (carrera), cae de vuelta a procesar solo
- * la invitación clicada — así el alta de un único hijo nunca se queda sin efecto.
+ * El GUARD (auth.uid() ↔ email de la invitación) vive DENTRO de la RPC
+ * (SECURITY DEFINER); NO se pasa el email por parámetro. ip/user_agent se
+ * capturan server-side como auditoría del consentimiento. La RPC lanza
+ * mensajes-código (RAISE) que aquí mapeamos a AcceptInvitationState.
  */
 async function attachAllPending(
   clicked: LoadedInvitation,
-  profileId: string,
   accepts: ConsentAccepts,
 ): Promise<AcceptInvitationState> {
   logStep('attach-all entered', {
@@ -417,62 +159,34 @@ async function attachAllPending(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // F14-2 — consentimientos obligatorios de cuenta, UNA vez por lote.
-  const consentResult = await recordAccountConsents(supabase, profileId, accepts);
-  if (consentResult.error) return consentResult;
+  // Metadatos de auditoría (no se confía en el cliente).
+  const h = await headers();
+  const fwd = h.get('x-forwarded-for');
+  const ip = fwd ? (fwd.split(',')[0]?.trim() ?? null) : null;
+  const userAgent = h.get('user-agent');
 
-  // Todas las pendientes del padre en ESTE club (incluye la clicada).
-  const pending = await loadPendingInvitationsForEmail(clicked.email, clicked.club_id);
-  const batch: PendingInvitationForBatch[] =
-    pending.length > 0
-      ? pending
-      : [
-          // Fallback defensivo: procesar al menos la clicada.
-          {
-            id: clicked.id,
-            club_id: clicked.club_id,
-            role: clicked.role,
-            player_id: clicked.player_id,
-            player_relation: clicked.player_relation,
-            team_id: clicked.team_id,
-            team_staff_role: clicked.team_staff_role,
-            player_first_name: null,
-            player_last_name: null,
-            team_name: null,
-          },
-        ];
-
-  logStep('attach-all batch', {
-    invitation_id: clicked.id,
-    club_id: clicked.club_id,
-    count: batch.length,
+  const { data, error } = await supabase.rpc('accept_pending_invitations', {
+    p_clicked_token: clicked.token,
+    p_accept_terms: accepts.terms,
+    p_accept_privacy: accepts.privacy,
+    p_ip: ip ?? undefined,
+    p_user_agent: userAgent ?? undefined,
   });
 
-  let firstError: AcceptInvitationState | null = null;
-  let processed = 0;
-  for (const inv of batch) {
-    const result = await attachSingleInvitation(supabase, inv, profileId);
-    if (result.error) {
-      if (!firstError) firstError = result;
-      logStep('attach-all item-failed', {
-        invitation_id: inv.id,
-        error: result.error,
-      });
-      // Seguimos con el resto del lote: reintentar es seguro (idempotente).
-    } else {
-      processed++;
-    }
+  if (error) {
+    const msg = error.message ?? '';
+    if (msg.includes('consent_required')) return { error: 'consent_required' };
+    if (msg.includes('wrong_email')) return { error: 'wrong_email' };
+    if (msg.includes('not_found')) return { error: 'not_found' };
+    if (msg.includes('no_session')) return { error: 'no_session' };
+    logError('rpc accept_pending', error, {
+      invitation_id: clicked.id,
+      pg_code: error.code,
+    });
+    return { error: 'generic' };
   }
 
-  logStep('attach-all done', {
-    invitation_id: clicked.id,
-    processed,
-    total: batch.length,
-  });
-
-  // Si alguna falló, devolvemos el error para que el padre reintente. Las que ya
-  // se procesaron no se duplican en el reintento (idempotencia + single-use).
-  if (firstError) return firstError;
+  logStep('attach-all done', { invitation_id: clicked.id, processed: data ?? 0 });
   return {};
 }
 
@@ -502,11 +216,7 @@ export async function acceptInvitation(
     const gate = await gateByToken(token, user.email);
     if (!gate.ok) return { error: gate.error };
 
-    const result = await attachAllPending(
-      gate.invitation,
-      user.id,
-      consentAcceptsFromForm(formData),
-    );
+    const result = await attachAllPending(gate.invitation, consentAcceptsFromForm(formData));
     if (result.error) return result;
 
     logStep('flow=quick success', {
@@ -659,7 +369,7 @@ export async function acceptNewInvitee(
     logStep('flow=new profile-update ok', { invitation_id: invitation.id });
 
     // Paso 5: attach de TODO el lote multi-hijo (+ consentimientos de cuenta).
-    const result = await attachAllPending(invitation, user.id, consentAcceptsFromForm(formData));
+    const result = await attachAllPending(invitation, consentAcceptsFromForm(formData));
     if (result.error) return result;
 
     logStep('flow=new success', {
@@ -727,7 +437,7 @@ export async function acceptExistingUser(
     }
     logStep('flow=existing sign-in ok', { invitation_id: invitation.id });
 
-    const result = await attachAllPending(invitation, user.id, consentAcceptsFromForm(formData));
+    const result = await attachAllPending(invitation, consentAcceptsFromForm(formData));
     if (result.error) return result;
 
     logStep('flow=existing success', {
