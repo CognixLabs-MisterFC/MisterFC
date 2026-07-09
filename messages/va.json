@@ -372,7 +372,13 @@
     "image_err_empty": "El fitxer està buit.",
     "image_err_generic": "No s'ha pogut processar la imatge.",
     "error_image_required": "Falta la imatge d'algun fill. Puja una foto o un avatar per a cadascun.",
-    "error_image_decision_required": "Respon Sí o No a les dues preguntes d'imatge de cada fill."
+    "error_image_decision_required": "Respon Sí o No a les dues preguntes d'imatge de cada fill.",
+    "medical_q": "Autoritzes registrar i tractar dades mèdiques del teu fill/a? (opcional)",
+    "medical_allergies": "Alèrgies",
+    "medical_medication": "Medicació",
+    "medical_conditions": "Condicions mèdiques",
+    "medical_emergency": "Contacte d’emergència",
+    "medical_optional_hint": "Tots els camps són opcionals. Podràs editar-los més avant."
   },
   "directos": {
     "title": "Directes",
@@ -1114,7 +1120,12 @@
         "medical_notes_too_long": "Las notas son demasiado largas (máx. 5000 caracteres).",
         "forbidden": "No tienes permiso para editar las notas médicas.",
         "generic": "No se pudo guardar."
-      }
+      },
+      "readonly_hint": "Només lectura. La família gestiona estes dades.",
+      "allergies": "Alèrgies",
+      "medication": "Medicació",
+      "conditions": "Condicions mèdiques",
+      "emergency": "Contacte d’emergència"
     },
     "errors": {
       "first_name_required": "Introduce el nombre.",
@@ -3155,7 +3166,21 @@
       "collective": "Equip"
     },
     "report_period_label": "Període",
-    "season_label": "Temporada"
+    "season_label": "Temporada",
+    "medical": {
+      "title": "Informació mèdica",
+      "tutor_hint": "Només tu (tutor) pots veure i editar estes dades del teu fill/a.",
+      "allergies": "Alèrgies",
+      "medication": "Medicació",
+      "conditions": "Condicions mèdiques",
+      "emergency": "Contacte d’emergència",
+      "save": "Guardar",
+      "saved": "Guardat",
+      "errors": {
+        "forbidden": "No tens permís (falta consentiment).",
+        "generic": "No s’ha pogut guardar."
+      }
+    }
   },
   "mi_informe": {
     "title": "Informe de desenvolupament",

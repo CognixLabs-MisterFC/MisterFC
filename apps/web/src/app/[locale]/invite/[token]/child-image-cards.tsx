@@ -7,7 +7,7 @@ import {
   PLAYER_PHOTO_MIME_TYPES,
   playerPhotoUploadSchema,
 } from '@misterfc/core';
-import type { ImageConsentDoc } from './consent-data';
+import type { ImageConsentDoc, MedicalConsentDoc } from './consent-data';
 
 /** F14-3c — un hijo pendiente con su player_id (para nombrar los campos del form). */
 export type PendingChild = {
@@ -23,16 +23,28 @@ type ChildState = {
   fileOk: boolean;
   preview: string | null;
   fileError: string | null;
+  // F14-4 — consentimiento médico (opcional, no gatea el alta).
+  medical: Decision;
 };
 
 function emptyState(): ChildState {
-  return { internal: null, social: null, fileOk: false, preview: null, fileError: null };
+  return {
+    internal: null,
+    social: null,
+    fileOk: false,
+    preview: null,
+    fileError: null,
+    medical: null,
+  };
 }
+
+type LegalText = { title: string; body: string };
 
 type Props = {
   items: PendingChild[];
   imageInternal: ImageConsentDoc | null;
   imageSocial: ImageConsentDoc | null;
+  medicalDoc: MedicalConsentDoc | null;
   /** Notifica si TODOS los hijos tienen las dos decisiones + una imagen válida. */
   onSatisfiedChange: (ok: boolean) => void;
 };
@@ -47,6 +59,7 @@ export function ChildrenImageSection({
   items,
   imageInternal,
   imageSocial,
+  medicalDoc,
   onSatisfiedChange,
 }: Props) {
   const t = useTranslations('invite');
@@ -56,7 +69,7 @@ export function ChildrenImageSection({
   const [states, setStates] = useState<Record<string, ChildState>>(() =>
     Object.fromEntries(kids.map((c) => [c.playerId, emptyState()]))
   );
-  const [viewer, setViewer] = useState<ImageConsentDoc | null>(null);
+  const [viewer, setViewer] = useState<LegalText | null>(null);
 
   function computeOk(next: Record<string, ChildState>): boolean {
     return (
@@ -158,6 +171,36 @@ export function ChildrenImageSection({
               )}
               {s.fileError && <span className="text-xs text-red-400">{s.fileError}</span>}
             </label>
+
+            {/* F14-4 — Consentimiento informado de datos médicos (OPCIONAL). */}
+            <div className="flex flex-col gap-2 border-t border-zinc-800 pt-3">
+              <ImageDecision
+                legendKey="medical_q"
+                name={`medical_consent_${c.playerId}`}
+                value={s.medical}
+                onChange={(d) => patch(c.playerId, { medical: d })}
+                onView={medicalDoc ? () => setViewer(medicalDoc) : null}
+                required={false}
+              />
+              {s.medical === 'yes' && (
+                <div className="flex flex-col gap-2">
+                  <MedicalField name={`med_allergies_${c.playerId}`} labelKey="medical_allergies" />
+                  <MedicalField
+                    name={`med_medication_${c.playerId}`}
+                    labelKey="medical_medication"
+                  />
+                  <MedicalField
+                    name={`med_conditions_${c.playerId}`}
+                    labelKey="medical_conditions"
+                  />
+                  <MedicalField
+                    name={`med_emergency_${c.playerId}`}
+                    labelKey="medical_emergency"
+                  />
+                  <span className="text-xs text-zinc-500">{t('medical_optional_hint')}</span>
+                </div>
+              )}
+            </div>
           </div>
         );
       })}
@@ -191,12 +234,14 @@ function ImageDecision({
   value,
   onChange,
   onView,
+  required = true,
 }: {
   legendKey: string;
   name: string;
   value: Decision;
   onChange: (d: Decision) => void;
   onView: (() => void) | null;
+  required?: boolean;
 }) {
   const t = useTranslations('invite');
   return (
@@ -219,7 +264,7 @@ function ImageDecision({
             type="radio"
             name={name}
             value="yes"
-            required
+            required={required}
             checked={value === 'yes'}
             onChange={() => onChange('yes')}
           />
@@ -237,5 +282,21 @@ function ImageDecision({
         </label>
       </div>
     </fieldset>
+  );
+}
+
+/** F14-4 — un campo médico estructurado (texto), opcional. */
+function MedicalField({ name, labelKey }: { name: string; labelKey: string }) {
+  const t = useTranslations('invite');
+  return (
+    <label className="flex flex-col gap-1 text-left">
+      <span className="text-xs font-medium text-zinc-300">{t(labelKey)}</span>
+      <textarea
+        name={name}
+        rows={2}
+        maxLength={2000}
+        className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-sm text-white outline-none transition focus:border-[#10B981]"
+      />
+    </label>
   );
 }

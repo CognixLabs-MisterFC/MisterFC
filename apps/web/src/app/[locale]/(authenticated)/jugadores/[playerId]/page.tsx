@@ -28,7 +28,6 @@ import { CancelInvitationButton } from '../../invitations/cancel-invitation-butt
 import { SendMessageButton } from './send-message-button';
 import { userCanMessageInClub } from '@/lib/messaging-permissions';
 import { PlayerForm } from './player-form';
-import { MedicalNotesForm } from './medical-notes-form';
 import { PlayerPhotoUploader } from './player-photo-uploader';
 import {
   PlayerNotesSection,
@@ -48,6 +47,16 @@ const PLAYER_TABS: ReadonlyArray<PlayerTabKey> = ['info', 'stats', 'history'];
 const ROLES_THAT_CAN_MANAGE = MANAGER_ROLES;
 
 const PLAYER_PHOTO_TTL_SECONDS = 600; // 10 min
+
+// F14-4 — fila de info médica en SOLO LECTURA (vista staff).
+function MedicalReadonlyRow({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="whitespace-pre-wrap text-foreground">{value?.trim() ? value : '—'}</span>
+    </div>
+  );
+}
 
 export default async function PlayerDetailPage({ params, searchParams }: Props) {
   const { locale, playerId } = await params;
@@ -83,12 +92,6 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
   // PR #24 (4f3bf39) para canManage de convocatorias.
   const canMessage = await userCanMessageInClub(supabase, ctx);
 
-  // Visibilidad de medical_notes: helper SQL es la autoridad
-  const { data: canSeeMedical } = await supabase.rpc(
-    'user_can_see_player_medical',
-    { p_player_id: player.id }
-  );
-
   // F14-3b — la FOTO solo la gestiona el tutor vinculado (parent/guardian). El
   // staff ve la foto pero no los controles. Casi siempre false en esta vista
   // (staff), true solo si además es tutor del jugador.
@@ -97,15 +100,15 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     { p_player_id: player.id }
   );
 
-  let medicalNotes: string | null = null;
-  if (canSeeMedical) {
-    const { data: row } = await supabase
-      .from('players')
-      .select('medical_notes')
-      .eq('id', player.id)
-      .maybeSingle();
-    medicalNotes = row?.medical_notes ?? null;
-  }
+  // F14-4 — Info médica: SOLO LECTURA para staff. La RLS de player_medical es la
+  // autoridad (staff del equipo del niño / equipo que lo promociona / dirección /
+  // tutor, y solo con consentimiento vigente). Si no hay acceso o consentimiento,
+  // la query no devuelve fila. El staff NO puede escribirla.
+  const { data: medical } = await supabase
+    .from('player_medical')
+    .select('allergies, medication, medical_conditions, emergency_contact')
+    .eq('player_id', player.id)
+    .maybeSingle();
 
   // F7 mejora — Notas por jugador (solo cuerpo técnico). El helper SQL es la
   // autoridad (cuerpo técnico del jugador + admin/coord; NO familia).
@@ -412,16 +415,22 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
               </CardContent>
             </Card>
 
-            {canSeeMedical && (
+            {medical && (
               <Card>
                 <CardHeader>
                   <CardTitle>{t('section.medical')}</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <MedicalNotesForm
-                    playerId={player.id}
-                    initial={medicalNotes}
-                    canEdit={canManage}
+                <CardContent className="flex flex-col gap-3 text-sm">
+                  <p className="text-xs text-muted-foreground">{t('medical.readonly_hint')}</p>
+                  <MedicalReadonlyRow label={t('medical.allergies')} value={medical.allergies} />
+                  <MedicalReadonlyRow label={t('medical.medication')} value={medical.medication} />
+                  <MedicalReadonlyRow
+                    label={t('medical.conditions')}
+                    value={medical.medical_conditions}
+                  />
+                  <MedicalReadonlyRow
+                    label={t('medical.emergency')}
+                    value={medical.emergency_contact}
                   />
                 </CardContent>
               </Card>

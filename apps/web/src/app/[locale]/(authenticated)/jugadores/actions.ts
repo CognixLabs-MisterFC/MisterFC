@@ -13,7 +13,6 @@ import {
   invitePlayerTutorSchema,
   resolveActiveClub,
   updatePlayerSchema,
-  updateMedicalNotesSchema,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -208,55 +207,8 @@ export async function updatePlayer(
   return { success: true, playerId };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// updateMedicalNotes (F2.2) — visibilidad: helper SQL la enforza vía RPC
-// ─────────────────────────────────────────────────────────────────────────────
-
-export type MedicalNotesState = {
-  error?:
-    | 'medical_notes_too_long'
-    | 'forbidden'
-    | 'generic';
-  success?: boolean;
-};
-
-export async function updateMedicalNotes(
-  playerId: string,
-  _prev: MedicalNotesState,
-  formData: FormData
-): Promise<MedicalNotesState> {
-  const parsed = updateMedicalNotesSchema.safeParse({
-    medical_notes: formData.get('medical_notes'),
-  });
-  if (!parsed.success) {
-    const msg = parsed.error.issues[0]?.message;
-    if (msg === 'medical_notes_too_long') return { error: msg };
-    return { error: 'generic' };
-  }
-
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-
-  // Pre-check de autoridad. RLS de UPDATE en players ya filtra por staff;
-  // este check adicional sirve para devolver `forbidden` con mensaje claro
-  // si un staff sin can_see_medical intenta editar.
-  const { data: canSee } = await supabase.rpc('user_can_see_player_medical', {
-    p_player_id: playerId,
-  });
-  if (!canSee) return { error: 'forbidden' };
-
-  const { error } = await supabase
-    .from('players')
-    .update({ medical_notes: parsed.data.medical_notes })
-    .eq('id', playerId);
-
-  if (error) {
-    return { error: 'generic' };
-  }
-
-  revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
-  return { success: true };
-}
+// F14-4 — updateMedicalNotes retirado: la médica salió de players a player_medical
+// y solo la escribe el TUTOR (RLS + RPC del alta / mi-ficha). El staff no escribe.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Photo path actions (F2.2)

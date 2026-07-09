@@ -9,7 +9,7 @@ import {
   type AcceptInvitationState,
 } from './actions';
 import { ConsentGate } from './consent-gate';
-import type { AccountConsentDoc, ImageConsentDoc } from './consent-data';
+import type { AccountConsentDoc, ImageConsentDoc, MedicalConsentDoc } from './consent-data';
 import { ChildrenImageSection, type PendingChild } from './child-image-cards';
 
 export type { PendingChild };
@@ -29,6 +29,7 @@ type CommonProps = {
   pendingChildren: PendingChild[];
   imageInternal: ImageConsentDoc | null;
   imageSocial: ImageConsentDoc | null;
+  medicalDoc: MedicalConsentDoc | null;
 };
 
 /** F14-3c — ¿hay hijos que requieren decisiones+imagen? Si no, no se gatea por imagen. */
@@ -54,6 +55,7 @@ export function AcceptForm({
   pendingChildren,
   imageInternal,
   imageSocial,
+  medicalDoc,
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
@@ -72,6 +74,7 @@ export function AcceptForm({
         items={pendingChildren}
         imageInternal={imageInternal}
         imageSocial={imageSocial}
+        medicalDoc={medicalDoc}
         onSatisfiedChange={setImagesOk}
       />
 
@@ -120,6 +123,7 @@ export function AcceptWithProfileForm({
   pendingChildren,
   imageInternal,
   imageSocial,
+  medicalDoc,
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
@@ -141,6 +145,7 @@ export function AcceptWithProfileForm({
         items={pendingChildren}
         imageInternal={imageInternal}
         imageSocial={imageSocial}
+        medicalDoc={medicalDoc}
         onSatisfiedChange={setImagesOk}
       />
 
@@ -255,6 +260,7 @@ export function SignInToAcceptForm({
   pendingChildren,
   imageInternal,
   imageSocial,
+  medicalDoc,
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
@@ -272,6 +278,7 @@ export function SignInToAcceptForm({
         items={pendingChildren}
         imageInternal={imageInternal}
         imageSocial={imageSocial}
+        medicalDoc={medicalDoc}
         onSatisfiedChange={setImagesOk}
       />
 

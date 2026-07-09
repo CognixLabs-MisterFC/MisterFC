@@ -737,7 +737,13 @@
     "image_err_empty": "El archivo está vacío.",
     "image_err_generic": "No se pudo procesar la imagen.",
     "error_image_required": "Falta la imagen de algún hijo. Sube una foto o un avatar para cada uno.",
-    "error_image_decision_required": "Responde Sí o No a las dos preguntas de imagen de cada hijo."
+    "error_image_decision_required": "Responde Sí o No a las dos preguntas de imagen de cada hijo.",
+    "medical_q": "¿Autorizas registrar y tratar datos médicos de tu hijo/a? (opcional)",
+    "medical_allergies": "Alergias",
+    "medical_medication": "Medicación",
+    "medical_conditions": "Condiciones médicas",
+    "medical_emergency": "Contacto de emergencia",
+    "medical_optional_hint": "Todos los campos son opcionales. Podrás editarlos más adelante."
   },
   "informes": {
     "title": "Informes de desarrollo",
@@ -1113,7 +1119,12 @@
         "medical_notes_too_long": "Las notas son demasiado largas (máx. 5000 caracteres).",
         "forbidden": "No tienes permiso para editar las notas médicas.",
         "generic": "No se pudo guardar."
-      }
+      },
+      "readonly_hint": "Solo lectura. La familia gestiona estos datos.",
+      "allergies": "Alergias",
+      "medication": "Medicación",
+      "conditions": "Condiciones médicas",
+      "emergency": "Contacto de emergencia"
     },
     "errors": {
       "first_name_required": "Introduce el nombre.",
@@ -3154,7 +3165,21 @@
       "collective": "Equipo"
     },
     "report_period_label": "Periodo",
-    "season_label": "Temporada"
+    "season_label": "Temporada",
+    "medical": {
+      "title": "Información médica",
+      "tutor_hint": "Solo tú (tutor) puedes ver y editar estos datos de tu hijo/a.",
+      "allergies": "Alergias",
+      "medication": "Medicación",
+      "conditions": "Condiciones médicas",
+      "emergency": "Contacto de emergencia",
+      "save": "Guardar",
+      "saved": "Guardado",
+      "errors": {
+        "forbidden": "No tienes permiso (falta consentimiento).",
+        "generic": "No se pudo guardar."
+      }
+    }
   },
   "mi_informe": {
     "title": "Informe de desarrollo",
