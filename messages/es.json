@@ -3127,7 +3127,8 @@
     "section": {
       "stats": "Estadísticas de la temporada",
       "evaluations": "Valoraciones",
-      "development_reports": "Informes de desarrollo"
+      "development_reports": "Informes de desarrollo",
+      "photo": "Foto del jugador"
     },
     "evaluations": {
       "title": "Valoraciones por partido",

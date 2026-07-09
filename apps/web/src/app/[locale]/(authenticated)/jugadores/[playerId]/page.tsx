@@ -89,6 +89,14 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     { p_player_id: player.id }
   );
 
+  // F14-3b — la FOTO solo la gestiona el tutor vinculado (parent/guardian). El
+  // staff ve la foto pero no los controles. Casi siempre false en esta vista
+  // (staff), true solo si además es tutor del jugador.
+  const { data: isTutorOfPlayer } = await supabase.rpc(
+    'user_is_tutor_of_player',
+    { p_player_id: player.id }
+  );
+
   let medicalNotes: string | null = null;
   if (canSeeMedical) {
     const { data: row } = await supabase
@@ -335,7 +343,7 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
           initialPath={player.photo_url}
           initialSignedUrl={photoSignedUrl}
           fallback={fullName.slice(0, 2).toUpperCase()}
-          canManage={canManage}
+          canManage={isTutorOfPlayer ?? false}
           labels={{
             change: t('photo.change'),
             remove: t('photo.remove'),

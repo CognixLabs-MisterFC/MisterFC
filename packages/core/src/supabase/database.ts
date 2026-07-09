@@ -3634,6 +3634,10 @@ export type Database = {
         }
         Returns: string
       }
+      set_player_photo: {
+        Args: { p_path: string | null; p_player_id: string }
+        Returns: undefined
+      }
       unaccent: { Args: { "": string }; Returns: string }
       unplace_player_from_upcoming: {
         Args: { p_club_id: string; p_player_id: string; p_team_id: string }
@@ -3760,6 +3764,10 @@ export type Database = {
         Returns: boolean
       }
       user_is_team_staff: { Args: { p_team_id: string }; Returns: boolean }
+      user_is_tutor_of_player: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
       user_owns_player_account: {
         Args: { p_player_id: string }
         Returns: boolean
