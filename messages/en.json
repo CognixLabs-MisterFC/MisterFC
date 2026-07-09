@@ -372,7 +372,13 @@
     "image_err_empty": "The file is empty.",
     "image_err_generic": "The image could not be processed.",
     "error_image_required": "A child is missing an image. Upload a photo or avatar for each one.",
-    "error_image_decision_required": "Answer Yes or No to both image questions for each child."
+    "error_image_decision_required": "Answer Yes or No to both image questions for each child.",
+    "medical_q": "Do you allow recording and processing your child’s medical data? (optional)",
+    "medical_allergies": "Allergies",
+    "medical_medication": "Medication",
+    "medical_conditions": "Medical conditions",
+    "medical_emergency": "Emergency contact",
+    "medical_optional_hint": "All fields are optional. You can edit them later."
   },
   "directos": {
     "title": "Live",
@@ -1114,7 +1120,12 @@
         "medical_notes_too_long": "Las notas son demasiado largas (máx. 5000 caracteres).",
         "forbidden": "No tienes permiso para editar las notas médicas.",
         "generic": "No se pudo guardar."
-      }
+      },
+      "readonly_hint": "Read-only. The family manages this data.",
+      "allergies": "Allergies",
+      "medication": "Medication",
+      "conditions": "Medical conditions",
+      "emergency": "Emergency contact"
     },
     "errors": {
       "first_name_required": "Introduce el nombre.",
@@ -3155,7 +3166,21 @@
       "collective": "Team"
     },
     "report_period_label": "Period",
-    "season_label": "Season"
+    "season_label": "Season",
+    "medical": {
+      "title": "Medical information",
+      "tutor_hint": "Only you (guardian) can view and edit your child’s data.",
+      "allergies": "Allergies",
+      "medication": "Medication",
+      "conditions": "Medical conditions",
+      "emergency": "Emergency contact",
+      "save": "Save",
+      "saved": "Saved",
+      "errors": {
+        "forbidden": "Not allowed (consent missing).",
+        "generic": "Could not save."
+      }
+    }
   },
   "mi_informe": {
     "title": "Development report",

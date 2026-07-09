@@ -6,6 +6,7 @@ import {
   loadCurrentLegalDocs,
   loadAccountConsentStatus,
   loadImageLegalDocs,
+  loadMedicalLegalDoc,
 } from './consent-data';
 import { AcceptForm, AcceptWithProfileForm, SignInToAcceptForm } from './accept-form';
 
@@ -105,6 +106,8 @@ export default async function InvitePage({ params }: Props) {
   // F14-3c — textos vigentes de consentimiento de imagen (interna / redes) para
   // enlazar en cada tarjeta de hijo.
   const imageDocs = await loadImageLegalDocs();
+  // F14-4 — texto informado de datos médicos (opcional por hijo).
+  const medicalDoc = await loadMedicalLegalDoc();
 
   const consentProps = {
     legalTerms: legal.terms,
@@ -114,6 +117,7 @@ export default async function InvitePage({ params }: Props) {
     pendingChildren,
     imageInternal: imageDocs.internal,
     imageSocial: imageDocs.social,
+    medicalDoc,
   };
 
   return (

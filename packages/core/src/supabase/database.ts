@@ -2021,6 +2021,51 @@ export type Database = {
           },
         ]
       }
+      player_medical: {
+        Row: {
+          allergies: string | null
+          emergency_contact: string | null
+          medical_conditions: string | null
+          medication: string | null
+          player_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          allergies?: string | null
+          emergency_contact?: string | null
+          medical_conditions?: string | null
+          medication?: string | null
+          player_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          allergies?: string | null
+          emergency_contact?: string | null
+          medical_conditions?: string | null
+          medication?: string | null
+          player_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_medical_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_medical_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_notes: {
         Row: {
           author_profile_id: string
@@ -3440,6 +3485,7 @@ export type Database = {
           p_children?: Json
           p_clicked_token: string
           p_ip?: string
+          p_medical?: Json
           p_user_agent?: string
         }
         Returns: number
@@ -3693,8 +3739,16 @@ export type Database = {
         Returns: boolean
       }
       user_can_record_match: { Args: { p_event_id: string }; Returns: boolean }
+      user_can_access_player_medical: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
       user_can_see_player: { Args: { p_player_id: string }; Returns: boolean }
       user_can_see_player_medical: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
+      user_has_medical_consent: {
         Args: { p_player_id: string }
         Returns: boolean
       }

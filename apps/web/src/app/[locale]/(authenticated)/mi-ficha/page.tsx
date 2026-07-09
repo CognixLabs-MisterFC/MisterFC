@@ -27,6 +27,7 @@ import { PlayerBadges } from '../jugadores/[playerId]/player-badges';
 import { FichaHeader } from '../jugadores/[playerId]/informes/_components/ficha-header';
 import { PlayerPhotoUploader } from '../jugadores/[playerId]/player-photo-uploader';
 import { PlayerSelector } from './player-selector';
+import { MedicalForm } from './medical-form';
 import {
   PlayerEvaluationsDetail,
   type MatchEvaluation,
@@ -159,6 +160,20 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
     { p_player_id: playerId }
   );
   const tJugadores = await getTranslations('jugadores');
+
+  // F14-4 — el tutor gestiona la info médica de su hijo si hay consentimiento
+  // vigente. Sin consentimiento la RLS no permite escribir (ni la fila es visible).
+  const { data: hasMedicalConsent } = await supabase.rpc('user_has_medical_consent', {
+    p_player_id: playerId,
+  });
+  const canManageMedical = Boolean(isTutorOfPlayer && hasMedicalConsent);
+  const { data: medicalRow } = canManageMedical
+    ? await supabase
+        .from('player_medical')
+        .select('allergies, medication, medical_conditions, emergency_contact')
+        .eq('player_id', playerId)
+        .maybeSingle()
+    : { data: null };
 
   // 3) Temporadas de la trayectoria del jugador → selector + default.
   //    Rework A (A2): la temporada vive en el equipo (teams.season).
@@ -401,6 +416,19 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
                 },
               }}
             />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* F14-4 — Info médica: la gestiona el tutor si hay consentimiento vigente. */}
+      {canManageMedical && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('medical.title')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-xs text-muted-foreground">{t('medical.tutor_hint')}</p>
+            <MedicalForm playerId={playerId} initial={medicalRow ?? null} />
           </CardContent>
         </Card>
       )}

@@ -185,6 +185,25 @@ async function attachAllPending(
   const admin = createSupabaseAdminClient();
   const uploadedPaths: string[] = [];
   const children: Record<string, { internal: boolean; social: boolean; path: string }> = {};
+  // F14-4 — decisiones médicas por hijo (opcionales, no gatean). Solo se incluye
+  // el hijo si el tutor respondió sí/no explícito.
+  const medical: Record<
+    string,
+    {
+      consent: boolean;
+      allergies?: string;
+      medication?: string;
+      medical_conditions?: string;
+      emergency_contact?: string;
+    }
+  > = {};
+
+  function medField(pid: string, key: string): string | undefined {
+    const v = formData.get(`${key}_${pid}`);
+    if (typeof v !== 'string') return undefined;
+    const trimmed = v.trim();
+    return trimmed.length > 0 ? trimmed.slice(0, 2000) : undefined;
+  }
 
   const playerIds = new Set<string>();
   for (const key of formData.keys()) {
@@ -229,6 +248,18 @@ async function attachAllPending(
         social: socialRaw === 'yes',
         path,
       };
+
+      // F14-4 — consentimiento médico (opcional). Solo si respondió sí/no.
+      const medicalRaw = formData.get(`medical_consent_${pid}`);
+      if (medicalRaw === 'yes' || medicalRaw === 'no') {
+        medical[pid] = {
+          consent: medicalRaw === 'yes',
+          allergies: medField(pid, 'med_allergies'),
+          medication: medField(pid, 'med_medication'),
+          medical_conditions: medField(pid, 'med_conditions'),
+          emergency_contact: medField(pid, 'med_emergency'),
+        };
+      }
     }
 
     const { data, error } = await supabase.rpc('accept_pending_invitations', {
@@ -238,6 +269,7 @@ async function attachAllPending(
       p_ip: ip ?? undefined,
       p_user_agent: userAgent ?? undefined,
       p_children: children,
+      p_medical: medical,
     });
 
     if (error) {

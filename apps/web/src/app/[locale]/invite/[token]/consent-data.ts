@@ -76,6 +76,24 @@ export async function loadImageLegalDocs(): Promise<ImageConsentDocs> {
 }
 
 /**
+ * F14-4 — Documento de CONSENTIMIENTO INFORMADO de datos médicos (vigente). Se
+ * enseña ANTES de pedir nada (informado). La médica es opcional y no bloquea.
+ */
+export type MedicalConsentDoc = { version: number; title: string; body: string };
+
+export async function loadMedicalLegalDoc(): Promise<MedicalConsentDoc | null> {
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin
+    .from('legal_documents')
+    .select('version, title, body')
+    .eq('doc_type', 'medical_informed_consent')
+    .order('version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data ? { version: data.version, title: data.title, body: data.body } : null;
+}
+
+/**
  * ¿El tutor ya aceptó (granted=true) la versión VIGENTE de cada doc, a nivel de
  * cuenta (player_id NULL)? Solo tiene sentido si ya hay sesión (flujo quick).
  */
