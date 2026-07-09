@@ -1,7 +1,7 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { getCurrentUser, chooseInviteForm } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { loadInvitationForPage } from './invite-data';
+import { loadInvitationForPage, loadPendingInvitationsForEmail } from './invite-data';
 import { loadCurrentLegalDocs, loadAccountConsentStatus } from './consent-data';
 import { AcceptForm, AcceptWithProfileForm, SignInToAcceptForm } from './accept-form';
 
@@ -61,11 +61,9 @@ export default async function InvitePage({ params }: Props) {
   const adapter = await createCookieAdapter();
   const user = await getCurrentUser(adapter);
   const sessionEmailMatches =
-    !!user?.email &&
-    user.email.trim().toLowerCase() === inv.email.trim().toLowerCase();
+    !!user?.email && user.email.trim().toLowerCase() === inv.email.trim().toLowerCase();
   const invitePending =
-    (user?.app_metadata as { invite_pending?: boolean } | undefined)
-      ?.invite_pending === true;
+    (user?.app_metadata as { invite_pending?: boolean } | undefined)?.invite_pending === true;
 
   const choice = chooseInviteForm({
     invitedUserId: inv.invited_user_id,
@@ -87,11 +85,24 @@ export default async function InvitePage({ params }: Props) {
         )
       : { termsAccepted: false, privacyAccepted: false };
 
+  // F14-3a — Alta MULTI-HIJO: todas las invitaciones pendientes de este email en
+  // ESTE club (incluye la clicada). Se pintan como una tarjeta por hijo para que
+  // el padre vea a quién va a dar de alta en un solo paso. El batch real se
+  // reevalúa server-side al aceptar (la lista es solo informativa).
+  const pending = await loadPendingInvitationsForEmail(inv.email, inv.club_id);
+  const pendingChildren = pending
+    .filter((p) => p.player_id)
+    .map((p) => ({
+      playerName: [p.player_first_name, p.player_last_name].filter(Boolean).join(' ') || null,
+      teamName: p.team_name,
+    }));
+
   const consentProps = {
     legalTerms: legal.terms,
     legalPrivacy: legal.privacy,
     preAcceptedTerms: preAccepted.termsAccepted,
     preAcceptedPrivacy: preAccepted.privacyAccepted,
+    pendingChildren,
   };
 
   return (

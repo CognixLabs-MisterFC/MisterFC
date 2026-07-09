@@ -3433,6 +3433,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_pending_invitations: {
+        Args: {
+          p_accept_privacy?: boolean
+          p_accept_terms?: boolean
+          p_clicked_token: string
+          p_ip?: string
+          p_user_agent?: string
+        }
+        Returns: number
+      }
       admin_update_staff_contact: {
         Args: {
           p_club_id: string

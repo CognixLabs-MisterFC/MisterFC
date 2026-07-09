@@ -720,6 +720,9 @@
     "consent_view": "ver",
     "consent_already": "Ya aceptado: {doc}",
     "consent_close": "Cerrar",
+    "children_heading": "Vas a dar de alta a:",
+    "child_unnamed": "Jugador/a",
+    "child_no_team": "Sin equipo asignado",
     "error_consent_required": "Debes aceptar los Términos y la Política de Privacidad para completar el alta."
   },
   "informes": {
