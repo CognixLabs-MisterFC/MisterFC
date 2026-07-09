@@ -3128,7 +3128,8 @@
     "section": {
       "stats": "Season stats",
       "evaluations": "Ratings",
-      "development_reports": "Development reports"
+      "development_reports": "Development reports",
+      "photo": "Player photo"
     },
     "evaluations": {
       "title": "Ratings per match",

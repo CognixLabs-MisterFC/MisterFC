@@ -279,13 +279,16 @@ export async function updatePlayerPhotoPath(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { error } = await supabase
-    .from('players')
-    .update({ photo_url: path })
-    .eq('id', playerId);
+  // F14-3b — la foto solo la escribe el tutor vinculado. La RPC set_player_photo
+  // (SECURITY DEFINER) valida `user_is_tutor_of_player` y toca solo photo_url.
+  const { error } = await supabase.rpc('set_player_photo', {
+    p_player_id: playerId,
+    p_path: path,
+  });
 
   if (error) {
-    return { success: false, error: 'generic' };
+    const forbidden = (error.message ?? '').includes('forbidden');
+    return { success: false, error: forbidden ? 'forbidden' : 'generic' };
   }
 
   revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
@@ -299,13 +302,15 @@ export async function clearPlayerPhotoPath(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { error } = await supabase
-    .from('players')
-    .update({ photo_url: null })
-    .eq('id', playerId);
+  // F14-3b — retirar la foto (path NULL) también es exclusivo del tutor.
+  const { error } = await supabase.rpc('set_player_photo', {
+    p_player_id: playerId,
+    p_path: null,
+  });
 
   if (error) {
-    return { success: false, error: 'generic' };
+    const forbidden = (error.message ?? '').includes('forbidden');
+    return { success: false, error: forbidden ? 'forbidden' : 'generic' };
   }
 
   revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');

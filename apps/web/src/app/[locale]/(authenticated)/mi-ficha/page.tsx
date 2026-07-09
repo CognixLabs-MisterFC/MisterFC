@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { PlayerSeasonStats } from '../jugadores/[playerId]/player-season-stats';
 import { PlayerBadges } from '../jugadores/[playerId]/player-badges';
 import { FichaHeader } from '../jugadores/[playerId]/informes/_components/ficha-header';
+import { PlayerPhotoUploader } from '../jugadores/[playerId]/player-photo-uploader';
 import { PlayerSelector } from './player-selector';
 import {
   PlayerEvaluationsDetail,
@@ -150,6 +151,14 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
   )
     ? (playerRow!.position_main as PlayerPosition)
     : null;
+
+  // F14-3b — la foto del hijo la gestiona SOLO el tutor vinculado (parent/guardian),
+  // de forma continua desde su ficha. El propio jugador (relation='self') NO.
+  const { data: isTutorOfPlayer } = await supabase.rpc(
+    'user_is_tutor_of_player',
+    { p_player_id: playerId }
+  );
+  const tJugadores = await getTranslations('jugadores');
 
   // 3) Temporadas de la trayectoria del jugador → selector + default.
   //    Rework A (A2): la temporada vive en el equipo (teams.season).
@@ -362,6 +371,39 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
           />
         </CardContent>
       </Card>
+
+      {/* F14-3b — Gestión de la foto: SOLO el tutor vinculado (parent/guardian). */}
+      {isTutorOfPlayer && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('section.photo')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PlayerPhotoUploader
+              playerId={playerId}
+              initialPath={playerRow?.photo_url ?? null}
+              initialSignedUrl={headerPhotoUrl}
+              fallback={
+                (playerRow?.first_name?.[0] ?? '') +
+                (playerRow?.last_name?.[0] ?? '')
+              }
+              canManage
+              labels={{
+                change: tJugadores('photo.change'),
+                remove: tJugadores('photo.remove'),
+                hint: tJugadores('photo.hint'),
+                errors: {
+                  mime: tJugadores('photo.errors.mime'),
+                  too_large: tJugadores('photo.errors.too_large'),
+                  empty: tJugadores('photo.errors.empty'),
+                  upload_failed: tJugadores('photo.errors.upload_failed'),
+                  remove_failed: tJugadores('photo.errors.remove_failed'),
+                },
+              }}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
