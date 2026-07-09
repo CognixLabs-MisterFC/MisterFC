@@ -168,13 +168,16 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
     p_player_id: playerId,
   });
   const canManageMedical = Boolean(isTutorOfPlayer && hasMedicalConsent);
-  const { data: medicalRow } = canManageMedical
-    ? await supabase
-        .from('player_medical')
-        .select('allergies, medication, medical_conditions, emergency_contact')
-        .eq('player_id', playerId)
-        .maybeSingle()
+  // F14-6 — lectura por la ÚNICA puerta get_player_medical (player_medical cerrada
+  // al cliente). La lectura del tutor sobre su hijo NO se audita (regla 1).
+  const { data: medicalRows } = canManageMedical
+    ? await supabase.rpc('get_player_medical', {
+        p_player_id: playerId,
+        p_ip: undefined,
+        p_user_agent: undefined,
+      })
     : { data: null };
+  const medicalRow = medicalRows?.[0] ?? null;
 
   // 3) Temporadas de la trayectoria del jugador → selector + default.
   //    Rework A (A2): la temporada vive en el equipo (teams.season).

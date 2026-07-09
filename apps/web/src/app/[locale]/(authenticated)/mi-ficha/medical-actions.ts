@@ -7,10 +7,11 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 export type MedicalFormState = { error?: 'forbidden' | 'generic'; success?: boolean };
 
 /**
- * F14-4 — El TUTOR gestiona (de forma continua) los 4 campos médicos de su hijo.
- * Escribe bajo su sesión: la RLS de player_medical exige user_is_tutor_of_player
- * Y consentimiento vigente. El staff NO llega aquí (no es tutor). upsert por
- * player_id; updated_by/updated_at los pone el trigger player_medical_touch.
+ * F14-4/F14-6 — El TUTOR gestiona (de forma continua) los 4 campos médicos de su
+ * hijo. La ESCRITURA pasa OBLIGATORIAMENTE por la RPC `set_player_medical`
+ * (SECURITY DEFINER): player_medical está cerrada al cliente (una sola puerta). La
+ * RPC valida tutor + consentimiento de escritura vigente (RAISE forbidden si no) y
+ * la auditoría medical.write la pone el trigger. El staff no llega aquí.
  */
 export async function upsertPlayerMedical(
   playerId: string,
@@ -27,20 +28,17 @@ export async function upsertPlayerMedical(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { error } = await supabase.from('player_medical').upsert(
-    {
-      player_id: playerId,
-      allergies: field('allergies'),
-      medication: field('medication'),
-      medical_conditions: field('medical_conditions'),
-      emergency_contact: field('emergency_contact'),
-    },
-    { onConflict: 'player_id' }
-  );
+  const { error } = await supabase.rpc('set_player_medical', {
+    p_player_id: playerId,
+    p_allergies: field('allergies'),
+    p_medication: field('medication'),
+    p_medical_conditions: field('medical_conditions'),
+    p_emergency_contact: field('emergency_contact'),
+  });
 
   if (error) {
-    // 42501 = RLS: no es tutor o no hay consentimiento vigente.
-    return { error: error.code === '42501' ? 'forbidden' : 'generic' };
+    // La RPC lanza 'forbidden' si no es tutor o no hay consentimiento de escritura.
+    return { error: (error.message ?? '').includes('forbidden') ? 'forbidden' : 'generic' };
   }
 
   revalidatePath('/[locale]/(authenticated)/mi-ficha', 'page');

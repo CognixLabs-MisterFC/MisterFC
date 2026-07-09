@@ -145,30 +145,36 @@ export type Database = {
           actor_profile_id: string
           club_id: string
           id: string
+          ip: string | null
           occurred_at: string
-          reason: string
+          reason: string | null
           target_id: string
           target_kind: string
+          user_agent: string | null
         }
         Insert: {
           action: string
           actor_profile_id: string
           club_id: string
           id?: string
+          ip?: string | null
           occurred_at?: string
-          reason: string
+          reason?: string | null
           target_id: string
           target_kind: string
+          user_agent?: string | null
         }
         Update: {
           action?: string
           actor_profile_id?: string
           club_id?: string
           id?: string
+          ip?: string | null
           occurred_at?: string
-          reason?: string
+          reason?: string | null
           target_id?: string
           target_kind?: string
+          user_agent?: string | null
         }
         Relationships: [
           {
@@ -3757,6 +3763,29 @@ export type Database = {
       user_can_see_player_medical: {
         Args: { p_player_id: string }
         Returns: boolean
+      }
+      get_player_medical: {
+        Args: {
+          p_player_id: string
+          p_ip?: string
+          p_user_agent?: string
+        }
+        Returns: {
+          allergies: string | null
+          medication: string | null
+          medical_conditions: string | null
+          emergency_contact: string | null
+        }[]
+      }
+      set_player_medical: {
+        Args: {
+          p_player_id: string
+          p_allergies: string | null
+          p_medication: string | null
+          p_medical_conditions: string | null
+          p_emergency_contact: string | null
+        }
+        Returns: undefined
       }
       user_has_medical_consent_read: {
         Args: { p_player_id: string }

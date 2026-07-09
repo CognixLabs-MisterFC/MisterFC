@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Download, ClipboardList } from 'lucide-react';
 import {
@@ -100,15 +101,22 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     { p_player_id: player.id }
   );
 
-  // F14-4 — Info médica: SOLO LECTURA para staff. La RLS de player_medical es la
-  // autoridad (staff del equipo del niño / equipo que lo promociona / dirección /
-  // tutor, y solo con consentimiento vigente). Si no hay acceso o consentimiento,
-  // la query no devuelve fila. El staff NO puede escribirla.
-  const { data: medical } = await supabase
-    .from('player_medical')
-    .select('allergies, medication, medical_conditions, emergency_contact')
-    .eq('player_id', player.id)
-    .maybeSingle();
+  // F14-4/F14-6 — Info médica: SOLO LECTURA para staff, y por la ÚNICA puerta
+  // `get_player_medical` (player_medical está cerrada al cliente). La RPC valida
+  // acceso (equipo del niño / promoción / dirección / tutor) + consentimiento, y
+  // AUDITA la lectura (medical.read) cuando hay datos y el lector no es tutor. Si
+  // no hay acceso lanza forbidden (lo tratamos como "sin médica"). ip/user_agent
+  // se pasan server-side para el registro de auditoría.
+  const hdrs = await headers();
+  const fwd = hdrs.get('x-forwarded-for');
+  const auditIp = fwd ? (fwd.split(',')[0]?.trim() ?? null) : null;
+  const auditUa = hdrs.get('user-agent');
+  const { data: medicalRows } = await supabase.rpc('get_player_medical', {
+    p_player_id: player.id,
+    p_ip: auditIp ?? undefined,
+    p_user_agent: auditUa ?? undefined,
+  });
+  const medical = medicalRows?.[0] ?? null;
 
   // F7 mejora — Notas por jugador (solo cuerpo técnico). El helper SQL es la
   // autoridad (cuerpo técnico del jugador + admin/coord; NO familia).
