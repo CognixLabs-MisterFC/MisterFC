@@ -42,6 +42,40 @@ export async function loadCurrentLegalDocs(): Promise<AccountConsentDocs> {
 }
 
 /**
+ * F14-3c — Documentos de consentimiento de IMAGEN (interna / redes) por hijo. Se
+ * enlazan en cada tarjeta del accept para que el tutor lea el texto vigente antes
+ * de decidir sí/no. Mismo patrón que loadCurrentLegalDocs (service_role).
+ */
+export type ImageConsentDoc = {
+  consentType: 'image_internal' | 'image_social';
+  version: number;
+  title: string;
+  body: string;
+};
+
+export type ImageConsentDocs = {
+  internal: ImageConsentDoc | null;
+  social: ImageConsentDoc | null;
+};
+
+export async function loadImageLegalDocs(): Promise<ImageConsentDocs> {
+  const admin = createSupabaseAdminClient();
+  const { data } = await admin
+    .from('legal_documents')
+    .select('doc_type, version, title, body')
+    .in('doc_type', ['image_internal', 'image_social'])
+    .order('version', { ascending: false });
+
+  const rows = data ?? [];
+  const pick = (docType: 'image_internal' | 'image_social'): ImageConsentDoc | null => {
+    const r = rows.find((x) => x.doc_type === docType);
+    return r ? { consentType: docType, version: r.version, title: r.title, body: r.body } : null;
+  };
+
+  return { internal: pick('image_internal'), social: pick('image_social') };
+}
+
+/**
  * ¿El tutor ya aceptó (granted=true) la versión VIGENTE de cada doc, a nivel de
  * cuenta (player_id NULL)? Solo tiene sentido si ya hay sesión (flujo quick).
  */

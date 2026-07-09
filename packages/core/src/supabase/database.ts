@@ -3437,6 +3437,7 @@ export type Database = {
         Args: {
           p_accept_privacy?: boolean
           p_accept_terms?: boolean
+          p_children?: Json
           p_clicked_token: string
           p_ip?: string
           p_user_agent?: string

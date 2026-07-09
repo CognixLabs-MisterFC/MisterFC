@@ -358,7 +358,21 @@
     "children_heading": "Vas a donar d'alta a:",
     "child_unnamed": "Jugador/a",
     "child_no_team": "Sense equip assignat",
-    "error_consent_required": "Has d'acceptar els Termes i la Política de Privacitat per completar l'alta."
+    "error_consent_required": "Has d'acceptar els Termes i la Política de Privacitat per completar l'alta.",
+    "image_heading": "Consentiments d'imatge i foto de cada fill",
+    "image_internal_q": "Autoritzes l'ús de la seua imatge dins de l'app?",
+    "image_social_q": "Autoritzes l'ús de la seua imatge a les xarxes socials?",
+    "image_yes": "Sí",
+    "image_no": "No",
+    "image_upload_photo": "Puja una foto del xiquet/a",
+    "image_upload_avatar": "Puja un avatar (imatge que el represente)",
+    "image_hint": "JPG, PNG o WebP. Màxim {maxMb} MB.",
+    "image_err_mime": "Format no vàlid (usa JPG, PNG o WebP).",
+    "image_err_large": "La imatge supera la mida màxima.",
+    "image_err_empty": "El fitxer està buit.",
+    "image_err_generic": "No s'ha pogut processar la imatge.",
+    "error_image_required": "Falta la imatge d'algun fill. Puja una foto o un avatar per a cadascun.",
+    "error_image_decision_required": "Respon Sí o No a les dues preguntes d'imatge de cada fill."
   },
   "directos": {
     "title": "Directes",

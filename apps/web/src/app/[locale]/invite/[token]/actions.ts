@@ -1,5 +1,6 @@
 'use server';
 
+import { randomUUID } from 'node:crypto';
 import { redirect, unstable_rethrow } from 'next/navigation';
 import { headers } from 'next/headers';
 import * as Sentry from '@sentry/nextjs';
@@ -9,6 +10,7 @@ import {
   createSupabaseAdminClient,
   createSupabaseServerClient,
   isSamePasswordError,
+  playerPhotoUploadSchema,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadInvitationByToken, type LoadedInvitation } from './invite-data';
@@ -46,7 +48,17 @@ export type AcceptInvitationState = {
     | 'team_staff_failed'
     // F14-2 — faltan consentimientos obligatorios de cuenta (T&C / privacidad).
     | 'consent_required'
+    // F14-3c — imagen obligatoria por hijo / decisiones de imagen sin responder.
+    | 'image_required'
+    | 'image_decision_required'
     | 'generic';
+};
+
+/** F14-3c — mime → extensión para el path del bucket player-photos. */
+const MIME_TO_EXT: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -150,7 +162,7 @@ async function gateByToken(
  */
 async function attachAllPending(
   clicked: LoadedInvitation,
-  accepts: ConsentAccepts,
+  formData: FormData,
 ): Promise<AcceptInvitationState> {
   logStep('attach-all entered', {
     invitation_id: clicked.id,
@@ -158,6 +170,7 @@ async function attachAllPending(
   });
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
+  const accepts = consentAcceptsFromForm(formData);
 
   // Metadatos de auditoría (no se confía en el cliente).
   const h = await headers();
@@ -165,29 +178,92 @@ async function attachAllPending(
   const ip = fwd ? (fwd.split(',')[0]?.trim() ?? null) : null;
   const userAgent = h.get('user-agent');
 
-  const { data, error } = await supabase.rpc('accept_pending_invitations', {
-    p_clicked_token: clicked.token,
-    p_accept_terms: accepts.terms,
-    p_accept_privacy: accepts.privacy,
-    p_ip: ip ?? undefined,
-    p_user_agent: userAgent ?? undefined,
-  });
+  // F14-3c — Subida de imágenes ANTES de la RPC, server-side con admin: en este
+  // instante el vínculo player_accounts aún no existe (la RPC lo crea), así que
+  // el tutor no pasaría la RLS de storage. Recogemos player_ids de los campos
+  // `image_file_<pid>`. Si la RPC revierte o algo falla → borramos lo subido.
+  const admin = createSupabaseAdminClient();
+  const uploadedPaths: string[] = [];
+  const children: Record<string, { internal: boolean; social: boolean; path: string }> = {};
 
-  if (error) {
-    const msg = error.message ?? '';
-    if (msg.includes('consent_required')) return { error: 'consent_required' };
-    if (msg.includes('wrong_email')) return { error: 'wrong_email' };
-    if (msg.includes('not_found')) return { error: 'not_found' };
-    if (msg.includes('no_session')) return { error: 'no_session' };
-    logError('rpc accept_pending', error, {
-      invitation_id: clicked.id,
-      pg_code: error.code,
-    });
-    return { error: 'generic' };
+  const playerIds = new Set<string>();
+  for (const key of formData.keys()) {
+    if (key.startsWith('image_file_')) playerIds.add(key.slice('image_file_'.length));
   }
 
-  logStep('attach-all done', { invitation_id: clicked.id, processed: data ?? 0 });
-  return {};
+  async function cleanupImages() {
+    if (uploadedPaths.length === 0) return;
+    try {
+      await admin.storage.from('player-photos').remove(uploadedPaths);
+    } catch (rmErr) {
+      logError('image-cleanup', rmErr, { paths: uploadedPaths.length });
+    }
+  }
+
+  try {
+    for (const pid of playerIds) {
+      const internalRaw = formData.get(`image_internal_${pid}`);
+      const socialRaw = formData.get(`image_social_${pid}`);
+      // Decisiones explícitas (sí/no); guard server-side, no se confía en la UI.
+      if (internalRaw !== 'yes' && internalRaw !== 'no') return { error: 'image_decision_required' };
+      if (socialRaw !== 'yes' && socialRaw !== 'no') return { error: 'image_decision_required' };
+
+      const file = formData.get(`image_file_${pid}`);
+      if (!(file instanceof File) || file.size === 0) return { error: 'image_required' };
+      const valid = playerPhotoUploadSchema.safeParse({ mimeType: file.type, size: file.size });
+      if (!valid.success) return { error: 'image_required' };
+
+      const ext = MIME_TO_EXT[file.type] ?? 'jpg';
+      const path = `${pid}/${randomUUID()}.${ext}`;
+      const { error: upErr } = await admin.storage
+        .from('player-photos')
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) {
+        logError('image-upload', upErr, { player_id: pid });
+        await cleanupImages();
+        return { error: 'generic' };
+      }
+      uploadedPaths.push(path);
+      children[pid] = {
+        internal: internalRaw === 'yes',
+        social: socialRaw === 'yes',
+        path,
+      };
+    }
+
+    const { data, error } = await supabase.rpc('accept_pending_invitations', {
+      p_clicked_token: clicked.token,
+      p_accept_terms: accepts.terms,
+      p_accept_privacy: accepts.privacy,
+      p_ip: ip ?? undefined,
+      p_user_agent: userAgent ?? undefined,
+      p_children: children,
+    });
+
+    if (error) {
+      // La transacción revirtió: no dejamos imágenes huérfanas en el bucket.
+      await cleanupImages();
+      const msg = error.message ?? '';
+      if (msg.includes('consent_required')) return { error: 'consent_required' };
+      if (msg.includes('wrong_email')) return { error: 'wrong_email' };
+      if (msg.includes('not_found')) return { error: 'not_found' };
+      if (msg.includes('no_session')) return { error: 'no_session' };
+      if (msg.includes('image_decision_required')) return { error: 'image_decision_required' };
+      if (msg.includes('image_required')) return { error: 'image_required' };
+      logError('rpc accept_pending', error, {
+        invitation_id: clicked.id,
+        pg_code: error.code,
+      });
+      return { error: 'generic' };
+    }
+
+    logStep('attach-all done', { invitation_id: clicked.id, processed: data ?? 0 });
+    return {};
+  } catch (err) {
+    // Fallo inesperado (p.ej. red): limpiamos antes de propagar.
+    await cleanupImages();
+    throw err;
+  }
 }
 
 /**
@@ -216,7 +292,7 @@ export async function acceptInvitation(
     const gate = await gateByToken(token, user.email);
     if (!gate.ok) return { error: gate.error };
 
-    const result = await attachAllPending(gate.invitation, consentAcceptsFromForm(formData));
+    const result = await attachAllPending(gate.invitation, formData);
     if (result.error) return result;
 
     logStep('flow=quick success', {
@@ -369,7 +445,7 @@ export async function acceptNewInvitee(
     logStep('flow=new profile-update ok', { invitation_id: invitation.id });
 
     // Paso 5: attach de TODO el lote multi-hijo (+ consentimientos de cuenta).
-    const result = await attachAllPending(invitation, consentAcceptsFromForm(formData));
+    const result = await attachAllPending(invitation, formData);
     if (result.error) return result;
 
     logStep('flow=new success', {
@@ -437,7 +513,7 @@ export async function acceptExistingUser(
     }
     logStep('flow=existing sign-in ok', { invitation_id: invitation.id });
 
-    const result = await attachAllPending(invitation, consentAcceptsFromForm(formData));
+    const result = await attachAllPending(invitation, formData);
     if (result.error) return result;
 
     logStep('flow=existing success', {

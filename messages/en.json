@@ -358,7 +358,21 @@
     "children_heading": "You'll be registering:",
     "child_unnamed": "Player",
     "child_no_team": "No team assigned",
-    "error_consent_required": "You must accept the Terms and the Privacy Policy to finish signing up."
+    "error_consent_required": "You must accept the Terms and the Privacy Policy to finish signing up.",
+    "image_heading": "Image consents and photo for each child",
+    "image_internal_q": "Do you allow using their image inside the app?",
+    "image_social_q": "Do you allow using their image on social media?",
+    "image_yes": "Yes",
+    "image_no": "No",
+    "image_upload_photo": "Upload a photo of the child",
+    "image_upload_avatar": "Upload an avatar (an image that represents them)",
+    "image_hint": "JPG, PNG or WebP. Max {maxMb} MB.",
+    "image_err_mime": "Invalid format (use JPG, PNG or WebP).",
+    "image_err_large": "The image exceeds the maximum size.",
+    "image_err_empty": "The file is empty.",
+    "image_err_generic": "The image could not be processed.",
+    "error_image_required": "A child is missing an image. Upload a photo or avatar for each one.",
+    "error_image_decision_required": "Answer Yes or No to both image questions for each child."
   },
   "directos": {
     "title": "Live",
