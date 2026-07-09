@@ -6,6 +6,15 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@misterfc/core'],
+  // F14-3c — el accept multi-hijo sube las fotos de los hijos por Server Action
+  // (server-side con admin, porque el tutor aún no está vinculado). Cada foto
+  // puede pesar hasta PLAYER_PHOTO_MAX_BYTES (2MB) y hay varias por lote; el
+  // límite por defecto de Server Actions (1MB) se queda corto.
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '15mb',
+    },
+  },
   // F9.B-6/7 — @react-pdf/renderer solo se usa en Route Handlers (runtime
   // nodejs); se externaliza para que no entre en el bundle de cliente/SSR.
   serverExternalPackages: ['@react-pdf/renderer'],

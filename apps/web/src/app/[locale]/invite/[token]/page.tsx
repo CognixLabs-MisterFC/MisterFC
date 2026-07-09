@@ -2,7 +2,11 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { getCurrentUser, chooseInviteForm } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadInvitationForPage, loadPendingInvitationsForEmail } from './invite-data';
-import { loadCurrentLegalDocs, loadAccountConsentStatus } from './consent-data';
+import {
+  loadCurrentLegalDocs,
+  loadAccountConsentStatus,
+  loadImageLegalDocs,
+} from './consent-data';
 import { AcceptForm, AcceptWithProfileForm, SignInToAcceptForm } from './accept-form';
 
 type Props = {
@@ -93,9 +97,14 @@ export default async function InvitePage({ params }: Props) {
   const pendingChildren = pending
     .filter((p) => p.player_id)
     .map((p) => ({
+      playerId: p.player_id,
       playerName: [p.player_first_name, p.player_last_name].filter(Boolean).join(' ') || null,
       teamName: p.team_name,
     }));
+
+  // F14-3c — textos vigentes de consentimiento de imagen (interna / redes) para
+  // enlazar en cada tarjeta de hijo.
+  const imageDocs = await loadImageLegalDocs();
 
   const consentProps = {
     legalTerms: legal.terms,
@@ -103,6 +112,8 @@ export default async function InvitePage({ params }: Props) {
     preAcceptedTerms: preAccepted.termsAccepted,
     preAcceptedPrivacy: preAccepted.privacyAccepted,
     pendingChildren,
+    imageInternal: imageDocs.internal,
+    imageSocial: imageDocs.social,
   };
 
   return (

@@ -9,10 +9,10 @@ import {
   type AcceptInvitationState,
 } from './actions';
 import { ConsentGate } from './consent-gate';
-import type { AccountConsentDoc } from './consent-data';
+import type { AccountConsentDoc, ImageConsentDoc } from './consent-data';
+import { ChildrenImageSection, type PendingChild } from './child-image-cards';
 
-/** F14-3a — un hijo pendiente de alta (para pintar una tarjeta por hijo). */
-export type PendingChild = { playerName: string | null; teamName: string | null };
+export type { PendingChild };
 
 type CommonProps = {
   locale: string;
@@ -25,34 +25,15 @@ type CommonProps = {
   legalPrivacy: AccountConsentDoc | null;
   preAcceptedTerms: boolean;
   preAcceptedPrivacy: boolean;
-  // F14-3a — hijos pendientes de este email/club (alta multi-hijo).
+  // F14-3a/3c — hijos pendientes de este email/club + docs de imagen vigentes.
   pendingChildren: PendingChild[];
+  imageInternal: ImageConsentDoc | null;
+  imageSocial: ImageConsentDoc | null;
 };
 
-/**
- * F14-3a — Resumen de los hijos que se darán de alta en este mismo paso. Solo
- * informativo: una tarjeta por hijo con su nombre y (si lo tiene) su equipo. El
- * backbone procesa TODAS las pendientes del email en este club al aceptar.
- */
-function ChildrenSummary({ items }: { items: PendingChild[] }) {
-  const t = useTranslations('invite');
-  if (items.length === 0) return null;
-  return (
-    <div className="flex w-full flex-col gap-2 rounded-md border border-zinc-800 bg-zinc-900/40 p-3 text-left">
-      <p className="text-xs font-medium text-zinc-300">{t('children_heading')}</p>
-      <ul className="flex flex-col gap-1">
-        {items.map((child, i) => (
-          <li key={i} className="text-sm text-white">
-            <span className="font-medium">{child.playerName ?? t('child_unnamed')}</span>
-            <span className="text-zinc-500">
-              {' · '}
-              {child.teamName ?? t('child_no_team')}
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+/** F14-3c — ¿hay hijos que requieren decisiones+imagen? Si no, no se gatea por imagen. */
+function hasChildImages(children: PendingChild[]): boolean {
+  return children.some((c) => c.playerId != null);
 }
 
 /**
@@ -71,6 +52,8 @@ export function AcceptForm({
   preAcceptedTerms,
   preAcceptedPrivacy,
   pendingChildren,
+  imageInternal,
+  imageSocial,
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
@@ -78,13 +61,19 @@ export function AcceptForm({
     {},
   );
   const [consentOk, setConsentOk] = useState(false);
+  const [imagesOk, setImagesOk] = useState(!hasChildImages(pendingChildren));
 
   return (
     <form action={formAction} className="flex w-full max-w-sm flex-col items-center gap-4">
       <p className="text-sm text-zinc-300">{t('summary', { club: clubName, role })}</p>
       <p className="text-xs text-zinc-500">{t('invited_email_hint', { email: invitedEmail })}</p>
 
-      <ChildrenSummary items={pendingChildren} />
+      <ChildrenImageSection
+        items={pendingChildren}
+        imageInternal={imageInternal}
+        imageSocial={imageSocial}
+        onSatisfiedChange={setImagesOk}
+      />
 
       <ConsentGate
         terms={legalTerms}
@@ -98,7 +87,7 @@ export function AcceptForm({
 
       <button
         type="submit"
-        disabled={isPending || !consentOk}
+        disabled={isPending || !consentOk || !imagesOk}
         className="rounded-md bg-[#10B981] px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-[#0EA371] disabled:opacity-60"
       >
         {isPending ? t('submitting') : t('submit')}
@@ -129,6 +118,8 @@ export function AcceptWithProfileForm({
   preAcceptedTerms,
   preAcceptedPrivacy,
   pendingChildren,
+  imageInternal,
+  imageSocial,
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
@@ -139,13 +130,19 @@ export function AcceptWithProfileForm({
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [consentOk, setConsentOk] = useState(false);
+  const [imagesOk, setImagesOk] = useState(!hasChildImages(pendingChildren));
   const clientMismatch = password.length > 0 && confirm.length > 0 && password !== confirm;
 
   return (
     <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
       <p className="text-sm text-zinc-300">{t('set_password_summary', { club: clubName, role })}</p>
 
-      <ChildrenSummary items={pendingChildren} />
+      <ChildrenImageSection
+        items={pendingChildren}
+        imageInternal={imageInternal}
+        imageSocial={imageSocial}
+        onSatisfiedChange={setImagesOk}
+      />
 
       <label className="flex flex-col gap-2 text-left">
         <span className="text-sm font-medium text-zinc-200">{t('email_label')}</span>
@@ -231,7 +228,7 @@ export function AcceptWithProfileForm({
 
       <button
         type="submit"
-        disabled={isPending || clientMismatch || !consentOk}
+        disabled={isPending || clientMismatch || !consentOk || !imagesOk}
         className="rounded-md bg-[#10B981] px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-[#0EA371] disabled:opacity-60"
       >
         {isPending ? t('set_password_submitting') : t('set_password_submit')}
@@ -256,6 +253,8 @@ export function SignInToAcceptForm({
   preAcceptedTerms,
   preAcceptedPrivacy,
   pendingChildren,
+  imageInternal,
+  imageSocial,
 }: CommonProps) {
   const t = useTranslations('invite');
   const [state, formAction, isPending] = useActionState<AcceptInvitationState, FormData>(
@@ -263,12 +262,18 @@ export function SignInToAcceptForm({
     {},
   );
   const [consentOk, setConsentOk] = useState(false);
+  const [imagesOk, setImagesOk] = useState(!hasChildImages(pendingChildren));
 
   return (
     <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
       <p className="text-sm text-zinc-300">{t('signin_summary', { club: clubName, role })}</p>
 
-      <ChildrenSummary items={pendingChildren} />
+      <ChildrenImageSection
+        items={pendingChildren}
+        imageInternal={imageInternal}
+        imageSocial={imageSocial}
+        onSatisfiedChange={setImagesOk}
+      />
 
       <label className="flex flex-col gap-2 text-left">
         <span className="text-sm font-medium text-zinc-200">{t('email_label')}</span>
@@ -304,7 +309,7 @@ export function SignInToAcceptForm({
 
       <button
         type="submit"
-        disabled={isPending || !consentOk}
+        disabled={isPending || !consentOk || !imagesOk}
         className="rounded-md bg-[#10B981] px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-[#0EA371] disabled:opacity-60"
       >
         {isPending ? t('signin_submitting') : t('signin_submit')}
@@ -335,6 +340,8 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       player_link_failed: 'error_player_link_failed',
       team_staff_failed: 'error_team_staff_failed',
       consent_required: 'error_consent_required',
+      image_required: 'error_image_required',
+      image_decision_required: 'error_image_decision_required',
       generic: 'error_generic',
     }[error] ?? 'error_generic';
 

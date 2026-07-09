@@ -723,7 +723,21 @@
     "children_heading": "Vas a dar de alta a:",
     "child_unnamed": "Jugador/a",
     "child_no_team": "Sin equipo asignado",
-    "error_consent_required": "Debes aceptar los Términos y la Política de Privacidad para completar el alta."
+    "error_consent_required": "Debes aceptar los Términos y la Política de Privacidad para completar el alta.",
+    "image_heading": "Consentimientos de imagen y foto de cada hijo",
+    "image_internal_q": "¿Autorizas el uso de su imagen dentro de la app?",
+    "image_social_q": "¿Autorizas el uso de su imagen en redes sociales?",
+    "image_yes": "Sí",
+    "image_no": "No",
+    "image_upload_photo": "Sube una foto del niño/a",
+    "image_upload_avatar": "Sube un avatar (imagen que le represente)",
+    "image_hint": "JPG, PNG o WebP. Máximo {maxMb} MB.",
+    "image_err_mime": "Formato no válido (usa JPG, PNG o WebP).",
+    "image_err_large": "La imagen supera el tamaño máximo.",
+    "image_err_empty": "El archivo está vacío.",
+    "image_err_generic": "No se pudo procesar la imagen.",
+    "error_image_required": "Falta la imagen de algún hijo. Sube una foto o un avatar para cada uno.",
+    "error_image_decision_required": "Responde Sí o No a las dos preguntas de imagen de cada hijo."
   },
   "informes": {
     "title": "Informes de desarrollo",
