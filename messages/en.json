@@ -3945,5 +3945,28 @@
       "confirm": "Save",
       "toast_set": "Signal updated."
     }
+  },
+  "reconsent": {
+    "title": "Renew your consents",
+    "subtitle": "The {season} season has started. To keep using the app, confirm the required consents and review the optional ones for each child.",
+    "required_intro": "Required to continue:",
+    "accept_terms": "I accept the Terms and conditions",
+    "accept_privacy": "I accept the Privacy policy",
+    "optional_intro": "Optional per child (they never block access). Leave “No change” to keep last season’s choice.",
+    "image_internal": "Image for the club’s internal use",
+    "image_social": "Image on social media",
+    "medical": "Processing of medical data",
+    "keep": "No change",
+    "yes": "Yes",
+    "no": "No",
+    "view": "view text",
+    "close": "Close",
+    "continue": "Continue",
+    "errors": {
+      "consent_required": "You must accept the Terms and Privacy to continue.",
+      "forbidden": "You are not allowed to do this.",
+      "generic": "Could not save. Please try again.",
+      "no_session": "Your session has expired. Please sign in again."
+    }
   }
 }

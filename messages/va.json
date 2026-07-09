@@ -3945,5 +3945,28 @@
       "confirm": "Guarda",
       "toast_set": "Senya actualitzada."
     }
+  },
+  "reconsent": {
+    "title": "Renova els teus consentiments",
+    "subtitle": "Ha començat la temporada {season}. Per a seguir usant l’app, confirma els consentiments obligatoris i revisa els opcionals de cada fill.",
+    "required_intro": "Obligatoris per a continuar:",
+    "accept_terms": "Accepte els Termes i condicions",
+    "accept_privacy": "Accepte la Política de privacitat",
+    "optional_intro": "Opcionals per fill (no bloquegen l’accés). Deixa “Sense canvis” per a mantindre el de la temporada anterior.",
+    "image_internal": "Imatge per a ús intern del club",
+    "image_social": "Imatge en xarxes socials",
+    "medical": "Tractament de dades mèdiques",
+    "keep": "Sense canvis",
+    "yes": "Sí",
+    "no": "No",
+    "view": "veure text",
+    "close": "Tancar",
+    "continue": "Continuar",
+    "errors": {
+      "consent_required": "Has d’acceptar els Termes i la Privacitat per a continuar.",
+      "forbidden": "No tens permís per a esta acció.",
+      "generic": "No s’ha pogut guardar. Torna-ho a intentar.",
+      "no_session": "La teua sessió ha caducat. Torna a entrar."
+    }
   }
 }

@@ -492,6 +492,7 @@ export type Database = {
           ip: string | null
           legal_document_version: number
           player_id: string | null
+          season_id: string
           tutor_profile_id: string
           user_agent: string | null
         }
@@ -504,6 +505,7 @@ export type Database = {
           ip?: string | null
           legal_document_version: number
           player_id?: string | null
+          season_id: string
           tutor_profile_id: string
           user_agent?: string | null
         }
@@ -516,6 +518,7 @@ export type Database = {
           ip?: string | null
           legal_document_version?: number
           player_id?: string | null
+          season_id?: string
           tutor_profile_id?: string
           user_agent?: string | null
         }
@@ -525,6 +528,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consents_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
             referencedColumns: ["id"]
           },
           {
@@ -3748,9 +3758,36 @@ export type Database = {
         Args: { p_player_id: string }
         Returns: boolean
       }
-      user_has_medical_consent: {
+      user_has_medical_consent_read: {
         Args: { p_player_id: string }
         Returns: boolean
+      }
+      user_has_medical_consent_write: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
+      active_season_id: {
+        Args: { p_club_id: string }
+        Returns: string
+      }
+      player_photo_visible: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
+      tutor_needs_reconsent: {
+        Args: { p_club_id: string }
+        Returns: boolean
+      }
+      record_season_reconsent: {
+        Args: {
+          p_club_id: string
+          p_accept_terms?: boolean
+          p_accept_privacy?: boolean
+          p_ip?: string
+          p_user_agent?: string
+          p_children?: Json
+        }
+        Returns: undefined
       }
       user_can_see_session: { Args: { p_session_id: string }; Returns: boolean }
       user_can_see_shared_lineup: {

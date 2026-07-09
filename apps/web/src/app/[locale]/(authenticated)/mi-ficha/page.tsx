@@ -161,9 +161,10 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
   );
   const tJugadores = await getTranslations('jugadores');
 
-  // F14-4 — el tutor gestiona la info médica de su hijo si hay consentimiento
-  // vigente. Sin consentimiento la RLS no permite escribir (ni la fila es visible).
-  const { data: hasMedicalConsent } = await supabase.rpc('user_has_medical_consent', {
+  // F14-4/F14-5 — el tutor gestiona la médica de su hijo si hay consentimiento de
+  // ESCRITURA (otorgado para la TEMPORADA ACTIVA). Tras un cambio de temporada sin
+  // re-consentir no se puede escribir aunque la médica siga siendo LEGIBLE.
+  const { data: hasMedicalConsent } = await supabase.rpc('user_has_medical_consent_write', {
     p_player_id: playerId,
   });
   const canManageMedical = Boolean(isTutorOfPlayer && hasMedicalConsent);

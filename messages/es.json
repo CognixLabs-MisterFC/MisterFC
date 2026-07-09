@@ -3944,5 +3944,28 @@
       "confirm": "Guardar",
       "toast_set": "Seña actualizada."
     }
+  },
+  "reconsent": {
+    "title": "Renueva tus consentimientos",
+    "subtitle": "Ha comenzado la temporada {season}. Para seguir usando la app, confirma los consentimientos obligatorios y revisa los opcionales de cada hijo.",
+    "required_intro": "Obligatorios para continuar:",
+    "accept_terms": "Acepto los Términos y condiciones",
+    "accept_privacy": "Acepto la Política de privacidad",
+    "optional_intro": "Opcionales por hijo (no bloquean el acceso). Deja “Sin cambios” para mantener lo de la temporada anterior.",
+    "image_internal": "Imagen para uso interno del club",
+    "image_social": "Imagen en redes sociales",
+    "medical": "Tratamiento de datos médicos",
+    "keep": "Sin cambios",
+    "yes": "Sí",
+    "no": "No",
+    "view": "ver texto",
+    "close": "Cerrar",
+    "continue": "Continuar",
+    "errors": {
+      "consent_required": "Debes aceptar los Términos y la Privacidad para continuar.",
+      "forbidden": "No tienes permiso para esta acción.",
+      "generic": "No se pudo guardar. Inténtalo de nuevo.",
+      "no_session": "Tu sesión ha caducado. Vuelve a entrar."
+    }
   }
 }
