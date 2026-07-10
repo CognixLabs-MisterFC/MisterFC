@@ -22,12 +22,13 @@ export type AccountConsentDocs = {
   privacy: AccountConsentDoc | null;
 };
 
-/** Versión vigente (mayor `version`) de T&C y Privacidad, con su texto. */
-export async function loadCurrentLegalDocs(): Promise<AccountConsentDocs> {
+/** Versión vigente (mayor `version`) de T&C y Privacidad DEL CLUB, con su texto. */
+export async function loadCurrentLegalDocs(clubId: string): Promise<AccountConsentDocs> {
   const admin = createSupabaseAdminClient();
   const { data } = await admin
     .from('legal_documents')
     .select('doc_type, version, title, body')
+    .eq('club_id', clubId)
     .in('doc_type', ['terms_conditions', 'privacy_policy'])
     .order('version', { ascending: false });
 
@@ -58,11 +59,12 @@ export type ImageConsentDocs = {
   social: ImageConsentDoc | null;
 };
 
-export async function loadImageLegalDocs(): Promise<ImageConsentDocs> {
+export async function loadImageLegalDocs(clubId: string): Promise<ImageConsentDocs> {
   const admin = createSupabaseAdminClient();
   const { data } = await admin
     .from('legal_documents')
     .select('doc_type, version, title, body')
+    .eq('club_id', clubId)
     .in('doc_type', ['image_internal', 'image_social'])
     .order('version', { ascending: false });
 
@@ -81,11 +83,12 @@ export async function loadImageLegalDocs(): Promise<ImageConsentDocs> {
  */
 export type MedicalConsentDoc = { version: number; title: string; body: string };
 
-export async function loadMedicalLegalDoc(): Promise<MedicalConsentDoc | null> {
+export async function loadMedicalLegalDoc(clubId: string): Promise<MedicalConsentDoc | null> {
   const admin = createSupabaseAdminClient();
   const { data } = await admin
     .from('legal_documents')
     .select('version, title, body')
+    .eq('club_id', clubId)
     .eq('doc_type', 'medical_informed_consent')
     .order('version', { ascending: false })
     .limit(1)

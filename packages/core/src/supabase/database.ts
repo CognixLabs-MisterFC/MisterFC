@@ -561,6 +561,7 @@ export type Database = {
           granted: boolean
           id: string
           ip: string | null
+          legal_document_id: string
           legal_document_version: number
           player_id: string | null
           season_id: string
@@ -574,6 +575,7 @@ export type Database = {
           granted: boolean
           id?: string
           ip?: string | null
+          legal_document_id: string
           legal_document_version: number
           player_id?: string | null
           season_id: string
@@ -587,6 +589,7 @@ export type Database = {
           granted?: boolean
           id?: string
           ip?: string | null
+          legal_document_id?: string
           legal_document_version?: number
           player_id?: string | null
           season_id?: string
@@ -594,6 +597,13 @@ export type Database = {
           user_agent?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "consents_legal_document_id_fkey"
+            columns: ["legal_document_id"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "consents_player_id_fkey"
             columns: ["player_id"]
@@ -1208,6 +1218,7 @@ export type Database = {
       legal_documents: {
         Row: {
           body: string
+          club_id: string
           created_at: string
           doc_type: Database["public"]["Enums"]["legal_document_type"]
           id: string
@@ -1217,6 +1228,7 @@ export type Database = {
         }
         Insert: {
           body: string
+          club_id: string
           created_at?: string
           doc_type: Database["public"]["Enums"]["legal_document_type"]
           id?: string
@@ -1226,6 +1238,7 @@ export type Database = {
         }
         Update: {
           body?: string
+          club_id?: string
           created_at?: string
           doc_type?: Database["public"]["Enums"]["legal_document_type"]
           id?: string
@@ -1233,7 +1246,15 @@ export type Database = {
           title?: string
           version?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "legal_documents_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lineup_positions: {
         Row: {
@@ -3899,6 +3920,17 @@ export type Database = {
       active_season_id: {
         Args: { p_club_id: string }
         Returns: string
+      }
+      current_legal_version: {
+        Args: {
+          p_club_id: string
+          p_doc_type: Database["public"]["Enums"]["legal_document_type"]
+        }
+        Returns: number
+      }
+      seed_club_legal_documents: {
+        Args: { p_club_id: string }
+        Returns: undefined
       }
       player_photo_visible: {
         Args: { p_player_id: string }
