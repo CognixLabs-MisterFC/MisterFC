@@ -385,7 +385,18 @@
     "section": {
       "avatar": "Foto de perfil",
       "data": "Datos personales",
-      "account": "Cuenta"
+      "account": "Cuenta",
+      "consents": "Consentimientos"
+    },
+    "consents": {
+      "account_group": "Tu cuenta",
+      "child_unnamed": "Hijo/a",
+      "granted": "Aceptado",
+      "denied": "Denegado",
+      "view": "Ver el texto que aceptaste",
+      "close": "Cerrar",
+      "load_error": "No se pudo cargar el texto.",
+      "empty": "Todavía no tienes consentimientos registrados en este club."
     },
     "field": {
       "full_name": "Nombre completo",

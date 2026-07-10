@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { LegalTextModal } from '@/components/legal/legal-text-modal';
 import type { AccountConsentDoc } from './consent-data';
 
 export type ConsentGateProps = {
@@ -104,31 +105,14 @@ export function ConsentGate({
         t('consent_accept_privacy'),
       )}
 
-      {openDoc && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setOpenDoc(null)}
-        >
-          <div
-            className="flex max-h-[80vh] w-full max-w-lg flex-col gap-3 overflow-hidden rounded-lg border border-zinc-700 bg-[#0F1B2E] p-5 text-left"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold text-white">{openDoc.title}</h2>
-            <div className="overflow-y-auto whitespace-pre-wrap text-sm text-zinc-300">
-              {openDoc.body}
-            </div>
-            <button
-              type="button"
-              onClick={() => setOpenDoc(null)}
-              className="self-end rounded-md bg-[#10B981] px-3 py-1.5 text-sm font-semibold text-zinc-900 transition hover:bg-[#0EA371]"
-            >
-              {t('consent_close')}
-            </button>
-          </div>
-        </div>
-      )}
+      <LegalTextModal
+        open={openDoc != null}
+        title={openDoc?.title ?? null}
+        body={openDoc?.body ?? null}
+        closeLabel={t('consent_close')}
+        errorLabel={t('consent_close')}
+        onClose={() => setOpenDoc(null)}
+      />
     </div>
   );
 }

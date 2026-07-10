@@ -490,7 +490,18 @@
     "section": {
       "avatar": "Foto de perfil",
       "data": "Datos personales",
-      "account": "Cuenta"
+      "account": "Cuenta",
+      "consents": "Consentiments"
+    },
+    "consents": {
+      "account_group": "El teu compte",
+      "child_unnamed": "Fill/a",
+      "granted": "Acceptat",
+      "denied": "Denegat",
+      "view": "Veure el text que vas acceptar",
+      "close": "Tancar",
+      "load_error": "No s'ha pogut carregar el text.",
+      "empty": "Encara no tens consentiments registrats en aquest club."
     },
     "field": {
       "full_name": "Nombre completo",

@@ -3879,6 +3879,25 @@ export type Database = {
           emergency_contact: string | null
         }[]
       }
+      get_tutor_consents: {
+        Args: { p_club_id: string }
+        Returns: {
+          player_id: string | null
+          player_name: string | null
+          consent_type: Database["public"]["Enums"]["consent_type"]
+          granted: boolean
+          accepted_at: string
+          legal_document_id: string
+          title: string
+        }[]
+      }
+      get_legal_document_body: {
+        Args: { p_legal_document_id: string }
+        Returns: {
+          title: string
+          body: string
+        }[]
+      }
       record_data_export: {
         Args: {
           p_player_id: string

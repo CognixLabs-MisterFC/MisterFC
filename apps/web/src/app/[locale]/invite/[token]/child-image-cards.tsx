@@ -7,6 +7,7 @@ import {
   PLAYER_PHOTO_MIME_TYPES,
   playerPhotoUploadSchema,
 } from '@misterfc/core';
+import { LegalTextModal } from '@/components/legal/legal-text-modal';
 import type { ImageConsentDoc, MedicalConsentDoc } from './consent-data';
 
 /** F14-3c — un hijo pendiente con su player_id (para nombrar los campos del form). */
@@ -205,25 +206,14 @@ export function ChildrenImageSection({
         );
       })}
 
-      {viewer && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="flex max-h-[80vh] w-full max-w-lg flex-col gap-4 overflow-y-auto rounded-lg bg-zinc-900 p-6 text-left">
-            <h2 className="text-lg font-bold text-white">{viewer.title}</h2>
-            <p className="whitespace-pre-wrap text-sm text-zinc-300">{viewer.body}</p>
-            <button
-              type="button"
-              onClick={() => setViewer(null)}
-              className="self-end rounded-md bg-zinc-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-600"
-            >
-              {t('consent_close')}
-            </button>
-          </div>
-        </div>
-      )}
+      <LegalTextModal
+        open={viewer != null}
+        title={viewer?.title ?? null}
+        body={viewer?.body ?? null}
+        closeLabel={t('consent_close')}
+        errorLabel={t('consent_close')}
+        onClose={() => setViewer(null)}
+      />
     </div>
   );
 }

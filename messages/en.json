@@ -490,7 +490,18 @@
     "section": {
       "avatar": "Foto de perfil",
       "data": "Datos personales",
-      "account": "Cuenta"
+      "account": "Cuenta",
+      "consents": "Consents"
+    },
+    "consents": {
+      "account_group": "Your account",
+      "child_unnamed": "Child",
+      "granted": "Accepted",
+      "denied": "Declined",
+      "view": "View the text you accepted",
+      "close": "Close",
+      "load_error": "The text could not be loaded.",
+      "empty": "You have no consents recorded in this club yet."
     },
     "field": {
       "full_name": "Nombre completo",
