@@ -80,7 +80,7 @@ export default async function InvitePage({ params }: Props) {
   // F14-2 — T&C + Privacidad obligatorios en el paso final del alta. Se lee el
   // texto vigente (max version) y, si ya hay sesión que coincide, si el tutor ya
   // los aceptó en esa versión (para no volver a pedirlos ni duplicar filas).
-  const legal = await loadCurrentLegalDocs();
+  const legal = await loadCurrentLegalDocs(inv.club_id);
   const preAccepted =
     user && sessionEmailMatches
       ? await loadAccountConsentStatus(
@@ -105,9 +105,9 @@ export default async function InvitePage({ params }: Props) {
 
   // F14-3c — textos vigentes de consentimiento de imagen (interna / redes) para
   // enlazar en cada tarjeta de hijo.
-  const imageDocs = await loadImageLegalDocs();
+  const imageDocs = await loadImageLegalDocs(inv.club_id);
   // F14-4 — texto informado de datos médicos (opcional por hijo).
-  const medicalDoc = await loadMedicalLegalDoc();
+  const medicalDoc = await loadMedicalLegalDoc(inv.club_id);
 
   const consentProps = {
     legalTerms: legal.terms,

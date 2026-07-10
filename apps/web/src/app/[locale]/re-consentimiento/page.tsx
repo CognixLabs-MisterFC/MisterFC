@@ -53,9 +53,9 @@ export default async function ReconsentPage({ params }: Props) {
     }));
 
   const [{ terms, privacy }, imageDocs, medicalDoc, seasonLabel] = await Promise.all([
-    loadCurrentLegalDocs(),
-    loadImageLegalDocs(),
-    loadMedicalLegalDoc(),
+    loadCurrentLegalDocs(clubId),
+    loadImageLegalDocs(clubId),
+    loadMedicalLegalDoc(clubId),
     getActiveSeasonLabel(supabase, clubId),
   ]);
 
