@@ -33,7 +33,12 @@ type TeamRow = {
 type MemberRow = {
   team_id: string;
   player_id: string;
-  players: { first_name: string; last_name: string | null; left_club_at: string | null };
+  players: {
+    first_name: string;
+    last_name: string | null;
+    left_club_at: string | null;
+    erased_at: string | null;
+  };
 };
 
 export default async function ReasignacionPage({ params }: Props) {
@@ -94,11 +99,14 @@ export default async function ReasignacionPage({ params }: Props) {
   const { data: memberData } = allTeamIds.length
     ? await supabase
         .from('team_members')
-        .select('team_id, player_id, players!inner(first_name, last_name, left_club_at)')
+        .select('team_id, player_id, players!inner(first_name, last_name, left_club_at, erased_at)')
         .in('team_id', allTeamIds)
         .is('left_at', null)
     : { data: [] as MemberRow[] };
-  const members = (memberData ?? []) as unknown as MemberRow[];
+  // F14-7: los jugadores SUPRIMIDOS se excluyen del roster y de los pendientes.
+  const members = ((memberData ?? []) as unknown as MemberRow[]).filter(
+    (m) => m.players.erased_at == null
+  );
 
   // Para cada jugador, en qué equipos de la upcoming está colocado (membresía
   // abierta). Permite a la tarjeta mostrar "colocar" o "quitar" según el destino.

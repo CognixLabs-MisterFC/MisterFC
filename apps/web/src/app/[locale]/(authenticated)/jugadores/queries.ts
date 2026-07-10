@@ -324,7 +324,10 @@ export async function loadGlobalPlayers(
        player_accounts(profile_id)`,
       { count: 'exact' }
     )
-    .eq('club_id', clubId);
+    .eq('club_id', clubId)
+    // F14-7: los jugadores SUPRIMIDOS (derecho al olvido) se excluyen SIEMPRE del
+    // listado, incluso con el toggle "ver bajas". Supresión ≠ baja.
+    .is('erased_at', null);
 
   // C11a: por defecto se ocultan las bajas (left_club_at IS NULL). El toggle
   // "ver bajas" las incluye para consultar su histórico.
@@ -426,7 +429,8 @@ async function loadNoTeamPlayerIds(clubId: string): Promise<string[]> {
     .from('players')
     .select('id')
     .eq('club_id', clubId)
-    .is('left_club_at', null);
+    .is('left_club_at', null)
+    .is('erased_at', null); // F14-7: los suprimidos no son "sin equipo"
   const activeIds = (activeData ?? []).map((r) => r.id as string);
   if (activeIds.length === 0) return [];
 

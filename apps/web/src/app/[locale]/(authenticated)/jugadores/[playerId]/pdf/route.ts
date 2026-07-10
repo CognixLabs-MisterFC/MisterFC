@@ -53,10 +53,11 @@ export async function GET(
 
   const { data: player } = await supabase
     .from('players')
-    .select('id, club_id, first_name, last_name, dorsal')
+    .select('id, club_id, first_name, last_name, dorsal, erased_at')
     .eq('id', playerId)
     .maybeSingle();
-  if (!player || player.club_id !== ctx.activeClub.club.id) {
+  // F14-7 — jugador suprimido: ficha (y su PDF) inaccesible.
+  if (!player || player.club_id !== ctx.activeClub.club.id || player.erased_at) {
     return new Response('Not found', { status: 404 });
   }
 

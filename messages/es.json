@@ -361,7 +361,8 @@
       "partidos": "Partidos",
       "plantilla": "Plantilla",
       "pizarra": "Pizarra",
-      "sesiones": "Sesiones"
+      "sesiones": "Sesiones",
+      "supresiones": "Supresiones"
     },
     "collapse_sidebar": "Ocultar el menú",
     "expand_sidebar": "Mostrar el menú"
@@ -3966,6 +3967,31 @@
       "forbidden": "No tienes permiso para esta acción.",
       "generic": "No se pudo guardar. Inténtalo de nuevo.",
       "no_session": "Tu sesión ha caducado. Vuelve a entrar."
+    }
+  },
+  "erasure": {
+    "card_title": "Derecho al olvido",
+    "card_hint": "Puedes solicitar la supresión de los datos de tu hijo. La aprobará la dirección del club. Es irreversible: se borran la foto y los datos médicos.",
+    "request_button": "Solicitar supresión",
+    "request_title": "Solicitar el derecho al olvido",
+    "request_warning": "Vas a solicitar la supresión de los datos de tu hijo. Si la dirección la aprueba, se borrarán la foto y los datos médicos, y el resto de datos personales quedarán ocultos. El histórico deportivo se conserva solo con el nombre de pila. Es irreversible.",
+    "request_reason_placeholder": "Motivo (opcional)",
+    "request_confirm": "Enviar solicitud",
+    "request_sent": "Solicitud enviada. La dirección del club la revisará.",
+    "cancel": "Cancelar",
+    "inbox_title": "Solicitudes de supresión",
+    "inbox_hint": "Solicitudes de derecho al olvido pendientes de decidir. Aprobar es irreversible: se borran la foto y los datos médicos del menor.",
+    "inbox_empty": "No hay solicitudes pendientes.",
+    "requested_by": "Solicitado por {who} · {date}",
+    "approve": "Aprobar",
+    "approve_confirm": "Confirmar supresión",
+    "approve_warning": "Irreversible: se borran foto y datos médicos.",
+    "reject": "Rechazar",
+    "errors": {
+      "generic": "No se pudo completar. Inténtalo de nuevo.",
+      "forbidden": "No tienes permiso.",
+      "already_decided": "La solicitud ya estaba decidida.",
+      "not_found": "La solicitud no existe."
     }
   }
 }
