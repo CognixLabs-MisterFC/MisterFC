@@ -20,6 +20,13 @@
  * El título del documento = primer encabezado markdown (# ...) del fichero; si
  * no hay, se usa un título por defecto. El body = contenido íntegro del .md.
  *
+ * IDEMPOTENCIA: antes de publicar se compara el body del .md con el de la versión
+ * VIGENTE (max) de ese club/doc_type. Si COINCIDEN no se publica versión nueva (se
+ * avisa y se sigue con los demás). "Coinciden" = iguales tras normalizar ÚNICAMENTE
+ * el espacio en blanco FINAL del fichero (saltos de línea y espacios al final). NO
+ * se normaliza el contenido: un cambio de espaciado DENTRO del texto legal es un
+ * cambio real y publica versión nueva.
+ *
  * Requisitos en apps/web/.env.local: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
  */
 
@@ -82,6 +89,27 @@ function titleFromMarkdown(body, fallback) {
   return fallback;
 }
 
+// Idempotencia: normaliza SOLO el espacio en blanco FINAL del fichero (saltos de
+// línea y espacios al final). NO toca el contenido interior: un cambio de
+// espaciado dentro del texto ES un cambio y debe publicar versión nueva.
+function normalizeTrailing(text) {
+  return text.replace(/\s+$/u, '');
+}
+
+// Versión vigente (id, version, body) de un club/doc_type, o null si no existe.
+async function currentDoc(clubId, docType) {
+  const { data, error } = await supabase
+    .from('legal_documents')
+    .select('id, version, body')
+    .eq('club_id', clubId)
+    .eq('doc_type', docType)
+    .order('version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ?? null;
+}
+
 async function resolveClubId(clubRef) {
   if (UUID_RE.test(clubRef)) return clubRef;
   const { data, error } = await supabase.from('clubs').select('id, name').eq('slug', clubRef).maybeSingle();
@@ -91,25 +119,13 @@ async function resolveClubId(clubRef) {
   return data.id;
 }
 
-async function nextVersion(clubId, docType) {
-  const { data, error } = await supabase
-    .from('legal_documents')
-    .select('version')
-    .eq('club_id', clubId)
-    .eq('doc_type', docType)
-    .order('version', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  return (data?.version ?? 0) + 1;
-}
-
 // ── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
   console.log(`\nF14-11/12 · carga de textos legales${DRY_RUN ? ' (DRY-RUN)' : ''}`);
   const clubId = await resolveClubId(CLUB);
 
   let published = 0;
+  let unchanged = 0;
   for (const dt of DOC_TYPES) {
     const path = join(DIR, dt.file);
     if (!existsSync(path)) {
@@ -122,7 +138,17 @@ async function main() {
       continue;
     }
     const title = titleFromMarkdown(body, dt.defaultTitle);
-    const version = await nextVersion(clubId, dt.type);
+    const current = await currentDoc(clubId, dt.type);
+
+    // Idempotencia: si el body coincide con el vigente (salvo espacio final), no
+    // se publica versión nueva.
+    if (current && normalizeTrailing(current.body) === normalizeTrailing(body)) {
+      console.log(`  = ${dt.type}: sin cambios respecto a v${current.version}, no ${DRY_RUN ? 'publicaría' : 'se publica'}`);
+      unchanged++;
+      continue;
+    }
+
+    const version = (current?.version ?? 0) + 1;
 
     if (DRY_RUN) {
       console.log(`  · ${dt.type}: publicaría v${version} — "${title}" (${body.length} chars)`);
@@ -136,7 +162,10 @@ async function main() {
     published++;
   }
 
-  console.log(`\n${DRY_RUN ? 'Dry-run completado.' : `Publicados ${published} documento(s).`}\n`);
+  console.log(
+    `\n${DRY_RUN ? 'Dry-run completado.' : `Publicados ${published} documento(s)`}` +
+      `${unchanged ? ` · ${unchanged} sin cambios` : ''}.\n`,
+  );
 }
 
 main().catch((e) => {
