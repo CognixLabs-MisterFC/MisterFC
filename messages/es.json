@@ -3180,6 +3180,11 @@
         "forbidden": "No tienes permiso (falta consentimiento).",
         "generic": "No se pudo guardar."
       }
+    },
+    "data_export": {
+      "title": "Descargar expediente (derecho de acceso)",
+      "hint": "Descarga en PDF todo lo que ves sobre tu hijo/a: identidad, foto, información médica, histórico deportivo, informes de desarrollo y logros. No incluye notas privadas del entrenador ni mensajes.",
+      "button": "Descargar expediente (PDF)"
     }
   },
   "mi_informe": {
@@ -3992,6 +3997,55 @@
       "forbidden": "No tienes permiso.",
       "already_decided": "La solicitud ya estaba decidida.",
       "not_found": "La solicitud no existe."
+    }
+  },
+  "access_export": {
+    "title": "Expediente del jugador",
+    "reports_title": "Informes de desarrollo",
+    "file": "expediente",
+    "generated": "Generado el {date}",
+    "age": "{age} años",
+    "career_totals": "Total carrera",
+    "section": {
+      "medical": "Información médica",
+      "season_stats": "Estadísticas {season}",
+      "career": "Carrera",
+      "attendance": "Asistencia a entrenamientos",
+      "achievements": "Logros",
+      "evaluations": "Valoraciones"
+    },
+    "col": {
+      "season": "Temporada",
+      "matches": "PJ",
+      "minutes": "Min",
+      "goals": "G",
+      "assists": "A",
+      "starts": "Tit",
+      "yellow": "TA",
+      "red": "TR",
+      "start_rate": "% Tit",
+      "rating": "Nota"
+    },
+    "medical": {
+      "allergies": "Alergias",
+      "medication": "Medicación",
+      "medical_conditions": "Condiciones médicas",
+      "emergency_contact": "Contacto de emergencia",
+      "none": "Sin información médica registrada."
+    },
+    "attendance": {
+      "present_pct": "% Asistencia",
+      "sessions": "Sesiones",
+      "none": "Sin registros de asistencia."
+    },
+    "achievements": {
+      "none": "Sin logros."
+    },
+    "eval": {
+      "match": "Partido",
+      "rating": "Nota",
+      "team": "Equipo",
+      "comment": "Comentario"
     }
   }
 }

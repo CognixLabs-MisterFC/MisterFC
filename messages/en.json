@@ -3181,6 +3181,11 @@
         "forbidden": "Not allowed (consent missing).",
         "generic": "Could not save."
       }
+    },
+    "data_export": {
+      "title": "Download file (right of access)",
+      "hint": "Download a PDF with everything you see about your child: identity, photo, medical information, sporting history, development reports and achievements. It does not include the coach private notes or messages.",
+      "button": "Download file (PDF)"
     }
   },
   "mi_informe": {
@@ -3993,6 +3998,55 @@
       "forbidden": "You are not allowed.",
       "already_decided": "The request was already decided.",
       "not_found": "The request does not exist."
+    }
+  },
+  "access_export": {
+    "title": "Player file",
+    "reports_title": "Development reports",
+    "file": "player-file",
+    "generated": "Generated on {date}",
+    "age": "{age} years",
+    "career_totals": "Career total",
+    "section": {
+      "medical": "Medical information",
+      "season_stats": "Statistics {season}",
+      "career": "Career",
+      "attendance": "Training attendance",
+      "achievements": "Achievements",
+      "evaluations": "Ratings"
+    },
+    "col": {
+      "season": "Season",
+      "matches": "GP",
+      "minutes": "Min",
+      "goals": "G",
+      "assists": "A",
+      "starts": "St",
+      "yellow": "YC",
+      "red": "RC",
+      "start_rate": "Start %",
+      "rating": "Rating"
+    },
+    "medical": {
+      "allergies": "Allergies",
+      "medication": "Medication",
+      "medical_conditions": "Medical conditions",
+      "emergency_contact": "Emergency contact",
+      "none": "No medical information on record."
+    },
+    "attendance": {
+      "present_pct": "Attendance %",
+      "sessions": "Sessions",
+      "none": "No attendance records."
+    },
+    "achievements": {
+      "none": "No achievements."
+    },
+    "eval": {
+      "match": "Match",
+      "rating": "Rating",
+      "team": "Team",
+      "comment": "Comment"
     }
   }
 }

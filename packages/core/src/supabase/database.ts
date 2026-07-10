@@ -3858,6 +3858,14 @@ export type Database = {
           emergency_contact: string | null
         }[]
       }
+      record_data_export: {
+        Args: {
+          p_player_id: string
+          p_ip?: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
       request_player_erasure: {
         Args: { p_player_id: string; p_reason?: string }
         Returns: string

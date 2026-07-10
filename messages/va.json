@@ -3181,6 +3181,11 @@
         "forbidden": "No tens permís (falta consentiment).",
         "generic": "No s’ha pogut guardar."
       }
+    },
+    "data_export": {
+      "title": "Descarregar expedient (dret d accés)",
+      "hint": "Descarrega en PDF tot el que veus sobre el teu fill/a: identitat, foto, informació mèdica, històric esportiu, informes de desenvolupament i assoliments. No inclou notes privades de l entrenador ni missatges.",
+      "button": "Descarregar expedient (PDF)"
     }
   },
   "mi_informe": {
@@ -3993,6 +3998,55 @@
       "forbidden": "No tens permís.",
       "already_decided": "La sol·licitud ja estava decidida.",
       "not_found": "La sol·licitud no existeix."
+    }
+  },
+  "access_export": {
+    "title": "Expedient del jugador",
+    "reports_title": "Informes de desenvolupament",
+    "file": "expedient",
+    "generated": "Generat el {date}",
+    "age": "{age} anys",
+    "career_totals": "Total carrera",
+    "section": {
+      "medical": "Informació mèdica",
+      "season_stats": "Estadístiques {season}",
+      "career": "Carrera",
+      "attendance": "Assistència a entrenaments",
+      "achievements": "Assoliments",
+      "evaluations": "Valoracions"
+    },
+    "col": {
+      "season": "Temporada",
+      "matches": "PJ",
+      "minutes": "Min",
+      "goals": "G",
+      "assists": "A",
+      "starts": "Tit",
+      "yellow": "TA",
+      "red": "TR",
+      "start_rate": "% Tit",
+      "rating": "Nota"
+    },
+    "medical": {
+      "allergies": "Al·lèrgies",
+      "medication": "Medicació",
+      "medical_conditions": "Condicions mèdiques",
+      "emergency_contact": "Contacte d emergència",
+      "none": "Sense informació mèdica registrada."
+    },
+    "attendance": {
+      "present_pct": "% Assistència",
+      "sessions": "Sessions",
+      "none": "Sense registres d assistència."
+    },
+    "achievements": {
+      "none": "Sense assoliments."
+    },
+    "eval": {
+      "match": "Partit",
+      "rating": "Nota",
+      "team": "Equip",
+      "comment": "Comentari"
     }
   }
 }
