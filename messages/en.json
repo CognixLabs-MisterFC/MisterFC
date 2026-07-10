@@ -3968,6 +3968,7 @@
     "view": "view text",
     "close": "Close",
     "continue": "Continue",
+    "skip": "Continue without changes",
     "errors": {
       "consent_required": "You must accept the Terms and Privacy to continue.",
       "forbidden": "You are not allowed to do this.",

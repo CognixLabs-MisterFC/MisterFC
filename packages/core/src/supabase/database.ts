@@ -1223,6 +1223,7 @@ export type Database = {
           doc_type: Database["public"]["Enums"]["legal_document_type"]
           id: string
           published_at: string
+          requires_resignature: boolean
           title: string
           version: number
         }
@@ -1233,6 +1234,7 @@ export type Database = {
           doc_type: Database["public"]["Enums"]["legal_document_type"]
           id?: string
           published_at?: string
+          requires_resignature?: boolean
           title: string
           version: number
         }
@@ -1243,6 +1245,7 @@ export type Database = {
           doc_type?: Database["public"]["Enums"]["legal_document_type"]
           id?: string
           published_at?: string
+          requires_resignature?: boolean
           title?: string
           version?: number
         }
@@ -3939,6 +3942,10 @@ export type Database = {
       tutor_needs_reconsent: {
         Args: { p_club_id: string }
         Returns: boolean
+      }
+      tutor_pending_reconsent_docs: {
+        Args: { p_club_id: string }
+        Returns: Database["public"]["Enums"]["legal_document_type"][]
       }
       record_season_reconsent: {
         Args: {

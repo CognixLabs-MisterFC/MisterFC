@@ -30,11 +30,16 @@ export default async function ReconsentPage({ params }: Props) {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // Solo si de verdad necesita re-consentir (tutor sin obligatorios de la activa).
-  const { data: needs } = await supabase.rpc('tutor_needs_reconsent', {
+  // F14-14 — QUÉ doc_types debe (re)firmar este tutor (obligatorios + opcionales).
+  // Si no hay ninguno pendiente → nada que hacer, de vuelta a la app. Si solo hay
+  // opcionales, la pantalla se muestra pero NO bloquea (puede salir sin firmar).
+  const { data: pendingData } = await supabase.rpc('tutor_pending_reconsent_docs', {
     p_club_id: clubId,
   });
-  if (!needs) redirect(`/${locale}`);
+  const pending = new Set((pendingData ?? []) as string[]);
+  if (pending.size === 0) redirect(`/${locale}`);
+
+  const blocking = pending.has('terms_conditions') || pending.has('privacy_policy');
 
   // Hijos del tutor (parent/guardian) en el club activo.
   const { data: pas } = await supabase
@@ -62,16 +67,21 @@ export default async function ReconsentPage({ params }: Props) {
   const toText = (d: { title: string; body: string } | null) =>
     d ? { title: d.title, body: d.body } : null;
 
+  // F14-14 — solo se pintan los doc_types PENDIENTES (re-firma selectiva). Un doc
+  // que no cambió no aparece. Los opcionales son por hijo; el helper devuelve el
+  // doc_type en agregado (pendiente para algún hijo) y la pantalla lo ofrece a
+  // todos los hijos, como en el rollover.
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#0A1220] px-4 py-10">
       <ReconsentForm
         locale={locale}
         seasonLabel={seasonLabel}
-        terms={toText(terms)}
-        privacy={toText(privacy)}
-        internalDoc={toText(imageDocs.internal)}
-        socialDoc={toText(imageDocs.social)}
-        medicalDoc={toText(medicalDoc)}
+        blocking={blocking}
+        terms={pending.has('terms_conditions') ? toText(terms) : null}
+        privacy={pending.has('privacy_policy') ? toText(privacy) : null}
+        internalDoc={pending.has('image_internal') ? toText(imageDocs.internal) : null}
+        socialDoc={pending.has('image_social') ? toText(imageDocs.social) : null}
+        medicalDoc={pending.has('medical_informed_consent') ? toText(medicalDoc) : null}
         players={players}
       />
     </main>

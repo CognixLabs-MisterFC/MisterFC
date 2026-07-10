@@ -3968,6 +3968,7 @@
     "view": "veure text",
     "close": "Tancar",
     "continue": "Continuar",
+    "skip": "Continuar sense canvis",
     "errors": {
       "consent_required": "Has d’acceptar els Termes i la Privacitat per a continuar.",
       "forbidden": "No tens permís per a esta acció.",

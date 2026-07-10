@@ -13,12 +13,24 @@
  * Uso:
  *   cd apps/web && node scripts/load-legal-docs.mjs --club <club_id|slug> --dir <ruta>
  *   node scripts/load-legal-docs.mjs --club club-beta-test --dir ~/legal/beta --dry-run
+ *   node scripts/load-legal-docs.mjs --club club-beta-test --dir ~/legal/beta --requires-resignature
  *
  * En <ruta> se esperan 5 ficheros (los que falten se OMITEN con aviso):
  *   privacy_policy.md  terms_conditions.md  image_internal.md
  *   image_social.md    medical_informed_consent.md
  * El título del documento = primer encabezado markdown (# ...) del fichero; si
  * no hay, se usa un título por defecto. El body = contenido íntegro del .md.
+ *
+ * IDEMPOTENCIA (F14-14): antes de publicar se compara el body del .md con el de la
+ * versión VIGENTE (max) de ese club/doc_type. Si COINCIDEN no se publica versión
+ * nueva (se avisa y se sigue con los demás). "Coinciden" = iguales tras normalizar
+ * ÚNICAMENTE el espacio en blanco FINAL del fichero (saltos de línea y espacios al
+ * final). NO se normaliza el contenido: un cambio de espaciado DENTRO del texto
+ * legal es un cambio real y publica versión nueva.
+ *
+ * RE-FIRMA (F14-14): --requires-resignature marca la versión publicada como cambio
+ * SUSTANCIAL → los tutores caen en la pantalla de re-consentimiento (solo ese
+ * doc_type). Por defecto FALSE (cambio menor: nadie re-firma hasta el rollover).
  *
  * Requisitos en apps/web/.env.local: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
  */
@@ -44,6 +56,7 @@ function argVal(name) {
 const CLUB = argVal('--club');
 const DIR = argVal('--dir');
 const DRY_RUN = process.argv.includes('--dry-run');
+const REQUIRES_RESIGNATURE = process.argv.includes('--requires-resignature');
 if (!CLUB || !DIR) {
   console.error('Uso: node scripts/load-legal-docs.mjs --club <club_id|slug> --dir <ruta> [--dry-run]');
   process.exit(1);
@@ -82,6 +95,27 @@ function titleFromMarkdown(body, fallback) {
   return fallback;
 }
 
+// Idempotencia (F14-14): normaliza SOLO el espacio en blanco FINAL del fichero
+// (saltos de línea y espacios al final). NO toca el contenido interior: un cambio
+// de espaciado dentro del texto ES un cambio y debe publicar versión nueva.
+function normalizeTrailing(text) {
+  return text.replace(/\s+$/u, '');
+}
+
+// Versión vigente (id, version, body) de un club/doc_type, o null si no existe.
+async function currentDoc(clubId, docType) {
+  const { data, error } = await supabase
+    .from('legal_documents')
+    .select('id, version, body')
+    .eq('club_id', clubId)
+    .eq('doc_type', docType)
+    .order('version', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ?? null;
+}
+
 async function resolveClubId(clubRef) {
   if (UUID_RE.test(clubRef)) return clubRef;
   const { data, error } = await supabase.from('clubs').select('id, name').eq('slug', clubRef).maybeSingle();
@@ -91,25 +125,14 @@ async function resolveClubId(clubRef) {
   return data.id;
 }
 
-async function nextVersion(clubId, docType) {
-  const { data, error } = await supabase
-    .from('legal_documents')
-    .select('version')
-    .eq('club_id', clubId)
-    .eq('doc_type', docType)
-    .order('version', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw error;
-  return (data?.version ?? 0) + 1;
-}
-
 // ── Main ─────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log(`\nF14-11/12 · carga de textos legales${DRY_RUN ? ' (DRY-RUN)' : ''}`);
+  console.log(`\nF14-14 · carga de textos legales${DRY_RUN ? ' (DRY-RUN)' : ''}`);
+  if (REQUIRES_RESIGNATURE) console.log('  ⚑ requires_resignature=TRUE (cambio sustancial: exige re-firma)');
   const clubId = await resolveClubId(CLUB);
 
   let published = 0;
+  let unchanged = 0;
   for (const dt of DOC_TYPES) {
     const path = join(DIR, dt.file);
     if (!existsSync(path)) {
@@ -122,21 +145,42 @@ async function main() {
       continue;
     }
     const title = titleFromMarkdown(body, dt.defaultTitle);
-    const version = await nextVersion(clubId, dt.type);
+    const current = await currentDoc(clubId, dt.type);
+
+    // Idempotencia: si el body coincide con el vigente (salvo espacio final), no
+    // se publica versión nueva.
+    if (current && normalizeTrailing(current.body) === normalizeTrailing(body)) {
+      console.log(`  = ${dt.type}: sin cambios respecto a v${current.version}, no ${DRY_RUN ? 'publicaría' : 'se publica'}`);
+      unchanged++;
+      continue;
+    }
+
+    const version = (current?.version ?? 0) + 1;
+    const resign = REQUIRES_RESIGNATURE ? ' · exige re-firma' : '';
 
     if (DRY_RUN) {
-      console.log(`  · ${dt.type}: publicaría v${version} — "${title}" (${body.length} chars)`);
+      console.log(`  · ${dt.type}: publicaría v${version} — "${title}" (${body.length} chars${resign})`);
       continue;
     }
     const { error } = await supabase
       .from('legal_documents')
-      .insert({ club_id: clubId, doc_type: dt.type, version, title, body });
+      .insert({
+        club_id: clubId,
+        doc_type: dt.type,
+        version,
+        title,
+        body,
+        requires_resignature: REQUIRES_RESIGNATURE,
+      });
     if (error) throw error;
-    console.log(`  ✓ ${dt.type}: publicado v${version} — "${title}"`);
+    console.log(`  ✓ ${dt.type}: publicado v${version} — "${title}"${resign}`);
     published++;
   }
 
-  console.log(`\n${DRY_RUN ? 'Dry-run completado.' : `Publicados ${published} documento(s).`}\n`);
+  console.log(
+    `\n${DRY_RUN ? 'Dry-run completado.' : `Publicados ${published} documento(s)`}` +
+      `${unchanged ? ` · ${unchanged} sin cambios` : ''}.\n`,
+  );
 }
 
 main().catch((e) => {

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, ShieldCheck } from 'lucide-react';
@@ -11,6 +12,12 @@ export type ReconsentChild = { id: string; name: string };
 type Props = {
   locale: string;
   seasonLabel: string;
+  /**
+   * F14-14 — TRUE si algún OBLIGATORIO está pendiente: la pantalla bloquea (no hay
+   * salida sin firmar). FALSE = solo opcionales pendientes: se presenta pero el
+   * tutor puede salir sin firmar.
+   */
+  blocking: boolean;
   terms: LegalText;
   privacy: LegalText;
   internalDoc: LegalText;
@@ -20,15 +27,17 @@ type Props = {
 };
 
 /**
- * F14-5 — Pantalla de RE-CONSENTIMIENTO por temporada. Bloqueante para el tutor:
- * arriba los OBLIGATORIOS (T&C + Privacidad), que deben marcarse para continuar;
- * debajo, por cada hijo, los OPCIONALES (imagen interna, imagen redes, médico) con
- * decisión explícita sí/no o "sin cambios". El botón se activa con los dos
- * obligatorios marcados, independientemente de los opcionales.
+ * F14-5/14 — Pantalla de RE-CONSENTIMIENTO. Solo pinta los doc_types PENDIENTES
+ * (re-firma selectiva): un doc que no cambió no aparece. Arriba los OBLIGATORIOS
+ * (T&C + Privacidad) pendientes, que deben marcarse para continuar; debajo, por
+ * cada hijo, los OPCIONALES pendientes (imagen interna, imagen redes, médico) con
+ * decisión sí/no o "sin cambios". Si solo hay opcionales (`blocking=false`) se
+ * ofrece una salida "continuar" para que el tutor no quede atrapado.
  */
 export function ReconsentForm({
   locale,
   seasonLabel,
+  blocking,
   terms,
   privacy,
   internalDoc,
@@ -45,6 +54,8 @@ export function ReconsentForm({
   const [checkedPrivacy, setCheckedPrivacy] = useState(false);
   const [openDoc, setOpenDoc] = useState<{ title: string; body: string } | null>(null);
 
+  const hasRequired = terms != null || privacy != null;
+  const hasOptional = internalDoc != null || socialDoc != null || medicalDoc != null;
   const termsOk = terms == null || checkedTerms;
   const privacyOk = privacy == null || checkedPrivacy;
   const canSubmit = termsOk && privacyOk && !pending;
@@ -64,31 +75,33 @@ export function ReconsentForm({
         </div>
       </div>
 
-      {/* ── Obligatorios ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-2 rounded-md border border-zinc-800 bg-zinc-900/30 p-3">
-        <p className="text-xs font-medium text-zinc-400">{t('required_intro')}</p>
-        <ConsentCheck
-          doc={terms}
-          checked={checkedTerms}
-          setChecked={setCheckedTerms}
-          name="accept_terms"
-          label={t('accept_terms')}
-          onView={setOpenDoc}
-          viewLabel={t('view')}
-        />
-        <ConsentCheck
-          doc={privacy}
-          checked={checkedPrivacy}
-          setChecked={setCheckedPrivacy}
-          name="accept_privacy"
-          label={t('accept_privacy')}
-          onView={setOpenDoc}
-          viewLabel={t('view')}
-        />
-      </div>
+      {/* ── Obligatorios (solo los pendientes) ───────────────────────────── */}
+      {hasRequired && (
+        <div className="flex flex-col gap-2 rounded-md border border-zinc-800 bg-zinc-900/30 p-3">
+          <p className="text-xs font-medium text-zinc-400">{t('required_intro')}</p>
+          <ConsentCheck
+            doc={terms}
+            checked={checkedTerms}
+            setChecked={setCheckedTerms}
+            name="accept_terms"
+            label={t('accept_terms')}
+            onView={setOpenDoc}
+            viewLabel={t('view')}
+          />
+          <ConsentCheck
+            doc={privacy}
+            checked={checkedPrivacy}
+            setChecked={setCheckedPrivacy}
+            name="accept_privacy"
+            label={t('accept_privacy')}
+            onView={setOpenDoc}
+            viewLabel={t('view')}
+          />
+        </div>
+      )}
 
-      {/* ── Opcionales por hijo ──────────────────────────────────────────── */}
-      {players.length > 0 && (
+      {/* ── Opcionales por hijo (solo los pendientes) ────────────────────── */}
+      {players.length > 0 && hasOptional && (
         <div className="flex flex-col gap-4">
           <p className="text-xs font-medium text-zinc-400">{t('optional_intro')}</p>
           {players.map((child) => (
@@ -149,6 +162,16 @@ export function ReconsentForm({
         {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
         <span>{t('continue')}</span>
       </button>
+
+      {/* F14-14 — solo opcionales pendientes: no bloquea, el tutor puede salir. */}
+      {!blocking && (
+        <Link
+          href={`/${locale}`}
+          className="text-center text-sm text-zinc-400 underline underline-offset-2 hover:text-misterfc-green"
+        >
+          {t('skip')}
+        </Link>
+      )}
 
       {openDoc && (
         <div
@@ -242,6 +265,8 @@ function TriState({
   yesLabel: string;
   noLabel: string;
 }) {
+  // F14-14 — si el doc no está pendiente para este tipo, no se ofrece.
+  if (doc == null) return null;
   const name = `reconsent_${field}_${pid}`;
   return (
     <div className="flex flex-col gap-1.5">

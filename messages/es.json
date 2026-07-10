@@ -3967,6 +3967,7 @@
     "view": "ver texto",
     "close": "Cerrar",
     "continue": "Continuar",
+    "skip": "Continuar sin cambios",
     "errors": {
       "consent_required": "Debes aceptar los Términos y la Privacidad para continuar.",
       "forbidden": "No tienes permiso para esta acción.",
