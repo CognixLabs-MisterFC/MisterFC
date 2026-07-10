@@ -23,6 +23,7 @@ import {
   Radio,
   Swords,
   Shield,
+  ShieldAlert,
   LayoutGrid,
   LayoutDashboard,
   LineChart,
@@ -82,6 +83,10 @@ export const NAV: readonly NavEntry[] = [
   { key: 'home', href: '', icon: Home, roles: ALL },
   // Dirección: dashboard ejecutivo (top-level; el gating real es server-side).
   { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard, roles: DIRECCION },
+
+  // F14-7 — bandeja de solicitudes de supresión (derecho al olvido). SOLO
+  // admin_club/director (coincide con user_is_admin_or_director; coordinador NO).
+  { key: 'supresiones', href: '/supresiones', icon: ShieldAlert, roles: ['admin_club', 'director'] },
 
   // HUB Plantilla — jugadores + importar + cuerpo técnico + equipos.
   {

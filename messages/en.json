@@ -474,7 +474,8 @@
       "partidos": "Matches",
       "plantilla": "Squad",
       "pizarra": "Tactics board",
-      "sesiones": "Sessions"
+      "sesiones": "Sessions",
+      "supresiones": "Erasure requests"
     },
     "collapse_sidebar": "Hide menu",
     "expand_sidebar": "Show menu"
@@ -3967,6 +3968,31 @@
       "forbidden": "You are not allowed to do this.",
       "generic": "Could not save. Please try again.",
       "no_session": "Your session has expired. Please sign in again."
+    }
+  },
+  "erasure": {
+    "card_title": "Right to erasure",
+    "card_hint": "You can request the erasure of your child’s data. Club management approves it. It is irreversible: the photo and medical data are deleted.",
+    "request_button": "Request erasure",
+    "request_title": "Request the right to erasure",
+    "request_warning": "You are about to request the erasure of your child’s data. If management approves, the photo and medical data will be deleted and the rest of the personal data will be hidden. The sporting history is kept with the first name only. This is irreversible.",
+    "request_reason_placeholder": "Reason (optional)",
+    "request_confirm": "Send request",
+    "request_sent": "Request sent. Club management will review it.",
+    "cancel": "Cancel",
+    "inbox_title": "Erasure requests",
+    "inbox_hint": "Right-to-erasure requests pending a decision. Approving is irreversible: the minor’s photo and medical data are deleted.",
+    "inbox_empty": "No pending requests.",
+    "requested_by": "Requested by {who} · {date}",
+    "approve": "Approve",
+    "approve_confirm": "Confirm erasure",
+    "approve_warning": "Irreversible: photo and medical data are deleted.",
+    "reject": "Reject",
+    "errors": {
+      "generic": "Could not complete. Please try again.",
+      "forbidden": "You are not allowed.",
+      "already_decided": "The request was already decided.",
+      "not_found": "The request does not exist."
     }
   }
 }

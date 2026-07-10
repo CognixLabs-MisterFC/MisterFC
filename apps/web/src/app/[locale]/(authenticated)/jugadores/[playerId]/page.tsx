@@ -77,12 +77,14 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
   const { data: player } = await supabase
     .from('players')
     .select(
-      'id, club_id, first_name, last_name, date_of_birth, dorsal, position_main, positions_secondary, foot, height_cm, weight_kg, origin, photo_url'
+      'id, club_id, first_name, last_name, date_of_birth, dorsal, position_main, positions_secondary, foot, height_cm, weight_kg, origin, photo_url, erased_at'
     )
     .eq('id', playerId)
     .maybeSingle();
 
-  if (!player || player.club_id !== ctx.activeClub.club.id) notFound();
+  // F14-7 — la ficha de un jugador SUPRIMIDO (derecho al olvido) es INACCESIBLE
+  // para todos (guard server-side, no solo UI): 404, sin render enmascarado.
+  if (!player || player.club_id !== ctx.activeClub.club.id || player.erased_at) notFound();
 
   const t = await getTranslations('jugadores');
   const tBadges = await getTranslations('badges');

@@ -474,7 +474,8 @@
       "partidos": "Partits",
       "plantilla": "Plantilla",
       "pizarra": "Pissarra",
-      "sesiones": "Sessions"
+      "sesiones": "Sessions",
+      "supresiones": "Supressions"
     },
     "collapse_sidebar": "Amaga el menú",
     "expand_sidebar": "Mostra el menú"
@@ -3967,6 +3968,31 @@
       "forbidden": "No tens permís per a esta acció.",
       "generic": "No s’ha pogut guardar. Torna-ho a intentar.",
       "no_session": "La teua sessió ha caducat. Torna a entrar."
+    }
+  },
+  "erasure": {
+    "card_title": "Dret a l’oblit",
+    "card_hint": "Pots sol·licitar la supressió de les dades del teu fill. L’aprovarà la direcció del club. És irreversible: s’esborren la foto i les dades mèdiques.",
+    "request_button": "Sol·licitar supressió",
+    "request_title": "Sol·licitar el dret a l’oblit",
+    "request_warning": "Vas a sol·licitar la supressió de les dades del teu fill. Si la direcció l’aprova, s’esborraran la foto i les dades mèdiques, i la resta de dades personals quedaran ocultes. L’històric esportiu es conserva només amb el nom de pila. És irreversible.",
+    "request_reason_placeholder": "Motiu (opcional)",
+    "request_confirm": "Enviar sol·licitud",
+    "request_sent": "Sol·licitud enviada. La direcció del club la revisarà.",
+    "cancel": "Cancel·lar",
+    "inbox_title": "Sol·licituds de supressió",
+    "inbox_hint": "Sol·licituds de dret a l’oblit pendents de decidir. Aprovar és irreversible: s’esborren la foto i les dades mèdiques del menor.",
+    "inbox_empty": "No hi ha sol·licituds pendents.",
+    "requested_by": "Sol·licitat per {who} · {date}",
+    "approve": "Aprovar",
+    "approve_confirm": "Confirmar supressió",
+    "approve_warning": "Irreversible: s’esborren foto i dades mèdiques.",
+    "reject": "Rebutjar",
+    "errors": {
+      "generic": "No s’ha pogut completar. Torna-ho a intentar.",
+      "forbidden": "No tens permís.",
+      "already_decided": "La sol·licitud ja estava decidida.",
+      "not_found": "La sol·licitud no existeix."
     }
   }
 }

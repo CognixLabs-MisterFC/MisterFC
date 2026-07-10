@@ -193,6 +193,71 @@ export type Database = {
           },
         ]
       }
+      erasure_requests: {
+        Row: {
+          club_id: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          player_id: string
+          reason: string | null
+          requested_at: string
+          requested_by: string
+          status: string
+        }
+        Insert: {
+          club_id: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          player_id: string
+          reason?: string | null
+          requested_at?: string
+          requested_by: string
+          status?: string
+        }
+        Update: {
+          club_id?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          player_id?: string
+          reason?: string | null
+          requested_at?: string
+          requested_by?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "erasure_requests_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "erasure_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "erasure_requests_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "erasure_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       callup_decisions: {
         Row: {
           decided_at: string
@@ -2303,12 +2368,15 @@ export type Database = {
           created_at: string
           date_of_birth: string
           dorsal: number | null
+          erased_at: string | null
+          erased_by: string | null
           first_name: string
           foot: string | null
           height_cm: number | null
           id: string
           invite_email: string | null
           last_name: string | null
+          last_name_blocked: string | null
           left_club_at: string | null
           left_club_reason: string | null
           medical_notes: string | null
@@ -2324,12 +2392,15 @@ export type Database = {
           created_at?: string
           date_of_birth: string
           dorsal?: number | null
+          erased_at?: string | null
+          erased_by?: string | null
           first_name: string
           foot?: string | null
           height_cm?: number | null
           id?: string
           invite_email?: string | null
           last_name?: string | null
+          last_name_blocked?: string | null
           left_club_at?: string | null
           left_club_reason?: string | null
           medical_notes?: string | null
@@ -2345,12 +2416,15 @@ export type Database = {
           created_at?: string
           date_of_birth?: string
           dorsal?: number | null
+          erased_at?: string | null
+          erased_by?: string | null
           first_name?: string
           foot?: string | null
           height_cm?: number | null
           id?: string
           invite_email?: string | null
           last_name?: string | null
+          last_name_blocked?: string | null
           left_club_at?: string | null
           left_club_reason?: string | null
           medical_notes?: string | null
@@ -2367,6 +2441,13 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "players_erased_by_fkey"
+            columns: ["erased_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -3776,6 +3857,18 @@ export type Database = {
           medical_conditions: string | null
           emergency_contact: string | null
         }[]
+      }
+      request_player_erasure: {
+        Args: { p_player_id: string; p_reason?: string }
+        Returns: string
+      }
+      decide_player_erasure: {
+        Args: { p_request_id: string; p_approve: boolean; p_reason?: string }
+        Returns: string
+      }
+      physically_erase_player: {
+        Args: { p_player_id: string }
+        Returns: undefined
       }
       set_player_medical: {
         Args: {

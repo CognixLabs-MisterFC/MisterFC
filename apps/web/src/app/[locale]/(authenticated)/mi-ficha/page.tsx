@@ -28,6 +28,7 @@ import { FichaHeader } from '../jugadores/[playerId]/informes/_components/ficha-
 import { PlayerPhotoUploader } from '../jugadores/[playerId]/player-photo-uploader';
 import { PlayerSelector } from './player-selector';
 import { MedicalForm } from './medical-form';
+import { ErasureRequestButton } from './erasure-request-button';
 import {
   PlayerEvaluationsDetail,
   type MatchEvaluation,
@@ -92,7 +93,7 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
   const { data: pas } = await supabase
     .from('player_accounts')
     .select(
-      'player_id, players!inner(id, club_id, first_name, last_name)'
+      'player_id, players!inner(id, club_id, first_name, last_name, erased_at)'
     )
     .eq('profile_id', ctx.user.id);
   type PA = {
@@ -102,10 +103,12 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
       club_id: string;
       first_name: string;
       last_name: string | null;
+      erased_at: string | null;
     };
   };
+  // F14-7 — un hijo SUPRIMIDO (derecho al olvido aprobado) desaparece de /mi-ficha.
   const myPlayers = ((pas ?? []) as unknown as PA[])
-    .filter((p) => p.players.club_id === ctx.activeClub.club.id)
+    .filter((p) => p.players.club_id === ctx.activeClub.club.id && p.players.erased_at == null)
     .map((p) => ({
       id: p.players.id,
       name: `${p.players.first_name} ${p.players.last_name ?? ''}`.trim(),
@@ -160,6 +163,7 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
     { p_player_id: playerId }
   );
   const tJugadores = await getTranslations('jugadores');
+  const tErasure = await getTranslations('erasure');
 
   // F14-4/F14-5 — el tutor gestiona la médica de su hijo si hay consentimiento de
   // ESCRITURA (otorgado para la TEMPORADA ACTIVA). Tras un cambio de temporada sin
@@ -433,6 +437,20 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
           <CardContent>
             <p className="mb-3 text-xs text-muted-foreground">{t('medical.tutor_hint')}</p>
             <MedicalForm playerId={playerId} initial={medicalRow ?? null} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* F14-7 — Derecho al olvido: el tutor SOLICITA la supresión de su hijo. La
+          aprueba admin_club/director; al aprobar se borran foto y datos médicos. */}
+      {isTutorOfPlayer && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{tErasure('card_title')}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-xs text-muted-foreground">{tErasure('card_hint')}</p>
+            <ErasureRequestButton playerId={playerId} />
           </CardContent>
         </Card>
       )}

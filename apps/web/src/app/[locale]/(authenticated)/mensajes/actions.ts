@@ -312,6 +312,7 @@ export async function listMessageablePlayers(): Promise<ListMessageablePlayersRe
     .select('id, first_name, last_name')
     .eq('club_id', clubId)
     .is('left_club_at', null)
+    .is('erased_at', null) // F14-7: no se puede mensajear a un jugador suprimido
     .order('first_name', { ascending: true })
     .order('last_name', { ascending: true })
     .limit(500);
