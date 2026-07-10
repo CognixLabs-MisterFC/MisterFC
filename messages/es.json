@@ -436,6 +436,43 @@
     "subtitle": "Configuración general del club.",
     "saving": "Guardando…",
     "saved": "Guardado",
+    "legal": {
+      "title": "Documentos legales",
+      "subtitle": "Publica los textos legales de tu club.",
+      "section_title": "Documentos legales",
+      "section_description": "Actualiza el texto de los 5 documentos legales de tu club.",
+      "doc": {
+        "privacy_policy": "Política de privacidad",
+        "terms_conditions": "Términos y condiciones",
+        "image_internal": "Imagen · uso interno",
+        "image_social": "Imagen · redes sociales",
+        "medical_informed_consent": "Datos médicos"
+      },
+      "upload_docx": "Subir .docx",
+      "upload_hint": "O edita el texto directamente. El .docx se convierte a markdown; el original no se guarda.",
+      "publish": "Publicar",
+      "markdown_label": "Texto (markdown)",
+      "preview_label": "Previsualización",
+      "preview_empty": "Escribe o sube un documento para ver la previsualización.",
+      "converted": "Documento convertido. Revísalo antes de publicar.",
+      "published": "Publicado v{version}.",
+      "unchanged": "Sin cambios: el texto es idéntico al vigente.",
+      "convert_error": {
+        "generic": "No se pudo convertir el documento.",
+        "no_session": "Tu sesión ha caducado.",
+        "forbidden": "No tienes permiso.",
+        "no_file": "No se recibió ningún fichero.",
+        "empty_file": "El fichero está vacío.",
+        "too_large": "El fichero es demasiado grande.",
+        "not_docx": "El fichero debe ser un .docx.",
+        "empty_result": "El documento no tiene texto."
+      },
+      "publish_error": {
+        "generic": "No se pudo publicar.",
+        "forbidden": "Solo el administrador del club puede publicar.",
+        "empty_body": "El texto está vacío."
+      }
+    },
     "evaluations_section": {
       "title": "Valoraciones de partido",
       "description": "Controla qué ven los jugadores y sus familias de las valoraciones."

@@ -541,6 +541,43 @@
     "subtitle": "General configuration for the club.",
     "saving": "Saving…",
     "saved": "Saved",
+    "legal": {
+      "title": "Legal documents",
+      "subtitle": "Publish your club's legal texts.",
+      "section_title": "Legal documents",
+      "section_description": "Update the text of your club's 5 legal documents.",
+      "doc": {
+        "privacy_policy": "Privacy policy",
+        "terms_conditions": "Terms and conditions",
+        "image_internal": "Image · internal use",
+        "image_social": "Image · social media",
+        "medical_informed_consent": "Medical data"
+      },
+      "upload_docx": "Upload .docx",
+      "upload_hint": "Or edit the text directly. The .docx is converted to markdown; the original is not stored.",
+      "publish": "Publish",
+      "markdown_label": "Text (markdown)",
+      "preview_label": "Preview",
+      "preview_empty": "Write or upload a document to see the preview.",
+      "converted": "Document converted. Review it before publishing.",
+      "published": "Published v{version}.",
+      "unchanged": "No changes: the text is identical to the current one.",
+      "convert_error": {
+        "generic": "The document could not be converted.",
+        "no_session": "Your session has expired.",
+        "forbidden": "You don't have permission.",
+        "no_file": "No file was received.",
+        "empty_file": "The file is empty.",
+        "too_large": "The file is too large.",
+        "not_docx": "The file must be a .docx.",
+        "empty_result": "The document has no text."
+      },
+      "publish_error": {
+        "generic": "Could not publish.",
+        "forbidden": "Only the club administrator can publish.",
+        "empty_body": "The text is empty."
+      }
+    },
     "evaluations_section": {
       "title": "Match ratings",
       "description": "Control what players and their families see of the ratings."
