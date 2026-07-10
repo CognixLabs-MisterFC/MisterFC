@@ -3898,6 +3898,17 @@ export type Database = {
           body: string
         }[]
       }
+      publish_legal_document: {
+        Args: {
+          p_club_id: string
+          p_doc_type: Database["public"]["Enums"]["legal_document_type"]
+          p_body: string
+        }
+        Returns: {
+          version: number
+          published: boolean
+        }[]
+      }
       record_data_export: {
         Args: {
           p_player_id: string

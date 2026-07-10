@@ -541,6 +541,43 @@
     "subtitle": "Configuració general del club.",
     "saving": "Guardant…",
     "saved": "Guardat",
+    "legal": {
+      "title": "Documents legals",
+      "subtitle": "Publica els textos legals del teu club.",
+      "section_title": "Documents legals",
+      "section_description": "Actualitza el text dels 5 documents legals del teu club.",
+      "doc": {
+        "privacy_policy": "Política de privacitat",
+        "terms_conditions": "Termes i condicions",
+        "image_internal": "Imatge · ús intern",
+        "image_social": "Imatge · xarxes socials",
+        "medical_informed_consent": "Dades mèdiques"
+      },
+      "upload_docx": "Pujar .docx",
+      "upload_hint": "O edita el text directament. El .docx es converteix a markdown; l'original no es guarda.",
+      "publish": "Publicar",
+      "markdown_label": "Text (markdown)",
+      "preview_label": "Previsualització",
+      "preview_empty": "Escriu o puja un document per veure la previsualització.",
+      "converted": "Document convertit. Revisa'l abans de publicar.",
+      "published": "Publicat v{version}.",
+      "unchanged": "Sense canvis: el text és idèntic al vigent.",
+      "convert_error": {
+        "generic": "No s'ha pogut convertir el document.",
+        "no_session": "La teua sessió ha caducat.",
+        "forbidden": "No tens permís.",
+        "no_file": "No s'ha rebut cap fitxer.",
+        "empty_file": "El fitxer està buit.",
+        "too_large": "El fitxer és massa gran.",
+        "not_docx": "El fitxer ha de ser un .docx.",
+        "empty_result": "El document no té text."
+      },
+      "publish_error": {
+        "generic": "No s'ha pogut publicar.",
+        "forbidden": "Només l'administrador del club pot publicar.",
+        "empty_body": "El text està buit."
+      }
+    },
     "evaluations_section": {
       "title": "Valoracions del partit",
       "description": "Controla què veuen els jugadors i les seues famílies de les valoracions."

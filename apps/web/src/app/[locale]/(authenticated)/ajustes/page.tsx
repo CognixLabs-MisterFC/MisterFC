@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Settings } from 'lucide-react';
+import { Settings, FileText, ChevronRight } from 'lucide-react';
 import { createSupabaseServerClient, ADMIN_ROLES } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -64,6 +65,22 @@ export default async function AjustesPage({ params }: Props) {
           <ClubSettingsForm initialVisible={visible} canEdit={canEdit} />
         </CardContent>
       </Card>
+
+      {/* F14-13b — Publicación de textos legales: SOLO admin_club. */}
+      {ctx.activeClub.role === 'admin_club' && (
+        <Link href={`/${locale}/ajustes/documentos-legales`} className="block">
+          <Card className="transition hover:border-misterfc-green/50">
+            <CardHeader className="flex flex-row items-center gap-3 space-y-0">
+              <FileText className="size-5 text-muted-foreground" aria-hidden />
+              <div className="flex-1">
+                <CardTitle>{t('legal.section_title')}</CardTitle>
+                <CardDescription>{t('legal.section_description')}</CardDescription>
+              </div>
+              <ChevronRight className="size-5 text-muted-foreground" aria-hidden />
+            </CardHeader>
+          </Card>
+        </Link>
+      )}
     </div>
   );
 }
