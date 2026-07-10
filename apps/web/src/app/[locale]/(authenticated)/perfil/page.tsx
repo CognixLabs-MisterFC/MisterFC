@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { AvatarUploader } from './avatar-uploader';
 import { PerfilForm } from './perfil-form';
+import { ConsentsSection, type TutorConsentRow } from './consents-section';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -31,15 +32,21 @@ export default async function PerfilPage({ params }: Props) {
     ctx.user.email ?? '?'
   );
 
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
   let avatarSignedUrl: string | null = null;
   if (ctx.profile.avatar_url) {
-    const adapter = await createCookieAdapter();
-    const supabase = createSupabaseServerClient(adapter);
     const { data } = await supabase.storage
       .from('profile-avatars')
       .createSignedUrl(ctx.profile.avatar_url, SIGNED_URL_TTL_SECONDS);
     avatarSignedUrl = data?.signedUrl ?? null;
   }
+
+  // F14-13 — consentimientos del tutor en el club activo (estado latest-wins).
+  const { data: consentRows } = await supabase.rpc('get_tutor_consents', {
+    p_club_id: ctx.activeClub.club.id,
+  });
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -102,6 +109,15 @@ export default async function PerfilPage({ params }: Props) {
           >
             {t('manage_notifications')}
           </a>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('section.consents')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ConsentsSection rows={(consentRows ?? []) as TutorConsentRow[]} locale={locale} />
         </CardContent>
       </Card>
     </div>
