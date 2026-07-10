@@ -441,6 +441,25 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
         </Card>
       )}
 
+      {/* F14-8 — Derecho de acceso: el tutor descarga el expediente completo de su
+          hijo (identidad, foto, médica, histórico, informes, logros) en PDF. */}
+      {isTutorOfPlayer && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('data_export.title')}</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+            <p className="text-xs text-muted-foreground">{t('data_export.hint')}</p>
+            <Button asChild variant="outline" size="sm" className="w-fit gap-2">
+              <a href={`/${locale}/mi-ficha/export/${playerId}`}>
+                <Download className="size-4" aria-hidden />
+                <span>{t('data_export.button')}</span>
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* F14-7 — Derecho al olvido: el tutor SOLICITA la supresión de su hijo. La
           aprueba admin_club/director; al aprobar se borran foto y datos médicos. */}
       {isTutorOfPlayer && (
