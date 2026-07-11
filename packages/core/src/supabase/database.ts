@@ -4111,6 +4111,14 @@ export type Database = {
         Args: { p_name: string; p_slug: string; p_locale?: string }
         Returns: string
       }
+      platform_invite_club_admin: {
+        Args: { p_club_id: string; p_email: string }
+        Returns: {
+          id: string
+          token: string
+          email: string
+        }[]
+      }
       platform_list_clubs: {
         Args: Record<PropertyKey, never>
         Returns: {
