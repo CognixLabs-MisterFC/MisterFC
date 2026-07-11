@@ -36,12 +36,6 @@ export default async function SigninPage({ params }: Props) {
           >
             {t('forgot_password_link')}
           </Link>
-          <Link
-            href={`/${locale}/signup`}
-            className="underline underline-offset-4 hover:text-white"
-          >
-            {t('signup_link')}
-          </Link>
         </div>
       </div>
     </main>
