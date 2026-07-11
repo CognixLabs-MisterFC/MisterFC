@@ -28,8 +28,18 @@ const handleIntl = createIntlMiddleware(routing);
  * protección.
  */
 export default async function middleware(request: NextRequest) {
-  // (1) Reenrutar artefactos de auth sueltos hacia /auth/callback.
+  // (0) Registro cerrado (F14D): el signup libre ya no existe. Cinturón y
+  // tirantes por si queda algún enlace rancio o alguien teclea la URL:
+  // /{locale}/signup (o /signup pelado) → /{locale}/signin. La ruta ya está
+  // borrada; esto solo evita un 404 y deja claro que se entra por invitación.
   const { searchParams, pathname } = request.nextUrl;
+  const signupMatch = pathname.match(/^\/(es|en|va)\/signup(?:\/.*)?$/);
+  if (signupMatch || pathname === '/signup' || pathname.startsWith('/signup/')) {
+    const locale = signupMatch?.[1] ?? routing.defaultLocale;
+    return NextResponse.redirect(new URL(`/${locale}/signin`, request.url));
+  }
+
+  // (1) Reenrutar artefactos de auth sueltos hacia /auth/callback.
   const code = searchParams.get('code');
   const tokenHash = searchParams.get('token_hash');
   const type = searchParams.get('type');
