@@ -452,7 +452,8 @@
       "plantilla": "Squad",
       "pizarra": "Tactics board",
       "sesiones": "Sessions",
-      "supresiones": "Erasure requests"
+      "supresiones": "Erasure requests",
+      "platform": "Platform console"
     },
     "collapse_sidebar": "Hide menu",
     "expand_sidebar": "Show menu"
@@ -4072,6 +4073,67 @@
       "rating": "Rating",
       "team": "Team",
       "comment": "Comment"
+    }
+  },
+  "platform": {
+    "console_title": "Platform console",
+    "back_to_app": "Back to app",
+    "clubs_title": "Clubs",
+    "clubs_count": "{count, plural, =0 {No clubs} =1 {1 club} other {# clubs}}",
+    "clubs_empty": "No clubs yet.",
+    "create_club": "Create club",
+    "create_club_help": "Create an empty club. You can invite its administrator afterwards.",
+    "table": {
+      "club": "Club",
+      "status": "Status",
+      "members": "Members",
+      "players": "Players",
+      "pending": "Pending invitations"
+    },
+    "status": {
+      "owner": "Owner: {name}",
+      "no_owner": "No owner",
+      "no_admin": "No admin"
+    },
+    "form": {
+      "name_label": "Club name",
+      "name_placeholder": "e.g. Example Sports Club",
+      "slug_preview": "URL: /{slug}",
+      "slug_preview_empty": "The URL is generated from the name.",
+      "locale_label": "Language",
+      "cancel": "Cancel",
+      "create": "Create club",
+      "error": {
+        "no_session": "Invalid session. Please sign in again.",
+        "forbidden": "You don't have permission to create clubs.",
+        "name_required": "Enter a valid name.",
+        "slug_taken": "A club with that name already exists. Try another.",
+        "generic": "Couldn't create the club. Please try again."
+      }
+    },
+    "detail": {
+      "back": "Back to list",
+      "admin_title": "Club administrator",
+      "owner_readonly": "Club owner",
+      "pending_admin": "Pending invitation: {email}",
+      "invite_help": "Invite the club administrator. On acceptance they become the owner.",
+      "metrics_title": "Metrics",
+      "by_role": "By role"
+    },
+    "invite": {
+      "email_label": "Administrator email",
+      "email_placeholder": "admin@club.com",
+      "send": "Invite admin",
+      "resend": "Re-invite / change email",
+      "ok": "Invitation sent to {email}.",
+      "error": {
+        "no_session": "Invalid session. Please sign in again.",
+        "forbidden": "You don't have permission to invite.",
+        "club_not_found": "The club doesn't exist.",
+        "club_already_has_admin": "The club already has an owner.",
+        "invalid_email": "Enter a valid email.",
+        "generic": "Couldn't send the invitation. Please try again."
+      }
     }
   }
 }

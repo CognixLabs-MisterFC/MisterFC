@@ -19,6 +19,8 @@ type Props = {
   badges?: Partial<Record<string, number>>;
   /** #9 — estado inicial (desde cookie) del colapso del menú lateral. */
   sidebarCollapsed?: boolean;
+  /** F14B-7 — enlace a la consola de plataforma en el drawer (solo superadmin). */
+  isSuperadmin?: boolean;
 };
 
 export async function Header({
@@ -30,6 +32,7 @@ export async function Header({
   locale,
   badges,
   sidebarCollapsed = false,
+  isSuperadmin = false,
 }: Props) {
   const t = await getTranslations('shell');
   const fallback = initialsOf(fullName, user.email ?? '?');
@@ -41,7 +44,12 @@ export async function Header({
           triggerLabel={t('open_menu')}
           title={t('sidebar_label')}
         >
-          <Sidebar role={activeClub.role} variant="mobile" badges={badges} />
+          <Sidebar
+            role={activeClub.role}
+            variant="mobile"
+            badges={badges}
+            isSuperadmin={isSuperadmin}
+          />
         </MobileDrawer>
 
         {/* #9 — colapsar/mostrar el menú lateral (solo desktop). */}

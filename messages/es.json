@@ -339,7 +339,8 @@
       "plantilla": "Plantilla",
       "pizarra": "Pizarra",
       "sesiones": "Sesiones",
-      "supresiones": "Supresiones"
+      "supresiones": "Supresiones",
+      "platform": "Consola de plataforma"
     },
     "collapse_sidebar": "Ocultar el menú",
     "expand_sidebar": "Mostrar el menú"
@@ -4071,6 +4072,67 @@
       "rating": "Nota",
       "team": "Equipo",
       "comment": "Comentario"
+    }
+  },
+  "platform": {
+    "console_title": "Consola de plataforma",
+    "back_to_app": "Volver a la app",
+    "clubs_title": "Clubs",
+    "clubs_count": "{count, plural, =0 {Sin clubs} =1 {1 club} other {# clubs}}",
+    "clubs_empty": "Todavía no hay clubs.",
+    "create_club": "Crear club",
+    "create_club_help": "Crea un club vacío. Podrás invitar a su administrador después.",
+    "table": {
+      "club": "Club",
+      "status": "Estado",
+      "members": "Miembros",
+      "players": "Jugadores",
+      "pending": "Invitaciones pendientes"
+    },
+    "status": {
+      "owner": "Owner: {name}",
+      "no_owner": "Sin owner",
+      "no_admin": "Sin admin"
+    },
+    "form": {
+      "name_label": "Nombre del club",
+      "name_placeholder": "Ej. Club Deportivo Ejemplo",
+      "slug_preview": "URL: /{slug}",
+      "slug_preview_empty": "La URL se genera a partir del nombre.",
+      "locale_label": "Idioma",
+      "cancel": "Cancelar",
+      "create": "Crear club",
+      "error": {
+        "no_session": "Sesión no válida. Vuelve a iniciar sesión.",
+        "forbidden": "No tienes permisos para crear clubs.",
+        "name_required": "Introduce un nombre válido.",
+        "slug_taken": "Ya existe un club con ese nombre. Prueba otro.",
+        "generic": "No se pudo crear el club. Inténtalo de nuevo."
+      }
+    },
+    "detail": {
+      "back": "Volver a la lista",
+      "admin_title": "Administrador del club",
+      "owner_readonly": "Owner del club",
+      "pending_admin": "Invitación pendiente: {email}",
+      "invite_help": "Invita al administrador del club. Al aceptar, pasará a ser owner.",
+      "metrics_title": "Métricas",
+      "by_role": "Por rol"
+    },
+    "invite": {
+      "email_label": "Email del administrador",
+      "email_placeholder": "admin@club.com",
+      "send": "Invitar admin",
+      "resend": "Reinvitar / cambiar email",
+      "ok": "Invitación enviada a {email}.",
+      "error": {
+        "no_session": "Sesión no válida. Vuelve a iniciar sesión.",
+        "forbidden": "No tienes permisos para invitar.",
+        "club_not_found": "El club no existe.",
+        "club_already_has_admin": "El club ya tiene owner.",
+        "invalid_email": "Introduce un email válido.",
+        "generic": "No se pudo enviar la invitación. Inténtalo de nuevo."
+      }
     }
   }
 }

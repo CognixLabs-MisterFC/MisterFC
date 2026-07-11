@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { ShieldCheck } from 'lucide-react';
 import type { Role } from '@misterfc/core';
 import { SidebarNavLink } from './sidebar-nav-link';
 import { resolveNav } from './nav-config';
@@ -15,9 +16,14 @@ type Props = {
    * key simplemente no aparece en el record.
    */
   badges?: Partial<Record<string, number>>;
+  /**
+   * F14B-7 — el superadmin ve un enlace extra a la consola de plataforma
+   * (`/platform`). NO es un rol de club, por eso va aquí y no en nav-config.
+   */
+  isSuperadmin?: boolean;
 };
 
-export async function Sidebar({ role, variant, badges }: Props) {
+export async function Sidebar({ role, variant, badges, isSuperadmin }: Props) {
   const t = await getTranslations('shell');
   const items = resolveNav(role);
 
@@ -51,6 +57,14 @@ export async function Sidebar({ role, variant, badges }: Props) {
           />
         );
       })}
+
+      {isSuperadmin && (
+        <SidebarNavLink
+          href="/platform"
+          icon={<ShieldCheck className="size-4 shrink-0" aria-hidden />}
+          label={t('nav.platform')}
+        />
+      )}
     </nav>
   );
 }
