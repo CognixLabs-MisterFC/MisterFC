@@ -21,17 +21,15 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
  * inviteUserByEmail lleva invitation_id en user_metadata.
  */
 
-export type InviteClubAdminResult =
-  | { ok: { email: string } }
-  | {
-      error:
-        | 'no_session'
-        | 'forbidden'
-        | 'club_not_found'
-        | 'club_already_has_admin'
-        | 'invalid_email'
-        | 'generic';
-    };
+export type InviteClubAdminError =
+  | 'no_session'
+  | 'forbidden'
+  | 'club_not_found'
+  | 'club_already_has_admin'
+  | 'invalid_email'
+  | 'generic';
+
+export type InviteClubAdminResult = { ok: { email: string } } | { error: InviteClubAdminError };
 
 function maskEmail(email: string): string {
   const [user, domain] = email.split('@');
@@ -52,7 +50,7 @@ function serializeError(err: unknown): Record<string, unknown> {
   }
 }
 
-function mapRpcError(message: string | undefined): InviteClubAdminResult['error'] {
+function mapRpcError(message: string | undefined): InviteClubAdminError {
   const m = message ?? '';
   if (m.includes('no_session')) return 'no_session';
   if (m.includes('forbidden')) return 'forbidden';
