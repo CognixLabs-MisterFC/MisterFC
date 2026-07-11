@@ -4103,6 +4103,44 @@ export type Database = {
         }
         Returns: boolean
       }
+      platform_propose_slug: {
+        Args: { p_name: string }
+        Returns: string
+      }
+      platform_create_club: {
+        Args: { p_name: string; p_slug: string; p_locale?: string }
+        Returns: string
+      }
+      platform_list_clubs: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          slug: string
+          locale: string
+          created_at: string
+          owner_profile_id: string | null
+          owner_name: string | null
+          has_owner: boolean
+          has_admin: boolean
+        }[]
+      }
+      platform_club_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          club_id: string
+          club_name: string
+          admin_club: number
+          director: number
+          coordinador: number
+          entrenador_principal: number
+          entrenador_ayudante: number
+          jugador: number
+          members_total: number
+          pending_invitations: number
+          players: number
+        }[]
+      }
     }
     Enums: {
       attendance_code:
