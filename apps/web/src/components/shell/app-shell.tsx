@@ -11,6 +11,8 @@ type Props = {
   ctx: ShellContext;
   locale: string;
   children: ReactNode;
+  /** F14B-7 — muestra el enlace a la consola de plataforma (solo superadmin). */
+  isSuperadmin?: boolean;
 };
 
 /**
@@ -58,7 +60,7 @@ async function loadNotificationBadges(
   return { convocatorias, anuncios };
 }
 
-export async function AppShell({ ctx, locale, children }: Props) {
+export async function AppShell({ ctx, locale, children, isSuperadmin = false }: Props) {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const [unreadConversations, notifBadges] = await Promise.all([
@@ -93,6 +95,7 @@ export async function AppShell({ ctx, locale, children }: Props) {
         locale={locale}
         badges={badges}
         sidebarCollapsed={sidebarCollapsed}
+        isSuperadmin={isSuperadmin}
       />
       <div className="flex flex-1">
         <aside
@@ -103,6 +106,7 @@ export async function AppShell({ ctx, locale, children }: Props) {
             role={ctx.activeClub.role}
             variant="desktop"
             badges={badges}
+            isSuperadmin={isSuperadmin}
           />
         </aside>
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-10">{children}</main>

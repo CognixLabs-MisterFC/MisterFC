@@ -452,7 +452,8 @@
       "plantilla": "Plantilla",
       "pizarra": "Pissarra",
       "sesiones": "Sessions",
-      "supresiones": "Supressions"
+      "supresiones": "Supressions",
+      "platform": "Consola de plataforma"
     },
     "collapse_sidebar": "Amaga el menú",
     "expand_sidebar": "Mostra el menú"
@@ -4072,6 +4073,67 @@
       "rating": "Nota",
       "team": "Equip",
       "comment": "Comentari"
+    }
+  },
+  "platform": {
+    "console_title": "Consola de plataforma",
+    "back_to_app": "Tornar a l'app",
+    "clubs_title": "Clubs",
+    "clubs_count": "{count, plural, =0 {Sense clubs} =1 {1 club} other {# clubs}}",
+    "clubs_empty": "Encara no hi ha clubs.",
+    "create_club": "Crear club",
+    "create_club_help": "Crea un club buit. Podràs convidar el seu administrador després.",
+    "table": {
+      "club": "Club",
+      "status": "Estat",
+      "members": "Membres",
+      "players": "Jugadors",
+      "pending": "Invitacions pendents"
+    },
+    "status": {
+      "owner": "Owner: {name}",
+      "no_owner": "Sense owner",
+      "no_admin": "Sense admin"
+    },
+    "form": {
+      "name_label": "Nom del club",
+      "name_placeholder": "Ex. Club Esportiu Exemple",
+      "slug_preview": "URL: /{slug}",
+      "slug_preview_empty": "L'URL es genera a partir del nom.",
+      "locale_label": "Idioma",
+      "cancel": "Cancel·lar",
+      "create": "Crear club",
+      "error": {
+        "no_session": "Sessió no vàlida. Torna a iniciar sessió.",
+        "forbidden": "No tens permisos per a crear clubs.",
+        "name_required": "Introduïx un nom vàlid.",
+        "slug_taken": "Ja existix un club amb eixe nom. Prova un altre.",
+        "generic": "No s'ha pogut crear el club. Torna-ho a provar."
+      }
+    },
+    "detail": {
+      "back": "Tornar a la llista",
+      "admin_title": "Administrador del club",
+      "owner_readonly": "Owner del club",
+      "pending_admin": "Invitació pendent: {email}",
+      "invite_help": "Convida l'administrador del club. En acceptar, passarà a ser owner.",
+      "metrics_title": "Mètriques",
+      "by_role": "Per rol"
+    },
+    "invite": {
+      "email_label": "Email de l'administrador",
+      "email_placeholder": "admin@club.com",
+      "send": "Convidar admin",
+      "resend": "Reconvidar / canviar email",
+      "ok": "Invitació enviada a {email}.",
+      "error": {
+        "no_session": "Sessió no vàlida. Torna a iniciar sessió.",
+        "forbidden": "No tens permisos per a convidar.",
+        "club_not_found": "El club no existix.",
+        "club_already_has_admin": "El club ja té owner.",
+        "invalid_email": "Introduïx un email vàlid.",
+        "generic": "No s'ha pogut enviar la invitació. Torna-ho a provar."
+      }
     }
   }
 }

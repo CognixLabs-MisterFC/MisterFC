@@ -34,19 +34,22 @@ export default async function AuthenticatedLayout({ children, params }: Props) {
   // navegar a ninguna ruta autenticada: se le redirige a la pantalla de
   // re-consentimiento (fuera de este layout, sin bucle). El staff nunca es tutor →
   // `tutor_needs_reconsent` devuelve false y no se ve afectado.
-  {
-    const adapter = await createCookieAdapter();
-    const supabase = createSupabaseServerClient(adapter);
-    const { data: needsReconsent } = await supabase.rpc('tutor_needs_reconsent', {
-      p_club_id: ctx.activeClub.club.id,
-    });
-    if (needsReconsent) {
-      redirect(`/${locale}/re-consentimiento`);
-    }
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const { data: needsReconsent } = await supabase.rpc('tutor_needs_reconsent', {
+    p_club_id: ctx.activeClub.club.id,
+  });
+  if (needsReconsent) {
+    redirect(`/${locale}/re-consentimiento`);
   }
 
+  // F14B-7 — el superadmin ve un enlace extra a la consola de plataforma en el
+  // shell. `is_superadmin()` es la única fuente de verdad; no es un rol de club,
+  // así que NO va por nav-config (el nav filtra por rol de club).
+  const { data: isSuper } = await supabase.rpc('is_superadmin');
+
   return (
-    <AppShell ctx={ctx} locale={locale}>
+    <AppShell ctx={ctx} locale={locale} isSuperadmin={isSuper === true}>
       {children}
     </AppShell>
   );
