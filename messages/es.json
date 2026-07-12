@@ -331,7 +331,7 @@
       "formaciones": "Formaciones",
       "ajustes": "Ajustes del club",
       "mi_ficha": "Mi ficha",
-      "mi_informe": "Informe de desarrollo",
+      "seguidores": "Seguidores", "mi_informe": "Informe de desarrollo",
       "equipos": "Equipos",
       "ejercicios": "Ejercicios",
       "entrenamientos": "Entrenamientos",
@@ -4187,6 +4187,48 @@
     "perfil": {
       "title": "Mi perfil",
       "subtitle": "Tus datos de acceso."
+    }
+  },
+  "seguidores": {
+    "title": "Seguidores",
+    "subtitle": "Gestiona quién sigue a tu jugador.",
+    "subtitle_for": "Seguidores de {name}",
+    "no_player": "No tienes ningún jugador vinculado a tu cuenta.",
+    "list": {
+      "title": "Seguidores actuales",
+      "empty": "Todavía no hay seguidores.",
+      "unknown": "Seguidor",
+      "hint": "Los seguidores invitados aparecen aquí cuando aceptan la invitación."
+    },
+    "invite": {
+      "action": "Invitar seguidor",
+      "title": "Invitar seguidor",
+      "description": "Invita a un familiar (abuelo/a, tío/a…) a seguir a {player}. Verá solo lo deportivo: agenda, directos y estadísticas. Nada personal.",
+      "field": {
+        "email": "Email",
+        "help": "Le enviaremos una invitación a este correo."
+      },
+      "errors": {
+        "email_invalid": "Email no válido.",
+        "email_too_long": "El email es demasiado largo.",
+        "forbidden": "No tienes permiso para invitar seguidores de este jugador.",
+        "generic": "No se pudo enviar la invitación. Inténtalo de nuevo."
+      },
+      "sent": "Invitación enviada a {email}.",
+      "close": "Cerrar",
+      "cancel": "Cancelar",
+      "send": "Enviar invitación"
+    },
+    "revoke": {
+      "action": "Quitar",
+      "title": "Quitar seguidor",
+      "confirm": "¿Seguro que quieres quitar a {name}? Dejará de tener acceso a tu jugador.",
+      "confirm_action": "Quitar",
+      "cancel": "Cancelar",
+      "errors": {
+        "forbidden": "No tienes permiso para quitar este seguidor.",
+        "generic": "No se pudo quitar el seguidor. Inténtalo de nuevo."
+      }
     }
   }
 }

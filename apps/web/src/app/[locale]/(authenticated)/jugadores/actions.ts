@@ -609,6 +609,51 @@ export async function inviteSpectatorForPlayer(
   return { ok: { email: parsed.data.email } };
 }
 
+export type RemoveSpectatorState = {
+  error?: 'forbidden' | 'generic';
+  ok?: true;
+};
+
+/**
+ * F14C-5 — Revoca (elimina) a un seguidor de un jugador. Envuelve el RPC
+ * `remove_spectator` (SECURITY DEFINER), cuyo gate (tutor del jugador O el propio
+ * jugador self) es la autoridad real; aquí solo mapeamos el error y revalidamos.
+ * Al borrar la fila de player_spectators, el seguidor pierde su acceso deportivo
+ * a ese jugador (F14C-3).
+ */
+export async function removeSpectatorForPlayer(
+  playerId: string,
+  spectatorProfileId: string
+): Promise<RemoveSpectatorState> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { error } = await supabase.rpc('remove_spectator', {
+    p_player_id: playerId,
+    p_spectator_profile_id: spectatorProfileId,
+  });
+
+  if (error) {
+    const msg = error.message?.toLowerCase() ?? '';
+    if (msg.includes('forbidden') || msg.includes('no_session')) {
+      return { error: 'forbidden' };
+    }
+    Sentry.captureException(error, {
+      tags: { feature: 'invitations', step: 'remove_spectator' },
+      extra: { player_id: playerId },
+    });
+    return { error: 'generic' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/mi-ficha/seguidores', 'page');
+  return { ok: true };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Rework C (C11a) — baja / reactivar de jugador (no destructivo)
 // ─────────────────────────────────────────────────────────────────────────────
