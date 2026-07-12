@@ -3675,7 +3675,19 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      players_sporting: {
+        Row: {
+          club_id: string | null
+          dorsal: number | null
+          first_name: string | null
+          foot: string | null
+          id: string | null
+          last_name: string | null
+          position_main: string | null
+          positions_secondary: string[] | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_pending_invitations: {
@@ -3769,8 +3781,24 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_spectator_of_club: {
+        Args: { p_club_id: string }
+        Returns: boolean
+      }
+      is_spectator_of_event_club: {
+        Args: { p_event_id: string }
+        Returns: boolean
+      }
       is_spectator_of_player: {
         Args: { p_player_id: string }
+        Returns: boolean
+      }
+      is_spectator_of_players_club: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
+      is_spectator_of_team: {
+        Args: { p_team_id: string }
         Returns: boolean
       }
       is_superadmin: {
