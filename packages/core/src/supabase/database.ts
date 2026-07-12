@@ -3757,6 +3757,10 @@ export type Database = {
         Args: { p_club_id: string; p_cutoff: string }
         Returns: string
       }
+      invite_spectator: {
+        Args: { p_email: string; p_player_id: string }
+        Returns: { email: string; id: string; token: string }[]
+      }
       is_promotion_target_superior: {
         Args: { p_event_id: string; p_player_id: string }
         Returns: boolean
@@ -4073,6 +4077,10 @@ export type Database = {
           p_user_agent?: string
           p_children?: Json
         }
+        Returns: undefined
+      }
+      remove_spectator: {
+        Args: { p_player_id: string; p_spectator_profile_id: string }
         Returns: undefined
       }
       user_can_see_session: { Args: { p_session_id: string }; Returns: boolean }

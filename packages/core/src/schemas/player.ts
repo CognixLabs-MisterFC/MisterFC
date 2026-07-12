@@ -223,3 +223,18 @@ export const invitePlayerTutorSchema = z.object({
   relation: z.enum(['parent', 'guardian'], { message: 'relation_invalid' }),
 });
 export type InvitePlayerTutorInput = z.infer<typeof invitePlayerTutorSchema>;
+
+/**
+ * F14C-2 — Invitar a un SEGUIDOR/espectador (abuelo/familiar) de un jugador, por
+ * email. Solo el email: el jugador va por parámetro y la marca de seguidor la pone
+ * el RPC `invite_spectator`. Sin relation (el seguidor no es tutor).
+ */
+export const inviteSpectatorSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email({ message: 'email_invalid' })
+    .max(254, { message: 'email_too_long' }),
+});
+export type InviteSpectatorInput = z.infer<typeof inviteSpectatorSchema>;
