@@ -43,6 +43,7 @@ import {
   type AccessExportReport,
   type AccessExportSeason,
 } from '@/lib/pdf/access-export-pdf';
+import { clubLogoDataUrl } from '@/lib/pdf/club-logo-data';
 import { pdfResponse, slugForFile, type Translator } from '@/lib/pdf/shared';
 
 export const runtime = 'nodejs';
@@ -313,10 +314,14 @@ export async function GET(
     validFoot ? tFoot(player.foot as string) : null,
   ].filter(Boolean) as string[];
 
+  // F14B-9b — logo del club en la cabecera del PDF (base64; null si no hay/falla).
+  const logoDataUrl = await clubLogoDataUrl(supabase, ctx.activeClub.club.logo_path);
+
   const doc = AccessExportDocument({
     t,
     tInf,
     clubName: ctx.activeClub.club.name ?? 'MisterFC',
+    logoDataUrl,
     generatedAtLabel: t('generated', {
       date: new Intl.DateTimeFormat(locale, {
         day: 'numeric',

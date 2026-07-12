@@ -217,6 +217,8 @@ export interface AccessExportProps {
   /** informes.* (etiquetas de catálogo, periodos, estados de objetivo). */
   tInf: Translator;
   clubName: string;
+  /** F14B-9b — logo del club como data URI base64 (null → cabecera sin logo). */
+  logoDataUrl: string | null;
   generatedAtLabel: string;
   playerName: string;
   initials: string;
@@ -500,7 +502,12 @@ export function AccessExportDocument(props: AccessExportProps): ReactElement<Doc
     <Document>
       {/* Página 1 — identidad + médica + histórico deportivo + logros. */}
       <Page size="A4" style={s.page}>
-        <BrandHeader clubName={props.clubName} title={t('title')} subtitle={props.playerName} />
+        <BrandHeader
+          clubName={props.clubName}
+          logoDataUrl={props.logoDataUrl}
+          title={t('title')}
+          subtitle={props.playerName}
+        />
         <IdentitySection {...props} />
         <MedicalSection {...props} />
         <SportingSection {...props} />
@@ -510,7 +517,12 @@ export function AccessExportDocument(props: AccessExportProps): ReactElement<Doc
       {/* Página(s) 2+ — informes formales publicados (regla 4). */}
       {hasReports ? (
         <Page size="A4" style={s.page}>
-          <BrandHeader clubName={props.clubName} title={t('reports_title')} subtitle={props.playerName} />
+          <BrandHeader
+            clubName={props.clubName}
+            logoDataUrl={props.logoDataUrl}
+            title={t('reports_title')}
+            subtitle={props.playerName}
+          />
           {props.reportSeasons.flatMap((rs) =>
             rs.reports.map((r) => (
               <ReportBlock
