@@ -2419,6 +2419,52 @@ export type Database = {
           },
         ]
       }
+      player_spectators: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by_profile_id: string | null
+          player_id: string
+          spectator_profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by_profile_id?: string | null
+          player_id: string
+          spectator_profile_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by_profile_id?: string | null
+          player_id?: string
+          spectator_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_spectators_spectator_profile_id_fkey"
+            columns: ["spectator_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_spectators_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_spectators_invited_by_profile_id_fkey"
+            columns: ["invited_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           club_id: string
@@ -3713,6 +3759,14 @@ export type Database = {
       }
       is_promotion_target_superior: {
         Args: { p_event_id: string; p_player_id: string }
+        Returns: boolean
+      }
+      is_spectator: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_spectator_of_player: {
+        Args: { p_player_id: string }
         Returns: boolean
       }
       is_superadmin: {
