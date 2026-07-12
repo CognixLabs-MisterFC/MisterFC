@@ -11,6 +11,7 @@ import {
   createSupabaseServerClient,
   getCurrentUserClubs,
   invitePlayerTutorSchema,
+  inviteSpectatorSchema,
   resolveActiveClub,
   updatePlayerSchema,
 } from '@misterfc/core';
@@ -483,6 +484,122 @@ export async function inviteTutorForPlayer(
         feature: 'invitations',
         step: 'inviteUserByEmail_tutor_thrown',
       },
+      extra: { invitation_id: invite.id },
+    });
+    return { error: 'generic' };
+  }
+
+  revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
+  return { ok: { email: parsed.data.email } };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invitar SEGUIDOR/espectador para un jugador (F14C-2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type InviteSpectatorState = {
+  error?: 'email_invalid' | 'email_too_long' | 'forbidden' | 'generic';
+  ok?: { email: string };
+};
+
+/**
+ * F14C-2 — El tutor del jugador o el propio jugador (self) invitan a un SEGUIDOR
+ * (abuelo/familiar) por email. El gate (tutor/self) lo impone el RPC
+ * `invite_spectator` (SECURITY DEFINER); aquí solo mapeamos el error y enviamos el
+ * email reutilizando la maquinaria de invitaciones (inviteUserByEmail con
+ * invitation_id, patrón inviteTutorForPlayer). El seguidor NO obtiene membership ni
+ * player_account: el accept crea SOLO player_spectators.
+ */
+export async function inviteSpectatorForPlayer(
+  locale: string,
+  playerId: string,
+  _prev: InviteSpectatorState,
+  formData: FormData
+): Promise<InviteSpectatorState> {
+  const parsed = inviteSpectatorSchema.safeParse({
+    email: formData.get('email'),
+  });
+  if (!parsed.success) {
+    const code = parsed.error.issues[0]?.message;
+    if (code === 'email_invalid' || code === 'email_too_long') {
+      return { error: code };
+    }
+    return { error: 'generic' };
+  }
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  // Crear la invitación de seguidor vía RPC: el gate tutor/self vive ahí.
+  const { data: invite, error: rpcErr } = await supabase
+    .rpc('invite_spectator', {
+      p_player_id: playerId,
+      p_email: parsed.data.email,
+    })
+    .single();
+
+  if (rpcErr) {
+    const msg = rpcErr.message?.toLowerCase() ?? '';
+    if (msg.includes('forbidden')) return { error: 'forbidden' };
+    if (msg.includes('invalid_email')) return { error: 'email_invalid' };
+    Sentry.captureException(rpcErr, {
+      tags: { feature: 'invitations', step: 'invite_spectator' },
+      extra: { player_id: playerId },
+    });
+    return { error: 'generic' };
+  }
+  if (!invite) return { error: 'generic' };
+
+  const hdrs = await headers();
+  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
+  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
+  const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
+
+  const admin = createSupabaseAdminClient();
+  try {
+    const { error: invErr } = await admin.auth.admin.inviteUserByEmail(
+      parsed.data.email,
+      {
+        redirectTo,
+        data: { invite_pending: true, invitation_id: invite.id },
+      }
+    );
+
+    if (invErr) {
+      const msg = invErr.message?.toLowerCase() ?? '';
+      const alreadyExists =
+        ('code' in invErr && invErr.code === 'email_exists') ||
+        msg.includes('already been registered') ||
+        msg.includes('already exists');
+
+      if (alreadyExists) {
+        const { error: resetErr } =
+          await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+            redirectTo,
+          });
+        if (resetErr) {
+          Sentry.captureException(resetErr, {
+            tags: { feature: 'invitations', step: 'reset_fallback_spectator' },
+            extra: { invitation_id: invite.id },
+          });
+          return { error: 'generic' };
+        }
+      } else {
+        Sentry.captureException(invErr, {
+          tags: { feature: 'invitations', step: 'inviteUserByEmail_spectator' },
+          extra: { invitation_id: invite.id },
+        });
+        return { error: 'generic' };
+      }
+    }
+  } catch (thrown) {
+    Sentry.captureException(thrown, {
+      tags: { feature: 'invitations', step: 'inviteUserByEmail_spectator_thrown' },
       extra: { invitation_id: invite.id },
     });
     return { error: 'generic' };

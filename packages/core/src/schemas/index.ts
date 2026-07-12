@@ -65,6 +65,7 @@ export {
   playerPhotoUploadSchema,
   assignPlayerToTeamSchema,
   invitePlayerTutorSchema,
+  inviteSpectatorSchema,
   PLAYER_POSITIONS,
   PLAYER_FEET,
   PLAYER_ACCOUNT_RELATIONS,
