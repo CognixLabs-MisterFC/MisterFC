@@ -3805,6 +3805,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      list_player_spectators: {
+        Args: { p_player_id: string }
+        Returns: {
+          spectator_profile_id: string
+          full_name: string | null
+          email: string | null
+          created_at: string
+        }[]
+      }
       match_assert_event: {
         Args: { p_event_id: string }
         Returns: {

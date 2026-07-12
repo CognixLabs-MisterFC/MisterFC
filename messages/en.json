@@ -444,7 +444,7 @@
       "formaciones": "Formations",
       "ajustes": "Club settings",
       "mi_ficha": "My profile",
-      "mi_informe": "Development report",
+      "seguidores": "Followers", "mi_informe": "Development report",
       "equipos": "Equipos",
       "ejercicios": "Exercises",
       "entrenamientos": "Training",
@@ -4188,6 +4188,48 @@
     "perfil": {
       "title": "My profile",
       "subtitle": "Your account details."
+    }
+  },
+  "seguidores": {
+    "title": "Followers",
+    "subtitle": "Manage who follows your player.",
+    "subtitle_for": "{name}'s followers",
+    "no_player": "You don't have any player linked to your account.",
+    "list": {
+      "title": "Current followers",
+      "empty": "No followers yet.",
+      "unknown": "Follower",
+      "hint": "Invited followers appear here once they accept the invitation."
+    },
+    "invite": {
+      "action": "Invite follower",
+      "title": "Invite follower",
+      "description": "Invite a relative (grandparent, aunt/uncle…) to follow {player}. They'll only see sporting info: schedule, live and stats. Nothing personal.",
+      "field": {
+        "email": "Email",
+        "help": "We'll send an invitation to this address."
+      },
+      "errors": {
+        "email_invalid": "Invalid email.",
+        "email_too_long": "The email is too long.",
+        "forbidden": "You don't have permission to invite followers for this player.",
+        "generic": "Couldn't send the invitation. Please try again."
+      },
+      "sent": "Invitation sent to {email}.",
+      "close": "Close",
+      "cancel": "Cancel",
+      "send": "Send invitation"
+    },
+    "revoke": {
+      "action": "Remove",
+      "title": "Remove follower",
+      "confirm": "Remove {name}? They will lose access to your player.",
+      "confirm_action": "Remove",
+      "cancel": "Cancel",
+      "errors": {
+        "forbidden": "You don't have permission to remove this follower.",
+        "generic": "Couldn't remove the follower. Please try again."
+      }
     }
   }
 }

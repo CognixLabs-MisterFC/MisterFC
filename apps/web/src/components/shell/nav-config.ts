@@ -118,6 +118,8 @@ export const NAV: readonly NavEntry[] = [
   { key: 'mi_ficha', href: '/mi-ficha', icon: LineChart, roles: ['jugador'] },
   // Informe de desarrollo (familia/jugador): ruta propia, fuera de /mi-ficha.
   { key: 'mi_informe', href: '/mi-informe', icon: FileText, roles: ['jugador'] },
+  // F14C-5 — Seguidores (abuelos/familiares) del jugador: invitar/listar/revocar.
+  { key: 'seguidores', href: '/mi-ficha/seguidores', icon: UsersRound, roles: ['jugador'] },
 
   // HUB Entrenamientos — ejercicios (staff) + asistencia (todos) [+ sesiones F12].
   {

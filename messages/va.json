@@ -444,7 +444,7 @@
       "formaciones": "Formacions",
       "ajustes": "Ajustos del club",
       "mi_ficha": "La meua fitxa",
-      "mi_informe": "Informe de desenvolupament",
+      "seguidores": "Seguidors", "mi_informe": "Informe de desenvolupament",
       "equipos": "Equipos",
       "ejercicios": "Exercicis",
       "entrenamientos": "Entrenaments",
@@ -4188,6 +4188,48 @@
     "perfil": {
       "title": "El meu perfil",
       "subtitle": "Les teues dades d'accés."
+    }
+  },
+  "seguidores": {
+    "title": "Seguidors",
+    "subtitle": "Gestiona qui segueix el teu jugador.",
+    "subtitle_for": "Seguidors de {name}",
+    "no_player": "No tens cap jugador vinculat al teu compte.",
+    "list": {
+      "title": "Seguidors actuals",
+      "empty": "Encara no hi ha seguidors.",
+      "unknown": "Seguidor",
+      "hint": "Els seguidors convidats apareixen ací quan accepten la invitació."
+    },
+    "invite": {
+      "action": "Convidar seguidor",
+      "title": "Convidar seguidor",
+      "description": "Convida un familiar (avi/àvia, tio/tia…) a seguir {player}. Només veurà l'esportiu: agenda, directes i estadístiques. Res personal.",
+      "field": {
+        "email": "Correu",
+        "help": "Enviarem una invitació a aquest correu."
+      },
+      "errors": {
+        "email_invalid": "Correu no vàlid.",
+        "email_too_long": "El correu és massa llarg.",
+        "forbidden": "No tens permís per a convidar seguidors d'aquest jugador.",
+        "generic": "No s'ha pogut enviar la invitació. Torna-ho a provar."
+      },
+      "sent": "Invitació enviada a {email}.",
+      "close": "Tancar",
+      "cancel": "Cancel·lar",
+      "send": "Enviar invitació"
+    },
+    "revoke": {
+      "action": "Llevar",
+      "title": "Llevar seguidor",
+      "confirm": "Segur que vols llevar {name}? Deixarà de tindre accés al teu jugador.",
+      "confirm_action": "Llevar",
+      "cancel": "Cancel·lar",
+      "errors": {
+        "forbidden": "No tens permís per a llevar aquest seguidor.",
+        "generic": "No s'ha pogut llevar el seguidor. Torna-ho a provar."
+      }
     }
   }
 }
