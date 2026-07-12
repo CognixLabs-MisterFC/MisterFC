@@ -4134,6 +4134,18 @@
         "invalid_email": "Introduïx un email vàlid.",
         "generic": "No s'ha pogut enviar la invitació. Torna-ho a provar."
       }
+    },
+    "enter": {
+      "button": "Entrar a este club",
+      "error": {
+        "no_session": "Sessió no vàlida. Torna a iniciar sessió.",
+        "forbidden": "No tens permisos per a entrar a este club.",
+        "club_not_found": "El club no existix."
+      }
+    },
+    "banner": {
+      "text": "Estàs en {club} com a superadmin",
+      "exit": "Eixir"
     }
   }
 }

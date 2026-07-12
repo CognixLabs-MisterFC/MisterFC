@@ -22,6 +22,13 @@ export type CurrentUserClub = {
    * expone owner_profile_id crudo al front.
    */
   isOwner: boolean;
+  /**
+   * F14B-8 — true si este club es un acceso SINTÉTICO de "modo superadmin" (el
+   * superadmin entró a un club ajeno desde la consola), NO una membership real.
+   * Ausente/false para las membresías normales. Lo usa el shell para pintar el
+   * banner de modo superadmin. Nunca se persiste: se deriva por request.
+   */
+  isPlatformAccess?: boolean;
   club: {
     id: string;
     name: string;

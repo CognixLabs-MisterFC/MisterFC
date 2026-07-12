@@ -4134,6 +4134,18 @@
         "invalid_email": "Enter a valid email.",
         "generic": "Couldn't send the invitation. Please try again."
       }
+    },
+    "enter": {
+      "button": "Enter this club",
+      "error": {
+        "no_session": "Invalid session. Please sign in again.",
+        "forbidden": "You don't have permission to enter this club.",
+        "club_not_found": "The club doesn't exist."
+      }
+    },
+    "banner": {
+      "text": "You're in {club} as superadmin",
+      "exit": "Exit"
     }
   }
 }

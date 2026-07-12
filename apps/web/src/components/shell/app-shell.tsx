@@ -5,6 +5,7 @@ import type { ShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
+import { SuperadminBanner } from './superadmin-banner';
 import { SIDEBAR_COLLAPSED_COOKIE } from './sidebar-toggle';
 
 type Props = {
@@ -80,12 +81,24 @@ export async function AppShell({ ctx, locale, children, isSuperadmin = false }: 
   const sidebarCollapsed =
     cookieStore.get(SIDEBAR_COLLAPSED_COOKIE)?.value === '1';
 
+  // F14B-8 — banner de modo superadmin: solo si el club activo es un acceso
+  // sintético (club ajeno). El "club propio" al que volver es la primera
+  // membresía REAL (isPlatformAccess ausente).
+  const isPlatformAccess = ctx.activeClub.isPlatformAccess === true;
+  const ownClubId = ctx.clubs.find((c) => !c.isPlatformAccess)?.club.id ?? null;
+
   return (
     <div
       id="app-shell-root"
       data-sidebar-collapsed={sidebarCollapsed ? 'true' : 'false'}
       className="flex min-h-screen flex-col bg-background"
     >
+      {isPlatformAccess && (
+        <SuperadminBanner
+          clubName={ctx.activeClub.club.name}
+          ownClubId={ownClubId}
+        />
+      )}
       <Header
         user={ctx.user}
         fullName={ctx.profile.full_name}
