@@ -13,6 +13,7 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import { ClubSettingsForm } from './club-settings-form';
+import { ClubLogoUploader } from './club-logo-uploader';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -65,6 +66,23 @@ export default async function AjustesPage({ params }: Props) {
           <ClubSettingsForm initialVisible={visible} canEdit={canEdit} />
         </CardContent>
       </Card>
+
+      {/* F14B-9a — Logo del club: SOLO admin_club (director NO; superadmin sí, paridad). */}
+      {ctx.activeClub.role === 'admin_club' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('logo.section_title')}</CardTitle>
+            <CardDescription>{t('logo.section_description')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ClubLogoUploader
+              clubId={ctx.activeClub.club.id}
+              clubName={ctx.activeClub.club.name}
+              initialPath={ctx.activeClub.club.logo_path}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* F14-13b — Publicación de textos legales: SOLO admin_club. */}
       {ctx.activeClub.role === 'admin_club' && (

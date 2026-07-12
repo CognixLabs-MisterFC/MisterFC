@@ -473,6 +473,18 @@
       "season": "Temporada {season}",
       "hint": "Deja una fecha en blanco para quitarla. Por ahora solo informa (alertas y seguimiento llegan después); no bloquea editar tras la fecha.",
       "no_active_season": "No hay una temporada activa en el club."
+    },
+    "logo": {
+      "section_title": "Logo del club",
+      "section_description": "Sube el escudo o logo del club. Se muestra en la cabecera, el selector de club y la consola.",
+      "upload": "Subir logo",
+      "change": "Cambiar logo",
+      "remove": "Quitar",
+      "hint": "PNG, JPG o WebP. Máximo {maxMb} MB.",
+      "error_mime": "Formato no válido. Usa PNG, JPG o WebP.",
+      "error_too_large": "La imagen es demasiado grande.",
+      "error_upload": "No se pudo subir el logo. Inténtalo de nuevo.",
+      "error_forbidden": "Solo el administrador del club puede cambiar el logo."
     }
   },
   "categorias": {

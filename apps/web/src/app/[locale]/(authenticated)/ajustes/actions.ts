@@ -60,3 +60,31 @@ export async function setEvaluationsVisibility(
   revalidatePath('/[locale]/(authenticated)/ajustes', 'page');
   return { success: true };
 }
+
+/**
+ * F14B-9a — Fija (path) o quita (null) el logo del club. La autoridad la impone la
+ * RPC `set_club_logo` (gate admin_club; excluye director, incluye superadmin por el
+ * chokepoint). El objeto ya se subió al bucket `club-logos` desde el cliente (la
+ * policy de storage vuelve a exigir admin_club).
+ */
+export async function setClubLogo(
+  clubId: string,
+  path: string | null,
+): Promise<ActionResult> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase.rpc('set_club_logo', {
+    p_club_id: clubId,
+    p_path: path,
+  });
+  if (error) {
+    return {
+      error: error.message?.includes('forbidden') ? 'forbidden' : 'generic',
+    };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/ajustes', 'page');
+  revalidatePath('/[locale]/(authenticated)', 'layout');
+  return { success: true };
+}

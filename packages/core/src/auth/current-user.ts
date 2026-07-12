@@ -33,6 +33,8 @@ export type CurrentUserClub = {
     id: string;
     name: string;
     slug: string;
+    /** F14B-9a — path del logo en el bucket público `club-logos`; null si sin logo. */
+    logo_path: string | null;
   };
 };
 
@@ -71,7 +73,7 @@ export async function getCurrentUserClubs(
   const { data, error } = await supabase
     .from('memberships')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .select('id, role, club:club_id(id, name, slug, owner_profile_id)' as any)
+    .select('id, role, club:club_id(id, name, slug, owner_profile_id, logo_path)' as any)
     .eq('profile_id', user.id);
 
   if (error || !data) return [];
@@ -85,6 +87,7 @@ export async function getCurrentUserClubs(
       name: string;
       slug: string;
       owner_profile_id: string | null;
+      logo_path: string | null;
     } | null;
   };
 
@@ -99,6 +102,7 @@ export async function getCurrentUserClubs(
         id: m.club.id,
         name: m.club.name,
         slug: m.club.slug,
+        logo_path: m.club.logo_path,
       },
     }))
     .sort((a, b) => a.club.name.localeCompare(b.club.name));

@@ -65,7 +65,7 @@ export async function loadShellContext(): Promise<ShellContext | null> {
       // user_role_in_club='admin_club' → clubs_select_member lo permite).
       const { data: clubRow } = await supabase
         .from('clubs')
-        .select('id, name, slug')
+        .select('id, name, slug, logo_path')
         .eq('id', cookieValue)
         .maybeSingle();
       if (clubRow) {
@@ -74,7 +74,12 @@ export async function loadShellContext(): Promise<ShellContext | null> {
           role: 'admin_club',
           isOwner: true,
           isPlatformAccess: true,
-          club: { id: clubRow.id, name: clubRow.name, slug: clubRow.slug },
+          club: {
+            id: clubRow.id,
+            name: clubRow.name,
+            slug: clubRow.slug,
+            logo_path: clubRow.logo_path,
+          },
         });
       }
     }

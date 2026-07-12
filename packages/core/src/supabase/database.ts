@@ -469,6 +469,7 @@ export type Database = {
           created_at: string
           id: string
           locale: string
+          logo_path: string | null
           name: string
           owner_profile_id: string | null
           settings: Json
@@ -479,6 +480,7 @@ export type Database = {
           created_at?: string
           id?: string
           locale?: string
+          logo_path?: string | null
           name: string
           owner_profile_id?: string | null
           settings?: Json
@@ -489,6 +491,7 @@ export type Database = {
           created_at?: string
           id?: string
           locale?: string
+          logo_path?: string | null
           name?: string
           owner_profile_id?: string | null
           settings?: Json
@@ -4126,12 +4129,17 @@ export type Database = {
           name: string
           slug: string
           locale: string
+          logo_path: string | null
           created_at: string
           owner_profile_id: string | null
           owner_name: string | null
           has_owner: boolean
           has_admin: boolean
         }[]
+      }
+      set_club_logo: {
+        Args: { p_club_id: string; p_path: string | null }
+        Returns: undefined
       }
       platform_club_metrics: {
         Args: Record<PropertyKey, never>
