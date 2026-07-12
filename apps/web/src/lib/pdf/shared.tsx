@@ -12,6 +12,7 @@ import {
   Page,
   View,
   Text,
+  Image,
   StyleSheet,
   renderToBuffer,
   type DocumentProps,
@@ -40,6 +41,10 @@ export const pdfStyles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 14,
   },
+  // F14B-9b — cabecera con logo: fila logo + bloque de textos.
+  bandRow: { flexDirection: 'row', alignItems: 'center' },
+  // Caja fija; objectFit 'contain' respeta el ratio (no deforma logos no cuadrados).
+  bandLogo: { width: 40, height: 40, marginRight: 12, objectFit: 'contain' },
   bandClub: { color: BRAND_GREEN, fontSize: 9, fontFamily: 'Helvetica-Bold' },
   bandTitle: { color: '#FFFFFF', fontSize: 15, fontFamily: 'Helvetica-Bold' },
   bandSub: { color: '#CBD5E1', fontSize: 9, marginTop: 2 },
@@ -97,21 +102,43 @@ export const pdfStyles = StyleSheet.create({
   emptyText: { color: MUTED, fontSize: 9 },
 });
 
-/** Cabecera de marca (banda verde/navy con club + título + subtítulo). */
+/**
+ * Cabecera de marca (banda verde/navy con club + título + subtítulo).
+ * F14B-9b: si el club tiene logo (data URI base64) se pinta a la izquierda; si
+ * es null cae al layout original (nombre a secas), sin hueco ni imagen rota.
+ */
 export function BrandHeader({
   clubName,
   title,
   subtitle,
+  logoDataUrl,
 }: {
   clubName: string;
   title: string;
   subtitle?: string;
+  logoDataUrl?: string | null;
 }): ReactElement {
-  return (
-    <View style={pdfStyles.band}>
+  // Los tres textos, como fragmento reutilizable. SIN logo se pintan directos en
+  // la banda (idéntico al layout original); CON logo se envuelven en un bloque
+  // flex:1 a la derecha de la imagen.
+  const texts = (
+    <>
       <Text style={pdfStyles.bandClub}>{clubName.toUpperCase()}</Text>
       <Text style={pdfStyles.bandTitle}>{title}</Text>
       {subtitle ? <Text style={pdfStyles.bandSub}>{subtitle}</Text> : null}
+    </>
+  );
+  return (
+    <View style={pdfStyles.band}>
+      {logoDataUrl ? (
+        <View style={pdfStyles.bandRow}>
+          {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf Image no soporta alt */}
+          <Image style={pdfStyles.bandLogo} src={logoDataUrl} />
+          <View style={{ flex: 1 }}>{texts}</View>
+        </View>
+      ) : (
+        texts
+      )}
     </View>
   );
 }
@@ -121,17 +148,24 @@ export function PdfShell({
   clubName,
   title,
   subtitle,
+  logoDataUrl,
   children,
 }: {
   clubName: string;
   title: string;
   subtitle?: string;
+  logoDataUrl?: string | null;
   children: React.ReactNode;
 }): ReactElement<DocumentProps> {
   return (
     <Document>
       <Page size="A4" style={pdfStyles.page}>
-        <BrandHeader clubName={clubName} title={title} subtitle={subtitle} />
+        <BrandHeader
+          clubName={clubName}
+          title={title}
+          subtitle={subtitle}
+          logoDataUrl={logoDataUrl}
+        />
         {children}
       </Page>
     </Document>

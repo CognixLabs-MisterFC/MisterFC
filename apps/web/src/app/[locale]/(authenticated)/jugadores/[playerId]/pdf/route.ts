@@ -24,6 +24,7 @@ import { loadShellContext } from '@/lib/auth-shell';
 import { loadPlayerCareer } from '@/lib/player-career';
 import { loadPlayerBadges } from '@/lib/player-badges';
 import { PlayerPdfDocument } from '@/lib/pdf/player-pdf';
+import { clubLogoDataUrl } from '@/lib/pdf/club-logo-data';
 import { pdfResponse, slugForFile, type Translator } from '@/lib/pdf/shared';
 
 export const runtime = 'nodejs';
@@ -99,10 +100,12 @@ export async function GET(
 
   const { data: club } = await supabase
     .from('clubs')
-    .select('name')
+    .select('name, logo_path')
     .eq('id', player.club_id)
     .maybeSingle();
   const clubName = club?.name ?? 'MisterFC';
+  // F14B-9b — logo del club en la cabecera del PDF (base64; null si no hay/falla).
+  const logoDataUrl = await clubLogoDataUrl(supabase, club?.logo_path ?? null);
 
   const latest = career.bySeason[0] ?? null;
 
@@ -120,6 +123,7 @@ export async function GET(
   const doc = PlayerPdfDocument({
     t,
     clubName,
+    logoDataUrl,
     playerName,
     dorsal: player.dorsal,
     teamLine,

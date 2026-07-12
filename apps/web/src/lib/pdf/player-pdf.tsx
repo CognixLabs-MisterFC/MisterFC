@@ -15,6 +15,8 @@ import { PdfShell, pdfStyles, type Translator } from './shared';
 export interface PlayerPdfProps {
   t: Translator;
   clubName: string;
+  /** F14B-9b — logo del club como data URI base64 (null → cabecera sin logo). */
+  logoDataUrl: string | null;
   playerName: string;
   dorsal: number | null;
   /** "Equipo · Categoría · Temporada" del equipo actual (o null). */
@@ -53,6 +55,7 @@ export function PlayerPdfDocument(
   return (
     <PdfShell
       clubName={props.clubName}
+      logoDataUrl={props.logoDataUrl}
       title={`${t('player.title')} — ${props.playerName}`}
       subtitle={subtitleParts.join('  ·  ') || undefined}
     >
