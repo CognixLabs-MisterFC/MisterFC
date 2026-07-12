@@ -578,6 +578,18 @@
       "season": "Temporada {season}",
       "hint": "Deixa una data en blanc per llevar-la. De moment només informa (alertes i seguiment arriben després); no bloqueja editar després de la data.",
       "no_active_season": "No hi ha cap temporada activa al club."
+    },
+    "logo": {
+      "section_title": "Logo del club",
+      "section_description": "Puja l'escut o logo del club. Es mostra en la capçalera, el selector de club i la consola.",
+      "upload": "Pujar logo",
+      "change": "Canviar logo",
+      "remove": "Llevar",
+      "hint": "PNG, JPG o WebP. Màxim {maxMb} MB.",
+      "error_mime": "Format no vàlid. Usa PNG, JPG o WebP.",
+      "error_too_large": "La imatge és massa gran.",
+      "error_upload": "No s'ha pogut pujar el logo. Torna-ho a provar.",
+      "error_forbidden": "Només l'administrador del club pot canviar el logo."
     }
   },
   "categorias": {

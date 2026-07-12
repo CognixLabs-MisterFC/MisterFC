@@ -4,6 +4,7 @@ import { useTransition } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import type { CurrentUserClub } from '@misterfc/core';
 import { setActiveClub } from './actions';
+import { ClubLogo } from '@/components/ui/club-logo';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -35,6 +36,11 @@ export function ActiveClubSwitcher({ clubs, activeClubId, labels }: Props) {
   if (clubs.length === 1) {
     return (
       <div className="flex items-center gap-2">
+        <ClubLogo
+          path={active.club.logo_path}
+          name={active.club.name}
+          className="size-6"
+        />
         <span className="text-xs uppercase tracking-widest text-zinc-400">
           {labels.label}
         </span>
@@ -55,6 +61,11 @@ export function ActiveClubSwitcher({ clubs, activeClubId, labels }: Props) {
           )}
           aria-label={labels.switch_help}
         >
+          <ClubLogo
+            path={active.club.logo_path}
+            name={active.club.name}
+            className="size-5"
+          />
           <span className="max-w-[14ch] truncate">{active.club.name}</span>
           <ChevronsUpDown className="size-4 opacity-60" aria-hidden />
         </Button>
@@ -77,7 +88,14 @@ export function ActiveClubSwitcher({ clubs, activeClubId, labels }: Props) {
               }}
               className="flex items-center justify-between"
             >
-              <span className="truncate">{c.club.name}</span>
+              <span className="flex items-center gap-2 truncate">
+                <ClubLogo
+                  path={c.club.logo_path}
+                  name={c.club.name}
+                  className="size-5"
+                />
+                <span className="truncate">{c.club.name}</span>
+              </span>
               {isActive && <Check className="size-4" aria-hidden />}
             </DropdownMenuItem>
           );

@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { ClubLogo } from '@/components/ui/club-logo';
 import { CreateClubDialog } from './create-club-dialog';
 
 type Props = {
@@ -90,11 +91,18 @@ export default async function PlatformClubsPage({ params }: Props) {
                     <TableCell>
                       <Link
                         href={`/platform/${club.id}`}
-                        className="flex flex-col hover:underline"
+                        className="flex items-center gap-3 hover:underline"
                       >
-                        <span className="font-medium">{club.name}</span>
-                        <span className="text-xs text-muted-foreground">
-                          /{club.slug}
+                        <ClubLogo
+                          path={club.logo_path}
+                          name={club.name}
+                          className="size-9"
+                        />
+                        <span className="flex flex-col">
+                          <span className="font-medium">{club.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            /{club.slug}
+                          </span>
                         </span>
                       </Link>
                     </TableCell>

@@ -578,6 +578,18 @@
       "season": "Season {season}",
       "hint": "Leave a date blank to remove it. For now it is informational only (alerts and tracking come later); it does not block editing after the date.",
       "no_active_season": "There is no active season in the club."
+    },
+    "logo": {
+      "section_title": "Club logo",
+      "section_description": "Upload the club crest or logo. Shown in the header, club switcher and console.",
+      "upload": "Upload logo",
+      "change": "Change logo",
+      "remove": "Remove",
+      "hint": "PNG, JPG or WebP. Max {maxMb} MB.",
+      "error_mime": "Invalid format. Use PNG, JPG or WebP.",
+      "error_too_large": "The image is too large.",
+      "error_upload": "Couldn't upload the logo. Please try again.",
+      "error_forbidden": "Only the club administrator can change the logo."
     }
   },
   "categorias": {
