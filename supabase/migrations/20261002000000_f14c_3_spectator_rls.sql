@@ -269,5 +269,21 @@ comment on view public.players_sporting is
   'is_spectator_of_club) y excluye suprimidos. Es el ÚNICO camino del seguidor a '
   'datos de jugador; players sigue cerrada a no-miembros.';
 
-revoke all on public.players_sporting from public, anon;
+-- CIERRE DE ESCRITURA (F14C-3 fix de seguridad). Supabase concede ALL por DEFAULT
+-- PRIVILEGES a authenticated/anon sobre toda vista/tabla nueva de public. Como esta
+-- vista es AUTO-ACTUALIZABLE (vista simple de una tabla) y DEFINER (security_invoker
+-- OFF → corre como owner, que puentea la RLS de players porque players no fuerza RLS
+-- al owner), heredar UPDATE/DELETE/INSERT permitiría a cualquier authenticated (incl.
+-- el seguidor, que es SOLO-lectura) escribir/borrar filas de players saltándose la
+-- RLS. Se revoca TODO a public/anon/authenticated y se concede SOLO SELECT a
+-- authenticated. service_role conserva sus privilegios (backend).
+--
+-- NOTA — por qué NO security_invoker=true: la vista existe para puentear la RLS de
+-- players (cerrada al seguidor) y proyectar SOLO columnas deportivas. Con invoker=true
+-- la lectura de players se evaluaría contra la RLS del INVOCADOR; el seguidor no tiene
+-- SELECT en players → la vista devolvería 0 filas y rompería su lectura legítima
+-- (verificado empíricamente). La inmunidad a escritura la garantizan los grants:
+-- authenticated/anon SIN privilegios de escritura, así que el UPDATE/DELETE/INSERT
+-- falla por "permission denied" antes de tocar players.
+revoke all on public.players_sporting from public, anon, authenticated;
 grant select on public.players_sporting to authenticated;
