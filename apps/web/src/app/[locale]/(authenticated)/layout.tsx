@@ -22,7 +22,13 @@ export default async function AuthenticatedLayout({ children, params }: Props) {
     // hay user, falta club → /onboarding; si no, falta sesión → /signin.
     const { loadAuthOnly } = await import('@/lib/auth-shell');
     const auth = await loadAuthOnly();
-    redirect(auth ? `/${locale}/onboarding` : `/${locale}/signin`);
+    if (!auth) redirect(`/${locale}/signin`);
+    // F14C-4 — SEGUIDOR PURO: user autenticado, sin membership de club, pero
+    // is_spectator() → su zona reducida, NO onboarding. (Prioridad al rol: si
+    // tuviera cualquier membership, loadShellContext no habría devuelto null.)
+    const { isPureSpectator } = await import('@/lib/spectator-shell');
+    if (await isPureSpectator()) redirect(`/${locale}/spectator`);
+    redirect(`/${locale}/onboarding`);
   }
 
   if (ctx.staleCookie) {

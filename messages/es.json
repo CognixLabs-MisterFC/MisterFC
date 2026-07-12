@@ -4158,5 +4158,35 @@
       "text": "Estás en {club} como superadmin",
       "exit": "Salir"
     }
+  },
+  "spectator": {
+    "app_name": "MisterFC",
+    "sidebar_label": "Menú del seguidor",
+    "active_player_label": "Viendo a",
+    "active_player_switch_help": "Cambiar de jugador seguido",
+    "nav": {
+      "agenda": "Agenda",
+      "directos": "Directos",
+      "estadisticas": "Estadísticas",
+      "perfil": "Mi perfil"
+    },
+    "agenda": {
+      "title": "Agenda",
+      "subtitle": "Próximos partidos y entrenamientos del equipo de {name}"
+    },
+    "directos": {
+      "title": "Directos",
+      "subtitle": "Partidos en directo del club",
+      "back": "Volver a directos"
+    },
+    "estadisticas": {
+      "title": "Estadísticas",
+      "subtitle": "Estadísticas del equipo de {name}",
+      "empty": "Aún no hay estadísticas disponibles."
+    },
+    "perfil": {
+      "title": "Mi perfil",
+      "subtitle": "Tus datos de acceso."
+    }
   }
 }
