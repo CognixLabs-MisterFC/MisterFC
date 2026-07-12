@@ -34,7 +34,9 @@ export default async function SpectatorEstadisticasPage({ params }: Props) {
   const tInf = await getTranslations('informes');
 
   const teamId = ctx.activePlayer.teamId;
-  const data = teamId ? await loadTeamSeasonStats(teamId) : null;
+  const data = teamId
+    ? await loadTeamSeasonStats(teamId, { viewerIsSpectator: true })
+    : null;
 
   const na = '—';
 

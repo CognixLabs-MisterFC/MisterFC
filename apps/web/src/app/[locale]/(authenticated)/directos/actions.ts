@@ -21,23 +21,31 @@ import {
  * antes (ctx presente → mismo club); la rama del seguidor solo entra cuando NO
  * hay shell normal.
  */
-async function pollingClubId(): Promise<string | null> {
+async function pollingClub(): Promise<{
+  clubId: string;
+  viewerIsSpectator: boolean;
+} | null> {
   const ctx = await loadShellContext();
-  if (ctx) return ctx.activeClub.club.id;
+  if (ctx) return { clubId: ctx.activeClub.club.id, viewerIsSpectator: false };
   const spec = await loadSpectatorContext();
-  return spec ? spec.activePlayer.clubId : null;
+  return spec
+    ? { clubId: spec.activePlayer.clubId, viewerIsSpectator: true }
+    : null;
 }
 
 export async function fetchWeekMatches(): Promise<WeekMatch[]> {
-  const clubId = await pollingClubId();
-  if (!clubId) return [];
-  return loadWeekMatches(clubId);
+  const info = await pollingClub();
+  if (!info) return [];
+  return loadWeekMatches(info.clubId);
 }
 
 export async function fetchMatchDetail(
   eventId: string,
 ): Promise<MatchDetail | null> {
-  const clubId = await pollingClubId();
-  if (!clubId) return null;
-  return loadMatchDetail(clubId, eventId);
+  const info = await pollingClub();
+  if (!info) return null;
+  // F14C-4b — el detalle del seguidor resuelve los nombres desde players_sporting.
+  return loadMatchDetail(info.clubId, eventId, {
+    viewerIsSpectator: info.viewerIsSpectator,
+  });
 }
