@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { InviteAdminForm } from './invite-admin-form';
+import { EnterClubButton } from './enter-club-button';
 
 type Props = {
   params: Promise<{ locale: string; clubId: string }>;
@@ -75,9 +76,12 @@ export default async function PlatformClubDetailPage({ params }: Props) {
           <ArrowLeft className="size-4" aria-hidden />
           <span>{t('detail.back')}</span>
         </Link>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{club.name}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">/{club.slug}</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{club.name}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">/{club.slug}</p>
+          </div>
+          <EnterClubButton clubId={clubId} locale={locale} />
         </div>
       </div>
 
