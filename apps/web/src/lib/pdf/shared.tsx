@@ -118,12 +118,15 @@ export function BrandHeader({
   subtitle?: string;
   logoDataUrl?: string | null;
 }): ReactElement {
+  // Los tres textos, como fragmento reutilizable. SIN logo se pintan directos en
+  // la banda (idéntico al layout original); CON logo se envuelven en un bloque
+  // flex:1 a la derecha de la imagen.
   const texts = (
-    <View style={{ flex: 1 }}>
+    <>
       <Text style={pdfStyles.bandClub}>{clubName.toUpperCase()}</Text>
       <Text style={pdfStyles.bandTitle}>{title}</Text>
       {subtitle ? <Text style={pdfStyles.bandSub}>{subtitle}</Text> : null}
-    </View>
+    </>
   );
   return (
     <View style={pdfStyles.band}>
@@ -131,7 +134,7 @@ export function BrandHeader({
         <View style={pdfStyles.bandRow}>
           {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf Image no soporta alt */}
           <Image style={pdfStyles.bandLogo} src={logoDataUrl} />
-          {texts}
+          <View style={{ flex: 1 }}>{texts}</View>
         </View>
       ) : (
         texts
