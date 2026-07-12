@@ -4159,5 +4159,35 @@
       "text": "You're in {club} as superadmin",
       "exit": "Exit"
     }
+  },
+  "spectator": {
+    "app_name": "MisterFC",
+    "sidebar_label": "Follower menu",
+    "active_player_label": "Viewing",
+    "active_player_switch_help": "Switch followed player",
+    "nav": {
+      "agenda": "Schedule",
+      "directos": "Live",
+      "estadisticas": "Statistics",
+      "perfil": "My profile"
+    },
+    "agenda": {
+      "title": "Schedule",
+      "subtitle": "Upcoming matches and training for {name}'s team"
+    },
+    "directos": {
+      "title": "Live",
+      "subtitle": "Club matches live",
+      "back": "Back to live"
+    },
+    "estadisticas": {
+      "title": "Statistics",
+      "subtitle": "{name}'s team statistics",
+      "empty": "No statistics available yet."
+    },
+    "perfil": {
+      "title": "My profile",
+      "subtitle": "Your account details."
+    }
   }
 }

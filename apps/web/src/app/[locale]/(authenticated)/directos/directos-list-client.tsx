@@ -26,6 +26,11 @@ import type { WeekMatch } from './queries';
 type Props = {
   locale: string;
   initialMatches: WeekMatch[];
+  /**
+   * F14C-4 — base del enlace al detalle. Por defecto `/directos` (shell de
+   * miembro, sin cambios); el shell del seguidor pasa `/spectator/directos`.
+   */
+  detailBasePath?: string;
 };
 
 /**
@@ -67,7 +72,11 @@ const LIVE_PHASES: ReadonlySet<MatchPhaseKind> = new Set([
   'extra_time',
 ]);
 
-export function DirectosListClient({ locale, initialMatches }: Props) {
+export function DirectosListClient({
+  locale,
+  initialMatches,
+  detailBasePath = '/directos',
+}: Props) {
   const t = useTranslations('directos');
   const [matches, setMatches] = useState<WeekMatch[]>(initialMatches);
 
@@ -139,7 +148,7 @@ export function DirectosListClient({ locale, initialMatches }: Props) {
 
         return (
           <li key={m.eventId}>
-            <Link href={`/directos/${m.eventId}`}>
+            <Link href={`${detailBasePath}/${m.eventId}`}>
               <Card className="transition-colors hover:bg-muted/30">
                 <CardContent className="flex items-center justify-between gap-3 py-3">
                   <div className="flex min-w-0 flex-col gap-1">

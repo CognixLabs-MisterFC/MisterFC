@@ -15,6 +15,11 @@ export {
   resolveActiveClub,
   ACTIVE_CLUB_COOKIE_NAME,
 } from './active-club';
+export {
+  resolveActivePlayer,
+  ACTIVE_PLAYER_COOKIE_NAME,
+  type FollowedPlayer,
+} from './spectator';
 export { isSamePasswordError } from './password-errors';
 export {
   assertInvitationValid,

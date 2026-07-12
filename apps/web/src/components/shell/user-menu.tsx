@@ -25,9 +25,21 @@ type Props = {
   };
   /** El form de logout es server-action; lo recibimos como children renderizado. */
   signoutForm: ReactNode;
+  /**
+   * F14C-4 — destino del enlace "Mi perfil". Por defecto `/perfil` (shell de
+   * miembro, sin cambios). El shell del seguidor lo apunta a `/spectator/perfil`.
+   */
+  perfilHref?: string;
 };
 
-export function UserMenu({ avatar, fullName, email, labels, signoutForm }: Props) {
+export function UserMenu({
+  avatar,
+  fullName,
+  email,
+  labels,
+  signoutForm,
+  perfilHref = '/perfil',
+}: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -49,7 +61,7 @@ export function UserMenu({ avatar, fullName, email, labels, signoutForm }: Props
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/perfil" className="flex items-center gap-2">
+          <Link href={perfilHref} className="flex items-center gap-2">
             <UserRound className="size-4" aria-hidden />
             <span>{labels.perfil}</span>
           </Link>

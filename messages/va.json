@@ -4159,5 +4159,35 @@
       "text": "Estàs en {club} com a superadmin",
       "exit": "Eixir"
     }
+  },
+  "spectator": {
+    "app_name": "MisterFC",
+    "sidebar_label": "Menú del seguidor",
+    "active_player_label": "Veient a",
+    "active_player_switch_help": "Canviar de jugador seguit",
+    "nav": {
+      "agenda": "Agenda",
+      "directos": "Directes",
+      "estadisticas": "Estadístiques",
+      "perfil": "El meu perfil"
+    },
+    "agenda": {
+      "title": "Agenda",
+      "subtitle": "Pròxims partits i entrenaments de l'equip de {name}"
+    },
+    "directos": {
+      "title": "Directes",
+      "subtitle": "Partits en directe del club",
+      "back": "Tornar als directes"
+    },
+    "estadisticas": {
+      "title": "Estadístiques",
+      "subtitle": "Estadístiques de l'equip de {name}",
+      "empty": "Encara no hi ha estadístiques disponibles."
+    },
+    "perfil": {
+      "title": "El meu perfil",
+      "subtitle": "Les teues dades d'accés."
+    }
   }
 }
