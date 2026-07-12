@@ -27,6 +27,7 @@ import {
   type TeamAggregate,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { loadSportingNames } from '@/lib/spectator-names';
 
 /** Nº de PARTIDOS REALES del equipo por tipo (count distinct event_id, no Σ apariciones). */
 export interface TeamMatchesByType {
@@ -79,7 +80,8 @@ export interface TeamSeasonStats {
  * agregado se calcula en core (`aggregateTeamStats`).
  */
 export async function loadTeamSeasonStats(
-  teamId: string
+  teamId: string,
+  opts?: { viewerIsSpectator?: boolean }
 ): Promise<TeamSeasonStats | null> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
@@ -103,29 +105,55 @@ export async function loadTeamSeasonStats(
   const team = t as unknown as TeamRow;
 
   // 2) Roster del equipo (todas las membresías, el team es season-scoped).
-  type TmRow = {
-    player_id: string;
-    dorsal_in_team: number | null;
-    position_in_team: string | null;
-    players: { first_name: string; last_name: string | null };
-  };
-  const { data: rawRoster } = await supabase
-    .from('team_members')
-    .select(
-      'player_id, dorsal_in_team, position_in_team, players!inner(first_name, last_name)'
-    )
-    .eq('team_id', teamId)
-    .order('dorsal_in_team', { ascending: true, nullsFirst: false });
+  let roster: RosterPlayer[];
+  if (opts?.viewerIsSpectator) {
+    // F14C-4b — el SEGUIDOR no lee `players` (RLS cerrada); team_members SÍ es
+    // legible (F14C-3). Los nombres/dorsal salen de `players_sporting` (vista
+    // deportiva), NO de players!inner (que devolvería 0 filas → roster vacío).
+    const { data: tmOnly } = await supabase
+      .from('team_members')
+      .select('player_id, dorsal_in_team, position_in_team')
+      .eq('team_id', teamId)
+      .order('dorsal_in_team', { ascending: true, nullsFirst: false });
+    const tmRows = tmOnly ?? [];
+    const names = await loadSportingNames(
+      supabase,
+      tmRows.map((r) => r.player_id)
+    );
+    roster = tmRows.map((r) => {
+      const n = names.get(r.player_id);
+      return {
+        player_id: r.player_id,
+        first_name: n?.first_name ?? '',
+        last_name: n?.last_name ?? null,
+        dorsal_in_team: r.dorsal_in_team,
+        position_in_team: r.position_in_team,
+      };
+    });
+  } else {
+    // Ruta de MIEMBRO (sin cambios): nombres desde players!inner.
+    type TmRow = {
+      player_id: string;
+      dorsal_in_team: number | null;
+      position_in_team: string | null;
+      players: { first_name: string; last_name: string | null };
+    };
+    const { data: rawRoster } = await supabase
+      .from('team_members')
+      .select(
+        'player_id, dorsal_in_team, position_in_team, players!inner(first_name, last_name)'
+      )
+      .eq('team_id', teamId)
+      .order('dorsal_in_team', { ascending: true, nullsFirst: false });
 
-  const roster: RosterPlayer[] = ((rawRoster ?? []) as unknown as TmRow[]).map(
-    (r) => ({
+    roster = ((rawRoster ?? []) as unknown as TmRow[]).map((r) => ({
       player_id: r.player_id,
       first_name: r.players.first_name,
       last_name: r.players.last_name,
       dorsal_in_team: r.dorsal_in_team,
       position_in_team: r.position_in_team,
-    })
-  );
+    }));
+  }
 
   // 3) match_player_stats del equipo (RLS: staff del team / admin / coord).
   // F9B-4a — se junta events!inner(type, tournament_id) para el desglose por tipo.

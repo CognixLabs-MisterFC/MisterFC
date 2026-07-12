@@ -19,6 +19,7 @@ import {
   type MatchTeamStats,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { loadSportingNames } from '@/lib/spectator-names';
 
 /** Un partido de la semana para la LISTA. */
 export type WeekMatch = {
@@ -253,6 +254,7 @@ export type MatchDetail = {
 export async function loadMatchDetail(
   clubId: string,
   eventId: string,
+  opts?: { viewerIsSpectator?: boolean },
 ): Promise<MatchDetail | null> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
@@ -316,6 +318,10 @@ export async function loadMatchDetail(
   }));
 
   // Alineación oficial → campo (posiciones); override con live_positions.
+  // NOTA F14C-4b: para el SEGUIDOR esto sale vacío porque `lineups`/
+  // `lineup_positions` están RLS-CERRADAS al seguidor (F14C-3 abrió match_events/
+  // state/periods/starters pero NO lineups). Abrir la alineación al seguidor
+  // sería una pieza NUEVA de RLS (F14C-4c), fuera del alcance "solo nombres".
   let formationCode: string | null = null;
   let fieldPlayers: DetailFieldPlayer[] = [];
   const { data: officialRow } = await supabase
@@ -357,15 +363,9 @@ export async function loadMatchDetail(
   }
 
   // Todos los eventos (cronológico) — con nombre del jugador propio.
-  const { data: evtRows } = await supabase
-    .from('match_events')
-    .select(
-      `id, side, type, player_id, rival_dorsal, clock_seconds, display_minute, period, metadata,
-       players!match_events_player_id_fkey(first_name, last_name, dorsal)`,
-    )
-    .eq('event_id', eventId)
-    .order('clock_seconds', { ascending: true })
-    .order('created_at', { ascending: true });
+  // F14C-4b — el SEGUIDOR no lee `players` (RLS) → el embed daría nombres null
+  // ("—"). Su rama resuelve el nombre desde `players_sporting` (F14C-3). El
+  // MIEMBRO sigue con players!inner, sin cambios.
   type EvtShape = {
     id: string;
     side: 'own' | 'rival';
@@ -378,20 +378,44 @@ export async function loadMatchDetail(
     metadata: { outcome?: string; foul_kind?: string; corner_side?: string } | null;
     players: { first_name: string; last_name: string | null; dorsal: number | null } | null;
   };
+  const evtSelect = opts?.viewerIsSpectator
+    ? `id, side, type, player_id, rival_dorsal, clock_seconds, display_minute, period, metadata`
+    : `id, side, type, player_id, rival_dorsal, clock_seconds, display_minute, period, metadata,
+       players!match_events_player_id_fkey(first_name, last_name, dorsal)`;
+  const { data: evtRows } = await supabase
+    .from('match_events')
+    .select(evtSelect)
+    .eq('event_id', eventId)
+    .order('clock_seconds', { ascending: true })
+    .order('created_at', { ascending: true });
   const rows = (evtRows ?? []) as unknown as EvtShape[];
 
-  const events: DetailEvent[] = rows.map((r) => ({
-    id: r.id,
-    side: r.side,
-    type: r.type,
-    label:
-      r.side === 'rival'
-        ? `#${r.rival_dorsal ?? '?'}`
-        : r.players?.last_name || r.players?.first_name || '—',
-    clockSeconds: r.clock_seconds,
-    displayMinute: r.display_minute,
-    period: r.period,
-  }));
+  // Para el seguidor, nombre propio desde players_sporting (mapa player_id→nombre).
+  const evtNames = opts?.viewerIsSpectator
+    ? await loadSportingNames(
+        supabase,
+        rows.map((r) => r.player_id),
+      )
+    : null;
+
+  const events: DetailEvent[] = rows.map((r) => {
+    const own =
+      evtNames != null
+        ? evtNames.get(r.player_id ?? '')
+        : r.players;
+    return {
+      id: r.id,
+      side: r.side,
+      type: r.type,
+      label:
+        r.side === 'rival'
+          ? `#${r.rival_dorsal ?? '?'}`
+          : own?.last_name || own?.first_name || '—',
+      clockSeconds: r.clock_seconds,
+      displayMinute: r.display_minute,
+      period: r.period,
+    };
+  });
 
   // Marcador + agregados de equipo, reusando el motor puro de core.
   const score = computeScore(

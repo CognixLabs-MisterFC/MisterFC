@@ -23,7 +23,9 @@ export default async function SpectatorDirectoDetailPage({ params }: Props) {
   if (!ctx) redirect(`/${locale}/`);
 
   const t = await getTranslations('spectator');
-  const detail = await loadMatchDetail(ctx.activePlayer.clubId, eventId);
+  const detail = await loadMatchDetail(ctx.activePlayer.clubId, eventId, {
+    viewerIsSpectator: true,
+  });
   if (!detail) notFound();
 
   return (
