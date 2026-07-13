@@ -237,6 +237,54 @@ export async function loadPublishedSessionsForTeam(
     }));
 }
 
+export type PlayerSharedSessionRow = PublishedSessionRow & {
+  team_id: string;
+  team_name: string;
+};
+
+/**
+ * F14E-4 — Sesiones COMPARTIDAS (visibility='team') de VARIOS equipos (los del
+ * jugador), a partir de `fromIso`, para la pantalla "Planificación de
+ * entrenamientos". Igual que `loadPublishedSessionsForTeam` pero para un conjunto
+ * de equipos, e incluye el nombre del equipo (un jugador puede estar en varios).
+ * La RLS de 12.1 es el gate real; el filtro por team_ids refuerza la intención.
+ */
+export async function loadSharedSessionsForTeams(
+  clubId: string,
+  teams: Array<{ id: string; name: string }>,
+  fromIso: string,
+  limit = 50
+): Promise<PlayerSharedSessionRow[]> {
+  if (teams.length === 0) return [];
+  const teamIds = teams.map((t) => t.id);
+  const nameById = new Map(teams.map((t) => [t.id, t.name]));
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('sessions')
+    .select('id, title, session_date, total_minutes, team_id')
+    .eq('club_id', clubId)
+    .in('team_id', teamIds)
+    .eq('is_template', false)
+    .eq('visibility', 'team')
+    .gte('session_date', fromIso)
+    .order('session_date', { ascending: true })
+    .limit(limit);
+
+  return (data ?? [])
+    .filter((s) => s.session_date != null && s.team_id != null)
+    .map((s) => ({
+      id: s.id as string,
+      title: (s.title as string | null) ?? null,
+      session_date: s.session_date as string,
+      total_minutes: (s.total_minutes as number | null) ?? null,
+      team_id: s.team_id as string,
+      team_name: nameById.get(s.team_id as string) ?? '',
+    }));
+}
+
 // ── Sesión para editar (cabecera + bloques + tareas) ─────────────────────────
 export type SessionTaskForEdit = {
   id: string;

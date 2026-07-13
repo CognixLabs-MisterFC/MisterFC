@@ -137,6 +137,12 @@ export const NAV: readonly NavEntry[] = [
       // Playbook de jugadas animadas (F13) — solo staff.
       { key: 'jugadas', href: '/jugadas', icon: Swords, roles: STAFF },
       { key: 'asistencia', href: '/asistencia', icon: Calendar, roles: ALL },
+      // F14E-4 — Planificación compartida (SOLO jugador): las sesiones que el
+      // entrenador ha compartido (visibility='team'), en solo lectura. Al ser el
+      // 2º hijo visible del jugador, "Entrenamientos" deja de colapsar y pasa a
+      // hub de 2 tarjetas (Asistencia + Planificación). El staff no lo ve (ya
+      // tiene 'sesiones' aquí) → su hub queda intacto.
+      { key: 'planificacion', href: '/mi-equipo/sesiones', icon: ClipboardList, roles: ['jugador'] },
     ],
   },
 

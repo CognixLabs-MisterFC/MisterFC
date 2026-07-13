@@ -45,7 +45,8 @@ export type SessionActionState = {
 };
 
 function mapPgErr(code: string | undefined): ActionError {
-  if (code === '42501') return 'forbidden'; // RLS
+  if (code === '42501') return 'forbidden'; // RLS / gate del RPC
+  if (code === 'P0002') return 'not_found'; // no_data_found (RAISE del RPC)
   return 'generic';
 }
 
@@ -318,10 +319,15 @@ export async function updateSessionHeader(input: unknown): Promise<SessionAction
 }
 
 /**
- * F12.4 — Publica/despublica una sesión al equipo (visibility 'staff'↔'team').
- * Publicar la hace visible read-only para jugadores y familias del team_id (D3).
- * Confía en la RLS de UPDATE (owner∪admin) como gate; si no se edita, not_found.
- * Revalida también /mi-equipo (la superficie del jugador/familia).
+ * F12.4 (+ F14E-4) — Comparte/descomparte una sesión con el equipo.
+ * "Compartida" = visibility='team' (visible read-only para jugadores/familias del
+ * team_id, sin condición de convocatoria); "no compartida" = 'staff'.
+ *
+ * Pasa por el RPC `set_session_shared` (SECURITY DEFINER) en vez de un UPDATE
+ * directo: el RPC AMPLÍA el gate (staff del equipo —incl. AYUDANTE sin capability—
+ * ∪ admin/director/superadmin), mientras que el UPDATE directo exigía autoridad de
+ * creación (owner∪admin∪staff-con-capability). Revalida también /mi-equipo y la
+ * pantalla de planificación del jugador (superficie del jugador/familia).
  */
 export async function setSessionVisibility(input: unknown): Promise<SessionActionState> {
   const parsed = setSessionVisibilitySchema.safeParse(input);
@@ -333,18 +339,16 @@ export async function setSessionVisibility(input: unknown): Promise<SessionActio
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { data: updated, error } = await supabase
-    .from('sessions')
-    .update({ visibility: parsed.data.visibility })
-    .eq('id', parsed.data.id)
-    .select('id')
-    .maybeSingle();
+  const { error } = await supabase.rpc('set_session_shared', {
+    p_session_id: parsed.data.id,
+    p_shared: parsed.data.visibility === 'team',
+  });
 
   if (error) return { error: mapPgErr(error.code) };
-  if (!updated) return { error: 'not_found' };
 
   revalidateSessions();
   revalidatePath('/[locale]/(authenticated)/mi-equipo', 'page');
+  revalidatePath('/[locale]/(authenticated)/mi-equipo/sesiones', 'page');
   return { success: true, id: parsed.data.id };
 }
 

@@ -456,6 +456,7 @@
       "cuerpo_tecnico": "Cos tècnic",
       "estadisticas_equipo": "Estadístiques per equip",
       "asistencia": "Entrenaments",
+      "planificacion": "Planificació",
       "playbook": "Playbook",
       "convocatorias": "Gestió de partits",
       "mensajes": "Missatges",
@@ -3523,8 +3524,20 @@
       "jugadas": {
         "title": "Jugades",
         "description": "Crea i anima jugades tàctiques de l'equip (playbook)."
+      },
+      "planificacion": {
+        "title": "Planificació d'entrenaments",
+        "description": "Consulta les sessions que el teu entrenador ha compartit."
       }
     }
+  },
+  "planificacion": {
+    "title": "Planificació d'entrenaments",
+    "subtitle": "Sessions d'entrenament que el teu entrenador ha compartit amb l'equip.",
+    "empty": "Encara no hi ha planificacions compartides.",
+    "untitled": "Sessió",
+    "minutes": "{count} min",
+    "team_label": "Equip"
   },
   "jugadas": {
     "title": "Jugades",
@@ -3929,14 +3942,14 @@
       "minutes": "{count} min"
     },
     "publish": {
-      "label": "Publicar a l'equip",
-      "draft": "Esborrany",
-      "published": "Publicada",
-      "no_team": "Assigna un equip per a poder publicar la sessió.",
-      "help_draft": "Només el cos tècnic la veu. Publica-la per a compartir-la amb l'equip.",
-      "help_published": "Visible per a jugadors i famílies de l'equip.",
-      "toast_published": "Sessió publicada a l'equip",
-      "toast_unpublished": "Sessió tornada a esborrany"
+      "label": "Compartir amb jugadors",
+      "draft": "No compartida",
+      "published": "Compartida",
+      "no_team": "Assigna un equip per a poder compartir la sessió.",
+      "help_draft": "Només el cos tècnic la veu. Comparteix-la perquè la vegen els jugadors de l'equip.",
+      "help_published": "Visible per als jugadors i famílies de l'equip.",
+      "toast_published": "Sessió compartida amb l'equip",
+      "toast_unpublished": "Sessió deixada de compartir"
     },
     "templates": {
       "save_as": "Guardar com a plantilla",
