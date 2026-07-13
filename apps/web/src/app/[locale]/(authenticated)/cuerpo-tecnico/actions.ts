@@ -179,6 +179,115 @@ export async function moveStaffToTeam(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// addStaffAssignment (Serie C · C-0) — AÑADE un rol/equipo a una membership
+// existente SIN cerrar las demás filas (a diferencia de moveStaffToTeam). Permite
+// multi-rol y multi-equipo, incl. 2 roles en el mismo equipo (habilitado por el
+// UNIQUE (team_id, membership_id, staff_role) de C-0). Guard = RLS
+// team_staff_insert_admin (admin/coord/director); la UI solo lo ofrece a
+// admin/director (coordinador NO asigna en C-0). Cero policy nueva.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const addAssignmentSchema = z.object({
+  target_team_id: z.string().uuid({ message: 'team_invalid' }),
+  staff_role: z.enum(TEAM_STAFF_ROLES, { message: 'staff_role_invalid' }),
+});
+
+export type AddAssignmentState = {
+  error?:
+    | 'team_invalid'
+    | 'staff_role_invalid'
+    | 'cross_club'
+    | 'principal_exists'
+    | 'role_exists'
+    | 'forbidden'
+    | 'generic';
+  success?: boolean;
+};
+
+export async function addStaffAssignment(
+  membershipId: string,
+  _prev: AddAssignmentState,
+  formData: FormData
+): Promise<AddAssignmentState> {
+  const parsed = addAssignmentSchema.safeParse({
+    target_team_id: formData.get('target_team_id'),
+    staff_role: formData.get('staff_role'),
+  });
+  if (!parsed.success) {
+    const code = parsed.error.issues[0]?.message;
+    if (code === 'team_invalid' || code === 'staff_role_invalid') {
+      return { error: code };
+    }
+    return { error: 'generic' };
+  }
+  const { target_team_id, staff_role } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // Coherencia de club: la membership y el equipo destino deben ser del mismo club.
+  const { data: membership } = await supabase
+    .from('memberships')
+    .select('id, club_id')
+    .eq('id', membershipId)
+    .maybeSingle();
+  if (!membership) return { error: 'forbidden' };
+
+  const { data: team } = await supabase
+    .from('teams')
+    .select('id, categories!inner(club_id)')
+    .eq('id', target_team_id)
+    .maybeSingle();
+  if (!team) return { error: 'team_invalid' };
+  const teamClubId = (team.categories as unknown as { club_id: string }).club_id;
+  if (teamClubId !== (membership.club_id as string)) {
+    return { error: 'cross_club' };
+  }
+
+  // Pre-check principal único por equipo (además del índice parcial).
+  if (staff_role === 'entrenador_principal') {
+    const { data: existing } = await supabase
+      .from('team_staff')
+      .select('id')
+      .eq('team_id', target_team_id)
+      .eq('staff_role', 'entrenador_principal')
+      .is('left_at', null)
+      .maybeSingle();
+    if (existing) return { error: 'principal_exists' };
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const { error: insErr } = await supabase.from('team_staff').insert({
+    team_id: target_team_id,
+    membership_id: membershipId,
+    staff_role,
+    joined_at: today,
+  });
+
+  if (insErr) {
+    if (insErr.code === '42501') return { error: 'forbidden' };
+    // UNIQUE parcial: principal duplicado, o mismo rol activo ya existente en el team.
+    if (insErr.code === '23505') {
+      return {
+        error:
+          staff_role === 'entrenador_principal'
+            ? 'principal_exists'
+            : 'role_exists',
+      };
+    }
+    return { error: 'generic' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico', 'page');
+  revalidatePath(
+    `/[locale]/(authenticated)/cuerpo-tecnico/${membershipId}`,
+    'page'
+  );
+  revalidatePath(`/[locale]/(authenticated)/equipos/${target_team_id}`, 'page');
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // removeStaffFromTeam (F2.11) — duplica el helper de F2.6 pero scope global
 // ─────────────────────────────────────────────────────────────────────────────
 

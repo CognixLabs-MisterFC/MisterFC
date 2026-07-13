@@ -1358,7 +1358,8 @@
       "entrenador_principal": "Entrenador principal",
       "entrenador_ayudante": "Entrenador ayudante",
       "preparador_fisico": "Preparador físico",
-      "delegado": "Delegado"
+      "delegado": "Delegado",
+      "coordinador": "Coordinador"
     },
     "invite": {
       "action": "Invitar staff",
@@ -2082,6 +2083,28 @@
     },
     "row_actions": {
       "open": "Veure fitxa"
+    },
+    "add_role": {
+      "action": "Afegir rol",
+      "title": "Afegir rol en un equip",
+      "description": "Dona a aquesta persona una funció en un equip. No tanca les seues altres assignacions; pot tindre diversos rols i equips alhora.",
+      "field": {
+        "team": "Equip",
+        "team_placeholder": "Selecciona equip",
+        "staff_role": "Funció",
+        "staff_role_placeholder": "Selecciona funció"
+      },
+      "save": "Afegir",
+      "cancel": "Cancel·lar",
+      "errors": {
+        "team_invalid": "Equip no vàlid.",
+        "staff_role_invalid": "Funció no vàlida.",
+        "cross_club": "L'equip no pertany al mateix club.",
+        "principal_exists": "Ja hi ha un entrenador principal actiu en aquest equip.",
+        "role_exists": "Aquesta persona ja té aquesta funció activa en aquest equip.",
+        "forbidden": "No tens permís per a assignar staff.",
+        "generic": "No s'ha pogut afegir l'assignació."
+      }
     },
     "move": {
       "action": "Moure",

@@ -4133,6 +4133,7 @@ export type Database = {
         Args: { p_team_report_id: string }
         Returns: boolean
       }
+      user_coordinates_team: { Args: { p_team_id: string }; Returns: boolean }
       user_has_capability: {
         Args: { p_capability: string; p_membership_id: string }
         Returns: boolean

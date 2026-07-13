@@ -31,6 +31,9 @@ const STAFF_ROLE_TO_MEMBERSHIP_ROLE: Record<TeamStaffRole, string> = {
   entrenador_ayudante: 'entrenador_ayudante',
   preparador_fisico: 'entrenador_ayudante',
   delegado: 'entrenador_ayudante',
+  // Serie C (C-0) — el coordinador invitado a un equipo tiene rol de club
+  // 'coordinador' (coherente con invitations_team_staff_role_consistency).
+  coordinador: 'coordinador',
 };
 
 export async function inviteStaffToTeam(
