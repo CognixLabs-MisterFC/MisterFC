@@ -38,6 +38,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { HubGridCards, type HubGridItem } from '@/components/shell/hub-grid';
 import { loadTeamDetail } from '../queries';
 import { PositionFilter } from './position-filter';
 
@@ -108,6 +109,63 @@ export default async function TeamDetailPage({ params, searchParams }: Props) {
       )
     : detail.roster;
 
+  // F14E-3 — Acciones como rectángulos (patrón HubGrid). MISMAS acciones,
+  // condiciones (2 tarjetas contextuales) y rutas que la versión de líneas; solo
+  // cambia la presentación. Orden preservado.
+  const actionItems: HubGridItem[] = [
+    ...(detail.next_match_without_callup
+      ? [
+          {
+            key: 'convocar_next',
+            href: `/convocatorias/${detail.next_match_without_callup.id}`,
+            icon: Megaphone,
+            title: t('actions.convocar_next', {
+              when: formatDateTime(
+                detail.next_match_without_callup.starts_at,
+                locale
+              ),
+            }),
+          },
+        ]
+      : []),
+    {
+      key: 'view_active_callups',
+      href: `/convocatorias?team=${detail.team.id}`,
+      icon: Megaphone,
+      title: t('actions.view_active_callups', {
+        count: detail.callups_published_count,
+      }),
+    },
+    {
+      key: 'development_reports',
+      href: `/equipos/${detail.team.id}/informes`,
+      icon: ClipboardList,
+      title: t('actions.development_reports'),
+    },
+    {
+      key: 'manage_playbook',
+      href: `/equipos/${detail.team.id}/jugadas`,
+      icon: Swords,
+      title: t('actions.manage_playbook'),
+    },
+    ...(detail.last_training_without_attendance
+      ? [
+          {
+            key: 'mark_last_attendance',
+            href: `/asistencia/${detail.last_training_without_attendance.id}`,
+            icon: ClipboardCheck,
+            title: t('actions.mark_last_attendance'),
+          },
+        ]
+      : []),
+    {
+      key: 'open_calendar',
+      href: `/calendario?team=${detail.team.id}`,
+      icon: Calendar,
+      title: t('actions.open_calendar'),
+    },
+  ];
+
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
       <div className="flex items-start justify-between gap-3">
@@ -131,67 +189,14 @@ export default async function TeamDetailPage({ params, searchParams }: Props) {
         </Badge>
       </div>
 
-      {/* Acciones contextuales — el entry point principal para F4 */}
+      {/* Acciones contextuales — el entry point principal para F4. F14E-3:
+          rectángulos (patrón HubGrid) en vez de líneas pequeñas. */}
       <Card>
         <CardHeader>
           <CardTitle>{t('actions.title')}</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          {detail.next_match_without_callup && (
-            <Button asChild variant="default" size="sm">
-              <Link
-                href={`/convocatorias/${detail.next_match_without_callup.id}`}
-              >
-                <Megaphone className="size-4" aria-hidden />
-                <span>
-                  {t('actions.convocar_next', {
-                    when: formatDateTime(
-                      detail.next_match_without_callup.starts_at,
-                      locale
-                    ),
-                  })}
-                </span>
-              </Link>
-            </Button>
-          )}
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/convocatorias?team=${detail.team.id}`}>
-              <Megaphone className="size-4" aria-hidden />
-              <span>
-                {t('actions.view_active_callups', {
-                  count: detail.callups_published_count,
-                })}
-              </span>
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/equipos/${detail.team.id}/informes`}>
-              <ClipboardList className="size-4" aria-hidden />
-              <span>{t('actions.development_reports')}</span>
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/equipos/${detail.team.id}/jugadas`}>
-              <Swords className="size-4" aria-hidden />
-              <span>{t('actions.manage_playbook')}</span>
-            </Link>
-          </Button>
-          {detail.last_training_without_attendance && (
-            <Button asChild variant="outline" size="sm">
-              <Link
-                href={`/asistencia/${detail.last_training_without_attendance.id}`}
-              >
-                <ClipboardCheck className="size-4" aria-hidden />
-                <span>{t('actions.mark_last_attendance')}</span>
-              </Link>
-            </Button>
-          )}
-          <Button asChild variant="ghost" size="sm">
-            <Link href={`/calendario?team=${detail.team.id}`}>
-              <Calendar className="size-4" aria-hidden />
-              <span>{t('actions.open_calendar')}</span>
-            </Link>
-          </Button>
+        <CardContent>
+          <HubGridCards items={actionItems} />
         </CardContent>
       </Card>
 
