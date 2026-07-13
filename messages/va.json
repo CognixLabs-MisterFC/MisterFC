@@ -130,6 +130,25 @@
     "next": "Següent"
   },
   "home": {
+    "direccion": {
+      "tasks_title": "Tasques dels entrenadors",
+      "filters": {
+        "team": "Equip",
+        "coach": "Entrenador",
+        "all_teams": "Tots els equips",
+        "all_coaches": "Tots els entrenadors"
+      },
+      "trainings_no_session": "Entrenaments sense sessió",
+      "trainings_no_attendance": "Assistència sense confirmar",
+      "pending_callups": "Convocatòries sense publicar",
+      "pending_reports": "Informes pendents",
+      "reports_pending": "{count} pendents",
+      "empty": "Sense pendents",
+      "pending_invitations": "Invitacions pendents",
+      "pending_invitations_cta": "{count} invitacions sense acceptar",
+      "pending_erasure": "Supressions pendents",
+      "pending_erasure_cta": "{count} supressions per revisar"
+    },
     "feed": {
       "title": "Novetats",
       "mark_all": "Marca-les totes com a llegides",

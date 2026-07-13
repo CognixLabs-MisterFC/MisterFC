@@ -130,6 +130,25 @@
     "next": "Siguiente"
   },
   "home": {
+    "direccion": {
+      "tasks_title": "Tareas de los entrenadores",
+      "filters": {
+        "team": "Equipo",
+        "coach": "Entrenador",
+        "all_teams": "Todos los equipos",
+        "all_coaches": "Todos los entrenadores"
+      },
+      "trainings_no_session": "Entrenamientos sin sesión",
+      "trainings_no_attendance": "Asistencia sin confirmar",
+      "pending_callups": "Convocatorias sin publicar",
+      "pending_reports": "Informes pendientes",
+      "reports_pending": "{count} pendientes",
+      "empty": "Sin pendientes",
+      "pending_invitations": "Invitaciones pendientes",
+      "pending_invitations_cta": "{count} invitaciones sin aceptar",
+      "pending_erasure": "Supresiones pendientes",
+      "pending_erasure_cta": "{count} supresiones por revisar"
+    },
     "feed": {
       "title": "Novedades",
       "mark_all": "Marcar todas como leídas",
