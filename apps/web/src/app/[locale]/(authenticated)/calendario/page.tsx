@@ -15,6 +15,7 @@ import { EventDialog } from './_components/event-dialog';
 import {
   computeRange,
   loadCalendarData,
+  loadCalendarScopeTeamIds,
   loadManageableTeams,
   loadCanCreateSessions,
   type CalendarFilters as Filters,
@@ -62,10 +63,19 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
   const range = computeRange(view, pivot);
   const t = await getTranslations('calendario');
 
+  // FIX-DIRECTO — la agenda se acota a los equipos del usuario (null = admin/coord
+  // → club-wide). Evita que los partidos, ahora club-wide en la RLS por el directo,
+  // se cuelen en el calendario de un jugador/padre/entrenador.
+  const scopeTeamIds = await loadCalendarScopeTeamIds(
+    ctx.activeClub.club.id,
+    ctx.activeClub.role
+  );
+
   const { events, teams, categories } = await loadCalendarData(
     ctx.activeClub.club.id,
     range,
-    filters
+    filters,
+    { scopeTeamIds }
   );
 
   const { manageableTeamIds, canManageClubEvents } =
