@@ -4196,6 +4196,7 @@ export type Database = {
         Returns: boolean
       }
       user_role_in_club: { Args: { p_club_id: string }; Returns: string }
+      user_team_ids_in_club: { Args: { p_club_id: string }; Returns: string[] }
       user_unread_conversations_count: { Args: never; Returns: number }
       user_wants_notification: {
         Args: {

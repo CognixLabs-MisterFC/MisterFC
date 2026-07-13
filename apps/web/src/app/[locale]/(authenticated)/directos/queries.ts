@@ -8,7 +8,7 @@
 
 import {
   createSupabaseServerClient,
-  MATCH_SURFACE_TYPES,
+  MANAGEABLE_MATCH_TYPES,
   defaultLineupDraft,
   getFormation,
   computeScore,
@@ -97,7 +97,7 @@ export async function loadWeekMatches(clubId: string): Promise<WeekMatch[]> {
        teams!inner(name, color, format, categories!inner(name, half_duration_minutes))`,
     )
     .eq('club_id', clubId)
-    .in('type', MATCH_SURFACE_TYPES)
+    .in('type', MANAGEABLE_MATCH_TYPES)
     .gte('starts_at', startIso)
     .lt('starts_at', endIso)
     .order('starts_at', { ascending: true });
@@ -269,7 +269,7 @@ export async function loadMatchDetail(
     .maybeSingle();
   if (!ev) return null;
   if ((ev.club_id as string) !== clubId) return null;
-  if (!(MATCH_SURFACE_TYPES as readonly string[]).includes(ev.type as string)) return null;
+  if (!(MANAGEABLE_MATCH_TYPES as readonly string[]).includes(ev.type as string)) return null;
 
   type EvShape = {
     id: string;
@@ -318,10 +318,11 @@ export async function loadMatchDetail(
   }));
 
   // Alineación oficial → campo (posiciones); override con live_positions.
-  // NOTA F14C-4b: para el SEGUIDOR esto sale vacío porque `lineups`/
-  // `lineup_positions` están RLS-CERRADAS al seguidor (F14C-3 abrió match_events/
-  // state/periods/starters pero NO lineups). Abrir la alineación al seguidor
-  // sería una pieza NUEVA de RLS (F14C-4c), fuera del alcance "solo nombres".
+  // FIX-DIRECTO (Opción A): la RLS ya abre al SEGUIDOR el lineup OFICIAL
+  // (is_spectator_of_event_club) y sus posiciones — MISMO alcance club-wide que
+  // match_events. Los borradores (is_official=false) siguen cerrados. Como el
+  // seguidor NO lee `players` (RLS), su rama omite el embed `players!inner`
+  // (daría 0 filas) y resuelve nombre/dorsal desde `players_sporting` (F14C-4b).
   let formationCode: string | null = null;
   let fieldPlayers: DetailFieldPlayer[] = [];
   const { data: officialRow } = await supabase
@@ -332,11 +333,12 @@ export async function loadMatchDetail(
     .maybeSingle();
   if (officialRow) {
     formationCode = officialRow.formation_code as string;
+    const posSelect = opts?.viewerIsSpectator
+      ? 'player_id, position_code, x_pct, y_pct'
+      : 'player_id, position_code, x_pct, y_pct, players!inner(first_name, last_name, dorsal)';
     const { data: posRows } = await supabase
       .from('lineup_positions')
-      .select(
-        'player_id, position_code, x_pct, y_pct, players!inner(first_name, last_name, dorsal)',
-      )
+      .select(posSelect)
       .eq('lineup_id', officialRow.id as string)
       .eq('location', 'field');
     type PosShape = {
@@ -344,14 +346,23 @@ export async function loadMatchDetail(
       position_code: string | null;
       x_pct: number | string | null;
       y_pct: number | string | null;
-      players: { first_name: string; last_name: string | null; dorsal: number | null };
+      players: { first_name: string; last_name: string | null; dorsal: number | null } | null;
     };
-    fieldPlayers = ((posRows ?? []) as unknown as PosShape[]).map((p) => {
+    const posArr = (posRows ?? []) as unknown as PosShape[];
+    // Para el seguidor: nombre/dorsal desde players_sporting (mapa player_id→nombre).
+    const posNames = opts?.viewerIsSpectator
+      ? await loadSportingNames(
+          supabase,
+          posArr.map((p) => p.player_id),
+        )
+      : null;
+    fieldPlayers = posArr.map((p) => {
       const live = livePositions[p.player_id];
+      const n = posNames != null ? posNames.get(p.player_id) : p.players;
       return {
         playerId: p.player_id,
-        label: p.players.last_name || p.players.first_name || p.player_id.slice(0, 4),
-        dorsal: p.players.dorsal,
+        label: n?.last_name || n?.first_name || p.player_id.slice(0, 4),
+        dorsal: n?.dorsal ?? null,
         positionCode: live?.position_code ?? p.position_code,
         xPct: live?.x_pct ?? (p.x_pct == null ? null : Number(p.x_pct)),
         yPct: live?.y_pct ?? (p.y_pct == null ? null : Number(p.y_pct)),

@@ -131,7 +131,8 @@ export function computeRange(
 export async function loadCalendarData(
   clubId: string,
   range: CalendarRange,
-  filters: CalendarFilters
+  filters: CalendarFilters,
+  opts?: { scopeTeamIds?: string[] | null }
 ): Promise<{
   events: CalendarEvent[];
   teams: TeamOption[];
@@ -153,6 +154,21 @@ export async function loadCalendarData(
     .gte('starts_at', range.startIso)
     .lt('starts_at', range.endIso)
     .order('starts_at', { ascending: true });
+
+  // FIX-DIRECTO — Acota la AGENDA a los equipos del usuario (+ eventos de club,
+  // team_id null). Necesario porque los PARTIDOS ahora son club-wide en la RLS de
+  // events (para el directo): sin este filtro, a un jugador/padre se le colarían
+  // en el calendario los partidos de OTROS equipos. Para admin/coord el caller
+  // pasa scopeTeamIds=null → agenda club-wide, sin cambios. La agenda del seguidor
+  // ya pasa teamIds explícito (F14C-4), así que no depende de esto.
+  if (opts?.scopeTeamIds != null) {
+    const scope = opts.scopeTeamIds;
+    if (scope.length > 0) {
+      query = query.or(`team_id.in.(${scope.join(',')}),team_id.is.null`);
+    } else {
+      query = query.is('team_id', null);
+    }
+  }
 
   if (filters.teamIds.length > 0) {
     query = query.in('team_id', filters.teamIds);
@@ -299,6 +315,26 @@ async function loadPlannedEventIds(
  *   - entrenador_ayudante con can_manage_calendar → teams donde es staff.
  *   - jugador → ninguno.
  */
+/**
+ * FIX-DIRECTO — IDs de los equipos del usuario en el club (para acotar la AGENDA
+ * ahora que los partidos son club-wide en la RLS de events). Devuelve `null` para
+ * admin/coord (su agenda sigue club-wide, sin acotar). Para el resto, los equipos
+ * donde es staff o cuenta jugador/padre (helper SQL user_team_ids_in_club).
+ */
+export async function loadCalendarScopeTeamIds(
+  clubId: string,
+  role: string
+): Promise<string[] | null> {
+  if (role === 'admin_club' || role === 'coordinador') return null;
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const { data } = await supabase.rpc('user_team_ids_in_club', {
+    p_club_id: clubId,
+  });
+  // setof uuid → array de strings.
+  return ((data ?? []) as unknown as string[]).filter(Boolean);
+}
+
 export async function loadManageableTeams(
   clubId: string,
   role: string,
