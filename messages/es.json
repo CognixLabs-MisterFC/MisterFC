@@ -2646,12 +2646,6 @@
         "description": "Confirma o rechaza tus convocatorias de partido.",
         "cta": "Ir a convocatorias →"
       },
-      "sessions": {
-        "title": "Próximas sesiones",
-        "empty": "No hay sesiones publicadas.",
-        "untitled": "Sesión",
-        "minutes": "{count} min"
-      },
       "playbook": {
         "title": "Playbook",
         "empty": "Aún no hay jugadas compartidas.",
