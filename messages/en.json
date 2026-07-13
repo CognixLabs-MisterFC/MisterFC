@@ -456,6 +456,7 @@
       "cuerpo_tecnico": "Coaching staff",
       "estadisticas_equipo": "Team statistics",
       "asistencia": "Training",
+      "planificacion": "Training plan",
       "playbook": "Playbook",
       "convocatorias": "Match management",
       "mensajes": "Messages",
@@ -3523,8 +3524,20 @@
       "jugadas": {
         "title": "Plays",
         "description": "Create and animate the team's tactical plays (playbook)."
+      },
+      "planificacion": {
+        "title": "Training plan",
+        "description": "See the sessions your coach has shared."
       }
     }
+  },
+  "planificacion": {
+    "title": "Training plan",
+    "subtitle": "Training sessions your coach has shared with the team.",
+    "empty": "No shared plans yet.",
+    "untitled": "Session",
+    "minutes": "{count} min",
+    "team_label": "Team"
   },
   "jugadas": {
     "title": "Plays",
@@ -3929,14 +3942,14 @@
       "minutes": "{count} min"
     },
     "publish": {
-      "label": "Publish to team",
-      "draft": "Draft",
-      "published": "Published",
-      "no_team": "Assign a team to publish the session.",
-      "help_draft": "Only staff can see it. Publish it to share with the team.",
+      "label": "Share with players",
+      "draft": "Not shared",
+      "published": "Shared",
+      "no_team": "Assign a team to share the session.",
+      "help_draft": "Only staff can see it. Share it so the team's players can see it.",
       "help_published": "Visible to the team's players and families.",
-      "toast_published": "Session published to the team",
-      "toast_unpublished": "Session set back to draft"
+      "toast_published": "Session shared with the team",
+      "toast_unpublished": "Session no longer shared"
     },
     "templates": {
       "save_as": "Save as template",

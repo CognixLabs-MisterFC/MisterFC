@@ -4120,6 +4120,10 @@ export type Database = {
         Args: { p_player_id: string; p_spectator_profile_id: string }
         Returns: undefined
       }
+      set_session_shared: {
+        Args: { p_session_id: string; p_shared: boolean }
+        Returns: undefined
+      }
       user_can_see_session: { Args: { p_session_id: string }; Returns: boolean }
       user_can_see_shared_lineup: {
         Args: { p_event_id: string }

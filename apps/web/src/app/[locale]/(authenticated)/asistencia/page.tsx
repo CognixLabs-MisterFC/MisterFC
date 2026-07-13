@@ -200,86 +200,8 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarCheck2 className="size-5" aria-hidden />
-            {t('recent.title')}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {recent.length === 0 ? (
-            <p className="p-6 text-sm text-muted-foreground">
-              {t('recent.empty')}
-            </p>
-          ) : (
-            // #7 — por defecto ~10 entrenamientos visibles (más recientes primero,
-            // ya ordenados en la query); el resto queda accesible con scroll (no es
-            // un corte duro). max-h ≈ 10 filas + cabecera.
-            <div className="max-h-[33rem] overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('recent.event')}</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    {t('recent.team')}
-                  </TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    {t('recent.when')}
-                  </TableHead>
-                  <TableHead>{t('recent.marked')}</TableHead>
-                  <TableHead className="text-right">
-                    {t('recent.actions')}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recent.map((r) => (
-                  <TableRow key={r.id}>
-                    <TableCell className="font-medium">{r.title}</TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <span
-                        className="inline-flex items-center gap-1 rounded-md border border-border bg-card/30 px-2 py-0.5 text-xs"
-                        style={{
-                          borderLeftWidth: 3,
-                          borderLeftColor: r.team_color,
-                        }}
-                      >
-                        {r.team_name}
-                      </span>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
-                      {fmtShortDate(r.starts_at, locale)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          r.marked_count === r.roster_count
-                            ? 'default'
-                            : 'secondary'
-                        }
-                      >
-                        {r.marked_count}/{r.roster_count}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button asChild variant="ghost" size="sm">
-                        <Link href={`/asistencia/${r.id}`}>
-                          {r.marked_count === r.roster_count
-                            ? t('recent.open')
-                            : t('recent.mark')}
-                        </Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
+      {/* F14E-4 — RESUMEN (estadísticas) ARRIBA, DETALLE (recientes) ABAJO.
+          Solo se reordenaron los dos Cards; su contenido es idéntico. */}
       <Card>
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -357,6 +279,86 @@ export default async function AsistenciaPage({ params, searchParams }: Props) {
               </div>
             )}
           </section>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarCheck2 className="size-5" aria-hidden />
+            {t('recent.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {recent.length === 0 ? (
+            <p className="p-6 text-sm text-muted-foreground">
+              {t('recent.empty')}
+            </p>
+          ) : (
+            // #7 — por defecto ~10 entrenamientos visibles (más recientes primero,
+            // ya ordenados en la query); el resto queda accesible con scroll (no es
+            // un corte duro). max-h ≈ 10 filas + cabecera.
+            <div className="max-h-[33rem] overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('recent.event')}</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    {t('recent.team')}
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    {t('recent.when')}
+                  </TableHead>
+                  <TableHead>{t('recent.marked')}</TableHead>
+                  <TableHead className="text-right">
+                    {t('recent.actions')}
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recent.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">{r.title}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <span
+                        className="inline-flex items-center gap-1 rounded-md border border-border bg-card/30 px-2 py-0.5 text-xs"
+                        style={{
+                          borderLeftWidth: 3,
+                          borderLeftColor: r.team_color,
+                        }}
+                      >
+                        {r.team_name}
+                      </span>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
+                      {fmtShortDate(r.starts_at, locale)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          r.marked_count === r.roster_count
+                            ? 'default'
+                            : 'secondary'
+                        }
+                      >
+                        {r.marked_count}/{r.roster_count}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href={`/asistencia/${r.id}`}>
+                          {r.marked_count === r.roster_count
+                            ? t('recent.open')
+                            : t('recent.mark')}
+                        </Link>
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
