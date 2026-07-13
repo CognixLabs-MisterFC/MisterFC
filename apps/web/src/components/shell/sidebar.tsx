@@ -41,6 +41,16 @@ export async function Sidebar({ role, variant, badges, isSuperadmin }: Props) {
         </span>
       </div>
 
+      {/* F14E-1 — Consola de plataforma: PRIMERA entrada del superadmin (antes de
+          Inicio). No es rol de club, por eso el gate es el flag isSuperadmin. */}
+      {isSuperadmin && (
+        <SidebarNavLink
+          href="/platform"
+          icon={<ShieldCheck className="size-4 shrink-0" aria-hidden />}
+          label={t('nav.platform')}
+        />
+      )}
+
       {items.map((item) => {
         const Icon = item.icon;
         return (
@@ -57,14 +67,6 @@ export async function Sidebar({ role, variant, badges, isSuperadmin }: Props) {
           />
         );
       })}
-
-      {isSuperadmin && (
-        <SidebarNavLink
-          href="/platform"
-          icon={<ShieldCheck className="size-4 shrink-0" aria-hidden />}
-          label={t('nav.platform')}
-        />
-      )}
     </nav>
   );
 }

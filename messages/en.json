@@ -436,7 +436,8 @@
       "calendario": "Calendar",
       "cuerpo_tecnico": "Coaching staff",
       "estadisticas_equipo": "Team statistics",
-      "asistencia": "Attendance",
+      "asistencia": "Training",
+      "playbook": "Playbook",
       "convocatorias": "Match management",
       "mensajes": "Messages",
       "anuncios": "Club announcements",
@@ -4189,6 +4190,11 @@
       "title": "My profile",
       "subtitle": "Your account details."
     }
+  },
+  "playbook": {
+    "title": "Playbook",
+    "coming_soon": "Coming soon",
+    "subtitle": "The playbook will be available soon."
   },
   "seguidores": {
     "title": "Followers",

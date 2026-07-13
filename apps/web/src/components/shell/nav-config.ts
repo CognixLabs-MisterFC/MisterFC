@@ -1,7 +1,6 @@
 import {
   type Role,
   ADMIN_ROLES,
-  MANAGER_ROLES,
   STAFF_ROLES,
   COACH_ROLES,
   ALL_CLUB_ROLES,
@@ -30,6 +29,7 @@ import {
   BarChart3,
   FileText,
   Settings,
+  BookOpen,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -79,14 +79,26 @@ const DIRECCION: Role[] = [...ADMIN_ROLES];
  * moverlas). El gating por rol/capability de cada sub-área se preserva: lo
  * decide el `roles` del hijo + el guard/RLS de su ruta.
  */
+// F14E-1 — Orden REORDENADO por rol (Jose). El orden lo da la posición en el
+// array + los roles[] de cada entrada; un único array produce los 5 menús
+// objetivo (superadmin/admin/director/entrenador/jugador) al proyectar por rol.
+// La Consola de plataforma del superadmin NO va aquí (la pinta el sidebar, 1ª).
 export const NAV: readonly NavEntry[] = [
   { key: 'home', href: '', icon: Home, roles: ALL },
   // Dirección: dashboard ejecutivo (top-level; el gating real es server-side).
   { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard, roles: DIRECCION },
 
-  // F14-7 — bandeja de solicitudes de supresión (derecho al olvido). SOLO
-  // admin_club/director (coincide con user_is_admin_or_director; coordinador NO).
-  { key: 'supresiones', href: '/supresiones', icon: ShieldAlert, roles: ['admin_club', 'director'] },
+  // Vistas de equipo por rol (top-level simples; no entran en hubs de staff).
+  { key: 'mis_equipos', href: '/mis-equipos', icon: Shield, roles: [...COACH_ROLES] },
+
+  { key: 'calendario', href: '/calendario', icon: Calendar, roles: ALL },
+
+  { key: 'mi_equipo', href: '/mi-equipo', icon: Shield, roles: ['jugador'] },
+
+  // F5B-0 — "Equipos" como pestaña TOP-LEVEL (dirección): acceso directo al
+  // listado de equipos del club por temporada. Coexiste con la tarjeta 'equipos'
+  // del hub Plantilla (misma ruta /equipos; decisión de Jose). Mismos roles.
+  { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: DIRECCION },
 
   // HUB Plantilla — jugadores + importar + cuerpo técnico + equipos.
   {
@@ -96,10 +108,12 @@ export const NAV: readonly NavEntry[] = [
     children: [
       // admin/coord ven la plantilla completa del club.
       { key: 'jugadores', href: '/jugadores', icon: Users, roles: DIRECCION },
-      // Import masivo: roles que SIEMPRE pueden; la page chequea capability del ayudante.
-      { key: 'import_players', href: '/plantilla/importar', icon: Upload, roles: [...MANAGER_ROLES] },
-      // Gestión global del cuerpo técnico (principal: lectura de SUS equipos).
-      { key: 'cuerpo_tecnico', href: '/cuerpo-tecnico', icon: UsersRound, roles: [...MANAGER_ROLES] },
+      // F14E-1: importar + cuerpo técnico pasan a DIRECCION (antes MANAGER_ROLES);
+      // el entrenador_principal deja de ver el hub Plantilla en el menú (objetivo
+      // Jose: el menú del entrenador no lleva Plantilla). NO revoca acceso a la
+      // página (solo la oculta del nav); su reubicación es decisión de producto.
+      { key: 'import_players', href: '/plantilla/importar', icon: Upload, roles: DIRECCION },
+      { key: 'cuerpo_tecnico', href: '/cuerpo-tecnico', icon: UsersRound, roles: DIRECCION },
       // Estructura: listado de equipos por temporada + categorías-plantilla.
       { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: DIRECCION },
       // F13.10g — centro de mando de campañas de informes (admin/coord).
@@ -107,21 +121,8 @@ export const NAV: readonly NavEntry[] = [
     ],
   },
 
-  // F5B-0 — "Equipos" como pestaña TOP-LEVEL (dirección): acceso directo al
-  // listado de equipos del club por temporada. Coexiste con la tarjeta 'equipos'
-  // del hub Plantilla (misma ruta /equipos; decisión de Jose). Mismos roles.
-  { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: DIRECCION },
-
-  // Vistas de equipo por rol (top-level simples; no entran en hubs de staff).
-  { key: 'mis_equipos', href: '/mis-equipos', icon: Shield, roles: [...COACH_ROLES] },
-  { key: 'mi_equipo', href: '/mi-equipo', icon: Shield, roles: ['jugador'] },
-  { key: 'mi_ficha', href: '/mi-ficha', icon: LineChart, roles: ['jugador'] },
-  // Informe de desarrollo (familia/jugador): ruta propia, fuera de /mi-ficha.
-  { key: 'mi_informe', href: '/mi-informe', icon: FileText, roles: ['jugador'] },
-  // F14C-5 — Seguidores (abuelos/familiares) del jugador: invitar/listar/revocar.
-  { key: 'seguidores', href: '/mi-ficha/seguidores', icon: UsersRound, roles: ['jugador'] },
-
   // HUB Entrenamientos — ejercicios (staff) + asistencia (todos) [+ sesiones F12].
+  // Para el JUGADOR colapsa a su único hijo 'asistencia' (etiqueta "Entrenamientos").
   {
     key: 'entrenamientos',
     href: '/entrenamientos',
@@ -138,7 +139,12 @@ export const NAV: readonly NavEntry[] = [
     ],
   },
 
+  // F14E-1 — Playbook del JUGADOR: PLACEHOLDER (feature nueva fuera de F14E). La
+  // entrada existe y lleva a un stub "próximamente"; no rompe al pulsarla.
+  { key: 'playbook', href: '/playbook', icon: BookOpen, roles: ['jugador'] },
+
   // HUB Partidos — gestión de partidos (todos) + formaciones (staff) + stats (staff).
+  // Para el JUGADOR colapsa a 'convocatorias' (etiqueta "Gestión de partidos").
   {
     key: 'partidos',
     href: '/partidos',
@@ -154,13 +160,28 @@ export const NAV: readonly NavEntry[] = [
   // marcador/estado/minuto en vivo. Independiente de la gestión de partidos.
   { key: 'directos', href: '/directos', icon: Radio, roles: ALL },
 
-  { key: 'calendario', href: '/calendario', icon: Calendar, roles: ALL },
+  { key: 'mi_ficha', href: '/mi-ficha', icon: LineChart, roles: ['jugador'] },
+  // Informe de desarrollo (familia/jugador): ruta propia, fuera de /mi-ficha.
+  { key: 'mi_informe', href: '/mi-informe', icon: FileText, roles: ['jugador'] },
+
   { key: 'mensajes', href: '/mensajes', icon: MessageSquare, roles: ALL },
 
   // Dirección: comunicación club-wide + administración (top-level).
   { key: 'anuncios', href: '/anuncios', icon: Megaphone, roles: DIRECCION },
   { key: 'invitations', href: '/invitations', icon: Mail, roles: DIRECCION },
-  { key: 'ajustes', href: '/ajustes', icon: Settings, roles: DIRECCION },
+
+  // F14C-5 — Seguidores (abuelos/familiares) del jugador: invitar/listar/revocar.
+  { key: 'seguidores', href: '/mi-ficha/seguidores', icon: UsersRound, roles: ['jugador'] },
+
+  // F14-7 — bandeja de supresiones (derecho al olvido). F14E-1: SOLO admin_club
+  // (se revoca al director, en menú Y en el guard server-side; superadmin entra
+  // como admin_club sintético → paridad). coordinador NUNCA la vio.
+  { key: 'supresiones', href: '/supresiones', icon: ShieldAlert, roles: ['admin_club'] },
+
+  // F14E-1: Ajustes del club SIN director (lista propia, sin tocar DIRECCION que
+  // comparten dashboard/equipos/plantilla/anuncios/invitaciones). coordinador se
+  // MANTIENE como hoy. Guard server-side también revoca al director.
+  { key: 'ajustes', href: '/ajustes', icon: Settings, roles: ['admin_club', 'coordinador'] },
 
   { key: 'perfil', href: '/perfil', icon: UserRound, roles: ALL },
 ] as const;

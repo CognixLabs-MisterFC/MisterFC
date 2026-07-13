@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Settings, FileText, ChevronRight } from 'lucide-react';
-import { createSupabaseServerClient, ADMIN_ROLES } from '@misterfc/core';
+import { createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import {
@@ -19,8 +19,10 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-// Admin y coordinador ven la pantalla; SOLO admin puede cambiar el flag (D10).
-const ALLOWED_ROLES = new Set<string>(ADMIN_ROLES);
+// F14E-1 — Admin y coordinador ven la pantalla; el DIRECTOR pierde el acceso
+// (revocado en menú y aquí). El superadmin entra como admin_club sintético →
+// paridad. SOLO admin puede cambiar el flag (D10).
+const ALLOWED_ROLES = new Set<string>(['admin_club', 'coordinador']);
 
 export default async function AjustesPage({ params }: Props) {
   const { locale } = await params;

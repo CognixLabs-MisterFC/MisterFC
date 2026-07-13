@@ -21,8 +21,9 @@ export default async function SupresionesPage({ params }: Props) {
 
   const ctx = await loadShellContext();
   if (!ctx) redirect(`/${locale}/signin`);
-  // Solo admin_club / director (coincide con user_is_admin_or_director).
-  if (ctx.activeClub.role !== 'admin_club' && ctx.activeClub.role !== 'director') {
+  // F14E-1 — SOLO admin_club (el director pierde el acceso; el superadmin entra
+  // como admin_club sintético → paridad). Alineado con el gate del nav.
+  if (ctx.activeClub.role !== 'admin_club') {
     redirect(`/${locale}`);
   }
 
