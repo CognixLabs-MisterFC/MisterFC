@@ -1,6 +1,7 @@
 import {
   type Role,
   ADMIN_ROLES,
+  MANAGER_ROLES,
   STAFF_ROLES,
   COACH_ROLES,
   ALL_CLUB_ROLES,
@@ -108,12 +109,12 @@ export const NAV: readonly NavEntry[] = [
     children: [
       // admin/coord ven la plantilla completa del club.
       { key: 'jugadores', href: '/jugadores', icon: Users, roles: DIRECCION },
-      // F14E-1: importar + cuerpo técnico pasan a DIRECCION (antes MANAGER_ROLES);
-      // el entrenador_principal deja de ver el hub Plantilla en el menú (objetivo
-      // Jose: el menú del entrenador no lleva Plantilla). NO revoca acceso a la
-      // página (solo la oculta del nav); su reubicación es decisión de producto.
+      // F14E-1: SOLO import_players pasa a DIRECCION (antes MANAGER_ROLES) → el
+      // entrenador_principal deja de ver Importar/Plantilla en el nav (NO revoca
+      // la página). cuerpo_tecnico se MANTIENE como en main (MANAGER_ROLES); su
+      // gating por rol se rehace en E-7, no aquí.
       { key: 'import_players', href: '/plantilla/importar', icon: Upload, roles: DIRECCION },
-      { key: 'cuerpo_tecnico', href: '/cuerpo-tecnico', icon: UsersRound, roles: DIRECCION },
+      { key: 'cuerpo_tecnico', href: '/cuerpo-tecnico', icon: UsersRound, roles: [...MANAGER_ROLES] },
       // Estructura: listado de equipos por temporada + categorías-plantilla.
       { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: DIRECCION },
       // F13.10g — centro de mando de campañas de informes (admin/coord).
