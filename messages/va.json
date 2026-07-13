@@ -2647,12 +2647,6 @@
         "description": "Confirma o rebutja les teves convocatòries de partit.",
         "cta": "Anar a convocatòries →"
       },
-      "sessions": {
-        "title": "Pròximes sessions",
-        "empty": "No hi ha sessions publicades.",
-        "untitled": "Sessió",
-        "minutes": "{count} min"
-      },
       "playbook": {
         "title": "Playbook",
         "empty": "Encara no hi ha jugades compartides.",

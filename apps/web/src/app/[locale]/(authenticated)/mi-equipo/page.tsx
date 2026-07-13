@@ -2,10 +2,8 @@ import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import {
   Calendar,
-  Dumbbell,
   Megaphone,
   ClipboardList,
-  Clock,
   Shield,
   Swords,
   Users,
@@ -31,7 +29,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { SharedLineupSection } from '@/components/match/shared-lineup-section';
-import { loadPublishedSessionsForTeam } from '../sesiones/queries';
 import { loadTeamPlaybook } from '../jugadas/queries';
 import { TeamSelectorWrapper } from './team-selector-wrapper';
 
@@ -39,6 +36,17 @@ type Props = {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ team?: string }>;
 };
+
+// F14E-5 — Detalle del evento según su tipo (mapeo EXPLÍCITO, no isMatchSurfaceType):
+// partidos/amistosos/torneos → convocatoria; entrenamiento → asistencia; `other`
+// no tiene pantalla de detalle → sin enlace (item visible, no clicable).
+function eventDetailHref(type: string, id: string): string | null {
+  if (type === 'match' || type === 'friendly' || type === 'tournament') {
+    return `/convocatorias/${id}`;
+  }
+  if (type === 'training') return `/asistencia/${id}`;
+  return null;
+}
 
 export default async function MiEquipoPage({ params, searchParams }: Props) {
   const { locale } = await params;
@@ -223,15 +231,6 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
     5,
   );
 
-  // 7) F12.4 — Sesiones publicadas (visibility=team) del team activo, próximas
-  //    (incluido hoy). La RLS de 12.1 es el gate; aquí solo se piden las del team.
-  const todayIso = new Date(nowMs).toISOString().slice(0, 10);
-  const publishedSessions = await loadPublishedSessionsForTeam(
-    ctx.activeClub.club.id,
-    activeTeam.id,
-    todayIso,
-  );
-
   // F13.6 — Playbook: jugadas publicadas (visibility=team) del team activo. La RLS
   // de 13.1b es el gate; aquí solo se piden las del team.
   const playbook = await loadTeamPlaybook(ctx.activeClub.club.id, activeTeam.id);
@@ -339,59 +338,33 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
               </p>
             ) : (
               <ul className="flex flex-col divide-y divide-border">
-                {upcoming.map((e) => (
-                  <li
-                    key={e.id}
-                    className="flex flex-col gap-0.5 py-2 first:pt-0 last:pb-0"
-                  >
-                    <span className="font-medium">{e.title}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(e.starts_at).toLocaleString(locale)}
-                      {e.opponent_name && ` · vs ${e.opponent_name}`}
-                      {e.location_name && ` · ${e.location_name}`}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Dumbbell className="size-4" aria-hidden />
-              {t('cards.sessions.title')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">
-            {publishedSessions.length === 0 ? (
-              <p className="text-muted-foreground">{t('cards.sessions.empty')}</p>
-            ) : (
-              <ul className="flex flex-col divide-y divide-border">
-                {publishedSessions.map((s) => (
-                  <li key={s.id} className="py-2 first:pt-0 last:pb-0">
-                    <Link
-                      href={`/mi-equipo/sesiones/${s.id}`}
-                      className="flex flex-col gap-0.5 rounded-md p-1 -mx-1 hover:bg-zinc-900/50"
-                    >
-                      <span className="font-medium">
-                        {s.title ?? t('cards.sessions.untitled')}
+                {upcoming.map((e) => {
+                  const href = eventDetailHref(e.type, e.id);
+                  const inner = (
+                    <>
+                      <span className="font-medium">{e.title}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(e.starts_at).toLocaleString(locale)}
+                        {e.opponent_name && ` · vs ${e.opponent_name}`}
+                        {e.location_name && ` · ${e.location_name}`}
                       </span>
-                      <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-                        <span>
-                          {new Date(`${s.session_date}T00:00:00`).toLocaleDateString(locale)}
-                        </span>
-                        {s.total_minutes != null && (
-                          <span className="inline-flex items-center gap-1">
-                            <Clock className="size-3" aria-hidden />
-                            {t('cards.sessions.minutes', { count: s.total_minutes })}
-                          </span>
-                        )}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
+                    </>
+                  );
+                  return (
+                    <li key={e.id} className="first:pt-0 last:pb-0">
+                      {href ? (
+                        <Link
+                          href={href}
+                          className="flex flex-col gap-0.5 rounded-md p-1 -mx-1 py-2 hover:bg-zinc-900/50"
+                        >
+                          {inner}
+                        </Link>
+                      ) : (
+                        <div className="flex flex-col gap-0.5 py-2">{inner}</div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>
