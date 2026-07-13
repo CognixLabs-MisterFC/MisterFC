@@ -1357,7 +1357,8 @@
       "entrenador_principal": "Entrenador principal",
       "entrenador_ayudante": "Entrenador ayudante",
       "preparador_fisico": "Preparador físico",
-      "delegado": "Delegado"
+      "delegado": "Delegado",
+      "coordinador": "Coordinador"
     },
     "invite": {
       "action": "Invitar staff",
@@ -2081,6 +2082,28 @@
     },
     "row_actions": {
       "open": "Ver ficha"
+    },
+    "add_role": {
+      "action": "Agregar rol",
+      "title": "Agregar rol en un equipo",
+      "description": "Añade una función en un equipo a esta persona. No cierra sus otras asignaciones; puede tener varios roles y equipos a la vez.",
+      "field": {
+        "team": "Equipo",
+        "team_placeholder": "Selecciona equipo",
+        "staff_role": "Función",
+        "staff_role_placeholder": "Selecciona función"
+      },
+      "save": "Agregar",
+      "cancel": "Cancelar",
+      "errors": {
+        "team_invalid": "Equipo no válido.",
+        "staff_role_invalid": "Función no válida.",
+        "cross_club": "El equipo no pertenece al mismo club.",
+        "principal_exists": "Ya hay un entrenador principal activo en ese equipo.",
+        "role_exists": "Esta persona ya tiene esa función activa en ese equipo.",
+        "forbidden": "No tienes permiso para asignar staff.",
+        "generic": "No se pudo agregar la asignación."
+      }
     },
     "move": {
       "action": "Mover",

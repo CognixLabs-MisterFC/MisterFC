@@ -5,6 +5,9 @@ export const TEAM_STAFF_ROLES = [
   'entrenador_ayudante',
   'preparador_fisico',
   'delegado',
+  // Serie C (C-0) — el coordinador es staff de EQUIPO (una fila por equipo que
+  // coordina). sendStaffInvitationSchema lo admite vía este enum.
+  'coordinador',
 ] as const;
 
 export type TeamStaffRole = (typeof TEAM_STAFF_ROLES)[number];

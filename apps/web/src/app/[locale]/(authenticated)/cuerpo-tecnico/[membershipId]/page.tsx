@@ -27,6 +27,7 @@ import {
 import { CalendarAgenda } from '../../calendario/_components/calendar-agenda';
 import { today as todayLocal } from '@/lib/calendar-utils';
 import { MoveStaffDialog } from '../_components/move-staff-dialog';
+import { AddAssignmentDialog } from '../_components/add-assignment-dialog';
 import { RemoveAssignmentButton } from '../_components/remove-assignment-button';
 import { EditStaffNameDialog } from '../_components/edit-staff-name-dialog';
 import { EditStaffContactDialog } from '../_components/edit-staff-contact-dialog';
@@ -218,11 +219,22 @@ export default async function CoachDetailPage({ params }: Props) {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <CardTitle className="flex items-center gap-2">
             <Users className="size-5" aria-hidden />
             {t('detail.teams_title')}
           </CardTitle>
+          {/* Serie C (C-0) — Agregar rol/equipo. Solo admin/director asignan staff. */}
+          {(role === 'admin_club' || role === 'director') && (
+            <AddAssignmentDialog
+              membershipId={coach.membership_id}
+              teams={movableTargets.map((tm) => ({
+                id: tm.id,
+                name: tm.name,
+                category_name: tm.category_name,
+              }))}
+            />
+          )}
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {coach.assignments.length === 0 ? (

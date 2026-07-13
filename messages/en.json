@@ -1358,7 +1358,8 @@
       "entrenador_principal": "Entrenador principal",
       "entrenador_ayudante": "Entrenador ayudante",
       "preparador_fisico": "Preparador físico",
-      "delegado": "Delegado"
+      "delegado": "Delegado",
+      "coordinador": "Coordinator"
     },
     "invite": {
       "action": "Invitar staff",
@@ -2082,6 +2083,28 @@
     },
     "row_actions": {
       "open": "Open"
+    },
+    "add_role": {
+      "action": "Add role",
+      "title": "Add a role on a team",
+      "description": "Give this person a role on a team. It does not close their other assignments; they can hold several roles and teams at once.",
+      "field": {
+        "team": "Team",
+        "team_placeholder": "Select team",
+        "staff_role": "Role",
+        "staff_role_placeholder": "Select role"
+      },
+      "save": "Add",
+      "cancel": "Cancel",
+      "errors": {
+        "team_invalid": "Invalid team.",
+        "staff_role_invalid": "Invalid role.",
+        "cross_club": "The team is not in the same club.",
+        "principal_exists": "There is already an active head coach in that team.",
+        "role_exists": "This person already has that role active in that team.",
+        "forbidden": "You don't have permission to assign staff.",
+        "generic": "Could not add the assignment."
+      }
     },
     "move": {
       "action": "Move",
