@@ -21,6 +21,7 @@ export type TrainingWithoutSession = {
   eventId: string;
   title: string;
   startsAt: string;
+  teamId: string | null;
   teamName: string | null;
 };
 
@@ -39,7 +40,10 @@ const WINDOW_HOURS = 48;
 export async function loadTrainingsWithoutSession(
   role: string,
   clubId: string,
-  membershipId: string
+  membershipId: string,
+  // F14E-2 — filtro opcional por equipo (Inicio de dirección). Solo acota la rama
+  // admin/coord/director club-wide; la rama coach ignora este parámetro.
+  filterTeamIds?: string[] | null
 ): Promise<TrainingWithoutSession[]> {
   const isCoach = COACH_ROLES.has(role);
   const isAdminLike = ADMIN_LIKE_ROLES.has(role);
@@ -71,8 +75,11 @@ export async function loadTrainingsWithoutSession(
     if (teamIds.length === 0) return [];
     q = q.in('team_id', teamIds);
   } else {
-    // admin/coord → todo el club.
+    // admin/coord/director → todo el club (F14E-2: director ya club-wide por RLS).
     q = q.eq('club_id', clubId);
+    if (filterTeamIds && filterTeamIds.length > 0) {
+      q = q.in('team_id', filterTeamIds);
+    }
   }
 
   const { data: evRows } = await q;
@@ -105,6 +112,7 @@ export async function loadTrainingsWithoutSession(
       eventId: e.id,
       title: e.title,
       startsAt: e.starts_at,
+      teamId: e.team_id,
       teamName: e.teams?.name ?? null,
     }));
 }

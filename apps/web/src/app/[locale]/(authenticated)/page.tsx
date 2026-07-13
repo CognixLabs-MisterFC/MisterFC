@@ -26,16 +26,19 @@ import { NextMatchPanel } from './next-match-panel';
 import { TrainingAlertPanel } from './training-alert-panel';
 import { CampaignAlertPanel } from './campaign-alert-panel';
 import { NotificationsPanel } from './notifications-panel';
+import { DireccionHome } from './direccion-home';
 
 type Props = {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ team?: string; coach?: string }>;
 };
 
 const COACH_ROLES = new Set<string>(CORE_COACH_ROLES);
 const ADMIN_LIKE_ROLES = new Set<string>(ADMIN_ROLES);
 
-export default async function Home({ params }: Props) {
+export default async function Home({ params, searchParams }: Props) {
   const { locale } = await params;
+  const sp = await searchParams;
   setRequestLocale(locale);
 
   const ctx = await loadShellContext();
@@ -54,6 +57,9 @@ export default async function Home({ params }: Props) {
   const isPlayer = role === 'jugador';
   const isCoach = COACH_ROLES.has(role);
   const isAdminLike = ADMIN_LIKE_ROLES.has(role);
+  // F14E-2 — DIRECCIÓN = admin_club + director (NO coordinador, cuyo Inicio se
+  // decide en E-final; superadmin entra como admin_club sintético → incluido).
+  const isDireccion = role === 'admin_club' || role === 'director';
   const clubId = ctx.activeClub.club.id;
 
   // ─── Datos para Cards ───
@@ -179,6 +185,20 @@ export default async function Home({ params }: Props) {
         </p>
       </div>
 
+      {/* F14E-2 — INICIO DE DIRECCIÓN (admin_club/director): tareas de los
+          entrenadores club-wide + filtros + gestión. Sustituye para dirección a
+          las alertas/novedades sueltas de abajo. */}
+      {isDireccion && (
+        <DireccionHome
+          role={role}
+          clubId={clubId}
+          membershipId={ctx.activeClub.membershipId}
+          isAdminClub={role === 'admin_club'}
+          locale={locale}
+          filters={{ teamId: sp.team, coachMembershipId: sp.coach }}
+        />
+      )}
+
       {/* F7.12 — Panel del próximo partido (coach) / aviso de convocatoria
           pendiente (jugador). Admin/coord no lo ven. */}
       <NextMatchPanel
@@ -188,53 +208,60 @@ export default async function Home({ params }: Props) {
         locale={locale}
       />
 
-      {/* F12.8b — Alerta de entrenamientos <48h sin sesión planificada (cuerpo
-          técnico = sus equipos; admin/coord = club). El panel se oculta si no hay. */}
-      <TrainingAlertPanel
-        role={role}
-        clubId={clubId}
-        membershipId={ctx.activeClub.membershipId}
-        locale={locale}
-      />
+      {/* F12.8b — Alerta de entrenamientos <48h sin sesión (coach = sus equipos;
+          coordinador = club). Para DIRECCIÓN va dentro de DireccionHome (arriba). */}
+      {!isDireccion && (
+        <TrainingAlertPanel
+          role={role}
+          clubId={clubId}
+          membershipId={ctx.activeClub.membershipId}
+          locale={locale}
+        />
+      )}
 
-      {/* F13.10g — Alerta de campaña de evaluación abierta con informes pendientes
-          (cuerpo técnico = sus equipos; admin/coord = club). Se oculta si no hay. */}
-      <CampaignAlertPanel
-        role={role}
-        clubId={clubId}
-        membershipId={ctx.activeClub.membershipId}
-        locale={locale}
-      />
+      {/* F13.10g — Campaña con informes pendientes (coach = sus equipos;
+          coordinador = club). Para DIRECCIÓN va dentro de DireccionHome (arriba). */}
+      {!isDireccion && (
+        <CampaignAlertPanel
+          role={role}
+          clubId={clubId}
+          membershipId={ctx.activeClub.membershipId}
+          locale={locale}
+        />
+      )}
 
-      {/* F13.9a — Bandeja de novedades (feed in_app). Para todos los roles; la
-          RLS filtra por usuario. Se oculta si no hay nada. No marca leído. */}
-      <NotificationsPanel locale={locale} />
+      {/* F13.9a — Bandeja de novedades (feed in_app). F14E-2: FUERA del Inicio de
+          dirección (incluye chat); coach/player/coordinador la siguen viendo. */}
+      {!isDireccion && <NotificationsPanel locale={locale} />}
 
       {/* Grid de cards rol-aware */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {/* Mensajes no leídos — para todos los roles */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <MessageSquare className="size-4" aria-hidden />
-              {t('cards.messages.title')}
-            </CardTitle>
-            {unreadConversations > 0 && (
-              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-misterfc-green px-2 text-xs font-semibold text-zinc-900">
-                {unreadConversations}
-              </span>
-            )}
-          </CardHeader>
-          <CardContent className="text-sm">
-            {unreadConversations > 0 ? (
-              <Link href="/mensajes" className="text-misterfc-green hover:underline">
-                {t('cards.messages.cta', { count: unreadConversations })}
-              </Link>
-            ) : (
-              <p className="text-muted-foreground">{t('cards.messages.empty')}</p>
-            )}
-          </CardContent>
-        </Card>
+        {/* Mensajes no leídos. F14E-2: es actividad de chat → FUERA del Inicio de
+            dirección; coach/player/coordinador la siguen viendo. */}
+        {!isDireccion && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <MessageSquare className="size-4" aria-hidden />
+                {t('cards.messages.title')}
+              </CardTitle>
+              {unreadConversations > 0 && (
+                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-misterfc-green px-2 text-xs font-semibold text-zinc-900">
+                  {unreadConversations}
+                </span>
+              )}
+            </CardHeader>
+            <CardContent className="text-sm">
+              {unreadConversations > 0 ? (
+                <Link href="/mensajes" className="text-misterfc-green hover:underline">
+                  {t('cards.messages.cta', { count: unreadConversations })}
+                </Link>
+              ) : (
+                <p className="text-muted-foreground">{t('cards.messages.empty')}</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Anuncios recientes (últimos 7d) — para todos los roles */}
         <Card>
@@ -331,9 +358,10 @@ export default async function Home({ params }: Props) {
           </Card>
         )}
 
-        {/* Admin / coord — acceso al dashboard ejecutivo (F10). La home NO se
-            sustituye; solo enlaza al dashboard club-wide. */}
-        {isAdminLike && (
+        {/* Enlace al dashboard ejecutivo (F10). F14E-2: FUERA del Inicio de
+            dirección (el Dashboard es su entrada de menú /dashboard); se mantiene
+            para el COORDINADOR (isAdminLike && !isDireccion), sin cambios. */}
+        {isAdminLike && !isDireccion && (
           <Card className="md:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">

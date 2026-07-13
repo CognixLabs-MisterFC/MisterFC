@@ -30,6 +30,9 @@ export async function loadCampaignAlerts(
   role: string,
   clubId: string,
   membershipId: string,
+  // F14E-2 — filtro opcional por equipo (Inicio de dirección). Solo acota la
+  // audiencia admin/coord/director; la rama coach lo ignora.
+  filterTeamIds?: string[] | null,
 ): Promise<CampaignAlert[]> {
   const isCoach = COACH_ROLES.has(role);
   const isAdminLike = ADMIN_LIKE_ROLES.has(role);
@@ -77,6 +80,11 @@ export async function loadCampaignAlerts(
       .eq('season', seasonLabel)
       .eq('categories.club_id', clubId);
     teamIds = ((teamRows ?? []) as unknown as Array<{ id: string }>).map((t) => t.id);
+    // F14E-2 — filtro por equipo del Inicio de dirección.
+    if (filterTeamIds && filterTeamIds.length > 0) {
+      const allow = new Set(filterTeamIds);
+      teamIds = teamIds.filter((id) => allow.has(id));
+    }
   }
   if (teamIds.length === 0) return [];
 
