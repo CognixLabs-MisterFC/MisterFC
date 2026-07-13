@@ -323,7 +323,8 @@
       "calendario": "Calendario",
       "cuerpo_tecnico": "Cuerpo técnico",
       "estadisticas_equipo": "Estadísticas por equipo",
-      "asistencia": "Asistencia",
+      "asistencia": "Entrenamientos",
+      "playbook": "Playbook",
       "convocatorias": "Gestión de partidos",
       "mensajes": "Mensajes",
       "anuncios": "Anuncios del club",
@@ -4188,6 +4189,11 @@
       "title": "Mi perfil",
       "subtitle": "Tus datos de acceso."
     }
+  },
+  "playbook": {
+    "title": "Playbook",
+    "coming_soon": "Próximamente",
+    "subtitle": "El playbook estará disponible pronto."
   },
   "seguidores": {
     "title": "Seguidores",

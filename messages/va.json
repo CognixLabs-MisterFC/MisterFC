@@ -436,7 +436,8 @@
       "calendario": "Calendari",
       "cuerpo_tecnico": "Cos tècnic",
       "estadisticas_equipo": "Estadístiques per equip",
-      "asistencia": "Assistència",
+      "asistencia": "Entrenaments",
+      "playbook": "Playbook",
       "convocatorias": "Gestió de partits",
       "mensajes": "Missatges",
       "anuncios": "Anuncis del club",
@@ -4189,6 +4190,11 @@
       "title": "El meu perfil",
       "subtitle": "Les teues dades d'accés."
     }
+  },
+  "playbook": {
+    "title": "Playbook",
+    "coming_soon": "Pròximament",
+    "subtitle": "El playbook estarà disponible aviat."
   },
   "seguidores": {
     "title": "Seguidors",
