@@ -315,13 +315,19 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
               </ul>
             )}
           </CardContent>
-          {teammates.length > 12 && (
-            <CardFooter className="pt-0">
+          <CardFooter className="flex items-center justify-between pt-0">
+            <Link
+              href={`/mi-equipo/plantilla?team=${activeTeam.id}`}
+              className="text-xs text-misterfc-green hover:underline"
+            >
+              {t('cards.teammates.view_all')}
+            </Link>
+            {teammates.length > 12 && (
               <span className="text-xs text-muted-foreground">
                 +{teammates.length - 12}
               </span>
-            </CardFooter>
-          )}
+            )}
+          </CardFooter>
         </Card>
 
         <Card>

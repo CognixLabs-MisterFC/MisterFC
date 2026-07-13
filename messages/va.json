@@ -2620,6 +2620,17 @@
       }
     }
   },
+  "mi_plantilla": {
+    "title": "Plantilla",
+    "subtitle": "Companys de l'equip i les seues estadístiques de la temporada.",
+    "back": "Tornar al meu equip",
+    "no_team": "No pertanys a cap equip aquesta temporada.",
+    "empty": "Aquest equip encara no té jugadors.",
+    "col": {
+      "position": "Pos",
+      "foot": "Peu"
+    }
+  },
   "mi_equipo": {
     "title": "El meu equip",
     "subtitle_one": "El teu equip, pròxims esdeveniments i anuncis.",

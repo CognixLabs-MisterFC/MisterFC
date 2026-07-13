@@ -16,20 +16,28 @@ type Props = {
   locale: string;
   activeTeamId: string;
   teams: { id: string; name: string; category_name: string }[];
+  /** Ruta base a la que navega el selector (default /mi-equipo). F14E-6 lo reutiliza
+   *  para /mi-equipo/plantilla sin cambiar el comportamiento de /mi-equipo. */
+  basePath?: string;
 };
 
 /**
  * F5.8 — selector de equipo cuando el jugador está en varios teams.
  * Actualiza el query param `team` y navega — el server component re-render.
  */
-export function TeamSelectorWrapper({ locale, activeTeamId, teams }: Props) {
+export function TeamSelectorWrapper({
+  locale,
+  activeTeamId,
+  teams,
+  basePath = '/mi-equipo',
+}: Props) {
   const t = useTranslations('mi_equipo');
   const router = useRouter();
   const [, startTransition] = useTransition();
 
   function onChange(next: string) {
     startTransition(() => {
-      router.push(`/${locale}/mi-equipo?team=${next}`);
+      router.push(`/${locale}${basePath}?team=${next}`);
     });
   }
 
