@@ -2619,6 +2619,17 @@
       }
     }
   },
+  "mi_plantilla": {
+    "title": "Plantilla",
+    "subtitle": "Compañeros del equipo y sus estadísticas de la temporada.",
+    "back": "Volver a mi equipo",
+    "no_team": "No perteneces a ningún equipo esta temporada.",
+    "empty": "Este equipo aún no tiene jugadores.",
+    "col": {
+      "position": "Pos",
+      "foot": "Pie"
+    }
+  },
   "mi_equipo": {
     "title": "Mi equipo",
     "subtitle_one": "Tu equipo, próximos eventos y anuncios.",

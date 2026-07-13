@@ -2620,6 +2620,17 @@
       }
     }
   },
+  "mi_plantilla": {
+    "title": "Squad",
+    "subtitle": "Teammates and their season statistics.",
+    "back": "Back to my team",
+    "no_team": "You don't belong to any team this season.",
+    "empty": "This team has no players yet.",
+    "col": {
+      "position": "Pos",
+      "foot": "Foot"
+    }
+  },
   "mi_equipo": {
     "title": "My team",
     "subtitle_one": "Your team, upcoming events and announcements.",
