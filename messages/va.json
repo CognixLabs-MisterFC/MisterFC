@@ -465,7 +465,8 @@
       "formaciones": "Formacions",
       "ajustes": "Ajustos del club",
       "mi_ficha": "La meua fitxa",
-      "seguidores": "Seguidors", "mi_informe": "Informe de desenvolupament",
+      "seguidores": "Seguidors",
+      "mi_informe": "Informe de desenvolupament",
       "equipos": "Equipos",
       "ejercicios": "Exercicis",
       "entrenamientos": "Entrenaments",
@@ -2212,6 +2213,18 @@
         "target_invalid": "Aquest membre no pertany al teu club.",
         "forbidden": "Només un administrador del club pot canviar rols.",
         "generic": "No s’ha pogut canviar el rol."
+      }
+    },
+    "csv": {
+      "export": "Exportar CSV",
+      "col": {
+        "name": "Nom",
+        "club_role": "Rol de club",
+        "teams": "Equips",
+        "staff_role": "Rol en l'equip",
+        "category": "Categoria",
+        "phone": "Telèfon",
+        "email": "Correu"
       }
     }
   },
@@ -4297,5 +4310,11 @@
         "generic": "No s'ha pogut llevar el seguidor. Torna-ho a provar."
       }
     }
+  },
+  "mi_equipo_cuerpo_tecnico": {
+    "title": "Cos tècnic",
+    "subtitle": "El cos tècnic dels teus equips.",
+    "empty": "Encara no estàs en cap equip.",
+    "no_staff": "Este equip no té cos tècnic assignat."
   }
 }

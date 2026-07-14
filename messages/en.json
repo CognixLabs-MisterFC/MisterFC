@@ -465,7 +465,8 @@
       "formaciones": "Formations",
       "ajustes": "Club settings",
       "mi_ficha": "My profile",
-      "seguidores": "Followers", "mi_informe": "Development report",
+      "seguidores": "Followers",
+      "mi_informe": "Development report",
       "equipos": "Equipos",
       "ejercicios": "Exercises",
       "entrenamientos": "Training",
@@ -2212,6 +2213,18 @@
         "target_invalid": "This member does not belong to your club.",
         "forbidden": "Only a club administrator can change roles.",
         "generic": "The role could not be changed."
+      }
+    },
+    "csv": {
+      "export": "Export CSV",
+      "col": {
+        "name": "Name",
+        "club_role": "Club role",
+        "teams": "Teams",
+        "staff_role": "Team role",
+        "category": "Category",
+        "phone": "Phone",
+        "email": "Email"
       }
     }
   },
@@ -4297,5 +4310,11 @@
         "generic": "Couldn't remove the follower. Please try again."
       }
     }
+  },
+  "mi_equipo_cuerpo_tecnico": {
+    "title": "Coaching staff",
+    "subtitle": "The coaching staff of your teams.",
+    "empty": "You are not on any team yet.",
+    "no_staff": "This team has no coaching staff assigned."
   }
 }

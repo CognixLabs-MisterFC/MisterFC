@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Users } from 'lucide-react';
-import { MANAGER_ROLES, TEAM_STAFF_ROLES, type TeamStaffRole } from '@misterfc/core';
+import { ADMIN_ROLES, TEAM_STAFF_ROLES, type TeamStaffRole } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { StaffSearchInput } from './_components/staff-search-input';
 import { StaffFilters } from './_components/staff-filters';
 import { MoveStaffDialog } from './_components/move-staff-dialog';
+import { ExportCsvButton } from './_components/export-csv-button';
 import { loadCoachList } from './queries';
 import type { Role } from '../jugadores/queries';
 
@@ -35,7 +36,11 @@ type Props = {
   }>;
 };
 
-const ALLOWED_VIEW_ROLES = MANAGER_ROLES;
+// E-7b — Vista DIRECCIÓN: admin/director/coordinador (= DIRECCION/ADMIN_ROLES). El
+// entrenador_principal salió de aquí (antes MANAGER_ROLES) → usa la vista ligera
+// /mi-equipo/cuerpo-tecnico. Consistente con la entrada de nav. La ficha
+// [membershipId] no se toca (su guard sigue como estaba).
+const ALLOWED_VIEW_ROLES = ADMIN_ROLES;
 
 function normalizeMulti(v: string | string[] | undefined): string[] {
   if (v == null) return [];
@@ -94,13 +99,45 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
     category_name: t.category_name,
   }));
 
+  // E-7b — CSV de dirección. Filas construidas server-side desde el conjunto YA
+  // visible/filtrado (result.coaches respeta scope de rol + filtros activos). Las
+  // asignaciones múltiples se concatenan por '; ' en las 3 columnas paralelas
+  // (equipos / rol de staff / categoría), en el mismo orden.
+  const csvHeaders = [
+    t('csv.col.name'),
+    t('csv.col.club_role'),
+    t('csv.col.teams'),
+    t('csv.col.staff_role'),
+    t('csv.col.category'),
+    t('csv.col.phone'),
+    t('csv.col.email'),
+  ];
+  const csvRows = result.coaches.map((c) => [
+    c.full_name,
+    tClubRole(c.club_role),
+    c.assignments.map((a) => a.team_name).join('; '),
+    c.assignments.map((a) => tStaff(a.staff_role)).join('; '),
+    c.assignments.map((a) => a.category_name).join('; '),
+    c.phone ?? '',
+    c.contact_email ?? '',
+  ]);
+  const csvFilename = `cuerpo-tecnico-${new Date().toISOString().slice(0, 10)}.csv`;
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {t('count', { count: result.total })}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t('count', { count: result.total })}
+          </p>
+        </div>
+        <ExportCsvButton
+          filename={csvFilename}
+          headers={csvHeaders}
+          rows={csvRows}
+          label={t('csv.export')}
+        />
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
