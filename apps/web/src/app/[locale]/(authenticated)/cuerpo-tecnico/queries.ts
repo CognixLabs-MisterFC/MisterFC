@@ -99,7 +99,10 @@ export async function resolveStaffScope(
   clubId: string,
   role: Role
 ): Promise<StaffScope> {
-  if (role === 'admin_club') return { kind: 'all' };
+  // E-7a: el director es club-wide en TODO, exactamente como admin_club (director
+  // = admin salvo invitar directores y docs legales). Se separa ARRIBA, antes de
+  // la rama compartida, para no caer en el catch-all 'none' de abajo.
+  if (role === 'admin_club' || role === 'director') return { kind: 'all' };
   // C-2a: el coordinador deja de ser club-wide y cae en 'restricted' (sus equipos
   // = unión de team_staff, cualquier staff_role). Reutiliza la misma query que el
   // principal. admin_club/director/ayudante NO cambian.
