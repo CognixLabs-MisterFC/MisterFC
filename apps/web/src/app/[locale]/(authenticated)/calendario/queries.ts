@@ -318,14 +318,15 @@ async function loadPlannedEventIds(
 /**
  * FIX-DIRECTO — IDs de los equipos del usuario en el club (para acotar la AGENDA
  * ahora que los partidos son club-wide en la RLS de events). Devuelve `null` para
- * admin/coord (su agenda sigue club-wide, sin acotar). Para el resto, los equipos
- * donde es staff o cuenta jugador/padre (helper SQL user_team_ids_in_club).
+ * admin (su agenda sigue club-wide, sin acotar). Para el resto —incluido el
+ * coordinador (C-2a)— los equipos donde es staff o cuenta jugador/padre (helper SQL
+ * user_team_ids_in_club).
  */
 export async function loadCalendarScopeTeamIds(
   clubId: string,
   role: string
 ): Promise<string[] | null> {
-  if (role === 'admin_club' || role === 'coordinador') return null;
+  if (role === 'admin_club') return null;
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const { data } = await supabase.rpc('user_team_ids_in_club', {
