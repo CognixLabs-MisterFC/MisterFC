@@ -193,14 +193,21 @@ export async function resolveConvocatoriasScope(
   clubId: string,
   role: Role
 ): Promise<ConvocatoriasScope> {
-  if (role === 'admin_club' || role === 'coordinador') return { kind: 'all' };
+  if (role === 'admin_club') return { kind: 'all' };
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const user = await getCurrentUser(adapter);
   if (!user) return { kind: 'none' };
 
-  if (role === 'entrenador_principal' || role === 'entrenador_ayudante') {
+  // C-2a: el coordinador cae en 'restricted' (sus equipos vía team_staff). Gestiona
+  // las convocatorias de TODOS sus equipos (managedTeamIds = teamIds), coherente con
+  // user_can_manage_callup de C-1a. admin_club/director/principal/ayudante NO cambian.
+  if (
+    role === 'entrenador_principal' ||
+    role === 'entrenador_ayudante' ||
+    role === 'coordinador'
+  ) {
     type Row = {
       team_id: string;
       staff_role: string;
@@ -239,11 +246,14 @@ export async function resolveConvocatoriasScope(
           r.memberships.club_id === clubId
       );
 
-    const managedTeamIds = hasCallupCap
-      ? teamIds
-      : myRows
-          .filter((r) => r.staff_role === 'entrenador_principal')
-          .map((r) => r.team_id);
+    // C-2a: el coordinador gestiona convocatorias de todos sus equipos (como si
+    // tuviera la capability); principal/ayudante mantienen su lógica previa.
+    const managedTeamIds =
+      hasCallupCap || role === 'coordinador'
+        ? teamIds
+        : myRows
+            .filter((r) => r.staff_role === 'entrenador_principal')
+            .map((r) => r.team_id);
 
     return { kind: 'restricted', teamIds, managedTeamIds };
   }

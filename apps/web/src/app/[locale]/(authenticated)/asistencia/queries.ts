@@ -96,14 +96,20 @@ export async function resolveAsistenciaScope(
   clubId: string,
   role: Role
 ): Promise<AsistenciaScope> {
-  if (role === 'admin_club' || role === 'coordinador') return { kind: 'all' };
+  if (role === 'admin_club') return { kind: 'all' };
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const user = await getCurrentUser(adapter);
   if (!user) return { kind: 'none' };
 
-  if (role === 'entrenador_principal' || role === 'entrenador_ayudante') {
+  // C-2a: el coordinador cae en 'restricted' (sus equipos vía team_staff, cualquier
+  // staff_role), como principal/ayudante. admin_club/director NO cambian.
+  if (
+    role === 'entrenador_principal' ||
+    role === 'entrenador_ayudante' ||
+    role === 'coordinador'
+  ) {
     type Row = {
       team_id: string;
       memberships: { profile_id: string; club_id: string };

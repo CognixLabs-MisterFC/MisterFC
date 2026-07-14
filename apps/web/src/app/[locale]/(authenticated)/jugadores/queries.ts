@@ -99,9 +99,11 @@ export async function resolveVisibilityScope(
   clubId: string,
   role: Role
 ): Promise<VisibilityScope> {
-  if (role === 'admin_club' || role === 'coordinador') {
+  if (role === 'admin_club') {
     return { kind: 'all' };
   }
+  // C-2a: el coordinador cae en 'restricted' (sus equipos vía team_staff, cualquier
+  // staff_role), como el principal. admin_club/director/ayudante NO cambian.
   if (role === 'jugador') return { kind: 'none' };
 
   const adapter = await createCookieAdapter();

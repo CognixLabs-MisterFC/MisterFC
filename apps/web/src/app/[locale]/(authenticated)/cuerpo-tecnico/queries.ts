@@ -99,10 +99,15 @@ export async function resolveStaffScope(
   clubId: string,
   role: Role
 ): Promise<StaffScope> {
-  if (role === 'admin_club' || role === 'coordinador') return { kind: 'all' };
-  if (role !== 'entrenador_principal') return { kind: 'none' };
+  if (role === 'admin_club') return { kind: 'all' };
+  // C-2a: el coordinador deja de ser club-wide y cae en 'restricted' (sus equipos
+  // = unión de team_staff, cualquier staff_role). Reutiliza la misma query que el
+  // principal. admin_club/director/ayudante NO cambian.
+  if (role !== 'entrenador_principal' && role !== 'coordinador') {
+    return { kind: 'none' };
+  }
 
-  // Principal: ve a staff de SUS teams. Resolvemos sus teams activos.
+  // Principal/coordinador: ve a staff de SUS teams. Resolvemos sus teams activos.
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const user = await getCurrentUser(adapter);
