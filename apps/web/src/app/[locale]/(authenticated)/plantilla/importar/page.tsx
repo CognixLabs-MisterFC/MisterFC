@@ -33,6 +33,9 @@ export default async function ImportPlayersPage({ params }: Props) {
 
   const role = ctx.activeClub.role;
   if (!ROLES_ALLOWED.includes(role)) redirect(`/${locale}`);
+  // C-2b: el coordinador no importa jugadores (estructura). El resto de STAFF_ROLES
+  // (admin/director/principal/ayudante-con-cap) mantiene su acceso.
+  if (role === 'coordinador') redirect(`/${locale}`);
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);

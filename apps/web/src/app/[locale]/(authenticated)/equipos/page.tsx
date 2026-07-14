@@ -30,7 +30,10 @@ type Props = {
   searchParams: Promise<{ season?: string }>;
 };
 
-const ALLOWED_ROLES = new Set<string>(ADMIN_ROLES);
+// C-2b: estructura (equipos) = admin-like SIN coordinador.
+const ALLOWED_ROLES = new Set<string>(
+  ADMIN_ROLES.filter((r) => r !== 'coordinador'),
+);
 const SEASON_RE = /^[0-9]{4}-[0-9]{2}$/;
 
 export default async function EquiposPage({ params, searchParams }: Props) {

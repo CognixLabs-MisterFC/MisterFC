@@ -14,16 +14,26 @@ type Team = { id: string; name: string };
 type Props = {
   locale: string;
   teams: Team[];
+  /**
+   * C-2b: si es false (coordinador), no se ofrece la opción "todo el club": el
+   * formulario arranca en modo EQUIPO y se oculta la casilla club-wide. admin/
+   * director reciben true (default) → pueden emitir anuncios de club.
+   */
+  allowClubWide?: boolean;
 };
 
-export function GlobalAnnouncementForm({ locale, teams }: Props) {
+export function GlobalAnnouncementForm({
+  locale,
+  teams,
+  allowClubWide = true,
+}: Props) {
   const t = useTranslations('anuncios_global.form');
   const tErr = useTranslations('anuncios_global.errors');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [pinned, setPinned] = useState(false);
   const [expiresAt, setExpiresAt] = useState('');
-  const [clubWide, setClubWide] = useState(true);
+  const [clubWide, setClubWide] = useState(allowClubWide);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -95,18 +105,20 @@ export function GlobalAnnouncementForm({ locale, teams }: Props) {
 
       <fieldset className="flex flex-col gap-2 rounded-md border border-zinc-800 p-3">
         <legend className="px-1 text-sm font-medium">{t('field.audience')}</legend>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={clubWide}
-            onChange={(e) => {
-              setClubWide(e.target.checked);
-              if (e.target.checked) setSelectedTeams([]);
-            }}
-            className="size-4 rounded border-zinc-700 bg-zinc-900 text-misterfc-green focus:ring-misterfc-green"
-          />
-          <span>{t('audience.club_wide')}</span>
-        </label>
+        {allowClubWide && (
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={clubWide}
+              onChange={(e) => {
+                setClubWide(e.target.checked);
+                if (e.target.checked) setSelectedTeams([]);
+              }}
+              className="size-4 rounded border-zinc-700 bg-zinc-900 text-misterfc-green focus:ring-misterfc-green"
+            />
+            <span>{t('audience.club_wide')}</span>
+          </label>
+        )}
 
         {!clubWide && (
           <div className="flex flex-col gap-1.5">

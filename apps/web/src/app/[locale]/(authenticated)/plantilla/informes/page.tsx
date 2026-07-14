@@ -42,7 +42,10 @@ type Props = {
   searchParams: Promise<{ period?: string }>;
 };
 
-const ADMIN_LIKE = ADMIN_ROLES;
+// C-2b: gestión de campañas de evaluación = admin-like SIN coordinador (el
+// coordinador sigue rellenando evaluaciones de sus jugadores, ya acotado en C-1a;
+// solo se le quita esta pantalla de gestión de campañas).
+const ADMIN_LIKE: Role[] = ADMIN_ROLES.filter((r) => r !== 'coordinador');
 
 const STATUS_VARIANT: Record<
   AssessmentCampaignStatus | 'none',

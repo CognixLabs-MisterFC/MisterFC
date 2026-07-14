@@ -52,8 +52,9 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-/** Solo dirección ve el dashboard ejecutivo (spec 10.0 §5.0, D6). */
-const DASHBOARD_ROLES = ADMIN_ROLES;
+/** Solo dirección ve el dashboard ejecutivo (spec 10.0 §5.0, D6). C-2b: estructura
+ * = admin-like SIN coordinador (el coordinador queda fuera del dashboard). */
+const DASHBOARD_ROLES: Role[] = ADMIN_ROLES.filter((r) => r !== 'coordinador');
 
 /** Fila de la comparativa de plantilla por categoría (activa vs anterior). */
 type CategoryComparisonRow = {
