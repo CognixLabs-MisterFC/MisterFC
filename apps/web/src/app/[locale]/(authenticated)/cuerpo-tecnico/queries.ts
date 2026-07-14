@@ -564,10 +564,17 @@ export async function loadCoachDetail(
     contact_email: (m.contact_email as string | null) ?? null,
   };
 
-  const allTeams = await loadVisibleTeams(clubId, { kind: 'all' });
+  // C-2c — Equipos ofrecidos en "Agregar rol": el coordinador solo puede asignar
+  // staff en SUS equipos (scope restricted de resolveStaffScope = unión de team_staff).
+  // admin_club sigue viendo todos ({kind:'all'}). El director no llega aquí (scope
+  // 'none' → return null arriba, bug E-7 pre-existente, no se toca).
+  const movableTargets = await loadVisibleTeams(
+    clubId,
+    role === 'coordinador' ? scope : { kind: 'all' }
+  );
   const canManage = WRITE_ROLES.includes(role);
 
-  return { coach, history, movableTargets: allTeams, canManage };
+  return { coach, history, movableTargets, canManage };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

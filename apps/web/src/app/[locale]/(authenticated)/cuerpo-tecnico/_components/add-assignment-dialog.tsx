@@ -9,7 +9,7 @@
 import { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, Plus } from 'lucide-react';
-import { TEAM_STAFF_ROLES } from '@misterfc/core';
+import { TEAM_STAFF_ROLES, type TeamStaffRole } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -35,9 +35,16 @@ type TeamOption = { id: string; name: string; category_name: string };
 export function AddAssignmentDialog({
   membershipId,
   teams,
+  assignableRoles = TEAM_STAFF_ROLES,
 }: {
   membershipId: string;
   teams: TeamOption[];
+  /**
+   * Roles ofrecidos en el selector. C-2c: el coordinador recibe la lista sin
+   * 'coordinador' (no nombra coordinadores; la RLS C-1d ya lo bloquea). admin/
+   * director reciben la lista completa (default).
+   */
+  assignableRoles?: readonly TeamStaffRole[];
 }) {
   const t = useTranslations('cuerpo_tecnico.add_role');
   const tRole = useTranslations('staff.role');
@@ -95,7 +102,7 @@ export function AddAssignmentDialog({
                 <SelectValue placeholder={t('field.staff_role_placeholder')} />
               </SelectTrigger>
               <SelectContent>
-                {TEAM_STAFF_ROLES.map((r) => (
+                {assignableRoles.map((r) => (
                   <SelectItem key={r} value={r}>
                     {tRole(r)}
                   </SelectItem>

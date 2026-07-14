@@ -8,7 +8,7 @@ import {
   Settings,
   Users,
 } from 'lucide-react';
-import { MANAGER_ROLES } from '@misterfc/core';
+import { MANAGER_ROLES, TEAM_STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -224,8 +224,12 @@ export default async function CoachDetailPage({ params }: Props) {
             <Users className="size-5" aria-hidden />
             {t('detail.teams_title')}
           </CardTitle>
-          {/* Serie C (C-0) — Agregar rol/equipo. Solo admin/director asignan staff. */}
-          {(role === 'admin_club' || role === 'director') && (
+          {/* Serie C — Agregar rol/equipo. admin/director asignan cualquier rol en
+              cualquier equipo; el coordinador (C-2c) solo en SUS equipos
+              (movableTargets ya acotado) y sin la opción 'coordinador'. */}
+          {(role === 'admin_club' ||
+            role === 'director' ||
+            role === 'coordinador') && (
             <AddAssignmentDialog
               membershipId={coach.membership_id}
               teams={movableTargets.map((tm) => ({
@@ -233,6 +237,11 @@ export default async function CoachDetailPage({ params }: Props) {
                 name: tm.name,
                 category_name: tm.category_name,
               }))}
+              assignableRoles={
+                role === 'coordinador'
+                  ? TEAM_STAFF_ROLES.filter((r) => r !== 'coordinador')
+                  : TEAM_STAFF_ROLES
+              }
             />
           )}
         </CardHeader>
