@@ -17,8 +17,9 @@ type Props = {
 };
 
 /**
- * Cuenta el número de CONVERSACIONES con mensajes no leídos para el user
- * actual via RPC SECURITY DEFINER (`user_unread_conversations_count`).
+ * Cuenta el número de CHATS con mensajes no leídos para el user actual: chats
+ * 1-a-1 + chats de EQUIPO. Unidad homogénea = NÚMERO DE CHATS con no-leídos (no
+ * suma de mensajes), coherente entre ambos subsistemas (E-8).
  *
  * Bug M (PR #32): la query directa sobre `messages` con `.is(read_at,null)
  * .neq(sender_profile_id, user_id)` no devolvía filas para admin_club en
@@ -26,13 +27,29 @@ type Props = {
  * inline (sin pasar por la RLS de messages) y devuelve un único int. Más
  * robusto y más barato (el planner hace count distinct + join, en lugar
  * de scan + dedupe en JS).
+ *
+ * E-8: antes solo contaba 1-a-1 (`user_unread_conversations_count`) → el badge
+ * ignoraba los chats de equipo. Ahora suma también el nº de chats de equipo con
+ * no-leídos, reutilizando el RPC existente `team_chat_unread_counts()` (el mismo
+ * que usa /mensajes; SECURITY DEFINER, ya excluye mensajes propios, solo chats
+ * donde participa y solo posteriores a last_read_at). Se cuentan las FILAS con
+ * unread>0 (un chat de equipo cuenta como 1, no como nº de mensajes). Si ese RPC
+ * falla/da null, el lado equipo aporta 0 y el badge 1-a-1 sigue funcionando.
  */
 async function loadUnreadConversationsCount(
   supabase: ReturnType<typeof createSupabaseServerClient>,
 ): Promise<number> {
-  const { data } = await supabase.rpc('user_unread_conversations_count');
-  if (typeof data !== 'number') return 0;
-  return data;
+  const { data: oneToOneData } = await supabase.rpc(
+    'user_unread_conversations_count',
+  );
+  const oneToOne = typeof oneToOneData === 'number' ? oneToOneData : 0;
+
+  const { data: teamRows } = await supabase.rpc('team_chat_unread_counts');
+  const teamChatsWithUnread = (teamRows ?? []).filter(
+    (r) => (r.unread ?? 0) > 0,
+  ).length;
+
+  return oneToOne + teamChatsWithUnread;
 }
 
 /**
