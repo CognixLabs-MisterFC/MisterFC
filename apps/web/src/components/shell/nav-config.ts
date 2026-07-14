@@ -153,10 +153,9 @@ export const NAV: readonly NavEntry[] = [
       { key: 'ejercicios', href: '/ejercicios', icon: GraduationCap, roles: STAFF },
       // Planificador de sesiones (F12) — solo staff.
       { key: 'sesiones', href: '/sesiones', icon: ClipboardList, roles: STAFF },
-      // Pizarra táctica efímera (F11B) — solo staff.
+      // Pizarra táctica efímera (F11B) — solo staff. (E-9: 'jugadas'/Playbook salió
+      // de este hub al hub Partidos; la pizarra se queda, es otra cosa.)
       { key: 'pizarra', href: '/pizarra', icon: PenTool, roles: STAFF },
-      // Playbook de jugadas animadas (F13) — solo staff.
-      { key: 'jugadas', href: '/jugadas', icon: Swords, roles: STAFF },
       { key: 'asistencia', href: '/asistencia', icon: Calendar, roles: ALL },
       // F14E-4 — Planificación compartida (SOLO jugador): las sesiones que el
       // entrenador ha compartido (visibility='team'), en solo lectura. Al ser el
@@ -167,9 +166,10 @@ export const NAV: readonly NavEntry[] = [
     ],
   },
 
-  // F14E-1 — Playbook del JUGADOR: PLACEHOLDER (feature nueva fuera de F14E). La
-  // entrada existe y lleva a un stub "próximamente"; no rompe al pulsarla.
-  { key: 'playbook', href: '/playbook', icon: BookOpen, roles: ['jugador'] },
+  // E-9 — Playbook del JUGADOR: la entrada apunta al visor REAL (/mi-equipo/jugadas),
+  // que ya lista las jugadas compartidas con su equipo (team_plays.shared_with_family).
+  // Antes iba a un stub "próximamente" (/playbook, retirado). Etiqueta/roles intactos.
+  { key: 'playbook', href: '/mi-equipo/jugadas', icon: BookOpen, roles: ['jugador'] },
 
   // HUB Partidos — gestión de partidos (todos) + formaciones (staff) + stats (staff).
   // Para el JUGADOR colapsa a 'convocatorias' (etiqueta "Gestión de partidos").
@@ -180,6 +180,9 @@ export const NAV: readonly NavEntry[] = [
     children: [
       { key: 'convocatorias', href: '/convocatorias', icon: Megaphone, roles: ALL },
       { key: 'formaciones', href: '/formaciones', icon: LayoutGrid, roles: STAFF },
+      // E-9 — Playbook (banco de jugadas del club, F13): movido aquí desde el hub
+      // Entrenamientos. Mismo href/roles/etiqueta; solo cambia de hub padre.
+      { key: 'jugadas', href: '/jugadas', icon: Swords, roles: STAFF },
       { key: 'estadisticas_equipo', href: '/estadisticas-equipo', icon: BarChart3, roles: STAFF },
     ],
   },
