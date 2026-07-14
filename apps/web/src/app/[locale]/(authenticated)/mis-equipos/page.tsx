@@ -12,7 +12,7 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Calendar, Megaphone, Users } from 'lucide-react';
-import { COACH_ROLES } from '@misterfc/core';
+import { COACH_ROLES, type Role } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -28,9 +28,10 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-// Semántica LOCAL "entreno este equipo" (principal/ayudante), NO staff de club:
-// mapea a COACH_ROLES (sin director), no a la STAFF_ROLES central.
-const STAFF_ROLES = COACH_ROLES;
+// Semántica LOCAL de "mis equipos": principal/ayudante (COACH_ROLES) + coordinador
+// (E-final-1, coordina sus equipos). NO es la STAFF_ROLES central ni se toca
+// COACH_ROLES (el coordinador NO debe entrar en otras pantallas COACH-only).
+const MIS_EQUIPOS_ROLES: readonly Role[] = [...COACH_ROLES, 'coordinador'];
 
 function formatDateTime(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
@@ -51,8 +52,10 @@ export default async function MisEquiposPage({ params }: Props) {
   if (!ctx) redirect(`/${locale}/signin`);
 
   const role = ctx.activeClub.role;
-  if (!STAFF_ROLES.includes(role as (typeof STAFF_ROLES)[number])) {
-    if (role === 'admin_club' || role === 'coordinador') {
+  if (!MIS_EQUIPOS_ROLES.includes(role as Role)) {
+    // admin_club sí tiene su puerta a equipos (estructura /equipos); el resto
+    // (jugador) a su perfil. El coordinador ya NO cae aquí (E-final-1).
+    if (role === 'admin_club') {
       redirect(`/${locale}/jugadores`);
     }
     redirect(`/${locale}/perfil`);

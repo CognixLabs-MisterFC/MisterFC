@@ -94,7 +94,10 @@ export const NAV: readonly NavEntry[] = [
   { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ESTRUCTURA },
 
   // Vistas de equipo por rol (top-level simples; no entran en hubs de staff).
-  { key: 'mis_equipos', href: '/mis-equipos', icon: Shield, roles: [...COACH_ROLES] },
+  // E-final-1: el coordinador entra por "Mis equipos" (es staff de sus equipos) —
+  // su puerta a la ficha/acciones de equipo (E-3). admin/director siguen por
+  // /equipos (estructura), no aquí.
+  { key: 'mis_equipos', href: '/mis-equipos', icon: Shield, roles: [...COACH_ROLES, 'coordinador'] },
 
   { key: 'calendario', href: '/calendario', icon: Calendar, roles: ALL },
 

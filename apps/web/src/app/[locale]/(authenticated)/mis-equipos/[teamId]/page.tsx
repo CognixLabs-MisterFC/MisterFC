@@ -27,6 +27,7 @@ import {
   formatPlayerName,
   isMatchSurfaceType,
   COACH_ROLES,
+  type Role,
 } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -47,9 +48,11 @@ type Props = {
   searchParams: Promise<{ position?: string }>;
 };
 
-// Semántica LOCAL "entreno este equipo" (principal/ayudante), NO staff de club:
-// mapea a COACH_ROLES (sin director), no a la STAFF_ROLES central.
-const STAFF_ROLES = COACH_ROLES;
+// Semántica LOCAL de "mis equipos": principal/ayudante (COACH_ROLES) + coordinador
+// (E-final-1). NO es la STAFF_ROLES central ni se toca COACH_ROLES. La propiedad del
+// equipo (que ESTE team_id es suyo) la valida loadTeamDetail (→ notFound si no es
+// staff del equipo), no basta el rol.
+const MIS_EQUIPOS_ROLES: readonly Role[] = [...COACH_ROLES, 'coordinador'];
 
 function ageFromDob(dob: string): number {
   const d = new Date(dob);
@@ -80,8 +83,11 @@ export default async function TeamDetailPage({ params, searchParams }: Props) {
   if (!ctx) redirect(`/${locale}/signin`);
 
   const role = ctx.activeClub.role;
-  if (!STAFF_ROLES.includes(role as (typeof STAFF_ROLES)[number])) {
-    if (role === 'admin_club' || role === 'coordinador') {
+  if (!MIS_EQUIPOS_ROLES.includes(role as Role)) {
+    // admin_club a su puerta de estructura (/jugadores); resto a su perfil. El
+    // coordinador ya NO cae aquí (E-final-1); si el equipo no es suyo, el propio
+    // loadTeamDetail devuelve null → notFound abajo.
+    if (role === 'admin_club') {
       redirect(`/${locale}/jugadores`);
     }
     redirect(`/${locale}/perfil`);
