@@ -1,7 +1,6 @@
 import {
   type Role,
   ADMIN_ROLES,
-  MANAGER_ROLES,
   STAFF_ROLES,
   COACH_ROLES,
   ALL_CLUB_ROLES,
@@ -99,6 +98,17 @@ export const NAV: readonly NavEntry[] = [
 
   { key: 'calendario', href: '/calendario', icon: Calendar, roles: ALL },
 
+  // E-7b — Cuerpo técnico VISTA LIGERA (read-only, solo nombre+rol de sus equipos,
+  // sin contacto/CSV/gestión) para principal/ayudante/jugador. Misma etiqueta
+  // shell.nav.cuerpo_tecnico que la entrada de dirección, pero roles DISJUNTOS y
+  // destino distinto (/mi-equipo/cuerpo-tecnico) → nadie ve las dos.
+  {
+    key: 'cuerpo_tecnico',
+    href: '/mi-equipo/cuerpo-tecnico',
+    icon: UsersRound,
+    roles: [...COACH_ROLES, 'jugador'],
+  },
+
   { key: 'mi_equipo', href: '/mi-equipo', icon: Shield, roles: ['jugador'] },
 
   // F5B-0 — "Equipos" como pestaña TOP-LEVEL (dirección): acceso directo al
@@ -106,7 +116,14 @@ export const NAV: readonly NavEntry[] = [
   // del hub Plantilla (misma ruta /equipos; decisión de Jose). Mismos roles.
   { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: ESTRUCTURA },
 
-  // HUB Plantilla — jugadores + importar + cuerpo técnico + equipos.
+  // E-7b — Cuerpo técnico VISTA DIRECCIÓN (lista + filtro por equipo + CSV), ENCIMA
+  // de Plantilla. roles = DIRECCION (admin/director/coordinador): sale del hub
+  // Plantilla y del rango MANAGER_ROLES → el entrenador_principal deja de verla
+  // (pasa a la vista ligera). admin/director club-wide (E-7a), coordinador acotado
+  // a sus equipos (serie C, ya en el resolver).
+  { key: 'cuerpo_tecnico', href: '/cuerpo-tecnico', icon: UsersRound, roles: DIRECCION },
+
+  // HUB Plantilla — jugadores + importar + equipos.
   {
     key: 'plantilla',
     href: '/plantilla',
@@ -116,10 +133,9 @@ export const NAV: readonly NavEntry[] = [
       { key: 'jugadores', href: '/jugadores', icon: Users, roles: DIRECCION },
       // F14E-1: SOLO import_players pasa a DIRECCION (antes MANAGER_ROLES) → el
       // entrenador_principal deja de ver Importar/Plantilla en el nav (NO revoca
-      // la página). cuerpo_tecnico se MANTIENE como en main (MANAGER_ROLES); su
-      // gating por rol se rehace en E-7, no aquí.
+      // la página). E-7b: cuerpo_tecnico sale de este hub a una entrada top-level
+      // ENCIMA de Plantilla (vista dirección) + una vista ligera bajo Calendario.
       { key: 'import_players', href: '/plantilla/importar', icon: Upload, roles: ESTRUCTURA },
-      { key: 'cuerpo_tecnico', href: '/cuerpo-tecnico', icon: UsersRound, roles: [...MANAGER_ROLES] },
       // Estructura: listado de equipos por temporada + categorías-plantilla.
       { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: ESTRUCTURA },
       // F13.10g — centro de mando de campañas de informes (admin/coord).

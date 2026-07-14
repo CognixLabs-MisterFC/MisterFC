@@ -352,7 +352,8 @@
       "formaciones": "Formaciones",
       "ajustes": "Ajustes del club",
       "mi_ficha": "Mi ficha",
-      "seguidores": "Seguidores", "mi_informe": "Informe de desarrollo",
+      "seguidores": "Seguidores",
+      "mi_informe": "Informe de desarrollo",
       "equipos": "Equipos",
       "ejercicios": "Ejercicios",
       "entrenamientos": "Entrenamientos",
@@ -2211,6 +2212,18 @@
         "target_invalid": "Este miembro no pertenece a tu club.",
         "forbidden": "Solo un administrador del club puede cambiar roles.",
         "generic": "No se pudo cambiar el rol."
+      }
+    },
+    "csv": {
+      "export": "Exportar CSV",
+      "col": {
+        "name": "Nombre",
+        "club_role": "Rol de club",
+        "teams": "Equipos",
+        "staff_role": "Rol en el equipo",
+        "category": "Categoría",
+        "phone": "Teléfono",
+        "email": "Email"
       }
     }
   },
@@ -4296,5 +4309,11 @@
         "generic": "No se pudo quitar el seguidor. Inténtalo de nuevo."
       }
     }
+  },
+  "mi_equipo_cuerpo_tecnico": {
+    "title": "Cuerpo técnico",
+    "subtitle": "El cuerpo técnico de tus equipos.",
+    "empty": "Todavía no estás en ningún equipo.",
+    "no_staff": "Este equipo no tiene cuerpo técnico asignado."
   }
 }
