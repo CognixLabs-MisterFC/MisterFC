@@ -1476,7 +1476,8 @@
     "opponent_tbd": "rival per confirmar",
     "staff_role": {
       "entrenador_principal": "Principal",
-      "entrenador_ayudante": "Ajudant"
+      "entrenador_ayudante": "Ajudant",
+      "coordinador": "Coordinador"
     },
     "actions": {
       "title": "Accions",

@@ -1476,7 +1476,8 @@
     "opponent_tbd": "opponent TBD",
     "staff_role": {
       "entrenador_principal": "Head coach",
-      "entrenador_ayudante": "Assistant"
+      "entrenador_ayudante": "Assistant",
+      "coordinador": "Coordinator"
     },
     "actions": {
       "title": "Actions",

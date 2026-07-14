@@ -29,7 +29,7 @@ export type CoachTeamCard = {
   team_format: string;
   category_name: string;
   category_season: string;
-  staff_role: 'entrenador_principal' | 'entrenador_ayudante';
+  staff_role: 'entrenador_principal' | 'entrenador_ayudante' | 'coordinador';
   players_count: number;
   next_training_at: string | null;
   next_match_at: string | null;
@@ -67,7 +67,7 @@ export type TeamDetail = {
     category_name: string;
     category_season: string;
   };
-  staff_role: 'entrenador_principal' | 'entrenador_ayudante';
+  staff_role: 'entrenador_principal' | 'entrenador_ayudante' | 'coordinador';
   roster: TeamRosterRow[];
   upcoming_events: TeamUpcomingEvent[];
   next_match_without_callup: TeamUpcomingEvent | null;
@@ -75,7 +75,23 @@ export type TeamDetail = {
   callups_published_count: number;
 };
 
-const STAFF_ROLES = new Set<string>(COACH_ROLES);
+// E-final-1: "mis equipos" del coordinador = los que coordina. Además de las
+// COACH_ROLES (principal/ayudante), aceptamos staff_role='coordinador'. Local a
+// mis-equipos (NO se toca COACH_ROLES central: el coordinador NO debe entrar en
+// otras pantallas COACH-only, p.ej. la vista ligera de cuerpo técnico de E-7b).
+const MIS_EQUIPOS_STAFF_ROLES = new Set<string>([
+  ...COACH_ROLES,
+  'coordinador',
+]);
+
+// Prioridad para elegir el badge cuando el usuario tiene VARIOS staff_role en el
+// MISMO equipo (C-0): muestra el rol más "de banquillo"; 'coordinador' solo si es
+// su único vínculo con ese equipo. También sirve para deduplicar por equipo.
+const STAFF_ROLE_PRIORITY: Record<string, number> = {
+  entrenador_principal: 3,
+  entrenador_ayudante: 2,
+  coordinador: 1,
+};
 
 type StaffTeam = {
   team_id: string;
@@ -107,10 +123,27 @@ async function loadStaffTeams(
     )
     .eq('membership_id', membershipId)
     .is('left_at', null);
-  return ((data ?? []) as unknown as StaffTeam[]).filter(
+  const rows = ((data ?? []) as unknown as StaffTeam[]).filter(
     (s) =>
-      STAFF_ROLES.has(s.staff_role) && s.teams.categories.club_id === clubId
+      MIS_EQUIPOS_STAFF_ROLES.has(s.staff_role) &&
+      s.teams.categories.club_id === clubId
   );
+
+  // Unión SIN duplicar equipos: un usuario puede tener varias filas team_staff en
+  // el mismo equipo (varios staff_role). Nos quedamos con una por team_id,
+  // eligiendo el staff_role de mayor prioridad para el badge.
+  const byTeam = new Map<string, StaffTeam>();
+  for (const s of rows) {
+    const cur = byTeam.get(s.team_id);
+    if (
+      !cur ||
+      (STAFF_ROLE_PRIORITY[s.staff_role] ?? 0) >
+        (STAFF_ROLE_PRIORITY[cur.staff_role] ?? 0)
+    ) {
+      byTeam.set(s.team_id, s);
+    }
+  }
+  return [...byTeam.values()];
 }
 
 export async function loadCoachTeams(
@@ -197,7 +230,8 @@ export async function loadCoachTeams(
       category_season: s.teams.season,
       staff_role: s.staff_role as
         | 'entrenador_principal'
-        | 'entrenador_ayudante',
+        | 'entrenador_ayudante'
+        | 'coordinador',
       players_count: playersByTeam.get(s.team_id) ?? 0,
       next_training_at: nextTraining?.starts_at ?? null,
       next_match_at: nextMatch?.starts_at ?? null,
@@ -379,7 +413,8 @@ export async function loadTeamDetail(
     },
     staff_role: staff.staff_role as
       | 'entrenador_principal'
-      | 'entrenador_ayudante',
+      | 'entrenador_ayudante'
+      | 'coordinador',
     roster: roster.map((r) => ({
       team_member_id: r.id,
       player_id: r.players.id,
