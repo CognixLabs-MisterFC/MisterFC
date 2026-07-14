@@ -24,7 +24,10 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-const ALLOWED_ROLES = new Set<string>(ADMIN_ROLES);
+// C-2b: estructura (categorías/plantillas) = admin-like SIN coordinador.
+const ALLOWED_ROLES = new Set<string>(
+  ADMIN_ROLES.filter((r) => r !== 'coordinador'),
+);
 
 export default async function PlantillasPage({ params }: Props) {
   const { locale } = await params;

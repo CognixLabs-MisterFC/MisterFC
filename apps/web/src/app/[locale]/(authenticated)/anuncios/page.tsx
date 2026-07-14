@@ -45,7 +45,12 @@ export default async function AnunciosGlobalesPage({
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const canPublish = PUBLISHER_ROLES.includes(ctx.activeClub.role);
+  const role = ctx.activeClub.role;
+  const canPublish = PUBLISHER_ROLES.includes(role);
+  // C-2b: solo dirección emite anuncios de CLUB (team_id null). El coordinador emite
+  // solo anuncios de EQUIPO de SUS equipos (la RLS C-1c ya lo impone). La RECEPCIÓN
+  // de anuncios de club queda intacta (la lista no depende de esto).
+  const canPublishClub = role === 'admin_club' || role === 'director';
 
   // Teams del club — para el form (admin/coord) y para el filtro de lista.
   // Bug-1: ambos son operativos → solo la temporada activa (sin duplicados del
@@ -63,6 +68,18 @@ export default async function AnunciosGlobalesPage({
     categories: { name: string; club_id: string };
   };
   const teams = (teamRows ?? []) as unknown as TeamRow[];
+
+  // C-2b — Equipos ofrecidos en el FORMULARIO: el coordinador solo puede emitir para
+  // SUS equipos; admin/director para todos. (La lista/filtros de abajo no cambian: la
+  // recepción y el filtrado por RLS quedan intactos.)
+  let formTeams = teams;
+  if (canPublish && !canPublishClub) {
+    const { data: myTeamIds } = await supabase.rpc('user_team_ids_in_club', {
+      p_club_id: clubId,
+    });
+    const allowed = new Set(((myTeamIds ?? []) as unknown as string[]) ?? []);
+    formTeams = teams.filter((tm) => allowed.has(tm.id));
+  }
 
   // Filtros de URL (defaults: scope=all, since=30d).
   // BUG K — scope/team solo aplicables a admin/coord. Para entrenador y
@@ -152,10 +169,11 @@ export default async function AnunciosGlobalesPage({
           <CardContent>
             <GlobalAnnouncementForm
               locale={locale}
-              teams={teams.map((tm) => ({
+              teams={formTeams.map((tm) => ({
                 id: tm.id,
                 name: `${tm.name} · ${tm.categories.name}`,
               }))}
+              allowClubWide={canPublishClub}
             />
           </CardContent>
         </Card>

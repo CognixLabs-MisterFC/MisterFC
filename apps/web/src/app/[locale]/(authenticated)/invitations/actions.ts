@@ -18,7 +18,9 @@ export type SendInvitationFormState = {
 };
 
 // Quién puede invitar (a roles bajos). director = admin en gestión de roles bajos.
-const ROLES_ALLOWED_TO_INVITE: Role[] = ['admin_club', 'director', 'coordinador'];
+// C-2b: el coordinador queda fuera de la invitación de club (su gestión de staff de
+// sus equipos vive en Cuerpo técnico, C-2c; la RLS de invitations ya lo acota).
+const ROLES_ALLOWED_TO_INVITE: Role[] = ['admin_club', 'director'];
 // Roles "altos": invitarlos es EXCLUSIVO del owner del club (F1B-2). La RLS
 // invitations_insert_admin lo impone; este check es el pre-gate server-side.
 const HIGH_ROLES: Role[] = ['admin_club', 'director'];

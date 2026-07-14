@@ -72,6 +72,11 @@ export function isNavHub(entry: NavEntry): entry is NavHub {
 const ALL: Role[] = [...ALL_CLUB_ROLES];
 const STAFF: Role[] = [...STAFF_ROLES];
 const DIRECCION: Role[] = [...ADMIN_ROLES];
+// C-2b — Estructura del club: DIRECCION SIN coordinador (el coordinador no ve las
+// entradas de estructura: dashboard, equipos, importar, informes/campañas,
+// invitaciones). No se toca ADMIN_ROLES/DIRECCION: las entradas que el coordinador
+// SÍ conserva (jugadores, anuncios) siguen en DIRECCION.
+const ESTRUCTURA: Role[] = ADMIN_ROLES.filter((r) => r !== 'coordinador');
 
 /**
  * Entradas del menú lateral, en orden. Mezcla enlaces simples y HUBS. Los hubs
@@ -87,7 +92,7 @@ const DIRECCION: Role[] = [...ADMIN_ROLES];
 export const NAV: readonly NavEntry[] = [
   { key: 'home', href: '', icon: Home, roles: ALL },
   // Dirección: dashboard ejecutivo (top-level; el gating real es server-side).
-  { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard, roles: DIRECCION },
+  { key: 'dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ESTRUCTURA },
 
   // Vistas de equipo por rol (top-level simples; no entran en hubs de staff).
   { key: 'mis_equipos', href: '/mis-equipos', icon: Shield, roles: [...COACH_ROLES] },
@@ -99,7 +104,7 @@ export const NAV: readonly NavEntry[] = [
   // F5B-0 — "Equipos" como pestaña TOP-LEVEL (dirección): acceso directo al
   // listado de equipos del club por temporada. Coexiste con la tarjeta 'equipos'
   // del hub Plantilla (misma ruta /equipos; decisión de Jose). Mismos roles.
-  { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: DIRECCION },
+  { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: ESTRUCTURA },
 
   // HUB Plantilla — jugadores + importar + cuerpo técnico + equipos.
   {
@@ -113,12 +118,12 @@ export const NAV: readonly NavEntry[] = [
       // entrenador_principal deja de ver Importar/Plantilla en el nav (NO revoca
       // la página). cuerpo_tecnico se MANTIENE como en main (MANAGER_ROLES); su
       // gating por rol se rehace en E-7, no aquí.
-      { key: 'import_players', href: '/plantilla/importar', icon: Upload, roles: DIRECCION },
+      { key: 'import_players', href: '/plantilla/importar', icon: Upload, roles: ESTRUCTURA },
       { key: 'cuerpo_tecnico', href: '/cuerpo-tecnico', icon: UsersRound, roles: [...MANAGER_ROLES] },
       // Estructura: listado de equipos por temporada + categorías-plantilla.
-      { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: DIRECCION },
+      { key: 'equipos', href: '/equipos', icon: FolderKanban, roles: ESTRUCTURA },
       // F13.10g — centro de mando de campañas de informes (admin/coord).
-      { key: 'informes_dev', href: '/plantilla/informes', icon: ClipboardList, roles: DIRECCION },
+      { key: 'informes_dev', href: '/plantilla/informes', icon: ClipboardList, roles: ESTRUCTURA },
     ],
   },
 
@@ -175,7 +180,7 @@ export const NAV: readonly NavEntry[] = [
 
   // Dirección: comunicación club-wide + administración (top-level).
   { key: 'anuncios', href: '/anuncios', icon: Megaphone, roles: DIRECCION },
-  { key: 'invitations', href: '/invitations', icon: Mail, roles: DIRECCION },
+  { key: 'invitations', href: '/invitations', icon: Mail, roles: ESTRUCTURA },
 
   // F14C-5 — Seguidores (abuelos/familiares) del jugador: invitar/listar/revocar.
   { key: 'seguidores', href: '/mi-ficha/seguidores', icon: UsersRound, roles: ['jugador'] },
