@@ -99,7 +99,9 @@ export async function resolveVisibilityScope(
   clubId: string,
   role: Role
 ): Promise<VisibilityScope> {
-  if (role === 'admin_club') {
+  // E-7a: director club-wide como admin_club. Se separa ARRIBA para que no caiga
+  // en la query de staff de abajo (que le daría restricted con teamIds=[] → vacío).
+  if (role === 'admin_club' || role === 'director') {
     return { kind: 'all' };
   }
   // C-2a: el coordinador cae en 'restricted' (sus equipos vía team_staff, cualquier

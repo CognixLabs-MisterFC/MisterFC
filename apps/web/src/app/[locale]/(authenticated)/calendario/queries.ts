@@ -326,7 +326,9 @@ export async function loadCalendarScopeTeamIds(
   clubId: string,
   role: string
 ): Promise<string[] | null> {
-  if (role === 'admin_club') return null;
+  // E-7a: director club-wide como admin_club (agenda del club sin acotar; antes caía
+  // en user_team_ids_in_club → [] porque no es staff/jugador/padre).
+  if (role === 'admin_club' || role === 'director') return null;
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const { data } = await supabase.rpc('user_team_ids_in_club', {

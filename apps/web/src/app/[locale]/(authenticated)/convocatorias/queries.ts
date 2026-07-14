@@ -193,7 +193,8 @@ export async function resolveConvocatoriasScope(
   clubId: string,
   role: Role
 ): Promise<ConvocatoriasScope> {
-  if (role === 'admin_club') return { kind: 'all' };
+  // E-7a: director club-wide como admin_club (antes caía en el 'none' final → vacío).
+  if (role === 'admin_club' || role === 'director') return { kind: 'all' };
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
