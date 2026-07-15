@@ -291,20 +291,24 @@ export default async function CoachDetailPage({ params }: Props) {
                   </Link>
                   {canManage && (
                     <div className="flex items-center gap-2">
-                      {coach.club_role === 'entrenador_ayudante' && (
-                        <Button
-                          asChild
-                          variant="ghost"
-                          size="icon"
-                          title={t('detail.edit_caps')}
-                        >
-                          <Link
-                            href={`/equipos/${a.team_id}/staff/${coach.membership_id}/capabilities`}
+                      {/* Follow-up: el enlace de capabilities lleva a /equipos/[teamId]
+                          (estructura, cerrada al coordinador por C-2b) → se oculta al
+                          coordinador (coordinatedTeamIds != null). admin/director lo ven. */}
+                      {coach.club_role === 'entrenador_ayudante' &&
+                        coordinatedTeamIds === null && (
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="icon"
+                            title={t('detail.edit_caps')}
                           >
-                            <Settings className="size-4" aria-hidden />
-                          </Link>
-                        </Button>
-                      )}
+                            <Link
+                              href={`/equipos/${a.team_id}/staff/${coach.membership_id}/capabilities`}
+                            >
+                              <Settings className="size-4" aria-hidden />
+                            </Link>
+                          </Button>
+                        )}
                       {/* E-final-2: el coordinador solo mueve DESDE equipos que
                           coordina (coordinatedTeamIds); admin/director, todos. */}
                       {(coordinatedTeamIds === null ||
@@ -323,12 +327,18 @@ export default async function CoachDetailPage({ params }: Props) {
                           }))}
                         />
                       )}
-                      <RemoveAssignmentButton
-                        compact
-                        teamStaffId={a.team_staff_id}
-                        membershipId={coach.membership_id}
-                        teamName={a.team_name}
-                      />
+                      {/* Follow-up: el coordinador solo quita asignaciones de equipos
+                          que coordina (RLS team_staff_delete lo exige); admin/director,
+                          todas. Mismo patrón que el botón mover (#353). */}
+                      {(coordinatedTeamIds === null ||
+                        coordinatedTeamIds.includes(a.team_id)) && (
+                        <RemoveAssignmentButton
+                          compact
+                          teamStaffId={a.team_staff_id}
+                          membershipId={coach.membership_id}
+                          teamName={a.team_name}
+                        />
+                      )}
                     </div>
                   )}
                 </li>
