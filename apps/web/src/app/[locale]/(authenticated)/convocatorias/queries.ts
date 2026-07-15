@@ -762,6 +762,8 @@ export async function loadCallupDetail(
       .select('id, starts_at')
       .eq('team_id', event.team_id)
       .eq('type', 'training')
+      // F14F-1b — la asistencia semanal del contexto de convocatoria ignora cancelados.
+      .is('cancelled_at', null)
       .gte('starts_at', lo.toISOString())
       .lte('starts_at', hi.toISOString());
     const trainings: TrainingDay[] = (trainRows ?? []).map((r) => ({

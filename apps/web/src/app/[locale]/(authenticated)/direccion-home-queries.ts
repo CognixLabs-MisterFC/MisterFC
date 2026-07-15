@@ -179,6 +179,8 @@ export async function loadTrainingsWithoutAttendance(
     .select('id, title, starts_at, team_id, teams(name)')
     .eq('club_id', clubId)
     .eq('type', 'training')
+    // F14F-1b — un entreno cancelado no queda "pendiente de asistencia".
+    .is('cancelled_at', null)
     .not('team_id', 'is', null)
     .gte('starts_at', fromIso)
     .lte('starts_at', nowIso)

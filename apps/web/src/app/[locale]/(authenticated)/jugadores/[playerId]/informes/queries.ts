@@ -312,6 +312,8 @@ export async function loadFichaStats(
     .select('code, events!inner(type, teams!inner(season))')
     .eq('player_id', playerId)
     .eq('events.type', 'training')
+    // F14F-1b — el % de asistencia del informe excluye entrenos cancelados.
+    .is('events.cancelled_at', null)
     .eq('events.teams.season', seasonLabel);
   const att = attendanceBreakdown((attRows ?? []) as unknown as AttendanceRow[]);
 
@@ -347,7 +349,9 @@ export async function loadFichaStats(
           .from('events')
           .select('id', { count: 'exact', head: true })
           .eq('team_id', teamId)
-          .eq('type', 'training'),
+          .eq('type', 'training')
+          // F14F-1b — denominador de entrenos excluye cancelados.
+          .is('cancelled_at', null),
         // Pertenencia histórica del jugador a ESTE equipo (puede tener varias filas).
         supabase
           .from('team_members')

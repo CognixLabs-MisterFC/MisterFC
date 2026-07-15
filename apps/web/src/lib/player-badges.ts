@@ -96,6 +96,8 @@ export async function loadPlayerBadges(
     .select('code, events!inner(type, teams!inner(season))')
     .eq('player_id', playerId)
     .eq('events.type', 'training')
+    // F14F-1b — los badges de asistencia excluyen entrenos cancelados.
+    .is('events.cancelled_at', null)
     .eq('events.teams.season', activeSeason);
   const attendance = attendanceBreakdown(
     (attRows ?? []) as unknown as AttendanceRow[]

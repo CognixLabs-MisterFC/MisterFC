@@ -4366,6 +4366,7 @@ export type Database = {
         | "player_promoted"
         | "goal"
         | "training_cancelled"
+        | "training_reinstated"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -4543,6 +4544,7 @@ export const Constants = {
         "player_promoted",
         "goal",
         "training_cancelled",
+        "training_reinstated",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },
