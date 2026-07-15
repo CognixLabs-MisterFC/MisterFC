@@ -4125,7 +4125,8 @@
       "career": "Carrera",
       "attendance": "Asistencia a entrenamientos",
       "achievements": "Logros",
-      "evaluations": "Valoraciones"
+      "evaluations": "Valoraciones",
+      "consents": "Consentimientos"
     },
     "col": {
       "season": "Temporada",
@@ -4159,6 +4160,18 @@
       "rating": "Nota",
       "team": "Equipo",
       "comment": "Comentario"
+    },
+    "consents": {
+      "account_group": "Cuenta del tutor",
+      "player_group": "De este jugador",
+      "col_document": "Documento",
+      "col_version": "Versión",
+      "col_date": "Fecha",
+      "col_status": "Estado",
+      "version": "v{version}",
+      "granted": "Aceptado",
+      "denied": "Denegado",
+      "none": "Sin consentimientos registrados."
     }
   },
   "platform": {

@@ -4126,7 +4126,8 @@
       "career": "Career",
       "attendance": "Training attendance",
       "achievements": "Achievements",
-      "evaluations": "Ratings"
+      "evaluations": "Ratings",
+      "consents": "Consents"
     },
     "col": {
       "season": "Season",
@@ -4160,6 +4161,18 @@
       "rating": "Rating",
       "team": "Team",
       "comment": "Comment"
+    },
+    "consents": {
+      "account_group": "Tutor account",
+      "player_group": "This player",
+      "col_document": "Document",
+      "col_version": "Version",
+      "col_date": "Date",
+      "col_status": "Status",
+      "version": "v{version}",
+      "granted": "Accepted",
+      "denied": "Denied",
+      "none": "No consents on record."
     }
   },
   "platform": {

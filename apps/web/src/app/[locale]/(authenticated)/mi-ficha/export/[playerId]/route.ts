@@ -12,8 +12,14 @@
  * reutilizan las MISMAS queries de mi-ficha / mi-informe. Lo que la RLS devuelva
  * vacío (private_notes, player_notes, evaluaciones con flag OFF, informes no
  * publicados) simplemente no aparece. NO se consultan: evaluation_private_notes,
- * player_notes, mensajes, notificaciones, consents, ni el detalle de asistencia
- * por sesión (solo el agregado que ya ve).
+ * player_notes, mensajes, notificaciones, ni el detalle de asistencia por sesión
+ * (solo el agregado que ya ve).
+ *
+ * F14-8b — SÍ se exportan los CONSENTIMIENTOS: los de este jugador + los de CUENTA
+ * del tutor, con el MISMO estado (latest-wins) y la MISMA fuente que la pantalla de
+ * consentimientos de su perfil: la RPC `get_tutor_consents` (SECURITY DEFINER,
+ * auth.uid() interno). La versión de cada documento firmado se resuelve por su
+ * legal_document_id (lectura acotada por RLS al club del tutor). No toca la RPC.
  */
 
 import { headers } from 'next/headers';
@@ -39,6 +45,7 @@ import {
 } from '../../../jugadores/[playerId]/informes/queries';
 import {
   AccessExportDocument,
+  type AccessExportConsent,
   type AccessExportEvaluation,
   type AccessExportReport,
   type AccessExportSeason,
@@ -314,6 +321,56 @@ export async function GET(
     validFoot ? tFoot(player.foot as string) : null,
   ].filter(Boolean) as string[];
 
+  // ── F14-8b — Consentimientos (estado actual latest-wins), MISMA fuente que la
+  //    pantalla del perfil del tutor: get_tutor_consents(club). Devuelve las filas
+  //    de CUENTA (player_id NULL: T&C/privacidad) + las de CADA hijo del tutor; se
+  //    filtra a las de ESTE jugador + las de cuenta. La versión firmada se resuelve
+  //    por legal_document_id (RLS acota legal_documents al club del tutor). ────────
+  const { data: consentRows } = await supabase.rpc('get_tutor_consents', {
+    p_club_id: player.club_id,
+  });
+  const rows = consentRows ?? [];
+
+  // Versión de cada documento firmado, por su id (la RPC no la devuelve).
+  const docIds = Array.from(new Set(rows.map((r) => r.legal_document_id)));
+  const versionById = new Map<string, number>();
+  if (docIds.length > 0) {
+    const { data: docs } = await supabase
+      .from('legal_documents')
+      .select('id, version')
+      .in('id', docIds);
+    for (const d of (docs ?? []) as Array<{ id: string; version: number }>)
+      versionById.set(d.id, d.version);
+  }
+
+  const consentDateFmt = new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Europe/Madrid',
+  });
+  // Orden estable de presentación por tipo (cuenta y jugador).
+  const ACCOUNT_ORDER: Record<string, number> = { terms_conditions: 0, privacy_policy: 1 };
+  const PLAYER_ORDER: Record<string, number> = {
+    image_internal: 0,
+    image_social: 1,
+    medical_data_processing: 2,
+  };
+  const toConsent = (r: (typeof rows)[number]): AccessExportConsent => ({
+    title: r.title,
+    granted: r.granted,
+    dateLabel: consentDateFmt.format(new Date(r.accepted_at)),
+    version: versionById.get(r.legal_document_id) ?? null,
+  });
+  const consentsAccount = rows
+    .filter((r) => r.player_id === null)
+    .sort((a, b) => (ACCOUNT_ORDER[a.consent_type] ?? 9) - (ACCOUNT_ORDER[b.consent_type] ?? 9))
+    .map(toConsent);
+  const consentsPlayer = rows
+    .filter((r) => r.player_id === playerId)
+    .sort((a, b) => (PLAYER_ORDER[a.consent_type] ?? 9) - (PLAYER_ORDER[b.consent_type] ?? 9))
+    .map(toConsent);
+
   // F14B-9b — logo del club en la cabecera del PDF (base64; null si no hay/falla).
   const logoDataUrl = await clubLogoDataUrl(supabase, ctx.activeClub.club.logo_path);
 
@@ -352,6 +409,8 @@ export async function GET(
     attendanceSessions,
     reportSeasons,
     evaluations,
+    consentsPlayer,
+    consentsAccount,
   });
 
   return pdfResponse(doc, `${t('file')}-${slugForFile(playerName)}.pdf`);

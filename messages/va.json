@@ -4126,7 +4126,8 @@
       "career": "Carrera",
       "attendance": "Assistència a entrenaments",
       "achievements": "Assoliments",
-      "evaluations": "Valoracions"
+      "evaluations": "Valoracions",
+      "consents": "Consentiments"
     },
     "col": {
       "season": "Temporada",
@@ -4160,6 +4161,18 @@
       "rating": "Nota",
       "team": "Equip",
       "comment": "Comentari"
+    },
+    "consents": {
+      "account_group": "Compte del tutor",
+      "player_group": "D'este jugador",
+      "col_document": "Document",
+      "col_version": "Versió",
+      "col_date": "Data",
+      "col_status": "Estat",
+      "version": "v{version}",
+      "granted": "Acceptat",
+      "denied": "Denegat",
+      "none": "Sense consentiments registrats."
     }
   },
   "platform": {
