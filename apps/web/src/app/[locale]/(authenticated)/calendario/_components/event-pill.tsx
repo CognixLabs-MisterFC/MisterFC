@@ -64,6 +64,7 @@ export function EventPill({
   const [open, setOpen] = useState(false);
 
   const Icon = TYPE_ICONS[event.type];
+  const cancelled = event.cancelled_at != null;
 
   return (
     <>
@@ -75,14 +76,16 @@ export function EventPill({
           TYPE_BG[event.type],
           layout === 'pill' && 'truncate',
           layout === 'block' && 'rounded-md py-1.5',
-          layout === 'card' && 'rounded-md px-3 py-2 text-sm'
+          layout === 'card' && 'rounded-md px-3 py-2 text-sm',
+          // F14F-1 — entrenamiento cancelado: tachado + atenuado (NO se oculta).
+          cancelled && 'line-through opacity-60'
         )}
         style={
           event.team_color
             ? { borderLeftWidth: 3, borderLeftColor: event.team_color }
             : undefined
         }
-        aria-label={`${event.title} — ${t(event.type)}`}
+        aria-label={`${event.title} — ${t(event.type)}${cancelled ? ` (${tc('cancel.badge')})` : ''}`}
       >
         <Icon className="size-3 shrink-0" aria-hidden />
         {/* F12.9 — indicador "sesión planificada": junto al icono de pesas, solo
@@ -105,6 +108,11 @@ export function EventPill({
           </span>
         )}
         <span className="truncate">{event.title}</span>
+        {cancelled && (
+          <span className="shrink-0 rounded bg-destructive/15 px-1 text-[9px] font-semibold uppercase text-destructive no-underline">
+            {tc('cancel.badge')}
+          </span>
+        )}
         {layout === 'card' && event.team_name && (
           <span className="ml-auto shrink-0 text-xs opacity-70">
             {event.team_name}

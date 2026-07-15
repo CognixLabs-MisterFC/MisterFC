@@ -634,6 +634,163 @@ export async function deleteEvent(
   return { success: true, deleted_count: deletedCount };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// F14F-1 — Cancelar / descancelar un entrenamiento.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type CancelErrorCode =
+  | 'forbidden'
+  | 'not_found'
+  | 'not_training'
+  | 'already_cancelled'
+  | 'not_cancelled'
+  | 'cancelled_by_holiday'
+  | 'no_session'
+  | 'db';
+
+export type EventCancelResult =
+  | { success: true }
+  | { success: false; error: CancelErrorCode };
+
+const CANCEL_ERRORS = new Set<string>([
+  'forbidden',
+  'not_found',
+  'not_training',
+  'already_cancelled',
+  'not_cancelled',
+  'cancelled_by_holiday',
+  'no_session',
+]);
+
+/**
+ * F14F-1 — Aviso "entrenamiento cancelado" a jugadores/familias del equipo
+ * (team_members → player_accounts), reusando el bus F5.7 igual que
+ * event_updated. El entrenamiento cancelado NO desaparece; el aviso informa.
+ */
+async function notifyTrainingCancelled(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  ev: { id: string; teamId: string; title: string; startsAt: string },
+): Promise<void> {
+  const { data: tms } = await supabase
+    .from('team_members')
+    .select('player_id')
+    .eq('team_id', ev.teamId)
+    .is('left_at', null);
+  const playerIds = (tms ?? []).map((r) => r.player_id);
+  if (playerIds.length === 0) return;
+
+  const { data: pas } = await supabase
+    .from('player_accounts')
+    .select('profile_id')
+    .in('player_id', playerIds);
+  const recipients = Array.from(
+    new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
+  ) as string[];
+  if (recipients.length === 0) return;
+
+  const whenEs = new Date(ev.startsAt).toLocaleString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: TZ,
+  });
+  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+  await emitNotificationFanOut(
+    recipients.map((u) => ({ user_id: u })),
+    {
+      type: 'training_cancelled',
+      in_app_payload: {
+        event_id: ev.id,
+        team_id: ev.teamId,
+        title: ev.title,
+        starts_at: ev.startsAt,
+        deep_link: '/calendario',
+      },
+      push_payload: {
+        title: `Entrenamiento cancelado: ${ev.title}`,
+        body: whenEs,
+        deep_link: '/es/calendario',
+        tag: `training_cancelled:${ev.id}`,
+      },
+      // dedupe por evento+fecha: cancelar/descancelar/cancelar del mismo día no
+      // re-notifica; una cancelación de otro día (evento distinto) sí.
+      dedupe_base_prefix: `training_cancelled:${ev.id}:${ev.startsAt}`,
+    },
+  );
+}
+
+/**
+ * F14F-1 — Cancela un entrenamiento (motivo opcional) vía RPC cancel_event
+ * (gate user_can_manage_event). Avisa a jugadores/familias del equipo. El
+ * entrenamiento queda tachado en el calendario, NO se borra.
+ */
+export async function cancelTraining(
+  eventId: string,
+  reason: string | null,
+): Promise<EventCancelResult> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const trimmed = reason?.trim() ? reason.trim().slice(0, 500) : null;
+  const { error } = await supabase.rpc('cancel_event', {
+    p_event_id: eventId,
+    p_reason: trimmed ?? undefined,
+  });
+  if (error) {
+    const code = error.message?.trim();
+    if (code && CANCEL_ERRORS.has(code)) {
+      return { success: false, error: code as CancelErrorCode };
+    }
+    return { success: false, error: 'db' };
+  }
+
+  // Aviso (best-effort; no bloquea el resultado). Necesita team_id/title/fecha.
+  const { data: ev } = await supabase
+    .from('events')
+    .select('id, team_id, title, starts_at')
+    .eq('id', eventId)
+    .maybeSingle();
+  if (ev?.team_id) {
+    await notifyTrainingCancelled(supabase, {
+      id: ev.id,
+      teamId: ev.team_id,
+      title: ev.title,
+      startsAt: ev.starts_at,
+    });
+  }
+
+  revalidatePath('/[locale]/(authenticated)/calendario', 'page');
+  return { success: true };
+}
+
+/**
+ * F14F-1 — Reactiva (descancela) un entrenamiento cancelado por PERSONA vía RPC
+ * uncancel_event. Los cancelados por FESTIVO se reactivan en F14F-2. No avisa
+ * (recomendación pendiente de decisión de Jose — ver informe).
+ */
+export async function uncancelTraining(
+  eventId: string,
+): Promise<EventCancelResult> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase.rpc('uncancel_event', {
+    p_event_id: eventId,
+  });
+  if (error) {
+    const code = error.message?.trim();
+    if (code && CANCEL_ERRORS.has(code)) {
+      return { success: false, error: code as CancelErrorCode };
+    }
+    return { success: false, error: 'db' };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/calendario', 'page');
+  return { success: true };
+}
+
 function targetToColumns(target: EventInput['target']): {
   team_id: string | null;
   category_id: string | null;

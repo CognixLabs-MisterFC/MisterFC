@@ -169,6 +169,8 @@
       "training_reminder": "Training reminder",
       "event_updated": "Training updated",
       "event_updated_named": "Training updated: {title}",
+      "training_cancelled": "Training cancelled",
+      "training_cancelled_named": "Training cancelled: {title}",
       "goal": "Goal in a match you follow",
       "generic": "You have an update",
       "development_report_published": "A development report was published",
@@ -1770,6 +1772,28 @@
         "not_found": "The event no longer exists.",
         "invalid_mode": "Invalid scope.",
         "db": "Delete failed. Try again."
+      }
+    },
+    "cancel": {
+      "trigger": "Cancel training",
+      "title": "Cancel training",
+      "description": "The training will be marked as cancelled on the calendar (not deleted) and the team's players and families will be notified.",
+      "reason_label": "Reason (optional)",
+      "reason_placeholder": "E.g. facilities closed, rain…",
+      "back": "Back",
+      "confirm": "Cancel training",
+      "reactivate": "Reactivate training",
+      "badge": "Cancelled",
+      "by_holiday_note": "Cancelled by a holiday.",
+      "errors": {
+        "forbidden": "You do not have permission to cancel this training.",
+        "not_found": "The training no longer exists.",
+        "not_training": "Only trainings can be cancelled.",
+        "already_cancelled": "The training was already cancelled.",
+        "not_cancelled": "The training is not cancelled.",
+        "cancelled_by_holiday": "This training was cancelled by a holiday; it will be reactivated when the holiday is removed.",
+        "no_session": "Invalid session. Please sign in again.",
+        "db": "Something went wrong. Try again."
       }
     }
   },

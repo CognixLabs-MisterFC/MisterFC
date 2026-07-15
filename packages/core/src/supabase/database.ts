@@ -920,6 +920,11 @@ export type Database = {
       events: {
         Row: {
           all_day: boolean
+          cancellation_reason: string | null
+          cancellation_source: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_holiday_id: string | null
           category_id: string | null
           club_id: string
           created_at: string
@@ -942,6 +947,11 @@ export type Database = {
         }
         Insert: {
           all_day?: boolean
+          cancellation_reason?: string | null
+          cancellation_source?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_holiday_id?: string | null
           category_id?: string | null
           club_id: string
           created_at?: string
@@ -964,6 +974,11 @@ export type Database = {
         }
         Update: {
           all_day?: boolean
+          cancellation_reason?: string | null
+          cancellation_source?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_holiday_id?: string | null
           category_id?: string | null
           club_id?: string
           created_at?: string
@@ -985,6 +1000,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "events_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "events_category_id_fkey"
             columns: ["category_id"]
@@ -3719,6 +3741,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      cancel_event: {
+        Args: { p_event_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      uncancel_event: {
+        Args: { p_event_id: string }
+        Returns: undefined
+      }
       admin_update_staff_role: {
         Args: {
           p_club_id: string
@@ -4335,6 +4365,7 @@ export type Database = {
         | "play_updated"
         | "player_promoted"
         | "goal"
+        | "training_cancelled"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -4511,6 +4542,7 @@ export const Constants = {
         "play_updated",
         "player_promoted",
         "goal",
+        "training_cancelled",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },

@@ -91,6 +91,7 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
     case 'attendance_pending_reminder':
     case 'training_reminder':
     case 'event_updated':
+    case 'training_cancelled':
       return CalendarClock;
     case 'player_promoted':
       return ArrowUpCircle;
@@ -155,6 +156,12 @@ function textFor(t: Translate, type: string, payload: Record<string, unknown> | 
     case 'event_updated': {
       const title = str(payload, 'title');
       return title ? t('event_updated_named', { title }) : t('event_updated');
+    }
+    case 'training_cancelled': {
+      const title = str(payload, 'title');
+      return title
+        ? t('training_cancelled_named', { title })
+        : t('training_cancelled');
     }
     case 'player_promoted': {
       const team = str(payload, 'team_name');
@@ -229,6 +236,7 @@ function hrefFor(type: string, payload: Record<string, unknown> | null): string 
       break;
     }
     case 'event_updated':
+    case 'training_cancelled':
     case 'player_promoted': {
       // No hay vista de evento por jugador → al calendario (accesible a todos).
       derived = '/calendario';
