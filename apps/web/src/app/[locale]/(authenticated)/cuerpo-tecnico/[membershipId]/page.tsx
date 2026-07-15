@@ -76,7 +76,20 @@ export default async function CoachDetailPage({ params }: Props) {
   );
   if (!detail) notFound();
 
-  const { coach, history, movableTargets, canManage } = detail;
+  const { coach, history, movableTargets, canManage, coordinatedTeamIds } =
+    detail;
+
+  // E-final-2 — Mover staff acotado para el coordinador:
+  //  · destino: solo equipos que coordina (coordinatedTeamIds); admin/director todos.
+  //  · rol: sin 'coordinador' (la RLS de team_staff lo rechaza); admin/director completo.
+  //  · botón: se muestra por asignación solo si coordina el equipo ORIGEN (más abajo).
+  const moveTargets = coordinatedTeamIds
+    ? movableTargets.filter((tm) => coordinatedTeamIds.includes(tm.id))
+    : movableTargets;
+  const moveAssignableRoles =
+    role === 'coordinador'
+      ? TEAM_STAFF_ROLES.filter((r) => r !== 'coordinador')
+      : TEAM_STAFF_ROLES;
 
   const t = await getTranslations('cuerpo_tecnico');
   const tStaff = await getTranslations('staff.role');
@@ -292,18 +305,24 @@ export default async function CoachDetailPage({ params }: Props) {
                           </Link>
                         </Button>
                       )}
-                      <MoveStaffDialog
-                        compact
-                        membershipId={coach.membership_id}
-                        teamStaffId={a.team_staff_id}
-                        currentTeamId={a.team_id}
-                        currentStaffRole={a.staff_role}
-                        targets={movableTargets.map((t) => ({
-                          id: t.id,
-                          name: t.name,
-                          category_name: t.category_name,
-                        }))}
-                      />
+                      {/* E-final-2: el coordinador solo mueve DESDE equipos que
+                          coordina (coordinatedTeamIds); admin/director, todos. */}
+                      {(coordinatedTeamIds === null ||
+                        coordinatedTeamIds.includes(a.team_id)) && (
+                        <MoveStaffDialog
+                          compact
+                          membershipId={coach.membership_id}
+                          teamStaffId={a.team_staff_id}
+                          currentTeamId={a.team_id}
+                          currentStaffRole={a.staff_role}
+                          assignableRoles={moveAssignableRoles}
+                          targets={moveTargets.map((tm) => ({
+                            id: tm.id,
+                            name: tm.name,
+                            category_name: tm.category_name,
+                          }))}
+                        />
+                      )}
                       <RemoveAssignmentButton
                         compact
                         teamStaffId={a.team_staff_id}

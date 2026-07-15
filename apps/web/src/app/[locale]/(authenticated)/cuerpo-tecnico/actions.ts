@@ -133,32 +133,21 @@ export async function moveStaffToTeam(
     if (existing) return { error: 'principal_exists' };
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-
-  // Cerrar la fila activa actual.
-  const { error: closeErr } = await supabase
-    .from('team_staff')
-    .update({ left_at: today })
-    .eq('id', team_staff_id)
-    .is('left_at', null);
-
-  if (closeErr) {
-    if (closeErr.code === '42501') return { error: 'forbidden' };
-    return { error: 'generic' };
-  }
-
-  // Insertar la nueva fila.
-  const { error: insErr } = await supabase.from('team_staff').insert({
-    team_id: target_team_id,
-    membership_id: membershipId,
-    staff_role,
-    joined_at: today,
+  // E-final-2 — Cierre de origen + alta en destino de forma ATÓMICA vía RPC
+  // (SECURITY INVOKER: la RLS de team_staff decide). Antes eran dos llamadas
+  // sueltas: si el INSERT fallaba, el origen quedaba cerrado y la persona perdía
+  // la asignación. Ahora, si el destino/rol lo rechaza la RLS, la excepción
+  // revierte también el cierre → no se pierde nada.
+  const { error: moveErr } = await supabase.rpc('move_team_staff', {
+    p_source_id: team_staff_id,
+    p_target_team_id: target_team_id,
+    p_staff_role: staff_role,
   });
 
-  if (insErr) {
-    if (insErr.code === '42501') return { error: 'forbidden' };
-    // Si el índice parcial UNIQUE (principal único) salta por concurrencia.
-    if (insErr.code === '23505') return { error: 'principal_exists' };
+  if (moveErr) {
+    if (moveErr.code === '42501') return { error: 'forbidden' };
+    // Índice parcial UNIQUE (principal único) por concurrencia.
+    if (moveErr.code === '23505') return { error: 'principal_exists' };
     return { error: 'generic' };
   }
 
