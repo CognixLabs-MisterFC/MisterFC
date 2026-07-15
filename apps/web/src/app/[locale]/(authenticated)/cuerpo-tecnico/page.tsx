@@ -93,11 +93,21 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
     teamIds.length > 0 ||
     categoryIds.length > 0;
 
-  const targetsForMove = result.visibleTeams.map((t) => ({
+  // E-final-2 — Mover staff acotado para el coordinador (igual que en la ficha):
+  // destino y botón solo para equipos que coordina; rol sin 'coordinador'.
+  const coordinatedTeamIds = result.coordinatedTeamIds;
+  const moveTargetTeams = coordinatedTeamIds
+    ? result.visibleTeams.filter((t) => coordinatedTeamIds.includes(t.id))
+    : result.visibleTeams;
+  const targetsForMove = moveTargetTeams.map((t) => ({
     id: t.id,
     name: t.name,
     category_name: t.category_name,
   }));
+  const moveAssignableRoles =
+    role === 'coordinador'
+      ? TEAM_STAFF_ROLES.filter((r) => r !== 'coordinador')
+      : TEAM_STAFF_ROLES;
 
   // E-7b — CSV de dirección. Filas construidas server-side desde el conjunto YA
   // visible/filtrado (result.coaches respeta scope de rol + filtros activos). Las
@@ -264,16 +274,22 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        {result.canManage && c.assignments[0] && (
-                          <MoveStaffDialog
-                            compact
-                            membershipId={c.membership_id}
-                            teamStaffId={c.assignments[0].team_staff_id}
-                            currentTeamId={c.assignments[0].team_id}
-                            currentStaffRole={c.assignments[0].staff_role}
-                            targets={targetsForMove}
-                          />
-                        )}
+                        {result.canManage &&
+                          c.assignments[0] &&
+                          (coordinatedTeamIds === null ||
+                            coordinatedTeamIds.includes(
+                              c.assignments[0].team_id
+                            )) && (
+                            <MoveStaffDialog
+                              compact
+                              membershipId={c.membership_id}
+                              teamStaffId={c.assignments[0].team_staff_id}
+                              currentTeamId={c.assignments[0].team_id}
+                              currentStaffRole={c.assignments[0].staff_role}
+                              assignableRoles={moveAssignableRoles}
+                              targets={targetsForMove}
+                            />
+                          )}
                         <Button asChild variant="ghost" size="sm">
                           <Link href={`/cuerpo-tecnico/${c.membership_id}`}>
                             {t('row_actions.open')}

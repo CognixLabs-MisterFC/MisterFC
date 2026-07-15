@@ -36,6 +36,12 @@ type Props = {
   currentTeamId: string;
   currentStaffRole: TeamStaffRole;
   targets: TeamOption[];
+  /**
+   * E-final-2: roles ofrecibles como destino del movimiento. Para el coordinador
+   * se pasa TEAM_STAFF_ROLES sin 'coordinador' (la RLS de team_staff se lo rechaza);
+   * admin/director reciben la lista completa (default).
+   */
+  assignableRoles?: readonly TeamStaffRole[];
   /** Variante compacta para la tabla del listado. */
   compact?: boolean;
 };
@@ -46,6 +52,7 @@ export function MoveStaffDialog({
   currentTeamId,
   currentStaffRole,
   targets,
+  assignableRoles = TEAM_STAFF_ROLES,
   compact = false,
 }: Props) {
   const t = useTranslations('cuerpo_tecnico.move');
@@ -111,7 +118,7 @@ export function MoveStaffDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {TEAM_STAFF_ROLES.map((r) => (
+                {assignableRoles.map((r) => (
                   <SelectItem key={r} value={r}>
                     {tRole(r)}
                   </SelectItem>

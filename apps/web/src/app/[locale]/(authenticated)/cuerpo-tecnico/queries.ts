@@ -88,9 +88,44 @@ export type CoachListResult = {
   visibleCategories: CategoryOption[];
   /** El user puede mover staff entre equipos. */
   canManage: boolean;
+  /**
+   * E-final-2: equipos que el user COORDINA (team_staff staff_role='coordinador'),
+   * o `null` si es admin/director (mover club-wide, sin acotar). Se usa para mostrar
+   * el botón "mover" del coordinador SOLO en asignaciones cuyo equipo origen coordina.
+   */
+  coordinatedTeamIds: string[] | null;
 };
 
 const WRITE_ROLES = ADMIN_ROLES;
+
+/**
+ * E-final-2 — Equipos que el user actual COORDINA (team_staff.staff_role =
+ * 'coordinador', activo) en el club. Coincide con el gate RLS user_coordinates_team,
+ * así que acota el "mover" a exactamente lo que la RLS de team_staff le permite.
+ */
+async function loadCoordinatedTeamIds(clubId: string): Promise<string[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const user = await getCurrentUser(adapter);
+  if (!user) return [];
+  type Row = {
+    team_id: string;
+    memberships: { profile_id: string; club_id: string };
+  };
+  const { data } = await supabase
+    .from('team_staff')
+    .select('team_id, memberships!inner(profile_id, club_id)')
+    .eq('staff_role', 'coordinador')
+    .is('left_at', null);
+  return (data ?? [])
+    .map((r) => r as unknown as Row)
+    .filter(
+      (r) =>
+        r.memberships.profile_id === user.id &&
+        r.memberships.club_id === clubId
+    )
+    .map((r) => r.team_id);
+}
 
 /**
  * Determina el scope de visibilidad del user para listar cuerpo técnico.
@@ -230,6 +265,8 @@ export async function loadCoachList(
   filters: CoachFilters
 ): Promise<CoachListResult> {
   const scope = await resolveStaffScope(clubId, role);
+  const coordinatedTeamIds =
+    role === 'coordinador' ? await loadCoordinatedTeamIds(clubId) : null;
   if (scope.kind === 'none') {
     return {
       coaches: [],
@@ -237,6 +274,7 @@ export async function loadCoachList(
       visibleTeams: [],
       visibleCategories: [],
       canManage: false,
+      coordinatedTeamIds,
     };
   }
 
@@ -255,6 +293,7 @@ export async function loadCoachList(
       visibleTeams,
       visibleCategories,
       canManage,
+      coordinatedTeamIds,
     };
   }
 
@@ -424,6 +463,7 @@ export async function loadCoachList(
     visibleTeams,
     visibleCategories,
     canManage,
+    coordinatedTeamIds,
   };
 }
 
@@ -449,6 +489,12 @@ export type CoachDetail = {
   /** Teams del club a los que se puede mover (target del dialog). */
   movableTargets: TeamOption[];
   canManage: boolean;
+  /**
+   * E-final-2: equipos que el user COORDINA (o `null` si admin/director = mover
+   * club-wide). Acota el botón "mover" del coordinador a asignaciones cuyo equipo
+   * origen coordina, y el destino del movimiento a esos mismos equipos.
+   */
+  coordinatedTeamIds: string[] | null;
 };
 
 /**
@@ -576,8 +622,12 @@ export async function loadCoachDetail(
     role === 'coordinador' ? scope : { kind: 'all' }
   );
   const canManage = WRITE_ROLES.includes(role);
+  // E-final-2: equipos que el coordinador COORDINA (RLS user_coordinates_team) para
+  // acotar el botón/destino del movimiento. null = admin/director (mover club-wide).
+  const coordinatedTeamIds =
+    role === 'coordinador' ? await loadCoordinatedTeamIds(clubId) : null;
 
-  return { coach, history, movableTargets, canManage };
+  return { coach, history, movableTargets, canManage, coordinatedTeamIds };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

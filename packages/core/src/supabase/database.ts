@@ -3854,6 +3854,14 @@ export type Database = {
         Args: { p_dest_ids: string[]; p_task_id: string; p_to_block_id: string }
         Returns: undefined
       }
+      move_team_staff: {
+        Args: {
+          p_source_id: string
+          p_staff_role: string
+          p_target_team_id: string
+        }
+        Returns: undefined
+      }
       open_next_season: { Args: { p_club_id: string }; Returns: string }
       place_players_in_upcoming: {
         Args: {
