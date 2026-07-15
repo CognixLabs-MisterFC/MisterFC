@@ -4180,6 +4180,25 @@
     "clubs_title": "Clubs",
     "clubs_count": "{count, plural, =0 {Sin clubs} =1 {1 club} other {# clubs}}",
     "clubs_empty": "Todavía no hay clubs.",
+    "tabs": {
+      "clubs": "Clubs",
+      "data": "Datos"
+    },
+    "data_title": "Datos por club",
+    "data_subtitle": "Personas por rol (cada una en su rol más alto), familiares y seguidores activos, y jugadores y equipos de la temporada activa.",
+    "data_col": {
+      "admin_club": "Admin",
+      "director": "Directores",
+      "coordinador": "Coordinadores",
+      "entrenador_principal": "Entrenador principal",
+      "segundo_entrenador": "Segundo entrenador",
+      "preparador_fisico": "Preparador físico",
+      "delegado": "Delegado",
+      "jugadores": "Jugadores",
+      "familiares": "Familiares",
+      "seguidores": "Seguidores",
+      "equipos": "Equipos"
+    },
     "create_club": "Crear club",
     "create_club_help": "Crea un club vacío. Podrás invitar a su administrador después.",
     "table": {

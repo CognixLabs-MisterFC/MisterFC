@@ -4181,6 +4181,25 @@
     "clubs_title": "Clubs",
     "clubs_count": "{count, plural, =0 {Sense clubs} =1 {1 club} other {# clubs}}",
     "clubs_empty": "Encara no hi ha clubs.",
+    "tabs": {
+      "clubs": "Clubs",
+      "data": "Dades"
+    },
+    "data_title": "Dades per club",
+    "data_subtitle": "Persones per rol (cadascuna en el seu rol més alt), familiars i seguidors actius, i jugadors i equips de la temporada activa.",
+    "data_col": {
+      "admin_club": "Admin",
+      "director": "Directors",
+      "coordinador": "Coordinadors",
+      "entrenador_principal": "Entrenador principal",
+      "segundo_entrenador": "Segon entrenador",
+      "preparador_fisico": "Preparador físic",
+      "delegado": "Delegat",
+      "jugadores": "Jugadors",
+      "familiares": "Familiars",
+      "seguidores": "Seguidors",
+      "equipos": "Equips"
+    },
     "create_club": "Crear club",
     "create_club_help": "Crea un club buit. Podràs convidar el seu administrador després.",
     "table": {
