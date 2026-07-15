@@ -10,7 +10,14 @@
  * "sin datos", nunca rompen el render.
  *
  * NO incluye (regla 5): evaluation_private_notes, player_notes, mensajes,
- * notificaciones, detalle de asistencia por sesión, ni consentimientos.
+ * notificaciones, ni el detalle de asistencia por sesión.
+ *
+ * F14-8b — SÍ incluye los CONSENTIMIENTOS (estado actual latest-wins): los de este
+ * jugador (imagen interna/redes, datos médicos) + los de CUENTA del tutor (T&C,
+ * privacidad, base legal del tratamiento). Misma fuente/estado que la pantalla de
+ * consentimientos del perfil del tutor (get_tutor_consents). Cuando F14-8 se
+ * construyó (antes de F14-13) el tutor aún no veía sus consentimientos, por eso
+ * quedaron fuera; ahora que los VE en la app, la regla maestra los exporta.
  */
 
 import {
@@ -211,6 +218,17 @@ export interface AccessExportSeason {
   reports: AccessExportReport[];
 }
 
+export interface AccessExportConsent {
+  /** Título del documento legal aceptado (= lo que ve el tutor en su perfil). */
+  title: string;
+  /** Estado actual (latest-wins): true = otorgado, false = retirado. */
+  granted: boolean;
+  /** Fecha de aceptación ya formateada en el locale del PDF. */
+  dateLabel: string;
+  /** Versión del documento firmado (null si no se pudo resolver). */
+  version: number | null;
+}
+
 export interface AccessExportProps {
   /** access_export.* */
   t: Translator;
@@ -240,6 +258,10 @@ export interface AccessExportProps {
   attendanceSessions: number;
   reportSeasons: AccessExportSeason[];
   evaluations: AccessExportEvaluation[];
+  /** F14-8b — consentimientos de ESTE jugador (imagen/médica). Estado actual. */
+  consentsPlayer: AccessExportConsent[];
+  /** F14-8b — consentimientos de CUENTA del tutor (T&C, privacidad). Estado actual. */
+  consentsAccount: AccessExportConsent[];
 }
 
 function IdentitySection(props: AccessExportProps): ReactElement {
@@ -495,6 +517,67 @@ function EvaluationsSection(props: AccessExportProps): ReactElement | null {
   );
 }
 
+/** F14-8b — Tabla de consentimientos: documento · versión · fecha · estado. */
+function ConsentTable({ rows, t }: { rows: AccessExportConsent[]; t: Translator }): ReactElement {
+  return (
+    <View style={pdfStyles.table}>
+      <View style={pdfStyles.headRow}>
+        <Text style={[pdfStyles.cellHead, { flex: 3 }]}>{t('consents.col_document')}</Text>
+        <Text style={[pdfStyles.cellHead, pdfStyles.cellNum, { flex: 1 }]}>{t('consents.col_version')}</Text>
+        <Text style={[pdfStyles.cellHead, { flex: 1.6 }]}>{t('consents.col_date')}</Text>
+        <Text style={[pdfStyles.cellHead, { flex: 1.2 }]}>{t('consents.col_status')}</Text>
+      </View>
+      {rows.map((r, i) => (
+        <View key={`${r.title}-${i}`} style={pdfStyles.row} wrap={false}>
+          <Text style={[pdfStyles.cell, { flex: 3 }]}>{r.title}</Text>
+          <Text style={[pdfStyles.cell, pdfStyles.cellNum, { flex: 1 }]}>
+            {r.version != null ? t('consents.version', { version: r.version }) : NA}
+          </Text>
+          <Text style={[pdfStyles.cell, { flex: 1.6 }]}>{r.dateLabel}</Text>
+          <Text
+            style={[pdfStyles.cell, pdfStyles.bold, { flex: 1.2, color: r.granted ? '#047857' : '#B91C1C' }]}
+          >
+            {r.granted ? t('consents.granted') : t('consents.denied')}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * F14-8b — Sección de consentimientos: dos bloques (cuenta del tutor + este
+ * jugador). Estado actual (latest-wins) idéntico al que ve el tutor en su perfil.
+ * Si no hay ninguno (jugador sin tutor/consentimientos) se indica claramente.
+ */
+function ConsentsSection(props: AccessExportProps): ReactElement {
+  const { t, consentsPlayer, consentsAccount } = props;
+  const empty = consentsPlayer.length === 0 && consentsAccount.length === 0;
+  return (
+    <>
+      <Text style={pdfStyles.sectionTitle}>{t('section.consents')}</Text>
+      {empty ? (
+        <Text style={pdfStyles.emptyText}>{t('consents.none')}</Text>
+      ) : (
+        <>
+          {consentsAccount.length > 0 ? (
+            <>
+              <Text style={s.commentLabel}>{t('consents.account_group')}</Text>
+              <ConsentTable rows={consentsAccount} t={t} />
+            </>
+          ) : null}
+          {consentsPlayer.length > 0 ? (
+            <>
+              <Text style={s.commentLabel}>{t('consents.player_group')}</Text>
+              <ConsentTable rows={consentsPlayer} t={t} />
+            </>
+          ) : null}
+        </>
+      )}
+    </>
+  );
+}
+
 export function AccessExportDocument(props: AccessExportProps): ReactElement<DocumentProps> {
   const { t } = props;
   const hasReports = props.reportSeasons.some((rs) => rs.reports.length > 0);
@@ -512,6 +595,7 @@ export function AccessExportDocument(props: AccessExportProps): ReactElement<Doc
         <MedicalSection {...props} />
         <SportingSection {...props} />
         <EvaluationsSection {...props} />
+        <ConsentsSection {...props} />
       </Page>
 
       {/* Página(s) 2+ — informes formales publicados (regla 4). */}
