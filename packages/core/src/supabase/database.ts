@@ -4270,6 +4270,24 @@ export type Database = {
           players: number
         }[]
       }
+      platform_club_breakdown: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          club_id: string
+          club_name: string
+          admin_club: number
+          director: number
+          coordinador: number
+          entrenador_principal: number
+          segundo_entrenador: number
+          preparador_fisico: number
+          delegado: number
+          jugadores: number
+          familiares: number
+          seguidores: number
+          equipos: number
+        }[]
+      }
     }
     Enums: {
       attendance_code:

@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ShieldCheck, ArrowLeft } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { requireSuperadmin } from '@/lib/platform/guard';
+import { PlatformTabs } from './platform-tabs';
 
 type Props = {
   children: ReactNode;
@@ -42,6 +43,7 @@ export default async function PlatformLayout({ children, params }: Props) {
           <span>{t('back_to_app')}</span>
         </Link>
       </header>
+      <PlatformTabs labels={{ clubs: t('tabs.clubs'), data: t('tabs.data') }} />
       <main className="flex-1 px-4 py-6 sm:px-6 lg:px-10">{children}</main>
     </div>
   );

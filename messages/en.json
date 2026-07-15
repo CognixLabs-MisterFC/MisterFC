@@ -4181,6 +4181,25 @@
     "clubs_title": "Clubs",
     "clubs_count": "{count, plural, =0 {No clubs} =1 {1 club} other {# clubs}}",
     "clubs_empty": "No clubs yet.",
+    "tabs": {
+      "clubs": "Clubs",
+      "data": "Data"
+    },
+    "data_title": "Data by club",
+    "data_subtitle": "People by role (each in their highest role), active family members and followers, and players and teams of the active season.",
+    "data_col": {
+      "admin_club": "Admin",
+      "director": "Directors",
+      "coordinador": "Coordinators",
+      "entrenador_principal": "Head coach",
+      "segundo_entrenador": "Assistant coach",
+      "preparador_fisico": "Fitness coach",
+      "delegado": "Team manager",
+      "jugadores": "Players",
+      "familiares": "Family",
+      "seguidores": "Followers",
+      "equipos": "Teams"
+    },
     "create_club": "Create club",
     "create_club_help": "Create an empty club. You can invite its administrator afterwards.",
     "table": {
