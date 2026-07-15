@@ -109,6 +109,8 @@ export default async function Home({ params, searchParams }: Props) {
     ? await supabase
         .from('events')
         .select('id, title, type, starts_at, team_id, teams(name)')
+        // F14F-1b — un entreno cancelado no cuenta como próximo evento en Inicio.
+        .is('cancelled_at', null)
         .gte('starts_at', nowIso)
         .lte('starts_at', upcomingHorizon)
         .order('starts_at', { ascending: true })

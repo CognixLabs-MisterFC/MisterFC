@@ -193,6 +193,8 @@ export async function GET(
       .select('code, events!inner(type, teams!inner(season))')
       .eq('player_id', playerId)
       .eq('events.type', 'training')
+      // F14F-1b — el export excluye entrenos cancelados del % de asistencia.
+      .is('events.cancelled_at', null)
       .eq('events.teams.season', activeSeason);
     const br = attendanceBreakdown((attRows ?? []) as unknown as AttendanceRow[]);
     attendancePct = br.total > 0 ? br.presentPct : null;

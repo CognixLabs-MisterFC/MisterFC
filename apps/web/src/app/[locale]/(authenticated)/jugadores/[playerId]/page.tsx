@@ -240,6 +240,8 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
       .select('code, events!inner(type, teams!inner(season))')
       .eq('player_id', player.id)
       .eq('events.type', 'training')
+      // F14F-1b — el % de asistencia excluye entrenos cancelados.
+      .is('events.cancelled_at', null)
       .eq('events.teams.season', activeSeason);
     attendance = attendanceBreakdown(
       (attRows ?? []) as unknown as AttendanceRow[]

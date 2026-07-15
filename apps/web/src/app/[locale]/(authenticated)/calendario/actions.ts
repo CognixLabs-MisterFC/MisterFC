@@ -722,6 +722,65 @@ async function notifyTrainingCancelled(
 }
 
 /**
+ * F14F-1b — Aviso "entrenamiento reactivado" a jugadores/familias del equipo,
+ * mismo mecanismo y destinatarios que notifyTrainingCancelled. Se emite al
+ * DESCANCELAR: el entrenamiento vuelve con su hora y su plan (nunca se borró ni
+ * se reprograma). dedupe por evento+fecha, con prefijo distinto del de
+ * cancelación para que ambos avisos convivan sobre el mismo evento.
+ */
+async function notifyTrainingReinstated(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  ev: { id: string; teamId: string; title: string; startsAt: string },
+): Promise<void> {
+  const { data: tms } = await supabase
+    .from('team_members')
+    .select('player_id')
+    .eq('team_id', ev.teamId)
+    .is('left_at', null);
+  const playerIds = (tms ?? []).map((r) => r.player_id);
+  if (playerIds.length === 0) return;
+
+  const { data: pas } = await supabase
+    .from('player_accounts')
+    .select('profile_id')
+    .in('player_id', playerIds);
+  const recipients = Array.from(
+    new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
+  ) as string[];
+  if (recipients.length === 0) return;
+
+  const whenEs = new Date(ev.startsAt).toLocaleString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: TZ,
+  });
+  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+  await emitNotificationFanOut(
+    recipients.map((u) => ({ user_id: u })),
+    {
+      type: 'training_reinstated',
+      in_app_payload: {
+        event_id: ev.id,
+        team_id: ev.teamId,
+        title: ev.title,
+        starts_at: ev.startsAt,
+        deep_link: '/calendario',
+      },
+      push_payload: {
+        title: `Entrenamiento reactivado: ${ev.title}`,
+        body: whenEs,
+        deep_link: '/es/calendario',
+        tag: `training_reinstated:${ev.id}`,
+      },
+      dedupe_base_prefix: `training_reinstated:${ev.id}:${ev.startsAt}`,
+    },
+  );
+}
+
+/**
  * F14F-1 — Cancela un entrenamiento (motivo opcional) vía RPC cancel_event
  * (gate user_can_manage_event). Avisa a jugadores/familias del equipo. El
  * entrenamiento queda tachado en el calendario, NO se borra.
@@ -767,8 +826,9 @@ export async function cancelTraining(
 
 /**
  * F14F-1 — Reactiva (descancela) un entrenamiento cancelado por PERSONA vía RPC
- * uncancel_event. Los cancelados por FESTIVO se reactivan en F14F-2. No avisa
- * (recomendación pendiente de decisión de Jose — ver informe).
+ * uncancel_event. Los cancelados por FESTIVO se reactivan en F14F-2. F14F-1b:
+ * avisa a jugadores/familias del equipo (el entrenamiento vuelve; caso real:
+ * se levanta la alerta de lluvia). El entrenamiento no se recrea ni reprograma.
  */
 export async function uncancelTraining(
   eventId: string,
@@ -785,6 +845,21 @@ export async function uncancelTraining(
       return { success: false, error: code as CancelErrorCode };
     }
     return { success: false, error: 'db' };
+  }
+
+  // Aviso (best-effort; no bloquea el resultado). El evento ya está activo.
+  const { data: ev } = await supabase
+    .from('events')
+    .select('id, team_id, title, starts_at')
+    .eq('id', eventId)
+    .maybeSingle();
+  if (ev?.team_id) {
+    await notifyTrainingReinstated(supabase, {
+      id: ev.id,
+      teamId: ev.team_id,
+      title: ev.title,
+      startsAt: ev.starts_at,
+    });
   }
 
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');

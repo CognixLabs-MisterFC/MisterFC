@@ -191,6 +191,8 @@ export async function loadCoachTeams(
       .from('events')
       .select('id, team_id, type, title, opponent_name, starts_at')
       .in('team_id', teamIds)
+      // F14F-1b — un entreno cancelado no cuenta como próximo evento del equipo.
+      .is('cancelled_at', null)
       .gte('starts_at', nowIso)
       .lte('starts_at', horizonIso)
       .order('starts_at', { ascending: true }),
@@ -303,6 +305,8 @@ export async function loadTeamDetail(
       .from('events')
       .select('id, type, title, opponent_name, starts_at, tournament_id')
       .eq('team_id', teamId)
+      // F14F-1b — un entreno cancelado no cuenta como próximo evento.
+      .is('cancelled_at', null)
       .gte('starts_at', nowIso)
       .lte('starts_at', horizonIso)
       .order('starts_at', { ascending: true }),
@@ -311,6 +315,8 @@ export async function loadTeamDetail(
       .select('id, type, title, opponent_name, starts_at, tournament_id')
       .eq('team_id', teamId)
       .eq('type', 'training')
+      // F14F-1b — el "último entreno sin asistencia" ignora los cancelados.
+      .is('cancelled_at', null)
       .gte('starts_at', lookbackIso)
       .lte('starts_at', nowIso),
   ]);

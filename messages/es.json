@@ -171,6 +171,8 @@
       "event_updated_named": "Entrenamiento actualizado: {title}",
       "training_cancelled": "Entrenamiento cancelado",
       "training_cancelled_named": "Entrenamiento cancelado: {title}",
+      "training_reinstated": "Entrenamiento reactivado",
+      "training_reinstated_named": "Entrenamiento reactivado: {title}",
       "goal": "Gol en un partido que sigues",
       "generic": "Tienes una novedad",
       "development_report_published": "Se ha publicado un informe de desarrollo",

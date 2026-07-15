@@ -175,6 +175,8 @@ export async function loadRecentTrainings(
     )
     .eq('club_id', clubId)
     .eq('type', 'training')
+    // F14F-1b — un entrenamiento cancelado no ocurrió: fuera del listado de asistencia.
+    .is('cancelled_at', null)
     .gte('starts_at', sinceIso)
     .lte('starts_at', nowIso)
     .order('starts_at', { ascending: false })
@@ -296,7 +298,7 @@ export async function loadEventAttendance(
   const { data: ev } = await supabase
     .from('events')
     .select(
-      `id, club_id, team_id, type, title, starts_at, ends_at,
+      `id, club_id, team_id, type, title, starts_at, ends_at, cancelled_at,
        teams!inner(name, color, season, categories!inner(name))`
     )
     .eq('id', eventId)
@@ -305,6 +307,8 @@ export async function loadEventAttendance(
   if (!ev) return null;
   if ((ev.club_id as string) !== clubId) return null;
   if (ev.type !== 'training') return null;
+  // F14F-1b — un entrenamiento cancelado no pide pasar lista (ni por URL directa).
+  if (ev.cancelled_at != null) return null;
   if (ev.team_id == null) return null;
 
   type EventShape = {
@@ -560,7 +564,9 @@ export async function loadAsistenciaStats(
        players!inner(id, first_name, last_name)`
     )
     .gte('events.starts_at', startIso)
-    .lte('events.starts_at', endIso);
+    .lte('events.starts_at', endIso)
+    // F14F-1b — las estadísticas de asistencia excluyen entrenos cancelados.
+    .is('events.cancelled_at', null);
 
   if (filters.teamId) {
     q = q.eq('events.team_id', filters.teamId);

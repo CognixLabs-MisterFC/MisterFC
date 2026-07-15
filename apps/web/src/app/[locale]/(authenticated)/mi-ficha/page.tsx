@@ -244,6 +244,8 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
       .select('code, events!inner(type, teams!inner(season))')
       .eq('player_id', playerId)
       .eq('events.type', 'training')
+      // F14F-1b — mi ficha: el % de asistencia excluye entrenos cancelados.
+      .is('events.cancelled_at', null)
       .eq('events.teams.season', activeSeason);
     attendance = attendanceBreakdown(
       (attRows ?? []) as unknown as AttendanceRow[]

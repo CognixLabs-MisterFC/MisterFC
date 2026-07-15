@@ -308,6 +308,8 @@ async function handle(req: Request): Promise<NextResponse> {
     .from('events')
     .select('id, team_id, title, starts_at')
     .eq('type', 'training')
+    // F14F-1b — no recordar "asistencia pendiente" de un entreno cancelado.
+    .is('cancelled_at', null)
     .gte('starts_at', yesterdayFromIso)
     .lte('starts_at', yesterdayToIso);
 

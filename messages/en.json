@@ -171,6 +171,8 @@
       "event_updated_named": "Training updated: {title}",
       "training_cancelled": "Training cancelled",
       "training_cancelled_named": "Training cancelled: {title}",
+      "training_reinstated": "Training reinstated",
+      "training_reinstated_named": "Training reinstated: {title}",
       "goal": "Goal in a match you follow",
       "generic": "You have an update",
       "development_report_published": "A development report was published",

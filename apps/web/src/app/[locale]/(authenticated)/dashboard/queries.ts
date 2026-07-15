@@ -259,6 +259,8 @@ export async function loadClubAttendance(teamIds: readonly string[]): Promise<Cl
     .from('training_attendance')
     .select('player_id, code, event_id, events!inner(team_id, type, starts_at)')
     .eq('events.type', 'training')
+    // F14F-1b — las estadísticas del club excluyen entrenos cancelados.
+    .is('events.cancelled_at', null)
     .in('events.team_id', teamIds);
 
   const joinRows = ((data ?? []) as unknown as AttendanceJoinRow[]).filter(
@@ -508,6 +510,8 @@ export async function loadClubAlerts(teamIds: readonly string[]): Promise<ClubAl
       .from('training_attendance')
       .select('player_id, code, event_id, events!inner(team_id, type, starts_at)')
       .eq('events.type', 'training')
+      // F14F-1b — las estadísticas/alertas del club excluyen entrenos cancelados.
+      .is('events.cancelled_at', null)
       .in('events.team_id', teamIds),
     supabase.from('match_player_stats').select('player_id').in('team_id', teamIds),
   ]);

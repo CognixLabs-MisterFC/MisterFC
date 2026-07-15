@@ -189,6 +189,8 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
       'id, title, type, starts_at, ends_at, location_name, opponent_name',
     )
     .eq('team_id', activeTeam.id)
+    // F14F-1b — un entreno cancelado no cuenta como próximo evento del equipo.
+    .is('cancelled_at', null)
     .gte('starts_at', nowIso)
     .lte('starts_at', horizonIso)
     .order('starts_at', { ascending: true });
