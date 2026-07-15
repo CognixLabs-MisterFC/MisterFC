@@ -58,6 +58,7 @@ import type {
   TeamOption,
 } from '../queries';
 import { EventDeleteDialog } from './event-delete-dialog';
+import { EventCancelControls } from './event-cancel-dialog';
 
 type Mode = 'new' | 'edit';
 
@@ -801,7 +802,14 @@ export function EventDialog({
 
         <DialogFooter className="gap-2 sm:gap-2">
           {isEdit && canManage && event && (
-            <div className="mr-auto">
+            <div className="mr-auto flex flex-wrap items-center gap-2">
+              {/* F14F-1 — cancelar/reactivar solo entrenamientos. */}
+              {event.type === 'training' && (
+                <EventCancelControls
+                  event={event}
+                  onDone={() => setOpen(false)}
+                />
+              )}
               <EventDeleteDialog
                 eventId={event.id}
                 isRecurring={isRecurring}

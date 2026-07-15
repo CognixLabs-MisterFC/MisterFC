@@ -41,6 +41,14 @@ export type CalendarEvent = {
    *  VER (RLS de 12.1: staff ve cualquiera del club; jugador/familia solo si está
    *  publicada). Solo aplica a type='training'; en el resto es false. */
   has_session: boolean;
+  /** F14F-1 — sello de cancelación. null = activo; fecha = cancelado (se pinta
+   *  tachado, no se oculta). */
+  cancelled_at: string | null;
+  /** F14F-1 — origen de la cancelación: 'person' (usuario) | 'holiday' (festivo,
+   *  F14F-2). null si activo. Solo se descancela manualmente lo de 'person'. */
+  cancellation_source: 'person' | 'holiday' | null;
+  /** F14F-1 — motivo libre y opcional. */
+  cancellation_reason: string | null;
 };
 
 export type TeamOption = {
@@ -147,6 +155,7 @@ export async function loadCalendarData(
       `id, club_id, team_id, category_id, type, title, notes, starts_at, ends_at,
        all_day, location_name, location_address, opponent_name, parent_event_id,
        recurrence_rule, created_by,
+       cancelled_at, cancellation_source, cancellation_reason,
        teams(name, color, categories(name)),
        categories(name)`
     )
@@ -213,6 +222,10 @@ export async function loadCalendarData(
       team_color: team?.color ?? null,
       category_name: cat?.name ?? team?.categories?.name ?? null,
       has_session: false,
+      cancelled_at: (e.cancelled_at as string | null) ?? null,
+      cancellation_source:
+        (e.cancellation_source as CalendarEvent['cancellation_source']) ?? null,
+      cancellation_reason: (e.cancellation_reason as string | null) ?? null,
     };
   });
 
@@ -389,6 +402,7 @@ export async function loadEvent(eventId: string): Promise<CalendarEvent | null> 
       `id, club_id, team_id, category_id, type, title, notes, starts_at, ends_at,
        all_day, location_name, location_address, opponent_name, parent_event_id,
        recurrence_rule, created_by,
+       cancelled_at, cancellation_source, cancellation_reason,
        teams(name, color, categories(name)),
        categories(name)`
     )
@@ -436,6 +450,10 @@ export async function loadEvent(eventId: string): Promise<CalendarEvent | null> 
     team_color: team?.color ?? null,
     category_name: cat?.name ?? team?.categories?.name ?? null,
     has_session: hasSession,
+    cancelled_at: (data.cancelled_at as string | null) ?? null,
+    cancellation_source:
+      (data.cancellation_source as CalendarEvent['cancellation_source']) ?? null,
+    cancellation_reason: (data.cancellation_reason as string | null) ?? null,
   };
 }
 

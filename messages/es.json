@@ -169,6 +169,8 @@
       "training_reminder": "Recordatorio de entrenamiento",
       "event_updated": "Entrenamiento actualizado",
       "event_updated_named": "Entrenamiento actualizado: {title}",
+      "training_cancelled": "Entrenamiento cancelado",
+      "training_cancelled_named": "Entrenamiento cancelado: {title}",
       "goal": "Gol en un partido que sigues",
       "generic": "Tienes una novedad",
       "development_report_published": "Se ha publicado un informe de desarrollo",
@@ -1769,6 +1771,28 @@
         "not_found": "El evento ya no existe.",
         "invalid_mode": "Alcance no válido.",
         "db": "Error al borrar. Inténtalo de nuevo."
+      }
+    },
+    "cancel": {
+      "trigger": "Cancelar entrenamiento",
+      "title": "Cancelar entrenamiento",
+      "description": "El entrenamiento quedará marcado como cancelado en el calendario (no se borra) y se avisará a los jugadores y familias del equipo.",
+      "reason_label": "Motivo (opcional)",
+      "reason_placeholder": "Ej. instalaciones cerradas, lluvia…",
+      "back": "Volver",
+      "confirm": "Cancelar entrenamiento",
+      "reactivate": "Reactivar entrenamiento",
+      "badge": "Cancelado",
+      "by_holiday_note": "Cancelado por un día festivo.",
+      "errors": {
+        "forbidden": "No tienes permiso para cancelar este entrenamiento.",
+        "not_found": "El entrenamiento ya no existe.",
+        "not_training": "Solo se pueden cancelar entrenamientos.",
+        "already_cancelled": "El entrenamiento ya estaba cancelado.",
+        "not_cancelled": "El entrenamiento no está cancelado.",
+        "cancelled_by_holiday": "Este entrenamiento lo canceló un día festivo; se reactivará al desmarcarlo.",
+        "no_session": "Sesión no válida. Vuelve a iniciar sesión.",
+        "db": "Error al procesar. Inténtalo de nuevo."
       }
     }
   },

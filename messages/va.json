@@ -169,6 +169,8 @@
       "training_reminder": "Recordatori d'entrenament",
       "event_updated": "Entrenament actualitzat",
       "event_updated_named": "Entrenament actualitzat: {title}",
+      "training_cancelled": "Entrenament cancel·lat",
+      "training_cancelled_named": "Entrenament cancel·lat: {title}",
       "goal": "Gol en un partit que segueixes",
       "generic": "Tens una novetat",
       "development_report_published": "S'ha publicat un informe de desenvolupament",
@@ -1770,6 +1772,28 @@
         "not_found": "L'esdeveniment ja no existeix.",
         "invalid_mode": "Abast no vàlid.",
         "db": "Error en esborrar. Torna-ho a intentar."
+      }
+    },
+    "cancel": {
+      "trigger": "Cancel·lar entrenament",
+      "title": "Cancel·lar entrenament",
+      "description": "L'entrenament quedarà marcat com a cancel·lat al calendari (no s'esborra) i s'avisarà els jugadors i famílies de l'equip.",
+      "reason_label": "Motiu (opcional)",
+      "reason_placeholder": "Ex. instal·lacions tancades, pluja…",
+      "back": "Tornar",
+      "confirm": "Cancel·lar entrenament",
+      "reactivate": "Reactivar entrenament",
+      "badge": "Cancel·lat",
+      "by_holiday_note": "Cancel·lat per un dia festiu.",
+      "errors": {
+        "forbidden": "No tens permís per cancel·lar este entrenament.",
+        "not_found": "L'entrenament ja no existeix.",
+        "not_training": "Només es poden cancel·lar entrenaments.",
+        "already_cancelled": "L'entrenament ja estava cancel·lat.",
+        "not_cancelled": "L'entrenament no està cancel·lat.",
+        "cancelled_by_holiday": "Este entrenament el va cancel·lar un dia festiu; es reactivarà en desmarcar-lo.",
+        "no_session": "Sessió no vàlida. Torna a iniciar sessió.",
+        "db": "Error en processar. Torna-ho a intentar."
       }
     }
   },
