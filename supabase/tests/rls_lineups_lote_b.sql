@@ -8,9 +8,11 @@
 --   V1. visibility='team' + is_official → jugador del team VE lineups + positions.
 --   V2. notas tácticas NUNCA visibles al jugador (tabla solo-staff).
 --   V3. cambios programados NUNCA visibles al jugador (solo-staff).
---   V4. jugador de OTRO player (no del team) NO ve la alineación.
---   V5. visibility='staff' → el jugador del team deja de ver la alineación.
---   V6. is_official=false + visibility='team' → el jugador NO ve (debe ser oficial).
+--   V4. jugador de OTRO equipo del MISMO club SÍ ve la alineación oficial+publicada
+--       (is_official + visibility='team') → directo club-wide.
+--   V5. visibility='staff' → el jugador del team NO ve; V5b: el staff SÍ.
+--   V6. is_official=false (borrador) → el jugador NO ve; V6b: el staff SÍ.
+--       (V5/V6 los arregla la mig 20261022: la rama club-wide exige oficial+team.)
 --   S1. staff ve notas + cambios; jugador NO puede INSERT planned_substitutions (42501).
 \ir helpers/auth_users.sql
 
@@ -96,18 +98,24 @@ begin
 end $$;
 reset role;
 
--- ── V4: jugadorC (fuera del team) NO ve la alineación ────────────────────────
+-- ── V4: jugadorC (otro equipo, MISMO club) SÍ ve la alineación OFICIAL+PUBLICADA ─
+-- La alineación es is_official=true + visibility='team' → visible a cualquier
+-- miembro del club (directo). Rama club-wide de lineups_select
+-- (user_belongs_to_event_club), F7B2 mig 20260830. Antes esperaba 0 (expectativa
+-- vieja, incorrecta); Jose confirmó que la oficial y publicada SÍ es club-wide.
 set local role authenticated;
 set local "request.jwt.claim.sub" to '77ff0000-aaaa-0003-0000-000000000000';
 do $$
 declare n int;
 begin
   select count(*) into n from public.lineups where id = '77ff0000-7777-0001-0000-000000000000';
-  if n <> 0 then raise exception 'FAIL [V4]: jugador fuera del team NO debería ver la alineación (n=%)', n; end if;
+  if n <> 1 then raise exception 'FAIL [V4]: jugador de otro equipo del club debería ver la alineación oficial publicada (n=%)', n; end if;
 end $$;
 reset role;
 
--- ── V5: visibility='staff' → jugadorA deja de ver ───────────────────────────
+-- ── V5: visibility='staff' (SOLO STAFF) → jugadorA (del equipo) NO ve ─────────
+-- FIX (mig 20261022): la rama club-wide exige is_official AND visibility='team'.
+-- Una alineación marcada visibility='staff', aunque sea oficial, es solo del staff.
 update public.lineups set visibility = 'staff' where id = '77ff0000-7777-0001-0000-000000000000';
 set local role authenticated;
 set local "request.jwt.claim.sub" to '77ff0000-aaaa-0002-0000-000000000000';
@@ -119,7 +127,20 @@ begin
 end $$;
 reset role;
 
--- ── V6: visibility='team' pero is_official=false → jugadorA NO ve ────────────
+-- ── V5b: el STAFF del equipo SÍ ve la alineación solo-staff (rama user_can_manage) ─
+set local role authenticated;
+set local "request.jwt.claim.sub" to '77ff0000-aaaa-0001-0000-000000000000';
+do $$
+declare n int;
+begin
+  select count(*) into n from public.lineups where id = '77ff0000-7777-0001-0000-000000000000';
+  if n <> 1 then raise exception 'FAIL [V5b]: el staff del equipo SÍ debe ver la alineación solo-staff (n=%)', n; end if;
+end $$;
+reset role;
+
+-- ── V6: visibility='team' pero is_official=false (BORRADOR) → jugadorA NO ve ──
+-- FIX (mig 20261022): la rama club-wide exige is_official. El borrador (once en
+-- pruebas) NO se expone a jugadores/familias ni al resto del club.
 update public.lineups set visibility = 'team', is_official = false where id = '77ff0000-7777-0001-0000-000000000000';
 set local role authenticated;
 set local "request.jwt.claim.sub" to '77ff0000-aaaa-0002-0000-000000000000';
@@ -127,7 +148,18 @@ do $$
 declare n int;
 begin
   select count(*) into n from public.lineups where id = '77ff0000-7777-0001-0000-000000000000';
-  if n <> 0 then raise exception 'FAIL [V6]: alineación no oficial NO debería verse aunque sea team (n=%)', n; end if;
+  if n <> 0 then raise exception 'FAIL [V6]: alineación no oficial (borrador) NO debería verse aunque sea team (n=%)', n; end if;
+end $$;
+reset role;
+
+-- ── V6b: el STAFF del equipo SÍ ve el BORRADOR (rama user_can_manage) ─────────
+set local role authenticated;
+set local "request.jwt.claim.sub" to '77ff0000-aaaa-0001-0000-000000000000';
+do $$
+declare n int;
+begin
+  select count(*) into n from public.lineups where id = '77ff0000-7777-0001-0000-000000000000';
+  if n <> 1 then raise exception 'FAIL [V6b]: el staff del equipo SÍ debe ver el borrador (n=%)', n; end if;
 end $$;
 reset role;
 
