@@ -94,10 +94,15 @@ insert into public.teams (id, category_id, name, format, color, season) values
   ('88f80000-0ee1-0002-0000-000000000000', '88f80000-0dd0-0001-0000-000000000000', 'Team 2', 'F7', '#F59E0B', '2025-26');
 
 -- principal + ayudante → team1; staff-team2 → team2.
+-- F15-A2 (arreglo de SETUP, no de expectativa): el coordinador es staff de SU
+-- equipo (serie C, C-0 mig 20261008). El evento de R3 (0ee0-0002) es de team1, así
+-- que se le da fila team_staff coordinador en team1; "coord inserta evaluación en
+-- su equipo → OK" vuelve a ser correcta.
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('88f80000-0ee1-0001-0000-000000000000', '88f80000-5550-0002-0000-000000000000', 'entrenador_principal'),
   ('88f80000-0ee1-0001-0000-000000000000', '88f80000-5550-0008-0000-000000000000', 'entrenador_ayudante'),
-  ('88f80000-0ee1-0002-0000-000000000000', '88f80000-5550-0006-0000-000000000000', 'entrenador_principal');
+  ('88f80000-0ee1-0002-0000-000000000000', '88f80000-5550-0006-0000-000000000000', 'entrenador_principal'),
+  ('88f80000-0ee1-0001-0000-000000000000', '88f80000-5550-0003-0000-000000000000', 'coordinador');
 
 -- players: p1, p2 en team1; pX solo en team2 (ajeno al roster de team1).
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values

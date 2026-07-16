@@ -69,18 +69,24 @@ begin
   end if;
 end $$;
 
--- C3: UNIQUE active (mismo team + membership ya activo) → rechazar segundo INSERT
+-- C3: UNIQUE active → rechazar segundo INSERT con la MISMA (team, membership, staff_role).
+-- F15-A2: C-0 (mig 20261008) cambió el unique parcial de (team_id, membership_id) a
+-- (team_id, membership_id, staff_role) WHERE left_at is null → una persona SÍ puede
+-- tener varios roles activos en el mismo equipo. Por eso el duplicado que debe
+-- rechazarse hoy es el de los TRES campos: repetimos el 'entrenador_ayudante' que C1
+-- ya dejó activo para el membership 4444 (antes se probaba con 'delegado', que bajo el
+-- unique nuevo YA no colisiona y por eso pasaba de largo).
 do $$
 declare ok boolean := false;
 begin
   begin
     insert into public.team_staff (team_id, membership_id, staff_role)
-    values ('33abcdef-0000-0000-0000-000000000001', '55abcdef-aaaa-4444-4444-444444444444', 'delegado');
+    values ('33abcdef-0000-0000-0000-000000000001', '55abcdef-aaaa-4444-4444-444444444444', 'entrenador_ayudante');
   exception when unique_violation then
     ok := true;
   end;
   if not ok then
-    raise exception 'FAIL [C3]: segundo (team, membership) activo no debería pasar';
+    raise exception 'FAIL [C3]: segundo (team, membership, staff_role) activo no debería pasar';
   end if;
 end $$;
 

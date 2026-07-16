@@ -57,10 +57,17 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('d1b50000-0000-4000-8000-0000000000ba', 'd1b00000-0000-4000-8000-00000000000a', 'd1c00000-0000-4000-8000-000000000002', 'admin_club');
 
 -- team_staff: principal c + ayudante d en Team A; principal 7 en Team A2.
+-- F15-A2 (arreglo de SETUP, no de expectativa): development_reports_select ya no
+-- da al coordinador visibilidad club-wide (C-1b mig 20261010 quitó coord de la rama
+-- de club; hoy ve por `user_is_team_staff(team_id)`). Para que S1 siga siendo cierto
+-- ("ve los informes de sus equipos") el coordinador debe ser staff de los DOS equipos
+-- del club (A y A2), que es donde viven los 3 informes. No afecta a S2-S5 (otros users).
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('d1700000-0000-4000-8000-000000000001', 'd1550000-0000-4000-8000-00000000000c', 'entrenador_principal'),
   ('d1700000-0000-4000-8000-000000000001', 'd1550000-0000-4000-8000-00000000000d', 'entrenador_ayudante'),
-  ('d1700000-0000-4000-8000-000000000002', 'd1550000-0000-4000-8000-000000000007', 'entrenador_principal');
+  ('d1700000-0000-4000-8000-000000000002', 'd1550000-0000-4000-8000-000000000007', 'entrenador_principal'),
+  ('d1700000-0000-4000-8000-000000000001', 'd1550000-0000-4000-8000-00000000000b', 'coordinador'),
+  ('d1700000-0000-4000-8000-000000000002', 'd1550000-0000-4000-8000-00000000000b', 'coordinador');
 
 -- jugadorA ↔ f (Team A); jugadorA2 ↔ 9 (Team A2).
 insert into public.player_accounts (player_id, profile_id, relation) values
@@ -214,7 +221,8 @@ insert into public.team_objectives (id, club_id, team_id, season_id, title, stat
 -- ─────────────────────────────────────────────────────────────────────────────
 set local role authenticated;
 
--- S1: coord ve los 3 informes (todo el club).
+-- S1: coord ve los 3 informes de SUS equipos (A y A2). Ya no es visibilidad
+-- club-wide: tras C-1b (mig 20261010) el coord ve por team_staff de cada equipo.
 do $$
 declare n int;
 begin
