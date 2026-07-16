@@ -79,10 +79,16 @@ insert into public.invitations (email, role, club_id, created_by, expires_at) va
   ('inv-jug@f1b4.test',   'jugador',              'f1b40000-aaaa-0000-0000-000000000001', 'f1b40000-0001-0000-0000-000000000001', now()+interval '7 days');
 
 -- ═════════════════════════════════════════════════════════════════════════════
--- FIXTURE 2 — Club H (jerarquía: owner + admin no-owner + director + coord + peón).
--- ═════════════════════════════════════════════════════════════════════════════
+-- FIXTURE 2 — Club H (jerarquía: owner + 2 directores + coord + peón).
+-- REDISEÑO (RM-1, mig un-admin-por-club): el modelo original "owner + admin no-owner"
+-- es IMPOSIBLE — la constraint memberships_one_admin_per_club solo admite UN admin_club
+-- por club (= el owner). El 2º admin (h-admin2) se reconvierte en un 2º DIRECTOR
+-- (h-dir2): un rol ALTO no-owner, que es lo que 3.A.6/3.A.7 necesitan como diana para
+-- probar "un director/admin no puede degradar/eliminar a otro rol alto — solo el owner".
+-- La antigua sección 3.N ("admin no-owner caller") se elimina: ese rol ya no existe y
+-- sus invariantes quedan cubiertos por 3.O (el owner es el único admin posible).
 select pg_temp.new_test_user('f1b40000-2001-0000-0000-000000000001', 'h-owner@f1b4.test', '{}'::jsonb);
-select pg_temp.new_test_user('f1b40000-2002-0000-0000-000000000001', 'h-admin2@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-2002-0000-0000-000000000001', 'h-dir2@f1b4.test', '{}'::jsonb);
 select pg_temp.new_test_user('f1b40000-2003-0000-0000-000000000001', 'h-dir@f1b4.test', '{}'::jsonb);
 select pg_temp.new_test_user('f1b40000-2004-0000-0000-000000000001', 'h-coord@f1b4.test', '{}'::jsonb);
 select pg_temp.new_test_user('f1b40000-2005-0000-0000-000000000001', 'h-pawn@f1b4.test', '{}'::jsonb);
@@ -91,8 +97,8 @@ insert into public.clubs (id, name, slug, owner_profile_id) values
   ('f1b40000-cccc-0000-0000-000000000001', 'Club H F1B4', 'club-h-f1b4', 'f1b40000-2001-0000-0000-000000000001');
 
 insert into public.memberships (id, profile_id, club_id, role) values
-  ('f1b40000-6001-0000-0000-000000000001', 'f1b40000-2001-0000-0000-000000000001', 'f1b40000-cccc-0000-0000-000000000001', 'admin_club'),   -- h-owner
-  ('f1b40000-6002-0000-0000-000000000001', 'f1b40000-2002-0000-0000-000000000001', 'f1b40000-cccc-0000-0000-000000000001', 'admin_club'),   -- h-admin2 (no-owner)
+  ('f1b40000-6001-0000-0000-000000000001', 'f1b40000-2001-0000-0000-000000000001', 'f1b40000-cccc-0000-0000-000000000001', 'admin_club'),   -- h-owner (único admin)
+  ('f1b40000-6002-0000-0000-000000000001', 'f1b40000-2002-0000-0000-000000000001', 'f1b40000-cccc-0000-0000-000000000001', 'director'),     -- h-dir2 (2º director, rol alto no-owner)
   ('f1b40000-6003-0000-0000-000000000001', 'f1b40000-2003-0000-0000-000000000001', 'f1b40000-cccc-0000-0000-000000000001', 'director'),     -- h-dir
   ('f1b40000-6004-0000-0000-000000000001', 'f1b40000-2004-0000-0000-000000000001', 'f1b40000-cccc-0000-0000-000000000001', 'coordinador'),  -- h-coord
   ('f1b40000-6005-0000-0000-000000000001', 'f1b40000-2005-0000-0000-000000000001', 'f1b40000-cccc-0000-0000-000000000001', 'jugador');      -- h-pawn
@@ -282,22 +288,24 @@ exception when others then
   if sqlerrm not like '%high_role_invite_only%' then raise exception 'FAIL [3.A.5]: inesperado: % (%).', sqlerrm, sqlstate; end if;
 end $$;
 
--- 3.A.6 director degrada al admin no-owner → forbidden_requires_owner.
+-- 3.A.6 director degrada a OTRO director (rol alto no-owner) → forbidden_requires_owner.
+-- (Antes la diana era un "admin no-owner", imposible bajo RM-1; ahora es h-dir2, otro
+-- rol alto. El invariante es el mismo: un no-owner no degrada roles altos.)
 do $$
 begin
   perform public.admin_update_staff_role('f1b40000-cccc-0000-0000-000000000001', 'f1b40000-2002-0000-0000-000000000001', 'coordinador');
-  raise exception 'FAIL [3.A.6]: director pudo degradar a un admin';
+  raise exception 'FAIL [3.A.6]: director pudo degradar a otro director';
 exception when others then
   if sqlerrm not like '%forbidden_requires_owner%' then raise exception 'FAIL [3.A.6]: inesperado: % (%).', sqlerrm, sqlstate; end if;
 end $$;
 
--- 3.A.7 director ELIMINA membership de admin (alto) vía RLS → 0 filas.
+-- 3.A.7 director ELIMINA membership de OTRO director (alto) vía RLS → 0 filas.
 do $$
 declare n int;
 begin
   delete from public.memberships where profile_id='f1b40000-2002-0000-0000-000000000001' and club_id='f1b40000-cccc-0000-0000-000000000001';
   get diagnostics n = row_count;
-  if n <> 0 then raise exception 'FAIL [3.A.7]: director eliminó una membership de admin (% filas)', n; end if;
+  if n <> 0 then raise exception 'FAIL [3.A.7]: director eliminó una membership de rol alto (% filas)', n; end if;
 end $$;
 
 -- 3.A.8 director ELIMINA membership BAJA (coord) vía RLS → 1 fila.
@@ -311,49 +319,15 @@ end $$;
 
 rollback to savepoint s_hier_dir;
 
--- 3.N — ADMIN no-owner caller: mueve bajos; no sube a alto; no toca altos.
-savepoint s_hier_adm;
-set local "request.jwt.claims" = '{"sub":"f1b40000-2002-0000-0000-000000000001","role":"authenticated"}';
-
--- 3.N.1 admin no-owner invita DIRECTOR → RLS rechaza.
-do $$
-begin
-  insert into public.invitations (club_id, email, role, created_by)
-  values ('f1b40000-cccc-0000-0000-000000000001', 'n1@f1b4.test', 'director', 'f1b40000-2002-0000-0000-000000000001');
-  raise exception 'FAIL [3.N.1]: admin no-owner pudo invitar a un director';
-exception when insufficient_privilege or check_violation then null; end $$;
-
--- 3.N.2 admin no-owner mueve coord→entrenador_principal (bajo↔bajo) → OK.
-do $$
-declare r text;
-begin
-  perform public.admin_update_staff_role('f1b40000-cccc-0000-0000-000000000001', 'f1b40000-2004-0000-0000-000000000001', 'entrenador_principal');
-  select role into r from public.memberships where profile_id='f1b40000-2004-0000-0000-000000000001' and club_id='f1b40000-cccc-0000-0000-000000000001';
-  if r <> 'entrenador_principal' then raise exception 'FAIL [3.N.2]: bajo↔bajo no cambió (%).', r; end if;
-exception when others then
-  if sqlerrm like 'FAIL%' then raise; end if;
-  raise exception 'FAIL [3.N.2]: admin no pudo mover rol bajo: % (%).', sqlerrm, sqlstate;
-end $$;
-
--- 3.N.3 admin no-owner sube peón a DIRECTOR → high_role_invite_only.
-do $$
-begin
-  perform public.admin_update_staff_role('f1b40000-cccc-0000-0000-000000000001', 'f1b40000-2005-0000-0000-000000000001', 'director');
-  raise exception 'FAIL [3.N.3]: admin no-owner pudo subir a director';
-exception when others then
-  if sqlerrm not like '%high_role_invite_only%' then raise exception 'FAIL [3.N.3]: inesperado: % (%).', sqlerrm, sqlstate; end if;
-end $$;
-
--- 3.N.4 admin no-owner degrada al director → forbidden_requires_owner.
-do $$
-begin
-  perform public.admin_update_staff_role('f1b40000-cccc-0000-0000-000000000001', 'f1b40000-2003-0000-0000-000000000001', 'jugador');
-  raise exception 'FAIL [3.N.4]: admin no-owner degradó a un director';
-exception when others then
-  if sqlerrm not like '%forbidden_requires_owner%' then raise exception 'FAIL [3.N.4]: inesperado: % (%).', sqlerrm, sqlstate; end if;
-end $$;
-
-rollback to savepoint s_hier_adm;
+-- 3.N — ELIMINADA. Modelaba un "admin no-owner caller", imposible bajo RM-1
+-- (memberships_one_admin_per_club: el único admin_club de un club es el owner). Sus
+-- cuatro casos quedan cubiertos por el owner, que es el único admin posible:
+--   · 3.N.1 (admin no-owner NO invita director)  → no aplica; el owner SÍ invita (3.O.1).
+--   · 3.N.2 (admin mueve bajo↔bajo)              → potestad trivial del owner y del director (3.A.4).
+--   · 3.N.3 (admin no sube a director)           → cubierto por 3.O.3 (ni el owner sube por cambio de rol).
+--   · 3.N.4 (admin no-owner no degrada director) → no aplica; el owner SÍ degrada (3.O.4);
+--                                                   que un no-owner NO pueda lo prueban 3.A.6 (director)
+--                                                   y 3.P.1 (director no elimina al owner).
 
 -- 3.O — OWNER caller: invita altos; NUNCA sube a alto por cambio de rol; degrada altos.
 savepoint s_hier_own;
@@ -414,9 +388,9 @@ end $$;
 
 rollback to savepoint s_hier_own;
 
--- 3.P — OWNER inmutable por RLS directa (no editable ni eliminable por un admin).
+-- 3.P — OWNER inmutable por RLS directa (no editable ni eliminable por un no-owner).
 savepoint s_hier_p;
--- 3.P.1 admin no-owner NO elimina la membership del owner → 0 filas.
+-- 3.P.1 un gestor no-owner (director h-dir2) NO elimina la membership del owner → 0 filas.
 set local "request.jwt.claims" = '{"sub":"f1b40000-2002-0000-0000-000000000001","role":"authenticated"}';
 do $$
 declare n int;

@@ -10,7 +10,8 @@
 --   R1  SELECT como miembro del club → ve eventos del club.
 --   R2  SELECT como miembro de OTRO club → 0 rows.
 --   R3  INSERT como admin_club, evento de equipo → OK.
---   R4  INSERT como coordinador, evento de club (team y category NULL) → OK.
+--   R4  INSERT como coordinador, evento de club (team_id NULL) → RECHAZADO (C-1a).
+--   R4b INSERT como coordinador, evento de SU equipo (Team A1) → OK (C-1a rama A').
 --   R5  INSERT como entrenador_principal con team_staff activo → OK.
 --   R6  INSERT como entrenador_principal a OTRO equipo del club → rechazado.
 --   R7  INSERT como entrenador_ayudante SIN can_manage_calendar → rechazado.
@@ -71,9 +72,14 @@ insert into public.memberships (id, profile_id, club_id, role) values
 
 -- Staff activo: principal-a1 en Team A1, principal-a2 en Team A2.
 -- asst-cap en Team A1 (con can_manage_calendar), asst-nocap en Team A1 (sin cap).
+-- coord es COORDINADOR (team_staff) del Team A1: tras C-1a (mig 20261009) el coordinador
+-- gestiona eventos SOLO de los equipos que coordina (user_can_manage_event rama A'
+-- exige p_team_id not null). Habilita R4b (crea evento de SU equipo) sin darle el
+-- nivel-club (R4, team_id NULL, sigue reservado a admin/director).
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('33ab0000-0000-0000-0000-000000000001', '55ab0000-3333-0000-0000-000000000001', 'entrenador_principal'),
   ('33ab0000-0000-0000-0000-000000000002', '55ab0000-3333-0000-0000-000000000002', 'entrenador_principal'),
+  ('33ab0000-0000-0000-0000-000000000001', '55ab0000-2222-0000-0000-000000000001', 'coordinador'),
   ('33ab0000-0000-0000-0000-000000000001', '55ab0000-4444-0000-0000-000000000001', 'entrenador_ayudante'),
   ('33ab0000-0000-0000-0000-000000000001', '55ab0000-4444-0000-0000-000000000002', 'entrenador_ayudante');
 
@@ -351,20 +357,49 @@ exception when others then
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- R4 — coordinador inserta evento de club (team y category NULL) → OK
+-- R4 — coordinador inserta evento de CLUB (team_id NULL) → RECHAZADO.
+-- CAMBIO DE EXPECTATIVA (C-1a, mig 20261009): user_can_manage_event reserva el
+-- nivel-club (p_team_id NULL) a admin/director; la rama del coordinador (A') exige
+-- p_team_id NOT NULL. Coherente con "coordinador = solo sus equipos". Antes el
+-- coordinador tenía alcance club → esperaba OK. (H1.g ya prueba el helper para NULL.)
 -- ─────────────────────────────────────────────────────────────────────────────
 set local "request.jwt.claims" = '{"sub":"44ab0000-2222-0000-0000-000000000001","role":"authenticated"}';
 do $$
+declare ok boolean := false;
 begin
-  insert into public.events (club_id, type, title, starts_at, created_by)
+  begin
+    insert into public.events (club_id, type, title, starts_at, created_by)
+    values (
+      '11ab0000-c0c0-0000-0000-000000000001',
+      'other', 'R4 gala anual',
+      '2026-06-30 19:00:00+02',
+      '44ab0000-2222-0000-0000-000000000001'
+    );
+  exception when others then
+    if sqlstate = '42501' then ok := true; end if;
+  end;
+  if not ok then
+    raise exception 'FAIL [R4]: coordinador NO debería poder crear evento de nivel-club (C-1a)';
+  end if;
+end $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- R4b — coordinador inserta evento de SU equipo (Team A1) → OK.
+-- Complemento de R4: el coordinador SÍ retiene poder a nivel EQUIPO (C-1a rama A',
+-- user_coordinates_team(Team A1) vía la fila team_staff añadida arriba).
+-- ─────────────────────────────────────────────────────────────────────────────
+do $$
+begin
+  insert into public.events (club_id, team_id, type, title, starts_at, created_by)
   values (
     '11ab0000-c0c0-0000-0000-000000000001',
-    'other', 'R4 gala anual',
-    '2026-06-30 19:00:00+02',
+    '33ab0000-0000-0000-0000-000000000001',
+    'training', 'R4b coord de su equipo',
+    '2026-06-30 20:00:00+02',
     '44ab0000-2222-0000-0000-000000000001'
   );
 exception when others then
-  raise exception 'FAIL [R4]: coord no pudo INSERT evento de club: % (sqlstate=%)', sqlerrm, sqlstate;
+  raise exception 'FAIL [R4b]: coordinador de Team A1 debería poder crear evento de su equipo: % (sqlstate=%)', sqlerrm, sqlstate;
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -712,8 +747,18 @@ reset role;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- R17 — borde left_at: tras causar baja en el equipo, el jugador/familia deja de
--- ver los eventos de ese equipo (helper "miembro ACTIVO"). Conocido y anotado en
--- known-issues.md.
+-- ver la visibilidad TEAM-SCOPED de ese equipo (helper "miembro ACTIVO",
+-- user_is_team_member_account). Conocido y anotado en known-issues.md.
+--
+-- ⚠️ ACOTACIÓN DE ALCANCE (FIX-DIRECTO #333, mig 20261004 — la misma decisión que
+-- gobierna R8b/R8c de rls_match_live_capture): los eventos de tipo PARTIDO
+-- (match/friendly/tournament) son visibles club-wide a CUALQUIER miembro del club,
+-- independientemente de la pertenencia al equipo. Un jugador que causa baja del
+-- equipo SIGUE siendo miembro del CLUB → sigue viendo los PARTIDOS del club (por eso
+-- contar todos los eventos daba 2 = 'sel A1 match' + 'R3 partido'). Lo que left_at SÍ
+-- oculta es lo team-scoped: los ENTRENAMIENTOS (gated por user_is_team_member_account).
+-- R17a comprueba que left_at oculta los trainings (el invariante real del helper);
+-- R17b documenta que los partidos permanecen visibles club-wide (#333).
 -- ─────────────────────────────────────────────────────────────────────────────
 update public.team_members
    set left_at = (current_date - interval '1 day')::date
@@ -723,11 +768,22 @@ update public.team_members
 set local role authenticated;
 set local "request.jwt.claims" = '{"sub":"44ab0000-5555-0000-0000-000000000001","role":"authenticated"}';
 do $$
-declare cnt_a1 int;
+declare cnt_train int;
+declare cnt_match int;
 begin
-  select count(*) into cnt_a1 from public.events where team_id = '33ab0000-0000-0000-0000-000000000001';
-  if cnt_a1 <> 0 then
-    raise exception 'FAIL [R17]: jugador con left_at sigue viendo eventos del equipo (cnt=%)', cnt_a1;
+  -- R17a: los ENTRENAMIENTOS del equipo (team-scoped) dejan de verse tras left_at.
+  select count(*) into cnt_train from public.events
+   where team_id = '33ab0000-0000-0000-0000-000000000001' and type = 'training';
+  if cnt_train <> 0 then
+    raise exception 'FAIL [R17a]: jugador con left_at sigue viendo entrenamientos del equipo (cnt=%)', cnt_train;
+  end if;
+  -- R17b: los PARTIDOS siguen visibles club-wide (FIX-DIRECTO #333): el jugador sigue
+  -- siendo miembro del club. Debe ver los 2 partidos de Team A1 ('sel A1 match', 'R3 partido').
+  select count(*) into cnt_match from public.events
+   where team_id = '33ab0000-0000-0000-0000-000000000001'
+     and type = any (array['match', 'friendly', 'tournament']);
+  if cnt_match <> 2 then
+    raise exception 'FAIL [R17b]: jugador del club debería ver los 2 partidos del club club-wide (#333) (cnt=%)', cnt_match;
   end if;
 end $$;
 

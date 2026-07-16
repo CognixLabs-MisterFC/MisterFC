@@ -2,7 +2,7 @@
 --
 -- Verifica que la policy `capabilities_update` (F1.7) cumple:
 --   T1. admin del club A SI puede UPDATE cab0 de ayudante en club A.
---   T2. coord del club A SI puede UPDATE.
+--   T2. coord del club A NO puede UPDATE (C-1d: no toca capabilities).
 --   T3. principal del equipo A1 SI puede UPDATE cab0 de un ayudante de A1.
 --   T3b. principal del equipo A2 NO puede UPDATE cab0 de un ayudante que solo es
 --       staff de A1 (F14.9: sin equipo compartido → rechazado).
@@ -106,7 +106,12 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- T2: coord SÍ puede
+-- T2: coord NO puede
+-- CAMBIO DE EXPECTATIVA (C-1d, mig 20261012000000): la policy viva capabilities_update
+-- reserva el UPDATE a admin_club ∪ user_is_principal_of_assistant_team. El coordinador
+-- ya NO toca la estructura del club (capabilities incluidas). El UPDATE pasa el filtro
+-- USING como no-op (0 filas) → la capability sigue en su valor sembrado (false). Antes
+-- de C-1d el coordinador sí podía → esperaba true.
 -- ─────────────────────────────────────────────────────────────────────────────
 do $$
 declare current_val boolean;
@@ -121,8 +126,8 @@ begin
   select granted into current_val from public.capabilities
    where membership_id = 'cab04444-0a00-4444-4444-444444444444'
      and capability_name = 'can_create_lineups';
-  if current_val is distinct from true then
-    raise exception 'FAIL [T2]: coord no pudo activar cab0 (got=%)', current_val;
+  if current_val is distinct from false then
+    raise exception 'FAIL [T2]: coord NO debería poder activar cab0 (C-1d); quedó=%', current_val;
   end if;
 end $$;
 

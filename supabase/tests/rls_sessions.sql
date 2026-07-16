@@ -58,8 +58,15 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('5eb00000-0000-4000-8000-0000000000ba', '5eb00000-0000-4000-8000-00000000000a', '5e550000-0000-4000-8000-000000000002', 'admin_club');
 
 -- Principal en team_staff de Team A (autoridad de creación vía rol de team).
+-- coord es COORDINADOR (team_staff) del Team A: tras C-1b (mig 20261010) el coordinador
+-- solo crea sesión de un equipo que coordina (sessions_insert: rol=coordinador exige
+-- is_template OR user_coordinates_team(team_id)). Habilita I4. NOTA: coordinar Team A lo
+-- convierte en user_is_staff_of_team(Team A) → gana autoridad UPDATE/DELETE/bloques sobre
+-- las sesiones de Team A; por eso las sesiones "ajenas" de U3/B5/D3 pasan a ser de Team A2
+-- (que NO coordina), no de Team A (ver más abajo).
 insert into public.team_staff (team_id, membership_id, staff_role) values
-  ('5e552000-0000-4000-8000-000000000001', '5e555000-0000-4000-8000-00000000000c', 'entrenador_principal');
+  ('5e552000-0000-4000-8000-000000000001', '5e555000-0000-4000-8000-00000000000c', 'entrenador_principal'),
+  ('5e552000-0000-4000-8000-000000000001', '5e555000-0000-4000-8000-00000000000b', 'coordinador');
 
 -- jugadorF ↔ f (del Team A); jugador9 ↔ 9 (de Team A2, otro team del club).
 insert into public.player_accounts (player_id, profile_id, relation) values
@@ -126,14 +133,14 @@ exception when others then
   raise exception 'FAIL [I3]: principal no pudo crear: %', sqlerrm;
 end $$;
 
--- I4: coord crea → OK
+-- I4: coord crea sesión de un equipo que COORDINA (Team A) → OK (C-1b).
 do $$
 begin
   set local "request.jwt.claims" = '{"sub":"5ea00000-0000-4000-8000-00000000000b","role":"authenticated"}';
   insert into public.sessions (owner_profile_id, club_id, team_id, session_date)
   values ('5ea00000-0000-4000-8000-00000000000b', '5e550000-0000-4000-8000-000000000001', '5e552000-0000-4000-8000-000000000001', '2026-09-12');
 exception when others then
-  raise exception 'FAIL [I4]: coord no pudo crear: %', sqlerrm;
+  raise exception 'FAIL [I4]: coord (coordina Team A) no pudo crear sesión de su equipo: %', sqlerrm;
 end $$;
 
 -- I5: jugador crea → rechazado
@@ -236,7 +243,12 @@ alter table public.sessions disable trigger trg_sessions_validate;
 insert into public.sessions (id, owner_profile_id, club_id, team_id, session_date, visibility, is_template) values
   ('5e500000-0000-4000-8000-0000000000c1', '5ea00000-0000-4000-8000-00000000000d', '5e550000-0000-4000-8000-000000000001', '5e552000-0000-4000-8000-000000000001', '2026-10-01', 'staff', false),
   ('5e500000-0000-4000-8000-0000000000c2', '5ea00000-0000-4000-8000-00000000000d', '5e550000-0000-4000-8000-000000000001', '5e552000-0000-4000-8000-000000000001', '2026-10-02', 'team',  false),
-  ('5e500000-0000-4000-8000-0000000000c3', '5ea00000-0000-4000-8000-00000000000d', '5e550000-0000-4000-8000-000000000001', null, null, 'staff', true);
+  ('5e500000-0000-4000-8000-0000000000c3', '5ea00000-0000-4000-8000-00000000000d', '5e550000-0000-4000-8000-000000000001', null, null, 'staff', true),
+  -- c4: sesión de Team A2 (equipo que el coordinador NO coordina), owner = ayudante d.
+  -- Es la sesión "ajena" al coordinador para U3/B5/D3: coord no es owner, ni admin, ni
+  -- staff de Team A2 → no puede editar/borrar/añadir bloques. (Antes esos casos usaban
+  -- c1/c2 de Team A, pero ahora el coord SÍ coordina Team A y tendría autoridad.)
+  ('5e500000-0000-4000-8000-0000000000c4', '5ea00000-0000-4000-8000-00000000000d', '5e550000-0000-4000-8000-000000000001', '5e552000-0000-4000-8000-000000000002', '2026-10-03', 'staff', false);
 alter table public.sessions enable trigger trg_sessions_validate;
 
 -- Bloques (1 por sesión real) + 1 tarea en la sesión team. El trigger deriva club_id.
@@ -316,14 +328,14 @@ begin
   if n <> 1 then raise exception 'FAIL [U2]: admin no pudo editar sesión ajena'; end if;
 end $$;
 
--- U3: coord (no owner, no admin) edita → 0 filas (RLS)
+-- U3: coord (no owner, no admin, NO coordina Team A2) edita c4 → 0 filas (RLS)
 do $$
 declare n int;
 begin
   set local "request.jwt.claims" = '{"sub":"5ea00000-0000-4000-8000-00000000000b","role":"authenticated"}';
-  update public.sessions set title = 'hack' where id = '5e500000-0000-4000-8000-0000000000c1';
+  update public.sessions set title = 'hack' where id = '5e500000-0000-4000-8000-0000000000c4';
   get diagnostics n = row_count;
-  if n <> 0 then raise exception 'FAIL [U3]: coord editó sesión ajena'; end if;
+  if n <> 0 then raise exception 'FAIL [U3]: coord editó sesión de un equipo que no coordina (Team A2)'; end if;
 end $$;
 
 -- U4: owner inmutable → trigger lo bloquea
@@ -401,17 +413,17 @@ begin
   if not ok then raise exception 'FAIL [B4]: jugador insertó un bloque'; end if;
 end $$;
 
--- B5: coord (no owner, no admin) NO puede insertar bloques en sesión ajena → 42501
+-- B5: coord (no coordina Team A2) NO puede insertar bloques en la sesión c4 → 42501
 do $$
 declare ok boolean := false;
 begin
   set local "request.jwt.claims" = '{"sub":"5ea00000-0000-4000-8000-00000000000b","role":"authenticated"}';
   begin
     insert into public.session_blocks (session_id, club_id, block_type, order_idx)
-    values ('5e500000-0000-4000-8000-0000000000c1', '5e550000-0000-4000-8000-000000000001', 'principal', 7);
+    values ('5e500000-0000-4000-8000-0000000000c4', '5e550000-0000-4000-8000-000000000001', 'principal', 7);
   exception when insufficient_privilege then ok := true;
   end;
-  if not ok then raise exception 'FAIL [B5]: coord no-owner insertó un bloque'; end if;
+  if not ok then raise exception 'FAIL [B5]: coord insertó un bloque en sesión de un equipo que no coordina'; end if;
 end $$;
 
 -- X1: owner inserta una tarea; el trigger deriva session_id+club_id del bloque
@@ -459,14 +471,14 @@ begin
   if n <> 1 then raise exception 'FAIL [D2]: admin no pudo borrar plantilla ajena'; end if;
 end $$;
 
--- D3: coord (no owner, no admin) borra → 0 filas
+-- D3: coord (no coordina Team A2) borra c4 → 0 filas
 do $$
 declare n int;
 begin
   set local "request.jwt.claims" = '{"sub":"5ea00000-0000-4000-8000-00000000000b","role":"authenticated"}';
-  delete from public.sessions where id = '5e500000-0000-4000-8000-0000000000c2';
+  delete from public.sessions where id = '5e500000-0000-4000-8000-0000000000c4';
   get diagnostics n = row_count;
-  if n <> 0 then raise exception 'FAIL [D3]: coord borró sesión ajena'; end if;
+  if n <> 0 then raise exception 'FAIL [D3]: coord borró sesión de un equipo que no coordina (Team A2)'; end if;
 end $$;
 
 reset role;

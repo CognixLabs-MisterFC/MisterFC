@@ -15,8 +15,8 @@
 --   match_player_stats (policy nueva player-scoped + staff existente):
 --     S1.  flag OFF: jugador (self de p1) lee SUS stats           → 1 fila (D9-1, sin flag).
 --     S2.  flag OFF: familia (parent de p1) lee las de p1         → 1 fila.
---     S3.  jugador (de p1) lee las de p2 (compañero)              → 0 (player-scoped).
---     S4.  familia (de p1) lee las de p2                          → 0.
+--     S3.  jugador (de p1) lee las de p2 (compañero del equipo)   → 1 (F14E-6, mig 20261007).
+--     S4.  familia (de p1) lee las de p2 (compañero del equipo)   → 1 (F14E-6: cuenta del equipo).
 --     S5.  staff (principal del team) lee las del partido         → 2 filas (policy staff).
 --     S6.  staff de OTRO equipo (mismo club) lee las del partido  → 0 (no recorder).
 --     S7.  admin de OTRO club lee las de p1                       → 0.
@@ -125,7 +125,13 @@ begin
 end $$;
 reset role;
 
--- S3. jugador (de p1) lee las de p2 → 0 (player-scoped).
+-- S3. jugador (de p1) lee las de p2 (compañero del team1) → 1.
+-- CAMBIO DE EXPECTATIVA (F14E-6, mig 20261007000000_f14e_6_match_stats_teammate_select):
+-- la policy ADITIVA match_player_stats_select_teammate abre las stats de un equipo a
+-- toda cuenta (jugador Y familia) de un miembro activo de ese equipo
+-- (user_is_team_member_account sobre team_id). Es el propósito de la migración: la
+-- pantalla "Plantilla" del jugador muestra las stats de sus compañeros. Antes de E-6
+-- la policy era player-scoped (solo las propias) → el test esperaba 0.
 set local role authenticated;
 set local "request.jwt.claim.sub" to '99f95000-aaaa-0003-0000-000000000000';
 do $$
@@ -133,11 +139,15 @@ declare n int;
 begin
   select count(*) into n from public.match_player_stats
     where player_id = '99f95000-0c00-0002-0000-000000000000';
-  if n <> 0 then raise exception 'FAIL [S3]: jugador no debería ver las stats de un compañero (got %)', n; end if;
+  if n <> 1 then raise exception 'FAIL [S3]: jugador SÍ debería ver las stats de su compañero de equipo (F14E-6) (got %)', n; end if;
 end $$;
 reset role;
 
--- S4. familia (de p1) lee las de p2 → 0.
+-- S4. familia (de p1) lee las de p2 (compañero del team1) → 1.
+-- Misma decisión F14E-6: user_is_team_member_account cuenta a las FAMILIAS (relation
+-- 'parent'), no solo al jugador. El padre usa la app por el niño y son datos deportivos
+-- del equipo. Acotado a SUS equipos (team_id de la fila): la familia de un jugador de
+-- team1 NO ve stats de otros equipos (cross-check con S6/S7, que siguen en 0).
 set local role authenticated;
 set local "request.jwt.claim.sub" to '99f95000-aaaa-0004-0000-000000000000';
 do $$
@@ -145,7 +155,7 @@ declare n int;
 begin
   select count(*) into n from public.match_player_stats
     where player_id = '99f95000-0c00-0002-0000-000000000000';
-  if n <> 0 then raise exception 'FAIL [S4]: familia no debería ver las stats de un compañero (got %)', n; end if;
+  if n <> 1 then raise exception 'FAIL [S4]: familia SÍ debería ver las stats del compañero de su hijo (F14E-6) (got %)', n; end if;
 end $$;
 reset role;
 

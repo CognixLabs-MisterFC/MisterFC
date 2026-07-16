@@ -30,7 +30,8 @@
 --     R5.  jugador                      → forbidden (42501).
 --     R6.  staff de OTRO team           → forbidden (42501).
 --     R7.  admin de OTRO club           → forbidden (42501).
---     R8.  SELECT: principal ve evento sembrado; jugador y staff-otro-team ven 0.
+--     R8.  SELECT del directo (F7B-2 club-wide): principal R8a=1, jugador del club
+--          R8b=1, staff de otro equipo del club R8c=1; admin de OTRO club R8d=0.
 --   RLS resto de tablas (smoke):
 --     R9.  principal inserta match_state / match_periods / match_starters → OK.
 --     R10. jugador inserta match_starters → forbidden.
@@ -69,9 +70,13 @@ insert into public.teams (id, category_id, name, format, color, season) values
   ('77f70000-0ee1-0002-0000-000000000000', '77f70000-0dd0-0001-0000-000000000000', 'Team 2', 'F7', '#F59E0B', '2025-26');
 
 -- principal y ayudante → team1; staff-team2 → team2.
+-- coord → team1 como COORDINADOR (team_staff): tras C-1a (mig 20261009) grabar el
+-- partido exige coordinar ESE equipo (user_can_record_match rama A'). Sin esta fila el
+-- coordinador no tendría autoridad y R4 fallaría (setup, no cambio de expectativa).
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('77f70000-0ee1-0001-0000-000000000000', '77f70000-5550-0002-0000-000000000000', 'entrenador_principal'),
   ('77f70000-0ee1-0001-0000-000000000000', '77f70000-5550-0003-0000-000000000000', 'entrenador_ayudante'),
+  ('77f70000-0ee1-0001-0000-000000000000', '77f70000-5550-0004-0000-000000000000', 'coordinador'),
   ('77f70000-0ee1-0002-0000-000000000000', '77f70000-5550-0006-0000-000000000000', 'entrenador_principal');
 
 -- players: p1, p2 en team1; pX solo en team2 (ajeno al roster de team1).
@@ -305,7 +310,18 @@ do $$ begin
 end $$;
 reset role;
 
--- R8. SELECT: principal ve el evento sembrado; jugador y staff-otro-team ven 0.
+-- R8. SELECT del directo. CAMBIO DE EXPECTATIVA en R8b/R8c (F7B-2, mig 20260830, cabecera
+-- literal "Lectura del directo abierta a TODO el club"; reafirmado por F14C-3 mig 20261002
+-- y FIX-DIRECTO #333 mig 20261004): CUALQUIER miembro del club ve el directo de TODOS los
+-- partidos de SU club (marcador, reloj, eventos, alineación), sin filtrar por el equipo del
+-- hijo. La ESCRITURA sigue siendo solo del staff que graba (por eso R5/R6 no cambian). El
+-- match_events es la crónica deportiva del partido (gol/tarjeta/cambio/minuto), sin nada
+-- personal sensible. Estos tests eran de junio (modelo team-scoped 20260611) y se quedaron
+-- atrás. El aislamiento que SÍ importa —ENTRE CLUBS— se conserva y se prueba en R8d.
+--   R8a: principal (staff que graba) ve el evento → 1.
+--   R8b: jugador del club → 1 (F7B-2, antes 0).
+--   R8c: staff de OTRO equipo del MISMO club → 1 (F7B-2: es miembro del club, antes 0).
+--   R8d: admin de OTRO club → 0 (aislamiento inter-club, invariante que sí importa).
 set local role authenticated;
 set local "request.jwt.claim.sub" to '77f70000-aaaa-0002-0000-000000000000';
 do $$ declare n int; begin
@@ -318,7 +334,7 @@ set local role authenticated;
 set local "request.jwt.claim.sub" to '77f70000-aaaa-0005-0000-000000000000';
 do $$ declare n int; begin
   select count(*) into n from public.match_events where id = '77f70000-0ec0-0001-0000-000000000000';
-  if n <> 0 then raise exception 'FAIL [R8b]: jugador NO debería ver el evento (n=%)', n; end if;
+  if n <> 1 then raise exception 'FAIL [R8b]: jugador del club SÍ ve el directo (F7B-2) (n=%)', n; end if;
 end $$;
 reset role;
 
@@ -326,7 +342,16 @@ set local role authenticated;
 set local "request.jwt.claim.sub" to '77f70000-aaaa-0006-0000-000000000000';
 do $$ declare n int; begin
   select count(*) into n from public.match_events where id = '77f70000-0ec0-0001-0000-000000000000';
-  if n <> 0 then raise exception 'FAIL [R8c]: staff de otro team NO debería ver el evento (n=%)', n; end if;
+  if n <> 1 then raise exception 'FAIL [R8c]: staff de otro equipo del mismo club SÍ ve el directo (F7B-2) (n=%)', n; end if;
+end $$;
+reset role;
+
+-- R8d — AISLAMIENTO INTER-CLUB (invariante crítico): un admin de OTRO club ve 0.
+set local role authenticated;
+set local "request.jwt.claim.sub" to '77f70000-bbbb-0001-0000-000000000000';
+do $$ declare n int; begin
+  select count(*) into n from public.match_events where id = '77f70000-0ec0-0001-0000-000000000000';
+  if n <> 0 then raise exception 'FAIL [R8d]: admin de OTRO club NO debería ver el evento (n=%)', n; end if;
 end $$;
 reset role;
 
