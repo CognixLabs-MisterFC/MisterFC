@@ -292,6 +292,10 @@ export const TIMELINE_ADD_TYPES = [
   'corner',
   'offside',
   'shot',
+  // F14H — la sustitución entra en el alta manual: minuto → SALE → ENTRA. Es
+  // imprescindible para que los MINUTOS jugados salgan bien cuando el partido se
+  // reconstruye después (sin cambios, todos contarían el partido entero).
+  'substitution',
 ] as const;
 
 export const addTimelineEventSchema = z
@@ -304,6 +308,8 @@ export const addTimelineEventSchema = z
     }),
     display_minute: minuteSchema,
     player_id: uuid.optional(),
+    // F14H — sustitución: player_id = SALE, related_player_id = ENTRA (side own).
+    related_player_id: uuid.optional(),
     rival_dorsal: dorsalSchema.optional(),
     outcome: z
       .enum(PENALTY_OUTCOMES as unknown as [string, ...string[]], {
@@ -348,6 +354,19 @@ export const addTimelineEventSchema = z
     }
     if (v.type === 'assist' && v.side !== 'own') {
       ctx.addIssue({ code: 'custom', message: 'assist_own_only', path: ['side'] });
+    }
+    // F14H — sustitución: siempre nuestra (own), con jugador que SALE (player_id) y
+    // jugador que ENTRA (related_player_id), distintos entre sí.
+    if (v.type === 'substitution') {
+      if (v.side !== 'own')
+        ctx.addIssue({ code: 'custom', message: 'sub_own_only', path: ['side'] });
+      if (!v.player_id)
+        ctx.addIssue({ code: 'custom', message: 'player_out_required', path: ['player_id'] });
+      if (!v.related_player_id)
+        ctx.addIssue({ code: 'custom', message: 'player_in_required', path: ['related_player_id'] });
+      if (v.player_id && v.related_player_id && v.player_id === v.related_player_id)
+        ctx.addIssue({ code: 'custom', message: 'sub_same_player', path: ['related_player_id'] });
+      return;
     }
     // Actor coherente con el bando para los tipos con actor.
     const needsActor =

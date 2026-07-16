@@ -3171,6 +3171,17 @@
         "sub_in_expelled": "Canvi que fica un expulsat"
       }
     },
+    "quick": {
+      "link": "Entrada ràpida",
+      "title": "Entrada ràpida d'esdeveniments",
+      "back_to_live": "Tornar al directe",
+      "add_title": "Afegir esdeveniment",
+      "chain_hint": "El formulari es queda obert: fica'n un darrere d'un altre. Es conserven el tipus i el bàndol; el minut puja sol (pots canviar-lo). El jugador es neteja per al següent.",
+      "prepare_title": "Preparar l'acta",
+      "prepare_explain": "Aquest partit no es va obrir en el directe. Per a registrar els esdeveniments per minut es prepararà l'acta: es congelarà l'onze de l'alineació oficial i es crearan les dues parts. El partit quedarà marcat com a ACABAT; després podràs ficar els esdeveniments i les estadístiques es calcularan soles.",
+      "prepare_cta": "Preparar acta i començar",
+      "needs_official_lineup": "Defineix primer l'alineació oficial d'aquest partit per a poder preparar l'acta (no s'inventa un onze)."
+    },
     "stats_consolidated": "Partit tancat · estadístiques consolidades",
     "go_post_match": "Anar a valoracions",
     "clock_reopen": "Reobrir partit",

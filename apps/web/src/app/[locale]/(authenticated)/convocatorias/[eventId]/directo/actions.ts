@@ -304,6 +304,160 @@ export async function startMatch(input: unknown): Promise<ClockActionState> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// F14H — prepareMatchSheet — "Preparar acta" de un partido que NUNCA se abrió en
+// directo (not_started): el entrenador jugó solo y mete todo después.
+//
+// A diferencia de startMatch (que pone el partido LIVE y solo arranca la 1ª parte),
+// esto RECONSTRUYE un partido ya jugado:
+//   1. Congela el once desde la ALINEACIÓN OFICIAL (misma fuente que startMatch).
+//      Sin alineación oficial → 'no_official_lineup' (no se inventa un once).
+//   2. Siembra las DOS partes canónicas desde categories.half_duration_minutes:
+//      1ª (offset 0) y 2ª (offset media·60), ambas con la media acumulada y
+//      TERMINADAS. Así el reloj total = 2·media·60 (minutos jugados correctos) y
+//      cada minuto cae en su parte (periodAtClock): <media → 1ª, ≥media → 2ª.
+//   3. Deja match_state en 'closed' (acta reconstruida), con el entrenador como
+//      operador. A partir de aquí, la entrada rápida añade eventos y cada alta
+//      RECONSOLIDA (reconsolidateIfClosed) → stats al día.
+//
+// Idempotente: si ya está 'live'/'closed' (ya tiene reloj), no hace nada. El gate
+// de rol es la RLS (user_can_record_match) en cada insert; no se amplía a nadie.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function prepareMatchSheet(input: unknown): Promise<ClockActionState> {
+  const parsed = matchEventRefSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid' };
+  const { event_id } = parsed.data;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const { data: ev } = await supabase
+    .from('events')
+    .select('id, club_id, team_id, type')
+    .eq('id', event_id)
+    .maybeSingle();
+  if (!ev) return { error: 'not_found' };
+  if (!isManageableMatchType(ev.type as string)) return { error: 'invalid' };
+  if (ev.team_id == null) return { error: 'invalid' };
+  const clubId = ev.club_id as string;
+  const teamId = ev.team_id as string;
+
+  // Ya tiene reloj (se abrió en directo o ya se reconstruyó) → nada que preparar.
+  const status = await loadStatus(supabase, event_id);
+  if (status === 'live' || status === 'closed') return { success: true };
+
+  // 1. Congelar el once desde la alineación oficial (fuente del cálculo de minutos).
+  const { data: existingStarters } = await supabase
+    .from('match_starters')
+    .select('player_id')
+    .eq('event_id', event_id)
+    .limit(1);
+  if ((existingStarters ?? []).length === 0) {
+    const { data: official } = await supabase
+      .from('lineups')
+      .select('id')
+      .eq('event_id', event_id)
+      .eq('is_official', true)
+      .maybeSingle();
+    if (!official) return { error: 'no_official_lineup' };
+
+    const { data: positions } = await supabase
+      .from('lineup_positions')
+      .select('player_id, position_code')
+      .eq('lineup_id', official.id as string)
+      .eq('location', 'field');
+    const starters = (positions ?? []).map((p) => ({
+      event_id,
+      player_id: p.player_id as string,
+      position_code: (p.position_code as string | null) ?? null,
+    }));
+    if (starters.length === 0) return { error: 'no_official_lineup' };
+    const { error } = await supabase.from('match_starters').insert(starters);
+    if (error) return { error: mapPgErr(error.message, error.code) };
+  }
+
+  // 2. Sembrar las dos partes canónicas (media desde la categoría del equipo).
+  const { data: team } = await supabase
+    .from('teams')
+    .select('category_id')
+    .eq('id', teamId)
+    .maybeSingle();
+  let halfMinutes = 45;
+  if (team?.category_id) {
+    const { data: cat } = await supabase
+      .from('categories')
+      .select('half_duration_minutes')
+      .eq('id', team.category_id as string)
+      .maybeSingle();
+    const hm = cat?.half_duration_minutes as number | undefined;
+    if (hm && hm > 0) halfMinutes = hm;
+  }
+  const halfSeconds = halfMinutes * 60;
+
+  const existingPeriods = await loadPeriods(supabase, event_id);
+  if (existingPeriods.length === 0) {
+    const { error } = await supabase.from('match_periods').insert([
+      {
+        event_id,
+        period: 'first_half',
+        ordinal: 1,
+        base_offset_seconds: 0,
+        accumulated_seconds: halfSeconds,
+        running: false,
+        last_started_at: null,
+        ended: true,
+      },
+      {
+        event_id,
+        period: 'second_half',
+        ordinal: 2,
+        base_offset_seconds: halfSeconds,
+        accumulated_seconds: halfSeconds,
+        running: false,
+        last_started_at: null,
+        ended: true,
+      },
+    ]);
+    if (error) return { error: mapPgErr(error.message, error.code) };
+  }
+
+  // 3. Cabecera de sesión en 'closed' (acta reconstruida).
+  const { iso } = now();
+  if (status == null) {
+    const { error } = await supabase.from('match_state').insert({
+      event_id,
+      club_id: clubId, // el trigger lo deriva; lo pasamos por el NOT NULL.
+      status: 'closed',
+      started_at: iso,
+      closed_at: iso,
+      closed_by: user.id,
+      operator_profile_id: user.id,
+      lock_heartbeat_at: iso,
+    });
+    if (error) return { error: mapPgErr(error.message, error.code) };
+  } else {
+    const { error } = await supabase
+      .from('match_state')
+      .update({
+        status: 'closed',
+        started_at: iso,
+        closed_at: iso,
+        closed_by: user.id,
+        operator_profile_id: user.id,
+        lock_heartbeat_at: iso,
+      })
+      .eq('event_id', event_id);
+    if (error) return { error: mapPgErr(error.message, error.code) };
+  }
+
+  revalidate(event_id);
+  return { success: true };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // pauseClock — pausa el periodo en curso (pliega lo corrido). Idempotente.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -575,6 +729,33 @@ async function consolidateAndPersist(
   if (scoreErr) return mapPgErr(scoreErr.message, scoreErr.code);
 
   return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F14H — Reconsolidación automática al editar el acta de un partido YA CERRADO.
+//
+// Las stats (match_player_stats) y el marcador se materializan al finalizar
+// (consolidateAndPersist ← finishMatch). Si se añade/edita/borra un evento con el
+// partido ya 'closed' (entrada rápida días después), hay que RE-materializar para
+// que todo cuadre solo. Reusa consolidateAndPersist (delete+reinsert idempotente),
+// que NO cambia match_state.status → el partido SIGUE cerrado. Sin efectos
+// colaterales (ni reopen→finish, ni notificaciones). En 'live' no toca nada: las
+// stats aún no existen y se calcularán al cerrar como siempre.
+// ─────────────────────────────────────────────────────────────────────────────
+async function reconsolidateIfClosed(
+  supabase: Supa,
+  eventId: string,
+): Promise<EventActionError | null> {
+  const status = await loadStatus(supabase, eventId);
+  if (status !== 'closed') return null;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return 'forbidden';
+  const err = await consolidateAndPersist(supabase, eventId, user.id);
+  if (!err) return null;
+  // consolidateAndPersist solo devuelve invalid/forbidden/generic; el resto → generic.
+  return err === 'invalid' || err === 'forbidden' ? err : 'generic';
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1609,6 +1790,11 @@ export async function deleteMatchEvent(input: unknown): Promise<RegisterEventSta
     .eq('id', id);
   if (error) return { error: mapEventErr(error.message, error.code) };
 
+  // F14H — si el partido ya está cerrado, recalcular stats/marcador (borrar un gol
+  // mal metido debe cuadrar el acta). En vivo no hace nada.
+  const rc = await reconsolidateIfClosed(supabase, event_id);
+  if (rc) return { error: rc };
+
   revalidate(event_id);
   return { success: true, eventRowId: id };
 }
@@ -1640,6 +1826,9 @@ export async function updateMatchEventMinute(input: unknown): Promise<RegisterEv
     .eq('event_id', event_id)
     .eq('id', id);
   if (error) return { error: mapEventErr(error.message, error.code) };
+
+  const rc = await reconsolidateIfClosed(supabase, event_id);
+  if (rc) return { error: rc };
 
   revalidate(event_id);
   return { success: true, eventRowId: id };
@@ -1689,6 +1878,9 @@ export async function updateMatchEventActor(input: unknown): Promise<RegisterEve
     .eq('id', id);
   if (error) return { error: mapEventErr(error.message, error.code) };
 
+  const rc = await reconsolidateIfClosed(supabase, event_id);
+  if (rc) return { error: rc };
+
   revalidate(event_id);
   return { success: true, eventRowId: id };
 }
@@ -1707,6 +1899,7 @@ export async function addMatchEvent(input: unknown): Promise<RegisterEventState>
     type,
     display_minute,
     player_id,
+    related_player_id,
     rival_dorsal,
     outcome,
     foul_kind,
@@ -1748,6 +1941,10 @@ export async function addMatchEvent(input: unknown): Promise<RegisterEventState>
   const finalPlayerId =
     effectiveSide === 'own' && !ownByLocation ? (player_id ?? null) : null;
   const finalDorsal = effectiveSide === 'rival' ? (rival_dorsal ?? null) : null;
+  // F14H — sustitución: related_player_id = jugador que ENTRA (solo en 'substitution',
+  // el CHECK related_only_sub del modelo lo exige). player_id = jugador que SALE.
+  const finalRelated =
+    type === 'substitution' ? (related_player_id ?? null) : null;
 
   // Coordenadas solo en tipos de campo (foul/offside/shot); el córner no lleva.
   const isFieldCoords = type === 'foul' || type === 'offside' || type === 'shot';
@@ -1775,6 +1972,7 @@ export async function addMatchEvent(input: unknown): Promise<RegisterEventState>
       side: effectiveSide,
       type,
       player_id: finalPlayerId,
+      related_player_id: finalRelated,
       rival_dorsal: finalDorsal,
       x_pct: xPct,
       y_pct: yPct,
@@ -1786,6 +1984,11 @@ export async function addMatchEvent(input: unknown): Promise<RegisterEventState>
     { onConflict: 'id', ignoreDuplicates: true },
   );
   if (error) return { error: mapEventErr(error.message, error.code) };
+
+  // F14H — partido cerrado: recalcular stats/marcador con el nuevo evento (un gol
+  // metido días después debe cuadrar solo). En vivo, se consolidará al cerrar.
+  const rc = await reconsolidateIfClosed(supabase, event_id);
+  if (rc) return { error: rc };
 
   revalidate(event_id);
   return { success: true, eventRowId: id };

@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft, PenTool } from 'lucide-react';
+import { ArrowLeft, ListPlus, PenTool } from 'lucide-react';
 import { STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -71,6 +71,14 @@ export default async function MatchLivePage({ params }: Props) {
             <Link href={`/pizarra?event=${eventId}`}>
               <PenTool className="size-4" aria-hidden />
               <span>{tPizarra('open_board')}</span>
+            </Link>
+          </Button>
+          {/* F14H — entrada rápida de eventos (meter muchos seguidos, o
+              reconstruir el acta de un partido jugado sin abrir el directo). */}
+          <Button asChild variant="outline" size="sm" className="gap-1">
+            <Link href={`/convocatorias/${eventId}/directo/entrada-rapida`}>
+              <ListPlus className="size-4" aria-hidden />
+              <span>{t('quick.link')}</span>
             </Link>
           </Button>
         </div>
