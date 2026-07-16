@@ -75,6 +75,14 @@ export type CalendarFilters = {
   types: string[];
 };
 
+/** F14F-2 — un día festivo del club (instalaciones cerradas). */
+export type HolidayInfo = {
+  id: string;
+  /** 'YYYY-MM-DD' (día local del club). */
+  date: string;
+  reason: string;
+};
+
 export type CalendarRange = {
   /** UTC inicio (inclusivo). */
   startIso: string;
@@ -134,6 +142,31 @@ export function computeRange(
     TZ
   ).toISOString();
   return { firstDay, lastDay, startIso, endIso };
+}
+
+/**
+ * F14F-2 — festivos del club dentro del rango visible. Los ve cualquier rol
+ * (RLS holidays_select). Fechas como 'YYYY-MM-DD' (día local del club).
+ */
+export async function loadHolidays(
+  clubId: string,
+  range: CalendarRange
+): Promise<HolidayInfo[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const iso = (d: LocalDay) =>
+    `${d.year}-${String(d.month + 1).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
+  const { data } = await supabase
+    .from('holidays')
+    .select('id, date, reason')
+    .eq('club_id', clubId)
+    .gte('date', iso(range.firstDay))
+    .lte('date', iso(range.lastDay));
+  return (data ?? []).map((h) => ({
+    id: h.id as string,
+    date: h.date as string,
+    reason: h.reason as string,
+  }));
 }
 
 export async function loadCalendarData(

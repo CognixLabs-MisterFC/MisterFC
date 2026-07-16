@@ -1008,6 +1008,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "events_cancelled_holiday_id_fkey"
+            columns: ["cancelled_holiday_id"]
+            isOneToOne: false
+            referencedRelation: "holidays"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "events_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
@@ -1154,6 +1161,48 @@ export type Database = {
           {
             foreignKeyName: "exercises_owner_profile_id_fkey"
             columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      holidays: {
+        Row: {
+          club_id: string
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          reason: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          created_by?: string | null
+          date: string
+          id?: string
+          reason: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "holidays_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "holidays_created_by_fkey"
+            columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -4317,6 +4366,14 @@ export type Database = {
           seguidores: number
           equipos: number
         }[]
+      }
+      mark_holiday: {
+        Args: { p_club_id: string; p_date: string; p_reason: string }
+        Returns: Json
+      }
+      unmark_holiday: {
+        Args: { p_holiday_id: string }
+        Returns: Json
       }
     }
     Enums: {
