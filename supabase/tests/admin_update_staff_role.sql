@@ -16,8 +16,8 @@
 --       mismo siendo el único admin → would_remove_last_admin (no cambia nada).
 --   L2. GUARDA: degradar al único admin (sobre el propio admin) bloqueado — ya
 --       cubierto por L1; aquí verificamos que el admin sigue siendo admin_club.
---   L3. promover al entrenador a admin_club (2º admin) y LUEGO degradar al
---       primer admin SÍ funciona (ya no es el último).
+--   L3. promover a un rol ALTO (admin_club) por UPDATE directo → rechazado
+--       (high_role_invite_only, F1B2b): los roles altos solo por invitación.
 \ir helpers/auth_users.sql
 
 begin;
@@ -136,34 +136,32 @@ begin
   end if;
 end $$;
 
--- ── L3. promover a un 2º admin y LUEGO degradar al 1º SÍ funciona ────────────
+-- ── L3. NO se puede promover a un rol ALTO por UPDATE directo (solo por invitación) ──
+-- F15-A2 (EXPECTATIVA actualizada, confirmada por Jose): F1B2b (mig 20260825) y el
+-- modelo de roles (un-admin-por-club) → los roles altos (admin_club/director) se
+-- asignan SOLO por invitación; admin_update_staff_role rechaza el destino alto con
+-- high_role_invite_only. Antes L3 promovía al entrenador a 2º admin y degradaba al 1º;
+-- hoy eso es imposible, así que el admin único NO puede auto-degradarse por esta vía
+-- (ya cubierto por la GUARDA del último admin en L1).
 do $$
+declare ok boolean := false;
 begin
-  -- Promovemos al entrenador (ahora ayudante) a admin_club → 2 admins.
-  perform public.admin_update_staff_role(
-    'bb000000-0000-4000-8000-000000000001',
-    'bb0a0000-eeee-4000-8000-000000000001',
-    'admin_club'
-  );
-  if (select count(*) from public.memberships
-        where club_id='bb000000-0000-4000-8000-000000000001' and role='admin_club') <> 2 then
-    raise exception 'FAIL [L3]: debería haber 2 admins tras promover al entrenador';
+  begin
+    perform public.admin_update_staff_role(
+      'bb000000-0000-4000-8000-000000000001',
+      'bb0a0000-eeee-4000-8000-000000000001',
+      'admin_club'
+    );
+  exception when others then
+    if sqlerrm like '%high_role_invite_only%' then ok := true; else raise; end if;
+  end;
+  if not ok then
+    raise exception 'FAIL [L3]: promover a admin_club por UPDATE directo debería rechazarse (high_role_invite_only)';
   end if;
-
-  -- Ahora el admin original SÍ puede degradarse (ya no es el último).
-  perform public.admin_update_staff_role(
-    'bb000000-0000-4000-8000-000000000001',
-    'bb0a0000-aaaa-4000-8000-000000000001',
-    'coordinador'
-  );
-  if not exists (select 1 from public.memberships
-                  where profile_id='bb0a0000-aaaa-4000-8000-000000000001'
-                    and role='coordinador') then
-    raise exception 'FAIL [L3]: el admin original debería poder degradarse a coordinador con otro admin presente';
-  end if;
+  -- No se creó un 2º admin: sigue habiendo exactamente 1.
   if (select count(*) from public.memberships
         where club_id='bb000000-0000-4000-8000-000000000001' and role='admin_club') <> 1 then
-    raise exception 'FAIL [L3]: debería quedar exactamente 1 admin tras la degradación';
+    raise exception 'FAIL [L3]: no debería haberse creado un 2º admin';
   end if;
 end $$;
 
@@ -183,5 +181,5 @@ end $$;
 rollback;
 
 \echo '──────────────────────────────────────────────'
-\echo '✅ Bug2b: admin_update_staff_role (admin cambia el rol de club; gateado, cross-club y rol inválido rechazados; GUARDA del último admin bloquea degradar al único admin, incluido a uno mismo; promover 2º admin y degradar al 1º funciona).'
+\echo '✅ Bug2b: admin_update_staff_role (admin cambia el rol de club; gateado, cross-club y rol inválido rechazados; GUARDA del último admin bloquea degradar al único admin, incluido a uno mismo; promover a rol alto por UPDATE directo rechazado — high_role_invite_only).'
 \echo '──────────────────────────────────────────────'
