@@ -453,6 +453,11 @@ export async function prepareMatchSheet(input: unknown): Promise<ClockActionStat
     if (error) return { error: mapPgErr(error.message, error.code) };
   }
 
+  // Consolidar ya (aunque aún no haya eventos): así el once reconstruido muestra sus
+  // minutos completos desde el principio. Cada evento posterior reconsolida solo.
+  const consErr = await consolidateAndPersist(supabase, event_id, user.id);
+  if (consErr) return { error: consErr };
+
   revalidate(event_id);
   return { success: true };
 }
