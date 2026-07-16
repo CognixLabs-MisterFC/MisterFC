@@ -10,9 +10,11 @@
 --   V3. cambios programados NUNCA visibles al jugador (solo-staff).
 --   V4. jugador de OTRO equipo del MISMO club SÍ ve la alineación oficial+publicada
 --       (is_official + visibility='team') → directo club-wide.
---   V5. visibility='staff' → el jugador del team NO ve; V5b: el staff SÍ.
---   V6. is_official=false (borrador) → el jugador NO ve; V6b: el staff SÍ.
---       (V5/V6 los arregla la mig 20261022: la rama club-wide exige oficial+team.)
+--   V5. OFICIAL con visibility='staff' → el jugador/club SÍ la ve (oficial=publicada);
+--       V5b: el staff también.
+--   V6. is_official=false (borrador) → el jugador/club NO ve; V6b: el staff SÍ.
+--       (Rama club-wide = SOLO is_official: mig 20261022 la acotó pero exigiendo
+--        además visibility='team'; la mig 20261023 lo corrige a is_official a secas.)
 --   S1. staff ve notas + cambios; jugador NO puede INSERT planned_substitutions (42501).
 \ir helpers/auth_users.sql
 
@@ -113,9 +115,14 @@ begin
 end $$;
 reset role;
 
--- ── V5: visibility='staff' (SOLO STAFF) → jugadorA (del equipo) NO ve ─────────
--- FIX (mig 20261022): la rama club-wide exige is_official AND visibility='team'.
--- Una alineación marcada visibility='staff', aunque sea oficial, es solo del staff.
+-- ── V5: OFICIAL con visibility='staff' → el jugador SÍ la ve (es la oficial) ──
+-- Corrección (mig 20261023): la rama club-wide exige SOLO is_official. Marcar una
+-- alineación OFICIAL ya ES publicarla (es el once que juega); no depende de
+-- visibility. Decisión de Jose: en la app, oficializar (setLineupOfficial) y
+-- compartir (setLineupVisibility) son acciones independientes, el default de
+-- visibility es 'staff', y en prod 10 de 10 oficiales están en 'staff' → exigir
+-- 'team' (como hacía la mig 20261022) dejaba el directo vacío. Antes (20261022)
+-- este caso esperaba 0; ahora es 1. El BORRADOR (V6) sigue oculto: esa era la fuga.
 update public.lineups set visibility = 'staff' where id = '77ff0000-7777-0001-0000-000000000000';
 set local role authenticated;
 set local "request.jwt.claim.sub" to '77ff0000-aaaa-0002-0000-000000000000';
@@ -123,11 +130,11 @@ do $$
 declare n int;
 begin
   select count(*) into n from public.lineups where id = '77ff0000-7777-0001-0000-000000000000';
-  if n <> 0 then raise exception 'FAIL [V5]: con visibility=staff el jugador NO debería ver (n=%)', n; end if;
+  if n <> 1 then raise exception 'FAIL [V5]: la alineación OFICIAL (aunque visibility=staff) debería verse en el club (n=%)', n; end if;
 end $$;
 reset role;
 
--- ── V5b: el STAFF del equipo SÍ ve la alineación solo-staff (rama user_can_manage) ─
+-- ── V5b: el STAFF del equipo también la ve (rama user_can_manage) ─────────────
 set local role authenticated;
 set local "request.jwt.claim.sub" to '77ff0000-aaaa-0001-0000-000000000000';
 do $$
@@ -139,8 +146,9 @@ end $$;
 reset role;
 
 -- ── V6: visibility='team' pero is_official=false (BORRADOR) → jugadorA NO ve ──
--- FIX (mig 20261022): la rama club-wide exige is_official. El borrador (once en
--- pruebas) NO se expone a jugadores/familias ni al resto del club.
+-- La rama club-wide exige is_official (mig 20261022, mantenido en 20261023): el
+-- borrador (once en pruebas) NO se expone a jugadores/familias ni al resto del club.
+-- Esta era la fuga real que había que tapar.
 update public.lineups set visibility = 'team', is_official = false where id = '77ff0000-7777-0001-0000-000000000000';
 set local role authenticated;
 set local "request.jwt.claim.sub" to '77ff0000-aaaa-0002-0000-000000000000';
