@@ -8,7 +8,7 @@
 --
 -- Cubre:
 --   U1. admin_club ejecuta INSERT ... ON CONFLICT DO UPDATE → OK.
---   U2. coordinador hace lo mismo → OK.
+--   U2. coordinador hace lo mismo → 42501 (C-1d: no toca capabilities).
 --   U3. entrenador_principal hace lo mismo → OK.
 --   U4. el propio ayudante NO puede hacerlo → 42501.
 --   U5. jugador del club NO puede hacerlo → 42501.
@@ -38,6 +38,19 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('caf05555-0a00-5555-5555-555555555555', 'caf05555-aaaa-5555-5555-555555555555', 'caf00000-0000-0000-0000-000000000001', 'jugador'),
   ('caf06666-0a00-6666-6666-666666666666', 'caf06666-bbbb-6666-6666-666666666666', 'caf00000-0000-0000-0000-000000000002', 'admin_club');
 
+-- SETUP de equipo (gemelo de rls_capabilities_update): el principal caf03333 y el
+-- ayudante caf04444 comparten un equipo. Necesario para U3: tras C-1d/F14.9 la policy
+-- viva capabilities_update reserva el UPDATE a admin_club ∪ user_is_principal_of_assistant_team
+-- (comparten equipo). Sin este setup el principal no tendría autoridad y U3 fallaría.
+-- (Este fixture nunca lo montó porque abortaba en U2 antes de llegar a U3.)
+insert into public.categories (id, club_id, name) values
+  ('cafca700-0000-0000-0000-000000000001', 'caf00000-0000-0000-0000-000000000001', 'Cat Upsert A');
+insert into public.teams (id, category_id, name, format, color, season) values
+  ('caf70000-0000-0000-0000-0000000000a1', 'cafca700-0000-0000-0000-000000000001', 'Upsert A1', 'F7', '#10B981', '2025-26');
+insert into public.team_staff (team_id, membership_id, staff_role) values
+  ('caf70000-0000-0000-0000-0000000000a1', 'caf03333-0a00-3333-3333-333333333333', 'entrenador_principal'),
+  ('caf70000-0000-0000-0000-0000000000a1', 'caf04444-0a00-4444-4444-444444444444', 'entrenador_ayudante');
+
 -- El trigger sembró las 9 filas con granted=false para el ayudante caf04444.
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -64,23 +77,27 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- U2: coordinador → OK
+-- U2: coordinador → 42501 (rechazado)
+-- CAMBIO DE EXPECTATIVA (C-1d, mig 20261012000000): el coordinador ya NO gestiona
+-- capabilities. El UPSERT es INSERT ... ON CONFLICT DO UPDATE; el WITH CHECK de
+-- capabilities_insert_managers / capabilities_update (admin_club ∪ principal) lo
+-- rechaza con 42501. Antes de C-1d el coordinador estaba en la rama → esperaba OK.
 -- ─────────────────────────────────────────────────────────────────────────────
 set local role authenticated;
 set local "request.jwt.claims" = '{"sub":"caf02222-aaaa-2222-2222-222222222222","role":"authenticated"}';
 do $$
-declare current_val boolean;
+declare ok boolean := false;
 begin
-  insert into public.capabilities (membership_id, capability_name, granted)
-  values ('caf04444-0a00-4444-4444-444444444444', 'can_evaluate', true)
-  on conflict (membership_id, capability_name) do update set granted = excluded.granted;
-
+  begin
+    insert into public.capabilities (membership_id, capability_name, granted)
+    values ('caf04444-0a00-4444-4444-444444444444', 'can_evaluate', true)
+    on conflict (membership_id, capability_name) do update set granted = excluded.granted;
+  exception when others then
+    if sqlstate = '42501' then ok := true; end if;
+  end;
   reset role;
-  select granted into current_val from public.capabilities
-   where membership_id = 'caf04444-0a00-4444-4444-444444444444'
-     and capability_name = 'can_evaluate';
-  if current_val is distinct from true then
-    raise exception 'FAIL [U2]: coord no pudo UPSERT (got=%)', current_val;
+  if not ok then
+    raise exception 'FAIL [U2]: coord NO debería poder UPSERT capabilities (C-1d)';
   end if;
 end $$;
 

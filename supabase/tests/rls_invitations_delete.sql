@@ -2,7 +2,7 @@
 --
 -- Cobertura (6 casos, según spec):
 --   D1. admin_club borra invitación de su club → OK.
---   D2. coordinador borra invitación de su club → OK.
+--   D2. coordinador NO borra invitación de su club → RLS no afecta (C-1d).
 --   D3. entrenador_principal del team borra invitación con ese team_id → OK.
 --   D4. inviter (created_by = auth.uid()) borra su propia invitación → OK.
 --   D5. jugador NO puede borrar invitaciones del club → rechazado por RLS.
@@ -90,7 +90,13 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- D2: coordinador del club borra inv 002.
+-- D2: coordinador del club NO puede borrar inv 002.
+-- CAMBIO DE EXPECTATIVA (C-1d, mig 20261015000000 + #353): el coordinador ya NO
+-- gestiona invitaciones. La policy viva invitations_delete_managers permite borrar
+-- solo a: created_by=auth.uid() ∪ admin_club ∪ entrenador_principal del team. El
+-- coordinador no está en ninguna rama → el DELETE pasa el filtro USING y no afecta
+-- ninguna fila (queda 1). Antes de C-1d el coordinador sí gestionaba → esperaba 0.
+-- (D4, inviter que resulta ser coordinador, sigue borrando por la rama created_by.)
 -- ─────────────────────────────────────────────────────────────────────────────
 do $$
 declare v_remaining int;
@@ -100,8 +106,8 @@ begin
   delete from public.invitations where id = 'a0d00002-0000-0000-0000-000000000002';
   reset role;
   select count(*) into v_remaining from public.invitations where id = 'a0d00002-0000-0000-0000-000000000002';
-  if v_remaining <> 0 then
-    raise exception 'FAIL [D2]: coordinador no pudo borrar (quedaron % filas)', v_remaining;
+  if v_remaining <> 1 then
+    raise exception 'FAIL [D2]: coordinador NO debería poder borrar (C-1d); quedaron % filas, esperaba 1', v_remaining;
   end if;
 end $$;
 
