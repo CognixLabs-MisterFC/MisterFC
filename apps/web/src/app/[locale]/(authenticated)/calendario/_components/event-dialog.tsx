@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import {
   ClipboardList,
   ClipboardCheck,
@@ -372,6 +373,25 @@ export function EventDialog({
       if (!result.success) {
         setError(tErrors(result.error));
         return;
+      }
+      // F14F-3 — al crear una serie, informa de los días omitidos por festivo.
+      if (mode === 'new' && result.skipped_holidays?.length) {
+        const fmt = new Intl.DateTimeFormat(locale, {
+          day: 'numeric',
+          month: 'short',
+        });
+        const dates = result.skipped_holidays
+          .map((s) => {
+            const [y, m, d] = s.split('-').map((n) => parseInt(n, 10));
+            return fmt.format(new Date(y!, m! - 1, d!));
+          })
+          .join(', ');
+        toast.info(
+          t('holidays.skipped_summary', {
+            count: result.skipped_holidays.length,
+            dates,
+          }),
+        );
       }
       setOpen(false);
     });

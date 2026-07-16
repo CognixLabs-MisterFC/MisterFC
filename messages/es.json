@@ -1720,6 +1720,7 @@
         "no_active_club": "No hay club activo.",
         "cross_club": "El equipo o categoría no pertenece a este club.",
         "not_found": "El evento no existe o ya no es accesible.",
+        "all_on_holidays": "Todas las fechas de la serie caen en días festivos: no se ha creado ningún entrenamiento.",
         "db": "Error al guardar. Inténtalo de nuevo.",
         "plan_failed": "No se pudo planificar la sesión. Inténtalo de nuevo.",
         "link_failed": "No se pudo vincular la sesión. Inténtalo de nuevo.",
@@ -1809,6 +1810,7 @@
       "unmark": "Desmarcar festivo",
       "unmark_title": "Desmarcar día festivo",
       "unmark_description": "Se quitará el festivo «{reason}» y se reactivarán los entrenamientos que canceló (los cancelados por otro motivo no se tocan).",
+      "skipped_summary": "Se {count, plural, one {ha omitido # día} other {han omitido # días}} por festivo ({dates}).",
       "errors": {
         "forbidden": "Solo dirección puede marcar días festivos.",
         "already_holiday": "Ese día ya está marcado como festivo.",
