@@ -3171,6 +3171,17 @@
         "sub_in_expelled": "Sub brings on a sent-off player"
       }
     },
+    "quick": {
+      "link": "Quick entry",
+      "title": "Quick event entry",
+      "back_to_live": "Back to live",
+      "add_title": "Add event",
+      "chain_hint": "The form stays open: add one after another. Type and side are kept; the minute steps up on its own (you can change it). The player clears for the next one.",
+      "prepare_title": "Prepare the match sheet",
+      "prepare_explain": "This match was never opened in live. To log events by minute the sheet will be prepared: the official lineup's starting XI is frozen and the two halves are created. The match will be marked as FINISHED; you can then add events and the stats will be computed automatically.",
+      "prepare_cta": "Prepare sheet and start",
+      "needs_official_lineup": "Set the official lineup for this match first so the sheet can be prepared (no XI is invented)."
+    },
     "stats_consolidated": "Match closed · stats consolidated",
     "go_post_match": "Go to ratings",
     "clock_reopen": "Reopen match",

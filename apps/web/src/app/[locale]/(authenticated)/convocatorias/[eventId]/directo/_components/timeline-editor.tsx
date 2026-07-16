@@ -49,8 +49,10 @@ type Props = {
   absentIds: string[];
 };
 
-/** Tipos que NO se dan de alta aquí (tienen su propia UI/derivación). */
-const NON_ADDABLE = new Set(['substitution', 'formation_change', 'shootout_penalty']);
+/** Tipos que NO se dan de alta a mano (tienen su propia UI/derivación). F14H
+ *  saca la SUSTITUCIÓN de aquí (ahora sí se mete a mano: SALE → ENTRA), para que
+ *  los minutos jugados salgan bien al reconstruir un partido después. */
+const NON_ADDABLE = new Set(['formation_change', 'shootout_penalty']);
 
 function minuteOf(e: TimelineEntry): number {
   return e.displayMinute ?? Math.floor(e.clockSeconds / 60);
@@ -145,6 +147,24 @@ export function TimelineEditor({
       .finally(() => setPending(false));
   };
 
+  // F14H — MODO CADENA: el alta NO cierra el formulario al enviar. Refresca la
+  // lista, devuelve el resultado y deja que el AddEventForm se resetee para el
+  // siguiente evento (minuto+1, mismo tipo/bando, jugador limpio). Meter 20 seguidos
+  // sin reabrir. (El resto de operaciones —editar/borrar— siguen usando `run`.)
+  const runAdd = (
+    fn: () => Promise<{ error?: string; success?: boolean }>,
+  ): Promise<{ error?: string; success?: boolean }> => {
+    setPending(true);
+    setError(null);
+    return fn()
+      .then((res) => {
+        if (res.error) setError(res.error);
+        else startTransition(() => router.refresh());
+        return res;
+      })
+      .finally(() => setPending(false));
+  };
+
   function describe(e: TimelineEntry): string {
     switch (e.type) {
       case 'substitution':
@@ -228,7 +248,7 @@ export function TimelineEditor({
           rosterPlayers={rosterPlayers}
           defaultMinute={defaultMinute}
           pending={pending}
-          onSubmit={(input) => run(() => addMatchEvent(input))}
+          onSubmit={(input) => runAdd(() => addMatchEvent(input))}
         />
       )}
 
@@ -485,20 +505,23 @@ function EditRow({
 // Alta de un evento olvidado.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type AddInput = {
+export type AddInput = {
   event_id: string;
   id: string;
   side: 'own' | 'rival';
   type: string;
   display_minute: number;
   player_id?: string;
+  related_player_id?: string;
   rival_dorsal?: number;
   outcome?: string;
   foul_kind?: string;
   corner_side?: string;
 };
 
-function AddEventForm({
+// F14H — exportado para reusarlo en la superficie de ENTRADA RÁPIDA (misma forma,
+// mismas reglas). Devuelve el resultado para encadenar altas sin cerrar el form.
+export function AddEventForm({
   eventId,
   rosterPlayers,
   defaultMinute,
@@ -509,34 +532,41 @@ function AddEventForm({
   rosterPlayers: RosterPlayer[];
   defaultMinute: number;
   pending: boolean;
-  onSubmit: (input: AddInput) => void;
+  onSubmit: (input: AddInput) => Promise<{ error?: string; success?: boolean }>;
 }) {
   const t = useTranslations('partido_directo');
   const [type, setType] = useState<string>('goal');
   const [side, setSide] = useState<'own' | 'rival'>('own');
   const [minute, setMinute] = useState<number>(defaultMinute);
   const [playerId, setPlayerId] = useState<string>('');
+  const [playerInId, setPlayerInId] = useState<string>('');
   const [dorsal, setDorsal] = useState<string>('');
   const [outcome, setOutcome] = useState<string>('scored');
   const [foulKind, setFoulKind] = useState<string>('committed');
   const [cornerSide, setCornerSide] = useState<string>('for');
+  const minuteRef = useRef<HTMLInputElement | null>(null);
 
   const addable = TIMELINE_ADD_TYPES.filter((ty) => !NON_ADDABLE.has(ty));
 
   // Reglas de UI por tipo (espejo de addTimelineEventSchema).
+  const isSub = type === 'substitution';
   const teamEvent = type === 'foul' || type === 'corner'; // siempre 'own'
-  const effectiveSide: 'own' | 'rival' = teamEvent ? 'own' : side;
+  const sideHidden = teamEvent || isSub; // sub y evento de equipo → siempre 'own'
+  const effectiveSide: 'own' | 'rival' = sideHidden ? 'own' : side;
   const assistOnlyOwn = type === 'assist';
   const ownByLocation = type === 'offside' || type === 'shot' || type === 'corner';
+  // needsPlayer: actor propio, o el jugador que SALE en la sustitución.
   const needsPlayer = effectiveSide === 'own' && !ownByLocation && type !== 'corner';
   const needsDorsal = effectiveSide === 'rival';
 
   const canSubmit =
     minute >= 0 &&
-    (type === 'corner' ||
-      (needsPlayer ? !!playerId : true) && (needsDorsal ? !!dorsal : true));
+    (isSub
+      ? !!playerId && !!playerInId && playerId !== playerInId
+      : type === 'corner' ||
+        ((needsPlayer ? !!playerId : true) && (needsDorsal ? !!dorsal : true)));
 
-  const submit = () => {
+  const submit = async () => {
     const input: AddInput = {
       event_id: eventId,
       id: crypto.randomUUID(),
@@ -544,12 +574,27 @@ function AddEventForm({
       type,
       display_minute: minute,
     };
-    if (needsPlayer && playerId) input.player_id = playerId;
+    if (needsPlayer && playerId) input.player_id = playerId; // actor / SALE
+    if (isSub && playerInId) input.related_player_id = playerInId; // ENTRA
     if (needsDorsal && dorsal) input.rival_dorsal = Number(dorsal);
     if (type === 'penalty') input.outcome = outcome;
     if (type === 'foul') input.foul_kind = foulKind;
     if (type === 'corner') input.corner_side = cornerSide;
-    onSubmit(input);
+
+    const res = await onSubmit(input);
+    // F14H — MODO CADENA: si el alta va bien, resetear y quedar listo para el
+    // siguiente. Conservar TIPO y BANDO (suelen repetirse); subir el minuto +1
+    // (editable); limpiar jugadores/dorsal y las opciones del tipo. Foco al minuto.
+    if (res?.success) {
+      setMinute((m) => m + 1);
+      setPlayerId('');
+      setPlayerInId('');
+      setDorsal('');
+      setOutcome('scored');
+      setFoulKind('committed');
+      setCornerSide('for');
+      minuteRef.current?.focus();
+    }
   };
 
   return (
@@ -573,7 +618,7 @@ function AddEventForm({
         </select>
       </label>
 
-      {!teamEvent && (
+      {!sideHidden && (
         <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
           <span>{t('timeline.field_side')}</span>
           <select
@@ -591,6 +636,7 @@ function AddEventForm({
       <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
         <span>{t('timeline.field_minute')}</span>
         <input
+          ref={minuteRef}
           type="number"
           min={0}
           max={130}
@@ -602,10 +648,28 @@ function AddEventForm({
 
       {needsPlayer && (
         <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
-          <span>{t('timeline.field_player')}</span>
+          <span>{t(isSub ? 'timeline.field_player_out' : 'timeline.field_player')}</span>
           <select
             value={playerId}
             onChange={(ev) => setPlayerId(ev.target.value)}
+            className="rounded-md border border-border bg-background px-1.5 py-0.5 text-sm text-foreground"
+          >
+            <option value="">—</option>
+            {rosterPlayers.map((p) => (
+              <option key={p.playerId} value={p.playerId}>
+                {p.dorsal != null ? `${p.dorsal} · ${p.label}` : p.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      {isSub && (
+        <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
+          <span>{t('timeline.field_player_in')}</span>
+          <select
+            value={playerInId}
+            onChange={(ev) => setPlayerInId(ev.target.value)}
             className="rounded-md border border-border bg-background px-1.5 py-0.5 text-sm text-foreground"
           >
             <option value="">—</option>

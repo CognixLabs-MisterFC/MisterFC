@@ -3170,6 +3170,17 @@
         "sub_in_expelled": "Cambio que mete a un expulsado"
       }
     },
+    "quick": {
+      "link": "Entrada rápida",
+      "title": "Entrada rápida de eventos",
+      "back_to_live": "Volver al directo",
+      "add_title": "Añadir evento",
+      "chain_hint": "El formulario se queda abierto: mete uno tras otro. Se conservan el tipo y el bando; el minuto sube solo (puedes cambiarlo). El jugador se limpia para el siguiente.",
+      "prepare_title": "Preparar el acta",
+      "prepare_explain": "Este partido no se abrió en el directo. Para registrar los eventos por minuto se preparará el acta: se congelará el once de la alineación oficial y se crearán las dos partes. El partido quedará marcado como TERMINADO; luego podrás meter los eventos y las estadísticas se calcularán solas.",
+      "prepare_cta": "Preparar acta y empezar",
+      "needs_official_lineup": "Define primero la alineación oficial de este partido para poder preparar el acta (no se inventa un once)."
+    },
     "stats_consolidated": "Partido cerrado · estadísticas consolidadas",
     "go_post_match": "Ir a valoraciones",
     "clock_reopen": "Reabrir partido",
