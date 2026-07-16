@@ -12,6 +12,7 @@
 --   V5. visibility='staff' → el jugador del team deja de ver la alineación.
 --   V6. is_official=false + visibility='team' → el jugador NO ve (debe ser oficial).
 --   S1. staff ve notas + cambios; jugador NO puede INSERT planned_substitutions (42501).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -32,10 +33,9 @@ insert into public.team_members (team_id, player_id, joined_at) values
   ('77ff0000-2222-0000-0000-000000000001', '77ff0000-3333-0000-0000-00000000000A', '2025-09-01'),
   ('77ff0000-2222-0000-0000-000000000001', '77ff0000-3333-0000-0000-00000000000B', '2025-09-01');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('77ff0000-aaaa-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coach-lb@ts.test',  now(), '{}'::jsonb, now(), now()),
-  ('77ff0000-aaaa-0002-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugA-lb@ts.test',   now(), '{}'::jsonb, now(), now()),
-  ('77ff0000-aaaa-0003-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugC-lb@ts.test',   now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('77ff0000-aaaa-0001-0000-000000000000', 'coach-lb@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('77ff0000-aaaa-0002-0000-000000000000', 'jugA-lb@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('77ff0000-aaaa-0003-0000-000000000000', 'jugC-lb@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('77ff0000-5555-0001-0000-000000000000', '77ff0000-aaaa-0001-0000-000000000000', '77ff0000-0000-0000-0000-000000000001', 'entrenador_principal'),

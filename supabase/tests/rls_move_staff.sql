@@ -13,6 +13,7 @@
 --   M3. Si el destino ya tiene principal activo y se intenta insertar otro
 --       principal → 23505 (UNIQUE parcial).
 --   M4. Si el actor es jugador → RLS rechaza UPDATE (42501).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -27,11 +28,10 @@ insert into public.teams (id, category_id, name, format, color, season) values
   ('33ff0000-0000-0000-0000-000000000001', '22ff0000-0000-0000-0000-000000000001', 'Origin', 'F7', '#10B981', '2025-26'),
   ('33ff0000-0000-0000-0000-000000000002', '22ff0000-0000-0000-0000-000000000001', 'Target', 'F7', '#10B981', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44ff0000-aaaa-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-m@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44ff0000-aaaa-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-m@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44ff0000-aaaa-7777-7777-777777777777', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'other-principal-m@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44ff0000-aaaa-9999-9999-999999999999', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-m@ts.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44ff0000-aaaa-1111-1111-111111111111', 'admin-m@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ff0000-aaaa-3333-3333-333333333333', 'principal-m@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ff0000-aaaa-7777-7777-777777777777', 'other-principal-m@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ff0000-aaaa-9999-9999-999999999999', 'jugador-m@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55ff0000-aaaa-1111-1111-111111111111', '44ff0000-aaaa-1111-1111-111111111111', '11ff0000-0000-0000-0000-000000000001', 'admin_club'),

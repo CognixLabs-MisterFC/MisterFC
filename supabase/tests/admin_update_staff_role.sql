@@ -18,6 +18,7 @@
 --       cubierto por L1; aquí verificamos que el admin sigue siendo admin_club.
 --   L3. promover al entrenador a admin_club (2º admin) y LUEGO degradar al
 --       primer admin SÍ funciona (ya no es el último).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -25,13 +26,11 @@ insert into public.clubs (id, name, slug) values
   ('bb000000-0000-4000-8000-000000000001', 'Club A 2b', 'club-a-2b'),
   ('bb000000-0000-4000-8000-000000000002', 'Club B 2b', 'club-b-2b');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('bb0a0000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a2b-admin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('bb0a0000-cccc-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a2b-coord@test.local', now(), '{}'::jsonb, now(), now()),
-  ('bb0a0000-eeee-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a2b-coach@test.local', now(), '{}'::jsonb, now(), now()),
-  ('bb0b0000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'b2b-admin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('bb0b0000-eeee-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'b2b-coach@test.local', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('bb0a0000-aaaa-4000-8000-000000000001', 'a2b-admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('bb0a0000-cccc-4000-8000-000000000001', 'a2b-coord@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('bb0a0000-eeee-4000-8000-000000000001', 'a2b-coach@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('bb0b0000-aaaa-4000-8000-000000000001', 'b2b-admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('bb0b0000-eeee-4000-8000-000000000001', 'b2b-coach@test.local', '{}'::jsonb);
 
 insert into public.profiles (id, full_name) values
   ('bb0a0000-aaaa-4000-8000-000000000001', 'Admin A'),

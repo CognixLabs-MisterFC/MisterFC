@@ -11,6 +11,7 @@
 --
 -- Aprobador de jugadas = admin_club ∪ coordinador (D1), distinto de ejercicios.
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -34,16 +35,15 @@ insert into public.team_members (team_id, player_id, joined_at) values
   ('b1700000-0000-4000-8000-000000000001', 'b1500000-0000-4000-8000-00000000000f', '2025-09-01'),
   ('b1700000-0000-4000-8000-000000000002', 'b1500000-0000-4000-8000-000000000009', '2025-09-01');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('b1a00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@play.test',     now(), '{}'::jsonb, now(), now()),
-  ('b1a00000-0000-4000-8000-00000000000b', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord@play.test',     now(), '{}'::jsonb, now(), now()),
-  ('b1a00000-0000-4000-8000-00000000000c', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principalA@play.test', now(), '{}'::jsonb, now(), now()),
-  ('b1a00000-0000-4000-8000-00000000000d', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayud-cap@play.test',  now(), '{}'::jsonb, now(), now()),
-  ('b1a00000-0000-4000-8000-00000000000e', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayud-nocap@play.test',now(), '{}'::jsonb, now(), now()),
-  ('b1a00000-0000-4000-8000-000000000007', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principalA2@play.test',now(),'{}'::jsonb, now(), now()),
-  ('b1a00000-0000-4000-8000-00000000000f', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugA@play.test',      now(), '{}'::jsonb, now(), now()),
-  ('b1a00000-0000-4000-8000-000000000009', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugA2@play.test',     now(), '{}'::jsonb, now(), now()),
-  ('b1b00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'adminB@play.test',    now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('b1a00000-0000-4000-8000-00000000000a', 'admin@play.test', '{}'::jsonb);
+select pg_temp.new_test_user('b1a00000-0000-4000-8000-00000000000b', 'coord@play.test', '{}'::jsonb);
+select pg_temp.new_test_user('b1a00000-0000-4000-8000-00000000000c', 'principalA@play.test', '{}'::jsonb);
+select pg_temp.new_test_user('b1a00000-0000-4000-8000-00000000000d', 'ayud-cap@play.test', '{}'::jsonb);
+select pg_temp.new_test_user('b1a00000-0000-4000-8000-00000000000e', 'ayud-nocap@play.test', '{}'::jsonb);
+select pg_temp.new_test_user('b1a00000-0000-4000-8000-000000000007', 'principalA2@play.test', '{}'::jsonb);
+select pg_temp.new_test_user('b1a00000-0000-4000-8000-00000000000f', 'jugA@play.test', '{}'::jsonb);
+select pg_temp.new_test_user('b1a00000-0000-4000-8000-000000000009', 'jugA2@play.test', '{}'::jsonb);
+select pg_temp.new_test_user('b1b00000-0000-4000-8000-00000000000a', 'adminB@play.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('b1550000-0000-4000-8000-00000000000a', 'b1a00000-0000-4000-8000-00000000000a', 'b1c00000-0000-4000-8000-000000000001', 'admin_club'),

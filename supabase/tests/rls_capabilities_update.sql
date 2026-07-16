@@ -14,6 +14,7 @@
 --   T8. ese mismo principal-de-equipo NO puede UPDATE sus PROPIAS cab0
 --       (anti-escalada: el helper excluye la auto-edición).
 --   X1. capability_name inválida → CHECK rechaza.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -22,19 +23,14 @@ insert into public.clubs (id, name, slug) values
   ('cab00000-0000-0000-0000-000000000001', 'Club Alfa Caps', 'alfa-cab0'),
   ('cab00000-0000-0000-0000-000000000002', 'Club Beta Caps', 'beta-cab0');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('cab01111-aaaa-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-cab0@test', now(), '{}'::jsonb, now(), now()),
-  ('cab02222-aaaa-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord-cab0@test', now(), '{}'::jsonb, now(), now()),
-  ('cab03333-aaaa-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-cab0@test', now(), '{}'::jsonb, now(), now()),
-  ('cab04444-aaaa-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'assist-cab0@test', now(), '{}'::jsonb, now(), now()),
-  ('cab05555-aaaa-5555-5555-555555555555', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'player-cab0@test', now(), '{}'::jsonb, now(), now()),
-  ('cab06666-bbbb-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'adminb-cab0@test', now(), '{}'::jsonb, now(), now()),
-  -- principal de OTRO equipo (A2) del mismo club — NO debe poder editar a un
-  -- ayudante que solo es staff de A1 (el agujero F14.9 que cerramos).
-  ('cab07777-aaaa-7777-7777-777777777777', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-a2-cab0@test', now(), '{}'::jsonb, now(), now()),
-  -- principal del equipo A3 pero rol de CLUB ayudante (caso coach7): SÍ debe
-  -- poder editar al staff de A3, pero NO sus propias caps (anti-escalada).
-  ('cab08888-aaaa-8888-8888-888888888888', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-a3-club-ayud-cab0@test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('cab01111-aaaa-1111-1111-111111111111', 'admin-cab0@test', '{}'::jsonb);
+select pg_temp.new_test_user('cab02222-aaaa-2222-2222-222222222222', 'coord-cab0@test', '{}'::jsonb);
+select pg_temp.new_test_user('cab03333-aaaa-3333-3333-333333333333', 'principal-cab0@test', '{}'::jsonb);
+select pg_temp.new_test_user('cab04444-aaaa-4444-4444-444444444444', 'assist-cab0@test', '{}'::jsonb);
+select pg_temp.new_test_user('cab05555-aaaa-5555-5555-555555555555', 'player-cab0@test', '{}'::jsonb);
+select pg_temp.new_test_user('cab06666-bbbb-6666-6666-666666666666', 'adminb-cab0@test', '{}'::jsonb);
+select pg_temp.new_test_user('cab07777-aaaa-7777-7777-777777777777', 'principal-a2-cab0@test', '{}'::jsonb);
+select pg_temp.new_test_user('cab08888-aaaa-8888-8888-888888888888', 'principal-a3-club-ayud-cab0@test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('cab01111-0a00-1111-1111-111111111111', 'cab01111-aaaa-1111-1111-111111111111', 'cab00000-0000-0000-0000-000000000001', 'admin_club'),

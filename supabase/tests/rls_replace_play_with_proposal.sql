@@ -4,6 +4,7 @@
 -- sobre la original = MISMO registro published, owner/estado intactos; consume la
 -- propuesta); team_plays (vínculo + signal_id) preservado; rechazo si la "propuesta"
 -- no tiene source_play_id. Estilo: aserciones con raise exception; transaccional.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -16,9 +17,8 @@ insert into public.categories (id, club_id, name) values
 insert into public.teams (id, category_id, name, format, color, season) values
   ('b2700000-0000-4000-8000-000000000001', 'b2ca0000-0000-4000-8000-000000000001', 'Team R', 'F11', '#10B981', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('b2a00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'adminR@repl.test',     now(), '{}'::jsonb, now(), now()),
-  ('b2a00000-0000-4000-8000-00000000000c', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principalR@repl.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('b2a00000-0000-4000-8000-00000000000a', 'adminR@repl.test', '{}'::jsonb);
+select pg_temp.new_test_user('b2a00000-0000-4000-8000-00000000000c', 'principalR@repl.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('b2550000-0000-4000-8000-00000000000a', 'b2a00000-0000-4000-8000-00000000000a', 'b2c00000-0000-4000-8000-000000000001', 'admin_club'),

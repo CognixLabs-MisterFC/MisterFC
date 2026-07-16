@@ -7,6 +7,7 @@
 --   F4. Solo VE sus propias filas (no las de otro usuario del mismo club).
 --   F5. Resolución del fan-out: los seguidores de un equipo son el conjunto correcto
 --       (query service-role/bypass-RLS, como hace emitGoalPush).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -27,10 +28,9 @@ insert into public.teams (id, category_id, name, format, color, season, club_id)
   ('ca110000-1111-4111-8111-0000000000fb', 'b1110000-1111-4111-8111-0000000000fb', 'Team FB', 'F7', '#10B981', '2025-26', 'a1110000-1111-4111-8111-0000000000fb');
 
 -- U1, U2 miembros de A; UB miembro de B.
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('dd110000-0000-4000-8000-0000000000f1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'u1-f@follows.test', now(), '{}'::jsonb, now(), now()),
-  ('dd110000-0000-4000-8000-0000000000f2', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'u2-f@follows.test', now(), '{}'::jsonb, now(), now()),
-  ('dd110000-0000-4000-8000-0000000000fb', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ub-f@follows.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('dd110000-0000-4000-8000-0000000000f1', 'u1-f@follows.test', '{}'::jsonb);
+select pg_temp.new_test_user('dd110000-0000-4000-8000-0000000000f2', 'u2-f@follows.test', '{}'::jsonb);
+select pg_temp.new_test_user('dd110000-0000-4000-8000-0000000000fb', 'ub-f@follows.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55110000-0000-4000-8000-0000000000f1', 'dd110000-0000-4000-8000-0000000000f1', 'a1110000-1111-4111-8111-0000000000fa', 'jugador'),

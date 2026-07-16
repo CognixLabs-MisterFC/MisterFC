@@ -7,6 +7,7 @@
 --
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final).
 -- IDs: prefijo fc (hex; no colisiona con otros tests).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -26,9 +27,8 @@ insert into public.players (id, club_id, first_name, last_name, date_of_birth) v
   ('fc500000-0000-4000-8000-000000000001', 'fc000000-0000-4000-8000-000000000001', 'Comp', 'Leto', '2012-01-01'),
   ('fc500000-0000-4000-8000-000000000002', 'fc000000-0000-4000-8000-000000000001', 'Incom', 'Pleto', '2012-01-01');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('fca00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'pcadmin@pc.test', now(), '{}'::jsonb, now(), now()),
-  ('fca00000-0000-4000-8000-00000000000b', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'pccoord@pc.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('fca00000-0000-4000-8000-00000000000a', 'pcadmin@pc.test', '{}'::jsonb);
+select pg_temp.new_test_user('fca00000-0000-4000-8000-00000000000b', 'pccoord@pc.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('fc550000-0000-4000-8000-00000000000a', 'fca00000-0000-4000-8000-00000000000a', 'fc000000-0000-4000-8000-000000000001', 'admin_club'),

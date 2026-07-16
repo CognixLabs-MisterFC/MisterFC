@@ -9,13 +9,11 @@
 --   S1. Club creado por la RPC → exactamente 10 categorías is_standard=true.
 --   S2. Sin custom (is_standard=false) en el club nuevo.
 --   S3. Los 10 kinds canónicos presentes.
+\ir helpers/auth_users.sql
 
 begin;
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('c2000000-0000-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'c2newuser@test.local', now(), '{"full_name":"C2 New"}'::jsonb, now(), now());
+select pg_temp.new_test_user('c2000000-0000-4000-8000-000000000001', 'c2newuser@test.local', '{"full_name":"C2 New"}'::jsonb);
 
 set local role authenticated;
 set local "request.jwt.claims" = '{"sub":"c2000000-0000-4000-8000-000000000001","role":"authenticated"}';

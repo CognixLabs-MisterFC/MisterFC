@@ -9,6 +9,7 @@
 --   C5. INSERT participación cross-club rechazada por trigger same_club.
 --   C6. UNIQUE (coach_profile_id, player_id) — segundo INSERT con misma
 --       pareja → rechazado.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -26,12 +27,11 @@ insert into public.categories (id, club_id, name) values
 insert into public.teams (id, category_id, name, format, color, season) values
   ('33333333-3333-4333-8333-333333330001', '22222222-2222-4222-8222-222222220001', 'Team A', 'F7', '#10B981', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44444444-4444-4444-8444-444444440001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@msg.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-444444440002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coach1@msg.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-444444440003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coach2@msg.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-444444440004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'tutor@msg.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-444444440005', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'stranger@msg.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44444444-4444-4444-8444-444444440001', 'admin@msg.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-444444440002', 'coach1@msg.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-444444440003', 'coach2@msg.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-444444440004', 'tutor@msg.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-444444440005', 'stranger@msg.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55555555-5555-4555-8555-555555550001', '44444444-4444-4444-8444-444444440001', '11111111-1111-4111-8111-111111110001', 'admin_club'),

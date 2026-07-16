@@ -9,6 +9,7 @@
 --       → trigger rechaza.
 --   M6. audit_get_conversation: admin con razón válida → ve mensajes +
 --       deja entry en audit_log. Sin razón / < 5 chars → rechaza.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -26,11 +27,10 @@ insert into public.categories (id, club_id, name) values
 insert into public.teams (id, category_id, name, format, color, season) values
   ('33333333-3333-4333-8333-3333333300a1', '22222222-2222-4222-8222-2222222200a1', 'Team M', 'F7', '#10B981', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44444444-4444-4444-8444-4444444400a1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'adm-m@msg.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-4444444400a2', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'cch-m@msg.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-4444444400a3', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'tut-m@msg.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-4444444400a4', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'oth-m@msg.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44444444-4444-4444-8444-4444444400a1', 'adm-m@msg.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-4444444400a2', 'cch-m@msg.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-4444444400a3', 'tut-m@msg.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-4444444400a4', 'oth-m@msg.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55555555-5555-4555-8555-5555555500a1', '44444444-4444-4444-8444-4444444400a1', '11111111-1111-4111-8111-1111111100a1', 'admin_club'),

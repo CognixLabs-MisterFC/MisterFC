@@ -11,6 +11,7 @@
 --
 -- Timestamps EXPLÍCITOS: dentro de una transacción now() es constante, así que se
 -- fijan created_at/last_read_at a horas concretas para un orden determinista.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -29,11 +30,10 @@ insert into public.teams (id, category_id, name, format, color, season, club_id)
   ('cb110000-1111-4111-8111-00000000000b', 'b1110000-1111-4111-8111-000000000001', 'Team RB', 'F7', '#10B981', '2025-26', 'a1110000-1111-4111-8111-000000000001');
 
 -- D director; SA staff de A; SB staff de B; PL familia de A.
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('dd110000-0000-4000-8000-0000000000d1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dir-r@reads.test', now(), '{}'::jsonb, now(), now()),
-  ('dd110000-0000-4000-8000-00000000005a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'sa-r@reads.test',  now(), '{}'::jsonb, now(), now()),
-  ('dd110000-0000-4000-8000-00000000005b', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'sb-r@reads.test',  now(), '{}'::jsonb, now(), now()),
-  ('dd110000-0000-4000-8000-0000000000f1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'pl-r@reads.test',  now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('dd110000-0000-4000-8000-0000000000d1', 'dir-r@reads.test', '{}'::jsonb);
+select pg_temp.new_test_user('dd110000-0000-4000-8000-00000000005a', 'sa-r@reads.test', '{}'::jsonb);
+select pg_temp.new_test_user('dd110000-0000-4000-8000-00000000005b', 'sb-r@reads.test', '{}'::jsonb);
+select pg_temp.new_test_user('dd110000-0000-4000-8000-0000000000f1', 'pl-r@reads.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55110000-0000-4000-8000-0000000000d1', 'dd110000-0000-4000-8000-0000000000d1', 'a1110000-1111-4111-8111-000000000001', 'director'),

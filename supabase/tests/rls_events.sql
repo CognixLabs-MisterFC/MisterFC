@@ -25,6 +25,7 @@
 --   R12 DELETE como jugador → rechazado.
 --   R13 DELETE cascade: borrar parent borra children.
 --   H1  user_can_manage_event() devuelve true/false según rol/cap/team.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -46,15 +47,14 @@ insert into public.teams (id, category_id, name, format, color, season) values
   ('33ab0000-0000-0000-0000-000000000002', '22ab0000-0000-0000-0000-000000000002', 'Team A2', 'F11', '#3B82F6', '2025-26'),
   ('33ab0000-0000-0000-0000-000000000099', '22ab0000-0000-0000-0000-000000000099', 'Team Beta', 'F7', '#EF4444', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44ab0000-1111-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@ev.test', now(), '{}'::jsonb, now(), now()),
-  ('44ab0000-2222-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord@ev.test', now(), '{}'::jsonb, now(), now()),
-  ('44ab0000-3333-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-a1@ev.test', now(), '{}'::jsonb, now(), now()),
-  ('44ab0000-3333-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-a2@ev.test', now(), '{}'::jsonb, now(), now()),
-  ('44ab0000-4444-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'asst-cap@ev.test', now(), '{}'::jsonb, now(), now()),
-  ('44ab0000-4444-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'asst-nocap@ev.test', now(), '{}'::jsonb, now(), now()),
-  ('44ab0000-5555-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador@ev.test', now(), '{}'::jsonb, now(), now()),
-  ('44ab0000-9999-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-beta@ev.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44ab0000-1111-0000-0000-000000000001', 'admin@ev.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ab0000-2222-0000-0000-000000000001', 'coord@ev.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ab0000-3333-0000-0000-000000000001', 'principal-a1@ev.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ab0000-3333-0000-0000-000000000002', 'principal-a2@ev.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ab0000-4444-0000-0000-000000000001', 'asst-cap@ev.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ab0000-4444-0000-0000-000000000002', 'asst-nocap@ev.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ab0000-5555-0000-0000-000000000001', 'jugador@ev.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ab0000-9999-0000-0000-000000000001', 'admin-beta@ev.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55ab0000-1111-0000-0000-000000000001', '44ab0000-1111-0000-0000-000000000001', '11ab0000-c0c0-0000-0000-000000000001', 'admin_club'),

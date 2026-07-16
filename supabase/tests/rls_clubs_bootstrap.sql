@@ -5,16 +5,13 @@
 --   T2. create_club_with_admin crea club + membership en una sola transacción.
 --   T3. Llamar a la función dos veces (mismo user, sin memberships) falla la 2ª.
 --   T4. Si user ya tiene membership en otro club, la función falla.
+\ir helpers/auth_users.sql
 
 begin;
 
 -- Setup: dos users sin memberships.
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'newuser@test.local', now(), '{"full_name":"NewUser"}'::jsonb, now(), now()),
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'existinguser@test.local', now(), '{"full_name":"Existing"}'::jsonb, now(), now());
+select pg_temp.new_test_user('dddddddd-dddd-dddd-dddd-dddddddddddd', 'newuser@test.local', '{"full_name":"NewUser"}'::jsonb);
+select pg_temp.new_test_user('cccccccc-cccc-cccc-cccc-cccccccccccc', 'existinguser@test.local', '{"full_name":"Existing"}'::jsonb);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- T1: INSERT directo en clubs bloqueado para authenticated

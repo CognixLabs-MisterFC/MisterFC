@@ -12,6 +12,7 @@
 --
 -- Nota: DELETE no se prueba aquí (storage.protect_delete() lo bloquea
 -- desde SQL puro; smoke E2E desde la app valida la Storage API).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -33,12 +34,10 @@ insert into public.players (id, club_id, first_name, last_name, date_of_birth)
 values
   ('00000000-aaaa-1111-0000-000000000001', 'dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0', 'Player', 'A1', '2015-04-12');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('11111111-bbbb-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-aph@test', now(), '{}'::jsonb, now(), now()),
-  ('22222222-bbbb-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'assist-aph@test', now(), '{}'::jsonb, now(), now()),
-  ('33333333-bbbb-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'assist-squad-aph@test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-bbbb-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-bph@test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('11111111-bbbb-1111-1111-111111111111', 'admin-aph@test', '{}'::jsonb);
+select pg_temp.new_test_user('22222222-bbbb-2222-2222-222222222222', 'assist-aph@test', '{}'::jsonb);
+select pg_temp.new_test_user('33333333-bbbb-3333-3333-333333333333', 'assist-squad-aph@test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-bbbb-4444-4444-444444444444', 'admin-bph@test', '{}'::jsonb);
 
 insert into public.memberships (profile_id, club_id, role) values
   ('11111111-bbbb-1111-1111-111111111111', 'dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0', 'admin_club'),

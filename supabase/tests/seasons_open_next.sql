@@ -12,6 +12,7 @@
 --       los equipos de la activa quedan intactos; los nuevos atados a la upcoming.
 --   F2. re-open → idempotente (no duplica equipos; misma upcoming).
 --   F3. no-admin (jugador) → forbidden.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -41,10 +42,8 @@ do $$ begin
 end $$;
 
 -- ── Setup para la función: club C6 con admin, jugador, categoría, activa + 2 equipos
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('c6a00000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c6admin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('c6a00000-bbbb-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c6jug@test.local', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('c6a00000-aaaa-4000-8000-000000000001', 'c6admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('c6a00000-bbbb-4000-8000-000000000001', 'c6jug@test.local', '{}'::jsonb);
 
 insert into public.memberships (profile_id, club_id, role) values
   ('c6a00000-aaaa-4000-8000-000000000001', 'c6000000-0000-4000-8000-000000000001', 'admin_club'),

@@ -13,6 +13,7 @@
 -- Mapa de IDs (último segmento del uuid, todo HEX):
 --   users: admin a, coord b, principal c, ayudante(cap) d, ayudante(sin cap) e,
 --          jugador del team A = f, jugador del team A2 = 9, adminB = ...0a (club B).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -37,15 +38,14 @@ insert into public.team_members (team_id, player_id, joined_at) values
   ('5e552000-0000-4000-8000-000000000001', '5e553000-0000-4000-8000-00000000000f', '2025-09-01'),
   ('5e552000-0000-4000-8000-000000000002', '5e553000-0000-4000-8000-000000000009', '2025-09-01');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('5ea00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@ses.test',    now(), '{}'::jsonb, now(), now()),
-  ('5ea00000-0000-4000-8000-00000000000b', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord@ses.test',    now(), '{}'::jsonb, now(), now()),
-  ('5ea00000-0000-4000-8000-00000000000c', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal@ses.test',now(), '{}'::jsonb, now(), now()),
-  ('5ea00000-0000-4000-8000-00000000000d', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayud-cap@ses.test', now(), '{}'::jsonb, now(), now()),
-  ('5ea00000-0000-4000-8000-00000000000e', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayud-nocap@ses.test',now(),'{}'::jsonb, now(), now()),
-  ('5ea00000-0000-4000-8000-00000000000f', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugF@ses.test',     now(), '{}'::jsonb, now(), now()),
-  ('5ea00000-0000-4000-8000-000000000009', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jug9@ses.test',     now(), '{}'::jsonb, now(), now()),
-  ('5eb00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'adminB@ses.test',   now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('5ea00000-0000-4000-8000-00000000000a', 'admin@ses.test', '{}'::jsonb);
+select pg_temp.new_test_user('5ea00000-0000-4000-8000-00000000000b', 'coord@ses.test', '{}'::jsonb);
+select pg_temp.new_test_user('5ea00000-0000-4000-8000-00000000000c', 'principal@ses.test', '{}'::jsonb);
+select pg_temp.new_test_user('5ea00000-0000-4000-8000-00000000000d', 'ayud-cap@ses.test', '{}'::jsonb);
+select pg_temp.new_test_user('5ea00000-0000-4000-8000-00000000000e', 'ayud-nocap@ses.test', '{}'::jsonb);
+select pg_temp.new_test_user('5ea00000-0000-4000-8000-00000000000f', 'jugF@ses.test', '{}'::jsonb);
+select pg_temp.new_test_user('5ea00000-0000-4000-8000-000000000009', 'jug9@ses.test', '{}'::jsonb);
+select pg_temp.new_test_user('5eb00000-0000-4000-8000-00000000000a', 'adminB@ses.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('5e555000-0000-4000-8000-00000000000a', '5ea00000-0000-4000-8000-00000000000a', '5e550000-0000-4000-8000-000000000001', 'admin_club'),

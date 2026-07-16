@@ -16,16 +16,15 @@
 --       (y la fila NO se borra).
 --   G2. GUARD: desasignar de un equipo de una temporada FINALIZED → not_upcoming.
 --   G3. no-admin (jugador) → forbidden.
+\ir helpers/auth_users.sql
 
 begin;
 
 insert into public.clubs (id, name, slug) values
   ('c9000000-0000-4000-8000-000000000001', 'Club C9', 'club-c9');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('c9a00000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c9admin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('c9a00000-bbbb-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c9jug@test.local', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('c9a00000-aaaa-4000-8000-000000000001', 'c9admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('c9a00000-bbbb-4000-8000-000000000001', 'c9jug@test.local', '{}'::jsonb);
 
 insert into public.memberships (profile_id, club_id, role) values
   ('c9a00000-aaaa-4000-8000-000000000001', 'c9000000-0000-4000-8000-000000000001', 'admin_club'),

@@ -17,6 +17,7 @@
 --   S4. familia NO inserta (42501).
 --   S5. admin/coord SÍ ve.
 --   S6. staff del equipo BASE VE la subida.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -46,12 +47,11 @@ insert into public.teams (id, category_id, name, format, color, season, division
   ('a3000000-0000-0000-0000-000000000007', 'a2000000-0000-0000-0000-000000000005', 'Cadete Primera B','F11', '#10B981', '2025-26', 'primera');
 
 -- ── Usuarios ─────────────────────────────────────────────────────────────────
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('a4000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-a@promo.test',     now(), '{}'::jsonb, now(), now()),
-  ('a4000000-0000-0000-0000-0000000000a2', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-sup@promo.test', now(), '{}'::jsonb, now(), now()),
-  ('a4000000-0000-0000-0000-0000000000a3', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-base@promo.test',now(), '{}'::jsonb, now(), now()),
-  ('a4000000-0000-0000-0000-0000000000a4', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'familia@promo.test',      now(), '{}'::jsonb, now(), now()),
-  ('a4000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-b@promo.test',      now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('a4000000-0000-0000-0000-0000000000a1', 'admin-a@promo.test', '{}'::jsonb);
+select pg_temp.new_test_user('a4000000-0000-0000-0000-0000000000a2', 'principal-sup@promo.test', '{}'::jsonb);
+select pg_temp.new_test_user('a4000000-0000-0000-0000-0000000000a3', 'principal-base@promo.test', '{}'::jsonb);
+select pg_temp.new_test_user('a4000000-0000-0000-0000-0000000000a4', 'familia@promo.test', '{}'::jsonb);
+select pg_temp.new_test_user('a4000000-0000-0000-0000-0000000000b1', 'admin-b@promo.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('a5000000-0000-0000-0000-0000000000a1', 'a4000000-0000-0000-0000-0000000000a1', 'a1000000-0000-0000-0000-000000000001', 'admin_club'),

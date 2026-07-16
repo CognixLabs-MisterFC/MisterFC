@@ -18,6 +18,7 @@
 --   T5. Admin del club crea anuncio club-wide (team_id NULL) → OK.
 --   T6. Principal del club NO puede crear anuncio club-wide (solo admin/coord).
 --   T7. Trigger same_club: anuncio con team_id de otro club → rechazado.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -35,11 +36,10 @@ insert into public.teams (id, category_id, name, format, color, season) values
   ('33333333-3333-4333-8333-33333333c002', '22222222-2222-4222-8222-22222222c001', 'Team A2', 'F7', '#10B981', '2025-26'),
   ('33333333-3333-4333-8333-33333333c003', '22222222-2222-4222-8222-22222222c002', 'Team B1', 'F7', '#10B981', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44444444-4444-4444-8444-44444444c001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'adm-ts@x.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-44444444c002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-club@x.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-44444444c003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayud-principal-ts@x.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-44444444c004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayud-puro@x.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44444444-4444-4444-8444-44444444c001', 'adm-ts@x.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-44444444c002', 'principal-club@x.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-44444444c003', 'ayud-principal-ts@x.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-44444444c004', 'ayud-puro@x.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55555555-5555-4555-8555-55555555c001', '44444444-4444-4444-8444-44444444c001', '11111111-1111-4111-8111-11111111c001', 'admin_club'),

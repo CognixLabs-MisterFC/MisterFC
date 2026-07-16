@@ -9,6 +9,7 @@
 --   N2. la columna out_reason no existe en el schema.
 --   N3. INSERT bench válido (sin out_reason) → OK.
 --   N4. INSERT field válido → OK.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -22,8 +23,7 @@ insert into public.players (id, club_id, first_name, last_name, date_of_birth) v
   ('66ee0000-9300-0000-0000-000000000001', '66ee0000-9000-0000-0000-000000000001', 'Uno', 'Campo', '2012-01-01');
 insert into public.team_members (team_id, player_id, joined_at) values
   ('66ee0000-9200-0000-0000-000000000001', '66ee0000-9300-0000-0000-000000000001', '2025-09-01');
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('66ee0000-9a00-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'noout@ts.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('66ee0000-9a00-0001-0000-000000000000', 'noout@ts.test', '{}'::jsonb);
 insert into public.events (id, club_id, team_id, type, title, starts_at, created_by) values
   ('66ee0000-9600-0001-0000-000000000000', '66ee0000-9000-0000-0000-000000000001', '66ee0000-9200-0000-0000-000000000001', 'match', 'Partido NoOut', '2026-09-20 10:00:00+00', '66ee0000-9a00-0001-0000-000000000000');
 insert into public.lineups (id, event_id, name, formation_code, created_by) values

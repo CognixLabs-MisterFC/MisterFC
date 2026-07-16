@@ -35,6 +35,7 @@
 --     R9.  principal inserta match_state / match_periods / match_starters → OK.
 --     R10. jugador inserta match_starters → forbidden.
 --     R11. match_starters con player ajeno (superuser) → check_violation.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -43,14 +44,13 @@ insert into public.clubs (id, name, slug) values
   ('77f70000-0000-0000-0000-000000000001', 'Club F7 A', 'club-f7-a'),
   ('77f70000-0000-0000-0000-000000000002', 'Club F7 B', 'club-f7-b');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('77f70000-aaaa-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-f7-a@ts.test',     now(), '{}'::jsonb, now(), now()),
-  ('77f70000-aaaa-0002-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-f7-a@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('77f70000-aaaa-0003-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayudante-f7-a@ts.test',  now(), '{}'::jsonb, now(), now()),
-  ('77f70000-aaaa-0004-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord-f7-a@ts.test',     now(), '{}'::jsonb, now(), now()),
-  ('77f70000-aaaa-0005-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-f7-a@ts.test',   now(), '{}'::jsonb, now(), now()),
-  ('77f70000-aaaa-0006-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'staff-team2-f7@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('77f70000-bbbb-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-f7-b@ts.test',     now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('77f70000-aaaa-0001-0000-000000000000', 'admin-f7-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('77f70000-aaaa-0002-0000-000000000000', 'principal-f7-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('77f70000-aaaa-0003-0000-000000000000', 'ayudante-f7-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('77f70000-aaaa-0004-0000-000000000000', 'coord-f7-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('77f70000-aaaa-0005-0000-000000000000', 'jugador-f7-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('77f70000-aaaa-0006-0000-000000000000', 'staff-team2-f7@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('77f70000-bbbb-0001-0000-000000000000', 'admin-f7-b@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('77f70000-5550-0001-0000-000000000000', '77f70000-aaaa-0001-0000-000000000000', '77f70000-0000-0000-0000-000000000001', 'admin_club'),

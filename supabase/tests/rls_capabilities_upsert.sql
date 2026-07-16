@@ -14,6 +14,7 @@
 --   U5. jugador del club NO puede hacerlo → 42501.
 --   U6. admin de OTRO club NO puede hacerlo → 42501.
 --   U7. UPSERT con capability_name no listado → CHECK rechaza (incluso siendo admin).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -22,13 +23,12 @@ insert into public.clubs (id, name, slug) values
   ('caf00000-0000-0000-0000-000000000001', 'Club Alfa Upsert', 'alfa-upsert'),
   ('caf00000-0000-0000-0000-000000000002', 'Club Beta Upsert', 'beta-upsert');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('caf01111-aaaa-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-up@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('caf02222-aaaa-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord-up@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('caf03333-aaaa-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-up@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('caf04444-aaaa-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'assist-up@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('caf05555-aaaa-5555-5555-555555555555', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-up@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('caf06666-bbbb-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-otro-up@ts.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('caf01111-aaaa-1111-1111-111111111111', 'admin-up@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('caf02222-aaaa-2222-2222-222222222222', 'coord-up@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('caf03333-aaaa-3333-3333-333333333333', 'principal-up@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('caf04444-aaaa-4444-4444-444444444444', 'assist-up@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('caf05555-aaaa-5555-5555-555555555555', 'jugador-up@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('caf06666-bbbb-6666-6666-666666666666', 'admin-otro-up@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('caf01111-0a00-1111-1111-111111111111', 'caf01111-aaaa-1111-1111-111111111111', 'caf00000-0000-0000-0000-000000000001', 'admin_club'),

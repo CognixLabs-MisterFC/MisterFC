@@ -14,6 +14,7 @@
 --   G1. coordinador de A → forbidden (solo admin_club).
 --   G2. el entrenador (no admin) → forbidden.
 --   G3. admin de A → target de OTRO club → target_invalid.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -21,13 +22,11 @@ insert into public.clubs (id, name, slug) values
   ('bc000000-0000-4000-8000-000000000001', 'Club A 2c', 'club-a-2c'),
   ('bc000000-0000-4000-8000-000000000002', 'Club B 2c', 'club-b-2c');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('bc0a0000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c-admin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('bc0a0000-cccc-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c-coord@test.local', now(), '{}'::jsonb, now(), now()),
-  ('bc0a0000-eeee-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c-coach@test.local', now(), '{}'::jsonb, now(), now()),
-  ('bc0b0000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c-badmin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('bc0b0000-eeee-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c-bcoach@test.local', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('bc0a0000-aaaa-4000-8000-000000000001', 'c-admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('bc0a0000-cccc-4000-8000-000000000001', 'c-coord@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('bc0a0000-eeee-4000-8000-000000000001', 'c-coach@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('bc0b0000-aaaa-4000-8000-000000000001', 'c-badmin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('bc0b0000-eeee-4000-8000-000000000001', 'c-bcoach@test.local', '{}'::jsonb);
 
 insert into public.profiles (id, full_name) values
   ('bc0a0000-aaaa-4000-8000-000000000001', 'Admin A'),

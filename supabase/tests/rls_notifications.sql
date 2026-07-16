@@ -7,12 +7,12 @@
 --   N4. SELECT propio funciona; SELECT de otro user → 0 filas (RLS).
 --   N5. UPDATE propio: pending → sent OK. setea sent_at automáticamente.
 --   N6. UPDATE intentando cambiar payload → payload_immutable.
+\ir helpers/auth_users.sql
 
 begin;
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44dd1000-aaaa-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'notif-a@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44dd1000-aaaa-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'notif-b@ts.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44dd1000-aaaa-1111-1111-111111111111', 'notif-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44dd1000-aaaa-2222-2222-222222222222', 'notif-b@ts.test', '{}'::jsonb);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- N1: INSERT como service_role

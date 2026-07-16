@@ -5,12 +5,12 @@
 --   P2. user intenta insertar con user_id ajeno → ❌.
 --   P3. user SELECT solo ve sus filas.
 --   P4. user DELETE solo sus filas (otro user no puede borrar la mía).
+\ir helpers/auth_users.sql
 
 begin;
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44444444-4444-4444-8444-44444444d001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a@push.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-44444444d002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'b@push.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44444444-4444-4444-8444-44444444d001', 'a@push.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-44444444d002', 'b@push.test', '{}'::jsonb);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- P1: insert propio

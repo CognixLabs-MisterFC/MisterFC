@@ -9,6 +9,7 @@
 -- (principal de OTRO equipo) no puede; la PLANTILLA (team_id NULL) sigue owner∪admin.
 --
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -23,10 +24,9 @@ insert into public.teams (id, category_id, name, format, color, season) values
   ('5d700000-0000-4000-8000-000000000001', '5dca0000-0000-4000-8000-000000000001', 'Team A',  'F11', '#10B981', '2025-26'),
   ('5d700000-0000-4000-8000-000000000002', '5dca0000-0000-4000-8000-000000000002', 'Team A2', 'F11', '#0EA5E9', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('5da00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@edit.test',  now(), '{}'::jsonb, now(), now()),
-  ('5da00000-0000-4000-8000-00000000000c', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coachP@edit.test', now(), '{}'::jsonb, now(), now()),
-  ('5da00000-0000-4000-8000-00000000000d', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coachO@edit.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('5da00000-0000-4000-8000-00000000000a', 'admin@edit.test', '{}'::jsonb);
+select pg_temp.new_test_user('5da00000-0000-4000-8000-00000000000c', 'coachP@edit.test', '{}'::jsonb);
+select pg_temp.new_test_user('5da00000-0000-4000-8000-00000000000d', 'coachO@edit.test', '{}'::jsonb);
 
 -- coachP y coachOther tienen rol de CLUB = entrenador_ayudante (¡no admin!).
 insert into public.memberships (id, profile_id, club_id, role) values

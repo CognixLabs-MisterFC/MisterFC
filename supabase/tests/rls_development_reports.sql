@@ -10,6 +10,7 @@
 --
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final).
 -- IDs: prefijo d1 (no colisiona con rls_plays, que usa b1).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -36,15 +37,14 @@ insert into public.team_members (team_id, player_id, joined_at) values
   ('d1700000-0000-4000-8000-000000000001', 'd1500000-0000-4000-8000-00000000000f', '2025-09-01'),
   ('d1700000-0000-4000-8000-000000000002', 'd1500000-0000-4000-8000-000000000009', '2025-09-01');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('d1a00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@dr.test',      now(), '{}'::jsonb, now(), now()),
-  ('d1a00000-0000-4000-8000-00000000000b', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord@dr.test',      now(), '{}'::jsonb, now(), now()),
-  ('d1a00000-0000-4000-8000-00000000000c', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principalA@dr.test', now(), '{}'::jsonb, now(), now()),
-  ('d1a00000-0000-4000-8000-00000000000d', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayudA@dr.test',      now(), '{}'::jsonb, now(), now()),
-  ('d1a00000-0000-4000-8000-000000000007', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principalA2@dr.test',now(), '{}'::jsonb, now(), now()),
-  ('d1a00000-0000-4000-8000-00000000000f', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugA@dr.test',       now(), '{}'::jsonb, now(), now()),
-  ('d1a00000-0000-4000-8000-000000000009', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugA2@dr.test',      now(), '{}'::jsonb, now(), now()),
-  ('d1b00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'adminB@dr.test',     now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('d1a00000-0000-4000-8000-00000000000a', 'admin@dr.test', '{}'::jsonb);
+select pg_temp.new_test_user('d1a00000-0000-4000-8000-00000000000b', 'coord@dr.test', '{}'::jsonb);
+select pg_temp.new_test_user('d1a00000-0000-4000-8000-00000000000c', 'principalA@dr.test', '{}'::jsonb);
+select pg_temp.new_test_user('d1a00000-0000-4000-8000-00000000000d', 'ayudA@dr.test', '{}'::jsonb);
+select pg_temp.new_test_user('d1a00000-0000-4000-8000-000000000007', 'principalA2@dr.test', '{}'::jsonb);
+select pg_temp.new_test_user('d1a00000-0000-4000-8000-00000000000f', 'jugA@dr.test', '{}'::jsonb);
+select pg_temp.new_test_user('d1a00000-0000-4000-8000-000000000009', 'jugA2@dr.test', '{}'::jsonb);
+select pg_temp.new_test_user('d1b00000-0000-4000-8000-00000000000a', 'adminB@dr.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('d1550000-0000-4000-8000-00000000000a', 'd1a00000-0000-4000-8000-00000000000a', 'd1c00000-0000-4000-8000-000000000001', 'admin_club'),
@@ -455,8 +455,7 @@ end $$;
 reset role;  -- fixtures nuevos como owner (sin RLS)
 
 -- jugador B en Team A, con cuenta familiar jugB (misma familia-tier que jugA, otro jugador)
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('d1a00000-0000-4000-8000-0000000000eb', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugB@dr.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('d1a00000-0000-4000-8000-0000000000eb', 'jugB@dr.test', '{}'::jsonb);
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
   ('d1500000-0000-4000-8000-0000000000eb', 'd1c00000-0000-4000-8000-000000000001', 'Bruno', 'B', '2012-01-01');
 insert into public.team_members (team_id, player_id, joined_at) values

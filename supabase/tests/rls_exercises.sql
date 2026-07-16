@@ -7,6 +7,7 @@
 -- y el seed de la capability por el trigger ensure_assistant_capabilities.
 --
 -- Estilo: aserciones con raise exception (como el resto del repo). Transaccional.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -25,14 +26,13 @@ insert into public.categories (id, club_id, name) values
 insert into public.teams (id, category_id, name, format, color, season) values
   ('e2000000-0000-4000-8000-000000000001', 'e1000000-0000-4000-8000-000000000001', 'Team A', 'F11', '#10B981', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('ea000000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@ej.test',    now(), '{}'::jsonb, now(), now()),
-  ('ea000000-0000-4000-8000-00000000000b', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord@ej.test',    now(), '{}'::jsonb, now(), now()),
-  ('ea000000-0000-4000-8000-00000000000c', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal@ej.test',now(), '{}'::jsonb, now(), now()),
-  ('ea000000-0000-4000-8000-00000000000d', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayud-cap@ej.test', now(), '{}'::jsonb, now(), now()),
-  ('ea000000-0000-4000-8000-00000000000e', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayud-nocap@ej.test',now(),'{}'::jsonb, now(), now()),
-  ('ea000000-0000-4000-8000-00000000000f', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador@ej.test',  now(), '{}'::jsonb, now(), now()),
-  ('eb000000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'adminB@ej.test',   now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('ea000000-0000-4000-8000-00000000000a', 'admin@ej.test', '{}'::jsonb);
+select pg_temp.new_test_user('ea000000-0000-4000-8000-00000000000b', 'coord@ej.test', '{}'::jsonb);
+select pg_temp.new_test_user('ea000000-0000-4000-8000-00000000000c', 'principal@ej.test', '{}'::jsonb);
+select pg_temp.new_test_user('ea000000-0000-4000-8000-00000000000d', 'ayud-cap@ej.test', '{}'::jsonb);
+select pg_temp.new_test_user('ea000000-0000-4000-8000-00000000000e', 'ayud-nocap@ej.test', '{}'::jsonb);
+select pg_temp.new_test_user('ea000000-0000-4000-8000-00000000000f', 'jugador@ej.test', '{}'::jsonb);
+select pg_temp.new_test_user('eb000000-0000-4000-8000-00000000000a', 'adminB@ej.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('e5000000-0000-4000-8000-00000000000a', 'ea000000-0000-4000-8000-00000000000a', 'e0000000-0000-4000-8000-000000000001', 'admin_club'),

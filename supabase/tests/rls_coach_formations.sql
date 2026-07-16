@@ -30,6 +30,7 @@
 --     X1. otro coach (A2) borra la de A1 → 0 filas (RLS la oculta).
 --     X2. coordinador borra la de A1 → 0 filas (solo owner + admin).
 --     X3. admin borra la de A1 → 1 fila.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -37,15 +38,14 @@ insert into public.clubs (id, name, slug) values
   ('99cf0000-0000-0000-0000-000000000001', 'Club CF A', 'club-cf-a'),
   ('99cf0000-0000-0000-0000-000000000002', 'Club CF B', 'club-cf-b');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('99cf0000-aaaa-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-cf-a@ts.test',     now(), '{}'::jsonb, now(), now()),
-  ('99cf0000-aaaa-0002-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coach1-cf-a@ts.test',    now(), '{}'::jsonb, now(), now()),
-  ('99cf0000-aaaa-0003-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coach2-cf-a@ts.test',    now(), '{}'::jsonb, now(), now()),
-  ('99cf0000-aaaa-0004-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord-cf-a@ts.test',     now(), '{}'::jsonb, now(), now()),
-  ('99cf0000-aaaa-0005-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-cf-a@ts.test',   now(), '{}'::jsonb, now(), now()),
-  ('99cf0000-aaaa-0006-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayudante-cf-a@ts.test',  now(), '{}'::jsonb, now(), now()),
-  ('99cf0000-aaaa-0007-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-cf-a@ts.test',  now(), '{}'::jsonb, now(), now()),
-  ('99cf0000-bbbb-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-cf-b@ts.test',     now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('99cf0000-aaaa-0001-0000-000000000000', 'admin-cf-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99cf0000-aaaa-0002-0000-000000000000', 'coach1-cf-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99cf0000-aaaa-0003-0000-000000000000', 'coach2-cf-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99cf0000-aaaa-0004-0000-000000000000', 'coord-cf-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99cf0000-aaaa-0005-0000-000000000000', 'jugador-cf-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99cf0000-aaaa-0006-0000-000000000000', 'ayudante-cf-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99cf0000-aaaa-0007-0000-000000000000', 'principal-cf-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99cf0000-bbbb-0001-0000-000000000000', 'admin-cf-b@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('99cf0000-5555-0001-0000-000000000000', '99cf0000-aaaa-0001-0000-000000000000', '99cf0000-0000-0000-0000-000000000001', 'admin_club'),

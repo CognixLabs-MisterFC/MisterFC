@@ -14,6 +14,7 @@
 --       retiró en A6; la season la aporta /equipos).
 --   D1. dedup re-apunta teams.category_id y events.category_id al superviviente y
 --       borra la categoría duplicada (fixture con 2 categorías mismo nombre).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -70,9 +71,7 @@ end $$;
 drop index public.categories_club_name_uniq;
 
 -- profile para events.created_by (auth.users → profile por trigger, ver rls_events).
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-  values ('a6000000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000',
-          'authenticated', 'authenticated', 'a6@contract.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('a6000000-aaaa-4000-8000-000000000001', 'a6@contract.test', '{}'::jsonb);
 
 -- 2 categorías mismo (club, lower(name)); el superviviente es la más antigua.
 insert into public.categories (id, club_id, name, kind, created_at) values
