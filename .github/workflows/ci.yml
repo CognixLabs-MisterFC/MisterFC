@@ -42,3 +42,66 @@ jobs:
 
       - name: Build web
         run: pnpm --filter web build
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # F15-B — Suite pgTAP (RLS) contra una BD Supabase EFÍMERA por PR.
+  #
+  # Hermético: `supabase start` levanta un stack local en el runner (Docker),
+  # aplica las 179 migraciones EN LIMPIO y trae el esquema `storage` (2 tests lo
+  # necesitan). La suite corre con DATABASE_URL apuntando a la BD local
+  # (127.0.0.1:54322) → NO usa secrets ni toca producción, y cada PR tiene su
+  # propia BD (concurrencia resuelta por construcción).
+  #
+  # Bloqueante como el resto: si un test o una migración falla, el PR se para.
+  # ───────────────────────────────────────────────────────────────────────────
+  pgtap:
+    name: pgTAP · RLS (BD efímera)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # CLI PINEADO a 2.98.2 (constante del proyecto: v2.99+ rompe el flujo db).
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.98.2
+
+      # Levanta el stack local y APLICA las 179 migraciones en limpio. Si alguna
+      # migración falla (un club nuevo no se podría crear desde cero), este paso
+      # sale en rojo y para el PR.
+      - name: supabase start (aplica las 179 migraciones en limpio)
+        run: supabase start
+
+      # Red de verificación del propio stack antes de correr la suite:
+      #  · el esquema `storage` existe (si no, los 2 tests de storage fallarían).
+      #  · las 179 migraciones quedaron registradas (clean apply completo).
+      - name: Verificar storage + recuento de migraciones
+        run: |
+          DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+          echo "→ ¿esquema storage presente?"
+          psql "$DB" -tAc "select count(*) from information_schema.tables where table_schema='storage' and table_name='objects';" | grep -qx 1
+          echo "  OK: storage.objects existe"
+          echo "→ migraciones aplicadas vs ficheros en el repo:"
+          APPLIED=$(psql "$DB" -tAc "select count(*) from supabase_migrations.schema_migrations;")
+          FILES=$(ls supabase/migrations/*.sql | wc -l)
+          echo "  aplicadas=$APPLIED  ficheros=$FILES"
+          test "$APPLIED" -eq "$FILES"
+
+      # La suite pgTAP contra la BD local vía el override DATABASE_URL del script
+      # (scripts/supabase-cli.sh). Sin DATABASE_URL el script seguiría yendo al
+      # remoto — aquí lo forzamos a local. Bloqueante: rc != 0 => PR en rojo.
+      - name: pgTAP suite (72/72)
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: pnpm db:test
