@@ -6,12 +6,12 @@
 --   N3. SELECT solo ve sus filas.
 --   N4. helper user_wants_notification: default true cuando NO hay fila.
 --   N5. helper user_wants_notification: respeta enabled=false explícito.
+\ir helpers/auth_users.sql
 
 begin;
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44444444-4444-4444-8444-44444444e001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a@pref.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-44444444e002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'b@pref.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44444444-4444-4444-8444-44444444e001', 'a@pref.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-44444444e002', 'b@pref.test', '{}'::jsonb);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- N1: insert propio

@@ -9,6 +9,7 @@
 --       para ayudante con can_see_medical, true para tutor vinculado (player_accounts),
 --       false para ayudante sin capability, false para jugador sin vínculo,
 --       false cross-club.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -32,17 +33,15 @@ values
   ('00000000-bbbb-0000-0000-000000000001', 'cccccccc-c1c1-c1c1-c1c1-c1c1c1c1c1c1', 'Player', 'B1', '2015-04-12');
 
 -- Profiles + memberships (use auth.users del seed para roles)
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('11111111-aaaa-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-a@h.test', now(), '{}'::jsonb, now(), now()),
-  ('22222222-aaaa-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord-a@h.test', now(), '{}'::jsonb, now(), now()),
-  ('33333333-aaaa-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-a@h.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-aaaa-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'assistant-a@h.test', now(), '{}'::jsonb, now(), now()),
-  ('55555555-aaaa-5555-5555-555555555555', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'assistant-a-squad@h.test', now(), '{}'::jsonb, now(), now()),
-  ('66666666-aaaa-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'assistant-a-med@h.test', now(), '{}'::jsonb, now(), now()),
-  ('77777777-aaaa-7777-7777-777777777777', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'tutor-a@h.test', now(), '{}'::jsonb, now(), now()),
-  ('88888888-aaaa-8888-8888-888888888888', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-a@h.test', now(), '{}'::jsonb, now(), now()),
-  ('99999999-bbbb-9999-9999-999999999999', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-b@h.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('11111111-aaaa-1111-1111-111111111111', 'admin-a@h.test', '{}'::jsonb);
+select pg_temp.new_test_user('22222222-aaaa-2222-2222-222222222222', 'coord-a@h.test', '{}'::jsonb);
+select pg_temp.new_test_user('33333333-aaaa-3333-3333-333333333333', 'principal-a@h.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-aaaa-4444-4444-444444444444', 'assistant-a@h.test', '{}'::jsonb);
+select pg_temp.new_test_user('55555555-aaaa-5555-5555-555555555555', 'assistant-a-squad@h.test', '{}'::jsonb);
+select pg_temp.new_test_user('66666666-aaaa-6666-6666-666666666666', 'assistant-a-med@h.test', '{}'::jsonb);
+select pg_temp.new_test_user('77777777-aaaa-7777-7777-777777777777', 'tutor-a@h.test', '{}'::jsonb);
+select pg_temp.new_test_user('88888888-aaaa-8888-8888-888888888888', 'jugador-a@h.test', '{}'::jsonb);
+select pg_temp.new_test_user('99999999-bbbb-9999-9999-999999999999', 'admin-b@h.test', '{}'::jsonb);
 
 -- Trigger handle_new_user ya creó profiles.
 

@@ -14,6 +14,7 @@
 --   · familia no puede editar/borrar.
 --
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -37,11 +38,10 @@ insert into public.team_members (team_id, player_id, joined_at) values
   ('5c700000-0000-4000-8000-000000000001', '5c500000-0000-4000-8000-00000000000f', '2025-09-01'),
   ('5c700000-0000-4000-8000-000000000002', '5c500000-0000-4000-8000-000000000009', '2025-09-01');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('5ca00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@sbp.test',     now(), '{}'::jsonb, now(), now()),
-  ('5ca00000-0000-4000-8000-00000000000c', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal@sbp.test', now(), '{}'::jsonb, now(), now()),
-  ('5ca00000-0000-4000-8000-00000000000f', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugF@sbp.test',      now(), '{}'::jsonb, now(), now()),
-  ('5ca00000-0000-4000-8000-000000000009', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jug9@sbp.test',      now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('5ca00000-0000-4000-8000-00000000000a', 'admin@sbp.test', '{}'::jsonb);
+select pg_temp.new_test_user('5ca00000-0000-4000-8000-00000000000c', 'principal@sbp.test', '{}'::jsonb);
+select pg_temp.new_test_user('5ca00000-0000-4000-8000-00000000000f', 'jugF@sbp.test', '{}'::jsonb);
+select pg_temp.new_test_user('5ca00000-0000-4000-8000-000000000009', 'jug9@sbp.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('5c550000-0000-4000-8000-00000000000a', '5ca00000-0000-4000-8000-00000000000a', '5cc00000-0000-4000-8000-000000000001', 'admin_club'),

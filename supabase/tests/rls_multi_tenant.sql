@@ -8,6 +8,7 @@
 --   3. Cambiar a role authenticated + JWT claim sub = user X.
 --   4. Verificar que las queries respetan el aislamiento.
 --   5. ROLLBACK al final → no quedan rastros.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -30,16 +31,10 @@ begin;
 --   INV_1      eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee
 --   TOKEN_1    ffffffff-ffff-ffff-ffff-ffffffffffff
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'alice@test.local', now(), '{"full_name":"Alice Admin"}'::jsonb, now(), now()),
-  ('bbbbbbb2-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'bob@test.local', now(), '{"full_name":"Bob Admin"}'::jsonb, now(), now()),
-  ('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'asst@test.local', now(), '{"full_name":"Ayudante Aitor"}'::jsonb, now(), now()),
-  ('aaaaaaa3-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'player@test.local', now(), '{"full_name":"Jugador Joaquin"}'::jsonb, now(), now());
+select pg_temp.new_test_user('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alice@test.local', '{"full_name":"Alice Admin"}'::jsonb);
+select pg_temp.new_test_user('bbbbbbb2-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bob@test.local', '{"full_name":"Bob Admin"}'::jsonb);
+select pg_temp.new_test_user('aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'asst@test.local', '{"full_name":"Ayudante Aitor"}'::jsonb);
+select pg_temp.new_test_user('aaaaaaa3-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'player@test.local', '{"full_name":"Jugador Joaquin"}'::jsonb);
 
 do $$
 declare c int;

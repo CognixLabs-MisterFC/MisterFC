@@ -7,6 +7,7 @@
 --   (d) cross-club → player_cross_club
 -- Sitios: training_attendance, callup_decisions, callup_responses,
 --         lineup_positions y el helper match_assert_player_in_team (F7).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -29,8 +30,7 @@ insert into public.teams (id, category_id, name, format, color, season, division
 
 -- ── Admin (para FKs recorded_by/decided_by/responded_by/created_by/published_by
 --    y para publicar la meta). El profile lo crea el trigger de auth.users. ────
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('c4000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@elig.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('c4000000-0000-0000-0000-000000000001', 'admin@elig.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('c5000000-0000-0000-0000-000000000001', 'c4000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001', 'admin_club');

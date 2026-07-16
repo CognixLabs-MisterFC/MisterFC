@@ -8,6 +8,7 @@
 --   D3. Escritura intacta: un NO-staff NO puede insertar match_events.
 --   D4. Sin relación con el club → no lee nada.
 --   D5. El staff sigue leyendo (sin regresión).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -29,11 +30,10 @@ insert into public.teams (id, category_id, name, format, color, season, club_id)
 
 -- ST staff (graba) de A; FA jugador de A (NO staff, NO ligado al equipo); MB
 -- miembro de B; OUT sin membership.
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('51770000-0000-4000-8000-000000000011', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'st-a7@f7b2.test',  now(), '{}'::jsonb, now(), now()),
-  ('51770000-0000-4000-8000-000000000022', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'fa-a7@f7b2.test',  now(), '{}'::jsonb, now(), now()),
-  ('51770000-0000-4000-8000-000000000033', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'mb-b7@f7b2.test',  now(), '{}'::jsonb, now(), now()),
-  ('51770000-0000-4000-8000-000000000044', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'out@f7b2.test',    now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('51770000-0000-4000-8000-000000000011', 'st-a7@f7b2.test', '{}'::jsonb);
+select pg_temp.new_test_user('51770000-0000-4000-8000-000000000022', 'fa-a7@f7b2.test', '{}'::jsonb);
+select pg_temp.new_test_user('51770000-0000-4000-8000-000000000033', 'mb-b7@f7b2.test', '{}'::jsonb);
+select pg_temp.new_test_user('51770000-0000-4000-8000-000000000044', 'out@f7b2.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('61770000-0000-4000-8000-000000000011', '51770000-0000-4000-8000-000000000011', 'a7770000-0000-4000-8000-0000000000a1', 'entrenador_principal'),

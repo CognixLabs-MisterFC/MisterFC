@@ -9,6 +9,7 @@
 --
 -- Convención: psql ON_ERROR_STOP=1; BEGIN/ROLLBACK; SQLSTATE esperado en los
 -- bloques que deben fallar.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -36,8 +37,7 @@ insert into public.players (id, club_id, first_name, last_name, date_of_birth) v
   ('66ee0000-c300-0000-0000-00000000000A', '66ee0000-c000-0000-0000-000000000001', 'Ana', 'Roster', '2012-01-01');
 insert into public.team_members (team_id, player_id, joined_at) values
   ('66ee0000-c200-0000-0000-000000000001', '66ee0000-c300-0000-0000-00000000000A', '2025-09-01');
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('66ee0000-ca00-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'notif-jug@ts.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('66ee0000-ca00-0001-0000-000000000000', 'notif-jug@ts.test', '{}'::jsonb);
 insert into public.memberships (id, profile_id, club_id, role) values
   ('66ee0000-c500-0001-0000-000000000000', '66ee0000-ca00-0001-0000-000000000000', '66ee0000-c000-0000-0000-000000000001', 'jugador');
 insert into public.player_accounts (player_id, profile_id, relation) values

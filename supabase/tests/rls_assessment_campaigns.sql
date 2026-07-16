@@ -9,6 +9,7 @@
 --
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final).
 -- IDs: prefijo ad (no colisiona con rls_development_reports, que usa d1).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -19,12 +20,11 @@ insert into public.clubs (id, name, slug) values
 insert into public.seasons (id, club_id, label, status) values
   ('ad5ea000-0000-4000-8000-000000000001', 'adc00000-0000-4000-8000-000000000001', '2025-26', 'active');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('ada00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'adminAD@ad.test',  now(), '{}'::jsonb, now(), now()),
-  ('ada00000-0000-4000-8000-00000000000b', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coordAD@ad.test',  now(), '{}'::jsonb, now(), now()),
-  ('ada00000-0000-4000-8000-00000000000c', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'princAD@ad.test',  now(), '{}'::jsonb, now(), now()),
-  ('ada00000-0000-4000-8000-00000000000f', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugAD@ad.test',    now(), '{}'::jsonb, now(), now()),
-  ('adb00000-0000-4000-8000-00000000000a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'adminADB@ad.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('ada00000-0000-4000-8000-00000000000a', 'adminAD@ad.test', '{}'::jsonb);
+select pg_temp.new_test_user('ada00000-0000-4000-8000-00000000000b', 'coordAD@ad.test', '{}'::jsonb);
+select pg_temp.new_test_user('ada00000-0000-4000-8000-00000000000c', 'princAD@ad.test', '{}'::jsonb);
+select pg_temp.new_test_user('ada00000-0000-4000-8000-00000000000f', 'jugAD@ad.test', '{}'::jsonb);
+select pg_temp.new_test_user('adb00000-0000-4000-8000-00000000000a', 'adminADB@ad.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('ad550000-0000-4000-8000-00000000000a', 'ada00000-0000-4000-8000-00000000000a', 'adc00000-0000-4000-8000-000000000001', 'admin_club'),

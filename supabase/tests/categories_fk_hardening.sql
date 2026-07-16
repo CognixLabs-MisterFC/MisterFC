@@ -10,6 +10,7 @@
 --   S1. events.category_id = SET NULL → borrar una categoría con un evento (y sin
 --       equipos) SÍ borra la categoría; el evento se CONSERVA con category_id NULL.
 --   D1. Categoría SIN referencias → borrado permitido.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -17,10 +18,7 @@ begin;
 insert into public.clubs (id, name, slug) values
   ('c4000000-0000-4000-8000-000000000001', 'Club C4', 'club-c4');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('c4000000-0aaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'c4user@test.local', now(), '{"full_name":"C4 User"}'::jsonb, now(), now());
+select pg_temp.new_test_user('c4000000-0aaa-4000-8000-000000000001', 'c4user@test.local', '{"full_name":"C4 User"}'::jsonb);
 
 -- ── R1. RESTRICT: categoría con equipo no se puede borrar ────────────────────
 insert into public.categories (id, club_id, name, kind, half_duration_minutes, is_standard) values

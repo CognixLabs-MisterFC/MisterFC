@@ -10,6 +10,7 @@
 -- Estilo: aserciones con raise exception. Transaccional.
 -- IDs (último segmento HEX): owner d, jugador f; sesión real a1; plantilla destino t1;
 -- bloques b1/b2; tareas c1/c2; ejercicios e1/e2; equipo destino al crear desde plantilla.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -25,9 +26,8 @@ insert into public.players (id, club_id, first_name, last_name, date_of_birth) v
 insert into public.team_members (team_id, player_id, joined_at) values
   ('c10c2000-0000-4000-8000-000000000001', 'c10c3000-0000-4000-8000-00000000000f', '2025-09-01');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('c1a60000-0000-4000-8000-00000000000d', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'owner@clone.test', now(), '{}'::jsonb, now(), now()),
-  ('c1a60000-0000-4000-8000-00000000000f', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jug@clone.test',   now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('c1a60000-0000-4000-8000-00000000000d', 'owner@clone.test', '{}'::jsonb);
+select pg_temp.new_test_user('c1a60000-0000-4000-8000-00000000000f', 'jug@clone.test', '{}'::jsonb);
 insert into public.memberships (id, profile_id, club_id, role) values
   ('c10c5000-0000-4000-8000-00000000000d', 'c1a60000-0000-4000-8000-00000000000d', 'c10c0000-0000-4000-8000-000000000001', 'entrenador_ayudante'),
   ('c10c5000-0000-4000-8000-00000000000f', 'c1a60000-0000-4000-8000-00000000000f', 'c10c0000-0000-4000-8000-000000000001', 'jugador');

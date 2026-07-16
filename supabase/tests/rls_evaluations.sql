@@ -58,6 +58,7 @@
 --     R29. entrenador lee club_settings                → 0 filas (SELECT solo admin+coord).
 --     R30. jugador escribe el flag                     → RLS filtra (0 filas).
 --     R31. el flag sigue en false tras R28/R30.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -66,15 +67,14 @@ insert into public.clubs (id, name, slug) values
   ('88f80000-0000-0000-0000-000000000001', 'Club F8 A', 'club-f8-a'),
   ('88f80000-0000-0000-0000-000000000002', 'Club F8 B', 'club-f8-b');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('88f80000-aaaa-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-f8-a@ts.test',     now(), '{}'::jsonb, now(), now()),
-  ('88f80000-aaaa-0002-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-f8-a@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('88f80000-aaaa-0003-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord-f8-a@ts.test',     now(), '{}'::jsonb, now(), now()),
-  ('88f80000-aaaa-0004-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-f8-a@ts.test',   now(), '{}'::jsonb, now(), now()),
-  ('88f80000-aaaa-0005-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'familia-f8-a@ts.test',   now(), '{}'::jsonb, now(), now()),
-  ('88f80000-aaaa-0006-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'staff-team2-f8@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('88f80000-aaaa-0007-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayudante-f8-a@ts.test',  now(), '{}'::jsonb, now(), now()),
-  ('88f80000-bbbb-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-f8-b@ts.test',     now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('88f80000-aaaa-0001-0000-000000000000', 'admin-f8-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('88f80000-aaaa-0002-0000-000000000000', 'principal-f8-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('88f80000-aaaa-0003-0000-000000000000', 'coord-f8-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('88f80000-aaaa-0004-0000-000000000000', 'jugador-f8-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('88f80000-aaaa-0005-0000-000000000000', 'familia-f8-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('88f80000-aaaa-0006-0000-000000000000', 'staff-team2-f8@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('88f80000-aaaa-0007-0000-000000000000', 'ayudante-f8-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('88f80000-bbbb-0001-0000-000000000000', 'admin-f8-b@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('88f80000-5550-0001-0000-000000000000', '88f80000-aaaa-0001-0000-000000000000', '88f80000-0000-0000-0000-000000000001', 'admin_club'),

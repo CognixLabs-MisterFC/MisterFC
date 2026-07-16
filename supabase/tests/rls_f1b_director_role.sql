@@ -24,24 +24,23 @@
 -- Estilo house (rls_events.sql): begin … set local jwt.claims … do $$ raise on
 -- fail $$ … rollback. Corre por psql contra el remoto (pgTAP no va en CI).
 -- Al insertar en auth.users, el trigger on_auth_user_created crea el profile.
+\ir helpers/auth_users.sql
 
 begin;
 
 -- ═════════════════════════════════════════════════════════════════════════════
 -- FIXTURE 1 — Clubs A y B (aislamiento, equivalencia, owner-safety, aceptación).
 -- ═════════════════════════════════════════════════════════════════════════════
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('f1b40000-0001-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ownerA@f1b4.test', now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-0002-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dirA@f1b4.test',   now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-0004-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugA@f1b4.test',   now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-0005-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ownerB@f1b4.test', now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-0003-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dirB@f1b4.test',   now(), '{}'::jsonb, now(), now()),
-  -- Invitees (aceptan en el club A, uno por rol)
-  ('f1b40000-1001-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inv-dir@f1b4.test',   now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-1002-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inv-coord@f1b4.test', now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-1003-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inv-princ@f1b4.test', now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-1004-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inv-ayud@f1b4.test',  now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-1005-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inv-jug@f1b4.test',   now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('f1b40000-0001-0000-0000-000000000001', 'ownerA@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-0002-0000-0000-000000000001', 'dirA@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-0004-0000-0000-000000000001', 'jugA@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-0005-0000-0000-000000000001', 'ownerB@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-0003-0000-0000-000000000001', 'dirB@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-1001-0000-0000-000000000001', 'inv-dir@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-1002-0000-0000-000000000001', 'inv-coord@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-1003-0000-0000-000000000001', 'inv-princ@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-1004-0000-0000-000000000001', 'inv-ayud@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-1005-0000-0000-000000000001', 'inv-jug@f1b4.test', '{}'::jsonb);
 
 insert into public.clubs (id, name, slug, owner_profile_id) values
   ('f1b40000-aaaa-0000-0000-000000000001', 'Club A F1B4', 'club-a-f1b4', 'f1b40000-0001-0000-0000-000000000001'),
@@ -82,12 +81,11 @@ insert into public.invitations (email, role, club_id, created_by, expires_at) va
 -- ═════════════════════════════════════════════════════════════════════════════
 -- FIXTURE 2 — Club H (jerarquía: owner + admin no-owner + director + coord + peón).
 -- ═════════════════════════════════════════════════════════════════════════════
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('f1b40000-2001-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'h-owner@f1b4.test',  now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-2002-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'h-admin2@f1b4.test', now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-2003-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'h-dir@f1b4.test',    now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-2004-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'h-coord@f1b4.test',  now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-2005-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'h-pawn@f1b4.test',   now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('f1b40000-2001-0000-0000-000000000001', 'h-owner@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-2002-0000-0000-000000000001', 'h-admin2@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-2003-0000-0000-000000000001', 'h-dir@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-2004-0000-0000-000000000001', 'h-coord@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-2005-0000-0000-000000000001', 'h-pawn@f1b4.test', '{}'::jsonb);
 
 insert into public.clubs (id, name, slug, owner_profile_id) values
   ('f1b40000-cccc-0000-0000-000000000001', 'Club H F1B4', 'club-h-f1b4', 'f1b40000-2001-0000-0000-000000000001');
@@ -106,9 +104,8 @@ insert into public.memberships (id, profile_id, club_id, role) values
 -- SUBSUMIDA por la inmutabilidad del owner (el owner es admin permanente); este
 -- club artificial ejercita el guard #8 de admin_update_staff_role en solitario.
 -- ═════════════════════════════════════════════════════════════════════════════
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('f1b40000-3001-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'l-ownerdir@f1b4.test', now(), '{}'::jsonb, now(), now()),
-  ('f1b40000-3002-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'l-admin@f1b4.test',    now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('f1b40000-3001-0000-0000-000000000001', 'l-ownerdir@f1b4.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1b40000-3002-0000-0000-000000000001', 'l-admin@f1b4.test', '{}'::jsonb);
 
 insert into public.clubs (id, name, slug, owner_profile_id) values
   ('f1b40000-dddd-0000-0000-000000000001', 'Club L F1B4', 'club-l-f1b4', 'f1b40000-3001-0000-0000-000000000001');

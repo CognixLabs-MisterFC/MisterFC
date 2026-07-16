@@ -15,6 +15,7 @@
 --       abierta; un jugador de baja NO cuenta como sin equipo).
 --   G1. jugador de otro club → player_invalid.
 --   G2. no-admin (jugador) → forbidden.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -22,10 +23,8 @@ insert into public.clubs (id, name, slug) values
   ('cb000000-0000-4000-8000-000000000001', 'Club C11a', 'club-c11a'),
   ('cb000000-0000-4000-8000-000000000002', 'Otro Club', 'otro-club-c11a');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('cba00000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c11admin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('cba00000-bbbb-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c11jug@test.local', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('cba00000-aaaa-4000-8000-000000000001', 'c11admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('cba00000-bbbb-4000-8000-000000000001', 'c11jug@test.local', '{}'::jsonb);
 
 insert into public.memberships (profile_id, club_id, role) values
   ('cba00000-aaaa-4000-8000-000000000001', 'cb000000-0000-4000-8000-000000000001', 'admin_club'),

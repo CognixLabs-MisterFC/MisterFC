@@ -15,16 +15,15 @@
 --   F3. idempotente: re-run no duplica (0 colocados, sigue 1 fila activa).
 --   F4. colocar en un equipo NO upcoming (de la activa) → dest_not_upcoming.
 --   F5. no-admin (jugador) → forbidden.
+\ir helpers/auth_users.sql
 
 begin;
 
 insert into public.clubs (id, name, slug) values
   ('c7000000-0000-4000-8000-000000000001', 'Club C7', 'club-c7');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('c7a00000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c7admin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('c7a00000-bbbb-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c7jug@test.local', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('c7a00000-aaaa-4000-8000-000000000001', 'c7admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('c7a00000-bbbb-4000-8000-000000000001', 'c7jug@test.local', '{}'::jsonb);
 
 insert into public.memberships (profile_id, club_id, role) values
   ('c7a00000-aaaa-4000-8000-000000000001', 'c7000000-0000-4000-8000-000000000001', 'admin_club'),

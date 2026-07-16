@@ -5,6 +5,7 @@
 -- destino queda reindexado; cruzar a un bloque de OTRA sesión → bloqueado; un
 -- jugador (no editor) no puede mover (RLS). Transaccional.
 -- IDs (HEX): owner d, jugador f; sesión a1 (b1,b2) + sesión a2 (bx); tareas c1/c2.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -20,9 +21,8 @@ insert into public.players (id, club_id, first_name, last_name, date_of_birth) v
 insert into public.team_members (team_id, player_id, joined_at) values
   ('5e572000-0000-4000-8000-000000000001', '5e573000-0000-4000-8000-00000000000f', '2025-09-01');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('5ea70000-0000-4000-8000-00000000000d', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'owner@move.test', now(), '{}'::jsonb, now(), now()),
-  ('5ea70000-0000-4000-8000-00000000000f', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jug@move.test',   now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('5ea70000-0000-4000-8000-00000000000d', 'owner@move.test', '{}'::jsonb);
+select pg_temp.new_test_user('5ea70000-0000-4000-8000-00000000000f', 'jug@move.test', '{}'::jsonb);
 insert into public.memberships (id, profile_id, club_id, role) values
   ('5e575000-0000-4000-8000-00000000000d', '5ea70000-0000-4000-8000-00000000000d', '5e570000-0000-4000-8000-000000000001', 'entrenador_ayudante'),
   ('5e575000-0000-4000-8000-00000000000f', '5ea70000-0000-4000-8000-00000000000f', '5e570000-0000-4000-8000-000000000001', 'jugador');

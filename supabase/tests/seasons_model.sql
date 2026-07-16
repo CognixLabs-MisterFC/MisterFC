@@ -13,6 +13,7 @@
 --   R1. RLS: admin_club inserta season → OK.
 --   R2. RLS: miembro NO admin (jugador) inserta → bloqueado.
 --   R3. RLS: no-miembro NO ve las seasons del club; miembro sí.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -94,11 +95,9 @@ end $$;
 
 -- ── RLS ──────────────────────────────────────────────────────────────────────
 -- Users: admin (A) y miembro no-admin (M) del club A; outsider (O) sin membership.
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('c5a00000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c5admin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('c5a00000-bbbb-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c5member@test.local', now(), '{}'::jsonb, now(), now()),
-  ('c5a00000-cccc-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c5outsider@test.local', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('c5a00000-aaaa-4000-8000-000000000001', 'c5admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('c5a00000-bbbb-4000-8000-000000000001', 'c5member@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('c5a00000-cccc-4000-8000-000000000001', 'c5outsider@test.local', '{}'::jsonb);
 
 insert into public.memberships (profile_id, club_id, role) values
   ('c5a00000-aaaa-4000-8000-000000000001', 'c5000000-0000-4000-8000-000000000001', 'admin_club'),

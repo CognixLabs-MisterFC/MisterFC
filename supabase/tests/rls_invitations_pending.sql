@@ -8,22 +8,16 @@
 --   T4. User SIN ninguna invitación a un club → NO ve ese club.
 --   T5. La policy NO debilita aislamiento multi-tenant: el invitado al club A
 --       sigue sin ver el club B.
+\ir helpers/auth_users.sql
 
 begin;
 
 -- Setup
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'admin@test.local', now(), '{"full_name":"Admin"}'::jsonb, now(), now()),
-  ('bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'invited@test.local', now(), '{"full_name":"Invited"}'::jsonb, now(), now()),
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'expired@test.local', now(), '{"full_name":"Expired"}'::jsonb, now(), now()),
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'accepted@test.local', now(), '{"full_name":"Accepted"}'::jsonb, now(), now()),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'noinvite@test.local', now(), '{"full_name":"NoInvite"}'::jsonb, now(), now());
+select pg_temp.new_test_user('aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'admin@test.local', '{"full_name":"Admin"}'::jsonb);
+select pg_temp.new_test_user('bbbbbbb1-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'invited@test.local', '{"full_name":"Invited"}'::jsonb);
+select pg_temp.new_test_user('cccccccc-cccc-cccc-cccc-cccccccccccc', 'expired@test.local', '{"full_name":"Expired"}'::jsonb);
+select pg_temp.new_test_user('dddddddd-dddd-dddd-dddd-dddddddddddd', 'accepted@test.local', '{"full_name":"Accepted"}'::jsonb);
+select pg_temp.new_test_user('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'noinvite@test.local', '{"full_name":"NoInvite"}'::jsonb);
 
 insert into public.clubs (id, name, slug) values
   ('11111111-1111-1111-1111-111111111111', 'Club A', 'club-a-pending-test'),

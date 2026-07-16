@@ -15,17 +15,17 @@
 --   X1. admin activa el flag (ON): individual=1 y colectiva=1 (ambas, a la vez).
 --   X2. admin desactiva el flag (OFF): individual=0 y colectiva=0 (revocación inmediata).
 --   X3. staff (principal) ve ambas SIEMPRE (no depende del flag).
+\ir helpers/auth_users.sql
 
 begin;
 
 insert into public.clubs (id, name, slug) values
   ('77f80000-0000-0000-0000-000000000001', 'Club F86', 'club-f86');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('77f80000-aaaa-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-f86@ts.test',     now(), '{}'::jsonb, now(), now()),
-  ('77f80000-aaaa-0002-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-f86@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('77f80000-aaaa-0004-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-f86@ts.test',   now(), '{}'::jsonb, now(), now()),
-  ('77f80000-aaaa-0005-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'familia-f86@ts.test',   now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('77f80000-aaaa-0001-0000-000000000000', 'admin-f86@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('77f80000-aaaa-0002-0000-000000000000', 'principal-f86@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('77f80000-aaaa-0004-0000-000000000000', 'jugador-f86@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('77f80000-aaaa-0005-0000-000000000000', 'familia-f86@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('77f80000-5550-0001-0000-000000000000', '77f80000-aaaa-0001-0000-000000000000', '77f80000-0000-0000-0000-000000000001', 'admin_club'),

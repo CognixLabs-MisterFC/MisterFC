@@ -23,6 +23,7 @@
 --       can_mark_attendance=false SÍ puede (regresión del bug: la rama
 --       "principal" mira team_staff.staff_role, no memberships.role).
 --   R6. RLS UPDATE: ese mismo principal-de-equipo SÍ puede actualizar.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -43,12 +44,11 @@ insert into public.teams (id, category_id, name, format, color, season) values
   ('33ee0000-0000-0000-0000-000000000001', '22ee0000-0000-0000-0000-000000000001', 'Team Att A', 'F7', '#10B981', '2025-26'),
   ('33ee0000-0000-0000-0000-000000000002', '22ee0000-0000-0000-0000-000000000002', 'Team Att B', 'F7', '#10B981', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44ee0000-aaaa-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-att-a@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44ee0000-aaaa-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-att-a@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44ee0000-aaaa-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'assistant-att-a@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44ee0000-aaaa-9999-9999-999999999999', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-att-a@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44ee0000-bbbb-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-att-b@ts.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44ee0000-aaaa-1111-1111-111111111111', 'admin-att-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ee0000-aaaa-3333-3333-333333333333', 'principal-att-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ee0000-aaaa-4444-4444-444444444444', 'assistant-att-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ee0000-aaaa-9999-9999-999999999999', 'jugador-att-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44ee0000-bbbb-1111-1111-111111111111', 'admin-att-b@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55ee0000-aaaa-1111-1111-111111111111', '44ee0000-aaaa-1111-1111-111111111111', '11ee0000-0000-0000-0000-000000000001', 'admin_club'),

@@ -22,6 +22,7 @@
 --   F2. parent (familia) overwrites self via UPDATE → OK; responded_by = familia.
 --   F3. parent re-INSERT tras limpieza → OK; responded_by = familia.
 --   F4. jugador sin player_accounts → INSERT rechazado con 42501.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -37,11 +38,10 @@ insert into public.teams (id, category_id, name, format, color, season) values
   ('33dd0000-0000-0000-0000-000000000001', '22dd0000-0000-0000-0000-000000000001', 'Team Callup A', 'F7', '#0EA5E9', '2025-26'),
   ('33dd0000-0000-0000-0000-000000000002', '22dd0000-0000-0000-0000-000000000002', 'Team Callup B', 'F7', '#0EA5E9', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44dd0000-aaaa-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-c-a@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44dd0000-aaaa-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-c-a@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44dd0000-aaaa-9999-9999-999999999999', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-c-a@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44dd0000-bbbb-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-c-b@ts.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44dd0000-aaaa-1111-1111-111111111111', 'admin-c-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44dd0000-aaaa-3333-3333-333333333333', 'principal-c-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44dd0000-aaaa-9999-9999-999999999999', 'jugador-c-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44dd0000-bbbb-1111-1111-111111111111', 'admin-c-b@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55dd0000-aaaa-1111-1111-111111111111', '44dd0000-aaaa-1111-1111-111111111111', '11dd0000-0000-0000-0000-000000000001', 'admin_club'),
@@ -412,8 +412,7 @@ reset role;
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Usuario nuevo: ayudante a nivel club, principal del team_staff.
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44dd0000-aaaa-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'team-principal-c-a@ts.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44dd0000-aaaa-4444-4444-444444444444', 'team-principal-c-a@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55dd0000-aaaa-4444-4444-444444444444', '44dd0000-aaaa-4444-4444-444444444444', '11dd0000-0000-0000-0000-000000000001', 'entrenador_ayudante');
@@ -480,8 +479,7 @@ reset role;
 -- el acceso a cualquier ayudante; sigue exigiendo o principal_de_team_staff
 -- o capability.
 -- ─────────────────────────────────────────────────────────────────────────────
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44dd0000-aaaa-5555-5555-555555555555', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'just-asst-c-a@ts.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44dd0000-aaaa-5555-5555-555555555555', 'just-asst-c-a@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55dd0000-aaaa-5555-5555-555555555555', '44dd0000-aaaa-5555-5555-555555555555', '11dd0000-0000-0000-0000-000000000001', 'entrenador_ayudante');
@@ -528,9 +526,8 @@ delete from public.callup_responses
  where event_id = '77dd0000-0000-0000-0000-000000000001';
 
 -- Usuarios nuevos.
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44dd0000-aaaa-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'familia-c-a@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('44dd0000-aaaa-7777-7777-777777777777', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-otro-c-a@ts.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44dd0000-aaaa-6666-6666-666666666666', 'familia-c-a@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('44dd0000-aaaa-7777-7777-777777777777', 'jugador-otro-c-a@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55dd0000-aaaa-6666-6666-666666666666', '44dd0000-aaaa-6666-6666-666666666666', '11dd0000-0000-0000-0000-000000000001', 'jugador'),

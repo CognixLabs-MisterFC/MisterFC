@@ -16,16 +16,15 @@
 --       upcoming→active; devuelve '2026-27'; queda 1 active y 0 upcoming.
 --   F2. idempotencia/atomicidad: 2ª llamada → no_upcoming (no hay doble cierre).
 --   PC. pre-chequeo (read): jugador en la activa NO colocado en la upcoming.
+\ir helpers/auth_users.sql
 
 begin;
 
 insert into public.clubs (id, name, slug) values
   ('c8000000-0000-4000-8000-000000000001', 'Club C8', 'club-c8');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('c8a00000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c8admin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('c8a00000-bbbb-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'c8jug@test.local', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('c8a00000-aaaa-4000-8000-000000000001', 'c8admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('c8a00000-bbbb-4000-8000-000000000001', 'c8jug@test.local', '{}'::jsonb);
 
 insert into public.memberships (profile_id, club_id, role) values
   ('c8a00000-aaaa-4000-8000-000000000001', 'c8000000-0000-4000-8000-000000000001', 'admin_club'),

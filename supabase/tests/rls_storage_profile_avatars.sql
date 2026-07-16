@@ -16,16 +16,13 @@
 -- para evitar orphans entre la tabla y el bucket físico. El único path válido
 -- es la Storage API (supabase-js `.remove()`). El DELETE se valida en
 -- smoke tests E2E desde la app.
+\ir helpers/auth_users.sql
 
 begin;
 
 -- Setup: dos users de prueba.
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('aaaaaaaa-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'user-a@avatars.test', now(), '{"full_name":"User A"}'::jsonb, now(), now()),
-  ('bbbbbbbb-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
-   'user-b@avatars.test', now(), '{"full_name":"User B"}'::jsonb, now(), now());
+select pg_temp.new_test_user('aaaaaaaa-1111-1111-1111-111111111111', 'user-a@avatars.test', '{"full_name":"User A"}'::jsonb);
+select pg_temp.new_test_user('bbbbbbbb-2222-2222-2222-222222222222', 'user-b@avatars.test', '{"full_name":"User B"}'::jsonb);
 
 -- Seed: un objeto preexistente en la carpeta de B (insertado como postgres,
 -- bypass RLS) para luego comprobar que A no puede tocar/leer pertenece-a-B.

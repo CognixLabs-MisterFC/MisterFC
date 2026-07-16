@@ -8,6 +8,7 @@
 --   O5. Fan-out: director active ∈ recipients(A); director observer ∉ recipients(B);
 --       staff/jugador SIEMPRE ∈ recipients.
 --   O6. Aislamiento entre clubs: director de otro club no ve ni escribe en A.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -30,12 +31,11 @@ insert into public.teams (id, category_id, name, format, color, season, club_id)
 
 -- Usuarios: D director de O1; SA staff de A; SB staff de B; PL familia de A;
 -- D2 director de O2 (aislamiento).
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('dddd0000-0000-4000-8000-0000000000d1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dir-o1@obs.test', now(), '{}'::jsonb, now(), now()),
-  ('dddd0000-0000-4000-8000-00000000005a', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'sa-o1@obs.test',  now(), '{}'::jsonb, now(), now()),
-  ('dddd0000-0000-4000-8000-00000000005b', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'sb-o1@obs.test',  now(), '{}'::jsonb, now(), now()),
-  ('dddd0000-0000-4000-8000-0000000000f1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'pl-o1@obs.test',  now(), '{}'::jsonb, now(), now()),
-  ('dddd0000-0000-4000-8000-0000000000d2', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dir-o2@obs.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('dddd0000-0000-4000-8000-0000000000d1', 'dir-o1@obs.test', '{}'::jsonb);
+select pg_temp.new_test_user('dddd0000-0000-4000-8000-00000000005a', 'sa-o1@obs.test', '{}'::jsonb);
+select pg_temp.new_test_user('dddd0000-0000-4000-8000-00000000005b', 'sb-o1@obs.test', '{}'::jsonb);
+select pg_temp.new_test_user('dddd0000-0000-4000-8000-0000000000f1', 'pl-o1@obs.test', '{}'::jsonb);
+select pg_temp.new_test_user('dddd0000-0000-4000-8000-0000000000d2', 'dir-o2@obs.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55550000-0000-4000-8000-0000000000d1', 'dddd0000-0000-4000-8000-0000000000d1', 'aaaa1111-1111-4111-8111-000000000001', 'director'),

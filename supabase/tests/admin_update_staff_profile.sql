@@ -14,6 +14,7 @@
 --   G1. coordinador de A → forbidden (solo admin_club).
 --   G2. el entrenador (no admin) → forbidden.
 --   G3. admin de A intenta editar a un miembro de OTRO club → target_invalid.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -21,13 +22,11 @@ insert into public.clubs (id, name, slug) values
   ('ba000000-0000-4000-8000-000000000001', 'Club A 2a', 'club-a-2a'),
   ('ba000000-0000-4000-8000-000000000002', 'Club B 2a', 'club-b-2a');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at)
-values
-  ('ba0a0000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a-admin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('ba0a0000-cccc-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a-coord@test.local', now(), '{}'::jsonb, now(), now()),
-  ('ba0a0000-eeee-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a-coach@test.local', now(), '{}'::jsonb, now(), now()),
-  ('ba0b0000-aaaa-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'b-admin@test.local', now(), '{}'::jsonb, now(), now()),
-  ('ba0b0000-eeee-4000-8000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'b-coach@test.local', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('ba0a0000-aaaa-4000-8000-000000000001', 'a-admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('ba0a0000-cccc-4000-8000-000000000001', 'a-coord@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('ba0a0000-eeee-4000-8000-000000000001', 'a-coach@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('ba0b0000-aaaa-4000-8000-000000000001', 'b-admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('ba0b0000-eeee-4000-8000-000000000001', 'b-coach@test.local', '{}'::jsonb);
 
 -- profiles: el trigger handle_new_user ya los creó al insertar en auth.users
 -- (full_name null). Les ponemos nombre vía upsert.

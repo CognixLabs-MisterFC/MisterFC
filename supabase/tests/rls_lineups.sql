@@ -25,6 +25,7 @@
 --     P3. ayudante con can_create_lineups concedida inserta → OK.
 --     P4. ayudante SIN la capability → 42501.
 --     P5. jugador → 42501.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -54,12 +55,11 @@ insert into public.team_members (team_id, player_id, joined_at) values
   ('66ee0000-2222-0000-0000-000000000001', '66ee0000-3333-0000-0000-000000000004', '2025-09-01');
 
 -- Usuarios (profiles se crean por trigger handle_new_user de F1).
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('66ee0000-aaaa-0001-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-l@ts.test',     now(), '{}'::jsonb, now(), now()),
-  ('66ee0000-aaaa-0002-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-l@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('66ee0000-aaaa-0003-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'aycap-l@ts.test',     now(), '{}'::jsonb, now(), now()),
-  ('66ee0000-aaaa-0004-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'aynocap-l@ts.test',   now(), '{}'::jsonb, now(), now()),
-  ('66ee0000-aaaa-0005-0000-000000000000', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-l@ts.test',   now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('66ee0000-aaaa-0001-0000-000000000000', 'admin-l@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('66ee0000-aaaa-0002-0000-000000000000', 'principal-l@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('66ee0000-aaaa-0003-0000-000000000000', 'aycap-l@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('66ee0000-aaaa-0004-0000-000000000000', 'aynocap-l@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('66ee0000-aaaa-0005-0000-000000000000', 'jugador-l@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('66ee0000-5555-0001-0000-000000000000', '66ee0000-aaaa-0001-0000-000000000000', '66ee0000-0000-0000-0000-000000000001', 'admin_club'),

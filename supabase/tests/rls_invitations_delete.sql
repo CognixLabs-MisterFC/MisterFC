@@ -7,6 +7,7 @@
 --   D4. inviter (created_by = auth.uid()) borra su propia invitación → OK.
 --   D5. jugador NO puede borrar invitaciones del club → rechazado por RLS.
 --   D6. admin_club de OTRO club NO puede borrar (aislamiento multi-tenant) → rechazado.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -24,13 +25,12 @@ insert into public.categories (id, club_id, name) values
 insert into public.teams (id, category_id, name, format, color, season) values
   ('33abcdef-d000-0000-0000-000000000a01', '22abcdef-d000-0000-0000-000000000a01', 'Team A', 'F7', '#10B981', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44abcdef-d000-0000-0000-000000000a01', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-a@del.test', now(), '{}'::jsonb, now(), now()),
-  ('44abcdef-d000-0000-0000-000000000a02', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord-a@del.test', now(), '{}'::jsonb, now(), now()),
-  ('44abcdef-d000-0000-0000-000000000a03', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-a@del.test', now(), '{}'::jsonb, now(), now()),
-  ('44abcdef-d000-0000-0000-000000000a04', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'inviter-a@del.test', now(), '{}'::jsonb, now(), now()),
-  ('44abcdef-d000-0000-0000-000000000a05', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jugador-a@del.test', now(), '{}'::jsonb, now(), now()),
-  ('44abcdef-d000-0000-0000-000000000b01', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-b@del.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44abcdef-d000-0000-0000-000000000a01', 'admin-a@del.test', '{}'::jsonb);
+select pg_temp.new_test_user('44abcdef-d000-0000-0000-000000000a02', 'coord-a@del.test', '{}'::jsonb);
+select pg_temp.new_test_user('44abcdef-d000-0000-0000-000000000a03', 'principal-a@del.test', '{}'::jsonb);
+select pg_temp.new_test_user('44abcdef-d000-0000-0000-000000000a04', 'inviter-a@del.test', '{}'::jsonb);
+select pg_temp.new_test_user('44abcdef-d000-0000-0000-000000000a05', 'jugador-a@del.test', '{}'::jsonb);
+select pg_temp.new_test_user('44abcdef-d000-0000-0000-000000000b01', 'admin-b@del.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55abcdef-d000-0000-0000-000000000a01', '44abcdef-d000-0000-0000-000000000a01', '11abcdef-d000-0000-0000-000000000a01', 'admin_club'),

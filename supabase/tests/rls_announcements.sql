@@ -8,6 +8,7 @@
 --   A5. DELETE por autor → OK.
 --   A6. DELETE por admin del club (no autor) → OK.
 --   A7. UPDATE author_profile_id → trigger rechaza (autor inmutable).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -23,12 +24,11 @@ insert into public.teams (id, category_id, name, format, color, season) values
   ('33333333-3333-4333-8333-3333333300b1', '22222222-2222-4222-8222-2222222200b1', 'Team A', 'F7', '#10B981', '2025-26'),
   ('33333333-3333-4333-8333-3333333300b2', '22222222-2222-4222-8222-2222222200b2', 'Team B', 'F7', '#10B981', '2025-26');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('44444444-4444-4444-8444-4444444400b1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-ann@msg.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-4444444400b2', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-ann@msg.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-4444444400b3', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ayud-ann@msg.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-4444444400b4', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jug-ann@msg.test', now(), '{}'::jsonb, now(), now()),
-  ('44444444-4444-4444-8444-4444444400b5', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-b-ann@msg.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('44444444-4444-4444-8444-4444444400b1', 'admin-ann@msg.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-4444444400b2', 'principal-ann@msg.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-4444444400b3', 'ayud-ann@msg.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-4444444400b4', 'jug-ann@msg.test', '{}'::jsonb);
+select pg_temp.new_test_user('44444444-4444-4444-8444-4444444400b5', 'admin-b-ann@msg.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('55555555-5555-4555-8555-5555555500b1', '44444444-4444-4444-8444-4444444400b1', '11111111-1111-4111-8111-1111111100b1', 'admin_club'),

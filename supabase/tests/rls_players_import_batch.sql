@@ -16,6 +16,7 @@
 -- (saltando RLS de capabilities porque corremos como bootstrap superuser
 -- en el setup; los UPDATEs reales en producción van por la action
 -- toggleCapability).
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -24,14 +25,13 @@ insert into public.clubs (id, name, slug) values
   ('99aaaaaa-aaaa-0000-0000-000000000001', 'Club Import Alfa', 'alfa-import'),
   ('99aaaaaa-bbbb-0000-0000-000000000001', 'Club Import Beta', 'beta-import');
 
-insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at, raw_user_meta_data, created_at, updated_at) values
-  ('99aaaaaa-aaaa-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-imp@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('99aaaaaa-aaaa-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'coord-imp@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('99aaaaaa-aaaa-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'principal-imp@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('99aaaaaa-aaaa-4444-4444-444444444444', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'assist-on@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('99aaaaaa-aaaa-5555-5555-555555555555', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'assist-off@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('99aaaaaa-aaaa-6666-6666-666666666666', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'jug-imp@ts.test', now(), '{}'::jsonb, now(), now()),
-  ('99aaaaaa-bbbb-7777-7777-777777777777', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin-b-imp@ts.test', now(), '{}'::jsonb, now(), now());
+select pg_temp.new_test_user('99aaaaaa-aaaa-1111-1111-111111111111', 'admin-imp@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99aaaaaa-aaaa-2222-2222-222222222222', 'coord-imp@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99aaaaaa-aaaa-3333-3333-333333333333', 'principal-imp@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99aaaaaa-aaaa-4444-4444-444444444444', 'assist-on@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99aaaaaa-aaaa-5555-5555-555555555555', 'assist-off@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99aaaaaa-aaaa-6666-6666-666666666666', 'jug-imp@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('99aaaaaa-bbbb-7777-7777-777777777777', 'admin-b-imp@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('99aaaaaa-0a00-1111-1111-111111111111', '99aaaaaa-aaaa-1111-1111-111111111111', '99aaaaaa-aaaa-0000-0000-000000000001', 'admin_club'),
