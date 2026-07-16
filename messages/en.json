@@ -1797,6 +1797,27 @@
         "no_session": "Invalid session. Please sign in again.",
         "db": "Something went wrong. Try again."
       }
+    },
+    "holidays": {
+      "badge": "Holiday",
+      "trigger": "Mark as holiday",
+      "title": "Mark holiday",
+      "description": "The club is closed that day: all scheduled trainings will be cancelled and coaches, players and families will be notified. Matches are not affected.",
+      "reason_label": "Reason",
+      "reason_placeholder": "e.g. Christmas, local holiday…",
+      "back": "Back",
+      "confirm": "Mark holiday",
+      "unmark": "Remove holiday",
+      "unmark_title": "Remove holiday",
+      "unmark_description": "The holiday “{reason}” will be removed and the trainings it cancelled will be reactivated (those cancelled for other reasons are left untouched).",
+      "errors": {
+        "forbidden": "Only club management can mark holidays.",
+        "already_holiday": "That day is already marked as a holiday.",
+        "reason_required": "Enter a reason for the holiday.",
+        "not_found": "That holiday no longer exists.",
+        "no_session": "Invalid session. Please sign in again.",
+        "db": "Something went wrong. Try again."
+      }
     }
   },
   "pdf": {

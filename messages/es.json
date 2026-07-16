@@ -1796,6 +1796,27 @@
         "no_session": "Sesión no válida. Vuelve a iniciar sesión.",
         "db": "Error al procesar. Inténtalo de nuevo."
       }
+    },
+    "holidays": {
+      "badge": "Festivo",
+      "trigger": "Marcar día festivo",
+      "title": "Marcar día festivo",
+      "description": "El club cierra ese día: todos los entrenamientos programados se cancelarán y se avisará a entrenadores, jugadores y familias. No afecta a partidos.",
+      "reason_label": "Motivo",
+      "reason_placeholder": "Ej. Navidad, fiesta local…",
+      "back": "Volver",
+      "confirm": "Marcar festivo",
+      "unmark": "Desmarcar festivo",
+      "unmark_title": "Desmarcar día festivo",
+      "unmark_description": "Se quitará el festivo «{reason}» y se reactivarán los entrenamientos que canceló (los cancelados por otro motivo no se tocan).",
+      "errors": {
+        "forbidden": "Solo dirección puede marcar días festivos.",
+        "already_holiday": "Ese día ya está marcado como festivo.",
+        "reason_required": "Indica un motivo para el festivo.",
+        "not_found": "Ese festivo ya no existe.",
+        "no_session": "Sesión no válida. Vuelve a iniciar sesión.",
+        "db": "Error al procesar. Inténtalo de nuevo."
+      }
     }
   },
   "pdf": {

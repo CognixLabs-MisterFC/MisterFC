@@ -12,9 +12,12 @@ import {
 } from '@/lib/calendar-utils';
 import { cn } from '@/lib/utils';
 import { EventPill } from './event-pill';
+import { HolidayCell } from './holiday-cell';
+import { holidayByDayKey, dayIso } from './holiday-index';
 import type {
   CalendarEvent,
   CategoryOption,
+  HolidayInfo,
   TeamOption,
 } from '../queries';
 
@@ -28,6 +31,8 @@ type Props = {
   categories: CategoryOption[];
   role: string;
   canCreateSessions: boolean;
+  holidays: HolidayInfo[];
+  canManageHolidays: boolean;
 };
 
 const MAX_PILLS_PER_CELL = 3;
@@ -42,6 +47,8 @@ export async function CalendarMonth({
   categories,
   role,
   canCreateSessions,
+  holidays,
+  canManageHolidays,
 }: Props) {
   const t = await getTranslations('calendario');
 
@@ -62,6 +69,7 @@ export async function CalendarMonth({
   }
 
   const weekdayLabels = weeks[0]!.map((d) => formatWeekdayShort(d, locale));
+  const holidayIndex = holidayByDayKey(holidays);
 
   return (
     <div className="overflow-hidden rounded-md border border-border bg-card">
@@ -81,15 +89,17 @@ export async function CalendarMonth({
           const overflow = dayEvents.length - MAX_PILLS_PER_CELL;
           const canCreate =
             canManageClubEvents || manageableTeamIds.length > 0;
+          const holiday = holidayIndex.get(key) ?? null;
           return (
             <div
               key={key}
               className={cn(
-                'flex min-h-[110px] flex-col gap-1 border-b border-r border-border p-1.5 sm:min-h-[130px]',
-                !inMonth && 'bg-muted/30 text-muted-foreground'
+                'group flex min-h-[110px] flex-col gap-1 border-b border-r border-border p-1.5 sm:min-h-[130px]',
+                !inMonth && 'bg-muted/30 text-muted-foreground',
+                holiday && 'bg-amber-500/5'
               )}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-1">
                 <span
                   className={cn(
                     'text-xs font-medium',
@@ -99,6 +109,11 @@ export async function CalendarMonth({
                 >
                   {formatDayNumber(day)}
                 </span>
+                <HolidayCell
+                  dateIso={dayIso(day)}
+                  holiday={holiday}
+                  canManage={canManageHolidays}
+                />
                 {canCreate && compareLocalDays(day, today) >= 0 && (
                   <span className="sr-only">{t('new.create_for_day')}</span>
                 )}

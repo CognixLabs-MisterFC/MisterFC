@@ -1797,6 +1797,27 @@
         "no_session": "Sessió no vàlida. Torna a iniciar sessió.",
         "db": "Error en processar. Torna-ho a intentar."
       }
+    },
+    "holidays": {
+      "badge": "Festiu",
+      "trigger": "Marcar dia festiu",
+      "title": "Marcar dia festiu",
+      "description": "El club tanca eixe dia: tots els entrenaments programats es cancel·laran i s'avisarà a entrenadors, jugadors i famílies. No afecta els partits.",
+      "reason_label": "Motiu",
+      "reason_placeholder": "Ex. Nadal, festa local…",
+      "back": "Tornar",
+      "confirm": "Marcar festiu",
+      "unmark": "Desmarcar festiu",
+      "unmark_title": "Desmarcar dia festiu",
+      "unmark_description": "Es llevarà el festiu «{reason}» i es reactivaran els entrenaments que va cancel·lar (els cancel·lats per un altre motiu no es toquen).",
+      "errors": {
+        "forbidden": "Només la direcció pot marcar dies festius.",
+        "already_holiday": "Eixe dia ja està marcat com a festiu.",
+        "reason_required": "Indica un motiu per al festiu.",
+        "not_found": "Eixe festiu ja no existeix.",
+        "no_session": "Sessió no vàlida. Torna a iniciar sessió.",
+        "db": "Error en processar. Torna-ho a intentar."
+      }
     }
   },
   "pdf": {

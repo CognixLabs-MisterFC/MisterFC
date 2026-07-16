@@ -18,6 +18,7 @@ import {
   loadCalendarScopeTeamIds,
   loadManageableTeams,
   loadCanCreateSessions,
+  loadHolidays,
   type CalendarFilters as Filters,
 } from './queries';
 
@@ -88,6 +89,12 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
   // training de equipo). Capacidad distinta de gestionar el calendario.
   const canCreateSessions = await loadCanCreateSessions(ctx.activeClub.club.id);
 
+  // F14F-2 — festivos del rango + quién puede marcarlos (solo dirección/admin;
+  // NO coordinador). Se muestran a todos los roles; el gate real vive en la RPC.
+  const holidays = await loadHolidays(ctx.activeClub.club.id, range);
+  const canManageHolidays =
+    ctx.activeClub.role === 'admin_club' || ctx.activeClub.role === 'director';
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -131,6 +138,8 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
           categories={categories}
           role={ctx.activeClub.role}
           canCreateSessions={canCreateSessions}
+          holidays={holidays}
+          canManageHolidays={canManageHolidays}
         />
       )}
       {view === 'week' && (
@@ -144,6 +153,8 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
           categories={categories}
           role={ctx.activeClub.role}
           canCreateSessions={canCreateSessions}
+          holidays={holidays}
+          canManageHolidays={canManageHolidays}
         />
       )}
       {view === 'agenda' && (
@@ -156,6 +167,8 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
           categories={categories}
           role={ctx.activeClub.role}
           canCreateSessions={canCreateSessions}
+          holidays={holidays}
+          canManageHolidays={canManageHolidays}
         />
       )}
     </div>

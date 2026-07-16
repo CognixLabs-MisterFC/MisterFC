@@ -11,9 +11,12 @@ import {
 } from '@/lib/calendar-utils';
 import { cn } from '@/lib/utils';
 import { EventPill } from './event-pill';
+import { HolidayCell } from './holiday-cell';
+import { holidayByDayKey, dayIso } from './holiday-index';
 import type {
   CalendarEvent,
   CategoryOption,
+  HolidayInfo,
   TeamOption,
 } from '../queries';
 
@@ -27,6 +30,8 @@ type Props = {
   categories: CategoryOption[];
   role: string;
   canCreateSessions: boolean;
+  holidays: HolidayInfo[];
+  canManageHolidays: boolean;
 };
 
 export async function CalendarWeek({
@@ -39,11 +44,14 @@ export async function CalendarWeek({
   categories,
   role,
   canCreateSessions,
+  holidays,
+  canManageHolidays,
 }: Props) {
   const t = await getTranslations('calendario');
 
   const days = weekGrid(startOfWeek(pivot));
   const today = todayLocal();
+  const holidayIndex = holidayByDayKey(holidays);
 
   const byDay = new Map<string, CalendarEvent[]>();
   for (const e of events) {
@@ -62,10 +70,11 @@ export async function CalendarWeek({
       <div className="grid grid-cols-7 border-b border-border bg-muted/50">
         {days.map((d) => {
           const isToday = isSameDay(d, today);
+          const holiday = holidayIndex.get(`${d.year}-${d.month}-${d.day}`) ?? null;
           return (
             <div
               key={`${d.year}-${d.month}-${d.day}`}
-              className="flex flex-col items-center gap-0.5 px-2 py-2 text-center text-xs"
+              className="group flex flex-col items-center gap-0.5 px-2 py-2 text-center text-xs"
             >
               <span className="uppercase tracking-wider text-muted-foreground">
                 {formatWeekdayShort(d, locale)}
@@ -78,6 +87,11 @@ export async function CalendarWeek({
               >
                 {formatDayNumber(d)}
               </span>
+              <HolidayCell
+                dateIso={dayIso(d)}
+                holiday={holiday}
+                canManage={canManageHolidays}
+              />
             </div>
           );
         })}
@@ -86,10 +100,14 @@ export async function CalendarWeek({
         {days.map((d) => {
           const key = `${d.year}-${d.month}-${d.day}`;
           const dayEvents = byDay.get(key) ?? [];
+          const isHoliday = holidayIndex.has(key);
           return (
             <div
               key={key}
-              className="flex min-h-[400px] flex-col gap-1.5 p-2"
+              className={cn(
+                'flex min-h-[400px] flex-col gap-1.5 p-2',
+                isHoliday && 'bg-amber-500/5'
+              )}
             >
               {dayEvents.length === 0 && (
                 <span className="text-[10px] text-muted-foreground">
