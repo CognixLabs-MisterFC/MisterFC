@@ -14,12 +14,14 @@ import {
   tournamentInputSchema,
   tournamentMatchInputSchema,
   TIMEZONE_OLA1,
+  zonedFields,
   type EventInput,
+  type Occurrence,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 export type EventActionResult =
-  | { success: true; event_id: string }
+  | { success: true; event_id: string; skipped_holidays?: string[] }
   | {
       success: false;
       error:
@@ -28,9 +30,42 @@ export type EventActionResult =
         | 'forbidden'
         | 'not_found'
         | 'cross_club'
+        | 'all_on_holidays'
         | 'db';
       detail?: string;
     };
+
+/**
+ * F14F-3 — clave de día local del club (Europe/Madrid) 'YYYY-MM-DD' para una
+ * fecha, con el MISMO criterio que mark_holiday en BD (starts_at at time zone
+ * 'Europe/Madrid')::date. zonedFields.month es 0-based.
+ */
+function madridDateKey(d: Date): string {
+  const z = zonedFields(d, TZ);
+  return `${z.year}-${String(z.month + 1).padStart(2, '0')}-${String(z.day).padStart(2, '0')}`;
+}
+
+/**
+ * F14F-3 — festivos del club que caen en el rango de las ocurrencias dadas,
+ * como Set de claves 'YYYY-MM-DD'. Vacío si no hay ocurrencias.
+ */
+async function loadClubHolidaySet(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  clubId: string,
+  occurrences: Occurrence[]
+): Promise<Set<string>> {
+  if (occurrences.length === 0) return new Set();
+  const keys = occurrences.map((o) => madridDateKey(o.starts_at));
+  const min = keys.reduce((a, b) => (a < b ? a : b));
+  const max = keys.reduce((a, b) => (a > b ? a : b));
+  const { data } = await supabase
+    .from('holidays')
+    .select('date')
+    .eq('club_id', clubId)
+    .gte('date', min)
+    .lte('date', max);
+  return new Set((data ?? []).map((h) => h.date as string));
+}
 
 export type EventDeleteResult =
   | { success: true; deleted_count: number }
@@ -81,14 +116,54 @@ export async function createEvent(
 
   const targetCols = targetToColumns(data.target);
 
+  // F14F-3 — una SERIE de entrenamientos SALTA los días marcados como festivo
+  // (instalaciones cerradas): esas ocurrencias no se crean. Se calcula ANTES de
+  // insertar el parent, porque el parent es la 1ª ocurrencia: si esa cae en
+  // festivo, el parent pasa a ser la 1ª ocurrencia NO festiva. Solo TRAINING;
+  // los partidos y demás tipos pueden ocurrir en festivo → intactos.
+  let parentStartsAt = data.starts_at;
+  let parentEndsAt: string | null = data.ends_at ?? null;
+  let childOccurrences: Occurrence[] = [];
+  let skippedHolidays: string[] = [];
+
+  if (data.recurrence_rule) {
+    const occurrences = expandRecurrence(
+      new Date(data.starts_at),
+      data.ends_at ? new Date(data.ends_at) : null,
+      data.recurrence_rule,
+      TZ
+    );
+    if (data.type === 'training') {
+      const holidaySet = await loadClubHolidaySet(supabase, clubId, occurrences);
+      const kept: Occurrence[] = [];
+      for (const occ of occurrences) {
+        const key = madridDateKey(occ.starts_at);
+        if (holidaySet.has(key)) skippedHolidays.push(key);
+        else kept.push(occ);
+      }
+      // Serie entera sobre festivos: no se crea nada (caso degenerado).
+      if (kept.length === 0) {
+        return { success: false, error: 'all_on_holidays' };
+      }
+      // El parent es la 1ª ocurrencia NO festiva.
+      parentStartsAt = kept[0]!.starts_at.toISOString();
+      parentEndsAt = kept[0]!.ends_at ? kept[0]!.ends_at!.toISOString() : null;
+      childOccurrences = kept.slice(1);
+      skippedHolidays = [...new Set(skippedHolidays)].sort();
+    } else {
+      // Otros tipos: NO se saltan festivos. Comportamiento idéntico al previo.
+      childOccurrences = occurrences.slice(1);
+    }
+  }
+
   const parentInsert = {
     club_id: clubId,
     ...targetCols,
     type: data.type,
     title: data.title,
     notes: data.notes,
-    starts_at: data.starts_at,
-    ends_at: data.ends_at,
+    starts_at: parentStartsAt,
+    ends_at: parentEndsAt,
     all_day: data.all_day,
     location_name: data.location_name,
     location_address: data.location_address,
@@ -121,15 +196,8 @@ export async function createEvent(
     };
   }
 
-  if (data.recurrence_rule) {
-    const occurrences = expandRecurrence(
-      new Date(data.starts_at),
-      data.ends_at ? new Date(data.ends_at) : null,
-      data.recurrence_rule,
-      TZ
-    );
-    // El primero es el parent; los siguientes son children.
-    const children = occurrences.slice(1).map((occ) => ({
+  if (data.recurrence_rule && childOccurrences.length > 0) {
+    const children = childOccurrences.map((occ) => ({
       club_id: clubId,
       ...targetCols,
       type: data.type,
@@ -145,24 +213,24 @@ export async function createEvent(
       created_by: user.id,
     }));
 
-    if (children.length > 0) {
-      const { error: childErr } = await supabase
-        .from('events')
-        .insert(children);
-      if (childErr) {
-        // Rollback manual del parent.
-        await supabase.from('events').delete().eq('id', parent.id);
-        return {
-          success: false,
-          error: 'db',
-          detail: childErr.message,
-        };
-      }
+    const { error: childErr } = await supabase.from('events').insert(children);
+    if (childErr) {
+      // Rollback manual del parent.
+      await supabase.from('events').delete().eq('id', parent.id);
+      return {
+        success: false,
+        error: 'db',
+        detail: childErr.message,
+      };
     }
   }
 
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');
-  return { success: true, event_id: parent.id as string };
+  return {
+    success: true,
+    event_id: parent.id as string,
+    skipped_holidays: skippedHolidays.length > 0 ? skippedHolidays : undefined,
+  };
 }
 
 /**

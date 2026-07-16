@@ -1721,6 +1721,7 @@
         "no_active_club": "No hi ha club actiu.",
         "cross_club": "L'equip o categoria no pertany a este club.",
         "not_found": "L'esdeveniment ja no existeix o no és accessible.",
+        "all_on_holidays": "Totes les dates de la sèrie cauen en dies festius: no s'ha creat cap entrenament.",
         "db": "Error en guardar. Torna-ho a intentar.",
         "plan_failed": "No s'ha pogut planificar la sessió. Torna-ho a provar.",
         "link_failed": "No s'ha pogut vincular la sessió. Torna-ho a provar.",
@@ -1810,6 +1811,7 @@
       "unmark": "Desmarcar festiu",
       "unmark_title": "Desmarcar dia festiu",
       "unmark_description": "Es llevarà el festiu «{reason}» i es reactivaran els entrenaments que va cancel·lar (els cancel·lats per un altre motiu no es toquen).",
+      "skipped_summary": "S'{count, plural, one {ha omés # dia} other {han omés # dies}} per festiu ({dates}).",
       "errors": {
         "forbidden": "Només la direcció pot marcar dies festius.",
         "already_holiday": "Eixe dia ja està marcat com a festiu.",

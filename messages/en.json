@@ -1721,6 +1721,7 @@
         "no_active_club": "No active club.",
         "cross_club": "Team or category does not belong to this club.",
         "not_found": "The event no longer exists or is not accessible.",
+        "all_on_holidays": "Every date in the series falls on a holiday: no training was created.",
         "db": "Save failed. Try again.",
         "plan_failed": "Could not plan the session. Try again.",
         "link_failed": "Could not link the session. Try again.",
@@ -1810,6 +1811,7 @@
       "unmark": "Remove holiday",
       "unmark_title": "Remove holiday",
       "unmark_description": "The holiday “{reason}” will be removed and the trainings it cancelled will be reactivated (those cancelled for other reasons are left untouched).",
+      "skipped_summary": "{count, plural, one {# day was skipped} other {# days were skipped}} due to holidays ({dates}).",
       "errors": {
         "forbidden": "Only club management can mark holidays.",
         "already_holiday": "That day is already marked as a holiday.",
