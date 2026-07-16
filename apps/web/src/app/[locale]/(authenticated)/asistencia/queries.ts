@@ -177,6 +177,8 @@ export async function loadRecentTrainings(
     .eq('type', 'training')
     // F14F-1b — un entrenamiento cancelado no ocurrió: fuera del listado de asistencia.
     .is('cancelled_at', null)
+    // F14F-4 — un training pendiente/rechazado no cuenta: solo normales/aprobados.
+    .or('approval_status.is.null,approval_status.eq.approved')
     .gte('starts_at', sinceIso)
     .lte('starts_at', nowIso)
     .order('starts_at', { ascending: false })
@@ -298,7 +300,7 @@ export async function loadEventAttendance(
   const { data: ev } = await supabase
     .from('events')
     .select(
-      `id, club_id, team_id, type, title, starts_at, ends_at, cancelled_at,
+      `id, club_id, team_id, type, title, starts_at, ends_at, cancelled_at, approval_status,
        teams!inner(name, color, season, categories!inner(name))`
     )
     .eq('id', eventId)
@@ -309,6 +311,8 @@ export async function loadEventAttendance(
   if (ev.type !== 'training') return null;
   // F14F-1b — un entrenamiento cancelado no pide pasar lista (ni por URL directa).
   if (ev.cancelled_at != null) return null;
+  // F14F-4 — un training pendiente/rechazado tampoco pide pasar lista.
+  if (ev.approval_status === 'pending' || ev.approval_status === 'rejected') return null;
   if (ev.team_id == null) return null;
 
   type EventShape = {

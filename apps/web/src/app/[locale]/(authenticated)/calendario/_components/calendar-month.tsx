@@ -70,6 +70,7 @@ export async function CalendarMonth({
 
   const weekdayLabels = weeks[0]!.map((d) => formatWeekdayShort(d, locale));
   const holidayIndex = holidayByDayKey(holidays);
+  const canApprove = role === 'admin_club' || role === 'director';
 
   return (
     <div className="overflow-hidden rounded-md border border-border bg-card">
@@ -136,6 +137,7 @@ export async function CalendarMonth({
                       manageableTeamIds={manageableTeamIds}
                       canManageClubEvents={canManageClubEvents}
                       canCreateSessions={canCreateSessions}
+                      canApprove={canApprove}
                       teams={teams}
                       categories={categories}
                     />

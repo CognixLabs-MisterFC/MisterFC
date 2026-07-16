@@ -141,6 +141,7 @@
       "trainings_no_session": "Trainings without a session",
       "trainings_no_attendance": "Attendance not recorded",
       "pending_callups": "Call-ups not published",
+      "pending_approvals": "Holiday trainings to approve",
       "pending_reports": "Pending reports",
       "reports_pending": "{count} pending",
       "empty": "Nothing pending",
@@ -173,6 +174,12 @@
       "training_cancelled_named": "Training cancelled: {title}",
       "training_reinstated": "Training reinstated",
       "training_reinstated_named": "Training reinstated: {title}",
+      "training_approval_requested": "Holiday training to approve",
+      "training_approval_requested_named": "Holiday training to approve: {title}",
+      "training_approved": "Holiday training approved",
+      "training_approved_named": "Holiday training approved: {title}",
+      "training_rejected": "Holiday training rejected",
+      "training_rejected_named": "Holiday training rejected: {title}",
       "goal": "Goal in a match you follow",
       "generic": "You have an update",
       "development_report_published": "A development report was published",
@@ -1817,6 +1824,27 @@
         "already_holiday": "That day is already marked as a holiday.",
         "reason_required": "Enter a reason for the holiday.",
         "not_found": "That holiday no longer exists.",
+        "no_session": "Invalid session. Please sign in again.",
+        "db": "Something went wrong. Try again."
+      }
+    },
+    "approval": {
+      "badge_pending": "Pending",
+      "badge_rejected": "Rejected",
+      "approve": "Approve",
+      "reject": "Reject",
+      "reject_title": "Reject training",
+      "reject_description": "The training will be marked as rejected (not deleted) and the coach will be notified with the reason.",
+      "reason_label": "Rejection reason",
+      "reason_placeholder": "e.g. facilities closed that day…",
+      "back": "Back",
+      "pending_note": "Pending approval by club management.",
+      "rejected_note": "Rejected: {reason}",
+      "errors": {
+        "forbidden": "Only club management can approve or reject.",
+        "not_found": "The training no longer exists.",
+        "not_pending": "This training is no longer pending.",
+        "reason_required": "Enter a rejection reason.",
         "no_session": "Invalid session. Please sign in again.",
         "db": "Something went wrong. Try again."
       }

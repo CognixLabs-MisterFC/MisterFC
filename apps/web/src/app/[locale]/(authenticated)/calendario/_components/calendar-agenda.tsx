@@ -48,6 +48,7 @@ export async function CalendarAgenda({
   const t = await getTranslations('calendario');
   const today = todayLocal();
   const holidayIndex = holidayByDayKey(holidays);
+  const canApprove = role === 'admin_club' || role === 'director';
 
   if (events.length === 0 && holidays.length === 0) {
     return (
@@ -134,6 +135,7 @@ export async function CalendarAgenda({
                     manageableTeamIds={manageableTeamIds}
                     canManageClubEvents={canManageClubEvents}
                     canCreateSessions={canCreateSessions}
+                    canApprove={canApprove}
                     teams={teams}
                     categories={categories}
                   />

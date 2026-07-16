@@ -181,6 +181,8 @@ export async function loadTrainingsWithoutAttendance(
     .eq('type', 'training')
     // F14F-1b — un entreno cancelado no queda "pendiente de asistencia".
     .is('cancelled_at', null)
+    // F14F-4 — ni un pendiente/rechazado (no es un entreno confirmado).
+    .or('approval_status.is.null,approval_status.eq.approved')
     .not('team_id', 'is', null)
     .gte('starts_at', fromIso)
     .lte('starts_at', nowIso)
@@ -210,6 +212,40 @@ export async function loadTrainingsWithoutAttendance(
       startsAt: e.starts_at,
       teamName: e.teams?.name ?? null,
     }));
+}
+
+/**
+ * F14F-4 — COLA de trainings PENDIENTES de aprobación (creados en día festivo
+ * por alguien que no puede aprobar). Solo dirección/admin la usa. Ordenada por
+ * fecha del entrenamiento.
+ */
+export async function loadPendingApprovals(
+  clubId: string,
+  filterTeamIds?: string[] | null
+): Promise<DireccionTaskItem[]> {
+  const supabase = createSupabaseServerClient(await createCookieAdapter());
+  let q = supabase
+    .from('events')
+    .select('id, title, starts_at, team_id, teams(name)')
+    .eq('club_id', clubId)
+    .eq('type', 'training')
+    .eq('approval_status', 'pending')
+    .order('starts_at', { ascending: true });
+  if (filterTeamIds && filterTeamIds.length > 0) q = q.in('team_id', filterTeamIds);
+
+  type Row = {
+    id: string;
+    title: string;
+    starts_at: string;
+    teams: { name: string } | null;
+  };
+  const events = ((await q).data ?? []) as unknown as Row[];
+  return events.map((e) => ({
+    eventId: e.id,
+    title: e.title,
+    startsAt: e.starts_at,
+    teamName: e.teams?.name ?? null,
+  }));
 }
 
 /** Invitaciones del club pendientes (sin aceptar y no expiradas). */

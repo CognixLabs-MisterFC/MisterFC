@@ -49,6 +49,11 @@ export type CalendarEvent = {
   cancellation_source: 'person' | 'holiday' | null;
   /** F14F-1 — motivo libre y opcional. */
   cancellation_reason: string | null;
+  /** F14F-4 — estado de aprobación. null = evento NORMAL; 'pending'|'approved'|
+   *  'rejected' solo para trainings sueltos creados en día festivo. */
+  approval_status: 'pending' | 'approved' | 'rejected' | null;
+  /** F14F-4 — motivo del rechazo (solo si approval_status='rejected'). */
+  rejection_reason: string | null;
 };
 
 export type TeamOption = {
@@ -189,6 +194,7 @@ export async function loadCalendarData(
        all_day, location_name, location_address, opponent_name, parent_event_id,
        recurrence_rule, created_by,
        cancelled_at, cancellation_source, cancellation_reason,
+       approval_status, rejection_reason,
        teams(name, color, categories(name)),
        categories(name)`
     )
@@ -259,6 +265,9 @@ export async function loadCalendarData(
       cancellation_source:
         (e.cancellation_source as CalendarEvent['cancellation_source']) ?? null,
       cancellation_reason: (e.cancellation_reason as string | null) ?? null,
+      approval_status:
+        (e.approval_status as CalendarEvent['approval_status']) ?? null,
+      rejection_reason: (e.rejection_reason as string | null) ?? null,
     };
   });
 
@@ -436,6 +445,7 @@ export async function loadEvent(eventId: string): Promise<CalendarEvent | null> 
        all_day, location_name, location_address, opponent_name, parent_event_id,
        recurrence_rule, created_by,
        cancelled_at, cancellation_source, cancellation_reason,
+       approval_status, rejection_reason,
        teams(name, color, categories(name)),
        categories(name)`
     )
@@ -487,6 +497,9 @@ export async function loadEvent(eventId: string): Promise<CalendarEvent | null> 
     cancellation_source:
       (data.cancellation_source as CalendarEvent['cancellation_source']) ?? null,
     cancellation_reason: (data.cancellation_reason as string | null) ?? null,
+    approval_status:
+      (data.approval_status as CalendarEvent['approval_status']) ?? null,
+    rejection_reason: (data.rejection_reason as string | null) ?? null,
   };
 }
 

@@ -52,6 +52,7 @@ export async function CalendarWeek({
   const days = weekGrid(startOfWeek(pivot));
   const today = todayLocal();
   const holidayIndex = holidayByDayKey(holidays);
+  const canApprove = role === 'admin_club' || role === 'director';
 
   const byDay = new Map<string, CalendarEvent[]>();
   for (const e of events) {
@@ -131,6 +132,7 @@ export async function CalendarWeek({
                     manageableTeamIds={manageableTeamIds}
                     canManageClubEvents={canManageClubEvents}
                     canCreateSessions={canCreateSessions}
+                    canApprove={canApprove}
                     teams={teams}
                     categories={categories}
                   />

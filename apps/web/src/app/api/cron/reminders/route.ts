@@ -310,6 +310,8 @@ async function handle(req: Request): Promise<NextResponse> {
     .eq('type', 'training')
     // F14F-1b — no recordar "asistencia pendiente" de un entreno cancelado.
     .is('cancelled_at', null)
+    // F14F-4 — ni de un pendiente/rechazado de aprobación.
+    .or('approval_status.is.null,approval_status.eq.approved')
     .gte('starts_at', yesterdayFromIso)
     .lte('starts_at', yesterdayToIso);
 

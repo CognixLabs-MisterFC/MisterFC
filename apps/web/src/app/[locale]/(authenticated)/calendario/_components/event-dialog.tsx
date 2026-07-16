@@ -60,6 +60,7 @@ import type {
 } from '../queries';
 import { EventDeleteDialog } from './event-delete-dialog';
 import { EventCancelControls } from './event-cancel-dialog';
+import { EventApprovalControls } from './event-approval-dialog';
 
 type Mode = 'new' | 'edit';
 
@@ -79,6 +80,8 @@ type Props = {
   categories: CategoryOption[];
   /** 12.8a — puede planificar sesiones (botón "Planificar sesión" en training de equipo). */
   canCreateSessions?: boolean;
+  /** F14F-4 — dirección/admin: puede aprobar/rechazar trainings en festivo. */
+  canApprove?: boolean;
   /** Opcional: trigger custom. Si no se provee, el componente provee un botón "Nuevo". */
   triggerLabel?: string;
 };
@@ -101,6 +104,7 @@ export function EventDialog({
   teams,
   categories,
   canCreateSessions = false,
+  canApprove = false,
   triggerLabel,
 }: Props) {
   const t = useTranslations('calendario');
@@ -827,6 +831,14 @@ export function EventDialog({
               {event.type === 'training' && (
                 <EventCancelControls
                   event={event}
+                  onDone={() => setOpen(false)}
+                />
+              )}
+              {/* F14F-4 — aprobar/rechazar (o nota de estado) de un training en festivo. */}
+              {event.type === 'training' && (
+                <EventApprovalControls
+                  event={event}
+                  canApprove={canApprove}
                   onDone={() => setOpen(false)}
                 />
               )}

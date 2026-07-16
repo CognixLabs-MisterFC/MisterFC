@@ -62,6 +62,8 @@ export async function loadTrainingsWithoutSession(
     .eq('type', 'training')
     // F14F-1b — no alertar de "sin sesión" sobre un entreno cancelado.
     .is('cancelled_at', null)
+    // F14F-4 — ni sobre un pendiente/rechazado (aún no es un entreno real).
+    .or('approval_status.is.null,approval_status.eq.approved')
     .not('team_id', 'is', null)
     .gt('starts_at', nowIso)
     .lte('starts_at', untilIso)

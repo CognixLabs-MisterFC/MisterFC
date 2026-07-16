@@ -920,6 +920,9 @@ export type Database = {
       events: {
         Row: {
           all_day: boolean
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           cancellation_reason: string | null
           cancellation_source: string | null
           cancelled_at: string | null
@@ -937,6 +940,7 @@ export type Database = {
           opponent_name: string | null
           parent_event_id: string | null
           recurrence_rule: Json | null
+          rejection_reason: string | null
           round: number | null
           starts_at: string
           team_id: string | null
@@ -947,6 +951,9 @@ export type Database = {
         }
         Insert: {
           all_day?: boolean
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           cancellation_reason?: string | null
           cancellation_source?: string | null
           cancelled_at?: string | null
@@ -964,6 +971,7 @@ export type Database = {
           opponent_name?: string | null
           parent_event_id?: string | null
           recurrence_rule?: Json | null
+          rejection_reason?: string | null
           round?: number | null
           starts_at: string
           team_id?: string | null
@@ -974,6 +982,9 @@ export type Database = {
         }
         Update: {
           all_day?: boolean
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           cancellation_reason?: string | null
           cancellation_source?: string | null
           cancelled_at?: string | null
@@ -991,6 +1002,7 @@ export type Database = {
           opponent_name?: string | null
           parent_event_id?: string | null
           recurrence_rule?: Json | null
+          rejection_reason?: string | null
           round?: number | null
           starts_at?: string
           team_id?: string | null
@@ -1000,6 +1012,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "events_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "events_cancelled_by_fkey"
             columns: ["cancelled_by"]
@@ -4375,6 +4394,14 @@ export type Database = {
         Args: { p_holiday_id: string }
         Returns: Json
       }
+      decide_event_approval: {
+        Args: { p_event_id: string; p_approve: boolean; p_reason?: string }
+        Returns: Json
+      }
+      user_is_admin_or_director: {
+        Args: { p_club_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       attendance_code:
@@ -4424,6 +4451,9 @@ export type Database = {
         | "goal"
         | "training_cancelled"
         | "training_reinstated"
+        | "training_approval_requested"
+        | "training_approved"
+        | "training_rejected"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -4602,6 +4632,9 @@ export const Constants = {
         "goal",
         "training_cancelled",
         "training_reinstated",
+        "training_approval_requested",
+        "training_approved",
+        "training_rejected",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },

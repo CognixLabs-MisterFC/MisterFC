@@ -26,6 +26,8 @@ type Props = {
   categories: CategoryOption[];
   /** 12.8a — puede planificar sesiones (botón en eventos training de equipo). */
   canCreateSessions: boolean;
+  /** F14F-4 — dirección/admin: puede aprobar/rechazar trainings en festivo. */
+  canApprove?: boolean;
 };
 
 const TYPE_ICONS = {
@@ -58,6 +60,7 @@ export function EventPill({
   teams,
   categories,
   canCreateSessions,
+  canApprove = false,
 }: Props) {
   const t = useTranslations('calendario.types');
   const tc = useTranslations('calendario');
@@ -65,6 +68,10 @@ export function EventPill({
 
   const Icon = TYPE_ICONS[event.type];
   const cancelled = event.cancelled_at != null;
+  // F14F-4 — un training pendiente/rechazado se marca (solo lo ven staff+dirección
+  // por RLS; aquí se distingue del normal). El rechazado además atenuado.
+  const pending = event.approval_status === 'pending';
+  const rejected = event.approval_status === 'rejected';
 
   return (
     <>
@@ -78,7 +85,10 @@ export function EventPill({
           layout === 'block' && 'rounded-md py-1.5',
           layout === 'card' && 'rounded-md px-3 py-2 text-sm',
           // F14F-1 — entrenamiento cancelado: tachado + atenuado (NO se oculta).
-          cancelled && 'line-through opacity-60'
+          cancelled && 'line-through opacity-60',
+          // F14F-4 — rechazado atenuado; pendiente con borde punteado.
+          rejected && 'opacity-60',
+          pending && 'border-dashed'
         )}
         style={
           event.team_color
@@ -113,6 +123,16 @@ export function EventPill({
             {tc('cancel.badge')}
           </span>
         )}
+        {pending && (
+          <span className="shrink-0 rounded bg-amber-500/15 px-1 text-[9px] font-semibold uppercase text-amber-700 dark:text-amber-400">
+            {tc('approval.badge_pending')}
+          </span>
+        )}
+        {rejected && (
+          <span className="shrink-0 rounded bg-destructive/15 px-1 text-[9px] font-semibold uppercase text-destructive">
+            {tc('approval.badge_rejected')}
+          </span>
+        )}
         {layout === 'card' && event.team_name && (
           <span className="ml-auto shrink-0 text-xs opacity-70">
             {event.team_name}
@@ -132,6 +152,7 @@ export function EventPill({
         teams={teams}
         categories={categories}
         canCreateSessions={canCreateSessions}
+        canApprove={canApprove}
       />
     </>
   );
