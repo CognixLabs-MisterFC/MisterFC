@@ -21,7 +21,13 @@ import {
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 export type EventActionResult =
-  | { success: true; event_id: string; skipped_holidays?: string[] }
+  | {
+      success: true;
+      event_id: string;
+      skipped_holidays?: string[];
+      /** F14F-4 — 'pending' | 'approved' si el suelto cayó en festivo. */
+      approval_status?: string;
+    }
   | {
       success: false;
       error:
@@ -156,6 +162,42 @@ export async function createEvent(
     }
   }
 
+  // F14F-4 — un training SUELTO (sin recurrencia) creado en un día FESTIVO queda
+  // PENDIENTE de aprobación de dirección. Si lo crea quien puede aprobar
+  // (admin/director), se crea APROBADO directo. Las series NO entran aquí (las
+  // salta F-3); los partidos y demás tipos tampoco. Solo el suelto de training.
+  let approvalCols: {
+    approval_status?: string;
+    approved_by?: string;
+    approved_at?: string;
+  } = {};
+  let pendingApproval = false;
+  if (!data.recurrence_rule && data.type === 'training') {
+    const key = madridDateKey(new Date(data.starts_at));
+    const { data: hol } = await supabase
+      .from('holidays')
+      .select('id')
+      .eq('club_id', clubId)
+      .eq('date', key)
+      .maybeSingle();
+    if (hol) {
+      const { data: isApprover } = await supabase.rpc(
+        'user_is_admin_or_director',
+        { p_club_id: clubId }
+      );
+      if (isApprover) {
+        approvalCols = {
+          approval_status: 'approved',
+          approved_by: user.id,
+          approved_at: new Date().toISOString(),
+        };
+      } else {
+        approvalCols = { approval_status: 'pending' };
+        pendingApproval = true;
+      }
+    }
+  }
+
   const parentInsert = {
     club_id: clubId,
     ...targetCols,
@@ -170,6 +212,7 @@ export async function createEvent(
     opponent_name: data.opponent_name,
     recurrence_rule: data.recurrence_rule,
     created_by: user.id,
+    ...approvalCols,
   };
 
   const { data: parent, error: parentErr } = await supabase
@@ -225,11 +268,22 @@ export async function createEvent(
     }
   }
 
+  // F14F-4 — si quedó PENDIENTE, avisa a la dirección (cola de aprobación).
+  if (pendingApproval) {
+    await notifyApprovalRequested(supabase, clubId, {
+      event_id: parent.id as string,
+      team_id: targetCols.team_id,
+      title: data.title,
+      starts_at: parentStartsAt,
+    });
+  }
+
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');
   return {
     success: true,
     event_id: parent.id as string,
     skipped_holidays: skippedHolidays.length > 0 ? skippedHolidays : undefined,
+    approval_status: approvalCols.approval_status,
   };
 }
 
@@ -1142,6 +1196,175 @@ export async function unmarkHoliday(
 
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');
   return { success: true, holidayId };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F14F-4 — Entrenar en festivo: aprobación de un training PENDIENTE.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type ApprovalErrorCode =
+  | 'forbidden'
+  | 'no_session'
+  | 'not_found'
+  | 'not_pending'
+  | 'reason_required'
+  | 'db';
+
+export type ApprovalActionResult =
+  | { success: true; status: 'approved' | 'rejected' }
+  | { success: false; error: ApprovalErrorCode };
+
+const APPROVAL_ERRORS = new Set<string>([
+  'forbidden',
+  'no_session',
+  'not_found',
+  'not_pending',
+  'reason_required',
+]);
+
+/**
+ * F14F-4 — avisa a la DIRECCIÓN (admin/director del club) de que hay un training
+ * pendiente de aprobar. Deep-link al calendario, donde lo ven marcado y pueden
+ * decidir (también en la cola de la home de dirección).
+ */
+async function notifyApprovalRequested(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  clubId: string,
+  ev: { event_id: string; team_id: string | null; title: string; starts_at: string },
+): Promise<void> {
+  const { data: mans } = await supabase
+    .from('memberships')
+    .select('profile_id')
+    .eq('club_id', clubId)
+    .in('role', ['admin_club', 'director']);
+  const recipients = Array.from(
+    new Set((mans ?? []).map((r) => r.profile_id).filter(Boolean)),
+  ) as string[];
+  if (recipients.length === 0) return;
+
+  const whenEs = new Date(ev.starts_at).toLocaleString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: TZ,
+  });
+  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+  await emitNotificationFanOut(
+    recipients.map((u) => ({ user_id: u })),
+    {
+      type: 'training_approval_requested',
+      in_app_payload: {
+        event_id: ev.event_id,
+        team_id: ev.team_id,
+        title: ev.title,
+        starts_at: ev.starts_at,
+        deep_link: '/calendario',
+      },
+      push_payload: {
+        title: `Entrenamiento en festivo por aprobar: ${ev.title}`,
+        body: whenEs,
+        deep_link: '/es/calendario',
+        tag: `training_approval_requested:${ev.event_id}`,
+      },
+      dedupe_base_prefix: `training_approval_requested:${ev.event_id}:${ev.starts_at}`,
+    },
+  );
+}
+
+/**
+ * F14F-4 — avisa al CREADOR del resultado (aprobado o rechazado).
+ */
+async function notifyApprovalDecision(
+  ev: {
+    event_id: string;
+    team_id: string | null;
+    title: string;
+    starts_at: string;
+    created_by: string;
+    status: 'approved' | 'rejected';
+  },
+): Promise<void> {
+  const type = ev.status === 'approved' ? 'training_approved' : 'training_rejected';
+  const whenEs = new Date(ev.starts_at).toLocaleString('es-ES', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: TZ,
+  });
+  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
+  await emitNotificationFanOut([{ user_id: ev.created_by }], {
+    type,
+    in_app_payload: {
+      event_id: ev.event_id,
+      team_id: ev.team_id,
+      title: ev.title,
+      starts_at: ev.starts_at,
+      deep_link: '/calendario',
+    },
+    push_payload: {
+      title:
+        ev.status === 'approved'
+          ? `Entrenamiento en festivo aprobado: ${ev.title}`
+          : `Entrenamiento en festivo rechazado: ${ev.title}`,
+      body: whenEs,
+      deep_link: '/es/calendario',
+      tag: `${type}:${ev.event_id}`,
+    },
+    dedupe_base_prefix: `${type}:${ev.event_id}:${ev.starts_at}`,
+  });
+}
+
+/**
+ * F14F-4 — aprueba o rechaza un training PENDIENTE vía RPC decide_event_approval
+ * (gate admin/director dentro de la RPC). Avisa al creador del resultado. El
+ * rechazo exige motivo.
+ */
+export async function decideEventApproval(
+  eventId: string,
+  approve: boolean,
+  reason: string | null,
+): Promise<ApprovalActionResult> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data, error } = await supabase.rpc('decide_event_approval', {
+    p_event_id: eventId,
+    p_approve: approve,
+    p_reason: reason?.trim() ? reason.trim() : undefined,
+  });
+  if (error) {
+    const code = error.message?.trim();
+    if (code && APPROVAL_ERRORS.has(code)) {
+      return { success: false, error: code as ApprovalErrorCode };
+    }
+    return { success: false, error: 'db' };
+  }
+
+  const res = (data ?? {}) as {
+    event_id?: string;
+    team_id?: string | null;
+    title?: string;
+    starts_at?: string;
+    created_by?: string;
+    status?: 'approved' | 'rejected';
+  };
+  if (res.created_by && res.status && res.starts_at && res.title) {
+    await notifyApprovalDecision({
+      event_id: res.event_id ?? eventId,
+      team_id: res.team_id ?? null,
+      title: res.title,
+      starts_at: res.starts_at,
+      created_by: res.created_by,
+      status: res.status,
+    });
+  }
+
+  revalidatePath('/[locale]/(authenticated)/calendario', 'page');
+  return { success: true, status: (res.status ?? 'approved') as 'approved' | 'rejected' };
 }
 
 function targetToColumns(target: EventInput['target']): {

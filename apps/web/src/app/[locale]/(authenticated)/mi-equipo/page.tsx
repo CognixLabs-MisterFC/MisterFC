@@ -191,6 +191,8 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
     .eq('team_id', activeTeam.id)
     // F14F-1b — un entreno cancelado no cuenta como próximo evento del equipo.
     .is('cancelled_at', null)
+    // F14F-4 — ni un pendiente/rechazado de aprobación.
+    .or('approval_status.is.null,approval_status.eq.approved')
     .gte('starts_at', nowIso)
     .lte('starts_at', horizonIso)
     .order('starts_at', { ascending: true });

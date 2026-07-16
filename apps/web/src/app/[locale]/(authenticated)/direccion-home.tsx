@@ -5,6 +5,7 @@ import {
   GraduationCap,
   Megaphone,
   ClipboardCheck,
+  CalendarClock,
   Mail,
   ShieldAlert,
 } from 'lucide-react';
@@ -17,6 +18,7 @@ import {
   loadFilterOptions,
   loadPendingCallups,
   loadTrainingsWithoutAttendance,
+  loadPendingApprovals,
   loadPendingInvitationsCount,
   loadPendingErasureCount,
   type DireccionTaskItem,
@@ -58,6 +60,7 @@ export async function DireccionHome({
     campaigns,
     pendingCallups,
     trainingsNoAttendance,
+    pendingApprovals,
     invitations,
     erasure,
   ] = await Promise.all([
@@ -65,6 +68,7 @@ export async function DireccionHome({
     loadCampaignAlerts(role, clubId, membershipId, filterTeamIds),
     loadPendingCallups(clubId, filterTeamIds),
     loadTrainingsWithoutAttendance(clubId, filterTeamIds),
+    loadPendingApprovals(clubId, filterTeamIds),
     loadPendingInvitationsCount(clubId),
     isAdminClub ? loadPendingErasureCount(clubId) : Promise.resolve(0),
   ]);
@@ -106,6 +110,15 @@ export async function DireccionHome({
           empty={t('direccion.empty')}
           fmt={fmt}
           hrefFor={() => `/convocatorias`}
+        />
+        {/* F14F-4 — cola de entrenamientos en festivo pendientes de aprobar. */}
+        <TaskCard
+          icon={<CalendarClock className="size-4" aria-hidden />}
+          title={t('direccion.pending_approvals')}
+          items={pendingApprovals}
+          empty={t('direccion.empty')}
+          fmt={fmt}
+          hrefFor={() => `/calendario`}
         />
         {/* C — campañas: agregado por periodo (no por equipo). */}
         <Card>

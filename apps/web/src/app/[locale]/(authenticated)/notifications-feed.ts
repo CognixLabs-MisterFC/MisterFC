@@ -84,15 +84,18 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
     case 'play_updated':
       return Clapperboard;
     case 'play_approved':
+    case 'training_approved':
       return CheckCircle2;
     case 'exercise_rejected':
     case 'play_rejected':
+    case 'training_rejected':
       return XCircle;
     case 'attendance_pending_reminder':
     case 'training_reminder':
     case 'event_updated':
     case 'training_cancelled':
     case 'training_reinstated':
+    case 'training_approval_requested':
       return CalendarClock;
     case 'player_promoted':
       return ArrowUpCircle;
@@ -170,6 +173,24 @@ function textFor(t: Translate, type: string, payload: Record<string, unknown> | 
         ? t('training_reinstated_named', { title })
         : t('training_reinstated');
     }
+    case 'training_approval_requested': {
+      const title = str(payload, 'title');
+      return title
+        ? t('training_approval_requested_named', { title })
+        : t('training_approval_requested');
+    }
+    case 'training_approved': {
+      const title = str(payload, 'title');
+      return title
+        ? t('training_approved_named', { title })
+        : t('training_approved');
+    }
+    case 'training_rejected': {
+      const title = str(payload, 'title');
+      return title
+        ? t('training_rejected_named', { title })
+        : t('training_rejected');
+    }
     case 'player_promoted': {
       const team = str(payload, 'team_name');
       const key = str(payload, 'kind') === 'train'
@@ -245,6 +266,9 @@ function hrefFor(type: string, payload: Record<string, unknown> | null): string 
     case 'event_updated':
     case 'training_cancelled':
     case 'training_reinstated':
+    case 'training_approval_requested':
+    case 'training_approved':
+    case 'training_rejected':
     case 'player_promoted': {
       // No hay vista de evento por jugador → al calendario (accesible a todos).
       derived = '/calendario';

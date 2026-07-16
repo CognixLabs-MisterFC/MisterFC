@@ -141,6 +141,7 @@
       "trainings_no_session": "Entrenaments sense sessió",
       "trainings_no_attendance": "Assistència sense confirmar",
       "pending_callups": "Convocatòries sense publicar",
+      "pending_approvals": "Entrenaments en festiu per aprovar",
       "pending_reports": "Informes pendents",
       "reports_pending": "{count} pendents",
       "empty": "Sense pendents",
@@ -173,6 +174,12 @@
       "training_cancelled_named": "Entrenament cancel·lat: {title}",
       "training_reinstated": "Entrenament reactivat",
       "training_reinstated_named": "Entrenament reactivat: {title}",
+      "training_approval_requested": "Entrenament en festiu per aprovar",
+      "training_approval_requested_named": "Entrenament en festiu per aprovar: {title}",
+      "training_approved": "Entrenament en festiu aprovat",
+      "training_approved_named": "Entrenament en festiu aprovat: {title}",
+      "training_rejected": "Entrenament en festiu rebutjat",
+      "training_rejected_named": "Entrenament en festiu rebutjat: {title}",
       "goal": "Gol en un partit que segueixes",
       "generic": "Tens una novetat",
       "development_report_published": "S'ha publicat un informe de desenvolupament",
@@ -1817,6 +1824,27 @@
         "already_holiday": "Eixe dia ja està marcat com a festiu.",
         "reason_required": "Indica un motiu per al festiu.",
         "not_found": "Eixe festiu ja no existeix.",
+        "no_session": "Sessió no vàlida. Torna a iniciar sessió.",
+        "db": "Error en processar. Torna-ho a intentar."
+      }
+    },
+    "approval": {
+      "badge_pending": "Pendent",
+      "badge_rejected": "Rebutjat",
+      "approve": "Aprovar",
+      "reject": "Rebutjar",
+      "reject_title": "Rebutjar entrenament",
+      "reject_description": "L'entrenament quedarà marcat com a rebutjat (no s'esborra) i s'avisarà l'entrenador amb el motiu.",
+      "reason_label": "Motiu del rebuig",
+      "reason_placeholder": "Ex. instal·lacions tancades eixe dia…",
+      "back": "Tornar",
+      "pending_note": "Pendent d'aprovació per direcció.",
+      "rejected_note": "Rebutjat: {reason}",
+      "errors": {
+        "forbidden": "Només la direcció pot aprovar o rebutjar.",
+        "not_found": "L'entrenament ja no existeix.",
+        "not_pending": "Este entrenament ja no està pendent.",
+        "reason_required": "Indica el motiu del rebuig.",
         "no_session": "Sessió no vàlida. Torna a iniciar sessió.",
         "db": "Error en processar. Torna-ho a intentar."
       }

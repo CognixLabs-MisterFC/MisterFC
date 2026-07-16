@@ -141,6 +141,7 @@
       "trainings_no_session": "Entrenamientos sin sesión",
       "trainings_no_attendance": "Asistencia sin confirmar",
       "pending_callups": "Convocatorias sin publicar",
+      "pending_approvals": "Entrenamientos en festivo por aprobar",
       "pending_reports": "Informes pendientes",
       "reports_pending": "{count} pendientes",
       "empty": "Sin pendientes",
@@ -173,6 +174,12 @@
       "training_cancelled_named": "Entrenamiento cancelado: {title}",
       "training_reinstated": "Entrenamiento reactivado",
       "training_reinstated_named": "Entrenamiento reactivado: {title}",
+      "training_approval_requested": "Entrenamiento en festivo por aprobar",
+      "training_approval_requested_named": "Entrenamiento en festivo por aprobar: {title}",
+      "training_approved": "Entrenamiento en festivo aprobado",
+      "training_approved_named": "Entrenamiento en festivo aprobado: {title}",
+      "training_rejected": "Entrenamiento en festivo rechazado",
+      "training_rejected_named": "Entrenamiento en festivo rechazado: {title}",
       "goal": "Gol en un partido que sigues",
       "generic": "Tienes una novedad",
       "development_report_published": "Se ha publicado un informe de desarrollo",
@@ -1816,6 +1823,27 @@
         "already_holiday": "Ese día ya está marcado como festivo.",
         "reason_required": "Indica un motivo para el festivo.",
         "not_found": "Ese festivo ya no existe.",
+        "no_session": "Sesión no válida. Vuelve a iniciar sesión.",
+        "db": "Error al procesar. Inténtalo de nuevo."
+      }
+    },
+    "approval": {
+      "badge_pending": "Pendiente",
+      "badge_rejected": "Rechazado",
+      "approve": "Aprobar",
+      "reject": "Rechazar",
+      "reject_title": "Rechazar entrenamiento",
+      "reject_description": "El entrenamiento quedará marcado como rechazado (no se borra) y se avisará al entrenador con el motivo.",
+      "reason_label": "Motivo del rechazo",
+      "reason_placeholder": "Ej. instalaciones cerradas ese día…",
+      "back": "Volver",
+      "pending_note": "Pendiente de aprobación por dirección.",
+      "rejected_note": "Rechazado: {reason}",
+      "errors": {
+        "forbidden": "Solo dirección puede aprobar o rechazar.",
+        "not_found": "El entrenamiento ya no existe.",
+        "not_pending": "Este entrenamiento ya no está pendiente.",
+        "reason_required": "Indica el motivo del rechazo.",
         "no_session": "Sesión no válida. Vuelve a iniciar sesión.",
         "db": "Error al procesar. Inténtalo de nuevo."
       }

@@ -351,7 +351,9 @@ export async function loadFichaStats(
           .eq('team_id', teamId)
           .eq('type', 'training')
           // F14F-1b — denominador de entrenos excluye cancelados.
-          .is('cancelled_at', null),
+          .is('cancelled_at', null)
+          // F14F-4 — y los pendientes/rechazados (solo cuentan aprobados/normales).
+          .or('approval_status.is.null,approval_status.eq.approved'),
         // Pertenencia histórica del jugador a ESTE equipo (puede tener varias filas).
         supabase
           .from('team_members')

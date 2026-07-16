@@ -193,6 +193,8 @@ export async function loadCoachTeams(
       .in('team_id', teamIds)
       // F14F-1b — un entreno cancelado no cuenta como próximo evento del equipo.
       .is('cancelled_at', null)
+      // F14F-4 — ni un pendiente/rechazado de aprobación.
+      .or('approval_status.is.null,approval_status.eq.approved')
       .gte('starts_at', nowIso)
       .lte('starts_at', horizonIso)
       .order('starts_at', { ascending: true }),
@@ -307,6 +309,8 @@ export async function loadTeamDetail(
       .eq('team_id', teamId)
       // F14F-1b — un entreno cancelado no cuenta como próximo evento.
       .is('cancelled_at', null)
+      // F14F-4 — ni un pendiente/rechazado.
+      .or('approval_status.is.null,approval_status.eq.approved')
       .gte('starts_at', nowIso)
       .lte('starts_at', horizonIso)
       .order('starts_at', { ascending: true }),
@@ -317,6 +321,8 @@ export async function loadTeamDetail(
       .eq('type', 'training')
       // F14F-1b — el "último entreno sin asistencia" ignora los cancelados.
       .is('cancelled_at', null)
+      // F14F-4 — y los pendientes/rechazados.
+      .or('approval_status.is.null,approval_status.eq.approved')
       .gte('starts_at', lookbackIso)
       .lte('starts_at', nowIso),
   ]);

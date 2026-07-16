@@ -764,6 +764,8 @@ export async function loadCallupDetail(
       .eq('type', 'training')
       // F14F-1b — la asistencia semanal del contexto de convocatoria ignora cancelados.
       .is('cancelled_at', null)
+      // F14F-4 — y los pendientes/rechazados.
+      .or('approval_status.is.null,approval_status.eq.approved')
       .gte('starts_at', lo.toISOString())
       .lte('starts_at', hi.toISOString());
     const trainings: TrainingDay[] = (trainRows ?? []).map((r) => ({

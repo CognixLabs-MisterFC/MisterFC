@@ -111,6 +111,8 @@ export default async function Home({ params, searchParams }: Props) {
         .select('id, title, type, starts_at, team_id, teams(name)')
         // F14F-1b — un entreno cancelado no cuenta como próximo evento en Inicio.
         .is('cancelled_at', null)
+        // F14F-4 — ni un pendiente/rechazado (aún no es un entreno real).
+        .or('approval_status.is.null,approval_status.eq.approved')
         .gte('starts_at', nowIso)
         .lte('starts_at', upcomingHorizon)
         .order('starts_at', { ascending: true })
