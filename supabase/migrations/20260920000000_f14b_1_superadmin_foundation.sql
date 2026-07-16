@@ -70,8 +70,22 @@ create policy platform_admins_select_superadmin on public.platform_admins
   using (public.is_superadmin());
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 3. Seed de Jose por EMAIL (idempotente; FALLA si no resuelve).
+-- 3. Seed de Jose por EMAIL (idempotente; TOLERANTE si no resuelve).
 --    El email vive en auth.users; profiles.id = auth.users.id en este modelo.
+--
+-- ⚠️ TOLERANTE A PROPÓSITO (F15-B, editado sobre migración YA APLICADA): este seed
+-- está acoplado a un email de ENTORNO ('jovimib@gmail.com'). En el remoto ese
+-- profile existe → siembra el superadmin. En una BD NUEVA/VACÍA (CI con BD efímera,
+-- `supabase db reset`, entorno nuevo, recuperación ante desastre, dev local desde
+-- cero) ese email NO existe → antes hacía `raise exception` y ABORTABA la migración,
+-- dejando el proyecto imposible de levantar desde cero. Ahora, si no resuelve,
+-- simplemente NO siembra y sigue (`return`).
+--   · Prod: efecto CERO. La fila ya está sembrada y la migración está registrada como
+--     aplicada (no se re-ejecuta en `db push`).
+--   · BD nueva: no hay superadmin (nadie lo necesita para bootstrap; los tests que lo
+--     requieren crean su propia fila en platform_admins).
+-- NO revertir a `raise`: eso vuelve a bloquear el arranque desde cero (era el bug que
+-- F15-B destapó al aplicar las 179 migraciones en limpio).
 -- ─────────────────────────────────────────────────────────────────────────────
 
 do $$
@@ -85,9 +99,9 @@ begin
   where lower(u.email) = 'jovimib@gmail.com'
   limit 1;
 
+  -- Email de entorno no presente (BD nueva/CI): no se siembra superadmin y se sigue.
   if v_profile_id is null then
-    raise exception
-      'F14B-1 seed: no existe un profile para jovimib@gmail.com en el remoto; abortando (no se inserta nada).';
+    return;
   end if;
 
   insert into public.platform_admins (profile_id)
