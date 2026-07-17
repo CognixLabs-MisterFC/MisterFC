@@ -56,6 +56,13 @@ insert into public.events (id, club_id, team_id, type, title, starts_at, created
   ('47770000-0000-4000-8000-0000000000aa', 'a7770000-0000-4000-8000-0000000000a1', '77770000-0000-4000-8000-0000000000aa', 'match', 'Partido A7', '2025-09-20T10:00:00Z', '51770000-0000-4000-8000-000000000011'),
   ('47770000-0000-4000-8000-0000000000bb', 'a7770000-0000-4000-8000-0000000000b2', '77770000-0000-4000-8000-0000000000bb', 'match', 'Partido B7', '2025-09-20T10:00:00Z', '51770000-0000-4000-8000-000000000033');
 
+-- Convocatoria PUBLICADA de A: requisito para marcar oficial (mig 20261024). El
+-- trigger fuerza published_by=auth.uid(); fijamos el claim solo para el seed.
+set local "request.jwt.claim.sub" to '51770000-0000-4000-8000-000000000011';
+insert into public.match_callup_meta (event_id, meeting_at, meeting_location, published_at)
+  values ('47770000-0000-4000-8000-0000000000aa', '2025-09-20T08:00:00Z', 'Sede', now());
+reset "request.jwt.claim.sub";
+
 -- Directo sembrado en A (como postgres: bypass RLS; los triggers derivan club_id
 -- y validan el evento/jugador, sin requerir auth). match_state también en B.
 insert into public.match_state (event_id, club_id, status) values

@@ -109,6 +109,13 @@ export type LineupEditorData = {
    * preparar once → jugar), para torneo y partido normal por igual.
    */
   canRecordMatch: boolean;
+  /**
+   * ¿La convocatoria del partido está PUBLICADA
+   * (match_callup_meta.published_at != null)? Requisito para marcar una
+   * alineación como oficial (regla de Jose): el toggle "oficial" se deshabilita
+   * mientras esté en borrador. Da igual que los jugadores hayan respondido.
+   */
+  isCallupPublished: boolean;
 };
 
 export async function loadLineupEditor(
@@ -441,6 +448,14 @@ export async function loadLineupEditor(
     }
   }
 
+  // ¿Convocatoria publicada? Requisito para marcar oficial (gatea el toggle).
+  const { data: callupMeta } = await supabase
+    .from('match_callup_meta')
+    .select('published_at')
+    .eq('event_id', eventId)
+    .maybeSingle();
+  const isCallupPublished = callupMeta?.published_at != null;
+
   return {
     event: {
       id: event.id,
@@ -465,5 +480,6 @@ export async function loadLineupEditor(
     coachFormations,
     isTournamentMatch: event.tournament_id != null,
     canRecordMatch,
+    isCallupPublished,
   };
 }

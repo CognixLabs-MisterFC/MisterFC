@@ -2837,7 +2837,8 @@
       "out_reason_coherence": "Exclusion reason missing.",
       "coords_only_field": "Coordinates only valid on the field.",
       "generic": "Couldn’t save. Try again.",
-      "too_many_starters": "Too many starters on the pitch for this format."
+      "too_many_starters": "Too many starters on the pitch for this format.",
+      "callup_not_published": "Publish the call-up before marking the lineup as official."
     },
     "pos_short": {
       "goalkeeper": "GK",
@@ -2867,6 +2868,7 @@
     "official_lineup_title": "Official lineup",
     "share_hint": "Turn on so players and families can see this official lineup. Tactical notes always stay hidden.",
     "official_hint": "Mark this as the official lineup for the match (only one allowed).",
+    "official_needs_published": "Publish the call-up before marking the lineup as official.",
     "formation_hint": "Change the formation; starters are repositioned automatically.",
     "new_lineup_hint": "Create a second lineup (Plan B, Plan C…) with the same called-up players but a different setup.",
     "field_full": "Maximum {max} players on the pitch for this format.",

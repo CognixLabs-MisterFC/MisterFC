@@ -57,6 +57,13 @@ insert into public.player_accounts (player_id, profile_id, relation) values
 insert into public.events (id, club_id, team_id, type, title, starts_at, created_by) values
   ('77ff0000-6666-0001-0000-000000000000', '77ff0000-0000-0000-0000-000000000001', '77ff0000-2222-0000-0000-000000000001', 'match', 'Partido LB', '2026-09-20 10:00:00+00', '77ff0000-aaaa-0001-0000-000000000000');
 
+-- Convocatoria PUBLICADA: requisito para marcar oficial (mig 20261024). El
+-- trigger fuerza published_by=auth.uid(); fijamos el claim solo para el seed.
+set local "request.jwt.claim.sub" to '77ff0000-aaaa-0001-0000-000000000000';
+insert into public.match_callup_meta (event_id, meeting_at, meeting_location, published_at)
+  values ('77ff0000-6666-0001-0000-000000000000', '2026-09-20 08:00:00+00', 'Sede', now());
+reset "request.jwt.claim.sub";
+
 insert into public.lineups (id, event_id, name, formation_code, is_official, visibility, created_by) values
   ('77ff0000-7777-0001-0000-000000000000', '77ff0000-6666-0001-0000-000000000000', 'Titular', '1-3-3-1', true, 'team', '77ff0000-aaaa-0001-0000-000000000000');
 
