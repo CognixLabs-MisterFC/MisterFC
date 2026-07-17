@@ -101,7 +101,7 @@ jobs:
       # La suite pgTAP contra la BD local vía el override DATABASE_URL del script
       # (scripts/supabase-cli.sh). Sin DATABASE_URL el script seguiría yendo al
       # remoto — aquí lo forzamos a local. Bloqueante: rc != 0 => PR en rojo.
-      - name: pgTAP suite (76/76)
+      - name: pgTAP suite (75/75)
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
         run: pnpm db:test

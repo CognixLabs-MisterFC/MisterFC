@@ -109,17 +109,8 @@
     }
   },
   "onboarding": {
-    "title": "Crea tu club",
-    "subtitle": "Eres el primer miembro. Crea tu club y quedarás como administrador.",
-    "club_name_label": "Nombre del club",
-    "club_name_placeholder": "CD Mi Club",
-    "club_locale_label": "Idioma por defecto",
-    "submit": "Crear club",
-    "submitting": "Creando…",
-    "error_name_required": "Pon el nombre del club",
-    "error_slug_collision": "Ya existe un club con un nombre muy parecido. Cámbialo un poco.",
-    "error_already_in_a_club": "Ya perteneces a un club. Vuelve al inicio.",
-    "error_generic": "No hemos podido crear el club. Inténtalo de nuevo."
+    "no_club_title": "No tienes acceso a ningún club",
+    "no_club_body": "Pide a tu club que te envíe una invitación."
   },
   "novedades": {
     "title": "Novedades",

@@ -3850,10 +3850,6 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: boolean
       }
-      create_club_with_admin: {
-        Args: { p_locale?: string; p_name: string; p_slug: string }
-        Returns: string
-      }
       current_user_email: { Args: never; Returns: string }
       development_report_shared_for_player: {
         Args: { p_player_id: string; p_season_id: string }
