@@ -237,3 +237,197 @@ begin
    where id = p_session_id;
 end;
 $function$;
+
+-- 7) CIERRE DE CLASE (defensa en profundidad). La auditoría (pg_proc) probó que
+--    estos 8 helpers pueden devolver NULL para un no-miembro, PERO hoy solo se
+--    consumen en posiciones NULL-safe: policies RLS (USING/CHECK), exists() y
+--    cláusulas WHERE — donde NULL y false son idénticos (ambos = deny/excluir).
+--    Ningún gate imperativo `if not (...)` los usa (imperativo_if_not = 0 para los
+--    8). Los saneamos igualmente para que un consumidor imperativo FUTURO no pueda
+--    reabrir el agujero: la raíz (devolver NULL) queda eliminada de la clase entera.
+--    Cambio de comportamiento para los consumidores actuales: NINGUNO.
+--    Recreados desde su DEF VIVA (pg_get_functiondef); solo se añade el coalesce.
+
+create or replace function public.user_can_create_coach_formations(p_club_id uuid)
+returns boolean language sql stable security definer set search_path to 'public'
+as $function$
+  select coalesce(
+    -- admin/director/coord del club.
+    public.user_role_in_club(p_club_id) in ('admin_club', 'director', 'coordinador')
+    -- staff del club con la capability (ayudantes con can_create_lineups).
+    or public.user_has_capability_in_club(p_club_id, 'can_create_lineups')
+    -- principal de ALGÚN team del club (autoridad vía team_staff.staff_role).
+    or exists (
+      select 1
+      from public.team_staff ts
+      join public.memberships m on m.id = ts.membership_id
+      join public.teams t on t.id = ts.team_id
+      join public.categories c on c.id = t.category_id
+      where ts.staff_role = 'entrenador_principal'
+        and ts.left_at is null
+        and m.profile_id = auth.uid()
+        and m.club_id = p_club_id
+        and c.club_id = p_club_id
+    ),
+  false);
+$function$;
+
+create or replace function public.user_can_create_exercises(p_club_id uuid)
+returns boolean language sql stable security definer set search_path to 'public'
+as $function$
+  select coalesce(
+    public.user_role_in_club(p_club_id) in ('admin_club', 'director', 'coordinador')
+    or public.user_has_capability_in_club(p_club_id, 'can_create_exercises')
+    or exists (
+      select 1
+      from public.team_staff ts
+      join public.memberships m on m.id = ts.membership_id
+      join public.teams t on t.id = ts.team_id
+      join public.categories c on c.id = t.category_id
+      where ts.staff_role = 'entrenador_principal'
+        and ts.left_at is null
+        and m.profile_id = auth.uid()
+        and m.club_id = p_club_id
+        and c.club_id = p_club_id
+    ),
+  false);
+$function$;
+
+create or replace function public.user_can_create_plays(p_club_id uuid)
+returns boolean language sql stable security definer set search_path to 'public'
+as $function$
+  select coalesce(
+    public.user_role_in_club(p_club_id) in ('admin_club', 'director', 'coordinador')
+    or public.user_has_capability_in_club(p_club_id, 'can_create_plays')
+    or exists (
+      select 1
+      from public.team_staff ts
+      join public.memberships m on m.id = ts.membership_id
+      join public.teams t on t.id = ts.team_id
+      join public.categories c on c.id = t.category_id
+      where ts.staff_role = 'entrenador_principal'
+        and ts.left_at is null
+        and m.profile_id = auth.uid()
+        and m.club_id = p_club_id
+        and c.club_id = p_club_id
+    ),
+  false);
+$function$;
+
+create or replace function public.user_can_create_sessions(p_club_id uuid)
+returns boolean language sql stable security definer set search_path to 'public'
+as $function$
+  select coalesce(
+    public.user_role_in_club(p_club_id) in ('admin_club', 'director', 'coordinador')
+    or public.user_has_capability_in_club(p_club_id, 'can_create_sessions')
+    or exists (
+      select 1
+      from public.team_staff ts
+      join public.memberships m on m.id = ts.membership_id
+      join public.teams t on t.id = ts.team_id
+      join public.categories c on c.id = t.category_id
+      where ts.staff_role = 'entrenador_principal'
+        and ts.left_at is null
+        and m.profile_id = auth.uid()
+        and m.club_id = p_club_id
+        and c.club_id = p_club_id
+    ),
+  false);
+$function$;
+
+-- Los 4 basados en evento: además del coalesce, si el evento no existe la
+-- subconsulta da 0 filas → el coalesce del escalar la convierte en false.
+create or replace function public.user_can_manage_callup(p_event_id uuid)
+returns boolean language sql stable security definer set search_path to 'public'
+as $function$
+  select coalesce((
+    select
+      -- (A) admin o director del club: siempre (club-wide, igual que hoy)
+      public.user_role_in_club(e.club_id) in ('admin_club', 'director')
+      -- (A') coordinador SOLO del equipo del evento (C-1a)
+      or (e.team_id is not null and public.user_coordinates_team(e.team_id))
+      -- (B) principal del TEAM (autoridad: team_staff.staff_role)
+      or (
+        e.team_id is not null
+        and exists (
+          select 1
+          from public.team_staff ts
+          join public.memberships m on m.id = ts.membership_id
+          where ts.team_id = e.team_id
+            and ts.staff_role = 'entrenador_principal'
+            and ts.left_at is null
+            and m.profile_id = auth.uid()
+            and m.club_id = e.club_id
+        )
+      )
+      -- (C) staff activo del team con capability can_manage_callups (ayudantes)
+      or (
+        e.team_id is not null
+        and public.user_has_capability_in_club(e.club_id, 'can_manage_callups')
+        and public.user_is_staff_of_team(e.team_id)
+      )
+      from public.events e
+     where e.id = p_event_id
+  ), false);
+$function$;
+
+create or replace function public.user_can_manage_lineup(p_event_id uuid)
+returns boolean language sql stable security definer set search_path to 'public'
+as $function$
+  select coalesce((
+    select
+      public.user_role_in_club(e.club_id) in ('admin_club', 'director')
+      or (e.team_id is not null and public.user_coordinates_team(e.team_id))
+      or (
+        e.team_id is not null
+        and exists (
+          select 1
+          from public.team_staff ts
+          join public.memberships m on m.id = ts.membership_id
+          where ts.team_id = e.team_id
+            and ts.staff_role = 'entrenador_principal'
+            and ts.left_at is null
+            and m.profile_id = auth.uid()
+            and m.club_id = e.club_id
+        )
+      )
+      or (
+        e.team_id is not null
+        and public.user_has_capability_in_club(e.club_id, 'can_create_lineups')
+        and public.user_is_staff_of_team(e.team_id)
+      )
+      from public.events e
+     where e.id = p_event_id
+  ), false);
+$function$;
+
+create or replace function public.user_can_record_attendance(p_event_id uuid)
+returns boolean language sql stable security definer set search_path to 'public'
+as $function$
+  select coalesce((
+    select
+      public.user_role_in_club(e.club_id) in ('admin_club', 'director')
+      or (e.team_id is not null and public.user_coordinates_team(e.team_id))
+      or (e.team_id is not null and public.user_is_principal_of_team(e.team_id))
+      or (
+        e.team_id is not null
+        and public.user_has_capability_in_club(e.club_id, 'can_mark_attendance')
+        and public.user_is_staff_of_team(e.team_id)
+      )
+      from public.events e
+     where e.id = p_event_id
+  ), false);
+$function$;
+
+create or replace function public.user_can_record_match(p_event_id uuid)
+returns boolean language sql stable security definer set search_path to 'public'
+as $function$
+  select coalesce((
+    select
+      public.user_role_in_club(e.club_id) in ('admin_club', 'director')
+      or (e.team_id is not null and public.user_coordinates_team(e.team_id))
+      or (e.team_id is not null and public.user_is_staff_of_team(e.team_id))
+      from public.events e
+     where e.id = p_event_id
+  ), false);
+$function$;

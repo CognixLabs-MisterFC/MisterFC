@@ -29,9 +29,22 @@ insert into public.team_staff (team_id, membership_id, staff_role) values
 
 -- Original PUBLISHED (owner = admin) + propuesta de cambios (owner = principal) +
 -- una propuesta SIN source. Plays jsonb mínimos válidos (frames 1..60).
+--
+-- La ORIGINAL nace 'published': plays_validate exige aprobador para crearla así.
+-- Antes colaba sembrándola como superuser (auth.uid() NULL → user_can_approve_plays
+-- devolvía NULL → el gate `if not (...)` no lanzaba). Tras el fix NULL-safe
+-- (mig 20261026), ese agujero está cerrado, así que la sembramos bajo el contexto
+-- de un APROBADOR (admin del club). Rol por defecto = bypass RLS para el resto.
+select set_config('request.jwt.claims',
+  '{"sub":"b2a00000-0000-4000-8000-00000000000a","role":"authenticated"}', true);
 insert into public.plays (id, owner_profile_id, club_id, name, description, play, status, strategy_type, source_play_id) values
   ('b2900000-0000-4000-8000-000000000001', 'b2a00000-0000-4000-8000-00000000000a', 'b2c00000-0000-4000-8000-000000000001',
-   'Original', 'desc vieja', '{"version":1,"field":{},"frames":[{"elements":[]}]}'::jsonb, 'published', 'corner', null),
+   'Original', 'desc vieja', '{"version":1,"field":{},"frames":[{"elements":[]}]}'::jsonb, 'published', 'corner', null);
+
+-- Las PROPUESTAS son status='proposed' (sin gate de aprobador). Limpiamos el claim
+-- para que plays_validate NO reescriba su owner (deja el owner = principal escrito).
+select set_config('request.jwt.claims', '', true);
+insert into public.plays (id, owner_profile_id, club_id, name, description, play, status, strategy_type, source_play_id) values
   ('b2900000-0000-4000-8000-000000000002', 'b2a00000-0000-4000-8000-00000000000c', 'b2c00000-0000-4000-8000-000000000001',
    'Propuesta edit', 'desc nueva', '{"version":1,"field":{},"frames":[{"elements":[]},{"elements":[]}]}'::jsonb, 'proposed', 'falta',
    'b2900000-0000-4000-8000-000000000001'),
