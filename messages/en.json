@@ -109,17 +109,8 @@
     }
   },
   "onboarding": {
-    "title": "Create your club",
-    "subtitle": "You're the first member. Create your club and you'll be the admin.",
-    "club_name_label": "Club name",
-    "club_name_placeholder": "CD My Club",
-    "club_locale_label": "Default language",
-    "submit": "Create club",
-    "submitting": "Creating…",
-    "error_name_required": "Enter the club name",
-    "error_slug_collision": "A club with a very similar name already exists. Tweak it a bit.",
-    "error_already_in_a_club": "You already belong to a club. Go back to home.",
-    "error_generic": "We couldn't create the club. Please try again."
+    "no_club_title": "You don't have access to any club",
+    "no_club_body": "Ask your club to send you an invitation."
   },
   "novedades": {
     "title": "What's new",

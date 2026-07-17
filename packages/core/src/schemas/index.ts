@@ -8,7 +8,6 @@ export {
   forgotPasswordSchema,
   resetPasswordSchema,
   acceptInvitationWithProfileSchema,
-  createClubSchema,
   sendInvitationSchema,
 } from './auth';
 export type {
@@ -17,7 +16,6 @@ export type {
   ForgotPasswordInput,
   ResetPasswordInput,
   AcceptInvitationWithProfileInput,
-  CreateClubInput,
   SendInvitationInput,
 } from './auth';
 

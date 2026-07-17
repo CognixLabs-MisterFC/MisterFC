@@ -109,17 +109,8 @@
     }
   },
   "onboarding": {
-    "title": "Crea el teu club",
-    "subtitle": "Ets el primer membre. Crea el teu club i seràs administrador.",
-    "club_name_label": "Nom del club",
-    "club_name_placeholder": "CD El meu club",
-    "club_locale_label": "Idioma per defecte",
-    "submit": "Crear club",
-    "submitting": "Creant…",
-    "error_name_required": "Posa el nom del club",
-    "error_slug_collision": "Ja existeix un club amb un nom molt similar. Canvia'l una mica.",
-    "error_already_in_a_club": "Ja pertanys a un club. Torna a l'inici.",
-    "error_generic": "No hem pogut crear el club. Torna-ho a provar."
+    "no_club_title": "No tens accés a cap club",
+    "no_club_body": "Demana al teu club que t'envie una invitació."
   },
   "novedades": {
     "title": "Novetats",

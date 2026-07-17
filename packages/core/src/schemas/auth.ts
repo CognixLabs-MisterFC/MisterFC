@@ -139,16 +139,6 @@ export type AcceptInvitationWithProfileInput = z.infer<
 >;
 
 /**
- * Schema del onboarding de club (admin_club).
- */
-export const createClubSchema = z.object({
-  name: z.string().trim().min(1).max(120),
-  locale: z.enum(['es', 'en', 'va']).default('es'),
-});
-
-export type CreateClubInput = z.infer<typeof createClubSchema>;
-
-/**
  * Schema del formulario de invitación a un club.
  */
 export const sendInvitationSchema = z.object({
