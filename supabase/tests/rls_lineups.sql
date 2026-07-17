@@ -86,6 +86,13 @@ insert into public.events (id, club_id, team_id, type, title, starts_at, created
   ('66ee0000-6666-0002-0000-000000000000', '66ee0000-0000-0000-0000-000000000001', '66ee0000-2222-0000-0000-000000000001', 'training', 'Entreno L1', '2026-09-12 18:00:00+00', '66ee0000-aaaa-0001-0000-000000000000'),
   ('66ee0000-6666-0003-0000-000000000000', '66ee0000-0000-0000-0000-000000000001', null,                                   'match',    'Partido club', '2026-09-16 10:00:00+00', '66ee0000-aaaa-0001-0000-000000000000');
 
+-- Convocatoria PUBLICADA de E1: requisito para marcar oficial (mig 20261024).
+-- El trigger fuerza published_by=auth.uid(); fijamos el claim solo para el seed.
+set local "request.jwt.claim.sub" to '66ee0000-aaaa-0001-0000-000000000000';
+insert into public.match_callup_meta (event_id, meeting_at, meeting_location, published_at)
+  values ('66ee0000-6666-0001-0000-000000000000', '2026-09-15 08:00:00+00', 'Sede', now());
+reset "request.jwt.claim.sub";
+
 -- Lineup base para los tests de constraints/triggers de posiciones.
 insert into public.lineups (id, event_id, name, formation_code, created_by) values
   ('66ee0000-7777-0001-0000-000000000000', '66ee0000-6666-0001-0000-000000000000', 'Titular', '1-3-3', '66ee0000-aaaa-0001-0000-000000000000');

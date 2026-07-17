@@ -42,6 +42,7 @@ type ActionError =
   | 'position_code_coherence'
   | 'coords_only_field'
   | 'too_many_starters'
+  | 'callup_not_published'
   | 'generic';
 
 export type LineupActionState = {
@@ -58,6 +59,7 @@ function mapPgErr(message: string | undefined, code: string | undefined): Action
   if (message.includes('player_not_in_team_at_event')) return 'player_not_in_team_at_event';
   if (message.includes('lineup_positions_field_has_position')) return 'position_code_coherence';
   if (message.includes('lineup_positions_coords_only_field')) return 'coords_only_field';
+  if (message.includes('callup_not_published')) return 'callup_not_published';
   return 'generic';
 }
 
@@ -407,6 +409,17 @@ export async function setLineupOfficial(input: unknown): Promise<LineupActionSta
   if (!eventId) return { error: 'not_found' };
 
   if (is_official) {
+    // Regla (Jose): para marcar oficial, la convocatoria debe estar PUBLICADA.
+    // Guard de UX ANTES de tocar nada — así no se ejecuta el "desmarca las
+    // demás" de abajo (que si no dejaría el partido sin ninguna oficial y luego
+    // fallaría en el trigger). El trigger lineups_validate es la barrera real.
+    const { data: meta } = await supabase
+      .from('match_callup_meta')
+      .select('published_at')
+      .eq('event_id', eventId)
+      .maybeSingle();
+    if (meta?.published_at == null) return { error: 'callup_not_published' };
+
     // Desmarca cualquier otra oficial del evento antes (índice parcial único).
     const { error: clearErr } = await supabase
       .from('lineups')

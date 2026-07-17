@@ -143,6 +143,12 @@ type Props = {
    * de la cabecera, en modo lectura).
    */
   isTournamentMatch: boolean;
+  /**
+   * ¿La convocatoria del partido está publicada? Requisito para marcar oficial
+   * (regla de Jose). Si es false, el toggle "oficial" se muestra deshabilitado
+   * con la explicación de que primero hay que publicar la convocatoria.
+   */
+  isCallupPublished: boolean;
 };
 
 // Ficha de la alineación: nombre en orden natural "Nombre Apellido" (no solo el
@@ -263,6 +269,7 @@ export function LineupEditorClient(props: Props) {
     initialPlannedSubs,
     coachFormations,
     isTournamentMatch,
+    isCallupPublished,
   } = props;
 
   const t = useTranslations('alineacion');
@@ -746,11 +753,31 @@ export function LineupEditorClient(props: Props) {
           </Hint>
         </div>
 
-        <Hint label={t('official_hint')}>
-          <label className="flex items-center gap-2 text-sm">
-            <Switch checked={selectedIsOfficial} onCheckedChange={onToggleOfficial} disabled={pending} />
-            {t('official_label')}
-          </label>
+        {/* "Oficial" exige convocatoria publicada (regla de Jose). Solo se
+            bloquea MARCAR mientras esté en borrador; DESMARCAR una ya oficial
+            sigue libre (p. ej. las oficiales antiguas sin convocatoria). */}
+        <Hint
+          label={
+            !isCallupPublished && !selectedIsOfficial
+              ? t('official_needs_published')
+              : t('official_hint')
+          }
+        >
+          <div className="flex flex-col gap-0.5">
+            <label className="flex items-center gap-2 text-sm">
+              <Switch
+                checked={selectedIsOfficial}
+                onCheckedChange={onToggleOfficial}
+                disabled={pending || (!isCallupPublished && !selectedIsOfficial)}
+              />
+              {t('official_label')}
+            </label>
+            {!isCallupPublished && !selectedIsOfficial && (
+              <span className="text-xs text-muted-foreground">
+                {t('official_needs_published')}
+              </span>
+            )}
+          </div>
         </Hint>
 
         <Hint label={t('share_hint')}>

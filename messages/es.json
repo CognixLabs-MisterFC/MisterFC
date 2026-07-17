@@ -2836,7 +2836,8 @@
       "out_reason_coherence": "Falta el motivo de descarte.",
       "coords_only_field": "Coordenadas solo válidas en el campo.",
       "generic": "No se pudo guardar. Inténtalo de nuevo.",
-      "too_many_starters": "Demasiados titulares en el campo para esta modalidad."
+      "too_many_starters": "Demasiados titulares en el campo para esta modalidad.",
+      "callup_not_published": "Publica la convocatoria antes de marcar la alineación como oficial."
     },
     "pos_short": {
       "goalkeeper": "POR",
@@ -2866,6 +2867,7 @@
     "official_lineup_title": "Alineación oficial",
     "share_hint": "Actívalo para que jugadores y familias vean esta alineación oficial. Las notas tácticas siempre quedan ocultas.",
     "official_hint": "Marca esta como la alineación oficial del partido (solo puede haber una).",
+    "official_needs_published": "Publica la convocatoria antes de marcar la alineación como oficial.",
     "formation_hint": "Cambia el sistema de juego; los titulares se reubican automáticamente.",
     "new_lineup_hint": "Crear una segunda alineación (Plan B, Plan C…) con los mismos convocados pero distinta distribución.",
     "field_full": "Máximo {max} jugadores en el campo para esta modalidad.",

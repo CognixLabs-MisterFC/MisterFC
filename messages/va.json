@@ -2837,7 +2837,8 @@
       "out_reason_coherence": "Falta el motiu del descart.",
       "coords_only_field": "Coordenades només vàlides al camp.",
       "generic": "No s’ha pogut guardar. Torna-ho a provar.",
-      "too_many_starters": "Massa titulars al camp per a esta modalitat."
+      "too_many_starters": "Massa titulars al camp per a esta modalitat.",
+      "callup_not_published": "Publica la convocatòria abans de marcar l’alineació com a oficial."
     },
     "pos_short": {
       "goalkeeper": "POR",
@@ -2867,6 +2868,7 @@
     "official_lineup_title": "Alineació oficial",
     "share_hint": "Activaʼl perquè jugadors i famílies vegen esta alineació oficial. Les notes tàctiques sempre queden ocultes.",
     "official_hint": "Marca esta com l'alineació oficial del partit (només pot haver-ne una).",
+    "official_needs_published": "Publica la convocatòria abans de marcar l’alineació com a oficial.",
     "formation_hint": "Canvia el sistema de joc; els titulars es reubiquen automàticament.",
     "new_lineup_hint": "Crear una segona alineació (Pla B, Pla C…) amb els mateixos convocats però distinta distribució.",
     "field_full": "Màxim {max} jugadors al camp per a esta modalitat.",
