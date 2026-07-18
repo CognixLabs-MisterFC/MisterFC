@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import * as Sentry from '@sentry/nextjs';
 import {
   calledUpLimitApplies,
   calledUpOverflow,
@@ -227,6 +228,9 @@ export async function publishCallup(
     } catch (e) {
       // No bloquear el publish por fallo de notificación.
       console.error('notify callup_published error', e);
+      Sentry.captureException(e, {
+        tags: { feature: 'callups', step: 'notify_callup_published' },
+      });
     }
   }
 
@@ -300,6 +304,9 @@ export async function republishCallup(eventId: string): Promise<RepublishState> 
     await notifyCallup(eventId, 'callup_updated', String(Date.now()));
   } catch (e) {
     console.error('notify callup_updated error', e);
+    Sentry.captureException(e, {
+      tags: { feature: 'callups', step: 'notify_callup_updated' },
+    });
   }
 
   return { success: true };
@@ -653,6 +660,9 @@ export async function upsertCallupDecision(
     );
   } catch (e) {
     console.error('syncLineupsForDecision error', e);
+    Sentry.captureException(e, {
+      tags: { feature: 'callups', step: 'sync_lineups_decision' },
+    });
   }
 
   revalidatePath('/[locale]/(authenticated)/convocatorias', 'page');
@@ -694,6 +704,9 @@ export async function clearCallupDecision(
     await syncLineupsForDecision(supabase, eventId, playerId, true);
   } catch (e) {
     console.error('syncLineupsForDecision error', e);
+    Sentry.captureException(e, {
+      tags: { feature: 'callups', step: 'sync_lineups_decision' },
+    });
   }
 
   revalidatePath(
