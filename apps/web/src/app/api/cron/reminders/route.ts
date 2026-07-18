@@ -29,6 +29,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import {
   MATCH_SURFACE_TYPES,
   buildDedupeKey,
@@ -41,6 +42,20 @@ import {
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// D-2 — Heartbeat via Sentry Crons. Si el cron DEJA de ejecutarse (o falla cada
+// mañana), un error que nunca ocurre no genera evento; el monitor detecta la
+// AUSENCIA de check-in a la hora esperada y avisa. El monitor se auto-configura
+// DESDE CÓDIGO (no en la UI), versionado aquí. slug estable = mismo monitor
+// siempre. checkinMargin/maxRuntime en minutos; timezone UTC para casar con el
+// cron de Vercel (vercel.json: '0 8 * * *').
+const CRON_MONITOR_SLUG = 'daily-reminders';
+const CRON_MONITOR_CONFIG = {
+  schedule: { type: 'crontab', value: '0 8 * * *' },
+  timezone: 'UTC',
+  checkinMargin: 15,
+  maxRuntime: 5,
+} as const;
 
 type NotificationRow = {
   user_id: string;
@@ -71,7 +86,29 @@ export async function GET(req: Request) {
 }
 
 async function handle(req: Request): Promise<NextResponse> {
+  // El 401 va ANTES del check-in: un curl ajeno sin el secret NO cuenta como
+  // ejecución del cron (si contara, un atacante silenciaría la alerta).
   if (!authorized(req)) return unauthorized();
+
+  // Heartbeat: check-in de inicio. La config auto-crea/actualiza el monitor.
+  const checkInId = Sentry.captureCheckIn(
+    { monitorSlug: CRON_MONITOR_SLUG, status: 'in_progress' },
+    CRON_MONITOR_CONFIG,
+  );
+
+  // Cierra el heartbeat (ok|error) y FUERZA el envío antes de devolver: en
+  // serverless la función se congela al return y el evento podría no salir.
+  const finish = async (
+    status: 'ok' | 'error',
+    response: NextResponse,
+  ): Promise<NextResponse> => {
+    Sentry.captureCheckIn(
+      { checkInId, monitorSlug: CRON_MONITOR_SLUG, status },
+      CRON_MONITOR_CONFIG,
+    );
+    await Sentry.flush(2000);
+    return response;
+  };
 
   const supabase = createSupabaseAdminClient();
   const now = new Date();
@@ -104,7 +141,13 @@ async function handle(req: Request): Promise<NextResponse> {
     .not('match_callup_meta.published_at', 'is', null);
 
   if (matchErr) {
-    return NextResponse.json({ error: matchErr.message }, { status: 500 });
+    Sentry.captureException(matchErr, {
+      tags: { cron: CRON_MONITOR_SLUG, step: 'query_matches' },
+    });
+    return finish(
+      'error',
+      NextResponse.json({ error: matchErr.message }, { status: 500 }),
+    );
   }
 
   type MatchRow = {
@@ -132,7 +175,13 @@ async function handle(req: Request): Promise<NextResponse> {
     .lte('starts_at', upcomingToIso);
 
   if (tournErr) {
-    return NextResponse.json({ error: tournErr.message }, { status: 500 });
+    Sentry.captureException(tournErr, {
+      tags: { cron: CRON_MONITOR_SLUG, step: 'query_tournament_matches' },
+    });
+    return finish(
+      'error',
+      NextResponse.json({ error: tournErr.message }, { status: 500 }),
+    );
   }
 
   const tournMatches = (tournMatchRows ?? []).map(
@@ -316,7 +365,13 @@ async function handle(req: Request): Promise<NextResponse> {
     .lte('starts_at', yesterdayToIso);
 
   if (trErr) {
-    return NextResponse.json({ error: trErr.message }, { status: 500 });
+    Sentry.captureException(trErr, {
+      tags: { cron: CRON_MONITOR_SLUG, step: 'query_trainings' },
+    });
+    return finish(
+      'error',
+      NextResponse.json({ error: trErr.message }, { status: 500 }),
+    );
   }
 
   type TrainingRow = {
@@ -406,7 +461,13 @@ async function handle(req: Request): Promise<NextResponse> {
       })
       .select('id');
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      Sentry.captureException(error, {
+        tags: { cron: CRON_MONITOR_SLUG, step: 'insert_notifications' },
+      });
+      return finish(
+        'error',
+        NextResponse.json({ error: error.message }, { status: 500 }),
+      );
     }
     inserted = data?.length ?? 0;
   }
@@ -416,16 +477,19 @@ async function handle(req: Request): Promise<NextResponse> {
   // quedan para mañana.
   const drainResult = await drainPushQueue(supabase, 100);
 
-  return NextResponse.json({
-    ok: true,
-    queued: inserts.length,
-    inserted,
-    day_bucket: dayBucket,
-    matches_scanned: allMatches.length,
-    reminder_targets: reminderTargets.length,
-    trainings_scanned: trainings.length,
-    push_drain: drainResult,
-  });
+  return finish(
+    'ok',
+    NextResponse.json({
+      ok: true,
+      queued: inserts.length,
+      inserted,
+      day_bucket: dayBucket,
+      matches_scanned: allMatches.length,
+      reminder_targets: reminderTargets.length,
+      trainings_scanned: trainings.length,
+      push_drain: drainResult,
+    }),
+  );
 }
 
 type DrainResult = {
@@ -500,7 +564,12 @@ async function drainPushQueue(
           .update({ status: 'failed', sent_at: new Date().toISOString() })
           .eq('id', row.id);
       }
-    } catch {
+    } catch (e) {
+      // Error INESPERADO de envío (failed_other). NO capturamos failed_gone:
+      // endpoint muerto = suscripción caducada, churn normal → sería ruido.
+      Sentry.captureException(e, {
+        tags: { cron: CRON_MONITOR_SLUG, step: 'push_send' },
+      });
       result.failed_other += 1;
     }
   }
