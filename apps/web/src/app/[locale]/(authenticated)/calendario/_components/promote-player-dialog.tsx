@@ -47,6 +47,8 @@ type Props = {
  */
 export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
   const t = useTranslations('promotions');
+  // D-4b — mensaje de recarga ante un throw de transporte (skew de deploy / red).
+  const tReload = useTranslations('calendario');
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
@@ -84,15 +86,20 @@ export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
     setTeamFilter('');
     setOpen(true);
     startTransition(async () => {
-      const res = await loadPromotionCandidates(eventId);
-      if (res.error) {
-        setError(t('errors.load_failed'));
+      try {
+        const res = await loadPromotionCandidates(eventId);
+        if (res.error) {
+          setError(t('errors.load_failed'));
+          setLoaded(true);
+          return;
+        }
+        setEvent(res.event);
+        setCandidates(res.candidates);
         setLoaded(true);
-        return;
+      } catch {
+        setError(tReload('stale_reload'));
+        setLoaded(true);
       }
-      setEvent(res.event);
-      setCandidates(res.candidates);
-      setLoaded(true);
     });
   }
 
@@ -102,9 +109,13 @@ export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
     setConflictsChecked(false);
     setError(null);
     startTransition(async () => {
-      const res = await loadPromotionConflicts(eventId, playerId);
-      setConflicts(res.conflicts);
-      setConflictsChecked(true);
+      try {
+        const res = await loadPromotionConflicts(eventId, playerId);
+        setConflicts(res.conflicts);
+        setConflictsChecked(true);
+      } catch {
+        setError(tReload('stale_reload'));
+      }
     });
   }
 
@@ -112,14 +123,18 @@ export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
     if (!selectedId) return;
     setError(null);
     startTransition(async () => {
-      const res = await promotePlayer(eventId, selectedId);
-      if (!res.success) {
-        setError(t(`errors.${res.error}`));
-        return;
+      try {
+        const res = await promotePlayer(eventId, selectedId);
+        if (!res.success) {
+          setError(t(`errors.${res.error}`));
+          return;
+        }
+        setOpen(false);
+        onDone?.();
+        router.refresh();
+      } catch {
+        setError(tReload('stale_reload'));
       }
-      setOpen(false);
-      onDone?.();
-      router.refresh();
     });
   }
 

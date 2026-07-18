@@ -37,6 +37,8 @@ type Props = {
  */
 export function HolidayCell({ dateIso, holiday, canManage }: Props) {
   const t = useTranslations('calendario.holidays');
+  // D-4b — mensaje de recarga ante un throw de transporte (skew de deploy / red).
+  const tReload = useTranslations('calendario');
   const [markOpen, setMarkOpen] = useState(false);
   const [unmarkOpen, setUnmarkOpen] = useState(false);
   const [reason, setReason] = useState('');
@@ -46,13 +48,17 @@ export function HolidayCell({ dateIso, holiday, canManage }: Props) {
   function runMark() {
     setError(null);
     startTransition(async () => {
-      const res = await markHoliday(dateIso, reason.trim());
-      if (!res.success) {
-        setError(t(`errors.${res.error}`));
-        return;
+      try {
+        const res = await markHoliday(dateIso, reason.trim());
+        if (!res.success) {
+          setError(t(`errors.${res.error}`));
+          return;
+        }
+        setReason('');
+        setMarkOpen(false);
+      } catch {
+        setError(tReload('stale_reload'));
       }
-      setReason('');
-      setMarkOpen(false);
     });
   }
 
@@ -60,12 +66,16 @@ export function HolidayCell({ dateIso, holiday, canManage }: Props) {
     if (!holiday) return;
     setError(null);
     startTransition(async () => {
-      const res = await unmarkHoliday(holiday.id);
-      if (!res.success) {
-        setError(t(`errors.${res.error}`));
-        return;
+      try {
+        const res = await unmarkHoliday(holiday.id);
+        if (!res.success) {
+          setError(t(`errors.${res.error}`));
+          return;
+        }
+        setUnmarkOpen(false);
+      } catch {
+        setError(tReload('stale_reload'));
       }
-      setUnmarkOpen(false);
     });
   }
 

@@ -1620,6 +1620,7 @@
   "calendario": {
     "title": "Calendari",
     "subtitle": "Entrenaments, partits, tornejos i altres esdeveniments del club.",
+    "stale_reload": "La pàgina s'ha actualitzat. Recarrega per a continuar.",
     "session_planned": "Sessió planificada",
     "nav": {
       "prev": "Anterior",

@@ -43,6 +43,8 @@ type Props = {
 export function PlanSessionDialog({ eventId, onNavigate }: Props) {
   const t = useTranslations('calendario.dialog.plan');
   const tErr = useTranslations('calendario.dialog.errors');
+  // D-4b — mensaje de recarga ante un throw de transporte (skew de deploy / red).
+  const tReload = useTranslations('calendario');
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
@@ -59,13 +61,17 @@ export function PlanSessionDialog({ eventId, onNavigate }: Props) {
     setCandidates([]);
     setOpen(true);
     startTransition(async () => {
-      const res = await loadPlanSessionOptions({ event_id: eventId });
-      if (res.error) {
-        setError(tErr('plan_failed'));
-        return;
+      try {
+        const res = await loadPlanSessionOptions({ event_id: eventId });
+        if (res.error) {
+          setError(tErr('plan_failed'));
+          return;
+        }
+        setLinkedId(res.linkedSessionId ?? null);
+        setCandidates(res.candidates ?? []);
+      } catch {
+        setError(tReload('stale_reload'));
       }
-      setLinkedId(res.linkedSessionId ?? null);
-      setCandidates(res.candidates ?? []);
     });
   }
 
@@ -78,12 +84,16 @@ export function PlanSessionDialog({ eventId, onNavigate }: Props) {
   function createNew() {
     setError(null);
     startTransition(async () => {
-      const res = await planSessionForEvent({ event_id: eventId });
-      if (res.error || !res.id) {
-        setError(tErr('plan_failed'));
-        return;
+      try {
+        const res = await planSessionForEvent({ event_id: eventId });
+        if (res.error || !res.id) {
+          setError(tErr('plan_failed'));
+          return;
+        }
+        goToEditor(res.id);
+      } catch {
+        setError(tReload('stale_reload'));
       }
-      goToEditor(res.id);
     });
   }
 
@@ -91,15 +101,19 @@ export function PlanSessionDialog({ eventId, onNavigate }: Props) {
     if (!selectedId) return;
     setError(null);
     startTransition(async () => {
-      const res = await linkSessionToEvent({
-        event_id: eventId,
-        session_id: selectedId,
-      });
-      if (res.error || !res.id) {
-        setError(res.error === 'conflict' ? tErr('link_conflict') : tErr('link_failed'));
-        return;
+      try {
+        const res = await linkSessionToEvent({
+          event_id: eventId,
+          session_id: selectedId,
+        });
+        if (res.error || !res.id) {
+          setError(res.error === 'conflict' ? tErr('link_conflict') : tErr('link_failed'));
+          return;
+        }
+        goToEditor(res.id);
+      } catch {
+        setError(tReload('stale_reload'));
       }
-      goToEditor(res.id);
     });
   }
 

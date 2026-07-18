@@ -351,13 +351,19 @@ export function EventDialog({
         return;
       }
       startTransition(async () => {
-        const result = await createTournament(tInput);
-        if (!result.success) {
-          setError(tErrors(result.error));
-          return;
+        try {
+          const result = await createTournament(tInput);
+          if (!result.success) {
+            setError(tErrors(result.error));
+            return;
+          }
+          setOpen(false);
+          router.push(`/convocatorias/${result.event_id}`);
+        } catch {
+          // D-4b — la action rechazó la promesa (skew de deploy / red), no es
+          // un {error} de negocio. Mensaje de recarga, sin auto-reload.
+          setError(t('stale_reload'));
         }
-        setOpen(false);
-        router.push(`/convocatorias/${result.event_id}`);
       });
       return;
     }
@@ -368,36 +374,40 @@ export function EventDialog({
       return;
     }
     startTransition(async () => {
-      let result;
-      if (mode === 'new') {
-        result = await createEvent(input);
-      } else {
-        result = await updateEvent(event!.id, updateMode, input);
+      try {
+        let result;
+        if (mode === 'new') {
+          result = await createEvent(input);
+        } else {
+          result = await updateEvent(event!.id, updateMode, input);
+        }
+        if (!result.success) {
+          setError(tErrors(result.error));
+          return;
+        }
+        // F14F-3 — al crear una serie, informa de los días omitidos por festivo.
+        if (mode === 'new' && result.skipped_holidays?.length) {
+          const fmt = new Intl.DateTimeFormat(locale, {
+            day: 'numeric',
+            month: 'short',
+          });
+          const dates = result.skipped_holidays
+            .map((s) => {
+              const [y, m, d] = s.split('-').map((n) => parseInt(n, 10));
+              return fmt.format(new Date(y!, m! - 1, d!));
+            })
+            .join(', ');
+          toast.info(
+            t('holidays.skipped_summary', {
+              count: result.skipped_holidays.length,
+              dates,
+            }),
+          );
+        }
+        setOpen(false);
+      } catch {
+        setError(t('stale_reload'));
       }
-      if (!result.success) {
-        setError(tErrors(result.error));
-        return;
-      }
-      // F14F-3 — al crear una serie, informa de los días omitidos por festivo.
-      if (mode === 'new' && result.skipped_holidays?.length) {
-        const fmt = new Intl.DateTimeFormat(locale, {
-          day: 'numeric',
-          month: 'short',
-        });
-        const dates = result.skipped_holidays
-          .map((s) => {
-            const [y, m, d] = s.split('-').map((n) => parseInt(n, 10));
-            return fmt.format(new Date(y!, m! - 1, d!));
-          })
-          .join(', ');
-        toast.info(
-          t('holidays.skipped_summary', {
-            count: result.skipped_holidays.length,
-            dates,
-          }),
-        );
-      }
-      setOpen(false);
     });
   }
 
