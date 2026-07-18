@@ -21,7 +21,8 @@
 
 export type NotificationType =
   | 'match_callup_reminder'
-  | 'attendance_pending_reminder';
+  | 'attendance_pending_reminder'
+  | 'training_reminder';
 
 export type NotificationChannel = 'in_app' | 'push' | 'email';
 
