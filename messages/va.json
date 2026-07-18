@@ -108,6 +108,12 @@
       "back_to_signin": "Tornar a iniciar sessió"
     }
   },
+  "portada": {
+    "title": "Tria el teu club",
+    "subtitle": "Entra a l'espai del teu club a MisterFC.",
+    "empty": "Encara no hi ha clubs disponibles.",
+    "error": "No hem pogut carregar els clubs. Torna-ho a provar d'ací a uns minuts."
+  },
   "onboarding": {
     "no_club_title": "No tens accés a cap club",
     "no_club_body": "Demana al teu club que t'envie una invitació."
