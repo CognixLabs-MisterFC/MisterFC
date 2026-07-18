@@ -32,11 +32,13 @@ import { NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import {
   MATCH_SURFACE_TYPES,
+  TIMEZONE_OLA1,
   buildDedupeKey,
   callupEventIdFor,
   consolidateReminderTargets,
   createSupabaseAdminClient,
   dayBucketMadrid,
+  fromZonedFields,
   type Json,
 } from '@misterfc/core';
 
@@ -59,7 +61,10 @@ const CRON_MONITOR_CONFIG = {
 
 type NotificationRow = {
   user_id: string;
-  type: 'match_callup_reminder' | 'attendance_pending_reminder';
+  type:
+    | 'match_callup_reminder'
+    | 'attendance_pending_reminder'
+    | 'training_reminder';
   channel: 'in_app' | 'push';
   payload: Json;
   dedupe_key: string;
@@ -450,6 +455,160 @@ async function handle(req: Request): Promise<NextResponse> {
     }
   }
 
+  // 3) Training reminders (D-5). "Hoy tienes entrenamiento": para CADA entreno
+  // de HOY (día local Europe/Madrid del run) avisamos a TODO el equipo —
+  // jugadores, familias Y entrenadores/staff. `training_reminder` era un valor
+  // del enum sin productor; este bloque lo emite. Mismo canal doble
+  // (in_app + push) y misma idempotencia por dedupe_key que los otros
+  // recordatorios.
+  //
+  // Rango del día Madrid: [00:00, 24:00) local convertido a UTC (DST-aware vía
+  // fromZonedFields). El cron corre al amanecer Madrid, así que "hoy" abarca
+  // los entrenos de esta tarde/noche que aún no han ocurrido.
+  const dbParts = dayBucket.split('-');
+  const ty = parseInt(dbParts[0] ?? '0', 10);
+  const tmo = parseInt(dbParts[1] ?? '0', 10);
+  const td = parseInt(dbParts[2] ?? '0', 10);
+  const todayStartIso = fromZonedFields(
+    ty,
+    tmo - 1,
+    td,
+    0,
+    0,
+    TIMEZONE_OLA1,
+  ).toISOString();
+  const todayEndIso = fromZonedFields(
+    ty,
+    tmo - 1,
+    td + 1,
+    0,
+    0,
+    TIMEZONE_OLA1,
+  ).toISOString();
+
+  const { data: todayTrainingRows, error: todayTrErr } = await supabase
+    .from('events')
+    .select('id, team_id, title, starts_at')
+    .eq('type', 'training')
+    // Mismos filtros de "entreno activo" que el bloque de asistencia
+    // (F14F-1b cancelados / F14F-4 pendientes-rechazados de aprobación).
+    .is('cancelled_at', null)
+    .or('approval_status.is.null,approval_status.eq.approved')
+    .gte('starts_at', todayStartIso)
+    .lt('starts_at', todayEndIso);
+
+  if (todayTrErr) {
+    Sentry.captureException(todayTrErr, {
+      tags: { cron: CRON_MONITOR_SLUG, step: 'query_trainings_today' },
+    });
+    return finish(
+      'error',
+      NextResponse.json({ error: todayTrErr.message }, { status: 500 }),
+    );
+  }
+
+  const todayTrainings = (todayTrainingRows ?? []).map(
+    (r) => r as unknown as TrainingRow,
+  );
+
+  for (const tr of todayTrainings) {
+    if (!tr.team_id) continue;
+
+    // Destinatarios = UNIÓN dedup de (jugadores+familias) ∪ (staff del equipo).
+    // Set de profile_ids → un usuario que sea a la vez familia y staff (o
+    // familia de dos hermanos del equipo) recibe UNA sola notificación.
+    const recipientProfileIds = new Set<string>();
+
+    // (a) Jugadores/familias: roster del team a día de hoy → player_accounts
+    //     (mismo patrón de roster que el bloque de match_callup_reminder).
+    const eventDate = tr.starts_at.slice(0, 10);
+    const { data: tms } = await supabase
+      .from('team_members')
+      .select('player_id, joined_at, left_at')
+      .eq('team_id', tr.team_id)
+      .lte('joined_at', eventDate);
+    type TM2 = {
+      player_id: string;
+      joined_at: string;
+      left_at: string | null;
+    };
+    const rosterIds = (tms ?? [])
+      .map((r) => r as unknown as TM2)
+      .filter((r) => r.left_at == null || r.left_at >= eventDate)
+      .map((r) => r.player_id);
+    if (rosterIds.length > 0) {
+      const { data: pas } = await supabase
+        .from('player_accounts')
+        .select('profile_id')
+        .in('player_id', rosterIds);
+      for (const r of (pas ?? []) as { profile_id: string }[]) {
+        recipientProfileIds.add(r.profile_id);
+      }
+    }
+
+    // (b) Entrenadores/staff activos del team (mismo patrón que
+    //     attendance_pending_reminder: team_staff con left_at IS NULL).
+    const { data: staffRows } = await supabase
+      .from('team_staff')
+      .select('memberships!inner(profile_id)')
+      .eq('team_id', tr.team_id)
+      .is('left_at', null);
+    type StaffRow2 = { memberships: { profile_id: string } };
+    for (const r of (staffRows ?? []) as unknown as StaffRow2[]) {
+      recipientProfileIds.add(r.memberships.profile_id);
+    }
+
+    if (recipientProfileIds.size === 0) continue;
+
+    // Hora local Madrid para el cuerpo del push.
+    const hhmm = new Intl.DateTimeFormat('es-ES', {
+      timeZone: TIMEZONE_OLA1,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(new Date(tr.starts_at));
+
+    for (const profileId of recipientProfileIds) {
+      inserts.push({
+        user_id: profileId,
+        type: 'training_reminder',
+        channel: 'in_app',
+        payload: {
+          event_id: tr.id,
+          title: tr.title,
+          starts_at: tr.starts_at,
+          deep_link: '/calendario',
+        },
+        dedupe_key: buildDedupeKey({
+          type: 'training_reminder',
+          channel: 'in_app',
+          event_id: tr.id,
+          day_bucket: dayBucket,
+          user_id: profileId,
+        }),
+      });
+      // Push paralelo — el drainer al final lo procesa. Va en es como el resto.
+      inserts.push({
+        user_id: profileId,
+        type: 'training_reminder',
+        channel: 'push',
+        payload: {
+          title: 'Entrenamiento hoy',
+          body: `Hoy tienes entrenamiento: ${tr.title} a las ${hhmm}`,
+          deep_link: '/es/calendario',
+          tag: `training_reminder:${tr.id}`,
+        },
+        dedupe_key: buildDedupeKey({
+          type: 'training_reminder',
+          channel: 'push',
+          event_id: tr.id,
+          day_bucket: dayBucket,
+          user_id: profileId,
+        }),
+      });
+    }
+  }
+
   // Insert con on conflict do nothing (idempotente vía UNIQUE dedupe_key).
   let inserted = 0;
   if (inserts.length > 0) {
@@ -487,6 +646,7 @@ async function handle(req: Request): Promise<NextResponse> {
       matches_scanned: allMatches.length,
       reminder_targets: reminderTargets.length,
       trainings_scanned: trainings.length,
+      trainings_today_scanned: todayTrainings.length,
       push_drain: drainResult,
     }),
   );
