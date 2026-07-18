@@ -4344,6 +4344,24 @@ export type Database = {
           has_admin: boolean
         }[]
       }
+      list_public_clubs: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          name: string
+          slug: string
+          logo_path: string | null
+        }[]
+      }
+      get_public_club_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          id: string
+          name: string
+          slug: string
+          logo_path: string | null
+        }[]
+      }
       set_club_logo: {
         Args: { p_club_id: string; p_path: string | null }
         Returns: undefined

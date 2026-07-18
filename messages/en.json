@@ -108,6 +108,12 @@
       "back_to_signin": "Back to sign in"
     }
   },
+  "portada": {
+    "title": "Choose your club",
+    "subtitle": "Enter your club's space in MisterFC.",
+    "empty": "No clubs available yet.",
+    "error": "We couldn't load the clubs. Please try again in a few minutes."
+  },
   "onboarding": {
     "no_club_title": "You don't have access to any club",
     "no_club_body": "Ask your club to send you an invitation."

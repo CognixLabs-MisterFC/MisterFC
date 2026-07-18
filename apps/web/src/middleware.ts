@@ -89,12 +89,29 @@ export default async function middleware(request: NextRequest) {
   // D-4c — el refresh es best-effort: un parpadeo de red no debe expulsar a un
   // usuario con sesión válida (las páginas protegidas revalidan por su cuenta).
   // Capturamos el fallo para no perderlo y DEJAMOS SEGUIR la request.
+  let user = null;
   try {
-    await supabase.auth.getUser();
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
   } catch (e) {
     Sentry.captureException(e, {
       tags: { feature: 'auth', step: 'middleware_refresh' },
     });
+  }
+
+  // F14J-2 — Portada "elige tu club": la RAÍZ pública (misterfc.es → /{locale})
+  // SIN sesión muestra la portada de clubes, no el login. Es SOLO la raíz: los
+  // deep-links sin sesión siguen yendo a /signin vía el layout autenticado (sin
+  // cambios), así el login sigue accesible. Con sesión, la raíz pasa al home de
+  // la app como hasta ahora (no entra aquí).
+  const localeRoot = pathname.match(/^\/(es|en|va)$/);
+  if (localeRoot && !user) {
+    const redirectRes = NextResponse.redirect(
+      new URL(`/${localeRoot[1]}/clubes`, request.url),
+    );
+    // Preserva las cookies que Supabase/next-intl hayan escrito sobre `response`.
+    for (const c of response.cookies.getAll()) redirectRes.cookies.set(c);
+    return redirectRes;
   }
 
   return response;
