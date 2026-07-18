@@ -1619,6 +1619,7 @@
   "calendario": {
     "title": "Calendario",
     "subtitle": "Entrenamientos, partidos, torneos y otros eventos del club.",
+    "stale_reload": "La página se ha actualizado. Recarga para continuar.",
     "session_planned": "Sesión planificada",
     "nav": {
       "prev": "Anterior",

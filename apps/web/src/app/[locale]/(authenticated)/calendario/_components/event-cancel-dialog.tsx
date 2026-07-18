@@ -32,6 +32,8 @@ type Props = {
  */
 export function EventCancelControls({ event, onDone }: Props) {
   const t = useTranslations('calendario.cancel');
+  // D-4b — mensaje de recarga ante un throw de transporte (skew de deploy / red).
+  const tReload = useTranslations('calendario');
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [pending, startTransition] = useTransition();
@@ -43,25 +45,33 @@ export function EventCancelControls({ event, onDone }: Props) {
   function runCancel() {
     setError(null);
     startTransition(async () => {
-      const res = await cancelTraining(event.id, reason.trim() || null);
-      if (!res.success) {
-        setError(t(`errors.${res.error}`));
-        return;
+      try {
+        const res = await cancelTraining(event.id, reason.trim() || null);
+        if (!res.success) {
+          setError(t(`errors.${res.error}`));
+          return;
+        }
+        setOpen(false);
+        onDone?.();
+      } catch {
+        setError(tReload('stale_reload'));
       }
-      setOpen(false);
-      onDone?.();
     });
   }
 
   function runUncancel() {
     setError(null);
     startTransition(async () => {
-      const res = await uncancelTraining(event.id);
-      if (!res.success) {
-        setError(t(`errors.${res.error}`));
-        return;
+      try {
+        const res = await uncancelTraining(event.id);
+        if (!res.success) {
+          setError(t(`errors.${res.error}`));
+          return;
+        }
+        onDone?.();
+      } catch {
+        setError(tReload('stale_reload'));
       }
-      onDone?.();
     });
   }
 

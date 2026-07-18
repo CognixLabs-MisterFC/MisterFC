@@ -36,6 +36,8 @@ type Props = {
  */
 export function EventApprovalControls({ event, canApprove, onDone }: Props) {
   const t = useTranslations('calendario.approval');
+  // D-4b — mensaje de recarga ante un throw de transporte (skew de deploy / red).
+  const tReload = useTranslations('calendario');
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [pendingTx, startTransition] = useTransition();
@@ -47,17 +49,21 @@ export function EventApprovalControls({ event, canApprove, onDone }: Props) {
   function run(approve: boolean) {
     setError(null);
     startTransition(async () => {
-      const res = await decideEventApproval(
-        event.id,
-        approve,
-        approve ? null : reason.trim() || null,
-      );
-      if (!res.success) {
-        setError(t(`errors.${res.error}`));
-        return;
+      try {
+        const res = await decideEventApproval(
+          event.id,
+          approve,
+          approve ? null : reason.trim() || null,
+        );
+        if (!res.success) {
+          setError(t(`errors.${res.error}`));
+          return;
+        }
+        setOpen(false);
+        onDone?.();
+      } catch {
+        setError(tReload('stale_reload'));
       }
-      setOpen(false);
-      onDone?.();
     });
   }
 

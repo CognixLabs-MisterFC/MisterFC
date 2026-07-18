@@ -1620,6 +1620,7 @@
   "calendario": {
     "title": "Calendar",
     "subtitle": "Trainings, matches, tournaments and other club events.",
+    "stale_reload": "The page has been updated. Reload to continue.",
     "session_planned": "Session planned",
     "nav": {
       "prev": "Previous",

@@ -29,6 +29,8 @@ type Mode = 'single' | 'this_and_future' | 'series';
 
 export function EventDeleteDialog({ eventId, isRecurring, onDeleted }: Props) {
   const t = useTranslations('calendario.delete');
+  // D-4b — mensaje de recarga ante un throw de transporte (skew de deploy / red).
+  const tReload = useTranslations('calendario');
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>('single');
   const [pending, startTransition] = useTransition();
@@ -37,13 +39,19 @@ export function EventDeleteDialog({ eventId, isRecurring, onDeleted }: Props) {
   function run() {
     setError(null);
     startTransition(async () => {
-      const result = await deleteEvent(eventId, mode);
-      if (!result.success) {
-        setError(t(`errors.${result.error}`));
-        return;
+      try {
+        const result = await deleteEvent(eventId, mode);
+        if (!result.success) {
+          setError(t(`errors.${result.error}`));
+          return;
+        }
+        setOpen(false);
+        onDeleted?.();
+      } catch {
+        // La action RECHAZÓ la promesa (no es un {error} de negocio): deploy
+        // skew / red. No auto-reload; pedimos recarga manual sin cerrar nada.
+        setError(tReload('stale_reload'));
       }
-      setOpen(false);
-      onDeleted?.();
     });
   }
 
