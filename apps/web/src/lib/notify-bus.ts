@@ -23,6 +23,7 @@
  * el service-role client (bypass RLS para insertar en `notifications`).
  */
 
+import * as Sentry from '@sentry/nextjs';
 import { createSupabaseAdminClient, type Json } from '@misterfc/core';
 import type { Database } from '@misterfc/core';
 import {
@@ -66,7 +67,7 @@ export async function emitNotification(
 
   // 1. Insertar campana (in_app). ignoreDuplicates=true: si ya existe la fila,
   //    no la duplicamos ni lanzamos error.
-  const { data: inAppRows } = await supabase
+  const { data: inAppRows, error: inAppErr } = await supabase
     .from('notifications')
     .upsert(
       {
@@ -79,10 +80,17 @@ export async function emitNotification(
       { onConflict: 'dedupe_key', ignoreDuplicates: true },
     )
     .select('id');
+  // D-3 — la notificación NO debe romper la acción del usuario, pero un fallo de
+  // INSERT no puede perderse en silencio: lo reportamos y seguimos.
+  if (inAppErr) {
+    Sentry.captureException(inAppErr, {
+      tags: { feature: 'notifications', step: 'emit_in_app' },
+    });
+  }
   const inAppInserted = Boolean(inAppRows && inAppRows.length > 0);
 
   // 2. Insertar push.
-  const { data: pushRows } = await supabase
+  const { data: pushRows, error: pushErr } = await supabase
     .from('notifications')
     .upsert(
       {
@@ -95,6 +103,11 @@ export async function emitNotification(
       { onConflict: 'dedupe_key', ignoreDuplicates: true },
     )
     .select('id');
+  if (pushErr) {
+    Sentry.captureException(pushErr, {
+      tags: { feature: 'notifications', step: 'emit_push' },
+    });
+  }
   const insertedPushRow = pushRows?.[0];
   const pushInserted = Boolean(insertedPushRow);
 
@@ -179,14 +192,21 @@ export async function emitNotificationFanOut(
         in_app_payload: base.in_app_payload,
         push_payload: base.push_payload,
         dedupe_base: `${base.dedupe_base_prefix}:${r.dedupe_base_suffix ?? r.user_id}`,
-      }).catch(() => ({
-        in_app_inserted: false,
-        push_inserted: false,
-        eager_sent: 0,
-        eager_failed_gone: 0,
-        eager_failed_other: 0,
-        skipped_user_pref: false,
-      })),
+      }).catch((e) => {
+        // D-3 — el fan-out NUNCA lanza (un destinatario roto no frena a los
+        // demás), pero el fallo se reporta en vez de perderse.
+        Sentry.captureException(e, {
+          tags: { feature: 'notifications', step: 'emit_fan_out' },
+        });
+        return {
+          in_app_inserted: false,
+          push_inserted: false,
+          eager_sent: 0,
+          eager_failed_gone: 0,
+          eager_failed_other: 0,
+          skipped_user_pref: false,
+        };
+      }),
     ),
   );
 }
