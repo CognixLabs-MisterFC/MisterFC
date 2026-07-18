@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { createServerClient } from '@supabase/ssr';
+import * as Sentry from '@sentry/nextjs';
 import { routing } from './i18n/routing';
 
 const handleIntl = createIntlMiddleware(routing);
@@ -85,7 +86,16 @@ export default async function middleware(request: NextRequest) {
 
   // Toca getUser para que el cliente refresque el token si toca.
   // Las cookies actualizadas viajan al browser vía `response.cookies.set` arriba.
-  await supabase.auth.getUser();
+  // D-4c — el refresh es best-effort: un parpadeo de red no debe expulsar a un
+  // usuario con sesión válida (las páginas protegidas revalidan por su cuenta).
+  // Capturamos el fallo para no perderlo y DEJAMOS SEGUIR la request.
+  try {
+    await supabase.auth.getUser();
+  } catch (e) {
+    Sentry.captureException(e, {
+      tags: { feature: 'auth', step: 'middleware_refresh' },
+    });
+  }
 
   return response;
 }

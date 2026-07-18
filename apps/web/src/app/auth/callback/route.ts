@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import * as Sentry from '@sentry/nextjs';
 
 /**
  * Callback del magic link de Supabase Auth.
@@ -65,6 +66,19 @@ export async function GET(request: NextRequest) {
   const hasCode = code !== null;
   const hasOtp = tokenHash !== null && isOtpType(typeParam);
   if (errorParam || (!hasCode && !hasOtp)) {
+    // D-4c — hoy este redirect descarta el motivo real. No hay objeto Error
+    // (Supabase pasa el fallo como query param, o simplemente no llegan
+    // artefactos), así que reportamos el contexto con captureMessage.
+    Sentry.captureMessage('auth callback: bad params', {
+      level: 'warning',
+      tags: { feature: 'auth', step: 'callback_bad_params' },
+      extra: {
+        error_param: errorParam ?? null,
+        has_code: hasCode,
+        has_token_hash: tokenHash !== null,
+        type_param: typeParam,
+      },
+    });
     return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
   }
 
@@ -93,6 +107,11 @@ export async function GET(request: NextRequest) {
   if (hasCode) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
+      // D-4c — capturamos el error real antes de tirarlo; el usuario sigue
+      // viendo el mismo callback_failed genérico.
+      Sentry.captureException(error, {
+        tags: { feature: 'auth', step: 'callback_exchange' },
+      });
       return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
     }
   } else if (hasOtp && tokenHash && isOtpType(typeParam)) {
@@ -101,6 +120,10 @@ export async function GET(request: NextRequest) {
       type: typeParam,
     });
     if (error) {
+      // D-4c — capturamos el error real antes de tirarlo.
+      Sentry.captureException(error, {
+        tags: { feature: 'auth', step: 'callback_verify' },
+      });
       return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
     }
   }
