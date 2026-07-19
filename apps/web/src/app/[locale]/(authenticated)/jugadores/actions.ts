@@ -16,6 +16,7 @@ import {
   updatePlayerSchema,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { loadPendingInvitePlayers } from './queries';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -714,4 +715,245 @@ export async function setPlayerLeftClub(
   revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
   revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
   return { ok: { active: opts.reactivate } };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invitar EN LOTE a los jugadores pendientes (F14K-2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Tope de EMAILS distintos por lote. Por debajo del 100/h de Supabase y del
+ *  100/día de Resend gratis; superarlo obliga a Jose a dividir la selección. */
+const MAX_BATCH_EMAILS = 100;
+
+export type BatchInviteRow = {
+  player_id: string;
+  email: string;
+  status: 'sent' | 'error';
+  /** Motivo cuando status='error' (forbidden | insert_failed | send_failed). */
+  reason?: string;
+};
+
+export type BatchInviteResult = {
+  error?: 'forbidden' | 'too_many_emails' | 'generic';
+  /** Nº de EMAILS distintos del lote (la medida del tope, no jugadores). */
+  count_emails: number;
+  /** Tope aplicado (100). */
+  limit: number;
+  /** Nº de emails (grupos) enviados OK. */
+  sent_emails: number;
+  /** Jugadores pedidos (botón 1) que YA no cumplen el criterio → no se invitan. */
+  skipped: { player_id: string }[];
+  /** Reporte por jugador. */
+  rows: BatchInviteRow[];
+};
+
+/**
+ * F14K-2 — Motor de envío en lote. Invita a los jugadores PENDIENTES del club,
+ * agrupando por email (un solo email por padre, N filas de invitación por hijos).
+ *
+ * Reglas (K-2):
+ *  · Recalcula los pendientes con loadPendingInvitePlayers (NO se fía de la lista
+ *    del cliente): sin cuenta, sin invitación pendiente vigente, erased_at null.
+ *  · Agrupa por email (summarizePendingInvites, vía loadPendingInvitePlayers).
+ *    player_relation='parent' en cada fila.
+ *  · Tope de 100 EMAILS distintos: si se supera, NO envía nada → 'too_many_emails'
+ *    con el número, para que la UI (K-3) obligue a reducir. No trocea solo.
+ *  · Idempotencia: la query ya excluye a los que tienen invitación pendiente
+ *    vigente ("comprobar antes"); un doble-clic simultáneo, en el peor caso, crea
+ *    una invitación duplicada que accept_pending_invitations absorbe (player_accounts
+ *    tiene on conflict do nothing).
+ *  · Un inviteUserByEmail que falle NO tumba el lote: se registra en su fila y se
+ *    sigue. Además, si el envío de un grupo falla, se BORRAN sus invitaciones recién
+ *    insertadas para que el grupo vuelva a estar pendiente y sea reintentable (si no,
+ *    quedarían "pendientes vigentes" bloqueando el reintento 7 días).
+ *
+ * Permiso: admin_club o director (coordinador NO). La RLS de invitations reimpone
+ * el gate en el insert.
+ */
+export async function inviteBatch(
+  locale: string,
+  clubId: string,
+  playerIds?: string[],
+): Promise<BatchInviteResult> {
+  const base = (error?: BatchInviteResult['error']): BatchInviteResult => ({
+    error,
+    count_emails: 0,
+    limit: MAX_BATCH_EMAILS,
+    sent_emails: 0,
+    skipped: [],
+    rows: [],
+  });
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return base('forbidden');
+
+  // Rol del caller EN ESTE club (y, de paso, que sea miembro). Solo admin/director.
+  const clubs = await getCurrentUserClubs(adapter);
+  const role = clubs.find((c) => c.club.id === clubId)?.role;
+  if (role !== 'admin_club' && role !== 'director') {
+    return base('forbidden');
+  }
+
+  // Recalcula pendientes server-side (autoridad; ignora cualquier lista sin revalidar).
+  const pending = await loadPendingInvitePlayers(
+    clubId,
+    role,
+    playerIds ? { playerIds } : {},
+  );
+
+  // skipped: pedidos (botón 1) que ya no son pendientes (con cuenta / ya invitados /
+  // sin email / suprimidos). Solo tiene sentido cuando se pasó una lista explícita.
+  const skipped = playerIds
+    ? (() => {
+        const stillPending = new Set(pending.players.map((p) => p.player_id));
+        return playerIds
+          .filter((id) => !stillPending.has(id))
+          .map((id) => ({ player_id: id }));
+      })()
+    : [];
+
+  // Tope de 100 EMAILS distintos: NO envía nada si se supera (Jose divide a mano).
+  if (pending.count_emails > MAX_BATCH_EMAILS) {
+    return {
+      error: 'too_many_emails',
+      count_emails: pending.count_emails,
+      limit: MAX_BATCH_EMAILS,
+      sent_emails: 0,
+      skipped,
+      rows: [],
+    };
+  }
+
+  if (pending.count_emails === 0) {
+    return { ...base(), skipped };
+  }
+
+  const hdrs = await headers();
+  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
+  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
+  const admin = createSupabaseAdminClient();
+
+  const rows: BatchInviteRow[] = [];
+  let sentEmails = 0;
+
+  for (const group of pending.emails) {
+    // 1) Una invitación por jugador del grupo (relation='parent'). token y
+    //    expires_at (now()+7d) los pone el default de la tabla.
+    const inserted: { player_id: string; id: string; token: string }[] = [];
+
+    for (const playerId of group.player_ids) {
+      const { data: inv, error: insErr } = await supabase
+        .from('invitations')
+        .insert({
+          email: group.email,
+          role: 'jugador',
+          club_id: clubId,
+          player_id: playerId,
+          player_relation: 'parent',
+          created_by: user.id,
+        })
+        .select('id, token')
+        .single();
+
+      if (insErr || !inv) {
+        const reason = insErr?.code === '42501' ? 'forbidden' : 'insert_failed';
+        rows.push({ player_id: playerId, email: group.email, status: 'error', reason });
+        if (insErr?.code !== '42501') {
+          Sentry.captureException(insErr ?? new Error('insert returned null'), {
+            tags: { feature: 'invitations', step: 'batch_invite' },
+            extra: { club_id: clubId, player_id: playerId },
+          });
+        }
+        continue;
+      }
+      inserted.push({ player_id: playerId, id: inv.id as string, token: inv.token as string });
+    }
+
+    // Si ningún insert del grupo salió, no hay email que enviar.
+    if (inserted.length === 0) continue;
+
+    // 2) UN solo email por grupo, con la primera invitación como ancla (accept
+    //    aceptará todas las pendientes de ese email en el club de un clic).
+    const anchor = inserted[0]!;
+    const redirectTo = `${proto}://${host}/${locale}/invite/${anchor.token}`;
+    let sendReason: string | null = null;
+
+    try {
+      const { error: invErr } = await admin.auth.admin.inviteUserByEmail(group.email, {
+        redirectTo,
+        data: { invite_pending: true, invitation_id: anchor.id },
+      });
+      if (invErr) {
+        const msg = invErr.message?.toLowerCase() ?? '';
+        const alreadyExists =
+          ('code' in invErr && invErr.code === 'email_exists') ||
+          msg.includes('already been registered') ||
+          msg.includes('already exists');
+        if (alreadyExists) {
+          // Email ya registrado → mismo redirectTo vía reset (patrón de inviteTutorForPlayer).
+          const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
+            group.email,
+            { redirectTo },
+          );
+          if (resetErr) {
+            sendReason = 'send_failed';
+            Sentry.captureException(resetErr, {
+              tags: { feature: 'invitations', step: 'batch_invite' },
+              extra: { club_id: clubId, invitation_id: anchor.id },
+            });
+          }
+        } else {
+          sendReason = 'send_failed';
+          Sentry.captureException(invErr, {
+            tags: { feature: 'invitations', step: 'batch_invite' },
+            extra: { club_id: clubId, invitation_id: anchor.id },
+          });
+        }
+      }
+    } catch (thrown) {
+      sendReason = 'send_failed';
+      Sentry.captureException(thrown, {
+        tags: { feature: 'invitations', step: 'batch_invite' },
+        extra: { club_id: clubId, invitation_id: anchor.id },
+      });
+    }
+
+    if (sendReason) {
+      // El envío falló: borra las invitaciones recién creadas del grupo para que
+      // vuelva a estar pendiente y reintentable (si no, K-1 lo ocultaría 7 días).
+      const { error: delErr } = await admin
+        .from('invitations')
+        .delete()
+        .in('id', inserted.map((r) => r.id));
+      if (delErr) {
+        Sentry.captureException(delErr, {
+          tags: { feature: 'invitations', step: 'batch_invite' },
+          extra: { club_id: clubId, invitation_id: anchor.id },
+        });
+      }
+      for (const r of inserted) {
+        rows.push({ player_id: r.player_id, email: group.email, status: 'error', reason: sendReason });
+      }
+    } else {
+      sentEmails++;
+      for (const r of inserted) {
+        rows.push({ player_id: r.player_id, email: group.email, status: 'sent' });
+      }
+    }
+  }
+
+  revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
+
+  return {
+    count_emails: pending.count_emails,
+    limit: MAX_BATCH_EMAILS,
+    sent_emails: sentEmails,
+    skipped,
+    rows,
+  };
 }
