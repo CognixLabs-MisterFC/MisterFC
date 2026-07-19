@@ -24,6 +24,9 @@ import {
   createSupabaseServerClient,
   getCurrentUser,
   teamsInActiveSeason,
+  summarizePendingInvites,
+  type PendingInviteCandidate,
+  type PendingInviteSummary,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
@@ -481,4 +484,118 @@ async function loadVisibleYears(
     }
   }
   return [...yearSet].sort((a, b) => b - a);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F14K-1 — Jugadores PENDIENTES DE INVITAR (base del motor de lote de K-2).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Opciones de la query de pendientes.
+ *  - `playerIds`: acota a esos jugadores concretos (botón 1, recién importados —
+ *    los que devuelve el import en result.details). Sin él → todos los del club
+ *    (botón 2, listado). Una lista vacía significa "ninguno" (no "todos").
+ */
+export type PendingInviteOptions = {
+  playerIds?: string[];
+};
+
+const EMPTY_PENDING: PendingInviteSummary = {
+  players: [],
+  count_players: 0,
+  count_emails: 0,
+  emails: [],
+};
+
+/**
+ * Devuelve los jugadores "pendientes de invitar" del club activo, agrupados por
+ * email (para el conteo del tope de 100/h de K-2). Un jugador está pendiente si:
+ *   · `invite_email` presente y no vacío,
+ *   · NO tiene player_account (nadie ha aceptado acceso para él),
+ *   · NO tiene una invitación pendiente vigente (invitations con su player_id,
+ *     accepted_at IS NULL, expires_at > now) → si la tiene, se salta (no reinvitar),
+ *   · `erased_at` IS NULL (borrado RGPD fuera).
+ * `left_club_at` NO excluye: una baja reactivada vuelve a estar pendiente. Sin
+ * lógica de temporadas — los que continúan ya tienen player_account y quedan fuera
+ * solos por el filtro "sin cuenta".
+ *
+ * Permiso de lectura: SOLO admin/director del club (coordinador NO). La RLS de
+ * `invitations` ya lo respalda tras el fix F14K-1 (director ve las del club).
+ */
+export async function loadPendingInvitePlayers(
+  clubId: string,
+  role: Role,
+  options: PendingInviteOptions = {},
+): Promise<PendingInviteSummary> {
+  // Solo admin/director ven la lista de pendientes.
+  if (role !== 'admin_club' && role !== 'director') {
+    return EMPTY_PENDING;
+  }
+
+  // Acotado explícito a "ningún jugador" → nada que invitar.
+  if (options.playerIds && options.playerIds.length === 0) {
+    return EMPTY_PENDING;
+  }
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // 1) Candidatos: con invite_email, no borrados, y traemos player_accounts para
+  //    descartar a los que ya tienen acceso. (left_club_at NO se filtra.)
+  let q = supabase
+    .from('players')
+    .select('id, first_name, last_name, invite_email, player_accounts(profile_id)')
+    .eq('club_id', clubId)
+    .is('erased_at', null)
+    .not('invite_email', 'is', null);
+
+  if (options.playerIds) {
+    q = q.in('id', options.playerIds);
+  }
+
+  const { data } = await q;
+
+  type Row = {
+    id: string;
+    first_name: string;
+    last_name: string;
+    invite_email: string | null;
+    player_accounts: Array<{ profile_id: string }> | null;
+  };
+
+  // Sin cuenta + email no vacío.
+  const candidates = ((data ?? []) as unknown as Row[]).filter((r) => {
+    const accounts = r.player_accounts ?? [];
+    const email = (r.invite_email ?? '').trim();
+    return accounts.length === 0 && email.length > 0;
+  });
+  if (candidates.length === 0) return EMPTY_PENDING;
+
+  // 2) Descartar los que YA tienen invitación pendiente vigente (no reinvitar).
+  const candidateIds = candidates.map((r) => r.id);
+  const nowIso = new Date().toISOString();
+  const { data: pend } = await supabase
+    .from('invitations')
+    .select('player_id')
+    .eq('club_id', clubId)
+    .is('accepted_at', null)
+    .gt('expires_at', nowIso)
+    .in('player_id', candidateIds);
+  const alreadyPending = new Set(
+    (pend ?? [])
+      .map((r) => r.player_id as string | null)
+      .filter((id): id is string => id != null),
+  );
+
+  const pendingPlayers: PendingInviteCandidate[] = candidates
+    .filter((r) => !alreadyPending.has(r.id))
+    .map((r) => ({
+      player_id: r.id,
+      first_name: r.first_name,
+      last_name: r.last_name,
+      invite_email: (r.invite_email ?? '').trim(),
+    }));
+
+  // 3) Agrupado por email (case-insensitive) → conteo de emails distintos.
+  return summarizePendingInvites(pendingPlayers);
 }
