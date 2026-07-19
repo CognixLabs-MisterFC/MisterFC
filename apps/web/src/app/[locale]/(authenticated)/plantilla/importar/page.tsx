@@ -91,6 +91,8 @@ export default async function ImportPlayersPage({ params }: Props) {
       </div>
       <ImportWizard
         locale={locale}
+        clubId={ctx.activeClub.club.id}
+        canInvite={role === 'admin_club' || role === 'director'}
         teams={teams}
         existing={existing}
         activeSeason={season}

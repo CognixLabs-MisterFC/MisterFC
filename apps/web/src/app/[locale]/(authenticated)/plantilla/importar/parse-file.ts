@@ -2,7 +2,12 @@
 
 import Papa from 'papaparse';
 import { readSheet, type SheetData } from 'read-excel-file/browser';
-import { parseTabular, type ParsedTabular, type ParseTabularError } from '@misterfc/core';
+import {
+  parseTabular,
+  MAX_IMPORT_ROWS,
+  type ParsedTabular,
+  type ParseTabularError,
+} from '@misterfc/core';
 
 const CSV_EXTENSIONS = ['.csv'];
 const XLSX_EXTENSIONS = ['.xlsx', '.xls'];
@@ -12,6 +17,7 @@ export type ParseFileError =
   | { code: 'too_large' }
   | { code: 'unsupported_type' }
   | { code: 'parse_failed'; detail?: string }
+  | { code: 'too_many_rows'; count: number; max: number }
   | ParseTabularError;
 
 export type ParseFileResult =
@@ -39,6 +45,19 @@ export async function parseFile(file: File): Promise<ParseFileResult> {
     const rawRows = isCsv ? await parseCsv(file) : await parseXlsx(file);
     const result = parseTabular(rawRows);
     if (!result.ok) return { ok: false, error: result.error };
+    // F14K-3 — tope de 100 jugadores por importación (rechazo temprano, antes de
+    // crear nada). Garantiza que un import nunca genera >100 emails. El server
+    // reimpone el límite (playerImportPayloadSchema) por si se salta el cliente.
+    if (result.data.rows.length > MAX_IMPORT_ROWS) {
+      return {
+        ok: false,
+        error: {
+          code: 'too_many_rows',
+          count: result.data.rows.length,
+          max: MAX_IMPORT_ROWS,
+        },
+      };
+    }
     return { ok: true, data: result.data };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);

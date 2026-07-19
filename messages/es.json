@@ -1048,6 +1048,42 @@
     "radar_team_empty": "Sin valoración de equipo en este periodo"
   },
   "jugadores": {
+    "invitePending": {
+      "trigger": {
+        "imported": "Invitar a los recién importados",
+        "pending": "Invitar a los pendientes"
+      },
+      "confirm": {
+        "title": "Invitar por email",
+        "body": "¿Invitar a {count} personas? Se envía un email por familia (uno solo aunque haya varios hijos).",
+        "cancel": "Cancelar",
+        "send": "Invitar"
+      },
+      "sending": "Enviando…",
+      "tooMany": {
+        "title": "Demasiados pendientes",
+        "body": "Hay {count} pendientes y el máximo por tanda es {limit}. Invita desde el import (que va de 100 en 100) o reduce la selección."
+      },
+      "errorState": {
+        "title": "No se pudo invitar",
+        "forbidden": "No tienes permiso para invitar en este club.",
+        "generic": "Algo salió mal. Inténtalo de nuevo en unos minutos."
+      },
+      "result": {
+        "title": "Resultado del envío",
+        "summary": "{sent} enviados, {failed} fallidos, {skipped} saltados."
+      },
+      "row": {
+        "sent": "Enviado",
+        "skipped": "Saltado",
+        "reason": {
+          "forbidden": "Sin permiso",
+          "insert_failed": "Error al crear",
+          "send_failed": "Error al enviar"
+        }
+      },
+      "close": "Cerrar"
+    },
     "title": "Jugadores",
     "development_reports": "Informes de desarrollo",
     "export_pdf": "Exportar PDF",
@@ -1613,7 +1649,8 @@
       "unsupported_type": "Formato no soportado. Sube .csv o .xlsx.",
       "parse_failed": "No hemos podido leer el archivo. Comprueba el formato.",
       "empty_file": "El archivo está vacío.",
-      "no_recognized_headers": "No reconocemos ninguna columna. Asegúrate de usar la plantilla."
+      "no_recognized_headers": "No reconocemos ninguna columna. Asegúrate de usar la plantilla.",
+      "too_many_rows": "Máximo {max} jugadores por importación (este archivo trae {count}). Divide el fichero y súbelo en partes."
     },
     "result": {
       "created": "Creados",
