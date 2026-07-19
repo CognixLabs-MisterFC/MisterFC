@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { InvitePendingButton } from '../../jugadores/_components/invite-pending-button';
 import { PreviewTable } from './preview-table';
 import { parseFile, type ParseFileError } from './parse-file';
 import { importPlayers, type ImportResult } from './actions';
@@ -32,6 +33,9 @@ type Team = { id: string; name: string; category_name: string };
 
 type Props = {
   locale: string;
+  clubId: string;
+  /** F14K-3: solo admin/director invitan → el botón 1 solo se muestra si es true. */
+  canInvite: boolean;
   teams: Team[];
   existing: ExistingPlayer[];
   /** Temporada activa: ámbito de la resolución de "equipo por fila" y del lote. */
@@ -40,7 +44,14 @@ type Props = {
 
 type Step = 'upload' | 'preview' | 'confirming' | 'result';
 
-export function ImportWizard({ teams, existing, activeSeason }: Props) {
+export function ImportWizard({
+  locale,
+  clubId,
+  canInvite,
+  teams,
+  existing,
+  activeSeason,
+}: Props) {
   const t = useTranslations('import');
   const [step, setStep] = useState<Step>('upload');
   const [rows, setRows] = useState<ValidatedRow[]>([]);
@@ -230,6 +241,20 @@ export function ImportWizard({ teams, existing, activeSeason }: Props) {
               </p>
             )}
             <div className="flex flex-wrap gap-2">
+              {canInvite &&
+                (() => {
+                  const targets = buildInviteTargets(rows, result);
+                  return targets.ids.length > 0 ? (
+                    <InvitePendingButton
+                      mode="imported"
+                      locale={locale}
+                      clubId={clubId}
+                      count={targets.ids.length}
+                      playerIds={targets.ids}
+                      nameById={targets.nameById}
+                    />
+                  ) : null;
+                })()}
               <Button onClick={() => downloadReport(result)}>{t('result.download')}</Button>
               <Button variant="ghost" onClick={handleReset}>
                 {t('result.again')}
@@ -290,12 +315,37 @@ function CountBadge({
 
 function ParseErrorMessage({ error }: { error: ParseFileError }) {
   const t = useTranslations('import');
-  const key = `error.${error.code}`;
+  // F14K-3: too_many_rows lleva el conteo y el máximo en el mensaje.
+  const message =
+    error.code === 'too_many_rows'
+      ? t('error.too_many_rows', { count: error.count, max: error.max })
+      : t(`error.${error.code}`);
   return (
     <p className="rounded-md border border-red-800 bg-red-950/30 px-3 py-2 text-sm text-red-200">
-      {t(key)}
+      {message}
     </p>
   );
+}
+
+/**
+ * F14K-3 — de los recién importados (status='created' con player_id) saca la lista
+ * de ids y un mapa player_id→nombre (desde las filas validadas) para el botón 1.
+ */
+function buildInviteTargets(
+  rows: ValidatedRow[],
+  result: ImportResult,
+): { ids: string[]; nameById: Record<string, string> } {
+  const ids: string[] = [];
+  const nameById: Record<string, string> = {};
+  for (const d of result.details) {
+    if (d.status !== 'created' || !d.player_id) continue;
+    ids.push(d.player_id);
+    const src = rows[d.row_index]?.data;
+    const first = src?.first_name?.trim() ?? '';
+    const last = src?.last_name?.trim() ?? '';
+    nameById[d.player_id] = last ? `${last}, ${first}` : first || d.player_id;
+  }
+  return { ids, nameById };
 }
 
 function downloadReport(result: ImportResult) {

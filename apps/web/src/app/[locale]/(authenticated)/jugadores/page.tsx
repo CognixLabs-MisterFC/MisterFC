@@ -24,9 +24,11 @@ import { CreatePlayerDialog } from './create-player-dialog';
 import { PlayersSearchInput } from './_components/players-search-input';
 import { PlayersFilters } from './_components/players-filters';
 import { PlayerRowActions } from './_components/player-row-actions';
+import { InvitePendingButton } from './_components/invite-pending-button';
 import {
   PLAYERS_PAGE_SIZE,
   loadGlobalPlayers,
+  loadPendingInvitePlayers,
   type Role,
 } from './queries';
 
@@ -125,6 +127,19 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
     name: t.name,
   }));
 
+  // F14K-3 — solo admin/director invitan en lote. Cargamos los pendientes del club
+  // para el conteo del botón, el confirm y el detalle por nombre. Resto de roles: null.
+  const canInvite = role === 'admin_club' || role === 'director';
+  const pending = canInvite
+    ? await loadPendingInvitePlayers(ctx.activeClub.club.id, role)
+    : null;
+  const pendingNameById: Record<string, string> = {};
+  if (pending) {
+    for (const p of pending.players) {
+      pendingNameById[p.player_id] = fullName(p.first_name, p.last_name);
+    }
+  }
+
   // Estado especial: ayudante sin can_manage_squad.
   if (
     role === 'entrenador_ayudante' &&
@@ -181,7 +196,18 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
             {t('count', { count: result.total })}
           </p>
         </div>
-        {canCreate && <CreatePlayerDialog teams={teamsForDialog} />}
+        <div className="flex flex-wrap items-center gap-2">
+          {pending && pending.count_players > 0 && (
+            <InvitePendingButton
+              mode="pending"
+              locale={locale}
+              clubId={ctx.activeClub.club.id}
+              count={pending.count_players}
+              nameById={pendingNameById}
+            />
+          )}
+          {canCreate && <CreatePlayerDialog teams={teamsForDialog} />}
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

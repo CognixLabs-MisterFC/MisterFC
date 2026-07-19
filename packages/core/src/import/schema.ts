@@ -412,13 +412,18 @@ export type PlayerImportRow = z.infer<typeof playerImportRowSchema>;
 
 /**
  * Payload completo del import — validación de tamaño antes del server action.
- * 1-500 filas por subida.
+ * 1-100 filas por subida (F14K-3): el tope de 100 garantiza que un import nunca
+ * genera más de 100 emails → el botón "invitar a los recién importados" nunca
+ * choca con el límite del motor de lote. Autoridad server-side (el cap de cliente
+ * en parse-file.ts es solo UX; esto es bypass-proof).
  */
+export const MAX_IMPORT_ROWS = 100;
+
 export const playerImportPayloadSchema = z.object({
   rows: z
     .array(playerImportRowSchema)
     .min(1, { message: 'payload_empty' })
-    .max(500, { message: 'payload_too_large' }),
+    .max(MAX_IMPORT_ROWS, { message: 'too_many_rows' }),
   team_id: z
     .string()
     .uuid({ message: 'team_invalid' })
