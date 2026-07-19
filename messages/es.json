@@ -114,6 +114,13 @@
     "empty": "Todavía no hay clubes disponibles.",
     "error": "No hemos podido cargar los clubes. Inténtalo de nuevo en unos minutos."
   },
+  "clubLogin": {
+    "subtitle": "Entra a tu club",
+    "error": "Usuario, contraseña o club erróneos",
+    "notFoundTitle": "Club no encontrado",
+    "notFoundBody": "No existe ningún club con esa dirección.",
+    "backToClubs": "Ver todos los clubes"
+  },
   "onboarding": {
     "no_club_title": "No tienes acceso a ningún club",
     "no_club_body": "Pide a tu club que te envíe una invitación."

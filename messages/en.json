@@ -114,6 +114,13 @@
     "empty": "No clubs available yet.",
     "error": "We couldn't load the clubs. Please try again in a few minutes."
   },
+  "clubLogin": {
+    "subtitle": "Sign in to your club",
+    "error": "Wrong username, password or club",
+    "notFoundTitle": "Club not found",
+    "notFoundBody": "There's no club at this address.",
+    "backToClubs": "See all clubs"
+  },
   "onboarding": {
     "no_club_title": "You don't have access to any club",
     "no_club_body": "Ask your club to send you an invitation."

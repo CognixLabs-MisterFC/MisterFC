@@ -114,6 +114,13 @@
     "empty": "Encara no hi ha clubs disponibles.",
     "error": "No hem pogut carregar els clubs. Torna-ho a provar d'ací a uns minuts."
   },
+  "clubLogin": {
+    "subtitle": "Entra al teu club",
+    "error": "Usuari, contrasenya o club erronis",
+    "notFoundTitle": "Club no trobat",
+    "notFoundBody": "No hi ha cap club en aquesta adreça.",
+    "backToClubs": "Veure tots els clubs"
+  },
   "onboarding": {
     "no_club_title": "No tens accés a cap club",
     "no_club_body": "Demana al teu club que t'envie una invitació."
