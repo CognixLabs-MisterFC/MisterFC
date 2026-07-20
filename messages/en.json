@@ -136,6 +136,7 @@
   "home": {
     "direccion": {
       "tasks_title": "Coaches' pending tasks",
+      "management_title": "Management tasks",
       "filters": {
         "team": "Team",
         "coach": "Coach",
