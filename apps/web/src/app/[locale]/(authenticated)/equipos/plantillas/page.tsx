@@ -18,8 +18,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CategoryDialog } from './category-dialog';
-import { CategoryDeleteButton } from './category-delete-button';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -150,24 +148,6 @@ export default async function PlantillasPage({ params }: Props) {
                     >
                       {t('overlap_badge')}
                     </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  <CategoryDialog
-                    isStandard={category.is_standard}
-                    category={{
-                      id: category.id,
-                      name: category.name,
-                      kind: category.kind,
-                      half_duration_minutes: category.half_duration_minutes,
-                    }}
-                  />
-                  {/* C3: las estándar NO se borran; solo las custom. */}
-                  {!category.is_standard && (
-                    <CategoryDeleteButton
-                      categoryId={category.id}
-                      categoryName={category.name}
-                    />
                   )}
                 </div>
               </div>
