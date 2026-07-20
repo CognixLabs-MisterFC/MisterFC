@@ -53,6 +53,9 @@ on conflict (club_id) do nothing;
 
 insert into public.categories (id, club_id, name) values
   ('f1b40000-c0a1-0000-0000-000000000001', 'f1b40000-aaaa-0000-0000-000000000001', 'Cat A'),
+  -- 5b: el catálogo está bloqueado para todos; la 'Cat A2' que usa el test 2.2 se
+  -- siembra aquí (como postgres) en vez de crearla el director en 2.1.
+  ('f1b40000-c0a2-0000-0000-000000000001', 'f1b40000-aaaa-0000-0000-000000000001', 'Cat A2'),
   ('f1b40000-c0b1-0000-0000-000000000001', 'f1b40000-bbbb-0000-0000-000000000001', 'Cat B');
 
 insert into public.teams (id, category_id, name, format, color, season) values
@@ -179,14 +182,16 @@ end $$;
 -- 2. EQUIVALENCIA — director del club A gestiona igual que admin del club A.
 -- ═════════════════════════════════════════════════════════════════════════════
 
--- 2.1 INSERT categoría en A.
+-- 2.1 Categorías: catálogo FIJO (5b). Ni admin ni director escriben categorías; el
+-- catálogo es intocable (solo lo siembra seed_standard_categories, SECURITY DEFINER).
+-- La equivalencia admin==director se mantiene: AMBOS están bloqueados. El INSERT lo
+-- rechaza la RLS (categories_write_locked → 42501). ('Cat A2' de 2.2 ya está sembrada.)
 do $$
 begin
   insert into public.categories (id, club_id, name)
-  values ('f1b40000-c0a2-0000-0000-000000000001', 'f1b40000-aaaa-0000-0000-000000000001', 'Cat A2 por director');
-exception when others then
-  raise exception 'FAIL [2.1]: director A no pudo INSERT categoría en A: % (%).', sqlerrm, sqlstate;
-end $$;
+  values ('f1b40000-c0a3-0000-0000-000000000001', 'f1b40000-aaaa-0000-0000-000000000001', 'Cat bloqueada');
+  raise exception 'FAIL [2.1]: el catálogo de categorías está bloqueado; director NO debería poder INSERT en A';
+exception when insufficient_privilege or check_violation then null; end $$;
 
 -- 2.2 INSERT equipo en A.
 do $$
