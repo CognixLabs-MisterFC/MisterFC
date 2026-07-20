@@ -136,6 +136,7 @@
   "home": {
     "direccion": {
       "tasks_title": "Tareas de los entrenadores",
+      "management_title": "Tareas de dirección",
       "filters": {
         "team": "Equipo",
         "coach": "Entrenador",

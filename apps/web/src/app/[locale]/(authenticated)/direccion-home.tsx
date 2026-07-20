@@ -68,7 +68,9 @@ export async function DireccionHome({
     loadCampaignAlerts(role, clubId, membershipId, filterTeamIds),
     loadPendingCallups(clubId, filterTeamIds),
     loadTrainingsWithoutAttendance(clubId, filterTeamIds),
-    loadPendingApprovals(clubId, filterTeamIds),
+    // Approvals es tarea de DIRECCIÓN (Bloque 1): se ve completa, SIN filtro por
+    // equipo/entrenador (a diferencia del resto de tareas de entrenadores).
+    loadPendingApprovals(clubId),
     loadPendingInvitationsCount(clubId),
     isAdminClub ? loadPendingErasureCount(clubId) : Promise.resolve(0),
   ]);
@@ -76,99 +78,106 @@ export async function DireccionHome({
   const fmt = (iso: string) => new Date(iso).toLocaleString(locale);
 
   return (
-    <section className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold">{t('direccion.tasks_title')}</h2>
-        <DireccionFilters
-          teams={teams}
-          coaches={coaches}
-          activeTeamId={filters.teamId ?? ''}
-          activeCoachId={filters.coachMembershipId ?? ''}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <TaskCard
-          icon={<GraduationCap className="size-4" aria-hidden />}
-          title={t('direccion.trainings_no_session')}
-          items={trainingsNoSession.map((e) => ({ ...e }))}
-          empty={t('direccion.empty')}
-          fmt={fmt}
-        />
-        <TaskCard
-          icon={<ClipboardCheck className="size-4" aria-hidden />}
-          title={t('direccion.trainings_no_attendance')}
-          items={trainingsNoAttendance}
-          empty={t('direccion.empty')}
-          fmt={fmt}
-          hrefFor={(e) => `/asistencia/${e.eventId}`}
-        />
-        <TaskCard
-          icon={<Megaphone className="size-4" aria-hidden />}
-          title={t('direccion.pending_callups')}
-          items={pendingCallups}
-          empty={t('direccion.empty')}
-          fmt={fmt}
-          hrefFor={() => `/convocatorias`}
-        />
-        {/* F14F-4 — cola de entrenamientos en festivo pendientes de aprobar. */}
-        <TaskCard
-          icon={<CalendarClock className="size-4" aria-hidden />}
-          title={t('direccion.pending_approvals')}
-          items={pendingApprovals}
-          empty={t('direccion.empty')}
-          fmt={fmt}
-          hrefFor={() => `/calendario`}
-        />
-        {/* C — campañas: agregado por periodo (no por equipo). */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ClipboardList className="size-4" aria-hidden />
-              {t('direccion.pending_reports')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm">
-            {campaigns.length === 0 ? (
-              <p className="text-muted-foreground">{t('direccion.empty')}</p>
-            ) : (
-              <ul className="flex flex-col divide-y divide-border">
-                {campaigns.map((c) => (
-                  <li key={c.period} className="flex items-center justify-between gap-3 py-2">
-                    <span className="font-medium">{c.period}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {t('direccion.reports_pending', { count: c.pending })}
-                      {' · '}
-                      {new Date(c.dueDate).toLocaleDateString(locale)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tareas de gestión propias */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <ManagementCard
-          icon={<Mail className="size-4" aria-hidden />}
-          title={t('direccion.pending_invitations')}
-          count={invitations}
-          href="/invitations"
-          cta={t('direccion.pending_invitations_cta', { count: invitations })}
-          empty={t('direccion.empty')}
-        />
-        {isAdminClub && (
+    <section className="flex flex-col gap-6">
+      {/* ── BLOQUE 1 · Tareas de DIRECCIÓN — sin filtro, siempre completo. ── */}
+      <div className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold">{t('direccion.management_title')}</h2>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <ManagementCard
-            icon={<ShieldAlert className="size-4" aria-hidden />}
-            title={t('direccion.pending_erasure')}
-            count={erasure}
-            href="/supresiones"
-            cta={t('direccion.pending_erasure_cta', { count: erasure })}
+            icon={<Mail className="size-4" aria-hidden />}
+            title={t('direccion.pending_invitations')}
+            count={invitations}
+            href="/invitations"
+            cta={t('direccion.pending_invitations_cta', { count: invitations })}
             empty={t('direccion.empty')}
           />
-        )}
+          {isAdminClub && (
+            <ManagementCard
+              icon={<ShieldAlert className="size-4" aria-hidden />}
+              title={t('direccion.pending_erasure')}
+              count={erasure}
+              href="/supresiones"
+              cta={t('direccion.pending_erasure_cta', { count: erasure })}
+              empty={t('direccion.empty')}
+            />
+          )}
+          {/* F14F-4 — cola de entrenamientos en festivo pendientes de aprobar. Es
+              tarea de dirección: se ve completa, SIN filtro por equipo/entrenador. */}
+          <TaskCard
+            icon={<CalendarClock className="size-4" aria-hidden />}
+            title={t('direccion.pending_approvals')}
+            items={pendingApprovals}
+            empty={t('direccion.empty')}
+            fmt={fmt}
+            hrefFor={() => `/calendario`}
+          />
+        </div>
+      </div>
+
+      {/* ── BLOQUE 2 · Tareas de los ENTRENADORES — con filtro equipo/entrenador. ── */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-lg font-semibold">{t('direccion.tasks_title')}</h2>
+          <DireccionFilters
+            teams={teams}
+            coaches={coaches}
+            activeTeamId={filters.teamId ?? ''}
+            activeCoachId={filters.coachMembershipId ?? ''}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <TaskCard
+            icon={<GraduationCap className="size-4" aria-hidden />}
+            title={t('direccion.trainings_no_session')}
+            items={trainingsNoSession.map((e) => ({ ...e }))}
+            empty={t('direccion.empty')}
+            fmt={fmt}
+          />
+          <TaskCard
+            icon={<ClipboardCheck className="size-4" aria-hidden />}
+            title={t('direccion.trainings_no_attendance')}
+            items={trainingsNoAttendance}
+            empty={t('direccion.empty')}
+            fmt={fmt}
+            hrefFor={(e) => `/asistencia/${e.eventId}`}
+          />
+          <TaskCard
+            icon={<Megaphone className="size-4" aria-hidden />}
+            title={t('direccion.pending_callups')}
+            items={pendingCallups}
+            empty={t('direccion.empty')}
+            fmt={fmt}
+            hrefFor={() => `/convocatorias`}
+          />
+          {/* C — campañas: agregado por periodo (no por equipo). */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <ClipboardList className="size-4" aria-hidden />
+                {t('direccion.pending_reports')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm">
+              {campaigns.length === 0 ? (
+                <p className="text-muted-foreground">{t('direccion.empty')}</p>
+              ) : (
+                <ul className="flex flex-col divide-y divide-border">
+                  {campaigns.map((c) => (
+                    <li key={c.period} className="flex items-center justify-between gap-3 py-2">
+                      <span className="font-medium">{c.period}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {t('direccion.reports_pending', { count: c.pending })}
+                        {' · '}
+                        {new Date(c.dueDate).toLocaleDateString(locale)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </section>
   );
