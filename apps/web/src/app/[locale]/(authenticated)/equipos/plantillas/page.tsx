@@ -10,6 +10,7 @@ import {
 import { Link } from '@/i18n/navigation';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 import {
   Card,
   CardContent,
@@ -46,10 +47,16 @@ export default async function PlantillasPage({ params }: Props) {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
+  // El conteo de equipos por categoría se acota a la temporada ACTIVA (misma fuente
+  // que el resto: seasons.status='active'); si no, teams(count) sumaría todas las
+  // temporadas (histórico incluido). El filtro embebido NO excluye categorías sin
+  // equipos: siguen apareciendo con count 0.
+  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
   const { data: categoriesData } = await supabase
     .from('categories')
     .select('id, name, kind, half_duration_minutes, is_standard, teams(count)')
-    .eq('club_id', clubId);
+    .eq('club_id', clubId)
+    .eq('teams.season', activeSeason);
 
   type Row = {
     id: string;
