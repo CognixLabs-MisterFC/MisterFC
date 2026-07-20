@@ -52,7 +52,13 @@ describe('A5 — alias de cabecera de equipo y email', () => {
 });
 
 describe('A5 — validación de invite_email', () => {
-  const base = { first_name: 'Pepe', date_of_birth: '2010-05-15' };
+  // invite_email OBLIGATORIO desde el rework 2026-07; base lo incluye para los
+  // casos que validan OTROS campos.
+  const base = {
+    first_name: 'Pepe',
+    date_of_birth: '2010-05-15',
+    invite_email: 'pepe@example.com',
+  };
 
   it('acepta email válido', () => {
     const r = playerImportRowSchema.safeParse({
@@ -63,10 +69,11 @@ describe('A5 — validación de invite_email', () => {
     if (r.success) expect(r.data.invite_email).toBe('familia@example.com');
   });
 
-  it('email vacío → null (opcional)', () => {
+  it('email vacío → invite_email_required (obligatorio)', () => {
     const r = playerImportRowSchema.safeParse({ ...base, invite_email: '  ' });
-    expect(r.success).toBe(true);
-    if (r.success) expect(r.data.invite_email).toBe(null);
+    expect(r.success).toBe(false);
+    if (!r.success)
+      expect(r.error.issues[0]?.message).toBe('invite_email_required');
   });
 
   it('rechaza email sin dominio con punto', () => {
@@ -124,22 +131,46 @@ describe('A5 — resolución de equipo por nombre', () => {
     expect(resolveTeamName('Cadete Z', index)).toEqual({ kind: 'not_found' });
   });
 
-  it('applyTeamResolution marca inválidas las filas con equipo no resoluble', () => {
+  it('applyTeamResolution: resuelve, marca no_encontrado y aplica fallback/obligatorio de equipo', () => {
+    const email = 'x@example.com';
     const rows: ValidatedRow[] = [
       validateRow(
-        { first_name: 'A', date_of_birth: '2012-01-01', team: 'Infantil B' },
+        {
+          first_name: 'A',
+          date_of_birth: '2012-01-01',
+          team: 'Infantil B',
+          invite_email: email,
+        },
         0
       ),
       validateRow(
-        { first_name: 'B', date_of_birth: '2012-01-02', team: 'No Existe' },
+        {
+          first_name: 'B',
+          date_of_birth: '2012-01-02',
+          team: 'No Existe',
+          invite_email: email,
+        },
         1
       ),
-      validateRow({ first_name: 'C', date_of_birth: '2012-01-03' }, 2),
+      validateRow(
+        { first_name: 'C', date_of_birth: '2012-01-03', invite_email: email },
+        2
+      ),
     ];
+
+    // Sin selector de lote: la fila sin equipo pasa a error team_required.
     const out = applyTeamResolution(rows, teams);
-    expect(out[0]!.status).toBe('valid'); // resuelve
+    expect(out[0]!.status).toBe('valid'); // resuelve por nombre
     expect(out[1]!.status).toBe('invalid'); // no resuelve
     expect(out[1]!.reason).toBe('team_not_found');
-    expect(out[2]!.status).toBe('valid'); // sin equipo → fallback de lote
+    expect(out[2]!.status).toBe('invalid'); // sin equipo + sin lote
+    expect(out[2]!.reason).toBe('team_required');
+
+    // Con selector de lote: la fila sin equipo es válida (fallback).
+    const outBatch = applyTeamResolution(rows, teams, 't-ale-a');
+    expect(outBatch[2]!.status).toBe('valid');
+    // El equipo no resoluble sigue siendo error aunque haya lote.
+    expect(outBatch[1]!.status).toBe('invalid');
+    expect(outBatch[1]!.reason).toBe('team_not_found');
   });
 });

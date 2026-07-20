@@ -1572,7 +1572,7 @@
       "upload": {
         "short": "Pujar",
         "title": "Puja el teu arxiu",
-        "help": "Usa la plantilla descarregable. Només Nom i Data de naixement són obligatoris. Data en format dia/mes/any (15/03/2010). Posicions i peu accepten castellà (Portero, Defensa, Mediocentro, Delantero, Derecho, Izquierdo...)."
+        "help": "Usa la plantilla descarregable (4 columnes: Nom complet, Data de naixement, Equip, Email). Obligatoris: Nom complet, Data de naixement i Email. Data en format dia/mes/any (15/03/2010). Equip és opcional (si el deixes buit s'usa l'equip del lot)."
       },
       "preview": {
         "short": "Revisar",
@@ -1594,7 +1594,9 @@
     },
     "preview": {
       "truncated": "+{count} filas más se procesan igual aunque no se muestren aquí.",
-      "unmapped_headers": "Columnas no reconocidas (se ignoran): {headers}"
+      "unmapped_headers": "Columnas no reconocidas (se ignoran): {headers}",
+      "required_legend": "Obligatoris: Nom complet, Data de naixement i Email. Equip és opcional: si el deixes buit s'usa l'equip del selector de lot.",
+      "editable_hint": "Pots corregir qualsevol fila amb error editant-la ací; es revalida a l'instant."
     },
     "team": {
       "label": "Asignar al equipo (opcional)",
@@ -1607,14 +1609,15 @@
       "confirm": "Importar {count} jugadores"
     },
     "col": {
-      "first_name": "Nom",
+      "first_name": "Nom complet",
       "last_name": "Cognoms",
-      "date_of_birth": "Naixement",
+      "date_of_birth": "Data de naixement",
       "dorsal": "Dorsal",
       "position_main": "Posició",
       "status": "Estat",
       "required_hint": "Camp obligatori",
-      "team": "Equipo",
+      "team": "Equip",
+      "team_none": "— (usar equip del lot)",
       "email": "Email"
     },
     "status": {
@@ -1643,7 +1646,9 @@
       "team_assign_failed": "creado pero no asignado al equipo",
       "generic": "fallo del servidor",
       "team_not_found": "Equipo no encontrado en la temporada activa. Créalo antes de importar.",
+      "team_required": "Falta el equipo. Indica un equipo en la fila o elige uno en el selector de lote.",
       "team_too_long": "Nombre de equipo demasiado largo",
+      "invite_email_required": "Falta el email",
       "invite_email_invalid": "Email no válido"
     },
     "error": {

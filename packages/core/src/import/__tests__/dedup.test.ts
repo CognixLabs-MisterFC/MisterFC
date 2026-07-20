@@ -5,8 +5,18 @@ import { validateRow, detectDuplicates, summarize, dedupKey } from '../validate'
  * 4 escenarios de dedup según spec §7.
  */
 describe('detectDuplicates', () => {
+  // invite_email OBLIGATORIO (rework 2026-07): lo incluimos para que las filas
+  // sean válidas y lleguen al dedup.
   const make = (first: string, last: string, dob: string) =>
-    validateRow({ first_name: first, last_name: last, date_of_birth: dob }, 0);
+    validateRow(
+      {
+        first_name: first,
+        last_name: last,
+        date_of_birth: dob,
+        invite_email: 'x@example.com',
+      },
+      0
+    );
 
   it('mismas filas (nombre+apellido+DOB idénticos) → primera valid, segunda duplicate_in_file', () => {
     const rows = [
@@ -105,7 +115,15 @@ describe('dedupKey', () => {
 
 describe('detectDuplicates — last_name opcional (F2.9 hotfix 2026-05-30)', () => {
   const makeNullLast = (first: string, dob: string) =>
-    validateRow({ first_name: first, last_name: '', date_of_birth: dob }, 0);
+    validateRow(
+      {
+        first_name: first,
+        last_name: '',
+        date_of_birth: dob,
+        invite_email: 'x@example.com',
+      },
+      0
+    );
 
   it('dos filas con apellidos null pero mismo first+DOB → 2ª duplicate_in_file', () => {
     const rows = [
@@ -137,7 +155,7 @@ describe('detectDuplicates — last_name opcional (F2.9 hotfix 2026-05-30)', () 
     // Decisión documentada: si el club tiene una fila con apellido y otra sin,
     // tratamos como entradas independientes (el usuario decide tras revisar).
     const rows = [
-      { ...validateRow({ first_name: 'Pepe', last_name: 'Gomez', date_of_birth: '2010-05-15' }, 0), index: 0 },
+      { ...validateRow({ first_name: 'Pepe', last_name: 'Gomez', date_of_birth: '2010-05-15', invite_email: 'x@example.com' }, 0), index: 0 },
       { ...makeNullLast('Pepe', '2010-05-15'), index: 1 },
     ];
     const out = detectDuplicates(rows, []);

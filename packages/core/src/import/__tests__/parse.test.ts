@@ -110,6 +110,20 @@ describe('mapHeaders', () => {
     expect(unmapped).toEqual(['foo']);
   });
 
+  it('mapea la plantilla nueva (2026-07): "Nombre completo", "Equipo", "Email*"', () => {
+    const { mapping, unmapped } = mapHeaders([
+      'Nombre completo*',
+      'Fecha de nacimiento*',
+      'Equipo',
+      'Email*',
+    ]);
+    expect(mapping.get('Nombre completo*')).toBe('first_name');
+    expect(mapping.get('Fecha de nacimiento*')).toBe('date_of_birth');
+    expect(mapping.get('Equipo')).toBe('team');
+    expect(mapping.get('Email*')).toBe('invite_email');
+    expect(unmapped).toHaveLength(0);
+  });
+
   it('headers castellanos con asterisco de obligatorio se aceptan ("Nombre*")', () => {
     const { mapping, unmapped } = mapHeaders([
       'Nombre*',

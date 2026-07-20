@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   validateRow,
@@ -25,11 +25,37 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { InvitePendingButton } from '../../jugadores/_components/invite-pending-button';
-import { PreviewTable } from './preview-table';
+import { PreviewTable, type EditableField } from './preview-table';
 import { parseFile, type ParseFileError } from './parse-file';
 import { importPlayers, type ImportResult } from './actions';
 
 type Team = { id: string; name: string; category_name: string };
+
+/** Campo editable del preview → columna canónica del parser. */
+const FIELD_TO_COLUMN: Record<EditableField, string> = {
+  full_name: 'first_name',
+  date_of_birth: 'date_of_birth',
+  team: 'team',
+  email: 'invite_email',
+};
+
+/**
+ * Revalida TODAS las filas crudas con el mismo pipeline del import: validación
+ * por fila (validateRow) + resolución de equipo por fila con fallback al lote
+ * (applyTeamResolution) + detección de duplicados (detectDuplicates). Es la
+ * ÚNICA fuente de verdad de estado, tanto en la carga inicial como tras cada
+ * edición en pantalla. No duplica lógica: llama a validate.ts.
+ */
+function revalidate(
+  rawRows: Array<Record<string, unknown>>,
+  teams: Team[],
+  existing: ExistingPlayer[],
+  batchTeamId: string | null,
+): ValidatedRow[] {
+  const validated = rawRows.map((raw, i) => validateRow(raw, i));
+  const withTeam = applyTeamResolution(validated, teams, batchTeamId);
+  return detectDuplicates(withTeam, existing);
+}
 
 type Props = {
   locale: string;
@@ -54,12 +80,20 @@ export function ImportWizard({
 }: Props) {
   const t = useTranslations('import');
   const [step, setStep] = useState<Step>('upload');
-  const [rows, setRows] = useState<ValidatedRow[]>([]);
+  const [rawRows, setRawRows] = useState<Array<Record<string, unknown>>>([]);
   const [unmappedHeaders, setUnmappedHeaders] = useState<string[]>([]);
   const [parseError, setParseError] = useState<ParseFileError | null>(null);
   const [teamId, setTeamId] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // Estado de validación DERIVADO de las filas crudas (editable): recalcular al
+  // editar una celda o cambiar el selector de lote. El tope de 100 filas (F14K)
+  // hace la revalidación completa barata.
+  const rows = useMemo(
+    () => revalidate(rawRows, teams, existing, teamId),
+    [rawRows, teams, existing, teamId],
+  );
 
   const stats = summarize(rows);
 
@@ -70,16 +104,21 @@ export function ImportWizard({
       setParseError(parsed.error);
       return;
     }
-    const validated = parsed.data.rows.map(
-      (raw: Record<string, unknown>, i: number) => validateRow(raw, i)
-    );
-    // Equipo por fila (A5): marca inválidas las filas cuyo nombre de equipo no
-    // resuelva a un equipo de la temporada activa (no se crean equipos al vuelo).
-    const withTeam = applyTeamResolution(validated, teams);
-    const withDedup = detectDuplicates(withTeam, existing);
-    setRows(withDedup);
+    // Guardamos las filas crudas (keys canónicas); la validación es derivada
+    // (useMemo) para que la edición en pantalla y el selector de lote la
+    // recalculen con el mismo validador.
+    setRawRows(parsed.data.rows);
     setUnmappedHeaders(parsed.data.unmapped_headers);
     setStep('preview');
+  }
+
+  /** Edición en pantalla de una celda del preview → muta la fila cruda y
+   *  dispara la revalidación derivada. */
+  function handleEditCell(index: number, field: EditableField, value: string) {
+    const column = FIELD_TO_COLUMN[field];
+    setRawRows((prev) =>
+      prev.map((raw, i) => (i === index ? { ...raw, [column]: value } : raw)),
+    );
   }
 
   function handleConfirm() {
@@ -96,7 +135,7 @@ export function ImportWizard({
   }
 
   function handleReset() {
-    setRows([]);
+    setRawRows([]);
     setUnmappedHeaders([]);
     setParseError(null);
     setTeamId(null);
@@ -174,6 +213,10 @@ export function ImportWizard({
               </p>
             )}
 
+            <p className="text-xs text-zinc-400">
+              {t('preview.required_legend')} {t('preview.editable_hint')}
+            </p>
+
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <label className="flex flex-col gap-1 text-sm sm:max-w-sm">
                 <span className="text-zinc-300">{t('team.label')}</span>
@@ -207,7 +250,12 @@ export function ImportWizard({
               </div>
             </div>
 
-            <PreviewTable rows={rows} />
+            <PreviewTable
+              rows={rows}
+              rawRows={rawRows}
+              teams={teams}
+              onEdit={handleEditCell}
+            />
           </CardContent>
         </Card>
       )}

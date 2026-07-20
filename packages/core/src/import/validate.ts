@@ -168,14 +168,24 @@ export function resolveTeamName(
 }
 
 /**
- * Marca como inválidas (`team_not_found`) las filas válidas cuyo nombre de equipo
- * no resuelve a un equipo de la temporada activa. Las filas sin equipo o con
- * equipo resoluble quedan igual. Pensado para encadenar entre `validateRow` y
- * `detectDuplicates` en el wizard.
+ * Aplica la validación de equipo por fila (rework 2026-07). Equipo es OPCIONAL
+ * en la celda, pero cada jugador importado DEBE acabar con un equipo:
+ *   - nombre que resuelve → OK (se usará ese team_id).
+ *   - nombre que NO resuelve → inválida `team_not_found` (el import no crea
+ *     equipos).
+ *   - celda vacía + `batchTeamId` (selector de lote elegido) → OK (fallback).
+ *   - celda vacía + SIN `batchTeamId` → inválida `team_required` (antes se
+ *     importaba sin equipo; ahora es error).
+ *
+ * `batchTeamId` refleja el estado del selector de lote del asistente; al
+ * cambiarlo hay que re-ejecutar esta función (el estado de las filas sin equipo
+ * depende de él). Pensado para encadenar entre `validateRow` y
+ * `detectDuplicates`.
  */
 export function applyTeamResolution(
   rows: ValidatedRow[],
-  teams: ImportTeamRef[]
+  teams: ImportTeamRef[],
+  batchTeamId?: string | null
 ): ValidatedRow[] {
   const index = buildTeamNameIndex(teams);
   return rows.map((row) => {
@@ -183,6 +193,9 @@ export function applyTeamResolution(
     const res = resolveTeamName(row.data.team, index);
     if (res.kind === 'not_found') {
       return { ...row, status: 'invalid', reason: 'team_not_found' };
+    }
+    if (res.kind === 'none' && !batchTeamId) {
+      return { ...row, status: 'invalid', reason: 'team_required' };
     }
     return row;
   });

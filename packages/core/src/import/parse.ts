@@ -14,9 +14,14 @@ import { PLAYER_IMPORT_COLUMNS, type PlayerImportColumn } from './schema';
  * sigue).
  */
 const HEADER_ALIASES: Record<string, PlayerImportColumn> = {
-  // first_name
+  // first_name — la plantilla nueva (2026-07) usa "Nombre completo" (nombre +
+  // apellidos en una sola celda); mantenemos "Nombre" y variantes por compat.
+  'nombre completo': 'first_name',
+  'nombre y apellidos': 'first_name',
   nombre: 'first_name',
   nombres: 'first_name',
+  'full name': 'first_name',
+  fullname: 'first_name',
   first_name: 'first_name',
   'first name': 'first_name',
   firstname: 'first_name',

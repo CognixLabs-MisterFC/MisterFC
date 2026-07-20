@@ -17,6 +17,8 @@ describe('playerImportRowSchema — validación por fila', () => {
     first_name: 'Pepe',
     last_name: 'Gomez',
     date_of_birth: '2010-05-15',
+    // invite_email OBLIGATORIO desde el rework 2026-07.
+    invite_email: 'pepe@example.com',
   };
 
   // ─────────────────── Fechas ───────────────────
@@ -67,11 +69,12 @@ describe('playerImportRowSchema — validación por fila', () => {
 
   // ─────────────────── Validación relajada (last_name opcional) ───────────────────
 
-  it('entra con solo Nombre + DOB (apellidos vacío → null)', () => {
+  it('entra con solo Nombre + DOB + Email (apellidos vacío → null)', () => {
     const r = playerImportRowSchema.safeParse({
       first_name: 'Solo',
       last_name: '',
       date_of_birth: '15/03/2010',
+      invite_email: 'solo@example.com',
     });
     expect(r.success).toBe(true);
     if (r.success) {
@@ -81,13 +84,46 @@ describe('playerImportRowSchema — validación por fila', () => {
     }
   });
 
-  it('entra con Nombre + DOB y last_name omitido del payload', () => {
+  it('entra con Nombre + DOB + Email y last_name omitido del payload', () => {
     const r = playerImportRowSchema.safeParse({
       first_name: 'Solo',
       date_of_birth: '15/03/2010',
+      invite_email: 'solo@example.com',
     });
     expect(r.success).toBe(true);
     if (r.success) expect(r.data.last_name).toBeNull();
+  });
+
+  // ─────────────────── Email obligatorio (rework 2026-07) ───────────────────
+
+  it('falla sin email con código invite_email_required', () => {
+    const r = playerImportRowSchema.safeParse({
+      first_name: 'Pepe',
+      date_of_birth: '15/03/2010',
+      invite_email: '',
+    });
+    expect(r.success).toBe(false);
+    if (!r.success)
+      expect(r.error.issues[0]?.message).toBe('invite_email_required');
+  });
+
+  it('falla con email inválido con código invite_email_invalid', () => {
+    const r = playerImportRowSchema.safeParse({
+      ...base,
+      invite_email: 'sin-arroba',
+    });
+    expect(r.success).toBe(false);
+    if (!r.success)
+      expect(r.error.issues[0]?.message).toBe('invite_email_invalid');
+  });
+
+  it('acepta email válido y lo conserva', () => {
+    const r = playerImportRowSchema.safeParse({
+      ...base,
+      invite_email: 'familia@club.es',
+    });
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.invite_email).toBe('familia@club.es');
   });
 
   it('falla sin Nombre con código first_name_required', () => {
@@ -263,12 +299,14 @@ describe('round-trip: el output del schema vuelve a parsear (server re-valida)',
     first_name: 'Pepe',
     last_name: 'Gomez',
     date_of_birth: '15/03/2010',
+    invite_email: 'pepe@example.com',
   };
 
   it('row mínima (solo obligatorios) re-parsea OK', () => {
     const first = playerImportRowSchema.safeParse({
       first_name: 'Solo',
       date_of_birth: '15/03/2010',
+      invite_email: 'solo@example.com',
     });
     expect(first.success).toBe(true);
     if (!first.success) return;
