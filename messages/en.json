@@ -4371,6 +4371,25 @@
       "metrics_title": "Metrics",
       "by_role": "By role"
     },
+    "changeAdmin": {
+      "trigger": "Change admin",
+      "title": "Change club administrator",
+      "description": "Current administrator: {admin}.",
+      "email_label": "New administrator email",
+      "email_placeholder": "new-admin@club.com",
+      "warning": "{admin} will lose access IMMEDIATELY and the new email will be invited as administrator. The new admin takes over once they accept.",
+      "submit": "Remove access & invite",
+      "submitting": "Changing…",
+      "cancel": "Cancel",
+      "error": {
+        "no_session": "Invalid session. Please sign in again.",
+        "forbidden": "You don't have permission.",
+        "club_not_found": "The club doesn't exist.",
+        "no_current_admin": "The club has no current administrator.",
+        "email_invalid": "Enter a valid email.",
+        "generic": "Couldn't change the administrator. Please try again."
+      }
+    },
     "invite": {
       "email_label": "Administrator email",
       "email_placeholder": "admin@club.com",

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { InviteAdminForm } from './invite-admin-form';
+import { ChangeAdminDialog } from './change-admin-dialog';
 import { EnterClubButton } from './enter-club-button';
 
 type Props = {
@@ -92,12 +93,20 @@ export default async function PlatformClubDetailPage({ params }: Props) {
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {club.has_owner ? (
-            <div className="flex items-center gap-3 rounded-md border border-border bg-card/40 px-4 py-3">
-              <UserCheck className="size-5 text-emerald-400" aria-hidden />
-              <div>
-                <p className="text-sm font-medium">{club.owner_name ?? '—'}</p>
-                <p className="text-xs text-muted-foreground">{t('detail.owner_readonly')}</p>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3 rounded-md border border-border bg-card/40 px-4 py-3">
+                <UserCheck className="size-5 text-emerald-400" aria-hidden />
+                <div>
+                  <p className="text-sm font-medium">{club.owner_name ?? '—'}</p>
+                  <p className="text-xs text-muted-foreground">{t('detail.owner_readonly')}</p>
+                </div>
               </div>
+              {/* Cambiar el admin del club (corte inmediato + invitación al nuevo). */}
+              <ChangeAdminDialog
+                clubId={clubId}
+                locale={locale}
+                currentAdminName={club.owner_name ?? '—'}
+              />
             </div>
           ) : (
             <div className="flex flex-col gap-3">
