@@ -4317,6 +4317,14 @@ export type Database = {
         Args: { p_name: string }
         Returns: string
       }
+      platform_change_club_admin: {
+        Args: { p_club_id: string; p_new_email: string }
+        Returns: {
+          invitation_id: string
+          token: string
+          email: string
+        }[]
+      }
       platform_create_club: {
         Args: { p_name: string; p_slug: string; p_locale?: string }
         Returns: string

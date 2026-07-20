@@ -4371,6 +4371,25 @@
       "metrics_title": "Mètriques",
       "by_role": "Per rol"
     },
+    "changeAdmin": {
+      "trigger": "Canviar admin",
+      "title": "Canviar administrador del club",
+      "description": "Administrador actual: {admin}.",
+      "email_label": "Email del nou administrador",
+      "email_placeholder": "nou-admin@club.com",
+      "warning": "Es retirarà l'accés a {admin} de forma IMMEDIATA i es convidarà el nou email com a administrador. El nou entra quan accepte.",
+      "submit": "Retirar accés i convidar",
+      "submitting": "Canviant…",
+      "cancel": "Cancel·lar",
+      "error": {
+        "no_session": "Sessió no vàlida. Torna a iniciar sessió.",
+        "forbidden": "No tens permisos.",
+        "club_not_found": "El club no existix.",
+        "no_current_admin": "El club no té administrador actual.",
+        "email_invalid": "Introduïx un email vàlid.",
+        "generic": "No s'ha pogut canviar l'administrador. Torna-ho a provar."
+      }
+    },
     "invite": {
       "email_label": "Email de l'administrador",
       "email_placeholder": "admin@club.com",

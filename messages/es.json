@@ -4370,6 +4370,25 @@
       "metrics_title": "Métricas",
       "by_role": "Por rol"
     },
+    "changeAdmin": {
+      "trigger": "Cambiar admin",
+      "title": "Cambiar administrador del club",
+      "description": "Administrador actual: {admin}.",
+      "email_label": "Email del nuevo administrador",
+      "email_placeholder": "nuevo-admin@club.com",
+      "warning": "Se retirará el acceso a {admin} de forma INMEDIATA y se invitará al nuevo email como administrador. El nuevo entra cuando acepte.",
+      "submit": "Retirar acceso e invitar",
+      "submitting": "Cambiando…",
+      "cancel": "Cancelar",
+      "error": {
+        "no_session": "Sesión no válida. Vuelve a iniciar sesión.",
+        "forbidden": "No tienes permisos.",
+        "club_not_found": "El club no existe.",
+        "no_current_admin": "El club no tiene administrador actual.",
+        "email_invalid": "Introduce un email válido.",
+        "generic": "No se pudo cambiar el administrador. Inténtalo de nuevo."
+      }
+    },
     "invite": {
       "email_label": "Email del administrador",
       "email_placeholder": "admin@club.com",
