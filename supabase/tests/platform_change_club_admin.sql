@@ -4,10 +4,13 @@
 --   T1. superadmin cambia admin → el viejo pierde la membership admin_club de ESTE
 --       club; el club queda owner NULL; existe invitación admin_club para el nuevo;
 --       las invitaciones NO-admin del viejo siguen vivas; el viejo conserva su
---       membership en OTRO club (aislamiento); el trigger queda REACTIVADO.
+--       membership en OTRO club (aislamiento); el trigger NUNCA se desactiva (el
+--       mecanismo es un permiso de sesión LOCAL, no DISABLE/ENABLE TRIGGER).
 --   T2. NO-superadmin → forbidden.
---   T3. el trigger protect_club_owner_membership bloquea un DELETE directo de una
---       membership admin_club (defensa en profundidad).
+--   T3. En una transacción NUEVA (sin el permiso de sesión) el trigger
+--       protect_club_owner_membership bloquea un DELETE directo de una membership
+--       admin_club. Corre en su propia transacción a propósito: prueba que el
+--       set_config(is_local:=true) de la RPC NO persiste entre transacciones.
 --
 -- Convención: psql ON_ERROR_STOP=1; asserts con DO+raise; BEGIN/ROLLBACK. El
 -- superadmin se siembra en platform_admins (as postgres) y se simula auth con role
@@ -94,38 +97,52 @@ begin
    where id = 'caaa0001-0000-4000-8000-000000000001';
   if v_cnt <> 1 then raise exception 'FAIL [T1.5]: se borró una invitación no-admin del viejo'; end if;
 
-  -- el trigger quedó REACTIVADO (tgenabled = 'O' = origin/enabled)
+  -- El trigger NUNCA se desactiva: el mecanismo es set_config local, no DISABLE
+  -- TRIGGER. tgenabled sigue siendo 'O' (origin/enabled). Detecta una regresión a
+  -- DISABLE/ENABLE TRIGGER (que dejaría tgenabled='D' si algo lo interrumpiera).
   select tgenabled into v_tg from pg_trigger
    where tgname = 'protect_club_owner_membership'
      and tgrelid = 'public.memberships'::regclass;
   if v_tg is distinct from 'O' then
-    raise exception 'FAIL [T1.6]: el trigger no quedó reactivado (tgenabled=%)', v_tg;
+    raise exception 'FAIL [T1.6]: el trigger no quedó enabled (tgenabled=%)', v_tg;
   end if;
 end $$;
 
 reset role;
+rollback;
 
--- ── T3: el trigger bloquea un DELETE directo de admin_club (como postgres) ──
+-- ── T3: transacción NUEVA — el permiso de sesión NO persiste (prueba is_local) y el
+--        trigger vuelve a bloquear un DELETE directo de admin_club (como postgres) ──
+begin;
+
+-- El set_config(is_local:=true) que la RPC activó en la transacción anterior debe
+-- haberse limpiado al hacer rollback: aquí la variable NO debe valer 'on'.
+do $$
+begin
+  if coalesce(current_setting('misterfc.allow_owner_membership_delete', true), '') = 'on' then
+    raise exception 'FAIL [T3.0]: el permiso de sesión persistió entre transacciones (is_local roto)';
+  end if;
+end $$;
+
+select pg_temp.new_test_user('c0000000-0000-4000-8000-000000000004', 'freshadmin@chg.test', '{"full_name":"Fresh"}'::jsonb);
+insert into public.clubs (id, name, slug, owner_profile_id)
+  values ('cccc0000-0000-4000-8000-000000000001', 'Club C', 'club-c-chgadmin', null);
+insert into public.memberships (profile_id, club_id, role)
+  values ('c0000000-0000-4000-8000-000000000004', 'cccc0000-0000-4000-8000-000000000001', 'admin_club');
+
 do $$
 begin
   delete from public.memberships
-   where club_id = 'cbbb0000-0000-4000-8000-000000000001';  -- club B no tiene admin_club → no dispara
-  -- creamos un admin_club fresco en club B y probamos borrarlo directamente
-  insert into public.memberships (profile_id, club_id, role)
-    values ('c0000000-0000-4000-8000-000000000003', 'cbbb0000-0000-4000-8000-000000000001', 'admin_club');
-  begin
-    delete from public.memberships
-     where club_id = 'cbbb0000-0000-4000-8000-000000000001' and role = 'admin_club';
-    raise exception 'FAIL [T3]: el DELETE directo de admin_club NO fue bloqueado';
-  exception when others then
-    if sqlerrm <> 'owner_membership_protected' then
-      raise exception 'FAIL [T3]: esperaba owner_membership_protected, obtuve "%"', sqlerrm;
-    end if;
-  end;
+   where club_id = 'cccc0000-0000-4000-8000-000000000001' and role = 'admin_club';
+  raise exception 'FAIL [T3]: el DELETE directo de admin_club NO fue bloqueado (sin set_config)';
+exception when others then
+  if sqlerrm <> 'owner_membership_protected' then
+    raise exception 'FAIL [T3]: esperaba owner_membership_protected, obtuve "%"', sqlerrm;
+  end if;
 end $$;
 
 rollback;
 
 \echo '──────────────────────────────────────────────'
-\echo '✅ platform_change_club_admin: corta al viejo, owner NULL, invita al nuevo, aísla otros clubes, trigger reactivado y protegiendo.'
+\echo '✅ platform_change_club_admin: corta al viejo, owner NULL, invita al nuevo, aísla otros clubes; guard por sesión local (no DISABLE TRIGGER), que no persiste entre transacciones y sigue protegiendo.'
 \echo '──────────────────────────────────────────────'
