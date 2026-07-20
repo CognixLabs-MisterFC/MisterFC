@@ -1,5 +1,4 @@
-Nombre*,Apellidos,Fecha de nacimiento*,Dorsal,Posición,Posiciones secundarias,Pie dominante,Altura (cm),Peso (kg),Procedencia
-Pepe,Gómez García,15/03/2010,10,Mediocentro,Defensa|Delantero,Derecho,150,"42,5",Cantera
-Lucía,Sánchez López,03/09/2011,7,Delantero,,Izquierdo,148,40,
-Solo Nombre,,20/01/2012,,,,,,,
-Ana,,14/07/2013,5,Portero,,Derecho,,,
+Nombre completo*,Fecha de nacimiento*,Equipo,Email*
+Pepe Gómez García,15/03/2010,Infantil A,pepe.gomez@example.com
+Lucía Sánchez López,03/09/2011,Alevín B,familia.lucia@example.com
+Mario Ruiz,20/01/2012,,mario.ruiz@example.com

@@ -150,6 +150,30 @@ export async function importPlayers(
       continue;
     }
 
+    // Equipo por fila (rework 2026-07): se resuelve ANTES de crear al jugador,
+    // porque ahora TODO jugador importado debe acabar con equipo. Reglas espejo
+    // de applyTeamResolution (validate.ts); el servidor es la autoridad:
+    //   · resuelto        → ese team_id.
+    //   · vacío + lote     → team_id del selector de lote (fallback).
+    //   · vacío + sin lote → fallo `team_required` (no se crea el jugador).
+    //   · no resuelto      → fallo `team_not_found` (no se crea; no crea equipos).
+    const resolution = resolveTeamName(row.team, teamIndex);
+    let rowTeamId: string;
+    if (resolution.kind === 'resolved') {
+      rowTeamId = resolution.teamId;
+    } else if (resolution.kind === 'none') {
+      if (!team_id) {
+        failed++;
+        details.push({ row_index: i, status: 'failed', reason: 'team_required' });
+        continue;
+      }
+      rowTeamId = team_id;
+    } else {
+      failed++;
+      details.push({ row_index: i, status: 'failed', reason: 'team_not_found' });
+      continue;
+    }
+
     const { data: inserted, error: insErr } = await supabase
       .from('players')
       .insert({
@@ -191,41 +215,23 @@ export async function importPlayers(
     created++;
     details.push({ row_index: i, status: 'created', player_id: inserted.id });
 
-    // Equipo por fila (A5): si la fila trae nombre de equipo, se usa el resuelto;
-    // si no trae (o viene vacío), fallback al equipo del selector de lote.
-    const resolution = resolveTeamName(row.team, teamIndex);
-    let rowTeamId: string | null;
-    if (resolution.kind === 'resolved') {
-      rowTeamId = resolution.teamId;
-    } else if (resolution.kind === 'none') {
-      rowTeamId = team_id; // fallback de lote
-    } else {
-      // not_found: el cliente ya bloquea estas filas en el preview; defensivo.
-      rowTeamId = null;
+    // rowTeamId siempre está definido aquí (los casos sin equipo ya fallaron).
+    const { error: tmErr } = await supabase.from('team_members').insert({
+      player_id: inserted.id,
+      team_id: rowTeamId,
+    });
+    // Si team_members falla, el player queda creado sin equipo (no marcamos
+    // failed para no falsear el conteo). Lo reflejamos en details con un campo
+    // reason auxiliar.
+    if (tmErr) {
       details[details.length - 1] = {
         ...details[details.length - 1]!,
-        reason: 'team_not_found',
+        reason: 'team_assign_failed',
       };
-    }
-
-    if (rowTeamId) {
-      const { error: tmErr } = await supabase.from('team_members').insert({
-        player_id: inserted.id,
-        team_id: rowTeamId,
+      Sentry.captureException(tmErr, {
+        tags: { feature: 'import', step: 'team_members_insert' },
+        extra: { row_index: i, player_id: inserted.id, team_id: rowTeamId },
       });
-      // Si team_members falla, el player queda creado sin equipo (no
-      // marcamos failed para no falsear el conteo). Lo reflejamos en details
-      // con un campo reason auxiliar.
-      if (tmErr) {
-        details[details.length - 1] = {
-          ...details[details.length - 1]!,
-          reason: 'team_assign_failed',
-        };
-        Sentry.captureException(tmErr, {
-          tags: { feature: 'import', step: 'team_members_insert' },
-          extra: { row_index: i, player_id: inserted.id, team_id: rowTeamId },
-        });
-      }
     }
   }
 

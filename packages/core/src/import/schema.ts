@@ -368,29 +368,33 @@ const weightKgField = z
 const teamField = optionalText(80, 'team_too_long');
 
 /**
- * 🔒 O2 — email de contacto/invitación. Opcional. El regex es el mismo que la
- * constraint de BD (`players.invite_email`): un @, sin espacios, dominio con
- * punto. Así todo valor aceptado aquí pasa también la constraint.
+ * 🔒 O2 — email de contacto/invitación. OBLIGATORIO desde el rework 2026-07: la
+ * plantilla nueva pide Email por fila para poder enviar la invitación tras
+ * importar. El regex es el mismo que la constraint de BD
+ * (`players.invite_email`): un @, sin espacios, dominio con punto. Así todo
+ * valor aceptado aquí pasa también la constraint.
  */
 const INVITE_EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 const inviteEmailField = z
   .union([z.string(), z.number(), z.null()])
-  .optional()
   .transform((v) => {
-    if (v === null || v === undefined) return null;
-    const s = String(v).trim();
-    return s.length > 0 ? s : null;
+    if (v === null || v === undefined) return '';
+    return String(v).trim();
   })
-  .refine((v) => v === null || v.length <= 254, { message: 'invite_email_invalid' })
-  .refine((v) => v === null || INVITE_EMAIL_RE.test(v), {
+  .refine((v) => v.length > 0, { message: 'invite_email_required' })
+  .refine((v) => v.length <= 254, { message: 'invite_email_invalid' })
+  .refine((v) => INVITE_EMAIL_RE.test(v), {
     message: 'invite_email_invalid',
   });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Row schema — validación relajada per F2.9 hotfix 2026-05-30:
-// solo `first_name` + `date_of_birth` son obligatorios. `last_name` ahora
-// es opcional (NULL en BD) — ver migración 20260603000002.
+// Row schema. Obligatorios: `first_name` (Nombre completo), `date_of_birth` e
+// `invite_email` (rework 2026-07 — la plantilla nueva pide Email por fila).
+// `last_name` es opcional/NULL (F2.9 hotfix 2026-05-30, mig 20260603000002); el
+// resto de columnas de detalle siguen soportadas pero opcionales (compat).
+// La obligatoriedad de "equipo" NO se modela aquí (depende del selector de lote
+// en runtime): se resuelve en validate.ts (applyTeamResolution) y actions.ts.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const playerImportRowSchema = z.object({
