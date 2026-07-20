@@ -441,10 +441,14 @@ async function loadNoTeamPlayerIds(clubId: string): Promise<string[]> {
   const activeIds = (activeData ?? []).map((r) => r.id as string);
   if (activeIds.length === 0) return [];
 
+  // "Sin equipo" se juzga SOLO en la temporada activa: un jugador con equipo únicamente
+  // en una temporada anterior (finalizada) debe contar como sin equipo en la activa.
+  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
   const { data: teamData } = await supabase
     .from('teams')
     .select('id')
-    .eq('club_id', clubId);
+    .eq('club_id', clubId)
+    .eq('season', activeSeason);
   const clubTeamIds = (teamData ?? []).map((r) => r.id as string);
 
   const withTeam = new Set<string>();

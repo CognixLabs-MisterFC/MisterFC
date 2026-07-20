@@ -24,6 +24,7 @@ import {
   inactivePlayers,
   formatPlayerName,
   activeSeasonLabel,
+  categoryKindOrdinal,
   currentSeason,
   reportStatus,
   DEVELOPMENT_REPORT_CATALOG,
@@ -39,6 +40,7 @@ import {
   type CategoryEvalRow,
   type CategoryRankings,
 } from '@misterfc/core';
+import * as Sentry from '@sentry/nextjs';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 type Supabase = ReturnType<typeof createSupabaseServerClient>;
@@ -70,7 +72,7 @@ type TeamRow = {
   name: string;
   color: string;
   category_id: string;
-  categories: { name: string; order_idx: number };
+  categories: { name: string; kind: string | null };
 };
 
 type MemberRow = {
@@ -89,12 +91,20 @@ async function loadSeasonCensus(
   clubId: string,
   season: string,
 ): Promise<{ census: ClubCensus; teamIds: string[] }> {
-  // Equipos de la temporada (categoría embebida para nombre + order_idx).
-  const { data: rawTeams } = await supabase
+  // Equipos de la temporada (categoría embebida para nombre + kind → orden O1).
+  const { data: rawTeams, error: teamsError } = await supabase
     .from('teams')
-    .select('id, name, color, category_id, categories!inner(name, order_idx)')
+    .select('id, name, color, category_id, categories!inner(name, kind)')
     .eq('club_id', clubId)
     .eq('season', season);
+  // El error NO puede desaparecer sin rastro (así se ocultó meses el order_idx
+  // fantasma tras A6). Se reporta a Sentry; la UI degrada a censo vacío, no revienta.
+  if (teamsError) {
+    Sentry.captureException(teamsError, {
+      tags: { feature: 'dashboard', step: 'season_census' },
+      extra: { clubId, season },
+    });
+  }
   const teamRows = (rawTeams ?? []) as unknown as TeamRow[];
 
   const teams: ClubTeam[] = teamRows.map((t) => ({
@@ -102,7 +112,7 @@ async function loadSeasonCensus(
     name: t.name,
     categoryId: t.category_id,
     categoryName: t.categories.name,
-    categoryOrder: t.categories.order_idx,
+    categoryOrder: categoryKindOrdinal(t.categories.kind),
   }));
   const teamIds = teams.map((t) => t.id);
 
