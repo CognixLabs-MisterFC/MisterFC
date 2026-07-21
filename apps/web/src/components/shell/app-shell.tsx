@@ -56,12 +56,6 @@ async function loadUnreadConversationsCount(
 /**
  * PART 3.4 — badge verde de "anuncios": notificaciones in_app new_announcement
  * pendientes del user. Se marcan leídas al abrir la lista (MarkNotificationsRead).
- *
- * FIX E — el bucket "convocatorias" YA NO se cuenta aquí. Contar notificaciones
- * pending sin filtro temporal/pertenencia inflaba el badge con convocatorias de
- * eventos borrados o partidos ya jugados (badge decía 13/16 con la pantalla a 0).
- * Ahora el badge de convocatorias se deriva de la MISMA fuente que la pantalla
- * (loadUpcomingCallups), ver AppShell — así badge y contenido no divergen.
  */
 async function loadAnnouncementBadge(
   supabase: ReturnType<typeof createSupabaseServerClient>,
@@ -75,22 +69,65 @@ async function loadAnnouncementBadge(
   return data?.length ?? 0;
 }
 
+/**
+ * FIX E — badge de "convocatorias" con semántica de NO-LEÍDO filtrado por
+ * VIGENCIA. Es la INTERSECCIÓN de:
+ *   (a) notificaciones callup_* in_app PENDING del user  → no leídas; bajan a 0
+ *       al abrir la lista (MarkNotificationsRead las pasa a 'sent'), como el
+ *       badge original.
+ *   (b) convocatorias VIGENTES para el user (`vigenteEventIds`, derivadas de
+ *       loadUpcomingCallups: evento existe + starts_at en ventana + equipo del
+ *       jugador con team_members.left_at IS NULL, por rol).
+ * Así el badge NUNCA cuenta basura de eventos borrados/pasados (no están en (b))
+ * aunque su notificación siga pending, y sí refleja novedades reales.
+ *
+ * Se deduplica por evento (una convocatoria con varias notifs pending —
+ * published + updated — cuenta como 1), coherente con la lista, que muestra una
+ * tarjeta por evento. Enlace notif→evento por payload->>'event_id' (la MISMA
+ * columna que ancla la migración de limpieza FIX 2).
+ */
+async function loadConvocatoriasBadge(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  vigenteEventIds: ReadonlySet<string>,
+): Promise<number> {
+  if (vigenteEventIds.size === 0) return 0;
+  const { data } = await supabase
+    .from('notifications')
+    .select('payload')
+    .eq('channel', 'in_app')
+    .eq('status', 'pending')
+    .in('type', ['callup_published', 'callup_updated']);
+  const unreadVigenteEvents = new Set<string>();
+  for (const row of data ?? []) {
+    const eventId = (row.payload as { event_id?: string } | null)?.event_id;
+    if (eventId && vigenteEventIds.has(eventId)) unreadVigenteEvents.add(eventId);
+  }
+  return unreadVigenteEvents.size;
+}
+
 export async function AppShell({ ctx, locale, children, isSuperadmin = false }: Props) {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  // FIX E — el badge de convocatorias se cuenta con la MISMA resolución que la
-  // pantalla /convocatorias (loadUpcomingCallups: evento vigente + ventana +
-  // equipo del jugador con team_members.left_at IS NULL, por rol). Así "si la
-  // pantalla muestra N, el badge dice N" y nunca cuenta eventos borrados/pasados.
-  // rangeDays=30 = mismo valor que usa la página (convocatorias/page.tsx).
+  // FIX E — badge de convocatorias = NO-LEÍDAS ∩ VIGENTES. Se resuelve el
+  // conjunto de convocatorias vigentes con la MISMA lógica que la pantalla
+  // (loadUpcomingCallups: evento vigente + ventana + equipo del jugador con
+  // team_members.left_at IS NULL, por rol; rangeDays=30 = convocatorias/page.tsx),
+  // y luego se cuentan solo las notificaciones callup PENDING (no leídas) cuyo
+  // evento cae en ese conjunto. Baja a 0 al abrir la lista (MarkNotificationsRead)
+  // y nunca cuenta eventos borrados/pasados.
   const [unreadConversations, anunciosBadge, upcomingCallups] = await Promise.all([
     loadUnreadConversationsCount(supabase),
     loadAnnouncementBadge(supabase),
     loadUpcomingCallups(ctx.activeClub.club.id, ctx.activeClub.role, 30),
   ]);
+  const vigenteEventIds = new Set(upcomingCallups.map((c) => c.event_id));
+  const convocatoriasBadge = await loadConvocatoriasBadge(
+    supabase,
+    vigenteEventIds,
+  );
   const badges = {
     mensajes: unreadConversations,
-    convocatorias: upcomingCallups.length,
+    convocatorias: convocatoriasBadge,
     anuncios: anunciosBadge,
   };
 
