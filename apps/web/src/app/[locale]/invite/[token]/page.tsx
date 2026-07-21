@@ -100,6 +100,9 @@ export default async function InvitePage({ params }: Props) {
     .map((p) => ({
       playerId: p.player_id,
       playerName: [p.player_first_name, p.player_last_name].filter(Boolean).join(' ') || null,
+      playerFirstName: p.player_first_name,
+      playerLastName: p.player_last_name,
+      playerDob: p.player_date_of_birth,
       teamName: p.team_name,
     }));
 

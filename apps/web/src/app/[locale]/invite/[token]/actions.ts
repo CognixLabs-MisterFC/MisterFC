@@ -13,7 +13,11 @@ import {
   playerPhotoUploadSchema,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { loadInvitationByToken, type LoadedInvitation } from './invite-data';
+import {
+  loadInvitationByToken,
+  loadPendingInvitationsForEmail,
+  type LoadedInvitation,
+} from './invite-data';
 
 /** Flags de aceptación (T&C + Privacidad) enviados por el form del alta (F14-2). */
 type ConsentAccepts = { terms: boolean; privacy: boolean };
@@ -51,6 +55,9 @@ export type AcceptInvitationState = {
     // F14-3c — imagen obligatoria por hijo / decisiones de imagen sin responder.
     | 'image_required'
     | 'image_decision_required'
+    // Rework C/D — confirmación de datos del hijo (nombre + fecha nac.).
+    | 'child_name_required'
+    | 'child_dob_invalid'
     | 'generic';
 };
 
@@ -60,6 +67,78 @@ const MIME_TO_EXT: Record<string, string> = {
   'image/png': 'png',
   'image/webp': 'webp',
 };
+
+/**
+ * Rework C/D — validación de la fecha de nacimiento del hijo confirmada por el
+ * tutor. Mismo criterio que el alta (yyyy-mm-dd, >= 1900, no futura).
+ */
+function isValidChildDob(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return false;
+  const year = d.getUTCFullYear();
+  if (year < 1900) return false;
+  if (d.getTime() > Date.now()) return false;
+  return true;
+}
+
+type ChildUpdate = {
+  playerId: string;
+  first_name: string;
+  last_name: string | null;
+  date_of_birth: string;
+};
+
+/**
+ * Rework C/D — parsea y valida los datos de hijo confirmados por el tutor
+ * (campo `children_data`, JSON). Ancla al server: solo acepta player_ids que
+ * estén entre las invitaciones PENDIENTES de este email+club (anti-tamper).
+ * Devuelve la lista a persistir, o un código de error de validación.
+ */
+async function parseChildUpdates(
+  clicked: LoadedInvitation,
+  formData: FormData,
+): Promise<
+  | { ok: true; updates: ChildUpdate[] }
+  | { ok: false; error: NonNullable<AcceptInvitationState['error']> }
+> {
+  const raw = formData.get('children_data');
+  if (typeof raw !== 'string' || raw.trim().length === 0) {
+    return { ok: true, updates: [] };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { ok: false, error: 'invalid_input' };
+  }
+  if (!Array.isArray(parsed)) return { ok: false, error: 'invalid_input' };
+
+  const pending = await loadPendingInvitationsForEmail(clicked.email, clicked.club_id);
+  const allowed = new Set(
+    pending.map((p) => p.player_id).filter((x): x is string => !!x),
+  );
+
+  const updates: ChildUpdate[] = [];
+  for (const entry of parsed) {
+    const rec = entry as Record<string, unknown>;
+    const pid = String(rec?.playerId ?? '');
+    if (!allowed.has(pid)) continue; // ignora ids ajenos al lote pendiente
+    const first = String(rec?.firstName ?? '').trim();
+    const last = String(rec?.lastName ?? '').trim();
+    const dob = String(rec?.dob ?? '').trim();
+    if (first.length === 0 || first.length > 80) return { ok: false, error: 'child_name_required' };
+    if (last.length > 120) return { ok: false, error: 'child_name_required' };
+    if (!isValidChildDob(dob)) return { ok: false, error: 'child_dob_invalid' };
+    updates.push({
+      playerId: pid,
+      first_name: first,
+      last_name: last.length > 0 ? last : null,
+      date_of_birth: dob,
+    });
+  }
+  return { ok: true, updates };
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers de diagnóstico
@@ -171,6 +250,12 @@ async function attachAllPending(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const accepts = consentAcceptsFromForm(formData);
+
+  // Rework C/D — validar los datos del hijo confirmados por el tutor ANTES de
+  // subir imágenes / llamar a la RPC: si son inválidos salimos sin efectos
+  // secundarios. La persistencia se hace tras aceptar (más abajo).
+  const childParse = await parseChildUpdates(clicked, formData);
+  if (!childParse.ok) return { error: childParse.error };
 
   // Metadatos de auditoría (no se confía en el cliente).
   const h = await headers();
@@ -287,6 +372,25 @@ async function attachAllPending(
         pg_code: error.code,
       });
       return { error: 'generic' };
+    }
+
+    // Rework C/D — persistir nombre + fecha nac. del hijo confirmados por el
+    // tutor. Best-effort tras la aceptación ya comprometida (admin/service_role:
+    // el vínculo player_accounts se acaba de crear en la RPC). Un fallo aquí no
+    // tumba la aceptación (ya hecha); se registra.
+    for (const u of childParse.updates) {
+      const { error: pErr } = await admin
+        .from('players')
+        .update({
+          first_name: u.first_name,
+          last_name: u.last_name,
+          date_of_birth: u.date_of_birth,
+        })
+        .eq('id', u.playerId)
+        .eq('club_id', clicked.club_id);
+      if (pErr) {
+        logError('child-data-update', pErr, { player_id: u.playerId });
+      }
     }
 
     logStep('attach-all done', { invitation_id: clicked.id, processed: data ?? 0 });

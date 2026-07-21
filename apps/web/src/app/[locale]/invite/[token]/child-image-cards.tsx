@@ -14,6 +14,10 @@ import type { ImageConsentDoc, MedicalConsentDoc } from './consent-data';
 export type PendingChild = {
   playerId: string | null;
   playerName: string | null;
+  // Rework C/D — datos editables del hijo para el paso de confirmación.
+  playerFirstName: string | null;
+  playerLastName: string | null;
+  playerDob: string | null;
   teamName: string | null;
 };
 
