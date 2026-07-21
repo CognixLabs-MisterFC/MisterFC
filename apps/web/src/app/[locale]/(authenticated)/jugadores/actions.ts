@@ -50,6 +50,8 @@ function parseCreatePlayerData(formData: FormData) {
     weight_kg: formData.get('weight_kg'),
     origin: formData.get('origin'),
     team_id: formData.get('team_id'),
+    invite_email: formData.get('invite_email'),
+    player_relation: formData.get('player_relation'),
   });
 }
 
@@ -87,6 +89,12 @@ export type PlayerFormError =
   | 'weight_kg_invalid'
   | 'origin_too_long'
   | 'team_invalid'
+  // Rework B2 (2026-07): email + relación de tutor + equipo obligatorios.
+  | 'team_required'
+  | 'email_required'
+  | 'email_invalid'
+  | 'email_too_long'
+  | 'relation_required'
   | 'no_active_club'
   | 'forbidden'
   | 'generic';
@@ -113,6 +121,11 @@ function mapPlayerError(message: string | undefined): PlayerFormError {
     'weight_kg_invalid',
     'origin_too_long',
     'team_invalid',
+    'team_required',
+    'email_required',
+    'email_invalid',
+    'email_too_long',
+    'relation_required',
   ];
   if (message && known.includes(message as PlayerFormError)) {
     return message as PlayerFormError;
@@ -121,10 +134,159 @@ function mapPlayerError(message: string | undefined): PlayerFormError {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Circuito ÚNICO de invitación de tutor (rework B2) — reutilizado por el alta
+// manual (createPlayer) y el botón de la ficha (inviteTutorForPlayer).
+// ─────────────────────────────────────────────────────────────────────────────
+
+type TutorInviteResult =
+  | { ok: { email: string } }
+  | { error: 'forbidden' | 'generic' };
+
+/**
+ * Envía —o RENUEVA— la invitación de tutor de un jugador. Anti-duplicado:
+ *   1. Si ya hay una invitación VIGENTE (accepted_at IS NULL y no expirada) para
+ *      el player, se RENUEVA (token nuevo + expiración +7d + email/relación del
+ *      formulario) en vez de crear otra fila.
+ *   2. Si no la hay, se INSERTA una nueva.
+ *   3. Se envía el email con inviteUserByEmail; si el email ya está registrado,
+ *      fallback a resetPasswordForEmail con el mismo redirectTo.
+ * El permiso lo impone la RLS de `invitations` (INSERT admin/director; UPDATE
+ * admin_club) — si el actor no puede, devuelve 'forbidden'.
+ */
+async function sendOrRenewTutorInvitation(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  locale: string,
+  params: {
+    playerId: string;
+    clubId: string;
+    email: string;
+    relation: 'parent' | 'guardian';
+    createdBy: string;
+  },
+): Promise<TutorInviteResult> {
+  const { playerId, clubId, email, relation, createdBy } = params;
+
+  // 1) ¿Invitación vigente para este jugador? (no aceptada y no caducada)
+  const nowIso = new Date().toISOString();
+  const { data: existing } = await supabase
+    .from('invitations')
+    .select('id')
+    .eq('player_id', playerId)
+    .is('accepted_at', null)
+    .gt('expires_at', nowIso)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let invite: { id: string; token: string } | null = null;
+
+  if (existing?.id) {
+    // 1a) Renovar la existente: token nuevo + +7d, y actualiza email/relación al
+    //     último valor del formulario. NO crea una segunda fila.
+    const renewedExpiry = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    const { data: renewed, error: updErr } = await supabase
+      .from('invitations')
+      .update({
+        email,
+        player_relation: relation,
+        token: crypto.randomUUID(),
+        expires_at: renewedExpiry,
+      })
+      .eq('id', existing.id)
+      .select('id, token')
+      .single();
+    if (updErr) {
+      if (updErr.code === '42501') return { error: 'forbidden' };
+      Sentry.captureException(updErr, {
+        tags: { feature: 'invitations', step: 'renew_tutor' },
+        extra: { player_id: playerId, invitation_id: existing.id },
+      });
+      return { error: 'generic' };
+    }
+    invite = renewed as { id: string; token: string };
+  } else {
+    // 1b) Sin invitación vigente → crear.
+    const { data: inserted, error: insErr } = await supabase
+      .from('invitations')
+      .insert({
+        email,
+        role: 'jugador',
+        club_id: clubId,
+        player_id: playerId,
+        player_relation: relation,
+        created_by: createdBy,
+      })
+      .select('id, token')
+      .single();
+    if (insErr) {
+      if (insErr.code === '42501') return { error: 'forbidden' };
+      Sentry.captureException(insErr, {
+        tags: { feature: 'invitations', step: 'insert_tutor' },
+        extra: { player_id: playerId, relation },
+      });
+      return { error: 'generic' };
+    }
+    invite = inserted as { id: string; token: string };
+  }
+
+  if (!invite) return { error: 'generic' };
+
+  // 2) Enviar el email (mismo redirectTo directo a /invite/{token}).
+  const hdrs = await headers();
+  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
+  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
+  const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
+
+  const admin = createSupabaseAdminClient();
+  try {
+    const { error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo,
+      data: { invite_pending: true, invitation_id: invite.id },
+    });
+    if (invErr) {
+      const msg = invErr.message?.toLowerCase() ?? '';
+      const alreadyExists =
+        ('code' in invErr && invErr.code === 'email_exists') ||
+        msg.includes('already been registered') ||
+        msg.includes('already exists');
+      if (alreadyExists) {
+        // Email ya registrado → mismo vehículo de redirect (patrón sendInvitation).
+        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
+          email,
+          { redirectTo },
+        );
+        if (resetErr) {
+          Sentry.captureException(resetErr, {
+            tags: { feature: 'invitations', step: 'reset_fallback_tutor' },
+            extra: { invitation_id: invite.id },
+          });
+          return { error: 'generic' };
+        }
+      } else {
+        Sentry.captureException(invErr, {
+          tags: { feature: 'invitations', step: 'inviteUserByEmail_tutor' },
+          extra: { invitation_id: invite.id },
+        });
+        return { error: 'generic' };
+      }
+    }
+  } catch (thrown) {
+    Sentry.captureException(thrown, {
+      tags: { feature: 'invitations', step: 'inviteUserByEmail_tutor_thrown' },
+      extra: { invitation_id: invite.id },
+    });
+    return { error: 'generic' };
+  }
+
+  return { ok: { email } };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // createPlayer (F2.3)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function createPlayer(
+  locale: string,
   _prev: PlayerFormState,
   formData: FormData
 ): Promise<PlayerFormState> {
@@ -139,7 +301,12 @@ export async function createPlayer(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { team_id, positions_secondary, ...playerFields } = parsed.data;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { team_id, positions_secondary, invite_email, player_relation, ...playerFields } =
+    parsed.data;
 
   const insertPayload = {
     club_id: clubId,
@@ -153,6 +320,9 @@ export async function createPlayer(
     height_cm: playerFields.height_cm,
     weight_kg: playerFields.weight_kg,
     origin: playerFields.origin,
+    // Rework B2 — email del tutor persistido; deja al jugador invitable aunque
+    // el envío automático de abajo fallara.
+    invite_email,
   };
 
   const { data: created, error } = await supabase
@@ -165,13 +335,33 @@ export async function createPlayer(
     return { error: 'generic' };
   }
 
-  if (team_id) {
-    // Asignar al equipo. Si falla, no abortamos el alta — el jugador queda
-    // creado sin equipo y el caller puede asignar después desde la ficha.
-    await supabase.from('team_members').insert({
-      player_id: created.id,
-      team_id,
+  // Equipo OBLIGATORIO (rework B2): siempre hay team_id. Si el insert de
+  // team_members falla, no abortamos — el jugador queda creado y reasignable.
+  await supabase.from('team_members').insert({
+    player_id: created.id,
+    team_id,
+  });
+
+  // Invitación AUTOMÁTICA al crear, mismo circuito que la ficha (con
+  // anti-duplicado). Si el envío falla, el jugador YA está creado: NO abortamos
+  // el alta; registramos y lo dejamos invitable para reintento desde la ficha.
+  if (user) {
+    const invite = await sendOrRenewTutorInvitation(supabase, locale, {
+      playerId: created.id,
+      clubId,
+      email: invite_email,
+      relation: player_relation,
+      createdBy: user.id,
     });
+    if ('error' in invite) {
+      Sentry.captureException(
+        new Error('auto-invite failed on create player'),
+        {
+          tags: { feature: 'invitations', step: 'create_player_autoinvite' },
+          extra: { player_id: created.id, reason: invite.error },
+        },
+      );
+    }
   }
 
   revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
@@ -407,91 +597,20 @@ export async function inviteTutorForPlayer(
     .maybeSingle();
   if (!player) return { error: 'forbidden' };
 
-  // Insertar invitación. La policy `invitations_insert_admin` ya exige
-  // admin/coord del club; si el actor no lo es, devuelve error y aquí lo
-  // mapeamos a forbidden.
-  const { data: invite, error: insErr } = await supabase
-    .from('invitations')
-    .insert({
-      email: parsed.data.email,
-      role: 'jugador',
-      club_id: player.club_id,
-      player_id: player.id,
-      player_relation: parsed.data.relation,
-      created_by: user.id,
-    })
-    .select('id, token')
-    .single();
-
-  if (insErr) {
-    if (insErr.code === '42501') return { error: 'forbidden' };
-    Sentry.captureException(insErr, {
-      tags: { feature: 'invitations', step: 'insert_tutor' },
-      extra: { player_id: player.id, relation: parsed.data.relation },
-    });
-    return { error: 'generic' };
-  }
-  if (!invite) return { error: 'generic' };
-
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
-  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  // redirectTo directo a la página de invitación. Ver nota en
-  // invitations/actions.ts para el porqué (allowlist Supabase).
-  const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
-
-  const admin = createSupabaseAdminClient();
-  try {
-    const { error: invErr } = await admin.auth.admin.inviteUserByEmail(
-      parsed.data.email,
-      {
-        redirectTo,
-        data: { invite_pending: true, invitation_id: invite.id },
-      }
-    );
-
-    if (invErr) {
-      const msg = invErr.message?.toLowerCase() ?? '';
-      const alreadyExists =
-        ('code' in invErr && invErr.code === 'email_exists') ||
-        msg.includes('already been registered') ||
-        msg.includes('already exists');
-
-      if (alreadyExists) {
-        // Reusa resetPasswordForEmail como vehículo del mismo redirectTo
-        // cuando el email ya está registrado (mismo patrón que sendInvitation).
-        const { error: resetErr } =
-          await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-            redirectTo,
-          });
-        if (resetErr) {
-          Sentry.captureException(resetErr, {
-            tags: { feature: 'invitations', step: 'reset_fallback_tutor' },
-            extra: { invitation_id: invite.id },
-          });
-          return { error: 'generic' };
-        }
-      } else {
-        Sentry.captureException(invErr, {
-          tags: { feature: 'invitations', step: 'inviteUserByEmail_tutor' },
-          extra: { invitation_id: invite.id },
-        });
-        return { error: 'generic' };
-      }
-    }
-  } catch (thrown) {
-    Sentry.captureException(thrown, {
-      tags: {
-        feature: 'invitations',
-        step: 'inviteUserByEmail_tutor_thrown',
-      },
-      extra: { invitation_id: invite.id },
-    });
-    return { error: 'generic' };
-  }
+  // Circuito único (con anti-duplicado): si ya hay una invitación vigente para
+  // este jugador, la renueva y reenvía; si no, la crea. La RLS de `invitations`
+  // (INSERT admin/director; UPDATE admin_club) impone el permiso → 'forbidden'.
+  const result = await sendOrRenewTutorInvitation(supabase, locale, {
+    playerId: player.id,
+    clubId: player.club_id,
+    email: parsed.data.email,
+    relation: parsed.data.relation,
+    createdBy: user.id,
+  });
+  if ('error' in result) return { error: result.error };
 
   revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
-  return { ok: { email: parsed.data.email } };
+  return { ok: result.ok };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

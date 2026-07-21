@@ -67,6 +67,8 @@ export {
   PLAYER_POSITIONS,
   PLAYER_FEET,
   PLAYER_ACCOUNT_RELATIONS,
+  PLAYER_TUTOR_RELATIONS,
+  INVITE_EMAIL_RE,
   PLAYER_PHOTO_MIME_TYPES,
   PLAYER_PHOTO_MAX_BYTES,
 } from './player';
@@ -80,6 +82,7 @@ export type {
   PlayerPosition,
   PlayerFoot,
   PlayerAccountRelation,
+  PlayerTutorRelation,
 } from './player';
 
 export {

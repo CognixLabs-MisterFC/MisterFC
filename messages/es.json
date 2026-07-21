@@ -1112,9 +1112,17 @@
       "height_cm": "Altura (cm)",
       "weight_kg": "Peso (kg)",
       "origin": "Procedencia",
-      "team": "Asignar a equipo",
+      "team": "Equipo",
       "no_team": "Sin equipo (asignar luego)",
-      "optional": "Opcional"
+      "optional": "Opcional",
+      "legend": "Los campos marcados con * son obligatorios.",
+      "optional_tag": "opcional",
+      "team_placeholder": "Selecciona un equipo",
+      "team_none_available": "No hay equipos en la temporada activa. Crea un equipo antes de dar de alta jugadores.",
+      "tutor_email": "Email del tutor",
+      "tutor_relation": "Relación del tutor",
+      "relation_placeholder": "Selecciona la relación",
+      "tutor_help": "Al crear el jugador se enviará automáticamente la invitación a este email."
     },
     "positions": {
       "goalkeeper": "Portero",
@@ -1254,6 +1262,11 @@
       "weight_kg_invalid": "El peso debe estar entre 10 y 200 kg.",
       "origin_too_long": "Procedencia demasiado larga.",
       "team_invalid": "Equipo no válido.",
+      "team_required": "Selecciona un equipo.",
+      "email_required": "Introduce el email del tutor.",
+      "email_invalid": "El email del tutor no es válido.",
+      "email_too_long": "El email es demasiado largo.",
+      "relation_required": "Selecciona la relación del tutor.",
       "no_active_club": "Selecciona primero un club.",
       "forbidden": "No tienes permiso.",
       "generic": "No se pudo guardar. Inténtalo de nuevo."
