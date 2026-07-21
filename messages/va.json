@@ -200,6 +200,10 @@
       "player_promoted_match": "Convocat per a jugar amb un equip superior",
       "player_promoted_match_named": "Convocat per a jugar amb el {team}"
     },
+    "welcome": "Bienvenido a {club}",
+    "your_role": "Tu rol aquí es {role}.",
+    "next_steps_title": "Siguientes pasos",
+    "next_steps_body": "Empieza creando categorías y equipos en el menú lateral. Después podrás dar de alta jugadores y configurar al cuerpo técnico.",
     "dashboard_card": {
       "title": "Tauler executiu",
       "body": "Visió global del club: plantilla, resultats, assistència, alertes i rànquings.",
@@ -3915,6 +3919,10 @@
       "formaciones": {
         "title": "Formacions",
         "description": "Plantilles de formació personalitzades del cos tècnic."
+      },
+      "jugadas": {
+        "title": "Jugadas",
+        "description": "Banco de jugadas del equipo: crea y anima jugadas por fotogramas."
       },
       "estadisticas_equipo": {
         "title": "Estadístiques per equip",

@@ -200,6 +200,10 @@
       "player_promoted_match": "Called up to play with a higher team",
       "player_promoted_match_named": "Called up to play with {team}"
     },
+    "welcome": "Welcome to {club}",
+    "your_role": "Your role here is {role}.",
+    "next_steps_title": "Next steps",
+    "next_steps_body": "Start by creating categories and teams in the sidebar. Then you can add players and set up the coaching staff.",
     "dashboard_card": {
       "title": "Executive dashboard",
       "body": "Club-wide overview: squad, results, attendance, alerts and rankings.",
@@ -3915,6 +3919,10 @@
       "formaciones": {
         "title": "Formations",
         "description": "Custom formation templates for the coaching staff."
+      },
+      "jugadas": {
+        "title": "Plays",
+        "description": "Team playbook: create and animate frame-by-frame plays."
       },
       "estadisticas_equipo": {
         "title": "Team stats",
