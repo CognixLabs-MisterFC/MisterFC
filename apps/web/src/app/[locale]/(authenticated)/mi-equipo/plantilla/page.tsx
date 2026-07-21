@@ -135,7 +135,7 @@ export default async function PlantillaPage({ params, searchParams }: Props) {
   const positionLabel = (pos: string | null) =>
     pos && KNOWN_POSITIONS.has(pos) ? tJug(`positions.${pos}`) : '—';
   const footLabel = (foot: string | null) =>
-    foot && KNOWN_FEET.has(foot) ? tJug(`foot.${foot}`) : '—';
+    foot && KNOWN_FEET.has(foot) ? tJug(`feet.${foot}`) : '—';
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">

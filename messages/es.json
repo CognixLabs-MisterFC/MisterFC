@@ -3915,6 +3915,10 @@
         "title": "Formaciones",
         "description": "Plantillas de formación personalizadas del cuerpo técnico."
       },
+      "jugadas": {
+        "title": "Jugadas",
+        "description": "Banco de jugadas del equipo: crea y anima jugadas por fotogramas."
+      },
       "estadisticas_equipo": {
         "title": "Estadísticas por equipo",
         "description": "Resultados y métricas agregadas por equipo."
