@@ -17,6 +17,23 @@ export const PLAYER_ACCOUNT_RELATIONS = ['self', 'parent', 'guardian'] as const;
 
 export type PlayerAccountRelation = (typeof PLAYER_ACCOUNT_RELATIONS)[number];
 
+/**
+ * Relaciones de TUTOR válidas para invitar (excluye 'self'; el tutor no es el
+ * propio jugador). Fuente única: la usa el alta manual (createPlayerSchema) y la
+ * invitación desde la ficha (invitePlayerTutorSchema) — no reinventar el enum.
+ */
+export const PLAYER_TUTOR_RELATIONS = ['parent', 'guardian'] as const;
+
+export type PlayerTutorRelation = (typeof PLAYER_TUTOR_RELATIONS)[number];
+
+/**
+ * Regex de email idéntico a la constraint de BD `players.invite_email`
+ * (mig 20260629000000) y al INVITE_EMAIL_RE del schema de importación: un @, sin
+ * espacios, dominio con punto. Todo valor aceptado aquí pasa también la
+ * constraint.
+ */
+export const INVITE_EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Fields shared
 // ─────────────────────────────────────────────────────────────────────────────
@@ -141,13 +158,26 @@ export const createPlayerSchema = z.object({
   height_cm: heightCmField,
   weight_kg: weightKgField,
   origin: optionalText(120, 'origin_too_long'),
-  /** Equipo destino opcional. Si presente, se crea team_members al alta. */
+  /** Equipo destino OBLIGATORIO (rework B2 2026-07): el alta siempre asigna
+   *  equipo (se crea team_members). `error` cubre también el caso "falta" (el
+   *  form no envía el campo → null/undefined). */
   team_id: z
+    .string({ error: 'team_required' })
+    .uuid({ message: 'team_required' }),
+  /** Email del tutor OBLIGATORIO (rework B2): se persiste en players.invite_email
+   *  y se usa para enviar la invitación automática al crear. Mismo regex que la
+   *  constraint de BD. */
+  invite_email: z
     .string()
-    .uuid({ message: 'team_invalid' })
-    .optional()
-    .transform((v) => (v && v.length > 0 ? v : null))
-    .nullable(),
+    .trim()
+    .toLowerCase()
+    .min(1, { message: 'email_required' })
+    .max(254, { message: 'email_too_long' })
+    .regex(INVITE_EMAIL_RE, { message: 'email_invalid' }),
+  /** Relación del tutor OBLIGATORIA — mismo enum que la invitación de ficha. */
+  player_relation: z.enum(PLAYER_TUTOR_RELATIONS, {
+    message: 'relation_required',
+  }),
 });
 export type CreatePlayerInput = z.infer<typeof createPlayerSchema>;
 
@@ -220,7 +250,7 @@ export const invitePlayerTutorSchema = z.object({
     .toLowerCase()
     .email({ message: 'email_invalid' })
     .max(254, { message: 'email_too_long' }),
-  relation: z.enum(['parent', 'guardian'], { message: 'relation_invalid' }),
+  relation: z.enum(PLAYER_TUTOR_RELATIONS, { message: 'relation_invalid' }),
 });
 export type InvitePlayerTutorInput = z.infer<typeof invitePlayerTutorSchema>;
 
