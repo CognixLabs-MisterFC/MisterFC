@@ -510,6 +510,13 @@
     "saved": "Cambios guardados.",
     "change_password": "Canviar contrasenya",
     "manage_notifications": "Gestionar notificacions",
+    "zone": {
+      "account": "El teu compte",
+      "player_self": "Les teues dades com a jugador",
+      "player_child": "Dades del teu fill/a",
+      "player_self_hint": "Gestiona la teua foto, informació mèdica i expedient com a jugador.",
+      "player_child_hint": "Gestiona la foto, informació mèdica i expedient del teu fill/a."
+    },
     "section": {
       "avatar": "Foto de perfil",
       "data": "Datos personales",

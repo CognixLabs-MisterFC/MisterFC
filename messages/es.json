@@ -398,6 +398,13 @@
     "saved": "Cambios guardados.",
     "change_password": "Cambiar contraseña",
     "manage_notifications": "Gestionar notificaciones",
+    "zone": {
+      "account": "Tu cuenta",
+      "player_self": "Tus datos como jugador",
+      "player_child": "Datos de tu hijo/a",
+      "player_self_hint": "Gestiona tu foto, información médica y expediente como jugador.",
+      "player_child_hint": "Gestiona la foto, información médica y expediente de tu hijo/a."
+    },
     "section": {
       "avatar": "Foto de perfil",
       "data": "Datos personales",
