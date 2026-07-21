@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@misterfc/core';
 import type { ShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { loadUpcomingCallups } from '@/app/[locale]/(authenticated)/convocatorias/queries';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
 import { SuperadminBanner } from './superadmin-banner';
@@ -53,42 +54,81 @@ async function loadUnreadConversationsCount(
 }
 
 /**
- * PART 3.4 — badge verde por tipo de notificación in_app pendiente. callup_*
- * (publicada/actualizada) se acumula en "convocatorias"; new_announcement en
- * "anuncios". Se marcan leídas al abrir la lista (MarkNotificationsRead).
+ * PART 3.4 — badge verde de "anuncios": notificaciones in_app new_announcement
+ * pendientes del user. Se marcan leídas al abrir la lista (MarkNotificationsRead).
  */
-async function loadNotificationBadges(
+async function loadAnnouncementBadge(
   supabase: ReturnType<typeof createSupabaseServerClient>,
-): Promise<{ convocatorias: number; anuncios: number }> {
+): Promise<number> {
   const { data } = await supabase
     .from('notifications')
     .select('type')
     .eq('channel', 'in_app')
-    .eq('status', 'pending');
-  let convocatorias = 0;
-  let anuncios = 0;
+    .eq('status', 'pending')
+    .eq('type', 'new_announcement');
+  return data?.length ?? 0;
+}
+
+/**
+ * FIX E — badge de "convocatorias" con semántica de NO-LEÍDO filtrado por
+ * VIGENCIA. Es la INTERSECCIÓN de:
+ *   (a) notificaciones callup_* in_app PENDING del user  → no leídas; bajan a 0
+ *       al abrir la lista (MarkNotificationsRead las pasa a 'sent'), como el
+ *       badge original.
+ *   (b) convocatorias VIGENTES para el user (`vigenteEventIds`, derivadas de
+ *       loadUpcomingCallups: evento existe + starts_at en ventana + equipo del
+ *       jugador con team_members.left_at IS NULL, por rol).
+ * Así el badge NUNCA cuenta basura de eventos borrados/pasados (no están en (b))
+ * aunque su notificación siga pending, y sí refleja novedades reales.
+ *
+ * Se deduplica por evento (una convocatoria con varias notifs pending —
+ * published + updated — cuenta como 1), coherente con la lista, que muestra una
+ * tarjeta por evento. Enlace notif→evento por payload->>'event_id' (la MISMA
+ * columna que ancla la migración de limpieza FIX 2).
+ */
+async function loadConvocatoriasBadge(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  vigenteEventIds: ReadonlySet<string>,
+): Promise<number> {
+  if (vigenteEventIds.size === 0) return 0;
+  const { data } = await supabase
+    .from('notifications')
+    .select('payload')
+    .eq('channel', 'in_app')
+    .eq('status', 'pending')
+    .in('type', ['callup_published', 'callup_updated']);
+  const unreadVigenteEvents = new Set<string>();
   for (const row of data ?? []) {
-    const type = row.type as string;
-    if (type === 'callup_published' || type === 'callup_updated') {
-      convocatorias += 1;
-    } else if (type === 'new_announcement') {
-      anuncios += 1;
-    }
+    const eventId = (row.payload as { event_id?: string } | null)?.event_id;
+    if (eventId && vigenteEventIds.has(eventId)) unreadVigenteEvents.add(eventId);
   }
-  return { convocatorias, anuncios };
+  return unreadVigenteEvents.size;
 }
 
 export async function AppShell({ ctx, locale, children, isSuperadmin = false }: Props) {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const [unreadConversations, notifBadges] = await Promise.all([
+  // FIX E — badge de convocatorias = NO-LEÍDAS ∩ VIGENTES. Se resuelve el
+  // conjunto de convocatorias vigentes con la MISMA lógica que la pantalla
+  // (loadUpcomingCallups: evento vigente + ventana + equipo del jugador con
+  // team_members.left_at IS NULL, por rol; rangeDays=30 = convocatorias/page.tsx),
+  // y luego se cuentan solo las notificaciones callup PENDING (no leídas) cuyo
+  // evento cae en ese conjunto. Baja a 0 al abrir la lista (MarkNotificationsRead)
+  // y nunca cuenta eventos borrados/pasados.
+  const [unreadConversations, anunciosBadge, upcomingCallups] = await Promise.all([
     loadUnreadConversationsCount(supabase),
-    loadNotificationBadges(supabase),
+    loadAnnouncementBadge(supabase),
+    loadUpcomingCallups(ctx.activeClub.club.id, ctx.activeClub.role, 30),
   ]);
+  const vigenteEventIds = new Set(upcomingCallups.map((c) => c.event_id));
+  const convocatoriasBadge = await loadConvocatoriasBadge(
+    supabase,
+    vigenteEventIds,
+  );
   const badges = {
     mensajes: unreadConversations,
-    convocatorias: notifBadges.convocatorias,
-    anuncios: notifBadges.anuncios,
+    convocatorias: convocatoriasBadge,
+    anuncios: anunciosBadge,
   };
 
   // #9 — estado del colapso del menú lateral leído de la cookie en el servidor:
