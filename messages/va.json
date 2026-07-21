@@ -200,10 +200,10 @@
       "player_promoted_match": "Convocat per a jugar amb un equip superior",
       "player_promoted_match_named": "Convocat per a jugar amb el {team}"
     },
-    "welcome": "Bienvenido a {club}",
-    "your_role": "Tu rol aquí es {role}.",
-    "next_steps_title": "Siguientes pasos",
-    "next_steps_body": "Empieza creando categorías y equipos en el menú lateral. Después podrás dar de alta jugadores y configurar al cuerpo técnico.",
+    "welcome": "Benvingut a {club}",
+    "your_role": "El teu rol ací és {role}.",
+    "next_steps_title": "Passos següents",
+    "next_steps_body": "Comença creant categories i equips en el menú lateral. Després podràs donar d'alta jugadors i configurar el cos tècnic.",
     "dashboard_card": {
       "title": "Tauler executiu",
       "body": "Visió global del club: plantilla, resultats, assistència, alertes i rànquings.",
@@ -364,11 +364,11 @@
     "error_password_mismatch": "Les contrasenyes no coincideixen",
     "error_no_session": "Sessió no trobada. Torna a obrir l'enllaç del correu.",
     "error_generic": "No hem pogut processar la invitació. Torna-ho a provar.",
-    "error_auth_update_failed": "No hemos podido establecer tu contraseña. Inténtalo de nuevo.",
-    "error_profile_update_failed": "No hemos podido guardar tu perfil. Inténtalo de nuevo.",
-    "error_membership_failed": "No hemos podido vincularte al club. Avisa al admin del club.",
-    "error_player_link_failed": "No hemos podido vincularte al jugador. Avisa al admin del club.",
-    "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club.",
+    "error_auth_update_failed": "No hem pogut establir la teua contrasenya. Torneu-ho a provar.",
+    "error_profile_update_failed": "No hem pogut guardar el teu perfil. Torneu-ho a provar.",
+    "error_membership_failed": "No hem pogut vincular-te al club. Avisa l'admin del club.",
+    "error_player_link_failed": "No hem pogut vincular-te al jugador. Avisa l'admin del club.",
+    "error_team_staff_failed": "No hem pogut afegir-te a l'equip. Avisa l'admin del club.",
     "error_wrong_credentials": "Correu o contrasenya incorrectes.",
     "consent_intro": "Per completar l'alta, accepta:",
     "consent_accept_terms": "Accepte els Termes i Condicions",
@@ -464,18 +464,18 @@
   "shell": {
     "app_name": "MisterFC",
     "sidebar_label": "Menú principal",
-    "signout": "Cerrar sesión",
-    "open_menu": "Abrir menú",
-    "active_club_label": "Club activo",
-    "active_club_switch_help": "Cambiar de club activo",
-    "user_menu_label": "Menú de usuario",
-    "user_menu_perfil": "Mi perfil",
+    "signout": "Tancar sessió",
+    "open_menu": "Obrir menú",
+    "active_club_label": "Club actiu",
+    "active_club_switch_help": "Canviar de club actiu",
+    "user_menu_label": "Menú d'usuari",
+    "user_menu_perfil": "El meu perfil",
     "nav": {
-      "home": "Inicio",
+      "home": "Inici",
       "directos": "Directes",
       "dashboard": "Tauler",
-      "invitations": "Invitaciones",
-      "perfil": "Mi perfil",
+      "invitations": "Invitacions",
+      "perfil": "El meu perfil",
       "jugadores": "Jugadors",
       "mis_equipos": "Els meus equips",
       "import_players": "Importar",
@@ -494,7 +494,7 @@
       "mi_ficha": "La meua fitxa",
       "seguidores": "Seguidors",
       "mi_informe": "Informe de desenvolupament",
-      "equipos": "Equipos",
+      "equipos": "Equips",
       "ejercicios": "Exercicis",
       "entrenamientos": "Entrenaments",
       "partidos": "Partits",
@@ -508,10 +508,10 @@
     "expand_sidebar": "Mostra el menú"
   },
   "perfil": {
-    "title": "Mi perfil",
-    "subtitle": "Datos de tu cuenta y cómo te ven el resto de miembros del club.",
-    "save": "Guardar cambios",
-    "saved": "Cambios guardados.",
+    "title": "El meu perfil",
+    "subtitle": "Dades del teu compte i com et veuen la resta de membres del club.",
+    "save": "Guardar canvis",
+    "saved": "Canvis guardats.",
     "change_password": "Canviar contrasenya",
     "manage_notifications": "Gestionar notificacions",
     "zone": {
@@ -523,8 +523,8 @@
     },
     "section": {
       "avatar": "Foto de perfil",
-      "data": "Datos personales",
-      "account": "Cuenta",
+      "data": "Dades personals",
+      "account": "Compte",
       "consents": "Consentiments"
     },
     "consents": {
@@ -538,36 +538,36 @@
       "empty": "Encara no tens consentiments registrats en aquest club."
     },
     "field": {
-      "full_name": "Nombre completo",
-      "email": "Correo electrónico",
-      "email_help": "Para cambiar tu correo, contacta con soporte.",
-      "date_of_birth": "Fecha de nacimiento",
-      "locale": "Idioma de la app",
-      "locale_help": "Determina el idioma de menús, mensajes y emails."
+      "full_name": "Nom complet",
+      "email": "Correu electrònic",
+      "email_help": "Per a canviar el teu correu, contacta amb suport.",
+      "date_of_birth": "Data de naixement",
+      "locale": "Idioma de l'app",
+      "locale_help": "Determina l'idioma de menús, missatges i correus."
     },
     "locales": {
-      "es": "Español",
-      "en": "Inglés",
+      "es": "Espanyol",
+      "en": "Anglés",
       "va": "Valencià"
     },
     "avatar": {
-      "pick_label": "Elegir nueva foto",
-      "change": "Cambiar foto",
-      "remove": "Quitar foto",
-      "hint": "JPG, PNG o WebP. Máximo {maxMb} MB."
+      "pick_label": "Triar nova foto",
+      "change": "Canviar foto",
+      "remove": "Llevar foto",
+      "hint": "JPG, PNG o WebP. Màxim {maxMb} MB."
     },
     "errors": {
-      "full_name_too_short": "El nombre debe tener al menos 2 caracteres",
-      "full_name_too_long": "El nombre no puede superar los 120 caracteres",
-      "date_of_birth_invalid": "Fecha de nacimiento no válida",
-      "locale_invalid": "Idioma no válido",
-      "no_session": "Sesión perdida. Vuelve a iniciar sesión.",
-      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo.",
-      "avatar_mime_invalid": "Formato no admitido. Usa JPG, PNG o WebP.",
-      "avatar_too_large": "La foto es demasiado grande.",
-      "avatar_empty": "El archivo está vacío.",
-      "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
-      "avatar_remove_failed": "No hemos podido quitar la foto."
+      "full_name_too_short": "El nom ha de tindre almenys 2 caràcters",
+      "full_name_too_long": "El nom no pot superar els 120 caràcters",
+      "date_of_birth_invalid": "Data de naixement no vàlida",
+      "locale_invalid": "Idioma no vàlid",
+      "no_session": "Sessió perduda. Torna a iniciar sessió.",
+      "generic": "No hem pogut guardar els canvis. Torneu-ho a provar.",
+      "avatar_mime_invalid": "Format no admés. Useu JPG, PNG o WebP.",
+      "avatar_too_large": "La foto és massa gran.",
+      "avatar_empty": "El fitxer està buit.",
+      "avatar_upload_failed": "No hem pogut pujar la foto. Torneu-ho a provar.",
+      "avatar_remove_failed": "No hem pogut llevar la foto."
     }
   },
   "ajustes": {
@@ -649,84 +649,84 @@
     }
   },
   "categorias": {
-    "title": "Categorías",
-    "subtitle": "Organiza el club por categorías y temporadas.",
-    "empty": "Aún no has creado ninguna categoría. Empieza por la primera.",
+    "title": "Categories",
+    "subtitle": "Organitza el club per categories i temporades.",
+    "empty": "Encara no heu creat cap categoria. Comenceu per la primera.",
     "season_label": "Temporada {season}",
-    "teams_count": "{count, plural, =0 {Sin equipos} one {# equipo} other {# equipos}}",
+    "teams_count": "{count, plural, =0 {Sense equips} one {# equip} other {# equips}}",
     "actions": {
-      "create": "Nueva categoría",
+      "create": "Nova categoria",
       "edit": "Editar",
       "delete": "Eliminar",
-      "cancel": "Cancelar",
+      "cancel": "Cancel·lar",
       "save": "Guardar"
     },
     "dialog": {
-      "create_title": "Crear categoría",
-      "edit_title": "Editar categoría",
-      "description": "Las categorías agrupan equipos por edad o nivel dentro de una temporada."
+      "create_title": "Crear categoria",
+      "edit_title": "Editar categoria",
+      "description": "Les categories agrupen equips per edat o nivell dins d'una temporada."
     },
     "field": {
-      "name": "Nombre",
+      "name": "Nom",
       "season": "Temporada",
-      "season_help": "Formato YYYY-YY, por ejemplo 2025-26.",
-      "order_idx": "Orden"
+      "season_help": "Format YYYY-YY, per exemple 2025-26.",
+      "order_idx": "Orde"
     },
     "delete": {
-      "title": "¿Eliminar la categoría?",
-      "description": "Vas a eliminar «{name}». Esta acción elimina también sus equipos y no se puede deshacer."
+      "title": "Voleu eliminar la categoria?",
+      "description": "Vas a eliminar «{name}». Esta acció elimina també els seus equips i no es pot desfer."
     },
     "errors": {
-      "name_required": "Pon el nombre de la categoría",
-      "name_too_long": "El nombre no puede superar los 80 caracteres",
-      "season_invalid": "Temporada no válida. Usa formato YYYY-YY (ej. 2025-26).",
-      "no_active_club": "No hay club activo.",
-      "forbidden": "No tienes permiso para hacer esto.",
-      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo."
+      "name_required": "Posa el nom de la categoria",
+      "name_too_long": "El nom no pot superar els 80 caràcters",
+      "season_invalid": "Temporada no vàlida. Useu el format YYYY-YY (ex. 2025-26).",
+      "no_active_club": "No hi ha club actiu.",
+      "forbidden": "No tens permís per a fer açò.",
+      "generic": "No hem pogut guardar els canvis. Torneu-ho a provar."
     }
   },
   "equipos": {
-    "back_to_categorias": "← Volver a categorías",
-    "subtitle": "Equipos de la temporada {season}.",
-    "empty": "Aún no hay equipos en esta categoría.",
-    "list_title": "Equipos",
+    "back_to_categorias": "← Tornar a categories",
+    "subtitle": "Equips de la temporada {season}.",
+    "empty": "Encara no hi ha equips en esta categoria.",
+    "list_title": "Equips",
     "actions": {
-      "create": "Nuevo equipo",
+      "create": "Nou equip",
       "edit": "Editar",
       "delete": "Eliminar",
-      "cancel": "Cancelar",
+      "cancel": "Cancel·lar",
       "save": "Guardar"
     },
     "dialog": {
-      "create_title": "Crear equipo",
-      "edit_title": "Editar equipo"
+      "create_title": "Crear equip",
+      "edit_title": "Editar equip"
     },
     "field": {
-      "name": "Nombre",
-      "format": "Formato",
+      "name": "Nom",
+      "format": "Format",
       "color": "Color",
-      "color_help": "Color identificativo en calendarios y vistas del equipo.",
+      "color_help": "Color identificatiu en calendaris i vistes de l'equip.",
       "division": "Divisió",
       "division_help": "Definix el règim de canvis de l'equip.",
       "season": "Temporada",
-      "season_help": "Formato YYYY-YY, por ejemplo 2025-26.",
-      "category": "Categoría"
+      "season_help": "Format YYYY-YY, per exemple 2025-26.",
+      "category": "Categoria"
     },
     "delete": {
-      "title": "¿Eliminar el equipo?",
-      "description": "Vas a eliminar «{name}». Esta acción no se puede deshacer."
+      "title": "Voleu eliminar l'equip?",
+      "description": "Vas a eliminar «{name}». Esta acció no es pot desfer."
     },
     "errors": {
-      "name_required": "Pon el nombre del equipo",
-      "name_too_long": "El nombre no puede superar los 80 caracteres",
-      "format_invalid": "Formato no válido",
-      "color_invalid": "Color no válido",
-      "forbidden": "No tienes permiso para hacer esto.",
-      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo.",
+      "name_required": "Posa el nom de l'equip",
+      "name_too_long": "El nom no pot superar els 80 caràcters",
+      "format_invalid": "Format no vàlid",
+      "color_invalid": "Color no vàlid",
+      "forbidden": "No tens permís per a fer açò.",
+      "generic": "No hem pogut guardar els canvis. Torneu-ho a provar.",
       "division_invalid": "Divisió no vàlida per a la categoria.",
-      "category_invalid": "Categoría no válida.",
-      "season_invalid": "Temporada no válida. Usa formato YYYY-YY (ej. 2025-26).",
-      "no_active_club": "No hay club activo."
+      "category_invalid": "Categoria no vàlida.",
+      "season_invalid": "Temporada no vàlida. Useu el format YYYY-YY (ex. 2025-26).",
+      "no_active_club": "No hi ha club actiu."
     },
     "divisions": {
       "preferente": "Preferent",
@@ -742,8 +742,8 @@
       "limited": "{max} canvis"
     },
     "title": "Equips",
-    "page_subtitle": "Equipos del club por temporada.",
-    "manage_templates": "Categorías",
+    "page_subtitle": "Equips del club per temporada.",
+    "manage_templates": "Categories",
     "open_season": "Obrir temporada {season}",
     "open_season_confirm_title": "Obrir la temporada {season}",
     "open_season_confirm_description": "Estàs a punt d'obrir la temporada {season}. Es crearà la temporada nova i es clonaran els equips. Confirmar?",
@@ -829,17 +829,17 @@
         "generic": "No hem pogut finalitzar la temporada. Torna-ho a provar."
       }
     },
-    "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
+    "no_templates": "Creeu primer una categoria-plantilla per a poder donar d'alta equips.",
     "season_filter": "Temporada",
-    "empty_season": "Aún no hay equipos en la temporada {season}."
+    "empty_season": "Encara no hi ha equips en la temporada {season}."
   },
   "roles": {
     "admin_club": "Administrador del club",
     "director": "Director",
     "coordinador": "Coordinador",
     "entrenador_principal": "Entrenador principal",
-    "entrenador_ayudante": "Entrenador ayudante",
-    "jugador": "Jugador / Familia"
+    "entrenador_ayudante": "Entrenador ajudant",
+    "jugador": "Jugador / Família"
   },
   "informes": {
     "title": "Informes de desenvolupament",
@@ -1070,95 +1070,95 @@
   "jugadores": {
     "invitePending": {
       "trigger": {
-        "imported": "Invitar a los recién importados",
-        "pending": "Invitar a los pendientes"
+        "imported": "Convidar els acabats d'importar",
+        "pending": "Convidar els pendents"
       },
       "confirm": {
-        "title": "Invitar por email",
-        "body": "¿Invitar a {count} personas? Se envía un email por familia (uno solo aunque haya varios hijos).",
-        "cancel": "Cancelar",
-        "send": "Invitar"
+        "title": "Convidar per correu",
+        "body": "Voleu convidar {count} persones? S'envia un correu per família (només un encara que hi haja diversos fills).",
+        "cancel": "Cancel·lar",
+        "send": "Convidar"
       },
-      "sending": "Enviando…",
+      "sending": "Enviant…",
       "tooMany": {
-        "title": "Demasiados pendientes",
-        "body": "Hay {count} pendientes y el máximo por tanda es {limit}. Invita desde el import (que va de 100 en 100) o reduce la selección."
+        "title": "Massa pendents",
+        "body": "Hi ha {count} pendents i el màxim per tanda és {limit}. Convida des de l'import (que va de 100 en 100) o reduïx la selecció."
       },
       "errorState": {
-        "title": "No se pudo invitar",
-        "forbidden": "No tienes permiso para invitar en este club.",
-        "generic": "Algo salió mal. Inténtalo de nuevo en unos minutos."
+        "title": "No s'ha pogut convidar",
+        "forbidden": "No tens permís per a convidar en este club.",
+        "generic": "Alguna cosa ha anat malament. Torneu-ho a provar d'ací a uns minuts."
       },
       "result": {
-        "title": "Resultado del envío",
-        "summary": "{sent} enviados, {failed} fallidos, {skipped} saltados."
+        "title": "Resultat de l'enviament",
+        "summary": "{sent} enviats, {failed} fallits, {skipped} omesos."
       },
       "row": {
-        "sent": "Enviado",
-        "skipped": "Saltado",
+        "sent": "Enviat",
+        "skipped": "Omés",
         "reason": {
-          "forbidden": "Sin permiso",
-          "insert_failed": "Error al crear",
-          "send_failed": "Error al enviar"
+          "forbidden": "Sense permís",
+          "insert_failed": "Error en crear",
+          "send_failed": "Error en enviar"
         }
       },
-      "close": "Cerrar"
+      "close": "Tancar"
     },
-    "title": "Jugadores",
+    "title": "Jugadors",
     "development_reports": "Informes de desenvolupament",
     "export_pdf": "Exportar PDF",
-    "count": "{count, plural, =0 {Sin jugadores todavía} one {1 jugador} other {# jugadores}}",
-    "empty": "Aún no hay jugadores en este club. Crea el primero arriba.",
+    "count": "{count, plural, =0 {Encara sense jugadors} one {1 jugador} other {# jugadors}}",
+    "empty": "Encara no hi ha jugadors en este club. Creeu el primer a dalt.",
     "create": "Crear jugador",
-    "create_help": "Da de alta la ficha del jugador. Puedes asignarle un equipo ahora o más tarde.",
-    "back_to_list": "Volver al listado",
-    "age_years": "{age, plural, one {1 año} other {# años}}",
-    "saved": "Cambios guardados.",
+    "create_help": "Dona d'alta la fitxa del jugador. Podeu assignar-li un equip ara o més tard.",
+    "back_to_list": "Tornar al llistat",
+    "age_years": "{age, plural, one {1 any} other {# anys}}",
+    "saved": "Canvis guardats.",
     "actions": {
       "create": "Crear",
-      "cancel": "Cancelar",
-      "save": "Guardar cambios"
+      "cancel": "Cancel·lar",
+      "save": "Guardar canvis"
     },
     "field": {
-      "first_name": "Nombre",
-      "last_name": "Apellidos",
-      "date_of_birth": "Fecha de nacimiento",
-      "date_of_birth_help": "Obligatoria — necesaria para edad y categoría.",
+      "first_name": "Nom",
+      "last_name": "Cognoms",
+      "date_of_birth": "Data de naixement",
+      "date_of_birth_help": "Obligatòria — necessària per a edat i categoria.",
       "dorsal": "Dorsal",
-      "position_main": "Posición principal",
-      "positions_secondary": "Otras posiciones",
-      "foot": "Pie dominante",
+      "position_main": "Posició principal",
+      "positions_secondary": "Altres posicions",
+      "foot": "Peu dominant",
       "height_cm": "Altura (cm)",
-      "weight_kg": "Peso (kg)",
-      "origin": "Procedencia",
-      "team": "Equipo",
-      "no_team": "Sin equipo (asignar luego)",
+      "weight_kg": "Pes (kg)",
+      "origin": "Procedència",
+      "team": "Equip",
+      "no_team": "Sense equip (assignar després)",
       "optional": "Opcional",
-      "legend": "Los campos marcados con * son obligatorios.",
+      "legend": "Els camps marcats amb * són obligatoris.",
       "optional_tag": "opcional",
-      "team_placeholder": "Selecciona un equipo",
-      "team_none_available": "No hay equipos en la temporada activa. Crea un equipo antes de dar de alta jugadores.",
-      "tutor_email": "Email del tutor",
-      "tutor_relation": "Relación del tutor",
-      "relation_placeholder": "Selecciona la relación",
-      "tutor_help": "Al crear el jugador se enviará automáticamente la invitación a este email."
+      "team_placeholder": "Selecciona un equip",
+      "team_none_available": "No hi ha equips en la temporada activa. Creeu un equip abans de donar d'alta jugadors.",
+      "tutor_email": "Correu del tutor",
+      "tutor_relation": "Relació del tutor",
+      "relation_placeholder": "Selecciona la relació",
+      "tutor_help": "En crear el jugador s'enviarà automàticament la invitació a este correu."
     },
     "positions": {
-      "goalkeeper": "Portero",
+      "goalkeeper": "Porter",
       "defender": "Defensa",
-      "midfielder": "Centrocampista",
-      "forward": "Delantero"
+      "midfielder": "Centrecampista",
+      "forward": "Davanter"
     },
     "feet": {
-      "right": "Diestro",
-      "left": "Zurdo",
-      "both": "Ambidiestro"
+      "right": "Dretà",
+      "left": "Esquerrà",
+      "both": "Ambidextre"
     },
     "section": {
-      "basic_data": "Datos básicos",
-      "medical": "Notas médicas",
-      "history": "Trayectoria en el club",
-      "family": "Familia",
+      "basic_data": "Dades bàsiques",
+      "medical": "Notes mèdiques",
+      "history": "Trajectòria en el club",
+      "family": "Família",
       "season_stats": "Estadístiques de la temporada"
     },
     "stats": {
@@ -1236,29 +1236,29 @@
       }
     },
     "history": {
-      "empty": "Sin asignaciones a equipos todavía.",
+      "empty": "Encara sense assignacions a equips.",
       "active": "Actual"
     },
     "photo": {
-      "change": "Cambiar foto",
-      "remove": "Quitar foto",
-      "hint": "Máximo {maxMb} MB. JPG, PNG o WebP.",
+      "change": "Canviar foto",
+      "remove": "Llevar foto",
+      "hint": "Màxim {maxMb} MB. JPG, PNG o WebP.",
       "errors": {
-        "mime": "Formato no aceptado. Usa JPG, PNG o WebP.",
-        "too_large": "Imagen demasiado grande.",
-        "empty": "Fichero vacío.",
-        "upload_failed": "No se pudo subir la imagen.",
-        "remove_failed": "No se pudo quitar la imagen."
+        "mime": "Format no acceptat. Useu JPG, PNG o WebP.",
+        "too_large": "Imatge massa gran.",
+        "empty": "Fitxer buit.",
+        "upload_failed": "No s'ha pogut pujar la imatge.",
+        "remove_failed": "No s'ha pogut llevar la imatge."
       }
     },
     "medical": {
-      "label": "Notas médicas",
-      "placeholder": "Alergias, lesiones, tratamientos en curso, contactos de urgencia…",
-      "help": "Visible solo para admin/coordinador, entrenador principal, ayudantes con permiso explícito, y tutores legales vinculados.",
+      "label": "Notes mèdiques",
+      "placeholder": "Al·lèrgies, lesions, tractaments en curs, contactes d'urgència…",
+      "help": "Visible només per a admin/coordinador, entrenador principal, ajudants amb permís explícit, i tutors legals vinculats.",
       "errors": {
-        "medical_notes_too_long": "Las notas son demasiado largas (máx. 5000 caracteres).",
-        "forbidden": "No tienes permiso para editar las notas médicas.",
-        "generic": "No se pudo guardar."
+        "medical_notes_too_long": "Les notes són massa llargues (màx. 5000 caràcters).",
+        "forbidden": "No tens permís per a editar les notes mèdiques.",
+        "generic": "No s'ha pogut guardar."
       },
       "readonly_hint": "Només lectura. La família gestiona estes dades.",
       "allergies": "Alèrgies",
@@ -1267,85 +1267,85 @@
       "emergency": "Contacte d’emergència"
     },
     "errors": {
-      "first_name_required": "Introduce el nombre.",
-      "first_name_too_long": "Nombre demasiado largo.",
-      "last_name_required": "Introduce los apellidos.",
-      "last_name_too_long": "Apellidos demasiado largos.",
-      "date_of_birth_required": "Falta la fecha de nacimiento.",
-      "date_of_birth_invalid": "Fecha de nacimiento no válida.",
-      "dorsal_invalid": "El dorsal debe estar entre 1 y 99.",
-      "position_invalid": "Posición no válida.",
-      "positions_secondary_too_many": "Demasiadas posiciones secundarias.",
-      "foot_invalid": "Pie no válido.",
-      "height_cm_invalid": "La altura debe estar entre 50 y 250 cm.",
-      "weight_kg_invalid": "El peso debe estar entre 10 y 200 kg.",
-      "origin_too_long": "Procedencia demasiado larga.",
-      "team_invalid": "Equipo no válido.",
-      "team_required": "Selecciona un equipo.",
-      "email_required": "Introduce el email del tutor.",
-      "email_invalid": "El email del tutor no es válido.",
-      "email_too_long": "El email es demasiado largo.",
-      "relation_required": "Selecciona la relación del tutor.",
-      "no_active_club": "Selecciona primero un club.",
-      "forbidden": "No tienes permiso.",
-      "generic": "No se pudo guardar. Inténtalo de nuevo."
+      "first_name_required": "Introduïu el nom.",
+      "first_name_too_long": "Nom massa llarg.",
+      "last_name_required": "Introduïu els cognoms.",
+      "last_name_too_long": "Cognoms massa llargs.",
+      "date_of_birth_required": "Falta la data de naixement.",
+      "date_of_birth_invalid": "Data de naixement no vàlida.",
+      "dorsal_invalid": "El dorsal ha d'estar entre 1 i 99.",
+      "position_invalid": "Posició no vàlida.",
+      "positions_secondary_too_many": "Massa posicions secundàries.",
+      "foot_invalid": "Peu no vàlid.",
+      "height_cm_invalid": "L'altura ha d'estar entre 50 i 250 cm.",
+      "weight_kg_invalid": "El pes ha d'estar entre 10 i 200 kg.",
+      "origin_too_long": "Procedència massa llarga.",
+      "team_invalid": "Equip no vàlid.",
+      "team_required": "Selecciona un equip.",
+      "email_required": "Introduïu el correu del tutor.",
+      "email_invalid": "El correu del tutor no és vàlid.",
+      "email_too_long": "El correu és massa llarg.",
+      "relation_required": "Selecciona la relació del tutor.",
+      "no_active_club": "Selecciona primer un club.",
+      "forbidden": "No tens permís.",
+      "generic": "No s'ha pogut guardar. Torneu-ho a provar."
     },
     "family": {
-      "empty": "Aún no hay cuentas de familia vinculadas.",
+      "empty": "Encara no hi ha comptes de família vinculats.",
       "linked": "Vinculada",
-      "pending": "Invitación pendiente",
+      "pending": "Invitació pendent",
       "relation": {
-        "parent": "Padre/madre",
+        "parent": "Pare/mare",
         "guardian": "Tutor legal",
-        "self": "El propio jugador"
+        "self": "El mateix jugador"
       }
     },
     "tutor": {
-      "action": "Invitar tutor",
-      "title": "Invitar tutor familiar",
-      "description": "Envía una invitación por email a un familiar de {player}. Al aceptar quedará vinculado a esta ficha.",
+      "action": "Convidar tutor",
+      "title": "Convidar tutor familiar",
+      "description": "Envia una invitació per correu a un familiar de {player}. En acceptar quedarà vinculat a esta fitxa.",
       "field": {
-        "email": "Email del tutor",
-        "relation": "Relación",
-        "help": "Determina el vínculo legal. Ambos comparten la misma vista del jugador."
+        "email": "Correu del tutor",
+        "relation": "Relació",
+        "help": "Determina el vincle legal. Ambdós compartixen la mateixa vista del jugador."
       },
       "relation": {
-        "parent": "Padre/madre",
+        "parent": "Pare/mare",
         "guardian": "Tutor legal"
       },
-      "send": "Enviar invitación",
-      "cancel": "Cancelar",
-      "close": "Cerrar",
-      "sent": "Invitación enviada a {email}.",
+      "send": "Enviar invitació",
+      "cancel": "Cancel·lar",
+      "close": "Tancar",
+      "sent": "Invitació enviada a {email}.",
       "errors": {
-        "email_invalid": "Email no válido.",
-        "email_too_long": "Email demasiado largo.",
-        "relation_invalid": "Relación no válida.",
-        "forbidden": "No tienes permiso para invitar tutores en este club.",
-        "generic": "No se pudo enviar la invitación."
+        "email_invalid": "Correu no vàlid.",
+        "email_too_long": "Correu massa llarg.",
+        "relation_invalid": "Relació no vàlida.",
+        "forbidden": "No tens permís per a convidar tutors en este club.",
+        "generic": "No s'ha pogut enviar la invitació."
       }
     },
     "assign": {
-      "action_move": "Mover de equipo",
-      "action_assign": "Asignar a equipo",
-      "title_assign": "Asignar a equipo",
-      "title_move": "Mover a otro equipo",
-      "description": "Al asignar a un equipo nuevo, el equipo actual se cierra con la fecha de hoy. La trayectoria se conserva.",
+      "action_move": "Moure d'equip",
+      "action_assign": "Assignar a equip",
+      "title_assign": "Assignar a equip",
+      "title_move": "Moure a un altre equip",
+      "description": "En assignar a un equip nou, l'equip actual es tanca amb la data de hui. La trajectòria es conserva.",
       "field": {
-        "team": "Equipo destino",
-        "team_placeholder": "Selecciona un equipo",
-        "dorsal_in_team": "Dorsal en el equipo",
-        "position_in_team": "Posición en el equipo",
+        "team": "Equip destí",
+        "team_placeholder": "Selecciona un equip",
+        "dorsal_in_team": "Dorsal en l'equip",
+        "position_in_team": "Posició en l'equip",
         "optional": "Opcional"
       },
-      "cancel": "Cancelar",
+      "cancel": "Cancel·lar",
       "save": "Confirmar",
       "errors": {
-        "team_invalid": "Equipo no válido.",
-        "dorsal_invalid": "El dorsal debe estar entre 1 y 99.",
-        "position_invalid": "Posición no válida.",
-        "forbidden": "No tienes permiso para gestionar este jugador.",
-        "generic": "No se pudo guardar."
+        "team_invalid": "Equip no vàlid.",
+        "dorsal_invalid": "El dorsal ha d'estar entre 1 i 99.",
+        "position_invalid": "Posició no vàlida.",
+        "forbidden": "No tens permís per a gestionar este jugador.",
+        "generic": "No s'ha pogut guardar."
       }
     },
     "subtitle": "Llistat global del club amb filtres i assignació individual.",
@@ -1426,101 +1426,101 @@
     }
   },
   "equipo_detalle": {
-    "back": "Volver a la categoría",
-    "roster_title": "Jugadores activos",
-    "roster_empty": "Aún no hay jugadores asignados a este equipo.",
+    "back": "Tornar a la categoria",
+    "roster_title": "Jugadors actius",
+    "roster_empty": "Encara no hi ha jugadors assignats a este equip.",
     "announcements_link": "Anuncis",
     "development_reports_link": "Informes",
     "playbook_link": "Playbook",
     "team_chat_link": "Xat de l'equip"
   },
   "staff": {
-    "title": "Cuerpo técnico",
-    "empty": "Sin cuerpo técnico asignado todavía.",
-    "caps": "Configurar permisos del ayudante",
+    "title": "Cos tècnic",
+    "empty": "Encara sense cos tècnic assignat.",
+    "caps": "Configurar permisos de l'ajudant",
     "role": {
       "entrenador_principal": "Entrenador principal",
-      "entrenador_ayudante": "Entrenador ayudante",
-      "preparador_fisico": "Preparador físico",
-      "delegado": "Delegado",
+      "entrenador_ayudante": "Entrenador ajudant",
+      "preparador_fisico": "Preparador físic",
+      "delegado": "Delegat",
       "coordinador": "Coordinador"
     },
     "invite": {
-      "action": "Invitar staff",
-      "title": "Invitar cuerpo técnico",
-      "description": "Envía una invitación por email. Al aceptar quedará vinculado a este equipo con la función indicada.",
+      "action": "Convidar staff",
+      "title": "Convidar cos tècnic",
+      "description": "Envia una invitació per correu. En acceptar quedarà vinculat a este equip amb la funció indicada.",
       "field": {
         "email": "Email",
-        "role": "Función en el equipo",
-        "help": "Solo un entrenador principal por equipo. Preparador físico y delegado se gestionan como ayudantes a nivel de club (sin caps por defecto)."
+        "role": "Funció en l'equip",
+        "help": "Només un entrenador principal per equip. Preparador físic i delegat es gestionen com a ajudants a nivell de club (sense caps per defecte)."
       },
-      "send": "Enviar invitación",
-      "cancel": "Cancelar",
-      "close": "Cerrar",
-      "sent": "Invitación enviada a {email}.",
+      "send": "Enviar invitació",
+      "cancel": "Cancel·lar",
+      "close": "Tancar",
+      "sent": "Invitació enviada a {email}.",
       "errors": {
-        "email_invalid": "Email no válido.",
-        "email_too_long": "Email demasiado largo.",
-        "team_staff_role_invalid": "Función no válida.",
-        "principal_exists": "Ya hay un entrenador principal activo en este equipo. Quita el actual antes de invitar otro.",
-        "forbidden": "No tienes permiso para invitar staff en este equipo.",
-        "generic": "No se pudo enviar la invitación."
+        "email_invalid": "Correu no vàlid.",
+        "email_too_long": "Correu massa llarg.",
+        "team_staff_role_invalid": "Funció no vàlida.",
+        "principal_exists": "Ja hi ha un entrenador principal actiu en este equip. Lleva l'actual abans de convidar-ne un altre.",
+        "forbidden": "No tens permís per a convidar staff en este equip.",
+        "generic": "No s'ha pogut enviar la invitació."
       }
     },
     "remove": {
-      "action": "Quitar del cuerpo técnico",
-      "title": "Quitar del cuerpo técnico",
-      "description": "¿Seguro que quieres quitar a {name} del cuerpo técnico de este equipo? Su membership en el club no se ve afectada.",
-      "cancel": "Cancelar",
-      "confirm": "Quitar"
+      "action": "Llevar del cos tècnic",
+      "title": "Llevar del cos tècnic",
+      "description": "Segur que voleu llevar {name} del cos tècnic d'este equip? La seua pertinença al club no es veu afectada.",
+      "cancel": "Cancel·lar",
+      "confirm": "Llevar"
     },
     "pending_title": "Invitacions pendents",
     "pending_status": "Enviada",
     "pending_expired": "Caducada"
   },
   "capabilities": {
-    "back": "Volver al equipo",
-    "subtitle": "Permisos del entrenador ayudante",
-    "read_only": "Solo el entrenador principal del equipo, coordinador o admin puede modificar estos permisos.",
-    "not_assistant": "Este miembro no es entrenador ayudante. Los permisos solo aplican a ayudantes.",
-    "autosave_hint": "Los cambios se guardan automáticamente.",
+    "back": "Tornar a l'equip",
+    "subtitle": "Permisos de l'entrenador ajudant",
+    "read_only": "Només l'entrenador principal de l'equip, coordinador o admin pot modificar estos permisos.",
+    "not_assistant": "Este membre no és entrenador ajudant. Els permisos només s'apliquen a ajudants.",
+    "autosave_hint": "Els canvis es guarden automàticament.",
     "can_evaluate": {
-      "label": "Valorar a jugadores",
-      "description": "Puede dejar valoraciones individuales post-partido y post-entrenamiento."
+      "label": "Valorar jugadors",
+      "description": "Pot deixar valoracions individuals post-partit i post-entrenament."
     },
     "can_create_lineups": {
-      "label": "Crear alineaciones",
-      "description": "Puede preparar alineaciones (titular, plan B, segunda parte)."
+      "label": "Crear alineacions",
+      "description": "Pot preparar alineacions (titular, pla B, segona part)."
     },
     "can_register_match_events": {
-      "label": "Registrar eventos del partido",
-      "description": "Puede usar la pantalla de toma de datos en directo."
+      "label": "Registrar esdeveniments del partit",
+      "description": "Pot usar la pantalla de presa de dades en directe."
     },
     "can_create_sessions": {
-      "label": "Crear sesiones de entrenamiento",
-      "description": "Puede diseñar y publicar sesiones al equipo."
+      "label": "Crear sessions d'entrenament",
+      "description": "Pot dissenyar i publicar sessions a l'equip."
     },
     "can_create_plays": {
-      "label": "Crear jugadas tácticas",
-      "description": "Puede crear y compartir jugadas con el equipo."
+      "label": "Crear jugades tàctiques",
+      "description": "Pot crear i compartir jugades amb l'equip."
     },
     "can_see_medical": {
-      "label": "Ver notas médicas",
-      "description": "Puede leer las notas médicas de los jugadores del equipo."
+      "label": "Veure notes mèdiques",
+      "description": "Pot llegir les notes mèdiques dels jugadors de l'equip."
     },
     "can_message_families": {
-      "label": "Escribir a familias",
-      "description": "Puede iniciar conversaciones con tutores legales."
+      "label": "Escriure a famílies",
+      "description": "Pot iniciar converses amb tutors legals."
     },
     "can_manage_squad": {
       "label": "Gestionar plantilla",
-      "description": "Puede crear/editar fichas y subir fotos. Sin esto, no puede dar de alta jugadores."
+      "description": "Pot crear/editar fitxes i pujar fotos. Sense açò, no pot donar d'alta jugadors."
     },
     "errors": {
-      "forbidden": "No tienes permiso para modificar este permiso.",
-      "not_assistant": "Este miembro no es entrenador ayudante.",
-      "invalid_input": "Datos no válidos.",
-      "db": "No se pudo guardar. Inténtalo de nuevo."
+      "forbidden": "No tens permís per a modificar este permís.",
+      "not_assistant": "Este membre no és entrenador ajudant.",
+      "invalid_input": "Dades no vàlides.",
+      "db": "No s'ha pogut guardar. Torneu-ho a provar."
     },
     "can_manage_calendar": {
       "label": "Gestionar calendari",
@@ -1590,14 +1590,14 @@
     }
   },
   "import": {
-    "title": "Importar jugadores",
-    "subtitle": "Sube un CSV o Excel con tu plantilla. Hasta 500 filas por carga.",
+    "title": "Importar jugadors",
+    "subtitle": "Puja un CSV o Excel amb la teua plantilla. Fins a 500 files per càrrega.",
     "download": {
-      "xlsx": "Descargar plantilla XLSX",
-      "csv": "Descargar plantilla CSV"
+      "xlsx": "Descarregar plantilla XLSX",
+      "csv": "Descarregar plantilla CSV"
     },
     "upload": {
-      "label": "Selecciona el archivo (.csv o .xlsx)"
+      "label": "Selecciona el fitxer (.csv o .xlsx)"
     },
     "step": {
       "upload": {
@@ -1607,37 +1607,37 @@
       },
       "preview": {
         "short": "Revisar",
-        "title": "Revisa antes de confirmar"
+        "title": "Revisa abans de confirmar"
       },
       "confirming": {
         "short": "Importar",
-        "spinner": "Importando jugadores..."
+        "spinner": "Important jugadors..."
       },
       "result": {
-        "short": "Resumen",
-        "title": "Resumen de la importación"
+        "short": "Resum",
+        "title": "Resum de la importació"
       }
     },
     "stats": {
-      "valid": "Listas para crear",
-      "duplicates": "Duplicadas (omitidas)",
-      "invalid": "Inválidas"
+      "valid": "Llestes per a crear",
+      "duplicates": "Duplicades (omeses)",
+      "invalid": "No vàlides"
     },
     "preview": {
-      "truncated": "+{count} filas más se procesan igual aunque no se muestren aquí.",
-      "unmapped_headers": "Columnas no reconocidas (se ignoran): {headers}",
+      "truncated": "+{count} files més es processen igual encara que no es mostren ací.",
+      "unmapped_headers": "Columnes no reconegudes (s'ignoren): {headers}",
       "required_legend": "Obligatoris: Nom complet, Data de naixement i Email. Equip és opcional: si el deixes buit s'usa l'equip del selector de lot.",
       "editable_hint": "Pots corregir qualsevol fila amb error editant-la ací; es revalida a l'instant."
     },
     "team": {
-      "label": "Asignar al equipo (opcional)",
-      "placeholder": "Sin equipo",
-      "none": "Sin equipo",
-      "help": "Se usa para las filas sin columna «Equipo». La resolución por fila y este selector aplican a la temporada {season}."
+      "label": "Assignar a l'equip (opcional)",
+      "placeholder": "Sense equip",
+      "none": "Sense equip",
+      "help": "S'usa per a les files sense columna «Equip». La resolució per fila i este selector s'apliquen a la temporada {season}."
     },
     "action": {
-      "back": "Volver",
-      "confirm": "Importar {count} jugadores"
+      "back": "Tornar",
+      "confirm": "Importar {count} jugadors"
     },
     "col": {
       "first_name": "Nom complet",
@@ -1654,11 +1654,11 @@
     "status": {
       "valid": "OK",
       "duplicate": "Duplicada",
-      "invalid": "Inválida"
+      "invalid": "No vàlida"
     },
     "reason": {
-      "duplicate_in_db": "ya existe en el club",
-      "duplicate_in_file": "duplicada en el archivo",
+      "duplicate_in_db": "ja existix en el club",
+      "duplicate_in_file": "duplicada en el fitxer",
       "first_name_required": "Falta el nom",
       "first_name_too_long": "Nom massa llarg",
       "last_name_required": "Falten cognoms",
@@ -1672,35 +1672,35 @@
       "height_cm_invalid": "Alçada fora de rang (50-250)",
       "weight_kg_invalid": "Pes fora de rang (10-200)",
       "origin_too_long": "Procedència massa llarga",
-      "rls": "permiso denegado",
-      "duplicate_constraint": "violación de unicidad",
-      "team_assign_failed": "creado pero no asignado al equipo",
-      "generic": "fallo del servidor",
-      "team_not_found": "Equipo no encontrado en la temporada activa. Créalo antes de importar.",
-      "team_required": "Falta el equipo. Indica un equipo en la fila o elige uno en el selector de lote.",
-      "team_too_long": "Nombre de equipo demasiado largo",
-      "invite_email_required": "Falta el email",
-      "invite_email_invalid": "Email no válido"
+      "rls": "permís denegat",
+      "duplicate_constraint": "violació d'unicitat",
+      "team_assign_failed": "creat però no assignat a l'equip",
+      "generic": "fallada del servidor",
+      "team_not_found": "Equip no trobat en la temporada activa. Creeu-lo abans d'importar.",
+      "team_required": "Falta l'equip. Indiqueu un equip en la fila o trieu-ne un en el selector de lot.",
+      "team_too_long": "Nom d'equip massa llarg",
+      "invite_email_required": "Falta el correu",
+      "invite_email_invalid": "Correu no vàlid"
     },
     "error": {
-      "too_large": "Archivo demasiado grande (máx. 5 MB).",
-      "unsupported_type": "Formato no soportado. Sube .csv o .xlsx.",
-      "parse_failed": "No hemos podido leer el archivo. Comprueba el formato.",
-      "empty_file": "El archivo está vacío.",
-      "no_recognized_headers": "No reconocemos ninguna columna. Asegúrate de usar la plantilla.",
-      "too_many_rows": "Máximo {max} jugadores por importación (este archivo trae {count}). Divide el fichero y súbelo en partes."
+      "too_large": "Fitxer massa gran (màx. 5 MB).",
+      "unsupported_type": "Format no admés. Pugeu .csv o .xlsx.",
+      "parse_failed": "No hem pogut llegir el fitxer. Comproveu el format.",
+      "empty_file": "El fitxer està buit.",
+      "no_recognized_headers": "No reconeixem cap columna. Assegureu-vos d'usar la plantilla.",
+      "too_many_rows": "Màxim {max} jugadors per importació (este fitxer en porta {count}). Dividiu el fitxer i pugeu-lo per parts."
     },
     "result": {
-      "created": "Creados",
-      "skipped": "Duplicados",
-      "failed": "Fallidos",
-      "download": "Descargar informe CSV",
-      "again": "Importar otro archivo",
+      "created": "Creats",
+      "skipped": "Duplicats",
+      "failed": "Fallits",
+      "download": "Descarregar informe CSV",
+      "again": "Importar un altre fitxer",
       "error": {
-        "forbidden": "No tienes permisos para importar.",
-        "invalid_payload": "Datos del cliente inválidos.",
-        "no_active_club": "Sin club activo.",
-        "generic": "Error inesperado. Inténtalo de nuevo."
+        "forbidden": "No tens permisos per a importar.",
+        "invalid_payload": "Dades del client no vàlides.",
+        "no_active_club": "Sense club actiu.",
+        "generic": "Error inesperat. Torneu-ho a provar."
       }
     }
   },
@@ -3464,65 +3464,65 @@
     "no_reports": "Encara no hi ha informes de desenvolupament publicats."
   },
   "plantillas": {
-    "title": "Categorías",
-    "subtitle": "Plantillas permanentes del club (sin temporada). La temporada vive en el equipo.",
-    "back_to_equipos": "← Volver a equipos",
-    "empty": "Aún no has creado ninguna categoría-plantilla. Empieza por la primera.",
-    "teams_count": "{count, plural, =0 {Sin equipos} one {# equipo} other {# equipos}}",
-    "half_short": "{min} min/tiempo",
+    "title": "Categories",
+    "subtitle": "Plantilles permanents del club (sense temporada). La temporada viu en l'equip.",
+    "back_to_equipos": "← Tornar a equips",
+    "empty": "Encara no heu creat cap categoria-plantilla. Comenceu per la primera.",
+    "teams_count": "{count, plural, =0 {Sense equips} one {# equip} other {# equips}}",
+    "half_short": "{min} min/temps",
     "badge_standard": "Estàndard",
     "badge_custom": "Personalitzada",
     "overlap_badge": "Solapa estàndard",
     "overlap_hint": "Esta categoria coincidix en grup d'edat amb una estàndard però té un altre nom. Revisa-la.",
     "standard_locked_hint": "Categoria estàndard: el nom i el grup d'edat estan bloquejats. Només pots canviar la duració.",
     "actions": {
-      "create": "Nueva categoría",
+      "create": "Nova categoria",
       "edit": "Editar",
       "delete": "Eliminar",
-      "cancel": "Cancelar",
+      "cancel": "Cancel·lar",
       "save": "Guardar"
     },
     "dialog": {
-      "create_title": "Crear categoría",
-      "edit_title": "Editar categoría",
-      "description": "Las categorías son plantillas permanentes del club (sin temporada). Los equipos se crean por temporada en Equipos."
+      "create_title": "Crear categoria",
+      "edit_title": "Editar categoria",
+      "description": "Les categories són plantilles permanents del club (sense temporada). Els equips es creen per temporada en Equips."
     },
     "field": {
-      "name": "Nombre",
-      "kind": "Grupo de edad",
-      "kind_help": "Determina el régimen de cambios y el orden del listado.",
-      "half_duration": "Duración por tiempo (min)",
-      "half_duration_help": "Minutos de cada tiempo de partido (1–90)."
+      "name": "Nom",
+      "kind": "Grup d'edat",
+      "kind_help": "Determina el règim de canvis i l'orde del llistat.",
+      "half_duration": "Durada per temps (min)",
+      "half_duration_help": "Minuts de cada temps de partit (1–90)."
     },
-    "kind_none": "Sin grupo de edad",
+    "kind_none": "Sense grup d'edat",
     "delete": {
-      "title": "¿Eliminar la categoría?",
-      "description": "Vas a eliminar «{name}». Esta acción no se puede deshacer."
+      "title": "Voleu eliminar la categoria?",
+      "description": "Vas a eliminar «{name}». Esta acció no es pot desfer."
     },
     "errors": {
-      "name_required": "Pon el nombre de la categoría",
-      "name_too_long": "El nombre no puede superar los 80 caracteres",
-      "kind_invalid": "Grupo de edad no válido",
-      "half_duration_invalid": "Duración no válida. Usa un valor entre 1 y 90.",
-      "name_duplicate": "Ya existe una categoría con ese nombre en el club.",
-      "has_teams": "No se puede eliminar: tiene equipos en alguna temporada.",
+      "name_required": "Posa el nom de la categoria",
+      "name_too_long": "El nom no pot superar els 80 caràcters",
+      "kind_invalid": "Grup d'edat no vàlid",
+      "half_duration_invalid": "Durada no vàlida. Useu un valor entre 1 i 90.",
+      "name_duplicate": "Ja existix una categoria amb eixe nom en el club.",
+      "has_teams": "No es pot eliminar: té equips en alguna temporada.",
       "is_standard": "Les categories estàndard no es poden eliminar.",
-      "no_active_club": "No hay club activo.",
-      "forbidden": "No tienes permiso para hacer esto.",
-      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo."
+      "no_active_club": "No hi ha club actiu.",
+      "forbidden": "No tens permís per a fer açò.",
+      "generic": "No hem pogut guardar els canvis. Torneu-ho a provar."
     }
   },
   "category_kinds": {
-    "querubin": "Querubín",
-    "prebenjamin": "Prebenjamín",
-    "benjamin": "Benjamín",
-    "alevin": "Alevín",
+    "querubin": "Querubí",
+    "prebenjamin": "Prebenjamí",
+    "benjamin": "Benjamí",
+    "alevin": "Aleví",
     "infantil": "Infantil",
-    "cadete": "Cadete",
+    "cadete": "Cadet",
     "juvenil": "Juvenil",
     "amateur": "Amateur",
     "senior": "Sénior",
-    "veterano": "Veterano"
+    "veterano": "Veterà"
   },
   "ejercicios": {
     "title": "Exercicis",
@@ -3921,8 +3921,8 @@
         "description": "Plantilles de formació personalitzades del cos tècnic."
       },
       "jugadas": {
-        "title": "Jugadas",
-        "description": "Banco de jugadas del equipo: crea y anima jugadas por fotogramas."
+        "title": "Jugades",
+        "description": "Banc de jugades de l'equip: crea i anima jugades per fotogrames."
       },
       "estadisticas_equipo": {
         "title": "Estadístiques per equip",
