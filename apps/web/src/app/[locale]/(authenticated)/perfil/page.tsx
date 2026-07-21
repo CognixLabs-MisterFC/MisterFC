@@ -5,11 +5,9 @@ import { createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { loadAccountPlayers } from '@/lib/account-players';
-import { initialsOf } from '@/components/shell/avatar-image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { AvatarUploader } from './avatar-uploader';
 import { PerfilForm } from './perfil-form';
 import { ConsentsSection, type TutorConsentRow } from './consents-section';
 import { PlayerSelector } from '../mi-ficha/player-selector';
@@ -22,7 +20,6 @@ type Props = {
   searchParams: Promise<{ player?: string }>;
 };
 
-const SIGNED_URL_TTL_SECONDS = 60 * 60;
 const PHOTO_TTL = 3600;
 
 export default async function PerfilPage({ params, searchParams }: Props) {
@@ -37,21 +34,8 @@ export default async function PerfilPage({ params, searchParams }: Props) {
 
   const t = await getTranslations('perfil');
 
-  const fallback = initialsOf(
-    ctx.profile.full_name,
-    ctx.user.email ?? '?'
-  );
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  let avatarSignedUrl: string | null = null;
-  if (ctx.profile.avatar_url) {
-    const { data } = await supabase.storage
-      .from('profile-avatars')
-      .createSignedUrl(ctx.profile.avatar_url, SIGNED_URL_TTL_SECONDS);
-    avatarSignedUrl = data?.signedUrl ?? null;
-  }
 
   // F14-13 — consentimientos del tutor en el club activo (estado latest-wins).
   const { data: consentRows } = await supabase.rpc('get_tutor_consents', {
@@ -134,81 +118,9 @@ export default async function PerfilPage({ params, searchParams }: Props) {
         <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
 
-      {/* ── ZONA A · Datos de la CUENTA / TUTOR (profiles) ─────────────────── */}
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-        {t('zone.account')}
-      </h2>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('section.avatar')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <AvatarUploader
-            userId={ctx.user.id}
-            initialPath={ctx.profile.avatar_url}
-            initialSignedUrl={avatarSignedUrl}
-            fallback={fallback}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('section.data')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PerfilForm
-            locale={locale}
-            email={ctx.user.email ?? ''}
-            initial={{
-              full_name: ctx.profile.full_name ?? '',
-              date_of_birth: ctx.profile.date_of_birth ?? '',
-              locale: ctx.profile.locale,
-            }}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('section.account')}</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3 text-sm">
-          <div>
-            <p className="font-medium">{t('field.email')}</p>
-            <p className="text-muted-foreground">{ctx.user.email}</p>
-          </div>
-          <Separator />
-          <a
-            href={`/${locale}/forgot-password`}
-            className="text-sm text-misterfc-green underline underline-offset-4 hover:text-emerald-300"
-          >
-            {t('change_password')}
-          </a>
-          <Separator />
-          <a
-            href={`/${locale}/perfil/notificaciones`}
-            className="text-sm text-misterfc-green underline underline-offset-4 hover:text-emerald-300"
-          >
-            {t('manage_notifications')}
-          </a>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('section.consents')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ConsentsSection rows={(consentRows ?? []) as TutorConsentRow[]} locale={locale} />
-        </CardContent>
-      </Card>
-
-      {/* ── ZONA B · Datos y gestión del JUGADOR (players), por-player ──────── */}
+      {/* ── ZONA B · Datos y gestión del JUGADOR (players), ARRIBA ─────────── */}
       {activePlayer && (
         <>
-          <Separator className="my-2" />
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               {isSelf ? t('zone.player_self') : t('zone.player_child')}
@@ -227,7 +139,7 @@ export default async function PerfilPage({ params, searchParams }: Props) {
             />
           )}
 
-          {/* Foto del JUGADOR: players.photo_url (NO el avatar del tutor). */}
+          {/* Foto del JUGADOR: players.photo_url (única foto de la pantalla). */}
           {canManagePhoto && (
             <Card>
               <CardHeader>
@@ -304,8 +216,69 @@ export default async function PerfilPage({ params, searchParams }: Props) {
               </CardContent>
             </Card>
           )}
+
+          <Separator className="my-2" />
         </>
       )}
+
+      {/* ── Consentimientos (en medio) ─────────────────────────────────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('section.consents')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ConsentsSection rows={(consentRows ?? []) as TutorConsentRow[]} locale={locale} />
+        </CardContent>
+      </Card>
+
+      {/* ── ZONA A · Tu cuenta (datos del tutor), ABAJO ────────────────────── */}
+      <Separator className="my-2" />
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        {t('zone.account')}
+      </h2>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('section.data')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PerfilForm
+            locale={locale}
+            email={ctx.user.email ?? ''}
+            initial={{
+              full_name: ctx.profile.full_name ?? '',
+              date_of_birth: ctx.profile.date_of_birth ?? '',
+              locale: ctx.profile.locale,
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('section.account')}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3 text-sm">
+          <div>
+            <p className="font-medium">{t('field.email')}</p>
+            <p className="text-muted-foreground">{ctx.user.email}</p>
+          </div>
+          <Separator />
+          <a
+            href={`/${locale}/forgot-password`}
+            className="text-sm text-misterfc-green underline underline-offset-4 hover:text-emerald-300"
+          >
+            {t('change_password')}
+          </a>
+          <Separator />
+          <a
+            href={`/${locale}/perfil/notificaciones`}
+            className="text-sm text-misterfc-green underline underline-offset-4 hover:text-emerald-300"
+          >
+            {t('manage_notifications')}
+          </a>
+        </CardContent>
+      </Card>
     </div>
   );
 }
