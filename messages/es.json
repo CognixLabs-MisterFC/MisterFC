@@ -209,6 +209,11 @@
       "body": "Visión global del club: plantilla, resultados, asistencia, alertas y rankings.",
       "cta": "Abrir el dashboard →"
     },
+    "signed_in_as": "Sesión iniciada como {email}",
+    "your_clubs": "Tus clubs",
+    "no_clubs": "Todavía no perteneces a ningún club.",
+    "signout": "Cerrar sesión",
+    "invitations_link": "Invitar personas",
     "cards": {
       "messages": {
         "title": "Mensajes sin leer",
