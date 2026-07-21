@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createSupabaseServerClient } from '@misterfc/core';
 import type { ShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { loadUpcomingCallups } from '@/app/[locale]/(authenticated)/convocatorias/queries';
 import { Sidebar } from './sidebar';
 import { Header } from './header';
 import { SuperadminBanner } from './superadmin-banner';
@@ -53,42 +54,44 @@ async function loadUnreadConversationsCount(
 }
 
 /**
- * PART 3.4 — badge verde por tipo de notificación in_app pendiente. callup_*
- * (publicada/actualizada) se acumula en "convocatorias"; new_announcement en
- * "anuncios". Se marcan leídas al abrir la lista (MarkNotificationsRead).
+ * PART 3.4 — badge verde de "anuncios": notificaciones in_app new_announcement
+ * pendientes del user. Se marcan leídas al abrir la lista (MarkNotificationsRead).
+ *
+ * FIX E — el bucket "convocatorias" YA NO se cuenta aquí. Contar notificaciones
+ * pending sin filtro temporal/pertenencia inflaba el badge con convocatorias de
+ * eventos borrados o partidos ya jugados (badge decía 13/16 con la pantalla a 0).
+ * Ahora el badge de convocatorias se deriva de la MISMA fuente que la pantalla
+ * (loadUpcomingCallups), ver AppShell — así badge y contenido no divergen.
  */
-async function loadNotificationBadges(
+async function loadAnnouncementBadge(
   supabase: ReturnType<typeof createSupabaseServerClient>,
-): Promise<{ convocatorias: number; anuncios: number }> {
+): Promise<number> {
   const { data } = await supabase
     .from('notifications')
     .select('type')
     .eq('channel', 'in_app')
-    .eq('status', 'pending');
-  let convocatorias = 0;
-  let anuncios = 0;
-  for (const row of data ?? []) {
-    const type = row.type as string;
-    if (type === 'callup_published' || type === 'callup_updated') {
-      convocatorias += 1;
-    } else if (type === 'new_announcement') {
-      anuncios += 1;
-    }
-  }
-  return { convocatorias, anuncios };
+    .eq('status', 'pending')
+    .eq('type', 'new_announcement');
+  return data?.length ?? 0;
 }
 
 export async function AppShell({ ctx, locale, children, isSuperadmin = false }: Props) {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const [unreadConversations, notifBadges] = await Promise.all([
+  // FIX E — el badge de convocatorias se cuenta con la MISMA resolución que la
+  // pantalla /convocatorias (loadUpcomingCallups: evento vigente + ventana +
+  // equipo del jugador con team_members.left_at IS NULL, por rol). Así "si la
+  // pantalla muestra N, el badge dice N" y nunca cuenta eventos borrados/pasados.
+  // rangeDays=30 = mismo valor que usa la página (convocatorias/page.tsx).
+  const [unreadConversations, anunciosBadge, upcomingCallups] = await Promise.all([
     loadUnreadConversationsCount(supabase),
-    loadNotificationBadges(supabase),
+    loadAnnouncementBadge(supabase),
+    loadUpcomingCallups(ctx.activeClub.club.id, ctx.activeClub.role, 30),
   ]);
   const badges = {
     mensajes: unreadConversations,
-    convocatorias: notifBadges.convocatorias,
-    anuncios: notifBadges.anuncios,
+    convocatorias: upcomingCallups.length,
+    anuncios: anunciosBadge,
   };
 
   // #9 — estado del colapso del menú lateral leído de la cookie en el servidor:
