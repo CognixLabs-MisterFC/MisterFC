@@ -239,10 +239,11 @@ async function sendOrRenewTutorInvitation(
 
   const admin = createSupabaseAdminClient();
   try {
-    const { error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
-      redirectTo,
-      data: { invite_pending: true, invitation_id: invite.id },
-    });
+    const { data: inviteData, error: invErr } =
+      await admin.auth.admin.inviteUserByEmail(email, {
+        redirectTo,
+        data: { invite_pending: true, invitation_id: invite.id },
+      });
     if (invErr) {
       const msg = invErr.message?.toLowerCase() ?? '';
       const alreadyExists =
@@ -251,6 +252,8 @@ async function sendOrRenewTutorInvitation(
         msg.includes('already exists');
       if (alreadyExists) {
         // Email ya registrado → mismo vehículo de redirect (patrón sendInvitation).
+        // invited_user_id se deja como esté: es un invitee EXISTENTE (inicia
+        // sesión con su contraseña); no lo creamos nosotros.
         const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
           email,
           { redirectTo },
@@ -268,6 +271,27 @@ async function sendOrRenewTutorInvitation(
           extra: { invitation_id: invite.id },
         });
         return { error: 'generic' };
+      }
+    } else {
+      // Cuenta creada por nosotros para esta invitación (aún no reclamada).
+      // Enlazamos su auth.users.id en invitations.invited_user_id — MISMO patrón
+      // que el circuito de staff (invitations/actions.ts): chooseInviteForm lo usa
+      // para enrutar al form set_password (pedir contraseña). Sin esto el invitee
+      // nuevo caía en quick/sign_in y nunca fijaba contraseña.
+      const invitedUserId = inviteData?.user?.id ?? null;
+      if (invitedUserId) {
+        const { error: linkErr } = await admin
+          .from('invitations')
+          .update({ invited_user_id: invitedUserId })
+          .eq('id', invite.id);
+        if (linkErr) {
+          // No fatal para el envío: se registra. Sin invited_user_id el accept
+          // trataría al invitee como existente (peor UX pero no rompe).
+          Sentry.captureException(linkErr, {
+            tags: { feature: 'invitations', step: 'link_invited_user_tutor' },
+            extra: { invitation_id: invite.id },
+          });
+        }
       }
     }
   } catch (thrown) {

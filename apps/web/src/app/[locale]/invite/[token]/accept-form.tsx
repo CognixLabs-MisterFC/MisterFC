@@ -38,6 +38,86 @@ function hasChildImages(children: PendingChild[]): boolean {
 }
 
 /**
+ * Rework C/D — paso de CONFIRMAR/CORREGIR datos de cada hijo (nombre + fecha de
+ * nacimiento). Multi-hijo: una fila por hijo pendiente. Serializa el estado a un
+ * input oculto `children_data` (JSON) que la action valida y guarda en players.
+ */
+function ChildDataSection({ items }: { items: PendingChild[] }) {
+  const t = useTranslations('invite');
+  const children = items.filter((c) => c.playerId != null);
+  const [rows, setRows] = useState(() =>
+    children.map((c) => ({
+      playerId: c.playerId as string,
+      firstName: c.playerFirstName ?? '',
+      lastName: c.playerLastName ?? '',
+      dob: c.playerDob ?? '',
+    })),
+  );
+
+  if (rows.length === 0) return null;
+
+  const update = (i: number, field: 'firstName' | 'lastName' | 'dob', value: string) =>
+    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
+
+  const inputCls =
+    'rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-base text-white outline-none transition focus:border-[#10B981]';
+
+  return (
+    <section className="flex flex-col gap-3 rounded-md border border-zinc-800 bg-zinc-900/30 p-4 text-left">
+      <div>
+        <h2 className="text-sm font-semibold text-zinc-100">{t('child_data_title')}</h2>
+        <p className="text-xs text-zinc-400">{t('child_data_help')}</p>
+      </div>
+      {rows.map((r, i) => (
+        <div key={r.playerId} className="flex flex-col gap-2 border-t border-zinc-800 pt-3 first:border-t-0 first:pt-0">
+          {children[i]?.teamName && (
+            <span className="text-xs uppercase tracking-wide text-zinc-500">
+              {children[i]?.teamName}
+            </span>
+          )}
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-zinc-300">{t('child_first_name')}</span>
+            <input
+              type="text"
+              value={r.firstName}
+              required
+              minLength={1}
+              maxLength={80}
+              onChange={(e) => update(i, 'firstName', e.target.value)}
+              className={inputCls}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-zinc-300">
+              {t('child_last_name')}{' '}
+              <span className="font-normal text-zinc-500">{t('optional')}</span>
+            </span>
+            <input
+              type="text"
+              value={r.lastName}
+              maxLength={120}
+              onChange={(e) => update(i, 'lastName', e.target.value)}
+              className={inputCls}
+            />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-zinc-300">{t('child_dob')}</span>
+            <input
+              type="date"
+              value={r.dob}
+              required
+              onChange={(e) => update(i, 'dob', e.target.value)}
+              className={inputCls}
+            />
+          </label>
+        </div>
+      ))}
+      <input type="hidden" name="children_data" value={JSON.stringify(rows)} />
+    </section>
+  );
+}
+
+/**
  * Form para invitee que YA tiene password (porque pertenece a otro club o se
  * registró con anterioridad). No le pedimos nada salvo confirmar y, si aún no
  * los aceptó en versión vigente, los consentimientos de cuenta (F14-2).
@@ -141,14 +221,7 @@ export function AcceptWithProfileForm({
     <form action={formAction} className="flex w-full max-w-sm flex-col gap-4">
       <p className="text-sm text-zinc-300">{t('set_password_summary', { club: clubName, role })}</p>
 
-      <ChildrenImageSection
-        items={pendingChildren}
-        imageInternal={imageInternal}
-        imageSocial={imageSocial}
-        medicalDoc={medicalDoc}
-        onSatisfiedChange={setImagesOk}
-      />
-
+      {/* 1 · Datos del tutor */}
       <label className="flex flex-col gap-2 text-left">
         <span className="text-sm font-medium text-zinc-200">{t('email_label')}</span>
         <input
@@ -187,6 +260,19 @@ export function AcceptWithProfileForm({
         />
       </label>
 
+      {/* 2 · Confirmar/corregir datos del hijo (multi-hijo) */}
+      <ChildDataSection items={pendingChildren} />
+
+      {/* 3 · Consentimientos por hijo (imagen / médico) */}
+      <ChildrenImageSection
+        items={pendingChildren}
+        imageInternal={imageInternal}
+        imageSocial={imageSocial}
+        medicalDoc={medicalDoc}
+        onSatisfiedChange={setImagesOk}
+      />
+
+      {/* 4 · Contraseña */}
       <label className="flex flex-col gap-2 text-left">
         <span className="text-sm font-medium text-zinc-200">{t('password_label')}</span>
         <input
@@ -349,6 +435,8 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       consent_required: 'error_consent_required',
       image_required: 'error_image_required',
       image_decision_required: 'error_image_decision_required',
+      child_name_required: 'error_child_name_required',
+      child_dob_invalid: 'error_child_dob_invalid',
       generic: 'error_generic',
     }[error] ?? 'error_generic';
 

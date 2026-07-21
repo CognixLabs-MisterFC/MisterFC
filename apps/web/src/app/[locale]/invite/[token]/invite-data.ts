@@ -112,6 +112,7 @@ export type PendingInvitationForBatch = {
   team_staff_role: string | null;
   player_first_name: string | null;
   player_last_name: string | null;
+  player_date_of_birth: string | null;
   team_name: string | null;
 };
 
@@ -129,7 +130,7 @@ export async function loadPendingInvitationsForEmail(
   const { data, error } = await admin
     .from('invitations')
     .select(
-      'id, club_id, role, player_id, player_relation, team_id, team_staff_role, player:player_id(first_name, last_name), team:team_id(name)',
+      'id, club_id, role, player_id, player_relation, team_id, team_staff_role, player:player_id(first_name, last_name, date_of_birth), team:team_id(name)',
     )
     .ilike('email', escapeLike(email))
     .eq('club_id', clubId)
@@ -149,6 +150,7 @@ export async function loadPendingInvitationsForEmail(
     team_staff_role: row.team_staff_role,
     player_first_name: row.player?.first_name ?? null,
     player_last_name: row.player?.last_name ?? null,
+    player_date_of_birth: row.player?.date_of_birth ?? null,
     team_name: row.team?.name ?? null,
   }));
 }
@@ -161,7 +163,11 @@ type RawPendingRow = {
   player_relation: string | null;
   team_id: string | null;
   team_staff_role: string | null;
-  player: { first_name: string; last_name: string } | null;
+  player: {
+    first_name: string;
+    last_name: string;
+    date_of_birth: string | null;
+  } | null;
   team: { name: string } | null;
 };
 
