@@ -510,6 +510,13 @@
     "saved": "Cambios guardados.",
     "change_password": "Change password",
     "manage_notifications": "Manage notifications",
+    "zone": {
+      "account": "Your account",
+      "player_self": "Your player data",
+      "player_child": "Your child's data",
+      "player_self_hint": "Manage your photo, medical info and record as a player.",
+      "player_child_hint": "Manage your child's photo, medical info and record."
+    },
     "section": {
       "avatar": "Foto de perfil",
       "data": "Datos personales",

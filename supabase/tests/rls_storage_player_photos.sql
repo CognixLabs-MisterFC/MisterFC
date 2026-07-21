@@ -45,15 +45,20 @@ select pg_temp.new_test_user('44444444-bbbb-4444-4444-444444444444', 'admin-bph@
 -- F15-A2: tutor (parent) del player A1. Desde F14-3b (mig 20260904) la ESCRITURA
 -- de player-photos es SOLO del tutor vinculado (player_accounts parent/guardian).
 select pg_temp.new_test_user('55555555-bbbb-5555-5555-555555555555', 'tutor-aph@test', '{}'::jsonb);
+-- Extensión self (mig 20261038): el jugador adulto vinculado como relation='self'
+-- gestiona TAMBIÉN su propia foto. Usuario self del player A1 (T11).
+select pg_temp.new_test_user('66666666-bbbb-6666-6666-666666666666', 'self-aph@test', '{}'::jsonb);
 
 insert into public.memberships (profile_id, club_id, role) values
   ('11111111-bbbb-1111-1111-111111111111', 'dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0', 'admin_club'),
   ('22222222-bbbb-2222-2222-222222222222', 'dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0', 'entrenador_ayudante'),
   ('33333333-bbbb-3333-3333-333333333333', 'dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0', 'entrenador_ayudante'),
-  ('44444444-bbbb-4444-4444-444444444444', 'dddddddd-d1d1-d1d1-d1d1-d1d1d1d1d1d1', 'admin_club');
+  ('44444444-bbbb-4444-4444-444444444444', 'dddddddd-d1d1-d1d1-d1d1-d1d1d1d1d1d1', 'admin_club'),
+  ('66666666-bbbb-6666-6666-666666666666', 'dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0', 'jugador');
 
 insert into public.player_accounts (player_id, profile_id, relation) values
-  ('00000000-aaaa-1111-0000-000000000001', '55555555-bbbb-5555-5555-555555555555', 'parent');
+  ('00000000-aaaa-1111-0000-000000000001', '55555555-bbbb-5555-5555-555555555555', 'parent'),
+  ('00000000-aaaa-1111-0000-000000000001', '66666666-bbbb-6666-6666-666666666666', 'self');
 
 update public.capabilities
    set granted = true
@@ -250,6 +255,23 @@ begin
           auth.uid(), '{}'::jsonb);
 exception when others then
   raise exception 'FAIL [T9]: el tutor no pudo INSERT la foto de su hijo: %', sqlerrm;
+end $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- T11: el jugador adulto self del player SÍ puede INSERT su foto (extensión
+--      mig 20261038 — relation='self' cuenta como gestor).
+-- ─────────────────────────────────────────────────────────────────────────────
+
+set local "request.jwt.claims" = '{"sub":"66666666-bbbb-6666-6666-666666666666","role":"authenticated"}';
+
+do $$
+begin
+  insert into storage.objects (bucket_id, name, owner, metadata)
+  values ('player-photos',
+          '00000000-aaaa-1111-0000-000000000001/self-upload.webp',
+          auth.uid(), '{}'::jsonb);
+exception when others then
+  raise exception 'FAIL [T11]: el jugador self no pudo INSERT su propia foto: %', sqlerrm;
 end $$;
 
 reset role;

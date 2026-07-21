@@ -20,15 +20,13 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadPlayerCareer } from '@/lib/player-career';
 import { loadPlayerBadges } from '@/lib/player-badges';
 import { loadShellContext } from '@/lib/auth-shell';
+import { loadAccountPlayers } from '@/lib/account-players';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlayerSeasonStats } from '../jugadores/[playerId]/player-season-stats';
 import { PlayerBadges } from '../jugadores/[playerId]/player-badges';
 import { FichaHeader } from '../jugadores/[playerId]/informes/_components/ficha-header';
-import { PlayerPhotoUploader } from '../jugadores/[playerId]/player-photo-uploader';
 import { PlayerSelector } from './player-selector';
-import { MedicalForm } from './medical-form';
-import { ErasureRequestButton } from './erasure-request-button';
 import {
   PlayerEvaluationsDetail,
   type MatchEvaluation,
@@ -90,29 +88,14 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
   const supabase = createSupabaseServerClient(adapter);
 
   // 1) Jugadores vinculados a la cuenta (vía player_accounts) en el club activo.
-  const { data: pas } = await supabase
-    .from('player_accounts')
-    .select(
-      'player_id, players!inner(id, club_id, first_name, last_name, erased_at)'
-    )
-    .eq('profile_id', ctx.user.id);
-  type PA = {
-    player_id: string;
-    players: {
-      id: string;
-      club_id: string;
-      first_name: string;
-      last_name: string | null;
-      erased_at: string | null;
-    };
-  };
-  // F14-7 — un hijo SUPRIMIDO (derecho al olvido aprobado) desaparece de /mi-ficha.
-  const myPlayers = ((pas ?? []) as unknown as PA[])
-    .filter((p) => p.players.club_id === ctx.activeClub.club.id && p.players.erased_at == null)
-    .map((p) => ({
-      id: p.players.id,
-      name: `${p.players.first_name} ${p.players.last_name ?? ''}`.trim(),
-    }));
+  //    Helper compartido con /perfil y /mi-informe → mismo conjunto y mismo ORDEN
+  //    determinista (el default es estable entre pantallas). Excluye suprimidos
+  //    (F14-7: un hijo con derecho al olvido aprobado desaparece de /mi-ficha).
+  const myPlayers = await loadAccountPlayers(
+    supabase,
+    ctx.user.id,
+    ctx.activeClub.club.id,
+  );
 
   if (myPlayers.length === 0) {
     return (
@@ -156,32 +139,9 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
     ? (playerRow!.position_main as PlayerPosition)
     : null;
 
-  // F14-3b — la foto del hijo la gestiona SOLO el tutor vinculado (parent/guardian),
-  // de forma continua desde su ficha. El propio jugador (relation='self') NO.
-  const { data: isTutorOfPlayer } = await supabase.rpc(
-    'user_is_tutor_of_player',
-    { p_player_id: playerId }
-  );
-  const tJugadores = await getTranslations('jugadores');
-  const tErasure = await getTranslations('erasure');
-
-  // F14-4/F14-5 — el tutor gestiona la médica de su hijo si hay consentimiento de
-  // ESCRITURA (otorgado para la TEMPORADA ACTIVA). Tras un cambio de temporada sin
-  // re-consentir no se puede escribir aunque la médica siga siendo LEGIBLE.
-  const { data: hasMedicalConsent } = await supabase.rpc('user_has_medical_consent_write', {
-    p_player_id: playerId,
-  });
-  const canManageMedical = Boolean(isTutorOfPlayer && hasMedicalConsent);
-  // F14-6 — lectura por la ÚNICA puerta get_player_medical (player_medical cerrada
-  // al cliente). La lectura del tutor sobre su hijo NO se audita (regla 1).
-  const { data: medicalRows } = canManageMedical
-    ? await supabase.rpc('get_player_medical', {
-        p_player_id: playerId,
-        p_ip: undefined,
-        p_user_agent: undefined,
-      })
-    : { data: null };
-  const medicalRow = medicalRows?.[0] ?? null;
+  // Gestión por-player (foto, médica, expediente, derecho al olvido) vive ahora en
+  // /perfil (sección "Datos del jugador"), no aquí — /mi-ficha es solo consulta
+  // deportiva. Ver perfil/page.tsx.
 
   // 3) Temporadas de la trayectoria del jugador → selector + default.
   //    Rework A (A2): la temporada vive en el equipo (teams.season).
@@ -396,85 +356,6 @@ export default async function MiFichaPage({ params, searchParams }: Props) {
           />
         </CardContent>
       </Card>
-
-      {/* F14-3b — Gestión de la foto: SOLO el tutor vinculado (parent/guardian). */}
-      {isTutorOfPlayer && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('section.photo')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PlayerPhotoUploader
-              playerId={playerId}
-              initialPath={playerRow?.photo_url ?? null}
-              initialSignedUrl={headerPhotoUrl}
-              fallback={
-                (playerRow?.first_name?.[0] ?? '') +
-                (playerRow?.last_name?.[0] ?? '')
-              }
-              canManage
-              labels={{
-                change: tJugadores('photo.change'),
-                remove: tJugadores('photo.remove'),
-                hint: tJugadores('photo.hint'),
-                errors: {
-                  mime: tJugadores('photo.errors.mime'),
-                  too_large: tJugadores('photo.errors.too_large'),
-                  empty: tJugadores('photo.errors.empty'),
-                  upload_failed: tJugadores('photo.errors.upload_failed'),
-                  remove_failed: tJugadores('photo.errors.remove_failed'),
-                },
-              }}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* F14-4 — Info médica: la gestiona el tutor si hay consentimiento vigente. */}
-      {canManageMedical && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('medical.title')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-3 text-xs text-muted-foreground">{t('medical.tutor_hint')}</p>
-            <MedicalForm playerId={playerId} initial={medicalRow ?? null} />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* F14-8 — Derecho de acceso: el tutor descarga el expediente completo de su
-          hijo (identidad, foto, médica, histórico, informes, logros) en PDF. */}
-      {isTutorOfPlayer && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('data_export.title')}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <p className="text-xs text-muted-foreground">{t('data_export.hint')}</p>
-            <Button asChild variant="outline" size="sm" className="w-fit gap-2">
-              <a href={`/${locale}/mi-ficha/export/${playerId}`}>
-                <Download className="size-4" aria-hidden />
-                <span>{t('data_export.button')}</span>
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* F14-7 — Derecho al olvido: el tutor SOLICITA la supresión de su hijo. La
-          aprueba admin_club/director; al aprobar se borran foto y datos médicos. */}
-      {isTutorOfPlayer && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{tErasure('card_title')}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <p className="text-xs text-muted-foreground">{tErasure('card_hint')}</p>
-            <ErasureRequestButton playerId={playerId} />
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>
