@@ -76,14 +76,33 @@ En el menú, `entrenador_principal` y `entrenador_ayudante` **proyectan lo mismo
 
 ### Decisión 7 · Cobertura por banda
 
-Cobertura de la app por banda de rol:
+**Regla de lectura**: la app **se añade, NO sustituye**. La web sigue viva y completa para todos los roles. Para **cuerpo técnico y dirección**, la app es un **subconjunto** de la web: toda pantalla marcada **APP** existe también en web. **"WEB"** significa **solo web** (no está en la app). Para **familias y seguidores** la app cubre el **100 %**, pero su web **no se retira** en Ola 2.
 
-- **Familias (jugador/tutor) y seguidores**: **100 %** en app.
-- **Cuerpo técnico (principal, ayudante, delegado, coordinador)**: **~80 %**.
-- **Dirección (admin_club, director)**: **~50 %**.
-- **Superadmin (`/platform`)**: **0 %**, nunca en app.
+**Familias (jugador/tutor) y seguidores — banda 100 %**
 
-> **PENDIENTE (a aportar por el product owner)**: la **lista cerrada de pantallas APP/WEB** que concreta estas bandas se reproducirá **literal** en esta sección, sin reordenar ni completar. No se ha inventado aquí. Ver "Discrepancias detectadas".
+- **APP**: Inicio · Calendario · Mi equipo (+ plantilla, cuerpo técnico ligero, playbook, sesiones publicadas) · Convocatorias (responder citación) · Estadísticas de partido (fila de su hijo) · Directos (+ detalle + seguir) · Mi ficha · Seguidores · Mi informe · Mensajes (1:1 y de equipo) · Anuncios · Novedades · Perfil (+ notificaciones) · Asistencia (consulta).
+- **APP**: Carcasa spectator completa: agenda · directos · estadísticas · perfil.
+- **WEB**: ninguna pantalla exclusiva de web para esta banda.
+- **AMBAS**: entradas por enlace de email: `/invite/[token]` · `/reset-password` · `/re-consentimiento` → deep link a la app, con la web como fallback.
+
+**Cuerpo técnico (entrenador_principal · entrenador_ayudante · delegado · coordinador) — banda ~80 %**
+
+- **APP**: Inicio · Mis equipos (+ detalle) · Calendario (consulta) · Convocatorias (+ detalle, publicar/republicar, decisiones) · Alineación · Directo · Entrada rápida · Post-partido · Estadísticas de partido · Asistencia (+ pasar lista) · Estadísticas de equipo (consulta) · Sesión del día (lectura) · Cuerpo técnico ligero · Mensajes · Anuncios · Novedades · Perfil.
+- **WEB**: Biblioteca de ejercicios (+ alta y edición) · Editor de sesiones · PDF de sesión · Banco de jugadas (+ alta y edición) · Formaciones · Playbook de equipo · Informes de desarrollo (paneles y editores) · Pizarra.
+- El **coordinador** añade en **APP**, en modo consulta: Cuerpo técnico de dirección y Jugadores.
+
+**Dirección (admin_club · director) — banda ~50 %**
+
+- **APP**: Inicio de dirección (los dos bloques) · Dashboard ejecutivo · Calendario (+ aprobar festivos) · Jugadores (lista y ficha, lectura) · Cuerpo técnico (lista y ficha, lectura) · Supresiones (aprobar/rechazar) · Anuncios (publicar) · Mensajes · Novedades · Perfil.
+- **WEB**: Equipos y temporadas (crear, rollover, finalizar, reasignación, categorías) · Importar jugadores · Campañas de informes · Invitaciones · Gestión de staff (mover, roles, capabilities) · Alta y edición de jugadores · Ajustes · Documentos legales.
+
+**Superadmin — 0 %**
+
+- **WEB**: `/platform` completo. Nunca en app.
+
+**Fuera de la app en cualquier caso**: `/dev-diagram` · `/dev-pitch-editor` (harnesses de desarrollo) · `/perfil/formaciones` (redirect legacy 308) · `/api/cron/reminders`.
+
+> **Núcleo de valor nativo**: seis pantallas justifican por sí solas la app — **directo · entrada rápida · alineación · pasar lista · directos (grada) · detalle de directo**. El resto es acompañamiento.
 
 ### Decisión 8 · `packages/core` es la base
 
@@ -143,6 +162,6 @@ En nativo **no existe ese redirect**. Se **auditan ANTES** de portar pantallas.
 
 Anotadas, **no corregidas** (este ADR es solo documentación de Ola 2):
 
-1. **Lista literal de pantallas APP/WEB (Decisión 7) no aportada**: el mensaje de decisión referencia una "lista cerrada" que debía pegarse pero no se incluyó. Se ha dejado la sección con las **bandas de cobertura** (100/80/50/0) y un marcador **PENDIENTE**; no se ha inventado el detalle por pantalla. Debe completarla el product owner.
-2. **Índice de ADRs incompleto** ([docs/decisions/README.md](README.md)): la tabla del índice **omite las filas ADR-0007 … ADR-0013** (los ficheros existen en `docs/decisions/`). Este ADR añade únicamente su propia fila (0020); no rellena las ausentes para no exceder su alcance.
-3. **ADR-0003 y §7 del plan-maestro** describían Ola 2 como "React Native" con una única propuesta `O2.1` y estimación 50–70 h / 18–25 sesiones. Este ADR **concreta** el stack (Expo+EAS) y **desglosa** las fases O2-0…O2-13. No se reabre ADR-0003 (inmutable); el plan-maestro se actualiza para reflejar el desglose sin inventar horas por fase.
+1. **Índice de ADRs incompleto** ([docs/decisions/README.md](README.md)): la tabla del índice **omite las filas ADR-0007 … ADR-0013** (los ficheros existen en `docs/decisions/`). Este ADR añade únicamente su propia fila (0020); no rellena las ausentes para no exceder su alcance.
+2. **ADR-0003 y §7 del plan-maestro** describían Ola 2 como "React Native" con una única propuesta `O2.1` y estimación 50–70 h / 18–25 sesiones. Este ADR **concreta** el stack (Expo+EAS) y **desglosa** las fases O2-0…O2-13. No se reabre ADR-0003 (inmutable); el plan-maestro se actualiza para reflejar el desglose sin inventar horas por fase.
+3. **Cotejo de la lista de la Decisión 7 con el censo** (anotado, no modificado): "Sesión del día (lectura)", marcada **APP** para cuerpo técnico, **no tiene hoy una ruta web propia de solo-lectura para staff** — las sesiones del staff son el editor `/sesiones` (marcado **WEB**) y el único visor read-only de sesión (`/mi-equipo/sesiones/[id]`) está gateado al rol `jugador`. La lista se reproduce **literal** sin tocarla; queda para el PO decidir si esa pantalla de app reusa el editor en modo lectura o requiere una superficie web nueva.
