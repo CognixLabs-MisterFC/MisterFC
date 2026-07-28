@@ -12,11 +12,19 @@
 // Solo AÑADIMOS las EXPO_PUBLIC_* (URL y anon key de Supabase, ambas públicas;
 // NO son secretos) para tenerlas accesibles vía expo-constants. Los secretos
 // reales van como EAS secrets de proyecto, nunca aquí.
+//
+// Cada clave se añade por SPREAD CONDICIONAL: si la variable de entorno no está
+// definida, la clave NO se escribe (antes, con `?? null`, `eas init` serializaba
+// esos null como objetos vacíos `{}` y ensuciaba app.json).
 module.exports = ({ config }) => ({
   ...config,
   extra: {
     ...config.extra,
-    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? null,
-    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? null,
+    ...(process.env.EXPO_PUBLIC_SUPABASE_URL
+      ? { supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL }
+      : {}),
+    ...(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+      ? { supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY }
+      : {}),
   },
 });
