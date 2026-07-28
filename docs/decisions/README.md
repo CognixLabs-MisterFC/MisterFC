@@ -32,3 +32,4 @@ Decisiones técnicas con impacto significativo en la arquitectura, el stack o la
 | 0017 | Temporada en el equipo; categoría como plantilla permanente | Accepted |
 | 0018 | Categorías estándar fijas + rollover de temporada sin destruir histórico | Proposed |
 | 0019 | Jugadas como banco común del club con ciclo de aprobación | Accepted |
+| 0020 | Ola 2: app nativa con Expo + EAS Build | Accepted |
