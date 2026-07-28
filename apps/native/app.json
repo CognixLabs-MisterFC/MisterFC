@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "MisterFC",
+    "slug": "misterfc",
+    "owner": "misterfc",
+    "scheme": "misterfc",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.misterfc.app",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.misterfc.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ]
+  }
+}
