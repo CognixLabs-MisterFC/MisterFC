@@ -614,6 +614,29 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 
 ---
 
+## Ola 2 — App nativa (planificada)
+
+Arranque de Ola 2 documentado en [ADR-0020](../decisions/ADR-0020-ola2-app-nativa-expo-eas.md): **Expo + EAS Build**, la app **se añade** a la web (no la sustituye), tema del club desde BD, offline de solo lectura. Detalle y estimación (50–70 h) en [plan-maestro.md §7](plan-maestro.md). Nada empezado.
+
+| Subfase | Estado | Resumen |
+|---|---|---|
+| O2-0 | ☐ pendiente | Andamiaje + primer EAS build (APK preview vacío) |
+| O2-1 | ☐ pendiente | Auth + club activo + selector + tema del club desde BD |
+| O2-2 | ☐ pendiente | Navegación por rol + capa de datos + caché de lectura + aviso sin conexión |
+| O2-3 | ☐ pendiente | Auditoría de las 10 rutas sin gate explícito |
+| O2-4 | ☐ pendiente | Push FCM v1 + deep links (arranque en frío) + enlaces de email |
+| O2-5 | ☐ pendiente | Familias |
+| O2-6 | ☐ pendiente | Seguidores |
+| O2-7 | ☐ pendiente | Campo A: asistencia y convocatorias |
+| O2-8 | ☐ pendiente | Campo B: alineación |
+| O2-9 | ☐ pendiente | Campo C: directo + entrada rápida + post-partido |
+| O2-10 | ☐ pendiente | Cuerpo técnico, resto de la banda 80 % |
+| O2-11 | ☐ pendiente | Dirección, banda 50 % |
+| O2-12 | ☐ pendiente | Pulido: i18n es/en/va, Sentry, iconos/splash, assets de store, QA |
+| O2-13 | ☐ pendiente | Submit a stores (bloqueado por constitución de la S.L.) |
+
+---
+
 ## Notas
 
 - Al cerrar cada fase, mover su fila a `☑` y rellenar la fecha de cierre.

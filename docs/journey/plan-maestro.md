@@ -937,9 +937,24 @@ Bloque de **comunicaciones/onboarding** que consolida el canal email, hoy disper
 
 **Horas**: 50–70 h · **Sesiones**: 18–25
 
-**Propuestas**:
+**Stack** (ver [ADR-0020](../decisions/ADR-0020-ola2-app-nativa-expo-eas.md)): **Expo + EAS Build** (compilación iOS/Android en la nube, sin Mac), expo-router, expo-secure-store (sesión segura por datos de menores/médicos), NativeWind. Reusa `packages/core` al 100 % (solo se le inyecta el adaptador de sesión de RN). Push nativo FCM/APNs. La app **se añade, no sustituye** a la web; identidad genérica `com.misterfc.app` con tema del club leído de BD; login email+contraseña con selector de club en cabecera; offline de **solo lectura**. Roles reales = 6 (censo del repo). Cobertura por banda: familias/seguidores 100 %, cuerpo técnico ~80 %, dirección ~50 %, superadmin 0 %.
 
-- **O2.1** App nativa Android + iOS (React Native): aplicación nativa publicada en App Store y Google Play. Reusa al 100 % la lógica de Ola 1 desde `packages/core`. UI reconstruida con React Native + Reanimated 3 + react-native-gesture-handler para máximo rendimiento en drag & drop táctil (toma de datos en directo del partido y pizarra táctica) y animaciones fluidas. Push notifications nativas vía FCM/APNs (más fiables que en PWA). Cuenta Apple Developer Program y Google Play Developer requeridas.
+**Subfases** (sin horas por fase asignadas todavía; ver ADR-0020):
+
+- **O2-0** ☐ andamiaje + primer EAS build (APK preview instalable, pantalla vacía)
+- **O2-1** ☐ auth + club activo + selector de club + tema del club desde BD
+- **O2-2** ☐ navegación por rol + capa de datos + caché de lectura + aviso sin conexión
+- **O2-3** ☐ auditoría de las 10 rutas sin gate explícito
+- **O2-4** ☐ push FCM v1 + deep links (incluido arranque en frío) + enlaces de email
+- **O2-5** ☐ familias
+- **O2-6** ☐ seguidores
+- **O2-7** ☐ campo A: asistencia y convocatorias
+- **O2-8** ☐ campo B: alineación
+- **O2-9** ☐ campo C: directo + entrada rápida + post-partido
+- **O2-10** ☐ cuerpo técnico, resto de la banda 80 %
+- **O2-11** ☐ dirección, banda 50 %
+- **O2-12** ☐ pulido: i18n es/en/va, Sentry activo, iconos/splash, assets de store, QA
+- **O2-13** ☐ submit (bloqueado por constitución de Cognix Labs, S.L.)
 
 ---
 
