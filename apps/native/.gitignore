@@ -2,7 +2,8 @@
 .expo/
 dist/
 web-build/
-expo-env.d.ts.bak
+# expo-env.d.ts lo autogenera Expo (expo start/prebuild); no se versiona.
+expo-env.d.ts
 
 # Native
 *.orig.*
