@@ -44,6 +44,44 @@ jobs:
         run: pnpm --filter web build
 
   # ───────────────────────────────────────────────────────────────────────────
+  # Empaquetado de apps/native con Metro — MISMO comando que un build de EAS.
+  #
+  # Caza fallos de RESOLUCIÓN de módulos al empaquetar (p.ej. el transitivo
+  # react-native-css-interop de NativeWind, no resoluble desde la app bajo el
+  # node_modules estricto de pnpm) que `typecheck` y `lint` NO detectan porque
+  # no empaquetan. Si el bundle no se genera, el step sale en rojo y para el PR
+  # ANTES de gastar un build de EAS. Solo Android: el bundle de JS es común, no
+  # hace falta iOS. La salida va a $RUNNER_TEMP → no se commitea nada.
+  # ───────────────────────────────────────────────────────────────────────────
+  native-bundle:
+    name: native · bundle Android (Metro)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Bundle apps/native (Android)
+        working-directory: apps/native
+        run: |
+          pnpm expo export:embed --eager --platform android --dev false \
+            --bundle-output "$RUNNER_TEMP/native-bundle.js" \
+            --assets-dest "$RUNNER_TEMP/native-assets"
+          test -s "$RUNNER_TEMP/native-bundle.js"
+
+  # ───────────────────────────────────────────────────────────────────────────
   # F15-B — Suite pgTAP (RLS) contra una BD Supabase EFÍMERA por PR.
   #
   # Hermético: `supabase start` levanta un stack local en el runner (Docker),
