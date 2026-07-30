@@ -472,6 +472,7 @@ export type Database = {
           logo_path: string | null
           name: string
           owner_profile_id: string | null
+          primary_color: string | null
           settings: Json
           slug: string
           updated_at: string
@@ -4369,6 +4370,10 @@ export type Database = {
           slug: string
           logo_path: string | null
         }[]
+      }
+      set_club_color: {
+        Args: { p_club_id: string; p_color: string | null }
+        Returns: undefined
       }
       set_club_logo: {
         Args: { p_club_id: string; p_path: string | null }
