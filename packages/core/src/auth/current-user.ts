@@ -1,8 +1,12 @@
-import type { User } from '@supabase/supabase-js';
+import type { SupabaseClient, User } from '@supabase/supabase-js';
 import {
   createSupabaseServerClient,
   type CookieAdapter,
 } from '../supabase/client-server';
+import type { Database } from '../supabase/types';
+
+/** Cliente supabase-js tipado con el schema del proyecto. */
+type DbClient = SupabaseClient<Database>;
 
 export type Role =
   | 'admin_club'
@@ -35,8 +39,102 @@ export type CurrentUserClub = {
     slug: string;
     /** F14B-9a — path del logo en el bucket público `club-logos`; null si sin logo. */
     logo_path: string | null;
+    /**
+     * O2-1a — color de marca del club en hex #RRGGBB (null = sin color → neutro).
+     * OPCIONAL: lo rellena la carga desde memberships (getCurrentUserClubs*), pero
+     * el club SINTÉTICO del modo superadmin (F14B-8, apps/web) lo omite. Aditivo:
+     * no rompe a los consumidores existentes de apps/web.
+     */
+    primary_color?: string | null;
   };
 };
+
+/**
+ * Query única de los clubs del usuario a partir de un `SupabaseClient` ya
+ * autenticado. Factorizada para que la variante con `CookieAdapter` (apps/web) y
+ * la variante con cliente directo (apps/native) compartan EXACTAMENTE el mismo
+ * select/derivación/orden. O2-1a: el select incluye `primary_color`.
+ */
+async function fetchUserClubs(
+  supabase: DbClient,
+  userId: string
+): Promise<CurrentUserClub[]> {
+  const { data, error } = await supabase
+    .from('memberships')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .select('id, role, club:club_id(id, name, slug, owner_profile_id, logo_path, primary_color)' as any)
+    .eq('profile_id', userId);
+
+  if (error || !data) return [];
+
+  type Row = {
+    id: string;
+    role: Role;
+    club: {
+      id: string;
+      name: string;
+      slug: string;
+      owner_profile_id: string | null;
+      logo_path: string | null;
+      primary_color: string | null;
+    } | null;
+  };
+
+  return (data as unknown as Row[])
+    .filter((m): m is Row & { club: NonNullable<Row['club']> } => m.club !== null)
+    .map((m) => ({
+      membershipId: m.id,
+      role: m.role,
+      // Booleano derivado; no se propaga owner_profile_id fuera de aquí.
+      isOwner: m.club.owner_profile_id === userId,
+      club: {
+        id: m.club.id,
+        name: m.club.name,
+        slug: m.club.slug,
+        logo_path: m.club.logo_path,
+        primary_color: m.club.primary_color,
+      },
+    }))
+    .sort((a, b) => a.club.name.localeCompare(b.club.name));
+}
+
+/**
+ * Devuelve el `User` autenticado actual a partir de un `SupabaseClient` (variante
+ * agnóstica para apps/native). Usa `auth.getUser()` (verifica contra el servidor
+ * de Auth), no `getSession()`.
+ */
+export async function getCurrentUserFromClient(
+  supabase: DbClient
+): Promise<User | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+}
+
+/**
+ * Lista los clubs del usuario a partir de un `SupabaseClient` (variante agnóstica
+ * para apps/native). Misma query/orden que la versión con adapter.
+ */
+export async function getCurrentUserClubsFromClient(
+  supabase: DbClient
+): Promise<CurrentUserClub[]> {
+  const user = await getCurrentUserFromClient(supabase);
+  if (!user) return [];
+  return fetchUserClubs(supabase, user.id);
+}
+
+/**
+ * ¿El usuario actual es SEGUIDOR (espectador)? Wrapper de la RPC `is_spectator`
+ * sobre un `SupabaseClient` directo. Detección para apps/native (PR-1); el shell
+ * del seguidor lo monta PR-2. En apps/web la detección vive en spectator-shell.ts.
+ */
+export async function isSpectatorFromClient(
+  supabase: DbClient
+): Promise<boolean> {
+  const { data } = await supabase.rpc('is_spectator');
+  return data === true;
+}
 
 /**
  * Devuelve el `User` autenticado actual o `null` si no hay sesión.
@@ -48,11 +146,7 @@ export type CurrentUserClub = {
 export async function getCurrentUser(
   cookieAdapter: CookieAdapter
 ): Promise<User | null> {
-  const supabase = createSupabaseServerClient(cookieAdapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  return getCurrentUserFromClient(createSupabaseServerClient(cookieAdapter));
 }
 
 /**
@@ -64,46 +158,5 @@ export async function getCurrentUser(
 export async function getCurrentUserClubs(
   cookieAdapter: CookieAdapter
 ): Promise<CurrentUserClub[]> {
-  const supabase = createSupabaseServerClient(cookieAdapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data, error } = await supabase
-    .from('memberships')
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .select('id, role, club:club_id(id, name, slug, owner_profile_id, logo_path)' as any)
-    .eq('profile_id', user.id);
-
-  if (error || !data) return [];
-
-  // El tipo de `Database` es aún placeholder (se rellena en 1.7), por eso el cast.
-  type Row = {
-    id: string;
-    role: Role;
-    club: {
-      id: string;
-      name: string;
-      slug: string;
-      owner_profile_id: string | null;
-      logo_path: string | null;
-    } | null;
-  };
-
-  return (data as unknown as Row[])
-    .filter((m): m is Row & { club: NonNullable<Row['club']> } => m.club !== null)
-    .map((m) => ({
-      membershipId: m.id,
-      role: m.role,
-      // Booleano derivado; no se propaga owner_profile_id fuera de aquí.
-      isOwner: m.club.owner_profile_id === user.id,
-      club: {
-        id: m.club.id,
-        name: m.club.name,
-        slug: m.club.slug,
-        logo_path: m.club.logo_path,
-      },
-    }))
-    .sort((a, b) => a.club.name.localeCompare(b.club.name));
+  return getCurrentUserClubsFromClient(createSupabaseServerClient(cookieAdapter));
 }
