@@ -1,3 +1,4 @@
+import { AreaGuard } from '@/nav/area-guard';
 import { RoleChrome } from '@/nav/chrome';
 import { AreaNavigator } from '@/nav/navigator';
 
@@ -8,8 +9,10 @@ import { AreaNavigator } from '@/nav/navigator';
  */
 export default function SpectatorLayout() {
   return (
-    <RoleChrome area="spectator" role={null}>
-      <AreaNavigator area="spectator" />
-    </RoleChrome>
+    <AreaGuard area="spectator">
+      <RoleChrome area="spectator" role={null}>
+        <AreaNavigator area="spectator" />
+      </RoleChrome>
+    </AreaGuard>
   );
 }

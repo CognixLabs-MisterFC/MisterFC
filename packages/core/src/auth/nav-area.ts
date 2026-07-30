@@ -36,3 +36,32 @@ export function navAreaForRole(role: Role): NavArea {
       return 'family';
   }
 }
+
+/**
+ * Área de carcasa incluyendo la del SEGUIDOR (que no es un rol de club). Coincide
+ * con `ChromeArea` de apps/native; se define aquí para que la regla de acceso
+ * viva junto a `navAreaForRole` y sea testeable en core.
+ */
+export type NavAudienceArea = NavArea | 'spectator';
+
+/** Tipo de usuario tras login (espejo de `UserKind` de apps/native). */
+export type NavUserKind = 'member' | 'spectator' | 'none';
+
+/**
+ * O2-2 — Regla PURA de acceso a un área de carcasa (defensa en profundidad: cada
+ * layout de área la usa para protegerse a sí mismo, además del gatekeeper).
+ *
+ *  - área 'spectator' → solo el seguidor (kind==='spectator').
+ *  - áreas family/staff/direction → solo un miembro cuyo rol de club activo
+ *    PROYECTA a esa área según `navAreaForRole` (fuente única de la proyección).
+ *
+ * Cualquier otro caso (rol de otra área, sin rol, sin sesión) NO pertenece.
+ */
+export function isAllowedInArea(
+  area: NavAudienceArea,
+  audience: { kind: NavUserKind; role: Role | null }
+): boolean {
+  if (area === 'spectator') return audience.kind === 'spectator';
+  if (audience.kind !== 'member' || audience.role == null) return false;
+  return navAreaForRole(audience.role) === area;
+}

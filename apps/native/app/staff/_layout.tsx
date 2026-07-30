@@ -1,4 +1,5 @@
 import { useApp } from '@/auth/context';
+import { AreaGuard } from '@/nav/area-guard';
 import { RoleChrome } from '@/nav/chrome';
 import { AreaNavigator } from '@/nav/navigator';
 
@@ -10,8 +11,10 @@ import { AreaNavigator } from '@/nav/navigator';
 export default function StaffLayout() {
   const { activeClub } = useApp();
   return (
-    <RoleChrome area="staff" role={activeClub?.role ?? null}>
-      <AreaNavigator area="staff" />
-    </RoleChrome>
+    <AreaGuard area="staff">
+      <RoleChrome area="staff" role={activeClub?.role ?? null}>
+        <AreaNavigator area="staff" />
+      </RoleChrome>
+    </AreaGuard>
   );
 }

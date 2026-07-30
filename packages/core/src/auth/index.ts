@@ -18,7 +18,13 @@ export {
   resolveActiveClub,
   ACTIVE_CLUB_COOKIE_NAME,
 } from './active-club';
-export { navAreaForRole, type NavArea } from './nav-area';
+export {
+  navAreaForRole,
+  isAllowedInArea,
+  type NavArea,
+  type NavAudienceArea,
+  type NavUserKind,
+} from './nav-area';
 export {
   resolveActivePlayer,
   ACTIVE_PLAYER_COOKIE_NAME,
