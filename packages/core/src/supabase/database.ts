@@ -145,7 +145,7 @@ export type Database = {
           actor_profile_id: string
           club_id: string
           id: string
-          ip: string | null
+          ip: unknown
           occurred_at: string
           reason: string | null
           target_id: string
@@ -157,7 +157,7 @@ export type Database = {
           actor_profile_id: string
           club_id: string
           id?: string
-          ip?: string | null
+          ip?: unknown
           occurred_at?: string
           reason?: string | null
           target_id: string
@@ -169,7 +169,7 @@ export type Database = {
           actor_profile_id?: string
           club_id?: string
           id?: string
-          ip?: string | null
+          ip?: unknown
           occurred_at?: string
           reason?: string | null
           target_id?: string
@@ -189,71 +189,6 @@ export type Database = {
             columns: ["club_id"]
             isOneToOne: false
             referencedRelation: "clubs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      erasure_requests: {
-        Row: {
-          club_id: string
-          decided_at: string | null
-          decided_by: string | null
-          id: string
-          player_id: string
-          reason: string | null
-          requested_at: string
-          requested_by: string
-          status: string
-        }
-        Insert: {
-          club_id: string
-          decided_at?: string | null
-          decided_by?: string | null
-          id?: string
-          player_id: string
-          reason?: string | null
-          requested_at?: string
-          requested_by: string
-          status?: string
-        }
-        Update: {
-          club_id?: string
-          decided_at?: string | null
-          decided_by?: string | null
-          id?: string
-          player_id?: string
-          reason?: string | null
-          requested_at?: string
-          requested_by?: string
-          status?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "erasure_requests_club_id_fkey"
-            columns: ["club_id"]
-            isOneToOne: false
-            referencedRelation: "clubs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "erasure_requests_decided_by_fkey"
-            columns: ["decided_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "erasure_requests_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "erasure_requests_requested_by_fkey"
-            columns: ["requested_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -308,6 +243,13 @@ export type Database = {
             referencedRelation: "players"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "callup_decisions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
         ]
       }
       callup_responses: {
@@ -354,6 +296,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "callup_responses_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
             referencedColumns: ["id"]
           },
           {
@@ -484,6 +433,7 @@ export type Database = {
           logo_path?: string | null
           name: string
           owner_profile_id?: string | null
+          primary_color?: string | null
           settings?: Json
           slug: string
           updated_at?: string
@@ -495,6 +445,7 @@ export type Database = {
           logo_path?: string | null
           name?: string
           owner_profile_id?: string | null
+          primary_color?: string | null
           settings?: Json
           slug?: string
           updated_at?: string
@@ -564,7 +515,7 @@ export type Database = {
           created_at: string
           granted: boolean
           id: string
-          ip: string | null
+          ip: unknown
           legal_document_id: string
           legal_document_version: number
           player_id: string | null
@@ -578,7 +529,7 @@ export type Database = {
           created_at?: string
           granted: boolean
           id?: string
-          ip?: string | null
+          ip?: unknown
           legal_document_id: string
           legal_document_version: number
           player_id?: string | null
@@ -592,7 +543,7 @@ export type Database = {
           created_at?: string
           granted?: boolean
           id?: string
-          ip?: string | null
+          ip?: unknown
           legal_document_id?: string
           legal_document_version?: number
           player_id?: string | null
@@ -613,6 +564,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consents_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
             referencedColumns: ["id"]
           },
           {
@@ -676,6 +634,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
             referencedColumns: ["id"]
           },
         ]
@@ -749,6 +714,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "development_reports_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "development_reports_season_id_fkey"
             columns: ["season_id"]
             isOneToOne: false
@@ -767,6 +739,78 @@ export type Database = {
             columns: ["team_report_id"]
             isOneToOne: false
             referencedRelation: "team_development_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      erasure_requests: {
+        Row: {
+          club_id: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          player_id: string
+          reason: string | null
+          requested_at: string
+          requested_by: string
+          status: string
+        }
+        Insert: {
+          club_id: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          player_id: string
+          reason?: string | null
+          requested_at?: string
+          requested_by: string
+          status?: string
+        }
+        Update: {
+          club_id?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          player_id?: string
+          reason?: string | null
+          requested_at?: string
+          requested_by?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "erasure_requests_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "erasure_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "erasure_requests_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "erasure_requests_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "erasure_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -829,6 +873,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluation_private_notes_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
             referencedColumns: ["id"]
           },
           {
@@ -907,6 +958,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
             referencedColumns: ["id"]
           },
           {
@@ -1301,6 +1359,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "invitations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "invitations_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
@@ -1397,6 +1462,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lineup_positions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
             referencedColumns: ["id"]
           },
         ]
@@ -1507,6 +1579,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_absences_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
             referencedColumns: ["id"]
           },
         ]
@@ -1656,10 +1735,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_events_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "match_events_related_player_id_fkey"
             columns: ["related_player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_events_related_player_id_fkey"
+            columns: ["related_player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
             referencedColumns: ["id"]
           },
         ]
@@ -1792,6 +1885,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "match_player_stats_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "match_player_stats_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
@@ -1864,6 +1964,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_starters_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
             referencedColumns: ["id"]
           },
         ]
@@ -2170,10 +2277,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "planned_substitutions_player_in_id_fkey"
+            columns: ["player_in_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "planned_substitutions_player_out_id_fkey"
             columns: ["player_out_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planned_substitutions_player_out_id_fkey"
+            columns: ["player_out_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_admins: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          profile_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          profile_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_admins_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_admins_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2206,6 +2360,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_accounts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
             referencedColumns: ["id"]
           },
           {
@@ -2254,41 +2415,15 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "player_medical_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "player_medical_updated_by_fkey"
             columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      platform_admins: {
-        Row: {
-          granted_at: string
-          granted_by: string | null
-          profile_id: string
-        }
-        Insert: {
-          granted_at?: string
-          granted_by?: string | null
-          profile_id: string
-        }
-        Update: {
-          granted_at?: string
-          granted_by?: string | null
-          profile_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "platform_admins_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "platform_admins_granted_by_fkey"
-            columns: ["granted_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -2359,6 +2494,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "player_notes_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "player_notes_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
@@ -2423,6 +2565,13 @@ export type Database = {
             columns: ["player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_objectives_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
             referencedColumns: ["id"]
           },
           {
@@ -2502,6 +2651,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "player_promotions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "player_promotions_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
@@ -2534,8 +2690,8 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "player_spectators_spectator_profile_id_fkey"
-            columns: ["spectator_profile_id"]
+            foreignKeyName: "player_spectators_invited_by_profile_id_fkey"
+            columns: ["invited_by_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -2548,8 +2704,15 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "player_spectators_invited_by_profile_id_fkey"
-            columns: ["invited_by_profile_id"]
+            foreignKeyName: "player_spectators_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_spectators_spectator_profile_id_fkey"
+            columns: ["spectator_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -3123,77 +3286,6 @@ export type Database = {
         }
         Relationships: []
       }
-      team_development_reports: {
-        Row: {
-          club_id: string
-          comment: string | null
-          created_at: string
-          created_by: string
-          id: string
-          period: string
-          scores: Json
-          season_id: string
-          team_id: string
-          updated_at: string
-          visibility: string
-        }
-        Insert: {
-          club_id: string
-          comment?: string | null
-          created_at?: string
-          created_by: string
-          id?: string
-          period: string
-          scores?: Json
-          season_id: string
-          team_id: string
-          updated_at?: string
-          visibility?: string
-        }
-        Update: {
-          club_id?: string
-          comment?: string | null
-          created_at?: string
-          created_by?: string
-          id?: string
-          period?: string
-          scores?: Json
-          season_id?: string
-          team_id?: string
-          updated_at?: string
-          visibility?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_development_reports_club_id_fkey"
-            columns: ["club_id"]
-            isOneToOne: false
-            referencedRelation: "clubs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_development_reports_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_development_reports_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "seasons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_development_reports_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       team_chat_participation: {
         Row: {
           mode: string
@@ -3300,6 +3392,77 @@ export type Database = {
             foreignKeyName: "team_conversations_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: true
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_development_reports: {
+        Row: {
+          club_id: string
+          comment: string | null
+          created_at: string
+          created_by: string
+          id: string
+          period: string
+          scores: Json
+          season_id: string
+          team_id: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          club_id: string
+          comment?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          period: string
+          scores?: Json
+          season_id: string
+          team_id: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          club_id?: string
+          comment?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          period?: string
+          scores?: Json
+          season_id?: string
+          team_id?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_development_reports_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_development_reports_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_development_reports_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_development_reports_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
             referencedRelation: "teams"
             referencedColumns: ["id"]
           },
@@ -3440,10 +3603,56 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "team_members_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "team_members_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender_profile_id: string
+          team_conversation_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender_profile_id: string
+          team_conversation_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender_profile_id?: string
+          team_conversation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_messages_team_conversation_id_fkey"
+            columns: ["team_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "team_conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -3570,45 +3779,6 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_messages: {
-        Row: {
-          body: string
-          created_at: string
-          id: string
-          sender_profile_id: string
-          team_conversation_id: string
-        }
-        Insert: {
-          body: string
-          created_at?: string
-          id?: string
-          sender_profile_id: string
-          team_conversation_id: string
-        }
-        Update: {
-          body?: string
-          created_at?: string
-          id?: string
-          sender_profile_id?: string
-          team_conversation_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_messages_sender_profile_id_fkey"
-            columns: ["sender_profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_messages_team_conversation_id_fkey"
-            columns: ["team_conversation_id"]
-            isOneToOne: false
-            referencedRelation: "team_conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -3756,6 +3926,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "training_attendance_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players_sporting"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "training_attendance_recorded_by_fkey"
             columns: ["recorded_by"]
             isOneToOne: false
@@ -3777,7 +3954,35 @@ export type Database = {
           position_main: string | null
           positions_secondary: string[] | null
         }
-        Relationships: []
+        Insert: {
+          club_id?: string | null
+          dorsal?: number | null
+          first_name?: string | null
+          foot?: string | null
+          id?: string | null
+          last_name?: string | null
+          position_main?: string | null
+          positions_secondary?: string[] | null
+        }
+        Update: {
+          club_id?: string | null
+          dorsal?: number | null
+          first_name?: string | null
+          foot?: string | null
+          id?: string | null
+          last_name?: string | null
+          position_main?: string | null
+          positions_secondary?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -3793,6 +3998,7 @@ export type Database = {
         }
         Returns: number
       }
+      active_season_id: { Args: { p_club_id: string }; Returns: string }
       admin_update_staff_contact: {
         Args: {
           p_club_id: string
@@ -3808,14 +4014,6 @@ export type Database = {
           p_full_name: string
           p_target_profile_id: string
         }
-        Returns: undefined
-      }
-      cancel_event: {
-        Args: { p_event_id: string; p_reason?: string }
-        Returns: undefined
-      }
-      uncancel_event: {
-        Args: { p_event_id: string }
         Returns: undefined
       }
       admin_update_staff_role: {
@@ -3836,6 +4034,10 @@ export type Database = {
           sent_at: string
         }[]
       }
+      cancel_event: {
+        Args: { p_event_id: string; p_reason?: string }
+        Returns: undefined
+      }
       category_kind_ordinal: { Args: { p_kind: string }; Returns: number }
       clone_session: {
         Args: {
@@ -3851,7 +4053,22 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: boolean
       }
+      current_legal_version: {
+        Args: {
+          p_club_id: string
+          p_doc_type: Database["public"]["Enums"]["legal_document_type"]
+        }
+        Returns: number
+      }
       current_user_email: { Args: never; Returns: string }
+      decide_event_approval: {
+        Args: { p_approve: boolean; p_event_id: string; p_reason?: string }
+        Returns: Json
+      }
+      decide_player_erasure: {
+        Args: { p_approve: boolean; p_reason?: string; p_request_id: string }
+        Returns: string
+      }
       development_report_shared_for_player: {
         Args: { p_player_id: string; p_season_id: string }
         Returns: boolean
@@ -3864,22 +4081,58 @@ export type Database = {
         Args: { p_club_id: string; p_cutoff: string }
         Returns: string
       }
+      get_legal_document_body: {
+        Args: { p_legal_document_id: string }
+        Returns: {
+          body: string
+          title: string
+        }[]
+      }
+      get_player_medical: {
+        Args: { p_ip?: string; p_player_id: string; p_user_agent?: string }
+        Returns: {
+          allergies: string
+          emergency_contact: string
+          medical_conditions: string
+          medication: string
+        }[]
+      }
+      get_public_club_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          id: string
+          logo_path: string
+          name: string
+          slug: string
+        }[]
+      }
+      get_tutor_consents: {
+        Args: { p_club_id: string }
+        Returns: {
+          accepted_at: string
+          consent_type: Database["public"]["Enums"]["consent_type"]
+          granted: boolean
+          legal_document_id: string
+          player_id: string
+          player_name: string
+          title: string
+        }[]
+      }
       invite_spectator: {
         Args: { p_email: string; p_player_id: string }
-        Returns: { email: string; id: string; token: string }[]
+        Returns: {
+          email: string
+          id: string
+          token: string
+        }[]
       }
       is_promotion_target_superior: {
         Args: { p_event_id: string; p_player_id: string }
         Returns: boolean
       }
-      is_spectator: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_spectator_of_club: {
-        Args: { p_club_id: string }
-        Returns: boolean
-      }
+      is_reserved_slug: { Args: { p_slug: string }; Returns: boolean }
+      is_spectator: { Args: never; Returns: boolean }
+      is_spectator_of_club: { Args: { p_club_id: string }; Returns: boolean }
       is_spectator_of_event_club: {
         Args: { p_event_id: string }
         Returns: boolean
@@ -3892,27 +4145,42 @@ export type Database = {
         Args: { p_player_id: string }
         Returns: boolean
       }
-      is_spectator_of_team: {
-        Args: { p_team_id: string }
-        Returns: boolean
-      }
-      is_superadmin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_spectator_of_team: { Args: { p_team_id: string }; Returns: boolean }
+      is_superadmin: { Args: never; Returns: boolean }
       list_player_spectators: {
         Args: { p_player_id: string }
         Returns: {
-          spectator_profile_id: string
-          full_name: string | null
-          email: string | null
           created_at: string
+          email: string
+          full_name: string
+          spectator_profile_id: string
         }[]
+      }
+      list_public_clubs: {
+        Args: never
+        Returns: {
+          id: string
+          logo_path: string
+          name: string
+          slug: string
+        }[]
+      }
+      mark_holiday: {
+        Args: { p_club_id: string; p_date: string; p_reason: string }
+        Returns: Json
       }
       match_assert_event: {
         Args: { p_event_id: string }
         Returns: {
           all_day: boolean
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          cancellation_reason: string | null
+          cancellation_source: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_holiday_id: string | null
           category_id: string | null
           club_id: string
           created_at: string
@@ -3925,9 +4193,12 @@ export type Database = {
           opponent_name: string | null
           parent_event_id: string | null
           recurrence_rule: Json | null
+          rejection_reason: string | null
+          round: number | null
           starts_at: string
           team_id: string | null
           title: string
+          tournament_id: string | null
           type: string
           updated_at: string
         }
@@ -3945,6 +4216,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      membership_role_is_high: { Args: { p_role: string }; Returns: boolean }
       move_session_task: {
         Args: { p_dest_ids: string[]; p_task_id: string; p_to_block_id: string }
         Returns: undefined
@@ -3958,6 +4230,10 @@ export type Database = {
         Returns: undefined
       }
       open_next_season: { Args: { p_club_id: string }; Returns: string }
+      physically_erase_player: {
+        Args: { p_player_id: string }
+        Returns: undefined
+      }
       place_players_in_upcoming: {
         Args: {
           p_club_id: string
@@ -3966,8 +4242,83 @@ export type Database = {
         }
         Returns: number
       }
+      platform_change_club_admin: {
+        Args: { p_club_id: string; p_new_email: string }
+        Returns: {
+          email: string
+          invitation_id: string
+          token: string
+        }[]
+      }
+      platform_club_breakdown: {
+        Args: never
+        Returns: {
+          admin_club: number
+          club_id: string
+          club_name: string
+          coordinador: number
+          delegado: number
+          director: number
+          entrenador_principal: number
+          equipos: number
+          familiares: number
+          jugadores: number
+          preparador_fisico: number
+          seguidores: number
+          segundo_entrenador: number
+        }[]
+      }
+      platform_club_metrics: {
+        Args: never
+        Returns: {
+          admin_club: number
+          club_id: string
+          club_name: string
+          coordinador: number
+          director: number
+          entrenador_ayudante: number
+          entrenador_principal: number
+          jugador: number
+          members_total: number
+          pending_invitations: number
+          players: number
+        }[]
+      }
+      platform_create_club: {
+        Args: { p_locale?: string; p_name: string; p_slug: string }
+        Returns: string
+      }
+      platform_invite_club_admin: {
+        Args: { p_club_id: string; p_email: string }
+        Returns: {
+          email: string
+          id: string
+          token: string
+        }[]
+      }
+      platform_list_clubs: {
+        Args: never
+        Returns: {
+          created_at: string
+          has_admin: boolean
+          has_owner: boolean
+          id: string
+          locale: string
+          logo_path: string
+          name: string
+          owner_name: string
+          owner_profile_id: string
+          slug: string
+        }[]
+      }
+      platform_propose_slug: { Args: { p_name: string }; Returns: string }
+      player_photo_visible: { Args: { p_player_id: string }; Returns: boolean }
       player_promoted_to_event: {
         Args: { p_event_id: string; p_player_id: string }
+        Returns: boolean
+      }
+      profile_is_club_owner: {
+        Args: { p_club_id: string; p_profile_id: string }
         Returns: boolean
       }
       promotion_candidates: {
@@ -3998,6 +4349,36 @@ export type Database = {
           player_id: string
         }[]
       }
+      publish_legal_document: {
+        Args: {
+          p_body: string
+          p_club_id: string
+          p_doc_type: Database["public"]["Enums"]["legal_document_type"]
+        }
+        Returns: {
+          published: boolean
+          version: number
+        }[]
+      }
+      record_data_export: {
+        Args: { p_ip?: string; p_player_id: string; p_user_agent?: string }
+        Returns: undefined
+      }
+      record_season_reconsent: {
+        Args: {
+          p_accept_privacy?: boolean
+          p_accept_terms?: boolean
+          p_children?: Json
+          p_club_id: string
+          p_ip?: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
+      remove_spectator: {
+        Args: { p_player_id: string; p_spectator_profile_id: string }
+        Returns: undefined
+      }
       reorder_session_block_plays: {
         Args: { p_block_id: string; p_play_ids: string[] }
         Returns: undefined
@@ -4018,6 +4399,14 @@ export type Database = {
           proposal_owner_id: string
         }[]
       }
+      request_player_erasure: {
+        Args: { p_player_id: string; p_reason?: string }
+        Returns: string
+      }
+      seed_club_legal_documents: {
+        Args: { p_club_id: string }
+        Returns: undefined
+      }
       seed_standard_categories: { Args: { p_club_id: string }; Returns: number }
       session_exercise_meta: {
         Args: { p_session_id: string }
@@ -4028,6 +4417,14 @@ export type Database = {
           technical_objectives: string[]
         }[]
       }
+      set_club_color: {
+        Args: { p_club_id: string; p_color: string }
+        Returns: undefined
+      }
+      set_club_logo: {
+        Args: { p_club_id: string; p_path: string }
+        Returns: undefined
+      }
       set_player_left_club: {
         Args: {
           p_club_id: string
@@ -4037,11 +4434,40 @@ export type Database = {
         }
         Returns: string
       }
-      set_player_photo: {
-        Args: { p_path: string | null; p_player_id: string }
+      set_player_medical: {
+        Args: {
+          p_allergies: string
+          p_emergency_contact: string
+          p_medical_conditions: string
+          p_medication: string
+          p_player_id: string
+        }
         Returns: undefined
       }
+      set_player_photo: {
+        Args: { p_path: string; p_player_id: string }
+        Returns: undefined
+      }
+      set_session_shared: {
+        Args: { p_session_id: string; p_shared: boolean }
+        Returns: undefined
+      }
+      team_chat_member_profile_ids: {
+        Args: { p_team_id: string }
+        Returns: string[]
+      }
+      team_chat_unread_counts: {
+        Args: never
+        Returns: {
+          team_conversation_id: string
+          unread: number
+        }[]
+      }
+      team_club_id: { Args: { p_team_id: string }; Returns: string }
+      tutor_needs_reconsent: { Args: { p_club_id: string }; Returns: boolean }
       unaccent: { Args: { "": string }; Returns: string }
+      uncancel_event: { Args: { p_event_id: string }; Returns: undefined }
+      unmark_holiday: { Args: { p_holiday_id: string }; Returns: Json }
       unplace_player_from_upcoming: {
         Args: { p_club_id: string; p_player_id: string; p_team_id: string }
         Returns: number
@@ -4049,6 +4475,18 @@ export type Database = {
       user_active_team_for_staff: {
         Args: { p_club_id: string }
         Returns: string
+      }
+      user_belongs_to_event_club: {
+        Args: { p_event_id: string }
+        Returns: boolean
+      }
+      user_belongs_to_team_club: {
+        Args: { p_team_id: string }
+        Returns: boolean
+      }
+      user_can_access_player_medical: {
+        Args: { p_player_id: string }
+        Returns: boolean
       }
       user_can_access_player_notes: {
         Args: { p_player_id: string }
@@ -4086,6 +4524,11 @@ export type Database = {
         Args: { p_player_id: string }
         Returns: boolean
       }
+      user_can_post_team_chat: { Args: { p_team_id: string }; Returns: boolean }
+      user_can_post_team_chat_by_conversation: {
+        Args: { p_conversation_id: string }
+        Returns: boolean
+      }
       user_can_publish_methodology: {
         Args: { p_club_id: string }
         Returns: boolean
@@ -4095,137 +4538,10 @@ export type Database = {
         Returns: boolean
       }
       user_can_record_match: { Args: { p_event_id: string }; Returns: boolean }
-      user_can_access_player_medical: {
-        Args: { p_player_id: string }
-        Returns: boolean
-      }
       user_can_see_player: { Args: { p_player_id: string }; Returns: boolean }
       user_can_see_player_medical: {
         Args: { p_player_id: string }
         Returns: boolean
-      }
-      get_player_medical: {
-        Args: {
-          p_player_id: string
-          p_ip?: string
-          p_user_agent?: string
-        }
-        Returns: {
-          allergies: string | null
-          medication: string | null
-          medical_conditions: string | null
-          emergency_contact: string | null
-        }[]
-      }
-      get_tutor_consents: {
-        Args: { p_club_id: string }
-        Returns: {
-          player_id: string | null
-          player_name: string | null
-          consent_type: Database["public"]["Enums"]["consent_type"]
-          granted: boolean
-          accepted_at: string
-          legal_document_id: string
-          title: string
-        }[]
-      }
-      get_legal_document_body: {
-        Args: { p_legal_document_id: string }
-        Returns: {
-          title: string
-          body: string
-        }[]
-      }
-      publish_legal_document: {
-        Args: {
-          p_club_id: string
-          p_doc_type: Database["public"]["Enums"]["legal_document_type"]
-          p_body: string
-        }
-        Returns: {
-          version: number
-          published: boolean
-        }[]
-      }
-      record_data_export: {
-        Args: {
-          p_player_id: string
-          p_ip?: string
-          p_user_agent?: string
-        }
-        Returns: undefined
-      }
-      request_player_erasure: {
-        Args: { p_player_id: string; p_reason?: string }
-        Returns: string
-      }
-      decide_player_erasure: {
-        Args: { p_request_id: string; p_approve: boolean; p_reason?: string }
-        Returns: string
-      }
-      physically_erase_player: {
-        Args: { p_player_id: string }
-        Returns: undefined
-      }
-      set_player_medical: {
-        Args: {
-          p_player_id: string
-          p_allergies: string | null
-          p_medication: string | null
-          p_medical_conditions: string | null
-          p_emergency_contact: string | null
-        }
-        Returns: undefined
-      }
-      user_has_medical_consent_read: {
-        Args: { p_player_id: string }
-        Returns: boolean
-      }
-      user_has_medical_consent_write: {
-        Args: { p_player_id: string }
-        Returns: boolean
-      }
-      active_season_id: {
-        Args: { p_club_id: string }
-        Returns: string
-      }
-      current_legal_version: {
-        Args: {
-          p_club_id: string
-          p_doc_type: Database["public"]["Enums"]["legal_document_type"]
-        }
-        Returns: number
-      }
-      seed_club_legal_documents: {
-        Args: { p_club_id: string }
-        Returns: undefined
-      }
-      player_photo_visible: {
-        Args: { p_player_id: string }
-        Returns: boolean
-      }
-      tutor_needs_reconsent: {
-        Args: { p_club_id: string }
-        Returns: boolean
-      }
-      record_season_reconsent: {
-        Args: {
-          p_club_id: string
-          p_accept_terms?: boolean
-          p_accept_privacy?: boolean
-          p_ip?: string
-          p_user_agent?: string
-          p_children?: Json
-        }
-        Returns: undefined
-      }
-      remove_spectator: {
-        Args: { p_player_id: string; p_spectator_profile_id: string }
-        Returns: undefined
-      }
-      set_session_shared: {
-        Args: { p_session_id: string; p_shared: boolean }
-        Returns: undefined
       }
       user_can_see_session: { Args: { p_session_id: string }; Returns: boolean }
       user_can_see_shared_lineup: {
@@ -4245,22 +4561,23 @@ export type Database = {
         Args: { p_capability: string; p_club_id: string }
         Returns: boolean
       }
+      user_has_medical_consent_read: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
+      user_has_medical_consent_write: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
       user_is_account_of_player: {
         Args: { p_player_id: string }
         Returns: boolean
       }
-      team_chat_member_profile_ids: {
-        Args: { p_team_id: string }
-        Returns: string[]
+      user_is_admin_or_director: {
+        Args: { p_club_id: string }
+        Returns: boolean
       }
-      team_chat_unread_counts: {
-        Args: never
-        Returns: {
-          team_conversation_id: string
-          unread: number
-        }[]
-      }
-      team_club_id: { Args: { p_team_id: string }; Returns: string }
+      user_is_club_owner: { Args: { p_club_id: string }; Returns: boolean }
       user_is_conversation_participant: {
         Args: { p_conversation_id: string }
         Returns: boolean
@@ -4279,14 +4596,6 @@ export type Database = {
         Returns: boolean
       }
       user_is_team_chat_member_by_conversation: {
-        Args: { p_conversation_id: string }
-        Returns: boolean
-      }
-      user_can_post_team_chat: {
-        Args: { p_team_id: string }
-        Returns: boolean
-      }
-      user_can_post_team_chat_by_conversation: {
         Args: { p_conversation_id: string }
         Returns: boolean
       }
@@ -4312,121 +4621,6 @@ export type Database = {
           p_type: Database["public"]["Enums"]["notification_type"]
           p_user_id: string
         }
-        Returns: boolean
-      }
-      platform_propose_slug: {
-        Args: { p_name: string }
-        Returns: string
-      }
-      platform_change_club_admin: {
-        Args: { p_club_id: string; p_new_email: string }
-        Returns: {
-          invitation_id: string
-          token: string
-          email: string
-        }[]
-      }
-      platform_create_club: {
-        Args: { p_name: string; p_slug: string; p_locale?: string }
-        Returns: string
-      }
-      platform_invite_club_admin: {
-        Args: { p_club_id: string; p_email: string }
-        Returns: {
-          id: string
-          token: string
-          email: string
-        }[]
-      }
-      platform_list_clubs: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          id: string
-          name: string
-          slug: string
-          locale: string
-          logo_path: string | null
-          created_at: string
-          owner_profile_id: string | null
-          owner_name: string | null
-          has_owner: boolean
-          has_admin: boolean
-        }[]
-      }
-      list_public_clubs: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          id: string
-          name: string
-          slug: string
-          logo_path: string | null
-        }[]
-      }
-      get_public_club_by_slug: {
-        Args: { p_slug: string }
-        Returns: {
-          id: string
-          name: string
-          slug: string
-          logo_path: string | null
-        }[]
-      }
-      set_club_color: {
-        Args: { p_club_id: string; p_color: string | null }
-        Returns: undefined
-      }
-      set_club_logo: {
-        Args: { p_club_id: string; p_path: string | null }
-        Returns: undefined
-      }
-      platform_club_metrics: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          club_id: string
-          club_name: string
-          admin_club: number
-          director: number
-          coordinador: number
-          entrenador_principal: number
-          entrenador_ayudante: number
-          jugador: number
-          members_total: number
-          pending_invitations: number
-          players: number
-        }[]
-      }
-      platform_club_breakdown: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          club_id: string
-          club_name: string
-          admin_club: number
-          director: number
-          coordinador: number
-          entrenador_principal: number
-          segundo_entrenador: number
-          preparador_fisico: number
-          delegado: number
-          jugadores: number
-          familiares: number
-          seguidores: number
-          equipos: number
-        }[]
-      }
-      mark_holiday: {
-        Args: { p_club_id: string; p_date: string; p_reason: string }
-        Returns: Json
-      }
-      unmark_holiday: {
-        Args: { p_holiday_id: string }
-        Returns: Json
-      }
-      decide_event_approval: {
-        Args: { p_event_id: string; p_approve: boolean; p_reason?: string }
-        Returns: Json
-      }
-      user_is_admin_or_director: {
-        Args: { p_club_id: string }
         Returns: boolean
       }
     }
