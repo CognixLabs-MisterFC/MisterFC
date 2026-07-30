@@ -132,11 +132,14 @@ export async function emitNotification(
   let skippedPref = false;
 
   try {
+    // O2-4 — el `in_app_payload` alimenta el `data` del push nativo (trae
+    // event_id/team_id/… → la app deriva la ruta). El envío va a web + expo.
     const r = await sendPushToUser(
       supabase,
       input.user_id,
       input.type,
       input.push_payload,
+      input.in_app_payload,
     );
     eagerSent = r.sent;
     eagerFailedGone = r.failed_gone;
