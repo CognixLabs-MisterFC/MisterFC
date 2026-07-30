@@ -1245,6 +1245,44 @@ export type Database = {
           },
         ]
       }
+      expo_push_tokens: {
+        Row: {
+          created_at: string
+          device_info: string | null
+          id: string
+          last_seen_at: string
+          platform: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_info?: string | null
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_info?: string | null
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expo_push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       holidays: {
         Row: {
           club_id: string
@@ -4373,6 +4411,10 @@ export type Database = {
           p_ip?: string
           p_user_agent?: string
         }
+        Returns: undefined
+      }
+      register_expo_push_token: {
+        Args: { p_device_info?: string; p_platform?: string; p_token: string }
         Returns: undefined
       }
       remove_spectator: {
