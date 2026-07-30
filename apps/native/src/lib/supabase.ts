@@ -1,7 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-// Reutiliza el tipo `Database` generado en @misterfc/core (contrato con el
-// backend). NO se duplica: es el mismo tipo que usa apps/web.
-import type { Database } from '@misterfc/core';
+import { createSupabaseClient } from '@misterfc/core';
 import { SecureStoreAdapter } from './secure-store-adapter';
 
 // Convenio de Expo: las públicas van como EXPO_PUBLIC_* (inlined por Metro).
@@ -18,21 +15,17 @@ if (!url || !anonKey) {
 /**
  * Cliente Supabase de la app nativa.
  *
- * No se reutiliza `createSupabaseBrowserClient` de core: ese usa `@supabase/ssr`
- * (cookies del browser) y lee `process.env.NEXT_PUBLIC_*` de forma literal —
- * acoplado a Next/web y sin punto de inyección para el storage. Aquí montamos el
- * cliente con `@supabase/supabase-js` y el adaptador expo-secure-store que exige
- * el ADR-0020. La lógica de dominio (schemas, cálculos) sigue viniendo de core.
+ * O2-1: monta el cliente con el helper AGNÓSTICO `createSupabaseClient` de core
+ * (sobre `@supabase/supabase-js`, NO `@supabase/ssr`), inyectándole el adaptador
+ * `expo-secure-store` (ADR-0020) y las `EXPO_PUBLIC_*`. Se elimina el `createClient`
+ * que native montaba por su cuenta en O2-0: la construcción vive ahora en core, y
+ * apps/web/apps/native comparten el mismo contrato de cliente. (Deuda de O2-0 saldada.)
  *
- * NOTA (deuda para O2-1): cuando se cableen los flujos de auth reales habrá que
- * añadir el polyfill de URL para RN y valorar mover un helper
- * `createSupabaseClient(storage)` a core para no acoplar el convenio de env.
+ * El polyfill de `URL` para React Native (que supabase-js necesita en runtime) se
+ * importa en el entry de la app (`app/_layout.tsx`), antes de tocar el cliente.
  */
-export const supabase = createClient<Database>(url, anonKey, {
-  auth: {
-    storage: SecureStoreAdapter,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
+export const supabase = createSupabaseClient({
+  url,
+  anonKey,
+  storage: SecureStoreAdapter,
 });

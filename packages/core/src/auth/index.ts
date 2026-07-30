@@ -1,6 +1,9 @@
 export {
   getCurrentUser,
   getCurrentUserClubs,
+  getCurrentUserFromClient,
+  getCurrentUserClubsFromClient,
+  isSpectatorFromClient,
   type Role,
   type CurrentUserClub,
 } from './current-user';
