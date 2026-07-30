@@ -18,7 +18,7 @@ export type {
 export { formatGoalPush, resolveGoalRecipients } from './goal-push';
 export type { GoalPushInput, GoalPushMessage } from './goal-push';
 
-export { mergeChannelOutcomes } from './multi-channel';
+export { mergeChannelOutcomes, sendChannelIsolated } from './multi-channel';
 export type { ChannelResult } from './multi-channel';
 
 export {

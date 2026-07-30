@@ -24,6 +24,31 @@ export type ChannelResult = {
 } | null;
 
 /**
+ * Envía por UN canal de forma AISLADA: si el envío LANZA (timeout / 5xx / DNS de
+ * la red del transporte), la excepción NO se propaga — se reporta vía `onError` y
+ * el canal se degrada a un fallo TRANSITORIO (`failed_other: 1`). Así un throw de
+ * un canal nunca tumba al otro en el `Promise.all` del fan-out, y el que ya
+ * entregó conserva su outcome.
+ *
+ * Se usa `failed_other` (no `failed_gone`) a propósito: un throw es un error de
+ * red transitorio, no un destino muerto → el status agregado queda `pending`
+ * (retry del cron), nunca `failed`. El nº real de destinos se desconoce si el
+ * envío revienta antes de enumerarlos, así que se cuenta como 1 intento fallido
+ * (suficiente para el criterio: cualquier `failed_other>0` con `sent=0` → pending).
+ */
+export async function sendChannelIsolated(
+  send: () => Promise<ChannelResult>,
+  onError: (err: unknown) => void,
+): Promise<ChannelResult> {
+  try {
+    return await send();
+  } catch (err) {
+    onError(err);
+    return { sent: 0, failed_gone: 0, failed_other: 1 };
+  }
+}
+
+/**
  * Combina web + expo en un `SendOutcome` agregado (criterio O2-4):
  *   - `wants=false` → skipped_user_pref (el gate dijo no; ni se intentó).
  *   - sent = suma de ambos → si CUALQUIER destino entregó, sent>0.

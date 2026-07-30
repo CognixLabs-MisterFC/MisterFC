@@ -15,9 +15,14 @@
  */
 
 import webpush from 'web-push';
+import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ChannelResult, Database, Json } from '@misterfc/core';
-import { expoDataFromNotification, mergeChannelOutcomes } from '@misterfc/core';
+import {
+  expoDataFromNotification,
+  mergeChannelOutcomes,
+  sendChannelIsolated,
+} from '@misterfc/core';
 import { sendExpoToUser } from './expo-push';
 
 let vapidConfigured = false;
@@ -145,14 +150,32 @@ export async function sendPushToUser(
     dataSource ?? (payload as unknown as Json),
   );
 
-  // Ambos canales en paralelo; cada uno limpia sus destinos muertos.
+  // Ambos canales en paralelo y AISLADOS: si un canal LANZA (timeout / 5xx / DNS
+  // de su red), su throw NO debe tumbar al otro que ya pudo entregar.
+  // `sendChannelIsolated` captura la excepción, la reporta a Sentry y degrada ese
+  // canal a un fallo transitorio (failed_other) — así el Promise.all nunca rechaza
+  // y `sendPushToUser` tampoco. El status agregado se calcula con lo que cada
+  // canal devolvió (sent si el otro entregó; failed solo si ambos a cero muertos).
   const [web, expo] = await Promise.all([
-    sendWebOnly(supabase, userId, payload),
-    sendExpoToUser(
-      supabase,
-      userId,
-      { title: payload.title, body: payload.body },
-      expoData,
+    sendChannelIsolated(
+      () => sendWebOnly(supabase, userId, payload),
+      (err) =>
+        Sentry.captureException(err, {
+          tags: { feature: 'notifications', step: 'send_web_channel' },
+        }),
+    ),
+    sendChannelIsolated(
+      () =>
+        sendExpoToUser(
+          supabase,
+          userId,
+          { title: payload.title, body: payload.body },
+          expoData,
+        ),
+      (err) =>
+        Sentry.captureException(err, {
+          tags: { feature: 'notifications', step: 'send_expo_channel' },
+        }),
     ),
   ]);
 
