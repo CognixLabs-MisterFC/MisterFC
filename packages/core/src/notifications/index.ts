@@ -22,6 +22,12 @@ export { mergeChannelOutcomes, sendChannelIsolated } from './multi-channel';
 export type { ChannelResult } from './multi-channel';
 
 export {
+  nativeHrefForNotification,
+  resourceIdForNotification,
+} from './native-route';
+export type { NativeRouteTarget } from './native-route';
+
+export {
   expoDataFromNotification,
   buildExpoMessages,
   isDeviceNotRegistered,

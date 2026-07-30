@@ -12,11 +12,18 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.misterfc.app"
+      "package": "com.misterfc.app",
+      "googleServicesFile": "./google-services.json"
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "color": "#0F1B2E"
+        }
+      ]
     ],
     "extra": {
       "eas": {

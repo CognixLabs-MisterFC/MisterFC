@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { ProfileScreen } from '@/screens/profile-screen';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.perfil" />;
+  return <ProfileScreen />;
 }

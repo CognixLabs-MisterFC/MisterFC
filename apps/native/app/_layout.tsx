@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SessionProvider } from '@/auth/session';
 import { AppProvider } from '@/auth/context';
 import { SessionGuard } from '@/nav/session-guard';
+import { NotificationsProvider } from '@/notifications/notifications-provider';
 
 export default function RootLayout() {
   return (
@@ -17,6 +18,7 @@ export default function RootLayout() {
         <AppProvider>
           <StatusBar style="light" />
           <SessionGuard />
+          <NotificationsProvider />
           <Stack screenOptions={{ headerShown: false }} />
         </AppProvider>
       </SessionProvider>
