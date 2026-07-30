@@ -15,8 +15,15 @@
  */
 
 import webpush from 'web-push';
+import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@misterfc/core';
+import type { ChannelResult, Database, Json } from '@misterfc/core';
+import {
+  expoDataFromNotification,
+  mergeChannelOutcomes,
+  sendChannelIsolated,
+} from '@misterfc/core';
+import { sendExpoToUser } from './expo-push';
 
 let vapidConfigured = false;
 
@@ -50,54 +57,21 @@ export type SendPushResult = {
 };
 
 /**
- * Envía un push a TODOS los dispositivos del user (puede tener móvil +
- * desktop + iPad). Respeta `notification_preferences` — si el user
- * desactivó este tipo por canal push, devuelve `skipped_user_pref=true`
- * sin enviar.
- *
- * El caller decide qué hacer con el resultado: el drainer marca la fila
- * de `notifications` como `sent`/`skipped`/`failed`. El eager send en
- * server actions puede ignorarlo si la cola lo recogerá.
+ * Envía SOLO por Web Push a las suscripciones del user. NO consulta el gate
+ * (lo hace el caller). Devuelve `null` si el user no tiene suscripciones
+ * (distinto de `{sent:0}`). Borra las suscripciones muertas (404/410).
  */
-export async function sendPushToUser(
+async function sendWebOnly(
   supabase: SupabaseClient<Database>,
   userId: string,
-  notificationType: Database['public']['Enums']['notification_type'],
   payload: PushPayload,
-): Promise<SendPushResult> {
-  configureVapid();
-
-  // ¿Quiere el user este tipo por canal push?
-  const { data: wantsRow } = await supabase.rpc('user_wants_notification', {
-    p_user_id: userId,
-    p_type: notificationType,
-    p_channel: 'push',
-  });
-  const wants = wantsRow !== false; // null/undefined → true (default opt-in)
-  if (!wants) {
-    return {
-      sent: 0,
-      failed_gone: 0,
-      failed_other: 0,
-      skipped_user_pref: true,
-      skipped_no_subscriptions: false,
-    };
-  }
-
+): Promise<ChannelResult> {
   const { data: subs } = await supabase
     .from('push_subscriptions')
     .select('id, endpoint, p256dh, auth')
     .eq('user_id', userId);
 
-  if (!subs || subs.length === 0) {
-    return {
-      sent: 0,
-      failed_gone: 0,
-      failed_other: 0,
-      skipped_user_pref: false,
-      skipped_no_subscriptions: true,
-    };
-  }
+  if (!subs || subs.length === 0) return null;
 
   let sent = 0;
   let failedGone = 0;
@@ -128,12 +102,90 @@ export async function sendPushToUser(
     }),
   );
 
+  return { sent, failed_gone: failedGone, failed_other: failedOther };
+}
+
+/**
+ * Envía un push a TODOS los canales del user: sus suscripciones Web Push
+ * (navegador) Y sus Expo push tokens (app nativa). Respeta
+ * `notification_preferences` consultando el gate UNA sola vez (mismo canal
+ * 'push'); si el user lo desactivó, devuelve `skipped_user_pref=true` sin enviar
+ * por ningún canal. Web+app recibe por los dos (no se desduplica).
+ *
+ * `dataSource` alimenta el `data` del push NATIVO (type + IDs del recurso, para
+ * que la app derive la ruta): el bus pasa el `in_app_payload` (con event_id/
+ * team_id/…); el cron pasa el push payload (con `deep_link`, del que se extrae el
+ * resource_id si lo hay). Nunca se manda la ruta web como destino nativo.
+ *
+ * El caller marca la fila `notifications` según el resultado (drainer/eager).
+ */
+export async function sendPushToUser(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  notificationType: Database['public']['Enums']['notification_type'],
+  payload: PushPayload,
+  dataSource?: Json,
+): Promise<SendPushResult> {
+  configureVapid();
+
+  // Gate UNA vez para ambos canales. null/undefined → true (opt-in por defecto).
+  const { data: wantsRow } = await supabase.rpc('user_wants_notification', {
+    p_user_id: userId,
+    p_type: notificationType,
+    p_channel: 'push',
+  });
+  const wants = wantsRow !== false;
+  if (!wants) {
+    return {
+      sent: 0,
+      failed_gone: 0,
+      failed_other: 0,
+      skipped_user_pref: true,
+      skipped_no_subscriptions: false,
+    };
+  }
+
+  const expoData = expoDataFromNotification(
+    notificationType,
+    dataSource ?? (payload as unknown as Json),
+  );
+
+  // Ambos canales en paralelo y AISLADOS: si un canal LANZA (timeout / 5xx / DNS
+  // de su red), su throw NO debe tumbar al otro que ya pudo entregar.
+  // `sendChannelIsolated` captura la excepción, la reporta a Sentry y degrada ese
+  // canal a un fallo transitorio (failed_other) — así el Promise.all nunca rechaza
+  // y `sendPushToUser` tampoco. El status agregado se calcula con lo que cada
+  // canal devolvió (sent si el otro entregó; failed solo si ambos a cero muertos).
+  const [web, expo] = await Promise.all([
+    sendChannelIsolated(
+      () => sendWebOnly(supabase, userId, payload),
+      (err) =>
+        Sentry.captureException(err, {
+          tags: { feature: 'notifications', step: 'send_web_channel' },
+        }),
+    ),
+    sendChannelIsolated(
+      () =>
+        sendExpoToUser(
+          supabase,
+          userId,
+          { title: payload.title, body: payload.body },
+          expoData,
+        ),
+      (err) =>
+        Sentry.captureException(err, {
+          tags: { feature: 'notifications', step: 'send_expo_channel' },
+        }),
+    ),
+  ]);
+
+  const merged = mergeChannelOutcomes(true, web, expo);
   return {
-    sent,
-    failed_gone: failedGone,
-    failed_other: failedOther,
-    skipped_user_pref: false,
-    skipped_no_subscriptions: false,
+    sent: merged.sent,
+    failed_gone: merged.failed_gone,
+    failed_other: merged.failed_other,
+    skipped_user_pref: merged.skipped_user_pref,
+    skipped_no_subscriptions: merged.skipped_no_subscriptions,
   };
 }
 

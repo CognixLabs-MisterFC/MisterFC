@@ -698,7 +698,15 @@ async function drainPushQueue(
       type: row.type,
     });
     try {
-      const r = await sendPushToUser(supabase, row.user_id, row.type, payload);
+      // O2-4 — envío a web + expo. El `data` nativo sale de `row.payload` (para
+      // el push, del `deep_link` se extrae el resource_id si lo hay).
+      const r = await sendPushToUser(
+        supabase,
+        row.user_id,
+        row.type,
+        payload,
+        row.payload,
+      );
       result.sent += r.sent;
       result.failed_gone += r.failed_gone;
       result.failed_other += r.failed_other;
