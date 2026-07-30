@@ -646,6 +646,19 @@
       "error_too_large": "La imatge és massa gran.",
       "error_upload": "No s'ha pogut pujar el logo. Torna-ho a provar.",
       "error_forbidden": "Només l'administrador del club pot canviar el logo."
+    },
+    "color": {
+      "section_title": "Color del club",
+      "section_description": "Fixa el color de marca del club. De moment es guarda ací; encara no tenyeix la resta de la web.",
+      "picker_label": "Selector de color",
+      "hex_label": "Color en hex",
+      "save": "Guardar",
+      "remove": "Llevar",
+      "hint_set": "Color actual: {color}.",
+      "hint_none": "Sense color: s'usa un to neutre per defecte.",
+      "error_invalid": "Color no vàlid. Usa un hex #RRGGBB.",
+      "error_forbidden": "Només l'administrador del club pot canviar el color.",
+      "error_generic": "No s'ha pogut guardar el color. Torna-ho a provar."
     }
   },
   "categorias": {

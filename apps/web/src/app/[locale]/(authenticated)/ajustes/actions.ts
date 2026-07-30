@@ -88,3 +88,38 @@ export async function setClubLogo(
   revalidatePath('/[locale]/(authenticated)', 'layout');
   return { success: true };
 }
+
+/** O2-1a — hex #RRGGBB (mismo formato que el CHECK de clubs.primary_color). */
+const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
+
+/**
+ * O2-1a — Fija (hex #RRGGBB) o quita (null) el color de marca del club. La
+ * autoridad la impone la RPC `set_club_color` (gate admin_club; excluye director,
+ * incluye superadmin por el chokepoint) y el CHECK de la columna valida el hex.
+ * Aquí validamos el formato antes de la ida a la RPC para dar un error claro.
+ */
+export async function setClubColor(
+  clubId: string,
+  color: string | null,
+): Promise<ActionResult> {
+  if (color !== null && !HEX_COLOR_RE.test(color)) {
+    return { error: 'invalid' };
+  }
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { error } = await supabase.rpc('set_club_color', {
+    p_club_id: clubId,
+    p_color: color,
+  });
+  if (error) {
+    return {
+      error: error.message?.includes('forbidden') ? 'forbidden' : 'generic',
+    };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/ajustes', 'page');
+  revalidatePath('/[locale]/(authenticated)', 'layout');
+  return { success: true };
+}

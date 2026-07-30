@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import { ClubSettingsForm } from './club-settings-form';
 import { ClubLogoUploader } from './club-logo-uploader';
+import { ClubColorPicker } from './club-color-picker';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -49,6 +50,15 @@ export default async function AjustesPage({ params }: Props) {
   const visible = settings?.evaluations_player_visibility ?? false;
   const canEdit = ctx.activeClub.role === 'admin_club';
 
+  // O2-1a — color de marca del club (NULL = sin color). Solo se usa/edita en la
+  // tarjeta de admin de abajo; RLS permite al miembro leer su club.
+  const { data: clubRow } = await supabase
+    .from('clubs')
+    .select('primary_color')
+    .eq('id', ctx.activeClub.club.id)
+    .maybeSingle();
+  const primaryColor = clubRow?.primary_color ?? null;
+
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div className="flex items-center gap-3">
@@ -81,6 +91,23 @@ export default async function AjustesPage({ params }: Props) {
               clubId={ctx.activeClub.club.id}
               clubName={ctx.activeClub.club.name}
               initialPath={ctx.activeClub.club.logo_path}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* O2-1a — Color de marca del club: SOLO admin_club (como el logo). Guarda
+          el valor; NO pinta la web con él todavía (otro alcance). */}
+      {ctx.activeClub.role === 'admin_club' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('color.section_title')}</CardTitle>
+            <CardDescription>{t('color.section_description')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ClubColorPicker
+              clubId={ctx.activeClub.club.id}
+              initialColor={primaryColor}
             />
           </CardContent>
         </Card>

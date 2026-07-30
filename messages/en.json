@@ -646,6 +646,19 @@
       "error_too_large": "The image is too large.",
       "error_upload": "Couldn't upload the logo. Please try again.",
       "error_forbidden": "Only the club administrator can change the logo."
+    },
+    "color": {
+      "section_title": "Club color",
+      "section_description": "Set the club's brand color. For now it's saved here; it doesn't tint the rest of the web yet.",
+      "picker_label": "Color picker",
+      "hex_label": "Hex color",
+      "save": "Save",
+      "remove": "Remove",
+      "hint_set": "Current color: {color}.",
+      "hint_none": "No color: a neutral default is used.",
+      "error_invalid": "Invalid color. Use a #RRGGBB hex.",
+      "error_forbidden": "Only the club administrator can change the color.",
+      "error_generic": "Couldn't save the color. Please try again."
     }
   },
   "categorias": {
