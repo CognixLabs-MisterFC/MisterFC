@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { SessionProvider } from '@/auth/session';
 import { AppProvider } from '@/auth/context';
+import { SessionGuard } from '@/nav/session-guard';
 
 export default function RootLayout() {
   return (
@@ -15,6 +16,7 @@ export default function RootLayout() {
       <SessionProvider>
         <AppProvider>
           <StatusBar style="light" />
+          <SessionGuard />
           <Stack screenOptions={{ headerShown: false }} />
         </AppProvider>
       </SessionProvider>
