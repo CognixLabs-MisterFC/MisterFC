@@ -83,6 +83,17 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     'nav.jugadores': 'Jugadores',
     'nav.cuerpo_tecnico': 'Cuerpo técnico',
     'nav.supresiones': 'Supresiones',
+    'push.section_title': 'Notificaciones',
+    'push.card_title': 'Notificaciones push',
+    'push.card_body':
+      'Actívalas para recibir avisos de convocatorias, mensajes y directos aunque no tengas la app abierta.',
+    'push.enable_button': 'Activar notificaciones',
+    'push.enabling': 'Activando…',
+    'push.enabled': 'Notificaciones activadas en este dispositivo.',
+    'push.denied_title': 'Permiso denegado',
+    'push.denied_body':
+      'Has bloqueado las notificaciones. Actívalas desde los Ajustes del sistema para este dispositivo.',
+    'push.error': 'No se pudieron activar. Inténtalo de nuevo.',
   },
   en: {
     'login.title': 'MisterFC',
@@ -143,6 +154,17 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     'nav.jugadores': 'Players',
     'nav.cuerpo_tecnico': 'Coaching staff',
     'nav.supresiones': 'Deletions',
+    'push.section_title': 'Notifications',
+    'push.card_title': 'Push notifications',
+    'push.card_body':
+      'Turn them on to get alerts about call-ups, messages and live matches even when the app is closed.',
+    'push.enable_button': 'Enable notifications',
+    'push.enabling': 'Enabling…',
+    'push.enabled': 'Notifications enabled on this device.',
+    'push.denied_title': 'Permission denied',
+    'push.denied_body':
+      'You blocked notifications. Turn them on from the system Settings for this device.',
+    'push.error': "Couldn't enable them. Please try again.",
   },
   va: {
     'login.title': 'MisterFC',
@@ -203,6 +225,17 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     'nav.jugadores': 'Jugadors',
     'nav.cuerpo_tecnico': 'Cos tècnic',
     'nav.supresiones': 'Supressions',
+    'push.section_title': 'Notificacions',
+    'push.card_title': 'Notificacions push',
+    'push.card_body':
+      'Activa-les per rebre avisos de convocatòries, missatges i directes encara que no tingues l’app oberta.',
+    'push.enable_button': 'Activar notificacions',
+    'push.enabling': 'Activant…',
+    'push.enabled': 'Notificacions activades en este dispositiu.',
+    'push.denied_title': 'Permís denegat',
+    'push.denied_body':
+      'Has bloquejat les notificacions. Activa-les des dels Ajustos del sistema per a este dispositiu.',
+    'push.error': 'No s’han pogut activar. Torna-ho a provar.',
   },
 };
 
