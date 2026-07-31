@@ -58,7 +58,7 @@ export function CalendarioScreen() {
     holidays: HolidayInfo[];
   }>(clubScopedCacheKey('calendar', clubId ?? 'none'), async (sb) => {
     if (!clubId) return { events: [], holidays: [] };
-    const scope = await getCalendarScopeTeamIdsFromClient(sb);
+    const scope = await getCalendarScopeTeamIdsFromClient(sb, clubId);
     const { events } = await getCalendarDataFromClient(
       sb,
       clubId,

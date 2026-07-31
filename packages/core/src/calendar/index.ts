@@ -66,12 +66,19 @@ export type HolidayInfo = { id: string; date: string; reason: string };
 /** Rango UTC de la consulta (calculado por el caller). */
 export type CalendarRangeIso = { startIso: string; endIso: string };
 
-/** Equipos del usuario en el club (acota la agenda de jugador/familia). */
+/**
+ * Equipos del usuario en el club (acota la agenda de jugador/familia). Espeja la
+ * rama no-admin de `loadCalendarScopeTeamIds` de web: el rpc `user_team_ids_in_club`
+ * EXIGE `p_club_id` (setof uuid) → se pasa el club y se filtran vacíos.
+ */
 export async function getCalendarScopeTeamIdsFromClient(
-  supabase: DbClient
+  supabase: DbClient,
+  clubId: string
 ): Promise<string[]> {
-  const { data } = await supabase.rpc('user_team_ids_in_club');
-  return Array.isArray(data) ? (data as string[]) : [];
+  const { data } = await supabase.rpc('user_team_ids_in_club', {
+    p_club_id: clubId,
+  });
+  return ((data ?? []) as unknown as string[]).filter(Boolean);
 }
 
 /** Festivos del club en un rango de días 'YYYY-MM-DD' (inclusive). */

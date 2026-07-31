@@ -14,6 +14,7 @@ import {
   setTeamFollowFromClient,
 } from '../follows/index';
 import { getUpcomingEventsFromClient } from '../home/index';
+import { getCalendarScopeTeamIdsFromClient } from '../calendar/index';
 
 type TableResult = { data?: unknown[]; count?: number };
 
@@ -143,6 +144,21 @@ describe('follows', () => {
     const ok = mockClient({ user: { id: 'u1' }, tables: { team_follows: { data: [] } } });
     expect(await setTeamFollowFromClient(ok, 't1', true)).toEqual({ ok: true, following: true });
     expect(await setTeamFollowFromClient(ok, 't1', false)).toEqual({ ok: true, following: false });
+  });
+});
+
+describe('calendario scope', () => {
+  it('getCalendarScopeTeamIdsFromClient pasa p_club_id (rpc lo exige) y filtra vacíos', async () => {
+    let passedArgs: unknown;
+    const sb = {
+      rpc: async (_name: string, args: unknown) => {
+        passedArgs = args;
+        return { data: ['t1', '', 't2', null] };
+      },
+    } as unknown as SupabaseClient<Database>;
+    const ids = await getCalendarScopeTeamIdsFromClient(sb, 'C1');
+    expect(passedArgs).toEqual({ p_club_id: 'C1' });
+    expect(ids).toEqual(['t1', 't2']);
   });
 });
 
