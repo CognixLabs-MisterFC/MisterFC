@@ -128,7 +128,6 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
   const allTeamIds = myTeams.map((t) => t.team_id);
 
   // 4-6) Home del equipo (compañeros + próximos eventos + anuncios) — FETCH en core.
-  // eslint-disable-next-line react-hooks/purity
   const nowIso = new Date().toISOString();
   const { teammates, upcoming, announcements } = await getTeamHomeFromClient(
     supabase,
