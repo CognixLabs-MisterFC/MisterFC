@@ -31,6 +31,15 @@ export type ReadThroughResult<T> = {
 
 const PREFIX = 'rcache::';
 
+/**
+ * Norma de KEYS de caché (O2-5): datos club-scoped llevan el `clubId` en la key,
+ * para que al cambiar de club la key sea DISTINTA y no se sirva la caché del club
+ * anterior. p.ej. `clubScopedCacheKey('calendar', clubId)` → 'calendar::<clubId>'.
+ */
+export function clubScopedCacheKey(resource: string, clubId: string): string {
+  return `${resource}::${clubId}`;
+}
+
 export async function cacheGet<T>(
   backing: CacheBacking,
   key: string

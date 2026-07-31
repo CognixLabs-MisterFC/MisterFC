@@ -28,6 +28,18 @@ export {
 export type { NativeRouteTarget } from './native-route';
 
 export {
+  getNotificationFeedFromClient,
+  getNotificationsPageFromClient,
+  getUnreadNotificationsCountFromClient,
+  markNotificationsReadFromClient,
+  markNotificationReadFromClient,
+  markAllNotificationsReadFromClient,
+  FEED_LIMIT,
+  NOVEDADES_PAGE_SIZE,
+  type NotificationFeedRow,
+} from './feed';
+
+export {
   expoDataFromNotification,
   buildExpoMessages,
   isDeviceNotRegistered,

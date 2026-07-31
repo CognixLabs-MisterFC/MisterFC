@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { NovedadesScreen } from '@/screens/family/novedades';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.novedades" />;
+  return <NovedadesScreen />;
 }
