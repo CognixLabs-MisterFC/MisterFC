@@ -10,11 +10,9 @@ import {
 } from 'lucide-react';
 import {
   createSupabaseServerClient,
+  getPlayerTeamsFromClient,
+  getTeamHomeFromClient,
   isMatchSurfaceType,
-  listTeammates,
-  listUpcomingTeamEvents,
-  listVisibleAnnouncements,
-  teamsInActiveSeason,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
@@ -91,41 +89,18 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
     );
   }
 
-  // 2) Teams del jugador (team_members activos).
-  const { data: tmRows } = await supabase
-    .from('team_members')
-    .select(
-      'player_id, team_id, teams!inner(id, name, color, format, category_id, season, categories!inner(name, club_id, half_duration_minutes))',
-    )
-    .in('player_id', myPlayerIds)
-    .is('left_at', null);
-  type TM = {
-    player_id: string;
-    team_id: string;
-    teams: {
-      id: string;
-      name: string;
-      color: string;
-      format: string;
-      category_id: string;
-      season: string;
-      categories: {
-        name: string;
-        club_id: string;
-        half_duration_minutes: number;
-      };
-    };
-  };
-  // Bug-1: "mi equipo" es operativo → solo equipos de la temporada activa.
-  // (Sin esto, un jugador con membresía abierta en 25-26 y 26-27 vería ambos.)
+  // 2) Teams del jugador — O2-5 D1: el FETCH (equipos de unos jugadores en la
+  //    temporada activa) se extrajo a core. La web AGREGA todos los hijos
+  //    (`myPlayerIds`); la app nativa pasa solo el hijo activo (divergencia
+  //    deliberada). Bug-1: `getPlayerTeamsFromClient` ya filtra a la temporada activa.
   const activeSeason = await getActiveSeasonLabel(
     supabase,
     ctx.activeClub.club.id,
   );
-  const myTeams = teamsInActiveSeason(
-    ((tmRows ?? []) as unknown as TM[]).filter(
-      (r) => r.teams.categories.club_id === ctx.activeClub.club.id,
-    ).map((r) => ({ ...r, season: r.teams.season })),
+  const myTeams = await getPlayerTeamsFromClient(
+    supabase,
+    ctx.activeClub.club.id,
+    myPlayerIds,
     activeSeason,
   );
 
@@ -146,98 +121,26 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
   }
 
   // 3) Resolver team activo a renderizar — query param o el primero.
-  // myTeams.length > 0 ya garantizado por el early return de arriba.
   const requestedTeamId = sp.team;
-  const activeTeamRow =
+  const activeTeam =
     myTeams.find((t) => t.team_id === requestedTeamId) ?? myTeams[0]!;
-  const activeTeam = activeTeamRow.teams;
-  const activePlayerId = activeTeamRow.player_id;
-
-  // 4) Compañeros (otros players del team).
-  const { data: rosterRows } = await supabase
-    .from('team_members')
-    .select(
-      'player_id, players!inner(id, first_name, last_name, dorsal, photo_url)',
-    )
-    .eq('team_id', activeTeam.id)
-    .is('left_at', null);
-  type RosterRow = {
-    player_id: string;
-    players: {
-      id: string;
-      first_name: string;
-      last_name: string | null;
-      dorsal: number | null;
-      photo_url: string | null;
-    };
-  };
-  const roster = ((rosterRows ?? []) as unknown as RosterRow[]).map(
-    (r) => r.players,
-  );
-  const teammates = listTeammates(roster, activePlayerId);
-
-  // 5) Próximos eventos del team (training/match) — usa el helper puro tras
-  //    pedir 30 días por delante. Snapshot del reloj para que ambos ISO
-  //    deriven del mismo punto temporal.
-  // eslint-disable-next-line react-hooks/purity
-  const nowMs = Date.now();
-  const nowIso = new Date(nowMs).toISOString();
-  const horizonIso = new Date(nowMs + 30 * 86_400_000).toISOString();
-  const { data: eventRows } = await supabase
-    .from('events')
-    .select(
-      'id, title, type, starts_at, ends_at, location_name, opponent_name',
-    )
-    .eq('team_id', activeTeam.id)
-    // F14F-1b — un entreno cancelado no cuenta como próximo evento del equipo.
-    .is('cancelled_at', null)
-    // F14F-4 — ni un pendiente/rechazado de aprobación.
-    .or('approval_status.is.null,approval_status.eq.approved')
-    .gte('starts_at', nowIso)
-    .lte('starts_at', horizonIso)
-    .order('starts_at', { ascending: true });
-  type Ev = {
-    id: string;
-    title: string;
-    type: string;
-    starts_at: string;
-    ends_at: string | null;
-    location_name: string | null;
-    opponent_name: string | null;
-  };
-  const upcoming = listUpcomingTeamEvents(
-    (eventRows ?? []) as Ev[],
-    nowIso,
-    30,
-    10,
-  );
-
-  // 6) Anuncios visibles (RLS ya filtra; el helper hace el ordering + limit).
+  const activePlayerId = activeTeam.player_id;
   const allTeamIds = myTeams.map((t) => t.team_id);
-  const { data: annRows } = await supabase
-    .from('announcements')
-    .select('id, title, body, pinned, team_id, created_at')
-    .eq('club_id', ctx.activeClub.club.id)
-    .order('pinned', { ascending: false })
-    .order('created_at', { ascending: false })
-    .limit(20);
-  type AnnRow = {
-    id: string;
-    title: string;
-    body: string;
-    pinned: boolean;
-    team_id: string | null;
-    created_at: string;
-  };
-  const announcements = listVisibleAnnouncements(
-    (annRows ?? []) as AnnRow[],
+
+  // 4-6) Home del equipo (compañeros + próximos eventos + anuncios) — FETCH en core.
+  const nowIso = new Date().toISOString();
+  const { teammates, upcoming, announcements } = await getTeamHomeFromClient(
+    supabase,
+    ctx.activeClub.club.id,
+    activeTeam.team_id,
+    activePlayerId,
     allTeamIds,
-    5,
+    nowIso,
   );
 
-  // F13.6 — Playbook: jugadas publicadas (visibility=team) del team activo. La RLS
-  // de 13.1b es el gate; aquí solo se piden las del team.
-  const playbook = await loadTeamPlaybook(ctx.activeClub.club.id, activeTeam.id);
+  // F13.6 — Playbook: recuento para la card resumen (el listado/visor es D2). La
+  // RLS de 13.1b es el gate; aquí solo se piden las del team.
+  const playbook = await loadTeamPlaybook(ctx.activeClub.club.id, activeTeam.team_id);
 
   // F6 Lote B — alineación oficial compartida del próximo partido (si la hay
   // y es visibility=team; la sección se auto-oculta vía RLS si no).
@@ -259,11 +162,11 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
       {myTeams.length > 1 && (
         <TeamSelectorWrapper
           locale={locale}
-          activeTeamId={activeTeam.id}
+          activeTeamId={activeTeam.team_id}
           teams={myTeams.map((m) => ({
-            id: m.teams.id,
-            name: m.teams.name,
-            category_name: m.teams.categories.name,
+            id: m.team_id,
+            name: m.name,
+            category_name: m.category_name,
           }))}
         />
       )}
@@ -282,9 +185,9 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
           </CardTitle>
           <CardDescription>
             {t('category_format', {
-              category: activeTeam.categories.name,
+              category: activeTeam.category_name,
               season: activeTeam.season,
-              minutes: activeTeam.categories.half_duration_minutes,
+              minutes: activeTeam.half_duration_minutes,
             })}
           </CardDescription>
         </CardHeader>
@@ -321,7 +224,7 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
           </CardContent>
           <CardFooter className="flex items-center justify-between pt-0">
             <Link
-              href={`/mi-equipo/plantilla?team=${activeTeam.id}`}
+              href={`/mi-equipo/plantilla?team=${activeTeam.team_id}`}
               className="text-xs text-misterfc-green hover:underline"
             >
               {t('cards.teammates.view_all')}
@@ -404,7 +307,7 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
             </CardContent>
             <CardFooter>
               <Link
-                href={`/mi-equipo/jugadas?team=${activeTeam.id}`}
+                href={`/mi-equipo/jugadas?team=${activeTeam.team_id}`}
                 className="text-sm font-medium text-primary hover:underline"
               >
                 {t('cards.playbook.view_all')}

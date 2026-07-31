@@ -3,6 +3,20 @@
  */
 
 export {
+  getSharedSessionsForTeamsFromClient,
+  getSessionForEditFromClient,
+  getSessionExerciseMetaFromClient,
+} from './queries';
+export type {
+  PlayerSharedSessionRow,
+  SessionTaskForEdit,
+  SessionBlockPlayForEdit,
+  SessionBlockForEdit,
+  SessionForEdit,
+  SessionExerciseMeta,
+} from './queries';
+
+export {
   SESSION_BLOCK_TYPES,
   DEFAULT_SESSION_SKELETON,
   SESSION_VISIBILITIES,

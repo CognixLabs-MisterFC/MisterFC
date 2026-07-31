@@ -15,23 +15,15 @@
 import {
   createSupabaseServerClient,
   teamsInActiveSeason,
-  type TeamStaffRole,
+  getTeamStaffLightFromClient,
+  type LightTeamStaff,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
 
-export type LightStaffMember = {
-  team_staff_id: string;
-  full_name: string;
-  staff_role: TeamStaffRole;
-};
-
-export type LightTeamStaff = {
-  team_id: string;
-  team_name: string;
-  team_color: string;
-  members: LightStaffMember[];
-};
+// O2-5 D1 — tipos y fetch de staff extraídos a core; el wrapper conserva la
+// resolución "sus equipos" (unión jugador+entrenador), que es web-only.
+export type { LightStaffMember, LightTeamStaff } from '@misterfc/core';
 
 export async function loadLightTeamStaff(
   clubId: string,
@@ -100,43 +92,10 @@ export async function loadLightTeamStaff(
     activeSeason,
   );
   if (teams.length === 0) return [];
-  const activeTeamIds = teams.map((t) => t.id);
 
-  // Staff activo de esos equipos → nombre + rol (sin contacto).
-  type StaffJoin = {
-    id: string;
-    team_id: string;
-    staff_role: TeamStaffRole;
-    memberships: { profiles: { full_name: string | null } };
-  };
-  const { data: staffRaw } = await supabase
-    .from('team_staff')
-    .select(
-      'id, team_id, staff_role, memberships!inner(profiles!inner(full_name))',
-    )
-    .in('team_id', activeTeamIds)
-    .is('left_at', null);
-  const staff = (staffRaw ?? []).map((r) => r as unknown as StaffJoin);
-
-  const byTeam = new Map<string, LightStaffMember[]>();
-  for (const s of staff) {
-    const list = byTeam.get(s.team_id) ?? [];
-    list.push({
-      team_staff_id: s.id,
-      full_name: s.memberships.profiles.full_name ?? '—',
-      staff_role: s.staff_role,
-    });
-    byTeam.set(s.team_id, list);
-  }
-
-  return teams
-    .map((t) => ({
-      team_id: t.id,
-      team_name: t.name,
-      team_color: t.color,
-      members: (byTeam.get(t.id) ?? []).sort((a, b) =>
-        a.full_name.localeCompare(b.full_name, 'es', { sensitivity: 'base' }),
-      ),
-    }))
-    .sort((a, b) => a.team_name.localeCompare(b.team_name, 'es'));
+  // Staff (nombre + rol) de esos equipos → fetch extraído a core.
+  return getTeamStaffLightFromClient(
+    supabase,
+    teams.map((t) => ({ id: t.id, name: t.name, color: t.color })),
+  );
 }
