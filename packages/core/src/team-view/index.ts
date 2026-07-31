@@ -11,3 +11,16 @@ export type {
   TeamAnnouncementInput,
   AnnouncementCard,
 } from './helpers';
+export {
+  getPlayerTeamsFromClient,
+  getTeamHomeFromClient,
+  getTeamRosterStatsFromClient,
+  getTeamStaffLightFromClient,
+} from './queries';
+export type {
+  PlayerTeamMembership,
+  TeamHome,
+  RosterStatRow,
+  LightStaffMember,
+  LightTeamStaff,
+} from './queries';

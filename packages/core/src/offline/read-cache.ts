@@ -65,6 +65,22 @@ export function playerScopedCacheKey(
   return `${resource}::${clubId}::${playerId}`;
 }
 
+/**
+ * Variante TEAM-scoped (O2-5 D1): datos de un EQUIPO concreto (plantilla, staff,
+ * sesiones, home) llevan clubId Y teamId en la key. En "Mi equipo" el equipo se
+ * deriva del hijo activo, pero el DATO pertenece al equipo (dos hermanos del mismo
+ * equipo comparten caché); por eso se escopa por teamId, no por playerId. Cambiar
+ * de equipo → key distinta. p.ej. `teamScopedCacheKey('plantilla', clubId, teamId)`
+ * → 'plantilla::<clubId>::<teamId>'.
+ */
+export function teamScopedCacheKey(
+  resource: string,
+  clubId: string,
+  teamId: string
+): string {
+  return `${resource}::${clubId}::${teamId}`;
+}
+
 export async function cacheGet<T>(
   backing: CacheBacking,
   key: string

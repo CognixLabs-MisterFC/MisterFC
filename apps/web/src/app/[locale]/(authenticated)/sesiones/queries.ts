@@ -16,7 +16,9 @@ import {
   addDaysIso,
   createSupabaseServerClient,
   createSupabaseAdminClient,
-  getCurrentUser,
+  getSharedSessionsForTeamsFromClient,
+  getSessionForEditFromClient,
+  getSessionExerciseMetaFromClient,
   parsePlay,
   parseDiagram,
   sceneAtTime,
@@ -237,263 +239,64 @@ export async function loadPublishedSessionsForTeam(
     }));
 }
 
-export type PlayerSharedSessionRow = PublishedSessionRow & {
-  team_id: string;
-  team_name: string;
-};
+// O2-5 D1 — tipo y fetch extraídos a core (wrapper de compatibilidad).
+export type { PlayerSharedSessionRow } from '@misterfc/core';
 
 /**
  * F14E-4 — Sesiones COMPARTIDAS (visibility='team') de VARIOS equipos (los del
  * jugador), a partir de `fromIso`, para la pantalla "Planificación de
- * entrenamientos". Igual que `loadPublishedSessionsForTeam` pero para un conjunto
- * de equipos, e incluye el nombre del equipo (un jugador puede estar en varios).
- * La RLS de 12.1 es el gate real; el filtro por team_ids refuerza la intención.
+ * entrenamientos". O2-5 D1: el fetch vive en core; misma firma y comportamiento.
  */
 export async function loadSharedSessionsForTeams(
   clubId: string,
   teams: Array<{ id: string; name: string }>,
   fromIso: string,
   limit = 50
-): Promise<PlayerSharedSessionRow[]> {
-  if (teams.length === 0) return [];
-  const teamIds = teams.map((t) => t.id);
-  const nameById = new Map(teams.map((t) => [t.id, t.name]));
-
+): Promise<import('@misterfc/core').PlayerSharedSessionRow[]> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  const { data } = await supabase
-    .from('sessions')
-    .select('id, title, session_date, total_minutes, team_id')
-    .eq('club_id', clubId)
-    .in('team_id', teamIds)
-    .eq('is_template', false)
-    .eq('visibility', 'team')
-    .gte('session_date', fromIso)
-    .order('session_date', { ascending: true })
-    .limit(limit);
-
-  return (data ?? [])
-    .filter((s) => s.session_date != null && s.team_id != null)
-    .map((s) => ({
-      id: s.id as string,
-      title: (s.title as string | null) ?? null,
-      session_date: s.session_date as string,
-      total_minutes: (s.total_minutes as number | null) ?? null,
-      team_id: s.team_id as string,
-      team_name: nameById.get(s.team_id as string) ?? '',
-    }));
+  return getSharedSessionsForTeamsFromClient(supabase, clubId, teams, fromIso, limit);
 }
 
 // ── Sesión para editar (cabecera + bloques + tareas) ─────────────────────────
-export type SessionTaskForEdit = {
-  id: string;
-  exercise_id: string;
-  exercise_name: string;
-  order_idx: number;
-  duration_min: number | null;
-  series: string | null;
-  notes: string | null;
-};
-
-// JS-1 — jugada del playbook añadida a un bloque (override del día: duración/notas).
-export type SessionBlockPlayForEdit = {
-  id: string;
-  play_id: string;
-  play_name: string;
-  frame_count: number;
-  order_idx: number;
-  duration_min: number | null;
-  notes: string | null;
-};
-
-export type SessionBlockForEdit = {
-  id: string;
-  block_type: SessionBlockType;
-  title: string | null;
-  notes: string | null;
-  order_idx: number;
-  tasks: SessionTaskForEdit[];
-  plays: SessionBlockPlayForEdit[];
-};
-
-export type SessionForEdit = {
-  id: string;
-  team_id: string | null;
-  /** `kind` de la categoría del equipo (CATEGORY_KIND), default del filtro del picker. */
-  team_category_kind: string | null;
-  session_date: string | null;
-  title: string | null;
-  objective_physical: string | null;
-  tactical_objectives: string[];
-  technical_objectives: string[];
-  mesocycle: string | null;
-  microcycle: string | null;
-  total_minutes: number | null;
-  is_template: boolean;
-  /** 'staff' = borrador; 'team' = publicada al equipo (12.4). */
-  visibility: SessionVisibility;
-  is_owner: boolean;
-  blocks: SessionBlockForEdit[];
-};
+// O2-5 D1 — tipos y fetch extraídos a core (wrapper de compatibilidad).
+export type {
+  SessionTaskForEdit,
+  SessionBlockPlayForEdit,
+  SessionBlockForEdit,
+  SessionForEdit,
+} from '@misterfc/core';
 
 /**
  * Carga UNA sesión por id con sus bloques y tareas, CONFIANDO en la RLS: si el
  * user no puede verla, no hay fila → null (la page hace notFound). Se scopea al
- * club activo (un id de otro club → null). Bloques y tareas vienen ordenados por
- * `order_idx`; las tareas resuelven el nombre del ejercicio.
+ * club activo. O2-5 D1: el fetch vive en core; misma firma y comportamiento (el
+ * editor staff y la vista de lectura jugador/familia lo comparten).
  */
 export async function loadSessionForEdit(
   clubId: string,
   id: string
-): Promise<SessionForEdit | null> {
+): Promise<import('@misterfc/core').SessionForEdit | null> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const user = await getCurrentUser(adapter);
-
-  const { data } = await supabase
-    .from('sessions')
-    .select(
-      `id, team_id, session_date, title, objective_physical,
-       tactical_objectives, technical_objectives, mesocycle, microcycle,
-       total_minutes, is_template, visibility, owner_profile_id,
-       team:teams ( category:categories ( kind ) ),
-       session_blocks (
-         id, block_type, title, notes, order_idx,
-         session_block_exercises (
-           id, exercise_id, order_idx, duration_min, series, notes,
-           exercise:exercises ( name )
-         ),
-         session_block_plays (
-           id, play_id, order_idx, duration_min, notes,
-           play:plays ( name, play )
-         )
-       )`
-    )
-    .eq('id', id)
-    .eq('club_id', clubId)
-    .maybeSingle();
-
-  if (!data) return null;
-
-  const team = data.team as { category: { kind: string | null } | null } | null;
-
-  type RawTask = {
-    id: string;
-    exercise_id: string;
-    order_idx: number;
-    duration_min: number | null;
-    series: string | null;
-    notes: string | null;
-    exercise: { name: string } | null;
-  };
-  type RawBlockPlay = {
-    id: string;
-    play_id: string;
-    order_idx: number;
-    duration_min: number | null;
-    notes: string | null;
-    play: { name: string | null; play: unknown } | null;
-  };
-  type RawBlock = {
-    id: string;
-    block_type: string;
-    title: string | null;
-    notes: string | null;
-    order_idx: number;
-    session_block_exercises: RawTask[] | null;
-    session_block_plays: RawBlockPlay[] | null;
-  };
-
-  const blocks: SessionBlockForEdit[] = ((data.session_blocks as RawBlock[] | null) ?? [])
-    .map((b) => ({
-      id: b.id,
-      block_type: b.block_type as SessionBlockType,
-      title: b.title,
-      notes: b.notes,
-      order_idx: b.order_idx,
-      tasks: (b.session_block_exercises ?? [])
-        .map((t) => ({
-          id: t.id,
-          exercise_id: t.exercise_id,
-          exercise_name: t.exercise?.name ?? '',
-          order_idx: t.order_idx,
-          duration_min: t.duration_min,
-          series: t.series,
-          notes: t.notes,
-        }))
-        .sort((a, b2) => a.order_idx - b2.order_idx),
-      plays: (b.session_block_plays ?? [])
-        .map((p) => {
-          const parsed = parsePlay(p.play?.play);
-          return {
-            id: p.id,
-            play_id: p.play_id,
-            play_name: p.play?.name ?? '',
-            frame_count: parsed.success ? parsed.data.frames.length : 0,
-            order_idx: p.order_idx,
-            duration_min: p.duration_min,
-            notes: p.notes,
-          };
-        })
-        .sort((a, b2) => a.order_idx - b2.order_idx),
-    }))
-    .sort((a, b2) => a.order_idx - b2.order_idx);
-
-  return {
-    id: data.id as string,
-    team_id: (data.team_id as string | null) ?? null,
-    team_category_kind: team?.category?.kind ?? null,
-    session_date: (data.session_date as string | null) ?? null,
-    title: (data.title as string | null) ?? null,
-    objective_physical: (data.objective_physical as string | null) ?? null,
-    tactical_objectives: (data.tactical_objectives as string[] | null) ?? [],
-    technical_objectives: (data.technical_objectives as string[] | null) ?? [],
-    mesocycle: (data.mesocycle as string | null) ?? null,
-    microcycle: (data.microcycle as string | null) ?? null,
-    total_minutes: (data.total_minutes as number | null) ?? null,
-    is_template: (data.is_template as boolean | null) ?? false,
-    visibility: ((data.visibility as string | null) ?? 'staff') as SessionVisibility,
-    is_owner: user != null && data.owner_profile_id === user.id,
-    blocks,
-  };
+  return getSessionForEditFromClient(supabase, clubId, id);
 }
 
 // ── Meta de ejercicios de una sesión visible (12.4 — vista jugador/familia) ──
-export type SessionExerciseMeta = {
-  exercise_id: string;
-  name: string;
-  tactical_objectives: string[];
-  technical_objectives: string[];
-};
+// O2-5 D1 — tipo y fetch (RPC) extraídos a core (wrapper de compatibilidad).
+export type { SessionExerciseMeta } from '@misterfc/core';
 
 /**
- * Nombre + objetivos de los ejercicios referenciados por una sesión que el user
- * PUEDE ver. Vía el RPC SECURITY DEFINER `session_exercise_meta` (12.4): el
- * jugador/familia no puede leer `exercises` (RLS staff), así que el embed normal no
- * resuelve el nombre. El RPC expone SOLO nombre/objetivos y solo de los ejercicios
- * de esa sesión, gateado por user_can_see_session. Devuelve un mapa por exercise_id.
+ * Nombre + objetivos de los ejercicios de una sesión que el user PUEDE ver, vía el
+ * RPC SECURITY DEFINER `session_exercise_meta`. O2-5 D1: el fetch vive en core;
+ * misma firma y comportamiento.
  */
 export async function loadSessionExerciseMeta(
   sessionId: string
-): Promise<Map<string, SessionExerciseMeta>> {
+): Promise<Map<string, import('@misterfc/core').SessionExerciseMeta>> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  const { data } = await supabase.rpc('session_exercise_meta', {
-    p_session_id: sessionId,
-  });
-
-  const map = new Map<string, SessionExerciseMeta>();
-  for (const r of data ?? []) {
-    map.set(r.exercise_id as string, {
-      exercise_id: r.exercise_id as string,
-      name: (r.name as string | null) ?? '',
-      tactical_objectives: (r.tactical_objectives as string[] | null) ?? [],
-      technical_objectives: (r.technical_objectives as string[] | null) ?? [],
-    });
-  }
-  return map;
+  return getSessionExerciseMetaFromClient(supabase, sessionId);
 }
 
 // ── Sesión para PDF (12.5 — hoja de sesión, staff) ───────────────────────────

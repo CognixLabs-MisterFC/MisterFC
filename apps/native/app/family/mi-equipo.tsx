@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { MiEquipoScreen } from '@/screens/family/mi-equipo';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.mi_equipo" />;
+  return <MiEquipoScreen />;
 }

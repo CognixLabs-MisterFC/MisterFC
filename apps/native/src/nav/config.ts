@@ -79,7 +79,14 @@ const FAMILY_MENU: MenuDef[] = [
  * href:null para no salir en la barra) pero NO se listan en el menú (se alcanzan
  * por navegación con parámetros). `directo` = detalle de un directo (?eventId).
  */
-const FAMILY_HIDDEN: MenuDef[] = [{ name: 'directo', labelKey: 'nav.directo' }];
+const FAMILY_HIDDEN: MenuDef[] = [
+  { name: 'directo', labelKey: 'nav.directo' },
+  // O2-5 D1 — subpantallas de Mi equipo (alcanzadas por navegación con teamId).
+  { name: 'plantilla', labelKey: 'nav.mi_equipo' },
+  { name: 'cuerpo-tecnico', labelKey: 'nav.cuerpo_tecnico' },
+  { name: 'sesiones', labelKey: 'nav.mi_equipo' },
+  { name: 'sesion', labelKey: 'nav.mi_equipo' },
+];
 
 const STAFF_MENU_BASE: MenuDef[] = [
   { name: 'mis-equipos', labelKey: 'nav.mis_equipos' },
