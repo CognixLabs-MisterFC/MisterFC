@@ -12,6 +12,7 @@ import {
   getCurrentUserClubs,
   invitePlayerTutorSchema,
   inviteSpectatorSchema,
+  removeSpectatorFromClient,
   resolveActiveClub,
   updatePlayerSchema,
 } from '@misterfc/core';
@@ -772,22 +773,17 @@ export async function removeSpectatorForPlayer(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'forbidden' };
+  // La lógica (auth + RPC remove_spectator + mapeo de error) vive en core; aquí
+  // solo se registra en Sentry el error crudo y se revalida (server-only).
+  const res = await removeSpectatorFromClient(
+    supabase,
+    playerId,
+    spectatorProfileId
+  );
 
-  const { error } = await supabase.rpc('remove_spectator', {
-    p_player_id: playerId,
-    p_spectator_profile_id: spectatorProfileId,
-  });
-
-  if (error) {
-    const msg = error.message?.toLowerCase() ?? '';
-    if (msg.includes('forbidden') || msg.includes('no_session')) {
-      return { error: 'forbidden' };
-    }
-    Sentry.captureException(error, {
+  if ('error' in res) {
+    if (res.error === 'forbidden') return { error: 'forbidden' };
+    Sentry.captureException(res.raw, {
       tags: { feature: 'invitations', step: 'remove_spectator' },
       extra: { player_id: playerId },
     });

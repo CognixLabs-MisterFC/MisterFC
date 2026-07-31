@@ -12,6 +12,7 @@ export {
   cacheClear,
   clubScopedCacheKey,
   eventScopedCacheKey,
+  playerScopedCacheKey,
   type CacheBacking,
   type ReadThroughResult,
 } from './read-cache';
