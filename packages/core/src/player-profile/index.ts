@@ -9,3 +9,4 @@ export * from './career';
 export * from './club';
 export * from './account-players';
 export * from './sporting-names';
+export * from './ficha';
