@@ -11,6 +11,7 @@ export {
   cacheSet,
   cacheClear,
   clubScopedCacheKey,
+  eventScopedCacheKey,
   type CacheBacking,
   type ReadThroughResult,
 } from './read-cache';

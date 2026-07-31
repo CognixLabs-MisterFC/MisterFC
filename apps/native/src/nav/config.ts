@@ -73,6 +73,13 @@ const FAMILY_MENU: MenuDef[] = [
   { name: 'asistencia', labelKey: 'nav.asistencia_consulta' },
 ];
 
+/**
+ * O2-5 B2 — Rutas OCULTAS de family: existen como fichero (deben declararse
+ * href:null para no salir en la barra) pero NO se listan en el menú (se alcanzan
+ * por navegación con parámetros). `directo` = detalle de un directo (?eventId).
+ */
+const FAMILY_HIDDEN: MenuDef[] = [{ name: 'directo', labelKey: 'nav.directo' }];
+
 const STAFF_MENU_BASE: MenuDef[] = [
   { name: 'mis-equipos', labelKey: 'nav.mis_equipos' },
   { name: 'convocatorias', labelKey: 'nav.convocatorias' },
@@ -134,6 +141,8 @@ export function menuForArea(area: ChromeArea, role: Role | null): MenuDef[] {
  */
 export function allMenuFiles(area: ChromeArea): MenuDef[] {
   if (area === 'staff') return [...STAFF_MENU_BASE, ...STAFF_MENU_COORD_EXTRA];
+  // family añade sus rutas ocultas (href:null pero no listadas en el menú).
+  if (area === 'family') return [...FAMILY_MENU, ...FAMILY_HIDDEN];
   return AREA_MENU[area];
 }
 

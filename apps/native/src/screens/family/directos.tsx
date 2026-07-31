@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   getWeekMatchesFromClient,
   getFollowableTeamsFromClient,
@@ -87,6 +88,7 @@ function LiveList({ clubId }: { clubId: string | null }) {
 }
 
 function MatchCard({ match }: { match: WeekMatch }) {
+  const router = useRouter();
   const statusLabel =
     match.status === 'live'
       ? t('directos.status_live')
@@ -98,7 +100,12 @@ function MatchCard({ match }: { match: WeekMatch }) {
       ? match.startsAt.slice(11, 16)
       : `${match.goalsOwn} - ${match.goalsRival}`;
   return (
-    <View className="mx-4 my-1.5 rounded-2xl border border-zinc-200 p-4">
+    <Pressable
+      onPress={() =>
+        router.push({ pathname: '/family/directo', params: { eventId: match.eventId } })
+      }
+      className="mx-4 my-1.5 rounded-2xl border border-zinc-200 p-4 active:bg-zinc-50"
+    >
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
           <View className="h-3 w-3 rounded-full" style={{ backgroundColor: match.teamColor || BRAND.navy }} />
@@ -115,7 +122,7 @@ function MatchCard({ match }: { match: WeekMatch }) {
         </Text>
         <Text className="text-lg font-bold text-[#0F1B2E]">{score}</Text>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
