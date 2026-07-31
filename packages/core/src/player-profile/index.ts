@@ -7,3 +7,4 @@ export * from './team-aggregate';
 export * from './badges';
 export * from './career';
 export * from './club';
+export * from './account-players';

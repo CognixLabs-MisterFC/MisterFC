@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { SessionProvider } from '@/auth/session';
 import { AppProvider } from '@/auth/context';
+import { ActivePlayerProvider } from '@/auth/active-player';
 import { SessionGuard } from '@/nav/session-guard';
 import { NotificationsProvider } from '@/notifications/notifications-provider';
 
@@ -16,10 +17,12 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <SessionProvider>
         <AppProvider>
-          <StatusBar style="light" />
-          <SessionGuard />
-          <NotificationsProvider />
-          <Stack screenOptions={{ headerShown: false }} />
+          <ActivePlayerProvider>
+            <StatusBar style="light" />
+            <SessionGuard />
+            <NotificationsProvider />
+            <Stack screenOptions={{ headerShown: false }} />
+          </ActivePlayerProvider>
         </AppProvider>
       </SessionProvider>
     </SafeAreaProvider>

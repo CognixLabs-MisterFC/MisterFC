@@ -36,17 +36,26 @@ export type FollowedPlayer = {
  *
  * `staleCookie` = true cuando la cookie existía pero apuntaba a un jugador que
  * ya no sigue, para que la capa que llama la reescriba.
+ *
+ * GENÉRICO (O2-5): el mismo criterio sirve para el "jugador activo" del TUTOR en
+ * la app nativa (lista de `AccountPlayer` con clave `id`) y para el seguidor
+ * (`FollowedPlayer` con clave `playerId`). El accesor `idOf` por defecto lee
+ * `playerId` → los llamantes existentes (seguidor) no cambian; native pasa
+ * `(p) => p.id`. La persistencia (cookie web / secure-store nativo) es del
+ * llamante; aquí solo el criterio puro guardado→válido / default / vacío.
  */
-export function resolveActivePlayer(
-  players: FollowedPlayer[],
-  cookieValue: string | null | undefined
-): { active: FollowedPlayer | null; staleCookie: boolean } {
+export function resolveActivePlayer<T = FollowedPlayer>(
+  players: T[],
+  cookieValue: string | null | undefined,
+  idOf: (player: T) => string = (player) =>
+    (player as unknown as { playerId: string }).playerId
+): { active: T | null; staleCookie: boolean } {
   if (players.length === 0) {
     return { active: null, staleCookie: false };
   }
 
   if (cookieValue) {
-    const match = players.find((p) => p.playerId === cookieValue);
+    const match = players.find((p) => idOf(p) === cookieValue);
     if (match) {
       return { active: match, staleCookie: false };
     }
