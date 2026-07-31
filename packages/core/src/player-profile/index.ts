@@ -8,3 +8,4 @@ export * from './badges';
 export * from './career';
 export * from './club';
 export * from './account-players';
+export * from './sporting-names';

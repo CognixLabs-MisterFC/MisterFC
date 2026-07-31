@@ -40,6 +40,16 @@ export function clubScopedCacheKey(resource: string, clubId: string): string {
   return `${resource}::${clubId}`;
 }
 
+/**
+ * Variante event-scoped (O2-5 B2): datos de un evento concreto (p.ej. el detalle
+ * de un directo) llevan el `eventId` en la key. El eventId ya es único global, así
+ * que no hace falta el clubId. p.ej. `eventScopedCacheKey('directo', eventId)` →
+ * 'directo::<eventId>'. Evento distinto → key distinta.
+ */
+export function eventScopedCacheKey(resource: string, eventId: string): string {
+  return `${resource}::${eventId}`;
+}
+
 export async function cacheGet<T>(
   backing: CacheBacking,
   key: string

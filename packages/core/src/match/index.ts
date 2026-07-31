@@ -163,3 +163,4 @@ export type {
   MatchPhaseResult,
 } from './phase';
 export * from './week-matches';
+export * from './detail';
