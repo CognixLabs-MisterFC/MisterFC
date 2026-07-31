@@ -9,7 +9,6 @@
 
 import {
   type SessionBlockType,
-  type SessionVisibility,
   type PlaySignalId,
   type Diagram,
   type Scene,
