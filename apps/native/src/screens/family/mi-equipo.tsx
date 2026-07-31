@@ -122,9 +122,7 @@ export function MiEquipoScreen() {
           <NavChip label={t('mi_equipo.nav_plantilla')} accent={accent} onPress={() => goTeam('/family/plantilla')} />
           <NavChip label={t('mi_equipo.nav_staff')} accent={accent} onPress={() => goTeam('/family/cuerpo-tecnico')} />
           <NavChip label={t('mi_equipo.nav_sesiones')} accent={accent} onPress={() => goTeam('/family/sesiones')} />
-          <View className="rounded-full bg-zinc-100 px-4 py-2" style={{ opacity: 0.6 }}>
-            <Text className="text-xs font-medium text-zinc-500">{t('mi_equipo.playbook_soon')}</Text>
-          </View>
+          <NavChip label={t('mi_equipo.nav_playbook')} accent={accent} onPress={() => goTeam('/family/jugadas')} />
         </View>
 
         {/* Compañeros. */}

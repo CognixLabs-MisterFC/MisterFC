@@ -17,3 +17,9 @@ export {
   type SignalShape,
   type PlaySignal,
 } from './signals';
+
+export {
+  getTeamPlaybookFromClient,
+  getTeamPlayFromClient,
+} from './queries';
+export type { PlaybookRow, TeamPlay } from './queries';
