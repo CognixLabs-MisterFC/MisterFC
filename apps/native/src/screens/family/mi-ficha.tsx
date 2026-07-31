@@ -9,6 +9,7 @@ import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { ChildSelector } from '@/ui/child-selector';
+import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { t } from '@/i18n';
 import { BRAND } from '@/theme';
@@ -49,11 +50,9 @@ export function MiFichaScreen() {
       <ChildSelector />
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}>
-        {/* Cabecera de identidad (iniciales; foto es C2). */}
+        {/* Cabecera de identidad (foto real firmada online; iniciales offline). */}
         <View className="flex-row items-center gap-3">
-          <View className="h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: accent }}>
-            <Text className="text-lg font-bold text-white">{initials.toUpperCase() || '·'}</Text>
-          </View>
+          <PlayerAvatar path={data.identity.photoPath} initials={initials} accent={accent} size={56} />
           <View className="flex-1">
             <Text className="text-xl font-bold text-[#0F1B2E]" numberOfLines={1}>{name}</Text>
             <Text className="text-xs text-zinc-400">
