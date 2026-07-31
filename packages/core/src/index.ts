@@ -16,3 +16,4 @@ export * from './sessions/index';
 export * from './development-report/index';
 export * from './plays/index';
 export * from './invitations/index';
+export * from './offline/index';
