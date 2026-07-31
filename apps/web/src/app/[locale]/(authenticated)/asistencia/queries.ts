@@ -16,6 +16,7 @@
 import {
   type AttendanceCode,
   createSupabaseServerClient,
+  getAttendanceStatsFromClient,
   getCurrentUser,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -557,127 +558,15 @@ export async function loadAsistenciaStats(
   const supabase = createSupabaseServerClient(adapter);
   const { startIso, endIso } = rangeToWindow(filters);
 
-  // Trae filas de training_attendance con join al evento (para filtrar club
-  // + team + ventana temporal) y al player (para nombre).
-  let q = supabase
-    .from('training_attendance')
-    .select(
-      `id, event_id, player_id, code,
-       events!inner(id, club_id, team_id, starts_at,
-                    teams!inner(id, name)),
-       players!inner(id, first_name, last_name)`
-    )
-    .gte('events.starts_at', startIso)
-    .lte('events.starts_at', endIso)
-    // F14F-1b — las estadísticas de asistencia excluyen entrenos cancelados.
-    .is('events.cancelled_at', null);
-
-  if (filters.teamId) {
-    q = q.eq('events.team_id', filters.teamId);
-  }
-
-  const { data: rawRows } = await q;
-
-  type StatRow = {
-    code: AttendanceCode;
-    player_id: string;
-    events: {
-      club_id: string;
-      team_id: string;
-      teams: { id: string; name: string };
-    };
-    players: { id: string; first_name: string; last_name: string };
-  };
-  const rows = (rawRows ?? [])
-    .map((r) => r as unknown as StatRow)
-    .filter((r) => r.events.club_id === clubId);
-
-  // Aplica scope.
-  const filteredRows = rows.filter((r) => {
-    if (scope.kind === 'all') return true;
-    if (scope.kind === 'restricted')
-      return scope.teamIds.includes(r.events.team_id);
-    if (scope.kind === 'player')
-      return scope.playerIds.includes(r.player_id);
-    return false;
+  // O2-5 E1 — el fetch+agregación se extrajo a core (getAttendanceStatsFromClient)
+  // para compartirlo con la app nativa de familia. Mismas queries, mismo mapeo de
+  // códigos y ordenación: comportamiento idéntico. Aquí solo se resuelve el scope
+  // (server-only) y la ventana temporal.
+  return getAttendanceStatsFromClient(supabase, {
+    clubId,
+    scope,
+    startIso,
+    endIso,
+    teamId: filters.teamId,
   });
-
-  const totalRecorded = filteredRows.length;
-
-  // Bucket por código.
-  const codeCounts = new Map<AttendanceCode, number>();
-  for (const r of filteredRows) {
-    codeCounts.set(r.code, (codeCounts.get(r.code) ?? 0) + 1);
-  }
-  const byCode: CodeBucket[] = Array.from(codeCounts.entries())
-    .map(([code, count]) => ({
-      code,
-      count,
-      pct: totalRecorded > 0 ? (count / totalRecorded) * 100 : 0,
-    }))
-    .sort((a, b) => b.count - a.count);
-
-  // Bucket por jugador.
-  const playerAgg = new Map<
-    string,
-    {
-      player_id: string;
-      first_name: string;
-      last_name: string;
-      team_id: string;
-      team_name: string;
-      total: number;
-      present: number;
-      justified: number;
-      unjustified: number;
-      partial: number;
-    }
-  >();
-
-  for (const r of filteredRows) {
-    let p = playerAgg.get(r.player_id);
-    if (!p) {
-      p = {
-        player_id: r.player_id,
-        first_name: r.players.first_name,
-        last_name: r.players.last_name,
-        team_id: r.events.teams.id,
-        team_name: r.events.teams.name,
-        total: 0,
-        present: 0,
-        justified: 0,
-        unjustified: 0,
-        partial: 0,
-      };
-      playerAgg.set(r.player_id, p);
-    }
-    p.total++;
-    switch (r.code) {
-      case 'presente':
-        p.present++;
-        break;
-      case 'ausente':
-        p.unjustified++;
-        break;
-      case 'entreno_diferenciado':
-        p.partial++;
-        break;
-      default:
-        p.justified++;
-        break;
-    }
-  }
-
-  const byPlayer: PlayerStat[] = Array.from(playerAgg.values())
-    .map((p) => ({
-      ...p,
-      pct_present: p.total > 0 ? (p.present / p.total) * 100 : 0,
-    }))
-    .sort((a, b) =>
-      (a.last_name ?? '').localeCompare(b.last_name ?? '', 'es', {
-        sensitivity: 'base',
-      })
-    );
-
-  return { byPlayer, byCode, totalRecorded };
 }

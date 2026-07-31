@@ -21,6 +21,7 @@ import {
   computeWeeklyTrainingAttendance,
   createSupabaseServerClient,
   getCurrentUser,
+  getPlayerCallupsFromClient,
   groupRosterByCallup,
   isManageableMatchType,
 } from '@misterfc/core';
@@ -294,6 +295,15 @@ export async function loadUpcomingCallups(
     Date.now() + rangeDays * 86_400_000
   ).toISOString();
 
+  // O2-5 E1 — la rama de jugador/familia se extrajo a core (misma query + RLS)
+  // para que la app nativa la comparta. Comportamiento idéntico.
+  if (scope.kind === 'player') {
+    return getPlayerCallupsFromClient(supabase, clubId, scope.playerIds, {
+      fromIso: nowIso,
+      toIso: untilIso,
+    });
+  }
+
   let q = supabase
     .from('events')
     .select(
@@ -310,20 +320,6 @@ export async function loadUpcomingCallups(
   if (scope.kind === 'restricted') {
     if (scope.teamIds.length === 0) return [];
     q = q.in('team_id', scope.teamIds);
-  } else if (scope.kind === 'player') {
-    if (scope.playerIds.length === 0) return [];
-    // jugador / familia: solo partidos de sus teams.
-    type TM = { team_id: string };
-    const { data: tms } = await supabase
-      .from('team_members')
-      .select('team_id')
-      .in('player_id', scope.playerIds)
-      .is('left_at', null);
-    const teamIds = Array.from(
-      new Set((tms ?? []).map((t) => (t as unknown as TM).team_id))
-    );
-    if (teamIds.length === 0) return [];
-    q = q.in('team_id', teamIds);
   }
 
   const { data: rawEvents } = await q;
@@ -475,15 +471,11 @@ export async function loadUpcomingCallups(
 
     const responses = responsesByEvent.get(e.id) ?? [];
     const respCount = { yes: 0, maybe: 0, no: 0 };
-    let myResponse: CallupResponseStatus | null = null;
+    // O2-5 E1 — `my_response` (jugador/familia) se resuelve ahora en la rama de
+    // core con salida temprana; aquí (staff) siempre es null.
+    const myResponse: CallupResponseStatus | null = null;
     for (const r of responses) {
       respCount[r.status]++;
-      if (
-        scope.kind === 'player' &&
-        scope.playerIds.includes(r.player_id)
-      ) {
-        myResponse = r.status;
-      }
     }
     // Convocados DERIVADOS = roster − descartados (definición canónica,
     // groupRosterByCallup). Intersecta con el roster vigente: un descartado que

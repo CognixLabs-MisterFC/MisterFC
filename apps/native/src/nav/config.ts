@@ -89,6 +89,9 @@ const FAMILY_HIDDEN: MenuDef[] = [
   // O2-5 D2 — playbook (listado + visor animado).
   { name: 'jugadas', labelKey: 'nav.mi_equipo' },
   { name: 'jugada', labelKey: 'nav.mi_equipo' },
+  // O2-5 E1 — detalle de convocatoria (?eventId) y stats del partido (?eventId).
+  { name: 'convocatoria', labelKey: 'nav.convocatorias' },
+  { name: 'estadisticas', labelKey: 'nav.estadisticas' },
 ];
 
 const STAFF_MENU_BASE: MenuDef[] = [
