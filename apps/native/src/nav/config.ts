@@ -86,6 +86,9 @@ const FAMILY_HIDDEN: MenuDef[] = [
   { name: 'cuerpo-tecnico', labelKey: 'nav.cuerpo_tecnico' },
   { name: 'sesiones', labelKey: 'nav.mi_equipo' },
   { name: 'sesion', labelKey: 'nav.mi_equipo' },
+  // O2-5 D2 — playbook (listado + visor animado).
+  { name: 'jugadas', labelKey: 'nav.mi_equipo' },
+  { name: 'jugada', labelKey: 'nav.mi_equipo' },
 ];
 
 const STAFF_MENU_BASE: MenuDef[] = [
