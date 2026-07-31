@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { MessageSquare, UsersRound } from 'lucide-react';
-import { createSupabaseServerClient, formatPlayerName } from '@misterfc/core';
+import { createSupabaseServerClient, getInboxFromClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { userCanMessageInClub } from '@/lib/messaging-permissions';
@@ -33,76 +33,11 @@ export default async function MensajesPage({ params }: Props) {
   // jugador (admin/coord/principal por rol; ayudante con cap o principal de team).
   const canMessage = await userCanMessageInClub(supabase, ctx);
 
-  // RLS conversations_select_participants ya filtra a las del user.
-  const { data: conversationRows } = await supabase
-    .from('conversations')
-    .select(
-      'id, last_message_at, coach_profile_id, players!inner(id, first_name, last_name)',
-    )
-    .order('last_message_at', { ascending: false });
+  // O2-5 E2a — inbox (1:1 + equipo, no-leídos, fusionado y ordenado) extraído a
+  // core para compartirlo con la app nativa. Comportamiento idéntico; aquí solo
+  // se mapea a la forma de la lista (href/rótulo) de la web.
+  const inbox = await getInboxFromClient(supabase, ctx.user.id);
 
-  type ConversationRow = {
-    id: string;
-    last_message_at: string;
-    coach_profile_id: string;
-    players: {
-      id: string;
-      first_name: string;
-      last_name: string | null;
-    };
-  };
-
-  const conversations =
-    (conversationRows ?? []) as unknown as ConversationRow[];
-
-  // Para cada conversación, contar mensajes no leídos por el user actual.
-  // Una sola query agregada por simplicidad inicial; si crece, optimizar.
-  const ids = conversations.map((c) => c.id);
-  const unreadByConvId = new Map<string, number>();
-  if (ids.length > 0) {
-    const { data: unreadRows } = await supabase
-      .from('messages')
-      .select('conversation_id')
-      .in('conversation_id', ids)
-      .is('read_at', null)
-      .neq('sender_profile_id', ctx.user.id);
-    for (const m of unreadRows ?? []) {
-      const id = (m as { conversation_id: string }).conversation_id;
-      unreadByConvId.set(id, (unreadByConvId.get(id) ?? 0) + 1);
-    }
-  }
-
-  // F5B-3 — Chats de EQUIPO (grupo). La RLS de team_conversations filtra a los
-  // grupos de los que el user es miembro (staff ∪ roster vigente ∪ director del
-  // club).
-  const { data: teamConvRows } = await supabase
-    .from('team_conversations')
-    .select('id, team_id, last_message_at, teams!inner(name)')
-    .order('last_message_at', { ascending: false });
-
-  type TeamConvRow = {
-    id: string;
-    team_id: string;
-    last_message_at: string;
-    teams: { name: string };
-  };
-  const teamConversations =
-    (teamConvRows ?? []) as unknown as TeamConvRow[];
-
-  // F5B-5 — No-leídos por grupo. El RPC (SECURITY DEFINER, acotado a auth.uid())
-  // cuenta team_messages no propios posteriores a la marca de lectura del user,
-  // SOLO en los chats donde participa (staff/jugador siempre; director solo si
-  // 'active' — un director que solo observa NO acumula badges). Los grupos sin
-  // no-leídos no vienen en el resultado (se tratan como 0).
-  const unreadByTeamConvId = new Map<string, number>();
-  const { data: teamUnreadRows } = await supabase.rpc(
-    'team_chat_unread_counts',
-  );
-  for (const r of teamUnreadRows ?? []) {
-    unreadByTeamConvId.set(r.team_conversation_id, r.unread);
-  }
-
-  // Lista unificada 1:1 + grupo, ordenada por actividad reciente.
   type ListItem = {
     kind: 'direct' | 'group';
     key: string;
@@ -112,24 +47,25 @@ export default async function MensajesPage({ params }: Props) {
     unread: number;
   };
 
-  const items: ListItem[] = [
-    ...conversations.map((c): ListItem => ({
-      kind: 'direct',
-      key: `d-${c.id}`,
-      href: `/mensajes/${c.id}`,
-      title: formatPlayerName(c.players.first_name, c.players.last_name),
-      last: c.last_message_at,
-      unread: unreadByConvId.get(c.id) ?? 0,
-    })),
-    ...teamConversations.map((tc): ListItem => ({
-      kind: 'group',
-      key: `g-${tc.id}`,
-      href: `/mensajes/equipo/${tc.team_id}`,
-      title: tc.teams?.name ?? '',
-      last: tc.last_message_at,
-      unread: unreadByTeamConvId.get(tc.id) ?? 0,
-    })),
-  ].sort((a, b) => (a.last < b.last ? 1 : a.last > b.last ? -1 : 0));
+  const items: ListItem[] = inbox.map((it): ListItem =>
+    it.kind === 'direct'
+      ? {
+          kind: 'direct',
+          key: `d-${it.conversationId}`,
+          href: `/mensajes/${it.conversationId}`,
+          title: it.title,
+          last: it.lastMessageAt,
+          unread: it.unread,
+        }
+      : {
+          kind: 'group',
+          key: `g-${it.teamConversationId}`,
+          href: `/mensajes/equipo/${it.teamId}`,
+          title: it.title,
+          last: it.lastMessageAt,
+          unread: it.unread,
+        },
+  );
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">

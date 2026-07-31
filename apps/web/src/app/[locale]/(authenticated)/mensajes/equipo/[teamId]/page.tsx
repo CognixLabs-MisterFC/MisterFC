@@ -1,7 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, Users } from 'lucide-react';
-import { createSupabaseServerClient } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  getTeamMessagesFromClient,
+  markTeamConversationReadFromClient,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -108,16 +112,13 @@ export default async function TeamChatPage({ params }: Props) {
   // Component (Next.js 16 prohíbe revalidatePath durante render); el badge del
   // listado se recalcula en la próxima navegación a /mensajes. La RLS solo
   // permite escribir la fila propia y de un chat al que se pertenece.
-  await supabase
-    .from('team_conversation_reads')
-    .upsert(
-      {
-        profile_id: ctx.user.id,
-        team_conversation_id: conversationId,
-        last_read_at: new Date().toISOString(),
-      },
-      { onConflict: 'profile_id,team_conversation_id' },
-    );
+  // O2-5 E2a — marcar leído extraído a core (mismo upsert + RLS). Idéntico.
+  await markTeamConversationReadFromClient(
+    supabase,
+    conversationId,
+    ctx.user.id,
+    new Date().toISOString(),
+  );
 
   // F5B-4 — Supervisión. Para admin/director: modo de participación (default
   // observer sin fila) y si puede escribir (participación 'active'). Staff y
@@ -142,28 +143,11 @@ export default async function TeamChatPage({ params }: Props) {
     canPost = Boolean(canPostData);
   }
 
-  const { data: messageRows } = await supabase
-    .from('team_messages')
-    .select('id, sender_profile_id, body, created_at, profiles!inner(full_name)')
-    .eq('team_conversation_id', conversationId)
-    .order('created_at', { ascending: true });
-
-  type Row = {
-    id: string;
-    sender_profile_id: string;
-    body: string;
-    created_at: string;
-    profiles: { full_name: string | null };
-  };
-  const messages: TeamMessage[] = (
-    (messageRows ?? []) as unknown as Row[]
-  ).map((m) => ({
-    id: m.id,
-    sender_profile_id: m.sender_profile_id,
-    sender_name: m.profiles?.full_name ?? '',
-    body: m.body,
-    created_at: m.created_at,
-  }));
+  // O2-5 E2a — fetch de mensajes de equipo extraído a core. Idéntico.
+  const messages: TeamMessage[] = await getTeamMessagesFromClient(
+    supabase,
+    conversationId,
+  );
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">

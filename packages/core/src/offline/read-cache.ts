@@ -99,6 +99,19 @@ export function playerEventScopedCacheKey(
   return `${resource}::${clubId}::${playerId}::${eventId}`;
 }
 
+/**
+ * Variante PROFILE-scoped (O2-5 E2a): datos que cuelgan del PERFIL del usuario
+ * (no del club ni del hijo), como el inbox de mensajería — los hilos son del
+ * tutor, compartidos entre sus hijos. Llevan el profileId en la key. p.ej.
+ * `profileScopedCacheKey('inbox', profileId)` → 'inbox::<profileId>'.
+ */
+export function profileScopedCacheKey(
+  resource: string,
+  profileId: string
+): string {
+  return `${resource}::${profileId}`;
+}
+
 export async function cacheGet<T>(
   backing: CacheBacking,
   key: string

@@ -92,6 +92,9 @@ const FAMILY_HIDDEN: MenuDef[] = [
   // O2-5 E1 — detalle de convocatoria (?eventId) y stats del partido (?eventId).
   { name: 'convocatoria', labelKey: 'nav.convocatorias' },
   { name: 'estadisticas', labelKey: 'nav.estadisticas' },
+  // O2-5 E2a — hilo 1:1 (?conversationId) y de equipo (?teamConversationId).
+  { name: 'mensaje', labelKey: 'nav.mensajes' },
+  { name: 'mensaje-equipo', labelKey: 'nav.mensajes' },
 ];
 
 const STAFF_MENU_BASE: MenuDef[] = [

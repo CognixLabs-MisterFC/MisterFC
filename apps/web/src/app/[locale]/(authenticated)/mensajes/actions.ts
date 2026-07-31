@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import {
   createSupabaseServerClient,
+  getConversationMessagesFromClient,
+  getTeamMessagesFromClient,
   sendMessageSchema,
   startConversationSchema,
   MESSAGE_RATE_LIMIT,
@@ -632,14 +634,9 @@ export async function fetchConversationMessages(
   if (!ctx) return [];
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  const { data } = await supabase
-    .from('messages')
-    .select('id, sender_profile_id, body, sent_at, read_at')
-    .eq('conversation_id', conversationId)
-    .order('sent_at', { ascending: true });
-
-  return (data ?? []) as ConversationMessage[];
+  // O2-5 E2a — el fetch se extrajo a core (misma query + RLS) para compartirlo
+  // con la app nativa. Comportamiento idéntico.
+  return getConversationMessagesFromClient(supabase, conversationId);
 }
 
 export type TeamThreadMessage = {
@@ -658,27 +655,8 @@ export async function fetchTeamMessages(
   if (!ctx) return [];
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  const { data } = await supabase
-    .from('team_messages')
-    .select('id, sender_profile_id, body, created_at, profiles!inner(full_name)')
-    .eq('team_conversation_id', teamConversationId)
-    .order('created_at', { ascending: true });
-
-  type Row = {
-    id: string;
-    sender_profile_id: string;
-    body: string;
-    created_at: string;
-    profiles: { full_name: string | null };
-  };
-  return ((data ?? []) as unknown as Row[]).map((m) => ({
-    id: m.id,
-    sender_profile_id: m.sender_profile_id,
-    sender_name: m.profiles?.full_name ?? '',
-    body: m.body,
-    created_at: m.created_at,
-  }));
+  // O2-5 E2a — el fetch se extrajo a core (misma query + RLS). Idéntico.
+  return getTeamMessagesFromClient(supabase, teamConversationId);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

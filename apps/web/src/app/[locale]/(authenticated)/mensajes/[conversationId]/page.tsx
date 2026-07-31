@@ -1,7 +1,12 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft } from 'lucide-react';
-import { createSupabaseServerClient, formatPlayerName } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  formatPlayerName,
+  getConversationMessagesFromClient,
+  markConversationReadFromClient,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -53,27 +58,18 @@ export default async function ConversationPage({ params }: Props) {
   // porque Next.js 16 prohíbe revalidatePath durante render — la
   // revalidación del badge en el sidebar la dispara MessageThread tras
   // mount via router.refresh() (Bug I).
-  await supabase
-    .from('messages')
-    .update({ read_at: new Date().toISOString() })
-    .eq('conversation_id', conversationId)
-    .is('read_at', null)
-    .neq('sender_profile_id', ctx.user.id);
+  // O2-5 E2a — marcar leído + fetch extraídos a core (misma query + RLS). Idéntico.
+  await markConversationReadFromClient(
+    supabase,
+    conversationId,
+    ctx.user.id,
+    new Date().toISOString(),
+  );
 
-  const { data: messageRows } = await supabase
-    .from('messages')
-    .select('id, sender_profile_id, body, sent_at, read_at')
-    .eq('conversation_id', conversationId)
-    .order('sent_at', { ascending: true });
-
-  type Msg = {
-    id: string;
-    sender_profile_id: string;
-    body: string;
-    sent_at: string;
-    read_at: string | null;
-  };
-  const messages = (messageRows ?? []) as Msg[];
+  const messages = await getConversationMessagesFromClient(
+    supabase,
+    conversationId,
+  );
 
   const playerName = formatPlayerName(conv.players.first_name, conv.players.last_name);
 

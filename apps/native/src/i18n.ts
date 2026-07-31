@@ -341,6 +341,13 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     'stats.red': 'Rojas',
     'stats.fouls_committed': 'Faltas',
     'stats.fouls_received': 'Recibidas',
+    // O2-5 E2a — Mensajes (lectura)
+    'mensajes.title': 'Mensajes',
+    'mensajes.empty': 'No tienes conversaciones',
+    'mensajes.group_label': 'Equipo · {team}',
+    'mensajes.unavailable': 'Esta conversación no está disponible',
+    'mensajes.thread_empty': 'No hay mensajes todavía',
+    'mensajes.send_soon': 'Enviar mensajes: próximamente',
     'common.vs': 'vs',
   },
   en: {
