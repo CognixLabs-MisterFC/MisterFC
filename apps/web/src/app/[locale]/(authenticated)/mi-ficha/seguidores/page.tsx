@@ -1,7 +1,10 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Users } from 'lucide-react';
-import { createSupabaseServerClient } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  getPlayerSpectatorsFromClient,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,10 +88,7 @@ export default async function SeguidoresPage({ params, searchParams }: Props) {
     myPlayers.find((p) => p.id === playerParam) ?? myPlayers[0]!;
   const playerId = activePlayer.id;
 
-  const { data: spectators } = await supabase.rpc('list_player_spectators', {
-    p_player_id: playerId,
-  });
-  const rows = spectators ?? [];
+  const rows = await getPlayerSpectatorsFromClient(supabase, playerId);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">

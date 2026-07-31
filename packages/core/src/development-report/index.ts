@@ -52,3 +52,6 @@ export type {
   UpsertAssessmentCampaignInput,
   DeadlineState,
 } from './development-report';
+
+export * from './report-queries';
+export * from './report-bundle';

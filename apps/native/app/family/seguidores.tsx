@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { SeguidoresScreen } from '@/screens/family/seguidores';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.seguidores" />;
+  return <SeguidoresScreen />;
 }

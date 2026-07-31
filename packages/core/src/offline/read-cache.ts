@@ -50,6 +50,21 @@ export function eventScopedCacheKey(resource: string, eventId: string): string {
   return `${resource}::${eventId}`;
 }
 
+/**
+ * Variante PLAYER-scoped (O2-5 C1): datos del hijo activo (ficha/informe/
+ * seguidores) llevan clubId Y playerId en la key. Es la norma MÁS crítica de la
+ * tanda: son datos personales/deportivos de un MENOR; cambiar de hijo DEBE dar una
+ * key distinta para NUNCA servir offline la ficha del hijo equivocado. p.ej.
+ * `playerScopedCacheKey('ficha', clubId, playerId)` → 'ficha::<clubId>::<playerId>'.
+ */
+export function playerScopedCacheKey(
+  resource: string,
+  clubId: string,
+  playerId: string
+): string {
+  return `${resource}::${clubId}::${playerId}`;
+}
+
 export async function cacheGet<T>(
   backing: CacheBacking,
   key: string
