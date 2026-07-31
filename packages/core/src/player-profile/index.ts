@@ -10,3 +10,4 @@ export * from './club';
 export * from './account-players';
 export * from './sporting-names';
 export * from './ficha';
+export * from './sensitive';

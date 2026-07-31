@@ -67,6 +67,7 @@ const FAMILY_MENU: MenuDef[] = [
   { name: 'mi-ficha', labelKey: 'nav.mi_ficha' },
   { name: 'mi-informe', labelKey: 'nav.mi_informe' },
   { name: 'seguidores', labelKey: 'nav.seguidores' },
+  { name: 'gestion', labelKey: 'nav.gestion' },
   { name: 'anuncios', labelKey: 'nav.anuncios' },
   { name: 'novedades', labelKey: 'nav.novedades' },
   { name: 'perfil', labelKey: 'nav.perfil' },

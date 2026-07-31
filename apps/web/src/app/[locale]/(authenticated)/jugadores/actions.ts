@@ -12,8 +12,10 @@ import {
   getCurrentUserClubs,
   invitePlayerTutorSchema,
   inviteSpectatorSchema,
+  clearPlayerPhotoFromClient,
   removeSpectatorFromClient,
   resolveActiveClub,
+  setPlayerPhotoPathFromClient,
   updatePlayerSchema,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -435,34 +437,24 @@ export type PhotoActionResult =
   | { success: true }
   | { success: false; error: 'forbidden' | 'generic' };
 
+// F14-3b — la foto solo la escribe el tutor vinculado. La RPC set_player_photo
+// (SECURITY DEFINER) valida `user_is_tutor_of_player` y toca solo photo_url.
+// O2-5 C2 — la validación del path + invocación + mapeo de error viven en core
+// (`setPlayerPhotoPathFromClient` / `clearPlayerPhotoFromClient`); aquí solo se revalida.
 export async function updatePlayerPhotoPath(
   playerId: string,
   path: string
 ): Promise<PhotoActionResult> {
-  // Validación mínima del path: debe empezar por <playerId>/ para que el
-  // path persistido no pueda apuntar a una carpeta de otro jugador.
-  if (!path || !path.startsWith(`${playerId}/`) || path.length > 200) {
-    return { success: false, error: 'forbidden' };
-  }
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // F14-3b — la foto solo la escribe el tutor vinculado. La RPC set_player_photo
-  // (SECURITY DEFINER) valida `user_is_tutor_of_player` y toca solo photo_url.
-  const { error } = await supabase.rpc('set_player_photo', {
-    p_player_id: playerId,
-    p_path: path,
-  });
-
-  if (error) {
-    const forbidden = (error.message ?? '').includes('forbidden');
-    return { success: false, error: forbidden ? 'forbidden' : 'generic' };
+  const res = await setPlayerPhotoPathFromClient(supabase, playerId, path);
+  if ('ok' in res) {
+    revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
+    revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
+    return { success: true };
   }
-
-  revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
-  revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
-  return { success: true };
+  return { success: false, error: res.error };
 }
 
 export async function clearPlayerPhotoPath(
@@ -471,20 +463,13 @@ export async function clearPlayerPhotoPath(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // F14-3b — retirar la foto (path NULL) también es exclusivo del tutor.
-  const { error } = await supabase.rpc('set_player_photo', {
-    p_player_id: playerId,
-    p_path: null,
-  });
-
-  if (error) {
-    const forbidden = (error.message ?? '').includes('forbidden');
-    return { success: false, error: forbidden ? 'forbidden' : 'generic' };
+  const res = await clearPlayerPhotoFromClient(supabase, playerId);
+  if ('ok' in res) {
+    revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
+    revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
+    return { success: true };
   }
-
-  revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
-  revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
-  return { success: true };
+  return { success: false, error: res.error };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

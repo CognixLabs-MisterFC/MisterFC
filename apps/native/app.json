@@ -23,6 +23,12 @@
         {
           "color": "#0F1B2E"
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MisterFC accede a tus fotos para actualizar la foto del jugador."
+        }
       ]
     ],
     "extra": {

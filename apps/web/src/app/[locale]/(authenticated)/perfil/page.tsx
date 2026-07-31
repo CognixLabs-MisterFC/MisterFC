@@ -1,7 +1,11 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Download } from 'lucide-react';
-import { createSupabaseServerClient } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  getPlayerManagementAccessFromClient,
+  getPlayerMedicalFromClient,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { loadAccountPlayers } from '@/lib/account-players';
@@ -85,24 +89,12 @@ export default async function PerfilPage({ params, searchParams }: Props) {
     // Gate de gestión por-player (foto, expediente, olvido): user_is_tutor_of_player
     // — desde la extensión self acepta relation parent/guardian/self (el propio
     // jugador adulto gestiona lo suyo). La médica exige ADEMÁS consentimiento vigente.
-    const { data: isTutorOfPlayer } = await supabase.rpc(
-      'user_is_tutor_of_player',
-      { p_player_id: activePlayer.id },
-    );
-    canManagePhoto = Boolean(isTutorOfPlayer);
-
-    const { data: hasMedicalConsent } = await supabase.rpc(
-      'user_has_medical_consent_write',
-      { p_player_id: activePlayer.id },
-    );
-    canManageMedical = Boolean(isTutorOfPlayer && hasMedicalConsent);
+    // O2-5 C2 — los gates + la lectura médica viven en core (mismo criterio).
+    const access = await getPlayerManagementAccessFromClient(supabase, activePlayer.id);
+    canManagePhoto = access.isTutor;
+    canManageMedical = access.isTutor && access.canWriteMedical;
     if (canManageMedical) {
-      const { data: medicalRows } = await supabase.rpc('get_player_medical', {
-        p_player_id: activePlayer.id,
-        p_ip: undefined,
-        p_user_agent: undefined,
-      });
-      medicalInitial = medicalRows?.[0] ?? null;
+      medicalInitial = await getPlayerMedicalFromClient(supabase, activePlayer.id);
     }
   }
 

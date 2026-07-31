@@ -12,6 +12,7 @@ import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { ChildSelector } from '@/ui/child-selector';
+import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { t } from '@/i18n';
 import { BRAND } from '@/theme';
@@ -63,11 +64,19 @@ export function MiInformeScreen() {
           <EmptyState message={t('informe.no_reports')} />
         ) : (
           <>
-            <View>
+            <View className="flex-row items-center gap-3">
+              <PlayerAvatar
+                playerId={playerId}
+                initials={(activePlayer?.name ?? '').trim().slice(0, 2)}
+                accent={accent}
+                size={48}
+              />
+              <View className="flex-1">
               <Text className="text-xl font-bold text-[#0F1B2E]">{activePlayer?.name}</Text>
               <Text className="text-xs text-zinc-400">
                 {[t(`informe.period.${rep.period}`), data.activeSeason, rep.teamName].filter(Boolean).join(' · ')}
               </Text>
+              </View>
             </View>
 
             {/* Medias por grupo (individual) */}
