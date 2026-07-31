@@ -3,7 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ClipboardList, Download } from 'lucide-react';
 import {
   createSupabaseServerClient,
-  DEVELOPMENT_PERIODS,
+  getPlayerReportBundleFromClient,
   PLAYER_POSITIONS,
   type PlayerPosition,
 } from '@misterfc/core';
@@ -15,15 +15,6 @@ import {
   ReportFichaView,
   type ReportFichaData,
 } from '../jugadores/[playerId]/informes/_components/report-ficha-view';
-import {
-  resolvePlayerTeamForSeason,
-  loadIndividualReport,
-  loadPlayerObjectives,
-  loadTeamObjectives,
-  loadFichaStats,
-  loadPlayerEvolution,
-  loadTeamEvolution,
-} from '../jugadores/[playerId]/informes/queries';
 import { PlayerSelector } from '../mi-ficha/player-selector';
 import { ReportPeriodSelect } from './report-period-select';
 import { SeasonSelect } from './season-select';
@@ -47,13 +38,11 @@ function ageFromDob(dob: string | null): number | null {
 }
 
 /**
- * F13.10d — Informe de desarrollo, vista jugador/familia (ruta propia, enlazada
- * desde el menú lateral solo para el rol `jugador`). Muestra los informes
- * PUBLICADOS (visibility='team'; la RLS de PR1 ya recorta a SOLO los del propio
- * jugador) en read-only, reusando la ficha rediseñada (`ReportFichaView`).
+ * F13.10d — Informe de desarrollo, vista jugador/familia (read-only).
  *
- * Selectores de jugador (cuenta familiar con varios), temporada y periodo. El
- * staff NO ve este enlace: accede por la ficha del equipo / mis-equipos.
+ * O2-5 C1 — la orquestación (temporadas, periodos publicados, ensamblado del
+ * informe) vive en core (`getPlayerReportBundleFromClient`); esta página lo
+ * consume, firma la foto (Storage server-only) y lo pinta con `ReportFichaView`.
  */
 export default async function MiInformePage({ params, searchParams }: Props) {
   const { locale } = await params;
@@ -117,125 +106,53 @@ export default async function MiInformePage({ params, searchParams }: Props) {
     );
   }
 
-  // 2) Jugador activo + temporadas de su trayectoria (selector + default).
+  // 2) Jugador activo + informe (temporadas/periodos/ensamblado en core).
   const activePlayer = myPlayers.find((p) => p.id === playerParam) ?? myPlayers[0]!;
   const playerId = activePlayer.id;
 
-  const { data: history } = await supabase
-    .from('team_members')
-    .select('left_at, teams!inner(season)')
-    .eq('player_id', playerId)
-    .order('joined_at', { ascending: false });
-  type HistTeam = { season: string } | null;
-  const seasonsSet = new Set<string>();
-  let activeSeasonFromHistory: string | null = null;
-  for (const h of history ?? []) {
-    const tm = (h.teams ?? null) as HistTeam;
-    const s = tm?.season;
-    if (s) {
-      seasonsSet.add(s);
-      if (h.left_at === null) activeSeasonFromHistory = s;
-    }
-  }
-  const seasons = Array.from(seasonsSet).sort((a, b) => b.localeCompare(a));
-  const activeSeason =
-    (seasonParam && seasons.includes(seasonParam) ? seasonParam : null) ??
-    activeSeasonFromHistory ??
-    seasons[0] ??
-    null;
+  const bundle = await getPlayerReportBundleFromClient(supabase, clubId, playerId, {
+    season: seasonParam,
+    period: informeParam,
+  });
+  const { seasons, activeSeason, periods: devReportPeriods } = bundle;
 
-  // 3) Informes PUBLICADOS del jugador en la temporada (RLS de PR1 → solo suyos).
-  let devReportPeriods: string[] = [];
   let devFicha: ReportFichaData | null = null;
-  if (activeSeason) {
-    const { data: seasonRow } = await supabase
-      .from('seasons')
-      .select('id')
-      .eq('club_id', clubId)
-      .eq('label', activeSeason)
-      .maybeSingle();
-    const seasonId = (seasonRow?.id as string | undefined) ?? null;
-    if (seasonId) {
-      const { data: pubRows } = await supabase
-        .from('development_reports')
-        .select('period')
-        .eq('player_id', playerId)
-        .eq('season_id', seasonId);
-      const pubSet = new Set((pubRows ?? []).map((r) => r.period as string));
-      devReportPeriods = DEVELOPMENT_PERIODS.filter((p) => pubSet.has(p));
-      const selPeriod =
-        informeParam && devReportPeriods.includes(informeParam)
-          ? informeParam
-          : devReportPeriods[0];
-      if (selPeriod) {
-        const { data: pl } = await supabase
-          .from('players')
-          .select(
-            'first_name, last_name, date_of_birth, dorsal, position_main, positions_secondary, foot, photo_url'
-          )
-          .eq('id', playerId)
-          .maybeSingle();
-        const team = await resolvePlayerTeamForSeason(supabase, playerId, activeSeason);
-        const [report, playerObjectives, teamObjectives, stats, evolution, teamEvolution] =
-          await Promise.all([
-            loadIndividualReport(supabase, playerId, seasonId, selPeriod),
-            loadPlayerObjectives(supabase, playerId, seasonId),
-            team ? loadTeamObjectives(supabase, team.teamId, seasonId) : Promise.resolve([]),
-            loadFichaStats(supabase, playerId, activeSeason, team?.teamId ?? null),
-            loadPlayerEvolution(supabase, playerId, seasonId),
-            team ? loadTeamEvolution(supabase, team.teamId, seasonId) : Promise.resolve([]),
-          ]);
-        // Bloque de equipo: por el id enlazado (la RLS helper de PR1 lo permite).
-        let teamReport: { scores: Record<string, number>; comment: string | null } | null =
-          null;
-        if (report?.team_report_id) {
-          const { data: tr } = await supabase
-            .from('team_development_reports')
-            .select('scores, comment')
-            .eq('id', report.team_report_id)
-            .maybeSingle();
-          if (tr) {
-            teamReport = {
-              scores: (tr.scores as Record<string, number>) ?? {},
-              comment: (tr.comment as string | null) ?? null,
-            };
-          }
-        }
-        let photoUrl: string | null = null;
-        if (pl?.photo_url) {
-          const { data: signed } = await supabase.storage
-            .from('player-photos')
-            .createSignedUrl(pl.photo_url, PHOTO_TTL);
-          photoUrl = signed?.signedUrl ?? null;
-        }
-        const primaryPos = (PLAYER_POSITIONS as readonly string[]).includes(
-          pl?.position_main ?? ''
-        )
-          ? (pl!.position_main as PlayerPosition)
-          : null;
-        devFicha = {
-          fullName: activePlayer.name,
-          initials: (pl?.first_name?.[0] ?? '') + (pl?.last_name?.[0] ?? ''),
-          photoUrl,
-          dorsal: pl?.dorsal ?? null,
-          age: ageFromDob(pl?.date_of_birth ?? null),
-          primaryPos,
-          secondaryPos: (pl?.positions_secondary ?? []) as string[],
-          foot: pl?.foot ?? null,
-          teamName: team?.teamName ?? '',
-          seasonLabel: activeSeason,
-          period: selPeriod,
-          stats,
-          scores: report?.scores ?? {},
-          commentOverall: report?.comment_overall ?? null,
-          teamReport,
-          playerObjectives,
-          teamObjectives,
-          evolution,
-          teamEvolution,
-        };
-      }
+  if (bundle.report) {
+    const rep = bundle.report;
+    let photoUrl: string | null = null;
+    if (rep.identity.photoPath) {
+      const { data: signed } = await supabase.storage
+        .from('player-photos')
+        .createSignedUrl(rep.identity.photoPath, PHOTO_TTL);
+      photoUrl = signed?.signedUrl ?? null;
     }
+    const primaryPos = (PLAYER_POSITIONS as readonly string[]).includes(
+      rep.identity.positionMain ?? '',
+    )
+      ? (rep.identity.positionMain as PlayerPosition)
+      : null;
+    devFicha = {
+      fullName: activePlayer.name,
+      initials:
+        (rep.identity.firstName?.[0] ?? '') + (rep.identity.lastName?.[0] ?? ''),
+      photoUrl,
+      dorsal: rep.identity.dorsal,
+      age: ageFromDob(rep.identity.dateOfBirth),
+      primaryPos,
+      secondaryPos: rep.identity.positionsSecondary,
+      foot: rep.identity.foot,
+      teamName: rep.teamName,
+      seasonLabel: activeSeason ?? '',
+      period: rep.period,
+      stats: rep.fichaStats,
+      scores: rep.scores,
+      commentOverall: rep.commentOverall,
+      teamReport: rep.teamReport,
+      playerObjectives: rep.playerObjectives,
+      teamObjectives: rep.teamObjectives,
+      evolution: rep.evolution,
+      teamEvolution: rep.teamEvolution,
+    };
   }
 
   return (

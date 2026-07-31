@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { MiInformeScreen } from '@/screens/family/mi-informe';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.mi_informe" />;
+  return <MiInformeScreen />;
 }

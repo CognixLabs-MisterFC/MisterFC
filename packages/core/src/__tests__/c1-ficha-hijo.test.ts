@@ -6,6 +6,26 @@ import {
   getPlayerSpectatorsFromClient,
   removeSpectatorFromClient,
 } from '../spectators/index';
+import { getPlayerReportBundleFromClient } from '../development-report/report-bundle';
+
+type TableResult = { data?: unknown[] };
+
+/** Mock table-aware: cada tabla resuelve a su resultado; maybeSingle → 1ª fila. */
+function tableClient(tables: Record<string, TableResult>): SupabaseClient<Database> {
+  const res = (table: string): TableResult => tables[table] ?? { data: [] };
+  function builder(table: string) {
+    const r = res(table);
+    const chain: Record<string, unknown> = {};
+    for (const m of ['select', 'eq', 'in', 'order', 'lte', 'gte', 'lt', 'is', 'or', 'not']) {
+      chain[m] = () => chain;
+    }
+    (chain as { then: unknown }).then = (f: (v: TableResult) => unknown) => Promise.resolve(r).then(f);
+    (chain as { maybeSingle: unknown }).maybeSingle = () =>
+      Promise.resolve({ data: (r.data ?? [])[0] ?? null });
+    return chain;
+  }
+  return { from: (tbl: string) => builder(tbl) } as unknown as SupabaseClient<Database>;
+}
 
 /** Mock mínimo: rpc devuelve lo prefijado; auth.getUser devuelve el user dado. */
 function mockClient(cfg: {
@@ -67,5 +87,27 @@ describe('seguidores (C1)', () => {
     });
     const res = await removeSpectatorFromClient(generic, 'P1', 's1');
     expect('error' in res && res.error).toBe('generic');
+  });
+});
+
+describe('mi informe (getPlayerReportBundleFromClient)', () => {
+  it('sin temporadas → report null, seasons vacío', async () => {
+    const sb = tableClient({ team_members: { data: [] } });
+    const b = await getPlayerReportBundleFromClient(sb, 'C1', 'P1');
+    expect(b.seasons).toEqual([]);
+    expect(b.activeSeason).toBeNull();
+    expect(b.report).toBeNull();
+  });
+
+  it('con temporada pero sin periodos publicados → activeSeason resuelto, report null', async () => {
+    const sb = tableClient({
+      team_members: { data: [{ left_at: null, teams: { season: '2025-26' } }] },
+      seasons: { data: [{ id: 's1' }] },
+      development_reports: { data: [] }, // ningún periodo publicado
+    });
+    const b = await getPlayerReportBundleFromClient(sb, 'C1', 'P1');
+    expect(b.activeSeason).toBe('2025-26');
+    expect(b.periods).toEqual([]);
+    expect(b.report).toBeNull();
   });
 });
