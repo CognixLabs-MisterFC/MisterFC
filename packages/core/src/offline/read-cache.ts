@@ -81,6 +81,24 @@ export function teamScopedCacheKey(
   return `${resource}::${clubId}::${teamId}`;
 }
 
+/**
+ * Variante PLAYER+EVENT-scoped (O2-5 E1): datos de un evento concreto vistos POR
+ * el hijo activo (detalle de convocatoria, fila del hijo en las stats del
+ * partido). Llevan clubId, playerId Y eventId. El playerId es la parte crítica —
+ * dos hermanos ven el MISMO evento con datos DISTINTOS (su respuesta/su fila), así
+ * que cambiar de hijo DEBE dar key distinta aunque el evento sea el mismo. p.ej.
+ * `playerEventScopedCacheKey('convocatoria', clubId, playerId, eventId)` →
+ * 'convocatoria::<clubId>::<playerId>::<eventId>'.
+ */
+export function playerEventScopedCacheKey(
+  resource: string,
+  clubId: string,
+  playerId: string,
+  eventId: string
+): string {
+  return `${resource}::${clubId}::${playerId}::${eventId}`;
+}
+
 export async function cacheGet<T>(
   backing: CacheBacking,
   key: string

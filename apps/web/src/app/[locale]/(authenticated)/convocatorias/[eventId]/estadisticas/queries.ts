@@ -23,6 +23,7 @@ import {
   aggregateMatchTeamStats,
   createSupabaseServerClient,
   formatPlayerNameNatural,
+  getFamilyMatchStatRowsFromClient,
   type MatchTeamStatEvent,
   type MatchTeamStats,
   type TeamFormat,
@@ -191,25 +192,14 @@ export async function loadMatchStats(
     const playerIds = (accounts ?? []).map((a) => a.player_id as string);
     if (playerIds.length === 0) return { status: 'empty' };
 
-    const { data: statRows } = await supabase
-      .from('match_player_stats')
-      .select(STAT_SELECT)
-      .eq('event_id', eventId)
-      .in('player_id', playerIds);
-    const stats = (statRows ?? []) as unknown as StatShape[];
-    if (stats.length === 0) return { status: 'empty' };
-
-    const ids = stats.map((s) => s.player_id);
-    const { data: nameRows } = await supabase
-      .from('players')
-      .select('id, first_name, last_name, dorsal')
-      .in('id', ids);
-    const names = new Map<string, PlayerNameShape>();
-    for (const n of (nameRows ?? []) as unknown as PlayerNameShape[]) {
-      names.set(n.id, n);
-    }
-
-    const players = sortRows(stats.map((s) => toRow(s, names.get(s.player_id))));
+    // O2-5 E1 — el fetch de la fila del hijo se extrajo a core (misma query +
+    // RLS player-scoped) para compartirlo con la app nativa. Idéntico.
+    const players = await getFamilyMatchStatRowsFromClient(
+      supabase,
+      eventId,
+      playerIds,
+    );
+    if (players.length === 0) return { status: 'empty' };
     return { status: 'ok', view: { viewer: 'family', event, players } };
   }
 

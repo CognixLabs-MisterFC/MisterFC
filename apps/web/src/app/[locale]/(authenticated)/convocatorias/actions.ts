@@ -9,6 +9,7 @@ import {
   createSupabaseServerClient,
   maxCalledUpFor,
   publishCallupSchema,
+  respondCallupFromClient,
   upsertCallupDecisionSchema,
   upsertCallupResponseSchema,
   type TeamFormat,
@@ -521,38 +522,14 @@ export async function upsertCallupResponse(
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'forbidden' };
 
-  const { data: existing } = await supabase
-    .from('callup_responses')
-    .select('id')
-    .eq('event_id', parsed.data.event_id)
-    .eq('player_id', parsed.data.player_id)
-    .maybeSingle();
-
-  if (existing) {
-    const { error } = await supabase
-      .from('callup_responses')
-      .update({
-        status: parsed.data.status,
-        reason: parsed.data.reason,
-      })
-      .eq('id', existing.id as string);
-    if (error)
-      return { error: mapUpsertResponsePgErr(error.message, error.code) };
-  } else {
-    const { error } = await supabase.from('callup_responses').insert({
-      event_id: parsed.data.event_id,
-      player_id: parsed.data.player_id,
-      status: parsed.data.status,
-      reason: parsed.data.reason,
-      responded_by: user.id,
-    });
-    if (error)
-      return { error: mapUpsertResponsePgErr(error.message, error.code) };
+  // O2-5 E1 — la escritura (SELECT→UPDATE/INSERT con responded_by=auth.uid) se
+  // extrajo a core para compartirla con la app nativa. Comportamiento idéntico:
+  // aquí solo se mapea el error pg y se revalida.
+  const res = await respondCallupFromClient(supabase, parsed.data);
+  if (!res.ok) {
+    if (res.noUser) return { error: 'forbidden' };
+    return { error: mapUpsertResponsePgErr(res.message, res.code) };
   }
 
   revalidatePath('/[locale]/(authenticated)/convocatorias', 'page');

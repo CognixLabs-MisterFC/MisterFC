@@ -14,6 +14,7 @@ export {
   eventScopedCacheKey,
   playerScopedCacheKey,
   teamScopedCacheKey,
+  playerEventScopedCacheKey,
   type CacheBacking,
   type ReadThroughResult,
 } from './read-cache';

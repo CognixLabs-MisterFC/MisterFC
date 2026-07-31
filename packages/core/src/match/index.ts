@@ -164,3 +164,4 @@ export type {
 } from './phase';
 export * from './week-matches';
 export * from './detail';
+export * from './family-stats';
