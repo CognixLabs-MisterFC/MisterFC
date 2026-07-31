@@ -10,6 +10,7 @@ export {
   cacheGet,
   cacheSet,
   cacheClear,
+  clubScopedCacheKey,
   type CacheBacking,
   type ReadThroughResult,
 } from './read-cache';

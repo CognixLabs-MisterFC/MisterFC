@@ -162,3 +162,4 @@ export type {
   MatchPhaseInput,
   MatchPhaseResult,
 } from './phase';
+export * from './week-matches';

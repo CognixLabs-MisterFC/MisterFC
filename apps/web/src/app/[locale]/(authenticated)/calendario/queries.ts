@@ -1,10 +1,17 @@
 import {
   TIMEZONE_OLA1,
   createSupabaseServerClient,
-  teamsInActiveSeason,
+  getCalendarDataFromClient,
+  getHolidaysFromClient,
+  getCalendarScopeTeamIdsFromClient,
+  fromZonedFields,
+  type CalendarEvent,
+  type TeamOption,
+  type CategoryOption,
+  type CalendarFilters,
+  type HolidayInfo,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { getActiveSeasonLabel } from '@/lib/active-season';
 import {
   type LocalDay,
   endOfMonth,
@@ -14,79 +21,13 @@ import {
   parseIsoDate,
   toIsoDate,
 } from '@/lib/calendar-utils';
-import { fromZonedFields } from '@misterfc/core';
 
-export type CalendarEvent = {
-  id: string;
-  club_id: string;
-  team_id: string | null;
-  category_id: string | null;
-  type: 'training' | 'match' | 'tournament' | 'friendly' | 'other';
-  title: string;
-  notes: string | null;
-  starts_at: string;
-  ends_at: string | null;
-  all_day: boolean;
-  location_name: string | null;
-  location_address: string | null;
-  opponent_name: string | null;
-  parent_event_id: string | null;
-  recurrence_rule: unknown;
-  created_by: string;
-  /** Embebido vía join: nombre y color del equipo (si existe). */
-  team_name: string | null;
-  team_color: string | null;
-  category_name: string | null;
-  /** F12.9 — el entrenamiento tiene una sesión vinculada que el usuario PUEDE
-   *  VER (RLS de 12.1: staff ve cualquiera del club; jugador/familia solo si está
-   *  publicada). Solo aplica a type='training'; en el resto es false. */
-  has_session: boolean;
-  /** F14F-1 — sello de cancelación. null = activo; fecha = cancelado (se pinta
-   *  tachado, no se oculta). */
-  cancelled_at: string | null;
-  /** F14F-1 — origen de la cancelación: 'person' (usuario) | 'holiday' (festivo,
-   *  F14F-2). null si activo. Solo se descancela manualmente lo de 'person'. */
-  cancellation_source: 'person' | 'holiday' | null;
-  /** F14F-1 — motivo libre y opcional. */
-  cancellation_reason: string | null;
-  /** F14F-4 — estado de aprobación. null = evento NORMAL; 'pending'|'approved'|
-   *  'rejected' solo para trainings sueltos creados en día festivo. */
-  approval_status: 'pending' | 'approved' | 'rejected' | null;
-  /** F14F-4 — motivo del rechazo (solo si approval_status='rejected'). */
-  rejection_reason: string | null;
-};
-
-export type TeamOption = {
-  id: string;
-  name: string;
-  color: string;
-  category_id: string;
-  category_name: string;
-  season: string;
-  /** F4.9 — duración por tiempo (min) de la categoría del team. */
-  half_duration_minutes: number;
-};
-
-export type CategoryOption = {
-  id: string;
-  name: string;
-  /** F4.9 — duración por tiempo (min) de la categoría. */
-  half_duration_minutes: number;
-};
-
-export type CalendarFilters = {
-  teamIds: string[];
-  categoryIds: string[];
-  types: string[];
-};
-
-/** F14F-2 — un día festivo del club (instalaciones cerradas). */
-export type HolidayInfo = {
-  id: string;
-  /** 'YYYY-MM-DD' (día local del club). */
-  date: string;
-  reason: string;
-};
+// O2-5 B1 — la lógica de lectura del calendario (eventos/festivos/scope) y sus
+// tipos viven en `@misterfc/core`; web los re-exporta para no divergir. El cálculo
+// del RANGO de vista (CalendarRange/computeRange) sigue aquí (usa LocalDay). Las
+// vecinas de gestión (loadEvent/loadManageableTeams/loadCanCreateSessions) NO se
+// tocan.
+export type { CalendarEvent, TeamOption, CategoryOption, CalendarFilters, HolidayInfo };
 
 export type CalendarRange = {
   /** UTC inicio (inclusivo). */
@@ -161,17 +102,7 @@ export async function loadHolidays(
   const supabase = createSupabaseServerClient(adapter);
   const iso = (d: LocalDay) =>
     `${d.year}-${String(d.month + 1).padStart(2, '0')}-${String(d.day).padStart(2, '0')}`;
-  const { data } = await supabase
-    .from('holidays')
-    .select('id, date, reason')
-    .eq('club_id', clubId)
-    .gte('date', iso(range.firstDay))
-    .lte('date', iso(range.lastDay));
-  return (data ?? []).map((h) => ({
-    id: h.id as string,
-    date: h.date as string,
-    reason: h.reason as string,
-  }));
+  return getHolidaysFromClient(supabase, clubId, iso(range.firstDay), iso(range.lastDay));
 }
 
 export async function loadCalendarData(
@@ -186,179 +117,14 @@ export async function loadCalendarData(
 }> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  let query = supabase
-    .from('events')
-    .select(
-      `id, club_id, team_id, category_id, type, title, notes, starts_at, ends_at,
-       all_day, location_name, location_address, opponent_name, parent_event_id,
-       recurrence_rule, created_by,
-       cancelled_at, cancellation_source, cancellation_reason,
-       approval_status, rejection_reason,
-       teams(name, color, categories(name)),
-       categories(name)`
-    )
-    .eq('club_id', clubId)
-    .gte('starts_at', range.startIso)
-    .lt('starts_at', range.endIso)
-    .order('starts_at', { ascending: true });
-
-  // FIX-DIRECTO — Acota la AGENDA a los equipos del usuario (+ eventos de club,
-  // team_id null). Necesario porque los PARTIDOS ahora son club-wide en la RLS de
-  // events (para el directo): sin este filtro, a un jugador/padre se le colarían
-  // en el calendario los partidos de OTROS equipos. Para admin/coord el caller
-  // pasa scopeTeamIds=null → agenda club-wide, sin cambios. La agenda del seguidor
-  // ya pasa teamIds explícito (F14C-4), así que no depende de esto.
-  if (opts?.scopeTeamIds != null) {
-    const scope = opts.scopeTeamIds;
-    if (scope.length > 0) {
-      query = query.or(`team_id.in.(${scope.join(',')}),team_id.is.null`);
-    } else {
-      query = query.is('team_id', null);
-    }
-  }
-
-  if (filters.teamIds.length > 0) {
-    query = query.in('team_id', filters.teamIds);
-  }
-  if (filters.categoryIds.length > 0) {
-    query = query.in('category_id', filters.categoryIds);
-  }
-  if (filters.types.length > 0) {
-    query = query.in('type', filters.types);
-  }
-
-  const { data: rawEvents } = await query;
-
-  type RawTeam = {
-    name: string;
-    color: string;
-    categories: { name: string } | null;
-  };
-  type RawCategory = { name: string };
-
-  const events: CalendarEvent[] = (rawEvents ?? []).map((e) => {
-    const team = e.teams as unknown as RawTeam | null;
-    const cat = e.categories as unknown as RawCategory | null;
-    return {
-      id: e.id as string,
-      club_id: e.club_id as string,
-      team_id: (e.team_id as string | null) ?? null,
-      category_id: (e.category_id as string | null) ?? null,
-      type: e.type as CalendarEvent['type'],
-      title: e.title as string,
-      notes: (e.notes as string | null) ?? null,
-      starts_at: e.starts_at as string,
-      ends_at: (e.ends_at as string | null) ?? null,
-      all_day: e.all_day as boolean,
-      location_name: (e.location_name as string | null) ?? null,
-      location_address: (e.location_address as string | null) ?? null,
-      opponent_name: (e.opponent_name as string | null) ?? null,
-      parent_event_id: (e.parent_event_id as string | null) ?? null,
-      recurrence_rule: e.recurrence_rule,
-      created_by: e.created_by as string,
-      team_name: team?.name ?? null,
-      team_color: team?.color ?? null,
-      category_name: cat?.name ?? team?.categories?.name ?? null,
-      has_session: false,
-      cancelled_at: (e.cancelled_at as string | null) ?? null,
-      cancellation_source:
-        (e.cancellation_source as CalendarEvent['cancellation_source']) ?? null,
-      cancellation_reason: (e.cancellation_reason as string | null) ?? null,
-      approval_status:
-        (e.approval_status as CalendarEvent['approval_status']) ?? null,
-      rejection_reason: (e.rejection_reason as string | null) ?? null,
-    };
-  });
-
-  // F12.9 — marca los entrenamientos con sesión vinculada VISIBLE para el usuario.
-  // La RLS de `sessions` (12.1) es el filtro: el staff ve las del club; el
-  // jugador/familia solo las publicadas (visibility='team'). Un único lookup.
-  const trainingIds = events
-    .filter((e) => e.type === 'training')
-    .map((e) => e.id);
-  const plannedIds = await loadPlannedEventIds(supabase, trainingIds);
-  for (const e of events) {
-    if (plannedIds.has(e.id)) e.has_session = true;
-  }
-
-  // Teams + categories del club para los selectores de filtro y dialog.
-  const { data: rawTeams } = await supabase
-    .from('teams')
-    .select(
-      'id, name, color, season, category_id, categories!inner(name, club_id, half_duration_minutes)',
-    )
-    .order('name');
-
-  const allTeams: TeamOption[] = (rawTeams ?? [])
-    .map((t) => {
-      const cat = t.categories as unknown as {
-        name: string;
-        club_id: string;
-        half_duration_minutes: number;
-      };
-      return {
-        id: t.id as string,
-        name: t.name as string,
-        color: t.color as string,
-        category_id: t.category_id as string,
-        category_name: cat.name,
-        season: t.season as string,
-        club_id: cat.club_id,
-        half_duration_minutes: cat.half_duration_minutes ?? 45,
-      };
-    })
-    .filter((t) => t.club_id === clubId)
-    .map((t) => {
-      const { club_id, ...rest } = t;
-      void club_id;
-      return rest;
-    });
-
-  // Bug-1: selectores/diálogo del calendario son operativos → solo la temporada
-  // activa (sin duplicados del rollover). Los nombres de equipo de cada evento
-  // vienen del embed del propio evento, así que el histórico se sigue mostrando.
-  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
-  const teams: TeamOption[] = teamsInActiveSeason(allTeams, activeSeason);
-
-  // Rework A (A4) — la categoría es una plantilla permanente sin temporada. El
-  // selector de categoría del calendario ya no muestra/ordena por season (la
-  // temporada vive en el equipo); el filtro sigue siendo por category_id.
-  const { data: rawCategories } = await supabase
-    .from('categories')
-    .select('id, name, half_duration_minutes')
-    .eq('club_id', clubId)
-    .order('name');
-
-  const categories: CategoryOption[] = (rawCategories ?? []).map((c) => ({
-    id: c.id as string,
-    name: c.name as string,
-    half_duration_minutes: (c.half_duration_minutes as number | null) ?? 45,
-  }));
-
-  return { events, teams, categories };
-}
-
-/**
- * F12.9 — IDs de eventos (entrenamientos) que tienen una sesión REAL vinculada
- * VISIBLE para el usuario actual. RLS-aware: confía en la RLS de `sessions` (12.1)
- * — el staff ve las del club, el jugador/familia solo las publicadas. Un solo
- * SELECT acotado a los ids pasados; devuelve el conjunto presente.
- */
-async function loadPlannedEventIds(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
-  eventIds: string[]
-): Promise<Set<string>> {
-  if (eventIds.length === 0) return new Set();
-  const { data } = await supabase
-    .from('sessions')
-    .select('event_id')
-    .in('event_id', eventIds)
-    .eq('is_template', false);
-  return new Set(
-    (data ?? [])
-      .map((r) => r.event_id as string | null)
-      .filter((id): id is string => id != null)
+  // El cálculo de vista (CalendarRange) sigue en web; la query toma solo el rango
+  // ISO. Comportamiento idéntico al histórico (misma query/filtros/mapeo).
+  return getCalendarDataFromClient(
+    supabase,
+    clubId,
+    { startIso: range.startIso, endIso: range.endIso },
+    filters,
+    opts
   );
 }
 
@@ -382,15 +148,13 @@ export async function loadCalendarScopeTeamIds(
   role: string
 ): Promise<string[] | null> {
   // E-7a: director club-wide como admin_club (agenda del club sin acotar; antes caía
-  // en user_team_ids_in_club → [] porque no es staff/jugador/padre).
+  // en user_team_ids_in_club → [] porque no es staff/jugador/padre). El resto
+  // delega el rpc a core (`getCalendarScopeTeamIdsFromClient`), que pasa p_club_id
+  // y filtra vacíos igual que antes.
   if (role === 'admin_club' || role === 'director') return null;
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const { data } = await supabase.rpc('user_team_ids_in_club', {
-    p_club_id: clubId,
-  });
-  // setof uuid → array de strings.
-  return ((data ?? []) as unknown as string[]).filter(Boolean);
+  return getCalendarScopeTeamIdsFromClient(supabase, clubId);
 }
 
 export async function loadManageableTeams(

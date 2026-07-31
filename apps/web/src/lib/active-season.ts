@@ -1,25 +1,18 @@
 import {
-  activeSeasonLabel,
-  createSupabaseServerClient,
-  currentSeason,
+  getActiveSeasonLabelFromClient,
+  type createSupabaseServerClient,
 } from '@misterfc/core';
 
 type Supa = ReturnType<typeof createSupabaseServerClient>;
 
 /**
- * Rework C (C5) — "¿en qué temporada operamos?" = la temporada ACTIVA del club
- * (seasons.status='active'), NO el reloj. Si por lo que sea no hubiese activa
- * (no debería tras el backfill de C5), cae a currentSeason() como label seguro.
- *
- * Es la fuente de verdad para los defaults de alta de equipo, selectores e import.
+ * Rework C (C5) — temporada ACTIVA del club. O2-5 B1: la query se extrajo a core
+ * (`getActiveSeasonLabelFromClient`); esto es un wrapper de compatibilidad, misma
+ * firma y comportamiento.
  */
-export async function getActiveSeasonLabel(
+export function getActiveSeasonLabel(
   supabase: Supa,
   clubId: string
 ): Promise<string> {
-  const { data } = await supabase
-    .from('seasons')
-    .select('label, status')
-    .eq('club_id', clubId);
-  return activeSeasonLabel(data ?? []) ?? currentSeason();
+  return getActiveSeasonLabelFromClient(supabase, clubId);
 }

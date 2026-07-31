@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { InicioScreen } from '@/screens/family/inicio';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.inicio" />;
+  return <InicioScreen />;
 }

@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { CalendarioScreen } from '@/screens/family/calendario';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.calendario" />;
+  return <CalendarioScreen />;
 }

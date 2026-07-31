@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { DirectosScreen } from '@/screens/family/directos';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.directos" />;
+  return <DirectosScreen />;
 }
