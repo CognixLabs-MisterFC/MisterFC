@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { SpectatorDirectosScreen } from '@/screens/spectator/directos';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.directos" />;
+  return <SpectatorDirectosScreen />;
 }

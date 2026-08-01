@@ -66,11 +66,12 @@ function countsAsGoal(g: GoalRow): boolean {
 
 export async function getWeekMatchesFromClient(
   supabase: DbClient,
-  clubId: string
+  clubId: string,
+  opts?: { teamId?: string | null }
 ): Promise<WeekMatch[]> {
   const { startIso, endIso } = weekBounds(new Date());
 
-  const { data: evRows } = await supabase
+  let evQuery = supabase
     .from('events')
     .select(
       `id, team_id, title, opponent_name, starts_at, type,
@@ -79,8 +80,13 @@ export async function getWeekMatchesFromClient(
     .eq('club_id', clubId)
     .in('type', MANAGEABLE_MATCH_TYPES)
     .gte('starts_at', startIso)
-    .lt('starts_at', endIso)
-    .order('starts_at', { ascending: true });
+    .lt('starts_at', endIso);
+
+  // O2-6 — acotar al equipo del jugador seguido (seguidor). Opcional y
+  // RETROCOMPATIBLE: familia llama sin `opts` → sin filtro (comportamiento igual).
+  if (opts?.teamId) evQuery = evQuery.eq('team_id', opts.teamId);
+
+  const { data: evRows } = await evQuery.order('starts_at', { ascending: true });
 
   type EvRow = {
     id: string;
