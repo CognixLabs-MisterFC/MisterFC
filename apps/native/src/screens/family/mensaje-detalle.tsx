@@ -1,5 +1,12 @@
-import { useEffect } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import {
   getConversationMessagesFromClient,
   markConversationReadFromClient,
@@ -12,8 +19,9 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { useForegroundPoll } from '@/hooks/use-foreground-poll';
+import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { t, APP_LOCALE } from '@/i18n';
 import { BRAND } from '@/theme';
 
 const MESSAGES_POLL_MS = 5000;
@@ -44,6 +52,27 @@ export function MensajeDetalleScreen({
         : Promise.resolve([]),
   );
   useForegroundPoll(refresh, MESSAGES_POLL_MS);
+
+  // Envío 1:1: el endpoint hace el insert como el usuario (RLS) + fan-out. Tras el
+  // ok, refrescamos (el polling lo confirmaría igual; refrescar lo hace inmediato).
+  // Sin cola diferida: sin red el composer va deshabilitado.
+  const onSend = useCallback(
+    async (text: string): Promise<boolean> => {
+      if (!conversationId) return false;
+      try {
+        const res = await callServerEndpoint('/api/messages/send', {
+          method: 'POST',
+          body: { kind: 'direct', conversationId, body: text, locale: APP_LOCALE },
+        });
+        if (!res.ok) return false;
+        refresh();
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [conversationId, refresh],
+  );
 
   // Marcar leído al abrir (y al reconectar): escritura de bajo riesgo por RLS.
   // Sin red se omite con gracia (se marcará al volver la conexión).
@@ -82,8 +111,7 @@ export function MensajeDetalleScreen({
         </ScrollView>
       )}
 
-      {/* Composer deshabilitado — el envío es E2b. */}
-      <DisabledComposer />
+      <Composer online={online} accent={accent} onSend={onSend} />
     </View>
   );
 }
@@ -112,12 +140,71 @@ function Bubble({
   );
 }
 
-/** O2-5 E2a — placeholder del composer; el envío llega en E2b. */
-export function DisabledComposer() {
+/**
+ * O2-5 F3 — Composer de envío (1:1 y equipo). `onSend` devuelve true si el endpoint
+ * confirmó; tras el ok se limpia el input (el screen ya refrescó). Write-guard: sin
+ * red, deshabilitado con aviso; sin cola diferida. La familia solo responde DENTRO
+ * de un hilo existente (no hay "nueva conversación").
+ */
+export function Composer({
+  online,
+  accent,
+  onSend,
+}: {
+  online: boolean;
+  accent: string;
+  onSend: (text: string) => Promise<boolean>;
+}) {
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const canSend = online && !busy && text.trim().length > 0;
+
+  const send = useCallback(async () => {
+    const trimmed = text.trim();
+    if (!online || busy || trimmed.length === 0) return; // write-guard
+    setBusy(true);
+    setFailed(false);
+    const ok = await onSend(trimmed);
+    setBusy(false);
+    if (ok) setText('');
+    else setFailed(true);
+  }, [text, online, busy, onSend]);
+
   return (
-    <View className="border-t border-zinc-100 bg-zinc-50 px-4 py-3">
-      <View className="rounded-full border border-zinc-200 bg-white px-4 py-2 opacity-60">
-        <Text className="text-sm text-zinc-400">{t('mensajes.send_soon')}</Text>
+    <View className="border-t border-zinc-100 bg-white px-3 py-2">
+      {failed ? (
+        <Text className="mb-1 px-1 text-xs text-red-600">{t('mensajes.send_error')}</Text>
+      ) : null}
+      {!online ? (
+        <Text className="mb-1 px-1 text-xs text-zinc-400">{t('mensajes.send_offline')}</Text>
+      ) : null}
+      <View className="flex-row items-end gap-2">
+        <TextInput
+          value={text}
+          onChangeText={(v) => {
+            setText(v);
+            if (failed) setFailed(false);
+          }}
+          placeholder={t('mensajes.send_placeholder')}
+          placeholderTextColor="#a1a1aa"
+          editable={online && !busy}
+          multiline
+          maxLength={2000}
+          className="max-h-28 flex-1 rounded-2xl border border-zinc-200 px-3 py-2 text-sm text-[#0F1B2E]"
+        />
+        <Pressable
+          onPress={send}
+          disabled={!canSend}
+          className="rounded-full px-4 py-2 active:opacity-80"
+          style={{ backgroundColor: accent, opacity: canSend ? 1 : 0.5 }}
+        >
+          {busy ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text className="text-sm font-semibold text-white">{t('mensajes.send')}</Text>
+          )}
+        </Pressable>
       </View>
     </View>
   );
