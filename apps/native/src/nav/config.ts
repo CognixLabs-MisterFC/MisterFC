@@ -156,10 +156,20 @@ export function menuForArea(area: ChromeArea, role: Role | null): MenuDef[] {
  * fichero de ruta NO declarado aparecería como pestaña de la barra. El overlay,
  * en cambio, usa `menuForArea` (filtra por rol qué se LISTA).
  */
+/**
+ * O2-6 — Rutas OCULTAS del seguidor: `directo` (detalle de un directo, ?eventId),
+ * alcanzado por navegación desde el listado. href:null (no sale en la barra ni en
+ * menú; el seguidor no tiene menú hamburguesa).
+ */
+const SPECTATOR_HIDDEN: MenuDef[] = [
+  { name: 'directo', labelKey: 'nav.directo' },
+];
+
 export function allMenuFiles(area: ChromeArea): MenuDef[] {
   if (area === 'staff') return [...STAFF_MENU_BASE, ...STAFF_MENU_COORD_EXTRA];
   // family añade sus rutas ocultas (href:null pero no listadas en el menú).
   if (area === 'family') return [...FAMILY_MENU, ...FAMILY_HIDDEN];
+  if (area === 'spectator') return [...AREA_MENU.spectator, ...SPECTATOR_HIDDEN];
   return AREA_MENU[area];
 }
 

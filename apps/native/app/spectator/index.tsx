@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { SpectatorAgendaScreen } from '@/screens/spectator/agenda';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.agenda" />;
+  return <SpectatorAgendaScreen />;
 }

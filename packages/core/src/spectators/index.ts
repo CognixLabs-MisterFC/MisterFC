@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { getCurrentUserFromClient } from '../auth/current-user';
+import type { FollowedPlayer } from '../auth/spectator';
 
 /**
  * O2-5 C1 — Seguidores (espectadores) de un jugador. Extraído de
@@ -19,6 +20,73 @@ export type PlayerSpectator = {
   email: string;
   created_at: string;
 };
+
+/**
+ * O2-6 — Jugadores que SIGUE un seguidor (espectador), con sus datos DEPORTIVOS
+ * (nombre + equipo activo). Extraído de `apps/web/lib/spectator-shell.ts`
+ * (loadSpectatorContext) para que la app nativa monte su "jugador seguido activo".
+ * La web pasa a delegar (comportamiento idéntico).
+ *
+ * SOLO datos deportivos: nombre/club por la vista `players_sporting` (F14C-3,
+ * `players` está cerrada al seguidor), equipo activo por `team_members` (RLS
+ * `is_spectator_of_players_club`). La RLS acota a las filas propias del seguidor.
+ * Orden estable por nombre (mismo criterio que la web).
+ */
+export async function getFollowedPlayersFromClient(
+  supabase: DbClient,
+  userId: string
+): Promise<FollowedPlayer[]> {
+  // Jugadores seguidos: player_spectators (RLS: solo filas propias del seguidor).
+  const { data: links } = await supabase
+    .from('player_spectators')
+    .select('player_id')
+    .eq('spectator_profile_id', userId);
+  const playerIds = (links ?? []).map((l) => l.player_id);
+  if (playerIds.length === 0) return [];
+
+  // Nombre + club por la vista deportiva (nada personal).
+  const { data: sportRows } = await supabase
+    .from('players_sporting')
+    .select('id, club_id, first_name, last_name')
+    .in('id', playerIds);
+
+  // Equipo ACTIVO de cada jugador: team_members (RLS abierta al seguidor por
+  // is_spectator_of_players_club) + nombre del equipo desde teams.
+  const { data: tmRows } = await supabase
+    .from('team_members')
+    .select('player_id, team_id')
+    .in('player_id', playerIds)
+    .is('left_at', null);
+  const teamOfPlayer = new Map<string, string>();
+  for (const r of tmRows ?? []) {
+    if (!teamOfPlayer.has(r.player_id)) teamOfPlayer.set(r.player_id, r.team_id);
+  }
+  const teamIds = [...new Set([...teamOfPlayer.values()])];
+  const teamNameById = new Map<string, string>();
+  if (teamIds.length > 0) {
+    const { data: teamRows } = await supabase
+      .from('teams')
+      .select('id, name')
+      .in('id', teamIds);
+    for (const tRow of teamRows ?? []) teamNameById.set(tRow.id, tRow.name);
+  }
+
+  return (sportRows ?? [])
+    .filter((p): p is typeof p & { id: string } => p.id != null)
+    .map((p) => {
+      const teamId = teamOfPlayer.get(p.id) ?? null;
+      const fullName =
+        [p.first_name, p.last_name].filter(Boolean).join(' ').trim() || '—';
+      return {
+        playerId: p.id,
+        clubId: p.club_id ?? '',
+        fullName,
+        teamId,
+        teamName: teamId ? (teamNameById.get(teamId) ?? null) : null,
+      };
+    })
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
 
 export async function getPlayerSpectatorsFromClient(
   supabase: DbClient,

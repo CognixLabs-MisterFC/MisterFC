@@ -165,3 +165,4 @@ export type {
 export * from './week-matches';
 export * from './detail';
 export * from './family-stats';
+export * from './closed-matches';

@@ -55,16 +55,30 @@ function frozenNow(periods: ClockPeriod[]): number {
  * cálculo de fase/marcador viene de core (matchPhase/computeScore); aquí solo se
  * pinta.
  */
-export function DirectoDetalleScreen({ eventId }: { eventId: string | null }) {
+export function DirectoDetalleScreen({
+  eventId,
+  clubId: clubIdProp,
+  viewerIsSpectator = false,
+  cacheKeyPrefix = 'directo',
+}: {
+  eventId: string | null;
+  /** O2-6 — clubId explícito (seguidor: el del jugador seguido). Familia lo omite
+   *  → usa el club activo (comportamiento idéntico). */
+  clubId?: string | null;
+  /** O2-6 — el seguidor resuelve nombres por `players_sporting` (no lee `players`). */
+  viewerIsSpectator?: boolean;
+  /** O2-6 — prefijo de caché (seguidor: `spec-directo`); familia lo omite. */
+  cacheKeyPrefix?: string;
+}) {
   const { activeClub, theme } = useApp();
-  const clubId = activeClub?.club.id ?? null;
+  const clubId = clubIdProp !== undefined ? clubIdProp : activeClub?.club.id ?? null;
   const accent = theme?.color ?? BRAND.navy;
 
   const { data, fromCache, loading, refresh } = useCached<MatchDetail | null>(
-    eventScopedCacheKey('directo', eventId ?? 'none'),
+    eventScopedCacheKey(cacheKeyPrefix, eventId ?? 'none'),
     (sb) =>
       clubId && eventId
-        ? getMatchDetailFromClient(sb, clubId, eventId)
+        ? getMatchDetailFromClient(sb, clubId, eventId, { viewerIsSpectator })
         : Promise.resolve(null),
   );
 

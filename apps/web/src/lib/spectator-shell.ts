@@ -5,6 +5,7 @@ import {
   createSupabaseServerClient,
   getCurrentUser,
   getCurrentUserClubs,
+  getFollowedPlayersFromClient,
   resolveActivePlayer,
   type FollowedPlayer,
 } from '@misterfc/core';
@@ -48,58 +49,12 @@ export async function loadSpectatorContext(): Promise<SpectatorContext | null> {
   const { data: isSpec } = await supabase.rpc('is_spectator');
   if (isSpec !== true) return null;
 
-  // Jugadores seguidos: player_spectators (RLS: solo filas propias del seguidor).
-  const { data: links } = await supabase
-    .from('player_spectators')
-    .select('player_id')
-    .eq('spectator_profile_id', user.id);
-  const playerIds = (links ?? []).map((l) => l.player_id);
-  if (playerIds.length === 0) return null;
-
-  // Nombre + club por la vista deportiva (nada personal).
-  const { data: sportRows } = await supabase
-    .from('players_sporting')
-    .select('id, club_id, first_name, last_name')
-    .in('id', playerIds);
-
-  // Equipo ACTIVO de cada jugador: team_members (RLS abierta al seguidor por
-  // is_spectator_of_players_club, F14C-3) + nombre del equipo desde teams.
-  const { data: tmRows } = await supabase
-    .from('team_members')
-    .select('player_id, team_id')
-    .in('player_id', playerIds)
-    .is('left_at', null);
-  const teamOfPlayer = new Map<string, string>();
-  for (const r of tmRows ?? []) {
-    if (!teamOfPlayer.has(r.player_id)) teamOfPlayer.set(r.player_id, r.team_id);
-  }
-  const teamIds = [...new Set([...teamOfPlayer.values()])];
-  const teamNameById = new Map<string, string>();
-  if (teamIds.length > 0) {
-    const { data: teamRows } = await supabase
-      .from('teams')
-      .select('id, name')
-      .in('id', teamIds);
-    for (const t of teamRows ?? []) teamNameById.set(t.id, t.name);
-  }
-
-  const players: FollowedPlayer[] = (sportRows ?? [])
-    .filter((p): p is typeof p & { id: string } => p.id != null)
-    .map((p) => {
-      const teamId = teamOfPlayer.get(p.id) ?? null;
-      const fullName =
-        [p.first_name, p.last_name].filter(Boolean).join(' ').trim() ||
-        '—';
-      return {
-        playerId: p.id,
-        clubId: p.club_id ?? '',
-        fullName,
-        teamId,
-        teamName: teamId ? (teamNameById.get(teamId) ?? null) : null,
-      };
-    })
-    .sort((a, b) => a.fullName.localeCompare(b.fullName));
-
+  // Jugadores seguidos con sus datos deportivos (extraído a core en O2-6; misma
+  // query y RLS). La web delega; comportamiento idéntico.
+  const players: FollowedPlayer[] = await getFollowedPlayersFromClient(
+    supabase,
+    user.id,
+  );
   if (players.length === 0) return null;
 
   const cookieStore = await cookies();

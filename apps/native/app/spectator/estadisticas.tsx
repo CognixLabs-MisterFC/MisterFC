@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { SpectatorEstadisticasScreen } from '@/screens/spectator/estadisticas';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.estadisticas" />;
+  return <SpectatorEstadisticasScreen />;
 }
