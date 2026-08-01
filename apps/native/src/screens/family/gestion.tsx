@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Sharing from 'expo-sharing';
 import {
   clearPlayerPhotoFromClient,
   getPlayerManagementAccessFromClient,
@@ -31,7 +32,8 @@ import { useIsOnline } from '@/data/connectivity';
 import { ChildSelector } from '@/ui/child-selector';
 import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { t, APP_LOCALE } from '@/i18n';
+import { downloadServerFile } from '@/lib/server-api';
 import { BRAND } from '@/theme';
 
 /**
@@ -140,7 +142,7 @@ export function GestionScreen() {
           online={online}
           loading={medical.loading}
         />
-        <ExportCard />
+        <ExportCard playerId={playerId} online={online} />
         <ErasureCard playerId={playerId} online={online} />
       </ScrollView>
     </View>
@@ -344,14 +346,51 @@ function MedicalCard({
   );
 }
 
-// ── Expediente PDF (server-only → deshabilitado) ──────────────────────────────
-function ExportCard() {
+// ── Expediente PDF (O2-5 F1: route handler de Next con bearer + auditoría) ─────
+function ExportCard({ playerId, online }: { playerId: string; online: boolean }) {
+  const [busy, setBusy] = useState(false);
+  const [state, setState] = useState<'idle' | 'error' | 'unavailable'>('idle');
+
+  async function download() {
+    if (!online || busy) return; // write-guard
+    setBusy(true);
+    setState('idle');
+    try {
+      const uri = await downloadServerFile(
+        `/${APP_LOCALE}/mi-ficha/export/${playerId}`,
+        'expediente.pdf',
+      );
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: t('gestion.export_title'),
+        });
+      }
+    } catch (e) {
+      setState((e as Error)?.message === 'no_web_url' ? 'unavailable' : 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <Card title={t('gestion.export_title')}>
       <Text className="mb-3 text-xs text-zinc-400">{t('gestion.export_hint')}</Text>
-      <View className="self-start rounded-full bg-zinc-100 px-4 py-2" style={{ opacity: 0.6 }}>
-        <Text className="text-xs font-medium text-zinc-500">{t('gestion.export_soon')}</Text>
-      </View>
+      <ActionButton
+        label={t('gestion.export_download')}
+        onPress={download}
+        disabled={!online || busy}
+        busy={busy}
+      />
+      {!online ? (
+        <Text className="mt-2 text-xs text-amber-600">{t('gestion.export_offline')}</Text>
+      ) : null}
+      {state === 'error' ? (
+        <Text className="mt-2 text-xs text-red-600">{t('gestion.export_error')}</Text>
+      ) : null}
+      {state === 'unavailable' ? (
+        <Text className="mt-2 text-xs text-red-600">{t('gestion.export_unavailable')}</Text>
+      ) : null}
     </Card>
   );
 }

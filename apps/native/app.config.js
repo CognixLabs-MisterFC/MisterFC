@@ -26,5 +26,9 @@ module.exports = ({ config }) => ({
     ...(process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
       ? { supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY }
       : {}),
+    // O2-5 F1 — dominio de la web (route handlers de Next). Pública, no secreto.
+    ...(process.env.EXPO_PUBLIC_WEB_URL
+      ? { webUrl: process.env.EXPO_PUBLIC_WEB_URL }
+      : {}),
   },
 });

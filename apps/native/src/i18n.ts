@@ -238,8 +238,11 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
     'gestion.medical_forbidden': 'No tienes permiso para editar estos datos',
     'gestion.medical_err': 'No se pudieron guardar. Inténtalo de nuevo.',
     'gestion.export_title': 'Descargar expediente',
-    'gestion.export_hint': 'El expediente completo en PDF (derecho de acceso) llegará pronto a la app.',
-    'gestion.export_soon': 'Próximamente',
+    'gestion.export_hint': 'El expediente completo de tu hijo en PDF (derecho de acceso RGPD).',
+    'gestion.export_download': 'Descargar PDF',
+    'gestion.export_offline': 'Sin conexión: no puedes descargar ahora',
+    'gestion.export_error': 'No se pudo generar el expediente. Inténtalo de nuevo.',
+    'gestion.export_unavailable': 'Descarga no disponible en esta versión.',
     'gestion.erasure_title': 'Derecho al olvido',
     'gestion.erasure_hint': 'Solicita la supresión de todos los datos de tu hijo. La decisión la toma la dirección del club.',
     'gestion.erasure_button': 'Solicitar supresión',
@@ -497,6 +500,9 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
 };
 
 const LOCALE: Locale = detectLocale();
+
+/** Locale activo de la app (para construir URLs de route handlers de Next). */
+export const APP_LOCALE: string = LOCALE;
 
 export function t(key: string, vars?: Record<string, string>): string {
   let msg = MESSAGES[LOCALE][key] ?? MESSAGES.es[key] ?? key;
