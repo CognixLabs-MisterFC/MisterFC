@@ -119,6 +119,16 @@ const STAFF_MENU_COORD_EXTRA: MenuDef[] = [
   { name: 'jugadores-consulta', labelKey: 'nav.jugadores_consulta' },
 ];
 
+/**
+ * O2-7a — Rutas OCULTAS de staff: existen como fichero pero NO se listan en el menú
+ * (se alcanzan por navegación con parámetros). Deben declararse `href:null` o
+ * saldrían como pestaña de la barra. `asistencia-sesion` = marcado de una sesión
+ * (?eventId), alcanzado desde la lista de asistencia.
+ */
+const STAFF_HIDDEN: MenuDef[] = [
+  { name: 'asistencia-sesion', labelKey: 'nav.asistencia' },
+];
+
 const DIRECTION_MENU: MenuDef[] = [
   { name: 'inicio-direccion', labelKey: 'nav.inicio_direccion' },
   { name: 'dashboard', labelKey: 'nav.dashboard' },
@@ -166,7 +176,8 @@ const SPECTATOR_HIDDEN: MenuDef[] = [
 ];
 
 export function allMenuFiles(area: ChromeArea): MenuDef[] {
-  if (area === 'staff') return [...STAFF_MENU_BASE, ...STAFF_MENU_COORD_EXTRA];
+  if (area === 'staff')
+    return [...STAFF_MENU_BASE, ...STAFF_MENU_COORD_EXTRA, ...STAFF_HIDDEN];
   // family añade sus rutas ocultas (href:null pero no listadas en el menú).
   if (area === 'family') return [...FAMILY_MENU, ...FAMILY_HIDDEN];
   if (area === 'spectator') return [...AREA_MENU.spectator, ...SPECTATOR_HIDDEN];

@@ -1,5 +1,5 @@
-import { Placeholder } from '@/nav/placeholder';
+import { AsistenciaListScreen } from '@/screens/staff/asistencia';
 
 export default function Screen() {
-  return <Placeholder labelKey="nav.asistencia" />;
+  return <AsistenciaListScreen />;
 }
