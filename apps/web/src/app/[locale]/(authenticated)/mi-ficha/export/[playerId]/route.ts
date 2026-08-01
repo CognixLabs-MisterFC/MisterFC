@@ -25,7 +25,6 @@
 import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import {
-  createSupabaseServerClient,
   formatPlayerName,
   attendanceBreakdown,
   PLAYER_POSITIONS,
@@ -33,8 +32,7 @@ import {
   type AttendanceRow,
   type PlayerPosition,
 } from '@misterfc/core';
-import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { loadShellContext } from '@/lib/auth-shell';
+import { resolveUserFromRequest } from '@/lib/resolve-user';
 import { loadPlayerCareer } from '@/lib/player-career';
 import { loadPlayerBadges } from '@/lib/player-badges';
 import {
@@ -79,17 +77,18 @@ function ageFromDob(dob: string | null): number | null {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ locale: string; playerId: string }> },
 ): Promise<Response> {
   const { locale, playerId } = await params;
 
-  const ctx = await loadShellContext();
-  if (!ctx) return new Response('Unauthorized', { status: 401 });
+  // O2-5 F1 — acepta cookie (web, idéntico) O Authorization: Bearer (app nativa).
+  // Devuelve un cliente RLS-scoped al usuario; NUNCA admin. Token inválido → 401.
+  const auth = await resolveUserFromRequest(req);
+  if (!auth) return new Response('Unauthorized', { status: 401 });
+  const { supabase, shell } = auth;
 
-  const supabase = createSupabaseServerClient(await createCookieAdapter());
-
-  // Jugador (RLS: el tutor ve a su hijo). 404 si no existe / otro club / SUPRIMIDO.
+  // Jugador (RLS: el tutor ve a su hijo). 404 si no existe / SUPRIMIDO.
   const { data: player } = await supabase
     .from('players')
     .select(
@@ -97,7 +96,12 @@ export async function GET(
     )
     .eq('id', playerId)
     .maybeSingle();
-  if (!player || player.club_id !== ctx.activeClub.club.id || player.erased_at) {
+  if (!player || player.erased_at) {
+    return new Response('Not found', { status: 404 });
+  }
+  // Camino COOKIE: se conserva EXACTA la comprobación de club activo de hoy. En
+  // bearer no hay club activo → el club se deriva del propio jugador más abajo.
+  if (shell && player.club_id !== shell.activeClub.club.id) {
     return new Response('Not found', { status: 404 });
   }
 
@@ -373,13 +377,28 @@ export async function GET(
     .sort((a, b) => (PLAYER_ORDER[a.consent_type] ?? 9) - (PLAYER_ORDER[b.consent_type] ?? 9))
     .map(toConsent);
 
+  // Nombre + logo del club para la cabecera. Cookie: del club activo (idéntico a
+  // hoy). Bearer: derivado del club del jugador (misma RLS del tutor lo lee). El
+  // club del jugador ES el club activo en el flujo web, así que la salida coincide.
+  let clubName = shell?.activeClub.club.name ?? null;
+  let clubLogoPath = shell?.activeClub.club.logo_path ?? null;
+  if (!shell) {
+    const { data: clubRow } = await supabase
+      .from('clubs')
+      .select('name, logo_path')
+      .eq('id', player.club_id)
+      .maybeSingle();
+    clubName = clubRow?.name ?? null;
+    clubLogoPath = clubRow?.logo_path ?? null;
+  }
+
   // F14B-9b — logo del club en la cabecera del PDF (base64; null si no hay/falla).
-  const logoDataUrl = await clubLogoDataUrl(supabase, ctx.activeClub.club.logo_path);
+  const logoDataUrl = await clubLogoDataUrl(supabase, clubLogoPath);
 
   const doc = AccessExportDocument({
     t,
     tInf,
-    clubName: ctx.activeClub.club.name ?? 'MisterFC',
+    clubName: clubName ?? 'MisterFC',
     logoDataUrl,
     generatedAtLabel: t('generated', {
       date: new Intl.DateTimeFormat(locale, {
