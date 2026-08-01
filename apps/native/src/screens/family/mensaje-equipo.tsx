@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import {
   getTeamMessagesFromClient,
@@ -12,9 +12,10 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { useForegroundPoll } from '@/hooks/use-foreground-poll';
+import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { DisabledComposer } from './mensaje-detalle';
-import { t } from '@/i18n';
+import { Composer } from './mensaje-detalle';
+import { t, APP_LOCALE } from '@/i18n';
 import { BRAND } from '@/theme';
 
 const MESSAGES_POLL_MS = 5000;
@@ -45,6 +46,26 @@ export function MensajeEquipoScreen({
         : Promise.resolve([]),
   );
   useForegroundPoll(refresh, MESSAGES_POLL_MS);
+
+  // Envío al chat de equipo: insert como el usuario (RLS) + fan-out en el endpoint.
+  // Tras el ok, refresco inmediato (el polling lo confirmaría). Sin cola diferida.
+  const onSend = useCallback(
+    async (text: string): Promise<boolean> => {
+      if (!teamConversationId) return false;
+      try {
+        const res = await callServerEndpoint('/api/messages/send', {
+          method: 'POST',
+          body: { kind: 'team', teamConversationId, body: text, locale: APP_LOCALE },
+        });
+        if (!res.ok) return false;
+        refresh();
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [teamConversationId, refresh],
+  );
 
   useEffect(() => {
     if (!online || !teamConversationId || !userId) return;
@@ -86,7 +107,7 @@ export function MensajeEquipoScreen({
         </ScrollView>
       )}
 
-      <DisabledComposer />
+      <Composer online={online} accent={accent} onSend={onSend} />
     </View>
   );
 }

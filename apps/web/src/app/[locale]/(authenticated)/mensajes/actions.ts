@@ -8,10 +8,13 @@ import {
   getTeamMessagesFromClient,
   sendMessageSchema,
   startConversationSchema,
-  MESSAGE_RATE_LIMIT,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
+import {
+  sendDirectMessage,
+  sendTeamMessage as sendTeamMessageWrapped,
+} from '@/lib/send-message';
 import { userCanMessageInClub } from '@/lib/messaging-permissions';
 import { getActiveSeasonLabel } from '@/lib/active-season';
 
@@ -128,107 +131,21 @@ export async function sendMessage(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // Verificar que la conversation existe Y el user es participant (RLS lo
-  // bloquearía igualmente; el SELECT permite devolver error semántico).
-  const { data: conv } = await supabase
-    .from('conversations')
-    .select('id, club_id, player_id, coach_profile_id')
-    .eq('id', parsed.data.conversation_id)
-    .maybeSingle();
-  if (!conv) return { error: 'conversation_not_found' };
-
-  // Rate limit: contar mensajes propios en los últimos 5 min.
-  const windowStartIso = new Date(
-    Date.now() - MESSAGE_RATE_LIMIT.windowSeconds * 1000,
-  ).toISOString();
-  const { count } = await supabase
-    .from('messages')
-    .select('id', { count: 'exact', head: true })
-    .eq('sender_profile_id', ctx.user.id)
-    .gte('sent_at', windowStartIso);
-  if ((count ?? 0) >= MESSAGE_RATE_LIMIT.maxMessages) {
-    return { error: 'rate_limited' };
-  }
-
-  const { data: inserted, error: insErr } = await supabase
-    .from('messages')
-    .insert({
-      conversation_id: parsed.data.conversation_id,
-      sender_profile_id: ctx.user.id,
-      body: parsed.data.body,
-    })
-    .select('id')
-    .single();
-
-  if (insErr || !inserted) {
-    if (insErr?.code === '42501') return { error: 'forbidden' };
-    Sentry.captureException(insErr ?? new Error('insert returned null'), {
-      tags: { feature: 'messaging', step: 'send_message' },
-      extra: { conversation_id: parsed.data.conversation_id },
-    });
-    return { error: 'generic' };
-  }
-
-  // F5.7 — Notificación al otro participante. Para la conversación
-  // coach<>player: si el sender es el coach, recipient son todas las
-  // accounts del player (jugador + familia). Si el sender es la familia o
-  // el propio jugador, recipient es el coach.
-  try {
-    const { data: convExtra } = await supabase
-      .from('conversations')
-      .select('coach_profile_id, player_id')
-      .eq('id', parsed.data.conversation_id)
-      .maybeSingle();
-
-    if (convExtra) {
-      const recipientUserIds: string[] = [];
-      if (convExtra.coach_profile_id === ctx.user.id) {
-        // Coach → familia / jugador
-        const { data: pas } = await supabase
-          .from('player_accounts')
-          .select('profile_id')
-          .eq('player_id', convExtra.player_id);
-        for (const r of pas ?? []) {
-          if (r.profile_id) recipientUserIds.push(r.profile_id as string);
-        }
-      } else {
-        // Family / player → coach
-        recipientUserIds.push(convExtra.coach_profile_id);
-      }
-
-      const senderName = ctx.profile.full_name ?? 'Mensaje nuevo';
-      const preview = parsed.data.body.slice(0, 140);
-      const { emitNotificationFanOut } = await import('@/lib/notify-bus');
-      await emitNotificationFanOut(
-        recipientUserIds.map((u) => ({ user_id: u })),
-        {
-          type: 'new_message',
-          in_app_payload: {
-            conversation_id: parsed.data.conversation_id,
-            message_id: inserted.id,
-            sender_profile_id: ctx.user.id,
-            deep_link: `/${locale}/mensajes/${parsed.data.conversation_id}`,
-          },
-          push_payload: {
-            title: senderName,
-            body: preview,
-            deep_link: `/${locale}/mensajes/${parsed.data.conversation_id}`,
-            tag: `conversation:${parsed.data.conversation_id}`,
-          },
-          dedupe_base_prefix: `new_message:${inserted.id}`,
-        },
-      );
-    }
-  } catch (notifyErr) {
-    Sentry.captureException(notifyErr, {
-      tags: { feature: 'messaging', step: 'notify' },
-      extra: { message_id: inserted.id },
-    });
-  }
+  // Orquestación compartida con el route handler nativo (O2-5 F3): insert como el
+  // usuario (RLS = gate) + fan-out DESPUÉS. El wrapper inyecta el fan-out real
+  // (service-role) y Sentry. Comportamiento web idéntico.
+  const res = await sendDirectMessage(supabase, {
+    conversationId: parsed.data.conversation_id,
+    body: parsed.data.body,
+    senderId: ctx.user.id,
+    senderName: ctx.profile.full_name ?? null,
+    locale,
+  });
+  if ('error' in res) return { error: res.error };
 
   revalidatePath(`/${locale}/mensajes`);
   revalidatePath(`/${locale}/mensajes/${parsed.data.conversation_id}`);
-  return { ok: { message_id: inserted.id } };
+  return { ok: { message_id: res.ok.message.id } };
 }
 
 export type MarkReadResult = { ok?: true; error?: 'forbidden' | 'generic' };
@@ -413,111 +330,26 @@ export async function sendTeamMessage(
   locale: string,
   input: { team_conversation_id: string; body: string },
 ): Promise<SendTeamMessageResult> {
-  const body = typeof input.body === 'string' ? input.body.trim() : '';
-  if (
-    !input.team_conversation_id ||
-    body.length === 0 ||
-    body.length > 2000
-  ) {
-    return { error: 'invalid_payload' };
-  }
-
   const ctx = await loadShellContext();
   if (!ctx) return { error: 'forbidden' };
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // Resolver la conversación (RLS: solo miembro la ve) + el team para el fan-out.
-  const { data: conv } = await supabase
-    .from('team_conversations')
-    .select('id, team_id, teams!inner(name)')
-    .eq('id', input.team_conversation_id)
-    .maybeSingle();
-  if (!conv) return { error: 'conversation_not_found' };
-  const teamName =
-    (conv as unknown as { teams: { name: string } }).teams?.name ?? '';
-
-  // Rate limit por emisor (mismo límite que el 1:1), contando team_messages.
-  const windowStartIso = new Date(
-    Date.now() - MESSAGE_RATE_LIMIT.windowSeconds * 1000,
-  ).toISOString();
-  const { count } = await supabase
-    .from('team_messages')
-    .select('id', { count: 'exact', head: true })
-    .eq('sender_profile_id', ctx.user.id)
-    .gte('created_at', windowStartIso);
-  if ((count ?? 0) >= MESSAGE_RATE_LIMIT.maxMessages) {
-    return { error: 'rate_limited' };
-  }
-
-  const { data: inserted, error: insErr } = await supabase
-    .from('team_messages')
-    .insert({
-      team_conversation_id: input.team_conversation_id,
-      sender_profile_id: ctx.user.id,
-      body,
-    })
-    .select('id')
-    .single();
-
-  if (insErr || !inserted) {
-    if (insErr?.code === '42501') return { error: 'forbidden' };
-    Sentry.captureException(insErr ?? new Error('insert returned null'), {
-      tags: { feature: 'messaging', step: 'send_team_message' },
-      extra: { team_conversation_id: input.team_conversation_id },
-    });
-    return { error: 'generic' };
-  }
-
-  // Fan-out a los miembros derivados MENOS el emisor. team_chat_member_profile_ids
-  // (SECURITY DEFINER) devuelve staff ∪ jugador/familia vigentes ∪ directores.
-  try {
-    const { data: memberIds } = await supabase.rpc(
-      'team_chat_member_profile_ids',
-      { p_team_id: conv.team_id },
-    );
-    const recipients = ((memberIds ?? []) as string[]).filter(
-      (id) => id !== ctx.user.id,
-    );
-    // [F5B-4] Punto de extensión: aquí se filtrarán los directores en modo
-    // observer antes del fan-out.
-    if (recipients.length > 0) {
-      const senderName = ctx.profile.full_name ?? 'Mensaje nuevo';
-      const preview = body.slice(0, 140);
-      const deepLink = `/${locale}/mensajes/equipo/${conv.team_id}`;
-      const { emitNotificationFanOut } = await import('@/lib/notify-bus');
-      await emitNotificationFanOut(
-        recipients.map((u) => ({ user_id: u })),
-        {
-          type: 'new_message',
-          in_app_payload: {
-            team_conversation_id: input.team_conversation_id,
-            message_id: inserted.id,
-            team_id: conv.team_id,
-            sender_profile_id: ctx.user.id,
-            deep_link: deepLink,
-          },
-          push_payload: {
-            title: teamName ? `${teamName}` : senderName,
-            body: `${senderName}: ${preview}`,
-            deep_link: deepLink,
-            tag: `team_conversation:${input.team_conversation_id}`,
-          },
-          dedupe_base_prefix: `new_message:${inserted.id}`,
-        },
-      );
-    }
-  } catch (notifyErr) {
-    Sentry.captureException(notifyErr, {
-      tags: { feature: 'messaging', step: 'notify_team' },
-      extra: { message_id: inserted.id },
-    });
-  }
+  // Orquestación compartida (O2-5 F3): insert como el usuario (RLS = gate) +
+  // fan-out a los miembros derivados DESPUÉS. Wrapper inyecta fan-out + Sentry.
+  const res = await sendTeamMessageWrapped(supabase, {
+    teamConversationId: input.team_conversation_id,
+    body: input.body,
+    senderId: ctx.user.id,
+    senderName: ctx.profile.full_name ?? null,
+    locale,
+  });
+  if ('error' in res) return { error: res.error };
 
   revalidatePath(`/${locale}/mensajes`);
-  revalidatePath(`/${locale}/mensajes/equipo/${conv.team_id}`);
-  return { ok: { message_id: inserted.id } };
+  revalidatePath(`/${locale}/mensajes/equipo/${res.ok.teamId}`);
+  return { ok: { message_id: res.ok.message.id } };
 }
 
 export type MessageableTeam = { id: string; name: string };
