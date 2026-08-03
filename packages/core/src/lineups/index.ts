@@ -80,6 +80,10 @@ export {
 } from './positions';
 export type { PositionKey } from './positions';
 
+// O2-8a — lectura READ-ONLY de la alineación de un partido (pintar, app nativa).
+export { getLineupForEventFromClient } from './queries';
+export type { LineupView, LineupRosterPlayer } from './queries';
+
 export {
   calledUpOnPlace,
   calledUpOnRemove,

@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   calledUpLimitApplies,
   calledUpOverflow,
@@ -59,6 +60,7 @@ export function ConvocatoriaStaffDetalleScreen({
 }) {
   const { activeClub, theme } = useApp();
   const { user } = useSession();
+  const router = useRouter();
   const online = useIsOnline();
   const clubId = activeClub?.club.id ?? null;
   const role = (activeClub?.role ?? null) as Role | null;
@@ -196,6 +198,20 @@ export function ConvocatoriaStaffDetalleScreen({
             total: String(roster.length),
           })}
         </Text>
+        {/* O2-8a — acceso a la alineación del partido (pintar; editar llega en 8b). */}
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: '/staff/alineacion',
+              params: { eventId: data.event.id },
+            })
+          }
+          className="mt-2 self-start rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
+        >
+          <Text className="text-xs font-medium" style={{ color: accent }}>
+            {t('convocatorias_staff.view_lineup')}
+          </Text>
+        </Pressable>
       </View>
 
       {/* Aviso: sin permiso (gate server-side) o sin conexión (write-guard). */}
