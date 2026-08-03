@@ -166,3 +166,18 @@ export * from './week-matches';
 export * from './detail';
 export * from './family-stats';
 export * from './closed-matches';
+
+// O2-9a — ESCRITURA del reloj/estado del directo (staff).
+export {
+  startMatchFromClient,
+  pauseClockFromClient,
+  resumeClockFromClient,
+  endPeriodFromClient,
+  startNextPeriodFromClient,
+  adjustClockFromClient,
+  finishMatchFromClient,
+  reopenMatchFromClient,
+  consolidateMatchAndPersistFromClient,
+  userCanRecordMatchFromClient,
+} from './state-writes';
+export type { ClockWriteError, ClockWriteOutcome } from './state-writes';
