@@ -26,3 +26,17 @@ export type {
   ClearCallupDecisionOutcome,
   SyncErrorLogger,
 } from './staff-writes';
+
+// O2-7b-2 — publicar / republicar convocatoria (orquestación con fan-out inyectado).
+export {
+  publishCallupFromClient,
+  republishCallupFromClient,
+} from './publish';
+export type {
+  CallupFanOut,
+  CallupPublishLogger,
+  PublishCallupError,
+  PublishCallupOutcome,
+  RepublishCallupError,
+  RepublishCallupOutcome,
+} from './publish';

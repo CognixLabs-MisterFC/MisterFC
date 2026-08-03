@@ -10,28 +10,32 @@ import {
   upsertCallupDecisionFromClient,
   type CallupDecisionRow,
   type CallupDetail,
+  type CallupMetaRow,
   type CallupPlayerRow,
   type CallupResponseRow,
   type Role,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
+import { callServerEndpoint } from '@/lib/server-api';
 import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { t } from '@/i18n';
+import { PublishCallupSheet } from './publish-callup-sheet';
 
 /**
- * O2-7b-1 — Detalle de convocatoria (staff): VER RESPUESTAS de disponibilidad de las
- * familias + MARCAR/DESMARCAR citados. Convocado = roster − descartados (derivado);
- * cada decisión es un upsert INCREMENTAL por jugador (core `upsertCallupDecision
- * FromClient`) o su borrado (`clearCallupDecisionFromClient`, vuelve a convocado por
- * defecto), detrás del WRITE-GUARD: sin red no se decide (aviso). El GATE de quién
- * convoca es server-side (`user_can_manage_callup`/RLS); la UI deshabilita lo que el
- * server rechazaría (`canManage`) y un rechazo (42501→forbidden) se maneja con gracia.
- * NADA de publicar aquí (eso es 7b-2). El EQUIPO lo fija el evento. Caché event-scoped
- * (eventId en la key); los Map de core se serializan a Record para cachearlos offline.
+ * O2-7b-1/7b-2 — Detalle de convocatoria (staff): VER RESPUESTAS de disponibilidad +
+ * MARCAR/DESMARCAR citados (7b-1) + PUBLICAR / REPUBLICAR (7b-2). Convocado = roster −
+ * descartados (derivado); cada decisión es un upsert INCREMENTAL por jugador. PUBLICAR
+ * abre la hoja nativa (hora+lugar) → `/api/callups/publish` con Bearer; REPUBLICAR (si
+ * ya publicada y hay cambios sin publicar) es un botón directo al mismo endpoint
+ * (mode:'republish'). Todo detrás del WRITE-GUARD: sin red → deshabilitado. El GATE de
+ * quién convoca/publica es server-side (`user_can_manage_callup`/RLS); la UI deshabilita
+ * lo que el server rechazaría (`canManage`) y un rechazo (42501/403) se maneja con
+ * gracia. El fan-out (campana + push) lo dispara el servidor tras publicar. El EQUIPO lo
+ * fija el evento. Caché event-scoped; los Map de core se serializan a Record (offline).
  */
 
 /** DTO serializable para la caché (JSON no soporta Map). */
@@ -41,6 +45,11 @@ type CallupView = {
   responses: Record<string, CallupResponseRow>;
   decisions: Record<string, CallupDecisionRow>;
   canManage: boolean;
+  /** 7b-2 — estado de publicación (para el botón publicar vs republicar). */
+  published: boolean;
+  hasUnpublishedChanges: boolean;
+  /** Meta previa (si hay borrador) para prefill de la hoja de publicar. */
+  meta: CallupMetaRow | null;
 };
 
 export function ConvocatoriaStaffDetalleScreen({
@@ -58,6 +67,8 @@ export function ConvocatoriaStaffDetalleScreen({
 
   const [busy, setBusy] = useState<string | null>(null);
   const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [pubBusy, setPubBusy] = useState(false);
 
   const { data, fromCache, loading, refresh } = useCached<CallupView | null>(
     eventScopedCacheKey('convocatoria-staff', eventId ?? 'none'),
@@ -76,11 +87,35 @@ export function ConvocatoriaStaffDetalleScreen({
         responses: Object.fromEntries(d.responses),
         decisions: Object.fromEntries(d.decisions),
         canManage: d.canManage,
+        published: d.meta?.published_at != null,
+        hasUnpublishedChanges: d.hasUnpublishedChanges,
+        meta: d.meta,
       };
     },
   );
 
   const canWrite = !!data?.canManage && online;
+
+  // 7b-2 — REPUBLICAR (botón directo, sin formulario): re-publica y notifica
+  // callup_updated. Solo tras publicar con éxito el servidor dispara el fan-out.
+  const onRepublish = useCallback(async () => {
+    if (!eventId || !canWrite || pubBusy) return; // write-guard + gate (cliente)
+    setPubBusy(true);
+    setErrorKey(null);
+    try {
+      const res = await callServerEndpoint('/api/callups/publish', {
+        body: { mode: 'republish', eventId },
+      });
+      setPubBusy(false);
+      if (res.status === 200) refresh();
+      else if (res.status === 403)
+        setErrorKey('convocatorias_staff.pub_err_forbidden');
+      else setErrorKey('convocatorias_staff.pub_err_generic');
+    } catch {
+      setPubBusy(false);
+      setErrorKey('convocatorias_staff.pub_err_generic');
+    }
+  }, [eventId, canWrite, pubBusy, refresh]);
 
   const onDecide = useCallback(
     async (playerId: string, decision: 'called_up' | 'discarded') => {
@@ -184,6 +219,49 @@ export function ConvocatoriaStaffDetalleScreen({
         </View>
       ) : null}
 
+      {/* 7b-2 — publicar / republicar. Solo lo ve quien puede gestionar (gate real
+          = RLS); write-guard: sin red → deshabilitado. */}
+      {data.canManage ? (
+        <View className="px-4 pb-1 pt-1">
+          {!data.published ? (
+            <Pressable
+              onPress={() => setSheetOpen(true)}
+              disabled={!online}
+              className="rounded-xl py-2.5 active:opacity-80"
+              style={{ backgroundColor: accent, opacity: online ? 1 : 0.4 }}
+            >
+              <Text className="text-center text-sm font-semibold text-white">
+                {t('convocatorias_staff.publish_cta')}
+              </Text>
+            </Pressable>
+          ) : data.hasUnpublishedChanges ? (
+            <View className="flex-row items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2">
+              <Text className="flex-1 text-xs text-amber-700">
+                {t('convocatorias_staff.pending_changes')}
+              </Text>
+              <Pressable
+                onPress={onRepublish}
+                disabled={!online || pubBusy}
+                className="rounded-full px-3 py-1.5 active:opacity-80"
+                style={{ backgroundColor: accent, opacity: !online || pubBusy ? 0.4 : 1 }}
+              >
+                <Text className="text-xs font-semibold text-white">
+                  {pubBusy
+                    ? t('convocatorias_staff.publishing')
+                    : t('convocatorias_staff.republish_cta')}
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View className="flex-row items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2">
+              <Text className="text-xs font-medium text-emerald-700">
+                {t('convocatorias_staff.published_state')}
+              </Text>
+            </View>
+          )}
+        </View>
+      ) : null}
+
       {roster.length === 0 ? (
         <EmptyState message={t('convocatorias_staff.roster_empty')} />
       ) : (
@@ -260,6 +338,20 @@ export function ConvocatoriaStaffDetalleScreen({
           }}
         />
       )}
+
+      {/* 7b-2 — hoja de publicar (autónoma: hora + lugar + opcionales). */}
+      <PublishCallupSheet
+        visible={sheetOpen}
+        eventId={data.event.id}
+        matchStartsAt={data.event.starts_at}
+        meta={data.meta}
+        accent={accent}
+        onClose={() => setSheetOpen(false)}
+        onPublished={() => {
+          setSheetOpen(false);
+          refresh();
+        }}
+      />
     </View>
   );
 }
