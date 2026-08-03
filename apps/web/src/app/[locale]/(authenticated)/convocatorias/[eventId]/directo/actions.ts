@@ -20,25 +20,25 @@
 import { revalidatePath } from 'next/cache';
 import {
   addTimelineEventSchema,
-  adjustClockPatch,
-  adjustClockSchema,
   assignPlayersToFormation,
-  buildNextPeriod,
   canRegisterSubstitution,
   changeFormationSchema,
   clockFieldsForMinute,
-  clockSecondsAt,
-  type ClockMutation,
   type ClockPeriod,
-  consolidateMatch,
-  type ConsolidationEvent,
+  consolidateMatchAndPersistFromClient,
   createSupabaseServerClient,
-  currentPeriod,
+  startMatchFromClient,
+  pauseClockFromClient,
+  resumeClockFromClient,
+  endPeriodFromClient,
+  startNextPeriodFromClient,
+  adjustClockFromClient,
+  finishMatchFromClient,
+  reopenMatchFromClient,
   deleteMatchEventSchema,
   DEFAULT_REGIME,
   deriveExpelledPlayers,
   deriveSquad,
-  endPeriodPatch,
   type FieldPlayerPos,
   type FieldSlot,
   formationsForFormat,
@@ -49,11 +49,8 @@ import {
   matchEventRefSchema,
   moveLivePlayer,
   movePlayerSchema,
-  nextPeriodAfter,
-  nextRegularPeriod,
   isExpelled,
   isFieldEventType,
-  pauseClockPatch,
   type PeriodKind,
   type PlayerEventType,
   playerEventClockFields,
@@ -69,10 +66,8 @@ import {
   registerSubstitutionSchema,
   resolveCardOutcome,
   type SubstitutionRegime,
-  resumeClockPatch,
   setAbsenceSchema,
   setMatchNotesSchema,
-  startNextPeriodSchema,
   type Sub,
   type TeamFormat,
   updateEventActorSchema,
@@ -125,24 +120,6 @@ function revalidate(eventId: string) {
 
 type Supa = ReturnType<typeof createSupabaseServerClient>;
 
-/** Parche camelCase → fila snake_case de match_periods (solo campos presentes). */
-type PeriodUpdate = {
-  base_offset_seconds?: number;
-  accumulated_seconds?: number;
-  running?: boolean;
-  last_started_at?: string | null;
-  ended?: boolean;
-};
-function toPeriodRow(m: ClockMutation): PeriodUpdate {
-  const row: PeriodUpdate = {};
-  if (m.baseOffsetSeconds !== undefined) row.base_offset_seconds = m.baseOffsetSeconds;
-  if (m.accumulatedSeconds !== undefined) row.accumulated_seconds = m.accumulatedSeconds;
-  if (m.running !== undefined) row.running = m.running;
-  if (m.lastStartedAt !== undefined) row.last_started_at = m.lastStartedAt;
-  if (m.ended !== undefined) row.ended = m.ended;
-  return row;
-}
-
 type PeriodRow = ClockPeriod & { id: string };
 
 /** Carga los periodos del partido como proyección del motor (con id para update). */
@@ -192,114 +169,12 @@ function now() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function startMatch(input: unknown): Promise<ClockActionState> {
-  const parsed = matchEventRefSchema.safeParse(input);
-  if (!parsed.success) return { error: 'invalid' };
-  const { event_id } = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'forbidden' };
-
-  const { data: ev } = await supabase
-    .from('events')
-    .select('id, club_id, team_id, type')
-    .eq('id', event_id)
-    .maybeSingle();
-  if (!ev) return { error: 'not_found' };
-  if (!isManageableMatchType(ev.type as string)) return { error: 'invalid' };
-  if (ev.team_id == null) return { error: 'invalid' };
-  const clubId = ev.club_id as string;
-
-  const { ms, iso } = now();
-
-  // 1. match_state — crear o transicionar a 'live'.
-  const status = await loadStatus(supabase, event_id);
-  if (status === 'closed') return { error: 'already_closed' };
-
-  if (status == null) {
-    const { error } = await supabase.from('match_state').insert({
-      event_id,
-      club_id: clubId, // el trigger lo deriva igualmente; lo pasamos por el NOT NULL.
-      status: 'live',
-      started_at: iso,
-      operator_profile_id: user.id,
-      lock_heartbeat_at: iso,
-    });
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  } else {
-    // not_started → live (sella started_at si faltaba), o live → refresca lock.
-    const patch: {
-      status: 'live';
-      operator_profile_id: string;
-      lock_heartbeat_at: string;
-      started_at?: string;
-    } = {
-      status: 'live',
-      operator_profile_id: user.id,
-      lock_heartbeat_at: iso,
-    };
-    if (status === 'not_started') patch.started_at = iso;
-    const { error } = await supabase
-      .from('match_state')
-      .update(patch)
-      .eq('event_id', event_id);
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  }
-
-  // 2. Congelar el once desde la alineación oficial (solo la primera vez).
-  const { data: existingStarters } = await supabase
-    .from('match_starters')
-    .select('player_id')
-    .eq('event_id', event_id)
-    .limit(1);
-  if ((existingStarters ?? []).length === 0) {
-    const { data: official } = await supabase
-      .from('lineups')
-      .select('id')
-      .eq('event_id', event_id)
-      .eq('is_official', true)
-      .maybeSingle();
-    if (!official) return { error: 'no_official_lineup' };
-
-    const { data: positions } = await supabase
-      .from('lineup_positions')
-      .select('player_id, position_code')
-      .eq('lineup_id', official.id as string)
-      .eq('location', 'field');
-    const starters = (positions ?? []).map((p) => ({
-      event_id,
-      player_id: p.player_id as string,
-      position_code: (p.position_code as string | null) ?? null,
-    }));
-    if (starters.length > 0) {
-      const { error } = await supabase.from('match_starters').insert(starters);
-      if (error) return { error: mapPgErr(error.message, error.code) };
-    }
-  }
-
-  // 3. Arrancar la 1ª parte (solo si aún no hay periodos).
-  const periods = await loadPeriods(supabase, event_id);
-  if (periods.length === 0) {
-    const first = buildNextPeriod([], ms, iso);
-    if (first) {
-      const { error } = await supabase.from('match_periods').insert({
-        event_id,
-        period: first.period,
-        ordinal: first.ordinal,
-        base_offset_seconds: first.baseOffsetSeconds,
-        accumulated_seconds: first.accumulatedSeconds,
-        running: first.running,
-        last_started_at: first.lastStartedAt,
-        ended: first.ended,
-      });
-      if (error) return { error: mapPgErr(error.message, error.code) };
-    }
-  }
-
-  revalidate(event_id);
+  const r = await startMatchFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  const ref = matchEventRefSchema.safeParse(input);
+  if (ref.success) revalidate(ref.data.event_id);
   return { success: true };
 }
 
@@ -467,30 +342,12 @@ export async function prepareMatchSheet(input: unknown): Promise<ClockActionStat
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function pauseClock(input: unknown): Promise<ClockActionState> {
-  const parsed = matchEventRefSchema.safeParse(input);
-  if (!parsed.success) return { error: 'invalid' };
-  const { event_id } = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
-
-  const periods = await loadPeriods(supabase, event_id);
-  const running = periods.find((p) => p.running);
-  if (!running) {
-    revalidate(event_id);
-    return { success: true }; // ya estaba en pausa
-  }
-
-  const { ms } = now();
-  const { error } = await supabase
-    .from('match_periods')
-    .update(toPeriodRow(pauseClockPatch(running, ms)))
-    .eq('id', running.id);
-  if (error) return { error: mapPgErr(error.message, error.code) };
-
-  revalidate(event_id);
+  const r = await pauseClockFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  const ref = matchEventRefSchema.safeParse(input);
+  if (ref.success) revalidate(ref.data.event_id);
   return { success: true };
 }
 
@@ -499,33 +356,12 @@ export async function pauseClock(input: unknown): Promise<ClockActionState> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function resumeClock(input: unknown): Promise<ClockActionState> {
-  const parsed = matchEventRefSchema.safeParse(input);
-  if (!parsed.success) return { error: 'invalid' };
-  const { event_id } = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
-
-  const periods = await loadPeriods(supabase, event_id);
-  const cur = currentPeriod(periods) as PeriodRow | null;
-  if (!cur) return { error: 'no_period' };
-  if (cur.running) {
-    revalidate(event_id);
-    return { success: true }; // ya corría
-  }
-  // Un periodo TERMINADO no se reanuda: hay que empezar el siguiente (descanso).
-  if (cur.ended) return { error: 'period_ended' };
-
-  const { iso } = now();
-  const { error } = await supabase
-    .from('match_periods')
-    .update(toPeriodRow(resumeClockPatch(iso)))
-    .eq('id', cur.id);
-  if (error) return { error: mapPgErr(error.message, error.code) };
-
-  revalidate(event_id);
+  const r = await resumeClockFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  const ref = matchEventRefSchema.safeParse(input);
+  if (ref.success) revalidate(ref.data.event_id);
   return { success: true };
 }
 
@@ -534,31 +370,12 @@ export async function resumeClock(input: unknown): Promise<ClockActionState> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function endPeriod(input: unknown): Promise<ClockActionState> {
-  const parsed = matchEventRefSchema.safeParse(input);
-  if (!parsed.success) return { error: 'invalid' };
-  const { event_id } = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
-
-  const periods = await loadPeriods(supabase, event_id);
-  const cur = currentPeriod(periods) as PeriodRow | null;
-  if (!cur) return { error: 'no_period' };
-  if (cur.ended) {
-    revalidate(event_id);
-    return { success: true }; // ya terminado
-  }
-
-  const { ms } = now();
-  const { error } = await supabase
-    .from('match_periods')
-    .update(toPeriodRow(endPeriodPatch(cur, ms)))
-    .eq('id', cur.id);
-  if (error) return { error: mapPgErr(error.message, error.code) };
-
-  revalidate(event_id);
+  const r = await endPeriodFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  const ref = matchEventRefSchema.safeParse(input);
+  if (ref.success) revalidate(ref.data.event_id);
   return { success: true };
 }
 
@@ -570,39 +387,12 @@ export async function endPeriod(input: unknown): Promise<ClockActionState> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function startNextPeriod(input: unknown): Promise<ClockActionState> {
-  const parsed = startNextPeriodSchema.safeParse(input);
-  if (!parsed.success) return { error: 'invalid' };
-  const { event_id, period } = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
-
-  const periods = await loadPeriods(supabase, event_id);
-  if (periods.some((p) => p.running)) return { error: 'period_running' };
-
-  const next = nextPeriodAfter(periods);
-  if (!next) return { error: 'all_periods_played' };
-  if (next.period !== period) return { error: 'period_mismatch' };
-
-  const { ms, iso } = now();
-  const built = buildNextPeriod(periods, ms, iso);
-  if (!built) return { error: 'all_periods_played' };
-
-  const { error } = await supabase.from('match_periods').insert({
-    event_id,
-    period: built.period,
-    ordinal: built.ordinal,
-    base_offset_seconds: built.baseOffsetSeconds,
-    accumulated_seconds: built.accumulatedSeconds,
-    running: built.running,
-    last_started_at: built.lastStartedAt,
-    ended: built.ended,
-  });
-  if (error) return { error: mapPgErr(error.message, error.code) };
-
-  revalidate(event_id);
+  const r = await startNextPeriodFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  const ref = matchEventRefSchema.safeParse(input);
+  if (ref.success) revalidate(ref.data.event_id);
   return { success: true };
 }
 
@@ -618,122 +408,15 @@ export async function startNextPeriod(input: unknown): Promise<ClockActionState>
 // match_periods → robusto y repetible.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// O2-9a — DELEGA en core (`consolidateMatchAndPersistFromClient`): misma lógica de
+// materialización (match_player_stats + marcador) que ahora comparte la app nativa.
+// La usan finishMatch (vía core), prepareMatchSheet y reconsolidateIfClosed.
 async function consolidateAndPersist(
   supabase: Supa,
   eventId: string,
   closedBy: string,
 ): Promise<ActionError | null> {
-  const { data: ev } = await supabase
-    .from('events')
-    .select('club_id, team_id')
-    .eq('id', eventId)
-    .maybeSingle();
-  if (!ev || ev.team_id == null) return 'invalid';
-  const clubId = ev.club_id as string;
-  const teamId = ev.team_id as string;
-
-  // Once congelado + todos los eventos + reloj final + ausencias.
-  const { data: starterRows } = await supabase
-    .from('match_starters')
-    .select('player_id')
-    .eq('event_id', eventId);
-  const starterIds = (starterRows ?? []).map((r) => r.player_id as string);
-
-  const { data: evRows } = await supabase
-    .from('match_events')
-    .select('side, type, player_id, related_player_id, clock_seconds, metadata')
-    .eq('event_id', eventId);
-  const events: ConsolidationEvent[] = (evRows ?? []).map((r) => {
-    const meta = (r.metadata as { outcome?: string; foul_kind?: string } | null) ?? null;
-    return {
-      side: r.side as 'own' | 'rival',
-      type: r.type as string,
-      playerId: (r.player_id as string | null) ?? null,
-      relatedPlayerId: (r.related_player_id as string | null) ?? null,
-      clockSeconds: r.clock_seconds as number,
-      outcome: meta?.outcome ?? null,
-      foulKind: meta?.foul_kind ?? null,
-    };
-  });
-
-  const periods = await loadPeriods(supabase, eventId);
-  const matchClockSeconds = clockSecondsAt(periods, now().ms);
-
-  const { data: absRows } = await supabase
-    .from('match_absences')
-    .select('player_id')
-    .eq('event_id', eventId);
-  const absentIds = (absRows ?? []).map((r) => r.player_id as string);
-
-  // rosterIds = los que participaron: titulares + cualquier jugador propio con
-  // evento + los que entraron por sustitución (orden estable: titulares primero).
-  const ordered: string[] = [];
-  const seen = new Set<string>();
-  const add = (id: string | null | undefined) => {
-    if (id && !seen.has(id)) {
-      seen.add(id);
-      ordered.push(id);
-    }
-  };
-  for (const id of starterIds) add(id);
-  for (const e of events) {
-    if (e.side !== 'own') continue;
-    add(e.playerId);
-    if (e.type === 'substitution') add(e.relatedPlayerId);
-  }
-
-  const { players, score, shootout } = consolidateMatch({
-    starterIds,
-    events,
-    matchClockSeconds,
-    absentIds,
-    rosterIds: ordered,
-  });
-
-  // Delete + reinsert de la cara del partido (consistente al re-cerrar, §5.3).
-  const { error: delErr } = await supabase
-    .from('match_player_stats')
-    .delete()
-    .eq('event_id', eventId);
-  if (delErr) return mapPgErr(delErr.message, delErr.code);
-
-  if (players.length > 0) {
-    const rows = players.map((p) => ({
-      event_id: eventId,
-      player_id: p.playerId,
-      club_id: clubId, // el trigger lo deriva; lo pasamos por el NOT NULL.
-      team_id: teamId,
-      started: p.started,
-      minutes_played: p.minutesPlayed,
-      goals: p.goals,
-      assists: p.assists,
-      yellow_cards: p.yellowCards,
-      red_cards: p.redCards,
-      shots: p.shots,
-      fouls_committed: p.foulsCommitted,
-      fouls_received: p.foulsReceived,
-      penalties_scored: p.penaltiesScored,
-      penalties_missed: p.penaltiesMissed,
-    }));
-    const { error: insErr } = await supabase.from('match_player_stats').insert(rows);
-    if (insErr) return mapPgErr(insErr.message, insErr.code);
-  }
-
-  // Marcador final (y tanda si la hubo) en la cabecera de sesión.
-  const { error: scoreErr } = await supabase
-    .from('match_state')
-    .update({
-      goals_for: score.own,
-      goals_against: score.rival,
-      shootout_for: shootout ? shootout.own : null,
-      shootout_against: shootout ? shootout.rival : null,
-      closed_at: now().iso,
-      closed_by: closedBy,
-    })
-    .eq('event_id', eventId);
-  if (scoreErr) return mapPgErr(scoreErr.message, scoreErr.code);
-
-  return null;
+  return consolidateMatchAndPersistFromClient(supabase, eventId, closedBy);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -777,51 +460,12 @@ async function reconsolidateIfClosed(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function finishMatch(input: unknown): Promise<ClockActionState> {
-  const parsed = matchEventRefSchema.safeParse(input);
-  if (!parsed.success) return { error: 'invalid' };
-  const { event_id } = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'forbidden' };
-
-  const status = await loadStatus(supabase, event_id);
-  if (status === 'closed') {
-    revalidate(event_id);
-    return { success: true }; // ya terminado (idempotente)
-  }
-  if (status !== 'live') return { error: 'not_live' };
-
-  const periods = await loadPeriods(supabase, event_id);
-  // No se finaliza con una parte regular aún pendiente (antes de la 2ª parte).
-  if (nextRegularPeriod(periods) !== null) return { error: 'regulation_incomplete' };
-
-  // Parar el reloj: terminar el periodo en curso si quedara sin terminar (pliega
-  // lo corrido). Tras esto, canFinishMatch ya se cumple por construcción.
-  const cur = currentPeriod(periods) as PeriodRow | null;
-  if (cur && !cur.ended) {
-    const { ms } = now();
-    const { error } = await supabase
-      .from('match_periods')
-      .update(toPeriodRow(endPeriodPatch(cur, ms)))
-      .eq('id', cur.id);
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  }
-
-  const { error } = await supabase
-    .from('match_state')
-    .update({ status: 'closed' })
-    .eq('event_id', event_id);
-  if (error) return { error: mapPgErr(error.message, error.code) };
-
-  // F7.10 — consolidar al cerrar (stats por jugador + marcador final).
-  const consolidateErr = await consolidateAndPersist(supabase, event_id, user.id);
-  if (consolidateErr) return { error: consolidateErr };
-
-  revalidate(event_id);
+  const r = await finishMatchFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  const ref = matchEventRefSchema.safeParse(input);
+  if (ref.success) revalidate(ref.data.event_id);
   return { success: true };
 }
 
@@ -833,36 +477,12 @@ export async function finishMatch(input: unknown): Promise<ClockActionState> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function reopenMatch(input: unknown): Promise<ClockActionState> {
-  const parsed = matchEventRefSchema.safeParse(input);
-  if (!parsed.success) return { error: 'invalid' };
-  const { event_id } = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  const { data: stateRow } = await supabase
-    .from('match_state')
-    .select('status, reopened_count')
-    .eq('event_id', event_id)
-    .maybeSingle();
-  if (!stateRow) return { error: 'not_found' };
-  if (stateRow.status !== 'closed') {
-    revalidate(event_id);
-    return { success: true }; // no estaba cerrado (idempotente)
-  }
-
-  const { error } = await supabase
-    .from('match_state')
-    .update({
-      status: 'live',
-      reopened_count: ((stateRow.reopened_count as number | null) ?? 0) + 1,
-      closed_at: null,
-      closed_by: null,
-    })
-    .eq('event_id', event_id);
-  if (error) return { error: mapPgErr(error.message, error.code) };
-
-  revalidate(event_id);
+  const r = await reopenMatchFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  const ref = matchEventRefSchema.safeParse(input);
+  if (ref.success) revalidate(ref.data.event_id);
   return { success: true };
 }
 
@@ -871,27 +491,12 @@ export async function reopenMatch(input: unknown): Promise<ClockActionState> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function adjustClock(input: unknown): Promise<ClockActionState> {
-  const parsed = adjustClockSchema.safeParse(input);
-  if (!parsed.success) return { error: 'invalid' };
-  const { event_id, delta_seconds } = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  if ((await loadStatus(supabase, event_id)) !== 'live') return { error: 'not_live' };
-
-  const periods = await loadPeriods(supabase, event_id);
-  const cur = currentPeriod(periods) as PeriodRow | null;
-  if (!cur) return { error: 'no_period' };
-
-  const { ms, iso } = now();
-  const { error } = await supabase
-    .from('match_periods')
-    .update(toPeriodRow(adjustClockPatch(cur, delta_seconds, ms, iso)))
-    .eq('id', cur.id);
-  if (error) return { error: mapPgErr(error.message, error.code) };
-
-  revalidate(event_id);
+  const r = await adjustClockFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  const ref = matchEventRefSchema.safeParse(input);
+  if (ref.success) revalidate(ref.data.event_id);
   return { success: true };
 }
 

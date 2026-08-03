@@ -198,20 +198,36 @@ export function ConvocatoriaStaffDetalleScreen({
             total: String(roster.length),
           })}
         </Text>
-        {/* O2-8a — acceso a la alineación del partido (pintar; editar llega en 8b). */}
-        <Pressable
-          onPress={() =>
-            router.push({
-              pathname: '/staff/alineacion',
-              params: { eventId: data.event.id },
-            })
-          }
-          className="mt-2 self-start rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
-        >
-          <Text className="text-xs font-medium" style={{ color: accent }}>
-            {t('convocatorias_staff.view_lineup')}
-          </Text>
-        </Pressable>
+        {/* O2-8a/9a — accesos al partido: alineación (pintar; editar en 8b) y directo
+            (control de reloj/estado; eventos en 9b). */}
+        <View className="mt-2 flex-row flex-wrap gap-2">
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: '/staff/alineacion',
+                params: { eventId: data.event.id },
+              })
+            }
+            className="self-start rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
+          >
+            <Text className="text-xs font-medium" style={{ color: accent }}>
+              {t('convocatorias_staff.view_lineup')}
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: '/staff/directo',
+                params: { eventId: data.event.id },
+              })
+            }
+            className="self-start rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
+          >
+            <Text className="text-xs font-medium" style={{ color: accent }}>
+              {t('convocatorias_staff.open_live')}
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       {/* Aviso: sin permiso (gate server-side) o sin conexión (write-guard). */}
