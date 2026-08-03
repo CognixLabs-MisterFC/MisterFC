@@ -3,92 +3,26 @@
 import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import {
-  calledUpLimitApplies,
-  calledUpOverflow,
   clearCallupDecisionFromClient,
-  createSupabaseAdminClient,
   createSupabaseServerClient,
-  maxCalledUpFor,
-  publishCallupSchema,
   respondCallupFromClient,
   upsertCallupDecisionFromClient,
   upsertCallupResponseSchema,
-  type TeamFormat,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-
-type SupaClient = ReturnType<typeof createSupabaseServerClient>;
-
-/**
- * F6 Mejora 3 — devuelve un estado de error si el nº de convocados (roster a
- * fecha del partido − descartados en callup_decisions) excede el máximo de la
- * modalidad del equipo. null si cabe. "Convocados" = los que el coach lleva,
- * no los que respondieron "no" (esos son no-disponibles por respuesta propia).
- */
-async function checkCalledUpLimit(
-  supabase: SupaClient,
-  eventId: string
-): Promise<PublishCallupState | null> {
-  const { data: ev } = await supabase
-    .from('events')
-    .select('type, team_id, starts_at, teams!inner(format)')
-    .eq('id', eventId)
-    .maybeSingle();
-  const teamId = (ev?.team_id as string | null) ?? null;
-  if (!ev || !teamId) return null;
-
-  // F13B — el tope de convocados (regla reglamentaria por modalidad) solo aplica
-  // al partido OFICIAL. Un amistoso/torneo se convoca sin límite: saltamos el
-  // chequeo, que cubre publishCallup y republishCallup de una sola vez.
-  if (!calledUpLimitApplies(ev.type as string)) return null;
-
-  const format = (ev as unknown as { teams: { format: TeamFormat } }).teams
-    .format;
-  const eventDate = (ev.starts_at as string).slice(0, 10);
-
-  const { data: tms } = await supabase
-    .from('team_members')
-    .select('player_id, joined_at, left_at')
-    .eq('team_id', teamId)
-    .lte('joined_at', eventDate);
-  type TM = { player_id: string; joined_at: string; left_at: string | null };
-  const rosterIds = (tms ?? [])
-    .map((r) => r as unknown as TM)
-    .filter((r) => r.left_at == null || r.left_at >= eventDate)
-    .map((r) => r.player_id);
-
-  const { data: decs } = await supabase
-    .from('callup_decisions')
-    .select('player_id, decision')
-    .eq('event_id', eventId);
-  const discarded = new Set(
-    (decs ?? [])
-      .filter((d) => (d.decision as string) === 'discarded')
-      .map((d) => d.player_id as string)
-  );
-  const calledUp = rosterIds.filter((id) => !discarded.has(id)).length;
-
-  const overflow = calledUpOverflow(calledUp, format);
-  if (overflow > 0) {
-    return {
-      error: 'too_many_called_up',
-      overflow,
-      maxCalledUp: maxCalledUpFor(format),
-    };
-  }
-  return null;
-}
+import { publishCallupWeb, republishCallupWeb } from '@/lib/publish-callup';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // publishCallup (F4.4)
 //
-// Guarda o publica los datos de citación para un partido. Si `publish=true`
-// y la fila no existía publicada, se setea published_at = now() (el trigger
-// de BD valida y fuerza published_by = auth.uid()).
+// Guarda o publica los datos de citación para un partido. Si `publish=true` y la
+// fila no existía publicada, se setea published_at = now().
 //
-// No usamos `.upsert()` por la lección del PR #19 (INSERT ON CONFLICT
-// evalúa policy INSERT WITH CHECK incluso en path UPDATE). Detección
-// manual existing → UPDATE / falta → INSERT.
+// O2-7b-2 — la orquestación (guardar/publicar como el usuario + tope + fan-out
+// callup_published) se extrajo a core (`publishCallupFromClient`) y se comparte con
+// el route handler nativo vía `@/lib/publish-callup`. Aquí queda el wrapper de la
+// Server Action: construye el cliente cookie, delega y revalida. Comportamiento
+// web idéntico.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type PublishCallupState = {
@@ -115,128 +49,32 @@ export type PublishCallupState = {
   maxCalledUp?: number;
 };
 
-function mapPublishErr(
-  code: string | undefined
-): PublishCallupState['error'] {
-  const known = [
-    'event_invalid',
-    'meeting_at_invalid',
-    'meeting_location_required',
-    'meeting_location_too_long',
-    'meeting_address_too_long',
-    'transport_mode_invalid',
-    'transport_notes_too_long',
-    'notes_general_too_long',
-  ] as const;
-  if (code && (known as readonly string[]).includes(code)) {
-    return code as PublishCallupState['error'];
-  }
-  return 'generic';
-}
-
-function mapPublishPgErr(
-  message: string | undefined,
-  pgcode: string | undefined
-): PublishCallupState['error'] {
-  if (pgcode === '42501') return 'forbidden';
-  if (!message) return 'generic';
-  if (message.includes('event_not_match')) return 'event_not_match';
-  if (message.includes('event_without_team')) return 'event_without_team';
-  if (message.includes('cannot_unpublish')) return 'cannot_unpublish';
-  return 'generic';
-}
-
 export async function publishCallup(
   input: unknown
 ): Promise<PublishCallupState> {
-  const parsed = publishCallupSchema.safeParse(input);
-  if (!parsed.success) {
-    return { error: mapPublishErr(parsed.error.issues[0]?.message) };
-  }
-
-  const {
-    event_id,
-    meeting_at,
-    meeting_location,
-    meeting_address,
-    transport_mode,
-    transport_notes,
-    notes_general,
-    publish,
-  } = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // ¿Existe ya la meta?
-  const { data: existing } = await supabase
-    .from('match_callup_meta')
-    .select('event_id, published_at')
-    .eq('event_id', event_id)
-    .maybeSingle();
-
-  // F6 Mejora 3 — al PUBLICAR (transición a publicada), bloquear si el nº de
-  // convocados (roster a fecha − descartados) excede el máximo de la modalidad.
-  if (publish && existing?.published_at == null) {
-    const gate = await checkCalledUpLimit(supabase, event_id);
-    if (gate) return gate;
+  // Guardar/publicar como el usuario (RLS = gate) + tope + fan-out (core, vía el
+  // wrapper que inyecta notify-bus + Sentry). El fan-out solo ocurre en la 1ª
+  // publicación, dentro de core, DESPUÉS del cambio de estado.
+  const res = await publishCallupWeb(supabase, input);
+  if (!res.ok) {
+    return {
+      error: res.error,
+      ...(res.overflow != null ? { overflow: res.overflow } : {}),
+      ...(res.maxCalledUp != null ? { maxCalledUp: res.maxCalledUp } : {}),
+    };
   }
 
-  const payloadCommon = {
-    meeting_at,
-    meeting_location,
-    meeting_address,
-    transport_mode,
-    transport_notes,
-    notes_general,
-  };
-  const publishedNow = publish ? new Date().toISOString() : null;
-
-  if (existing) {
-    const update =
-      publish && existing.published_at == null
-        ? { ...payloadCommon, published_at: publishedNow }
-        : payloadCommon;
-    const { error } = await supabase
-      .from('match_callup_meta')
-      .update(update)
-      .eq('event_id', event_id);
-    if (error) return { error: mapPublishPgErr(error.message, error.code) };
-  } else {
-    const { error } = await supabase.from('match_callup_meta').insert({
-      event_id,
-      ...payloadCommon,
-      published_at: publishedNow,
-    });
-    if (error) return { error: mapPublishPgErr(error.message, error.code) };
-  }
-
+  const eventId = (input as { event_id?: string }).event_id ?? '';
   revalidatePath('/[locale]/(authenticated)/convocatorias', 'page');
   revalidatePath(
-    `/[locale]/(authenticated)/convocatorias/${event_id}`,
+    `/[locale]/(authenticated)/convocatorias/${eventId}`,
     'page'
   );
   revalidatePath(`/[locale]/(authenticated)/calendario`, 'page');
-  const finalPublished =
-    publish || existing?.published_at != null;
-
-  // F5.7 — Notificación callup_published al jugador / familia cuando se
-  // publica por primera vez (transition pending → published). Se omite si
-  // era un re-save de borrador o si ya estaba publicada.
-  const isFirstPublish = publish && (existing?.published_at == null);
-  if (isFirstPublish) {
-    try {
-      await notifyCallup(event_id, 'callup_published');
-    } catch (e) {
-      // No bloquear el publish por fallo de notificación.
-      console.error('notify callup_published error', e);
-      Sentry.captureException(e, {
-        tags: { feature: 'callups', step: 'notify_callup_published' },
-      });
-    }
-  }
-
-  return { success: true, published: !!finalPublished };
+  return { success: true, published: res.published };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -262,163 +100,22 @@ export async function republishCallup(eventId: string): Promise<RepublishState> 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { data: meta } = await supabase
-    .from('match_callup_meta')
-    .select('published_at')
-    .eq('event_id', eventId)
-    .maybeSingle();
-  if (!meta) return { error: 'not_found' };
-  if (meta.published_at == null) return { error: 'not_published' };
-
-  // No re-publicar un partido ya empezado.
-  const { data: ev } = await supabase
-    .from('events')
-    .select('starts_at')
-    .eq('id', eventId)
-    .maybeSingle();
-  if (ev?.starts_at && new Date(ev.starts_at).getTime() < Date.now()) {
-    return { error: 'event_started' };
-  }
-
-  // Re-aplica el tope de convocados de la modalidad antes de re-publicar.
-  const gate = await checkCalledUpLimit(supabase, eventId);
-  if (gate) {
+  // Re-publicar como el usuario (RLS = gate) + tope + fan-out callup_updated (core,
+  // vía el wrapper que inyecta notify-bus + Sentry). El fan-out va DESPUÉS del
+  // cambio de estado.
+  const res = await republishCallupWeb(supabase, eventId);
+  if (!res.ok) {
     return {
-      error: 'too_many_called_up',
-      overflow: gate.overflow,
-      maxCalledUp: gate.maxCalledUp,
+      error: res.error,
+      ...(res.overflow != null ? { overflow: res.overflow } : {}),
+      ...(res.maxCalledUp != null ? { maxCalledUp: res.maxCalledUp } : {}),
     };
-  }
-
-  const { error } = await supabase
-    .from('match_callup_meta')
-    .update({ published_at: new Date().toISOString() })
-    .eq('event_id', eventId);
-  if (error) {
-    return { error: error.code === '42501' ? 'forbidden' : 'generic' };
   }
 
   revalidatePath('/[locale]/(authenticated)/convocatorias', 'page');
   revalidatePath(`/[locale]/(authenticated)/convocatorias/${eventId}`, 'page');
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');
-
-  try {
-    await notifyCallup(eventId, 'callup_updated', String(Date.now()));
-  } catch (e) {
-    console.error('notify callup_updated error', e);
-    Sentry.captureException(e, {
-      tags: { feature: 'callups', step: 'notify_callup_updated' },
-    });
-  }
-
   return { success: true };
-}
-
-type CallupEvent = {
-  id: string;
-  team_id: string;
-  title: string;
-  opponent_name: string | null;
-  starts_at: string;
-};
-
-/**
- * Destinatarios de una notificación de convocatoria: profiles vinculados (vía
- * player_accounts) a jugadores del roster activo a la fecha del partido.
- */
-async function callupRecipients(
-  eventId: string,
-): Promise<{ event: CallupEvent; userIds: string[] } | null> {
-  // Admin client (service role): la resolución de destinatarios NO debe quedar
-  // limitada por la RLS del cuerpo técnico sobre player_accounts (Bug CC: si el
-  // coach no veía las cuentas vinculadas, no se generaba ninguna notificación).
-  const admin = createSupabaseAdminClient();
-
-  const { data: event } = await admin
-    .from('events')
-    .select('id, team_id, title, opponent_name, starts_at')
-    .eq('id', eventId)
-    .maybeSingle();
-  if (!event?.team_id) return null;
-
-  const eventDate = event.starts_at.slice(0, 10);
-  const { data: tms } = await admin
-    .from('team_members')
-    .select('player_id, joined_at, left_at')
-    .eq('team_id', event.team_id)
-    .lte('joined_at', eventDate);
-  type TM = { player_id: string; joined_at: string; left_at: string | null };
-  const rosterIds = (tms ?? [])
-    .map((r) => r as unknown as TM)
-    .filter((r) => r.left_at == null || r.left_at >= eventDate)
-    .map((r) => r.player_id);
-
-  // D2.1 — los jugadores SUBIDOS a este evento cuentan como convocados → reciben
-  // la notificación nativa de convocatoria como un miembro más.
-  const { data: promo } = await admin
-    .from('player_promotions')
-    .select('player_id')
-    .eq('event_id', eventId);
-  const allPlayerIds = Array.from(
-    new Set([...rosterIds, ...((promo ?? []).map((r) => r.player_id))]),
-  );
-  if (allPlayerIds.length === 0) return null;
-
-  const { data: pas } = await admin
-    .from('player_accounts')
-    .select('profile_id')
-    .in('player_id', allPlayerIds);
-  const userIds = Array.from(
-    new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
-  ) as string[];
-  if (userIds.length === 0) return null;
-
-  return { event: event as CallupEvent, userIds };
-}
-
-/**
- * Emite la notificación de convocatoria publicada (`callup_published`) o
- * actualizada (`callup_updated`, Bug D/G). `dedupeToken` distingue cada
- * publicación: en re-publicaciones se pasa un token único para que la
- * notificación NO quede deduplicada con la anterior.
- */
-async function notifyCallup(
-  eventId: string,
-  kind: 'callup_published' | 'callup_updated',
-  dedupeToken?: string,
-): Promise<void> {
-  const r = await callupRecipients(eventId);
-  if (!r) return;
-  const { event, userIds } = r;
-
-  const oppLabel = event.opponent_name ?? '';
-  const matchLabel = oppLabel ? `${event.title} vs ${oppLabel}` : event.title;
-  const prefixEs =
-    kind === 'callup_updated' ? 'Convocatoria actualizada' : 'Convocatoria';
-  const title = `${prefixEs}: ${matchLabel}`;
-  const body = `Partido el ${new Date(event.starts_at).toLocaleString('es-ES')}`;
-  const base = dedupeToken
-    ? `${kind}:${eventId}:${dedupeToken}`
-    : `${kind}:${eventId}`;
-
-  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
-  await emitNotificationFanOut(
-    userIds.map((u) => ({ user_id: u })),
-    {
-      type: kind,
-      in_app_payload: {
-        event_id: eventId,
-        deep_link: `/es/convocatorias/${eventId}`,
-      },
-      push_payload: {
-        title,
-        body,
-        deep_link: `/es/convocatorias/${eventId}`,
-        tag: `${kind}:${eventId}`,
-      },
-      dedupe_base_prefix: base,
-    },
-  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
