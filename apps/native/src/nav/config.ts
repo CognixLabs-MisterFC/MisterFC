@@ -127,6 +127,8 @@ const STAFF_MENU_COORD_EXTRA: MenuDef[] = [
  */
 const STAFF_HIDDEN: MenuDef[] = [
   { name: 'asistencia-sesion', labelKey: 'nav.asistencia' },
+  // O2-7b-1 — detalle de convocatoria (?eventId), alcanzado desde la lista.
+  { name: 'convocatoria', labelKey: 'nav.convocatorias' },
 ];
 
 const DIRECTION_MENU: MenuDef[] = [

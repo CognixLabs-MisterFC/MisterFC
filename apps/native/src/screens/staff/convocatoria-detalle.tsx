@@ -1,0 +1,337 @@
+import { useCallback, useState } from 'react';
+import { FlatList, Pressable, Text, View } from 'react-native';
+import {
+  calledUpLimitApplies,
+  calledUpOverflow,
+  clearCallupDecisionFromClient,
+  eventScopedCacheKey,
+  getStaffCallupDetailFromClient,
+  maxCalledUpFor,
+  upsertCallupDecisionFromClient,
+  type CallupDecisionRow,
+  type CallupDetail,
+  type CallupPlayerRow,
+  type CallupResponseRow,
+  type Role,
+} from '@misterfc/core';
+import { supabase } from '@/lib/supabase';
+import { useApp } from '@/auth/context';
+import { useSession } from '@/auth/session';
+import { useCached } from '@/data/use-cached';
+import { useIsOnline } from '@/data/connectivity';
+import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
+import { t } from '@/i18n';
+
+/**
+ * O2-7b-1 — Detalle de convocatoria (staff): VER RESPUESTAS de disponibilidad de las
+ * familias + MARCAR/DESMARCAR citados. Convocado = roster − descartados (derivado);
+ * cada decisión es un upsert INCREMENTAL por jugador (core `upsertCallupDecision
+ * FromClient`) o su borrado (`clearCallupDecisionFromClient`, vuelve a convocado por
+ * defecto), detrás del WRITE-GUARD: sin red no se decide (aviso). El GATE de quién
+ * convoca es server-side (`user_can_manage_callup`/RLS); la UI deshabilita lo que el
+ * server rechazaría (`canManage`) y un rechazo (42501→forbidden) se maneja con gracia.
+ * NADA de publicar aquí (eso es 7b-2). El EQUIPO lo fija el evento. Caché event-scoped
+ * (eventId en la key); los Map de core se serializan a Record para cachearlos offline.
+ */
+
+/** DTO serializable para la caché (JSON no soporta Map). */
+type CallupView = {
+  event: CallupDetail['event'];
+  roster: CallupPlayerRow[];
+  responses: Record<string, CallupResponseRow>;
+  decisions: Record<string, CallupDecisionRow>;
+  canManage: boolean;
+};
+
+export function ConvocatoriaStaffDetalleScreen({
+  eventId,
+}: {
+  eventId: string | null;
+}) {
+  const { activeClub, theme } = useApp();
+  const { user } = useSession();
+  const online = useIsOnline();
+  const clubId = activeClub?.club.id ?? null;
+  const role = (activeClub?.role ?? null) as Role | null;
+  const userId = user?.id ?? null;
+  const accent = theme?.color ?? '#0F1B2E';
+
+  const [busy, setBusy] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
+
+  const { data, fromCache, loading, refresh } = useCached<CallupView | null>(
+    eventScopedCacheKey('convocatoria-staff', eventId ?? 'none'),
+    async (sb) => {
+      if (!eventId || !clubId || !role) return null;
+      const d = await getStaffCallupDetailFromClient(sb, {
+        clubId,
+        role,
+        userId,
+        eventId,
+      });
+      if (!d) return null;
+      return {
+        event: d.event,
+        roster: d.roster,
+        responses: Object.fromEntries(d.responses),
+        decisions: Object.fromEntries(d.decisions),
+        canManage: d.canManage,
+      };
+    },
+  );
+
+  const canWrite = !!data?.canManage && online;
+
+  const onDecide = useCallback(
+    async (playerId: string, decision: 'called_up' | 'discarded') => {
+      if (!eventId || !canWrite || busy) return; // write-guard + gate (cliente)
+      setBusy(playerId);
+      setErrorKey(null);
+      const res = await upsertCallupDecisionFromClient(supabase, {
+        event_id: eventId,
+        player_id: playerId,
+        decision,
+        reason: null,
+      });
+      setBusy(null);
+      if (res.ok) refresh();
+      else
+        setErrorKey(
+          res.error === 'forbidden'
+            ? 'convocatorias_staff.forbidden'
+            : 'convocatorias_staff.error',
+        );
+    },
+    [eventId, canWrite, busy, refresh],
+  );
+
+  const onClear = useCallback(
+    async (playerId: string) => {
+      if (!eventId || !canWrite || busy) return;
+      setBusy(playerId);
+      setErrorKey(null);
+      const res = await clearCallupDecisionFromClient(supabase, eventId, playerId);
+      setBusy(null);
+      if (res.ok) refresh();
+      else
+        setErrorKey(
+          res.error === 'forbidden'
+            ? 'convocatorias_staff.forbidden'
+            : 'convocatorias_staff.error',
+        );
+    },
+    [eventId, canWrite, busy, refresh],
+  );
+
+  if (loading) return <LoadingScreen />;
+  if (!data) return <EmptyState message={t('convocatorias.unavailable')} />;
+
+  const roster = data.roster;
+
+  // Convocados = roster − descartados (derivado). Aviso de TOPE por modalidad (solo
+  // informativo aquí; el bloqueo duro vive en el publish = 7b-2).
+  const discardedCount = roster.filter(
+    (p) => data.decisions[p.id]?.decision === 'discarded',
+  ).length;
+  const calledUp = roster.length - discardedCount;
+  const overLimit =
+    calledUpLimitApplies(data.event.type) &&
+    calledUpOverflow(calledUp, data.event.format) > 0;
+
+  return (
+    <View className="flex-1 bg-white">
+      <OfflineBanner show={fromCache} />
+      <View className="px-4 pb-1 pt-3">
+        <Text className="text-lg font-bold text-[#0F1B2E]" numberOfLines={1}>
+          {data.event.title}
+          {data.event.opponent_name ? ` · ${data.event.opponent_name}` : ''}
+        </Text>
+        <Text className="text-xs text-zinc-400" numberOfLines={1}>
+          {[
+            new Date(data.event.starts_at).toLocaleString(),
+            data.event.team_name,
+            data.event.category_name,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </Text>
+        <Text className="mt-1 text-xs font-semibold" style={{ color: accent }}>
+          {t('convocatorias_staff.called_summary', {
+            called: String(calledUp),
+            total: String(roster.length),
+          })}
+        </Text>
+      </View>
+
+      {/* Aviso: sin permiso (gate server-side) o sin conexión (write-guard). */}
+      {!data.canManage ? (
+        <Banner text={t('convocatorias_staff.no_permission')} />
+      ) : !online ? (
+        <Banner text={t('convocatorias_staff.offline_write')} />
+      ) : null}
+      {overLimit ? (
+        <View className="bg-amber-50 px-4 py-2">
+          <Text className="text-center text-xs text-amber-700">
+            {t('convocatorias_staff.over_limit', {
+              max: String(maxCalledUpFor(data.event.format)),
+            })}
+          </Text>
+        </View>
+      ) : null}
+      {errorKey ? (
+        <View className="bg-red-50 px-4 py-2">
+          <Text className="text-center text-xs text-red-600">{t(errorKey)}</Text>
+        </View>
+      ) : null}
+
+      {roster.length === 0 ? (
+        <EmptyState message={t('convocatorias_staff.roster_empty')} />
+      ) : (
+        <FlatList
+          data={roster}
+          keyExtractor={(p) => p.id}
+          contentContainerStyle={{ paddingVertical: 8, paddingBottom: 40 }}
+          renderItem={({ item }) => {
+            const decision = data.decisions[item.id]?.decision ?? null;
+            // Derivado: sin decisión explícita = convocado por defecto.
+            const isDiscarded = decision === 'discarded';
+            const response = data.responses[item.id]?.status ?? null;
+            const isBusy = busy === item.id;
+            return (
+              <View className="mx-4 my-1 rounded-xl border border-zinc-200 px-3 py-2">
+                <View className="flex-row items-center gap-2">
+                  <View className="h-7 w-7 items-center justify-center rounded-full bg-zinc-100">
+                    <Text className="text-[11px] font-semibold text-zinc-600">
+                      {item.dorsal ?? '—'}
+                    </Text>
+                  </View>
+                  <View className="min-w-0 flex-1">
+                    <Text
+                      className="text-sm font-medium text-[#0F1B2E]"
+                      numberOfLines={1}
+                    >
+                      {[item.first_name, item.last_name]
+                        .filter(Boolean)
+                        .join(' ')}
+                    </Text>
+                    {item.is_promoted ? (
+                      <Text
+                        className="text-[10px] text-amber-600"
+                        numberOfLines={1}
+                      >
+                        {t('convocatorias_staff.promoted')}
+                        {item.from_team_name ? ` · ${item.from_team_name}` : ''}
+                      </Text>
+                    ) : null}
+                  </View>
+                  {/* Respuesta de la familia (ver respuestas). */}
+                  <ResponseChip status={response} />
+                </View>
+                <View className="mt-2 flex-row items-center gap-1.5">
+                  <DecisionButton
+                    label={t('convocatorias_staff.call_up')}
+                    on={!isDiscarded}
+                    color="#16a34a"
+                    disabled={!canWrite || isBusy}
+                    onPress={() => onDecide(item.id, 'called_up')}
+                  />
+                  <DecisionButton
+                    label={t('convocatorias_staff.discard')}
+                    on={isDiscarded}
+                    color="#3f3f46"
+                    disabled={!canWrite || isBusy}
+                    onPress={() => onDecide(item.id, 'discarded')}
+                  />
+                  {decision != null ? (
+                    <Pressable
+                      onPress={() => onClear(item.id)}
+                      disabled={!canWrite || isBusy}
+                      className="rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
+                      style={{ opacity: !canWrite || isBusy ? 0.4 : 1 }}
+                    >
+                      <Text className="text-xs text-zinc-500">
+                        {t('convocatorias_staff.clear')}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </View>
+            );
+          }}
+        />
+      )}
+    </View>
+  );
+}
+
+function Banner({ text }: { text: string }) {
+  return (
+    <View className="bg-zinc-100 px-4 py-2">
+      <Text className="text-center text-xs text-zinc-500">{text}</Text>
+    </View>
+  );
+}
+
+function DecisionButton({
+  label,
+  on,
+  color,
+  disabled,
+  onPress,
+}: {
+  label: string;
+  on: boolean;
+  color: string;
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      className={`rounded-full px-3 py-1.5 active:opacity-70 ${on ? '' : 'border border-zinc-200'}`}
+      style={{ backgroundColor: on ? color : undefined, opacity: disabled ? 0.4 : 1 }}
+    >
+      <Text
+        className={
+          on ? 'text-xs font-semibold text-white' : 'text-xs text-zinc-600'
+        }
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ResponseChip({ status }: { status: 'yes' | 'maybe' | 'no' | null }) {
+  const label =
+    status === 'yes'
+      ? t('convocatorias.resp_yes')
+      : status === 'maybe'
+        ? t('convocatorias.resp_maybe')
+        : status === 'no'
+          ? t('convocatorias.resp_no')
+          : t('convocatorias.resp_pending');
+  const bg =
+    status === 'yes'
+      ? '#16a34a'
+      : status === 'no'
+        ? '#dc2626'
+        : status === 'maybe'
+          ? '#d97706'
+          : null;
+  return (
+    <View
+      className="rounded-full px-2 py-0.5"
+      style={bg ? { backgroundColor: bg } : { borderWidth: 1, borderColor: '#e4e4e7' }}
+    >
+      <Text
+        className={
+          bg ? 'text-[10px] font-semibold text-white' : 'text-[10px] text-zinc-500'
+        }
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}

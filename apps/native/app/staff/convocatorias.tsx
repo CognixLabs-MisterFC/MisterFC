@@ -1,5 +1,6 @@
-import { Placeholder } from '@/nav/placeholder';
+import { ConvocatoriasStaffListScreen } from '@/screens/staff/convocatorias';
 
+/** O2-7b-1 — Convocatorias del staff (armar): lista de partidos próximos. */
 export default function Screen() {
-  return <Placeholder labelKey="nav.convocatorias" />;
+  return <ConvocatoriasStaffListScreen />;
 }
