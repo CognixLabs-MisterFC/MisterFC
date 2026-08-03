@@ -416,9 +416,7 @@ async function consolidateAndPersist(
   eventId: string,
   closedBy: string,
 ): Promise<ActionError | null> {
-  return consolidateMatchAndPersistFromClient(supabase, eventId, closedBy) as
-    | ActionError
-    | null;
+  return consolidateMatchAndPersistFromClient(supabase, eventId, closedBy);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
