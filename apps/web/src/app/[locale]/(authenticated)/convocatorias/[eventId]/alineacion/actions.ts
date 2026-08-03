@@ -2,29 +2,20 @@
 
 import { revalidatePath } from 'next/cache';
 import {
-  calledUpOnPlace,
   calledUpOnRemove,
   callupEventIdFor,
   createLineupSchema,
   createPlannedSubSchema,
   createSupabaseServerClient,
-  defaultFormation,
   lineupWritesCallup,
   deleteLineupPositionSchema,
   deletePlannedSubSchema,
-  exceedsStarters,
-  getFormation,
-  remapToFormation,
   renameLineupSchema,
-  roleFromPosition,
-  setLineupFormationSchema,
+  setLineupFormationFromClient,
   setLineupOfficialSchema,
   setLineupVisibilitySchema,
   setTacticalNotesSchema,
-  upsertLineupPositionSchema,
-  type CallupDecision,
-  type PlayerPositionMain,
-  type TeamFormat,
+  upsertLineupPositionFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -82,21 +73,6 @@ async function eventIdOfLineup(supabase: Supa, lineupId: string): Promise<string
   return (data?.event_id as string | undefined) ?? null;
 }
 
-/** Modalidad del equipo del evento (para topar titulares por modalidad). */
-async function teamFormatOfEvent(
-  supabase: Supa,
-  eventId: string,
-): Promise<TeamFormat | null> {
-  const { data } = await supabase
-    .from('events')
-    .select('teams!inner(format)')
-    .eq('id', eventId)
-    .maybeSingle();
-  const fmt = (data as unknown as { teams?: { format?: string } } | null)?.teams
-    ?.format;
-  return (fmt as TeamFormat | undefined) ?? null;
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // BUG 2 — propagación alineación → convocatoria (called_up).
 //
@@ -130,42 +106,6 @@ async function eventTournamentId(
     .eq('id', eventId)
     .maybeSingle();
   return (data?.tournament_id as string | null | undefined) ?? null;
-}
-
-/** Marca called_up al colocar en campo/banquillo (solo en borrador). No pisa un
- * descarte existente (el descarte manda hasta reincluir). */
-async function propagateCalledUp(
-  supabase: Supa,
-  eventId: string,
-  playerId: string,
-): Promise<void> {
-  // F13B (T-2) — la alineación de un partido de torneo NO escribe convocatoria:
-  // la plantilla se gestiona solo en la cabecera. Solo distribuye.
-  if (!lineupWritesCallup({ tournament_id: await eventTournamentId(supabase, eventId) })) {
-    return;
-  }
-  const published = await isCallupPublished(supabase, eventId);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-  const { data: existing } = await supabase
-    .from('callup_decisions')
-    .select('decision')
-    .eq('event_id', eventId)
-    .eq('player_id', playerId)
-    .maybeSingle();
-  const op = calledUpOnPlace(
-    (existing?.decision as CallupDecision | undefined) ?? null,
-    published,
-  );
-  if (op !== 'insert_called_up') return;
-  await supabase.from('callup_decisions').insert({
-    event_id: eventId,
-    player_id: playerId,
-    decision: 'called_up',
-    decided_by: user.id,
-  });
 }
 
 /** Limpia el called_up al sacar a un jugador de la alineación (solo en
@@ -295,75 +235,18 @@ export async function createLineup(input: unknown): Promise<LineupActionState> {
 // ─────────────────────────────────────────────────────────────────────────────
 // upsertLineupPosition — coloca/mueve un jugador (field/bench).
 //
-// Bug F: al colocar en el campo se respeta el máximo de titulares de la
-// modalidad (F7=7, F8=8, F11=11). El cliente persiste primero los desplazados
-// (a banquillo) y luego el nuevo titular, de modo que un swap legítimo no choca
-// con el tope; un exceso real (más jugadores que titulares de la modalidad) sí.
+// O2-8b — DELEGA en core (`upsertLineupPositionFromClient`): la lógica (tope de
+// titulares por modalidad, upsert manual, BUG 2 → convocado) vive en core y la
+// comparte la app nativa; aquí solo se añade el `revalidatePath` de Next. El
+// comportamiento es idéntico al server action original.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function upsertLineupPosition(input: unknown): Promise<LineupActionState> {
-  const parsed = upsertLineupPositionSchema.safeParse(input);
-  if (!parsed.success) {
-    return { error: (parsed.error.issues[0]?.message as ActionError) ?? 'invalid' };
-  }
-  const v = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  const eventId = await eventIdOfLineup(supabase, v.lineup_id);
-  if (!eventId) return { error: 'not_found' };
-
-  // Tope de titulares por modalidad (solo al colocar/mover a campo).
-  if (v.location === 'field') {
-    const format = await teamFormatOfEvent(supabase, eventId);
-    if (format) {
-      const { data: fieldRows } = await supabase
-        .from('lineup_positions')
-        .select('player_id')
-        .eq('lineup_id', v.lineup_id)
-        .eq('location', 'field');
-      const fieldOthers = (fieldRows ?? [])
-        .map((r) => r.player_id as string)
-        .filter((pid) => pid !== v.player_id);
-      // El jugador objetivo se suma a los demás titulares ya presentes.
-      if (exceedsStarters(fieldOthers.length + 1, format)) {
-        return { error: 'too_many_starters' };
-      }
-    }
-  }
-
-  const { data: existing } = await supabase
-    .from('lineup_positions')
-    .select('id')
-    .eq('lineup_id', v.lineup_id)
-    .eq('player_id', v.player_id)
-    .maybeSingle();
-
-  const row = {
-    location: v.location,
-    position_code: v.position_code,
-    x_pct: v.x_pct,
-    y_pct: v.y_pct,
-  };
-
-  if (existing) {
-    const { error } = await supabase
-      .from('lineup_positions')
-      .update(row)
-      .eq('id', existing.id as string);
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  } else {
-    const { error } = await supabase
-      .from('lineup_positions')
-      .insert({ lineup_id: v.lineup_id, player_id: v.player_id, ...row });
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  }
-
-  // BUG 2 — en campo o banquillo → convocado (borrador; respeta 6.6).
-  await propagateCalledUp(supabase, eventId, v.player_id);
-
-  revalidate(eventId);
+  const r = await upsertLineupPositionFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  revalidate(r.eventId);
   return { success: true };
 }
 
@@ -465,73 +348,18 @@ export async function setLineupName(input: unknown): Promise<LineupActionState> 
 
 // ─────────────────────────────────────────────────────────────────────────────
 // setLineupFormation — cambia la formación y reasigna los titulares (server).
+//
+// O2-8b — DELEGA en core (`setLineupFormationFromClient`): el remap por rol vive en
+// core y lo comparte la app nativa; aquí solo el `revalidatePath`. Idéntico al
+// server action original.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function setLineupFormation(input: unknown): Promise<LineupActionState> {
-  const parsed = setLineupFormationSchema.safeParse(input);
-  if (!parsed.success) return { error: 'invalid' };
-  const { lineup_id, formation_code } = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const eventId = await eventIdOfLineup(supabase, lineup_id);
-  if (!eventId) return { error: 'not_found' };
-
-  const next = getFormation(formation_code) ?? defaultFormation('F11');
-
-  // Titulares actuales + su rol de ficha para reasignar conservando posición.
-  const { data: fieldRows } = await supabase
-    .from('lineup_positions')
-    .select('player_id, players!inner(position_main)')
-    .eq('lineup_id', lineup_id)
-    .eq('location', 'field');
-  type FieldShape = { player_id: string; players: { position_main: PlayerPositionMain } };
-  const fieldPlayers = (fieldRows ?? []).map((r) => {
-    const f = r as unknown as FieldShape;
-    return { playerId: f.player_id, role: roleFromPosition(f.players.position_main) };
-  });
-
-  const { assignments, benched } = remapToFormation(fieldPlayers, next);
-
-  // Actualiza la cabecera.
-  {
-    const { error } = await supabase
-      .from('lineups')
-      .update({ formation_code })
-      .eq('id', lineup_id);
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  }
-
-  // Reubica titulares en los slots de la nueva formación.
-  for (const a of assignments) {
-    const { error } = await supabase
-      .from('lineup_positions')
-      .update({
-        location: 'field',
-        position_code: a.positionCode,
-        x_pct: a.xPct,
-        y_pct: a.yPct,
-      })
-      .eq('lineup_id', lineup_id)
-      .eq('player_id', a.playerId);
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  }
-  // Los que ya no caben → banquillo.
-  for (const playerId of benched) {
-    const { error } = await supabase
-      .from('lineup_positions')
-      .update({
-        location: 'bench',
-        position_code: null,
-        x_pct: null,
-        y_pct: null,
-      })
-      .eq('lineup_id', lineup_id)
-      .eq('player_id', playerId);
-    if (error) return { error: mapPgErr(error.message, error.code) };
-  }
-
-  revalidate(eventId);
+  const r = await setLineupFormationFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  revalidate(r.eventId);
   return { success: true };
 }
 

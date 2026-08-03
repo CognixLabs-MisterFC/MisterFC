@@ -4,6 +4,7 @@ import 'react-native-url-polyfill/auto';
 import '../global.css';
 
 import { Stack } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { SessionProvider } from '@/auth/session';
@@ -14,17 +15,21 @@ import { NotificationsProvider } from '@/notifications/notifications-provider';
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <SessionProvider>
-        <AppProvider>
-          <ActivePlayerProvider>
-            <StatusBar style="light" />
-            <SessionGuard />
-            <NotificationsProvider />
-            <Stack screenOptions={{ headerShown: false }} />
-          </ActivePlayerProvider>
-        </AppProvider>
-      </SessionProvider>
-    </SafeAreaProvider>
+    // GestureHandlerRootView (O2-8b): raíz obligatoria para los gestos nativos
+    // (drag de la alineación). Envuelve toda la app; flex:1 para ocupar la pantalla.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <SessionProvider>
+          <AppProvider>
+            <ActivePlayerProvider>
+              <StatusBar style="light" />
+              <SessionGuard />
+              <NotificationsProvider />
+              <Stack screenOptions={{ headerShown: false }} />
+            </ActivePlayerProvider>
+          </AppProvider>
+        </SessionProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

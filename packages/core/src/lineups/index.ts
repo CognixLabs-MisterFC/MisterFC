@@ -84,6 +84,14 @@ export type { PositionKey } from './positions';
 export { getLineupForEventFromClient } from './queries';
 export type { LineupView, LineupRosterPlayer } from './queries';
 
+// O2-8b — ESCRITURA de la alineación (drag: colocar/mover + cambiar formación).
+export {
+  upsertLineupPositionFromClient,
+  setLineupFormationFromClient,
+  mapLineupPgErr,
+} from './writes';
+export type { LineupWriteError, LineupWriteOutcome } from './writes';
+
 export {
   calledUpOnPlace,
   calledUpOnRemove,
