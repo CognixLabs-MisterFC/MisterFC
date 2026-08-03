@@ -5,12 +5,13 @@ import * as Sentry from '@sentry/nextjs';
 import {
   calledUpLimitApplies,
   calledUpOverflow,
+  clearCallupDecisionFromClient,
   createSupabaseAdminClient,
   createSupabaseServerClient,
   maxCalledUpFor,
   publishCallupSchema,
   respondCallupFromClient,
-  upsertCallupDecisionSchema,
+  upsertCallupDecisionFromClient,
   upsertCallupResponseSchema,
   type TeamFormat,
 } from '@misterfc/core';
@@ -420,52 +421,6 @@ async function notifyCallup(
   );
 }
 
-/**
- * PART 2.4 — sincroniza la convocatoria HACIA las alineaciones del partido.
- * Descartar → quita al jugador de lineup_positions de TODAS las alineaciones.
- * Convocar → lo añade al banquillo de todas las que no lo tengan. Best-effort:
- * un fallo aquí no debe romper la decisión de convocatoria.
- */
-async function syncLineupsForDecision(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
-  eventId: string,
-  playerId: string,
-  calledUp: boolean,
-): Promise<void> {
-  const { data: lus } = await supabase
-    .from('lineups')
-    .select('id')
-    .eq('event_id', eventId);
-  const lineupIds = (lus ?? []).map((l) => l.id as string);
-  if (lineupIds.length === 0) return;
-
-  if (!calledUp) {
-    await supabase
-      .from('lineup_positions')
-      .delete()
-      .in('lineup_id', lineupIds)
-      .eq('player_id', playerId);
-    return;
-  }
-
-  const { data: present } = await supabase
-    .from('lineup_positions')
-    .select('lineup_id')
-    .eq('player_id', playerId)
-    .in('lineup_id', lineupIds);
-  const have = new Set((present ?? []).map((r) => r.lineup_id as string));
-  const missing = lineupIds.filter((id) => !have.has(id));
-  if (missing.length > 0) {
-    await supabase.from('lineup_positions').insert(
-      missing.map((lid) => ({
-        lineup_id: lid,
-        player_id: playerId,
-        location: 'bench' as const,
-      })),
-    );
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // upsertCallupResponse (F4.5) — jugador / familia
 // ─────────────────────────────────────────────────────────────────────────────
@@ -557,98 +512,33 @@ export type UpsertDecisionState = {
   success?: boolean;
 };
 
-function mapDecisionErr(
-  code: string | undefined
-): UpsertDecisionState['error'] {
-  const known = [
-    'event_invalid',
-    'player_invalid',
-    'decision_invalid',
-    'reason_too_long',
-  ] as const;
-  if (code && (known as readonly string[]).includes(code)) {
-    return code as UpsertDecisionState['error'];
-  }
-  return 'generic';
-}
-
-function mapDecisionPgErr(
-  message: string | undefined,
-  pgcode: string | undefined
-): UpsertDecisionState['error'] {
-  if (pgcode === '42501') return 'forbidden';
-  if (!message) return 'generic';
-  if (message.includes('event_not_match')) return 'event_not_match';
-  if (message.includes('player_not_in_team_at_event'))
-    return 'player_not_in_team_at_event';
-  return 'generic';
-}
-
 export async function upsertCallupDecision(
   input: unknown
 ): Promise<UpsertDecisionState> {
-  const parsed = upsertCallupDecisionSchema.safeParse(input);
-  if (!parsed.success) {
-    return { error: mapDecisionErr(parsed.error.issues[0]?.message) };
-  }
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'forbidden' };
 
-  const { data: existing } = await supabase
-    .from('callup_decisions')
-    .select('event_id')
-    .eq('event_id', parsed.data.event_id)
-    .eq('player_id', parsed.data.player_id)
-    .maybeSingle();
-
-  if (existing) {
-    const { error } = await supabase
-      .from('callup_decisions')
-      .update({
-        decision: parsed.data.decision,
-        reason: parsed.data.reason,
-      })
-      .eq('event_id', parsed.data.event_id)
-      .eq('player_id', parsed.data.player_id);
-    if (error) return { error: mapDecisionPgErr(error.message, error.code) };
-  } else {
-    const { error } = await supabase.from('callup_decisions').insert({
-      event_id: parsed.data.event_id,
-      player_id: parsed.data.player_id,
-      decision: parsed.data.decision,
-      reason: parsed.data.reason,
-      decided_by: user.id,
-    });
-    if (error) return { error: mapDecisionPgErr(error.message, error.code) };
-  }
-
-  // PART 2.4 — propaga el descarte/convocatoria a las alineaciones del partido.
-  try {
-    await syncLineupsForDecision(
-      supabase,
-      parsed.data.event_id,
-      parsed.data.player_id,
-      parsed.data.decision === 'called_up',
-    );
-  } catch (e) {
+  // O2-7b-1 — la escritura (upsert incremental SELECT→UPDATE/INSERT con
+  // decided_by=auth.uid + sync de alineación best-effort) se extrajo a core para
+  // compartirla con la app nativa. Comportamiento idéntico: aquí solo se inyecta el
+  // logger (console + Sentry) y se revalida. El GATE (quién convoca) sigue siendo la
+  // RLS server-side (42501 → 'forbidden'); no se reimplementa aquí.
+  const res = await upsertCallupDecisionFromClient(supabase, input, (e) => {
     console.error('syncLineupsForDecision error', e);
     Sentry.captureException(e, {
       tags: { feature: 'callups', step: 'sync_lineups_decision' },
     });
-  }
+  });
+  if (!res.ok) return { error: res.error };
 
+  const eventId = (input as { event_id?: string }).event_id ?? '';
   revalidatePath('/[locale]/(authenticated)/convocatorias', 'page');
   revalidatePath(
-    `/[locale]/(authenticated)/convocatorias/${parsed.data.event_id}`,
+    `/[locale]/(authenticated)/convocatorias/${eventId}`,
     'page'
   );
   revalidatePath(
-    `/[locale]/(authenticated)/convocatorias/${parsed.data.event_id}/alineacion`,
+    `/[locale]/(authenticated)/convocatorias/${eventId}/alineacion`,
     'page'
   );
   return { success: true };
@@ -665,26 +555,21 @@ export async function clearCallupDecision(
 ): Promise<ClearDecisionState> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const { error } = await supabase
-    .from('callup_decisions')
-    .delete()
-    .eq('event_id', eventId)
-    .eq('player_id', playerId);
-  if (error) {
-    if (error.code === '42501') return { error: 'forbidden' };
-    return { error: 'generic' };
-  }
 
-  // Quitar la decisión = el jugador vuelve a convocado por defecto → al
-  // banquillo de las alineaciones (PART 2.4).
-  try {
-    await syncLineupsForDecision(supabase, eventId, playerId, true);
-  } catch (e) {
-    console.error('syncLineupsForDecision error', e);
-    Sentry.captureException(e, {
-      tags: { feature: 'callups', step: 'sync_lineups_decision' },
-    });
-  }
+  // O2-7b-1 — delega en core (DELETE + sync de alineación como convocado,
+  // best-effort). Comportamiento idéntico; el gate sigue en la RLS (42501).
+  const res = await clearCallupDecisionFromClient(
+    supabase,
+    eventId,
+    playerId,
+    (e) => {
+      console.error('syncLineupsForDecision error', e);
+      Sentry.captureException(e, {
+        tags: { feature: 'callups', step: 'sync_lineups_decision' },
+      });
+    },
+  );
+  if (!res.ok) return { error: res.error };
 
   revalidatePath(
     `/[locale]/(authenticated)/convocatorias/${eventId}`,
