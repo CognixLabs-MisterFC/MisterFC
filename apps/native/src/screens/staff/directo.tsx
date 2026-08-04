@@ -31,6 +31,7 @@ import {
   type PeriodKind,
   type QuickEntryInput,
 } from '@misterfc/core';
+import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
@@ -127,6 +128,7 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
 
   const { user } = useSession();
   const userId = user?.id ?? null;
+  const router = useRouter();
 
   const [busy, setBusy] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
@@ -383,12 +385,22 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
           ) : null}
 
           {status === 'closed' ? (
-            <ConfirmBtn
-              label={t('directo_control.reopen')}
-              confirmLabel={t('directo_control.reopen_confirm')}
-              disabled={!editable}
-              onConfirm={() => run(reopenMatchFromClient, ref)}
-            />
+            <>
+              {/* O2-9c — al pitar el final se llega al post-partido (valoraciones). */}
+              <Btn
+                label={t('directo_control.go_post_match')}
+                accent={accent}
+                disabled={false}
+                onPress={() => router.push({ pathname: '/staff/post-partido', params: { eventId } })}
+                primary
+              />
+              <ConfirmBtn
+                label={t('directo_control.reopen')}
+                confirmLabel={t('directo_control.reopen_confirm')}
+                disabled={!editable}
+                onConfirm={() => run(reopenMatchFromClient, ref)}
+              />
+            </>
           ) : null}
         </View>
 

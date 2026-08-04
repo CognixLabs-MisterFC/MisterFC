@@ -1,74 +1,34 @@
 /**
  * F8.2 — Carga de la etapa POST-PARTIDO (valoraciones del partido).
  *
- * Etapa terminal del ciclo (spec 8.0 §3): convocatoria → alineación → directo →
- * post-partido → cerrado. Permiso autoritativo vía RPC `user_can_record_match`
- * (mismo helper que la RLS de evaluations / F7): cuerpo técnico del equipo +
- * admin/coord.
- *
- * La lista de jugadores a valorar es la PLANTILLA QUE PARTICIPÓ: las filas
- * materializadas en `match_player_stats` (7.10) — unión con jugadores que ya
- * tengan una valoración (por si el partido se reabrió y editó). Las stats de
- * 7.10 se muestran como CONTEXTO en solo lectura (§6); NO se mezclan con la
- * valoración subjetiva.
+ * O2-9c — El grueso de la lectura se EXTRAJO a core (`getPostMatchFromClient`):
+ * resultado final, stats consolidadas (7.10, contexto), valoraciones individuales,
+ * valoración colectiva y permiso (RPC user_can_record_match). Aquí solo queda la
+ * capa web: crear el cliente con cookie, y AÑADIR la nota privada del staff (F8.4,
+ * `evaluation_private_notes`) que NO se extrajo — así el comportamiento web es
+ * idéntico (la UI sigue viendo `privateNote`) sin duplicar el resto de la lectura.
  */
 
-import { createSupabaseServerClient, type TeamFormat } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  getPostMatchFromClient,
+  type PostMatchData as CorePostMatchData,
+  type PostMatchPlayer as CorePostMatchPlayer,
+  type PostMatchStats,
+  type PostMatchEvaluation,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
-/** Stats objetivas materializadas al cerrar (7.10). Contexto, no valoración. */
-export type PostMatchStats = {
-  started: boolean;
-  minutesPlayed: number;
-  goals: number;
-  assists: number;
-  yellowCards: number;
-  redCards: number;
-  shots: number;
-  foulsCommitted: number;
-  foulsReceived: number;
-  penaltiesScored: number;
-  penaltiesMissed: number;
-};
+export type { PostMatchStats, PostMatchEvaluation };
 
-/** Valoración actual de un jugador (si existe). */
-export type PostMatchEvaluation = {
-  rating: number | null;
-  comment: string | null;
-  isMvp: boolean;
-};
-
-export type PostMatchPlayer = {
-  playerId: string;
-  firstName: string;
-  lastName: string | null;
-  dorsal: number | null;
-  /** null si el jugador no tiene fila en match_player_stats (no participó). */
-  stats: PostMatchStats | null;
-  /** null si aún no se ha valorado. */
-  evaluation: PostMatchEvaluation | null;
+/** Jugador del post-partido = el del core + la nota privada del staff (F8.4). */
+export type PostMatchPlayer = CorePostMatchPlayer & {
   /** F8.4 — nota privada del staff (interna, nunca visible a jugador/familia). */
   privateNote: string | null;
 };
 
-export type PostMatchData = {
-  event: {
-    id: string;
-    title: string;
-    opponentName: string | null;
-    teamName: string;
-    format: TeamFormat;
-    type: string;
-  };
-  /** Estado de la sesión de captura (F7). El formulario solo se abre en 'closed'. */
-  matchStatus: 'not_started' | 'live' | 'closed';
-  /** F8 §3.5 — etapa de valoraciones completada (nodo "cerrado" del ciclo). */
-  postMatchDone: boolean;
-  /** Marcador final materializado al cerrar (7.10). null si no hay. */
-  score: { own: number | null; against: number | null };
+export type PostMatchData = Omit<CorePostMatchData, 'players'> & {
   players: PostMatchPlayer[];
-  /** F8.3 — valoración COLECTIVA del equipo (una por partido). null si no hay. */
-  teamEvaluation: { rating: number; comment: string | null } | null;
 };
 
 export async function loadPostMatch(
@@ -78,90 +38,11 @@ export async function loadPostMatch(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { data: ev } = await supabase
-    .from('events')
-    .select(
-      `id, club_id, type, title, opponent_name,
-       teams!inner(name, format)`,
-    )
-    .eq('id', eventId)
-    .eq('club_id', clubId)
-    .maybeSingle();
-  if (!ev) return null;
+  const core = await getPostMatchFromClient(supabase, clubId, eventId);
+  if (!core) return null;
 
-  type EventShape = {
-    id: string;
-    club_id: string;
-    type: string;
-    title: string;
-    opponent_name: string | null;
-    teams: { name: string; format: TeamFormat };
-  };
-  const event = ev as unknown as EventShape;
-
-  // Permiso autoritativo (mismo helper que la RLS de evaluations / F7.1).
-  const { data: canRecord } = await supabase.rpc('user_can_record_match', {
-    p_event_id: eventId,
-  });
-  if (canRecord !== true) return null;
-
-  // Estado + cierre de la etapa + marcador final.
-  const { data: stateRow } = await supabase
-    .from('match_state')
-    .select('status, post_match_done, goals_for, goals_against')
-    .eq('event_id', eventId)
-    .maybeSingle();
-  const matchStatus =
-    (stateRow?.status as 'not_started' | 'live' | 'closed' | undefined) ??
-    'not_started';
-  const postMatchDone = (stateRow?.post_match_done as boolean | undefined) ?? false;
-  const score = {
-    own: (stateRow?.goals_for as number | null) ?? null,
-    against: (stateRow?.goals_against as number | null) ?? null,
-  };
-
-  // Stats consolidadas (7.10) — contexto por jugador.
-  const { data: statRows } = await supabase
-    .from('match_player_stats')
-    .select(
-      `player_id, started, minutes_played, goals, assists, yellow_cards,
-       red_cards, shots, fouls_committed, fouls_received,
-       penalties_scored, penalties_missed`,
-    )
-    .eq('event_id', eventId);
-  const statsByPlayer = new Map<string, PostMatchStats>();
-  for (const r of statRows ?? []) {
-    statsByPlayer.set(r.player_id as string, {
-      started: r.started as boolean,
-      minutesPlayed: r.minutes_played as number,
-      goals: r.goals as number,
-      assists: r.assists as number,
-      yellowCards: r.yellow_cards as number,
-      redCards: r.red_cards as number,
-      shots: r.shots as number,
-      foulsCommitted: r.fouls_committed as number,
-      foulsReceived: r.fouls_received as number,
-      penaltiesScored: r.penalties_scored as number,
-      penaltiesMissed: r.penalties_missed as number,
-    });
-  }
-
-  // Valoraciones ya guardadas.
-  const { data: evalRows } = await supabase
-    .from('evaluations')
-    .select('player_id, rating, comment, is_mvp')
-    .eq('event_id', eventId);
-  const evalByPlayer = new Map<string, PostMatchEvaluation>();
-  for (const r of evalRows ?? []) {
-    evalByPlayer.set(r.player_id as string, {
-      rating: (r.rating as number | null) ?? null,
-      comment: (r.comment as string | null) ?? null,
-      isMvp: (r.is_mvp as boolean) ?? false,
-    });
-  }
-
-  // F8.4 — notas privadas del staff (internas; la RLS impide que lleguen aquí a
-  // jugador/familia, pero esta query solo la usa el post-partido, gateado staff).
+  // F8.4 — notas privadas del staff (internas). La RLS las restringe a staff;
+  // esta query solo la usa el post-partido, ya gateado.
   const { data: privRows } = await supabase
     .from('evaluation_private_notes')
     .select('player_id, note')
@@ -171,66 +52,11 @@ export async function loadPostMatch(
     privByPlayer.set(r.player_id as string, r.note as string);
   }
 
-  // Lista de jugadores = participantes (match_player_stats) ∪ ya valorados.
-  const playerIds = new Set<string>([
-    ...statsByPlayer.keys(),
-    ...evalByPlayer.keys(),
-  ]);
-  let players: PostMatchPlayer[] = [];
-  if (playerIds.size > 0) {
-    const { data: playerRows } = await supabase
-      .from('players')
-      .select('id, first_name, last_name, dorsal')
-      .in('id', [...playerIds]);
-    players = (playerRows ?? []).map((p) => ({
-      playerId: p.id as string,
-      firstName: p.first_name as string,
-      lastName: (p.last_name as string | null) ?? null,
-      dorsal: (p.dorsal as number | null) ?? null,
-      stats: statsByPlayer.get(p.id as string) ?? null,
-      evaluation: evalByPlayer.get(p.id as string) ?? null,
-      privateNote: privByPlayer.get(p.id as string) ?? null,
-    }));
-    // Orden: titulares primero, luego por dorsal, luego por apellido.
-    players.sort((a, b) => {
-      const sa = a.stats?.started ? 0 : 1;
-      const sb = b.stats?.started ? 0 : 1;
-      if (sa !== sb) return sa - sb;
-      const da = a.dorsal ?? 999;
-      const db = b.dorsal ?? 999;
-      if (da !== db) return da - db;
-      return (a.lastName ?? '').localeCompare(b.lastName ?? '', 'es', {
-        sensitivity: 'base',
-      });
-    });
-  }
-
-  // F8.3 — valoración COLECTIVA del equipo (una por partido).
-  const { data: teamEvalRow } = await supabase
-    .from('team_evaluations')
-    .select('rating, comment')
-    .eq('event_id', eventId)
-    .maybeSingle();
-  const teamEvaluation = teamEvalRow
-    ? {
-        rating: teamEvalRow.rating as number,
-        comment: (teamEvalRow.comment as string | null) ?? null,
-      }
-    : null;
-
   return {
-    event: {
-      id: event.id,
-      title: event.title,
-      opponentName: event.opponent_name,
-      teamName: event.teams.name,
-      format: event.teams.format,
-      type: event.type,
-    },
-    matchStatus,
-    postMatchDone,
-    score,
-    players,
-    teamEvaluation,
+    ...core,
+    players: core.players.map((p) => ({
+      ...p,
+      privateNote: privByPlayer.get(p.playerId) ?? null,
+    })),
   };
 }
