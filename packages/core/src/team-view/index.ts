@@ -16,6 +16,7 @@ export {
   getTeamHomeFromClient,
   getTeamRosterStatsFromClient,
   getTeamStaffLightFromClient,
+  getStaffTeamsFromClient,
 } from './queries';
 export type {
   PlayerTeamMembership,
@@ -23,4 +24,5 @@ export type {
   RosterStatRow,
   LightStaffMember,
   LightTeamStaff,
+  StaffTeamCard,
 } from './queries';

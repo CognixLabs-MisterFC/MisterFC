@@ -1,5 +1,6 @@
-import { Placeholder } from '@/nav/placeholder';
+import { MisEquiposScreen } from '@/screens/staff/mis-equipos';
 
+/** O2-10a — Mis equipos (menú): lista → tocar equipo → detalle. */
 export default function Screen() {
-  return <Placeholder labelKey="nav.mis_equipos" />;
+  return <MisEquiposScreen target="detail" />;
 }

@@ -1,5 +1,6 @@
-import { Placeholder } from '@/nav/placeholder';
+import { SesionDelDiaScreen } from '@/screens/staff/sesion-del-dia';
 
+/** O2-10a — Sesiones publicadas de los equipos del staff (lectura). */
 export default function Screen() {
-  return <Placeholder labelKey="nav.sesion_del_dia" />;
+  return <SesionDelDiaScreen />;
 }
