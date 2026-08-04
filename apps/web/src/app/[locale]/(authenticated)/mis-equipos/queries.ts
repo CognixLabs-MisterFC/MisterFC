@@ -17,7 +17,7 @@ import {
   pickNextEvent,
   pickNextMatchWithoutCallup,
   pickLastTrainingWithoutAttendance,
-  COACH_ROLES,
+  getStaffTeamsFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
@@ -75,24 +75,6 @@ export type TeamDetail = {
   callups_published_count: number;
 };
 
-// E-final-1: "mis equipos" del coordinador = los que coordina. Además de las
-// COACH_ROLES (principal/ayudante), aceptamos staff_role='coordinador'. Local a
-// mis-equipos (NO se toca COACH_ROLES central: el coordinador NO debe entrar en
-// otras pantallas COACH-only, p.ej. la vista ligera de cuerpo técnico de E-7b).
-const MIS_EQUIPOS_STAFF_ROLES = new Set<string>([
-  ...COACH_ROLES,
-  'coordinador',
-]);
-
-// Prioridad para elegir el badge cuando el usuario tiene VARIOS staff_role en el
-// MISMO equipo (C-0): muestra el rol más "de banquillo"; 'coordinador' solo si es
-// su único vínculo con ese equipo. También sirve para deduplicar por equipo.
-const STAFF_ROLE_PRIORITY: Record<string, number> = {
-  entrenador_principal: 3,
-  entrenador_ayudante: 2,
-  coordinador: 1,
-};
-
 type StaffTeam = {
   team_id: string;
   staff_role: string;
@@ -110,40 +92,28 @@ type StaffTeam = {
   };
 };
 
+// O2-10a — la lectura + filtro de rol + dedup por equipo se EXTRAJO a core
+// (`getStaffTeamsFromClient`); aquí solo se mapea al shape nested que usa el resto
+// del dashboard (loadCoachTeams). Comportamiento idéntico.
 async function loadStaffTeams(
   membershipId: string,
   clubId: string
 ): Promise<StaffTeam[]> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const { data } = await supabase
-    .from('team_staff')
-    .select(
-      'team_id, staff_role, teams!inner(id, name, color, format, season, categories!inner(id, club_id, name))'
-    )
-    .eq('membership_id', membershipId)
-    .is('left_at', null);
-  const rows = ((data ?? []) as unknown as StaffTeam[]).filter(
-    (s) =>
-      MIS_EQUIPOS_STAFF_ROLES.has(s.staff_role) &&
-      s.teams.categories.club_id === clubId
-  );
-
-  // Unión SIN duplicar equipos: un usuario puede tener varias filas team_staff en
-  // el mismo equipo (varios staff_role). Nos quedamos con una por team_id,
-  // eligiendo el staff_role de mayor prioridad para el badge.
-  const byTeam = new Map<string, StaffTeam>();
-  for (const s of rows) {
-    const cur = byTeam.get(s.team_id);
-    if (
-      !cur ||
-      (STAFF_ROLE_PRIORITY[s.staff_role] ?? 0) >
-        (STAFF_ROLE_PRIORITY[cur.staff_role] ?? 0)
-    ) {
-      byTeam.set(s.team_id, s);
-    }
-  }
-  return [...byTeam.values()];
+  const cards = await getStaffTeamsFromClient(supabase, { membershipId, clubId });
+  return cards.map((c) => ({
+    team_id: c.teamId,
+    staff_role: c.staffRole,
+    teams: {
+      id: c.teamId,
+      name: c.name,
+      color: c.color,
+      format: c.format,
+      season: c.season,
+      categories: { id: c.categoryId, club_id: clubId, name: c.categoryName },
+    },
+  }));
 }
 
 export async function loadCoachTeams(

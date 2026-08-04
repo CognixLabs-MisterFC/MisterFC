@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { teamsInActiveSeason } from '../schemas/club-structure';
 import type { TeamStaffRole } from '../schemas/staff';
+import { COACH_ROLES } from '../auth/roles';
 import {
   aggregateTeamStats,
   type RosterPlayer,
@@ -330,4 +331,92 @@ export async function getTeamStaffLightFromClient(
       ),
     }))
     .sort((a, b) => a.team_name.localeCompare(b.team_name, 'es'));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// O2-10a — "Mis equipos" del cuerpo técnico. Extraído de apps/web/.../mis-equipos
+// (`loadStaffTeams`). Equipos donde el usuario es `team_staff` activo, DEDUP por
+// equipo (un usuario puede tener varias filas staff_role en el mismo equipo →
+// se queda el rol de mayor prioridad para el badge). Coordinador incluido (E-final:
+// "mis equipos" del coordinador = los que coordina). Lectura; la RLS es el gate.
+// La web pasa a DELEGAR aquí (mapea al shape nested que usa su dashboard).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Tarjeta de equipo del staff (lista de "Mis equipos"). */
+export type StaffTeamCard = {
+  teamId: string;
+  staffRole: string;
+  name: string;
+  color: string;
+  format: string;
+  season: string;
+  categoryId: string;
+  categoryName: string;
+};
+
+/** Roles que cuentan como "mis equipos" del staff (coach + coordinador). */
+const STAFF_TEAM_ROLES = new Set<string>([...COACH_ROLES, 'coordinador']);
+
+/** Prioridad para elegir el badge/dedup cuando hay varios staff_role en un equipo. */
+const STAFF_TEAM_ROLE_PRIORITY: Record<string, number> = {
+  entrenador_principal: 3,
+  entrenador_ayudante: 2,
+  coordinador: 1,
+};
+
+export async function getStaffTeamsFromClient(
+  supabase: SupabaseClient<Database>,
+  params: { membershipId: string; clubId: string },
+): Promise<StaffTeamCard[]> {
+  const { data } = await supabase
+    .from('team_staff')
+    .select(
+      'team_id, staff_role, teams!inner(id, name, color, format, season, categories!inner(id, club_id, name))',
+    )
+    .eq('membership_id', params.membershipId)
+    .is('left_at', null);
+
+  type Row = {
+    team_id: string;
+    staff_role: string;
+    teams: {
+      id: string;
+      name: string;
+      color: string;
+      format: string;
+      season: string;
+      categories: { id: string; club_id: string; name: string };
+    };
+  };
+  const rows = ((data ?? []) as unknown as Row[]).filter(
+    (s) =>
+      STAFF_TEAM_ROLES.has(s.staff_role) &&
+      s.teams.categories.club_id === params.clubId,
+  );
+
+  // Dedup por equipo: nos quedamos con el staff_role de mayor prioridad.
+  const byTeam = new Map<string, Row>();
+  for (const s of rows) {
+    const cur = byTeam.get(s.team_id);
+    if (
+      !cur ||
+      (STAFF_TEAM_ROLE_PRIORITY[s.staff_role] ?? 0) >
+        (STAFF_TEAM_ROLE_PRIORITY[cur.staff_role] ?? 0)
+    ) {
+      byTeam.set(s.team_id, s);
+    }
+  }
+
+  return [...byTeam.values()]
+    .map((s) => ({
+      teamId: s.team_id,
+      staffRole: s.staff_role,
+      name: s.teams.name,
+      color: s.teams.color,
+      format: s.teams.format,
+      season: s.teams.season,
+      categoryId: s.teams.categories.id,
+      categoryName: s.teams.categories.name,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
 }
