@@ -2,15 +2,19 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import {
   adjustClockFromClient,
+  buildMatchEventRow,
   canFinishMatch,
+  computeScore,
   currentPeriod,
   endPeriodFromClient,
   eventScopedCacheKey,
   finishMatchFromClient,
+  getLineupForEventFromClient,
   getMatchDetailFromClient,
   isAtBreak,
   isClockRunning,
   matchPhase,
+  mergeLiveEvents,
   nextPeriodAfter,
   pauseClockFromClient,
   reopenMatchFromClient,
@@ -20,17 +24,30 @@ import {
   userCanRecordMatchFromClient,
   type ClockPeriod,
   type ClockWriteError,
+  type DetailEvent,
+  type LineupRosterPlayer,
   type MatchDetail,
   type MatchPhaseKind,
   type PeriodKind,
+  type QuickEntryInput,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
+import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { useEventQueue } from '@/directo/use-event-queue';
+import { QuickEntry } from '@/directo/quick-entry';
+import { uuidv4 } from '@/lib/uuid';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { t } from '@/i18n';
 import { BRAND } from '@/theme';
+
+/** Eventos que se listan en el timeline (misma familia que B2). */
+const LISTED_EVENTS = new Set([
+  'goal', 'penalty', 'assist', 'yellow_card', 'red_card',
+  'substitution', 'corner', 'foul', 'offside', 'shot',
+]);
 
 /**
  * O2-9a — CONTROL del directo (staff): el RELOJ y el ESTADO del partido. Lee el estado
@@ -52,7 +69,7 @@ const LIVE_PHASES: ReadonlySet<MatchPhaseKind> = new Set([
   'extra_time',
 ]);
 
-type ControlData = { detail: MatchDetail; canRecord: boolean };
+type ControlData = { detail: MatchDetail; canRecord: boolean; roster: LineupRosterPlayer[] };
 
 /** "Ahora" que tickea cada segundo con el partido en vivo (patrón B1/B2, sin setState-en-effect del reloj). */
 function useTickingNow(active: boolean): number {
@@ -101,9 +118,15 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
       const detail = await getMatchDetailFromClient(sb, clubId, eventId);
       if (!detail) return null;
       const canRecord = await userCanRecordMatchFromClient(sb, eventId);
-      return { detail, canRecord };
+      // Roster (nombres/dorsales + banquillo) para la entrada rápida de 9b. Se
+      // cachea junto al estado → la entrada de eventos funciona también offline.
+      const lineup = await getLineupForEventFromClient(sb, { clubId, eventId });
+      return { detail, canRecord, roster: lineup?.roster ?? [] };
     },
   );
+
+  const { user } = useSession();
+  const userId = user?.id ?? null;
 
   const [busy, setBusy] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
@@ -114,6 +137,11 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
   const isLive = status === 'live';
   const now = useTickingNow(isLive);
 
+  // O2-9b — COLA de eventos offline (la única escritura offline). Encola optimista
+  // y drena idempotente al haber red; su motor es puro (core).
+  const queue = useEventQueue(eventId, online);
+  const { reconcile } = queue;
+
   // Poll en vivo (como B2): refleja cambios de estado/eventos de otro dispositivo o de
   // la web. El cronómetro NO depende del poll (tickea local); esto solo re-lee el estado.
   useEffect(() => {
@@ -121,6 +149,16 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
     const id = setInterval(refresh, LIVE_POLL_MS);
     return () => clearInterval(id);
   }, [isLive, refresh]);
+
+  // Al llegar eventos del servidor, PODAR de la cola los `uploaded` ya confirmados
+  // (ida y vuelta). La key concatena los ids servidos para disparar solo al cambiar.
+  const serverIdsKey = (detail?.events ?? []).map((e) => e.id).join(',');
+  useEffect(() => {
+    if (!detail) return;
+    reconcile(new Set(detail.events.map((e) => e.id)));
+    // serverIdsKey resume detail.events; reconcile es estable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverIdsKey, reconcile]);
 
   // WRITE-GUARD + GATE (cliente): controlar el reloj exige permiso, red y no estar ocupado.
   const editable = canRecord && online && !busy;
@@ -169,6 +207,47 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
 
   const periodLabel = (p: PeriodKind) => t(`directo_control.period.${p}`);
 
+  // O2-9b — TIMELINE y MARCADOR OPTIMISTAS: eventos del servidor + los de la cola
+  // (pending/uploaded, sin failed), deduplicados por uuid (mergeLiveEvents), y el
+  // marcador RE-DERIVADO con computeScore (no se sincroniza; se calcula).
+  const roster = data?.roster ?? [];
+  const nameById = new Map(
+    roster.map((r) => [r.playerId, `${r.firstName} ${r.lastName}`.trim()] as const),
+  );
+  const overlayEvents: DetailEvent[] = queue.overlay.map((r) => ({
+    id: r.id,
+    side: r.side,
+    type: r.type,
+    label:
+      r.side === 'rival'
+        ? `#${r.rival_dorsal}`
+        : nameById.get(r.player_id ?? '') || t('directo_entry.player'),
+    clockSeconds: r.clock_seconds,
+    displayMinute: r.display_minute,
+    period: r.period as PeriodKind,
+  }));
+  const mergedEvents = mergeLiveEvents(detail.events, overlayEvents);
+  const score = computeScore(mergedEvents);
+  const serverIds = new Set(detail.events.map((e) => e.id));
+  const optimisticIds = new Set(
+    queue.overlay.map((r) => r.id).filter((id) => !serverIds.has(id)),
+  );
+
+  // Registrar un evento: uuid + reloj CONGELADOS en el toque → fila completa →
+  // encolar (optimista + persistente). La subida idempotente la hace el hook.
+  const onRegister = (input: QuickEntryInput) => {
+    if (!eventId || !clubId || !userId) return;
+    const row = buildMatchEventRow(input, {
+      id: uuidv4(),
+      eventId,
+      clubId,
+      createdBy: userId,
+      periods: detail.periods,
+      nowMs: Date.now(),
+    });
+    void queue.enqueue(row);
+  };
+
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
@@ -191,7 +270,7 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
               {detail.teamName}
             </Text>
             <Text className="text-3xl font-extrabold text-[#0F1B2E] tabular-nums">
-              {detail.goalsOwn} - {detail.goalsRival}
+              {score.own} - {score.rival}
             </Text>
             <Text className="text-base font-bold text-[#0F1B2E]" numberOfLines={1}>
               {detail.opponentName ?? ''}
@@ -313,16 +392,92 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
           ) : null}
         </View>
 
-        {/* HUECO 9b — aquí engancharán la ENTRADA RÁPIDA de eventos (con cola offline) y
-            el TIMELINE en vivo editable. En 9a el partido se controla (reloj/estado); el
-            registro de goles/tarjetas/cambios llega en 9b. */}
-        <View className="rounded-2xl border border-dashed border-zinc-300 p-4">
-          <Text className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            {t('directo_control.events')}
-          </Text>
-          <Text className="mt-1 text-sm text-zinc-400">{t('directo_control.events_soon')}</Text>
-        </View>
+        {/* O2-9b — ENTRADA RÁPIDA de eventos (solo con el partido EN VIVO). Registra
+            optimista + persistente; offline queda en la cola y sube al reconectar. */}
+        {isLive && canRecord ? (
+          <QuickEntry
+            fieldPlayers={detail.fieldPlayers}
+            roster={roster}
+            accent={accent}
+            disabled={false}
+            onRegister={onRegister}
+          />
+        ) : null}
+
+        {/* Estado de la cola: pendientes de subir + rechazados (aviso, no se pierden). */}
+        {queue.pendingCount > 0 ? (
+          <View className="flex-row items-center justify-center gap-2 rounded-xl bg-amber-50 px-4 py-2">
+            <View className="h-2 w-2 rounded-full bg-amber-500" />
+            <Text className="text-xs text-amber-700">
+              {t('directo_entry.pending', { count: String(queue.pendingCount) })}
+            </Text>
+          </View>
+        ) : null}
+        {queue.failedCount > 0 ? (
+          <FailedBanner count={queue.failedCount} onRetry={queue.retryFailed} />
+        ) : null}
+
+        {/* TIMELINE en vivo: servidor + cola, deduplicado por uuid. */}
+        <EventsTimeline events={mergedEvents} optimisticIds={optimisticIds} />
       </ScrollView>
+    </View>
+  );
+}
+
+/** Aviso de eventos RECHAZADOS por el servidor al subir (RLS/CHECK): no se pierden. */
+function FailedBanner({ count, onRetry }: { count: number; onRetry: () => void }) {
+  return (
+    <View className="flex-row items-center justify-between rounded-xl bg-red-50 px-4 py-2">
+      <Text className="flex-1 text-xs text-red-600">
+        {t('directo_entry.failed', { count: String(count) })}
+      </Text>
+      <Pressable onPress={onRetry} className="rounded-lg bg-red-600 px-3 py-1.5 active:opacity-70">
+        <Text className="text-xs font-semibold text-white">{t('directo_entry.retry')}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/** Línea de tiempo (misma familia que B2): eventos en orden; marca los sin subir. */
+function EventsTimeline({
+  events,
+  optimisticIds,
+}: {
+  events: DetailEvent[];
+  optimisticIds: Set<string>;
+}) {
+  const listed = events
+    .filter((e) => LISTED_EVENTS.has(e.type))
+    .sort((a, b) => a.clockSeconds - b.clockSeconds);
+  return (
+    <View className="rounded-2xl border border-zinc-200 p-4">
+      <Text className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+        {t('directo.events')}
+      </Text>
+      {listed.length === 0 ? (
+        <Text className="py-4 text-center text-sm text-zinc-400">{t('directo.no_events')}</Text>
+      ) : (
+        listed.map((e) => {
+          const min = e.displayMinute ?? Math.floor(e.clockSeconds / 60);
+          const pending = optimisticIds.has(e.id);
+          return (
+            <View key={e.id} className="flex-row items-center gap-3 border-b border-zinc-100 py-2">
+              <Text className="w-8 text-right text-sm text-zinc-400 tabular-nums">{`${min}'`}</Text>
+              <Text className="text-sm font-medium text-[#0F1B2E]">{t(`directo.event.${e.type}`)}</Text>
+              <Text className="flex-1 text-sm text-zinc-500" numberOfLines={1}>
+                {e.side === 'rival' ? `${t('directo.event.rival')} ${e.label}` : e.label}
+              </Text>
+              {pending ? (
+                <View className="rounded-full bg-amber-100 px-2 py-0.5">
+                  <Text className="text-[10px] font-semibold text-amber-700">
+                    {t('directo_entry.unsynced')}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          );
+        })
+      )}
     </View>
   );
 }
