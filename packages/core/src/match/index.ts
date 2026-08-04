@@ -181,3 +181,34 @@ export {
   userCanRecordMatchFromClient,
 } from './state-writes';
 export type { ClockWriteError, ClockWriteOutcome } from './state-writes';
+
+// O2-9b — COLA DE ESCRITURA OFFLINE de los EVENTOS del directo (staff). La ÚNICA
+// escritura offline de la app (excepción acotada al ADR-0020). Puro + primitivo
+// de subida idempotente; la persistencia/orquestación viven en apps/native.
+export {
+  buildMatchEventRow,
+  enqueueEvent,
+  pendingForDrain,
+  countPending,
+  countFailed,
+  hasUnconfirmed,
+  applyDrainResult,
+  pruneConfirmed,
+  resetFailedToPending,
+  overlayRows,
+  failedEntries,
+  upsertMatchEventFromClient,
+  EMPTY_QUEUE,
+  MAX_DRAIN_ATTEMPTS,
+} from './event-queue';
+export type {
+  QueuedMatchEventRow,
+  QuickEntryInput,
+  BuildEventContext,
+  QueuedEventStatus,
+  QueuedEvent,
+  EventQueue,
+  DrainResult,
+  UploadOutcome,
+  EventQueueError,
+} from './event-queue';
