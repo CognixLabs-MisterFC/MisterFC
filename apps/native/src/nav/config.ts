@@ -129,6 +129,11 @@ const STAFF_HIDDEN: MenuDef[] = [
   { name: 'asistencia-sesion', labelKey: 'nav.asistencia' },
   // O2-7b-1 — detalle de convocatoria (?eventId), alcanzado desde la lista.
   { name: 'convocatoria', labelKey: 'nav.convocatorias' },
+  // O2-10b-1a — hilo 1:1 (?conversationId), de equipo (?teamConversationId) y
+  // "nueva conversación" (el staff SÍ inicia). Alcanzados por navegación.
+  { name: 'mensaje', labelKey: 'nav.mensajes' },
+  { name: 'mensaje-equipo', labelKey: 'nav.mensajes' },
+  { name: 'mensaje-nuevo', labelKey: 'nav.mensajes' },
 ];
 
 const DIRECTION_MENU: MenuDef[] = [

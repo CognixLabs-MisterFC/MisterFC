@@ -8,6 +8,10 @@ import {
   getTeamMessagesFromClient,
   sendMessageSchema,
   startConversationSchema,
+  startConversationFromClient,
+  createTeamConversationFromClient,
+  listMessageablePlayersFromClient,
+  listMessageableTeamsFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -16,7 +20,10 @@ import {
   sendTeamMessage as sendTeamMessageWrapped,
 } from '@/lib/send-message';
 import { userCanMessageInClub } from '@/lib/messaging-permissions';
-import { getActiveSeasonLabel } from '@/lib/active-season';
+
+/** Sumidero de errores → Sentry, inyectado en los orquestadores de core. */
+const sentryLog = (error: unknown, step: string, extra: Record<string, unknown>) =>
+  Sentry.captureException(error, { tags: { feature: 'messaging', step }, extra });
 
 export type StartConversationResult = {
   ok?: { conversation_id: string };
@@ -54,52 +61,19 @@ export async function startConversation(
   const canMessage = await userCanMessageInClub(supabase, ctx);
   if (!canMessage) return { error: 'forbidden' };
 
-  // Verificar que el player pertenece al club activo (defensa en profundidad;
-  // el trigger conversations_same_club_trg también lo verifica).
-  const { data: player } = await supabase
-    .from('players')
-    .select('id, club_id')
-    .eq('id', parsed.data.player_id)
-    .maybeSingle();
-  if (!player || player.club_id !== clubId) {
-    return { error: 'player_not_in_club' };
-  }
-
-  // UPSERT por (coach_profile_id, player_id) UNIQUE. Si ya existe, .select()
-  // devuelve la fila existente.
-  const { data: existing } = await supabase
-    .from('conversations')
-    .select('id')
-    .eq('coach_profile_id', ctx.user.id)
-    .eq('player_id', parsed.data.player_id)
-    .maybeSingle();
-
-  if (existing?.id) {
-    return { ok: { conversation_id: existing.id } };
-  }
-
-  const { data: created, error: insErr } = await supabase
-    .from('conversations')
-    .insert({
-      club_id: clubId,
-      player_id: parsed.data.player_id,
-      coach_profile_id: ctx.user.id,
-    })
-    .select('id')
-    .single();
-
-  if (insErr || !created) {
-    if (insErr?.code === '42501') return { error: 'forbidden' };
-    Sentry.captureException(insErr ?? new Error('insert returned null'), {
-      tags: { feature: 'messaging', step: 'start_conversation' },
-      extra: { player_id: parsed.data.player_id, club_id: clubId },
-    });
-    return { error: 'generic' };
-  }
+  // O2-10b-1a — la creación/idempotencia + chequeo de club se extrajo a core
+  // (`startConversationFromClient`, INSERT RLS-gated como el usuario) para compartirla
+  // con la app nativa. El gate UX (userCanMessageInClub) y el revalidate siguen aquí.
+  const res = await startConversationFromClient(
+    supabase,
+    { clubId, playerId: parsed.data.player_id, coachProfileId: ctx.user.id },
+    sentryLog,
+  );
+  if ('error' in res) return { error: res.error };
 
   revalidatePath(`/${locale}/mensajes`);
   revalidatePath(`/${locale}/jugadores/${parsed.data.player_id}`);
-  return { ok: { conversation_id: created.id } };
+  return { ok: { conversation_id: res.ok.conversationId } };
 }
 
 export type SendMessageResult = {
@@ -226,25 +200,11 @@ export async function listMessageablePlayers(): Promise<ListMessageablePlayersRe
   const canMessage = await userCanMessageInClub(supabase, ctx);
   if (!canMessage) return { error: 'forbidden' };
 
-  const { data, error } = await supabase
-    .from('players')
-    .select('id, first_name, last_name')
-    .eq('club_id', clubId)
-    .is('left_club_at', null)
-    .is('erased_at', null) // F14-7: no se puede mensajear a un jugador suprimido
-    .order('first_name', { ascending: true })
-    .order('last_name', { ascending: true })
-    .limit(500);
-
-  if (error) {
-    Sentry.captureException(error, {
-      tags: { feature: 'messaging', step: 'list_messageable_players' },
-      extra: { club_id: clubId },
-    });
-    return { error: 'generic' };
-  }
-
-  return { players: (data ?? []) as MessageablePlayer[] };
+  // O2-10b-1a — la query se extrajo a core (`listMessageablePlayersFromClient`,
+  // RLS players_select_member). El gate UX sigue aquí.
+  const res = await listMessageablePlayersFromClient(supabase, clubId, sentryLog);
+  if ('error' in res) return { error: res.error };
+  return { players: res.players as MessageablePlayer[] };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -274,36 +234,19 @@ export async function createTeamConversation(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // ¿Ya existe? La RLS SELECT devuelve la fila solo si el user es miembro.
-  const { data: existing } = await supabase
-    .from('team_conversations')
-    .select('id')
-    .eq('team_id', teamId)
-    .maybeSingle();
-  if (existing?.id) return { ok: { conversation_id: existing.id } };
-
-  const { data: created, error: insErr } = await supabase
-    .from('team_conversations')
-    .insert({ club_id: clubId, team_id: teamId })
-    .select('id')
-    .single();
-
-  if (insErr || !created) {
-    if (insErr?.code === '42501') return { error: 'forbidden' };
-    // 23503/trigger cross-club, etc.
-    if (insErr?.message?.includes('team_conversation_team_not_found')) {
-      return { error: 'team_not_in_club' };
-    }
-    Sentry.captureException(insErr ?? new Error('insert returned null'), {
-      tags: { feature: 'messaging', step: 'create_team_conversation' },
-      extra: { team_id: teamId, club_id: clubId },
-    });
-    return { error: 'generic' };
-  }
+  // O2-10b-1a — abrir/crear el hilo de grupo se extrajo a core
+  // (`createTeamConversationFromClient`, idempotente + RLS-gated). El gate real de
+  // crear lo impone la RLS `team_conversations_insert_staff_or_director`.
+  const res = await createTeamConversationFromClient(
+    supabase,
+    { clubId, teamId },
+    sentryLog,
+  );
+  if ('error' in res) return { error: res.error };
 
   revalidatePath(`/${locale}/mensajes`);
   revalidatePath(`/${locale}/mensajes/equipo/${teamId}`);
-  return { ok: { conversation_id: created.id } };
+  return { ok: { conversation_id: res.ok.conversationId } };
 }
 
 export type SendTeamMessageResult = {
@@ -388,60 +331,20 @@ export async function listMessageableTeams(): Promise<ListMessageableTeamsResult
   const canMessage = await userCanMessageInClub(supabase, ctx);
   if (!canMessage) return { error: 'forbidden' };
 
-  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
-
-  // El rol del user en el club activo ya viene resuelto en el contexto de sesión
-  // (ctx.activeClub.role). Alineamos "ve todos" con la RLS: admin_club/director.
+  // El rol del user en el club activo ya viene resuelto (ctx.activeClub.role).
+  // Alineamos "ve todos" con la RLS: admin_club/director.
   const isAdminDir =
     ctx.activeClub.role === 'admin_club' || ctx.activeClub.role === 'director';
 
-  // Base: equipos del club en la temporada activa (columna denormalizada
-  // teams.club_id, disponible desde A1; sin join a categories).
-  let query = supabase
-    .from('teams')
-    .select('id, name')
-    .eq('club_id', clubId)
-    .eq('season', activeSeason);
-
-  if (!isAdminDir) {
-    // Solo los equipos que el usuario entrena (team_staff activo). team_staff
-    // apunta a la fila de team de su temporada, así que el .in() combinado con
-    // .eq('season', activeSeason) deja únicamente sus equipos de la activa.
-    const { data: staffRows, error: staffError } = await supabase
-      .from('team_staff')
-      .select('team_id')
-      .eq('membership_id', ctx.activeClub.membershipId)
-      .is('left_at', null);
-
-    if (staffError) {
-      Sentry.captureException(staffError, {
-        tags: { feature: 'messaging', step: 'list_messageable_teams_staff' },
-        extra: { club_id: clubId },
-      });
-      return { error: 'generic' };
-    }
-
-    const teamIds = (staffRows ?? []).map((r) => r.team_id as string);
-    if (teamIds.length === 0) return { teams: [] };
-    query = query.in('id', teamIds);
-  }
-
-  const { data, error } = await query
-    .order('name', { ascending: true })
-    .limit(500);
-
-  if (error) {
-    Sentry.captureException(error, {
-      tags: { feature: 'messaging', step: 'list_messageable_teams' },
-      extra: { club_id: clubId },
-    });
-    return { error: 'generic' };
-  }
-
-  const teams = ((data ?? []) as Array<{ id: string; name: string }>).map(
-    (t) => ({ id: t.id, name: t.name }),
+  // O2-10b-1a — la resolución (temporada activa + ramificación por scope) se extrajo
+  // a core (`listMessageableTeamsFromClient`). El gate UX sigue aquí.
+  const res = await listMessageableTeamsFromClient(
+    supabase,
+    { clubId, isAdminDir, membershipId: ctx.activeClub.membershipId },
+    sentryLog,
   );
-  return { teams };
+  if ('error' in res) return { error: res.error };
+  return { teams: res.teams };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
