@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 
+export * from './publish';
+
 /**
  * O2-5 B1 — Anuncios (lectura), extraído de `apps/web` (Inicio + /anuncios). La
  * RLS filtra a los que el usuario ve (club-wide + equipos del jugador). Family no
@@ -59,6 +61,57 @@ export async function getRecentAnnouncementsFromClient(
     .order('created_at', { ascending: false })
     .limit(opts?.limit ?? 5);
   return mapAnn((data ?? []) as unknown as RawAnn[]);
+}
+
+/**
+ * O2-10b-1b — Anuncios de UN equipo, para la pantalla de gestión del staff. Incluye
+ * `author_profile_id` (para decidir afordancia de editar/borrar; el candado real es
+ * la RLS) y el nombre del autor. La RLS `announcements_select_club_member` filtra a
+ * los visibles; el orden replica la web (fijados primero, luego recientes).
+ */
+export type TeamAnnouncementRow = {
+  id: string;
+  title: string;
+  body: string;
+  pinned: boolean;
+  expires_at: string | null;
+  created_at: string;
+  author_profile_id: string;
+  authorName: string | null;
+};
+
+export async function getTeamAnnouncementsFromClient(
+  supabase: DbClient,
+  teamId: string
+): Promise<TeamAnnouncementRow[]> {
+  const { data } = await supabase
+    .from('announcements')
+    .select(
+      'id, title, body, pinned, expires_at, created_at, author_profile_id, profiles!inner(full_name)'
+    )
+    .eq('team_id', teamId)
+    .order('pinned', { ascending: false })
+    .order('created_at', { ascending: false });
+  type Row = {
+    id: string;
+    title: string;
+    body: string;
+    pinned: boolean;
+    expires_at: string | null;
+    created_at: string;
+    author_profile_id: string;
+    profiles: { full_name: string | null };
+  };
+  return ((data ?? []) as unknown as Row[]).map((a) => ({
+    id: a.id,
+    title: a.title,
+    body: a.body,
+    pinned: a.pinned,
+    expires_at: a.expires_at ?? null,
+    created_at: a.created_at,
+    author_profile_id: a.author_profile_id,
+    authorName: a.profiles?.full_name ?? null,
+  }));
 }
 
 /** Lista de anuncios para la pantalla /anuncios (family: sin filtro de scope). */

@@ -6,10 +6,17 @@ import {
   createSupabaseServerClient,
   announcementInputSchema,
   announcementUpdateSchema,
+  updateAnnouncementFromClient,
+  deleteAnnouncementFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { userCanPublishAnnouncementsToTeam } from '@/lib/messaging-permissions';
+import { publishAnnouncementWeb } from '@/lib/publish-announcement';
+
+/** Sumidero de errores → Sentry, inyectado en los orquestadores de core. */
+const sentryLog = (error: unknown, step: string, extra: Record<string, unknown>) =>
+  Sentry.captureException(error, { tags: { feature: 'announcements', step }, extra });
 
 export type AnnouncementResult = {
   ok?: { announcement_id: string };
@@ -53,103 +60,24 @@ export async function createAnnouncement(
   );
   if (!canPublish) return { error: 'forbidden' };
 
-  // Verificar que el team pertenece al club activo.
-  const { data: teamRow } = await supabase
-    .from('teams')
-    .select('id, categories!inner(club_id)')
-    .eq('id', parsed.data.team_id)
-    .maybeSingle();
-  const teamClubId = (teamRow?.categories as unknown as { club_id: string } | null)?.club_id;
-  if (!teamRow || teamClubId !== clubId) return { error: 'team_not_in_club' };
-
-  const { data: created, error: insErr } = await supabase
-    .from('announcements')
-    .insert({
-      team_id: parsed.data.team_id,
-      club_id: clubId,
-      author_profile_id: ctx.user.id,
-      title: parsed.data.title,
-      body: parsed.data.body,
-      pinned: parsed.data.pinned,
-      expires_at: parsed.data.expires_at,
-    })
-    .select('id')
-    .single();
-
-  if (insErr || !created) {
-    if (insErr?.code === '42501') return { error: 'forbidden' };
-    Sentry.captureException(insErr ?? new Error('insert returned null'), {
-      tags: { feature: 'announcements', step: 'create' },
-      extra: { team_id: parsed.data.team_id },
-    });
-    return { error: 'generic' };
-  }
-
-  // F5.7 — Notificación a los miembros del team (jugadores + familia).
-  try {
-    await notifyTeamAnnouncement(
-      supabase,
-      created.id,
-      parsed.data.team_id,
-      parsed.data.title,
-      parsed.data.body,
-      locale,
-    );
-  } catch (notifyErr) {
-    Sentry.captureException(notifyErr, {
-      tags: { feature: 'announcements', step: 'notify' },
-      extra: { announcement_id: created.id },
-    });
-  }
+  // O2-10b-1b — publicar (insert como el usuario + fan-out service-role DESPUÉS) se
+  // extrajo a `publishAnnouncementWeb` (core + inyección de notify/Sentry), compartido
+  // con el route handler nativo. El gate UX (userCanPublishAnnouncementsToTeam) y el
+  // revalidate siguen aquí; comportamiento web idéntico.
+  const res = await publishAnnouncementWeb(supabase, {
+    clubId,
+    authorProfileId: ctx.user.id,
+    teamId: parsed.data.team_id,
+    title: parsed.data.title,
+    body: parsed.data.body,
+    pinned: parsed.data.pinned,
+    expiresAt: parsed.data.expires_at,
+    locale,
+  });
+  if ('error' in res) return { error: res.error };
 
   revalidatePath(`/${locale}/equipos/${parsed.data.team_id}/anuncios`);
-  return { ok: { announcement_id: created.id } };
-}
-
-async function notifyTeamAnnouncement(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
-  announcementId: string,
-  teamId: string,
-  title: string,
-  body: string,
-  locale: string,
-): Promise<void> {
-  const { data: tms } = await supabase
-    .from('team_members')
-    .select('player_id')
-    .eq('team_id', teamId)
-    .is('left_at', null);
-  const playerIds = (tms ?? []).map((r) => r.player_id);
-  if (playerIds.length === 0) return;
-
-  const { data: pas } = await supabase
-    .from('player_accounts')
-    .select('profile_id')
-    .in('player_id', playerIds);
-  const recipientUserIds = Array.from(
-    new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
-  ) as string[];
-  if (recipientUserIds.length === 0) return;
-
-  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
-  await emitNotificationFanOut(
-    recipientUserIds.map((u) => ({ user_id: u })),
-    {
-      type: 'new_announcement',
-      in_app_payload: {
-        announcement_id: announcementId,
-        team_id: teamId,
-        deep_link: `/${locale}/anuncios/${announcementId}`,
-      },
-      push_payload: {
-        title,
-        body: body.slice(0, 200),
-        deep_link: `/${locale}/anuncios/${announcementId}`,
-        tag: `announcement:${announcementId}`,
-      },
-      dedupe_base_prefix: `new_announcement:${announcementId}`,
-    },
-  );
+  return { ok: { announcement_id: res.ok.announcementId } };
 }
 
 export async function updateAnnouncement(
@@ -171,45 +99,23 @@ export async function updateAnnouncement(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // Construir patch sólo con campos presentes. Tipo estricto para que el
-  // Supabase generated types lo acepte sin caster a Record<string, unknown>.
-  const patch: {
-    title?: string;
-    body?: string;
-    pinned?: boolean;
-    expires_at?: string | null;
-  } = {};
-  if (parsed.data.title !== undefined) patch.title = parsed.data.title;
-  if (parsed.data.body !== undefined) patch.body = parsed.data.body;
-  if (parsed.data.pinned !== undefined) patch.pinned = parsed.data.pinned;
-  if (parsed.data.expires_at !== undefined) patch.expires_at = parsed.data.expires_at;
-  if (Object.keys(patch).length === 0) {
-    return { ok: { announcement_id: parsed.data.announcement_id } };
-  }
+  // O2-10b-1b — editar es RLS directa (sin fan-out: editar NO re-notifica, solo la
+  // publicación inicial). Extraído a core (`updateAnnouncementFromClient`).
+  const res = await updateAnnouncementFromClient(
+    supabase,
+    parsed.data.announcement_id,
+    {
+      title: parsed.data.title,
+      body: parsed.data.body,
+      pinned: parsed.data.pinned,
+      expiresAt: parsed.data.expires_at,
+    },
+    sentryLog,
+  );
+  if ('error' in res) return { error: res.error };
 
-  const { data: existing } = await supabase
-    .from('announcements')
-    .select('id, team_id')
-    .eq('id', parsed.data.announcement_id)
-    .maybeSingle();
-  if (!existing) return { error: 'not_found' };
-
-  const { error: updErr } = await supabase
-    .from('announcements')
-    .update(patch)
-    .eq('id', parsed.data.announcement_id);
-
-  if (updErr) {
-    if (updErr.code === '42501') return { error: 'forbidden' };
-    Sentry.captureException(updErr, {
-      tags: { feature: 'announcements', step: 'update' },
-      extra: { announcement_id: parsed.data.announcement_id },
-    });
-    return { error: 'generic' };
-  }
-
-  revalidatePath(`/${locale}/equipos/${existing.team_id}/anuncios`);
-  return { ok: { announcement_id: parsed.data.announcement_id } };
+  revalidatePath(`/${locale}/equipos/${res.ok.teamId}/anuncios`);
+  return { ok: { announcement_id: res.ok.announcementId } };
 }
 
 export async function deleteAnnouncement(
@@ -222,28 +128,11 @@ export async function deleteAnnouncement(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { data: existing } = await supabase
-    .from('announcements')
-    .select('id, team_id')
-    .eq('id', announcementId)
-    .maybeSingle();
-  if (!existing) return { error: 'not_found' };
+  // O2-10b-1b — borrar es RLS directa (sin fan-out). Extraído a core
+  // (`deleteAnnouncementFromClient`).
+  const res = await deleteAnnouncementFromClient(supabase, announcementId, sentryLog);
+  if ('error' in res) return { error: res.error };
 
-  const { error: delErr, count } = await supabase
-    .from('announcements')
-    .delete({ count: 'exact' })
-    .eq('id', announcementId);
-
-  if (delErr) {
-    if (delErr.code === '42501') return { error: 'forbidden' };
-    Sentry.captureException(delErr, {
-      tags: { feature: 'announcements', step: 'delete' },
-      extra: { announcement_id: announcementId },
-    });
-    return { error: 'generic' };
-  }
-  if (count === 0) return { error: 'forbidden' };
-
-  revalidatePath(`/${locale}/equipos/${existing.team_id}/anuncios`);
+  revalidatePath(`/${locale}/equipos/${res.ok.teamId}/anuncios`);
   return { ok: true };
 }

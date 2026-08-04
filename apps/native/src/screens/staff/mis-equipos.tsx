@@ -20,12 +20,13 @@ import { ListCard, RoleChip } from './hub-parts';
  * cuerpo técnico sin teamId (no hay selector global — eso es del coordinador, 10b).
  * Caché club-scoped (`staff-teams::${clubId}`).
  */
-export type TeamTarget = 'detail' | 'stats' | 'staff';
+export type TeamTarget = 'detail' | 'stats' | 'staff' | 'anuncios';
 
 const ROUTE_FOR: Record<TeamTarget, string> = {
   detail: '/staff/equipo',
   stats: '/staff/estadisticas-equipo',
   staff: '/staff/cuerpo-tecnico-ligero',
+  anuncios: '/staff/anuncios',
 };
 
 export function MisEquiposScreen({ target = 'detail' }: { target?: TeamTarget }) {
