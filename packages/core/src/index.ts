@@ -25,3 +25,4 @@ export * from './follows/index';
 export * from './calendar/index';
 export * from './home/index';
 export * from './spectators/index';
+export * from './direction/index';
