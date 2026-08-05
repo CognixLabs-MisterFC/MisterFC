@@ -18,6 +18,8 @@ import {
   MATCH_SURFACE_TYPES,
   teamsInActiveSeason,
   COACH_ROLES as CORE_COACH_ROLES,
+  countPendingInvitationsFromClient,
+  countPendingErasuresFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
@@ -248,26 +250,16 @@ export async function loadPendingApprovals(
   }));
 }
 
-/** Invitaciones del club pendientes (sin aceptar y no expiradas). */
+/** Invitaciones del club pendientes (sin aceptar y no expiradas).
+ * O2-11a-2 — delega en la lectura de core (misma query; la app nativa la reusa). */
 export async function loadPendingInvitationsCount(clubId: string): Promise<number> {
   const supabase = createSupabaseServerClient(await createCookieAdapter());
-  const nowIso = new Date().toISOString();
-  const { count } = await supabase
-    .from('invitations')
-    .select('id', { count: 'exact', head: true })
-    .eq('club_id', clubId)
-    .is('accepted_at', null)
-    .gt('expires_at', nowIso);
-  return count ?? 0;
+  return countPendingInvitationsFromClient(supabase, clubId);
 }
 
-/** Supresiones (derecho al olvido) del club pendientes de aprobar. */
+/** Supresiones (derecho al olvido) del club pendientes de aprobar.
+ * O2-11a-2 — delega en la lectura de core (misma query; la app nativa la reusa). */
 export async function loadPendingErasureCount(clubId: string): Promise<number> {
   const supabase = createSupabaseServerClient(await createCookieAdapter());
-  const { count } = await supabase
-    .from('erasure_requests')
-    .select('id', { count: 'exact', head: true })
-    .eq('club_id', clubId)
-    .eq('status', 'pending');
-  return count ?? 0;
+  return countPendingErasuresFromClient(supabase, clubId);
 }

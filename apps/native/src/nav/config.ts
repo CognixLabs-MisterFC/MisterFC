@@ -157,6 +157,9 @@ const DIRECTION_HIDDEN: MenuDef[] = [
   { name: 'mensaje', labelKey: 'nav.mensajes' },
   { name: 'mensaje-equipo', labelKey: 'nav.mensajes' },
   { name: 'mensaje-nuevo', labelKey: 'nav.mensajes' },
+  // O2-11a-2 — fichas club-wide (alcanzadas por navegación con parámetros).
+  { name: 'jugador', labelKey: 'nav.jugadores' },
+  { name: 'coach', labelKey: 'nav.cuerpo_tecnico' },
 ];
 
 /** Pantallas SOLO-menú por área (sin contar el extra dinámico del coordinador). */
