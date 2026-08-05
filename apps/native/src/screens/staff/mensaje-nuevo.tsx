@@ -35,7 +35,7 @@ type Mode = 'player' | 'team';
  * navega a su pantalla; el envío ya reutiliza el endpoint F3. Write-guard: crear exige
  * red (sin cola); offline → deshabilitado con aviso.
  */
-export function MensajeNuevoScreen() {
+export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string }) {
   const { user } = useSession();
   const { activeClub, theme } = useApp();
   const router = useRouter();
@@ -94,14 +94,14 @@ export function MensajeNuevoScreen() {
         return;
       }
       router.replace({
-        pathname: '/staff/mensaje',
+        pathname: `${basePath}/mensaje`,
         params: {
           conversationId: res.ok.conversationId,
           title: formatPlayerName(p.first_name, p.last_name),
         },
       });
     },
-    [online, clubId, userId, busyId, router],
+    [online, clubId, userId, busyId, router, basePath],
   );
 
   const openTeam = useCallback(
@@ -119,11 +119,11 @@ export function MensajeNuevoScreen() {
         return;
       }
       router.replace({
-        pathname: '/staff/mensaje-equipo',
+        pathname: `${basePath}/mensaje-equipo`,
         params: { teamConversationId: res.ok.conversationId, title: team.name },
       });
     },
-    [online, clubId, busyId, router],
+    [online, clubId, busyId, router, basePath],
   );
 
   if (loading) return <LoadingScreen />;

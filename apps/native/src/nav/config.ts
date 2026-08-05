@@ -148,6 +148,17 @@ const DIRECTION_MENU: MenuDef[] = [
   { name: 'perfil', labelKey: 'nav.perfil' },
 ];
 
+/**
+ * O2-11a-1 — Rutas OCULTAS de dirección: existen como fichero (deben declararse
+ * href:null para no salir en la barra) pero NO se listan en el menú (se alcanzan por
+ * navegación con parámetros). Reuso de mensajería del staff con basePath /direction.
+ */
+const DIRECTION_HIDDEN: MenuDef[] = [
+  { name: 'mensaje', labelKey: 'nav.mensajes' },
+  { name: 'mensaje-equipo', labelKey: 'nav.mensajes' },
+  { name: 'mensaje-nuevo', labelKey: 'nav.mensajes' },
+];
+
 /** Pantallas SOLO-menú por área (sin contar el extra dinámico del coordinador). */
 export const AREA_MENU: Record<ChromeArea, MenuDef[]> = {
   family: FAMILY_MENU,
@@ -188,6 +199,7 @@ export function allMenuFiles(area: ChromeArea): MenuDef[] {
   // family añade sus rutas ocultas (href:null pero no listadas en el menú).
   if (area === 'family') return [...FAMILY_MENU, ...FAMILY_HIDDEN];
   if (area === 'spectator') return [...AREA_MENU.spectator, ...SPECTATOR_HIDDEN];
+  if (area === 'direction') return [...DIRECTION_MENU, ...DIRECTION_HIDDEN];
   return AREA_MENU[area];
 }
 

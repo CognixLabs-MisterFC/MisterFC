@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { teamsInActiveSeason } from '../schemas/club-structure';
+import { getActiveSeasonLabelFromClient } from '../season/active-season';
 import type { TeamStaffRole } from '../schemas/staff';
 import { COACH_ROLES } from '../auth/roles';
 import {
@@ -417,6 +418,54 @@ export async function getStaffTeamsFromClient(
       season: s.teams.season,
       categoryId: s.teams.categories.id,
       categoryName: s.teams.categories.name,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// O2-11a-1 — Equipos del CLUB (temporada activa), CLUB-WIDE. A diferencia de
+// `getStaffTeamsFromClient` (los equipos `team_staff` del usuario), enumera TODOS
+// los equipos del club → lo usa dirección (admin_club/director, RLS club-wide) como
+// picker de anuncios, donde un admin puede no tener filas team_staff. Solo lectura;
+// la RLS `teams_select_member` es el gate (cualquier miembro lee; la banda la acota
+// AreaGuard('direction')). Temporada activa para no duplicar el mismo equipo por
+// temporada (unique club_id,name,season).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Tarjeta de equipo club-wide (picker de dirección). */
+export type ClubTeamCard = {
+  teamId: string;
+  name: string;
+  color: string;
+  categoryName: string;
+};
+
+export async function getClubTeamsFromClient(
+  supabase: DbClient,
+  clubId: string,
+): Promise<ClubTeamCard[]> {
+  const activeSeason = await getActiveSeasonLabelFromClient(supabase, clubId);
+  const { data } = await supabase
+    .from('teams')
+    .select('id, name, color, season, categories!inner(club_id, name)')
+    .eq('club_id', clubId)
+    .eq('season', activeSeason)
+    .order('name');
+
+  type Row = {
+    id: string;
+    name: string;
+    color: string;
+    season: string;
+    categories: { club_id: string; name: string };
+  };
+  return ((data ?? []) as unknown as Row[])
+    .filter((r) => r.categories.club_id === clubId)
+    .map((r) => ({
+      teamId: r.id,
+      name: r.name,
+      color: r.color,
+      categoryName: r.categories.name,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
 }
