@@ -27,3 +27,4 @@ export * from './home/index';
 export * from './spectators/index';
 export * from './direction/index';
 export * from './dashboard/index';
+export * from './holidays/index';
