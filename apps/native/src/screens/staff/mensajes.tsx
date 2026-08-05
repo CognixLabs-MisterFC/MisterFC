@@ -23,7 +23,7 @@ const MESSAGES_POLL_MS = 5000;
  * "Nueva conversación" (→ /staff/mensaje-nuevo). Solo lectura aquí; el envío reutiliza
  * el endpoint F3 dentro de cada hilo. Offline muestra el último inbox conocido.
  */
-export function StaffMensajesScreen() {
+export function StaffMensajesScreen({ basePath = '/staff' }: { basePath?: string }) {
   const { user } = useSession();
   const { theme } = useApp();
   const router = useRouter();
@@ -39,11 +39,11 @@ export function StaffMensajesScreen() {
   const openThread = (item: InboxItem) =>
     item.kind === 'direct'
       ? router.push({
-          pathname: '/staff/mensaje',
+          pathname: `${basePath}/mensaje`,
           params: { conversationId: item.conversationId, title: item.title },
         })
       : router.push({
-          pathname: '/staff/mensaje-equipo',
+          pathname: `${basePath}/mensaje-equipo`,
           params: { teamConversationId: item.teamConversationId, title: item.title },
         });
 
@@ -56,7 +56,7 @@ export function StaffMensajesScreen() {
       <View className="flex-row items-center justify-between px-4 pt-4">
         <ScreenTitle>{t('mensajes.title')}</ScreenTitle>
         <Pressable
-          onPress={() => router.push('/staff/mensaje-nuevo')}
+          onPress={() => router.push(`${basePath}/mensaje-nuevo`)}
           className="flex-row items-center gap-1 rounded-full px-3 py-1.5 active:opacity-80"
           style={{ backgroundColor: accent }}
         >

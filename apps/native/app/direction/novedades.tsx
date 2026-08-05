@@ -1,5 +1,6 @@
-import { Placeholder } from '@/nav/placeholder';
+import { NovedadesScreen } from '@/screens/family/novedades';
 
+/** O2-11a-1 — Novedades de dirección. Reuso puro del feed per-usuario (RLS select-own). */
 export default function Screen() {
-  return <Placeholder labelKey="nav.novedades" />;
+  return <NovedadesScreen />;
 }
