@@ -58,7 +58,7 @@ describe('getClubStaffFromClient (cuerpo técnico club-wide de dirección)', () 
     const r = await getClubStaffFromClient(sb, CLUB);
     expect(r.map((c) => c.fullName)).toEqual(['Ana Díaz', 'Zoe Vega']);
     // Ana agrupa 2 asignaciones, ordenadas por joined_at desc.
-    expect(r[0].assignments.map((a) => a.teamName)).toEqual(['Benjamín', 'Alevín A']);
+    expect(r[0]!.assignments.map((a) => a.teamName)).toEqual(['Benjamín', 'Alevín A']);
   });
 
   it('excluye staff de OTRO club', async () => {

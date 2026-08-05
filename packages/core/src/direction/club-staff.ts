@@ -18,7 +18,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { COACH_ROLES } from '../auth/roles';
-import type { Role } from '../auth/roles';
+import type { Role } from '../auth/current-user';
 import type { TeamStaffRole } from '../schemas/staff';
 
 type DbClient = SupabaseClient<Database>;
