@@ -17,8 +17,15 @@ import {
   zonedFields,
   type EventInput,
   type Occurrence,
+  type HolidayOutcome,
+  type ApprovalOutcome,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import {
+  markHolidayWeb,
+  unmarkHolidayWeb,
+  decideEventApprovalWeb,
+} from '@/lib/holidays';
 
 export type EventActionResult =
   | {
@@ -994,139 +1001,14 @@ export async function uncancelTraining(
 // de cancelación de F14F-1: los entrenamientos del día pasan a source='holiday'.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type HolidayErrorCode =
-  | 'forbidden'
-  | 'no_session'
-  | 'already_holiday'
-  | 'reason_required'
-  | 'not_found'
-  | 'db';
-
-export type HolidayActionResult =
-  | { success: true; holidayId: string }
-  | { success: false; error: HolidayErrorCode };
-
-const HOLIDAY_ERRORS = new Set<string>([
-  'forbidden',
-  'no_session',
-  'already_holiday',
-  'reason_required',
-  'not_found',
-]);
-
-type AffectedEvent = {
-  event_id: string;
-  team_id: string | null;
-  title: string;
-  starts_at: string;
-};
+// O2-11c-1 — la lógica de festivos (RPC como el usuario + fan-out service-role
+// DESPUÉS) vive en @/lib/holidays, compartida con el route handler nativo. El tipo
+// de resultado se re-exporta desde core (shape idéntico al histórico).
+export type HolidayActionResult = HolidayOutcome;
 
 /**
- * F14F-2 — destinatarios del aviso de festivo para un equipo: ENTRENADORES
- * (team_staff activo → memberships) ∪ JUGADORES/FAMILIAS (team_members activo →
- * player_accounts). Deduplicado por profile_id. A diferencia de F14F-1, el
- * festivo lo marca dirección, así que TAMBIÉN se avisa a los entrenadores.
- */
-async function holidayTeamRecipients(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
-  teamId: string,
-): Promise<string[]> {
-  const [{ data: staffRows }, { data: tms }] = await Promise.all([
-    supabase
-      .from('team_staff')
-      .select('memberships!inner(profile_id)')
-      .eq('team_id', teamId)
-      .is('left_at', null),
-    supabase
-      .from('team_members')
-      .select('player_id')
-      .eq('team_id', teamId)
-      .is('left_at', null),
-  ]);
-
-  const coachIds = ((staffRows ?? []) as unknown as {
-    memberships: { profile_id: string };
-  }[]).map((r) => r.memberships.profile_id);
-
-  const playerIds = (tms ?? []).map((r) => r.player_id);
-  let familyIds: string[] = [];
-  if (playerIds.length > 0) {
-    const { data: pas } = await supabase
-      .from('player_accounts')
-      .select('profile_id')
-      .in('player_id', playerIds);
-    familyIds = (pas ?? []).map((r) => r.profile_id).filter(Boolean) as string[];
-  }
-
-  return Array.from(new Set([...coachIds, ...familyIds]));
-}
-
-/**
- * F14F-2 — emite el aviso (cancelación o reactivación por festivo) a los
- * destinatarios de cada equipo afectado. Reutiliza los tipos de F14F-1
- * (training_cancelled / training_reinstated); el motivo del festivo viaja en el
- * cuerpo del push. best-effort: no bloquea el resultado de la acción.
- */
-async function notifyHolidayEvents(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
-  events: AffectedEvent[],
-  kind: 'cancelled' | 'reinstated',
-  reason: string | null,
-): Promise<void> {
-  const withTeam = events.filter((e) => e.team_id);
-  if (withTeam.length === 0) return;
-
-  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
-  const type = kind === 'cancelled' ? 'training_cancelled' : 'training_reinstated';
-
-  for (const ev of withTeam) {
-    const recipients = await holidayTeamRecipients(supabase, ev.team_id as string);
-    if (recipients.length === 0) continue;
-
-    const whenEs = new Date(ev.starts_at).toLocaleString('es-ES', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: TZ,
-    });
-    const pushTitle =
-      kind === 'cancelled'
-        ? `Entrenamiento cancelado: ${ev.title}`
-        : `Entrenamiento reactivado: ${ev.title}`;
-    const pushBody =
-      kind === 'cancelled' && reason
-        ? `Instalaciones cerradas (${reason}) · ${whenEs}`
-        : whenEs;
-
-    await emitNotificationFanOut(
-      recipients.map((u) => ({ user_id: u })),
-      {
-        type,
-        in_app_payload: {
-          event_id: ev.event_id,
-          team_id: ev.team_id,
-          title: ev.title,
-          starts_at: ev.starts_at,
-          deep_link: '/calendario',
-        },
-        push_payload: {
-          title: pushTitle,
-          body: pushBody,
-          deep_link: '/es/calendario',
-          tag: `${type}:${ev.event_id}`,
-        },
-        dedupe_base_prefix: `${type}:${ev.event_id}:${ev.starts_at}`,
-      },
-    );
-  }
-}
-
-/**
- * F14F-2 — Marca un día como festivo del club activo vía RPC mark_holiday
- * (gate admin/director dentro de la RPC). Cancela atómicamente los
- * entrenamientos ACTIVOS de ese día y avisa a entrenadores/jugadores/familias.
+ * F14F-2 — Marca un día como festivo del club activo. Wrapper cookie: deriva el club
+ * activo y delega en `markHolidayWeb` (RPC como el usuario + fan-out DESPUÉS).
  * `date` en formato ISO 'YYYY-MM-DD' (día del club, Europe/Madrid).
  */
 export async function markHoliday(
@@ -1136,91 +1018,30 @@ export async function markHoliday(
   const clubId = await getActiveClubId();
   if (!clubId) return { success: false, error: 'forbidden' };
 
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-
-  const { data, error } = await supabase.rpc('mark_holiday', {
-    p_club_id: clubId,
-    p_date: date,
-    p_reason: reason,
-  });
-  if (error) {
-    const code = error.message?.trim();
-    if (code && HOLIDAY_ERRORS.has(code)) {
-      return { success: false, error: code as HolidayErrorCode };
-    }
-    return { success: false, error: 'db' };
-  }
-
-  const result = (data ?? {}) as {
-    holiday_id?: string;
-    reason?: string;
-    cancelled?: AffectedEvent[];
-  };
-  const cancelled = result.cancelled ?? [];
-  if (cancelled.length > 0) {
-    await notifyHolidayEvents(supabase, cancelled, 'cancelled', result.reason ?? reason);
-  }
-
+  const supabase = createSupabaseServerClient(await createCookieAdapter());
+  const res = await markHolidayWeb(supabase, clubId, date, reason);
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');
-  return { success: true, holidayId: result.holiday_id ?? '' };
+  return res;
 }
 
 /**
- * F14F-2 — Desmarca un festivo vía RPC unmark_holiday: reactiva SOLO los
- * entrenamientos que canceló ESE festivo (los de persona no se tocan) y avisa
- * de la reactivación.
+ * F14F-2 — Desmarca un festivo. Wrapper cookie: delega en `unmarkHolidayWeb` (RPC
+ * como el usuario + fan-out de reactivación DESPUÉS).
  */
 export async function unmarkHoliday(
   holidayId: string,
 ): Promise<HolidayActionResult> {
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-
-  const { data, error } = await supabase.rpc('unmark_holiday', {
-    p_holiday_id: holidayId,
-  });
-  if (error) {
-    const code = error.message?.trim();
-    if (code && HOLIDAY_ERRORS.has(code)) {
-      return { success: false, error: code as HolidayErrorCode };
-    }
-    return { success: false, error: 'db' };
-  }
-
-  const result = (data ?? {}) as { reactivated?: AffectedEvent[] };
-  const reactivated = result.reactivated ?? [];
-  if (reactivated.length > 0) {
-    await notifyHolidayEvents(supabase, reactivated, 'reinstated', null);
-  }
-
+  const supabase = createSupabaseServerClient(await createCookieAdapter());
+  const res = await unmarkHolidayWeb(supabase, holidayId);
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');
-  return { success: true, holidayId };
+  return res;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // F14F-4 — Entrenar en festivo: aprobación de un training PENDIENTE.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type ApprovalErrorCode =
-  | 'forbidden'
-  | 'no_session'
-  | 'not_found'
-  | 'not_pending'
-  | 'reason_required'
-  | 'db';
-
-export type ApprovalActionResult =
-  | { success: true; status: 'approved' | 'rejected' }
-  | { success: false; error: ApprovalErrorCode };
-
-const APPROVAL_ERRORS = new Set<string>([
-  'forbidden',
-  'no_session',
-  'not_found',
-  'not_pending',
-  'reason_required',
-]);
+export type ApprovalActionResult = ApprovalOutcome;
 
 /**
  * F14F-4 — avisa a la DIRECCIÓN (admin/director del club) de que hay un training
@@ -1274,97 +1095,18 @@ async function notifyApprovalRequested(
 }
 
 /**
- * F14F-4 — avisa al CREADOR del resultado (aprobado o rechazado).
- */
-async function notifyApprovalDecision(
-  ev: {
-    event_id: string;
-    team_id: string | null;
-    title: string;
-    starts_at: string;
-    created_by: string;
-    status: 'approved' | 'rejected';
-  },
-): Promise<void> {
-  const type = ev.status === 'approved' ? 'training_approved' : 'training_rejected';
-  const whenEs = new Date(ev.starts_at).toLocaleString('es-ES', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: TZ,
-  });
-  const { emitNotificationFanOut } = await import('@/lib/notify-bus');
-  await emitNotificationFanOut([{ user_id: ev.created_by }], {
-    type,
-    in_app_payload: {
-      event_id: ev.event_id,
-      team_id: ev.team_id,
-      title: ev.title,
-      starts_at: ev.starts_at,
-      deep_link: '/calendario',
-    },
-    push_payload: {
-      title:
-        ev.status === 'approved'
-          ? `Entrenamiento en festivo aprobado: ${ev.title}`
-          : `Entrenamiento en festivo rechazado: ${ev.title}`,
-      body: whenEs,
-      deep_link: '/es/calendario',
-      tag: `${type}:${ev.event_id}`,
-    },
-    dedupe_base_prefix: `${type}:${ev.event_id}:${ev.starts_at}`,
-  });
-}
-
-/**
- * F14F-4 — aprueba o rechaza un training PENDIENTE vía RPC decide_event_approval
- * (gate admin/director dentro de la RPC). Avisa al creador del resultado. El
- * rechazo exige motivo.
+ * F14F-4 — aprueba/rechaza un training PENDIENTE en festivo. Wrapper cookie: delega
+ * en `decideEventApprovalWeb` (RPC como el usuario + aviso al creador DESPUÉS).
  */
 export async function decideEventApproval(
   eventId: string,
   approve: boolean,
   reason: string | null,
 ): Promise<ApprovalActionResult> {
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-
-  const { data, error } = await supabase.rpc('decide_event_approval', {
-    p_event_id: eventId,
-    p_approve: approve,
-    p_reason: reason?.trim() ? reason.trim() : undefined,
-  });
-  if (error) {
-    const code = error.message?.trim();
-    if (code && APPROVAL_ERRORS.has(code)) {
-      return { success: false, error: code as ApprovalErrorCode };
-    }
-    return { success: false, error: 'db' };
-  }
-
-  const res = (data ?? {}) as {
-    event_id?: string;
-    team_id?: string | null;
-    title?: string;
-    starts_at?: string;
-    created_by?: string;
-    status?: 'approved' | 'rejected';
-  };
-  if (res.created_by && res.status && res.starts_at && res.title) {
-    await notifyApprovalDecision({
-      event_id: res.event_id ?? eventId,
-      team_id: res.team_id ?? null,
-      title: res.title,
-      starts_at: res.starts_at,
-      created_by: res.created_by,
-      status: res.status,
-    });
-  }
-
+  const supabase = createSupabaseServerClient(await createCookieAdapter());
+  const res = await decideEventApprovalWeb(supabase, eventId, approve, reason);
   revalidatePath('/[locale]/(authenticated)/calendario', 'page');
-  return { success: true, status: (res.status ?? 'approved') as 'approved' | 'rejected' };
+  return res;
 }
 
 function targetToColumns(target: EventInput['target']): {
