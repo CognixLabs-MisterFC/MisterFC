@@ -28,3 +28,4 @@ export * from './spectators/index';
 export * from './direction/index';
 export * from './dashboard/index';
 export * from './holidays/index';
+export * from './erasures/index';
