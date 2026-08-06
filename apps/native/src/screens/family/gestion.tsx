@@ -25,6 +25,7 @@ import {
   type PlayerMedical,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
+import { MIME_TO_EXT, base64ToBytes } from '@/lib/image-upload';
 import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
@@ -46,37 +47,6 @@ import { BRAND } from '@/theme';
  * (secure-store cifrado, player-scoped). El EXPEDIENTE PDF es server-only (route
  * handler con sesión cookie + auditoría): aquí queda DESHABILITADO ("próximamente").
  */
-
-const MIME_TO_EXT: Record<string, string> = {
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-};
-
-// Decodificador base64 → bytes puro (sin depender de atob global, cuya presencia
-// varía por versión de Hermes). La foto se sube al bucket como Uint8Array.
-const B64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-const B64_LOOKUP = (() => {
-  const l = new Uint8Array(256);
-  for (let i = 0; i < B64_ALPHABET.length; i++) l[B64_ALPHABET.charCodeAt(i)] = i;
-  return l;
-})();
-function base64ToBytes(b64: string): Uint8Array {
-  const clean = b64.replace(/[^A-Za-z0-9+/]/g, '');
-  const len = clean.length;
-  const bytes = new Uint8Array(Math.floor((len * 3) / 4));
-  let p = 0;
-  for (let i = 0; i < len; i += 4) {
-    const e1 = B64_LOOKUP[clean.charCodeAt(i)]!;
-    const e2 = B64_LOOKUP[clean.charCodeAt(i + 1)]!;
-    const e3 = B64_LOOKUP[clean.charCodeAt(i + 2)]!;
-    const e4 = B64_LOOKUP[clean.charCodeAt(i + 3)]!;
-    bytes[p++] = (e1 << 2) | (e2 >> 4);
-    if (i + 2 < len) bytes[p++] = ((e2 & 15) << 4) | (e3 >> 2);
-    if (i + 3 < len) bytes[p++] = ((e3 & 3) << 6) | e4;
-  }
-  return bytes;
-}
 
 export function GestionScreen() {
   const { activeClub, theme } = useApp();
