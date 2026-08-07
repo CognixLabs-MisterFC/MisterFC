@@ -82,7 +82,7 @@ export function ProfileScreen() {
               onChanged={refresh}
             />
             <DataCard userId={userId} initial={data} online={online} onSaved={refresh} />
-            <LanguageCard userId={userId} initial={data} online={online} onSaved={refresh} />
+            <LanguageCard userId={userId} online={online} onSaved={refresh} />
           </>
         ) : null}
 
@@ -248,7 +248,6 @@ function DataCard({
   onSaved: () => void;
 }) {
   const t = useTranslations('perfil');
-  const locale = useLocale();
   const [fullName, setFullName] = useState(initial?.full_name ?? '');
   const [dob, setDob] = useState(initial?.date_of_birth ?? '');
   const [busy, setBusy] = useState(false);
@@ -260,11 +259,11 @@ function DataCard({
     setBusy(true);
     setState('idle');
     setErrorKey(null);
-    // Reutiliza la escritura de #440: nombre + fecha + el locale ACTIVO (fuente de verdad).
+    // Escribe SOLO sus campos (nombre + fecha). NUNCA locale: eso es de LanguageCard,
+    // así no pisa un idioma elegido en otra superficie (p.ej. la web).
     const res = await updateProfileFromClient(supabase, userId, {
       full_name: fullName,
       date_of_birth: dob,
-      locale,
     });
     setBusy(false);
     if (res.success) {
@@ -303,12 +302,10 @@ function DataCard({
 // ── Idioma: selector con cambio EN CALIENTE + persistencia en profiles.locale ────
 function LanguageCard({
   userId,
-  initial,
   online,
   onSaved,
 }: {
   userId: string;
-  initial: ProfileData | null;
   online: boolean;
   onSaved: () => void;
 }) {
@@ -321,13 +318,10 @@ function LanguageCard({
     // 1) Cambio EN CALIENTE + caché local (secure-store), siempre, también offline.
     setLocale(l);
     // 2) Persistencia en profiles.locale (verdad) reutilizando updateProfileFromClient
-    //    (#440), solo online. Usa el nombre/fecha ya guardados para no tocar edits en curso.
+    //    (#440), solo online. Escribe SOLO locale (update parcial): NUNCA nombre/fecha,
+    //    para no revertir edits sin guardar del formulario de datos.
     if (online) {
-      const res = await updateProfileFromClient(supabase, userId, {
-        full_name: initial?.full_name ?? '',
-        date_of_birth: initial?.date_of_birth ?? '',
-        locale: l,
-      });
+      const res = await updateProfileFromClient(supabase, userId, { locale: l });
       if (res.success) onSaved();
     }
   }
