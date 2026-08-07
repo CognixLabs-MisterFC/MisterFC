@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Role } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { NEUTRAL_COLOR, type ClubTheme } from '@/theme';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { menuForArea, type ChromeArea, type MenuDef } from './config';
 import { AppMenu } from './menu';
 
@@ -92,6 +92,7 @@ export function useChrome(): ChromeValue {
 export function AppHeader() {
   const insets = useSafeAreaInsets();
   const { chromeTheme, openMenu } = useChrome();
+  const t = useTranslations('shell');
 
   return (
     <View style={{ paddingTop: insets.top, backgroundColor: chromeTheme.color }}>
@@ -99,7 +100,7 @@ export function AppHeader() {
         <Pressable
           onPress={openMenu}
           accessibilityRole="button"
-          accessibilityLabel={t('nav.menu')}
+          accessibilityLabel={t('menu')}
           hitSlop={10}
           className="active:opacity-60"
         >

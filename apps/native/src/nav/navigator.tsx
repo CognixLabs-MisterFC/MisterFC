@@ -2,7 +2,8 @@ import { Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useChrome, AppHeader } from './chrome';
 import { AREA_TABS, allMenuFiles, type ChromeArea } from './config';
-import { t } from '@/i18n';
+import { navI18nKey } from './menu';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-2 — Navegador de un área: BARRA inferior (pestañas frecuentes) + cabecera
@@ -13,6 +14,8 @@ import { t } from '@/i18n';
  */
 export function AreaNavigator({ area }: { area: ChromeArea }) {
   const { chromeTheme } = useChrome();
+  // Namespace vacío: resolvemos claves con ruta completa del catálogo compartido.
+  const t = useTranslations('');
 
   return (
     <Tabs
@@ -27,8 +30,8 @@ export function AreaNavigator({ area }: { area: ChromeArea }) {
           key={tab.name}
           name={tab.name}
           options={{
-            title: t(tab.labelKey),
-            tabBarLabel: t(tab.labelKey),
+            title: t(navI18nKey(tab.labelKey)),
+            tabBarLabel: t(navI18nKey(tab.labelKey)),
             tabBarIcon: ({ size }) => (
               <Text style={{ fontSize: size ?? 20 }}>{tab.icon}</Text>
             ),

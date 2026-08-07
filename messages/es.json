@@ -59,7 +59,12 @@
       "error_invalid_input": "Revisa los datos del formulario",
       "error_invalid_credentials": "Correo o contraseña incorrectos",
       "error_email_not_confirmed": "Aún no has verificado tu correo. Revisa tu bandeja de entrada.",
-      "error_generic": "No hemos podido iniciar sesión. Inténtalo de nuevo."
+      "error_generic": "No hemos podido iniciar sesión. Inténtalo de nuevo.",
+      "app_subtitle": "Entra con tu cuenta",
+      "app_error_invalid_input": "Revisa el correo y la contraseña.",
+      "app_error_invalid_credentials": "Correo o contraseña incorrectos.",
+      "app_error_email_not_confirmed": "Confirma tu correo antes de entrar.",
+      "app_error_generic": "No se pudo entrar. Inténtalo de nuevo."
     },
     "forgot_password": {
       "title": "Recuperar contraseña",
@@ -282,6 +287,10 @@
       "due_soon": "¡Quedan {days} días! · {date}",
       "overdue_days": "Vencida hace {days} días · {date}",
       "cta": "Ir a redactar"
+    },
+    "no_access": {
+      "title": "Sin acceso",
+      "body": "Tu cuenta no pertenece a ningún club todavía."
     }
   },
   "directos": {
@@ -386,7 +395,16 @@
       "platform": "Consola de plataforma"
     },
     "collapse_sidebar": "Ocultar el menú",
-    "expand_sidebar": "Mostrar el menú"
+    "expand_sidebar": "Mostrar el menú",
+    "switch_club": "Cambiar de club",
+    "menu": "Menú",
+    "placeholder_hint": "Pantalla en construcción",
+    "offline_banner": "Sin conexión · mostrando datos guardados",
+    "selector": {
+      "change": "Cambiar",
+      "pick_child": "Elige un hijo",
+      "pick_team": "Elige equipo"
+    }
   },
   "roles": {
     "admin_club": "Administrador del club",
@@ -2833,6 +2851,15 @@
         "label": "Asistencia pendiente",
         "description": "Para entrenadores: aviso si quedan asistencias por marcar."
       }
+    },
+    "push_native": {
+      "card_title": "Notificaciones push",
+      "card_body": "Actívalas para recibir avisos de convocatorias, mensajes y directos aunque no tengas la app abierta.",
+      "enabled": "Notificaciones activadas en este dispositivo.",
+      "denied_body": "Has bloqueado las notificaciones. Actívalas desde los Ajustes del sistema para este dispositivo.",
+      "enabling": "Activando…",
+      "enable_button": "Activar notificaciones",
+      "error": "No se pudieron activar. Inténtalo de nuevo."
     }
   },
   "mi_plantilla": {
@@ -4563,5 +4590,27 @@
     "subtitle": "El cuerpo técnico de tus equipos.",
     "empty": "Todavía no estás en ningún equipo.",
     "no_staff": "Este equipo no tiene cuerpo técnico asignado."
+  },
+  "nav": {
+    "agenda": "Agenda",
+    "alineacion": "Alineación",
+    "anuncios": "Anuncios",
+    "asistencia": "Asistencia",
+    "asistencia_consulta": "Asistencia",
+    "convocatorias": "Convocatorias",
+    "cuerpo_tecnico_direccion": "Cuerpo técnico de dirección",
+    "cuerpo_tecnico_ligero": "Cuerpo técnico ligero",
+    "directo": "Directo",
+    "entrada_rapida": "Entrada rápida",
+    "equipo": "Equipo",
+    "estadisticas": "Estadísticas",
+    "estadisticas_equipo": "Estadísticas de equipo",
+    "gestion": "Gestión del hijo",
+    "inicio_direccion": "Inicio de dirección",
+    "mi_informe": "Mi informe",
+    "novedades": "Novedades",
+    "perfil": "Perfil",
+    "post_partido": "Post-partido",
+    "sesion_del_dia": "Sesión del día"
   }
 }

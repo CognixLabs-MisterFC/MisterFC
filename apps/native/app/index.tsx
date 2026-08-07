@@ -6,7 +6,7 @@ import { useSession } from '@/auth/session';
 import { useApp } from '@/auth/context';
 import { AREA_SEGMENT } from '@/nav/config';
 import { BRAND } from '@/theme';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-2 — GATEKEEPER de navegación (fichero ÚNICO de enrutado por rol, patrón del
@@ -55,21 +55,19 @@ function Splash() {
 }
 
 function NoAccess({ onSignOut }: { onSignOut: () => void }) {
+  const t = useTranslations('home.no_access');
+  const tShell = useTranslations('shell');
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className="flex-1 justify-center gap-3 p-6">
-        <Text className="text-2xl font-bold text-[#0F1B2E]">
-          {t('home.no_access_title')}
-        </Text>
-        <Text className="text-base text-zinc-500">
-          {t('home.no_access_body')}
-        </Text>
+        <Text className="text-2xl font-bold text-[#0F1B2E]">{t('title')}</Text>
+        <Text className="text-base text-zinc-500">{t('body')}</Text>
         <Pressable
           onPress={onSignOut}
           className="mt-4 items-center rounded-xl border border-zinc-200 py-3 active:opacity-70"
         >
           <Text className="text-base font-medium text-zinc-700">
-            {t('nav.cerrar_sesion')}
+            {tShell('signout')}
           </Text>
         </Pressable>
       </View>

@@ -1,5 +1,5 @@
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -9,11 +9,12 @@ import { BRAND } from '@/theme';
  */
 
 export function OfflineBanner({ show }: { show: boolean }) {
+  const t = useTranslations('shell');
   if (!show) return null;
   return (
     <View className="bg-amber-100 px-4 py-2">
       <Text className="text-center text-xs font-medium text-amber-800">
-        {t('offline.banner')}
+        {t('offline_banner')}
       </Text>
     </View>
   );

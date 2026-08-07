@@ -59,7 +59,12 @@
       "error_invalid_input": "Check the form fields",
       "error_invalid_credentials": "Wrong email or password",
       "error_email_not_confirmed": "You haven't verified your email yet. Check your inbox.",
-      "error_generic": "We couldn't sign you in. Please try again."
+      "error_generic": "We couldn't sign you in. Please try again.",
+      "app_subtitle": "Sign in to your account",
+      "app_error_invalid_input": "Check your email and password.",
+      "app_error_invalid_credentials": "Wrong email or password.",
+      "app_error_email_not_confirmed": "Confirm your email before signing in.",
+      "app_error_generic": "Couldn't sign in. Please try again."
     },
     "forgot_password": {
       "title": "Reset your password",
@@ -282,6 +287,10 @@
       "due_soon": "{days} days left! · {date}",
       "overdue_days": "Overdue by {days} days · {date}",
       "cta": "Go write"
+    },
+    "no_access": {
+      "title": "No access",
+      "body": "Your account doesn't belong to any club yet."
     }
   },
   "invitations": {
@@ -505,7 +514,13 @@
       "platform": "Platform console"
     },
     "collapse_sidebar": "Hide menu",
-    "expand_sidebar": "Show menu"
+    "expand_sidebar": "Show menu",
+    "switch_club": "Switch club",
+    "menu": "Menu",
+    "placeholder_hint": "Screen under construction",
+    "selector": {
+      "pick_team": "Pick team"
+    }
   },
   "perfil": {
     "title": "Mi perfil",
@@ -2833,6 +2848,15 @@
         "label": "Attendance pending",
         "description": "For coaches: alert if attendance is still unmarked."
       }
+    },
+    "push_native": {
+      "card_title": "Push notifications",
+      "card_body": "Turn them on to get alerts about call-ups, messages and live matches even when the app is closed.",
+      "enabled": "Notifications enabled on this device.",
+      "denied_body": "You blocked notifications. Turn them on from the system Settings for this device.",
+      "enabling": "Enabling…",
+      "enable_button": "Enable notifications",
+      "error": "Couldn't enable them. Please try again."
     }
   },
   "mi_plantilla": {
@@ -4563,5 +4587,27 @@
     "subtitle": "The coaching staff of your teams.",
     "empty": "You are not on any team yet.",
     "no_staff": "This team has no coaching staff assigned."
+  },
+  "nav": {
+    "agenda": "Schedule",
+    "alineacion": "Lineup",
+    "anuncios": "Announcements",
+    "asistencia": "Attendance",
+    "asistencia_consulta": "Attendance",
+    "convocatorias": "Call-ups",
+    "cuerpo_tecnico_direccion": "Management staff",
+    "cuerpo_tecnico_ligero": "Light staff",
+    "directo": "Live match",
+    "entrada_rapida": "Quick entry",
+    "equipo": "Team",
+    "estadisticas": "Stats",
+    "estadisticas_equipo": "Team stats",
+    "gestion": "Child management",
+    "inicio_direccion": "Management home",
+    "mi_informe": "My report",
+    "novedades": "Updates",
+    "perfil": "Profile",
+    "post_partido": "Post-match",
+    "sesion_del_dia": "Today's session"
   }
 }

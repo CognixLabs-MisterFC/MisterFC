@@ -1,0 +1,62 @@
+clave,es,en,va,pantalla
+auth.signin.app_subtitle,Entra con tu cuenta,Sign in to your account,Entra amb el teu compte,login
+home.no_access.title,Sin acceso,No access,Sense accés,app/index
+home.no_access.body,Tu cuenta no pertenece a ningún club todavía.,Your account doesn't belong to any club yet.,El teu compte encara no pertany a cap club.,app/index
+shell.switch_club,Cambiar de club,Switch club,Canviar de club,nav/menu
+shell.menu,Menú,Menu,Menú,nav/chrome
+shell.placeholder_hint,Pantalla en construcción,Screen under construction,Pantalla en construcció,nav/placeholder
+shell.offline_banner,Sin conexión · mostrando datos guardados,undefined,undefined,ui/feedback
+shell.selector.change,Cambiar,undefined,undefined,ui/child-selector; ui/spectator-player-selector; ui/staff-team-selector
+shell.selector.pick_child,Elige un hijo,undefined,undefined,ui/child-selector; ui/spectator-player-selector
+shell.selector.pick_team,Elige equipo,Pick team,Tria equip,ui/staff-team-selector
+notificaciones.push_native.card_title,Notificaciones push,Push notifications,Notificacions push,notifications/push-settings-card
+notificaciones.push_native.card_body,"Actívalas para recibir avisos de convocatorias, mensajes y directos aunque no tengas la app abierta.","Turn them on to get alerts about call-ups, messages and live matches even when the app is closed.","Activa-les per rebre avisos de convocatòries, missatges i directes encara que no tingues l’app oberta.",notifications/push-settings-card
+notificaciones.push_native.enabled,Notificaciones activadas en este dispositivo.,Notifications enabled on this device.,Notificacions activades en este dispositiu.,notifications/push-settings-card
+notificaciones.push_native.denied_body,Has bloqueado las notificaciones. Actívalas desde los Ajustes del sistema para este dispositivo.,You blocked notifications. Turn them on from the system Settings for this device.,Has bloquejat les notificacions. Activa-les des dels Ajustos del sistema per a este dispositiu.,notifications/push-settings-card
+notificaciones.push_native.enabling,Activando…,Enabling…,Activant…,notifications/push-settings-card
+notificaciones.push_native.enable_button,Activar notificaciones,Enable notifications,Activar notificacions,notifications/push-settings-card
+notificaciones.push_native.error,No se pudieron activar. Inténtalo de nuevo.,Couldn't enable them. Please try again.,No s’han pogut activar. Torna-ho a provar.,notifications/push-settings-card
+nav.agenda,Agenda,Schedule,Agenda,nav/navigator; nav/menu
+nav.alineacion,Alineación,Lineup,Alineació,nav/navigator; nav/menu
+nav.anuncios,Anuncios,Announcements,Anuncis,nav/navigator; nav/menu
+nav.asistencia,Asistencia,Attendance,Assistència,nav/navigator; nav/menu
+nav.asistencia_consulta,Asistencia,Attendance,Assistència,nav/navigator; nav/menu
+nav.convocatorias,Convocatorias,Call-ups,Convocatòries,nav/navigator; nav/menu
+nav.cuerpo_tecnico_direccion,Cuerpo técnico de dirección,Management staff,Cos tècnic de direcció,nav/navigator; nav/menu
+nav.cuerpo_tecnico_ligero,Cuerpo técnico ligero,Light staff,Cos tècnic lleuger,nav/navigator; nav/menu
+nav.directo,Directo,Live match,Directe,nav/navigator; nav/menu
+nav.entrada_rapida,Entrada rápida,Quick entry,Entrada ràpida,nav/navigator; nav/menu
+nav.equipo,Equipo,Team,Equip,nav/navigator; nav/menu
+nav.estadisticas,Estadísticas,Stats,Estadístiques,nav/navigator; nav/menu
+nav.estadisticas_equipo,Estadísticas de equipo,Team stats,Estadístiques d'equip,nav/navigator; nav/menu
+nav.gestion,Gestión del hijo,Child management,Gestió del fill,nav/navigator; nav/menu
+nav.inicio_direccion,Inicio de dirección,Management home,Inici de direcció,nav/navigator; nav/menu
+nav.mi_informe,Mi informe,My report,El meu informe,nav/navigator; nav/menu
+nav.novedades,Novedades,Updates,Novetats,nav/navigator; nav/menu
+nav.perfil,Perfil,Profile,Perfil,nav/navigator; nav/menu
+nav.post_partido,Post-partido,Post-match,Post-partit,nav/navigator; nav/menu
+nav.sesion_del_dia,Sesión del día,Today's session,Sessió del dia,nav/navigator; nav/menu
+shell.app_name,MisterFC,MisterFC,MisterFC,[reusada] login
+auth.signin.email_label,Correo electrónico,Email,Correu electrònic,[reusada] login
+auth.signin.password_label,Contraseña,Password,Contrasenya,[reusada] login
+auth.signin.submit,Entrar,Sign in,Entrar,[reusada] login
+auth.signin.submitting,Entrando…,Signing in…,Entrant…,[reusada] login
+shell.signout,Cerrar sesión,Cerrar sesión,Tancar sessió,[reusada] app/index; nav/menu
+notificaciones.push.denied_title,Permiso denegado,Permission denied,Permís denegat,[reusada] notifications/push-settings-card
+shell.nav.calendario,Calendario,Calendar,Calendari,[reusada] nav/navigator; nav/menu
+shell.nav.cuerpo_tecnico,Cuerpo técnico,Coaching staff,Cos tècnic,[reusada] nav/navigator; nav/menu
+shell.nav.dashboard,Dashboard,Dashboard,Tauler,[reusada] nav/navigator; nav/menu
+shell.nav.directos,Directos,Live,Directes,[reusada] nav/navigator; nav/menu
+shell.nav.equipos,Equipos,Equipos,Equips,[reusada] nav/navigator; nav/menu
+shell.nav.home,Inicio,Inicio,Inici,[reusada] nav/navigator; nav/menu
+shell.nav.jugadores,Jugadores,Players,Jugadors,[reusada] nav/navigator; nav/menu
+shell.nav.mensajes,Mensajes,Messages,Missatges,[reusada] nav/navigator; nav/menu
+shell.nav.mi_equipo,Mi equipo,My team,El meu equip,[reusada] nav/navigator; nav/menu
+shell.nav.mi_ficha,Mi ficha,My profile,La meua fitxa,[reusada] nav/navigator; nav/menu
+shell.nav.mis_equipos,Mis equipos,My teams,Els meus equips,[reusada] nav/navigator; nav/menu
+shell.nav.seguidores,Seguidores,Followers,Seguidors,[reusada] nav/navigator; nav/menu
+shell.nav.supresiones,Supresiones,Erasure requests,Supressions,[reusada] nav/navigator; nav/menu
+auth.signin.app_error_invalid_input,Revisa el correo y la contraseña.,Check your email and password.,Revisa el correu i la contrasenya.,login
+auth.signin.app_error_invalid_credentials,Correo o contraseña incorrectos.,Wrong email or password.,Correu o contrasenya incorrectes.,login
+auth.signin.app_error_email_not_confirmed,Confirma tu correo antes de entrar.,Confirm your email before signing in.,Confirma el teu correu abans d’entrar.,login
+auth.signin.app_error_generic,No se pudo entrar. Inténtalo de nuevo.,Couldn't sign in. Please try again.,No s’ha pogut entrar. Torna-ho a provar.,login

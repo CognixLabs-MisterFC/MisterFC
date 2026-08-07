@@ -59,7 +59,12 @@
       "error_invalid_input": "Revisa les dades del formulari",
       "error_invalid_credentials": "Correu o contrasenya incorrectes",
       "error_email_not_confirmed": "Encara no has verificat el teu correu. Revisa la safata d'entrada.",
-      "error_generic": "No hem pogut iniciar la sessió. Torna-ho a provar."
+      "error_generic": "No hem pogut iniciar la sessió. Torna-ho a provar.",
+      "app_subtitle": "Entra amb el teu compte",
+      "app_error_invalid_input": "Revisa el correu i la contrasenya.",
+      "app_error_invalid_credentials": "Correu o contrasenya incorrectes.",
+      "app_error_email_not_confirmed": "Confirma el teu correu abans d’entrar.",
+      "app_error_generic": "No s’ha pogut entrar. Torna-ho a provar."
     },
     "forgot_password": {
       "title": "Recuperar contrasenya",
@@ -282,6 +287,10 @@
       "due_soon": "Queden {days} dies! · {date}",
       "overdue_days": "Vençuda fa {days} dies · {date}",
       "cta": "Anar a redactar"
+    },
+    "no_access": {
+      "title": "Sense accés",
+      "body": "El teu compte encara no pertany a cap club."
     }
   },
   "invitations": {
@@ -505,7 +514,13 @@
       "platform": "Consola de plataforma"
     },
     "collapse_sidebar": "Amaga el menú",
-    "expand_sidebar": "Mostra el menú"
+    "expand_sidebar": "Mostra el menú",
+    "switch_club": "Canviar de club",
+    "menu": "Menú",
+    "placeholder_hint": "Pantalla en construcció",
+    "selector": {
+      "pick_team": "Tria equip"
+    }
   },
   "perfil": {
     "title": "El meu perfil",
@@ -2833,6 +2848,15 @@
         "label": "Assistència pendent",
         "description": "Per a entrenadors: avís si queden assistències per marcar."
       }
+    },
+    "push_native": {
+      "card_title": "Notificacions push",
+      "card_body": "Activa-les per rebre avisos de convocatòries, missatges i directes encara que no tingues l’app oberta.",
+      "enabled": "Notificacions activades en este dispositiu.",
+      "denied_body": "Has bloquejat les notificacions. Activa-les des dels Ajustos del sistema per a este dispositiu.",
+      "enabling": "Activant…",
+      "enable_button": "Activar notificacions",
+      "error": "No s’han pogut activar. Torna-ho a provar."
     }
   },
   "mi_plantilla": {
@@ -4563,5 +4587,27 @@
     "subtitle": "El cos tècnic dels teus equips.",
     "empty": "Encara no estàs en cap equip.",
     "no_staff": "Este equip no té cos tècnic assignat."
+  },
+  "nav": {
+    "agenda": "Agenda",
+    "alineacion": "Alineació",
+    "anuncios": "Anuncis",
+    "asistencia": "Assistència",
+    "asistencia_consulta": "Assistència",
+    "convocatorias": "Convocatòries",
+    "cuerpo_tecnico_direccion": "Cos tècnic de direcció",
+    "cuerpo_tecnico_ligero": "Cos tècnic lleuger",
+    "directo": "Directe",
+    "entrada_rapida": "Entrada ràpida",
+    "equipo": "Equip",
+    "estadisticas": "Estadístiques",
+    "estadisticas_equipo": "Estadístiques d'equip",
+    "gestion": "Gestió del fill",
+    "inicio_direccion": "Inici de direcció",
+    "mi_informe": "El meu informe",
+    "novedades": "Novetats",
+    "perfil": "Perfil",
+    "post_partido": "Post-partit",
+    "sesion_del_dia": "Sessió del dia"
   }
 }

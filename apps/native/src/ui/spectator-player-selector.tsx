@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { useSpectatorPlayer } from '@/auth/spectator-player';
 import { NEUTRAL_COLOR } from '@/theme';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-6 — Selector de JUGADOR SEGUIDO ACTIVO en la cabecera de las pantallas de la
@@ -13,6 +13,7 @@ import { t } from '@/i18n';
  */
 export function SpectatorPlayerSelector() {
   const { players, activePlayer, setActivePlayer } = useSpectatorPlayer();
+  const t = useTranslations('shell.selector');
   const [open, setOpen] = useState(false);
 
   if (players.length <= 1 || !activePlayer) return null;
@@ -36,7 +37,7 @@ export function SpectatorPlayerSelector() {
             {activePlayer.fullName}
           </Text>
         </View>
-        <Text className="text-xs text-zinc-400">{t('child.change')}</Text>
+        <Text className="text-xs text-zinc-400">{t('change')}</Text>
       </Pressable>
 
       <Modal
@@ -48,7 +49,7 @@ export function SpectatorPlayerSelector() {
         <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setOpen(false)}>
           <View className="rounded-t-3xl bg-white p-4 pb-8">
             <Text className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-              {t('child.pick')}
+              {t('pick_child')}
             </Text>
             {players.map((p) => {
               const active = p.playerId === activePlayer.playerId;
