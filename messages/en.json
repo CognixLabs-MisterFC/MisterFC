@@ -373,11 +373,11 @@
     "error_password_mismatch": "Passwords don't match",
     "error_no_session": "Session not found. Please reopen the link from your email.",
     "error_generic": "We couldn't process the invitation. Please try again.",
-    "error_auth_update_failed": "No hemos podido establecer tu contraseña. Inténtalo de nuevo.",
-    "error_profile_update_failed": "No hemos podido guardar tu perfil. Inténtalo de nuevo.",
-    "error_membership_failed": "No hemos podido vincularte al club. Avisa al admin del club.",
-    "error_player_link_failed": "No hemos podido vincularte al jugador. Avisa al admin del club.",
-    "error_team_staff_failed": "No hemos podido añadirte al equipo. Avisa al admin del club.",
+    "error_auth_update_failed": "We couldn't set your password. Please try again.",
+    "error_profile_update_failed": "We couldn't save your profile. Please try again.",
+    "error_membership_failed": "We couldn't link you to the club. Let the club admin know.",
+    "error_player_link_failed": "We couldn't link you to the player. Let the club admin know.",
+    "error_team_staff_failed": "We couldn't add you to the team. Let the club admin know.",
     "error_wrong_credentials": "Incorrect email or password.",
     "consent_intro": "To finish signing up, accept:",
     "consent_accept_terms": "I accept the Terms and Conditions",
@@ -472,22 +472,22 @@
   },
   "shell": {
     "app_name": "MisterFC",
-    "sidebar_label": "Menú principal",
-    "signout": "Cerrar sesión",
-    "open_menu": "Abrir menú",
-    "active_club_label": "Club activo",
-    "active_club_switch_help": "Cambiar de club activo",
-    "user_menu_label": "Menú de usuario",
-    "user_menu_perfil": "Mi perfil",
+    "sidebar_label": "Main menu",
+    "signout": "Sign out",
+    "open_menu": "Open menu",
+    "active_club_label": "Active club",
+    "active_club_switch_help": "Switch active club",
+    "user_menu_label": "User menu",
+    "user_menu_perfil": "My profile",
     "nav": {
-      "home": "Inicio",
+      "home": "Home",
       "directos": "Live",
       "dashboard": "Dashboard",
-      "invitations": "Invitaciones",
-      "perfil": "Mi perfil",
+      "invitations": "Invitations",
+      "perfil": "My profile",
       "jugadores": "Players",
       "mis_equipos": "My teams",
-      "import_players": "Importar",
+      "import_players": "Import",
       "calendario": "Calendar",
       "cuerpo_tecnico": "Coaching staff",
       "estadisticas_equipo": "Team statistics",
@@ -503,7 +503,7 @@
       "mi_ficha": "My profile",
       "seguidores": "Followers",
       "mi_informe": "Development report",
-      "equipos": "Equipos",
+      "equipos": "Teams",
       "ejercicios": "Exercises",
       "entrenamientos": "Training",
       "partidos": "Matches",
@@ -526,10 +526,10 @@
     "offline_banner": "Offline · showing saved data"
   },
   "perfil": {
-    "title": "Mi perfil",
-    "subtitle": "Datos de tu cuenta y cómo te ven el resto de miembros del club.",
-    "save": "Guardar cambios",
-    "saved": "Cambios guardados.",
+    "title": "My profile",
+    "subtitle": "Your account details and how other club members see you.",
+    "save": "Save changes",
+    "saved": "Changes saved.",
     "change_password": "Change password",
     "manage_notifications": "Manage notifications",
     "zone": {
@@ -540,9 +540,9 @@
       "player_child_hint": "Manage your child's photo, medical info and record."
     },
     "section": {
-      "avatar": "Foto de perfil",
-      "data": "Datos personales",
-      "account": "Cuenta",
+      "avatar": "Profile photo",
+      "data": "Personal details",
+      "account": "Account",
       "consents": "Consents"
     },
     "consents": {
@@ -556,37 +556,37 @@
       "empty": "You have no consents recorded in this club yet."
     },
     "field": {
-      "full_name": "Nombre completo",
-      "email": "Correo electrónico",
-      "email_help": "Para cambiar tu correo, contacta con soporte.",
-      "date_of_birth": "Fecha de nacimiento",
-      "locale": "Idioma de la app",
-      "locale_help": "Determina el idioma de menús, mensajes y emails."
+      "full_name": "Full name",
+      "email": "Email",
+      "email_help": "To change your email, contact support.",
+      "date_of_birth": "Date of birth",
+      "locale": "App language",
+      "locale_help": "Sets the language for menus, messages and emails."
     },
     "locales": {
-      "es": "Español",
-      "en": "Inglés",
-      "va": "Valencià"
+      "es": "Spanish",
+      "en": "English",
+      "va": "Valencian"
     },
     "avatar": {
-      "pick_label": "Elegir nueva foto",
-      "change": "Cambiar foto",
-      "remove": "Quitar foto",
-      "hint": "JPG, PNG o WebP. Máximo {maxMb} MB.",
+      "pick_label": "Choose new photo",
+      "change": "Change photo",
+      "remove": "Remove photo",
+      "hint": "JPG, PNG or WebP. Maximum {maxMb} MB.",
       "permission": "We need permission to access your photos."
     },
     "errors": {
-      "full_name_too_short": "El nombre debe tener al menos 2 caracteres",
-      "full_name_too_long": "El nombre no puede superar los 120 caracteres",
-      "date_of_birth_invalid": "Fecha de nacimiento no válida",
-      "locale_invalid": "Idioma no válido",
-      "no_session": "Sesión perdida. Vuelve a iniciar sesión.",
-      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo.",
-      "avatar_mime_invalid": "Formato no admitido. Usa JPG, PNG o WebP.",
-      "avatar_too_large": "La foto es demasiado grande.",
-      "avatar_empty": "El archivo está vacío.",
-      "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
-      "avatar_remove_failed": "No hemos podido quitar la foto."
+      "full_name_too_short": "The name must be at least 2 characters",
+      "full_name_too_long": "The name cannot exceed 120 characters",
+      "date_of_birth_invalid": "Invalid date of birth",
+      "locale_invalid": "Invalid language",
+      "no_session": "Session lost. Please sign in again.",
+      "generic": "We couldn't save your changes. Please try again.",
+      "avatar_mime_invalid": "Unsupported format. Use JPG, PNG or WebP.",
+      "avatar_too_large": "The photo is too large.",
+      "avatar_empty": "The file is empty.",
+      "avatar_upload_failed": "We couldn't upload the photo. Please try again.",
+      "avatar_remove_failed": "We couldn't remove the photo."
     },
     "change_password_hint": "We’ll email you a link to change it.",
     "offline": "You’re offline: you can’t edit right now.",
@@ -689,84 +689,84 @@
     }
   },
   "categorias": {
-    "title": "Categorías",
-    "subtitle": "Organiza el club por categorías y temporadas.",
-    "empty": "Aún no has creado ninguna categoría. Empieza por la primera.",
-    "season_label": "Temporada {season}",
-    "teams_count": "{count, plural, =0 {Sin equipos} one {# equipo} other {# equipos}}",
+    "title": "Categories",
+    "subtitle": "Organize the club by categories and seasons.",
+    "empty": "You haven't created any categories yet. Start with the first one.",
+    "season_label": "Season {season}",
+    "teams_count": "{count, plural, =0 {No teams} one {# team} other {# teams}}",
     "actions": {
-      "create": "Nueva categoría",
-      "edit": "Editar",
-      "delete": "Eliminar",
-      "cancel": "Cancelar",
-      "save": "Guardar"
+      "create": "New category",
+      "edit": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save"
     },
     "dialog": {
-      "create_title": "Crear categoría",
-      "edit_title": "Editar categoría",
-      "description": "Las categorías agrupan equipos por edad o nivel dentro de una temporada."
+      "create_title": "Create category",
+      "edit_title": "Edit category",
+      "description": "Categories group teams by age or level within a season."
     },
     "field": {
-      "name": "Nombre",
-      "season": "Temporada",
-      "season_help": "Formato YYYY-YY, por ejemplo 2025-26.",
-      "order_idx": "Orden"
+      "name": "Name",
+      "season": "Season",
+      "season_help": "Format YYYY-YY, for example 2025-26.",
+      "order_idx": "Order"
     },
     "delete": {
-      "title": "¿Eliminar la categoría?",
-      "description": "Vas a eliminar «{name}». Esta acción elimina también sus equipos y no se puede deshacer."
+      "title": "Delete the category?",
+      "description": "You are about to delete \"{name}\". This action also deletes its teams and cannot be undone."
     },
     "errors": {
-      "name_required": "Pon el nombre de la categoría",
-      "name_too_long": "El nombre no puede superar los 80 caracteres",
-      "season_invalid": "Temporada no válida. Usa formato YYYY-YY (ej. 2025-26).",
-      "no_active_club": "No hay club activo.",
-      "forbidden": "No tienes permiso para hacer esto.",
-      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo."
+      "name_required": "Enter the category name",
+      "name_too_long": "The name cannot exceed 80 characters",
+      "season_invalid": "Invalid season. Use format YYYY-YY (e.g. 2025-26).",
+      "no_active_club": "No active club.",
+      "forbidden": "You don't have permission to do this.",
+      "generic": "We couldn't save your changes. Please try again."
     }
   },
   "equipos": {
-    "back_to_categorias": "← Volver a categorías",
-    "subtitle": "Equipos de la temporada {season}.",
-    "empty": "Aún no hay equipos en esta categoría.",
-    "list_title": "Equipos",
+    "back_to_categorias": "← Back to categories",
+    "subtitle": "Teams for the {season} season.",
+    "empty": "There are no teams in this category yet.",
+    "list_title": "Teams",
     "actions": {
-      "create": "Nuevo equipo",
-      "edit": "Editar",
-      "delete": "Eliminar",
-      "cancel": "Cancelar",
-      "save": "Guardar"
+      "create": "New team",
+      "edit": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save"
     },
     "dialog": {
-      "create_title": "Crear equipo",
-      "edit_title": "Editar equipo"
+      "create_title": "Create team",
+      "edit_title": "Edit team"
     },
     "field": {
-      "name": "Nombre",
-      "format": "Formato",
+      "name": "Name",
+      "format": "Format",
       "color": "Color",
-      "color_help": "Color identificativo en calendarios y vistas del equipo.",
+      "color_help": "Identifying color in calendars and team views.",
       "division": "Division",
       "division_help": "Sets the team's substitution regime.",
-      "season": "Temporada",
-      "season_help": "Formato YYYY-YY, por ejemplo 2025-26.",
-      "category": "Categoría"
+      "season": "Season",
+      "season_help": "Format YYYY-YY, for example 2025-26.",
+      "category": "Category"
     },
     "delete": {
-      "title": "¿Eliminar el equipo?",
-      "description": "Vas a eliminar «{name}». Esta acción no se puede deshacer."
+      "title": "Delete the team?",
+      "description": "You're about to delete \"{name}\". This action can't be undone."
     },
     "errors": {
-      "name_required": "Pon el nombre del equipo",
-      "name_too_long": "El nombre no puede superar los 80 caracteres",
-      "format_invalid": "Formato no válido",
-      "color_invalid": "Color no válido",
-      "forbidden": "No tienes permiso para hacer esto.",
-      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo.",
+      "name_required": "Enter the team name",
+      "name_too_long": "The name can't be longer than 80 characters",
+      "format_invalid": "Invalid format",
+      "color_invalid": "Invalid color",
+      "forbidden": "You don't have permission to do this.",
+      "generic": "We couldn't save the changes. Please try again.",
       "division_invalid": "Division not valid for the category.",
-      "category_invalid": "Categoría no válida.",
-      "season_invalid": "Temporada no válida. Usa formato YYYY-YY (ej. 2025-26).",
-      "no_active_club": "No hay club activo."
+      "category_invalid": "Invalid category.",
+      "season_invalid": "Invalid season. Use YYYY-YY format (e.g. 2025-26).",
+      "no_active_club": "There's no active club."
     },
     "divisions": {
       "preferente": "Preferent",
@@ -781,9 +781,9 @@
       "rolling": "Rolling subs",
       "limited": "{max} subs"
     },
-    "title": "Equipos",
-    "page_subtitle": "Equipos del club por temporada.",
-    "manage_templates": "Categorías",
+    "title": "Teams",
+    "page_subtitle": "Club teams by season.",
+    "manage_templates": "Categories",
     "open_season": "Open season {season}",
     "open_season_confirm_title": "Open season {season}",
     "open_season_confirm_description": "You are about to open season {season}. The new season will be created and the teams will be cloned. Confirm?",
@@ -869,17 +869,17 @@
         "generic": "We couldn't finalize the season. Please try again."
       }
     },
-    "no_templates": "Crea primero una categoría-plantilla para poder dar de alta equipos.",
-    "season_filter": "Temporada",
-    "empty_season": "Aún no hay equipos en la temporada {season}."
+    "no_templates": "Create a category template first so you can add teams.",
+    "season_filter": "Season",
+    "empty_season": "There are no teams in the {season} season yet."
   },
   "roles": {
-    "admin_club": "Administrador del club",
+    "admin_club": "Club administrator",
     "director": "Director",
-    "coordinador": "Coordinador",
-    "entrenador_principal": "Entrenador principal",
-    "entrenador_ayudante": "Entrenador ayudante",
-    "jugador": "Jugador / Familia"
+    "coordinador": "Coordinator",
+    "entrenador_principal": "Head coach",
+    "entrenador_ayudante": "Assistant coach",
+    "jugador": "Player / Family"
   },
   "informes": {
     "title": "Development reports",
@@ -1110,95 +1110,95 @@
   "jugadores": {
     "invitePending": {
       "trigger": {
-        "imported": "Invitar a los recién importados",
-        "pending": "Invitar a los pendientes"
+        "imported": "Invite the recently imported",
+        "pending": "Invite the pending ones"
       },
       "confirm": {
-        "title": "Invitar por email",
-        "body": "¿Invitar a {count} personas? Se envía un email por familia (uno solo aunque haya varios hijos).",
-        "cancel": "Cancelar",
-        "send": "Invitar"
+        "title": "Invite by email",
+        "body": "Invite {count} people? One email is sent per family (just one even if there are several children).",
+        "cancel": "Cancel",
+        "send": "Invite"
       },
-      "sending": "Enviando…",
+      "sending": "Sending…",
       "tooMany": {
-        "title": "Demasiados pendientes",
-        "body": "Hay {count} pendientes y el máximo por tanda es {limit}. Invita desde el import (que va de 100 en 100) o reduce la selección."
+        "title": "Too many pending",
+        "body": "There are {count} pending and the maximum per batch is {limit}. Invite from the import (which goes 100 at a time) or reduce the selection."
       },
       "errorState": {
-        "title": "No se pudo invitar",
-        "forbidden": "No tienes permiso para invitar en este club.",
-        "generic": "Algo salió mal. Inténtalo de nuevo en unos minutos."
+        "title": "Couldn't invite",
+        "forbidden": "You don't have permission to invite in this club.",
+        "generic": "Something went wrong. Please try again in a few minutes."
       },
       "result": {
-        "title": "Resultado del envío",
-        "summary": "{sent} enviados, {failed} fallidos, {skipped} saltados."
+        "title": "Send result",
+        "summary": "{sent} sent, {failed} failed, {skipped} skipped."
       },
       "row": {
-        "sent": "Enviado",
-        "skipped": "Saltado",
+        "sent": "Sent",
+        "skipped": "Skipped",
         "reason": {
-          "forbidden": "Sin permiso",
-          "insert_failed": "Error al crear",
-          "send_failed": "Error al enviar"
+          "forbidden": "No permission",
+          "insert_failed": "Creation error",
+          "send_failed": "Send error"
         }
       },
-      "close": "Cerrar"
+      "close": "Close"
     },
-    "title": "Jugadores",
+    "title": "Players",
     "development_reports": "Development reports",
     "export_pdf": "Export PDF",
-    "count": "{count, plural, =0 {Sin jugadores todavía} one {1 jugador} other {# jugadores}}",
-    "empty": "Aún no hay jugadores en este club. Crea el primero arriba.",
-    "create": "Crear jugador",
-    "create_help": "Da de alta la ficha del jugador. Puedes asignarle un equipo ahora o más tarde.",
-    "back_to_list": "Volver al listado",
-    "age_years": "{age, plural, one {1 año} other {# años}}",
-    "saved": "Cambios guardados.",
+    "count": "{count, plural, =0 {No players yet} one {1 player} other {# players}}",
+    "empty": "There are no players in this club yet. Create the first one above.",
+    "create": "Create player",
+    "create_help": "Add the player's profile. You can assign them a team now or later.",
+    "back_to_list": "Back to list",
+    "age_years": "{age, plural, one {1 year} other {# years}}",
+    "saved": "Changes saved.",
     "actions": {
-      "create": "Crear",
-      "cancel": "Cancelar",
-      "save": "Guardar cambios"
+      "create": "Create",
+      "cancel": "Cancel",
+      "save": "Save changes"
     },
     "field": {
-      "first_name": "Nombre",
-      "last_name": "Apellidos",
-      "date_of_birth": "Fecha de nacimiento",
-      "date_of_birth_help": "Obligatoria — necesaria para edad y categoría.",
-      "dorsal": "Dorsal",
-      "position_main": "Posición principal",
-      "positions_secondary": "Otras posiciones",
-      "foot": "Pie dominante",
-      "height_cm": "Altura (cm)",
-      "weight_kg": "Peso (kg)",
-      "origin": "Procedencia",
-      "team": "Equipo",
-      "no_team": "Sin equipo (asignar luego)",
-      "optional": "Opcional",
-      "legend": "Los campos marcados con * son obligatorios.",
-      "optional_tag": "opcional",
-      "team_placeholder": "Selecciona un equipo",
-      "team_none_available": "No hay equipos en la temporada activa. Crea un equipo antes de dar de alta jugadores.",
-      "tutor_email": "Email del tutor",
-      "tutor_relation": "Relación del tutor",
-      "relation_placeholder": "Selecciona la relación",
-      "tutor_help": "Al crear el jugador se enviará automáticamente la invitación a este email."
+      "first_name": "First name",
+      "last_name": "Last name",
+      "date_of_birth": "Date of birth",
+      "date_of_birth_help": "Required — needed for age and category.",
+      "dorsal": "Number",
+      "position_main": "Main position",
+      "positions_secondary": "Other positions",
+      "foot": "Preferred foot",
+      "height_cm": "Height (cm)",
+      "weight_kg": "Weight (kg)",
+      "origin": "Origin",
+      "team": "Team",
+      "no_team": "No team (assign later)",
+      "optional": "Optional",
+      "legend": "Fields marked with * are required.",
+      "optional_tag": "optional",
+      "team_placeholder": "Select a team",
+      "team_none_available": "There are no teams in the active season. Create a team before adding players.",
+      "tutor_email": "Guardian's email",
+      "tutor_relation": "Guardian's relationship",
+      "relation_placeholder": "Select the relationship",
+      "tutor_help": "When you create the player, the invitation will automatically be sent to this email."
     },
     "positions": {
-      "goalkeeper": "Portero",
-      "defender": "Defensa",
-      "midfielder": "Centrocampista",
-      "forward": "Delantero"
+      "goalkeeper": "Goalkeeper",
+      "defender": "Defender",
+      "midfielder": "Midfielder",
+      "forward": "Forward"
     },
     "feet": {
-      "right": "Diestro",
-      "left": "Zurdo",
-      "both": "Ambidiestro"
+      "right": "Right-footed",
+      "left": "Left-footed",
+      "both": "Two-footed"
     },
     "section": {
-      "basic_data": "Datos básicos",
-      "medical": "Notas médicas",
-      "history": "Trayectoria en el club",
-      "family": "Familia",
+      "basic_data": "Basic data",
+      "medical": "Medical notes",
+      "history": "History at the club",
+      "family": "Family",
       "season_stats": "Season stats"
     },
     "stats": {
@@ -1276,29 +1276,29 @@
       }
     },
     "history": {
-      "empty": "Sin asignaciones a equipos todavía.",
-      "active": "Actual"
+      "empty": "No team assignments yet.",
+      "active": "Current"
     },
     "photo": {
-      "change": "Cambiar foto",
-      "remove": "Quitar foto",
-      "hint": "Máximo {maxMb} MB. JPG, PNG o WebP.",
+      "change": "Change photo",
+      "remove": "Remove photo",
+      "hint": "Maximum {maxMb} MB. JPG, PNG or WebP.",
       "errors": {
-        "mime": "Formato no aceptado. Usa JPG, PNG o WebP.",
-        "too_large": "Imagen demasiado grande.",
-        "empty": "Fichero vacío.",
-        "upload_failed": "No se pudo subir la imagen.",
-        "remove_failed": "No se pudo quitar la imagen."
+        "mime": "Format not accepted. Use JPG, PNG or WebP.",
+        "too_large": "Image too large.",
+        "empty": "Empty file.",
+        "upload_failed": "Couldn't upload the image.",
+        "remove_failed": "Couldn't remove the image."
       }
     },
     "medical": {
-      "label": "Notas médicas",
-      "placeholder": "Alergias, lesiones, tratamientos en curso, contactos de urgencia…",
-      "help": "Visible solo para admin/coordinador, entrenador principal, ayudantes con permiso explícito, y tutores legales vinculados.",
+      "label": "Medical notes",
+      "placeholder": "Allergies, injuries, ongoing treatments, emergency contacts…",
+      "help": "Visible only to admin/coordinator, head coach, assistants with explicit permission, and linked legal guardians.",
       "errors": {
-        "medical_notes_too_long": "Las notas son demasiado largas (máx. 5000 caracteres).",
-        "forbidden": "No tienes permiso para editar las notas médicas.",
-        "generic": "No se pudo guardar."
+        "medical_notes_too_long": "The notes are too long (max. 5000 characters).",
+        "forbidden": "You don't have permission to edit the medical notes.",
+        "generic": "Couldn't save."
       },
       "readonly_hint": "Read-only. The family manages this data.",
       "allergies": "Allergies",
@@ -1307,85 +1307,85 @@
       "emergency": "Emergency contact"
     },
     "errors": {
-      "first_name_required": "Introduce el nombre.",
-      "first_name_too_long": "Nombre demasiado largo.",
-      "last_name_required": "Introduce los apellidos.",
-      "last_name_too_long": "Apellidos demasiado largos.",
-      "date_of_birth_required": "Falta la fecha de nacimiento.",
-      "date_of_birth_invalid": "Fecha de nacimiento no válida.",
-      "dorsal_invalid": "El dorsal debe estar entre 1 y 99.",
-      "position_invalid": "Posición no válida.",
-      "positions_secondary_too_many": "Demasiadas posiciones secundarias.",
-      "foot_invalid": "Pie no válido.",
-      "height_cm_invalid": "La altura debe estar entre 50 y 250 cm.",
-      "weight_kg_invalid": "El peso debe estar entre 10 y 200 kg.",
-      "origin_too_long": "Procedencia demasiado larga.",
-      "team_invalid": "Equipo no válido.",
-      "team_required": "Selecciona un equipo.",
-      "email_required": "Introduce el email del tutor.",
-      "email_invalid": "El email del tutor no es válido.",
-      "email_too_long": "El email es demasiado largo.",
-      "relation_required": "Selecciona la relación del tutor.",
-      "no_active_club": "Selecciona primero un club.",
-      "forbidden": "No tienes permiso.",
-      "generic": "No se pudo guardar. Inténtalo de nuevo."
+      "first_name_required": "Enter the first name.",
+      "first_name_too_long": "First name too long.",
+      "last_name_required": "Enter the last name.",
+      "last_name_too_long": "Last name too long.",
+      "date_of_birth_required": "Date of birth is missing.",
+      "date_of_birth_invalid": "Invalid date of birth.",
+      "dorsal_invalid": "The number must be between 1 and 99.",
+      "position_invalid": "Invalid position.",
+      "positions_secondary_too_many": "Too many secondary positions.",
+      "foot_invalid": "Invalid foot.",
+      "height_cm_invalid": "Height must be between 50 and 250 cm.",
+      "weight_kg_invalid": "Weight must be between 10 and 200 kg.",
+      "origin_too_long": "Origin too long.",
+      "team_invalid": "Invalid team.",
+      "team_required": "Select a team.",
+      "email_required": "Enter the guardian's email.",
+      "email_invalid": "The guardian's email is not valid.",
+      "email_too_long": "The email is too long.",
+      "relation_required": "Select the guardian's relationship.",
+      "no_active_club": "Select a club first.",
+      "forbidden": "You don't have permission.",
+      "generic": "Couldn't save. Please try again."
     },
     "family": {
-      "empty": "Aún no hay cuentas de familia vinculadas.",
-      "linked": "Vinculada",
-      "pending": "Invitación pendiente",
+      "empty": "No family accounts linked yet.",
+      "linked": "Linked",
+      "pending": "Invitation pending",
       "relation": {
-        "parent": "Padre/madre",
-        "guardian": "Tutor legal",
-        "self": "El propio jugador"
+        "parent": "Parent",
+        "guardian": "Legal guardian",
+        "self": "The player themselves"
       }
     },
     "tutor": {
-      "action": "Invitar tutor",
-      "title": "Invitar tutor familiar",
-      "description": "Envía una invitación por email a un familiar de {player}. Al aceptar quedará vinculado a esta ficha.",
+      "action": "Invite guardian",
+      "title": "Invite family guardian",
+      "description": "Send an email invitation to a relative of {player}. On accepting, they'll be linked to this profile.",
       "field": {
-        "email": "Email del tutor",
-        "relation": "Relación",
-        "help": "Determina el vínculo legal. Ambos comparten la misma vista del jugador."
+        "email": "Guardian's email",
+        "relation": "Relationship",
+        "help": "Determines the legal link. Both share the same view of the player."
       },
       "relation": {
-        "parent": "Padre/madre",
-        "guardian": "Tutor legal"
+        "parent": "Parent",
+        "guardian": "Legal guardian"
       },
-      "send": "Enviar invitación",
-      "cancel": "Cancelar",
-      "close": "Cerrar",
-      "sent": "Invitación enviada a {email}.",
+      "send": "Send invitation",
+      "cancel": "Cancel",
+      "close": "Close",
+      "sent": "Invitation sent to {email}.",
       "errors": {
-        "email_invalid": "Email no válido.",
-        "email_too_long": "Email demasiado largo.",
-        "relation_invalid": "Relación no válida.",
-        "forbidden": "No tienes permiso para invitar tutores en este club.",
-        "generic": "No se pudo enviar la invitación."
+        "email_invalid": "Invalid email.",
+        "email_too_long": "Email too long.",
+        "relation_invalid": "Invalid relationship.",
+        "forbidden": "You don't have permission to invite guardians in this club.",
+        "generic": "Couldn't send the invitation."
       }
     },
     "assign": {
-      "action_move": "Mover de equipo",
-      "action_assign": "Asignar a equipo",
-      "title_assign": "Asignar a equipo",
-      "title_move": "Mover a otro equipo",
-      "description": "Al asignar a un equipo nuevo, el equipo actual se cierra con la fecha de hoy. La trayectoria se conserva.",
+      "action_move": "Move team",
+      "action_assign": "Assign to team",
+      "title_assign": "Assign to team",
+      "title_move": "Move to another team",
+      "description": "When assigning to a new team, the current team is closed with today's date. The history is preserved.",
       "field": {
-        "team": "Equipo destino",
-        "team_placeholder": "Selecciona un equipo",
-        "dorsal_in_team": "Dorsal en el equipo",
-        "position_in_team": "Posición en el equipo",
-        "optional": "Opcional"
+        "team": "Target team",
+        "team_placeholder": "Select a team",
+        "dorsal_in_team": "Number in the team",
+        "position_in_team": "Position in the team",
+        "optional": "Optional"
       },
-      "cancel": "Cancelar",
-      "save": "Confirmar",
+      "cancel": "Cancel",
+      "save": "Confirm",
       "errors": {
-        "team_invalid": "Equipo no válido.",
-        "dorsal_invalid": "El dorsal debe estar entre 1 y 99.",
-        "position_invalid": "Posición no válida.",
-        "forbidden": "No tienes permiso para gestionar este jugador.",
-        "generic": "No se pudo guardar."
+        "team_invalid": "Invalid team.",
+        "dorsal_invalid": "The number must be between 1 and 99.",
+        "position_invalid": "Invalid position.",
+        "forbidden": "You don't have permission to manage this player.",
+        "generic": "Couldn't save."
       }
     },
     "subtitle": "Club-wide list with filters and individual assignment.",
@@ -1466,101 +1466,101 @@
     }
   },
   "equipo_detalle": {
-    "back": "Volver a la categoría",
-    "roster_title": "Jugadores activos",
-    "roster_empty": "Aún no hay jugadores asignados a este equipo.",
+    "back": "Back to the category",
+    "roster_title": "Active players",
+    "roster_empty": "No players assigned to this team yet.",
     "announcements_link": "Announcements",
     "development_reports_link": "Reports",
     "playbook_link": "Playbook",
     "team_chat_link": "Team chat"
   },
   "staff": {
-    "title": "Cuerpo técnico",
-    "empty": "Sin cuerpo técnico asignado todavía.",
-    "caps": "Configurar permisos del ayudante",
+    "title": "Coaching staff",
+    "empty": "No coaching staff assigned yet.",
+    "caps": "Configure assistant permissions",
     "role": {
-      "entrenador_principal": "Entrenador principal",
-      "entrenador_ayudante": "Entrenador ayudante",
-      "preparador_fisico": "Preparador físico",
-      "delegado": "Delegado",
+      "entrenador_principal": "Head coach",
+      "entrenador_ayudante": "Assistant coach",
+      "preparador_fisico": "Fitness coach",
+      "delegado": "Team manager",
       "coordinador": "Coordinator"
     },
     "invite": {
-      "action": "Invitar staff",
-      "title": "Invitar cuerpo técnico",
-      "description": "Envía una invitación por email. Al aceptar quedará vinculado a este equipo con la función indicada.",
+      "action": "Invite staff",
+      "title": "Invite coaching staff",
+      "description": "Sends an invitation by email. Upon accepting, they will be linked to this team with the specified role.",
       "field": {
         "email": "Email",
-        "role": "Función en el equipo",
-        "help": "Solo un entrenador principal por equipo. Preparador físico y delegado se gestionan como ayudantes a nivel de club (sin caps por defecto)."
+        "role": "Role in the team",
+        "help": "Only one head coach per team. Fitness coach and team manager are managed as assistants at the club level (no caps by default)."
       },
-      "send": "Enviar invitación",
-      "cancel": "Cancelar",
-      "close": "Cerrar",
-      "sent": "Invitación enviada a {email}.",
+      "send": "Send invitation",
+      "cancel": "Cancel",
+      "close": "Close",
+      "sent": "Invitation sent to {email}.",
       "errors": {
-        "email_invalid": "Email no válido.",
-        "email_too_long": "Email demasiado largo.",
-        "team_staff_role_invalid": "Función no válida.",
-        "principal_exists": "Ya hay un entrenador principal activo en este equipo. Quita el actual antes de invitar otro.",
-        "forbidden": "No tienes permiso para invitar staff en este equipo.",
-        "generic": "No se pudo enviar la invitación."
+        "email_invalid": "Invalid email.",
+        "email_too_long": "Email too long.",
+        "team_staff_role_invalid": "Invalid role.",
+        "principal_exists": "There is already an active head coach on this team. Remove the current one before inviting another.",
+        "forbidden": "You don't have permission to invite staff to this team.",
+        "generic": "The invitation could not be sent."
       }
     },
     "remove": {
-      "action": "Quitar del cuerpo técnico",
-      "title": "Quitar del cuerpo técnico",
-      "description": "¿Seguro que quieres quitar a {name} del cuerpo técnico de este equipo? Su membership en el club no se ve afectada.",
-      "cancel": "Cancelar",
-      "confirm": "Quitar"
+      "action": "Remove from coaching staff",
+      "title": "Remove from coaching staff",
+      "description": "Are you sure you want to remove {name} from this team's coaching staff? Their club membership is not affected.",
+      "cancel": "Cancel",
+      "confirm": "Remove"
     },
     "pending_title": "Pending invitations",
     "pending_status": "Sent",
     "pending_expired": "Expired"
   },
   "capabilities": {
-    "back": "Volver al equipo",
-    "subtitle": "Permisos del entrenador ayudante",
-    "read_only": "Solo el entrenador principal del equipo, coordinador o admin puede modificar estos permisos.",
-    "not_assistant": "Este miembro no es entrenador ayudante. Los permisos solo aplican a ayudantes.",
-    "autosave_hint": "Los cambios se guardan automáticamente.",
+    "back": "Back to team",
+    "subtitle": "Assistant coach permissions",
+    "read_only": "Only the team's head coach, coordinator, or admin can modify these permissions.",
+    "not_assistant": "This member is not an assistant coach. Permissions only apply to assistants.",
+    "autosave_hint": "Changes are saved automatically.",
     "can_evaluate": {
-      "label": "Valorar a jugadores",
-      "description": "Puede dejar valoraciones individuales post-partido y post-entrenamiento."
+      "label": "Rate players",
+      "description": "Can leave individual ratings post-match and post-training."
     },
     "can_create_lineups": {
-      "label": "Crear alineaciones",
-      "description": "Puede preparar alineaciones (titular, plan B, segunda parte)."
+      "label": "Create lineups",
+      "description": "Can prepare lineups (starting, plan B, second half)."
     },
     "can_register_match_events": {
-      "label": "Registrar eventos del partido",
-      "description": "Puede usar la pantalla de toma de datos en directo."
+      "label": "Register match events",
+      "description": "Can use the live data entry screen."
     },
     "can_create_sessions": {
-      "label": "Crear sesiones de entrenamiento",
-      "description": "Puede diseñar y publicar sesiones al equipo."
+      "label": "Create training sessions",
+      "description": "Can design and publish sessions to the team."
     },
     "can_create_plays": {
-      "label": "Crear jugadas tácticas",
-      "description": "Puede crear y compartir jugadas con el equipo."
+      "label": "Create tactical plays",
+      "description": "Can create and share plays with the team."
     },
     "can_see_medical": {
-      "label": "Ver notas médicas",
-      "description": "Puede leer las notas médicas de los jugadores del equipo."
+      "label": "View medical notes",
+      "description": "Can read the medical notes of the team's players."
     },
     "can_message_families": {
-      "label": "Escribir a familias",
-      "description": "Puede iniciar conversaciones con tutores legales."
+      "label": "Message families",
+      "description": "Can start conversations with legal guardians."
     },
     "can_manage_squad": {
-      "label": "Gestionar plantilla",
-      "description": "Puede crear/editar fichas y subir fotos. Sin esto, no puede dar de alta jugadores."
+      "label": "Manage squad",
+      "description": "Can create/edit profiles and upload photos. Without this, they cannot add players."
     },
     "errors": {
-      "forbidden": "No tienes permiso para modificar este permiso.",
-      "not_assistant": "Este miembro no es entrenador ayudante.",
-      "invalid_input": "Datos no válidos.",
-      "db": "No se pudo guardar. Inténtalo de nuevo."
+      "forbidden": "You don't have permission to modify this permission.",
+      "not_assistant": "This member is not an assistant coach.",
+      "invalid_input": "Invalid data.",
+      "db": "Could not save. Please try again."
     },
     "can_manage_calendar": {
       "label": "Manage calendar",
@@ -1630,117 +1630,117 @@
     }
   },
   "import": {
-    "title": "Importar jugadores",
-    "subtitle": "Sube un CSV o Excel con tu plantilla. Hasta 500 filas por carga.",
+    "title": "Import players",
+    "subtitle": "Upload a CSV or Excel with your squad. Up to 500 rows per upload.",
     "download": {
-      "xlsx": "Descargar plantilla XLSX",
-      "csv": "Descargar plantilla CSV"
+      "xlsx": "Download XLSX template",
+      "csv": "Download CSV template"
     },
     "upload": {
-      "label": "Selecciona el archivo (.csv o .xlsx)"
+      "label": "Select the file (.csv or .xlsx)"
     },
     "step": {
       "upload": {
-        "short": "Subir",
-        "title": "Sube tu archivo",
-        "help": "Usa la plantilla descargable (4 columnas: Nombre completo, Fecha de nacimiento, Equipo, Email). Obligatorios: Nombre completo, Fecha de nacimiento y Email. Fecha en formato día/mes/año (15/03/2010). Equipo es opcional (si lo dejas vacío se usa el equipo del lote)."
+        "short": "Upload",
+        "title": "Upload your file",
+        "help": "Use the downloadable template (4 columns: Full name, Date of birth, Team, Email). Required: Full name, Date of birth, and Email. Date in day/month/year format (15/03/2010). Team is optional (if you leave it empty, the batch team is used)."
       },
       "preview": {
-        "short": "Revisar",
-        "title": "Revisa antes de confirmar"
+        "short": "Review",
+        "title": "Review before confirming"
       },
       "confirming": {
-        "short": "Importar",
-        "spinner": "Importando jugadores..."
+        "short": "Import",
+        "spinner": "Importing players..."
       },
       "result": {
-        "short": "Resumen",
-        "title": "Resumen de la importación"
+        "short": "Summary",
+        "title": "Import summary"
       }
     },
     "stats": {
-      "valid": "Listas para crear",
-      "duplicates": "Duplicadas (omitidas)",
-      "invalid": "Inválidas"
+      "valid": "Ready to create",
+      "duplicates": "Duplicates (skipped)",
+      "invalid": "Invalid"
     },
     "preview": {
-      "truncated": "+{count} filas más se procesan igual aunque no se muestren aquí.",
-      "unmapped_headers": "Columnas no reconocidas (se ignoran): {headers}",
-      "required_legend": "Obligatorios: Nombre completo, Fecha de nacimiento y Email. Equipo es opcional: si lo dejas vacío se usa el equipo del selector de lote.",
-      "editable_hint": "Puedes corregir cualquier fila con error editándola aquí; se revalida al momento."
+      "truncated": "+{count} more rows are processed the same even if they aren't shown here.",
+      "unmapped_headers": "Unrecognized columns (ignored): {headers}",
+      "required_legend": "Required: Full name, Date of birth, and Email. Team is optional: if you leave it empty, the batch selector team is used.",
+      "editable_hint": "You can fix any row with an error by editing it here; it is revalidated instantly."
     },
     "team": {
-      "label": "Asignar al equipo (opcional)",
-      "placeholder": "Sin equipo",
-      "none": "Sin equipo",
-      "help": "Se usa para las filas sin columna «Equipo». La resolución por fila y este selector aplican a la temporada {season}."
+      "label": "Assign to team (optional)",
+      "placeholder": "No team",
+      "none": "No team",
+      "help": "Used for rows without a \"Team\" column. Per-row resolution and this selector apply to the {season} season."
     },
     "action": {
-      "back": "Volver",
-      "confirm": "Importar {count} jugadores"
+      "back": "Back",
+      "confirm": "Import {count} players"
     },
     "col": {
-      "first_name": "Nombre completo",
-      "last_name": "Apellidos",
-      "date_of_birth": "Fecha de nacimiento",
-      "dorsal": "Dorsal",
-      "position_main": "Posición",
-      "status": "Estado",
-      "required_hint": "Campo obligatorio",
-      "team": "Equipo",
-      "team_none": "— (usar equipo del lote)",
+      "first_name": "Full name",
+      "last_name": "Last name",
+      "date_of_birth": "Date of birth",
+      "dorsal": "Number",
+      "position_main": "Position",
+      "status": "Status",
+      "required_hint": "Required field",
+      "team": "Team",
+      "team_none": "— (use batch team)",
       "email": "Email"
     },
     "status": {
       "valid": "OK",
-      "duplicate": "Duplicada",
-      "invalid": "Inválida"
+      "duplicate": "Duplicate",
+      "invalid": "Invalid"
     },
     "reason": {
-      "duplicate_in_db": "ya existe en el club",
-      "duplicate_in_file": "duplicada en el archivo",
-      "first_name_required": "Falta nombre",
-      "first_name_too_long": "Nombre demasiado largo",
-      "last_name_required": "Falta apellidos",
-      "last_name_too_long": "Apellidos demasiado largos",
-      "date_of_birth_required": "Falta fecha de nacimiento",
-      "date_of_birth_invalid": "Formato de fecha no reconocido. Usa dd/mm/yyyy (ej. 15/03/2010)",
-      "dorsal_invalid": "Dorsal fuera de rango (1-99)",
-      "position_invalid": "Posición no reconocida. Opciones: Portero, Defensa, Lateral, Mediocentro, Delantero, Extremo (y sinónimos)",
-      "positions_secondary_too_many": "Demasiadas posiciones secundarias",
-      "foot_invalid": "Pie no reconocido. Opciones: Derecho, Izquierdo, Ambidiestro",
-      "height_cm_invalid": "Altura fuera de rango (50-250)",
-      "weight_kg_invalid": "Peso fuera de rango (10-200)",
-      "origin_too_long": "Origen demasiado largo",
-      "rls": "permiso denegado",
-      "duplicate_constraint": "violación de unicidad",
-      "team_assign_failed": "creado pero no asignado al equipo",
-      "generic": "fallo del servidor",
-      "team_not_found": "Equipo no encontrado en la temporada activa. Créalo antes de importar.",
-      "team_required": "Falta el equipo. Indica un equipo en la fila o elige uno en el selector de lote.",
-      "team_too_long": "Nombre de equipo demasiado largo",
-      "invite_email_required": "Falta el email",
-      "invite_email_invalid": "Email no válido"
+      "duplicate_in_db": "already exists in the club",
+      "duplicate_in_file": "duplicate in the file",
+      "first_name_required": "Missing name",
+      "first_name_too_long": "Name too long",
+      "last_name_required": "Missing last name",
+      "last_name_too_long": "Last name too long",
+      "date_of_birth_required": "Missing date of birth",
+      "date_of_birth_invalid": "Date format not recognized. Use dd/mm/yyyy (e.g. 15/03/2010)",
+      "dorsal_invalid": "Number out of range (1-99)",
+      "position_invalid": "Position not recognized. Options: Goalkeeper, Defender, Full-back, Midfielder, Forward, Winger (and synonyms)",
+      "positions_secondary_too_many": "Too many secondary positions",
+      "foot_invalid": "Foot not recognized. Options: Right, Left, Two-footed",
+      "height_cm_invalid": "Height out of range (50-250)",
+      "weight_kg_invalid": "Weight out of range (10-200)",
+      "origin_too_long": "Origin too long",
+      "rls": "permission denied",
+      "duplicate_constraint": "uniqueness violation",
+      "team_assign_failed": "created but not assigned to the team",
+      "generic": "server error",
+      "team_not_found": "Team not found in the active season. Create it before importing.",
+      "team_required": "Team is missing. Enter a team in the row or choose one in the batch selector.",
+      "team_too_long": "Team name too long",
+      "invite_email_required": "Email is missing",
+      "invite_email_invalid": "Invalid email"
     },
     "error": {
-      "too_large": "Archivo demasiado grande (máx. 5 MB).",
-      "unsupported_type": "Formato no soportado. Sube .csv o .xlsx.",
-      "parse_failed": "No hemos podido leer el archivo. Comprueba el formato.",
-      "empty_file": "El archivo está vacío.",
-      "no_recognized_headers": "No reconocemos ninguna columna. Asegúrate de usar la plantilla.",
-      "too_many_rows": "Máximo {max} jugadores por importación (este archivo trae {count}). Divide el fichero y súbelo en partes."
+      "too_large": "File too large (max. 5 MB).",
+      "unsupported_type": "Unsupported format. Upload .csv or .xlsx.",
+      "parse_failed": "We couldn't read the file. Check the format.",
+      "empty_file": "The file is empty.",
+      "no_recognized_headers": "We don't recognize any column. Make sure you use the template.",
+      "too_many_rows": "Maximum {max} players per import (this file has {count}). Split the file and upload it in parts."
     },
     "result": {
-      "created": "Creados",
-      "skipped": "Duplicados",
-      "failed": "Fallidos",
-      "download": "Descargar informe CSV",
-      "again": "Importar otro archivo",
+      "created": "Created",
+      "skipped": "Duplicates",
+      "failed": "Failed",
+      "download": "Download CSV report",
+      "again": "Import another file",
       "error": {
-        "forbidden": "No tienes permisos para importar.",
-        "invalid_payload": "Datos del cliente inválidos.",
-        "no_active_club": "Sin club activo.",
-        "generic": "Error inesperado. Inténtalo de nuevo."
+        "forbidden": "You don't have permission to import.",
+        "invalid_payload": "Invalid client data.",
+        "no_active_club": "No active club.",
+        "generic": "Unexpected error. Please try again."
       }
     }
   },
@@ -1758,7 +1758,7 @@
       "label": "Change view",
       "month": "Month",
       "week": "Week",
-      "agenda": "Agenda"
+      "agenda": "Schedule"
     },
     "month": {
       "more": "+{count} more"
@@ -3513,52 +3513,52 @@
     "no_reports": "No development reports published yet."
   },
   "plantillas": {
-    "title": "Categorías",
-    "subtitle": "Plantillas permanentes del club (sin temporada). La temporada vive en el equipo.",
-    "back_to_equipos": "← Volver a equipos",
-    "empty": "Aún no has creado ninguna categoría-plantilla. Empieza por la primera.",
-    "teams_count": "{count, plural, =0 {Sin equipos} one {# equipo} other {# equipos}}",
-    "half_short": "{min} min/tiempo",
+    "title": "Categories",
+    "subtitle": "Permanent club categories (no season). The season lives in the team.",
+    "back_to_equipos": "← Back to teams",
+    "empty": "You haven't created any category template yet. Start with the first one.",
+    "teams_count": "{count, plural, =0 {No teams} one {# team} other {# teams}}",
+    "half_short": "{min} min/half",
     "badge_standard": "Standard",
     "badge_custom": "Custom",
     "overlap_badge": "Overlaps standard",
     "overlap_hint": "This category shares an age group with a standard one but has a different name. Review it.",
     "standard_locked_hint": "Standard category: name and age group are locked. You can only change the duration.",
     "actions": {
-      "create": "Nueva categoría",
-      "edit": "Editar",
-      "delete": "Eliminar",
-      "cancel": "Cancelar",
-      "save": "Guardar"
+      "create": "New category",
+      "edit": "Edit",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "save": "Save"
     },
     "dialog": {
-      "create_title": "Crear categoría",
-      "edit_title": "Editar categoría",
-      "description": "Las categorías son plantillas permanentes del club (sin temporada). Los equipos se crean por temporada en Equipos."
+      "create_title": "Create category",
+      "edit_title": "Edit category",
+      "description": "Categories are permanent club templates (no season). Teams are created per season in Teams."
     },
     "field": {
-      "name": "Nombre",
-      "kind": "Grupo de edad",
-      "kind_help": "Determina el régimen de cambios y el orden del listado.",
-      "half_duration": "Duración por tiempo (min)",
-      "half_duration_help": "Minutos de cada tiempo de partido (1–90)."
+      "name": "Name",
+      "kind": "Age group",
+      "kind_help": "Determines the substitution rules and the list order.",
+      "half_duration": "Half duration (min)",
+      "half_duration_help": "Minutes of each match half (1–90)."
     },
-    "kind_none": "Sin grupo de edad",
+    "kind_none": "No age group",
     "delete": {
-      "title": "¿Eliminar la categoría?",
-      "description": "Vas a eliminar «{name}». Esta acción no se puede deshacer."
+      "title": "Delete the category?",
+      "description": "You are about to delete \"{name}\". This action cannot be undone."
     },
     "errors": {
-      "name_required": "Pon el nombre de la categoría",
-      "name_too_long": "El nombre no puede superar los 80 caracteres",
-      "kind_invalid": "Grupo de edad no válido",
-      "half_duration_invalid": "Duración no válida. Usa un valor entre 1 y 90.",
-      "name_duplicate": "Ya existe una categoría con ese nombre en el club.",
-      "has_teams": "No se puede eliminar: tiene equipos en alguna temporada.",
+      "name_required": "Enter the category name",
+      "name_too_long": "The name cannot exceed 80 characters",
+      "kind_invalid": "Invalid age group",
+      "half_duration_invalid": "Invalid duration. Use a value between 1 and 90.",
+      "name_duplicate": "A category with that name already exists in the club.",
+      "has_teams": "Cannot delete: it has teams in some season.",
       "is_standard": "Standard categories cannot be deleted.",
-      "no_active_club": "No hay club activo.",
-      "forbidden": "No tienes permiso para hacer esto.",
-      "generic": "No hemos podido guardar los cambios. Inténtalo de nuevo."
+      "no_active_club": "No active club.",
+      "forbidden": "You don't have permission to do this.",
+      "generic": "We couldn't save your changes. Please try again."
     }
   },
   "category_kinds": {

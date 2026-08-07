@@ -1,0 +1,419 @@
+clave,es,traduccion_nueva,estado
+shell.sidebar_label,Menú principal,Main menu,sin_traducir
+shell.signout,Cerrar sesión,Sign out,sin_traducir
+shell.open_menu,Abrir menú,Open menu,sin_traducir
+shell.active_club_label,Club activo,Active club,sin_traducir
+shell.active_club_switch_help,Cambiar de club activo,Switch active club,sin_traducir
+shell.user_menu_label,Menú de usuario,User menu,sin_traducir
+shell.user_menu_perfil,Mi perfil,My profile,sin_traducir
+shell.nav.home,Inicio,Home,sin_traducir
+shell.nav.invitations,Invitaciones,Invitations,sin_traducir
+shell.nav.perfil,Mi perfil,My profile,sin_traducir
+shell.nav.import_players,Importar,Import,sin_traducir
+shell.nav.equipos,Equipos,Teams,sin_traducir
+roles.admin_club,Administrador del club,Club administrator,sin_traducir
+roles.coordinador,Coordinador,Coordinator,sin_traducir
+roles.entrenador_principal,Entrenador principal,Head coach,sin_traducir
+roles.entrenador_ayudante,Entrenador ayudante,Assistant coach,sin_traducir
+roles.jugador,Jugador / Familia,Player / Family,sin_traducir
+perfil.title,Mi perfil,My profile,sin_traducir
+perfil.subtitle,Datos de tu cuenta y cómo te ven el resto de miembros del club.,Your account details and how other club members see you.,sin_traducir
+perfil.save,Guardar cambios,Save changes,sin_traducir
+perfil.saved,Cambios guardados.,Changes saved.,sin_traducir
+perfil.section.avatar,Foto de perfil,Profile photo,sin_traducir
+perfil.section.data,Datos personales,Personal details,sin_traducir
+perfil.section.account,Cuenta,Account,sin_traducir
+perfil.field.full_name,Nombre completo,Full name,sin_traducir
+perfil.field.email,Correo electrónico,Email,sin_traducir
+perfil.field.email_help,"Para cambiar tu correo, contacta con soporte.","To change your email, contact support.",sin_traducir
+perfil.field.date_of_birth,Fecha de nacimiento,Date of birth,sin_traducir
+perfil.field.locale,Idioma de la app,App language,sin_traducir
+perfil.field.locale_help,"Determina el idioma de menús, mensajes y emails.","Sets the language for menus, messages and emails.",sin_traducir
+perfil.locales.es,Español,Spanish,sin_traducir
+perfil.locales.en,Inglés,English,sin_traducir
+perfil.locales.va,Valencià,Valencian,sin_traducir
+perfil.avatar.pick_label,Elegir nueva foto,Choose new photo,sin_traducir
+perfil.avatar.change,Cambiar foto,Change photo,sin_traducir
+perfil.avatar.remove,Quitar foto,Remove photo,sin_traducir
+perfil.avatar.hint,"JPG, PNG o WebP. Máximo {maxMb} MB.","JPG, PNG or WebP. Maximum {maxMb} MB.",sin_traducir
+perfil.errors.full_name_too_short,El nombre debe tener al menos 2 caracteres,The name must be at least 2 characters,sin_traducir
+perfil.errors.full_name_too_long,El nombre no puede superar los 120 caracteres,The name cannot exceed 120 characters,sin_traducir
+perfil.errors.date_of_birth_invalid,Fecha de nacimiento no válida,Invalid date of birth,sin_traducir
+perfil.errors.locale_invalid,Idioma no válido,Invalid language,sin_traducir
+perfil.errors.no_session,Sesión perdida. Vuelve a iniciar sesión.,Session lost. Please sign in again.,sin_traducir
+perfil.errors.generic,No hemos podido guardar los cambios. Inténtalo de nuevo.,We couldn't save your changes. Please try again.,sin_traducir
+perfil.errors.avatar_mime_invalid,"Formato no admitido. Usa JPG, PNG o WebP.","Unsupported format. Use JPG, PNG or WebP.",sin_traducir
+perfil.errors.avatar_too_large,La foto es demasiado grande.,The photo is too large.,sin_traducir
+perfil.errors.avatar_empty,El archivo está vacío.,The file is empty.,sin_traducir
+perfil.errors.avatar_upload_failed,No hemos podido subir la foto. Inténtalo de nuevo.,We couldn't upload the photo. Please try again.,sin_traducir
+perfil.errors.avatar_remove_failed,No hemos podido quitar la foto.,We couldn't remove the photo.,sin_traducir
+categorias.title,Categorías,Categories,sin_traducir
+categorias.subtitle,Organiza el club por categorías y temporadas.,Organize the club by categories and seasons.,sin_traducir
+categorias.empty,Aún no has creado ninguna categoría. Empieza por la primera.,You haven't created any categories yet. Start with the first one.,sin_traducir
+categorias.season_label,Temporada {season},Season {season},sin_traducir
+categorias.teams_count,"{count, plural, =0 {Sin equipos} one {# equipo} other {# equipos}}","{count, plural, =0 {No teams} one {# team} other {# teams}}",sin_traducir
+categorias.actions.create,Nueva categoría,New category,sin_traducir
+categorias.actions.edit,Editar,Edit,sin_traducir
+categorias.actions.delete,Eliminar,Delete,sin_traducir
+categorias.actions.cancel,Cancelar,Cancel,sin_traducir
+categorias.actions.save,Guardar,Save,sin_traducir
+categorias.dialog.create_title,Crear categoría,Create category,sin_traducir
+categorias.dialog.edit_title,Editar categoría,Edit category,sin_traducir
+categorias.dialog.description,Las categorías agrupan equipos por edad o nivel dentro de una temporada.,Categories group teams by age or level within a season.,sin_traducir
+categorias.field.name,Nombre,Name,sin_traducir
+categorias.field.season,Temporada,Season,sin_traducir
+categorias.field.season_help,"Formato YYYY-YY, por ejemplo 2025-26.","Format YYYY-YY, for example 2025-26.",sin_traducir
+categorias.field.order_idx,Orden,Order,sin_traducir
+categorias.delete.title,¿Eliminar la categoría?,Delete the category?,sin_traducir
+categorias.delete.description,Vas a eliminar «{name}». Esta acción elimina también sus equipos y no se puede deshacer.,"You are about to delete ""{name}"". This action also deletes its teams and cannot be undone.",sin_traducir
+categorias.errors.name_required,Pon el nombre de la categoría,Enter the category name,sin_traducir
+categorias.errors.name_too_long,El nombre no puede superar los 80 caracteres,The name cannot exceed 80 characters,sin_traducir
+categorias.errors.season_invalid,Temporada no válida. Usa formato YYYY-YY (ej. 2025-26).,Invalid season. Use format YYYY-YY (e.g. 2025-26).,sin_traducir
+categorias.errors.no_active_club,No hay club activo.,No active club.,sin_traducir
+categorias.errors.forbidden,No tienes permiso para hacer esto.,You don't have permission to do this.,sin_traducir
+categorias.errors.generic,No hemos podido guardar los cambios. Inténtalo de nuevo.,We couldn't save your changes. Please try again.,sin_traducir
+equipos.back_to_categorias,← Volver a categorías,← Back to categories,sin_traducir
+equipos.subtitle,Equipos de la temporada {season}.,Teams for the {season} season.,sin_traducir
+equipos.empty,Aún no hay equipos en esta categoría.,There are no teams in this category yet.,sin_traducir
+equipos.list_title,Equipos,Teams,sin_traducir
+equipos.actions.create,Nuevo equipo,New team,sin_traducir
+equipos.actions.edit,Editar,Edit,sin_traducir
+equipos.actions.delete,Eliminar,Delete,sin_traducir
+equipos.actions.cancel,Cancelar,Cancel,sin_traducir
+equipos.actions.save,Guardar,Save,sin_traducir
+equipos.dialog.create_title,Crear equipo,Create team,sin_traducir
+equipos.dialog.edit_title,Editar equipo,Edit team,sin_traducir
+equipos.field.name,Nombre,Name,sin_traducir
+equipos.field.format,Formato,Format,sin_traducir
+equipos.field.color_help,Color identificativo en calendarios y vistas del equipo.,Identifying color in calendars and team views.,sin_traducir
+equipos.field.season,Temporada,Season,sin_traducir
+equipos.field.season_help,"Formato YYYY-YY, por ejemplo 2025-26.","Format YYYY-YY, for example 2025-26.",sin_traducir
+equipos.field.category,Categoría,Category,sin_traducir
+equipos.delete.title,¿Eliminar el equipo?,Delete the team?,sin_traducir
+equipos.delete.description,Vas a eliminar «{name}». Esta acción no se puede deshacer.,"You're about to delete ""{name}"". This action can't be undone.",sin_traducir
+equipos.errors.name_required,Pon el nombre del equipo,Enter the team name,sin_traducir
+equipos.errors.name_too_long,El nombre no puede superar los 80 caracteres,The name can't be longer than 80 characters,sin_traducir
+equipos.errors.format_invalid,Formato no válido,Invalid format,sin_traducir
+equipos.errors.color_invalid,Color no válido,Invalid color,sin_traducir
+equipos.errors.forbidden,No tienes permiso para hacer esto.,You don't have permission to do this.,sin_traducir
+equipos.errors.generic,No hemos podido guardar los cambios. Inténtalo de nuevo.,We couldn't save the changes. Please try again.,sin_traducir
+equipos.errors.category_invalid,Categoría no válida.,Invalid category.,sin_traducir
+equipos.errors.season_invalid,Temporada no válida. Usa formato YYYY-YY (ej. 2025-26).,Invalid season. Use YYYY-YY format (e.g. 2025-26).,sin_traducir
+equipos.errors.no_active_club,No hay club activo.,There's no active club.,sin_traducir
+equipos.title,Equipos,Teams,sin_traducir
+equipos.page_subtitle,Equipos del club por temporada.,Club teams by season.,sin_traducir
+equipos.manage_templates,Categorías,Categories,sin_traducir
+equipos.no_templates,Crea primero una categoría-plantilla para poder dar de alta equipos.,Create a category template first so you can add teams.,sin_traducir
+equipos.season_filter,Temporada,Season,sin_traducir
+equipos.empty_season,Aún no hay equipos en la temporada {season}.,There are no teams in the {season} season yet.,sin_traducir
+invite.error_auth_update_failed,No hemos podido establecer tu contraseña. Inténtalo de nuevo.,We couldn't set your password. Please try again.,sin_traducir
+invite.error_profile_update_failed,No hemos podido guardar tu perfil. Inténtalo de nuevo.,We couldn't save your profile. Please try again.,sin_traducir
+invite.error_membership_failed,No hemos podido vincularte al club. Avisa al admin del club.,We couldn't link you to the club. Let the club admin know.,sin_traducir
+invite.error_player_link_failed,No hemos podido vincularte al jugador. Avisa al admin del club.,We couldn't link you to the player. Let the club admin know.,sin_traducir
+invite.error_team_staff_failed,No hemos podido añadirte al equipo. Avisa al admin del club.,We couldn't add you to the team. Let the club admin know.,sin_traducir
+jugadores.invitePending.trigger.imported,Invitar a los recién importados,Invite the recently imported,sin_traducir
+jugadores.invitePending.trigger.pending,Invitar a los pendientes,Invite the pending ones,sin_traducir
+jugadores.invitePending.confirm.title,Invitar por email,Invite by email,sin_traducir
+jugadores.invitePending.confirm.body,¿Invitar a {count} personas? Se envía un email por familia (uno solo aunque haya varios hijos).,Invite {count} people? One email is sent per family (just one even if there are several children).,sin_traducir
+jugadores.invitePending.confirm.cancel,Cancelar,Cancel,sin_traducir
+jugadores.invitePending.confirm.send,Invitar,Invite,sin_traducir
+jugadores.invitePending.sending,Enviando…,Sending…,sin_traducir
+jugadores.invitePending.tooMany.title,Demasiados pendientes,Too many pending,sin_traducir
+jugadores.invitePending.tooMany.body,Hay {count} pendientes y el máximo por tanda es {limit}. Invita desde el import (que va de 100 en 100) o reduce la selección.,There are {count} pending and the maximum per batch is {limit}. Invite from the import (which goes 100 at a time) or reduce the selection.,sin_traducir
+jugadores.invitePending.errorState.title,No se pudo invitar,Couldn't invite,sin_traducir
+jugadores.invitePending.errorState.forbidden,No tienes permiso para invitar en este club.,You don't have permission to invite in this club.,sin_traducir
+jugadores.invitePending.errorState.generic,Algo salió mal. Inténtalo de nuevo en unos minutos.,Something went wrong. Please try again in a few minutes.,sin_traducir
+jugadores.invitePending.result.title,Resultado del envío,Send result,sin_traducir
+jugadores.invitePending.result.summary,"{sent} enviados, {failed} fallidos, {skipped} saltados.","{sent} sent, {failed} failed, {skipped} skipped.",sin_traducir
+jugadores.invitePending.row.sent,Enviado,Sent,sin_traducir
+jugadores.invitePending.row.skipped,Saltado,Skipped,sin_traducir
+jugadores.invitePending.row.reason.forbidden,Sin permiso,No permission,sin_traducir
+jugadores.invitePending.row.reason.insert_failed,Error al crear,Creation error,sin_traducir
+jugadores.invitePending.row.reason.send_failed,Error al enviar,Send error,sin_traducir
+jugadores.invitePending.close,Cerrar,Close,sin_traducir
+jugadores.title,Jugadores,Players,sin_traducir
+jugadores.count,"{count, plural, =0 {Sin jugadores todavía} one {1 jugador} other {# jugadores}}","{count, plural, =0 {No players yet} one {1 player} other {# players}}",sin_traducir
+jugadores.empty,Aún no hay jugadores en este club. Crea el primero arriba.,There are no players in this club yet. Create the first one above.,sin_traducir
+jugadores.create,Crear jugador,Create player,sin_traducir
+jugadores.create_help,Da de alta la ficha del jugador. Puedes asignarle un equipo ahora o más tarde.,Add the player's profile. You can assign them a team now or later.,sin_traducir
+jugadores.back_to_list,Volver al listado,Back to list,sin_traducir
+jugadores.age_years,"{age, plural, one {1 año} other {# años}}","{age, plural, one {1 year} other {# years}}",sin_traducir
+jugadores.saved,Cambios guardados.,Changes saved.,sin_traducir
+jugadores.actions.create,Crear,Create,sin_traducir
+jugadores.actions.cancel,Cancelar,Cancel,sin_traducir
+jugadores.actions.save,Guardar cambios,Save changes,sin_traducir
+jugadores.field.first_name,Nombre,First name,sin_traducir
+jugadores.field.last_name,Apellidos,Last name,sin_traducir
+jugadores.field.date_of_birth,Fecha de nacimiento,Date of birth,sin_traducir
+jugadores.field.date_of_birth_help,Obligatoria — necesaria para edad y categoría.,Required — needed for age and category.,sin_traducir
+jugadores.field.dorsal,Dorsal,Number,sin_traducir
+jugadores.field.position_main,Posición principal,Main position,sin_traducir
+jugadores.field.positions_secondary,Otras posiciones,Other positions,sin_traducir
+jugadores.field.foot,Pie dominante,Preferred foot,sin_traducir
+jugadores.field.height_cm,Altura (cm),Height (cm),sin_traducir
+jugadores.field.weight_kg,Peso (kg),Weight (kg),sin_traducir
+jugadores.field.origin,Procedencia,Origin,sin_traducir
+jugadores.field.team,Equipo,Team,sin_traducir
+jugadores.field.no_team,Sin equipo (asignar luego),No team (assign later),sin_traducir
+jugadores.field.optional,Opcional,Optional,sin_traducir
+jugadores.field.legend,Los campos marcados con * son obligatorios.,Fields marked with * are required.,sin_traducir
+jugadores.field.optional_tag,opcional,optional,sin_traducir
+jugadores.field.team_placeholder,Selecciona un equipo,Select a team,sin_traducir
+jugadores.field.team_none_available,No hay equipos en la temporada activa. Crea un equipo antes de dar de alta jugadores.,There are no teams in the active season. Create a team before adding players.,sin_traducir
+jugadores.field.tutor_email,Email del tutor,Guardian's email,sin_traducir
+jugadores.field.tutor_relation,Relación del tutor,Guardian's relationship,sin_traducir
+jugadores.field.relation_placeholder,Selecciona la relación,Select the relationship,sin_traducir
+jugadores.field.tutor_help,Al crear el jugador se enviará automáticamente la invitación a este email.,"When you create the player, the invitation will automatically be sent to this email.",sin_traducir
+jugadores.positions.goalkeeper,Portero,Goalkeeper,sin_traducir
+jugadores.positions.defender,Defensa,Defender,sin_traducir
+jugadores.positions.midfielder,Centrocampista,Midfielder,sin_traducir
+jugadores.positions.forward,Delantero,Forward,sin_traducir
+jugadores.feet.right,Diestro,Right-footed,sin_traducir
+jugadores.feet.left,Zurdo,Left-footed,sin_traducir
+jugadores.feet.both,Ambidiestro,Two-footed,sin_traducir
+jugadores.section.basic_data,Datos básicos,Basic data,sin_traducir
+jugadores.section.medical,Notas médicas,Medical notes,sin_traducir
+jugadores.section.history,Trayectoria en el club,History at the club,sin_traducir
+jugadores.section.family,Familia,Family,sin_traducir
+jugadores.history.empty,Sin asignaciones a equipos todavía.,No team assignments yet.,sin_traducir
+jugadores.history.active,Actual,Current,sin_traducir
+jugadores.photo.change,Cambiar foto,Change photo,sin_traducir
+jugadores.photo.remove,Quitar foto,Remove photo,sin_traducir
+jugadores.photo.hint,"Máximo {maxMb} MB. JPG, PNG o WebP.","Maximum {maxMb} MB. JPG, PNG or WebP.",sin_traducir
+jugadores.photo.errors.mime,"Formato no aceptado. Usa JPG, PNG o WebP.","Format not accepted. Use JPG, PNG or WebP.",sin_traducir
+jugadores.photo.errors.too_large,Imagen demasiado grande.,Image too large.,sin_traducir
+jugadores.photo.errors.empty,Fichero vacío.,Empty file.,sin_traducir
+jugadores.photo.errors.upload_failed,No se pudo subir la imagen.,Couldn't upload the image.,sin_traducir
+jugadores.photo.errors.remove_failed,No se pudo quitar la imagen.,Couldn't remove the image.,sin_traducir
+jugadores.medical.label,Notas médicas,Medical notes,sin_traducir
+jugadores.medical.placeholder,"Alergias, lesiones, tratamientos en curso, contactos de urgencia…","Allergies, injuries, ongoing treatments, emergency contacts…",sin_traducir
+jugadores.medical.help,"Visible solo para admin/coordinador, entrenador principal, ayudantes con permiso explícito, y tutores legales vinculados.","Visible only to admin/coordinator, head coach, assistants with explicit permission, and linked legal guardians.",sin_traducir
+jugadores.medical.errors.medical_notes_too_long,Las notas son demasiado largas (máx. 5000 caracteres).,The notes are too long (max. 5000 characters).,sin_traducir
+jugadores.medical.errors.forbidden,No tienes permiso para editar las notas médicas.,You don't have permission to edit the medical notes.,sin_traducir
+jugadores.medical.errors.generic,No se pudo guardar.,Couldn't save.,sin_traducir
+jugadores.errors.first_name_required,Introduce el nombre.,Enter the first name.,sin_traducir
+jugadores.errors.first_name_too_long,Nombre demasiado largo.,First name too long.,sin_traducir
+jugadores.errors.last_name_required,Introduce los apellidos.,Enter the last name.,sin_traducir
+jugadores.errors.last_name_too_long,Apellidos demasiado largos.,Last name too long.,sin_traducir
+jugadores.errors.date_of_birth_required,Falta la fecha de nacimiento.,Date of birth is missing.,sin_traducir
+jugadores.errors.date_of_birth_invalid,Fecha de nacimiento no válida.,Invalid date of birth.,sin_traducir
+jugadores.errors.dorsal_invalid,El dorsal debe estar entre 1 y 99.,The number must be between 1 and 99.,sin_traducir
+jugadores.errors.position_invalid,Posición no válida.,Invalid position.,sin_traducir
+jugadores.errors.positions_secondary_too_many,Demasiadas posiciones secundarias.,Too many secondary positions.,sin_traducir
+jugadores.errors.foot_invalid,Pie no válido.,Invalid foot.,sin_traducir
+jugadores.errors.height_cm_invalid,La altura debe estar entre 50 y 250 cm.,Height must be between 50 and 250 cm.,sin_traducir
+jugadores.errors.weight_kg_invalid,El peso debe estar entre 10 y 200 kg.,Weight must be between 10 and 200 kg.,sin_traducir
+jugadores.errors.origin_too_long,Procedencia demasiado larga.,Origin too long.,sin_traducir
+jugadores.errors.team_invalid,Equipo no válido.,Invalid team.,sin_traducir
+jugadores.errors.team_required,Selecciona un equipo.,Select a team.,sin_traducir
+jugadores.errors.email_required,Introduce el email del tutor.,Enter the guardian's email.,sin_traducir
+jugadores.errors.email_invalid,El email del tutor no es válido.,The guardian's email is not valid.,sin_traducir
+jugadores.errors.email_too_long,El email es demasiado largo.,The email is too long.,sin_traducir
+jugadores.errors.relation_required,Selecciona la relación del tutor.,Select the guardian's relationship.,sin_traducir
+jugadores.errors.no_active_club,Selecciona primero un club.,Select a club first.,sin_traducir
+jugadores.errors.forbidden,No tienes permiso.,You don't have permission.,sin_traducir
+jugadores.errors.generic,No se pudo guardar. Inténtalo de nuevo.,Couldn't save. Please try again.,sin_traducir
+jugadores.family.empty,Aún no hay cuentas de familia vinculadas.,No family accounts linked yet.,sin_traducir
+jugadores.family.linked,Vinculada,Linked,sin_traducir
+jugadores.family.pending,Invitación pendiente,Invitation pending,sin_traducir
+jugadores.family.relation.parent,Padre/madre,Parent,sin_traducir
+jugadores.family.relation.guardian,Tutor legal,Legal guardian,sin_traducir
+jugadores.family.relation.self,El propio jugador,The player themselves,sin_traducir
+jugadores.tutor.action,Invitar tutor,Invite guardian,sin_traducir
+jugadores.tutor.title,Invitar tutor familiar,Invite family guardian,sin_traducir
+jugadores.tutor.description,Envía una invitación por email a un familiar de {player}. Al aceptar quedará vinculado a esta ficha.,"Send an email invitation to a relative of {player}. On accepting, they'll be linked to this profile.",sin_traducir
+jugadores.tutor.field.email,Email del tutor,Guardian's email,sin_traducir
+jugadores.tutor.field.relation,Relación,Relationship,sin_traducir
+jugadores.tutor.field.help,Determina el vínculo legal. Ambos comparten la misma vista del jugador.,Determines the legal link. Both share the same view of the player.,sin_traducir
+jugadores.tutor.relation.parent,Padre/madre,Parent,sin_traducir
+jugadores.tutor.relation.guardian,Tutor legal,Legal guardian,sin_traducir
+jugadores.tutor.send,Enviar invitación,Send invitation,sin_traducir
+jugadores.tutor.cancel,Cancelar,Cancel,sin_traducir
+jugadores.tutor.close,Cerrar,Close,sin_traducir
+jugadores.tutor.sent,Invitación enviada a {email}.,Invitation sent to {email}.,sin_traducir
+jugadores.tutor.errors.email_invalid,Email no válido.,Invalid email.,sin_traducir
+jugadores.tutor.errors.email_too_long,Email demasiado largo.,Email too long.,sin_traducir
+jugadores.tutor.errors.relation_invalid,Relación no válida.,Invalid relationship.,sin_traducir
+jugadores.tutor.errors.forbidden,No tienes permiso para invitar tutores en este club.,You don't have permission to invite guardians in this club.,sin_traducir
+jugadores.tutor.errors.generic,No se pudo enviar la invitación.,Couldn't send the invitation.,sin_traducir
+jugadores.assign.action_move,Mover de equipo,Move team,sin_traducir
+jugadores.assign.action_assign,Asignar a equipo,Assign to team,sin_traducir
+jugadores.assign.title_assign,Asignar a equipo,Assign to team,sin_traducir
+jugadores.assign.title_move,Mover a otro equipo,Move to another team,sin_traducir
+jugadores.assign.description,"Al asignar a un equipo nuevo, el equipo actual se cierra con la fecha de hoy. La trayectoria se conserva.","When assigning to a new team, the current team is closed with today's date. The history is preserved.",sin_traducir
+jugadores.assign.field.team,Equipo destino,Target team,sin_traducir
+jugadores.assign.field.team_placeholder,Selecciona un equipo,Select a team,sin_traducir
+jugadores.assign.field.dorsal_in_team,Dorsal en el equipo,Number in the team,sin_traducir
+jugadores.assign.field.position_in_team,Posición en el equipo,Position in the team,sin_traducir
+jugadores.assign.field.optional,Opcional,Optional,sin_traducir
+jugadores.assign.cancel,Cancelar,Cancel,sin_traducir
+jugadores.assign.save,Confirmar,Confirm,sin_traducir
+jugadores.assign.errors.team_invalid,Equipo no válido.,Invalid team.,sin_traducir
+jugadores.assign.errors.dorsal_invalid,El dorsal debe estar entre 1 y 99.,The number must be between 1 and 99.,sin_traducir
+jugadores.assign.errors.position_invalid,Posición no válida.,Invalid position.,sin_traducir
+jugadores.assign.errors.forbidden,No tienes permiso para gestionar este jugador.,You don't have permission to manage this player.,sin_traducir
+jugadores.assign.errors.generic,No se pudo guardar.,Couldn't save.,sin_traducir
+equipo_detalle.back,Volver a la categoría,Back to the category,sin_traducir
+equipo_detalle.roster_title,Jugadores activos,Active players,sin_traducir
+equipo_detalle.roster_empty,Aún no hay jugadores asignados a este equipo.,No players assigned to this team yet.,sin_traducir
+staff.title,Cuerpo técnico,Coaching staff,sin_traducir
+staff.empty,Sin cuerpo técnico asignado todavía.,No coaching staff assigned yet.,sin_traducir
+staff.caps,Configurar permisos del ayudante,Configure assistant permissions,sin_traducir
+staff.role.entrenador_principal,Entrenador principal,Head coach,sin_traducir
+staff.role.entrenador_ayudante,Entrenador ayudante,Assistant coach,sin_traducir
+staff.role.preparador_fisico,Preparador físico,Fitness coach,sin_traducir
+staff.role.delegado,Delegado,Team manager,sin_traducir
+staff.invite.action,Invitar staff,Invite staff,sin_traducir
+staff.invite.title,Invitar cuerpo técnico,Invite coaching staff,sin_traducir
+staff.invite.description,Envía una invitación por email. Al aceptar quedará vinculado a este equipo con la función indicada.,"Sends an invitation by email. Upon accepting, they will be linked to this team with the specified role.",sin_traducir
+staff.invite.field.role,Función en el equipo,Role in the team,sin_traducir
+staff.invite.field.help,Solo un entrenador principal por equipo. Preparador físico y delegado se gestionan como ayudantes a nivel de club (sin caps por defecto).,Only one head coach per team. Fitness coach and team manager are managed as assistants at the club level (no caps by default).,sin_traducir
+staff.invite.send,Enviar invitación,Send invitation,sin_traducir
+staff.invite.cancel,Cancelar,Cancel,sin_traducir
+staff.invite.close,Cerrar,Close,sin_traducir
+staff.invite.sent,Invitación enviada a {email}.,Invitation sent to {email}.,sin_traducir
+staff.invite.errors.email_invalid,Email no válido.,Invalid email.,sin_traducir
+staff.invite.errors.email_too_long,Email demasiado largo.,Email too long.,sin_traducir
+staff.invite.errors.team_staff_role_invalid,Función no válida.,Invalid role.,sin_traducir
+staff.invite.errors.principal_exists,Ya hay un entrenador principal activo en este equipo. Quita el actual antes de invitar otro.,There is already an active head coach on this team. Remove the current one before inviting another.,sin_traducir
+staff.invite.errors.forbidden,No tienes permiso para invitar staff en este equipo.,You don't have permission to invite staff to this team.,sin_traducir
+staff.invite.errors.generic,No se pudo enviar la invitación.,The invitation could not be sent.,sin_traducir
+staff.remove.action,Quitar del cuerpo técnico,Remove from coaching staff,sin_traducir
+staff.remove.title,Quitar del cuerpo técnico,Remove from coaching staff,sin_traducir
+staff.remove.description,¿Seguro que quieres quitar a {name} del cuerpo técnico de este equipo? Su membership en el club no se ve afectada.,Are you sure you want to remove {name} from this team's coaching staff? Their club membership is not affected.,sin_traducir
+staff.remove.cancel,Cancelar,Cancel,sin_traducir
+staff.remove.confirm,Quitar,Remove,sin_traducir
+capabilities.back,Volver al equipo,Back to team,sin_traducir
+capabilities.subtitle,Permisos del entrenador ayudante,Assistant coach permissions,sin_traducir
+capabilities.read_only,"Solo el entrenador principal del equipo, coordinador o admin puede modificar estos permisos.","Only the team's head coach, coordinator, or admin can modify these permissions.",sin_traducir
+capabilities.not_assistant,Este miembro no es entrenador ayudante. Los permisos solo aplican a ayudantes.,This member is not an assistant coach. Permissions only apply to assistants.,sin_traducir
+capabilities.autosave_hint,Los cambios se guardan automáticamente.,Changes are saved automatically.,sin_traducir
+capabilities.can_evaluate.label,Valorar a jugadores,Rate players,sin_traducir
+capabilities.can_evaluate.description,Puede dejar valoraciones individuales post-partido y post-entrenamiento.,Can leave individual ratings post-match and post-training.,sin_traducir
+capabilities.can_create_lineups.label,Crear alineaciones,Create lineups,sin_traducir
+capabilities.can_create_lineups.description,"Puede preparar alineaciones (titular, plan B, segunda parte).","Can prepare lineups (starting, plan B, second half).",sin_traducir
+capabilities.can_register_match_events.label,Registrar eventos del partido,Register match events,sin_traducir
+capabilities.can_register_match_events.description,Puede usar la pantalla de toma de datos en directo.,Can use the live data entry screen.,sin_traducir
+capabilities.can_create_sessions.label,Crear sesiones de entrenamiento,Create training sessions,sin_traducir
+capabilities.can_create_sessions.description,Puede diseñar y publicar sesiones al equipo.,Can design and publish sessions to the team.,sin_traducir
+capabilities.can_create_plays.label,Crear jugadas tácticas,Create tactical plays,sin_traducir
+capabilities.can_create_plays.description,Puede crear y compartir jugadas con el equipo.,Can create and share plays with the team.,sin_traducir
+capabilities.can_see_medical.label,Ver notas médicas,View medical notes,sin_traducir
+capabilities.can_see_medical.description,Puede leer las notas médicas de los jugadores del equipo.,Can read the medical notes of the team's players.,sin_traducir
+capabilities.can_message_families.label,Escribir a familias,Message families,sin_traducir
+capabilities.can_message_families.description,Puede iniciar conversaciones con tutores legales.,Can start conversations with legal guardians.,sin_traducir
+capabilities.can_manage_squad.label,Gestionar plantilla,Manage squad,sin_traducir
+capabilities.can_manage_squad.description,"Puede crear/editar fichas y subir fotos. Sin esto, no puede dar de alta jugadores.","Can create/edit profiles and upload photos. Without this, they cannot add players.",sin_traducir
+capabilities.errors.forbidden,No tienes permiso para modificar este permiso.,You don't have permission to modify this permission.,sin_traducir
+capabilities.errors.not_assistant,Este miembro no es entrenador ayudante.,This member is not an assistant coach.,sin_traducir
+capabilities.errors.invalid_input,Datos no válidos.,Invalid data.,sin_traducir
+capabilities.errors.db,No se pudo guardar. Inténtalo de nuevo.,Could not save. Please try again.,sin_traducir
+import.title,Importar jugadores,Import players,sin_traducir
+import.subtitle,Sube un CSV o Excel con tu plantilla. Hasta 500 filas por carga.,Upload a CSV or Excel with your squad. Up to 500 rows per upload.,sin_traducir
+import.download.xlsx,Descargar plantilla XLSX,Download XLSX template,sin_traducir
+import.download.csv,Descargar plantilla CSV,Download CSV template,sin_traducir
+import.upload.label,Selecciona el archivo (.csv o .xlsx),Select the file (.csv or .xlsx),sin_traducir
+import.step.upload.short,Subir,Upload,sin_traducir
+import.step.upload.title,Sube tu archivo,Upload your file,sin_traducir
+import.step.upload.help,"Usa la plantilla descargable (4 columnas: Nombre completo, Fecha de nacimiento, Equipo, Email). Obligatorios: Nombre completo, Fecha de nacimiento y Email. Fecha en formato día/mes/año (15/03/2010). Equipo es opcional (si lo dejas vacío se usa el equipo del lote).","Use the downloadable template (4 columns: Full name, Date of birth, Team, Email). Required: Full name, Date of birth, and Email. Date in day/month/year format (15/03/2010). Team is optional (if you leave it empty, the batch team is used).",sin_traducir
+import.step.preview.short,Revisar,Review,sin_traducir
+import.step.preview.title,Revisa antes de confirmar,Review before confirming,sin_traducir
+import.step.confirming.short,Importar,Import,sin_traducir
+import.step.confirming.spinner,Importando jugadores...,Importing players...,sin_traducir
+import.step.result.short,Resumen,Summary,sin_traducir
+import.step.result.title,Resumen de la importación,Import summary,sin_traducir
+import.stats.valid,Listas para crear,Ready to create,sin_traducir
+import.stats.duplicates,Duplicadas (omitidas),Duplicates (skipped),sin_traducir
+import.stats.invalid,Inválidas,Invalid,sin_traducir
+import.preview.truncated,+{count} filas más se procesan igual aunque no se muestren aquí.,+{count} more rows are processed the same even if they aren't shown here.,sin_traducir
+import.preview.unmapped_headers,Columnas no reconocidas (se ignoran): {headers},Unrecognized columns (ignored): {headers},sin_traducir
+import.preview.required_legend,"Obligatorios: Nombre completo, Fecha de nacimiento y Email. Equipo es opcional: si lo dejas vacío se usa el equipo del selector de lote.","Required: Full name, Date of birth, and Email. Team is optional: if you leave it empty, the batch selector team is used.",sin_traducir
+import.preview.editable_hint,Puedes corregir cualquier fila con error editándola aquí; se revalida al momento.,You can fix any row with an error by editing it here; it is revalidated instantly.,sin_traducir
+import.team.label,Asignar al equipo (opcional),Assign to team (optional),sin_traducir
+import.team.placeholder,Sin equipo,No team,sin_traducir
+import.team.none,Sin equipo,No team,sin_traducir
+import.team.help,Se usa para las filas sin columna «Equipo». La resolución por fila y este selector aplican a la temporada {season}.,"Used for rows without a ""Team"" column. Per-row resolution and this selector apply to the {season} season.",sin_traducir
+import.action.back,Volver,Back,sin_traducir
+import.action.confirm,Importar {count} jugadores,Import {count} players,sin_traducir
+import.col.first_name,Nombre completo,Full name,sin_traducir
+import.col.last_name,Apellidos,Last name,sin_traducir
+import.col.date_of_birth,Fecha de nacimiento,Date of birth,sin_traducir
+import.col.dorsal,Dorsal,Number,sin_traducir
+import.col.position_main,Posición,Position,sin_traducir
+import.col.status,Estado,Status,sin_traducir
+import.col.required_hint,Campo obligatorio,Required field,sin_traducir
+import.col.team,Equipo,Team,sin_traducir
+import.col.team_none,— (usar equipo del lote),— (use batch team),sin_traducir
+import.status.duplicate,Duplicada,Duplicate,sin_traducir
+import.status.invalid,Inválida,Invalid,sin_traducir
+import.reason.duplicate_in_db,ya existe en el club,already exists in the club,sin_traducir
+import.reason.duplicate_in_file,duplicada en el archivo,duplicate in the file,sin_traducir
+import.reason.first_name_required,Falta nombre,Missing name,sin_traducir
+import.reason.first_name_too_long,Nombre demasiado largo,Name too long,sin_traducir
+import.reason.last_name_required,Falta apellidos,Missing last name,sin_traducir
+import.reason.last_name_too_long,Apellidos demasiado largos,Last name too long,sin_traducir
+import.reason.date_of_birth_required,Falta fecha de nacimiento,Missing date of birth,sin_traducir
+import.reason.date_of_birth_invalid,Formato de fecha no reconocido. Usa dd/mm/yyyy (ej. 15/03/2010),Date format not recognized. Use dd/mm/yyyy (e.g. 15/03/2010),sin_traducir
+import.reason.dorsal_invalid,Dorsal fuera de rango (1-99),Number out of range (1-99),sin_traducir
+import.reason.position_invalid,"Posición no reconocida. Opciones: Portero, Defensa, Lateral, Mediocentro, Delantero, Extremo (y sinónimos)","Position not recognized. Options: Goalkeeper, Defender, Full-back, Midfielder, Forward, Winger (and synonyms)",sin_traducir
+import.reason.positions_secondary_too_many,Demasiadas posiciones secundarias,Too many secondary positions,sin_traducir
+import.reason.foot_invalid,"Pie no reconocido. Opciones: Derecho, Izquierdo, Ambidiestro","Foot not recognized. Options: Right, Left, Two-footed",sin_traducir
+import.reason.height_cm_invalid,Altura fuera de rango (50-250),Height out of range (50-250),sin_traducir
+import.reason.weight_kg_invalid,Peso fuera de rango (10-200),Weight out of range (10-200),sin_traducir
+import.reason.origin_too_long,Origen demasiado largo,Origin too long,sin_traducir
+import.reason.rls,permiso denegado,permission denied,sin_traducir
+import.reason.duplicate_constraint,violación de unicidad,uniqueness violation,sin_traducir
+import.reason.team_assign_failed,creado pero no asignado al equipo,created but not assigned to the team,sin_traducir
+import.reason.generic,fallo del servidor,server error,sin_traducir
+import.reason.team_not_found,Equipo no encontrado en la temporada activa. Créalo antes de importar.,Team not found in the active season. Create it before importing.,sin_traducir
+import.reason.team_required,Falta el equipo. Indica un equipo en la fila o elige uno en el selector de lote.,Team is missing. Enter a team in the row or choose one in the batch selector.,sin_traducir
+import.reason.team_too_long,Nombre de equipo demasiado largo,Team name too long,sin_traducir
+import.reason.invite_email_required,Falta el email,Email is missing,sin_traducir
+import.reason.invite_email_invalid,Email no válido,Invalid email,sin_traducir
+import.error.too_large,Archivo demasiado grande (máx. 5 MB).,File too large (max. 5 MB).,sin_traducir
+import.error.unsupported_type,Formato no soportado. Sube .csv o .xlsx.,Unsupported format. Upload .csv or .xlsx.,sin_traducir
+import.error.parse_failed,No hemos podido leer el archivo. Comprueba el formato.,We couldn't read the file. Check the format.,sin_traducir
+import.error.empty_file,El archivo está vacío.,The file is empty.,sin_traducir
+import.error.no_recognized_headers,No reconocemos ninguna columna. Asegúrate de usar la plantilla.,We don't recognize any column. Make sure you use the template.,sin_traducir
+import.error.too_many_rows,Máximo {max} jugadores por importación (este archivo trae {count}). Divide el fichero y súbelo en partes.,Maximum {max} players per import (this file has {count}). Split the file and upload it in parts.,sin_traducir
+import.result.created,Creados,Created,sin_traducir
+import.result.skipped,Duplicados,Duplicates,sin_traducir
+import.result.failed,Fallidos,Failed,sin_traducir
+import.result.download,Descargar informe CSV,Download CSV report,sin_traducir
+import.result.again,Importar otro archivo,Import another file,sin_traducir
+import.result.error.forbidden,No tienes permisos para importar.,You don't have permission to import.,sin_traducir
+import.result.error.invalid_payload,Datos del cliente inválidos.,Invalid client data.,sin_traducir
+import.result.error.no_active_club,Sin club activo.,No active club.,sin_traducir
+import.result.error.generic,Error inesperado. Inténtalo de nuevo.,Unexpected error. Please try again.,sin_traducir
+calendario.views.agenda,Agenda,Schedule,sin_traducir
+plantillas.title,Categorías,Categories,sin_traducir
+plantillas.subtitle,Plantillas permanentes del club (sin temporada). La temporada vive en el equipo.,Permanent club categories (no season). The season lives in the team.,sin_traducir
+plantillas.back_to_equipos,← Volver a equipos,← Back to teams,sin_traducir
+plantillas.empty,Aún no has creado ninguna categoría-plantilla. Empieza por la primera.,You haven't created any category template yet. Start with the first one.,sin_traducir
+plantillas.teams_count,"{count, plural, =0 {Sin equipos} one {# equipo} other {# equipos}}","{count, plural, =0 {No teams} one {# team} other {# teams}}",sin_traducir
+plantillas.half_short,{min} min/tiempo,{min} min/half,sin_traducir
+plantillas.actions.create,Nueva categoría,New category,sin_traducir
+plantillas.actions.edit,Editar,Edit,sin_traducir
+plantillas.actions.delete,Eliminar,Delete,sin_traducir
+plantillas.actions.cancel,Cancelar,Cancel,sin_traducir
+plantillas.actions.save,Guardar,Save,sin_traducir
+plantillas.dialog.create_title,Crear categoría,Create category,sin_traducir
+plantillas.dialog.edit_title,Editar categoría,Edit category,sin_traducir
+plantillas.dialog.description,Las categorías son plantillas permanentes del club (sin temporada). Los equipos se crean por temporada en Equipos.,Categories are permanent club templates (no season). Teams are created per season in Teams.,sin_traducir
+plantillas.field.name,Nombre,Name,sin_traducir
+plantillas.field.kind,Grupo de edad,Age group,sin_traducir
+plantillas.field.kind_help,Determina el régimen de cambios y el orden del listado.,Determines the substitution rules and the list order.,sin_traducir
+plantillas.field.half_duration,Duración por tiempo (min),Half duration (min),sin_traducir
+plantillas.field.half_duration_help,Minutos de cada tiempo de partido (1–90).,Minutes of each match half (1–90).,sin_traducir
+plantillas.kind_none,Sin grupo de edad,No age group,sin_traducir
+plantillas.delete.title,¿Eliminar la categoría?,Delete the category?,sin_traducir
+plantillas.delete.description,Vas a eliminar «{name}». Esta acción no se puede deshacer.,"You are about to delete ""{name}"". This action cannot be undone.",sin_traducir
+plantillas.errors.name_required,Pon el nombre de la categoría,Enter the category name,sin_traducir
+plantillas.errors.name_too_long,El nombre no puede superar los 80 caracteres,The name cannot exceed 80 characters,sin_traducir
+plantillas.errors.kind_invalid,Grupo de edad no válido,Invalid age group,sin_traducir
+plantillas.errors.half_duration_invalid,Duración no válida. Usa un valor entre 1 y 90.,Invalid duration. Use a value between 1 and 90.,sin_traducir
+plantillas.errors.name_duplicate,Ya existe una categoría con ese nombre en el club.,A category with that name already exists in the club.,sin_traducir
+plantillas.errors.has_teams,No se puede eliminar: tiene equipos en alguna temporada.,Cannot delete: it has teams in some season.,sin_traducir
+plantillas.errors.no_active_club,No hay club activo.,No active club.,sin_traducir
+plantillas.errors.forbidden,No tienes permiso para hacer esto.,You don't have permission to do this.,sin_traducir
+plantillas.errors.generic,No hemos podido guardar los cambios. Inténtalo de nuevo.,We couldn't save your changes. Please try again.,sin_traducir
