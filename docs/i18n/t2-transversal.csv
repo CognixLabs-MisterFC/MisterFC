@@ -5,9 +5,9 @@ home.no_access.body,Tu cuenta no pertenece a ningún club todavía.,Your account
 shell.switch_club,Cambiar de club,Switch club,Canviar de club,nav/menu
 shell.menu,Menú,Menu,Menú,nav/chrome
 shell.placeholder_hint,Pantalla en construcción,Screen under construction,Pantalla en construcció,nav/placeholder
-shell.offline_banner,Sin conexión · mostrando datos guardados,undefined,undefined,ui/feedback
-shell.selector.change,Cambiar,undefined,undefined,ui/child-selector; ui/spectator-player-selector; ui/staff-team-selector
-shell.selector.pick_child,Elige un hijo,undefined,undefined,ui/child-selector; ui/spectator-player-selector
+shell.offline_banner,Sin conexión · mostrando datos guardados,Offline · showing saved data,Sense connexió · mostrant dades desades,ui/feedback
+shell.selector.change,Cambiar,Change,Canvia,ui/child-selector; ui/spectator-player-selector; ui/staff-team-selector
+shell.selector.pick_child,Elige un hijo,Pick child,Tria fill,ui/child-selector; ui/spectator-player-selector
 shell.selector.pick_team,Elige equipo,Pick team,Tria equip,ui/staff-team-selector
 notificaciones.push_native.card_title,Notificaciones push,Push notifications,Notificacions push,notifications/push-settings-card
 notificaciones.push_native.card_body,"Actívalas para recibir avisos de convocatorias, mensajes y directos aunque no tengas la app abierta.","Turn them on to get alerts about call-ups, messages and live matches even when the app is closed.","Activa-les per rebre avisos de convocatòries, missatges i directes encara que no tingues l’app oberta.",notifications/push-settings-card

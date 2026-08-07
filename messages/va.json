@@ -519,8 +519,11 @@
     "menu": "Menú",
     "placeholder_hint": "Pantalla en construcció",
     "selector": {
-      "pick_team": "Tria equip"
-    }
+      "pick_team": "Tria equip",
+      "change": "Canvia",
+      "pick_child": "Tria fill"
+    },
+    "offline_banner": "Sense connexió · mostrant dades desades"
   },
   "perfil": {
     "title": "El meu perfil",

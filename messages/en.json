@@ -519,8 +519,11 @@
     "menu": "Menu",
     "placeholder_hint": "Screen under construction",
     "selector": {
-      "pick_team": "Pick team"
-    }
+      "pick_team": "Pick team",
+      "change": "Change",
+      "pick_child": "Pick child"
+    },
+    "offline_banner": "Offline · showing saved data"
   },
   "perfil": {
     "title": "Mi perfil",
