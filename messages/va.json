@@ -1168,7 +1168,7 @@
       "position_main": "Posició principal",
       "positions_secondary": "Altres posicions",
       "foot": "Peu dominant",
-      "height_cm": "Altura (cm)",
+      "height_cm": "Alçària (cm)",
       "weight_kg": "Pes (kg)",
       "origin": "Procedència",
       "team": "Equip",
@@ -3854,7 +3854,7 @@
       "scrub": "Posició de la reproducció",
       "playing": "Reproduint…",
       "need_frames": "Afig almenys 2 frames per a animar la jugada",
-      "frame_indicator": "Frame {current} / {total}"
+      "frame_indicator": "Fotograma {current} / {total}"
     },
     "delete": {
       "action": "Esborrar",
