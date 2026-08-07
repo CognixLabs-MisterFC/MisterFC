@@ -3,8 +3,39 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useApp } from '@/auth/context';
 import { NEUTRAL_COLOR, type ClubTheme } from '@/theme';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { hrefFor, type ChromeArea, type MenuDef } from './config';
+
+/**
+ * O2-12a T2 — Mapa de reuso de los labels de nav: la clave de `config.ts`
+ * (`nav.<x>`, que NO se toca esta tanda) → la clave del catálogo COMPARTIDO. Solo
+ * las que la web YA tiene con el MISMO texto se reapuntan a `shell.nav.*` (producto
+ * único, sin duplicar); el resto cae a `nav.<x>` (namespace propio de la app, misma
+ * subclave que config). Vive aquí (menu es hoja del grafo nav) y lo importan
+ * `navigator.tsx` y `placeholder.tsx` sin crear ciclos. Una tanda futura que migre
+ * `config.ts` lo hará desaparecer.
+ */
+const NAV_I18N_KEYS: Record<string, string> = {
+  'nav.inicio': 'shell.nav.home',
+  'nav.calendario': 'shell.nav.calendario',
+  'nav.directos': 'shell.nav.directos',
+  'nav.mensajes': 'shell.nav.mensajes',
+  'nav.dashboard': 'shell.nav.dashboard',
+  'nav.equipos': 'shell.nav.equipos',
+  'nav.jugadores': 'shell.nav.jugadores',
+  'nav.jugadores_consulta': 'shell.nav.jugadores',
+  'nav.cuerpo_tecnico': 'shell.nav.cuerpo_tecnico',
+  'nav.mi_equipo': 'shell.nav.mi_equipo',
+  'nav.mis_equipos': 'shell.nav.mis_equipos',
+  'nav.mi_ficha': 'shell.nav.mi_ficha',
+  'nav.seguidores': 'shell.nav.seguidores',
+  'nav.supresiones': 'shell.nav.supresiones',
+};
+
+/** Resuelve la clave del catálogo compartido para un `labelKey` de config. */
+export function navI18nKey(labelKey: string): string {
+  return NAV_I18N_KEYS[labelKey] ?? labelKey;
+}
 
 /**
  * O2-2 — MENÚ HAMBURGUESA. Overlay propio (Modal de react-native), sin
@@ -28,6 +59,7 @@ export function AppMenu({
 }) {
   const insets = useSafeAreaInsets();
   const { clubs, activeClub, setActiveClub, signOut } = useApp();
+  const t = useTranslations(''); // claves con ruta completa (nav labels compartidos + shell.*)
 
   const go = (name: string) => {
     onClose();
@@ -69,7 +101,7 @@ export function AppMenu({
               onPress={() => go(item.name)}
               className="border-b border-zinc-100 px-4 py-4 active:bg-zinc-50"
             >
-              <Text className="text-base text-zinc-800">{t(item.labelKey)}</Text>
+              <Text className="text-base text-zinc-800">{t(navI18nKey(item.labelKey))}</Text>
             </Pressable>
           ))}
 
@@ -77,7 +109,7 @@ export function AppMenu({
           {clubs.length > 1 && (
             <View className="mt-4 px-4">
               <Text className="mb-2 text-xs uppercase tracking-wide text-zinc-400">
-                {t('nav.cambiar_club')}
+                {t('shell.switch_club')}
               </Text>
               <View className="gap-2">
                 {clubs.map((c) => {
@@ -124,7 +156,7 @@ export function AppMenu({
               className="items-center rounded-xl border border-zinc-200 py-3 active:opacity-70"
             >
               <Text className="text-base font-medium text-zinc-700">
-                {t('nav.cerrar_sesion')}
+                {t('shell.signout')}
               </Text>
             </Pressable>
           </View>

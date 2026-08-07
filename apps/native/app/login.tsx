@@ -13,7 +13,7 @@ import { Redirect, router } from 'expo-router';
 import { signinSchema } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { useSession } from '@/auth/session';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 type LoginError =
@@ -22,11 +22,13 @@ type LoginError =
   | 'email_not_confirmed'
   | 'generic';
 
+// Subclaves dentro del namespace compartido `auth.signin` (los textos de la app
+// difieren de los de la web → claves propias `app_error_*`).
 const ERROR_KEY: Record<LoginError, string> = {
-  invalid_input: 'login.error_invalid_input',
-  invalid_credentials: 'login.error_invalid_credentials',
-  email_not_confirmed: 'login.error_email_not_confirmed',
-  generic: 'login.error_generic',
+  invalid_input: 'app_error_invalid_input',
+  invalid_credentials: 'app_error_invalid_credentials',
+  email_not_confirmed: 'app_error_email_not_confirmed',
+  generic: 'app_error_generic',
 };
 
 /**
@@ -36,6 +38,8 @@ const ERROR_KEY: Record<LoginError, string> = {
  */
 export default function LoginScreen() {
   const { user, loading } = useSession();
+  const t = useTranslations('auth.signin');
+  const tShell = useTranslations('shell');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -84,10 +88,10 @@ export default function LoginScreen() {
         <View className="flex-1 justify-center gap-6 px-6">
           <View className="items-center gap-1">
             <Text className="text-4xl font-bold text-white">
-              {t('login.title')}
+              {tShell('app_name')}
             </Text>
             <Text className="text-base text-zinc-300">
-              {t('login.subtitle')}
+              {t('app_subtitle')}
             </Text>
           </View>
 
@@ -95,7 +99,7 @@ export default function LoginScreen() {
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder={t('login.email')}
+              placeholder={t('email_label')}
               placeholderTextColor="#9CA3AF"
               autoCapitalize="none"
               autoCorrect={false}
@@ -107,7 +111,7 @@ export default function LoginScreen() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder={t('login.password')}
+              placeholder={t('password_label')}
               placeholderTextColor="#9CA3AF"
               autoCapitalize="none"
               autoCorrect={false}
@@ -131,7 +135,7 @@ export default function LoginScreen() {
             >
               {submitting && <ActivityIndicator color="#052e1c" size="small" />}
               <Text className="text-base font-semibold text-emerald-950">
-                {submitting ? t('login.submitting') : t('login.submit')}
+                {submitting ? t('submitting') : t('submit')}
               </Text>
             </Pressable>
           </View>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { supabase } from '@/lib/supabase';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import {
   currentPermissionView,
   enablePushNotifications,
@@ -19,6 +19,10 @@ import {
  *                    (sin reintento automático, como la web).
  */
 export function PushSettingsCard() {
+  // Push nativo = concepto propio (notificaciones.push_native); solo "denied_title"
+  // se reutiliza del push web (misma frase), coherente con el namespace compartido.
+  const t = useTranslations('notificaciones.push_native');
+  const tShared = useTranslations('notificaciones.push');
   const [view, setView] = useState<PermissionView | 'loading'>('loading');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -51,21 +55,21 @@ export function PushSettingsCard() {
   return (
     <View className="gap-2 rounded-2xl border border-zinc-200 p-4">
       <Text className="text-base font-semibold text-[#0F1B2E]">
-        {t('push.card_title')}
+        {t('card_title')}
       </Text>
 
       {view === 'granted' ? (
-        <Text className="text-sm text-emerald-600">{t('push.enabled')}</Text>
+        <Text className="text-sm text-emerald-600">{t('enabled')}</Text>
       ) : view === 'denied' ? (
         <>
           <Text className="text-sm font-medium text-zinc-700">
-            {t('push.denied_title')}
+            {tShared('denied_title')}
           </Text>
-          <Text className="text-sm text-zinc-500">{t('push.denied_body')}</Text>
+          <Text className="text-sm text-zinc-500">{t('denied_body')}</Text>
         </>
       ) : (
         <>
-          <Text className="text-sm text-zinc-500">{t('push.card_body')}</Text>
+          <Text className="text-sm text-zinc-500">{t('card_body')}</Text>
           <Pressable
             onPress={onEnable}
             disabled={busy || view === 'loading'}
@@ -74,12 +78,12 @@ export function PushSettingsCard() {
           >
             {busy ? <ActivityIndicator color="#ffffff" size="small" /> : null}
             <Text className="text-base font-medium text-white">
-              {busy ? t('push.enabling') : t('push.enable_button')}
+              {busy ? t('enabling') : t('enable_button')}
             </Text>
           </Pressable>
           {error ? (
             <Text className="text-sm text-red-600" role="alert">
-              {t('push.error')}
+              {t('error')}
             </Text>
           ) : null}
         </>

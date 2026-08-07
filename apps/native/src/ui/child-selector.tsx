@@ -3,7 +3,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 import { useActivePlayer } from '@/auth/active-player';
 import { useApp } from '@/auth/context';
 import { BRAND } from '@/theme';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-5 C1 — Selector de HIJO ACTIVO en la cabecera de las pantallas player-scoped
@@ -15,6 +15,7 @@ import { t } from '@/i18n';
 export function ChildSelector() {
   const { players, activePlayer, setActivePlayer } = useActivePlayer();
   const { theme } = useApp();
+  const t = useTranslations('shell.selector');
   const [open, setOpen] = useState(false);
   const accent = theme?.color ?? BRAND.navy;
 
@@ -34,14 +35,14 @@ export function ChildSelector() {
           </View>
           <Text className="text-sm font-semibold text-[#0F1B2E]">{activePlayer.name}</Text>
         </View>
-        <Text className="text-xs text-zinc-400">{t('child.change')}</Text>
+        <Text className="text-xs text-zinc-400">{t('change')}</Text>
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setOpen(false)}>
           <View className="rounded-t-3xl bg-white p-4 pb-8">
             <Text className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-              {t('child.pick')}
+              {t('pick_child')}
             </Text>
             {players.map((p) => {
               const active = p.id === activePlayer.id;

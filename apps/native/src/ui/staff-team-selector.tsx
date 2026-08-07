@@ -3,7 +3,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 import { useActiveStaffTeam } from '@/auth/active-staff-team';
 import { useApp } from '@/auth/context';
 import { BRAND } from '@/theme';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-10b-2 — Selector de EQUIPO ACTIVO del coordinador en la cabecera de sus
@@ -15,6 +15,7 @@ import { t } from '@/i18n';
 export function StaffTeamSelector() {
   const { teams, activeTeam, setActiveTeam } = useActiveStaffTeam();
   const { theme } = useApp();
+  const t = useTranslations('shell.selector');
   const [open, setOpen] = useState(false);
   const accent = theme?.color ?? BRAND.navy;
 
@@ -33,14 +34,14 @@ export function StaffTeamSelector() {
           />
           <Text className="text-sm font-semibold text-[#0F1B2E]">{activeTeam.name}</Text>
         </View>
-        <Text className="text-xs text-zinc-400">{t('staff_team.change')}</Text>
+        <Text className="text-xs text-zinc-400">{t('change')}</Text>
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable className="flex-1 justify-end bg-black/40" onPress={() => setOpen(false)}>
           <View className="rounded-t-3xl bg-white p-4 pb-8">
             <Text className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-              {t('staff_team.pick')}
+              {t('pick_team')}
             </Text>
             {teams.map((team) => {
               const active = team.teamId === activeTeam.teamId;
