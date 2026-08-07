@@ -443,7 +443,8 @@
       "pick_label": "Elegir nueva foto",
       "change": "Cambiar foto",
       "remove": "Quitar foto",
-      "hint": "JPG, PNG o WebP. Máximo {maxMb} MB."
+      "hint": "JPG, PNG o WebP. Máximo {maxMb} MB.",
+      "permission": "Necesitas dar permiso para acceder a tus fotos."
     },
     "errors": {
       "full_name_too_short": "El nombre debe tener al menos 2 caracteres",
@@ -457,6 +458,14 @@
       "avatar_empty": "El archivo está vacío.",
       "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
       "avatar_remove_failed": "No hemos podido quitar la foto."
+    },
+    "change_password_hint": "Te enviaremos un enlace por email para cambiarla.",
+    "offline": "Sin conexión: no puedes editar ahora.",
+    "pw": {
+      "sent_title": "Revisa tu correo",
+      "sent_body": "Te hemos enviado un enlace a {email} para cambiar la contraseña.",
+      "error_title": "No se pudo enviar",
+      "error_body": "Inténtalo de nuevo en unos minutos."
     }
   },
   "ajustes": {

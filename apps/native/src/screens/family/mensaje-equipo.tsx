@@ -15,7 +15,7 @@ import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { Composer } from './mensaje-detalle';
-import { t, APP_LOCALE } from '@/i18n';
+import { t, appLocale } from '@/i18n';
 import { BRAND } from '@/theme';
 
 const MESSAGES_POLL_MS = 5000;
@@ -55,7 +55,7 @@ export function MensajeEquipoScreen({
       try {
         const res = await callServerEndpoint('/api/messages/send', {
           method: 'POST',
-          body: { kind: 'team', teamConversationId, body: text, locale: APP_LOCALE },
+          body: { kind: 'team', teamConversationId, body: text, locale: appLocale() },
         });
         if (!res.ok) return false;
         refresh();

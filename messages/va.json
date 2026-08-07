@@ -554,7 +554,8 @@
       "pick_label": "Triar nova foto",
       "change": "Canviar foto",
       "remove": "Llevar foto",
-      "hint": "JPG, PNG o WebP. Màxim {maxMb} MB."
+      "hint": "JPG, PNG o WebP. Màxim {maxMb} MB.",
+      "permission": "Necessites donar permís per a accedir a les teues fotos."
     },
     "errors": {
       "full_name_too_short": "El nom ha de tindre almenys 2 caràcters",
@@ -568,6 +569,14 @@
       "avatar_empty": "El fitxer està buit.",
       "avatar_upload_failed": "No hem pogut pujar la foto. Torneu-ho a provar.",
       "avatar_remove_failed": "No hem pogut llevar la foto."
+    },
+    "change_password_hint": "T’enviarem un enllaç per correu per a canviar-la.",
+    "offline": "Sense connexió: no pots editar ara.",
+    "pw": {
+      "sent_title": "Revisa el teu correu",
+      "sent_body": "T’hem enviat un enllaç a {email} per a canviar la contrasenya.",
+      "error_title": "No s’ha pogut enviar",
+      "error_body": "Torna-ho a provar d’ací a uns minuts."
     }
   },
   "ajustes": {

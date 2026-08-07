@@ -22,7 +22,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { ChildSelector } from '@/ui/child-selector';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
-import { t, APP_LOCALE } from '@/i18n';
+import { t, appLocale } from '@/i18n';
 
 /**
  * O2-5 C1/F2 — Seguidores del HIJO ACTIVO: listar + revocar + INVITAR. Invitar es
@@ -161,7 +161,7 @@ function InviteModal({
     try {
       const res = await callServerEndpoint('/api/spectators/invite', {
         method: 'POST',
-        body: { playerId, email: trimmed, locale: APP_LOCALE },
+        body: { playerId, email: trimmed, locale: appLocale() },
       });
       let json: { status?: string; error?: string } = {};
       try {

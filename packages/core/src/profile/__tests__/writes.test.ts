@@ -63,6 +63,25 @@ describe('updateProfileFromClient', () => {
     expect(r).toEqual({ success: false, error: 'locale_invalid' });
   });
 
+  it('parcial nombre+fecha (sin locale) → NO escribe locale', async () => {
+    const { sb, calls } = makeClient(null);
+    const r = await updateProfileFromClient(sb, USER, {
+      full_name: 'Ada Lovelace',
+      date_of_birth: '1990-01-01',
+    });
+    expect(r).toEqual({ success: true, locale: '' });
+    expect(calls.payload).toEqual({ full_name: 'Ada Lovelace', date_of_birth: '1990-01-01' });
+    expect(calls.eq).toEqual(['id', USER]);
+  });
+
+  it('parcial solo locale → NO escribe full_name ni date_of_birth', async () => {
+    const { sb, calls } = makeClient(null);
+    const r = await updateProfileFromClient(sb, USER, { locale: 'en' });
+    expect(r).toEqual({ success: true, locale: 'en' });
+    expect(calls.payload).toEqual({ locale: 'en' });
+    expect(calls.eq).toEqual(['id', USER]);
+  });
+
   it('error de BD en el UPDATE → generic', async () => {
     const { sb } = makeClient({ message: 'db down' });
     const r = await updateProfileFromClient(sb, USER, VALID);

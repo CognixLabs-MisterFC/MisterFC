@@ -30,28 +30,28 @@ import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
 import { PushSettingsCard } from '@/notifications/push-settings-card';
 import { webBaseUrl } from '@/lib/server-api';
 import { uuidv4 } from '@/lib/uuid';
-import { t, APP_LOCALE } from '@/i18n';
+import { appLocale, t as flatT } from '@/i18n';
+import { useLocale, useSetLocale, useTranslations } from '@/locale/provider';
+import { LOCALES, type Locale } from '@/locale/catalogs';
 import { BRAND } from '@/theme';
 
-const LOCALES = ['es', 'en', 'va'] as const;
-
 /**
- * PERFIL COMPLETO — pantalla COMÚN a las cuatro áreas (familia, seguidor, staff,
- * dirección). Nada por-rol: la gestión del jugador/consentimientos vive en Familia
- * (C2), no aquí. Reúne datos personales + avatar + contraseña + push (O2-4).
+ * PERFIL COMPLETO — pantalla COMÚN a las cuatro áreas. PRIMERA pantalla migrada al
+ * catálogo COMPARTIDO con la web (`messages/*.json`, namespace `perfil`) vía el hook
+ * `useTranslations` (O2-12a). El resto de la app sigue con el `t()` plano hasta que
+ * se migre por tandas.
  *
- * TODO es escritura RLS DIRECTA con el cliente del usuario (datos → su fila
- * `profiles`; avatar → su carpeta en el bucket `profile-avatars`). SIN service-role,
- * SIN route handler. La contraseña se cambia por EMAIL (`resetPasswordForEmail`,
- * como la web), no con un formulario in-app. El `locale` SE PERSISTE (lo consumen
- * emails/notificaciones server-side) pero NO cambia el idioma de la app en caliente
- * (eso es O2-12). Offline = solo lectura: los botones de guardar/subir/contraseña se
- * deshabilitan sin conexión (write-guard).
+ * Datos + avatar = escritura RLS DIRECTA (su fila / su carpeta en `profile-avatars`),
+ * SIN service-role ni route handler. Contraseña por email (`resetPasswordForEmail`).
+ * El SELECTOR de idioma cambia la app EN CALIENTE (LocaleProvider) y persiste en
+ * `profiles.locale` reutilizando `updateProfileFromClient` (#440). Offline = solo
+ * lectura para las escrituras de red (write-guard); el cambio de idioma sí es local.
  */
 export function ProfileScreen() {
   const { theme } = useApp();
   const { user } = useSession();
   const online = useIsOnline();
+  const t = useTranslations('perfil');
   const userId = user?.id ?? null;
   const email = user?.email ?? '';
   const accent = theme?.color ?? BRAND.navy;
@@ -69,7 +69,7 @@ export function ProfileScreen() {
     <ScrollView className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
       <View className="gap-4 p-6">
-        <Text className="text-xl font-semibold text-[#0F1B2E]">{t('nav.perfil')}</Text>
+        <Text className="text-xl font-semibold text-[#0F1B2E]">{t('title')}</Text>
 
         {userId ? (
           <>
@@ -81,19 +81,16 @@ export function ProfileScreen() {
               online={online}
               onChanged={refresh}
             />
-            <DataCard
-              userId={userId}
-              initial={data}
-              online={online}
-              onSaved={refresh}
-            />
+            <DataCard userId={userId} initial={data} online={online} onSaved={refresh} />
+            <LanguageCard userId={userId} online={online} onSaved={refresh} />
           </>
         ) : null}
 
         <AccountCard email={email} online={online} />
 
         <View className="gap-2">
-          <Text className="text-sm text-zinc-400">{t('push.section_title')}</Text>
+          {/* Sección de push aún NO migrada al catálogo compartido → t() plano heredado. */}
+          <Text className="text-sm text-zinc-400">{flatT('push.section_title')}</Text>
           <PushSettingsCard />
         </View>
       </View>
@@ -117,13 +114,12 @@ function AvatarCard({
   online: boolean;
   onChanged: () => void;
 }) {
+  const t = useTranslations('perfil');
   const [path, setPath] = useState<string | null>(initialPath);
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Firma la ruta actual bajo demanda (bucket privado, online-only). Set-state solo
-  // dentro del callback async (regla react-hooks/set-state-in-effect).
   useEffect(() => {
     let active = true;
     (async () => {
@@ -140,7 +136,7 @@ function AvatarCard({
     setError(null);
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      setError(t('perfil.avatar_permission'));
+      setError(t('avatar.permission'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -156,11 +152,11 @@ function AvatarCard({
     const validation = avatarUploadSchema.safeParse({ mimeType: mime, size });
     if (!validation.success) {
       const code = validation.error.issues[0]?.message ?? '';
-      setError(code.includes('large') ? t('perfil.avatar_err_large') : t('perfil.avatar_err_mime'));
+      setError(code.includes('large') ? t('errors.avatar_too_large') : t('errors.avatar_mime_invalid'));
       return;
     }
     if (!asset.base64) {
-      setError(t('perfil.avatar_err_generic'));
+      setError(t('errors.avatar_upload_failed'));
       return;
     }
 
@@ -172,7 +168,7 @@ function AvatarCard({
       .upload(objectPath, base64ToBytes(asset.base64), { contentType: mime, upsert: false });
     if (uploadError) {
       setBusy(false);
-      setError(t('perfil.avatar_err_generic'));
+      setError(t('errors.avatar_upload_failed'));
       return;
     }
     const res = await updateAvatarPathFromClient(supabase, userId, objectPath);
@@ -181,7 +177,7 @@ function AvatarCard({
       setPath(objectPath);
       onChanged();
     } else {
-      setError(t('perfil.avatar_err_generic'));
+      setError(t('errors.avatar_upload_failed'));
     }
   }
 
@@ -195,12 +191,12 @@ function AvatarCard({
       setPath(null);
       onChanged();
     } else {
-      setError(t('perfil.avatar_err_generic'));
+      setError(t('errors.avatar_remove_failed'));
     }
   }
 
   return (
-    <Card title={t('perfil.avatar_title')}>
+    <Card title={t('section.avatar')}>
       <View className="flex-row items-center gap-4">
         <View
           className="items-center justify-center overflow-hidden rounded-full"
@@ -217,21 +213,21 @@ function AvatarCard({
         <View className="flex-1 gap-2">
           <View className="flex-row flex-wrap gap-2">
             <ActionButton
-              label={t('perfil.avatar_change')}
+              label={t('avatar.change')}
               onPress={pick}
               disabled={!online || busy}
               busy={busy}
             />
             {path ? (
               <ActionButton
-                label={t('perfil.avatar_remove')}
+                label={t('avatar.remove')}
                 onPress={remove}
                 disabled={!online || busy}
                 variant="ghost"
               />
             ) : null}
           </View>
-          <Text className="text-xs text-zinc-400">{t('perfil.avatar_hint')}</Text>
+          <Text className="text-xs text-zinc-400">{t('avatar.hint', { maxMb: 2 })}</Text>
           {error ? <Text className="text-xs text-red-600">{error}</Text> : null}
         </View>
       </View>
@@ -239,7 +235,7 @@ function AvatarCard({
   );
 }
 
-// ── Datos personales (full_name, date_of_birth, locale) ─────────────────────────
+// ── Datos personales (full_name, date_of_birth) ─────────────────────────────────
 function DataCard({
   userId,
   initial,
@@ -251,9 +247,9 @@ function DataCard({
   online: boolean;
   onSaved: () => void;
 }) {
+  const t = useTranslations('perfil');
   const [fullName, setFullName] = useState(initial?.full_name ?? '');
   const [dob, setDob] = useState(initial?.date_of_birth ?? '');
-  const [locale, setLocale] = useState<string>(initial?.locale ?? 'es');
   const [busy, setBusy] = useState(false);
   const [state, setState] = useState<'idle' | 'saved' | 'error'>('idle');
   const [errorKey, setErrorKey] = useState<string | null>(null);
@@ -263,10 +259,11 @@ function DataCard({
     setBusy(true);
     setState('idle');
     setErrorKey(null);
+    // Escribe SOLO sus campos (nombre + fecha). NUNCA locale: eso es de LanguageCard,
+    // así no pisa un idioma elegido en otra superficie (p.ej. la web).
     const res = await updateProfileFromClient(supabase, userId, {
       full_name: fullName,
       date_of_birth: dob,
-      locale,
     });
     setBusy(false);
     if (res.success) {
@@ -279,59 +276,83 @@ function DataCard({
   }
 
   return (
-    <Card title={t('perfil.data_title')}>
-      <Field label={t('perfil.field_full_name')} value={fullName} onChange={setFullName} />
+    <Card title={t('section.data')}>
+      <Field label={t('field.full_name')} value={fullName} onChange={setFullName} />
       <Field
-        label={t('perfil.field_dob')}
+        label={t('field.date_of_birth')}
         value={dob}
         onChange={setDob}
         placeholder="AAAA-MM-DD"
         keyboardType="numbers-and-punctuation"
       />
+      <ActionButton label={t('save')} onPress={save} disabled={!online || busy} busy={busy} />
+      {state === 'saved' ? (
+        <Text className="mt-2 text-xs text-emerald-600">{t('saved')}</Text>
+      ) : null}
+      {state === 'error' ? (
+        <Text className="mt-2 text-xs text-red-600">
+          {errorKey ? t(`errors.${errorKey}`) : t('errors.generic')}
+        </Text>
+      ) : null}
+      {!online ? <Text className="mt-2 text-xs text-amber-600">{t('offline')}</Text> : null}
+    </Card>
+  );
+}
 
-      <Text className="mb-1 text-xs text-zinc-500">{t('perfil.field_locale')}</Text>
+// ── Idioma: selector con cambio EN CALIENTE + persistencia en profiles.locale ────
+function LanguageCard({
+  userId,
+  online,
+  onSaved,
+}: {
+  userId: string;
+  online: boolean;
+  onSaved: () => void;
+}) {
+  const t = useTranslations('perfil');
+  const locale = useLocale();
+  const setLocale = useSetLocale();
+
+  async function choose(l: Locale) {
+    if (l === locale) return;
+    // 1) Cambio EN CALIENTE + caché local (secure-store), siempre, también offline.
+    setLocale(l);
+    // 2) Persistencia en profiles.locale (verdad) reutilizando updateProfileFromClient
+    //    (#440), solo online. Escribe SOLO locale (update parcial): NUNCA nombre/fecha,
+    //    para no revertir edits sin guardar del formulario de datos.
+    if (online) {
+      const res = await updateProfileFromClient(supabase, userId, { locale: l });
+      if (res.success) onSaved();
+    }
+  }
+
+  return (
+    <Card title={t('field.locale')}>
       <View className="mb-1 flex-row gap-2">
         {LOCALES.map((l) => {
           const selected = locale === l;
           return (
             <Pressable
               key={l}
-              onPress={() => setLocale(l)}
+              onPress={() => choose(l)}
               className={`rounded-full border px-4 py-1.5 ${selected ? 'border-transparent' : 'border-zinc-300'}`}
               style={selected ? { backgroundColor: '#0F1B2E' } : undefined}
             >
               <Text className={`text-xs font-medium ${selected ? 'text-white' : 'text-zinc-600'}`}>
-                {t(`perfil.locale_${l}`)}
+                {t(`locales.${l}`)}
               </Text>
             </Pressable>
           );
         })}
       </View>
-      <Text className="mb-3 text-xs text-zinc-400">{t('perfil.locale_hint')}</Text>
-
-      <ActionButton
-        label={t('perfil.save')}
-        onPress={save}
-        disabled={!online || busy}
-        busy={busy}
-      />
-      {state === 'saved' ? (
-        <Text className="mt-2 text-xs text-emerald-600">{t('perfil.saved')}</Text>
-      ) : null}
-      {state === 'error' ? (
-        <Text className="mt-2 text-xs text-red-600">
-          {errorKey ? t(`perfil.err_${errorKey}`) : t('perfil.err_generic')}
-        </Text>
-      ) : null}
-      {!online ? (
-        <Text className="mt-2 text-xs text-amber-600">{t('perfil.offline')}</Text>
-      ) : null}
+      <Text className="text-xs text-zinc-400">{t('field.locale_help')}</Text>
     </Card>
   );
 }
 
 // ── Cuenta (email readonly + cambiar contraseña por email) ──────────────────────
 function AccountCard({ email, online }: { email: string; online: boolean }) {
+  const t = useTranslations('perfil');
   const [busy, setBusy] = useState(false);
 
   async function changePassword() {
@@ -339,7 +360,7 @@ function AccountCard({ email, online }: { email: string; online: boolean }) {
     setBusy(true);
     try {
       const base = webBaseUrl();
-      const next = `/${APP_LOCALE}/reset-password`;
+      const next = `/${appLocale()}/reset-password`;
       const redirectTo = base
         ? `${base}/auth/callback?next=${encodeURIComponent(next)}`
         : undefined;
@@ -348,30 +369,30 @@ function AccountCard({ email, online }: { email: string; online: boolean }) {
         redirectTo ? { redirectTo } : undefined,
       );
       if (error) {
-        Alert.alert(t('perfil.pw_error_title'), t('perfil.pw_error_body'));
+        Alert.alert(t('pw.error_title'), t('pw.error_body'));
       } else {
-        Alert.alert(t('perfil.pw_sent_title'), t('perfil.pw_sent_body', { email }));
+        Alert.alert(t('pw.sent_title'), t('pw.sent_body', { email }));
       }
     } catch {
-      Alert.alert(t('perfil.pw_error_title'), t('perfil.pw_error_body'));
+      Alert.alert(t('pw.error_title'), t('pw.error_body'));
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Card title={t('perfil.account_title')}>
-      <Text className="text-xs text-zinc-500">{t('perfil.field_email')}</Text>
+    <Card title={t('section.account')}>
+      <Text className="text-xs text-zinc-500">{t('field.email')}</Text>
       <Text className="mb-1 text-sm text-[#0F1B2E]">{email || '—'}</Text>
-      <Text className="mb-3 text-xs text-zinc-400">{t('perfil.email_help')}</Text>
+      <Text className="mb-3 text-xs text-zinc-400">{t('field.email_help')}</Text>
 
       <ActionButton
-        label={t('perfil.change_password')}
+        label={t('change_password')}
         onPress={changePassword}
         disabled={!online || busy || !email}
         busy={busy}
       />
-      <Text className="mt-2 text-xs text-zinc-400">{t('perfil.change_password_hint')}</Text>
+      <Text className="mt-2 text-xs text-zinc-400">{t('change_password_hint')}</Text>
     </Card>
   );
 }

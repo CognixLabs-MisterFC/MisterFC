@@ -33,7 +33,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { ChildSelector } from '@/ui/child-selector';
 import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t, APP_LOCALE } from '@/i18n';
+import { t, appLocale } from '@/i18n';
 import { downloadServerFile } from '@/lib/server-api';
 import { BRAND } from '@/theme';
 
@@ -327,7 +327,7 @@ function ExportCard({ playerId, online }: { playerId: string; online: boolean })
     setState('idle');
     try {
       const uri = await downloadServerFile(
-        `/${APP_LOCALE}/mi-ficha/export/${playerId}`,
+        `/${appLocale()}/mi-ficha/export/${playerId}`,
         'expediente.pdf',
       );
       if (await Sharing.isAvailableAsync()) {

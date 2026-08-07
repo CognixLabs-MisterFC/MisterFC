@@ -77,17 +77,22 @@ export type UpdateProfileResult =
   | { success: false; error: ProfileWriteError };
 
 /**
- * Valida (mismo `updateProfileSchema` que la web) y actualiza full_name,
- * date_of_birth y locale de la propia fila. Devuelve el `locale` persistido para
- * que el caller web sincronice la cookie NEXT_LOCALE (efecto web; la app nativa lo
- * ignora). Los códigos de error espejan los de la Server Action.
+ * Actualiza el perfil propio con un update PARCIAL: valida y escribe SOLO las
+ * claves PRESENTES en `input` (mismos validadores que la web). Así cada superficie
+ * escribe únicamente sus campos y no pisa los demás (p.ej. guardar nombre/fecha no
+ * toca `locale`, y cambiar idioma no revierte edits del nombre en curso).
+ *
+ * La web sigue pasando los tres campos → valida y escribe los tres, comportamiento
+ * IDÉNTICO. Devuelve el `locale` persistido (string) para que el caller web
+ * sincronice la cookie NEXT_LOCALE; en un update sin `locale` devuelve '' (los
+ * callers nativos no lo leen). Los códigos de error espejan los de la Server Action.
  */
 export async function updateProfileFromClient(
   supabase: DbClient,
   userId: string,
-  input: { full_name: unknown; date_of_birth: unknown; locale: unknown },
+  input: { full_name?: unknown; date_of_birth?: unknown; locale?: unknown },
 ): Promise<UpdateProfileResult> {
-  const parsed = updateProfileSchema.safeParse(input);
+  const parsed = updateProfileSchema.partial().safeParse(input);
   if (!parsed.success) {
     const issue = parsed.error.issues[0]?.message;
     if (
@@ -101,17 +106,18 @@ export async function updateProfileFromClient(
     return { success: false, error: 'generic' };
   }
 
-  const { error } = await supabase
-    .from('profiles')
-    .update({
-      full_name: parsed.data.full_name,
-      date_of_birth: parsed.data.date_of_birth,
-      locale: parsed.data.locale,
-    })
-    .eq('id', userId);
+  // Solo las claves PRESENTES en la entrada llegan al UPDATE.
+  const payload: { full_name?: string; date_of_birth?: string | null; locale?: string } = {};
+  if ('full_name' in input) payload.full_name = parsed.data.full_name;
+  if ('date_of_birth' in input) payload.date_of_birth = parsed.data.date_of_birth ?? null;
+  if ('locale' in input) payload.locale = parsed.data.locale;
 
-  if (error) return { success: false, error: 'generic' };
-  return { success: true, locale: parsed.data.locale };
+  if (Object.keys(payload).length > 0) {
+    const { error } = await supabase.from('profiles').update(payload).eq('id', userId);
+    if (error) return { success: false, error: 'generic' };
+  }
+
+  return { success: true, locale: parsed.data.locale ?? '' };
 }
 
 // ── Avatar ───────────────────────────────────────────────────────────────────

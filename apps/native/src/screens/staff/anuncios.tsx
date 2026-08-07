@@ -21,7 +21,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t, APP_LOCALE } from '@/i18n';
+import { t, appLocale } from '@/i18n';
 import { BRAND } from '@/theme';
 import { MisEquiposScreen } from './mis-equipos';
 
@@ -96,7 +96,7 @@ export function TeamAnnouncementsScreen({
         // Publicar: route handler (insert como usuario + fan-out service-role después).
         const r = await callServerEndpoint('/api/announcements/publish', {
           method: 'POST',
-          body: { teamId, title: tt, body: bb, pinned, locale: APP_LOCALE },
+          body: { teamId, title: tt, body: bb, pinned, locale: appLocale() },
         });
         if (!r.ok) {
           setError(t('anuncios_staff.publish_error'));
