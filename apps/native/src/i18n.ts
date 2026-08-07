@@ -1,27 +1,17 @@
 /**
- * i18n mínimo de apps/native (PR-1).
+ * i18n PLANO heredado de apps/native (catálogo inline, claves con puntos).
  *
- * apps/web usa next-intl (runtime de Next). Aquí, en RN, no hay ese runtime, así
- * que montamos un `t()` propio y autocontenido con los pocos textos de login/home.
- * Idioma detectado del dispositivo vía `Intl` (Hermes trae Intl), sin dep nativa.
- * Locales: es (default), en, va. PR-2 ampliará según haga falta.
+ * QUEDA DEPRECADO por el motor compartido (O2-12a): el catálogo canónico es
+ * `messages/{es,en,va}.json` (compartido con la web) y el hook nuevo es
+ * `useTranslations` de `@/locale/provider`. Las pantallas se migran por tandas;
+ * mientras tanto este `t()` plano sigue sirviendo a lo no migrado.
+ *
+ * El idioma NUNCA se detecta del dispositivo (regla de producto): arranca en
+ * español y lo sincroniza el LocaleProvider vía `setActiveLocale`.
+ * Locales: es (default), en, va.
  */
 
 type Locale = 'es' | 'en' | 'va';
-
-function detectLocale(): Locale {
-  try {
-    const raw = (
-      Intl.DateTimeFormat().resolvedOptions().locale || 'es'
-    ).toLowerCase();
-    if (raw.startsWith('en')) return 'en';
-    // El dispositivo reporta valenciano como 'ca'/'ca-ES-valencia' o 'va'.
-    if (raw.startsWith('va') || raw.startsWith('ca')) return 'va';
-    return 'es';
-  } catch {
-    return 'es';
-  }
-}
 
 const MESSAGES: Record<Locale, Record<string, string>> = {
   es: {
@@ -1248,13 +1238,27 @@ const MESSAGES: Record<Locale, Record<string, string>> = {
   },
 };
 
-const LOCALE: Locale = detectLocale();
+/**
+ * Locale activo del `t()` PLANO heredado. Arranca SIEMPRE en español (regla de
+ * producto O2-12a: nunca se lee el idioma del dispositivo). El LocaleProvider lo
+ * sincroniza vía `setActiveLocale` cuando el usuario elige idioma, de modo que las
+ * pantallas aún no migradas al catálogo compartido siguen el idioma en su siguiente
+ * montaje (coexistencia temporal mientras se migran por tandas).
+ */
+let activeLocale: Locale = 'es';
 
-/** Locale activo de la app (para construir URLs de route handlers de Next). */
-export const APP_LOCALE: string = LOCALE;
+/** Sincroniza el locale del t() plano (lo llama el LocaleProvider). */
+export function setActiveLocale(locale: Locale): void {
+  activeLocale = locale;
+}
+
+/** Locale activo de la app (para construir URLs de route handlers de Next y locale de fan-out). */
+export function appLocale(): string {
+  return activeLocale;
+}
 
 export function t(key: string, vars?: Record<string, string>): string {
-  let msg = MESSAGES[LOCALE][key] ?? MESSAGES.es[key] ?? key;
+  let msg = MESSAGES[activeLocale][key] ?? MESSAGES.es[key] ?? key;
   if (vars) {
     for (const [k, v] of Object.entries(vars)) {
       msg = msg.replace(`{${k}}`, v);

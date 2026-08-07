@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { SessionProvider } from '@/auth/session';
+import { LocaleProvider } from '@/locale/provider';
 import { AppProvider } from '@/auth/context';
 import { ActivePlayerProvider } from '@/auth/active-player';
 import { SessionGuard } from '@/nav/session-guard';
@@ -20,14 +21,18 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <SessionProvider>
-          <AppProvider>
-            <ActivePlayerProvider>
-              <StatusBar style="light" />
-              <SessionGuard />
-              <NotificationsProvider />
-              <Stack screenOptions={{ headerShown: false }} />
-            </ActivePlayerProvider>
-          </AppProvider>
+          {/* LocaleProvider dentro de SessionProvider (necesita el userId) y por
+              encima de todo lo visible: el cambio de idioma re-renderiza la app. */}
+          <LocaleProvider>
+            <AppProvider>
+              <ActivePlayerProvider>
+                <StatusBar style="light" />
+                <SessionGuard />
+                <NotificationsProvider />
+                <Stack screenOptions={{ headerShown: false }} />
+              </ActivePlayerProvider>
+            </AppProvider>
+          </LocaleProvider>
         </SessionProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

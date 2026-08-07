@@ -30,3 +30,4 @@ export * from './dashboard/index';
 export * from './holidays/index';
 export * from './erasures/index';
 export * from './profile/index';
+export * from './i18n/index';

@@ -21,7 +21,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t, APP_LOCALE } from '@/i18n';
+import { t, appLocale } from '@/i18n';
 import { BRAND } from '@/theme';
 
 const MESSAGES_POLL_MS = 5000;
@@ -62,7 +62,7 @@ export function MensajeDetalleScreen({
       try {
         const res = await callServerEndpoint('/api/messages/send', {
           method: 'POST',
-          body: { kind: 'direct', conversationId, body: text, locale: APP_LOCALE },
+          body: { kind: 'direct', conversationId, body: text, locale: appLocale() },
         });
         if (!res.ok) return false;
         refresh();
