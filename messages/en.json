@@ -1164,13 +1164,13 @@
       "last_name": "Last name",
       "date_of_birth": "Date of birth",
       "date_of_birth_help": "Required — needed for age and category.",
-      "dorsal": "Number",
+      "dorsal": "Squad number",
       "position_main": "Main position",
       "positions_secondary": "Other positions",
       "foot": "Preferred foot",
       "height_cm": "Height (cm)",
       "weight_kg": "Weight (kg)",
-      "origin": "Origin",
+      "origin": "Previous club",
       "team": "Team",
       "no_team": "No team (assign later)",
       "optional": "Optional",
@@ -1374,7 +1374,7 @@
       "field": {
         "team": "Target team",
         "team_placeholder": "Select a team",
-        "dorsal_in_team": "Number in the team",
+        "dorsal_in_team": "Squad number",
         "position_in_team": "Position in the team",
         "optional": "Optional"
       },
@@ -1482,7 +1482,7 @@
       "entrenador_principal": "Head coach",
       "entrenador_ayudante": "Assistant coach",
       "preparador_fisico": "Fitness coach",
-      "delegado": "Team manager",
+      "delegado": "Team official",
       "coordinador": "Coordinator"
     },
     "invite": {
@@ -1492,7 +1492,7 @@
       "field": {
         "email": "Email",
         "role": "Role in the team",
-        "help": "Only one head coach per team. Fitness coach and team manager are managed as assistants at the club level (no caps by default)."
+        "help": "Only one head coach per team. Fitness coach and team official are managed as assistants at the club level (no caps by default)."
       },
       "send": "Send invitation",
       "cancel": "Cancel",
@@ -1683,7 +1683,7 @@
       "first_name": "Full name",
       "last_name": "Last name",
       "date_of_birth": "Date of birth",
-      "dorsal": "Number",
+      "dorsal": "Squad number",
       "position_main": "Position",
       "status": "Status",
       "required_hint": "Required field",
