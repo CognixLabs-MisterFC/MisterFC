@@ -606,7 +606,8 @@
       "sent_body": "We’ve sent a link to {email} to change your password.",
       "error_title": "Couldn’t send",
       "error_body": "Please try again in a few minutes."
-    }
+    },
+    "notifications_title": "Notifications"
   },
   "ajustes": {
     "title": "Club settings",
@@ -4641,7 +4642,11 @@
     "perfil": {
       "title": "My profile",
       "subtitle": "Your account details."
-    }
+    },
+    "no_player": "You're not following any player yet",
+    "stats_did_not_play": "Didn't play in this match",
+    "stats_empty": "No matches played yet",
+    "stats_title": "{name}'s stats"
   },
   "playbook": {
     "title": "Playbook",
@@ -4789,7 +4794,12 @@
     "assists": "Assists",
     "yellow": "Yellow cards",
     "red": "Red cards",
-    "fouls_received": "Received"
+    "fouls_received": "Received",
+    "goals": "Goals",
+    "minutes": "Minutes",
+    "shots": "Shots",
+    "fouls_committed": "Fouls",
+    "starter": "Starter"
   },
   "gestion": {
     "not_tutor": "You are not a guardian of this player",
@@ -5095,7 +5105,7 @@
     "goals": "goals",
     "inactive": "Inactive",
     "low_attendance": "Low attendance",
-    "none": "No data",
+    "none": "No data.",
     "rankings": "Rankings by category",
     "results": "Results",
     "sessions": "sessions",

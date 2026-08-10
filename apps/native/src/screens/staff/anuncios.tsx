@@ -21,8 +21,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { appLocale } from '@/i18n';
-import { useTranslations } from '@/locale/provider';
+import { appLocale, useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { MisEquiposScreen } from './mis-equipos';
 

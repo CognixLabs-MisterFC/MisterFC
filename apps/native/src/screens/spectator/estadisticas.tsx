@@ -10,7 +10,7 @@ import { useSpectatorPlayer } from '@/auth/spectator-player';
 import { useCached } from '@/data/use-cached';
 import { SpectatorPlayerSelector } from '@/ui/spectator-player-selector';
 import { OfflineBanner, EmptyState, LoadingScreen, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 type MatchStatItem = { match: ClosedTeamMatch; row: FamilyMatchStatRow | null };
 
@@ -23,6 +23,7 @@ type MatchStatItem = { match: ClosedTeamMatch; row: FamilyMatchStatRow | null };
  * `players`). Caché player-scoped (spec-stats::${playerId}).
  */
 export function SpectatorEstadisticasScreen() {
+  const t = useTranslations('');
   const { activePlayer } = useSpectatorPlayer();
   const teamId = activePlayer?.teamId ?? null;
   const playerId = activePlayer?.playerId ?? null;
@@ -64,6 +65,7 @@ export function SpectatorEstadisticasScreen() {
 }
 
 function MatchStatCard({ match, row }: MatchStatItem) {
+  const t = useTranslations('');
   return (
     <View className="rounded-2xl border border-zinc-200 p-4">
       <View className="flex-row items-center justify-between">

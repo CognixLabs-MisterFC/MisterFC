@@ -22,8 +22,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { ChildSelector } from '@/ui/child-selector';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
-import { appLocale } from '@/i18n';
-import { useTranslations } from '@/locale/provider';
+import { appLocale, useTranslations } from '@/locale/provider';
 
 /**
  * O2-5 C1/F2 — Seguidores del HIJO ACTIVO: listar + revocar + INVITAR. Invitar es

@@ -21,8 +21,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { appLocale } from '@/i18n';
-import { useTranslations } from '@/locale/provider';
+import { appLocale, useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 const MESSAGES_POLL_MS = 5000;
