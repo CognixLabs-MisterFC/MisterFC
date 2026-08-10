@@ -12,7 +12,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 type CalData = { holidays: HolidayInfo[]; pending: PendingApprovalItem[] };
@@ -27,6 +27,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
  * Caché club-scoped; refresca tras cada acción. AreaGuard('direction').
  */
 export function DireccionCalendarioScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const online = useIsOnline();
   const clubId = activeClub?.club.id ?? null;
@@ -112,7 +113,7 @@ export function DireccionCalendarioScreen() {
         <ScreenTitle>{t('dir_cal.title')}</ScreenTitle>
 
         {/* Marcar festivo */}
-        <Section title={t('dir_cal.mark_title')}>
+        <Section title={t('calendario.holidays.trigger')}>
           <TextInput
             value={date}
             onChangeText={setDate}
@@ -124,11 +125,11 @@ export function DireccionCalendarioScreen() {
           <TextInput
             value={reason}
             onChangeText={setReason}
-            placeholder={t('dir_cal.reason_ph')}
+            placeholder={t('calendario.holidays.reason_label')}
             placeholderTextColor="#a1a1aa"
             className="mt-2 rounded-xl border border-zinc-200 px-3 py-2 text-sm text-[#0F1B2E]"
           />
-          <ActionBtn label={t('dir_cal.mark_btn')} onPress={doMark} disabled={!canMark} accent={accent} />
+          <ActionBtn label={t('calendario.holidays.confirm')} onPress={doMark} disabled={!canMark} accent={accent} />
           {!online ? <Text className="mt-1 text-xs text-zinc-400">{t('dir_cal.offline')}</Text> : null}
         </Section>
 
@@ -173,7 +174,7 @@ export function DireccionCalendarioScreen() {
                     <TextInput
                       value={rejectReason}
                       onChangeText={setRejectReason}
-                      placeholder={t('dir_cal.reject_reason_ph')}
+                      placeholder={t('calendario.approval.reason_label')}
                       placeholderTextColor="#a1a1aa"
                       className="rounded-xl border border-zinc-200 px-3 py-2 text-sm text-[#0F1B2E]"
                     />
@@ -185,7 +186,7 @@ export function DireccionCalendarioScreen() {
                         tone="danger"
                       />
                       <SmallBtn
-                        label={t('dir_cal.cancel')}
+                        label={t('calendario.dialog.cancel')}
                         onPress={() => {
                           setRejectingId(null);
                           setRejectReason('');
@@ -198,14 +199,14 @@ export function DireccionCalendarioScreen() {
                 ) : (
                   <View className="mt-2 flex-row gap-2">
                     <SmallBtn
-                      label={t('dir_cal.approve')}
+                      label={t('calendario.approval.approve')}
                       onPress={() => doDecide(p.eventId, true, null)}
                       disabled={!online || busy}
                       tone="accent"
                       accent={accent}
                     />
                     <SmallBtn
-                      label={t('dir_cal.reject')}
+                      label={t('calendario.approval.reject')}
                       onPress={() => {
                         setRejectingId(p.eventId);
                         setRejectReason('');

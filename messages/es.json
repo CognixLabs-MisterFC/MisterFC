@@ -4865,7 +4865,8 @@
     "matches_short": "PJ",
     "goals_short": "G",
     "career_total": "Total",
-    "years": "años"
+    "years": "años",
+    "evaluations": "Valoraciones"
   },
   "informe": {
     "empty": "Sin informe disponible",
@@ -5080,5 +5081,83 @@
     "mixed": "Mixto",
     "club": "Club",
     "individual": "Individual"
+  },
+  "dash": {
+    "attendance": "Asistencia",
+    "census": "Plantilla",
+    "title": "Dashboard",
+    "wins": "G",
+    "all_clear": "Todo en orden",
+    "best_avg": "Mejor media",
+    "campaigns": "Campañas por vencer",
+    "club_avg": "Media del club",
+    "criteria": "Baja asistencia < 60% con ≥ 4 sesiones · inactivo = sin partidos ni asistencia",
+    "empty": "Sin datos todavía",
+    "goals": "goles",
+    "inactive": "Inactivos",
+    "losses": "P",
+    "low_attendance": "Baja asistencia",
+    "none": "Sin datos",
+    "rankings": "Rankings por categoría",
+    "results": "Resultados",
+    "sessions": "sesiones",
+    "total_players": "jugadores"
+  },
+  "dir_cal": {
+    "confirm": "Confirmar",
+    "unmark": "Quitar",
+    "date_ph": "Fecha (AAAA-MM-DD)",
+    "error": "No se pudo completar",
+    "holidays_title": "Festivos",
+    "no_holidays": "No hay festivos",
+    "no_pending": "Nada pendiente",
+    "offline": "Necesitas conexión",
+    "pending_title": "Entrenos en festivo por aprobar",
+    "title": "Calendario · Festivos"
+  },
+  "dir_cuerpo": {
+    "no_team": "Sin equipo asignado",
+    "assignments": "Asignaciones",
+    "empty": "No hay cuerpo técnico",
+    "not_found": "No se encontró el entrenador",
+    "title": "Cuerpo técnico del club"
+  },
+  "dir_sup": {
+    "continue": "Continuar",
+    "approve_final_body": "Esta acción es definitiva.",
+    "approve_final_btn": "Eliminar definitivamente",
+    "approve_final_title": "¿Confirmas la eliminación?",
+    "approve_warn_body": "Vas a eliminar de forma IRREVERSIBLE los datos de {name} (foto y ficha médica). No se puede deshacer.",
+    "approve_warn_title": "Eliminar datos del menor",
+    "empty": "No hay solicitudes pendientes",
+    "error": "No se pudo completar",
+    "hint": "Derecho al olvido: aprobar es IRREVERSIBLE. Solo el admin del club decide.",
+    "offline": "Necesitas conexión",
+    "only_admin": "Solo el administrador del club puede decidir supresiones.",
+    "reject_body": "¿Rechazar la supresión de {name}?",
+    "reject_title": "Rechazar solicitud",
+    "title": "Supresiones (RGPD)"
+  },
+  "club_role": {
+    "entrenador_ayudante": "Entrenador ayudante",
+    "entrenador_principal": "Entrenador principal"
+  },
+  "dir_inicio": {
+    "invitations": "Invitaciones pendientes",
+    "erasures": "Supresiones pendientes",
+    "callups": "Convocatorias sin publicar",
+    "reports": "Informes pendientes",
+    "tasks_title": "Tareas de entrenadores",
+    "approvals": "Entrenos en festivo por aprobar",
+    "no_session": "Entrenos sin sesión",
+    "no_attendance": "Entrenos sin asistencia"
+  },
+  "anuncios_dir": {
+    "no_teams": "El club no tiene equipos",
+    "pick_team": "Elige el equipo del anuncio"
+  },
+  "dir_jugadores": {
+    "empty": "No hay jugadores",
+    "title": "Jugadores del club"
   }
 }

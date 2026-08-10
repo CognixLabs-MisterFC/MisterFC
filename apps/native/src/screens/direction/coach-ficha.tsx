@@ -9,7 +9,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { RoleChip } from '@/screens/staff/hub-parts';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-11a-2 — FICHA de un miembro del cuerpo técnico (DIRECCIÓN, SOLO LECTURA).
@@ -18,6 +18,7 @@ import { t } from '@/i18n';
  * asignaciones (equipo·rol de staff). NADA de gestión (mover staff es web).
  */
 export function DireccionCoachFichaScreen() {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const { membershipId, name } = useLocalSearchParams<{ membershipId?: string; name?: string }>();
   const clubId = activeClub?.club.id ?? null;

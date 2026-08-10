@@ -9,7 +9,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -20,6 +20,7 @@ import { BRAND } from '@/theme';
  * NADA de edición (es web). Caché player-scoped.
  */
 export function DireccionJugadorFichaScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { playerId, name } = useLocalSearchParams<{ playerId?: string; name?: string }>();
   const clubId = activeClub?.club.id ?? null;

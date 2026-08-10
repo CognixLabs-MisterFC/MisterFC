@@ -1,0 +1,100 @@
+clave,es,en,va,pantalla
+anuncios_dir.no_teams,El club no tiene equipos,The club has no teams,El club no té equips,anuncios-picker
+anuncios_dir.pick_team,Elige el equipo del anuncio,Choose the announcement's team,Tria l'equip de l'anunci,anuncios-picker
+calendario.approval.approve,Aprobar,Approve,Aprovar,[reusada] calendario
+calendario.approval.reason_label,Motivo del rechazo,Rejection reason,Motiu del rebuig,[reusada] calendario
+calendario.approval.reject,Rechazar,Reject,Rebutjar,[reusada] calendario
+calendario.dialog.cancel,Cancelar,Cancel,Cancel·lar,[reusada] calendario
+calendario.holidays.confirm,Marcar festivo,Mark holiday,Marcar festiu,[reusada] calendario
+calendario.holidays.reason_label,Motivo,Reason,Motiu,[reusada] calendario
+calendario.holidays.trigger,Marcar día festivo,Mark as holiday,Marcar dia festiu,[reusada] calendario
+club_role.entrenador_ayudante,Entrenador ayudante,Assistant coach,Entrenador ajudant,coach-ficha;cuerpo-tecnico
+club_role.entrenador_principal,Entrenador principal,Head coach,Entrenador principal,coach-ficha;cuerpo-tecnico
+dash.all_clear,Todo en orden,All clear,Tot en ordre,dashboard
+dash.attendance,Asistencia,Assist,Assistència,dashboard
+dash.best_avg,Mejor media,Best average,Millor mitjana,dashboard
+dash.campaigns,Campañas por vencer,Campaigns due soon,Campanyes a punt de vèncer,dashboard
+dash.census,Plantilla,Squad,Plantilla,dashboard
+dash.club_avg,Media del club,Club average,Mitjana del club,dashboard
+dash.criteria,Baja asistencia < 60% con ≥ 4 sesiones · inactivo = sin partidos ni asistencia,Low attendance < 60% with ≥ 4 sessions · inactive = no matches or attendance,Baixa assistència < 60 % amb ≥ 4 sessions · inactiu = sense partits ni assistència,dashboard
+dash.empty,Sin datos todavía,No data yet,Encara sense dades,dashboard
+dash.goals,goles,goals,gols,dashboard
+dash.inactive,Inactivos,Inactive,Inactius,dashboard
+dash.losses,P,L,D,dashboard
+dash.low_attendance,Baja asistencia,Low attendance,Baixa assistència,dashboard
+dash.none,Sin datos,No data,Sense dades,dashboard
+dash.rankings,Rankings por categoría,Rankings by category,Rànquings per categoria,dashboard
+dash.results,Resultados,Results,Resultats,dashboard
+dash.sessions,sesiones,sessions,sessions,dashboard
+dash.title,Dashboard,Dashboard,Tauler,dashboard
+dash.total_players,jugadores,players,jugadors,dashboard
+dash.wins,G,W,V,dashboard
+dashboard.alerts.title,Alertas,Alerts,Alertes,[reusada] dashboard
+dashboard.attendance.ranking,Ranking de jugadores,Player ranking,Rànquing de jugadors,[reusada] dashboard
+dashboard.attendance.trend.title,Tendencia semanal,Weekly trend,Tendència setmanal,[reusada] dashboard
+dashboard.census.by_category,Por categoría,By category,Per categoria,[reusada] dashboard
+dashboard.census.by_team,Por equipo,By team,Per equip,[reusada] dashboard
+dashboard.census.col.team,Equipo,Team,Equip,[reusada] dashboard
+dashboard.rankings.mvps,MVPs,MVPs,MVPs,[reusada] dashboard
+dashboard.rankings.scorers,Goleadores,Top scorers,Golejadors,[reusada] dashboard
+dashboard.results.col.draws,E,D,E,[reusada] dashboard
+dashboard.results.col.goal_diff,DG,GD,DG,[reusada] dashboard
+dashboard.results.col.played,PJ,P,PJ,[reusada] dashboard
+dir_cal.confirm,Confirmar,Confirm,Confirmar,calendario
+dir_cal.date_ph,Fecha (AAAA-MM-DD),Date (YYYY-MM-DD),Data (AAAA-MM-DD),calendario
+dir_cal.error,No se pudo completar,Couldn't be completed,No s'ha pogut completar,calendario
+dir_cal.holidays_title,Festivos,Holidays,Festius,calendario
+dir_cal.no_holidays,No hay festivos,No holidays,No hi ha festius,calendario
+dir_cal.no_pending,Nada pendiente,Nothing pending,Res pendent,calendario
+dir_cal.offline,Necesitas conexión,You need a connection,Necessites connexió,calendario
+dir_cal.pending_title,Entrenos en festivo por aprobar,Holiday trainings to approve,Entrenaments en festiu per aprovar,calendario
+dir_cal.title,Calendario · Festivos,Calendar · Holidays,Calendari · Festius,calendario
+dir_cal.unmark,Quitar,Remove,Llevar,calendario
+dir_cuerpo.assignments,Asignaciones,Assignments,Assignacions,coach-ficha
+dir_cuerpo.empty,No hay cuerpo técnico,No coaching staff,No hi ha cos tècnic,cuerpo-tecnico
+dir_cuerpo.no_team,Sin equipo asignado,No team assigned,Sense equip assignat,coach-ficha;cuerpo-tecnico
+dir_cuerpo.not_found,No se encontró el entrenador,Coach not found,No s'ha trobat l'entrenador,coach-ficha
+dir_cuerpo.title,Cuerpo técnico del club,Club coaching staff,Cos tècnic del club,cuerpo-tecnico
+dir_inicio.approvals,Entrenos en festivo por aprobar,Holiday trainings to approve,Entrenaments en festiu per aprovar,inicio
+dir_inicio.callups,Convocatorias sin publicar,Call-ups not published,Convocatòries sense publicar,inicio
+dir_inicio.erasures,Supresiones pendientes,Pending erasures,Supressions pendents,inicio
+dir_inicio.invitations,Invitaciones pendientes,Pending invitations,Invitacions pendents,inicio
+dir_inicio.no_attendance,Entrenos sin asistencia,Trainings without attendance,Entrenaments sense assistència,inicio
+dir_inicio.no_session,Entrenos sin sesión,Trainings without a session,Entrenaments sense sessió,inicio
+dir_inicio.reports,Informes pendientes,Pending reports,Informes pendents,inicio
+dir_inicio.tasks_title,Tareas de entrenadores,Coaches' tasks,Tasques dels entrenadors,inicio
+dir_jugadores.empty,No hay jugadores,No players,No hi ha jugadors,jugadores
+dir_jugadores.title,Jugadores del club,Club players,Jugadors del club,jugadores
+dir_sup.approve_final_body,Esta acción es definitiva.,This action is final.,Aquesta acció és definitiva.,supresiones
+dir_sup.approve_final_btn,Eliminar definitivamente,Delete permanently,Eliminar definitivament,supresiones
+dir_sup.approve_final_title,¿Confirmas la eliminación?,Confirm the deletion?,Confirmes l'eliminació?,supresiones
+dir_sup.approve_warn_body,Vas a eliminar de forma IRREVERSIBLE los datos de {name} (foto y ficha médica). No se puede deshacer.,You are about to IRREVERSIBLY delete {name}'s data (photo and medical record). This can't be undone.,Vas a eliminar de manera IRREVERSIBLE les dades de {name} (foto i fitxa mèdica). No es pot desfer.,supresiones
+dir_sup.approve_warn_title,Eliminar datos del menor,Delete the minor's data,Eliminar les dades del menor,supresiones
+dir_sup.continue,Continuar,Continue,Continuar,supresiones
+dir_sup.empty,No hay solicitudes pendientes,No pending requests,No hi ha sol·licituds pendents,supresiones
+dir_sup.error,No se pudo completar,Couldn't be completed,No s'ha pogut completar,supresiones
+dir_sup.hint,Derecho al olvido: aprobar es IRREVERSIBLE. Solo el admin del club decide.,Right to be forgotten: approving is IRREVERSIBLE. Only the club admin decides.,Dret a l'oblit: aprovar és IRREVERSIBLE. Només l'administrador del club decideix.,supresiones
+dir_sup.offline,Necesitas conexión,You need a connection,Necessites connexió,supresiones
+dir_sup.only_admin,Solo el administrador del club puede decidir supresiones.,Only the club admin can decide on erasures.,Només l'administrador del club pot decidir les supressions.,supresiones
+dir_sup.reject_body,¿Rechazar la supresión de {name}?,Reject the erasure of {name}?,Rebutjar la supressió de {name}?,supresiones
+dir_sup.reject_title,Rechazar solicitud,Reject request,Rebutjar la sol·licitud,supresiones
+dir_sup.title,Supresiones (RGPD),Erasures (GDPR),Supressions (RGPD),supresiones
+erasure.approve,Aprobar,Approve,Aprovar,[reusada] supresiones
+erasure.cancel,Cancelar,Cancel,Cancel·lar,[reusada] supresiones
+erasure.reject,Rechazar,Reject,Rebutjar,[reusada] supresiones
+erasure.requested_by,Solicitado por {who} · {date},Requested by {who} · {date},Sol·licitat per {who} · {date},[reusada] supresiones
+ficha.assists,Asist.,Assists,Assist.,[reusada] jugador-ficha
+ficha.attendance,Asistencia,Attendance,Assistència,[reusada] jugador-ficha
+ficha.attendance_pct,Presencia,Presence,Presència,[reusada] jugador-ficha
+ficha.empty,Sin datos de ficha todavía,No player profile data yet,Sense dades de fitxa encara,[reusada] jugador-ficha
+ficha.evaluations,Valoraciones,Ratings,Valoracions,jugador-ficha
+ficha.goals,Goles,Goals,Gols,[reusada] jugador-ficha
+ficha.matches,Partidos,Matches,Partits,[reusada] jugador-ficha
+ficha.minutes,Minutos,Minutes,Minuts,[reusada] jugador-ficha
+ficha.red,Rojas,Red cards,Roges,[reusada] jugador-ficha
+ficha.shots,Tiros,Shots,Tirs,[reusada] jugador-ficha
+ficha.starts,Titular,Starter,Titular,[reusada] jugador-ficha
+ficha.stats,Estadísticas,Statistics,Estadístiques,[reusada] jugador-ficha
+ficha.yellow,Amar.,Yel.,Groc.,[reusada] jugador-ficha
+home.direccion.management_title,Tareas de dirección,Management tasks,Tasques de direcció,[reusada] inicio
+jugadores.no_team,Sin equipo,No team,Sense equip,[reusada] jugadores

@@ -19,7 +19,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 type DashboardData = {
@@ -39,6 +39,7 @@ type DashboardData = {
  * charts nueva). Gate de la banda = AreaGuard('direction'). Caché `dashboard::clubId`.
  */
 export function DireccionDashboardScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const clubId = activeClub?.club.id ?? null;
   const accent = theme?.color ?? BRAND.navy;
@@ -92,7 +93,7 @@ export function DireccionDashboardScreen() {
           </View>
           {base.census.byCategory.length > 0 ? (
             <View className="mt-3">
-              <SubHead>{t('dash.by_category')}</SubHead>
+              <SubHead>{t('dashboard.census.by_category')}</SubHead>
               {base.census.byCategory.map((c) => {
                 const prev = prevByCat.get(c.categoryId);
                 const d = prev != null ? c.playerCount - prev : null;
@@ -109,7 +110,7 @@ export function DireccionDashboardScreen() {
           ) : null}
           {base.census.byTeam.length > 0 ? (
             <View className="mt-3">
-              <SubHead>{t('dash.by_team')}</SubHead>
+              <SubHead>{t('dashboard.census.by_team')}</SubHead>
               {base.census.byTeam.map((tm) => (
                 <Row key={tm.teamId} label={tm.teamName} sub={tm.categoryName}>
                   <Text className="text-sm font-semibold text-[#0F1B2E] tabular-nums">
@@ -129,9 +130,9 @@ export function DireccionDashboardScreen() {
             <>
               <View className="flex-row border-b border-zinc-100 pb-1">
                 <Text className="flex-1 text-[10px] font-semibold uppercase text-zinc-400">
-                  {t('dash.team')}
+                  {t('dashboard.census.col.team')}
                 </Text>
-                {[t('dash.played'), t('dash.wins'), t('dash.draws'), t('dash.losses'), t('dash.gd')].map(
+                {[t('dashboard.results.col.played'), t('dash.wins'), t('dashboard.results.col.draws'), t('dash.losses'), t('dashboard.results.col.goal_diff')].map(
                   (h, i) => (
                     <Text key={i} className="w-8 text-right text-[10px] font-semibold uppercase text-zinc-400">
                       {h}
@@ -172,14 +173,14 @@ export function DireccionDashboardScreen() {
 
               {attendance.agg.trendByWeek.length > 0 ? (
                 <View className="mt-3">
-                  <SubHead>{t('dash.trend')}</SubHead>
+                  <SubHead>{t('dashboard.attendance.trend.title')}</SubHead>
                   <TrendChart points={attendance.agg.trendByWeek} accent={accent} />
                 </View>
               ) : null}
 
               {attendance.agg.playerRanking.length > 0 ? (
                 <View className="mt-3">
-                  <SubHead>{t('dash.ranking')}</SubHead>
+                  <SubHead>{t('dashboard.attendance.ranking')}</SubHead>
                   {attendance.agg.playerRanking.slice(0, 10).map((p, i) => (
                     <Row
                       key={p.playerId}
@@ -204,14 +205,14 @@ export function DireccionDashboardScreen() {
               <View key={cat.categoryId} className="mt-2 first:mt-0">
                 <Text className="text-sm font-bold text-[#0F1B2E]">{cat.categoryName}</Text>
                 <RankBlock
-                  title={t('dash.scorers')}
+                  title={t('dashboard.rankings.scorers')}
                   unit={t('dash.goals')}
                   entries={cat.topScorers}
                   names={rankings.playerNames}
                   none={t('dash.none')}
                 />
                 <RankBlock
-                  title={t('dash.mvps')}
+                  title={t('dashboard.rankings.mvps')}
                   unit="MVP"
                   entries={cat.topMvps}
                   names={rankings.playerNames}
@@ -231,7 +232,7 @@ export function DireccionDashboardScreen() {
         </Section>
 
         {/* 5 · ALERTAS */}
-        <Section title={t('dash.alerts')}>
+        <Section title={t('dashboard.alerts.title')}>
           {campaigns.length === 0 && alerts.lowAttendance.length === 0 && alerts.inactive.length === 0 ? (
             <Text className="text-sm text-zinc-400">{t('dash.all_clear')}</Text>
           ) : (
