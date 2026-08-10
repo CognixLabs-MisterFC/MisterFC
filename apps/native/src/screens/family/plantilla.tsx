@@ -7,7 +7,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-5 D1 — Plantilla: roster del equipo con stats por compañero (SOLO LECTURA).
@@ -15,6 +15,7 @@ import { t } from '@/i18n';
  * Caché team-scoped. `teamId` llega por navegación desde Mi equipo.
  */
 export function PlantillaScreen({ teamId, teamName }: { teamId: string | null; teamName: string | null }) {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const clubId = activeClub?.club.id ?? null;
 

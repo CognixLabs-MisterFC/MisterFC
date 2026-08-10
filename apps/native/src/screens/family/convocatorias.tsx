@@ -10,7 +10,7 @@ import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { ChildSelector } from '@/ui/child-selector';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -20,6 +20,7 @@ import { BRAND } from '@/theme';
  * cambiar de hijo → key distinta → nunca se sirve el listado del otro.
  */
 export function ConvocatoriasScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { activePlayer } = useActivePlayer();
   const router = useRouter();
@@ -53,10 +54,10 @@ export function ConvocatoriasScreen() {
       <ChildSelector />
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
-        <ScreenTitle>{t('convocatorias.title')}</ScreenTitle>
+        <ScreenTitle>{t('convocatorias.family_title')}</ScreenTitle>
 
         {rows.length === 0 ? (
-          <EmptyState message={t('convocatorias.empty')} />
+          <EmptyState message={t('convocatorias.family_empty')} />
         ) : (
           <>
             <Section title={t('convocatorias.upcoming')}>
@@ -136,13 +137,14 @@ function ResponseChip({
   status: 'yes' | 'maybe' | 'no' | null;
   accent: string;
 }) {
+  const t = useTranslations('');
   const label =
     status === 'yes'
-      ? t('convocatorias.resp_yes')
+      ? t('convocatorias.response.yes')
       : status === 'maybe'
         ? t('convocatorias.resp_maybe')
         : status === 'no'
-          ? t('convocatorias.resp_no')
+          ? t('convocatorias.response.no')
           : t('convocatorias.resp_pending');
   const bg =
     status === 'yes' ? '#16a34a' : status === 'no' ? '#dc2626' : status === 'maybe' ? '#d97706' : accent;
@@ -160,6 +162,7 @@ function ResponseChip({
 }
 
 function DecisionBadge({ decision }: { decision: 'called_up' | 'discarded' }) {
+  const t = useTranslations('');
   const called = decision === 'called_up';
   return (
     <View
@@ -167,7 +170,7 @@ function DecisionBadge({ decision }: { decision: 'called_up' | 'discarded' }) {
       style={{ backgroundColor: called ? '#dcfce7' : '#fee2e2' }}
     >
       <Text className="text-[10px] font-semibold" style={{ color: called ? '#166534' : '#991b1b' }}>
-        {called ? t('convocatorias.decision_called') : t('convocatorias.decision_discarded')}
+        {called ? t('convocatorias.decision.called_up') : t('convocatorias.decision_discarded')}
       </Text>
     </View>
   );

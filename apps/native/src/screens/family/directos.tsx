@@ -14,7 +14,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /** Polling de marcadores en vivo (ms). Online refresca en vivo; offline sirve caché. */
@@ -27,6 +27,7 @@ const LIVE_POLL_MS = 15_000;
  * directo es B2.
  */
 export function DirectosScreen() {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const clubId = activeClub?.club.id ?? null;
   const [tab, setTab] = useState<'live' | 'follow'>('live');
@@ -35,7 +36,7 @@ export function DirectosScreen() {
     <View className="flex-1 bg-white">
       <View className="flex-row border-b border-zinc-100">
         <TabButton label={t('directos.tab_live')} active={tab === 'live'} onPress={() => setTab('live')} />
-        <TabButton label={t('directos.tab_follow')} active={tab === 'follow'} onPress={() => setTab('follow')} />
+        <TabButton label={t('directos.follow.follow')} active={tab === 'follow'} onPress={() => setTab('follow')} />
       </View>
       {tab === 'live' ? (
         <LiveList clubId={clubId} />
@@ -58,6 +59,7 @@ function TabButton({ label, active, onPress }: { label: string; active: boolean;
 }
 
 function LiveList({ clubId }: { clubId: string | null }) {
+  const t = useTranslations('');
   const { data, fromCache, loading, refresh } = useCached<WeekMatch[]>(
     clubScopedCacheKey('directos', clubId ?? 'none'),
     (sb) => (clubId ? getWeekMatchesFromClient(sb, clubId) : Promise.resolve([])),
@@ -88,6 +90,7 @@ function LiveList({ clubId }: { clubId: string | null }) {
 }
 
 function MatchCard({ match }: { match: WeekMatch }) {
+  const t = useTranslations('');
   const router = useRouter();
   const statusLabel =
     match.status === 'live'
@@ -127,6 +130,7 @@ function MatchCard({ match }: { match: WeekMatch }) {
 }
 
 function FollowList({ clubId }: { clubId: string | null }) {
+  const t = useTranslations('');
   const online = useIsOnline();
   const { data, fromCache, loading, refresh } = useCached<FollowableTeam[]>(
     clubScopedCacheKey('directos-follow', clubId ?? 'none'),
@@ -177,7 +181,7 @@ function FollowList({ clubId }: { clubId: string | null }) {
               style={!online ? { opacity: 0.5 } : undefined}
             >
               <Text className={item.following ? 'text-xs font-medium text-white' : 'text-xs font-medium text-zinc-600'}>
-                {item.following ? t('directos.following') : t('directos.follow')}
+                {item.following ? t('directos.follow.following') : t('directos.follow.follow')}
               </Text>
             </Pressable>
           </View>

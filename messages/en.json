@@ -44,7 +44,8 @@
     "fullscreen": {
       "enter": "Fullscreen",
       "exit": "Exit fullscreen"
-    }
+    },
+    "vs": "vs"
   },
   "auth": {
     "signin": {
@@ -136,7 +137,9 @@
     "empty": "You have no updates.",
     "page_of": "Page {current} of {total}",
     "prev": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "mark_all": "Mark all as read",
+    "load_more": "Load more"
   },
   "home": {
     "direccion": {
@@ -291,7 +294,8 @@
     "no_access": {
       "title": "No access",
       "body": "Your account doesn't belong to any club yet."
-    }
+    },
+    "greeting": "Hi, {name}"
   },
   "invitations": {
     "title": "Invitations",
@@ -468,7 +472,14 @@
       "penalty": "Penalty",
       "substitution": "Substitution",
       "rival": "Rival"
-    }
+    },
+    "tab_live": "Live",
+    "empty_live": "No matches this week",
+    "status_live": "LIVE",
+    "status_closed": "Full time",
+    "status_scheduled": "Scheduled",
+    "empty_follow": "No teams",
+    "offline_write": "No connection: you can't change following"
   },
   "shell": {
     "app_name": "MisterFC",
@@ -1967,7 +1978,8 @@
         "no_session": "Invalid session. Please sign in again.",
         "db": "Something went wrong. Try again."
       }
-    }
+    },
+    "empty": "No events in the coming weeks"
   },
   "pdf": {
     "player": {
@@ -2500,7 +2512,14 @@
       "descanso": "Rest (coaching decision)"
     },
     "team_filter": "Team",
-    "team_all": "All teams"
+    "team_all": "All teams",
+    "range_season": "Current season",
+    "empty": "No attendance records yet",
+    "pct_present": "Attendance",
+    "total": "{n} training sessions recorded",
+    "breakdown": "Breakdown",
+    "justified": "Justified",
+    "family_title": "Attendance"
   },
   "convocatorias": {
     "title": "Match management",
@@ -2648,7 +2667,27 @@
       "error": "Couldn't publish the changes.",
       "too_many": "Too many called up ({overflow} over, max {max}). Discard someone before publishing.",
       "event_started": "The match has already started."
-    }
+    },
+    "unavailable": "This call-up is not available",
+    "detail_title": "Call-up",
+    "meeting_at": "Meeting time",
+    "notes": "Notes",
+    "not_published": "The call-up is not published yet",
+    "decision_discarded": "Not called up",
+    "response_hint": "You are responding for {name}. To respond for another child, switch them in the selector.",
+    "resp_maybe": "Maybe",
+    "offline_write": "Offline: you cannot respond right now",
+    "saved": "Response saved",
+    "forbidden": "You do not have permission to respond",
+    "error": "Could not save. Please try again",
+    "view_stats": "View match stats",
+    "upcoming": "Upcoming",
+    "upcoming_empty": "No upcoming matches",
+    "past": "Past",
+    "resp_pending": "Pending",
+    "family_title": "Call-ups",
+    "family_empty": "No call-ups",
+    "family_your_response": "Your availability"
   },
   "mensajes": {
     "title": "Messages",
@@ -2702,7 +2741,13 @@
       "loading": "Loading teams…",
       "empty": "No matching teams.",
       "error": "We couldn't load the teams. Please try again."
-    }
+    },
+    "unavailable": "This conversation is not available",
+    "thread_empty": "No messages yet",
+    "send_offline": "Offline: you can’t send right now.",
+    "send_placeholder": "Write a message…",
+    "group_label": "Team · {team}",
+    "empty": "You have no conversations"
   },
   "anuncios": {
     "title": "Team announcements",
@@ -2735,7 +2780,8 @@
       "team_not_in_club": "Team doesn't belong to this club.",
       "not_found": "Announcement not found.",
       "generic": "Couldn't save. Please try again."
-    }
+    },
+    "empty": "No announcements"
   },
   "anuncios_global": {
     "title": "Club announcements",
@@ -2926,7 +2972,21 @@
     "playbook": {
       "title": "Playbook",
       "subtitle": "Plays your coach has shared with the team."
-    }
+    },
+    "nav_staff": "Coaching staff",
+    "staff_empty": "No coaching staff assigned",
+    "frames": "{count} frames",
+    "nav_plantilla": "Squad",
+    "nav_sesiones": "Sessions",
+    "teammates_empty": "No teammates yet",
+    "upcoming_empty": "No upcoming events",
+    "announcements": "Announcements",
+    "announcements_empty": "No announcements",
+    "plantilla_empty": "No players in the squad",
+    "session_unavailable": "This session is not available",
+    "session_no_tasks": "No drills",
+    "sesiones_empty": "No published sessions",
+    "family_no_team": "This player has no team in the active season"
   },
   "alineacion": {
     "title": "Lineup",
@@ -4541,7 +4601,16 @@
   "playbook": {
     "title": "Playbook",
     "coming_soon": "Coming soon",
-    "subtitle": "The playbook will be available soon."
+    "subtitle": "The playbook will be available soon.",
+    "unavailable": "This play is not available",
+    "untitled": "Play",
+    "pause": "Pause",
+    "play": "Play",
+    "stop": "Restart",
+    "loop": "Loop",
+    "speed": "Speed",
+    "single_frame": "Single-frame play (no animation)",
+    "empty": "No shared plays"
   },
   "seguidores": {
     "title": "Followers",
@@ -4583,7 +4652,19 @@
         "forbidden": "You don't have permission to remove this follower.",
         "generic": "Couldn't remove the follower. Please try again."
       }
-    }
+    },
+    "offline_write": "Offline: you can't remove followers",
+    "empty": "This player has no followers",
+    "hint": "Followers see only the player's sporting data (not medical or personal).",
+    "invite_desc": "Invite a relative (grandparent, aunt…) by email. They will only see {name}’s sporting data.",
+    "invite_email_ph": "name@email.com",
+    "invite_offline": "Offline: you can’t invite right now.",
+    "invite_sending": "Sending…",
+    "invite_ok": "Invitation sent to {email}.",
+    "invite_existing": "{email} already has a MisterFC account: we sent them an access link.",
+    "invite_forbidden": "You can’t invite followers for this player.",
+    "invite_email_invalid": "Invalid email.",
+    "invite_error": "Couldn’t send the invitation. Please try again."
   },
   "mi_equipo_cuerpo_tecnico": {
     "title": "Coaching staff",
@@ -4612,5 +4693,171 @@
     "perfil": "Profile",
     "post_partido": "Post-match",
     "sesion_del_dia": "Today's session"
+  },
+  "child": {
+    "none": "You have no children at this club"
+  },
+  "directo": {
+    "not_available": "This live match is not available",
+    "minute_added": "{minute}+{added}'",
+    "live": "LIVE",
+    "no_lineup": "No lineup published",
+    "no_events": "No events yet",
+    "phase": {
+      "not_started": "Not started",
+      "first_half": "1st half",
+      "half_time": "Half-time",
+      "second_half": "2nd half",
+      "extra_time": "Extra time",
+      "penalties": "Penalties",
+      "finished": "Full time"
+    },
+    "stat": {
+      "goals": "Goals",
+      "shots": "Shots",
+      "corners": "Corners",
+      "fouls": "Fouls",
+      "yellow": "Yellow",
+      "red": "Red",
+      "offsides": "Offsides"
+    },
+    "event": {
+      "goal": "Goal",
+      "penalty": "Penalty",
+      "assist": "Assist",
+      "yellow_card": "Yellow",
+      "red_card": "Red",
+      "substitution": "Substitution",
+      "corner": "Corner",
+      "foul": "Foul",
+      "offside": "Offside",
+      "shot": "Shot",
+      "rival": "Rival"
+    }
+  },
+  "stats": {
+    "unavailable": "Stats not available",
+    "empty": "Your child has no stats for this match",
+    "sub": "Substitute",
+    "assists": "Assists",
+    "yellow": "Yellow cards",
+    "red": "Red cards",
+    "fouls_received": "Received"
+  },
+  "gestion": {
+    "not_tutor": "You are not a guardian of this player",
+    "offline_write": "Offline: you can't save changes",
+    "photo_permission": "You need to grant access to your photos",
+    "photo_err_large": "The image exceeds 2 MB",
+    "photo_err_mime": "Invalid format (use JPG, PNG or WebP)",
+    "photo_err_generic": "The photo could not be updated",
+    "photo_title": "Photo",
+    "photo_change": "Change photo",
+    "photo_remove": "Remove",
+    "photo_hint": "JPG, PNG or WebP. Maximum 2 MB. Only you and the club will see it.",
+    "medical_title": "Medical data",
+    "medical_no_write": "You don't have valid write consent: read-only.",
+    "medical_allergies": "Allergies",
+    "medical_medication": "Medication",
+    "medical_conditions": "Medical conditions",
+    "medical_emergency": "Emergency contact",
+    "medical_empty": "No medical data recorded",
+    "medical_tutor_hint": "Only you, as the guardian, can see and edit this data. The club consults it in case of emergency.",
+    "medical_save": "Save",
+    "medical_saved": "Data saved",
+    "medical_forbidden": "You don't have permission to edit this data",
+    "medical_err": "They could not be saved. Please try again.",
+    "export_title": "Download record",
+    "export_hint": "Your child's complete record as a PDF (GDPR right of access).",
+    "export_download": "Download PDF",
+    "export_offline": "Offline: you can't download right now",
+    "export_error": "The record could not be generated. Please try again.",
+    "export_unavailable": "Download not available in this version.",
+    "erasure_title": "Right to be forgotten",
+    "erasure_sent": "Request sent. The club management will review it.",
+    "erasure_hint": "Request the erasure of all your child's data. The decision is made by the club management.",
+    "erasure_button": "Request erasure",
+    "erasure_err": "The request could not be sent. Please try again.",
+    "erasure_warning": "You are about to REQUEST your child's erasure. If management approves it, their photo, medical data and profile will be deleted IRREVERSIBLY.",
+    "erasure_reason_ph": "Reason (optional)",
+    "erasure_ack": "I understand this is an irreversible request once approved.",
+    "erasure_cancel": "Cancel",
+    "erasure_confirm": "Request"
+  },
+  "inicio": {
+    "unread_messages": "Unread messages: {n}",
+    "pending_callup": "Call-up awaiting response",
+    "pending_callup_count": "Players to confirm: {n}",
+    "section_upcoming": "Upcoming events",
+    "empty_upcoming": "No upcoming events",
+    "section_announcements": "Recent announcements",
+    "section_feed": "News",
+    "empty_feed": "No news"
+  },
+  "ficha": {
+    "empty": "No player profile data yet",
+    "stats": "Statistics",
+    "matches": "Matches",
+    "starts": "Starter",
+    "minutes": "Minutes",
+    "goals": "Goals",
+    "assists": "Assists",
+    "shots": "Shots",
+    "yellow": "Yel.",
+    "red": "Red cards",
+    "goals_per_match": "Goals/match",
+    "minutes_per_match": "Min/match",
+    "start_rate": "Start rate",
+    "attendance": "Attendance",
+    "attendance_pct": "Presence",
+    "att_present": "Present",
+    "att_justified": "Excused",
+    "att_unjustified": "Unexcused",
+    "att_partial": "Partial",
+    "career": "Career",
+    "matches_short": "MP",
+    "goals_short": "G",
+    "career_total": "Total",
+    "years": "years"
+  },
+  "informe": {
+    "empty": "No report available",
+    "no_reports": "There are no reports published this season",
+    "player_scores": "Individual assessment",
+    "team_scores": "Team assessment",
+    "player_objectives": "Individual objectives",
+    "team_objectives": "Team objectives",
+    "ficha_summary": "Summary",
+    "matches": "Matches",
+    "attendance": "Attendance",
+    "callups": "Call-ups",
+    "trainings": "Training sessions",
+    "period": {
+      "inicial": "Start",
+      "diciembre": "December",
+      "marzo": "March",
+      "junio": "June"
+    },
+    "group": {
+      "tecnico": "Technical",
+      "tactico": "Tactical",
+      "fisico": "Physical",
+      "actitud": "Attitude",
+      "rendimiento_colectivo": "Collective performance",
+      "dinamica_grupo": "Group dynamics",
+      "evolucion_equipo": "Team evolution"
+    },
+    "status": {
+      "open": "Open",
+      "achieved": "Achieved",
+      "dropped": "Dropped"
+    }
+  },
+  "staff_role": {
+    "entrenador_principal": "Head coach",
+    "entrenador_ayudante": "Assistant coach",
+    "preparador_fisico": "Fitness coach",
+    "delegado": "Team official",
+    "coordinador": "Coordinator"
   }
 }

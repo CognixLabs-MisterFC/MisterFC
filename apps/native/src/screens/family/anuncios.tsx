@@ -10,13 +10,14 @@ import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-5 B1 — Anuncios: lista club-wide + equipos del hijo (RLS). Caché club-scoped
  * (clubId en la key). Marca leídos los `new_announcement` al abrir.
  */
 export function AnunciosScreen() {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const clubId = activeClub?.club.id ?? null;
 

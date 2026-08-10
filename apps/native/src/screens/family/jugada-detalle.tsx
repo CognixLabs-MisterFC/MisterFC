@@ -10,7 +10,7 @@ import { useCached } from '@/data/use-cached';
 import { usePlayback, PLAYBACK_SPEEDS } from '@/hooks/use-playback';
 import { PlayField } from '@/ui/play-field';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /** Jugada vacía estable (fallback mientras carga; total=0 → sin animación). */
@@ -28,6 +28,7 @@ const EMPTY_PLAY: Play = {
  * Caché play-scoped del jsonb (contenido táctico, no dato personal).
  */
 export function JugadaDetalleScreen({ playId }: { playId: string | null }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const clubId = activeClub?.club.id ?? null;
   const accent = theme?.color ?? BRAND.navy;

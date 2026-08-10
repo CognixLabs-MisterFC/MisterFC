@@ -10,7 +10,7 @@ import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { ChildSelector } from '@/ui/child-selector';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -20,6 +20,7 @@ import { BRAND } from '@/theme';
  * Caché player-scoped: cambiar de hijo → key distinta.
  */
 export function AsistenciaScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { activePlayer } = useActivePlayer();
   const clubId = activeClub?.club.id ?? null;
@@ -51,7 +52,7 @@ export function AsistenciaScreen() {
       <ChildSelector />
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
-        <ScreenTitle>{t('asistencia.title')}</ScreenTitle>
+        <ScreenTitle>{t('asistencia.family_title')}</ScreenTitle>
         <Text className="text-xs text-zinc-400">{t('asistencia.range_season')}</Text>
 
         {!child || stats.totalRecorded === 0 ? (
@@ -74,10 +75,10 @@ export function AsistenciaScreen() {
               <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
                 {t('asistencia.breakdown')}
               </Text>
-              <StatLine label={t('asistencia.present')} value={child.present} color="#16a34a" />
+              <StatLine label={t('asistencia.codes.presente')} value={child.present} color="#16a34a" />
               <StatLine label={t('asistencia.justified')} value={child.justified} color="#d97706" />
-              <StatLine label={t('asistencia.partial')} value={child.partial} color="#0284c7" />
-              <StatLine label={t('asistencia.unjustified')} value={child.unjustified} color="#dc2626" />
+              <StatLine label={t('asistencia.codes.entreno_diferenciado')} value={child.partial} color="#0284c7" />
+              <StatLine label={t('asistencia.codes.ausente')} value={child.unjustified} color="#dc2626" />
             </View>
           </>
         )}

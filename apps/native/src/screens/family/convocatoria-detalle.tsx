@@ -14,7 +14,7 @@ import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -26,6 +26,7 @@ import { BRAND } from '@/theme';
  * Caché player+event-scoped (dos hermanos ven el mismo evento con datos distintos).
  */
 export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { activePlayer } = useActivePlayer();
   const router = useRouter();
@@ -109,12 +110,12 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
         {data.published ? (
           <View className="rounded-2xl border border-zinc-200 p-4">
             <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-              {t('convocatorias.meeting')}
+              {t('convocatorias.detail.citation_title')}
             </Text>
             <InfoRow label={t('convocatorias.meeting_at')} value={data.meeting_at ? new Date(data.meeting_at).toLocaleString() : null} />
-            <InfoRow label={t('convocatorias.meeting_place')} value={data.meeting_location} />
-            <InfoRow label={t('convocatorias.meeting_address')} value={data.meeting_address} />
-            <InfoRow label={t('convocatorias.transport')} value={data.transport_notes} />
+            <InfoRow label={t('convocatorias.tournament.field.location')} value={data.meeting_location} />
+            <InfoRow label={t('convocatorias.publish.field.meeting_address')} value={data.meeting_address} />
+            <InfoRow label={t('convocatorias.detail.citation_transport')} value={data.transport_notes} />
             <InfoRow label={t('convocatorias.notes')} value={data.notes_general} />
           </View>
         ) : (
@@ -128,7 +129,7 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
           <View className="rounded-2xl border border-zinc-200 p-4">
             <Text className="text-sm font-semibold" style={{ color: child.decision === 'called_up' ? '#166534' : '#991b1b' }}>
               {child.decision === 'called_up'
-                ? t('convocatorias.decision_called')
+                ? t('convocatorias.decision.called_up')
                 : t('convocatorias.decision_discarded')}
             </Text>
           </View>
@@ -137,7 +138,7 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
         {/* Responder disponibilidad (por el hijo activo). */}
         <View className="rounded-2xl border border-zinc-200 p-4">
           <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            {t('convocatorias.your_response')}
+            {t('convocatorias.family_your_response')}
           </Text>
           <Text className="mb-3 text-xs text-zinc-400">
             {t('convocatorias.response_hint', { name: activePlayer?.name ?? '' })}
@@ -156,10 +157,10 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
                 >
                   <Text className={on ? 'text-sm font-semibold text-white' : 'text-sm text-zinc-600'}>
                     {s === 'yes'
-                      ? t('convocatorias.resp_yes')
+                      ? t('convocatorias.response.yes')
                       : s === 'maybe'
                         ? t('convocatorias.resp_maybe')
-                        : t('convocatorias.resp_no')}
+                        : t('convocatorias.response.no')}
                   </Text>
                 </Pressable>
               );

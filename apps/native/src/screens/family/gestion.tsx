@@ -33,7 +33,8 @@ import { useIsOnline } from '@/data/connectivity';
 import { ChildSelector } from '@/ui/child-selector';
 import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t, appLocale } from '@/i18n';
+import { appLocale } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { downloadServerFile } from '@/lib/server-api';
 import { BRAND } from '@/theme';
 
@@ -49,6 +50,7 @@ import { BRAND } from '@/theme';
  */
 
 export function GestionScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { activePlayer } = useActivePlayer();
   const online = useIsOnline();
@@ -135,6 +137,7 @@ function PhotoCard({
   online: boolean;
   onChanged: () => void;
 }) {
+  const t = useTranslations('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -240,6 +243,7 @@ function MedicalCard({
   online: boolean;
   loading: boolean;
 }) {
+  const t = useTranslations('');
   const [allergies, setAllergies] = useState(initial?.allergies ?? '');
   const [medication, setMedication] = useState(initial?.medication ?? '');
   const [conditions, setConditions] = useState(initial?.medical_conditions ?? '');
@@ -318,6 +322,7 @@ function MedicalCard({
 
 // ── Expediente PDF (O2-5 F1: route handler de Next con bearer + auditoría) ─────
 function ExportCard({ playerId, online }: { playerId: string; online: boolean }) {
+  const t = useTranslations('');
   const [busy, setBusy] = useState(false);
   const [state, setState] = useState<'idle' | 'error' | 'unavailable'>('idle');
 
@@ -367,6 +372,7 @@ function ExportCard({ playerId, online }: { playerId: string; online: boolean })
 
 // ── Derecho al olvido (SOLICITUD, doble confirmación) ─────────────────────────
 function ErasureCard({ playerId, online }: { playerId: string; online: boolean }) {
+  const t = useTranslations('');
   const [open, setOpen] = useState(false);
   const [ack, setAck] = useState(false);
   const [reason, setReason] = useState('');

@@ -11,7 +11,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /** Agenda de las próximas 4 semanas (28 días) desde hoy. */
 const AGENDA_DAYS = 28;
@@ -37,6 +37,7 @@ const TYPE_ICON: Record<string, string> = {
  * Vista de agenda (lista por día); sin las 3 vistas de la web.
  */
 export function CalendarioScreen() {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const clubId = activeClub?.club.id ?? null;
 
@@ -100,7 +101,7 @@ export function CalendarioScreen() {
           item.kind === 'holiday' ? (
             <View className="mx-4 my-1 rounded-xl bg-amber-50 px-4 py-2">
               <Text className="text-sm font-medium text-amber-800">
-                {`${item.h.date.slice(5)} · ${t('calendario.holiday')} — ${item.h.reason}`}
+                {`${item.h.date.slice(5)} · ${t('calendario.holidays.badge')} — ${item.h.reason}`}
               </Text>
             </View>
           ) : (

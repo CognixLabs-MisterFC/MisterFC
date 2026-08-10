@@ -15,7 +15,7 @@ import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 const DAY = 86_400_000;
@@ -34,6 +34,7 @@ type HomeData = {
  * (sin selector de hijo); la convocatoria usa los IDs de todos los hijos.
  */
 export function InicioScreen() {
+  const t = useTranslations('');
   const { activeClub, profileName, theme } = useApp();
   const { players } = useActivePlayer();
   const clubId = activeClub?.club.id ?? null;

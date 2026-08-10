@@ -22,7 +22,8 @@ import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { ChildSelector } from '@/ui/child-selector';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
-import { t, appLocale } from '@/i18n';
+import { appLocale } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-5 C1/F2 — Seguidores del HIJO ACTIVO: listar + revocar + INVITAR. Invitar es
@@ -32,6 +33,7 @@ import { t, appLocale } from '@/i18n';
  * sin red, invitar/revocar deshabilitados. Caché PLAYER-SCOPED.
  */
 export function SeguidoresScreen() {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const { activePlayer } = useActivePlayer();
   const online = useIsOnline();
@@ -73,7 +75,7 @@ export function SeguidoresScreen() {
           className="rounded-full bg-[#0F1B2E] px-3 py-1.5 active:opacity-80"
           style={!online ? { opacity: 0.5 } : undefined}
         >
-          <Text className="text-xs font-medium text-white">{t('seguidores.invite')}</Text>
+          <Text className="text-xs font-medium text-white">{t('seguidores.invite.action')}</Text>
         </Pressable>
       </View>
       {!online ? (
@@ -92,7 +94,7 @@ export function SeguidoresScreen() {
             <View className="mx-4 my-1 flex-row items-center justify-between rounded-xl border border-zinc-200 px-4 py-3">
               <View className="min-w-0 flex-1 pr-2">
                 <Text className="text-base font-medium text-[#0F1B2E]" numberOfLines={1}>
-                  {item.full_name?.trim() || item.email || t('seguidores.unknown')}
+                  {item.full_name?.trim() || item.email || t('seguidores.list.unknown')}
                 </Text>
                 {item.email ? (
                   <Text className="text-xs text-zinc-400" numberOfLines={1}>{item.email}</Text>
@@ -104,7 +106,7 @@ export function SeguidoresScreen() {
                 className="rounded-full border border-red-200 px-3 py-1.5 active:opacity-60"
                 style={!online ? { opacity: 0.5 } : undefined}
               >
-                <Text className="text-xs font-medium text-red-600">{t('seguidores.revoke')}</Text>
+                <Text className="text-xs font-medium text-red-600">{t('seguidores.revoke.action')}</Text>
               </Pressable>
             </View>
           )}
@@ -142,6 +144,7 @@ function InviteModal({
   online: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslations('');
   const [email, setEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [outcome, setOutcome] = useState<InviteOutcome | null>(null);
@@ -198,23 +201,23 @@ function InviteModal({
         <View className="w-full max-w-md rounded-2xl bg-white p-5">
           {success ? (
             <>
-              <Text className="text-lg font-bold text-[#0F1B2E]">{t('seguidores.invite_title')}</Text>
+              <Text className="text-lg font-bold text-[#0F1B2E]">{t('seguidores.invite.title')}</Text>
               <Text className="mt-2 text-sm text-zinc-700">
                 {t(`seguidores.invite_${outcome}`, { email: email.trim() })}
               </Text>
               <View className="mt-4 flex-row justify-end">
                 <Pressable onPress={close} className="rounded-full bg-[#0F1B2E] px-4 py-2 active:opacity-80">
-                  <Text className="text-sm font-semibold text-white">{t('seguidores.invite_close')}</Text>
+                  <Text className="text-sm font-semibold text-white">{t('seguidores.invite.close')}</Text>
                 </Pressable>
               </View>
             </>
           ) : (
             <>
-              <Text className="text-lg font-bold text-[#0F1B2E]">{t('seguidores.invite_title')}</Text>
+              <Text className="text-lg font-bold text-[#0F1B2E]">{t('seguidores.invite.title')}</Text>
               <Text className="mt-2 text-sm text-zinc-600">
                 {t('seguidores.invite_desc', { name: playerName })}
               </Text>
-              <Text className="mt-3 text-xs font-medium text-zinc-500">{t('seguidores.invite_email')}</Text>
+              <Text className="mt-3 text-xs font-medium text-zinc-500">{t('seguidores.invite.field.email')}</Text>
               <TextInput
                 value={email}
                 onChangeText={setEmail}
@@ -235,7 +238,7 @@ function InviteModal({
               ) : null}
               <View className="mt-4 flex-row justify-end gap-2">
                 <Pressable onPress={close} disabled={sending} className="rounded-full px-4 py-2 active:opacity-60">
-                  <Text className="text-sm text-zinc-500">{t('seguidores.invite_cancel')}</Text>
+                  <Text className="text-sm text-zinc-500">{t('seguidores.invite.cancel')}</Text>
                 </Pressable>
                 <Pressable
                   onPress={submit}
@@ -245,7 +248,7 @@ function InviteModal({
                 >
                   {sending ? <ActivityIndicator size="small" color="#fff" /> : null}
                   <Text className="text-sm font-semibold text-white">
-                    {sending ? t('seguidores.invite_sending') : t('seguidores.invite_send')}
+                    {sending ? t('seguidores.invite_sending') : t('seguidores.invite.send')}
                   </Text>
                 </Pressable>
               </View>

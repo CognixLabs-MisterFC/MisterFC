@@ -10,7 +10,7 @@ import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 type MatchStatsView = {
   header: MatchStatsHeader;
@@ -24,6 +24,7 @@ type MatchStatsView = {
  * "no disponible". El fetch vive en core. Caché player+event-scoped.
  */
 export function EstadisticasScreen({ eventId }: { eventId: string | null }) {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const { activePlayer } = useActivePlayer();
   const clubId = activeClub?.club.id ?? null;
@@ -51,7 +52,7 @@ export function EstadisticasScreen({ eventId }: { eventId: string | null }) {
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
-        <ScreenTitle>{t('stats.title')}</ScreenTitle>
+        <ScreenTitle>{t('estadisticas_partido.title')}</ScreenTitle>
 
         <View className="rounded-2xl border border-zinc-200 p-4">
           <Text className="text-lg font-bold text-[#0F1B2E]">
@@ -76,17 +77,17 @@ export function EstadisticasScreen({ eventId }: { eventId: string | null }) {
                   {[r.firstName, r.lastName].filter(Boolean).join(' ')}
                 </Text>
                 <Text className="text-xs text-zinc-400">
-                  {r.started ? t('stats.starter') : t('stats.sub')}
+                  {r.started ? t('estadisticas_partido.col.started') : t('stats.sub')}
                 </Text>
               </View>
               <View className="flex-row flex-wrap gap-3">
-                <Stat label={t('stats.minutes')} value={r.minutesPlayed} />
-                <Stat label={t('stats.goals')} value={r.goals} />
+                <Stat label={t('estadisticas_partido.col.minutes')} value={r.minutesPlayed} />
+                <Stat label={t('estadisticas_partido.col.goals')} value={r.goals} />
                 <Stat label={t('stats.assists')} value={r.assists} />
-                <Stat label={t('stats.shots')} value={r.shots} />
+                <Stat label={t('estadisticas_partido.col.shots')} value={r.shots} />
                 <Stat label={t('stats.yellow')} value={r.yellowCards} />
                 <Stat label={t('stats.red')} value={r.redCards} />
-                <Stat label={t('stats.fouls_committed')} value={r.foulsCommitted} />
+                <Stat label={t('estadisticas_partido.team.fouls')} value={r.foulsCommitted} />
                 <Stat label={t('stats.fouls_received')} value={r.foulsReceived} />
               </View>
             </View>
