@@ -190,6 +190,10 @@ export const POSITION_VALUE_MAP: Record<string, (typeof PLAYER_POSITIONS)[number
   portero: 'goalkeeper',
   portera: 'goalkeeper',
   arquero: 'goalkeeper',
+  // goalkeeper — inglés extra + valencià (O2-12a importador multiidioma).
+  keeper: 'goalkeeper',
+  goalie: 'goalkeeper',
+  porter: 'goalkeeper',
   // defender
   defender: 'defender',
   defensa: 'defender',
@@ -200,6 +204,19 @@ export const POSITION_VALUE_MAP: Record<string, (typeof PLAYER_POSITIONS)[number
   'lateral izquierdo': 'defender',
   zaguero: 'defender',
   libero: 'defender',
+  // defender — inglés extra (valencià central/lateral/defensa ya coinciden).
+  'full-back': 'defender',
+  fullback: 'defender',
+  'full back': 'defender',
+  'wing-back': 'defender',
+  wingback: 'defender',
+  'wing back': 'defender',
+  'centre-back': 'defender',
+  'center-back': 'defender',
+  'centre back': 'defender',
+  'center back': 'defender',
+  centreback: 'defender',
+  centerback: 'defender',
   // midfielder
   midfielder: 'midfielder',
   mediocentro: 'midfielder',
@@ -211,6 +228,15 @@ export const POSITION_VALUE_MAP: Record<string, (typeof PLAYER_POSITIONS)[number
   'medio defensivo': 'midfielder',
   interior: 'midfielder',
   pivote: 'midfielder',
+  // midfielder — inglés extra + valencià (O2-12a importador multiidioma).
+  'defensive midfielder': 'midfielder',
+  'attacking midfielder': 'midfielder',
+  'holding midfielder': 'midfielder',
+  'central midfielder': 'midfielder',
+  'centre midfielder': 'midfielder',
+  'center midfielder': 'midfielder',
+  migcampista: 'midfielder',
+  migcentre: 'midfielder',
   // forward
   forward: 'forward',
   delantero: 'forward',
@@ -222,6 +248,17 @@ export const POSITION_VALUE_MAP: Record<string, (typeof PLAYER_POSITIONS)[number
   punta: 'forward',
   ariete: 'forward',
   '9': 'forward',
+  // forward — inglés extra + valencià (punta ya coincide).
+  striker: 'forward',
+  'centre-forward': 'forward',
+  'center-forward': 'forward',
+  'centre forward': 'forward',
+  'center forward': 'forward',
+  winger: 'forward',
+  wing: 'forward',
+  davanter: 'forward',
+  'davanter centre': 'forward',
+  extrem: 'forward',
 };
 
 /** Etiquetas castellano para mostrar como "opciones aceptadas" en errores. */
@@ -241,6 +278,10 @@ export const FOOT_VALUE_MAP: Record<string, (typeof PLAYER_FEET)[number]> = {
   diestro: 'right',
   'pie derecho': 'right',
   d: 'right',
+  // right — inglés extra + valencià (O2-12a importador multiidioma).
+  'right foot': 'right',
+  dret: 'right',
+  'peu dret': 'right',
   left: 'left',
   izquierdo: 'left',
   izquierda: 'left',
@@ -248,11 +289,21 @@ export const FOOT_VALUE_MAP: Record<string, (typeof PLAYER_FEET)[number]> = {
   'pie izquierdo': 'left',
   i: 'left',
   z: 'left',
+  // left — inglés extra + valencià (O2-12a importador multiidioma).
+  'left foot': 'left',
+  esquerre: 'left',
+  'peu esquerre': 'left',
   both: 'both',
   ambos: 'both',
   'los dos': 'both',
   ambidiestro: 'both',
   ambidextro: 'both',
+  // both — inglés extra + valencià (O2-12a importador multiidioma).
+  'two-footed': 'both',
+  'two footed': 'both',
+  either: 'both',
+  'both feet': 'both',
+  ambidextre: 'both',
 };
 
 export const FOOT_LABELS_ES = ['Derecho', 'Izquierdo', 'Ambidiestro'] as const;

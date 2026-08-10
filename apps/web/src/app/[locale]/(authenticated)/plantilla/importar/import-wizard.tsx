@@ -79,6 +79,11 @@ export function ImportWizard({
   activeSeason,
 }: Props) {
   const t = useTranslations('import');
+  // O2-12a — plantilla descargable por idioma. Hay variantes en/va con
+  // cabeceras y hoja-leyenda traducidas; cualquier otro locale (incl. es) cae
+  // a la plantilla española por defecto.
+  const TEMPLATE_LOCALES = new Set(['en', 'va']);
+  const templateSuffix = TEMPLATE_LOCALES.has(locale) ? `-${locale}` : '';
   const [step, setStep] = useState<Step>('upload');
   const [rawRows, setRawRows] = useState<Array<Record<string, unknown>>>([]);
   const [unmappedHeaders, setUnmappedHeaders] = useState<string[]>([]);
@@ -158,14 +163,14 @@ export function ImportWizard({
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <a
-                href="/import-templates/players-template.xlsx"
+                href={`/import-templates/players-template${templateSuffix}.xlsx`}
                 download
                 className="rounded-md border border-zinc-700 px-3 py-2 text-sm hover:bg-zinc-900"
               >
                 {t('download.xlsx')}
               </a>
               <a
-                href="/import-templates/players-template.csv"
+                href={`/import-templates/players-template${templateSuffix}.csv`}
                 download
                 className="rounded-md border border-zinc-700 px-3 py-2 text-sm hover:bg-zinc-900"
               >

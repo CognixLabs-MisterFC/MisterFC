@@ -22,9 +22,16 @@ const HEADER_ALIASES: Record<string, PlayerImportColumn> = {
   nombres: 'first_name',
   'full name': 'first_name',
   fullname: 'first_name',
+  'full name and surname': 'first_name',
+  'name and surname': 'first_name',
   first_name: 'first_name',
   'first name': 'first_name',
   firstname: 'first_name',
+  // first_name — valencià (O2-12a importador multiidioma).
+  'nom complet': 'first_name',
+  'nom i cognoms': 'first_name',
+  nom: 'first_name',
+  noms: 'first_name',
   // last_name (ahora opcional, ver F2.9 hotfix 2026-05-30)
   apellido: 'last_name',
   apellidos: 'last_name',
@@ -39,7 +46,13 @@ const HEADER_ALIASES: Record<string, PlayerImportColumn> = {
   fecha_nacimiento: 'date_of_birth',
   date_of_birth: 'date_of_birth',
   'date of birth': 'date_of_birth',
+  birthdate: 'date_of_birth',
+  birthday: 'date_of_birth',
   dob: 'date_of_birth',
+  // date_of_birth — valencià (O2-12a importador multiidioma).
+  'data de naixement': 'date_of_birth',
+  'data naixement': 'date_of_birth',
+  naixement: 'date_of_birth',
   // dorsal
   dorsal: 'dorsal',
   numero: 'dorsal',
@@ -90,15 +103,21 @@ const HEADER_ALIASES: Record<string, PlayerImportColumn> = {
   'equipo asignado': 'team',
   team: 'team',
   'team name': 'team',
+  // team — valencià (O2-12a importador multiidioma).
+  equip: 'team',
   // invite_email (Rework A · A5, 🔒 O2) — email de contacto/invitación.
   email: 'invite_email',
   correo: 'invite_email',
   'correo electronico': 'invite_email',
   'e-mail': 'invite_email',
+  'email address': 'invite_email',
   'email familiar': 'invite_email',
   'email de contacto': 'invite_email',
   'email contacto': 'invite_email',
   invite_email: 'invite_email',
+  // invite_email — valencià (O2-12a importador multiidioma).
+  correu: 'invite_email',
+  'correu electronic': 'invite_email',
 };
 
 export type ParseTabularError =
