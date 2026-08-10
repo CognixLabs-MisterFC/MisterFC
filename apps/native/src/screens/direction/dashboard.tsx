@@ -132,7 +132,7 @@ export function DireccionDashboardScreen() {
                 <Text className="flex-1 text-[10px] font-semibold uppercase text-zinc-400">
                   {t('dashboard.census.col.team')}
                 </Text>
-                {[t('dashboard.results.col.played'), t('dash.wins'), t('dashboard.results.col.draws'), t('dash.losses'), t('dashboard.results.col.goal_diff')].map(
+                {[t('dashboard.results.col.played'), t('dashboard.results.col.wins'), t('dashboard.results.col.draws'), t('dashboard.results.col.losses'), t('dashboard.results.col.goal_diff')].map(
                   (h, i) => (
                     <Text key={i} className="w-8 text-right text-[10px] font-semibold uppercase text-zinc-400">
                       {h}

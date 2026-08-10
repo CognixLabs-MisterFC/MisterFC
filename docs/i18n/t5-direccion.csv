@@ -20,7 +20,6 @@ dash.criteria,Baja asistencia < 60% con ≥ 4 sesiones · inactivo = sin partido
 dash.empty,Sin datos todavía,No data yet,Encara sense dades,dashboard
 dash.goals,goles,goals,gols,dashboard
 dash.inactive,Inactivos,Inactive,Inactius,dashboard
-dash.losses,P,L,D,dashboard
 dash.low_attendance,Baja asistencia,Low attendance,Baixa assistència,dashboard
 dash.none,Sin datos,No data,Sense dades,dashboard
 dash.rankings,Rankings por categoría,Rankings by category,Rànquings per categoria,dashboard
@@ -28,7 +27,6 @@ dash.results,Resultados,Results,Resultats,dashboard
 dash.sessions,sesiones,sessions,sessions,dashboard
 dash.title,Dashboard,Dashboard,Tauler,dashboard
 dash.total_players,jugadores,players,jugadors,dashboard
-dash.wins,G,W,V,dashboard
 dashboard.alerts.title,Alertas,Alerts,Alertes,[reusada] dashboard
 dashboard.attendance.ranking,Ranking de jugadores,Player ranking,Rànquing de jugadors,[reusada] dashboard
 dashboard.attendance.trend.title,Tendencia semanal,Weekly trend,Tendència setmanal,[reusada] dashboard
@@ -39,7 +37,9 @@ dashboard.rankings.mvps,MVPs,MVPs,MVPs,[reusada] dashboard
 dashboard.rankings.scorers,Goleadores,Top scorers,Golejadors,[reusada] dashboard
 dashboard.results.col.draws,E,D,E,[reusada] dashboard
 dashboard.results.col.goal_diff,DG,GD,DG,[reusada] dashboard
+dashboard.results.col.losses,D,L,D,[reusada] dashboard
 dashboard.results.col.played,PJ,P,PJ,[reusada] dashboard
+dashboard.results.col.wins,V,W,V,[reusada] dashboard
 dir_cal.confirm,Confirmar,Confirm,Confirmar,calendario
 dir_cal.date_ph,Fecha (AAAA-MM-DD),Date (YYYY-MM-DD),Data (AAAA-MM-DD),calendario
 dir_cal.error,No se pudo completar,Couldn't be completed,No s'ha pogut completar,calendario
