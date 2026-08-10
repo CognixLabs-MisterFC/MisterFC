@@ -10,7 +10,7 @@ import { useSpectatorPlayer } from '@/auth/spectator-player';
 import { useCached } from '@/data/use-cached';
 import { SpectatorPlayerSelector } from '@/ui/spectator-player-selector';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /** Polling de marcadores en vivo (ms). Online refresca en vivo; offline sirve caché. */
@@ -24,6 +24,7 @@ const LIVE_POLL_MS = 15_000;
  * Caché player-scoped (spec-directos::${playerId}).
  */
 export function SpectatorDirectosScreen() {
+  const t = useTranslations('');
   const { activePlayer } = useSpectatorPlayer();
   const clubId = activePlayer?.clubId ?? null;
   const teamId = activePlayer?.teamId ?? null;
@@ -66,6 +67,7 @@ export function SpectatorDirectosScreen() {
 }
 
 function MatchCard({ match }: { match: WeekMatch }) {
+  const t = useTranslations('');
   const router = useRouter();
   const statusLabel =
     match.status === 'live'

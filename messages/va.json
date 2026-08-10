@@ -606,7 +606,8 @@
       "sent_body": "T’hem enviat un enllaç a {email} per a canviar la contrasenya.",
       "error_title": "No s’ha pogut enviar",
       "error_body": "Torna-ho a provar d’ací a uns minuts."
-    }
+    },
+    "notifications_title": "Notificacions"
   },
   "ajustes": {
     "title": "Ajustos del club",
@@ -4641,7 +4642,11 @@
     "perfil": {
       "title": "El meu perfil",
       "subtitle": "Les teues dades d'accés."
-    }
+    },
+    "no_player": "Encara no seguixes cap jugador",
+    "stats_did_not_play": "No va participar en este partit",
+    "stats_empty": "Encara no hi ha partits jugats",
+    "stats_title": "Estadístiques de {name}"
   },
   "playbook": {
     "title": "Playbook",
@@ -4789,7 +4794,12 @@
     "assists": "Assist.",
     "yellow": "Grogues",
     "red": "Roges",
-    "fouls_received": "Rebudes"
+    "fouls_received": "Rebudes",
+    "goals": "Gols",
+    "minutes": "Minuts",
+    "shots": "Xuts",
+    "fouls_committed": "Faltes",
+    "starter": "Titular"
   },
   "gestion": {
     "not_tutor": "No eres tutor d'aquest jugador",
@@ -5095,7 +5105,7 @@
     "goals": "gols",
     "inactive": "Inactius",
     "low_attendance": "Baixa assistència",
-    "none": "Sense dades",
+    "none": "Sense dades.",
     "rankings": "Rànquings per categoria",
     "results": "Resultats",
     "sessions": "sessions",

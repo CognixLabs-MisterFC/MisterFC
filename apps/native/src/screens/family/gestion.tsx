@@ -33,8 +33,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { ChildSelector } from '@/ui/child-selector';
 import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { appLocale } from '@/i18n';
-import { useTranslations } from '@/locale/provider';
+import { appLocale, useTranslations } from '@/locale/provider';
 import { downloadServerFile } from '@/lib/server-api';
 import { BRAND } from '@/theme';
 

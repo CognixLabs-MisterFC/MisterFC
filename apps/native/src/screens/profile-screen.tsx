@@ -30,8 +30,7 @@ import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
 import { PushSettingsCard } from '@/notifications/push-settings-card';
 import { webBaseUrl } from '@/lib/server-api';
 import { uuidv4 } from '@/lib/uuid';
-import { appLocale, t as flatT } from '@/i18n';
-import { useLocale, useSetLocale, useTranslations } from '@/locale/provider';
+import { appLocale, useLocale, useSetLocale, useTranslations } from '@/locale/provider';
 import { LOCALES, type Locale } from '@/locale/catalogs';
 import { BRAND } from '@/theme';
 
@@ -90,7 +89,7 @@ export function ProfileScreen() {
 
         <View className="gap-2">
           {/* Sección de push aún NO migrada al catálogo compartido → t() plano heredado. */}
-          <Text className="text-sm text-zinc-400">{flatT('push.section_title')}</Text>
+          <Text className="text-sm text-zinc-400">{t('notifications_title')}</Text>
           <PushSettingsCard />
         </View>
       </View>

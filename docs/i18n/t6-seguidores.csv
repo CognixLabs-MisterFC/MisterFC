@@ -1,0 +1,23 @@
+clave,es,en,va,pantalla
+calendario.empty,No hay eventos en las próximas semanas,No events in the coming weeks,No hi ha esdeveniments en les pròximes setmanes,[reusada] agenda
+calendario.holidays.badge,Festivo,Holiday,Festiu,[reusada] agenda
+common.vs,vs,vs,vs,[reusada] directos;estadisticas
+directos.empty_live,No hay partidos esta semana,No matches this week,No hi ha partits aquesta setmana,[reusada] directos
+directos.status_closed,Final,Full time,Final,[reusada] directos
+directos.status_live,EN VIVO,LIVE,EN DIRECTE,[reusada] directos
+directos.status_scheduled,Programado,Scheduled,Programat,[reusada] directos
+perfil.notifications_title,Notificaciones,Notifications,Notificacions,profile-screen
+spectator.no_player,No sigues a ningún jugador todavía,You're not following any player yet,Encara no seguixes cap jugador,agenda;directos;estadisticas
+spectator.stats_did_not_play,No participó en este partido,Didn't play in this match,No va participar en este partit,estadisticas
+spectator.stats_empty,Aún no hay partidos jugados,No matches played yet,Encara no hi ha partits jugats,estadisticas
+spectator.stats_title,Estadísticas de {name},{name}'s stats,Estadístiques de {name},estadisticas
+stats.assists,Asist.,Assists,Assist.,[reusada] estadisticas
+stats.fouls_committed,Faltas,Fouls,Faltes,estadisticas
+stats.fouls_received,Recibidas,Received,Rebudes,[reusada] estadisticas
+stats.goals,Goles,Goals,Gols,estadisticas
+stats.minutes,Minutos,Minutes,Minuts,estadisticas
+stats.red,Rojas,Red cards,Roges,[reusada] estadisticas
+stats.shots,Tiros,Shots,Xuts,estadisticas
+stats.starter,Titular,Starter,Titular,estadisticas
+stats.sub,Suplente,Substitute,Suplent,[reusada] estadisticas
+stats.yellow,Amarillas,Yellow cards,Grogues,[reusada] estadisticas

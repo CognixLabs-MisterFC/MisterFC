@@ -495,7 +495,8 @@
       "sent_body": "Te hemos enviado un enlace a {email} para cambiar la contraseña.",
       "error_title": "No se pudo enviar",
       "error_body": "Inténtalo de nuevo en unos minutos."
-    }
+    },
+    "notifications_title": "Notificaciones"
   },
   "ajustes": {
     "title": "Ajustes del club",
@@ -4641,7 +4642,11 @@
     "perfil": {
       "title": "Mi perfil",
       "subtitle": "Tus datos de acceso."
-    }
+    },
+    "no_player": "No sigues a ningún jugador todavía",
+    "stats_did_not_play": "No participó en este partido",
+    "stats_empty": "Aún no hay partidos jugados",
+    "stats_title": "Estadísticas de {name}"
   },
   "playbook": {
     "title": "Playbook",
@@ -4789,7 +4794,12 @@
     "assists": "Asist.",
     "yellow": "Amarillas",
     "red": "Rojas",
-    "fouls_received": "Recibidas"
+    "fouls_received": "Recibidas",
+    "goals": "Goles",
+    "minutes": "Minutos",
+    "shots": "Tiros",
+    "fouls_committed": "Faltas",
+    "starter": "Titular"
   },
   "gestion": {
     "not_tutor": "No eres tutor de este jugador",
@@ -5095,7 +5105,7 @@
     "goals": "goles",
     "inactive": "Inactivos",
     "low_attendance": "Baja asistencia",
-    "none": "Sin datos",
+    "none": "Sin datos.",
     "rankings": "Rankings por categoría",
     "results": "Resultados",
     "sessions": "sesiones",
