@@ -44,7 +44,8 @@
     "fullscreen": {
       "enter": "Pantalla completa",
       "exit": "Eixir de pantalla completa"
-    }
+    },
+    "vs": "vs"
   },
   "auth": {
     "signin": {
@@ -136,7 +137,9 @@
     "empty": "No tens novetats.",
     "page_of": "Pàgina {current} de {total}",
     "prev": "Anterior",
-    "next": "Següent"
+    "next": "Següent",
+    "mark_all": "Marca-les totes com a llegides",
+    "load_more": "Carrega més"
   },
   "home": {
     "direccion": {
@@ -291,7 +294,8 @@
     "no_access": {
       "title": "Sense accés",
       "body": "El teu compte encara no pertany a cap club."
-    }
+    },
+    "greeting": "Hola, {name}"
   },
   "invitations": {
     "title": "Invitacions",
@@ -468,7 +472,14 @@
       "penalty": "Penal",
       "substitution": "Canvi",
       "rival": "Rival"
-    }
+    },
+    "tab_live": "En directe",
+    "empty_live": "No hi ha partits aquesta setmana",
+    "status_live": "EN DIRECTE",
+    "status_closed": "Final",
+    "status_scheduled": "Programat",
+    "empty_follow": "No hi ha equips",
+    "offline_write": "Sense connexió: no pots canviar el seguiment"
   },
   "shell": {
     "app_name": "MisterFC",
@@ -1967,7 +1978,8 @@
         "no_session": "Sessió no vàlida. Torna a iniciar sessió.",
         "db": "Error en processar. Torna-ho a intentar."
       }
-    }
+    },
+    "empty": "No hi ha esdeveniments en les pròximes setmanes"
   },
   "pdf": {
     "player": {
@@ -2500,7 +2512,14 @@
       "descanso": "Descans (decisió tècnica)"
     },
     "team_filter": "Equip",
-    "team_all": "Tots els equips"
+    "team_all": "Tots els equips",
+    "range_season": "Temporada actual",
+    "empty": "Encara no hi ha registres d'assistència",
+    "pct_present": "Presència",
+    "total": "{n} entrenaments registrats",
+    "breakdown": "Desglossament",
+    "justified": "Justificada",
+    "family_title": "Assistència"
   },
   "convocatorias": {
     "title": "Gestió de partits",
@@ -2648,7 +2667,27 @@
       "error": "No s’han pogut publicar els canvis.",
       "too_many": "Massa convocats ({overflow} de més, màx. {max}). Descarta algú abans de publicar.",
       "event_started": "El partit ja ha començat."
-    }
+    },
+    "unavailable": "Esta convocatòria no està disponible",
+    "detail_title": "Convocatòria",
+    "meeting_at": "Hora de quedada",
+    "notes": "Notes",
+    "not_published": "La convocatòria encara no està publicada",
+    "decision_discarded": "No convocat",
+    "response_hint": "Respons per {name}. Per a respondre per un altre fill, canvia'l en el selector.",
+    "resp_maybe": "Potser",
+    "offline_write": "Sense connexió: no pots respondre ara",
+    "saved": "Resposta guardada",
+    "forbidden": "No tens permís per a respondre",
+    "error": "No s'ha pogut guardar. Torna-ho a provar",
+    "view_stats": "Veure estadístiques del partit",
+    "upcoming": "Pròximes",
+    "upcoming_empty": "Sense partits pròxims",
+    "past": "Anteriors",
+    "resp_pending": "Pendent",
+    "family_title": "Convocatòries",
+    "family_empty": "No hi ha convocatòries",
+    "family_your_response": "La teua disponibilitat"
   },
   "mensajes": {
     "title": "Missatges",
@@ -2702,7 +2741,13 @@
       "loading": "Carregant equips…",
       "empty": "No hi ha equips que coincidisquen.",
       "error": "No hem pogut carregar els equips. Torna-ho a provar."
-    }
+    },
+    "unavailable": "Esta conversa no està disponible",
+    "thread_empty": "Encara no hi ha missatges",
+    "send_offline": "Sense connexió: no pots enviar ara.",
+    "send_placeholder": "Escriu un missatge…",
+    "group_label": "Equip · {team}",
+    "empty": "No tens converses"
   },
   "anuncios": {
     "title": "Anuncis de l'equip",
@@ -2735,7 +2780,8 @@
       "team_not_in_club": "L'equip no pertany a aquest club.",
       "not_found": "Anunci no trobat.",
       "generic": "No s'ha pogut guardar. Torna-ho a provar."
-    }
+    },
+    "empty": "No hi ha anuncis"
   },
   "anuncios_global": {
     "title": "Anuncis del club",
@@ -2926,7 +2972,21 @@
     "playbook": {
       "title": "Playbook",
       "subtitle": "Jugades que el teu entrenador ha compartit amb l'equip."
-    }
+    },
+    "nav_staff": "Cos tècnic",
+    "staff_empty": "Sense cos tècnic assignat",
+    "frames": "{count} fotogrames",
+    "nav_plantilla": "Plantilla",
+    "nav_sesiones": "Sessions",
+    "teammates_empty": "Sense companys encara",
+    "upcoming_empty": "Sense esdeveniments pròxims",
+    "announcements": "Anuncis",
+    "announcements_empty": "Sense anuncis",
+    "plantilla_empty": "Sense jugadors a la plantilla",
+    "session_unavailable": "Esta sessió no està disponible",
+    "session_no_tasks": "Sense exercicis",
+    "sesiones_empty": "No hi ha sessions publicades",
+    "family_no_team": "Este jugador no té equip en la temporada activa"
   },
   "alineacion": {
     "title": "Alineació",
@@ -4541,7 +4601,16 @@
   "playbook": {
     "title": "Playbook",
     "coming_soon": "Pròximament",
-    "subtitle": "El playbook estarà disponible aviat."
+    "subtitle": "El playbook estarà disponible aviat.",
+    "unavailable": "Esta jugada no està disponible",
+    "untitled": "Jugada",
+    "pause": "Pausa",
+    "play": "Reproduïx",
+    "stop": "Reinicia",
+    "loop": "Bucle",
+    "speed": "Velocitat",
+    "single_frame": "Jugada d'un sol frame (sense animació)",
+    "empty": "No hi ha jugades compartides"
   },
   "seguidores": {
     "title": "Seguidors",
@@ -4583,7 +4652,19 @@
         "forbidden": "No tens permís per a llevar aquest seguidor.",
         "generic": "No s'ha pogut llevar el seguidor. Torna-ho a provar."
       }
-    }
+    },
+    "offline_write": "Sense connexió: no pots llevar seguidors",
+    "empty": "Este jugador no té seguidors",
+    "hint": "Els seguidors veuen només les dades esportives del jugador (no mèdiques ni personals).",
+    "invite_desc": "Convida un familiar (avi/tia…) per correu. Només veurà les dades esportives de {name}.",
+    "invite_email_ph": "nom@correu.com",
+    "invite_offline": "Sense connexió: no pots convidar ara.",
+    "invite_sending": "Enviant…",
+    "invite_ok": "Invitació enviada a {email}.",
+    "invite_existing": "{email} ja té compte a MisterFC: li hem enviat un enllaç d’accés.",
+    "invite_forbidden": "No pots convidar seguidors per a este jugador.",
+    "invite_email_invalid": "Correu no vàlid.",
+    "invite_error": "No s’ha pogut enviar la invitació. Torna-ho a provar."
   },
   "mi_equipo_cuerpo_tecnico": {
     "title": "Cos tècnic",
@@ -4612,5 +4693,171 @@
     "perfil": "Perfil",
     "post_partido": "Post-partit",
     "sesion_del_dia": "Sessió del dia"
+  },
+  "child": {
+    "none": "No tens cap fill en este club"
+  },
+  "directo": {
+    "not_available": "Aquest directe no està disponible",
+    "minute_added": "{minute}+{added}'",
+    "live": "EN DIRECTE",
+    "no_lineup": "Sense alineació publicada",
+    "no_events": "Sense esdeveniments encara",
+    "phase": {
+      "not_started": "Sense començar",
+      "first_half": "1a part",
+      "half_time": "Descans",
+      "second_half": "2a part",
+      "extra_time": "Pròrroga",
+      "penalties": "Penals",
+      "finished": "Final"
+    },
+    "stat": {
+      "goals": "Gols",
+      "shots": "Xuts",
+      "corners": "Córners",
+      "fouls": "Faltes",
+      "yellow": "Grogues",
+      "red": "Roges",
+      "offsides": "Fores de joc"
+    },
+    "event": {
+      "goal": "Gol",
+      "penalty": "Penal",
+      "assist": "Assistència",
+      "yellow_card": "Groga",
+      "red_card": "Roja",
+      "substitution": "Canvi",
+      "corner": "Córner",
+      "foul": "Falta",
+      "offside": "Fora de joc",
+      "shot": "Xut",
+      "rival": "Rival"
+    }
+  },
+  "stats": {
+    "unavailable": "Estadístiques no disponibles",
+    "empty": "El teu fill no té estadístiques en este partit",
+    "sub": "Suplent",
+    "assists": "Assist.",
+    "yellow": "Grogues",
+    "red": "Roges",
+    "fouls_received": "Rebudes"
+  },
+  "gestion": {
+    "not_tutor": "No eres tutor d'aquest jugador",
+    "offline_write": "Sense connexió: no pots guardar canvis",
+    "photo_permission": "Necessites donar permís d'accés a les teues fotos",
+    "photo_err_large": "La imatge supera els 2 MB",
+    "photo_err_mime": "Format no vàlid (usa JPG, PNG o WebP)",
+    "photo_err_generic": "No s'ha pogut actualitzar la foto",
+    "photo_title": "Foto",
+    "photo_change": "Canviar foto",
+    "photo_remove": "Llevar",
+    "photo_hint": "JPG, PNG o WebP. Màxim 2 MB. Només la veuràs tu i el club.",
+    "medical_title": "Dades mèdiques",
+    "medical_no_write": "No tens consentiment d'escriptura vigent: només lectura.",
+    "medical_allergies": "Al·lèrgies",
+    "medical_medication": "Medicació",
+    "medical_conditions": "Condicions mèdiques",
+    "medical_emergency": "Contacte d'emergència",
+    "medical_empty": "Sense dades mèdiques registrades",
+    "medical_tutor_hint": "Només tu, com a tutor, veus i edites aquestes dades. El club les consulta en cas d'emergència.",
+    "medical_save": "Guardar",
+    "medical_saved": "Dades guardades",
+    "medical_forbidden": "No tens permís per a editar aquestes dades",
+    "medical_err": "No s'han pogut guardar. Torna-ho a provar.",
+    "export_title": "Descarregar expedient",
+    "export_hint": "L'expedient complet del teu fill en PDF (dret d'accés RGPD).",
+    "export_download": "Descarregar PDF",
+    "export_offline": "Sense connexió: no pots descarregar ara",
+    "export_error": "No s'ha pogut generar l'expedient. Torna-ho a provar.",
+    "export_unavailable": "Descàrrega no disponible en aquesta versió.",
+    "erasure_title": "Dret a l'oblit",
+    "erasure_sent": "Sol·licitud enviada. La direcció del club la revisarà.",
+    "erasure_hint": "Sol·licita la supressió de totes les dades del teu fill. La decisió la pren la direcció del club.",
+    "erasure_button": "Sol·licitar supressió",
+    "erasure_err": "No s'ha pogut enviar la sol·licitud. Torna-ho a provar.",
+    "erasure_warning": "Vas a SOL·LICITAR la supressió del teu fill. Si la direcció l'aprova, s'esborraran la foto, les dades mèdiques i la seua fitxa de manera IRREVERSIBLE.",
+    "erasure_reason_ph": "Motiu (opcional)",
+    "erasure_ack": "Entenc que és una sol·licitud irreversible una vegada aprovada.",
+    "erasure_cancel": "Cancel·lar",
+    "erasure_confirm": "Sol·licitar"
+  },
+  "inicio": {
+    "unread_messages": "Missatges sense llegir: {n}",
+    "pending_callup": "Convocatòria sense respondre",
+    "pending_callup_count": "Jugadors per confirmar: {n}",
+    "section_upcoming": "Pròxims esdeveniments",
+    "empty_upcoming": "Sense esdeveniments pròxims",
+    "section_announcements": "Anuncis recents",
+    "section_feed": "Novetats",
+    "empty_feed": "Sense novetats"
+  },
+  "ficha": {
+    "empty": "Sense dades de fitxa encara",
+    "stats": "Estadístiques",
+    "matches": "Partits",
+    "starts": "Titular",
+    "minutes": "Minuts",
+    "goals": "Gols",
+    "assists": "Assist.",
+    "shots": "Tirs",
+    "yellow": "Groc.",
+    "red": "Roges",
+    "goals_per_match": "Gols/partit",
+    "minutes_per_match": "Min/partit",
+    "start_rate": "Titularitat",
+    "attendance": "Assistència",
+    "attendance_pct": "Presència",
+    "att_present": "Present",
+    "att_justified": "Justif.",
+    "att_unjustified": "Injustif.",
+    "att_partial": "Parcial",
+    "career": "Trajectòria",
+    "matches_short": "PJ",
+    "goals_short": "G",
+    "career_total": "Total",
+    "years": "anys"
+  },
+  "informe": {
+    "empty": "Sense informe disponible",
+    "no_reports": "No hi ha informes publicats en esta temporada",
+    "player_scores": "Valoració individual",
+    "team_scores": "Valoració d'equip",
+    "player_objectives": "Objectius individuals",
+    "team_objectives": "Objectius d'equip",
+    "ficha_summary": "Resum",
+    "matches": "Partits",
+    "attendance": "Assistència",
+    "callups": "Convocatòries",
+    "trainings": "Entrenaments",
+    "period": {
+      "inicial": "Inicial",
+      "diciembre": "Desembre",
+      "marzo": "Març",
+      "junio": "Juny"
+    },
+    "group": {
+      "tecnico": "Tècnic",
+      "tactico": "Tàctic",
+      "fisico": "Físic",
+      "actitud": "Actitud",
+      "rendimiento_colectivo": "Rendiment col·lectiu",
+      "dinamica_grupo": "Dinàmica de grup",
+      "evolucion_equipo": "Evolució de l'equip"
+    },
+    "status": {
+      "open": "Obert",
+      "achieved": "Assolit",
+      "dropped": "Descartat"
+    }
+  },
+  "staff_role": {
+    "entrenador_principal": "Entrenador principal",
+    "entrenador_ayudante": "Entrenador ajudant",
+    "preparador_fisico": "Preparador físic",
+    "delegado": "Delegat",
+    "coordinador": "Coordinador"
   }
 }

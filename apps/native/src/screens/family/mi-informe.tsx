@@ -14,7 +14,7 @@ import { useCached } from '@/data/use-cached';
 import { ChildSelector } from '@/ui/child-selector';
 import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -25,6 +25,7 @@ import { BRAND } from '@/theme';
  * (informe::clubId::playerId::season::period). Selectores de temporada y periodo.
  */
 export function MiInformeScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { activePlayer } = useActivePlayer();
   const clubId = activeClub?.club.id ?? null;
@@ -148,6 +149,7 @@ function Chips({
   onPick: (v: string) => void;
   labelKey?: string;
 }) {
+  const t = useTranslations('');
   return (
     <View className="flex-row flex-wrap gap-2">
       {items.map((it) => {
@@ -178,6 +180,7 @@ function GroupScores({
   scores: Record<string, number>;
   accent: string;
 }) {
+  const t = useTranslations('');
   const { perGroup } = computeGroupAverages(catalog, scores);
   const entries = Object.entries(perGroup) as [string, number | null][];
   return (
@@ -210,6 +213,7 @@ function Objective({
   status: string;
   review: string | null;
 }) {
+  const t = useTranslations('');
   return (
     <View className="border-b border-zinc-100 py-2">
       <View className="flex-row items-center justify-between gap-2">

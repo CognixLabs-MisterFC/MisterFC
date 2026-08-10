@@ -13,7 +13,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /** Polling de marcador/timeline en vivo (ms) — consistente con el listado (B1). */
@@ -70,6 +70,7 @@ export function DirectoDetalleScreen({
   /** O2-6 — prefijo de caché (seguidor: `spec-directo`); familia lo omite. */
   cacheKeyPrefix?: string;
 }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const clubId = clubIdProp !== undefined ? clubIdProp : activeClub?.club.id ?? null;
   const accent = theme?.color ?? BRAND.navy;
@@ -118,6 +119,7 @@ function Scoreboard({
   accent: string;
   nowMs: number;
 }) {
+  const t = useTranslations('');
   const isLive = detail.status === 'live';
   const { phase, minute, addedTime } = matchPhase({
     status: detail.status,
@@ -130,7 +132,7 @@ function Scoreboard({
     isLive && LIVE_PHASES.has(phase)
       ? addedTime > 0
         ? t('directo.minute_added', { minute: String(minute), added: String(addedTime) })
-        : t('directo.minute', { minute: String(minute) })
+        : t('directos.minute', { minute: String(minute) })
       : phaseLabel;
 
   return (
@@ -166,11 +168,12 @@ function Scoreboard({
 }
 
 function FieldCard({ detail }: { detail: MatchDetail }) {
+  const t = useTranslations('');
   const hasLineup = detail.hasLineup && detail.fieldPlayers.length > 0;
   return (
     <View className="rounded-2xl border border-zinc-200 p-4">
       <Text className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-        {t('directo.field')}
+        {t('directos.field_title')}
       </Text>
       {hasLineup ? (
         <Pitch detail={detail} />
@@ -246,6 +249,7 @@ function PitchPlayer({
 }
 
 function StatsCard({ detail }: { detail: MatchDetail }) {
+  const t = useTranslations('');
   const ts = detail.teamStats;
   const rows: { key: string; own: number; rival: number }[] = [
     { key: 'goals', own: detail.goalsOwn, rival: detail.goalsRival },
@@ -259,7 +263,7 @@ function StatsCard({ detail }: { detail: MatchDetail }) {
   return (
     <View className="rounded-2xl border border-zinc-200 p-4">
       <Text className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-        {t('directo.stats')}
+        {t('directos.stats_title')}
       </Text>
       {rows.map((r) => (
         <View key={r.key} className="flex-row items-center border-b border-zinc-100 py-1.5">
@@ -273,11 +277,12 @@ function StatsCard({ detail }: { detail: MatchDetail }) {
 }
 
 function EventsCard({ detail }: { detail: MatchDetail }) {
+  const t = useTranslations('');
   const listed = detail.events.filter((e) => LISTED_EVENTS.has(e.type));
   return (
     <View className="rounded-2xl border border-zinc-200 p-4">
       <Text className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-        {t('directo.events')}
+        {t('directos.events_title')}
       </Text>
       {listed.length === 0 ? (
         <Text className="py-4 text-center text-sm text-zinc-400">{t('directo.no_events')}</Text>
@@ -289,7 +294,7 @@ function EventsCard({ detail }: { detail: MatchDetail }) {
               <Text className="w-8 text-right text-sm text-zinc-400 tabular-nums">{`${min}'`}</Text>
               <Text className="text-sm font-medium text-[#0F1B2E]">{t(`directo.event.${e.type}`)}</Text>
               <Text className="flex-1 text-sm text-zinc-500" numberOfLines={1}>
-                {e.side === 'rival' ? `${t('directo.event.rival')} ${e.label}` : e.label}
+                {e.side === 'rival' ? `${t('directos.event.rival')} ${e.label}` : e.label}
               </Text>
             </View>
           );

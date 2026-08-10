@@ -9,7 +9,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 type SessionView = {
   session: SessionForEdit;
@@ -24,6 +24,7 @@ type SessionView = {
  * jugadas del bloque se listan sin visor (el visor animado es D2). Caché por sesión.
  */
 export function SesionDetalleScreen({ sessionId }: { sessionId: string | null }) {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const clubId = activeClub?.club.id ?? null;
 
@@ -38,7 +39,7 @@ export function SesionDetalleScreen({ sessionId }: { sessionId: string | null })
     },
   );
 
-  if (!sessionId) return <EmptyState message={t('mi_equipo.session_untitled')} />;
+  if (!sessionId) return <EmptyState message={t('mi_equipo.session.untitled')} />;
   if (loading) return <LoadingScreen />;
   if (!data) return <EmptyState message={t('mi_equipo.session_unavailable')} />;
 
@@ -52,7 +53,7 @@ export function SesionDetalleScreen({ sessionId }: { sessionId: string | null })
         {/* Cabecera */}
         <View>
           <Text className="text-xl font-bold text-[#0F1B2E]">
-            {session.title ?? t('mi_equipo.session_untitled')}
+            {session.title ?? t('mi_equipo.session.untitled')}
           </Text>
           <Text className="text-xs text-zinc-400">
             {[
@@ -60,7 +61,7 @@ export function SesionDetalleScreen({ sessionId }: { sessionId: string | null })
                 ? new Date(`${session.session_date}T00:00:00`).toLocaleDateString()
                 : null,
               session.total_minutes != null
-                ? t('mi_equipo.minutes', { count: String(session.total_minutes) })
+                ? t('mi_equipo.session.minutes', { count: String(session.total_minutes) })
                 : null,
             ].filter(Boolean).join(' · ')}
           </Text>
@@ -80,14 +81,14 @@ export function SesionDetalleScreen({ sessionId }: { sessionId: string | null })
             ) : (
               block.tasks.map((task) => {
                 const m = meta.get(task.exercise_id);
-                const name = m?.name || task.exercise_name || t('mi_equipo.session_exercise');
+                const name = m?.name || task.exercise_name || t('mi_equipo.session.exercise_fallback');
                 return (
                   <View key={task.id} className="border-b border-zinc-100 py-2">
                     <Text className="text-sm font-medium text-[#0F1B2E]">{name}</Text>
                     <Text className="text-xs text-zinc-400">
                       {[
                         task.duration_min != null
-                          ? t('mi_equipo.minutes', { count: String(task.duration_min) })
+                          ? t('mi_equipo.session.minutes', { count: String(task.duration_min) })
                           : null,
                         task.series,
                         task.notes,
@@ -102,12 +103,12 @@ export function SesionDetalleScreen({ sessionId }: { sessionId: string | null })
             {block.plays.length > 0 ? (
               <View className="mt-3 border-t border-zinc-100 pt-3">
                 <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                  {t('mi_equipo.session_plays')}
+                  {t('mi_equipo.session.plays_heading')}
                 </Text>
                 {block.plays.map((play) => (
                   <View key={play.id} className="flex-row items-center justify-between py-1">
                     <Text className="flex-1 text-sm text-[#0F1B2E]" numberOfLines={1}>
-                      {play.play_name || t('mi_equipo.play_untitled')}
+                      {play.play_name || t('mi_equipo.cards.playbook.untitled')}
                     </Text>
                     <Text className="text-[11px] text-zinc-400">
                       {t('mi_equipo.frames', { count: String(play.frame_count) })}

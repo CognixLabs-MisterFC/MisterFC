@@ -1,0 +1,270 @@
+clave,es,en,va,pantalla
+anuncios.empty,No hay anuncios,No announcements,No hi ha anuncis,anuncios
+asistencia.breakdown,Desglose,Breakdown,Desglossament,asistencia
+asistencia.codes.ausente,Ausente,Absent,Absent,[reusada] asistencia
+asistencia.codes.entreno_diferenciado,Entreno diferenciado,Individual training,Entrenament diferenciat,[reusada] asistencia
+asistencia.codes.presente,Presente,Present,Present,[reusada] asistencia
+asistencia.empty,Sin registros de asistencia todavía,No attendance records yet,Encara no hi ha registres d'assistència,asistencia
+asistencia.family_title,Asistencia,Attendance,Assistència,asistencia
+asistencia.justified,Justificada,Justified,Justificada,asistencia
+asistencia.pct_present,Presencia,Attendance,Presència,asistencia
+asistencia.range_season,Temporada actual,Current season,Temporada actual,asistencia
+asistencia.total,{n} entrenos registrados,{n} training sessions recorded,{n} entrenaments registrats,asistencia
+calendario.empty,No hay eventos en las próximas semanas,No events in the coming weeks,No hi ha esdeveniments en les pròximes setmanes,calendario
+calendario.holidays.badge,Festivo,Holiday,Festiu,[reusada] calendario
+child.none,No tienes ningún hijo en este club,You have no children at this club,No tens cap fill en este club,asistencia;convocatoria-detalle;convocatorias;estadisticas;gestion;mi-equipo;mi-ficha;mi-informe;seguidores
+common.vs,vs,vs,vs,directos
+convocatorias.decision.called_up,Convocado,Called up,Convocat,[reusada] convocatoria-detalle;convocatorias
+convocatorias.decision_discarded,No convocado,Not called up,No convocat,convocatoria-detalle;convocatorias
+convocatorias.detail.citation_title,Citación,Meeting,Citació,[reusada] convocatoria-detalle
+convocatorias.detail.citation_transport,Transporte,Transport,Transport,[reusada] convocatoria-detalle
+convocatorias.detail_title,Convocatoria,Call-up,Convocatòria,convocatoria-detalle
+convocatorias.error,No se pudo guardar. Inténtalo de nuevo,Could not save. Please try again,No s'ha pogut guardar. Torna-ho a provar,convocatoria-detalle
+convocatorias.family_empty,No hay convocatorias,No call-ups,No hi ha convocatòries,convocatorias
+convocatorias.family_title,Convocatorias,Call-ups,Convocatòries,convocatorias
+convocatorias.family_your_response,Tu disponibilidad,Your availability,La teua disponibilitat,convocatoria-detalle
+convocatorias.forbidden,No tienes permiso para responder,You do not have permission to respond,No tens permís per a respondre,convocatoria-detalle
+convocatorias.meeting_at,Hora de quedada,Meeting time,Hora de quedada,convocatoria-detalle
+convocatorias.not_published,La convocatoria aún no está publicada,The call-up is not published yet,La convocatòria encara no està publicada,convocatoria-detalle
+convocatorias.notes,Notas,Notes,Notes,convocatoria-detalle
+convocatorias.offline_write,Sin conexión: no puedes responder ahora,Offline: you cannot respond right now,Sense connexió: no pots respondre ara,convocatoria-detalle
+convocatorias.past,Anteriores,Past,Anteriors,convocatorias
+convocatorias.publish.field.meeting_address,Dirección,Address,Adreça,[reusada] convocatoria-detalle
+convocatorias.resp_maybe,Quizá,Maybe,Potser,convocatoria-detalle;convocatorias
+convocatorias.resp_pending,Pendiente,Pending,Pendent,convocatorias
+convocatorias.response.no,No,No,No,[reusada] convocatoria-detalle;convocatorias
+convocatorias.response.yes,Sí,Yes,Sí,[reusada] convocatoria-detalle;convocatorias
+convocatorias.response_hint,"Respondes por {name}. Para responder por otro hijo, cámbialo en el selector.","You are responding for {name}. To respond for another child, switch them in the selector.","Respons per {name}. Per a respondre per un altre fill, canvia'l en el selector.",convocatoria-detalle
+convocatorias.saved,Respuesta guardada,Response saved,Resposta guardada,convocatoria-detalle
+convocatorias.tournament.field.location,Lugar,Venue,Lloc,[reusada] convocatoria-detalle
+convocatorias.unavailable,Esta convocatoria no está disponible,This call-up is not available,Esta convocatòria no està disponible,convocatoria-detalle
+convocatorias.upcoming,Próximas,Upcoming,Pròximes,convocatorias
+convocatorias.upcoming_empty,Sin partidos próximos,No upcoming matches,Sense partits pròxims,convocatorias
+convocatorias.view_stats,Ver estadísticas del partido,View match stats,Veure estadístiques del partit,convocatoria-detalle
+directo.event.assist,Asistencia,Assist,Assistència,directo-detalle
+directo.event.corner,Córner,Corner,Córner,directo-detalle
+directo.event.foul,Falta,Foul,Falta,directo-detalle
+directo.event.goal,Gol,Goal,Gol,directo-detalle
+directo.event.offside,Fuera de juego,Offside,Fora de joc,directo-detalle
+directo.event.penalty,Penalti,Penalty,Penal,directo-detalle
+directo.event.red_card,Roja,Red,Roja,directo-detalle
+directo.event.rival,Rival,Rival,Rival,directo-detalle
+directo.event.shot,Tiro,Shot,Xut,directo-detalle
+directo.event.substitution,Cambio,Substitution,Canvi,directo-detalle
+directo.event.yellow_card,Amarilla,Yellow,Groga,directo-detalle
+directo.live,EN VIVO,LIVE,EN DIRECTE,directo-detalle
+directo.minute_added,{minute}+{added}',{minute}+{added}',{minute}+{added}',directo-detalle
+directo.no_events,Sin eventos todavía,No events yet,Sense esdeveniments encara,directo-detalle
+directo.no_lineup,Sin alineación publicada,No lineup published,Sense alineació publicada,directo-detalle
+directo.not_available,Este directo no está disponible,This live match is not available,Aquest directe no està disponible,directo-detalle
+directo.phase.extra_time,Prórroga,Extra time,Pròrroga,directo-detalle
+directo.phase.finished,Final,Full time,Final,directo-detalle
+directo.phase.first_half,1ª parte,1st half,1a part,directo-detalle
+directo.phase.half_time,Descanso,Half-time,Descans,directo-detalle
+directo.phase.not_started,Sin empezar,Not started,Sense començar,directo-detalle
+directo.phase.penalties,Penaltis,Penalties,Penals,directo-detalle
+directo.phase.second_half,2ª parte,2nd half,2a part,directo-detalle
+directo.stat.corners,Córners,Corners,Córners,directo-detalle
+directo.stat.fouls,Faltas,Fouls,Faltes,directo-detalle
+directo.stat.goals,Goles,Goals,Gols,directo-detalle
+directo.stat.offsides,Fueras de juego,Offsides,Fores de joc,directo-detalle
+directo.stat.red,Rojas,Red,Roges,directo-detalle
+directo.stat.shots,Tiros,Shots,Xuts,directo-detalle
+directo.stat.yellow,Amarillas,Yellow,Grogues,directo-detalle
+directos.empty_follow,No hay equipos,No teams,No hi ha equips,directos
+directos.empty_live,No hay partidos esta semana,No matches this week,No hi ha partits aquesta setmana,directos
+directos.event.rival,Rival,Rival,Rival,[reusada] directo-detalle
+directos.events_title,Eventos,Events,Esdeveniments,[reusada] directo-detalle
+directos.field_title,Alineación,Line-up,Alineació,[reusada] directo-detalle
+directos.follow.follow,Seguir,Follow,Seguir,[reusada] directos
+directos.follow.following,Siguiendo,Following,Seguint,[reusada] directos
+directos.minute,{minute}',{minute}',{minute}',[reusada] directo-detalle
+directos.offline_write,Sin conexión: no puedes cambiar el seguimiento,No connection: you can't change following,Sense connexió: no pots canviar el seguiment,directos
+directos.stats_title,Estadísticas,Stats,Estadístiques,[reusada] directo-detalle
+directos.status_closed,Final,Full time,Final,directos
+directos.status_live,EN VIVO,LIVE,EN DIRECTE,directos
+directos.status_scheduled,Programado,Scheduled,Programat,directos
+directos.tab_live,En vivo,Live,En directe,directos
+estadisticas_partido.col.goals,Goles,Goals,Gols,[reusada] estadisticas
+estadisticas_partido.col.minutes,Minutos,Minutes,Minuts,[reusada] estadisticas
+estadisticas_partido.col.shots,Tiros,Shots,Tirs,[reusada] estadisticas
+estadisticas_partido.col.started,Titular,Starter,Titular,[reusada] estadisticas
+estadisticas_partido.team.fouls,Faltas,Fouls,Faltes,[reusada] estadisticas
+estadisticas_partido.title,Estadísticas del partido,Match statistics,Estadístiques del partit,[reusada] estadisticas
+ficha.assists,Asist.,Assists,Assist.,mi-ficha
+ficha.att_justified,Justif.,Excused,Justif.,mi-ficha
+ficha.att_partial,Parcial,Partial,Parcial,mi-ficha
+ficha.att_present,Presente,Present,Present,mi-ficha
+ficha.att_unjustified,Injustif.,Unexcused,Injustif.,mi-ficha
+ficha.attendance,Asistencia,Attendance,Assistència,mi-ficha
+ficha.attendance_pct,Presencia,Presence,Presència,mi-ficha
+ficha.career,Trayectoria,Career,Trajectòria,mi-ficha
+ficha.career_total,Total,Total,Total,mi-ficha
+ficha.empty,Sin datos de ficha todavía,No player profile data yet,Sense dades de fitxa encara,mi-ficha
+ficha.goals,Goles,Goals,Gols,mi-ficha
+ficha.goals_per_match,Goles/partido,Goals/match,Gols/partit,mi-ficha
+ficha.goals_short,G,G,G,mi-ficha;plantilla
+ficha.matches,Partidos,Matches,Partits,mi-ficha
+ficha.matches_short,PJ,MP,PJ,mi-ficha;plantilla
+ficha.minutes,Minutos,Minutes,Minuts,mi-ficha
+ficha.minutes_per_match,Min/partido,Min/match,Min/partit,mi-ficha
+ficha.red,Rojas,Red cards,Roges,mi-ficha
+ficha.shots,Tiros,Shots,Tirs,mi-ficha
+ficha.start_rate,Titularidad,Start rate,Titularitat,mi-ficha
+ficha.starts,Titular,Starter,Titular,mi-ficha
+ficha.stats,Estadísticas,Statistics,Estadístiques,mi-ficha
+ficha.years,años,years,anys,mi-ficha
+ficha.yellow,Amar.,Yel.,Groc.,mi-ficha
+gestion.erasure_ack,Entiendo que es una solicitud irreversible una vez aprobada.,I understand this is an irreversible request once approved.,Entenc que és una sol·licitud irreversible una vegada aprovada.,gestion
+gestion.erasure_button,Solicitar supresión,Request erasure,Sol·licitar supressió,gestion
+gestion.erasure_cancel,Cancelar,Cancel,Cancel·lar,gestion
+gestion.erasure_confirm,Solicitar,Request,Sol·licitar,gestion
+gestion.erasure_err,No se pudo enviar la solicitud. Inténtalo de nuevo.,The request could not be sent. Please try again.,No s'ha pogut enviar la sol·licitud. Torna-ho a provar.,gestion
+gestion.erasure_hint,Solicita la supresión de todos los datos de tu hijo. La decisión la toma la dirección del club.,Request the erasure of all your child's data. The decision is made by the club management.,Sol·licita la supressió de totes les dades del teu fill. La decisió la pren la direcció del club.,gestion
+gestion.erasure_reason_ph,Motivo (opcional),Reason (optional),Motiu (opcional),gestion
+gestion.erasure_sent,Solicitud enviada. La dirección del club la revisará.,Request sent. The club management will review it.,Sol·licitud enviada. La direcció del club la revisarà.,gestion
+gestion.erasure_title,Derecho al olvido,Right to be forgotten,Dret a l'oblit,gestion
+gestion.erasure_warning,"Vas a SOLICITAR la supresión de tu hijo. Si la dirección la aprueba, se borrarán foto, datos médicos y su ficha de forma IRREVERSIBLE.","You are about to REQUEST your child's erasure. If management approves it, their photo, medical data and profile will be deleted IRREVERSIBLY.","Vas a SOL·LICITAR la supressió del teu fill. Si la direcció l'aprova, s'esborraran la foto, les dades mèdiques i la seua fitxa de manera IRREVERSIBLE.",gestion
+gestion.export_download,Descargar PDF,Download PDF,Descarregar PDF,gestion
+gestion.export_error,No se pudo generar el expediente. Inténtalo de nuevo.,The record could not be generated. Please try again.,No s'ha pogut generar l'expedient. Torna-ho a provar.,gestion
+gestion.export_hint,El expediente completo de tu hijo en PDF (derecho de acceso RGPD).,Your child's complete record as a PDF (GDPR right of access).,L'expedient complet del teu fill en PDF (dret d'accés RGPD).,gestion
+gestion.export_offline,Sin conexión: no puedes descargar ahora,Offline: you can't download right now,Sense connexió: no pots descarregar ara,gestion
+gestion.export_title,Descargar expediente,Download record,Descarregar expedient,gestion
+gestion.export_unavailable,Descarga no disponible en esta versión.,Download not available in this version.,Descàrrega no disponible en aquesta versió.,gestion
+gestion.medical_allergies,Alergias,Allergies,Al·lèrgies,gestion
+gestion.medical_conditions,Condiciones médicas,Medical conditions,Condicions mèdiques,gestion
+gestion.medical_emergency,Contacto de emergencia,Emergency contact,Contacte d'emergència,gestion
+gestion.medical_empty,Sin datos médicos registrados,No medical data recorded,Sense dades mèdiques registrades,gestion
+gestion.medical_err,No se pudieron guardar. Inténtalo de nuevo.,They could not be saved. Please try again.,No s'han pogut guardar. Torna-ho a provar.,gestion
+gestion.medical_forbidden,No tienes permiso para editar estos datos,You don't have permission to edit this data,No tens permís per a editar aquestes dades,gestion
+gestion.medical_medication,Medicación,Medication,Medicació,gestion
+gestion.medical_no_write,No tienes consentimiento de escritura vigente: solo lectura.,You don't have valid write consent: read-only.,No tens consentiment d'escriptura vigent: només lectura.,gestion
+gestion.medical_save,Guardar,Save,Guardar,gestion
+gestion.medical_saved,Datos guardados,Data saved,Dades guardades,gestion
+gestion.medical_title,Datos médicos,Medical data,Dades mèdiques,gestion
+gestion.medical_tutor_hint,"Solo tú, como tutor, ves y editas estos datos. El club los consulta en caso de emergencia.","Only you, as the guardian, can see and edit this data. The club consults it in case of emergency.","Només tu, com a tutor, veus i edites aquestes dades. El club les consulta en cas d'emergència.",gestion
+gestion.not_tutor,No eres tutor de este jugador,You are not a guardian of this player,No eres tutor d'aquest jugador,gestion
+gestion.offline_write,Sin conexión: no puedes guardar cambios,Offline: you can't save changes,Sense connexió: no pots guardar canvis,gestion
+gestion.photo_change,Cambiar foto,Change photo,Canviar foto,gestion
+gestion.photo_err_generic,No se pudo actualizar la foto,The photo could not be updated,No s'ha pogut actualitzar la foto,gestion
+gestion.photo_err_large,La imagen supera los 2 MB,The image exceeds 2 MB,La imatge supera els 2 MB,gestion
+gestion.photo_err_mime,"Formato no válido (usa JPG, PNG o WebP)","Invalid format (use JPG, PNG or WebP)","Format no vàlid (usa JPG, PNG o WebP)",gestion
+gestion.photo_hint,"JPG, PNG o WebP. Máximo 2 MB. Solo la verás tú y el club.","JPG, PNG or WebP. Maximum 2 MB. Only you and the club will see it.","JPG, PNG o WebP. Màxim 2 MB. Només la veuràs tu i el club.",gestion
+gestion.photo_permission,Necesitas dar permiso de acceso a tus fotos,You need to grant access to your photos,Necessites donar permís d'accés a les teues fotos,gestion
+gestion.photo_remove,Quitar,Remove,Llevar,gestion
+gestion.photo_title,Foto,Photo,Foto,gestion
+home.greeting,"Hola, {name}","Hi, {name}","Hola, {name}",inicio
+informe.attendance,Asistencia,Attendance,Assistència,mi-informe
+informe.callups,Convocatorias,Call-ups,Convocatòries,mi-informe
+informe.empty,Sin informe disponible,No report available,Sense informe disponible,mi-informe
+informe.ficha_summary,Resumen,Summary,Resum,mi-informe
+informe.group.actitud,Actitud,Attitude,Actitud,mi-informe
+informe.group.dinamica_grupo,Dinámica de grupo,Group dynamics,Dinàmica de grup,mi-informe
+informe.group.evolucion_equipo,Evolución del equipo,Team evolution,Evolució de l'equip,mi-informe
+informe.group.fisico,Físico,Physical,Físic,mi-informe
+informe.group.rendimiento_colectivo,Rendimiento colectivo,Collective performance,Rendiment col·lectiu,mi-informe
+informe.group.tactico,Táctico,Tactical,Tàctic,mi-informe
+informe.group.tecnico,Técnico,Technical,Tècnic,mi-informe
+informe.matches,Partidos,Matches,Partits,mi-informe
+informe.no_reports,No hay informes publicados en esta temporada,There are no reports published this season,No hi ha informes publicats en esta temporada,mi-informe
+informe.period.diciembre,Diciembre,December,Desembre,mi-informe
+informe.period.inicial,Inicial,Start,Inicial,mi-informe
+informe.period.junio,Junio,June,Juny,mi-informe
+informe.period.marzo,Marzo,March,Març,mi-informe
+informe.player_objectives,Objetivos individuales,Individual objectives,Objectius individuals,mi-informe
+informe.player_scores,Valoración individual,Individual assessment,Valoració individual,mi-informe
+informe.status.achieved,Logrado,Achieved,Assolit,mi-informe
+informe.status.dropped,Descartado,Dropped,Descartat,mi-informe
+informe.status.open,Abierto,Open,Obert,mi-informe
+informe.team_objectives,Objetivos de equipo,Team objectives,Objectius d'equip,mi-informe
+informe.team_scores,Valoración de equipo,Team assessment,Valoració d'equip,mi-informe
+informe.trainings,Entrenos,Training sessions,Entrenaments,mi-informe
+inicio.empty_feed,Sin novedades,No news,Sense novetats,inicio
+inicio.empty_upcoming,Sin eventos próximos,No upcoming events,Sense esdeveniments pròxims,inicio
+inicio.pending_callup,Convocatoria sin responder,Call-up awaiting response,Convocatòria sense respondre,inicio
+inicio.pending_callup_count,Jugadores por confirmar: {n},Players to confirm: {n},Jugadors per confirmar: {n},inicio
+inicio.section_announcements,Anuncios recientes,Recent announcements,Anuncis recents,inicio
+inicio.section_feed,Novedades,News,Novetats,inicio
+inicio.section_upcoming,Próximos eventos,Upcoming events,Pròxims esdeveniments,inicio
+inicio.unread_messages,Mensajes sin leer: {n},Unread messages: {n},Missatges sense llegir: {n},inicio
+mensajes.empty,No tienes conversaciones,You have no conversations,No tens converses,mensajes
+mensajes.errors.generic,No se pudo enviar. Inténtalo de nuevo.,Couldn't send. Please try again.,No s'ha pogut enviar. Torna-ho a provar.,[reusada] mensaje-detalle
+mensajes.group_label,Equipo · {team},Team · {team},Equip · {team},mensaje-equipo;mensajes
+mensajes.send_offline,Sin conexión: no puedes enviar ahora.,Offline: you can’t send right now.,Sense connexió: no pots enviar ara.,mensaje-detalle
+mensajes.send_placeholder,Escribe un mensaje…,Write a message…,Escriu un missatge…,mensaje-detalle
+mensajes.thread.send,Enviar,Send,Enviar,[reusada] mensaje-detalle
+mensajes.thread_empty,No hay mensajes todavía,No messages yet,Encara no hi ha missatges,mensaje-detalle;mensaje-equipo
+mensajes.title,Mensajes,Messages,Missatges,[reusada] mensajes
+mensajes.unavailable,Esta conversación no está disponible,This conversation is not available,Esta conversa no està disponible,mensaje-detalle;mensaje-equipo
+mi_equipo.announcements,Anuncios,Announcements,Anuncis,mi-equipo
+mi_equipo.announcements_empty,Sin anuncios,No announcements,Sense anuncis,mi-equipo
+mi_equipo.cards.announcements.club_wide,Todo el club,Whole club,Tot el club,[reusada] mi-equipo
+mi_equipo.cards.playbook.title,Playbook,Playbook,Playbook,[reusada] mi-equipo
+mi_equipo.cards.playbook.untitled,Jugada,Play,Jugada,[reusada] sesion-detalle
+mi_equipo.cards.teammates.title,Compañeros,Teammates,Companys,[reusada] mi-equipo
+mi_equipo.cards.upcoming.title,Próximos eventos,Upcoming events,Pròxims esdeveniments,[reusada] mi-equipo
+mi_equipo.family_no_team,Este jugador no tiene equipo en la temporada activa,This player has no team in the active season,Este jugador no té equip en la temporada activa,cuerpo-tecnico;jugadas;mi-equipo;plantilla;sesiones
+mi_equipo.frames,{count} frames,{count} frames,{count} fotogrames,jugadas;sesion-detalle
+mi_equipo.nav_plantilla,Plantilla,Squad,Plantilla,mi-equipo;plantilla
+mi_equipo.nav_sesiones,Sesiones,Sessions,Sessions,mi-equipo;sesiones
+mi_equipo.nav_staff,Cuerpo técnico,Coaching staff,Cos tècnic,cuerpo-tecnico;mi-equipo
+mi_equipo.plantilla_empty,Sin jugadores en la plantilla,No players in the squad,Sense jugadors a la plantilla,plantilla
+mi_equipo.sesiones_empty,No hay sesiones publicadas,No published sessions,No hi ha sessions publicades,sesiones
+mi_equipo.session.exercise_fallback,Ejercicio,Exercise,Exercici,[reusada] sesion-detalle
+mi_equipo.session.minutes,{count} min,{count} min,{count} min,[reusada] sesion-detalle;sesiones
+mi_equipo.session.plays_heading,Jugadas a entrenar,Plays to train,Jugades a entrenar,[reusada] sesion-detalle
+mi_equipo.session.untitled,Sesión,Session,Sessió,[reusada] sesion-detalle;sesiones
+mi_equipo.session_no_tasks,Sin ejercicios,No drills,Sense exercicis,sesion-detalle
+mi_equipo.session_unavailable,Esta sesión no está disponible,This session is not available,Esta sessió no està disponible,sesion-detalle
+mi_equipo.staff_empty,Sin cuerpo técnico asignado,No coaching staff assigned,Sense cos tècnic assignat,cuerpo-tecnico
+mi_equipo.teammates_empty,Sin compañeros todavía,No teammates yet,Sense companys encara,mi-equipo
+mi_equipo.upcoming_empty,Sin eventos próximos,No upcoming events,Sense esdeveniments pròxims,mi-equipo
+mi_ficha.section.evaluations,Valoraciones,Ratings,Valoracions,[reusada] mi-ficha
+nav.anuncios,Anuncios,Announcements,Anuncis,[reusada] anuncios
+nav.novedades,Novedades,Updates,Novetats,[reusada] novedades
+novedades.empty,No tienes novedades.,You have no updates.,No tens novetats.,[reusada] novedades
+novedades.load_more,Cargar más,Load more,Carrega més,novedades
+novedades.mark_all,Marcar todas como leídas,Mark all as read,Marca-les totes com a llegides,novedades
+playbook.empty,No hay jugadas compartidas,No shared plays,No hi ha jugades compartides,jugadas
+playbook.loop,Bucle,Loop,Bucle,jugada-detalle
+playbook.pause,Pausa,Pause,Pausa,jugada-detalle
+playbook.play,Reproducir,Play,Reproduïx,jugada-detalle
+playbook.single_frame,Jugada de un solo frame (sin animación),Single-frame play (no animation),Jugada d'un sol frame (sense animació),jugada-detalle
+playbook.speed,Velocidad,Speed,Velocitat,jugada-detalle
+playbook.stop,Reiniciar,Restart,Reinicia,jugada-detalle
+playbook.title,Playbook,Playbook,Playbook,[reusada] jugadas
+playbook.unavailable,Esta jugada no está disponible,This play is not available,Esta jugada no està disponible,jugada-detalle
+playbook.untitled,Jugada,Play,Jugada,jugada-detalle;jugadas
+seguidores.empty,Este jugador no tiene seguidores,This player has no followers,Este jugador no té seguidors,seguidores
+seguidores.hint,Los seguidores ven solo los datos deportivos del jugador (no médicos ni personales).,Followers see only the player's sporting data (not medical or personal).,Els seguidors veuen només les dades esportives del jugador (no mèdiques ni personals).,seguidores
+seguidores.invite.action,Invitar seguidor,Invite follower,Convidar seguidor,[reusada] seguidores
+seguidores.invite.cancel,Cancelar,Cancel,Cancel·lar,[reusada] seguidores
+seguidores.invite.close,Cerrar,Close,Tancar,[reusada] seguidores
+seguidores.invite.field.email,Email,Email,Correu,[reusada] seguidores
+seguidores.invite.send,Enviar invitación,Send invitation,Enviar invitació,[reusada] seguidores
+seguidores.invite.title,Invitar seguidor,Invite follower,Convidar seguidor,[reusada] seguidores
+seguidores.invite_desc,Invita a un familiar (abuelo/tía…) por email. Verá solo los datos deportivos de {name}.,"Invite a relative (grandparent, aunt…) by email. They will only see {name}’s sporting data.",Convida un familiar (avi/tia…) per correu. Només veurà les dades esportives de {name}.,seguidores
+seguidores.invite_email_invalid,Email no válido.,Invalid email.,Correu no vàlid.,seguidores
+seguidores.invite_email_ph,nombre@correo.com,name@email.com,nom@correu.com,seguidores
+seguidores.invite_error,No se pudo enviar la invitación. Inténtalo de nuevo.,Couldn’t send the invitation. Please try again.,No s’ha pogut enviar la invitació. Torna-ho a provar.,seguidores
+seguidores.invite_existing,{email} ya tiene cuenta en MisterFC: le hemos enviado un enlace de acceso.,{email} already has a MisterFC account: we sent them an access link.,{email} ja té compte a MisterFC: li hem enviat un enllaç d’accés.,seguidores
+seguidores.invite_forbidden,No puedes invitar seguidores para este jugador.,You can’t invite followers for this player.,No pots convidar seguidors per a este jugador.,seguidores
+seguidores.invite_offline,Sin conexión: no puedes invitar ahora.,Offline: you can’t invite right now.,Sense connexió: no pots convidar ara.,seguidores
+seguidores.invite_ok,Invitación enviada a {email}.,Invitation sent to {email}.,Invitació enviada a {email}.,seguidores
+seguidores.invite_sending,Enviando…,Sending…,Enviant…,seguidores
+seguidores.list.unknown,Seguidor,Follower,Seguidor,[reusada] seguidores
+seguidores.offline_write,Sin conexión: no puedes quitar seguidores,Offline: you can't remove followers,Sense connexió: no pots llevar seguidors,seguidores
+seguidores.revoke.action,Quitar,Remove,Llevar,[reusada] seguidores
+seguidores.title,Seguidores,Followers,Seguidors,[reusada] seguidores
+staff_role.coordinador,Coordinador,Coordinator,Coordinador,cuerpo-tecnico
+staff_role.delegado,Delegado,Team official,Delegat,cuerpo-tecnico
+staff_role.entrenador_ayudante,Entrenador ayudante,Assistant coach,Entrenador ajudant,cuerpo-tecnico
+staff_role.entrenador_principal,Entrenador principal,Head coach,Entrenador principal,cuerpo-tecnico
+staff_role.preparador_fisico,Preparador físico,Fitness coach,Preparador físic,cuerpo-tecnico
+stats.assists,Asist.,Assists,Assist.,estadisticas
+stats.empty,Tu hijo no tiene estadísticas en este partido,Your child has no stats for this match,El teu fill no té estadístiques en este partit,estadisticas
+stats.fouls_received,Recibidas,Received,Rebudes,estadisticas
+stats.red,Rojas,Red cards,Roges,estadisticas
+stats.sub,Suplente,Substitute,Suplent,estadisticas
+stats.unavailable,Estadísticas no disponibles,Stats not available,Estadístiques no disponibles,estadisticas
+stats.yellow,Amarillas,Yellow cards,Grogues,estadisticas

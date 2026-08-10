@@ -21,7 +21,8 @@ import { useIsOnline } from '@/data/connectivity';
 import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t, appLocale } from '@/i18n';
+import { appLocale } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 const MESSAGES_POLL_MS = 5000;
@@ -38,6 +39,7 @@ export function MensajeDetalleScreen({
   conversationId: string | null;
   title: string | null;
 }) {
+  const t = useTranslations('');
   const { user } = useSession();
   const { theme } = useApp();
   const online = useIsOnline();
@@ -155,6 +157,7 @@ export function Composer({
   accent: string;
   onSend: (text: string) => Promise<boolean>;
 }) {
+  const t = useTranslations('');
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -174,7 +177,7 @@ export function Composer({
   return (
     <View className="border-t border-zinc-100 bg-white px-3 py-2">
       {failed ? (
-        <Text className="mb-1 px-1 text-xs text-red-600">{t('mensajes.send_error')}</Text>
+        <Text className="mb-1 px-1 text-xs text-red-600">{t('mensajes.errors.generic')}</Text>
       ) : null}
       {!online ? (
         <Text className="mb-1 px-1 text-xs text-zinc-400">{t('mensajes.send_offline')}</Text>
@@ -202,7 +205,7 @@ export function Composer({
           {busy ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text className="text-sm font-semibold text-white">{t('mensajes.send')}</Text>
+            <Text className="text-sm font-semibold text-white">{t('mensajes.thread.send')}</Text>
           )}
         </Pressable>
       </View>

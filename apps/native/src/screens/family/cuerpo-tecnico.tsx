@@ -7,10 +7,10 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /** Etiqueta i18n del rol de staff (fallback = el propio código). */
-function roleLabel(role: string): string {
+function roleLabel(role: string, t: (key: string) => string): string {
   return t(`staff_role.${role}`);
 }
 
@@ -28,6 +28,7 @@ export function CuerpoTecnicoScreen({
   teamName: string | null;
   color: string | null;
 }) {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const clubId = activeClub?.club.id ?? null;
 
@@ -41,7 +42,7 @@ export function CuerpoTecnicoScreen({
         : Promise.resolve([]),
   );
 
-  if (!teamId) return <EmptyState message={t('mi_equipo.no_team')} />;
+  if (!teamId) return <EmptyState message={t('mi_equipo.family_no_team')} />;
   if (loading) return <LoadingScreen />;
   const members = data?.[0]?.members ?? [];
 
@@ -57,7 +58,7 @@ export function CuerpoTecnicoScreen({
           members.map((m) => (
             <View key={m.team_staff_id} className="rounded-xl border border-zinc-200 px-3 py-2">
               <Text className="text-sm font-medium text-[#0F1B2E]">{m.full_name}</Text>
-              <Text className="text-[11px] text-zinc-400">{roleLabel(m.staff_role)}</Text>
+              <Text className="text-[11px] text-zinc-400">{roleLabel(m.staff_role, t)}</Text>
             </View>
           ))
         )}

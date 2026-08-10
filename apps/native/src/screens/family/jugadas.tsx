@@ -8,7 +8,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-5 D2 — Playbook: listado de jugadas COMPARTIDAS con la familia del equipo
@@ -16,6 +16,7 @@ import { t } from '@/i18n';
  * de team_plays es el gate. Caché team-scoped. Cada jugada abre el visor animado.
  */
 export function JugadasScreen({ teamId, teamName }: { teamId: string | null; teamName: string | null }) {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const router = useRouter();
   const clubId = activeClub?.club.id ?? null;

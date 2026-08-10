@@ -9,7 +9,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { fetchCached } from '@/data/client-data';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-5 B1 — Novedades: feed in_app paginado por-usuario (RLS select-own). Página 1
@@ -17,6 +17,7 @@ import { t } from '@/i18n';
  * por-ítem al tocar y "todas". Feed por-usuario → key sin clubId.
  */
 export function NovedadesScreen() {
+  const t = useTranslations('');
   const [rows, setRows] = useState<NotificationFeedRow[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);

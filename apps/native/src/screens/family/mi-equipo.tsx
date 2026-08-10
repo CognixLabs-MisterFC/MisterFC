@@ -15,7 +15,7 @@ import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { ChildSelector } from '@/ui/child-selector';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -26,6 +26,7 @@ import { BRAND } from '@/theme';
  * Caché: lista de equipos player-scoped; home team-scoped.
  */
 export function MiEquipoScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { activePlayer } = useActivePlayer();
   const router = useRouter();
@@ -68,7 +69,7 @@ export function MiEquipoScreen() {
     return (
       <View className="flex-1 bg-white">
         <ChildSelector />
-        <EmptyState message={t('mi_equipo.no_team')} />
+        <EmptyState message={t('mi_equipo.family_no_team')} />
       </View>
     );
   }
@@ -122,11 +123,11 @@ export function MiEquipoScreen() {
           <NavChip label={t('mi_equipo.nav_plantilla')} accent={accent} onPress={() => goTeam('/family/plantilla')} />
           <NavChip label={t('mi_equipo.nav_staff')} accent={accent} onPress={() => goTeam('/family/cuerpo-tecnico')} />
           <NavChip label={t('mi_equipo.nav_sesiones')} accent={accent} onPress={() => goTeam('/family/sesiones')} />
-          <NavChip label={t('mi_equipo.nav_playbook')} accent={accent} onPress={() => goTeam('/family/jugadas')} />
+          <NavChip label={t('mi_equipo.cards.playbook.title')} accent={accent} onPress={() => goTeam('/family/jugadas')} />
         </View>
 
         {/* Compañeros. */}
-        <Section title={t('mi_equipo.teammates')}>
+        <Section title={t('mi_equipo.cards.teammates.title')}>
           {!h || h.teammates.length === 0 ? (
             <Text className="text-sm text-zinc-500">{t('mi_equipo.teammates_empty')}</Text>
           ) : (
@@ -144,7 +145,7 @@ export function MiEquipoScreen() {
         </Section>
 
         {/* Próximos eventos. */}
-        <Section title={t('mi_equipo.upcoming')}>
+        <Section title={t('mi_equipo.cards.upcoming.title')}>
           {!h || h.upcoming.length === 0 ? (
             <Text className="text-sm text-zinc-500">{t('mi_equipo.upcoming_empty')}</Text>
           ) : (
@@ -174,7 +175,7 @@ export function MiEquipoScreen() {
                   {a.pinned ? '📌 ' : ''}{a.title}
                 </Text>
                 <Text className="text-xs text-zinc-400">
-                  {a.team_id === null ? t('mi_equipo.club_wide') : activeTeam.name}
+                  {a.team_id === null ? t('mi_equipo.cards.announcements.club_wide') : activeTeam.name}
                   {' · '}{new Date(a.created_at).toLocaleDateString()}
                 </Text>
               </View>

@@ -15,7 +15,8 @@ import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { Composer } from './mensaje-detalle';
-import { t, appLocale } from '@/i18n';
+import { appLocale } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 const MESSAGES_POLL_MS = 5000;
@@ -32,6 +33,7 @@ export function MensajeEquipoScreen({
   teamConversationId: string | null;
   title: string | null;
 }) {
+  const t = useTranslations('');
   const { user } = useSession();
   const { theme } = useApp();
   const online = useIsOnline();

@@ -8,13 +8,14 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-5 D1 — Sesiones publicadas (visibility='team') del equipo, próximas (incluido
  * hoy), SOLO LECTURA. Fetch en core; caché team-scoped. Cada sesión abre el detalle.
  */
 export function SesionesScreen({ teamId, teamName }: { teamId: string | null; teamName: string | null }) {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const router = useRouter();
   const clubId = activeClub?.club.id ?? null;
@@ -53,12 +54,12 @@ export function SesionesScreen({ teamId, teamName }: { teamId: string | null; te
               className="rounded-xl border border-zinc-200 px-3 py-3 active:opacity-70"
             >
               <Text className="text-sm font-medium text-[#0F1B2E]" numberOfLines={1}>
-                {s.title ?? t('mi_equipo.session_untitled')}
+                {s.title ?? t('mi_equipo.session.untitled')}
               </Text>
               <Text className="text-xs text-zinc-400">
                 {[
                   new Date(`${s.session_date}T00:00:00`).toLocaleDateString(),
-                  s.total_minutes != null ? t('mi_equipo.minutes', { count: String(s.total_minutes) }) : null,
+                  s.total_minutes != null ? t('mi_equipo.session.minutes', { count: String(s.total_minutes) }) : null,
                 ].filter(Boolean).join(' · ')}
               </Text>
             </Pressable>

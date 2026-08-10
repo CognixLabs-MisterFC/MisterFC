@@ -11,7 +11,7 @@ import { useCached } from '@/data/use-cached';
 import { ChildSelector } from '@/ui/child-selector';
 import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -22,6 +22,7 @@ import { BRAND } from '@/theme';
  * evalúan aparte (dependen del roster del equipo).
  */
 export function MiFichaScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { activePlayer } = useActivePlayer();
   const clubId = activeClub?.club.id ?? null;
@@ -58,7 +59,7 @@ export function MiFichaScreen() {
             <Text className="text-xs text-zinc-400">
               {[
                 data.identity.dorsal != null ? `#${data.identity.dorsal}` : null,
-                ageText(data.identity.dateOfBirth),
+                ageText(data.identity.dateOfBirth, t),
                 data.identity.positionMain,
                 data.identity.foot,
               ].filter(Boolean).join(' · ')}
@@ -124,7 +125,7 @@ export function MiFichaScreen() {
 
         {/* Valoraciones */}
         {data.evaluations.length > 0 ? (
-          <Section title={t('ficha.evaluations')}>
+          <Section title={t('mi_ficha.section.evaluations')}>
             {data.evaluations.map((e) => (
               <View key={e.eventId} className="border-b border-zinc-100 py-2">
                 <View className="flex-row items-center justify-between">
@@ -165,7 +166,7 @@ export function MiFichaScreen() {
   );
 }
 
-function ageText(dob: string | null): string | null {
+function ageText(dob: string | null, t: (key: string) => string): string | null {
   if (!dob) return null;
   const d = new Date(dob);
   if (Number.isNaN(d.getTime())) return null;
