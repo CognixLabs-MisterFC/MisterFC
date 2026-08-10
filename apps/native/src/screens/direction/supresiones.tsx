@@ -10,7 +10,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-11c-2 — SUPRESIONES RGPD (dirección). La acción MÁS IRREVERSIBLE (borra datos
@@ -21,6 +21,7 @@ import { t } from '@/i18n';
  * Offline solo lectura (write-guard). Caché club-scoped.
  */
 export function DireccionSupresionesScreen() {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const online = useIsOnline();
   const clubId = activeClub?.club.id ?? null;
@@ -54,13 +55,13 @@ export function DireccionSupresionesScreen() {
   const confirmApprove = (item: PendingErasure) => {
     if (!online || busy) return;
     Alert.alert(t('dir_sup.approve_warn_title'), t('dir_sup.approve_warn_body', { name: item.playerName }), [
-      { text: t('dir_sup.cancel'), style: 'cancel' },
+      { text: t('erasure.cancel'), style: 'cancel' },
       {
         text: t('dir_sup.continue'),
         style: 'destructive',
         onPress: () =>
           Alert.alert(t('dir_sup.approve_final_title'), t('dir_sup.approve_final_body'), [
-            { text: t('dir_sup.cancel'), style: 'cancel' },
+            { text: t('erasure.cancel'), style: 'cancel' },
             {
               text: t('dir_sup.approve_final_btn'),
               style: 'destructive',
@@ -74,8 +75,8 @@ export function DireccionSupresionesScreen() {
   const confirmReject = (item: PendingErasure) => {
     if (!online || busy) return;
     Alert.alert(t('dir_sup.reject_title'), t('dir_sup.reject_body', { name: item.playerName }), [
-      { text: t('dir_sup.cancel'), style: 'cancel' },
-      { text: t('dir_sup.reject_btn'), onPress: () => post('/api/erasures/reject', item.id) },
+      { text: t('erasure.cancel'), style: 'cancel' },
+      { text: t('erasure.reject'), onPress: () => post('/api/erasures/reject', item.id) },
     ]);
   };
 
@@ -101,7 +102,7 @@ export function DireccionSupresionesScreen() {
             <View key={item.id} className="rounded-2xl border border-zinc-200 p-4">
               <Text className="text-base font-semibold text-[#0F1B2E]">{item.playerName}</Text>
               <Text className="mt-0.5 text-xs text-zinc-400">
-                {t('dir_sup.requested_by', {
+                {t('erasure.requested_by', {
                   who: item.requesterName ?? '—',
                   date: new Date(item.requestedAt).toLocaleDateString(),
                 })}
@@ -116,14 +117,14 @@ export function DireccionSupresionesScreen() {
                     className={`rounded-lg px-4 py-1.5 ${!online || busy ? 'opacity-40' : 'active:opacity-70'}`}
                     style={{ backgroundColor: '#dc2626' }}
                   >
-                    <Text className="text-xs font-semibold text-white">{t('dir_sup.approve')}</Text>
+                    <Text className="text-xs font-semibold text-white">{t('erasure.approve')}</Text>
                   </Pressable>
                   <Pressable
                     disabled={!online || busy}
                     onPress={() => confirmReject(item)}
                     className={`rounded-lg border border-zinc-200 px-4 py-1.5 ${!online || busy ? 'opacity-40' : 'active:opacity-70'}`}
                   >
-                    <Text className="text-xs font-semibold text-zinc-600">{t('dir_sup.reject')}</Text>
+                    <Text className="text-xs font-semibold text-zinc-600">{t('erasure.reject')}</Text>
                   </Pressable>
                 </View>
               ) : null}

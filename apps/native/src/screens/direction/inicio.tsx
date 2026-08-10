@@ -9,7 +9,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { CountBadge } from '@/screens/staff/hub-parts';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -21,6 +21,7 @@ import { BRAND } from '@/theme';
  * pantalla (que de momento abre la vista en lectura). Caché club-scoped.
  */
 export function DireccionInicioScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const router = useRouter();
   const clubId = activeClub?.club.id ?? null;
@@ -65,7 +66,7 @@ export function DireccionInicioScreen() {
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }}>
         <View className="gap-2">
-          <ScreenTitle>{t('dir_inicio.management_title')}</ScreenTitle>
+          <ScreenTitle>{t('home.direccion.management_title')}</ScreenTitle>
           {block1.map((r) => (
             <TaskRow
               key={r.key}

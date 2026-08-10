@@ -10,7 +10,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { ListCard } from '@/screens/staff/hub-parts';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -21,6 +21,7 @@ import { BRAND } from '@/theme';
  * crear/editar (es web). Candado = AreaGuard('direction'); caché club-scoped.
  */
 export function DireccionJugadoresScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const router = useRouter();
   const clubId = activeClub?.club.id ?? null;
@@ -62,7 +63,7 @@ export function DireccionJugadoresScreen() {
                 </Text>
               </View>
               <Text className="mt-0.5 pl-10 text-xs text-zinc-400" numberOfLines={1}>
-                {p.currentTeamName ?? t('dir_jugadores.no_team')}
+                {p.currentTeamName ?? t('jugadores.no_team')}
                 {p.positionMain ? ` · ${p.positionMain}` : ''}
               </Text>
             </ListCard>

@@ -4865,7 +4865,8 @@
     "matches_short": "MP",
     "goals_short": "G",
     "career_total": "Total",
-    "years": "years"
+    "years": "years",
+    "evaluations": "Ratings"
   },
   "informe": {
     "empty": "No report available",
@@ -5080,5 +5081,81 @@
     "mixed": "Mixed",
     "club": "Club",
     "individual": "Individual"
+  },
+  "dash": {
+    "attendance": "Assist",
+    "census": "Squad",
+    "title": "Dashboard",
+    "all_clear": "All clear",
+    "best_avg": "Best average",
+    "campaigns": "Campaigns due soon",
+    "club_avg": "Club average",
+    "criteria": "Low attendance < 60% with ≥ 5 sessions · inactive = no matches or attendance",
+    "empty": "No data yet",
+    "goals": "goals",
+    "inactive": "Inactive",
+    "low_attendance": "Low attendance",
+    "none": "No data",
+    "rankings": "Rankings by category",
+    "results": "Results",
+    "sessions": "sessions",
+    "total_players": "players"
+  },
+  "dir_cal": {
+    "confirm": "Confirm",
+    "unmark": "Remove",
+    "date_ph": "Date (YYYY-MM-DD)",
+    "error": "Couldn't be completed",
+    "holidays_title": "Holidays",
+    "no_holidays": "No holidays",
+    "no_pending": "Nothing pending",
+    "offline": "You need a connection",
+    "pending_title": "Holiday trainings to approve",
+    "title": "Calendar · Holidays"
+  },
+  "dir_cuerpo": {
+    "no_team": "No team assigned",
+    "assignments": "Assignments",
+    "empty": "No coaching staff",
+    "not_found": "Coach not found",
+    "title": "Club coaching staff"
+  },
+  "dir_sup": {
+    "continue": "Continue",
+    "approve_final_body": "This action is final.",
+    "approve_final_btn": "Delete permanently",
+    "approve_final_title": "Confirm the deletion?",
+    "approve_warn_body": "You are about to IRREVERSIBLY delete {name}'s data (photo and medical record). This can't be undone.",
+    "approve_warn_title": "Delete the minor's data",
+    "empty": "No pending requests",
+    "error": "Couldn't be completed",
+    "hint": "Right to be forgotten: approving is IRREVERSIBLE. Only the club admin decides.",
+    "offline": "You need a connection",
+    "only_admin": "Only the club admin can decide on erasures.",
+    "reject_body": "Reject the erasure of {name}?",
+    "reject_title": "Reject request",
+    "title": "Erasures (GDPR)"
+  },
+  "club_role": {
+    "entrenador_ayudante": "Assistant coach",
+    "entrenador_principal": "Head coach"
+  },
+  "dir_inicio": {
+    "invitations": "Pending invitations",
+    "erasures": "Pending erasures",
+    "callups": "Call-ups not published",
+    "reports": "Pending reports",
+    "tasks_title": "Coaches' tasks",
+    "approvals": "Holiday trainings to approve",
+    "no_session": "Trainings without a session",
+    "no_attendance": "Trainings without attendance"
+  },
+  "anuncios_dir": {
+    "no_teams": "The club has no teams",
+    "pick_team": "Choose the announcement's team"
+  },
+  "dir_jugadores": {
+    "empty": "No players",
+    "title": "Club players"
   }
 }

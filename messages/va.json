@@ -4865,7 +4865,8 @@
     "matches_short": "PJ",
     "goals_short": "G",
     "career_total": "Total",
-    "years": "anys"
+    "years": "anys",
+    "evaluations": "Valoracions"
   },
   "informe": {
     "empty": "Sense informe disponible",
@@ -5080,5 +5081,81 @@
     "mixed": "Mixt",
     "club": "Club",
     "individual": "Individual"
+  },
+  "dash": {
+    "attendance": "Assistència",
+    "census": "Plantilla",
+    "title": "Tauler",
+    "all_clear": "Tot en ordre",
+    "best_avg": "Millor mitjana",
+    "campaigns": "Campanyes a punt de vèncer",
+    "club_avg": "Mitjana del club",
+    "criteria": "Baixa assistència < 60 % amb ≥ 5 sessions · inactiu = sense partits ni assistència",
+    "empty": "Encara sense dades",
+    "goals": "gols",
+    "inactive": "Inactius",
+    "low_attendance": "Baixa assistència",
+    "none": "Sense dades",
+    "rankings": "Rànquings per categoria",
+    "results": "Resultats",
+    "sessions": "sessions",
+    "total_players": "jugadors"
+  },
+  "dir_cal": {
+    "confirm": "Confirmar",
+    "unmark": "Llevar",
+    "date_ph": "Data (AAAA-MM-DD)",
+    "error": "No s'ha pogut completar",
+    "holidays_title": "Festius",
+    "no_holidays": "No hi ha festius",
+    "no_pending": "Res pendent",
+    "offline": "Necessites connexió",
+    "pending_title": "Entrenaments en festiu per aprovar",
+    "title": "Calendari · Festius"
+  },
+  "dir_cuerpo": {
+    "no_team": "Sense equip assignat",
+    "assignments": "Assignacions",
+    "empty": "No hi ha cos tècnic",
+    "not_found": "No s'ha trobat l'entrenador",
+    "title": "Cos tècnic del club"
+  },
+  "dir_sup": {
+    "continue": "Continuar",
+    "approve_final_body": "Aquesta acció és definitiva.",
+    "approve_final_btn": "Eliminar definitivament",
+    "approve_final_title": "Confirmes l'eliminació?",
+    "approve_warn_body": "Vas a eliminar de manera IRREVERSIBLE les dades de {name} (foto i fitxa mèdica). No es pot desfer.",
+    "approve_warn_title": "Eliminar les dades del menor",
+    "empty": "No hi ha sol·licituds pendents",
+    "error": "No s'ha pogut completar",
+    "hint": "Dret a l'oblit: aprovar és IRREVERSIBLE. Només l'administrador del club decideix.",
+    "offline": "Necessites connexió",
+    "only_admin": "Només l'administrador del club pot decidir les supressions.",
+    "reject_body": "Rebutjar la supressió de {name}?",
+    "reject_title": "Rebutjar la sol·licitud",
+    "title": "Supressions (RGPD)"
+  },
+  "club_role": {
+    "entrenador_ayudante": "Entrenador ajudant",
+    "entrenador_principal": "Entrenador principal"
+  },
+  "dir_inicio": {
+    "invitations": "Invitacions pendents",
+    "erasures": "Supressions pendents",
+    "callups": "Convocatòries sense publicar",
+    "reports": "Informes pendents",
+    "tasks_title": "Tasques dels entrenadors",
+    "approvals": "Entrenaments en festiu per aprovar",
+    "no_session": "Entrenaments sense sessió",
+    "no_attendance": "Entrenaments sense assistència"
+  },
+  "anuncios_dir": {
+    "no_teams": "El club no té equips",
+    "pick_team": "Tria l'equip de l'anunci"
+  },
+  "dir_jugadores": {
+    "empty": "No hi ha jugadors",
+    "title": "Jugadors del club"
   }
 }

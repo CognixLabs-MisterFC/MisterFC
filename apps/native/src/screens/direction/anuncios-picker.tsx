@@ -9,7 +9,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { ListCard } from '@/screens/staff/hub-parts';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -21,6 +21,7 @@ import { BRAND } from '@/theme';
  * Solo lectura; el candado de la banda es AreaGuard('direction'). Caché club-scoped.
  */
 export function DireccionAnunciosPickerScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const router = useRouter();
   const clubId = activeClub?.club.id ?? null;
