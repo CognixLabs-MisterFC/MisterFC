@@ -5,7 +5,7 @@ import type {
   LineupRosterPlayer,
   QuickEntryInput,
 } from '@misterfc/core';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-9b — ENTRADA RÁPIDA de eventos del directo (staff). Réplica del flujo web
@@ -35,6 +35,7 @@ export function QuickEntry({
   disabled: boolean;
   onRegister: (input: QuickEntryInput) => void;
 }) {
+  const t = useTranslations('');
   const [mode, setMode] = useState<Mode>(null);
   const [subOut, setSubOut] = useState<string | null>(null);
   const [dorsal, setDorsal] = useState('');
@@ -145,7 +146,7 @@ export function QuickEntry({
       {mode === 'sub' ? (
         <ActorGrid
           title={subOut ? t('directo_entry.pick_in') : t('directo_entry.pick_out')}
-          players={(subOut ? bench.map(rosterChip) : fieldPlayers.map((p) => ({
+          players={(subOut ? bench.map((r) => rosterChip(r, t)) : fieldPlayers.map((p) => ({
             id: p.playerId,
             label: p.label,
             dorsal: p.dorsal,
@@ -185,7 +186,7 @@ export function QuickEntry({
   );
 }
 
-function rosterChip(r: LineupRosterPlayer): { id: string; label: string; dorsal: number | null } {
+function rosterChip(r: LineupRosterPlayer, t: (key: string) => string): { id: string; label: string; dorsal: number | null } {
   const name = `${r.firstName} ${r.lastName}`.trim();
   return { id: r.playerId, label: name || t('directo_entry.player'), dorsal: r.dorsal };
 }

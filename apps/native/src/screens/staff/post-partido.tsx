@@ -22,7 +22,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -66,6 +66,7 @@ function errorKeyFor(e: PostMatchError): string {
 }
 
 export function PostMatchScreen({ eventId }: { eventId: string | null }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const router = useRouter();
   const online = useIsOnline();
@@ -221,7 +222,7 @@ export function PostMatchScreen({ eventId }: { eventId: string | null }) {
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 48 }}>
-        <ScreenTitle>{t('post_partido.title')}</ScreenTitle>
+        <ScreenTitle>{t('post_partido.app_title')}</ScreenTitle>
 
         {/* Resultado final (consolidado por finishMatch/9a). */}
         <View
@@ -301,7 +302,7 @@ export function PostMatchScreen({ eventId }: { eventId: string | null }) {
               {t('post_partido.players')}
             </Text>
             {data.players.length === 0 ? (
-              <Text className="py-2 text-sm text-zinc-400">{t('post_partido.no_players')}</Text>
+              <Text className="py-2 text-sm text-zinc-400">{t('post_partido.app_no_players')}</Text>
             ) : (
               data.players.map((p) => (
                 <PlayerCard
@@ -322,7 +323,7 @@ export function PostMatchScreen({ eventId }: { eventId: string | null }) {
             <View className="mt-1 rounded-2xl border border-zinc-200 p-4" style={{ gap: 8 }}>
               {data.postMatchDone ? (
                 <Btn
-                  label={t('post_partido.reopen_stage')}
+                  label={t('post_partido.app_reopen_stage')}
                   accent={accent}
                   disabled={!editable}
                   onPress={() => setStageDone(false)}
@@ -421,6 +422,7 @@ function PlayerCard({
   onSave: () => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations('');
   const name = formatPlayerName(player.firstName, player.lastName);
   const s = player.stats;
   const hasEval = player.evaluation?.rating != null;

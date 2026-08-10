@@ -9,7 +9,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { Tile } from './hub-parts';
 
@@ -29,6 +29,7 @@ export function TeamDetailScreen({
   name: string | null;
   color: string | null;
 }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const router = useRouter();
   const clubId = activeClub?.club.id ?? null;

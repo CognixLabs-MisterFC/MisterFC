@@ -15,7 +15,7 @@ import {
   type TransportMode,
 } from '@misterfc/core';
 import { callServerEndpoint } from '@/lib/server-api';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-7b-2 — Hoja de PUBLICAR convocatoria (staff, nativo). Opción 1: el móvil publica
@@ -65,6 +65,7 @@ export function PublishCallupSheet({
   onClose: () => void;
   onPublished: () => void;
 }) {
+  const t = useTranslations('');
   // Prefill de la hora: meta previa → su hora; si no, sugerencia saque−60min.
   const suggestedIso = meta?.meeting_at ?? computeCitacionAt(matchStartsAt);
   const suggested = suggestedIso ? new Date(suggestedIso) : null;

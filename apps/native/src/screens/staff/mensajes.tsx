@@ -10,7 +10,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /** Refresco del inbox (ms). Consistente con la web y con familia (polling 5s). */
@@ -24,6 +24,7 @@ const MESSAGES_POLL_MS = 5000;
  * el endpoint F3 dentro de cada hilo. Offline muestra el último inbox conocido.
  */
 export function StaffMensajesScreen({ basePath = '/staff' }: { basePath?: string }) {
+  const t = useTranslations('');
   const { user } = useSession();
   const { theme } = useApp();
   const router = useRouter();
@@ -90,6 +91,7 @@ function InboxRow({
   accent: string;
   onPress: () => void;
 }) {
+  const t = useTranslations('');
   const title =
     item.kind === 'group' ? t('mensajes.group_label', { team: item.title }) : item.title;
   return (

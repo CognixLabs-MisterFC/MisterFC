@@ -10,7 +10,7 @@ import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-7b-1 — Convocatorias del staff (ARMAR): partidos próximos del scope del user
@@ -21,6 +21,7 @@ import { t } from '@/i18n';
  * (`getStaffCallupsFromClient`). Caché club-scoped (id en la key).
  */
 export function ConvocatoriasStaffListScreen() {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const { user } = useSession();
   const router = useRouter();

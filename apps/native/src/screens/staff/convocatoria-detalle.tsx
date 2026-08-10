@@ -23,7 +23,7 @@ import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { PublishCallupSheet } from './publish-callup-sheet';
 
 /**
@@ -58,6 +58,7 @@ export function ConvocatoriaStaffDetalleScreen({
 }: {
   eventId: string | null;
 }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { user } = useSession();
   const router = useRouter();
@@ -428,6 +429,7 @@ function DecisionButton({
 }
 
 function ResponseChip({ status }: { status: 'yes' | 'maybe' | 'no' | null }) {
+  const t = useTranslations('');
   const label =
     status === 'yes'
       ? t('convocatorias.resp_yes')

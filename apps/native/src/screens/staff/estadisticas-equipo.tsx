@@ -8,7 +8,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { MisEquiposScreen } from './mis-equipos';
 
@@ -19,6 +19,7 @@ import { MisEquiposScreen } from './mis-equipos';
  * gate. Caché team-scoped (`staff-team-stats::${clubId}::${teamId}`).
  */
 export function TeamStatsScreen({ teamId, name }: { teamId: string | null; name: string | null }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const clubId = activeClub?.club.id ?? null;
   const accent = theme?.color ?? BRAND.navy;

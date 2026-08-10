@@ -41,7 +41,7 @@ import { useEventQueue } from '@/directo/use-event-queue';
 import { QuickEntry } from '@/directo/quick-entry';
 import { uuidv4 } from '@/lib/uuid';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /** Eventos que se listan en el timeline (misma familia que B2). */
@@ -107,6 +107,7 @@ function errorKeyFor(e: ClockWriteError): string {
 }
 
 export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const online = useIsOnline();
   const clubId = activeClub?.club.id ?? null;
@@ -438,6 +439,7 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
 
 /** Aviso de eventos RECHAZADOS por el servidor al subir (RLS/CHECK): no se pierden. */
 function FailedBanner({ count, onRetry }: { count: number; onRetry: () => void }) {
+  const t = useTranslations('');
   return (
     <View className="flex-row items-center justify-between rounded-xl bg-red-50 px-4 py-2">
       <Text className="flex-1 text-xs text-red-600">
@@ -458,6 +460,7 @@ function EventsTimeline({
   events: DetailEvent[];
   optimisticIds: Set<string>;
 }) {
+  const t = useTranslations('');
   const listed = events
     .filter((e) => LISTED_EVENTS.has(e.type))
     .sort((a, b) => a.clockSeconds - b.clockSeconds);

@@ -22,7 +22,7 @@ import { useSession } from '@/auth/session';
 import { useApp } from '@/auth/context';
 import { useIsOnline } from '@/data/connectivity';
 import { LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 type Mode = 'player' | 'team';
@@ -36,6 +36,7 @@ type Mode = 'player' | 'team';
  * red (sin cola); offline → deshabilitado con aviso.
  */
 export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string }) {
+  const t = useTranslations('');
   const { user } = useSession();
   const { activeClub, theme } = useApp();
   const router = useRouter();
@@ -101,7 +102,7 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
         },
       });
     },
-    [online, clubId, userId, busyId, router, basePath],
+    [online, clubId, userId, busyId, router, basePath, t],
   );
 
   const openTeam = useCallback(
@@ -123,7 +124,7 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
         params: { teamConversationId: res.ok.conversationId, title: team.name },
       });
     },
-    [online, clubId, busyId, router, basePath],
+    [online, clubId, busyId, router, basePath, t],
   );
 
   if (loading) return <LoadingScreen />;
