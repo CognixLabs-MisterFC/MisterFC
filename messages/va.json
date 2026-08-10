@@ -5090,7 +5090,7 @@
     "best_avg": "Millor mitjana",
     "campaigns": "Campanyes a punt de vèncer",
     "club_avg": "Mitjana del club",
-    "criteria": "Baixa assistència < 60 % amb ≥ 4 sessions · inactiu = sense partits ni assistència",
+    "criteria": "Baixa assistència < 60 % amb ≥ 5 sessions · inactiu = sense partits ni assistència",
     "empty": "Encara sense dades",
     "goals": "gols",
     "inactive": "Inactius",

@@ -5090,7 +5090,7 @@
     "best_avg": "Mejor media",
     "campaigns": "Campañas por vencer",
     "club_avg": "Media del club",
-    "criteria": "Baja asistencia < 60% con ≥ 4 sesiones · inactivo = sin partidos ni asistencia",
+    "criteria": "Baja asistencia < 60% con ≥ 5 sesiones · inactivo = sin partidos ni asistencia",
     "empty": "Sin datos todavía",
     "goals": "goles",
     "inactive": "Inactivos",
