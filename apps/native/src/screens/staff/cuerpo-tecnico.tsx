@@ -7,7 +7,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { MisEquiposScreen } from './mis-equipos';
 import { RoleChip } from './hub-parts';
@@ -27,6 +27,7 @@ export function TeamStaffScreen({
   name: string | null;
   color: string | null;
 }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const clubId = activeClub?.club.id ?? null;
   const accent = color || theme?.color || BRAND.navy;
@@ -42,7 +43,7 @@ export function TeamStaffScreen({
   if (!teamId) return <MisEquiposScreen target="staff" />;
   if (loading) return <LoadingScreen />;
   const members = data?.[0]?.members ?? [];
-  if (members.length === 0) return <EmptyState message={t('cuerpo_tecnico.empty')} />;
+  if (members.length === 0) return <EmptyState message={t('cuerpo_tecnico.app_empty')} />;
 
   return (
     <View className="flex-1 bg-white">

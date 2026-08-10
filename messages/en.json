@@ -1483,7 +1483,13 @@
     "announcements_link": "Announcements",
     "development_reports_link": "Reports",
     "playbook_link": "Playbook",
-    "team_chat_link": "Team chat"
+    "team_chat_link": "Team chat",
+    "roster": "Squad",
+    "staff": "Coaching staff",
+    "stats": "Stats",
+    "title": "Team",
+    "no_roster": "No players in the team",
+    "pick_team": "Choose a team"
   },
   "staff": {
     "title": "Coaching staff",
@@ -1638,7 +1644,8 @@
     },
     "filter": {
       "all": "All"
-    }
+    },
+    "empty": "You're not part of any team's coaching staff"
   },
   "import": {
     "title": "Import players",
@@ -2435,7 +2442,8 @@
         "phone": "Phone",
         "email": "Email"
       }
-    }
+    },
+    "app_empty": "No coaching staff"
   },
   "asistencia": {
     "title": "Training attendance",
@@ -2687,7 +2695,9 @@
     "resp_pending": "Pending",
     "family_title": "Call-ups",
     "family_empty": "No call-ups",
-    "family_your_response": "Your availability"
+    "family_your_response": "Your availability",
+    "resp_yes": "Yes",
+    "resp_no": "No"
   },
   "mensajes": {
     "title": "Messages",
@@ -3071,7 +3081,17 @@
     "rename_hint": "Click to rename this lineup.",
     "prepare_failed": "Could not prepare the lineup. Reload the page.",
     "formation_catalog": "Catalogue",
-    "formation_mine": "My formations"
+    "formation_mine": "My formations",
+    "formation": "Formation",
+    "no_permission": "You can’t edit this lineup.",
+    "official": "Official",
+    "edit_hint": "Drag a player onto an empty slot, onto another (swap) or to the bench.",
+    "none_yet": "No lineup yet for this match",
+    "offline_write": "Offline: the lineup is read-only.",
+    "pick_match": "Open a match and tap “View lineup”",
+    "readonly_hint": "Read-only view.",
+    "unavailable": "This lineup is not available",
+    "app_bench_empty": "No substitutes"
   },
   "formaciones": {
     "title": "My formations",
@@ -3521,7 +3541,32 @@
       "not_closed": "The match isn't finished.",
       "unauthenticated": "Invalid session.",
       "generic": "Couldn't save. Please try again."
-    }
+    },
+    "comment_ph": "Comment (optional)",
+    "complete_stage": "Complete ratings",
+    "no_permission": "You don't have permission to rate this match.",
+    "players": "Players",
+    "reopen_match": "Reopen match",
+    "saving": "Saving…",
+    "stage_done": "Ratings completed",
+    "stat_shots": "Shots",
+    "stat_starter": "Starter",
+    "team_eval": "Team rating",
+    "app_title": "Post-match",
+    "go_directo": "Go to Live",
+    "no_stats": "No stats (didn't play)",
+    "not_closed_warning": "The match isn't finished. Finish it in Live to rate players.",
+    "offline_write": "Offline: you can't rate players now.",
+    "pick_match": "Open a finished match",
+    "reopen_hint": "To fix the result or an event, reopen the match and edit it in Live.",
+    "reopen_match_confirm": "Confirm reopening",
+    "stage_open": "Ratings pending",
+    "stat_assists": "A",
+    "stat_goals": "G",
+    "stat_min": "Min",
+    "unavailable": "This post-match is not available",
+    "app_no_players": "No player has played yet",
+    "app_reopen_stage": "Reopen ratings"
   },
   "mi_ficha": {
     "title": "My profile",
@@ -4733,7 +4778,9 @@
       "offside": "Offside",
       "shot": "Shot",
       "rival": "Rival"
-    }
+    },
+    "events": "Events",
+    "minute": "{minute}'"
   },
   "stats": {
     "unavailable": "Stats not available",
@@ -4859,5 +4906,179 @@
     "preparador_fisico": "Fitness coach",
     "delegado": "Team official",
     "coordinador": "Coordinator"
+  },
+  "anuncios_staff": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "new": "New announcement",
+    "pinned": "Pin to top",
+    "publish": "Publish",
+    "publish_error": "Couldn't publish. Please try again.",
+    "save": "Save",
+    "save_error": "Couldn't save. Please try again.",
+    "title": "Announcements",
+    "title_ph": "Title",
+    "body_ph": "Write the announcement…",
+    "delete_error": "Couldn’t delete. Try again.",
+    "delete_title": "Delete this announcement?",
+    "empty": "No announcements in this team",
+    "offline": "You’re offline: you can’t publish or edit right now."
+  },
+  "asistencia_staff": {
+    "marked_count": "{marked}/{total} marked",
+    "others": "Others",
+    "promoted": "Called up",
+    "clear": "Clear mark",
+    "list_empty": "No recent trainings",
+    "no_permission": "You can’t take attendance in this session",
+    "not_found": "Session not found",
+    "offline_write": "You’re offline: you can’t take attendance right now",
+    "roster_empty": "No players in the roster",
+    "title": "Take attendance"
+  },
+  "convocatorias_staff": {
+    "clear": "Remove",
+    "discard": "Discard",
+    "draft": "Draft",
+    "meeting_at": "Meeting time",
+    "open_live": "Live match",
+    "promoted": "Called up",
+    "publish_cta": "Publish callup",
+    "publish_now": "Publish",
+    "publish_title": "Publish callup",
+    "published": "Published",
+    "published_state": "Callup published",
+    "title": "Call-ups",
+    "call_up": "Call up",
+    "called_summary": "{called}/{total} called up",
+    "list_empty": "No upcoming matches",
+    "meeting_address": "Address (optional)",
+    "meeting_location": "Meeting place",
+    "no_permission": "You can't make call-ups for this match",
+    "notes_general": "Notes (optional)",
+    "offline_write": "Offline: you can't make call-ups right now",
+    "over_limit": "You're over the format's call-up limit ({max})",
+    "pending_changes": "You have unpublished changes",
+    "pub_err_too_many_called_up": "You're {overflow} over the call-up limit. The cap is {max}",
+    "publish_desc": "Families will see the call-up and get a notification.",
+    "publishing": "Publishing…",
+    "republish_cta": "Republish",
+    "responses_summary": "Yes {yes} · Maybe {maybe} · No {no}",
+    "roster_empty": "No players in the roster",
+    "transport_mode": "Transport (optional)",
+    "transport_notes": "Transport notes (optional)",
+    "view_lineup": "View lineup"
+  },
+  "cuerpo_direccion": {
+    "title": "Management staff",
+    "empty": "This team has no coaching staff",
+    "no_team": "You don't coordinate any team"
+  },
+  "directo_control": {
+    "finish": "Finish match",
+    "pause": "Pause",
+    "reopen": "Reopen match",
+    "resume": "Resume",
+    "start_match": "Start match",
+    "title": "Live match",
+    "unavailable": "This live match is not available",
+    "period": {
+      "first_half": "1st half",
+      "second_half": "2nd half",
+      "penalties": "Penalties",
+      "extra_first": "Extra time (1st)",
+      "extra_second": "Extra time (2nd)"
+    },
+    "adjust": "Adjust",
+    "clock": "Clock",
+    "end_period": "End half",
+    "go_post_match": "Go to post-match",
+    "no_permission": "You don't have permission to control this match.",
+    "offline_write": "Offline: the clock can't be changed.",
+    "paused": "PAUSED",
+    "pick_match": "Open a match and tap “Live”",
+    "reopen_confirm": "Confirm reopen",
+    "start_next": "Start {period}"
+  },
+  "directo_entry": {
+    "cancel": "Cancel",
+    "player": "Player",
+    "type_goal": "Goal",
+    "type_red": "Red",
+    "type_sub": "Substitution",
+    "type_yellow": "Yellow",
+    "failed": "{count} couldn't be saved",
+    "no_bench": "No substitutes available",
+    "no_field_players": "No players on the pitch",
+    "pending": "{count} not uploaded · will upload when back online",
+    "pick_in": "In…",
+    "pick_out": "Out…",
+    "pick_player": "Tap the player",
+    "register_rival": "Record",
+    "retry": "Retry",
+    "rival_dorsal": "Opponent's squad number (1–99)",
+    "title": "Record event",
+    "type_rival": "Opponent goal",
+    "unsynced": "Not uploaded"
+  },
+  "estadisticas_equipo": {
+    "player": "Player",
+    "title": "Stats",
+    "col_pj": "GP",
+    "empty": "No team data",
+    "col_g": "G",
+    "col_a": "A",
+    "col_min": "Min"
+  },
+  "jugadores_consulta": {
+    "title": "Players",
+    "empty": "This team has no players",
+    "no_team": "You don't coordinate any team"
+  },
+  "mensajes_staff": {
+    "new": "New",
+    "new_title": "New conversation",
+    "tab_player": "Player",
+    "tab_team": "Team",
+    "create_error": "Couldn’t open the conversation. Try again.",
+    "no_players": "No players available",
+    "no_teams": "No teams available",
+    "offline": "You’re offline: you can’t start a conversation right now.",
+    "search": "Search…"
+  },
+  "sesion_dia": {
+    "empty": "No published sessions",
+    "title": "Sessions",
+    "untitled": "Session"
+  },
+  "staff_home": {
+    "no_upcoming": "No upcoming events",
+    "tile_attendance": "Assist",
+    "tile_calendar": "Calendar",
+    "tile_callups": "Call-ups",
+    "tile_directos": "Live",
+    "tile_sessions": "Sessions",
+    "tile_teams": "My teams",
+    "title": "Home",
+    "unpublished_callups": "Call-ups not published",
+    "upcoming": "Upcoming events"
+  },
+  "attendance_code": {
+    "presente": "Present",
+    "ausente": "Absent",
+    "entreno_diferenciado": "Individual training",
+    "lesionado": "Injured",
+    "enfermo": "Sick",
+    "viaje": "Travel",
+    "sancionado": "Sanctioned",
+    "descanso": "Half-time",
+    "ausente_con_aviso": "Absent (excused)",
+    "partido_oficial": "Official match"
+  },
+  "transport_mode": {
+    "mixed": "Mixed",
+    "club": "Club",
+    "individual": "Individual"
   }
 }

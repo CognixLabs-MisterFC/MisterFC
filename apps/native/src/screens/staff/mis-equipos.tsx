@@ -8,7 +8,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { ListCard, RoleChip } from './hub-parts';
 
@@ -30,6 +30,7 @@ const ROUTE_FOR: Record<TeamTarget, string> = {
 };
 
 export function MisEquiposScreen({ target = 'detail' }: { target?: TeamTarget }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const router = useRouter();
   const clubId = activeClub?.club.id ?? null;

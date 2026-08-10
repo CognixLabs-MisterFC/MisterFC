@@ -10,7 +10,7 @@ import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { ListCard, Tile, CountBadge } from './hub-parts';
 
@@ -33,6 +33,7 @@ const TYPE_ICON: Record<string, string> = {
 };
 
 export function StaffHomeScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { user } = useSession();
   const router = useRouter();

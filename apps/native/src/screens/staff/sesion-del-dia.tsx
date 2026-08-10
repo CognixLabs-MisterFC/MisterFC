@@ -8,7 +8,7 @@ import {
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { ListCard } from './hub-parts';
 
@@ -25,6 +25,7 @@ const todayIso = () => {
 };
 
 export function SesionDelDiaScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const clubId = activeClub?.club.id ?? null;
   const membershipId = activeClub?.membershipId ?? null;

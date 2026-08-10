@@ -21,7 +21,8 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
-import { t, appLocale } from '@/i18n';
+import { appLocale } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { MisEquiposScreen } from './mis-equipos';
 
@@ -40,6 +41,7 @@ export function TeamAnnouncementsScreen({
   teamId: string | null;
   name: string | null;
 }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const online = useIsOnline();
   const clubId = activeClub?.club.id ?? null;
@@ -111,7 +113,7 @@ export function TeamAnnouncementsScreen({
       setError(t('anuncios_staff.publish_error'));
       setBusy(false);
     }
-  }, [title, body, pinned, online, busy, teamId, editingId, resetForm, refresh]);
+  }, [title, body, pinned, online, busy, teamId, editingId, resetForm, refresh, t]);
 
   const confirmDelete = useCallback(
     (a: TeamAnnouncementRow) => {
@@ -133,7 +135,7 @@ export function TeamAnnouncementsScreen({
         },
       ]);
     },
-    [online, editingId, resetForm, refresh],
+    [online, editingId, resetForm, refresh, t],
   );
 
   if (!teamId) return <MisEquiposScreen target="anuncios" />;

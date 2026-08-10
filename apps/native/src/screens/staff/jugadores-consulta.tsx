@@ -10,7 +10,7 @@ import { useActiveStaffTeam } from '@/auth/active-staff-team';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { StaffTeamSelector } from '@/ui/staff-team-selector';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-10b-2 — JUGADORES (coordinador, modo CONSULTA — SOLO LECTURA). Lista de
@@ -20,6 +20,7 @@ import { t } from '@/i18n';
  * crear/editar (es web). Caché team-scoped (`coord-jugadores::${clubId}::${teamId}`).
  */
 export function JugadoresConsultaScreen() {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const { loading: teamLoading, activeTeam } = useActiveStaffTeam();
   const clubId = activeClub?.club.id ?? null;

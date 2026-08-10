@@ -1483,7 +1483,13 @@
     "announcements_link": "Anuncis",
     "development_reports_link": "Informes",
     "playbook_link": "Playbook",
-    "team_chat_link": "Xat de l'equip"
+    "team_chat_link": "Xat de l'equip",
+    "roster": "Plantilla",
+    "staff": "Cos tècnic",
+    "stats": "Estadístiques",
+    "title": "Equip",
+    "no_roster": "Sense jugadors en l'equip",
+    "pick_team": "Tria un equip"
   },
   "staff": {
     "title": "Cos tècnic",
@@ -1638,7 +1644,8 @@
     },
     "filter": {
       "all": "Tots"
-    }
+    },
+    "empty": "No formes part del cos tècnic de cap equip"
   },
   "import": {
     "title": "Importar jugadors",
@@ -2435,7 +2442,8 @@
         "phone": "Telèfon",
         "email": "Correu"
       }
-    }
+    },
+    "app_empty": "Sense cos tècnic"
   },
   "asistencia": {
     "title": "Assistència a entrenaments",
@@ -2687,7 +2695,9 @@
     "resp_pending": "Pendent",
     "family_title": "Convocatòries",
     "family_empty": "No hi ha convocatòries",
-    "family_your_response": "La teua disponibilitat"
+    "family_your_response": "La teua disponibilitat",
+    "resp_yes": "Sí",
+    "resp_no": "No"
   },
   "mensajes": {
     "title": "Missatges",
@@ -3071,7 +3081,17 @@
     "rename_hint": "Fes clic per a reanomenar esta alineació.",
     "prepare_failed": "No s'ha pogut preparar l'alineació. Recarrega la pàgina.",
     "formation_catalog": "Catàleg",
-    "formation_mine": "Les meues formacions"
+    "formation_mine": "Les meues formacions",
+    "formation": "Formació",
+    "no_permission": "No tens permís per editar aquesta alineació.",
+    "official": "Oficial",
+    "edit_hint": "Arrossega un jugador a un buit, a un altre (canvi) o a la banqueta.",
+    "none_yet": "Encara no hi ha alineació per a este partit",
+    "offline_write": "Sense connexió: l'alineació és només de lectura.",
+    "pick_match": "Obri un partit i toca «Veure alineació»",
+    "readonly_hint": "Vista de només lectura.",
+    "unavailable": "Esta alineació no està disponible",
+    "app_bench_empty": "Sense suplents"
   },
   "formaciones": {
     "title": "Les meues formacions",
@@ -3521,7 +3541,32 @@
       "not_closed": "El partit no està finalitzat.",
       "unauthenticated": "Sessió no vàlida.",
       "generic": "No s'ha pogut guardar. Torna-ho a provar."
-    }
+    },
+    "comment_ph": "Comentari (opcional)",
+    "complete_stage": "Completar valoracions",
+    "no_permission": "No tens permís per a valorar este partit.",
+    "players": "Jugadors",
+    "reopen_match": "Reobrir partit",
+    "saving": "Guardant…",
+    "stage_done": "Valoracions completades",
+    "stat_shots": "Xuts",
+    "stat_starter": "Titular",
+    "team_eval": "Valoració de l'equip",
+    "app_title": "Post-partit",
+    "go_directo": "Anar al directe",
+    "no_stats": "Sense estadístiques (no va participar)",
+    "not_closed_warning": "El partit no està finalitzat. Acaba'l en el directe per a valorar.",
+    "offline_write": "Sense connexió: no pots valorar ara.",
+    "pick_match": "Obri un partit finalitzat",
+    "reopen_hint": "Per a corregir el resultat o un esdeveniment, reobri el partit i edita'l en el directe.",
+    "reopen_match_confirm": "Confirmar reobertura",
+    "stage_open": "Valoracions pendents",
+    "stat_assists": "A",
+    "stat_goals": "G",
+    "stat_min": "Min",
+    "unavailable": "Este postpartit no està disponible",
+    "app_no_players": "Cap jugador ha participat encara",
+    "app_reopen_stage": "Reobrir valoracions"
   },
   "mi_ficha": {
     "title": "La meua fitxa",
@@ -4733,7 +4778,9 @@
       "offside": "Fora de joc",
       "shot": "Xut",
       "rival": "Rival"
-    }
+    },
+    "events": "Esdeveniments",
+    "minute": "{minute}'"
   },
   "stats": {
     "unavailable": "Estadístiques no disponibles",
@@ -4859,5 +4906,179 @@
     "preparador_fisico": "Preparador físic",
     "delegado": "Delegat",
     "coordinador": "Coordinador"
+  },
+  "anuncios_staff": {
+    "cancel": "Cancel·lar",
+    "delete": "Esborrar",
+    "edit": "Editar",
+    "new": "Nou anunci",
+    "pinned": "Fixar a dalt",
+    "publish": "Publicar",
+    "publish_error": "No s'ha pogut publicar. Torna-ho a provar.",
+    "save": "Guardar",
+    "save_error": "No s'ha pogut guardar. Torna-ho a provar.",
+    "title": "Anuncis",
+    "title_ph": "Títol",
+    "body_ph": "Escriu l’anunci…",
+    "delete_error": "No s’ha pogut esborrar. Torna-ho a provar.",
+    "delete_title": "Vols esborrar este anunci?",
+    "empty": "No hi ha anuncis en este equip",
+    "offline": "Sense connexió: no pots publicar ni editar ara."
+  },
+  "asistencia_staff": {
+    "marked_count": "{marked}/{total} marcats",
+    "others": "Altres",
+    "promoted": "Pujat",
+    "clear": "Llevar la marca",
+    "list_empty": "No hi ha entrenaments recents",
+    "no_permission": "No pots passar llista en esta sessió",
+    "not_found": "Sessió no trobada",
+    "offline_write": "Sense connexió: no pots passar llista ara",
+    "roster_empty": "Sense jugadors en la plantilla",
+    "title": "Passar llista"
+  },
+  "convocatorias_staff": {
+    "clear": "Llevar",
+    "discard": "Descartar",
+    "draft": "Esborrany",
+    "meeting_at": "Hora de citació",
+    "open_live": "Directe",
+    "promoted": "Pujat",
+    "publish_cta": "Publicar convocatòria",
+    "publish_now": "Publicar",
+    "publish_title": "Publicar convocatòria",
+    "published": "Publicada",
+    "published_state": "Convocatòria publicada",
+    "title": "Convocatòries",
+    "call_up": "Convocar",
+    "called_summary": "{called}/{total} convocats",
+    "list_empty": "No hi ha partits pròxims",
+    "meeting_address": "Adreça (opcional)",
+    "meeting_location": "Lloc de quedada",
+    "no_permission": "No pots convocar en esta convocatòria",
+    "notes_general": "Notes (opcional)",
+    "offline_write": "Sense connexió: no pots convocar ara",
+    "over_limit": "Superes el màxim de convocats ({max}) de la modalitat",
+    "pending_changes": "Hi ha canvis sense publicar",
+    "pub_err_too_many_called_up": "Superes el màxim de convocats per {overflow}. El límit és {max}",
+    "publish_desc": "Les famílies veuran la convocatòria i rebran un avís.",
+    "publishing": "Publicant…",
+    "republish_cta": "Republicar",
+    "responses_summary": "Sí {yes} · Potser {maybe} · No {no}",
+    "roster_empty": "Sense jugadors en la plantilla",
+    "transport_mode": "Transport (opcional)",
+    "transport_notes": "Notes de transport (opcional)",
+    "view_lineup": "Veure alineació"
+  },
+  "cuerpo_direccion": {
+    "title": "Cos tècnic de direcció",
+    "empty": "Aquest equip no té cos tècnic",
+    "no_team": "No coordines cap equip"
+  },
+  "directo_control": {
+    "finish": "Finalitzar el partit",
+    "pause": "Pausar",
+    "reopen": "Reobrir partit",
+    "resume": "Reprendre",
+    "start_match": "Iniciar partit",
+    "title": "Directe",
+    "unavailable": "Aquest directe no està disponible",
+    "period": {
+      "first_half": "1a part",
+      "second_half": "2a part",
+      "penalties": "Penals",
+      "extra_first": "Pròrroga (1a)",
+      "extra_second": "Pròrroga (2a)"
+    },
+    "adjust": "Ajust",
+    "clock": "Rellotge",
+    "end_period": "Acabar la part",
+    "go_post_match": "Anar al postpartit",
+    "no_permission": "No tens permís per a controlar este partit.",
+    "offline_write": "Sense connexió: no es pot canviar el rellotge.",
+    "paused": "PAUSA",
+    "pick_match": "Obri un partit i toca «Directe»",
+    "reopen_confirm": "Confirmar reobertura",
+    "start_next": "Començar {period}"
+  },
+  "directo_entry": {
+    "cancel": "Cancel·lar",
+    "player": "Jugador",
+    "type_goal": "Gol",
+    "type_red": "Roja",
+    "type_sub": "Canvi",
+    "type_yellow": "Groga",
+    "failed": "{count} no s'han pogut guardar",
+    "no_bench": "No hi ha suplents disponibles",
+    "no_field_players": "No hi ha jugadors al camp",
+    "pending": "{count} sense pujar · es pujaran en reconnectar",
+    "pick_in": "Entra…",
+    "pick_out": "Ix…",
+    "pick_player": "Toca el jugador",
+    "register_rival": "Registrar",
+    "retry": "Reintenta",
+    "rival_dorsal": "Dorsal del rival (1–99)",
+    "title": "Registrar esdeveniment",
+    "type_rival": "Gol rival",
+    "unsynced": "Sense pujar"
+  },
+  "estadisticas_equipo": {
+    "player": "Jugador",
+    "title": "Estadístiques",
+    "col_pj": "PJ",
+    "empty": "Sense dades d'equip",
+    "col_g": "G",
+    "col_a": "A",
+    "col_min": "Min"
+  },
+  "jugadores_consulta": {
+    "title": "Jugadors",
+    "empty": "Aquest equip no té jugadors",
+    "no_team": "No coordines cap equip"
+  },
+  "mensajes_staff": {
+    "new": "Nova",
+    "new_title": "Nova conversa",
+    "tab_player": "Jugador",
+    "tab_team": "Equip",
+    "create_error": "No s’ha pogut obrir la conversa. Torna-ho a provar.",
+    "no_players": "No hi ha jugadors disponibles",
+    "no_teams": "No hi ha equips disponibles",
+    "offline": "Sense connexió: no pots iniciar una conversa ara.",
+    "search": "Cercar…"
+  },
+  "sesion_dia": {
+    "empty": "No hi ha sessions publicades",
+    "title": "Sessions",
+    "untitled": "Sessió"
+  },
+  "staff_home": {
+    "no_upcoming": "Sense esdeveniments pròxims",
+    "tile_attendance": "Assistència",
+    "tile_calendar": "Calendari",
+    "tile_callups": "Convocatòries",
+    "tile_directos": "Directes",
+    "tile_sessions": "Sessions",
+    "tile_teams": "Els meus equips",
+    "title": "Inici",
+    "unpublished_callups": "Convocatòries sense publicar",
+    "upcoming": "Pròxims esdeveniments"
+  },
+  "attendance_code": {
+    "presente": "Present",
+    "ausente": "Absent",
+    "entreno_diferenciado": "Entrenament diferenciat",
+    "lesionado": "Lesionat",
+    "enfermo": "Malalt",
+    "viaje": "Viatge",
+    "sancionado": "Sancionat",
+    "descanso": "Descans",
+    "ausente_con_aviso": "Absent (amb avís)",
+    "partido_oficial": "Partit oficial"
+  },
+  "transport_mode": {
+    "mixed": "Mixt",
+    "club": "Club",
+    "individual": "Individual"
   }
 }

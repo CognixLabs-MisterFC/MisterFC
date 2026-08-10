@@ -10,7 +10,7 @@ import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { StaffTeamSelector } from '@/ui/staff-team-selector';
 import { RoleChip } from './hub-parts';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-10b-2 — CUERPO TÉCNICO DE DIRECCIÓN (coordinador, SOLO LECTURA). Directorio del
@@ -20,6 +20,7 @@ import { t } from '@/i18n';
  * (mover staff es web). Caché team-scoped (`coord-cuerpo::${clubId}::${teamId}`).
  */
 export function CuerpoTecnicoDireccionScreen() {
+  const t = useTranslations('');
   const { activeClub } = useApp();
   const { loading: teamLoading, activeTeam } = useActiveStaffTeam();
   const clubId = activeClub?.club.id ?? null;

@@ -1,0 +1,210 @@
+clave,es,en,va,pantalla
+alineacion.app_bench_empty,Sin suplentes,No substitutes,Sense suplents,alineacion
+alineacion.bench,Banquillo,Bench,Banqueta,[reusada] alineacion
+alineacion.edit_hint,"Arrastra a un jugador a un hueco, a otro (cambio) o al banquillo.","Drag a player onto an empty slot, onto another (swap) or to the bench.","Arrossega un jugador a un buit, a un altre (canvi) o a la banqueta.",alineacion
+alineacion.formation,Formación,Formation,Formació,alineacion
+alineacion.no_permission,No tienes permiso para editar esta alineación.,You can’t edit this lineup.,No tens permís per editar aquesta alineació.,alineacion
+alineacion.none_yet,Aún no hay alineación para este partido,No lineup yet for this match,Encara no hi ha alineació per a este partit,alineacion
+alineacion.official,Oficial,Official,Oficial,alineacion
+alineacion.offline_write,Sin conexión: la alineación es de solo lectura.,Offline: the lineup is read-only.,Sense connexió: l'alineació és només de lectura.,alineacion
+alineacion.pick_match,Abre un partido y pulsa «Ver alineación»,Open a match and tap “View lineup”,Obri un partit i toca «Veure alineació»,alineacion
+alineacion.readonly_hint,Vista de solo lectura.,Read-only view.,Vista de només lectura.,alineacion
+alineacion.title,Alineación,Lineup,Alineació,[reusada] alineacion
+alineacion.unavailable,Esta alineación no está disponible,This lineup is not available,Esta alineació no està disponible,alineacion
+anuncios_staff.body_ph,Escribe el anuncio…,Write the announcement…,Escriu l’anunci…,anuncios
+anuncios_staff.cancel,Cancelar,Cancel,Cancel·lar,anuncios
+anuncios_staff.delete,Borrar,Delete,Esborrar,anuncios
+anuncios_staff.delete_error,No se pudo borrar. Inténtalo de nuevo.,Couldn’t delete. Try again.,No s’ha pogut esborrar. Torna-ho a provar.,anuncios
+anuncios_staff.delete_title,¿Borrar este anuncio?,Delete this announcement?,Vols esborrar este anunci?,anuncios
+anuncios_staff.edit,Editar,Edit,Editar,anuncios
+anuncios_staff.empty,No hay anuncios en este equipo,No announcements in this team,No hi ha anuncis en este equip,anuncios
+anuncios_staff.new,Nuevo anuncio,New announcement,Nou anunci,anuncios
+anuncios_staff.offline,Sin conexión: no puedes publicar ni editar ahora.,You’re offline: you can’t publish or edit right now.,Sense connexió: no pots publicar ni editar ara.,anuncios
+anuncios_staff.pinned,Fijar arriba,Pin to top,Fixar a dalt,anuncios
+anuncios_staff.publish,Publicar,Publish,Publicar,anuncios
+anuncios_staff.publish_error,No se pudo publicar. Inténtalo de nuevo.,Couldn't publish. Please try again.,No s'ha pogut publicar. Torna-ho a provar.,anuncios
+anuncios_staff.save,Guardar,Save,Guardar,anuncios
+anuncios_staff.save_error,No se pudo guardar. Inténtalo de nuevo.,Couldn't save. Please try again.,No s'ha pogut guardar. Torna-ho a provar.,anuncios
+anuncios_staff.title,Anuncios,Announcements,Anuncis,anuncios
+anuncios_staff.title_ph,Título,Title,Títol,anuncios
+asistencia_staff.clear,Quitar marca,Clear mark,Llevar la marca,asistencia-sesion
+asistencia_staff.list_empty,No hay entrenamientos recientes,No recent trainings,No hi ha entrenaments recents,asistencia
+asistencia_staff.marked_count,{marked}/{total} marcados,{marked}/{total} marked,{marked}/{total} marcats,asistencia
+asistencia_staff.no_permission,No puedes pasar lista en esta sesión,You can’t take attendance in this session,No pots passar llista en esta sessió,asistencia-sesion
+asistencia_staff.not_found,Sesión no encontrada,Session not found,Sessió no trobada,asistencia-sesion
+asistencia_staff.offline_write,Sin conexión: no puedes pasar lista ahora,You’re offline: you can’t take attendance right now,Sense connexió: no pots passar llista ara,asistencia-sesion
+asistencia_staff.others,Otros,Others,Altres,asistencia-sesion
+asistencia_staff.promoted,Subido,Called up,Pujat,asistencia-sesion
+asistencia_staff.roster_empty,Sin jugadores en el roster,No players in the roster,Sense jugadors en la plantilla,asistencia-sesion
+asistencia_staff.title,Pasar lista,Take attendance,Passar llista,asistencia
+attendance_code.ausente,Ausente,Absent,Absent,asistencia-sesion
+attendance_code.ausente_con_aviso,Ausente (con aviso),Absent (excused),Absent (amb avís),asistencia-sesion
+attendance_code.descanso,Descanso,Half-time,Descans,asistencia-sesion
+attendance_code.enfermo,Enfermo,Sick,Malalt,asistencia-sesion
+attendance_code.entreno_diferenciado,Entreno diferenciado,Individual training,Entrenament diferenciat,asistencia-sesion
+attendance_code.lesionado,Lesionado,Injured,Lesionat,asistencia-sesion
+attendance_code.partido_oficial,Partido oficial,Official match,Partit oficial,asistencia-sesion
+attendance_code.presente,Presente,Present,Present,asistencia-sesion
+attendance_code.sancionado,Sancionado,Sanctioned,Sancionat,asistencia-sesion
+attendance_code.viaje,Viaje,Travel,Viatge,asistencia-sesion
+convocatorias.resp_maybe,Quizá,Maybe,Potser,[reusada] convocatoria-detalle
+convocatorias.resp_no,No,No,No,convocatoria-detalle
+convocatorias.resp_pending,Pendiente,Pending,Pendent,[reusada] convocatoria-detalle
+convocatorias.resp_yes,Sí,Yes,Sí,convocatoria-detalle
+convocatorias.unavailable,Esta convocatoria no está disponible,This call-up is not available,Esta convocatòria no està disponible,[reusada] convocatoria-detalle
+convocatorias_staff.call_up,Convocar,Call up,Convocar,convocatoria-detalle
+convocatorias_staff.called_summary,{called}/{total} convocados,{called}/{total} called up,{called}/{total} convocats,convocatoria-detalle;convocatorias
+convocatorias_staff.clear,Quitar,Remove,Llevar,convocatoria-detalle
+convocatorias_staff.discard,Descartar,Discard,Descartar,convocatoria-detalle
+convocatorias_staff.draft,Borrador,Draft,Esborrany,convocatorias
+convocatorias_staff.list_empty,No hay partidos próximos,No upcoming matches,No hi ha partits pròxims,convocatorias
+convocatorias_staff.meeting_address,Dirección (opcional),Address (optional),Adreça (opcional),publish-callup-sheet
+convocatorias_staff.meeting_at,Hora de citación,Meeting time,Hora de citació,publish-callup-sheet
+convocatorias_staff.meeting_location,Lugar de quedada,Meeting place,Lloc de quedada,publish-callup-sheet
+convocatorias_staff.no_permission,No puedes convocar en esta convocatoria,You can't make call-ups for this match,No pots convocar en esta convocatòria,convocatoria-detalle
+convocatorias_staff.notes_general,Notas (opcional),Notes (optional),Notes (opcional),publish-callup-sheet
+convocatorias_staff.offline_write,Sin conexión: no puedes convocar ahora,Offline: you can't make call-ups right now,Sense connexió: no pots convocar ara,convocatoria-detalle
+convocatorias_staff.open_live,Directo,Live match,Directe,convocatoria-detalle
+convocatorias_staff.over_limit,Superas el máximo de convocados ({max}) de la modalidad,You're over the format's call-up limit ({max}),Superes el màxim de convocats ({max}) de la modalitat,convocatoria-detalle
+convocatorias_staff.pending_changes,Hay cambios sin publicar,You have unpublished changes,Hi ha canvis sense publicar,convocatoria-detalle
+convocatorias_staff.promoted,Subido,Called up,Pujat,convocatoria-detalle
+convocatorias_staff.pub_err_too_many_called_up,Superas el máximo de convocados por {overflow}. El tope es {max},You're {overflow} over the call-up limit. The cap is {max},Superes el màxim de convocats per {overflow}. El límit és {max},publish-callup-sheet
+convocatorias_staff.publish_cta,Publicar convocatoria,Publish callup,Publicar convocatòria,convocatoria-detalle
+convocatorias_staff.publish_desc,Las familias verán la convocatoria y recibirán un aviso.,Families will see the call-up and get a notification.,Les famílies veuran la convocatòria i rebran un avís.,publish-callup-sheet
+convocatorias_staff.publish_now,Publicar,Publish,Publicar,publish-callup-sheet
+convocatorias_staff.publish_title,Publicar convocatoria,Publish callup,Publicar convocatòria,publish-callup-sheet
+convocatorias_staff.published,Publicada,Published,Publicada,convocatorias
+convocatorias_staff.published_state,Convocatoria publicada,Callup published,Convocatòria publicada,convocatoria-detalle
+convocatorias_staff.publishing,Publicando…,Publishing…,Publicant…,convocatoria-detalle;publish-callup-sheet
+convocatorias_staff.republish_cta,Republicar,Republish,Republicar,convocatoria-detalle
+convocatorias_staff.responses_summary,Sí {yes} · Quizá {maybe} · No {no},Yes {yes} · Maybe {maybe} · No {no},Sí {yes} · Potser {maybe} · No {no},convocatorias
+convocatorias_staff.roster_empty,Sin jugadores en el roster,No players in the roster,Sense jugadors en la plantilla,convocatoria-detalle
+convocatorias_staff.title,Convocatorias,Call-ups,Convocatòries,convocatorias
+convocatorias_staff.transport_mode,Transporte (opcional),Transport (optional),Transport (opcional),publish-callup-sheet
+convocatorias_staff.transport_notes,Notas de transporte (opcional),Transport notes (optional),Notes de transport (opcional),publish-callup-sheet
+convocatorias_staff.view_lineup,Ver alineación,View lineup,Veure alineació,convocatoria-detalle
+cuerpo_direccion.empty,Este equipo no tiene cuerpo técnico,This team has no coaching staff,Aquest equip no té cos tècnic,cuerpo-tecnico-direccion
+cuerpo_direccion.no_team,No coordinas ningún equipo,You don't coordinate any team,No coordines cap equip,cuerpo-tecnico-direccion
+cuerpo_direccion.title,Cuerpo técnico de dirección,Management staff,Cos tècnic de direcció,cuerpo-tecnico-direccion
+cuerpo_tecnico.app_empty,Sin cuerpo técnico,No coaching staff,Sense cos tècnic,cuerpo-tecnico
+cuerpo_tecnico.title,Cuerpo técnico,Coaching staff,Cos tècnic,[reusada] cuerpo-tecnico
+directo.event.rival,Rival,Rival,Rival,[reusada] directo
+directo.events,Eventos,Events,Esdeveniments,directo
+directo.live,EN VIVO,LIVE,EN DIRECTE,[reusada] directo
+directo.minute,{minute}',{minute}',{minute}',directo
+directo.minute_added,{minute}+{added}',{minute}+{added}',{minute}+{added}',[reusada] directo
+directo.no_events,Sin eventos todavía,No events yet,Sense esdeveniments encara,[reusada] directo
+directo_control.adjust,Ajuste,Adjust,Ajust,directo
+directo_control.clock,Reloj,Clock,Rellotge,directo
+directo_control.end_period,Terminar parte,End half,Acabar la part,directo
+directo_control.finish,Finalizar partido,Finish match,Finalitzar el partit,directo
+directo_control.go_post_match,Ir al post-partido,Go to post-match,Anar al postpartit,directo
+directo_control.no_permission,No tienes permiso para controlar este partido.,You don't have permission to control this match.,No tens permís per a controlar este partit.,directo
+directo_control.offline_write,Sin conexión: el reloj no se puede cambiar.,Offline: the clock can't be changed.,Sense connexió: no es pot canviar el rellotge.,directo
+directo_control.pause,Pausar,Pause,Pausar,directo
+directo_control.paused,PAUSA,PAUSED,PAUSA,directo
+directo_control.period.extra_first,Prórroga (1ª),Extra time (1st),Pròrroga (1a),directo
+directo_control.period.extra_second,Prórroga (2ª),Extra time (2nd),Pròrroga (2a),directo
+directo_control.period.first_half,1ª parte,1st half,1a part,directo
+directo_control.period.penalties,Penaltis,Penalties,Penals,directo
+directo_control.period.second_half,2ª parte,2nd half,2a part,directo
+directo_control.pick_match,Abre un partido y pulsa «Directo»,Open a match and tap “Live”,Obri un partit i toca «Directe»,directo
+directo_control.reopen,Reabrir partido,Reopen match,Reobrir partit,directo
+directo_control.reopen_confirm,Confirmar reapertura,Confirm reopen,Confirmar reobertura,directo
+directo_control.resume,Reanudar,Resume,Reprendre,directo
+directo_control.start_match,Iniciar partido,Start match,Iniciar partit,directo
+directo_control.start_next,Empezar {period},Start {period},Començar {period},directo
+directo_control.title,Directo,Live match,Directe,directo
+directo_control.unavailable,Este directo no está disponible,This live match is not available,Aquest directe no està disponible,directo
+directo_entry.cancel,Cancelar,Cancel,Cancel·lar,quick-entry
+directo_entry.failed,{count} no se pudieron guardar,{count} couldn't be saved,{count} no s'han pogut guardar,directo
+directo_entry.no_bench,No hay suplentes disponibles,No substitutes available,No hi ha suplents disponibles,quick-entry
+directo_entry.no_field_players,No hay jugadores en el campo,No players on the pitch,No hi ha jugadors al camp,quick-entry
+directo_entry.pending,{count} sin subir · se subirán al reconectar,{count} not uploaded · will upload when back online,{count} sense pujar · es pujaran en reconnectar,directo
+directo_entry.pick_in,Entra…,In…,Entra…,quick-entry
+directo_entry.pick_out,Sale…,Out…,Ix…,quick-entry
+directo_entry.pick_player,Toca al jugador,Tap the player,Toca el jugador,quick-entry
+directo_entry.player,Jugador,Player,Jugador,directo;quick-entry
+directo_entry.register_rival,Registrar,Record,Registrar,quick-entry
+directo_entry.retry,Reintentar,Retry,Reintenta,directo
+directo_entry.rival_dorsal,Dorsal del rival (1–99),Opponent's squad number (1–99),Dorsal del rival (1–99),quick-entry
+directo_entry.title,Registrar evento,Record event,Registrar esdeveniment,quick-entry
+directo_entry.type_goal,Gol,Goal,Gol,quick-entry
+directo_entry.type_red,Roja,Red,Roja,quick-entry
+directo_entry.type_rival,Gol rival,Opponent goal,Gol rival,quick-entry
+directo_entry.type_sub,Cambio,Substitution,Canvi,quick-entry
+directo_entry.type_yellow,Amarilla,Yellow,Groga,quick-entry
+directo_entry.unsynced,Sin subir,Not uploaded,Sense pujar,directo
+equipo_detalle.no_roster,Sin jugadores en el equipo,No players in the team,Sense jugadors en l'equip,equipo-detalle
+equipo_detalle.pick_team,Elige un equipo,Choose a team,Tria un equip,equipo-detalle
+equipo_detalle.roster,Plantilla,Squad,Plantilla,equipo-detalle
+equipo_detalle.staff,Cuerpo técnico,Coaching staff,Cos tècnic,equipo-detalle
+equipo_detalle.stats,Estadísticas,Stats,Estadístiques,equipo-detalle
+equipo_detalle.title,Equipo,Team,Equip,equipo-detalle
+estadisticas_equipo.col_a,A,A,A,estadisticas-equipo
+estadisticas_equipo.col_g,G,G,G,estadisticas-equipo
+estadisticas_equipo.col_min,Min,Min,Min,estadisticas-equipo
+estadisticas_equipo.col_pj,PJ,GP,PJ,estadisticas-equipo
+estadisticas_equipo.empty,Sin datos de equipo,No team data,Sense dades d'equip,estadisticas-equipo
+estadisticas_equipo.player,Jugador,Player,Jugador,estadisticas-equipo
+estadisticas_equipo.title,Estadísticas,Stats,Estadístiques,estadisticas-equipo
+jugadores_consulta.empty,Este equipo no tiene jugadores,This team has no players,Aquest equip no té jugadors,jugadores-consulta
+jugadores_consulta.no_team,No coordinas ningún equipo,You don't coordinate any team,No coordines cap equip,jugadores-consulta
+jugadores_consulta.title,Jugadores,Players,Jugadors,jugadores-consulta
+mensajes.empty,No tienes conversaciones,You have no conversations,No tens converses,[reusada] mensajes
+mensajes.group_label,Equipo · {team},Team · {team},Equip · {team},[reusada] mensajes
+mensajes.title,Mensajes,Messages,Missatges,[reusada] mensajes
+mensajes_staff.create_error,No se pudo abrir la conversación. Inténtalo de nuevo.,Couldn’t open the conversation. Try again.,No s’ha pogut obrir la conversa. Torna-ho a provar.,mensaje-nuevo
+mensajes_staff.new,Nueva,New,Nova,mensajes
+mensajes_staff.new_title,Nueva conversación,New conversation,Nova conversa,mensaje-nuevo
+mensajes_staff.no_players,No hay jugadores disponibles,No players available,No hi ha jugadors disponibles,mensaje-nuevo
+mensajes_staff.no_teams,No hay equipos disponibles,No teams available,No hi ha equips disponibles,mensaje-nuevo
+mensajes_staff.offline,Sin conexión: no puedes iniciar una conversación ahora.,You’re offline: you can’t start a conversation right now.,Sense connexió: no pots iniciar una conversa ara.,mensaje-nuevo
+mensajes_staff.search,Buscar…,Search…,Cercar…,mensaje-nuevo
+mensajes_staff.tab_player,Jugador,Player,Jugador,mensaje-nuevo
+mensajes_staff.tab_team,Equipo,Team,Equip,mensaje-nuevo
+mis_equipos.empty,No eres cuerpo técnico de ningún equipo,You're not part of any team's coaching staff,No formes part del cos tècnic de cap equip,mis-equipos
+post_partido.app_no_players,Ningún jugador participó todavía,No player has played yet,Cap jugador ha participat encara,post-partido
+post_partido.app_reopen_stage,Reabrir valoraciones,Reopen ratings,Reobrir valoracions,post-partido
+post_partido.app_title,Post-partido,Post-match,Post-partit,post-partido
+post_partido.clear,Borrar,Clear,Esborrar,[reusada] post-partido
+post_partido.comment_ph,Comentario (opcional),Comment (optional),Comentari (opcional),post-partido
+post_partido.complete_stage,Completar valoraciones,Complete ratings,Completar valoracions,post-partido
+post_partido.go_directo,Ir al directo,Go to Live,Anar al directe,post-partido
+post_partido.mvp,MVP,MVP,MVP,[reusada] post-partido
+post_partido.no_permission,No tienes permiso para valorar este partido.,You don't have permission to rate this match.,No tens permís per a valorar este partit.,post-partido
+post_partido.no_stats,Sin stats (no participó),No stats (didn't play),Sense estadístiques (no va participar),post-partido
+post_partido.not_closed_warning,El partido no está finalizado. Termínalo en el directo para valorar.,The match isn't finished. Finish it in Live to rate players.,El partit no està finalitzat. Acaba'l en el directe per a valorar.,post-partido
+post_partido.offline_write,Sin conexión: no puedes valorar ahora.,Offline: you can't rate players now.,Sense connexió: no pots valorar ara.,post-partido
+post_partido.pick_match,Abre un partido finalizado,Open a finished match,Obri un partit finalitzat,post-partido
+post_partido.players,Jugadores,Players,Jugadors,post-partido
+post_partido.reopen_hint,"Para corregir el resultado o un evento, reabre el partido y edítalo en el directo.","To fix the result or an event, reopen the match and edit it in Live.","Per a corregir el resultat o un esdeveniment, reobri el partit i edita'l en el directe.",post-partido
+post_partido.reopen_match,Reabrir partido,Reopen match,Reobrir partit,post-partido
+post_partido.reopen_match_confirm,Confirmar reapertura,Confirm reopening,Confirmar reobertura,post-partido
+post_partido.save,Guardar,Save,Guardar,[reusada] post-partido
+post_partido.saving,Guardando…,Saving…,Guardant…,post-partido
+post_partido.stage_done,Valoraciones completadas,Ratings completed,Valoracions completades,post-partido
+post_partido.stage_open,Valoraciones pendientes,Ratings pending,Valoracions pendents,post-partido
+post_partido.stat_assists,A,A,A,post-partido
+post_partido.stat_goals,G,G,G,post-partido
+post_partido.stat_min,Min,Min,Min,post-partido
+post_partido.stat_shots,Tiros,Shots,Xuts,post-partido
+post_partido.stat_starter,Titular,Starter,Titular,post-partido
+post_partido.team_eval,Valoración del equipo,Team rating,Valoració de l'equip,post-partido
+post_partido.unavailable,Este post-partido no está disponible,This post-match is not available,Este postpartit no està disponible,post-partido
+sesion_dia.empty,No hay sesiones publicadas,No published sessions,No hi ha sessions publicades,sesion-del-dia
+sesion_dia.title,Sesiones,Sessions,Sessions,sesion-del-dia
+sesion_dia.untitled,Sesión,Session,Sessió,sesion-del-dia
+staff_home.no_upcoming,Sin eventos próximos,No upcoming events,Sense esdeveniments pròxims,inicio
+staff_home.tile_attendance,Asistencia,Assist,Assistència,inicio
+staff_home.tile_calendar,Calendario,Calendar,Calendari,inicio
+staff_home.tile_callups,Convocatorias,Call-ups,Convocatòries,inicio
+staff_home.tile_directos,Directos,Live,Directes,inicio
+staff_home.tile_sessions,Sesiones,Sessions,Sessions,inicio
+staff_home.tile_teams,Mis equipos,My teams,Els meus equips,inicio
+staff_home.title,Inicio,Home,Inici,inicio
+staff_home.unpublished_callups,Convocatorias sin publicar,Call-ups not published,Convocatòries sense publicar,inicio
+staff_home.upcoming,Próximos eventos,Upcoming events,Pròxims esdeveniments,inicio
+transport_mode.club,Club,Club,Club,publish-callup-sheet
+transport_mode.individual,Individual,Individual,Individual,publish-callup-sheet
+transport_mode.mixed,Mixto,Mixed,Mixt,publish-callup-sheet

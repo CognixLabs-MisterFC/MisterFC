@@ -10,7 +10,7 @@ import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-7a — Lista de sesiones para PASAR LISTA (staff, SOLO LECTURA aquí). Entrena-
@@ -20,6 +20,7 @@ import { t } from '@/i18n';
  * core (`getRecentTrainingsFromClient`). Caché club-scoped (id en la key).
  */
 export function AsistenciaListScreen() {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { user } = useSession();
   const router = useRouter();

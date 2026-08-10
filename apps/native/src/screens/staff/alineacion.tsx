@@ -22,7 +22,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { LineupBoard, type DropTargetLite } from '@/ui/lineup-field';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -45,6 +45,7 @@ const ROLE_TO_SHORT: Record<string, string> = {
 };
 
 export function AlineacionScreen({ eventId }: { eventId: string | null }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const online = useIsOnline();
   const clubId = activeClub?.club.id ?? null;
@@ -312,7 +313,7 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
               savingIds={savingIds}
               chipColor={accent}
               benchTitle={t('alineacion.bench')}
-              benchEmptyText={t('alineacion.bench_empty')}
+              benchEmptyText={t('alineacion.app_bench_empty')}
               onDrop={onDrop}
               hoverCode={hover.code}
               hoverBench={hover.bench}

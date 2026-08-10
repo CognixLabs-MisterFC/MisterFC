@@ -27,7 +27,7 @@ import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { t } from '@/i18n';
+import { useTranslations } from '@/locale/provider';
 
 /**
  * O2-7a — Pasar lista de UNA sesión (staff). Roster + estado actual; cada marca es
@@ -50,6 +50,7 @@ type AttendanceView = {
 };
 
 export function AsistenciaSesionScreen({ eventId }: { eventId: string | null }) {
+  const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { user } = useSession();
   const online = useIsOnline();
@@ -302,6 +303,7 @@ function OthersModal({
   onClear: () => void;
   onClose: () => void;
 }) {
+  const t = useTranslations('');
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable
