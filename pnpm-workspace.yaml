@@ -9,3 +9,6 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - expo-splash-screen@57.0.6
