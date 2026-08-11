@@ -2,7 +2,11 @@
 // (supabase-js usa URL/URLSearchParams, incompletos en RN/Hermes). Primer import.
 import 'react-native-url-polyfill/auto';
 import '../global.css';
+// Sentry (O2-12b): inicializa como EFECTO al importar, lo antes posible tras los
+// polyfills, para capturar también errores del arranque de los providers.
+import '@/lib/sentry';
 
+import * as Sentry from '@sentry/react-native';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -14,7 +18,7 @@ import { ActivePlayerProvider } from '@/auth/active-player';
 import { SessionGuard } from '@/nav/session-guard';
 import { NotificationsProvider } from '@/notifications/notifications-provider';
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     // GestureHandlerRootView (O2-8b): raíz obligatoria para los gestos nativos
     // (drag de la alineación). Envuelve toda la app; flex:1 para ocupar la pantalla.
@@ -38,3 +42,7 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+// Sentry.wrap añade el ErrorBoundary de Sentry y el contexto de navegación/toques.
+// Es un passthrough si Sentry no llegó a inicializarse (DSN ausente).
+export default Sentry.wrap(RootLayout);

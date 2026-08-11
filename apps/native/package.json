@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@misterfc/core": "workspace:*",
+    "@sentry/react-native": "~7.11.0",
     "@supabase/supabase-js": "^2.106.2",
     "expo": "~57.0.8",
     "expo-constants": "~57.0.7",
