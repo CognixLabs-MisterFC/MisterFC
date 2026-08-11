@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { ScrollView, Pressable, Text, View } from 'react-native';
 import {
   getPlayerFichaFromClient,
+  getPlayerBadgesFromClient,
+  getPlayerCareerFromClient,
   playerScopedCacheKey,
   type PlayerFicha,
+  type Badge,
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
@@ -34,6 +37,25 @@ export function MiFichaScreen() {
     `${playerScopedCacheKey('ficha', clubId ?? 'none', playerId ?? 'none')}::${season ?? 'def'}`,
     (sb) =>
       playerId ? getPlayerFichaFromClient(sb, playerId, { season }) : Promise.resolve(null),
+  );
+
+  // Badges (Logros): se calculan CON el roster del equipo (comparativa), igual que
+  // la web (getPlayerBadgesFromClient). Son de la temporada ACTIVA (no dependen del
+  // selector de temporada), por eso la clave NO lleva season. careerMatches sale de
+  // la carrera del jugador (misma fuente que la web). RLS directa (policy compañero
+  // de equipo en match_player_stats); si el club no expone valoraciones el core no
+  // emite las badges de rating (idéntico a la web).
+  const { data: badges } = useCached<Badge[]>(
+    playerScopedCacheKey('badges', clubId ?? 'none', playerId ?? 'none'),
+    async (sb) => {
+      if (!playerId || !clubId) return [];
+      const career = await getPlayerCareerFromClient(sb, playerId);
+      return getPlayerBadgesFromClient(sb, {
+        playerId,
+        clubId,
+        careerMatches: career.totals.stats.matches,
+      });
+    },
   );
 
   if (!playerId) return <EmptyState message={t('child.none')} />;
@@ -84,6 +106,17 @@ export function MiFichaScreen() {
               );
             })}
           </View>
+        ) : null}
+
+        {/* Logros (badges) — mismos badges/orden/textos que la web (catálogo compartido). */}
+        {badges && badges.length > 0 ? (
+          <Section title={t('badges.title')}>
+            <View className="flex-row flex-wrap gap-2">
+              {badges.map((b) => (
+                <BadgeChip key={`${b.kind}-${b.level ?? 0}`} badge={b} t={t} accent={accent} />
+              ))}
+            </View>
+          </Section>
         ) : null}
 
         {/* Stats de la temporada */}
@@ -209,5 +242,42 @@ function Ratio({ label, v, pct: isPct }: { label: string; v: number | null; pct?
     <Text className="text-xs text-zinc-500">
       {label}: <Text className="font-semibold text-[#0F1B2E]">{text}</Text>
     </Text>
+  );
+}
+
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+
+/** Sufijo de nivel para las escalonadas (mismo criterio que la web); null para el resto. */
+function levelSuffix(badge: Badge): string | null {
+  if (badge.kind === 'veteran' && badge.level) return ROMAN[badge.level] ?? '';
+  if (badge.kind === 'mvp_match') return `×${badge.value}`;
+  return null;
+}
+
+/** Chip de un logro: nombre del catálogo compartido (`badges.name.<kind>`) + nivel. */
+function BadgeChip({
+  badge,
+  t,
+  accent,
+}: {
+  badge: Badge;
+  t: (key: string) => string;
+  accent: string;
+}) {
+  const suffix = levelSuffix(badge);
+  return (
+    <View
+      className="flex-row items-center gap-1.5 rounded-full border px-3 py-1"
+      style={{ borderColor: `${accent}4D`, backgroundColor: `${accent}1A` }}
+    >
+      <Text className="text-sm font-medium" style={{ color: accent }}>
+        {t(`badges.name.${badge.kind}`)}
+      </Text>
+      {suffix ? (
+        <Text className="text-sm font-semibold tabular-nums" style={{ color: accent }}>
+          {suffix}
+        </Text>
+      ) : null}
+    </View>
   );
 }
