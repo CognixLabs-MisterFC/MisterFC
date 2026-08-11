@@ -7,19 +7,37 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "ios": {
       "bundleIdentifier": "com.misterfc.app",
       "supportsTablet": true
     },
     "android": {
       "package": "com.misterfc.app",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#438832"
+      }
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       "expo-sharing",
       "@sentry/react-native",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#438832",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#438832"
+          }
+        }
+      ],
       [
         "expo-notifications",
         {
