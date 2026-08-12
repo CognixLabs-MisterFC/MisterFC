@@ -6,6 +6,14 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@misterfc/core'],
+  // Legal público: los .md (src/content/legal/) se leen con fs.readFileSync en el
+  // Server Component; se fuerzan en el trace de despliegue para que Vercel los
+  // empaquete (si no, la lectura fallaría en runtime).
+  outputFileTracingIncludes: {
+    '/[locale]/legal/privacidad': ['./src/content/legal/privacidad.md'],
+    '/[locale]/legal/eliminacion-cuenta': ['./src/content/legal/eliminacion-cuenta.md'],
+    '/[locale]/legal/terminos': ['./src/content/legal/terminos.md'],
+  },
   // F14-3c — el accept multi-hijo sube las fotos de los hijos por Server Action
   // (server-side con admin, porque el tutor aún no está vinculado). Cada foto
   // puede pesar hasta PLAYER_PHOTO_MAX_BYTES (2MB) y hay varias por lote; el
@@ -25,6 +33,14 @@ const nextConfig: NextConfig = {
   // los redirects de next.config se evalúan antes del middleware de next-intl.
   async redirects() {
     return [
+      // Legal público: URLs LIMPIAS sin locale (registradas en Google Play/App
+      // Store) → variante /es/ (los textos son español). Los redirects de
+      // next.config se evalúan ANTES del middleware i18n → determinista y estable.
+      {
+        source: '/legal/:path*',
+        destination: '/es/legal/:path*',
+        permanent: true,
+      },
       {
         source: '/:locale/categorias',
         destination: '/:locale/equipos',

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { getCurrentUser } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { LegalFooter } from '@/components/legal/legal-footer';
 import { SigninForm } from './signin-form';
 
 type Props = {
@@ -37,6 +38,7 @@ export default async function SigninPage({ params }: Props) {
             {t('forgot_password_link')}
           </Link>
         </div>
+        <LegalFooter locale={locale} />
       </div>
     </main>
   );

@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { createSupabaseServerClient, getCurrentUser } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { ClubLogo } from '@/components/ui/club-logo';
+import { LegalFooter } from '@/components/legal/legal-footer';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -80,6 +81,8 @@ export default async function PortadaClubesPage({ params }: Props) {
             ))}
           </ul>
         )}
+
+        <LegalFooter locale={locale} />
       </div>
     </main>
   );
