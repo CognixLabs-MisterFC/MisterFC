@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Loader2, Mail } from 'lucide-react';
@@ -52,11 +52,24 @@ export function InvitePendingButton({
   const [open, setOpen] = useState(false);
   const [result, setResult] = useState<BatchInviteResult | null>(null);
   const [pending, startTransition] = useTransition();
+  // Cerrojo síncrono contra el doble envío. `disabled={pending}` sólo cubre el
+  // aspecto visual: `pending` es un valor de render (stale dentro de la clausura
+  // y no true hasta el siguiente render), así que un doble-clic rápido o un
+  // Enter con teclado podría disparar `send` dos veces antes de que React marque
+  // pending y deshabilite el botón. El ref se lee/escribe en el instante y bloquea
+  // el segundo disparo → una sola llamada a inviteBatch = un solo email/cuota.
+  const sendingRef = useRef(false);
 
   function send() {
+    if (sendingRef.current) return;
+    sendingRef.current = true;
     startTransition(async () => {
-      const res = await inviteBatch(locale, clubId, playerIds);
-      setResult(res);
+      try {
+        const res = await inviteBatch(locale, clubId, playerIds);
+        setResult(res);
+      } finally {
+        sendingRef.current = false;
+      }
     });
   }
 
