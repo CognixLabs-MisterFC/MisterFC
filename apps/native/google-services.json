@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "34172906246",
+    "project_id": "misterfc-41528",
+    "storage_bucket": "misterfc-41528.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:34172906246:android:e559701297ee46ebafcc87",
+        "android_client_info": {
+          "package_name": "com.misterfc.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_Otu83HGqUPUK-0EYZlX3cjjy6MNXxf0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
