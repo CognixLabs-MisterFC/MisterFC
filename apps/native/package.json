@@ -52,6 +52,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
+    "@sentry/cli": "2.58.4",
     "@types/react": "^19",
     "babel-preset-expo": "~57.0.4",
     "eslint": "^9",
