@@ -24,7 +24,13 @@
       "expo-router",
       "expo-secure-store",
       "expo-sharing",
-      "@sentry/react-native",
+      [
+        "@sentry/react-native",
+        {
+          "organization": "mister-fc",
+          "project": "misterfc-native"
+        }
+      ],
       [
         "expo-splash-screen",
         {
