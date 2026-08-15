@@ -5,6 +5,15 @@ web-build/
 # expo-env.d.ts lo autogenera Expo (expo start/prebuild); no se versiona.
 expo-env.d.ts
 
+# Carpetas nativas generadas por prebuild (CNG): app.json es la fuente de verdad.
+# Se regeneran con `expo prebuild`; NO se versionan (igual que hace EAS en la nube).
+/android/
+/ios/
+
+# Variables locales para el build de QA en la máquina (build-apk.sh). Contiene las
+# EXPO_PUBLIC_* y NUNCA se versiona (ver build-apk.sh y el PR del flujo local).
+.env.local
+
 # Native
 *.orig.*
 *.jks
