@@ -37,6 +37,7 @@ import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { useEventQueue } from '@/directo/use-event-queue';
 import { QuickEntry } from '@/directo/quick-entry';
 import { uuidv4 } from '@/lib/uuid';
@@ -177,7 +178,10 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
       const r = await fn(supabase, input);
       setBusy(false);
       if (!r.ok) setErrorKey(errorKeyFor(r.error));
-      else refresh(); // refleja lo GUARDADO
+      else {
+        refresh(); // refleja lo GUARDADO
+        void invalidateAfterWrite('matchState');
+      }
     },
     [eventId, editable, refresh],
   );

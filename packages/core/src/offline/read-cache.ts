@@ -1,18 +1,23 @@
 /**
  * O2-5 — Caché de LECTURA para offline (ADR-0020 Decisión 5).
  *
- * Política CACHE-FIRST-CON-REVALIDACIÓN, pura y con el almacenamiento INYECTADO
+ * Política STALE-WHILE-REVALIDATE, pura y con el almacenamiento INYECTADO
  * (`CacheBacking`): así el criterio se testea en core sin tocar el disco, y la
  * app nativa provee el backing real (secure-store cifrado, exigido para datos de
  * menores/médicos — ver `apps/native`). Web no la usa.
  *
  * Reglas de `readThrough`:
- *   - ONLINE  → intenta `fetcher`; si va, guarda en caché y devuelve fresco;
- *               si el fetch FALLA (red intermitente), cae a lo cacheado.
- *   - OFFLINE → devuelve directamente lo cacheado (o `null` si no hay nada).
+ *   - OFFLINE (sin radio) → devuelve directamente lo cacheado (o `null`) y marca
+ *     `fromCache=true` (banner "sin conexión"). No intenta red.
+ *   - ONLINE con CACHÉ → devuelve lo cacheado DE INMEDIATO (`fromCache=false`) y
+ *     revalida EN SEGUNDO PLANO; cuando llega lo fresco se avisa por
+ *     `onRevalidated` para que la UI se actualice. Si la revalidación falla, se
+ *     mantiene la caché ya mostrada y `onRevalidated` marca `fromCache=true`.
+ *   - ONLINE sin CACHÉ → primera carga: BLOQUEA en `fetcher` (no hay nada que
+ *     mostrar); si va, cachea y devuelve fresco; si falla, `null` + banner.
  *
- * `fromCache` indica de dónde salió el dato (para que la UI marque "sin conexión"
- * / "datos guardados"). NO hay cola de escritura: esto es SOLO lectura.
+ * `fromCache` indica si la UI debe pintar el banner "sin conexión / datos
+ * guardados". NO hay cola de escritura: esto es SOLO lectura.
  */
 
 /** Almacenamiento clave→string que provee la app (p.ej. secure-store). */
@@ -25,7 +30,7 @@ export type CacheBacking = {
 export type ReadThroughResult<T> = {
   /** Dato resuelto (fresco o cacheado); `null` si offline y sin caché, o fetch fallido sin caché. */
   data: T | null;
-  /** true si el dato vino de la caché (offline, o fallback por fetch fallido). */
+  /** true si la UI debe pintar el banner (offline, o revalidación/fetch fallidos). */
   fromCache: boolean;
 };
 
@@ -149,22 +154,63 @@ export async function cacheClear(
 export async function readThrough<T>(
   key: string,
   fetcher: () => Promise<T>,
-  opts: { isOnline: boolean; backing: CacheBacking }
+  opts: {
+    isOnline: boolean;
+    backing: CacheBacking;
+    /**
+     * STALE-WHILE-REVALIDATE: cuando había caché y se devolvió de inmediato, la
+     * revalidación en 2º plano llama aquí con el resultado. Éxito → `{ data:
+     * fresco, fromCache: false }`. Fallo (red intermitente) → `{ data: cacheado,
+     * fromCache: true }` (para el banner). No se invoca en el resto de caminos
+     * (offline, o primera carga sin caché que ya bloquea).
+     */
+    onRevalidated?: (result: ReadThroughResult<T>) => void;
+  }
 ): Promise<ReadThroughResult<T>> {
-  const { isOnline, backing } = opts;
+  const { isOnline, backing, onRevalidated } = opts;
 
+  // OFFLINE duro (sin radio): servir caché y banner, sin gastar red.
   if (!isOnline) {
     const cached = await cacheGet<T>(backing, key);
     return { data: cached, fromCache: true };
   }
 
+  const cached = await cacheGet<T>(backing, key);
+
+  // STALE-WHILE-REVALIDATE: hay caché → se devuelve YA y se revalida por detrás.
+  // Online ⇒ fromCache=false (no banner): no estamos offline, solo refrescando.
+  if (cached !== null) {
+    void revalidate(key, fetcher, backing, onRevalidated);
+    return { data: cached, fromCache: false };
+  }
+
+  // Sin caché: primera carga, hay que BLOQUEAR (no hay nada que mostrar aún).
   try {
     const fresh = await fetcher();
     await cacheSet(backing, key, fresh);
     return { data: fresh, fromCache: false };
   } catch {
-    // Red intermitente / fetch fallido → cae a lo último cacheado si existe.
-    const cached = await cacheGet<T>(backing, key);
-    return { data: cached, fromCache: true };
+    // Falló y no hay caché → null. fromCache=true para que salga el banner.
+    const fallback = await cacheGet<T>(backing, key);
+    return { data: fallback, fromCache: true };
+  }
+}
+
+/** Revalidación en 2º plano del SWR: refresca la caché y avisa por `onRevalidated`. */
+async function revalidate<T>(
+  key: string,
+  fetcher: () => Promise<T>,
+  backing: CacheBacking,
+  onRevalidated?: (result: ReadThroughResult<T>) => void
+): Promise<void> {
+  try {
+    const fresh = await fetcher();
+    await cacheSet(backing, key, fresh);
+    onRevalidated?.({ data: fresh, fromCache: false });
+  } catch {
+    // Revalidación fallida (red intermitente): se mantiene la caché ya mostrada
+    // y se avisa para que la UI pinte el banner "sin conexión".
+    const stale = await cacheGet<T>(backing, key);
+    onRevalidated?.({ data: stale, fromCache: true });
   }
 }

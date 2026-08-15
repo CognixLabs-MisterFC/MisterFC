@@ -13,6 +13,7 @@ import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
@@ -74,6 +75,8 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
     if (res.ok) {
       setSaveState('saved');
       refresh();
+      // La convocatoria deja de estar "pendiente": refresca inicio, listas y detalle.
+      void invalidateAfterWrite('respondCallup');
     } else if (res.code === '42501' || res.noUser) {
       setSaveState('forbidden');
     } else {

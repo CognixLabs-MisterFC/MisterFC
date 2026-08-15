@@ -22,3 +22,23 @@ export function isOnlineFromState(state: NetworkStateInput | null | undefined): 
   if (state.isInternetReachable === false) return false;
   return true;
 }
+
+/**
+ * Criterio de conectividad para LECTURAS con caché (SWR).
+ *
+ * MÁS PERMISIVO que `isOnlineFromState` a propósito: solo se considera OFFLINE
+ * cuando NO hay radio (`isConnected === false`). `isInternetReachable` se IGNORA
+ * aquí porque en Android puede reportar `false` transitoriamente en el arranque
+ * (antes de que resuelva la sonda de alcanzabilidad); si eso condenara la lectura
+ * a la caché, la pantalla mostraría datos viejos "para siempre". La alcanzabilidad
+ * REAL se comprueba con el propio fetch: si falla, `readThrough` cae a la caché y
+ * marca el banner. Así una sonda que parpadea a `false` ya no fija la pantalla en
+ * caché — el siguiente intento (SWR/foco) reintenta.
+ *
+ * `isOnlineFromState` (más estricto, incluye reachability) se mantiene para el
+ * GATE DE ESCRITURAS (`useIsOnline`): una escritura sí quiere reachability antes
+ * de intentarse, y su fallo no es recuperable como el de una lectura.
+ */
+export function canAttemptFetch(state: NetworkStateInput | null | undefined): boolean {
+  return state?.isConnected !== false;
+}

@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { LineupBoard, type DropTargetLite } from '@/ui/lineup-field';
 import { useTranslations } from '@/locale/provider';
@@ -124,6 +125,8 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
         }
       }
       setSavingIds(new Set());
+      // La alineación guardada se ve en el campo del directo (familia/seguidor).
+      void invalidateAfterWrite('setLineup');
     },
     [lineupId],
   );
@@ -183,6 +186,7 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
       }
       setBusyFormation(false);
       refresh(); // refleja lo GUARDADO
+      void invalidateAfterWrite('setLineup');
     },
     [editable, lineupId, busyFormation, data, positions, refresh],
   );

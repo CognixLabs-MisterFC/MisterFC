@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
@@ -137,7 +138,10 @@ export function PostMatchScreen({ eventId }: { eventId: string | null }) {
       });
       setBusy(null);
       if (!r.ok) setErrorKey(errorKeyFor(r.error));
-      else refresh();
+      else {
+        refresh();
+        void invalidateAfterWrite('postMatch');
+      }
     },
     [eventId, editable, drafts, refresh],
   );
@@ -153,7 +157,10 @@ export function PostMatchScreen({ eventId }: { eventId: string | null }) {
       });
       setBusy(null);
       if (!r.ok) setErrorKey(errorKeyFor(r.error));
-      else refresh();
+      else {
+        refresh();
+        void invalidateAfterWrite('postMatch');
+      }
     },
     [eventId, editable, refresh],
   );
@@ -169,7 +176,10 @@ export function PostMatchScreen({ eventId }: { eventId: string | null }) {
     });
     setBusy(null);
     if (!r.ok) setErrorKey(errorKeyFor(r.error));
-    else refresh();
+    else {
+      refresh();
+      void invalidateAfterWrite('postMatch');
+    }
   }, [eventId, editable, teamDraft, refresh]);
 
   const removeTeam = useCallback(async () => {
@@ -179,7 +189,10 @@ export function PostMatchScreen({ eventId }: { eventId: string | null }) {
     const r = await deleteTeamEvaluationFromClient(supabase, { event_id: eventId });
     setBusy(null);
     if (!r.ok) setErrorKey(errorKeyFor(r.error));
-    else refresh();
+    else {
+      refresh();
+      void invalidateAfterWrite('postMatch');
+    }
   }, [eventId, editable, refresh]);
 
   const setStageDone = useCallback(
@@ -190,7 +203,10 @@ export function PostMatchScreen({ eventId }: { eventId: string | null }) {
       const r = await setPostMatchDoneFromClient(supabase, { event_id: eventId, done });
       setBusy(null);
       if (!r.ok) setErrorKey(errorKeyFor(r.error));
-      else refresh();
+      else {
+        refresh();
+        void invalidateAfterWrite('postMatch');
+      }
     },
     [eventId, editable, refresh],
   );

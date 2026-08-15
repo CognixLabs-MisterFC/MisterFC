@@ -18,6 +18,7 @@ import { useSession } from '@/auth/session';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
@@ -67,6 +68,7 @@ export function MensajeDetalleScreen({
         });
         if (!res.ok) return false;
         refresh();
+        void invalidateAfterWrite('sendMessage');
         return true;
       } catch {
         return false;
@@ -84,7 +86,9 @@ export function MensajeDetalleScreen({
       conversationId,
       userId,
       new Date().toISOString(),
-    );
+    ).then(() => {
+      void invalidateAfterWrite('markConversationRead');
+    });
   }, [online, conversationId, userId]);
 
   if (!conversationId) return <EmptyState message={t('mensajes.unavailable')} />;

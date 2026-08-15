@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
@@ -144,7 +145,10 @@ function FollowList({ clubId }: { clubId: string | null }) {
       setBusy(team.teamId);
       const res = await setTeamFollowFromClient(supabase, team.teamId, !team.following);
       setBusy(null);
-      if ('ok' in res) refresh();
+      if ('ok' in res) {
+        refresh();
+        void invalidateAfterWrite('setTeamFollow');
+      }
     },
     [online, refresh],
   );

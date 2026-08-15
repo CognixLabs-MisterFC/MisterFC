@@ -26,6 +26,7 @@ import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
 import { PushSettingsCard } from '@/notifications/push-settings-card';
 import { webBaseUrl } from '@/lib/server-api';
@@ -175,6 +176,7 @@ function AvatarCard({
     if (res.success) {
       setPath(objectPath);
       onChanged();
+      void invalidateAfterWrite('updateProfile');
     } else {
       setError(t('errors.avatar_upload_failed'));
     }
@@ -268,6 +270,7 @@ function DataCard({
     if (res.success) {
       setState('saved');
       onSaved();
+      void invalidateAfterWrite('updateProfile');
     } else {
       setState('error');
       setErrorKey(res.error);
@@ -321,7 +324,10 @@ function LanguageCard({
     //    para no revertir edits sin guardar del formulario de datos.
     if (online) {
       const res = await updateProfileFromClient(supabase, userId, { locale: l });
-      if (res.success) onSaved();
+      if (res.success) {
+        onSaved();
+        void invalidateAfterWrite('updateProfile');
+      }
     }
   }
 

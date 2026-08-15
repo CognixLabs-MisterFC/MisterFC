@@ -30,6 +30,7 @@ import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { ChildSelector } from '@/ui/child-selector';
 import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
@@ -185,8 +186,10 @@ function PhotoCard({
     }
     const res = await setPlayerPhotoPathFromClient(supabase, playerId, objectPath);
     setBusy(false);
-    if ('ok' in res) onChanged();
-    else setError(t('gestion.photo_err_generic'));
+    if ('ok' in res) {
+      onChanged();
+      void invalidateAfterWrite('setPlayerPhoto');
+    } else setError(t('gestion.photo_err_generic'));
   }
 
   async function remove() {
@@ -195,8 +198,10 @@ function PhotoCard({
     setError(null);
     const res = await clearPlayerPhotoFromClient(supabase, playerId);
     setBusy(false);
-    if ('ok' in res) onChanged();
-    else setError(t('gestion.photo_err_generic'));
+    if ('ok' in res) {
+      onChanged();
+      void invalidateAfterWrite('setPlayerPhoto');
+    } else setError(t('gestion.photo_err_generic'));
   }
 
   return (
@@ -261,8 +266,10 @@ function MedicalCard({
       emergency_contact: emergency,
     });
     setBusy(false);
-    if ('ok' in res) setState('saved');
-    else setState(res.error === 'forbidden' ? 'forbidden' : 'error');
+    if ('ok' in res) {
+      setState('saved');
+      void invalidateAfterWrite('setPlayerMedical');
+    } else setState(res.error === 'forbidden' ? 'forbidden' : 'error');
   }
 
   if (loading) {
