@@ -23,7 +23,7 @@ const MESSAGES_POLL_MS = 5000;
 /**
  * O2-5 E2a — Hilo de EQUIPO (SOLO LECTURA). Leer + polling + marcar leído (upsert
  * team_conversation_reads, permitido por RLS). El ENVÍO es E2b: composer
- * deshabilitado. Caché por hilo de equipo (team-thread::${id}).
+ * deshabilitado. Caché por hilo de equipo (team-thread.${id}).
  */
 export function MensajeEquipoScreen({
   teamConversationId,

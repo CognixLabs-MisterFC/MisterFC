@@ -54,11 +54,11 @@ function mockClient(config: {
 
 describe('clubScopedCacheKey (norma de keys O2-5)', () => {
   it('mete el clubId en la key; club distinto → key distinta', () => {
-    expect(clubScopedCacheKey('calendar', 'C1')).toBe('calendar::C1');
+    expect(clubScopedCacheKey('calendar', 'C1')).toBe('calendar.C1');
     expect(clubScopedCacheKey('calendar', 'C1')).not.toBe(
       clubScopedCacheKey('calendar', 'C2'),
     );
-    expect(clubScopedCacheKey('directos', 'C1')).toBe('directos::C1');
+    expect(clubScopedCacheKey('directos', 'C1')).toBe('directos.C1');
   });
 });
 

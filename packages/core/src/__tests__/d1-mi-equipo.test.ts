@@ -39,11 +39,11 @@ function tableClient(
 
 describe('D1 · teamScopedCacheKey (norma: id en la key)', () => {
   it('mete clubId Y teamId; cambiar de equipo → key distinta', () => {
-    expect(teamScopedCacheKey('plantilla', 'C1', 'T1')).toBe('plantilla::C1::T1');
+    expect(teamScopedCacheKey('plantilla', 'C1', 'T1')).toBe('plantilla.C1.T1');
     expect(teamScopedCacheKey('plantilla', 'C1', 'T1')).not.toBe(
       teamScopedCacheKey('plantilla', 'C1', 'T2'),
     );
-    expect(teamScopedCacheKey('staff', 'C1', 'T1')).toBe('staff::C1::T1');
+    expect(teamScopedCacheKey('staff', 'C1', 'T1')).toBe('staff.C1.T1');
     // El clubId también entra en la key: mismo equipo, club distinto → key distinta.
     expect(teamScopedCacheKey('plantilla', 'C1', 'T1')).not.toBe(
       teamScopedCacheKey('plantilla', 'C2', 'T1'),

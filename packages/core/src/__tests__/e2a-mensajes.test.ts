@@ -39,11 +39,11 @@ function client(
 
 describe('E2a · keys de caché', () => {
   it('inbox profile-scoped; hilos por id (thread / team-thread)', () => {
-    expect(profileScopedCacheKey('inbox', 'U1')).toBe('inbox::U1');
+    expect(profileScopedCacheKey('inbox', 'U1')).toBe('inbox.U1');
     expect(profileScopedCacheKey('inbox', 'U1')).not.toBe(profileScopedCacheKey('inbox', 'U2'));
-    expect(eventScopedCacheKey('thread', 'C1')).toBe('thread::C1');
+    expect(eventScopedCacheKey('thread', 'C1')).toBe('thread.C1');
     expect(eventScopedCacheKey('thread', 'C1')).not.toBe(eventScopedCacheKey('thread', 'C2'));
-    expect(eventScopedCacheKey('team-thread', 'TC1')).toBe('team-thread::TC1');
+    expect(eventScopedCacheKey('team-thread', 'TC1')).toBe('team-thread.TC1');
   });
 });
 

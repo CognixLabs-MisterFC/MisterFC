@@ -16,7 +16,7 @@ import { RoleChip } from './hub-parts';
  * O2-10a — Cuerpo técnico (ligero) de un equipo: nombre + rol, SIN contacto
  * (`getTeamStaffLightFromClient`, ya en core). Con teamId muestra el staff; sin
  * teamId reusa "Mis equipos" como PICKER. RLS = gate (miembro del club lee).
- * Caché team-scoped (`staff-cuerpo::${clubId}::${teamId}`).
+ * Caché team-scoped (`staff-cuerpo.${clubId}.${teamId}`).
  */
 export function TeamStaffScreen({
   teamId,

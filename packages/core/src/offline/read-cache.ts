@@ -29,25 +29,30 @@ export type ReadThroughResult<T> = {
   fromCache: boolean;
 };
 
-const PREFIX = 'rcache::';
+// Separador '.' (antes ':' doble, inválido): expo-secure-store valida las claves
+// con /^[\w.-]+$/
+// (SecureStore.js:151), así que ':' es inválido y revienta EN DISPOSITIVO (no en
+// CI, que inyecta un backing en memoria). El '.' es válido, no colisiona (ni los
+// resource ni los ids llevan puntos) y es el que menos ruido introduce.
+const PREFIX = 'rcache.';
 
 /**
  * Norma de KEYS de caché (O2-5): datos club-scoped llevan el `clubId` en la key,
  * para que al cambiar de club la key sea DISTINTA y no se sirva la caché del club
- * anterior. p.ej. `clubScopedCacheKey('calendar', clubId)` → 'calendar::<clubId>'.
+ * anterior. p.ej. `clubScopedCacheKey('calendar', clubId)` → 'calendar.<clubId>'.
  */
 export function clubScopedCacheKey(resource: string, clubId: string): string {
-  return `${resource}::${clubId}`;
+  return `${resource}.${clubId}`;
 }
 
 /**
  * Variante event-scoped (O2-5 B2): datos de un evento concreto (p.ej. el detalle
  * de un directo) llevan el `eventId` en la key. El eventId ya es único global, así
  * que no hace falta el clubId. p.ej. `eventScopedCacheKey('directo', eventId)` →
- * 'directo::<eventId>'. Evento distinto → key distinta.
+ * 'directo.<eventId>'. Evento distinto → key distinta.
  */
 export function eventScopedCacheKey(resource: string, eventId: string): string {
-  return `${resource}::${eventId}`;
+  return `${resource}.${eventId}`;
 }
 
 /**
@@ -55,14 +60,14 @@ export function eventScopedCacheKey(resource: string, eventId: string): string {
  * seguidores) llevan clubId Y playerId en la key. Es la norma MÁS crítica de la
  * tanda: son datos personales/deportivos de un MENOR; cambiar de hijo DEBE dar una
  * key distinta para NUNCA servir offline la ficha del hijo equivocado. p.ej.
- * `playerScopedCacheKey('ficha', clubId, playerId)` → 'ficha::<clubId>::<playerId>'.
+ * `playerScopedCacheKey('ficha', clubId, playerId)` → 'ficha.<clubId>.<playerId>'.
  */
 export function playerScopedCacheKey(
   resource: string,
   clubId: string,
   playerId: string
 ): string {
-  return `${resource}::${clubId}::${playerId}`;
+  return `${resource}.${clubId}.${playerId}`;
 }
 
 /**
@@ -71,14 +76,14 @@ export function playerScopedCacheKey(
  * deriva del hijo activo, pero el DATO pertenece al equipo (dos hermanos del mismo
  * equipo comparten caché); por eso se escopa por teamId, no por playerId. Cambiar
  * de equipo → key distinta. p.ej. `teamScopedCacheKey('plantilla', clubId, teamId)`
- * → 'plantilla::<clubId>::<teamId>'.
+ * → 'plantilla.<clubId>.<teamId>'.
  */
 export function teamScopedCacheKey(
   resource: string,
   clubId: string,
   teamId: string
 ): string {
-  return `${resource}::${clubId}::${teamId}`;
+  return `${resource}.${clubId}.${teamId}`;
 }
 
 /**
@@ -88,7 +93,7 @@ export function teamScopedCacheKey(
  * dos hermanos ven el MISMO evento con datos DISTINTOS (su respuesta/su fila), así
  * que cambiar de hijo DEBE dar key distinta aunque el evento sea el mismo. p.ej.
  * `playerEventScopedCacheKey('convocatoria', clubId, playerId, eventId)` →
- * 'convocatoria::<clubId>::<playerId>::<eventId>'.
+ * 'convocatoria.<clubId>.<playerId>.<eventId>'.
  */
 export function playerEventScopedCacheKey(
   resource: string,
@@ -96,20 +101,20 @@ export function playerEventScopedCacheKey(
   playerId: string,
   eventId: string
 ): string {
-  return `${resource}::${clubId}::${playerId}::${eventId}`;
+  return `${resource}.${clubId}.${playerId}.${eventId}`;
 }
 
 /**
  * Variante PROFILE-scoped (O2-5 E2a): datos que cuelgan del PERFIL del usuario
  * (no del club ni del hijo), como el inbox de mensajería — los hilos son del
  * tutor, compartidos entre sus hijos. Llevan el profileId en la key. p.ej.
- * `profileScopedCacheKey('inbox', profileId)` → 'inbox::<profileId>'.
+ * `profileScopedCacheKey('inbox', profileId)` → 'inbox.<profileId>'.
  */
 export function profileScopedCacheKey(
   resource: string,
   profileId: string
 ): string {
-  return `${resource}::${profileId}`;
+  return `${resource}.${profileId}`;
 }
 
 export async function cacheGet<T>(

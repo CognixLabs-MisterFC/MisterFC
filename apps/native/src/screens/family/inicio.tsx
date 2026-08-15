@@ -13,6 +13,7 @@ import {
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
+import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
@@ -37,12 +38,18 @@ export function InicioScreen() {
   const t = useTranslations('');
   const { activeClub, profileName, theme } = useApp();
   const { players } = useActivePlayer();
+  const { user } = useSession();
   const clubId = activeClub?.club.id ?? null;
   const playerIds = useMemo(() => players.map((p) => p.id), [players]);
   const accent = theme?.color ?? BRAND.navy;
 
+  // Clave por CUENTA DEL TUTOR (user.id = profiles.id), no por la lista de ids de
+  // los hijos: `playerIds.join(',')` metía comas (inválidas en secure-store) y
+  // generaba entradas distintas según el orden/altas de hijos. El tutor identifica
+  // unívocamente a la familia y es estable. Se mantiene el clubId para no servir
+  // offline la caché de otro club (norma O2-5). Una sola entrada por (club, tutor).
   const { data, fromCache, loading } = useCached<HomeData>(
-    `inicio::${clubId ?? 'none'}::${playerIds.join(',')}`,
+    `inicio.${clubId ?? 'none'}.${user?.id ?? 'anon'}`,
     async (sb) => {
       if (!clubId) {
         return { unread: 0, pending: null, upcoming: [], announcements: [], feed: [] };

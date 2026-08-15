@@ -35,7 +35,7 @@ const TYPE_ICON: Record<string, string> = {
  * O2-6 — Agenda del SEGUIDOR: calendario del jugador seguido activo (próximas 4
  * semanas), acotado a su EQUIPO (scopeTeamIds). Reutiliza `getCalendarDataFromClient`
  * (B1) tal cual; la RLS de spectator (is_spectator_of_team) ya limita a los eventos
- * de ese equipo. Caché player-scoped (spec-agenda::${playerId}).
+ * de ese equipo. Caché player-scoped (spec-agenda.${playerId}).
  */
 export function SpectatorAgendaScreen() {
   const t = useTranslations('');

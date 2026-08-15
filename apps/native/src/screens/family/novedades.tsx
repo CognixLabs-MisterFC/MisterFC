@@ -25,7 +25,7 @@ export function NovedadesScreen() {
   const [offline, setOffline] = useState(false);
 
   const loadPage = useCallback(async (p: number) => {
-    const r = await fetchCached(`novedades::p${p}`, (sb) =>
+    const r = await fetchCached(`novedades.p${p}`, (sb) =>
       getNotificationsPageFromClient(sb, p),
     );
     if (r.data) {
@@ -41,7 +41,7 @@ export function NovedadesScreen() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const r = await fetchCached('novedades::p1', (sb) =>
+      const r = await fetchCached('novedades.p1', (sb) =>
         getNotificationsPageFromClient(sb, 1),
       );
       if (!active) return;

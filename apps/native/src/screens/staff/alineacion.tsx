@@ -34,7 +34,7 @@ import { BRAND } from '@/theme';
  * dispara fan-out). WRITE-GUARD: sin red o sin permiso, el drag va deshabilitado (no se
  * arrastra y se avisa) — nunca se deja mover algo que no se guarda. GATE server-side
  * (`canManage`/RLS): un rechazo llega como `forbidden` y se maneja con gracia. Caché
- * event-scoped (`alineacion::${eventId}`), lectura offline como el resto.
+ * event-scoped (`alineacion.${eventId}`), lectura offline como el resto.
  */
 
 const ROLE_TO_SHORT: Record<string, string> = {

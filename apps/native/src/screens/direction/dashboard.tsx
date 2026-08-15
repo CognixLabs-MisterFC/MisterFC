@@ -36,7 +36,7 @@ type DashboardData = {
  * loaders de core (thin sobre los agregadores puros) en un único fetch cache-first
  * y pinta 5 secciones: censo (+delta), resultados, asistencia (+tendencia SVG),
  * rankings por categoría y alertas. La tendencia usa react-native-svg (sin dep de
- * charts nueva). Gate de la banda = AreaGuard('direction'). Caché `dashboard::clubId`.
+ * charts nueva). Gate de la banda = AreaGuard('direction'). Caché `dashboard.clubId`.
  */
 export function DireccionDashboardScreen() {
   const t = useTranslations('');

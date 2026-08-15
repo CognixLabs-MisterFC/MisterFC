@@ -18,7 +18,7 @@ import { ListCard, RoleChip } from './hub-parts';
  * equipo: al tocar un equipo se navega a su destino (`target`) con el teamId
  * (patrón asistencia 7a). Reusado como PICKER cuando se entra a estadísticas /
  * cuerpo técnico sin teamId (no hay selector global — eso es del coordinador, 10b).
- * Caché club-scoped (`staff-teams::${clubId}`).
+ * Caché club-scoped (`staff-teams.${clubId}`).
  */
 export type TeamTarget = 'detail' | 'stats' | 'staff' | 'anuncios';
 

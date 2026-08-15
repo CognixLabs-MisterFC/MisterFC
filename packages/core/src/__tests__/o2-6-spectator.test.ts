@@ -171,14 +171,14 @@ describe('O2-6 · getWeekMatchesFromClient filtro teamId (retrocompatible)', () 
 
 describe('O2-6 · keys de caché player-scoped (seguido)', () => {
   it('mete el playerId en la key; seguido distinto → key distinta', () => {
-    expect(eventScopedCacheKey('spec-agenda', 'pA')).toBe('spec-agenda::pA');
+    expect(eventScopedCacheKey('spec-agenda', 'pA')).toBe('spec-agenda.pA');
     expect(eventScopedCacheKey('spec-agenda', 'pA')).not.toBe(
       eventScopedCacheKey('spec-agenda', 'pB'),
     );
-    expect(eventScopedCacheKey('spec-directos', 'pA')).toBe('spec-directos::pA');
-    expect(eventScopedCacheKey('spec-stats', 'pA')).toBe('spec-stats::pA');
+    expect(eventScopedCacheKey('spec-directos', 'pA')).toBe('spec-directos.pA');
+    expect(eventScopedCacheKey('spec-stats', 'pA')).toBe('spec-stats.pA');
     // el detalle es event-scoped (no cambia con el seguido, sino con el partido).
-    expect(eventScopedCacheKey('spec-directo', 'e1')).toBe('spec-directo::e1');
+    expect(eventScopedCacheKey('spec-directo', 'e1')).toBe('spec-directo.e1');
   });
 });
 

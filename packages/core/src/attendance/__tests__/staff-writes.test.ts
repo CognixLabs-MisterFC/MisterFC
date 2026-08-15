@@ -220,7 +220,7 @@ describe('O2-7a · resolveAttendanceScopeFromClient', () => {
 describe('O2-7a · cache key de la sesión lleva el eventId', () => {
   it('eventScopedCacheKey incluye el id del evento', () => {
     const key = eventScopedCacheKey('asistencia-sesion', EVENT_ID);
-    expect(key).toBe(`asistencia-sesion::${EVENT_ID}`);
+    expect(key).toBe(`asistencia-sesion.${EVENT_ID}`);
     expect(key).toContain(EVENT_ID);
   });
 });

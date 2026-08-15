@@ -29,7 +29,7 @@ const MESSAGES_POLL_MS = 5000;
 /**
  * O2-5 E2a — Hilo 1:1 (SOLO LECTURA). Leer mensajes + polling en foreground +
  * marcar leído (UPDATE read_at, permitido al cliente por RLS). El ENVÍO es E2b:
- * el composer va deshabilitado con nota. Caché por hilo (thread::${id}).
+ * el composer va deshabilitado con nota. Caché por hilo (thread.${id}).
  */
 export function MensajeDetalleScreen({
   conversationId,

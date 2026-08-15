@@ -21,7 +21,7 @@ const LIVE_POLL_MS = 15_000;
  * (con polling en vivo; offline muestra el último listado, marcado "sin conexión").
  * Reutiliza `getWeekMatchesFromClient` con el filtro `teamId` del seguido. SIN la
  * pestaña "seguir equipos" (eso es escritura de familia; el seguidor solo mira).
- * Caché player-scoped (spec-directos::${playerId}).
+ * Caché player-scoped (spec-directos.${playerId}).
  */
 export function SpectatorDirectosScreen() {
   const t = useTranslations('');
