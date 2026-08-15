@@ -59,7 +59,7 @@ const LISTED_EVENTS = new Set([
  * los controles van deshabilitados con aviso; NADA de cola (la cola es solo eventos, 9b).
  * GATE server-side (`user_can_record_match`): sin permiso, controles deshabilitados; un
  * rechazo llega como forbidden. El reloj TICKEA local (matchPhase, como B2), sin polling
- * del cronómetro. Caché event-scoped (`directo-estado::${eventId}`), lectura offline del
+ * del cronómetro. Caché event-scoped (`directo-estado.${eventId}`), lectura offline del
  * último estado. La ENTRADA de eventos y el timeline en vivo son 9b (hueco abajo).
  */
 

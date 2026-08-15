@@ -20,7 +20,7 @@ type MatchStatItem = { match: ClosedTeamMatch; row: FamilyMatchStatRow | null };
  * del jugador seguido (`getFamilyMatchStatRowsFromClient` filtrado a `[playerId]`).
  * NUNCA el agregado de equipo (todos los jugadores): un seguidor de UN niño no ve el
  * rendimiento del resto. El nombre sale del jugador activo (el seguidor no lee
- * `players`). Caché player-scoped (spec-stats::${playerId}).
+ * `players`). Caché player-scoped (spec-stats.${playerId}).
  */
 export function SpectatorEstadisticasScreen() {
   const t = useTranslations('');

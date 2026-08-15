@@ -18,10 +18,11 @@ import { EMPTY_QUEUE, type EventQueue } from '@misterfc/core';
  * drena. Es el fallo (perder un gol) que toda esta pieza existe para evitar → la
  * persistencia es REAL, no en memoria.
  *
- * Clave POR EVENTO (`directo-queue::<eventId>`): un partido a la vez, pero cada
- * partido tiene su cola aislada (cambiar de directo no mezcla eventos).
+ * Clave POR EVENTO (`directo-queue.<eventId>`): un partido a la vez, pero cada
+ * partido tiene su cola aislada (cambiar de directo no mezcla eventos). Separador
+ * '.' (no ':'): expo-secure-store rechaza ':' en la clave (SecureStore.js:151).
  */
-const queueKey = (eventId: string) => `directo-queue::${eventId}`;
+const queueKey = (eventId: string) => `directo-queue.${eventId}`;
 
 export async function loadQueue(eventId: string): Promise<EventQueue> {
   const raw = await SecureStoreAdapter.getItem(queueKey(eventId));

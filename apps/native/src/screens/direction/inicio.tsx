@@ -30,7 +30,7 @@ export function DireccionInicioScreen() {
   const accent = theme?.color ?? BRAND.navy;
 
   const { data, fromCache, loading } = useCached<DireccionHomeCounts | null>(
-    `${clubScopedCacheKey('dir-inicio', clubId ?? 'none')}::${role ?? 'none'}`,
+    `${clubScopedCacheKey('dir-inicio', clubId ?? 'none')}.${role ?? 'none'}`,
     (sb) =>
       clubId
         ? getDireccionHomeCountsFromClient(sb, clubId, { includeErasures: isAdminClub })

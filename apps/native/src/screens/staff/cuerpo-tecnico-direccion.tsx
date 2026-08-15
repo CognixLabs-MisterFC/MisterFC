@@ -17,7 +17,7 @@ import { useTranslations } from '@/locale/provider';
  * staff del EQUIPO ACTIVO (selector global). Reutiliza la lectura team-scoped de core
  * `getTeamStaffLightFromClient` (RLS `team_staff_select_member`, acotada a los equipos
  * del coordinador porque el selector solo ofrece sus team_staff). NADA de gestión
- * (mover staff es web). Caché team-scoped (`coord-cuerpo::${clubId}::${teamId}`).
+ * (mover staff es web). Caché team-scoped (`coord-cuerpo.${clubId}.${teamId}`).
  */
 export function CuerpoTecnicoDireccionScreen() {
   const t = useTranslations('');

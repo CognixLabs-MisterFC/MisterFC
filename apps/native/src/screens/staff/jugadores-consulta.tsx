@@ -17,7 +17,7 @@ import { useTranslations } from '@/locale/provider';
  * jugadores del EQUIPO ACTIVO (selector global). Reutiliza la lectura team-scoped de
  * core `getTeamRosterStatsFromClient` (RLS de compañero de equipo, acotada a los
  * equipos del coordinador porque el selector solo ofrece sus team_staff). NADA de
- * crear/editar (es web). Caché team-scoped (`coord-jugadores::${clubId}::${teamId}`).
+ * crear/editar (es web). Caché team-scoped (`coord-jugadores.${clubId}.${teamId}`).
  */
 export function JugadoresConsultaScreen() {
   const t = useTranslations('');

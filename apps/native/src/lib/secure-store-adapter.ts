@@ -12,8 +12,12 @@ import * as SecureStore from 'expo-secure-store';
  * pequeños siguen leyéndose aunque se guardaran sin trocear (compatibilidad).
  */
 const CHUNK_SIZE = 2000;
-const countKey = (key: string) => `${key}::chunks`;
-const chunkKey = (key: string, i: number) => `${key}::${i}`;
+// Separador '.' (NO ':'): expo-secure-store rechaza las claves con ':' (valida con
+// /^[\w.-]+$/, SecureStore.js:151). Como este adapter deriva claves de TODA
+// escritura (incluida la sesión de Supabase), un ':' aquí tumbaba la app en el
+// primer setItemAsync EN DISPOSITIVO (CI no lo caza: usa backing en memoria).
+const countKey = (key: string) => `${key}.chunks`;
+const chunkKey = (key: string, i: number) => `${key}.${i}`;
 
 async function getItem(key: string): Promise<string | null> {
   const countRaw = await SecureStore.getItemAsync(countKey(key));

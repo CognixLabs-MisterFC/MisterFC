@@ -40,7 +40,7 @@ function mockClient(cfg: {
 
 describe('playerScopedCacheKey (norma CRÍTICA C1)', () => {
   it('mete clubId Y playerId; cambiar de hijo → key distinta', () => {
-    expect(playerScopedCacheKey('ficha', 'C1', 'P1')).toBe('ficha::C1::P1');
+    expect(playerScopedCacheKey('ficha', 'C1', 'P1')).toBe('ficha.C1.P1');
     // Mismo club, hijo distinto → NUNCA la misma key (no servir ficha del otro hijo).
     expect(playerScopedCacheKey('ficha', 'C1', 'P1')).not.toBe(
       playerScopedCacheKey('ficha', 'C1', 'P2'),
@@ -49,8 +49,8 @@ describe('playerScopedCacheKey (norma CRÍTICA C1)', () => {
     expect(playerScopedCacheKey('ficha', 'C1', 'P1')).not.toBe(
       playerScopedCacheKey('ficha', 'C2', 'P1'),
     );
-    expect(playerScopedCacheKey('informe', 'C1', 'P1')).toBe('informe::C1::P1');
-    expect(playerScopedCacheKey('seguidores', 'C1', 'P1')).toBe('seguidores::C1::P1');
+    expect(playerScopedCacheKey('informe', 'C1', 'P1')).toBe('informe.C1.P1');
+    expect(playerScopedCacheKey('seguidores', 'C1', 'P1')).toBe('seguidores.C1.P1');
   });
 });
 

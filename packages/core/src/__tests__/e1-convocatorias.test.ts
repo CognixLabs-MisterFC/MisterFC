@@ -51,7 +51,7 @@ function tableClient(
 
 describe('E1 · keys de caché player-scoped', () => {
   it('convocatorias/asistencia cambian con el hijo', () => {
-    expect(playerScopedCacheKey('convocatorias', 'C1', 'P1')).toBe('convocatorias::C1::P1');
+    expect(playerScopedCacheKey('convocatorias', 'C1', 'P1')).toBe('convocatorias.C1.P1');
     expect(playerScopedCacheKey('convocatorias', 'C1', 'P1')).not.toBe(
       playerScopedCacheKey('convocatorias', 'C1', 'P2'),
     );
@@ -63,7 +63,7 @@ describe('E1 · keys de caché player-scoped', () => {
   it('player+event (detalle/stats) cambia con el hijo AUNQUE el evento sea el mismo', () => {
     const a = playerEventScopedCacheKey('convocatoria', 'C1', 'P1', 'E1');
     const b = playerEventScopedCacheKey('convocatoria', 'C1', 'P2', 'E1');
-    expect(a).toBe('convocatoria::C1::P1::E1');
+    expect(a).toBe('convocatoria.C1.P1.E1');
     expect(a).not.toBe(b); // mismo evento, hijo distinto → key distinta
     expect(playerEventScopedCacheKey('stats-partido', 'C1', 'P1', 'E1')).not.toBe(
       playerEventScopedCacheKey('stats-partido', 'C1', 'P1', 'E2'),

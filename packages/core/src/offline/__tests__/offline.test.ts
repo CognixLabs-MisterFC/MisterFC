@@ -104,7 +104,7 @@ describe('readThrough (cache-first con revalidación)', () => {
 
   it('caché corrupta → cacheGet devuelve null', async () => {
     const backing = memBacking();
-    backing.store.set('rcache::bad', '{no-json');
+    backing.store.set('rcache.bad', '{no-json');
     expect(await cacheGet(backing, 'bad')).toBeNull();
   });
 });

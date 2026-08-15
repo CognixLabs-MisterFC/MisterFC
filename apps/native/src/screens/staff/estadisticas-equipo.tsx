@@ -16,7 +16,7 @@ import { MisEquiposScreen } from './mis-equipos';
  * O2-10a — Estadísticas de equipo (consulta). Reutiliza `getTeamRosterStatsFromClient`
  * + los agregados puros ya en core (AggregatedStats). Solo lectura (el PDF es web).
  * Con teamId muestra la tabla; sin teamId reusa "Mis equipos" como PICKER. RLS =
- * gate. Caché team-scoped (`staff-team-stats::${clubId}::${teamId}`).
+ * gate. Caché team-scoped (`staff-team-stats.${clubId}.${teamId}`).
  */
 export function TeamStatsScreen({ teamId, name }: { teamId: string | null; name: string | null }) {
   const t = useTranslations('');

@@ -137,7 +137,7 @@ describe('getSportingNamesFromClient (rama seguidor)', () => {
 
 describe('eventScopedCacheKey (norma de keys B2)', () => {
   it('mete el eventId en la key; evento distinto → key distinta', () => {
-    expect(eventScopedCacheKey('directo', 'E1')).toBe('directo::E1');
+    expect(eventScopedCacheKey('directo', 'E1')).toBe('directo.E1');
     expect(eventScopedCacheKey('directo', 'E1')).not.toBe(eventScopedCacheKey('directo', 'E2'));
   });
 });

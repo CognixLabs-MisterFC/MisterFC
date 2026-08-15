@@ -18,7 +18,7 @@ import { Tile } from './hub-parts';
  * Muestra la PLANTILLA (roster, `getTeamRosterStatsFromClient`) y da paso a las dos
  * consultas que cuelgan del detalle: Estadísticas de equipo y Cuerpo técnico
  * (ambas con el mismo teamId). Solo lectura; RLS = gate (staff del equipo). Caché
- * team-scoped (`staff-roster::${clubId}::${teamId}`).
+ * team-scoped (`staff-roster.${clubId}.${teamId}`).
  */
 export function TeamDetailScreen({
   teamId,

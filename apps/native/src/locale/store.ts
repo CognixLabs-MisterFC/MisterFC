@@ -9,7 +9,8 @@ import * as SecureStore from 'expo-secure-store';
  * cuenta del dispositivo tenga su idioma. El valor es un código de 2 letras → cabe
  * de sobra en SecureStore, sin trocear.
  */
-const localeKey = (userId: string) => `i18n_locale::${userId}`;
+// Separador '.' (no ':'): expo-secure-store rechaza ':' en la clave (SecureStore.js:151).
+const localeKey = (userId: string) => `i18n_locale.${userId}`;
 
 export async function getStoredLocale(userId: string): Promise<string | null> {
   return SecureStore.getItemAsync(localeKey(userId));

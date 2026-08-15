@@ -19,7 +19,7 @@ import { ListCard, Tile, CountBadge } from './hub-parts';
  * anuncios/novedades son 10b): "convocatorias sin publicar" (`getStaffCallupsFromClient`
  * → filtra no publicadas) y "próximos eventos" (`getUpcomingEventsFromClient`, RLS
  * scope = sus equipos), más accesos rápidos al hub. Solo lectura, cache-first
- * (`staff-home::${clubId}`).
+ * (`staff-home.${clubId}`).
  */
 const DAY = 86_400_000;
 

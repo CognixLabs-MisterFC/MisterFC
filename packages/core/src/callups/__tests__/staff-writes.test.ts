@@ -228,7 +228,7 @@ describe('O2-7b-1 · clearCallupDecisionFromClient', () => {
 describe('O2-7b-1 · cache key event-scoped lleva el eventId', () => {
   it('eventScopedCacheKey incluye el id del evento', () => {
     const key = eventScopedCacheKey('convocatoria-staff', EVENT_ID);
-    expect(key).toBe(`convocatoria-staff::${EVENT_ID}`);
+    expect(key).toBe(`convocatoria-staff.${EVENT_ID}`);
     expect(key).toContain(EVENT_ID);
   });
 });

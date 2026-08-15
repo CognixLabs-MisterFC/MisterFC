@@ -22,7 +22,7 @@ import { BRAND } from '@/theme';
  * LECTURA): medias por grupo del periodo, comentario, valoración de equipo,
  * objetivos y resumen de ficha. Orquestación + fetch en core
  * (`getPlayerReportBundleFromClient`). Caché PLAYER-SCOPED
- * (informe::clubId::playerId::season::period). Selectores de temporada y periodo.
+ * (informe.clubId.playerId.season.period). Selectores de temporada y periodo.
  */
 export function MiInformeScreen() {
   const t = useTranslations('');
@@ -35,7 +35,7 @@ export function MiInformeScreen() {
   const [period, setPeriod] = useState<string | null>(null);
 
   const { data, fromCache, loading } = useCached<PlayerReportBundle | null>(
-    `${playerScopedCacheKey('informe', clubId ?? 'none', playerId ?? 'none')}::${season ?? 'def'}::${period ?? 'def'}`,
+    `${playerScopedCacheKey('informe', clubId ?? 'none', playerId ?? 'none')}.${season ?? 'def'}.${period ?? 'def'}`,
     (sb) =>
       clubId && playerId
         ? getPlayerReportBundleFromClient(sb, clubId, playerId, { season, period })

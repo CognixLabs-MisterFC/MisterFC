@@ -16,7 +16,7 @@ import { ListCard } from './hub-parts';
  * O2-10a — Sesiones (publicadas) de los equipos del staff, próximas desde hoy
  * (`getSharedSessionsForTeamsFromClient`, D1). SOLO LECTURA — crear/editar sesiones
  * es WEB-ONLY (no se porta). Resuelve los equipos con `getStaffTeamsFromClient`.
- * Caché club-scoped (`staff-sessions::${clubId}`).
+ * Caché club-scoped (`staff-sessions.${clubId}`).
  */
 const pad = (n: number) => String(n).padStart(2, '0');
 const todayIso = () => {

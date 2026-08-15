@@ -33,7 +33,7 @@ import { BRAND } from '@/theme';
  * (vuelve al directo de 9a/9b; al re-finalizar reconsolida) — no editamos eventos
  * aquí. Todo ESCRITURA DIRECTA con RLS y ONLINE (write-guard: sin red → deshabilitado
  * con aviso; NO es la cola de 9b). Modelo de valoraciones REUTILIZADO de core (F8),
- * no reimplementado. Caché event-scoped `post-partido::${eventId}`.
+ * no reimplementado. Caché event-scoped `post-partido.${eventId}`.
  */
 
 type Draft = { rating: number | null; comment: string; isMvp: boolean };

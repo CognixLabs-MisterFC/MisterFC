@@ -21,7 +21,7 @@ import { BRAND } from '@/theme';
  * O2-5 C1 — Mi ficha (expediente deportivo del HIJO ACTIVO, SOLO LECTURA):
  * identidad, stats/ratios, asistencia, valoraciones y carrera. Todo el fetch +
  * cálculo viene de core (`getPlayerFichaFromClient`); aquí solo se pinta. Caché
- * PLAYER-SCOPED (ficha::clubId::playerId::season). Foto = iniciales (C2). Badges se
+ * PLAYER-SCOPED (ficha.clubId.playerId.season). Foto = iniciales (C2). Badges se
  * evalúan aparte (dependen del roster del equipo).
  */
 export function MiFichaScreen() {
@@ -34,7 +34,7 @@ export function MiFichaScreen() {
   const [season, setSeason] = useState<string | null>(null);
 
   const { data, fromCache, loading } = useCached<PlayerFicha | null>(
-    `${playerScopedCacheKey('ficha', clubId ?? 'none', playerId ?? 'none')}::${season ?? 'def'}`,
+    `${playerScopedCacheKey('ficha', clubId ?? 'none', playerId ?? 'none')}.${season ?? 'def'}`,
     (sb) =>
       playerId ? getPlayerFichaFromClient(sb, playerId, { season }) : Promise.resolve(null),
   );

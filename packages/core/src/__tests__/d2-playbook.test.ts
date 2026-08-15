@@ -35,8 +35,8 @@ const twoFramePlay: Play = {
 
 describe('D2 · keys de caché', () => {
   it('team-scoped (playbook) y play-scoped (detalle) con id', () => {
-    expect(teamScopedCacheKey('playbook', 'C1', 'T1')).toBe('playbook::C1::T1');
-    expect(eventScopedCacheKey('play', 'PL1')).toBe('play::PL1');
+    expect(teamScopedCacheKey('playbook', 'C1', 'T1')).toBe('playbook.C1.T1');
+    expect(eventScopedCacheKey('play', 'PL1')).toBe('play.PL1');
     expect(eventScopedCacheKey('play', 'PL1')).not.toBe(eventScopedCacheKey('play', 'PL2'));
   });
 });
