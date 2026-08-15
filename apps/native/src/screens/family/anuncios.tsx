@@ -9,6 +9,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 
@@ -30,7 +31,10 @@ export function AnunciosScreen() {
   useEffect(() => {
     void markNotificationsReadFromClient(supabase, [
       'new_announcement',
-    ] as ('new_announcement')[]);
+    ] as ('new_announcement')[]).then(() => {
+      // Al leer los anuncios cae el contador del inicio y el feed de novedades.
+      void invalidateAfterWrite('markNotifications');
+    });
   }, []);
 
   if (loading) return <LoadingScreen />;

@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { appLocale, useTranslations } from '@/locale/provider';
@@ -108,6 +109,8 @@ export function TeamAnnouncementsScreen({
       setBusy(false);
       resetForm();
       refresh();
+      // Anuncios: se ven en el inicio y home de familia + la lista de anuncios.
+      void invalidateAfterWrite('manageAnnouncement');
     } catch {
       setError(t('anuncios_staff.publish_error'));
       setBusy(false);
@@ -130,6 +133,7 @@ export function TeamAnnouncementsScreen({
             }
             if (editingId === a.id) resetForm();
             refresh();
+            void invalidateAfterWrite('manageAnnouncement');
           },
         },
       ]);

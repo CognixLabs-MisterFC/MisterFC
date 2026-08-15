@@ -86,13 +86,19 @@ export function DirectoDetalleScreen({
   const isLive = data?.status === 'live';
   const now = useTickingNow(!!isLive);
 
-  // Polling en vivo: con red refresca (y cachea el último estado); sin red el
-  // fetchCached devuelve la caché. No se sirve stale online.
+  // Polling mientras el partido NO esté finalizado (`not_started` o `live`), no
+  // solo cuando ya está en vivo. Antes el gate exigía `isLive`, pero para
+  // ENTERARSE de que ha empezado hay que sondear: con el gate viejo, un partido
+  // abierto como `not_started` se quedaba congelado (0-0, "sin empezar") aunque
+  // el staff ya lo hubiera puesto en vivo. Ahora se observa la transición
+  // not_started → live (y live → closed, que corta el polling). El reloj sigue
+  // ticando solo en vivo (`useTickingNow(isLive)`).
+  const shouldPoll = data != null && data.status !== 'closed';
   useEffect(() => {
-    if (!isLive) return;
+    if (!shouldPoll) return;
     const id = setInterval(refresh, LIVE_POLL_MS);
     return () => clearInterval(id);
-  }, [isLive, refresh]);
+  }, [shouldPoll, refresh]);
 
   if (loading) return <LoadingScreen />;
   if (!data) return <EmptyState message={t('directo.not_available')} />;

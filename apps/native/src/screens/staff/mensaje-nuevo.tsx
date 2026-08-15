@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabase';
 import { useSession } from '@/auth/session';
 import { useApp } from '@/auth/context';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
@@ -94,6 +95,7 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
         setError(t('mensajes_staff.create_error'));
         return;
       }
+      void invalidateAfterWrite('createConversation');
       router.replace({
         pathname: `${basePath}/mensaje`,
         params: {
@@ -119,6 +121,7 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
         setError(t('mensajes_staff.create_error'));
         return;
       }
+      void invalidateAfterWrite('createConversation');
       router.replace({
         pathname: `${basePath}/mensaje-equipo`,
         params: { teamConversationId: res.ok.conversationId, title: team.name },

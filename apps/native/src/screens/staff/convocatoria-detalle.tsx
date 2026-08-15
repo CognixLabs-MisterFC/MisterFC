@@ -22,6 +22,7 @@ import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { PublishCallupSheet } from './publish-callup-sheet';
@@ -110,8 +111,10 @@ export function ConvocatoriaStaffDetalleScreen({
         body: { mode: 'republish', eventId },
       });
       setPubBusy(false);
-      if (res.status === 200) refresh();
-      else if (res.status === 403)
+      if (res.status === 200) {
+        refresh();
+        void invalidateAfterWrite('upsertCallupDecision');
+      } else if (res.status === 403)
         setErrorKey('convocatorias_staff.pub_err_forbidden');
       else setErrorKey('convocatorias_staff.pub_err_generic');
     } catch {
@@ -132,8 +135,10 @@ export function ConvocatoriaStaffDetalleScreen({
         reason: null,
       });
       setBusy(null);
-      if (res.ok) refresh();
-      else
+      if (res.ok) {
+        refresh();
+        void invalidateAfterWrite('upsertCallupDecision');
+      } else
         setErrorKey(
           res.error === 'forbidden'
             ? 'convocatorias_staff.forbidden'
@@ -150,8 +155,10 @@ export function ConvocatoriaStaffDetalleScreen({
       setErrorKey(null);
       const res = await clearCallupDecisionFromClient(supabase, eventId, playerId);
       setBusy(null);
-      if (res.ok) refresh();
-      else
+      if (res.ok) {
+        refresh();
+        void invalidateAfterWrite('upsertCallupDecision');
+      } else
         setErrorKey(
           res.error === 'forbidden'
             ? 'convocatorias_staff.forbidden'

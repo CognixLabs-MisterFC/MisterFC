@@ -26,6 +26,7 @@ import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 
@@ -97,8 +98,10 @@ export function AsistenciaSesionScreen({ eventId }: { eventId: string | null }) 
         code,
       });
       setBusy(null);
-      if (res.ok) refresh();
-      else
+      if (res.ok) {
+        refresh();
+        void invalidateAfterWrite('markAttendance');
+      } else
         setErrorKey(
           res.error === 'forbidden'
             ? 'asistencia_staff.forbidden'
@@ -115,8 +118,10 @@ export function AsistenciaSesionScreen({ eventId }: { eventId: string | null }) 
       setErrorKey(null);
       const res = await clearAttendanceFromClient(supabase, eventId, playerId);
       setBusy(null);
-      if (res.ok) refresh();
-      else
+      if (res.ok) {
+        refresh();
+        void invalidateAfterWrite('markAttendance');
+      } else
         setErrorKey(
           res.error === 'forbidden'
             ? 'asistencia_staff.forbidden'

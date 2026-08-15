@@ -1,16 +1,29 @@
 import { useEffect, useState } from 'react';
 import * as Network from 'expo-network';
-import { isOnlineFromState } from '@misterfc/core';
+import { canAttemptFetch, isOnlineFromState } from '@misterfc/core';
 
 /**
- * O2-5 — Detector de conectividad sobre expo-network. La DECISIÓN "¿online?" es
- * pura y vive en core (`isOnlineFromState`, fail-open); aquí solo la lectura del
- * estado de red del dispositivo.
+ * O2-5 — Detector de conectividad sobre expo-network. La DECISIÓN es pura y vive
+ * en core; aquí solo la lectura del estado de red del dispositivo.
  *
- *  - `getIsOnline()`: comprobación puntual (para un fetch/escritura concreta).
- *  - `useIsOnline()`: estado reactivo para la UI (las tandas que escriben pintan
- *    el aviso "sin conexión" con esto).
+ *  - `getCanFetch()`: gate de LECTURAS (SWR). Criterio PERMISIVO (`canAttemptFetch`,
+ *    solo `isConnected===false` es offline): ignora la reachability, que en Android
+ *    parpadea a `false` al arrancar y condenaría la pantalla a mostrar caché para
+ *    siempre. La alcanzabilidad real la prueba el propio fetch.
+ *  - `getIsOnline()` / `useIsOnline()`: gate de ESCRITURAS (criterio estricto
+ *    `isOnlineFromState`, incluye reachability). Las pantallas que escriben pintan
+ *    su aviso "sin conexión" con esto.
  */
+export async function getCanFetch(): Promise<boolean> {
+  try {
+    const state = await Network.getNetworkStateAsync();
+    return canAttemptFetch(state);
+  } catch {
+    // Fail-open: si el detector falla, intentamos (la red/RLS son el gate real).
+    return true;
+  }
+}
+
 export async function getIsOnline(): Promise<boolean> {
   try {
     const state = await Network.getNetworkStateAsync();

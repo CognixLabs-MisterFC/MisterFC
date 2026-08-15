@@ -8,6 +8,7 @@ import {
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { fetchCached } from '@/data/client-data';
+import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 
@@ -61,6 +62,7 @@ export function NovedadesScreen() {
   const onMarkAll = useCallback(async () => {
     await markAllNotificationsReadFromClient(supabase);
     await loadPage(1);
+    void invalidateAfterWrite('markNotifications');
   }, [loadPage]);
 
   const onOpen = useCallback(async (id: string) => {
@@ -68,6 +70,7 @@ export function NovedadesScreen() {
       prev.map((r) => (r.id === id ? { ...r, status: 'sent' } : r)),
     );
     await markNotificationReadFromClient(supabase, id);
+    void invalidateAfterWrite('markNotifications');
   }, []);
 
   if (loading) return <LoadingScreen />;

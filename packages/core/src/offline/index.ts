@@ -1,4 +1,4 @@
-export { isOnlineFromState, type NetworkStateInput } from './online-state';
+export { isOnlineFromState, canAttemptFetch, type NetworkStateInput } from './online-state';
 export {
   OfflineError,
   isOfflineError,
