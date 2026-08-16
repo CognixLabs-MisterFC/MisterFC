@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import {
   getMatchDetailFromClient,
@@ -6,13 +6,14 @@ import {
   matchPhase,
   eventScopedCacheKey,
   type MatchDetail,
-  type DetailFieldPlayer,
+  type PositionAssignment,
   type ClockPeriod,
   type MatchPhaseKind,
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
+import { ReadonlyLineup, type ReadonlyLineupPlayer } from '@/ui/readonly-lineup';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -108,7 +109,7 @@ export function DirectoDetalleScreen({
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}>
         <Scoreboard detail={data} accent={accent} nowMs={now} />
-        <FieldCard detail={data} />
+        <FieldCard detail={data} accent={accent} />
         <StatsCard detail={data} />
         <EventsCard detail={data} />
       </ScrollView>
@@ -173,83 +174,57 @@ function Scoreboard({
   );
 }
 
-function FieldCard({ detail }: { detail: MatchDetail }) {
+/**
+ * Campo del directo (Opción B): sustituye al `Pitch` propio por el MISMO
+ * `LineupBoard` read-only del editor (vía `ReadonlyLineup`) para no duplicar el
+ * renderizador y añadir el BANQUILLO. Se alimenta del `detail` que YA tiene el
+ * directo — conserva el override de `live_positions` en los titulares (el jugador se
+ * mueve en el campo durante el partido) — y del `benchPlayers` que ahora trae el
+ * detalle, refrescado en cada ciclo de polling como el resto.
+ */
+function FieldCard({ detail, accent }: { detail: MatchDetail; accent: string }) {
   const t = useTranslations('');
   const hasLineup = detail.hasLineup && detail.fieldPlayers.length > 0;
+  const formation = getFormation(detail.formationCode);
+  const formationLabel = formation?.label ?? detail.formationCode;
+
+  const positions: PositionAssignment[] = [
+    ...detail.fieldPlayers.map((p) => ({
+      playerId: p.playerId,
+      location: 'field' as const,
+      positionCode: p.positionCode,
+      xPct: p.xPct,
+      yPct: p.yPct,
+    })),
+    ...detail.benchPlayers.map((p) => ({
+      playerId: p.playerId,
+      location: 'bench' as const,
+      positionCode: null,
+      xPct: null,
+      yPct: null,
+    })),
+  ];
+  const players: ReadonlyLineupPlayer[] = [
+    ...detail.fieldPlayers.map((p) => ({ playerId: p.playerId, label: p.label, dorsal: p.dorsal })),
+    ...detail.benchPlayers.map((p) => ({ playerId: p.playerId, label: p.label, dorsal: p.dorsal })),
+  ];
+
   return (
     <View className="rounded-2xl border border-zinc-200 p-4">
       <Text className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
         {t('directos.field_title')}
       </Text>
       {hasLineup ? (
-        <Pitch detail={detail} />
+        <ReadonlyLineup
+          formation={formation}
+          formationLabel={formationLabel}
+          positions={positions}
+          players={players}
+          accent={accent}
+        />
       ) : (
         <Text className="py-6 text-center text-sm text-zinc-400">{t('directo.no_lineup')}</Text>
       )}
-    </View>
-  );
-}
-
-/** Campo vertical con los titulares posicionados por xPct/yPct (0–100). */
-function Pitch({ detail }: { detail: MatchDetail }) {
-  const placed = useMemo(() => {
-    const formation = getFormation(detail.formationCode);
-    return detail.fieldPlayers.map((p) => {
-      const slot = formation?.slots.find((s) => s.code === p.positionCode);
-      const x = p.xPct ?? slot?.xPct ?? 50;
-      const y = p.yPct ?? slot?.yPct ?? 50;
-      return { player: p, x, y };
-    });
-  }, [detail.fieldPlayers, detail.formationCode]);
-
-  return (
-    <View
-      className="w-full overflow-hidden rounded-xl"
-      style={{ aspectRatio: 0.66, backgroundColor: '#15803d' }}
-    >
-      {/* Líneas simples del campo */}
-      <View
-        className="absolute rounded-full border-2"
-        style={{ width: '30%', aspectRatio: 1, top: '42%', left: '35%', borderColor: 'rgba(255,255,255,0.35)' }}
-      />
-      <View
-        className="absolute border-b-2"
-        style={{ top: '50%', left: 0, right: 0, borderColor: 'rgba(255,255,255,0.35)' }}
-      />
-      {placed.map(({ player, x, y }) => (
-        <PitchPlayer key={player.playerId} player={player} x={x} y={y} color={detail.teamColor} />
-      ))}
-    </View>
-  );
-}
-
-function PitchPlayer({
-  player,
-  x,
-  y,
-  color,
-}: {
-  player: DetailFieldPlayer;
-  x: number;
-  y: number;
-  color: string;
-}) {
-  return (
-    <View
-      className="absolute items-center"
-      style={{ left: `${x}%`, top: `${y}%`, width: 56, transform: [{ translateX: -28 }, { translateY: -22 }] }}
-    >
-      <View
-        className="h-9 w-9 items-center justify-center rounded-full border-2 border-white"
-        style={{ backgroundColor: color || '#0F1B2E' }}
-      >
-        <Text className="text-xs font-bold text-white">
-          {player.dorsal ?? player.label.slice(0, 2)}
-        </Text>
-      </View>
-      <Text className="mt-0.5 text-[10px] text-white" numberOfLines={1}>
-        {player.label}
-      </Text>
     </View>
   );
 }

@@ -27,6 +27,13 @@ export type DetailFieldPlayer = {
   yPct: number | null;
 };
 
+/** Suplente del banquillo (alineación oficial) — sin posición ni coords. */
+export type DetailBenchPlayer = {
+  playerId: string;
+  label: string;
+  dorsal: number | null;
+};
+
 export type DetailEvent = {
   id: string;
   side: 'own' | 'rival';
@@ -51,6 +58,9 @@ export type MatchDetail = {
   periods: ClockPeriod[];
   formationCode: string;
   fieldPlayers: DetailFieldPlayer[];
+  /** Banquillo de la alineación oficial (suplentes). Se refresca en cada ciclo de
+   * polling como el resto del detalle; no lleva `live_positions` (no ocupan campo). */
+  benchPlayers: DetailBenchPlayer[];
   hasLineup: boolean;
   /** Marcador derivado de match_events (goal + penalty 'scored'). */
   goalsOwn: number;
@@ -138,6 +148,7 @@ export async function getMatchDetailFromClient(
   // `players_sporting`; los borradores (is_official=false) siguen cerrados.
   let formationCode: string | null = null;
   let fieldPlayers: DetailFieldPlayer[] = [];
+  let benchPlayers: DetailBenchPlayer[] = [];
   const { data: officialRow } = await supabase
     .from('lineups')
     .select('id, formation_code')
@@ -178,6 +189,37 @@ export async function getMatchDetailFromClient(
         positionCode: live?.position_code ?? p.position_code,
         xPct: live?.x_pct ?? (p.x_pct == null ? null : Number(p.x_pct)),
         yPct: live?.y_pct ?? (p.y_pct == null ? null : Number(p.y_pct)),
+      };
+    });
+
+    // Banquillo (suplentes) de la MISMA alineación oficial. Aditivo y read-only; NO
+    // aplica `live_positions` (los suplentes no ocupan campo). El SEGUIDOR omite el
+    // embed `players!inner` (RLS) y resuelve nombre/dorsal por `players_sporting`.
+    const benchSelect = opts?.viewerIsSpectator
+      ? 'player_id'
+      : 'player_id, players!inner(first_name, last_name, dorsal)';
+    const { data: benchRows } = await supabase
+      .from('lineup_positions')
+      .select(benchSelect)
+      .eq('lineup_id', officialRow.id as string)
+      .eq('location', 'bench');
+    type BenchShape = {
+      player_id: string;
+      players: { first_name: string; last_name: string | null; dorsal: number | null } | null;
+    };
+    const benchArr = (benchRows ?? []) as unknown as BenchShape[];
+    const benchNames = opts?.viewerIsSpectator
+      ? await getSportingNamesFromClient(
+          supabase,
+          benchArr.map((p) => p.player_id)
+        )
+      : null;
+    benchPlayers = benchArr.map((p) => {
+      const n = benchNames != null ? benchNames.get(p.player_id) : p.players;
+      return {
+        playerId: p.player_id,
+        label: n?.last_name || n?.first_name || p.player_id.slice(0, 4),
+        dorsal: n?.dorsal ?? null,
       };
     });
   }
@@ -261,6 +303,7 @@ export async function getMatchDetailFromClient(
     periods,
     formationCode,
     fieldPlayers,
+    benchPlayers,
     hasLineup: officialRow != null,
     goalsOwn: score.own,
     goalsRival: score.rival,

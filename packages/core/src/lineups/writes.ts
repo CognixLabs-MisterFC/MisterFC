@@ -24,6 +24,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import {
   setLineupFormationSchema,
+  setLineupOfficialSchema,
+  setLineupVisibilitySchema,
   upsertLineupPositionSchema,
 } from '../schemas/lineup';
 import { getFormation, defaultFormation } from './formations';
@@ -237,6 +239,81 @@ export async function upsertLineupPositionFromClient(
 
   // BUG 2 — en campo o banquillo → convocado (borrador; respeta 6.6).
   await propagateCalledUp(supabase, eventId, v.player_id);
+
+  return { ok: true, eventId };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// setLineupOfficialFromClient — marca oficial (desmarca las demás del evento).
+//
+// Réplica exacta de `setLineupOfficial` (web) menos el `revalidatePath`. La web pasa
+// a DELEGAR aquí; la app nativa la llama tras el write-guard. GUARDIA (Jose): para
+// marcar oficial, la convocatoria debe estar PUBLICADA (así el jugador no ve la
+// alineación antes que la citación). Antes de tocar nada se desmarca cualquier otra
+// oficial del evento (índice parcial único `lineups_one_official_per_event`). El
+// trigger `lineups_validate` es la barrera real; aquí el gate de UX + RLS.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function setLineupOfficialFromClient(
+  supabase: DbClient,
+  input: unknown,
+): Promise<LineupWriteOutcome> {
+  const parsed = setLineupOfficialSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'invalid' };
+  const { lineup_id, is_official } = parsed.data;
+
+  const eventId = await eventIdOfLineup(supabase, lineup_id);
+  if (!eventId) return { ok: false, error: 'not_found' };
+
+  if (is_official) {
+    // Guard de UX ANTES de tocar nada — así no se ejecuta el "desmarca las demás"
+    // (que si no dejaría el partido sin ninguna oficial y luego fallaría en el trigger).
+    if (!(await isCallupPublished(supabase, eventId))) {
+      return { ok: false, error: 'callup_not_published' };
+    }
+    // Desmarca cualquier otra oficial del evento antes (índice parcial único).
+    const { error: clearErr } = await supabase
+      .from('lineups')
+      .update({ is_official: false })
+      .eq('event_id', eventId)
+      .neq('id', lineup_id);
+    if (clearErr) {
+      return { ok: false, error: mapLineupPgErr(clearErr.message, clearErr.code) };
+    }
+  }
+
+  const { error } = await supabase
+    .from('lineups')
+    .update({ is_official })
+    .eq('id', lineup_id);
+  if (error) return { ok: false, error: mapLineupPgErr(error.message, error.code) };
+
+  return { ok: true, eventId };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// setLineupVisibilityFromClient — compartir con equipo/familias (staff|team).
+//
+// Réplica exacta de `setLineupVisibility` (web) menos el `revalidatePath`. Solo la
+// alineación OFICIAL con visibility='team' la ve el jugador/familia (RLS); ambas
+// condiciones se marcan por acciones separadas (esta y `setLineupOfficial`).
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function setLineupVisibilityFromClient(
+  supabase: DbClient,
+  input: unknown,
+): Promise<LineupWriteOutcome> {
+  const parsed = setLineupVisibilitySchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'invalid' };
+
+  const eventId = await eventIdOfLineup(supabase, parsed.data.lineup_id);
+  if (!eventId) return { ok: false, error: 'not_found' };
+
+  const { error } = await supabase
+    .from('lineups')
+    .update({ visibility: parsed.data.visibility })
+    .eq('id', parsed.data.lineup_id);
+  if (error) return { ok: false, error: mapLineupPgErr(error.message, error.code) };
 
   return { ok: true, eventId };
 }

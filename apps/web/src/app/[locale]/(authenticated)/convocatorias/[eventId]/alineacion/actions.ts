@@ -12,8 +12,8 @@ import {
   deletePlannedSubSchema,
   renameLineupSchema,
   setLineupFormationFromClient,
-  setLineupOfficialSchema,
-  setLineupVisibilitySchema,
+  setLineupOfficialFromClient,
+  setLineupVisibilityFromClient,
   setTacticalNotesSchema,
   upsertLineupPositionFromClient,
 } from '@misterfc/core';
@@ -279,46 +279,18 @@ export async function deleteLineupPosition(input: unknown): Promise<LineupAction
 
 // ─────────────────────────────────────────────────────────────────────────────
 // setLineupOfficial — marca oficial (desmarca las demás del mismo evento).
+//
+// O2 alineación compartida — DELEGA en core (`setLineupOfficialFromClient`): la
+// guardia de convocatoria-publicada + el "desmarca las demás" viven en core y los
+// comparte la app nativa; aquí solo el `revalidatePath`. Idéntico al original.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function setLineupOfficial(input: unknown): Promise<LineupActionState> {
-  const parsed = setLineupOfficialSchema.safeParse(input);
-  if (!parsed.success) return { error: 'invalid' };
-  const { lineup_id, is_official } = parsed.data;
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const eventId = await eventIdOfLineup(supabase, lineup_id);
-  if (!eventId) return { error: 'not_found' };
-
-  if (is_official) {
-    // Regla (Jose): para marcar oficial, la convocatoria debe estar PUBLICADA.
-    // Guard de UX ANTES de tocar nada — así no se ejecuta el "desmarca las
-    // demás" de abajo (que si no dejaría el partido sin ninguna oficial y luego
-    // fallaría en el trigger). El trigger lineups_validate es la barrera real.
-    const { data: meta } = await supabase
-      .from('match_callup_meta')
-      .select('published_at')
-      .eq('event_id', eventId)
-      .maybeSingle();
-    if (meta?.published_at == null) return { error: 'callup_not_published' };
-
-    // Desmarca cualquier otra oficial del evento antes (índice parcial único).
-    const { error: clearErr } = await supabase
-      .from('lineups')
-      .update({ is_official: false })
-      .eq('event_id', eventId)
-      .neq('id', lineup_id);
-    if (clearErr) return { error: mapPgErr(clearErr.message, clearErr.code) };
-  }
-
-  const { error } = await supabase
-    .from('lineups')
-    .update({ is_official })
-    .eq('id', lineup_id);
-  if (error) return { error: mapPgErr(error.message, error.code) };
-
-  revalidate(eventId);
+  const r = await setLineupOfficialFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  revalidate(r.eventId);
   return { success: true };
 }
 
@@ -365,24 +337,17 @@ export async function setLineupFormation(input: unknown): Promise<LineupActionSt
 
 // ─────────────────────────────────────────────────────────────────────────────
 // setLineupVisibility (F6 Lote B) — compartir con equipo/familias.
+//
+// O2 alineación compartida — DELEGA en core (`setLineupVisibilityFromClient`); aquí
+// solo el `revalidatePath`. Idéntico al original.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function setLineupVisibility(input: unknown): Promise<LineupActionState> {
-  const parsed = setLineupVisibilitySchema.safeParse(input);
-  if (!parsed.success) return { error: 'invalid' };
-
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const eventId = await eventIdOfLineup(supabase, parsed.data.lineup_id);
-  if (!eventId) return { error: 'not_found' };
-
-  const { error } = await supabase
-    .from('lineups')
-    .update({ visibility: parsed.data.visibility })
-    .eq('id', parsed.data.lineup_id);
-  if (error) return { error: mapPgErr(error.message, error.code) };
-
-  revalidate(eventId);
+  const r = await setLineupVisibilityFromClient(supabase, input);
+  if (!r.ok) return { error: r.error as ActionError };
+  revalidate(r.eventId);
   return { success: true };
 }
 
