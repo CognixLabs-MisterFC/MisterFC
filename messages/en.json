@@ -2916,7 +2916,8 @@
       "denied_body": "You blocked notifications. Turn them on from the system Settings for this device.",
       "enabling": "Enabling…",
       "enable_button": "Enable notifications",
-      "error": "Couldn't enable them. Please try again."
+      "error_device": "Couldn't enable them on this device. Check the permissions and try again.",
+      "error_server": "Couldn't save them on the server. Please try again."
     }
   },
   "mi_plantilla": {

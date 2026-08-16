@@ -2916,7 +2916,8 @@
       "denied_body": "Has bloquejat les notificacions. Activa-les des dels Ajustos del sistema per a este dispositiu.",
       "enabling": "Activant…",
       "enable_button": "Activar notificacions",
-      "error": "No s’han pogut activar. Torna-ho a provar."
+      "error_device": "No s’han pogut activar en aquest dispositiu. Revisa els permisos i torna-ho a provar.",
+      "error_server": "No s’han pogut guardar al servidor. Torna-ho a provar."
     }
   },
   "mi_plantilla": {
