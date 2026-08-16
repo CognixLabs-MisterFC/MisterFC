@@ -6,6 +6,7 @@ import {
   getUpcomingEventsFromClient,
   getRecentAnnouncementsFromClient,
   getNotificationFeedFromClient,
+  notificationFeedText,
   type UpcomingEvent,
   type PlayerPendingCallup,
   type AnnouncementRow,
@@ -36,6 +37,7 @@ type HomeData = {
  */
 export function InicioScreen() {
   const t = useTranslations('');
+  const tFeed = useTranslations('home.feed');
   const { activeClub, profileName, theme } = useApp();
   const { players } = useActivePlayer();
   const { user } = useSession();
@@ -126,7 +128,7 @@ export function InicioScreen() {
             <Muted text={t('inicio.empty_feed')} />
           ) : (
             d.feed.map((n) => (
-              <Row key={n.id} title={n.type} sub={n.created_at.slice(0, 10)} unread={n.status === 'pending'} />
+              <Row key={n.id} title={notificationFeedText(tFeed, n.type, n.payload)} sub={n.created_at.slice(0, 10)} unread={n.status === 'pending'} />
             ))
           )}
         </Section>

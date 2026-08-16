@@ -59,7 +59,9 @@ export function JugadoresConsultaScreen() {
                   {formatPlayerName(p.first_name, p.last_name)}
                 </Text>
                 {p.position ? (
-                  <Text className="text-xs text-zinc-400">{p.position}</Text>
+                  <Text className="text-xs text-zinc-400">
+                    {t(`jugadores.positions.${p.position}`)}
+                  </Text>
                 ) : null}
               </View>
             ))}

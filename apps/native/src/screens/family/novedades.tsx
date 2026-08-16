@@ -4,6 +4,7 @@ import {
   getNotificationsPageFromClient,
   markAllNotificationsReadFromClient,
   markNotificationReadFromClient,
+  notificationFeedText,
   type NotificationFeedRow,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
@@ -19,6 +20,7 @@ import { useTranslations } from '@/locale/provider';
  */
 export function NovedadesScreen() {
   const t = useTranslations('');
+  const tFeed = useTranslations('home.feed');
   const [rows, setRows] = useState<NotificationFeedRow[]>([]);
   const [page, setPage] = useState(0);
   const [total, setTotal] = useState(0);
@@ -104,7 +106,9 @@ export function NovedadesScreen() {
               className={`mt-1.5 h-2 w-2 rounded-full ${item.status === 'pending' ? 'bg-emerald-500' : 'bg-transparent'}`}
             />
             <View className="flex-1">
-              <Text className="text-sm text-[#0F1B2E]">{item.type}</Text>
+              <Text className="text-sm text-[#0F1B2E]">
+                {notificationFeedText(tFeed, item.type, item.payload)}
+              </Text>
               <Text className="text-xs text-zinc-400">
                 {item.created_at.slice(0, 10)}
               </Text>
