@@ -1,8 +1,18 @@
 #!/usr/bin/env bash
 #
-# Build LOCAL de un APK de DEBUG para QA en la máquina (Chromebook), SIN gastar
-# builds de EAS. Es una herramienta de QA, NO el camino de release: EAS sigue
-# produciendo los APK/AAB reales y su comportamiento no cambia.
+# Build LOCAL de un APK para QA en la máquina (Chromebook), SIN gastar builds de
+# EAS. Es una herramienta de QA, NO el camino de release: EAS sigue produciendo los
+# APK/AAB reales y su comportamiento no cambia.
+#
+# DOS MODOS:
+#   · AUTÓNOMO (por defecto): assembleRelease firmado con el debug keystore local y
+#     el JS + assets EMBEBIDOS. El APK funciona SOLO —sin Metro y sin el ordenador
+#     delante—, así Jose puede instalarlo y probar convocatorias/directo/push en
+#     condiciones reales fuera de casa. La minificación (R8/Proguard) se deja
+#     DESACTIVADA a propósito: da el empaquetado standalone de release sin sus fallos
+#     ni su coste, para iterar rápido en QA.
+#   · METRO (--metro): assembleDebug; el APK carga el JS desde Metro (dev server).
+#     Útil solo para iterar JS rápido con el ordenador delante.
 #
 # Requisitos (ya instalados por Jose): Java 21, ANDROID_HOME con platforms
 # android-34/36, build-tools 34/36, NDK 27.1.12297006, cmdline-tools.
@@ -17,10 +27,22 @@
 #         # opcional: ANDROID_ABI=arm64-v8a     # ABI del dispositivo de QA
 #         # opcional: GRADLE_WORKERS=1
 #      NUNCA pongas aquí SENTRY_AUTH_TOKEN: en local no se suben sourcemaps.
-#   2) ./build-apk.sh
-#   3) Instala el APK y arranca Metro para el JS (ver el final del script).
+#   2) ./build-apk.sh            # APK AUTÓNOMO (por defecto)
+#      ./build-apk.sh --metro    # APK que carga el JS desde Metro
+#   3) Instala el APK (ver el final del script).
 #
 set -euo pipefail
+
+# --- 0. Modo (autónomo por defecto; --metro para el viejo debug+Metro) ---------
+MODE="standalone"
+case "${1:-}" in
+  --metro)      MODE="metro" ;;
+  ""|--standalone) MODE="standalone" ;;
+  *)
+    echo "❌ Argumento no reconocido: '$1'. Usa: ./build-apk.sh [--metro]" >&2
+    exit 1
+    ;;
+esac
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE"
@@ -71,6 +93,8 @@ fi
 # --- 3. Sentry: NO subir sourcemaps en local -----------------------------------
 # sentry-cli no degrada solo sin token (verificado en #458): fallaría el build.
 # Lo desactivamos SOLO en este entorno local; EAS no se toca y sigue subiendo.
+# En modo AUTÓNOMO el bundle de release dispara el paso de Sentry (embebe el JS), así
+# que esta desactivación es imprescindible también aquí.
 export SENTRY_DISABLE_AUTO_UPLOAD=true
 
 # --- 4. android/ (CNG): app.json es la fuente de verdad ------------------------
@@ -108,30 +132,94 @@ fi
 export CMAKE_BUILD_PARALLEL_LEVEL="${CMAKE_JOBS:-1}"
 ABI="${ANDROID_ABI:-arm64-v8a}"
 WORKERS="${GRADLE_WORKERS:-1}"
-echo "▶ ./gradlew assembleDebug  (ABI=$ABI, max-workers=$WORKERS, CMAKE_JOBS=$CMAKE_BUILD_PARALLEL_LEVEL, sin parallel)…"
+
 cd "$HERE/android"
-./gradlew assembleDebug \
-  -PreactNativeArchitectures="$ABI" \
-  --max-workers="$WORKERS" \
-  --no-parallel
+if [ "$MODE" = "metro" ]; then
+  echo "▶ ./gradlew assembleDebug  (ABI=$ABI, max-workers=$WORKERS, CMAKE_JOBS=$CMAKE_BUILD_PARALLEL_LEVEL, sin parallel)…"
+  ./gradlew assembleDebug \
+    -PreactNativeArchitectures="$ABI" \
+    --max-workers="$WORKERS" \
+    --no-parallel
+else
+  # AUTÓNOMO: assembleRelease (developer support OFF → SIEMPRE usa el bundle embebido).
+  # Minificación DESACTIVADA a propósito (R8/Proguard y shrinkResources off): da el
+  # empaquetado standalone sin sus fallos ni su coste. Firma = debug keystore de la
+  # plantilla de Expo (android/app/debug.keystore) → APK instalable sin más.
+  echo "▶ ./gradlew assembleRelease  (AUTÓNOMO, sin minificar; ABI=$ABI, max-workers=$WORKERS, CMAKE_JOBS=$CMAKE_BUILD_PARALLEL_LEVEL, sin parallel)…"
+  ./gradlew assembleRelease \
+    -PreactNativeArchitectures="$ABI" \
+    -Pandroid.enableProguardInReleaseBuilds=false \
+    -Pandroid.enableShrinkResourcesInReleaseBuilds=false \
+    --max-workers="$WORKERS" \
+    --no-parallel
+fi
 
 # --- 6. Resultado --------------------------------------------------------------
-APK="$HERE/android/app/build/outputs/apk/debug/app-debug.apk"
+if [ "$MODE" = "metro" ]; then
+  APK="$HERE/android/app/build/outputs/apk/debug/app-debug.apk"
+  if [ ! -f "$APK" ]; then
+    echo "❌ El build terminó pero no se encontró el APK en:" >&2
+    echo "   $APK" >&2
+    exit 1
+  fi
+  SIZE="$(du -h "$APK" | cut -f1)"
+  cat <<EOF
+
+✅ APK de DEBUG (modo METRO) generado:
+   $APK   ($SIZE)
+
+⚠️  NO es autónomo: carga el JS desde Metro. Instálalo y arranca el dev server:
+   adb install -r "$APK"
+   pnpm --filter native start
+   adb reverse tcp:8081 tcp:8081     # si el dispositivo va por USB
+EOF
+  exit 0
+fi
+
+# AUTÓNOMO: la plantilla de Expo firma release con el debug keystore → app-release.apk.
+# Fallback DEFENSIVO: si por lo que sea saliera sin firmar (app-release-unsigned.apk),
+# lo firmamos aquí con el mismo debug keystore para que SIEMPRE sea instalable.
+REL_DIR="$HERE/android/app/build/outputs/apk/release"
+APK="$REL_DIR/app-release.apk"
+UNSIGNED="$REL_DIR/app-release-unsigned.apk"
+
+if [ ! -f "$APK" ] && [ -f "$UNSIGNED" ]; then
+  echo "▶ APK sin firmar; firmando con el debug keystore (apksigner)…"
+  BT="$(ls -d "$ANDROID_HOME"/build-tools/*/ 2>/dev/null | sort -V | tail -1)"
+  KS="$HERE/android/app/debug.keystore"
+  if [ -z "$BT" ] || [ ! -x "${BT}apksigner" ]; then
+    echo "❌ No encuentro apksigner en $ANDROID_HOME/build-tools/*/" >&2
+    exit 1
+  fi
+  if [ ! -f "$KS" ]; then
+    echo "❌ No encuentro el debug keystore: $KS" >&2
+    exit 1
+  fi
+  "${BT}zipalign" -f 4 "$UNSIGNED" "$APK"
+  # Credenciales estándar del debug keystore de Android/Expo.
+  "${BT}apksigner" sign \
+    --ks "$KS" --ks-pass pass:android --key-pass pass:android \
+    --ks-key-alias androiddebugkey "$APK"
+fi
+
 if [ ! -f "$APK" ]; then
-  echo "❌ El build terminó pero no se encontró el APK en:" >&2
+  echo "❌ El build terminó pero no se encontró el APK de release en:" >&2
   echo "   $APK" >&2
   exit 1
 fi
 SIZE="$(du -h "$APK" | cut -f1)"
 cat <<EOF
 
-✅ APK de DEBUG generado:
+✅ APK AUTÓNOMO generado:
    $APK   ($SIZE)
+
+Este APK es AUTÓNOMO: lleva el JavaScript y los assets EMBEBIDOS y está firmado con
+el debug keystore. Funciona SOLO —NO necesita Metro ni el ordenador delante—, así
+que puedes instalarlo y probar convocatorias, directo y push fuera de casa.
 
 Instalar en el dispositivo:
    adb install -r "$APK"
 
-El APK debug carga el JS desde Metro. Arráncalo (Expo lee .env.local solo):
-   pnpm --filter native start
-   adb reverse tcp:8081 tcp:8081     # si el dispositivo va por USB
+(Sigue siendo un build de QA, no de tiendas: EAS es el camino de release real.)
+Para iterar JS rápido con el ordenador delante:  ./build-apk.sh --metro
 EOF
