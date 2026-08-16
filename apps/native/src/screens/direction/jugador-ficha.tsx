@@ -48,8 +48,10 @@ export function DireccionJugadorFichaScreen() {
           <Text className="mt-0.5 text-xs text-zinc-400">
             {[
               data.identity.dorsal != null ? `#${data.identity.dorsal}` : null,
-              data.identity.positionMain,
-              data.identity.foot,
+              data.identity.positionMain
+                ? t(`jugadores.positions.${data.identity.positionMain}`)
+                : null,
+              data.identity.foot ? t(`jugadores.feet.${data.identity.foot}`) : null,
             ]
               .filter(Boolean)
               .join(' · ')}

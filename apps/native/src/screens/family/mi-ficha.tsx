@@ -82,8 +82,10 @@ export function MiFichaScreen() {
               {[
                 data.identity.dorsal != null ? `#${data.identity.dorsal}` : null,
                 ageText(data.identity.dateOfBirth, t),
-                data.identity.positionMain,
-                data.identity.foot,
+                data.identity.positionMain
+                  ? t(`jugadores.positions.${data.identity.positionMain}`)
+                  : null,
+                data.identity.foot ? t(`jugadores.feet.${data.identity.foot}`) : null,
               ].filter(Boolean).join(' · ')}
             </Text>
           </View>

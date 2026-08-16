@@ -64,7 +64,7 @@ export function DireccionJugadoresScreen() {
               </View>
               <Text className="mt-0.5 pl-10 text-xs text-zinc-400" numberOfLines={1}>
                 {p.currentTeamName ?? t('jugadores.no_team')}
-                {p.positionMain ? ` · ${p.positionMain}` : ''}
+                {p.positionMain ? ` · ${t(`jugadores.positions.${p.positionMain}`)}` : ''}
               </Text>
             </ListCard>
           ))

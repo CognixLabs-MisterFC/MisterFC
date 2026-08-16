@@ -27,6 +27,9 @@ export {
 } from './native-route';
 export type { NativeRouteTarget } from './native-route';
 
+export { notificationFeedText } from './feed-text';
+export type { FeedTextTranslate } from './feed-text';
+
 export {
   getNotificationFeedFromClient,
   getNotificationsPageFromClient,

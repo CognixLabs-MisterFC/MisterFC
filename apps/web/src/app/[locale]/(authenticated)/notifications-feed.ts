@@ -1,20 +1,19 @@
 /**
  * F13.9a — Mapper REUSABLE de notificaciones in_app → ítem de feed legible.
  *
+ * El TEXTO se compone en `@misterfc/core` (`notificationFeedText`), compartido con
+ * la app nativa; aquí se añade lo específico de web: ICONO (lucide) y HREF.
+ *
  * El `in_app_payload` que escribe el bus (F5.7, ver notify-bus.ts) NO guarda un
  * título legible (eso solo va en el `push_payload`): trae IDs + `deep_link`, y a
- * veces algún campo extra. Aquí se construye el texto a partir del TIPO + los
- * campos que el payload YA contiene — SIN queries adicionales (decisión Regla
- * #11): texto genérico por tipo, enriquecido solo cuando el payload trae el dato
- * (p.ej. `exercise_name`, `title`). No se inventan campos que no existan.
+ * veces algún campo extra.
  *
  * El `href` se DERIVA de los IDs del payload (sin locale) porque los `deep_link`
  * guardados son inconsistentes (unos con `/${locale}`, otros con `/es` fijo,
  * otros sin locale); el panel los pinta con el <Link> de next-intl, que añade el
  * locale activo. Si falta el ID, se cae al `deep_link` guardado, normalizado.
  *
- * Es pieza central: la consume el panel de Inicio (13.9a) y, más adelante, la
- * página /novedades (13.9b).
+ * Es pieza central: la consume el panel de Inicio (13.9a) y la página /novedades.
  */
 
 import type { ComponentType } from 'react';
@@ -32,6 +31,7 @@ import {
   MessageSquare,
   XCircle,
 } from 'lucide-react';
+import { notificationFeedText } from '@misterfc/core';
 
 /** Fila in_app tal como la lee `loadNotificationFeed` (subset de notifications). */
 export type InAppNotificationRow = {
@@ -107,105 +107,6 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
       return ClipboardList;
     default:
       return Bell;
-  }
-}
-
-/** Texto legible por tipo, enriquecido con campos presentes en el payload. */
-function textFor(t: Translate, type: string, payload: Record<string, unknown> | null): string {
-  switch (type) {
-    case 'new_announcement':
-      return t('new_announcement');
-    case 'callup_published':
-      return t('callup_published');
-    case 'callup_updated':
-      return t('callup_updated');
-    case 'new_message':
-      return t('new_message');
-    case 'play_published':
-      return t('play_published');
-    case 'play_approved': {
-      const name = str(payload, 'play_name');
-      return name ? t('play_approved_named', { name }) : t('play_approved');
-    }
-    case 'play_updated': {
-      const name = str(payload, 'play_name');
-      return name ? t('play_updated_named', { name }) : t('play_updated');
-    }
-    case 'play_rejected': {
-      const name = str(payload, 'play_name');
-      return name ? t('play_rejected_named', { name }) : t('play_rejected');
-    }
-    case 'exercise_rejected': {
-      const name = str(payload, 'exercise_name');
-      return name ? t('exercise_rejected_named', { name }) : t('exercise_rejected');
-    }
-    case 'match_callup_reminder': {
-      const title = str(payload, 'title');
-      // F13B — recordatorio consolidado de torneo: texto genérico (sin rival/hora).
-      if (payload?.is_tournament === true) {
-        return title
-          ? t('match_callup_reminder_tournament', { title })
-          : t('match_callup_reminder');
-      }
-      return title ? t('match_callup_reminder_named', { title }) : t('match_callup_reminder');
-    }
-    case 'attendance_pending_reminder': {
-      const title = str(payload, 'title');
-      return title
-        ? t('attendance_pending_reminder_named', { title })
-        : t('attendance_pending_reminder');
-    }
-    case 'training_reminder':
-      return t('training_reminder');
-    case 'event_updated': {
-      const title = str(payload, 'title');
-      return title ? t('event_updated_named', { title }) : t('event_updated');
-    }
-    case 'training_cancelled': {
-      const title = str(payload, 'title');
-      return title
-        ? t('training_cancelled_named', { title })
-        : t('training_cancelled');
-    }
-    case 'training_reinstated': {
-      const title = str(payload, 'title');
-      return title
-        ? t('training_reinstated_named', { title })
-        : t('training_reinstated');
-    }
-    case 'training_approval_requested': {
-      const title = str(payload, 'title');
-      return title
-        ? t('training_approval_requested_named', { title })
-        : t('training_approval_requested');
-    }
-    case 'training_approved': {
-      const title = str(payload, 'title');
-      return title
-        ? t('training_approved_named', { title })
-        : t('training_approved');
-    }
-    case 'training_rejected': {
-      const title = str(payload, 'title');
-      return title
-        ? t('training_rejected_named', { title })
-        : t('training_rejected');
-    }
-    case 'player_promoted': {
-      const team = str(payload, 'team_name');
-      const key = str(payload, 'kind') === 'train'
-        ? 'player_promoted_train'
-        : 'player_promoted_match';
-      return team ? t(`${key}_named`, { team }) : t(key);
-    }
-    case 'development_report_published':
-      return t('development_report_published');
-    case 'evaluation_campaign_launched':
-      return t('evaluation_campaign_launched');
-    case 'goal':
-      return t('goal');
-    default:
-      return t('generic');
   }
 }
 
@@ -291,7 +192,7 @@ export function mapNotification(row: InAppNotificationRow, t: Translate): Mapped
   return {
     id: row.id,
     Icon: iconFor(row.type),
-    text: textFor(t, row.type, payload),
+    text: notificationFeedText(t, row.type, row.payload),
     href: hrefFor(row.type, payload),
     unread: row.status === 'pending',
     createdAt: row.created_at,

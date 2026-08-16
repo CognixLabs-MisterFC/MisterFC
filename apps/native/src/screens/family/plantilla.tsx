@@ -47,7 +47,11 @@ export function PlantillaScreen({ teamId, teamName }: { teamId: string | null; t
                   {[r.first_name, r.last_name].filter(Boolean).join(' ')}
                 </Text>
                 <Text className="text-[11px] text-zinc-400">
-                  {[r.position, `${r.stats.matches} ${t('ficha.matches_short')}`, `${r.stats.goals} ${t('ficha.goals_short')}`]
+                  {[
+                    r.position ? t(`jugadores.positions.${r.position}`) : null,
+                    `${r.stats.matches} ${t('ficha.matches_short')}`,
+                    `${r.stats.goals} ${t('ficha.goals_short')}`,
+                  ]
                     .filter(Boolean)
                     .join(' · ')}
                 </Text>
