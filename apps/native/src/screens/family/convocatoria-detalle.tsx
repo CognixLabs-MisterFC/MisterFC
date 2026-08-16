@@ -15,6 +15,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
+import { SharedLineupCard } from './shared-lineup-card';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -126,6 +127,11 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
             <Text className="text-sm text-zinc-500">{t('convocatorias.not_published')}</Text>
           </View>
         )}
+
+        {/* Alineación oficial compartida (estática). Solo se pinta si el entrenador
+            la ha marcado oficial Y compartido con el equipo (la RLS la gatea); si no,
+            no aparece nada. */}
+        <SharedLineupCard eventId={eventId} />
 
         {/* Decisión técnica sobre el hijo (si publicada). */}
         {child?.decision ? (

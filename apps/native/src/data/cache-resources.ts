@@ -52,6 +52,18 @@ export const WRITE_INVALIDATIONS = {
   upsertCallupDecision: ['convocatoria-staff', 'convocatorias-staff', 'convocatoria', 'convocatorias', 'inicio'],
   /** Alineación/posiciones (se refleja en el campo del directo). */
   setLineup: ['alineacion', 'directo', 'directo-estado', 'spec-directo'],
+  /** Marcar oficial / compartir con el equipo desde el editor: la vista de la
+   *  convocatoria del jugador (tarjeta de alineación compartida) y el editor no
+   *  deben servir lo viejo; también toca el campo del directo (lee la oficial). */
+  shareLineup: [
+    'shared-lineup',
+    'convocatoria',
+    'convocatorias',
+    'alineacion',
+    'directo',
+    'directo-estado',
+    'spec-directo',
+  ],
   /** Alta/edición/borrado de anuncio (inicio y home de familia, lista de anuncios). */
   manageAnnouncement: ['anuncios', 'staff-anuncios', 'inicio', 'home'],
   /** Valoraciones y cierre post-partido. */

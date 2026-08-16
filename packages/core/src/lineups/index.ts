@@ -81,13 +81,26 @@ export {
 export type { PositionKey } from './positions';
 
 // O2-8a — lectura READ-ONLY de la alineación de un partido (pintar, app nativa).
-export { getLineupForEventFromClient } from './queries';
-export type { LineupView, LineupRosterPlayer } from './queries';
+export {
+  getLineupForEventFromClient,
+  getSharedLineupForEventFromClient,
+} from './queries';
+export type {
+  LineupView,
+  LineupRosterPlayer,
+  LineupVisibility,
+  SharedLineupView,
+  SharedLineupPlayer,
+} from './queries';
 
 // O2-8b — ESCRITURA de la alineación (drag: colocar/mover + cambiar formación).
+// O2 alineación compartida — marcar oficial + compartir con el equipo (dos toggles,
+// como la web); la web pasa a DELEGAR en estas (comportamiento idéntico).
 export {
   upsertLineupPositionFromClient,
   setLineupFormationFromClient,
+  setLineupOfficialFromClient,
+  setLineupVisibilityFromClient,
   mapLineupPgErr,
 } from './writes';
 export type { LineupWriteError, LineupWriteOutcome } from './writes';

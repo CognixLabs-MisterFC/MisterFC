@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import {
   applyDrop,
   coachFormationToFormation,
@@ -10,6 +10,8 @@ import {
   getFormation,
   getLineupForEventFromClient,
   setLineupFormationFromClient,
+  setLineupOfficialFromClient,
+  setLineupVisibilityFromClient,
   upsertLineupPositionFromClient,
   type DropTarget,
   type Formation,
@@ -68,6 +70,7 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
     bench: false,
   });
   const [busyFormation, setBusyFormation] = useState(false);
+  const [busyShare, setBusyShare] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
   // Semilla de estado desde lo GUARDADO: se REsemilla en cada fetch nuevo (identidad
   // de `data` cambia) — patrón "ajustar estado al cambiar una prop" de React, sin
@@ -191,6 +194,63 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
     [editable, lineupId, busyFormation, data, positions, refresh],
   );
 
+  // Compartir con los jugadores = DOS interruptores independientes (igual que la web):
+  // "Oficial" (is_official) y "Compartir con equipo" (visibility='team'). El jugador/
+  // familia solo la ve si AMBOS están activos (RLS). Marcar oficial exige convocatoria
+  // publicada (guardia en core → 'callup_not_published'). Escritura RLS directa; tras
+  // el éxito se invalida la caché de la vista del jugador ('shareLineup').
+  const shareEditable = canManage && online && lineupId != null && !busyShare;
+
+  const onToggleOfficial = useCallback(
+    async (next: boolean) => {
+      if (!lineupId || busyShare) return;
+      setBusyShare(true);
+      setErrorKey(null);
+      const r = await setLineupOfficialFromClient(supabase, {
+        lineup_id: lineupId,
+        is_official: next,
+      });
+      setBusyShare(false);
+      if (!r.ok) {
+        setErrorKey(
+          r.error === 'callup_not_published'
+            ? 'alineacion.official_needs_published'
+            : r.error === 'forbidden'
+              ? 'alineacion.errors.forbidden'
+              : 'alineacion.errors.generic',
+        );
+        return;
+      }
+      refresh();
+      void invalidateAfterWrite('shareLineup');
+    },
+    [lineupId, busyShare, refresh],
+  );
+
+  const onToggleShare = useCallback(
+    async (next: boolean) => {
+      if (!lineupId || busyShare) return;
+      setBusyShare(true);
+      setErrorKey(null);
+      const r = await setLineupVisibilityFromClient(supabase, {
+        lineup_id: lineupId,
+        visibility: next ? 'team' : 'staff',
+      });
+      setBusyShare(false);
+      if (!r.ok) {
+        setErrorKey(
+          r.error === 'forbidden'
+            ? 'alineacion.errors.forbidden'
+            : 'alineacion.errors.generic',
+        );
+        return;
+      }
+      refresh();
+      void invalidateAfterWrite('shareLineup');
+    },
+    [lineupId, busyShare, refresh],
+  );
+
   if (!eventId) return <EmptyState message={t('alineacion.pick_match')} />;
   if (loading) return <LoadingScreen />;
   if (!data) return <EmptyState message={t('alineacion.unavailable')} />;
@@ -306,6 +366,30 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
               </View>
             ) : null}
 
+            {/* Compartir con los jugadores: DOS interruptores (Oficial + Compartir
+                con equipo), réplica de la web. Solo si AMBOS → jugador/familia la ve. */}
+            <View className="gap-3 rounded-2xl border border-zinc-200 p-4">
+              <Text className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+                {t('alineacion.official_lineup_title')}
+              </Text>
+              <ToggleRow
+                label={t('alineacion.official_label')}
+                hint={t('alineacion.official_hint')}
+                value={data.isOfficial}
+                disabled={!shareEditable}
+                onChange={onToggleOfficial}
+                accent={accent}
+              />
+              <ToggleRow
+                label={t('alineacion.share_label')}
+                hint={t('alineacion.share_hint')}
+                value={data.visibility === 'team'}
+                disabled={!shareEditable}
+                onChange={onToggleShare}
+                accent={accent}
+              />
+            </View>
+
             {/* Tablero: campo + banquillo, con drag. */}
             <LineupBoard
               formation={formation}
@@ -338,6 +422,37 @@ function Banner({ text }: { text: string }) {
   return (
     <View className="rounded-xl bg-zinc-100 px-4 py-2">
       <Text className="text-center text-xs text-zinc-500">{text}</Text>
+    </View>
+  );
+}
+
+function ToggleRow({
+  label,
+  hint,
+  value,
+  disabled,
+  onChange,
+  accent,
+}: {
+  label: string;
+  hint: string;
+  value: boolean;
+  disabled: boolean;
+  onChange: (next: boolean) => void;
+  accent: string;
+}) {
+  return (
+    <View className="flex-row items-start gap-3">
+      <View className="flex-1">
+        <Text className="text-sm font-medium text-[#0F1B2E]">{label}</Text>
+        <Text className="mt-0.5 text-xs text-zinc-400">{hint}</Text>
+      </View>
+      <Switch
+        value={value}
+        disabled={disabled}
+        onValueChange={onChange}
+        trackColor={{ true: accent }}
+      />
     </View>
   );
 }
