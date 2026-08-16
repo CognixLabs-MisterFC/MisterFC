@@ -2916,7 +2916,8 @@
       "denied_body": "Has bloqueado las notificaciones. Actívalas desde los Ajustes del sistema para este dispositivo.",
       "enabling": "Activando…",
       "enable_button": "Activar notificaciones",
-      "error": "No se pudieron activar. Inténtalo de nuevo."
+      "error_device": "No se pudieron activar en este dispositivo. Revisa los permisos e inténtalo de nuevo.",
+      "error_server": "No se pudieron guardar en el servidor. Inténtalo de nuevo."
     }
   },
   "mi_plantilla": {

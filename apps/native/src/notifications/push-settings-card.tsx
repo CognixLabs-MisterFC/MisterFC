@@ -5,6 +5,7 @@ import { useTranslations } from '@/locale/provider';
 import {
   currentPermissionView,
   enablePushNotifications,
+  type EnableErrorReason,
   type PermissionView,
 } from './push-registration';
 
@@ -25,7 +26,7 @@ export function PushSettingsCard() {
   const tShared = useTranslations('notificaciones.push');
   const [view, setView] = useState<PermissionView | 'loading'>('loading');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
+  const [errorReason, setErrorReason] = useState<EnableErrorReason | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -40,7 +41,7 @@ export function PushSettingsCard() {
 
   const onEnable = useCallback(async () => {
     setBusy(true);
-    setError(false);
+    setErrorReason(null);
     const res = await enablePushNotifications(supabase);
     setBusy(false);
     if (res.status === 'enabled') {
@@ -48,7 +49,7 @@ export function PushSettingsCard() {
     } else if (res.status === 'denied') {
       setView(res.canAskAgain ? 'undetermined' : 'denied');
     } else {
-      setError(true);
+      setErrorReason(res.reason);
     }
   }, []);
 
@@ -81,9 +82,9 @@ export function PushSettingsCard() {
               {busy ? t('enabling') : t('enable_button')}
             </Text>
           </Pressable>
-          {error ? (
+          {errorReason ? (
             <Text className="text-sm text-red-600" role="alert">
-              {t('error')}
+              {t(errorReason === 'server' ? 'error_server' : 'error_device')}
             </Text>
           ) : null}
         </>
