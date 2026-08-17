@@ -2,17 +2,26 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { BackHandler, Image, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter, type Href } from 'expo-router';
 import type { Role } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { NEUTRAL_COLOR, type ClubTheme } from '@/theme';
 import { useTranslations } from '@/locale/provider';
-import { menuForArea, type ChromeArea, type MenuDef } from './config';
+import {
+  hrefFor,
+  isParamSwapRoute,
+  isRootTab,
+  menuForArea,
+  type ChromeArea,
+  type MenuDef,
+} from './config';
 import { AppMenu } from './menu';
 
 /** Tema neutro de la carcasa cuando no hay club activo (p.ej. seguidor). */
@@ -88,15 +97,75 @@ export function useChrome(): ChromeValue {
  * Cabecera de la carcasa: fondo con el COLOR del club (o neutro), botón ☰ que
  * abre el menú, logo y nombre del club activo. La monta el `_layout` de cada área
  * como `header` de las pestañas, así aparece en todas sus pantallas.
+ *
+ * Botón de VOLVER: se pinta como primer elemento (antes del ☰, que NUNCA desaparece)
+ * en toda pantalla que no sea raíz de pestaña, y en el detalle de las rutas swap
+ * (?teamId). Al pulsarlo vuelve a la pantalla anterior (`onGoBack` = goBack del Tabs
+ * con backBehavior:'history'); en el detalle swap vuelve a la LISTA limpiando teamId.
+ * El atrás físico de Android y el gesto de borde disparan el MISMO evento
+ * (`hardwareBackPress`): lo igualamos a la flecha para el caso swap; el resto lo deja
+ * en el back por defecto (historial). Solo actúa la pantalla ENFOCADA (puede haber
+ * varias cabeceras montadas). NO se toca el `View` exterior (paddingTop: insets.top).
  */
-export function AppHeader() {
+export function AppHeader({
+  routeName,
+  teamId,
+  onGoBack,
+  isFocused,
+}: {
+  routeName: string;
+  teamId: string | null;
+  onGoBack: () => void;
+  isFocused: () => boolean;
+}) {
   const insets = useSafeAreaInsets();
-  const { chromeTheme, openMenu } = useChrome();
+  const { area, chromeTheme, openMenu } = useChrome();
   const t = useTranslations('shell');
+  const router = useRouter();
+
+  const swapDetail = isParamSwapRoute(area, routeName) && !!teamId;
+  const showBack = swapDetail || !isRootTab(area, routeName);
+
+  // Volver a la lista de una ruta swap = navegar a la ruta base (sin params): limpia
+  // teamId y muestra la lista/picker, sin añadir entrada de historial (misma ruta).
+  const backToList = useCallback(() => {
+    router.navigate(hrefFor(area, routeName) as Href);
+  }, [router, area, routeName]);
+
+  const onBack = useCallback(() => {
+    if (swapDetail) backToList();
+    else onGoBack();
+  }, [swapDetail, backToList, onGoBack]);
+
+  // Física + gesto de borde de Android = mismo evento; consistentes con la flecha.
+  useEffect(() => {
+    const onHardwareBack = () => {
+      if (!isFocused()) return false; // solo la pantalla enfocada decide
+      if (swapDetail) {
+        backToList();
+        return true; // manejado: detalle → lista
+      }
+      return false; // resto: back por defecto (historial)
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onHardwareBack);
+    return () => sub.remove();
+  }, [swapDetail, isFocused, backToList]);
 
   return (
     <View style={{ paddingTop: insets.top, backgroundColor: chromeTheme.color }}>
       <View className="h-14 flex-row items-center gap-3 px-4">
+        {showBack ? (
+          <Pressable
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel={t('back')}
+            hitSlop={10}
+            className="active:opacity-60"
+          >
+            <Text className="text-3xl leading-none text-white">‹</Text>
+          </Pressable>
+        ) : null}
+
         <Pressable
           onPress={openMenu}
           accessibilityRole="button"
