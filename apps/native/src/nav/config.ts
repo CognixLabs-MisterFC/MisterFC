@@ -211,3 +211,33 @@ export function hrefFor(area: ChromeArea, name: string): string {
   const seg = AREA_SEGMENT[area];
   return name === 'index' ? `/${seg}` : `/${seg}/${name}`;
 }
+
+/**
+ * ¿`name` es una pestaña RAÍZ del área (sale en la barra inferior)? Las raíces NO
+ * llevan flecha de volver: son el nivel superior de su pestaña. El atrás físico sigue
+ * funcionando (retrocede en el historial), pero la flecha solo aparece en pantallas
+ * hijas.
+ */
+export function isRootTab(area: ChromeArea, name: string): boolean {
+  return AREA_TABS[area].some((t) => t.name === name);
+}
+
+/**
+ * Rutas "misma ruta, dos estados por ?teamId": SIN teamId muestran una lista/picker de
+ * equipos, CON teamId el detalle de ese equipo. Comparten clave de ruta, así que el
+ * historial NO distingue lista↔detalle; por eso el "volver" desde el detalle limpia
+ * teamId (vuelve a la lista) en vez de retroceder en el historial. Solo estos 3: el
+ * resto de ?teamId son detalle-only con su lista en OTRA ruta (mi-equipo/mis-equipos),
+ * donde el back por historial ya lleva a la lista.
+ */
+const PARAM_SWAP_ROUTES: Record<ChromeArea, readonly string[]> = {
+  family: [],
+  staff: ['equipo', 'anuncios'],
+  direction: ['anuncios'],
+  spectator: [],
+};
+
+/** ¿`name` hace swap lista↔detalle por ?teamId dentro de la misma ruta (ver arriba)? */
+export function isParamSwapRoute(area: ChromeArea, name: string): boolean {
+  return PARAM_SWAP_ROUTES[area].includes(name);
+}

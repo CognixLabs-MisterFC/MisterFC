@@ -19,8 +19,22 @@ export function AreaNavigator({ area }: { area: ChromeArea }) {
 
   return (
     <Tabs
+      // `history`: el atrás (flecha, botón físico y gesto de borde de Android)
+      // retrocede a la pantalla ANTERIOR visitada —incluidos cambios de pestaña—, no
+      // al inicio del área. Es la base del "volver un paso".
+      backBehavior="history"
       screenOptions={{
-        header: () => <AppHeader />,
+        // El header recibe la ruta/navegación actuales (antes se ignoraban) para
+        // decidir si pinta la flecha y a dónde vuelve. Pasamos primitivas/callbacks
+        // para no acoplar AppHeader a los tipos de react-navigation.
+        header: ({ route, navigation }) => (
+          <AppHeader
+            routeName={route.name}
+            teamId={(route.params as { teamId?: string } | undefined)?.teamId ?? null}
+            onGoBack={() => navigation.goBack()}
+            isFocused={() => navigation.isFocused()}
+          />
+        ),
         tabBarActiveTintColor: chromeTheme.color,
         tabBarInactiveTintColor: '#9CA3AF',
       }}
