@@ -12,3 +12,14 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - expo-splash-screen@57.0.6
+
+# Public-hoist SOLO los plugins de Babel al node_modules raíz.
+# babel-preset-expo (SDK 57) hace require('@babel/plugin-transform-react-jsx') y ~32
+# plugins mas DESDE su ubicacion en .pnpm/ (resolutor anidado). En modo isolated esos
+# plugins solo viven en el store hoisted; si una instalacion queda inconsistente, ese
+# symlink desaparece y el bundle de release peta ("Cannot find module
+# '@babel/plugin-transform-react-jsx'"). Public-hoisting @babel/plugin-* los coloca en
+# el node_modules RAIZ, que SI esta en la ruta de resolucion del preset, de forma
+# estable. Acotado: solo @babel/plugin-*.
+publicHoistPattern:
+  - '@babel/plugin-*'
