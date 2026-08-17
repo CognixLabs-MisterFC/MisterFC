@@ -49,3 +49,7 @@ coverage/
 # Sentry
 .sentryclirc
 Documentos/
+
+# Claves de cuenta de servicio (NUNCA al repo)
+*firebase-adminsdk*.json
+*-service-account*.json
