@@ -4,11 +4,13 @@
 
 export {
   getSharedSessionsForTeamsFromClient,
+  getTeamTrainingsFromClient,
   getSessionForEditFromClient,
   getSessionExerciseMetaFromClient,
 } from './queries';
 export type {
   PlayerSharedSessionRow,
+  TeamTrainingRow,
   SessionTaskForEdit,
   SessionBlockPlayForEdit,
   SessionBlockForEdit,

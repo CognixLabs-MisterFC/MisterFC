@@ -61,17 +61,21 @@ export const AREA_TABS: Record<ChromeArea, TabDef[]> = {
   ],
 };
 
+// Orden EXACTO pedido por Jose (O2 QA). `convocatoria` (singular) y `playbook`/
+// `entrenamientos.title` reusan claves del catálogo compartido de la web.
 const FAMILY_MENU: MenuDef[] = [
   { name: 'mi-equipo', labelKey: 'nav.mi_equipo' },
-  { name: 'convocatorias', labelKey: 'nav.convocatorias' },
+  { name: 'convocatorias', labelKey: 'nav.convocatoria' },
+  { name: 'entrenamientos', labelKey: 'entrenamientos.title' },
+  { name: 'asistencia', labelKey: 'nav.asistencia_consulta' },
+  { name: 'jugadas', labelKey: 'playbook.title' },
   { name: 'mi-ficha', labelKey: 'nav.mi_ficha' },
   { name: 'mi-informe', labelKey: 'nav.mi_informe' },
-  { name: 'seguidores', labelKey: 'nav.seguidores' },
-  { name: 'gestion', labelKey: 'nav.gestion' },
   { name: 'anuncios', labelKey: 'nav.anuncios' },
   { name: 'novedades', labelKey: 'nav.novedades' },
+  { name: 'gestion', labelKey: 'nav.gestion' },
   { name: 'perfil', labelKey: 'nav.perfil' },
-  { name: 'asistencia', labelKey: 'nav.asistencia_consulta' },
+  { name: 'seguidores', labelKey: 'nav.seguidores' },
 ];
 
 /**
@@ -84,10 +88,11 @@ const FAMILY_HIDDEN: MenuDef[] = [
   // O2-5 D1 — subpantallas de Mi equipo (alcanzadas por navegación con teamId).
   { name: 'plantilla', labelKey: 'nav.mi_equipo' },
   { name: 'cuerpo-tecnico', labelKey: 'nav.cuerpo_tecnico' },
-  { name: 'sesiones', labelKey: 'nav.mi_equipo' },
+  // O2 — detalle de una sesión (sessionId): reutilizado por Entrenamientos.
   { name: 'sesion', labelKey: 'nav.mi_equipo' },
-  // O2-5 D2 — playbook (listado + visor animado).
-  { name: 'jugadas', labelKey: 'nav.mi_equipo' },
+  // O2 — detalle de un entrenamiento SIN sesión (datos por navegación).
+  { name: 'entrenamiento', labelKey: 'entrenamientos.title' },
+  // O2-5 D2 — visor animado de una jugada (la LISTA `jugadas` es entrada de menú).
   { name: 'jugada', labelKey: 'nav.mi_equipo' },
   // O2-5 E1 — detalle de convocatoria (?eventId) y stats del partido (?eventId).
   { name: 'convocatoria', labelKey: 'nav.convocatorias' },

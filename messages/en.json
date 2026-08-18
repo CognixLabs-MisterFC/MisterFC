@@ -3897,7 +3897,11 @@
         "title": "Training plan",
         "description": "See the sessions your coach has shared."
       }
-    }
+    },
+    "empty": "No upcoming trainings.",
+    "untitled": "Training",
+    "session_badge": "Session",
+    "no_session": "This training has no shared session."
   },
   "planificacion": {
     "title": "Training plan",
@@ -4738,13 +4742,14 @@
     "equipo": "Team",
     "estadisticas": "Stats",
     "estadisticas_equipo": "Team stats",
-    "gestion": "Child management",
+    "gestion": "Player management",
     "inicio_direccion": "Management home",
     "mi_informe": "My report",
     "novedades": "Updates",
     "perfil": "Profile",
     "post_partido": "Post-match",
-    "sesion_del_dia": "Today's session"
+    "sesion_del_dia": "Today's session",
+    "convocatoria": "Call-up"
   },
   "child": {
     "none": "You have no children at this club"

@@ -58,6 +58,77 @@ export async function getSharedSessionsForTeamsFromClient(
     }));
 }
 
+// ── Entrenamientos del equipo (TODOS) + si tienen sesión compartida ────────────
+
+export type TeamTrainingRow = {
+  event_id: string;
+  team_id: string;
+  team_name: string;
+  title: string | null;
+  starts_at: string;
+  location_name: string | null;
+  /** Id de la sesión compartida (visibility='team') ligada al entrenamiento, o null. */
+  session_id: string | null;
+};
+
+/**
+ * O2 — Lista TODOS los entrenamientos (type='training') del/los equipo(s) desde
+ * `fromIso`, y marca cuáles tienen SESIÓN COMPARTIDA. El criterio de "tiene sesión"
+ * espeja el `has_session` de la web (calendar `loadPlannedEventIds`: existe fila en
+ * `sessions` con ese `event_id` e `is_template=false`), añadiendo `visibility='team'`
+ * porque la familia solo ve las compartidas (igual que getSharedSessionsForTeams).
+ * Devuelve además el `session_id` para abrir el detalle reutilizando `sesion-detalle`.
+ * RLS es el gate; los filtros refuerzan la intención.
+ */
+export async function getTeamTrainingsFromClient(
+  supabase: DbClient,
+  clubId: string,
+  teams: ReadonlyArray<{ id: string; name: string }>,
+  fromIso: string,
+  limit = 100,
+): Promise<TeamTrainingRow[]> {
+  if (teams.length === 0) return [];
+  const teamIds = teams.map((t) => t.id);
+  const nameById = new Map(teams.map((t) => [t.id, t.name]));
+
+  const { data: evs } = await supabase
+    .from('events')
+    .select('id, team_id, title, starts_at, location_name')
+    .eq('club_id', clubId)
+    .in('team_id', teamIds)
+    .eq('type', 'training')
+    .gte('starts_at', fromIso)
+    .order('starts_at', { ascending: true })
+    .limit(limit);
+
+  const events = (evs ?? []).filter((e) => e.starts_at != null && e.team_id != null);
+  if (events.length === 0) return [];
+
+  const eventIds = events.map((e) => e.id as string);
+  const { data: sess } = await supabase
+    .from('sessions')
+    .select('id, event_id')
+    .in('event_id', eventIds)
+    .eq('is_template', false)
+    .eq('visibility', 'team');
+
+  const sessionByEvent = new Map<string, string>();
+  for (const s of sess ?? []) {
+    const ev = s.event_id as string | null;
+    if (ev && !sessionByEvent.has(ev)) sessionByEvent.set(ev, s.id as string);
+  }
+
+  return events.map((e) => ({
+    event_id: e.id as string,
+    team_id: e.team_id as string,
+    team_name: nameById.get(e.team_id as string) ?? '',
+    title: (e.title as string | null) ?? null,
+    starts_at: e.starts_at as string,
+    location_name: (e.location_name as string | null) ?? null,
+    session_id: sessionByEvent.get(e.id as string) ?? null,
+  }));
+}
+
 // ── Una sesión con bloques/tareas/jugadas (editor staff + lectura jugador) ──────
 
 export type SessionTaskForEdit = {
