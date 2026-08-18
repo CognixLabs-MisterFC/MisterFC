@@ -16,9 +16,19 @@ function team(id: string, name: string, clubId = CLUB) {
   };
 }
 
-function makeClient(rows: unknown[]) {
+function makeClient(
+  rows: unknown[],
+  seasons: unknown[] = [{ label: '2025/26', status: 'active' }],
+) {
   const client = {
     from(t: string) {
+      if (t === 'seasons') {
+        const s = {
+          select: () => s,
+          eq: () => Promise.resolve({ data: seasons, error: null }),
+        };
+        return s;
+      }
       expect(t).toBe('team_staff');
       const q = {
         select: () => q,
@@ -67,5 +77,21 @@ describe('getStaffTeamsFromClient', () => {
     ]);
     const r = await getStaffTeamsFromClient(client, { membershipId: 'm-1', clubId: CLUB });
     expect(r).toHaveLength(0);
+  });
+
+  it('ignora equipos de temporada NO activa (dato caduco tras rollover)', async () => {
+    const client = makeClient(
+      [
+        { team_id: 't-new', staff_role: 'entrenador_principal', teams: team('t-new', 'Infantil B') },
+        {
+          team_id: 't-old',
+          staff_role: 'entrenador_principal',
+          teams: { ...team('t-old', 'Infantil B'), season: '2024/25' },
+        },
+      ],
+      [{ label: '2025/26', status: 'active' }],
+    );
+    const r = await getStaffTeamsFromClient(client, { membershipId: 'm-1', clubId: CLUB });
+    expect(r.map((t) => t.teamId)).toEqual(['t-new']);
   });
 });

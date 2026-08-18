@@ -14,6 +14,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import type { Role } from '../auth/current-user';
+import { getActiveSeasonLabelFromClient } from '../season/active-season';
 
 type DbClient = SupabaseClient<Database>;
 
@@ -40,21 +41,28 @@ export async function resolveConvocatoriasScopeFromClient(
     role === 'entrenador_ayudante' ||
     role === 'coordinador'
   ) {
+    // Solo equipos de la TEMPORADA ACTIVA: tras el rollover puede haber una fila
+    // `team_staff` viva (left_at null) en el equipo de una temporada pasada (mismo
+    // nombre, otro team_id). Sin este filtro el scope arrastra ese equipo caduco y
+    // deja las pantallas del entrenador vacías. Mismo patrón que el lado familia.
+    const activeSeason = await getActiveSeasonLabelFromClient(supabase, clubId);
     type Row = {
       team_id: string;
       staff_role: string;
+      teams: { season: string };
       memberships: { profile_id: string; club_id: string };
     };
     const { data } = await supabase
       .from('team_staff')
-      .select('team_id, staff_role, memberships!inner(profile_id, club_id)')
+      .select('team_id, staff_role, teams!inner(season), memberships!inner(profile_id, club_id)')
       .is('left_at', null);
     const myRows = (data ?? [])
       .map((r) => r as unknown as Row)
       .filter(
         (r) =>
           r.memberships.profile_id === userId &&
-          r.memberships.club_id === clubId,
+          r.memberships.club_id === clubId &&
+          r.teams.season === activeSeason,
       );
     const teamIds = myRows.map((r) => r.team_id);
 

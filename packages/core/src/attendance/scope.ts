@@ -14,6 +14,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import type { Role } from '../auth/current-user';
+import { getActiveSeasonLabelFromClient } from '../season/active-season';
 
 type DbClient = SupabaseClient<Database>;
 
@@ -51,20 +52,26 @@ export async function resolveAttendanceScopeFromClient(
     role === 'entrenador_ayudante' ||
     role === 'coordinador'
   ) {
+    // Solo equipos de la TEMPORADA ACTIVA: una fila `team_staff` viva de una
+    // temporada pasada (mismo nombre, otro team_id) arrastraría un equipo caduco y
+    // dejaría la asistencia vacía. Mismo patrón que el lado familia.
+    const activeSeason = await getActiveSeasonLabelFromClient(supabase, clubId);
     type Row = {
       team_id: string;
+      teams: { season: string };
       memberships: { profile_id: string; club_id: string };
     };
     const { data } = await supabase
       .from('team_staff')
-      .select('team_id, memberships!inner(profile_id, club_id)')
+      .select('team_id, teams!inner(season), memberships!inner(profile_id, club_id)')
       .is('left_at', null);
     const teamIds = (data ?? [])
       .map((r) => r as unknown as Row)
       .filter(
         (r) =>
           r.memberships.profile_id === userId &&
-          r.memberships.club_id === clubId,
+          r.memberships.club_id === clubId &&
+          r.teams.season === activeSeason,
       )
       .map((r) => r.team_id);
     return { kind: 'restricted', teamIds };
