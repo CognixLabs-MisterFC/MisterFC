@@ -61,13 +61,15 @@ export const AREA_TABS: Record<ChromeArea, TabDef[]> = {
   ],
 };
 
-// Orden EXACTO pedido por Jose (O2 QA). `convocatoria` (singular) y `playbook`/
-// `entrenamientos.title` reusan claves del catálogo compartido de la web.
+// Orden EXACTO pedido por Jose (O2 QA). `nav.partidos` es el rótulo PROPIO de
+// familia (la pantalla `convocatorias`: lista de partidos con convocatoria,
+// disponibilidad y alineación); NO se toca `nav.convocatorias` del staff.
+// `playbook`/`entrenamientos.title` reusan claves del catálogo compartido de la
+// web. Asistencia salió del menú: su contenido vive dentro de Entrenamientos.
 const FAMILY_MENU: MenuDef[] = [
   { name: 'mi-equipo', labelKey: 'nav.mi_equipo' },
-  { name: 'convocatorias', labelKey: 'nav.convocatoria' },
+  { name: 'convocatorias', labelKey: 'nav.partidos' },
   { name: 'entrenamientos', labelKey: 'entrenamientos.title' },
-  { name: 'asistencia', labelKey: 'nav.asistencia_consulta' },
   { name: 'jugadas', labelKey: 'playbook.title' },
   { name: 'mi-ficha', labelKey: 'nav.mi_ficha' },
   { name: 'mi-informe', labelKey: 'nav.mi_informe' },

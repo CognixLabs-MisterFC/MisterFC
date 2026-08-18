@@ -15,6 +15,7 @@ export type {
 export {
   attendanceStatsWindow,
   getAttendanceStatsFromClient,
+  getPlayerTrainingAttendanceForEventsFromClient,
 } from './stats-queries';
 export type {
   AttendanceStatsScope,

@@ -22,8 +22,20 @@ type SessionView = {
  * del ejercicio sale del RPC `session_exercise_meta` (la familia no lee `exercises`).
  * El fetch vive en core; defensa: si no es team-visible o es plantilla → vacío. Las
  * jugadas del bloque se listan sin visor (el visor animado es D2). Caché por sesión.
+ *
+ * O2 — Cuando se abre desde el HISTÓRICO de Entrenamientos (`past`), muestra arriba
+ * la asistencia del jugador a ese entrenamiento (`attendanceCode`, o "sin registro").
+ * Los próximos NO pasan `past` (aún no celebrados) → la sesión se ve tal cual.
  */
-export function SesionDetalleScreen({ sessionId }: { sessionId: string | null }) {
+export function SesionDetalleScreen({
+  sessionId,
+  past = false,
+  attendanceCode = null,
+}: {
+  sessionId: string | null;
+  past?: boolean;
+  attendanceCode?: string | null;
+}) {
   const t = useTranslations('');
   const { activeClub } = useApp();
   const clubId = activeClub?.club.id ?? null;
@@ -50,6 +62,20 @@ export function SesionDetalleScreen({ sessionId }: { sessionId: string | null })
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
+        {/* Asistencia del jugador (solo al abrir desde el histórico). */}
+        {past ? (
+          <View className="rounded-2xl border border-zinc-200 p-4">
+            <Text className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+              {t('entrenamientos.attendance_label')}
+            </Text>
+            <Text className="text-sm font-medium text-[#0F1B2E]">
+              {attendanceCode
+                ? t(`asistencia.codes.${attendanceCode}`)
+                : t('entrenamientos.attendance_none')}
+            </Text>
+          </View>
+        ) : null}
+
         {/* Cabecera */}
         <View>
           <Text className="text-xl font-bold text-[#0F1B2E]">

@@ -217,3 +217,31 @@ export async function getAttendanceStatsFromClient(
 
   return { byPlayer, byCode, totalRecorded };
 }
+
+/**
+ * O2 — Código de asistencia de UN jugador para un conjunto de entrenamientos ya
+ * celebrados (histórico de Entrenamientos, área familia). Devuelve `event_id →
+ * code` solo para los eventos con registro; los que el entrenador aún no marcó no
+ * aparecen en el mapa. SOLO LECTURA; la RLS de `training_attendance` acota lo
+ * visible (el tutor ve las filas de su hijo, igual que en `getAttendanceStats`).
+ */
+export async function getPlayerTrainingAttendanceForEventsFromClient(
+  supabase: Sb,
+  playerId: string,
+  eventIds: readonly string[],
+): Promise<Map<string, AttendanceCode>> {
+  const out = new Map<string, AttendanceCode>();
+  if (eventIds.length === 0) return out;
+
+  const { data } = await supabase
+    .from('training_attendance')
+    .select('event_id, code')
+    .eq('player_id', playerId)
+    .in('event_id', eventIds as string[]);
+
+  for (const r of data ?? []) {
+    const ev = r.event_id as string | null;
+    if (ev) out.set(ev, r.code as AttendanceCode);
+  }
+  return out;
+}
