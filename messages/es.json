@@ -3897,7 +3897,11 @@
         "title": "Planificación de entrenamientos",
         "description": "Consulta las sesiones que tu entrenador ha compartido."
       }
-    }
+    },
+    "empty": "No hay entrenamientos próximos.",
+    "untitled": "Entrenamiento",
+    "session_badge": "Sesión",
+    "no_session": "Este entrenamiento no tiene una sesión compartida."
   },
   "planificacion": {
     "title": "Planificación de entrenamientos",
@@ -4738,13 +4742,14 @@
     "equipo": "Equipo",
     "estadisticas": "Estadísticas",
     "estadisticas_equipo": "Estadísticas de equipo",
-    "gestion": "Gestión del hijo",
+    "gestion": "Gestión jugador",
     "inicio_direccion": "Inicio de dirección",
     "mi_informe": "Mi informe",
     "novedades": "Novedades",
     "perfil": "Perfil",
     "post_partido": "Post-partido",
-    "sesion_del_dia": "Sesión del día"
+    "sesion_del_dia": "Sesión del día",
+    "convocatoria": "Convocatoria"
   },
   "child": {
     "none": "No tienes ningún hijo en este club"

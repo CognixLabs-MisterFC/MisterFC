@@ -3897,7 +3897,11 @@
         "title": "Planificació d'entrenaments",
         "description": "Consulta les sessions que el teu entrenador ha compartit."
       }
-    }
+    },
+    "empty": "No hi ha entrenaments propers.",
+    "untitled": "Entrenament",
+    "session_badge": "Sessió",
+    "no_session": "Aquest entrenament no té una sessió compartida."
   },
   "planificacion": {
     "title": "Planificació d'entrenaments",
@@ -4738,13 +4742,14 @@
     "equipo": "Equip",
     "estadisticas": "Estadístiques",
     "estadisticas_equipo": "Estadístiques d'equip",
-    "gestion": "Gestió del fill",
+    "gestion": "Gestió del jugador",
     "inicio_direccion": "Inici de direcció",
     "mi_informe": "El meu informe",
     "novedades": "Novetats",
     "perfil": "Perfil",
     "post_partido": "Post-partit",
-    "sesion_del_dia": "Sessió del dia"
+    "sesion_del_dia": "Sessió del dia",
+    "convocatoria": "Convocatòria"
   },
   "child": {
     "none": "No tens cap fill en este club"

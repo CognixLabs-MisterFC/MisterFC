@@ -122,7 +122,6 @@ export function MiEquipoScreen() {
         <View className="flex-row flex-wrap gap-2">
           <NavChip label={t('mi_equipo.nav_plantilla')} accent={accent} onPress={() => goTeam('/family/plantilla')} />
           <NavChip label={t('mi_equipo.nav_staff')} accent={accent} onPress={() => goTeam('/family/cuerpo-tecnico')} />
-          <NavChip label={t('mi_equipo.nav_sesiones')} accent={accent} onPress={() => goTeam('/family/sesiones')} />
           <NavChip label={t('mi_equipo.cards.playbook.title')} accent={accent} onPress={() => goTeam('/family/jugadas')} />
         </View>
 
