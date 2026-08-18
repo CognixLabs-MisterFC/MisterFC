@@ -99,10 +99,17 @@ function MatchCard({ match }: { match: WeekMatch }) {
       : match.status === 'closed'
         ? t('directos.status_closed')
         : t('directos.status_scheduled');
+  // Antes del inicio mostramos día + hora (no solo la hora): mismo criterio de
+  // fecha que convocatorias (`toLocaleString`), pero sin los segundos, que sobran.
+  const kickoff = new Date(match.startsAt).toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
   const score =
-    match.goalsOwn == null
-      ? match.startsAt.slice(11, 16)
-      : `${match.goalsOwn} - ${match.goalsRival}`;
+    match.goalsOwn == null ? kickoff : `${match.goalsOwn} - ${match.goalsRival}`;
   return (
     <Pressable
       onPress={() =>
