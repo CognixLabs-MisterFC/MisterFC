@@ -11,6 +11,7 @@ import {
   resolveActiveClub,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { STAFF_CLUB_ROLES } from './roles';
 
 async function activeClubId(): Promise<string | null> {
   const adapter = await createCookieAdapter();
@@ -402,19 +403,6 @@ export async function updateStaffName(
 // updateStaffRole (Bug 2 · 2b) — el admin cambia el ROL DE CLUB de un miembro.
 // La guarda del "último admin" vive en la función SQL (would_remove_last_admin).
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Roles de club OFRECIDOS como DESTINO al cambiar el rol de un miembro. Solo
- * roles BAJOS: los roles altos (director/admin_club) NO se alcanzan por cambio de
- * rol, solo por INVITACIÓN (F1B-2b — el RPC los rechaza con high_role_invite_only).
- * Tampoco se ofrece `jugador` (convertir un miembro del staff en jugador/familia
- * es otro flujo, no una operación de cuerpo técnico).
- */
-export const STAFF_CLUB_ROLES = [
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-] as const;
 
 const updateStaffRoleSchema = z.object({
   new_role: z.enum(STAFF_CLUB_ROLES, { message: 'role_invalid' }),

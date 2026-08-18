@@ -14,11 +14,8 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import {
-  updateStaffRole,
-  STAFF_CLUB_ROLES,
-  type UpdateStaffRoleState,
-} from '../actions';
+import { updateStaffRole, type UpdateStaffRoleState } from '../actions';
+import { STAFF_CLUB_ROLES } from '../roles';
 
 type Props = {
   /** Profile del miembro a editar (target de la función SECURITY DEFINER). */

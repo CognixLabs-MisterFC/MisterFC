@@ -37,6 +37,11 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # Guard de runtime que `next build` NO caza: un fichero 'use server' que
+      # exporte algo que no sea una función async peta la ruta en producción.
+      - name: Check "use server" exports
+        run: pnpm check:use-server
+
       - name: Test (vitest)
         run: pnpm test
 
