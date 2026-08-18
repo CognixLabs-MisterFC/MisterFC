@@ -3901,7 +3901,13 @@
     "empty": "No hi ha entrenaments propers.",
     "untitled": "Entrenament",
     "session_badge": "Sessió",
-    "no_session": "Aquest entrenament no té una sessió compartida."
+    "no_session": "Aquest entrenament no té una sessió compartida.",
+    "section_summary": "Resum de la temporada",
+    "section_upcoming": "Pròxims",
+    "section_history": "Històric de la temporada",
+    "empty_history": "Encara no hi ha entrenaments passats aquesta temporada.",
+    "attendance_label": "La teua assistència",
+    "attendance_none": "Sense registre d'assistència"
   },
   "planificacion": {
     "title": "Planificació d'entrenaments",
@@ -4733,7 +4739,6 @@
     "alineacion": "Alineació",
     "anuncios": "Anuncis",
     "asistencia": "Assistència",
-    "asistencia_consulta": "Assistència",
     "convocatorias": "Convocatòries",
     "cuerpo_tecnico_direccion": "Cos tècnic de direcció",
     "cuerpo_tecnico_ligero": "Cos tècnic lleuger",
@@ -4749,7 +4754,7 @@
     "perfil": "Perfil",
     "post_partido": "Post-partit",
     "sesion_del_dia": "Sessió del dia",
-    "convocatoria": "Convocatòria"
+    "partidos": "Partits"
   },
   "child": {
     "none": "No tens cap fill en este club"

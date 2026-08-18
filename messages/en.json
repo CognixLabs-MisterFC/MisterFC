@@ -3901,7 +3901,13 @@
     "empty": "No upcoming trainings.",
     "untitled": "Training",
     "session_badge": "Session",
-    "no_session": "This training has no shared session."
+    "no_session": "This training has no shared session.",
+    "section_summary": "Season summary",
+    "section_upcoming": "Upcoming",
+    "section_history": "Season history",
+    "empty_history": "No past trainings this season yet.",
+    "attendance_label": "Your attendance",
+    "attendance_none": "No attendance recorded"
   },
   "planificacion": {
     "title": "Training plan",
@@ -4733,7 +4739,6 @@
     "alineacion": "Lineup",
     "anuncios": "Announcements",
     "asistencia": "Attendance",
-    "asistencia_consulta": "Attendance",
     "convocatorias": "Call-ups",
     "cuerpo_tecnico_direccion": "Management staff",
     "cuerpo_tecnico_ligero": "Light staff",
@@ -4749,7 +4754,7 @@
     "perfil": "Profile",
     "post_partido": "Post-match",
     "sesion_del_dia": "Today's session",
-    "convocatoria": "Call-up"
+    "partidos": "Matches"
   },
   "child": {
     "none": "You have no children at this club"

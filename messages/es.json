@@ -3901,7 +3901,13 @@
     "empty": "No hay entrenamientos próximos.",
     "untitled": "Entrenamiento",
     "session_badge": "Sesión",
-    "no_session": "Este entrenamiento no tiene una sesión compartida."
+    "no_session": "Este entrenamiento no tiene una sesión compartida.",
+    "section_summary": "Resumen de la temporada",
+    "section_upcoming": "Próximos",
+    "section_history": "Histórico de la temporada",
+    "empty_history": "Aún no hay entrenamientos pasados esta temporada.",
+    "attendance_label": "Tu asistencia",
+    "attendance_none": "Sin registro de asistencia"
   },
   "planificacion": {
     "title": "Planificación de entrenamientos",
@@ -4733,7 +4739,6 @@
     "alineacion": "Alineación",
     "anuncios": "Anuncios",
     "asistencia": "Asistencia",
-    "asistencia_consulta": "Asistencia",
     "convocatorias": "Convocatorias",
     "cuerpo_tecnico_direccion": "Cuerpo técnico de dirección",
     "cuerpo_tecnico_ligero": "Cuerpo técnico ligero",
@@ -4749,7 +4754,7 @@
     "perfil": "Perfil",
     "post_partido": "Post-partido",
     "sesion_del_dia": "Sesión del día",
-    "convocatoria": "Convocatoria"
+    "partidos": "Partidos"
   },
   "child": {
     "none": "No tienes ningún hijo en este club"

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   getUnreadConversationsCountFromClient,
   getPlayerPendingCallupFromClient,
@@ -35,12 +36,21 @@ type HomeData = {
  * hijo, próximos eventos, anuncios recientes y feed de novedades. Todo agregado
  * (sin selector de hijo); la convocatoria usa los IDs de todos los hijos.
  */
+/** Accesos rápidos del inicio del jugador (rejilla), en el orden pedido por Jose. */
+const HOME_TILES: { icon: string; labelKey: string; href: string }[] = [
+  { icon: '🛡️', labelKey: 'shell.nav.mi_equipo', href: '/family/mi-equipo' },
+  { icon: '⚽', labelKey: 'nav.partidos', href: '/family/convocatorias' },
+  { icon: '🏋️', labelKey: 'entrenamientos.title', href: '/family/entrenamientos' },
+  { icon: '📋', labelKey: 'playbook.title', href: '/family/jugadas' },
+];
+
 export function InicioScreen() {
   const t = useTranslations('');
   const tFeed = useTranslations('home.feed');
   const { activeClub, profileName, theme } = useApp();
   const { players } = useActivePlayer();
   const { user } = useSession();
+  const router = useRouter();
   const clubId = activeClub?.club.id ?? null;
   const playerIds = useMemo(() => players.map((p) => p.id), [players]);
   const accent = theme?.color ?? BRAND.navy;
@@ -85,6 +95,19 @@ export function InicioScreen() {
         {theme?.clubName ? (
           <Text className="text-sm text-zinc-400">{theme.clubName}</Text>
         ) : null}
+
+        {/* Rejilla de accesos rápidos (espeja el inicio de staff). */}
+        <View className="flex-row flex-wrap gap-2 pt-1">
+          {HOME_TILES.map((tile) => (
+            <Tile
+              key={tile.href}
+              icon={tile.icon}
+              label={t(tile.labelKey)}
+              accent={accent}
+              onPress={() => router.push(tile.href)}
+            />
+          ))}
+        </View>
 
         {d.unread > 0 ? (
           <Card accent={accent}>
@@ -134,6 +157,32 @@ export function InicioScreen() {
         </Section>
       </ScrollView>
     </View>
+  );
+}
+
+/** Tile de navegación de la rejilla del inicio (mismo patrón visual que staff). */
+function Tile({
+  icon,
+  label,
+  accent,
+  onPress,
+}: {
+  icon: string;
+  label: string;
+  accent: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      className="min-w-[46%] flex-1 flex-row items-center gap-2 rounded-2xl border border-zinc-200 p-4 active:opacity-70"
+      style={{ borderLeftWidth: 4, borderLeftColor: accent }}
+    >
+      <Text className="text-lg">{icon}</Text>
+      <Text className="flex-1 text-sm font-semibold text-[#0F1B2E]" numberOfLines={2}>
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 
