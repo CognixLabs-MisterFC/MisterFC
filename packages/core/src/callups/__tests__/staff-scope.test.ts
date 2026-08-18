@@ -11,6 +11,7 @@ function makeClient(data: {
   team_staff?: unknown[];
   capabilities?: unknown[];
   player_accounts?: unknown[];
+  seasons?: unknown[];
 }): SupabaseClient<Database> {
   const from = (table: keyof typeof data) => {
     const rows = data[table] ?? [];
@@ -60,11 +61,12 @@ describe('O2-7b-1 · resolveConvocatoriasScopeFromClient (espejo del gate RLS)',
 
   it('principal SIN capability → gestiona solo los equipos donde es principal', async () => {
     const client = makeClient({
+      seasons: [{ label: '2025-26', status: 'active' }],
       team_staff: [
-        { team_id: 't-1', staff_role: 'entrenador_principal', memberships: { profile_id: 'u-1', club_id: 'club-1' } },
-        { team_id: 't-2', staff_role: 'entrenador_ayudante', memberships: { profile_id: 'u-1', club_id: 'club-1' } },
-        { team_id: 't-9', staff_role: 'entrenador_principal', memberships: { profile_id: 'OTHER', club_id: 'club-1' } },
-        { team_id: 't-8', staff_role: 'entrenador_principal', memberships: { profile_id: 'u-1', club_id: 'OTHER-CLUB' } },
+        { team_id: 't-1', staff_role: 'entrenador_principal', teams: { season: '2025-26' }, memberships: { profile_id: 'u-1', club_id: 'club-1' } },
+        { team_id: 't-2', staff_role: 'entrenador_ayudante', teams: { season: '2025-26' }, memberships: { profile_id: 'u-1', club_id: 'club-1' } },
+        { team_id: 't-9', staff_role: 'entrenador_principal', teams: { season: '2025-26' }, memberships: { profile_id: 'OTHER', club_id: 'club-1' } },
+        { team_id: 't-8', staff_role: 'entrenador_principal', teams: { season: '2025-26' }, memberships: { profile_id: 'u-1', club_id: 'OTHER-CLUB' } },
       ],
       capabilities: [],
     });
@@ -83,9 +85,10 @@ describe('O2-7b-1 · resolveConvocatoriasScopeFromClient (espejo del gate RLS)',
 
   it('ayudante CON capability can_manage_callups → gestiona todos sus equipos', async () => {
     const client = makeClient({
+      seasons: [{ label: '2025-26', status: 'active' }],
       team_staff: [
-        { team_id: 't-1', staff_role: 'entrenador_ayudante', memberships: { profile_id: 'u-1', club_id: 'club-1' } },
-        { team_id: 't-2', staff_role: 'entrenador_ayudante', memberships: { profile_id: 'u-1', club_id: 'club-1' } },
+        { team_id: 't-1', staff_role: 'entrenador_ayudante', teams: { season: '2025-26' }, memberships: { profile_id: 'u-1', club_id: 'club-1' } },
+        { team_id: 't-2', staff_role: 'entrenador_ayudante', teams: { season: '2025-26' }, memberships: { profile_id: 'u-1', club_id: 'club-1' } },
       ],
       capabilities: [
         { granted: true, memberships: { profile_id: 'u-1', club_id: 'club-1' } },
@@ -105,9 +108,10 @@ describe('O2-7b-1 · resolveConvocatoriasScopeFromClient (espejo del gate RLS)',
 
   it('coordinador → gestiona TODOS sus equipos (managedTeamIds = teamIds)', async () => {
     const client = makeClient({
+      seasons: [{ label: '2025-26', status: 'active' }],
       team_staff: [
-        { team_id: 't-1', staff_role: 'coordinador', memberships: { profile_id: 'u-1', club_id: 'club-1' } },
-        { team_id: 't-2', staff_role: 'coordinador', memberships: { profile_id: 'u-1', club_id: 'club-1' } },
+        { team_id: 't-1', staff_role: 'coordinador', teams: { season: '2025-26' }, memberships: { profile_id: 'u-1', club_id: 'club-1' } },
+        { team_id: 't-2', staff_role: 'coordinador', teams: { season: '2025-26' }, memberships: { profile_id: 'u-1', club_id: 'club-1' } },
       ],
       capabilities: [],
     });
@@ -120,6 +124,29 @@ describe('O2-7b-1 · resolveConvocatoriasScopeFromClient (espejo del gate RLS)',
       kind: 'restricted',
       teamIds: ['t-1', 't-2'],
       managedTeamIds: ['t-1', 't-2'],
+    });
+  });
+
+  it('ignora equipos de temporada NO activa (dato caduco tras rollover)', async () => {
+    const client = makeClient({
+      seasons: [{ label: '2026-27', status: 'active' }, { label: '2025-26', status: 'finalized' }],
+      team_staff: [
+        // Vivo pero en el equipo de la temporada PASADA → debe ignorarse.
+        { team_id: 't-viejo', staff_role: 'entrenador_principal', teams: { season: '2025-26' }, memberships: { profile_id: 'u-1', club_id: 'club-1' } },
+        // Vivo en el equipo de la temporada activa → cuenta.
+        { team_id: 't-nuevo', staff_role: 'entrenador_principal', teams: { season: '2026-27' }, memberships: { profile_id: 'u-1', club_id: 'club-1' } },
+      ],
+      capabilities: [],
+    });
+    const scope = await resolveConvocatoriasScopeFromClient(client, {
+      clubId: 'club-1',
+      role: 'entrenador_principal',
+      userId: 'u-1',
+    });
+    expect(scope).toEqual({
+      kind: 'restricted',
+      teamIds: ['t-nuevo'],
+      managedTeamIds: ['t-nuevo'],
     });
   });
 

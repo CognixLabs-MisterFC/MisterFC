@@ -189,14 +189,17 @@ describe('O2-7a · resolveAttendanceScopeFromClient', () => {
 
   it('entrenador_ayudante → restricted a sus equipos del club', async () => {
     const rows = [
-      { team_id: 't-1', memberships: { profile_id: 'u-1', club_id: 'club-1' } },
-      { team_id: 't-2', memberships: { profile_id: 'u-1', club_id: 'OTHER' } },
-      { team_id: 't-3', memberships: { profile_id: 'OTHER', club_id: 'club-1' } },
+      { team_id: 't-1', teams: { season: '2026-27' }, memberships: { profile_id: 'u-1', club_id: 'club-1' } },
+      { team_id: 't-2', teams: { season: '2026-27' }, memberships: { profile_id: 'u-1', club_id: 'OTHER' } },
+      { team_id: 't-3', teams: { season: '2026-27' }, memberships: { profile_id: 'OTHER', club_id: 'club-1' } },
     ];
+    // Mock table-aware: `seasons` termina en `.eq()` (temporada activa), `team_staff`
+    // en `.is()`.
     const client = {
-      from: () => ({
-        select: () => ({ is: async () => ({ data: rows }) }),
-      }),
+      from: (table: string) =>
+        table === 'seasons'
+          ? { select: () => ({ eq: async () => ({ data: [{ label: '2026-27', status: 'active' }] }) }) }
+          : { select: () => ({ is: async () => ({ data: rows }) }) },
     } as unknown as SupabaseClient<Database>;
     const scope = await resolveAttendanceScopeFromClient(client, {
       clubId: 'club-1',

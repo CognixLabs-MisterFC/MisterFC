@@ -369,6 +369,11 @@ export async function getStaffTeamsFromClient(
   supabase: SupabaseClient<Database>,
   params: { membershipId: string; clubId: string },
 ): Promise<StaffTeamCard[]> {
+  // Solo equipos de la TEMPORADA ACTIVA: es un selector OPERATIVO ("mis equipos",
+  // equipo activo del coordinador…). Tras el rollover puede quedar una fila
+  // `team_staff` viva en el equipo de la temporada pasada (mismo nombre, otro
+  // team_id); sin este filtro el picker la ofrece y las pantallas salen vacías.
+  const activeSeason = await getActiveSeasonLabelFromClient(supabase, params.clubId);
   const { data } = await supabase
     .from('team_staff')
     .select(
@@ -392,7 +397,8 @@ export async function getStaffTeamsFromClient(
   const rows = ((data ?? []) as unknown as Row[]).filter(
     (s) =>
       STAFF_TEAM_ROLES.has(s.staff_role) &&
-      s.teams.categories.club_id === params.clubId,
+      s.teams.categories.club_id === params.clubId &&
+      s.teams.season === activeSeason,
   );
 
   // Dedup por equipo: nos quedamos con el staff_role de mayor prioridad.
