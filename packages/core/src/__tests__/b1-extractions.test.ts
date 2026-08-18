@@ -34,7 +34,7 @@ function mockClient(config: {
     const res = result(table);
     const chain: Record<string, unknown> = {};
     for (const m of [
-      'select', 'eq', 'in', 'gte', 'lte', 'lt', 'order', 'range', 'not',
+      'select', 'eq', 'neq', 'in', 'gte', 'lte', 'lt', 'order', 'range', 'not',
       'or', 'is', 'update', 'upsert', 'delete', 'limit',
     ]) {
       chain[m] = () => chain;
