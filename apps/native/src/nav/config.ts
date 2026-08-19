@@ -113,7 +113,6 @@ const STAFF_MENU_BASE: MenuDef[] = [
   { name: 'post-partido', labelKey: 'nav.post_partido' },
   { name: 'asistencia', labelKey: 'nav.asistencia' },
   { name: 'estadisticas-equipo', labelKey: 'nav.estadisticas_equipo' },
-  { name: 'sesion-del-dia', labelKey: 'nav.sesion_del_dia' },
   { name: 'cuerpo-tecnico-ligero', labelKey: 'nav.cuerpo_tecnico_ligero' },
   { name: 'anuncios', labelKey: 'nav.anuncios' },
   { name: 'novedades', labelKey: 'nav.novedades' },
@@ -134,6 +133,10 @@ const STAFF_MENU_COORD_EXTRA: MenuDef[] = [
  */
 const STAFF_HIDDEN: MenuDef[] = [
   { name: 'asistencia-sesion', labelKey: 'nav.asistencia' },
+  // O2 Bloque H — "Entrenamiento de hoy" salió del menú lateral al inicio (tarjeta
+  // de la rejilla). Sigue existiendo como fichero de ruta → href:null para no salir
+  // como pestaña de la barra; se alcanza desde la tarjeta del inicio.
+  { name: 'sesion-del-dia', labelKey: 'nav.sesion_del_dia' },
   // O2-7b-1 — detalle de convocatoria (?eventId), alcanzado desde la lista.
   { name: 'convocatoria', labelKey: 'nav.convocatorias' },
   // O2-10b-1a — hilo 1:1 (?conversationId), de equipo (?teamConversationId) y

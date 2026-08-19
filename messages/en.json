@@ -5075,9 +5075,10 @@
     "search": "Search…"
   },
   "sesion_dia": {
-    "empty": "No published sessions",
-    "title": "Sessions",
-    "untitled": "Session"
+    "empty": "No training today",
+    "title": "Today's training",
+    "untitled": "Session",
+    "no_shared_session": "No shared session"
   },
   "staff_home": {
     "no_upcoming": "No upcoming events",
@@ -5085,7 +5086,7 @@
     "tile_calendar": "Calendar",
     "tile_callups": "Call-ups",
     "tile_directos": "Live",
-    "tile_sessions": "Sessions",
+    "tile_today_training": "Today's training",
     "tile_teams": "My teams",
     "title": "Home",
     "unpublished_callups": "Call-ups not published",
