@@ -5,8 +5,8 @@ import {
   getUnreadConversationsCountFromClient,
   getPlayerPendingCallupFromClient,
   getUpcomingEventsFromClient,
-  getRecentAnnouncementsFromClient,
-  getNotificationFeedFromClient,
+  getUnreadAnnouncementsFromClient,
+  getUnreadNotificationsFeedFromClient,
   markNotificationReadFromClient,
   notificationFeedText,
   type UpcomingEvent,
@@ -37,8 +37,9 @@ type HomeData = {
 
 /**
  * O2-5 B1 — Inicio de familia: mensajes sin leer, convocatoria pendiente del
- * hijo, próximos eventos, anuncios recientes y feed de novedades. Todo agregado
- * (sin selector de hijo); la convocatoria usa los IDs de todos los hijos.
+ * hijo, tarjeta del próximo evento, anuncios del club SIN LEER y novedades SIN
+ * LEER. Todo agregado (sin selector de hijo); la convocatoria usa los IDs de
+ * todos los hijos.
  */
 /** Accesos rápidos del inicio del jugador (rejilla), en el orden pedido por Jose. */
 const HOME_TILES: { icon: string; labelKey: string; href: string }[] = [
@@ -76,11 +77,12 @@ export function InicioScreen() {
         getUnreadConversationsCountFromClient(sb),
         getPlayerPendingCallupFromClient(sb, playerIds),
         getUpcomingEventsFromClient(sb, nowIso, new Date(now + 7 * DAY).toISOString()),
-        getRecentAnnouncementsFromClient(sb, clubId, {
-          sinceIso: new Date(now - 7 * DAY).toISOString(),
-          limit: 5,
-        }),
-        getNotificationFeedFromClient(sb, 10),
+        // Punto 7 — SOLO anuncios sin leer; al abrirlos (/anuncios los marca
+        // leídos) desaparecen del inicio. Ya no salen en el feed de novedades.
+        getUnreadAnnouncementsFromClient(sb, clubId, 5),
+        // Punto 3 — el inicio muestra SOLO novedades sin leer (al leerlas
+        // desaparecen). La pantalla /novedades conserva sus pestañas (#474).
+        getUnreadNotificationsFeedFromClient(sb, 10),
       ]);
       return { unread, pending, upcoming, announcements, feed };
     },
@@ -106,6 +108,10 @@ export function InicioScreen() {
     router.push(target as Href);
   };
 
+  // Punto 6 — un SOLO evento: el más próximo. Destino = el mismo familyEventTarget.
+  const nextEvent = d.upcoming[0] ?? null;
+  const nextEventTarget = nextEvent ? familyEventTarget(nextEvent) : null;
+
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
@@ -116,6 +122,43 @@ export function InicioScreen() {
         {theme?.clubName ? (
           <Text className="text-sm text-zinc-400">{theme.clubName}</Text>
         ) : null}
+
+        {/* Punto 6 — tarjeta ANCHA del próximo evento (fecha/hora en grande), lo
+            primero tras el saludo, encima de la rejilla. Sustituye a la antigua
+            lista "Próximos eventos" (redundante con el calendario). */}
+        <Pressable
+          onPress={nextEventTarget ? () => go(nextEventTarget) : undefined}
+          disabled={!nextEventTarget}
+          className="rounded-2xl border border-zinc-200 p-4 active:opacity-70"
+          style={{ borderLeftWidth: 4, borderLeftColor: accent }}
+        >
+          <Text className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+            {t('inicio.next_event')}
+          </Text>
+          {nextEvent ? (
+            <>
+              <Text className="mt-1 text-2xl font-extrabold capitalize text-[#0F1B2E]">
+                {new Date(nextEvent.starts_at).toLocaleDateString(undefined, {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                })}
+              </Text>
+              <Text className="text-xl font-bold text-[#0F1B2E] tabular-nums">
+                {new Date(nextEvent.starts_at).toLocaleTimeString(undefined, {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </Text>
+              <Text className="mt-1 text-sm text-zinc-600" numberOfLines={2}>
+                {t(`calendario.types.${nextEvent.type}`)}
+                {nextEvent.title ? ` · ${nextEvent.title}` : ''}
+              </Text>
+            </>
+          ) : (
+            <Text className="mt-1 text-sm text-zinc-400">{t('inicio.empty_upcoming')}</Text>
+          )}
+        </Pressable>
 
         {/* Rejilla de accesos rápidos (espeja el inicio de staff). */}
         <View className="flex-row flex-wrap gap-2 pt-1">
@@ -149,28 +192,16 @@ export function InicioScreen() {
           </Card>
         ) : null}
 
-        <Section title={t('inicio.section_upcoming')}>
-          {d.upcoming.length === 0 ? (
-            <Muted text={t('inicio.empty_upcoming')} />
-          ) : (
-            d.upcoming.map((e) => {
-              const target = familyEventTarget(e);
-              return (
-                <Row
-                  key={e.id}
-                  title={e.title}
-                  sub={`${e.starts_at.slice(5, 16).replace('T', ' ')}${e.teamName ? ' · ' + e.teamName : ''}`}
-                  onPress={target ? () => go(target) : undefined}
-                />
-              );
-            })
-          )}
-        </Section>
-
         {d.announcements.length > 0 ? (
           <Section title={t('inicio.section_announcements')}>
             {d.announcements.map((a) => (
-              <Row key={a.id} title={a.title} sub={a.teamName ?? ''} />
+              <Row
+                key={a.id}
+                title={a.title}
+                sub={a.teamName ?? ''}
+                unread
+                onPress={() => router.push('/family/anuncios')}
+              />
             ))}
           </Section>
         ) : null}

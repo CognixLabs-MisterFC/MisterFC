@@ -2724,7 +2724,9 @@
       "not_found": "Announcement not found.",
       "generic": "Couldn't save. Please try again."
     },
-    "empty": "No announcements"
+    "empty": "No announcements",
+    "section_recent": "Latest announcements",
+    "section_history": "History"
   },
   "anuncios_global": {
     "title": "Club announcements",
@@ -4787,9 +4789,9 @@
     "unread_messages": "Unread messages: {n}",
     "pending_callup": "Call-up awaiting response",
     "pending_callup_count": "Players to confirm: {n}",
-    "section_upcoming": "Upcoming events",
+    "next_event": "Next event",
     "empty_upcoming": "No upcoming events",
-    "section_announcements": "Recent announcements",
+    "section_announcements": "Club announcements",
     "section_feed": "News",
     "empty_feed": "No news"
   },

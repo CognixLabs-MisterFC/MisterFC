@@ -2724,7 +2724,9 @@
       "not_found": "Anuncio no encontrado.",
       "generic": "No se pudo guardar. Inténtalo de nuevo."
     },
-    "empty": "No hay anuncios"
+    "empty": "No hay anuncios",
+    "section_recent": "Últimos anuncios",
+    "section_history": "Histórico"
   },
   "anuncios_global": {
     "title": "Anuncios del club",
@@ -4787,9 +4789,9 @@
     "unread_messages": "Mensajes sin leer: {n}",
     "pending_callup": "Convocatoria sin responder",
     "pending_callup_count": "Jugadores por confirmar: {n}",
-    "section_upcoming": "Próximos eventos",
+    "next_event": "Próximo evento",
     "empty_upcoming": "Sin eventos próximos",
-    "section_announcements": "Anuncios recientes",
+    "section_announcements": "Anuncios del club",
     "section_feed": "Novedades",
     "empty_feed": "Sin novedades"
   },
