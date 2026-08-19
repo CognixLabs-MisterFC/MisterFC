@@ -85,3 +85,24 @@ export function familyEventTarget(ev: {
       return null;
   }
 }
+
+/**
+ * Bug 17/14 — Espejo de `familyEventTarget` para el área STAFF. Mismo shape de
+ * destino pero a las rutas del área staff, para que las listas de eventos
+ * compartidas (calendario, inicio) enruten DENTRO del área correcta y no reboten
+ * en el AreaGuard: un entrenamiento abre su marcado de asistencia (pasar lista) y
+ * un partido/amistoso/torneo abre la convocatoria del staff. `other` → no clicable.
+ * Solo necesita `id` y `type` (ambas rutas toman `eventId`).
+ */
+export function staffEventTarget(ev: { id: string; type: string }): FamilyTarget {
+  switch (ev.type) {
+    case 'training':
+      return { pathname: '/staff/asistencia-sesion', params: { eventId: ev.id } };
+    case 'match':
+    case 'friendly':
+    case 'tournament':
+      return { pathname: '/staff/convocatoria', params: { eventId: ev.id } };
+    default:
+      return null;
+  }
+}

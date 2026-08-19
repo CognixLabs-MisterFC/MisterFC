@@ -141,6 +141,15 @@ function Scoreboard({
         ? t('directo.minute_added', { minute: String(minute), added: String(addedTime) })
         : t('directos.minute', { minute: String(minute) })
       : phaseLabel;
+  // Bug 2 — fecha del partido en el DETALLE (la lista ya la mostraba desde #469;
+  // el detalle nunca la pintaba). Mismo formato que la lista: día + hora, sin segundos.
+  const kickoff = new Date(detail.startsAt).toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   return (
     <View
@@ -151,6 +160,7 @@ function Scoreboard({
         <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: detail.teamColor || accent }} />
         <Text className="text-xs text-zinc-400">{detail.categoryName}</Text>
       </View>
+      <Text className="mt-0.5 text-center text-xs text-zinc-400 tabular-nums">{kickoff}</Text>
       <View className="mt-1 flex-row items-center justify-center gap-2">
         <Text className="text-lg font-bold text-[#0F1B2E]" numberOfLines={1}>
           {detail.teamName}
