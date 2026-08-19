@@ -13,7 +13,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
-import { familyEventTarget } from '@/notifications/feed-target';
+import { familyEventTarget, type FamilyTarget } from '@/notifications/feed-target';
 
 /** Agenda de las próximas 4 semanas (28 días) desde hoy. */
 const AGENDA_DAYS = 28;
@@ -39,8 +39,18 @@ const TYPE_ICON: Record<string, string> = {
  * O2-5 B1 — Calendario (agenda): eventos + festivos de las próximas 4 semanas,
  * acotados a los equipos de los hijos (scope). Club-scoped (clubId en la key).
  * Vista de agenda (lista por día); sin las 3 vistas de la web.
+ *
+ * Bug 17 — componente COMPARTIDO con el staff (app/staff/calendario.tsx). El
+ * destino al tocar una fila se parametriza vía `eventTarget` para que cada área
+ * enrute a SUS rutas (familia por defecto = `familyEventTarget`; el staff pasa
+ * `staffEventTarget`). Antes estaba cableado a familia y, montado en el staff,
+ * empujaba rutas `/family/…` que el AreaGuard rechazaba (rebote al inicio).
  */
-export function CalendarioScreen() {
+export function CalendarioScreen({
+  eventTarget = familyEventTarget,
+}: {
+  eventTarget?: (ev: CalendarEvent) => FamilyTarget;
+} = {}) {
   const t = useTranslations('');
   const { activeClub } = useApp();
   const router = useRouter();
@@ -115,7 +125,7 @@ export function CalendarioScreen() {
             </View>
           ) : (
             (() => {
-              const target = familyEventTarget(item.ev);
+              const target = eventTarget(item.ev);
               const body = (
                 <>
                   <Text className="text-lg">{TYPE_ICON[item.ev.type] ?? '📌'}</Text>

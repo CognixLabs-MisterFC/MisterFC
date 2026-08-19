@@ -331,9 +331,14 @@ export function LineupBoard({
       }
     }
   }
-  // Fichas en campo sin slot casado (p.ej. tras cambiar de formación): en sus coords.
+  // Fichas en campo NO colocadas por el bucle de slots → en sus PROPIAS coords.
+  // Cubre (a) formación cambiada (positionCode obsoleto que no casa slot) y
+  // (b) Bug 4: la `formation` no está disponible (personalizada que el viewer —
+  // familia — no resuelve por RLS de coach_formations) → el bucle de slots no
+  // corrió, pero las coords ya viven en la propia posición (snapshot al colocar).
+  // La dedup la garantiza `chips.some`: nunca se re-añade a un jugador ya colocado
+  // por su slot, así que en el caso normal (catálogo) no se duplican fichas.
   for (const p of fieldPositions) {
-    if (p.positionCode && byCode.get(p.positionCode) === p) continue;
     if (p.xPct == null || p.yPct == null) continue;
     if (chips.some((c) => c.playerId === p.playerId)) continue;
     chips.push({
