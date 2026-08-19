@@ -179,7 +179,7 @@ Se aplican medidas técnicas y organizativas apropiadas para proteger los datos 
 - Conexiones cifradas mediante HTTPS/TLS en todas las comunicaciones.
 - **Control de acceso aplicado en la propia base de datos** mediante políticas de seguridad a nivel de fila, de modo que cada usuario accede únicamente a los datos que su función dentro de su club requiere. La restricción no depende de la interfaz, sino que se aplica en el servidor con independencia del medio de acceso.
 - Separación estricta de los datos entre clubes: un usuario de un club no puede acceder a datos de otro club.
-- Las notas médicas son visibles únicamente para el administrador del club, el coordinador, el entrenador principal, los entrenadores ayudantes expresamente autorizados y los tutores legales vinculados al jugador.
+- Las notas médicas son visibles únicamente para el administrador del club, el coordinador, el entrenador principal, los entrenadores ayudantes y los tutores legales vinculados al jugador.
 - Registro de auditoría de los accesos y operaciones sobre información sensible.
 - Las credenciales de acceso se almacenan en el dispositivo mediante el almacenamiento seguro proporcionado por el sistema operativo.
 - Los informes de errores técnicos se anonimizan antes de su envío.
