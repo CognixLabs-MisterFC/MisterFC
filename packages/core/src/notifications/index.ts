@@ -33,12 +33,14 @@ export type { FeedTextTranslate } from './feed-text';
 export {
   getNotificationFeedFromClient,
   getNotificationsPageFromClient,
+  getUnreadNotificationsFeedFromClient,
   getUnreadNotificationsCountFromClient,
   markNotificationsReadFromClient,
   markNotificationReadFromClient,
   markAllNotificationsReadFromClient,
   FEED_LIMIT,
   NOVEDADES_PAGE_SIZE,
+  UNREAD_FEED_LIMIT,
   type NotificationFeedRow,
 } from './feed';
 

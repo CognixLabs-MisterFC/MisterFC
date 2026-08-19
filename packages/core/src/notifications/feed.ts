@@ -23,8 +23,10 @@ export type NotificationFeedRow = {
 
 /** Cuántas novedades muestra el panel de Inicio. */
 export const FEED_LIMIT = 6;
-/** Tamaño de página de /novedades. */
+/** Tamaño de página de /novedades (pestaña "Todas", histórico paginado). */
 export const NOVEDADES_PAGE_SIZE = 20;
+/** Nº de novedades SIN LEER que muestra la pestaña por defecto de /novedades. */
+export const UNREAD_FEED_LIMIT = 10;
 
 /**
  * Tipos in_app que NO son "novedades" y no deben aparecer en el feed ni contar
@@ -44,6 +46,27 @@ export async function getNotificationFeedFromClient(
     .select('id, type, payload, status, created_at')
     .eq('channel', 'in_app')
     .neq('type', FEED_HIDDEN_TYPE)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return (data ?? []) as NotificationFeedRow[];
+}
+
+/**
+ * Novedades SIN LEER (status='pending'), más recientes primero, hasta `limit`.
+ * Es lo que muestra la pestaña por defecto de /novedades: al marcar una como
+ * leída (pending→sent) sale de este listado. Excluye el mismo tipo oculto que el
+ * feed y el contador (`goal`), así el listado y el badge son coherentes.
+ */
+export async function getUnreadNotificationsFeedFromClient(
+  supabase: DbClient,
+  limit: number = UNREAD_FEED_LIMIT
+): Promise<NotificationFeedRow[]> {
+  const { data } = await supabase
+    .from('notifications')
+    .select('id, type, payload, status, created_at')
+    .eq('channel', 'in_app')
+    .neq('type', FEED_HIDDEN_TYPE)
+    .eq('status', 'pending')
     .order('created_at', { ascending: false })
     .limit(limit);
   return (data ?? []) as NotificationFeedRow[];

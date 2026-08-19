@@ -139,7 +139,11 @@
     "prev": "Anterior",
     "next": "Siguiente",
     "mark_all": "Marcar todas como leídas",
-    "load_more": "Cargar más"
+    "load_more": "Cargar más",
+    "tab_unread": "Sin leer",
+    "tab_all": "Todas",
+    "empty_unread": "No tienes novedades sin leer.",
+    "mark_read": "Marcar leída"
   },
   "home": {
     "direccion": {

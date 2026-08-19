@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 import {
   getCalendarDataFromClient,
   getCalendarScopeTeamIdsFromClient,
@@ -12,9 +13,12 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { familyEventTarget } from '@/notifications/feed-target';
 
 /** Agenda de las próximas 4 semanas (28 días) desde hoy. */
 const AGENDA_DAYS = 28;
+/** Máximo de eventos que se listan (los 5 más próximos). Los festivos no cuentan. */
+const MAX_EVENTS = 5;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -39,6 +43,7 @@ const TYPE_ICON: Record<string, string> = {
 export function CalendarioScreen() {
   const t = useTranslations('');
   const { activeClub } = useApp();
+  const router = useRouter();
   const clubId = activeClub?.club.id ?? null;
 
   const range = useMemo(() => {
@@ -72,7 +77,11 @@ export function CalendarioScreen() {
   });
 
   const items: AgendaItem[] = useMemo(() => {
-    const evs: AgendaItem[] = (data?.events ?? []).map((ev) => ({
+    // Cap a los 5 eventos MÁS PRÓXIMOS (los festivos no cuentan para el límite).
+    const capped = [...(data?.events ?? [])]
+      .sort((a, b) => (a.starts_at < b.starts_at ? -1 : 1))
+      .slice(0, MAX_EVENTS);
+    const evs: AgendaItem[] = capped.map((ev) => ({
       kind: 'event',
       key: `e:${ev.id}`,
       sortKey: ev.starts_at,
@@ -105,20 +114,37 @@ export function CalendarioScreen() {
               </Text>
             </View>
           ) : (
-            <View className="mx-4 my-1 flex-row items-center gap-3 border-b border-zinc-100 px-1 py-2">
-              <Text className="text-lg">{TYPE_ICON[item.ev.type] ?? '📌'}</Text>
-              <View className="flex-1">
-                <Text
-                  className={`text-sm font-medium ${item.ev.cancelled_at ? 'text-zinc-400 line-through' : 'text-[#0F1B2E]'}`}
-                  numberOfLines={1}
+            (() => {
+              const target = familyEventTarget(item.ev);
+              const body = (
+                <>
+                  <Text className="text-lg">{TYPE_ICON[item.ev.type] ?? '📌'}</Text>
+                  <View className="flex-1">
+                    <Text
+                      className={`text-sm font-medium ${item.ev.cancelled_at ? 'text-zinc-400 line-through' : 'text-[#0F1B2E]'}`}
+                      numberOfLines={1}
+                    >
+                      {item.ev.title}
+                    </Text>
+                    <Text className="text-xs text-zinc-400">
+                      {`${item.ev.starts_at.slice(5, 10)} ${item.ev.starts_at.slice(11, 16)}${item.ev.team_name ? ' · ' + item.ev.team_name : ''}`}
+                    </Text>
+                  </View>
+                </>
+              );
+              return target ? (
+                <Pressable
+                  onPress={() => router.push(target as Href)}
+                  className="mx-4 my-1 flex-row items-center gap-3 border-b border-zinc-100 px-1 py-2 active:opacity-60"
                 >
-                  {item.ev.title}
-                </Text>
-                <Text className="text-xs text-zinc-400">
-                  {`${item.ev.starts_at.slice(5, 10)} ${item.ev.starts_at.slice(11, 16)}${item.ev.team_name ? ' · ' + item.ev.team_name : ''}`}
-                </Text>
-              </View>
-            </View>
+                  {body}
+                </Pressable>
+              ) : (
+                <View className="mx-4 my-1 flex-row items-center gap-3 border-b border-zinc-100 px-1 py-2">
+                  {body}
+                </View>
+              );
+            })()
           )
         }
       />
