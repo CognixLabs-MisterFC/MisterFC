@@ -46,8 +46,11 @@ export function ConvocatoriasScreen() {
 
   const rows = data ?? [];
   const nowIso = new Date().toISOString();
-  const upcoming = rows.filter((r) => r.starts_at >= nowIso);
-  const past = rows.filter((r) => r.starts_at < nowIso).reverse();
+  // Límite 5 POR SECCIÓN: las 5 próximas más cercanas (asc) y las 5 anteriores
+  // más recientes (desc). Un tope global de 5 descuadraría según el momento de la
+  // temporada (5 pasadas y 0 próximas, o al revés).
+  const upcoming = rows.filter((r) => r.starts_at >= nowIso).slice(0, 5);
+  const past = rows.filter((r) => r.starts_at < nowIso).reverse().slice(0, 5);
 
   return (
     <View className="flex-1 bg-white">

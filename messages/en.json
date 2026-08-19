@@ -139,7 +139,11 @@
     "prev": "Previous",
     "next": "Next",
     "mark_all": "Mark all as read",
-    "load_more": "Load more"
+    "load_more": "Load more",
+    "tab_unread": "Unread",
+    "tab_all": "All",
+    "empty_unread": "No unread updates.",
+    "mark_read": "Mark read"
   },
   "home": {
     "direccion": {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ScrollView, Pressable, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import {
   getActiveSeasonLabelFromClient,
   getPlayerTeamsFromClient,
@@ -17,6 +17,10 @@ import { ChildSelector } from '@/ui/child-selector';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
+import { familyEventTarget } from '@/notifications/feed-target';
+
+/** Máximo de próximos eventos que se listan en Mi equipo. */
+const MAX_UPCOMING = 5;
 
 /**
  * O2-5 D1 — Mi equipo (home del HIJO ACTIVO, SOLO LECTURA). Divergencia deliberada
@@ -143,23 +147,37 @@ export function MiEquipoScreen() {
           )}
         </Section>
 
-        {/* Próximos eventos. */}
+        {/* Próximos eventos (los 5 más próximos, clicables a su detalle). */}
         <Section title={t('mi_equipo.cards.upcoming.title')}>
           {!h || h.upcoming.length === 0 ? (
             <Text className="text-sm text-zinc-500">{t('mi_equipo.upcoming_empty')}</Text>
           ) : (
-            h.upcoming.map((e) => (
-              <View key={e.id} className="border-b border-zinc-100 py-2">
-                <Text className="text-sm font-medium text-[#0F1B2E]" numberOfLines={1}>{e.title}</Text>
-                <Text className="text-xs text-zinc-400" numberOfLines={1}>
-                  {[
-                    new Date(e.starts_at).toLocaleString(),
-                    e.opponent_name ? `vs ${e.opponent_name}` : null,
-                    e.location_name,
-                  ].filter(Boolean).join(' · ')}
-                </Text>
-              </View>
-            ))
+            h.upcoming.slice(0, MAX_UPCOMING).map((e) => {
+              const target = familyEventTarget(e);
+              const body = (
+                <>
+                  <Text className="text-sm font-medium text-[#0F1B2E]" numberOfLines={1}>{e.title}</Text>
+                  <Text className="text-xs text-zinc-400" numberOfLines={1}>
+                    {[
+                      new Date(e.starts_at).toLocaleString(),
+                      e.opponent_name ? `vs ${e.opponent_name}` : null,
+                      e.location_name,
+                    ].filter(Boolean).join(' · ')}
+                  </Text>
+                </>
+              );
+              return target ? (
+                <Pressable
+                  key={e.id}
+                  onPress={() => router.push(target as Href)}
+                  className="border-b border-zinc-100 py-2 active:opacity-60"
+                >
+                  {body}
+                </Pressable>
+              ) : (
+                <View key={e.id} className="border-b border-zinc-100 py-2">{body}</View>
+              );
+            })
           )}
         </Section>
 

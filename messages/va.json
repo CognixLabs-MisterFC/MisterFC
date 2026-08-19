@@ -139,7 +139,11 @@
     "prev": "Anterior",
     "next": "Següent",
     "mark_all": "Marca-les totes com a llegides",
-    "load_more": "Carrega més"
+    "load_more": "Carrega més",
+    "tab_unread": "Sense llegir",
+    "tab_all": "Totes",
+    "empty_unread": "No tens novetats sense llegir.",
+    "mark_read": "Marca llegida"
   },
   "home": {
     "direccion": {
