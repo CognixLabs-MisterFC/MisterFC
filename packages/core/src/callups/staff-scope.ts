@@ -5,10 +5,11 @@
  * nativa lo consume con el rol del club activo y el `userId` de la sesión.
  *
  * `teamIds` = equipos donde el user es staff (cualquier staff_role). `managedTeamIds`
- * = equipos donde puede GESTIONAR convocatorias (convocar/publicar): principal vía
- * `team_staff.staff_role`, o cualquier staff con capability `can_manage_callups`, o
- * coordinador (todos sus equipos). Es el ESPEJO del gate RLS `user_can_manage_callup`;
- * el candado real es la RLS.
+ * = equipos donde puede GESTIONAR convocatorias (convocar/publicar). Desde O2 (se
+ * eliminó el sistema de capabilities) gestionar convocatorias es DE SERIE para todo
+ * el cuerpo técnico: cualquier staff activo del equipo gestiona → managedTeamIds =
+ * teamIds. Es el ESPEJO del gate RLS `user_can_manage_callup` (admin/director,
+ * coordinador del equipo, o cualquier staff del equipo); el candado real es la RLS.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -66,30 +67,9 @@ export async function resolveConvocatoriasScopeFromClient(
       );
     const teamIds = myRows.map((r) => r.team_id);
 
-    // ¿Tiene la capability can_manage_callups en este club?
-    type CapRow = {
-      granted: boolean;
-      memberships: { profile_id: string; club_id: string };
-    };
-    const { data: capData } = await supabase
-      .from('capabilities')
-      .select('granted, memberships!inner(profile_id, club_id)')
-      .eq('capability_name', 'can_manage_callups');
-    const hasCallupCap = (capData ?? [])
-      .map((r) => r as unknown as CapRow)
-      .some(
-        (r) =>
-          r.granted &&
-          r.memberships.profile_id === userId &&
-          r.memberships.club_id === clubId,
-      );
-
-    const managedTeamIds =
-      hasCallupCap || role === 'coordinador'
-        ? teamIds
-        : myRows
-            .filter((r) => r.staff_role === 'entrenador_principal')
-            .map((r) => r.team_id);
+    // O2: gestionar convocatorias es DE SERIE para todo el cuerpo técnico. Cualquier
+    // staff activo del equipo (principal, ayudante, coordinador) gestiona sus equipos.
+    const managedTeamIds = teamIds;
 
     return { kind: 'restricted', teamIds, managedTeamIds };
   }

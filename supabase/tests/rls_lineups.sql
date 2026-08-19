@@ -22,8 +22,8 @@
 --   Permisos (RLS, role-switched) — user_can_manage_lineup:
 --     P1. admin_club inserta lineup → OK.
 --     P2. entrenador_principal (team_staff.staff_role) inserta → OK.
---     P3. ayudante con can_create_lineups concedida inserta → OK.
---     P4. ayudante SIN la capability → 42501.
+--     P3. ayudante (staff activo) inserta → OK de serie.
+--     P4. ayudante (staff activo) inserta → OK de serie (sin capability).
 --     P5. jugador → 42501.
 \ir helpers/auth_users.sql
 
@@ -72,13 +72,6 @@ insert into public.team_staff (team_id, membership_id, staff_role) values
   ('66ee0000-2222-0000-0000-000000000001', '66ee0000-5555-0002-0000-000000000000', 'entrenador_principal'),
   ('66ee0000-2222-0000-0000-000000000001', '66ee0000-5555-0003-0000-000000000000', 'entrenador_ayudante'),
   ('66ee0000-2222-0000-0000-000000000001', '66ee0000-5555-0004-0000-000000000000', 'entrenador_ayudante');
-
--- El ayudante "cap" recibe can_create_lineups (las filas las sembró el trigger
--- ensure_assistant_capabilities con granted=false).
-update public.capabilities
-   set granted = true
- where membership_id = '66ee0000-5555-0003-0000-000000000000'
-   and capability_name = 'can_create_lineups';
 
 -- Eventos: E1 partido (futuro), E2 entrenamiento, E3 partido SIN team.
 insert into public.events (id, club_id, team_id, type, title, starts_at, created_by) values
@@ -248,29 +241,27 @@ exception when others then
 end $$;
 reset role;
 
--- P3. ayudante con can_create_lineups → OK.
+-- P3. ayudante (staff activo) → OK de serie.
 set local role authenticated;
 set local "request.jwt.claim.sub" to '66ee0000-aaaa-0003-0000-000000000000';
 do $$
 begin
   insert into public.lineups (event_id, name, formation_code, created_by)
-    values ('66ee0000-6666-0001-0000-000000000000', 'P3 ayudante cap', '1-3-3', '66ee0000-aaaa-0003-0000-000000000000');
+    values ('66ee0000-6666-0001-0000-000000000000', 'P3 ayudante de serie', '1-3-3', '66ee0000-aaaa-0003-0000-000000000000');
 exception when others then
-  raise exception 'FAIL [P3]: ayudante con capability no pudo insertar lineup: %', sqlerrm;
+  raise exception 'FAIL [P3]: ayudante staff activo no pudo insertar lineup de serie: %', sqlerrm;
 end $$;
 reset role;
 
--- P4. ayudante SIN la capability → 42501.
+-- P4. ayudante (staff activo) → OK de serie (sin capability).
 set local role authenticated;
 set local "request.jwt.claim.sub" to '66ee0000-aaaa-0004-0000-000000000000';
 do $$
 begin
-  begin
-    insert into public.lineups (event_id, name, formation_code, created_by)
-      values ('66ee0000-6666-0001-0000-000000000000', 'P4 ayudante nocap', '1-3-3', '66ee0000-aaaa-0004-0000-000000000000');
-    raise exception 'FAIL [P4]: ayudante sin capability no debería poder insertar';
-  exception when insufficient_privilege then null;
-  end;
+  insert into public.lineups (event_id, name, formation_code, created_by)
+    values ('66ee0000-6666-0001-0000-000000000000', 'P4 ayudante de serie', '1-3-3', '66ee0000-aaaa-0004-0000-000000000000');
+exception when others then
+  raise exception 'FAIL [P4]: ayudante staff activo debería poder insertar lineup de serie (sin capability): %', sqlerrm;
 end $$;
 reset role;
 

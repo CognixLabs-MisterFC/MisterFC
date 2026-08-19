@@ -87,23 +87,9 @@ export async function importPlayers(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  if (role === 'entrenador_ayudante') {
-    const { data: cap } = await supabase
-      .from('capabilities')
-      .select('granted')
-      .eq('membership_id', ctx.activeClub.membershipId)
-      .eq('capability_name', 'can_manage_squad')
-      .maybeSingle();
-    if (!cap?.granted) {
-      return {
-        created: 0,
-        skipped_duplicates: 0,
-        failed: 0,
-        details: [],
-        error: 'forbidden',
-      };
-    }
-  }
+  // Importar plantilla es DE SERIE para todo el cuerpo técnico desde O2 (se
+  // eliminó el sistema de capabilities). La autoridad final es la RLS de players
+  // (players_insert_staff), que admite a admin/director/coord/principal/ayudante.
 
   const { rows, team_id } = parsed.data;
 

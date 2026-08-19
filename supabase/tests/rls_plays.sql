@@ -1,7 +1,7 @@
 -- Tests JR-0 (ADR-0019) — RLS, autoridad, trigger y ciclo de PLAYS como banco del
 -- club, + tabla team_plays (selección por equipo). Migración 20260809000000.
 --
--- Cubre: INSERT (autoridad club-scoped: ayudante con/sin capability, principal,
+-- Cubre: INSERT (autoridad club-scoped: ayudante staff activo de serie, principal,
 -- coord, jugador, club ajeno; owner forzado; no-aprobador no crea published;
 -- aprobador sí); SELECT por estado (draft solo autor; proposed/rejected autor +
 -- aprobador; published todo el staff); UPDATE (transiciones: proponer, publicar/
@@ -66,11 +66,8 @@ insert into public.player_accounts (player_id, profile_id, relation) values
   ('b1500000-0000-4000-8000-00000000000f', 'b1a00000-0000-4000-8000-00000000000f', 'self'),
   ('b1500000-0000-4000-8000-000000000009', 'b1a00000-0000-4000-8000-000000000009', 'self');
 
--- can_create_plays: el ayudante D la tiene; el E no.
-update public.capabilities set granted = true
- where membership_id = 'b1550000-0000-4000-8000-00000000000d' and capability_name = 'can_create_plays';
-update public.capabilities set granted = false
- where membership_id = 'b1550000-0000-4000-8000-00000000000e' and capability_name = 'can_create_plays';
+-- Ayudantes D y E son staff activo del Team A (team_staff): crean jugadas de serie,
+-- sin capabilities (autoridad = cualquier team_staff activo del club).
 
 -- Play jsonb mínimo válido para el trigger (frames array 1..60).
 -- '{"version":1,"field":{},"frames":[{"elements":[]}]}'
@@ -80,7 +77,7 @@ set local role authenticated;
 -- ─────────────────────────────────────────────────────────────────────────────
 -- INSERT / autoridad (club-scoped)
 -- ─────────────────────────────────────────────────────────────────────────────
--- I1: ayudante CON capability crea draft → OK
+-- I1: ayudante (staff activo) crea draft de serie → OK
 set local "request.jwt.claims" = '{"sub":"b1a00000-0000-4000-8000-00000000000d","role":"authenticated"}';
 do $$
 begin
@@ -88,20 +85,17 @@ begin
   values ('b1900000-0000-4000-8000-000000000001', 'b1a00000-0000-4000-8000-00000000000d',
           'b1c00000-0000-4000-8000-000000000001', 'Jugada D', '{"version":1,"field":{},"frames":[{"elements":[]}]}'::jsonb, 'draft');
 exception when others then
-  raise exception 'FAIL [I1]: ayudante con cap no pudo crear draft: %', sqlerrm;
+  raise exception 'FAIL [I1]: ayudante (staff activo, de serie) no pudo crear draft: %', sqlerrm;
 end $$;
 
--- I2: ayudante SIN capability → RLS rechaza
+-- I2: ayudante (staff activo) crea de serie → OK
 do $$
-declare ok boolean := false;
 begin
   set local "request.jwt.claims" = '{"sub":"b1a00000-0000-4000-8000-00000000000e","role":"authenticated"}';
-  begin
-    insert into public.plays (owner_profile_id, club_id, name, play)
-    values ('b1a00000-0000-4000-8000-00000000000e', 'b1c00000-0000-4000-8000-000000000001', 'No', '{"version":1,"field":{},"frames":[{"elements":[]}]}'::jsonb);
-  exception when insufficient_privilege then ok := true;
-  end;
-  if not ok then raise exception 'FAIL [I2]: ayudante sin cap pudo insertar'; end if;
+  insert into public.plays (owner_profile_id, club_id, name, play)
+  values ('b1a00000-0000-4000-8000-00000000000e', 'b1c00000-0000-4000-8000-000000000001', 'De serie', '{"version":1,"field":{},"frames":[{"elements":[]}]}'::jsonb);
+exception when others then
+  raise exception 'FAIL [I2]: ayudante (staff activo) no pudo crear de serie: %', sqlerrm;
 end $$;
 
 -- I3: principal (vía team_staff) crea proposed → OK

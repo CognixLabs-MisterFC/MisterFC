@@ -5,8 +5,8 @@
 --   T2. Cualquier miembro del club del jugador puede SELECT.
 --   T3. User de otro club NO puede SELECT (aislamiento multi-tenant).
 --   T4. admin del club NO puede INSERT (F14-3b: escritura solo del tutor).
---   T5. ayudante sin can_manage_squad NO puede INSERT.
---   T6. ayudante con can_manage_squad TAMPOCO puede INSERT (F14-3b).
+--   T5. ayudante NO puede INSERT (F14-3b: escritura de foto solo del tutor).
+--   T6. otro ayudante (gestiona plantilla de serie tras O2) TAMPOCO puede INSERT.
 --   T7. admin de otro club NO puede INSERT en player ajeno.
 --   T8. admin NO puede UPDATE (F14-3b: UPDATE también tutor-only).
 --   T9. el TUTOR del jugador SÍ puede INSERT (caso positivo F14-3b).
@@ -59,13 +59,6 @@ insert into public.memberships (profile_id, club_id, role) values
 insert into public.player_accounts (player_id, profile_id, relation) values
   ('00000000-aaaa-1111-0000-000000000001', '55555555-bbbb-5555-5555-555555555555', 'parent'),
   ('00000000-aaaa-1111-0000-000000000001', '66666666-bbbb-6666-6666-666666666666', 'self');
-
-update public.capabilities
-   set granted = true
- where capability_name = 'can_manage_squad'
-   and membership_id = (select id from public.memberships
-                       where profile_id = '33333333-bbbb-3333-3333-333333333333'
-                         and club_id = 'dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0');
 
 -- Seed: objeto preexistente en la carpeta del player A1 (insertado como
 -- postgres, bypass RLS).
@@ -154,7 +147,7 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- T5: ayudante SIN can_manage_squad NO puede INSERT
+-- T5: ayudante NO puede INSERT foto (F14-3b: escritura solo del tutor)
 -- ─────────────────────────────────────────────────────────────────────────────
 
 set local "request.jwt.claims" = '{"sub":"22222222-bbbb-2222-2222-222222222222","role":"authenticated"}';
@@ -171,14 +164,14 @@ begin
     ok := true;
   end;
   if not ok then
-    raise exception 'FAIL [T5]: ayudante sin can_manage_squad pudo INSERT';
+    raise exception 'FAIL [T5]: un ayudante NO debería poder INSERT foto (F14-3b: solo tutor)';
   end if;
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- T6: ayudante CON can_manage_squad TAMPOCO puede INSERT
--- F15-A2 (EXPECTATIVA invertida, confirmada por Jose): F14-3b dejó la escritura de
--- fotos SOLO al tutor, sin importar can_manage_squad. Antes T6 esperaba que sí.
+-- T6: otro ayudante TAMPOCO puede INSERT (escritura de foto solo del tutor)
+-- F14-3b dejó la escritura de fotos SOLO al tutor. Con O2 gestionar plantilla es de
+-- serie para todo el cuerpo técnico, pero eso NO habilita subir fotos: sigue tutor-only.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 set local "request.jwt.claims" = '{"sub":"33333333-bbbb-3333-3333-333333333333","role":"authenticated"}';
@@ -195,7 +188,7 @@ begin
     ok := true;
   end;
   if not ok then
-    raise exception 'FAIL [T6]: ayudante con can_manage_squad NO debería poder INSERT foto (F14-3b: solo tutor)';
+    raise exception 'FAIL [T6]: un ayudante (aunque gestione plantilla) NO debería poder INSERT foto (F14-3b: solo tutor)';
   end if;
 end $$;
 

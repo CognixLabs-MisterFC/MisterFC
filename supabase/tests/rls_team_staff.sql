@@ -238,5 +238,5 @@ end $$;
 rollback;
 
 \echo '──────────────────────────────────────────────'
-\echo '✅ Tests RLS team_staff + capabilities pasaron.'
+\echo '✅ Tests RLS team_staff pasaron.'
 \echo '──────────────────────────────────────────────'

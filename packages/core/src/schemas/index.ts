@@ -85,20 +85,8 @@ export type {
   PlayerTutorRelation,
 } from './player';
 
-export {
-  sendStaffInvitationSchema,
-  updateCapabilitySchema,
-  TEAM_STAFF_ROLES,
-  CAPABILITY_NAMES,
-  CAPABILITY_DOMAINS,
-} from './staff';
-export type {
-  SendStaffInvitationInput,
-  UpdateCapabilityInput,
-  TeamStaffRole,
-  CapabilityName,
-  CapabilityDomainKey,
-} from './staff';
+export { sendStaffInvitationSchema, TEAM_STAFF_ROLES } from './staff';
+export type { SendStaffInvitationInput, TeamStaffRole } from './staff';
 
 export {
   PLAYER_IMPORT_COLUMNS,

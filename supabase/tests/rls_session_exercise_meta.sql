@@ -29,9 +29,10 @@ insert into public.memberships (id, profile_id, club_id, role) values
 insert into public.player_accounts (player_id, profile_id, relation) values
   ('5e543000-0000-4000-8000-00000000000f', '5ea40000-0000-4000-8000-00000000000f', 'self');
 
--- Autoridad para crear sesiones (calca el test de move): capability al ayudante.
-update public.capabilities set granted = true
-  where membership_id = '5e545000-0000-4000-8000-00000000000d' and capability_name = 'can_create_sessions';
+-- Autoridad para crear sesiones de serie: el ayudante es staff activo del equipo
+-- (team_staff), sin capabilities.
+insert into public.team_staff (team_id, membership_id, staff_role) values
+  ('5e542000-0000-4000-8000-000000000001', '5e545000-0000-4000-8000-00000000000d', 'entrenador_ayudante');
 
 -- Dos ejercicios publicados: uno referenciado (Rondo), otro NO (Suelto).
 alter table public.exercises disable trigger trg_exercises_validate;

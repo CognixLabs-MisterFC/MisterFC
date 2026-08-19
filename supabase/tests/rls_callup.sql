@@ -17,7 +17,8 @@
 --   D3. UNIQUE (event,player) — segundo INSERT en decisions → 23505.
 --   D4. Regresión bug: ayudante a nivel club PERO principal en team_staff
 --       puede INSERT + UPDATE decision en borrador (migración 20260603).
---   D5. Ayudante a nivel club + ayudante en team_staff SIN cap → 42501.
+--   D5. Ayudante a nivel club + STAFF (ayudante) del team del evento → INSERT
+--       decision OK DE SERIE (O2: user_can_manage_callup = cualquier staff del team).
 --   F1. self responde → OK; responded_by = self.profile.
 --   F2. parent (familia) overwrites self via UPDATE → OK; responded_by = familia.
 --   F3. parent re-INSERT tras limpieza → OK; responded_by = familia.
@@ -472,12 +473,13 @@ end $$;
 reset role;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- D5: ayudante a nivel club SIN principal en team_staff y SIN
---      can_manage_callups: NO puede insertar decision.
+-- D5: ayudante a nivel club que es STAFF ACTIVO (staff_role ayudante) del team
+--      del evento → AHORA SÍ puede insertar decision DE SERIE.
 --
--- Cierra el complemento de D4: el cambio de la migración 20260603 NO abre
--- el acceso a cualquier ayudante; sigue exigiendo o principal_de_team_staff
--- o capability.
+-- O2 (20261042): se eliminó el sistema de capabilities. user_can_manage_callup pasa
+-- a "admin/director OR coordinador del equipo OR cualquier staff activo del equipo"
+-- (user_is_staff_of_team). Antes esta rama exigía principal_de_team_staff o la
+-- capability can_manage_callups; ahora basta con ser staff del equipo del evento.
 -- ─────────────────────────────────────────────────────────────────────────────
 select pg_temp.new_test_user('44dd0000-aaaa-5555-5555-555555555555', 'just-asst-c-a@ts.test', '{}'::jsonb);
 
@@ -494,22 +496,16 @@ set local role authenticated;
 set local "request.jwt.claim.sub" to '44dd0000-aaaa-5555-5555-555555555555';
 
 do $$
-declare ok boolean := false;
 begin
-  begin
-    insert into public.callup_decisions (event_id, player_id, decision, decided_by)
-    values (
-      '77dd0000-0000-0000-0000-000000000003',
-      '66dd0000-0000-0000-0000-000000000001',
-      'called_up',
-      '44dd0000-aaaa-5555-5555-555555555555'
-    );
-  exception when others then
-    if sqlstate = '42501' then ok := true; end if;
-  end;
-  if not ok then
-    raise exception 'FAIL [D5]: ayudante sin principal_de_team_staff ni cap no debería poder insertar decision';
-  end if;
+  insert into public.callup_decisions (event_id, player_id, decision, decided_by)
+  values (
+    '77dd0000-0000-0000-0000-000000000003',
+    '66dd0000-0000-0000-0000-000000000001',
+    'called_up',
+    '44dd0000-aaaa-5555-5555-555555555555'
+  );
+exception when others then
+  raise exception 'FAIL [D5]: ayudante staff del equipo debería poder insertar decision de serie (sin capability): %', sqlerrm;
 end $$;
 
 reset role;

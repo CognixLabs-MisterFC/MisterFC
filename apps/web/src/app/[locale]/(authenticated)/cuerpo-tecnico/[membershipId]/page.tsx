@@ -5,7 +5,6 @@ import {
   CalendarOff,
   Mail,
   Phone,
-  Settings,
   Users,
 } from 'lucide-react';
 import { MANAGER_ROLES, TEAM_STAFF_ROLES } from '@misterfc/core';
@@ -151,17 +150,6 @@ export default async function CoachDetailPage({ params }: Props) {
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-muted-foreground">
               {tClubRole(coach.club_role)}
-              {coach.club_role === 'entrenador_ayudante' &&
-                coach.caps_granted != null && (
-                  <>
-                    {' '}
-                    ·{' '}
-                    {t('caps_summary', {
-                      granted: coach.caps_granted,
-                      total: 9,
-                    })}
-                  </>
-                )}
             </p>
             {/* Bug 2 · 2b + F1B-3c: gestionan roles bajos admin_club y director.
                 El diálogo solo ofrece roles bajos como destino (STAFF_CLUB_ROLES);
@@ -291,24 +279,6 @@ export default async function CoachDetailPage({ params }: Props) {
                   </Link>
                   {canManage && (
                     <div className="flex items-center gap-2">
-                      {/* Follow-up: el enlace de capabilities lleva a /equipos/[teamId]
-                          (estructura, cerrada al coordinador por C-2b) → se oculta al
-                          coordinador (coordinatedTeamIds != null). admin/director lo ven. */}
-                      {coach.club_role === 'entrenador_ayudante' &&
-                        coordinatedTeamIds === null && (
-                          <Button
-                            asChild
-                            variant="ghost"
-                            size="icon"
-                            title={t('detail.edit_caps')}
-                          >
-                            <Link
-                              href={`/equipos/${a.team_id}/staff/${coach.membership_id}/capabilities`}
-                            >
-                              <Settings className="size-4" aria-hidden />
-                            </Link>
-                          </Button>
-                        )}
                       {/* E-final-2: el coordinador solo mueve DESDE equipos que
                           coordina (coordinatedTeamIds); admin/director, todos. */}
                       {(coordinatedTeamIds === null ||

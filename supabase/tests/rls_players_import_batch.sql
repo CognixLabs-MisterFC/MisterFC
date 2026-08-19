@@ -6,16 +6,14 @@
 --   I1. admin del club SÍ puede INSERT en su club.
 --   I2. coordinador del club SÍ puede.
 --   I3. entrenador_principal del club SÍ puede.
---   I4. ayudante con `can_manage_squad=true` SÍ puede.
---   I5. ayudante sin `can_manage_squad` NO puede.
+--   I4. ayudante (cuerpo técnico) SÍ puede DE SERIE.
+--   I5. otro ayudante (cuerpo técnico) SÍ puede DE SERIE.
 --   I6. jugador NO puede.
 --   I7. admin del club B NO puede insertar con club_id del club A.
 --
--- Las capabilities las siembra el trigger F1.7 al crear la membership de
--- ayudante. Activamos `can_manage_squad` solo en I4 vía UPDATE directo
--- (saltando RLS de capabilities porque corremos como bootstrap superuser
--- en el setup; los UPDATEs reales en producción van por la action
--- toggleCapability).
+-- El cuerpo técnico (entrenador_ayudante) gestiona plantilla DE SERIE tras la
+-- migración 20261042 (players_insert_staff incluye 'entrenador_ayudante'); ya
+-- no hay capabilities que activar.
 \ir helpers/auth_users.sql
 
 begin;
@@ -41,12 +39,6 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('99aaaaaa-0a00-5555-5555-555555555555', '99aaaaaa-aaaa-5555-5555-555555555555', '99aaaaaa-aaaa-0000-0000-000000000001', 'entrenador_ayudante'),
   ('99aaaaaa-0a00-6666-6666-666666666666', '99aaaaaa-aaaa-6666-6666-666666666666', '99aaaaaa-aaaa-0000-0000-000000000001', 'jugador'),
   ('99aaaaaa-0a00-7777-7777-777777777777', '99aaaaaa-bbbb-7777-7777-777777777777', '99aaaaaa-bbbb-0000-0000-000000000001', 'admin_club');
-
--- Activar can_manage_squad solo en el ayudante "on" (I4)
-update public.capabilities
-   set granted = true
- where membership_id = '99aaaaaa-0a00-4444-4444-444444444444'
-   and capability_name = 'can_manage_squad';
 
 -- Helper para encapsular un INSERT de player como un user.
 create or replace function pg_temp.try_insert_player(
@@ -105,26 +97,26 @@ begin
   if s <> 'ok' then raise exception 'FAIL [I3]: principal no pudo INSERT (%)', s; end if;
 end $$;
 
--- I4: ayudante con can_manage_squad SÍ
+-- I4: ayudante (cuerpo técnico) SÍ de serie
 do $$
 declare s text;
 begin
   s := pg_temp.try_insert_player(
     '99aaaaaa-aaaa-4444-4444-444444444444',
     '99aaaaaa-aaaa-0000-0000-000000000001', 'Ayud', 'OnSquad');
-  if s <> 'ok' then raise exception 'FAIL [I4]: ayudante can_manage_squad=true no pudo (%)', s; end if;
+  if s <> 'ok' then raise exception 'FAIL [I4]: ayudante (cuerpo técnico) no pudo de serie (%)', s; end if;
 end $$;
 
--- I5: ayudante sin can_manage_squad NO puede.
--- La policy players_write_staff (F1.7) exige role∈{admin,coord,principal}
--- O capability can_manage_squad. El ayudante con cap=false cae fuera.
+-- I5: otro ayudante (cuerpo técnico) SÍ puede DE SERIE.
+-- La policy players_insert_staff (20261042) admite role∈{admin,director,
+-- coordinador,entrenador_principal,entrenador_ayudante}. El ayudante entra.
 do $$
 declare s text;
 begin
   s := pg_temp.try_insert_player(
     '99aaaaaa-aaaa-5555-5555-555555555555',
     '99aaaaaa-aaaa-0000-0000-000000000001', 'Ayud', 'OffSquad');
-  if s <> 'rls' then raise exception 'FAIL [I5]: ayudante sin can_manage_squad no debería poder (got=%)', s; end if;
+  if s <> 'ok' then raise exception 'FAIL [I5]: ayudante (cuerpo técnico) debería poder insertar de serie (got=%)', s; end if;
 end $$;
 
 -- I6: jugador NO
