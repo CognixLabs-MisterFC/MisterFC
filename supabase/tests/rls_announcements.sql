@@ -3,8 +3,8 @@
 -- Cobertura:
 --   A1. Miembro del club (jugador) SELECT anuncio del team → OK.
 --   A2. Admin de OTRO club SELECT → 0 rows (multi-tenant).
---   A3. INSERT con can_message_families granted (ayudante) → OK.
---   A4. INSERT sin capability (ayudante sin grant) → ❌ (RLS bloquea).
+--   A3. INSERT anuncio de equipo por ayudante (staff del equipo, de serie) → OK.
+--   A4. INSERT anuncio de equipo por ayudante (staff del equipo) → OK de serie.
 --   A5. DELETE por autor → OK.
 --   A6. DELETE por admin del club (no autor) → OK.
 --   A7. UPDATE author_profile_id → trigger rechaza (autor inmutable).
@@ -49,13 +49,11 @@ insert into public.player_accounts (player_id, profile_id, relation) values
 insert into public.team_members (player_id, team_id) values
   ('66666666-6666-4666-8666-66666666b001', '33333333-3333-4333-8333-3333333300b1');
 
--- Capability ayudante: el trigger ensure_assistant_capabilities siembra
--- todas las caps con granted=FALSE por defecto (confirmado empíricamente).
--- Para A3 activamos can_message_families con UPDATE directo. A4 la
--- desactivará para volver al estado inicial.
-update public.capabilities set granted = true
- where membership_id = '55555555-5555-4555-8555-5555555500b3'
-   and capability_name = 'can_message_families';
+-- El ayudante ...b3 es staff ACTIVO del Team A (team_staff). Como cuerpo
+-- técnico del equipo puede escribir anuncios del equipo DE SERIE, sin
+-- ninguna capability.
+insert into public.team_staff (team_id, membership_id, staff_role) values
+  ('33333333-3333-4333-8333-3333333300b1', '55555555-5555-4555-8555-5555555500b3', 'entrenador_ayudante');
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- A1: jugador del club ve anuncio del team
@@ -104,7 +102,7 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- A3: ayudante con cap on INSERT → OK
+-- A3: ayudante (staff del equipo) INSERT anuncio de equipo → OK de serie
 -- ─────────────────────────────────────────────────────────────────────────────
 do $$
 declare v_ann_id uuid;
@@ -119,34 +117,27 @@ begin
   returning id into v_ann_id;
   reset role;
   if v_ann_id is null then
-    raise exception 'FAIL [A3]: ayudante con cap no pudo insertar anuncio';
+    raise exception 'FAIL [A3]: ayudante staff del equipo no pudo insertar anuncio de serie';
   end if;
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- A4: ayudante con cap OFF → ❌
+-- A4: ayudante (staff del equipo) sin capability → OK de serie
 -- ─────────────────────────────────────────────────────────────────────────────
-update public.capabilities set granted = false
- where membership_id = '55555555-5555-4555-8555-5555555500b3'
-   and capability_name = 'can_message_families';
-
 do $$
-declare ok boolean := false;
+declare v_ann_id uuid;
 begin
   set local role authenticated;
   set local "request.jwt.claims" = '{"sub":"44444444-4444-4444-8444-4444444400b3","role":"authenticated"}';
-  begin
-    insert into public.announcements (team_id, club_id, author_profile_id, title, body) values
-      ('33333333-3333-4333-8333-3333333300b1',
-       '11111111-1111-4111-8111-1111111100b1',
-       '44444444-4444-4444-8444-4444444400b3',
-       't-off', 'b-off');
-  exception when insufficient_privilege then
-    ok := true;
-  end;
+  insert into public.announcements (team_id, club_id, author_profile_id, title, body) values
+    ('33333333-3333-4333-8333-3333333300b1',
+     '11111111-1111-4111-8111-1111111100b1',
+     '44444444-4444-4444-8444-4444444400b3',
+     't-on', 'b-on')
+  returning id into v_ann_id;
   reset role;
-  if not ok then
-    raise exception 'FAIL [A4]: ayudante sin cap pudo insertar';
+  if v_ann_id is null then
+    raise exception 'FAIL [A4]: ayudante staff del equipo no pudo insertar de serie';
   end if;
 end $$;
 

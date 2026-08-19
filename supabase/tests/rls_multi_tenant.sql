@@ -1,4 +1,4 @@
--- Tests RLS de Fase 1 — aislamiento multi-tenant y capabilities del ayudante.
+-- Tests RLS de Fase 1 — aislamiento multi-tenant y escritura del cuerpo técnico.
 --
 -- Ejecutar con `pnpm db:test` (envuelve en BEGIN/ROLLBACK contra la BD remota).
 --
@@ -124,7 +124,7 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- TEST 2: ayudante sin capabilities solo lee
+-- TEST 2: ayudante (cuerpo técnico) lee y gestiona plantilla DE SERIE
 -- ─────────────────────────────────────────────────────────────────────────────
 
 set local "request.jwt.claims" = '{"sub":"aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
@@ -148,28 +148,13 @@ begin
   begin
     insert into public.players (club_id, first_name, last_name, date_of_birth)
     values ('11111111-1111-1111-1111-111111111111', 'X', 'Y', '2016-01-01');
-  exception when others then
     ok := true;
+  exception when others then
+    ok := false;
   end;
   if not ok then
-    raise exception 'FAIL [T2.c]: ayudante sin capability pudo insertar player';
+    raise exception 'FAIL [T2.c]: ayudante (cuerpo técnico) no pudo insertar player de serie';
   end if;
-end $$;
-
--- Concedemos can_manage_squad al ayudante (postgres bypass)
-reset role;
-update public.capabilities
-  set granted = true
-  where membership_id = '77777777-7777-7777-7777-777777777777'
-    and capability_name = 'can_manage_squad';
-
-set local role authenticated;
-set local "request.jwt.claims" = '{"sub":"aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaaa","role":"authenticated"}';
-
-do $$
-begin
-  insert into public.players (club_id, first_name, last_name, date_of_birth)
-  values ('11111111-1111-1111-1111-111111111111', 'Test', 'Inserted', '2016-01-01');
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────

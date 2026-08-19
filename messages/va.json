@@ -1406,7 +1406,6 @@
       }
     },
     "subtitle": "Llistat global del club amb filtres i assignació individual.",
-    "forbidden_no_cap": "No tens permís per veure el llistat global. Demana a un entrenador principal o coordinador que et concedisca la capability 'Gestionar plantilla'.",
     "empty_filtered": "No hi ha jugadors que coincidisquen amb estos filtres.",
     "no_team": "Sense equip",
     "has_account": "Compte vinculat",
@@ -1500,7 +1499,6 @@
   "staff": {
     "title": "Cos tècnic",
     "empty": "Encara sense cos tècnic assignat.",
-    "caps": "Configurar permisos de l'ajudant",
     "role": {
       "entrenador_principal": "Entrenador principal",
       "entrenador_ayudante": "Entrenador ajudant",
@@ -1515,7 +1513,7 @@
       "field": {
         "email": "Email",
         "role": "Funció en l'equip",
-        "help": "Només un entrenador principal per equip. Preparador físic i delegat es gestionen com a ajudants a nivell de club (sense caps per defecte)."
+        "help": "Només un entrenador principal per equip. Preparador físic i delegat es gestionen com a ajudants a nivell de club."
       },
       "send": "Enviar invitació",
       "cancel": "Cancel·lar",
@@ -1540,74 +1538,6 @@
     "pending_title": "Invitacions pendents",
     "pending_status": "Enviada",
     "pending_expired": "Caducada"
-  },
-  "capabilities": {
-    "back": "Tornar a l'equip",
-    "subtitle": "Permisos de l'entrenador ajudant",
-    "read_only": "Només l'entrenador principal de l'equip, coordinador o admin pot modificar estos permisos.",
-    "not_assistant": "Este membre no és entrenador ajudant. Els permisos només s'apliquen a ajudants.",
-    "autosave_hint": "Els canvis es guarden automàticament.",
-    "can_evaluate": {
-      "label": "Valorar jugadors",
-      "description": "Pot deixar valoracions individuals post-partit i post-entrenament."
-    },
-    "can_create_lineups": {
-      "label": "Crear alineacions",
-      "description": "Pot preparar alineacions (titular, pla B, segona part)."
-    },
-    "can_register_match_events": {
-      "label": "Registrar esdeveniments del partit",
-      "description": "Pot usar la pantalla de presa de dades en directe."
-    },
-    "can_create_sessions": {
-      "label": "Crear sessions d'entrenament",
-      "description": "Pot dissenyar i publicar sessions a l'equip."
-    },
-    "can_create_plays": {
-      "label": "Crear jugades tàctiques",
-      "description": "Pot crear i compartir jugades amb l'equip."
-    },
-    "can_see_medical": {
-      "label": "Veure notes mèdiques",
-      "description": "Pot llegir les notes mèdiques dels jugadors de l'equip."
-    },
-    "can_message_families": {
-      "label": "Escriure a famílies",
-      "description": "Pot iniciar converses amb tutors legals."
-    },
-    "can_manage_squad": {
-      "label": "Gestionar plantilla",
-      "description": "Pot crear/editar fitxes i pujar fotos. Sense açò, no pot donar d'alta jugadors."
-    },
-    "errors": {
-      "forbidden": "No tens permís per a modificar este permís.",
-      "not_assistant": "Este membre no és entrenador ajudant.",
-      "invalid_input": "Dades no vàlides.",
-      "db": "No s'ha pogut guardar. Torneu-ho a provar."
-    },
-    "can_manage_calendar": {
-      "label": "Gestionar calendari",
-      "description": "Pot crear, editar i esborrar esdeveniments de l'equip. Sense açò, només pot veure el calendari."
-    },
-    "can_create_exercises": {
-      "label": "Crear exercicis",
-      "description": "Pot crear i proposar exercicis per a la biblioteca del club. La publicació l'aprova l'admin."
-    },
-    "domains": {
-      "entrenamientos": "Entrenaments",
-      "partidos": "Partits",
-      "calendario": "Calendari",
-      "jugadores": "Jugadors / Plantilla",
-      "comunicacion": "Comunicació"
-    },
-    "can_mark_attendance": {
-      "label": "Registrar assistència",
-      "description": "Pot passar llista i registrar l’assistència als entrenaments. Sense açò, només pot consultar-la."
-    },
-    "can_manage_callups": {
-      "label": "Gestionar convocatòries",
-      "description": "Pot crear i gestionar les convocatòries de partit. Sense açò, només pot veure-les."
-    }
   },
   "mis_equipos": {
     "title": "Els meus equips",
@@ -2282,7 +2212,6 @@
     "count": "{count, plural, =0 {Sense entrenadors actius} one {1 entrenador} other {# entrenadors}}",
     "empty": "Encara no hi ha cos tècnic actiu al club. Convida entrenadors des de la fitxa d'un equip.",
     "empty_filtered": "No hi ha entrenadors que coincidisquen amb els filtres.",
-    "caps_summary": "{granted}/{total} capabilities concedides",
     "filters": {
       "label": "Filtres",
       "title": "Filtrar cos tècnic",
@@ -2301,7 +2230,6 @@
       "name": "Nom",
       "club_role": "Rol de club",
       "teams": "Equips assignats",
-      "caps": "Permisos",
       "actions": "Accions"
     },
     "row_actions": {
@@ -2407,7 +2335,6 @@
       "back": "Tornar al cos tècnic",
       "teams_title": "Equips assignats",
       "no_active_teams": "Esta persona no té equips actius al club.",
-      "edit_caps": "Editar permisos",
       "agenda_title": "Agenda (pròxims 28 dies)",
       "agenda_subtitle": "Esdeveniments de F3 filtrats als equips actius.",
       "agenda_no_teams": "Sense equips actius, no hi ha res a mostrar.",

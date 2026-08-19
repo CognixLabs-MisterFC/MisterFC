@@ -1,7 +1,7 @@
 -- Tests F12.1 — RLS, autoridad y triggers del planificador de SESIONES
 -- (migración 20260716000000_sessions.sql).
 --
--- Cubre: INSERT (autoridad: ayudante con/sin capability, principal vía team_staff,
+-- Cubre: INSERT (autoridad: ayudante staff activo, principal vía team_staff,
 -- coord, jugador, ajeno al club; owner forzado a auth.uid); CHECKs de coherencia
 -- plantilla↔fecha/evento/visibilidad; SELECT por rol y por visibility staff|team
 -- (jugador/familia del team vs jugador de otro team vs club ajeno); UPDATE/DELETE
@@ -11,7 +11,7 @@
 -- Estilo: aserciones con raise exception (como rls_exercises.sql). Transaccional.
 --
 -- Mapa de IDs (último segmento del uuid, todo HEX):
---   users: admin a, coord b, principal c, ayudante(cap) d, ayudante(sin cap) e,
+--   users: admin a, coord b, principal c, ayudante d, ayudante e (ambos staff),
 --          jugador del team A = f, jugador del team A2 = 9, adminB = ...0a (club B).
 \ir helpers/auth_users.sql
 
@@ -64,9 +64,13 @@ insert into public.memberships (id, profile_id, club_id, role) values
 -- convierte en user_is_staff_of_team(Team A) → gana autoridad UPDATE/DELETE/bloques sobre
 -- las sesiones de Team A; por eso las sesiones "ajenas" de U3/B5/D3 pasan a ser de Team A2
 -- (que NO coordina), no de Team A (ver más abajo).
+-- Ayudantes d y e son team_staff activos de Team A → crean sesiones DE SERIE
+-- (sin capability) vía el gate club-scoped user_can_create_sessions.
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('5e552000-0000-4000-8000-000000000001', '5e555000-0000-4000-8000-00000000000c', 'entrenador_principal'),
-  ('5e552000-0000-4000-8000-000000000001', '5e555000-0000-4000-8000-00000000000b', 'coordinador');
+  ('5e552000-0000-4000-8000-000000000001', '5e555000-0000-4000-8000-00000000000b', 'coordinador'),
+  ('5e552000-0000-4000-8000-000000000001', '5e555000-0000-4000-8000-00000000000d', 'entrenador_ayudante'),
+  ('5e552000-0000-4000-8000-000000000001', '5e555000-0000-4000-8000-00000000000e', 'entrenador_ayudante');
 
 -- jugadorF ↔ f (del Team A); jugador9 ↔ 9 (de Team A2, otro team del club).
 insert into public.player_accounts (player_id, profile_id, relation) values
@@ -79,48 +83,29 @@ insert into public.exercises (id, owner_profile_id, club_id, name, status) value
   ('5e9e0000-0000-4000-8000-000000000001', '5ea00000-0000-4000-8000-00000000000a', '5e550000-0000-4000-8000-000000000001', 'Rondo 5v2', 'published');
 alter table public.exercises enable trigger trg_exercises_validate;
 
--- ── H1: el trigger sembró can_create_sessions para los ayudantes ─────────────
-do $$
-declare n int;
-begin
-  select count(*) into n from public.capabilities
-   where membership_id = '5e555000-0000-4000-8000-00000000000d'
-     and capability_name = 'can_create_sessions';
-  if n <> 1 then raise exception 'FAIL [H1]: el ayudante no tiene fila can_create_sessions'; end if;
-end $$;
-
--- ayudante D: capability concedida; ayudante E: sin capability.
-update public.capabilities set granted = true
-  where membership_id = '5e555000-0000-4000-8000-00000000000d' and capability_name = 'can_create_sessions';
-update public.capabilities set granted = false
-  where membership_id = '5e555000-0000-4000-8000-00000000000e' and capability_name = 'can_create_sessions';
-
 -- ─────────────────────────────────────────────────────────────────────────────
 -- INSERT / autoridad
 -- ─────────────────────────────────────────────────────────────────────────────
 set local role authenticated;
 
--- I1: ayudante CON capability crea sesión → OK
+-- I1: ayudante staff activo crea sesión → OK DE SERIE (sin capability)
 set local "request.jwt.claims" = '{"sub":"5ea00000-0000-4000-8000-00000000000d","role":"authenticated"}';
 do $$
 begin
   insert into public.sessions (id, owner_profile_id, club_id, team_id, session_date)
   values ('5e500000-0000-4000-8000-000000000001', '5ea00000-0000-4000-8000-00000000000d', '5e550000-0000-4000-8000-000000000001', '5e552000-0000-4000-8000-000000000001', '2026-09-10');
 exception when others then
-  raise exception 'FAIL [I1]: ayudante con cap no pudo crear sesión: %', sqlerrm;
+  raise exception 'FAIL [I1]: ayudante staff activo no pudo crear sesión de serie: %', sqlerrm;
 end $$;
 
--- I2: ayudante SIN capability crea → RLS lo rechaza
+-- I2: otro ayudante staff activo crea → OK DE SERIE (sin capability)
 do $$
-declare ok boolean := false;
 begin
   set local "request.jwt.claims" = '{"sub":"5ea00000-0000-4000-8000-00000000000e","role":"authenticated"}';
-  begin
-    insert into public.sessions (owner_profile_id, club_id, team_id, session_date)
-    values ('5ea00000-0000-4000-8000-00000000000e', '5e550000-0000-4000-8000-000000000001', '5e552000-0000-4000-8000-000000000001', '2026-09-10');
-  exception when insufficient_privilege then ok := true;
-  end;
-  if not ok then raise exception 'FAIL [I2]: ayudante sin cap pudo insertar'; end if;
+  insert into public.sessions (owner_profile_id, club_id, team_id, session_date)
+  values ('5ea00000-0000-4000-8000-00000000000e', '5e550000-0000-4000-8000-000000000001', '5e552000-0000-4000-8000-000000000001', '2026-09-10');
+exception when others then
+  raise exception 'FAIL [I2]: ayudante staff activo debería poder crear sesión de serie (sin capability): %', sqlerrm;
 end $$;
 
 -- I3: principal (vía team_staff) crea → OK

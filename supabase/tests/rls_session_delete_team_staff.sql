@@ -39,11 +39,9 @@ insert into public.team_staff (team_id, membership_id, staff_role) values
   ('5f700000-0000-4000-8000-000000000001', '5f550000-0000-4000-8000-00000000000b', 'entrenador_ayudante'),
   ('5f700000-0000-4000-8000-000000000002', '5f550000-0000-4000-8000-00000000000d', 'entrenador_principal');
 
--- El ayudante de Team A necesita la capability de sesiones (no es principal de ningún
--- equipo) para superar el prerrequisito user_can_create_sessions. El trigger ya sembró
--- la fila al crear la membership; aquí se concede.
-update public.capabilities set granted = true
-  where membership_id = '5f550000-0000-4000-8000-00000000000b' and capability_name = 'can_create_sessions';
+-- El ayudante de Team A es staff activo del equipo (team_staff); de serie supera el
+-- prerrequisito user_can_create_sessions ("cualquier team_staff activo del club"),
+-- sin capabilities.
 
 -- Sesiones de Team A creadas por el ADMIN (owner=admin) + una plantilla (team_id NULL).
 alter table public.sessions disable trigger trg_sessions_validate;
@@ -65,7 +63,7 @@ begin
   if n <> 0 then raise exception 'FAIL [DO0]: staff de otro equipo borró una sesión ajena'; end if;
 end $$;
 
--- DA: AYUDANTE de Team A (con capability) borra una sesión de Team A → 1 fila.
+-- DA: AYUDANTE de Team A (staff activo, de serie) borra una sesión de Team A → 1 fila.
 do $$
 declare n int;
 begin

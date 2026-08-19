@@ -7,11 +7,9 @@
  *
  * Permisos de lectura (visibilidad):
  *  - admin_club / coordinador → todos los jugadores del club.
- *  - entrenador_principal → solo jugadores cuya pertenencia ACTIVA es a un team
- *    donde el user es staff activo (team_staff.left_at IS NULL).
- *  - entrenador_ayudante con can_manage_squad → idem que principal.
- *  - entrenador_ayudante sin can_manage_squad → 0 resultados (la page mostrará
- *    un estado "no tienes permiso para ver este listado").
+ *  - entrenador_principal / entrenador_ayudante → solo jugadores cuya pertenencia
+ *    ACTIVA es a un team donde el user es staff activo (team_staff.left_at IS NULL).
+ *    O2: gestionar plantilla es de serie para todo el cuerpo técnico.
  *  - jugador → no debería llegar aquí (la page redirige antes).
  *
  * Permisos de escritura (acción "asignar a equipo"): mismos roles que arriba
@@ -116,27 +114,9 @@ export async function resolveVisibilityScope(
   const user = await getCurrentUser(adapter);
   if (!user) return { kind: 'none' };
 
-  // ayudante: exige can_manage_squad en el club activo.
-  if (role === 'entrenador_ayudante') {
-    type CapRow = {
-      granted: boolean;
-      memberships: { profile_id: string; club_id: string };
-    };
-    const { data: caps } = await supabase
-      .from('capabilities')
-      .select('granted, memberships!inner(profile_id, club_id)')
-      .eq('capability_name', 'can_manage_squad')
-      .eq('granted', true);
-    const hasSquadCap = (caps ?? []).some((row) => {
-      const r = row as unknown as CapRow;
-      return (
-        r.memberships.profile_id === user.id &&
-        r.memberships.club_id === clubId &&
-        r.granted
-      );
-    });
-    if (!hasSquadCap) return { kind: 'none' };
-  }
+  // Gestionar plantilla es DE SERIE para todo el cuerpo técnico desde O2 (se
+  // eliminó el sistema de capabilities). El ayudante cae, como el principal, al
+  // scope 'restricted' de sus equipos (team_staff activo) más abajo.
 
   // Equipos donde el user es staff activo en el club activo.
   type StaffRow = {

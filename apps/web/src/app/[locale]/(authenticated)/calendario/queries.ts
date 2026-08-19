@@ -132,8 +132,8 @@ export async function loadCalendarData(
  * Devuelve los teams en los que el user actual puede gestionar eventos.
  * Espejo del helper SQL `user_can_manage_event`:
  *   - admin_club / coordinador → todos los teams del club.
- *   - entrenador_principal → teams donde es staff activo.
- *   - entrenador_ayudante con can_manage_calendar → teams donde es staff.
+ *   - entrenador_principal / entrenador_ayudante → teams donde es staff activo
+ *     (O2: gestionar eventos es de serie para todo el cuerpo técnico).
  *   - jugador → ninguno.
  */
 /**
@@ -174,11 +174,10 @@ export async function loadManageableTeams(
 
   // Staff (principal o ayudante): la RLS es la verdad. Preguntamos al helper
   // user_can_manage_event por equipo (mismo patrón que canRecord en asistencia)
-  // en vez de decidir por memberships.role. Así un principal del EQUIPO con rol
-  // de club ayudante (que la rama (B) de la RLS reconoce vía
-  // user_is_principal_of_team) NO se queda sin el botón, y un ayudante sin
-  // can_manage_calendar tampoco lo ve. Eventos a nivel club (team_id null) solo
-  // los gestionan admin/coord, ya cubiertos arriba.
+  // en vez de decidir por memberships.role. Desde O2 gestionar eventos es de
+  // serie para todo el cuerpo técnico: cualquier staff activo del equipo (rama
+  // user_is_staff_of_team de la RLS) ve el botón en sus equipos. Eventos a nivel
+  // club (team_id null) solo los gestionan admin/coord, ya cubiertos arriba.
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 

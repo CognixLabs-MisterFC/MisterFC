@@ -53,8 +53,6 @@ export type CoachRow = {
   avatar_url: string | null;
   club_role: 'entrenador_principal' | 'entrenador_ayudante';
   assignments: CoachTeamAssignment[];
-  /** Resumen de caps concedidas, solo para ayudantes (X / 9). */
-  caps_granted: number | null;
   /** Contacto gestionado por el club (Bug 2 · 2c). NO es el email de login. */
   phone: string | null;
   contact_email: string | null;
@@ -387,7 +385,6 @@ export async function loadCoachList(
           | 'entrenador_principal'
           | 'entrenador_ayudante',
         assignments: [assignment],
-        caps_granted: null,
         phone: (r.memberships.phone as string | null) ?? null,
         contact_email: (r.memberships.contact_email as string | null) ?? null,
       });
@@ -395,28 +392,6 @@ export async function loadCoachList(
   }
 
   let coaches = [...byMembership.values()];
-
-  // Resumen de capabilities concedidas para ayudantes.
-  const assistantIds = coaches
-    .filter((c) => c.club_role === 'entrenador_ayudante')
-    .map((c) => c.membership_id);
-  if (assistantIds.length > 0) {
-    const { data: caps } = await supabase
-      .from('capabilities')
-      .select('membership_id, granted')
-      .in('membership_id', assistantIds)
-      .eq('granted', true);
-    const counts = new Map<string, number>();
-    for (const row of caps ?? []) {
-      const m = row.membership_id as string;
-      counts.set(m, (counts.get(m) ?? 0) + 1);
-    }
-    for (const c of coaches) {
-      if (c.club_role === 'entrenador_ayudante') {
-        c.caps_granted = counts.get(c.membership_id) ?? 0;
-      }
-    }
-  }
 
   // Aplica filtros en memoria. El conjunto es pequeño (< 50 entrenadores
   // típicos por club). Postpone BD-side filtering a F2.11 extension si
@@ -590,17 +565,6 @@ export async function loadCoachDetail(
     joined_at: a.joined_at,
   }));
 
-  // Capabilities (solo si ayudante).
-  let capsGranted: number | null = null;
-  if (m.role === 'entrenador_ayudante') {
-    const { data: caps } = await supabase
-      .from('capabilities')
-      .select('granted')
-      .eq('membership_id', membershipId)
-      .eq('granted', true);
-    capsGranted = (caps ?? []).length;
-  }
-
   const coach: CoachRow = {
     membership_id: m.id as string,
     profile_id: m.profile_id as string,
@@ -608,7 +572,6 @@ export async function loadCoachDetail(
     avatar_url: profile.avatar_url ?? null,
     club_role: m.role as 'entrenador_principal' | 'entrenador_ayudante',
     assignments,
-    caps_granted: capsGranted,
     phone: (m.phone as string | null) ?? null,
     contact_email: (m.contact_email as string | null) ?? null,
   };

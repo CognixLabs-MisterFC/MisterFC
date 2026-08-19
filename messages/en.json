@@ -1406,7 +1406,6 @@
       }
     },
     "subtitle": "Club-wide list with filters and individual assignment.",
-    "forbidden_no_cap": "You don't have permission to view the global list. Ask a head coach or coordinator to grant you the 'Manage squad' capability.",
     "empty_filtered": "No players match these filters.",
     "no_team": "No team",
     "has_account": "Account linked",
@@ -1500,7 +1499,6 @@
   "staff": {
     "title": "Coaching staff",
     "empty": "No coaching staff assigned yet.",
-    "caps": "Configure assistant permissions",
     "role": {
       "entrenador_principal": "Head coach",
       "entrenador_ayudante": "Assistant coach",
@@ -1515,7 +1513,7 @@
       "field": {
         "email": "Email",
         "role": "Role in the team",
-        "help": "Only one head coach per team. Fitness coach and team official are managed as assistants at the club level (no caps by default)."
+        "help": "Only one head coach per team. Fitness coach and team official are managed as assistants at the club level."
       },
       "send": "Send invitation",
       "cancel": "Cancel",
@@ -1540,74 +1538,6 @@
     "pending_title": "Pending invitations",
     "pending_status": "Sent",
     "pending_expired": "Expired"
-  },
-  "capabilities": {
-    "back": "Back to team",
-    "subtitle": "Assistant coach permissions",
-    "read_only": "Only the team's head coach, coordinator, or admin can modify these permissions.",
-    "not_assistant": "This member is not an assistant coach. Permissions only apply to assistants.",
-    "autosave_hint": "Changes are saved automatically.",
-    "can_evaluate": {
-      "label": "Rate players",
-      "description": "Can leave individual ratings post-match and post-training."
-    },
-    "can_create_lineups": {
-      "label": "Create lineups",
-      "description": "Can prepare lineups (starting, plan B, second half)."
-    },
-    "can_register_match_events": {
-      "label": "Register match events",
-      "description": "Can use the live data entry screen."
-    },
-    "can_create_sessions": {
-      "label": "Create training sessions",
-      "description": "Can design and publish sessions to the team."
-    },
-    "can_create_plays": {
-      "label": "Create tactical plays",
-      "description": "Can create and share plays with the team."
-    },
-    "can_see_medical": {
-      "label": "View medical notes",
-      "description": "Can read the medical notes of the team's players."
-    },
-    "can_message_families": {
-      "label": "Message families",
-      "description": "Can start conversations with legal guardians."
-    },
-    "can_manage_squad": {
-      "label": "Manage squad",
-      "description": "Can create/edit profiles and upload photos. Without this, they cannot add players."
-    },
-    "errors": {
-      "forbidden": "You don't have permission to modify this permission.",
-      "not_assistant": "This member is not an assistant coach.",
-      "invalid_input": "Invalid data.",
-      "db": "Could not save. Please try again."
-    },
-    "can_manage_calendar": {
-      "label": "Manage calendar",
-      "description": "Can create, edit and delete team events. Without this, can only view the calendar."
-    },
-    "can_create_exercises": {
-      "label": "Create exercises",
-      "description": "Can create and propose exercises for the club library. Publishing is approved by the admin."
-    },
-    "domains": {
-      "entrenamientos": "Training",
-      "partidos": "Matches",
-      "calendario": "Calendar",
-      "jugadores": "Players / Squad",
-      "comunicacion": "Communication"
-    },
-    "can_mark_attendance": {
-      "label": "Record attendance",
-      "description": "Can take the roll and record training attendance. Without this, can only view it."
-    },
-    "can_manage_callups": {
-      "label": "Manage call-ups",
-      "description": "Can create and manage match call-ups. Without this, can only view them."
-    }
   },
   "mis_equipos": {
     "title": "My teams",
@@ -2282,7 +2212,6 @@
     "count": "{count, plural, =0 {No active coaches} one {1 coach} other {# coaches}}",
     "empty": "No active staff yet. Invite coaches from a team page.",
     "empty_filtered": "No coaches match the current filters.",
-    "caps_summary": "{granted}/{total} capabilities granted",
     "filters": {
       "label": "Filters",
       "title": "Filter staff",
@@ -2301,7 +2230,6 @@
       "name": "Name",
       "club_role": "Club role",
       "teams": "Assigned teams",
-      "caps": "Capabilities",
       "actions": "Actions"
     },
     "row_actions": {
@@ -2407,7 +2335,6 @@
       "back": "Back to coaching staff",
       "teams_title": "Assigned teams",
       "no_active_teams": "This person has no active teams in the club.",
-      "edit_caps": "Edit capabilities",
       "agenda_title": "Agenda (next 28 days)",
       "agenda_subtitle": "F3 events filtered to active teams.",
       "agenda_no_teams": "No active teams, nothing to show.",

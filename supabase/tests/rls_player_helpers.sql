@@ -2,13 +2,12 @@
 --
 -- Verifica:
 --   H1. user_can_see_player → true para cualquier miembro del club, false fuera.
---   H2. user_can_manage_player → true para admin/coord/principal, true para
---       ayudante con can_manage_squad, false para ayudante sin capability y
---       false para jugador.
---   H3. user_can_see_player_medical → true para admin/coord/principal, true
---       para ayudante con can_see_medical, true para tutor vinculado (player_accounts),
---       false para ayudante sin capability, false para jugador sin vínculo,
---       false cross-club.
+--
+-- Nota (O2): user_can_manage_player y user_can_see_player_medical se ELIMINARON
+-- (eran funciones muertas: sus únicos consumidores —las policies player_photos_*_staff—
+-- se dropearon en F14-3b). La autoridad de gestión de plantilla vive ahora en las
+-- policies players_*_staff (ver rls_players_import_batch / rls_multi_tenant) y la
+-- lectura médica en get_player_medical → user_can_access_player_medical (sin cambios).
 \ir helpers/auth_users.sql
 
 begin;
@@ -60,21 +59,6 @@ insert into public.memberships (profile_id, club_id, role) values
 insert into public.player_accounts (player_id, profile_id, relation) values
   ('00000000-aaaa-0000-0000-000000000001', '77777777-aaaa-7777-7777-777777777777', 'parent');
 
--- Capabilities: ayudante 55... con can_manage_squad; 66... con can_see_medical.
-update public.capabilities
-   set granted = true
- where capability_name = 'can_manage_squad'
-   and membership_id = (select id from public.memberships
-                       where profile_id = '55555555-aaaa-5555-5555-555555555555'
-                         and club_id = 'cccccccc-c0c0-c0c0-c0c0-c0c0c0c0c0c0');
-
-update public.capabilities
-   set granted = true
- where capability_name = 'can_see_medical'
-   and membership_id = (select id from public.memberships
-                       where profile_id = '66666666-aaaa-6666-6666-666666666666'
-                         and club_id = 'cccccccc-c0c0-c0c0-c0c0-c0c0c0c0c0c0');
-
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Helper: aserta que user_can_see_player(player) = expected para sub
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -90,36 +74,6 @@ begin
   select public.user_can_see_player(p_player) into got;
   if got is distinct from p_expected then
     raise exception 'FAIL [%]: user_can_see_player got % expected %',
-      p_label, got, p_expected;
-  end if;
-end $$;
-
-create or replace function pg_temp.assert_can_manage(
-  p_label text, p_sub text, p_player uuid, p_expected boolean
-) returns void language plpgsql as $$
-declare got boolean;
-begin
-  perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims',
-    '{"sub":"' || p_sub || '","role":"authenticated"}', true);
-  select public.user_can_manage_player(p_player) into got;
-  if got is distinct from p_expected then
-    raise exception 'FAIL [%]: user_can_manage_player got % expected %',
-      p_label, got, p_expected;
-  end if;
-end $$;
-
-create or replace function pg_temp.assert_can_see_medical(
-  p_label text, p_sub text, p_player uuid, p_expected boolean
-) returns void language plpgsql as $$
-declare got boolean;
-begin
-  perform set_config('role', 'authenticated', true);
-  perform set_config('request.jwt.claims',
-    '{"sub":"' || p_sub || '","role":"authenticated"}', true);
-  select public.user_can_see_player_medical(p_player) into got;
-  if got is distinct from p_expected then
-    raise exception 'FAIL [%]: user_can_see_player_medical got % expected %',
       p_label, got, p_expected;
   end if;
 end $$;
@@ -141,52 +95,6 @@ select pg_temp.assert_can_see('admin_b→P_A1 (cross-club)',
 select pg_temp.assert_can_see('admin_a→P_B1 (cross-club)',
                               '11111111-aaaa-1111-1111-111111111111',
                               '00000000-bbbb-0000-0000-000000000001', false);
-
--- ─────────────────────────────────────────────────────────────────────────────
--- H2: user_can_manage_player
--- ─────────────────────────────────────────────────────────────────────────────
-select pg_temp.assert_can_manage('admin_a', '11111111-aaaa-1111-1111-111111111111',
-                                 '00000000-aaaa-0000-0000-000000000001', true);
-select pg_temp.assert_can_manage('coord_a', '22222222-aaaa-2222-2222-222222222222',
-                                 '00000000-aaaa-0000-0000-000000000001', true);
-select pg_temp.assert_can_manage('principal_a', '33333333-aaaa-3333-3333-333333333333',
-                                 '00000000-aaaa-0000-0000-000000000001', true);
-select pg_temp.assert_can_manage('assistant_a (sin caps)', '44444444-aaaa-4444-4444-444444444444',
-                                 '00000000-aaaa-0000-0000-000000000001', false);
-select pg_temp.assert_can_manage('assistant_a (can_manage_squad)',
-                                 '55555555-aaaa-5555-5555-555555555555',
-                                 '00000000-aaaa-0000-0000-000000000001', true);
-select pg_temp.assert_can_manage('jugador_a', '88888888-aaaa-8888-8888-888888888888',
-                                 '00000000-aaaa-0000-0000-000000000001', false);
-select pg_temp.assert_can_manage('admin_b cross-club',
-                                 '99999999-bbbb-9999-9999-999999999999',
-                                 '00000000-aaaa-0000-0000-000000000001', false);
-
--- ─────────────────────────────────────────────────────────────────────────────
--- H3: user_can_see_player_medical
--- ─────────────────────────────────────────────────────────────────────────────
-select pg_temp.assert_can_see_medical('admin_a', '11111111-aaaa-1111-1111-111111111111',
-                                      '00000000-aaaa-0000-0000-000000000001', true);
-select pg_temp.assert_can_see_medical('principal_a', '33333333-aaaa-3333-3333-333333333333',
-                                      '00000000-aaaa-0000-0000-000000000001', true);
-select pg_temp.assert_can_see_medical('assistant_a (sin caps)',
-                                      '44444444-aaaa-4444-4444-444444444444',
-                                      '00000000-aaaa-0000-0000-000000000001', false);
-select pg_temp.assert_can_see_medical('assistant_a (can_manage_squad sin medical)',
-                                      '55555555-aaaa-5555-5555-555555555555',
-                                      '00000000-aaaa-0000-0000-000000000001', false);
-select pg_temp.assert_can_see_medical('assistant_a (can_see_medical)',
-                                      '66666666-aaaa-6666-6666-666666666666',
-                                      '00000000-aaaa-0000-0000-000000000001', true);
-select pg_temp.assert_can_see_medical('tutor_a vinculado',
-                                      '77777777-aaaa-7777-7777-777777777777',
-                                      '00000000-aaaa-0000-0000-000000000001', true);
-select pg_temp.assert_can_see_medical('jugador_a sin vínculo',
-                                      '88888888-aaaa-8888-8888-888888888888',
-                                      '00000000-aaaa-0000-0000-000000000001', false);
-select pg_temp.assert_can_see_medical('admin_b cross-club',
-                                      '99999999-bbbb-9999-9999-999999999999',
-                                      '00000000-aaaa-0000-0000-000000000001', false);
 
 reset role;
 rollback;

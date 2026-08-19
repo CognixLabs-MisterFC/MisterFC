@@ -8,11 +8,10 @@
 --       rama principal-by-team_staff del team).
 --
 -- Y debe seguir BLOQUEADO si:
---   T3. Ayudante club que NO es principal de team_staff de NINGÚN team y
---       no tiene capability granted → INSERT conversation falla.
---   T4. Ayudante club principal de team A intenta publicar anuncio en
---       team B (no suyo): si no tiene cap on, falla; si tiene cap on,
---       pasa por la rama capability. Cubrimos el sin-cap.
+--   T3. Ayudante club que NO es staff de NINGÚN team (sin team_staff) →
+--       INSERT conversation falla (no es cuerpo técnico de ningún equipo).
+--   T4. Ayudante club staff de team A1 intenta publicar anuncio en
+--       team A2 (no suyo): falla, porque no es staff de ese equipo.
 --
 -- Feature D — anuncios globales:
 --   T5. Admin del club crea anuncio club-wide (team_id NULL) → OK.
@@ -53,17 +52,15 @@ insert into public.memberships (id, profile_id, club_id, role) values
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('33333333-3333-4333-8333-33333333c001', '55555555-5555-4555-8555-55555555c003', 'entrenador_principal');
 
--- Forzamos las caps a OFF para que la única razón para que pasen las RLS
--- sea la nueva rama principal-by-team_staff (no la cap que tendría granted
--- por defecto el trigger ensure_assistant_capabilities).
-update public.capabilities set granted = false
- where membership_id in ('55555555-5555-4555-8555-55555555c003', '55555555-5555-4555-8555-55555555c004');
+-- Ya no hay capabilities (migración 20261042): las RLS pasan solo por la rama
+-- "cualquier team_staff activo" (conversations) / user_is_staff_of_team
+-- (announcements). El ayudante-staff entra de serie; el ayudante puro no.
 
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
   ('66666666-6666-4666-8666-66666666c001', '11111111-1111-4111-8111-11111111c001', 'Test', 'Player', '2012-01-01');
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- T1: ayudante club + principal team_staff (cap OFF) → puede crear conversation
+-- T1: ayudante club + staff de team_staff → puede crear conversation de serie
 -- ─────────────────────────────────────────────────────────────────────────────
 do $$
 declare v_conv_id uuid;
@@ -102,7 +99,7 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- T3: ayudante "puro" (sin cap, sin team_staff principal) → INSERT conv falla
+-- T3: ayudante "puro" (sin team_staff) → INSERT conv falla
 -- ─────────────────────────────────────────────────────────────────────────────
 do $$
 declare ok boolean := false;
@@ -119,12 +116,12 @@ begin
   end;
   reset role;
   if not ok then
-    raise exception 'FAIL [T3]: ayudante puro pudo crear conversation sin cap';
+    raise exception 'FAIL [T3]: ayudante puro (sin team_staff) pudo crear conversation';
   end if;
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- T4: ayud-principal-ts (cap OFF) intenta publicar en Team A2 (no suyo) → falla
+-- T4: ayud-staff-ts (staff de A1) intenta publicar en Team A2 (no suyo) → falla
 -- ─────────────────────────────────────────────────────────────────────────────
 do $$
 declare ok boolean := false;

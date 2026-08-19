@@ -17,11 +17,11 @@
 --   B8. UPDATE cambiando code + notes → OK; updated_at se actualiza.
 --   R1. RLS SELECT: miembro del club ve filas del evento; cross-club no.
 --   R2. RLS INSERT: jugador NO puede insertar (forbidden via policy).
---   R3. RLS INSERT: ayudante sin can_mark_attendance NO puede.
---   R4. RLS INSERT: ayudante con can_mark_attendance + staff activo SÍ puede.
---   R5. RLS INSERT: PRINCIPAL del EQUIPO con rol de CLUB = ayudante y
---       can_mark_attendance=false SÍ puede (regresión del bug: la rama
---       "principal" mira team_staff.staff_role, no memberships.role).
+--   R3. RLS INSERT: ayudante staff activo SÍ puede DE SERIE (sin capability).
+--   R4. RLS INSERT: ayudante staff activo SÍ puede (de serie).
+--   R5. RLS INSERT: PRINCIPAL del EQUIPO con rol de CLUB = ayudante SÍ puede
+--       (la rama "staff del equipo" mira team_staff.staff_role, no
+--       memberships.role).
 --   R6. RLS UPDATE: ese mismo principal-de-equipo SÍ puede actualizar.
 \ir helpers/auth_users.sql
 
@@ -319,47 +319,11 @@ end $$;
 reset role;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- R3: ayudante sin can_mark_attendance NO puede insertar.
+-- R3: ayudante staff activo SÍ puede insertar DE SERIE (sin capability).
 -- ─────────────────────────────────────────────────────────────────────────────
--- Garantiza granted=false (la migración hizo backfill como false).
-update public.capabilities
-   set granted = false
- where membership_id = '55ee0000-aaaa-4444-4444-444444444444'
-   and capability_name = 'can_mark_attendance';
-
 -- Borra la fila B1 para que el ayudante pueda intentar de cero.
 delete from public.training_attendance
  where event_id = '77ee0000-0000-0000-0000-000000000001';
-
-set local role authenticated;
-set local "request.jwt.claim.sub" to '44ee0000-aaaa-4444-4444-444444444444';
-
-do $$
-declare ok boolean := false;
-begin
-  begin
-    insert into public.training_attendance (event_id, player_id, code, recorded_by) values
-      ('77ee0000-0000-0000-0000-000000000001',
-       '66ee0000-0000-0000-0000-000000000001',
-       'presente',
-       '44ee0000-aaaa-4444-4444-444444444444');
-  exception when others then
-    if sqlstate = '42501' then ok := true; end if;
-  end;
-  if not ok then
-    raise exception 'FAIL [R3]: ayudante sin cap no debería poder insertar';
-  end if;
-end $$;
-
-reset role;
-
--- ─────────────────────────────────────────────────────────────────────────────
--- R4: ayudante con can_mark_attendance + staff activo SÍ puede.
--- ─────────────────────────────────────────────────────────────────────────────
-update public.capabilities
-   set granted = true
- where membership_id = '55ee0000-aaaa-4444-4444-444444444444'
-   and capability_name = 'can_mark_attendance';
 
 set local role authenticated;
 set local "request.jwt.claim.sub" to '44ee0000-aaaa-4444-4444-444444444444';
@@ -372,24 +336,39 @@ begin
      'presente',
      '44ee0000-aaaa-4444-4444-444444444444');
 exception when others then
-  raise exception 'FAIL [R4]: ayudante con cap debería poder insertar: %', sqlerrm;
+  raise exception 'FAIL [R3]: ayudante staff activo debería poder insertar de serie (sin capability): %', sqlerrm;
 end $$;
 
 reset role;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- R5: PRINCIPAL DE EQUIPO con rol de CLUB = ayudante y can_mark_attendance=false
---     → SÍ puede INSERT (regresión del bug). Demuestra que la rama "principal"
---     mira team_staff.staff_role, NO memberships.role, y que NO depende de la
---     capability.
+-- R4: ayudante staff activo SÍ puede insertar (de serie).
 -- ─────────────────────────────────────────────────────────────────────────────
--- Garantiza que NO se apoya en la capability (el trigger la sembró en false; lo
--- reafirmamos por si acaso) — debe pasar por la rama "principal de equipo".
-update public.capabilities
-   set granted = false
- where membership_id = '55ee0000-aaaa-3333-3333-333333333333'
-   and capability_name = 'can_mark_attendance';
+-- Limpia la fila que dejó R3 para insertar de cero.
+delete from public.training_attendance
+ where event_id = '77ee0000-0000-0000-0000-000000000001';
 
+set local role authenticated;
+set local "request.jwt.claim.sub" to '44ee0000-aaaa-4444-4444-444444444444';
+
+do $$
+begin
+  insert into public.training_attendance (event_id, player_id, code, recorded_by) values
+    ('77ee0000-0000-0000-0000-000000000001',
+     '66ee0000-0000-0000-0000-000000000001',
+     'presente',
+     '44ee0000-aaaa-4444-4444-444444444444');
+exception when others then
+  raise exception 'FAIL [R4]: ayudante staff activo debería poder insertar de serie: %', sqlerrm;
+end $$;
+
+reset role;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- R5: PRINCIPAL DE EQUIPO con rol de CLUB = ayudante → SÍ puede INSERT.
+--     Demuestra que la rama "staff del equipo" mira team_staff.staff_role, NO
+--     memberships.role.
+-- ─────────────────────────────────────────────────────────────────────────────
 -- Limpia la fila que dejó R4 para insertar de cero.
 delete from public.training_attendance
  where event_id = '77ee0000-0000-0000-0000-000000000001';

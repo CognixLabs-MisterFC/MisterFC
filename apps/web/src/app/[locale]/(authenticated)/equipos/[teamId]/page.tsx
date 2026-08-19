@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { ArrowLeft, Settings, UserRound, Users } from 'lucide-react';
+import { ArrowLeft, UserRound, Users } from 'lucide-react';
 import {
   ADMIN_ROLES,
   STAFF_ROLES,
@@ -215,8 +215,6 @@ export default async function TeamDetailPage({ params }: Props) {
             <ul className="flex flex-col divide-y divide-border">
               {staff.map((s) => {
                 const name = s.memberships.profiles.full_name ?? '—';
-                const isAssistant =
-                  s.memberships.role === 'entrenador_ayudante';
                 return (
                   <li
                     key={s.id}
@@ -229,15 +227,6 @@ export default async function TeamDetailPage({ params }: Props) {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {isAssistant && canManageStaff && (
-                        <Button asChild variant="ghost" size="icon" title={tStaff('caps')}>
-                          <Link
-                            href={`/equipos/${teamId}/staff/${s.membership_id}/capabilities`}
-                          >
-                            <Settings className="size-4" aria-hidden />
-                          </Link>
-                        </Button>
-                      )}
                       {canManageStaff && (
                         <RemoveStaffButton
                           teamId={teamId}

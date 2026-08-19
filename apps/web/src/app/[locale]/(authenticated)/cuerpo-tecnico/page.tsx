@@ -200,9 +200,6 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
                     {t('table.club_role')}
                   </TableHead>
                   <TableHead>{t('table.teams')}</TableHead>
-                  <TableHead className="hidden lg:table-cell">
-                    {t('table.caps')}
-                  </TableHead>
                   <TableHead className="text-right">
                     {t('table.actions')}
                   </TableHead>
@@ -256,21 +253,6 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
                           </li>
                         ))}
                       </ul>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {c.club_role === 'entrenador_ayudante' &&
-                      c.caps_granted != null ? (
-                        <span className="text-xs text-muted-foreground">
-                          {t('caps_summary', {
-                            granted: c.caps_granted,
-                            total: 9,
-                          })}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          —
-                        </span>
-                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">

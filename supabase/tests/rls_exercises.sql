@@ -1,10 +1,10 @@
 -- Tests F11.1 — RLS, máquina de estados y autoridad de `exercises`.
 --
--- Cubre: INSERT (autor con capability, sin capability, principal vía team_staff,
+-- Cubre: INSERT (autor ayudante staff activo de serie, principal vía team_staff,
 -- coord, jugador, ajeno al club, no-Admin→published, Admin→published, →rejected);
 -- SELECT por estado (draft/proposed/rejected/published) y por rol; transición
--- gateada por Admin (publicar/rechazar, motivo obligatorio); archivar vs borrar;
--- y el seed de la capability por el trigger ensure_assistant_capabilities.
+-- gateada por Admin (publicar/rechazar, motivo obligatorio); archivar vs borrar.
+-- Autoridad de creación: cualquier team_staff activo del club (de serie).
 --
 -- Estilo: aserciones con raise exception (como el resto del repo). Transaccional.
 \ir helpers/auth_users.sql
@@ -13,7 +13,7 @@ begin;
 
 -- ── IDs ──────────────────────────────────────────────────────────────────────
 -- club A = ...01, club B = ...02
--- users: admin a, coord b, principal c, ayudante(cap) d, ayudante(sin cap) e,
+-- users: admin a, coord b, principal c, ayudante d, ayudante e,
 --        jugador f, adminB g.
 
 insert into public.clubs (id, name, slug) values
@@ -43,52 +43,36 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('e5000000-0000-4000-8000-00000000000f', 'ea000000-0000-4000-8000-00000000000f', 'e0000000-0000-4000-8000-000000000001', 'jugador'),
   ('eb000000-0000-4000-8000-0000000000ba', 'eb000000-0000-4000-8000-00000000000a', 'e0000000-0000-4000-8000-000000000002', 'admin_club');
 
--- Principal en team_staff del Team A (autoridad de creación vía rol de team).
+-- Staff activo del Team A: principal c + ayudantes d, e. La autoridad de creación
+-- es "cualquier team_staff activo del club" (de serie, sin capabilities).
 insert into public.team_staff (team_id, membership_id, staff_role) values
-  ('e2000000-0000-4000-8000-000000000001', 'e5000000-0000-4000-8000-00000000000c', 'entrenador_principal');
-
--- ── H1: el trigger sembró can_create_exercises para los ayudantes ────────────
-do $$
-declare n int;
-begin
-  select count(*) into n from public.capabilities
-   where membership_id = 'e5000000-0000-4000-8000-00000000000d'
-     and capability_name = 'can_create_exercises';
-  if n <> 1 then raise exception 'FAIL [H1]: el ayudante no tiene fila can_create_exercises'; end if;
-end $$;
-
--- ayudante D: capability concedida; ayudante E: la dejamos en false (sin cap).
-update public.capabilities set granted = true
-  where membership_id = 'e5000000-0000-4000-8000-00000000000d' and capability_name = 'can_create_exercises';
-update public.capabilities set granted = false
-  where membership_id = 'e5000000-0000-4000-8000-00000000000e' and capability_name = 'can_create_exercises';
+  ('e2000000-0000-4000-8000-000000000001', 'e5000000-0000-4000-8000-00000000000c', 'entrenador_principal'),
+  ('e2000000-0000-4000-8000-000000000001', 'e5000000-0000-4000-8000-00000000000d', 'entrenador_ayudante'),
+  ('e2000000-0000-4000-8000-000000000001', 'e5000000-0000-4000-8000-00000000000e', 'entrenador_ayudante');
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- INSERT
 -- ─────────────────────────────────────────────────────────────────────────────
 set local role authenticated;
 
--- I1: ayudante CON capability crea draft → OK
+-- I1: ayudante (staff activo) crea draft de serie → OK
 set local "request.jwt.claims" = '{"sub":"ea000000-0000-4000-8000-00000000000d","role":"authenticated"}';
 do $$
 begin
   insert into public.exercises (id, owner_profile_id, club_id, name, status)
   values ('e9000000-0000-4000-8000-000000000001', 'ea000000-0000-4000-8000-00000000000d', 'e0000000-0000-4000-8000-000000000001', 'Rondo', 'draft');
 exception when others then
-  raise exception 'FAIL [I1]: ayudante con cap no pudo crear draft: %', sqlerrm;
+  raise exception 'FAIL [I1]: ayudante (staff activo, de serie) no pudo crear draft: %', sqlerrm;
 end $$;
 
--- I2: ayudante SIN capability crea → RLS lo rechaza
+-- I2: ayudante (staff activo) crea de serie → OK
 do $$
-declare ok boolean := false;
 begin
   set local "request.jwt.claims" = '{"sub":"ea000000-0000-4000-8000-00000000000e","role":"authenticated"}';
-  begin
-    insert into public.exercises (owner_profile_id, club_id, name)
-    values ('ea000000-0000-4000-8000-00000000000e', 'e0000000-0000-4000-8000-000000000001', 'No deberia');
-  exception when insufficient_privilege then ok := true;
-  end;
-  if not ok then raise exception 'FAIL [I2]: ayudante sin cap pudo insertar'; end if;
+  insert into public.exercises (owner_profile_id, club_id, name)
+  values ('ea000000-0000-4000-8000-00000000000e', 'e0000000-0000-4000-8000-000000000001', 'De serie');
+exception when others then
+  raise exception 'FAIL [I2]: ayudante (staff activo) no pudo crear de serie: %', sqlerrm;
 end $$;
 
 -- I3: principal (vía team_staff) crea proposed → OK

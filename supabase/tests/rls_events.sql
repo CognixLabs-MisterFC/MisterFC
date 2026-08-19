@@ -14,18 +14,17 @@
 --   R4b INSERT como coordinador, evento de SU equipo (Team A1) → OK (C-1a rama A').
 --   R5  INSERT como entrenador_principal con team_staff activo → OK.
 --   R6  INSERT como entrenador_principal a OTRO equipo del club → rechazado.
---   R7  INSERT como entrenador_ayudante SIN can_manage_calendar → rechazado.
---   R8  INSERT como entrenador_ayudante CON can_manage_calendar y staff activo → OK.
+--   R7  INSERT como entrenador_ayudante staff activo → OK DE SERIE (sin capability).
+--   R8  INSERT como entrenador_ayudante staff activo → OK (de serie).
 --   R9  INSERT como entrenador_principal de evento a nivel club (team_id NULL) → rechazado.
 --   R10 INSERT como jugador → rechazado.
 --   R11 UPDATE como entrenador_principal de su equipo → OK.
---   R14 INSERT como PRINCIPAL del EQUIPO con rol de club ayudante y sin
---       can_manage_calendar → OK (regresión del bug: la rama "principal" mira
---       team_staff.staff_role, no memberships.role).
+--   R14 INSERT como PRINCIPAL del EQUIPO con rol de club ayudante → OK (la rama
+--       "staff del equipo" mira team_staff.staff_role, no memberships.role).
 --   R15 UPDATE / R16 DELETE por ese mismo principal-de-equipo → OK.
 --   R12 DELETE como jugador → rechazado.
 --   R13 DELETE cascade: borrar parent borra children.
---   H1  user_can_manage_event() devuelve true/false según rol/cap/team.
+--   H1  user_can_manage_event() devuelve true/false según rol/team.
 \ir helpers/auth_users.sql
 
 begin;
@@ -71,7 +70,7 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('55ab0000-9999-0000-0000-000000000001', '44ab0000-9999-0000-0000-000000000001', '11ab0000-c1c1-0000-0000-000000000001', 'admin_club');
 
 -- Staff activo: principal-a1 en Team A1, principal-a2 en Team A2.
--- asst-cap en Team A1 (con can_manage_calendar), asst-nocap en Team A1 (sin cap).
+-- asst-cap y asst-nocap son ayudantes staff activos del Team A1 (de serie, sin capability).
 -- coord es COORDINADOR (team_staff) del Team A1: tras C-1a (mig 20261009) el coordinador
 -- gestiona eventos SOLO de los equipos que coordina (user_can_manage_event rama A'
 -- exige p_team_id not null). Habilita R4b (crea evento de SU equipo) sin darle el
@@ -82,12 +81,6 @@ insert into public.team_staff (team_id, membership_id, staff_role) values
   ('33ab0000-0000-0000-0000-000000000001', '55ab0000-2222-0000-0000-000000000001', 'coordinador'),
   ('33ab0000-0000-0000-0000-000000000001', '55ab0000-4444-0000-0000-000000000001', 'entrenador_ayudante'),
   ('33ab0000-0000-0000-0000-000000000001', '55ab0000-4444-0000-0000-000000000002', 'entrenador_ayudante');
-
--- asst-cap recibe can_manage_calendar = true; asst-nocap NO.
-update public.capabilities
-   set granted = true
- where membership_id = '55ab0000-4444-0000-0000-000000000001'
-   and capability_name = 'can_manage_calendar';
 
 -- F14.10 — Fixtures para los tests de SELECT por equipo.
 -- Jugador 'jugador@ev.test' (44ab..5555) es cuenta familiar de un jugador
@@ -444,31 +437,25 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- R7 — ayudante SIN can_manage_calendar → rechazado
+-- R7 — ayudante staff activo → OK DE SERIE (sin capability)
 -- ─────────────────────────────────────────────────────────────────────────────
 set local "request.jwt.claims" = '{"sub":"44ab0000-4444-0000-0000-000000000002","role":"authenticated"}';
 do $$
-declare ok boolean := false;
 begin
-  begin
-    insert into public.events (club_id, team_id, type, title, starts_at, created_by)
-    values (
-      '11ab0000-c0c0-0000-0000-000000000001',
-      '33ab0000-0000-0000-0000-000000000001',
-      'training', 'R7 ayudante sin cap',
-      '2026-05-14 18:00:00+02',
-      '44ab0000-4444-0000-0000-000000000002'
-    );
-  exception when others then
-    if sqlstate = '42501' then ok := true; end if;
-  end;
-  if not ok then
-    raise exception 'FAIL [R7]: ayudante sin can_manage_calendar pudo INSERT';
-  end if;
+  insert into public.events (club_id, team_id, type, title, starts_at, created_by)
+  values (
+    '11ab0000-c0c0-0000-0000-000000000001',
+    '33ab0000-0000-0000-0000-000000000001',
+    'training', 'R7 ayudante de serie',
+    '2026-05-14 18:00:00+02',
+    '44ab0000-4444-0000-0000-000000000002'
+  );
+exception when others then
+  raise exception 'FAIL [R7]: ayudante staff activo debería poder INSERT de serie (sin capability): % (sqlstate=%)', sqlerrm, sqlstate;
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- R8 — ayudante CON can_manage_calendar y staff activo → OK
+-- R8 — ayudante staff activo → OK (de serie)
 -- ─────────────────────────────────────────────────────────────────────────────
 set local "request.jwt.claims" = '{"sub":"44ab0000-4444-0000-0000-000000000001","role":"authenticated"}';
 do $$
@@ -477,12 +464,12 @@ begin
   values (
     '11ab0000-c0c0-0000-0000-000000000001',
     '33ab0000-0000-0000-0000-000000000001',
-    'training', 'R8 ayudante con cap',
+    'training', 'R8 ayudante de serie',
     '2026-05-14 18:30:00+02',
     '44ab0000-4444-0000-0000-000000000001'
   );
 exception when others then
-  raise exception 'FAIL [R8]: ayudante con can_manage_calendar no pudo INSERT: % (sqlstate=%)', sqlerrm, sqlstate;
+  raise exception 'FAIL [R8]: ayudante staff activo no pudo INSERT de serie: % (sqlstate=%)', sqlerrm, sqlstate;
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -605,16 +592,10 @@ begin
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- R14/R15/R16 — PRINCIPAL del EQUIPO con rol de CLUB ayudante y SIN
--- can_manage_calendar → puede INSERT/UPDATE/DELETE eventos de su equipo (A2).
--- Regresión del bug: la rama "principal" mira team_staff.staff_role.
+-- R14/R15/R16 — PRINCIPAL del EQUIPO con rol de CLUB ayudante → puede
+-- INSERT/UPDATE/DELETE eventos de su equipo (A2). La rama "staff del equipo"
+-- mira team_staff.staff_role, no memberships.role.
 -- ─────────────────────────────────────────────────────────────────────────────
--- Garantiza que NO se apoya en la capability (debe pasar por la rama principal).
-update public.capabilities
-   set granted = false
- where membership_id = '55ab0000-3333-0000-0000-000000000002'
-   and capability_name = 'can_manage_calendar';
-
 set local "request.jwt.claims" = '{"sub":"44ab0000-3333-0000-0000-000000000002","role":"authenticated"}';
 
 -- R14 — INSERT en su equipo (A2) → OK
@@ -687,7 +668,7 @@ begin
     raise exception 'FAIL [H1.c]: principal de A1 no debería poder manage A2 (got=%)', got;
   end if;
 
-  -- ayudante con cap en su equipo → true
+  -- ayudante staff activo en su equipo → true (de serie)
   perform set_config('request.jwt.claims',
     '{"sub":"44ab0000-4444-0000-0000-000000000001","role":"authenticated"}', true);
   select public.user_can_manage_event(
@@ -695,18 +676,18 @@ begin
     '33ab0000-0000-0000-0000-000000000001'
   ) into got;
   if got is not true then
-    raise exception 'FAIL [H1.d]: ayudante con can_manage_calendar debería poder manage su equipo';
+    raise exception 'FAIL [H1.d]: ayudante staff activo debería poder manage su equipo de serie';
   end if;
 
-  -- ayudante sin cap en su equipo → false
+  -- otro ayudante staff activo en su equipo → true (de serie, sin capability)
   perform set_config('request.jwt.claims',
     '{"sub":"44ab0000-4444-0000-0000-000000000002","role":"authenticated"}', true);
   select public.user_can_manage_event(
     '11ab0000-c0c0-0000-0000-000000000001',
     '33ab0000-0000-0000-0000-000000000001'
   ) into got;
-  if got is not false then
-    raise exception 'FAIL [H1.e]: ayudante sin cap no debería poder manage (got=%)', got;
+  if got is not true then
+    raise exception 'FAIL [H1.e]: ayudante staff activo debería poder manage su equipo de serie (got=%)', got;
   end if;
 
   -- jugador → false
@@ -791,5 +772,5 @@ reset role;
 rollback;
 
 \echo '──────────────────────────────────────────────'
-\echo '✅ Tests RLS events + capability + helper pasaron.'
+\echo '✅ Tests RLS events + helper pasaron.'
 \echo '──────────────────────────────────────────────'

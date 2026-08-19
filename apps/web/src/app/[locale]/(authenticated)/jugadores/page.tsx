@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { UserRound, Lock } from 'lucide-react';
+import { UserRound } from 'lucide-react';
 import { MANAGER_ROLES, STAFF_ROLES } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -138,30 +138,6 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
     for (const p of pending.players) {
       pendingNameById[p.player_id] = fullName(p.first_name, p.last_name);
     }
-  }
-
-  // Estado especial: ayudante sin can_manage_squad.
-  if (
-    role === 'entrenador_ayudante' &&
-    result.visibleTeams.length === 0 &&
-    result.total === 0
-  ) {
-    return (
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{t('subtitle')}</p>
-        </div>
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <Lock className="size-10 text-muted-foreground" aria-hidden />
-            <p className="text-sm text-muted-foreground">
-              {t('forbidden_no_cap')}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
   }
 
   const totalPages = Math.max(1, Math.ceil(result.total / PLAYERS_PAGE_SIZE));

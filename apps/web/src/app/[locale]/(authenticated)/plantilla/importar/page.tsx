@@ -17,8 +17,8 @@ const ROLES_ALLOWED = STAFF_ROLES;
  * Página del wizard de importación masiva (F2.9).
  *
  * Role gate:
- *  - admin_club / coordinador / entrenador_principal → siempre.
- *  - entrenador_ayudante → solo si tiene `can_manage_squad` granted.
+ *  - admin_club / coordinador / entrenador_principal / entrenador_ayudante →
+ *    siempre (O2: gestionar plantilla es de serie para todo el cuerpo técnico).
  *  - jugador → no.
  *
  * El gate se ejecuta también en la server action (defense in depth) — la RLS
@@ -40,15 +40,9 @@ export default async function ImportPlayersPage({ params }: Props) {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  if (role === 'entrenador_ayudante') {
-    const { data: cap } = await supabase
-      .from('capabilities')
-      .select('granted')
-      .eq('membership_id', ctx.activeClub.membershipId)
-      .eq('capability_name', 'can_manage_squad')
-      .maybeSingle();
-    if (!cap?.granted) redirect(`/${locale}`);
-  }
+  // Importar plantilla es DE SERIE para todo el cuerpo técnico desde O2 (se
+  // eliminó el sistema de capabilities). ROLES_ALLOWED ya restringe el acceso y
+  // el coordinador se redirige arriba; el ayudante entra sin configuración.
 
   // Rework A (A5) — los equipos son por temporada. Tanto el selector de lote como
   // la resolución de "equipo por fila" operan sobre la TEMPORADA ACTIVA del club

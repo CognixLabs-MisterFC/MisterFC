@@ -14,18 +14,18 @@
 --     V4. UNIQUE (owner, format, name) — segundo INSERT → 23505.
 --     V5. mismo nombre en otra modalidad → OK (no colisiona).
 --   RLS (role-switched):
---     S1. owner (coach A1, con cap) ve su formación.
+--     S1. owner (coach A1, team_staff) ve su formación.
 --     S2. otro coach (A2, principal sin admin/coord) NO ve la de A1.
 --     S3. admin del club ve la de A1.
 --     S4. coordinador del club ve la de A1.
 --     S5. admin de OTRO club NO ve la de A1.
 --   INSERT:
---     P1. coach A1 (cap can_create_lineups) inserta la suya → OK; owner forzado.
---     P2. jugador (sin cap) inserta → forbidden (42501).
---     P3. ayudante sin cap inserta → forbidden (42501).
---     P4. principal del team (team_staff) sin cap inserta → OK (Bug BB).
---     P5. admin del club sin cap inserta → OK (Bug BB).
---     P6. coordinador del club sin cap inserta → OK (Bug BB).
+--     P1. coach A1 (team_staff) inserta la suya → OK de serie; owner forzado.
+--     P2. jugador inserta → forbidden (42501).
+--     P3. ayudante (team_staff) inserta → OK de serie (sin capability).
+--     P4. principal del team (team_staff) inserta → OK de serie.
+--     P5. admin del club inserta → OK.
+--     P6. coordinador del club inserta → OK.
 --   DELETE:
 --     X1. otro coach (A2) borra la de A1 → 0 filas (RLS la oculta).
 --     X2. coordinador borra la de A1 → 0 filas (solo owner + admin).
@@ -57,20 +57,17 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('99cf0000-5555-0007-0000-000000000000', '99cf0000-bbbb-0001-0000-000000000000', '99cf0000-0000-0000-0000-000000000002', 'admin_club'),
   ('99cf0000-5555-0008-0000-000000000000', '99cf0000-aaaa-0007-0000-000000000000', '99cf0000-0000-0000-0000-000000000001', 'entrenador_principal');
 
--- Capability can_create_lineups: coach1 y coach2 la tienen; ayudante y el
--- principal-sin-cap (coach3) NO — coach3 crea vía autoridad team_staff (Bug BB).
-insert into public.capabilities (membership_id, capability_name, granted) values
-  ('99cf0000-5555-0002-0000-000000000000', 'can_create_lineups', true),
-  ('99cf0000-5555-0003-0000-000000000000', 'can_create_lineups', true);
-
--- Team + team_staff: coach3 es PRINCIPAL del team (autoridad de alineaciones
--- sin capability explícita).
+-- Autoridad de creación de formaciones (gate club-scoped user_can_create_coach_
+-- formations): cualquier team_staff activo del club. coach1, el ayudante y coach3
+-- son team_staff del Team CF A → crean DE SERIE, sin capability.
 insert into public.categories (id, club_id, name) values
   ('99cf0000-dddd-0001-0000-000000000000', '99cf0000-0000-0000-0000-000000000001', 'Cat CF A');
 insert into public.teams (id, category_id, name, format, color, season) values
   ('99cf0000-eeee-0001-0000-000000000000', '99cf0000-dddd-0001-0000-000000000000', 'Team CF A', 'F7', '#0EA5E9', '2025-26');
 insert into public.team_staff (team_id, membership_id, staff_role) values
-  ('99cf0000-eeee-0001-0000-000000000000', '99cf0000-5555-0008-0000-000000000000', 'entrenador_principal');
+  ('99cf0000-eeee-0001-0000-000000000000', '99cf0000-5555-0008-0000-000000000000', 'entrenador_principal'),
+  ('99cf0000-eeee-0001-0000-000000000000', '99cf0000-5555-0002-0000-000000000000', 'entrenador_ayudante'),
+  ('99cf0000-eeee-0001-0000-000000000000', '99cf0000-5555-0006-0000-000000000000', 'entrenador_ayudante');
 
 -- Posiciones válidas para F7 (7 items). Las reutilizamos en varios casos.
 -- (sin \set para no depender de variables; se repite el literal donde hace falta)
@@ -193,7 +190,7 @@ end $$;
 -- RLS SELECT (role-switched)
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- S1. owner (coach1) ve su formación.
+-- S1. owner (coach1, team_staff) ve su formación.
 set local role authenticated;
 set local "request.jwt.claim.sub" to '99cf0000-aaaa-0002-0000-000000000000';
 do $$
@@ -257,7 +254,7 @@ reset role;
 -- RLS INSERT (role-switched)
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- P1. coach1 (con cap) inserta la suya → OK; owner forzado a auth.uid().
+-- P1. coach1 (team_staff) inserta la suya → OK de serie; owner forzado a auth.uid().
 set local role authenticated;
 set local "request.jwt.claim.sub" to '99cf0000-aaaa-0002-0000-000000000000';
 do $$
@@ -278,7 +275,7 @@ begin
     raise exception 'FAIL [P1]: owner debería forzarse a auth.uid()';
   end if;
 exception when others then
-  raise exception 'FAIL [P1]: coach con cap no pudo insertar: %', sqlerrm;
+  raise exception 'FAIL [P1]: coach staff activo no pudo insertar de serie: %', sqlerrm;
 end $$;
 reset role;
 
@@ -304,29 +301,27 @@ begin
 end $$;
 reset role;
 
--- P3. ayudante sin cap inserta → forbidden (42501).
+-- P3. ayudante (team_staff) inserta → OK de serie (sin capability).
 set local role authenticated;
 set local "request.jwt.claim.sub" to '99cf0000-aaaa-0006-0000-000000000000';
 do $$
 begin
-  begin
-    insert into public.coach_formations (owner_profile_id, club_id, name, format, positions)
-      values ('99cf0000-aaaa-0006-0000-000000000000', '99cf0000-0000-0000-0000-000000000001',
-        'P3', 'F7',
-        '[{"position_code":"POR","x_pct":50,"y_pct":94},
-          {"position_code":"DF1","x_pct":20,"y_pct":70},
-          {"position_code":"DF2","x_pct":50,"y_pct":70},
-          {"position_code":"DF3","x_pct":80,"y_pct":70},
-          {"position_code":"FW1","x_pct":20,"y_pct":38},
-          {"position_code":"FW2","x_pct":50,"y_pct":38},
-          {"position_code":"FW3","x_pct":80,"y_pct":38}]'::jsonb);
-    raise exception 'FAIL [P3]: ayudante sin cap no debería poder insertar';
-  exception when insufficient_privilege then null;
-  end;
+  insert into public.coach_formations (owner_profile_id, club_id, name, format, positions)
+    values ('99cf0000-aaaa-0006-0000-000000000000', '99cf0000-0000-0000-0000-000000000001',
+      'P3', 'F7',
+      '[{"position_code":"POR","x_pct":50,"y_pct":94},
+        {"position_code":"DF1","x_pct":20,"y_pct":70},
+        {"position_code":"DF2","x_pct":50,"y_pct":70},
+        {"position_code":"DF3","x_pct":80,"y_pct":70},
+        {"position_code":"FW1","x_pct":20,"y_pct":38},
+        {"position_code":"FW2","x_pct":50,"y_pct":38},
+        {"position_code":"FW3","x_pct":80,"y_pct":38}]'::jsonb);
+exception when others then
+  raise exception 'FAIL [P3]: ayudante staff activo debería poder insertar de serie (sin capability): %', sqlerrm;
 end $$;
 reset role;
 
--- P4. principal del team (team_staff) SIN capability inserta → OK (Bug BB).
+-- P4. principal del team (team_staff) inserta → OK de serie.
 set local role authenticated;
 set local "request.jwt.claim.sub" to '99cf0000-aaaa-0007-0000-000000000000';
 do $$
@@ -342,11 +337,11 @@ begin
         {"position_code":"FW2","x_pct":50,"y_pct":38},
         {"position_code":"FW3","x_pct":80,"y_pct":38}]'::jsonb);
 exception when others then
-  raise exception 'FAIL [P4]: principal del team (sin cap) debería poder insertar: %', sqlerrm;
+  raise exception 'FAIL [P4]: principal del team (team_staff) debería poder insertar de serie: %', sqlerrm;
 end $$;
 reset role;
 
--- P5. admin del club SIN capability inserta → OK (Bug BB: la otra mitad).
+-- P5. admin del club inserta → OK.
 set local role authenticated;
 set local "request.jwt.claim.sub" to '99cf0000-aaaa-0001-0000-000000000000';
 do $$
@@ -362,11 +357,11 @@ begin
         {"position_code":"FW2","x_pct":50,"y_pct":38},
         {"position_code":"FW3","x_pct":80,"y_pct":38}]'::jsonb);
 exception when others then
-  raise exception 'FAIL [P5]: admin sin cap debería poder insertar: %', sqlerrm;
+  raise exception 'FAIL [P5]: admin debería poder insertar: %', sqlerrm;
 end $$;
 reset role;
 
--- P6. coordinador del club SIN capability inserta → OK.
+-- P6. coordinador del club inserta → OK.
 set local role authenticated;
 set local "request.jwt.claim.sub" to '99cf0000-aaaa-0004-0000-000000000000';
 do $$
@@ -382,7 +377,7 @@ begin
         {"position_code":"FW2","x_pct":50,"y_pct":38},
         {"position_code":"FW3","x_pct":80,"y_pct":38}]'::jsonb);
 exception when others then
-  raise exception 'FAIL [P6]: coordinador sin cap debería poder insertar: %', sqlerrm;
+  raise exception 'FAIL [P6]: coordinador debería poder insertar: %', sqlerrm;
 end $$;
 reset role;
 

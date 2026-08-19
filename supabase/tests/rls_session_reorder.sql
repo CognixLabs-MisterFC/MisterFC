@@ -32,8 +32,9 @@ insert into public.memberships (id, profile_id, club_id, role) values
 insert into public.player_accounts (player_id, profile_id, relation) values
   ('5e563000-0000-4000-8000-00000000000f', '5ea60000-0000-4000-8000-00000000000f', 'self');
 
-update public.capabilities set granted = true
-  where membership_id = '5e565000-0000-4000-8000-00000000000d' and capability_name = 'can_create_sessions';
+-- El ayudante es staff activo del equipo (team_staff): crea sesiones de serie.
+insert into public.team_staff (team_id, membership_id, staff_role) values
+  ('5e562000-0000-4000-8000-000000000001', '5e565000-0000-4000-8000-00000000000d', 'entrenador_ayudante');
 
 -- Ejercicios para las tareas.
 alter table public.exercises disable trigger trg_exercises_validate;

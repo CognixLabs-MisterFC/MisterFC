@@ -34,8 +34,10 @@ insert into public.memberships (id, profile_id, club_id, role) values
 insert into public.player_accounts (player_id, profile_id, relation) values
   ('c10c3000-0000-4000-8000-00000000000f', 'c1a60000-0000-4000-8000-00000000000f', 'self');
 
-update public.capabilities set granted = true
-  where membership_id = 'c10c5000-0000-4000-8000-00000000000d' and capability_name = 'can_create_sessions';
+-- owner d es team_staff activo de Team C → crea/clona sesiones DE SERIE (sin
+-- capability) vía el gate club-scoped user_can_create_sessions.
+insert into public.team_staff (team_id, membership_id, staff_role) values
+  ('c10c2000-0000-4000-8000-000000000001', 'c10c5000-0000-4000-8000-00000000000d', 'entrenador_ayudante');
 
 alter table public.exercises disable trigger trg_exercises_validate;
 insert into public.exercises (id, owner_profile_id, club_id, name, status) values
