@@ -1,6 +1,6 @@
 import { SesionDelDiaScreen } from '@/screens/staff/sesion-del-dia';
 
-/** O2-10a — Sesiones publicadas de los equipos del staff (lectura). */
+/** O2 Bloque H — "Entrenamiento de hoy": entrenamientos de hoy + su sesión (lectura). */
 export default function Screen() {
   return <SesionDelDiaScreen />;
 }

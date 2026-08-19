@@ -5075,9 +5075,10 @@
     "search": "Buscar…"
   },
   "sesion_dia": {
-    "empty": "No hay sesiones publicadas",
-    "title": "Sesiones",
-    "untitled": "Sesión"
+    "empty": "Hoy no hay entrenamiento",
+    "title": "Entrenamiento de hoy",
+    "untitled": "Sesión",
+    "no_shared_session": "Sin sesión compartida"
   },
   "staff_home": {
     "no_upcoming": "Sin eventos próximos",
@@ -5085,7 +5086,7 @@
     "tile_calendar": "Calendario",
     "tile_callups": "Convocatorias",
     "tile_directos": "Directos",
-    "tile_sessions": "Sesiones",
+    "tile_today_training": "Entrenamiento de hoy",
     "tile_teams": "Mis equipos",
     "title": "Inicio",
     "unpublished_callups": "Convocatorias sin publicar",

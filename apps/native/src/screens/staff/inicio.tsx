@@ -93,7 +93,7 @@ export function StaffHomeScreen() {
           <Tile icon="📋" label={t('staff_home.tile_callups')} accent={accent} onPress={() => go('/staff/convocatorias')} />
           <Tile icon="✅" label={t('staff_home.tile_attendance')} accent={accent} onPress={() => go('/staff/asistencia')} />
           <Tile icon="🔴" label={t('staff_home.tile_directos')} accent={accent} onPress={() => go('/staff/directos')} />
-          <Tile icon="🏋️" label={t('staff_home.tile_sessions')} accent={accent} onPress={() => go('/staff/sesion-del-dia')} />
+          <Tile icon="🏋️" label={t('staff_home.tile_today_training')} accent={accent} onPress={() => go('/staff/sesion-del-dia')} />
         </View>
 
         {/* Próximos eventos. */}
