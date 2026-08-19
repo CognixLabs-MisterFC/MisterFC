@@ -109,7 +109,6 @@ const STAFF_MENU_BASE: MenuDef[] = [
   { name: 'convocatorias', labelKey: 'nav.convocatorias' },
   { name: 'alineacion', labelKey: 'nav.alineacion' },
   { name: 'directo', labelKey: 'nav.directo' },
-  { name: 'entrada-rapida', labelKey: 'nav.entrada_rapida' },
   { name: 'post-partido', labelKey: 'nav.post_partido' },
   { name: 'asistencia', labelKey: 'nav.asistencia' },
   { name: 'estadisticas-equipo', labelKey: 'nav.estadisticas_equipo' },

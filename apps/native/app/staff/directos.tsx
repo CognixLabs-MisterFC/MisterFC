@@ -1,5 +1,6 @@
-import { Placeholder } from '@/nav/placeholder';
+import { DirectosScreen } from '@/screens/staff/directos';
 
+/** O2 Bloque F — Directos del staff: listado de la semana + seguir equipos. */
 export default function Screen() {
-  return <Placeholder labelKey="nav.directos" />;
+  return <DirectosScreen />;
 }
