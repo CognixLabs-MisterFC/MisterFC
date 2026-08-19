@@ -1922,7 +1922,33 @@
         "db": "Error en processar. Torna-ho a intentar."
       }
     },
-    "empty": "No hi ha esdeveniments en les pròximes setmanes"
+    "empty": "No hi ha esdeveniments en les pròximes setmanes",
+    "vs": "vs",
+    "date": {
+      "weekday": {
+        "0": "Diumenge",
+        "1": "Dilluns",
+        "2": "Dimarts",
+        "3": "Dimecres",
+        "4": "Dijous",
+        "5": "Divendres",
+        "6": "Dissabte"
+      },
+      "month": {
+        "0": "gener",
+        "1": "febrer",
+        "2": "març",
+        "3": "abril",
+        "4": "maig",
+        "5": "juny",
+        "6": "juliol",
+        "7": "agost",
+        "8": "setembre",
+        "9": "octubre",
+        "10": "novembre",
+        "11": "desembre"
+      }
+    }
   },
   "pdf": {
     "player": {
