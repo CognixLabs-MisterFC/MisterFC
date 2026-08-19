@@ -2724,7 +2724,9 @@
       "not_found": "Anunci no trobat.",
       "generic": "No s'ha pogut guardar. Torna-ho a provar."
     },
-    "empty": "No hi ha anuncis"
+    "empty": "No hi ha anuncis",
+    "section_recent": "Últims anuncis",
+    "section_history": "Històric"
   },
   "anuncios_global": {
     "title": "Anuncis del club",
@@ -4787,9 +4789,9 @@
     "unread_messages": "Missatges sense llegir: {n}",
     "pending_callup": "Convocatòria sense respondre",
     "pending_callup_count": "Jugadors per confirmar: {n}",
-    "section_upcoming": "Pròxims esdeveniments",
+    "next_event": "Pròxim esdeveniment",
     "empty_upcoming": "Sense esdeveniments pròxims",
-    "section_announcements": "Anuncis recents",
+    "section_announcements": "Anuncis del club",
     "section_feed": "Novetats",
     "empty_feed": "Sense novetats"
   },

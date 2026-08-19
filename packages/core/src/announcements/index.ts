@@ -114,6 +114,45 @@ export async function getTeamAnnouncementsFromClient(
   }));
 }
 
+/**
+ * Punto 7 QA — Anuncios NO LEÍDOS para la sección del inicio de familia. El
+ * "leído" por-usuario vive en las notificaciones `in_app` de tipo
+ * `new_announcement` (una por destinatario, con `payload.announcement_id`): las
+ * pendientes son las no leídas. Se leen esas notificaciones (RLS select-own),
+ * se extraen los `announcement_id` y se traen los anuncios (RLS de anuncios),
+ * filtrando por el club activo. El orden respeta la recencia de la notificación.
+ * No hace falta migración: reutiliza el mecanismo de las novedades.
+ */
+export async function getUnreadAnnouncementsFromClient(
+  supabase: DbClient,
+  clubId: string,
+  limit = 5
+): Promise<AnnouncementRow[]> {
+  const { data: notifs } = await supabase
+    .from('notifications')
+    .select('payload, created_at')
+    .eq('channel', 'in_app')
+    .eq('type', 'new_announcement')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  const ids: string[] = [];
+  for (const n of (notifs ?? []) as { payload: unknown }[]) {
+    const id = (n.payload as { announcement_id?: string } | null)?.announcement_id;
+    if (id && !ids.includes(id)) ids.push(id);
+  }
+  if (ids.length === 0) return [];
+  const { data } = await supabase
+    .from('announcements')
+    .select('id, title, body, pinned, team_id, created_at, teams(name)')
+    .eq('club_id', clubId)
+    .in('id', ids);
+  const rows = mapAnn((data ?? []) as unknown as RawAnn[]);
+  // Respeta el orden de recencia de la notificación (el `in` no lo garantiza).
+  const rank = new Map(ids.map((id, i) => [id, i]));
+  return rows.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+}
+
 /** Lista de anuncios para la pantalla /anuncios (family: sin filtro de scope). */
 export async function getAnnouncementsListFromClient(
   supabase: DbClient,

@@ -30,12 +30,18 @@ export const UNREAD_FEED_LIMIT = 10;
 
 /**
  * Tipos in_app que NO son "novedades" y no deben aparecer en el feed ni contar
- * como no leídos: el gol pertenece al DIRECTO, no al feed (QA en dispositivo).
+ * como no leídos:
+ *  - `goal`: pertenece al DIRECTO, no al feed (QA en dispositivo).
+ *  - `new_announcement`: los anuncios tienen su propio hogar (sección del inicio
+ *    y pantalla /anuncios); se excluyen del feed para no duplicarlos (punto 7 QA).
  * OJO: solo afecta a la LECTURA. La generación de la fila y la cola de push
  * (channel='push', `pushPayloadFromNotificationRow`) quedan intactas, así que el
- * push de gol a seguidores sigue siendo posible.
+ * push de gol/anuncio sigue siendo posible. Al excluirlos del feed Y del contador
+ * a la vez, listado y badge de no leídos siguen coherentes (patrón del gol, #469).
  */
-const FEED_HIDDEN_TYPE: NotificationType = 'goal';
+const FEED_HIDDEN_TYPES: NotificationType[] = ['goal', 'new_announcement'];
+/** Filtro PostgREST `in`: `(goal,new_announcement)`. */
+const FEED_HIDDEN_FILTER = `(${FEED_HIDDEN_TYPES.join(',')})`;
 
 export async function getNotificationFeedFromClient(
   supabase: DbClient,
@@ -45,7 +51,7 @@ export async function getNotificationFeedFromClient(
     .from('notifications')
     .select('id, type, payload, status, created_at')
     .eq('channel', 'in_app')
-    .neq('type', FEED_HIDDEN_TYPE)
+    .not('type', 'in', FEED_HIDDEN_FILTER)
     .order('created_at', { ascending: false })
     .limit(limit);
   return (data ?? []) as NotificationFeedRow[];
@@ -54,8 +60,9 @@ export async function getNotificationFeedFromClient(
 /**
  * Novedades SIN LEER (status='pending'), más recientes primero, hasta `limit`.
  * Es lo que muestra la pestaña por defecto de /novedades: al marcar una como
- * leída (pending→sent) sale de este listado. Excluye el mismo tipo oculto que el
- * feed y el contador (`goal`), así el listado y el badge son coherentes.
+ * leída (pending→sent) sale de este listado. Excluye los mismos tipos ocultos que
+ * el feed y el contador (`goal`, `new_announcement`), así el listado y el badge
+ * son coherentes.
  */
 export async function getUnreadNotificationsFeedFromClient(
   supabase: DbClient,
@@ -65,7 +72,7 @@ export async function getUnreadNotificationsFeedFromClient(
     .from('notifications')
     .select('id, type, payload, status, created_at')
     .eq('channel', 'in_app')
-    .neq('type', FEED_HIDDEN_TYPE)
+    .not('type', 'in', FEED_HIDDEN_FILTER)
     .eq('status', 'pending')
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -83,7 +90,7 @@ export async function getNotificationsPageFromClient(
     .from('notifications')
     .select('id, type, payload, status, created_at', { count: 'exact' })
     .eq('channel', 'in_app')
-    .neq('type', FEED_HIDDEN_TYPE)
+    .not('type', 'in', FEED_HIDDEN_FILTER)
     .order('created_at', { ascending: false })
     .range(from, to);
   return { rows: (data ?? []) as NotificationFeedRow[], total: count ?? 0 };
@@ -96,7 +103,7 @@ export async function getUnreadNotificationsCountFromClient(
     .from('notifications')
     .select('id', { count: 'exact', head: true })
     .eq('channel', 'in_app')
-    .neq('type', FEED_HIDDEN_TYPE)
+    .not('type', 'in', FEED_HIDDEN_FILTER)
     .eq('status', 'pending');
   return count ?? 0;
 }
