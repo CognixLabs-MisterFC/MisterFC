@@ -5,6 +5,9 @@ import { buildDefaultSkeleton, sessionDateFromEventStart } from './sessions';
 import {
   updateSessionHeaderMobileSchema,
   toSessionHeaderMobileColumns,
+  addBlockTaskSchema,
+  blockTaskIdSchema,
+  reorderTasksSchema,
 } from './session-form';
 
 /**
@@ -149,6 +152,88 @@ export async function updateSessionHeaderFromClient(
   if (!parsed.success) return { ok: false, error: 'invalid' };
   const cols = toSessionHeaderMobileColumns(parsed.data);
   const { error } = await supabase.from('sessions').update(cols).eq('id', parsed.data.id);
+  return error ? { ok: false, error: mapErr(error.code) } : { ok: true };
+}
+
+// ── Tareas (ejercicios) de un bloque desde el editor MÓVIL (G2) ────────────────
+
+export type AddTaskResult = { id: string | null; error?: SessionWriteError };
+
+/**
+ * Añade un ejercicio a un bloque (G2). Replica `web addBlockTask`: lee
+ * `session_id`/`club_id` del bloque (el tipo Insert los exige; el trigger los
+ * re-deriva al mismo valor) y calcula el siguiente `order_idx` (huecos OK; el orden
+ * lo normaliza el reorder). La RLS de INSERT es el gate.
+ */
+export async function addBlockTaskFromClient(
+  supabase: DbClient,
+  input: unknown,
+): Promise<AddTaskResult> {
+  const parsed = addBlockTaskSchema.safeParse(input);
+  if (!parsed.success) return { id: null, error: 'invalid' };
+  const { block_id, exercise_id } = parsed.data;
+
+  const { data: block } = await supabase
+    .from('session_blocks')
+    .select('session_id, club_id')
+    .eq('id', block_id)
+    .maybeSingle();
+  if (!block) return { id: null, error: 'not_found' };
+
+  const { data: last } = await supabase
+    .from('session_block_exercises')
+    .select('order_idx')
+    .eq('block_id', block_id)
+    .order('order_idx', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const nextIdx = ((last?.order_idx as number | null) ?? -1) + 1;
+
+  const { data: created, error } = await supabase
+    .from('session_block_exercises')
+    .insert({
+      block_id,
+      session_id: block.session_id as string,
+      club_id: block.club_id as string,
+      exercise_id,
+      order_idx: nextIdx,
+    })
+    .select('id')
+    .maybeSingle();
+  if (error) return { id: null, error: mapErr(error.code) };
+  const id = (created?.id as string | undefined) ?? null;
+  if (!id) return { id: null, error: 'generic' };
+  return { id };
+}
+
+/** Quita una tarea de un bloque (borra el join). RLS = gate. */
+export async function removeBlockTaskFromClient(
+  supabase: DbClient,
+  input: unknown,
+): Promise<{ ok: boolean; error?: SessionWriteError }> {
+  const parsed = blockTaskIdSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'invalid' };
+  const { error } = await supabase
+    .from('session_block_exercises')
+    .delete()
+    .eq('id', parsed.data.id);
+  return error ? { ok: false, error: mapErr(error.code) } : { ok: true };
+}
+
+/**
+ * Reordena las tareas DENTRO de un bloque vía el RPC `reorder_session_tasks` (una
+ * sentencia, UNIQUE deferrable). `task_ids` = el nuevo orden completo del bloque.
+ */
+export async function reorderTasksFromClient(
+  supabase: DbClient,
+  input: unknown,
+): Promise<{ ok: boolean; error?: SessionWriteError }> {
+  const parsed = reorderTasksSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'invalid' };
+  const { error } = await supabase.rpc('reorder_session_tasks', {
+    p_block_id: parsed.data.block_id,
+    p_task_ids: parsed.data.task_ids,
+  });
   return error ? { ok: false, error: mapErr(error.code) } : { ok: true };
 }
 

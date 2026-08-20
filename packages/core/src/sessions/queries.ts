@@ -329,6 +329,46 @@ export async function getSessionTemplatesFromClient(
   }));
 }
 
+// ── Ejercicios elegibles para el picker (12.2b — extraído de web) ─────────────
+/** Ejercicio del catálogo del club con sus taxonomías para FILTRAR/recomendar en
+ *  cliente (categoría + objetivos + fases). Superconjunto de `RecommendableExercise`. */
+export type PickableExercise = {
+  id: string;
+  name: string;
+  categories: string[];
+  tactical_objectives: string[];
+  technical_objectives: string[];
+  /** Fases (tipos de bloque) para las que sirve el ejercicio (12.7a). */
+  phases: string[];
+};
+
+/**
+ * Ejercicios del club que el usuario puede ver (la RLS decide), no archivados, con
+ * sus taxonomías para filtrar/recomendar en cliente (categoría del equipo +
+ * objetivos + fase del bloque — D8/12.7a). Sin paginación: el set por club es
+ * modesto. Extraído de `web loadPickableExercises`.
+ */
+export async function getPickableExercisesFromClient(
+  supabase: DbClient,
+  clubId: string,
+): Promise<PickableExercise[]> {
+  const { data } = await supabase
+    .from('exercises')
+    .select('id, name, categories, tactical_objectives, technical_objectives, phases')
+    .eq('club_id', clubId)
+    .is('archived_at', null)
+    .order('name', { ascending: true });
+
+  return (data ?? []).map((e) => ({
+    id: e.id as string,
+    name: e.name as string,
+    categories: (e.categories as string[] | null) ?? [],
+    tactical_objectives: (e.tactical_objectives as string[] | null) ?? [],
+    technical_objectives: (e.technical_objectives as string[] | null) ?? [],
+    phases: (e.phases as string[] | null) ?? [],
+  }));
+}
+
 /** Id de la sesión (no plantilla) vinculada a un entrenamiento, o null si no tiene. */
 export async function getEventSessionIdFromClient(
   supabase: DbClient,

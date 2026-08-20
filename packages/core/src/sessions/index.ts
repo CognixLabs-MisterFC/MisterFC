@@ -8,6 +8,7 @@ export {
   getSessionForEditFromClient,
   getSessionExerciseMetaFromClient,
   getSessionTemplatesFromClient,
+  getPickableExercisesFromClient,
   getEventSessionIdFromClient,
   getPlanSessionOptionsFromClient,
 } from './queries';
@@ -20,6 +21,7 @@ export type {
   SessionForEdit,
   SessionExerciseMeta,
   SessionTemplateRow,
+  PickableExercise,
   LinkableSession,
   PlanSessionOptions,
 } from './queries';
@@ -28,8 +30,11 @@ export {
   planSessionForEventFromClient,
   updateSessionHeaderFromClient,
   setSessionSharedFromClient,
+  addBlockTaskFromClient,
+  removeBlockTaskFromClient,
+  reorderTasksFromClient,
 } from './plan';
-export type { PlanSessionResult, SessionWriteError } from './plan';
+export type { PlanSessionResult, SessionWriteError, AddTaskResult } from './plan';
 
 export {
   SESSION_BLOCK_TYPES,
