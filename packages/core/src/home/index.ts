@@ -28,14 +28,6 @@ export type PlayerPendingCallup = {
   pendingCount: number;
 } | null;
 
-/** Nº de conversaciones con mensajes no leídos (RPC SECURITY DEFINER). */
-export async function getUnreadConversationsCountFromClient(
-  supabase: DbClient
-): Promise<number> {
-  const { data } = await supabase.rpc('user_unread_conversations_count');
-  return typeof data === 'number' ? data : 0;
-}
-
 /** Próximos eventos (no cancelados, aprobados) en un rango ISO. */
 export async function getUpcomingEventsFromClient(
   supabase: DbClient,
