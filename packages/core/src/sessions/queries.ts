@@ -164,6 +164,8 @@ export type SessionBlockForEdit = {
 export type SessionForEdit = {
   id: string;
   team_id: string | null;
+  /** Entrenamiento al que está asignada la sesión (events.id) o null si es suelta. */
+  event_id: string | null;
   team_category_kind: string | null;
   session_date: string | null;
   title: string | null;
@@ -189,7 +191,7 @@ export async function getSessionForEditFromClient(
   const { data } = await supabase
     .from('sessions')
     .select(
-      `id, team_id, session_date, title, objective_physical,
+      `id, team_id, event_id, session_date, title, objective_physical,
        tactical_objectives, technical_objectives, mesocycle, microcycle,
        total_minutes, is_template, visibility, owner_profile_id,
        team:teams ( category:categories ( kind ) ),
@@ -278,6 +280,7 @@ export async function getSessionForEditFromClient(
   return {
     id: data.id as string,
     team_id: (data.team_id as string | null) ?? null,
+    event_id: (data.event_id as string | null) ?? null,
     team_category_kind: team?.category?.kind ?? null,
     session_date: (data.session_date as string | null) ?? null,
     title: (data.title as string | null) ?? null,

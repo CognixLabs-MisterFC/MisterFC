@@ -7,8 +7,12 @@
  * de la cabecera): publicar es una intención distinta de editar campos.
  *
  * El gate real (owner∪admin) es la RLS de 12.1; si no puede, la acción devuelve
- * error y se muestra un toast. Si la sesión no tiene equipo, publicar no tendría
- * destinatarios → el switch se deshabilita y se explica.
+ * error y se muestra un toast. El switch se deshabilita —y se explica por qué—
+ * cuando compartir no tendría sentido:
+ *  · sin equipo (`hasTeam=false`) → no hay destinatarios;
+ *  · sin entrenamiento asignado (`hasEvent=false`, punto 1 QA) → una sesión suelta
+ *    compartida es invisible para el jugador en el móvil (las sesiones viven dentro
+ *    de Entrenamientos, #470). El backstop server-side es el RPC set_session_shared.
  */
 
 import { useState, useTransition } from 'react';
@@ -26,10 +30,13 @@ export function PublishControl({
   sessionId,
   visibility,
   hasTeam,
+  hasEvent,
 }: {
   sessionId: string;
   visibility: SessionVisibility;
   hasTeam: boolean;
+  /** La sesión está asignada a un entrenamiento (event_id no nulo). Punto 1 QA. */
+  hasEvent: boolean;
 }) {
   const t = useTranslations('sesiones.publish');
   const tErr = useTranslations('sesiones.errors');
@@ -65,14 +72,23 @@ export function PublishControl({
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            {!hasTeam ? t('no_team') : published ? t('help_published') : t('help_draft')}
+            {published
+              ? t('help_published')
+              : !hasTeam
+                ? t('no_team')
+                : !hasEvent
+                  ? t('no_event')
+                  : t('help_draft')}
           </p>
         </div>
+        {/* Solo se bloquea COMPARTIR (activar) cuando falta equipo o entrenamiento;
+            descompartir (una sesión ya compartida, p. ej. suelta antigua) se permite,
+            coherente con el RPC (el guard de event_id solo aplica a p_shared=true). */}
         <Switch
           id="publish"
           checked={published}
           onCheckedChange={onToggle}
-          disabled={pending || !hasTeam}
+          disabled={pending || (!published && (!hasTeam || !hasEvent))}
           aria-label={t('label')}
         />
       </CardContent>
