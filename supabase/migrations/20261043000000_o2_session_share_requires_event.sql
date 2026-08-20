@@ -54,19 +54,22 @@ begin
     raise exception 'template_not_shareable' using errcode = 'insufficient_privilege';
   end if;
 
-  -- Punto 1 QA — solo se COMPARTE (p_shared=true) una sesión asignada a un
-  -- entrenamiento (event_id no nulo). Descompartir no lo exige (limpieza).
-  if p_shared and v_event_id is null then
-    raise exception 'session_not_assigned' using errcode = 'insufficient_privilege';
-  end if;
-
   -- Gate: staff del equipo de la sesión ∪ admin_club/director del club ∪ superadmin.
+  -- Va ANTES del guard de event_id: un externo debe recibir 'forbidden' sin llegar
+  -- a saber si la sesión está o no asignada (sin fuga de información; lo fija
+  -- rls_null_gate_authz).
   if not (
     public.user_is_staff_of_team(v_team_id)
     or public.user_is_admin_or_director(v_club_id)
     or public.is_superadmin()
   ) then
     raise exception 'forbidden' using errcode = 'insufficient_privilege';
+  end if;
+
+  -- Punto 1 QA — solo se COMPARTE (p_shared=true) una sesión asignada a un
+  -- entrenamiento (event_id no nulo). Descompartir no lo exige (limpieza).
+  if p_shared and v_event_id is null then
+    raise exception 'session_not_assigned' using errcode = 'insufficient_privilege';
   end if;
 
   update public.sessions
