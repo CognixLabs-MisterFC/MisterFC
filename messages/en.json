@@ -4631,7 +4631,8 @@
     "loop": "Loop",
     "speed": "Speed",
     "single_frame": "Single-frame play (no animation)",
-    "empty": "No shared plays"
+    "empty": "No shared plays",
+    "uncategorized": "Uncategorized"
   },
   "seguidores": {
     "title": "Followers",
