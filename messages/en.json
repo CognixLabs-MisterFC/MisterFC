@@ -4247,6 +4247,7 @@
       "principal": "Main part",
       "vuelta_a_la_calma": "Cool-down"
     },
+    "block_empty": "No exercises yet",
     "picker": {
       "add": "Add exercise",
       "search": "Search exercise…",

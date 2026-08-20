@@ -4247,6 +4247,7 @@
       "principal": "Parte principal",
       "vuelta_a_la_calma": "Vuelta a la calma"
     },
+    "block_empty": "Sin ejercicios todavía",
     "picker": {
       "add": "Añadir ejercicio",
       "search": "Buscar ejercicio…",

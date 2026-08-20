@@ -18,6 +18,7 @@ import {
   getSharedSessionsForTeamsFromClient,
   getSessionForEditFromClient,
   getSessionExerciseMetaFromClient,
+  getSessionTemplatesFromClient,
   parsePlay,
   parseDiagram,
   sceneAtTime,
@@ -137,20 +138,8 @@ export type TemplateRow = {
 export async function loadTemplates(clubId: string): Promise<TemplateRow[]> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  const { data } = await supabase
-    .from('sessions')
-    .select('id, title, total_minutes, created_at')
-    .eq('club_id', clubId)
-    .eq('is_template', true)
-    .order('created_at', { ascending: false });
-
-  return (data ?? []).map((s) => ({
-    id: s.id as string,
-    title: (s.title as string | null) ?? null,
-    total_minutes: (s.total_minutes as number | null) ?? null,
-    created_at: s.created_at as string,
-  }));
+  // G1 — extraído a core (`getSessionTemplatesFromClient`); wrapper de compat.
+  return getSessionTemplatesFromClient(supabase, clubId);
 }
 
 // ── Vista semana / microciclo (12.3) ─────────────────────────────────────────

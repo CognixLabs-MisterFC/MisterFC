@@ -7,6 +7,9 @@ export {
   getTeamTrainingsFromClient,
   getSessionForEditFromClient,
   getSessionExerciseMetaFromClient,
+  getSessionTemplatesFromClient,
+  getEventSessionIdFromClient,
+  getPlanSessionOptionsFromClient,
 } from './queries';
 export type {
   PlayerSharedSessionRow,
@@ -16,7 +19,17 @@ export type {
   SessionBlockForEdit,
   SessionForEdit,
   SessionExerciseMeta,
+  SessionTemplateRow,
+  LinkableSession,
+  PlanSessionOptions,
 } from './queries';
+
+export {
+  planSessionForEventFromClient,
+  updateSessionHeaderFromClient,
+  setSessionSharedFromClient,
+} from './plan';
+export type { PlanSessionResult, SessionWriteError } from './plan';
 
 export {
   SESSION_BLOCK_TYPES,
@@ -66,6 +79,8 @@ export {
   sessionIdSchema,
   planSessionForEventSchema,
   linkSessionToEventSchema,
+  updateSessionHeaderMobileSchema,
+  toSessionHeaderMobileColumns,
   sumTaskMinutes,
   type SessionHeaderInput,
   type SessionTaskInput,
@@ -91,4 +106,6 @@ export {
   type SessionIdInput,
   type PlanSessionForEventInput,
   type LinkSessionToEventInput,
+  type UpdateSessionHeaderMobileInput,
+  type SessionHeaderMobileColumns,
 } from './session-form';

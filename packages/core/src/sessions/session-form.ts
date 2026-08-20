@@ -153,6 +153,40 @@ export const updateSessionHeaderSchema = sessionHeaderSchema
 
 export type UpdateSessionHeaderInput = z.infer<typeof updateSessionHeaderSchema>;
 
+// ── Editar cabecera DESDE MÓVIL (G1) ──────────────────────────────────────────
+// El editor nativo NO muestra meso/microciclo (periodización: la web). Para NO
+// pisarlos al guardar (una sesión creada en web o desde plantilla puede traerlos),
+// esta cabecera móvil SOLO incluye nombre + objetivos. Tampoco toca team/fecha
+// (heredados del evento) ni visibility (acción aparte). El mapeo escribe solo esas
+// columnas → meso/micro quedan intactos.
+export const updateSessionHeaderMobileSchema = z.object({
+  id: z.string().uuid({ message: 'id_invalid' }),
+  title: optText(120),
+  objective_physical: optText(2000),
+  tactical_objectives: tacticalObjectivesSchema,
+  technical_objectives: technicalObjectivesSchema,
+});
+export type UpdateSessionHeaderMobileInput = z.infer<typeof updateSessionHeaderMobileSchema>;
+
+/** Columnas de cabecera que escribe el editor móvil (sin meso/micro/team/fecha). */
+export type SessionHeaderMobileColumns = {
+  title: string | null;
+  objective_physical: string | null;
+  tactical_objectives: string[];
+  technical_objectives: string[];
+};
+
+export function toSessionHeaderMobileColumns(
+  data: UpdateSessionHeaderMobileInput
+): SessionHeaderMobileColumns {
+  return {
+    title: orNull(data.title),
+    objective_physical: orNull(data.objective_physical),
+    tactical_objectives: data.tactical_objectives,
+    technical_objectives: data.technical_objectives,
+  };
+}
+
 // ── Publicar / despublicar al equipo (12.4) ────────────────────────────────────
 // `visibility` se cambia con su PROPIA acción (no en la cabecera): publicar es una
 // intención distinta de editar campos, con efecto inmediato (D3/D7). 'staff' =

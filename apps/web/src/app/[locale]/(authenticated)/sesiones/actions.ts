@@ -26,6 +26,7 @@ import {
   sessionDateFromEventStart,
   buildDefaultSkeleton,
   createSupabaseServerClient,
+  getPlanSessionOptionsFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -197,45 +198,16 @@ export async function loadPlanSessionOptions(input: unknown): Promise<PlanSessio
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const clubId = ctx.activeClub.club.id;
 
-  // El evento debe ser un entrenamiento DE EQUIPO del club activo.
-  const { data: ev } = await supabase
-    .from('events')
-    .select('team_id, type, club_id')
-    .eq('id', parsed.data.event_id)
-    .maybeSingle();
-  if (!ev || ev.club_id !== clubId || ev.type !== 'training') return { error: 'invalid' };
-  const teamId = (ev.team_id as string | null) ?? null;
-  if (!teamId) return { error: 'invalid' };
-
-  // ¿Ya hay sesión vinculada?
-  const { data: linked } = await supabase
-    .from('sessions')
-    .select('id')
-    .eq('event_id', parsed.data.event_id)
-    .eq('is_template', false)
-    .maybeSingle();
-  if (linked?.id) return { linkedSessionId: linked.id as string, candidates: [] };
-
-  // Sesiones sueltas del mismo equipo (sin evento), más recientes primero.
-  const { data: rows } = await supabase
-    .from('sessions')
-    .select('id, title, session_date')
-    .eq('club_id', clubId)
-    .eq('team_id', teamId)
-    .eq('is_template', false)
-    .is('event_id', null)
-    .order('session_date', { ascending: false, nullsFirst: false })
-    .limit(100);
-
-  const candidates: LinkableSession[] = (rows ?? []).map((s) => ({
-    id: s.id as string,
-    title: (s.title as string | null) ?? null,
-    session_date: (s.session_date as string | null) ?? null,
-  }));
-
-  return { linkedSessionId: null, candidates };
+  // G1 — la lectura (validar el evento + sesión vinculada + candidatas sueltas) se
+  // extrajo a core (`getPlanSessionOptionsFromClient`); aquí solo el gate de sesión.
+  const res = await getPlanSessionOptionsFromClient(
+    supabase,
+    ctx.activeClub.club.id,
+    parsed.data.event_id,
+  );
+  if (!res.ok) return { error: res.error };
+  return { linkedSessionId: res.linkedSessionId, candidates: res.candidates };
 }
 
 /**

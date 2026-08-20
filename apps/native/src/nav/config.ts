@@ -132,6 +132,9 @@ const STAFF_MENU_COORD_EXTRA: MenuDef[] = [
  */
 const STAFF_HIDDEN: MenuDef[] = [
   { name: 'asistencia-sesion', labelKey: 'nav.asistencia' },
+  // G1 — editor de sesión de entrenamiento (?sessionId), alcanzado desde el detalle
+  // del entrenamiento (asistencia-sesion). href:null → no sale en la barra.
+  { name: 'sesion-editar', labelKey: 'sesiones.edit_title' },
   // O2 Bloque H — "Entrenamiento de hoy" salió del menú lateral al inicio (tarjeta
   // de la rejilla). Sigue existiendo como fichero de ruta → href:null para no salir
   // como pestaña de la barra; se alcanza desde la tarjeta del inicio.
