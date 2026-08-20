@@ -19,6 +19,8 @@ import {
   getSessionForEditFromClient,
   getSessionExerciseMetaFromClient,
   getSessionTemplatesFromClient,
+  getPickableExercisesFromClient,
+  type PickableExercise,
   parsePlay,
   parseDiagram,
   sceneAtTime,
@@ -533,40 +535,18 @@ export async function loadSessionForPdf(
 }
 
 // ── Ejercicios elegibles para el picker (12.2b) ──────────────────────────────
-export type PickableExercise = {
-  id: string;
-  name: string;
-  categories: string[];
-  tactical_objectives: string[];
-  technical_objectives: string[];
-  /** Fases (tipos de bloque) para las que sirve el ejercicio (12.7a). */
-  phases: string[];
-};
+export type { PickableExercise };
 
 /**
  * Ejercicios del club que el usuario puede ver (la RLS decide), no archivados, con
  * sus taxonomías para FILTRAR en cliente (categoría del equipo + objetivos — D8).
  * Sin paginación: el set por club es modesto (como loadBoardExercises de 11B.1).
+ * G2 — extraído a core (`getPickableExercisesFromClient`); wrapper de compat.
  */
 export async function loadPickableExercises(clubId: string): Promise<PickableExercise[]> {
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-
-  const { data } = await supabase
-    .from('exercises')
-    .select('id, name, categories, tactical_objectives, technical_objectives, phases')
-    .eq('club_id', clubId)
-    .is('archived_at', null)
-    .order('name', { ascending: true });
-
-  return (data ?? []).map((e) => ({
-    id: e.id as string,
-    name: e.name as string,
-    categories: (e.categories as string[] | null) ?? [],
-    tactical_objectives: (e.tactical_objectives as string[] | null) ?? [],
-    technical_objectives: (e.technical_objectives as string[] | null) ?? [],
-    phases: (e.phases as string[] | null) ?? [],
-  }));
+  return getPickableExercisesFromClient(supabase, clubId);
 }
 
 // ── Jugadas elegibles para el picker de la sesión (JS-1) ──────────────────────
