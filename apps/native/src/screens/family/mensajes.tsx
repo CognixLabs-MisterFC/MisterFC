@@ -6,12 +6,10 @@ import {
   type InboxItem,
 } from '@misterfc/core';
 import { useSession } from '@/auth/session';
-import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
-import { BRAND } from '@/theme';
 
 /** Refresco del inbox (ms). Consistente con la web (polling 5s). */
 const MESSAGES_POLL_MS = 5000;
@@ -26,10 +24,8 @@ const MESSAGES_POLL_MS = 5000;
 export function MensajesScreen() {
   const t = useTranslations('');
   const { user } = useSession();
-  const { theme } = useApp();
   const router = useRouter();
   const profileId = user?.id ?? null;
-  const accent = theme?.color ?? BRAND.navy;
 
   const { data, fromCache, loading, refresh } = useCached<InboxItem[]>(
     profileScopedCacheKey('inbox', profileId ?? 'none'),
@@ -58,7 +54,6 @@ export function MensajesScreen() {
           renderItem={({ item }) => (
             <InboxRow
               item={item}
-              accent={accent}
               onPress={() =>
                 item.kind === 'direct'
                   ? router.push({
@@ -80,11 +75,9 @@ export function MensajesScreen() {
 
 function InboxRow({
   item,
-  accent,
   onPress,
 }: {
   item: InboxItem;
-  accent: string;
   onPress: () => void;
 }) {
   const t = useTranslations('');
@@ -107,10 +100,7 @@ function InboxRow({
         </View>
       </View>
       {item.unread > 0 ? (
-        <View
-          className="h-6 min-w-6 items-center justify-center rounded-full px-2"
-          style={{ backgroundColor: accent }}
-        >
+        <View className="h-6 min-w-6 items-center justify-center rounded-full bg-emerald-500 px-2">
           <Text className="text-xs font-semibold text-white">{item.unread}</Text>
         </View>
       ) : null}

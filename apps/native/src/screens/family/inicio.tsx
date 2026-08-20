@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import {
-  getUnreadConversationsCountFromClient,
+  getInboxFromClient,
+  countUnreadConversations,
   getPlayerPendingCallupFromClient,
   getUpcomingEventsFromClient,
   getUnreadAnnouncementsFromClient,
@@ -74,7 +75,11 @@ export function InicioScreen() {
       const now = Date.now();
       const nowIso = new Date(now).toISOString();
       const [unread, pending, upcoming, announcements, feed] = await Promise.all([
-        getUnreadConversationsCountFromClient(sb),
+        // Punto 11 — nº de CONVERSACIONES con no leídos (1:1 + equipo), derivado del
+        // MISMO inbox que la lista y el badge de la pestaña → los tres dicen lo mismo.
+        user?.id
+          ? getInboxFromClient(sb, user.id).then(countUnreadConversations)
+          : Promise.resolve(0),
         getPlayerPendingCallupFromClient(sb, playerIds),
         getUpcomingEventsFromClient(sb, nowIso, new Date(now + 7 * DAY).toISOString()),
         // Punto 7 — SOLO anuncios sin leer; al abrirlos (/anuncios los marca

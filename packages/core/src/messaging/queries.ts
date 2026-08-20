@@ -39,6 +39,17 @@ export type InboxItem =
       unread: number;
     };
 
+/**
+ * Punto 11 QA — Nº de CONVERSACIONES con mensajes sin leer, a partir del inbox.
+ * ÚNICO criterio para el badge de la pestaña, el pill de la lista y el contador del
+ * inicio: así los tres dicen SIEMPRE el mismo número (badge == lista == inicio).
+ * Cada conversación (1:1 o de equipo) con `unread > 0` cuenta como 1 — mismo
+ * criterio que el badge de la web (F5/E-8): conversaciones, no mensajes totales.
+ */
+export function countUnreadConversations(inbox: InboxItem[]): number {
+  return inbox.filter((c) => c.unread > 0).length;
+}
+
 export type ConversationMessage = {
   id: string;
   sender_profile_id: string;
