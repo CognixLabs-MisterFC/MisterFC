@@ -48,6 +48,11 @@ export const WRITE_INVALIDATIONS = {
   // ── Staff / entrenador ──────────────────────────────────────────────────────
   /** Marcar asistencia a una sesión (la ve staff y la familia). */
   markAttendance: ['asistencia-sesion', 'asistencia-list', 'asistencia'],
+  /** G1 — Crear/planificar la sesión de un entrenamiento: refresca la afordancia
+   *  (existe sesión) del detalle del entrenamiento. */
+  planSession: ['event-session', 'asistencia-sesion', 'sesion-editar'],
+  /** G1 — Editar cabecera/compartir la sesión: el editor y la vista del jugador. */
+  sessionEdit: ['sesion-editar', 'sesion', 'entrenamientos'],
   /** Decisión de convocatoria del staff (convoca/descarta) → familia y staff. */
   upsertCallupDecision: ['convocatoria-staff', 'convocatorias-staff', 'convocatoria', 'convocatorias', 'inicio'],
   /** Alineación/posiciones (se refleja en el campo del directo). */

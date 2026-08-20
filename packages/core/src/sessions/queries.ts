@@ -297,6 +297,110 @@ export async function getSessionForEditFromClient(
   };
 }
 
+// ── Plantillas / plan de sesión desde el evento (G1 — extraído de web) ─────────
+
+/** Plantilla de sesión del club (is_template=true) para el selector "desde plantilla". */
+export type SessionTemplateRow = {
+  id: string;
+  title: string | null;
+  total_minutes: number | null;
+  created_at: string;
+};
+
+/**
+ * Plantillas del club (is_template=true), recientes primero. La RLS restringe a
+ * staff (jugador/familia nunca ven plantillas). Extraído de `web loadTemplates`.
+ */
+export async function getSessionTemplatesFromClient(
+  supabase: DbClient,
+  clubId: string,
+): Promise<SessionTemplateRow[]> {
+  const { data } = await supabase
+    .from('sessions')
+    .select('id, title, total_minutes, created_at')
+    .eq('club_id', clubId)
+    .eq('is_template', true)
+    .order('created_at', { ascending: false });
+  return (data ?? []).map((s) => ({
+    id: s.id as string,
+    title: (s.title as string | null) ?? null,
+    total_minutes: (s.total_minutes as number | null) ?? null,
+    created_at: s.created_at as string,
+  }));
+}
+
+/** Id de la sesión (no plantilla) vinculada a un entrenamiento, o null si no tiene. */
+export async function getEventSessionIdFromClient(
+  supabase: DbClient,
+  eventId: string,
+): Promise<string | null> {
+  const { data } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('event_id', eventId)
+    .eq('is_template', false)
+    .maybeSingle();
+  return (data?.id as string | undefined) ?? null;
+}
+
+/** Sesión suelta candidata a vincular (del mismo equipo, sin evento). */
+export type LinkableSession = {
+  id: string;
+  title: string | null;
+  session_date: string | null;
+};
+
+export type PlanSessionOptions =
+  | { ok: false; error: 'invalid' }
+  | { ok: true; linkedSessionId: string | null; candidates: LinkableSession[] };
+
+/**
+ * Opciones del flujo "Planificar sesión" de un entrenamiento (extraído de la web,
+ * comportamiento idéntico): si el evento ya tiene sesión vinculada → su id; si no,
+ * las sesiones SUELTAS (event_id null, no plantilla) del MISMO equipo, candidatas a
+ * vincular. El evento debe ser un training de equipo del club. La AUTORIZACIÓN
+ * (ctx/forbidden) la resuelve el caller; aquí solo se valida el evento y la RLS filtra.
+ */
+export async function getPlanSessionOptionsFromClient(
+  supabase: DbClient,
+  clubId: string,
+  eventId: string,
+): Promise<PlanSessionOptions> {
+  const { data: ev } = await supabase
+    .from('events')
+    .select('team_id, type, club_id')
+    .eq('id', eventId)
+    .maybeSingle();
+  if (!ev || ev.club_id !== clubId || ev.type !== 'training') return { ok: false, error: 'invalid' };
+  const teamId = (ev.team_id as string | null) ?? null;
+  if (!teamId) return { ok: false, error: 'invalid' };
+
+  const { data: linked } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('event_id', eventId)
+    .eq('is_template', false)
+    .maybeSingle();
+  if (linked?.id) return { ok: true, linkedSessionId: linked.id as string, candidates: [] };
+
+  const { data: rows } = await supabase
+    .from('sessions')
+    .select('id, title, session_date')
+    .eq('club_id', clubId)
+    .eq('team_id', teamId)
+    .eq('is_template', false)
+    .is('event_id', null)
+    .order('session_date', { ascending: false, nullsFirst: false })
+    .limit(100);
+
+  const candidates: LinkableSession[] = (rows ?? []).map((s) => ({
+    id: s.id as string,
+    title: (s.title as string | null) ?? null,
+    session_date: (s.session_date as string | null) ?? null,
+  }));
+  return { ok: true, linkedSessionId: null, candidates };
+}
+
 // ── Meta de ejercicios de una sesión visible (RPC SECURITY DEFINER) ────────────
 
 export type SessionExerciseMeta = {

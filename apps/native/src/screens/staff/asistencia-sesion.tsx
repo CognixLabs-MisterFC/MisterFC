@@ -28,6 +28,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
+import { SessionPlanEntry } from '@/ui/session-plan-entry';
 import { useTranslations } from '@/locale/provider';
 
 /**
@@ -152,6 +153,9 @@ export function AsistenciaSesionScreen({ eventId }: { eventId: string | null }) 
             .join(' · ')}
         </Text>
       </View>
+
+      {/* G1 — Planificar/abrir la SESIÓN de este entrenamiento (staff). */}
+      <SessionPlanEntry eventId={eventId} />
 
       {/* Aviso: sin permiso (gate server-side) o sin conexión (write-guard). */}
       {!data.canRecord ? (
