@@ -204,6 +204,7 @@ export function SessionEditor({
           sessionId={session.id}
           visibility={session.visibility}
           hasTeam={session.team_id != null}
+          hasEvent={session.event_id != null}
         />
       )}
 

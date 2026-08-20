@@ -4287,6 +4287,7 @@
       "draft": "No compartida",
       "published": "Compartida",
       "no_team": "Asigna un equipo para poder compartir la sesión.",
+      "no_event": "Asigna la sesión a un entrenamiento para poder compartirla con los jugadores.",
       "help_draft": "Solo el cuerpo técnico la ve. Compártela para que la vean los jugadores del equipo.",
       "help_published": "Visible para los jugadores y familias del equipo.",
       "toast_published": "Sesión compartida con el equipo",

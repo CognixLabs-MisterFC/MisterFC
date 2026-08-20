@@ -4287,6 +4287,7 @@
       "draft": "Not shared",
       "published": "Shared",
       "no_team": "Assign a team to share the session.",
+      "no_event": "Assign the session to a training to share it with players.",
       "help_draft": "Only staff can see it. Share it so the team's players can see it.",
       "help_published": "Visible to the team's players and families.",
       "toast_published": "Session shared with the team",
