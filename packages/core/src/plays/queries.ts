@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { parsePlay, emptyPlay, type Play } from '../diagram/play';
-import type { PlaySignalId } from './signals';
+import { isStrategyType, type PlaySignalId, type StrategyType } from './signals';
 
 /**
  * O2-5 D2 — FETCH del PLAYBOOK del jugador/familia (visor de jugadas, SOLO LECTURA),
@@ -20,6 +20,8 @@ export type PlaybookRow = {
   updated_at: string;
   /** Seña del equipo para la jugada (team_plays.signal_id; null = sin elegir). */
   signal_id: PlaySignalId | null;
+  /** Tipo de estrategia de la jugada (plays.strategy_type; null = sin categoría). */
+  strategy_type: StrategyType | null;
 };
 
 export async function getTeamPlaybookFromClient(
@@ -28,13 +30,19 @@ export async function getTeamPlaybookFromClient(
 ): Promise<PlaybookRow[]> {
   const { data } = await supabase
     .from('team_plays')
-    .select('signal_id, play:plays!inner(id, name, play, updated_at)')
+    .select('signal_id, play:plays!inner(id, name, play, updated_at, strategy_type)')
     .eq('team_id', teamId)
     .eq('shared_with_family', true);
 
   type RawRow = {
     signal_id: string | null;
-    play: { id: string; name: string | null; play: unknown; updated_at: string } | null;
+    play: {
+      id: string;
+      name: string | null;
+      play: unknown;
+      updated_at: string;
+      strategy_type?: string | null;
+    } | null;
   };
   const rows = ((data ?? []) as unknown as RawRow[])
     .filter((tp): tp is RawRow & { play: NonNullable<RawRow['play']> } => tp.play != null)
@@ -47,6 +55,7 @@ export async function getTeamPlaybookFromClient(
         frame_count: parsed.success ? parsed.data.frames.length : 0,
         updated_at: p.updated_at,
         signal_id: (tp.signal_id as PlaySignalId | null) ?? null,
+        strategy_type: isStrategyType(p.strategy_type) ? p.strategy_type : null,
       };
     });
   rows.sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));

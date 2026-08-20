@@ -4631,7 +4631,8 @@
     "loop": "Bucle",
     "speed": "Velocidad",
     "single_frame": "Jugada de un solo frame (sin animación)",
-    "empty": "No hay jugadas compartidas"
+    "empty": "No hay jugadas compartidas",
+    "uncategorized": "Sin categoría"
   },
   "seguidores": {
     "title": "Seguidores",
