@@ -28,6 +28,27 @@ import { familyEventTarget, familyFeedTarget, type FamilyTarget } from '@/notifi
 
 const DAY = 86_400_000;
 
+/**
+ * Iconos por tipo de evento: los MISMOS que ya usan el inicio de staff
+ * (screens/staff/inicio.tsx) y el calendario (screens/family/calendario.tsx).
+ * Copia local (el patrón del repo es una por pantalla); no se inventan otros.
+ */
+const TYPE_ICON: Record<string, string> = {
+  training: '🏋️',
+  match: '⚽',
+  friendly: '⚽',
+  tournament: '🏆',
+  other: '📌',
+};
+
+/** "Viernes, 21 de agosto · 18:00" — fecha (primera letra en mayúscula) + hora. */
+function formatEventWhen(iso: string): string {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
+  const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return `${date.charAt(0).toUpperCase()}${date.slice(1)} · ${time}`;
+}
+
 type HomeData = {
   unread: number;
   pending: PlayerPendingCallup;
@@ -128,9 +149,10 @@ export function InicioScreen() {
           <Text className="text-sm text-zinc-400">{theme.clubName}</Text>
         ) : null}
 
-        {/* Punto 6 — tarjeta ANCHA del próximo evento (fecha/hora en grande), lo
-            primero tras el saludo, encima de la rejilla. Sustituye a la antigua
-            lista "Próximos eventos" (redundante con el calendario). */}
+        {/* Punto 6 — tarjeta ANCHA del próximo evento, lo primero tras el saludo,
+            encima de la rejilla. Jerarquía (ajuste dispositivo): lo más grande es
+            QUÉ es el evento (icono + tipo/título), luego fecha·hora en tamaño medio
+            y el equipo en pequeño. Sustituye a la antigua lista "Próximos eventos". */}
         <Pressable
           onPress={nextEventTarget ? () => go(nextEventTarget) : undefined}
           disabled={!nextEventTarget}
@@ -141,25 +163,33 @@ export function InicioScreen() {
             {t('inicio.next_event')}
           </Text>
           {nextEvent ? (
-            <>
-              <Text className="mt-1 text-2xl font-extrabold capitalize text-[#0F1B2E]">
-                {new Date(nextEvent.starts_at).toLocaleDateString(undefined, {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}
-              </Text>
-              <Text className="text-xl font-bold text-[#0F1B2E] tabular-nums">
-                {new Date(nextEvent.starts_at).toLocaleTimeString(undefined, {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </Text>
-              <Text className="mt-1 text-sm text-zinc-600" numberOfLines={2}>
-                {t(`calendario.types.${nextEvent.type}`)}
-                {nextEvent.title ? ` · ${nextEvent.title}` : ''}
-              </Text>
-            </>
+            (() => {
+              // Sin duplicar: el tipo (catálogo compartido) es el titular. Si el
+              // evento trae título propio DISTINTO del tipo (p. ej. un amistoso
+              // "Fonteta vs Amistat"), ese título sustituye al tipo como titular.
+              const typeLabel = t(`calendario.types.${nextEvent.type}`);
+              const ownTitle = nextEvent.title?.trim();
+              const headline = ownTitle && ownTitle !== typeLabel ? ownTitle : typeLabel;
+              return (
+                <>
+                  <View className="mt-1 flex-row items-center gap-2">
+                    <Text className="text-2xl">{TYPE_ICON[nextEvent.type] ?? '📌'}</Text>
+                    <Text
+                      className="flex-1 text-xl font-extrabold uppercase text-[#0F1B2E]"
+                      numberOfLines={2}
+                    >
+                      {headline}
+                    </Text>
+                  </View>
+                  <Text className="mt-2 text-base font-semibold text-[#0F1B2E] tabular-nums">
+                    {formatEventWhen(nextEvent.starts_at)}
+                  </Text>
+                  {nextEvent.teamName ? (
+                    <Text className="text-sm text-zinc-500">{nextEvent.teamName}</Text>
+                  ) : null}
+                </>
+              );
+            })()
           ) : (
             <Text className="mt-1 text-sm text-zinc-400">{t('inicio.empty_upcoming')}</Text>
           )}
