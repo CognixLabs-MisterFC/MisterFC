@@ -121,16 +121,21 @@ export function InicioScreen() {
     if (target) router.push(target as Href);
   };
 
-  // Al tocar una novedad: navega Y la marca como leída (además de navegar), para
-  // que el contador de no leídos siga coherente. Fire-and-forget + invalidación.
+  // Marca una novedad como leída (fire-and-forget + invalidación). Al leerla
+  // desaparece del inicio (getUnread… deja de traerla) y el badge sigue coherente.
+  const markFeedRead = (id: string) => {
+    void markNotificationReadFromClient(supabase, id).then(() =>
+      invalidateAfterWrite('markNotifications'),
+    );
+  };
+
+  // Al tocar una novedad CON destino: navega Y la marca como leída, para que el
+  // contador de no leídos siga coherente. Las filas SIN destino no navegan: se
+  // marcan con el botón "marcar leída" (mismo patrón que la pantalla Novedades, #474).
   const openFeed = (n: NotificationFeedRow) => {
     const target = familyFeedTarget(n.type, n.payload);
     if (!target) return; // sin destino → fila no clicable
-    if (n.status === 'pending') {
-      void markNotificationReadFromClient(supabase, n.id).then(() =>
-        invalidateAfterWrite('markNotifications'),
-      );
-    }
+    if (n.status === 'pending') markFeedRead(n.id);
     router.push(target as Href);
   };
 
@@ -241,22 +246,40 @@ export function InicioScreen() {
           </Section>
         ) : null}
 
+        {/* J2 — en el inicio se muestran como MÁXIMO 3 novedades sin leer; si hay
+            más, un acceso a la pantalla Novedades (pestañas "Sin leer"/"Todas",
+            #474). Cada fila puede marcarse leída: las que tienen destino, al tocarlas
+            (navegan y marcan); las que NO tienen destino, con el botón "marcar leída"
+            (mismo patrón que Novedades). Al leerlas desaparecen del inicio (#480). */}
         <Section title={t('inicio.section_feed')}>
           {d.feed.length === 0 ? (
             <Muted text={t('inicio.empty_feed')} />
           ) : (
-            d.feed.map((n) => {
-              const clickable = familyFeedTarget(n.type, n.payload) != null;
-              return (
-                <Row
-                  key={n.id}
-                  title={notificationFeedText(tFeed, n.type, n.payload)}
-                  sub={n.created_at.slice(0, 10)}
-                  unread={n.status === 'pending'}
-                  onPress={clickable ? () => openFeed(n) : undefined}
-                />
-              );
-            })
+            <>
+              {d.feed.slice(0, 3).map((n) => {
+                const clickable = familyFeedTarget(n.type, n.payload) != null;
+                const pending = n.status === 'pending';
+                return (
+                  <Row
+                    key={n.id}
+                    title={notificationFeedText(tFeed, n.type, n.payload)}
+                    sub={n.created_at.slice(0, 10)}
+                    unread={pending}
+                    onPress={clickable ? () => openFeed(n) : undefined}
+                    onMarkRead={!clickable && pending ? () => markFeedRead(n.id) : undefined}
+                    markReadLabel={t('novedades.mark_read')}
+                  />
+                );
+              })}
+              {d.feed.length > 3 ? (
+                <Pressable
+                  onPress={() => router.push('/family/novedades')}
+                  className="items-end py-2 active:opacity-60"
+                >
+                  <Text className="text-xs font-medium text-emerald-600">{tFeed('view_all')}</Text>
+                </Pressable>
+              ) : null}
+            </>
           )}
         </Section>
       </ScrollView>
@@ -312,11 +335,17 @@ function Row({
   sub,
   unread,
   onPress,
+  onMarkRead,
+  markReadLabel,
 }: {
   title: string;
   sub: string;
   unread?: boolean;
   onPress?: () => void;
+  /** J2 — botón "marcar leída" para filas SIN destino (no navegables). Solo se
+   * pasa cuando la fila no es clicable y está pendiente (patrón de Novedades #474). */
+  onMarkRead?: () => void;
+  markReadLabel?: string;
 }) {
   const content = (
     <>
@@ -325,6 +354,15 @@ function Row({
         <Text className="text-sm text-[#0F1B2E]" numberOfLines={1}>{title}</Text>
         {sub ? <Text className="text-xs text-zinc-400">{sub}</Text> : null}
       </View>
+      {onMarkRead ? (
+        <Pressable
+          onPress={onMarkRead}
+          hitSlop={8}
+          className="ml-2 rounded-full border border-zinc-200 px-2 py-1 active:opacity-60"
+        >
+          <Text className="text-[11px] font-medium text-zinc-500">{markReadLabel}</Text>
+        </Pressable>
+      ) : null}
     </>
   );
   if (onPress) {
