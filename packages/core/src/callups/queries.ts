@@ -69,6 +69,14 @@ export type PlayerCallupDetailPlayer = {
   decision: CallupDecisionKind | null;
 };
 
+/** J5/J6 — jugador del squad del equipo (nombre/dorsal) para la vista de partido
+ * de familia. Etiqueta = apellido || nombre (igual que la alineación compartida). */
+export type CallupSquadPlayer = {
+  playerId: string;
+  label: string;
+  dorsal: number | null;
+};
+
 export type PlayerCallupDetail = {
   event: {
     id: string;
@@ -93,6 +101,10 @@ export type PlayerCallupDetail = {
   notes_general: string | null;
   published: boolean;
   players: PlayerCallupDetailPlayer[];
+  /** J5/J6 — squad COMPLETO del equipo (no solo hijos): convocados (roster −
+   * descartados) y no convocados (descartados). Regla canónica compartida con el
+   * staff (groupRosterByCallup). La vista de partido lo muestra solo si publicada. */
+  squad: { calledUp: CallupSquadPlayer[]; notCalledUp: CallupSquadPlayer[] };
 };
 
 type EventRow = {
@@ -497,6 +509,27 @@ export async function getPlayerCallupDetailFromClient(
     },
   );
 
+  // J5/J6 — squad del EQUIPO (todos, no solo hijos) para la vista de partido de
+  // familia. Convocado = roster − descartados; no convocado = descartados (regla
+  // canónica `groupRosterByCallup`, la misma del staff). Se deriva del roster
+  // COMPLETO ya cargado (`active` + subidos), sin consulta extra ni tocar RLS.
+  const squadRoster: CallupSquadPlayer[] = [
+    ...active.map((r) => ({
+      playerId: r.player_id,
+      label: r.players.last_name || r.players.first_name || r.player_id.slice(0, 4),
+      dorsal: r.players.dorsal,
+    })),
+    ...promoted.map((p) => ({
+      playerId: p.id,
+      label: p.last_name || p.first_name || p.id.slice(0, 4),
+      dorsal: p.dorsal,
+    })),
+  ];
+  const squadGroups = groupRosterByCallup(
+    squadRoster,
+    (p) => decisionByPlayer.get(p.playerId) ?? null,
+  );
+
   return {
     event: {
       id: event.id,
@@ -513,6 +546,7 @@ export async function getPlayerCallupDetailFromClient(
       location_address: event.location_address,
       tournament_id: event.tournament_id,
     },
+    squad: { calledUp: squadGroups.calledUp, notCalledUp: squadGroups.discarded },
     meeting_at: meta?.meeting_at ?? null,
     meeting_location: meta?.meeting_location ?? null,
     meeting_address: meta?.meeting_address ?? null,

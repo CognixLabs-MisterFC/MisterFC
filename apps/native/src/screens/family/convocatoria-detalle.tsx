@@ -3,10 +3,14 @@ import { ScrollView, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   getPlayerCallupDetailFromClient,
+  getSharedLineupForEventFromClient,
   respondCallupFromClient,
   playerEventScopedCacheKey,
+  eventScopedCacheKey,
   type PlayerCallupDetail,
   type CallupResponseStatus,
+  type CallupSquadPlayer,
+  type SharedLineupView,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
@@ -54,6 +58,15 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
     },
   );
 
+  // Alineación oficial COMPARTIDA (event-scoped: la misma para ambos hijos, a
+  // diferencia del detalle player-scoped de arriba). La RLS solo la devuelve si es
+  // oficial y compartida con el equipo. Se pinta el campo+banquillo (J6) SOLO si
+  // hay titulares colocados; si no, la vista muestra convocados/no convocados (J5).
+  const { data: shared } = useCached<SharedLineupView | null>(
+    eventScopedCacheKey('shared-lineup', eventId ?? 'none'),
+    (sb) => (eventId ? getSharedLineupForEventFromClient(sb, eventId) : Promise.resolve(null)),
+  );
+
   if (!playerId) return <EmptyState message={t('child.none')} />;
   if (!eventId) return <EmptyState message={t('convocatorias.unavailable')} />;
   if (loading) return <LoadingScreen />;
@@ -61,6 +74,11 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
 
   const child = data.players[0] ?? null;
   const isPast = data.isPast;
+  // J6 — solo hay alineación "compartida" que pintar (campo + banquillo) si tiene
+  // TITULARES colocados en el campo. Si la oficial existe pero sin colocar, se trata
+  // como "sin compartir" (J5): se muestran las listas de convocados/no convocados.
+  const sharedField =
+    shared && shared.positions.some((p) => p.location === 'field') ? shared : null;
 
   async function respond(status: CallupResponseStatus) {
     if (!online || busy || !eventId || !playerId) return;
@@ -128,10 +146,31 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
           </View>
         )}
 
-        {/* Alineación oficial compartida (estática). Solo se pinta si el entrenador
-            la ha marcado oficial Y compartido con el equipo (la RLS la gatea); si no,
-            no aparece nada. */}
-        <SharedLineupCard eventId={eventId} />
+        {/* J5/J6 — vista de partido. La lista de NO CONVOCADOS se ve SIEMPRE (con la
+            convocatoria publicada). Si el entrenador ha COMPARTIDO la alineación (hay
+            titulares colocados en el campo) se muestra el campo + banquillo (J6); si
+            NO la ha compartido, se muestra la lista de CONVOCADOS (J5) en vez de una
+            media tarjeta de alineación vacía. Convocado = roster − descartados;
+            no convocado = descartados (regla canónica del core). */}
+        {data.published ? (
+          <>
+            {sharedField ? (
+              <SharedLineupCard data={sharedField} accent={accent} />
+            ) : (
+              <SquadList
+                title={t('convocatorias.family_called_title')}
+                players={data.squad.calledUp}
+                accent={accent}
+              />
+            )}
+            <SquadList
+              title={t('convocatorias.family_not_called_title')}
+              players={data.squad.notCalledUp}
+              accent={accent}
+              muted
+            />
+          </>
+        ) : null}
 
         {/* Decisión técnica sobre el hijo (si publicada). */}
         {child?.decision ? (
@@ -202,6 +241,53 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
           </Pressable>
         ) : null}
       </ScrollView>
+    </View>
+  );
+}
+
+/**
+ * J5/J6 — lista de squad (convocados o no convocados) como chips con dorsal +
+ * nombre. Mismo lenguaje de chips que el banquillo de la web. `muted` = estilo
+ * apagado para la lista de no convocados (sin acento del club).
+ */
+function SquadList({
+  title,
+  players,
+  accent,
+  muted = false,
+}: {
+  title: string;
+  players: CallupSquadPlayer[];
+  accent: string;
+  muted?: boolean;
+}) {
+  return (
+    <View className="gap-2 rounded-2xl border border-zinc-200 p-4">
+      <Text className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+        {`${title} · ${players.length}`}
+      </Text>
+      {players.length === 0 ? (
+        <Text className="text-sm text-zinc-400">—</Text>
+      ) : (
+        <View className="flex-row flex-wrap gap-1.5">
+          {players.map((p) => (
+            <View
+              key={p.playerId}
+              className="flex-row items-center gap-1 rounded-md border border-zinc-200 px-2 py-1"
+              style={muted ? undefined : { borderLeftWidth: 3, borderLeftColor: accent }}
+            >
+              {p.dorsal != null ? (
+                <Text className="text-xs font-semibold text-zinc-500 tabular-nums">
+                  {`#${p.dorsal}`}
+                </Text>
+              ) : null}
+              <Text className={`text-xs ${muted ? 'text-zinc-500' : 'text-[#0F1B2E]'}`}>
+                {p.label}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }

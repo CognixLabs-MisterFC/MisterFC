@@ -1,38 +1,33 @@
 import { View, Text } from 'react-native';
 import {
   coachFormationToFormation,
-  eventScopedCacheKey,
   getFormation,
-  getSharedLineupForEventFromClient,
   type Formation,
   type SharedLineupView,
 } from '@misterfc/core';
-import { useApp } from '@/auth/context';
-import { useCached } from '@/data/use-cached';
 import { ReadonlyLineup } from '@/ui/readonly-lineup';
 import { useTranslations } from '@/locale/provider';
-import { BRAND } from '@/theme';
 
 /**
- * O2 alineación compartida — tarjeta de la ALINEACIÓN OFICIAL COMPARTIDA en el
- * detalle de convocatoria del jugador/familia. ESTÁTICA (no varía como el directo):
- * lee `getSharedLineupForEventFromClient` (la RLS solo la devuelve si es
- * `is_official AND visibility='team'`). Si NO hay alineación visible, NO pinta nada
- * (ni mensaje de vacío) — así el detalle no muestra un hueco cuando el entrenador aún
- * no ha compartido. Las notas tácticas nunca se piden (solo-staff). Caché
- * event-scoped (`shared-lineup.<eventId>`): la misma alineación para todos los hijos.
+ * O2 alineación compartida — tarjeta PRESENTACIONAL de la alineación oficial
+ * compartida (campo con titulares + banquillo). El fetch (event-scoped, común a
+ * ambos hijos) y la decisión de MOSTRARLA viven en el llamador:
+ *  · J6 (alineación compartida) → la convocatoria la pinta SOLO si hay titulares
+ *    colocados en el campo, junto a la lista de no convocados.
+ *  · J5 (sin alineación compartida) → NO se monta; en su lugar se muestran las
+ *    listas de convocados + no convocados. Así se evita la "media tarjeta" vacía
+ *    (campo sin titulares + banquillo) que se pintaba antes cuando existía una
+ *    alineación oficial sin colocar.
+ * Las notas tácticas nunca se piden (solo-staff).
  */
-export function SharedLineupCard({ eventId }: { eventId: string }) {
+export function SharedLineupCard({
+  data,
+  accent,
+}: {
+  data: SharedLineupView;
+  accent: string;
+}) {
   const t = useTranslations('');
-  const { theme } = useApp();
-  const accent = theme?.color ?? BRAND.navy;
-
-  const { data } = useCached<SharedLineupView | null>(
-    eventScopedCacheKey('shared-lineup', eventId),
-    async (sb) => getSharedLineupForEventFromClient(sb, eventId),
-  );
-
-  if (!data) return null;
 
   const formation: Formation | undefined = data.formationCode
     ? (getFormation(data.formationCode) ??

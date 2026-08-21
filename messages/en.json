@@ -2646,6 +2646,8 @@
     "notes": "Notes",
     "not_published": "The call-up is not published yet",
     "decision_discarded": "Not called up",
+    "family_called_title": "Called up",
+    "family_not_called_title": "Not called up",
     "response_hint": "You are responding for {name}. To respond for another child, switch them in the selector.",
     "resp_maybe": "Maybe",
     "offline_write": "Offline: you cannot respond right now",

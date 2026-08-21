@@ -2646,6 +2646,8 @@
     "notes": "Notas",
     "not_published": "La convocatoria aún no está publicada",
     "decision_discarded": "No convocado",
+    "family_called_title": "Convocados",
+    "family_not_called_title": "No convocados",
     "response_hint": "Respondes por {name}. Para responder por otro hijo, cámbialo en el selector.",
     "resp_maybe": "Quizá",
     "offline_write": "Sin conexión: no puedes responder ahora",

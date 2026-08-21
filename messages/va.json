@@ -2646,6 +2646,8 @@
     "notes": "Notes",
     "not_published": "La convocatòria encara no està publicada",
     "decision_discarded": "No convocat",
+    "family_called_title": "Convocats",
+    "family_not_called_title": "No convocats",
     "response_hint": "Respons per {name}. Per a respondre per un altre fill, canvia'l en el selector.",
     "resp_maybe": "Potser",
     "offline_write": "Sense connexió: no pots respondre ara",
