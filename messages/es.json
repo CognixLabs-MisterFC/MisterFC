@@ -1539,8 +1539,13 @@
     "pending_status": "Enviada",
     "pending_expired": "Caducada"
   },
+  "match_picker": {
+    "title": "Elige un partido",
+    "empty": "No hay partidos en esta temporada."
+  },
   "mis_equipos": {
     "title": "Mis equipos",
+    "pick_team": "Elige un equipo",
     "subtitle": "Equipos donde formas parte del cuerpo técnico.",
     "no_teams": "Aún no eres entrenador de ningún equipo. Pide al coordinador del club que te asigne.",
     "back_to_hub": "Mis equipos",

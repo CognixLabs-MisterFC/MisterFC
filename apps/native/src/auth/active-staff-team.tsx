@@ -17,6 +17,7 @@ import {
   getStoredStaffTeamId,
   setStoredStaffTeamId,
 } from '@/lib/active-staff-team-store';
+import { reportDataError } from '@/lib/report-error';
 import { useApp } from './context';
 
 /**
@@ -63,26 +64,37 @@ export function ActiveStaffTeamProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // E5 — try/catch/finally: sin él, si CUALQUIER await de aquí rechazaba (el
+      // loader, o las llamadas a secure-store), `setLoading(false)` no corría y este
+      // provider quedaba `loading=true` PARA SIEMPRE (spinner eterno en las pantallas
+      // que gatean por él). Ahora la carga SIEMPRE resuelve y el error se ve en Sentry
+      // (antes se tragaba sin rastro), pasando SOLO el recurso ('staff-teams', sin PII).
       setLoading(true);
-      const list = await getStaffTeamsFromClient(supabase, { membershipId, clubId });
-      if (!active) return;
-      setTeams(list);
+      try {
+        const list = await getStaffTeamsFromClient(supabase, { membershipId, clubId }, (e) =>
+          reportDataError('staff-teams', e),
+        );
+        if (!active) return;
+        setTeams(list);
 
-      const stored = await getStoredStaffTeamId();
-      if (!active) return;
-      const { active: chosen, staleCookie } = resolveActivePlayer(
-        list,
-        stored,
-        (team) => team.teamId,
-      );
-      setActiveTeamState(chosen);
-      if (chosen) {
-        if (!stored || staleCookie) await setStoredStaffTeamId(chosen.teamId);
-      } else {
-        await clearStoredStaffTeamId();
+        const stored = await getStoredStaffTeamId();
+        if (!active) return;
+        const { active: chosen, staleCookie } = resolveActivePlayer(
+          list,
+          stored,
+          (team) => team.teamId,
+        );
+        setActiveTeamState(chosen);
+        if (chosen) {
+          if (!stored || staleCookie) await setStoredStaffTeamId(chosen.teamId);
+        } else {
+          await clearStoredStaffTeamId();
+        }
+      } catch (err) {
+        if (active) reportDataError('staff-teams', err);
+      } finally {
+        if (active) setLoading(false);
       }
-
-      if (active) setLoading(false);
     })();
 
     return () => {

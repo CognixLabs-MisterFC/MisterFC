@@ -23,6 +23,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
+import { MatchPickerScreen } from '@/screens/staff/match-picker';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -225,7 +226,9 @@ export function PostMatchScreen({ eventId }: { eventId: string | null }) {
     router.replace({ pathname: '/staff/directo', params: { eventId } });
   }, [eventId, editable, router]);
 
-  if (!eventId) return <EmptyState message={t('post_partido.pick_match')} />;
+  // E7 — Sin eventId (abierta desde el menú): selector de partido en vez de un texto
+  // sin salida (partidos de la temporada, pasados y futuros).
+  if (!eventId) return <MatchPickerScreen target="post-partido" />;
   if (loading) return <LoadingScreen />;
   if (!data) return <EmptyState message={t('post_partido.unavailable')} />;
 

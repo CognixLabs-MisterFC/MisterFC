@@ -1539,8 +1539,13 @@
     "pending_status": "Sent",
     "pending_expired": "Expired"
   },
+  "match_picker": {
+    "title": "Choose a match",
+    "empty": "No matches this season."
+  },
   "mis_equipos": {
     "title": "My teams",
+    "pick_team": "Choose a team",
     "subtitle": "Teams where you are part of the coaching staff.",
     "no_teams": "You're not coaching any team yet. Ask the club coordinator to assign you.",
     "back_to_hub": "My teams",

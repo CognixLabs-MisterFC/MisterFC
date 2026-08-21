@@ -163,6 +163,7 @@ export type {
   MatchPhaseResult,
 } from './phase';
 export * from './week-matches';
+export * from './staff-matches';
 export * from './detail';
 export * from './post-match';
 export * from './family-stats';

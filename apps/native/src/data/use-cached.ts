@@ -3,6 +3,7 @@ import { useFocusEffect } from 'expo-router';
 import { fetchCached, type NativeDbClient } from './client-data';
 import { msSinceLastFetch } from './request-coalescing';
 import { subscribeInvalidation } from './cache-bus';
+import { reportDataError } from '@/lib/report-error';
 
 /**
  * O2 — Hook de LECTURA con caché offline y STALE-WHILE-REVALIDATE.
@@ -77,13 +78,24 @@ export function useCached<T>(
       setFromCache(r.fromCache);
     };
 
-    const r = await fetchCached<T>(key, (sb) => fetcherRef.current(sb), {
-      onRevalidated: apply,
-    });
-    apply(r);
-
-    if (showLoading && mountedRef.current && keyRef.current === key) {
-      setLoading(false);
+    try {
+      const r = await fetchCached<T>(key, (sb) => fetcherRef.current(sb), {
+        onRevalidated: apply,
+      });
+      apply(r);
+    } catch (err) {
+      // `fetchCached` normalmente NO rechaza (readThrough captura el fetcher), pero
+      // la caché (secure-store) puede lanzar antes de ese try; si no lo cubriéramos,
+      // el `finally` no correría y la carga quedaría colgada PARA SIEMPRE (spinner
+      // eterno, E5). Reportamos a Sentry (antes se tragaba sin rastro) usando SOLO
+      // el token de recurso de la key (sin ids → sin PII).
+      reportDataError(`read:${key.split('.')[0]}`, err);
+    } finally {
+      // Pase lo que pase, la carga inicial DEJA de estar cargando: nunca un spinner
+      // que no resuelve.
+      if (showLoading && mountedRef.current && keyRef.current === key) {
+        setLoading(false);
+      }
     }
   }, []);
 

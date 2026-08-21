@@ -192,13 +192,17 @@ export type RosterStatRow = {
 export async function getTeamRosterStatsFromClient(
   supabase: DbClient,
   teamId: string,
+  /** Sumidero de errores del caller (native: Sentry). Un fallo de RLS/Postgres ya
+   *  NO se traga: se reporta por aquí en vez de salir como pantalla vacía (E5). */
+  onError?: (err: unknown) => void,
 ): Promise<RosterStatRow[]> {
   // 1) Roster del equipo (override del día por equipo). RLS team_members = clubmate.
-  const { data: tmRows } = await supabase
+  const { data: tmRows, error: tmErr } = await supabase
     .from('team_members')
     .select('player_id, dorsal_in_team, position_in_team')
     .eq('team_id', teamId)
     .is('left_at', null);
+  if (tmErr) onError?.(tmErr);
   type TM = {
     player_id: string;
     dorsal_in_team: number | null;
@@ -209,10 +213,11 @@ export async function getTeamRosterStatsFromClient(
   const ids = tm.map((r) => r.player_id);
 
   // 2) Identidad SOLO-deportiva (F14C: el jugador tiene SELECT en players_sporting).
-  const { data: spRows } = await supabase
+  const { data: spRows, error: spErr } = await supabase
     .from('players_sporting')
     .select('id, first_name, last_name, dorsal, position_main, foot')
     .in('id', ids);
+  if (spErr) onError?.(spErr);
   type SP = {
     id: string;
     first_name: string;
@@ -224,12 +229,13 @@ export async function getTeamRosterStatsFromClient(
   const spById = new Map(((spRows ?? []) as SP[]).map((s) => [s.id, s]));
 
   // 3) Stats de match del equipo (RLS F14E-6: compañero de equipo).
-  const { data: statRows } = await supabase
+  const { data: statRows, error: statErr } = await supabase
     .from('match_player_stats')
     .select(
       'player_id, started, minutes_played, goals, assists, yellow_cards, red_cards, shots, fouls_committed, fouls_received, penalties_scored, penalties_missed',
     )
     .eq('team_id', teamId);
+  if (statErr) onError?.(statErr);
   const rows = (statRows ?? []) as unknown as PlayerMatchStatRow[];
 
   // Roster para el agregado (nombres desde players_sporting). Cada jugador aparece
@@ -368,19 +374,23 @@ const STAFF_TEAM_ROLE_PRIORITY: Record<string, number> = {
 export async function getStaffTeamsFromClient(
   supabase: SupabaseClient<Database>,
   params: { membershipId: string; clubId: string },
+  /** Sumidero de errores del caller (native: Sentry). Core no depende de Sentry: un
+   *  fallo de RLS/Postgres ya NO se traga sin rastro, se reporta por aquí (E5). */
+  onError?: (err: unknown) => void,
 ): Promise<StaffTeamCard[]> {
   // Solo equipos de la TEMPORADA ACTIVA: es un selector OPERATIVO ("mis equipos",
   // equipo activo del coordinador…). Tras el rollover puede quedar una fila
   // `team_staff` viva en el equipo de la temporada pasada (mismo nombre, otro
   // team_id); sin este filtro el picker la ofrece y las pantallas salen vacías.
   const activeSeason = await getActiveSeasonLabelFromClient(supabase, params.clubId);
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('team_staff')
     .select(
       'team_id, staff_role, teams!inner(id, name, color, format, season, categories!inner(id, club_id, name))',
     )
     .eq('membership_id', params.membershipId)
     .is('left_at', null);
+  if (error) onError?.(error);
 
   type Row = {
     team_id: string;

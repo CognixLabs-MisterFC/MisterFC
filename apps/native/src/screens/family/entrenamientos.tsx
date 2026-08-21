@@ -4,7 +4,7 @@ import {
   getTeamTrainingsFromClient,
   getAttendanceStatsFromClient,
   getPlayerTrainingAttendanceForEventsFromClient,
-  attendanceStatsWindow,
+  getActiveSeasonStartIsoFromClient,
   type TeamTrainingRow,
   type AttendancePlayerStat,
   type AttendanceCode,
@@ -66,7 +66,11 @@ export function EntrenamientosScreen({
     async (sb) => {
       if (!clubId || !teamId) return { trainings: [], stat: null, codes: [] };
       const now = new Date();
-      const { startIso, endIso } = attendanceStatsWindow('season', now);
+      // J3 — Límite inferior = inicio de la TEMPORADA ACTIVA del club (no un corte por
+      // calendario a 1 de agosto, que en agosto excluía la temporada recién jugada y
+      // dejaba el histórico vacío). Mismo criterio que los resolvers desde #477.
+      const startIso = await getActiveSeasonStartIsoFromClient(sb, clubId);
+      const endIso = now.toISOString();
       // Desde el inicio de temporada para tener también el histórico; el límite
       // cubre una temporada completa de entrenos (varios por semana).
       const trainings = await getTeamTrainingsFromClient(
