@@ -75,7 +75,9 @@ export function DireccionJugadoresScreen() {
     (sb) => (clubId ? getClubPlayersFromClient(sb, clubId) : Promise.resolve([])),
   );
 
-  const players = data ?? [];
+  // Referencia estable (no un `data ?? []` nuevo cada render) para que no cambie las
+  // dependencias de los useMemo de abajo (react-hooks/exhaustive-deps).
+  const players = useMemo(() => data ?? [], [data]);
   const teams = useMemo(() => teamsOf(players), [players]);
   const filtered = useMemo(() => {
     const term = foldForSearch(search.trim());

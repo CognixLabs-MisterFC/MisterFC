@@ -66,7 +66,9 @@ export function DireccionCuerpoTecnicoScreen() {
     (sb) => (clubId ? getClubStaffFromClient(sb, clubId) : Promise.resolve([])),
   );
 
-  const coaches = data ?? [];
+  // Referencia estable (no un `data ?? []` nuevo cada render) para que no cambie las
+  // dependencias de los useMemo de abajo (react-hooks/exhaustive-deps).
+  const coaches = useMemo(() => data ?? [], [data]);
   const teams = useMemo(() => teamsOf(coaches), [coaches]);
   const filtered = useMemo(() => {
     const term = foldForSearch(search.trim());
