@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { ScrollView, Text, View } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 import {
   getStaffTeamsFromClient,
   getTeamTrainingsFromClient,
@@ -12,7 +14,12 @@ import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
+import { staffEventTarget } from '@/notifications/feed-target';
 import { ListCard } from './hub-parts';
+
+/** Ruta del detalle de UN entrenamiento (jugadores + sesión) desde su event_id. */
+const trainingTarget = (eventId: string): Href =>
+  staffEventTarget({ id: eventId, type: 'training' }) as Href;
 
 /**
  * O2 Bloque H — "Entrenamiento de hoy" (acceso desde la rejilla del inicio del
@@ -39,6 +46,7 @@ type Data = {
 
 export function SesionDelDiaScreen() {
   const t = useTranslations('');
+  const router = useRouter();
   const { activeClub, theme } = useApp();
   const clubId = activeClub?.club.id ?? null;
   const membershipId = activeClub?.membershipId ?? null;
@@ -64,6 +72,16 @@ export function SesionDelDiaScreen() {
     },
   );
 
+  // E2 — sin pantalla intermedia: si HOY hay exactamente UN entrenamiento, se abre
+  // directamente su detalle (jugadores + sesión), REEMPLAZANDO esta pantalla (así
+  // "atrás" vuelve al inicio, no a la lista). Con VARIOS, esta lista hace de
+  // SELECTOR (tarjetas clicables). Con NINGUNO, se muestra el mensaje "hoy no hay
+  // entrenamiento" (sin lista vacía intermedia).
+  useEffect(() => {
+    if (loading || !data || data.trainings.length !== 1) return;
+    router.replace(trainingTarget(data.trainings[0]!.event_id));
+  }, [loading, data, router]);
+
   if (loading) return <LoadingScreen />;
   const d = data ?? { trainings: [], sessions: [] };
   const sessionById = new Map(d.sessions);
@@ -78,7 +96,11 @@ export function SesionDelDiaScreen() {
         {d.trainings.map((tr) => {
           const session = tr.session_id ? sessionById.get(tr.session_id) ?? null : null;
           return (
-            <ListCard key={tr.event_id} accent={accent}>
+            <ListCard
+              key={tr.event_id}
+              accent={accent}
+              onPress={() => router.push(trainingTarget(tr.event_id))}
+            >
               {/* Entrenamiento. */}
               <View className="flex-row items-center gap-2">
                 <Text className="flex-1 text-sm font-semibold text-[#0F1B2E]" numberOfLines={1}>
