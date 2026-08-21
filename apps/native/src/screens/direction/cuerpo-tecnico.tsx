@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -9,6 +10,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { ListCard, RoleChip } from '@/screens/staff/hub-parts';
+import { DirectoryFilters, type FilterTeam } from '@/ui/directory-filters';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -18,7 +20,36 @@ import { BRAND } from '@/theme';
  * core, club-wide — no el motor de gestión de la web). Al tocar uno se abre su ficha
  * en lectura (`/direction/coach?membershipId`). NADA de mover staff (es web).
  * Candado = AreaGuard('direction'); caché club-scoped.
+ *
+ * D5 — con un cuerpo técnico grande la lista es inmanejable: BÚSQUEDA por nombre y
+ * FILTRO por UN equipo (o "todos"). Filtrado en CLIENTE (la lista ya se trae entera).
+ * Criterio replicado EXACTAMENTE de la web (cuerpo-tecnico/queries.ts): la búsqueda
+ * coincide en el NOMBRE COMPLETO sin distinguir mayúsculas y SENSIBLE a acentos
+ * (`full_name.toLowerCase().includes`); el filtro de equipo casa si ALGUNA de sus
+ * asignaciones es de ese equipo (`assignments.some`); orden alfabético por nombre
+ * (`localeCompare('es', { sensitivity: 'base' })`, insensible a acentos). Los equipos
+ * del filtro (temporada activa) se derivan de las asignaciones abiertas, sin consulta
+ * extra.
  */
+function matchesSearch(c: ClubStaffRow, term: string): boolean {
+  return term.length === 0 || c.fullName.toLowerCase().includes(term);
+}
+
+/** Equipos presentes entre las asignaciones del cuerpo técnico, para el selector. */
+function teamsOf(coaches: ClubStaffRow[]): FilterTeam[] {
+  const byId = new Map<string, FilterTeam>();
+  for (const c of coaches) {
+    for (const a of c.assignments) {
+      if (!byId.has(a.teamId)) {
+        byId.set(a.teamId, { id: a.teamId, name: a.teamName, color: a.teamColor });
+      }
+    }
+  }
+  return [...byId.values()].sort((a, b) =>
+    a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }),
+  );
+}
+
 export function DireccionCuerpoTecnicoScreen() {
   const t = useTranslations('');
   const { activeClub, theme } = useApp();
@@ -26,23 +57,54 @@ export function DireccionCuerpoTecnicoScreen() {
   const clubId = activeClub?.club.id ?? null;
   const accent = theme?.color ?? BRAND.navy;
 
+  const [search, setSearch] = useState('');
+  const [teamId, setTeamId] = useState<string | null>(null);
+
   const { data, fromCache, loading } = useCached<ClubStaffRow[]>(
     clubScopedCacheKey('dir-cuerpo', clubId ?? 'none'),
     (sb) => (clubId ? getClubStaffFromClient(sb, clubId) : Promise.resolve([])),
   );
 
-  if (loading) return <LoadingScreen />;
   const coaches = data ?? [];
+  const teams = useMemo(() => teamsOf(coaches), [coaches]);
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return coaches
+      .filter(
+        (c) =>
+          (teamId == null || c.assignments.some((a) => a.teamId === teamId)) &&
+          matchesSearch(c, term),
+      )
+      .sort((a, b) => a.fullName.localeCompare(b.fullName, 'es', { sensitivity: 'base' }));
+  }, [coaches, search, teamId]);
+
+  if (loading) return <LoadingScreen />;
+
+  const hasFilters = search.trim().length > 0 || teamId != null;
 
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }}>
         <ScreenTitle>{t('dir_cuerpo.title')}</ScreenTitle>
-        {coaches.length === 0 ? (
-          <EmptyState message={t('dir_cuerpo.empty')} />
+
+        {/* D5 — búsqueda por nombre + filtro por equipo (temporada activa). */}
+        <DirectoryFilters
+          search={search}
+          onSearch={setSearch}
+          searchPlaceholder={t('cuerpo_tecnico.filters.search_placeholder')}
+          teamLabel={t('cuerpo_tecnico.filters.team')}
+          teams={teams}
+          selectedTeamId={teamId}
+          onSelectTeam={setTeamId}
+        />
+
+        {filtered.length === 0 ? (
+          <EmptyState
+            message={hasFilters ? t('cuerpo_tecnico.empty_filtered') : t('dir_cuerpo.empty')}
+          />
         ) : (
-          coaches.map((c) => (
+          filtered.map((c) => (
             <ListCard
               key={c.membershipId}
               accent={c.assignments[0]?.teamColor || accent}
