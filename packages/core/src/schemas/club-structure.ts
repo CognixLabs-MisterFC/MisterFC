@@ -173,6 +173,19 @@ export function currentSeason(now: Date = new Date()): string {
 }
 
 /**
+ * Fecha de INICIO (ISO UTC) de una temporada por su label `YYYY-YY`: el 1 de agosto
+ * del año inicial (mismo corte que `currentSeason`). Sirve como límite inferior
+ * "desde el principio de la temporada" (p. ej. el histórico de entrenamientos), en
+ * lugar de un cálculo por calendario que en agosto excluiría la temporada recién
+ * jugada. Si el label no es parseable, cae al año de `currentSeason()` (nunca NaN).
+ */
+export function seasonStartIso(label: string): string {
+  const parsed = Number(label.slice(0, 4));
+  const startYear = Number.isFinite(parsed) && parsed > 0 ? parsed : Number(currentSeason().slice(0, 4));
+  return `${startYear}-08-01T00:00:00.000Z`;
+}
+
+/**
  * 🔒 Rework C (C5) — modelo de temporada explícito.
  *
  * La "temporada actual" del club es la fila `seasons` con `status='active'`

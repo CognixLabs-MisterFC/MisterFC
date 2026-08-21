@@ -8,6 +8,7 @@ import {
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
+import { reportDataError } from '@/lib/report-error';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
@@ -39,7 +40,9 @@ export function TeamDetailScreen({
     teamScopedCacheKey('staff-roster', clubId ?? 'none', teamId ?? 'none'),
     async (sb) => {
       if (!teamId) return [];
-      return getTeamRosterStatsFromClient(sb, teamId);
+      return getTeamRosterStatsFromClient(sb, teamId, (e) =>
+        reportDataError('staff-roster', e),
+      );
     },
   );
 

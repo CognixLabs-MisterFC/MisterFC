@@ -1539,8 +1539,13 @@
     "pending_status": "Enviada",
     "pending_expired": "Caducada"
   },
+  "match_picker": {
+    "title": "Tria un partit",
+    "empty": "No hi ha partits en aquesta temporada."
+  },
   "mis_equipos": {
     "title": "Els meus equips",
+    "pick_team": "Tria un equip",
     "subtitle": "Equips on formes part del cos tècnic.",
     "no_teams": "Encara no entrenes cap equip. Demana al coordinador del club que t'assigne.",
     "back_to_hub": "Els meus equips",

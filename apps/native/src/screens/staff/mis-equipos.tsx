@@ -7,6 +7,7 @@ import {
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
+import { reportDataError } from '@/lib/report-error';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
@@ -41,7 +42,9 @@ export function MisEquiposScreen({ target = 'detail' }: { target?: TeamTarget })
     clubScopedCacheKey('staff-teams', clubId ?? 'none'),
     async (sb) => {
       if (!clubId || !membershipId) return [];
-      return getStaffTeamsFromClient(sb, { membershipId, clubId });
+      return getStaffTeamsFromClient(sb, { membershipId, clubId }, (e) =>
+        reportDataError('staff-teams', e),
+      );
     },
   );
 

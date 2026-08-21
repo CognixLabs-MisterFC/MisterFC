@@ -5,9 +5,11 @@ import {
   getWeekMatchesFromClient,
   getFollowableTeamsFromClient,
   setTeamFollowFromClient,
+  matchPhase,
   clubScopedCacheKey,
   type WeekMatch,
   type FollowableTeam,
+  type MatchPhaseKind,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
@@ -96,26 +98,63 @@ function LiveList({ clubId, detailPathname }: { clubId: string | null; detailPat
   );
 }
 
+/** Fases EN JUEGO (el reloj corre): se muestra el minuto. El resto → etiqueta de fase. */
+const INPLAY_PHASES: ReadonlySet<MatchPhaseKind> = new Set([
+  'first_half',
+  'second_half',
+  'extra_time',
+]);
+
+/** "Ahora" que tickea cada segundo solo con un partido en vivo (patrón del detalle);
+ *  evita `Date.now()` en render (regla de pureza del React Compiler). */
+function useTickingNow(active: boolean): number {
+  const [now, setNow] = useState<number>(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [active]);
+  return now;
+}
+
 function MatchCard({ match, detailPathname }: { match: WeekMatch; detailPathname: string }) {
   const t = useTranslations('');
   const router = useRouter();
+  const live = match.status === 'live';
+  const now = useTickingNow(live);
   const statusLabel =
     match.status === 'live'
       ? t('directos.status_live')
       : match.status === 'closed'
         ? t('directos.status_closed')
         : t('directos.status_scheduled');
-  // Antes del inicio mostramos día + hora (no solo la hora): mismo criterio de
-  // fecha que convocatorias (`toLocaleString`), pero sin los segundos (F #469).
+  // E4 (decisión de Jose) — SIEMPRE día + hora (dd/mm/aaaa hh:mm), pase lo que pase
+  // con el marcador: el marcador ya NO sustituye a la fecha.
   const kickoff = new Date(match.startsAt).toLocaleString(undefined, {
-    day: 'numeric',
-    month: 'numeric',
+    day: '2-digit',
+    month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
   });
-  const score =
-    match.goalsOwn == null ? kickoff : `${match.goalsOwn} - ${match.goalsRival}`;
+  const scoreText =
+    match.goalsOwn != null ? `${match.goalsOwn} - ${match.goalsRival}` : null;
+  // Minuto SOLO si está EN JUEGO (reloj corriendo); en pausa/descanso, la fase.
+  const mp = live
+    ? matchPhase({
+        status: 'live',
+        periods: match.periods,
+        halfDurationMinutes: match.halfDurationMinutes,
+        nowMs: now,
+      })
+    : null;
+  const minuteText = mp
+    ? INPLAY_PHASES.has(mp.phase)
+      ? mp.addedTime > 0
+        ? t('directo.minute_added', { minute: String(mp.minute), added: String(mp.addedTime) })
+        : t('directo.minute', { minute: String(mp.minute) })
+      : t(`directo.phase.${mp.phase}`)
+    : null;
   return (
     <Pressable
       onPress={() => router.push({ pathname: detailPathname, params: { eventId: match.eventId } })}
@@ -130,12 +169,21 @@ function MatchCard({ match, detailPathname }: { match: WeekMatch; detailPathname
           {statusLabel}
         </Text>
       </View>
-      <View className="mt-2 flex-row items-center justify-between">
+      <View className="mt-2 flex-row items-center justify-between gap-2">
         <Text className="flex-1 text-base font-semibold text-[#0F1B2E]" numberOfLines={1}>
           {match.teamName}
           {match.opponentName ? `  ${t('common.vs')}  ${match.opponentName}` : ''}
         </Text>
-        <Text className="text-lg font-bold text-[#0F1B2E]">{score}</Text>
+        {scoreText ? (
+          <Text className="text-lg font-bold text-[#0F1B2E]">{scoreText}</Text>
+        ) : null}
+      </View>
+      {/* SIEMPRE la fecha; si está en juego, además el minuto/fase. */}
+      <View className="mt-1 flex-row items-center justify-between gap-2">
+        <Text className="text-xs text-zinc-400">{kickoff}</Text>
+        {minuteText ? (
+          <Text className="text-xs font-semibold text-red-500">{minuteText}</Text>
+        ) : null}
       </View>
     </Pressable>
   );

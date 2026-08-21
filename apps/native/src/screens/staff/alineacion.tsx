@@ -25,6 +25,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { LineupBoard, type DropTargetLite } from '@/ui/lineup-field';
+import { MatchPickerScreen } from '@/screens/staff/match-picker';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -251,7 +252,9 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
     [lineupId, busyShare, refresh],
   );
 
-  if (!eventId) return <EmptyState message={t('alineacion.pick_match')} />;
+  // E6 — Sin eventId (abierta desde el menú): en vez de un texto sin salida, se
+  // interpone el SELECTOR de partido (partidos de la temporada, pasados y futuros).
+  if (!eventId) return <MatchPickerScreen target="alineacion" />;
   if (loading) return <LoadingScreen />;
   if (!data) return <EmptyState message={t('alineacion.unavailable')} />;
 

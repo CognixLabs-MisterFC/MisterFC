@@ -272,6 +272,16 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
               {detail.teamName} · {detail.categoryName}
             </Text>
           </View>
+          {/* E4 — Fecha del partido (día + hora): la cabecera del entrenador no la pintaba. */}
+          <Text className="mt-0.5 text-center text-xs text-zinc-400">
+            {new Date(detail.startsAt).toLocaleString(undefined, {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </Text>
           <View className="mt-1 flex-row items-center justify-center gap-3">
             <Text className="text-base font-bold text-[#0F1B2E]" numberOfLines={1}>
               {detail.teamName}
