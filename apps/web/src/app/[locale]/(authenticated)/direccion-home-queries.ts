@@ -95,7 +95,11 @@ export async function loadFilterOptions(
     .is('left_at', null);
   type StaffRow = {
     membership_id: string;
-    memberships: { id: string; role: string; club_id: string; profiles: { full_name: string } };
+    // `profiles.full_name` es NULLABLE en BD (un entrenador invitado que aún no ha
+    // completado su perfil no tiene nombre). Antes se tipaba `string` y el sort de
+    // abajo (`a.name.localeCompare`) reventaba en runtime con `Cannot read properties
+    // of null` → 500 del home de dirección. Se tipa nullable y se coalesce.
+    memberships: { id: string; role: string; club_id: string; profiles: { full_name: string | null } };
   };
   const byMembership = new Map<string, CoachOption>();
   for (const r of (staffRows ?? []) as unknown as StaffRow[]) {
@@ -103,7 +107,7 @@ export async function loadFilterOptions(
     if (m.club_id === clubId && COACH_ROLES.has(m.role) && !byMembership.has(m.id)) {
       byMembership.set(m.id, {
         membershipId: m.id,
-        name: m.profiles.full_name,
+        name: m.profiles.full_name ?? '—',
       });
     }
   }
