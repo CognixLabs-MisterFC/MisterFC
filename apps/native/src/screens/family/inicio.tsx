@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import {
@@ -20,6 +20,7 @@ import { useActivePlayer } from '@/auth/active-player';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { supabase } from '@/lib/supabase';
+import { reportDataError, reportDataSignal } from '@/lib/report-error';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
@@ -74,6 +75,7 @@ export function InicioScreen() {
       }
       const now = Date.now();
       const nowIso = new Date(now).toISOString();
+      const toIso = new Date(now + 7 * DAY).toISOString();
       const [unread, pending, upcoming, announcements, feed] = await Promise.all([
         // Punto 11 — nº de CONVERSACIONES con no leídos (1:1 + equipo), derivado del
         // MISMO inbox que la lista y el badge de la pestaña → los tres dicen lo mismo.
@@ -81,7 +83,11 @@ export function InicioScreen() {
           ? getInboxFromClient(sb, user.id).then(countUnreadConversations)
           : Promise.resolve(0),
         getPlayerPendingCallupFromClient(sb, playerIds),
-        getUpcomingEventsFromClient(sb, nowIso, new Date(now + 7 * DAY).toISOString()),
+        // INSTRUMENTACIÓN — sink onError: si la consulta de próximos eventos falla por
+        // RLS/Postgres, deja rastro en Sentry en vez de un `[]` mudo (bug "sin eventos").
+        getUpcomingEventsFromClient(sb, nowIso, toIso, 5, (e) =>
+          reportDataError('upcoming-events', e),
+        ),
         // Punto 7 — SOLO anuncios sin leer; al abrirlos (/anuncios los marca
         // leídos) desaparecen del inicio. Ya no salen en el feed de novedades.
         getUnreadAnnouncementsFromClient(sb, clubId, 5),
@@ -89,9 +95,32 @@ export function InicioScreen() {
         // desaparecen). La pantalla /novedades conserva sus pestañas (#474).
         getUnreadNotificationsFeedFromClient(sb, 10),
       ]);
+      // INSTRUMENTACIÓN — este bloque SOLO corre en fetch FRESCO (readThrough no
+      // ejecuta el fetcher al servir caché) → refleja lo que devuelve la consulta VIVA:
+      // cuántos próximos eventos y el más cercano, con la ventana usada.
+      reportDataSignal('inicio-upcoming', {
+        phase: 'fetch',
+        count: upcoming.length,
+        first: upcoming[0]?.starts_at ?? 'none',
+        from: nowIso.slice(0, 10),
+        to: toIso.slice(0, 10),
+      });
       return { unread, pending, upcoming, announcements, feed };
     },
   );
+
+  // INSTRUMENTACIÓN — señal del valor SERVIDO al render (cada vez que cambia `data`:
+  // primero el de caché, luego el de la revalidación). `fromCache=true` solo en
+  // OFFLINE; el timeline (render vs fetch) revela si lo servido es caché stale o fresco.
+  useEffect(() => {
+    if (loading || !data) return;
+    reportDataSignal('inicio-upcoming', {
+      phase: 'render',
+      fromCache,
+      count: data.upcoming.length,
+      first: data.upcoming[0]?.starts_at ?? 'none',
+    });
+  }, [data, fromCache, loading]);
 
   if (loading) return <LoadingScreen />;
   const d = data ?? { unread: 0, pending: null, upcoming: [], announcements: [], feed: [] };

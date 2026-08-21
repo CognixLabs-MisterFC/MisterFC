@@ -28,14 +28,18 @@ export type PlayerPendingCallup = {
   pendingCount: number;
 } | null;
 
-/** Próximos eventos (no cancelados, aprobados) en un rango ISO. */
+/** Próximos eventos (no cancelados, aprobados) en un rango ISO.
+ *  `onError`: sumidero de errores del caller (native: Sentry). INSTRUMENTACIÓN — un
+ *  fallo de RLS/Postgres dejaba `[]` mudo ("sin eventos próximos") sin rastro; con el
+ *  sink se ve. Core no depende de Sentry (mismo patrón que team-view, #487). */
 export async function getUpcomingEventsFromClient(
   supabase: DbClient,
   fromIso: string,
   toIso: string,
-  limit = 5
+  limit = 5,
+  onError?: (err: unknown) => void
 ): Promise<UpcomingEvent[]> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('events')
     .select('id, title, type, starts_at, team_id, teams(name)')
     .is('cancelled_at', null)
@@ -44,6 +48,7 @@ export async function getUpcomingEventsFromClient(
     .lte('starts_at', toIso)
     .order('starts_at', { ascending: true })
     .limit(limit);
+  if (error) onError?.(error);
   type Ev = {
     id: string;
     title: string;
