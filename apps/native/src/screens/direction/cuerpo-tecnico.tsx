@@ -10,7 +10,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { ListCard, RoleChip } from '@/screens/staff/hub-parts';
-import { DirectoryFilters, type FilterTeam } from '@/ui/directory-filters';
+import { DirectoryFilters, foldForSearch, type FilterTeam } from '@/ui/directory-filters';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -23,16 +23,17 @@ import { BRAND } from '@/theme';
  *
  * D5 — con un cuerpo técnico grande la lista es inmanejable: BÚSQUEDA por nombre y
  * FILTRO por UN equipo (o "todos"). Filtrado en CLIENTE (la lista ya se trae entera).
- * Criterio replicado EXACTAMENTE de la web (cuerpo-tecnico/queries.ts): la búsqueda
- * coincide en el NOMBRE COMPLETO sin distinguir mayúsculas y SENSIBLE a acentos
- * (`full_name.toLowerCase().includes`); el filtro de equipo casa si ALGUNA de sus
- * asignaciones es de ese equipo (`assignments.some`); orden alfabético por nombre
- * (`localeCompare('es', { sensitivity: 'base' })`, insensible a acentos). Los equipos
- * del filtro (temporada activa) se derivan de las asignaciones abiertas, sin consulta
- * extra.
+ * Criterio basado en la web (cuerpo-tecnico/queries.ts): la búsqueda coincide en el
+ * NOMBRE COMPLETO sin distinguir mayúsculas; el filtro de equipo casa si ALGUNA de
+ * sus asignaciones es de ese equipo (`assignments.some`); orden alfabético por nombre
+ * (`localeCompare('es', { sensitivity: 'base' })`, insensible a acentos). A DIFERENCIA
+ * de la web, la búsqueda es INSENSIBLE A ACENTOS: `foldForSearch` normaliza término y
+ * texto → "jose" encuentra "José". El `ilike` de la web tiene el mismo problema y
+ * queda señalado en `foldForSearch` (no se toca la web ahora). Los equipos del filtro
+ * (temporada activa) se derivan de las asignaciones abiertas, sin consulta extra.
  */
-function matchesSearch(c: ClubStaffRow, term: string): boolean {
-  return term.length === 0 || c.fullName.toLowerCase().includes(term);
+function matchesSearch(c: ClubStaffRow, foldedTerm: string): boolean {
+  return foldedTerm.length === 0 || foldForSearch(c.fullName).includes(foldedTerm);
 }
 
 /** Equipos presentes entre las asignaciones del cuerpo técnico, para el selector. */
@@ -68,7 +69,7 @@ export function DireccionCuerpoTecnicoScreen() {
   const coaches = data ?? [];
   const teams = useMemo(() => teamsOf(coaches), [coaches]);
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
+    const term = foldForSearch(search.trim());
     return coaches
       .filter(
         (c) =>

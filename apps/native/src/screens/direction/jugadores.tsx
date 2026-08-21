@@ -11,7 +11,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { ListCard } from '@/screens/staff/hub-parts';
-import { DirectoryFilters, type FilterTeam } from '@/ui/directory-filters';
+import { DirectoryFilters, foldForSearch, type FilterTeam } from '@/ui/directory-filters';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -26,16 +26,20 @@ import { BRAND } from '@/theme';
  * FILTRO por UN equipo (o "todos"). El filtrado es en CLIENTE porque la lista YA se
  * trae entera (una sola lectura club-wide, sin paginación) y 300 filas se filtran de
  * sobra en memoria; con volúmenes mayores habría que paginar en servidor. Criterio
- * de búsqueda replicado de la web (jugadores/queries.ts): coincide en NOMBRE o
- * APELLIDO, sin distinguir mayúsculas y SENSIBLE a acentos (como el `ilike`), orden
- * apellido→nombre (el que ya trae la lectura de core). Los equipos del filtro son los
- * de la temporada ACTIVA: se derivan de la pertenencia abierta (`currentTeamId`, la
- * misma señal que #477/#471), sin consulta extra.
+ * de búsqueda basado en la web (jugadores/queries.ts): coincide en NOMBRE o APELLIDO,
+ * sin distinguir mayúsculas; orden apellido→nombre (el que ya trae la lectura de
+ * core). A DIFERENCIA de la web, es INSENSIBLE A ACENTOS: `foldForSearch` normaliza
+ * el término Y el texto, así "jose" encuentra "José" (en móvil y con nombres
+ * españoles, buscar con tildes es casi inútil). El `ilike` de la web tiene el mismo
+ * problema y queda señalado en `foldForSearch` (no se toca la web ahora). Los equipos
+ * del filtro son los de la temporada ACTIVA: se derivan de la pertenencia abierta
+ * (`currentTeamId`, la misma señal que #477/#471), sin consulta extra.
  */
-function matchesSearch(p: ClubPlayerRow, term: string): boolean {
-  if (term.length === 0) return true;
+function matchesSearch(p: ClubPlayerRow, foldedTerm: string): boolean {
+  if (foldedTerm.length === 0) return true;
   return (
-    p.firstName.toLowerCase().includes(term) || p.lastName.toLowerCase().includes(term)
+    foldForSearch(p.firstName).includes(foldedTerm) ||
+    foldForSearch(p.lastName).includes(foldedTerm)
   );
 }
 
@@ -74,7 +78,7 @@ export function DireccionJugadoresScreen() {
   const players = data ?? [];
   const teams = useMemo(() => teamsOf(players), [players]);
   const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
+    const term = foldForSearch(search.trim());
     return players.filter(
       (p) => (teamId == null || p.currentTeamId === teamId) && matchesSearch(p, term),
     );

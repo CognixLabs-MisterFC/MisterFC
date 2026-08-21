@@ -7,6 +7,26 @@ import { BRAND } from '@/theme';
 export type FilterTeam = { id: string; name: string; color: string | null };
 
 /**
+ * Normaliza texto para BÚSQUEDA: minúsculas + SIN acentos (NFD y elimina los
+ * diacríticos combinantes U+0300–U+036F). Debe aplicarse tanto al término buscado
+ * como al texto sobre el que se busca, para que la coincidencia valga en ambos
+ * sentidos: "jose" encuentra "José" y "José" encuentra "jose". En un móvil (y en un
+ * club español, donde media plantilla lleva tildes) una búsqueda sensible a acentos
+ * es casi inútil. Mismo patrón anti-acentos que ya usa el core (utils/slug,
+ * import/validate).
+ *
+ * NOTA: la WEB tiene el MISMO problema — su búsqueda usa `ilike` sobre first_name/
+ * last_name / full_name (jugadores/queries.ts, cuerpo-tecnico/queries.ts), que es
+ * sensible a acentos (no hay `unaccent`). Queda SEÑALADO; no se toca aquí.
+ */
+export function foldForSearch(s: string): string {
+  return s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+}
+
+/**
  * O2 D4/D5 — Barra de acotado para las listas CLUB-WIDE de dirección (jugadores y
  * cuerpo técnico), inmanejables con 300+ filas: BÚSQUEDA por nombre + FILTRO por UN
  * equipo (o "todos"). El filtrado es en CLIENTE (las listas ya se traen enteras).
