@@ -40,7 +40,8 @@ export type TeamRosterRow = {
   team_member_id: string;
   player_id: string;
   first_name: string;
-  last_name: string;
+  // `players.last_name` es NULLABLE en DB; propaga de RosterShape.players.last_name.
+  last_name: string | null;
   date_of_birth: string;
   dorsal: number | null;
   dorsal_in_team: number | null;
@@ -242,7 +243,9 @@ export async function loadTeamDetail(
     players: {
       id: string;
       first_name: string;
-      last_name: string;
+      // `players.last_name` es NULLABLE en DB (el join `players!inner` garantiza el
+      // objeto, no que last_name tenga valor). El sort ya coalescea con `?? ''`.
+      last_name: string | null;
       date_of_birth: string;
       dorsal: number | null;
       position_main: string | null;

@@ -121,6 +121,10 @@ Regla dura (léela tú-de-futuras-sesiones antes de castear el resultado de una 
 - **`as unknown as X` sigue permitido** donde el generado no puede expresar el *shape*
   (joins anidados de Supabase). **Pero no para cambiar nullability**: el shape se puede
   reetiquetar; el `null` no se puede borrar.
+- **Dónde se cuela el riesgo:** en los casts sobre **vistas** y **relaciones anidadas
+  (joins)**, donde el generador pierde el `NOT NULL` (una vista tipa todas sus columnas
+  como nullable). Los `select` directos a **tablas base** salen fiables — ahí el cast
+  suele ser inocuo. Al revisar un cast, mira primero si la fuente es una vista o un join.
 
 **Por qué existe esta regla (contexto real, no la ignores):** el 500 de producción del
 **21 de agosto de 2026** en el home autenticado lo causó
@@ -128,7 +132,10 @@ Regla dura (léela tú-de-futuras-sesiones antes de castear el resultado de una 
 `string` pero la columna es `text | null`. El cast redeclaraba nullable como no-nulo, el
 typecheck no lo veía, y en runtime `full_name.localeCompare(...)` reventó con
 `Cannot read properties of null`. La forma del cast es idéntica en decenas de sitios del
-repo (deuda conocida, ~51 call-sites): no se auditan sin síntoma, pero **no se añaden más**.
+repo. Se auditaron los 51: **0 bombas**, 2 "feos" (tipo miente pero el consumidor ya
+coalescea) — ambos sobre una vista/join y ya corregidos — y **49 correctos** (selects a
+tablas base, cast inocuo). Los 49 quedan como deuda conocida: no se tocan sin síntoma, pero
+**no se añaden más**.
 
 ### Estilo
 
