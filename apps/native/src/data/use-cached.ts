@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { fetchCached, type NativeDbClient } from './client-data';
 import { msSinceLastFetch } from './request-coalescing';
@@ -14,6 +15,12 @@ import { reportDataError } from '@/lib/report-error';
  *  - REFETCH AL ENFOCAR → al volver a la pantalla se reconsulta en 2º plano
  *    (sin spinner), saltando el primer foco (ya lo cubre la carga inicial) y
  *    respetando un INTERVALO MÍNIMO para no tormentar al alternar pestañas.
+ *  - REFETCH AL VOLVER DE BACKGROUND (invalidación de caché · Parte 2) → al pasar
+ *    la app a `active`, la pantalla ENFOCADA revalida en 2º plano (el mismo
+ *    `run(key,false)` y el mismo intervalo mínimo que el foco). Cubre el hueco de
+ *    quien deja la app abierta en una pantalla y vuelve horas después (p.ej. la
+ *    familia en el detalle de una convocatoria cambiada en la web). Solo la
+ *    enfocada, para no disparar N consultas de todas las pantallas montadas.
  *  - INVALIDACIÓN por escritura → recarga inmediata (ignora el intervalo mínimo).
  *  - `refresh()` fuerza una recarga (lo usa el polling de Directos).
  *
@@ -105,19 +112,43 @@ export function useCached<T>(
   }, [cacheKey, run]);
 
   // Refetch al enfocar: salta el primer foco (la carga inicial ya cargó) y respeta
-  // el intervalo mínimo. En 2º plano (sin spinner).
+  // el intervalo mínimo. En 2º plano (sin spinner). Además, `focusedRef` marca si
+  // ESTA pantalla está enfocada: lo lee el listener de background (abajo) para que
+  // solo revalide la pantalla visible. El cleanup del foco lo pone a false SIEMPRE
+  // (blur o desmontaje), así nunca queda en true tras salir de la pantalla.
   const firstFocus = useRef(true);
+  const focusedRef = useRef(false);
   useFocusEffect(
     useCallback(() => {
+      focusedRef.current = true;
       if (firstFocus.current) {
         firstFocus.current = false;
-        return;
-      }
-      if (msSinceLastFetch(keyRef.current) >= FOCUS_REFETCH_MIN_INTERVAL_MS) {
+      } else if (msSinceLastFetch(keyRef.current) >= FOCUS_REFETCH_MIN_INTERVAL_MS) {
         void run(keyRef.current, false);
       }
+      return () => {
+        focusedRef.current = false;
+      };
     }, [run]),
   );
+
+  // Refetch al VOLVER DE BACKGROUND: solo la pantalla enfocada y con el intervalo
+  // mínimo cumplido → mismo `run(key,false)` que el foco (2º plano, coalesced). Lee
+  // `keyRef.current` (nunca una key vieja tras cambiarla). `run` es estable (deps []),
+  // así que el listener se registra UNA vez y se retira en el cleanup al desmontar:
+  // nunca sobrevive a la pantalla ni revalida keys muertas.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (
+        next === 'active' &&
+        focusedRef.current &&
+        msSinceLastFetch(keyRef.current) >= FOCUS_REFETCH_MIN_INTERVAL_MS
+      ) {
+        void run(keyRef.current, false);
+      }
+    });
+    return () => sub.remove();
+  }, [run]);
 
   // Invalidación por escritura → recarga inmediata (ignora el intervalo mínimo).
   useEffect(() => {
