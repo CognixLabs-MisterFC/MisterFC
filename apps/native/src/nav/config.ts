@@ -183,6 +183,11 @@ const DIRECTION_HIDDEN: MenuDef[] = [
   // D1b-2 — convocatorias del equipo (?teamId) + detalle read-only (?eventId).
   { name: 'convocatorias', labelKey: 'nav.equipos' },
   { name: 'convocatoria', labelKey: 'nav.equipos' },
+  // D1b-3 — entrenamientos del equipo (?teamId) + visor de sesión (?sessionId) +
+  // detalle de entrenamiento sin sesión (params).
+  { name: 'entrenamientos', labelKey: 'nav.equipos' },
+  { name: 'sesion', labelKey: 'nav.equipos' },
+  { name: 'entrenamiento', labelKey: 'nav.equipos' },
 ];
 
 /** Pantallas SOLO-menú por área (sin contar el extra dinámico del coordinador). */
