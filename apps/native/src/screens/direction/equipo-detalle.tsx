@@ -9,10 +9,10 @@ import { BRAND } from '@/theme';
 /**
  * D1b-1 — Detalle de un equipo para DIRECCIÓN (hub, SOLO CONSULTA). Cabecera del
  * equipo + accesos a las secciones read-only, cada una en su ruta /direction con el
- * mismo teamId (reutilizan pantallas ya existentes de familia/staff). En esta entrega
- * solo las tres primeras: Plantilla, Cuerpo técnico y Estadísticas. Las secciones que
- * aún no existen (convocatorias, sesiones, calendario) NO se muestran: llegan en
- * D1b-2/3/4. Todo bajo AreaGuard('direction'); ni un botón de actuar.
+ * mismo teamId (reutilizan pantallas ya existentes de familia/staff). En esta entrega:
+ * Plantilla, Cuerpo técnico, Estadísticas (D1b-1) y Convocatorias (D1b-2). Las
+ * secciones que aún no existen (sesiones, calendario) NO se muestran: llegan en
+ * D1b-3/4. Todo bajo AreaGuard('direction'); ni un botón de actuar.
  */
 export function DireccionEquipoDetalleScreen({
   teamId,
@@ -55,6 +55,12 @@ export function DireccionEquipoDetalleScreen({
             label={t('equipo_detalle.stats')}
             accent={accent}
             onPress={() => go('/direction/equipo-estadisticas')}
+          />
+          <Tile
+            icon="📋"
+            label={t('convocatorias_staff.title')}
+            accent={accent}
+            onPress={() => go('/direction/convocatorias')}
           />
         </View>
       </ScrollView>
