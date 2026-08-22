@@ -458,6 +458,8 @@ export type ClubTeamCard = {
   name: string;
   color: string;
   categoryName: string;
+  /** Modalidad del equipo (p.ej. "f7"/"f11"), para el badge de la lista de dirección. */
+  format: string;
 };
 
 export async function getClubTeamsFromClient(
@@ -467,7 +469,7 @@ export async function getClubTeamsFromClient(
   const activeSeason = await getActiveSeasonLabelFromClient(supabase, clubId);
   const { data } = await supabase
     .from('teams')
-    .select('id, name, color, season, categories!inner(club_id, name)')
+    .select('id, name, color, format, season, categories!inner(club_id, name)')
     .eq('club_id', clubId)
     .eq('season', activeSeason)
     .order('name');
@@ -476,6 +478,7 @@ export async function getClubTeamsFromClient(
     id: string;
     name: string;
     color: string;
+    format: string;
     season: string;
     categories: { club_id: string; name: string };
   };
@@ -486,6 +489,7 @@ export async function getClubTeamsFromClient(
       name: r.name,
       color: r.color,
       categoryName: r.categories.name,
+      format: r.format,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
 }

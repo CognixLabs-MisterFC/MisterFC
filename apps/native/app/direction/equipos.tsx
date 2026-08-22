@@ -1,5 +1,6 @@
-import { Placeholder } from '@/nav/placeholder';
+import { DireccionEquiposScreen } from '@/screens/direction/equipos';
 
+/** D1b-1 — Equipos del director: lista club-wide de la temporada activa. */
 export default function Screen() {
-  return <Placeholder labelKey="nav.equipos" />;
+  return <DireccionEquiposScreen />;
 }
