@@ -70,6 +70,10 @@ export type DatabaseOverrides = {
       };
 
       // (2) Columnas nullable de RETURNS TABLE(...) que el generador marca no-null.
+      audit_get_conversation: {
+        // `messages.read_at` es NULL mientras el mensaje no está leído.
+        Returns: { read_at: string | null }[];
+      };
       get_player_medical: {
         Returns: {
           allergies: string | null;
@@ -102,6 +106,21 @@ export type DatabaseOverrides = {
           owner_name: string | null;
           owner_profile_id: string | null;
         }[];
+      };
+      promotion_candidates: {
+        // `players.dorsal` y `players.last_name` son nullable.
+        Returns: {
+          dorsal: number | null;
+          last_name: string | null;
+        }[];
+      };
+      promotion_conflicts: {
+        // Proyecta `events.ends_at` CRUDO (nullable); el coalesce vive solo en el WHERE.
+        Returns: { ends_at: string | null }[];
+      };
+      replace_play_with_proposal: {
+        // `play_name := v_prop.name` donde v_prop es plays%rowtype (plays.name nullable).
+        Returns: { play_name: string | null }[];
       };
     };
   };

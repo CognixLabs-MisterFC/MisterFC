@@ -29,6 +29,13 @@ type Assert<T extends true> = T;
 /** true solo si T ⊆ string (rechaza null/undefined): para las aserciones de preservación. */
 type IsPlainString<T> = [T] extends [string] ? true : false;
 
+/** true solo si T ⊆ (number | null | undefined) y además incluye null (columnas numéricas nullable). */
+type IsNumberOrNull<T> = [T] extends [number | null | undefined]
+  ? [null] extends [T]
+    ? true
+    : false
+  : false;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // GRUPO A — 7 params de RPC que aceptan NULL (el generador emite `string`).
 // ─────────────────────────────────────────────────────────────────────────────
@@ -43,9 +50,14 @@ export type _AssertGroupA = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GRUPO B — 13 columnas de RETURNS TABLE(...) nullable marcadas no-null.
+// GRUPO B — 18 columnas de RETURNS TABLE(...) nullable marcadas no-null.
 // ─────────────────────────────────────────────────────────────────────────────
 export type _AssertGroupB = [
+  Assert<IsStringOrNull<Fn['audit_get_conversation']['Returns'][number]['read_at']>>,
+  Assert<IsNumberOrNull<Fn['promotion_candidates']['Returns'][number]['dorsal']>>,
+  Assert<IsStringOrNull<Fn['promotion_candidates']['Returns'][number]['last_name']>>,
+  Assert<IsStringOrNull<Fn['promotion_conflicts']['Returns'][number]['ends_at']>>,
+  Assert<IsStringOrNull<Fn['replace_play_with_proposal']['Returns'][number]['play_name']>>,
   Assert<IsStringOrNull<Fn['get_player_medical']['Returns'][number]['allergies']>>,
   Assert<IsStringOrNull<Fn['get_player_medical']['Returns'][number]['medication']>>,
   Assert<IsStringOrNull<Fn['get_player_medical']['Returns'][number]['medical_conditions']>>,

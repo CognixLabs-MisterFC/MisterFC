@@ -139,7 +139,7 @@ export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
   }
 
   function candidateLabel(c: PromotionCandidate): string {
-    const name = `${c.first_name} ${c.last_name}`.trim();
+    const name = `${c.first_name} ${c.last_name ?? ''}`.trim();
     const team = c.base_team_name ? ` · ${c.base_team_name}` : '';
     const dorsal = c.dorsal != null ? ` #${c.dorsal}` : '';
     return `${name}${dorsal}${team}`;
@@ -154,7 +154,7 @@ export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
   ).sort((a, b) => a.localeCompare(b, locale, { sensitivity: 'base' }));
   const q = search.trim().toLowerCase();
   const filtered = candidates.filter((c) => {
-    const name = `${c.first_name} ${c.last_name}`.toLowerCase();
+    const name = `${c.first_name} ${c.last_name ?? ''}`.toLowerCase();
     return (
       (q === '' || name.includes(q)) &&
       (teamFilter === '' || c.base_team_name === teamFilter)
