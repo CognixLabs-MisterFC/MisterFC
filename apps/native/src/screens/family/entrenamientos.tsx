@@ -49,16 +49,29 @@ type Data = {
 export function EntrenamientosScreen({
   teamId,
   teamName,
+  showAttendance = true,
+  sessionPathname = '/family/sesion',
+  trainingPathname = '/family/entrenamiento',
 }: {
   teamId: string | null;
   teamName: string | null;
+  /**
+   * D1b-3 — DIRECCIÓN: la asistencia es player-scoped (activePlayer) y a un director
+   * no le aplica. Con `false` NO se consulta la asistencia (nada atado a activePlayer)
+   * y NO se pinta la sección de resumen (ni ceros ni estado vacío). DEFAULT `true` →
+   * familia IDÉNTICA.
+   */
+  showAttendance?: boolean;
+  /** D1b-3 — destino del detalle según área (familia por defecto). */
+  sessionPathname?: string;
+  trainingPathname?: string;
 }) {
   const t = useTranslations('');
   const { activeClub, theme } = useApp();
   const { activePlayer } = useActivePlayer();
   const router = useRouter();
   const clubId = activeClub?.club.id ?? null;
-  const playerId = activePlayer?.id ?? null;
+  const playerId = showAttendance ? (activePlayer?.id ?? null) : null;
   const accent = theme?.color ?? BRAND.navy;
 
   const { data, fromCache, loading } = useCached<Data>(
@@ -127,12 +140,12 @@ export function EntrenamientosScreen({
       : {};
     if (r.session_id) {
       router.push({
-        pathname: '/family/sesion',
+        pathname: sessionPathname,
         params: { sessionId: r.session_id, ...extra },
       });
     } else {
       router.push({
-        pathname: '/family/entrenamiento',
+        pathname: trainingPathname,
         params: {
           title: r.title ?? '',
           startsAt: r.starts_at,
@@ -150,34 +163,40 @@ export function EntrenamientosScreen({
         <Text className="text-xl font-bold text-[#0F1B2E]">{t('entrenamientos.title')}</Text>
         {teamName ? <Text className="-mt-1 text-xs text-zinc-400">{teamName}</Text> : null}
 
-        {/* 1 · RESUMEN DE LA TEMPORADA — reusa el cálculo de asistencia (F4.8). */}
-        <Text className="pt-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-          {t('entrenamientos.section_summary')}
-        </Text>
-        {!d.stat || d.stat.total === 0 ? (
-          <EmptyState message={t('asistencia.empty')} />
-        ) : (
+        {/* 1 · RESUMEN DE LA TEMPORADA — reusa el cálculo de asistencia (F4.8). D1b-3:
+            la asistencia es player-scoped → en dirección (showAttendance=false) la
+            sección NO se pinta (ni ceros ni estado vacío). */}
+        {showAttendance ? (
           <>
-            <View className="items-center rounded-2xl border border-zinc-200 p-4">
-              <Text className="text-4xl font-bold" style={{ color: accent }}>
-                {Math.round(d.stat.pct_present)}%
-              </Text>
-              <Text className="mt-1 text-xs text-zinc-400">{t('asistencia.pct_present')}</Text>
-              <Text className="mt-1 text-xs text-zinc-400">
-                {t('asistencia.total', { n: String(d.stat.total) })}
-              </Text>
-            </View>
-            <View className="rounded-2xl border border-zinc-200 p-4">
-              <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
-                {t('asistencia.breakdown')}
-              </Text>
-              <StatLine label={t('asistencia.codes.presente')} value={d.stat.present} color="#16a34a" />
-              <StatLine label={t('asistencia.justified')} value={d.stat.justified} color="#d97706" />
-              <StatLine label={t('asistencia.codes.entreno_diferenciado')} value={d.stat.partial} color="#0284c7" />
-              <StatLine label={t('asistencia.codes.ausente')} value={d.stat.unjustified} color="#dc2626" />
-            </View>
+            <Text className="pt-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+              {t('entrenamientos.section_summary')}
+            </Text>
+            {!d.stat || d.stat.total === 0 ? (
+              <EmptyState message={t('asistencia.empty')} />
+            ) : (
+              <>
+                <View className="items-center rounded-2xl border border-zinc-200 p-4">
+                  <Text className="text-4xl font-bold" style={{ color: accent }}>
+                    {Math.round(d.stat.pct_present)}%
+                  </Text>
+                  <Text className="mt-1 text-xs text-zinc-400">{t('asistencia.pct_present')}</Text>
+                  <Text className="mt-1 text-xs text-zinc-400">
+                    {t('asistencia.total', { n: String(d.stat.total) })}
+                  </Text>
+                </View>
+                <View className="rounded-2xl border border-zinc-200 p-4">
+                  <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                    {t('asistencia.breakdown')}
+                  </Text>
+                  <StatLine label={t('asistencia.codes.presente')} value={d.stat.present} color="#16a34a" />
+                  <StatLine label={t('asistencia.justified')} value={d.stat.justified} color="#d97706" />
+                  <StatLine label={t('asistencia.codes.entreno_diferenciado')} value={d.stat.partial} color="#0284c7" />
+                  <StatLine label={t('asistencia.codes.ausente')} value={d.stat.unjustified} color="#dc2626" />
+                </View>
+              </>
+            )}
           </>
-        )}
+        ) : null}
 
         {/* 2 · PRÓXIMOS 5 — sin asistencia (aún no celebrados). */}
         <Text className="pt-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
