@@ -373,7 +373,9 @@ export async function resolvePlayProposal(
   if (!result) return { error: 'not_found' };
 
   const originalId = result.original_id as string;
-  const playName = (result.play_name as string | null) ?? '';
+  // `play_name` ya es `string | null` (database.overrides: plays.name nullable) → sin
+  // cast manual; coalesce a '' para el nombre en las notificaciones.
+  const playName = result.play_name ?? '';
   const ownerId = result.proposal_owner_id as string;
 
   // Notificaciones (no bloquean la aprobación si el bus falla). Admin client para

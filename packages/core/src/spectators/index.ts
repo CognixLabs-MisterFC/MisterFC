@@ -13,11 +13,14 @@ import type { FollowedPlayer } from '../auth/spectator';
  */
 type DbClient = SupabaseClient<Database>;
 
-/** Fila del listado de seguidores (forma cruda del RPC list_player_spectators). */
+/** Fila del listado de seguidores (forma cruda del RPC list_player_spectators).
+ * `full_name` y `email` son NULLABLE (así lo tipa el RPC vía database.overrides):
+ * un seguidor invitado puede no haber completado su perfil. El tipo lo refleja para
+ * que el consumidor esté OBLIGADO a manejar el null (no por casualidad de un `?.`). */
 export type PlayerSpectator = {
   spectator_profile_id: string;
-  full_name: string;
-  email: string;
+  full_name: string | null;
+  email: string | null;
   created_at: string;
 };
 
@@ -95,7 +98,10 @@ export async function getPlayerSpectatorsFromClient(
   const { data } = await supabase.rpc('list_player_spectators', {
     p_player_id: playerId,
   });
-  return (data ?? []) as PlayerSpectator[];
+  // Sin cast: la forma del RPC (con nullability correcta vía database.overrides) ya
+  // encaja en PlayerSpectator. Antes `as PlayerSpectator[]` ocultaba que full_name/
+  // email son nullable (el patrón que causó el 500 de producción).
+  return data ?? [];
 }
 
 export type RemoveSpectatorResult =

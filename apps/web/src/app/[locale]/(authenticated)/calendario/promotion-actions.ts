@@ -22,7 +22,10 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 export type PromotionCandidate = {
   player_id: string;
   first_name: string;
-  last_name: string;
+  // `players.last_name` es NULLABLE (el RPC promotion_candidates lo devuelve null si
+  // el jugador no tiene apellido). Antes se tipaba `string` y el picker interpolaba
+  // el literal "null" en el nombre; ahora el tipo obliga a coalescer.
+  last_name: string | null;
   dorsal: number | null;
   base_team_name: string | null;
   base_category_name: string | null;
