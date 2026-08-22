@@ -172,6 +172,8 @@ const DIRECTION_HIDDEN: MenuDef[] = [
   // O2-11a-2 — fichas club-wide (alcanzadas por navegación con parámetros).
   { name: 'jugador', labelKey: 'nav.jugadores' },
   { name: 'coach', labelKey: 'nav.cuerpo_tecnico' },
+  // D1a — detalle de un directo (?eventId), alcanzado desde la card del listado.
+  { name: 'directo', labelKey: 'nav.directo' },
 ];
 
 /** Pantallas SOLO-menú por área (sin contar el extra dinámico del coordinador). */
