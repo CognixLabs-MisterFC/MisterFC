@@ -34,6 +34,7 @@ function team(id: string, name: string, clubId = CLUB) {
     id,
     name,
     color: '#111',
+    format: 'f7',
     season: '2025/26',
     categories: { club_id: clubId, name: 'Alevín' },
   };

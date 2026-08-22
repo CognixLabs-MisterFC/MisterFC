@@ -174,6 +174,12 @@ const DIRECTION_HIDDEN: MenuDef[] = [
   { name: 'coach', labelKey: 'nav.cuerpo_tecnico' },
   // D1a — detalle de un directo (?eventId), alcanzado desde la card del listado.
   { name: 'directo', labelKey: 'nav.directo' },
+  // D1b-1 — detalle de un equipo (?teamId) + sus 3 secciones read-only, alcanzadas
+  // desde la lista de Equipos (href:null: no salen en la barra).
+  { name: 'equipo', labelKey: 'nav.equipos' },
+  { name: 'equipo-plantilla', labelKey: 'nav.equipos' },
+  { name: 'equipo-cuerpo-tecnico', labelKey: 'nav.equipos' },
+  { name: 'equipo-estadisticas', labelKey: 'nav.equipos' },
 ];
 
 /** Pantallas SOLO-menú por área (sin contar el extra dinámico del coordinador). */
