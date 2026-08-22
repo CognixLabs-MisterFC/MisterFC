@@ -5150,5 +5150,9 @@
   "dir_jugadores": {
     "empty": "No hay jugadores",
     "title": "Jugadores del club"
+  },
+  "active_player": {
+    "removed_title": "Jugador no disponible",
+    "removed_body": "Este jugador ya no está disponible."
   }
 }

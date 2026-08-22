@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -20,7 +21,21 @@ import {
   setStoredActiveClubId,
 } from '@/lib/active-club-store';
 import { NEUTRAL_COLOR, type ClubTheme } from '@/theme';
+import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { useSession } from './session';
+
+/**
+ * Invalidación de caché · Parte 1 — Refresco de providers al volver de background.
+ * El móvil mantiene la app "caliente" semanas y el arranque en frío nunca llega, así
+ * que rol/membership/clubs se quedaban congelados toda la sesión. `useForegroundPoll`
+ * (el mismo patrón de mensajes/directos) recarga en 2º plano al resumir y cada
+ * intervalo; el throttle deja pasar como mucho una recarga por ventana. 60 s: estos
+ * datos cambian en escala de horas (acción de admin en web), así que 60 s colapsa la
+ * ventana de "días" a ≤1 min con coste despreciable, y absorbe el alternado rápido de
+ * apps (volver antes de 60 s no recarga). La recarga es SILENCIOSA (no toca `loading`)
+ * para no parpadear el splash/AreaGuard en cada ciclo.
+ */
+const PROVIDER_REFRESH_MIN_INTERVAL_MS = 60_000;
 
 /**
  * Tipo de usuario tras login:
@@ -71,61 +86,92 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const userId = user?.id ?? null;
 
+  // No escribir estado tras desmontar (guard del refresco en 2º plano).
+  const mountedRef = useRef(true);
   useEffect(() => {
-    let active = true;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+  // Sello del último load REAL (frío o refresco): base del throttle de 60 s.
+  const lastLoadRef = useRef(0);
 
-    // Todo el trabajo (incluido el reset sin sesión) va dentro del IIFE async:
-    // React Compiler prohíbe setState SÍNCRONO en el cuerpo del effect.
-    (async () => {
+  // Carga del contexto. `silent=false` (frío / cambio de userId) muestra `loading`
+  // como siempre; `silent=true` (refresco al resumir) recarga por detrás sin tocar
+  // `loading`. `alive()` descarta escrituras de una corrida obsoleta (desmontaje o
+  // cambio de userId). Comportamiento en frío IDÉNTICO al anterior.
+  const runLoad = useCallback(
+    async (silent: boolean, alive: () => boolean) => {
       if (!userId) {
-        if (!active) return;
+        if (!alive()) return;
         setKind('none');
         setProfileName(null);
         setClubs([]);
         setActiveClubState(null);
-        setLoading(false);
+        if (!silent) setLoading(false);
         return;
       }
 
-      setLoading(true);
+      if (!silent) setLoading(true);
 
-      const { data: profileRow } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', userId)
-        .maybeSingle();
+      try {
+        const { data: profileRow } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', userId)
+          .maybeSingle();
 
-      const userClubs = await getCurrentUserClubsFromClient(supabase);
+        const userClubs = await getCurrentUserClubsFromClient(supabase);
 
-      if (!active) return;
+        if (!alive()) return;
 
-      setProfileName(profileRow?.full_name ?? null);
-      setClubs(userClubs);
+        setProfileName(profileRow?.full_name ?? null);
+        setClubs(userClubs);
 
-      if (userClubs.length > 0) {
-        const stored = await getStoredActiveClubId();
-        if (!active) return;
-        const { active: chosen } = resolveActiveClub(userClubs, stored);
-        if (chosen) {
-          setActiveClubState(chosen);
-          await setStoredActiveClubId(chosen.club.id);
+        if (userClubs.length > 0) {
+          const stored = await getStoredActiveClubId();
+          if (!alive()) return;
+          const { active: chosen } = resolveActiveClub(userClubs, stored);
+          if (chosen) {
+            setActiveClubState(chosen);
+            await setStoredActiveClubId(chosen.club.id);
+          }
+          setKind('member');
+        } else {
+          // Sin clubs: ¿seguidor puro? (detección PR-1; carcasa en PR-2).
+          const spectator = await isSpectatorFromClient(supabase);
+          if (!alive()) return;
+          setActiveClubState(null);
+          setKind(spectator ? 'spectator' : 'none');
         }
-        setKind('member');
-      } else {
-        // Sin clubs: ¿seguidor puro? (detección PR-1; carcasa en PR-2).
-        const spectator = await isSpectatorFromClient(supabase);
-        if (!active) return;
-        setActiveClubState(null);
-        setKind(spectator ? 'spectator' : 'none');
+
+        lastLoadRef.current = Date.now();
+      } finally {
+        if (!silent && alive()) setLoading(false);
       }
+    },
+    [userId],
+  );
 
-      if (active) setLoading(false);
+  // Carga inicial + cambio de userId (con spinner, como antes). Va en un IIFE async
+  // (la setState queda dentro de un callback, no en el cuerpo del effect).
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      await runLoad(false, () => active);
     })();
-
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [runLoad]);
+
+  // Refresco silencioso al volver de background / en foreground, throttled a 60 s.
+  const refresh = useCallback(() => {
+    if (Date.now() - lastLoadRef.current < PROVIDER_REFRESH_MIN_INTERVAL_MS) return;
+    void runLoad(true, () => mountedRef.current);
+  }, [runLoad]);
+  useForegroundPoll(refresh, PROVIDER_REFRESH_MIN_INTERVAL_MS);
 
   const setActiveClub = useCallback(
     async (clubId: string) => {

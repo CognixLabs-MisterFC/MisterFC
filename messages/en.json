@@ -5150,5 +5150,9 @@
   "dir_jugadores": {
     "empty": "No players",
     "title": "Club players"
+  },
+  "active_player": {
+    "removed_title": "Player unavailable",
+    "removed_body": "This player is no longer available."
   }
 }
