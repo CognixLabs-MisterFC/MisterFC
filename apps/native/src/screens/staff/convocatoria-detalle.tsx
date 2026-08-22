@@ -6,6 +6,7 @@ import {
   calledUpOverflow,
   clearCallupDecisionFromClient,
   eventScopedCacheKey,
+  getSharedLineupForEventFromClient,
   getStaffCallupDetailFromClient,
   maxCalledUpFor,
   upsertCallupDecisionFromClient,
@@ -15,6 +16,7 @@ import {
   type CallupPlayerRow,
   type CallupResponseRow,
   type Role,
+  type SharedLineupView,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { callServerEndpoint } from '@/lib/server-api';
@@ -26,6 +28,7 @@ import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { PublishCallupSheet } from './publish-callup-sheet';
+import { SharedLineupCard } from '@/screens/family/shared-lineup-card';
 
 /**
  * O2-7b-1/7b-2 — Detalle de convocatoria (staff): VER RESPUESTAS de disponibilidad +
@@ -56,8 +59,17 @@ type CallupView = {
 
 export function ConvocatoriaStaffDetalleScreen({
   eventId,
+  readOnly = false,
 }: {
   eventId: string | null;
+  /**
+   * D1b-2 — SOLO CONSULTA (dirección): oculta TODA la barra de acciones (convocar/
+   * descartar, limpiar, publicar/republicar, acceso a alineación-editor y a directo)
+   * y muestra en su lugar el estado convocado/no-convocado + la alineación oficial
+   * COMPARTIDA (si existe). DEFAULT `false` → comportamiento IDÉNTICO al de staff: si
+   * alguien olvida el prop, staff sigue funcionando exactamente igual que hoy.
+   */
+  readOnly?: boolean;
 }) {
   const t = useTranslations('');
   const { activeClub, theme } = useApp();
@@ -97,6 +109,25 @@ export function ConvocatoriaStaffDetalleScreen({
       };
     },
   );
+
+  // D1b-2 — Alineación oficial COMPARTIDA, SOLO en modo consulta (dirección). Con
+  // readOnly=false (staff) la KEY es inerte (`shared-lineup.none`) y el fetcher
+  // devuelve null: NI se consulta NI se toca la caché real `shared-lineup.<eventId>`
+  // (la misma que usa el detalle de familia) → staff intacto. La RLS deja leer al
+  // director la alineación oficial vía `user_can_manage_lineup` (admin/director).
+  const { data: shared } = useCached<SharedLineupView | null>(
+    readOnly && eventId
+      ? eventScopedCacheKey('shared-lineup', eventId)
+      : 'shared-lineup.none',
+    (sb) =>
+      readOnly && eventId
+        ? getSharedLineupForEventFromClient(sb, eventId)
+        : Promise.resolve(null),
+  );
+  // Se pinta SOLO si hay titulares COLOCADOS en el campo (misma regla que familia);
+  // si no, la sección no aparece (sin estado vacío ni mensaje).
+  const sharedField =
+    shared && shared.positions.some((p) => p.location === 'field') ? shared : null;
 
   const canWrite = !!data?.canManage && online;
 
@@ -207,44 +238,48 @@ export function ConvocatoriaStaffDetalleScreen({
           })}
         </Text>
         {/* O2-8a/9a — accesos al partido: alineación (pintar; editar en 8b) y directo
-            (control de reloj/estado; eventos en 9b). */}
-        <View className="mt-2 flex-row flex-wrap gap-2">
-          <Pressable
-            onPress={() =>
-              router.push({
-                pathname: '/staff/alineacion',
-                params: { eventId: data.event.id },
-              })
-            }
-            className="self-start rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
-          >
-            <Text className="text-xs font-medium" style={{ color: accent }}>
-              {t('convocatorias_staff.view_lineup')}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() =>
-              router.push({
-                pathname: '/staff/directo',
-                params: { eventId: data.event.id },
-              })
-            }
-            className="self-start rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
-          >
-            <Text className="text-xs font-medium" style={{ color: accent }}>
-              {t('convocatorias_staff.open_live')}
-            </Text>
-          </Pressable>
-        </View>
+            (control de reloj/estado; eventos en 9b). D1b-2: FUERA en modo consulta
+            (el director no entra al editor ni al control del directo). */}
+        {!readOnly ? (
+          <View className="mt-2 flex-row flex-wrap gap-2">
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/staff/alineacion',
+                  params: { eventId: data.event.id },
+                })
+              }
+              className="self-start rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
+            >
+              <Text className="text-xs font-medium" style={{ color: accent }}>
+                {t('convocatorias_staff.view_lineup')}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/staff/directo',
+                  params: { eventId: data.event.id },
+                })
+              }
+              className="self-start rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
+            >
+              <Text className="text-xs font-medium" style={{ color: accent }}>
+                {t('convocatorias_staff.open_live')}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
 
-      {/* Aviso: sin permiso (gate server-side) o sin conexión (write-guard). */}
-      {!data.canManage ? (
+      {/* Aviso: sin permiso (gate server-side) o sin conexión (write-guard). D1b-2:
+          en modo consulta no hay escritura → no aplica ningún banner de acción. */}
+      {!readOnly && !data.canManage ? (
         <Banner text={t('convocatorias_staff.no_permission')} />
-      ) : !online ? (
+      ) : !readOnly && !online ? (
         <Banner text={t('convocatorias_staff.offline_write')} />
       ) : null}
-      {overLimit ? (
+      {!readOnly && overLimit ? (
         <View className="bg-amber-50 px-4 py-2">
           <Text className="text-center text-xs text-amber-700">
             {t('convocatorias_staff.over_limit', {
@@ -260,8 +295,8 @@ export function ConvocatoriaStaffDetalleScreen({
       ) : null}
 
       {/* 7b-2 — publicar / republicar. Solo lo ve quien puede gestionar (gate real
-          = RLS); write-guard: sin red → deshabilitado. */}
-      {data.canManage ? (
+          = RLS); write-guard: sin red → deshabilitado. D1b-2: FUERA en consulta. */}
+      {!readOnly && data.canManage ? (
         <View className="px-4 pb-1 pt-1">
           {!data.published ? (
             <Pressable
@@ -309,6 +344,14 @@ export function ConvocatoriaStaffDetalleScreen({
           data={roster}
           keyExtractor={(p) => p.id}
           contentContainerStyle={{ paddingVertical: 8, paddingBottom: 40 }}
+          // D1b-2 — alineación oficial compartida (solo consulta), encima del roster.
+          ListHeaderComponent={
+            readOnly && sharedField ? (
+              <View className="px-4 pt-1 pb-2">
+                <SharedLineupCard data={sharedField} accent={accent} />
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => {
             const decision = data.decisions[item.id]?.decision ?? null;
             // Derivado: sin decisión explícita = convocado por defecto.
@@ -345,53 +388,80 @@ export function ConvocatoriaStaffDetalleScreen({
                   {/* Respuesta de la familia (ver respuestas). */}
                   <ResponseChip status={response} />
                 </View>
-                <View className="mt-2 flex-row items-center gap-1.5">
-                  <DecisionButton
-                    label={t('convocatorias_staff.call_up')}
-                    on={!isDiscarded}
-                    color="#16a34a"
-                    disabled={!canWrite || isBusy}
-                    onPress={() => onDecide(item.id, 'called_up')}
-                  />
-                  <DecisionButton
-                    label={t('convocatorias_staff.discard')}
-                    on={isDiscarded}
-                    color="#3f3f46"
-                    disabled={!canWrite || isBusy}
-                    onPress={() => onDecide(item.id, 'discarded')}
-                  />
-                  {decision != null ? (
-                    <Pressable
-                      onPress={() => onClear(item.id)}
-                      disabled={!canWrite || isBusy}
-                      className="rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
-                      style={{ opacity: !canWrite || isBusy ? 0.4 : 1 }}
+                {readOnly ? (
+                  // D1b-2 — consulta: estado convocado/no-convocado, sin acciones.
+                  <View className="mt-2 flex-row">
+                    <View
+                      className="rounded-full px-2.5 py-0.5"
+                      style={{
+                        backgroundColor: isDiscarded ? '#f4f4f5' : '#16a34a',
+                      }}
                     >
-                      <Text className="text-xs text-zinc-500">
-                        {t('convocatorias_staff.clear')}
+                      <Text
+                        className={
+                          isDiscarded
+                            ? 'text-[11px] font-medium text-zinc-500'
+                            : 'text-[11px] font-semibold text-white'
+                        }
+                      >
+                        {isDiscarded
+                          ? t('convocatorias_staff.status_not_called')
+                          : t('convocatorias_staff.status_called')}
                       </Text>
-                    </Pressable>
-                  ) : null}
-                </View>
+                    </View>
+                  </View>
+                ) : (
+                  <View className="mt-2 flex-row items-center gap-1.5">
+                    <DecisionButton
+                      label={t('convocatorias_staff.call_up')}
+                      on={!isDiscarded}
+                      color="#16a34a"
+                      disabled={!canWrite || isBusy}
+                      onPress={() => onDecide(item.id, 'called_up')}
+                    />
+                    <DecisionButton
+                      label={t('convocatorias_staff.discard')}
+                      on={isDiscarded}
+                      color="#3f3f46"
+                      disabled={!canWrite || isBusy}
+                      onPress={() => onDecide(item.id, 'discarded')}
+                    />
+                    {decision != null ? (
+                      <Pressable
+                        onPress={() => onClear(item.id)}
+                        disabled={!canWrite || isBusy}
+                        className="rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
+                        style={{ opacity: !canWrite || isBusy ? 0.4 : 1 }}
+                      >
+                        <Text className="text-xs text-zinc-500">
+                          {t('convocatorias_staff.clear')}
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                )}
               </View>
             );
           }}
         />
       )}
 
-      {/* 7b-2 — hoja de publicar (autónoma: hora + lugar + opcionales). */}
-      <PublishCallupSheet
-        visible={sheetOpen}
-        eventId={data.event.id}
-        matchStartsAt={data.event.starts_at}
-        meta={data.meta}
-        accent={accent}
-        onClose={() => setSheetOpen(false)}
-        onPublished={() => {
-          setSheetOpen(false);
-          refresh();
-        }}
-      />
+      {/* 7b-2 — hoja de publicar (autónoma: hora + lugar + opcionales). D1b-2: no se
+          monta en consulta (no hay CTA que la abra). */}
+      {!readOnly ? (
+        <PublishCallupSheet
+          visible={sheetOpen}
+          eventId={data.event.id}
+          matchStartsAt={data.event.starts_at}
+          meta={data.meta}
+          accent={accent}
+          onClose={() => setSheetOpen(false)}
+          onPublished={() => {
+            setSheetOpen(false);
+            refresh();
+          }}
+        />
+      ) : null}
     </View>
   );
 }

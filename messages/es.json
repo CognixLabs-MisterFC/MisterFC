@@ -4942,6 +4942,8 @@
     "published_state": "Convocatoria publicada",
     "title": "Convocatorias",
     "call_up": "Convocar",
+    "status_called": "Convocado",
+    "status_not_called": "No convocado",
     "called_summary": "{called}/{total} convocados",
     "list_empty": "No hay partidos próximos",
     "meeting_address": "Dirección (opcional)",

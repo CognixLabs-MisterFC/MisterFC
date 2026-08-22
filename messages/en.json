@@ -4942,6 +4942,8 @@
     "published_state": "Callup published",
     "title": "Call-ups",
     "call_up": "Call up",
+    "status_called": "Called up",
+    "status_not_called": "Not called up",
     "called_summary": "{called}/{total} called up",
     "list_empty": "No upcoming matches",
     "meeting_address": "Address (optional)",

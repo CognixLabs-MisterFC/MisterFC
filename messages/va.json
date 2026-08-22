@@ -4942,6 +4942,8 @@
     "published_state": "Convocatòria publicada",
     "title": "Convocatòries",
     "call_up": "Convocar",
+    "status_called": "Convocat",
+    "status_not_called": "No convocat",
     "called_summary": "{called}/{total} convocats",
     "list_empty": "No hi ha partits pròxims",
     "meeting_address": "Adreça (opcional)",

@@ -180,6 +180,9 @@ const DIRECTION_HIDDEN: MenuDef[] = [
   { name: 'equipo-plantilla', labelKey: 'nav.equipos' },
   { name: 'equipo-cuerpo-tecnico', labelKey: 'nav.equipos' },
   { name: 'equipo-estadisticas', labelKey: 'nav.equipos' },
+  // D1b-2 — convocatorias del equipo (?teamId) + detalle read-only (?eventId).
+  { name: 'convocatorias', labelKey: 'nav.equipos' },
+  { name: 'convocatoria', labelKey: 'nav.equipos' },
 ];
 
 /** Pantallas SOLO-menú por área (sin contar el extra dinámico del coordinador). */

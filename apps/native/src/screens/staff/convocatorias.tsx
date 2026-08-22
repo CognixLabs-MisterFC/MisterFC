@@ -19,8 +19,22 @@ import { useTranslations } from '@/locale/provider';
  * (?eventId) permite marcar convocados y ver respuestas. El EQUIPO lo fija la
  * convocatoria elegida, así que NO hace falta selector de equipo. Fetch en core
  * (`getStaffCallupsFromClient`). Caché club-scoped (id en la key).
+ *
+ * D1b-2 — REUTILIZADA por DIRECCIÓN dentro del detalle de un equipo. El loader ya
+ * devuelve `kind:'all'` (club-wide) para el director; los dos props opcionales
+ * (con DEFAULTS que reproducen el comportamiento de staff) permiten:
+ *  · `teamId` — acota la lista al equipo del hub (filtro en cliente sobre el mismo
+ *    fetch club-wide; sin él, no filtra → staff ve todos sus equipos como hoy).
+ *  · `detailPathname` — destino de cada fila; por defecto `/staff/convocatoria`,
+ *    en dirección `/direction/convocatoria`.
  */
-export function ConvocatoriasStaffListScreen() {
+export function ConvocatoriasStaffListScreen({
+  teamId,
+  detailPathname = '/staff/convocatoria',
+}: {
+  teamId?: string | null;
+  detailPathname?: string;
+} = {}) {
   const t = useTranslations('');
   const { activeClub } = useApp();
   const { user } = useSession();
@@ -38,7 +52,9 @@ export function ConvocatoriasStaffListScreen() {
   );
 
   if (loading) return <LoadingScreen />;
-  const rows = data ?? [];
+  // D1b-2 — dentro de un equipo (dirección) se acota al teamId; sin teamId (staff) no
+  // filtra. Sobre el mismo fetch club-wide, así que una sola lectura sirve a ambos.
+  const rows = (data ?? []).filter((m) => teamId == null || m.team_id === teamId);
 
   return (
     <View className="flex-1 bg-white">
@@ -57,7 +73,7 @@ export function ConvocatoriasStaffListScreen() {
             <Pressable
               onPress={() =>
                 router.push({
-                  pathname: '/staff/convocatoria',
+                  pathname: detailPathname,
                   params: { eventId: item.event_id },
                 })
               }
