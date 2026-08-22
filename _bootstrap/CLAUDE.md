@@ -107,6 +107,29 @@ misterfc/
 - Sin `any`. Si necesitas un tipo dinámico, usa `unknown` y narrow.
 - Tipos compartidos en `packages/core/src/types/`. Importables desde `apps/web` como `@misterfc/core`.
 
+#### Nullability de queries/RPC — NO taparla con `as`
+
+Regla dura (léela tú-de-futuras-sesiones antes de castear el resultado de una query):
+
+- **No castees el resultado de una query o RPC a un tipo que redeclare nullability.**
+  Si una columna es `T | null` en la DB, el tipo local no puede decir `T`.
+- **Si el tipo generado (`packages/core/src/supabase/database.ts`) es incorrecto, se
+  corrige en `database.overrides.ts` con su `Assert<…>` en `database.overrides.assert.ts`.**
+  Nunca se tapa con `as`. (El generador tipa las columnas de `RETURNS TABLE` de los RPC
+  como no-nulas porque no lee `NOT NULL` en RPC: ese es justo el hueco que hay que parchear
+  en el override, no en el call-site.)
+- **`as unknown as X` sigue permitido** donde el generado no puede expresar el *shape*
+  (joins anidados de Supabase). **Pero no para cambiar nullability**: el shape se puede
+  reetiquetar; el `null` no se puede borrar.
+
+**Por qué existe esta regla (contexto real, no la ignores):** el 500 de producción del
+**21 de agosto de 2026** en el home autenticado lo causó
+`(data ?? []) as PlayerSpectator[]`, donde `PlayerSpectator.full_name` estaba tipado
+`string` pero la columna es `text | null`. El cast redeclaraba nullable como no-nulo, el
+typecheck no lo veía, y en runtime `full_name.localeCompare(...)` reventó con
+`Cannot read properties of null`. La forma del cast es idéntica en decenas de sitios del
+repo (deuda conocida, ~51 call-sites): no se auditan sin síntoma, pero **no se añaden más**.
+
 ### Estilo
 
 - Prettier configurado. Husky con hook pre-commit que pasa `pnpm format` + `pnpm lint`.
