@@ -218,9 +218,13 @@ export async function getTeamRosterStatsFromClient(
     .select('id, first_name, last_name, dorsal, position_main, foot')
     .in('id', ids);
   if (spErr) onError?.(spErr);
+  // `players_sporting` es una VISTA: el generador tipa TODAS sus columnas como
+  // nullable (una vista pierde el NOT NULL de la tabla base). El tipo lo refleja;
+  // los consumidores ya coalescean (`sp?.first_name ?? ''`) y `id` solo se usa como
+  // clave de Map.
   type SP = {
-    id: string;
-    first_name: string;
+    id: string | null;
+    first_name: string | null;
     last_name: string | null;
     dorsal: number | null;
     position_main: string | null;
