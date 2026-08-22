@@ -10,8 +10,8 @@ import { BRAND } from '@/theme';
  * D1b-1 — Detalle de un equipo para DIRECCIÓN (hub, SOLO CONSULTA). Cabecera del
  * equipo + accesos a las secciones read-only, cada una en su ruta /direction con el
  * mismo teamId (reutilizan pantallas ya existentes de familia/staff). En esta entrega:
- * Plantilla, Cuerpo técnico, Estadísticas (D1b-1), Convocatorias (D1b-2) y
- * Entrenamientos/Sesiones (D1b-3). El calendario aún no aparece: llega en D1b-4.
+ * Plantilla, Cuerpo técnico, Estadísticas (D1b-1), Convocatorias (D1b-2),
+ * Entrenamientos/Sesiones (D1b-3) y Calendario del equipo (D1b-4). Hub COMPLETO.
  * Todo bajo AreaGuard('direction'); ni un botón de actuar.
  */
 export function DireccionEquipoDetalleScreen({
@@ -67,6 +67,12 @@ export function DireccionEquipoDetalleScreen({
             label={t('entrenamientos.title')}
             accent={accent}
             onPress={() => go('/direction/entrenamientos')}
+          />
+          <Tile
+            icon="📅"
+            label={t('calendario.title')}
+            accent={accent}
+            onPress={() => go('/direction/equipo-calendario')}
           />
         </View>
       </ScrollView>

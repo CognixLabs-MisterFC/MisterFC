@@ -188,6 +188,9 @@ const DIRECTION_HIDDEN: MenuDef[] = [
   { name: 'entrenamientos', labelKey: 'nav.equipos' },
   { name: 'sesion', labelKey: 'nav.equipos' },
   { name: 'entrenamiento', labelKey: 'nav.equipos' },
+  // D1b-4 — calendario del equipo (?teamId), agenda read-only. NO es `calendario`
+  // (esa es la pantalla de FESTIVOS del menú de dirección).
+  { name: 'equipo-calendario', labelKey: 'nav.equipos' },
 ];
 
 /** Pantallas SOLO-menú por área (sin contar el extra dinámico del coordinador). */

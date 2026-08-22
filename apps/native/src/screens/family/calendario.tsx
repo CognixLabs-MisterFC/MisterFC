@@ -79,8 +79,17 @@ const TYPE_ICON: Record<string, string> = {
  */
 export function CalendarioScreen({
   eventTarget = familyEventTarget,
+  teamId = null,
 }: {
   eventTarget?: (ev: CalendarEvent) => FamilyTarget;
+  /**
+   * D1b-4 — DIRECCIÓN: acota la agenda a UN equipo explícito. El scope actual
+   * (`user_team_ids_in_club`) devuelve VACÍO a un director (no es team_member ni
+   * team_staff de ningún equipo) → sin esto, calendario vacío. Con `teamId` se filtra
+   * por ese equipo (`filters.teamIds`) y se desactiva el scope por-usuario. DEFAULT
+   * `null` → familia y staff IDÉNTICOS: scope por los equipos del usuario, como hoy.
+   */
+  teamId?: string | null;
 } = {}) {
   const t = useTranslations('');
   const { activeClub, theme } = useApp();
@@ -104,19 +113,31 @@ export function CalendarioScreen({
   const { data, fromCache, loading } = useCached<{
     events: CalendarEvent[];
     holidays: HolidayInfo[];
-  }>(clubScopedCacheKey('calendar', clubId ?? 'none'), async (sb) => {
-    if (!clubId) return { events: [], holidays: [] };
-    const scope = await getCalendarScopeTeamIdsFromClient(sb, clubId);
-    const { events } = await getCalendarDataFromClient(
-      sb,
-      clubId,
-      { startIso: range.startIso, endIso: range.endIso },
-      { teamIds: [], categoryIds: [], types: [] },
-      { scopeTeamIds: scope },
-    );
-    const holidays = await getHolidaysFromClient(sb, clubId, range.fromDate, range.toDate);
-    return { events, holidays };
-  });
+  }>(
+    // D1b-4 — la variante de dirección (teamId) usa un NAMESPACE propio por equipo
+    // (`calendar-team:<club>:<team>`) para no contaminar la caché de familia/staff
+    // (`calendar`). Familia/staff mantienen su key exacta → comportamiento igual.
+    teamId
+      ? clubScopedCacheKey('calendar-team', `${clubId ?? 'none'}:${teamId}`)
+      : clubScopedCacheKey('calendar', clubId ?? 'none'),
+    async (sb) => {
+      if (!clubId) return { events: [], holidays: [] };
+      // Familia/staff: scope por los equipos del usuario (comportamiento actual).
+      // Dirección (teamId): filtra por ESE equipo y desactiva el scope por-usuario
+      // (scopeTeamIds omitido) — un director no está en `user_team_ids_in_club`.
+      const { events } = await getCalendarDataFromClient(
+        sb,
+        clubId,
+        { startIso: range.startIso, endIso: range.endIso },
+        { teamIds: teamId ? [teamId] : [], categoryIds: [], types: [] },
+        teamId
+          ? {}
+          : { scopeTeamIds: await getCalendarScopeTeamIdsFromClient(sb, clubId) },
+      );
+      const holidays = await getHolidaysFromClient(sb, clubId, range.fromDate, range.toDate);
+      return { events, holidays };
+    },
+  );
 
   const items: AgendaItem[] = useMemo(() => {
     // Cap a los 5 eventos MÁS PRÓXIMOS (los festivos no cuentan para el límite).
