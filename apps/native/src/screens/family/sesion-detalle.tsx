@@ -31,21 +31,42 @@ export function SesionDetalleScreen({
   sessionId,
   past = false,
   attendanceCode = null,
+  allowUnshared = false,
 }: {
   sessionId: string | null;
   past?: boolean;
   attendanceCode?: string | null;
+  /**
+   * D1b-3 — DIRECCIÓN (solo consulta): el director ve TODAS las sesiones asignadas a
+   * un entrenamiento del equipo, compartidas con las familias o NO. Con este flag se
+   * relaja SOLO el filtro `visibility==='team'`; el bloqueo de `is_template` (las
+   * plantillas de biblioteca no cuelgan de ningún entrenamiento) se MANTIENE. La RLS
+   * `sessions_select` ya deja al director leer sesiones no compartidas (rama admin/
+   * director). DEFAULT `false` → familia IDÉNTICA: solo sesiones team-visible.
+   */
+  allowUnshared?: boolean;
 }) {
   const t = useTranslations('');
   const { activeClub } = useApp();
   const clubId = activeClub?.club.id ?? null;
 
   const { data, fromCache, loading } = useCached<SessionView | null>(
-    eventScopedCacheKey('sesion', sessionId ?? 'none'),
+    // D1b-3 — la variante de dirección (allowUnshared) puede cachear sesiones NO
+    // compartidas; usa un NAMESPACE propio (`sesion-dir`) para no contaminar la caché
+    // de familia (`sesion`, no profile-scoped): así una sesión no compartida jamás se
+    // pinta en familia por SWR. Familia mantiene su key exacta → comportamiento igual.
+    eventScopedCacheKey(allowUnshared ? 'sesion-dir' : 'sesion', sessionId ?? 'none'),
     async (sb) => {
       if (!clubId || !sessionId) return null;
       const session = await getSessionForEditFromClient(sb, clubId, sessionId);
-      if (!session || session.visibility !== 'team' || session.is_template) return null;
+      // is_template SIEMPRE fuera (biblioteca). visibility solo se exige cuando NO se
+      // permiten no compartidas (familia); dirección (allowUnshared) las ve todas.
+      if (
+        !session ||
+        session.is_template ||
+        (!allowUnshared && session.visibility !== 'team')
+      )
+        return null;
       const metaMap = await getSessionExerciseMetaFromClient(sb, sessionId);
       return { session, exMeta: Array.from(metaMap.entries()) };
     },
