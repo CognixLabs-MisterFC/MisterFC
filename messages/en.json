@@ -1724,7 +1724,13 @@
       "agenda": "Schedule"
     },
     "month": {
-      "more": "+{count} more"
+      "more": "+{count} more",
+      "select_day": "Tap a day to see its events",
+      "empty_day": "No events that day"
+    },
+    "tabs": {
+      "upcoming": "Upcoming",
+      "season": "Season"
     },
     "week": {
       "no_events": "No events"
@@ -1942,6 +1948,15 @@
         "4": "Thursday",
         "5": "Friday",
         "6": "Saturday"
+      },
+      "weekday_short": {
+        "0": "Sun",
+        "1": "Mon",
+        "2": "Tue",
+        "3": "Wed",
+        "4": "Thu",
+        "5": "Fri",
+        "6": "Sat"
       },
       "month": {
         "0": "January",

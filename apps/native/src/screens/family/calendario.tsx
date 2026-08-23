@@ -171,11 +171,7 @@ export function CalendarioScreen({
         contentContainerStyle={{ paddingVertical: 8 }}
         renderItem={({ item }) =>
           item.kind === 'holiday' ? (
-            <View className="mx-4 my-1 rounded-xl bg-amber-50 px-4 py-2">
-              <Text className="text-sm font-medium text-amber-800">
-                {`${item.h.date.slice(5)} · ${t('calendario.holidays.badge')} — ${item.h.reason}`}
-              </Text>
-            </View>
+            <HolidayRow h={item.h} t={t} />
           ) : (
             <EventCard
               ev={item.ev}
@@ -194,13 +190,29 @@ export function CalendarioScreen({
 }
 
 /**
+ * Fila de FESTIVO (badge ámbar). Extraída sin cambio visual de la agenda para que la
+ * comparta la vista de MES (18-F1): la lista del día bajo la rejilla pinta el mismo
+ * badge que la agenda. `date.slice(5)` = MM-DD (la fecha ya está en su contexto).
+ */
+export function HolidayRow({ h, t }: { h: HolidayInfo; t: T }) {
+  return (
+    <View className="mx-4 my-1 rounded-xl bg-amber-50 px-4 py-2">
+      <Text className="text-sm font-medium text-amber-800">
+        {`${h.date.slice(5)} · ${t('calendario.holidays.badge')} — ${h.reason}`}
+      </Text>
+    </View>
+  );
+}
+
+/**
  * Punto 3 QA — Tarjeta de evento legible (mismo lenguaje de tarjetas que el inicio
  * #480 y Entrenamientos #473): TIPO escrito + icono, FECHA en grande, HORA visible,
  * y una línea de detalle con el RIVAL (en partidos, si se conoce) y el EQUIPO. Para
  * los no-partidos conserva el título si aporta algo. Borde izquierdo con el color del
  * equipo (o el acento del club) para distinguir de un vistazo. Compartida con staff.
+ * EXPORTADA (18-F1) para reutilizarla en la lista del día de la vista de MES.
  */
-function EventCard({
+export function EventCard({
   ev,
   t,
   accent,

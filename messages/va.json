@@ -1724,7 +1724,13 @@
       "agenda": "Agenda"
     },
     "month": {
-      "more": "+{count} més"
+      "more": "+{count} més",
+      "select_day": "Toca un dia per veure els seus esdeveniments",
+      "empty_day": "Sense esdeveniments eixe dia"
+    },
+    "tabs": {
+      "upcoming": "Pròxims",
+      "season": "Temporada"
     },
     "week": {
       "no_events": "Sense esdeveniments"
@@ -1942,6 +1948,15 @@
         "4": "Dijous",
         "5": "Divendres",
         "6": "Dissabte"
+      },
+      "weekday_short": {
+        "0": "Dg",
+        "1": "Dl",
+        "2": "Dt",
+        "3": "Dc",
+        "4": "Dj",
+        "5": "Dv",
+        "6": "Ds"
       },
       "month": {
         "0": "gener",
