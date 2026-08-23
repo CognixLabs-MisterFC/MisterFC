@@ -106,3 +106,48 @@ export function staffEventTarget(ev: { id: string; type: string }): FamilyTarget
       return null;
   }
 }
+
+/**
+ * D1b-4 — Espejo de `familyEventTarget`/`staffEventTarget` para el área DIRECCIÓN.
+ * Los targets de familia/staff enrutan a `/family` y `/staff`, áreas vetadas al
+ * director por AreaGuard (usarlos lo rebota al home); este enruta a `/direction`.
+ * El director ve lo que ve el entrenador (decisión ③, cerrada):
+ *  · partido (match/friendly/tournament) → detalle de convocatoria read-only (D1b-2).
+ *  · entreno (training) → visor de sesión read-only (D1b-3). El evento del calendario
+ *    trae `has_session` pero NO el id de la sesión, así que:
+ *      - has_session=true  → `/direction/sesion` por `eventId` (esa ruta resuelve el
+ *        id; y si NO resuelve —sesión borrada/carrera— cae al detalle de entreno con
+ *        los params title/startsAt/locationName que van aquí de más).
+ *      - has_session=false → `/direction/entrenamiento` (detalle de entreno sin sesión).
+ *  · cualquier otro tipo ('other') / sin destino → null: la fila NO navega (ni pantalla
+ *    rota ni rebote al home).
+ */
+export function directionEventTarget(ev: {
+  id: string;
+  type: string;
+  title: string;
+  starts_at: string;
+  location_name?: string | null;
+  has_session?: boolean;
+}): FamilyTarget {
+  switch (ev.type) {
+    case 'training': {
+      const trainingParams = {
+        title: ev.title ?? '',
+        startsAt: ev.starts_at,
+        locationName: ev.location_name ?? '',
+      };
+      // Con sesión → visor (resolución eventId→sessionId en la ruta, con fallback al
+      // detalle de entreno usando estos mismos params). Sin sesión → detalle directo.
+      return ev.has_session
+        ? { pathname: '/direction/sesion', params: { eventId: ev.id, ...trainingParams } }
+        : { pathname: '/direction/entrenamiento', params: trainingParams };
+    }
+    case 'match':
+    case 'friendly':
+    case 'tournament':
+      return { pathname: '/direction/convocatoria', params: { eventId: ev.id } };
+    default:
+      return null;
+  }
+}
