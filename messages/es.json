@@ -1724,7 +1724,13 @@
       "agenda": "Agenda"
     },
     "month": {
-      "more": "+{count} más"
+      "more": "+{count} más",
+      "select_day": "Toca un día para ver sus eventos",
+      "empty_day": "Sin eventos ese día"
+    },
+    "tabs": {
+      "upcoming": "Próximos eventos",
+      "season": "Temporada"
     },
     "week": {
       "no_events": "Sin eventos"
@@ -1942,6 +1948,15 @@
         "4": "Jueves",
         "5": "Viernes",
         "6": "Sábado"
+      },
+      "weekday_short": {
+        "0": "Dom",
+        "1": "Lun",
+        "2": "Mar",
+        "3": "Mié",
+        "4": "Jue",
+        "5": "Vie",
+        "6": "Sáb"
       },
       "month": {
         "0": "enero",
