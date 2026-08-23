@@ -13,6 +13,7 @@ import {
   playerPhotoUploadSchema,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { emitInAppNotificationFanOut } from '@/lib/notify-bus';
 import {
   loadInvitationByToken,
   loadPendingInvitationsForEmail,
@@ -268,6 +269,20 @@ async function attachAllPending(
   // el tutor no pasaría la RLS de storage. Recogemos player_ids de los campos
   // `image_file_<pid>`. Si la RPC revierte o algo falla → borramos lo subido.
   const admin = createSupabaseAdminClient();
+
+  // D6 — invitaciones de ENTRENADOR pendientes de este email+club (las que el RPC va a
+  // aceptar como coach: tienen team_staff_role). Se capturan ANTES del RPC porque tras
+  // aceptar dejan de estar `pending`. Sirven para avisar a dirección (una novedad por
+  // lote, no una por invitación) tras el éxito de la aceptación.
+  const { data: coachInvsBefore } = await admin
+    .from('invitations')
+    .select('id, teams(name)')
+    .eq('club_id', clicked.club_id)
+    .ilike('email', clicked.email)
+    .not('team_staff_role', 'is', null)
+    .is('accepted_at', null)
+    .gt('expires_at', new Date().toISOString());
+
   const uploadedPaths: string[] = [];
   const children: Record<string, { internal: boolean; social: boolean; path: string }> = {};
   // F14-4 — decisiones médicas por hijo (opcionales, no gatean). Solo se incluye
@@ -393,6 +408,15 @@ async function attachAllPending(
       }
     }
 
+    // D6 — novedad a dirección (in_app, SIN push) si el que aceptó es un ENTRENADOR.
+    // Best-effort: va DESPUÉS de la aceptación ya comprometida y NUNCA lanza — un fallo
+    // aquí no puede dejar la invitación sin aceptar (ya está hecha).
+    if (coachInvsBefore && coachInvsBefore.length > 0) {
+      await notifyCoachInvitationAccepted(admin, supabase, clicked, coachInvsBefore).catch(
+        (e) => logError('notify-coach-accepted', e, { invitation_id: clicked.id }),
+      );
+    }
+
     logStep('attach-all done', { invitation_id: clicked.id, processed: data ?? 0 });
     return {};
   } catch (err) {
@@ -400,6 +424,68 @@ async function attachAllPending(
     await cleanupImages();
     throw err;
   }
+}
+
+/** Nombre de equipo del join `teams(name)` de PostgREST (objeto, array o null). */
+function teamNameOf(raw: unknown): string | null {
+  const t = Array.isArray(raw) ? (raw[0] ?? null) : raw;
+  const name = (t as { name?: unknown } | null)?.name;
+  return typeof name === 'string' && name.length > 0 ? name : null;
+}
+
+/**
+ * D6 — emite la novedad `coach_invitation_accepted` (in_app, SIN push) a admin_club y
+ * directores del club cuando un ENTRENADOR acepta su invitación. UNA novedad por lote
+ * (dedupe por el conjunto de ids de invitación de coach), no una por invitación; el
+ * aceptante no se auto-notifica. Best-effort: la llama un `.catch` en attachAllPending,
+ * así que un fallo no afecta a la aceptación ya comprometida.
+ */
+async function notifyCoachInvitationAccepted(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  clicked: LoadedInvitation,
+  coachInvs: ReadonlyArray<{ id: string; teams: unknown }>,
+): Promise<void> {
+  // Aceptante (para excluirlo de destinatarios y componer el nombre).
+  const { data: userData } = await supabase.auth.getUser();
+  const acceptingUid = userData.user?.id ?? clicked.invited_user_id ?? null;
+
+  // Nombre a pintar: full_name del aceptante, con fallback al email (siempre presente).
+  let name = clicked.email;
+  if (acceptingUid) {
+    const { data: prof } = await admin
+      .from('profiles')
+      .select('full_name')
+      .eq('id', acceptingUid)
+      .maybeSingle();
+    if (prof?.full_name) name = prof.full_name;
+  }
+
+  // Equipo solo cuando es UNO (con varios, el texto va sin equipo).
+  const teamName = coachInvs.length === 1 ? teamNameOf(coachInvs[0]?.teams) : null;
+
+  // Destinatarios: admin_club + directores del club; el aceptante no se auto-notifica.
+  const { data: recipRows } = await admin
+    .from('memberships')
+    .select('profile_id')
+    .eq('club_id', clicked.club_id)
+    .in('role', ['admin_club', 'director']);
+  const recipients = (recipRows ?? [])
+    .map((r) => r.profile_id)
+    .filter((pid): pid is string => Boolean(pid) && pid !== acceptingUid);
+  if (recipients.length === 0) return;
+
+  // Dedupe por el CONJUNTO de invitaciones de coach del lote (ordenado) → una sola
+  // novedad por lote, idempotente ante doble submit.
+  const coachIds = coachInvs.map((c) => c.id).sort();
+  await emitInAppNotificationFanOut(
+    recipients.map((pid) => ({ user_id: pid })),
+    {
+      type: 'coach_invitation_accepted',
+      in_app_payload: teamName ? { name, team_name: teamName } : { name },
+      dedupe_base_prefix: `coach_invitation_accepted:${clicked.club_id}:${coachIds.join('-')}`,
+    },
+  );
 }
 
 /**
