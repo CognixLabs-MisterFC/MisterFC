@@ -115,6 +115,11 @@ export function notificationFeedText(
     }
     case 'development_report_published':
       return t('development_report_published');
+    case 'erasure_requested':
+      // D6 — aviso a dirección. RGPD: texto genérico, SIN motivo ni nombre del menor;
+      // el dato sensible vive solo en /direction/supresiones (payload lleva player_id
+      // para trazabilidad, no se pinta).
+      return t('erasure_requested');
     case 'evaluation_campaign_launched':
       return t('evaluation_campaign_launched');
     case 'goal':

@@ -199,6 +199,7 @@
       "training_rejected_named": "Holiday training rejected: {title}",
       "goal": "GOL!!!",
       "generic": "You have an update",
+      "erasure_requested": "A data erasure has been requested",
       "development_report_published": "A development report was published",
       "evaluation_campaign_launched": "Evaluation campaign opened",
       "play_approved": "Play published",

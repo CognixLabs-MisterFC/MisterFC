@@ -58,6 +58,25 @@ export function familyFeedTarget(type: string, payload: unknown): FamilyTarget {
   }
 }
 
+/**
+ * D6 — Destino de navegación al TOCAR una fila de NOVEDADES en el área DIRECCIÓN.
+ * El feed del director reusa `NovedadesScreen` (familia), pero `familyFeedTarget`
+ * enruta a `/family/...`, área vetada al director por AreaGuard (lo rebotaría). Este
+ * resolver enruta DENTRO de `/direction`. De momento solo la novedad propia de
+ * dirección tiene destino; el resto → null (fila informativa, no navega — nunca un
+ * rebote al home).
+ *  · erasure_requested → lista de supresiones (el director la ve en lectura; el dato
+ *    sensible vive ahí, no en el feed). Sin id: va a la lista, no a un detalle.
+ */
+export function directionFeedTarget(type: string): FamilyTarget {
+  switch (type) {
+    case 'erasure_requested':
+      return { pathname: '/direction/supresiones' };
+    default:
+      return null;
+  }
+}
+
 /** Tipo de evento del calendario/eventos → detalle en el área familia. */
 export function familyEventTarget(ev: {
   id: string;

@@ -199,6 +199,7 @@
       "training_rejected_named": "Entrenamiento en festivo rechazado: {title}",
       "goal": "GOL!!!",
       "generic": "Tienes una novedad",
+      "erasure_requested": "Se ha solicitado una supresión de datos",
       "development_report_published": "Se ha publicado un informe de desarrollo",
       "evaluation_campaign_launched": "Campaña de evaluación abierta",
       "play_approved": "Jugada publicada",
