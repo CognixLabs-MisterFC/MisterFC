@@ -1972,6 +1972,23 @@
         "10": "novembre",
         "11": "desembre"
       }
+    },
+    "season": {
+      "tabs": {
+        "month": "Mes",
+        "day": "Dia"
+      }
+    },
+    "day": {
+      "range": {
+        "from": "Des de",
+        "to": "Fins a",
+        "reset": "Restablir"
+      },
+      "all_day": "Tot el dia",
+      "before_range": "{count, plural, one {# esdeveniment abans} other {# esdeveniments abans}}",
+      "after_range": "{count, plural, one {# esdeveniment després} other {# esdeveniments després}}",
+      "empty": "No hi ha esdeveniments este dia"
     }
   },
   "pdf": {

@@ -1972,6 +1972,23 @@
         "10": "November",
         "11": "December"
       }
+    },
+    "season": {
+      "tabs": {
+        "month": "Month",
+        "day": "Day"
+      }
+    },
+    "day": {
+      "range": {
+        "from": "From",
+        "to": "To",
+        "reset": "Reset"
+      },
+      "all_day": "All day",
+      "before_range": "{count, plural, one {# event earlier} other {# events earlier}}",
+      "after_range": "{count, plural, one {# event later} other {# events later}}",
+      "empty": "No events this day"
     }
   },
   "pdf": {
