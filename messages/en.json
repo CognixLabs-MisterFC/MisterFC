@@ -5142,7 +5142,9 @@
     "approvals": "Holiday trainings to approve",
     "no_session": "Trainings without a session",
     "no_attendance": "Trainings without attendance",
-    "list_empty": "Nothing pending"
+    "list_empty": "Nothing pending",
+    "expires": "Expires",
+    "report_progress": "{done} of {total}"
   },
   "anuncios_dir": {
     "no_teams": "The club has no teams",

@@ -40,24 +40,25 @@ export function DireccionInicioScreen() {
   if (loading) return <LoadingScreen />;
   const c = data;
 
-  // Deep-links: solo donde existe una pantalla nativa de dirección destino. Festivos
-  // → calendario; supresiones → pantalla de supresiones. Ambas ABREN LA VISTA (la
-  // acción de aprobar/decidir es 11c). El resto son conteos sin destino todavía.
+  // Deep-links a las pantallas de dirección destino. HOMOGENEIZADO (decisión Jose):
+  // las 7 tarjetas se comportan igual — clicables SOLO con contador > 0 (a 0 la fila
+  // queda gris e inerte) → nunca pantalla vacía. supresiones y festivos siguen siendo
+  // alcanzables por el MENÚ hamburguesa de dirección (DIRECTION_MENU: calendario +
+  // supresiones), así que gatear su tarjeta no los deja inaccesibles a contador 0.
   const block1 = [
-    { key: 'invitations', count: c?.pendingInvitations ?? 0, href: null },
+    { key: 'invitations', count: c?.pendingInvitations ?? 0, href: '/direction/pendientes-invitaciones' as const },
     ...(isAdminClub
       ? [{ key: 'erasures', count: c?.pendingErasures ?? 0, href: '/direction/supresiones' as const }]
       : []),
     { key: 'approvals', count: c?.pendingApprovals ?? 0, href: '/direction/calendario' as const },
   ];
-  // D2-1 — las tres colas de eventos ya tienen lista club-wide de dirección. Son
-  // clicables SOLO con contador > 0 (a 0 la fila queda gris e inerte, como hoy), para
-  // no llevar nunca a una pantalla vacía. `reports` sigue sin destino (D2-2).
+  // Eventos (D2-1) → detalle; reports (D2-2) → lista terminal de progreso por
+  // equipo/campaña. Misma regla que block1: clicable SOLO con contador > 0.
   const block2 = [
     { key: 'no_session', count: c?.trainingsWithoutSession ?? 0, href: '/direction/pendientes-sesion' as const },
     { key: 'no_attendance', count: c?.trainingsWithoutAttendance ?? 0, href: '/direction/pendientes-asistencia' as const },
     { key: 'callups', count: c?.pendingCallups ?? 0, href: '/direction/pendientes-convocatoria' as const },
-    { key: 'reports', count: c?.pendingReports ?? 0, href: null },
+    { key: 'reports', count: c?.pendingReports ?? 0, href: '/direction/pendientes-informes' as const },
   ];
 
   const go = (href: string | null) => {
@@ -76,7 +77,7 @@ export function DireccionInicioScreen() {
               label={t(`dir_inicio.${r.key}`)}
               count={r.count}
               accent={accent}
-              onPress={r.href ? () => go(r.href) : undefined}
+              onPress={r.href && r.count > 0 ? () => go(r.href) : undefined}
             />
           ))}
         </View>

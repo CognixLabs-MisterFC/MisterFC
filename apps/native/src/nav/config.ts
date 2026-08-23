@@ -196,6 +196,10 @@ const DIRECTION_HIDDEN: MenuDef[] = [
   { name: 'pendientes-sesion', labelKey: 'nav.inicio_direccion' },
   { name: 'pendientes-convocatoria', labelKey: 'nav.inicio_direccion' },
   { name: 'pendientes-asistencia', labelKey: 'nav.inicio_direccion' },
+  // D2-2 — listas terminales del inicio (sin detalle): invitaciones + progreso de
+  // informes por equipo/campaña. Solo consulta.
+  { name: 'pendientes-invitaciones', labelKey: 'nav.inicio_direccion' },
+  { name: 'pendientes-informes', labelKey: 'nav.inicio_direccion' },
 ];
 
 /** Pantallas SOLO-menú por área (sin contar el extra dinámico del coordinador). */

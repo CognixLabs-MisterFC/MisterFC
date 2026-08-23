@@ -5142,7 +5142,9 @@
     "approvals": "Entrenaments en festiu per aprovar",
     "no_session": "Entrenaments sense sessió",
     "no_attendance": "Entrenaments sense assistència",
-    "list_empty": "Res pendent"
+    "list_empty": "Res pendent",
+    "expires": "Caduca",
+    "report_progress": "{done} de {total}"
   },
   "anuncios_dir": {
     "no_teams": "El club no té equips",
