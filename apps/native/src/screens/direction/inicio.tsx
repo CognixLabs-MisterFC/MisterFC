@@ -40,24 +40,25 @@ export function DireccionInicioScreen() {
   if (loading) return <LoadingScreen />;
   const c = data;
 
-  // Deep-links: solo donde existe una pantalla nativa de dirección destino. Festivos
-  // → calendario; supresiones → pantalla de supresiones. Ambas ABREN LA VISTA (la
-  // acción de aprobar/decidir es 11c). El resto son conteos sin destino todavía.
+  // Deep-links a las pantallas de dirección destino. `gated:true` (D2) = clicable SOLO
+  // con contador > 0 (a 0 la fila queda gris e inerte, como hoy) → nunca pantalla
+  // vacía. erasures/approvals NO están gated: mantienen su comportamiento (clicables
+  // aunque estén a 0; su acción de aprobar/decidir es 11c).
   const block1 = [
-    { key: 'invitations', count: c?.pendingInvitations ?? 0, href: null },
+    { key: 'invitations', count: c?.pendingInvitations ?? 0, href: '/direction/pendientes-invitaciones' as const, gated: true },
     ...(isAdminClub
-      ? [{ key: 'erasures', count: c?.pendingErasures ?? 0, href: '/direction/supresiones' as const }]
+      ? [{ key: 'erasures', count: c?.pendingErasures ?? 0, href: '/direction/supresiones' as const, gated: false }]
       : []),
-    { key: 'approvals', count: c?.pendingApprovals ?? 0, href: '/direction/calendario' as const },
+    { key: 'approvals', count: c?.pendingApprovals ?? 0, href: '/direction/calendario' as const, gated: false },
   ];
-  // D2-1 — las tres colas de eventos ya tienen lista club-wide de dirección. Son
-  // clicables SOLO con contador > 0 (a 0 la fila queda gris e inerte, como hoy), para
-  // no llevar nunca a una pantalla vacía. `reports` sigue sin destino (D2-2).
+  // D2 — todas las colas ya tienen lista club-wide de dirección; clicables SOLO con
+  // contador > 0 (a 0 gris e inerte). Eventos (D2-1) → detalle; reports (D2-2) →
+  // lista terminal de progreso por equipo/campaña.
   const block2 = [
     { key: 'no_session', count: c?.trainingsWithoutSession ?? 0, href: '/direction/pendientes-sesion' as const },
     { key: 'no_attendance', count: c?.trainingsWithoutAttendance ?? 0, href: '/direction/pendientes-asistencia' as const },
     { key: 'callups', count: c?.pendingCallups ?? 0, href: '/direction/pendientes-convocatoria' as const },
-    { key: 'reports', count: c?.pendingReports ?? 0, href: null },
+    { key: 'reports', count: c?.pendingReports ?? 0, href: '/direction/pendientes-informes' as const },
   ];
 
   const go = (href: string | null) => {
@@ -76,7 +77,7 @@ export function DireccionInicioScreen() {
               label={t(`dir_inicio.${r.key}`)}
               count={r.count}
               accent={accent}
-              onPress={r.href ? () => go(r.href) : undefined}
+              onPress={r.href && (!r.gated || r.count > 0) ? () => go(r.href) : undefined}
             />
           ))}
         </View>

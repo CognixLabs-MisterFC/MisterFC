@@ -15,6 +15,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { MATCH_SURFACE_TYPES } from '../events/types';
+import {
+  reportStatus,
+  DEVELOPMENT_REPORT_CATALOG,
+} from '../development-report/development-report';
 
 type DbClient = SupabaseClient<Database>;
 
@@ -232,4 +236,176 @@ export async function listPendingCallupsFromClient(
         has_session: false,
       };
     });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  D2-2 · Listas TERMINALES (sin detalle): invitaciones + progreso de informes.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Fila de la lista de invitaciones pendientes (informativa, sin navegación). */
+export type DireccionPendingInvitation = {
+  id: string;
+  email: string;
+  role: string;
+  team_name: string | null;
+  expires_at: string;
+};
+
+/**
+ * Invitaciones del club sin aceptar y no expiradas. Espeja el filtro de
+ * `countPendingInvitationsFromClient` (mismas filas), pero devuelve las columnas para
+ * pintar cada fila: a quién (email), rol, equipo (si la invitación va atada a uno) y
+ * caducidad. La RLS `invitations_select` ya deja al director ver todas las del club
+ * (mig f14k_1). Sin acciones (solo consulta).
+ */
+export async function listPendingInvitationsFromClient(
+  supabase: DbClient,
+  clubId: string
+): Promise<DireccionPendingInvitation[]> {
+  const nowIso = new Date().toISOString();
+  const { data } = await supabase
+    .from('invitations')
+    .select('id, email, role, expires_at, teams(name)')
+    .eq('club_id', clubId)
+    .is('accepted_at', null)
+    .gt('expires_at', nowIso)
+    .order('expires_at', { ascending: true });
+
+  return (data ?? []).map((r) => {
+    const { name } = teamOf(r.teams);
+    return {
+      id: r.id as string,
+      email: r.email as string,
+      role: r.role as string,
+      team_name: name,
+      expires_at: r.expires_at as string,
+    };
+  });
+}
+
+/** Fila del progreso de informes de UN equipo en UNA campaña (informativa). */
+export type DireccionTeamReportProgress = {
+  teamId: string;
+  team_name: string;
+  category_name: string | null;
+  period: string;
+  done: number;
+  total: number;
+};
+
+/**
+ * Progreso de informes POR EQUIPO Y CAMPAÑA de la temporada activa (roster activo vs
+ * informes completados). Desglosa por equipo lo que `countPendingReports` sumaba en un
+ * solo número: una fila por (equipo × campaña lanzada) con informes pendientes
+ * (`done < total`) — "a qué entrenador apretar". NO lista jugadores. Mismas tablas y
+ * criterio (`reportStatus`) que el conteo del inicio; `development_reports_select` ya
+ * da al director lectura club-wide (mig c1b). Sin acciones.
+ */
+export async function listTeamsReportProgressFromClient(
+  supabase: DbClient,
+  clubId: string
+): Promise<DireccionTeamReportProgress[]> {
+  const { data: season } = await supabase
+    .from('seasons')
+    .select('id, label')
+    .eq('club_id', clubId)
+    .eq('status', 'active')
+    .order('label', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!season) return [];
+  const seasonId = season.id as string;
+  const seasonLabel = season.label as string;
+
+  const { data: campaignRows } = await supabase
+    .from('assessment_campaigns')
+    .select('period, due_date, status')
+    .eq('season_id', seasonId)
+    .eq('status', 'launched');
+  const periods = [
+    ...new Set(
+      ((campaignRows ?? []) as Array<{ period: string; due_date: string | null }>)
+        .filter((c) => c.due_date)
+        .map((c) => c.period)
+    ),
+  ];
+  if (periods.length === 0) return [];
+
+  const { data: teamRows } = await supabase
+    .from('teams')
+    .select('id, name, categories!inner(name, club_id)')
+    .eq('season', seasonLabel)
+    .eq('categories.club_id', clubId);
+  const teams = ((teamRows ?? []) as unknown as Array<{
+    id: string;
+    name: string;
+    categories: { name: string; club_id: string } | null;
+  }>).map((t) => ({
+    id: t.id,
+    name: t.name,
+    category: t.categories?.name ?? null,
+  }));
+  const teamIds = teams.map((t) => t.id);
+  if (teamIds.length === 0) return [];
+
+  const { data: rosterRows } = await supabase
+    .from('team_members')
+    .select('team_id, player_id')
+    .in('team_id', teamIds)
+    .is('left_at', null);
+  const rosterByTeam = new Map<string, Set<string>>();
+  for (const r of (rosterRows ?? []) as Array<{ team_id: string; player_id: string }>) {
+    const set = rosterByTeam.get(r.team_id) ?? new Set<string>();
+    set.add(r.player_id);
+    rosterByTeam.set(r.team_id, set);
+  }
+
+  const { data: reportRows } = await supabase
+    .from('development_reports')
+    .select('team_id, player_id, period, scores')
+    .eq('season_id', seasonId)
+    .in('team_id', teamIds)
+    .in('period', periods);
+  const completedByTeamPeriod = new Map<string, Set<string>>();
+  for (const r of (reportRows ?? []) as Array<{
+    team_id: string;
+    player_id: string;
+    period: string;
+    scores: Record<string, number>;
+  }>) {
+    const roster = rosterByTeam.get(r.team_id);
+    if (
+      roster?.has(r.player_id) &&
+      reportStatus(r.scores ?? {}, DEVELOPMENT_REPORT_CATALOG) === 'completed'
+    ) {
+      const key = `${r.team_id}:${r.period}`;
+      const set = completedByTeamPeriod.get(key) ?? new Set<string>();
+      set.add(r.player_id);
+      completedByTeamPeriod.set(key, set);
+    }
+  }
+
+  const rows: DireccionTeamReportProgress[] = [];
+  for (const team of teams) {
+    const total = rosterByTeam.get(team.id)?.size ?? 0;
+    if (total === 0) continue;
+    for (const period of periods) {
+      const done = completedByTeamPeriod.get(`${team.id}:${period}`)?.size ?? 0;
+      if (total - done > 0) {
+        rows.push({
+          teamId: team.id,
+          team_name: team.name,
+          category_name: team.category,
+          period,
+          done,
+          total,
+        });
+      }
+    }
+  }
+  // Más pendientes primero (a quién apretar antes); desempate por nombre de equipo.
+  rows.sort(
+    (a, b) => b.total - b.done - (a.total - a.done) || a.team_name.localeCompare(b.team_name)
+  );
+  return rows;
 }
