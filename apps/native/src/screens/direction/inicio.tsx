@@ -50,10 +50,13 @@ export function DireccionInicioScreen() {
       : []),
     { key: 'approvals', count: c?.pendingApprovals ?? 0, href: '/direction/calendario' as const },
   ];
+  // D2-1 — las tres colas de eventos ya tienen lista club-wide de dirección. Son
+  // clicables SOLO con contador > 0 (a 0 la fila queda gris e inerte, como hoy), para
+  // no llevar nunca a una pantalla vacía. `reports` sigue sin destino (D2-2).
   const block2 = [
-    { key: 'no_session', count: c?.trainingsWithoutSession ?? 0, href: null },
-    { key: 'no_attendance', count: c?.trainingsWithoutAttendance ?? 0, href: null },
-    { key: 'callups', count: c?.pendingCallups ?? 0, href: null },
+    { key: 'no_session', count: c?.trainingsWithoutSession ?? 0, href: '/direction/pendientes-sesion' as const },
+    { key: 'no_attendance', count: c?.trainingsWithoutAttendance ?? 0, href: '/direction/pendientes-asistencia' as const },
+    { key: 'callups', count: c?.pendingCallups ?? 0, href: '/direction/pendientes-convocatoria' as const },
     { key: 'reports', count: c?.pendingReports ?? 0, href: null },
   ];
 
@@ -81,7 +84,13 @@ export function DireccionInicioScreen() {
         <View className="gap-2">
           <ScreenTitle>{t('dir_inicio.tasks_title')}</ScreenTitle>
           {block2.map((r) => (
-            <TaskRow key={r.key} label={t(`dir_inicio.${r.key}`)} count={r.count} accent={accent} />
+            <TaskRow
+              key={r.key}
+              label={t(`dir_inicio.${r.key}`)}
+              count={r.count}
+              accent={accent}
+              onPress={r.href && r.count > 0 ? () => go(r.href) : undefined}
+            />
           ))}
         </View>
       </ScrollView>

@@ -5141,7 +5141,8 @@
     "tasks_title": "Coaches' tasks",
     "approvals": "Holiday trainings to approve",
     "no_session": "Trainings without a session",
-    "no_attendance": "Trainings without attendance"
+    "no_attendance": "Trainings without attendance",
+    "list_empty": "Nothing pending"
   },
   "anuncios_dir": {
     "no_teams": "The club has no teams",
