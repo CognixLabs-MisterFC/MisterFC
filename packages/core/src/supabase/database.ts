@@ -314,38 +314,6 @@ export type Database = {
           },
         ]
       }
-      capabilities: {
-        Row: {
-          capability_name: string
-          created_at: string
-          granted: boolean
-          id: string
-          membership_id: string
-        }
-        Insert: {
-          capability_name: string
-          created_at?: string
-          granted?: boolean
-          id?: string
-          membership_id: string
-        }
-        Update: {
-          capability_name?: string
-          created_at?: string
-          granted?: boolean
-          id?: string
-          membership_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "capabilities_membership_id_fkey"
-            columns: ["membership_id"]
-            isOneToOne: false
-            referencedRelation: "memberships"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       categories: {
         Row: {
           club_id: string
@@ -4562,10 +4530,6 @@ export type Database = {
         Returns: boolean
       }
       user_can_manage_lineup: { Args: { p_event_id: string }; Returns: boolean }
-      user_can_manage_player: {
-        Args: { p_player_id: string }
-        Returns: boolean
-      }
       user_can_post_team_chat: { Args: { p_team_id: string }; Returns: boolean }
       user_can_post_team_chat_by_conversation: {
         Args: { p_conversation_id: string }
@@ -4581,10 +4545,6 @@ export type Database = {
       }
       user_can_record_match: { Args: { p_event_id: string }; Returns: boolean }
       user_can_see_player: { Args: { p_player_id: string }; Returns: boolean }
-      user_can_see_player_medical: {
-        Args: { p_player_id: string }
-        Returns: boolean
-      }
       user_can_see_session: { Args: { p_session_id: string }; Returns: boolean }
       user_can_see_shared_lineup: {
         Args: { p_event_id: string }
@@ -4595,14 +4555,6 @@ export type Database = {
         Returns: boolean
       }
       user_coordinates_team: { Args: { p_team_id: string }; Returns: boolean }
-      user_has_capability: {
-        Args: { p_capability: string; p_membership_id: string }
-        Returns: boolean
-      }
-      user_has_capability_in_club: {
-        Args: { p_capability: string; p_club_id: string }
-        Returns: boolean
-      }
       user_has_medical_consent_read: {
         Args: { p_player_id: string }
         Returns: boolean
@@ -4717,6 +4669,7 @@ export type Database = {
         | "training_approval_requested"
         | "training_approved"
         | "training_rejected"
+        | "erasure_requested"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -4898,6 +4851,7 @@ export const Constants = {
         "training_approval_requested",
         "training_approved",
         "training_rejected",
+        "erasure_requested",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },

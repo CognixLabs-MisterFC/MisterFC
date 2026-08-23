@@ -16,9 +16,12 @@ import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { useApp } from '@/auth/context';
-import { familyFeedTarget } from '@/notifications/feed-target';
+import { familyFeedTarget, type FamilyTarget } from '@/notifications/feed-target';
 
 type Tab = 'unread' | 'all';
+
+/** Resolver de destino de una fila del feed (type+payload → ruta o null). */
+type FeedTarget = (type: string, payload: unknown) => FamilyTarget;
 
 /**
  * O2 Bloque A — Novedades. Dos pestañas:
@@ -30,8 +33,17 @@ type Tab = 'unread' | 'all';
  *    hoy (páginas de 20 + "cargar más").
  * El contador de no leídos (badge) se mantiene coherente vía invalidación tras
  * cada marcado. Feed por-usuario (RLS select-own) → keys sin clubId.
+ *
+ * COMPARTIDA por familia, staff y dirección. `feedTarget` decide a dónde lleva cada
+ * fila: por defecto `familyFeedTarget` (rutas `/family`, comportamiento actual de
+ * familia y staff, byte-idéntico); dirección pasa `directionFeedTarget` (rutas
+ * `/direction`) para no rebotar en el AreaGuard. Todo lo demás es idéntico.
  */
-export function NovedadesScreen() {
+export function NovedadesScreen({
+  feedTarget = familyFeedTarget,
+}: {
+  feedTarget?: FeedTarget;
+} = {}) {
   const t = useTranslations('');
   const tFeed = useTranslations('home.feed');
   const router = useRouter();
@@ -103,11 +115,11 @@ export function NovedadesScreen() {
   /** Toca una fila con destino: marca leída (si pendiente) y navega a su sitio. */
   const openRow = useCallback(
     (row: NotificationFeedRow) => {
-      const target = familyFeedTarget(row.type, row.payload);
+      const target = feedTarget(row.type, row.payload);
       if (row.status === 'pending') void markRead(row.id);
       if (target) router.push(target as Href);
     },
-    [markRead, router],
+    [markRead, router, feedTarget],
   );
 
   const onMarkAll = useCallback(async () => {
@@ -150,7 +162,7 @@ export function NovedadesScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingBottom: 24 }}
           renderItem={({ item }) => {
-            const clickable = familyFeedTarget(item.type, item.payload) != null;
+            const clickable = feedTarget(item.type, item.payload) != null;
             const pending = item.status === 'pending';
             const body = (
               <>
