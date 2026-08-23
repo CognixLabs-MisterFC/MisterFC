@@ -181,6 +181,76 @@ export async function emitNotification(
  * cada user_id en paralelo. La función NUNCA lanza — si un envío falla,
  * sigue con los demás (logs internos via Sentry en el caller).
  */
+// ─────────────────────────────────────────────────────────────────────────────
+//  D6 — variante SOLO CAMPANA (in_app), SIN push.
+//
+//  Las novedades de dirección (p. ej. coach_invitation_accepted) van al feed pero NO
+//  mandan push al móvil (decisión Jose). `emitNotification` acopla in_app + push +
+//  eager-send; esta variante inserta ÚNICAMENTE la fila channel='in_app'. Aditiva: no
+//  toca `emitNotification`/`emitNotificationFanOut`, así que las notificaciones
+//  actuales (con push) quedan intactas.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type EmitInAppInput = {
+  user_id: string;
+  type: NotificationType;
+  in_app_payload: Json;
+  /** Base estable; se le concatena ':in_app'. */
+  dedupe_base: string;
+};
+
+/** Inserta SOLO la campana (in_app). Sin fila push, sin eager-send. Idempotente por dedupe_key. */
+export async function emitInAppNotification(
+  input: EmitInAppInput,
+): Promise<{ in_app_inserted: boolean }> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from('notifications')
+    .upsert(
+      {
+        user_id: input.user_id,
+        type: input.type,
+        channel: 'in_app',
+        payload: input.in_app_payload,
+        dedupe_key: `${input.dedupe_base}:in_app`,
+      },
+      { onConflict: 'dedupe_key', ignoreDuplicates: true },
+    )
+    .select('id');
+  if (error) {
+    Sentry.captureException(error, {
+      tags: { feature: 'notifications', step: 'emit_in_app_only' },
+    });
+  }
+  return { in_app_inserted: Boolean(data && data.length > 0) };
+}
+
+/**
+ * Fan-out in-app-only a varios destinatarios. NUNCA lanza (un destinatario roto no
+ * frena a los demás; el fallo se reporta). Espejo de `emitNotificationFanOut` pero sin
+ * push.
+ */
+export async function emitInAppNotificationFanOut(
+  recipients: ReadonlyArray<{ user_id: string; dedupe_base_suffix?: string }>,
+  base: Omit<EmitInAppInput, 'user_id' | 'dedupe_base'> & { dedupe_base_prefix: string },
+): Promise<{ in_app_inserted: boolean }[]> {
+  return Promise.all(
+    recipients.map((r) =>
+      emitInAppNotification({
+        user_id: r.user_id,
+        type: base.type,
+        in_app_payload: base.in_app_payload,
+        dedupe_base: `${base.dedupe_base_prefix}:${r.dedupe_base_suffix ?? r.user_id}`,
+      }).catch((e) => {
+        Sentry.captureException(e, {
+          tags: { feature: 'notifications', step: 'emit_in_app_fan_out' },
+        });
+        return { in_app_inserted: false };
+      }),
+    ),
+  );
+}
+
 export async function emitNotificationFanOut(
   recipients: ReadonlyArray<{ user_id: string; dedupe_base_suffix?: string }>,
   base: Omit<EmitNotificationInput, 'user_id' | 'dedupe_base'> & {

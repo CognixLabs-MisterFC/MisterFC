@@ -4670,6 +4670,7 @@ export type Database = {
         | "training_approved"
         | "training_rejected"
         | "erasure_requested"
+        | "coach_invitation_accepted"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -4852,6 +4853,7 @@ export const Constants = {
         "training_approved",
         "training_rejected",
         "erasure_requested",
+        "coach_invitation_accepted",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },

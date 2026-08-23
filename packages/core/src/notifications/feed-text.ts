@@ -120,6 +120,17 @@ export function notificationFeedText(
       // el dato sensible vive solo en /direction/supresiones (payload lleva player_id
       // para trazabilidad, no se pinta).
       return t('erasure_requested');
+    case 'coach_invitation_accepted': {
+      // D6 — aviso a dirección: un ENTRENADOR (adulto con acceso a datos de menores)
+      // aceptó su invitación. Aquí SÍ se dice quién y a qué equipo (no es el caso RGPD
+      // de un menor). Con un solo equipo → nombre+equipo; con varios → solo nombre; sin
+      // nombre (fallback) → genérico.
+      const name = str(p, 'name');
+      const team = str(p, 'team_name');
+      if (name && team) return t('coach_invitation_accepted_team', { name, team });
+      if (name) return t('coach_invitation_accepted_named', { name });
+      return t('coach_invitation_accepted');
+    }
     case 'evaluation_campaign_launched':
       return t('evaluation_campaign_launched');
     case 'goal':
