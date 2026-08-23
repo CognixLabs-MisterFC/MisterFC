@@ -200,6 +200,9 @@ const DIRECTION_HIDDEN: MenuDef[] = [
   // informes por equipo/campaña. Solo consulta.
   { name: 'pendientes-invitaciones', labelKey: 'nav.inicio_direccion' },
   { name: 'pendientes-informes', labelKey: 'nav.inicio_direccion' },
+  // D2-3 — resumen de invitaciones por equipo (nivel 1); destino de la tarjeta del
+  // inicio. `pendientes-invitaciones` pasa a ser el nivel 2 (listado del equipo).
+  { name: 'invitaciones-equipos', labelKey: 'nav.inicio_direccion' },
 ];
 
 /** Pantallas SOLO-menú por área (sin contar el extra dinámico del coordinador). */

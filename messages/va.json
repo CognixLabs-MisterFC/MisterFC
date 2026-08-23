@@ -5144,7 +5144,20 @@
     "no_attendance": "Entrenaments sense assistència",
     "list_empty": "Res pendent",
     "expires": "Caduca",
-    "report_progress": "{done} de {total}"
+    "report_progress": "{done} de {total}",
+    "inv_teams_title": "Invitacions per equip",
+    "no_team": "Sense equip",
+    "inv_none_sent": "Sense invitacions enviades",
+    "inv_sent": "{count, plural, one {# enviada} other {# enviades}}",
+    "inv_accepted": "{count, plural, one {# acceptada} other {# acceptades}}",
+    "inv_expired": "{count, plural, one {# caducada} other {# caducades}}",
+    "inv_pending": "{count, plural, one {# pendent} other {# pendents}}",
+    "inv_tab_all": "Totes",
+    "inv_tab_pending": "Pendents",
+    "inv_tab_expired": "Caducades",
+    "inv_tab_accepted": "Acceptades",
+    "date_accepted": "Acceptada",
+    "date_expired": "Caducada"
   },
   "anuncios_dir": {
     "no_teams": "El club no té equips",

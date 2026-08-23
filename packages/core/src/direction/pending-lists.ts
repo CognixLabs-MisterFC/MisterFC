@@ -242,45 +242,180 @@ export async function listPendingCallupsFromClient(
 //  D2-2 · Listas TERMINALES (sin detalle): invitaciones + progreso de informes.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Fila de la lista de invitaciones pendientes (informativa, sin navegación). */
-export type DireccionPendingInvitation = {
+/**
+ * Estado de una invitación derivado de sus fechas (no hay columna `status`):
+ *  · `accepted`  → `accepted_at` no nulo.
+ *  · `expired`   → sin aceptar y `expires_at` ya pasó.
+ *  · `pending`   → sin aceptar y aún vigente.
+ */
+export type DireccionInvitationStatus = 'pending' | 'accepted' | 'expired';
+
+function invitationStatus(
+  acceptedAt: string | null,
+  expiresAt: string,
+  nowMs: number
+): DireccionInvitationStatus {
+  if (acceptedAt != null) return 'accepted';
+  return new Date(expiresAt).getTime() <= nowMs ? 'expired' : 'pending';
+}
+
+/** Fila del RESUMEN por equipo (D2-3 nivel 1). `teamId` null = fila "Sin equipo". */
+export type DireccionTeamInvitationSummary = {
+  teamId: string | null;
+  team_name: string | null;
+  team_color: string | null;
+  sent: number;
+  accepted: number;
+  expired: number;
+  pending: number;
+};
+
+type InvAgg = { sent: number; accepted: number; expired: number; pending: number };
+const emptyAgg = (): InvAgg => ({ sent: 0, accepted: 0, expired: 0, pending: 0 });
+
+/**
+ * D2-3 nivel 1 — Resumen de invitaciones POR EQUIPO de la temporada activa (SOLO
+ * CONSULTA, club-wide). Una fila por equipo de la temporada activa —INCLUIDOS los que
+ * tienen 0 enviadas (decisión Jose: un equipo a 0 es justo lo que hay que ver, se le
+ * olvidó invitar)— con el desglose completo enviadas/aceptadas/caducadas/pendientes.
+ * Más una fila "Sin equipo" (teamId null) SOLO si hay invitaciones sin `team_id`.
+ *
+ * A diferencia del loader de D2-2, lee TODAS las invitaciones del club (no solo las
+ * pendientes no caducadas): el desglose necesita aceptadas y caducadas. La RLS
+ * `invitations_select_admin_or_invited` da al director todas las filas del club sin
+ * filtro de estado. Equipos de la temporada activa con el mismo patrón que
+ * `listTeamsReportProgressFromClient`. Orden: pendientes desc (a quién perseguir);
+ * los de 0 pendientes (incluidos los de 0 enviadas) caen al final por nombre, y "Sin
+ * equipo" queda tras los equipos con nombre a igualdad de pendientes.
+ */
+export async function listTeamInvitationSummariesFromClient(
+  supabase: DbClient,
+  clubId: string
+): Promise<DireccionTeamInvitationSummary[]> {
+  const nowMs = Date.now();
+
+  // Equipos de la temporada activa (mismo patrón que reports-progress).
+  const { data: season } = await supabase
+    .from('seasons')
+    .select('id, label')
+    .eq('club_id', clubId)
+    .eq('status', 'active')
+    .order('label', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let teams: Array<{ id: string; name: string; color: string | null }> = [];
+  if (season) {
+    const { data: teamRows } = await supabase
+      .from('teams')
+      .select('id, name, color, categories!inner(club_id)')
+      .eq('season', season.label as string)
+      .eq('categories.club_id', clubId);
+    teams = ((teamRows ?? []) as unknown as Array<{
+      id: string;
+      name: string;
+      color: string | null;
+    }>).map((t) => ({ id: t.id, name: t.name, color: t.color ?? null }));
+  }
+
+  // TODAS las invitaciones del club (estados derivados de las fechas).
+  const { data: invRows } = await supabase
+    .from('invitations')
+    .select('team_id, accepted_at, expires_at')
+    .eq('club_id', clubId);
+
+  const byTeam = new Map<string, InvAgg>();
+  const noTeam = emptyAgg();
+  for (const r of (invRows ?? []) as Array<{
+    team_id: string | null;
+    accepted_at: string | null;
+    expires_at: string;
+  }>) {
+    const agg = r.team_id ? byTeam.get(r.team_id) ?? emptyAgg() : noTeam;
+    agg.sent += 1;
+    const st = invitationStatus(r.accepted_at, r.expires_at, nowMs);
+    agg[st] += 1;
+    if (r.team_id) byTeam.set(r.team_id, agg);
+  }
+
+  const rows: DireccionTeamInvitationSummary[] = teams.map((t) => {
+    const a = byTeam.get(t.id) ?? emptyAgg();
+    return { teamId: t.id, team_name: t.name, team_color: t.color, ...a };
+  });
+  if (noTeam.sent > 0) {
+    rows.push({ teamId: null, team_name: null, team_color: null, ...noTeam });
+  }
+
+  // Pendientes desc; a igualdad, los equipos con nombre antes que "Sin equipo"; luego
+  // por nombre. Los de 0 pendientes (incluidos 0 enviadas) caen al final por nombre.
+  rows.sort(
+    (a, b) =>
+      b.pending - a.pending ||
+      (a.teamId === null ? 1 : 0) - (b.teamId === null ? 1 : 0) ||
+      (a.team_name ?? '').localeCompare(b.team_name ?? '')
+  );
+  return rows;
+}
+
+/** Fila del listado individual de UN equipo (D2-3 nivel 2, informativa, sin navegación). */
+export type DireccionTeamInvitation = {
   id: string;
   email: string;
   role: string;
-  team_name: string | null;
-  expires_at: string;
+  status: DireccionInvitationStatus;
+  /** Fecha relevante según estado: aceptación si aceptada, caducidad en otro caso. */
+  date: string;
 };
 
 /**
- * Invitaciones del club sin aceptar y no expiradas. Espeja el filtro de
- * `countPendingInvitationsFromClient` (mismas filas), pero devuelve las columnas para
- * pintar cada fila: a quién (email), rol, equipo (si la invitación va atada a uno) y
- * caducidad. La RLS `invitations_select` ya deja al director ver todas las del club
- * (mig f14k_1). Sin acciones (solo consulta).
+ * D2-3 nivel 2 — TODAS las invitaciones de un equipo (o las que NO van atadas a equipo,
+ * `teamId=null`), con su estado. NO solo las pendientes. El filtro por estado
+ * (TODAS/PENDIENTES/CADUCADAS/ACEPTADAS) lo hace la pantalla en cliente (volumen por
+ * equipo pequeño). Orden: pendientes primero (caducan antes → primero), luego caducadas
+ * y aceptadas más recientes primero. RLS igual que el resumen (director club-wide).
  */
-export async function listPendingInvitationsFromClient(
+export async function listTeamInvitationsFromClient(
   supabase: DbClient,
-  clubId: string
-): Promise<DireccionPendingInvitation[]> {
-  const nowIso = new Date().toISOString();
-  const { data } = await supabase
+  clubId: string,
+  teamId: string | null
+): Promise<DireccionTeamInvitation[]> {
+  const nowMs = Date.now();
+  let query = supabase
     .from('invitations')
-    .select('id, email, role, expires_at, teams(name)')
-    .eq('club_id', clubId)
-    .is('accepted_at', null)
-    .gt('expires_at', nowIso)
-    .order('expires_at', { ascending: true });
+    .select('id, email, role, accepted_at, expires_at')
+    .eq('club_id', clubId);
+  query = teamId ? query.eq('team_id', teamId) : query.is('team_id', null);
+  const { data } = await query;
 
-  return (data ?? []).map((r) => {
-    const { name } = teamOf(r.teams);
+  const rows: DireccionTeamInvitation[] = ((data ?? []) as Array<{
+    id: string;
+    email: string;
+    role: string;
+    accepted_at: string | null;
+    expires_at: string;
+  }>).map((r) => {
+    const status = invitationStatus(r.accepted_at, r.expires_at, nowMs);
     return {
-      id: r.id as string,
-      email: r.email as string,
-      role: r.role as string,
-      team_name: name,
-      expires_at: r.expires_at as string,
+      id: r.id,
+      email: r.email,
+      role: r.role,
+      status,
+      date: status === 'accepted' ? (r.accepted_at as string) : r.expires_at,
     };
   });
+
+  const ORDER: Record<DireccionInvitationStatus, number> = {
+    pending: 0,
+    expired: 1,
+    accepted: 2,
+  };
+  rows.sort(
+    (a, b) =>
+      ORDER[a.status] - ORDER[b.status] ||
+      // Pendientes: la que caduca antes, primero. Caducadas/aceptadas: la más reciente primero.
+      (a.status === 'pending' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date))
+  );
+  return rows;
 }
 
 /** Fila del progreso de informes de UN equipo en UNA campaña (informativa). */

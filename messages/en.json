@@ -5144,7 +5144,20 @@
     "no_attendance": "Trainings without attendance",
     "list_empty": "Nothing pending",
     "expires": "Expires",
-    "report_progress": "{done} of {total}"
+    "report_progress": "{done} of {total}",
+    "inv_teams_title": "Invitations by team",
+    "no_team": "No team",
+    "inv_none_sent": "No invitations sent",
+    "inv_sent": "{count, plural, one {# sent} other {# sent}}",
+    "inv_accepted": "{count, plural, one {# accepted} other {# accepted}}",
+    "inv_expired": "{count, plural, one {# expired} other {# expired}}",
+    "inv_pending": "{count, plural, one {# pending} other {# pending}}",
+    "inv_tab_all": "All",
+    "inv_tab_pending": "Pending",
+    "inv_tab_expired": "Expired",
+    "inv_tab_accepted": "Accepted",
+    "date_accepted": "Accepted",
+    "date_expired": "Expired"
   },
   "anuncios_dir": {
     "no_teams": "The club has no teams",
