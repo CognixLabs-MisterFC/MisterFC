@@ -191,6 +191,11 @@ const DIRECTION_HIDDEN: MenuDef[] = [
   // D1b-4 — calendario del equipo (?teamId), agenda read-only. NO es `calendario`
   // (esa es la pantalla de FESTIVOS del menú de dirección).
   { name: 'equipo-calendario', labelKey: 'nav.equipos' },
+  // D2-1 — colas de eventos pendientes del inicio (club-wide, alcanzadas desde las
+  // tarjetas del inicio de dirección). Solo consulta.
+  { name: 'pendientes-sesion', labelKey: 'nav.inicio_direccion' },
+  { name: 'pendientes-convocatoria', labelKey: 'nav.inicio_direccion' },
+  { name: 'pendientes-asistencia', labelKey: 'nav.inicio_direccion' },
 ];
 
 /** Pantallas SOLO-menú por área (sin contar el extra dinámico del coordinador). */

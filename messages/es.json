@@ -5141,7 +5141,8 @@
     "tasks_title": "Tareas de entrenadores",
     "approvals": "Entrenos en festivo por aprobar",
     "no_session": "Entrenos sin sesión",
-    "no_attendance": "Entrenos sin asistencia"
+    "no_attendance": "Entrenos sin asistencia",
+    "list_empty": "Nada pendiente"
   },
   "anuncios_dir": {
     "no_teams": "El club no tiene equipos",

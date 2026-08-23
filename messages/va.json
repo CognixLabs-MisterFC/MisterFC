@@ -5141,7 +5141,8 @@
     "tasks_title": "Tasques dels entrenadors",
     "approvals": "Entrenaments en festiu per aprovar",
     "no_session": "Entrenaments sense sessió",
-    "no_attendance": "Entrenaments sense assistència"
+    "no_attendance": "Entrenaments sense assistència",
+    "list_empty": "Res pendent"
   },
   "anuncios_dir": {
     "no_teams": "El club no té equips",
