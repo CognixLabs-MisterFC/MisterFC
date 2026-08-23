@@ -5144,7 +5144,20 @@
     "no_attendance": "Entrenos sin asistencia",
     "list_empty": "Nada pendiente",
     "expires": "Caduca",
-    "report_progress": "{done} de {total}"
+    "report_progress": "{done} de {total}",
+    "inv_teams_title": "Invitaciones por equipo",
+    "no_team": "Sin equipo",
+    "inv_none_sent": "Sin invitaciones enviadas",
+    "inv_sent": "{count, plural, one {# enviada} other {# enviadas}}",
+    "inv_accepted": "{count, plural, one {# aceptada} other {# aceptadas}}",
+    "inv_expired": "{count, plural, one {# caducada} other {# caducadas}}",
+    "inv_pending": "{count, plural, one {# pendiente} other {# pendientes}}",
+    "inv_tab_all": "Todas",
+    "inv_tab_pending": "Pendientes",
+    "inv_tab_expired": "Caducadas",
+    "inv_tab_accepted": "Aceptadas",
+    "date_accepted": "Aceptada",
+    "date_expired": "Caducada"
   },
   "anuncios_dir": {
     "no_teams": "El club no tiene equipos",

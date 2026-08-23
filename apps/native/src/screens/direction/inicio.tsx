@@ -46,7 +46,7 @@ export function DireccionInicioScreen() {
   // alcanzables por el MENÚ hamburguesa de dirección (DIRECTION_MENU: calendario +
   // supresiones), así que gatear su tarjeta no los deja inaccesibles a contador 0.
   const block1 = [
-    { key: 'invitations', count: c?.pendingInvitations ?? 0, href: '/direction/pendientes-invitaciones' as const },
+    { key: 'invitations', count: c?.pendingInvitations ?? 0, href: '/direction/invitaciones-equipos' as const },
     ...(isAdminClub
       ? [{ key: 'erasures', count: c?.pendingErasures ?? 0, href: '/direction/supresiones' as const }]
       : []),
