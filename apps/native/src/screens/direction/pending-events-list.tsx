@@ -9,6 +9,23 @@ import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { directionEventTarget } from '@/notifications/feed-target';
 
+type T = (key: string, values?: Record<string, string>) => string;
+
+/**
+ * Fecha y hora de un evento con nombres de MES del CATÁLOGO (es/en/va), no
+ * `toLocaleString` del sistema: la app no usa el idioma del dispositivo. Ancla en el
+ * mismo formato de fecha de la lista de invitaciones (día + mes + año) y le añade la
+ * hora con la convención de la app (`toLocaleTimeString` HH:MM, igual que calendario/
+ * agenda; solo el HH:MM numérico es locale-agnóstico). El AÑO importa aquí: las colas
+ * llegan a +60d / -72h y pueden cruzar cambio de año. → "12 agosto 2026 · 14:30".
+ */
+function formatEventDateTime(t: T, iso: string): string {
+  const d = new Date(iso);
+  const date = `${d.getDate()} ${t(`calendario.date.month.${d.getMonth()}`)} ${d.getFullYear()}`;
+  const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return `${date} · ${time}`;
+}
+
 /**
  * D2-1 — Pantalla-lista GENÉRICA de una cola de eventos pendientes del inicio de
  * dirección (SOLO CONSULTA, club-wide). La comparten las tres colas de eventos
@@ -76,7 +93,7 @@ export function DireccionPendingEventsScreen({
                 {onPress ? <Text className="text-zinc-300">›</Text> : null}
               </View>
               <Text className="mt-1 text-xs text-zinc-500">
-                {new Date(item.starts_at).toLocaleString()}
+                {formatEventDateTime(t, item.starts_at)}
               </Text>
               {detail ? (
                 <Text className="text-xs text-zinc-400" numberOfLines={1}>
