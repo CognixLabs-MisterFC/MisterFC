@@ -1127,7 +1127,11 @@
     },
     "radar_individual": "Individual",
     "radar_team": "Equip",
-    "radar_team_empty": "Sense valoració d’equip en aquest període"
+    "radar_team_empty": "Sense valoració d’equip en aquest període",
+    "player_status": {
+      "completed": "Completat",
+      "pending": "Pendent"
+    }
   },
   "jugadores": {
     "invitePending": {

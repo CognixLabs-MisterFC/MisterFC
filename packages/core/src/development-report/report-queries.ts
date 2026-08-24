@@ -21,11 +21,72 @@ import {
   DEVELOPMENT_PERIODS,
   DEVELOPMENT_REPORT_CATALOG,
   TEAM_REPORT_CATALOG,
+  reportStatus,
 } from './development-report';
+import { formatPlayerName } from '../utils/name';
 
 type Supa = SupabaseClient<Database>;
 
 export type ClubSeason = { id: string; label: string; status: string };
+
+/** 19-B — Estado del informe de un jugador del equipo en un periodo (SOLO estado). */
+export type TeamReportPlayerStatus = {
+  playerId: string;
+  name: string;
+  completed: boolean;
+};
+
+/**
+ * 19-B — Estado POR JUGADOR del informe de desarrollo de un equipo en un periodo: el
+ * roster activo (`team_members` con `left_at` null) con si su informe está COMPLETADO,
+ * usando el MISMO criterio que el nivel-1 D2-2 (`reportStatus === 'completed'`, todos
+ * los ítems del catálogo puntuados). Así el recuento cuadra: nº de `completed=true` ==
+ * el `done` de `listTeamsReportProgressFromClient`, y el total == el tamaño del roster.
+ *
+ * Solo estado (no trae scores ni abre nada). NO atado al scope de dirección: recibe
+ * `teamId` + `period` y nada de team_staff/membership → lo reutiliza el entrenador (19-C).
+ * Un `team_id` vive en una sola temporada, así que filtrar por team_id+period basta (no
+ * hace falta season_id). RLS: `development_reports_select` da lectura a admin/director
+ * club-wide y a `user_is_team_staff` del equipo.
+ */
+export async function listTeamReportPlayerStatusFromClient(
+  supabase: Supa,
+  teamId: string,
+  period: string,
+): Promise<TeamReportPlayerStatus[]> {
+  // Roster activo con nombre (mismo origen que la web F13.10: team_members × players).
+  const { data: rosterData } = await supabase
+    .from('team_members')
+    .select('players!inner(id, first_name, last_name)')
+    .eq('team_id', teamId)
+    .is('left_at', null);
+  const roster = ((rosterData ?? []) as unknown as Array<{
+    players: { id: string; first_name: string; last_name: string | null };
+  }>).map((r) => ({
+    playerId: r.players.id,
+    name: formatPlayerName(r.players.first_name, r.players.last_name),
+  }));
+
+  // Informes del equipo en el periodo → set de jugadores con informe COMPLETO.
+  const { data: reportData } = await supabase
+    .from('development_reports')
+    .select('player_id, scores')
+    .eq('team_id', teamId)
+    .eq('period', period);
+  const completed = new Set<string>();
+  for (const r of (reportData ?? []) as Array<{
+    player_id: string;
+    scores: Record<string, number>;
+  }>) {
+    if (reportStatus(r.scores ?? {}, DEVELOPMENT_REPORT_CATALOG) === 'completed') {
+      completed.add(r.player_id);
+    }
+  }
+
+  return roster
+    .map((p) => ({ ...p, completed: completed.has(p.playerId) }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
+}
 
 export type DevelopmentReportRow = {
   id: string;

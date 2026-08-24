@@ -1,4 +1,5 @@
-import { FlatList, Text, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   clubScopedCacheKey,
   listTeamsReportProgressFromClient,
@@ -10,13 +11,14 @@ import { OfflineBanner, EmptyState, LoadingScreen, ScreenTitle } from '@/ui/feed
 import { useTranslations } from '@/locale/provider';
 
 /**
- * D2-2 — Progreso de informes POR EQUIPO Y CAMPAÑA para dirección (SOLO CONSULTA,
+ * D2-2 / 19-B — Progreso de informes POR EQUIPO Y CAMPAÑA para dirección (SOLO CONSULTA,
  * club-wide). Una fila por (equipo × campaña lanzada) con informes pendientes:
- * "Cadete A · Inicial · 8 de 20" — para saber a qué entrenador apretar. NO lista
- * jugadores ni abre visor de informe. Filas NO pulsables.
+ * "Cadete A · Inicial · 8 de 20". 19-B: las filas AHORA navegan al 2º nivel (jugadores
+ * del equipo con su estado), pasando teamId + period + nombre. Sigue sin abrir informes.
  */
 export function DireccionReportsProgressScreen() {
   const t = useTranslations('');
+  const router = useRouter();
   const { activeClub } = useApp();
   const clubId = activeClub?.club.id ?? null;
 
@@ -38,7 +40,15 @@ export function DireccionReportsProgressScreen() {
         ListHeaderComponent={<ScreenTitle>{t('dir_inicio.reports')}</ScreenTitle>}
         ListEmptyComponent={<EmptyState message={t('dir_inicio.list_empty')} />}
         renderItem={({ item }) => (
-          <View className="rounded-2xl border border-zinc-200 p-4">
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: '/direction/pendientes-informes-jugadores',
+                params: { teamId: item.teamId, period: item.period, teamName: item.team_name },
+              })
+            }
+            className="rounded-2xl border border-zinc-200 p-4 active:opacity-70"
+          >
             <Text className="text-sm font-semibold text-[#0F1B2E]" numberOfLines={1}>
               {item.team_name}
             </Text>
@@ -48,7 +58,7 @@ export function DireccionReportsProgressScreen() {
                 total: String(item.total),
               })}`}
             </Text>
-          </View>
+          </Pressable>
         )}
       />
     </View>
