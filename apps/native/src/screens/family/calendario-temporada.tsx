@@ -10,6 +10,7 @@ import {
   clubScopedCacheKey,
   type CalendarEvent,
   type HolidayInfo,
+  type TeamOption,
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
@@ -41,20 +42,30 @@ const TYPE_ICON: Record<string, string> = {
 type SubTab = 'month' | 'day';
 
 /**
- * 18-F1/F2 — Vista de TEMPORADA. Wrapper con sub-selector MES/DÍA que POSEE el estado
- * de mes/año, el día seleccionado y el FETCH mensual (caché `calendar-month:…`). Abre en
- * MES (comportamiento de F1). Tanto MES como DÍA leen de ese mismo `data` → un único fetch
- * por mes; deslizar a un día de otro mes mueve el mes visible y reaprovecha su caché.
+ * 18-F1/F2/F3a — Vista de TEMPORADA. Wrapper con sub-selector MES/DÍA que POSEE el estado
+ * de mes/año, el día seleccionado y el FETCH mensual (caché `calendar-month*`). Abre en
+ * MES. Tanto MES como DÍA leen del mismo `data` → un único fetch por mes; deslizar a un día
+ * de otro mes mueve el mes visible y reaprovecha su caché.
  *
- * Parametrizable (`eventTarget`, `teamId`) para reutilizar en staff/dirección (F3); en este
- * PR se monta SOLO en familia (default `familyEventTarget`, `teamId=null`).
+ * Parametrizable para el roll-out (F3b staff / F3c dirección):
+ *  · `teamId`    → acota a UN equipo (D1b-4), desactiva el scope por-usuario.
+ *  · `clubWide`  → TODOS los eventos del club (dirección), sin scope ni acotar equipo;
+ *                  caché en namespace propio (`calendar-month-club`).
+ *  · `teamFilter`→ habilita el filtro de equipos multiselección (se muestra solo si el
+ *                  scope trae >1 equipo). Familia NO lo pasa → se ve idéntico a hoy.
+ *
+ * En este PR (F3a) sigue montándose SOLO en familia (sin filtro, sin clubWide).
  */
 export function CalendarTemporadaScreen({
   eventTarget = familyEventTarget,
   teamId = null,
+  clubWide = false,
+  teamFilter = false,
 }: {
   eventTarget?: (ev: CalendarEvent) => FamilyTarget;
   teamId?: string | null;
+  clubWide?: boolean;
+  teamFilter?: boolean;
 } = {}) {
   const t = useTranslations('');
   const { activeClub, theme } = useApp();
@@ -69,6 +80,9 @@ export function CalendarTemporadaScreen({
   // Día seleccionado ('YYYY-MM-DD'): hoy si arrancamos en el mes actual; al cambiar de
   // mes se limpia (en MES se pide tocar un día).
   const [selectedDay, setSelectedDay] = useState<string | null>(() => dayKey(today));
+  // Filtro de equipos: null = TODOS (defecto). No persiste (estado de sesión, se reinicia
+  // al desmontar la pantalla). Solo activo si `teamFilter` y hay >1 equipo en el scope.
+  const [selectedTeams, setSelectedTeams] = useState<Set<string> | null>(null);
 
   const monthTag = `${viewYear}-${pad(viewMonth + 1)}`;
 
@@ -87,31 +101,59 @@ export function CalendarTemporadaScreen({
     };
   }, [viewYear, viewMonth]);
 
+  const cacheKey = clubWide
+    ? clubScopedCacheKey('calendar-month-club', `${clubId ?? 'none'}:${monthTag}`)
+    : teamId
+      ? clubScopedCacheKey('calendar-month-team', `${clubId ?? 'none'}:${teamId}:${monthTag}`)
+      : clubScopedCacheKey('calendar-month', `${clubId ?? 'none'}:${monthTag}`);
+
   const { data, fromCache, loading } = useCached<{
     events: CalendarEvent[];
     holidays: HolidayInfo[];
-  }>(
-    teamId
-      ? clubScopedCacheKey('calendar-month-team', `${clubId ?? 'none'}:${teamId}:${monthTag}`)
-      : clubScopedCacheKey('calendar-month', `${clubId ?? 'none'}:${monthTag}`),
-    async (sb) => {
-      if (!clubId) return { events: [], holidays: [] };
-      const { events } = await getCalendarDataFromClient(
-        sb,
-        clubId,
-        { startIso: range.startIso, endIso: range.endIso },
-        { teamIds: teamId ? [teamId] : [], categoryIds: [], types: [] },
-        teamId ? {} : { scopeTeamIds: await getCalendarScopeTeamIdsFromClient(sb, clubId) },
-      );
-      const holidays = await getHolidaysFromClient(sb, clubId, range.fromDate, range.toDate);
-      return { events, holidays };
-    },
+    teams: TeamOption[];
+  }>(cacheKey, async (sb) => {
+    if (!clubId) return { events: [], holidays: [], teams: [] };
+    // scope por-usuario solo en familia/staff (ni teamId ni clubWide).
+    const scopeTeamIds =
+      teamId || clubWide ? null : await getCalendarScopeTeamIdsFromClient(sb, clubId);
+    const { events, teams } = await getCalendarDataFromClient(
+      sb,
+      clubId,
+      { startIso: range.startIso, endIso: range.endIso },
+      { teamIds: teamId ? [teamId] : [], categoryIds: [], types: [] },
+      teamId || clubWide ? {} : { scopeTeamIds },
+    );
+    const holidays = await getHolidaysFromClient(sb, clubId, range.fromDate, range.toDate);
+    // Equipos EN EL SCOPE (fuente del filtro): club-wide → todos; teamId → ese; familia/
+    // staff → los del scope por-usuario. `teams` del loader ya son de la temporada activa.
+    const scopedTeams = teamId
+      ? teams.filter((tm) => tm.id === teamId)
+      : !clubWide && scopeTeamIds
+        ? teams.filter((tm) => scopeTeamIds.includes(tm.id))
+        : teams;
+    return { events, holidays, teams: scopedTeams };
+  });
+
+  const teamsInScope = data?.teams ?? [];
+  const showFilter = teamFilter && teamsInScope.length > 1;
+
+  const isTeamSelected = useCallback(
+    (id: string) => selectedTeams === null || selectedTeams.has(id),
+    [selectedTeams],
   );
+
+  // Eventos tras el filtro de equipos. Los de club (team_id null) NO se filtran (no son de
+  // un equipo). Con el filtro apagado o en "todos" (null) no se filtra nada.
+  const filteredEvents = useMemo(() => {
+    const evs = data?.events ?? [];
+    if (!showFilter || selectedTeams === null) return evs;
+    return evs.filter((e) => e.team_id === null || selectedTeams.has(e.team_id));
+  }, [data, showFilter, selectedTeams]);
 
   // Índices por día: qué días tienen evento / son festivo, y el detalle del día tocado.
   const { eventDays, holidayDays, dayEvents, dayHolidays } = useMemo(() => {
     const evByDay = new Map<string, CalendarEvent[]>();
-    for (const ev of data?.events ?? []) {
+    for (const ev of filteredEvents) {
       const k = dayKey(new Date(ev.starts_at));
       const arr = evByDay.get(k) ?? [];
       arr.push(ev);
@@ -133,7 +175,7 @@ export function CalendarTemporadaScreen({
       dayEvents: evs,
       dayHolidays: sel ? holByDay.get(sel) ?? [] : [],
     };
-  }, [data, selectedDay]);
+  }, [filteredEvents, data, selectedDay]);
 
   // Día concreto para la vista DÍA: el seleccionado o, si no hay, hoy (si el mes visible es
   // el actual) o el día 1 del mes visible.
@@ -168,6 +210,16 @@ export function CalendarTemporadaScreen({
     setSubTab('day');
   };
 
+  const toggleTeam = (id: string) => {
+    setSelectedTeams((prev) => {
+      const base = prev ?? new Set(teamsInScope.map((tm) => tm.id));
+      const next = new Set(base);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
@@ -186,6 +238,19 @@ export function CalendarTemporadaScreen({
           onPress={openDayTab}
         />
       </View>
+
+      {/* Filtro de equipos (multiselección, cliente). Solo si procede. Aplica a MES y DÍA. */}
+      {showFilter && (
+        <TeamFilterBar
+          teams={teamsInScope}
+          accent={accent}
+          t={t}
+          isSelected={isTeamSelected}
+          onToggle={toggleTeam}
+          onAll={() => setSelectedTeams(null)}
+          onNone={() => setSelectedTeams(new Set())}
+        />
+      )}
 
       {loading ? (
         <LoadingScreen />
@@ -214,7 +279,7 @@ export function CalendarTemporadaScreen({
         <DayView
           // key por día: el rango ajustado (8-24) vive SOLO mientras miras ESE día. Al
           // cambiar de día (o volver de MES) el componente se remonta y el rango se reinicia
-          // — decisión de Jose: nadie debe llevarse un 16-22 al día siguiente y perderse el
+          // — decisión de Jose: nadie se lleva un 16-22 al día siguiente y se pierde el
           // partido de las 9.
           key={effectiveDay}
           day={effectiveDay}
@@ -378,11 +443,8 @@ function MonthView({
   );
 }
 
-/* ────────────────────────────── Vista DÍA (18-F2) ─────────────────────────────────────── */
+/* ────────────────────────────── Vista DÍA (18-F2/F3a) ─────────────────────────────────── */
 
-const HOUR_H = 56; // alto en px de una hora de la rejilla
-const MIN_BLOCK_H = 28; // alto mínimo para que quepa la hora + tipo en eventos cortos
-const DEFAULT_DUR_MIN = 60; // duración asumida si no hay ends_at (o es inválido)
 const GUTTER = 48; // ancho de la columna de etiquetas de hora
 const DEFAULT_START = 8;
 const DEFAULT_END = 24;
@@ -403,55 +465,31 @@ const clockOfHour = (h: number) => {
   return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 };
 
-type Timed = { ev: CalendarEvent; startMin: number; endMin: number; col: number; colCount: number };
+/** Pill de duración: "3 h" / "30 min" / "1 h 30 min". */
+const formatDuration = (mins: number, t: T): string => {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  const H = t('calendario.day.dur.h');
+  const M = t('calendario.day.dur.min');
+  if (h === 0) return `${m} ${M}`;
+  if (m === 0) return `${h} ${H}`;
+  return `${h} ${H} ${m} ${M}`;
+};
+
+type DayItem = {
+  ev: CalendarEvent;
+  startMin: number;
+  durMin: number | null; // null si no hay ends_at válido → la duración no se conoce
+};
 
 /**
- * Reparto en CARRILES (estilo Outlook/Google): agrupa los eventos que se solapan en el
- * tiempo y, dentro de cada clúster, asigna la primera columna libre. Dos entrenamientos a
- * la misma hora → dos columnas lado a lado. Se calcula sobre TODOS los eventos con hora del
- * día (aunque queden fuera del rango visible) para que las columnas no bailen al ajustar.
+ * 18-F3a — Vista DÍA con APILADO VERTICAL. Timeline por horas; los eventos se colocan como
+ * filas a ANCHO COMPLETO bajo la hora en la que EMPIEZAN. Cuando varios coinciden en la
+ * misma hora se apilan (la banda crece por recuento, SIN tope, sin repartir el ancho en
+ * columnas). La duración es TEXTO (rango + pill), no altura: un evento largo vive solo en
+ * su banda de inicio y deja las horas siguientes aparentemente libres (consecuencia
+ * aceptada; el rango en texto ya lo dice). Sustituye el reparto en carriles de F2.
  */
-function layoutLanes(events: CalendarEvent[]): Timed[] {
-  const items = events.map((ev) => {
-    const startMin = minutesOf(ev.starts_at);
-    let endMin = startMin + DEFAULT_DUR_MIN;
-    if (ev.ends_at) {
-      const diff = (new Date(ev.ends_at).getTime() - new Date(ev.starts_at).getTime()) / 60000;
-      if (diff > 0) endMin = startMin + diff;
-    }
-    return { ev, startMin, endMin, col: 0, colCount: 1 };
-  });
-  items.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
-
-  const out: Timed[] = [];
-  let cluster: typeof items = [];
-  let clusterEnd = -Infinity;
-  const flush = () => {
-    const colEnds: number[] = []; // último fin (min) por columna
-    for (const it of cluster) {
-      let c = colEnds.findIndex((end) => end <= it.startMin);
-      if (c === -1) {
-        c = colEnds.length;
-        colEnds.push(it.endMin);
-      } else {
-        colEnds[c] = it.endMin;
-      }
-      it.col = c;
-    }
-    const colCount = colEnds.length;
-    for (const it of cluster) out.push({ ...it, colCount });
-    cluster = [];
-    clusterEnd = -Infinity;
-  };
-  for (const it of items) {
-    if (cluster.length && it.startMin >= clusterEnd) flush();
-    cluster.push(it);
-    clusterEnd = Math.max(clusterEnd, it.endMin);
-  }
-  if (cluster.length) flush();
-  return out;
-}
-
 function DayView({
   day,
   events,
@@ -473,24 +511,38 @@ function DayView({
   const [rangeEnd, setRangeEnd] = useState(DEFAULT_END);
 
   const allDay = events.filter((e) => e.all_day);
-  const lanes = useMemo(() => layoutLanes(events.filter((e) => !e.all_day)), [events]);
+
+  // Eventos con hora, con su minuto de inicio y duración (para el rango de texto y el pill).
+  const timed: DayItem[] = useMemo(() => {
+    return events
+      .filter((e) => !e.all_day)
+      .map((ev) => {
+        const startMin = minutesOf(ev.starts_at);
+        let durMin: number | null = null;
+        if (ev.ends_at) {
+          const diff =
+            (new Date(ev.ends_at).getTime() - new Date(ev.starts_at).getTime()) / 60000;
+          if (diff > 0) durMin = Math.round(diff);
+        }
+        return { ev, startMin, durMin };
+      })
+      .sort((a, b) => a.startMin - b.startMin);
+  }, [events]);
 
   const rangeStartMin = rangeStart * 60;
   const rangeEndMin = rangeEnd * 60;
-  const gridMin = (rangeEnd - rangeStart) * 60;
-  const gridHeight = (rangeEnd - rangeStart) * HOUR_H;
 
-  // Eventos con hora que caen FUERA del rango visible (no se recortan: están enteros fuera).
-  const before = lanes.filter((l) => l.endMin <= rangeStartMin).length;
-  const after = lanes.filter((l) => l.startMin >= rangeEndMin).length;
+  // Fuera de rango: los eventos se COLOCAN por su hora de inicio → fuera = empieza fuera.
+  const before = timed.filter((x) => x.startMin < rangeStartMin).length;
+  const after = timed.filter((x) => x.startMin >= rangeEndMin).length;
 
   const resetRange = () => {
     setRangeStart(DEFAULT_START);
     setRangeEnd(DEFAULT_END);
   };
 
-  // Deslizar entre días: pan horizontal. `failOffsetY` cede el gesto al scroll vertical de la
-  // rejilla; `activeOffsetX` exige movimiento horizontal para activarse.
+  // Deslizar entre días: pan horizontal. `failOffsetY` cede el gesto al scroll vertical;
+  // `activeOffsetX` exige movimiento horizontal para activarse.
   const swipe = useMemo(
     () =>
       Gesture.Pan()
@@ -508,8 +560,14 @@ function DayView({
     `calendario.date.month.${dayDate.getMonth()}`,
   )}`;
 
-  const hourLines = [];
-  for (let h = rangeStart; h <= rangeEnd; h++) hourLines.push(h);
+  // Bandas por hora: cada hora del rango con los eventos que EMPIEZAN en ella.
+  const hours: { h: number; items: DayItem[] }[] = [];
+  for (let h = rangeStart; h < rangeEnd; h++) {
+    hours.push({
+      h,
+      items: timed.filter((x) => x.startMin >= h * 60 && x.startMin < (h + 1) * 60),
+    });
+  }
 
   return (
     <GestureDetector gesture={swipe}>
@@ -569,7 +627,7 @@ function DayView({
           </View>
         )}
 
-        {/* Aviso de eventos por encima del rango visible. */}
+        {/* Aviso de eventos que empiezan por encima del rango visible. */}
         {before > 0 && (
           <OutOfRangeChip
             label={t('calendario.day.before_range', { count: String(before) })}
@@ -578,72 +636,57 @@ function DayView({
         )}
 
         <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-          <View style={{ height: gridHeight, position: 'relative' }} className="px-2">
-            {/* Líneas y etiquetas de hora. */}
-            {hourLines.map((h) => (
-              <View
-                key={h}
-                style={{ position: 'absolute', top: (h - rangeStart) * HOUR_H, left: 0, right: 0 }}
-              >
-                <View className="border-t border-zinc-100" style={{ marginLeft: GUTTER }} />
-                <Text
-                  style={{ position: 'absolute', top: -7, left: 0, width: GUTTER - 6 }}
-                  className="text-right text-[10px] text-zinc-400"
-                >
-                  {clockOfHour(h)}
-                </Text>
-              </View>
-            ))}
-
-            {/* Bloques de evento (posicionados por hora, ancho por carril). */}
-            <View style={{ position: 'absolute', left: GUTTER, right: 6, top: 0, bottom: 0 }}>
-              {lanes.map((l) => {
-                const topMin = Math.max(0, l.startMin - rangeStartMin);
-                const botMin = Math.min(gridMin, l.endMin - rangeStartMin);
-                if (botMin <= 0 || topMin >= gridMin || botMin <= topMin) return null; // fuera de rango
-                const top = (topMin / 60) * HOUR_H;
-                const height = Math.max(MIN_BLOCK_H, ((botMin - topMin) / 60) * HOUR_H);
-                const rival =
-                  l.ev.type === 'match' || l.ev.type === 'friendly' || l.ev.type === 'tournament'
-                    ? l.ev.opponent_name?.trim() || l.ev.title?.trim() || null
-                    : null;
-                const detail = rival ?? l.ev.team_name ?? null;
-                return (
-                  <Pressable
-                    key={`e:${l.ev.id}`}
-                    onPress={() => onOpenEvent(l.ev)}
-                    style={{
-                      position: 'absolute',
-                      top,
-                      height,
-                      left: `${(l.col / l.colCount) * 100}%`,
-                      width: `${(1 / l.colCount) * 100}%`,
-                    }}
-                  >
-                    <View
-                      className="mx-0.5 h-full overflow-hidden rounded-lg px-1.5 py-1"
+          {hours.map(({ h, items }) => (
+            <View key={h} className="flex-row border-t border-zinc-100 px-2">
+              <Text style={{ width: GUTTER }} className="py-1 text-[10px] text-zinc-400">
+                {clockOfHour(h)}
+              </Text>
+              <View className="flex-1 py-0.5">
+                {items.map((it) => {
+                  const ev = it.ev;
+                  const timeText =
+                    it.durMin != null
+                      ? `${clockOfIso(ev.starts_at)}–${clockOfIso(ev.ends_at as string)}`
+                      : clockOfIso(ev.starts_at);
+                  const rival =
+                    ev.type === 'match' || ev.type === 'friendly' || ev.type === 'tournament'
+                      ? ev.opponent_name?.trim() || ev.title?.trim() || null
+                      : null;
+                  const detail = rival ?? ev.team_name ?? t(`calendario.types.${ev.type}`);
+                  return (
+                    <Pressable
+                      key={`e:${ev.id}`}
+                      onPress={() => onOpenEvent(ev)}
+                      className="my-0.5 rounded-lg px-2 py-1.5 active:opacity-70"
                       style={{
-                        backgroundColor: `${(l.ev.team_color ?? accent)}22`,
+                        backgroundColor: `${ev.team_color ?? accent}22`,
                         borderLeftWidth: 3,
-                        borderLeftColor: l.ev.team_color ?? accent,
+                        borderLeftColor: ev.team_color ?? accent,
                       }}
                     >
-                      <Text className="text-[11px] font-semibold text-[#0F1B2E]" numberOfLines={1}>
-                        {`${TYPE_ICON[l.ev.type] ?? '📌'} ${clockOfIso(l.ev.starts_at)}`}
-                      </Text>
-                      {detail && height > MIN_BLOCK_H + 6 ? (
-                        <Text className="text-[10px] text-zinc-600" numberOfLines={1}>
-                          {detail}
+                      <View className="flex-row items-center gap-1.5">
+                        <Text className="text-xs font-semibold text-[#0F1B2E]">
+                          {`${TYPE_ICON[ev.type] ?? '📌'} ${timeText}`}
                         </Text>
-                      ) : null}
-                    </View>
-                  </Pressable>
-                );
-              })}
+                        {it.durMin != null && (
+                          <View className="rounded-full bg-white/70 px-1.5">
+                            <Text className="text-[10px] font-medium text-zinc-500">
+                              {formatDuration(it.durMin, t)}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text className="text-[11px] text-zinc-600" numberOfLines={1}>
+                        {detail}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
-          </View>
+          ))}
 
-          {/* Aviso de eventos por debajo del rango visible. */}
+          {/* Aviso de eventos que empiezan por debajo del rango visible. */}
           {after > 0 && (
             <OutOfRangeChip
               label={t('calendario.day.after_range', { count: String(after) })}
@@ -700,6 +743,74 @@ function SubTabChip({
   );
 }
 
+/**
+ * 18-F3a — Filtro de equipos (multiselección, en CLIENTE). Chips por equipo con atajos
+ * "todos"/"vaciar". El estado vive en el wrapper; aquí solo se pinta. Se muestra únicamente
+ * cuando hay >1 equipo en el scope (con uno solo no aparece).
+ */
+function TeamFilterBar({
+  teams,
+  accent,
+  t,
+  isSelected,
+  onToggle,
+  onAll,
+  onNone,
+}: {
+  teams: TeamOption[];
+  accent: string;
+  t: T;
+  isSelected: (id: string) => boolean;
+  onToggle: (id: string) => void;
+  onAll: () => void;
+  onNone: () => void;
+}) {
+  return (
+    <View className="border-b border-zinc-100 pb-1.5">
+      <View className="flex-row items-center justify-between px-4 pb-1 pt-0.5">
+        <Text className="text-[11px] font-semibold uppercase text-zinc-400">
+          {t('calendario.season.filter.label')}
+        </Text>
+        <View className="flex-row gap-3">
+          <Pressable onPress={onAll} hitSlop={6} className="active:opacity-60">
+            <Text className="text-xs font-semibold" style={{ color: accent }}>
+              {t('calendario.season.filter.all')}
+            </Text>
+          </Pressable>
+          <Pressable onPress={onNone} hitSlop={6} className="active:opacity-60">
+            <Text className="text-xs font-semibold text-zinc-400">
+              {t('calendario.season.filter.none')}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
+      >
+        {teams.map((tm) => {
+          const on = isSelected(tm.id);
+          return (
+            <Pressable
+              key={tm.id}
+              onPress={() => onToggle(tm.id)}
+              className={`rounded-full px-3 py-1 ${on ? '' : 'border border-zinc-200'}`}
+              style={on ? { backgroundColor: tm.color || accent } : undefined}
+            >
+              <Text
+                className={on ? 'text-xs font-semibold text-white' : 'text-xs text-zinc-500'}
+              >
+                {tm.name}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
 function Stepper({
   label,
   value,
@@ -737,7 +848,10 @@ function Stepper({
 
 function OutOfRangeChip({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} className="mx-4 my-1 rounded-lg bg-zinc-100 px-3 py-1.5 active:opacity-70">
+    <Pressable
+      onPress={onPress}
+      className="mx-4 my-1 rounded-lg bg-zinc-100 px-3 py-1.5 active:opacity-70"
+    >
       <Text className="text-center text-xs font-medium text-zinc-600">{label}</Text>
     </Pressable>
   );

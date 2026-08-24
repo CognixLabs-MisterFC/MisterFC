@@ -1977,6 +1977,11 @@
       "tabs": {
         "month": "Mes",
         "day": "Dia"
+      },
+      "filter": {
+        "label": "Equips",
+        "all": "Tots",
+        "none": "Buidar"
       }
     },
     "day": {
@@ -1988,7 +1993,11 @@
       "all_day": "Tot el dia",
       "before_range": "{count, plural, one {# esdeveniment abans} other {# esdeveniments abans}}",
       "after_range": "{count, plural, one {# esdeveniment després} other {# esdeveniments després}}",
-      "empty": "No hi ha esdeveniments este dia"
+      "empty": "No hi ha esdeveniments este dia",
+      "dur": {
+        "h": "h",
+        "min": "min"
+      }
     }
   },
   "pdf": {
