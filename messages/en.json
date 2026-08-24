@@ -1111,7 +1111,8 @@
         "forbidden": "Only the admin can do this.",
         "no_campaign": "Set a deadline first.",
         "generic": "Something went wrong. Try again.",
-        "not_launched": "The campaign isn't launched."
+        "not_launched": "The campaign isn't launched.",
+        "already_open": "There is already an open campaign this season. Publish it before launching another."
       },
       "publish_all": "Publish all",
       "publish_all_hint": "Publishes the period's completed reports to families. Incomplete ones aren't published.",

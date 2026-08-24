@@ -19,7 +19,7 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 
 type ActionResult = {
-  error?: 'invalid' | 'forbidden' | 'no_campaign' | 'not_launched' | 'generic';
+  error?: 'invalid' | 'forbidden' | 'no_campaign' | 'not_launched' | 'already_open' | 'generic';
   success?: boolean;
   published?: number;
 };
@@ -107,7 +107,14 @@ export async function launchCampaign(input: unknown): Promise<ActionResult> {
     .eq('status', 'draft')
     .select('id')
     .maybeSingle();
-  if (error) return { error: mapErr(error.code) };
+  if (error) {
+    // 19-A — Índice único parcial (una 'launched' por temporada): al lanzar con otra
+    // abierta, Postgres devuelve 23505 (unique_violation). Se traduce a 'already_open'
+    // (la UI dice que hay que publicar la abierta antes de lanzar otra). El resto sigue
+    // por mapErr (42501→forbidden, resto→generic), intacto.
+    if (error.code === '23505') return { error: 'already_open' };
+    return { error: mapErr(error.code) };
+  }
   if (!updated) {
     // Ya no estaba en draft (lanzada/publicada): nada que hacer, sin re-notificar.
     revalidate();
