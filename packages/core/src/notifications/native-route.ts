@@ -52,6 +52,23 @@ const SCREEN_FOR_TYPE: Record<string, string> = {
 };
 
 /**
+ * Override de pantalla POR ÁREA: para un mismo `type`, un área concreta puede tener un
+ * destino MÁS específico que el genérico de `SCREEN_FOR_TYPE`. Se resuelve antes que el
+ * genérico y pasa por la MISMA guarda `availableScreens` (si la pantalla no existe en el
+ * área → Inicio, nunca error).
+ *
+ * 18-F3c — dirección: `training_approval_requested` ("hay un entreno en festivo por
+ * aprobar", le llega al director) debe aterrizar en la pantalla de FESTIVOS, donde se
+ * aprueba, no en la lanzadera de calendario (`calendario`). Familia/staff NO se pisan:
+ * para ellos ese type sigue en `calendario` (`/family|staff/calendario`), como hoy. Los
+ * demás tipos de calendario (event_updated, training_cancelled/reinstated/approved/
+ * rejected, player_promoted) son de calendario general → sin override.
+ */
+const SCREEN_OVERRIDE_BY_AREA: Record<string, Record<string, string>> = {
+  direction: { training_approval_requested: 'calendario-festivos' },
+};
+
+/**
  * `notification_type` → clave del `data` que trae el ID del recurso relevante
  * (misma elección que `hrefFor`). Los tipos que van a un listado sin id (los de
  * calendario) no tienen entrada. Si no hay id específico, se usa `resource_id`
@@ -105,7 +122,8 @@ export function nativeHrefForNotification(
   areaSegment: string,
   availableScreens: ReadonlySet<string>,
 ): NativeRouteTarget {
-  const screen = SCREEN_FOR_TYPE[type];
+  // Override por área (más específico) y, si no hay, el genérico.
+  const screen = SCREEN_OVERRIDE_BY_AREA[areaSegment]?.[type] ?? SCREEN_FOR_TYPE[type];
   if (!screen || !availableScreens.has(screen)) {
     return { pathname: `/${areaSegment}` };
   }

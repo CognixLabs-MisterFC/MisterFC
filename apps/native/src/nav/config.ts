@@ -45,10 +45,14 @@ export const AREA_TABS: Record<ChromeArea, TabDef[]> = {
     { name: 'directos', labelKey: 'nav.directos', icon: '🔴' },
     { name: 'mensajes', labelKey: 'nav.mensajes', icon: '💬' },
   ],
-  // Dirección (4) — admin_club · director
+  // Dirección (5) — admin_club · director. 18-F3c: `calendario` entra en la barra
+  // (Inicio · Equipos · Calendario · Directos · Mensajes). La entrada del menú se
+  // queda y lleva AL MISMO destino (el lanzador). Staff ya corre 5 pestañas con
+  // "Calendario" → mismas anchuras, cabe.
   direction: [
     { name: 'index', labelKey: 'nav.inicio', icon: '🏠' },
     { name: 'equipos', labelKey: 'nav.equipos', icon: '🛡️' },
+    { name: 'calendario', labelKey: 'nav.calendario', icon: '📅' },
     { name: 'directos', labelKey: 'nav.directos', icon: '🔴' },
     { name: 'mensajes', labelKey: 'nav.mensajes', icon: '💬' },
   ],
@@ -203,6 +207,13 @@ const DIRECTION_HIDDEN: MenuDef[] = [
   // D2-3 — resumen de invitaciones por equipo (nivel 1); destino de la tarjeta del
   // inicio. `pendientes-invitaciones` pasa a ser el nivel 2 (listado del equipo).
   { name: 'invitaciones-equipos', labelKey: 'nav.inicio_direccion' },
+  // 18-F3c — lanzadera de calendario: el bar tab `calendario` es una pantalla con 3
+  // tarjetas que empujan a estos 3 destinos dedicados (href:null: no salen en la barra,
+  // se alcanzan desde el lanzador). Próximos/Temporada son club-wide; festivos monta
+  // la DireccionCalendarioScreen intacta.
+  { name: 'calendario-proximos', labelKey: 'nav.calendario' },
+  { name: 'calendario-temporada', labelKey: 'nav.calendario' },
+  { name: 'calendario-festivos', labelKey: 'nav.calendario' },
 ];
 
 /** Pantallas SOLO-menú por área (sin contar el extra dinámico del coordinador). */
@@ -240,13 +251,25 @@ const SPECTATOR_HIDDEN: MenuDef[] = [
 ];
 
 export function allMenuFiles(area: ChromeArea): MenuDef[] {
-  if (area === 'staff')
-    return [...STAFF_MENU_BASE, ...STAFF_MENU_COORD_EXTRA, ...STAFF_HIDDEN];
-  // family añade sus rutas ocultas (href:null pero no listadas en el menú).
-  if (area === 'family') return [...FAMILY_MENU, ...FAMILY_HIDDEN];
-  if (area === 'spectator') return [...AREA_MENU.spectator, ...SPECTATOR_HIDDEN];
-  if (area === 'direction') return [...DIRECTION_MENU, ...DIRECTION_HIDDEN];
-  return AREA_MENU[area];
+  const files =
+    area === 'staff'
+      ? [...STAFF_MENU_BASE, ...STAFF_MENU_COORD_EXTRA, ...STAFF_HIDDEN]
+      : // family añade sus rutas ocultas (href:null pero no listadas en el menú).
+        area === 'family'
+        ? [...FAMILY_MENU, ...FAMILY_HIDDEN]
+        : area === 'spectator'
+          ? [...AREA_MENU.spectator, ...SPECTATOR_HIDDEN]
+          : area === 'direction'
+            ? [...DIRECTION_MENU, ...DIRECTION_HIDDEN]
+            : AREA_MENU[area];
+  // 18-F3c — un nombre que YA es pestaña de la barra no debe declararse además como
+  // ruta oculta (href:null): expo-router lo declararía dos veces (misma `name`) y
+  // rompería. Se filtra. Hoy solo aplica a dirección (`calendario` es barra Y sigue en
+  // DIRECTION_MENU para el overlay → mismo destino). En el resto de áreas ningún nombre
+  // de menú coincide con uno de barra → no-op. `menuForArea` (overlay) NO se filtra:
+  // la entrada de menú de "Calendario" se conserva y navega al lanzador.
+  const tabNames = new Set(AREA_TABS[area].map((tab) => tab.name));
+  return files.filter((m) => !tabNames.has(m.name));
 }
 
 /** Ruta absoluta de una pantalla del área (los grupos son carpetas reales). */

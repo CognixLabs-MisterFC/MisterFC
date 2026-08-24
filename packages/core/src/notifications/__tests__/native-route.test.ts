@@ -15,6 +15,8 @@ const DIRECTION = new Set([
   'equipos', 'directos', 'mensajes', 'inicio-direccion', 'dashboard',
   'calendario', 'jugadores', 'cuerpo-tecnico', 'supresiones', 'anuncios',
   'novedades', 'perfil',
+  // 18-F3c — la lanzadera de calendario tiene 3 destinos dedicados (href:null).
+  'calendario-proximos', 'calendario-temporada', 'calendario-festivos',
 ]);
 const SPECTATOR = new Set(['directos', 'estadisticas', 'perfil']);
 
@@ -97,6 +99,41 @@ describe('nativeHrefForNotification (deep link O2-4)', () => {
         nativeHrefForNotification(t, { type: t, event_id: 'e1' }, 'family', FAMILY),
       ).toEqual({ pathname: '/family/calendario' });
     }
+  });
+
+  it('18-F3c dirección: training_approval_requested → festivos (donde se aprueba)', () => {
+    // El push "entreno en festivo por aprobar" le llega al director; debe aterrizar en
+    // la pantalla de festivos, no en la lanzadera. Sin id: festivos es un listado y este
+    // type no tiene clave de id (event_id se ignora; solo resource_id daría id).
+    expect(
+      nativeHrefForNotification(
+        'training_approval_requested',
+        { type: 'training_approval_requested', event_id: 'e1' },
+        'direction',
+        DIRECTION,
+      ),
+    ).toEqual({ pathname: '/direction/calendario-festivos' });
+  });
+
+  it('18-F3c: el override es SOLO dirección+ese type; el resto de calendario → lanzadera', () => {
+    // Los otros seis siguen en 'calendario' (lanzadera en dirección).
+    for (const t of [
+      'event_updated', 'training_cancelled', 'training_reinstated',
+      'training_approved', 'training_rejected', 'player_promoted',
+    ]) {
+      expect(
+        nativeHrefForNotification(t, { type: t }, 'direction', DIRECTION),
+      ).toEqual({ pathname: '/direction/calendario' });
+    }
+    // Y familia NO se pisa: para ese mismo type sigue en su calendario.
+    expect(
+      nativeHrefForNotification(
+        'training_approval_requested',
+        { type: 'training_approval_requested' },
+        'family',
+        FAMILY,
+      ),
+    ).toEqual({ pathname: '/family/calendario' });
   });
 
   it('type sin pantalla nativa (play_approved, exercise_rejected) → Inicio', () => {

@@ -50,7 +50,7 @@ export function DireccionInicioScreen() {
     ...(isAdminClub
       ? [{ key: 'erasures', count: c?.pendingErasures ?? 0, href: '/direction/supresiones' as const }]
       : []),
-    { key: 'approvals', count: c?.pendingApprovals ?? 0, href: '/direction/calendario' as const },
+    { key: 'approvals', count: c?.pendingApprovals ?? 0, href: '/direction/calendario-festivos' as const },
   ];
   // Eventos (D2-1) → detalle; reports (D2-2) → lista terminal de progreso por
   // equipo/campaña. Misma regla que block1: clicable SOLO con contador > 0.

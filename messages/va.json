@@ -1998,6 +1998,12 @@
         "h": "h",
         "min": "min"
       }
+    },
+    "direction": {
+      "holidays": "Festius",
+      "upcoming_desc": "Els pròxims esdeveniments del club",
+      "season_desc": "Vista de mes i dia, amb filtre per equips",
+      "holidays_desc": "Marcar festius i aprovar entrenaments"
     }
   },
   "pdf": {
