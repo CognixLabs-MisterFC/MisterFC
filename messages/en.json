@@ -1131,7 +1131,8 @@
     "player_status": {
       "completed": "Completed",
       "pending": "Pending"
-    }
+    },
+    "no_campaign_launched": "There is no evaluation campaign launched this season."
   },
   "jugadores": {
     "invitePending": {
@@ -4778,7 +4779,8 @@
     "perfil": "Profile",
     "post_partido": "Post-match",
     "sesion_del_dia": "Today's session",
-    "partidos": "Matches"
+    "partidos": "Matches",
+    "informes": "Reports"
   },
   "child": {
     "none": "You have no children at this club"
