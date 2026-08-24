@@ -1127,7 +1127,11 @@
     },
     "radar_individual": "Individual",
     "radar_team": "Team",
-    "radar_team_empty": "No team assessment for this period"
+    "radar_team_empty": "No team assessment for this period",
+    "player_status": {
+      "completed": "Completed",
+      "pending": "Pending"
+    }
   },
   "jugadores": {
     "invitePending": {
