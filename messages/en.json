@@ -5110,9 +5110,11 @@
     "tile_calendar": "Calendar",
     "tile_callups": "Call-ups",
     "tile_directos": "Live",
-    "tile_today_training": "Today's training",
     "tile_teams": "My teams",
+    "tile_today_training": "Today's training",
     "title": "Home",
+    "trainings_without_attendance": "Trainings without attendance",
+    "trainings_without_session": "Trainings without a session",
     "unpublished_callups": "Call-ups not published",
     "upcoming": "Upcoming events"
   },
@@ -5228,5 +5230,15 @@
   "active_player": {
     "removed_title": "Player unavailable",
     "removed_body": "This player is no longer available."
+  },
+  "staff_pending": {
+    "without_attendance": {
+      "empty": "You have no trainings without attendance.",
+      "title": "Without attendance"
+    },
+    "without_session": {
+      "empty": "You have no trainings without a session in the next 24 hours.",
+      "title": "Without a session"
+    }
   }
 }

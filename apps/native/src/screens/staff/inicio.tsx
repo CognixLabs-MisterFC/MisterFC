@@ -3,12 +3,16 @@ import { useRouter, type Href } from 'expo-router';
 import {
   getUpcomingEventsFromClient,
   getStaffCallupsFromClient,
+  getStaffTeamsFromClient,
+  listStaffTrainingsWithoutAttendanceFromClient,
+  listStaffTrainingsWithoutSessionFromClient,
   clubScopedCacheKey,
   type UpcomingEvent,
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
+import { reportDataError } from '@/lib/report-error';
 import { OfflineBanner, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
@@ -24,7 +28,22 @@ import { ListCard, Tile, CountBadge } from './hub-parts';
  */
 const DAY = 86_400_000;
 
-type HomeData = { upcoming: UpcomingEvent[]; unpublishedCallups: number };
+type HomeData = {
+  upcoming: UpcomingEvent[];
+  /** Tarea 1 — convocatorias sin publicar de partido a < 3 días. */
+  unpublishedCallups: number;
+  /** Tarea 2 — entrenos pasados (sin límite) sin pasar lista. */
+  trainingsWithoutAttendance: number;
+  /** Tarea 3 — entrenos a < 24 h sin sesión. */
+  trainingsWithoutSession: number;
+};
+
+const EMPTY_HOME: HomeData = {
+  upcoming: [],
+  unpublishedCallups: 0,
+  trainingsWithoutAttendance: 0,
+  trainingsWithoutSession: 0,
+};
 
 const TYPE_ICON: Record<string, string> = {
   training: '🏋️',
@@ -50,12 +69,13 @@ export function StaffHomeScreen() {
   const router = useRouter();
   const clubId = activeClub?.club.id ?? null;
   const role = activeClub?.role ?? null;
+  const membershipId = activeClub?.membershipId ?? null;
   const accent = theme?.color ?? BRAND.navy;
 
   const { data, fromCache, loading } = useCached<HomeData>(
     clubScopedCacheKey('staff-home', clubId ?? 'none'),
     async (sb) => {
-      if (!clubId || !role) return { upcoming: [], unpublishedCallups: 0 };
+      if (!clubId || !role) return EMPTY_HOME;
       const now = Date.now();
       const upcoming = await getUpcomingEventsFromClient(
         sb,
@@ -63,21 +83,40 @@ export function StaffHomeScreen() {
         new Date(now + 7 * DAY).toISOString(),
         5,
       );
+      // Tarea 1 — convocatorias de partido a < 3 días sin publicar (getStaffCallups
+      // ya es coach-scoped; rangeDays:3 es el umbral de esta tarea).
       const callups = await getStaffCallupsFromClient(sb, {
         clubId,
         role,
         userId: user?.id ?? null,
-        rangeDays: 30,
+        rangeDays: 3,
       });
       const unpublishedCallups = callups.filter((c) => !c.published).length;
-      return { upcoming, unpublishedCallups };
+      // Tareas 2 y 3 — entrenos pendientes de SUS equipos. Resolvemos sus equipos una
+      // vez (temporada activa) y el contador sale del MISMO loader que la lista.
+      const teams = membershipId
+        ? await getStaffTeamsFromClient(sb, { membershipId, clubId }, (e) =>
+            reportDataError('staff-home', e),
+          )
+        : [];
+      const teamIds = teams.map((tm) => tm.teamId);
+      const [withoutAttendance, withoutSession] = await Promise.all([
+        listStaffTrainingsWithoutAttendanceFromClient(sb, { teamIds }),
+        listStaffTrainingsWithoutSessionFromClient(sb, { teamIds }),
+      ]);
+      return {
+        upcoming,
+        unpublishedCallups,
+        trainingsWithoutAttendance: withoutAttendance.length,
+        trainingsWithoutSession: withoutSession.length,
+      };
     },
   );
 
   const go = (pathname: string) => router.push(pathname);
 
   if (loading) return <LoadingScreen />;
-  const home = data ?? { upcoming: [], unpublishedCallups: 0 };
+  const home = data ?? EMPTY_HOME;
 
   // E1 — próximo evento = el MÁS CERCANO de CUALQUIERA de sus equipos (la RLS de
   // getUpcomingEventsFromClient ya acota a sus equipos y ordena por fecha), con su
@@ -137,17 +176,43 @@ export function StaffHomeScreen() {
           )}
         </Pressable>
 
-        {/* Tarea: convocatorias sin publicar. */}
-        {home.unpublishedCallups > 0 ? (
-          <ListCard accent="#dc2626" onPress={() => go('/staff/convocatorias')}>
-            <View className="flex-row items-center gap-2">
-              <Text className="flex-1 text-sm font-semibold text-[#0F1B2E]">
-                {t('staff_home.unpublished_callups')}
-              </Text>
-              <CountBadge count={home.unpublishedCallups} accent="#dc2626" />
-            </View>
-          </ListCard>
-        ) : null}
+        {/* O2-16 — Tres tareas pendientes del entrenador, simétricas: cada una lleva a
+            la lista de lo suyo (1→convocatorias, 2→sin pasar lista, 3→sin sesión).
+            Criterio D2: SIEMPRE visibles, clicables SOLO con contador > 0 (a 0 quedan
+            grises e inertes → nunca pantalla vacía). Reusa ListCard + CountBadge. */}
+        {[
+          {
+            key: 'unpublished_callups',
+            count: home.unpublishedCallups,
+            href: '/staff/convocatorias',
+          },
+          {
+            key: 'trainings_without_attendance',
+            count: home.trainingsWithoutAttendance,
+            href: '/staff/entrenos-sin-lista',
+          },
+          {
+            key: 'trainings_without_session',
+            count: home.trainingsWithoutSession,
+            href: '/staff/entrenos-sin-sesion',
+          },
+        ].map((task) => {
+          const active = task.count > 0;
+          return (
+            <ListCard
+              key={task.key}
+              accent={active ? '#dc2626' : '#e4e4e7'}
+              onPress={active ? () => go(task.href) : undefined}
+            >
+              <View className="flex-row items-center gap-2">
+                <Text className="flex-1 text-sm font-semibold text-[#0F1B2E]">
+                  {t(`staff_home.${task.key}`)}
+                </Text>
+                <CountBadge count={task.count} accent={active ? '#dc2626' : '#a1a1aa'} />
+              </View>
+            </ListCard>
+          );
+        })}
 
         {/* Accesos rápidos. */}
         <View className="flex-row flex-wrap gap-2">
