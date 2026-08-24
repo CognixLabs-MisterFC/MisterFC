@@ -1131,7 +1131,8 @@
     "player_status": {
       "completed": "Completat",
       "pending": "Pendent"
-    }
+    },
+    "no_campaign_launched": "No hi ha cap campanya d'avaluació llançada esta temporada."
   },
   "jugadores": {
     "invitePending": {
@@ -4778,7 +4779,8 @@
     "perfil": "Perfil",
     "post_partido": "Post-partit",
     "sesion_del_dia": "Sessió del dia",
-    "partidos": "Partits"
+    "partidos": "Partits",
+    "informes": "Informes"
   },
   "child": {
     "none": "No tens cap fill en este club"

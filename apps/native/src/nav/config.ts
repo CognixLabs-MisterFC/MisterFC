@@ -116,6 +116,9 @@ const STAFF_MENU_BASE: MenuDef[] = [
   { name: 'post-partido', labelKey: 'nav.post_partido' },
   { name: 'asistencia', labelKey: 'nav.asistencia' },
   { name: 'estadisticas-equipo', labelKey: 'nav.estadisticas_equipo' },
+  // 19-C — Estado de los informes de la campaña por equipo (SUS equipos). Dispatcher:
+  // 0 equipos / 1 directo / varios con picker; si no hay campaña lanzada, lo dice.
+  { name: 'informes', labelKey: 'nav.informes' },
   { name: 'cuerpo-tecnico-ligero', labelKey: 'nav.cuerpo_tecnico_ligero' },
   { name: 'anuncios', labelKey: 'nav.anuncios' },
   { name: 'novedades', labelKey: 'nav.novedades' },
@@ -150,6 +153,9 @@ const STAFF_HIDDEN: MenuDef[] = [
   { name: 'mensaje', labelKey: 'nav.mensajes' },
   { name: 'mensaje-equipo', labelKey: 'nav.mensajes' },
   { name: 'mensaje-nuevo', labelKey: 'nav.mensajes' },
+  // 19-C — 2º nivel de Informes: jugadores del equipo con su estado (?teamId&period).
+  // Alcanzado desde el picker del dispatcher cuando el entrenador tiene >1 equipo.
+  { name: 'informes-jugadores', labelKey: 'nav.informes' },
 ];
 
 const DIRECTION_MENU: MenuDef[] = [

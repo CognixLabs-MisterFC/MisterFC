@@ -88,6 +88,36 @@ export async function listTeamReportPlayerStatusFromClient(
     .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }));
 }
 
+/**
+ * 19-C — Periodo de la campaña de evaluación LANZADA del club en su temporada activa, o
+ * `null` si no hay ninguna. Con 19-A (índice único parcial `one_launched_per_season`) hay
+ * como mucho UNA campaña `launched` por temporada → un solo periodo. La usa el entrenador
+ * para saber de qué campaña se trata (y mostrar "no hay campaña" si no la hay). RLS:
+ * `seasons` y `assessment_campaigns_select` son legibles por cualquier rol del club.
+ */
+export async function getLaunchedCampaignPeriodFromClient(
+  supabase: Supa,
+  clubId: string,
+): Promise<string | null> {
+  const { data: season } = await supabase
+    .from('seasons')
+    .select('id')
+    .eq('club_id', clubId)
+    .eq('status', 'active')
+    .order('label', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!season) return null;
+  const { data: campaign } = await supabase
+    .from('assessment_campaigns')
+    .select('period')
+    .eq('season_id', season.id as string)
+    .eq('status', 'launched')
+    .limit(1)
+    .maybeSingle();
+  return (campaign?.period as string | undefined) ?? null;
+}
+
 export type DevelopmentReportRow = {
   id: string;
   period: string;

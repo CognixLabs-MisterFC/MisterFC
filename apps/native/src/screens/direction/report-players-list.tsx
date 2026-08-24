@@ -10,11 +10,17 @@ import { OfflineBanner, EmptyState, LoadingScreen, ScreenTitle } from '@/ui/feed
 import { useTranslations } from '@/locale/provider';
 
 /**
- * 19-B — Segundo nivel del progreso de informes para DIRECCIÓN: los jugadores del roster
- * de un equipo con si su informe de la campaña está COMPLETADO o no. SOLO ESTADO —
- * decisión de Jose: NO se abre el informe desde aquí (ni enlace, ni chevron). Club-wide,
- * solo consulta; el criterio de "completado" (reportStatus) es el mismo que el nivel-1,
- * así que el "X de Y" cuadra. Caché propia `dir-report-players`.
+ * 19-B — Listado por JUGADOR del estado del informe de un equipo en un periodo: nombre +
+ * si está COMPLETADO. SOLO ESTADO — decisión de Jose: NO se abre el informe desde aquí (ni
+ * enlace, ni chevron), ni para el director ni para el entrenador. El criterio de
+ * "completado" (reportStatus) es el mismo que el nivel-1 → el "X de Y" cuadra.
+ *
+ * MONTADO POR DOS ÁREAS (aunque el nombre empiece por "Direccion"): dirección (19-B, 2º
+ * nivel de pendientes-informes, club-wide) y STAFF (19-C, informes del entrenador de SUS
+ * equipos). Es presentacional (recibe teamId/period/teamName) y el loader no está atado a
+ * ningún scope. La caché `dir-report-players` se COMPARTE a propósito: para un mismo
+ * (club, equipo, periodo) el dato es idéntico lo mire quien lo mire → acierto de caché.
+ * NO renombrar sin actualizar los dos montajes (staff y dirección).
  */
 export function DireccionReportPlayersScreen({
   teamId,
