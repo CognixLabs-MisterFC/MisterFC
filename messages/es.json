@@ -1998,6 +1998,12 @@
         "h": "h",
         "min": "min"
       }
+    },
+    "direction": {
+      "holidays": "Festivos",
+      "upcoming_desc": "Los próximos eventos del club",
+      "season_desc": "Vista de mes y día, con filtro por equipos",
+      "holidays_desc": "Marcar festivos y aprobar entrenos"
     }
   },
   "pdf": {

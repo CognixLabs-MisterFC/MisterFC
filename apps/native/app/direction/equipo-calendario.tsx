@@ -1,16 +1,16 @@
 import { useLocalSearchParams } from 'expo-router';
-import { CalendarioScreen } from '@/screens/family/calendario';
+import { CalendarShell } from '@/screens/family/calendario-shell';
 import { directionEventTarget } from '@/notifications/feed-target';
 
 /**
- * D1b-4 — Calendario del equipo para DIRECCIÓN (SOLO LECTURA, `?teamId`). Reutiliza
- * `CalendarioScreen` (ya es agenda read-only) acotada por `teamId` explícito, porque
- * el scope por-usuario (`user_team_ids_in_club`) devuelve vacío a un director. El tap
- * enruta con `directionEventTarget` a rutas `/direction` (partido→convocatoria,
- * entreno→visor de sesión/detalle, resto→no navega). NO confundir con
- * `app/direction/calendario.tsx`, que es la pantalla de FESTIVOS.
+ * D1b-4 / 18-F3c — Calendario del equipo para DIRECCIÓN (SOLO LECTURA, `?teamId`). Ahora
+ * con las 2 pestañas vía `CalendarShell`: "Próximos eventos" (la agenda de siempre) +
+ * "Temporada" (MES/DÍA), ambas acotadas a ESE equipo (`teamId`, NO clubWide → el scope
+ * por-usuario da vacío a un director; con teamId se filtra a ese equipo). Sin filtro de
+ * equipos (es un solo equipo). El tap enruta con `directionEventTarget`. NO confundir con
+ * `app/direction/calendario.tsx` (lanzadera) ni `calendario-festivos.tsx` (festivos).
  */
 export default function Screen() {
   const { teamId } = useLocalSearchParams<{ teamId?: string; name?: string }>();
-  return <CalendarioScreen teamId={teamId ?? null} eventTarget={directionEventTarget} />;
+  return <CalendarShell teamId={teamId ?? null} eventTarget={directionEventTarget} />;
 }

@@ -1998,6 +1998,12 @@
         "h": "h",
         "min": "min"
       }
+    },
+    "direction": {
+      "holidays": "Holidays",
+      "upcoming_desc": "The clubs upcoming events",
+      "season_desc": "Month and day view, filter by team",
+      "holidays_desc": "Mark holidays and approve trainings"
     }
   },
   "pdf": {
