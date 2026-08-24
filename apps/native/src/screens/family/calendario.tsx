@@ -80,6 +80,7 @@ const TYPE_ICON: Record<string, string> = {
 export function CalendarioScreen({
   eventTarget = familyEventTarget,
   teamId = null,
+  clubWide = false,
 }: {
   eventTarget?: (ev: CalendarEvent) => FamilyTarget;
   /**
@@ -90,6 +91,14 @@ export function CalendarioScreen({
    * `null` → familia y staff IDÉNTICOS: scope por los equipos del usuario, como hoy.
    */
   teamId?: string | null;
+  /**
+   * 18-F3a — DIRECCIÓN club-wide: TODOS los eventos del club (todos los equipos +
+   * los de club con `team_id null`). Desactiva el scope por-usuario (que a un director
+   * le da vacío) SIN acotar a un equipo. RLS `events_select` concede a admin_club/
+   * director todo el club. Caché en namespace propio (`calendar-club`). DEFAULT `false`
+   * → familia/staff/equipo IDÉNTICOS. `teamId` tiene prioridad si ambos se pasaran.
+   */
+  clubWide?: boolean;
 } = {}) {
   const t = useTranslations('');
   const { activeClub, theme } = useApp();
@@ -117,20 +126,23 @@ export function CalendarioScreen({
     // D1b-4 — la variante de dirección (teamId) usa un NAMESPACE propio por equipo
     // (`calendar-team:<club>:<team>`) para no contaminar la caché de familia/staff
     // (`calendar`). Familia/staff mantienen su key exacta → comportamiento igual.
-    teamId
-      ? clubScopedCacheKey('calendar-team', `${clubId ?? 'none'}:${teamId}`)
-      : clubScopedCacheKey('calendar', clubId ?? 'none'),
+    clubWide
+      ? clubScopedCacheKey('calendar-club', clubId ?? 'none')
+      : teamId
+        ? clubScopedCacheKey('calendar-team', `${clubId ?? 'none'}:${teamId}`)
+        : clubScopedCacheKey('calendar', clubId ?? 'none'),
     async (sb) => {
       if (!clubId) return { events: [], holidays: [] };
       // Familia/staff: scope por los equipos del usuario (comportamiento actual).
       // Dirección (teamId): filtra por ESE equipo y desactiva el scope por-usuario
       // (scopeTeamIds omitido) — un director no está en `user_team_ids_in_club`.
+      // Dirección (clubWide): sin scope y sin acotar equipo → todos los eventos del club.
       const { events } = await getCalendarDataFromClient(
         sb,
         clubId,
         { startIso: range.startIso, endIso: range.endIso },
         { teamIds: teamId ? [teamId] : [], categoryIds: [], types: [] },
-        teamId
+        teamId || clubWide
           ? {}
           : { scopeTeamIds: await getCalendarScopeTeamIdsFromClient(sb, clubId) },
       );

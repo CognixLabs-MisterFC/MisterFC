@@ -1977,6 +1977,11 @@
       "tabs": {
         "month": "Month",
         "day": "Day"
+      },
+      "filter": {
+        "label": "Teams",
+        "all": "All",
+        "none": "Clear"
       }
     },
     "day": {
@@ -1988,7 +1993,11 @@
       "all_day": "All day",
       "before_range": "{count, plural, one {# event earlier} other {# events earlier}}",
       "after_range": "{count, plural, one {# event later} other {# events later}}",
-      "empty": "No events this day"
+      "empty": "No events this day",
+      "dur": {
+        "h": "h",
+        "min": "min"
+      }
     }
   },
   "pdf": {

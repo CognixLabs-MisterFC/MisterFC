@@ -1977,6 +1977,11 @@
       "tabs": {
         "month": "Mes",
         "day": "Día"
+      },
+      "filter": {
+        "label": "Equipos",
+        "all": "Todos",
+        "none": "Vaciar"
       }
     },
     "day": {
@@ -1988,7 +1993,11 @@
       "all_day": "Todo el día",
       "before_range": "{count, plural, one {# evento antes} other {# eventos antes}}",
       "after_range": "{count, plural, one {# evento después} other {# eventos después}}",
-      "empty": "No hay eventos este día"
+      "empty": "No hay eventos este día",
+      "dur": {
+        "h": "h",
+        "min": "min"
+      }
     }
   },
   "pdf": {
