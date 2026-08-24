@@ -5110,9 +5110,11 @@
     "tile_calendar": "Calendari",
     "tile_callups": "Convocatòries",
     "tile_directos": "Directes",
-    "tile_today_training": "Entrenament de hui",
     "tile_teams": "Els meus equips",
+    "tile_today_training": "Entrenament de hui",
     "title": "Inici",
+    "trainings_without_attendance": "Entrenaments sense passar llista",
+    "trainings_without_session": "Entrenaments sense sessió",
     "unpublished_callups": "Convocatòries sense publicar",
     "upcoming": "Pròxims esdeveniments"
   },
@@ -5228,5 +5230,15 @@
   "active_player": {
     "removed_title": "Jugador no disponible",
     "removed_body": "Aquest jugador ja no està disponible."
+  },
+  "staff_pending": {
+    "without_attendance": {
+      "empty": "No tens entrenaments sense passar llista.",
+      "title": "Sense passar llista"
+    },
+    "without_session": {
+      "empty": "No tens entrenaments sense sessió en les pròximes 24 hores.",
+      "title": "Sense sessió"
+    }
   }
 }

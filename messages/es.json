@@ -5110,9 +5110,11 @@
     "tile_calendar": "Calendario",
     "tile_callups": "Convocatorias",
     "tile_directos": "Directos",
-    "tile_today_training": "Entrenamiento de hoy",
     "tile_teams": "Mis equipos",
+    "tile_today_training": "Entrenamiento de hoy",
     "title": "Inicio",
+    "trainings_without_attendance": "Entrenamientos sin pasar lista",
+    "trainings_without_session": "Entrenamientos sin sesión",
     "unpublished_callups": "Convocatorias sin publicar",
     "upcoming": "Próximos eventos"
   },
@@ -5228,5 +5230,15 @@
   "active_player": {
     "removed_title": "Jugador no disponible",
     "removed_body": "Este jugador ya no está disponible."
+  },
+  "staff_pending": {
+    "without_attendance": {
+      "empty": "No tienes entrenamientos sin pasar lista.",
+      "title": "Sin pasar lista"
+    },
+    "without_session": {
+      "empty": "No tienes entrenamientos sin sesión en las próximas 24 horas.",
+      "title": "Sin sesión"
+    }
   }
 }

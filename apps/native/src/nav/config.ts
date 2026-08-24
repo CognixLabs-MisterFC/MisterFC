@@ -156,6 +156,10 @@ const STAFF_HIDDEN: MenuDef[] = [
   // 19-C — 2º nivel de Informes: jugadores del equipo con su estado (?teamId&period).
   // Alcanzado desde el picker del dispatcher cuando el entrenador tiene >1 equipo.
   { name: 'informes-jugadores', labelKey: 'nav.informes' },
+  // O2-16 — Listas de entrenos PENDIENTES del entrenador (sin pasar lista / sin
+  // sesión). Se alcanzan desde las tarjetas de tarea del inicio; href:null.
+  { name: 'entrenos-sin-lista', labelKey: 'nav.asistencia' },
+  { name: 'entrenos-sin-sesion', labelKey: 'nav.sesion_del_dia' },
 ];
 
 const DIRECTION_MENU: MenuDef[] = [
