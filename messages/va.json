@@ -1111,7 +1111,8 @@
         "forbidden": "Només l'administrador pot fer-ho.",
         "no_campaign": "Configura primer una data límit.",
         "generic": "Alguna cosa ha anat malament. Torna-ho a provar.",
-        "not_launched": "La campanya no està llançada."
+        "not_launched": "La campanya no està llançada.",
+        "already_open": "Ja hi ha una campanya oberta esta temporada. Publica-la abans de llançar-ne una altra."
       },
       "publish_all": "Publicar tot",
       "publish_all_hint": "Publica a les famílies els informes complets del període. Els incomplets no es publiquen.",

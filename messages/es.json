@@ -1111,7 +1111,8 @@
         "forbidden": "Solo el administrador puede hacerlo.",
         "no_campaign": "Configura primero una fecha límite.",
         "generic": "Algo salió mal. Inténtalo de nuevo.",
-        "not_launched": "La campaña no está lanzada."
+        "not_launched": "La campaña no está lanzada.",
+        "already_open": "Ya hay una campaña abierta esta temporada. Publícala antes de lanzar otra."
       },
       "publish_all": "Publicar todo",
       "publish_all_hint": "Publica a las familias los informes completos del periodo. Los incompletos no se publican.",
