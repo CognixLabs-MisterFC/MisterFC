@@ -12,12 +12,19 @@ import {
   createTeamConversationFromClient,
   listMessageablePlayersFromClient,
   listMessageableTeamsFromClient,
+  startStaffConversationFromClient,
+  listStaffDirectoryFromClient,
+  getStaffConversationMessagesFromClient,
+  markStaffConversationReadFromClient,
+  type StaffDirectoryEntry,
+  type StaffThreadMessage as CoreStaffThreadMessage,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import {
   sendDirectMessage,
   sendTeamMessage as sendTeamMessageWrapped,
+  sendStaffMessage as sendStaffMessageWrapped,
 } from '@/lib/send-message';
 import { userCanMessageInClub } from '@/lib/messaging-permissions';
 
@@ -455,4 +462,150 @@ export async function setTeamChatParticipation(
 
   revalidatePath(`/${locale}/mensajes/equipo/${input.team_id}`);
   return { ok: { mode: input.mode } };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// O2-12 — Mensajería privada entre STAFF (1:1 perfil↔perfil). Mismo patrón que las
+// de familia/equipo: server actions que envuelven core con el gate UX
+// (userCanMessageInClub) + revalidatePath. Envío por el wrapper `sendStaffMessage`
+// de #520 (service-role fan-out), NO por el endpoint nativo. RLS es la autoridad.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type StaffDirectoryResult = {
+  staff?: StaffDirectoryEntry[];
+  error?: 'forbidden' | 'generic';
+};
+
+/** Directorio de staff del club (destinatarios), agrupado por rol en el cliente. */
+export async function listStaffDirectory(): Promise<StaffDirectoryResult> {
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const clubId = ctx.activeClub.club.id;
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const canMessage = await userCanMessageInClub(supabase, ctx);
+  if (!canMessage) return { error: 'forbidden' };
+
+  const res = await listStaffDirectoryFromClient(
+    supabase,
+    { clubId, currentProfileId: ctx.user.id },
+    sentryLog,
+  );
+  if ('error' in res) return { error: res.error };
+  return { staff: res.staff };
+}
+
+export type StartStaffConversationResult = {
+  ok?: { conversation_id: string };
+  error?: 'forbidden' | 'self' | 'generic';
+};
+
+/**
+ * Abre (o reusa) el hilo 1:1 entre el usuario y otro perfil de staff. Idempotente
+ * (par canónico); la RLS `staff_conversations_insert_staff` exige que AMBOS sean
+ * staff del club → 42501 = forbidden.
+ */
+export async function startStaffConversation(
+  locale: string,
+  otherProfileId: string,
+): Promise<StartStaffConversationResult> {
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const clubId = ctx.activeClub.club.id;
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const canMessage = await userCanMessageInClub(supabase, ctx);
+  if (!canMessage) return { error: 'forbidden' };
+
+  const res = await startStaffConversationFromClient(
+    supabase,
+    { clubId, currentProfileId: ctx.user.id, otherProfileId },
+    sentryLog,
+  );
+  if ('error' in res) return { error: res.error };
+
+  revalidatePath(`/${locale}/mensajes`);
+  return { ok: { conversation_id: res.ok.conversationId } };
+}
+
+export type SendStaffMessageResult = {
+  ok?: { message_id: string };
+  error?:
+    | 'forbidden'
+    | 'invalid_payload'
+    | 'rate_limited'
+    | 'conversation_not_found'
+    | 'generic';
+};
+
+/** Envía un mensaje al hilo de staff. Reusa el wrapper de #520 (fan-out al otro). */
+export async function sendStaffMessage(
+  locale: string,
+  input: { conversation_id: string; body: string },
+): Promise<SendStaffMessageResult> {
+  const parsed = sendMessageSchema.safeParse(input);
+  if (!parsed.success) return { error: 'invalid_payload' };
+
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const res = await sendStaffMessageWrapped(supabase, {
+    conversationId: parsed.data.conversation_id,
+    body: parsed.data.body,
+    senderId: ctx.user.id,
+    senderName: ctx.profile.full_name ?? null,
+    locale,
+  });
+  if ('error' in res) return { error: res.error };
+
+  revalidatePath(`/${locale}/mensajes`);
+  revalidatePath(`/${locale}/mensajes/staff/${parsed.data.conversation_id}`);
+  return { ok: { message_id: res.ok.message.id } };
+}
+
+/**
+ * Marca leído el hilo de staff (upsert de la marca del user). Idempotente. Los
+ * no-leídos del inbox se derivan por diferencia con last_read_at.
+ */
+export async function markStaffConversationRead(
+  locale: string,
+  conversationId: string,
+): Promise<MarkReadResult> {
+  const ctx = await loadShellContext();
+  if (!ctx) return { error: 'forbidden' };
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const res = await markStaffConversationReadFromClient(
+    supabase,
+    conversationId,
+    ctx.user.id,
+    new Date().toISOString(),
+  );
+  if (!res.ok) return { error: 'generic' };
+
+  revalidatePath(`/${locale}/mensajes`);
+  revalidatePath(`/${locale}/mensajes/staff/${conversationId}`);
+  return { ok: true };
+}
+
+export type StaffThreadMessage = CoreStaffThreadMessage;
+
+/** Mensajes del hilo de staff (para el polling del StaffMessageThread). */
+export async function fetchStaffMessages(
+  conversationId: string,
+): Promise<StaffThreadMessage[]> {
+  const ctx = await loadShellContext();
+  if (!ctx) return [];
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  return getStaffConversationMessagesFromClient(supabase, conversationId);
 }

@@ -2780,7 +2780,21 @@
     "send_offline": "Sense connexió: no pots enviar ara.",
     "send_placeholder": "Escriu un missatge…",
     "group_label": "Equip · {team}",
-    "empty": "No tens converses"
+    "empty": "No tens converses",
+    "filter": {
+      "all": "Tots",
+      "club": "Club",
+      "families": "Famílies",
+      "team": "Equip"
+    },
+    "new_staff": {
+      "action": "Club",
+      "title": "Nou missatge a staff",
+      "search_placeholder": "Cerca per nom…",
+      "loading": "Carregant…",
+      "error": "No s'ha pogut carregar. Torna-ho a provar.",
+      "empty": "No hi ha personal disponible"
+    }
   },
   "anuncios": {
     "title": "Anuncis de l'equip",
