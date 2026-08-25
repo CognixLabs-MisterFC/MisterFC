@@ -1,9 +1,9 @@
 /**
  * O2-5 F3 — Endpoint "enviar mensaje" para la app nativa (cierra la app de familia).
  *
- * Una sola ruta con discriminador `kind` ('direct' | 'team'): ambos flujos comparten
- * la misma superficie de auth (bearer/cookie), validación y 401; solo cambia qué
- * orquestador de core se invoca. Dos rutas serían dos handlers casi idénticos.
+ * Una sola ruta con discriminador `kind` ('direct' | 'team' | 'staff'): comparten la
+ * misma superficie de auth (bearer/cookie), validación y 401; solo cambia qué
+ * orquestador de core se invoca. Varias rutas serían handlers casi idénticos.
  *
  * Orden de seguridad (invariante):
  *   1. `resolveUserFromRequest` valida el bearer (getUser) → 401 si inválido. Cliente
@@ -19,7 +19,11 @@
 
 import { NextResponse } from 'next/server';
 import { resolveUserFromRequest } from '@/lib/resolve-user';
-import { sendDirectMessage, sendTeamMessage } from '@/lib/send-message';
+import {
+  sendDirectMessage,
+  sendTeamMessage,
+  sendStaffMessage,
+} from '@/lib/send-message';
 
 export const runtime = 'nodejs';
 
@@ -109,6 +113,30 @@ export async function POST(req: Request) {
     }
     const res = await sendTeamMessage(auth.supabase, {
       teamConversationId,
+      body: text,
+      senderId: auth.user.id,
+      senderName,
+      locale,
+    });
+    if ('error' in res) {
+      return NextResponse.json(
+        { error: res.error },
+        { status: statusFor(res.error) },
+      );
+    }
+    return NextResponse.json({ ok: true, message: res.ok.message });
+  }
+
+  // O2-12 — Mensaje privado entre STAFF. Rama ADITIVA: comparte auth/validación/mapeo
+  // de estados con las anteriores; usa `conversationId` (staff_conversations.id).
+  if (b.kind === 'staff') {
+    const conversationId =
+      typeof b.conversationId === 'string' ? b.conversationId : '';
+    if (!conversationId) {
+      return NextResponse.json({ error: 'invalid' }, { status: 400 });
+    }
+    const res = await sendStaffMessage(auth.supabase, {
+      conversationId,
       body: text,
       senderId: auth.user.id,
       senderName,

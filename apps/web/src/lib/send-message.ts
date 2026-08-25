@@ -4,13 +4,15 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   sendDirectMessageFromClient,
   sendTeamMessageFromClient,
+  sendStaffMessageFromClient,
   type Database,
   type SendMessageOutcome,
   type SendTeamMessageOutcome,
+  type SendStaffMessageOutcome,
 } from '@misterfc/core';
 import { emitNotificationFanOut } from '@/lib/notify-bus';
 
-export type { SendMessageOutcome, SendTeamMessageOutcome };
+export type { SendMessageOutcome, SendTeamMessageOutcome, SendStaffMessageOutcome };
 
 /**
  * O2-5 F3 — Wrapper web del envío de mensajes (core). Único punto que inyecta el
@@ -56,6 +58,27 @@ export function sendTeamMessage(
   },
 ): Promise<SendTeamMessageOutcome> {
   return sendTeamMessageFromClient(
+    supabase,
+    args,
+    (recipients, payload) => emitNotificationFanOut(recipients, payload),
+    sentryLog('messaging'),
+  );
+}
+
+// O2-12 — Envío de mensaje privado entre STAFF. Mismo patrón: inserta como el usuario
+// (RLS) y el fan-out (service-role) solo notifica al OTRO participante, DESPUÉS del
+// insert. Lo consume el route handler nativo (bearer); la web de usuario no lo usa.
+export function sendStaffMessage(
+  supabase: SupabaseClient<Database>,
+  args: {
+    conversationId: string;
+    body: string;
+    senderId: string;
+    senderName: string | null;
+    locale: string;
+  },
+): Promise<SendStaffMessageOutcome> {
+  return sendStaffMessageFromClient(
     supabase,
     args,
     (recipients, payload) => emitNotificationFanOut(recipients, payload),

@@ -32,10 +32,11 @@ export const WRITE_INVALIDATIONS = {
   respondCallup: ['inicio', 'convocatoria', 'convocatorias', 'convocatoria-staff', 'convocatorias-staff'],
   /** Marcar novedades/notificaciones como leídas (feed + contador del inicio). */
   markNotifications: ['novedades', 'inicio', 'anuncios'],
-  /** Leer un hilo de mensajería (contador de no leídos del inicio + el hilo). */
-  markConversationRead: ['inbox', 'thread', 'team-thread', 'inicio'],
-  /** Enviar un mensaje (1:1 o de equipo): actualiza la bandeja y el hilo. */
-  sendMessage: ['inbox', 'thread', 'team-thread'],
+  /** Leer un hilo de mensajería (contador de no leídos del inicio + el hilo).
+   *  O2-12: incluye el hilo/bandeja de staff (canal privado entre staff). */
+  markConversationRead: ['inbox', 'thread', 'team-thread', 'staff-inbox', 'staff-thread', 'inicio'],
+  /** Enviar un mensaje (1:1, equipo o staff): actualiza la bandeja y el hilo. */
+  sendMessage: ['inbox', 'thread', 'team-thread', 'staff-inbox', 'staff-thread'],
   /** Seguir/dejar de seguir un equipo en Directos. */
   setTeamFollow: ['directos', 'directos-follow', 'spec-directos'],
   /** Datos médicos del jugador (gestión sensible). */
@@ -73,8 +74,8 @@ export const WRITE_INVALIDATIONS = {
   manageAnnouncement: ['anuncios', 'staff-anuncios', 'inicio', 'home'],
   /** Valoraciones y cierre post-partido. */
   postMatch: ['post-partido'],
-  /** Crear una conversación de equipo (bandeja). */
-  createConversation: ['inbox'],
+  /** Crear una conversación de equipo o de staff (bandeja). */
+  createConversation: ['inbox', 'staff-inbox'],
   /** Cambios de ESTADO del partido en el control del directo (staff): empezar,
    *  fin de periodo, reloj, finalizar, reabrir. NO cubre los eventos de marcador,
    *  que van por la cola offline (use-event-queue, intocable). */

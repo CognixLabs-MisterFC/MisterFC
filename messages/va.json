@@ -5096,7 +5096,22 @@
     "no_players": "No hi ha jugadors disponibles",
     "no_teams": "No hi ha equips disponibles",
     "offline": "Sense connexió: no pots iniciar una conversa ara.",
-    "search": "Cercar…"
+    "search": "Cercar…",
+    "tab_club": "Club",
+    "no_staff": "No hi ha personal disponible",
+    "filter_all": "Tots",
+    "filter_club": "Club",
+    "filter_families": "Famílies",
+    "filter_team": "Equip",
+    "role_group": {
+      "admin_club": "Administració",
+      "director": "Direcció",
+      "coordinador": "Coordinació",
+      "entrenador_principal": "Entrenador principal",
+      "entrenador_ayudante": "Entrenador ajudant",
+      "preparador_fisico": "Preparador físic",
+      "delegado": "Delegat"
+    }
   },
   "sesion_dia": {
     "empty": "Hui no hi ha entrenament",
