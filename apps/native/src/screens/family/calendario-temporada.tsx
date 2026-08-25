@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
@@ -19,6 +19,7 @@ import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { familyEventTarget, type FamilyTarget } from '@/notifications/feed-target';
 import { EventCard, HolidayRow } from '@/screens/family/calendario';
+import { reportDataError, reportDataSignal } from '@/lib/report-error';
 
 /** Traducción con la firma del hook `useTranslations('')` (namespace raíz). */
 type T = (key: string, values?: Record<string, string>) => string;
@@ -121,8 +122,24 @@ export function CalendarTemporadaScreen({
       clubId,
       { startIso: range.startIso, endIso: range.endIso },
       { teamIds: teamId ? [teamId] : [], categoryIds: [], types: [] },
-      teamId || clubWide ? {} : { scopeTeamIds },
+      teamId || clubWide
+        ? { onError: reportDataError }
+        : { scopeTeamIds, onError: reportDataError },
     );
+    // INSTRUMENTACIÓN (patrón #488) — señal del fetch FRESCO de la temporada: cuántos
+    // eventos trae la consulta VIVA, la ventana usada y el SCOPE que se pasó (modo y nº de
+    // teamIds), para distinguir "consulta vacía" de "llega y no se pinta". Solo corre en
+    // fetch fresco (readThrough no ejecuta el fetcher al servir caché). Sin PII: escalares.
+    reportDataSignal('temporada-month', {
+      phase: 'fetch',
+      count: events.length,
+      first: events[0]?.starts_at ?? 'none',
+      from: range.fromDate,
+      to: range.toDate,
+      mode: clubWide ? 'clubWide' : teamId ? 'team' : 'user',
+      scope_team_ids: clubWide || teamId ? -1 : (scopeTeamIds?.length ?? -1),
+      filter: teamFilter,
+    });
     const holidays = await getHolidaysFromClient(sb, clubId, range.fromDate, range.toDate);
     // Equipos EN EL SCOPE (fuente del filtro): club-wide → todos; teamId → ese; familia/
     // staff → los del scope por-usuario. `teams` del loader ya son de la temporada activa.
@@ -149,6 +166,23 @@ export function CalendarTemporadaScreen({
     if (!showFilter || selectedTeams === null) return evs;
     return evs.filter((e) => e.team_id === null || selectedTeams.has(e.team_id));
   }, [data, showFilter, selectedTeams]);
+
+  // INSTRUMENTACIÓN (patrón #488) — señal del valor SERVIDO a la rejilla (cada vez que
+  // cambia `data`: primero la caché, luego la revalidación). `count_raw` = eventos del
+  // fetch; `count_grid` = tras el filtro de equipos → si `raw>0` y `grid=0` el filtro se
+  // come todo; si ambos 0 la consulta vino vacía. `from_cache=true` solo OFFLINE. Sin PII.
+  useEffect(() => {
+    if (loading || !data) return;
+    reportDataSignal('temporada-month', {
+      phase: 'render',
+      count_raw: data.events.length,
+      count_grid: filteredEvents.length,
+      month: monthTag,
+      show_filter: showFilter,
+      teams_in_scope: data.teams.length,
+      from_cache: fromCache,
+    });
+  }, [loading, data, filteredEvents, monthTag, showFilter, fromCache]);
 
   // Índices por día: qué días tienen evento / son festivo, y el detalle del día tocado.
   const { eventDays, holidayDays, dayEvents, dayHolidays } = useMemo(() => {

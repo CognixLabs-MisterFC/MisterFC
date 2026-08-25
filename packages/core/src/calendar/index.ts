@@ -123,7 +123,17 @@ export async function getCalendarDataFromClient(
   clubId: string,
   range: CalendarRangeIso,
   filters: CalendarFilters,
-  opts?: { scopeTeamIds?: string[] | null }
+  opts?: {
+    scopeTeamIds?: string[] | null;
+    /**
+     * Sink OPCIONAL de errores de consulta (aditivo, por defecto ausente → callers
+     * existentes sin cambio de comportamiento). Antes, un fallo de RLS/Postgres en
+     * la query de eventos se tragaba en un `[]` mudo (se destructura solo `data`).
+     * Con esto, el caller puede dejar rastro (p.ej. Sentry) para distinguir
+     * "consulta vacía" de "consulta que FALLA". No altera el retorno.
+     */
+    onError?: (op: string, error: unknown) => void;
+  }
 ): Promise<{
   events: CalendarEvent[];
   teams: TeamOption[];
@@ -160,7 +170,10 @@ export async function getCalendarDataFromClient(
   }
   if (filters.types.length > 0) query = query.in('type', filters.types);
 
-  const { data: rawEvents } = await query;
+  const { data: rawEvents, error: eventsError } = await query;
+  // Aditivo: si la query de eventos falla (RLS/Postgres), deja rastro por el sink en
+  // vez de degradar a `[]` sin señal. El comportamiento no cambia (seguimos con []).
+  if (eventsError) opts?.onError?.('calendar-events', eventsError);
 
   type RawTeam = { name: string; color: string; categories: { name: string } | null };
   type RawCategory = { name: string };
