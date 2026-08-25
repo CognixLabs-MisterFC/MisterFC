@@ -2780,7 +2780,21 @@
     "send_offline": "Offline: you can’t send right now.",
     "send_placeholder": "Write a message…",
     "group_label": "Team · {team}",
-    "empty": "You have no conversations"
+    "empty": "You have no conversations",
+    "filter": {
+      "all": "All",
+      "club": "Club",
+      "families": "Families",
+      "team": "Team"
+    },
+    "new_staff": {
+      "action": "Club",
+      "title": "New staff message",
+      "search_placeholder": "Search by name…",
+      "loading": "Loading…",
+      "error": "Couldn’t load. Try again.",
+      "empty": "No staff available"
+    }
   },
   "anuncios": {
     "title": "Team announcements",

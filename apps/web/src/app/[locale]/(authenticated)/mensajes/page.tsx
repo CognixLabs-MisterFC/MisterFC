@@ -1,7 +1,11 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { MessageSquare, UsersRound } from 'lucide-react';
-import { createSupabaseServerClient, getInboxFromClient } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  getInboxFromClient,
+  getStaffInboxFromClient,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { userCanMessageInClub } from '@/lib/messaging-permissions';
@@ -14,6 +18,8 @@ import {
 } from '@/components/ui/card';
 import { NewConversationDialog } from './new-conversation-dialog';
 import { NewTeamChatDialog } from './new-team-chat-dialog';
+import { NewStaffChatDialog } from './new-staff-chat-dialog';
+import { StaffInbox, type InboxListItem } from './staff-inbox';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -38,16 +44,7 @@ export default async function MensajesPage({ params }: Props) {
   // se mapea a la forma de la lista (href/rótulo) de la web.
   const inbox = await getInboxFromClient(supabase, ctx.user.id);
 
-  type ListItem = {
-    kind: 'direct' | 'group';
-    key: string;
-    href: string;
-    title: string;
-    last: string;
-    unread: number;
-  };
-
-  const items: ListItem[] = inbox.map((it): ListItem =>
+  const items: InboxListItem[] = inbox.map((it): InboxListItem =>
     it.kind === 'direct'
       ? {
           kind: 'direct',
@@ -67,6 +64,28 @@ export default async function MensajesPage({ params }: Props) {
         },
   );
 
+  // O2-12 — SOLO para staff (canMessage): se añade el canal privado entre staff a la
+  // MISMA bandeja, fusionado y ordenado por fecha, y se muestra en un componente
+  // cliente con el filtro de 4. Con canMessage=false (familias) NO se consulta el
+  // inbox de staff ni se cambia el render: se sirve exactamente la lista de siempre.
+  let mergedItems: InboxListItem[] | null = null;
+  if (canMessage) {
+    const staffInbox = await getStaffInboxFromClient(supabase, ctx.user.id);
+    mergedItems = [
+      ...items,
+      ...staffInbox.map(
+        (it): InboxListItem => ({
+          kind: 'staff',
+          key: `s-${it.conversationId}`,
+          href: `/mensajes/staff/${it.conversationId}`,
+          title: it.title,
+          last: it.lastMessageAt,
+          unread: it.unread,
+        }),
+      ),
+    ].sort((a, b) => (a.last < b.last ? 1 : a.last > b.last ? -1 : 0));
+  }
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex items-center justify-between gap-3">
@@ -77,6 +96,7 @@ export default async function MensajesPage({ params }: Props) {
         {canMessage && (
           <div className="flex items-center gap-2">
             <NewTeamChatDialog locale={locale} />
+            <NewStaffChatDialog locale={locale} />
             <NewConversationDialog locale={locale} />
           </div>
         )}
@@ -87,7 +107,9 @@ export default async function MensajesPage({ params }: Props) {
           <CardTitle>{t('list.title')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
-          {items.length === 0 ? (
+          {canMessage && mergedItems ? (
+            <StaffInbox locale={locale} items={mergedItems} />
+          ) : items.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('list.empty')}</p>
           ) : (
             <ul className="flex flex-col divide-y divide-border">

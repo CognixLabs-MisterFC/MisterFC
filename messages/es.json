@@ -2780,7 +2780,21 @@
     "send_offline": "Sin conexión: no puedes enviar ahora.",
     "send_placeholder": "Escribe un mensaje…",
     "group_label": "Equipo · {team}",
-    "empty": "No tienes conversaciones"
+    "empty": "No tienes conversaciones",
+    "filter": {
+      "all": "Todos",
+      "club": "Club",
+      "families": "Familias",
+      "team": "Equipo"
+    },
+    "new_staff": {
+      "action": "Club",
+      "title": "Nuevo mensaje a staff",
+      "search_placeholder": "Buscar por nombre…",
+      "loading": "Cargando…",
+      "error": "No se pudo cargar. Inténtalo de nuevo.",
+      "empty": "No hay personal disponible"
+    }
   },
   "anuncios": {
     "title": "Anuncios del equipo",
