@@ -34,3 +34,23 @@ export function reportDataError(op: string, error: unknown): void {
     Sentry.captureException(err);
   });
 }
+
+/**
+ * INSTRUMENTACIÓN (diagnóstico) — deja una SEÑAL no-error en Sentry para ver un
+ * flujo que se comporta mal en silencio (p. ej. "sin eventos próximos": ¿el valor
+ * servido vino de CACHÉ o FRESCO?, ¿cuántas filas?). Nivel `info`, mismo criterio de
+ * PRIVACIDAD que `reportDataError`: SOLO metadatos técnicos (operación, fase,
+ * contadores, flags) — NUNCA user_id, email ni datos de menores. `extra` debe ser
+ * escalares (string/number/boolean), no filas de datos.
+ */
+export function reportDataSignal(
+  op: string,
+  extra: Record<string, string | number | boolean>,
+): void {
+  Sentry.withScope((scope) => {
+    scope.setLevel('info');
+    scope.setTag('data_op', op);
+    scope.setContext('data_signal', { op, ...extra });
+    Sentry.captureMessage(`data-signal:${op}`, 'info');
+  });
+}
