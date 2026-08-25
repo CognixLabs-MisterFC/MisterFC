@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  SectionList,
   Text,
   TextInput,
   View,
@@ -11,11 +12,15 @@ import { useRouter } from 'expo-router';
 import {
   startConversationFromClient,
   createTeamConversationFromClient,
+  startStaffConversationFromClient,
   listMessageablePlayersFromClient,
   listMessageableTeamsFromClient,
+  listStaffDirectoryFromClient,
   formatPlayerName,
   type MessageablePlayer,
   type MessageableTeam,
+  type StaffDirectoryEntry,
+  type StaffDirectoryRole,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { useSession } from '@/auth/session';
@@ -26,15 +31,27 @@ import { LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
-type Mode = 'player' | 'team';
+type Mode = 'player' | 'team' | 'club';
+
+/** Orden de las secciones del directorio de staff (mismo criterio que core). */
+const STAFF_ROLE_ORDER: StaffDirectoryRole[] = [
+  'admin_club',
+  'director',
+  'coordinador',
+  'entrenador_principal',
+  'entrenador_ayudante',
+  'preparador_fisico',
+  'delegado',
+];
 
 /**
- * O2-10b-1a — "Nueva conversación" del STAFF (lo que la familia NO tiene). Elige un
- * JUGADOR (chat 1:1) o un EQUIPO (chat de grupo) y abre/crea el hilo con los
- * helpers de core (`startConversationFromClient` / `createTeamConversationFromClient`)
- * — INSERT como el usuario, la RLS es el gate (42501 → forbidden). Tras abrir el hilo
- * navega a su pantalla; el envío ya reutiliza el endpoint F3. Write-guard: crear exige
- * red (sin cola); offline → deshabilitado con aviso.
+ * O2-10b-1a / O2-12 — "Nueva conversación" del STAFF (lo que la familia NO tiene).
+ * Elige un JUGADOR (1:1 con familia), un EQUIPO (grupo) o un miembro del CLUB (staff,
+ * O2-12) y abre/crea el hilo con los helpers de core (`startConversationFromClient` /
+ * `createTeamConversationFromClient` / `startStaffConversationFromClient`) — INSERT como
+ * el usuario, la RLS es el gate (42501 → forbidden). El directorio de staff ya excluye
+ * al propio y deriva el conjunto como la RLS. Tras abrir el hilo navega a su pantalla;
+ * el envío reutiliza el endpoint F3. Write-guard: crear exige red; offline → aviso.
  */
 export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string }) {
   const t = useTranslations('');
@@ -52,6 +69,7 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
   const [query, setQuery] = useState('');
   const [players, setPlayers] = useState<MessageablePlayer[]>([]);
   const [teams, setTeams] = useState<MessageableTeam[]>([]);
+  const [staff, setStaff] = useState<StaffDirectoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,19 +84,23 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
         return;
       }
       const isAdminDir = role === 'admin_club' || role === 'director';
-      const [pRes, tRes] = await Promise.all([
+      const [pRes, tRes, sRes] = await Promise.all([
         listMessageablePlayersFromClient(supabase, clubId),
         listMessageableTeamsFromClient(supabase, { clubId, isAdminDir, membershipId }),
+        userId
+          ? listStaffDirectoryFromClient(supabase, { clubId, currentProfileId: userId })
+          : Promise.resolve({ staff: [] as StaffDirectoryEntry[] }),
       ]);
       if (!active) return;
       if ('players' in pRes) setPlayers(pRes.players);
       if ('teams' in tRes) setTeams(tRes.teams);
+      if ('staff' in sRes) setStaff(sRes.staff);
       setLoading(false);
     })();
     return () => {
       active = false;
     };
-  }, [clubId, membershipId, role]);
+  }, [clubId, membershipId, role, userId]);
 
   const openPlayer = useCallback(
     async (p: MessageablePlayer) => {
@@ -130,6 +152,30 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
     [online, clubId, busyId, router, basePath, t],
   );
 
+  const openStaff = useCallback(
+    async (entry: StaffDirectoryEntry) => {
+      if (!online || !clubId || !userId || busyId) return; // write-guard
+      setBusyId(entry.profileId);
+      setError(null);
+      const res = await startStaffConversationFromClient(supabase, {
+        clubId,
+        currentProfileId: userId,
+        otherProfileId: entry.profileId,
+      });
+      setBusyId(null);
+      if ('error' in res) {
+        setError(t('mensajes_staff.create_error'));
+        return;
+      }
+      void invalidateAfterWrite('createConversation');
+      router.replace({
+        pathname: `${basePath}/mensaje-staff`,
+        params: { conversationId: res.ok.conversationId, title: entry.fullName },
+      });
+    },
+    [online, clubId, userId, busyId, router, basePath, t],
+  );
+
   if (loading) return <LoadingScreen />;
 
   const term = query.trim().toLowerCase();
@@ -141,6 +187,14 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
   const filteredTeams = term
     ? teams.filter((t2) => t2.name.toLowerCase().includes(term))
     : teams;
+  const filteredStaff = term
+    ? staff.filter((s) => s.fullName.toLowerCase().includes(term))
+    : staff;
+  // Secciones del directorio de staff: por rol (orden fijo), solo las no vacías.
+  const staffSections = STAFF_ROLE_ORDER.map((r) => ({
+    role: r,
+    data: filteredStaff.filter((s) => s.role === r),
+  })).filter((sec) => sec.data.length > 0);
 
   return (
     <View className="flex-1 bg-white">
@@ -148,10 +202,11 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
         <ScreenTitle>{t('mensajes_staff.new_title')}</ScreenTitle>
       </View>
 
-      {/* Selector de modo: Jugador (1:1) / Equipo (grupo). */}
+      {/* Selector de modo: Jugador (1:1 familia) / Equipo (grupo) / Club (staff). */}
       <View className="flex-row gap-2 px-4 pb-2 pt-1">
         <Segment label={t('mensajes_staff.tab_player')} active={mode === 'player'} accent={accent} onPress={() => setMode('player')} />
         <Segment label={t('mensajes_staff.tab_team')} active={mode === 'team'} accent={accent} onPress={() => setMode('team')} />
+        <Segment label={t('mensajes_staff.tab_club')} active={mode === 'club'} accent={accent} onPress={() => setMode('club')} />
       </View>
 
       <View className="px-4 pb-2">
@@ -190,21 +245,46 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
             )}
           />
         )
-      ) : filteredTeams.length === 0 ? (
-        <EmptyState message={t('mensajes_staff.no_teams')} />
+      ) : mode === 'team' ? (
+        filteredTeams.length === 0 ? (
+          <EmptyState message={t('mensajes_staff.no_teams')} />
+        ) : (
+          <FlatList
+            data={filteredTeams}
+            keyExtractor={(team) => team.id}
+            contentContainerStyle={{ padding: 16, gap: 4 }}
+            renderItem={({ item }) => (
+              <Row
+                icon="👥"
+                label={item.name}
+                busy={busyId === item.id}
+                disabled={!online || busyId != null}
+                accent={accent}
+                onPress={() => openTeam(item)}
+              />
+            )}
+          />
+        )
+      ) : staffSections.length === 0 ? (
+        <EmptyState message={t('mensajes_staff.no_staff')} />
       ) : (
-        <FlatList
-          data={filteredTeams}
-          keyExtractor={(team) => team.id}
-          contentContainerStyle={{ padding: 16, gap: 4 }}
+        <SectionList
+          sections={staffSections}
+          keyExtractor={(item) => item.profileId}
+          contentContainerStyle={{ padding: 16 }}
+          stickySectionHeadersEnabled={false}
+          renderSectionHeader={({ section }) => (
+            <Text className="px-1 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-zinc-400">
+              {t(`mensajes_staff.role_group.${section.role}`)}
+            </Text>
+          )}
           renderItem={({ item }) => (
             <Row
-              icon="👥"
-              label={item.name}
-              busy={busyId === item.id}
+              label={item.fullName}
+              busy={busyId === item.profileId}
               disabled={!online || busyId != null}
               accent={accent}
-              onPress={() => openTeam(item)}
+              onPress={() => openStaff(item)}
             />
           )}
         />

@@ -250,6 +250,28 @@ export async function getStaffConversationMessagesFromClient(
   return (data ?? []) as StaffThreadMessage[];
 }
 
+/**
+ * Marca leído el hilo de staff (upsert de la marca del usuario a `nowIso`). Permitido
+ * por RLS (staff_conversation_reads_*_own). Idempotente. Los no-leídos del inbox se
+ * derivan por diferencia con este `last_read_at`.
+ */
+export async function markStaffConversationReadFromClient(
+  supabase: Sb,
+  conversationId: string,
+  userId: string,
+  nowIso: string,
+): Promise<{ ok: boolean }> {
+  const { error } = await supabase.from('staff_conversation_reads').upsert(
+    {
+      profile_id: userId,
+      conversation_id: conversationId,
+      last_read_at: nowIso,
+    },
+    { onConflict: 'profile_id,conversation_id' },
+  );
+  return { ok: !error };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Enviar mensaje (+ fan-out al OTRO perfil).
 // ─────────────────────────────────────────────────────────────────────────────

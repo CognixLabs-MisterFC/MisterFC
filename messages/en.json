@@ -5096,7 +5096,22 @@
     "no_players": "No players available",
     "no_teams": "No teams available",
     "offline": "You’re offline: you can’t start a conversation right now.",
-    "search": "Search…"
+    "search": "Search…",
+    "tab_club": "Club",
+    "no_staff": "No staff available",
+    "filter_all": "All",
+    "filter_club": "Club",
+    "filter_families": "Families",
+    "filter_team": "Team",
+    "role_group": {
+      "admin_club": "Admin",
+      "director": "Director",
+      "coordinador": "Coordinator",
+      "entrenador_principal": "Head coach",
+      "entrenador_ayudante": "Assistant coach",
+      "preparador_fisico": "Fitness coach",
+      "delegado": "Team manager"
+    }
   },
   "sesion_dia": {
     "empty": "No training today",

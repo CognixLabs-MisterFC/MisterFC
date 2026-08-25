@@ -153,6 +153,9 @@ const STAFF_HIDDEN: MenuDef[] = [
   { name: 'mensaje', labelKey: 'nav.mensajes' },
   { name: 'mensaje-equipo', labelKey: 'nav.mensajes' },
   { name: 'mensaje-nuevo', labelKey: 'nav.mensajes' },
+  // O2-12 — hilo 1:1 privado entre staff (?conversationId), alcanzado desde la bandeja
+  // (filtro CLUB) o el selector "nuevo → Club".
+  { name: 'mensaje-staff', labelKey: 'nav.mensajes' },
   // 19-C — 2º nivel de Informes: jugadores del equipo con su estado (?teamId&period).
   // Alcanzado desde el picker del dispatcher cuando el entrenador tiene >1 equipo.
   { name: 'informes-jugadores', labelKey: 'nav.informes' },
@@ -183,6 +186,8 @@ const DIRECTION_HIDDEN: MenuDef[] = [
   { name: 'mensaje', labelKey: 'nav.mensajes' },
   { name: 'mensaje-equipo', labelKey: 'nav.mensajes' },
   { name: 'mensaje-nuevo', labelKey: 'nav.mensajes' },
+  // O2-12 — hilo 1:1 privado entre staff en dirección (dirección también es staff).
+  { name: 'mensaje-staff', labelKey: 'nav.mensajes' },
   // O2-11a-2 — fichas club-wide (alcanzadas por navegación con parámetros).
   { name: 'jugador', labelKey: 'nav.jugadores' },
   { name: 'coach', labelKey: 'nav.cuerpo_tecnico' },

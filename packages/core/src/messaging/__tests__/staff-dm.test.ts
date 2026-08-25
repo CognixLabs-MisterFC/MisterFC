@@ -6,6 +6,7 @@ import {
   sendStaffMessageFromClient,
   getStaffInboxFromClient,
   countUnreadStaffConversations,
+  markStaffConversationReadFromClient,
   type StaffInboxItem,
 } from '../staff-dm';
 import type { MessageFanOut } from '../send';
@@ -46,6 +47,7 @@ function makeClient(responses: Record<string, Term[]>) {
     q.order = chain;
     q.limit = chain;
     q.insert = chain;
+    q.upsert = chain;
     q.maybeSingle = () => Promise.resolve(next(table));
     q.single = () => Promise.resolve(next(table));
     q.then = (onF: (v: Term) => unknown, onR?: (e: unknown) => unknown) =>
@@ -360,5 +362,19 @@ describe('getStaffInboxFromClient + countUnreadStaffConversations', () => {
       { kind: 'staff', conversationId: 'b', otherProfileId: 'y', title: 'B', lastMessageAt: '', unread: 3 },
     ];
     expect(countUnreadStaffConversations(items)).toBe(1);
+  });
+});
+
+describe('markStaffConversationReadFromClient', () => {
+  it('upsert ok → { ok: true }', async () => {
+    const sb = makeClient({ staff_conversation_reads: [{ error: null }] });
+    const r = await markStaffConversationReadFromClient(sb, CONV, ME, '2026-08-25T10:00:00.000Z');
+    expect(r).toEqual({ ok: true });
+  });
+
+  it('error de upsert → { ok: false }', async () => {
+    const sb = makeClient({ staff_conversation_reads: [{ error: { message: 'boom' } }] });
+    const r = await markStaffConversationReadFromClient(sb, CONV, ME, '2026-08-25T10:00:00.000Z');
+    expect(r).toEqual({ ok: false });
   });
 });

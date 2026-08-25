@@ -5096,7 +5096,22 @@
     "no_players": "No hay jugadores disponibles",
     "no_teams": "No hay equipos disponibles",
     "offline": "Sin conexión: no puedes iniciar una conversación ahora.",
-    "search": "Buscar…"
+    "search": "Buscar…",
+    "tab_club": "Club",
+    "no_staff": "No hay personal disponible",
+    "filter_all": "Todos",
+    "filter_club": "Club",
+    "filter_families": "Familias",
+    "filter_team": "Equipo",
+    "role_group": {
+      "admin_club": "Administración",
+      "director": "Dirección",
+      "coordinador": "Coordinación",
+      "entrenador_principal": "Entrenador principal",
+      "entrenador_ayudante": "Entrenador ayudante",
+      "preparador_fisico": "Preparador físico",
+      "delegado": "Delegado"
+    }
   },
   "sesion_dia": {
     "empty": "Hoy no hay entrenamiento",
