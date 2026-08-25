@@ -3265,6 +3265,127 @@ export type Database = {
           },
         ]
       }
+      staff_conversation_reads: {
+        Row: {
+          conversation_id: string
+          last_read_at: string
+          profile_id: string
+        }
+        Insert: {
+          conversation_id: string
+          last_read_at?: string
+          profile_id: string
+        }
+        Update: {
+          conversation_id?: string
+          last_read_at?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_conversation_reads_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "staff_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_conversation_reads_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_conversations: {
+        Row: {
+          club_id: string
+          created_at: string
+          id: string
+          last_message_at: string
+          profile_a: string
+          profile_b: string
+        }
+        Insert: {
+          club_id: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          profile_a: string
+          profile_b: string
+        }
+        Update: {
+          club_id?: string
+          created_at?: string
+          id?: string
+          last_message_at?: string
+          profile_a?: string
+          profile_b?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_conversations_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_conversations_profile_a_fkey"
+            columns: ["profile_a"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_conversations_profile_b_fkey"
+            columns: ["profile_b"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_messages: {
+        Row: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_profile_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender_profile_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender_profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "staff_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_messages_sender_profile_id_fkey"
+            columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       substitution_regimes: {
         Row: {
           allow_reentry: boolean
@@ -4327,6 +4448,10 @@ export type Database = {
         Args: { p_club_id: string; p_profile_id: string }
         Returns: boolean
       }
+      profile_is_staff_of_club: {
+        Args: { p_club_id: string; p_profile_id: string }
+        Returns: boolean
+      }
       promotion_candidates: {
         Args: { p_event_id: string }
         Returns: {
@@ -4584,6 +4709,11 @@ export type Database = {
         Args: { p_team_id: string }
         Returns: boolean
       }
+      user_is_staff_conversation_participant: {
+        Args: { p_conversation_id: string }
+        Returns: boolean
+      }
+      user_is_staff_of_club: { Args: { p_club_id: string }; Returns: boolean }
       user_is_staff_of_team: { Args: { p_team_id: string }; Returns: boolean }
       user_is_team_chat_member: {
         Args: { p_team_id: string }
