@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ScrollView, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -70,6 +71,9 @@ export function EntrenamientosScreen({
   const { activeClub, theme } = useApp();
   const { activePlayer } = useActivePlayer();
   const router = useRouter();
+  // El histórico puede tener ~150 entrenos: por defecto solo los 5 más recientes; un
+  // "ver más" despliega el resto (corte en CLIENTE; los datos ya vienen en `data`).
+  const [historyExpanded, setHistoryExpanded] = useState(false);
   const clubId = activeClub?.club.id ?? null;
   const playerId = showAttendance ? (activePlayer?.id ?? null) : null;
   const accent = theme?.color ?? BRAND.navy;
@@ -132,6 +136,11 @@ export function EntrenamientosScreen({
   const history = d.trainings
     .filter((tr) => tr.starts_at < nowIso)
     .reverse(); // más recientes primero
+  // Por defecto solo los 5 últimos; el resto se revela con "ver más".
+  const HISTORY_COLLAPSED = 5;
+  const historyVisible = historyExpanded
+    ? history
+    : history.slice(0, HISTORY_COLLAPSED);
 
   const openTraining = (r: TeamTrainingRow, past: boolean) => {
     const code = past ? (codeByEvent.get(r.event_id) ?? null) : null;
@@ -223,19 +232,35 @@ export function EntrenamientosScreen({
         {history.length === 0 ? (
           <EmptyState message={t('entrenamientos.empty_history')} />
         ) : (
-          history.map((r) => {
-            const code = codeByEvent.get(r.event_id) ?? null;
-            return (
-              <TrainingRow
-                key={r.event_id}
-                row={r}
-                onPress={() => openTraining(r, true)}
-                sessionBadge={t('entrenamientos.session_badge')}
-                untitled={t('entrenamientos.untitled')}
-                attendance={code ? t(`asistencia.codes.${code}`) : null}
-              />
-            );
-          })
+          <>
+            {historyVisible.map((r) => {
+              const code = codeByEvent.get(r.event_id) ?? null;
+              return (
+                <TrainingRow
+                  key={r.event_id}
+                  row={r}
+                  onPress={() => openTraining(r, true)}
+                  sessionBadge={t('entrenamientos.session_badge')}
+                  untitled={t('entrenamientos.untitled')}
+                  attendance={code ? t(`asistencia.codes.${code}`) : null}
+                />
+              );
+            })}
+            {history.length > HISTORY_COLLAPSED ? (
+              <Pressable
+                onPress={() => setHistoryExpanded((v) => !v)}
+                className="items-center rounded-xl border border-zinc-200 py-3 active:opacity-70"
+              >
+                <Text className="text-sm font-semibold" style={{ color: accent }}>
+                  {historyExpanded
+                    ? t('entrenamientos.history_show_less')
+                    : t('entrenamientos.history_show_more', {
+                        count: String(history.length - HISTORY_COLLAPSED),
+                      })}
+                </Text>
+              </Pressable>
+            ) : null}
+          </>
         )}
       </ScrollView>
     </View>

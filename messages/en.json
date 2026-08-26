@@ -4025,7 +4025,9 @@
     "section_history": "Season history",
     "empty_history": "No past trainings this season yet.",
     "attendance_label": "Your attendance",
-    "attendance_none": "No attendance recorded"
+    "attendance_none": "No attendance recorded",
+    "history_show_more": "Show {count} earlier",
+    "history_show_less": "Show less"
   },
   "planificacion": {
     "title": "Training plan",

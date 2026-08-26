@@ -4025,7 +4025,9 @@
     "section_history": "Histórico de la temporada",
     "empty_history": "Aún no hay entrenamientos pasados esta temporada.",
     "attendance_label": "Tu asistencia",
-    "attendance_none": "Sin registro de asistencia"
+    "attendance_none": "Sin registro de asistencia",
+    "history_show_more": "Ver los {count} anteriores",
+    "history_show_less": "Ver menos"
   },
   "planificacion": {
     "title": "Planificación de entrenamientos",
