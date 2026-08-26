@@ -3,6 +3,7 @@
  */
 
 export { nameToSlug } from './slug';
+export { foldForSearch } from './search';
 export {
   formatPlayerName,
   formatPlayerNameNatural,

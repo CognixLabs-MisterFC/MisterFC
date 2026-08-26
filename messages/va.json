@@ -143,7 +143,8 @@
     "segments": {
       "label": "Segment",
       "direccion": "Direcció",
-      "cuerpo_tecnico": "Cos tècnic"
+      "cuerpo_tecnico": "Cos tècnic",
+      "familias": "Famílies"
     },
     "empty": "No hi ha membres en aquest segment.",
     "table": {
@@ -179,6 +180,35 @@
         "admin_conflict": "El club ja té un administrador.",
         "generic": "No s'ha pogut completar l'acció. Torna-ho a provar."
       }
+    },
+    "reactivar": {
+      "action": "Reactivar",
+      "errors": {
+        "reason_too_long": "La raó és massa llarga (màxim 500 caràcters).",
+        "no_active_club": "No hi ha cap club actiu.",
+        "not_authenticated": "La teua sessió ha caducat. Torna a entrar.",
+        "forbidden": "No tens permís per a reactivar aquest membre.",
+        "cannot_leave_self": "No pots fer aquesta acció sobre tu mateix.",
+        "target_invalid": "Aquest membre ja no pertany al club.",
+        "admin_immutable": "No aplicable a l'administrador.",
+        "forbidden_requires_admin": "Només l'administrador pot reactivar un director.",
+        "admin_conflict": "El club ja té un administrador.",
+        "generic": "No s'ha pogut completar l'acció. Torna-ho a provar."
+      }
+    },
+    "include_left": "Incloure baixes",
+    "status": {
+      "left_since": "De baixa des del {date}"
+    },
+    "familias": {
+      "search_placeholder": "Cerca per nom…",
+      "search_label": "Cerca famílies",
+      "search_clear": "Netejar la cerca",
+      "empty": "No hi ha famílies que coincidisquen.",
+      "no_children": "Sense jugadors vinculats",
+      "page_of": "Pàgina {page} de {total}",
+      "prev": "Anterior",
+      "next": "Següent"
     }
   },
   "novedades": {

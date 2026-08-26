@@ -143,7 +143,8 @@
     "segments": {
       "label": "Segmento",
       "direccion": "Dirección",
-      "cuerpo_tecnico": "Cuerpo técnico"
+      "cuerpo_tecnico": "Cuerpo técnico",
+      "familias": "Familias"
     },
     "empty": "No hay miembros en este segmento.",
     "table": {
@@ -179,6 +180,35 @@
         "admin_conflict": "El club ya tiene un administrador.",
         "generic": "No se ha podido completar la acción. Inténtalo de nuevo."
       }
+    },
+    "reactivar": {
+      "action": "Reactivar",
+      "errors": {
+        "reason_too_long": "La razón es demasiado larga (máximo 500 caracteres).",
+        "no_active_club": "No hay un club activo.",
+        "not_authenticated": "Tu sesión ha caducado. Vuelve a entrar.",
+        "forbidden": "No tienes permiso para reactivar a este miembro.",
+        "cannot_leave_self": "No puedes hacer esta acción sobre ti mismo.",
+        "target_invalid": "Este miembro ya no pertenece al club.",
+        "admin_immutable": "No aplicable al administrador.",
+        "forbidden_requires_admin": "Solo el administrador puede reactivar a un director.",
+        "admin_conflict": "El club ya tiene un administrador.",
+        "generic": "No se ha podido completar la acción. Inténtalo de nuevo."
+      }
+    },
+    "include_left": "Incluir bajas",
+    "status": {
+      "left_since": "De baja desde el {date}"
+    },
+    "familias": {
+      "search_placeholder": "Buscar por nombre…",
+      "search_label": "Buscar familias",
+      "search_clear": "Limpiar búsqueda",
+      "empty": "No hay familias que coincidan.",
+      "no_children": "Sin jugadores vinculados",
+      "page_of": "Página {page} de {total}",
+      "prev": "Anterior",
+      "next": "Siguiente"
     }
   },
   "novedades": {
