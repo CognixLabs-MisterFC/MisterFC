@@ -143,7 +143,8 @@
     "segments": {
       "label": "Segment",
       "direccion": "Management",
-      "cuerpo_tecnico": "Coaching staff"
+      "cuerpo_tecnico": "Coaching staff",
+      "familias": "Families"
     },
     "empty": "No members in this segment.",
     "table": {
@@ -179,6 +180,35 @@
         "admin_conflict": "The club already has an administrator.",
         "generic": "The action couldn't be completed. Please try again."
       }
+    },
+    "reactivar": {
+      "action": "Reactivate",
+      "errors": {
+        "reason_too_long": "The reason is too long (500 characters max).",
+        "no_active_club": "There is no active club.",
+        "not_authenticated": "Your session expired. Please sign in again.",
+        "forbidden": "You don't have permission to reactivate this member.",
+        "cannot_leave_self": "You can't do this to yourself.",
+        "target_invalid": "This member no longer belongs to the club.",
+        "admin_immutable": "Not applicable to the administrator.",
+        "forbidden_requires_admin": "Only the administrator can reactivate a director.",
+        "admin_conflict": "The club already has an administrator.",
+        "generic": "The action couldn't be completed. Please try again."
+      }
+    },
+    "include_left": "Include removed",
+    "status": {
+      "left_since": "Removed since {date}"
+    },
+    "familias": {
+      "search_placeholder": "Search by name…",
+      "search_label": "Search families",
+      "search_clear": "Clear search",
+      "empty": "No families match.",
+      "no_children": "No linked players",
+      "page_of": "Page {page} of {total}",
+      "prev": "Previous",
+      "next": "Next"
     }
   },
   "novedades": {
