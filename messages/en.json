@@ -137,6 +137,50 @@
     "spectator_title": "You are no longer a member of {club}",
     "spectator_body": "The club removed you on {date}. Your following isn't affected: you still see the activity of the player you follow. If you think this is a mistake, contact the club."
   },
+  "miembros": {
+    "title": "Club members",
+    "subtitle": "Manage who belongs to the club. Removing a member revokes app and web access; it's reversible.",
+    "segments": {
+      "label": "Segment",
+      "direccion": "Management",
+      "cuerpo_tecnico": "Coaching staff"
+    },
+    "empty": "No members in this segment.",
+    "table": {
+      "avatar": "Avatar",
+      "name": "Name",
+      "role": "Role",
+      "actions": "Actions"
+    },
+    "row": {
+      "open_ficha": "View profile",
+      "admin_note": "The administrator can't be removed: transfer the administration first."
+    },
+    "baja": {
+      "action": "Remove",
+      "title": "Remove {name}",
+      "description": "They lose app and web access. It's reversible: you can reactivate them later.",
+      "field": {
+        "reason": "Reason (internal note)",
+        "reason_placeholder": "Reason for removal (optional)",
+        "reason_help": "For the club's internal use only. It's never shown to the affected person."
+      },
+      "cancel": "Cancel",
+      "confirm": "Remove",
+      "errors": {
+        "reason_too_long": "The reason is too long (500 characters max).",
+        "no_active_club": "There is no active club.",
+        "not_authenticated": "Your session expired. Please sign in again.",
+        "forbidden": "You don't have permission to remove this member.",
+        "cannot_leave_self": "You can't remove yourself.",
+        "target_invalid": "This member no longer belongs to the club.",
+        "admin_immutable": "The administrator can't be removed: transfer the administration first.",
+        "forbidden_requires_admin": "Only the administrator can remove a director.",
+        "admin_conflict": "The club already has an administrator.",
+        "generic": "The action couldn't be completed. Please try again."
+      }
+    }
+  },
   "novedades": {
     "title": "What's new",
     "subtitle": "All your recent updates.",
@@ -509,6 +553,7 @@
       "directos": "Live",
       "dashboard": "Dashboard",
       "invitations": "Invitations",
+      "miembros": "Club members",
       "perfil": "My profile",
       "jugadores": "Players",
       "mis_equipos": "My teams",

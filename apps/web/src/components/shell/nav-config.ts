@@ -13,6 +13,7 @@ import {
   UserRound,
   Users,
   UsersRound,
+  UserCog,
   Megaphone,
   Upload,
   Calendar,
@@ -203,6 +204,12 @@ export const NAV: readonly NavEntry[] = [
   // Dirección: comunicación club-wide + administración (top-level).
   { key: 'anuncios', href: '/anuncios', icon: Megaphone, roles: DIRECCION },
   { key: 'invitations', href: '/invitations', icon: Mail, roles: ESTRUCTURA },
+
+  // Baja de miembros (4e-1) — "Miembros del club": gestión de memberships (dar de
+  // baja / reactivar) por rol, y donde por fin se ven/gestionan los DIRECTORES. Solo
+  // admin_club/director (= ESTRUCTURA; el coordinador no da de baja). Guard también
+  // server-side en la página.
+  { key: 'miembros', href: '/miembros', icon: UserCog, roles: ESTRUCTURA },
 
   // F14C-5 — Seguidores (abuelos/familiares) del jugador: invitar/listar/revocar.
   { key: 'seguidores', href: '/mi-ficha/seguidores', icon: UsersRound, roles: ['jugador'] },

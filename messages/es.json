@@ -137,6 +137,50 @@
     "spectator_title": "Ya no eres miembro de {club}",
     "spectator_body": "El club te dio de baja el {date}. Tu seguimiento no se ve afectado: sigues viendo la actividad del jugador que sigues. Si crees que es un error, contacta con el club."
   },
+  "miembros": {
+    "title": "Miembros del club",
+    "subtitle": "Gestiona quién pertenece al club. Dar de baja retira el acceso a la app y la web; es reversible.",
+    "segments": {
+      "label": "Segmento",
+      "direccion": "Dirección",
+      "cuerpo_tecnico": "Cuerpo técnico"
+    },
+    "empty": "No hay miembros en este segmento.",
+    "table": {
+      "avatar": "Avatar",
+      "name": "Nombre",
+      "role": "Rol",
+      "actions": "Acciones"
+    },
+    "row": {
+      "open_ficha": "Ver ficha",
+      "admin_note": "Para dar de baja al administrador hay que traspasar antes la administración."
+    },
+    "baja": {
+      "action": "Dar de baja",
+      "title": "Dar de baja a {name}",
+      "description": "Pierde el acceso a la app y a la web. Es reversible: se puede reactivar más adelante.",
+      "field": {
+        "reason": "Razón (nota interna)",
+        "reason_placeholder": "Motivo de la baja (opcional)",
+        "reason_help": "Solo para uso interno del club. Nunca se le muestra al afectado."
+      },
+      "cancel": "Cancelar",
+      "confirm": "Dar de baja",
+      "errors": {
+        "reason_too_long": "La razón es demasiado larga (máximo 500 caracteres).",
+        "no_active_club": "No hay un club activo.",
+        "not_authenticated": "Tu sesión ha caducado. Vuelve a entrar.",
+        "forbidden": "No tienes permiso para dar de baja a este miembro.",
+        "cannot_leave_self": "No puedes darte de baja a ti mismo.",
+        "target_invalid": "Este miembro ya no pertenece al club.",
+        "admin_immutable": "Al administrador no se le da de baja: hay que traspasar antes la administración.",
+        "forbidden_requires_admin": "Solo el administrador puede dar de baja a un director.",
+        "admin_conflict": "El club ya tiene un administrador.",
+        "generic": "No se ha podido completar la acción. Inténtalo de nuevo."
+      }
+    }
+  },
   "novedades": {
     "title": "Novedades",
     "subtitle": "Todas tus novedades recientes.",
@@ -390,6 +434,7 @@
       "directos": "Directos",
       "dashboard": "Dashboard",
       "invitations": "Invitaciones",
+      "miembros": "Miembros del club",
       "perfil": "Mi perfil",
       "jugadores": "Jugadores",
       "mis_equipos": "Mis equipos",
