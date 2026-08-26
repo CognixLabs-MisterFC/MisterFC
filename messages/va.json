@@ -137,6 +137,50 @@
     "spectator_title": "Ja no eres membre de {club}",
     "spectator_body": "El club et va donar de baixa el {date}. El teu seguiment no es veu afectat: continues veient l'activitat del jugador que segueixes. Si creus que és un error, contacta amb el club."
   },
+  "miembros": {
+    "title": "Membres del club",
+    "subtitle": "Gestiona qui pertany al club. Donar de baixa retira l'accés a l'app i el web; és reversible.",
+    "segments": {
+      "label": "Segment",
+      "direccion": "Direcció",
+      "cuerpo_tecnico": "Cos tècnic"
+    },
+    "empty": "No hi ha membres en aquest segment.",
+    "table": {
+      "avatar": "Avatar",
+      "name": "Nom",
+      "role": "Rol",
+      "actions": "Accions"
+    },
+    "row": {
+      "open_ficha": "Veure fitxa",
+      "admin_note": "A l'administrador no se li dóna de baixa: cal traspassar abans l'administració."
+    },
+    "baja": {
+      "action": "Donar de baixa",
+      "title": "Donar de baixa {name}",
+      "description": "Perd l'accés a l'app i al web. És reversible: es pot reactivar més endavant.",
+      "field": {
+        "reason": "Raó (nota interna)",
+        "reason_placeholder": "Motiu de la baixa (opcional)",
+        "reason_help": "Només per a ús intern del club. Mai es mostra a la persona afectada."
+      },
+      "cancel": "Cancel·lar",
+      "confirm": "Donar de baixa",
+      "errors": {
+        "reason_too_long": "La raó és massa llarga (màxim 500 caràcters).",
+        "no_active_club": "No hi ha cap club actiu.",
+        "not_authenticated": "La teua sessió ha caducat. Torna a entrar.",
+        "forbidden": "No tens permís per a donar de baixa aquest membre.",
+        "cannot_leave_self": "No pots donar-te de baixa a tu mateix.",
+        "target_invalid": "Aquest membre ja no pertany al club.",
+        "admin_immutable": "A l'administrador no se li dóna de baixa: cal traspassar abans l'administració.",
+        "forbidden_requires_admin": "Només l'administrador pot donar de baixa un director.",
+        "admin_conflict": "El club ja té un administrador.",
+        "generic": "No s'ha pogut completar l'acció. Torna-ho a provar."
+      }
+    }
+  },
   "novedades": {
     "title": "Novetats",
     "subtitle": "Totes les teues novetats recents.",
@@ -509,6 +553,7 @@
       "directos": "Directes",
       "dashboard": "Tauler",
       "invitations": "Invitacions",
+      "miembros": "Membres del club",
       "perfil": "El meu perfil",
       "jugadores": "Jugadors",
       "mis_equipos": "Els meus equips",
