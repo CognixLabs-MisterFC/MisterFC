@@ -7,6 +7,7 @@ import { useApp } from '@/auth/context';
 import { AREA_SEGMENT } from '@/nav/config';
 import { BRAND } from '@/theme';
 import { useTranslations } from '@/locale/provider';
+import { RemovedBanner } from '@/ui/removed-banner';
 
 /**
  * O2-2 — GATEKEEPER de navegación (fichero ÚNICO de enrutado por rol, patrón del
@@ -59,6 +60,8 @@ function NoAccess({ onSignOut }: { onSignOut: () => void }) {
   const tShell = useTranslations('shell');
   return (
     <SafeAreaView className="flex-1 bg-white">
+      {/* Baja de miembros (4c): si el usuario cayó aquí por una baja, se lo decimos. */}
+      <RemovedBanner variant="member" />
       <View className="flex-1 justify-center gap-3 p-6">
         <Text className="text-2xl font-bold text-[#0F1B2E]">{t('title')}</Text>
         <Text className="text-base text-zinc-500">{t('body')}</Text>
