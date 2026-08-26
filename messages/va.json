@@ -131,6 +131,12 @@
     "no_club_title": "No tens accés a cap club",
     "no_club_body": "Demana al teu club que t'envie una invitació."
   },
+  "membership_removed": {
+    "title": "Ja no pertanys a {club}",
+    "body": "El club et va donar de baixa el {date}. Si creus que és un error, contacta amb el club.",
+    "spectator_title": "Ja no eres membre de {club}",
+    "spectator_body": "El club et va donar de baixa el {date}. El teu seguiment no es veu afectat: continues veient l'activitat del jugador que segueixes. Si creus que és un error, contacta amb el club."
+  },
   "novedades": {
     "title": "Novetats",
     "subtitle": "Totes les teues novetats recents.",

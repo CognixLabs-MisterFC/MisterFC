@@ -46,6 +46,18 @@ const PROVIDER_REFRESH_MIN_INTERVAL_MS = 60_000;
  */
 export type UserKind = 'member' | 'spectator' | 'none';
 
+/**
+ * Baja de miembros (4c) — una baja del usuario actual, para el banner informativo de
+ * las pantallas SIN club (none/spectator). Sin `left_reason`: la razón es nota interna
+ * del club y no viaja al cliente (la RPC ni la devuelve).
+ */
+export type RemovedMembership = {
+  club_id: string;
+  club_name: string;
+  club_slug: string;
+  left_at: string;
+};
+
 type AppContextValue = {
   loading: boolean;
   kind: UserKind;
@@ -53,6 +65,12 @@ type AppContextValue = {
   clubs: CurrentUserClub[];
   activeClub: CurrentUserClub | null;
   theme: ClubTheme | null;
+  /**
+   * Baja de miembros (4c) — bajas del usuario actual. Solo se puebla cuando NO tiene
+   * clubes activos (kind none/spectator); en el camino `member` es SIEMPRE `[]` y la
+   * RPC no se llama (coste cero para el usuario normal).
+   */
+  removedMemberships: RemovedMembership[];
   setActiveClub: (clubId: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -83,6 +101,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [activeClub, setActiveClubState] = useState<CurrentUserClub | null>(
     null,
   );
+  const [removedMemberships, setRemovedMemberships] = useState<
+    RemovedMembership[]
+  >([]);
 
   const userId = user?.id ?? null;
 
@@ -109,6 +130,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setProfileName(null);
         setClubs([]);
         setActiveClubState(null);
+        setRemovedMemberships([]);
         if (!silent) setLoading(false);
         return;
       }
@@ -130,6 +152,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setClubs(userClubs);
 
         if (userClubs.length > 0) {
+          // Camino MEMBER: nunca llama a my_removed_memberships (coste cero). Un miembro
+          // con club activo no ve el banner de baja: las superficies que lo pintan son
+          // inalcanzables con club.
+          setRemovedMemberships([]);
           const stored = await getStoredActiveClubId();
           if (!alive()) return;
           const { active: chosen } = resolveActiveClub(userClubs, stored);
@@ -139,10 +165,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
           setKind('member');
         } else {
-          // Sin clubs: ¿seguidor puro? (detección PR-1; carcasa en PR-2).
+          // Sin clubs: ¿seguidor puro? (detección PR-1; carcasa en PR-2). Baja de
+          // miembros (4c): SOLO aquí (sin clubes activos) consultamos las bajas del
+          // usuario para el banner informativo de none/spectator.
           const spectator = await isSpectatorFromClient(supabase);
+          const { data: removed } = await supabase.rpc('my_removed_memberships');
           if (!alive()) return;
           setActiveClubState(null);
+          setRemovedMemberships(removed ?? []);
           setKind(spectator ? 'spectator' : 'none');
         }
 
@@ -200,6 +230,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         clubs,
         activeClub,
         theme,
+        removedMemberships,
         setActiveClub,
         signOut,
       }}

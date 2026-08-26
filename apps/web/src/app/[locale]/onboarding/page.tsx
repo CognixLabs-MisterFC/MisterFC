@@ -8,6 +8,7 @@ import {
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { OnboardingShell } from '@/components/shell/onboarding-shell';
 import { LogoutButton } from '@/components/shell/logout-button';
+import { RemovedMembershipBanner } from '@/components/shell/removed-membership-banner';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -57,7 +58,23 @@ export default async function OnboardingPage({ params }: Props) {
     redirect(`/${locale}/invite/${pendingInvite.token}`);
   }
 
-  // Clubless SIN invitación: dead-end. No hay autoservicio de crear club.
+  // Baja de miembros (4c): si el clubless llegó aquí por una BAJA (no por ser nuevo),
+  // se lo decimos. La RPC solo se llama en este dead-end — un usuario con club activo ya
+  // fue redirigido a `/` arriba, así que nunca pasa por aquí (coste cero para el normal).
+  const { data: removed } = await supabase.rpc('my_removed_memberships');
+  if (removed && removed.length > 0) {
+    return (
+      <OnboardingShell locale={locale}>
+        <div className="flex w-full max-w-md flex-col items-center gap-6 text-center">
+          <RemovedMembershipBanner items={removed} />
+          <LogoutButton locale={locale} variant="outline" />
+        </div>
+      </OnboardingShell>
+    );
+  }
+
+  // Clubless SIN baja (usuario nuevo sin invitación): dead-end de siempre, EXACTAMENTE
+  // igual que hoy. No hay autoservicio de crear club.
   const t = await getTranslations('onboarding');
 
   return (

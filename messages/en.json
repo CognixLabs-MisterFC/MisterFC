@@ -131,6 +131,12 @@
     "no_club_title": "You don't have access to any club",
     "no_club_body": "Ask your club to send you an invitation."
   },
+  "membership_removed": {
+    "title": "You are no longer part of {club}",
+    "body": "The club removed you on {date}. If you think this is a mistake, contact the club.",
+    "spectator_title": "You are no longer a member of {club}",
+    "spectator_body": "The club removed you on {date}. Your following isn't affected: you still see the activity of the player you follow. If you think this is a mistake, contact the club."
+  },
   "novedades": {
     "title": "What's new",
     "subtitle": "All your recent updates.",

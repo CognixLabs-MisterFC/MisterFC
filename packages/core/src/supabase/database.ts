@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -4362,6 +4362,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      my_removed_memberships: {
+        Args: never
+        Returns: {
+          club_id: string
+          club_name: string
+          club_slug: string
+          left_at: string
+        }[]
+      }
       open_next_season: { Args: { p_club_id: string }; Returns: string }
       physically_erase_player: {
         Args: { p_player_id: string }
@@ -4565,6 +4574,15 @@ export type Database = {
       set_club_logo: {
         Args: { p_club_id: string; p_path: string }
         Returns: undefined
+      }
+      set_membership_left: {
+        Args: {
+          p_club_id: string
+          p_left_at: string
+          p_reason: string
+          p_target_profile_id: string
+        }
+        Returns: string
       }
       set_player_left_club: {
         Args: {
