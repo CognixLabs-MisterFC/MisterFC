@@ -4025,7 +4025,9 @@
     "section_history": "Històric de la temporada",
     "empty_history": "Encara no hi ha entrenaments passats aquesta temporada.",
     "attendance_label": "La teua assistència",
-    "attendance_none": "Sense registre d'assistència"
+    "attendance_none": "Sense registre d'assistència",
+    "history_show_more": "Veure els {count} anteriors",
+    "history_show_less": "Veure menys"
   },
   "planificacion": {
     "title": "Planificació d'entrenaments",
