@@ -2082,6 +2082,8 @@ export type Database = {
           contact_email: string | null
           created_at: string
           id: string
+          left_at: string | null
+          left_reason: string | null
           phone: string | null
           profile_id: string
           role: string
@@ -2091,6 +2093,8 @@ export type Database = {
           contact_email?: string | null
           created_at?: string
           id?: string
+          left_at?: string | null
+          left_reason?: string | null
           phone?: string | null
           profile_id: string
           role: string
@@ -2100,6 +2104,8 @@ export type Database = {
           contact_email?: string | null
           created_at?: string
           id?: string
+          left_at?: string | null
+          left_reason?: string | null
           phone?: string | null
           profile_id?: string
           role?: string

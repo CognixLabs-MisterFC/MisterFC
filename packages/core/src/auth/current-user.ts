@@ -63,7 +63,12 @@ async function fetchUserClubs(
     .from('memberships')
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .select('id, role, club:club_id(id, name, slug, owner_profile_id, logo_path, primary_color)' as any)
-    .eq('profile_id', userId);
+    .eq('profile_id', userId)
+    // Baja de miembros (paso 3): una membership de baja (left_at no nulo) ya no da
+    // acceso — la RLS (paso 2) le niega los datos; aquí, además, se cae de la LISTA
+    // de clubes para que no vea la carcasa vacía de un club al que ya no pertenece.
+    // Para un miembro ACTIVO (left_at NULL) es un no-op: cero cambio de comportamiento.
+    .is('left_at', null);
 
   if (error || !data) return [];
 
