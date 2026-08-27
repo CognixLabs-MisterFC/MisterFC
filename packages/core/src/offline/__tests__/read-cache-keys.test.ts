@@ -38,6 +38,9 @@ const HELPER_KEYS: Record<string, string> = {
   profileScoped: profileScopedCacheKey('inbox', PROFILE),
 };
 
+const MONTH = '2026-08'; // monthTag 'YYYY-MM' (guion válido)
+const PERIOD = 'T1';
+
 // Claves INLINE construidas en pantallas nativas (helper + sufijos). Si añades una
 // clave inline nueva en una pantalla, REGÍSTRALA aquí para que quede validada.
 const INLINE_KEYS: Record<string, string> = {
@@ -46,6 +49,15 @@ const INLINE_KEYS: Record<string, string> = {
   'family/inicio': `inicio.${CLUB}.${PROFILE}`,
   'family/novedades': 'novedades.p1',
   'direction/inicio': `${clubScopedCacheKey('dir-inicio', CLUB)}.admin_club`,
+  // Las 6 claves COMPUESTAS que reventaban en dispositivo (llevaban ':'): quedan
+  // pinneadas aquí con la MISMA construcción que la pantalla. Si alguien vuelve a
+  // meter un ':', el builder (que ahora RECHAZA) lanza al construir este map → CI rojo.
+  'family/calendario-temporada (club)': clubScopedCacheKey('calendar-month-club', `${CLUB}.${MONTH}`),
+  'family/calendario-temporada (team)': clubScopedCacheKey('calendar-month-team', `${CLUB}.${TEAM}.${MONTH}`),
+  'family/calendario-temporada (user)': clubScopedCacheKey('calendar-month', `${CLUB}.${MONTH}`),
+  'direction/calendario (team)': teamScopedCacheKey('calendar-team', CLUB, TEAM),
+  'direction/invitations-list': teamScopedCacheKey('dir-pend-invite-team', CLUB, TEAM),
+  'direction/report-players-list': clubScopedCacheKey('dir-report-players', `${CLUB}.${TEAM}.${PERIOD}`),
 };
 
 describe('claves de caché válidas para expo-secure-store', () => {
@@ -88,5 +100,34 @@ describe('claves de caché válidas para expo-secure-store', () => {
     expect(SECURE_STORE_KEY_RE.test('rcache.ficha.clubId.playerId.2025')).toBe(true);
     // Vacía inválida (como en expo-secure-store: '+').
     expect(SECURE_STORE_KEY_RE.test('')).toBe(false);
+  });
+});
+
+/**
+ * Los builders RECHAZAN (no normalizan) cualquier carácter fuera de [\w.-]. Este es
+ * el guard que faltaba: antes el ':' se colaba hasta el dispositivo. Reproduce, con
+ * las tres formas exactas que teníamos rotas, que ahora se cazan EN CONSTRUCCIÓN.
+ */
+describe('los builders rechazan claves inválidas para expo-secure-store', () => {
+  it('clubScopedCacheKey lanza con ":" en el id (calendar-month, la que reportó Sentry)', () => {
+    expect(() => clubScopedCacheKey('calendar-month', `${CLUB}:${MONTH}`)).toThrow(/inválida/);
+  });
+
+  it('clubScopedCacheKey lanza con ":" en el recurso (el viejo dir-pend-invite-team:<team>)', () => {
+    expect(() => clubScopedCacheKey(`dir-pend-invite-team:${TEAM}`, CLUB)).toThrow(/inválida/);
+  });
+
+  it('teamScopedCacheKey lanza con ":" en un segmento', () => {
+    expect(() => teamScopedCacheKey('calendar-team', CLUB, `${TEAM}:x`)).toThrow(/inválida/);
+  });
+
+  it('rechaza también otros caracteres fuera de [\\w.-] (coma, espacio)', () => {
+    expect(() => clubScopedCacheKey('x', 'a,b')).toThrow();
+    expect(() => clubScopedCacheKey('x', 'a b')).toThrow();
+  });
+
+  it('NO normaliza en silencio: la clave válida vuelve intacta', () => {
+    expect(clubScopedCacheKey('calendar', CLUB)).toBe(`calendar.${CLUB}`);
+    expect(teamScopedCacheKey('calendar-team', CLUB, TEAM)).toBe(`calendar-team.${CLUB}.${TEAM}`);
   });
 });

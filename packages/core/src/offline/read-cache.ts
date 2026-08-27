@@ -41,13 +41,34 @@ export type ReadThroughResult<T> = {
 // resource ni los ids llevan puntos) y es el que menos ruido introduce.
 const PREFIX = 'rcache.';
 
+// Regla de expo-secure-store: las claves solo admiten /^[\w.-]+$/ (SecureStore.js:151).
+// Un ':' (o cualquier otro carácter) NO revienta en CI —el backing de tests es un Map
+// en memoria— sino EN DISPOSITIVO, y de forma DIFERIDA: la caché lanza ANTES de que el
+// fetcher corra, así que la pantalla sale vacía y el fallo se reporta como
+// `read:<recurso>` sin pista del culpable. Por eso los builders RECHAZAN aquí, en
+// construcción: quien arma una clave inválida se entera al instante (throw ruidoso), no
+// vía una pantalla muda y un Sentry despistado. RECHAZA, no normaliza: normalizar en
+// silencio escondería el error que queremos hacer visible.
+const SECURE_STORE_KEY_RE = /^[\w.-]+$/;
+
+function assertValidCacheKey(key: string): string {
+  if (!SECURE_STORE_KEY_RE.test(key)) {
+    throw new Error(
+      `Clave de caché inválida para expo-secure-store: ${JSON.stringify(key)}. ` +
+        'Solo se admiten [A-Za-z0-9_.-] (SecureStore valida con /^[\\w.-]+$/): ' +
+        "usa '.' como separador, nunca ':'.",
+    );
+  }
+  return key;
+}
+
 /**
  * Norma de KEYS de caché (O2-5): datos club-scoped llevan el `clubId` en la key,
  * para que al cambiar de club la key sea DISTINTA y no se sirva la caché del club
  * anterior. p.ej. `clubScopedCacheKey('calendar', clubId)` → 'calendar.<clubId>'.
  */
 export function clubScopedCacheKey(resource: string, clubId: string): string {
-  return `${resource}.${clubId}`;
+  return assertValidCacheKey(`${resource}.${clubId}`);
 }
 
 /**
@@ -57,7 +78,7 @@ export function clubScopedCacheKey(resource: string, clubId: string): string {
  * 'directo.<eventId>'. Evento distinto → key distinta.
  */
 export function eventScopedCacheKey(resource: string, eventId: string): string {
-  return `${resource}.${eventId}`;
+  return assertValidCacheKey(`${resource}.${eventId}`);
 }
 
 /**
@@ -72,7 +93,7 @@ export function playerScopedCacheKey(
   clubId: string,
   playerId: string
 ): string {
-  return `${resource}.${clubId}.${playerId}`;
+  return assertValidCacheKey(`${resource}.${clubId}.${playerId}`);
 }
 
 /**
@@ -88,7 +109,7 @@ export function teamScopedCacheKey(
   clubId: string,
   teamId: string
 ): string {
-  return `${resource}.${clubId}.${teamId}`;
+  return assertValidCacheKey(`${resource}.${clubId}.${teamId}`);
 }
 
 /**
@@ -106,7 +127,7 @@ export function playerEventScopedCacheKey(
   playerId: string,
   eventId: string
 ): string {
-  return `${resource}.${clubId}.${playerId}.${eventId}`;
+  return assertValidCacheKey(`${resource}.${clubId}.${playerId}.${eventId}`);
 }
 
 /**
@@ -119,7 +140,7 @@ export function profileScopedCacheKey(
   resource: string,
   profileId: string
 ): string {
-  return `${resource}.${profileId}`;
+  return assertValidCacheKey(`${resource}.${profileId}`);
 }
 
 export async function cacheGet<T>(

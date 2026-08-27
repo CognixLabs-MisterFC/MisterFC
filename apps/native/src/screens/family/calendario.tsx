@@ -6,6 +6,7 @@ import {
   getCalendarScopeTeamIdsFromClient,
   getHolidaysFromClient,
   clubScopedCacheKey,
+  teamScopedCacheKey,
   type CalendarEvent,
   type HolidayInfo,
 } from '@misterfc/core';
@@ -124,12 +125,12 @@ export function CalendarioScreen({
     holidays: HolidayInfo[];
   }>(
     // D1b-4 — la variante de dirección (teamId) usa un NAMESPACE propio por equipo
-    // (`calendar-team:<club>:<team>`) para no contaminar la caché de familia/staff
+    // (`calendar-team.<club>.<team>`) para no contaminar la caché de familia/staff
     // (`calendar`). Familia/staff mantienen su key exacta → comportamiento igual.
     clubWide
       ? clubScopedCacheKey('calendar-club', clubId ?? 'none')
       : teamId
-        ? clubScopedCacheKey('calendar-team', `${clubId ?? 'none'}:${teamId}`)
+        ? teamScopedCacheKey('calendar-team', clubId ?? 'none', teamId)
         : clubScopedCacheKey('calendar', clubId ?? 'none'),
     async (sb) => {
       if (!clubId) return { events: [], holidays: [] };
