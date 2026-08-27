@@ -3,7 +3,12 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import type { Role } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { MembersScreen, type Segment } from './_components/members-screen';
-import { loadClubMembers, countFamilies, loadFamilies } from './queries';
+import {
+  loadClubMembers,
+  countFamilies,
+  loadFamilies,
+  loadAssignableTeams,
+} from './queries';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -54,6 +59,10 @@ export default async function MiembrosPage({ params, searchParams }: Props) {
     segment === 'familias'
       ? await loadFamilies(clubId, { search, page, includeLeft })
       : null;
+  // Equipos para el diálogo "Asignar a equipo" (director-entrenador S1a): solo se
+  // necesitan en el segmento DIRECCIÓN, donde vive la acción.
+  const assignableTeams =
+    segment === 'direccion' ? await loadAssignableTeams(clubId) : [];
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-4">
@@ -69,6 +78,7 @@ export default async function MiembrosPage({ params, searchParams }: Props) {
         cuerpoTecnico={members.cuerpoTecnico}
         familiesCount={familiesCount}
         families={families}
+        assignableTeams={assignableTeams}
         viewerRole={role}
         viewerProfileId={ctx.user.id}
       />

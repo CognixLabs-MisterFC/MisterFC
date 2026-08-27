@@ -155,6 +155,7 @@
     },
     "row": {
       "open_ficha": "Veure fitxa",
+      "coached_teams": "Equips que entrena:",
       "admin_note": "A l'administrador no se li dóna de baixa: cal traspassar abans l'administració."
     },
     "baja": {

@@ -155,6 +155,7 @@
     },
     "row": {
       "open_ficha": "View profile",
+      "coached_teams": "Teams coached:",
       "admin_note": "The administrator can't be removed: transfer the administration first."
     },
     "baja": {
