@@ -77,29 +77,37 @@ export function StaffHomeScreen() {
     async (sb) => {
       if (!clubId || !role) return EMPTY_HOME;
       const now = Date.now();
-      const upcoming = await getUpcomingEventsFromClient(
-        sb,
-        new Date(now).toISOString(),
-        new Date(now + 7 * DAY).toISOString(),
-        5,
-      );
-      // Tarea 1 — convocatorias de partido a < 3 días sin publicar (getStaffCallups
-      // ya es coach-scoped; rangeDays:3 es el umbral de esta tarea).
-      const callups = await getStaffCallupsFromClient(sb, {
-        clubId,
-        role,
-        userId: user?.id ?? null,
-        rangeDays: 3,
-      });
-      const unpublishedCallups = callups.filter((c) => !c.published).length;
-      // Tareas 2 y 3 — entrenos pendientes de SUS equipos. Resolvemos sus equipos una
-      // vez (temporada activa) y el contador sale del MISMO loader que la lista.
+      // Modo Míster: un director/admin en el área staff ve SOLO sus equipos, igual que
+      // un entrenador. Resolvemos sus equipos PRIMERO (se reusan en las tareas 2 y 3) y,
+      // en modo Míster, acotamos "próximos eventos" a esos equipos ANTES del limit (un
+      // filtro en cliente tras el top-5 club-wide dejaría fuera los suyos). Para el
+      // entrenador normal (isCoachMode=false) no se pasa teamIds → RLS, sin cambios.
+      const isCoachMode = role === 'admin_club' || role === 'director';
       const teams = membershipId
         ? await getStaffTeamsFromClient(sb, { membershipId, clubId }, (e) =>
             reportDataError('staff-home', e),
           )
         : [];
       const teamIds = teams.map((tm) => tm.teamId);
+      const upcoming = await getUpcomingEventsFromClient(
+        sb,
+        new Date(now).toISOString(),
+        new Date(now + 7 * DAY).toISOString(),
+        5,
+        undefined,
+        isCoachMode ? teamIds : undefined,
+      );
+      // Tarea 1 — convocatorias de partido a < 3 días sin publicar. asStaffMember acota
+      // al director a sus equipos (para coordinador/entrenador es no-op).
+      const callups = await getStaffCallupsFromClient(sb, {
+        clubId,
+        role,
+        userId: user?.id ?? null,
+        rangeDays: 3,
+        asStaffMember: true,
+      });
+      const unpublishedCallups = callups.filter((c) => !c.published).length;
+      // Tareas 2 y 3 — entrenos pendientes de SUS equipos (mismos teamIds de arriba).
       const [withoutAttendance, withoutSession] = await Promise.all([
         listStaffTrainingsWithoutAttendanceFromClient(sb, { teamIds }),
         listStaffTrainingsWithoutSessionFromClient(sb, { teamIds }),

@@ -90,11 +90,15 @@ export function ConvocatoriaStaffDetalleScreen({
     eventScopedCacheKey('convocatoria-staff', eventId ?? 'none'),
     async (sb) => {
       if (!eventId || !clubId || !role) return null;
+      // asStaffMember: detalle dentro del área staff (modo Míster). Si el evento no es
+      // de un equipo del director, el scope 'restricted' lo deja fuera (return null),
+      // igual que a un entrenador ajeno a ese equipo.
       const d = await getStaffCallupDetailFromClient(sb, {
         clubId,
         role,
         userId,
         eventId,
+        asStaffMember: true,
       });
       if (!d) return null;
       return {

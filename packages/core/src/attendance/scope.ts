@@ -37,20 +37,37 @@ export type AttendanceScope =
  */
 export async function resolveAttendanceScopeFromClient(
   supabase: DbClient,
-  params: { clubId: string; role: Role; userId: string | null },
+  params: {
+    clubId: string;
+    role: Role;
+    userId: string | null;
+    /**
+     * S2 director-entrenador (modo "Míster" de la APP) — ver la nota en
+     * `resolveConvocatoriasScopeFromClient`. Lo pasan SOLO las pantallas nativas de
+     * staff; la WEB nunca lo pasa → admin/director en web sigue con scope 'all'.
+     */
+    asStaffMember?: boolean;
+  },
 ): Promise<AttendanceScope> {
-  const { clubId, role, userId } = params;
+  const { clubId, role, userId, asStaffMember } = params;
 
-  // E-7a: director club-wide como admin_club.
-  if (role === 'admin_club' || role === 'director') return { kind: 'all' };
+  const coachMode =
+    asStaffMember === true && (role === 'admin_club' || role === 'director');
+
+  // E-7a: director/admin_club club-wide — SALVO en modo Míster, que cae en 'restricted'.
+  if ((role === 'admin_club' || role === 'director') && !coachMode) {
+    return { kind: 'all' };
+  }
   if (!userId) return { kind: 'none' };
 
   // C-2a: coordinador cae en 'restricted' (sus equipos vía team_staff, cualquier
-  // staff_role), como principal/ayudante.
+  // staff_role), como principal/ayudante. En modo Míster el director/admin entra AQUÍ
+  // por la MISMA rama → idéntico a un entrenador con sus mismas asignaciones.
   if (
     role === 'entrenador_principal' ||
     role === 'entrenador_ayudante' ||
-    role === 'coordinador'
+    role === 'coordinador' ||
+    coachMode
   ) {
     // Solo equipos de la TEMPORADA ACTIVA: una fila `team_staff` viva de una
     // temporada pasada (mismo nombre, otro team_id) arrastraría un equipo caduco y

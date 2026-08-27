@@ -33,11 +33,14 @@ export function AsistenciaListScreen() {
     clubScopedCacheKey('asistencia-list', clubId ?? 'none'),
     (sb) =>
       clubId && role
-        ? getRecentTrainingsFromClient(sb, {
+        ? // asStaffMember: pantalla solo del área staff → director/admin en modo Míster
+          // ve la asistencia SOLO de sus equipos, igual que un entrenador.
+          getRecentTrainingsFromClient(sb, {
             clubId,
             role,
             userId,
             rangeDays: 30,
+            asStaffMember: true,
           })
         : Promise.resolve([]),
   );
