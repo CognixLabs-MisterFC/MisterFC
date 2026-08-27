@@ -24,6 +24,16 @@ import { BRAND } from '@/theme';
 const DIR_INICIO_UNREAD_LIMIT = 5;
 
 /**
+ * Fecha (día + mes de CATÁLOGO + año), NUNCA `slice(0,10)` ISO ni `toLocaleDateString`:
+ * la app no usa el idioma del dispositivo (mismo criterio que #506 y la fecha de eventos
+ * / invitaciones). Solo fecha, sin hora: es una novedad.
+ */
+function formatFeedDate(t: (key: string) => string, iso: string): string {
+  const d = new Date(iso);
+  return `${d.getDate()} ${t(`calendario.date.month.${d.getMonth()}`)} ${d.getFullYear()}`;
+}
+
+/**
  * O2-11a-2 — INICIO DE DIRECCIÓN (SOLO LECTURA). Dos bloques de COLAS de tareas
  * (conteos + deep-links) que espejan la página web `direccion-home.tsx`, calculados
  * club-wide en core (`getDireccionHomeCountsFromClient`). Las supresiones solo se
@@ -164,7 +174,7 @@ export function DireccionInicioScreen() {
                   <Text className="text-sm text-[#0F1B2E]">
                     {notificationFeedText(tFeed, n.type, n.payload)}
                   </Text>
-                  <Text className="text-xs text-zinc-400">{n.created_at.slice(0, 10)}</Text>
+                  <Text className="text-xs text-zinc-400">{formatFeedDate(t, n.created_at)}</Text>
                 </View>
               </Pressable>
             ))
