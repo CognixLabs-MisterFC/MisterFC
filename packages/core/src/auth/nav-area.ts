@@ -55,13 +55,30 @@ export type NavUserKind = 'member' | 'spectator' | 'none';
  *  - áreas family/staff/direction → solo un miembro cuyo rol de club activo
  *    PROYECTA a esa área según `navAreaForRole` (fuente única de la proyección).
  *
+ * S2 director-entrenador — ÚNICA excepción al 1:1 rol↔área: un miembro cuyo hogar
+ * es 'direction' (admin_club/director) y que ADEMÁS está asignado como team_staff
+ * de algún equipo (`hasStaffTeams`) puede entrar TAMBIÉN en 'staff' (modo
+ * entrenador, conmutador de S2-2). `navAreaForRole` NO cambia: su hogar sigue
+ * siendo dirección (gatekeeper y router de push intactos); esto solo AÑADE 'staff'
+ * como área permitida cuando tiene equipos. El resto sigue 1:1:
+ *  · un director SIN equipos (hasStaffTeams=false) NO entra en 'staff';
+ *  · un coordinador/entrenador (hogar 'staff') NO entra en 'direction' — la
+ *    excepción es solo direction→staff, nunca al revés.
+ *
  * Cualquier otro caso (rol de otra área, sin rol, sin sesión) NO pertenece.
  */
 export function isAllowedInArea(
   area: NavAudienceArea,
-  audience: { kind: NavUserKind; role: Role | null }
+  audience: { kind: NavUserKind; role: Role | null; hasStaffTeams?: boolean }
 ): boolean {
   if (area === 'spectator') return audience.kind === 'spectator';
   if (audience.kind !== 'member' || audience.role == null) return false;
-  return navAreaForRole(audience.role) === area;
+  const home = navAreaForRole(audience.role);
+  if (home === area) return true;
+  // Excepción S2: director/admin_club con equipos asignados → también 'staff'.
+  return (
+    area === 'staff' &&
+    home === 'direction' &&
+    audience.hasStaffTeams === true
+  );
 }
