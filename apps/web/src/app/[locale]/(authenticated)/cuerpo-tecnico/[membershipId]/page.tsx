@@ -153,18 +153,21 @@ export default async function CoachDetailPage({ params }: Props) {
             </p>
             {/* Bug 2 · 2b + F1B-3c: gestionan roles bajos admin_club y director.
                 El diálogo solo ofrece roles bajos como destino (STAFF_CLUB_ROLES);
-                los altos van por invitación (F1B-2b). El target de esta página
-                siempre es un coach (loadCoachDetail filtra a COACH_ROLES: principal/
-                ayudante) → nunca un rol alto, así que no hay nada que ocultar por
-                owner aquí; el caso alto lo cubre el gate server (forbidden_requires_
-                owner). La guarda del último admin la impone la función SQL. */}
-            {(role === 'admin_club' || role === 'director') && (
-              <EditStaffRoleDialog
-                targetProfileId={coach.profile_id}
-                currentRole={coach.club_role}
-                isSelf={coach.profile_id === ctx.user.id}
-              />
-            )}
+                los altos van por invitación (F1B-2b). S1b (director-entrenador): la
+                ficha ahora es alcanzable también para un rol ALTO (director/admin_club)
+                asignado como team_staff, y ese diálogo lo DEGRADARÍA a entrenador (no
+                ofrece 'director' ni 'admin_club' como destino). Por eso se OCULTA si el
+                target es admin_club o director. Para coordinador/entrenadores sigue
+                disponible. La guarda del último admin la impone además la función SQL. */}
+            {(role === 'admin_club' || role === 'director') &&
+              coach.club_role !== 'admin_club' &&
+              coach.club_role !== 'director' && (
+                <EditStaffRoleDialog
+                  targetProfileId={coach.profile_id}
+                  currentRole={coach.club_role}
+                  isSelf={coach.profile_id === ctx.user.id}
+                />
+              )}
           </div>
         </div>
       </div>

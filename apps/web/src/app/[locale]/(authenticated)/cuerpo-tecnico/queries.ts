@@ -51,7 +51,14 @@ export type CoachRow = {
   profile_id: string;
   full_name: string;
   avatar_url: string | null;
-  club_role: 'entrenador_principal' | 'entrenador_ayudante';
+  /**
+   * Rol de CLUB del miembro. S1b (director-entrenador): además de los COACH_ROLES
+   * puede ser un rol alto (director/admin_club) o coordinador si está asignado como
+   * team_staff de un equipo — el listado incluye a "quién trabaja cada equipo",
+   * no solo a los entrenadores por rol. La UI lo trata como Role (no editable para
+   * roles altos: la ficha oculta EditStaffRoleDialog).
+   */
+  club_role: Role;
   assignments: CoachTeamAssignment[];
   /** Contacto gestionado por el club (Bug 2 · 2c). NO es el email de login. */
   phone: string | null;
@@ -348,14 +355,18 @@ export async function loadCoachList(
     };
   };
 
-  // Filtra por club + valida role membership coherente con cuerpo técnico.
+  // Filtra por club. S1b (director-entrenador): NO se filtra por rol de club —
+  // cualquier miembro con team_staff ACTIVO (la query ya es `.is('left_at', null)`)
+  // trabaja ese equipo y debe figurar aquí, incluidos director/admin_club/coordinador
+  // asignados como staff. El listado es "quién trabaja cada equipo", no "quién tiene
+  // rol de entrenador". La baja cierra el team_staff (mig 20261053000000), así que un
+  // miembro dado de baja no aparece.
   const rows = (rawStaff ?? [])
     .map((r) => r as unknown as StaffJoin)
     .filter(
       (r) =>
         r.memberships.club_id === clubId &&
-        r.teams.categories.club_id === clubId &&
-        COACH_ROLES.includes(r.memberships.role as Role)
+        r.teams.categories.club_id === clubId
     );
 
   // Agrupa por membership_id → CoachRow.
@@ -381,9 +392,7 @@ export async function loadCoachList(
         profile_id: r.memberships.profile_id,
         full_name: r.memberships.profiles.full_name ?? '—',
         avatar_url: r.memberships.profiles.avatar_url ?? null,
-        club_role: r.memberships.role as
-          | 'entrenador_principal'
-          | 'entrenador_ayudante',
+        club_role: r.memberships.role as Role,
         assignments: [assignment],
         phone: (r.memberships.phone as string | null) ?? null,
         contact_email: (r.memberships.contact_email as string | null) ?? null,
@@ -497,7 +506,9 @@ export async function loadCoachDetail(
 
   if (!m) return null;
   if ((m.club_id as string) !== clubId) return null;
-  if (!COACH_ROLES.includes(m.role as Role)) return null;
+  // El gate de rol se aplica ABAJO (tras cargar el histórico): un COACH_ROLE llega
+  // siempre; un rol alto/coordinador (S1b director-entrenador) solo si tiene team_staff
+  // ACTIVO — la ficha es alcanzable "porque trabaja un equipo", no por rol.
 
   type ProfileShape = {
     id: string;
@@ -546,6 +557,11 @@ export async function loadCoachDetail(
 
   const active = hist.filter((r) => r.left_at == null);
 
+  // Gate de rol (S1b): un COACH_ROLE (principal/ayudante) tiene ficha siempre, aunque
+  // no tenga asignaciones activas. Un rol alto/coordinador solo si trabaja algún equipo
+  // (team_staff ACTIVO) — sin asignación activa no tiene nada que hacer aquí.
+  if (!COACH_ROLES.includes(m.role as Role) && active.length === 0) return null;
+
   // Si el scope es restricted (principal), exigimos al menos un team en
   // común para mostrar la ficha.
   if (scope.kind === 'restricted') {
@@ -570,7 +586,7 @@ export async function loadCoachDetail(
     profile_id: m.profile_id as string,
     full_name: profile.full_name ?? '—',
     avatar_url: profile.avatar_url ?? null,
-    club_role: m.role as 'entrenador_principal' | 'entrenador_ayudante',
+    club_role: m.role as Role,
     assignments,
     phone: (m.phone as string | null) ?? null,
     contact_email: (m.contact_email as string | null) ?? null,
