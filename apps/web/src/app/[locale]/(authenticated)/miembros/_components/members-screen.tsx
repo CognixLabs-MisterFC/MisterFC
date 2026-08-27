@@ -18,7 +18,11 @@ import {
 } from '@/components/ui/table';
 import { MemberActions } from './member-actions';
 import { FamiliesSearch } from './families-search';
-import type { ClubMemberRow, FamilyRow } from '../queries';
+// Director-entrenador (S1a): se REUTILIZAN tal cual el diálogo de asignación y el botón
+// de quitar de Cuerpo técnico (misma acción team_staff, misma RLS). NO se modifican.
+import { AddAssignmentDialog } from '../../cuerpo-tecnico/_components/add-assignment-dialog';
+import { RemoveAssignmentButton } from '../../cuerpo-tecnico/_components/remove-assignment-button';
+import type { AssignableTeam, ClubMemberRow, FamilyRow } from '../queries';
 
 export type Segment = 'direccion' | 'cuerpo_tecnico' | 'familias';
 
@@ -47,6 +51,7 @@ export function MembersScreen({
   cuerpoTecnico,
   familiesCount,
   families,
+  assignableTeams,
   viewerRole,
   viewerProfileId,
 }: {
@@ -61,11 +66,13 @@ export function MembersScreen({
     page: number;
     pageSize: number;
   } | null;
+  assignableTeams: AssignableTeam[];
   viewerRole: Role;
   viewerProfileId: string;
 }) {
   const t = useTranslations('miembros');
   const tRole = useTranslations('roles');
+  const tStaffRole = useTranslations('staff.role');
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -162,6 +169,9 @@ export function MembersScreen({
     if (rows.length === 0) {
       return <EmptyCard label={t('empty')} />;
     }
+    // El conmutador director-entrenador (S1a) vive SOLO en DIRECCIÓN: asignar equipos y
+    // listar/quitar asignaciones. El cuerpo técnico se gestiona en su propia pantalla.
+    const isDireccion = segment === 'direccion';
     return (
       <Card>
         <CardContent className="p-0">
@@ -192,6 +202,29 @@ export function MembersScreen({
                         {tRole(m.club_role)}
                       </span>
                       <StatusLine leftAt={m.left_at} />
+                      {isDireccion && m.assignments.length > 0 && (
+                        <div className="mt-1 flex flex-col gap-1">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {t('row.coached_teams')}
+                          </span>
+                          {m.assignments.map((a) => (
+                            <span
+                              key={a.team_staff_id}
+                              className="flex items-center gap-1 text-xs text-muted-foreground"
+                            >
+                              <span>
+                                {a.team_name} · {tStaffRole(a.staff_role)}
+                              </span>
+                              <RemoveAssignmentButton
+                                teamStaffId={a.team_staff_id}
+                                membershipId={m.membership_id}
+                                teamName={a.team_name}
+                                compact
+                              />
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
@@ -207,6 +240,16 @@ export function MembersScreen({
                             {t('row.open_ficha')}
                           </Link>
                         </Button>
+                      )}
+                      {/* Asignar a equipo (director-entrenador S1a). Solo DIRECCIÓN y
+                          miembro ACTIVO. Deliberadamente SIN el gateo isSelf/rol-alto de
+                          la baja: un director puede asignarse a sí mismo (la RLS ya se lo
+                          permite). No toca `memberships.role`. */}
+                      {isDireccion && m.left_at == null && (
+                        <AddAssignmentDialog
+                          membershipId={m.membership_id}
+                          teams={assignableTeams}
+                        />
                       )}
                       <MemberActions
                         profileId={m.profile_id}

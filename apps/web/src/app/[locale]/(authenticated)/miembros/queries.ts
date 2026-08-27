@@ -19,9 +19,12 @@
 import {
   createSupabaseServerClient,
   foldForSearch,
+  teamsInActiveSeason,
   type Role,
+  type TeamStaffRole,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { getActiveSeasonLabel } from '@/lib/active-season';
 
 /** Roles de cada segmento (orden de aparición dentro del grupo). */
 export const DIRECCION_ROLES: readonly Role[] = ['admin_club', 'director'];
@@ -41,6 +44,18 @@ const ROLE_ORDER: Record<string, number> = {
   entrenador_ayudante: 4,
 };
 
+/**
+ * Director-entrenador (S1a): una asignación team_staff ACTIVA de un miembro de
+ * DIRECCIÓN. Se lista bajo su fila con un "quitar". El `team_staff` es tabla aparte:
+ * asignar/quitar NUNCA toca `memberships.role` (el director sigue siendo director).
+ */
+export type MemberAssignment = {
+  team_staff_id: string;
+  team_id: string;
+  team_name: string;
+  staff_role: TeamStaffRole;
+};
+
 export type ClubMemberRow = {
   membership_id: string;
   profile_id: string;
@@ -49,7 +64,12 @@ export type ClubMemberRow = {
   club_role: Role;
   /** null = ACTIVO; fecha (YYYY-MM-DD) = de baja desde. NUNCA se expone left_reason. */
   left_at: string | null;
+  /** Asignaciones team_staff activas (solo se pueblan para DIRECCIÓN; resto vacío). */
+  assignments: MemberAssignment[];
 };
+
+/** Equipo asignable en el diálogo (temporada activa, club-wide). */
+export type AssignableTeam = { id: string; name: string; category_name: string };
 
 export type ClubMembersResult = {
   direccion: ClubMemberRow[];
@@ -130,16 +150,117 @@ export async function loadClubMembers(
         avatar_url: r.profiles.avatar_url ?? null,
         club_role: r.role,
         left_at: r.left_at,
+        assignments: [],
       })
     );
 
   const direccionSet = new Set<string>(DIRECCION_ROLES);
-  return {
-    direccion: rows.filter((r) => direccionSet.has(r.club_role)).sort(sortMembers),
-    cuerpoTecnico: rows
-      .filter((r) => !direccionSet.has(r.club_role))
-      .sort(sortMembers),
+  const direccion = rows
+    .filter((r) => direccionSet.has(r.club_role))
+    .sort(sortMembers);
+  const cuerpoTecnico = rows
+    .filter((r) => !direccionSet.has(r.club_role))
+    .sort(sortMembers);
+
+  // S1a: pinta las asignaciones team_staff activas SOLO de DIRECCIÓN (donde vive el
+  // conmutador director-entrenador). El cuerpo técnico ya se gestiona en su pantalla.
+  const assignmentsByMembership = await loadActiveAssignments(
+    supabase,
+    clubId,
+    direccion.map((r) => r.membership_id)
+  );
+  for (const r of direccion) {
+    r.assignments = assignmentsByMembership.get(r.membership_id) ?? [];
+  }
+
+  return { direccion, cuerpoTecnico };
+}
+
+/**
+ * Asignaciones team_staff ACTIVAS (left_at null) de un conjunto de memberships →
+ * mapa membership_id → asignaciones. Solo lectura; no toca `memberships.role`.
+ */
+async function loadActiveAssignments(
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  clubId: string,
+  membershipIds: string[]
+): Promise<Map<string, MemberAssignment[]>> {
+  const out = new Map<string, MemberAssignment[]>();
+  if (membershipIds.length === 0) return out;
+
+  const { data } = await supabase
+    .from('team_staff')
+    .select(
+      'id, staff_role, team_id, membership_id, teams!inner(id, name, categories!inner(club_id))'
+    )
+    .in('membership_id', membershipIds)
+    .is('left_at', null);
+
+  type Row = {
+    id: string;
+    staff_role: TeamStaffRole;
+    team_id: string;
+    membership_id: string;
+    teams: { name: string; categories: { club_id: string } };
   };
+
+  for (const r of (data ?? []).map((x) => x as unknown as Row)) {
+    if (r.teams.categories.club_id !== clubId) continue; // defensivo
+    const list = out.get(r.membership_id) ?? [];
+    list.push({
+      team_staff_id: r.id,
+      team_id: r.team_id,
+      team_name: r.teams.name,
+      staff_role: r.staff_role,
+    });
+    out.set(r.membership_id, list);
+  }
+  for (const [, list] of out) {
+    list.sort((a, b) =>
+      a.team_name.localeCompare(b.team_name, 'es', { sensitivity: 'base' })
+    );
+  }
+  return out;
+}
+
+/**
+ * Equipos del club (temporada activa) para el diálogo "Asignar a equipo". El viewer
+ * es admin_club/director → alcance club-wide. `teamsInActiveSeason` evita los
+ * duplicados por nombre que deja el rollover de temporada.
+ */
+export async function loadAssignableTeams(
+  clubId: string
+): Promise<AssignableTeam[]> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const { data } = await supabase
+    .from('teams')
+    .select('id, name, season, categories!inner(name, club_id)')
+    .order('name');
+
+  type Row = {
+    id: string;
+    name: string;
+    season: string;
+    categories: { name: string; club_id: string };
+  };
+  const all = (data ?? [])
+    .map((r) => r as unknown as Row)
+    .filter((r) => r.categories.club_id === clubId)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      category_name: r.categories.name,
+      season: r.season,
+    }));
+
+  const activeSeason = await getActiveSeasonLabel(supabase, clubId);
+  return teamsInActiveSeason(all, activeSeason).map((t) => ({
+    id: t.id,
+    name: t.name,
+    category_name: t.category_name,
+  }));
 }
 
 /** Recuento total de tutores del club (para el contador del segmento Familias). */
