@@ -4859,6 +4859,8 @@
     "no_staff": "This team has no coaching staff assigned."
   },
   "nav": {
+    "mister": "Coach",
+    "club": "Club",
     "agenda": "Schedule",
     "alineacion": "Lineup",
     "anuncios": "Announcements",

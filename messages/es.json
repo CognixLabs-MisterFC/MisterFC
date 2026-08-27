@@ -4859,6 +4859,8 @@
     "no_staff": "Este equipo no tiene cuerpo técnico asignado."
   },
   "nav": {
+    "mister": "Míster",
+    "club": "Club",
     "agenda": "Agenda",
     "alineacion": "Alineación",
     "anuncios": "Anuncios",
