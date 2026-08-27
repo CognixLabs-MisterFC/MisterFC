@@ -1,16 +1,27 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import {
   getDireccionHomeCountsFromClient,
+  getUnreadNotificationsFeedFromClient,
+  markNotificationReadFromClient,
+  notificationFeedText,
   clubScopedCacheKey,
   type DireccionHomeCounts,
+  type NotificationFeedRow,
 } from '@misterfc/core';
+import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
+import { invalidateAfterWrite } from '@/data/cache-resources';
+import { directionFeedTarget } from '@/notifications/feed-target';
 import { OfflineBanner, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { CountBadge } from '@/screens/staff/hub-parts';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
+
+/** Nº de novedades sin leer que muestra el inicio de dirección (el resto, en /novedades). */
+const DIR_INICIO_UNREAD_LIMIT = 5;
 
 /**
  * O2-11a-2 — INICIO DE DIRECCIÓN (SOLO LECTURA). Dos bloques de COLAS de tareas
@@ -37,8 +48,37 @@ export function DireccionInicioScreen() {
         : Promise.resolve(null),
   );
 
+  // Bloque 3 · Novedades NO LEÍDAS. Feed POR-USUARIO (RLS select-own; sin clubId, como
+  // /novedades). Clave `novedades.dir-inicio` (primer token `novedades`) → la invalida
+  // `invalidateAfterWrite('markNotifications')` igual que a la pantalla completa, y NO
+  // colisiona con `novedades.unread` (limit 10) de esa pantalla. Coste: 1 query de ≤5
+  // filas pequeñas, indexada por channel/status; despreciable en una pantalla que ya
+  // hace 1 query. `hiddenIds` oculta al instante las que se marcan leídas (optimista).
+  const tFeed = useTranslations('home.feed');
+  const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
+  const { data: unreadData } = useCached<NotificationFeedRow[]>(
+    'novedades.dir-inicio',
+    (sb) => getUnreadNotificationsFeedFromClient(sb, DIR_INICIO_UNREAD_LIMIT),
+  );
+
   if (loading) return <LoadingScreen />;
   const c = data;
+  const unread = (unreadData ?? []).filter((n) => !hiddenIds.has(n.id));
+
+  // Tocar una novedad: la marca leída (desaparece del bloque de pendientes) e invalida
+  // la caché de novedades (bloque + pantalla completa coherentes). Solo la supresión
+  // RGPD navega (directionFeedTarget); el resto es informativo. Espeja `openRow`.
+  const openNovedad = (n: NotificationFeedRow) => {
+    const target = directionFeedTarget(n.type);
+    if (n.status === 'pending') {
+      setHiddenIds((prev) => new Set(prev).add(n.id));
+      void (async () => {
+        await markNotificationReadFromClient(supabase, n.id);
+        void invalidateAfterWrite('markNotifications');
+      })();
+    }
+    if (target) router.push(target as Href);
+  };
 
   // Deep-links a las pantallas de dirección destino. HOMOGENEIZADO (decisión Jose):
   // las 7 tarjetas se comportan igual — clicables SOLO con contador > 0 (a 0 la fila
@@ -93,6 +133,42 @@ export function DireccionInicioScreen() {
               onPress={r.href && r.count > 0 ? () => go(r.href) : undefined}
             />
           ))}
+        </View>
+
+        {/* Bloque 3 · Novedades NO LEÍDAS (5 más recientes) + "Ver todas". */}
+        <View className="gap-2">
+          <View className="flex-row items-center justify-between">
+            <ScreenTitle>{t('dir_inicio.novedades_title')}</ScreenTitle>
+            <Pressable
+              onPress={() => router.push('/direction/novedades')}
+              className="active:opacity-60"
+            >
+              <Text className="text-xs font-medium" style={{ color: accent }}>
+                {t('dir_inicio.novedades_see_all')}
+              </Text>
+            </Pressable>
+          </View>
+          {unread.length === 0 ? (
+            <Text className="rounded-2xl border border-zinc-200 p-4 text-sm text-zinc-400">
+              {t('dir_inicio.novedades_empty')}
+            </Text>
+          ) : (
+            unread.map((n) => (
+              <Pressable
+                key={n.id}
+                onPress={() => openNovedad(n)}
+                className="flex-row items-start gap-3 rounded-2xl border border-zinc-200 p-4 active:opacity-70"
+              >
+                <View className="mt-1.5 h-2 w-2 rounded-full bg-emerald-500" />
+                <View className="flex-1">
+                  <Text className="text-sm text-[#0F1B2E]">
+                    {notificationFeedText(tFeed, n.type, n.payload)}
+                  </Text>
+                  <Text className="text-xs text-zinc-400">{n.created_at.slice(0, 10)}</Text>
+                </View>
+              </Pressable>
+            ))
+          )}
         </View>
       </ScrollView>
     </View>
