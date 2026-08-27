@@ -66,3 +66,44 @@ describe('isAllowedInArea', () => {
     }
   });
 });
+
+describe('isAllowedInArea · excepción S2 director-entrenador', () => {
+  const DIRECTION_HOME: Role[] = ['admin_club', 'director'];
+
+  it('director/admin_club CON equipos entra también en staff (además de direction)', () => {
+    for (const role of DIRECTION_HOME) {
+      const aud = { kind: 'member' as const, role, hasStaffTeams: true };
+      expect(isAllowedInArea('staff', aud)).toBe(true); // modo entrenador
+      expect(isAllowedInArea('direction', aud)).toBe(true); // su hogar, intacto
+      expect(isAllowedInArea('family', aud)).toBe(false);
+      expect(isAllowedInArea('spectator', aud)).toBe(false);
+    }
+  });
+
+  it('director/admin_club SIN equipos NO entra en staff (solo direction)', () => {
+    for (const role of DIRECTION_HOME) {
+      // Explícito false y también el default (undefined) deben denegar staff.
+      expect(
+        isAllowedInArea('staff', { kind: 'member', role, hasStaffTeams: false }),
+      ).toBe(false);
+      expect(isAllowedInArea('staff', { kind: 'member', role })).toBe(false);
+      expect(
+        isAllowedInArea('direction', { kind: 'member', role, hasStaffTeams: false }),
+      ).toBe(true);
+    }
+  });
+
+  it('la excepción es SOLO direction→staff: un coordinador/entrenador con equipos NO entra en direction', () => {
+    for (const role of ['coordinador', 'entrenador_principal', 'entrenador_ayudante'] as Role[]) {
+      const aud = { kind: 'member' as const, role, hasStaffTeams: true };
+      expect(isAllowedInArea('staff', aud)).toBe(true); // su hogar
+      expect(isAllowedInArea('direction', aud)).toBe(false); // el flag NO abre direction
+    }
+  });
+
+  it('hasStaffTeams es irrelevante fuera de un rol de dirección (jugador sigue solo en family)', () => {
+    const aud = { kind: 'member' as const, role: 'jugador' as Role, hasStaffTeams: true };
+    expect(isAllowedInArea('family', aud)).toBe(true);
+    expect(isAllowedInArea('staff', aud)).toBe(false);
+  });
+});

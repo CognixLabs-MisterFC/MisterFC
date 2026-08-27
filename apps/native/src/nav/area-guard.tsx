@@ -18,6 +18,10 @@ type GuardStatus = 'loading' | 'allowed' | 'denied';
  *
  * La regla "qué área corresponde a qué rol" viene SIEMPRE de core
  * (`isAllowedInArea` → `navAreaForRole`), no se reimplementa aquí.
+ *
+ * S2 director-entrenador: se pasa `hasStaffTeams` (del AppProvider) para que un
+ * director/admin_club con equipos asignados pase el guard del área 'staff' (modo
+ * entrenador). Un director SIN equipos sigue denegado en 'staff'.
  */
 export function useAreaGuard(area: ChromeArea): GuardStatus {
   const { user, loading: sessionLoading } = useSession();
@@ -27,7 +31,13 @@ export function useAreaGuard(area: ChromeArea): GuardStatus {
   if (!user) return 'denied';
 
   const role = app.activeClub?.role ?? null;
-  return isAllowedInArea(area, { kind: app.kind, role }) ? 'allowed' : 'denied';
+  return isAllowedInArea(area, {
+    kind: app.kind,
+    role,
+    hasStaffTeams: app.hasStaffTeams,
+  })
+    ? 'allowed'
+    : 'denied';
 }
 
 /**

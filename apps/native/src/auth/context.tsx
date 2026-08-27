@@ -9,7 +9,9 @@ import {
 } from 'react';
 import {
   getCurrentUserClubsFromClient,
+  getStaffTeamsFromClient,
   isSpectatorFromClient,
+  navAreaForRole,
   resolveActiveClub,
   type CurrentUserClub,
 } from '@misterfc/core';
@@ -66,6 +68,15 @@ type AppContextValue = {
   activeClub: CurrentUserClub | null;
   theme: ClubTheme | null;
   /**
+   * S2 director-entrenador — el miembro activo (rol de DIRECCIÓN) está asignado como
+   * team_staff de ≥1 equipo (de la temporada activa). Es el flag que desbloquea el
+   * modo entrenador: lo lee `useAreaGuard` (para permitir el área 'staff') y la barra
+   * de dirección (S2-2, para mostrar el conmutador "Míster"). Solo se calcula para
+   * roles cuyo hogar es 'direction' (admin_club/director); para el resto es `false`
+   * SIN coste (no se hace la query). Se refresca en el poll de 60 s junto al rol.
+   */
+  hasStaffTeams: boolean;
+  /**
    * Baja de miembros (4c) — bajas del usuario actual. Solo se puebla cuando NO tiene
    * clubes activos (kind none/spectator); en el camino `member` es SIEMPRE `[]` y la
    * RPC no se llama (coste cero para el usuario normal).
@@ -104,6 +115,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [removedMemberships, setRemovedMemberships] = useState<
     RemovedMembership[]
   >([]);
+  const [hasStaffTeams, setHasStaffTeams] = useState(false);
 
   const userId = user?.id ?? null;
 
@@ -131,6 +143,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setClubs([]);
         setActiveClubState(null);
         setRemovedMemberships([]);
+        setHasStaffTeams(false);
         if (!silent) setLoading(false);
         return;
       }
@@ -162,6 +175,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (chosen) {
             setActiveClubState(chosen);
             await setStoredActiveClubId(chosen.club.id);
+            // S2 director-entrenador: ¿el miembro activo está asignado como team_staff?
+            // Solo se consulta para roles cuyo hogar es 'direction' (admin_club/director):
+            // es el único caso que desbloquea el área staff. El resto → false sin query.
+            if (navAreaForRole(chosen.role) === 'direction') {
+              const staffTeams = await getStaffTeamsFromClient(supabase, {
+                membershipId: chosen.membershipId,
+                clubId: chosen.club.id,
+              });
+              if (!alive()) return;
+              setHasStaffTeams(staffTeams.length > 0);
+            } else {
+              setHasStaffTeams(false);
+            }
+          } else {
+            setHasStaffTeams(false);
           }
           setKind('member');
         } else {
@@ -173,6 +201,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (!alive()) return;
           setActiveClubState(null);
           setRemovedMemberships(removed ?? []);
+          setHasStaffTeams(false);
           setKind(spectator ? 'spectator' : 'none');
         }
 
@@ -231,6 +260,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         activeClub,
         theme,
         removedMemberships,
+        hasStaffTeams,
         setActiveClub,
         signOut,
       }}
