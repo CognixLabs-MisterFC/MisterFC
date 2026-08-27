@@ -65,6 +65,27 @@ export const AREA_TABS: Record<ChromeArea, TabDef[]> = {
   ],
 };
 
+/**
+ * S2-2 director-entrenador — pestaña CONMUTADOR de área. Un director/admin con equipos
+ * asignados alterna entre su hogar (dirección) y el modo entrenador (staff):
+ *  · en la barra de DIRECCIÓN, "Míster" → salta a /staff (solo si hasStaffTeams);
+ *  · en la barra de STAFF, "Club" → vuelve a /direction (solo si su hogar es dirección).
+ * NO es una pantalla: el press se intercepta en `navigator.tsx` con `router.replace`
+ * (sin apilar áreas). El fichero-ruta (`mister`/`club`) existe como stub-redirect. La
+ * VISIBILIDAD (y a quién) la decide `navigator.tsx` en runtime (rol + hasStaffTeams);
+ * cuando no toca mostrarla, se declara `href:null`. Family/espectador no tienen.
+ */
+export type SwitchTabDef = {
+  name: string;
+  labelKey: string;
+  icon: string;
+  targetArea: ChromeArea;
+};
+export const AREA_SWITCH_TAB: Partial<Record<ChromeArea, SwitchTabDef>> = {
+  direction: { name: 'mister', labelKey: 'nav.mister', icon: '🎽', targetArea: 'staff' },
+  staff: { name: 'club', labelKey: 'nav.club', icon: '🛡️', targetArea: 'direction' },
+};
+
 // Orden EXACTO pedido por Jose (O2 QA). `nav.partidos` es el rótulo PROPIO de
 // familia (la pantalla `convocatorias`: lista de partidos con convocatoria,
 // disponibilidad y alineación); NO se toca `nav.convocatorias` del staff.

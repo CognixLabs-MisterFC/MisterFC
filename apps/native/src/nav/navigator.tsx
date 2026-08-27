@@ -1,14 +1,23 @@
 import { Text } from 'react-native';
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import {
   getInboxFromClient,
   countUnreadConversations,
+  navAreaForRole,
   profileScopedCacheKey,
   type InboxItem,
+  type Role,
 } from '@misterfc/core';
 import { useChrome, AppHeader } from './chrome';
-import { AREA_TABS, allMenuFiles, type ChromeArea } from './config';
+import {
+  AREA_TABS,
+  AREA_SWITCH_TAB,
+  allMenuFiles,
+  hrefFor,
+  type ChromeArea,
+} from './config';
 import { navI18nKey } from './menu';
+import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { useTranslations } from '@/locale/provider';
@@ -53,6 +62,28 @@ export function AreaNavigator({ area }: { area: ChromeArea }) {
   // Badge verde de mensajes sin leer (familia, staff y dirección; mismo criterio).
   const unreadConversations = useUnreadConversations();
 
+  // S2-2 — pestaña CONMUTADOR (director-entrenador). Decide en runtime si esta barra
+  // lleva el tab de conmutación y a quién:
+  //  · DIRECCIÓN → "Míster" (a /staff) solo si el director tiene equipos (hasStaffTeams).
+  //  · STAFF → "Club" (a /direction) solo si el hogar del usuario es dirección
+  //    (director/admin); un entrenador/coordinador NO lo ve (el guard lo rebotaría).
+  const router = useRouter();
+  const { activeClub, hasStaffTeams } = useApp();
+  const role = (activeClub?.role ?? null) as Role | null;
+  const homeIsDirection = role != null && navAreaForRole(role) === 'direction';
+  const switchTab = AREA_SWITCH_TAB[area];
+  const showSwitch =
+    switchTab != null &&
+    (area === 'direction'
+      ? hasStaffTeams
+      : area === 'staff'
+        ? homeIsDirection
+        : false);
+  // Con 6 pestañas (las 5 del área + el conmutador) los rótulos se estrechan; bajamos
+  // la fuente a 9 SOLO en esas dos barras para que "Calendario" (10 car.) no se corte.
+  // Sin conmutador (5 pestañas) no se toca.
+  const switchLabel = switchTab ? t(navI18nKey(switchTab.labelKey)) : '';
+
   return (
     <Tabs
       // `history`: el atrás (flecha, botón físico y gesto de borde de Android)
@@ -73,6 +104,7 @@ export function AreaNavigator({ area }: { area: ChromeArea }) {
         ),
         tabBarActiveTintColor: chromeTheme.color,
         tabBarInactiveTintColor: '#9CA3AF',
+        ...(showSwitch ? { tabBarLabelStyle: { fontSize: 9 } } : {}),
       }}
     >
       {AREA_TABS[area].map((tab) => (
@@ -96,6 +128,36 @@ export function AreaNavigator({ area }: { area: ChromeArea }) {
           }}
         />
       ))}
+
+      {/* S2-2 — tab conmutador (6º, a la derecha de Mensajes). El fichero-ruta existe
+          siempre; cuando NO toca mostrarlo se declara href:null (no sale en la barra).
+          Al pulsarlo, preventDefault + router.replace al área destino (sin apilar). */}
+      {switchTab && (
+        <Tabs.Screen
+          name={switchTab.name}
+          options={
+            showSwitch
+              ? {
+                  title: switchLabel,
+                  tabBarLabel: switchLabel,
+                  tabBarIcon: ({ size }) => (
+                    <Text style={{ fontSize: size ?? 20 }}>{switchTab.icon}</Text>
+                  ),
+                }
+              : { href: null }
+          }
+          listeners={
+            showSwitch
+              ? {
+                  tabPress: (e) => {
+                    e.preventDefault();
+                    router.replace(hrefFor(switchTab.targetArea, 'index'));
+                  },
+                }
+              : undefined
+          }
+        />
+      )}
 
       {allMenuFiles(area).map((item) => (
         <Tabs.Screen key={item.name} name={item.name} options={{ href: null }} />

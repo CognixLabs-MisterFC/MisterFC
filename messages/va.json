@@ -4859,6 +4859,8 @@
     "no_staff": "Este equip no té cos tècnic assignat."
   },
   "nav": {
+    "mister": "Míster",
+    "club": "Club",
     "agenda": "Agenda",
     "alineacion": "Alineació",
     "anuncios": "Anuncis",
