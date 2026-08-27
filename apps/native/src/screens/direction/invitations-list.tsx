@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import {
-  clubScopedCacheKey,
+  teamScopedCacheKey,
   listTeamInvitationsFromClient,
   type DireccionTeamInvitation,
   type DireccionInvitationStatus,
@@ -68,7 +68,7 @@ export function DireccionTeamInvitationsScreen({
   const [filter, setFilter] = useState<Filter>('all');
 
   const { data, fromCache, loading } = useCached<DireccionTeamInvitation[]>(
-    clubScopedCacheKey(`dir-pend-invite-team:${teamId ?? 'none'}`, clubId ?? 'none'),
+    teamScopedCacheKey('dir-pend-invite-team', clubId ?? 'none', teamId ?? 'none'),
     (sb) =>
       clubId ? listTeamInvitationsFromClient(sb, clubId, teamId) : Promise.resolve([]),
   );

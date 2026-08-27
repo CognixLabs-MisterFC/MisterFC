@@ -36,7 +36,7 @@ export function DireccionReportPlayersScreen({
   const clubId = activeClub?.club.id ?? null;
 
   const { data, fromCache, loading } = useCached<TeamReportPlayerStatus[]>(
-    clubScopedCacheKey('dir-report-players', `${clubId ?? 'none'}:${teamId}:${period}`),
+    clubScopedCacheKey('dir-report-players', `${clubId ?? 'none'}.${teamId}.${period}`),
     (sb) => listTeamReportPlayerStatusFromClient(sb, teamId, period),
   );
 

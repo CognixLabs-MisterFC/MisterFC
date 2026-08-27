@@ -23,17 +23,35 @@ import {
  */
 const { store } = vi.hoisted(() => ({ store: new Map<string, string>() }));
 
-vi.mock('./secure-cache-backing', () => ({
-  secureCacheBacking: {
-    getItem: async (k: string) => store.get(k) ?? null,
-    setItem: async (k: string, v: string) => {
-      store.set(k, v);
+// El Map en memoria VALIDA la clave con el MISMO regex que expo-secure-store
+// (/^[\w.-]+$/, SecureStore.js:151) y LANZA como lanzaría el dispositivo. Sin esto,
+// una clave con ':' pasaba silenciosa en CI y solo reventaba en el móvil (el bug que
+// dejó cuatro pantallas vacías). Con esto, cualquier clave inválida que atraviese la
+// caché en un test es un FALLO de CI, no una sorpresa en producción.
+vi.mock('./secure-cache-backing', () => {
+  const KEY_RE = /^[\w.-]+$/;
+  const assertKey = (k: string) => {
+    if (!KEY_RE.test(k)) {
+      throw new Error(`expo-secure-store rechazaría esta clave inválida: ${JSON.stringify(k)}`);
+    }
+  };
+  return {
+    secureCacheBacking: {
+      getItem: async (k: string) => {
+        assertKey(k);
+        return store.get(k) ?? null;
+      },
+      setItem: async (k: string, v: string) => {
+        assertKey(k);
+        store.set(k, v);
+      },
+      removeItem: async (k: string) => {
+        assertKey(k);
+        store.delete(k);
+      },
     },
-    removeItem: async (k: string) => {
-      store.delete(k);
-    },
-  },
-}));
+  };
+});
 
 afterEach(() => {
   __resetCoalescingForTests();

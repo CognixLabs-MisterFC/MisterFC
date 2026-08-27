@@ -103,10 +103,10 @@ export function CalendarTemporadaScreen({
   }, [viewYear, viewMonth]);
 
   const cacheKey = clubWide
-    ? clubScopedCacheKey('calendar-month-club', `${clubId ?? 'none'}:${monthTag}`)
+    ? clubScopedCacheKey('calendar-month-club', `${clubId ?? 'none'}.${monthTag}`)
     : teamId
-      ? clubScopedCacheKey('calendar-month-team', `${clubId ?? 'none'}:${teamId}:${monthTag}`)
-      : clubScopedCacheKey('calendar-month', `${clubId ?? 'none'}:${monthTag}`);
+      ? clubScopedCacheKey('calendar-month-team', `${clubId ?? 'none'}.${teamId}.${monthTag}`)
+      : clubScopedCacheKey('calendar-month', `${clubId ?? 'none'}.${monthTag}`);
 
   const { data, fromCache, loading } = useCached<{
     events: CalendarEvent[];
