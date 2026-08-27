@@ -27,20 +27,40 @@ export type ConvocatoriasScope =
 
 export async function resolveConvocatoriasScopeFromClient(
   supabase: DbClient,
-  params: { clubId: string; role: Role; userId: string | null },
+  params: {
+    clubId: string;
+    role: Role;
+    userId: string | null;
+    /**
+     * S2 director-entrenador (modo "Míster" de la APP) — el usuario actúa como
+     * team_staff de sus equipos, NO como director club-wide. Lo pasan SOLO las
+     * pantallas nativas del área staff; la WEB nunca lo pasa → un admin/director en
+     * web sigue con scope 'all' (club entero). Para roles que no son admin/director
+     * es no-op (ya caen en su rama). RLS intacta: esto solo acota lo VISIBLE en la UI.
+     */
+    asStaffMember?: boolean;
+  },
 ): Promise<ConvocatoriasScope> {
-  const { clubId, role, userId } = params;
+  const { clubId, role, userId, asStaffMember } = params;
 
-  // E-7a: director club-wide como admin_club.
-  if (role === 'admin_club' || role === 'director') return { kind: 'all' };
+  const coachMode =
+    asStaffMember === true && (role === 'admin_club' || role === 'director');
+
+  // E-7a: director/admin_club club-wide — SALVO en modo Míster, que cae en 'restricted'.
+  if ((role === 'admin_club' || role === 'director') && !coachMode) {
+    return { kind: 'all' };
+  }
   if (!userId) return { kind: 'none' };
 
   // C-2a: coordinador gestiona TODOS sus equipos (managedTeamIds = teamIds), como
-  // si tuviera la capability; principal/ayudante mantienen su lógica.
+  // si tuviera la capability; principal/ayudante mantienen su lógica. En modo Míster
+  // el director/admin entra AQUÍ por la MISMA rama → resultado idéntico al de un
+  // entrenador con sus mismas asignaciones.
   if (
     role === 'entrenador_principal' ||
     role === 'entrenador_ayudante' ||
-    role === 'coordinador'
+    role === 'coordinador' ||
+    coachMode
   ) {
     // Solo equipos de la TEMPORADA ACTIVA: tras el rollover puede haber una fila
     // `team_staff` viva (left_at null) en el equipo de una temporada pasada (mismo

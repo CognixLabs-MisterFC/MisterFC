@@ -142,9 +142,11 @@ export async function getStaffCallupsFromClient(
     userId: string | null;
     rangeDays?: number;
     nowMs?: number;
+    /** S2 modo Míster: acota a los equipos del usuario (ver resolveConvocatoriasScope). */
+    asStaffMember?: boolean;
   },
 ): Promise<CallupMatchRow[]> {
-  const { clubId, role, userId } = params;
+  const { clubId, role, userId, asStaffMember } = params;
   const rangeDays = params.rangeDays ?? 30;
   const nowMs = params.nowMs ?? Date.now();
 
@@ -152,6 +154,7 @@ export async function getStaffCallupsFromClient(
     clubId,
     role,
     userId,
+    asStaffMember,
   });
   if (scope.kind === 'none') return [];
 
@@ -363,9 +366,11 @@ export async function getStaffCallupDetailFromClient(
     userId: string | null;
     eventId: string;
     nowMs?: number;
+    /** S2 modo Míster: acota a los equipos del usuario (ver resolveConvocatoriasScope). */
+    asStaffMember?: boolean;
   },
 ): Promise<CallupDetail | null> {
-  const { clubId, role, userId, eventId } = params;
+  const { clubId, role, userId, eventId, asStaffMember } = params;
 
   const { data: ev } = await supabase
     .from('events')
@@ -405,7 +410,7 @@ export async function getStaffCallupDetailFromClient(
 
   const scope: ConvocatoriasScope = await resolveConvocatoriasScopeFromClient(
     supabase,
-    { clubId, role, userId },
+    { clubId, role, userId, asStaffMember },
   );
   if (scope.kind === 'none') return null;
   if (scope.kind === 'restricted' && !scope.teamIds.includes(event.team_id))

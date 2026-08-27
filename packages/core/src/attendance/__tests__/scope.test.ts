@@ -93,4 +93,31 @@ describe('resolveAttendanceScopeFromClient (filtro por temporada activa)', () =>
     });
     expect(scope).toEqual({ kind: 'player', playerIds: ['p-1'] });
   });
+
+  // S2 director-entrenador (modo Míster de la app).
+  it('director + asStaffMember → restricted a SUS equipos (idéntico a un entrenador)', async () => {
+    const teamStaff = [
+      { team_id: 't-1', teams: { season: '2026-27' }, memberships: { profile_id: 'u-1', club_id: 'club-1' } },
+      { team_id: 't-9', teams: { season: '2026-27' }, memberships: { profile_id: 'OTHER', club_id: 'club-1' } },
+    ];
+    const dirScope = await resolveAttendanceScopeFromClient(
+      makeClient({ seasons: [{ label: '2026-27', status: 'active' }], team_staff: teamStaff }),
+      { clubId: 'club-1', role: 'director', userId: 'u-1', asStaffMember: true },
+    );
+    const coachScope = await resolveAttendanceScopeFromClient(
+      makeClient({ seasons: [{ label: '2026-27', status: 'active' }], team_staff: teamStaff }),
+      { clubId: 'club-1', role: 'entrenador_principal', userId: 'u-1' },
+    );
+    expect(dirScope).toEqual({ kind: 'restricted', teamIds: ['t-1'] });
+    expect(dirScope).toEqual(coachScope);
+  });
+
+  it('director SIN asStaffMember (web) → sigue all, sin tocar la BD', async () => {
+    const from = vi.fn();
+    const client = { from } as unknown as SupabaseClient<Database>;
+    expect(
+      await resolveAttendanceScopeFromClient(client, { clubId: 'club-1', role: 'director', userId: 'u-1' }),
+    ).toEqual({ kind: 'all' });
+    expect(from).not.toHaveBeenCalled();
+  });
 });

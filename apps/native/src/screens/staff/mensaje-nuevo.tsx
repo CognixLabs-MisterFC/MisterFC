@@ -83,7 +83,12 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
         setLoading(false);
         return;
       }
-      const isAdminDir = role === 'admin_club' || role === 'director';
+      // S2 modo Míster: esta pantalla se reusa en staff (basePath '/staff') y en
+      // dirección ('/direction'). En DIRECCIÓN el director elige entre TODOS los equipos
+      // del club (isAdminDir=true, como hoy). En STAFF (modo entrenador) se comporta como
+      // un entrenador: solo SUS equipos (isAdminDir=false → rama team_staff de core).
+      const isDirRole = role === 'admin_club' || role === 'director';
+      const isAdminDir = isDirRole && basePath !== '/staff';
       const [pRes, tRes, sRes] = await Promise.all([
         listMessageablePlayersFromClient(supabase, clubId),
         listMessageableTeamsFromClient(supabase, { clubId, isAdminDir, membershipId }),
@@ -100,7 +105,7 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
     return () => {
       active = false;
     };
-  }, [clubId, membershipId, role, userId]);
+  }, [clubId, membershipId, role, userId, basePath]);
 
   const openPlayer = useCallback(
     async (p: MessageablePlayer) => {

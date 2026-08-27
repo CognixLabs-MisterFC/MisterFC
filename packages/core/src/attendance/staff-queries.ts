@@ -93,9 +93,11 @@ export async function getRecentTrainingsFromClient(
     rangeDays?: number;
     teamId?: string;
     nowMs?: number;
+    /** S2 modo Míster: acota a los equipos del usuario (ver resolveAttendanceScope). */
+    asStaffMember?: boolean;
   },
 ): Promise<StaffTrainingEvent[]> {
-  const { clubId, role, userId, teamId } = params;
+  const { clubId, role, userId, teamId, asStaffMember } = params;
   const rangeDays = params.rangeDays ?? 30;
   const nowMs = params.nowMs ?? Date.now();
 
@@ -103,6 +105,7 @@ export async function getRecentTrainingsFromClient(
     clubId,
     role,
     userId,
+    asStaffMember,
   });
   if (scope.kind === 'none') return [];
 
@@ -232,9 +235,11 @@ export async function getEventAttendanceFromClient(
     userId: string | null;
     eventId: string;
     nowMs?: number;
+    /** S2 modo Míster: acota a los equipos del usuario (ver resolveAttendanceScope). */
+    asStaffMember?: boolean;
   },
 ): Promise<EventAttendanceData | null> {
-  const { clubId, role, userId, eventId } = params;
+  const { clubId, role, userId, eventId, asStaffMember } = params;
   const nowMs = params.nowMs ?? Date.now();
 
   const { data: ev } = await supabase
@@ -273,7 +278,7 @@ export async function getEventAttendanceFromClient(
 
   const scope: AttendanceScope = await resolveAttendanceScopeFromClient(
     supabase,
-    { clubId, role, userId },
+    { clubId, role, userId, asStaffMember },
   );
   if (scope.kind === 'none') return null;
   if (scope.kind === 'restricted' && !scope.teamIds.includes(event.team_id))

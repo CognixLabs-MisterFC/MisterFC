@@ -47,7 +47,15 @@ export function ConvocatoriasStaffListScreen({
     clubScopedCacheKey('convocatorias-staff', clubId ?? 'none'),
     (sb) =>
       clubId && role
-        ? getStaffCallupsFromClient(sb, { clubId, role, userId, rangeDays: 30 })
+        ? // asStaffMember: esta pantalla solo existe en el área staff → un director/
+          // admin aquí está en modo Míster y ve SOLO sus equipos, como un entrenador.
+          getStaffCallupsFromClient(sb, {
+            clubId,
+            role,
+            userId,
+            rangeDays: 30,
+            asStaffMember: true,
+          })
         : Promise.resolve([]),
   );
 

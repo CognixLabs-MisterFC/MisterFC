@@ -69,11 +69,14 @@ export function AsistenciaSesionScreen({ eventId }: { eventId: string | null }) 
     eventScopedCacheKey('asistencia-sesion', eventId ?? 'none'),
     async (sb) => {
       if (!eventId || !clubId || !role) return null;
+      // asStaffMember: detalle dentro del área staff (modo Míster). Un evento de un
+      // equipo que el director NO entrena queda fuera del scope (return null).
       const d = await getEventAttendanceFromClient(sb, {
         clubId,
         role,
         userId,
         eventId,
+        asStaffMember: true,
       });
       if (!d) return null;
       return {

@@ -31,21 +31,30 @@ export type PlayerPendingCallup = {
 /** Próximos eventos (no cancelados, aprobados) en un rango ISO.
  *  `onError`: sumidero de errores del caller (native: Sentry). INSTRUMENTACIÓN — un
  *  fallo de RLS/Postgres dejaba `[]` mudo ("sin eventos próximos") sin rastro; con el
- *  sink se ve. Core no depende de Sentry (mismo patrón que team-view, #487). */
+ *  sink se ve. Core no depende de Sentry (mismo patrón que team-view, #487).
+ *
+ *  `teamIds` (S2 modo Míster): si se pasa, acota los eventos a esos equipos ANTES del
+ *  `limit` (imprescindible: filtrar en cliente tras un top-5 club-wide dejaría fuera los
+ *  del equipo). Lo usa SOLO el inicio de staff cuando el director está en modo entrenador,
+ *  para que "próximos eventos" sea de SUS equipos, igual que ve un entrenador. Sin el
+ *  parámetro, comportamiento idéntico al anterior (acotado por RLS): family y web intactos. */
 export async function getUpcomingEventsFromClient(
   supabase: DbClient,
   fromIso: string,
   toIso: string,
   limit = 5,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
+  teamIds?: string[]
 ): Promise<UpcomingEvent[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from('events')
     .select('id, title, type, starts_at, team_id, teams(name)')
     .is('cancelled_at', null)
     .or('approval_status.is.null,approval_status.eq.approved')
     .gte('starts_at', fromIso)
-    .lte('starts_at', toIso)
+    .lte('starts_at', toIso);
+  if (teamIds) query = query.in('team_id', teamIds);
+  const { data, error } = await query
     .order('starts_at', { ascending: true })
     .limit(limit);
   if (error) onError?.(error);
