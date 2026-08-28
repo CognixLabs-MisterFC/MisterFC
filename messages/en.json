@@ -395,6 +395,28 @@
     "status_pending": "Pending",
     "status_accepted": "Accepted",
     "status_expired": "Expired",
+    "by_team_title": "By team",
+    "sin_equipo": "No team",
+    "open": "View",
+    "back": "Back",
+    "empty_filter": "No invitations match this filter.",
+    "summary": {
+      "sent": "{count, plural, one {# sent} other {# sent}}",
+      "accepted": "{count, plural, one {# accepted} other {# accepted}}",
+      "expired": "{count, plural, one {# expired} other {# expired}}",
+      "pending": "{count, plural, one {# pending} other {# pending}}"
+    },
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "expired": "Expired",
+      "accepted": "Accepted"
+    },
+    "date": {
+      "accepted": "Accepted on {date}",
+      "expires": "Expires on {date}",
+      "expired": "Expired on {date}"
+    },
     "form": {
       "email_label": "Email",
       "email_placeholder": "person@email.com",
@@ -405,6 +427,8 @@
       "role_entrenador_principal": "Head coach",
       "role_entrenador_ayudante": "Assistant coach",
       "role_jugador": "Player / Family",
+      "team_label": "Team (optional)",
+      "team_none": "No team",
       "submit": "Send invitation",
       "submitting": "Sending…",
       "ok": "Invitation sent to {email}",

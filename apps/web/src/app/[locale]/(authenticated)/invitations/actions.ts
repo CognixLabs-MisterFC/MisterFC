@@ -482,7 +482,9 @@ export async function cancelInvitation(
   });
 
   // Revalidar todas las rutas donde esta invitación pudiera estar listada.
+  // Incluye el nivel 2 anidado (su fila desaparece) y el nivel 1 (resumen coherente).
   revalidatePath(`/${locale}/invitations`);
+  revalidatePath(`/${locale}/invitations/${invite.team_id ?? 'sin-equipo'}`);
   if (invite.team_id) revalidatePath(`/${locale}/equipos/${invite.team_id}`);
   if (invite.player_id) revalidatePath(`/${locale}/jugadores/${invite.player_id}`);
 
