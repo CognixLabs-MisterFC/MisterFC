@@ -108,6 +108,33 @@ describe('chooseInviteForm (B2b)', () => {
     ).toBe('set_password');
   });
 
+  it('CINTURÓN: cuenta no reclamada (invite_pending) con sesión pero SIN invited_user_id → set_password', () => {
+    // Reproduce el incidente: el enlazado de invited_user_id falló en el envío, pero
+    // el invitado tiene sesión del magic link (invite_pending) con su email → debe poder
+    // fijar contraseña sobre su sesión, NO quedar atrapado en 'sign_in'.
+    expect(
+      chooseInviteForm({
+        invitedUserId: null,
+        sessionUserId: 'magic-link-user',
+        sessionEmailMatches: true,
+        invitePending: true,
+      })
+    ).toBe('set_password');
+  });
+
+  it('SEGURIDAD: el cinturón exige email coincidente — invite_pending con email que NO coincide → sign_in', () => {
+    // Sesión invite_pending pero de OTRO email (no es este invitado): NO debe fijar
+    // contraseña por el token. Sin invited_user_id → sign_in.
+    expect(
+      chooseInviteForm({
+        invitedUserId: null,
+        sessionUserId: 'someone-else',
+        sessionEmailMatches: false,
+        invitePending: true,
+      })
+    ).toBe('sign_in');
+  });
+
   it('usuario YA configurado (otra cuenta, con contraseña) aceptando invitación adicional → quick', () => {
     expect(
       chooseInviteForm({
