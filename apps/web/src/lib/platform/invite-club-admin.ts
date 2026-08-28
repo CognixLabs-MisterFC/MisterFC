@@ -142,18 +142,31 @@ export async function inviteClubAdmin(input: {
     } else {
       // Cuenta creada por nosotros: enlazamos invited_user_id (como sendInvitation).
       const invitedUserId = inviteData?.user?.id ?? null;
-      if (invitedUserId) {
-        const { error: linkErr } = await admin
-          .from('invitations')
-          .update({ invited_user_id: invitedUserId })
-          .eq('id', invite.id);
-        if (linkErr) {
-          console.error(
-            '[platform][invite-admin] link_invited_user_failed ' +
-              JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id, error: serializeError(linkErr) }),
-          );
-          Sentry.captureException(linkErr, { tags: { feature: 'platform', step: 'link_invited_user' } });
-        }
+      if (!invitedUserId) {
+        // #535: invite OK pero sin user.id → antes MUDO. Sin invited_user_id la
+        // invitación lleva a la trampa: ruidoso + error al admin para reintentar.
+        console.error(
+          '[platform][invite-admin] invited_user_missing_id ' +
+            JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id }),
+        );
+        Sentry.captureMessage('[platform] inviteUserByEmail sin user.id (invite-admin)', {
+          level: 'error',
+          tags: { feature: 'platform', step: 'invited_user_missing_id' },
+        });
+        return { error: 'generic' };
+      }
+      const { error: linkErr } = await admin
+        .from('invitations')
+        .update({ invited_user_id: invitedUserId })
+        .eq('id', invite.id);
+      if (linkErr) {
+        // #535: el enlazado falló → no entregar una invitación rota. Error al admin.
+        console.error(
+          '[platform][invite-admin] link_invited_user_failed ' +
+            JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id, error: serializeError(linkErr) }),
+        );
+        Sentry.captureException(linkErr, { tags: { feature: 'platform', step: 'link_invited_user' } });
+        return { error: 'generic' };
       }
     }
   } catch (thrown) {

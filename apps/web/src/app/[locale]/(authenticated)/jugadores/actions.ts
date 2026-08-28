@@ -283,19 +283,27 @@ async function sendOrRenewTutorInvitation(
       // para enrutar al form set_password (pedir contraseña). Sin esto el invitee
       // nuevo caía en quick/sign_in y nunca fijaba contraseña.
       const invitedUserId = inviteData?.user?.id ?? null;
-      if (invitedUserId) {
-        const { error: linkErr } = await admin
-          .from('invitations')
-          .update({ invited_user_id: invitedUserId })
-          .eq('id', invite.id);
-        if (linkErr) {
-          // No fatal para el envío: se registra. Sin invited_user_id el accept
-          // trataría al invitee como existente (peor UX pero no rompe).
-          Sentry.captureException(linkErr, {
-            tags: { feature: 'invitations', step: 'link_invited_user_tutor' },
-            extra: { invitation_id: invite.id },
-          });
-        }
+      if (!invitedUserId) {
+        // #535: invite OK pero sin user.id → antes MUDO. Sin invited_user_id la
+        // invitación lleva a la trampa: ruidoso + error al admin para reintentar.
+        Sentry.captureMessage('[invitations] inviteUserByEmail sin user.id (tutor)', {
+          level: 'error',
+          tags: { feature: 'invitations', step: 'invited_user_missing_id_tutor' },
+          extra: { invitation_id: invite.id },
+        });
+        return { error: 'generic' };
+      }
+      const { error: linkErr } = await admin
+        .from('invitations')
+        .update({ invited_user_id: invitedUserId })
+        .eq('id', invite.id);
+      if (linkErr) {
+        // #535: el enlazado falló → no entregar una invitación rota. Error al admin.
+        Sentry.captureException(linkErr, {
+          tags: { feature: 'invitations', step: 'link_invited_user_tutor' },
+          extra: { invitation_id: invite.id },
+        });
+        return { error: 'generic' };
       }
     }
   } catch (thrown) {

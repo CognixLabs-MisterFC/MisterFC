@@ -133,18 +133,30 @@ export async function changeClubAdmin(input: {
       }
     } else {
       const invitedUserId = inviteData?.user?.id ?? null;
-      if (invitedUserId) {
-        const { error: linkErr } = await admin
-          .from('invitations')
-          .update({ invited_user_id: invitedUserId })
-          .eq('id', invite.invitation_id);
-        if (linkErr) {
-          console.error(
-            '[platform][change-admin] link_invited_user_failed ' +
-              JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id, error: serializeError(linkErr) }),
-          );
-          Sentry.captureException(linkErr, { tags: { feature: 'platform', step: 'change_admin_link' } });
-        }
+      if (!invitedUserId) {
+        // #535: invite OK pero sin user.id → antes MUDO. Ruidoso + error al admin.
+        console.error(
+          '[platform][change-admin] invited_user_missing_id ' +
+            JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id }),
+        );
+        Sentry.captureMessage('[platform] inviteUserByEmail sin user.id (change-admin)', {
+          level: 'error',
+          tags: { feature: 'platform', step: 'change_admin_missing_id' },
+        });
+        return { error: 'generic' };
+      }
+      const { error: linkErr } = await admin
+        .from('invitations')
+        .update({ invited_user_id: invitedUserId })
+        .eq('id', invite.invitation_id);
+      if (linkErr) {
+        // #535: el enlazado falló → no entregar una invitación rota. Error al admin.
+        console.error(
+          '[platform][change-admin] link_invited_user_failed ' +
+            JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id, error: serializeError(linkErr) }),
+        );
+        Sentry.captureException(linkErr, { tags: { feature: 'platform', step: 'change_admin_link' } });
+        return { error: 'generic' };
       }
     }
   } catch (thrown) {
