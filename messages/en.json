@@ -430,6 +430,7 @@
     }
   },
   "invite": {
+    "switch_account_hint": "Not you? Sign out and use another account.",
     "title": "Accept invitation",
     "summary": "You've been invited to join {club} as {role}.",
     "invited_email_hint": "Invitation sent to {email}.",

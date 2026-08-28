@@ -430,6 +430,7 @@
     }
   },
   "invite": {
+    "switch_account_hint": "No ets tu? Tanca la sessió i fes servir un altre compte.",
     "title": "Acceptar invitació",
     "summary": "Et conviden a entrar al club {club} amb el rol {role}.",
     "invited_email_hint": "Invitació enviada a {email}.",
