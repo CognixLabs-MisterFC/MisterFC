@@ -99,5 +99,14 @@ export function chooseInviteForm(params: {
   if (invitedUserId !== null) {
     return 'set_password';
   }
+  // Cinturón anti-trampa (incidente invitación): cuenta NO reclamada que creamos
+  // (invite_pending) con sesión del magic link, pero cuyo `invited_user_id` NO quedó
+  // guardado en el envío. La SESIÓN es la cuenta a reclamar → set_password sobre ella,
+  // sin depender de invited_user_id. SEGURO: se exige `invitePending` + email de sesión
+  // coincidente, así una cuenta PREEXISTENTE (sin invite_pending) sigue yendo a
+  // 'sign_in' y NO se reabre el vector de secuestro de cuentas.
+  if (invitePending && sessionUserId !== null && sessionEmailMatches) {
+    return 'set_password';
+  }
   return 'sign_in';
 }

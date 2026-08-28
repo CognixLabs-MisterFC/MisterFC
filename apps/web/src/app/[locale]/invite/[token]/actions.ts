@@ -577,24 +577,47 @@ export async function acceptNewInvitee(
     if (!gate.ok) return { error: gate.error };
     const invitation = gate.invitation;
 
-    if (!invitation.invited_user_id) {
-      // Defensivo: la página solo debería enrutar aquí cuando hay cuenta no
-      // reclamada. Si llega sin invited_user_id es un invitee existente → debe
-      // iniciar sesión, no fijar contraseña (vector de secuestro). Abortamos.
+    const admin = createSupabaseAdminClient();
+    const adapter = await createCookieAdapter();
+    const supabase = createSupabaseServerClient(adapter);
+
+    // Cuenta a reclamar. Normalmente `invited_user_id` (la cuenta que creamos al
+    // enviar). CINTURÓN anti-trampa (incidente): si el enlazado falló en el envío
+    // (invited_user_id NULL) pero el invitado tiene sesión del magic link de una
+    // cuenta NO reclamada (invite_pending) de ESTE email, reclamamos esa sesión —
+    // así no queda atrapado. SEGURIDAD: solo con invite_pending + email coincidente;
+    // una cuenta PREEXISTENTE (sin invite_pending) NO entra aquí → sigue el flujo
+    // 'sign_in' (no se reabre el vector de secuestro de cuentas).
+    let targetUid = invitation.invited_user_id;
+    if (!targetUid) {
+      const { data: sessData } = await supabase.auth.getUser();
+      const su = sessData.user;
+      const suPending =
+        (su?.app_metadata as { invite_pending?: boolean } | undefined)?.invite_pending === true;
+      const suEmailMatches =
+        !!su?.email &&
+        su.email.trim().toLowerCase() === invitation.email.trim().toLowerCase();
+      if (su && suPending && suEmailMatches) {
+        targetUid = su.id;
+        logStep('flow=new recovered-target-from-session', { invitation_id: invitation.id });
+      }
+    }
+    if (!targetUid) {
+      // Defensivo/seguridad: sin cuenta reclamable (ni invited_user_id ni sesión no
+      // reclamada) → un invitee existente debe INICIAR SESIÓN, no fijar contraseña por
+      // el token (vector de secuestro). Abortamos.
       logError(
         'flow=new no-invited-user',
-        new Error('acceptNewInvitee on invitation without invited_user_id'),
+        new Error('acceptNewInvitee without invited_user_id nor unclaimed magic-link session'),
         { invitation_id: invitation.id },
       );
       return { error: 'auth_update_failed' };
     }
 
-    const admin = createSupabaseAdminClient();
-
     // Paso 1+2: fija contraseña + metadata + limpia invite_pending sobre la
-    // cuenta no reclamada que creamos para esta invitación.
+    // cuenta no reclamada (invited_user_id o la recuperada de la sesión).
     logStep('flow=new admin-set-password start', { invitation_id: invitation.id });
-    const { error: updErr } = await admin.auth.admin.updateUserById(invitation.invited_user_id, {
+    const { error: updErr } = await admin.auth.admin.updateUserById(targetUid, {
       password: parsed.data.password,
       user_metadata: {
         full_name: parsed.data.full_name,
@@ -615,7 +638,7 @@ export async function acceptNewInvitee(
       logStep('flow=new admin-set-password same-password-ignored', {
         invitation_id: invitation.id,
       });
-      await admin.auth.admin.updateUserById(invitation.invited_user_id, {
+      await admin.auth.admin.updateUserById(targetUid, {
         user_metadata: {
           full_name: parsed.data.full_name,
           date_of_birth: parsed.data.date_of_birth,
@@ -627,9 +650,7 @@ export async function acceptNewInvitee(
       logStep('flow=new admin-set-password ok', { invitation_id: invitation.id });
     }
 
-    // Paso 3: crea sesión con la contraseña recién fijada.
-    const adapter = await createCookieAdapter();
-    const supabase = createSupabaseServerClient(adapter);
+    // Paso 3: crea sesión con la contraseña recién fijada (cliente ya creado arriba).
     logStep('flow=new sign-in start', { invitation_id: invitation.id });
     const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
       email: invitation.email,

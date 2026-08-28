@@ -9,6 +9,7 @@ import {
   loadMedicalLegalDoc,
 } from './consent-data';
 import { AcceptForm, AcceptWithProfileForm, SignInToAcceptForm } from './accept-form';
+import { LogoutButton } from '@/components/shell/logout-button';
 
 type Props = {
   params: Promise<{ locale: string; token: string }>;
@@ -154,6 +155,17 @@ export default async function InvitePage({ params }: Props) {
             invitedEmail={inv.email}
             {...consentProps}
           />
+        )}
+
+        {/* Salida discreta (incidente invitación): si hay sesión y NO es la cuenta que
+            toca, permite cerrar sesión y usar otra — para no quedar atrapado como le
+            pasó a un admin al abrir un enlace de prueba. Secundaria (ghost + texto
+            pequeño), separada del CTA, para no confundir al invitado legítimo. */}
+        {user && (
+          <div className="mt-2 flex flex-col items-center gap-1 border-t border-white/10 pt-4 text-center">
+            <p className="text-xs text-zinc-500">{t('switch_account_hint')}</p>
+            <LogoutButton locale={locale} variant="ghost" />
+          </div>
         )}
       </div>
     </main>

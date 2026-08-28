@@ -909,6 +909,7 @@
     }
   },
   "invite": {
+    "switch_account_hint": "¿No eres tú? Cierra sesión y usa otra cuenta.",
     "title": "Aceptar invitación",
     "summary": "Te invitan a entrar al club {club} con el rol {role}.",
     "invited_email_hint": "Invitación enviada a {email}.",
