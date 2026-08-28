@@ -395,6 +395,28 @@
     "status_pending": "Pendent",
     "status_accepted": "Acceptada",
     "status_expired": "Caducada",
+    "by_team_title": "Per equip",
+    "sin_equipo": "Sense equip",
+    "open": "Veure",
+    "back": "Tornar",
+    "empty_filter": "No hi ha invitacions amb aquest filtre.",
+    "summary": {
+      "sent": "{count, plural, one {# enviada} other {# enviades}}",
+      "accepted": "{count, plural, one {# acceptada} other {# acceptades}}",
+      "expired": "{count, plural, one {# caducada} other {# caducades}}",
+      "pending": "{count, plural, one {# pendent} other {# pendents}}"
+    },
+    "filters": {
+      "all": "Totes",
+      "pending": "Pendents",
+      "expired": "Caducades",
+      "accepted": "Acceptades"
+    },
+    "date": {
+      "accepted": "Acceptada el {date}",
+      "expires": "Caduca el {date}",
+      "expired": "Va caducar el {date}"
+    },
     "form": {
       "email_label": "Correu",
       "email_placeholder": "persona@email.com",
@@ -405,6 +427,8 @@
       "role_entrenador_principal": "Entrenador principal",
       "role_entrenador_ayudante": "Entrenador ajudant",
       "role_jugador": "Jugador / Família",
+      "team_label": "Equip (opcional)",
+      "team_none": "Sense equip",
       "submit": "Enviar invitació",
       "submitting": "Enviant…",
       "ok": "Invitació enviada a {email}",

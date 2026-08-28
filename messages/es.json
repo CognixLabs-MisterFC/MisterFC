@@ -874,6 +874,28 @@
     "status_pending": "Pendiente",
     "status_accepted": "Aceptada",
     "status_expired": "Caducada",
+    "by_team_title": "Por equipo",
+    "sin_equipo": "Sin equipo",
+    "open": "Ver",
+    "back": "Volver",
+    "empty_filter": "No hay invitaciones con este filtro.",
+    "summary": {
+      "sent": "{count, plural, one {# enviada} other {# enviadas}}",
+      "accepted": "{count, plural, one {# aceptada} other {# aceptadas}}",
+      "expired": "{count, plural, one {# caducada} other {# caducadas}}",
+      "pending": "{count, plural, one {# pendiente} other {# pendientes}}"
+    },
+    "filters": {
+      "all": "Todas",
+      "pending": "Pendientes",
+      "expired": "Caducadas",
+      "accepted": "Aceptadas"
+    },
+    "date": {
+      "accepted": "Aceptada el {date}",
+      "expires": "Caduca el {date}",
+      "expired": "Caducó el {date}"
+    },
     "form": {
       "email_label": "Correo",
       "email_placeholder": "persona@email.com",
@@ -884,6 +906,8 @@
       "role_entrenador_principal": "Entrenador principal",
       "role_entrenador_ayudante": "Entrenador ayudante",
       "role_jugador": "Jugador / Familia",
+      "team_label": "Equipo (opcional)",
+      "team_none": "Sin equipo",
       "submit": "Enviar invitación",
       "submitting": "Enviando…",
       "ok": "Invitación enviada a {email}",

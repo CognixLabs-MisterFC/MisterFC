@@ -4,13 +4,22 @@ import { useActionState } from 'react';
 import { useTranslations } from 'next-intl';
 import { sendInvitation, type SendInvitationFormState } from './actions';
 
+export type InviteFormTeam = { id: string; name: string };
+
 export function InviteForm({
   locale,
   isOwner,
+  teams,
 }: {
   locale: string;
   /** F1B-3c — solo el owner del club puede invitar a un rol ALTO (director). */
   isOwner: boolean;
+  /**
+   * Equipos de la temporada activa para el selector OPCIONAL de equipo. La
+   * invitación queda atada al equipo elegido (o "Sin equipo" si no se elige).
+   * El equipo es opcional SIEMPRE, sea cual sea el rol (decisión Jose).
+   */
+  teams: InviteFormTeam[];
 }) {
   const t = useTranslations('invitations.form');
   const [state, formAction, isPending] = useActionState<
@@ -47,6 +56,23 @@ export function InviteForm({
           <option value="entrenador_principal">{t('role_entrenador_principal')}</option>
           <option value="entrenador_ayudante">{t('role_entrenador_ayudante')}</option>
           <option value="jugador">{t('role_jugador')}</option>
+        </select>
+      </label>
+
+      {/* Equipo OPCIONAL para cualquier rol. Vacío → invitación "Sin equipo". */}
+      <label className="flex flex-col gap-2 text-left">
+        <span className="text-sm font-medium text-zinc-200">{t('team_label')}</span>
+        <select
+          name="team_id"
+          defaultValue=""
+          className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-base text-white outline-none transition focus:border-[#10B981]"
+        >
+          <option value="">{t('team_none')}</option>
+          {teams.map((team) => (
+            <option key={team.id} value={team.id}>
+              {team.name}
+            </option>
+          ))}
         </select>
       </label>
 
