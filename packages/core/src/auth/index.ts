@@ -34,7 +34,9 @@ export { isSamePasswordError } from './password-errors';
 export {
   assertInvitationValid,
   chooseInviteForm,
+  isInvitePending,
   type InvitationVerdict,
   type InvitationGateRow,
   type InviteFormChoice,
+  type InvitePendingUser,
 } from './invitation-token';

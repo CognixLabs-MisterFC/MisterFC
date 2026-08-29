@@ -110,3 +110,28 @@ export function chooseInviteForm(params: {
   }
   return 'sign_in';
 }
+
+/** Forma mínima del `User` de Supabase que necesita el gate de invite_pending. */
+export type InvitePendingUser = {
+  user_metadata?: { invite_pending?: boolean } | null;
+} | null | undefined;
+
+/**
+ * Deriva el parámetro `invitePending` de `chooseInviteForm` a partir del User de
+ * la sesión.
+ *
+ * CLAVE (incidente invitación, ago-2026): el flag lo escribe
+ * `inviteUserByEmail(email, { data: { invite_pending: true } })` en
+ * **user_metadata** (`raw_user_meta_data`), NO en `app_metadata`. Leerlo de
+ * `app_metadata` (como hacía la page) devolvía SIEMPRE `false` — `app_metadata`
+ * nunca vale true: está sin poner antes de aceptar y a `false` tras aceptar — por
+ * lo que el cinturón anti-trampa quedaba INERTE en producción. Este helper lee el
+ * bucket correcto y se testea en aislamiento con la forma real del User.
+ *
+ * Nota: el envío pone `invite_pending=true` en user_metadata y el accept lo pone a
+ * `false` (limpieza), así que en el momento de /invite (pre-aceptación) este flag
+ * es señal viva: true = cuenta creada por invitación aún no reclamada.
+ */
+export function isInvitePending(user: InvitePendingUser): boolean {
+  return user?.user_metadata?.invite_pending === true;
+}
