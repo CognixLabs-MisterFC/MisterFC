@@ -9,6 +9,7 @@ import {
   assertInvitationValid,
   createSupabaseAdminClient,
   createSupabaseServerClient,
+  isInvitePending,
   isSamePasswordError,
   playerPhotoUploadSchema,
 } from '@misterfc/core';
@@ -592,8 +593,8 @@ export async function acceptNewInvitee(
     if (!targetUid) {
       const { data: sessData } = await supabase.auth.getUser();
       const su = sessData.user;
-      const suPending =
-        (su?.app_metadata as { invite_pending?: boolean } | undefined)?.invite_pending === true;
+      // El flag vive en user_metadata (no app_metadata): mismo bucket que lee la page.
+      const suPending = isInvitePending(su);
       const suEmailMatches =
         !!su?.email &&
         su.email.trim().toLowerCase() === invitation.email.trim().toLowerCase();
@@ -619,10 +620,14 @@ export async function acceptNewInvitee(
     logStep('flow=new admin-set-password start', { invitation_id: invitation.id });
     const { error: updErr } = await admin.auth.admin.updateUserById(targetUid, {
       password: parsed.data.password,
+      // invite_pending: false TAMBIÉN en user_metadata (GoTrue fusiona, no reemplaza):
+      // es el bucket que lee el gate. Sin esto quedaba stale=true y un usuario ya
+      // configurado, al aceptar una invitación adicional, se iría a set_password.
       user_metadata: {
         full_name: parsed.data.full_name,
         date_of_birth: parsed.data.date_of_birth,
         locale,
+        invite_pending: false,
       },
       app_metadata: { invite_pending: false },
     });
@@ -643,6 +648,7 @@ export async function acceptNewInvitee(
           full_name: parsed.data.full_name,
           date_of_birth: parsed.data.date_of_birth,
           locale,
+          invite_pending: false,
         },
         app_metadata: { invite_pending: false },
       });

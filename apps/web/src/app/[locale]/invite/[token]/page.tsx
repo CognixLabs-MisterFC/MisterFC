@@ -1,5 +1,5 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { getCurrentUser, chooseInviteForm } from '@misterfc/core';
+import { getCurrentUser, chooseInviteForm, isInvitePending } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadInvitationForPage, loadPendingInvitationsForEmail } from './invite-data';
 import {
@@ -68,8 +68,9 @@ export default async function InvitePage({ params }: Props) {
   const user = await getCurrentUser(adapter);
   const sessionEmailMatches =
     !!user?.email && user.email.trim().toLowerCase() === inv.email.trim().toLowerCase();
-  const invitePending =
-    (user?.app_metadata as { invite_pending?: boolean } | undefined)?.invite_pending === true;
+  // El flag vive en user_metadata (lo escribe inviteUserByEmail), NO en app_metadata.
+  // Leerlo del bucket correcto es lo que hace ENTRAR el cinturón anti-trampa (#535).
+  const invitePending = isInvitePending(user);
 
   const choice = chooseInviteForm({
     invitedUserId: inv.invited_user_id,

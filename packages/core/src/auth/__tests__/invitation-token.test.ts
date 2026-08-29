@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { assertInvitationValid, chooseInviteForm } from '../invitation-token';
+import {
+  assertInvitationValid,
+  chooseInviteForm,
+  isInvitePending,
+} from '../invitation-token';
 
 // Reloj fijo para tests deterministas.
 const NOW = Date.parse('2026-06-10T12:00:00.000Z');
@@ -166,5 +170,39 @@ describe('chooseInviteForm (B2b)', () => {
         invitePending: false,
       })
     ).toBe('sign_in');
+  });
+});
+
+describe('isInvitePending (cableado del cinturón #535)', () => {
+  it('flag en user_metadata → true (bucket correcto)', () => {
+    // Forma REAL del User invitado en prod: invite_pending en user_metadata,
+    // app_metadata sin el flag. Con la lectura vieja (app_metadata) esto daba
+    // false y el cinturón quedaba inerte: este caso lo habría cazado.
+    expect(
+      isInvitePending({
+        // @ts-expect-error forma parcial suficiente para el gate
+        app_metadata: {},
+        user_metadata: { invite_pending: true },
+      })
+    ).toBe(true);
+  });
+
+  it('flag SOLO en app_metadata → false (ya NO se lee ese bucket)', () => {
+    expect(
+      isInvitePending({
+        // @ts-expect-error forma parcial suficiente para el gate
+        app_metadata: { invite_pending: true },
+        user_metadata: {},
+      })
+    ).toBe(false);
+  });
+
+  it('user_metadata.invite_pending=false (cuenta ya reclamada) → false', () => {
+    expect(isInvitePending({ user_metadata: { invite_pending: false } })).toBe(false);
+  });
+
+  it('sin sesión (null/undefined) → false', () => {
+    expect(isInvitePending(null)).toBe(false);
+    expect(isInvitePending(undefined)).toBe(false);
   });
 });
