@@ -202,6 +202,16 @@ export function MembersScreen({
                         {tRole(m.club_role)}
                       </span>
                       <StatusLine leftAt={m.left_at} />
+                      {/* La explicación de por qué el admin no tiene baja vive AQUÍ,
+                          bajo el nombre, y NO en la celda de Acciones: con
+                          `whitespace-normal` parte línea en vez de empujar la tabla
+                          (el nowrap de TableCell la dejaba en una sola línea larga que
+                          desbordaba). Sin cambio funcional: sigue sin botón de baja. */}
+                      {m.club_role === 'admin_club' && (
+                        <span className="mt-1 max-w-xs whitespace-normal text-xs text-muted-foreground">
+                          {t('row.admin_note')}
+                        </span>
+                      )}
                       {isDireccion && m.assignments.length > 0 && (
                         <div className="mt-1 flex flex-col gap-1">
                           <span className="text-xs font-medium text-muted-foreground">
@@ -233,7 +243,11 @@ export function MembersScreen({
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-2">
+                    {/* `flex-wrap`: en pantallas estrechas (móvil) los botones
+                        envuelven a otra línea en vez de forzar scroll lateral —
+                        #530 añadió un 2º botón ("Agregar rol") en Dirección. Cuando
+                        caben (caso normal, y todo Cuerpo técnico) el render es idéntico. */}
+                    <div className="flex flex-wrap items-center justify-end gap-2">
                       {COACH_FICHA_ROLES.has(m.club_role) && (
                         <Button asChild variant="ghost" size="sm">
                           <Link href={`/cuerpo-tecnico/${m.membership_id}`}>
@@ -307,7 +321,11 @@ export function MembersScreen({
                             {t('familias.no_children')}
                           </span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">
+                          // Mismo defecto latente que la nota del admin: sin
+                          // `whitespace-normal`, una familia con varios hijos o
+                          // nombres de equipo largos desbordaría la tabla (nowrap de
+                          // TableCell). `break-words` por si un nombre no tiene espacios.
+                          <span className="max-w-sm whitespace-normal break-words text-xs text-muted-foreground">
                             {f.children
                               .map((c) =>
                                 c.team_name
