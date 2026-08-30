@@ -4,6 +4,25 @@ import type { createSupabaseAdminClient } from '@misterfc/core';
 type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
 
 /**
+ * CONTRATO (léelo antes de escribir un sender nuevo):
+ *   TODO sitio que llame a `admin.auth.admin.inviteUserByEmail(...)` y CREE la
+ *   cuenta (es decir, la rama SIN error / SIN fallback a resetPasswordForEmail)
+ *   DEBE enlazar después el `auth.users.id` en `invitations.invited_user_id`
+ *   llamando a esta función. Sin ese enlazado, chooseInviteForm no puede enrutar
+ *   al form set_password por id y el invitee cae en la trampa (lo tapa el cinturón
+ *   #539, pero se pierde el enlazado). NO basta con enviar el email.
+ *
+ *   Censo de senders (2026-08-30) — quien añada el 8º, que se sume aquí:
+ *     1 sendInvitation (invitations/actions.ts)      ✅ enlaza
+ *     2 sendOrRenewTutorInvitation (jugadores)       ✅ enlaza
+ *     3 inviteClubAdmin (platform/invite-club-admin) ✅ enlaza
+ *     4 changeClubAdmin (platform/change-club-admin) ✅ enlaza
+ *     5 inviteBatch (jugadores, import)              ✅ enlaza
+ *     6 inviteStaffToTeam (equipos/[teamId])         ✅ enlaza
+ *     7 performSpectatorInvite (core/spectators)     ⏳ pendiente (core+nativo)
+ *   El barrido de #540 buscó el `.update`, no el envío, y se le escaparon 5/6/7.
+ *   Para encontrarlos todos: `grep -rn inviteUserByEmail`, NO grep del update.
+ *
  * Enlaza `invitations.invited_user_id` y EXIGE que el UPDATE afecte exactamente
  * 1 fila.
  *

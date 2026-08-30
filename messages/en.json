@@ -1273,7 +1273,8 @@
         "reason": {
           "forbidden": "No permission",
           "insert_failed": "Creation error",
-          "send_failed": "Send error"
+          "send_failed": "Send error",
+          "link_failed": "Sent, link error"
         }
       },
       "close": "Close"

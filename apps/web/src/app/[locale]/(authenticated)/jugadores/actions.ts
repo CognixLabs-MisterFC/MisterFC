@@ -805,7 +805,7 @@ export type BatchInviteRow = {
   player_id: string;
   email: string;
   status: 'sent' | 'error';
-  /** Motivo cuando status='error' (forbidden | insert_failed | send_failed). */
+  /** Motivo cuando status='error' (forbidden | insert_failed | send_failed | link_failed). */
   reason?: string;
 };
 
@@ -842,6 +842,11 @@ export type BatchInviteResult = {
  *    sigue. Además, si el envío de un grupo falla, se BORRAN sus invitaciones recién
  *    insertadas para que el grupo vuelva a estar pendiente y sea reintentable (si no,
  *    quedarían "pendientes vigentes" bloqueando el reintento 7 días).
+ *  · Enlazado invited_user_id: cuando NOSOTROS creamos la cuenta, se enlaza su id en
+ *    TODAS las filas del grupo (un padre con N hijos = N invitaciones, una cuenta),
+ *    con el guard de #540. Si el enlazado falla la fila va a error 'link_failed' PERO
+ *    NO se borra: el email ya salió y borrar dejaría muerto su enlace; el invitado
+ *    completa igual vía el cinturón #539 (invite_pending en user_metadata).
  *
  * Permiso: admin_club o director (coordinador NO). La RLS de invitations reimpone
  * el gate en el insert.
@@ -958,9 +963,14 @@ export async function inviteBatch(
     const anchor = inserted[0]!;
     const redirectTo = `${proto}://${host}/${locale}/invite/${anchor.token}`;
     let sendReason: string | null = null;
+    // ¿Creamos NOSOTROS la cuenta en este envío? Solo entonces hay que enlazar
+    // invited_user_id. En el fallback "email ya existe" se deja NULL por diseño
+    // (invitee EXISTENTE: inicia sesión con su contraseña).
+    let createdAccount = false;
+    let invitedUserId: string | null = null;
 
     try {
-      const { error: invErr } = await admin.auth.admin.inviteUserByEmail(group.email, {
+      const { data: inviteData, error: invErr } = await admin.auth.admin.inviteUserByEmail(group.email, {
         redirectTo,
         data: { invite_pending: true, invitation_id: anchor.id },
       });
@@ -990,6 +1000,11 @@ export async function inviteBatch(
             extra: { club_id: clubId, invitation_id: anchor.id },
           });
         }
+      } else {
+        // Cuenta creada por nosotros → hay que enlazar invited_user_id en TODAS
+        // las filas del grupo (se hace más abajo, tras confirmar que el email salió).
+        createdAccount = true;
+        invitedUserId = inviteData?.user?.id ?? null;
       }
     } catch (thrown) {
       sendReason = 'send_failed';
@@ -1016,8 +1031,41 @@ export async function inviteBatch(
         rows.push({ player_id: r.player_id, email: group.email, status: 'error', reason: sendReason });
       }
     } else {
+      // El email SÍ salió (cuenta nueva o reset de cuenta preexistente): cuenta
+      // como enviado a efectos del resumen del lote.
       sentEmails++;
+
+      // Si creamos la cuenta pero el invite no devolvió user.id (#535), no hay id
+      // que enlazar: aviso a Sentry una vez y las filas van a error 'link_failed'.
+      if (createdAccount && !invitedUserId) {
+        Sentry.captureMessage('[invitations] inviteUserByEmail sin user.id (batch)', {
+          level: 'error',
+          tags: { feature: 'invitations', step: 'batch_invite_missing_id' },
+          extra: { club_id: clubId, invitation_id: anchor.id },
+        });
+      }
+
       for (const r of inserted) {
+        // Solo enlazamos cuando NOSOTROS creamos la cuenta y tenemos su id. En el
+        // fallback "email ya existe" no se enlaza (invited_user_id NULL por diseño).
+        if (createdAccount) {
+          if (!invitedUserId) {
+            rows.push({ player_id: r.player_id, email: group.email, status: 'error', reason: 'link_failed' });
+            continue;
+          }
+          // Enlaza y EXIGE 1 fila afectada (guard #540). OJO: el email YA salió; si
+          // el enlazado falla NO borramos la invitación (dejaría muerto el enlace del
+          // correo). Fila a error 'link_failed' (Sentry lo registra en linkInvitedUser)
+          // y el invitado completa igual vía el cinturón (#539). El lote no aborta.
+          const linkRes = await linkInvitedUser(admin, r.id, invitedUserId, {
+            feature: 'invitations',
+            step: 'batch_invite_link',
+          });
+          if (!linkRes.ok) {
+            rows.push({ player_id: r.player_id, email: group.email, status: 'error', reason: 'link_failed' });
+            continue;
+          }
+        }
         rows.push({ player_id: r.player_id, email: group.email, status: 'sent' });
       }
     }
