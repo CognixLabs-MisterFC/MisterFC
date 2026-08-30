@@ -11,6 +11,7 @@ import {
   type Role,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { linkInvitedUser } from '@/lib/link-invited-user';
 
 export type SendInvitationFormState = {
   error?: 'invalid_input' | 'forbidden' | 'no_club' | 'generic';
@@ -344,29 +345,14 @@ export async function sendInvitation(
         });
         return { error: 'generic' };
       }
-      const { error: linkErr } = await admin
-        .from('invitations')
-        .update({ invited_user_id: invitedUserId })
-        .eq('id', invite.id);
-      if (linkErr) {
-        // El enlazado FALLÓ. Sin invited_user_id la invitación es una trampa: mejor
-        // decirle al admin que reintente que entregar una invitación rota. Ruidoso
-        // + error al admin (antes se tragaba como no-fatal y se daba por enviada).
-        console.error(
-          '[invitations][invite-email] link_invited_user_failed ' +
-            JSON.stringify({
-              step: 'link_invited_user',
-              masked_email: maskedEmail,
-              invitation_id: invite.id,
-              error: serializeError(linkErr),
-            })
-        );
-        Sentry.captureException(linkErr, {
-          tags: { feature: 'invitations', step: 'link_invited_user' },
-          extra: { masked_email: maskedEmail, invitation_id: invite.id },
-        });
-        return { error: 'generic' };
-      }
+      // Enlaza y EXIGE 1 fila afectada: un UPDATE de cero filas no da error en
+      // PostgREST y dejaría invited_user_id NULL en silencio (raíz del incidente).
+      const linkRes = await linkInvitedUser(admin, invite.id, invitedUserId, {
+        feature: 'invitations',
+        step: 'link_invited_user',
+        maskedEmail,
+      });
+      if (!linkRes.ok) return { error: 'generic' };
       console.info('[invitations][invite-email] invited_user_linked', {
         masked_email: maskedEmail,
         invitation_id: invite.id,
