@@ -1273,7 +1273,8 @@
         "reason": {
           "forbidden": "Sense permís",
           "insert_failed": "Error en crear",
-          "send_failed": "Error en enviar"
+          "send_failed": "Error en enviar",
+          "link_failed": "Enviat, error en enllaçar"
         }
       },
       "close": "Tancar"

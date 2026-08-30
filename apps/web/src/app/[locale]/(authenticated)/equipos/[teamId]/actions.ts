@@ -10,6 +10,7 @@ import {
   type TeamStaffRole,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { linkInvitedUser } from '@/lib/link-invited-user';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Invitar staff a un equipo (F2.6)
@@ -128,7 +129,7 @@ export async function inviteStaffToTeam(
 
   const admin = createSupabaseAdminClient();
   try {
-    const { error: invErr } = await admin.auth.admin.inviteUserByEmail(
+    const { data: inviteData, error: invErr } = await admin.auth.admin.inviteUserByEmail(
       parsed.data.email,
       {
         redirectTo,
@@ -144,6 +145,8 @@ export async function inviteStaffToTeam(
         msg.includes('already exists');
 
       if (alreadyExists) {
+        // Email ya registrado → reset con el mismo redirectTo. invited_user_id se
+        // deja NULL por diseño (invitee EXISTENTE: inicia sesión con su contraseña).
         const { error: resetErr } =
           await supabase.auth.resetPasswordForEmail(parsed.data.email, {
             redirectTo,
@@ -162,6 +165,28 @@ export async function inviteStaffToTeam(
         });
         return { error: 'generic' };
       }
+    } else {
+      // Cuenta creada por nosotros → enlazamos su auth.users.id en
+      // invitations.invited_user_id (MISMO patrón que los demás senders, #540).
+      // chooseInviteForm lo usa para enrutar al form set_password; sin esto el
+      // invitee nuevo caía en la trampa.
+      const invitedUserId = inviteData?.user?.id ?? null;
+      if (!invitedUserId) {
+        // #535: invite OK pero sin user.id → ruidoso + error al admin para reintentar.
+        Sentry.captureMessage('[invitations] inviteUserByEmail sin user.id (staff)', {
+          level: 'error',
+          tags: { feature: 'invitations', step: 'invited_user_missing_id_staff' },
+          extra: { invitation_id: invite.id },
+        });
+        return { error: 'generic' };
+      }
+      // Enlaza y EXIGE 1 fila afectada: un UPDATE de cero filas no da error en
+      // PostgREST y dejaría invited_user_id NULL en silencio (raíz del incidente).
+      const linkRes = await linkInvitedUser(admin, invite.id, invitedUserId, {
+        feature: 'invitations',
+        step: 'link_invited_user_staff',
+      });
+      if (!linkRes.ok) return { error: 'generic' };
     }
   } catch (thrown) {
     Sentry.captureException(thrown, {
