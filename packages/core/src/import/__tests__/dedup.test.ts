@@ -61,7 +61,7 @@ describe('detectDuplicates', () => {
     expect(out[1]!.status).toBe('valid');
   });
 
-  it('jugador existente en BD marca la fila como duplicate_in_db con existing_player_id', () => {
+  it('jugador existente CON familia → duplicate_in_db (bloquea) con existing_player_id', () => {
     const rows = [{ ...make('Pepe', 'Gomez', '2010-05-15'), index: 0 }];
     const existing = [
       {
@@ -69,6 +69,7 @@ describe('detectDuplicates', () => {
         first_name: 'Pepe',
         last_name: 'Gomez',
         date_of_birth: '2010-05-15',
+        has_family: true,
       },
     ];
     const out = detectDuplicates(rows, existing);
@@ -78,21 +79,42 @@ describe('detectDuplicates', () => {
       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
     );
   });
+
+  it('jugador existente SIN familia → link (enlaza) con existing_player_id', () => {
+    const rows = [{ ...make('Pepe', 'Gomez', '2010-05-15'), index: 0 }];
+    const existing = [
+      {
+        id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+        first_name: 'Pepe',
+        last_name: 'Gomez',
+        date_of_birth: '2010-05-15',
+        has_family: false,
+      },
+    ];
+    const out = detectDuplicates(rows, existing);
+    expect(out[0]!.status).toBe('link');
+    expect(out[0]!.reason).toBe('linkable');
+    expect(out[0]!.existing_player_id).toBe(
+      'cccccccc-cccc-cccc-cccc-cccccccccccc'
+    );
+  });
 });
 
 describe('summarize', () => {
-  it('cuenta correctamente válidas/duplicadas/inválidas', () => {
+  it('cuenta correctamente válidas/enlazables/duplicadas/inválidas', () => {
     const rows = [
       { index: 0, status: 'valid' as const },
       { index: 1, status: 'valid' as const },
-      { index: 2, status: 'duplicate' as const },
-      { index: 3, status: 'invalid' as const },
+      { index: 2, status: 'link' as const },
+      { index: 3, status: 'duplicate' as const },
+      { index: 4, status: 'invalid' as const },
     ];
     expect(summarize(rows)).toEqual({
       valid: 2,
+      linkable: 1,
       duplicates: 1,
       invalid: 1,
-      total: 4,
+      total: 5,
     });
   });
 });
@@ -136,7 +158,7 @@ describe('detectDuplicates — last_name opcional (F2.9 hotfix 2026-05-30)', () 
     expect(out[1]!.reason).toBe('duplicate_in_file');
   });
 
-  it('jugador BD con last_name NULL y fila con last_name NULL → match', () => {
+  it('jugador BD con last_name NULL y fila con last_name NULL → match (CON familia → duplicate)', () => {
     const rows = [{ ...makeNullLast('Solo', '2010-05-15'), index: 0 }];
     const existing = [
       {
@@ -144,6 +166,7 @@ describe('detectDuplicates — last_name opcional (F2.9 hotfix 2026-05-30)', () 
         first_name: 'Solo',
         last_name: null,
         date_of_birth: '2010-05-15',
+        has_family: true,
       },
     ];
     const out = detectDuplicates(rows, existing);

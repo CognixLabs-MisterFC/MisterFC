@@ -1741,6 +1741,7 @@
     },
     "stats": {
       "valid": "Llestes per a crear",
+      "linkable": "Enllaçar (sense família)",
       "duplicates": "Duplicades (omeses)",
       "invalid": "No vàlides"
     },
@@ -1774,11 +1775,14 @@
     },
     "status": {
       "valid": "OK",
+      "link": "Enllaçar",
       "duplicate": "Duplicada",
       "invalid": "No vàlida"
     },
     "reason": {
       "duplicate_in_db": "ja existix en el club",
+      "linkable": "ja existix sense família — s'enllaça",
+      "link_failed": "no s'ha pogut enllaçar a l'equip",
       "duplicate_in_file": "duplicada en el fitxer",
       "first_name_required": "Falta el nom",
       "first_name_too_long": "Nom massa llarg",
@@ -1813,6 +1817,7 @@
     },
     "result": {
       "created": "Creats",
+      "linked": "Enllaçats",
       "skipped": "Duplicats",
       "failed": "Fallits",
       "download": "Descarregar informe CSV",

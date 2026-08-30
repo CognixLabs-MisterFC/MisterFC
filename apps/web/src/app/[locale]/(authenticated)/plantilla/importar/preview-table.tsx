@@ -110,9 +110,11 @@ function RowItem({
   const colorClass =
     row.status === 'valid'
       ? 'bg-emerald-950/40'
-      : row.status === 'duplicate'
-        ? 'bg-amber-950/40'
-        : 'bg-red-950/40';
+      : row.status === 'link'
+        ? 'bg-sky-950/40'
+        : row.status === 'duplicate'
+          ? 'bg-amber-950/40'
+          : 'bg-red-950/40';
   const reason = row.reason ? t(`reason.${row.reason}`) : '';
 
   const nameValue = str(raw.first_name);
@@ -186,9 +188,11 @@ function RowItem({
           className={`font-medium ${
             row.status === 'valid'
               ? 'text-emerald-200'
-              : row.status === 'duplicate'
-                ? 'text-amber-200'
-                : 'text-red-200'
+              : row.status === 'link'
+                ? 'text-sky-200'
+                : row.status === 'duplicate'
+                  ? 'text-amber-200'
+                  : 'text-red-200'
           }`}
         >
           {t(`status.${row.status}`)}

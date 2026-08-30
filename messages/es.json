@@ -1741,6 +1741,7 @@
     },
     "stats": {
       "valid": "Listas para crear",
+      "linkable": "Enlazar (sin familia)",
       "duplicates": "Duplicadas (omitidas)",
       "invalid": "Inválidas"
     },
@@ -1774,11 +1775,14 @@
     },
     "status": {
       "valid": "OK",
+      "link": "Enlazar",
       "duplicate": "Duplicada",
       "invalid": "Inválida"
     },
     "reason": {
       "duplicate_in_db": "ya existe en el club",
+      "linkable": "ya existe sin familia — se enlaza",
+      "link_failed": "no se pudo enlazar al equipo",
       "duplicate_in_file": "duplicada en el archivo",
       "first_name_required": "Falta nombre",
       "first_name_too_long": "Nombre demasiado largo",
@@ -1813,6 +1817,7 @@
     },
     "result": {
       "created": "Creados",
+      "linked": "Enlazados",
       "skipped": "Duplicados",
       "failed": "Fallidos",
       "download": "Descargar informe CSV",

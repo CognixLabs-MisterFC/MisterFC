@@ -127,11 +127,16 @@ export function ImportWizard({
   }
 
   function handleConfirm() {
-    const validRows = rows.filter((r) => r.status === 'valid' && r.data);
+    // Se envían las CREABLES (valid) y las ENLAZABLES (link): ambas llevan data y
+    // el servidor decide qué hacer con cada una (re-comprueba familia). Las
+    // `duplicate` (con familia) y `invalid` se quedan fuera.
+    const toSend = rows.filter(
+      (r) => (r.status === 'valid' || r.status === 'link') && r.data,
+    );
     setStep('confirming');
     startTransition(async () => {
       const res = await importPlayers({
-        rows: validRows.map((r) => r.data!),
+        rows: toSend.map((r) => r.data!),
         team_id: teamId,
       });
       setResult(res);
@@ -202,6 +207,7 @@ export function ImportWizard({
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-wrap gap-4 text-sm">
               <CountBadge color="green" count={stats.valid} label={t('stats.valid')} />
+              <CountBadge color="blue" count={stats.linkable} label={t('stats.linkable')} />
               <CountBadge
                 color="amber"
                 count={stats.duplicates}
@@ -249,8 +255,11 @@ export function ImportWizard({
                 <Button variant="ghost" onClick={handleReset}>
                   {t('action.back')}
                 </Button>
-                <Button onClick={handleConfirm} disabled={stats.valid === 0}>
-                  {t('action.confirm', { count: stats.valid })}
+                <Button
+                  onClick={handleConfirm}
+                  disabled={stats.valid + stats.linkable === 0}
+                >
+                  {t('action.confirm', { count: stats.valid + stats.linkable })}
                 </Button>
               </div>
             </div>
@@ -281,6 +290,7 @@ export function ImportWizard({
           <CardContent className="flex flex-col gap-4">
             <div className="flex flex-wrap gap-4 text-sm">
               <CountBadge color="green" count={result.created} label={t('result.created')} />
+              <CountBadge color="blue" count={result.linked} label={t('result.linked')} />
               <CountBadge
                 color="amber"
                 count={result.skipped_duplicates}
@@ -348,16 +358,18 @@ function CountBadge({
   count,
   label,
 }: {
-  color: 'green' | 'amber' | 'red';
+  color: 'green' | 'blue' | 'amber' | 'red';
   count: number;
   label: string;
 }) {
   const cls =
     color === 'green'
       ? 'border-emerald-700 bg-emerald-950/40 text-emerald-200'
-      : color === 'amber'
-        ? 'border-amber-700 bg-amber-950/40 text-amber-200'
-        : 'border-red-700 bg-red-950/40 text-red-200';
+      : color === 'blue'
+        ? 'border-sky-700 bg-sky-950/40 text-sky-200'
+        : color === 'amber'
+          ? 'border-amber-700 bg-amber-950/40 text-amber-200'
+          : 'border-red-700 bg-red-950/40 text-red-200';
   return (
     <span className={`flex items-baseline gap-2 rounded-md border px-3 py-2 ${cls}`}>
       <strong className="text-lg">{count}</strong>
@@ -381,8 +393,9 @@ function ParseErrorMessage({ error }: { error: ParseFileError }) {
 }
 
 /**
- * F14K-3 — de los recién importados (status='created' con player_id) saca la lista
- * de ids y un mapa player_id→nombre (desde las filas validadas) para el botón 1.
+ * F14K-3 — de los recién importados (status='created') y de los ENLAZADOS
+ * (status='linked'), ambos con player_id, saca la lista de ids y un mapa
+ * player_id→nombre (desde las filas validadas) para el botón de invitar.
  */
 function buildInviteTargets(
   rows: ValidatedRow[],
@@ -391,7 +404,7 @@ function buildInviteTargets(
   const ids: string[] = [];
   const nameById: Record<string, string> = {};
   for (const d of result.details) {
-    if (d.status !== 'created' || !d.player_id) continue;
+    if ((d.status !== 'created' && d.status !== 'linked') || !d.player_id) continue;
     ids.push(d.player_id);
     const src = rows[d.row_index]?.data;
     const first = src?.first_name?.trim() ?? '';

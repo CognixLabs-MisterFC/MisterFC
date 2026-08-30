@@ -1,11 +1,17 @@
 import { playerImportRowSchema, type PlayerImportRow } from './schema';
 
 /**
- * Estado por fila tras pasar por validación + dedup. La UI lo pinta como
- * verde/amarillo/rojo. La server action ignora las amarillas/rojas y solo
- * inserta `created`.
+ * Estado por fila tras pasar por validación + dedup. La UI lo pinta:
+ *  - `valid`     verde  → se creará.
+ *  - `link`      azul   → ya existe en el club SIN familia vinculada → se ENLAZA
+ *                         (no se crea duplicado; entra en el paso de invitar).
+ *  - `duplicate` ámbar  → ya existe CON familia → se BLOQUEA (como siempre).
+ *  - `invalid`   rojo   → no pasa validación.
+ * La server action procesa `valid` y `link`; ignora `duplicate`/`invalid`. El
+ * servidor es la AUTORIDAD: re-comprueba player_accounts al confirmar (el preview
+ * puede quedar rancio si una familia completó el alta entre medias).
  */
-export type RowStatus = 'valid' | 'duplicate' | 'invalid';
+export type RowStatus = 'valid' | 'link' | 'duplicate' | 'invalid';
 
 export type ValidatedRow = {
   index: number;
@@ -13,7 +19,7 @@ export type ValidatedRow = {
   data?: PlayerImportRow;
   /** Código corto i18n (ej: 'date_of_birth_required', 'duplicate_in_db'). */
   reason?: string;
-  /** Para `duplicate`, el id del player existente que matchea. */
+  /** Para `duplicate`/`link`, el id del player existente que matchea. */
   existing_player_id?: string;
 };
 
@@ -27,6 +33,12 @@ export type ExistingPlayer = {
   /** NULL permitido per F2.9 hotfix 2026-05-30 (last_name pasó a nullable). */
   last_name: string | null;
   date_of_birth: string;
+  /**
+   * ¿Tiene familia vinculada? (player_accounts no vacío — regla de #542). Decide
+   * bloquear (`duplicate`) vs enlazar (`link`) al casar identidad. La query del
+   * wizard lo deriva con `hasLinkedFamily`.
+   */
+  has_family: boolean;
 };
 
 /**
@@ -81,9 +93,12 @@ export function detectDuplicates(
   rows: ValidatedRow[],
   existing: ExistingPlayer[]
 ): ValidatedRow[] {
-  const existingKeys = new Map<string, string>();
+  const existingByKey = new Map<string, { id: string; hasFamily: boolean }>();
   for (const p of existing) {
-    existingKeys.set(dedupKey(p.first_name, p.last_name, p.date_of_birth), p.id);
+    existingByKey.set(dedupKey(p.first_name, p.last_name, p.date_of_birth), {
+      id: p.id,
+      hasFamily: p.has_family,
+    });
   }
 
   const seenInFile = new Set<string>();
@@ -95,14 +110,23 @@ export function detectDuplicates(
       row.data.last_name,
       row.data.date_of_birth
     );
-    const existingId = existingKeys.get(key);
-    if (existingId) {
-      return {
-        ...row,
-        status: 'duplicate',
-        reason: 'duplicate_in_db',
-        existing_player_id: existingId,
-      };
+    const match = existingByKey.get(key);
+    if (match) {
+      // Ya existe en el club. CON familia → bloquea (duplicate). SIN familia →
+      // enlaza (link). El servidor re-comprueba al confirmar (es la autoridad).
+      return match.hasFamily
+        ? {
+            ...row,
+            status: 'duplicate' as const,
+            reason: 'duplicate_in_db',
+            existing_player_id: match.id,
+          }
+        : {
+            ...row,
+            status: 'link' as const,
+            reason: 'linkable',
+            existing_player_id: match.id,
+          };
     }
     if (seenInFile.has(key)) {
       return { ...row, status: 'duplicate', reason: 'duplicate_in_file' };
@@ -206,17 +230,20 @@ export function applyTeamResolution(
  */
 export function summarize(rows: ValidatedRow[]): {
   valid: number;
+  linkable: number;
   duplicates: number;
   invalid: number;
   total: number;
 } {
   let valid = 0,
+    linkable = 0,
     duplicates = 0,
     invalid = 0;
   for (const r of rows) {
     if (r.status === 'valid') valid++;
+    else if (r.status === 'link') linkable++;
     else if (r.status === 'duplicate') duplicates++;
     else invalid++;
   }
-  return { valid, duplicates, invalid, total: rows.length };
+  return { valid, linkable, duplicates, invalid, total: rows.length };
 }
