@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/nextjs';
 import {
   buildTeamNameIndex,
   createSupabaseServerClient,
+  hasLinkedFamily,
   playerImportPayloadSchema,
   resolveTeamName,
   type PlayerImportRow,
@@ -20,13 +21,15 @@ export type ImportPlayersInput = {
 
 export type ImportRowDetail = {
   row_index: number;
-  status: 'created' | 'skipped' | 'failed';
+  status: 'created' | 'linked' | 'skipped' | 'failed';
   reason?: string;
   player_id?: string;
 };
 
 export type ImportResult = {
   created: number;
+  /** Reimportados que ya existían SIN familia → enlazados (no duplicados). */
+  linked: number;
   skipped_duplicates: number;
   failed: number;
   details: ImportRowDetail[];
@@ -49,6 +52,7 @@ export async function importPlayers(
   if (!parsed.success) {
     return {
       created: 0,
+      linked: 0,
       skipped_duplicates: 0,
       failed: 0,
       details: [],
@@ -60,6 +64,7 @@ export async function importPlayers(
   if (!ctx) {
     return {
       created: 0,
+      linked: 0,
       skipped_duplicates: 0,
       failed: 0,
       details: [],
@@ -75,6 +80,7 @@ export async function importPlayers(
   ) {
     return {
       created: 0,
+      linked: 0,
       skipped_duplicates: 0,
       failed: 0,
       details: [],
@@ -108,6 +114,7 @@ export async function importPlayers(
   );
 
   let created = 0;
+  let linked = 0;
   let skipped = 0;
   let failed = 0;
   const details: ImportRowDetail[] = [];
@@ -120,7 +127,10 @@ export async function importPlayers(
     // SÍ trae, ilike sobre last_name.
     let dupQuery = supabase
       .from('players')
-      .select('id')
+      // player_accounts (familia) + team_members (equipo activo) para decidir, al
+      // casar identidad, bloquear (con familia) vs enlazar (sin familia) sin mover
+      // de equipo. El servidor es la AUTORIDAD: re-lee player_accounts aquí.
+      .select('id, player_accounts(profile_id), team_members(left_at)')
       .eq('club_id', clubId)
       .ilike('first_name', row.first_name)
       .eq('date_of_birth', row.date_of_birth);
@@ -131,8 +141,55 @@ export async function importPlayers(
     }
     const { data: dup } = await dupQuery.maybeSingle();
     if (dup?.id) {
-      skipped++;
-      details.push({ row_index: i, status: 'skipped', reason: 'duplicate_in_db' });
+      const accounts =
+        (dup.player_accounts as unknown as Array<{ profile_id: string }> | null) ?? [];
+      // CON familia → BLOQUEA como siempre (esto NO se toca).
+      if (hasLinkedFamily(accounts)) {
+        skipped++;
+        details.push({ row_index: i, status: 'skipped', reason: 'duplicate_in_db' });
+        continue;
+      }
+      // SIN familia → ENLAZA: no crea duplicado; entra en el paso de invitar.
+      // Equipo: se añade al del fichero SOLO si el jugador NO tiene ninguno activo
+      // (Jose: un jugador ya en un equipo NO se mueve, aunque el fichero diga otro).
+      const tms =
+        (dup.team_members as unknown as Array<{ left_at: string | null }> | null) ?? [];
+      const hasActiveTeam = tms.some((tm) => tm.left_at == null);
+      if (!hasActiveTeam) {
+        const resolution = resolveTeamName(row.team, teamIndex);
+        let linkTeamId: string;
+        if (resolution.kind === 'resolved') {
+          linkTeamId = resolution.teamId;
+        } else if (resolution.kind === 'none') {
+          if (!team_id) {
+            failed++;
+            details.push({ row_index: i, status: 'failed', reason: 'team_required' });
+            continue;
+          }
+          linkTeamId = team_id;
+        } else {
+          failed++;
+          details.push({ row_index: i, status: 'failed', reason: 'team_not_found' });
+          continue;
+        }
+        const { error: tmErr } = await supabase.from('team_members').insert({
+          player_id: dup.id,
+          team_id: linkTeamId,
+        });
+        // Si el enlace (única escritura del enlazado) falla, la fila va a error;
+        // el lote NO aborta y las demás siguen (como #541).
+        if (tmErr) {
+          failed++;
+          details.push({ row_index: i, status: 'failed', reason: 'link_failed' });
+          Sentry.captureException(tmErr, {
+            tags: { feature: 'import', step: 'link_team_members_insert' },
+            extra: { row_index: i, player_id: dup.id, team_id: linkTeamId },
+          });
+          continue;
+        }
+      }
+      linked++;
+      details.push({ row_index: i, status: 'linked', player_id: dup.id as string });
       continue;
     }
 
@@ -224,5 +281,5 @@ export async function importPlayers(
   revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
   revalidatePath('/[locale]/(authenticated)/plantilla/importar', 'page');
 
-  return { created, skipped_duplicates: skipped, failed, details };
+  return { created, linked, skipped_duplicates: skipped, failed, details };
 }

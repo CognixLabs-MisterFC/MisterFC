@@ -1741,6 +1741,7 @@
     },
     "stats": {
       "valid": "Ready to create",
+      "linkable": "Link (no family)",
       "duplicates": "Duplicates (skipped)",
       "invalid": "Invalid"
     },
@@ -1774,11 +1775,14 @@
     },
     "status": {
       "valid": "OK",
+      "link": "Link",
       "duplicate": "Duplicate",
       "invalid": "Invalid"
     },
     "reason": {
       "duplicate_in_db": "already exists in the club",
+      "linkable": "already exists without family — will link",
+      "link_failed": "could not link to team",
       "duplicate_in_file": "duplicate in the file",
       "first_name_required": "Missing name",
       "first_name_too_long": "Name too long",
@@ -1813,6 +1817,7 @@
     },
     "result": {
       "created": "Created",
+      "linked": "Linked",
       "skipped": "Duplicates",
       "failed": "Failed",
       "download": "Download CSV report",

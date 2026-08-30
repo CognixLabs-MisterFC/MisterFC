@@ -3,6 +3,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import {
   STAFF_ROLES,
   createSupabaseServerClient,
+  hasLinkedFamily,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
@@ -60,20 +61,26 @@ export default async function ImportPlayersPage({ params }: Props) {
     category_name: (t.categories as unknown as { name: string }).name,
   }));
 
-  // Jugadores existentes (solo claves para el dedup en cliente). Tope 5000
-  // para que el payload no se dispare en clubs grandes.
+  // Jugadores existentes (claves para el dedup en cliente + si tienen familia
+  // vinculada, para el preview de "enlazar vs bloquear"). Tope 5000 para que el
+  // payload no se dispare en clubs grandes. El servidor re-comprueba al confirmar.
   const { data: existingData } = await supabase
     .from('players')
-    .select('id, first_name, last_name, date_of_birth')
+    .select('id, first_name, last_name, date_of_birth, player_accounts(profile_id)')
     .eq('club_id', ctx.activeClub.club.id)
     .limit(5000);
-  const existing = (existingData ?? []) as Array<{
-    id: string;
-    first_name: string;
+  const existing = (existingData ?? []).map((p) => ({
+    id: p.id as string,
+    first_name: p.first_name as string,
     /** Nullable per F2.9 hotfix 2026-05-30. */
-    last_name: string | null;
-    date_of_birth: string;
-  }>;
+    last_name: p.last_name as string | null,
+    date_of_birth: p.date_of_birth as string,
+    // has_family: regla de #542 (player_accounts no vacío). El preview lo usa para
+    // clasificar; la decisión firme la toma el servidor.
+    has_family: hasLinkedFamily(
+      (p.player_accounts as unknown as Array<{ profile_id: string }> | null) ?? [],
+    ),
+  }));
 
   const t = await getTranslations('import');
 
