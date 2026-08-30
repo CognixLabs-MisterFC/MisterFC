@@ -19,6 +19,7 @@ import {
   updatePlayerSchema,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { linkInvitedUser } from '@/lib/link-invited-user';
 import { performSpectatorInvite } from '@/lib/invite-spectator';
 import { loadPendingInvitePlayers } from './queries';
 
@@ -293,18 +294,13 @@ async function sendOrRenewTutorInvitation(
         });
         return { error: 'generic' };
       }
-      const { error: linkErr } = await admin
-        .from('invitations')
-        .update({ invited_user_id: invitedUserId })
-        .eq('id', invite.id);
-      if (linkErr) {
-        // #535: el enlazado falló → no entregar una invitación rota. Error al admin.
-        Sentry.captureException(linkErr, {
-          tags: { feature: 'invitations', step: 'link_invited_user_tutor' },
-          extra: { invitation_id: invite.id },
-        });
-        return { error: 'generic' };
-      }
+      // Enlaza y EXIGE 1 fila afectada: un UPDATE de cero filas no da error en
+      // PostgREST y dejaría invited_user_id NULL en silencio (raíz del incidente).
+      const linkRes = await linkInvitedUser(admin, invite.id, invitedUserId, {
+        feature: 'invitations',
+        step: 'link_invited_user_tutor',
+      });
+      if (!linkRes.ok) return { error: 'generic' };
     }
   } catch (thrown) {
     Sentry.captureException(thrown, {
