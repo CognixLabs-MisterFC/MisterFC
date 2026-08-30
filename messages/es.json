@@ -1526,7 +1526,11 @@
     "subtitle": "Listado global del club con filtros y asignación individual.",
     "empty_filtered": "No hay jugadores que coincidan con estos filtros.",
     "no_team": "Sin equipo",
-    "has_account": "Cuenta vinculada",
+    "family_link": {
+      "invited": "Invitación pendiente",
+      "uninvited": "Sin invitar",
+      "hint": "No recibe convocatorias ni avisos"
+    },
     "left_club_badge": "Baja",
     "age_years_short": "{age} años",
     "table": {

@@ -18,6 +18,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
+import { deriveFamilyLinkStatus, type FamilyLinkStatus } from '../players/family-link';
 
 type DbClient = SupabaseClient<Database>;
 
@@ -31,7 +32,11 @@ export type ClubPlayerRow = {
   currentTeamId: string | null;
   currentTeamName: string | null;
   currentTeamColor: string | null;
-  hasAccount: boolean;
+  /**
+   * Vínculo con la familia (Slice A). `linked` recibe avisos; `invited`/`uninvited`
+   * NO reciben nada. Solo presentación — no gatea convocatoria/asistencia/stats.
+   */
+  familyLink: FamilyLinkStatus;
 };
 
 export async function getClubPlayersFromClient(
@@ -43,7 +48,8 @@ export async function getClubPlayersFromClient(
     .select(
       `id, first_name, last_name, date_of_birth, dorsal, position_main,
        team_members!left(team_id, left_at, teams(id, name, color)),
-       player_accounts(profile_id)`
+       player_accounts(profile_id),
+       invitations(accepted_at, expires_at)`
     )
     .eq('club_id', clubId)
     // Suprimidos (derecho al olvido) y bajas del club fuera del directorio.
@@ -63,6 +69,11 @@ export async function getClubPlayersFromClient(
     const active = tms.find((tm) => tm.left_at == null && tm.teams);
     const accounts =
       (p.player_accounts as unknown as Array<{ profile_id: string }> | null) ?? [];
+    const invites =
+      (p.invitations as unknown as Array<{
+        accepted_at: string | null;
+        expires_at: string | null;
+      }> | null) ?? [];
     return {
       id: p.id as string,
       firstName: (p.first_name as string) ?? '',
@@ -73,7 +84,7 @@ export async function getClubPlayersFromClient(
       currentTeamId: active?.teams?.id ?? null,
       currentTeamName: active?.teams?.name ?? null,
       currentTeamColor: active?.teams?.color ?? null,
-      hasAccount: accounts.length > 0,
+      familyLink: deriveFamilyLinkStatus({ accounts, invites }),
     };
   });
 }
