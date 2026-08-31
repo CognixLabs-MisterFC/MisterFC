@@ -473,6 +473,11 @@ export async function cancelInvitation(
   revalidatePath(`/${locale}/invitations/${invite.team_id ?? 'sin-equipo'}`);
   if (invite.team_id) revalidatePath(`/${locale}/equipos/${invite.team_id}`);
   if (invite.player_id) revalidatePath(`/${locale}/jugadores/${invite.player_id}`);
+  // La PLANTILLA (lista) muestra el marcador de familia (#542): al cancelar una
+  // invitación pendiente el jugador pasa de "invitación pendiente" a "sin invitar"
+  // (regla family-link: sin player_accounts y sin invitación vigente → uninvited).
+  // Revalidarla para que se vea sin recargar. Convención de jugadores/actions.ts.
+  revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
 
   return { ok: { email: invite.email } };
 }
