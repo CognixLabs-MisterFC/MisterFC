@@ -1526,9 +1526,8 @@
     "subtitle": "Club-wide list with filters and individual assignment.",
     "empty_filtered": "No players match these filters.",
     "no_team": "No team",
-    "family_link": {
-      "invited": "Invitation pending",
-      "uninvited": "Not invited",
+    "no_app": {
+      "label": "No app",
       "hint": "Gets no call-ups or alerts"
     },
     "left_club_badge": "Left club",

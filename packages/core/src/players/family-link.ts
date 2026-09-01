@@ -1,61 +1,30 @@
 /**
- * F14 — Estado del vínculo con la FAMILIA de un jugador (Slice A).
+ * F14 — ¿La familia de un jugador ha entrado en la app?
  *
- * Deriva de dos hechos que los loaders ya tienen a mano, SIN columna nueva:
- *  - `player_accounts` del jugador → una familia COMPLETÓ el alta.
- *  - invitación pendiente VIGENTE → correo enviado, sin aceptar y sin expirar.
+ * SEÑAL, sin columna nueva: `player_accounts` del jugador. Si está vacío, ninguna
+ * familia completó el alta → hoy NO recibe convocatorias ni avisos (los fan-outs
+ * de convocatorias/anuncios/mensajes/recordatorios resuelven destinatarios vía
+ * `player_accounts`). El marcador solo lo NOMBRA.
  *
- * Tres estados:
- *  - `linked`    → hay familia vinculada. Recibe convocatorias y avisos.
- *  - `invited`   → sin familia, pero hay invitación pendiente (se envió, no entró).
- *  - `uninvited` → sin familia y sin invitación (nunca se le mandó).
+ * UN SOLO MARCADOR — "Sin app" (decisión Jose, 2026-09-01). Antes eran dos
+ * ("Invitación pendiente" vs "Sin invitar"), lo que obligaba a leer también
+ * `invitations`. Se descartó: la RLS de `invitations` solo la deja leer a
+ * admin_club/director y al entrenador PRINCIPAL del equipo, así que a un ayudante
+ * o a un coordinador el marcador le habría MENTIDO ("Sin invitar" sobre un jugador
+ * con invitación pendiente), y ampliar esa policy quedó descartado. Con un solo
+ * marcador basta `player_accounts`, que sí lee todo el cuerpo técnico: el dato es
+ * el mismo para todos los roles. Y el texto es exacto: la web se retira cuando la
+ * app esté lista, así que sin familia vinculada = sin app.
  *
- * SOLO PRESENTACIÓN: nada gatea convocatoria/asistencia/estadísticas por esto.
- * Un jugador `invited`/`uninvited` se convoca, se le pasa lista y se le llevan
- * stats EXACTAMENTE igual que uno `linked`. Lo único cierto es que hoy NO recibe
- * convocatorias ni avisos (los fan-outs resuelven destinatarios vía
- * `player_accounts`); este estado solo lo hace visible. `invited` vs `uninvited`
- * le dice al club a quién le falta invitar.
+ * SOLO PRESENTACIÓN: nada gatea convocatoria/asistencia/estadísticas por esto. Un
+ * jugador "Sin app" se convoca, se le pasa lista y se le llevan stats igual que
+ * uno con familia. El importador (#543) usa esta misma regla, pero para ENLAZAR,
+ * no para pintar.
  */
-export type FamilyLinkStatus = 'linked' | 'invited' | 'uninvited';
 
 /** ¿Alguna familia completó el alta? (basta con que exista alguna player_account). */
 export function hasLinkedFamily(
   accounts: ReadonlyArray<unknown> | null | undefined,
 ): boolean {
   return (accounts?.length ?? 0) > 0;
-}
-
-/** Invitación VIGENTE = sin aceptar (`accepted_at` nulo) y sin expirar a `now`. */
-export function hasPendingInvite(
-  invites:
-    | ReadonlyArray<{ accepted_at?: string | null; expires_at?: string | null }>
-    | null
-    | undefined,
-  now: Date = new Date(),
-): boolean {
-  return (invites ?? []).some(
-    (i) =>
-      i.accepted_at == null &&
-      (i.expires_at == null || new Date(i.expires_at) > now),
-  );
-}
-
-/**
- * Deriva el estado de vínculo. `linked` manda sobre `invited`, e `invited` sobre
- * `uninvited`. Punto ÚNICO de la regla: web (plantilla/ficha) y nativo (dirección)
- * la llaman en vez de reimplementar `accounts.length > 0`.
- */
-export function deriveFamilyLinkStatus(args: {
-  accounts: ReadonlyArray<unknown> | null | undefined;
-  invites:
-    | ReadonlyArray<{ accepted_at?: string | null; expires_at?: string | null }>
-    | null
-    | undefined;
-  now?: Date;
-}): FamilyLinkStatus {
-  if (hasLinkedFamily(args.accounts)) return 'linked';
-  return hasPendingInvite(args.invites, args.now ?? new Date())
-    ? 'invited'
-    : 'uninvited';
 }

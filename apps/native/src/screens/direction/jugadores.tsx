@@ -12,7 +12,7 @@ import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { ListCard } from '@/screens/staff/hub-parts';
 import { DirectoryFilters, foldForSearch, type FilterTeam } from '@/ui/directory-filters';
-import { FamilyLinkBadge } from '@/ui/family-link-badge';
+import { NoAppBadge } from '@/ui/no-app-badge';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -136,16 +136,14 @@ export function DireccionJugadoresScreen() {
                 {p.currentTeamName ?? t('jugadores.no_team')}
                 {p.positionMain ? ` · ${t(`jugadores.positions.${p.positionMain}`)}` : ''}
               </Text>
-              <View className="pl-10">
-                <FamilyLinkBadge
-                  status={p.familyLink}
-                  labels={{
-                    invited: t('jugadores.family_link.invited'),
-                    uninvited: t('jugadores.family_link.uninvited'),
-                    hint: t('jugadores.family_link.hint'),
-                  }}
-                />
-              </View>
+              {p.noApp ? (
+                <View className="pl-10">
+                  <NoAppBadge
+                    label={t('jugadores.no_app.label')}
+                    hint={t('jugadores.no_app.hint')}
+                  />
+                </View>
+              ) : null}
             </ListCard>
           ))
         )}

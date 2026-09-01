@@ -39,6 +39,7 @@ import { RepublishBanner } from '../_components/republish-banner';
 import { ResponseButtons } from '../_components/response-buttons';
 import { DecisionButtons } from '../_components/decision-buttons';
 import { SharedLineupSection } from '@/components/match/shared-lineup-section';
+import { NoAppBadge } from '@/components/no-app-badge';
 import { loadCallupDetail } from '../queries';
 import type { Role } from '../../jugadores/queries';
 
@@ -101,6 +102,8 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
   const tResponse = await getTranslations('convocatorias.response');
   const tDecision = await getTranslations('convocatorias.decision');
   const tPromo = await getTranslations('promotions');
+  // Slice C — etiquetas del marcador "Sin app" (mismas keys que la plantilla).
+  const tNoApp = await getTranslations('jugadores.no_app');
 
   const {
     event,
@@ -409,6 +412,16 @@ export default async function ConvocatoriaDetailPage({ params }: Props) {
                                 ? tPromo('badge_from', { team: p.from_team_name })
                                 : tPromo('badge')}
                             </Badge>
+                          )}
+                          {/* Slice C — la familia de este jugador NO recibe la
+                              convocatoria (ni el aviso al publicar). Solo se
+                              pinta en la vista del cuerpo técnico. */}
+                          {p.no_app && (
+                            <NoAppBadge
+                              label={tNoApp('label')}
+                              hint={tNoApp('hint')}
+                              showHint={false}
+                            />
                           )}
                         </span>
                         <span className="flex items-center gap-2 text-xs text-muted-foreground">

@@ -6,6 +6,7 @@ import {
   STAFF_ROLES,
   createSupabaseServerClient,
   formatPlayerName,
+  getPlayersWithoutAppFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -21,6 +22,7 @@ import {
 import { InviteStaffDialog } from './invite-staff-dialog';
 import { RemoveStaffButton } from './remove-staff-button';
 import { CancelInvitationButton } from '../../invitations/cancel-invitation-button';
+import { NoAppBadge } from '@/components/no-app-badge';
 
 type Props = {
   params: Promise<{ locale: string; teamId: string }>;
@@ -138,6 +140,21 @@ export default async function TeamDetailPage({ params }: Props) {
 
   const staff = (staffRows ?? []) as unknown as StaffRow[];
   const roster = (rosterRows ?? []) as unknown as RosterRow[];
+
+  // Slice B — marcador "Sin app" en el roster. SOLO para el cuerpo técnico: es la
+  // misma audiencia que la plantilla de /jugadores y la única con RLS para leer
+  // `player_accounts`. Un tutor que llegue por URL a esta página no lo pide (leería
+  // 0 filas y saldrían TODOS marcados, que es falso).
+  const canSeeNoApp = STAFF_ROLES.includes(ctx.activeClub.role);
+  const noAppIds = new Set(
+    canSeeNoApp
+      ? await getPlayersWithoutAppFromClient(
+          supabase,
+          roster.map((r) => r.players.id)
+        )
+      : []
+  );
+
   // Server component: render una vez por request, sin re-renders. La regla
   // react-hooks/purity es over-protective aquí; el cálculo de "expirada" es
   // determinista para el snapshot del request.
@@ -291,38 +308,48 @@ export default async function TeamDetailPage({ params }: Props) {
             <p className="text-sm text-muted-foreground">{t('roster_empty')}</p>
           ) : (
             <ul className="flex flex-col divide-y divide-border">
-              {roster.map((r) => (
-                <li
-                  key={r.id}
-                  className="flex items-center justify-between gap-3 py-2"
-                >
-                  <Link
-                    href={`/jugadores/${r.players.id}`}
-                    className="flex flex-1 items-center gap-3 hover:opacity-90"
+              {roster.map((r) => {
+                const noApp = noAppIds.has(r.players.id);
+                return (
+                  <li
+                    key={r.id}
+                    className="flex items-center justify-between gap-3 py-2"
                   >
-                    <div className="flex min-w-0 flex-col">
-                      <span className="truncate font-medium">
-                        {formatPlayerName(r.players.first_name, r.players.last_name)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {tCat('age_years', {
-                          age: ageFromDob(r.players.date_of_birth),
-                        })}
-                        {r.position_in_team
-                          ? ` · ${tCat(`positions.${r.position_in_team}`)}`
-                          : r.players.position_main
-                            ? ` · ${tCat(`positions.${r.players.position_main}`)}`
-                            : ''}
-                      </span>
-                    </div>
-                  </Link>
-                  {(r.dorsal_in_team ?? r.players.dorsal) != null && (
-                    <Badge variant="secondary">
-                      #{r.dorsal_in_team ?? r.players.dorsal}
-                    </Badge>
-                  )}
-                </li>
-              ))}
+                    <Link
+                      href={`/jugadores/${r.players.id}`}
+                      className="flex flex-1 items-center gap-3 hover:opacity-90"
+                    >
+                      <div className="flex min-w-0 flex-col">
+                        <span className="truncate font-medium">
+                          {formatPlayerName(r.players.first_name, r.players.last_name)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {tCat('age_years', {
+                            age: ageFromDob(r.players.date_of_birth),
+                          })}
+                          {r.position_in_team
+                            ? ` · ${tCat(`positions.${r.position_in_team}`)}`
+                            : r.players.position_main
+                              ? ` · ${tCat(`positions.${r.players.position_main}`)}`
+                              : ''}
+                        </span>
+                        {noApp && (
+                          <NoAppBadge
+                            label={tCat('no_app.label')}
+                            hint={tCat('no_app.hint')}
+                            showHint={false}
+                          />
+                        )}
+                      </div>
+                    </Link>
+                    {(r.dorsal_in_team ?? r.players.dorsal) != null && (
+                      <Badge variant="secondary">
+                        #{r.dorsal_in_team ?? r.players.dorsal}
+                      </Badge>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </CardContent>

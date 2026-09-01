@@ -1526,9 +1526,8 @@
     "subtitle": "Listado global del club con filtros y asignación individual.",
     "empty_filtered": "No hay jugadores que coincidan con estos filtros.",
     "no_team": "Sin equipo",
-    "family_link": {
-      "invited": "Invitación pendiente",
-      "uninvited": "Sin invitar",
+    "no_app": {
+      "label": "Sin app",
       "hint": "No recibe convocatorias ni avisos"
     },
     "left_club_badge": "Baja",

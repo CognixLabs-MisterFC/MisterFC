@@ -1526,9 +1526,8 @@
     "subtitle": "Llistat global del club amb filtres i assignació individual.",
     "empty_filtered": "No hi ha jugadors que coincidisquen amb estos filtres.",
     "no_team": "Sense equip",
-    "family_link": {
-      "invited": "Invitació pendent",
-      "uninvited": "Sense convidar",
+    "no_app": {
+      "label": "Sense app",
       "hint": "No rep convocatòries ni avisos"
     },
     "left_club_badge": "Baixa",

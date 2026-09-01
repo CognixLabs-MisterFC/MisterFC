@@ -25,8 +25,7 @@ import {
   summarizePendingInvites,
   type PendingInviteCandidate,
   type PendingInviteSummary,
-  deriveFamilyLinkStatus,
-  type FamilyLinkStatus,
+  hasLinkedFamily,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { getActiveSeasonLabel } from '@/lib/active-season';
@@ -55,11 +54,11 @@ export type PlayerRow = {
   current_category_name: string | null;
   current_category_season: string | null;
   /**
-   * Vínculo con la familia (Slice A). `linked` recibe convocatorias y avisos;
-   * `invited` (invitación pendiente) y `uninvited` (sin invitar) NO reciben nada.
-   * Solo presentación — no gatea convocatoria/asistencia/estadísticas.
+   * `true` = la familia NO ha entrado en la app, así que NO recibe convocatorias ni
+   * avisos (marcador "Sin app"). Solo presentación — no gatea convocatoria/
+   * asistencia/estadísticas.
    */
-  family_link: FamilyLinkStatus;
+  no_app: boolean;
   /** Rework C (C11a): jugador dado de baja del club (left_club_at no nulo). */
   is_left_club: boolean;
 };
@@ -315,8 +314,7 @@ export async function loadGlobalPlayers(
     .select(
       `id, first_name, last_name, date_of_birth, dorsal, position_main, left_club_at,
        team_members!left(team_id, left_at, teams(id, name, color, season, categories(id, name))),
-       player_accounts(profile_id),
-       invitations(accepted_at, expires_at)`,
+       player_accounts(profile_id)`,
       { count: 'exact' }
     )
     .eq('club_id', clubId)
@@ -379,11 +377,6 @@ export async function loadGlobalPlayers(
     const tms = (p.team_members as unknown as TMRow[] | null) ?? [];
     const active = tms.find((tm) => tm.left_at == null && tm.teams);
     const accounts = (p.player_accounts as unknown as Array<{ profile_id: string }> | null) ?? [];
-    const invites =
-      (p.invitations as unknown as Array<{
-        accepted_at: string | null;
-        expires_at: string | null;
-      }> | null) ?? [];
     return {
       id: p.id as string,
       first_name: p.first_name as string,
@@ -397,7 +390,7 @@ export async function loadGlobalPlayers(
       current_category_id: active?.teams?.categories?.id ?? null,
       current_category_name: active?.teams?.categories?.name ?? null,
       current_category_season: active?.teams?.season ?? null,
-      family_link: deriveFamilyLinkStatus({ accounts, invites }),
+      no_app: !hasLinkedFamily(accounts),
       is_left_club: (p.left_club_at as string | null) != null,
     };
   });

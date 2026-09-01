@@ -15,7 +15,7 @@ import {
   type MatchStatsByType,
   type AttendanceRow,
   type RatingTimelinePoint,
-  deriveFamilyLinkStatus,
+  hasLinkedFamily,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadPlayerCareer } from '@/lib/player-career';
@@ -26,7 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AssignTeamDialog } from '../_components/assign-team-dialog';
 import { InviteTutorDialog } from './invite-tutor-dialog';
-import { FamilyLinkBadge } from '../_components/family-link-badge';
+import { NoAppBadge } from '@/components/no-app-badge';
 import { CancelInvitationButton } from '../../invitations/cancel-invitation-button';
 import { SendMessageButton } from './send-message-button';
 import { userCanMessageInClub } from '@/lib/messaging-permissions';
@@ -343,15 +343,10 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
   const hasActiveAssignment = (history ?? []).some((h) => h.left_at === null);
   const fullName = `${player.first_name} ${player.last_name}`;
 
-  // Slice A — vínculo con la familia, derivado de los dos hechos ya cargados
-  // (cuentas vinculadas + invitaciones pendientes vigentes). Solo presentación.
-  const familyLink = deriveFamilyLinkStatus({
-    accounts: linkedAccounts ?? [],
-    invites: (pendingInvites ?? []).map((i) => ({
-      accepted_at: null,
-      expires_at: i.expires_at,
-    })),
-  });
+  // Marcador "Sin app": sale de las cuentas ya cargadas (sin query extra). Las
+  // invitaciones pendientes se siguen leyendo, pero para la SECCIÓN de familia de
+  // más abajo; el marcador ya no las mira (un solo marcador para todos los roles).
+  const noApp = !hasLinkedFamily(linkedAccounts);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -386,14 +381,9 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
         />
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">{fullName}</h1>
-          <FamilyLinkBadge
-            status={familyLink}
-            labels={{
-              invited: t('family_link.invited'),
-              uninvited: t('family_link.uninvited'),
-              hint: t('family_link.hint'),
-            }}
-          />
+          {noApp && (
+            <NoAppBadge label={t('no_app.label')} hint={t('no_app.hint')} />
+          )}
           {player.dorsal != null && (
             <p className="text-sm text-muted-foreground">
               {t('field.dorsal')} #{player.dorsal}
