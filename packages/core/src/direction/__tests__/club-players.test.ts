@@ -25,8 +25,7 @@ function player(
   first: string,
   last: string,
   tms: Array<{ left_at: string | null; team: [string, string, string] | null }>,
-  accounts = 0,
-  invites: Array<{ accepted_at: string | null; expires_at: string | null }> = []
+  accounts = 0
 ) {
   return {
     id,
@@ -41,15 +40,11 @@ function player(
       teams: tm.team ? { id: tm.team[0], name: tm.team[1], color: tm.team[2] } : null,
     })),
     player_accounts: Array.from({ length: accounts }, (_, i) => ({ profile_id: `p${i}` })),
-    invitations: invites,
   };
 }
 
-/** Invitación vigente (sin aceptar, expira en el futuro). */
-const FUTURE = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString();
-
 describe('getClubPlayersFromClient (directorio club-wide de dirección)', () => {
-  it('mapea el equipo ACTIVO (pertenencia abierta) y familyLink=linked con cuenta', async () => {
+  it('mapea el equipo ACTIVO (pertenencia abierta) y noApp=false con cuenta', async () => {
     const sb = makeClient({
       players: {
         data: [
@@ -74,46 +69,28 @@ describe('getClubPlayersFromClient (directorio club-wide de dirección)', () => 
       lastName: 'Díaz',
       currentTeamId: 't1',
       currentTeamName: 'Alevín A',
-      familyLink: 'linked',
+      noApp: false,
     });
   });
 
-  it('sin cuenta pero con invitación vigente → familyLink=invited', async () => {
+  it('sin cuenta → noApp=true (un solo marcador: no se leen invitaciones)', async () => {
     const sb = makeClient({
       players: {
-        data: [
-          player('j3', 'Mia', 'Sanz', [{ left_at: null, team: ['t1', 'Alevín A', '#111'] }], 0, [
-            { accepted_at: null, expires_at: FUTURE },
-          ]),
-        ],
+        data: [player('j3', 'Mia', 'Sanz', [{ left_at: null, team: ['t1', 'Alevín A', '#111'] }], 0)],
       },
     });
     const r = await getClubPlayersFromClient(sb, CLUB);
-    expect(r[0]).toMatchObject({ familyLink: 'invited' });
+    expect(r[0]).toMatchObject({ noApp: true });
   });
 
-  it('jugador sin pertenencia activa, sin cuenta y sin invitación → sin equipo y familyLink=uninvited', async () => {
+  it('jugador sin pertenencia activa ni cuenta → sin equipo y noApp=true', async () => {
     const sb = makeClient({
       players: {
         data: [player('j2', 'Leo', 'Ruiz', [{ left_at: '2024-06-30', team: ['tOld', 'Viejo', '#000'] }], 0)],
       },
     });
     const r = await getClubPlayersFromClient(sb, CLUB);
-    expect(r[0]).toMatchObject({ currentTeamId: null, currentTeamName: null, familyLink: 'uninvited' });
-  });
-
-  it('invitación EXPIRADA no cuenta → familyLink=uninvited', async () => {
-    const sb = makeClient({
-      players: {
-        data: [
-          player('j4', 'Ona', 'Vila', [{ left_at: null, team: ['t1', 'Alevín A', '#111'] }], 0, [
-            { accepted_at: null, expires_at: '2020-01-01T00:00:00.000Z' },
-          ]),
-        ],
-      },
-    });
-    const r = await getClubPlayersFromClient(sb, CLUB);
-    expect(r[0]).toMatchObject({ familyLink: 'uninvited' });
+    expect(r[0]).toMatchObject({ currentTeamId: null, currentTeamName: null, noApp: true });
   });
 
   it('sin jugadores → lista vacía', async () => {

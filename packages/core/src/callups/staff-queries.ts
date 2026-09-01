@@ -27,6 +27,10 @@ import { groupRosterByCallup } from '../lineups/callup-sync';
 import { MANAGEABLE_MATCH_TYPES, isManageableMatchType } from '../events/types';
 import { getPlayerCallupsFromClient } from './queries';
 import {
+  getPlayersWithoutAppFromClient,
+  type PlayersWithoutApp,
+} from '../players/no-app-lookup';
+import {
   resolveConvocatoriasScopeFromClient,
   type ConvocatoriasScope,
 } from './staff-scope';
@@ -92,6 +96,16 @@ export type CallupPlayerRow = {
   dorsal: number | null;
   is_promoted?: boolean;
   from_team_name?: string | null;
+  /**
+   * Slice C — `true` = la familia del jugador NO ha entrado en la app, así que NO
+   * recibe la convocatoria ni el aviso al publicar (marcador "Sin app"). Se marca
+   * justo aquí porque es donde se decide a quién se avisa. SOLO PRESENTACIÓN — no
+   * gatea nada: se le convoca igual.
+   *
+   * `undefined` = no se ha consultado (rama FAMILIA del loader) o no se ha podido
+   * (RLS/error) → no se pinta marcador.
+   */
+  no_app?: boolean;
 };
 
 export type CallupDetail = {
@@ -356,6 +370,11 @@ export async function getStaffCallupsFromClient(
  * Detalle de una convocatoria: roster (histórico + subidos) + meta + respuestas de
  * familias + decisiones + canManage/canManageLineup/canRecordMatch + estado del
  * partido + asistencia semanal + `format` (para el tope). Réplica de `loadCallupDetail`.
+ *
+ * Slice C — añade `no_app` por jugador (marcador "Sin app") SOLO en las ramas de
+ * staff/dirección: una consulta más (`getPlayersWithoutAppFromClient`), con la MISMA
+ * guarda `scope.kind !== 'player'` que ya usa la asistencia semanal, así que la rama
+ * de FAMILIA hace exactamente las mismas queries que antes.
  * Devuelve null si el evento no existe / no es partido gestionable / fuera de scope.
  */
 export async function getStaffCallupDetailFromClient(
@@ -604,6 +623,20 @@ export async function getStaffCallupDetailFromClient(
     }
   }
 
+  // Slice C — marcador "Sin app". SOLO en las ramas de staff/dirección: en la rama
+  // FAMILIA (`scope.kind === 'player'`) el tutor solo ve a sus hijos, que por
+  // definición están vinculados, y su RLS no le dejaría leer el resto → ni se
+  // consulta (misma guarda que la asistencia semanal de arriba).
+  const queriedNoApp = scope.kind !== 'player';
+  let withoutApp: PlayersWithoutApp = [];
+  if (queriedNoApp) {
+    withoutApp = await getPlayersWithoutAppFromClient(
+      supabase,
+      visibleRoster.map((r) => r.players.id),
+    );
+  }
+  const withoutAppSet = new Set(withoutApp);
+
   return {
     event: {
       id: event.id,
@@ -630,6 +663,7 @@ export async function getStaffCallupDetailFromClient(
         dorsal: r.players.dorsal,
         is_promoted: promotedInfo.has(r.players.id),
         from_team_name: promotedInfo.get(r.players.id) ?? null,
+        no_app: queriedNoApp ? withoutAppSet.has(r.players.id) : undefined,
       }))
       .sort((a, b) =>
         (a.last_name ?? '').localeCompare(b.last_name ?? '', 'es', {

@@ -25,7 +25,7 @@ import { PlayersSearchInput } from './_components/players-search-input';
 import { PlayersFilters } from './_components/players-filters';
 import { PlayerRowActions } from './_components/player-row-actions';
 import { InvitePendingButton } from './_components/invite-pending-button';
-import { FamilyLinkBadge } from './_components/family-link-badge';
+import { NoAppBadge } from '@/components/no-app-badge';
 import {
   PLAYERS_PAGE_SIZE,
   loadGlobalPlayers,
@@ -285,14 +285,12 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
                             {p.position_main &&
                               ` · ${t(`positions.${p.position_main}`)}`}
                           </span>
-                          <FamilyLinkBadge
-                            status={p.family_link}
-                            labels={{
-                              invited: t('family_link.invited'),
-                              uninvited: t('family_link.uninvited'),
-                              hint: t('family_link.hint'),
-                            }}
-                          />
+                          {p.no_app && (
+                            <NoAppBadge
+                              label={t('no_app.label')}
+                              hint={t('no_app.hint')}
+                            />
+                          )}
                         </Link>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">

@@ -26,6 +26,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
+import { NoAppBadge } from '@/ui/no-app-badge';
 import { useTranslations } from '@/locale/provider';
 import { PublishCallupSheet } from './publish-callup-sheet';
 import { SharedLineupCard } from '@/screens/family/shared-lineup-card';
@@ -387,6 +388,15 @@ export function ConvocatoriaStaffDetalleScreen({
                         {t('convocatorias_staff.promoted')}
                         {item.from_team_name ? ` · ${item.from_team_name}` : ''}
                       </Text>
+                    ) : null}
+                    {/* Slice C — la familia de este jugador NO recibe la convocatoria
+                        ni el aviso al publicar. Solo presentación (se sigue pudiendo
+                        convocar igual). El loader solo lo trae en las ramas de staff. */}
+                    {item.no_app ? (
+                      <NoAppBadge
+                        label={t('jugadores.no_app.label')}
+                        hint={t('jugadores.no_app.hint')}
+                      />
                     ) : null}
                   </View>
                   {/* Respuesta de la familia (ver respuestas). */}
