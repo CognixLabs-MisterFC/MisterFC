@@ -12,7 +12,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Redirect, router } from 'expo-router';
 import { signinSchema } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
+import { webBaseUrl } from '@/lib/server-api';
 import { useSession } from '@/auth/session';
+import { ForgotPasswordModal } from '@/screens/forgot-password-modal';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -35,6 +37,12 @@ const ERROR_KEY: Record<LoginError, string> = {
  * B2 — Login NEUTRO de MisterFC (email + contraseña). Marca MisterFC, SIN tema de
  * club (el club aún no se conoce). Valida con `signinSchema` de core y mapea los
  * errores igual que apps/web. La sesión se persiste sola en secure-store.
+ *
+ * RECUPERAR CONTRASEÑA: acceso al modal (ver `ForgotPasswordModal`). Se OCULTA si
+ * no hay dominio web configurado (`EXPO_PUBLIC_WEB_URL`), porque el enlace del
+ * correo aterriza en la web: sin dominio no hay a dónde llevar al usuario, y es
+ * preferible no ofrecer la puerta a mandar un correo que acabe en cualquier sitio.
+ * Es una constante de build (Metro la inlinea), así que no parpadea.
  */
 export default function LoginScreen() {
   const { user, loading } = useSession();
@@ -44,6 +52,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<LoginError | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const canRecover = webBaseUrl() !== '';
 
   // Ya autenticado (o al volver de un login exitoso): fuera del login.
   if (!loading && user) return <Redirect href="/" />;
@@ -138,9 +148,27 @@ export default function LoginScreen() {
                 {submitting ? t('submitting') : t('submit')}
               </Text>
             </Pressable>
+
+            {canRecover ? (
+              <Pressable
+                onPress={() => setForgotOpen(true)}
+                disabled={submitting}
+                className="mt-1 py-2 active:opacity-70"
+              >
+                <Text className="text-center text-sm text-zinc-300 underline">
+                  {t('forgot_password_link')}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      <ForgotPasswordModal
+        visible={forgotOpen}
+        onClose={() => setForgotOpen(false)}
+        initialEmail={email}
+      />
     </SafeAreaView>
   );
 }
