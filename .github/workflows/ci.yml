@@ -42,6 +42,13 @@ jobs:
       - name: Check "use server" exports
         run: pnpm check:use-server
 
+      # Censo de senders de invitación: quien llame a inviteUserByEmail y cree la
+      # cuenta DEBE enlazar invited_user_id después. El barrido de #540 buscó el
+      # UPDATE en vez del ENVÍO y se dejó tres senders; este guard obliga a que un
+      # sender nuevo pase por el contrato (link-invited-user.ts) antes de mergear.
+      - name: Check invite senders census
+        run: pnpm check:invite-senders
+
       - name: Test (vitest)
         run: pnpm test
 

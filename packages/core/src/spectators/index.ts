@@ -154,6 +154,27 @@ export type SpectatorInviteLogger = (
 ) => void;
 
 /**
+ * PUERTO DE ENLAZADO — lo inyecta el caller (web: `linkInvitedUser`, que exige que
+ * el UPDATE afecte exactamente 1 fila y reporta a Sentry si no).
+ *
+ * Es OBLIGATORIO a propósito: quien llame a `inviteUserByEmail` y cree la cuenta
+ * DEBE enlazar después `invitations.invited_user_id`, y aquí eso lo garantiza el
+ * compilador — no hay forma de invocar el envío sin traer el enlazado. Sin el
+ * enlazado, `chooseInviteForm` no puede enrutar al form `set_password` por id y el
+ * invitado cae en la trampa del incidente de agosto de 2026 (lo tapa el cinturón
+ * de #539, pero se pierde el enlace).
+ *
+ * El puerto es responsable de SU PROPIO reporte de errores: si devuelve
+ * `{ ok: false }`, ya lo ha registrado; aquí solo se corta y se devuelve 'generic'
+ * al caller (así el guard vive en UN solo sitio, en apps/web, sin duplicarlo aquí
+ * ni arrastrar Sentry a core).
+ */
+export type LinkInvitedUser = (
+  invitationId: string,
+  invitedUserId: string
+) => Promise<{ ok: boolean }>;
+
+/**
  * EL CASO DELICADO (F2): ¿el email ya es usuario de Supabase? `inviteUserByEmail`
  * falla entonces con `code === 'email_exists'` o, según versión de GoTrue, con un
  * mensaje "already been registered" / "already exists". Detectarlo bien es lo que
@@ -181,11 +202,18 @@ export function isEmailAlreadyExistsError(err: unknown): boolean {
  * Caso email-ya-existe → `existing: true` (reenvío por reset, como el usuario). La
  * web lo ignora; el endpoint nativo lo muestra. `logError` recibe cada fallo crudo
  * (core no importa Sentry).
+ *
+ * ENLAZADO (7º sender del censo, ver apps/web/src/lib/link-invited-user.ts): cuando
+ * el email crea la cuenta, se enlaza su `auth.users.id` en `invitations.invited_user_id`
+ * a través del puerto `link` (obligatorio). En el fallback "email ya existe" NO se
+ * enlaza: la cuenta es del propio invitado y `invited_user_id` queda NULL por diseño.
  */
 export async function performSpectatorInvite(
   userSupabase: DbClient,
   admin: DbClient,
   args: { playerId: string; email: string; linkBase: string },
+  /** Obligatorio: no se puede enviar sin traer el enlazado. Ver `LinkInvitedUser`. */
+  link: LinkInvitedUser,
   logError?: SpectatorInviteLogger
 ): Promise<SpectatorInviteResult> {
   const { playerId, email, linkBase } = args;
@@ -210,10 +238,11 @@ export async function performSpectatorInvite(
   // 2) Email con ADMIN — SOLO tras crear la invitación (el gate ya pasó).
   let existing = false;
   try {
-    const { error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
-      redirectTo,
-      data: { invite_pending: true, invitation_id: invite.id },
-    });
+    const { data: inviteData, error: invErr } =
+      await admin.auth.admin.inviteUserByEmail(email, {
+        redirectTo,
+        data: { invite_pending: true, invitation_id: invite.id },
+      });
 
     if (invErr) {
       if (isEmailAlreadyExistsError(invErr)) {
@@ -231,6 +260,22 @@ export async function performSpectatorInvite(
         log(invErr, 'inviteUserByEmail_spectator', { invitation_id: invite.id });
         return { error: 'generic' };
       }
+    } else {
+      // Cuenta creada por NOSOTROS → hay que enlazar su auth.users.id. Única rama
+      // donde nace la cuenta; el enlazado es incondicional aquí.
+      const invitedUserId = inviteData?.user?.id ?? null;
+      if (!invitedUserId) {
+        // Invite OK pero sin user.id (#535): ruidoso + error, para que se reintente.
+        log(
+          new Error('inviteUserByEmail sin user.id (spectator)'),
+          'invited_user_missing_id_spectator',
+          { invitation_id: invite.id }
+        );
+        return { error: 'generic' };
+      }
+      // El puerto exige 1 fila afectada y reporta él mismo si falla (#540).
+      const linked = await link(invite.id, invitedUserId);
+      if (!linked.ok) return { error: 'generic' };
     }
   } catch (thrown) {
     log(thrown, 'inviteUserByEmail_spectator_thrown', {
