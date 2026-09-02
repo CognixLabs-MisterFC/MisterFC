@@ -18,6 +18,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "check:use-server": "node scripts/check-use-server-exports.mjs",
+    "check:invite-senders": "node scripts/check-invite-senders.mjs",
     "gen:import-template": "node scripts/generate-import-template.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\" --ignore-path .gitignore",

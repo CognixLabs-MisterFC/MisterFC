@@ -12,16 +12,66 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   al form set_password por id y el invitee cae en la trampa (lo tapa el cinturón
  *   #539, pero se pierde el enlazado). NO basta con enviar el email.
  *
- *   Censo de senders (2026-08-30) — quien añada el 8º, que se sume aquí:
+ *   Censo de senders (2026-09-03) — quien añada el 8º, que se sume aquí:
  *     1 sendInvitation (invitations/actions.ts)      ✅ enlaza
  *     2 sendOrRenewTutorInvitation (jugadores)       ✅ enlaza
  *     3 inviteClubAdmin (platform/invite-club-admin) ✅ enlaza
  *     4 changeClubAdmin (platform/change-club-admin) ✅ enlaza
  *     5 inviteBatch (jugadores, import)              ✅ enlaza
  *     6 inviteStaffToTeam (equipos/[teamId])         ✅ enlaza
- *     7 performSpectatorInvite (core/spectators)     ⏳ pendiente (core+nativo)
+ *     7 performSpectatorInvite (core/spectators)     ✅ enlaza (puerto inyectado)
  *   El barrido de #540 buscó el `.update`, no el envío, y se le escaparon 5/6/7.
  *   Para encontrarlos todos: `grep -rn inviteUserByEmail`, NO grep del update.
+ *
+ *   El 7 vive en `packages/core`, que NO puede importar Sentry ni este helper. Se
+ *   resuelve con un PUERTO INYECTADO: `performSpectatorInvite` recibe un parámetro
+ *   `link` OBLIGATORIO (tipo `LinkInvitedUser`) y el adaptador de web
+ *   `lib/invite-spectator.ts` —único punto por el que pasan la Server Action y el
+ *   route handler nativo— lo rellena con esta misma función. Así el guard no se
+ *   duplica y el compilador impide enviar sin traer el enlazado.
+ *
+ *   GUARD DE CI: `pnpm check:invite-senders` (scripts/check-invite-senders.mjs)
+ *   cuenta las llamadas reales a `auth.admin.inviteUserByEmail(` y las compara con
+ *   el censo. Un 8º sender rompe el PR hasta que alguien lea esto. Si tocas el
+ *   censo aquí, tócalo TAMBIÉN allí.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * FOLLOW-UP DISEÑADO Y APLAZADO — wrapper `inviteAndLink` (decisión 2026-09-03)
+ * ─────────────────────────────────────────────────────────────────────────────
+ *   El "email ya registrado" está reimplementado a mano en CINCO ficheros de web
+ *   (`code === 'email_exists'` + dos `includes`), mientras core ya exporta
+ *   `isEmailAlreadyExistsError`. Lo mismo con el guard de `user.id` ausente y el
+ *   try/catch. Un wrapper único lo unificaría:
+ *
+ *     packages/core/src/invitations/invite-and-link.ts
+ *       inviteAndLink({ admin, resetClient, email, redirectTo, metadata,
+ *                       invitationIds, link, log })
+ *         → { sent: 'created' } | { sent: 'existing' }
+ *         | { error: 'send_failed' | 'missing_user_id' | 'link_failed' }
+ *
+ *   Con dos invariantes: los puertos (`link`, `log`) se inyectan —core sigue sin
+ *   Sentry— y el wrapper NUNCA hace efectos secundarios: no borra invitaciones ni
+ *   marca filas de lote; devuelve el resultado y decide el llamador (inviteBatch
+ *   borra al fallar el envío pero NO al fallar el enlazado, y no aborta el lote).
+ *
+ *   NO se hizo ahora, y la razón vale para el que lo lea dentro de seis meses:
+ *   estos seis senders son el ALTA DE TODOS LOS USUARIOS, hoy correctos y
+ *   verificados en producción; CI no ejercita el envío (necesita GoTrue), así que
+ *   una regresión no la caza el pipeline y solo se ve cuando un padre no entra;
+ *   y validarlo obliga a mandar correos reales por sender y por estado (email
+ *   nuevo / email existente / fallo). El guard de CI de arriba ataca el fallo
+ *   histórico real (un sender nuevo que nadie ve) sin tocar el alta.
+ *
+ *   ORDEN DE ADOPCIÓN si algún día se hace, de menos a más riesgo:
+ *     1º performSpectatorInvite (seguidores: sin él nadie se queda fuera del club)
+ *     2º inviteClubAdmin y changeClubAdmin (superadmin, tráfico mínimo: si rompen,
+ *        afectan a Jose, no a una familia)
+ *     3º inviteStaffToTeam
+ *     último, o NUNCA: inviteBatch, sendOrRenewTutorInvitation, sendInvitation
+ *        (lote del import, alta de tutores y alta general: máximo tráfico y
+ *        post-condiciones propias)
+ *   Regla: migrar un sender por PR, con verificación manual de sus tres estados.
+ *   Y no migrar ninguno "de paso": solo cuando se toque por otra razón.
  *
  * Enlaza `invitations.invited_user_id` y EXIGE que el UPDATE afecte exactamente
  * 1 fila.
