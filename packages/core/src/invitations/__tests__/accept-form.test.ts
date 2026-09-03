@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { findAcceptProblems, validateChildRow, type AcceptFormRules } from '../accept-form';
+import {
+  findAcceptProblems,
+  playerIdsFromFormKeys,
+  validateChildRow,
+  type AcceptFormRules,
+} from '../accept-form';
 
 /**
  * El formulario de aceptar invitación no tenía NINGÚN test. Es el alta de todas
@@ -7,7 +12,9 @@ import { findAcceptProblems, validateChildRow, type AcceptFormRules } from '../a
  * queda corto, el servidor lo caza igual pero el padre se come un viaje.
  *
  * El caso que motivó todo esto: dos hijos, todo relleno salvo una foto, y el
- * botón sin decir nada. Aquí abajo es el test "nombra al hijo al que le falta".
+ * botón sin decir nada. Desde la migración 20261055000000 ese caso ya ni
+ * bloquea — la foto es opcional —, y aquí abajo está fijado en los dos
+ * sentidos: sin foto se pasa, sin decisiones no.
  */
 
 const CHILD_A = 'aaaaaaaa-0000-0000-0000-000000000001';
@@ -21,7 +28,6 @@ function baseRules(over: Partial<AcceptFormRules> = {}): AcceptFormRules {
     requireChildData: false,
     requireProfile: false,
     requireOwnPassword: false,
-    requirePhoto: true,
     ...over,
   };
 }
@@ -30,11 +36,11 @@ function photo(bytes = 1024, type = 'image/jpeg'): File {
   return new File([new Uint8Array(bytes)], 'foto.jpg', { type });
 }
 
-/** Un hijo con las dos decisiones respondidas y su foto. */
-function completeChild(fd: FormData, pid: string, internal = 'yes') {
+/** Un hijo con las dos decisiones respondidas (con foto o sin ella). */
+function completeChild(fd: FormData, pid: string, internal = 'yes', withPhoto = true) {
   fd.set(`image_internal_${pid}`, internal);
   fd.set(`image_social_${pid}`, 'no');
-  fd.set(`image_file_${pid}`, photo());
+  if (withPhoto) fd.set(`image_file_${pid}`, photo());
 }
 
 function codes(fd: FormData, rules: AcceptFormRules) {
@@ -65,7 +71,7 @@ describe('findAcceptProblems — consentimientos de cuenta', () => {
   });
 });
 
-describe('findAcceptProblems — decisiones de imagen y foto', () => {
+describe('findAcceptProblems — decisiones de imagen (la foto ya no gatea)', () => {
   const rules = baseRules({
     requireTerms: false,
     requirePrivacy: false,
@@ -75,58 +81,51 @@ describe('findAcceptProblems — decisiones de imagen y foto', () => {
     ],
   });
 
-  it('sin responder nada pide las dos decisiones y la foto de CADA hijo', () => {
+  it('sin responder nada pide las dos decisiones de CADA hijo, y nada más', () => {
     expect(codes(new FormData(), rules)).toEqual([
       'image_internal_missing',
       'image_social_missing',
-      'photo_missing',
       'image_internal_missing',
       'image_social_missing',
-      'photo_missing',
     ]);
   });
 
-  it('el caso de Jose: dos hijos, todo relleno menos UNA foto, y dice cuál', () => {
+  it('el caso de Jose: dos hijos, uno sin foto — ya NO bloquea el alta', () => {
     const fd = new FormData();
     completeChild(fd, CHILD_A);
-    fd.set(`image_internal_${CHILD_B}`, 'yes');
-    fd.set(`image_social_${CHILD_B}`, 'yes');
+    completeChild(fd, CHILD_B, 'yes', false);
+    expect(codes(fd, rules)).toEqual([]);
+  });
+
+  it('NINGÚN hijo sube foto y el alta sigue adelante', () => {
+    const fd = new FormData();
+    completeChild(fd, CHILD_A, 'yes', false);
+    completeChild(fd, CHILD_B, 'no', false);
+    expect(codes(fd, rules)).toEqual([]);
+  });
+
+  it('pero las decisiones siguen siendo obligatorias, y dice de qué hijo', () => {
+    const fd = new FormData();
+    completeChild(fd, CHILD_A);
+    fd.set(`image_social_${CHILD_B}`, 'yes'); // a Leo le falta la interna
 
     const problems = findAcceptProblems(fd, rules);
-    expect(problems).toEqual([{ code: 'photo_missing', playerId: CHILD_B }]);
+    expect(problems).toEqual([{ code: 'image_internal_missing', playerId: CHILD_B }]);
   });
 
   it('"no" es una respuesta válida: no se confunde con no haber respondido', () => {
     const fd = new FormData();
-    completeChild(fd, CHILD_A, 'no');
-    completeChild(fd, CHILD_B, 'no');
+    completeChild(fd, CHILD_A, 'no', false);
+    completeChild(fd, CHILD_B, 'no', false);
     expect(codes(fd, rules)).toEqual([]);
   });
 
-  it('un input de fichero vacío llega como File de 0 bytes y cuenta como que falta', () => {
+  it('un input de fichero vacío tampoco bloquea', () => {
     const fd = new FormData();
     completeChild(fd, CHILD_A);
-    fd.set(`image_internal_${CHILD_B}`, 'yes');
-    fd.set(`image_social_${CHILD_B}`, 'yes');
+    completeChild(fd, CHILD_B, 'yes', false);
     fd.set(`image_file_${CHILD_B}`, new File([], '', { type: 'application/octet-stream' }));
-    expect(codes(fd, rules)).toEqual(['photo_missing']);
-  });
-
-  it('una imagen que no cumple mime o tamaño cuenta como que falta', () => {
-    const fd = new FormData();
-    completeChild(fd, CHILD_A);
-    fd.set(`image_internal_${CHILD_B}`, 'yes');
-    fd.set(`image_social_${CHILD_B}`, 'yes');
-    fd.set(`image_file_${CHILD_B}`, photo(1024, 'application/pdf'));
-    expect(codes(fd, rules)).toEqual(['photo_missing']);
-  });
-
-  it('cuando la foto deje de ser obligatoria, las decisiones siguen siéndolo', () => {
-    const fd = new FormData();
-    fd.set(`image_internal_${CHILD_A}`, 'no');
-    fd.set(`image_social_${CHILD_A}`, 'no');
-    completeChild(fd, CHILD_B);
-    expect(codes(fd, { ...rules, requirePhoto: false })).toEqual([]);
+    expect(codes(fd, rules)).toEqual([]);
   });
 
   it('sin hijos no se pide nada de imagen (entrenador, staff, seguidor)', () => {
@@ -187,7 +186,6 @@ describe('findAcceptProblems — datos del hijo', () => {
     requireTerms: false,
     requirePrivacy: false,
     requireChildData: true,
-    requirePhoto: false,
     children: [{ playerId: CHILD_A, name: 'Marta' }],
   });
 
@@ -268,5 +266,37 @@ describe('validateChildRow — la regla que comparten cliente y servidor', () =>
     for (const dob of ['', '01-04-2015', '2015-13-40', '1899-12-31', '2999-01-01']) {
       expect(validateChildRow({ firstName: 'Marta', lastName: '', dob })).toBe('child_dob_invalid');
     }
+  });
+});
+
+describe('playerIdsFromFormKeys — la deducción del lote', () => {
+  it('encuentra al hijo que dijo NO y por tanto NO tiene campo de foto', () => {
+    const fd = new FormData();
+    // Marta dice SÍ y sube foto; Leo dice NO y su selector ni se pinta.
+    fd.set(`image_internal_${CHILD_A}`, 'yes');
+    fd.set(`image_social_${CHILD_A}`, 'no');
+    fd.set(`image_file_${CHILD_A}`, photo());
+    fd.set(`image_internal_${CHILD_B}`, 'no');
+    fd.set(`image_social_${CHILD_B}`, 'no');
+
+    expect(playerIdsFromFormKeys(fd.keys()).sort()).toEqual([CHILD_A, CHILD_B].sort());
+  });
+
+  it('deducirlo del campo de la foto habría perdido a ese hijo', () => {
+    const fd = new FormData();
+    fd.set(`image_internal_${CHILD_A}`, 'yes');
+    fd.set(`image_file_${CHILD_A}`, photo());
+    fd.set(`image_internal_${CHILD_B}`, 'no');
+
+    const porLaFoto = [...fd.keys()]
+      .filter((k) => k.startsWith('image_file_'))
+      .map((k) => k.slice('image_file_'.length));
+
+    expect(porLaFoto).toEqual([CHILD_A]);
+    expect(playerIdsFromFormKeys(fd.keys())).toContain(CHILD_B);
+  });
+
+  it('sin hijos devuelve lista vacía', () => {
+    expect(playerIdsFromFormKeys(new FormData().keys())).toEqual([]);
   });
 });

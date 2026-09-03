@@ -6,6 +6,7 @@ export {
 } from './pending';
 export {
   findAcceptProblems,
+  playerIdsFromFormKeys,
   validateChildRow,
   isValidChildDob,
   CHILD_FIRST_NAME_MAX,
