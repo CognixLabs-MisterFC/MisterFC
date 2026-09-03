@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { LegalTextModal } from '@/components/legal/legal-text-modal';
 import type { AccountConsentDoc } from './consent-data';
+import { fieldIds, type FormProblem } from './validation';
 
 export type ConsentGateProps = {
   terms: AccountConsentDoc | null;
@@ -11,8 +12,8 @@ export type ConsentGateProps = {
   /** Ya aceptados en versión vigente (flujo con sesión) → casilla satisfecha. */
   preAcceptedTerms: boolean;
   preAcceptedPrivacy: boolean;
-  /** Notifica al form si AMBOS obligatorios están satisfechos (para gatear el botón). */
-  onSatisfiedChange: (ok: boolean) => void;
+  /** Problema del último intento de envío, si falta marcar alguna de las dos. */
+  problem?: FormProblem | undefined;
 };
 
 /**
@@ -20,27 +21,22 @@ export type ConsentGateProps = {
  * Cada casilla enlaza al texto vigente (modal). Si ya se aceptó la versión
  * vigente, se muestra satisfecha (sin casilla) y no se envía flag. Los flags
  * `accept_terms`/`accept_privacy` viajan en el form; el servidor los revalida.
+ *
+ * Ya NO gatea el botón: si falta marcarlas, el validador del formulario lo dice
+ * y aquí se pinta la marca. Eran, además, los ÚNICOS campos que ni siquiera
+ * tenían validación nativa del navegador detrás.
  */
 export function ConsentGate({
   terms,
   privacy,
   preAcceptedTerms,
   preAcceptedPrivacy,
-  onSatisfiedChange,
+  problem,
 }: ConsentGateProps) {
   const t = useTranslations('invite');
   const [checkedTerms, setCheckedTerms] = useState(false);
   const [checkedPrivacy, setCheckedPrivacy] = useState(false);
   const [openDoc, setOpenDoc] = useState<AccountConsentDoc | null>(null);
-
-  // Un doc ausente en BD (no debería) no puede bloquear el alta → satisfecho.
-  const termsOk = terms == null || preAcceptedTerms || checkedTerms;
-  const privacyOk = privacy == null || preAcceptedPrivacy || checkedPrivacy;
-  const satisfied = termsOk && privacyOk;
-
-  useEffect(() => {
-    onSatisfiedChange(satisfied);
-  }, [satisfied, onSatisfiedChange]);
 
   const row = (
     doc: AccountConsentDoc | null,
@@ -48,6 +44,7 @@ export function ConsentGate({
     checked: boolean,
     setChecked: (v: boolean) => void,
     fieldName: string,
+    fieldId: string,
     acceptLabel: string,
   ) => {
     if (doc == null) return null;
@@ -65,10 +62,12 @@ export function ConsentGate({
       <label className="flex items-start gap-2 text-left text-sm text-zinc-200">
         <input
           type="checkbox"
+          id={fieldId}
           name={fieldName}
           value="true"
           checked={checked}
           onChange={(e) => setChecked(e.target.checked)}
+          aria-invalid={problem != null && !checked}
           className="mt-0.5 size-4 shrink-0 accent-[#10B981]"
         />
         <span>
@@ -94,6 +93,7 @@ export function ConsentGate({
         checkedTerms,
         setCheckedTerms,
         'accept_terms',
+        fieldIds.terms,
         t('consent_accept_terms'),
       )}
       {row(
@@ -102,7 +102,12 @@ export function ConsentGate({
         checkedPrivacy,
         setCheckedPrivacy,
         'accept_privacy',
+        fieldIds.privacy,
         t('consent_accept_privacy'),
+      )}
+
+      {problem && (
+        <p className="text-left text-xs text-red-400">{t(problem.messageKey)}</p>
       )}
 
       <LegalTextModal

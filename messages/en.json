@@ -528,7 +528,15 @@
     "medical_medication": "Medication",
     "medical_conditions": "Medical conditions",
     "medical_emergency": "Emergency contact",
-    "medical_optional_hint": "All fields are optional. You can edit them later."
+    "medical_optional_hint": "All fields are optional. You can edit them later.",
+    "missing_heading": "We can't complete the sign-up yet:",
+    "missing_for_child": "{child}: {what}",
+    "missing_image_internal": "answer Yes or No to using their image inside the app",
+    "missing_image_social": "answer Yes or No to using their image on social media",
+    "missing_photo": "the photo or avatar is missing",
+    "missing_child_name": "the name is missing",
+    "missing_child_dob": "the date of birth is missing, or is not valid",
+    "missing_password": "Enter your password."
   },
   "directos": {
     "title": "Live",
