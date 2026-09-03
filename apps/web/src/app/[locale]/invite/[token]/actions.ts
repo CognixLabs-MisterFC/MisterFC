@@ -11,6 +11,7 @@ import {
   createSupabaseServerClient,
   isInvitePending,
   isSamePasswordError,
+  playerIdsFromFormKeys,
   playerPhotoUploadSchema,
   // Rework C/D — la regla de los datos del hijo la usan LOS DOS lados (este
   // server y el validador del formulario). Una sola copia, en core: si se
@@ -275,7 +276,7 @@ async function attachAllPending(
     .gt('expires_at', new Date().toISOString());
 
   const uploadedPaths: string[] = [];
-  const children: Record<string, { internal: boolean; social: boolean; path: string }> = {};
+  const children: Record<string, { internal: boolean; social: boolean; path?: string }> = {};
   // F14-4 — decisiones médicas por hijo (opcionales, no gatean). Solo se incluye
   // el hijo si el tutor respondió sí/no explícito.
   const medical: Record<
@@ -296,10 +297,10 @@ async function attachAllPending(
     return trimmed.length > 0 ? trimmed.slice(0, 2000) : undefined;
   }
 
-  const playerIds = new Set<string>();
-  for (const key of formData.keys()) {
-    if (key.startsWith('image_file_')) playerIds.add(key.slice('image_file_'.length));
-  }
+  // Los hijos del lote se deducen del campo de la DECISIÓN, no del de la foto:
+  // el selector de fichero ya no se pinta cuando el tutor dice NO. La deducción
+  // vive en core y está cubierta por tests (playerIdsFromFormKeys).
+  const playerIds = playerIdsFromFormKeys(formData.keys());
 
   async function cleanupImages() {
     if (uploadedPaths.length === 0) return;
@@ -318,26 +319,35 @@ async function attachAllPending(
       if (internalRaw !== 'yes' && internalRaw !== 'no') return { error: 'image_decision_required' };
       if (socialRaw !== 'yes' && socialRaw !== 'no') return { error: 'image_decision_required' };
 
+      // F14-3c (revisión) — la foto es OPCIONAL. Sin fichero se sigue adelante y
+      // el hijo viaja sin `path`; la RPC deja su photo_url como estuviera.
       const file = formData.get(`image_file_${pid}`);
-      if (!(file instanceof File) || file.size === 0) return { error: 'image_required' };
-      const valid = playerPhotoUploadSchema.safeParse({ mimeType: file.type, size: file.size });
-      if (!valid.success) return { error: 'image_required' };
+      const hasFile = file instanceof File && file.size > 0;
+      let path: string | undefined;
 
-      const ext = MIME_TO_EXT[file.type] ?? 'jpg';
-      const path = `${pid}/${randomUUID()}.${ext}`;
-      const { error: upErr } = await admin.storage
-        .from('player-photos')
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (upErr) {
-        logError('image-upload', upErr, { player_id: pid });
-        await cleanupImages();
-        return { error: 'generic' };
+      if (hasFile) {
+        // Si SÍ manda fichero, tiene que ser válido: un mime o un tamaño fuera de
+        // rango es un error de verdad, no un "no quiero foto".
+        const valid = playerPhotoUploadSchema.safeParse({ mimeType: file.type, size: file.size });
+        if (!valid.success) return { error: 'image_required' };
+
+        const ext = MIME_TO_EXT[file.type] ?? 'jpg';
+        path = `${pid}/${randomUUID()}.${ext}`;
+        const { error: upErr } = await admin.storage
+          .from('player-photos')
+          .upload(path, file, { contentType: file.type, upsert: false });
+        if (upErr) {
+          logError('image-upload', upErr, { player_id: pid });
+          await cleanupImages();
+          return { error: 'generic' };
+        }
+        uploadedPaths.push(path);
       }
-      uploadedPaths.push(path);
+
       children[pid] = {
         internal: internalRaw === 'yes',
         social: socialRaw === 'yes',
-        path,
+        ...(path ? { path } : {}),
       };
 
       // F14-4 — consentimiento médico (opcional). Solo si respondió sí/no.

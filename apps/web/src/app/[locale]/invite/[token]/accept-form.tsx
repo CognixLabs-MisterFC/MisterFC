@@ -214,9 +214,6 @@ function acceptRules(input: RulesInput): AcceptFormRules {
     requireChildData: input.requireChildData,
     requireProfile: input.requireProfile,
     requireOwnPassword: input.requireOwnPassword,
-    // Hoy la foto sigue siendo obligatoria: la exigen la Server Action y la RPC.
-    // Deja de serlo cuando se aplique la migración que la hace opcional.
-    requirePhoto: true,
   };
 }
 

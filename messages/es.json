@@ -992,7 +992,6 @@
     "image_yes": "Sí",
     "image_no": "No",
     "image_upload_photo": "Sube una foto del niño/a",
-    "image_upload_avatar": "Sube un avatar (imagen que le represente)",
     "image_hint": "JPG, PNG o WebP. Máximo {maxMb} MB.",
     "image_err_mime": "Formato no válido (usa JPG, PNG o WebP).",
     "image_err_large": "La imagen supera el tamaño máximo.",
@@ -1012,7 +1011,6 @@
     "missing_for_child": "{child}: {what}",
     "missing_image_internal": "responde Sí o No al uso de su imagen dentro de la app",
     "missing_image_social": "responde Sí o No al uso de su imagen en redes sociales",
-    "missing_photo": "falta la foto o el avatar",
     "missing_child_name": "falta el nombre",
     "missing_child_dob": "falta la fecha de nacimiento, o no es válida",
     "missing_password": "Escribe tu contraseña."

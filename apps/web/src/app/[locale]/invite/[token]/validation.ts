@@ -30,7 +30,6 @@ export const fieldIds = {
   childDob: (pid: string) => `invite-child-dob-${pid}`,
   imageInternal: (pid: string) => `invite-image-internal-${pid}`,
   imageSocial: (pid: string) => `invite-image-social-${pid}`,
-  imageFile: (pid: string) => `invite-image-file-${pid}`,
 } as const;
 
 /**
@@ -55,7 +54,6 @@ const MESSAGE_KEY: Record<AcceptProblemCode, string> = {
   child_dob_invalid: 'missing_child_dob',
   image_internal_missing: 'missing_image_internal',
   image_social_missing: 'missing_image_social',
-  photo_missing: 'missing_photo',
   password_too_short: 'error_password_too_short',
   password_mismatch: 'error_password_mismatch',
   password_missing: 'missing_password',
@@ -82,8 +80,6 @@ function fieldIdFor(
       return fieldIds.imageInternal(pid);
     case 'image_social_missing':
       return fieldIds.imageSocial(pid);
-    case 'photo_missing':
-      return fieldIds.imageFile(pid);
     case 'password_too_short':
     case 'password_missing':
       return fieldIds.password;

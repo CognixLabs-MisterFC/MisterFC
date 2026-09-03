@@ -116,7 +116,6 @@ export function ChildrenImageSection({
       {kids.map((c) => {
         const s = states[c.playerId]!;
         const maxMb = String(PLAYER_PHOTO_MAX_BYTES / 1024 / 1024);
-        const fileProblem = problemFor(fieldIds.imageFile(c.playerId));
         return (
           <div
             key={c.playerId}
@@ -135,7 +134,13 @@ export function ChildrenImageSection({
               id={fieldIds.imageInternal(c.playerId)}
               name={`image_internal_${c.playerId}`}
               value={s.internal}
-              onChange={(d) => patch(c.playerId, { internal: d })}
+              onChange={(d) =>
+                // Cambiar a NO retira el campo: se limpia también su estado, para
+                // no dejar un preview colgando de un fichero que ya no se envía.
+                patch(c.playerId, d === 'no'
+                  ? { internal: d, preview: null, fileError: null }
+                  : { internal: d })
+              }
               onView={imageInternal ? () => setViewer(imageInternal) : null}
               problem={problemFor(fieldIds.imageInternal(c.playerId))}
             />
@@ -150,30 +155,30 @@ export function ChildrenImageSection({
               problem={problemFor(fieldIds.imageSocial(c.playerId))}
             />
 
-            <label className="flex flex-col gap-2 text-left">
-              <span className="text-sm font-medium text-zinc-200">
-                {s.internal === 'no' ? t('image_upload_avatar') : t('image_upload_photo')}
-              </span>
-              <input
-                type="file"
-                id={fieldIds.imageFile(c.playerId)}
-                name={`image_file_${c.playerId}`}
-                accept={PLAYER_PHOTO_MIME_TYPES.join(',')}
-                required
-                aria-invalid={fileProblem != null}
-                onChange={(e) => onFile(c.playerId, e)}
-                className="text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-1.5 file:text-sm file:text-white"
-              />
-              <span className="text-xs text-zinc-500">{t('image_hint', { maxMb })}</span>
-              {s.preview && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={s.preview} alt="" className="size-16 rounded-md object-cover" />
-              )}
-              {s.fileError && <span className="text-xs text-red-400">{s.fileError}</span>}
-              {fileProblem && !s.fileError && (
-                <span className="text-xs text-red-400">{t(fileProblem.messageKey)}</span>
-              )}
-            </label>
+            {/* La foto es OPCIONAL, y si la familia dice NO a la imagen interna no
+                se pide siquiera: guardarla sería retener la imagen de un menor
+                que la RLS (player_photo_visible) hace invisible para siempre. */}
+            {s.internal !== 'no' && (
+              <label className="flex flex-col gap-2 text-left">
+                <span className="text-sm font-medium text-zinc-200">
+                  {t('image_upload_photo')}{' '}
+                  <span className="font-normal text-zinc-500">{t('optional')}</span>
+                </span>
+                <input
+                  type="file"
+                  name={`image_file_${c.playerId}`}
+                  accept={PLAYER_PHOTO_MIME_TYPES.join(',')}
+                  onChange={(e) => onFile(c.playerId, e)}
+                  className="text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-1.5 file:text-sm file:text-white"
+                />
+                <span className="text-xs text-zinc-500">{t('image_hint', { maxMb })}</span>
+                {s.preview && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={s.preview} alt="" className="size-16 rounded-md object-cover" />
+                )}
+                {s.fileError && <span className="text-xs text-red-400">{s.fileError}</span>}
+              </label>
+            )}
 
             {/* F14-4 — Consentimiento informado de datos médicos (OPCIONAL). */}
             <div className="flex flex-col gap-2 border-t border-zinc-800 pt-3">

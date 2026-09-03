@@ -1,5 +1,4 @@
 import { acceptInvitationWithProfileSchema } from '../schemas/auth';
-import { playerPhotoUploadSchema } from '../schemas/player';
 
 /**
  * Qué le falta al formulario de aceptar invitación.
@@ -8,10 +7,10 @@ import { playerPhotoUploadSchema } from '../schemas/player';
  * padre puede completar el alta, y aquí es donde el CI ejecuta tests. El
  * formulario no tenía ninguno.
  *
- * NO INVENTA REGLAS. Las del perfil salen de `acceptInvitationWithProfileSchema`
- * y las de la foto de `playerPhotoUploadSchema` — los mismos schemas que corre
- * el servidor al aceptar. Las del hijo (`validateChildRow`) las importa también
- * la Server Action, así que hay UNA copia de cada una.
+ * NO INVENTA REGLAS. Las del perfil salen de `acceptInvitationWithProfileSchema`,
+ * el MISMO schema de core que corre el servidor al aceptar. Las del hijo
+ * (`validateChildRow`) las importa también la Server Action, así que hay UNA
+ * copia de cada una.
  *
  * Devuelve códigos, no textos ni ids de campo: de eso se encarga quien pinta.
  */
@@ -66,7 +65,6 @@ export type AcceptProblemCode =
   | 'child_dob_invalid'
   | 'image_internal_missing'
   | 'image_social_missing'
-  | 'photo_missing'
   | 'password_too_short'
   | 'password_mismatch'
   | 'password_missing'
@@ -93,12 +91,15 @@ export type AcceptFormRules = {
   requireProfile: boolean;
   /** El flujo pide la contraseña que el usuario ya tenía. */
   requireOwnPassword: boolean;
-  /**
-   * La foto de cada hijo es obligatoria. Hoy sí: la exigen la Server Action y la
-   * RPC. Deja de serlo cuando se aplique la migración que la hace opcional.
-   */
-  requirePhoto: boolean;
 };
+
+/**
+ * LA FOTO NO APARECE AQUÍ, y es a propósito: desde la migración
+ * 20261055000000 es OPCIONAL en los tres sitios que la exigían (este validador,
+ * la Server Action y la RPC). Un padre completa el alta sin subir ninguna. Lo
+ * que sigue siendo obligatorio por hijo son las DOS DECISIONES de imagen: eso
+ * es el consentimiento RGPD, la foto no.
+ */
 
 function str(formData: FormData, key: string): string {
   const v = formData.get(key);
@@ -144,7 +145,8 @@ export function findAcceptProblems(formData: FormData, rules: AcceptFormRules): 
     }
   }
 
-  // 3 · Decisiones de imagen (OBLIGATORIAS: son el consentimiento) y foto.
+  // 3 · Decisiones de imagen. OBLIGATORIAS: son el consentimiento. La foto NO se
+  // mira: subirla o no es decisión del padre y no puede impedir el alta.
   for (const child of rules.children) {
     const pid = child.playerId;
 
@@ -155,10 +157,6 @@ export function findAcceptProblems(formData: FormData, rules: AcceptFormRules): 
     const social = str(formData, `image_social_${pid}`);
     if (social !== 'yes' && social !== 'no') {
       problems.push({ code: 'image_social_missing', playerId: pid });
-    }
-
-    if (rules.requirePhoto && !hasValidPhoto(formData.get(`image_file_${pid}`))) {
-      problems.push({ code: 'photo_missing', playerId: pid });
     }
   }
 
@@ -204,11 +202,26 @@ function parseChildrenData(
 }
 
 /**
- * Un fichero de imagen utilizable. Un input vacío llega como File de 0 bytes, no
- * como ausencia: por eso no basta con mirar si existe la clave.
+ * Los hijos que vienen en el formulario, deducidos del campo de la DECISIÓN.
+ *
+ * NO se deducen del campo de la foto. El selector de fichero deja de pintarse
+ * cuando el tutor dice NO a la imagen interna, así que buscar por `image_file_`
+ * dejaría fuera al hijo ENTERO —con sus dos decisiones— y la RPC rechazaría el
+ * alta de justo la familia que ha ejercido su derecho a decir que no.
+ * `image_internal_` se pinta siempre, haya foto o no.
+ *
+ * Recibe los NOMBRES de campo, no el FormData: la app nativa también compila
+ * este paquete y su `FormData` no tiene `keys()`. Quien llama pasa
+ * `formData.keys()`.
  */
-function hasValidPhoto(value: unknown): boolean {
-  if (!(value instanceof File)) return false;
-  if (value.size === 0) return false;
-  return playerPhotoUploadSchema.safeParse({ mimeType: value.type, size: value.size }).success;
+export function playerIdsFromFormKeys(fieldNames: Iterable<string>): string[] {
+  const ids = new Set<string>();
+  for (const key of fieldNames) {
+    if (key.startsWith(CHILD_DECISION_PREFIX)) {
+      ids.add(key.slice(CHILD_DECISION_PREFIX.length));
+    }
+  }
+  return [...ids];
 }
+
+const CHILD_DECISION_PREFIX = 'image_internal_';

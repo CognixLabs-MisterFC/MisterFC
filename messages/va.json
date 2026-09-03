@@ -513,7 +513,6 @@
     "image_yes": "Sí",
     "image_no": "No",
     "image_upload_photo": "Puja una foto del xiquet/a",
-    "image_upload_avatar": "Puja un avatar (imatge que el represente)",
     "image_hint": "JPG, PNG o WebP. Màxim {maxMb} MB.",
     "image_err_mime": "Format no vàlid (usa JPG, PNG o WebP).",
     "image_err_large": "La imatge supera la mida màxima.",
@@ -533,7 +532,6 @@
     "missing_for_child": "{child}: {what}",
     "missing_image_internal": "respon Sí o No a l'ús de la seua imatge dins de l'app",
     "missing_image_social": "respon Sí o No a l'ús de la seua imatge en xarxes socials",
-    "missing_photo": "falta la foto o l'avatar",
     "missing_child_name": "falta el nom",
     "missing_child_dob": "falta la data de naixement, o no és vàlida",
     "missing_password": "Escriu la teua contrasenya."
