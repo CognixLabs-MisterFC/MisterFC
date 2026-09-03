@@ -9,6 +9,7 @@ import {
 } from '@misterfc/core';
 import { LegalTextModal } from '@/components/legal/legal-text-modal';
 import type { ImageConsentDoc, MedicalConsentDoc } from './consent-data';
+import { fieldIds, type FormProblem } from './validation';
 
 /** F14-3c — un hijo pendiente con su player_id (para nombrar los campos del form). */
 export type PendingChild = {
@@ -25,7 +26,6 @@ type Decision = 'yes' | 'no' | null;
 type ChildState = {
   internal: Decision;
   social: Decision;
-  fileOk: boolean;
   preview: string | null;
   fileError: string | null;
   // F14-4 — consentimiento médico (opcional, no gatea el alta).
@@ -36,7 +36,6 @@ function emptyState(): ChildState {
   return {
     internal: null,
     social: null,
-    fileOk: false,
     preview: null,
     fileError: null,
     medical: null,
@@ -50,22 +49,25 @@ type Props = {
   imageInternal: ImageConsentDoc | null;
   imageSocial: ImageConsentDoc | null;
   medicalDoc: MedicalConsentDoc | null;
-  /** Notifica si TODOS los hijos tienen las dos decisiones + una imagen válida. */
-  onSatisfiedChange: (ok: boolean) => void;
+  /** Problemas del último intento de envío, para marcar los campos que faltan. */
+  problems: FormProblem[];
 };
 
 /**
  * F14-3c — Tarjeta por hijo con dos decisiones de imagen INDEPENDIENTES (interna
  * / redes, sí/no explícito, no casilla muda) + selector de imagen OBLIGATORIO.
  * Los inputs con `name` viajan en el FormData del alta; el estado local solo
- * gobierna el gating del botón (onSatisfiedChange) y el preview/validación.
+ * gobierna el preview y el error de formato del fichero.
+ *
+ * Ya NO gatea el botón: lo que falte lo dice el validador del formulario, que
+ * lee el FormData y nombra al hijo. Aquí solo se pinta la marca de cada campo.
  */
 export function ChildrenImageSection({
   items,
   imageInternal,
   imageSocial,
   medicalDoc,
-  onSatisfiedChange,
+  problems,
 }: Props) {
   const t = useTranslations('invite');
   const kids = items.filter(
@@ -76,21 +78,11 @@ export function ChildrenImageSection({
   );
   const [viewer, setViewer] = useState<LegalText | null>(null);
 
-  function computeOk(next: Record<string, ChildState>): boolean {
-    return (
-      kids.length > 0 &&
-      kids.every((c) => {
-        const s = next[c.playerId];
-        return !!s && s.internal !== null && s.social !== null && s.fileOk;
-      })
-    );
+  function patch(pid: string, p: Partial<ChildState>) {
+    setStates((prev) => ({ ...prev, [pid]: { ...prev[pid]!, ...p } }));
   }
 
-  function patch(pid: string, p: Partial<ChildState>) {
-    const next = { ...states, [pid]: { ...states[pid]!, ...p } };
-    setStates(next);
-    onSatisfiedChange(computeOk(next));
-  }
+  const problemFor = (fieldId: string) => problems.find((p) => p.fieldId === fieldId);
 
   function mapFileError(code: string | undefined): string {
     if (code === 'player_photo_mime_invalid') return t('image_err_mime');
@@ -102,21 +94,17 @@ export function ChildrenImageSection({
   function onFile(pid: string, e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) {
-      patch(pid, { fileOk: false, preview: null, fileError: null });
+      patch(pid, { preview: null, fileError: null });
       return;
     }
     const v = playerPhotoUploadSchema.safeParse({ mimeType: file.type, size: file.size });
     if (!v.success) {
       // Fichero inválido: lo descartamos del form (no debe enviarse).
       e.target.value = '';
-      patch(pid, {
-        fileOk: false,
-        preview: null,
-        fileError: mapFileError(v.error.issues[0]?.message),
-      });
+      patch(pid, { preview: null, fileError: mapFileError(v.error.issues[0]?.message) });
       return;
     }
-    patch(pid, { fileOk: true, preview: URL.createObjectURL(file), fileError: null });
+    patch(pid, { preview: URL.createObjectURL(file), fileError: null });
   }
 
   if (kids.length === 0) return null;
@@ -128,6 +116,7 @@ export function ChildrenImageSection({
       {kids.map((c) => {
         const s = states[c.playerId]!;
         const maxMb = String(PLAYER_PHOTO_MAX_BYTES / 1024 / 1024);
+        const fileProblem = problemFor(fieldIds.imageFile(c.playerId));
         return (
           <div
             key={c.playerId}
@@ -143,18 +132,22 @@ export function ChildrenImageSection({
 
             <ImageDecision
               legendKey="image_internal_q"
+              id={fieldIds.imageInternal(c.playerId)}
               name={`image_internal_${c.playerId}`}
               value={s.internal}
               onChange={(d) => patch(c.playerId, { internal: d })}
               onView={imageInternal ? () => setViewer(imageInternal) : null}
+              problem={problemFor(fieldIds.imageInternal(c.playerId))}
             />
 
             <ImageDecision
               legendKey="image_social_q"
+              id={fieldIds.imageSocial(c.playerId)}
               name={`image_social_${c.playerId}`}
               value={s.social}
               onChange={(d) => patch(c.playerId, { social: d })}
               onView={imageSocial ? () => setViewer(imageSocial) : null}
+              problem={problemFor(fieldIds.imageSocial(c.playerId))}
             />
 
             <label className="flex flex-col gap-2 text-left">
@@ -163,9 +156,11 @@ export function ChildrenImageSection({
               </span>
               <input
                 type="file"
+                id={fieldIds.imageFile(c.playerId)}
                 name={`image_file_${c.playerId}`}
                 accept={PLAYER_PHOTO_MIME_TYPES.join(',')}
                 required
+                aria-invalid={fileProblem != null}
                 onChange={(e) => onFile(c.playerId, e)}
                 className="text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-zinc-700 file:px-3 file:py-1.5 file:text-sm file:text-white"
               />
@@ -175,6 +170,9 @@ export function ChildrenImageSection({
                 <img src={s.preview} alt="" className="size-16 rounded-md object-cover" />
               )}
               {s.fileError && <span className="text-xs text-red-400">{s.fileError}</span>}
+              {fileProblem && !s.fileError && (
+                <span className="text-xs text-red-400">{t(fileProblem.messageKey)}</span>
+              )}
             </label>
 
             {/* F14-4 — Consentimiento informado de datos médicos (OPCIONAL). */}
@@ -224,23 +222,33 @@ export function ChildrenImageSection({
 
 function ImageDecision({
   legendKey,
+  id,
   name,
   value,
   onChange,
   onView,
   required = true,
+  problem,
 }: {
   legendKey: string;
+  /** Va en el radio "sí": es el que recibe el foco cuando falta la respuesta. */
+  id?: string;
   name: string;
   value: Decision;
   onChange: (d: Decision) => void;
   onView: (() => void) | null;
   required?: boolean;
+  problem?: FormProblem | undefined;
 }) {
   const t = useTranslations('invite');
+  // `aria-invalid` no aplica al rol radio; el grupo se describe con su aviso.
+  const errorId = id ? `${id}-error` : undefined;
   return (
-    <fieldset className="flex flex-col gap-1">
-      <legend className="text-sm text-zinc-200">
+    <fieldset
+      className="flex flex-col gap-1"
+      aria-describedby={problem && errorId ? errorId : undefined}
+    >
+      <legend className={problem ? 'text-sm text-red-300' : 'text-sm text-zinc-200'}>
         {t(legendKey)}
         {onView && (
           <button
@@ -256,6 +264,7 @@ function ImageDecision({
         <label className="flex items-center gap-1.5 text-sm text-zinc-200">
           <input
             type="radio"
+            id={id}
             name={name}
             value="yes"
             required={required}
@@ -275,6 +284,11 @@ function ImageDecision({
           {t('image_no')}
         </label>
       </div>
+      {problem && (
+        <span id={errorId} className="text-xs text-red-400">
+          {t(problem.messageKey)}
+        </span>
+      )}
     </fieldset>
   );
 }

@@ -528,7 +528,15 @@
     "medical_medication": "Medicació",
     "medical_conditions": "Condicions mèdiques",
     "medical_emergency": "Contacte d’emergència",
-    "medical_optional_hint": "Tots els camps són opcionals. Podràs editar-los més avant."
+    "medical_optional_hint": "Tots els camps són opcionals. Podràs editar-los més avant.",
+    "missing_heading": "Encara no podem completar l'alta:",
+    "missing_for_child": "{child}: {what}",
+    "missing_image_internal": "respon Sí o No a l'ús de la seua imatge dins de l'app",
+    "missing_image_social": "respon Sí o No a l'ús de la seua imatge en xarxes socials",
+    "missing_photo": "falta la foto o l'avatar",
+    "missing_child_name": "falta el nom",
+    "missing_child_dob": "falta la data de naixement, o no és vàlida",
+    "missing_password": "Escriu la teua contrasenya."
   },
   "directos": {
     "title": "Directes",

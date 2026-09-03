@@ -12,6 +12,10 @@ import {
   isInvitePending,
   isSamePasswordError,
   playerPhotoUploadSchema,
+  // Rework C/D — la regla de los datos del hijo la usan LOS DOS lados (este
+  // server y el validador del formulario). Una sola copia, en core: si se
+  // tocara aquí, el aviso del cliente diría otra cosa que el servidor.
+  validateChildRow,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { emitInAppNotificationFanOut } from '@/lib/notify-bus';
@@ -20,6 +24,7 @@ import {
   loadPendingInvitationsForEmail,
   type LoadedInvitation,
 } from './invite-data';
+
 
 /** Flags de aceptación (T&C + Privacidad) enviados por el form del alta (F14-2). */
 type ConsentAccepts = { terms: boolean; privacy: boolean };
@@ -70,20 +75,6 @@ const MIME_TO_EXT: Record<string, string> = {
   'image/webp': 'webp',
 };
 
-/**
- * Rework C/D — validación de la fecha de nacimiento del hijo confirmada por el
- * tutor. Mismo criterio que el alta (yyyy-mm-dd, >= 1900, no futura).
- */
-function isValidChildDob(s: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return false;
-  const year = d.getUTCFullYear();
-  if (year < 1900) return false;
-  if (d.getTime() > Date.now()) return false;
-  return true;
-}
-
 type ChildUpdate = {
   playerId: string;
   first_name: string;
@@ -129,9 +120,8 @@ async function parseChildUpdates(
     const first = String(rec?.firstName ?? '').trim();
     const last = String(rec?.lastName ?? '').trim();
     const dob = String(rec?.dob ?? '').trim();
-    if (first.length === 0 || first.length > 80) return { ok: false, error: 'child_name_required' };
-    if (last.length > 120) return { ok: false, error: 'child_name_required' };
-    if (!isValidChildDob(dob)) return { ok: false, error: 'child_dob_invalid' };
+    const verdict = validateChildRow({ firstName: first, lastName: last, dob });
+    if (verdict) return { ok: false, error: verdict };
     updates.push({
       playerId: pid,
       first_name: first,

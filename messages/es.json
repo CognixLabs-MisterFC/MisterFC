@@ -1007,7 +1007,15 @@
     "medical_medication": "Medicación",
     "medical_conditions": "Condiciones médicas",
     "medical_emergency": "Contacto de emergencia",
-    "medical_optional_hint": "Todos los campos son opcionales. Podrás editarlos más adelante."
+    "medical_optional_hint": "Todos los campos son opcionales. Podrás editarlos más adelante.",
+    "missing_heading": "No podemos completar el alta todavía:",
+    "missing_for_child": "{child}: {what}",
+    "missing_image_internal": "responde Sí o No al uso de su imagen dentro de la app",
+    "missing_image_social": "responde Sí o No al uso de su imagen en redes sociales",
+    "missing_photo": "falta la foto o el avatar",
+    "missing_child_name": "falta el nombre",
+    "missing_child_dob": "falta la fecha de nacimiento, o no es válida",
+    "missing_password": "Escribe tu contraseña."
   },
   "informes": {
     "title": "Informes de desarrollo",
