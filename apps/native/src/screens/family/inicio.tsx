@@ -5,12 +5,13 @@ import {
   getInboxFromClient,
   countUnreadConversations,
   getPlayerPendingCallupFromClient,
-  getUpcomingEventsFromClient,
+  getNextEventPerPlayerFromClient,
   getUnreadAnnouncementsFromClient,
   getUnreadNotificationsFeedFromClient,
   markNotificationReadFromClient,
   notificationFeedText,
   type UpcomingEvent,
+  type PlayerNextEvent,
   type PlayerPendingCallup,
   type AnnouncementRow,
   type NotificationFeedRow,
@@ -50,10 +51,73 @@ function formatEventWhen(iso: string): string {
   return `${date.charAt(0).toUpperCase()}${date.slice(1)} · ${time}`;
 }
 
+/**
+ * Tarjeta ANCHA del próximo evento (Punto 6). Mismo diseño de siempre; lo único
+ * que cambia es la cabecera: con UN hijo dice "Próximo evento" (idéntico a antes)
+ * y con VARIOS el nombre del hijo, para distinguir las tarjetas.
+ *
+ * Jerarquía: lo más grande es QUÉ es el evento (icono + tipo/título), luego
+ * fecha·hora en tamaño medio y el equipo en pequeño.
+ */
+function NextEventCard({
+  heading,
+  event,
+  accent,
+  onPress,
+}: {
+  heading: string;
+  event: UpcomingEvent | null;
+  accent: string;
+  onPress: (() => void) | null;
+}) {
+  const t = useTranslations('');
+  // Sin duplicar: el tipo (catálogo compartido) es el titular. Si el evento trae
+  // título propio DISTINTO del tipo (p. ej. un amistoso "Fonteta vs Amistat"),
+  // ese título sustituye al tipo como titular.
+  const typeLabel = event ? t(`calendario.types.${event.type}`) : '';
+  const ownTitle = event?.title?.trim();
+  const headline = ownTitle && ownTitle !== typeLabel ? ownTitle : typeLabel;
+
+  return (
+    <Pressable
+      onPress={onPress ?? undefined}
+      disabled={!onPress}
+      className="rounded-2xl border border-zinc-200 p-4 active:opacity-70"
+      style={{ borderLeftWidth: 4, borderLeftColor: accent }}
+    >
+      <Text className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+        {heading}
+      </Text>
+      {event ? (
+        <>
+          <View className="mt-1 flex-row items-center gap-2">
+            <Text className="text-2xl">{TYPE_ICON[event.type] ?? '📌'}</Text>
+            <Text
+              className="flex-1 text-xl font-extrabold uppercase text-[#0F1B2E]"
+              numberOfLines={2}
+            >
+              {headline}
+            </Text>
+          </View>
+          <Text className="mt-2 text-base font-semibold text-[#0F1B2E] tabular-nums">
+            {formatEventWhen(event.starts_at)}
+          </Text>
+          {event.teamName ? (
+            <Text className="text-sm text-zinc-500">{event.teamName}</Text>
+          ) : null}
+        </>
+      ) : (
+        <Text className="mt-1 text-sm text-zinc-400">{t('inicio.empty_upcoming')}</Text>
+      )}
+    </Pressable>
+  );
+}
+
 type HomeData = {
   unread: number;
   pending: PlayerPendingCallup;
-  upcoming: UpcomingEvent[];
+  /** Una entrada POR HIJO, en el orden en que llegan; `event` null = sin eventos. */
+  upcoming: PlayerNextEvent[];
   announcements: AnnouncementRow[];
   feed: NotificationFeedRow[];
 };
@@ -104,9 +168,12 @@ export function InicioScreen() {
           ? getInboxFromClient(sb, user.id).then(countUnreadConversations)
           : Promise.resolve(0),
         getPlayerPendingCallupFromClient(sb, playerIds),
-        // INSTRUMENTACIÓN — sink onError: si la consulta de próximos eventos falla por
-        // RLS/Postgres, deja rastro en Sentry en vez de un `[]` mudo (bug "sin eventos").
-        getUpcomingEventsFromClient(sb, nowIso, toIso, 5, (e) =>
+        // El próximo evento DE CADA HIJO, acotado a SUS equipos. Antes se pedían los
+        // eventos sin filtro y se cogía el primero: como la RLS abre los partidos a
+        // todo el club (F7B-2), a una familia del Alevín le salía uno del Infantil B.
+        // INSTRUMENTACIÓN — sink onError (#488): un fallo de RLS/Postgres deja rastro
+        // en Sentry en vez de un `[]` mudo.
+        getNextEventPerPlayerFromClient(sb, clubId, playerIds, nowIso, toIso, (e) =>
           reportDataError('upcoming-events', e),
         ),
         // Punto 7 — SOLO anuncios sin leer; al abrirlos (/anuncios los marca
@@ -121,8 +188,11 @@ export function InicioScreen() {
       // cuántos próximos eventos y el más cercano, con la ventana usada.
       reportDataSignal('inicio-upcoming', {
         phase: 'fetch',
+        // `count` = hijos con tarjeta; `withEvent` = cuántas traen evento. Sin el
+        // segundo, "dos tarjetas vacías" y "dos tarjetas llenas" serían el mismo 2.
         count: upcoming.length,
-        first: upcoming[0]?.starts_at ?? 'none',
+        withEvent: upcoming.filter((u) => u.event != null).length,
+        first: upcoming.find((u) => u.event != null)?.event?.starts_at ?? 'none',
         from: nowIso.slice(0, 10),
         to: toIso.slice(0, 10),
       });
@@ -139,7 +209,8 @@ export function InicioScreen() {
       phase: 'render',
       fromCache,
       count: data.upcoming.length,
-      first: data.upcoming[0]?.starts_at ?? 'none',
+      withEvent: data.upcoming.filter((u) => u.event != null).length,
+      first: data.upcoming.find((u) => u.event != null)?.event?.starts_at ?? 'none',
     });
   }, [data, fromCache, loading]);
 
@@ -168,9 +239,19 @@ export function InicioScreen() {
     router.push(target as Href);
   };
 
-  // Punto 6 — un SOLO evento: el más próximo. Destino = el mismo familyEventTarget.
-  const nextEvent = d.upcoming[0] ?? null;
-  const nextEventTarget = nextEvent ? familyEventTarget(nextEvent) : null;
+  // Punto 6 (revisión) — UNA TARJETA POR HIJO, cada una con el próximo evento de
+  // SUS equipos. Con un solo hijo queda una tarjeta, idéntica a como estaba.
+  // Con varios, la cabecera pasa a ser el nombre para poder distinguirlas.
+  // Dos hermanos del MISMO equipo verán el MISMO evento: es correcto, comparten
+  // calendario.
+  const nameOf = (playerId: string) =>
+    players.find((p) => p.id === playerId)?.name ?? t('inicio.next_event');
+  const cards = d.upcoming.map((u) => ({
+    playerId: u.playerId,
+    heading: d.upcoming.length > 1 ? nameOf(u.playerId) : t('inicio.next_event'),
+    event: u.event,
+    target: u.event ? familyEventTarget(u.event) : null,
+  }));
 
   return (
     <View className="flex-1 bg-white">
@@ -183,51 +264,15 @@ export function InicioScreen() {
           <Text className="text-sm text-zinc-400">{theme.clubName}</Text>
         ) : null}
 
-        {/* Punto 6 — tarjeta ANCHA del próximo evento, lo primero tras el saludo,
-            encima de la rejilla. Jerarquía (ajuste dispositivo): lo más grande es
-            QUÉ es el evento (icono + tipo/título), luego fecha·hora en tamaño medio
-            y el equipo en pequeño. Sustituye a la antigua lista "Próximos eventos". */}
-        <Pressable
-          onPress={nextEventTarget ? () => go(nextEventTarget) : undefined}
-          disabled={!nextEventTarget}
-          className="rounded-2xl border border-zinc-200 p-4 active:opacity-70"
-          style={{ borderLeftWidth: 4, borderLeftColor: accent }}
-        >
-          <Text className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
-            {t('inicio.next_event')}
-          </Text>
-          {nextEvent ? (
-            (() => {
-              // Sin duplicar: el tipo (catálogo compartido) es el titular. Si el
-              // evento trae título propio DISTINTO del tipo (p. ej. un amistoso
-              // "Fonteta vs Amistat"), ese título sustituye al tipo como titular.
-              const typeLabel = t(`calendario.types.${nextEvent.type}`);
-              const ownTitle = nextEvent.title?.trim();
-              const headline = ownTitle && ownTitle !== typeLabel ? ownTitle : typeLabel;
-              return (
-                <>
-                  <View className="mt-1 flex-row items-center gap-2">
-                    <Text className="text-2xl">{TYPE_ICON[nextEvent.type] ?? '📌'}</Text>
-                    <Text
-                      className="flex-1 text-xl font-extrabold uppercase text-[#0F1B2E]"
-                      numberOfLines={2}
-                    >
-                      {headline}
-                    </Text>
-                  </View>
-                  <Text className="mt-2 text-base font-semibold text-[#0F1B2E] tabular-nums">
-                    {formatEventWhen(nextEvent.starts_at)}
-                  </Text>
-                  {nextEvent.teamName ? (
-                    <Text className="text-sm text-zinc-500">{nextEvent.teamName}</Text>
-                  ) : null}
-                </>
-              );
-            })()
-          ) : (
-            <Text className="mt-1 text-sm text-zinc-400">{t('inicio.empty_upcoming')}</Text>
-          )}
-        </Pressable>
+        {cards.map((c) => (
+          <NextEventCard
+            key={c.playerId}
+            heading={c.heading}
+            event={c.event}
+            accent={accent}
+            onPress={c.target ? () => go(c.target) : null}
+          />
+        ))}
 
         {/* Rejilla de accesos rápidos (espeja el inicio de staff). */}
         <View className="flex-row flex-wrap gap-2 pt-1">
