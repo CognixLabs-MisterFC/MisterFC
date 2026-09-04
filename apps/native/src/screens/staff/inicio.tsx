@@ -22,8 +22,8 @@ import { ListCard, Tile, CountBadge } from './hub-parts';
 /**
  * O2-10a — INICIO del cuerpo técnico. Bloques de TAREA (sin comunicación — mensajes/
  * anuncios/novedades son 10b): "convocatorias sin publicar" (`getStaffCallupsFromClient`
- * → filtra no publicadas) y "próximos eventos" (`getUpcomingEventsFromClient`, RLS
- * scope = sus equipos), más accesos rápidos al hub. Solo lectura, cache-first
+ * → filtra no publicadas) y "próximos eventos" (`getUpcomingEventsFromClient`
+ * acotado a SUS equipos), más accesos rápidos al hub. Solo lectura, cache-first
  * (`staff-home.${clubId}`).
  */
 const DAY = 86_400_000;
@@ -77,12 +77,19 @@ export function StaffHomeScreen() {
     async (sb) => {
       if (!clubId || !role) return EMPTY_HOME;
       const now = Date.now();
-      // Modo Míster: un director/admin en el área staff ve SOLO sus equipos, igual que
-      // un entrenador. Resolvemos sus equipos PRIMERO (se reusan en las tareas 2 y 3) y,
-      // en modo Míster, acotamos "próximos eventos" a esos equipos ANTES del limit (un
-      // filtro en cliente tras el top-5 club-wide dejaría fuera los suyos). Para el
-      // entrenador normal (isCoachMode=false) no se pasa teamIds → RLS, sin cambios.
-      const isCoachMode = role === 'admin_club' || role === 'director';
+      // "Próximos eventos" se acota SIEMPRE a sus equipos, para todo el cuerpo
+      // técnico. Antes solo lo hacía el modo Míster (director/admin, S2-1.5 #533) y
+      // al entrenador y al coordinador se les dejaba a merced de la RLS — que abre
+      // partidos/amistosos/torneos a TODO el club a propósito (F7B-2), así que se
+      // les colaba el partido de otro equipo. Mismo fallo que en el inicio de
+      // familia (#552).
+      //
+      // El filtro va ANTES del limit: filtrar en cliente tras un top-5 club-wide
+      // dejaría fuera los suyos. Y lista VACÍA ≠ sin filtro: si no tiene equipos,
+      // el loader devuelve [] sin consultar (guard de #552) y la tarjeta dice "sin
+      // eventos próximos" en vez de enseñar los de otro.
+      //
+      // Los equipos se resuelven PRIMERO porque se reusan en las tareas 2 y 3.
       const teams = membershipId
         ? await getStaffTeamsFromClient(sb, { membershipId, clubId }, (e) =>
             reportDataError('staff-home', e),
@@ -94,8 +101,11 @@ export function StaffHomeScreen() {
         new Date(now).toISOString(),
         new Date(now + 7 * DAY).toISOString(),
         5,
-        undefined,
-        isCoachMode ? teamIds : undefined,
+        // Sink de errores (patrón #488): con el filtro puesto, una tarjeta vacía es
+        // un resultado posible y legítimo. Sin este sink no habría forma de
+        // distinguirla de una consulta que falló.
+        (e) => reportDataError('staff-home-upcoming', e),
+        teamIds,
       );
       // Tarea 1 — convocatorias de partido a < 3 días sin publicar. asStaffMember acota
       // al director a sus equipos (para coordinador/entrenador es no-op).
@@ -129,12 +139,9 @@ export function StaffHomeScreen() {
   // E1 — próximo evento = el MÁS CERCANO, con su equipo indicado. Destino =
   // staffEventTarget (#478).
   //
-  // OJO — la RLS NO acota esto a sus equipos, aunque aquí se dijera lo contrario:
-  // `events_select` abre partidos/amistosos/torneos a TODO el club a propósito
-  // (F7B-2), así que sin `teamIds` se cuela el partido de otro equipo. Hoy solo
-  // el modo Míster (admin/director) pasa `teamIds`; al entrenador y al
-  // coordinador les falta, y por eso pueden ver un partido ajeno. Se arregla
-  // aparte, junto con el mismo fallo en la web.
+  // La RLS NO acota esto a sus equipos —`events_select` abre partidos/amistosos/
+  // torneos a TODO el club a propósito (F7B-2)—, por eso el loader recibe
+  // `teamIds` arriba. Sin ese filtro se colaba el partido de otro equipo.
   const nextEvent = home.upcoming[0] ?? null;
   const nextEventTarget = nextEvent ? staffEventTarget(nextEvent) : null;
 
