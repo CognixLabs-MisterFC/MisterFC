@@ -126,9 +126,15 @@ export function StaffHomeScreen() {
   if (loading) return <LoadingScreen />;
   const home = data ?? EMPTY_HOME;
 
-  // E1 — próximo evento = el MÁS CERCANO de CUALQUIERA de sus equipos (la RLS de
-  // getUpcomingEventsFromClient ya acota a sus equipos y ordena por fecha), con su
-  // equipo indicado. Destino = staffEventTarget (#478).
+  // E1 — próximo evento = el MÁS CERCANO, con su equipo indicado. Destino =
+  // staffEventTarget (#478).
+  //
+  // OJO — la RLS NO acota esto a sus equipos, aunque aquí se dijera lo contrario:
+  // `events_select` abre partidos/amistosos/torneos a TODO el club a propósito
+  // (F7B-2), así que sin `teamIds` se cuela el partido de otro equipo. Hoy solo
+  // el modo Míster (admin/director) pasa `teamIds`; al entrenador y al
+  // coordinador les falta, y por eso pueden ver un partido ajeno. Se arregla
+  // aparte, junto con el mismo fallo en la web.
   const nextEvent = home.upcoming[0] ?? null;
   const nextEventTarget = nextEvent ? staffEventTarget(nextEvent) : null;
 
