@@ -9,6 +9,8 @@ import {
 import {
   MATCH_SURFACE_TYPES,
   createSupabaseServerClient,
+  getCalendarScopeTeamIdsFromClient,
+  getUpcomingEventsFromClient,
   ADMIN_ROLES,
   COACH_ROLES as CORE_COACH_ROLES,
 } from '@misterfc/core';
@@ -100,33 +102,34 @@ export default async function Home({ params, searchParams }: Props) {
   };
   const announcements = (annRows ?? []) as unknown as AnnRow[];
 
-  // Próximos eventos (24-72h) — relevante para jugador y coach.
-  // Server component: render una vez por request, Date.now() determinista
-  // para el snapshot. La regla react-hooks/purity es over-protective aquí.
+  // Próximos eventos (7 días) — relevante para jugador y coach.
+  //
+  // Acotados a SUS equipos. Antes esta consulta estaba duplicada a mano aquí y no
+  // filtraba por equipo: como la RLS de `events` abre partidos/amistosos/torneos a
+  // TODO el club a propósito (F7B-2), a una familia del Alevín se le colaba un
+  // amistoso del Infantil B. Mismo fallo que en la app (#552), y por eso ahora
+  // usa el MISMO loader de core que ella, con el mismo guard de lista vacía: sin
+  // equipos devuelve [] sin consultar, en vez de caer a club-wide.
+  //
+  // `getCalendarScopeTeamIdsFromClient` es la RPC que ya usa el calendario:
+  // acotada a la temporada activa y válida para las dos ramas (los equipos de sus
+  // hijos si es familia, los suyos si es staff).
+  //
+  // Server component: render una vez por request, Date.now() determinista para el
+  // snapshot. La regla react-hooks/purity es over-protective aquí.
   // eslint-disable-next-line react-hooks/purity
   const upcomingHorizon = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString();
-  const { data: upcomingEventRows } = isPlayer || isCoach
-    ? await supabase
-        .from('events')
-        .select('id, title, type, starts_at, team_id, teams(name)')
-        // F14F-1b — un entreno cancelado no cuenta como próximo evento en Inicio.
-        .is('cancelled_at', null)
-        // F14F-4 — ni un pendiente/rechazado (aún no es un entreno real).
-        .or('approval_status.is.null,approval_status.eq.approved')
-        .gte('starts_at', nowIso)
-        .lte('starts_at', upcomingHorizon)
-        .order('starts_at', { ascending: true })
-        .limit(5)
-    : { data: [] };
-  type Ev = {
-    id: string;
-    title: string;
-    type: string;
-    starts_at: string;
-    team_id: string | null;
-    teams: { name: string } | null;
-  };
-  const upcomingEvents = (upcomingEventRows ?? []) as unknown as Ev[];
+  const upcomingEvents =
+    isPlayer || isCoach
+      ? await getUpcomingEventsFromClient(
+          supabase,
+          nowIso,
+          upcomingHorizon,
+          5,
+          undefined,
+          await getCalendarScopeTeamIdsFromClient(supabase, clubId),
+        )
+      : [];
 
   // Convocatorias pendientes a publicar (coach).
   // Bug J — la versión anterior usaba `head: true` + filtro embebido
@@ -334,7 +337,8 @@ export default async function Home({ params, searchParams }: Props) {
                           {t(`cards.upcoming.kind.${e.type}`)}
                           {' · '}
                           {new Date(e.starts_at).toLocaleString(locale)}
-                          {e.teams?.name && ` · ${e.teams.name}`}
+                          {/* El loader de core ya aplana `teams(name)` a `teamName`. */}
+                          {e.teamName && ` · ${e.teamName}`}
                         </span>
                       </div>
                     </li>
