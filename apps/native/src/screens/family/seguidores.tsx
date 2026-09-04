@@ -64,10 +64,14 @@ export function SeguidoresScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <ChildSelector />
       <OfflineBanner show={fromCache} />
-      <View className="flex-row items-center justify-between px-4 pb-1 pt-3">
-        <Text className="text-xl font-semibold text-[#0F1B2E]">{t('seguidores.title')}</Text>
+      {/* Los seguidores son de UN hijo, y aquí se decide quién puede ver a ese
+          niño: la etiqueta dice de cuál. Para cambiar se va al inicio. */}
+      <View className="flex-row items-center justify-between gap-2 px-4 pb-1 pt-3">
+        <Text className="flex-1 text-xl font-semibold text-[#0F1B2E]" numberOfLines={1}>
+          {t('seguidores.title')}
+        </Text>
+        <ChildSelector readOnly />
         <Pressable
           onPress={() => setInviteOpen(true)}
           disabled={!online}

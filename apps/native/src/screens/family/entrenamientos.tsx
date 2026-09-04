@@ -15,6 +15,7 @@ import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { ChildSelector } from '@/ui/child-selector';
 import { BRAND } from '@/theme';
 
 /** Día + hora sin segundos (mismo criterio que el resto de la app: `toLocaleString`). */
@@ -169,7 +170,13 @@ export function EntrenamientosScreen({
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
-        <Text className="text-xl font-bold text-[#0F1B2E]">{t('entrenamientos.title')}</Text>
+        {/* La asistencia de abajo es de UN hijo: la etiqueta dice de cuál. */}
+        <View className="flex-row items-center justify-between gap-3">
+          <Text className="flex-1 text-xl font-bold text-[#0F1B2E]" numberOfLines={1}>
+            {t('entrenamientos.title')}
+          </Text>
+          <ChildSelector readOnly />
+        </View>
         {teamName ? <Text className="-mt-1 text-xs text-zinc-400">{teamName}</Text> : null}
 
         {/* 1 · RESUMEN DE LA TEMPORADA — reusa el cálculo de asistencia (F4.8). D1b-3:
