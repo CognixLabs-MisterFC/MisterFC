@@ -13,7 +13,6 @@ import {
 import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
-import { ChildSelector } from '@/ui/child-selector';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
@@ -72,7 +71,6 @@ export function MiEquipoScreen() {
   if (!activeTeam) {
     return (
       <View className="flex-1 bg-white">
-        <ChildSelector />
         <EmptyState message={t('mi_equipo.family_no_team')} />
       </View>
     );
@@ -87,7 +85,6 @@ export function MiEquipoScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <ChildSelector />
       <OfflineBanner show={teams.fromCache || home.fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
         {/* Selector de equipo INTERNO (si el hijo activo tiene varios). */}

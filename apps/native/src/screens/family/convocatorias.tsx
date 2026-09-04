@@ -54,10 +54,16 @@ export function ConvocatoriasScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <ChildSelector />
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
-        <ScreenTitle>{t('convocatorias.family_title')}</ScreenTitle>
+        {/* Estas convocatorias son de UN hijo. Sin esta etiqueta, con dos hermanos
+            no había forma de saber de cuál. Para cambiar se va al inicio. */}
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="flex-1">
+            <ScreenTitle>{t('convocatorias.family_title')}</ScreenTitle>
+          </View>
+          <ChildSelector readOnly />
+        </View>
 
         {rows.length === 0 ? (
           <EmptyState message={t('convocatorias.family_empty')} />

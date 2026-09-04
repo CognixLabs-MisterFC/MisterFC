@@ -9,7 +9,6 @@ import {
 import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
-import { ChildSelector } from '@/ui/child-selector';
 import { LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
@@ -53,7 +52,6 @@ export function ResolvePlayerTeam({
   if (!activeTeam) {
     return (
       <View className="flex-1 bg-white">
-        <ChildSelector />
         <EmptyState message={t('mi_equipo.family_no_team')} />
       </View>
     );
@@ -61,7 +59,6 @@ export function ResolvePlayerTeam({
 
   return (
     <View className="flex-1 bg-white">
-      <ChildSelector />
       {list.length > 1 ? (
         <View className="flex-row flex-wrap gap-2 px-4 pt-3">
           {list.map((tm) => {

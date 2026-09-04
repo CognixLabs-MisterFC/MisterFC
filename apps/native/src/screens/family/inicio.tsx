@@ -24,6 +24,7 @@ import { supabase } from '@/lib/supabase';
 import { reportDataError, reportDataSignal } from '@/lib/report-error';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
+import { ChildSelector } from '@/ui/child-selector';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { familyEventTarget, familyFeedTarget, type FamilyTarget } from '@/notifications/feed-target';
@@ -241,6 +242,12 @@ export function InicioScreen() {
 
   // Punto 6 (revisión) — UNA TARJETA POR HIJO, cada una con el próximo evento de
   // SUS equipos. Con un solo hijo queda una tarjeta, idéntica a como estaba.
+  //
+  // OJO — estas tarjetas NO se filtran por el hijo activo, y no es un descuido:
+  // salen de `players` (TODOS los hijos), no de `activePlayer`, y la clave de
+  // caché va por tutor. Cambiar de hijo en el chip de arriba NO las toca. El
+  // selector está aquí para que las OTRAS pantallas sigan al hijo elegido; el
+  // inicio ya los enseña a los dos.
   // Con varios, la cabecera pasa a ser el nombre para poder distinguirlas.
   // Dos hermanos del MISMO equipo verán el MISMO evento: es correcto, comparten
   // calendario.
@@ -257,9 +264,16 @@ export function InicioScreen() {
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}>
-        <Text className="text-2xl font-bold text-[#0F1B2E]">
-          {t('home.greeting', { name: profileName ?? '' }).trim()}
-        </Text>
+        {/* El saludo lleva el nombre del TUTOR; el chip, el hijo activo. El saludo
+            se lleva el espacio sobrante y se trunca antes que el chip, que es la
+            información accionable. El selector vive SOLO aquí: para cambiar de
+            hijo se viene al inicio. */}
+        <View className="flex-row items-center justify-between gap-3">
+          <Text className="flex-1 text-2xl font-bold text-[#0F1B2E]" numberOfLines={1}>
+            {t('home.greeting', { name: profileName ?? '' }).trim()}
+          </Text>
+          <ChildSelector />
+        </View>
         {theme?.clubName ? (
           <Text className="text-sm text-zinc-400">{theme.clubName}</Text>
         ) : null}

@@ -82,7 +82,6 @@ export function GestionScreen() {
   if (!isTutor) {
     return (
       <View className="flex-1 bg-white">
-        <ChildSelector />
         <EmptyState message={t('gestion.not_tutor')} />
       </View>
     );
@@ -90,7 +89,6 @@ export function GestionScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <ChildSelector />
       <OfflineBanner show={fromCache} />
       {!online ? (
         <View className="bg-zinc-100 px-4 py-2">
@@ -98,6 +96,13 @@ export function GestionScreen() {
         </View>
       ) : null}
       <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}>
+        {/* De quién son estos datos. Esta pantalla edita alergias y medicación y
+            pide el borrado RGPD de UN menor: escribir en la ficha del hermano
+            equivocado es un daño real y silencioso. No es un selector — para
+            cambiar de hijo se va al inicio. */}
+        <View className="flex-row">
+          <ChildSelector readOnly />
+        </View>
         <PhotoCard
           playerId={playerId}
           accent={accent}
