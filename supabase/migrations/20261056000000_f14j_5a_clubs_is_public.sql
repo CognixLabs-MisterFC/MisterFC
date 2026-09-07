@@ -123,6 +123,7 @@ declare
   v_listados  int;
   v_beta      boolean;
   v_por_slug  int;
+  v_oculto    text;
 begin
   -- 4.1 · La columna existe con el default correcto.
   if not exists (
@@ -168,14 +169,26 @@ begin
     raise exception '5A: el listado no coincide con los clubes is_public';
   end if;
 
-  -- 4.5 · Y lo que NO debía cambiar: el club oculto sigue alcanzable por slug.
+  -- 4.5 · Y lo que NO debía cambiar: un club OCULTO sigue alcanzable por slug.
   --       Este assert es el que fallaría si alguien "arregla" la función de
   --       slug para que también filtre.
-  select count(*) into v_por_slug
-    from public.get_public_club_by_slug('club-beta-test');
-  if v_por_slug <> 1 then
-    raise exception
-      '5A: club-beta-test ya no es alcanzable por slug (esperado 1, hay %)',
-      v_por_slug;
+  --
+  --       Se pregunta por CUALQUIER club oculto, no por 'club-beta-test', y
+  --       solo si hay alguno: una migración corre también sobre bases recién
+  --       creadas —el CI aplica todas las migraciones en limpio— donde `clubs`
+  --       está VACÍA y los update de arriba no encuentran ninguna fila. Un
+  --       assert que exija datos de producción convierte el guard en un fallo
+  --       de entorno, que es exactamente lo que pasó la primera vez.
+  select c.slug into v_oculto
+    from public.clubs c where not c.is_public order by c.slug limit 1;
+
+  if v_oculto is not null then
+    select count(*) into v_por_slug
+      from public.get_public_club_by_slug(v_oculto);
+    if v_por_slug <> 1 then
+      raise exception
+        '5A: el club oculto % ya no es alcanzable por slug (esperado 1, hay %)',
+        v_oculto, v_por_slug;
+    end if;
   end if;
 end $guard$;
