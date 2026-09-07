@@ -118,14 +118,16 @@
     "title": "Elige tu club",
     "subtitle": "Entra al espacio de tu club en MisterFC.",
     "empty": "Todavía no hay clubes disponibles.",
-    "error": "No hemos podido cargar los clubes. Inténtalo de nuevo en unos minutos."
+    "error": "No hemos podido cargar los clubes. Inténtalo de nuevo en unos minutos.",
+    "retry": "Reintentar"
   },
   "clubLogin": {
     "subtitle": "Entra a tu club",
     "error": "Usuario, contraseña o club erróneos",
     "notFoundTitle": "Club no encontrado",
     "notFoundBody": "No existe ningún club con esa dirección.",
-    "backToClubs": "Ver todos los clubes"
+    "backToClubs": "Ver todos los clubes",
+    "changeClub": "Cambiar de club"
   },
   "onboarding": {
     "no_club_title": "No tienes acceso a ningún club",
@@ -5358,9 +5360,9 @@
     "no_session": "Entrenos sin sesión",
     "no_attendance": "Entrenos sin asistencia",
     "list_empty": "Nada pendiente",
- "novedades_title": "Novedades sin leer",
- "novedades_see_all": "Ver todas",
- "novedades_empty": "Estás al día.",
+    "novedades_title": "Novedades sin leer",
+    "novedades_see_all": "Ver todas",
+    "novedades_empty": "Estás al día.",
     "expires": "Caduca",
     "report_progress": "{done} de {total}",
     "inv_teams_title": "Invitaciones por equipo",
