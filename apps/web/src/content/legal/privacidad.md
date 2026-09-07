@@ -189,7 +189,7 @@ Se aplican medidas técnicas y organizativas apropiadas para proteger los datos 
 La aplicación puede solicitar los siguientes permisos, siempre para finalidades concretas y previa autorización del usuario:
 
 - **Notificaciones:** para enviar avisos de convocatorias, mensajes, anuncios y partidos en directo.
-- **Cámara y galería de fotos:** para tomar o seleccionar la fotografía de perfil.
+- **Galería y almacenamiento del dispositivo:** para seleccionar la fotografía de perfil. La aplicación no accede a la cámara.
 
 La aplicación no solicita acceso a la ubicación, a los contactos, al micrófono ni al calendario.
 
