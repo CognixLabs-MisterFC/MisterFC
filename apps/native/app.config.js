@@ -16,6 +16,30 @@
 // Cada clave se añade por SPREAD CONDICIONAL: si la variable de entorno no está
 // definida, la clave NO se escribe (antes, con `?? null`, `eas init` serializaba
 // esos null como objetos vacíos `{}` y ensuciaba app.json).
+//
+// ---------------------------------------------------------------------------
+// PERMISOS BLOQUEADOS (`android.blockedPermissions` en app.json)
+// ---------------------------------------------------------------------------
+// app.json es JSON puro y no admite comentarios, así que el porqué vive aquí.
+//
+// La app declaraba CAMERA, RECORD_AUDIO y SYSTEM_ALERT_WINDOW sin usar ninguno:
+//
+//   CAMERA              lo declara expo-image-picker, porque la librería PUEDE
+//                       abrir la cámara. Esta app no: sus dos únicos usos,
+//                       profile-screen.tsx y family/gestion.tsx, llaman a
+//                       `launchImageLibraryAsync` (galería). No hay una sola
+//                       llamada a `launchCameraAsync` en el proyecto.
+//   RECORD_AUDIO        venía en la plantilla de prebuild de Expo. No hay
+//                       ninguna dependencia ni API de audio en la app.
+//   SYSTEM_ALERT_WINDOW lo declara react-native para sus overlays de desarrollo
+//                       (redbox). En release no pinta nada.
+//
+// Importaban porque salen en la ficha de Google Play como «Cámara», «Micrófono»
+// y «Mostrar sobre otras apps»: una familia leería que la app puede usar la
+// cámara y el micrófono de su hijo, y no es verdad.
+//
+// ⚠️ Si algún día se añade una pantalla que haga fotos con `launchCameraAsync`,
+// hay que quitar CAMERA de esa lista o la llamada fallará en tiempo de ejecución.
 module.exports = ({ config }) => ({
   ...config,
   extra: {
