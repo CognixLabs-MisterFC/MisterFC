@@ -118,14 +118,16 @@
     "title": "Tria el teu club",
     "subtitle": "Entra a l'espai del teu club a MisterFC.",
     "empty": "Encara no hi ha clubs disponibles.",
-    "error": "No hem pogut carregar els clubs. Torna-ho a provar d'ací a uns minuts."
+    "error": "No hem pogut carregar els clubs. Torna-ho a provar d'ací a uns minuts.",
+    "retry": "Reintenta-ho"
   },
   "clubLogin": {
     "subtitle": "Entra al teu club",
     "error": "Usuari, contrasenya o club erronis",
     "notFoundTitle": "Club no trobat",
     "notFoundBody": "No hi ha cap club en aquesta adreça.",
-    "backToClubs": "Veure tots els clubs"
+    "backToClubs": "Veure tots els clubs",
+    "changeClub": "Canviar de club"
   },
   "onboarding": {
     "no_club_title": "No tens accés a cap club",
@@ -5358,9 +5360,9 @@
     "no_session": "Entrenaments sense sessió",
     "no_attendance": "Entrenaments sense assistència",
     "list_empty": "Res pendent",
- "novedades_title": "Novetats sense llegir",
- "novedades_see_all": "Veure-les totes",
- "novedades_empty": "Estàs al dia.",
+    "novedades_title": "Novetats sense llegir",
+    "novedades_see_all": "Veure-les totes",
+    "novedades_empty": "Estàs al dia.",
     "expires": "Caduca",
     "report_progress": "{done} de {total}",
     "inv_teams_title": "Invitacions per equip",
