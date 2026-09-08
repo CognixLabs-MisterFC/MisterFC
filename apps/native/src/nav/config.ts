@@ -28,6 +28,45 @@ export const AREA_SEGMENT: Record<ChromeArea, string> = {
   spectator: 'spectator',
 };
 
+/**
+ * RUTAS PÚBLICAS — las alcanzables SIN sesión. Lista cerrada y en un solo sitio.
+ *
+ * `SessionGuard` expulsa al login cualquier ruta que no esté aquí cuando no hay
+ * sesión. Durante mucho tiempo la condición fue un `segments[0] === 'login'`
+ * suelto dentro del guard, y era correcta solo por accidente: `/login` era la
+ * ÚNICA ruta sin sesión que existía. En cuanto F14J-5A añadió el selector de
+ * club, esa comparación empezó a expulsarlo — el login redirigía al selector, el
+ * guard devolvía al login, y la app se quedaba en BLANCO sin lanzar ni una
+ * excepción (por eso no llegó nada a Sentry, y por eso ningún job de CI lo vio:
+ * ninguno ejecuta una navegación).
+ *
+ * ⚠️ SI AÑADES UNA PANTALLA QUE SE VEA SIN SESIÓN, SU SEGMENTO VA AQUÍ.
+ * No hay otro sitio que tocar, y si se olvida el síntoma es una pantalla en
+ * blanco, no un error.
+ *
+ * Son SEGMENTOS de primer nivel (`segments[0]` de expo-router), no rutas
+ * completas: `/seleccionar-club` y un hipotético `/seleccionar-club/loquesea`
+ * cuentan igual.
+ */
+export const PUBLIC_ROUTE_SEGMENTS: readonly string[] = [
+  // El formulario de acceso, con o sin club resuelto.
+  'login',
+  // F14J-5A — elegir club antes de identificarse.
+  'seleccionar-club',
+];
+
+/**
+ * ¿Esta ruta se puede ver sin sesión?
+ *
+ * La raíz (`/`, con `segments` vacío) NO es pública, y es deliberado: ahí vive el
+ * gatekeeper, que ya redirige al login por su cuenta. Dejarla pasar no cambiaría
+ * el destino y taparía el caso de un `segments` vacío inesperado.
+ */
+export function isPublicRoute(segments: readonly string[]): boolean {
+  const first = segments[0];
+  return first !== undefined && PUBLIC_ROUTE_SEGMENTS.includes(first);
+}
+
 /** Barras inferiores — literal y en orden (ver ADR-0020, Decisión 7). */
 export const AREA_TABS: Record<ChromeArea, TabDef[]> = {
   // Jugador / familia (4)
