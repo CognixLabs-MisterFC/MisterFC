@@ -10,7 +10,10 @@
     "icon": "./assets/icon.png",
     "ios": {
       "bundleIdentifier": "com.misterfc.app",
-      "supportsTablet": true
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.misterfc.app",
