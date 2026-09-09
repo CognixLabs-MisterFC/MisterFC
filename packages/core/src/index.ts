@@ -13,6 +13,7 @@ export * from './diagram/index';
 export * from './exercises/index';
 export * from './attendance/index';
 export * from './player-profile/index';
+export * from './player-contact/index';
 export * from './sessions/index';
 export * from './development-report/index';
 export * from './plays/index';

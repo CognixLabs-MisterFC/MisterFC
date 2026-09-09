@@ -46,6 +46,9 @@ export type AcceptInvitationState = {
     | 'invalid_input'
     | 'full_name_too_short'
     | 'full_name_too_long'
+    // Teléfono del tutor: OBLIGATORIO en el alta (y solo aquí).
+    | 'phone_missing'
+    | 'phone_invalid'
     | 'date_of_birth_invalid'
     | 'password_too_short'
     | 'password_mismatch'
@@ -559,6 +562,7 @@ export async function acceptNewInvitee(
   try {
     const parsed = acceptInvitationWithProfileSchema.safeParse({
       full_name: formData.get('full_name'),
+      phone: formData.get('phone'),
       date_of_birth: formData.get('date_of_birth'),
       password: formData.get('password'),
       confirm: formData.get('confirm'),
@@ -568,6 +572,8 @@ export async function acceptNewInvitee(
       logStep('flow=new invalid-input', { code });
       if (code === 'full_name_too_short') return { error: 'full_name_too_short' };
       if (code === 'full_name_too_long') return { error: 'full_name_too_long' };
+      if (code === 'phone_required') return { error: 'phone_missing' };
+      if (code === 'phone_invalid') return { error: 'phone_invalid' };
       if (code === 'date_of_birth_invalid') return { error: 'date_of_birth_invalid' };
       if (code === 'password_too_short') return { error: 'password_too_short' };
       if (code === 'password_mismatch') return { error: 'password_mismatch' };
@@ -678,6 +684,10 @@ export async function acceptNewInvitee(
       .from('profiles')
       .update({
         full_name: parsed.data.full_name,
+        // El teléfono llega ya validado por el schema (mismo criterio que el
+        // CHECK de la columna) y con `trim`. Nunca cadena vacía: el campo es
+        // obligatorio, así que aquí siempre hay número.
+        phone: parsed.data.phone,
         date_of_birth: parsed.data.date_of_birth,
         locale,
       })

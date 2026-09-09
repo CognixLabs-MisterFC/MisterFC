@@ -20,6 +20,15 @@ export type {
 } from './auth';
 
 export {
+  PHONE_MAX_LENGTH,
+  isValidPhone,
+  normalizePhone,
+  phoneDigits,
+  phoneOptionalField,
+  phoneRequiredField,
+} from './phone';
+
+export {
   updateProfileSchema,
   avatarUploadSchema,
   AVATAR_MIME_TYPES,

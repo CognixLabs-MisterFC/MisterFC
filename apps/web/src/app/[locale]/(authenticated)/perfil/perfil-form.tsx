@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { PHONE_MAX_LENGTH } from '@misterfc/core';
 import { updateProfile, type UpdateProfileFormState } from './actions';
 
 type Props = {
@@ -23,9 +24,15 @@ type Props = {
     date_of_birth: string;
     locale: string;
   };
+  /**
+   * El teléfono va aparte porque su lectura puede FALLAR: no se selecciona, se
+   * pide por RPC (`get_my_phone`). Si falló, el campo no se pinta y el formulario
+   * no manda la clave, así que guardar el resto no puede borrarlo.
+   */
+  phone: { ok: true; value: string } | { ok: false };
 };
 
-export function PerfilForm({ locale, email, initial }: Props) {
+export function PerfilForm({ locale, email, initial, phone }: Props) {
   const t = useTranslations('perfil');
   const action = updateProfile.bind(null, locale);
   const [state, formAction, pending] = useActionState<
@@ -63,6 +70,30 @@ export function PerfilForm({ locale, email, initial }: Props) {
         />
         <p className="text-xs text-muted-foreground">{t('field.email_help')}</p>
       </div>
+
+      {phone.ok ? (
+        <div className="grid gap-2">
+          <Label htmlFor="phone">{t('field.phone')}</Label>
+          <Input
+            id="phone"
+            name="phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            maxLength={PHONE_MAX_LENGTH}
+            placeholder={t('field.phone_placeholder')}
+            defaultValue={phone.value}
+          />
+          <p className="text-xs text-muted-foreground">{t('field.phone_help')}</p>
+        </div>
+      ) : (
+        <div className="grid gap-2">
+          <Label>{t('field.phone')}</Label>
+          <p className="text-xs text-destructive" role="alert">
+            {t('field.phone_unavailable')}
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-2">
         <Label htmlFor="date_of_birth">{t('field.date_of_birth')}</Label>

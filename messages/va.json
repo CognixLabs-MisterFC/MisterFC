@@ -536,7 +536,12 @@
     "missing_image_social": "respon Sí o No a l'ús de la seua imatge en xarxes socials",
     "missing_child_name": "falta el nom",
     "missing_child_dob": "falta la data de naixement, o no és vàlida",
-    "missing_password": "Escriu la teua contrasenya."
+    "missing_password": "Escriu la teua contrasenya.",
+    "phone_label": "Telèfon de contacte",
+    "phone_placeholder": "600 123 456",
+    "phone_hint": "El club l’utilitzarà per a localitzar-te si el teu fill o filla necessita alguna cosa en un entrenament o un partit.",
+    "missing_phone": "Falta el teu telèfon de contacte.",
+    "error_phone_invalid": "Aquest telèfon no sembla vàlid. Revisa’l."
   },
   "directos": {
     "title": "Directes",
@@ -696,7 +701,11 @@
       "email_help": "Per a canviar el teu correu, contacta amb suport.",
       "date_of_birth": "Data de naixement",
       "locale": "Idioma de l'app",
-      "locale_help": "Determina l'idioma de menús, missatges i correus."
+      "locale_help": "Determina l'idioma de menús, missatges i correus.",
+      "phone": "Telèfon de contacte",
+      "phone_placeholder": "600 123 456",
+      "phone_help": "El veu el cos tècnic del teu club per a localitzar-te si passa alguna cosa. Les altres famílies, no.",
+      "phone_unavailable": "Ara mateix no podem mostrar el teu telèfon. Torna-ho a intentar més tard."
     },
     "locales": {
       "es": "Espanyol",
@@ -721,7 +730,8 @@
       "avatar_too_large": "La foto és massa gran.",
       "avatar_empty": "El fitxer està buit.",
       "avatar_upload_failed": "No hem pogut pujar la foto. Torneu-ho a provar.",
-      "avatar_remove_failed": "No hem pogut llevar la foto."
+      "avatar_remove_failed": "No hem pogut llevar la foto.",
+      "phone_invalid": "Aquest telèfon no sembla vàlid. Revisa’l."
     },
     "change_password_hint": "T’enviarem un enllaç per correu per a canviar-la.",
     "offline": "Sense connexió: no pots editar ara.",
@@ -1324,7 +1334,9 @@
       "tutor_email": "Correu del tutor",
       "tutor_relation": "Relació del tutor",
       "relation_placeholder": "Selecciona la relació",
-      "tutor_help": "En crear el jugador s'enviarà automàticament la invitació a este correu."
+      "tutor_help": "En crear el jugador s'enviarà automàticament la invitació a este correu.",
+      "phone": "Telèfon del jugador",
+      "phone_help": "Opcional. Només si el jugador té telèfon propi."
     },
     "positions": {
       "goalkeeper": "Porter",
@@ -1471,7 +1483,8 @@
       "relation_required": "Selecciona la relació del tutor.",
       "no_active_club": "Selecciona primer un club.",
       "forbidden": "No tens permís.",
-      "generic": "No s'ha pogut guardar. Torneu-ho a provar."
+      "generic": "No s'ha pogut guardar. Torneu-ho a provar.",
+      "phone_invalid": "Aquest telèfon no sembla vàlid. Revisa’l."
     },
     "family": {
       "empty": "Encara no hi ha comptes de família vinculats.",
@@ -1608,6 +1621,10 @@
       "info": "Informació personal",
       "stats": "Estadístiques",
       "history": "Trajectòria"
+    },
+    "contact": {
+      "unavailable": "No hem pogut carregar les dades de contacte. Torna-ho a intentar.",
+      "no_phone": "Sense telèfon"
     }
   },
   "equipo_detalle": {
@@ -4632,7 +4649,8 @@
       "attendance": "Assistència a entrenaments",
       "achievements": "Assoliments",
       "evaluations": "Valoracions",
-      "consents": "Consentiments"
+      "consents": "Consentiments",
+      "contact": "Contacte"
     },
     "col": {
       "season": "Temporada",
@@ -4678,6 +4696,15 @@
       "granted": "Acceptat",
       "denied": "Denegat",
       "none": "Sense consentiments registrats."
+    },
+    "contact": {
+      "player_phone": "Telèfon del jugador",
+      "none": "Sense dades de contacte registrades.",
+      "relation": {
+        "parent": "Pare/mare",
+        "guardian": "Tutor legal",
+        "self": "El mateix jugador"
+      }
     }
   },
   "platform": {
@@ -5056,7 +5083,14 @@
     "goals_short": "G",
     "career_total": "Total",
     "years": "anys",
-    "evaluations": "Valoracions"
+    "evaluations": "Valoracions",
+    "contact": "Contacte",
+    "contact_unavailable": "No hem pogut carregar les dades de contacte.",
+    "contact_player_phone": "Telèfon del jugador",
+    "contact_email": "Correu",
+    "contact_phone": "Telèfon",
+    "contact_no_phone": "Sense telèfon",
+    "contact_no_tutors": "Sense família vinculada."
   },
   "informe": {
     "empty": "Sense informe disponible",

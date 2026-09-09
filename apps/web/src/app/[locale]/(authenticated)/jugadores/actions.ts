@@ -72,6 +72,7 @@ function parseUpdatePlayerData(formData: FormData) {
     height_cm: formData.get('height_cm'),
     weight_kg: formData.get('weight_kg'),
     origin: formData.get('origin'),
+    phone: formData.get('phone'),
   });
 }
 
@@ -93,6 +94,7 @@ export type PlayerFormError =
   | 'height_cm_invalid'
   | 'weight_kg_invalid'
   | 'origin_too_long'
+  | 'phone_invalid'
   | 'team_invalid'
   // Rework B2 (2026-07): email + relación de tutor + equipo obligatorios.
   | 'team_required'
@@ -125,6 +127,7 @@ function mapPlayerError(message: string | undefined): PlayerFormError {
     'height_cm_invalid',
     'weight_kg_invalid',
     'origin_too_long',
+    'phone_invalid',
     'team_invalid',
     'team_required',
     'email_required',
@@ -417,10 +420,16 @@ export async function updatePlayer(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { error } = await supabase
-    .from('players')
-    .update(parsed.data)
-    .eq('id', playerId);
+  // Si el formulario no traía el campo del teléfono (su lectura falló y no se
+  // pintó), la clave se cae del UPDATE: `parsed.data.phone` valdría null y
+  // borraría el número guardado. Un fallo de lectura no puede convertirse en un
+  // borrado.
+  const payload = { ...parsed.data };
+  if (!formData.has('phone')) delete (payload as { phone?: string | null }).phone;
+
+  // Sin `.select()` encadenado: pedir la fila de vuelta sería LEER `phone`, que
+  // está cerrada, y el UPDATE entero fallaría con 42501.
+  const { error } = await supabase.from('players').update(payload).eq('id', playerId);
 
   if (error) {
     return { error: 'generic' };

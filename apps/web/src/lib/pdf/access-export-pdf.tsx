@@ -249,6 +249,21 @@ export interface AccessExportProps {
     medical_conditions: string | null;
     emergency_contact: string | null;
   } | null;
+  /**
+   * Datos de contacto: el teléfono del jugador y, por cada tutor, su correo y
+   * su teléfono. Van FUERA del bloque médico a propósito: son datos de contacto
+   * ordinarios y no dependen del consentimiento médico. `null` solo si la
+   * lectura falló (el PDF sale entonces sin esta sección, no sin PDF).
+   */
+  contact: {
+    playerPhone: string | null;
+    tutors: Array<{
+      name: string | null;
+      relation: string;
+      email: string | null;
+      phone: string | null;
+    }>;
+  } | null;
   seasonLabel: string | null;
   seasonStats: AggregatedStats | null;
   seasonRatios: DerivedRatios | null;
@@ -282,6 +297,39 @@ function IdentitySection(props: AccessExportProps): ReactElement {
         <Text style={s.generated}>{props.generatedAtLabel}</Text>
       </View>
     </View>
+  );
+}
+
+function ContactSection(props: AccessExportProps): ReactElement | null {
+  const { t, contact } = props;
+  if (!contact) return null;
+  const hasAny =
+    (contact.playerPhone && contact.playerPhone.trim().length > 0) ||
+    contact.tutors.length > 0;
+  return (
+    <>
+      <Text style={pdfStyles.sectionTitle}>{t('section.contact')}</Text>
+      {hasAny ? (
+        <>
+          <View style={s.medField}>
+            <Text style={s.medLabel}>{t('contact.player_phone')}</Text>
+            <Text style={s.medValue}>{contact.playerPhone?.trim() || NA}</Text>
+          </View>
+          {contact.tutors.map((tu, i) => (
+            <View key={`${tu.email ?? ''}-${i}`} style={s.medField}>
+              <Text style={s.medLabel}>
+                {tu.name?.trim() || t(`contact.relation.${tu.relation}`)}
+              </Text>
+              <Text style={s.medValue}>
+                {[tu.email?.trim(), tu.phone?.trim()].filter(Boolean).join('  ·  ') || NA}
+              </Text>
+            </View>
+          ))}
+        </>
+      ) : (
+        <Text style={pdfStyles.emptyText}>{t('contact.none')}</Text>
+      )}
+    </>
   );
 }
 
@@ -592,6 +640,7 @@ export function AccessExportDocument(props: AccessExportProps): ReactElement<Doc
           subtitle={props.playerName}
         />
         <IdentitySection {...props} />
+        <ContactSection {...props} />
         <MedicalSection {...props} />
         <SportingSection {...props} />
         <EvaluationsSection {...props} />

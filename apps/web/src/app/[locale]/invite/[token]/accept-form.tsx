@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { PHONE_MAX_LENGTH } from '@misterfc/core';
 import {
   acceptInvitation,
   acceptNewInvitee,
@@ -422,6 +423,24 @@ export function AcceptWithProfileForm({
       </label>
 
       <label className="flex flex-col gap-2 text-left">
+        <span className="text-sm font-medium text-zinc-200">{t('phone_label')}</span>
+        <input
+          type="tel"
+          id={fieldIds.phone}
+          name="phone"
+          required
+          maxLength={PHONE_MAX_LENGTH}
+          inputMode="tel"
+          autoComplete="tel"
+          placeholder={t('phone_placeholder')}
+          aria-invalid={problemFor(fieldIds.phone) != null}
+          className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-base text-white outline-none transition focus:border-[#10B981]"
+        />
+        <span className="text-xs text-zinc-500">{t('phone_hint')}</span>
+        <FieldProblem problem={problemFor(fieldIds.phone)} />
+      </label>
+
+      <label className="flex flex-col gap-2 text-left">
         <span className="text-sm font-medium text-zinc-200">
           {t('date_of_birth_label')}{' '}
           <span className="text-xs font-normal text-zinc-500">{t('optional')}</span>
@@ -616,6 +635,8 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       invalid_input: 'error_invalid_input',
       full_name_too_short: 'error_full_name_too_short',
       full_name_too_long: 'error_full_name_too_long',
+      phone_missing: 'missing_phone',
+      phone_invalid: 'error_phone_invalid',
       date_of_birth_invalid: 'error_date_of_birth_invalid',
       password_too_short: 'error_password_too_short',
       password_mismatch: 'error_password_mismatch',

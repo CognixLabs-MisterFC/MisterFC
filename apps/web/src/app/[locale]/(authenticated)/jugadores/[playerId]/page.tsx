@@ -16,6 +16,7 @@ import {
   type AttendanceRow,
   type RatingTimelinePoint,
   hasLinkedFamily,
+  getPlayerContactFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadPlayerCareer } from '@/lib/player-career';
@@ -121,6 +122,19 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     p_user_agent: auditUa ?? undefined,
   });
   const medical = medicalRows?.[0] ?? null;
+
+  // Teléfonos + correo de los tutores. Ni `players.phone` ni `profiles.phone` se
+  // pueden seleccionar (migración 20261057000000: SELECT revocado y reconcedido
+  // columna a columna) y el correo vive en `auth.users`, fuera de PostgREST: la
+  // única puerta son las RPC, que además AUDITAN la lectura (contact.read) cuando
+  // quien mira no es tutor del jugador. Mismo ip/user-agent que la médica.
+  const contact = await getPlayerContactFromClient(supabase, player.id, {
+    ip: auditIp,
+    userAgent: auditUa,
+  });
+  const tutorContact = new Map(
+    contact.ok ? contact.tutors.map((c) => [c.tutorProfileId, c]) : [],
+  );
 
   // F7 mejora — Notas por jugador (solo cuerpo técnico). El helper SQL es la
   // autoridad (cuerpo técnico del jugador + admin/coord; NO familia).
@@ -320,7 +334,7 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
   // Familia: cuentas vinculadas + invitaciones pendientes (F2.4)
   const { data: linkedAccounts } = await supabase
     .from('player_accounts')
-    .select('id, relation, profiles!inner(full_name)')
+    .select('id, profile_id, relation, profiles!inner(full_name)')
     .eq('player_id', player.id);
 
   const { data: pendingInvites } = await supabase
@@ -433,6 +447,9 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
                   playerId={player.id}
                   initial={player}
                   canEdit={canManage}
+                  phone={
+                    contact.ok ? { ok: true, value: contact.playerPhone ?? '' } : { ok: false }
+                  }
                 />
               </CardContent>
             </Card>
@@ -485,6 +502,15 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
                 )}
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
+                {/* Un fallo al leer los contactos NO se pinta como «no hay
+                    teléfono»: se dice. 'forbidden' no llega aquí (quien abre
+                    esta ficha es cuerpo técnico), así que esto es un error de
+                    verdad. */}
+                {!contact.ok && contact.reason === 'error' && (
+                  <p className="text-xs text-destructive" role="alert">
+                    {t('contact.unavailable')}
+                  </p>
+                )}
                 {(linkedAccounts ?? []).length === 0 &&
                 (pendingInvites ?? []).length === 0 ? (
                   <p className="text-sm text-muted-foreground">
@@ -497,16 +523,45 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
                         | { full_name: string | null }
                         | null;
                       const name = profObj?.full_name ?? '—';
+                      // El contacto viene de la RPC, no de esta consulta: el
+                      // correo está en auth.users y el teléfono en una columna
+                      // cerrada. Si la RPC falló, el mapa está vacío y la fila
+                      // se pinta como siempre — más el aviso de abajo.
+                      const c = tutorContact.get(acc.profile_id);
                       return (
                         <li
                           key={acc.id}
-                          className="flex items-center justify-between gap-3 py-2"
+                          className="flex items-start justify-between gap-3 py-2"
                         >
-                          <div className="flex flex-col">
+                          <div className="flex flex-col gap-0.5">
                             <span className="font-medium">{name}</span>
                             <span className="text-xs text-muted-foreground">
                               {t(`family.relation.${acc.relation}`)}
                             </span>
+                            {c?.email && (
+                              <a
+                                href={`mailto:${c.email}`}
+                                className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                              >
+                                {c.email}
+                              </a>
+                            )}
+                            {c && (
+                              <span className="text-xs">
+                                {c.phone ? (
+                                  <a
+                                    href={`tel:${c.phone}`}
+                                    className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                                  >
+                                    {c.phone}
+                                  </a>
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    {t('contact.no_phone')}
+                                  </span>
+                                )}
+                              </span>
+                            )}
                           </div>
                           <span className="text-xs text-misterfc-green">
                             {t('family.linked')}

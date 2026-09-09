@@ -142,13 +142,18 @@ describe('findAcceptProblems — perfil y contraseña', () => {
     requireProfile: true,
   });
 
-  it('alta nueva vacía: nombre y contraseña', () => {
-    expect(codes(new FormData(), rules)).toEqual(['full_name_too_short', 'password_too_short']);
+  it('alta nueva vacía: nombre, teléfono y contraseña', () => {
+    expect(codes(new FormData(), rules)).toEqual([
+      'full_name_too_short',
+      'phone_missing',
+      'password_too_short',
+    ]);
   });
 
   it('contraseñas que no coinciden', () => {
     const fd = new FormData();
     fd.set('full_name', 'Ana Pérez');
+    fd.set('phone', '600123456');
     fd.set('password', 'unaclavelarga');
     fd.set('confirm', 'otraclavelarga');
     expect(codes(fd, rules)).toEqual(['password_mismatch']);
@@ -157,6 +162,7 @@ describe('findAcceptProblems — perfil y contraseña', () => {
   it('un alta completa no tiene problemas', () => {
     const fd = new FormData();
     fd.set('full_name', 'Ana Pérez');
+    fd.set('phone', '600123456');
     fd.set('password', 'unaclavelarga');
     fd.set('confirm', 'unaclavelarga');
     expect(codes(fd, rules)).toEqual([]);
@@ -165,10 +171,45 @@ describe('findAcceptProblems — perfil y contraseña', () => {
   it('la fecha del tutor es opcional, pero si se pone tiene que valer', () => {
     const fd = new FormData();
     fd.set('full_name', 'Ana Pérez');
+    fd.set('phone', '600123456');
     fd.set('password', 'unaclavelarga');
     fd.set('confirm', 'unaclavelarga');
     fd.set('date_of_birth', '1850-01-01');
     expect(codes(fd, rules)).toEqual(['date_of_birth_invalid']);
+  });
+
+  it('el teléfono es obligatorio: en blanco no pasa', () => {
+    const fd = new FormData();
+    fd.set('full_name', 'Ana Pérez');
+    fd.set('phone', '   ');
+    fd.set('password', 'unaclavelarga');
+    fd.set('confirm', 'unaclavelarga');
+    expect(codes(fd, rules)).toEqual(['phone_missing']);
+  });
+
+  it('y tiene que parecer un teléfono, con el mismo criterio que la base', () => {
+    const fd = new FormData();
+    fd.set('full_name', 'Ana Pérez');
+    fd.set('password', 'unaclavelarga');
+    fd.set('confirm', 'unaclavelarga');
+
+    for (const malo of ['12345', 'llamar al club', '600123456 ext 12', '1234567890123456']) {
+      fd.set('phone', malo);
+      expect(codes(fd, rules), malo).toEqual(['phone_invalid']);
+    }
+
+    // Y los que sí: no se presupone España ni se exige el prefijo.
+    for (const bueno of ['600123456', '+34 600 123 456', '(+34) 600-123-456', '+44 20 7946 0958']) {
+      fd.set('phone', bueno);
+      expect(codes(fd, rules), bueno).toEqual([]);
+    }
+  });
+
+  it('a quien YA tiene cuenta no se le reclama el teléfono', () => {
+    // Decisión de Jose: obligatorio en el alta, y solo ahí. Los tutores que ya
+    // existen lo rellenan en su perfil si quieren, sin pantalla de bloqueo.
+    const yaTiene = baseRules({ requireTerms: false, requirePrivacy: false });
+    expect(codes(new FormData(), yaTiene)).toEqual([]);
   });
 
   it('quien ya tenía cuenta solo necesita escribir su contraseña', () => {

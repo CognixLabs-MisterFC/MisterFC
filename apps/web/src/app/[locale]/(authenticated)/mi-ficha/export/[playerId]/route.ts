@@ -27,6 +27,7 @@ import { getTranslations } from 'next-intl/server';
 import {
   formatPlayerName,
   attendanceBreakdown,
+  getPlayerContactFromClient,
   PLAYER_POSITIONS,
   type Badge,
   type AttendanceRow,
@@ -153,6 +154,14 @@ export async function GET(
     p_user_agent: undefined,
   });
   const medical = medicalRows?.[0] ?? null;
+
+  // ── Contacto: teléfono del jugador + correo y teléfono de cada tutor. Las dos
+  //    columnas están cerradas al cliente y el correo vive en auth.users, así que
+  //    van por RPC. Quien descarga esto ES el tutor (guard de arriba), de modo que
+  //    la RPC no deja apunte de auditoría: nadie audita a un padre leyendo el
+  //    contacto de su propia familia. Si fallara, el PDF sale sin la sección en
+  //    lugar de no salir.
+  const contact = await getPlayerContactFromClient(supabase, playerId);
 
   // ── Histórico: carrera + badges (helpers ya usados por el PDF del jugador). ──
   const career = await loadPlayerCareer(supabase, playerId);
@@ -419,6 +428,17 @@ export async function GET(
           medication: (medical.medication as string | null) ?? null,
           medical_conditions: (medical.medical_conditions as string | null) ?? null,
           emergency_contact: (medical.emergency_contact as string | null) ?? null,
+        }
+      : null,
+    contact: contact.ok
+      ? {
+          playerPhone: contact.playerPhone,
+          tutors: contact.tutors.map((c) => ({
+            name: c.fullName,
+            relation: c.relation,
+            email: c.email,
+            phone: c.phone,
+          })),
         }
       : null,
     seasonLabel: latest?.season ?? null,
