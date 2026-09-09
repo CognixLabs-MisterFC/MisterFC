@@ -16,6 +16,7 @@ export type UpdateProfileFormState = {
     | 'full_name_too_short'
     | 'full_name_too_long'
     | 'date_of_birth_invalid'
+    | 'phone_invalid'
     | 'locale_invalid'
     | 'no_session'
     | 'generic';
@@ -45,10 +46,15 @@ export async function updateProfile(
     return { error: 'no_session' };
   }
 
+  // El teléfono solo viaja si el formulario lo llevaba. Si su lectura falló, el
+  // campo no se pinta y la clave NO se manda: `updateProfileFromClient` escribe
+  // únicamente las claves presentes, así que un fallo de lectura no puede
+  // acabar borrando el teléfono que ya estaba guardado.
   const result = await updateProfileFromClient(supabase, user.id, {
     full_name: formData.get('full_name'),
     date_of_birth: formData.get('date_of_birth'),
     locale: formData.get('locale'),
+    ...(formData.has('phone') ? { phone: formData.get('phone') } : {}),
   });
   if (!result.success) {
     return { error: result.error };

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { createSupabaseServerClient } from '@misterfc/core';
+import { createSupabaseServerClient, getMyPhoneFromClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadSpectatorContext } from '@/lib/spectator-shell';
 import { initialsOf } from '@/components/shell/avatar-image';
@@ -33,6 +33,12 @@ export default async function SpectatorPerfilPage({ params }: Props) {
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
+
+  // El teléfono propio también aquí: es un dato de la PERSONA, y el seguidor es
+  // dueño de su fila como cualquiera. Va por RPC porque `profiles.phone` no se
+  // puede seleccionar. Que hoy nadie se lo pida no lo convierte en un campo
+  // ajeno: si lo rellena, es suyo y puede volver a verlo.
+  const myPhone = await getMyPhoneFromClient(supabase);
 
   let avatarSignedUrl: string | null = null;
   if (ctx.profile.avatar_url) {
@@ -80,6 +86,7 @@ export default async function SpectatorPerfilPage({ params }: Props) {
               date_of_birth: ctx.profile.date_of_birth ?? '',
               locale: ctx.profile.locale,
             }}
+            phone={myPhone.ok ? { ok: true, value: myPhone.phone ?? '' } : { ok: false }}
           />
         </CardContent>
       </Card>

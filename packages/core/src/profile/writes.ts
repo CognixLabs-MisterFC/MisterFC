@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { updateProfileSchema } from '../schemas/profile';
+import { normalizePhone } from '../schemas/phone';
 
 /**
  * Perfil del PROPIO usuario (datos personales + avatar), extraído de apps/web
@@ -51,6 +52,24 @@ export async function getProfileFromClient(
   };
 }
 
+/**
+ * El teléfono propio. NO sale de `profiles` con un select: desde la migración
+ * 20261057000000 la columna no es legible por el cliente (se revocó el SELECT y
+ * se reconcedió columna a columna). La única puerta es `get_my_phone()`.
+ *
+ * Devuelve un resultado con `ok` en vez de un `string | null` a secas, y no es
+ * ceremonia: «no tiene teléfono» y «no he podido leerlo» se pintan igual —en
+ * blanco— y quien lo pinte podría guardar ese blanco encima del teléfono bueno.
+ * Con `ok:false` el formulario sabe que NO debe mandar el campo.
+ */
+export type MyPhoneResult = { ok: true; phone: string | null } | { ok: false };
+
+export async function getMyPhoneFromClient(supabase: DbClient): Promise<MyPhoneResult> {
+  const { data, error } = await supabase.rpc('get_my_phone');
+  if (error) return { ok: false };
+  return { ok: true, phone: (data as string | null) ?? null };
+}
+
 /** Firma la ruta del bucket privado `profile-avatars`. null si no hay/falla. */
 export async function signAvatarFromClient(
   supabase: DbClient,
@@ -70,6 +89,7 @@ export type ProfileWriteError =
   | 'full_name_too_long'
   | 'date_of_birth_invalid'
   | 'locale_invalid'
+  | 'phone_invalid'
   | 'generic';
 
 export type UpdateProfileResult =
@@ -90,7 +110,7 @@ export type UpdateProfileResult =
 export async function updateProfileFromClient(
   supabase: DbClient,
   userId: string,
-  input: { full_name?: unknown; date_of_birth?: unknown; locale?: unknown },
+  input: { full_name?: unknown; date_of_birth?: unknown; locale?: unknown; phone?: unknown },
 ): Promise<UpdateProfileResult> {
   const parsed = updateProfileSchema.partial().safeParse(input);
   if (!parsed.success) {
@@ -99,7 +119,8 @@ export async function updateProfileFromClient(
       issue === 'full_name_too_short' ||
       issue === 'full_name_too_long' ||
       issue === 'date_of_birth_invalid' ||
-      issue === 'locale_invalid'
+      issue === 'locale_invalid' ||
+      issue === 'phone_invalid'
     ) {
       return { success: false, error: issue };
     }
@@ -107,12 +128,22 @@ export async function updateProfileFromClient(
   }
 
   // Solo las claves PRESENTES en la entrada llegan al UPDATE.
-  const payload: { full_name?: string; date_of_birth?: string | null; locale?: string } = {};
+  const payload: {
+    full_name?: string;
+    date_of_birth?: string | null;
+    locale?: string;
+    phone?: string | null;
+  } = {};
   if ('full_name' in input) payload.full_name = parsed.data.full_name;
   if ('date_of_birth' in input) payload.date_of_birth = parsed.data.date_of_birth ?? null;
   if ('locale' in input) payload.locale = parsed.data.locale;
+  // El vacío va como NULL: el CHECK de la columna rechaza la cadena vacía.
+  if ('phone' in input) payload.phone = normalizePhone(parsed.data.phone);
 
   if (Object.keys(payload).length > 0) {
+    // Sin `.select()` encadenado, y no es casualidad: pedir la fila de vuelta
+    // sería una LECTURA de `phone`, que está cerrada, y el UPDATE entero
+    // fallaría con 42501.
     const { error } = await supabase.from('profiles').update(payload).eq('id', userId);
     if (error) return { success: false, error: 'generic' };
   }

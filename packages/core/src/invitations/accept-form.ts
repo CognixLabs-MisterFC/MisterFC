@@ -60,6 +60,8 @@ export function validateChildRow(row: {
 export type AcceptProblemCode =
   | 'full_name_too_short'
   | 'full_name_too_long'
+  | 'phone_missing'
+  | 'phone_invalid'
   | 'date_of_birth_invalid'
   | 'child_name_required'
   | 'child_dob_invalid'
@@ -119,6 +121,7 @@ export function findAcceptProblems(formData: FormData, rules: AcceptFormRules): 
   const profileIssues = rules.requireProfile
     ? (acceptInvitationWithProfileSchema.safeParse({
         full_name: str(formData, 'full_name'),
+        phone: str(formData, 'phone'),
         date_of_birth: str(formData, 'date_of_birth'),
         password: str(formData, 'password'),
         confirm: str(formData, 'confirm'),
@@ -130,6 +133,13 @@ export function findAcceptProblems(formData: FormData, rules: AcceptFormRules): 
     if (field === 'full_name') {
       problems.push({
         code: issue.message === 'full_name_too_long' ? 'full_name_too_long' : 'full_name_too_short',
+      });
+    } else if (field === 'phone') {
+      // El teléfono es OBLIGATORIO en el alta (y solo ahí). Se distingue no
+      // haberlo puesto de haber escrito algo que no es un teléfono: son dos
+      // avisos distintos para quien está rellenando.
+      problems.push({
+        code: issue.message === 'phone_required' ? 'phone_missing' : 'phone_invalid',
       });
     } else if (field === 'date_of_birth') {
       problems.push({ code: 'date_of_birth_invalid' });

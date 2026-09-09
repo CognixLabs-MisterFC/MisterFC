@@ -5,6 +5,7 @@ import {
   createSupabaseServerClient,
   getPlayerManagementAccessFromClient,
   getPlayerMedicalFromClient,
+  getMyPhoneFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -40,6 +41,12 @@ export default async function PerfilPage({ params, searchParams }: Props) {
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
+
+  // Teléfono propio: `profiles.phone` no es legible por select (migración
+  // 20261057000000), así que sale de la RPC `get_my_phone`. Si la lectura falla,
+  // el formulario NO pinta el campo — mejor eso que enseñar un hueco vacío que
+  // al guardar borraría el número bueno.
+  const myPhone = await getMyPhoneFromClient(supabase);
 
   // F14-13 — consentimientos del tutor en el club activo (estado latest-wins).
   const { data: consentRows } = await supabase.rpc('get_tutor_consents', {
@@ -242,6 +249,7 @@ export default async function PerfilPage({ params, searchParams }: Props) {
               date_of_birth: ctx.profile.date_of_birth ?? '',
               locale: ctx.profile.locale,
             }}
+            phone={myPhone.ok ? { ok: true, value: myPhone.phone ?? '' } : { ok: false }}
           />
         </CardContent>
       </Card>

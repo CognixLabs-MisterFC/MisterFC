@@ -21,6 +21,7 @@ export type { AcceptFormRules, AcceptChild };
 /** Ids de los controles. Los pintan los componentes y aquí se apunta a ellos. */
 export const fieldIds = {
   fullName: 'invite-full-name',
+  phone: 'invite-phone',
   dateOfBirth: 'invite-date-of-birth',
   password: 'invite-password',
   confirm: 'invite-confirm',
@@ -49,6 +50,8 @@ export type FormProblem = {
 const MESSAGE_KEY: Record<AcceptProblemCode, string> = {
   full_name_too_short: 'error_full_name_too_short',
   full_name_too_long: 'error_full_name_too_long',
+  phone_missing: 'missing_phone',
+  phone_invalid: 'error_phone_invalid',
   date_of_birth_invalid: 'error_date_of_birth_invalid',
   child_name_required: 'missing_child_name',
   child_dob_invalid: 'missing_child_dob',
@@ -70,6 +73,9 @@ function fieldIdFor(
     case 'full_name_too_short':
     case 'full_name_too_long':
       return fieldIds.fullName;
+    case 'phone_missing':
+    case 'phone_invalid':
+      return fieldIds.phone;
     case 'date_of_birth_invalid':
       return fieldIds.dateOfBirth;
     case 'child_name_required':

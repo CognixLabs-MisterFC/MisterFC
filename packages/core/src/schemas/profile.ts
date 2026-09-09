@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { phoneOptionalField } from './phone';
 
 const LOCALES = ['es', 'en', 'va'] as const;
 
@@ -34,6 +35,13 @@ export const updateProfileSchema = z.object({
   full_name: fullNameField,
   date_of_birth: dateOfBirthField,
   locale: localeField,
+  /**
+   * Teléfono de contacto de la persona. OPCIONAL aquí: en el perfil se puede
+   * dejar en blanco (los tutores anteriores a la migración no tienen ninguno).
+   * Donde es obligatorio es en el alta, y eso lo impone el schema de la
+   * invitación, no este.
+   */
+  phone: phoneOptionalField,
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

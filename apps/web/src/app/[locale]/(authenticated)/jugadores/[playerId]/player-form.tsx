@@ -3,7 +3,7 @@
 import { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2 } from 'lucide-react';
-import { PLAYER_POSITIONS, PLAYER_FEET } from '@misterfc/core';
+import { PLAYER_POSITIONS, PLAYER_FEET, PHONE_MAX_LENGTH } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,9 +34,16 @@ type Props = {
   playerId: string;
   initial: PlayerInitial;
   canEdit: boolean;
+  /**
+   * El teléfono del jugador va aparte del resto de `initial` porque no se lee
+   * como los demás campos: `players.phone` está cerrada al cliente y viene de
+   * la RPC `get_player_phone`. Si esa lectura falla, el campo NO se pinta y el
+   * formulario no manda la clave — guardar el resto no puede borrarlo.
+   */
+  phone: { ok: true; value: string } | { ok: false };
 };
 
-export function PlayerForm({ playerId, initial, canEdit }: Props) {
+export function PlayerForm({ playerId, initial, canEdit, phone }: Props) {
   const t = useTranslations('jugadores');
   const action = updatePlayer.bind(null, playerId);
   const [state, formAction, pending] = useActionState<PlayerFormState, FormData>(
@@ -160,6 +167,29 @@ export function PlayerForm({ playerId, initial, canEdit }: Props) {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
+        {phone.ok ? (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="pf-phone">{t('field.phone')}</Label>
+            <Input
+              id="pf-phone"
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              maxLength={PHONE_MAX_LENGTH}
+              placeholder={t('field.optional')}
+              defaultValue={phone.value}
+              {...fieldProps}
+            />
+            <p className="text-xs text-muted-foreground">{t('field.phone_help')}</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <Label>{t('field.phone')}</Label>
+            <p className="text-xs text-destructive" role="alert">
+              {t('contact.unavailable')}
+            </p>
+          </div>
+        )}
         <div className="flex flex-col gap-2">
           <Label htmlFor="pf-height">{t('field.height_cm')}</Label>
           <Input

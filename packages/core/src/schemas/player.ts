@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { phoneOptionalField } from './phone';
 
 export const PLAYER_POSITIONS = [
   'goalkeeper',
@@ -192,6 +193,8 @@ export const updatePlayerSchema = z.object({
   height_cm: heightCmField,
   weight_kg: weightKgField,
   origin: optionalText(120, 'origin_too_long'),
+  /** Teléfono del jugador. OPCIONAL: muchos niños no tienen móvil. */
+  phone: phoneOptionalField,
 });
 export type UpdatePlayerInput = z.infer<typeof updatePlayerSchema>;
 

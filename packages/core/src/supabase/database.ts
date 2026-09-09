@@ -385,6 +385,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_public: boolean
           locale: string
           logo_path: string | null
           name: string
@@ -397,6 +398,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_public?: boolean
           locale?: string
           logo_path?: string | null
           name: string
@@ -409,6 +411,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_public?: boolean
           locale?: string
           logo_path?: string | null
           name?: string
@@ -488,6 +491,7 @@ export type Database = {
           legal_document_version: number
           player_id: string | null
           season_id: string
+          seq: number
           tutor_profile_id: string
           user_agent: string | null
         }
@@ -502,6 +506,7 @@ export type Database = {
           legal_document_version: number
           player_id?: string | null
           season_id: string
+          seq?: never
           tutor_profile_id: string
           user_agent?: string | null
         }
@@ -516,6 +521,7 @@ export type Database = {
           legal_document_version?: number
           player_id?: string | null
           season_id?: string
+          seq?: never
           tutor_profile_id?: string
           user_agent?: string | null
         }
@@ -2750,6 +2756,7 @@ export type Database = {
           left_club_reason: string | null
           medical_notes: string | null
           origin: string | null
+          phone: string | null
           photo_url: string | null
           position_main: string | null
           positions_secondary: string[]
@@ -2774,6 +2781,7 @@ export type Database = {
           left_club_reason?: string | null
           medical_notes?: string | null
           origin?: string | null
+          phone?: string | null
           photo_url?: string | null
           position_main?: string | null
           positions_secondary?: string[]
@@ -2798,6 +2806,7 @@ export type Database = {
           left_club_reason?: string | null
           medical_notes?: string | null
           origin?: string | null
+          phone?: string | null
           photo_url?: string | null
           position_main?: string | null
           positions_secondary?: string[]
@@ -2912,6 +2921,7 @@ export type Database = {
           full_name: string | null
           id: string
           locale: string
+          phone: string | null
           updated_at: string
         }
         Insert: {
@@ -2921,6 +2931,7 @@ export type Database = {
           full_name?: string | null
           id: string
           locale?: string
+          phone?: string | null
           updated_at?: string
         }
         Update: {
@@ -2930,6 +2941,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           locale?: string
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -4221,6 +4233,7 @@ export type Database = {
           title: string
         }[]
       }
+      get_my_phone: { Args: never; Returns: string }
       get_player_medical: {
         Args: { p_ip?: string; p_player_id: string; p_user_agent?: string }
         Returns: {
@@ -4228,6 +4241,20 @@ export type Database = {
           emergency_contact: string
           medical_conditions: string
           medication: string
+        }[]
+      }
+      get_player_phone: {
+        Args: { p_ip?: string; p_player_id: string; p_user_agent?: string }
+        Returns: string
+      }
+      get_player_tutors_contact: {
+        Args: { p_ip?: string; p_player_id: string; p_user_agent?: string }
+        Returns: {
+          email: string
+          full_name: string
+          phone: string
+          relation: string
+          tutor_profile_id: string
         }[]
       }
       get_public_club_by_slug: {
@@ -4641,6 +4668,10 @@ export type Database = {
       }
       user_belongs_to_team_club: {
         Args: { p_team_id: string }
+        Returns: boolean
+      }
+      user_can_access_player_contact: {
+        Args: { p_player_id: string }
         Returns: boolean
       }
       user_can_access_player_medical: {

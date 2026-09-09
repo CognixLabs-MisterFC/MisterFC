@@ -12,13 +12,16 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import {
   getProfileFromClient,
+  getMyPhoneFromClient,
   updateProfileFromClient,
   updateAvatarPathFromClient,
   clearAvatarPathFromClient,
   signAvatarFromClient,
   avatarUploadSchema,
   profileScopedCacheKey,
+  PHONE_MAX_LENGTH,
   type ProfileData,
+  type MyPhoneResult,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { MIME_TO_EXT, base64ToBytes } from '@/lib/image-upload';
@@ -61,7 +64,23 @@ export function ProfileScreen() {
     (sb) => (userId ? getProfileFromClient(sb, userId) : Promise.resolve(null)),
   );
 
-  if (loading) return <LoadingScreen />;
+  // El teléfono va en una lectura APARTE: `profiles.phone` no se puede
+  // seleccionar (migración 20261057000000) y sale de la RPC `get_my_phone`. Con
+  // su propia clave de caché para que un fallo suyo no tire la fila del perfil.
+  const {
+    data: phone,
+    loading: phoneLoading,
+    refresh: refreshPhone,
+  } = useCached<MyPhoneResult>(
+    profileScopedCacheKey('profile-phone', userId ?? 'none'),
+    (sb) => (userId ? getMyPhoneFromClient(sb) : Promise.resolve({ ok: false })),
+  );
+
+  // Se espera también al teléfono, y no es cosmético: la tarjeta de datos fija
+  // el valor del campo al montarse. Si se montara antes de que llegue, el campo
+  // nacería vacío con un teléfono guardado detrás, y el primer «Guardar» lo
+  // borraría.
+  if (loading || phoneLoading) return <LoadingScreen />;
 
   const fallback = (data?.full_name?.trim() || email || '·').slice(0, 2);
 
@@ -81,7 +100,16 @@ export function ProfileScreen() {
               online={online}
               onChanged={refresh}
             />
-            <DataCard userId={userId} initial={data} online={online} onSaved={refresh} />
+            <DataCard
+              userId={userId}
+              initial={data}
+              phone={phone ?? { ok: false }}
+              online={online}
+              onSaved={() => {
+                refresh();
+                refreshPhone();
+              }}
+            />
             <LanguageCard userId={userId} online={online} onSaved={refresh} />
           </>
         ) : null}
@@ -240,17 +268,25 @@ function AvatarCard({
 function DataCard({
   userId,
   initial,
+  phone,
   online,
   onSaved,
 }: {
   userId: string;
   initial: ProfileData | null;
+  /**
+   * El teléfono llega aparte y puede venir en `ok:false`: entonces el campo NO
+   * se pinta y el guardado NO manda la clave, así que un fallo de lectura no
+   * puede acabar borrando el número que ya estaba.
+   */
+  phone: MyPhoneResult;
   online: boolean;
   onSaved: () => void;
 }) {
   const t = useTranslations('perfil');
   const [fullName, setFullName] = useState(initial?.full_name ?? '');
   const [dob, setDob] = useState(initial?.date_of_birth ?? '');
+  const [phoneValue, setPhoneValue] = useState(phone.ok ? (phone.phone ?? '') : '');
   const [busy, setBusy] = useState(false);
   const [state, setState] = useState<'idle' | 'saved' | 'error'>('idle');
   const [errorKey, setErrorKey] = useState<string | null>(null);
@@ -265,6 +301,7 @@ function DataCard({
     const res = await updateProfileFromClient(supabase, userId, {
       full_name: fullName,
       date_of_birth: dob,
+      ...(phone.ok ? { phone: phoneValue } : {}),
     });
     setBusy(false);
     if (res.success) {
@@ -280,6 +317,18 @@ function DataCard({
   return (
     <Card title={t('section.data')}>
       <Field label={t('field.full_name')} value={fullName} onChange={setFullName} />
+      {phone.ok ? (
+        <Field
+          label={t('field.phone')}
+          value={phoneValue}
+          onChange={setPhoneValue}
+          placeholder={t('field.phone_placeholder')}
+          keyboardType="phone-pad"
+          maxLength={PHONE_MAX_LENGTH}
+        />
+      ) : (
+        <Text className="mb-2 text-xs text-red-600">{t('field.phone_unavailable')}</Text>
+      )}
       <Field
         label={t('field.date_of_birth')}
         value={dob}
@@ -418,12 +467,14 @@ function Field({
   onChange,
   placeholder,
   keyboardType,
+  maxLength,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  keyboardType?: 'default' | 'numbers-and-punctuation';
+  keyboardType?: 'default' | 'numbers-and-punctuation' | 'phone-pad';
+  maxLength?: number;
 }) {
   return (
     <View className="mb-3">
@@ -433,7 +484,7 @@ function Field({
         onChangeText={onChange}
         placeholder={placeholder}
         keyboardType={keyboardType ?? 'default'}
-        maxLength={120}
+        maxLength={maxLength ?? 120}
         placeholderTextColor="#a1a1aa"
         className="rounded-xl border border-zinc-200 px-3 py-2 text-sm text-[#0F1B2E]"
       />

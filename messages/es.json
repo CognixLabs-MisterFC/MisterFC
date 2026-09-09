@@ -554,7 +554,11 @@
       "email_help": "Para cambiar tu correo, contacta con soporte.",
       "date_of_birth": "Fecha de nacimiento",
       "locale": "Idioma de la app",
-      "locale_help": "Determina el idioma de menús, mensajes y emails."
+      "locale_help": "Determina el idioma de menús, mensajes y emails.",
+      "phone": "Teléfono de contacto",
+      "phone_placeholder": "600 123 456",
+      "phone_help": "Lo ve el cuerpo técnico de tu club para localizarte si pasa algo. Las demás familias, no.",
+      "phone_unavailable": "Ahora mismo no podemos mostrar tu teléfono. Vuelve a intentarlo más tarde."
     },
     "locales": {
       "es": "Español",
@@ -579,7 +583,8 @@
       "avatar_too_large": "La foto es demasiado grande.",
       "avatar_empty": "El archivo está vacío.",
       "avatar_upload_failed": "No hemos podido subir la foto. Inténtalo de nuevo.",
-      "avatar_remove_failed": "No hemos podido quitar la foto."
+      "avatar_remove_failed": "No hemos podido quitar la foto.",
+      "phone_invalid": "Ese teléfono no parece válido. Revísalo."
     },
     "change_password_hint": "Te enviaremos un enlace por email para cambiarla.",
     "offline": "Sin conexión: no puedes editar ahora.",
@@ -1015,7 +1020,12 @@
     "missing_image_social": "responde Sí o No al uso de su imagen en redes sociales",
     "missing_child_name": "falta el nombre",
     "missing_child_dob": "falta la fecha de nacimiento, o no es válida",
-    "missing_password": "Escribe tu contraseña."
+    "missing_password": "Escribe tu contraseña.",
+    "phone_label": "Teléfono de contacto",
+    "phone_placeholder": "600 123 456",
+    "phone_hint": "El club lo usará para localizarte si tu hijo o hija necesita algo en un entrenamiento o un partido.",
+    "missing_phone": "Falta tu teléfono de contacto.",
+    "error_phone_invalid": "Ese teléfono no parece válido. Revísalo."
   },
   "informes": {
     "title": "Informes de desarrollo",
@@ -1324,7 +1334,9 @@
       "tutor_email": "Email del tutor",
       "tutor_relation": "Relación del tutor",
       "relation_placeholder": "Selecciona la relación",
-      "tutor_help": "Al crear el jugador se enviará automáticamente la invitación a este email."
+      "tutor_help": "Al crear el jugador se enviará automáticamente la invitación a este email.",
+      "phone": "Teléfono del jugador",
+      "phone_help": "Opcional. Solo si el jugador tiene teléfono propio."
     },
     "positions": {
       "goalkeeper": "Portero",
@@ -1471,7 +1483,8 @@
       "relation_required": "Selecciona la relación del tutor.",
       "no_active_club": "Selecciona primero un club.",
       "forbidden": "No tienes permiso.",
-      "generic": "No se pudo guardar. Inténtalo de nuevo."
+      "generic": "No se pudo guardar. Inténtalo de nuevo.",
+      "phone_invalid": "Ese teléfono no parece válido. Revísalo."
     },
     "family": {
       "empty": "Aún no hay cuentas de familia vinculadas.",
@@ -1608,6 +1621,10 @@
       "info": "Información personal",
       "stats": "Estadísticas",
       "history": "Trayectoria"
+    },
+    "contact": {
+      "unavailable": "No hemos podido cargar los datos de contacto. Vuelve a intentarlo.",
+      "no_phone": "Sin teléfono"
     }
   },
   "equipo_detalle": {
@@ -4632,7 +4649,8 @@
       "attendance": "Asistencia a entrenamientos",
       "achievements": "Logros",
       "evaluations": "Valoraciones",
-      "consents": "Consentimientos"
+      "consents": "Consentimientos",
+      "contact": "Contacto"
     },
     "col": {
       "season": "Temporada",
@@ -4678,6 +4696,15 @@
       "granted": "Aceptado",
       "denied": "Denegado",
       "none": "Sin consentimientos registrados."
+    },
+    "contact": {
+      "player_phone": "Teléfono del jugador",
+      "none": "Sin datos de contacto registrados.",
+      "relation": {
+        "parent": "Padre/madre",
+        "guardian": "Tutor legal",
+        "self": "El propio jugador"
+      }
     }
   },
   "platform": {
@@ -5056,7 +5083,14 @@
     "goals_short": "G",
     "career_total": "Total",
     "years": "años",
-    "evaluations": "Valoraciones"
+    "evaluations": "Valoraciones",
+    "contact": "Contacto",
+    "contact_unavailable": "No hemos podido cargar los datos de contacto.",
+    "contact_player_phone": "Teléfono del jugador",
+    "contact_email": "Correo",
+    "contact_phone": "Teléfono",
+    "contact_no_phone": "Sin teléfono",
+    "contact_no_tutors": "Sin familia vinculada."
   },
   "informe": {
     "empty": "Sin informe disponible",

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { phoneRequiredField } from './phone';
 
 /**
  * Política mínima de contraseñas en MisterFC.
@@ -125,6 +126,13 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export const acceptInvitationWithProfileSchema = z
   .object({
     full_name: fullNameField,
+    /**
+     * OBLIGATORIO, y solo aquí. El club necesita un teléfono al que llamar si
+     * le pasa algo al niño en un entrenamiento, y el alta es el único momento
+     * en que se puede pedir sin interrumpir a nadie. A los tutores que ya
+     * existen NO se les reclama: rellenarán el suyo en su perfil si quieren.
+     */
+    phone: phoneRequiredField,
     date_of_birth: dateOfBirthField,
     password: passwordField,
     confirm: z.string(),

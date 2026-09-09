@@ -1,10 +1,12 @@
-import { ScrollView, Text, View } from 'react-native';
+import { Linking, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
   getPlayerFichaFromClient,
+  getPlayerContactFromClient,
   playerScopedCacheKey,
   formatPlayerName,
   type PlayerFicha,
+  type PlayerContactResult,
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
@@ -29,6 +31,18 @@ export function DireccionJugadorFichaScreen() {
   const { data, fromCache, loading } = useCached<PlayerFicha | null>(
     playerScopedCacheKey('dir-ficha', clubId ?? 'none', playerId ?? 'none'),
     (sb) => (playerId ? getPlayerFichaFromClient(sb, playerId) : Promise.resolve(null)),
+  );
+
+  // Contacto en una lectura APARTE, con su propia clave: son RPC (las columnas
+  // están cerradas y el correo vive en auth.users) y no deben poder tumbar la
+  // ficha si fallan. Sin ip/user-agent: en un móvil no hay cabeceras de
+  // petición que valga la pena inventar; la RPC apunta igual quién ha mirado.
+  const { data: contact } = useCached<PlayerContactResult>(
+    playerScopedCacheKey('dir-ficha-contacto', clubId ?? 'none', playerId ?? 'none'),
+    (sb) =>
+      playerId
+        ? getPlayerContactFromClient(sb, playerId)
+        : Promise.resolve({ ok: false, reason: 'error' } as PlayerContactResult),
   );
 
   if (loading) return <LoadingScreen />;
@@ -57,6 +71,8 @@ export function DireccionJugadorFichaScreen() {
               .join(' · ')}
           </Text>
         </View>
+
+        <ContactSection contact={contact} t={t} accent={accent} />
 
         <Section title={`${t('ficha.stats')}${data.activeSeason ? ` · ${data.activeSeason}` : ''}`}>
           <Grid
@@ -101,6 +117,107 @@ export function DireccionJugadorFichaScreen() {
           </Section>
         ) : null}
       </ScrollView>
+    </View>
+  );
+}
+
+/**
+ * Teléfono del niño y contacto de cada tutor. Es la razón de ser de todo esto:
+ * si pasa algo en un entrenamiento, el entrenador tiene a quién llamar sin salir
+ * de la ficha — los números y los correos son pulsables.
+ *
+ * Tres estados, y ninguno miente: sin acceso no se pinta el bloque, un fallo se
+ * DICE, y «no hay teléfono» se distingue de las dos cosas anteriores.
+ */
+function ContactSection({
+  contact,
+  t,
+  accent,
+}: {
+  contact: PlayerContactResult | null;
+  t: (key: string, values?: Record<string, string | number>) => string;
+  accent: string;
+}) {
+  if (!contact) return null;
+  if (!contact.ok) {
+    if (contact.reason === 'forbidden') return null;
+    return (
+      <Section title={t('ficha.contact')}>
+        <Text className="text-xs text-red-600">{t('ficha.contact_unavailable')}</Text>
+      </Section>
+    );
+  }
+
+  return (
+    <Section title={t('ficha.contact')}>
+      <Row
+        label={t('ficha.contact_player_phone')}
+        value={contact.playerPhone}
+        href={contact.playerPhone ? `tel:${contact.playerPhone}` : null}
+        accent={accent}
+        empty={t('ficha.contact_no_phone')}
+      />
+      {contact.tutors.length === 0 ? (
+        <Text className="mt-1 text-xs text-zinc-400">{t('ficha.contact_no_tutors')}</Text>
+      ) : (
+        contact.tutors.map((tu) => (
+          <View key={tu.tutorProfileId} className="mt-3 border-t border-zinc-100 pt-2">
+            <Text className="text-sm font-medium text-[#0F1B2E]">
+              {tu.fullName ?? t(`jugadores.family.relation.${tu.relation}`)}
+            </Text>
+            <Text className="mb-1 text-[10px] uppercase tracking-wide text-zinc-400">
+              {t(`jugadores.family.relation.${tu.relation}`)}
+            </Text>
+            <Row
+              label={t('ficha.contact_email')}
+              value={tu.email}
+              href={tu.email ? `mailto:${tu.email}` : null}
+              accent={accent}
+              empty="—"
+            />
+            <Row
+              label={t('ficha.contact_phone')}
+              value={tu.phone}
+              href={tu.phone ? `tel:${tu.phone}` : null}
+              accent={accent}
+              empty={t('ficha.contact_no_phone')}
+            />
+          </View>
+        ))
+      )}
+    </Section>
+  );
+}
+
+function Row({
+  label,
+  value,
+  href,
+  accent,
+  empty,
+}: {
+  label: string;
+  value: string | null;
+  href: string | null;
+  accent: string;
+  empty: string;
+}) {
+  return (
+    <View className="flex-row items-center justify-between py-1">
+      <Text className="text-xs text-zinc-500">{label}</Text>
+      {value && href ? (
+        <Text
+          className="text-sm font-medium"
+          style={{ color: accent }}
+          onPress={() => {
+            void Linking.openURL(href);
+          }}
+        >
+          {value}
+        </Text>
+      ) : (
+        <Text className="text-sm text-zinc-400">{empty}</Text>
+      )}
     </View>
   );
 }
