@@ -966,12 +966,13 @@ Bloque de **comunicaciones/onboarding** que consolida el canal email, hoy disper
 
 | PR | Qué | Migración | Estado |
 |---|---|---|---|
-| **BC-1** | SQL: modelo + motor (6 RPC) + pgTAP | ✅ dos ficheros | ☐ entregado, pendiente de aplicar |
-| **BC-2** | `packages/core`: lecturas, acciones, mapeo de errores | — | ☐ |
-| **BC-3** | Servidor: finalizador service_role + route handlers | — | ☐ |
-| **BC-4** | Web: Perfil + confirmación + pantalla "borrado en curso" | — | ☐ |
-| **BC-5** | Nativa: mismo flujo · **deja la app enseñable a Apple** | — | ☐ |
-| **BC-6** | Cron de 30 días (`vercel.json` + `CRON_SECRET`) | — | ☐ |
+| **BC-1** | SQL: modelo + motor (6 RPC) + pgTAP | ✅ dos ficheros | ✅ #563 [hecho 2026-09-10] |
+| **BC-2** | `packages/core`: lecturas, acciones, mapeo de errores | — | ✅ #564 [hecho 2026-09-10] |
+| **BC-3** | Servidor: finalizador service_role + route handlers | — | ✅ #565 [hecho 2026-09-10] |
+| **BC-4** | Web: Perfil + confirmación + pantalla "borrado en curso" | — | ✅ #566 [hecho 2026-09-10] |
+| **BC-5** | Nativa: mismo flujo · **deja la app enseñable a Apple** | — | ✅ #567 [hecho 2026-09-10] |
+| **BC-6a** | SQL del cron: cola del barrido de GoTrue + candado de invitaciones | ✅ un fichero | ☐ entregado, pendiente de aplicar |
+| **BC-6b** | Cron de 30 días (`vercel.json` + `CRON_SECRET`) + barrido | — | ☐ |
 | **BC-7** | Avisos: club, otro tutor, superadmin | — | ☐ |
 | **BC-8** | Legal, consola de plataforma, notas de revisión Apple | — | ☐ |
 

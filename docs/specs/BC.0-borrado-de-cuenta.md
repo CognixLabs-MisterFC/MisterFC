@@ -1,6 +1,6 @@
 # BC.0 — Borrado de cuenta
 
-> **Estado**: BC-1 (SQL) entregado · resto pendiente
+> **Estado**: BC-1 a BC-5 mergeados (#563–#567) · BC-6a (SQL) entregado · BC-6b, BC-7 y BC-8 pendientes
 > **Dispara**: Apple Guideline 2.1 / 5.1.1(v) — bloqueo de publicación en App Store.
 > **Decisión de fondo**: [ADR-0021 — anonimización forzada por el esquema](../decisions/ADR-0021-anonimizacion-forzada-por-el-esquema.md)
 
@@ -118,11 +118,13 @@ Ambas cuentan como bloqueantes mientras el borrado está en curso: una supresió
 | BC-3 | Servidor: finalizador con service_role + route handlers | — |
 | BC-4 | Web: Perfil + confirmación + pantalla "borrado en curso" | — |
 | BC-5 | Nativa: mismo flujo · **deja la app enseñable a Apple** | — |
-| BC-6 | Cron de 30 días (`vercel.json` + `CRON_SECRET`) | — |
+| **BC-6a** | SQL del cron: cola del barrido de GoTrue + candado de invitaciones | ✅ un fichero |
+| BC-6b | Cron de 30 días (`vercel.json` + `CRON_SECRET`) + barrido | — |
 | BC-7 | Avisos: club, otro tutor, superadmin | — |
 | BC-8 | Legal, consola de plataforma, notas de revisión Apple | — |
 
-Orden aprobado: 1 → 2 → 3 → 4 → 5, y después 6 → 7 → 8.
+Orden aprobado: 1 → 2 → 3 → 4 → 5, y después 6 → 7 → 8. BC-6 se parte en dos porque
+necesita migración: el SQL va primero y por separado, como BC-1.
 
 ## 7 · Vídeo para Apple
 
