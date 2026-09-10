@@ -5464,6 +5464,7 @@
       "not_pending": "No hi ha cap eliminació en curs.",
       "admin_slot_taken": "El club ja té un altre administrador, així que no podem tornar-te el teu lloc. Parla amb el club.",
       "generic": "No s'ha pogut completar. Torna-ho a intentar."
-    }
+    },
+    "offline": "Sense connexió no es pot cancel·lar. Intenta-ho quan tornes a tindre xarxa."
   }
 }

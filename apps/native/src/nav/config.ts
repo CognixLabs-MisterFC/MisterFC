@@ -53,6 +53,10 @@ export const PUBLIC_ROUTE_SEGMENTS: readonly string[] = [
   'login',
   // F14J-5A — elegir club antes de identificarse.
   'seleccionar-club',
+  // BC-5 — "tu cuenta ha sido eliminada". Se llega con la sesión YA cerrada (la cuenta
+  // está anonimizada y baneada), así que sin esto el guard la rebotaría al login y el
+  // usuario no vería nunca la confirmación de que su borrado terminó.
+  'cuenta-eliminada',
 ];
 
 /**

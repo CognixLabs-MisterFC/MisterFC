@@ -8,6 +8,7 @@ import { AREA_SEGMENT } from '@/nav/config';
 import { BRAND } from '@/theme';
 import { useTranslations } from '@/locale/provider';
 import { RemovedBanner } from '@/ui/removed-banner';
+import { AccountDeletionPendingScreen } from '@/ui/account-deletion-pending';
 
 /**
  * O2-2 — GATEKEEPER de navegación (fichero ÚNICO de enrutado por rol, patrón del
@@ -15,6 +16,7 @@ import { RemovedBanner } from '@/ui/removed-banner';
  * árbol que corresponde:
  *
  *   sin sesión            → /login
+ *   borrado de cuenta EN CURSO → pantalla terminal (fecha límite + cancelar)
  *   seguidor (espectador) → /spectator
  *   miembro con rol       → navAreaForRole(rol) → /family | /staff | /direction
  *   sin acceso reconocible→ pantalla "sin acceso" (NUNCA un árbol de más
@@ -30,6 +32,17 @@ export default function Index() {
   if (sessionLoading) return <Splash />;
   if (!user) return <Redirect href="/login" />;
   if (app.loading) return <Splash />;
+
+  // BC-5 — un borrado EN CURSO manda sobre todo lo demás. Va aquí, en el gatekeeper, y
+  // no dentro de `NoAccess`: es el único fichero que decide a dónde va cada usuario, así
+  // que cualquier área futura hereda la decisión sin tener que acordarse.
+  //
+  // Y va ANTES del banner de baja que pinta `NoAccess`: pedir el borrado pone `left_at`
+  // en todas las memberships, así que `removedMemberships` también trae filas y el
+  // usuario leería que le ha dado de baja el club, sin ver el botón de cancelar.
+  if (app.accountDeletion) {
+    return <AccountDeletionPendingScreen />;
+  }
 
   if (app.kind === 'spectator') {
     return <Redirect href={`/${AREA_SEGMENT.spectator}`} />;

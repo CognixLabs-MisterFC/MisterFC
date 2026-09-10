@@ -32,6 +32,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
 import { PushSettingsCard } from '@/notifications/push-settings-card';
+import { DeleteAccountCard } from '@/ui/delete-account-card';
 import { webBaseUrl } from '@/lib/server-api';
 import { uuidv4 } from '@/lib/uuid';
 import { appLocale, useLocale, useSetLocale, useTranslations } from '@/locale/provider';
@@ -121,6 +122,12 @@ export function ProfileScreen() {
           <Text className="text-sm text-zinc-400">{t('notifications_title')}</Text>
           <PushSettingsCard />
         </View>
+
+        {/* BC-5 — Eliminar la cuenta (Apple 5.1.1 v). AL FINAL DEL TODO y en su propia
+            tarjeta roja: es lo más irreversible que un usuario puede hacer sobre sí
+            mismo, y no debe quedar a un dedo de "cambiar contraseña". Perfil es la
+            pantalla compartida por todas las áreas, así que la ve cualquier rol. */}
+        <DeleteAccountCard />
       </View>
     </ScrollView>
   );
