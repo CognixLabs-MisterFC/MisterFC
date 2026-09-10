@@ -524,6 +524,7 @@
     "error_image_decision_required": "Answer Yes or No to both image questions for each child.",
     "error_child_name_required": "A child's name is missing.",
     "error_child_dob_invalid": "A child's date of birth is not valid.",
+    "error_account_deletion_in_progress": "Your account is scheduled for deletion, so you can't join a new club. Cancel the deletion from your profile and open this invitation again.",
     "medical_q": "Do you allow recording and processing your child’s medical data? (optional)",
     "medical_allergies": "Allergies",
     "medical_medication": "Medication",

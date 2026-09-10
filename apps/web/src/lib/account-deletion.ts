@@ -4,10 +4,13 @@ import * as Sentry from '@sentry/nextjs';
 import {
   createSupabaseAdminClient,
   finalizeAccountDeletionFromClient,
+  finalizeDueAccountDeletionsFromClient,
   neutralizeAuthUser,
+  sweepStuckAuthNeutralizationsFromClient,
   type AccountDeletionLogger,
   type Database,
   type FinalizeAccountDeletionResult,
+  type SweepResult,
 } from '@misterfc/core';
 
 /**
@@ -60,25 +63,30 @@ export async function finalizeAccountDeletionWeb(
 }
 
 /**
- * Remata los borrados que ya no tienen nada pendiente. Se llama DESPUÉS de aprobar o
- * rechazar una supresión: si era la última que bloqueaba una cuenta, la cuenta se
- * completa en el acto en vez de esperar al cron (decisión de Jose: la cuenta se elimina
- * cuando el club aprueba). Best-effort — un fallo aquí NO revierte la supresión, y el
- * cron de los 30 días (BC-6) vuelve a pasar por encima.
+ * BC-6b — las dos colas del cron. La orquestación (tope, recuento) vive en core, que es
+ * donde hay tests; aquí solo se inyecta el finalizador con service-role.
  */
-export async function finalizeDueAccountDeletions(): Promise<number> {
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.rpc('account_deletions_due');
-  if (error) {
-    logAccountDeletion(error, 'account_deletions_due', {});
-    return 0;
-  }
-  let done = 0;
-  for (const row of data ?? []) {
-    const res = await finalizeAccountDeletionWeb(row.profile_id);
-    if (res.ok) done += 1;
-  }
-  return done;
+const sweepDeps = { finalizeOne: finalizeAccountDeletionWeb, logError: logAccountDeletion };
+
+/**
+ * PLAZO. Se llama desde el cron (BC-6b) y desde `decideErasureWeb` justo después de
+ * aprobar o rechazar una supresión: si era la última que bloqueaba una cuenta, la
+ * cuenta se completa en el acto en vez de esperar al cron (decisión de Jose).
+ * Best-effort — un fallo aquí NO revierte la supresión.
+ */
+export async function finalizeDueAccountDeletions(): Promise<SweepResult> {
+  return finalizeDueAccountDeletionsFromClient(createSupabaseAdminClient(), sweepDeps);
+}
+
+/**
+ * BARRIDO de las neutralizaciones de GoTrue que se quedaron a medias. Sin esto, una
+ * cuenta anonimizada cuyo `updateUserById` falló se queda con las credenciales VIVAS
+ * para siempre: la solicitud ya está `completed`, así que `account_deletions_due()` no
+ * la vuelve a sacar. Cada fallo que persista deja su alerta desde
+ * `finalizeAccountDeletionWeb`.
+ */
+export async function sweepStuckAuthNeutralizations(): Promise<SweepResult> {
+  return sweepStuckAuthNeutralizationsFromClient(createSupabaseAdminClient(), sweepDeps);
 }
 
 /** El cliente RLS del usuario, para las dos RPC que corren COMO ÉL. */

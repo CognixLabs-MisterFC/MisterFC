@@ -65,6 +65,11 @@ Con estas 3 cuentas se valida F4 Lote B end-to-end:
   comprobar que aparecen filas `match_callup_reminder` en
   `notifications` para los 3 profiles vinculados a players con
   convocatoria pendiente.
+- **BC-6** — disparar `/api/cron/account-deletions` con el MISMO
+  `CRON_SECRET` (es variable del proyecto, no de la ruta). Devuelve
+  `{ok, due, auth_sweep}`; con la base limpia todo a cero. Ojo: **no
+  es una consulta**, anonimiza de verdad las cuentas cuya fecha límite
+  haya pasado.
 
 ## Histórico de seeds
 

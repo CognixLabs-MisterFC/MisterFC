@@ -61,9 +61,9 @@ export async function decideErasureWeb(
   if (!outcome.success) return outcome;
 
   try {
-    const completed = await finalizeDueAccountDeletions();
-    if (completed > 0) {
-      console.info('[erasure] borrados de cuenta rematados', { requestId, completed });
+    const fin = await finalizeDueAccountDeletions();
+    if (fin.succeeded > 0 || fin.failed > 0) {
+      console.info('[erasure] borrados de cuenta rematados', { requestId, ...fin });
     }
   } catch (e) {
     logErasure(e, 'finalize_due_account_deletions', { requestId });
