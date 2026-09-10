@@ -74,6 +74,13 @@ export type DatabaseOverrides = {
         // `messages.read_at` es NULL mientras el mensaje no está leído.
         Returns: { read_at: string | null }[];
       };
+      finalize_account_deletion: {
+        // No es RETURNS TABLE: devuelve la RUTA del avatar en Storage para que el
+        // servidor borre el objeto, y NULL cuando no había avatar o cuando la solicitud
+        // ya estaba resuelta (la RPC es idempotente para el cron). El generador emite
+        // `string` porque el tipo declarado es `text` a secas.
+        Returns: string | null;
+      };
       get_player_medical: {
         Returns: {
           allergies: string | null;
@@ -106,6 +113,10 @@ export type DatabaseOverrides = {
           owner_name: string | null;
           owner_profile_id: string | null;
         }[];
+      };
+      preview_account_deletion: {
+        // `players.last_name` es nullable (y F14-7 lo pone a NULL al suprimir).
+        Returns: { last_name: string | null }[];
       };
       promotion_candidates: {
         // `players.dorsal` y `players.last_name` son nullable.

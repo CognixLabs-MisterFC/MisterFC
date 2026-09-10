@@ -4143,6 +4143,14 @@ export type Database = {
         }
         Returns: number
       }
+      account_deletions_due: {
+        Args: never
+        Returns: {
+          due_reason: string
+          profile_id: string
+          request_id: string
+        }[]
+      }
       active_season_id: { Args: { p_club_id: string }; Returns: string }
       admin_update_staff_contact: {
         Args: {
@@ -4178,6 +4186,10 @@ export type Database = {
           sender_profile_id: string
           sent_at: string
         }[]
+      }
+      cancel_account_deletion: {
+        Args: never
+        Returns: undefined
       }
       cancel_event: {
         Args: { p_event_id: string; p_reason?: string }
@@ -4221,6 +4233,10 @@ export type Database = {
       development_report_shared_for_team: {
         Args: { p_season_id: string; p_team_id: string }
         Returns: boolean
+      }
+      finalize_account_deletion: {
+        Args: { p_profile_id: string }
+        Returns: string
       }
       finalize_active_season: {
         Args: { p_club_id: string; p_cutoff: string }
@@ -4389,6 +4405,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      my_account_deletion_status: {
+        Args: never
+        Returns: {
+          deadline_at: string
+          pending_players: number
+          request_id: string
+          requested_at: string
+        }[]
+      }
       my_removed_memberships: {
         Args: never
         Returns: {
@@ -4490,6 +4515,16 @@ export type Database = {
         Args: { p_club_id: string; p_profile_id: string }
         Returns: boolean
       }
+      preview_account_deletion: {
+        Args: never
+        Returns: {
+          club_id: string
+          club_name: string
+          first_name: string
+          last_name: string
+          player_id: string
+        }[]
+      }
       profile_is_staff_of_club: {
         Args: { p_club_id: string; p_profile_id: string }
         Returns: boolean
@@ -4574,6 +4609,13 @@ export type Database = {
           original_id: string
           play_name: string
           proposal_owner_id: string
+        }[]
+      }
+      request_account_deletion: {
+        Args: { p_reason?: string }
+        Returns: {
+          blocking_players: number
+          request_id: string
         }[]
       }
       request_player_erasure: {
