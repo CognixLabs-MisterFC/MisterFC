@@ -109,7 +109,17 @@ alter table public.erasure_requests
   add column account_deletion_id uuid references public.account_deletion_requests(id);
 
 comment on column public.erasure_requests.account_deletion_id is
-  'BC-1 — no nulo si la solicitud NACIÓ de un borrado de cuenta (el tutor era el único de ese jugador). Permite al servidor saber cuándo se puede completar el borrado y al club entender de dónde sale la solicitud.';
+  'BC-1 — no nulo si la solicitud está ENLAZADA a un borrado de cuenta: o nació de él, o ya estaba pendiente y el borrado la absorbió como bloqueante. Permite al servidor saber cuándo se puede completar el borrado.';
+
+-- El enlace NO basta: hay que distinguir las que NACIERON del borrado de las que el
+-- tutor ya había pedido por su cuenta ANTES. Las primeras se retiran si el usuario
+-- cancela el borrado; las segundas son independientes y SOBREVIVEN a la cancelación
+-- (solo se les suelta el enlace).
+alter table public.erasure_requests
+  add column created_by_account_deletion boolean not null default false;
+
+comment on column public.erasure_requests.created_by_account_deletion is
+  'BC-1 — true solo si esta supresión la CREÓ `request_account_deletion`. Una supresión que el tutor pidió por su cuenta antes del borrado queda en false: se enlaza (bloquea el borrado) pero NO se cancela si el usuario se arrepiente.';
 
 create index erasure_requests_account_deletion_idx
   on public.erasure_requests (account_deletion_id) where account_deletion_id is not null;

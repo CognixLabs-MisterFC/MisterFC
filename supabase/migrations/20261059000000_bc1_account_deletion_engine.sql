@@ -19,6 +19,9 @@
 --     club al SOLICITAR ya sale gratis: el trigger vivo `trg_notify_erasure_requested`
 --     dispara con cada `erasure_requests` que insertamos aquí.
 --   · NO toca `consents` (decisión de Jose: ni `ip` ni `user_agent`).
+--   · NO retira una supresión que el tutor hubiera pedido ANTES por su cuenta: esa es
+--     independiente del borrado. Se enlaza (bloquea) pero se marca con
+--     `created_by_account_deletion = false`, y al cancelar solo se le suelta el enlace.
 --   · NO toca los cuerpos de mensajes ni la autoría del histórico deportivo.
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -144,15 +147,20 @@ begin
      limit 1;
 
     if v_er_id is not null then
+      -- PREEXISTENTE: el tutor ya la había pedido por su cuenta. Se ENLAZA porque
+      -- también bloquea el borrado, pero `created_by_account_deletion` queda en false:
+      -- es independiente y sobrevive si el usuario cancela.
       update public.erasure_requests
          set account_deletion_id = v_req
        where id = v_er_id;
     else
       insert into public.erasure_requests (
-        player_id, club_id, requested_by, reason, account_deletion_id
+        player_id, club_id, requested_by, reason,
+        account_deletion_id, created_by_account_deletion
       ) values (
         v_player.player_id, v_player.club_id, v_uid,
-        'Solicitud generada al pedir el borrado de la cuenta del unico tutor', v_req
+        'Solicitud generada al pedir el borrado de la cuenta del unico tutor',
+        v_req, true
       );
       -- El aviso al club lo dispara `trg_notify_erasure_requested` (AFTER INSERT).
     end if;
@@ -225,13 +233,20 @@ begin
     raise exception 'admin_slot_taken';
   end;
 
-  -- Las supresiones que nacieron de este borrado se retiran. Las que el tutor hubiera
-  -- pedido por su cuenta ANTES también se enlazaron, así que también se retiran: el
-  -- usuario recupera el estado previo completo y puede volver a pedirlas si quiere.
+  -- Solo se retiran las supresiones que NACIERON de este borrado.
   update public.erasure_requests
      set status = 'cancelled', decided_at = now()
    where account_deletion_id = v_req.id
-     and status = 'pending';
+     and status = 'pending'
+     and created_by_account_deletion;
+
+  -- Las que el tutor ya había pedido por su cuenta ANTES son independientes: siguen
+  -- pendientes y el club las decidirá igual. Solo se les suelta el enlace, para no
+  -- dejarlas colgando de un borrado cancelado.
+  update public.erasure_requests
+     set account_deletion_id = null
+   where account_deletion_id = v_req.id
+     and not created_by_account_deletion;
 
   update public.account_deletion_requests
      set status = 'cancelled', cancelled_at = now()
@@ -246,7 +261,7 @@ end;
 $$;
 
 comment on function public.cancel_account_deletion() is
-  'BC-1 — el usuario retira su solicitud de borrado. Reactiva EXACTAMENTE las memberships que la solicitud puso de baja (nunca una baja anterior del club) y cancela las supresiones que nacieron de ella. Error admin_slot_taken si el club ya tiene otro admin_club activo.';
+  'BC-1 — el usuario retira su solicitud de borrado. Reactiva EXACTAMENTE las memberships que la solicitud puso de baja (nunca una baja anterior del club) y cancela SOLO las supresiones que nacieron de ella (created_by_account_deletion); las que el tutor pidio antes por su cuenta sobreviven, solo se desenlazan. Error admin_slot_taken si el club ya tiene otro admin_club activo.';
 
 revoke all on function public.cancel_account_deletion() from public;
 grant execute on function public.cancel_account_deletion() to authenticated;

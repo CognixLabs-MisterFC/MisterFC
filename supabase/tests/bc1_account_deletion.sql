@@ -13,6 +13,8 @@
 --        sigue escribiendo sus columnas normales y SI puede leer la marca.
 --   [10] CANDADO: authenticated no ejecuta finalize_account_deletion ni account_deletions_due.
 --   [11] un admin_club puede borrarse y el club ADMITE un admin nuevo (indice con left_at).
+--   [12] una supresion que el tutor pidio ANTES por su cuenta se ENLAZA (bloquea) pero
+--        NO se cancela al cancelar el borrado: solo se le suelta el enlace.
 --
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final), no deja rastro.
 \pset pager off
@@ -29,11 +31,13 @@ insert into public.clubs (id, name, slug) values
 select pg_temp.new_test_user('bc1a0000-0000-4000-8000-00000000000a', 'admin@bc1.test', '{}'::jsonb);
 select pg_temp.new_test_user('bc1a0000-0000-4000-8000-0000000000b1', 'tutor1@bc1.test', '{}'::jsonb);
 select pg_temp.new_test_user('bc1a0000-0000-4000-8000-0000000000b2', 'tutor2@bc1.test', '{}'::jsonb);
+select pg_temp.new_test_user('bc1a0000-0000-4000-8000-0000000000b3', 'tutor3@bc1.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role, phone, contact_email) values
   ('bc150000-0000-4000-8000-00000000000a', 'bc1a0000-0000-4000-8000-00000000000a', 'bc100000-0000-4000-8000-000000000001', 'admin_club', null, null),
   ('bc150000-0000-4000-8000-0000000000b1', 'bc1a0000-0000-4000-8000-0000000000b1', 'bc100000-0000-4000-8000-000000000001', 'jugador', '600111222', 'contacto1@bc1.test'),
-  ('bc150000-0000-4000-8000-0000000000b2', 'bc1a0000-0000-4000-8000-0000000000b2', 'bc100000-0000-4000-8000-000000000001', 'jugador', null, null);
+  ('bc150000-0000-4000-8000-0000000000b2', 'bc1a0000-0000-4000-8000-0000000000b2', 'bc100000-0000-4000-8000-000000000001', 'jugador', null, null),
+  ('bc150000-0000-4000-8000-0000000000b3', 'bc1a0000-0000-4000-8000-0000000000b3', 'bc100000-0000-4000-8000-000000000001', 'jugador', null, null);
 
 -- P1: SOLO tutor1 (bloqueante). P2: tutor1 + tutor2 (no bloqueante).
 -- P3: solo tutor1 pero YA suprimido → no bloquea. P4: solo tutor1 pero de BAJA → no bloquea.
@@ -41,14 +45,16 @@ insert into public.players (id, club_id, first_name, last_name, date_of_birth, e
   ('bc1b0000-0000-4000-8000-000000000001', 'bc100000-0000-4000-8000-000000000001', 'Uno',    'Solo',  '2014-01-01', null, null),
   ('bc1b0000-0000-4000-8000-000000000002', 'bc100000-0000-4000-8000-000000000001', 'Dos',    'Doble', '2014-01-02', null, null),
   ('bc1b0000-0000-4000-8000-000000000003', 'bc100000-0000-4000-8000-000000000001', 'Tres',   'Supri', '2014-01-03', now(), null),
-  ('bc1b0000-0000-4000-8000-000000000004', 'bc100000-0000-4000-8000-000000000001', 'Cuatro', 'Baja',  '2014-01-04', null, current_date);
+  ('bc1b0000-0000-4000-8000-000000000004', 'bc100000-0000-4000-8000-000000000001', 'Cuatro', 'Baja',  '2014-01-04', null, current_date),
+  ('bc1b0000-0000-4000-8000-000000000005', 'bc100000-0000-4000-8000-000000000001', 'Cinco',  'Previa','2014-01-05', null, null);
 
 insert into public.player_accounts (player_id, profile_id, relation) values
   ('bc1b0000-0000-4000-8000-000000000001', 'bc1a0000-0000-4000-8000-0000000000b1', 'parent'),
   ('bc1b0000-0000-4000-8000-000000000002', 'bc1a0000-0000-4000-8000-0000000000b1', 'parent'),
   ('bc1b0000-0000-4000-8000-000000000002', 'bc1a0000-0000-4000-8000-0000000000b2', 'parent'),
   ('bc1b0000-0000-4000-8000-000000000003', 'bc1a0000-0000-4000-8000-0000000000b1', 'parent'),
-  ('bc1b0000-0000-4000-8000-000000000004', 'bc1a0000-0000-4000-8000-0000000000b1', 'parent');
+  ('bc1b0000-0000-4000-8000-000000000004', 'bc1a0000-0000-4000-8000-0000000000b1', 'parent'),
+  ('bc1b0000-0000-4000-8000-000000000005', 'bc1a0000-0000-4000-8000-0000000000b3', 'parent');
 
 insert into public.expo_push_tokens (user_id, token) values
   ('bc1a0000-0000-4000-8000-0000000000b1', 'ExponentPushToken[bc1-ensayo]');
@@ -275,9 +281,62 @@ begin
   end if;
 end $$;
 
+\echo '=== [12] una supresion PREEXISTENTE sobrevive a la cancelacion del borrado ==='
+-- tutor3 pide POR SU CUENTA la supresion de su hijo (del que es unico tutor) y DESPUES
+-- pide el borrado de la cuenta. La supresion se enlaza porque tambien bloquea, pero es
+-- independiente: al cancelar el borrado tiene que seguir viva.
+set local role authenticated;
+set local "request.jwt.claims" = '{"sub":"bc1a0000-0000-4000-8000-0000000000b3","role":"authenticated"}';
+select public.request_player_erasure('bc1b0000-0000-4000-8000-000000000005', 'la pido yo, antes') is not null as supresion_previa;
+
+do $$
+declare v_flag boolean; v_link uuid;
+begin
+  reset role;
+  select created_by_account_deletion, account_deletion_id into v_flag, v_link
+    from public.erasure_requests where player_id = 'bc1b0000-0000-4000-8000-000000000005';
+  if v_flag then raise exception 'FAIL [12a]: una supresion pedida a mano nacio marcada como del borrado'; end if;
+  if v_link is not null then raise exception 'FAIL [12b]: nacio ya enlazada a un borrado'; end if;
+end $$;
+
+set local role authenticated;
+set local "request.jwt.claims" = '{"sub":"bc1a0000-0000-4000-8000-0000000000b3","role":"authenticated"}';
+select blocking_players as bloqueantes_de_tutor3 from public.request_account_deletion(null);
+
+do $$
+declare n int; v_flag boolean; v_link uuid;
+begin
+  reset role;
+  select count(*) into n from public.erasure_requests
+   where player_id = 'bc1b0000-0000-4000-8000-000000000005';
+  if n <> 1 then raise exception 'FAIL [12c]: el borrado duplico la supresion (hay % filas)', n; end if;
+  select created_by_account_deletion, account_deletion_id into v_flag, v_link
+    from public.erasure_requests where player_id = 'bc1b0000-0000-4000-8000-000000000005';
+  if v_link is null then raise exception 'FAIL [12d]: la preexistente no se enlazo, no bloquearia el borrado'; end if;
+  if v_flag then raise exception 'FAIL [12e]: enlazarla la marco como nacida del borrado'; end if;
+end $$;
+
+set local role authenticated;
+set local "request.jwt.claims" = '{"sub":"bc1a0000-0000-4000-8000-0000000000b3","role":"authenticated"}';
+select public.cancel_account_deletion();
+
+do $$
+declare v_st text; v_link uuid;
+begin
+  reset role;
+  select status, account_deletion_id into v_st, v_link
+    from public.erasure_requests where player_id = 'bc1b0000-0000-4000-8000-000000000005';
+  if v_st <> 'pending' then
+    raise exception 'FAIL [12f]: la supresion pedida a mano quedo en % al cancelar el borrado', v_st;
+  end if;
+  if v_link is not null then
+    raise exception 'FAIL [12g]: sigue colgando de un borrado cancelado';
+  end if;
+end $$;
+
 \echo ''
 \echo '───────────────────────────────────────────────'
-\echo '✅ Tests BC-1 (borrado de cuenta): 11 bloques pasaron.'
+\echo '✅ Tests BC-1 (borrado de cuenta): 12 bloques pasaron.'
 \echo '───────────────────────────────────────────────'
 
 rollback;

@@ -99,6 +99,16 @@ del menor, no sobre el derecho del titular.
 **Cancelar** revierte **exactamente** las memberships que la solicitud tocó
 (`affected_membership_ids`), nunca una baja que el club hubiera dado antes por su cuenta.
 
+Y distingue el origen de cada supresión (`erasure_requests.created_by_account_deletion`):
+
+- las que **nacieron** del borrado se retiran (pasan a `cancelled`);
+- las que el tutor ya había pedido **por su cuenta** son independientes: siguen pendientes y
+  el club las decidirá igual. Solo se les suelta el enlace, para no dejarlas colgando de un
+  borrado cancelado.
+
+Ambas cuentan como bloqueantes mientras el borrado está en curso: una supresión pendiente del
+único hijo impide completar la cuenta venga de donde venga.
+
 ## 6 · Reparto en PRs
 
 | PR | Qué | Migración |
