@@ -9,6 +9,7 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { OnboardingShell } from '@/components/shell/onboarding-shell';
 import { LogoutButton } from '@/components/shell/logout-button';
 import { RemovedMembershipBanner } from '@/components/shell/removed-membership-banner';
+import { AccountDeletionPending } from '@/components/shell/account-deletion-pending';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -41,10 +42,39 @@ export default async function OnboardingPage({ params }: Props) {
     redirect(`/${locale}`);
   }
 
+  // El cliente RLS del usuario: lo usan las tres comprobaciones que vienen (borrado en
+  // curso, invitación pendiente y baja), así que se crea una sola vez aquí.
+  const supabase = createSupabaseServerClient(adapter);
+
+  // BC-4 — un borrado de cuenta EN CURSO manda sobre todo lo demás, y por eso se mira
+  // lo primero:
+  //  · antes que la invitación pendiente, porque si no, a quien recibiera una invitación
+  //    mientras se borra lo mandaríamos a aceptarla; se haría de un club otra vez y no
+  //    volvería a ver esta pantalla, pero el cron lo borraría igual a los 30 días;
+  //  · antes que el banner de baja, porque pedir el borrado pone `left_at` en todas sus
+  //    memberships y `my_removed_memberships` también devolvería filas: le diríamos que
+  //    le ha dado de baja el club, que es falso, y encima le esconderíamos el botón de
+  //    cancelar.
+  // Cuesta una RPC extra solo en el camino de los clubless, que ya es el raro.
+  const { data: deletion } = await supabase.rpc('my_account_deletion_status');
+  const pendingDeletion = deletion?.[0];
+  if (pendingDeletion) {
+    return (
+      <OnboardingShell locale={locale}>
+        <div className="flex w-full max-w-md flex-col items-center gap-6 text-center">
+          <AccountDeletionPending
+            deadlineAt={pendingDeletion.deadline_at}
+            pendingPlayers={pendingDeletion.pending_players}
+          />
+          <LogoutButton locale={locale} variant="outline" />
+        </div>
+      </OnboardingShell>
+    );
+  }
+
   // Si tiene una invitación pendiente válida, le reencaminamos a aceptarla.
   // La policy de invitations ya restringe a invitaciones cuyo email coincida
   // con el del user. ESTE es el camino del invitado — no se toca.
-  const supabase = createSupabaseServerClient(adapter);
   const { data: pendingInvite } = await supabase
     .from('invitations')
     .select('token')

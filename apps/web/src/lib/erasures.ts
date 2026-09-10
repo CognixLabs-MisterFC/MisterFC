@@ -6,6 +6,7 @@ import {
   type Database,
   type ErasureOutcome,
 } from '@misterfc/core';
+import { finalizeDueAccountDeletions } from '@/lib/account-deletion';
 
 /**
  * O2-11c-2 — Wrapper web de la decisión de supresión (core). Único punto que inyecta
@@ -29,13 +30,27 @@ const logErasure = (error: unknown, step: string, extra: Record<string, unknown>
   console.error(`[erasure] ${step}`, { ...extra, error });
 };
 
-export function decideErasureWeb(
+/**
+ * BC-3/BC-4 — decidir una supresión puede DESBLOQUEAR un borrado de cuenta: si era la
+ * última que lo tenía en espera, la cuenta se anonimiza en el acto, sin esperar al cron
+ * de los 30 días.
+ *
+ * Vale tanto al APROBAR como al RECHAZAR (decisión de Jose): el rechazo es sobre el dato
+ * del MENOR, no sobre el derecho del titular a irse, así que en cuanto la solicitud deja
+ * de estar `pending` la cuenta puede completarse.
+ *
+ * Va AQUÍ y no en los callers porque por esta función pasan los tres caminos —la Server
+ * Action de /supresiones y los dos route handlers de la nativa—: en los callers habría
+ * que acordarse tres veces. Best-effort: la supresión YA está aplicada y no se revierte
+ * pase lo que pase aquí.
+ */
+export async function decideErasureWeb(
   supabase: Supa,
   requestId: string,
   approve: boolean,
   reason: string | null,
 ): Promise<ErasureOutcome> {
-  return decidePlayerErasureFromClient(
+  const outcome = await decidePlayerErasureFromClient(
     supabase,
     requestId,
     approve,
@@ -43,6 +58,17 @@ export function decideErasureWeb(
     removePhotoAdmin,
     logErasure,
   );
+  if (!outcome.success) return outcome;
+
+  try {
+    const completed = await finalizeDueAccountDeletions();
+    if (completed > 0) {
+      console.info('[erasure] borrados de cuenta rematados', { requestId, completed });
+    }
+  } catch (e) {
+    logErasure(e, 'finalize_due_account_deletions', { requestId });
+  }
+  return outcome;
 }
 
 /**
