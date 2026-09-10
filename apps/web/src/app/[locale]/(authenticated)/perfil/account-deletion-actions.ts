@@ -43,7 +43,14 @@ export async function requestAccountDeletion(
   let completed = false;
   if (res.blockingPlayers === 0 && userId) {
     const fin = await finalizeAccountDeletionWeb(userId);
-    completed = fin.ok;
+    // `auth_neutralize_failed` cuenta como completado A EFECTOS DE LO QUE VE EL USUARIO:
+    // la anonimización SÍ se aplicó (nombre, foto, teléfono, vínculos… ya no están) y lo
+    // único que quedó a medias fue neutralizar las credenciales en GoTrue, que BC-6
+    // repescará. Si aquí dijéramos `false`, el usuario caería en el dead-end y, como su
+    // solicitud ya está `completed`, no habría borrado en curso que enseñarle: leería el
+    // banner de baja, o sea "te ha dado de baja el club", que es FALSO. Solo un
+    // `rpc_failed` (no se tocó nada) merece la pantalla de borrado en curso.
+    completed = fin.ok || fin.error === 'auth_neutralize_failed';
   }
 
   // El club activo deja de existir en cualquier caso: sus memberships están de baja.

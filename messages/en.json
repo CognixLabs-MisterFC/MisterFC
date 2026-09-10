@@ -5464,6 +5464,7 @@
       "not_pending": "There is no deletion in progress.",
       "admin_slot_taken": "The club already has another administrator, so we cannot restore your role. Please contact the club.",
       "generic": "Could not complete. Please try again."
-    }
+    },
+    "offline": "You cannot cancel while offline. Try again when you are back online."
   }
 }

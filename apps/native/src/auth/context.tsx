@@ -11,6 +11,8 @@ import {
   getCurrentUserClubsFromClient,
   getStaffTeamsFromClient,
   isSpectatorFromClient,
+  getMyAccountDeletionStatusFromClient,
+  type AccountDeletionStatus,
   navAreaForRole,
   resolveActiveClub,
   type CurrentUserClub,
@@ -82,7 +84,26 @@ type AppContextValue = {
    * RPC no se llama (coste cero para el usuario normal).
    */
   removedMemberships: RemovedMembership[];
+  /**
+   * BC-5 — borrado de cuenta EN CURSO del usuario actual, o `null`. Se resuelve AQUÍ,
+   * junto a las bajas y en la misma rama (sin clubes activos), porque pedir el borrado
+   * pone `left_at` en todas las memberships y deja al usuario justo ahí. Ponerlo en el
+   * contexto y no en una pantalla es deliberado: el gatekeeper y cualquier superficie
+   * futura leen el MISMO estado, sin que haya que acordarse de consultarlo otra vez.
+   *
+   * Ojo al orden de lectura: si esto no es null, el usuario NO está de baja, está
+   * borrándose. `removedMemberships` también trae filas en ese caso, así que quien pinte
+   * las dos cosas tiene que mirar esto PRIMERO o dirá que le dio de baja el club.
+   */
+  accountDeletion: AccountDeletionStatus | null;
   setActiveClub: (clubId: string) => Promise<void>;
+  /**
+   * Recarga INMEDIATA del contexto (perfil, clubes, bajas, borrado en curso). A
+   * diferencia del refresco de foreground, no está limitada por el mínimo de 60 s: la
+   * usa quien acaba de cambiar el estado y necesita que la app reaccione ya, como
+   * cancelar un borrado de cuenta.
+   */
+  reload: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -116,6 +137,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     RemovedMembership[]
   >([]);
   const [hasStaffTeams, setHasStaffTeams] = useState(false);
+  const [accountDeletion, setAccountDeletion] =
+    useState<AccountDeletionStatus | null>(null);
 
   const userId = user?.id ?? null;
 
@@ -144,6 +167,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setActiveClubState(null);
         setRemovedMemberships([]);
         setHasStaffTeams(false);
+        setAccountDeletion(null);
         if (!silent) setLoading(false);
         return;
       }
@@ -169,6 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // con club activo no ve el banner de baja: las superficies que lo pintan son
           // inalcanzables con club.
           setRemovedMemberships([]);
+          setAccountDeletion(null);
           const stored = await getStoredActiveClubId();
           if (!alive()) return;
           const { active: chosen } = resolveActiveClub(userClubs, stored);
@@ -198,9 +223,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
           // usuario para el banner informativo de none/spectator.
           const spectator = await isSpectatorFromClient(supabase);
           const { data: removed } = await supabase.rpc('my_removed_memberships');
+          // BC-5 — mismo sitio y misma condición que las bajas: sin clubes activos.
+          // Si la lectura falla se deja en null y el usuario ve la pantalla de siempre;
+          // core distingue el fallo del "no hay" para no inventarnos un estado.
+          const deletion = await getMyAccountDeletionStatusFromClient(supabase);
           if (!alive()) return;
           setActiveClubState(null);
           setRemovedMemberships(removed ?? []);
+          setAccountDeletion(deletion.ok ? deletion.status : null);
           setHasStaffTeams(false);
           setKind(spectator ? 'spectator' : 'none');
         }
@@ -223,6 +253,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
+  }, [runLoad]);
+
+  // Recarga inmediata a petición (sin throttle): quien acaba de escribir necesita ver
+  // el estado nuevo, no el de hace un minuto.
+  const reload = useCallback(async () => {
+    await runLoad(false, () => mountedRef.current);
   }, [runLoad]);
 
   // Refresco silencioso al volver de background / en foreground, throttled a 60 s.
@@ -260,8 +296,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         activeClub,
         theme,
         removedMemberships,
+        accountDeletion,
         hasStaffTeams,
         setActiveClub,
+        reload,
         signOut,
       }}
     >

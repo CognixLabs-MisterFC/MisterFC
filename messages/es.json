@@ -5464,6 +5464,7 @@
       "not_pending": "No hay ninguna eliminación en curso.",
       "admin_slot_taken": "El club ya tiene otro administrador, así que no podemos devolverte tu puesto. Habla con el club.",
       "generic": "No se pudo completar. Inténtalo de nuevo."
-    }
+    },
+    "offline": "Sin conexión no se puede cancelar. Inténtalo cuando vuelvas a tener red."
   }
 }
