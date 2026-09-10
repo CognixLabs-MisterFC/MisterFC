@@ -1008,6 +1008,7 @@
     "error_image_decision_required": "Responde Sí o No a las dos preguntas de imagen de cada hijo.",
     "error_child_name_required": "Falta el nombre de algún hijo/a.",
     "error_child_dob_invalid": "La fecha de nacimiento de algún hijo/a no es válida.",
+    "error_account_deletion_in_progress": "Tienes un borrado de cuenta en curso, así que no puedes unirte a un club nuevo. Cancela el borrado desde tu perfil y vuelve a abrir esta invitación.",
     "medical_q": "¿Autorizas registrar y tratar datos médicos de tu hijo/a? (opcional)",
     "medical_allergies": "Alergias",
     "medical_medication": "Medicación",

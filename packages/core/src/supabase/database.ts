@@ -4143,6 +4143,15 @@ export type Database = {
         }
         Returns: number
       }
+      account_deletions_auth_pending: {
+        Args: never
+        Returns: {
+          completed_at: string
+          profile_id: string
+          reason: string
+          request_id: string
+        }[]
+      }
       account_deletions_due: {
         Args: never
         Returns: {

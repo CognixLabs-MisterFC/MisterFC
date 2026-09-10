@@ -652,6 +652,7 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       image_decision_required: 'error_image_decision_required',
       child_name_required: 'error_child_name_required',
       child_dob_invalid: 'error_child_dob_invalid',
+      account_deletion_in_progress: 'error_account_deletion_in_progress',
       generic: 'error_generic',
     }[error] ?? 'error_generic';
 

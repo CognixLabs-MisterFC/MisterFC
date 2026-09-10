@@ -69,6 +69,9 @@ export type AcceptInvitationState = {
     // Rework C/D — confirmación de datos del hijo (nombre + fecha nac.).
     | 'child_name_required'
     | 'child_dob_invalid'
+    // BC-6 — quien tiene un borrado de cuenta en curso no puede entrar en un club
+    // nuevo. Lo decide la RPC (punto común de TODA aceptación), no la pantalla.
+    | 'account_deletion_in_progress'
     | 'generic';
 };
 
@@ -380,6 +383,13 @@ async function attachAllPending(
       // La transacción revirtió: no dejamos imágenes huérfanas en el bucket.
       await cleanupImages();
       const msg = error.message ?? '';
+      // BC-6 — el candado de la RPC. Se mapea AQUÍ, en `attachAllPending`, porque es
+      // por donde pasan las tres acciones del alta (acceptInvitation /
+      // acceptNewInvitee / acceptExistingUser); en cualquiera de los tres callers se
+      // quedaría a medias.
+      if (msg.includes('account_deletion_in_progress')) {
+        return { error: 'account_deletion_in_progress' };
+      }
       if (msg.includes('consent_required')) return { error: 'consent_required' };
       if (msg.includes('wrong_email')) return { error: 'wrong_email' };
       if (msg.includes('not_found')) return { error: 'not_found' };

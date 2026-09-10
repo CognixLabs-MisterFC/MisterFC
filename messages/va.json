@@ -524,6 +524,7 @@
     "error_image_decision_required": "Respon Sí o No a les dues preguntes d'imatge de cada fill.",
     "error_child_name_required": "Falta el nom d'algun fill/a.",
     "error_child_dob_invalid": "La data de naixement d'algun fill/a no és vàlida.",
+    "error_account_deletion_in_progress": "Tens una eliminació de compte en curs, així que no pots unir-te a un club nou. Cancel·la l'eliminació des del teu perfil i torna a obrir aquesta invitació.",
     "medical_q": "Autoritzes registrar i tractar dades mèdiques del teu fill/a? (opcional)",
     "medical_allergies": "Alèrgies",
     "medical_medication": "Medicació",
