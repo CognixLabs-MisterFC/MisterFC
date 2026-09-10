@@ -261,3 +261,23 @@ Barrido sistemático de **todas las acciones × roles** (asistencia, convocatori
 - **Síntoma latente equivalente**: la policy `player_accounts_write_admin` (F1.7) solo permitía admin/coord. El comentario en `20260528180000_invitations_player_link.sql:19` asumía erróneamente que cubría también al aceptante. F2.4 nunca se había probado con un email virgen aceptando — habría fallado igual.
 - **Fix**: migración `20260529000000_team_staff_insert_invitee.sql` añade DOS policies aditivas (`team_staff_insert_invitee` y `player_accounts_insert_invitee`) con el patrón calcado de `memberships_insert_bootstrap_or_admin`: el user puede insertar SU fila si existe invitación pendiente vigente que coincida en (membership/profile, email, token vigente).
 - **Validación**: repro con puppeteer-core contra dev local. Ver `fase-2-summary.md` para la trace completa de pasos.
+
+### `notify_erasure_requested` avisa también a admin/directores DE BAJA (2026-09-10)
+- **Detectado en**: BC-1 (borrado de cuenta), al leer el trigger vivo con `pg_get_functiondef` para comprobar que las supresiones que genera el borrado avisan al club.
+- **Síntoma**: el `insert into notifications` del trigger selecciona `from memberships m where m.club_id = ... and m.role in ('admin_club','director')` **sin** `and m.left_at is null`. Un admin o director al que el club dio de baja (migraciones `20261049`/`20261050`) sigue recibiendo el aviso de cada solicitud de supresión de ese club.
+- **Alcance**: pre-existente, ajeno a BC-1. Solo campana (`in_app`), sin push, y el dado de baja no tiene acceso RLS para abrir la notificación — molesta, no filtra.
+- **No se arregla en BC-1** (regla: no mezclar). Candidato natural: BC-7, que ya toca los avisos.
+
+### La BD efímera del CI se cae si un test provoca un 42501 de una función `SECURITY DEFINER` con cláusula `SET` bajo `SET LOCAL ROLE` (2026-09-10)
+- **Detectado en**: BC-1 (PR #563), primer paso de la suite pgTAP en CI.
+- **Síntoma**: `psql: server closed the connection unexpectedly` y, a partir de ahí, `FATAL: the database system is in recovery mode` en los **60 tests siguientes**. Parece que fallan 61 tests; en realidad falla uno y los demás son daño colateral de que el backend se llevó por delante al servidor.
+- **Patrón que lo dispara** (reproducido dos veces, mismo punto, ~0,68 s):
+  ```sql
+  set local role authenticated;
+  begin
+    perform public.una_funcion_security_definer_con_set_search_path(...);  -- sin EXECUTE
+  exception when insufficient_privilege then ok := true; end;
+  ```
+- **No reproduce contra producción** (PostgreSQL 17.6 en el pooler): el ensayo completo pasó tres veces. La BD efímera del CI es la imagen `supabase/postgres` que fija `supabase/config.toml` (`major_version = 17`, minor por detrás). Apunta a un fallo de gestión de la pila de GUC al abortar la subtransacción, corregido en un 17.x posterior.
+- **Cómo se evita**: no provocar el error. La aserción que de verdad interesa —"este rol no tiene EXECUTE"— se comprueba en el catálogo con `has_function_privilege(rol, 'esquema.func(args)', 'EXECUTE')`, que además es más directa y no depende del runtime. Así quedó el bloque [10] de `supabase/tests/bc1_account_deletion.sql`.
+- **Ojo**: capturar `insufficient_privilege` de un **UPDATE** normal (privilegio de columna o RLS) **sí** es seguro; el bloque [9] del mismo test lo hace y pasa. Lo que tumba el backend es la combinación con la función `SECURITY DEFINER` que lleva `SET`.

@@ -954,7 +954,33 @@ Bloque de **comunicaciones/onboarding** que consolida el canal email, hoy disper
 - **O2-10** ☐ cuerpo técnico, resto de la banda 80 %
 - **O2-11** ☐ dirección, banda 50 %
 - **O2-12** ☐ pulido: i18n es/en/va, Sentry activo, iconos/splash, assets de store, QA
-- **O2-13** ☐ submit (bloqueado por constitución de Cognix Labs, S.L.)
+- **O2-13** ☐ submit (bloqueado por constitución de Cognix Labs, S.L. **y por la serie BC**, ver más abajo)
+
+### Serie BC — Borrado de cuenta (bloquea O2-13)
+
+**Dispara**: Apple, Guideline 2.1 / 5.1.1(v) — una app que da acceso a cuentas debe permitir **iniciar el borrado de la cuenta desde dentro de la app**. Hoy no existe: lo único parecido es la supresión RGPD del **jugador** (F14-7), que deja la cuenta del tutor intacta. Sin esto no hay submit a App Store.
+
+**Spec**: [BC.0 — Borrado de cuenta](../specs/BC.0-borrado-de-cuenta.md) · **Decisión de fondo**: [ADR-0021](../decisions/ADR-0021-anonimizacion-forzada-por-el-esquema.md) — el borrado es **anonimización**, y no es una preferencia de estilo: `profiles.id → auth.users ON DELETE CASCADE` y sobre `profiles` cuelgan 5 FK `RESTRICT`, así que `deleteUser()` sobre alguien con un solo mensaje falla.
+
+**No es una fase del plan**: es una serie transversal (SQL + core + web + nativa + cron) que cruza Ola 1 y Ola 2. Se registra aquí porque bloquea el submit.
+
+| PR | Qué | Migración | Estado |
+|---|---|---|---|
+| **BC-1** | SQL: modelo + motor (6 RPC) + pgTAP | ✅ dos ficheros | ☐ entregado, pendiente de aplicar |
+| **BC-2** | `packages/core`: lecturas, acciones, mapeo de errores | — | ☐ |
+| **BC-3** | Servidor: finalizador service_role + route handlers | — | ☐ |
+| **BC-4** | Web: Perfil + confirmación + pantalla "borrado en curso" | — | ☐ |
+| **BC-5** | Nativa: mismo flujo · **deja la app enseñable a Apple** | — | ☐ |
+| **BC-6** | Cron de 30 días (`vercel.json` + `CRON_SECRET`) | — | ☐ |
+| **BC-7** | Avisos: club, otro tutor, superadmin | — | ☐ |
+| **BC-8** | Legal, consola de plataforma, notas de revisión Apple | — | ☐ |
+
+Orden aprobado (Jose, 2026-09-10): **1 → 2 → 3 → 4 → 5**, y después 6 → 7 → 8. El primero probable de verdad es BC-1 (`pnpm db:test` contra el remoto, en `BEGIN/ROLLBACK`); el primero probable de punta a punta es BC-3 (con `curl`); **BC-5 es el que permite grabar el vídeo para Apple**, y no depende del cron.
+
+**Reglas de la serie**:
+- El SQL se **entrega**, lo aplica Jose (`yes | pnpm db:push`), y la implementación va **encima**. Tras aplicar, las firmas nuevas se añaden **a mano** a `packages/core/src/supabase/database.ts` — nunca `db:types` completo (ver PR #404).
+- BC-7 arrastra además el arreglo de `notify_erasure_requested`, que hoy avisa también a admins y directores dados de baja (ver [known-issues.md](known-issues.md)).
+- La suscripción anual de 3 €/familia llega después y **no** se diseña aquí; BC-1 deja el hueco `account_deletion_requests.entitlement_suspended_at` y la spec §8 recoge las cuatro cosas que ya se saben (aviso obligatorio de que borrar la cuenta no cancela la suscripción, clave propia de tienda, desvinculación al borrar, webhooks que no resucitan cuentas).
 
 ---
 
