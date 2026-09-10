@@ -12,6 +12,10 @@
  *      anonimiza, marca erased_at) y devuelve la ruta de la foto.
  *   4. Borrado del OBJETO de Storage con service-role, DESPUÉS de la RPC (best-effort:
  *      si falla no revierte, se logea). Todo dentro de `decideErasureWeb`.
+ *   5. BC-3 — si esta supresión era la última que bloqueaba un BORRADO DE CUENTA, la
+ *      cuenta se anonimiza en el acto (decisión de Jose: "la cuenta se elimina cuando el
+ *      club aprueba esa supresión"), sin esperar al cron de los 30 días. Best-effort:
+ *      un fallo aquí NO revierte la supresión, que ya está aplicada.
  *
  * Respuestas: 200 {ok} · 401 · 403 (no admin_club) · 404/409 · 500.
  */
@@ -19,6 +23,7 @@
 import { NextResponse } from 'next/server';
 import { resolveUserFromRequest } from '@/lib/resolve-user';
 import { decideErasureWeb, resolveErasureAdminClub } from '@/lib/erasures';
+import { finalizeDueAccountDeletions } from '@/lib/account-deletion';
 
 export const runtime = 'nodejs';
 
@@ -52,5 +57,15 @@ export async function POST(req: Request) {
             : 500;
     return NextResponse.json({ error: res.error }, { status });
   }
-  return NextResponse.json({ ok: true });
+
+  // BC-3 — la aprobación puede haber desbloqueado un borrado de cuenta. Best-effort:
+  // la supresión ya está aplicada y no se revierte por nada de lo que pase aquí.
+  let deletionsCompleted = 0;
+  try {
+    deletionsCompleted = await finalizeDueAccountDeletions();
+  } catch (e) {
+    console.error('[erasure] finalize_due_account_deletions', { requestId, error: e });
+  }
+
+  return NextResponse.json({ ok: true, deletionsCompleted });
 }
