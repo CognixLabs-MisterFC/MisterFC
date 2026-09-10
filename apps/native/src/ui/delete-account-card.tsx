@@ -70,10 +70,25 @@ export function DeleteAccountCard() {
         setError(t('errors.generic'));
         return;
       }
-      const body = (await res.json()) as { completed?: boolean };
+      const body = (await res.json()) as {
+        completed?: boolean;
+        blockingPlayers?: number;
+        warning?: string;
+      };
       setOpen(false);
-      if (body.completed) {
-        // Camino rápido: la cuenta ya está anonimizada y baneada.
+
+      // ¿Se llegó a anonimizar la cuenta? `completed` lo dice cuando todo salió bien.
+      // Pero el servidor también devuelve `completed: false` con `warning:
+      // 'auth_neutralize_failed'`: ahí la anonimización SÍ se aplicó (nombre, foto,
+      // teléfono, vínculos… ya no están) y lo único que quedó a medias fue neutralizar
+      // las credenciales en GoTrue, que BC-6 repescará. Mandar a esa persona a "sin
+      // acceso" sería peor y además falso: sus datos ya no existen. Con
+      // `warning: 'rpc_failed'` es al revés —no se tocó nada— y sí toca la pantalla de
+      // borrado en curso, que el cron rematará.
+      const anonymized = body.completed === true || body.warning === 'auth_neutralize_failed';
+
+      if (anonymized) {
+        // Camino rápido: la cuenta ya está anonimizada.
         //
         // ORDEN IMPORTANTE: primero se NAVEGA y después se cierra sesión. Al revés hay
         // carrera: `signOut` deja `user` en null y el SessionGuard, viendo todavía la
