@@ -6,6 +6,7 @@ import {
   getPlayerManagementAccessFromClient,
   getPlayerMedicalFromClient,
   getMyPhoneFromClient,
+  previewAccountDeletionFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -18,6 +19,7 @@ import { ConsentsSection, type TutorConsentRow } from './consents-section';
 import { PlayerSelector } from '../mi-ficha/player-selector';
 import { MedicalForm } from '../mi-ficha/medical-form';
 import { ErasureRequestButton } from '../mi-ficha/erasure-request-button';
+import { DeleteAccountCard } from './delete-account-card';
 import { PlayerPhotoUploader } from '../jugadores/[playerId]/player-photo-uploader';
 
 type Props = {
@@ -47,6 +49,13 @@ export default async function PerfilPage({ params, searchParams }: Props) {
   // el formulario NO pinta el campo — mejor eso que enseñar un hueco vacío que
   // al guardar borraría el número bueno.
   const myPhone = await getMyPhoneFromClient(supabase);
+
+  // BC-4 — jugadores activos de los que es ÚNICO tutor: al borrar la cuenta, la misma
+  // pulsación pide su supresión al club, así que hay que enseñarlos ANTES de confirmar.
+  // Si la lectura falla NO se pinta la tarjeta: prometer "no se pedirá la supresión de
+  // nadie" cuando no lo sabemos sería peor que no ofrecer el botón (core devuelve
+  // ok:false justo para poder distinguirlo).
+  const deletionPreview = await previewAccountDeletionFromClient(supabase);
 
   // F14-13 — consentimientos del tutor en el club activo (estado latest-wins).
   const { data: consentRows } = await supabase.rpc('get_tutor_consents', {
@@ -109,6 +118,7 @@ export default async function PerfilPage({ params, searchParams }: Props) {
   const tMiFicha = await getTranslations('mi_ficha');
   const tJugadores = await getTranslations('jugadores');
   const tErasure = await getTranslations('erasure');
+  const tAccountDeletion = await getTranslations('account_deletion');
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -279,6 +289,26 @@ export default async function PerfilPage({ params, searchParams }: Props) {
           </a>
         </CardContent>
       </Card>
+
+      {/* Eliminar la cuenta. Al FINAL del todo y en su propia tarjeta: es lo más
+          irreversible que un usuario puede hacer sobre sí mismo. */}
+      {deletionPreview.ok && (
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="text-destructive">{tAccountDeletion('card_title')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DeleteAccountCard
+              locale={locale}
+              blockers={deletionPreview.blockers.map((b) => ({
+                playerId: b.playerId,
+                playerName: b.playerName,
+                clubName: b.clubName,
+              }))}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

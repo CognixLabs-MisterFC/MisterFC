@@ -7,6 +7,10 @@
  * `decide_player_erasure(rechazar)` como el usuario. No hay borrado de storage (el
  * callback no se invoca al rechazar).
  *
+ * BC-4 — pero SÍ puede rematar un BORRADO DE CUENTA: el enganche vive dentro de
+ * `decideErasureWeb` y vale igual al aprobar que al rechazar (decisión de Jose: el
+ * rechazo es sobre el dato del MENOR, no sobre el derecho del titular a irse).
+ *
  * Respuestas: 200 {ok} · 401 · 403 (no admin_club) · 404/409 · 500.
  */
 
@@ -46,5 +50,6 @@ export async function POST(req: Request) {
             : 500;
     return NextResponse.json({ error: res.error }, { status });
   }
+
   return NextResponse.json({ ok: true });
 }

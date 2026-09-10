@@ -5434,5 +5434,36 @@
       "empty": "You have no trainings without a session in the next 24 hours.",
       "title": "Without a session"
     }
+  },
+  "account_deletion": {
+    "card_title": "Delete my account",
+    "card_hint": "Delete your MisterFC account. This cannot be undone: you will not be able to sign in with this email again.",
+    "button": "Delete my account",
+    "dialog_title": "Delete my account",
+    "dialog_intro": "You are about to delete your MisterFC account. Read this before confirming: it cannot be undone.",
+    "removed_title": "What gets deleted",
+    "removed_body": "Your name, your photo, your phone number and your date of birth. You lose access immediately, stop receiving notifications, and cannot sign in with this email again.",
+    "kept_title": "What is kept",
+    "kept_body": "The messages you wrote stay with their content, attributed to a deleted user. The consents you signed are kept as legal evidence. The player's sporting history (matches, attendance, assessments) belongs to the club and is kept under their name.",
+    "blockers_title": "You are the only guardian of:",
+    "blockers_body": "Deleting your account also requests the erasure of their data, which the club's management decides. Your account will be deleted within 30 days at the latest, whatever the club decides.",
+    "subscription_note": "",
+    "confirm_label": "Type {word} to confirm",
+    "confirm_word": "DELETE",
+    "confirm": "Delete my account",
+    "cancel": "Cancel",
+    "done_title": "Your account has been deleted",
+    "done_body": "You can no longer sign in with this email. Thank you for using MisterFC.",
+    "done_back": "Go to sign in",
+    "pending_title": "Your account is being deleted",
+    "pending_body": "It will be deleted by {date} at the latest. You no longer have access to any club and will not receive notifications.",
+    "pending_players": "{count} erasure requests are still waiting for the club to decide.",
+    "cancel_deletion": "Cancel the deletion",
+    "errors": {
+      "no_session": "Your session has expired. Please sign in again.",
+      "not_pending": "There is no deletion in progress.",
+      "admin_slot_taken": "The club already has another administrator, so we cannot restore your role. Please contact the club.",
+      "generic": "Could not complete. Please try again."
+    }
   }
 }

@@ -5434,5 +5434,36 @@
       "empty": "No tens entrenaments sense sessió en les pròximes 24 hores.",
       "title": "Sense sessió"
     }
+  },
+  "account_deletion": {
+    "card_title": "Eliminar el meu compte",
+    "card_hint": "Elimina el teu compte de MisterFC. És irreversible: no podràs tornar a entrar amb aquest correu.",
+    "button": "Eliminar el meu compte",
+    "dialog_title": "Eliminar el meu compte",
+    "dialog_intro": "Vas a eliminar el teu compte de MisterFC. Llig-ho abans de confirmar: és irreversible.",
+    "removed_title": "Què s'elimina",
+    "removed_body": "El teu nom, la teua foto, el teu telèfon i la teua data de naixement. Perds l'accés a l'instant, deixes de rebre avisos i no podràs tornar a entrar amb aquest correu.",
+    "kept_title": "Què es conserva",
+    "kept_body": "Els missatges que vas escriure es queden amb el seu contingut, atribuïts a un usuari eliminat. Els consentiments que vas signar es conserven com a prova legal. L'historial esportiu del jugador (partits, assistència, valoracions) és del club i es conserva amb el seu nom.",
+    "blockers_title": "Eres l'únic tutor de:",
+    "blockers_body": "En eliminar el teu compte també es demanarà la supressió de les seues dades, i la decidirà la direcció del club. El teu compte s'eliminarà com a molt tard en 30 dies, decidisca el que decidisca el club.",
+    "subscription_note": "",
+    "confirm_label": "Escriu {word} per a confirmar",
+    "confirm_word": "ELIMINAR",
+    "confirm": "Eliminar el meu compte",
+    "cancel": "Cancel·lar",
+    "done_title": "El teu compte ha sigut eliminat",
+    "done_body": "Ja no pots entrar amb aquest correu. Gràcies per haver usat MisterFC.",
+    "done_back": "Anar a l'inici de sessió",
+    "pending_title": "El teu compte està en procés d'eliminació",
+    "pending_body": "S'eliminarà com a molt tard el {date}. Ja no tens accés a cap club i no rebràs avisos.",
+    "pending_players": "Queden {count} sol·licituds de supressió pendents que ha de decidir el club.",
+    "cancel_deletion": "Cancel·lar l'eliminació",
+    "errors": {
+      "no_session": "La teua sessió ha caducat. Torna a entrar.",
+      "not_pending": "No hi ha cap eliminació en curs.",
+      "admin_slot_taken": "El club ja té un altre administrador, així que no podem tornar-te el teu lloc. Parla amb el club.",
+      "generic": "No s'ha pogut completar. Torna-ho a intentar."
+    }
   }
 }

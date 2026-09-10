@@ -5434,5 +5434,36 @@
       "empty": "No tienes entrenamientos sin sesión en las próximas 24 horas.",
       "title": "Sin sesión"
     }
+  },
+  "account_deletion": {
+    "card_title": "Eliminar mi cuenta",
+    "card_hint": "Elimina tu cuenta de MisterFC. Es irreversible: no podrás volver a entrar con este correo.",
+    "button": "Eliminar mi cuenta",
+    "dialog_title": "Eliminar mi cuenta",
+    "dialog_intro": "Vas a eliminar tu cuenta de MisterFC. Léelo antes de confirmar: es irreversible.",
+    "removed_title": "Qué se elimina",
+    "removed_body": "Tu nombre, tu foto, tu teléfono y tu fecha de nacimiento. Pierdes el acceso al instante, dejas de recibir avisos y no podrás volver a entrar con este correo.",
+    "kept_title": "Qué se conserva",
+    "kept_body": "Los mensajes que escribiste se quedan con su contenido, atribuidos a un usuario eliminado. Los consentimientos que firmaste se conservan como prueba legal. El historial deportivo del jugador (partidos, asistencia, valoraciones) es del club y se conserva con su nombre.",
+    "blockers_title": "Eres el único tutor de:",
+    "blockers_body": "Al eliminar tu cuenta se pedirá también la supresión de sus datos, y la decidirá la dirección del club. Tu cuenta se eliminará como muy tarde en 30 días, decida lo que decida el club.",
+    "subscription_note": "",
+    "confirm_label": "Escribe {word} para confirmar",
+    "confirm_word": "ELIMINAR",
+    "confirm": "Eliminar mi cuenta",
+    "cancel": "Cancelar",
+    "done_title": "Tu cuenta ha sido eliminada",
+    "done_body": "Ya no puedes entrar con este correo. Gracias por haber usado MisterFC.",
+    "done_back": "Ir al inicio de sesión",
+    "pending_title": "Tu cuenta está en proceso de eliminación",
+    "pending_body": "Se eliminará como muy tarde el {date}. Ya no tienes acceso a ningún club y no recibirás avisos.",
+    "pending_players": "Quedan {count} solicitudes de supresión pendientes de que las decida el club.",
+    "cancel_deletion": "Cancelar la eliminación",
+    "errors": {
+      "no_session": "Tu sesión ha caducado. Vuelve a entrar.",
+      "not_pending": "No hay ninguna eliminación en curso.",
+      "admin_slot_taken": "El club ya tiene otro administrador, así que no podemos devolverte tu puesto. Habla con el club.",
+      "generic": "No se pudo completar. Inténtalo de nuevo."
+    }
   }
 }
