@@ -261,3 +261,9 @@ Barrido sistemático de **todas las acciones × roles** (asistencia, convocatori
 - **Síntoma latente equivalente**: la policy `player_accounts_write_admin` (F1.7) solo permitía admin/coord. El comentario en `20260528180000_invitations_player_link.sql:19` asumía erróneamente que cubría también al aceptante. F2.4 nunca se había probado con un email virgen aceptando — habría fallado igual.
 - **Fix**: migración `20260529000000_team_staff_insert_invitee.sql` añade DOS policies aditivas (`team_staff_insert_invitee` y `player_accounts_insert_invitee`) con el patrón calcado de `memberships_insert_bootstrap_or_admin`: el user puede insertar SU fila si existe invitación pendiente vigente que coincida en (membership/profile, email, token vigente).
 - **Validación**: repro con puppeteer-core contra dev local. Ver `fase-2-summary.md` para la trace completa de pasos.
+
+### `notify_erasure_requested` avisa también a admin/directores DE BAJA (2026-09-10)
+- **Detectado en**: BC-1 (borrado de cuenta), al leer el trigger vivo con `pg_get_functiondef` para comprobar que las supresiones que genera el borrado avisan al club.
+- **Síntoma**: el `insert into notifications` del trigger selecciona `from memberships m where m.club_id = ... and m.role in ('admin_club','director')` **sin** `and m.left_at is null`. Un admin o director al que el club dio de baja (migraciones `20261049`/`20261050`) sigue recibiendo el aviso de cada solicitud de supresión de ese club.
+- **Alcance**: pre-existente, ajeno a BC-1. Solo campana (`in_app`), sin push, y el dado de baja no tiene acceso RLS para abrir la notificación — molesta, no filtra.
+- **No se arregla en BC-1** (regla: no mezclar). Candidato natural: BC-7, que ya toca los avisos.
