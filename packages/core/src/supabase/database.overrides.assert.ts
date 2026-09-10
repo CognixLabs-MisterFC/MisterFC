@@ -1,7 +1,7 @@
 /**
  * O2-1c — CANDADO de tipos de los overrides (compile-only, sin runtime).
  *
- * Verifica que los 26 puntos de `database.overrides.ts` son efectivamente
+ * Verifica que los 28 puntos de `database.overrides.ts` son efectivamente
  * `string | null` en el `Database` FINAL (generado + overrides fusionados). Si
  * alguien borra un override —o un `db:types` futuro deja de aplicarlo—, este
  * fichero ROMPE el `typecheck` en CI. Lo compila el `tsc --noEmit` de core.
@@ -50,7 +50,8 @@ export type _AssertGroupA = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GRUPO B — 18 columnas de RETURNS TABLE(...) nullable marcadas no-null.
+// GRUPO B — 19 columnas de RETURNS TABLE(...) nullable marcadas no-null,
+// más 1 retorno escalar nullable (finalize_account_deletion, que no es RETURNS TABLE).
 // ─────────────────────────────────────────────────────────────────────────────
 export type _AssertGroupB = [
   Assert<IsStringOrNull<Fn['audit_get_conversation']['Returns'][number]['read_at']>>,
@@ -71,6 +72,9 @@ export type _AssertGroupB = [
   Assert<IsStringOrNull<Fn['platform_list_clubs']['Returns'][number]['logo_path']>>,
   Assert<IsStringOrNull<Fn['platform_list_clubs']['Returns'][number]['owner_name']>>,
   Assert<IsStringOrNull<Fn['platform_list_clubs']['Returns'][number]['owner_profile_id']>>,
+  // BC-1 — borrado de cuenta.
+  Assert<IsStringOrNull<Fn['preview_account_deletion']['Returns'][number]['last_name']>>,
+  Assert<IsStringOrNull<Fn['finalize_account_deletion']['Returns']>>,
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -96,4 +100,9 @@ export type _AssertPreservation = [
   Assert<IsPlainString<Fn['platform_list_clubs']['Returns'][number]['slug']>>,
   // get_tutor_consents conserva su columna `title` (no-null) y el enum:
   Assert<IsPlainString<Fn['get_tutor_consents']['Returns'][number]['title']>>,
+  // BC-1 — preview_account_deletion conserva sus 4 columnas no-null junto al override:
+  Assert<IsPlainString<Fn['preview_account_deletion']['Returns'][number]['player_id']>>,
+  Assert<IsPlainString<Fn['preview_account_deletion']['Returns'][number]['first_name']>>,
+  Assert<IsPlainString<Fn['preview_account_deletion']['Returns'][number]['club_id']>>,
+  Assert<IsPlainString<Fn['preview_account_deletion']['Returns'][number]['club_name']>>,
 ];
