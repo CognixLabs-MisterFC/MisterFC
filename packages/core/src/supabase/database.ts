@@ -2987,6 +2987,41 @@ export type Database = {
           },
         ]
       }
+      revenuecat_deletion_queue: {
+        Row: {
+          app_user_id: string
+          attempts: number
+          done_at: string | null
+          enqueued_at: string
+          last_error: string | null
+          profile_id: string
+        }
+        Insert: {
+          app_user_id: string
+          attempts?: number
+          done_at?: string | null
+          enqueued_at?: string
+          last_error?: string | null
+          profile_id: string
+        }
+        Update: {
+          app_user_id?: string
+          attempts?: number
+          done_at?: string | null
+          enqueued_at?: string
+          last_error?: string | null
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenuecat_deletion_queue_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seasons: {
         Row: {
           club_id: string
@@ -3398,6 +3433,113 @@ export type Database = {
           {
             foreignKeyName: "staff_messages_sender_profile_id_fkey"
             columns: ["sender_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_entitlements: {
+        Row: {
+          access_until: string | null
+          billing_issue_detected_at: string | null
+          created_at: string
+          expires_at: string | null
+          grace_period_expires_at: string | null
+          last_event_at: string | null
+          last_event_id: string | null
+          product_id: string | null
+          profile_id: string
+          rc_customer_id: string | null
+          store: string | null
+          store_transaction_id: string | null
+          unlinked_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          billing_issue_detected_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          grace_period_expires_at?: string | null
+          last_event_at?: string | null
+          last_event_id?: string | null
+          product_id?: string | null
+          profile_id: string
+          rc_customer_id?: string | null
+          store?: string | null
+          store_transaction_id?: string | null
+          unlinked_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          billing_issue_detected_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          grace_period_expires_at?: string | null
+          last_event_at?: string | null
+          last_event_id?: string | null
+          product_id?: string | null
+          profile_id?: string
+          rc_customer_id?: string | null
+          store?: string | null
+          store_transaction_id?: string | null
+          unlinked_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_entitlements_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_events: {
+        Row: {
+          app_user_id: string
+          applied: boolean
+          environment: string
+          event_at: string
+          event_id: string
+          payload: Json
+          profile_id: string | null
+          received_at: string
+          skipped_reason: string | null
+          store: string | null
+          type: string
+        }
+        Insert: {
+          app_user_id: string
+          applied?: boolean
+          environment: string
+          event_at: string
+          event_id: string
+          payload: Json
+          profile_id?: string | null
+          received_at?: string
+          skipped_reason?: string | null
+          store?: string | null
+          type: string
+        }
+        Update: {
+          app_user_id?: string
+          applied?: boolean
+          environment?: string
+          event_at?: string
+          event_id?: string
+          payload?: Json
+          profile_id?: string | null
+          received_at?: string
+          skipped_reason?: string | null
+          store?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_events_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
