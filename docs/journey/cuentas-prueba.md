@@ -13,6 +13,10 @@ seed.
 >   la **service role key**. No commitear nunca esa key.
 > - El script es **idempotente**: re-ejecutarlo no falla; reutiliza
 >   filas existentes.
+> - Desde F14D (#312) el alta exige abrir el gate de `handle_new_user`.
+>   El script manda `invitation_id` en `user_metadata` (BC-8); antes no
+>   mandaba nada y **no podía crear cuentas nuevas**, solo reutilizar
+>   las que ya existían.
 > - Si una cuenta deja de hacer falta, borrarla manualmente (UI Supabase
 >   o `auth.admin.deleteUser`) y limpiar `profiles` / `memberships` /
 >   `player_accounts` asociados.
@@ -65,6 +69,12 @@ Con estas 3 cuentas se valida F4 Lote B end-to-end:
   comprobar que aparecen filas `match_callup_reminder` en
   `notifications` para los 3 profiles vinculados a players con
   convocatoria pendiente.
+- **BC-8 / Apple** — la cuenta del vídeo de revisión es
+  `jovimib+familia1@gmail.com`, porque **no es único tutor de ningún
+  jugador** y el borrado se completa entero de forma síncrona. Es de
+  **un solo uso**: al completarse queda anonimizada y baneada, y hay
+  que re-seedear. Detalle en
+  [apple-review-notes.md](apple-review-notes.md).
 - **BC-6** — disparar `/api/cron/account-deletions` con el MISMO
   `CRON_SECRET` (es variable del proyecto, no de la ruta). Devuelve
   `{ok, due, auth_sweep}`; con la base limpia todo a cero. Ojo: **no
