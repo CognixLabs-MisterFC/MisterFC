@@ -32,6 +32,7 @@ export * from './dashboard/index';
 export * from './holidays/index';
 export * from './erasures/index';
 export * from './account-deletion/index';
+export * from './subscription/index';
 export * from './profile/index';
 export * from './players/family-link';
 export * from './players/no-app-lookup';
