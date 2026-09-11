@@ -2,6 +2,7 @@
 
 - **Status**: Accepted
 - **Date**: 2026-09-11
+- **Revisiones**: 2026-09-11 — Jose cambia la decisión 5: **el periodo de gracia de la tienda sí da acceso** (ver «Revisiones» al final)
 - **Deciders**: Iker Milla, Jose
 - **Related**: [ADR-0021 — el borrado es anonimización](./ADR-0021-anonimizacion-forzada-por-el-esquema.md) · [BC.0 §8 — hueco reservado de la suscripción](../specs/BC.0-borrado-de-cuenta.md) · [ADR-0008 — patrón de crons en Vercel](./ADR-0008-vercel-cron-patron-jobs.md) · migración `20261058000000_bc1_account_deletion_model` (`entitlement_suspended_at`)
 
@@ -12,8 +13,8 @@ suscripción dentro de la app: 3 € al año**. Las decisiones de producto está
 reinterpretan aquí: paga cada **familia** (tutores y seguidores); cuerpo técnico, coordinación y
 dirección no pagan; **sin suscripción no se ve nada** —ni lectura parcial ni prueba gratuita—; la
 suscripción es **por cuenta, no por club**; vale en **las dos tiendas** porque el estado vive en el
-servidor; y **no hay periodo de gracia**. Jose confirma **cero ventas** en ambas tiendas: no hay
-transición que gestionar ni compradores a los que indemnizar.
+servidor; y **el periodo de gracia de la tienda da acceso**. Jose confirma **cero ventas** en ambas
+tiendas: no hay transición que gestionar ni compradores a los que indemnizar.
 
 La integración directa contra las dos tiendas obliga a hablar dos protocolos que no se parecen en
 nada: App Store Server Notifications v2 con payloads JWS y clave `.p8`, y Google Play Real-Time
@@ -152,10 +153,39 @@ nuestro de unas horas significa eventos perdidos para siempre. El trabajo noctur
 «reconcilia contra dos APIs» y pasa a ser «pregunta por REST a RevenueCat por las cuentas cuyo
 entitlement está a punto de vencer o lleva demasiado sin tocarse», con el patrón de ADR-0008.
 
-**El gate lee nuestra fecha de vencimiento, no el `isActive` del SDK.** RevenueCat mantiene el
-entitlement activo durante el **periodo de gracia** de la tienda, que es justo lo que la decisión de
-producto «sin periodo de gracia» rechaza. Usar `isActive` tal cual la incumpliría en silencio. A
-verificar contra un evento real de sandbox en SU-3.
+**El gate lee `isActive`, pero hay una fecha que hay que guardarse aparte.** RevenueCat calcula
+`isActive` **en servidor**, teniendo en cuenta la gracia, el account hold, la cancelación con tiempo
+restante y el vencimiento. Los dos estados que importan salen bien sin lógica nuestra:
+
+| Estado | ¿Acceso? | `isActive` |
+| --- | --- | --- |
+| Gracia (Apple `GRACE_PERIOD`, Google `IN_GRACE_PERIOD`) | **Sí**, por decisión de producto | `true` |
+| Account hold de Google (`ON_HOLD`) | **No** — Google ya revocó el acceso y pone `expiryTime` en el pasado | `false` |
+
+Luego **`ON_HOLD` no necesita tratamiento aparte en el gate**: `isActive` ya vale `false`, que es lo
+correcto. Lo necesita en **cómo se entera nuestra tabla**, que es otra cosa:
+
+> **Google no manda ningún evento en la transición gracia → account hold.** RevenueCat envía
+> `EXPIRATION` **al final** del account hold, que con la política de Google vigente desde diciembre de
+> 2025 dura **60 días menos la gracia configurada** (con 7 días de gracia, 53 de hold). Una proyección
+> alimentada solo por webhooks seguiría diciendo «activo» casi dos meses después de que Google le
+> hubiera quitado el acceso a esa persona.
+
+La nativa no lo nota, porque lee `isActive` en vivo. **El gate web sí lo notaría**: es un Server
+Component y lee nuestra tabla. Sin arreglo, alguien con la tarjeta caducada quedaría bloqueado en el
+móvil y seguiría entrando por navegador durante semanas.
+
+El arreglo es barato y no toca la decisión de producto: **`BILLING_ISSUE` sí llega en el acto** y trae
+`grace_period_expiration_at_ms`. Se guarda, y la fecha de corte es el **mínimo** entre el vencimiento
+normal y esa. La gracia sigue dando acceso; el hold corta el día que toca, sin depender de un webhook
+que no va a llegar. La reconciliación de SU-6 prioriza las cuentas con `billing_issue_detected_at`
+puesto, que son el único sitio donde la verdad puede divergir durante semanas.
+
+**Las dos tiendas no se comportan igual y no se puede asumir simetría.** Apple **sí** avisa: manda
+`GRACE_PERIOD_EXPIRED` al acabar la gracia —diciendo literalmente que ya se puede dejar de dar
+servicio— y reserva `EXPIRED` para después de sus 60 días de billing retry. Google no manda nada
+equivalente. El agujero es solo de Google, pero la regla de guardarse la fecha de fin de gracia vale
+para las dos y es una regla sola.
 
 **Un webhook de una cuenta borrada se registra pero no se aplica.** BC.0 §8 punto 4 lo pedía: las
 renovaciones y los reembolsos van a seguir llegando para cuentas anonimizadas y no deben romper nada ni
@@ -171,6 +201,8 @@ resucitar nada. Se anota en el libro de eventos y no toca el entitlement.
   - El antídoto de ADR-0021 sale **más fuerte** que en el diseño directo: además del desenganche local
     hay un borrado real en el procesador y un cable trampa que avisa si algo falla.
   - A RevenueCat le llega menos dato personal del que le llegaría por defecto, y **cero dato de menores**.
+  - Con la gracia dando acceso, la **nativa se simplifica de verdad**: lee `isActive` y no mantiene
+    ninguna lógica de vencimiento propia.
 
 - **Negativas**
   - Un procesador más en la política de privacidad, que gestiona datos de menores y **acaba de
@@ -181,6 +213,10 @@ resucitar nada. Se anota en el libro de eventos y no toca el entitlement.
   - `react-native-purchases` lleva código nativo: hace falta **build nuevo**, no basta con recompilar
     JS. El proyecto no usa `expo-updates`, así que esto **no introduce una restricción nueva** —cada
     versión nativa ya es un build—, pero sí ata SU-4 al ciclo de EAS.
+  - **La razón del cambio de la decisión 5 solo es cierta a medias, y conviene no olvidarlo.** «Leer
+    `isActive` en vez de mantener lógica propia de vencimiento» vale para la **nativa**. El **gate web**
+    sigue necesitando una fecha en nuestra tabla, porque el webhook de la transición gracia → hold no
+    existe en Google. El cambio simplifica un lado y no el otro.
   - **Apple no permite dos suscripciones al mismo producto bajo el mismo Apple ID.** Dos progenitores
     que comparten Apple ID en un móvil familiar **no pueden suscribirse los dos**, y con el modo de
     transferencia el segundo restaurar movería la compra y dejaría al primero sin acceso. Jose mantiene
@@ -193,3 +229,21 @@ resucitar nada. Se anota en el libro de eventos y no toca el entitlement.
     hay que reescribir es el ingestor, no el gate.
   - Jose sigue teniendo que dar de alta **los productos de suscripción en las dos tiendas**: eso
     RevenueCat no lo crea. Lo que ya no hace falta es Pub/Sub, cuenta de servicio de Play ni clave `.p8`.
+
+## Revisiones
+
+### 2026-09-11 — el periodo de gracia de la tienda sí da acceso
+
+La versión original de este ADR (PR #575) recogía la decisión de producto **«sin periodo de gracia»**:
+se bloqueaba en cuanto la suscripción no estuviera pagada, aunque la tienda siguiera reintentando. Al
+escribir el ADR apareció que eso obligaba a **no** usar `isActive` —RevenueCat mantiene el entitlement
+activo durante la gracia— y a sostener lógica de vencimiento propia en los dos clientes.
+
+Jose cambia la decisión a la vista de ese hallazgo: **la gracia da acceso**. Motivos: menos código y
+menos sitios donde equivocarse, y que alguien con la tarjeta caducada no se quede fuera mientras la
+tienda todavía lo cuenta como suscriptor. `DID_FAIL_TO_RENEW` de Apple e `IN_GRACE_PERIOD` de Google
+dejan de bloquear; vuelve `grace` como estado que da acceso.
+
+Lo que la revisión **no** cambia: el account hold de Google (`ON_HOLD`) **no es gracia**, y sigue
+bloqueando. Lo que sí añade es la obligación de guardarse `grace_period_expiration_at_ms` del evento
+`BILLING_ISSUE`, porque Google no avisa de esa transición. Está desarrollado en la sección 6.
