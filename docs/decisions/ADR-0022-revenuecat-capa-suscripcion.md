@@ -176,8 +176,11 @@ Component y lee nuestra tabla. Sin arreglo, alguien con la tarjeta caducada qued
 móvil y seguiría entrando por navegador durante semanas.
 
 El arreglo es barato y no toca la decisión de producto: **`BILLING_ISSUE` sí llega en el acto** y trae
-`grace_period_expiration_at_ms`. Se guarda, y la fecha de corte es el **mínimo** entre el vencimiento
-normal y esa. La gracia sigue dando acceso; el hold corta el día que toca, sin depender de un webhook
+`grace_period_expiration_at_ms`. Se guarda, y la fecha de corte es el **máximo** entre el vencimiento
+normal y esa. (En la primera redacción de este ADR puse «mínimo»; es un error mío, corregido al
+escribir SU-1: `expiration_at_ms` y `grace_period_expiration_at_ms` son campos **distintos** del
+webhook, así que en un impago el primero ya ha pasado y con el mínimo la gracia no daría ni un día de
+acceso. Medido: con `least` el corte cae dos días **antes** de ahora.) La gracia sigue dando acceso; el hold corta el día que toca, sin depender de un webhook
 que no va a llegar. La reconciliación de SU-6 prioriza las cuentas con `billing_issue_detected_at`
 puesto, que son el único sitio donde la verdad puede divergir durante semanas.
 
