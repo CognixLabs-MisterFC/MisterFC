@@ -41,6 +41,11 @@ export function familyFeedTarget(type: string, payload: unknown): FamilyTarget {
       return id ? { pathname: '/family/jugada', params: { playId: id } } : null;
     case 'development_report_published':
       return { pathname: '/family/mi-informe' };
+    case 'tutor_unlinked':
+      // BC-7 — el otro tutor del menor elimino su cuenta. A la ficha del hijo, que es
+      // donde se ve quien queda vinculado. La nativa no selecciona jugador por params
+      // (lo lleva el contexto de familia), asi que va a la pantalla sin mas.
+      return { pathname: '/family/mi-ficha' };
     case 'event_updated':
     case 'training_cancelled':
     case 'training_reinstated':
@@ -67,11 +72,31 @@ export function familyFeedTarget(type: string, payload: unknown): FamilyTarget {
  * rebote al home).
  *  · erasure_requested → lista de supresiones (el director la ve en lectura; el dato
  *    sensible vive ahí, no en el feed). Sin id: va a la lista, no a un detalle.
+ *  · account_deletion_requested (BC-7) → cuerpo técnico, SOLO si deja equipos sin
+ *    cubrir. El resto de la gestión (dar de alta a otro, ver quién está de baja) vive
+ *    en la web.
  */
-export function directionFeedTarget(type: string): FamilyTarget {
+export function directionFeedTarget(type: string, payload?: unknown): FamilyTarget {
   switch (type) {
     case 'erasure_requested':
       return { pathname: '/direction/supresiones' };
+    case 'account_deletion_requested': {
+      // BC-7 — alguien del club ha pedido eliminar su cuenta. La nativa NO tiene
+      // pantalla de gestion de miembros (esa vive en la web, `/miembros`), asi que el
+      // unico destino honesto es el cuerpo tecnico, y solo cuando quien se va dejaba
+      // equipos sin cubrir — que es lo que hay que resolver ahi. Si no, fila
+      // informativa: mejor eso que un destino que no responde a la novedad.
+      const data =
+        payload != null && typeof payload === 'object' && !Array.isArray(payload)
+          ? (payload as Record<string, unknown>)
+          : {};
+      const teams = data.teams;
+      return Array.isArray(teams) && teams.length > 0
+        ? { pathname: '/direction/cuerpo-tecnico' }
+        : null;
+    }
+    // `account_deletion_completed` solo le llega al superadmin de plataforma, y la
+    // consola de plataforma no existe en la nativa: fila informativa.
     default:
       return null;
   }

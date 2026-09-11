@@ -28,6 +28,14 @@ function str(payload: Record<string, unknown> | null, key: string): string | und
   return typeof v === 'string' && v.length > 0 ? v : undefined;
 }
 
+/** Lee una lista de strings no vacíos del payload (BC-7: `teams`), o []. */
+function strList(payload: Record<string, unknown> | null, key: string): string[] {
+  const v = payload?.[key];
+  return Array.isArray(v)
+    ? v.filter((x): x is string => typeof x === 'string' && x.length > 0)
+    : [];
+}
+
 /** Texto legible por tipo, enriquecido con los campos presentes en el payload. */
 export function notificationFeedText(
   t: FeedTextTranslate,
@@ -120,6 +128,39 @@ export function notificationFeedText(
       // el dato sensible vive solo en /direction/supresiones (payload lleva player_id
       // para trazabilidad, no se pinta).
       return t('erasure_requested');
+    case 'account_deletion_requested': {
+      // BC-7 — alguien ha pedido eliminar su cuenta. NUNCA se dice quién: el payload no
+      // lleva el nombre (BC-7a: `notifications.payload` es inmutable por trigger, así
+      // que un nombre metido ahí no se podría limpiar al anonimizar y el aviso acabaría
+      // siendo el último rastro de una cuenta borrada). Quién era se mira en la lista de
+      // miembros del club, donde figura de baja. Mismo criterio que `erasure_requested`.
+      if (p?.is_platform === true) {
+        // Escalado a plataforma: se va el admin_club y el club se queda sin admin.
+        const club = str(p, 'club_name');
+        return club
+          ? t('account_deletion_requested_admin_named', { club })
+          : t('account_deletion_requested_admin');
+      }
+      // Lo accionable para el club son los EQUIPOS que deja sin cubrir. No son dato
+      // personal, así que sí se pintan.
+      const teams = strList(p, 'teams');
+      return teams.length > 0
+        ? t('account_deletion_requested_coach', { teams: teams.join(', ') })
+        : t('account_deletion_requested');
+    }
+    case 'account_deletion_completed': {
+      // BC-7 — solo le llega a plataforma, y solo cuando quien se borró era admin_club.
+      const club = str(p, 'club_name');
+      return club
+        ? t('account_deletion_completed_named', { club })
+        : t('account_deletion_completed');
+    }
+    case 'tutor_unlinked': {
+      // BC-7 — el otro tutor del menor eliminó su cuenta. Aquí el nombre del MENOR sí se
+      // dice: quien lo lee es su propio tutor, y pasa a ser el único.
+      const name = str(p, 'player_first_name');
+      return name ? t('tutor_unlinked_named', { name }) : t('tutor_unlinked');
+    }
     case 'coach_invitation_accepted': {
       // D6 — aviso a dirección: un ENTRENADOR (adulto con acceso a datos de menores)
       // aceptó su invitación. Aquí SÍ se dice quién y a qué equipo (no es el caso RGPD

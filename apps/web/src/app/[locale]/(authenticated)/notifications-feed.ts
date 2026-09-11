@@ -29,6 +29,8 @@ import {
   Goal,
   Megaphone,
   MessageSquare,
+  UserMinus,
+  Users,
   XCircle,
 } from 'lucide-react';
 import { notificationFeedText } from '@misterfc/core';
@@ -105,6 +107,11 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
       return FileText;
     case 'evaluation_campaign_launched':
       return ClipboardList;
+    case 'account_deletion_requested':
+    case 'account_deletion_completed':
+      return UserMinus;
+    case 'tutor_unlinked':
+      return Users;
     default:
       return Bell;
   }
@@ -178,6 +185,28 @@ function hrefFor(type: string, payload: Record<string, unknown> | null): string 
     case 'goal': {
       const id = str(payload, 'event_id');
       derived = id ? `/directos/${id}` : null;
+      break;
+    }
+    case 'account_deletion_requested': {
+      // BC-7. Al superadmin le lleva a la ficha del club en la consola (es donde
+      // designa admin nuevo); al club, a la lista de miembros: ahí es donde la
+      // persona figura de baja, y es la pantalla que ya exige admin_club/director,
+      // el mismo público que recibe el aviso.
+      const club = str(payload, 'club_id');
+      derived = payload?.is_platform === true && club ? `/platform/${club}` : '/miembros';
+      break;
+    }
+    case 'account_deletion_completed': {
+      // Solo le llega a plataforma, y el club ya no tiene admin: a su ficha.
+      const club = str(payload, 'club_id');
+      derived = club ? `/platform/${club}` : null;
+      break;
+    }
+    case 'tutor_unlinked': {
+      // A la ficha del menor del que ahora es único tutor. `mi-ficha` selecciona
+      // jugador por query param (un tutor puede tener varios hijos).
+      const id = str(payload, 'player_id');
+      derived = id ? `/mi-ficha?player=${id}` : '/mi-ficha';
       break;
     }
     default:

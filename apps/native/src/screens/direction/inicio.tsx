@@ -77,9 +77,11 @@ export function DireccionInicioScreen() {
 
   // Tocar una novedad: la marca leída (desaparece del bloque de pendientes) e invalida
   // la caché de novedades (bloque + pantalla completa coherentes). Solo la supresión
-  // RGPD navega (directionFeedTarget); el resto es informativo. Espeja `openRow`.
+  // RGPD y el borrado de cuenta con equipos sueltos navegan (directionFeedTarget); el
+  // resto es informativo. Espeja `openRow` de NovedadesScreen — y le pasa el PAYLOAD,
+  // igual que él, o esta pantalla resolvería distinto que /direction/novedades.
   const openNovedad = (n: NotificationFeedRow) => {
-    const target = directionFeedTarget(n.type);
+    const target = directionFeedTarget(n.type, n.payload);
     if (n.status === 'pending') {
       setHiddenIds((prev) => new Set(prev).add(n.id));
       void (async () => {
