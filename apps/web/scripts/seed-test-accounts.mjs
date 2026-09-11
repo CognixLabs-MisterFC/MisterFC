@@ -129,11 +129,30 @@ async function ensureAuthUser({ email, full_name }) {
     console.log(`  ↻ auth user existe → ${existing.id}`);
     return existing;
   }
+  // BC-8 — `invitation_id` ABRE EL GATE de F14D. Desde que `handle_new_user` cerró el
+  // signup libre (#312), crear una cuenta exige una de tres cosas: `invitation_id` en
+  // user_metadata, `founder=true` en app_metadata, o una invitación pendiente para ese
+  // email. Sin ninguna, GoTrue responde "Database error creating new user" — que es lo
+  // que hacía este script desde entonces: era idempotente para cuentas YA existentes y
+  // fallaba al crear cualquiera nueva.
+  //
+  // MEDIDO contra el proyecto real (2026-09-11, tres usuarios desechables creados y
+  // borrados):
+  //   · sin nada                      → ✗ Database error creating new user
+  //   · app_metadata.founder = true   → ✗ Database error creating new user
+  //   · invitation_id en user_metadata → ✓ creado
+  //
+  // El escape del operador (`founder`) NO sirve por la Admin API: GoTrue aplica
+  // app_metadata DESPUÉS del INSERT, así que el trigger lo lee vacío. Sí funciona por
+  // SQL directo, que es como lo usan las fixtures de pgTAP.
+  //
+  // Importa para el vídeo de Apple: la cuenta de revisión se ANONIMIZA al usarla, así
+  // que hay que poder recrearla. Ver docs/journey/apple-review-notes.md.
   const { data, error } = await supabase.auth.admin.createUser({
     email,
     password: PASSWORD,
     email_confirm: true,
-    user_metadata: { full_name },
+    user_metadata: { full_name, invitation_id: 'seed-test-accounts' },
   });
   if (error || !data?.user) die(`createUser ${email} fallo`, error);
   console.log(`  ✚ auth user creado → ${data.user.id}`);
