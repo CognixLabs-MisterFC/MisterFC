@@ -1,5 +1,5 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Building2 } from 'lucide-react';
+import { AlertTriangle, Building2 } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 import { requireSuperadmin } from '@/lib/platform/guard';
 import {
@@ -42,7 +42,18 @@ export default async function PlatformClubsPage({ params }: Props) {
   ]);
 
   const metricsById = new Map((metrics ?? []).map((m) => [m.club_id, m]));
-  const rows = (clubs ?? []).map((c) => ({ club: c, metrics: metricsById.get(c.id) }));
+
+  // BC-8c — "sin administrador" se decide con el contador de `platform_club_metrics`,
+  // que desde BC-8b cuenta SOLO miembros activos, y no con `platform_list_clubs.has_admin`,
+  // que sigue mirando todas las memberships incluidas las de baja. La diferencia es
+  // justo el caso de esta serie: un admin que borra su cuenta queda con `left_at`, así
+  // que `has_admin` seguiría diciendo que sí. Un club sin métricas (no debería pasar:
+  // las dos RPC leen de `clubs`) NO se marca como sin admin — mejor callar que acusar.
+  const rows = (clubs ?? []).map((c) => {
+    const m = metricsById.get(c.id);
+    return { club: c, metrics: m, noAdmin: m != null && m.admin_club === 0 };
+  });
+  const clubsWithoutAdmin = rows.filter((r) => r.noAdmin);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
@@ -55,6 +66,29 @@ export default async function PlatformClubsPage({ params }: Props) {
         </div>
         <CreateClubDialog locale={locale} />
       </div>
+
+      {/* BC-8c — el badge de la fila no basta: hay que escanear la tabla para verlo.
+          Este aviso es el sitio DURADERO del escalado que BC-7 manda a plataforma
+          cuando un admin_club borra su cuenta. La novedad avisa una vez y se puede
+          marcar leída; esto sigue ahí mientras el club no tenga administrador. */}
+      {clubsWithoutAdmin.length > 0 && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-md border border-red-500/40 bg-red-500/5 px-4 py-3"
+        >
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-red-400" aria-hidden />
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-medium text-red-400">
+              {t('no_admin_alert_title', { count: clubsWithoutAdmin.length })}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {t('no_admin_alert_body', {
+                clubs: clubsWithoutAdmin.map((r) => r.club.name).join(', '),
+              })}
+            </p>
+          </div>
+        </div>
+      )}
 
       {rows.length === 0 ? (
         <Card>
@@ -86,7 +120,7 @@ export default async function PlatformClubsPage({ params }: Props) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map(({ club, metrics: m }) => (
+                {rows.map(({ club, metrics: m, noAdmin }) => (
                   <TableRow key={club.id}>
                     <TableCell>
                       <Link
@@ -107,17 +141,20 @@ export default async function PlatformClubsPage({ params }: Props) {
                       </Link>
                     </TableCell>
                     <TableCell>
-                      {club.has_owner ? (
+                      {/* El rojo GANA: un club sin administrador activo no puede
+                          presentarse como si tuviera owner, aunque `owner_profile_id`
+                          siga apuntando a alguien. */}
+                      {noAdmin ? (
+                        <Badge variant="outline" className="text-red-400">
+                          {t('status.no_admin')}
+                        </Badge>
+                      ) : club.has_owner ? (
                         <Badge variant="secondary">
                           {t('status.owner', { name: club.owner_name ?? '—' })}
                         </Badge>
-                      ) : club.has_admin ? (
+                      ) : (
                         <Badge variant="outline" className="text-amber-400">
                           {t('status.no_owner')}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-red-400">
-                          {t('status.no_admin')}
                         </Badge>
                       )}
                     </TableCell>

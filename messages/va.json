@@ -4722,6 +4722,8 @@
     "clubs_title": "Clubs",
     "clubs_count": "{count, plural, =0 {Sense clubs} =1 {1 club} other {# clubs}}",
     "clubs_empty": "Encara no hi ha clubs.",
+    "no_admin_alert_title": "{count, plural, =1 {Un club s'ha quedat sense administrador} other {# clubs s'han quedat sense administrador}}",
+    "no_admin_alert_body": "Ningú pot gestionar {clubs}. Entra en la fitxa del club per convidar un administrador nou.",
     "tabs": {
       "clubs": "Clubs",
       "data": "Dades"
@@ -4753,7 +4755,7 @@
     "status": {
       "owner": "Owner: {name}",
       "no_owner": "Sense owner",
-      "no_admin": "Sense admin"
+      "no_admin": "Sense administrador"
     },
     "form": {
       "name_label": "Nom del club",
