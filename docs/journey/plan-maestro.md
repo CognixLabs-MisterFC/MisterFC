@@ -972,8 +972,9 @@ Bloque de **comunicaciones/onboarding** que consolida el canal email, hoy disper
 | **BC-4** | Web: Perfil + confirmación + pantalla "borrado en curso" | — | ✅ #566 [hecho 2026-09-10] |
 | **BC-5** | Nativa: mismo flujo · **deja la app enseñable a Apple** | — | ✅ #567 [hecho 2026-09-10] |
 | **BC-6a** | SQL del cron: cola del barrido de GoTrue + candado de invitaciones | ✅ un fichero | ✅ #568 [hecho 2026-09-10] |
-| **BC-6b** | Cron de 30 días (`vercel.json` + `CRON_SECRET`) + barrido | — | ☐ |
-| **BC-7** | Avisos: club, otro tutor, superadmin | — | ☐ |
+| **BC-6b** | Cron de 30 días (`vercel.json` + `CRON_SECRET`) + barrido | — | ✅ #569 [hecho 2026-09-11] |
+| **BC-7a** | SQL de avisos: club, otro tutor, superadmin + arreglo de `notify_erasure_requested` | ✅ un fichero | ☐ entregado, pendiente de aplicar |
+| **BC-7b** | Texto de las novedades en el feed (core + web + nativa) e i18n | — | ☐ |
 | **BC-8** | Legal, consola de plataforma, notas de revisión Apple | — | ☐ |
 
 Orden aprobado (Jose, 2026-09-10): **1 → 2 → 3 → 4 → 5**, y después 6 → 7 → 8. El primero probable de verdad es BC-1 (`pnpm db:test` contra el remoto, en `BEGIN/ROLLBACK`); el primero probable de punta a punta es BC-3 (con `curl`); **BC-5 es el que permite grabar el vídeo para Apple**, y no depende del cron.
