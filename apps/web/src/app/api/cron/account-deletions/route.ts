@@ -36,14 +36,24 @@
  *     DESPUÉS a propósito: la pasada 1 puede generar justo ese estado, y así se
  *     recoge en la misma ejecución en vez de esperar a mañana.
  *
- * Idempotencia: las dos pasadas se apoyan en `finalize_account_deletion`, que es
- * idempotente por diseño (BC-1: si la solicitud ya está `completed`, devuelve NULL
- * sin tocar nada). Repetir el cron es inocuo.
+ *  3. SU-3 · REVENUECAT — `revenuecat_deletion_queue`: cuentas ya anonimizadas cuyo
+ *     cliente de RevenueCat sigue existiendo. La cola la llena la propia
+ *     `finalize_account_deletion`, porque borrar ese cliente es una llamada HTTP y no
+ *     cabe dentro de la transacción de Postgres (ADR-0022 §4c). Va aquí y no en un cron
+ *     propio porque es el MISMO dominio y el mismo horario: es el tercer efecto del
+ *     borrado de cuenta, junto al avatar de Storage y la neutralización de GoTrue.
+ *     Como la pasada 1 puede anonimizar cuentas nuevas, va después para recogerlas ya.
+ *
+ * Idempotencia: las dos primeras pasadas se apoyan en `finalize_account_deletion`, que
+ * es idempotente por diseño (BC-1: si la solicitud ya está `completed`, devuelve NULL
+ * sin tocar nada). La tercera también: el DELETE de RevenueCat responde 404 cuando el
+ * cliente ya no está, y eso cuenta como éxito. Repetir el cron es inocuo.
  */
 
 import { NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { finalizeDueAccountDeletions, sweepStuckAuthNeutralizations } from '@/lib/account-deletion';
+import { sweepRevenueCatDeletions } from '@/lib/subscription';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -121,17 +131,38 @@ async function handle(req: Request): Promise<NextResponse> {
       });
     }
 
-    // Cola por encima del tope: no es un fallo, pero no puede pasar desapercibido dos
-    // días seguidos con una fecha límite legal de por medio.
-    if (due.found > due.attempted || authSweep.found > authSweep.attempted) {
-      Sentry.captureMessage('account-deletions: quedan filas para la próxima pasada', {
-        level: 'warning',
-        tags: { cron: CRON_MONITOR_SLUG, step: 'backlog' },
-        extra: { due, authSweep },
+    // 3) SU-3 · el cliente de RevenueCat de las cuentas ya anonimizadas. Independiente
+    //    de las dos anteriores: su cola la llena el SQL, no estas pasadas.
+    const rcSweep = await sweepRevenueCatDeletions();
+
+    // Una supresión que el encargado de tratamiento no acepta NO se abandona nunca: se
+    // sigue reintentando. Pero si lleva muchas vueltas fallando, alguien tiene que verlo.
+    if (rcSweep.stuck > 0) {
+      Sentry.captureMessage('account-deletions: borrados de RevenueCat atascados', {
+        level: 'error',
+        tags: { cron: CRON_MONITOR_SLUG, step: 'revenuecat_sweep' },
+        extra: { ...rcSweep },
       });
     }
 
-    return finish('ok', NextResponse.json({ ok: true, due, auth_sweep: authSweep }));
+    // Cola por encima del tope: no es un fallo, pero no puede pasar desapercibido dos
+    // días seguidos con una fecha límite legal de por medio.
+    if (
+      due.found > due.attempted ||
+      authSweep.found > authSweep.attempted ||
+      rcSweep.found > rcSweep.attempted
+    ) {
+      Sentry.captureMessage('account-deletions: quedan filas para la próxima pasada', {
+        level: 'warning',
+        tags: { cron: CRON_MONITOR_SLUG, step: 'backlog' },
+        extra: { due, authSweep, rcSweep },
+      });
+    }
+
+    return finish(
+      'ok',
+      NextResponse.json({ ok: true, due, auth_sweep: authSweep, revenuecat: rcSweep }),
+    );
   } catch (e) {
     Sentry.captureException(e, {
       tags: { cron: CRON_MONITOR_SLUG, step: 'unexpected' },
