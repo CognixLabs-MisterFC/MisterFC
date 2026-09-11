@@ -4186,6 +4186,23 @@ export type Database = {
         }
         Returns: undefined
       }
+      apply_subscription_event: {
+        Args: {
+          p_app_user_id: string
+          p_environment: string
+          p_event_at: string
+          p_event_id: string
+          p_expires_at: string | null
+          p_grace_period_expires_at: string | null
+          p_payload: Json
+          p_product_id: string | null
+          p_rc_customer_id: string | null
+          p_store: string | null
+          p_store_transaction_id: string | null
+          p_type: string
+        }
+        Returns: string
+      }
       audit_get_conversation: {
         Args: { p_conversation_id: string; p_reason: string }
         Returns: {
@@ -4430,6 +4447,16 @@ export type Database = {
           club_name: string
           club_slug: string
           left_at: string
+        }[]
+      }
+      my_subscription_status: {
+        Args: never
+        Returns: {
+          access_until: string | null
+          billing_issue: boolean
+          has_access: boolean
+          requires_subscription: boolean
+          state: string
         }[]
       }
       open_next_season: { Args: { p_club_id: string }; Returns: string }
