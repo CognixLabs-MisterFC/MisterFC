@@ -51,10 +51,18 @@ export default async function PlatformClubDetailPage({ params }: Props) {
 
   const m = (metrics ?? []).find((row) => row.club_id === clubId);
 
-  // Invitación admin pendiente (solo relevante si el club aún no tiene owner). El
-  // superadmin la lee por RLS (chokepoint F14B-2 → admin_club en cualquier club).
+  // BC-8c — igual que en la lista: la verdad sale del contador de miembros ACTIVOS
+  // (BC-8b), no de `has_owner`. `owner_profile_id` puede seguir apuntando a alguien
+  // que ya no es admin activo, y entonces esta ficha enseñaría "Owner: Fulano" sobre
+  // un club que no puede gestionar nadie.
+  const noAdmin = m != null && m.admin_club === 0;
+
+  // Invitación admin pendiente. El superadmin la lee por RLS (chokepoint F14B-2 →
+  // admin_club en cualquier club). BC-8c: también se busca cuando el club se quedó SIN
+  // administrador activo aunque `owner_profile_id` siga puesto — si no, esa ficha
+  // ofrecería invitar sin decir que ya hay una invitación en vuelo.
   let pendingAdminEmail: string | null = null;
-  if (!club.has_owner) {
+  if (!club.has_owner || noAdmin) {
     const { data: pending } = await supabase
       .from('invitations')
       .select('email, created_at')
@@ -92,7 +100,7 @@ export default async function PlatformClubDetailPage({ params }: Props) {
           <CardTitle>{t('detail.admin_title')}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {club.has_owner ? (
+          {club.has_owner && !noAdmin ? (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-3 rounded-md border border-border bg-card/40 px-4 py-3">
                 <UserCheck className="size-5 text-emerald-400" aria-hidden />
@@ -112,8 +120,13 @@ export default async function PlatformClubDetailPage({ params }: Props) {
             <div className="flex flex-col gap-3">
               {pendingAdminEmail ? (
                 <div className="flex items-center gap-2 text-sm">
-                  <Badge variant="outline" className="text-amber-400">
-                    {t('status.no_owner')}
+                  {/* Una invitación pendiente NO es un administrador: mientras nadie la
+                      acepte, el club sigue sin poder gestionarse y el badge va en rojo. */}
+                  <Badge
+                    variant="outline"
+                    className={noAdmin ? 'text-red-400' : 'text-amber-400'}
+                  >
+                    {noAdmin ? t('status.no_admin') : t('status.no_owner')}
                   </Badge>
                   <span className="text-muted-foreground">
                     {t('detail.pending_admin', { email: pendingAdminEmail })}

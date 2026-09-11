@@ -4722,6 +4722,8 @@
     "clubs_title": "Clubs",
     "clubs_count": "{count, plural, =0 {Sin clubs} =1 {1 club} other {# clubs}}",
     "clubs_empty": "Todavía no hay clubs.",
+    "no_admin_alert_title": "{count, plural, =1 {Un club se ha quedado sin administrador} other {# clubs se han quedado sin administrador}}",
+    "no_admin_alert_body": "Nadie puede gestionar {clubs}. Entra en la ficha del club para invitar a un administrador nuevo.",
     "tabs": {
       "clubs": "Clubs",
       "data": "Datos"
@@ -4753,7 +4755,7 @@
     "status": {
       "owner": "Owner: {name}",
       "no_owner": "Sin owner",
-      "no_admin": "Sin admin"
+      "no_admin": "Sin administrador"
     },
     "form": {
       "name_label": "Nombre del club",

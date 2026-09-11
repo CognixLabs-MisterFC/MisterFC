@@ -1,6 +1,6 @@
 # BC.0 — Borrado de cuenta
 
-> **Estado**: BC-1 a BC-7a mergeados (#563–#570) · BC-7b en curso · BC-8 pendiente
+> **Estado**: BC-1 a BC-8b mergeados (#563–#573) · BC-8c en curso · el texto legal, PARADO a la espera del abogado (propuesta en `BC.8-legal-eliminacion-cuenta-propuesta.md`)
 > **Dispara**: Apple Guideline 2.1 / 5.1.1(v) — bloqueo de publicación en App Store.
 > **Decisión de fondo**: [ADR-0021 — anonimización forzada por el esquema](../decisions/ADR-0021-anonimizacion-forzada-por-el-esquema.md)
 
