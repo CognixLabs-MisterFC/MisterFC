@@ -10,6 +10,7 @@ import { useApp } from '@/auth/context';
 import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { useTranslations } from '@/locale/provider';
+import { logOutPurchases } from '@/subscription/purchases';
 
 /**
  * BC-5 — "Eliminar mi cuenta" (Apple Guideline 5.1.1 v). Vive en Perfil, la pantalla
@@ -96,6 +97,16 @@ export function DeleteAccountCard() {
         // llega a ver la pantalla de "cuenta eliminada", que es justo el plano que
         // demuestra el borrado. Navegando antes, el guard ya encuentra una ruta pública.
         router.replace('/cuenta-eliminada');
+        // SU-4 · ADR-0022 §4b — el SDK de RevenueCat TAMBIÉN tiene que cerrar sesión, y
+        // va aquí y no en otro sitio: es el único camino por el que una cuenta se
+        // anonimiza desde la app. Sin esto el SDK conserva cacheado el App User ID de la
+        // cuenta borrada en ESTE dispositivo, y el siguiente "restaurar compras" vuelve
+        // a asociar la compra al perfil anonimizado. El agujero está en nuestra app, no
+        // en su capa, y no lo tapa ninguna de las otras tres piezas del antídoto.
+        //
+        // Antes del `signOut` de Supabase a propósito: `signOut` desmonta esta pantalla,
+        // y un `await` posterior podría no llegar a ejecutarse. Nunca lanza.
+        await logOutPurchases();
         await signOut();
         return;
       }

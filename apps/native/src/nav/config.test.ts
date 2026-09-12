@@ -2,7 +2,12 @@ import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { PUBLIC_ROUTE_SEGMENTS, isPublicRoute } from './config';
+import {
+  PUBLIC_ROUTE_SEGMENTS,
+  SUBSCRIPTION_EXEMPT_SEGMENTS,
+  isPublicRoute,
+  isSubscriptionExemptRoute,
+} from './config';
 
 /**
  * Rutas públicas del guard de sesión.
@@ -57,5 +62,61 @@ describe('la lista de rutas públicas apunta a rutas REALES', () => {
       existsSync(comoFichero) ||
       (existsSync(comoCarpeta) && statSync(comoCarpeta).isDirectory());
     expect(existe).toBe(true);
+  });
+});
+
+/**
+ * SU-4 — rutas exentas del MURO DE PAGO.
+ *
+ * Mismo fallo mudo que las públicas, una vuelta más arriba: si el muro empuja a
+ * `/suscripcion` una ruta que no está exenta, y `/suscripcion` tampoco lo está, el
+ * guard se redirige a sí mismo. Un bucle de navegación no lanza excepciones: la app se
+ * queda en blanco, sin crash, sin Sentry y sin CI en rojo.
+ */
+describe('isSubscriptionExemptRoute', () => {
+  it('el muro está exento de sí mismo (si no, es un bucle)', () => {
+    expect(isSubscriptionExemptRoute(['suscripcion'])).toBe(true);
+  });
+
+  it('la confirmación del borrado está exenta', () => {
+    expect(isSubscriptionExemptRoute(['cuenta-eliminada'])).toBe(true);
+  });
+
+  it.each(['login', 'seleccionar-club'])('%s está exenta: nunca se empuja hacia atrás a quien entra', (seg) => {
+    expect(isSubscriptionExemptRoute([seg])).toBe(true);
+  });
+
+  it('la raíz está exenta: ahí decide el gatekeeper', () => {
+    expect(isSubscriptionExemptRoute([])).toBe(true);
+  });
+
+  // Decisión 3 de Jose: sin suscripción no se ve NADA del producto.
+  it.each(['family', 'staff', 'direction', 'spectator'])('el área %s NO está exenta', (seg) => {
+    expect(isSubscriptionExemptRoute([seg])).toBe(false);
+  });
+
+  // Y `perfil` tampoco: exentarlo abriría media app de familia. El borrado sigue
+  // alcanzable porque su tarjeta vive DENTRO de la pantalla del muro.
+  it('perfil NO está exento', () => {
+    expect(isSubscriptionExemptRoute(['family', 'perfil'])).toBe(false);
+    expect(isSubscriptionExemptRoute(['perfil'])).toBe(false);
+  });
+
+  it('cuenta por SEGMENTO de primer nivel, como el guard', () => {
+    expect(isSubscriptionExemptRoute(['suscripcion', 'loquesea'])).toBe(true);
+  });
+
+  // Toda ruta exenta tiene que ser un fichero de verdad: una entrada que no exista es
+  // una exención que no protege nada.
+  it('cada segmento exento existe como ruta', () => {
+    const appDir = join(process.cwd(), 'app');
+    for (const seg of SUBSCRIPTION_EXEMPT_SEGMENTS) {
+      const asFile = join(appDir, `${seg}.tsx`);
+      const asDir = join(appDir, seg);
+      const ok =
+        (existsSync(asFile) && statSync(asFile).isFile()) ||
+        (existsSync(asDir) && statSync(asDir).isDirectory());
+      expect(ok, `falta la ruta ${seg}`).toBe(true);
+    }
   });
 });

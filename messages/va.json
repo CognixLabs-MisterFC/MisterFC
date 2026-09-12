@@ -5458,7 +5458,7 @@
     "kept_body": "Els missatges que vas escriure es queden amb el seu contingut, atribuïts a un usuari eliminat. Els consentiments que vas signar es conserven com a prova legal. L'historial esportiu del jugador (partits, assistència, valoracions) és del club i es conserva amb el seu nom.",
     "blockers_title": "Eres l'únic tutor de:",
     "blockers_body": "En eliminar el teu compte també es demanarà la supressió de les seues dades, i la decidirà la direcció del club. El teu compte s'eliminarà com a molt tard en 30 dies, decidisca el que decidisca el club.",
-    "subscription_note": "",
+    "subscription_note": "Eliminar el teu compte no cancel·la la teua subscripció. Si en tens una activa, cancel·la-la també en la teua botiga: en iPhone, Ajustos → el teu nom → Subscripcions; en Android, Google Play → Pagaments i subscripcions.",
     "confirm_label": "Escriu {word} per a confirmar",
     "confirm_word": "ELIMINAR",
     "confirm": "Eliminar el meu compte",
@@ -5477,5 +5477,26 @@
       "generic": "No s'ha pogut completar. Torna-ho a intentar."
     },
     "offline": "Sense connexió no es pot cancel·lar. Intenta-ho quan tornes a tindre xarxa."
+  },
+  "subscription": {
+    "title": "Subscriu-te a MisterFC",
+    "body": "L'accés de les famílies a MisterFC és per subscripció anual. Amb ella veus l'equip del teu fill o filla, el calendari, les convocatòries, els directes i els missatges del club.",
+    "per_year": "a l'any, amb renovació automàtica",
+    "subscribe": "Subscriure'm",
+    "restore": "Restaurar compres",
+    "restore_none": "No hem trobat cap subscripció activa en aquest compte de la botiga.",
+    "activating": "Estem activant la teua subscripció. No tanques l'app.",
+    "activating_slow": "El teu pagament s'ha registrat, però l'activació està tardant. Torna a obrir l'app d'ací a uns minuts o prem \"Restaurar compres\".",
+    "billing_issue": "L'últim pagament no s'ha pogut cobrar i el període de gràcia ha acabat. Revisa el teu mètode de pagament en la botiga i torna a subscriure't.",
+    "unavailable_platform": "Encara no es pot subscriure des d'aquest dispositiu. Pots subscriure't des d'un iPhone o iPad i accedir després des d'ací: la subscripció és del teu compte, no del mòbil.",
+    "retry": "Tornar a intentar-ho",
+    "offline": "Sense connexió no es pot completar la compra. Intenta-ho quan tornes a tindre xarxa.",
+    "terms_note": "La subscripció es renova automàticament cada any llevat que la canceles almenys 24 hores abans de la renovació. Pots gestionar-la o cancel·lar-la en qualsevol moment des del teu compte de la botiga.",
+    "errors": {
+      "offering": "No hem pogut carregar el preu. Intenta-ho de nou en un moment.",
+      "purchase": "La compra no s'ha pogut completar. No se t'ha cobrat res.",
+      "restore": "No hem pogut comprovar les teues compres. Intenta-ho de nou.",
+      "status": "No hem pogut comprovar la teua subscripció."
+    }
   }
 }

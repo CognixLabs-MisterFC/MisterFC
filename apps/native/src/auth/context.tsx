@@ -18,6 +18,7 @@ import {
   type CurrentUserClub,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
+import { logOutPurchases } from '@/subscription/purchases';
 import { clubLogoUrl } from '@/lib/club-logo';
 import {
   clearStoredActiveClubId,
@@ -280,6 +281,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await clearStoredActiveClubId();
+    // SU-4 — el SDK de RevenueCat cierra sesión con la app. En un móvil COMPARTIDO, si
+    // no, el dispositivo sigue presentando el App User ID de quien acaba de salir y un
+    // "restaurar compras" de la siguiente persona podría mover la compra a su cuenta.
+    await logOutPurchases();
     await supabase.auth.signOut();
     // onAuthStateChange (SessionProvider) pone user=null → el gate vuelve a login.
   }, []);

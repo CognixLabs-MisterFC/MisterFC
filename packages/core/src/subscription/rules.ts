@@ -162,3 +162,28 @@ export function subscriptionStateFrom(
     billingIssue,
   };
 }
+
+/**
+ * Vuelve a decidir el acceso con el reloj de AHORA, a partir del estado que ya resolvió
+ * el servidor. Es lo que consume la app: `my_subscription_status()` devuelve
+ * `access_until` YA resuelto, así que aquí no se vuelven a mezclar fechas — solo se
+ * comprueba si esa fecha sigue en el futuro.
+ *
+ * Existe porque el estado se cachea y el acceso depende de una fecha: sin esto, una
+ * suscripción que vence con la app abierta seguiría dando acceso hasta el siguiente
+ * refresco. Lo que NO hace es abrir nada que el servidor haya cerrado; solo puede
+ * cerrar.
+ */
+export function applyClock(status: SubscriptionStatus, now: Date = new Date()): SubscriptionStatus {
+  // No paga: no hay fecha que vigilar.
+  if (!status.requiresSubscription) return status;
+  // Estados ya cerrados por el servidor. `unlinked` es el desenganche del borrado de
+  // cuenta y no se reabre por nada (ADR-0022 §4).
+  if (!status.hasAccess) return status;
+
+  const open =
+    status.accessUntil !== null && Date.parse(status.accessUntil) > now.getTime();
+  if (open) return status;
+
+  return { ...status, hasAccess: false, state: 'expired' };
+}
