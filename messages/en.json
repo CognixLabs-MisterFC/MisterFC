@@ -5497,6 +5497,11 @@
       "purchase": "The purchase could not be completed. You have not been charged.",
       "restore": "We could not check your purchases. Please try again.",
       "status": "We could not check your subscription."
+    },
+    "web": {
+      "pay_on_mobile_title": "The subscription is purchased in the mobile app",
+      "pay_on_mobile_body": "Download MisterFC on your phone, sign in with this same email and subscribe from there. There is no payment on the web.",
+      "pay_on_mobile_then": "Once subscribed you will be able to sign in here too: the subscription belongs to your account, not to the phone."
     }
   }
 }

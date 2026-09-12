@@ -5497,6 +5497,11 @@
       "purchase": "La compra no s'ha pogut completar. No se t'ha cobrat res.",
       "restore": "No hem pogut comprovar les teues compres. Intenta-ho de nou.",
       "status": "No hem pogut comprovar la teua subscripció."
+    },
+    "web": {
+      "pay_on_mobile_title": "La subscripció es contracta en l'app del mòbil",
+      "pay_on_mobile_body": "Descarrega MisterFC en el teu mòbil, entra amb aquest mateix correu i subscriu-te des d'allí. No hi ha pagament per la web.",
+      "pay_on_mobile_then": "Una vegada subscrit, podràs entrar també des d'ací: la subscripció és del teu compte, no del mòbil."
     }
   }
 }
