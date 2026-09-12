@@ -1,6 +1,6 @@
 # Política de Privacidad — MisterFC
 
-Última actualización: 12 de agosto de 2026
+Última actualización: 13 de septiembre de 2026
 
 ---
 
@@ -127,9 +127,19 @@ Para prestar el servicio se comparten datos con proveedores tecnológicos que ac
 
 **Alcance de los datos enviados a los servicios de notificación.** A los servicios de notificaciones push se transmite el identificador del dispositivo y el texto del aviso, que puede contener el título de una convocatoria, mensaje o anuncio. No se transmiten datos de salud.
 
+**Alcance de los datos enviados a RevenueCat.** A este proveedor se transmite únicamente un **identificador interno de la cuenta** —un código aleatorio que no contiene el nombre, el correo electrónico ni ningún otro dato personal—, la información de la compra facilitada por la tienda de aplicaciones (producto, fechas, identificador de la transacción y comprobante o justificante de compra), datos técnicos básicos del dispositivo, como su tipo y sistema operativo, así como la dirección IP, que el proveedor utiliza para determinar el país de la compra. **No se transmite ningún dato de los jugadores**, ni datos de salud, ni contenido de mensajes, ni imágenes, ni la dirección de correo electrónico. La aplicación no envía a este proveedor identificadores publicitarios del dispositivo ni datos de atribución de campañas. La información sobre quién ha pagado la suscripción no se comunica al club.
+
 No se venden ni ceden datos personales a terceros con fines comerciales o publicitarios. La aplicación no muestra publicidad.
 
-## 9. Transferencias internacionales
+## 9. Encargados del tratamiento de Cognix Labs, S.L.
+
+RevenueCat trata datos de los que Cognix Labs, S.L. es responsable —la cuenta de usuario y la suscripción—, no datos de los que sea responsable el club, por lo que no tiene la condición de subencargado de este.
+
+| Encargado | Finalidad | Ubicación |
+| --- | --- | --- |
+| RevenueCat | Gestión técnica de las suscripciones de pago: validación de la compra con la tienda de aplicaciones y registro del estado de la suscripción. | Estados Unidos |
+
+## 10. Transferencias internacionales
 
 La infraestructura principal de MisterFC, basada en Supabase, aloja los datos en servidores situados en la Unión Europea. Los datos de registro de errores técnicos se tratan igualmente en la Unión Europea.
 
@@ -137,7 +147,9 @@ Algunos proveedores, en particular los servicios de notificaciones push de Googl
 
 Dichas transferencias se realizan con las garantías previstas en el Capítulo V del RGPD, mediante Cláusulas Contractuales Tipo de la Comisión Europea, marcos de adecuación aplicables u otros mecanismos reconocidos por la normativa. Puede solicitar información adicional sobre las garantías aplicables a cada proveedor escribiendo a la dirección de contacto indicada en esta Política.
 
-## 10. Conservación de los datos
+La gestión técnica de las suscripciones de pago se realiza en servidores situados en **Estados Unidos**. Dicha transferencia se ampara en **[la certificación del proveedor en el Marco de Privacidad de Datos UE-EE. UU. / las cláusulas contractuales tipo aprobadas por la Comisión Europea, complementadas con la correspondiente evaluación de impacto de la transferencia]**, conforme al Capítulo V del RGPD.
+
+## 11. Conservación de los datos
 
 Los datos se conservan mientras se mantenga la relación entre el usuario y el club y mientras la cuenta permanezca activa.
 
@@ -153,7 +165,9 @@ Finalizada la relación, o ejercido el derecho de supresión cuando corresponda,
 
 **Revocación del acceso de seguidores.** Cuando la familia revoca el acceso de un seguidor, el vínculo se elimina de forma efectiva y el seguidor deja de tener acceso a cualquier dato del jugador.
 
-## 11. Derechos
+**Datos de la suscripción.** Al eliminar la cuenta se solicita la supresión de los datos de la suscripción al proveedor que la gestiona técnicamente. El **histórico de compra que conserva la tienda de aplicaciones** (Apple App Store o Google Play) no depende de Cognix Labs, S.L.: está sujeto a las condiciones y a los plazos de conservación de la tienda, y debe reclamarse ante ella.
+
+## 12. Derechos
 
 Las personas cuyos datos sean objeto de tratamiento pueden ejercer, cuando resulten aplicables, los derechos de acceso, rectificación, supresión, limitación del tratamiento, oposición, portabilidad y retirada del consentimiento.
 
@@ -172,7 +186,7 @@ Se responderá a las solicitudes dentro del plazo máximo de un mes desde su rec
 
 Si considera que el tratamiento de sus datos personales no se ajusta a la normativa, puede presentar una reclamación ante la Agencia Española de Protección de Datos ([www.aepd.es](https://www.aepd.es)).
 
-## 12. Seguridad
+## 13. Seguridad
 
 Se aplican medidas técnicas y organizativas apropiadas para proteger los datos personales, con protección reforzada para los datos de salud:
 
@@ -184,7 +198,7 @@ Se aplican medidas técnicas y organizativas apropiadas para proteger los datos 
 - Las credenciales de acceso se almacenan en el dispositivo mediante el almacenamiento seguro proporcionado por el sistema operativo.
 - Los informes de errores técnicos se anonimizan antes de su envío.
 
-## 13. Permisos del dispositivo
+## 14. Permisos del dispositivo
 
 La aplicación puede solicitar los siguientes permisos, siempre para finalidades concretas y previa autorización del usuario:
 
@@ -195,7 +209,7 @@ La aplicación no solicita acceso a la ubicación, a los contactos, al micrófon
 
 El usuario puede revocar estos permisos en cualquier momento desde los ajustes de su dispositivo.
 
-## 14. Cookies
+## 15. Cookies
 
 La versión web utiliza exclusivamente cookies propias, estrictamente necesarias o funcionales para el funcionamiento del servicio:
 
@@ -208,7 +222,7 @@ La versión web utiliza exclusivamente cookies propias, estrictamente necesarias
 
 No se utilizan cookies publicitarias, de perfilado, de análisis ni de terceros. No se emplea ninguna herramienta de analítica de producto ni de seguimiento del comportamiento del usuario, ni se registran grabaciones de la sesión.
 
-## 15. Cambios en esta Política de Privacidad
+## 16. Cambios en esta Política de Privacidad
 
 Esta Política de Privacidad puede actualizarse para adaptarla a cambios legislativos, regulatorios, técnicos o en el funcionamiento del servicio. La versión vigente se publicará en esta misma dirección, indicando la fecha de la última actualización. Cuando los cambios sean relevantes, se informará a los usuarios por los medios correspondientes.
 
