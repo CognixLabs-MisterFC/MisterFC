@@ -71,8 +71,24 @@ export async function deleteRevenueCatCustomer(
 }
 
 export type GetCustomerResult =
-  | { ok: true; subscriber: unknown }
+  | { ok: true; subscriber: unknown; created: boolean }
   | { ok: false; status: number | null; raw: unknown };
+
+export type GetCustomerOptions = {
+  /**
+   * Qué hacer con un 201 (= el GET acaba de CREAR el cliente).
+   *
+   *  · `'error'` (por defecto) — lo que necesita la reconciliación nocturna: un 201 ahí
+   *    significa que hemos preguntado por alguien que no existía y ya hemos hecho el
+   *    daño, así que tiene que verse en Sentry.
+   *  · `'accept'` — lo que necesita la RECLAMACIÓN de SU-6b: ahí pregunta la propia
+   *    persona por su propia cuenta con una sesión viva, y un 201 solo quiere decir
+   *    "esta cuenta nunca compró nada". El cliente creado es el mismo registro vacío que
+   *    el SDK crea en el `configure()` del primer arranque; no resucita nada porque la
+   *    cuenta está viva, y eso lo comprueba el llamante ANTES de llamar.
+   */
+  on201?: 'error' | 'accept';
+};
 
 /**
  * `GET /subscribers/{app_user_id}` — la lectura de reconciliación de SU-6.
@@ -86,6 +102,7 @@ export async function getRevenueCatCustomer(
   appUserId: string,
   config: RevenueCatConfig,
   assertNotDeleted: true,
+  options: GetCustomerOptions = {},
 ): Promise<GetCustomerResult> {
   void assertNotDeleted;
   const doFetch = config.fetchImpl ?? (globalThis.fetch as FetchLike);
@@ -99,11 +116,20 @@ export async function getRevenueCatCustomer(
     return { ok: false, status: null, raw: e };
   }
 
-  // 201 = lo acaba de CREAR. Para nosotros eso no es un éxito: significa que hemos
-  // preguntado por alguien que no existía, y ya hemos hecho el daño. Se devuelve como
-  // error para que quede en Sentry y se vea de dónde salió la llamada.
+  // 201 = lo acaba de CREAR. Para la reconciliación eso no es un éxito: significa que
+  // hemos preguntado por alguien que no existía, y ya hemos hecho el daño. Se devuelve
+  // como error para que quede en Sentry y se vea de dónde salió la llamada. La
+  // reclamación de SU-6b es el único sitio que lo acepta, y con motivo (ver
+  // `GetCustomerOptions`).
   if (res.status === 201) {
-    return { ok: false, status: 201, raw: 'el GET ha CREADO el cliente: no se debía preguntar' };
+    if ((options.on201 ?? 'error') === 'error') {
+      return { ok: false, status: 201, raw: 'el GET ha CREADO el cliente: no se debía preguntar' };
+    }
+    try {
+      return { ok: true, subscriber: await res.json(), created: true };
+    } catch (e) {
+      return { ok: false, status: res.status, raw: e };
+    }
   }
   if (!res.ok) {
     let body: unknown = null;
@@ -116,7 +142,7 @@ export async function getRevenueCatCustomer(
   }
 
   try {
-    return { ok: true, subscriber: await res.json() };
+    return { ok: true, subscriber: await res.json(), created: false };
   } catch (e) {
     return { ok: false, status: res.status, raw: e };
   }

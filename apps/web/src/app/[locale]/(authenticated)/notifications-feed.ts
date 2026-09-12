@@ -25,6 +25,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   Clapperboard,
+  CreditCard,
   FileText,
   Goal,
   Megaphone,
@@ -112,6 +113,8 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
       return UserMinus;
     case 'tutor_unlinked':
       return Users;
+    case 'subscription_expiring':
+      return CreditCard;
     default:
       return Bell;
   }
@@ -209,6 +212,13 @@ function hrefFor(type: string, payload: Record<string, unknown> | null): string 
       derived = id ? `/mi-ficha?player=${id}` : '/mi-ficha';
       break;
     }
+    case 'subscription_expiring':
+      // SU-6b — a propósito SIN destino. `/suscripcion` rebota a quien todavía tiene
+      // acceso (es el muro, y el muro solo es alcanzable estando bloqueado), y la
+      // suscripción se gestiona en la tienda del móvil, no en la web: no hay pantalla
+      // honesta a la que llevar. Fila informativa mientras no exista una de estado.
+      derived = null;
+      break;
     default:
       derived = null;
   }

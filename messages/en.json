@@ -305,7 +305,9 @@
       "player_promoted_train": "Called up to train with a higher team",
       "player_promoted_train_named": "Called up to train with {team}",
       "player_promoted_match": "Called up to play with a higher team",
-      "player_promoted_match_named": "Called up to play with {team}"
+      "player_promoted_match_named": "Called up to play with {team}",
+      "subscription_expiring": "Your annual subscription is about to expire",
+      "subscription_expiring_billing_issue": "There is a problem with your subscription payment: check your payment method in the store"
     },
     "welcome": "Welcome to {club}",
     "your_role": "Your role here is {role}.",
@@ -5501,7 +5503,13 @@
     "web": {
       "pay_on_mobile_title": "The subscription is purchased in the mobile app",
       "pay_on_mobile_body": "Download MisterFC on your phone, sign in with this same email and subscribe from there. There is no payment on the web.",
-      "pay_on_mobile_then": "Once subscribed you will be able to sign in here too: the subscription belongs to your account, not to the phone."
-    }
+      "pay_on_mobile_then": "Once subscribed you will be able to sign in here too: the subscription belongs to your account, not to the phone.",
+      "claim_title": "I've already subscribed from my phone",
+      "claim_body": "If you paid in the app and still see this wall here, tap and we will check it with the store."
+    },
+    "claim": "I've already subscribed",
+    "claim_checking": "Checking your subscription with the store…",
+    "claim_none": "We found no subscription for this account. If you have just paid, wait a moment and try again.",
+    "claim_error": "We couldn't check it right now. Please try again in a moment."
   }
 }

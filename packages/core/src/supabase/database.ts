@@ -2918,6 +2918,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           date_of_birth: string | null
+          deleted_at: string | null
           full_name: string | null
           id: string
           locale: string
@@ -2928,6 +2929,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
+          deleted_at?: string | null
           full_name?: string | null
           id: string
           locale?: string
@@ -2938,6 +2940,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           date_of_birth?: string | null
+          deleted_at?: string | null
           full_name?: string | null
           id?: string
           locale?: string
@@ -3451,6 +3454,7 @@ export type Database = {
           product_id: string | null
           profile_id: string
           rc_customer_id: string | null
+          reconciled_at: string | null
           store: string | null
           store_transaction_id: string | null
           unlinked_at: string | null
@@ -3466,6 +3470,7 @@ export type Database = {
           product_id?: string | null
           profile_id: string
           rc_customer_id?: string | null
+          reconciled_at?: string | null
           store?: string | null
           store_transaction_id?: string | null
           unlinked_at?: string | null
@@ -3481,6 +3486,7 @@ export type Database = {
           product_id?: string | null
           profile_id?: string
           rc_customer_id?: string | null
+          reconciled_at?: string | null
           store?: string | null
           store_transaction_id?: string | null
           unlinked_at?: string | null
@@ -4601,6 +4607,10 @@ export type Database = {
           state: string
         }[]
       }
+      notify_subscription_expiring: {
+        Args: { p_days?: number }
+        Returns: number
+      }
       open_next_season: { Args: { p_club_id: string }; Returns: string }
       physically_erase_player: {
         Args: { p_player_id: string }
@@ -4789,6 +4799,19 @@ export type Database = {
           proposal_owner_id: string
         }[]
       }
+      reconcile_subscription_entitlement: {
+        Args: {
+          p_billing_issue_at: string | null
+          p_expires_at: string | null
+          p_grace_period_expires_at: string | null
+          p_product_id?: string | null
+          p_profile_id: string
+          p_rc_customer_id?: string | null
+          p_store?: string | null
+          p_store_transaction_id?: string | null
+        }
+        Returns: string
+      }
       request_account_deletion: {
         Args: { p_reason?: string }
         Returns: {
@@ -4857,6 +4880,18 @@ export type Database = {
       set_session_shared: {
         Args: { p_session_id: string; p_shared: boolean }
         Returns: undefined
+      }
+      subscription_reconcile_candidates: {
+        Args: { p_limit?: number; p_soon_days?: number; p_stale_days?: number }
+        Returns: {
+          access_until: string | null
+          app_user_id: string
+          billing_issue: boolean
+          priority: string
+          profile_id: string
+          rc_customer_id: string | null
+          reconciled_at: string | null
+        }[]
       }
       team_chat_member_profile_ids: {
         Args: { p_team_id: string }
@@ -5076,6 +5111,10 @@ export type Database = {
         | "training_rejected"
         | "erasure_requested"
         | "coach_invitation_accepted"
+        | "account_deletion_requested"
+        | "account_deletion_completed"
+        | "tutor_unlinked"
+        | "subscription_expiring"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -5259,6 +5298,10 @@ export const Constants = {
         "training_rejected",
         "erasure_requested",
         "coach_invitation_accepted",
+        "account_deletion_requested",
+        "account_deletion_completed",
+        "tutor_unlinked",
+        "subscription_expiring",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },

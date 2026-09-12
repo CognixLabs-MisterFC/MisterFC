@@ -11,6 +11,7 @@ import { evaluateSubscriptionGate } from '@/lib/subscription-gate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogoutButton } from '@/components/shell/logout-button';
 import { DeleteAccountCard } from '../(authenticated)/perfil/delete-account-card';
+import { ClaimSubscriptionButton } from './claim-button';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -79,6 +80,19 @@ export default async function SuscripcionPage({ params }: Props) {
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>{t('web.pay_on_mobile_body')}</p>
           <p>{t('web.pay_on_mobile_then')}</p>
+        </CardContent>
+      </Card>
+
+      {/* SU-6b — el que YA pagó. Un webhook perdido lo deja sin fila, y sin fila la
+          reconciliación nocturna no puede ni preguntar por él: sin esto, una familia que
+          ha pagado se queda mirando un muro que por la web no se puede pagar. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">{t('web.claim_title')}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <p>{t('web.claim_body')}</p>
+          <ClaimSubscriptionButton />
         </CardContent>
       </Card>
 

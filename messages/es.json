@@ -305,7 +305,9 @@
       "player_promoted_train": "Convocado para entrenar con un equipo superior",
       "player_promoted_train_named": "Convocado para entrenar con el {team}",
       "player_promoted_match": "Convocado para jugar con un equipo superior",
-      "player_promoted_match_named": "Convocado para jugar con el {team}"
+      "player_promoted_match_named": "Convocado para jugar con el {team}",
+      "subscription_expiring": "Tu suscripción anual está a punto de vencer",
+      "subscription_expiring_billing_issue": "Hay un problema con el cobro de tu suscripción: revisa tu método de pago en la tienda"
     },
     "welcome": "Bienvenido a {club}",
     "your_role": "Tu rol aquí es {role}.",
@@ -5501,7 +5503,13 @@
     "web": {
       "pay_on_mobile_title": "La suscripción se contrata en la app del móvil",
       "pay_on_mobile_body": "Descarga MisterFC en tu móvil, entra con este mismo correo y suscríbete desde allí. No hay pago por la web.",
-      "pay_on_mobile_then": "Una vez suscrito, podrás entrar también desde aquí: la suscripción es de tu cuenta, no del móvil."
-    }
+      "pay_on_mobile_then": "Una vez suscrito, podrás entrar también desde aquí: la suscripción es de tu cuenta, no del móvil.",
+      "claim_title": "Ya me he suscrito desde el móvil",
+      "claim_body": "Si has pagado en la app y aquí sigues viendo este muro, pulsa y lo comprobamos con la tienda."
+    },
+    "claim": "Ya me he suscrito",
+    "claim_checking": "Comprobando tu suscripción con la tienda…",
+    "claim_none": "No hemos encontrado ninguna suscripción a nombre de esta cuenta. Si acabas de pagar, espera un momento y vuelve a intentarlo.",
+    "claim_error": "No hemos podido comprobarlo ahora mismo. Inténtalo de nuevo en un momento."
   }
 }

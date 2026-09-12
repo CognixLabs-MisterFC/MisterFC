@@ -12,6 +12,7 @@ import {
   purchasePackage,
   restorePurchases,
 } from '@/subscription/purchases';
+import { claimSubscription } from '@/subscription/claim';
 import { useSubscription } from '@/subscription/provider';
 
 /**
@@ -37,7 +38,7 @@ export function PaywallScreen() {
   // DERIVA el "cargando" en vez de guardarlo: así el efecto no hace ningún setState
   // sincrónico (el lint del compilador de React lo rechaza, y con razón).
   const [pkg, setPkg] = useState<PurchasesPackage | null | undefined>(undefined);
-  const [busy, setBusy] = useState<'buy' | 'restore' | 'activating' | null>(null);
+  const [busy, setBusy] = useState<'buy' | 'restore' | 'activating' | 'claiming' | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   const sellable = canPurchase();
@@ -95,14 +96,31 @@ export function PaywallScreen() {
   /**
    * Quien abre la puerta es el SERVIDOR, no el SDK. Tras pagar hay que esperar a que el
    * webhook llegue, así que se reintenta unos segundos con un mensaje honesto en
-   * pantalla. Si no llega, NO se abre nada: se dice que puede tardar y se deja
-   * "restaurar compras" a mano.
+   * pantalla.
+   *
+   * SU-6b — y si no llega, se RECLAMA. El webhook se puede perder de verdad (reintentan
+   * 5 veces y paran), y quien se queda sin fila no aparece en la reconciliación
+   * nocturna: nada automático lo rescata. Así que aquí se le pide al servidor que
+   * pregunte a RevenueCat por esta cuenta. Sigue decidiendo el servidor: esto no abre
+   * nada por su cuenta, solo hace que mire.
+   *
+   * Si después de eso tampoco hay acceso, NO se abre nada. Se dice qué ha pasado: que no
+   * hay ninguna compra a nombre de esta cuenta, o que puede tardar.
    */
   const activate = async () => {
     setBusy('activating');
-    const ok = await waitForEntitlement();
+    if (await waitForEntitlement()) {
+      setBusy(null);
+      return;
+    }
+
+    setBusy('claiming');
+    const claim = await claimSubscription();
+    // Tras reclamar, la fila ya tiene que estar: dos intentos cortos, no otra espera.
+    const ok = claim.ok ? await waitForEntitlement(2) : false;
     setBusy(null);
-    if (!ok) setMessage(t('activating_slow'));
+    if (ok) return;
+    setMessage(claim.outcome === 'no_entitlement' ? t('claim_none') : t('activating_slow'));
   };
 
   return (
@@ -153,7 +171,7 @@ export function PaywallScreen() {
               className="items-center rounded-xl bg-[#438832] py-4 active:opacity-70"
               style={busy !== null || !online ? { opacity: 0.5 } : undefined}
             >
-              {busy === 'buy' || busy === 'activating' ? (
+              {busy === 'buy' || busy === 'activating' || busy === 'claiming' ? (
                 <ActivityIndicator color="#ffffff" />
               ) : (
                 <Text className="text-base font-semibold text-white">{t('subscribe')}</Text>
@@ -181,6 +199,8 @@ export function PaywallScreen() {
 
         {busy === 'activating' ? (
           <Text className="text-center text-xs text-zinc-500">{t('activating')}</Text>
+        ) : busy === 'claiming' ? (
+          <Text className="text-center text-xs text-zinc-500">{t('claim_checking')}</Text>
         ) : null}
         {!online ? (
           <Text className="text-center text-xs text-amber-600">{t('offline')}</Text>

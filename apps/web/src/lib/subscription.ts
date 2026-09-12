@@ -1,14 +1,20 @@
 import 'server-only';
 import * as Sentry from '@sentry/nextjs';
 import {
+  claimSubscriptionFromClient,
   createSupabaseAdminClient,
   ingestRevenueCatEvent,
+  notifySubscriptionExpiringFromClient,
   parseRevenueCatEvent,
+  reconcileSubscriptionsFromClient,
   severityFor,
   sweepRevenueCatDeletionsFromClient,
   verifyRevenueCatSignature,
+  type ClaimResult,
   type DeletionSweepResult,
+  type ExpiringNoticeResult,
   type IngestOutcome,
+  type ReconcileSweepResult,
   type RevenueCatConfig,
   type SubscriptionLogger,
 } from '@misterfc/core';
@@ -131,6 +137,58 @@ export async function sweepRevenueCatDeletions(): Promise<DeletionSweepResult> {
     return { found: 0, attempted: 0, succeeded: 0, failed: 0, stuck: 0 };
   }
   return sweepRevenueCatDeletionsFromClient(createSupabaseAdminClient(), config, {
+    logError: logSubscription,
+  });
+}
+
+
+/**
+ * SU-6b — RECONCILIACIÓN NOCTURNA. Pasada 1 del cron de suscripciones.
+ *
+ * A quién se puede preguntar lo decide el SQL (`subscription_reconcile_candidates`), no
+ * esta función: `GET /subscribers/{id}` crea el cliente si no existe, así que la lista
+ * es el candado contra resucitar en RevenueCat una cuenta ya borrada.
+ */
+export async function reconcileSubscriptions(): Promise<ReconcileSweepResult> {
+  const config = revenueCatConfig();
+  if (!config) {
+    logSubscription(new Error('REVENUECAT_SECRET_KEY sin configurar'), 'reconcile_no_key');
+    return {
+      found: 0,
+      attempted: 0,
+      corrected: 0,
+      noop: 0,
+      skipped: 0,
+      sandbox: 0,
+      missingEntitlement: 0,
+      failed: 0,
+    };
+  }
+  return reconcileSubscriptionsFromClient(createSupabaseAdminClient(), config, {
+    logError: logSubscription,
+  });
+}
+
+/**
+ * SU-6b — AVISO DE VENCIMIENTO. Pasada 2 del cron. No necesita la secret key: es solo
+ * SQL, y por eso va DESPUÉS de la reconciliación y no dentro de su `if`.
+ */
+export async function notifySubscriptionExpiring(): Promise<ExpiringNoticeResult> {
+  return notifySubscriptionExpiringFromClient(createSupabaseAdminClient());
+}
+
+/**
+ * SU-6b — RECLAMACIÓN. `profileId` viene SIEMPRE de la sesión validada en el route
+ * handler, nunca del cuerpo de la petición: es lo que hace que este camino solo pueda
+ * preguntar por la cuenta de quien llama.
+ */
+export async function claimSubscription(profileId: string): Promise<ClaimResult> {
+  const config = revenueCatConfig();
+  if (!config) {
+    logSubscription(new Error('REVENUECAT_SECRET_KEY sin configurar'), 'claim_no_key');
+    return { ok: false, raw: 'no_key' };
+  }
+  return claimSubscriptionFromClient(createSupabaseAdminClient(), profileId, config, {
     logError: logSubscription,
   });
 }
