@@ -162,11 +162,13 @@ Por orden de quién bloquea a quién:
       ([propuesta](../specs/SU.7-legal-suscripcion-propuesta.md)): Términos con la sección
       de suscripción, Privacidad con RevenueCat, y el contrato de encargo con la fila
       nueva.
-- [ ] **Decidir si un menor paga** (decisión 〔3〕 de la propuesta): hoy la cuenta propia de
-      un jugador requiere suscripción, y en producción ya hay una de un menor. Si se
-      exime, es una migración.
-- [ ] **El revisor de Apple tiene que poder comprar** — hoy **no puede**. Ver el bloqueo
-      en [apple-review-notes.md](apple-review-notes.md) §7.
+- [ ] **Lo del menor, al abogado** (decisión 〔3〕): Jose ya decidió el fondo —el menor con
+      cuenta propia paga, sin excepción ni acceso derivado—, así que no hay código que
+      cambiar. Queda que el abogado mire la autorización parental que exigen las tiendas.
+- [x] **El revisor de Apple puede comprar** — resuelto en SU-8 (migración
+      `20261066000000`, aplicada) y SU-8b. **Pero la lista nace vacía**: hay que meter el
+      perfil del revisor antes de enviar, ver
+      [apple-review-notes.md](apple-review-notes.md) §7.3.
 - [ ] Productos creados y **aprobados** en las dos tiendas.
 - [ ] `REVENUECAT_WEBHOOK_SECRET` y `REVENUECAT_SECRET_KEY` en Vercel.
 - [ ] `EXPO_PUBLIC_REVENUECAT_IOS_KEY` y `_ANDROID_KEY` en EAS.

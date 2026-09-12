@@ -147,6 +147,13 @@ export async function reconcileSubscriptionsFromClient(
       // Un entitlement de sandbox no concede acceso de producción (lo mismo que hace
       // `apply_subscription_event` con un evento de SANDBOX) y tampoco lo quita: lo que
       // dijo el webhook de producción sigue siendo lo mejor que sabemos.
+      //
+      // SU-8b · Y aquí sí se corta, al contrario que en la reclamación, que desde SU-8
+      // pasa el entorno al SQL y deja que decida él. El motivo es que este barrido
+      // escribe por `reconcile_subscription_entitlement`, que **no sabe qué es un
+      // entorno**: no hay forma de decirle "esto es sandbox", así que escribiría las
+      // fechas del sandbox sin preguntar y se llevaría por delante la ventana fija de 30
+      // días del perfil designado. Saltar es lo único que respeta las dos cosas.
       result.sandbox += 1;
       continue;
     }

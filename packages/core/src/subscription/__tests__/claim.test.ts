@@ -280,16 +280,129 @@ describe('claimSubscriptionFromClient', () => {
     expect(calls).toHaveLength(0);
   });
 
-  it('una compra de sandbox no abre producción', async () => {
+  /**
+   * SU-8b · el bloque de esta serie. La reclamación NO decide sobre el sandbox: pasa el
+   * entorno tal cual y deja que lo decida `apply_subscription_event`, que es quien sabe
+   * de `subscription_test_profiles`.
+   */
+  it('una compra de sandbox se manda al SQL con su entorno, no se rechaza aquí', async () => {
     const calls: RpcCall[] = [];
     const { impl } = countingFetch(subscriberBody({ is_sandbox: true }));
     const res = await claimSubscriptionFromClient(
-      makeAdmin({ entitlement: null, calls }),
+      makeAdmin({ entitlement: null, ingest: 'sandbox', calls }),
+      P,
+      config(impl),
+    );
+    // El SQL ha dicho que no (el perfil no está designado): eso es lo que se devuelve.
+    expect(res).toMatchObject({ ok: true, outcome: 'sandbox', ingest: 'sandbox' });
+    const ingest = calls.find((c) => c.name === 'apply_subscription_event');
+    expect(ingest?.args).toMatchObject({ p_environment: 'SANDBOX' });
+  });
+
+  it('si el perfil está designado, el SQL aplica y la reclamación rescata al revisor', async () => {
+    const calls: RpcCall[] = [];
+    const { impl } = countingFetch(subscriberBody({ is_sandbox: true }));
+    const res = await claimSubscriptionFromClient(
+      makeAdmin({ entitlement: null, ingest: 'applied', calls }),
+      P,
+      config(impl),
+    );
+    expect(res).toMatchObject({ ok: true, outcome: 'claimed' });
+    expect(calls.find((c) => c.name === 'apply_subscription_event')?.args).toMatchObject({
+      p_environment: 'SANDBOX',
+      p_type: 'CLAIM',
+    });
+  });
+
+  /**
+   * Y esta es la que protege la ventana de 30 días: con fila YA existente, una compra de
+   * sandbox NO puede ir por la reconciliación. Esa función no sabe qué es un entorno, así
+   * que escribiría las fechas del sandbox —una hora, por su reloj acelerado— encima de la
+   * ventana fija, y además le daría a cualquiera con TestFlight una forma de mover el
+   * vencimiento de su propia fila. Es el agujero que cerró SU-1.
+   */
+  it('con fila existente, el sandbox va por la INGESTA y nunca por la reconciliación', async () => {
+    const calls: RpcCall[] = [];
+    const { impl } = countingFetch(subscriberBody({ is_sandbox: true }));
+    const res = await claimSubscriptionFromClient(
+      makeAdmin({ entitlement: entitlementRow(), ingest: 'applied', calls }),
+      P,
+      config(impl),
+    );
+    expect(res).toMatchObject({ outcome: 'claimed' });
+    expect(calls.filter((c) => c.name === 'reconcile_subscription_entitlement')).toHaveLength(0);
+    expect(calls.filter((c) => c.name === 'apply_subscription_event')).toHaveLength(1);
+  });
+
+  it('un sandbox rechazado por el SQL con fila existente no escribe nada más', async () => {
+    const calls: RpcCall[] = [];
+    const { impl } = countingFetch(subscriberBody({ is_sandbox: true }));
+    const res = await claimSubscriptionFromClient(
+      makeAdmin({ entitlement: entitlementRow(), ingest: 'sandbox', calls }),
       P,
       config(impl),
     );
     expect(res).toMatchObject({ outcome: 'sandbox' });
-    expect(calls).toHaveLength(0);
+    expect(calls.filter((c) => c.name === 'reconcile_subscription_entitlement')).toHaveLength(0);
+  });
+
+  /**
+   * El sellado de la gracia tampoco puede pisar la ventana fija: para el revisor la
+   * gracia no pinta nada, el acceso sí.
+   */
+  it('tras aplicar un sandbox NO se sella la gracia (se llevaría la ventana fija)', async () => {
+    const calls: RpcCall[] = [];
+    const { impl } = countingFetch(
+      subscriberBody({ is_sandbox: true, grace_period_expires_date: '2026-09-20T00:00:00Z' }),
+    );
+    await claimSubscriptionFromClient(
+      makeAdmin({ entitlement: null, ingest: 'applied', calls }),
+      P,
+      config(impl),
+    );
+    expect(calls.filter((c) => c.name === 'reconcile_subscription_entitlement')).toHaveLength(0);
+  });
+
+  it('una compra de producción sigue yendo por la reconciliación cuando hay fila', async () => {
+    const calls: RpcCall[] = [];
+    const { impl } = countingFetch(subscriberBody());
+    await claimSubscriptionFromClient(
+      makeAdmin({ entitlement: entitlementRow(), reconcile: 'corrected', calls }),
+      P,
+      config(impl),
+    );
+    expect(calls.filter((c) => c.name === 'apply_subscription_event')).toHaveLength(0);
+    expect(calls.filter((c) => c.name === 'reconcile_subscription_entitlement')).toHaveLength(1);
+  });
+
+  it('una compra de producción no se etiqueta como sandbox', async () => {
+    const calls: RpcCall[] = [];
+    const { impl } = countingFetch(subscriberBody());
+    await claimSubscriptionFromClient(
+      makeAdmin({ entitlement: null, calls }),
+      P,
+      config(impl),
+    );
+    expect(calls.find((c) => c.name === 'apply_subscription_event')?.args).toMatchObject({
+      p_environment: 'PRODUCTION',
+    });
+  });
+
+  it.each([
+    ['deleted_profile', 'unlinked'],
+    ['transfer_to_deleted_profile', 'unlinked'],
+    ['unknown_profile', 'unlinked'],
+    ['duplicate', 'already_ok'],
+    ['stale', 'already_ok'],
+    ['sandbox', 'sandbox'],
+  ])('el motivo %s del SQL se traduce a %s, sin cajón de sastre', async (ingest, esperado) => {
+    const { impl } = countingFetch(subscriberBody());
+    const res = await claimSubscriptionFromClient(
+      makeAdmin({ entitlement: null, ingest }),
+      P,
+      config(impl),
+    );
+    expect(res).toMatchObject({ ok: true, outcome: esperado, ingest });
   });
 
   it('dos reclamaciones seguidas: la segunda no llega a la red', async () => {
