@@ -134,7 +134,7 @@ Como prueba de la aceptación, Cognix Labs, S.L. registrará y conservará la id
 
 ## 6. Usuarios y cuentas
 
-**6.1 Edad mínima.** El acceso a la Plataforma se produce siempre por invitación. No existe registro abierto al público.
+**6.1 Alta por invitación y cuentas de menores.** El acceso a la Plataforma se produce siempre por invitación. No existe registro abierto al público.
 
 El club invita al personal técnico y a las familias. El padre, madre o tutor legal que ya dispone de cuenta puede, desde la suya, invitar al jugador a su cargo para que tenga cuenta propia, y al hacerlo autoriza expresamente su alta y su acceso a la aplicación.
 
@@ -142,7 +142,7 @@ La cuenta de un jugador menor de edad requiere su propia suscripción, en los t�
 
 Los datos del jugador menor son tratados en todo caso bajo la responsabilidad del club, con el consentimiento del tutor recabado en el momento del alta.
 
-**6.2 Perfiles de usuario.** Pueden disponer de cuenta el personal del club (administradores, directores, coordinadores y entrenadores), los padres, madres y tutores legales de los jugadores, los jugadores mayores de edad y los seguidores autorizados por la familia de un jugador.
+**6.2 Perfiles de usuario.** Pueden disponer de cuenta el personal del club (administradores, directores, coordinadores y entrenadores), los padres, madres y tutores legales de los jugadores, los jugadores mayores de edad, los jugadores menores de edad invitados por su padre, madre o tutor legal y los seguidores autorizados por la familia de un jugador.
 
 **6.3 Veracidad de los datos.** El usuario se compromete a proporcionar datos verídicos y a mantenerlos actualizados.
 

@@ -37,18 +37,21 @@ Esta Política de Privacidad se aplica a:
 
 ## 3. Quién puede utilizar la aplicación y quién aparece en ella
 
-MisterFC está dirigido exclusivamente a personas mayores de 18 años.
+El acceso a MisterFC se produce siempre por invitación. No existe registro abierto al público: nadie puede darse de alta por su cuenta.
 
-Pueden registrarse y disponer de una cuenta:
+Pueden disponer de una cuenta:
 
 - Personal del club: administradores, directores, coordinadores y entrenadores, incluidos entrenadores ayudantes.
 - Padres, madres y tutores legales de los jugadores.
 - Jugadores mayores de edad.
+- Jugadores menores de edad, cuando su padre, madre o tutor legal les invite desde su propia cuenta.
 - Seguidores autorizados expresamente por la familia de un jugador.
 
-**Los jugadores menores de edad no disponen de cuenta propia ni acceden a la aplicación.** Sus datos son tratados a través de la cuenta de su padre, madre o tutor legal, que es quien accede a la información del menor y ejerce los derechos en su nombre.
+**La cuenta de un jugador menor de edad solo puede crearse por invitación de su padre, madre o tutor legal.** La invitación se cursa desde la cuenta del propio tutor y constituye su autorización expresa al alta del menor y a su acceso a la aplicación. Queda registrada con indicación de quién la cursó, sobre qué jugador y en qué fecha.
 
-Los menores pueden ser, por tanto, titulares de datos personales tratados mediante MisterFC, pero no son usuarios directos del servicio.
+Que el menor disponga de cuenta propia no desplaza al tutor: este conserva el acceso a la información del menor y sigue siendo quien otorga y revoca los consentimientos relativos a sus datos y quien ejerce los derechos en su nombre. El tratamiento de los datos del jugador menor se realiza en todo caso bajo la responsabilidad del club, con el consentimiento del tutor recabado en el momento del alta.
+
+Los jugadores menores de edad son, por tanto, titulares de datos personales tratados mediante MisterFC y pueden además ser usuarios del servicio.
 
 ## 4. Datos que tratamos
 
