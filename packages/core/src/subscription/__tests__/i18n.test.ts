@@ -64,6 +64,9 @@ const PAYWALL_KEYS = [
   'subscription.claim_checking',
   'subscription.claim_none',
   'subscription.claim_error',
+  // SU-7 — los dos enlaces que Apple exige EN EL BINARIO (Guideline 3.1.2).
+  'subscription.terms_link',
+  'subscription.privacy_link',
 ];
 
 /**

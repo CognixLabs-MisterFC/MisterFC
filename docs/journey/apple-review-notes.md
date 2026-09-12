@@ -1,10 +1,14 @@
-# Notas de revisión para Apple — borrado de cuenta
+# Notas de revisión para Apple — borrado de cuenta y suscripción
 
 > **Qué es esto**: lo que hay que pegar en *App Store Connect → App Review Information*
 > y cómo dejar la cuenta de prueba en el estado correcto antes de enviar.
 > **Por qué existe**: Apple bloqueó la publicación con la **Guideline 5.1.1(v)** — una app
 > que da acceso a cuentas debe permitir **iniciar el borrado de la cuenta desde dentro de
 > la app**. La serie BC lo construye; esto es lo que se le enseña al revisor.
+>
+> **SU-7 añade la segunda mitad**: con la suscripción, el revisor ya no solo tiene que
+> poder borrarse — tiene que poder **comprar**. Eso es el §7, y hoy trae un **bloqueo**
+> que hay que resolver antes de enviar.
 
 ## 1 · El camino que tiene que ver el revisor
 
@@ -120,3 +124,125 @@ la revisión sin darse cuenta.
 - [ ] Texto legal de `/legal/eliminacion-cuenta` actualizado y aprobado (BC-8, pieza 1).
 - [ ] Vídeo grabado con el plano final del login rechazado.
 - [ ] Credenciales de la cuenta puestas en App Store Connect.
+
+---
+
+## 7 · La compra: cómo la prueba el revisor, y por qué hoy NO puede
+
+> Esta sección es de SU-7. Lo de arriba (borrado de cuenta) sigue valiendo igual.
+
+### 7.1 · El camino que tiene que ver el revisor
+
+Con el gate encendido, el muro es **la primera pantalla** que ve una familia sin
+suscripción, así que no hay que explicarle cómo llegar:
+
+```
+entrar con la cuenta de prueba  →  muro de suscripción
+        →  precio y periodicidad visibles (los pone la tienda)
+        →  «Suscribirme»  →  hoja de pago de Apple (sandbox)
+        →  acceso a la app
+```
+
+Y en la misma pantalla, lo que el revisor comprueba de la lista de la Guideline 3.1.2:
+
+| Lo que busca | Dónde está |
+|---|---|
+| Precio completo, visible | el `priceString` de la tienda, en grande |
+| Duración y renovación automática | «al año, con renovación automática» |
+| Cómo cancelar | el aviso del final |
+| **Restaurar compras** (3.1.1) | botón propio, debajo del de comprar |
+| **Enlace a condiciones de uso** | pie del muro (añadido en SU-7) |
+| **Enlace a política de privacidad** | pie del muro (añadido en SU-7) |
+
+### 7.2 · EL BLOQUEO · el revisor compra y NO entra
+
+**Apple ejecuta la compra del revisor en el SANDBOX**, aunque el build vaya firmado para
+producción. Es un caso conocido y documentado: un servidor que solo acepta recibos de
+producción rechaza la compra del revisor, y la app se cae por Guideline 2.1. RevenueCat
+valida los dos entornos por su cuenta, así que **nos manda el webhook con
+`environment: SANDBOX`**.
+
+Y ahí choca con una decisión nuestra de SU-1, escrita a propósito:
+
+```sql
+elsif upper(p_environment) <> 'PRODUCTION' then
+  -- Un evento de SANDBOX no puede dar acceso de producción.
+  v_reason := 'sandbox';
+```
+
+Existe por un motivo bueno —que nadie con TestFlight se abra la puerta de producción— pero
+tiene una consecuencia que no vi al escribirla: **la compra del revisor no concede nada**.
+El revisor paga, el muro le dice «tu pago se ha registrado, pero la activación está
+tardando», y no entra. Rechazo garantizado.
+
+Y las dos salidas que existen tampoco le valen:
+
+| Salida | Por qué no sirve al revisor |
+|---|---|
+| «Restaurar compras» | reconsulta el SDK y acaba en el mismo webhook de sandbox |
+| Reclamación (SU-6b) | la proyección marca `sandbox` y devuelve `sandbox`: no escribe nada |
+
+**Esto no se arregla con notas de revisión.** Es código.
+
+### 7.3 · Cómo se arregla (SU-8, lleva SQL)
+
+Aceptar SANDBOX **solo para perfiles designados como cuenta de prueba**, y nada más:
+
+- una lista explícita de perfiles de prueba (tabla propia o columna, lo decide el diseño);
+- `apply_subscription_event` aplica un evento de SANDBOX **si y solo si** el perfil está
+  en esa lista, y lo marca como tal en `subscription_events`;
+- todo lo demás sigue igual: para cualquier otra cuenta, SANDBOX se registra y no aplica.
+
+Con eso, la cuenta del revisor compra en sandbox y entra, y un usuario de TestFlight
+cualquiera sigue sin poder abrirse la puerta. Es una migración, así que va por el camino
+de siempre: SQL entregado, Jose aplica, implementación encima.
+
+**Mientras eso no exista, no se puede enviar la suscripción a revisión.** Es el único
+punto de SU-7 que bloquea la publicación por sí solo.
+
+### 7.4 · Y una cosa que el revisor va a preguntar
+
+Con el gate encendido y sin suscripción **no se ve nada** (decisión 3 de Jose: muro y
+punto). Un revisor que no consiga comprar tampoco podrá comprobar el resto de la app, ni
+el borrado de cuenta del §1. Así que en las notas conviene decírselo antes de que lo
+descubra: que el borrado está **dentro del muro**, alcanzable sin pagar, porque la
+Guideline 5.1.1(v) manda por encima del muro.
+
+### 7.5 · Texto para App Store Connect (cuando SU-8 esté dentro)
+
+> **Notes for Review — subscription**
+>
+> MisterFC is free to download. Club staff (coaches, coordinators, directors) get access
+> as part of the club's own contract and are never asked to pay. **Parents, guardians and
+> followers** need a personal auto-renewable subscription (1 year).
+>
+> After signing in with the demo account, the subscription screen is the first screen you
+> see. It shows the price and the renewal terms, a **Restore Purchases** button, and links
+> to our Terms of Use and Privacy Policy.
+>
+> Sandbox purchases made during review are recognised for the demo account, so you can
+> complete the purchase and continue into the app.
+>
+> **Account deletion is reachable from inside the subscription screen**, without paying:
+> Guideline 5.1.1(v) takes precedence over the paywall. See the account-deletion notes
+> above.
+>
+> There is no way to subscribe outside the app: we do not offer any external payment
+> method, and the web version only tells the user to subscribe from the app.
+
+---
+
+## 8 · Antes de enviar (suscripción)
+
+- [ ] **SU-8 dentro**: la compra del revisor, en sandbox, concede acceso a la cuenta de
+      prueba. Sin esto, no se envía (§7.2).
+- [ ] Build de EAS con **`EXPO_PUBLIC_SUBSCRIPTION_GATE=on`**: con el gate apagado el muro
+      es inalcanzable y Apple no encuentra la compra que tiene que revisar.
+- [ ] Build de EAS con `EXPO_PUBLIC_REVENUECAT_IOS_KEY` **y** `EXPO_PUBLIC_WEB_URL`.
+- [ ] Producto `com.misterfc.app.suscripcion.anual` creado y con localización (nombre y
+      descripción) — [fichas de tienda](su7-fichas-tienda.md).
+- [ ] *Sandbox tester* creado en App Store Connect y **no** usado antes con esa compra.
+- [ ] Enlaces legales comprobados **en el dispositivo**, abriendo los dos desde el muro.
+- [ ] Texto legal de la suscripción aprobado y publicado
+      ([propuesta](../specs/SU.7-legal-suscripcion-propuesta.md)).
+- [ ] Precio de la app a **Free**.

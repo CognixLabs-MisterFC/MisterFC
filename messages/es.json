@@ -5510,6 +5510,8 @@
     "claim": "Ya me he suscrito",
     "claim_checking": "Comprobando tu suscripción con la tienda…",
     "claim_none": "No hemos encontrado ninguna suscripción a nombre de esta cuenta. Si acabas de pagar, espera un momento y vuelve a intentarlo.",
-    "claim_error": "No hemos podido comprobarlo ahora mismo. Inténtalo de nuevo en un momento."
+    "claim_error": "No hemos podido comprobarlo ahora mismo. Inténtalo de nuevo en un momento.",
+    "terms_link": "Condiciones de uso",
+    "privacy_link": "Política de privacidad"
   }
 }

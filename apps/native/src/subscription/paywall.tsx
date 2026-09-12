@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { PurchasesPackage } from 'react-native-purchases';
 import { useApp } from '@/auth/context';
 import { useIsOnline } from '@/data/connectivity';
-import { useTranslations } from '@/locale/provider';
+import { useLocale, useTranslations } from '@/locale/provider';
 import { DeleteAccountCard } from '@/ui/delete-account-card';
 import {
   canPurchase,
@@ -13,6 +13,7 @@ import {
   restorePurchases,
 } from '@/subscription/purchases';
 import { claimSubscription } from '@/subscription/claim';
+import { legalUrl } from '@/subscription/legal-links';
 import { useSubscription } from '@/subscription/provider';
 
 /**
@@ -30,6 +31,7 @@ import { useSubscription } from '@/subscription/provider';
 export function PaywallScreen() {
   const t = useTranslations('subscription');
   const tShell = useTranslations('shell');
+  const locale = useLocale();
   const { signOut } = useApp();
   const { status, error, refresh, waitForEntitlement } = useSubscription();
   const online = useIsOnline();
@@ -210,6 +212,24 @@ export function PaywallScreen() {
         ) : null}
 
         <Text className="mt-2 text-xs text-zinc-400">{t('terms_note')}</Text>
+
+        {/* SU-7 · Apple lo EXIGE en el binario, no solo en la ficha: una suscripción
+            auto-renovable sin enlaces a condiciones y privacidad es un rechazo por
+            Guideline 3.1.2. Van juntos y en la misma pantalla de la compra. */}
+        <View className="flex-row justify-center gap-4">
+          <Pressable
+            onPress={() => void Linking.openURL(legalUrl('terminos', locale))}
+            className="py-2 active:opacity-70"
+          >
+            <Text className="text-xs text-[#438832] underline">{t('terms_link')}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => void Linking.openURL(legalUrl('privacidad', locale))}
+            className="py-2 active:opacity-70"
+          >
+            <Text className="text-xs text-[#438832] underline">{t('privacy_link')}</Text>
+          </Pressable>
+        </View>
 
         {/* Apple 5.1.1(v): el borrado tiene que seguir alcanzable DESDE el muro. */}
         <View className="mt-6 border-t border-zinc-100 pt-6">

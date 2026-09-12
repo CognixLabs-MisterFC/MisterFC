@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Smartphone } from 'lucide-react';
@@ -97,6 +98,18 @@ export default async function SuscripcionPage({ params }: Props) {
       </Card>
 
       <p className="text-xs text-muted-foreground">{t('terms_note')}</p>
+
+      {/* SU-7 · Los mismos dos enlaces que exige el muro de la nativa (Guideline 3.1.2).
+          Aquí no se cobra, así que no es la tienda la que los pide: es que este muro es
+          donde alguien lee las condiciones antes de ir a pagar al móvil. */}
+      <p className="flex justify-center gap-4 text-xs">
+        <Link href={`/${locale}/legal/terminos`} className="underline">
+          {t('terms_link')}
+        </Link>
+        <Link href={`/${locale}/legal/privacidad`} className="underline">
+          {t('privacy_link')}
+        </Link>
+      </p>
 
       {/* Apple 5.1.1(v): el borrado sigue alcanzable DESDE el muro. */}
       {deletionPreview.ok && (
