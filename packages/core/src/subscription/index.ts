@@ -8,6 +8,7 @@
  * Decisión de fondo: `ADR-0022` · SQL: migración `20261063000000`.
  */
 export * from './deletion-sweep';
+export * from './gate';
 export * from './reads';
 export * from './revenuecat-api';
 export * from './rules';

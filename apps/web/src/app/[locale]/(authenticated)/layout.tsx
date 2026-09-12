@@ -6,6 +6,7 @@ import { loadShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { rewriteStaleActiveClub } from '@/components/shell/actions';
 import { AppShell } from '@/components/shell/app-shell';
+import { evaluateSubscriptionGate } from '@/lib/subscription-gate';
 
 type Props = {
   children: ReactNode;
@@ -35,13 +36,33 @@ export default async function AuthenticatedLayout({ children, params }: Props) {
     await rewriteStaleActiveClub(ctx.activeClub.club.id);
   }
 
+  // Un solo cliente para los tres guards que vienen (suscripción, re-consentimiento y
+  // superadmin): son tres RPC sobre la MISMA sesión.
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  // SU-5 — GATE de SUSCRIPCIÓN (guard SERVER-SIDE). Este es el PRIMER punto común de
+  // la web: todo lo autenticado con club cuelga de aquí. El segundo es
+  // `/spectator/layout.tsx`, que NO pasa por este fichero.
+  //
+  // Va ANTES del re-consentimiento, y es una decisión mía: pedirle a alguien que firme
+  // los consentimientos de la temporada antes de que haya decidido si va a ser cliente
+  // es crear un registro legal de quien puede no comprar. Al revés no se pierde nada:
+  // quien paga y luego re-consiente hace el recorrido normal de cualquier compra. Si se
+  // prefiere el orden contrario, es mover este bloque debajo del siguiente.
+  //
+  // `evaluateSubscriptionGate` no bloquea con el interruptor apagado ni con una lectura
+  // fallida: "no se pudo leer" NO es "no tiene".
+  const gate = await evaluateSubscriptionGate(supabase);
+  if (gate.blocked) {
+    redirect(`/${locale}/suscripcion`);
+  }
+
   // F14-5 — GATE de re-consentimiento por temporada (guard SERVER-SIDE). Un tutor
   // (parent/guardian) sin T&C + Privacidad para la temporada ACTIVA no puede
   // navegar a ninguna ruta autenticada: se le redirige a la pantalla de
   // re-consentimiento (fuera de este layout, sin bucle). El staff nunca es tutor →
   // `tutor_needs_reconsent` devuelve false y no se ve afectado.
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
   const { data: needsReconsent } = await supabase.rpc('tutor_needs_reconsent', {
     p_club_id: ctx.activeClub.club.id,
   });

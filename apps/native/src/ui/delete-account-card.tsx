@@ -40,10 +40,11 @@ export function DeleteAccountCard() {
   const confirmWord = t('confirm_word');
   const canConfirm = typed.trim().toLowerCase() === confirmWord.toLowerCase() && !busy;
 
-  // Hueco reservado para la suscripción anual (spec BC.0 §8): Apple exige avisar de que
-  // borrar la cuenta NO cancela la suscripción. La clave está VACÍA a propósito en los
-  // tres idiomas porque hoy no hay suscripción y no vamos a afirmar algo falso. El día
-  // que exista se rellena y el aviso aparece solo. NO borrar la clave.
+  // SU-4 — aviso que exige Apple: borrar la cuenta NO cancela la suscripción. La clave
+  // estuvo VACÍA desde BC-4 a propósito (no había suscripción y no se iba a afirmar algo
+  // falso) y se rellenó al entrar la suscripción. El `.trim()` se queda: vacía ⇒ el
+  // aviso no se pinta, y hay un test en core que exige que NO vuelva a quedarse vacía,
+  // porque un texto que desaparece en silencio es justo lo que no se nota.
   const subscriptionNote = t('subscription_note').trim();
 
   const openDialog = async () => {

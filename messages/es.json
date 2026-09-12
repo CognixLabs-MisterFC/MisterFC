@@ -5497,6 +5497,11 @@
       "purchase": "La compra no se ha podido completar. No se te ha cobrado nada.",
       "restore": "No hemos podido comprobar tus compras. Inténtalo de nuevo.",
       "status": "No hemos podido comprobar tu suscripción."
+    },
+    "web": {
+      "pay_on_mobile_title": "La suscripción se contrata en la app del móvil",
+      "pay_on_mobile_body": "Descarga MisterFC en tu móvil, entra con este mismo correo y suscríbete desde allí. No hay pago por la web.",
+      "pay_on_mobile_then": "Una vez suscrito, podrás entrar también desde aquí: la suscripción es de tu cuenta, no del móvil."
     }
   }
 }
