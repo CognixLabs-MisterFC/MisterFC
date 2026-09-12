@@ -49,7 +49,7 @@ Cognix Labs, S.L. podrá solicitar la confirmación del tutor cuando existan ind
 
 La suscripción tiene una duración de **un (1) año** desde su contratación. El precio aplicable es el que muestra la tienda de aplicaciones en el momento de la compra, impuestos incluidos.
 
-Antes de confirmar la compra se muestran el precio total, la duración del periodo, el carácter automáticamente renovable de la suscripción, el precio de la renovación y la forma de cancelarla.
+Antes de confirmar la compra se muestran el precio total, la duración del periodo, el carácter automáticamente renovable de la suscripción y la forma de cancelarla.
 
 ### 3.5 Renovación automática
 
@@ -84,8 +84,6 @@ Las solicitudes de devolución se dirigen a la tienda, que es quien gestiona el 
 ### 3.10 Una cuenta, una suscripción
 
 La suscripción va asociada a la cuenta de usuario de MisterFC, no al club: si el usuario pertenece a varios clubes, una sola suscripción le da acceso a todos. Cada cuenta requiere su propia suscripción, incluso cuando dos personas pertenezcan a la misma familia.
-
-Esta condición se muestra al usuario antes de confirmar la compra.
 
 ### 3.11 Impago
 
@@ -136,7 +134,13 @@ Como prueba de la aceptación, Cognix Labs, S.L. registrará y conservará la id
 
 ## 6. Usuarios y cuentas
 
-**6.1 Edad mínima.** La Plataforma está dirigida exclusivamente a personas **mayores de 18 años**. Los jugadores menores de edad no disponen de cuenta propia ni acceden a la aplicación: sus datos se gestionan a través de la cuenta de su padre, madre o tutor legal.
+**6.1 Edad mínima.** El acceso a la Plataforma se produce siempre por invitación. No existe registro abierto al público.
+
+El club invita al personal técnico y a las familias. El padre, madre o tutor legal que ya dispone de cuenta puede, desde la suya, invitar al jugador a su cargo para que tenga cuenta propia, y al hacerlo autoriza expresamente su alta y su acceso a la aplicación.
+
+La cuenta de un jugador menor de edad requiere su propia suscripción, en los términos del apartado 3.3.
+
+Los datos del jugador menor son tratados en todo caso bajo la responsabilidad del club, con el consentimiento del tutor recabado en el momento del alta.
 
 **6.2 Perfiles de usuario.** Pueden disponer de cuenta el personal del club (administradores, directores, coordinadores y entrenadores), los padres, madres y tutores legales de los jugadores, los jugadores mayores de edad y los seguidores autorizados por la familia de un jugador.
 
