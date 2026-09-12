@@ -5510,6 +5510,8 @@
     "claim": "I've already subscribed",
     "claim_checking": "Checking your subscription with the store…",
     "claim_none": "We found no subscription for this account. If you have just paid, wait a moment and try again.",
-    "claim_error": "We couldn't check it right now. Please try again in a moment."
+    "claim_error": "We couldn't check it right now. Please try again in a moment.",
+    "terms_link": "Terms of Use",
+    "privacy_link": "Privacy Policy"
   }
 }

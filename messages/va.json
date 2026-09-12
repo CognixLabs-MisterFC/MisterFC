@@ -5510,6 +5510,8 @@
     "claim": "Ja m’he subscrit",
     "claim_checking": "Comprovant la teua subscripció amb la botiga…",
     "claim_none": "No hem trobat cap subscripció a nom d’este compte. Si acabes de pagar, espera un moment i torna a intentar-ho.",
-    "claim_error": "No ho hem pogut comprovar ara mateix. Torna a intentar-ho en un moment."
+    "claim_error": "No ho hem pogut comprovar ara mateix. Torna a intentar-ho en un moment.",
+    "terms_link": "Condicions d’ús",
+    "privacy_link": "Política de privacitat"
   }
 }
