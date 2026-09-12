@@ -71,6 +71,42 @@ export function isPublicRoute(segments: readonly string[]): boolean {
   return first !== undefined && PUBLIC_ROUTE_SEGMENTS.includes(first);
 }
 
+/**
+ * SU-4 — RUTAS EXENTAS DEL MURO DE PAGO: las alcanzables con sesión pero SIN
+ * suscripción. Lista cerrada y en un solo sitio, por el mismo motivo que
+ * `PUBLIC_ROUTE_SEGMENTS`: si la condición vive dentro del guard, el día que se añada
+ * una pantalla el síntoma es un BUCLE de navegación —pantalla en blanco, sin excepción,
+ * sin Sentry y sin CI en rojo.
+ *
+ * Son pocas a propósito. Decisión 3 de Jose: sin suscripción no se ve nada. Lo que
+ * queda fuera del muro no es producto:
+ *  · `suscripcion` — el muro mismo. Sin esto, redirigirse a sí mismo es el bucle.
+ *  · `cuenta-eliminada` — la confirmación terminal del borrado (ya sin sesión, pero el
+ *    orden de los guards no está garantizado y no vale jugársela).
+ *  · `login` / `seleccionar-club` — públicas; el muro nunca debe empujar hacia atrás a
+ *    quien está entrando.
+ *
+ * OJO con lo que NO está aquí: `perfil`. Borrar la cuenta tiene que seguir siendo
+ * alcanzable (Apple 5.1.1 v, toda la serie BC), y la solución NO es exentar `perfil`
+ * —eso abriría media app de familia— sino que la tarjeta de borrado vive DENTRO de la
+ * pantalla del muro.
+ */
+export const SUBSCRIPTION_EXEMPT_SEGMENTS: readonly string[] = [
+  'suscripcion',
+  'cuenta-eliminada',
+  'login',
+  'seleccionar-club',
+];
+
+/** ¿Esta ruta se puede ver sin suscripción? */
+export function isSubscriptionExemptRoute(segments: readonly string[]): boolean {
+  const first = segments[0];
+  // La raíz (`segments` vacío) está exenta: ahí vive el gatekeeper, que ya pinta el
+  // muro por su cuenta. Redirigirla sería pelearse con él.
+  if (first === undefined) return true;
+  return SUBSCRIPTION_EXEMPT_SEGMENTS.includes(first);
+}
+
 /** Barras inferiores — literal y en orden (ver ADR-0020, Decisión 7). */
 export const AREA_TABS: Record<ChromeArea, TabDef[]> = {
   // Jugador / familia (4)

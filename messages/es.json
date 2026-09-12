@@ -5458,7 +5458,7 @@
     "kept_body": "Los mensajes que escribiste se quedan con su contenido, atribuidos a un usuario eliminado. Los consentimientos que firmaste se conservan como prueba legal. El historial deportivo del jugador (partidos, asistencia, valoraciones) es del club y se conserva con su nombre.",
     "blockers_title": "Eres el único tutor de:",
     "blockers_body": "Al eliminar tu cuenta se pedirá también la supresión de sus datos, y la decidirá la dirección del club. Tu cuenta se eliminará como muy tarde en 30 días, decida lo que decida el club.",
-    "subscription_note": "",
+    "subscription_note": "Eliminar tu cuenta no cancela tu suscripción. Si tienes una activa, cancélala también en tu tienda: en iPhone, Ajustes → tu nombre → Suscripciones; en Android, Google Play → Pagos y suscripciones.",
     "confirm_label": "Escribe {word} para confirmar",
     "confirm_word": "ELIMINAR",
     "confirm": "Eliminar mi cuenta",
@@ -5477,5 +5477,26 @@
       "generic": "No se pudo completar. Inténtalo de nuevo."
     },
     "offline": "Sin conexión no se puede cancelar. Inténtalo cuando vuelvas a tener red."
+  },
+  "subscription": {
+    "title": "Suscríbete a MisterFC",
+    "body": "El acceso de las familias a MisterFC es por suscripción anual. Con ella ves el equipo de tu hijo o hija, el calendario, las convocatorias, los directos y los mensajes del club.",
+    "per_year": "al año, con renovación automática",
+    "subscribe": "Suscribirme",
+    "restore": "Restaurar compras",
+    "restore_none": "No hemos encontrado ninguna suscripción activa en esta cuenta de la tienda.",
+    "activating": "Estamos activando tu suscripción. No cierres la app.",
+    "activating_slow": "Tu pago se ha registrado, pero la activación está tardando. Vuelve a abrir la app en unos minutos o pulsa \"Restaurar compras\".",
+    "billing_issue": "Tu último pago no se pudo cobrar y el periodo de gracia ha terminado. Revisa tu método de pago en la tienda y vuelve a suscribirte.",
+    "unavailable_platform": "Todavía no se puede suscribir desde este dispositivo. Puedes suscribirte desde un iPhone o iPad y acceder luego desde aquí: la suscripción es de tu cuenta, no del móvil.",
+    "retry": "Volver a intentarlo",
+    "offline": "Sin conexión no se puede completar la compra. Inténtalo cuando vuelvas a tener red.",
+    "terms_note": "La suscripción se renueva automáticamente cada año salvo que la canceles al menos 24 horas antes de la renovación. Puedes gestionarla o cancelarla en cualquier momento desde tu cuenta de la tienda.",
+    "errors": {
+      "offering": "No hemos podido cargar el precio. Inténtalo de nuevo en un momento.",
+      "purchase": "La compra no se ha podido completar. No se te ha cobrado nada.",
+      "restore": "No hemos podido comprobar tus compras. Inténtalo de nuevo.",
+      "status": "No hemos podido comprobar tu suscripción."
+    }
   }
 }

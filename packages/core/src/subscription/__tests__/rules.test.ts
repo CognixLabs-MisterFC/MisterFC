@@ -5,6 +5,7 @@ import { STAFF_ROLES } from '../../auth/roles';
 import type { Role } from '../../auth/current-user';
 import {
   accessUntil,
+  applyClock,
   requiresSubscription,
   subscriptionStateFrom,
   type EntitlementFacts,
@@ -214,3 +215,62 @@ describe('subscriptionStateFrom', () => {
     expect(s.hasAccess).toBe(false);
   });
 });
+
+/**
+ * `applyClock` es lo que consume la nativa. Solo puede CERRAR: nunca abre algo que el
+ * servidor haya cerrado.
+ */
+describe('applyClock', () => {
+  const base = {
+    requiresSubscription: true,
+    hasAccess: true,
+    state: 'active' as const,
+    accessUntil: iso(5),
+    billingIssue: false,
+  };
+
+  it('con la fecha por delante no toca nada', () => {
+    expect(applyClock(base, NOW)).toEqual(base);
+  });
+
+  it('pasada la fecha cierra, sin esperar al servidor', () => {
+    const s = applyClock({ ...base, accessUntil: iso(-1) }, NOW);
+    expect(s.hasAccess).toBe(false);
+    expect(s.state).toBe('expired');
+  });
+
+  it('cierra la gracia en cuanto vence, y no antes', () => {
+    const grace = { ...base, state: 'grace' as const, billingIssue: true };
+    expect(applyClock(grace, NOW).hasAccess).toBe(true);
+    expect(
+      applyClock({ ...grace, accessUntil: '2026-09-11T11:59:59Z' }, NOW).hasAccess,
+    ).toBe(false);
+  });
+
+  it('a quien no paga no le vigila ninguna fecha', () => {
+    const free = {
+      requiresSubscription: false,
+      hasAccess: true,
+      state: 'staff_free' as const,
+      accessUntil: null,
+      billingIssue: false,
+    };
+    expect(applyClock(free, NOW)).toEqual(free);
+  });
+
+  it('NO reabre lo que el servidor cerró: unlinked sigue cerrado', () => {
+    const unlinked = {
+      requiresSubscription: true,
+      hasAccess: false,
+      state: 'unlinked' as const,
+      accessUntil: iso(300),
+      billingIssue: false,
+    };
+    expect(applyClock(unlinked, NOW)).toEqual(unlinked);
+  });
+
+  it('sin fecha no hay acceso', () => {
+    expect(applyClock({ ...base, accessUntil: null }, NOW).hasAccess).toBe(false);
+  });
+});
+

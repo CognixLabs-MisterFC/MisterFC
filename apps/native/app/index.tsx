@@ -9,6 +9,8 @@ import { BRAND } from '@/theme';
 import { useTranslations } from '@/locale/provider';
 import { RemovedBanner } from '@/ui/removed-banner';
 import { AccountDeletionPendingScreen } from '@/ui/account-deletion-pending';
+import { PaywallScreen } from '@/subscription/paywall';
+import { useSubscription } from '@/subscription/provider';
 
 /**
  * O2-2 — GATEKEEPER de navegación (fichero ÚNICO de enrutado por rol, patrón del
@@ -28,6 +30,7 @@ import { AccountDeletionPendingScreen } from '@/ui/account-deletion-pending';
 export default function Index() {
   const { user, loading: sessionLoading } = useSession();
   const app = useApp();
+  const subscription = useSubscription();
 
   if (sessionLoading) return <Splash />;
   if (!user) return <Redirect href="/login" />;
@@ -42,6 +45,18 @@ export default function Index() {
   // usuario leería que le ha dado de baja el club, sin ver el botón de cancelar.
   if (app.accountDeletion) {
     return <AccountDeletionPendingScreen />;
+  }
+
+  // SU-4 — el MURO va DESPUÉS del borrado de cuenta, y el orden es una decisión: quien
+  // tiene un borrado en curso ya no tiene acceso a nada y lo que necesita ver es su
+  // fecha límite y el botón de cancelar, no una pantalla que le pida 3 €. Además su
+  // suscripción puede seguir vigente: cobrarle atención por algo que ya no usa sería
+  // absurdo.
+  //
+  // `blocked` ya tiene en cuenta el flag de despliegue, el reloj, y que una lectura
+  // fallida NO bloquea (ver SubscriptionProvider).
+  if (subscription.blocked) {
+    return <PaywallScreen />;
   }
 
   if (app.kind === 'spectator') {

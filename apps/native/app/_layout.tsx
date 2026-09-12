@@ -16,6 +16,8 @@ import { LocaleProvider } from '@/locale/provider';
 import { AppProvider } from '@/auth/context';
 import { ActivePlayerProvider } from '@/auth/active-player';
 import { SessionGuard } from '@/nav/session-guard';
+import { SubscriptionGuard } from '@/nav/subscription-guard';
+import { SubscriptionProvider } from '@/subscription/provider';
 import { NotificationsProvider } from '@/notifications/notifications-provider';
 
 function RootLayout() {
@@ -30,10 +32,16 @@ function RootLayout() {
           <LocaleProvider>
             <AppProvider>
               <ActivePlayerProvider>
-                <StatusBar style="light" />
-                <SessionGuard />
-                <NotificationsProvider />
-                <Stack screenOptions={{ headerShown: false }} />
+                {/* SU-4: por debajo de AppProvider (necesita la sesión) y por encima
+                    de todo lo visible — el muro tiene que poder aparecer desde
+                    cualquier pantalla, no solo desde la raíz. */}
+                <SubscriptionProvider>
+                  <StatusBar style="light" />
+                  <SessionGuard />
+                  <SubscriptionGuard />
+                  <NotificationsProvider />
+                  <Stack screenOptions={{ headerShown: false }} />
+                </SubscriptionProvider>
               </ActivePlayerProvider>
             </AppProvider>
           </LocaleProvider>
