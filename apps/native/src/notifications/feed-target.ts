@@ -55,10 +55,16 @@ export function familyFeedTarget(type: string, payload: unknown): FamilyTarget {
     case 'training_reminder':
       // Sin event_id en el payload → a la lista de Entrenamientos (Jose).
       return { pathname: '/family/entrenamientos' };
+    // SU-6b — `subscription_expiring` va SIN destino a propósito, no por olvido:
+    // `/suscripcion` es el MURO, y enseñarle "Suscríbete" a quien ya está suscrito (que
+    // es justo quien recibe este aviso) sería peor que una fila informativa. La
+    // suscripción se gestiona en la tienda. Cuando exista una pantalla de ESTADO, este
+    // es su sitio.
     default:
       // play_approved/updated/rejected, exercise_rejected,
       // attendance_pending_reminder, training_approval_requested/approved/
-      // rejected, evaluation_campaign_launched, goal (fuera del feed) → sin destino.
+      // rejected, evaluation_campaign_launched, goal (fuera del feed),
+      // subscription_expiring → sin destino.
       return null;
   }
 }

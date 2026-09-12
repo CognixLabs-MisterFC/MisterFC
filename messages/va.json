@@ -305,7 +305,9 @@
       "player_promoted_train": "Convocat per a entrenar amb un equip superior",
       "player_promoted_train_named": "Convocat per a entrenar amb el {team}",
       "player_promoted_match": "Convocat per a jugar amb un equip superior",
-      "player_promoted_match_named": "Convocat per a jugar amb el {team}"
+      "player_promoted_match_named": "Convocat per a jugar amb el {team}",
+      "subscription_expiring": "La teua subscripció anual està a punt de véncer",
+      "subscription_expiring_billing_issue": "Hi ha un problema amb el cobrament de la teua subscripció: revisa el teu mètode de pagament en la botiga"
     },
     "welcome": "Benvingut a {club}",
     "your_role": "El teu rol ací és {role}.",
@@ -5501,7 +5503,13 @@
     "web": {
       "pay_on_mobile_title": "La subscripció es contracta en l'app del mòbil",
       "pay_on_mobile_body": "Descarrega MisterFC en el teu mòbil, entra amb aquest mateix correu i subscriu-te des d'allí. No hi ha pagament per la web.",
-      "pay_on_mobile_then": "Una vegada subscrit, podràs entrar també des d'ací: la subscripció és del teu compte, no del mòbil."
-    }
+      "pay_on_mobile_then": "Una vegada subscrit, podràs entrar també des d'ací: la subscripció és del teu compte, no del mòbil.",
+      "claim_title": "Ja m’he subscrit des del mòbil",
+      "claim_body": "Si has pagat en l’app i ací continues veient este mur, polsa i ho comprovem amb la botiga."
+    },
+    "claim": "Ja m’he subscrit",
+    "claim_checking": "Comprovant la teua subscripció amb la botiga…",
+    "claim_none": "No hem trobat cap subscripció a nom d’este compte. Si acabes de pagar, espera un moment i torna a intentar-ho.",
+    "claim_error": "No ho hem pogut comprovar ara mateix. Torna a intentar-ho en un moment."
   }
 }

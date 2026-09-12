@@ -59,6 +59,21 @@ const PAYWALL_KEYS = [
   'subscription.errors.purchase',
   'subscription.errors.restore',
   'subscription.errors.status',
+  // SU-6b — el botón de "ya me he suscrito" y sus dos respuestas.
+  'subscription.claim',
+  'subscription.claim_checking',
+  'subscription.claim_none',
+  'subscription.claim_error',
+];
+
+/**
+ * SU-6b — el aviso de vencimiento. Estas dos las pinta `notificationFeedText` desde el
+ * namespace `home.feed`, y una clave que falte se pinta como su propio nombre: la
+ * familia leería `subscription_expiring` en su lista de novedades.
+ */
+const FEED_KEYS = [
+  'home.feed.subscription_expiring',
+  'home.feed.subscription_expiring_billing_issue',
 ];
 
 describe.each(LOCALES)('catálogo %s', (locale) => {
@@ -81,6 +96,20 @@ describe.each(LOCALES)('catálogo %s', (locale) => {
     const value = get(messages, key);
     expect(typeof value, `${key} falta en ${locale}`).toBe('string');
     expect((value as string).trim().length, `${key} vacía en ${locale}`).toBeGreaterThan(0);
+  });
+
+  it.each(FEED_KEYS)('%s existe y no está vacía', (key) => {
+    const value = get(messages, key);
+    expect(typeof value, `${key} falta en ${locale}`).toBe('string');
+    expect((value as string).trim().length, `${key} vacía en ${locale}`).toBeGreaterThan(0);
+  });
+
+  // El texto del impago es el ÚNICO accionable de los dos (el otro no puede prometer si
+  // se renovará: no guardamos si la renovación automática sigue puesta). Si deja de
+  // decir dónde mirar, deja de servir para nada.
+  it('el aviso de impago dice dónde arreglarlo', () => {
+    const value = String(get(messages, 'home.feed.subscription_expiring_billing_issue'));
+    expect(value.toLowerCase()).toMatch(/tienda|store|botiga/);
   });
 });
 

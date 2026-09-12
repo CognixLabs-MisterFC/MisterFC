@@ -48,8 +48,12 @@ type SubscriptionState = {
   /** ¿Hay que enseñar el muro AHORA? Ya tiene en cuenta el flag y el reloj. */
   blocked: boolean;
   refresh: () => Promise<void>;
-  /** Tras comprar: reintenta hasta que el webhook llegue al servidor. */
-  waitForEntitlement: () => Promise<boolean>;
+  /**
+   * Tras comprar: reintenta hasta que el webhook llegue al servidor. `attempts` se
+   * pasa corto (SU-6b) cuando ya se ha reclamado al servidor y la fila TIENE que estar:
+   * ahí no hay nada que esperar, solo confirmar.
+   */
+  waitForEntitlement: (attempts?: number) => Promise<boolean>;
 };
 
 const SubscriptionContext = createContext<SubscriptionState>({
@@ -116,8 +120,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     setReloadKey((k) => k + 1);
   }, []);
 
-  const waitForEntitlement = useCallback(async (): Promise<boolean> => {
-    for (let i = 0; i < POST_PURCHASE_ATTEMPTS; i += 1) {
+  const waitForEntitlement = useCallback(async (
+    attempts: number = POST_PURCHASE_ATTEMPTS,
+  ): Promise<boolean> => {
+    for (let i = 0; i < attempts; i += 1) {
       const res = await getMySubscriptionStatusFromClient(supabase);
       if (res.ok && res.status.hasAccess) {
         setRead({ status: res.status, error: false });

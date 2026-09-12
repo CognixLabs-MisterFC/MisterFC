@@ -176,6 +176,18 @@ export function notificationFeedText(
       return t('evaluation_campaign_launched');
     case 'goal':
       return t('goal');
+    case 'subscription_expiring': {
+      // SU-6b — a la propia familia, sobre SU suscripción. El payload solo trae
+      // `access_until` y `billing_issue`; nada personal, y nada que caduque.
+      //
+      // Dos textos, y el neutro es neutro a propósito: no sabemos si la renovación
+      // automática sigue puesta (`unsubscribe_detected_at` no lo guarda ninguna columna
+      // todavía), así que el aviso sin impago no puede prometer ni que se renovará ni
+      // que se acabará. El que sí sabemos es el otro, y ese es el accionable.
+      return p?.billing_issue === true
+        ? t('subscription_expiring_billing_issue')
+        : t('subscription_expiring');
+    }
     default:
       return t('generic');
   }
