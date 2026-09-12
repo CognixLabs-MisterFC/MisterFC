@@ -1,0 +1,11 @@
+-- SU-6a · 1/2 — TIPO de notificación del aviso de vencimiento.
+--
+-- Va SOLA y ANTES de su hermana por el mismo motivo que BC-1 (migración
+-- 20261058000000): `ALTER TYPE ... ADD VALUE` **no se puede USAR en la misma
+-- transacción** en la que se añade. La hermana `20261065000000` define
+-- `notify_subscription_expiring`, cuyo cuerpo plpgsql resuelve el literal en
+-- EJECUCIÓN y por eso sí puede crearse ahí — pero cualquier INSERT directo o
+-- cualquier test que lo invoque tiene que ocurrir en otra transacción.
+--
+-- `ALTER TYPE ADD VALUE` es IRREVERSIBLE. El nombre es definitivo.
+alter type public.notification_type add value if not exists 'subscription_expiring';
