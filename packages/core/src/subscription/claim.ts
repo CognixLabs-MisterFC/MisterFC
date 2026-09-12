@@ -21,8 +21,14 @@
  *
  * Y NO ABRE NINGUNA PUERTA NUEVA: lo único que puede conceder acceso es lo que
  * RevenueCat responda. Quien no haya pagado recibe `no_entitlement` por más veces que
- * pulse. Sandbox tampoco cuela (la proyección lo marca y aquí se rechaza), igual que
- * `apply_subscription_event` rechaza los eventos de SANDBOX.
+ * pulse.
+ *
+ * SU-8b — y sobre el SANDBOX aquí ya no se decide nada. La reclamación pasa el entorno
+ * TAL CUAL a `apply_subscription_event`, que es la única función que sabe de
+ * `subscription_test_profiles` y de la ventana fija de 30 días: aplica si el perfil está
+ * designado (el revisor de Apple compra siempre en sandbox) y devuelve `sandbox` si no.
+ * Antes se cortaba en este módulo, y eso dejaba la regla escrita en dos sitios y al
+ * revisor sin su rescate.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -121,12 +127,32 @@ export async function claimSubscriptionFromClient(
     logError(new Error('subscriber ilegible'), 'claim_projection', { profileId });
     return { ok: false, raw: got.subscriber };
   }
-  if (projection.sandbox) return { ok: true, outcome: 'sandbox' };
   if (!projection.entitled) return { ok: true, outcome: 'no_entitlement' };
 
-  // ── 4a. Ya hay fila: esto es una reconciliación a petición, por el MISMO punto común
-  //       que la nocturna. Nada de una segunda regla del impago escrita aquí.
-  if (entitlement) {
+  // ── 4. SU-8b · Quién decide si una compra de SANDBOX vale: **el SQL, y solo el SQL**.
+  //
+  //      Antes se cortaba aquí. Estaba mal por dos motivos, y el segundo es el grave:
+  //        · el revisor de Apple compra SIEMPRE en sandbox, así que su reclamación —el
+  //          rescate cuando el webhook se retrasa— moría en esta línea;
+  //        · y la regla quedaba escrita en DOS sitios, uno de los cuales no sabe nada de
+  //          `subscription_test_profiles` ni de la ventana fija de 30 días.
+  //
+  //      Así que una reclamación de sandbox se manda por `apply_subscription_event`
+  //      —haya fila o no— porque es la única función que entiende de entornos: aplica si
+  //      el perfil está designado y devuelve `sandbox` si no.
+  //
+  //      Y NO se manda por la reconciliación aunque haya fila, que es lo que parecería
+  //      natural: `reconcile_subscription_entitlement` no sabe qué es un entorno, así que
+  //      escribiría las fechas del sandbox sin preguntar. Eso tendría dos efectos malos a
+  //      la vez: encogería la ventana de 30 días del revisor a la hora que dice su reloj
+  //      acelerado, y le daría a cualquiera con TestFlight una forma de mover el
+  //      vencimiento de su propia fila. Es el agujero que SU-1 cerró; no se reabre por la
+  //      puerta de al lado.
+  const sandbox = projection.sandbox;
+
+  // ── 4a. Hay fila y la compra es de producción: reconciliación a petición, por el MISMO
+  //       punto común que la nocturna. Nada de una segunda regla del impago escrita aquí.
+  if (entitlement && !sandbox) {
     const res = await applyReconciliation(admin, profileId, projection, {
       stored: entitlement.billing_issue_detected_at,
       now: now(),
@@ -140,10 +166,11 @@ export async function claimSubscriptionFromClient(
     return { ok: true, outcome: 'unlinked' };
   }
 
-  // ── 4b. No hay fila: crearla. Y se crea por `apply_subscription_event`, que es el
-  //       MISMO punto por el que entra un webhook, no un INSERT paralelo. Así este camino
-  //       hereda entera su red: no crea perfiles, no reenlaza una cuenta borrada, el
-  //       cable trampa del TRANSFER sigue puesto y la deduplicación es la PK.
+  // ── 4b. No hay fila (o la compra es de sandbox): por la INGESTA, que es el MISMO punto
+  //       por el que entra un webhook, no un INSERT paralelo. Así este camino hereda
+  //       entera su red: no crea perfiles, no reenlaza una cuenta borrada, el cable
+  //       trampa del TRANSFER sigue puesto, la deduplicación es la PK — y, desde SU-8, la
+  //       decisión sobre el sandbox y la ventana fija de 30 días.
   //
   //       `event_id` lleva la transacción de la tienda cuando la hay: dos reclamaciones
   //       de la MISMA compra son el mismo evento y la PK las cuenta como una.
@@ -155,8 +182,9 @@ export async function claimSubscriptionFromClient(
     // El instante de la LECTURA, no el de la compra: es la fecha de lo que sabemos. Con
     // la fecha de compra, un webhook posterior parecería viejo y se descartaría.
     p_event_at: new Date(nowMs).toISOString(),
-    // Sandbox ya se ha rechazado arriba; lo que queda es producción de verdad.
-    p_environment: 'PRODUCTION',
+    // Se pasa TAL CUAL lo que dijo la tienda. Aquí no se decide nada: si es sandbox y el
+    // perfil no está designado, el SQL devuelve `sandbox` y no escribe.
+    p_environment: sandbox ? 'SANDBOX' : 'PRODUCTION',
     p_store: projection.store,
     p_product_id: projection.productId,
     p_store_transaction_id: projection.storeTransactionId,
@@ -172,14 +200,10 @@ export async function claimSubscriptionFromClient(
 
   const outcome = (ingested ?? 'applied') as IngestOutcome;
   if (outcome !== 'applied') {
-    // `duplicate` = la fila la acaba de crear otra petición (o el webhook llegó justo
-    // ahora): para quien reclama, está hecho. El resto son motivos del SQL para no
-    // aplicar, y se devuelven tal cual en vez de traducirse a un éxito.
-    return {
-      ok: true,
-      outcome: outcome === 'duplicate' ? 'already_ok' : 'unlinked',
-      ingest: outcome,
-    };
+    // Cada motivo del SQL se traduce a su desenlace, uno por uno y sin cajón de sastre:
+    // desde SU-8b `sandbox` es un desenlace posible de verdad, y meterlo en el montón de
+    // «cuenta borrada» habría hecho que el muro dijera lo que no es.
+    return { ok: true, outcome: claimOutcomeFor(outcome), ingest: outcome };
   }
 
   // `apply_subscription_event` solo guarda la gracia cuando el evento es BILLING_ISSUE
@@ -189,7 +213,10 @@ export async function claimSubscriptionFromClient(
   // no había nada que sellar; y si esto fallara, lo peor que queda es una fila sin la
   // gracia apuntada, que la pasada nocturna arregla. Antes de esta petición no tenía
   // acceso ninguno, así que no se le puede quitar nada.
-  if (projection.gracePeriodExpiresAt || projection.billingIssueAt) {
+  //      Y NO se hace cuando la compra es de sandbox: la reconciliación escribiría las
+  //      fechas del sandbox y se llevaría por delante la ventana fija que el SQL acaba de
+  //      poner. Para el revisor la gracia no pinta nada; el acceso sí.
+  if (!sandbox && (projection.gracePeriodExpiresAt || projection.billingIssueAt)) {
     const res = await applyReconciliation(admin, profileId, projection, {
       stored: null,
       now: now(),
@@ -198,4 +225,32 @@ export async function claimSubscriptionFromClient(
   }
 
   return { ok: true, outcome: 'claimed', ingest: outcome };
+}
+
+/**
+ * Motivo del SQL → desenlace de la reclamación. Uno por uno a propósito: un `default`
+ * que lo mandara todo a «cuenta borrada» convertiría un `sandbox` (compra de pruebas en
+ * una cuenta perfectamente viva) en un mensaje falso.
+ */
+function claimOutcomeFor(outcome: IngestOutcome): ClaimOutcome {
+  switch (outcome) {
+    case 'applied':
+      return 'claimed';
+    // La fila la acaba de crear otra petición, o el webhook llegó justo ahora: para
+    // quien reclama, está hecho.
+    case 'duplicate':
+      return 'already_ok';
+    // Lo que tenemos es MÁS NUEVO que esta lectura (reloj torcido). No hay nada que
+    // corregir.
+    case 'stale':
+      return 'already_ok';
+    // Compra de sandbox de un perfil que no está en la lista de pruebas. No abre nada,
+    // y no es un error de nadie.
+    case 'sandbox':
+      return 'sandbox';
+    case 'deleted_profile':
+    case 'transfer_to_deleted_profile':
+    case 'unknown_profile':
+      return 'unlinked';
+  }
 }

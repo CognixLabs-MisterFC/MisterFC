@@ -154,7 +154,7 @@ Y en la misma pantalla, lo que el revisor comprueba de la lista de la Guideline 
 | **Enlace a condiciones de uso** | pie del muro (añadido en SU-7) |
 | **Enlace a política de privacidad** | pie del muro (añadido en SU-7) |
 
-### 7.2 · EL BLOQUEO · el revisor compra y NO entra
+### 7.2 · Por qué hacía falta SU-8 · RESUELTO
 
 **Apple ejecuta la compra del revisor en el SANDBOX**, aunque el build vaya firmado para
 producción. Es un caso conocido y documentado: un servidor que solo acepta recibos de
@@ -162,43 +162,56 @@ producción rechaza la compra del revisor, y la app se cae por Guideline 2.1. Re
 valida los dos entornos por su cuenta, así que **nos manda el webhook con
 `environment: SANDBOX`**.
 
-Y ahí choca con una decisión nuestra de SU-1, escrita a propósito:
+Y ahí chocaba con una decisión de SU-1, escrita a propósito: un evento que no fuera
+`PRODUCTION` no aplicaba nada. Existe por un motivo bueno —que nadie con TestFlight se
+abra la puerta de producción— pero tenía una consecuencia que no vi al escribirla: **la
+compra del revisor no concedía nada**. El revisor pagaba, el muro le decía «tu pago se ha
+registrado, pero la activación está tardando», y no entraba. Rechazo garantizado.
+
+**Resuelto en SU-8** (migración `20261066000000`, aplicada) **y SU-8b**:
+
+| Pieza | Qué hace |
+|---|---|
+| `subscription_test_profiles` | lista explícita de perfiles de prueba, con `motivo` obligatorio y `valid_until` que **caduca sola** |
+| `apply_subscription_event` | aplica un evento de SANDBOX **si y solo si** el perfil está en la lista y la designación está vigente; para cualquier otra cuenta lo registra y NO lo aplica, igual que antes |
+| ventana fija de 30 días | del sandbox **no se copia la fecha**: su reloj va acelerado (una anual renueva cada ~30-60 min y para a las ~6 veces), así que copiarla daría al revisor menos de una hora de acceso |
+| reclamación (SU-8b) | deja de decidir: pasa el entorno tal cual al SQL, así que el rescate del revisor funciona también si su webhook se retrasa |
+
+Y lo que **no** cambió, probado en pgTAP: la designación no gana a los candados de
+ADR-0022 (cuenta anonimizada, fila desenganchada y el cable trampa del TRANSFER siguen
+mandando), y una designación caducada vuelve a ser un `sandbox` normal.
+
+### 7.3 · El paso que hay que dar antes de enviar
+
+La lista **nace y vive vacía**. Hasta que el perfil del revisor esté en ella, su compra
+sigue sin conceder nada — o sea que esto no es un trámite, es el paso que hace que la
+revisión funcione:
 
 ```sql
-elsif upper(p_environment) <> 'PRODUCTION' then
-  -- Un evento de SANDBOX no puede dar acceso de producción.
-  v_reason := 'sandbox';
+-- El `profile_id` es el de la cuenta de prueba (`jovimib+familia1@gmail.com`, §2).
+-- `valid_until` con margen para toda la revisión y sus posibles reenvíos, no más.
+insert into public.subscription_test_profiles (profile_id, motivo, valid_until)
+select id, 'App Store review · envío ' || to_char(now(), 'YYYY-MM'), now() + interval '60 days'
+  from auth.users
+ where email = 'jovimib+familia1@gmail.com'
+on conflict (profile_id) do update
+  set motivo = excluded.motivo, valid_until = excluded.valid_until;
 ```
 
-Existe por un motivo bueno —que nadie con TestFlight se abra la puerta de producción— pero
-tiene una consecuencia que no vi al escribirla: **la compra del revisor no concede nada**.
-El revisor paga, el muro le dice «tu pago se ha registrado, pero la activación está
-tardando», y no entra. Rechazo garantizado.
+Y para comprobar que la designación está donde tiene que estar:
 
-Y las dos salidas que existen tampoco le valen:
+```sql
+select left(profile_id::text, 8) as perfil, motivo, valid_until > now() as vigente
+  from public.subscription_test_profiles;
+```
 
-| Salida | Por qué no sirve al revisor |
-|---|---|
-| «Restaurar compras» | reconsulta el SDK y acaba en el mismo webhook de sandbox |
-| Reclamación (SU-6b) | la proyección marca `sandbox` y devuelve `sandbox`: no escribe nada |
+> **Ojo con la cuenta de un solo uso.** Si se recrea `familia1` con
+> `seed-test-accounts.mjs` (§3), el perfil es **otro**: el `profile_id` cambia y la
+> designación vieja se queda apuntando a una cuenta anonimizada, que no aplica nada. Hay
+> que volver a ejecutar el `insert` DESPUÉS de recrearla, no antes.
 
-**Esto no se arregla con notas de revisión.** Es código.
-
-### 7.3 · Cómo se arregla (SU-8, lleva SQL)
-
-Aceptar SANDBOX **solo para perfiles designados como cuenta de prueba**, y nada más:
-
-- una lista explícita de perfiles de prueba (tabla propia o columna, lo decide el diseño);
-- `apply_subscription_event` aplica un evento de SANDBOX **si y solo si** el perfil está
-  en esa lista, y lo marca como tal en `subscription_events`;
-- todo lo demás sigue igual: para cualquier otra cuenta, SANDBOX se registra y no aplica.
-
-Con eso, la cuenta del revisor compra en sandbox y entra, y un usuario de TestFlight
-cualquiera sigue sin poder abrirse la puerta. Es una migración, así que va por el camino
-de siempre: SQL entregado, Jose aplica, implementación encima.
-
-**Mientras eso no exista, no se puede enviar la suscripción a revisión.** Es el único
-punto de SU-7 que bloquea la publicación por sí solo.
+No hace falta quitar la designación al acabar: caduca sola por `valid_until`. Quitarla
+antes de tiempo es un `DELETE` y no rompe nada.
 
 ### 7.4 · Y una cosa que el revisor va a preguntar
 
@@ -208,7 +221,7 @@ el borrado de cuenta del §1. Así que en las notas conviene decírselo antes de
 descubra: que el borrado está **dentro del muro**, alcanzable sin pagar, porque la
 Guideline 5.1.1(v) manda por encima del muro.
 
-### 7.5 · Texto para App Store Connect (cuando SU-8 esté dentro)
+### 7.5 · Texto para App Store Connect
 
 > **Notes for Review — subscription**
 >
@@ -234,8 +247,11 @@ Guideline 5.1.1(v) manda por encima del muro.
 
 ## 8 · Antes de enviar (suscripción)
 
-- [ ] **SU-8 dentro**: la compra del revisor, en sandbox, concede acceso a la cuenta de
-      prueba. Sin esto, no se envía (§7.2).
+- [ ] **El perfil del revisor, en `subscription_test_profiles`** con la designación
+      vigente (§7.3). SU-8 ya está aplicado, pero la lista nace vacía: sin esta fila, la
+      compra del revisor sigue sin conceder acceso.
+- [ ] Si se ha recreado la cuenta de prueba, la designación **rehecha** con el
+      `profile_id` nuevo.
 - [ ] Build de EAS con **`EXPO_PUBLIC_SUBSCRIPTION_GATE=on`**: con el gate apagado el muro
       es inalcanzable y Apple no encuentra la compra que tiene que revisar.
 - [ ] Build de EAS con `EXPO_PUBLIC_REVENUECAT_IOS_KEY` **y** `EXPO_PUBLIC_WEB_URL`.

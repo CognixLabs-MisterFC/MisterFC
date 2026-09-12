@@ -261,9 +261,24 @@ Dos consecuencias:
    un UUID opaco y sin PII, pero es un dato personal referido a un menor tratado en
    Estados Unidos, y eso el abogado tiene que saberlo.
 
-Lo que propongo —y es decisión de Jose, no mía—: **eximir la cuenta propia del jugador**
-cuando el jugador sea menor, porque su familia ya paga por el tutor. Eso es un cambio de
-`requires_subscription`, o sea **SQL y una migración**: no entra en SU-7.
+**DECIDIDO por Jose (2026-09-12): el menor con cuenta propia PAGA.** La regla es «todos
+pagan excepto el staff —entrenadores, coordinadores, directores y admin—», sin excepción
+por edad y sin acceso derivado del tutor. Es exactamente lo que ya está implementado en
+SU-1 y SU-2, así que **no hay nada que cambiar en el código**: propuse eximir la cuenta
+propia del jugador y la propuesta queda descartada.
+
+Lo que sigue abierto es la parte jurídica, y es la que tiene que mirar el abogado:
+
+- las tiendas exigen que quien compra sea el **titular de la cuenta y mayor de edad**, o
+  que medie **autorización parental** (en Apple, un Apple ID de menor en Family Sharing
+  solo compra con *Ask to Buy*);
+- un contrato con un menor es **anulable**;
+- y el identificador que viaja a RevenueCat —a Estados Unidos— puede ser el de un menor.
+  Sigue siendo un UUID opaco y sin PII, pero es un dato personal de un menor.
+
+Nada de eso se resuelve con código: o se acepta con el texto adecuado, o el club no da de
+alta la cuenta propia del menor. Es la única de las seis decisiones que ya tiene respuesta
+de producto y sigue esperando la legal.
 
 **〔4〕 El precio, en el texto.** He evitado escribir «3 €» en los Términos a propósito: el
 precio lo fija la tienda por país y divisa, y un número en un documento legal se queda
