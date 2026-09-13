@@ -30,7 +30,7 @@ const EXT = /\.(ts|tsx)$/;
 const CALL = 'auth.admin.inviteUserByEmail(';
 
 /**
- * CENSO (fichero → nº de llamadas). Los 7 senders viven en 6 ficheros:
+ * CENSO (fichero → nº de llamadas). Los 8 senders viven en 7 ficheros:
  *   1 sendInvitation ................ invitations/actions.ts
  *   2 sendOrRenewTutorInvitation ..... jugadores/actions.ts
  *   5 inviteBatch .................... jugadores/actions.ts  (2 en el mismo fichero)
@@ -38,6 +38,7 @@ const CALL = 'auth.admin.inviteUserByEmail(';
  *   3 inviteClubAdmin ................ lib/platform/invite-club-admin.ts
  *   4 changeClubAdmin ................ lib/platform/change-club-admin.ts
  *   7 performSpectatorInvite ......... packages/core/src/spectators/index.ts
+ *   8 performSelfInvite .............. packages/core/src/invitations/self-invite.ts
  * Si tocas esta lista, actualiza TAMBIÉN el censo de link-invited-user.ts.
  */
 const CENSUS = {
@@ -47,6 +48,7 @@ const CENSUS = {
   'apps/web/src/lib/platform/invite-club-admin.ts': 1,
   'apps/web/src/lib/platform/change-club-admin.ts': 1,
   'packages/core/src/spectators/index.ts': 1,
+  'packages/core/src/invitations/self-invite.ts': 1,
 };
 
 /** Líneas de comentario (`//`, `/*`, ` *`): el contrato y los docs citan la llamada. */

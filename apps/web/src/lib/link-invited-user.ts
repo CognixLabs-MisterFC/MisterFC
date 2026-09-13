@@ -12,7 +12,7 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   al form set_password por id y el invitee cae en la trampa (lo tapa el cinturón
  *   #539, pero se pierde el enlazado). NO basta con enviar el email.
  *
- *   Censo de senders (2026-09-03) — quien añada el 8º, que se sume aquí:
+ *   Censo de senders (2026-09-13) — quien añada el 9º, que se sume aquí:
  *     1 sendInvitation (invitations/actions.ts)      ✅ enlaza
  *     2 sendOrRenewTutorInvitation (jugadores)       ✅ enlaza
  *     3 inviteClubAdmin (platform/invite-club-admin) ✅ enlaza
@@ -20,19 +20,20 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *     5 inviteBatch (jugadores, import)              ✅ enlaza
  *     6 inviteStaffToTeam (equipos/[teamId])         ✅ enlaza
  *     7 performSpectatorInvite (core/spectators)     ✅ enlaza (puerto inyectado)
+ *     8 performSelfInvite (core/invitations)         ✅ enlaza (puerto inyectado)
  *   El barrido de #540 buscó el `.update`, no el envío, y se le escaparon 5/6/7.
  *   Para encontrarlos todos: `grep -rn inviteUserByEmail`, NO grep del update.
  *
- *   El 7 vive en `packages/core`, que NO puede importar Sentry ni este helper. Se
- *   resuelve con un PUERTO INYECTADO: `performSpectatorInvite` recibe un parámetro
- *   `link` OBLIGATORIO (tipo `LinkInvitedUser`) y el adaptador de web
- *   `lib/invite-spectator.ts` —único punto por el que pasan la Server Action y el
- *   route handler nativo— lo rellena con esta misma función. Así el guard no se
+ *   El 7 y el 8 viven en `packages/core`, que NO puede importar Sentry ni este
+ *   helper. Se resuelve con un PUERTO INYECTADO: cada uno recibe un parámetro
+ *   `link` OBLIGATORIO (tipo `LinkInvitedUser`) y su adaptador de web
+ *   (`lib/invite-spectator.ts`, `lib/invite-self.ts`) —único punto por el que pasan
+ *   la Server Action y el route handler nativo— lo rellena con esta misma función. Así el guard no se
  *   duplica y el compilador impide enviar sin traer el enlazado.
  *
  *   GUARD DE CI: `pnpm check:invite-senders` (scripts/check-invite-senders.mjs)
  *   cuenta las llamadas reales a `auth.admin.inviteUserByEmail(` y las compara con
- *   el censo. Un 8º sender rompe el PR hasta que alguien lea esto. Si tocas el
+ *   el censo. Un sender nuevo rompe el PR hasta que alguien lea esto. Si tocas el
  *   censo aquí, tócalo TAMBIÉN allí.
  *
  * ─────────────────────────────────────────────────────────────────────────────

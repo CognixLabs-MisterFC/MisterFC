@@ -5517,5 +5517,33 @@
     "claim_error": "No ho hem pogut comprovar ara mateix. Torna a intentar-ho en un moment.",
     "terms_link": "Condicions d’ús",
     "privacy_link": "Política de privacitat"
+  },
+  "invite_self": {
+    "action": "Donar accés al jugador",
+    "title": "Donar accés al jugador",
+    "description": "S'enviarà una invitació a {player} perquè entre amb el seu propi compte.",
+    "section": {
+      "title": "Accés del jugador",
+      "hint": "Pots donar-li el seu propi compte perquè entre amb el seu correu. Tu continues gestionant les seues autoritzacions d’imatge, les seues dades mèdiques i els seus drets sobre les seues dades."
+    },
+    "field": {
+      "email": "Correu del jugador",
+      "help": "Ha de ser un correu diferent del teu: és el compte del jugador, no un altre de teu."
+    },
+    "send": "Enviar invitació",
+    "cancel": "Cancel·lar",
+    "close": "Tancar",
+    "sent": "Invitació enviada a {email}.",
+    "errors": {
+      "email_invalid": "Eixe correu no és vàlid.",
+      "email_too_long": "Eixe correu és massa llarg.",
+      "forbidden": "Només el pare, mare o tutor legal del jugador pot donar-li accés.",
+      "erased": "Eixe jugador està donat de baixa.",
+      "already_linked": "Este jugador ja té el seu propi compte.",
+      "email_relation_conflict": "Eixe correu ja figura com el d’un tutor d’este jugador. El compte del jugador necessita un correu propi.",
+      "consents_required": "Abans cal respondre les autoritzacions d'imatge del jugador per a esta temporada.",
+      "no_active_season": "El club no té cap temporada activa.",
+      "generic": "No s'ha pogut enviar la invitació. Torna-ho a provar."
+    }
   }
 }

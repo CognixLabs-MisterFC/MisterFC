@@ -35,7 +35,7 @@ import { ChildSelector } from '@/ui/child-selector';
 import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { appLocale, useTranslations } from '@/locale/provider';
-import { downloadServerFile } from '@/lib/server-api';
+import { callServerEndpoint, downloadServerFile } from '@/lib/server-api';
 import { BRAND } from '@/theme';
 
 /**
@@ -119,6 +119,18 @@ export function GestionScreen() {
           online={online}
           loading={medical.loading}
         />
+        {/* MN-5 — Dar acceso al jugador. Solo cuando quien mira es el TUTOR: un
+            jugador que ya entra con su cuenta no se invita a si mismo, y la RPC se
+            lo negaria (desde MN-1 'self' no cuenta como tutor). `access.isTutor` no
+            sirve para distinguirlo — es true tambien para el jugador adulto de su
+            propia ficha —, asi que se mira la relacion del jugador activo. */}
+        {activePlayer?.relation !== 'self' ? (
+          <AccessCard
+            playerId={playerId}
+            playerName={activePlayer?.name ?? ''}
+            online={online}
+          />
+        ) : null}
         <ExportCard playerId={playerId} online={online} />
         <ErasureCard playerId={playerId} online={online} />
       </ScrollView>
@@ -542,5 +554,186 @@ function ActionButton({
         {label}
       </Text>
     </Pressable>
+  );
+}
+
+// ── Acceso del jugador (MN-5) ───────────────────────────────────────────────
+//
+// El tutor le abre al jugador su propia cuenta, y esa invitacion ES la autorizacion.
+// El formulario manda SOLO el email: la relacion la escribe la RPC en 'self' y no
+// viaja nunca desde el cliente. Mismo patron que el modal de invitar seguidor.
+//
+// La tarjeta se pinta siempre que haya tutor, sin preguntar antes si el jugador ya
+// tiene cuenta: esa respuesta puede quedar rancia entre el render y el envio, y el
+// endpoint devuelve `already_linked` con su propio texto.
+type AccessOutcome =
+  | 'ok'
+  | 'existing'
+  | 'forbidden'
+  | 'email_invalid'
+  | 'already_linked'
+  | 'email_relation_conflict'
+  | 'consents_required'
+  | 'no_active_season'
+  | 'erased'
+  | 'error';
+
+function AccessCard({
+  playerId,
+  playerName,
+  online,
+}: {
+  playerId: string;
+  playerName: string;
+  online: boolean;
+}) {
+  const t = useTranslations('');
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [outcome, setOutcome] = useState<AccessOutcome | null>(null);
+
+  const close = () => {
+    if (sending) return;
+    setEmail('');
+    setOutcome(null);
+    setOpen(false);
+  };
+
+  const submit = async () => {
+    const trimmed = email.trim();
+    if (!online || sending || !trimmed) return; // write-guard
+    setSending(true);
+    setOutcome(null);
+    try {
+      const res = await callServerEndpoint('/api/players/self-invite', {
+        method: 'POST',
+        body: { playerId, email: trimmed, locale: appLocale() },
+      });
+      let json: { status?: string; error?: string } = {};
+      try {
+        json = (await res.json()) as { status?: string; error?: string };
+      } catch {
+        json = {};
+      }
+      if (res.ok) {
+        setOutcome(json.status === 'existing' ? 'existing' : 'ok');
+      } else {
+        // El endpoint devuelve el gate por nombre; se acepta solo si lo conocemos,
+        // para que un error nuevo no acabe pintando una cadena que no existe.
+        const known: AccessOutcome[] = [
+          'forbidden',
+          'email_invalid',
+          'already_linked',
+          'email_relation_conflict',
+          'consents_required',
+          'no_active_season',
+          'erased',
+        ];
+        const got = json.error as AccessOutcome | undefined;
+        setOutcome(got && known.includes(got) ? got : 'error');
+      }
+    } catch {
+      // no_web_url / no_session / red caida
+      setOutcome('error');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const success = outcome === 'ok' || outcome === 'existing';
+  const errorKey =
+    outcome && !success
+      ? outcome === 'error'
+        ? 'invite_self.errors.generic'
+        : `invite_self.errors.${outcome}`
+      : null;
+
+  return (
+    <View className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <Text className="text-base font-bold text-[#0F1B2E]">
+        {t('invite_self.section.title')}
+      </Text>
+      <Text className="mt-1 text-sm text-zinc-600">{t('invite_self.section.hint')}</Text>
+      <Pressable
+        onPress={() => setOpen(true)}
+        disabled={!online}
+        className={`mt-3 self-start rounded-full px-4 py-2 ${
+          online ? 'bg-[#0F1B2E] active:opacity-80' : 'bg-zinc-300'
+        }`}
+      >
+        <Text className="text-sm font-semibold text-white">{t('invite_self.action')}</Text>
+      </Pressable>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
+        <View className="flex-1 items-center justify-center bg-black/50 px-6">
+          <View className="w-full max-w-md rounded-2xl bg-white p-5">
+            <Text className="text-lg font-bold text-[#0F1B2E]">
+              {t('invite_self.title')}
+            </Text>
+            {success ? (
+              <>
+                <Text className="mt-2 text-sm text-zinc-700">
+                  {t('invite_self.sent', { email: email.trim() })}
+                </Text>
+                <View className="mt-4 flex-row justify-end">
+                  <Pressable
+                    onPress={close}
+                    className="rounded-full bg-[#0F1B2E] px-4 py-2 active:opacity-80"
+                  >
+                    <Text className="text-sm font-semibold text-white">
+                      {t('invite_self.close')}
+                    </Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : (
+              <>
+                <Text className="mt-2 text-sm text-zinc-600">
+                  {t('invite_self.description', { player: playerName })}
+                </Text>
+                <Text className="mt-3 text-xs font-semibold uppercase text-zinc-500">
+                  {t('invite_self.field.email')}
+                </Text>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  editable={!sending}
+                  className="mt-1 rounded-xl border border-zinc-300 px-3 py-2 text-base text-[#0F1B2E]"
+                />
+                <Text className="mt-1 text-xs text-zinc-500">
+                  {t('invite_self.field.help')}
+                </Text>
+                {errorKey ? (
+                  <Text className="mt-2 text-sm text-red-600">{t(errorKey)}</Text>
+                ) : null}
+                <View className="mt-4 flex-row justify-end gap-2">
+                  <Pressable onPress={close} className="rounded-full px-4 py-2 active:opacity-60">
+                    <Text className="text-sm font-semibold text-zinc-600">
+                      {t('invite_self.cancel')}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={submit}
+                    disabled={sending || !online || email.trim().length === 0}
+                    className={`rounded-full px-4 py-2 ${
+                      sending || !online || email.trim().length === 0
+                        ? 'bg-zinc-300'
+                        : 'bg-[#0F1B2E] active:opacity-80'
+                    }`}
+                  >
+                    <Text className="text-sm font-semibold text-white">
+                      {t('invite_self.send')}
+                    </Text>
+                  </Pressable>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
