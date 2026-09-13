@@ -369,6 +369,8 @@ exception
 end $$;
 reset role;
 
-select 'TODOS LOS BLOQUES PASARON' as resultado;
-
 rollback;
+
+\echo '──────────────────────────────────────────────'
+\echo '✅ MN-3: alta self sin sellar lo del tutor, y las regresiones del tutor.'
+\echo '──────────────────────────────────────────────'
