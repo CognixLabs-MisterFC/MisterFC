@@ -63,7 +63,7 @@ El usuario que tenga la condición de consumidor dispone de **catorce (14) días
 
 Dado que la prestación del servicio comienza de forma inmediata a petición del usuario, quien desista después de haber comenzado a utilizarlo **abonará el importe proporcional a la parte del servicio ya prestada**, calculado sobre el precio total del periodo contratado, y se le reembolsará el resto (artículo 108.3 del texto refundido de la Ley General para la Defensa de los Consumidores y Usuarios).
 
-Para desistir basta con comunicarlo por cualquier medio que deje constancia, dirigiéndose a **info.cognixlabs@gmail.com** o empleando el formulario que figura como anexo **[X]** a estos Términos. Si la compra se realizó a través de una tienda de aplicaciones que actúa como vendedora en nombre propio, la solicitud podrá dirigirse igualmente a ella.
+Para desistir basta con comunicarlo por cualquier medio que deje constancia, dirigiéndose a **info.cognixlabs@gmail.com** o empleando el formulario que figura como anexo **1** a estos Términos. Si la compra se realizó a través de una tienda de aplicaciones que actúa como vendedora en nombre propio, la solicitud podrá dirigirse igualmente a ella.
 
 El derecho de desistimiento se refiere a la contratación inicial. Para evitar las renovaciones sucesivas debe cancelarse la suscripción conforme al apartado 3.7.
 
@@ -258,6 +258,38 @@ Si alguna cláusula de estos Términos fuera declarada nula o inaplicable, dicha
 Los presentes Términos y Condiciones se rigen por la legislación española.
 
 Para la resolución de cualquier controversia, las partes se someten a los Juzgados y Tribunales de Valencia, renunciando expresamente a cualquier otro fuero. Cuando el usuario tenga la condición legal de consumidor, será de aplicación el fuero que legalmente le corresponda.
+
+## ANEXO 1 · MODELO DE FORMULARIO DE DESISTIMIENTO
+
+(solo debe cumplimentar y enviar este formulario si desea desistir del contrato)
+
+**A la atención de:**
+
+Cognix Labs, S.L.
+
+CIF B-93996122
+
+Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España)
+
+info.cognixlabs@gmail.com
+
+Por la presente le comunico que desisto de mi contrato de prestación del siguiente servicio:
+
+**Suscripción anual de acceso a MisterFC**
+
+Contratado el: ............................................................
+
+Nombre del consumidor y usuario: ............................................................
+
+Domicilio del consumidor y usuario: ............................................................
+
+Correo electrónico de la cuenta MisterFC: ............................................................
+
+Firma (solo si este formulario se presenta en papel):
+
+............................................................
+
+Fecha: ............................................................
 
 ---
 
