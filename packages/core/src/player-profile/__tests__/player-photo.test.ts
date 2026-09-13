@@ -55,7 +55,7 @@ describe('clearPlayerPhotoFromClient', () => {
     const { sb, calls } = makeClient(null, { current: previo });
     const r = await clearPlayerPhotoFromClient(sb, PLAYER);
     expect(r).toEqual({ ok: true });
-    expect(calls.rpc[0][0]).toBe('set_player_photo');
+    expect(calls.rpc[0]?.[0]).toBe('set_player_photo');
     expect(calls.removed).toEqual([['player-photos', previo]]);
   });
 
