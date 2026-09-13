@@ -186,6 +186,10 @@ end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- [7] El correo de un TUTOR del jugador no vale
+--
+-- Desde MN-4 el predicado no vive aqui: `invite_player_self` llama a
+-- `player_email_relation_conflict`, que es tambien lo que aplica el trigger de
+-- `invitations`, y el error pasa a llamarse `email_relation_conflict`.
 -- ─────────────────────────────────────────────────────────────────────────────
 do $$
 begin
@@ -194,8 +198,8 @@ begin
 exception
   when sqlstate 'P0001' then
     if sqlerrm like 'FAIL %' then raise; end if;
-    if sqlerrm not like '%email_is_tutor%' then
-      raise exception 'FAIL [7]: esperaba email_is_tutor, dio: %', sqlerrm;
+    if sqlerrm not like '%email_relation_conflict%' then
+      raise exception 'FAIL [7]: esperaba email_relation_conflict, dio: %', sqlerrm;
     end if;
 end $$;
 
