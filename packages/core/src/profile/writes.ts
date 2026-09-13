@@ -158,9 +158,44 @@ export type AvatarPathResult =
   | { success: false; error: 'invalid_path' | 'generic' };
 
 /**
+ * Elimina un objeto del bucket de avatares, BEST-EFFORT.
+ *
+ * Va DESPUÉS de que la columna ya esté escrita y nunca tumba la operación: si el
+ * borrado falla, lo que el usuario pidió (quitar o cambiar la foto) ya está hecho y lo
+ * único que queda es un objeto huérfano. Mismo criterio que el borrado de la foto en
+ * `decidePlayerErasureFromClient`.
+ *
+ * No hace falta service-role: la política `profile_avatars_delete_own` deja a cada
+ * usuario borrar lo que cuelga de su propia carpeta.
+ */
+async function removeAvatarObject(supabase: DbClient, path: string | null): Promise<void> {
+  if (!path) return;
+  try {
+    await supabase.storage.from('profile-avatars').remove([path]);
+  } catch {
+    // Huérfano en el bucket, nada más. La columna ya está bien.
+  }
+}
+
+/** Ruta que tiene guardada el avatar ahora mismo (para poder borrar el objeto viejo). */
+async function currentAvatarPath(supabase: DbClient, userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('avatar_url')
+    .eq('id', userId)
+    .maybeSingle();
+  // Si no se puede leer, NO se borra nada: preferimos un huérfano a borrar de más.
+  if (error) return null;
+  return data?.avatar_url ?? null;
+}
+
+/**
  * Persiste la ruta del avatar tras subirlo al bucket. Defensa en profundidad: el
  * path DEBE colgar de `<userId>/` (la RLS de storage ya lo impuso al subir) y no
  * exceder 200 (CHECK de `profiles.avatar_url`).
+ *
+ * Cambiar de foto sube un objeto NUEVO (nombre con uuid), así que el anterior se
+ * queda en el bucket si nadie lo retira: se retira aquí.
  */
 export async function updateAvatarPathFromClient(
   supabase: DbClient,
@@ -170,23 +205,33 @@ export async function updateAvatarPathFromClient(
   if (!path.startsWith(`${userId}/`) || path.length > 200) {
     return { success: false, error: 'invalid_path' };
   }
+  const previous = await currentAvatarPath(supabase, userId);
   const { error } = await supabase
     .from('profiles')
     .update({ avatar_url: path })
     .eq('id', userId);
   if (error) return { success: false, error: 'generic' };
+  // Solo si de verdad cambió: volver a guardar la MISMA ruta no debe borrar la foto.
+  if (previous && previous !== path) await removeAvatarObject(supabase, previous);
   return { success: true, path };
 }
 
-/** Borra el path del avatar (`avatar_url` → NULL). No elimina el objeto del bucket. */
+/**
+ * Quita el avatar: `avatar_url` → NULL **y** borra el objeto del bucket.
+ *
+ * La pantalla dice "quitar foto" y quien la pulsa entiende que la foto desaparece; si
+ * solo se desreferenciaba, el fichero seguía vivo en Storage.
+ */
 export async function clearAvatarPathFromClient(
   supabase: DbClient,
   userId: string,
 ): Promise<AvatarPathResult> {
+  const previous = await currentAvatarPath(supabase, userId);
   const { error } = await supabase
     .from('profiles')
     .update({ avatar_url: null })
     .eq('id', userId);
   if (error) return { success: false, error: 'generic' };
+  await removeAvatarObject(supabase, previous);
   return { success: true, path: '' };
 }

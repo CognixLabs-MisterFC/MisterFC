@@ -138,8 +138,41 @@ export async function signPlayerPhotoFromClient(
   return data?.signedUrl ?? null;
 }
 
+/**
+ * Elimina un objeto del bucket de fotos, BEST-EFFORT.
+ *
+ * Va DESPUÉS de la RPC y nunca la revierte: si el borrado falla, lo que el tutor pidió
+ * ya está aplicado y solo queda un huérfano. Mismo criterio que `decidePlayerErasureFromClient`,
+ * que también borra el objeto fuera de la transacción porque `storage.protect_delete`
+ * impide hacerlo por SQL.
+ *
+ * No hace falta service-role: `player_photos_delete_tutor` deja borrar al mismo tutor
+ * que ya puede subir y reemplazar.
+ */
+async function removePhotoObject(supabase: DbClient, path: string | null): Promise<void> {
+  if (!path) return;
+  try {
+    await supabase.storage.from('player-photos').remove([path]);
+  } catch {
+    // Huérfano en el bucket, nada más. La columna ya está bien.
+  }
+}
+
+/** Ruta que tiene guardada la foto ahora mismo (para poder borrar el objeto viejo). */
+async function currentPhotoPath(supabase: DbClient, playerId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('players')
+    .select('photo_url')
+    .eq('id', playerId)
+    .maybeSingle();
+  // Si no se puede leer, NO se borra nada: preferimos un huérfano a borrar de más.
+  if (error) return null;
+  return data?.photo_url ?? null;
+}
+
 /** Persiste la ruta de la foto tras subirla al bucket (RPC `set_player_photo`, gate tutor).
- * Valida que el path cuelga de `<playerId>/` (defensa; la RLS de storage ya lo impone). */
+ * Valida que el path cuelga de `<playerId>/` (defensa; la RLS de storage ya lo impone).
+ * Cambiar de foto sube un objeto NUEVO, así que el anterior se retira aquí. */
 export async function setPlayerPhotoPathFromClient(
   supabase: DbClient,
   playerId: string,
@@ -148,23 +181,35 @@ export async function setPlayerPhotoPathFromClient(
   if (!path || !path.startsWith(`${playerId}/`) || path.length > 200) {
     return { error: 'forbidden' };
   }
+  const previous = await currentPhotoPath(supabase, playerId);
   const { error } = await supabase.rpc('set_player_photo', {
     p_player_id: playerId,
     p_path: path,
   });
-  return mapWriteError(error);
+  const result = mapWriteError(error);
+  // Solo si la RPC fue bien y la ruta CAMBIÓ.
+  if (!error && previous && previous !== path) await removePhotoObject(supabase, previous);
+  return result;
 }
 
-/** Retira la foto (photo_url → NULL). También exclusivo del tutor (misma RPC con path NULL). */
+/**
+ * Retira la foto: `photo_url` → NULL **y** borra el objeto del bucket.
+ *
+ * La pantalla dice "quitar foto" y quien la pulsa entiende que la foto desaparece; si
+ * solo se desreferenciaba, el fichero seguía vivo en Storage.
+ */
 export async function clearPlayerPhotoFromClient(
   supabase: DbClient,
   playerId: string,
 ): Promise<SensitiveWriteResult> {
+  const previous = await currentPhotoPath(supabase, playerId);
   const { error } = await supabase.rpc('set_player_photo', {
     p_player_id: playerId,
     p_path: null as unknown as string,
   });
-  return mapWriteError(error);
+  const result = mapWriteError(error);
+  if (!error) await removePhotoObject(supabase, previous);
+  return result;
 }
 
 // ── Derecho al olvido (SOLICITUD) ───────────────────────────────────────────────

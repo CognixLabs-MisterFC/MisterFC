@@ -1410,7 +1410,7 @@
       },
       "attendance": {
         "present_pct": "attendance",
-        "total": "{count} trainings recorded",
+        "total": "{count, plural, one {# training recorded} other {# trainings recorded}}",
         "bucket": {
           "present": "Present",
           "justified": "Justified absence",
@@ -2129,7 +2129,8 @@
         "9": "October",
         "10": "November",
         "11": "December"
-      }
+      },
+      "long": "{weekday}, {day} {month}"
     },
     "season": {
       "tabs": {
@@ -2697,7 +2698,7 @@
     "range_season": "Current season",
     "empty": "No attendance records yet",
     "pct_present": "Attendance",
-    "total": "{n} training sessions recorded",
+    "total": "{n, plural, one {# training session recorded} other {# training sessions recorded}}",
     "breakdown": "Breakdown",
     "justified": "Justified",
     "family_title": "Attendance"
