@@ -1,4 +1,4 @@
--- MN-2 — la invitacion del TUTOR a su hijo (migracion 20261068000000). Cubre:
+-- MN-2 — la invitacion del TUTOR a su hijo (migracion 20261069000000). Cubre:
 --   [1]  El CHECK admite 'self' y sigue rechazando cualquier otra cosa.
 --   [2]  El TUTOR invita: se crea la invitacion con role='jugador' y relation='self'.
 --   [3]  LA PRECONDICION: sin las decisiones de imagen de la temporada activa, no se
