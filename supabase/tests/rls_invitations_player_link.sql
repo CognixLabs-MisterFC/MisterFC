@@ -8,7 +8,8 @@
 --       · jugador sin player_id ni relation → OK (jugador adulto auto-invitándose).
 --   T1. Trigger same_club: invitation con player_id de OTRO club → falla.
 --   T2. Trigger same_club: invitation con player_id del mismo club → OK.
---   X1. Relation inválida (self) → falla por CHECK de columna.
+--   X1. relation='self' → OK desde MN-2 (la cuenta propia del menor).
+--   X2. Relation inventada → falla por CHECK de columna.
 
 begin;
 
@@ -103,19 +104,32 @@ exception when others then
   raise exception 'FAIL [T2]: same-club player_id no debería fallar: %', sqlerrm;
 end $$;
 
--- X1: relation='self' → CHECK de columna rechaza (solo parent/guardian)
+-- X1: el CHECK de columna, tras MN-2. Hasta MN-2 este bloque afirmaba lo contrario
+-- —que 'self' se rechazaba— porque hasta MN-2 no existía la cuenta propia del menor.
+-- Lo que el bloque mide no ha cambiado: que el CHECK deja pasar exactamente las
+-- relaciones del catálogo y ni una más. Lo que ha cambiado es el catálogo.
+do $$
+begin
+  insert into public.invitations (email, club_id, role, player_id, player_relation)
+  values ('self@x.test', 'eeeeeeee-e0e0-e0e0-e0e0-e0e0e0e0e0e0', 'jugador',
+          '00000000-aaaa-2222-0000-000000000001', 'self');
+exception when others then
+  raise exception 'FAIL [X1]: relation=self debería aceptarse desde MN-2: %', sqlerrm;
+end $$;
+
+-- X2: y sigue rechazando cualquier cosa fuera del catálogo.
 do $$
 declare ok boolean := false;
 begin
   begin
     insert into public.invitations (email, club_id, role, player_id, player_relation)
-    values ('self@x.test', 'eeeeeeee-e0e0-e0e0-e0e0-e0e0e0e0e0e0', 'jugador',
-            '00000000-aaaa-2222-0000-000000000001', 'self');
+    values ('primo@x.test', 'eeeeeeee-e0e0-e0e0-e0e0-e0e0e0e0e0e0', 'jugador',
+            '00000000-aaaa-2222-0000-000000000001', 'primo');
   exception when check_violation then
     ok := true;
   end;
   if not ok then
-    raise exception 'FAIL [X1]: relation=self no debería aceptarse';
+    raise exception 'FAIL [X2]: una relación inventada no debería aceptarse';
   end if;
 end $$;
 
