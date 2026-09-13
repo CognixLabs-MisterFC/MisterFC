@@ -1410,7 +1410,7 @@
       },
       "attendance": {
         "present_pct": "presencia",
-        "total": "{count} entrenos registrados",
+        "total": "{count, plural, one {# entreno registrado} other {# entrenos registrados}}",
         "bucket": {
           "present": "Presente",
           "justified": "Falta justificada",
@@ -2129,7 +2129,8 @@
         "9": "octubre",
         "10": "noviembre",
         "11": "diciembre"
-      }
+      },
+      "long": "{weekday}, {day} de {month}"
     },
     "season": {
       "tabs": {
@@ -2697,7 +2698,7 @@
     "range_season": "Temporada actual",
     "empty": "Sin registros de asistencia todavía",
     "pct_present": "Presencia",
-    "total": "{n} entrenos registrados",
+    "total": "{n, plural, one {# entreno registrado} other {# entrenos registrados}}",
     "breakdown": "Desglose",
     "justified": "Justificada",
     "family_title": "Asistencia"

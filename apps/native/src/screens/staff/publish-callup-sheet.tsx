@@ -16,6 +16,7 @@ import {
 } from '@misterfc/core';
 import { callServerEndpoint } from '@/lib/server-api';
 import { useTranslations } from '@/locale/provider';
+import { formatLongDate } from '@/lib/format-date';
 
 /**
  * O2-7b-2 — Hoja de PUBLICAR convocatoria (staff, nativo). Opción 1: el móvil publica
@@ -89,11 +90,7 @@ export function PublishCallupSheet({
     const d = new Date(matchStartsAt);
     return Number.isNaN(d.getTime())
       ? ''
-      : d.toLocaleDateString(undefined, {
-          weekday: 'long',
-          day: 'numeric',
-          month: 'long',
-        });
+      : formatLongDate(t, matchStartsAt);
   })();
 
   async function submit() {

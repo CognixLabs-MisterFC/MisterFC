@@ -16,22 +16,13 @@ import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { familyEventTarget, type FamilyTarget } from '@/notifications/feed-target';
+import { formatBigDate } from '@/lib/format-date';
 
 /** Traducción con la firma del hook `useTranslations('')` (namespace raíz). */
 type T = (key: string, values?: Record<string, string>) => string;
 
 /** Tipos de evento que son "partido" (llevan rival). */
 const MATCH_TYPES = new Set(['match', 'friendly', 'tournament']);
-
-/**
- * Fecha en grande y legible, con nombres del CATÁLOGO (es/en/va): la app nunca usa
- * el idioma del dispositivo, así que no vale `toLocaleDateString(undefined)`.
- * getDay()/getMonth() en hora local, coherente con el resto de la app.
- */
-function formatBigDate(t: T, iso: string): string {
-  const d = new Date(iso);
-  return `${t(`calendario.date.weekday.${d.getDay()}`)} ${d.getDate()} ${t(`calendario.date.month.${d.getMonth()}`)}`;
-}
 
 /** Hora HH:MM (formato numérico del dispositivo: respeta 12/24h). */
 function formatTime(iso: string): string {

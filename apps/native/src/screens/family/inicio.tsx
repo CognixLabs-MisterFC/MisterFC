@@ -26,6 +26,7 @@ import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
 import { ChildSelector } from '@/ui/child-selector';
 import { useTranslations } from '@/locale/provider';
+import { formatEventWhen } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 import { familyEventTarget, familyFeedTarget, type FamilyTarget } from '@/notifications/feed-target';
 
@@ -43,14 +44,6 @@ const TYPE_ICON: Record<string, string> = {
   tournament: '🏆',
   other: '📌',
 };
-
-/** "Viernes, 21 de agosto · 18:00" — fecha (primera letra en mayúscula) + hora. */
-function formatEventWhen(iso: string): string {
-  const d = new Date(iso);
-  const date = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
-  const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-  return `${date.charAt(0).toUpperCase()}${date.slice(1)} · ${time}`;
-}
 
 /**
  * Tarjeta ANCHA del próximo evento (Punto 6). Mismo diseño de siempre; lo único
@@ -101,7 +94,7 @@ function NextEventCard({
             </Text>
           </View>
           <Text className="mt-2 text-base font-semibold text-[#0F1B2E] tabular-nums">
-            {formatEventWhen(event.starts_at)}
+            {formatEventWhen(t, event.starts_at)}
           </Text>
           {event.teamName ? (
             <Text className="text-sm text-zinc-500">{event.teamName}</Text>
