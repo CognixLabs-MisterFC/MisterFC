@@ -3,8 +3,9 @@
  * vuelo, el PDF del expediente de su hijo. Descarga inmediata (sin solicitud ni
  * aprobación), auditada con UNA entrada 'data.export'.
  *
- * Modelo de identidad (regla 1): TUTOR = player_accounts (parent/guardian), vía
- * `user_is_tutor_of_player` — NO el rol de club ni staff. Alineado con F14-6/7.
+ * Modelo de identidad (regla 1): la superficie RESERVADA de MN-1, vía
+ * `user_manages_player_sensitive` — tutor vinculado (parent/guardian), o el propio
+ * jugador SI ya es mayor de edad. NO el rol de club ni staff. Alineado con F14-6/7.
  * A diferencia de /jugadores/[id]/pdf (staff ∪ player_accounts) y de
  * /informes/[period]/pdf (staff ∪ role='jugador'): aquí SOLO el tutor.
  *
@@ -106,12 +107,19 @@ export async function GET(
     return new Response('Not found', { status: 404 });
   }
 
-  // Guard estricto de identidad (regla 1): SOLO el tutor. Ni staff, ni dirección,
-  // ni el propio jugador (relation='self'). Fuga cero → 404, no 403.
-  const { data: isTutor } = await supabase.rpc('user_is_tutor_of_player', {
+  // Guard estricto de identidad: ni staff ni dirección. Fuga cero → 404, no 403.
+  //
+  // MN-6 — se pregunta por `user_manages_player_sensitive`, que es EXACTAMENTE lo
+  // que exige `record_data_export` doce líneas más abajo. Antes se preguntaba por
+  // `user_is_tutor_of_player` y las dos comprobaciones ya no decían lo mismo: MN-1
+  // estrechó ese helper a parent/guardian, así que la puerta de aquí negaba al
+  // jugador ADULTO un expediente que la RPC sí le concede. Con el helper correcto,
+  // el menor con cuenta propia sigue fuera —es uno de los cuatro bloques que Jose
+  // reserva al tutor— y al cumplir 18 se le abre solo, sin tocar nada.
+  const { data: canExport } = await supabase.rpc('user_manages_player_sensitive', {
     p_player_id: playerId,
   });
-  if (!isTutor) return new Response('Not found', { status: 404 });
+  if (!canExport) return new Response('Not found', { status: 404 });
 
   // ── Auditoría (regla 8): UNA entrada data.export, ANTES de servir el PDF. La
   //    escritura en audit_log va por RPC SECURITY DEFINER (tabla cerrada al cliente).

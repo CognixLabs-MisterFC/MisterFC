@@ -45,23 +45,77 @@ function mockClient(cfg: {
 }
 
 describe('C2 · gates de gestión', () => {
-  it('deriva isTutor y canWriteMedical de las dos RPC', async () => {
+  // MN-6 — los gates son el espejo del reparto de MN-1: `user_manages_player` para
+  // la superficie COMPARTIDA y `user_manages_player_sensitive` para la RESERVADA.
+  it('el TUTOR tiene las dos superficies', async () => {
     const sb = mockClient({
       rpc: {
-        user_is_tutor_of_player: { data: true },
-        user_has_medical_consent_write: { data: false },
+        user_manages_player: { data: true },
+        user_manages_player_sensitive: { data: true },
+        user_has_medical_consent_write: { data: true },
       },
     });
     expect(await getPlayerManagementAccessFromClient(sb, 'P1')).toEqual({
-      isTutor: true,
+      canManage: true,
+      canManageSensitive: true,
+      canWriteMedical: true,
+    });
+  });
+
+  // El caso que da nombre a MN-6: el menor con cuenta propia gestiona su foto y no
+  // ve médica, expediente ni supresión.
+  it('el MENOR self tiene la compartida y NO la reservada', async () => {
+    const sb = mockClient({
+      rpc: {
+        user_manages_player: { data: true },
+        user_manages_player_sensitive: { data: false },
+        user_has_medical_consent_write: { data: true },
+      },
+    });
+    expect(await getPlayerManagementAccessFromClient(sb, 'P1')).toEqual({
+      canManage: true,
+      canManageSensitive: false,
+      // El consentimiento por sí solo NO abre la médica: sin superficie reservada
+      // no hay escritura, y `set_player_medical` exige las dos cosas.
       canWriteMedical: false,
     });
   });
 
-  it('no-tutor → ambos false', async () => {
+  // La regresión que MN-1 dejó suelta: el jugador ADULTO de su propia ficha, que es
+  // para lo que existe la 20261038. El SQL se lo permitía; la interfaz no se lo pintaba.
+  it('el jugador ADULTO self conserva las dos superficies', async () => {
+    const sb = mockClient({
+      rpc: {
+        user_manages_player: { data: true },
+        user_manages_player_sensitive: { data: true },
+        user_has_medical_consent_write: { data: true },
+      },
+    });
+    const access = await getPlayerManagementAccessFromClient(sb, 'P1');
+    expect(access.canManageSensitive).toBe(true);
+    expect(access.canWriteMedical).toBe(true);
+  });
+
+  it('sin consentimiento médico, la reservada sigue abierta pero la médica no', async () => {
+    const sb = mockClient({
+      rpc: {
+        user_manages_player: { data: true },
+        user_manages_player_sensitive: { data: true },
+        user_has_medical_consent_write: { data: false },
+      },
+    });
+    expect(await getPlayerManagementAccessFromClient(sb, 'P1')).toEqual({
+      canManage: true,
+      canManageSensitive: true,
+      canWriteMedical: false,
+    });
+  });
+
+  it('quien no está vinculado no tiene ninguna', async () => {
     const sb = mockClient({ rpc: {} });
     expect(await getPlayerManagementAccessFromClient(sb, 'P1')).toEqual({
-      isTutor: false,
+      canManage: false,
+      canManageSensitive: false,
       canWriteMedical: false,
     });
   });

@@ -75,6 +75,7 @@ export default async function PerfilPage({ params, searchParams }: Props) {
     myPlayers.find((p) => p.id === playerParam) ?? myPlayers[0] ?? null;
 
   // Datos por-player del activo (foto + gates de gestión). Solo si hay player.
+  let canManageSensitive = false;
   let playerPhotoPath: string | null = null;
   let playerPhotoSignedUrl: string | null = null;
   let playerInitials = '';
@@ -103,13 +104,20 @@ export default async function PerfilPage({ params, searchParams }: Props) {
       playerPhotoSignedUrl = signed?.signedUrl ?? null;
     }
 
-    // Gate de gestión por-player (foto, expediente, olvido): user_is_tutor_of_player
-    // — desde la extensión self acepta relation parent/guardian/self (el propio
-    // jugador adulto gestiona lo suyo). La médica exige ADEMÁS consentimiento vigente.
+    // MN-6 — los gates son TRES porque en la base de datos son tres, y cada bloque
+    // de esta pantalla pregunta por el que gobierna SU RPC:
+    //   foto        → `set_player_photo`      → user_manages_player        (COMPARTIDA)
+    //   médica      → `set_player_medical`    → user_manages_player_sensitive + consent
+    //   expediente  → `record_data_export`    → user_manages_player_sensitive
+    //   supresión   → `request_player_erasure`→ user_manages_player_sensitive
+    // Antes los cuatro colgaban de un único `isTutor`, así que el menor con cuenta
+    // propia veía botones que el SQL le iba a denegar — y el jugador ADULTO se
+    // quedaba sin los suyos, que el SQL sí le permite.
     // O2-5 C2 — los gates + la lectura médica viven en core (mismo criterio).
     const access = await getPlayerManagementAccessFromClient(supabase, activePlayer.id);
-    canManagePhoto = access.isTutor;
-    canManageMedical = access.isTutor && access.canWriteMedical;
+    canManagePhoto = access.canManage;
+    canManageSensitive = access.canManageSensitive;
+    canManageMedical = access.canWriteMedical;
     if (canManageMedical) {
       medicalInitial = await getPlayerMedicalFromClient(supabase, activePlayer.id);
     }
@@ -226,8 +234,9 @@ export default async function PerfilPage({ params, searchParams }: Props) {
             </Card>
           )}
 
-          {/* Descargar expediente (derecho de acceso, PDF). */}
-          {canManagePhoto && (
+          {/* Descargar expediente (derecho de acceso, PDF). RESERVADA:
+              `record_data_export` exige user_manages_player_sensitive. */}
+          {canManageSensitive && (
             <Card>
               <CardHeader>
                 <CardTitle>{tMiFicha('data_export.title')}</CardTitle>
@@ -246,8 +255,9 @@ export default async function PerfilPage({ params, searchParams }: Props) {
             </Card>
           )}
 
-          {/* Derecho al olvido: solicita la supresión del player. */}
-          {canManagePhoto && (
+          {/* Derecho al olvido: solicita la supresión del player. RESERVADA:
+              `request_player_erasure` exige user_manages_player_sensitive. */}
+          {canManageSensitive && (
             <Card>
               <CardHeader>
                 <CardTitle>{tErasure('card_title')}</CardTitle>

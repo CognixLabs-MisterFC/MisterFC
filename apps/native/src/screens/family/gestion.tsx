@@ -44,6 +44,12 @@ import { BRAND } from '@/theme';
  * consentimiento) y derecho al olvido (SOLICITUD irreversible). Todas las escrituras
  * pasan por RPC SECURITY DEFINER de core; el write-guard bloquea sin conexión.
  *
+ * MN-6 — esta pantalla la abre también el JUGADOR con cuenta propia, y ve lo que le
+ * corresponde: la foto (superficie COMPARTIDA) sí; médica, expediente y supresión no
+ * mientras sea menor (superficie RESERVADA). Cada tarjeta pregunta por el helper que
+ * gobierna SU RPC, no por uno común: ofrecer un botón que el SQL va a denegar es el
+ * defecto que MN-6 viene a quitar.
+ *
  * La FOTO no se cachea (se firma online, ver PlayerAvatar). La MÉDICA sí se cachea
  * (secure-store cifrado, player-scoped). El EXPEDIENTE PDF es server-only (route
  * handler con sesión cookie + auditoría): aquí queda DESHABILITADO ("próximamente").
@@ -74,12 +80,19 @@ export function GestionScreen() {
   if (!playerId) return <EmptyState message={t('child.none')} />;
   if (access.loading) return <LoadingScreen />;
 
-  const isTutor = access.data?.isTutor ?? false;
+  // MN-6 — dos superficies, no una. `canManage` es la COMPARTIDA (foto: lo que el
+  // menor con cuenta propia SÍ hace) y `canManageSensitive` la RESERVADA (médica,
+  // expediente y supresión: los bloques que Jose deja al tutor mientras el jugador
+  // sea menor). Antes las cuatro tarjetas colgaban de un único `isTutor`, así que o
+  // se veían todas o no se veía la pantalla.
+  const canManage = access.data?.canManage ?? false;
+  const canManageSensitive = access.data?.canManageSensitive ?? false;
   const canWriteMedical = access.data?.canWriteMedical ?? false;
   const fromCache = access.fromCache || medical.fromCache || photo.fromCache;
   const initials = (activePlayer?.name ?? '').trim().slice(0, 2);
 
-  if (!isTutor) {
+  // La pantalla entera cuelga de la COMPARTIDA: sin ella no hay ni foto que tocar.
+  if (!canManage) {
     return (
       <View className="flex-1 bg-white">
         <EmptyState message={t('gestion.not_tutor')} />
@@ -111,19 +124,24 @@ export function GestionScreen() {
           online={online}
           onChanged={photo.refresh}
         />
-        <MedicalCard
-          key={playerId}
-          playerId={playerId}
-          initial={medical.data ?? null}
-          canWrite={canWriteMedical}
-          online={online}
-          loading={medical.loading}
-        />
+        {/* RESERVADA — `set_player_medical` y la lectura por `get_player_medical`
+            exigen user_manages_player_sensitive. Al menor con cuenta propia no se
+            le pinta: el SQL se lo negaría y no se ofrece lo que va a fallar. */}
+        {canManageSensitive ? (
+          <MedicalCard
+            key={playerId}
+            playerId={playerId}
+            initial={medical.data ?? null}
+            canWrite={canWriteMedical}
+            online={online}
+            loading={medical.loading}
+          />
+        ) : null}
         {/* MN-5 — Dar acceso al jugador. Solo cuando quien mira es el TUTOR: un
             jugador que ya entra con su cuenta no se invita a si mismo, y la RPC se
-            lo negaria (desde MN-1 'self' no cuenta como tutor). `access.isTutor` no
-            sirve para distinguirlo — es true tambien para el jugador adulto de su
-            propia ficha —, asi que se mira la relacion del jugador activo. */}
+            lo negaria. Ninguno de los dos gates de arriba sirve para distinguirlo
+            —`canManage` es true para el propio jugador y `canManageSensitive` lo es
+            para el jugador adulto—, asi que se mira la relacion del jugador activo. */}
         {activePlayer?.relation !== 'self' ? (
           <AccessCard
             playerId={playerId}
@@ -131,8 +149,14 @@ export function GestionScreen() {
             online={online}
           />
         ) : null}
-        <ExportCard playerId={playerId} online={online} />
-        <ErasureCard playerId={playerId} online={online} />
+        {/* RESERVADAS — `record_data_export` y `request_player_erasure`, las dos
+            sobre user_manages_player_sensitive. */}
+        {canManageSensitive ? (
+          <>
+            <ExportCard playerId={playerId} online={online} />
+            <ErasureCard playerId={playerId} online={online} />
+          </>
+        ) : null}
       </ScrollView>
     </View>
   );

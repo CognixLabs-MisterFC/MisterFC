@@ -152,6 +152,18 @@ export type DatabaseOverrides = {
         Args: { p_player_id: string; p_email: string };
         Returns: { id: string; token: string; email: string }[];
       };
+
+      // MN-6 — los dos helpers de MN-1, por el mismo motivo y con la misma fecha de
+      // caducidad: `database.ts` es anterior a la migración y regenerarlo con el CLI
+      // pineado rompe el typecheck de core. Firmas tomadas de la definición viva.
+      user_manages_player: {
+        Args: { p_player_id: string };
+        Returns: boolean;
+      };
+      user_manages_player_sensitive: {
+        Args: { p_player_id: string };
+        Returns: boolean;
+      };
     };
   };
 };
