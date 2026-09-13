@@ -166,6 +166,12 @@ export function ImportWizard({
             <p className="text-sm text-muted-foreground">
               {t('step.upload.help')}
             </p>
+            {/* MN-4 — la columna Email es la del TUTOR. Poner ahí la del jugador es
+                justo el agujero que MN-4 acota, y la importación es una de las dos
+                puertas por las que entra. */}
+            <p className="text-sm text-muted-foreground">
+              {t('step.upload.email_help')}
+            </p>
             <div className="flex flex-wrap items-center gap-3">
               <a
                 href={`/import-templates/players-template${templateSuffix}.xlsx`}

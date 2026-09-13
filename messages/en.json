@@ -552,7 +552,9 @@
     "phone_placeholder": "600 123 456",
     "phone_hint": "The club will use it to reach you if your child needs anything during a training session or a match.",
     "missing_phone": "Your contact phone number is missing.",
-    "error_phone_invalid": "That phone number doesn't look valid. Please check it."
+    "error_phone_invalid": "That phone number doesn't look valid. Please check it.",
+    "self_note": "This invitation is for your own player account: your parent or legal guardian sent it to you. Image permissions, your medical data and the handling of your personal data remain with them.",
+    "error_reserved_for_tutor": "That information is handled by your parent or legal guardian and cannot be submitted here."
   },
   "directos": {
     "title": "Live",
@@ -1345,7 +1347,7 @@
       "tutor_email": "Guardian's email",
       "tutor_relation": "Guardian's relationship",
       "relation_placeholder": "Select the relationship",
-      "tutor_help": "When you create the player, the invitation will automatically be sent to this email.",
+      "tutor_help": "This is the parent or legal guardian's email, not the player's: whoever receives it will be recorded as their guardian. The invitation is sent automatically when you create the player.",
       "phone": "Player's phone number",
       "phone_help": "Optional. Only if the player has their own phone."
     },
@@ -1759,7 +1761,8 @@
       "upload": {
         "short": "Upload",
         "title": "Upload your file",
-        "help": "Use the downloadable template (4 columns: Full name, Date of birth, Team, Email). Required: Full name, Date of birth, and Email. Date in day/month/year format (15/03/2010). Team is optional (if you leave it empty, the batch team is used)."
+        "help": "Use the downloadable template (4 columns: Full name, Date of birth, Team, Email). Required: Full name, Date of birth, and Email. Date in day/month/year format (15/03/2010). Team is optional (if you leave it empty, the batch team is used).",
+        "email_help": "The Email column is the parent or legal guardian's address for each player, not the player's: whoever receives it will be recorded as their guardian."
       },
       "preview": {
         "short": "Review",

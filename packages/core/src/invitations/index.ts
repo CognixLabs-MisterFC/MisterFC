@@ -17,3 +17,9 @@ export {
   type AcceptFormRules,
   type ChildRowError,
 } from './accept-form';
+export {
+  isSelfInvitation,
+  hasSelfInvitation,
+  childrenNeedingConsent,
+  type RelationCarrier,
+} from './self';

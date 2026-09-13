@@ -2,6 +2,7 @@ import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { getCurrentUser, chooseInviteForm, isInvitePending } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadInvitationForPage, loadPendingInvitationsForEmail } from './invite-data';
+import { childrenNeedingConsent, hasSelfInvitation } from '@misterfc/core';
 import {
   loadCurrentLegalDocs,
   loadAccountConsentStatus,
@@ -97,8 +98,13 @@ export default async function InvitePage({ params }: Props) {
   // el padre vea a quién va a dar de alta en un solo paso. El batch real se
   // reevalúa server-side al aceptar (la lista es solo informativa).
   const pending = await loadPendingInvitationsForEmail(inv.email, inv.club_id);
-  const pendingChildren = pending
-    .filter((p) => p.player_id)
+  // MN-5 — la invitación de CUENTA PROPIA no pinta tarjeta de hijo: quien acepta ES
+  // el jugador, y las decisiones de imagen, sus datos y la médica siguen siendo del
+  // tutor. La regla vive en core (`childrenNeedingConsent`), que es donde el CI la
+  // ejecuta; aquí solo se llama. Se filtra fila a fila porque un mismo lote puede
+  // llevar las dos cosas: un padre tutor de su hija y, además, jugador de su ficha.
+  const selfInvite = hasSelfInvitation(pending);
+  const pendingChildren = childrenNeedingConsent(pending)
     .map((p) => ({
       playerId: p.player_id,
       playerName: [p.player_first_name, p.player_last_name].filter(Boolean).join(' ') || null,
@@ -120,6 +126,7 @@ export default async function InvitePage({ params }: Props) {
     preAcceptedTerms: preAccepted.termsAccepted,
     preAcceptedPrivacy: preAccepted.privacyAccepted,
     pendingChildren,
+    selfInvite,
     imageInternal: imageDocs.internal,
     imageSocial: imageDocs.social,
     medicalDoc,
