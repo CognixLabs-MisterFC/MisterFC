@@ -5517,5 +5517,33 @@
     "claim_error": "No hemos podido comprobarlo ahora mismo. Inténtalo de nuevo en un momento.",
     "terms_link": "Condiciones de uso",
     "privacy_link": "Política de privacidad"
+  },
+  "invite_self": {
+    "action": "Dar acceso al jugador",
+    "title": "Dar acceso al jugador",
+    "description": "Se enviará una invitación a {player} para que entre con su propia cuenta.",
+    "section": {
+      "title": "Acceso del jugador",
+      "hint": "Puedes darle su propia cuenta para que entre con su correo. Tú sigues gestionando sus autorizaciones de imagen, sus datos médicos y sus derechos sobre sus datos."
+    },
+    "field": {
+      "email": "Correo del jugador",
+      "help": "Tiene que ser un correo distinto del tuyo: es la cuenta del jugador, no otra tuya."
+    },
+    "send": "Enviar invitación",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "sent": "Invitación enviada a {email}.",
+    "errors": {
+      "email_invalid": "Ese correo no es válido.",
+      "email_too_long": "Ese correo es demasiado largo.",
+      "forbidden": "Solo el padre, madre o tutor legal del jugador puede darle acceso.",
+      "erased": "Ese jugador está dado de baja.",
+      "already_linked": "Este jugador ya tiene su propia cuenta.",
+      "email_relation_conflict": "Ese correo ya figura como el de un tutor de este jugador. La cuenta del jugador necesita un correo propio.",
+      "consents_required": "Antes hay que responder las autorizaciones de imagen del jugador para esta temporada.",
+      "no_active_season": "El club no tiene ninguna temporada activa.",
+      "generic": "No se ha podido enviar la invitación. Inténtalo de nuevo."
+    }
   }
 }

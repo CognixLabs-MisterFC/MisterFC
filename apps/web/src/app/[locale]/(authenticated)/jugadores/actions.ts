@@ -21,6 +21,7 @@ import {
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
 import { performSpectatorInvite } from '@/lib/invite-spectator';
+import { performSelfInvite } from '@/lib/invite-self';
 import { loadPendingInvitePlayers } from './queries';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -697,6 +698,72 @@ export async function inviteSpectatorForPlayer(
   if ('error' in res) return { error: res.error };
 
   revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
+  return { ok: { email: res.ok.email } };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Invitar al PROPIO JUGADOR a tener cuenta (MN-5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type InviteSelfState = {
+  error?:
+    | 'email_invalid'
+    | 'email_too_long'
+    | 'forbidden'
+    | 'erased'
+    | 'already_linked'
+    | 'email_relation_conflict'
+    | 'consents_required'
+    | 'no_active_season'
+    | 'generic';
+  ok?: { email: string };
+};
+
+/**
+ * MN-5 — El TUTOR invita a su hijo a tener su propia cuenta. Esa invitación ES la
+ * autorización (decisión 1 de Jose), y por eso solo puede cursarla quien ya es
+ * tutor del jugador: el gate lo impone la RPC `invite_player_self` (SECURITY
+ * DEFINER), no esta pantalla.
+ *
+ * La RELACIÓN no viaja desde el cliente. El formulario manda solo el email; la RPC
+ * escribe `player_relation='self'`. Es lo que impide que esta acción se convierta
+ * en otra puerta para el agujero de `invite_email`.
+ */
+export async function inviteSelfForPlayer(
+  locale: string,
+  playerId: string,
+  _prev: InviteSelfState,
+  formData: FormData
+): Promise<InviteSelfState> {
+  const parsed = inviteSpectatorSchema.safeParse({ email: formData.get('email') });
+  if (!parsed.success) {
+    const code = parsed.error.issues[0]?.message;
+    if (code === 'email_invalid' || code === 'email_too_long') return { error: code };
+    return { error: 'generic' };
+  }
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const hdrs = await headers();
+  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
+  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
+  const linkBase = `${proto}://${host}/${locale}/invite`;
+
+  const admin = createSupabaseAdminClient();
+  const res = await performSelfInvite(supabase, admin, {
+    playerId,
+    email: parsed.data.email,
+    linkBase,
+  });
+  if ('error' in res) return { error: res.error };
+
+  revalidatePath('/[locale]/(authenticated)/perfil', 'page');
   return { ok: { email: res.ok.email } };
 }
 

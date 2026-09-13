@@ -23,3 +23,9 @@ export {
   childrenNeedingConsent,
   type RelationCarrier,
 } from './self';
+export {
+  performSelfInvite,
+  type SelfInviteError,
+  type SelfInviteLogger,
+  type SelfInviteResult,
+} from './self-invite';

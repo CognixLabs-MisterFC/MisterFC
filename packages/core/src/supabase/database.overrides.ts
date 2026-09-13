@@ -133,6 +133,25 @@ export type DatabaseOverrides = {
         // `play_name := v_prop.name` donde v_prop es plays%rowtype (plays.name nullable).
         Returns: { play_name: string | null }[];
       };
+
+      // ── MN-5 · FUNCIÓN QUE FALTA EN LO GENERADO, no una precisión perdida ────
+      //
+      // `invite_player_self` (MN-2) está aplicada en producción, pero `database.ts`
+      // no la trae: el fichero generado que hay en el repo es anterior. Y NO se
+      // puede arreglar con `pnpm db:types`, que es lo que habría que hacer: medido
+      // hoy, regenerar con el CLI 2.98.2 —el que el proyecto tiene PINEADO— devuelve
+      // un fichero que rompe el typecheck de core en 20 sitios de `subscription/`
+      // (nullability distinta en `webhook.ts` y `reconcile-sweep.ts`). El generado
+      // que está commiteado lo produjo un CLI más nuevo. Reconciliar el pin es un
+      // trabajo aparte y no cabe dentro de esta serie.
+      //
+      // Esta entrada es el mínimo para poder llamar a la RPC con tipos en vez de con
+      // un cast a ciegas. Firma tomada de la definición viva. CUANDO se regeneren
+      // los tipos de verdad, BÓRRALA: dejará de hacer falta.
+      invite_player_self: {
+        Args: { p_player_id: string; p_email: string };
+        Returns: { id: string; token: string; email: string }[];
+      };
     };
   };
 };
