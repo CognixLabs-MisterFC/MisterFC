@@ -552,7 +552,9 @@
     "phone_placeholder": "600 123 456",
     "phone_hint": "El club l’utilitzarà per a localitzar-te si el teu fill o filla necessita alguna cosa en un entrenament o un partit.",
     "missing_phone": "Falta el teu telèfon de contacte.",
-    "error_phone_invalid": "Aquest telèfon no sembla vàlid. Revisa’l."
+    "error_phone_invalid": "Aquest telèfon no sembla vàlid. Revisa’l.",
+    "self_note": "Esta invitació és per al teu propi compte de jugador: te l'ha enviada el teu pare, mare o tutor legal. Les autoritzacions d'imatge, les teues dades mèdiques i la gestió de les teues dades personals continuen sent cosa seua.",
+    "error_reserved_for_tutor": "Eixes dades les gestiona el teu pare, mare o tutor legal; no es poden enviar des d’ací."
   },
   "directos": {
     "title": "Directes",
@@ -1345,7 +1347,7 @@
       "tutor_email": "Correu del tutor",
       "tutor_relation": "Relació del tutor",
       "relation_placeholder": "Selecciona la relació",
-      "tutor_help": "En crear el jugador s'enviarà automàticament la invitació a este correu.",
+      "tutor_help": "És el correu del pare, mare o tutor legal, no el del jugador: qui el reba quedarà registrat com a tutor seu. En crear el jugador se li enviarà la invitació automàticament.",
       "phone": "Telèfon del jugador",
       "phone_help": "Opcional. Només si el jugador té telèfon propi."
     },
@@ -1759,7 +1761,8 @@
       "upload": {
         "short": "Pujar",
         "title": "Puja el teu arxiu",
-        "help": "Usa la plantilla descarregable (4 columnes: Nom complet, Data de naixement, Equip, Email). Obligatoris: Nom complet, Data de naixement i Email. Data en format dia/mes/any (15/03/2010). Equip és opcional (si el deixes buit s'usa l'equip del lot)."
+        "help": "Usa la plantilla descarregable (4 columnes: Nom complet, Data de naixement, Equip, Email). Obligatoris: Nom complet, Data de naixement i Email. Data en format dia/mes/any (15/03/2010). Equip és opcional (si el deixes buit s'usa l'equip del lot).",
+        "email_help": "La columna Email és la del pare, mare o tutor legal de cada jugador, no la del jugador: qui la reba quedarà registrat com a tutor seu."
       },
       "preview": {
         "short": "Revisar",

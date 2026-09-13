@@ -72,6 +72,11 @@ export type AcceptInvitationState = {
     // BC-6 — quien tiene un borrado de cuenta en curso no puede entrar en un club
     // nuevo. Lo decide la RPC (punto común de TODA aceptación), no la pantalla.
     | 'account_deletion_in_progress'
+    // MN-3 — la cuenta propia del jugador no trae datos reservados al tutor. Desde
+    // la pantalla no se llega (MN-5 no pinta esas tarjetas), pero la RPC está
+    // expuesta a `authenticated` y su error tiene que tener nombre propio: si
+    // cayera en 'generic' nadie sabría qué mirar.
+    | 'reserved_for_tutor'
     | 'generic';
 };
 
@@ -396,6 +401,7 @@ async function attachAllPending(
       if (msg.includes('no_session')) return { error: 'no_session' };
       if (msg.includes('image_decision_required')) return { error: 'image_decision_required' };
       if (msg.includes('image_required')) return { error: 'image_required' };
+      if (msg.includes('reserved_for_tutor')) return { error: 'reserved_for_tutor' };
       logError('rpc accept_pending', error, {
         invitation_id: clicked.id,
         pg_code: error.code,

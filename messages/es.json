@@ -1036,7 +1036,9 @@
     "phone_placeholder": "600 123 456",
     "phone_hint": "El club lo usará para localizarte si tu hijo o hija necesita algo en un entrenamiento o un partido.",
     "missing_phone": "Falta tu teléfono de contacto.",
-    "error_phone_invalid": "Ese teléfono no parece válido. Revísalo."
+    "error_phone_invalid": "Ese teléfono no parece válido. Revísalo.",
+    "self_note": "Esta invitación es para tu propia cuenta de jugador: te la ha enviado tu padre, madre o tutor legal. Las autorizaciones de imagen, tus datos médicos y la gestión de tus datos personales siguen estando a su cargo.",
+    "error_reserved_for_tutor": "Esos datos los gestiona tu padre, madre o tutor legal, no se pueden enviar desde aquí."
   },
   "informes": {
     "title": "Informes de desarrollo",
@@ -1345,7 +1347,7 @@
       "tutor_email": "Email del tutor",
       "tutor_relation": "Relación del tutor",
       "relation_placeholder": "Selecciona la relación",
-      "tutor_help": "Al crear el jugador se enviará automáticamente la invitación a este email.",
+      "tutor_help": "Es el correo del padre, madre o tutor legal, no el del jugador: quien lo reciba quedará registrado como su tutor. Al crear el jugador se le enviará la invitación automáticamente.",
       "phone": "Teléfono del jugador",
       "phone_help": "Opcional. Solo si el jugador tiene teléfono propio."
     },
@@ -1759,7 +1761,8 @@
       "upload": {
         "short": "Subir",
         "title": "Sube tu archivo",
-        "help": "Usa la plantilla descargable (4 columnas: Nombre completo, Fecha de nacimiento, Equipo, Email). Obligatorios: Nombre completo, Fecha de nacimiento y Email. Fecha en formato día/mes/año (15/03/2010). Equipo es opcional (si lo dejas vacío se usa el equipo del lote)."
+        "help": "Usa la plantilla descargable (4 columnas: Nombre completo, Fecha de nacimiento, Equipo, Email). Obligatorios: Nombre completo, Fecha de nacimiento y Email. Fecha en formato día/mes/año (15/03/2010). Equipo es opcional (si lo dejas vacío se usa el equipo del lote).",
+        "email_help": "La columna Email es la del padre, madre o tutor legal de cada jugador, no la del jugador: quien la reciba quedará registrado como su tutor."
       },
       "preview": {
         "short": "Revisar",
