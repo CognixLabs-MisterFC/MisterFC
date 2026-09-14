@@ -87,6 +87,14 @@ describe('selfAcceptMessageKey', () => {
     expect(selfAcceptMessageKey('not_self')).toBe('error_not_self');
     expect(selfAcceptMessageKey('rate_limited')).toBe('error_rate_limited');
   });
+
+  it('los codigos con clave IRREGULAR no acaban pintando el nombre de la clave', () => {
+    // El catalogo lo escribio la web y no es homogeneo: estos dos se llaman
+    // `missing_*`, no `error_*`. Sin la tabla, la pantalla enseñaba
+    // "error_phone_missing" tal cual al usuario.
+    expect(selfAcceptMessageKey('phone_missing')).toBe('missing_phone');
+    expect(selfAcceptMessageKey('password_missing')).toBe('missing_password');
+  });
 });
 
 describe('submitSelfAccept · lo que pasa cuando no hay respuesta', () => {

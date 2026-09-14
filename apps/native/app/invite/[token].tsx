@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { acceptInvitationWithProfileSchema } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
+import { useSession } from '@/auth/session';
 import { useTranslations, useLocale } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { legalUrl } from '@/legal/links';
@@ -41,10 +42,38 @@ import { callPublicServerEndpoint } from '@/lib/server-api';
  * (nav/config). Sin lo primero el SessionGuard rebota al login; sin lo segundo el muro de
  * pago la empuja. En ambos casos el síntoma es una pantalla en blanco, sin excepción.
  */
+/**
+ * R-4 — veredictos TERMINALES: con estos el formulario no sirve de nada, porque el
+ * problema no está en lo que el usuario escriba.
+ *
+ * Es la mitad de «que no se quede colgado»: sin esto la pantalla enseñaba el error en
+ * rojo y dejaba el formulario puesto, invitando a reintentar algo que iba a fallar
+ * siempre. Ahora se sustituye por una salida.
+ *
+ * `not_claimable` es el caso del CORREO YA REGISTRADO, el que no puede abrir la app: su
+ * correo va por la plantilla de recuperación, que sigue apuntando a
+ * `{{ .ConfirmationURL }}` y abre el navegador (BUG-3: esa plantilla NECESITA la sesión
+ * que crea el verify de Supabase, así que no se puede cambiar). En la web ese camino
+ * está resuelto —`chooseInviteForm` le da el formulario de iniciar sesión— pero si el
+ * enlace llega igualmente a la app, aquí se le dice qué hacer en vez de dejarlo mirando
+ * un error.
+ */
+const TERMINALES = new Set([
+  'not_found',
+  'invalid',
+  'expired',
+  'already_accepted',
+  'not_self',
+  'not_claimable',
+]);
+
 export default function InviteScreen() {
   const { token } = useLocalSearchParams<{ token: string }>();
   const t = useTranslations('invite');
   const locale = useLocale();
+  // Si ya hay sesión (el enlace suele llegar al correo del TUTOR, que probablemente
+  // tenga la app abierta), entrar cambiaría de cuenta. Se avisa antes, no después.
+  const { user } = useSession();
 
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -56,7 +85,15 @@ export default function InviteScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<{ code: string; retryAfter?: number } | null>(null);
 
-  if (!token) return <Verdict message={t('error_not_found')} />;
+  if (!token) {
+    return (
+      <Verdict
+        message={t('error_not_found')}
+        actionLabel={t('go_to_signin')}
+        onAction={() => router.replace('/login')}
+      />
+    );
+  }
 
   async function onSubmit() {
     setError(null);
@@ -116,6 +153,16 @@ export default function InviteScreen() {
     router.replace('/');
   }
 
+  if (error && TERMINALES.has(error.code)) {
+    return (
+      <Verdict
+        message={t(selfAcceptMessageKey(error.code))}
+        actionLabel={t('go_to_signin')}
+        onAction={() => router.replace('/login')}
+      />
+    );
+  }
+
   const errorText = error
     ? error.retryAfter
       ? t('error_rate_limited_in', { minutes: Math.max(1, Math.ceil(error.retryAfter / 60)) })
@@ -131,6 +178,12 @@ export default function InviteScreen() {
         <ScrollView contentContainerClassName="px-6 py-8" keyboardShouldPersistTaps="handled">
           <Text className="text-2xl font-bold text-white">{t('title')}</Text>
           <Text className="mt-3 text-sm text-zinc-300">{t('self_note')}</Text>
+
+          {user?.email ? (
+            <Text className="mt-4 rounded-xl bg-amber-500/15 px-4 py-3 text-sm text-amber-200">
+              {t('session_swap_warning', { email: user.email })}
+            </Text>
+          ) : null}
 
           <Field
             label={t('full_name_label')}
@@ -211,11 +264,35 @@ export default function InviteScreen() {
   );
 }
 
-/** Pantalla terminal: el token no da para formulario (caducado, ya aceptado, no existe). */
-function Verdict({ message }: { message: string }) {
+/**
+ * Pantalla terminal: el token no da para formulario (caducado, ya aceptado, no existe,
+ * no es de cuenta propia, o el correo ya tenía cuenta).
+ *
+ * SIEMPRE con salida. Una pantalla sin ningún botón en una app que se acaba de abrir
+ * desde un correo es un callejón: el usuario no tiene ni historial al que volver.
+ */
+function Verdict({
+  message,
+  actionLabel,
+  onAction,
+}: {
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
   return (
     <SafeAreaView className="flex-1 items-center justify-center px-8" style={{ backgroundColor: BRAND.navy }}>
       <Text className="text-center text-lg font-semibold text-zinc-200">{message}</Text>
+      {actionLabel && onAction ? (
+        <Pressable
+          onPress={onAction}
+          accessibilityRole="button"
+          className="mt-8 rounded-xl px-6 py-3"
+          style={{ backgroundColor: BRAND.green }}
+        >
+          <Text className="text-base font-semibold text-white">{actionLabel}</Text>
+        </Pressable>
+      ) : null}
     </SafeAreaView>
   );
 }

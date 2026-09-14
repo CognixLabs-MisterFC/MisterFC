@@ -561,7 +561,10 @@
     "error_rate_limited_in": "Too many attempts. Try again in {minutes} min.",
     "error_unavailable": "We couldn't check the invitation right now. Try again in a few minutes.",
     "error_network": "No connection. Check your network and try again.",
-    "error_no_web_url": "This version of the app isn't set up to complete invitations. Let your club know."
+    "error_no_web_url": "This version of the app isn't set up to complete invitations. Let your club know.",
+    "error_invalid": "This link isn't valid. Open the one you got by email.",
+    "go_to_signin": "Go to sign in",
+    "session_swap_warning": "You're currently signed in as {email}. If you complete this invitation, you'll be signed in as the player instead."
   },
   "directos": {
     "title": "Live",
