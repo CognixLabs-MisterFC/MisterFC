@@ -5526,6 +5526,10 @@
       "title": "Player access",
       "hint": "You can give them their own account so they sign in with their email. You still manage their image permissions, their medical data and their data rights."
     },
+    "state": {
+      "invited": "An invitation has already been sent, waiting for the player to sign in and accept it.",
+      "linked": "This player already has their own account."
+    },
     "field": {
       "email": "Player's email",
       "help": "It has to be different from yours: it is the player’s account, not another one of yours."

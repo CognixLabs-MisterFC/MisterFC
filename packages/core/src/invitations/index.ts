@@ -24,6 +24,10 @@ export {
   type RelationCarrier,
 } from './self';
 export {
+  getSelfAccountStatusFromClient,
+  type SelfAccountStatus,
+} from './self-status';
+export {
   performSelfInvite,
   type SelfInviteError,
   type SelfInviteLogger,

@@ -4,6 +4,8 @@ import { Download } from 'lucide-react';
 import {
   createSupabaseServerClient,
   getPlayerManagementAccessFromClient,
+  getSelfAccountStatusFromClient,
+  type SelfAccountStatus,
   getPlayerMedicalFromClient,
   getMyPhoneFromClient,
   previewAccountDeletionFromClient,
@@ -81,6 +83,8 @@ export default async function PerfilPage({ params, searchParams }: Props) {
   let playerInitials = '';
   let canManagePhoto = false;
   let canManageMedical = false;
+  // MN-9 — estado de la cuenta propia del jugador activo: none | invited | linked.
+  let selfStatus: SelfAccountStatus | null = null;
   let medicalInitial: {
     allergies: string | null;
     medication: string | null;
@@ -118,6 +122,9 @@ export default async function PerfilPage({ params, searchParams }: Props) {
     canManagePhoto = access.canManage;
     canManageSensitive = access.canManageSensitive;
     canManageMedical = access.canWriteMedical;
+    // MN-9 — qué enseña la tarjeta de acceso. Sustituye al `!isSelf`, que la pintaba
+    // para siempre porque miraba la relación de quien mira y no la del jugador.
+    selfStatus = await getSelfAccountStatusFromClient(supabase, activePlayer.id);
     if (canManageMedical) {
       medicalInitial = await getPlayerMedicalFromClient(supabase, activePlayer.id);
     }
@@ -159,32 +166,51 @@ export default async function PerfilPage({ params, searchParams }: Props) {
           )}
 
           {/* MN-5 — Dar acceso al JUGADOR: el tutor le abre su propia cuenta, y esa
-              invitación ES la autorización. Solo cuando quien mira es el tutor
-              (`!isSelf`): un jugador que ya entra con su cuenta no se invita a sí
-              mismo, y la RPC se lo negaría (`forbidden`, porque desde MN-1 'self' no
-              cuenta como tutor).
+              invitación ES la autorización.
 
-              La tarjeta se pinta SIEMPRE que haya tutor, sin consultar antes si el
-              jugador ya tiene cuenta propia. Es deliberado: esa consulta puede quedar
-              rancia entre el render y el envío, y la RPC ya responde `already_linked`
-              con su propio texto. Una verdad en el momento del envío vale más que una
-              suposición en el del pintado. */}
-          {canManagePhoto && !isSelf && (
+              MN-9 — qué se enseña lo decide el ESTADO del jugador, no la relación de
+              quien mira. Antes esto era `!isSelf`, y como la relación del tutor es
+              'parent' para siempre, la tarjeta no se iba nunca: el hijo ya entraba con
+              su cuenta y su padre seguía viendo el botón, que solo fallaba al pulsarlo.
+              El estado lo da `player_self_account_status`, porque el tutor NO VE la
+              fila 'self' de su hijo (se la oculta la RLS de `player_accounts`, y así
+              debe seguir).
+
+              Al PROPIO JUGADOR la tarjeta le desaparece por este MISMO camino, sin
+              preguntar por la relación: la RPC está gateada con `user_manages_player`,
+              así que a él le contesta 'linked' por construcción.
+
+              `null` = no se ha podido saber → no se ofrece, igual que `canManage ??
+              false` en esta misma pantalla: una lectura que falla no abre puertas.
+
+              Y esto decide qué se OFRECE, no qué se permite: `invite_player_self`
+              conserva su `already_linked` para el hueco entre el pintado y el envío. */}
+          {canManagePhoto && selfStatus !== null && (
             <Card>
               <CardHeader>
                 <CardTitle>{tInviteSelf('section.title')}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
-                <p className="text-sm text-muted-foreground">
-                  {tInviteSelf('section.hint')}
-                </p>
-                <div>
-                  <InviteSelfDialog
-                    locale={locale}
-                    playerId={activePlayer.id}
-                    playerName={activePlayer.name}
-                  />
-                </div>
+                {selfStatus === 'none' ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      {tInviteSelf('section.hint')}
+                    </p>
+                    <div>
+                      <InviteSelfDialog
+                        locale={locale}
+                        playerId={activePlayer.id}
+                        playerName={activePlayer.name}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {tInviteSelf(
+                      selfStatus === 'invited' ? 'state.invited' : 'state.linked',
+                    )}
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}

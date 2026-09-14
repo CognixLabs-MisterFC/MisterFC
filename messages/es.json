@@ -5526,6 +5526,10 @@
       "title": "Acceso del jugador",
       "hint": "Puedes darle su propia cuenta para que entre con su correo. Tú sigues gestionando sus autorizaciones de imagen, sus datos médicos y sus derechos sobre sus datos."
     },
+    "state": {
+      "invited": "Ya hay una invitación enviada, pendiente de que el jugador entre y la acepte.",
+      "linked": "Este jugador ya tiene su propia cuenta."
+    },
     "field": {
       "email": "Correo del jugador",
       "help": "Tiene que ser un correo distinto del tuyo: es la cuenta del jugador, no otra tuya."

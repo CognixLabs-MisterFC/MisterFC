@@ -164,6 +164,14 @@ export type DatabaseOverrides = {
         Args: { p_player_id: string };
         Returns: boolean;
       };
+
+      // MN-9 — misma historia y misma fecha de caducidad que las de arriba: la
+      // migración 20261072000000 es posterior al `database.ts` commiteado. Firma
+      // tomada de la definición viva (`returns text`, un escalar, no un set).
+      player_self_account_status: {
+        Args: { p_player_id: string };
+        Returns: string;
+      };
     };
   };
 };

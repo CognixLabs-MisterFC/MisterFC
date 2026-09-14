@@ -5526,6 +5526,10 @@
       "title": "Accés del jugador",
       "hint": "Pots donar-li el seu propi compte perquè entre amb el seu correu. Tu continues gestionant les seues autoritzacions d’imatge, les seues dades mèdiques i els seus drets sobre les seues dades."
     },
+    "state": {
+      "invited": "Ja hi ha una invitació enviada, pendent que el jugador entre i l’accepte.",
+      "linked": "Este jugador ja té el seu propi compte."
+    },
     "field": {
       "email": "Correu del jugador",
       "help": "Ha de ser un correu diferent del teu: és el compte del jugador, no un altre de teu."
