@@ -13,7 +13,10 @@
       "supportsTablet": false,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "associatedDomains": [
+        "applinks:misterfc.es"
+      ]
     },
     "android": {
       "package": "com.misterfc.app",
@@ -26,7 +29,34 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#438832"
-      }
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "misterfc.es",
+              "pathPrefix": "/es/invite"
+            },
+            {
+              "scheme": "https",
+              "host": "misterfc.es",
+              "pathPrefix": "/en/invite"
+            },
+            {
+              "scheme": "https",
+              "host": "misterfc.es",
+              "pathPrefix": "/va/invite"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "plugins": [
       "expo-router",
