@@ -41,6 +41,12 @@ export {
   type InviteAcceptLogger,
 } from './accept-new-invitee';
 export {
+  decideSelfAccept,
+  type SelfAcceptDecision,
+  type SelfAcceptInvitation,
+  type SelfAcceptRefusal,
+} from './self-accept';
+export {
   performSelfInvite,
   type SelfInviteError,
   type SelfInviteLogger,

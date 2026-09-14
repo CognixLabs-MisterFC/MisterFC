@@ -172,6 +172,20 @@ export type DatabaseOverrides = {
         Args: { p_player_id: string };
         Returns: string;
       };
+
+      // R-2 — el contador del endpoint público de aceptación (migración
+      // 20261074000000). `register_...` es un `returns table(...)`, así que devuelve
+      // un ARRAY de filas aunque siempre traiga una: el tipo lo dice para que el
+      // handler no se olvide de coger la primera. `p_ip` es `inet` con default, de
+      // ahí el opcional; `purge_...` no lleva argumentos y devuelve el recuento.
+      register_invite_accept_attempt: {
+        Args: { p_token: string; p_ip?: string };
+        Returns: { decision: string; retry_after_seconds: number }[];
+      };
+      purge_invite_accept_attempts: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
     };
   };
 };

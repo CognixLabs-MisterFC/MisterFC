@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/subscriptions",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/invite-attempts",
+      "schedule": "0 * * * *"
     }
   ]
 }

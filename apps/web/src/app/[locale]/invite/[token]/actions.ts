@@ -20,6 +20,7 @@ import {
   validateChildRow,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { clientIpFrom } from '@/lib/client-ip';
 import { emitInAppNotificationFanOut } from '@/lib/notify-bus';
 import {
   loadInvitationByToken,
@@ -262,10 +263,11 @@ async function attachAllPending(
   const childParse = await parseChildUpdates(clicked, formData);
   if (!childParse.ok) return { error: childParse.error };
 
-  // Metadatos de auditoría (no se confía en el cliente).
+  // Metadatos de auditoría (no se confía en el cliente). La IP sale del mismo sitio
+  // que usa el límite de intentos de R-2: si divergieran, un día dirían cosas
+  // distintas sobre el mismo intento.
   const h = await headers();
-  const fwd = h.get('x-forwarded-for');
-  const ip = fwd ? (fwd.split(',')[0]?.trim() ?? null) : null;
+  const ip = clientIpFrom(h);
   const userAgent = h.get('user-agent');
 
   // F14-3c — Subida de imágenes ANTES de la RPC, server-side con admin: en este
