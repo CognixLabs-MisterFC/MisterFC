@@ -17,6 +17,7 @@ import {
   getPlayerMedicalFromClient,
   getPlayerPhotoPathFromClient,
   getSelfAccountStatusFromClient,
+  selfAccountStatusMessageKey,
   playerScopedCacheKey,
   playerPhotoUploadSchema,
   requestPlayerErasureFromClient,
@@ -715,8 +716,11 @@ function AccessCard({
           </Pressable>
         </>
       ) : (
+        // MN-10 — los tres motivos de bloqueo dicen POR QUE, con el MISMO texto que
+        // enseñaba la RPC despues de pulsar. La clave la da core: web y nativa pintan
+        // los mismos seis estados y una lista escrita dos veces se queda coja en una.
         <Text className="mt-1 text-sm text-zinc-600">
-          {t(status === 'invited' ? 'invite_self.state.invited' : 'invite_self.state.linked')}
+          {t(`invite_self.${selfAccountStatusMessageKey(status) ?? 'section.hint'}`)}
         </Text>
       )}
 

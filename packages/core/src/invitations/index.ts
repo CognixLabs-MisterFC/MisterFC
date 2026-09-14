@@ -25,6 +25,10 @@ export {
 } from './self';
 export {
   getSelfAccountStatusFromClient,
+  isSelfAccountBlocker,
+  selfAccountStatusMessageKey,
+  SELF_ACCOUNT_BLOCKERS,
+  type SelfAccountBlocker,
   type SelfAccountStatus,
 } from './self-status';
 export {

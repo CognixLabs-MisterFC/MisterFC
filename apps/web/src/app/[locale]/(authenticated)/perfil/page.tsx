@@ -5,6 +5,7 @@ import {
   createSupabaseServerClient,
   getPlayerManagementAccessFromClient,
   getSelfAccountStatusFromClient,
+  selfAccountStatusMessageKey,
   type SelfAccountStatus,
   getPlayerMedicalFromClient,
   getMyPhoneFromClient,
@@ -183,6 +184,16 @@ export default async function PerfilPage({ params, searchParams }: Props) {
               `null` = no se ha podido saber → no se ofrece, igual que `canManage ??
               false` en esta misma pantalla: una lectura que falla no abre puertas.
 
+              MN-10 — y cuando está bloqueado dice POR QUÉ, no «no se puede»: jugador
+              de baja, club sin temporada abierta o decisiones de imagen sin responder.
+              El texto es el MISMO que enseñaba la RPC después de pulsar (`errors.*`),
+              reutilizado a propósito: dos frases para el mismo hecho divergen igual que
+              divergen dos predicados.
+
+              El cuarto motivo, `email_relation_conflict`, NO está aquí y no es un
+              olvido: se mide contra la dirección que el tutor todavía no ha escrito,
+              así que sigue saliendo como error bajo el campo.
+
               Y esto decide qué se OFRECE, no qué se permite: `invite_player_self`
               conserva su `already_linked` para el hueco entre el pintado y el envío. */}
           {canManagePhoto && selfStatus !== null && (
@@ -206,9 +217,7 @@ export default async function PerfilPage({ params, searchParams }: Props) {
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    {tInviteSelf(
-                      selfStatus === 'invited' ? 'state.invited' : 'state.linked',
-                    )}
+                    {tInviteSelf(selfAccountStatusMessageKey(selfStatus) ?? 'section.hint')}
                   </p>
                 )}
               </CardContent>
