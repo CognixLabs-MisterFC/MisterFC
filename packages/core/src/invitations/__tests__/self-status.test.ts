@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../supabase/types';
-import { getSelfAccountStatusFromClient } from '../self-status';
+import {
+  getSelfAccountStatusFromClient,
+  isSelfAccountBlocker,
+  selfAccountStatusMessageKey,
+  SELF_ACCOUNT_BLOCKERS,
+  type SelfAccountStatus,
+} from '../self-status';
 
 /**
  * MN-9 — el estado de la cuenta propia del jugador.
@@ -62,5 +68,43 @@ describe('getSelfAccountStatusFromClient', () => {
     // Si algún día la RPC devolviera las dos cosas, manda el error.
     const sb = mockClient({ data: 'none', error: { message: 'forbidden' } });
     await expect(getSelfAccountStatusFromClient(sb, 'p1')).resolves.toBeNull();
+  });
+});
+
+describe('selfAccountStatusMessageKey', () => {
+  it('none no dice nada: es el unico que enseña el boton', () => {
+    expect(selfAccountStatusMessageKey('none')).toBeNull();
+  });
+
+  it('los dos estados de cuenta usan state.*', () => {
+    expect(selfAccountStatusMessageKey('invited')).toBe('state.invited');
+    expect(selfAccountStatusMessageKey('linked')).toBe('state.linked');
+  });
+
+  it('los tres bloqueos reutilizan el texto del error de la RPC', () => {
+    // Misma frase en la tarjeta que despues de pulsar: dos textos para el mismo
+    // hecho acaban divergiendo igual que divergen dos predicados.
+    expect(selfAccountStatusMessageKey('erased')).toBe('errors.erased');
+    expect(selfAccountStatusMessageKey('no_active_season')).toBe('errors.no_active_season');
+    expect(selfAccountStatusMessageKey('consents_required')).toBe(
+      'errors.consents_required',
+    );
+  });
+
+  it('todo estado distinto de none tiene texto: ninguno se queda mudo', () => {
+    for (const estado of [
+      'invited',
+      'linked',
+      ...SELF_ACCOUNT_BLOCKERS,
+    ] as SelfAccountStatus[]) {
+      expect(selfAccountStatusMessageKey(estado)).toBeTruthy();
+    }
+  });
+
+  it('isSelfAccountBlocker separa los motivos de los estados de cuenta', () => {
+    expect(SELF_ACCOUNT_BLOCKERS.every(isSelfAccountBlocker)).toBe(true);
+    for (const estado of ['none', 'invited', 'linked'] as SelfAccountStatus[]) {
+      expect(isSelfAccountBlocker(estado)).toBe(false);
+    }
   });
 });
