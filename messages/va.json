@@ -561,7 +561,10 @@
     "error_rate_limited_in": "Massa intents. Torna a provar d'ací a {minutes} min.",
     "error_unavailable": "No hem pogut comprovar la invitació ara mateix. Intenta-ho d'ací a uns minuts.",
     "error_network": "Sense connexió. Comprova la teua xarxa i torna a intentar-ho.",
-    "error_no_web_url": "Aquesta versió de l'app no està configurada per a completar invitacions. Avisa el club."
+    "error_no_web_url": "Aquesta versió de l'app no està configurada per a completar invitacions. Avisa el club.",
+    "error_invalid": "Aquest enllaç no és vàlid. Obri el que t'ha arribat per correu.",
+    "go_to_signin": "Anar a iniciar sessió",
+    "session_swap_warning": "Ara mateix estàs en el compte {email}. Si completes aquesta invitació, entraràs amb el compte del jugador."
   },
   "directos": {
     "title": "Directes",

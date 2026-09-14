@@ -85,9 +85,23 @@ export function mapSelfAcceptResponse(
   return { error: code || 'generic' };
 }
 
+/**
+ * Nombres que NO siguen el patrón `error_*` en el catálogo.
+ *
+ * El namespace `invite` lo escribió la web y no es homogéneo: la mayoría de los códigos
+ * tienen su texto en `error_<codigo>`, pero unos pocos se llaman `missing_<algo>`. Sin
+ * esta tabla, `phone_missing` buscaba `error_phone_missing`, que no existe, y la
+ * pantalla habría pintado el NOMBRE DE LA CLAVE al usuario. No se renombran las claves
+ * de la web para no tocar textos que ya están traducidos y en uso.
+ */
+const CLAVE_IRREGULAR: Record<string, string> = {
+  phone_missing: 'missing_phone',
+  password_missing: 'missing_password',
+};
+
 /** La clave de traducción del veredicto, dentro del namespace `invite`. */
 export function selfAcceptMessageKey(code: string): string {
-  return `error_${code}`;
+  return CLAVE_IRREGULAR[code] ?? `error_${code}`;
 }
 
 /** Quien sabe hablar con la web. En la app, `callPublicServerEndpoint`. */
