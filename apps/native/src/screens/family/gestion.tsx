@@ -16,6 +16,7 @@ import {
   getPlayerManagementAccessFromClient,
   getPlayerMedicalFromClient,
   getPlayerPhotoPathFromClient,
+  getSelfAccountStatusFromClient,
   playerScopedCacheKey,
   playerPhotoUploadSchema,
   requestPlayerErasureFromClient,
@@ -23,6 +24,7 @@ import {
   setPlayerPhotoPathFromClient,
   type PlayerManagementAccess,
   type PlayerMedical,
+  type SelfAccountStatus,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { MIME_TO_EXT, base64ToBytes } from '@/lib/image-upload';
@@ -76,6 +78,13 @@ export function GestionScreen() {
     playerScopedCacheKey('photo-path', clubId ?? 'none', playerId ?? 'none'),
     (sb) => (playerId ? getPlayerPhotoPathFromClient(sb, playerId) : Promise.resolve(null)),
   );
+  // MN-9 — estado de la cuenta propia del jugador (none | invited | linked). Es lo
+  // que decide qué enseña la tarjeta de acceso; antes se miraba la relación de quien
+  // mira, que en el tutor es 'parent' para siempre y por eso no se iba nunca.
+  const selfStatus = useCached<SelfAccountStatus | null>(
+    playerScopedCacheKey('self-status', clubId ?? 'none', playerId ?? 'none'),
+    (sb) => (playerId ? getSelfAccountStatusFromClient(sb, playerId) : Promise.resolve(null)),
+  );
 
   if (!playerId) return <EmptyState message={t('child.none')} />;
   if (access.loading) return <LoadingScreen />;
@@ -88,7 +97,8 @@ export function GestionScreen() {
   const canManage = access.data?.canManage ?? false;
   const canManageSensitive = access.data?.canManageSensitive ?? false;
   const canWriteMedical = access.data?.canWriteMedical ?? false;
-  const fromCache = access.fromCache || medical.fromCache || photo.fromCache;
+  const fromCache =
+    access.fromCache || medical.fromCache || photo.fromCache || selfStatus.fromCache;
   const initials = (activePlayer?.name ?? '').trim().slice(0, 2);
 
   // La pantalla entera cuelga de la COMPARTIDA: sin ella no hay ni foto que tocar.
@@ -137,16 +147,21 @@ export function GestionScreen() {
             loading={medical.loading}
           />
         ) : null}
-        {/* MN-5 — Dar acceso al jugador. Solo cuando quien mira es el TUTOR: un
-            jugador que ya entra con su cuenta no se invita a si mismo, y la RPC se
-            lo negaria. Ninguno de los dos gates de arriba sirve para distinguirlo
-            —`canManage` es true para el propio jugador y `canManageSensitive` lo es
-            para el jugador adulto—, asi que se mira la relacion del jugador activo. */}
-        {activePlayer?.relation !== 'self' ? (
+        {/* MN-5 — Dar acceso al jugador. MN-9 — lo que se enseña lo decide el ESTADO
+            del jugador, no la relacion de quien mira: la del tutor es 'parent' para
+            siempre, asi que la tarjeta no se iba nunca aunque el hijo ya tuviera
+            cuenta. El estado viene de `player_self_account_status`, porque el tutor NO
+            VE la fila 'self' de su hijo (se la oculta la RLS de `player_accounts`).
+            Al PROPIO jugador le desaparece por este MISMO camino: la RPC esta gateada
+            con `user_manages_player`, asi que a el le contesta 'linked'.
+            `null` = no se ha podido saber -> no se ofrece, igual que `canManage`. */}
+        {selfStatus.data != null ? (
           <AccessCard
             playerId={playerId}
             playerName={activePlayer?.name ?? ''}
+            status={selfStatus.data}
             online={online}
+            onInvited={selfStatus.refresh}
           />
         ) : null}
         {/* RESERVADAS — `record_data_export` y `request_player_erasure`, las dos
@@ -605,11 +620,15 @@ type AccessOutcome =
 function AccessCard({
   playerId,
   playerName,
+  status,
   online,
+  onInvited,
 }: {
   playerId: string;
   playerName: string;
+  status: SelfAccountStatus;
   online: boolean;
+  onInvited: () => void;
 }) {
   const t = useTranslations('');
   const [open, setOpen] = useState(false);
@@ -619,9 +638,13 @@ function AccessCard({
 
   const close = () => {
     if (sending) return;
+    // MN-9 — si se ha enviado, el estado del jugador ha cambiado a 'invited': hay que
+    // releerlo o la tarjeta seguiria ofreciendo invitar hasta el proximo arranque.
+    const enviada = outcome === 'ok' || outcome === 'existing';
     setEmail('');
     setOutcome(null);
     setOpen(false);
+    if (enviada) onInvited();
   };
 
   const submit = async () => {
@@ -678,16 +701,24 @@ function AccessCard({
       <Text className="text-base font-bold text-[#0F1B2E]">
         {t('invite_self.section.title')}
       </Text>
-      <Text className="mt-1 text-sm text-zinc-600">{t('invite_self.section.hint')}</Text>
-      <Pressable
-        onPress={() => setOpen(true)}
-        disabled={!online}
-        className={`mt-3 self-start rounded-full px-4 py-2 ${
-          online ? 'bg-[#0F1B2E] active:opacity-80' : 'bg-zinc-300'
-        }`}
-      >
-        <Text className="text-sm font-semibold text-white">{t('invite_self.action')}</Text>
-      </Pressable>
+      {status === 'none' ? (
+        <>
+          <Text className="mt-1 text-sm text-zinc-600">{t('invite_self.section.hint')}</Text>
+          <Pressable
+            onPress={() => setOpen(true)}
+            disabled={!online}
+            className={`mt-3 self-start rounded-full px-4 py-2 ${
+              online ? 'bg-[#0F1B2E] active:opacity-80' : 'bg-zinc-300'
+            }`}
+          >
+            <Text className="text-sm font-semibold text-white">{t('invite_self.action')}</Text>
+          </Pressable>
+        </>
+      ) : (
+        <Text className="mt-1 text-sm text-zinc-600">
+          {t(status === 'invited' ? 'invite_self.state.invited' : 'invite_self.state.linked')}
+        </Text>
+      )}
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
         <View className="flex-1 items-center justify-center bg-black/50 px-6">
