@@ -244,7 +244,7 @@ describe('claimInviteeAccount', () => {
       mockAdmin({}, ll),
       { targetUid: 'uid-1', email: 'a@b.test', locale: 'es', profile: PERFIL },
     );
-    expect(r).toEqual({ error: 'auth_update_failed' });
+    expect(r).toEqual({ error: 'sign_in_failed' });
     expect(ll.some((c) => c.metodo === 'profiles.update')).toBe(false);
   });
 
@@ -256,6 +256,23 @@ describe('claimInviteeAccount', () => {
       { targetUid: 'uid-1', email: 'a@b.test', locale: 'es', profile: PERFIL },
     );
     expect(r).toEqual({ error: 'profile_update_failed' });
+  });
+
+  it('CONFIRMA el correo al reclamar la cuenta', async () => {
+    // BUG-4: la cuenta nace SIN confirmar (inviteUserByEmail) y quien la confirmaba era
+    // el verify de Supabase, por el que el enlace dejo de pasar al cambiar la plantilla
+    // a {{ .RedirectTo }} en BUG-3. Sin esto GoTrue rechaza el sign-in por contrasena y
+    // el alta NO se puede completar nunca. Medido en produccion: 21 cuentas, 17 han
+    // entrado, cero lo han hecho sin el correo confirmado.
+    const ll: Llamada[] = [];
+    await claimInviteeAccount(mockUser({}, ll), mockAdmin({}, ll), {
+      targetUid: 'uid-1',
+      email: 'a@b.test',
+      locale: 'es',
+      profile: PERFIL,
+    });
+    const payload = (ll[0]?.args as { payload: Record<string, unknown> }).payload;
+    expect(payload.email_confirm).toBe(true);
   });
 
   it('el perfil se escribe sobre el id de la SESION, no sobre targetUid', async () => {

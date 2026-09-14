@@ -59,6 +59,10 @@ export type AcceptInvitationState = {
     | 'wrong_credentials'
     // B1 — códigos específicos por punto de fallo (antes todo era 'generic').
     | 'auth_update_failed'
+    // BUG-4 — el inicio de sesión posterior a fijar la contraseña. Tenía el código de
+    // la contraseña y el usuario leía que no se había podido establecer cuando sí se
+    // había establecido: el mensaje mandaba a mirar al sitio equivocado.
+    | 'sign_in_failed'
     | 'profile_update_failed'
     | 'membership_failed'
     | 'player_link_failed'

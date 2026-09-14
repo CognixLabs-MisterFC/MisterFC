@@ -564,7 +564,8 @@
     "error_no_web_url": "Aquesta versió de l'app no està configurada per a completar invitacions. Avisa el club.",
     "error_invalid": "Aquest enllaç no és vàlid. Obri el que t'ha arribat per correu.",
     "go_to_signin": "Anar a iniciar sessió",
-    "session_swap_warning": "Ara mateix estàs en el compte {email}. Si completes aquesta invitació, entraràs amb el compte del jugador."
+    "session_swap_warning": "Ara mateix estàs en el compte {email}. Si completes aquesta invitació, entraràs amb el compte del jugador.",
+    "error_sign_in_failed": "La teua contrasenya s'ha guardat, però no hem pogut iniciar la teua sessió. Intenta-ho de nou."
   },
   "directos": {
     "title": "Directes",

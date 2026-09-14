@@ -564,7 +564,8 @@
     "error_no_web_url": "This version of the app isn't set up to complete invitations. Let your club know.",
     "error_invalid": "This link isn't valid. Open the one you got by email.",
     "go_to_signin": "Go to sign in",
-    "session_swap_warning": "You're currently signed in as {email}. If you complete this invitation, you'll be signed in as the player instead."
+    "session_swap_warning": "You're currently signed in as {email}. If you complete this invitation, you'll be signed in as the player instead.",
+    "error_sign_in_failed": "Your password was saved, but we couldn't sign you in. Please try again."
   },
   "directos": {
     "title": "Live",
