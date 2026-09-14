@@ -32,6 +32,15 @@ export {
   type SelfAccountStatus,
 } from './self-status';
 export {
+  acceptPendingInvitationsFromClient,
+  claimInviteeAccount,
+  mapAcceptRpcError,
+  type AcceptPendingOutcome,
+  type ClaimInviteeAccountOutcome,
+  type InviteAcceptError,
+  type InviteAcceptLogger,
+} from './accept-new-invitee';
+export {
   performSelfInvite,
   type SelfInviteError,
   type SelfInviteLogger,
