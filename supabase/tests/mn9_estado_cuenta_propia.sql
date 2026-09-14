@@ -12,6 +12,9 @@
 --   [9]  NO DIVERGE de invite_player_self: cuando el estado dice 'linked', la RPC
 --        levanta already_linked. Si algun dia uno cambia sin el otro, esto se pone rojo.
 --   [10] CANDADO ACL: anon NO ejecuta; authenticated si.
+-- Los motivos de bloqueo que MN-10 anadio al estado (erased, no_active_season,
+-- consents_required) se miden en mn10_cuarto_estado.sql; aqui el fixture los deja
+-- resueltos a proposito para que 'none' signifique 'nada lo bloquea'.
 --
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final), no deja rastro.
 -- Los privilegios se comprueban con has_function_privilege, NUNCA provocando el 42501
@@ -51,6 +54,22 @@ insert into public.player_accounts (player_id, profile_id, relation) values
   ('3ebb0000-0000-4000-8000-000000000001', '3eba0000-0000-4000-8000-000000000001', 'parent'),
   ('3ebb0000-0000-4000-8000-000000000002', '3eba0000-0000-4000-8000-000000000001', 'parent'),
   ('3ebb0000-0000-4000-8000-000000000002', '3eba0000-0000-4000-8000-000000000002', 'self');
+
+-- MN-10 — decisiones de imagen de los dos jugadores en la temporada activa. Desde
+-- MN-10 el estado mira tambien lo que haria fallar al boton, asi que SIN esto el
+-- 'none' que esperan [1], [4] y [5] seria 'consents_required': el fixture estaria
+-- midiendo el bloqueo y no lo que dice medir. Los documentos legales del club los
+-- siembra el trigger `clubs_seed_legal_documents` al insertarlo.
+insert into public.consents (tutor_profile_id, player_id, consent_type, granted,
+                             legal_document_id, legal_document_version, season_id)
+select '3eba0000-0000-4000-8000-000000000001', pl.id,
+       ld.doc_type::text::public.consent_type, true, ld.id, ld.version,
+       '3ebc0000-0000-4000-8000-000000000001'
+  from public.legal_documents ld
+ cross join (values ('3ebb0000-0000-4000-8000-000000000001'::uuid),
+                    ('3ebb0000-0000-4000-8000-000000000002'::uuid)) as pl(id)
+ where ld.club_id = '3eb00000-0000-4000-8000-000000000001'
+   and ld.doc_type in ('image_internal', 'image_social');
 
 set local role authenticated;
 set local "request.jwt.claims" = '{"sub":"3eba0000-0000-4000-8000-000000000001","role":"authenticated"}';
