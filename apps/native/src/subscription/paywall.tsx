@@ -13,7 +13,7 @@ import {
   restorePurchases,
 } from '@/subscription/purchases';
 import { claimSubscription } from '@/subscription/claim';
-import { legalUrl } from '@/subscription/legal-links';
+import { legalUrl } from '@/legal/links';
 import { useSubscription } from '@/subscription/provider';
 
 /**

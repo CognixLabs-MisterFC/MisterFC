@@ -1,5 +1,10 @@
 /**
- * SU-7 — enlaces a los documentos legales desde el MURO DE PAGO.
+ * Enlaces a los documentos legales públicos de la web.
+ *
+ * Nació en SU-7 para el MURO DE PAGO y vivía bajo `subscription/`. Lo usa ahora también
+ * la pantalla de invitación (R-3), donde el menor acepta términos y privacidad al darse
+ * de alta, así que deja de ser del muro y pasa a ser de la app. El fichero se mueve de
+ * sitio y no cambia de comportamiento.
  *
  * No es adorno: Apple lo exige. Su documentación de suscripciones dice que «your app and
  * App Store metadata must include links to your Terms of Use and Privacy Policy», y una

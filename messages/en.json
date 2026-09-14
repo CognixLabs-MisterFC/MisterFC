@@ -554,7 +554,14 @@
     "missing_phone": "Your contact phone number is missing.",
     "error_phone_invalid": "That phone number doesn't look valid. Please check it.",
     "self_note": "This invitation is for your own player account: your parent or legal guardian sent it to you. Image permissions, your medical data and the handling of your personal data remain with them.",
-    "error_reserved_for_tutor": "That information is handled by your parent or legal guardian and cannot be submitted here."
+    "error_reserved_for_tutor": "That information is handled by your parent or legal guardian and cannot be submitted here.",
+    "error_not_self": "This invitation is not for a player account. Open the link from your email in a browser to complete it.",
+    "error_not_claimable": "This email already has an account. Sign in with it and the invitation will be added automatically.",
+    "error_rate_limited": "Too many attempts. Wait a moment and try again.",
+    "error_rate_limited_in": "Too many attempts. Try again in {minutes} min.",
+    "error_unavailable": "We couldn't check the invitation right now. Try again in a few minutes.",
+    "error_network": "No connection. Check your network and try again.",
+    "error_no_web_url": "This version of the app isn't set up to complete invitations. Let your club know."
   },
   "directos": {
     "title": "Live",

@@ -48,6 +48,30 @@ export async function callServerEndpoint(
 }
 
 /**
+ * R-3 — llamada JSON a un route handler PÚBLICO, SIN bearer.
+ *
+ * `callServerEndpoint` exige sesión y lanza `no_session`. La pantalla de invitación no
+ * puede tener sesión —es justo la que la crea— así que necesita esta puerta. No es un
+ * relajo del guard: el endpoint al que llama (`/api/invitations/self-accept`) tiene su
+ * propia credencial, el TOKEN, y su propio límite de intentos.
+ *
+ * Se mantiene la regla de `webBaseUrl`: sin `EXPO_PUBLIC_WEB_URL` NO se inventa un host,
+ * se lanza `no_web_url`. La pantalla lo convierte en un mensaje, no en un enlace roto.
+ */
+export async function callPublicServerEndpoint(
+  path: string,
+  body: unknown,
+): Promise<Response> {
+  const base = webBaseUrl();
+  if (!base) throw new Error('no_web_url');
+  return fetch(`${base}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+/**
  * Descarga un fichero binario (PDF) del route handler con bearer y devuelve la URI
  * local (cache) para compartir/abrir. Lanza si falta config/sesión o si el HTTP no
  * es 200 (p.ej. 401/403/404 del gate del servidor).

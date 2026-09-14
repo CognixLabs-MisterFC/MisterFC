@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { LEGAL_FALLBACK_BASE, legalBaseUrl, legalUrl } from './legal-links';
+import { LEGAL_FALLBACK_BASE, legalBaseUrl, legalUrl } from './links';
 
 /**
  * SU-7 — las URL de los documentos legales del muro de pago.
