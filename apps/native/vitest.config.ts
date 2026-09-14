@@ -14,7 +14,13 @@ export default defineConfig({
       // `.pathname` y no `fileURLToPath`: el tsconfig de la app trae los libs de
       // DOM, así que `URL` resuelve al tipo del DOM y no al de node — y
       // `fileURLToPath` rechaza ese otro `URL` en typecheck.
-      '@': new URL('./src', import.meta.url).pathname,
+      //
+      // `decodeURIComponent` porque `.pathname` viene PERCENT-ENCODED: en un checkout
+      // cuya ruta lleve un espacio ("Claude Code") el alias apuntaba a
+      // `/…/Claude%20Code/…`, que no existe, y cualquier test que importara por `@`
+      // moría con "Cannot find module". No se veía porque hasta R-3 ningún test usaba
+      // el alias, y en CI la ruta no tiene espacios.
+      '@': decodeURIComponent(new URL('./src', import.meta.url).pathname),
     },
   },
   test: {

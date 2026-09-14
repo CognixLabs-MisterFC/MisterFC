@@ -57,6 +57,9 @@ export const PUBLIC_ROUTE_SEGMENTS: readonly string[] = [
   // está anonimizada y baneada), así que sin esto el guard la rebotaría al login y el
   // usuario no vería nunca la confirmación de que su borrado terminó.
   'cuenta-eliminada',
+  // R-3 — aceptar la invitación de cuenta propia del menor. Se llega por el enlace del
+  // correo y NO hay sesión: es justo la pantalla que la crea. El token es la credencial.
+  'invite',
 ];
 
 /**
@@ -96,6 +99,9 @@ export const SUBSCRIPTION_EXEMPT_SEGMENTS: readonly string[] = [
   'cuenta-eliminada',
   'login',
   'seleccionar-club',
+  // R-3 — misma razón que `login`: el muro no debe empujar hacia atrás a quien está
+  // entrando. Y aquí además no hay sesión todavía, así que no hay suscripción que mirar.
+  'invite',
 ];
 
 /** ¿Esta ruta se puede ver sin suscripción? */

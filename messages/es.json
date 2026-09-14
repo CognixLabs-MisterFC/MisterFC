@@ -1038,7 +1038,14 @@
     "missing_phone": "Falta tu teléfono de contacto.",
     "error_phone_invalid": "Ese teléfono no parece válido. Revísalo.",
     "self_note": "Esta invitación es para tu propia cuenta de jugador: te la ha enviado tu padre, madre o tutor legal. Las autorizaciones de imagen, tus datos médicos y la gestión de tus datos personales siguen estando a su cargo.",
-    "error_reserved_for_tutor": "Esos datos los gestiona tu padre, madre o tutor legal, no se pueden enviar desde aquí."
+    "error_reserved_for_tutor": "Esos datos los gestiona tu padre, madre o tutor legal, no se pueden enviar desde aquí.",
+    "error_not_self": "Esta invitación no es para una cuenta de jugador. Ábrela desde el enlace del correo en el navegador para completarla.",
+    "error_not_claimable": "Este correo ya tiene una cuenta. Inicia sesión con ella y la invitación se añadirá sola.",
+    "error_rate_limited": "Demasiados intentos. Espera un poco y vuelve a probar.",
+    "error_rate_limited_in": "Demasiados intentos. Vuelve a probar en {minutes} min.",
+    "error_unavailable": "No hemos podido comprobar la invitación ahora mismo. Inténtalo en unos minutos.",
+    "error_network": "Sin conexión. Comprueba tu red y vuelve a intentarlo.",
+    "error_no_web_url": "Esta versión de la app no está configurada para completar invitaciones. Avisa al club."
   },
   "informes": {
     "title": "Informes de desarrollo",

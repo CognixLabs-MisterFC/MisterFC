@@ -554,7 +554,14 @@
     "missing_phone": "Falta el teu telèfon de contacte.",
     "error_phone_invalid": "Aquest telèfon no sembla vàlid. Revisa’l.",
     "self_note": "Esta invitació és per al teu propi compte de jugador: te l'ha enviada el teu pare, mare o tutor legal. Les autoritzacions d'imatge, les teues dades mèdiques i la gestió de les teues dades personals continuen sent cosa seua.",
-    "error_reserved_for_tutor": "Eixes dades les gestiona el teu pare, mare o tutor legal; no es poden enviar des d’ací."
+    "error_reserved_for_tutor": "Eixes dades les gestiona el teu pare, mare o tutor legal; no es poden enviar des d’ací.",
+    "error_not_self": "Esta invitació no és per a un compte de jugador. Obri-la des de l'enllaç del correu en el navegador per a completar-la.",
+    "error_not_claimable": "Aquest correu ja té un compte. Inicia sessió amb ell i la invitació s'afegirà sola.",
+    "error_rate_limited": "Massa intents. Espera un poc i torna a provar.",
+    "error_rate_limited_in": "Massa intents. Torna a provar d'ací a {minutes} min.",
+    "error_unavailable": "No hem pogut comprovar la invitació ara mateix. Intenta-ho d'ací a uns minuts.",
+    "error_network": "Sense connexió. Comprova la teua xarxa i torna a intentar-ho.",
+    "error_no_web_url": "Aquesta versió de l'app no està configurada per a completar invitacions. Avisa el club."
   },
   "directos": {
     "title": "Directes",
