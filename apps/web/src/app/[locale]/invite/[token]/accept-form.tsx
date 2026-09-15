@@ -668,6 +668,10 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       no_session: 'error_no_session',
       wrong_credentials: 'error_wrong_credentials',
       auth_update_failed: 'error_auth_update_failed',
+      // BUG-4 — el paso de ENTRAR, separado del de fijar la contraseña: compartían
+      // código y el usuario leía que no se había podido establecer su contraseña con la
+      // contraseña ya guardada.
+      sign_in_failed: 'error_sign_in_failed',
       profile_update_failed: 'error_profile_update_failed',
       membership_failed: 'error_membership_failed',
       player_link_failed: 'error_player_link_failed',
