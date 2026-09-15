@@ -41,6 +41,7 @@ type Sb = SupabaseClient<Database>;
 /** Los errores que producen las dos funciones de este módulo. */
 export type InviteAcceptError =
   | 'auth_update_failed'
+  | 'sign_in_failed'
   | 'profile_update_failed'
   | 'account_deletion_in_progress'
   | 'consent_required'
@@ -67,7 +68,7 @@ const noopLog: InviteAcceptLogger = () => {};
 
 export type ClaimInviteeAccountOutcome =
   | { ok: { userId: string } }
-  | { error: 'auth_update_failed' | 'profile_update_failed' };
+  | { error: 'auth_update_failed' | 'sign_in_failed' | 'profile_update_failed' };
 
 /**
  * Fija la contraseña sobre la cuenta NO RECLAMADA, crea la sesión con ella y
@@ -107,6 +108,25 @@ export async function claimInviteeAccount(
 
   const { error: updErr } = await admin.auth.admin.updateUserById(targetUid, {
     password: profile.password,
+    // BUG-4 — SE CONFIRMA EL CORREO AQUÍ, y no es un atajo: es reponer lo que BUG-3 se
+    // llevó por delante sin que se notara.
+    //
+    // La cuenta del invitado nace por `inviteUserByEmail` con el correo SIN confirmar, y
+    // quien la confirmaba era el `/auth/v1/verify` de Supabase, por el que pasaba el
+    // enlace del correo cuando la plantilla usaba `{{ .ConfirmationURL }}`. BUG-3 la
+    // cambió a `{{ .RedirectTo }}` para que los enlaces profundos se verificaran contra
+    // misterfc.es —sin eso la app no se abría nunca—, y con ello el enlace dejó de tocar
+    // el verify. Resultado: correo sin confirmar para siempre, y GoTrue RECHAZA el
+    // inicio de sesión por contraseña de una cuenta sin confirmar.
+    //
+    // Medido en producción: 21 cuentas, 17 han entrado alguna vez, CERO lo han hecho sin
+    // el correo confirmado. Y el caso real: contraseña fijada a las 21:39:21,
+    // `last_sign_in_at` nulo, invitación sin aceptar.
+    //
+    // Confirmarlo aquí es legítimo con el mismo argumento que sostiene todo Rework B: el
+    // token viaja ÚNICAMENTE por correo, así que presentarlo ya prueba el control del
+    // buzón. Es exactamente lo que certificaba el verify, por otro camino.
+    email_confirm: true,
     ...metadata,
   });
   if (updErr && !isSamePasswordError(updErr)) {
@@ -126,7 +146,12 @@ export async function claimInviteeAccount(
     logError(signInErr ?? new Error('no user after sign-in'), 'claim_sign_in', {
       target_uid: targetUid,
     });
-    return { error: 'auth_update_failed' };
+    // CÓDIGO PROPIO, no `auth_update_failed`. Los dos pasos compartían código y el
+    // usuario leía «no hemos podido establecer tu contraseña» cuando la contraseña se
+    // había fijado perfectamente y lo que fallaba era entrar. Ese mensaje mandó a mirar
+    // al sitio equivocado durante toda la investigación de este fallo: costó más
+    // encontrarlo que arreglarlo.
+    return { error: 'sign_in_failed' };
   }
 
   // El perfil, ya bajo la sesión del invitado. El teléfono llega validado por el

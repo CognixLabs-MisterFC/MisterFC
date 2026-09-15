@@ -1048,7 +1048,8 @@
     "error_no_web_url": "Esta versión de la app no está configurada para completar invitaciones. Avisa al club.",
     "error_invalid": "Este enlace no es válido. Abre el que te llegó por correo.",
     "go_to_signin": "Ir a iniciar sesión",
-    "session_swap_warning": "Ahora mismo estás en la cuenta {email}. Si completas esta invitación, entrarás con la cuenta del jugador."
+    "session_swap_warning": "Ahora mismo estás en la cuenta {email}. Si completas esta invitación, entrarás con la cuenta del jugador.",
+    "error_sign_in_failed": "Tu contraseña se ha guardado, pero no hemos podido iniciar tu sesión. Inténtalo de nuevo."
   },
   "informes": {
     "title": "Informes de desarrollo",
