@@ -5588,5 +5588,18 @@
       "preparador_fisico": "Preparador físic",
       "coordinador": "Coordinador"
     }
+  },
+  "app_only": {
+    "title": "MisterFC ara s'usa des de l'app",
+    "body": "L'accés de les famílies a MisterFC està en l'aplicació per a mòbil. Entra amb el mateix correu i la mateixa contrasenya que uses ací.",
+    "account_title": "El teu compte està creat",
+    "account_email": "Has entrat amb aquest correu. És el mateix amb el qual has d'entrar en l'app:",
+    "account_email_unknown": "Entra en l'app amb el mateix correu amb el qual has entrat ací.",
+    "download_title": "Descarrega l'aplicació",
+    "download_soon": "Els enllaços de descàrrega estaran ací en quant l'app estiga publicada. Mentrestant, busca-la com «MisterFC» en App Store o en Google Play.",
+    "download_app_store": "Descarregar en App Store",
+    "download_play": "Descarregar en Google Play",
+    "terms_link": "Termes",
+    "privacy_link": "Privacitat"
   }
 }

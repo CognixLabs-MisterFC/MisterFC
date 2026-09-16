@@ -7,6 +7,7 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { rewriteStaleActiveClub } from '@/components/shell/actions';
 import { AppShell } from '@/components/shell/app-shell';
 import { evaluateSubscriptionGate } from '@/lib/subscription-gate';
+import { evaluateFamilyWebCut } from '@/lib/family-web-cut';
 
 type Props = {
   children: ReactNode;
@@ -43,7 +44,7 @@ export default async function AuthenticatedLayout({ children, params }: Props) {
 
   // SU-5 — GATE de SUSCRIPCIÓN (guard SERVER-SIDE). Este es el PRIMER punto común de
   // la web: todo lo autenticado con club cuelga de aquí. El segundo es
-  // `/spectator/layout.tsx`, que NO pasa por este fichero.
+  // `/spectator/layout.tsx`, que NO pasa por este fichero. (W-B usa los dos mismos.)
   //
   // Va ANTES del re-consentimiento, y es una decisión mía: pedirle a alguien que firme
   // los consentimientos de la temporada antes de que haya decidido si va a ser cliente
@@ -68,6 +69,29 @@ export default async function AuthenticatedLayout({ children, params }: Props) {
   });
   if (needsReconsent) {
     redirect(`/${locale}/re-consentimiento`);
+  }
+
+  // W-B — CORTE DE LA WEB PARA FAMILIAS. Primer punto común de los dos; el segundo es
+  // `/spectator/layout.tsx`, que NO pasa por este fichero.
+  //
+  // VA EL ÚLTIMO DE LOS TRES GUARDS, Y ES LO QUE HACE REAL LA EXCEPCIÓN DEL
+  // RE-CONSENTIMIENTO. `/re-consentimiento` queda abierto (decisión 2 de Jose) porque
+  // HOY SOLO EXISTE EN LA WEB: `tutor_needs_reconsent` y `record_season_reconsent` no
+  // aparecen en `apps/native`. Pero dejar la página abierta no sirve de nada si nada
+  // lleva a ella — y si el corte fuera antes, a la familia que debe re-consentir la
+  // mandaríamos a la app, donde no hay pantalla que firmar, y no volvería nunca.
+  //
+  // Puesto aquí, el recorrido anual se cierra solo: entra en la web → re-consentimiento
+  // → firma → vuelve a `/` → ya no lo necesita → corte → «entra desde la app».
+  //
+  // El precio de este orden es que una familia sin suscripción pasa antes por el muro de
+  // `/suscripcion`. Se paga en esa página y no aquí: el muro rebota a `/aplicacion` en
+  // cuanto el corte está puesto, porque con el corte encendido el muro web es una
+  // pantalla muerta (quien paga es familia o seguidor, y a los dos se les corta) y la
+  // reclamación "he pagado y sigo bloqueado" también existe en la nativa.
+  const cut = await evaluateFamilyWebCut(supabase);
+  if (cut.closed) {
+    redirect(`/${locale}/aplicacion`);
   }
 
   // F14B-7 — el superadmin ve un enlace extra a la consola de plataforma en el

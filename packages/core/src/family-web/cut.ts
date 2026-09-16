@@ -99,9 +99,11 @@ export function decideFamilyWebCut(
  * que `isFamilyAccount` y `requiresSubscription` dejen de coincidir, esa RPC deja de ser
  * una fuente válida para esta pregunta y hará falta SQL propio. Ese día el test lo dice.
  *
- * `decideFamilyWebCut` se expone aparte a propósito: el layout autenticado ya llama a
- * `my_subscription_status()` cuando el gate de suscripción está encendido, y no tiene
- * sentido preguntar dos veces lo mismo en la misma request.
+ * `decideFamilyWebCut` se expone aparte porque la decisión se puede tomar sin cliente en
+ * cuanto se sepa el dato, y así se prueba entera sin inventar un servidor. NO hay doble
+ * lectura que ahorrar en la web: el corte va DESPUÉS del gate de suscripción y, cuando
+ * cierra, `redirect()` corta la ejecución, así que las dos RPC nunca coinciden en la
+ * misma request salvo en el camino de una lectura rota.
  */
 export async function evaluateFamilyWebCutFromClient(
   supabase: DbClient,
