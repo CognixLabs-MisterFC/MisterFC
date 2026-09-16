@@ -6,6 +6,7 @@ import { useApp } from '@/auth/context';
 import { useIsOnline } from '@/data/connectivity';
 import { useLocale, useTranslations } from '@/locale/provider';
 import { DeleteAccountCard } from '@/ui/delete-account-card';
+import { ConsentsCard } from '@/ui/consents-card';
 import {
   canPurchase,
   loadOffering,
@@ -23,8 +24,14 @@ import { useSubscription } from '@/subscription/provider';
  * Pero lleva DENTRO la tarjeta de borrar la cuenta, y eso no es un adorno: Apple
  * Guideline 5.1.1(v) exige poder iniciar el borrado desde dentro de la app, y toda la
  * serie BC existe para cumplirlo. Un muro que tapara también el borrado rompería lo que
- * BC acaba de arreglar y volvería a bloquear la publicación. Así que "no se ve nada"
- * significa nada del producto — salir y borrarse siguen estando.
+ * BC acaba de arreglar y volvería a bloquear la publicación.
+ *
+ * Y desde RV-3, por el mismo razonamiento, lleva DENTRO los permisos: el artículo 7.3
+ * del RGPD pide que retirar un consentimiento sea tan fácil como darlo, y un muro que
+ * lo escondiera convertiría un botón en un correo — solo para quien ha dejado de pagar.
+ *
+ * Así que "no se ve nada" significa nada del producto: salir, borrarse y retirar lo que
+ * se consintió siguen estando.
  *
  * Cobrar solo desde el móvil (decisión 6): no hay pasarela web y no se va a montar.
  */
@@ -158,9 +165,7 @@ export function PaywallScreen() {
         ) : pkg ? (
           <>
             <View className="rounded-xl border border-zinc-200 px-4 py-4">
-              <Text className="text-lg font-semibold text-[#0F1B2E]">
-                {pkg.product.title}
-              </Text>
+              <Text className="text-lg font-semibold text-[#0F1B2E]">{pkg.product.title}</Text>
               <Text className="mt-1 text-2xl font-bold text-[#438832]">
                 {pkg.product.priceString}
               </Text>
@@ -207,9 +212,7 @@ export function PaywallScreen() {
         {!online ? (
           <Text className="text-center text-xs text-amber-600">{t('offline')}</Text>
         ) : null}
-        {message ? (
-          <Text className="text-center text-sm text-zinc-700">{message}</Text>
-        ) : null}
+        {message ? <Text className="text-center text-sm text-zinc-700">{message}</Text> : null}
 
         <Text className="mt-2 text-xs text-zinc-400">{t('terms_note')}</Text>
 
@@ -229,6 +232,21 @@ export function PaywallScreen() {
           >
             <Text className="text-xs text-[#438832] underline">{t('privacy_link')}</Text>
           </Pressable>
+        </View>
+
+        {/* RV-3 — los PERMISOS también atraviesan el muro, por el mismo motivo que el
+            borrado y con una norma concreta detrás: el artículo 7.3 del RGPD pide que
+            retirar un consentimiento sea TAN FÁCIL como darlo. Se dio con dos toques en
+            el alta; si el muro lo escondiera, retirarlo pasaría a ser escribir un correo
+            y esperar — y solo le pasaría a quien ha dejado de pagar, que es justo a
+            quien menos se le puede pedir un trámite para ejercer un derecho.
+
+            Aquí `activeClub` ya está resuelto: `app/index.tsx` no llega a este muro
+            hasta después de `app.loading`. Y la tarjeta se pinta sola o no, porque
+            `get_tutor_consents` devuelve cero filas a quien no es tutor — un seguidor
+            puro no ve nada, que es lo correcto. */}
+        <View className="mt-6 border-t border-zinc-100 pt-6">
+          <ConsentsCard />
         </View>
 
         {/* Apple 5.1.1(v): el borrado tiene que seguir alcanzable DESDE el muro. */}
