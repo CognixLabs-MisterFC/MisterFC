@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -16,6 +17,7 @@ import {
   getPlayerManagementAccessFromClient,
   getPlayerMedicalFromClient,
   getPlayerPhotoPathFromClient,
+  getPlayerTutorsContactFromClient,
   getSelfAccountStatusFromClient,
   selfAccountStatusMessageKey,
   playerScopedCacheKey,
@@ -25,12 +27,20 @@ import {
   setPlayerPhotoPathFromClient,
   type PlayerManagementAccess,
   type PlayerMedical,
+  type PlayerTutorsContactResult,
   type SelfAccountStatus,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { MIME_TO_EXT, base64ToBytes } from '@/lib/image-upload';
 import { useApp } from '@/auth/context';
+import { useSession } from '@/auth/session';
 import { useActivePlayer } from '@/auth/active-player';
+import {
+  contactActionsFor,
+  tutorContactRows,
+  type ContactAction,
+  type TutorContactRow,
+} from '@/player-contact/tutor-rows';
 import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
@@ -135,6 +145,11 @@ export function GestionScreen() {
           online={online}
           onChanged={photo.refresh}
         />
+        {/* COMPARTIDA — el contacto de los tutores. La puerta de la RPC
+            (`user_can_access_player_contact`) deja pasar al tutor Y al jugador con
+            cuenta propia, así que esta tarjeta cuelga de `canManage` como la foto y
+            no de la reservada: que el menor vea a sus tutores es justo el encargo. */}
+        <TutorsContactCard playerId={playerId} clubId={clubId} accent={accent} />
         {/* RESERVADA — `set_player_medical` y la lectura por `get_player_medical`
             exigen user_manages_player_sensitive. Al menor con cuenta propia no se
             le pinta: el SQL se lo negaría y no se ofrece lo que va a fallar. */}
@@ -519,6 +534,181 @@ function ErasureCard({ playerId, online }: { playerId: string; online: boolean }
         </View>
       </Modal>
     </Card>
+  );
+}
+
+// ── Contacto de los tutores ──────────────────────────────────────────────────
+/**
+ * Nombre, correo y teléfono de los tutores del jugador.
+ *
+ * QUIÉN LO VE. La RPC ya resuelve los dos casos sin tocar SQL: su puerta es
+ * `user_can_access_player_contact`, que incluye `user_manages_player` = tutor O el
+ * propio jugador. Y devuelve TODAS las filas de `player_accounts`, así que un tutor
+ * ve aquí a los demás tutores del mismo jugador.
+ *
+ * SON DATOS DE TERCEROS, y eso cambia cómo se pinta. El correo y el teléfono de un
+ * adulto se LEEN, en texto plano y sin ser pulsables. Llamar o escribir son botones
+ * aparte, y cada uno pasa por una confirmación que dice a quién y a qué número o
+ * dirección. La ficha de dirección hace lo contrario —el número ES el enlace— y
+ * está bien ahí: un entrenador con una urgencia en el campo necesita un toque. Aquí
+ * no hay urgencia, y un toque accidental es una llamada al padre de otro.
+ *
+ * Los tres estados de la lectura no se colapsan: `forbidden` no pinta la tarjeta,
+ * un fallo lo DICE, y «sin tutores» es su propio mensaje.
+ */
+function TutorsContactCard({
+  playerId,
+  clubId,
+  accent,
+}: {
+  playerId: string;
+  clubId: string | null;
+  accent: string;
+}) {
+  const t = useTranslations('');
+  const { user } = useSession();
+  const [pending, setPending] = useState<{ action: ContactAction; name: string } | null>(null);
+
+  const { data, loading } = useCached<PlayerTutorsContactResult | null>(
+    playerScopedCacheKey('tutors-contact', clubId ?? 'none', playerId),
+    (sb) => getPlayerTutorsContactFromClient(sb, playerId),
+  );
+
+  if (loading) {
+    return (
+      <Card title={t('gestion.contact_title')}>
+        <ActivityIndicator size="small" />
+      </Card>
+    );
+  }
+  if (!data) return null;
+  if (!data.ok) {
+    // Sin acceso no se pinta nada: no hay nada que explicarle a quien no debe verlo.
+    if (data.reason === 'forbidden') return null;
+    return (
+      <Card title={t('gestion.contact_title')}>
+        <Text className="text-xs text-red-600">{t('gestion.contact_error')}</Text>
+      </Card>
+    );
+  }
+
+  const rows = tutorContactRows(data.tutors, user?.id ?? null);
+
+  return (
+    <Card title={t('gestion.contact_title')}>
+      <Text className="mb-2 text-xs text-zinc-400">{t('gestion.contact_hint')}</Text>
+      {rows.length === 0 ? (
+        <Text className="text-sm text-zinc-500">{t('gestion.contact_none')}</Text>
+      ) : (
+        rows.map((row, i) => (
+          <TutorRow
+            key={row.tutorProfileId}
+            row={row}
+            first={i === 0}
+            accent={accent}
+            onAsk={(action, name) => setPending({ action, name })}
+          />
+        ))
+      )}
+
+      <Modal
+        visible={pending != null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPending(null)}
+      >
+        <View className="flex-1 items-center justify-center bg-black/50 px-6">
+          <View className="w-full max-w-md rounded-2xl bg-white p-5">
+            <Text className="text-lg font-bold text-[#0F1B2E]">
+              {pending
+                ? t(
+                    pending.action.kind === 'call'
+                      ? 'gestion.contact_confirm_call'
+                      : 'gestion.contact_confirm_mail',
+                    { name: pending.name },
+                  )
+                : ''}
+            </Text>
+            {/* El dato EXACTO que se va a usar. Confirmar «llamar a Ana» sin ver el
+                número es confirmar a ciegas, que es lo que se quiere evitar. */}
+            <Text className="mt-2 text-sm text-zinc-600">{pending?.action.value ?? ''}</Text>
+            <View className="mt-4 flex-row justify-end gap-2">
+              <Pressable
+                onPress={() => setPending(null)}
+                className="rounded-full px-4 py-2 active:opacity-60"
+              >
+                <Text className="text-sm text-zinc-500">{t('gestion.contact_cancel')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  const href = pending?.action.href;
+                  setPending(null);
+                  if (href) void Linking.openURL(href);
+                }}
+                className="rounded-full px-4 py-2 active:opacity-80"
+                style={{ backgroundColor: accent }}
+              >
+                <Text className="text-sm font-semibold text-white">
+                  {t('gestion.contact_confirm')}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </Card>
+  );
+}
+
+function TutorRow({
+  row,
+  first,
+  accent,
+  onAsk,
+}: {
+  row: TutorContactRow;
+  first: boolean;
+  accent: string;
+  onAsk: (action: ContactAction, name: string) => void;
+}) {
+  const t = useTranslations('');
+  const relation = t(`jugadores.family.relation.${row.relation}`);
+  const name = row.fullName ?? relation;
+  const actions = contactActionsFor(row);
+
+  return (
+    <View className={first ? 'py-2' : 'mt-1 border-t border-zinc-100 pt-2'}>
+      <View className="flex-row items-center gap-2">
+        <Text className="flex-1 text-sm font-medium text-[#0F1B2E]" numberOfLines={1}>
+          {name}
+        </Text>
+        {row.isViewer ? (
+          <Text className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] text-zinc-500">
+            {t('gestion.contact_you')}
+          </Text>
+        ) : null}
+      </View>
+      <Text className="text-[10px] uppercase tracking-wide text-zinc-400">{relation}</Text>
+      {/* Texto plano y NO pulsable: se ve, no se marca sin querer. */}
+      <ReadRow label={t('ficha.contact_email')} value={row.email} />
+      <ReadRow label={t('ficha.contact_phone')} value={row.phone} />
+      {actions.length > 0 ? (
+        <View className="mt-1.5 flex-row gap-2">
+          {actions.map((action) => (
+            <Pressable
+              key={action.kind}
+              onPress={() => onAsk(action, name)}
+              className="rounded-full border px-3 py-1.5 active:opacity-60"
+              style={{ borderColor: `${accent}66` }}
+            >
+              <Text className="text-xs font-medium" style={{ color: accent }}>
+                {t(action.kind === 'call' ? 'gestion.contact_call' : 'gestion.contact_write')}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+    </View>
   );
 }
 

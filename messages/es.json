@@ -5074,7 +5074,18 @@
     "erasure_reason_ph": "Motivo (opcional)",
     "erasure_ack": "Entiendo que es una solicitud irreversible una vez aprobada.",
     "erasure_cancel": "Cancelar",
-    "erasure_confirm": "Solicitar"
+    "erasure_confirm": "Solicitar",
+    "contact_title": "Contacto de la familia",
+    "contact_hint": "Los tutores vinculados a este jugador. Son datos personales: úsalos solo para lo que haga falta del club.",
+    "contact_none": "No hay ningún tutor vinculado todavía.",
+    "contact_error": "No hemos podido cargar el contacto de los tutores.",
+    "contact_you": "Tú",
+    "contact_call": "Llamar",
+    "contact_write": "Escribir",
+    "contact_confirm_call": "¿Llamar a {name}?",
+    "contact_confirm_mail": "¿Escribir a {name}?",
+    "contact_confirm": "Continuar",
+    "contact_cancel": "Cancelar"
   },
   "inicio": {
     "unread_messages": "Mensajes sin leer: {n}",

@@ -40,11 +40,63 @@ export type PlayerContactResult =
   | { ok: true; playerPhone: string | null; tutors: PlayerTutorContact[] }
   | { ok: false; reason: 'forbidden' | 'error' };
 
+/** Igual que el anterior pero sin el teléfono del jugador: solo los tutores. */
+export type PlayerTutorsContactResult =
+  | { ok: true; tutors: PlayerTutorContact[] }
+  | { ok: false; reason: 'forbidden' | 'error' };
+
 /** Datos de auditoría del lector. La RPC los guarda en `audit_log`. */
 export type ContactAudit = { ip?: string | null; userAgent?: string | null };
 
 function reasonOf(message: string | undefined): 'forbidden' | 'error' {
   return message?.includes('forbidden') ? 'forbidden' : 'error';
+}
+
+type TutorRow = {
+  tutor_profile_id: string;
+  full_name: string | null;
+  relation: string;
+  email: string | null;
+  phone: string | null;
+};
+
+function mapTutorRows(rows: TutorRow[]): PlayerTutorContact[] {
+  return rows.map((row) => ({
+    tutorProfileId: row.tutor_profile_id,
+    fullName: row.full_name ?? null,
+    relation: row.relation,
+    email: row.email ?? null,
+    phone: row.phone ?? null,
+  }));
+}
+
+/**
+ * Solo el contacto de los tutores, sin el teléfono del jugador.
+ *
+ * Existe aparte de `getPlayerContactFromClient` porque la pantalla de FAMILIA no
+ * pinta el teléfono del jugador —ahí el jugador es el hijo, o quien mira— y pedirlo
+ * sería una segunda RPC cuyo resultado se tira. Comparten puerta
+ * (`user_can_access_player_contact`) y comparten el mapeo; lo único que cambia es
+ * cuánto se pide.
+ *
+ * La puerta deja pasar al cuerpo técnico del club, al TUTOR y al propio jugador
+ * (`user_manages_player` cubre los dos últimos), y devuelve TODAS las filas de
+ * `player_accounts` del jugador. O sea: un tutor ve aquí a los demás tutores sin que
+ * haya que tocar el SQL.
+ */
+export async function getPlayerTutorsContactFromClient(
+  supabase: DbClient,
+  playerId: string,
+  audit?: ContactAudit,
+): Promise<PlayerTutorsContactResult> {
+  const { data, error } = await supabase.rpc('get_player_tutors_contact', {
+    p_player_id: playerId,
+    p_ip: audit?.ip ?? undefined,
+    p_user_agent: audit?.userAgent ?? undefined,
+  });
+
+  if (error) return { ok: false, reason: reasonOf(error.message) };
+  return { ok: true, tutors: mapTutorRows(data ?? []) };
 }
 
 /**
@@ -80,17 +132,9 @@ export async function getPlayerContactFromClient(
     };
   }
 
-  const tutors: PlayerTutorContact[] = (tutorsRes.data ?? []).map((row) => ({
-    tutorProfileId: row.tutor_profile_id,
-    fullName: row.full_name ?? null,
-    relation: row.relation,
-    email: row.email ?? null,
-    phone: row.phone ?? null,
-  }));
-
   return {
     ok: true,
     playerPhone: (phoneRes.data as string | null) ?? null,
-    tutors,
+    tutors: mapTutorRows(tutorsRes.data ?? []),
   };
 }

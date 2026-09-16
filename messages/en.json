@@ -5074,7 +5074,18 @@
     "erasure_reason_ph": "Reason (optional)",
     "erasure_ack": "I understand this is an irreversible request once approved.",
     "erasure_cancel": "Cancel",
-    "erasure_confirm": "Request"
+    "erasure_confirm": "Request",
+    "contact_title": "Family contact",
+    "contact_hint": "The guardians linked to this player. This is personal data: use it only for club matters.",
+    "contact_none": "No guardian is linked yet.",
+    "contact_error": "We couldn't load the guardians' contact details.",
+    "contact_you": "You",
+    "contact_call": "Call",
+    "contact_write": "Email",
+    "contact_confirm_call": "Call {name}?",
+    "contact_confirm_mail": "Email {name}?",
+    "contact_confirm": "Continue",
+    "contact_cancel": "Cancel"
   },
   "inicio": {
     "unread_messages": "Unread messages: {n}",
