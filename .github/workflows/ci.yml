@@ -49,6 +49,13 @@ jobs:
       - name: Check invite senders census
         run: pnpm check:invite-senders
 
+      # Censo de puntos de corte de la web para familias (W-B). La web tiene DOS
+      # carcasas autenticadas y `/spectator` es HERMANA de `(authenticated)`: no
+      # hereda su guard. Este censo obliga a que una carcasa nueva declare a qué
+      # lado del corte cae, en vez de quedarse fuera en silencio.
+      - name: Check family web cut census
+        run: pnpm check:family-web-cut
+
       - name: Test (vitest)
         run: pnpm test
 

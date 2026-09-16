@@ -9,6 +9,7 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { evaluateSubscriptionGate } from '@/lib/subscription-gate';
+import { evaluateFamilyWebCut } from '@/lib/family-web-cut';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogoutButton } from '@/components/shell/logout-button';
 import { DeleteAccountCard } from '../(authenticated)/perfil/delete-account-card';
@@ -41,6 +42,23 @@ export default async function SuscripcionPage({ params }: Props) {
   if (!user) redirect(`/${locale}/signin`);
 
   const supabase = createSupabaseServerClient(adapter);
+
+  // W-B — con el corte de la web puesto, esta pantalla no es para ti. Va ANTES del gate
+  // porque no depende de él: si a esta cuenta la web ya no le corresponde, da igual si
+  // debe o no debe dinero.
+  //
+  // Sin esta línea el corte tendría un hueco visible: el layout autenticado manda al
+  // muro ANTES de cortar (para no pisar el re-consentimiento), así que una familia sin
+  // suscripción se quedaría mirando un muro web en vez de la página de la app.
+  //
+  // No se pierde nada al rebotar. El muro solo hace dos cosas —explicar que se paga en
+  // el móvil y ofrecer «he pagado y sigo bloqueado»— y las dos existen en la nativa: el
+  // botón de reclamación llama al MISMO `/api/subscription/claim`
+  // (`apps/native/src/subscription/claim.ts`). Y con el corte encendido esta página
+  // queda inalcanzable de todas formas: quien puede quedar bloqueado por el muro es
+  // familia o seguidor, y a los dos se les corta.
+  const cut = await evaluateFamilyWebCut(supabase);
+  if (cut.closed) redirect(`/${locale}/aplicacion`);
 
   // Quien no debería estar aquí, fuera. Si el gate está apagado `blocked` es siempre
   // false, así que esta pantalla es inalcanzable sin el interruptor puesto — y eso es

@@ -35,9 +35,9 @@ describe('isFamilyAccount', () => {
   // sobre el vínculo familiar igual que en SU-2. La alternativa —la misma cuenta dentro
   // por un lado y fuera por otro— no es un estado que se pueda pintar.
   it('EL STAFF GANA: un entrenador que además es padre conserva la web', () => {
-    expect(
-      isFamilyAccount(links({ activeRoles: ['entrenador_ayudante'], isTutor: true })),
-    ).toBe(false);
+    expect(isFamilyAccount(links({ activeRoles: ['entrenador_ayudante'], isTutor: true }))).toBe(
+      false,
+    );
   });
 
   // La consola de plataforma solo existe en la web: cerrársela le deja sin herramienta.
@@ -74,9 +74,7 @@ describe('isFamilyAccount', () => {
  */
 describe('contrato con requiresSubscription (SU-2)', () => {
   function subsets(roles: readonly Role[]): Role[][] {
-    return roles.reduce<Role[][]>((acc, r) => [...acc, ...acc.map((s) => [...s, r])], [
-      [],
-    ]);
+    return roles.reduce<Role[][]>((acc, r) => [...acc, ...acc.map((s) => [...s, r])], [[]]);
   }
 
   it('coinciden sobre las 512 combinaciones posibles', () => {

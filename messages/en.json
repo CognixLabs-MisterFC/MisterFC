@@ -5588,5 +5588,18 @@
       "preparador_fisico": "Fitness coach",
       "coordinador": "Coordinator"
     }
+  },
+  "app_only": {
+    "title": "MisterFC now runs in the app",
+    "body": "Family access to MisterFC is in the mobile app. Sign in with the same email and password you use here.",
+    "account_title": "Your account is set up",
+    "account_email": "You signed in with this email. It is the same one you need to use in the app:",
+    "account_email_unknown": "Sign in to the app with the same email you signed in with here.",
+    "download_title": "Download the app",
+    "download_soon": "The download links will be here as soon as the app is published. In the meantime, search for “MisterFC” on the App Store or Google Play.",
+    "download_app_store": "Download on the App Store",
+    "download_play": "Get it on Google Play",
+    "terms_link": "Terms",
+    "privacy_link": "Privacy"
   }
 }

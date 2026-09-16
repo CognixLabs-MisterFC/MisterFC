@@ -7,6 +7,7 @@ import { SpectatorShell } from '@/components/spectator/spectator-shell';
 import { createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { evaluateSubscriptionGate } from '@/lib/subscription-gate';
+import { evaluateFamilyWebCut } from '@/lib/family-web-cut';
 
 type Props = {
   children: ReactNode;
@@ -49,6 +50,23 @@ export default async function SpectatorLayout({ children, params }: Props) {
   const gate = await evaluateSubscriptionGate(supabase);
   if (gate.blocked) {
     redirect(`/${locale}/suscripcion`);
+  }
+
+  // W-B — CORTE DE LA WEB PARA FAMILIAS. Segundo punto común, el que se olvida: esta
+  // carcasa es HERMANA de `(authenticated)` y no cuelga de su layout, así que el corte
+  // de allí no la cubre.
+  //
+  // Los seguidores entran en el corte por decisión expresa de Jose (punto 1 de la ronda
+  // de respuestas). Sin esta línea, el corte tendría un agujero del tamaño de un árbol
+  // entero: `/spectator` con sus cuatro secciones, abierto a todo el que siga a un
+  // jugador. Es el mismo agujero que SU-5 tapó aquí mismo, y por el mismo motivo.
+  //
+  // Aquí NO hay guard de re-consentimiento al que respetar (un seguidor no es tutor, y
+  // `tutor_needs_reconsent` necesita un club activo que esta carcasa no tiene), así que
+  // el corte puede ir justo después del muro sin más consideraciones.
+  const cut = await evaluateFamilyWebCut(supabase);
+  if (cut.closed) {
+    redirect(`/${locale}/aplicacion`);
   }
 
   return (
