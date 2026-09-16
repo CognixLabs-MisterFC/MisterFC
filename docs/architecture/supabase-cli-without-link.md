@@ -51,7 +51,7 @@ Definidos en `package.json` raíz, todos delegan en `scripts/supabase-cli.sh`:
 | Script | Equivalente CLI | Uso |
 |---|---|---|
 | `pnpm db:push` | `supabase db push --db-url ...` | Aplica migraciones pendientes a la BD remota |
-| `pnpm db:types` | `supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > packages/core/src/supabase/database.ts` | Regenera types TS desde el schema remoto. **Excepción**: usa Management API (no `--db-url`) porque el CLI 2.98 con `--db-url` exige Docker (bug). El access token sí tiene permiso de lectura para esta operación aunque no para `supabase link`. |
+| `pnpm db:types` | `supabase gen types typescript --project-id $SUPABASE_PROJECT_REF --schema public` → fichero temporal → `packages/core/src/supabase/database.ts` | Regenera types TS desde el schema remoto. **Excepción**: usa Management API (no `--db-url`) porque el CLI 2.98 con `--db-url` exige Docker (bug). El access token sí tiene permiso de lectura para esta operación aunque no para `supabase link`. Ver [Quién genera los tipos](#quién-genera-los-tipos-de-verdad). |
 | `pnpm db:reset` | `supabase db reset --db-url ...` | ⚠️ Borra y recrea el schema `public` remoto. Pide confirmación interactiva por nombre del ref. Solo usar en proyectos vacíos / sandbox. |
 
 Cualquier flag extra pasado al script se reenvía al CLI:
@@ -97,3 +97,21 @@ Hay un mismatch entre el estado del repo y el remoto. Probablemente alguien apli
 
 **`pnpm db:types` devuelve un archivo vacío o con error**
 El CLI vuelca el error a stdout y se acaba escribiendo como archivo de types. Comprueba el exit code y, si falla, no commitees el archivo generado.
+
+---
+
+## Quién genera los tipos de verdad
+
+Con `--project-id`, **el TypeScript no lo genera el CLI: lo genera Supabase en el servidor**. El CLI es un cliente HTTP de `GET /v1/projects/{ref}/types/typescript`. Comprobado contra producción: la respuesta cruda de esa ruta y la salida del CLI son **byte a byte idénticas**, tanto con el 2.98.2 pineado como con el 2.117.0.
+
+Tres consecuencias prácticas:
+
+- **La versión del CLI no influye en `db:types`.** Lo único en lo que se diferencian 2.98.2 y 2.117.0 es qué esquemas piden por defecto: el viejo pide `public` y el nuevo `public,graphql_public`. Por eso el script pasa `--schema public` explícito — así el fichero sale igual con cualquiera.
+- **`database.ts` puede cambiar sin que cambie el esquema.** El generador del servidor se actualiza solo. Entre julio y septiembre de 2026 cambió dos veces: añadió paréntesis en los genéricos `Tables<>`/`Enums<>` y cambió el `PostgrestVersion` que escribe en la cabecera. Un diff en esas líneas no significa que alguien haya tocado la BD.
+- **Un diff de `database.ts` no es revisable línea a línea.** Lo que hay que mirar es si aparecen o desaparecen tablas, columnas y funciones; el ruido de formato es del servidor.
+
+### El pin del CLI y `db:types`
+
+El proyecto pinea `2.98.2` en `scripts/supabase-cli.sh` y en `.github/workflows/ci.yml`. Ese pin **sigue importando** para `db push`, `db reset` y el `supabase start` del job de pgTAP, que sí corren código del CLI. Para `db:types` es indiferente, por lo de arriba.
+
+La nota de `ci.yml` que dice «v2.99+ rompe el flujo db» **no tiene medición detrás**: el pin lleva puesto sin tocar desde el primer commit que creó el script (mayo de 2026, Fase 1), nunca se subió ni se revirtió. Si algún día se quiere subir, es un cambio propio y se valida con el `supabase start` del CI y un `db push --dry-run`, no de paso en otro PR.
