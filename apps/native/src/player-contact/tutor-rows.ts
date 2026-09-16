@@ -5,6 +5,11 @@
  * ellas de privacidad— y en esta app lo que se prueba es la lógica pura: las
  * pantallas no se renderizan en los tests.
  *
+ * NO HAY ACCIONES, Y ES DELIBERADO. Hubo botones de llamar y escribir detrás de una
+ * confirmación; Jose los quitó. El contacto de los tutores se LEE: nombre, correo y
+ * teléfono en texto, y nada que abra el marcador ni el cliente de correo. Si alguien
+ * los echa de menos, la decisión es suya, no un olvido.
+ *
  * NO importa de `@misterfc/core`: el tipo de entrada se declara aquí, estructural.
  * Si el de core cambia de forma, el sitio que los junta (la pantalla) deja de
  * compilar, que es donde queremos enterarnos. Lo que se evita es que un test de
@@ -22,7 +27,7 @@ export type TutorContact = {
 };
 
 export type TutorContactRow = TutorContact & {
-  /** Quien mira ES este tutor. La fila se pinta, pero sin acciones. */
+  /** Quien mira ES este tutor. La fila se pinta, marcada. */
   isViewer: boolean;
 };
 
@@ -50,39 +55,4 @@ export function tutorContactRows(
   return tutors
     .filter((tu) => tu.relation !== 'self')
     .map((tu) => ({ ...tu, isViewer: tu.tutorProfileId === viewerProfileId }));
-}
-
-export type ContactAction = {
-  kind: 'call' | 'mail';
-  /** Lo que se abre. */
-  href: string;
-  /** Lo que se le enseña a quien va a pulsar, ANTES de abrir nada. */
-  value: string;
-};
-
-/**
- * Las acciones de una fila. Devolver una lista y no pintar botones a pelo es lo que
- * permite que la pantalla no tenga que decidir nada:
- *
- *  · sin dato no hay acción (un botón «Llamar» sin número es una promesa falsa),
- *  · sobre uno mismo no hay acción (llamarte a ti no es una funcionalidad),
- *  · el `value` viaja junto al `href` para que la confirmación pueda enseñar A QUIÉN
- *    se va a llamar o escribir. Son datos personales de un adulto: la acción tiene
- *    que ser deliberada, no un toque que marca sin avisar.
- *
- * En el `tel:` se quitan los espacios —hay marcadores que se atragantan con ellos—
- * pero el `value` conserva el número TAL CUAL está guardado, que es como lo
- * reconoce quien lo lee.
- */
-export function contactActionsFor(row: TutorContactRow): ContactAction[] {
-  if (row.isViewer) return [];
-
-  const actions: ContactAction[] = [];
-  const phone = row.phone?.trim();
-  const email = row.email?.trim();
-
-  if (phone) actions.push({ kind: 'call', href: `tel:${phone.replace(/\s+/g, '')}`, value: phone });
-  if (email) actions.push({ kind: 'mail', href: `mailto:${email}`, value: email });
-
-  return actions;
 }

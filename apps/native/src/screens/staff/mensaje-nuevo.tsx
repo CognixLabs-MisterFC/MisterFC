@@ -23,6 +23,7 @@ import {
   type StaffDirectoryRole,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
+import { reportDataError } from '@/lib/report-error';
 import { useSession } from '@/auth/session';
 import { useApp } from '@/auth/context';
 import { useIsOnline } from '@/data/connectivity';
@@ -71,6 +72,14 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
   const [teams, setTeams] = useState<MessageableTeam[]>([]);
   const [staff, setStaff] = useState<StaffDirectoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  // Qué pestañas NO se pudieron cargar. Antes esto no existía: si una lectura
+  // fallaba, su lista se quedaba a cero y la pantalla decía «no hay destinatarios»,
+  // que es una respuesta distinta y tranquilizadora. Se distingue.
+  const [failed, setFailed] = useState<Record<Mode, boolean>>({
+    player: false,
+    team: false,
+    club: false,
+  });
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,17 +98,28 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
       // un entrenador: solo SUS equipos (isAdminDir=false → rama team_staff de core).
       const isDirRole = role === 'admin_club' || role === 'director';
       const isAdminDir = isDirRole && basePath !== '/staff';
+      // El logger NO es opcional aquí. Los tres lectores de core lo tienen con un
+      // `noopLog` por defecto, así que sin pasarlo un fallo de RLS o de PostgREST se
+      // perdía del todo: ni pantalla, ni Sentry. Se descarta el `extra` a propósito
+      // (lleva club_id) — `reportDataError` es sin ids, igual que el resto.
+      const log = (error: unknown, step: string) => reportDataError(step, error);
+
       const [pRes, tRes, sRes] = await Promise.all([
-        listMessageablePlayersFromClient(supabase, clubId),
-        listMessageableTeamsFromClient(supabase, { clubId, isAdminDir, membershipId }),
+        listMessageablePlayersFromClient(supabase, clubId, log),
+        listMessageableTeamsFromClient(supabase, { clubId, isAdminDir, membershipId }, log),
         userId
-          ? listStaffDirectoryFromClient(supabase, { clubId, currentProfileId: userId })
+          ? listStaffDirectoryFromClient(supabase, { clubId, currentProfileId: userId }, log)
           : Promise.resolve({ staff: [] as StaffDirectoryEntry[] }),
       ]);
       if (!active) return;
       if ('players' in pRes) setPlayers(pRes.players);
       if ('teams' in tRes) setTeams(tRes.teams);
       if ('staff' in sRes) setStaff(sRes.staff);
+      setFailed({
+        player: 'error' in pRes,
+        team: 'error' in tRes,
+        club: 'error' in sRes,
+      });
       setLoading(false);
     })();
     return () => {
@@ -233,7 +253,11 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
 
       {mode === 'player' ? (
         filteredPlayers.length === 0 ? (
+          failed.player ? (
+          <LoadFailed />
+        ) : (
           <EmptyState message={t('mensajes_staff.no_players')} />
+        )
         ) : (
           <FlatList
             data={filteredPlayers}
@@ -252,7 +276,11 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
         )
       ) : mode === 'team' ? (
         filteredTeams.length === 0 ? (
+          failed.team ? (
+          <LoadFailed />
+        ) : (
           <EmptyState message={t('mensajes_staff.no_teams')} />
+        )
         ) : (
           <FlatList
             data={filteredTeams}
@@ -271,7 +299,11 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
           />
         )
       ) : staffSections.length === 0 ? (
-        <EmptyState message={t('mensajes_staff.no_staff')} />
+        failed.club ? (
+          <LoadFailed />
+        ) : (
+          <EmptyState message={t('mensajes_staff.no_staff')} />
+        )
       ) : (
         <SectionList
           sections={staffSections}
@@ -294,6 +326,23 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
           )}
         />
       )}
+    </View>
+  );
+}
+
+/**
+ * Una lectura que se rompió. Es lo contrario de `EmptyState`: «no hay destinatarios»
+ * y «no hemos podido mirar» son respuestas distintas, y hasta ahora las dos se
+ * pintaban igual. El fallo además ya está en Sentry (`reportDataError` en la carga).
+ */
+function LoadFailed() {
+  const t = useTranslations('');
+  return (
+    <View className="flex-1 items-center justify-center px-8">
+      <Text className="text-center text-sm text-red-600">{t('mensajes_staff.load_failed')}</Text>
+      <Text className="mt-1 text-center text-xs text-zinc-400">
+        {t('mensajes_staff.load_failed_hint')}
+      </Text>
     </View>
   );
 }
