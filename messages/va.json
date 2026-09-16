@@ -5601,5 +5601,37 @@
     "download_play": "Descarregar en Google Play",
     "terms_link": "Termes",
     "privacy_link": "Privacitat"
+  },
+  "consentimientos": {
+    "section_title": "Permisos que has donat",
+    "intro": "Ací pots veure què has autoritzat, quan, i el text exacte que vas acceptar. Els permisos opcionals pots retirar-los quan vulgues.",
+    "account_group": "El teu compte",
+    "child_unnamed": "Fill/a",
+    "granted": "Acceptat",
+    "revoked": "Retirat",
+    "view_text": "Veure el text que vas acceptar",
+    "close": "Tancar",
+    "load_error": "No hem pogut carregar els teus permisos. Torna a entrar d'ací a un moment.",
+    "doc_error": "No s'ha pogut carregar el text.",
+    "doc_not_found": "Aquest text ja no està disponible.",
+    "revoke": "Retirar",
+    "revoke_title": "Retirar aquest permís?",
+    "revoke_note": "Retirar un permís no afecta el que ja es va fer mentre estava vigent. Pots tornar a donar-lo quan el club et demane revisar els permisos.",
+    "revoke_cancel": "Cancel·lar",
+    "revoke_confirm": "Retirar",
+    "revoke_effect": {
+      "image_internal": "La fotografia del teu fill o filla deixarà de veure's en l'aplicació immediatament.",
+      "image_social": "El club deixarà de tindre el teu permís per a publicar la seua imatge fora de l'aplicació. Això impedeix usos futurs: no retira el que ja s'haja publicat.",
+      "medical": "La informació de salut deixarà de veure's en l'aplicació i el club no podrà afegir ni modificar res. No s'esborra: queda bloquejada."
+    },
+    "offline": "Sense connexió no es poden retirar permisos. Intenta-ho quan tornes a tindre xarxa.",
+    "errors": {
+      "forbidden": "Ja no pots gestionar els permisos d'aquest jugador.",
+      "no_session": "La teua sessió ha caducat. Torna a entrar.",
+      "not_revocable": "Aquest permís no es pot retirar ací. Si no vols continuar usant MisterFC, pots eliminar el teu compte des d'aquesta mateixa pantalla.",
+      "nothing_to_revoke": "No hi ha res a retirar en aquest permís.",
+      "no_active_season": "El club no té una temporada activa. Avisa'l perquè puga registrar-se la retirada.",
+      "error": "No s'ha pogut retirar el permís. Intenta-ho de nou."
+    }
   }
 }

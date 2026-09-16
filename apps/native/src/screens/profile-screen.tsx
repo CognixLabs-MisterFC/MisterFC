@@ -33,6 +33,7 @@ import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
 import { PushSettingsCard } from '@/notifications/push-settings-card';
 import { DeleteAccountCard } from '@/ui/delete-account-card';
+import { ConsentsCard } from '@/ui/consents-card';
 import { webBaseUrl } from '@/lib/server-api';
 import { uuidv4 } from '@/lib/uuid';
 import { appLocale, useLocale, useSetLocale, useTranslations } from '@/locale/provider';
@@ -72,9 +73,8 @@ export function ProfileScreen() {
     data: phone,
     loading: phoneLoading,
     refresh: refreshPhone,
-  } = useCached<MyPhoneResult>(
-    profileScopedCacheKey('profile-phone', userId ?? 'none'),
-    (sb) => (userId ? getMyPhoneFromClient(sb) : Promise.resolve({ ok: false })),
+  } = useCached<MyPhoneResult>(profileScopedCacheKey('profile-phone', userId ?? 'none'), (sb) =>
+    userId ? getMyPhoneFromClient(sb) : Promise.resolve({ ok: false }),
   );
 
   // Se espera también al teléfono, y no es cosmético: la tarjeta de datos fija
@@ -122,6 +122,13 @@ export function ProfileScreen() {
           <Text className="text-sm text-zinc-400">{t('notifications_title')}</Text>
           <PushSettingsCard />
         </View>
+
+        {/* RV-2 — los permisos que ha dado, y el botón de retirarlos. Va DESPUÉS de
+            push y ANTES del borrado: es el bloque de "lo que has consentido", y tiene
+            que quedar por encima de lo irreversible. No se gatea por rol —
+            `get_tutor_consents` devuelve cero filas a quien no es tutor y la tarjeta no
+            se pinta sola. */}
+        <ConsentsCard />
 
         {/* BC-5 — Eliminar la cuenta (Apple 5.1.1 v). AL FINAL DEL TODO y en su propia
             tarjeta roja: es lo más irreversible que un usuario puede hacer sobre sí
@@ -187,7 +194,9 @@ function AvatarCard({
     const validation = avatarUploadSchema.safeParse({ mimeType: mime, size });
     if (!validation.success) {
       const code = validation.error.issues[0]?.message ?? '';
-      setError(code.includes('large') ? t('errors.avatar_too_large') : t('errors.avatar_mime_invalid'));
+      setError(
+        code.includes('large') ? t('errors.avatar_too_large') : t('errors.avatar_mime_invalid'),
+      );
       return;
     }
     if (!asset.base64) {

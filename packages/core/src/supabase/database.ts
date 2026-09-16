@@ -4996,6 +4996,15 @@ export type Database = {
         Args: { p_profile_id: string }
         Returns: boolean
       }
+      revoke_player_consent: {
+        Args: {
+          p_consent_type: Database["public"]["Enums"]["consent_type"]
+          p_ip?: string
+          p_player_id: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
       seed_club_legal_documents: {
         Args: { p_club_id: string }
         Returns: undefined

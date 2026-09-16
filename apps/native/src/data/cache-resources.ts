@@ -29,7 +29,13 @@ import { invalidateResources } from './cache-bus';
 export const WRITE_INVALIDATIONS = {
   // ── Familia ───────────────────────────────────────────────────────────────
   /** Familia responde una convocatoria del hijo (deja de estar "pendiente"). */
-  respondCallup: ['inicio', 'convocatoria', 'convocatorias', 'convocatoria-staff', 'convocatorias-staff'],
+  respondCallup: [
+    'inicio',
+    'convocatoria',
+    'convocatorias',
+    'convocatoria-staff',
+    'convocatorias-staff',
+  ],
   /** Marcar novedades/notificaciones como leídas (feed + contador del inicio). */
   markNotifications: ['novedades', 'inicio', 'anuncios'],
   /** Leer un hilo de mensajería (contador de no leídos del inicio + el hilo).
@@ -43,6 +49,13 @@ export const WRITE_INVALIDATIONS = {
   setPlayerMedical: ['medical', 'mgmt'],
   /** Foto del jugador (se ve en gestión, plantilla, home de equipo y roster staff). */
   setPlayerPhoto: ['photo-path', 'mgmt', 'plantilla', 'home', 'staff-roster'],
+  /** RV-2 — retirar un consentimiento. Sobre-lista a propósito: no se sabe aquí QUÉ
+   *  tipo se retiró, y los efectos caen en pantallas distintas. Retirar `image_internal`
+   *  apaga `player_photo_visible`, que GATEA LA RLS DE STORAGE: la foto del jugador
+   *  deja de poder leerse del bucket, así que todo lo que la pinta sirve algo que ya
+   *  no existe. Retirar el médico cierra la ficha. */
+  revokeConsent: ['consents', 'photo-path', 'mgmt', 'plantilla', 'home', 'staff-roster', 'medical'],
+
   /** Perfil del tutor (nombre/avatar/idioma). `tutors-contact` porque el tutor se ve
    *  a sí mismo en la tarjeta de contacto de Gestión: cambiarse el nombre o el
    *  teléfono y seguir viendo el viejo ahí es la clase de incoherencia que hace
@@ -59,7 +72,13 @@ export const WRITE_INVALIDATIONS = {
   /** G1 — Editar cabecera/compartir la sesión: el editor y la vista del jugador. */
   sessionEdit: ['sesion-editar', 'sesion', 'entrenamientos'],
   /** Decisión de convocatoria del staff (convoca/descarta) → familia y staff. */
-  upsertCallupDecision: ['convocatoria-staff', 'convocatorias-staff', 'convocatoria', 'convocatorias', 'inicio'],
+  upsertCallupDecision: [
+    'convocatoria-staff',
+    'convocatorias-staff',
+    'convocatoria',
+    'convocatorias',
+    'inicio',
+  ],
   /** Alineación/posiciones (se refleja en el campo del directo). */
   setLineup: ['alineacion', 'directo', 'directo-estado', 'spec-directo'],
   /** Marcar oficial / compartir con el equipo desde el editor: la vista de la
