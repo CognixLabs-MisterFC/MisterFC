@@ -5601,5 +5601,37 @@
     "download_play": "Get it on Google Play",
     "terms_link": "Terms",
     "privacy_link": "Privacy"
+  },
+  "consentimientos": {
+    "section_title": "Permissions you have given",
+    "intro": "Here you can see what you have authorised, when, and the exact text you accepted. Optional permissions can be withdrawn whenever you want.",
+    "account_group": "Your account",
+    "child_unnamed": "Child",
+    "granted": "Accepted",
+    "revoked": "Withdrawn",
+    "view_text": "View the text you accepted",
+    "close": "Close",
+    "load_error": "We couldn't load your permissions. Please come back in a moment.",
+    "doc_error": "The text could not be loaded.",
+    "doc_not_found": "This text is no longer available.",
+    "revoke": "Withdraw",
+    "revoke_title": "Withdraw this permission?",
+    "revoke_note": "Withdrawing a permission does not affect what was already done while it was in force. You can give it again when the club asks you to review your permissions.",
+    "revoke_cancel": "Cancel",
+    "revoke_confirm": "Withdraw",
+    "revoke_effect": {
+      "image_internal": "Your child's photo will stop being visible in the app immediately.",
+      "image_social": "The club will no longer have your permission to publish their image outside the app. This prevents future uses: it does not take back what has already been published.",
+      "medical": "Health information will stop being visible in the app and the club will not be able to add or change anything. It is not deleted: it is blocked."
+    },
+    "offline": "Permissions cannot be withdrawn while offline. Try again when you are back on the network.",
+    "errors": {
+      "forbidden": "You can no longer manage this player's permissions.",
+      "no_session": "Your session has expired. Please sign in again.",
+      "not_revocable": "This permission cannot be withdrawn here. If you no longer want to use MisterFC, you can delete your account from this same screen.",
+      "nothing_to_revoke": "There is nothing to withdraw for this permission.",
+      "no_active_season": "The club has no active season. Let them know so the withdrawal can be recorded.",
+      "error": "The permission could not be withdrawn. Please try again."
+    }
   }
 }

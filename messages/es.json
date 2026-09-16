@@ -5601,5 +5601,37 @@
     "download_play": "Descargar en Google Play",
     "terms_link": "Términos",
     "privacy_link": "Privacidad"
+  },
+  "consentimientos": {
+    "section_title": "Permisos que has dado",
+    "intro": "Aquí puedes ver qué has autorizado, cuándo, y el texto exacto que aceptaste. Los permisos opcionales puedes retirarlos cuando quieras.",
+    "account_group": "Tu cuenta",
+    "child_unnamed": "Hijo/a",
+    "granted": "Aceptado",
+    "revoked": "Retirado",
+    "view_text": "Ver el texto que aceptaste",
+    "close": "Cerrar",
+    "load_error": "No hemos podido cargar tus permisos. Vuelve a entrar en un momento.",
+    "doc_error": "No se pudo cargar el texto.",
+    "doc_not_found": "Este texto ya no está disponible.",
+    "revoke": "Retirar",
+    "revoke_title": "¿Retirar este permiso?",
+    "revoke_note": "Retirar un permiso no afecta a lo que ya se hizo mientras estaba vigente. Puedes volver a darlo cuando el club te pida revisar los permisos.",
+    "revoke_cancel": "Cancelar",
+    "revoke_confirm": "Retirar",
+    "revoke_effect": {
+      "image_internal": "La fotografía de tu hijo o hija dejará de verse en la aplicación de inmediato.",
+      "image_social": "El club dejará de tener tu permiso para publicar su imagen fuera de la aplicación. Esto impide usos futuros: no retira lo que ya se haya publicado.",
+      "medical": "La información de salud dejará de verse en la aplicación y el club no podrá añadir ni modificar nada. No se borra: queda bloqueada."
+    },
+    "offline": "Sin conexión no se pueden retirar permisos. Inténtalo cuando vuelvas a tener red.",
+    "errors": {
+      "forbidden": "Ya no puedes gestionar los permisos de este jugador.",
+      "no_session": "Tu sesión ha caducado. Vuelve a entrar.",
+      "not_revocable": "Este permiso no se puede retirar aquí. Si no quieres seguir usando MisterFC, puedes eliminar tu cuenta desde esta misma pantalla.",
+      "nothing_to_revoke": "No hay nada que retirar en este permiso.",
+      "no_active_season": "El club no tiene una temporada activa. Avísale para que pueda registrarse la retirada.",
+      "error": "No se ha podido retirar el permiso. Inténtalo de nuevo."
+    }
   }
 }
