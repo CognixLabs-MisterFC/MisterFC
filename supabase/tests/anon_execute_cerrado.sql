@@ -3,12 +3,17 @@
 --   [1] EXACTAMENTE dos funciones ejecutables por anon, y son las dos de F14J.
 --   [2] Las que el mapa encontro SIN portero ya no lo son (comprobacion nominal: si
 --       alguien reabre una por su nombre, esto la caza aunque [1] se relajara).
---   [3] LA IMPORTANTE: una funcion CREADA AHORA no nace ejecutable por anon. Es lo que
---       prueba que el arreglo es permanente y no una limpieza del pasado.
+--   [3] El default de Supabase (anon=X) sigue retirado en `public`. La otra via, la de
+--       PUBLIC, NO se puede cerrar sin romper la suite (ver la migracion): quien caza
+--       una funcion nueva abierta es [1], y por eso [1] es el bloque que importa.
 --   [4] NO nos hemos pasado de frenada: `authenticated` conserva EXECUTE en todas las
 --       funciones que usan sus policies. Sin eso, quitar de mas rompe lecturas enteras
 --       y el sintoma serian tablas vacias, no un error.
 --   [5] `service_role` conserva EXECUTE: lo usan los crons y los route handlers.
+--   [6] No hemos cerrado `pg_temp`. Suena ajeno a esto y no lo es: la primera version
+--       de la migracion revocaba PUBLic de forma GLOBAL, `pg_temp` incluido, y 95
+--       ficheros de esta suite crean ahi sus helpers. El sintoma no fue un rojo: fue
+--       el backend del CI cayendose a mitad de suite.
 --
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final).
 -- Privilegios con has_function_privilege, NUNCA provocando el 42501.
@@ -78,26 +83,38 @@ begin
   end loop;
 end $$;
 
--- ── [3] Una funcion NUEVA nace cerrada ───────────────────────────────────────
--- Esta es la que distingue "hemos limpiado" de "no vuelve a pasar". Si alguien
--- revierte el ALTER DEFAULT PRIVILEGES, aqui se pone rojo aunque el esquema de hoy
--- este impecable.
+-- ── [3] El default de anon sigue retirado ────────────────────────────────────
+-- Ojo con lo que este bloque NO dice. Una funcion creada ahora SI nace ejecutable por
+-- anon, porque el `=X/postgres` de PostgreSQL solo se quita con un revoke GLOBAL que
+-- deja `pg_temp` sin PUBLIC y tumba el backend del CI (esta contado en la migracion).
+-- Lo que se fija aqui es la mitad que si se puede fijar sin colateral: que nadie
+-- devuelva el default de Supabase. El que una funcion nueva quede abierta lo caza [1].
 do $$
+declare
+  v_acl text;
 begin
-  execute 'create function public.zz_prueba_default_acl() returns integer language sql as $f$ select 1 $f$';
+  select coalesce(d.defaclacl::text, '')
+    into v_acl
+  from pg_default_acl d
+  join pg_namespace n on n.oid = d.defaclnamespace
+  join pg_roles r on r.oid = d.defaclrole
+  where d.defaclobjtype = 'f' and n.nspname = 'public' and r.rolname = 'postgres';
 
-  if has_function_privilege('anon', 'public.zz_prueba_default_acl()'::regprocedure::oid, 'execute') then
+  if v_acl is null or v_acl = '' then
     raise exception
-      '[3] una funcion recien creada NACE ejecutable por anon: el default privilege sigue concediendo';
+      '[3] no hay default privilege de postgres para funciones en public: el ALTER DEFAULT PRIVILEGES de la migracion no esta aplicado';
   end if;
 
-  -- Y el contraste: authenticated SI la hereda, que es lo normal y lo que queremos.
-  if not has_function_privilege('authenticated', 'public.zz_prueba_default_acl()'::regprocedure::oid, 'execute') then
+  if v_acl ~ '\manon=' then
     raise exception
-      '[3] se ha cerrado tambien a authenticated sin querer: el revoke iba solo para anon';
+      '[3] el default privilege vuelve a conceder EXECUTE a anon: %. Toda funcion nueva nacera abierta por DOS vias en vez de una', v_acl;
   end if;
 
-  execute 'drop function public.zz_prueba_default_acl()';
+  -- Y el contraste: authenticated y service_role SI lo heredan, que es lo normal.
+  if v_acl !~ '\mauthenticated=' or v_acl !~ '\mservice_role=' then
+    raise exception
+      '[3] el revoke se llevo por delante a authenticated o service_role: %', v_acl;
+  end if;
 end $$;
 
 -- ── [4] No nos hemos pasado: authenticated conserva lo que sus policies usan ──
@@ -135,6 +152,24 @@ begin
 
   if v_sin > 0 then
     raise exception '[5] service_role perdio EXECUTE en % funciones; los crons y los route handlers van con ese rol', v_sin;
+  end if;
+end $$;
+
+-- ── [6] pg_temp sigue siendo de todos ────────────────────────────────────────
+-- Un revoke de EXECUTE a PUBLIC sin `IN SCHEMA` alcanza a `pg_temp`. Los ficheros de
+-- esta suite crean ahi sus `assert_*` y luego cambian de rol con set_config('role',...,
+-- true), que es LOCAL A LA TRANSACCION y sigue puesto cuando psql llama al helper
+-- siguiente. Sin PUBLIC eso es un 42501, y un 42501 tumba el backend efimero del CI
+-- (BC-1): no sale un fallo legible, sale "server closed the connection unexpectedly".
+-- Este bloque lo caza en el fichero que lo causa en vez de en el que lo sufre.
+do $$
+begin
+  execute 'create function pg_temp.zz_guard_pg_temp() returns integer language sql as $f$ select 1 $f$';
+
+  if not has_function_privilege('authenticated',
+       (select p.oid from pg_proc p where p.proname = 'zz_guard_pg_temp'), 'execute') then
+    raise exception
+      '[6] pg_temp ha perdido EXECUTE para PUBLIC: alguien ha puesto un ALTER DEFAULT PRIVILEGES global. La suite pgTAP no sobrevive a eso (el backend se cae, no falla)';
   end if;
 end $$;
 

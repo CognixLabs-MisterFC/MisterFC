@@ -140,46 +140,46 @@ comment on function public.list_public_clubs() is
 comment on function public.get_public_club_by_slug(text) is
   'PÚBLICA A PROPÓSITO (F14J): la página del club corre ANTES de identificarse. Es una de las DOS funciones de public ejecutables por anon; la lista la fija el test anon_execute_cerrado.';
 
--- ── 3 · Que las nuevas no nazcan abiertas ───────────────────────────────────
+-- ── 3 · Que las nuevas no nazcan abiertas: hasta dónde se puede llegar ──────
 --
--- ESTO es lo que impide que el problema vuelva dentro de seis meses. Sin ello, el
--- bloque de arriba limpia el pasado y la siguiente migración abre un agujero nuevo
--- sin que nadie escriba una línea.
+-- Aquí hay que ser exacto, porque la primera versión de esta migración se pasó de
+-- frenada y tumbó el CI. Las dos vías de la ACL no se cierran igual de bien:
+--
+--   · `anon=X/postgres` es el default de SUPABASE y vive EN EL ESQUEMA. Se quita con
+--     `IN SCHEMA public`, y eso es lo que hace la línea de abajo. Sin colateral.
+--
+--   · `=X/postgres` (PUBLIC) es el default de POSTGRESQL y es GLOBAL, no de esquema.
+--     `ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ... FROM PUBLIC` se acepta sin
+--     rechistar y NO HACE NADA. La única forma que funciona es la global, sin
+--     `IN SCHEMA` — y esa alcanza a TODO lo que cree `postgres` en CUALQUIER esquema,
+--     `pg_temp` incluido.
+--
+-- Y `pg_temp` no es teórico: 95 ficheros de la suite pgTAP crean funciones ahí
+-- (`pg_temp.new_test_user`, los `assert_*` de cada fichero). Varios cambian de rol a
+-- mitad de transacción con `set_config('role','authenticated', true)`, que es LOCAL a
+-- la transacción y sobrevive al `return` de la función. A partir de ahí el propio psql
+-- llama a sus helpers de `pg_temp` siendo `authenticated`: con PUBLIC revocado eso es
+-- un `42501`, y un 42501 tumba el backend efímero del CI (lección de BC-1). No es un
+-- fallo rojo legible: es «server closed the connection unexpectedly» a mitad de suite.
+-- Medido en producción: con el revoke global, una función recién creada en `pg_temp`
+-- pasa de ACL nula a `{postgres=X/postgres}` y `authenticated` deja de poder llamarla.
+--
+-- ASÍ QUE NO SE PONE. La vía de PUBLIC se queda abierta a propósito, y lo que impide
+-- que el problema vuelva es el bloque [1] del test `anon_execute_cerrado`: exige que
+-- la lista de funciones de `public` ejecutables por anon sea EXACTAMENTE esas dos.
+-- Una función nueva —o una de estas 199 recreada con DROP+CREATE, que resetea la ACL—
+-- nace ejecutable por anon y pone el CI en rojo antes del merge, nombrando la función.
+--
+-- Es una red distinta de la que se pidió: no impide abrirla, la caza. Pero es la que
+-- se puede tener sin superusuario (postgres no lo es en Supabase, así que tampoco hay
+-- event trigger que valga) y sin romper la suite.
 --
 -- SOLO PARA `postgres`, Y NO ES UN OLVIDO. En `pg_default_acl` hay DOS entradas que
 -- conceden `anon=X`: una por `postgres` y otra por `supabase_admin`. La segunda NO se
 -- puede cambiar desde aquí —lo intenté y contesta `42501: permission denied to change
 -- default privileges`: el rol que aplica migraciones es `postgres` y no es superusuario.
---
--- No hace falta, y conviene saber por qué: esa entrada solo gobierna lo que crea
--- `supabase_admin`, que es la propia plataforma (extensiones y objetos internos). Las
--- funciones de este proyecto las crea `postgres`, porque es el rol con el que conecta
--- `supabase db push`. Verificado: `current_user` = postgres en el camino de escritura.
---
--- Lo que queda descubierto —una función que Supabase cree en `public` por su cuenta—
--- lo caza el bloque [1] del test, que exige que la lista sea EXACTAMENTE esas dos.
-
--- LAS DOS VÍAS OTRA VEZ, y con una trampa que NO es evidente y que descubrí midiendo:
---
---   · La concesión a `anon` es del default de SUPABASE, y vive en el esquema. Se quita
---     con `IN SCHEMA public`.
---   · La concesión a `PUBLIC` es el default de POSTGRESQL, y es GLOBAL, no de esquema.
---     `ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE ... FROM PUBLIC` se acepta sin
---     rechistar y NO SIRVE: la función nueva sigue naciendo con `=X`. Hay que decirlo
---     SIN `IN SCHEMA`.
---
--- Medido, creando funciones de verdad y mirando su ACL:
---     IN SCHEMA public ... FROM public  → acl `=X/postgres | ...`   → anon puede
---     (global)          ... FROM public → acl `postgres=X | ...`    → anon NO puede
---
--- El bloque [3] del test lo comprueba creando una función y mirando quién la ejecuta.
--- La forma global alcanza a las funciones que `postgres` cree en CUALQUIER esquema,
--- no solo en `public`. Es más ancho de lo que pide el encargo y se asume a propósito:
--- este proyecto no crea funciones fuera de `public`, y el default de PostgreSQL —
--- «toda función nace ejecutable por todo el mundo»— no nos sirve en ningún esquema.
-
-alter default privileges for role postgres
-  revoke execute on functions from public;
+-- No hace falta: esa entrada solo gobierna lo que crea `supabase_admin` (la plataforma).
+-- Las funciones de este proyecto las crea `postgres`, que es el rol de `supabase db push`.
 
 alter default privileges for role postgres in schema public
   revoke execute on functions from anon;
