@@ -212,6 +212,11 @@ const FAMILY_HIDDEN: MenuDef[] = [
   // O2-5 E2a — hilo 1:1 (?conversationId) y de equipo (?teamConversationId).
   { name: 'mensaje', labelKey: 'nav.mensajes' },
   { name: 'mensaje-equipo', labelKey: 'nav.mensajes' },
+  // La familia elige destinatario. OCULTA como las demás: se llega desde el botón de
+  // la bandeja, no del menú. Si no estuviera aquí, expo-router la declararía sin
+  // `href:null` y saldría como PESTAÑA de la barra — una quinta pestaña que nadie
+  // pidió, y sin error que lo avise.
+  { name: 'mensaje-nuevo', labelKey: 'nav.mensajes' },
 ];
 
 const STAFF_MENU_BASE: MenuDef[] = [

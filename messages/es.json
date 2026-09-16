@@ -5567,5 +5567,26 @@
       "no_active_season": "El club no tiene ninguna temporada activa.",
       "generic": "No se ha podido enviar la invitación. Inténtalo de nuevo."
     }
+  },
+  "mensajes_familia": {
+    "new": "Nuevo",
+    "new_title": "¿A quién escribes?",
+    "group_club": "El club",
+    "group_team": "Su equipo",
+    "nobody": "Ahora mismo no hay nadie a quien escribir. Cuando el club asigne cuerpo técnico al equipo, aparecerá aquí.",
+    "load_failed": "No hemos podido cargar a quién puedes escribir.",
+    "load_failed_hint": "Vuelve a entrar en un momento. Si sigue igual, avisa al club.",
+    "start_error": "No hemos podido abrir la conversación. Inténtalo de nuevo.",
+    "recipient_gone": "Esa persona ya no está disponible. Actualiza la lista.",
+    "offline": "Sin conexión: para escribir necesitas estar en línea.",
+    "role": {
+      "admin_club": "Dirección del club",
+      "director": "Dirección del club",
+      "entrenador_principal": "Entrenador principal",
+      "entrenador_ayudante": "Entrenador ayudante",
+      "delegado": "Delegado",
+      "preparador_fisico": "Preparador físico",
+      "coordinador": "Coordinador"
+    }
   }
 }
