@@ -43,8 +43,12 @@ export const WRITE_INVALIDATIONS = {
   setPlayerMedical: ['medical', 'mgmt'],
   /** Foto del jugador (se ve en gestión, plantilla, home de equipo y roster staff). */
   setPlayerPhoto: ['photo-path', 'mgmt', 'plantilla', 'home', 'staff-roster'],
-  /** Perfil del tutor (nombre/avatar/idioma). */
-  updateProfile: ['profile'],
+  /** Perfil del tutor (nombre/avatar/idioma). `tutors-contact` porque el tutor se ve
+   *  a sí mismo en la tarjeta de contacto de Gestión: cambiarse el nombre o el
+   *  teléfono y seguir viendo el viejo ahí es la clase de incoherencia que hace
+   *  dudar del dato. A los OTROS tutores no les llega —están en otro móvil— y eso
+   *  no lo arregla la caché. */
+  updateProfile: ['profile', 'tutors-contact'],
 
   // ── Staff / entrenador ──────────────────────────────────────────────────────
   /** Marcar asistencia a una sesión (la ve staff y la familia). */
