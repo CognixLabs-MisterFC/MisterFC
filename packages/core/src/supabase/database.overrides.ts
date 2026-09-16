@@ -131,6 +131,22 @@ export type DatabaseOverrides = {
           emergency_contact: string | null;
         }[];
       };
+      // La familia abre hilo (mig 20261076000000). Cuatro columnas del RETURNS TABLE
+      // que SON nulas y el generador marca no-null:
+      //   · conversation_id → null mientras no exista el hilo. Es LA columna que
+      //     decide si la pantalla abre o crea; tiparla no-null seria mentir en el
+      //     punto exacto donde se toma la decision.
+      //   · full_name       → `profiles.full_name` es nullable.
+      //   · team_id/team_name → null en las filas 'club' (admin y direccion no van
+      //     por equipo). Esas dos son null en la MITAD de las filas, siempre.
+      family_conversation_recipients: {
+        Returns: {
+          conversation_id: string | null;
+          full_name: string | null;
+          team_id: string | null;
+          team_name: string | null;
+        }[];
+      };
       get_public_club_by_slug: {
         Returns: { logo_path: string | null }[];
       };

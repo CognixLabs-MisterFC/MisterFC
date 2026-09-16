@@ -5567,5 +5567,26 @@
       "no_active_season": "The club has no active season.",
       "generic": "The invitation could not be sent. Please try again."
     }
+  },
+  "mensajes_familia": {
+    "new": "New",
+    "new_title": "Who do you want to write to?",
+    "group_club": "The club",
+    "group_team": "Their team",
+    "nobody": "There's nobody to write to right now. Once the club assigns staff to the team, they'll show up here.",
+    "load_failed": "We couldn't load who you can write to.",
+    "load_failed_hint": "Try opening this again in a moment. If it persists, tell the club.",
+    "start_error": "We couldn't open the conversation. Please try again.",
+    "recipient_gone": "That person is no longer available. Refresh the list.",
+    "offline": "Offline: you need a connection to write.",
+    "role": {
+      "admin_club": "Club management",
+      "director": "Club management",
+      "entrenador_principal": "Head coach",
+      "entrenador_ayudante": "Assistant coach",
+      "delegado": "Team manager",
+      "preparador_fisico": "Fitness coach",
+      "coordinador": "Coordinator"
+    }
   }
 }

@@ -5,27 +5,34 @@ import {
   profileScopedCacheKey,
   type InboxItem,
 } from '@misterfc/core';
+import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { BRAND } from '@/theme';
 
 /** Refresco del inbox (ms). Consistente con la web (polling 5s). */
 const MESSAGES_POLL_MS = 5000;
 
 /**
- * O2-5 E2a — Inbox de mensajes (SOLO LECTURA). Lista hilos 1:1 (los abre el
- * cuerpo técnico) + chats de equipo, con no-leídos, tal cual la web. La familia
- * NO inicia hilos → sin botón "nueva conversación". Es USER-scoped (los hilos
+ * O2-5 E2a — Inbox de mensajes. Lista hilos 1:1 + chats de equipo, con no-leídos,
+ * tal cual la web. Es USER-scoped (los hilos
  * cuelgan del tutor, no del hijo): sin selector de hijo. Polling en foreground;
- * offline muestra el último inbox conocido. El envío es E2b.
+ * offline muestra el último inbox conocido.
+ *
+ * YA NO ES SOLO LECTURA: desde la migración 20261076000000 la familia puede INICIAR
+ * un hilo con el cuerpo técnico de su equipo o con la dirección del club, y de ahí el
+ * botón de arriba. Elegir destinatario es `mensaje-nuevo`; el hilo en sí no cambia.
  */
 export function MensajesScreen() {
   const t = useTranslations('');
   const { user } = useSession();
+  const { theme } = useApp();
   const router = useRouter();
   const profileId = user?.id ?? null;
+  const accent = theme?.color ?? BRAND.navy;
 
   const { data, fromCache, loading, refresh } = useCached<InboxItem[]>(
     profileScopedCacheKey('inbox', profileId ?? 'none'),
@@ -39,8 +46,15 @@ export function MensajesScreen() {
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
-      <View className="px-4 pt-4">
+      <View className="flex-row items-center justify-between px-4 pt-4">
         <ScreenTitle>{t('mensajes.title')}</ScreenTitle>
+        <Pressable
+          onPress={() => router.push('/family/mensaje-nuevo')}
+          className="flex-row items-center gap-1 rounded-full px-3 py-1.5 active:opacity-80"
+          style={{ backgroundColor: accent }}
+        >
+          <Text className="text-sm font-semibold text-white">＋ {t('mensajes_familia.new')}</Text>
+        </Pressable>
       </View>
       {rows.length === 0 ? (
         <EmptyState message={t('mensajes.empty')} />

@@ -80,6 +80,11 @@ export type _AssertGroupB = [
   Assert<IsStringOrNull<Fn['get_player_medical']['Returns'][number]['medical_conditions']>>,
   Assert<IsStringOrNull<Fn['get_player_medical']['Returns'][number]['emergency_contact']>>,
   Assert<IsStringOrNull<Fn['get_public_club_by_slug']['Returns'][number]['logo_path']>>,
+  // La familia abre hilo — `conversation_id` es la que decide abrir vs crear.
+  Assert<IsStringOrNull<Fn['family_conversation_recipients']['Returns'][number]['conversation_id']>>,
+  Assert<IsStringOrNull<Fn['family_conversation_recipients']['Returns'][number]['full_name']>>,
+  Assert<IsStringOrNull<Fn['family_conversation_recipients']['Returns'][number]['team_id']>>,
+  Assert<IsStringOrNull<Fn['family_conversation_recipients']['Returns'][number]['team_name']>>,
   Assert<IsStringOrNull<Fn['get_tutor_consents']['Returns'][number]['player_id']>>,
   Assert<IsStringOrNull<Fn['get_tutor_consents']['Returns'][number]['player_name']>>,
   Assert<IsStringOrNull<Fn['list_player_spectators']['Returns'][number]['email']>>,

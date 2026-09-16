@@ -4523,6 +4523,22 @@ export type Database = {
         Args: { p_season_id: string; p_team_id: string }
         Returns: boolean
       }
+      family_conversation_recipients: {
+        Args: { p_player_id: string }
+        Returns: {
+          conversation_id: string
+          full_name: string
+          kind: string
+          profile_id: string
+          staff_role: string
+          team_id: string
+          team_name: string
+        }[]
+      }
+      family_start_conversation: {
+        Args: { p_player_id: string; p_recipient_profile_id: string }
+        Returns: string
+      }
       finalize_account_deletion: {
         Args: { p_profile_id: string }
         Returns: string

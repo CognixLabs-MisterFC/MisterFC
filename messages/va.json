@@ -5567,5 +5567,26 @@
       "no_active_season": "El club no té cap temporada activa.",
       "generic": "No s'ha pogut enviar la invitació. Torna-ho a provar."
     }
+  },
+  "mensajes_familia": {
+    "new": "Nou",
+    "new_title": "A qui escrius?",
+    "group_club": "El club",
+    "group_team": "El seu equip",
+    "nobody": "Ara mateix no hi ha ningú a qui escriure. Quan el club assigne cos tècnic a l'equip, apareixerà ací.",
+    "load_failed": "No hem pogut carregar a qui pots escriure.",
+    "load_failed_hint": "Torna a entrar d'ací a un moment. Si continua igual, avisa el club.",
+    "start_error": "No hem pogut obrir la conversa. Torna-ho a provar.",
+    "recipient_gone": "Eixa persona ja no està disponible. Actualitza la llista.",
+    "offline": "Sense connexió: per a escriure necessites estar en línia.",
+    "role": {
+      "admin_club": "Direcció del club",
+      "director": "Direcció del club",
+      "entrenador_principal": "Entrenador principal",
+      "entrenador_ayudante": "Entrenador ajudant",
+      "delegado": "Delegat",
+      "preparador_fisico": "Preparador físic",
+      "coordinador": "Coordinador"
+    }
   }
 }
