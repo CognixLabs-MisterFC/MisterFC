@@ -354,7 +354,20 @@ begin
   end if;
 end $$;
 
-set local role anon;
+-- El rol es `authenticated` SIN claims, no `anon`, y el cambio tiene motivo.
+--
+-- Desde la migracion 20261075000000, `anon` ya no tiene EXECUTE sobre las funciones de
+-- `public`: la llamada ni siquiera entra, muere en un 42501. Eso es MEJOR —hay dos
+-- cerraduras en vez de una— pero deja este bloque sin poder medir lo que vino a medir,
+-- que es la de DENTRO: que la funcion se niega cuando no hay sesion.
+--
+-- Y no vale afirmarlo provocando el 42501: en esta suite eso TUMBA el backend del CI
+-- (leccion de BC-1), que es exactamente como se descubrio este acoplamiento.
+--
+-- `authenticated` con claims vacias deja `auth.uid()` en null igual que anon, asi que
+-- el gate interno se mide intacto. La cerradura de fuera —que anon no llegue— la fija
+-- el test anon_execute_cerrado.
+set local role authenticated;
 set local "request.jwt.claims" = '{}';
 do $$
 begin
