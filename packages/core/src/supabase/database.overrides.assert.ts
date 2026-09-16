@@ -1,7 +1,7 @@
 /**
  * O2-1c — CANDADO de tipos de los overrides (compile-only, sin runtime).
  *
- * Verifica que los 28 puntos de `database.overrides.ts` son efectivamente
+ * Verifica que cada punto de `database.overrides.ts` es efectivamente
  * `string | null` en el `Database` FINAL (generado + overrides fusionados). Si
  * alguien borra un override —o un `db:types` futuro deja de aplicarlo—, este
  * fichero ROMPE el `typecheck` en CI. Lo compila el `tsc --noEmit` de core.
@@ -37,7 +37,7 @@ type IsNumberOrNull<T> = [T] extends [number | null | undefined]
   : false;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GRUPO A — 7 params de RPC que aceptan NULL (el generador emite `string`).
+// GRUPO A — params de RPC que aceptan NULL (el generador emite `string`).
 // ─────────────────────────────────────────────────────────────────────────────
 export type _AssertGroupA = [
   Assert<IsStringOrNull<Fn['set_player_medical']['Args']['p_allergies']>>,
@@ -47,6 +47,22 @@ export type _AssertGroupA = [
   Assert<IsStringOrNull<Fn['set_player_photo']['Args']['p_path']>>,
   Assert<IsStringOrNull<Fn['set_club_logo']['Args']['p_path']>>,
   Assert<IsStringOrNull<Fn['set_club_color']['Args']['p_color']>>,
+  // SU — las dos RPC de la suscripcion. Estas 13 son las que estaban a mano dentro
+  // de `database.ts` y que la primera regeneracion se llevo por delante: sin ellas
+  // vuelven los 19 errores de `subscription/`. Aqui quedan ancladas.
+  Assert<IsStringOrNull<Fn['apply_subscription_event']['Args']['p_store']>>,
+  Assert<IsStringOrNull<Fn['apply_subscription_event']['Args']['p_product_id']>>,
+  Assert<IsStringOrNull<Fn['apply_subscription_event']['Args']['p_store_transaction_id']>>,
+  Assert<IsStringOrNull<Fn['apply_subscription_event']['Args']['p_expires_at']>>,
+  Assert<IsStringOrNull<Fn['apply_subscription_event']['Args']['p_grace_period_expires_at']>>,
+  Assert<IsStringOrNull<Fn['apply_subscription_event']['Args']['p_rc_customer_id']>>,
+  Assert<IsStringOrNull<Fn['reconcile_subscription_entitlement']['Args']['p_expires_at']>>,
+  Assert<IsStringOrNull<Fn['reconcile_subscription_entitlement']['Args']['p_grace_period_expires_at']>>,
+  Assert<IsStringOrNull<Fn['reconcile_subscription_entitlement']['Args']['p_billing_issue_at']>>,
+  Assert<IsStringOrNull<Fn['reconcile_subscription_entitlement']['Args']['p_store']>>,
+  Assert<IsStringOrNull<Fn['reconcile_subscription_entitlement']['Args']['p_product_id']>>,
+  Assert<IsStringOrNull<Fn['reconcile_subscription_entitlement']['Args']['p_store_transaction_id']>>,
+  Assert<IsStringOrNull<Fn['reconcile_subscription_entitlement']['Args']['p_rc_customer_id']>>,
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -78,7 +94,7 @@ export type _AssertGroupB = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GRUPO C — 6 columnas `inet` (Row/Insert/Update de audit_log y consents).
+// GRUPO C — columnas y params `inet`, que el generador emite como `unknown`.
 // ─────────────────────────────────────────────────────────────────────────────
 export type _AssertGroupC = [
   Assert<IsStringOrNull<Tbl['audit_log']['Row']['ip']>>,
@@ -87,6 +103,11 @@ export type _AssertGroupC = [
   Assert<IsStringOrNull<Tbl['consents']['Row']['ip']>>,
   Assert<IsStringOrNull<Tbl['consents']['Insert']['ip']>>,
   Assert<IsStringOrNull<Tbl['consents']['Update']['ip']>>,
+  // R-2 — la tercera tabla con columna `ip`, y el param `inet` de su RPC.
+  Assert<IsStringOrNull<Tbl['invite_accept_attempts']['Row']['ip']>>,
+  Assert<IsStringOrNull<Tbl['invite_accept_attempts']['Insert']['ip']>>,
+  Assert<IsStringOrNull<Tbl['invite_accept_attempts']['Update']['ip']>>,
+  Assert<IsStringOrNull<Fn['register_invite_accept_attempt']['Args']['p_ip']>>,
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -80,13 +80,59 @@ case "$CMD" in
     ;;
   types)
     # `gen types --db-url` requiere Docker (bug del CLI 2.98). Usamos
-    # `--project-id` que va por el Management API y solo necesita el access
+    # `--project-id`, que va por el Management API y solo necesita el access
     # token (que sí tiene permiso de lectura para esta operación).
+    #
+    # LO QUE HAY QUE SABER DE ESTE SUBCOMANDO: con `--project-id` el TypeScript
+    # NO lo genera el CLI. Lo genera SUPABASE, en el servidor. El CLI es un
+    # cliente HTTP de `GET /v1/projects/{ref}/types/typescript`. Comprobado:
+    # la respuesta cruda de esa ruta y la salida del CLI son BYTE A BYTE
+    # idénticas, con 2.98.2 y con 2.117.0.
+    #
+    # Dos consecuencias que ahorran depuraciones:
+    #  · La versión del CLI aquí da igual. Lo único en lo que se diferencian
+    #    2.98.2 y 2.117.0 es qué esquemas piden por defecto (ver --schema abajo).
+    #  · El fichero puede cambiar SIN que cambie ni el esquema ni el CLI, porque
+    #    el generador del servidor se actualiza solo. Pasó entre julio y hoy:
+    #    paréntesis nuevos en los genéricos y otro `PostgrestVersion`.
     : "${SUPABASE_ACCESS_TOKEN:?falta SUPABASE_ACCESS_TOKEN en apps/web/.env.local}"
     OUT="$REPO_ROOT/packages/core/src/supabase/database.ts"
+
+    # `--schema public` EXPLÍCITO, y no por gusto: 2.98.2 pide `public` a secas y
+    # 2.99+ pide `public,graphql_public`, así que sin esta línea la salida depende
+    # de qué CLI tengas instalado. Con ella, el fichero es el mismo con cualquiera.
+    ARGS=("$@")
+    if [[ " ${ARGS[*]-} " != *" --schema "* ]]; then
+      ARGS+=(--schema public)
+    fi
+
+    # NO se escribe sobre el fichero hasta que la generación haya salido bien.
+    # Antes esto era `... > "$OUT"`, y el `>` TRUNCA ANTES de ejecutar nada: un
+    # timeout, un token caducado o un 500 del Management API dejaban database.ts
+    # vacío, y el error que veías después era un typecheck con mil fallos en vez
+    # del fallo de red que lo había causado.
+    TMP="$(mktemp)"
+    trap 'rm -f "$TMP"' EXIT
+
     echo "Generando types desde proyecto $SUPABASE_PROJECT_REF → $OUT"
-    npx "supabase@${SUPABASE_VERSION}" gen types typescript --project-id "$SUPABASE_PROJECT_REF" "$@" > "$OUT"
-    echo "OK"
+    if ! npx "supabase@${SUPABASE_VERSION}" gen types typescript \
+           --project-id "$SUPABASE_PROJECT_REF" "${ARGS[@]}" > "$TMP"; then
+      echo "Error: la generación falló. $OUT NO se ha tocado." >&2
+      exit 1
+    fi
+
+    # Salió con código 0, pero eso no basta: comprobamos que lo que hay dentro es
+    # un fichero de tipos y no una página de error, un JSON de la API o vacío.
+    if [[ ! -s "$TMP" ]] || ! grep -q '^export type Database' "$TMP"; then
+      echo "Error: la salida no parece un database.ts ($(wc -c < "$TMP") bytes)." >&2
+      echo "       $OUT NO se ha tocado. Primeras líneas de lo recibido:" >&2
+      head -5 "$TMP" >&2
+      exit 1
+    fi
+
+    mv "$TMP" "$OUT"
+    trap - EXIT
+    echo "OK ($(wc -l < "$OUT") líneas)"
     ;;
   test)
     # Ejecuta los .sql de supabase/tests/ contra la BD remota.

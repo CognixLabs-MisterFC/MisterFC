@@ -121,7 +121,11 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # CLI PINEADO a 2.98.2 (constante del proyecto: v2.99+ rompe el flujo db).
+      # CLI PINEADO a 2.98.2. Aquí el pin SÍ importa: `supabase start` corre código
+      # del CLI. Lo que decía esta nota —«v2.99+ rompe el flujo db»— no tiene ninguna
+      # medición detrás: el pin está sin tocar desde el primer commit (Fase 1, mayo
+      # 2026). Subirlo es un cambio propio, que se valida con este mismo job y un
+      # `db push --dry-run`. Ver docs/architecture/supabase-cli-without-link.md.
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:

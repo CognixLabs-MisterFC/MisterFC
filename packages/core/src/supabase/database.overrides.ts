@@ -16,8 +16,11 @@
  *      devolver NULL. (Ojo: cuando una RPC devuelve `SETOF <tabla>` el generador
  *      SÍ acierta la nullability desde la tabla; esos no necesitan override.)
  *
- *   3. Columnas `inet`: el CLI 2.98.2 no mapea el tipo `inet` y emite `unknown`.
- *      La representación real en el cliente JS es un string (o NULL).
+ *   3. Columnas y parámetros `inet`: el generador no mapea el tipo y emite
+ *      `unknown`. La representación real en el cliente JS es un string (o NULL).
+ *      (No es cosa de la versión del CLI: con `--project-id` el TypeScript lo
+ *      genera SUPABASE en el servidor, y el CLI solo baja la respuesta. Medido:
+ *      la salida de 2.98.2 y la de 2.117.0 son byte a byte la misma.)
  *
  * Estos overrides se aplican ENCIMA de lo generado en `types.ts` vía `MergeDeep`
  * (con `recurseIntoArrays`, para fusionar los elementos de los `Returns: {...}[]`
@@ -44,9 +47,48 @@ export type DatabaseOverrides = {
         Insert: { ip?: string | null };
         Update: { ip?: string | null };
       };
+      // R-2. Hoy no la lee nadie desde el cliente (la tabla es de service_role y
+      // se toca solo por RPC), pero la regla de arriba es de TIPO, no de uso: si
+      // se deja fuera, el día que alguien la lea se encuentra un `unknown`.
+      invite_accept_attempts: {
+        Row: { ip: string | null };
+        Insert: { ip?: string | null };
+        Update: { ip?: string | null };
+      };
     };
     Functions: {
       // (1) Args de RPC que aceptan NULL (el generador emite no-null).
+      // SU — las dos RPC de la suscripción. Estos overrides NO son nuevos: la
+      // nullability estaba escrita A MANO dentro de `database.ts`, y regenerar se
+      // la lleva por delante (19 errores de typecheck en `subscription/`). Aquí es
+      // donde tenía que haber estado desde O2-1c.
+      //
+      // Comprobado contra la definición viva en producción, no contra el call-site:
+      // en `reconcile_...` los cuatro últimos están declarados `DEFAULT NULL::text`
+      // —de ahí que sigan siendo opcionales Y nullable—; el resto son parámetros sin
+      // default, que en SQL admiten NULL igual. El proyector de RevenueCat devuelve
+      // null en todos ellos cuando el evento no trae tienda, producto ni caducidad.
+      apply_subscription_event: {
+        Args: {
+          p_store: string | null;
+          p_product_id: string | null;
+          p_store_transaction_id: string | null;
+          p_expires_at: string | null;
+          p_grace_period_expires_at: string | null;
+          p_rc_customer_id: string | null;
+        };
+      };
+      reconcile_subscription_entitlement: {
+        Args: {
+          p_expires_at: string | null;
+          p_grace_period_expires_at: string | null;
+          p_billing_issue_at: string | null;
+          p_store?: string | null;
+          p_product_id?: string | null;
+          p_store_transaction_id?: string | null;
+          p_rc_customer_id?: string | null;
+        };
+      };
       set_player_medical: {
         // Campos médicos opcionales: apps/web pasa `field()` → string | null.
         Args: {
@@ -134,53 +176,24 @@ export type DatabaseOverrides = {
         Returns: { play_name: string | null }[];
       };
 
-      // ── MN-5 · FUNCIÓN QUE FALTA EN LO GENERADO, no una precisión perdida ────
+      // ── LO QUE SE HA BORRADO AQUÍ, PARA QUE NADIE LO REPONGA ────────────────
       //
-      // `invite_player_self` (MN-2) está aplicada en producción, pero `database.ts`
-      // no la trae: el fichero generado que hay en el repo es anterior. Y NO se
-      // puede arreglar con `pnpm db:types`, que es lo que habría que hacer: medido
-      // hoy, regenerar con el CLI 2.98.2 —el que el proyecto tiene PINEADO— devuelve
-      // un fichero que rompe el typecheck de core en 20 sitios de `subscription/`
-      // (nullability distinta en `webhook.ts` y `reconcile-sweep.ts`). El generado
-      // que está commiteado lo produjo un CLI más nuevo. Reconciliar el pin es un
-      // trabajo aparte y no cabe dentro de esta serie.
+      // Hasta la regeneración vivían aquí seis entradas que NO eran precisión
+      // perdida: eran funciones que existían en producción y no en `database.ts`,
+      // porque el fichero llevaba sin regenerar desde julio (invite_player_self,
+      // user_manages_player, user_manages_player_sensitive,
+      // player_self_account_status y las dos de R-2). Cada una decía «BÓRRALA
+      // cuando se regeneren los tipos de verdad». Regenerado: las seis están en lo
+      // generado y se han ido de aquí.
       //
-      // Esta entrada es el mínimo para poder llamar a la RPC con tipos en vez de con
-      // un cast a ciegas. Firma tomada de la definición viva. CUANDO se regeneren
-      // los tipos de verdad, BÓRRALA: dejará de hacer falta.
-      invite_player_self: {
-        Args: { p_player_id: string; p_email: string };
-        Returns: { id: string; token: string; email: string }[];
-      };
+      // La lección, que es lo que importa: este fichero es para lo que el generador
+      // NO PUEDE saber. Una función que falta no es eso — es un `pnpm db:types`
+      // pendiente, y taparlo aquí hace que el fichero generado parezca al día.
 
-      // MN-6 — los dos helpers de MN-1, por el mismo motivo y con la misma fecha de
-      // caducidad: `database.ts` es anterior a la migración y regenerarlo con el CLI
-      // pineado rompe el typecheck de core. Firmas tomadas de la definición viva.
-      user_manages_player: {
-        Args: { p_player_id: string };
-        Returns: boolean;
-      };
-      user_manages_player_sensitive: {
-        Args: { p_player_id: string };
-        Returns: boolean;
-      };
-
-      // MN-9 — misma historia y misma fecha de caducidad que las de arriba: la
-      // migración 20261072000000 es posterior al `database.ts` commiteado. Firma
-      // tomada de la definición viva (`returns text`, un escalar, no un set).
-      player_self_account_status: {
-        Args: { p_player_id: string };
-        Returns: string;
-      };
-
-      // R-2 — el contador del endpoint público de aceptación (migración
-      // 20261074000000). `register_...` es un `returns table(...)`, así que devuelve
-      // un ARRAY de filas aunque siempre traiga una: el tipo lo dice para que el
-      // handler no se olvide de coger la primera. `p_ip` es `inet` con default, de
-      // ahí el opcional; `purge_...` no lleva argumentos y devuelve el recuento.
+      // R-2 · `p_ip` es `inet`: el generador emite `unknown` (regla 3 de arriba).
+      // El handler le pasa la IP ya derivada, o null cuando no hay cabecera fiable.
       register_invite_accept_attempt: {
-        Args: { p_token: string; p_ip?: string };
-        Returns: { decision: string; retry_after_seconds: number }[];
+        Args: { p_ip?: string | null };
       };
       purge_invite_accept_attempts: {
         Args: Record<string, never>;
