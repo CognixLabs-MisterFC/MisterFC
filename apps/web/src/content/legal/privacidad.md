@@ -1,6 +1,6 @@
 # Política de Privacidad — MisterFC
 
-Última actualización: 12 de agosto de 2026
+Última actualización: 16 de septiembre de 2026
 
 ---
 
@@ -74,7 +74,15 @@ El consentimiento se otorga a través de la aplicación y queda registrado de fo
 
 La aplicación distingue consentimientos separados para finalidades distintas, de modo que el tutor puede autorizar unos tratamientos y no otros. En particular, el tratamiento de datos de salud y el uso de la imagen del menor requieren consentimientos específicos y diferenciados, con distinción entre el uso interno y la difusión pública de la imagen.
 
-El tutor legal puede **revocar cualquier consentimiento en cualquier momento** desde la propia aplicación, sin que ello afecte a la licitud de los tratamientos realizados antes de la retirada. La revocación surte efecto de forma inmediata sobre la visibilidad del dato en la plataforma.
+El tutor legal puede **retirar cualquier consentimiento opcional en cualquier momento**, desde la aplicación, en el apartado **Perfil**, sin que ello afecte a la licitud de los tratamientos realizados antes de la retirada. La retirada surte efecto de forma inmediata y queda registrada con la misma verificabilidad que la concesión: no sustituye a la decisión anterior, sino que se añade a ella.
+
+**Retirar un consentimiento impide usos futuros; no retira lo ya publicado.** Lo que ocurre al retirar depende de la finalidad:
+
+- **Uso interno de la imagen:** la fotografía del jugador deja de mostrarse en la aplicación de forma inmediata, y deja también de ser accesible en el sistema de almacenamiento. La restricción no depende de la pantalla: se aplica en el servidor.
+- **Difusión pública de la imagen:** el club deja de contar con autorización para publicar la imagen del jugador fuera de la aplicación. La retirada impide usos futuros y no alcanza a las publicaciones ya realizadas por el club o por terceros, cuya retirada debe solicitarse a quien las publicó.
+- **Datos de salud:** dejan de mostrarse en la aplicación y el club deja de poder añadirlos o modificarlos. Los datos no se eliminan: quedan bloqueados, y su supresión se solicita por el procedimiento descrito en el apartado «Conservación de los datos».
+
+Los consentimientos de **Términos y Condiciones** y de **Política de Privacidad** no se retiran desde ese apartado, porque son la base sobre la que existe la cuenta: dejar de prestarlos equivale a dejar de utilizar el servicio, y se hace eliminando la cuenta.
 
 **Acreditación de la condición de tutor.** El alta de una cuenta familiar se produce por invitación del club: es el club quien identifica al padre, madre o tutor legal del jugador conforme a la documentación que obra en su poder como entidad deportiva, e introduce su dirección de correo electrónico en la plataforma. La invitación se remite a esa dirección y su aceptación vincula la cuenta al jugador. Cognix Labs no realiza una verificación documental independiente de la relación de tutela: dicha comprobación corresponde al club como responsable del tratamiento.
 
@@ -163,8 +171,8 @@ En el caso de jugadores menores de edad, estos derechos serán ejercidos por su 
 
 Adicionalmente, la aplicación permite, desde el propio perfil del usuario:
 
-- consultar en cualquier momento los consentimientos otorgados y su fecha;
-- revocar cualquier consentimiento de forma inmediata;
+- consultar en cualquier momento los consentimientos otorgados, su fecha y el texto exacto que se aceptó;
+- retirar de forma inmediata los consentimientos opcionales, en los términos del apartado «Datos de menores y consentimiento del tutor legal»;
 - obtener una copia de los datos del jugador en un documento descargable;
 - solicitar la supresión de los datos.
 
