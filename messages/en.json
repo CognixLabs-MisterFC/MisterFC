@@ -5079,13 +5079,7 @@
     "contact_hint": "The guardians linked to this player. This is personal data: use it only for club matters.",
     "contact_none": "No guardian is linked yet.",
     "contact_error": "We couldn't load the guardians' contact details.",
-    "contact_you": "You",
-    "contact_call": "Call",
-    "contact_write": "Email",
-    "contact_confirm_call": "Call {name}?",
-    "contact_confirm_mail": "Email {name}?",
-    "contact_confirm": "Continue",
-    "contact_cancel": "Cancel"
+    "contact_you": "You"
   },
   "inicio": {
     "unread_messages": "Unread messages: {n}",
@@ -5326,7 +5320,9 @@
       "entrenador_ayudante": "Assistant coach",
       "preparador_fisico": "Fitness coach",
       "delegado": "Team manager"
-    }
+    },
+    "load_failed": "We couldn't load the recipients.",
+    "load_failed_hint": "Try opening this again in a moment. If it persists, tell the club."
   },
   "sesion_dia": {
     "empty": "No training today",

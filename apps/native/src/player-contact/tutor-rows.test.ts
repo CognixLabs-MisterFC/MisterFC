@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  contactActionsFor,
-  tutorContactRows,
-  type TutorContact,
-} from '@/player-contact/tutor-rows';
+import { tutorContactRows, type TutorContact } from '@/player-contact/tutor-rows';
 
 const ANA: TutorContact = {
   tutorProfileId: 'ana',
@@ -56,42 +52,5 @@ describe('tutorContactRows', () => {
 
   it('sin tutores, lista vacía', () => {
     expect(tutorContactRows([], 'ana')).toEqual([]);
-  });
-});
-
-describe('contactActionsFor', () => {
-  const fila = (over: Partial<TutorContact> & { isViewer?: boolean } = {}) => ({
-    ...ANA,
-    isViewer: false,
-    ...over,
-  });
-
-  it('con teléfono y correo ofrece llamar y escribir, en ese orden', () => {
-    expect(contactActionsFor(fila())).toEqual([
-      { kind: 'call', href: 'tel:600123456', value: '600 123 456' },
-      { kind: 'mail', href: 'mailto:ana@example.com', value: 'ana@example.com' },
-    ]);
-  });
-
-  it('el tel: va sin espacios pero lo que se le enseña al usuario los conserva', () => {
-    const [call] = contactActionsFor(fila({ phone: ' 600 12 34 56 ' }));
-    expect(call?.href).toBe('tel:600123456');
-    expect(call?.value).toBe('600 12 34 56');
-  });
-
-  it('sin teléfono no hay botón de llamar', () => {
-    expect(contactActionsFor(fila({ phone: null })).map((a) => a.kind)).toEqual(['mail']);
-  });
-
-  it('sin correo no hay botón de escribir', () => {
-    expect(contactActionsFor(fila({ email: null })).map((a) => a.kind)).toEqual(['call']);
-  });
-
-  it('un campo en blanco cuenta como que no lo hay', () => {
-    expect(contactActionsFor(fila({ phone: '   ', email: '' }))).toEqual([]);
-  });
-
-  it('sobre uno mismo no hay acciones', () => {
-    expect(contactActionsFor(fila({ isViewer: true }))).toEqual([]);
   });
 });

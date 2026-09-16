@@ -5079,13 +5079,7 @@
     "contact_hint": "Los tutores vinculados a este jugador. Son datos personales: úsalos solo para lo que haga falta del club.",
     "contact_none": "No hay ningún tutor vinculado todavía.",
     "contact_error": "No hemos podido cargar el contacto de los tutores.",
-    "contact_you": "Tú",
-    "contact_call": "Llamar",
-    "contact_write": "Escribir",
-    "contact_confirm_call": "¿Llamar a {name}?",
-    "contact_confirm_mail": "¿Escribir a {name}?",
-    "contact_confirm": "Continuar",
-    "contact_cancel": "Cancelar"
+    "contact_you": "Tú"
   },
   "inicio": {
     "unread_messages": "Mensajes sin leer: {n}",
@@ -5326,7 +5320,9 @@
       "entrenador_ayudante": "Entrenador ayudante",
       "preparador_fisico": "Preparador físico",
       "delegado": "Delegado"
-    }
+    },
+    "load_failed": "No hemos podido cargar los destinatarios.",
+    "load_failed_hint": "Vuelve a entrar en un momento. Si sigue igual, avisa al club."
   },
   "sesion_dia": {
     "empty": "Hoy no hay entrenamiento",
