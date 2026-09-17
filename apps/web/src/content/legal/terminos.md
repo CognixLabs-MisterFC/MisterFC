@@ -1,6 +1,6 @@
 # Términos y Condiciones de Uso — MisterFC
 
-Última actualización: 13 de septiembre de 2026
+Última actualización: 17 de septiembre de 2026
 
 ## 1. Información general
 
@@ -73,7 +73,7 @@ La cancelación se realiza desde la **cuenta de la tienda de aplicaciones** (App
 
 ### 3.8 Dónde se contrata
 
-En la actualidad la suscripción **solo puede contratarse desde la aplicación móvil**. Una vez contratada, el acceso funciona también en la versión web: la suscripción es de la cuenta del usuario, no del dispositivo.
+En la actualidad la suscripción **solo puede contratarse desde la aplicación móvil**. La suscripción es de la cuenta del usuario, no del dispositivo.
 
 ### 3.9 Cobro, facturación y devoluciones
 
@@ -89,7 +89,7 @@ La suscripción va asociada a la cuenta de usuario de MisterFC, no al club: si e
 
 Si la renovación no puede cobrarse, la tienda abre un periodo de reintentos durante el cual el acceso se mantiene. Agotado ese periodo sin cobro, el acceso queda suspendido hasta que se regularice, sin que ello suponga la eliminación de la cuenta ni de la información del club.
 
-**La suspensión no impide el ejercicio de los derechos en materia de protección de datos.** Aunque la suscripción no esté vigente, el usuario conserva el acceso a la **eliminación de su cuenta** desde la propia aplicación. El resto de derechos —acceso, rectificación, limitación, oposición, portabilidad y revocación de los consentimientos otorgados— puede ejercerlos escribiendo a **info.cognixlabs@gmail.com**. Su ejercicio es gratuito y se atiende en los plazos legalmente previstos.
+**La suspensión no impide el ejercicio de los derechos en materia de protección de datos.** Aunque la suscripción no esté vigente, el usuario conserva desde la propia aplicación el acceso a la **eliminación de su cuenta** y a la **retirada de los consentimientos** que hubiera otorgado. El resto de derechos —acceso, rectificación, limitación, oposición y portabilidad— puede ejercerlos escribiendo a **info.cognixlabs@gmail.com**. Su ejercicio es gratuito y se atiende en los plazos legalmente previstos.
 
 ### 3.12 Cambios de precio
 
