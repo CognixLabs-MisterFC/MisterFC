@@ -141,12 +141,12 @@ jobs:
       # Levanta el stack local y APLICA las 179 migraciones en limpio. Si alguna
       # migración falla (un club nuevo no se podría crear desde cero), este paso
       # sale en rojo y para el PR.
-      - name: supabase start (aplica las 238 migraciones en limpio)
+      - name: supabase start (aplica las 239 migraciones en limpio)
         run: supabase start
 
       # Red de verificación del propio stack antes de correr la suite:
       #  · el esquema `storage` existe (si no, los 2 tests de storage fallarían).
-      #  · las 238 migraciones quedaron registradas (clean apply completo).
+      #  · las 239 migraciones quedaron registradas (clean apply completo).
       - name: Verificar storage + recuento de migraciones
         run: |
           DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
@@ -162,7 +162,7 @@ jobs:
       # La suite pgTAP contra la BD local vía el override DATABASE_URL del script
       # (scripts/supabase-cli.sh). Sin DATABASE_URL el script seguiría yendo al
       # remoto — aquí lo forzamos a local. Bloqueante: rc != 0 => PR en rojo.
-      - name: pgTAP suite (110/110)
+      - name: pgTAP suite (111/111)
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
         run: pnpm db:test

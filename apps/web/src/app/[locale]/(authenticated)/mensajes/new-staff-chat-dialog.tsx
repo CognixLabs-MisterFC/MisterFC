@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Building2, Loader2, Search } from 'lucide-react';
-import type { StaffDirectoryEntry, StaffDirectoryRole } from '@misterfc/core';
+import { STAFF_ROLE_PRIORITY, type StaffDirectoryEntry } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -17,17 +17,6 @@ import {
 import { listStaffDirectory, startStaffConversation } from './actions';
 
 type Props = { locale: string };
-
-/** Orden de las secciones del directorio (mismo criterio que core). */
-const STAFF_ROLE_ORDER: StaffDirectoryRole[] = [
-  'admin_club',
-  'director',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-  'preparador_fisico',
-  'delegado',
-];
 
 /**
  * O2-12 — "Nuevo mensaje a staff" (segmento CLUB). Lista el directorio de staff del
@@ -71,7 +60,7 @@ export function NewStaffChatDialog({ locale }: Props) {
     const q = term.trim().toLowerCase();
     const filtered =
       q.length === 0 ? list : list.filter((s) => s.fullName.toLowerCase().includes(q));
-    return STAFF_ROLE_ORDER.map((role) => ({
+    return STAFF_ROLE_PRIORITY.map((role) => ({
       role,
       entries: filtered.filter((s) => s.role === role),
     })).filter((sec) => sec.entries.length > 0);

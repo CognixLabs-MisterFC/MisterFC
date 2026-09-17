@@ -42,7 +42,7 @@ const noopLog: StaffDmLogger = () => {};
  * distinto de 'jugador') y roles de team_staff (incluidos preparador_fisico y
  * delegado, que NO son roles de club). Mismo criterio que profile_is_staff_of_club.
  */
-const STAFF_ROLE_PRIORITY = [
+export const STAFF_ROLE_PRIORITY = [
   'admin_club',
   'director',
   'coordinador',
@@ -53,15 +53,6 @@ const STAFF_ROLE_PRIORITY = [
 ] as const;
 
 export type StaffDirectoryRole = (typeof STAFF_ROLE_PRIORITY)[number];
-
-/** Roles de club (memberships.role) que cuentan como staff (todos menos 'jugador'). */
-const MANAGEMENT_ROLES = new Set<string>([
-  'admin_club',
-  'director',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-]);
 
 export type StaffDirectoryEntry = {
   profileId: string;
@@ -74,91 +65,53 @@ export type ListStaffDirectoryResult =
   | { staff: StaffDirectoryEntry[] }
   | { error: 'generic' };
 
-function primaryRole(roles: Set<string>): StaffDirectoryRole {
-  for (const r of STAFF_ROLE_PRIORITY) if (roles.has(r)) return r;
-  return 'delegado'; // inalcanzable: todo rol del conjunto está en la prioridad.
-}
-
 /**
- * Staff del club para el selector, derivado de los DOS sitios (memberships de gestión
- * ∪ team_staff activo), como el helper de RLS. Excluye al propio usuario. Devuelve
- * nombre + rol canónico (para agrupar) — el buscador por nombre lo hace el front. La
- * RLS ya permite a cualquier miembro leer memberships/team_staff/profiles club-wide.
+ * Staff del club para el selector, MENOS quien pregunta.
+ *
+ * POR QUÉ ES UNA RPC Y NO TRES CONSULTAS (migración 20261083000000). Esto armaba la
+ * lista aquí: `memberships` del club con `role <> 'jugador'`, unión con `team_staff`
+ * activo, y luego los nombres. La primera consulta **no filtraba `left_at`**, y el
+ * portero que decide si el hilo se puede abrir —`profile_is_staff_of_club`, el del
+ * WITH CHECK de `staff_conversations_insert_staff`— sí lo filtra.
+ *
+ * Medido en producción con el perfil con el que se probó en el dispositivo: 7
+ * personas ofrecidas, 3 de ellas fuera del club desde agosto, que devolvían
+ * `forbidden` al pulsarlas. Mismo fallo que cerró la 20261082 en la lista de
+ * jugadores: la lista escrita en un lenguaje y el permiso en otro.
+ *
+ * Así que la regla NO se arregla aquí con un filtro más. Quien está dentro lo decide
+ * `profile_is_staff_of_club` desde dentro de la RPC, que es el único sitio donde esa
+ * regla existe. Lo que queda en TypeScript es el buscador por nombre, que es del
+ * front.
+ *
+ * La RPC ordena por nombre (`unaccent(lower(...))`, lo más cerca del
+ * `localeCompare('es')` que hacía esto) y desempata por id: en un club con cuatro
+ * personas del mismo nombre, el `sort` sin desempate dejaba el orden al azar del
+ * servidor.
  */
 export async function listStaffDirectoryFromClient(
   supabase: Sb,
-  params: { clubId: string; currentProfileId: string },
+  clubId: string,
   logError: StaffDmLogger = noopLog,
 ): Promise<ListStaffDirectoryResult> {
-  const { clubId, currentProfileId } = params;
+  const { data, error } = await supabase.rpc('staff_conversation_directory', {
+    p_club_id: clubId,
+  });
 
-  // (1) Memberships de gestión del club.
-  const { data: mRows, error: mErr } = await supabase
-    .from('memberships')
-    .select('profile_id, role')
-    .eq('club_id', clubId)
-    .neq('role', 'jugador');
-  if (mErr) {
-    logError(mErr, 'staff_directory_memberships', { club_id: clubId });
+  if (error) {
+    logError(error, 'staff_directory', { club_id: clubId });
     return { error: 'generic' };
   }
 
-  // (2) team_staff ACTIVO cuyo membership pertenece al club (capta delegado/pf).
-  const { data: tsRows, error: tsErr } = await supabase
-    .from('team_staff')
-    .select('staff_role, memberships!inner(profile_id, club_id)')
-    .is('left_at', null)
-    .eq('memberships.club_id', clubId);
-  if (tsErr) {
-    logError(tsErr, 'staff_directory_team_staff', { club_id: clubId });
-    return { error: 'generic' };
-  }
-
-  // Unión: profileId → conjunto de roles.
-  const rolesByProfile = new Map<string, Set<string>>();
-  const add = (profileId: string, role: string) => {
-    const set = rolesByProfile.get(profileId) ?? new Set<string>();
-    set.add(role);
-    rolesByProfile.set(profileId, set);
-  };
-  for (const m of (mRows ?? []) as Array<{ profile_id: string; role: string }>) {
-    if (MANAGEMENT_ROLES.has(m.role)) add(m.profile_id, m.role);
-  }
-  for (const ts of (tsRows ?? []) as unknown as Array<{
-    staff_role: string;
-    memberships: { profile_id: string; club_id: string };
-  }>) {
-    add(ts.memberships.profile_id, ts.staff_role);
-  }
-
-  const ids = [...rolesByProfile.keys()].filter((id) => id !== currentProfileId);
-  if (ids.length === 0) return { staff: [] };
-
-  // Nombres.
-  const { data: pRows, error: pErr } = await supabase
-    .from('profiles')
-    .select('id, full_name')
-    .in('id', ids);
-  if (pErr) {
-    logError(pErr, 'staff_directory_profiles', { club_id: clubId });
-    return { error: 'generic' };
-  }
-  const nameById = new Map(
-    ((pRows ?? []) as Array<{ id: string; full_name: string | null }>).map((p) => [
-      p.id,
-      p.full_name ?? '',
-    ]),
-  );
-
-  const staff = ids
-    .map((id) => ({
-      profileId: id,
-      fullName: nameById.get(id) ?? '',
-      role: primaryRole(rolesByProfile.get(id) ?? new Set<string>()),
-    }))
-    .sort((a, b) =>
-      a.fullName.localeCompare(b.fullName, 'es', { sensitivity: 'base' }),
-    );
+  const staff = ((data ?? []) as Array<{
+    profile_id: string;
+    full_name: string;
+    role: string;
+  }>).map((row) => ({
+    profileId: row.profile_id,
+    fullName: row.full_name,
+    role: row.role as StaffDirectoryRole,
+  }));
 
   return { staff };
 }

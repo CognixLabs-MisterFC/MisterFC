@@ -19,8 +19,8 @@ import {
   formatPlayerName,
   type MessageablePlayer,
   type MessageableTeam,
+  STAFF_ROLE_PRIORITY,
   type StaffDirectoryEntry,
-  type StaffDirectoryRole,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { reportDataError } from '@/lib/report-error';
@@ -33,17 +33,6 @@ import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 type Mode = 'player' | 'team' | 'club';
-
-/** Orden de las secciones del directorio de staff (mismo criterio que core). */
-const STAFF_ROLE_ORDER: StaffDirectoryRole[] = [
-  'admin_club',
-  'director',
-  'coordinador',
-  'entrenador_principal',
-  'entrenador_ayudante',
-  'preparador_fisico',
-  'delegado',
-];
 
 /**
  * O2-10b-1a / O2-12 — "Nueva conversación" del STAFF (lo que la familia NO tiene).
@@ -107,9 +96,7 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
       const [pRes, tRes, sRes] = await Promise.all([
         listMessageablePlayersFromClient(supabase, clubId, log),
         listMessageableTeamsFromClient(supabase, { clubId, isAdminDir, membershipId }, log),
-        userId
-          ? listStaffDirectoryFromClient(supabase, { clubId, currentProfileId: userId }, log)
-          : Promise.resolve({ staff: [] as StaffDirectoryEntry[] }),
+        listStaffDirectoryFromClient(supabase, clubId, log),
       ]);
       if (!active) return;
       if ('players' in pRes) setPlayers(pRes.players);
@@ -216,7 +203,7 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
     ? staff.filter((s) => s.fullName.toLowerCase().includes(term))
     : staff;
   // Secciones del directorio de staff: por rol (orden fijo), solo las no vacías.
-  const staffSections = STAFF_ROLE_ORDER.map((r) => ({
+  const staffSections = STAFF_ROLE_PRIORITY.map((r) => ({
     role: r,
     data: filteredStaff.filter((s) => s.role === r),
   })).filter((sec) => sec.data.length > 0);
