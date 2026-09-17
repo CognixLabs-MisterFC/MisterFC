@@ -247,6 +247,7 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
         )
         ) : (
           <FlatList
+            keyboardShouldPersistTaps="handled"
             data={filteredPlayers}
             keyExtractor={(p) => p.id}
             contentContainerStyle={{ padding: 16, gap: 4 }}
@@ -270,6 +271,7 @@ export function MensajeNuevoScreen({ basePath = '/staff' }: { basePath?: string 
         )
         ) : (
           <FlatList
+            keyboardShouldPersistTaps="handled"
             data={filteredTeams}
             keyExtractor={(team) => team.id}
             contentContainerStyle={{ padding: 16, gap: 4 }}

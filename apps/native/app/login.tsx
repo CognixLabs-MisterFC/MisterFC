@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   Text,
   TextInput,
@@ -23,6 +21,7 @@ import {
   getStoredLoginClubSlug,
 } from '@/lib/login-club-store';
 import { ClubCrest } from '@/ui/club-crest';
+import { KeyboardScrollView } from '@/ui/keyboard';
 import { CREST_WIDTH } from '@/lib/club-logo';
 
 type LoginError =
@@ -185,9 +184,15 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: BRAND.navy }}>
-      <KeyboardAvoidingView
+      {/* Aquí estaba el KeyboardAvoidingView de React Native, con
+          `behavior={Platform.OS === 'ios' ? 'padding' : undefined}`. En Android,
+          undefined = no hace nada, y por eso el campo de contraseña se quedaba
+          debajo del teclado. `contentContainerStyle={{ flexGrow: 1 }}` mantiene el
+          formulario centrado cuando sobra sitio y lo deja scrollear cuando no. */}
+      <KeyboardScrollView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
       >
         <View className="flex-1 justify-center gap-6 px-6">
           {/* Con club: manda el ESCUDO. Sin club resuelto (solo por fallo de
@@ -295,7 +300,7 @@ export default function LoginScreen() {
             ) : null}
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardScrollView>
 
       <ForgotPasswordModal
         visible={forgotOpen}

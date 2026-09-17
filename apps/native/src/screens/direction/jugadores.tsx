@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   getClubPlayersFromClient,
@@ -13,6 +13,7 @@ import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feed
 import { ListCard } from '@/screens/staff/hub-parts';
 import { DirectoryFilters, foldForSearch, type FilterTeam } from '@/ui/directory-filters';
 import { NoAppBadge } from '@/ui/no-app-badge';
+import { KeyboardScrollView } from '@/ui/keyboard';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -94,7 +95,7 @@ export function DireccionJugadoresScreen() {
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }}>
+      <KeyboardScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }}>
         <ScreenTitle>{t('dir_jugadores.title')}</ScreenTitle>
 
         {/* D4 — búsqueda por nombre + filtro por equipo (temporada activa). */}
@@ -147,7 +148,7 @@ export function DireccionJugadoresScreen() {
             </ListCard>
           ))
         )}
-      </ScrollView>
+      </KeyboardScrollView>
     </View>
   );
 }

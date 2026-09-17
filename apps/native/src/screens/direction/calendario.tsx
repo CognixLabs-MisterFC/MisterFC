@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import {
   getHolidaysFromClient,
   getPendingHolidayApprovalsFromClient,
@@ -12,6 +12,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, ScreenTitle } from '@/ui/feedback';
+import { KeyboardScrollView } from '@/ui/keyboard';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -109,7 +110,7 @@ export function DireccionCalendarioScreen() {
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+      <KeyboardScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         <ScreenTitle>{t('dir_cal.title')}</ScreenTitle>
 
         {/* Marcar festivo */}
@@ -220,7 +221,7 @@ export function DireccionCalendarioScreen() {
             ))
           )}
         </Section>
-      </ScrollView>
+      </KeyboardScrollView>
     </View>
   );
 }

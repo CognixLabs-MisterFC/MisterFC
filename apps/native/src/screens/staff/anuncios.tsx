@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
@@ -22,6 +21,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
+import { KeyboardScrollView } from '@/ui/keyboard';
 import { appLocale, useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { MisEquiposScreen } from './mis-equipos';
@@ -149,7 +149,7 @@ export function TeamAnnouncementsScreen({
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
+      <KeyboardScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
         <ScreenTitle>{name ?? t('anuncios_staff.title')}</ScreenTitle>
 
         {/* Formulario: publicar (o guardar edición). */}
@@ -262,7 +262,7 @@ export function TeamAnnouncementsScreen({
             </View>
           ))
         )}
-      </ScrollView>
+      </KeyboardScrollView>
     </View>
   );
 }

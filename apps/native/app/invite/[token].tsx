@@ -1,11 +1,8 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
   Linking,
-  Platform,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
@@ -20,6 +17,7 @@ import { BRAND } from '@/theme';
 import { legalUrl } from '@/legal/links';
 import { submitSelfAccept, selfAcceptMessageKey } from '@/invitations/self-accept';
 import { callPublicServerEndpoint } from '@/lib/server-api';
+import { KeyboardScrollView } from '@/ui/keyboard';
 
 /**
  * R-3 — Pantalla nativa de invitación a la CUENTA PROPIA del menor.
@@ -171,95 +169,97 @@ export default function InviteScreen() {
 
   return (
     <SafeAreaView className="flex-1" style={{ backgroundColor: BRAND.navy }}>
-      <KeyboardAvoidingView
+      {/* Aquí estaba el KeyboardAvoidingView de React Native con
+          `behavior={Platform.OS === 'ios' ? 'padding' : undefined}`: en Android,
+          undefined = no hace nada. Se va entero; lo hace KeyboardScrollView. */}
+      <KeyboardScrollView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        contentContainerClassName="px-6 py-8"
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView contentContainerClassName="px-6 py-8" keyboardShouldPersistTaps="handled">
-          <Text className="text-2xl font-bold text-white">{t('title')}</Text>
-          <Text className="mt-3 text-sm text-zinc-300">{t('self_note')}</Text>
+        <Text className="text-2xl font-bold text-white">{t('title')}</Text>
+        <Text className="mt-3 text-sm text-zinc-300">{t('self_note')}</Text>
 
-          {user?.email ? (
-            <Text className="mt-4 rounded-xl bg-amber-500/15 px-4 py-3 text-sm text-amber-200">
-              {t('session_swap_warning', { email: user.email })}
+        {user?.email ? (
+          <Text className="mt-4 rounded-xl bg-amber-500/15 px-4 py-3 text-sm text-amber-200">
+            {t('session_swap_warning', { email: user.email })}
+          </Text>
+        ) : null}
+
+        <Field
+          label={t('full_name_label')}
+          placeholder={t('full_name_placeholder')}
+          value={fullName}
+          onChangeText={setFullName}
+          autoCapitalize="words"
+        />
+        <Field
+          label={t('phone_label')}
+          placeholder={t('phone_placeholder')}
+          hint={t('phone_hint')}
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
+        />
+        <Field
+          label={`${t('date_of_birth_label')} ${t('optional')}`}
+          placeholder="AAAA-MM-DD"
+          value={dateOfBirth}
+          onChangeText={setDateOfBirth}
+          autoCapitalize="none"
+        />
+        <Field
+          label={t('password_label')}
+          hint={t('password_hint')}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        <Field
+          label={t('confirm_label')}
+          value={confirm}
+          onChangeText={setConfirm}
+          secureTextEntry
+        />
+
+        <Text className="mt-6 text-sm text-zinc-300">{t('consent_intro')}</Text>
+        <Consent
+          checked={acceptTerms}
+          onToggle={() => setAcceptTerms((v) => !v)}
+          label={t('consent_accept_terms')}
+          viewLabel={t('consent_view')}
+          onView={() => void Linking.openURL(legalUrl('terminos', locale))}
+        />
+        <Consent
+          checked={acceptPrivacy}
+          onToggle={() => setAcceptPrivacy((v) => !v)}
+          label={t('consent_accept_privacy')}
+          viewLabel={t('consent_view')}
+          onView={() => void Linking.openURL(legalUrl('privacidad', locale))}
+        />
+
+        {errorText ? (
+          <Text className="mt-5 text-sm text-red-400" accessibilityRole="alert">
+            {errorText}
+          </Text>
+        ) : null}
+
+        <Pressable
+          disabled={submitting}
+          onPress={() => void onSubmit()}
+          className="mt-6 items-center rounded-xl px-5 py-4"
+          style={{ backgroundColor: BRAND.green, opacity: submitting ? 0.6 : 1 }}
+          accessibilityRole="button"
+        >
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text className="text-base font-semibold text-white">
+              {t('set_password_submit')}
             </Text>
-          ) : null}
-
-          <Field
-            label={t('full_name_label')}
-            placeholder={t('full_name_placeholder')}
-            value={fullName}
-            onChangeText={setFullName}
-            autoCapitalize="words"
-          />
-          <Field
-            label={t('phone_label')}
-            placeholder={t('phone_placeholder')}
-            hint={t('phone_hint')}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-          />
-          <Field
-            label={`${t('date_of_birth_label')} ${t('optional')}`}
-            placeholder="AAAA-MM-DD"
-            value={dateOfBirth}
-            onChangeText={setDateOfBirth}
-            autoCapitalize="none"
-          />
-          <Field
-            label={t('password_label')}
-            hint={t('password_hint')}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          <Field
-            label={t('confirm_label')}
-            value={confirm}
-            onChangeText={setConfirm}
-            secureTextEntry
-          />
-
-          <Text className="mt-6 text-sm text-zinc-300">{t('consent_intro')}</Text>
-          <Consent
-            checked={acceptTerms}
-            onToggle={() => setAcceptTerms((v) => !v)}
-            label={t('consent_accept_terms')}
-            viewLabel={t('consent_view')}
-            onView={() => void Linking.openURL(legalUrl('terminos', locale))}
-          />
-          <Consent
-            checked={acceptPrivacy}
-            onToggle={() => setAcceptPrivacy((v) => !v)}
-            label={t('consent_accept_privacy')}
-            viewLabel={t('consent_view')}
-            onView={() => void Linking.openURL(legalUrl('privacidad', locale))}
-          />
-
-          {errorText ? (
-            <Text className="mt-5 text-sm text-red-400" accessibilityRole="alert">
-              {errorText}
-            </Text>
-          ) : null}
-
-          <Pressable
-            disabled={submitting}
-            onPress={() => void onSubmit()}
-            className="mt-6 items-center rounded-xl px-5 py-4"
-            style={{ backgroundColor: BRAND.green, opacity: submitting ? 0.6 : 1 }}
-            accessibilityRole="button"
-          >
-            {submitting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text className="text-base font-semibold text-white">
-                {t('set_password_submit')}
-              </Text>
-            )}
-          </Pressable>
-        </ScrollView>
-      </KeyboardAvoidingView>
+          )}
+        </Pressable>
+      </KeyboardScrollView>
     </SafeAreaView>
   );
 }

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   deleteEvaluationFromClient,
@@ -23,6 +23,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
+import { KeyboardScrollView } from '@/ui/keyboard';
 import { MatchPickerScreen } from '@/screens/staff/match-picker';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
@@ -240,7 +241,7 @@ export function PostMatchScreen({ eventId }: { eventId: string | null }) {
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 48 }}>
+      <KeyboardScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 48 }}>
         <ScreenTitle>{t('post_partido.app_title')}</ScreenTitle>
 
         {/* Resultado final (consolidado por finishMatch/9a). */}
@@ -377,7 +378,7 @@ export function PostMatchScreen({ eventId }: { eventId: string | null }) {
             primary
           />
         )}
-      </ScrollView>
+      </KeyboardScrollView>
     </View>
   );
 }

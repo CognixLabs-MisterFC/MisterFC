@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import {
   adjustClockFromClient,
   buildMatchEventRow,
@@ -42,6 +42,7 @@ import { useEventQueue } from '@/directo/use-event-queue';
 import { QuickEntry } from '@/directo/quick-entry';
 import { uuidv4 } from '@/lib/uuid';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
+import { KeyboardScrollView } from '@/ui/keyboard';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -258,7 +259,7 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
+      <KeyboardScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
         <ScreenTitle>{t('directo_control.title')}</ScreenTitle>
 
         {/* Marcador + reloj (derivado; el reloj tickea local). */}
@@ -446,7 +447,7 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
 
         {/* TIMELINE en vivo: servidor + cola, deduplicado por uuid. */}
         <EventsTimeline events={mergedEvents} optimisticIds={optimisticIds} />
-      </ScrollView>
+      </KeyboardScrollView>
     </View>
   );
 }

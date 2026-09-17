@@ -20,6 +20,7 @@
     "check:use-server": "node scripts/check-use-server-exports.mjs",
     "check:invite-senders": "node scripts/check-invite-senders.mjs",
     "check:family-web-cut": "node scripts/check-family-web-cut.mjs",
+    "check:teclado": "node scripts/check-teclado.mjs",
     "gen:import-template": "node scripts/generate-import-template.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\" --ignore-path .gitignore",

@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, Switch, Text, TextInput, View } from 'react-native';
+import { Pressable, Switch, Text, TextInput, View } from 'react-native';
 import {
   getSessionForEditFromClient,
   getPickableExercisesFromClient,
@@ -22,6 +22,7 @@ import { useCached } from '@/data/use-cached';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { ExercisePickerSheet } from '@/ui/exercise-picker-sheet';
+import { KeyboardScrollView } from '@/ui/keyboard';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -203,7 +204,7 @@ function EditorBody({ session }: { session: SessionForEdit }) {
   const pickerBlock = pickerFor ? blocks.find((b) => b.id === pickerFor) ?? null : null;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}>
+    <KeyboardScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}>
       <Text className="text-xl font-bold text-[#0F1B2E]">{t('sesiones.edit_title')}</Text>
 
       {/* ── Cabecera: nombre ── */}
@@ -392,7 +393,7 @@ function EditorBody({ session }: { session: SessionForEdit }) {
           onClose={() => setPickerFor(null)}
         />
       ) : null}
-    </ScrollView>
+    </KeyboardScrollView>
   );
 }
 
