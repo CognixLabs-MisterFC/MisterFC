@@ -38,7 +38,7 @@ declare
 begin
   -- Con has_table_privilege, no con information_schema: esa vista solo enseña los
   -- roles que el que consulta tiene habilitados, y eso es una condicion del entorno.
-  select coalesce(array_agg(c.relname || ' (' || p.priv || ')' order by c.relname, p.priv), '{}')
+  select coalesce(array_agg(c.relname::text || ' (' || p.priv || ')' order by c.relname, p.priv), '{}')
     into v_tablas
   from pg_class c
   join pg_namespace n on n.oid = c.relnamespace
@@ -51,7 +51,7 @@ begin
     raise exception '[1] anon conserva privilegios de TABLA en public: %', v_tablas;
   end if;
 
-  select coalesce(array_agg(distinct table_name || '.' || column_name || ' (' || privilege_type || ')'), '{}')
+  select coalesce(array_agg(distinct table_name::text || '.' || column_name::text || ' (' || privilege_type::text || ')'), '{}')
     into v_cols
   from information_schema.column_privileges
   where table_schema = 'public' and grantee = 'anon';
@@ -78,7 +78,7 @@ end $$;
 do $$
 declare v_malas text[];
 begin
-  select coalesce(array_agg(c.relname || ' (' || p.priv || ')' order by c.relname, p.priv), '{}')
+  select coalesce(array_agg(c.relname::text || ' (' || p.priv || ')' order by c.relname, p.priv), '{}')
     into v_malas
   from pg_class c
   join pg_namespace n on n.oid = c.relnamespace
@@ -152,7 +152,7 @@ declare
   v_auth  text[];
 begin
   -- Tablas y secuencias: anon no puede aparecer en el default de `postgres`.
-  select coalesce(array_agg(d.defaclobjtype || ':' || a.privilege_type), '{}')
+  select coalesce(array_agg(d.defaclobjtype::text || ':' || a.privilege_type), '{}')
     into v_anon
   from pg_default_acl d
   cross join lateral aclexplode(d.defaclacl) a
