@@ -158,7 +158,7 @@ Algunos proveedores, en particular los servicios de notificaciones push de Googl
 
 Dichas transferencias se realizan con las garantías previstas en el Capítulo V del RGPD, mediante Cláusulas Contractuales Tipo de la Comisión Europea, marcos de adecuación aplicables u otros mecanismos reconocidos por la normativa. Puede solicitar información adicional sobre las garantías aplicables a cada proveedor escribiendo a la dirección de contacto indicada en esta Política.
 
-La gestión técnica de las suscripciones de pago se realiza en servidores situados en **Estados Unidos**. Dicha transferencia se ampara en **[la certificación del proveedor en el Marco de Privacidad de Datos UE-EE. UU. / las cláusulas contractuales tipo aprobadas por la Comisión Europea, complementadas con la correspondiente evaluación de impacto de la transferencia]**, conforme al Capítulo V del RGPD.
+La gestión técnica de las suscripciones de pago se realiza en servidores situados en **Estados Unidos**. Dicha transferencia se ampara en las cláusulas contractuales tipo aprobadas por la Comisión Europea, complementadas con la correspondiente evaluación de impacto de la transferencia, conforme al Capítulo V del RGPD.
 
 ## 11. Conservación de los datos
 
