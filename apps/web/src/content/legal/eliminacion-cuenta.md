@@ -1,6 +1,6 @@
 # Eliminación de cuenta — MisterFC
 
-Última actualización: **16 de septiembre de 2026**  ·  Versión **1.1**
+Última actualización: **17 de septiembre de 2026**  ·  Versión **1.2**
 
 En MisterFC puedes eliminar tu cuenta y tus datos personales en cualquier momento, **desde la propia aplicación**. Esta página explica cómo hacerlo y qué ocurre con la información.
 
@@ -15,7 +15,7 @@ Puedes dirigirnos cualquier solicitud: si corresponde resolverla al club, se la 
 
 ## Cómo eliminar tu cuenta
 
-1. Abre **MisterFC** (aplicación móvil o versión web) e inicia sesión.
+1. Abre la aplicación **MisterFC** en tu móvil e inicia sesión.
 2. Ve a **Perfil**.
 3. Al final de la pantalla, pulsa **Eliminar mi cuenta**.
 4. Lee el resumen de lo que se elimina y lo que se conserva, escribe **ELIMINAR** para confirmar y pulsa el botón.
@@ -93,7 +93,7 @@ Al basarse en el interés legítimo, puedes **oponerte** a la conservación de m
 
 Si quieres que se supriman sus datos, puedes pedirlo desde la aplicación:
 
-1. Abre **MisterFC** e inicia sesión con tu cuenta de familia.
+1. Abre la aplicación **MisterFC** e inicia sesión con tu cuenta de familia.
 2. Ve a la sección de **gestión del jugador**.
 3. Solicita la **supresión de datos** del jugador.
 
