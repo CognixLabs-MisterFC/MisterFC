@@ -2,8 +2,9 @@
 --
 -- Caso real: user con memberships.role = 'entrenador_ayudante' a nivel club,
 -- PERO team_staff.staff_role = 'entrenador_principal' de un team. Debe poder:
---   T1. Iniciar conversación con un player del club (RLS INSERT en
---       conversations cubre rama principal-by-team_staff).
+--   T1. Iniciar conversación con un player DE SU TEAM (RLS INSERT en
+--       conversations cubre rama principal-by-team_staff). Desde la mig 20261080
+--       esa rama exige que el equipo contenga al jugador; antes bastaba el club.
 --   T2. Publicar un anuncio en SU team (RLS INSERT en announcements cubre
 --       rama principal-by-team_staff del team).
 --
@@ -58,6 +59,16 @@ insert into public.team_staff (team_id, membership_id, staff_role) values
 
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
   ('66666666-6666-4666-8666-66666666c001', '11111111-1111-4111-8111-11111111c001', 'Test', 'Player', '2012-01-01');
+
+-- Mig 20261080: la rama de `team_staff` de `conversations_insert_coach` ya no vale
+-- con estar en el mismo club, pide que el equipo CONTENGA al jugador. Este fixture
+-- se apoyaba sin decirlo en la version floja: su jugador no estaba en ningun equipo
+-- y T1 pasaba igual. Lo que T1 quiere probar es que el ayudante-que-es-principal-por
+-- -team_staff entra de serie, no que alcance a jugadores ajenos, asi que el jugador
+-- pasa a estar en el Team A1, que es el suyo. T3 y T4 no cambian: el ayudante PURO
+-- no tiene ninguna fila en team_staff, asi que sigue fuera por el mismo motivo.
+insert into public.team_members (player_id, team_id) values
+  ('66666666-6666-4666-8666-66666666c001', '33333333-3333-4333-8333-33333333c001');
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- T1: ayudante club + staff de team_staff → puede crear conversation de serie
