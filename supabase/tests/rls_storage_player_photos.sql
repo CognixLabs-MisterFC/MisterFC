@@ -60,6 +60,25 @@ insert into public.player_accounts (player_id, profile_id, relation) values
   ('00000000-aaaa-1111-0000-000000000001', '55555555-bbbb-5555-5555-555555555555', 'parent'),
   ('00000000-aaaa-1111-0000-000000000001', '66666666-bbbb-6666-6666-666666666666', 'self');
 
+-- Mig 20261079 — la foto ya NO se ve "por defecto": sin fila de `image_internal`,
+-- `player_photo_visible` devuelve false y la policy de SELECT no deja leer el objeto.
+-- T2 comprueba justo que un miembro del club SÍ puede, así que el consentimiento
+-- tiene que estar sellado. Hasta esa migración este fixture se apoyaba, sin decirlo,
+-- en el `coalesce(..., true)` que ella invierte.
+insert into public.seasons (id, club_id, label, status) values
+  ('eeeeeeee-0000-4000-8000-000000000001', 'dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0', '2025-26', 'active');
+
+insert into public.consents (tutor_profile_id, player_id, consent_type, granted,
+                             legal_document_id, legal_document_version, season_id)
+select '55555555-bbbb-5555-5555-555555555555',
+       '00000000-aaaa-1111-0000-000000000001',
+       'image_internal', true, ld.id, ld.version,
+       'eeeeeeee-0000-4000-8000-000000000001'
+from public.legal_documents ld
+where ld.club_id = 'dddddddd-d0d0-d0d0-d0d0-d0d0d0d0d0d0'
+  and ld.doc_type = 'image_internal'
+  and ld.version = 1;
+
 -- Seed: objeto preexistente en la carpeta del player A1 (insertado como
 -- postgres, bypass RLS).
 insert into storage.objects (bucket_id, name, owner, metadata)
