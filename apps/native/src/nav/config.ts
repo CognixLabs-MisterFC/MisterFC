@@ -57,6 +57,9 @@ export const PUBLIC_ROUTE_SEGMENTS: readonly string[] = [
   // está anonimizada y baneada), así que sin esto el guard la rebotaría al login y el
   // usuario no vería nunca la confirmación de que su borrado terminó.
   'cuenta-eliminada',
+  // R-3 — aceptar la invitación de cuenta propia del menor. Se llega por el enlace del
+  // correo y NO hay sesión: es justo la pantalla que la crea. El token es la credencial.
+  'invite',
 ];
 
 /**
@@ -96,6 +99,9 @@ export const SUBSCRIPTION_EXEMPT_SEGMENTS: readonly string[] = [
   'cuenta-eliminada',
   'login',
   'seleccionar-club',
+  // R-3 — misma razón que `login`: el muro no debe empujar hacia atrás a quien está
+  // entrando. Y aquí además no hay sesión todavía, así que no hay suscripción que mirar.
+  'invite',
 ];
 
 /** ¿Esta ruta se puede ver sin suscripción? */
@@ -206,6 +212,11 @@ const FAMILY_HIDDEN: MenuDef[] = [
   // O2-5 E2a — hilo 1:1 (?conversationId) y de equipo (?teamConversationId).
   { name: 'mensaje', labelKey: 'nav.mensajes' },
   { name: 'mensaje-equipo', labelKey: 'nav.mensajes' },
+  // La familia elige destinatario. OCULTA como las demás: se llega desde el botón de
+  // la bandeja, no del menú. Si no estuviera aquí, expo-router la declararía sin
+  // `href:null` y saldría como PESTAÑA de la barra — una quinta pestaña que nadie
+  // pidió, y sin error que lo avise.
+  { name: 'mensaje-nuevo', labelKey: 'nav.mensajes' },
 ];
 
 const STAFF_MENU_BASE: MenuDef[] = [

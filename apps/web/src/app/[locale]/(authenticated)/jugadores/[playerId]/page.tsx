@@ -98,11 +98,16 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
   // PR #24 (4f3bf39) para canManage de convocatorias.
   const canMessage = await userCanMessageInClub(supabase, ctx);
 
-  // F14-3b — la FOTO solo la gestiona el tutor vinculado (parent/guardian). El
-  // staff ve la foto pero no los controles. Casi siempre false en esta vista
-  // (staff), true solo si además es tutor del jugador.
+  // F14-3b — la FOTO la gestiona la familia: el tutor vinculado o el propio
+  // jugador. El staff la ve pero no los controles. Casi siempre false en esta
+  // vista (staff), true solo si además está vinculado al jugador.
+  //
+  // MN-6 — `user_manages_player` y no `user_is_tutor_of_player`: la foto es
+  // superficie COMPARTIDA, y es lo que exige `set_player_photo`. Con el helper
+  // viejo, un jugador vinculado a su propia ficha veía los controles ocultos
+  // aunque el SQL se los permitiera.
   const { data: isTutorOfPlayer } = await supabase.rpc(
-    'user_is_tutor_of_player',
+    'user_manages_player',
     { p_player_id: player.id }
   );
 

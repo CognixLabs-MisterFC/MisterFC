@@ -4,6 +4,9 @@ import { Download } from 'lucide-react';
 import {
   createSupabaseServerClient,
   getPlayerManagementAccessFromClient,
+  getSelfAccountStatusFromClient,
+  selfAccountStatusMessageKey,
+  type SelfAccountStatus,
   getPlayerMedicalFromClient,
   getMyPhoneFromClient,
   previewAccountDeletionFromClient,
@@ -20,6 +23,7 @@ import { PlayerSelector } from '../mi-ficha/player-selector';
 import { MedicalForm } from '../mi-ficha/medical-form';
 import { ErasureRequestButton } from '../mi-ficha/erasure-request-button';
 import { DeleteAccountCard } from './delete-account-card';
+import { InviteSelfDialog } from './invite-self-dialog';
 import { PlayerPhotoUploader } from '../jugadores/[playerId]/player-photo-uploader';
 
 type Props = {
@@ -74,11 +78,14 @@ export default async function PerfilPage({ params, searchParams }: Props) {
     myPlayers.find((p) => p.id === playerParam) ?? myPlayers[0] ?? null;
 
   // Datos por-player del activo (foto + gates de gestión). Solo si hay player.
+  let canManageSensitive = false;
   let playerPhotoPath: string | null = null;
   let playerPhotoSignedUrl: string | null = null;
   let playerInitials = '';
   let canManagePhoto = false;
   let canManageMedical = false;
+  // MN-9 — estado de la cuenta propia del jugador activo: none | invited | linked.
+  let selfStatus: SelfAccountStatus | null = null;
   let medicalInitial: {
     allergies: string | null;
     medication: string | null;
@@ -102,13 +109,23 @@ export default async function PerfilPage({ params, searchParams }: Props) {
       playerPhotoSignedUrl = signed?.signedUrl ?? null;
     }
 
-    // Gate de gestión por-player (foto, expediente, olvido): user_is_tutor_of_player
-    // — desde la extensión self acepta relation parent/guardian/self (el propio
-    // jugador adulto gestiona lo suyo). La médica exige ADEMÁS consentimiento vigente.
+    // MN-6 — los gates son TRES porque en la base de datos son tres, y cada bloque
+    // de esta pantalla pregunta por el que gobierna SU RPC:
+    //   foto        → `set_player_photo`      → user_manages_player        (COMPARTIDA)
+    //   médica      → `set_player_medical`    → user_manages_player_sensitive + consent
+    //   expediente  → `record_data_export`    → user_manages_player_sensitive
+    //   supresión   → `request_player_erasure`→ user_manages_player_sensitive
+    // Antes los cuatro colgaban de un único `isTutor`, así que el menor con cuenta
+    // propia veía botones que el SQL le iba a denegar — y el jugador ADULTO se
+    // quedaba sin los suyos, que el SQL sí le permite.
     // O2-5 C2 — los gates + la lectura médica viven en core (mismo criterio).
     const access = await getPlayerManagementAccessFromClient(supabase, activePlayer.id);
-    canManagePhoto = access.isTutor;
-    canManageMedical = access.isTutor && access.canWriteMedical;
+    canManagePhoto = access.canManage;
+    canManageSensitive = access.canManageSensitive;
+    canManageMedical = access.canWriteMedical;
+    // MN-9 — qué enseña la tarjeta de acceso. Sustituye al `!isSelf`, que la pintaba
+    // para siempre porque miraba la relación de quien mira y no la del jugador.
+    selfStatus = await getSelfAccountStatusFromClient(supabase, activePlayer.id);
     if (canManageMedical) {
       medicalInitial = await getPlayerMedicalFromClient(supabase, activePlayer.id);
     }
@@ -119,6 +136,7 @@ export default async function PerfilPage({ params, searchParams }: Props) {
   const tJugadores = await getTranslations('jugadores');
   const tErasure = await getTranslations('erasure');
   const tAccountDeletion = await getTranslations('account_deletion');
+  const tInviteSelf = await getTranslations('invite_self');
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
@@ -146,6 +164,64 @@ export default async function PerfilPage({ params, searchParams }: Props) {
               players={myPlayers}
               basePath="/perfil"
             />
+          )}
+
+          {/* MN-5 — Dar acceso al JUGADOR: el tutor le abre su propia cuenta, y esa
+              invitación ES la autorización.
+
+              MN-9 — qué se enseña lo decide el ESTADO del jugador, no la relación de
+              quien mira. Antes esto era `!isSelf`, y como la relación del tutor es
+              'parent' para siempre, la tarjeta no se iba nunca: el hijo ya entraba con
+              su cuenta y su padre seguía viendo el botón, que solo fallaba al pulsarlo.
+              El estado lo da `player_self_account_status`, porque el tutor NO VE la
+              fila 'self' de su hijo (se la oculta la RLS de `player_accounts`, y así
+              debe seguir).
+
+              Al PROPIO JUGADOR la tarjeta le desaparece por este MISMO camino, sin
+              preguntar por la relación: la RPC está gateada con `user_manages_player`,
+              así que a él le contesta 'linked' por construcción.
+
+              `null` = no se ha podido saber → no se ofrece, igual que `canManage ??
+              false` en esta misma pantalla: una lectura que falla no abre puertas.
+
+              MN-10 — y cuando está bloqueado dice POR QUÉ, no «no se puede»: jugador
+              de baja, club sin temporada abierta o decisiones de imagen sin responder.
+              El texto es el MISMO que enseñaba la RPC después de pulsar (`errors.*`),
+              reutilizado a propósito: dos frases para el mismo hecho divergen igual que
+              divergen dos predicados.
+
+              El cuarto motivo, `email_relation_conflict`, NO está aquí y no es un
+              olvido: se mide contra la dirección que el tutor todavía no ha escrito,
+              así que sigue saliendo como error bajo el campo.
+
+              Y esto decide qué se OFRECE, no qué se permite: `invite_player_self`
+              conserva su `already_linked` para el hueco entre el pintado y el envío. */}
+          {canManagePhoto && selfStatus !== null && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{tInviteSelf('section.title')}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                {selfStatus === 'none' ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      {tInviteSelf('section.hint')}
+                    </p>
+                    <div>
+                      <InviteSelfDialog
+                        locale={locale}
+                        playerId={activePlayer.id}
+                        playerName={activePlayer.name}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {tInviteSelf(selfAccountStatusMessageKey(selfStatus) ?? 'section.hint')}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
           )}
 
           {/* Foto del JUGADOR: players.photo_url (única foto de la pantalla). */}
@@ -193,8 +269,9 @@ export default async function PerfilPage({ params, searchParams }: Props) {
             </Card>
           )}
 
-          {/* Descargar expediente (derecho de acceso, PDF). */}
-          {canManagePhoto && (
+          {/* Descargar expediente (derecho de acceso, PDF). RESERVADA:
+              `record_data_export` exige user_manages_player_sensitive. */}
+          {canManageSensitive && (
             <Card>
               <CardHeader>
                 <CardTitle>{tMiFicha('data_export.title')}</CardTitle>
@@ -213,8 +290,9 @@ export default async function PerfilPage({ params, searchParams }: Props) {
             </Card>
           )}
 
-          {/* Derecho al olvido: solicita la supresión del player. */}
-          {canManagePhoto && (
+          {/* Derecho al olvido: solicita la supresión del player. RESERVADA:
+              `request_player_erasure` exige user_manages_player_sensitive. */}
+          {canManageSensitive && (
             <Card>
               <CardHeader>
                 <CardTitle>{tErasure('card_title')}</CardTitle>

@@ -17,3 +17,38 @@ export {
   type AcceptFormRules,
   type ChildRowError,
 } from './accept-form';
+export {
+  isSelfInvitation,
+  hasSelfInvitation,
+  childrenNeedingConsent,
+  type RelationCarrier,
+} from './self';
+export {
+  getSelfAccountStatusFromClient,
+  isSelfAccountBlocker,
+  selfAccountStatusMessageKey,
+  SELF_ACCOUNT_BLOCKERS,
+  type SelfAccountBlocker,
+  type SelfAccountStatus,
+} from './self-status';
+export {
+  acceptPendingInvitationsFromClient,
+  claimInviteeAccount,
+  mapAcceptRpcError,
+  type AcceptPendingOutcome,
+  type ClaimInviteeAccountOutcome,
+  type InviteAcceptError,
+  type InviteAcceptLogger,
+} from './accept-new-invitee';
+export {
+  decideSelfAccept,
+  type SelfAcceptDecision,
+  type SelfAcceptInvitation,
+  type SelfAcceptRefusal,
+} from './self-accept';
+export {
+  performSelfInvite,
+  type SelfInviteError,
+  type SelfInviteLogger,
+  type SelfInviteResult,
+} from './self-invite';

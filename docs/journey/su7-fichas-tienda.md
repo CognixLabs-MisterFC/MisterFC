@@ -179,3 +179,8 @@ Por orden de quién bloquea a quién:
 - [ ] Y al final, los dos interruptores **a la vez**: `SUBSCRIPTION_GATE=on` en Vercel y
       `EXPO_PUBLIC_SUBSCRIPTION_GATE=on` en el build de EAS. Encender solo uno deja la web
       y la app diciendo cosas distintas a la misma familia.
+- [ ] **`FAMILY_WEB_CUT=on` en Vercel** (W-B) — cierra la web a familias y seguidores, que
+      pasan a la app. Es un interruptor aparte y **sin gemela en EAS**: la app es el
+      destino del corte, no la otra mitad de un muro. Va con la publicación, no con las
+      tiendas: mientras la app no esté publicada, encenderlo deja a las familias sin sitio
+      a donde ir. El staff y la dirección no se ven afectados.

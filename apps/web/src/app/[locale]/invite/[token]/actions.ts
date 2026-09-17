@@ -6,11 +6,12 @@ import { headers } from 'next/headers';
 import * as Sentry from '@sentry/nextjs';
 import {
   acceptInvitationWithProfileSchema,
+  acceptPendingInvitationsFromClient,
+  claimInviteeAccount,
   assertInvitationValid,
   createSupabaseAdminClient,
   createSupabaseServerClient,
   isInvitePending,
-  isSamePasswordError,
   playerIdsFromFormKeys,
   playerPhotoUploadSchema,
   // Rework C/D — la regla de los datos del hijo la usan LOS DOS lados (este
@@ -19,6 +20,7 @@ import {
   validateChildRow,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { clientIpFrom } from '@/lib/client-ip';
 import { emitInAppNotificationFanOut } from '@/lib/notify-bus';
 import {
   loadInvitationByToken,
@@ -57,6 +59,10 @@ export type AcceptInvitationState = {
     | 'wrong_credentials'
     // B1 — códigos específicos por punto de fallo (antes todo era 'generic').
     | 'auth_update_failed'
+    // BUG-4 — el inicio de sesión posterior a fijar la contraseña. Tenía el código de
+    // la contraseña y el usuario leía que no se había podido establecer cuando sí se
+    // había establecido: el mensaje mandaba a mirar al sitio equivocado.
+    | 'sign_in_failed'
     | 'profile_update_failed'
     | 'membership_failed'
     | 'player_link_failed'
@@ -72,6 +78,11 @@ export type AcceptInvitationState = {
     // BC-6 — quien tiene un borrado de cuenta en curso no puede entrar en un club
     // nuevo. Lo decide la RPC (punto común de TODA aceptación), no la pantalla.
     | 'account_deletion_in_progress'
+    // MN-3 — la cuenta propia del jugador no trae datos reservados al tutor. Desde
+    // la pantalla no se llega (MN-5 no pinta esas tarjetas), pero la RPC está
+    // expuesta a `authenticated` y su error tiene que tener nombre propio: si
+    // cayera en 'generic' nadie sabría qué mirar.
+    | 'reserved_for_tutor'
     | 'generic';
 };
 
@@ -256,10 +267,11 @@ async function attachAllPending(
   const childParse = await parseChildUpdates(clicked, formData);
   if (!childParse.ok) return { error: childParse.error };
 
-  // Metadatos de auditoría (no se confía en el cliente).
+  // Metadatos de auditoría (no se confía en el cliente). La IP sale del mismo sitio
+  // que usa el límite de intentos de R-2: si divergieran, un día dirían cosas
+  // distintas sobre el mismo intento.
   const h = await headers();
-  const fwd = h.get('x-forwarded-for');
-  const ip = fwd ? (fwd.split(',')[0]?.trim() ?? null) : null;
+  const ip = clientIpFrom(h);
   const userAgent = h.get('user-agent');
 
   // F14-3c — Subida de imágenes ANTES de la RPC, server-side con admin: en este
@@ -369,39 +381,28 @@ async function attachAllPending(
       }
     }
 
-    const { data, error } = await supabase.rpc('accept_pending_invitations', {
-      p_clicked_token: clicked.token,
-      p_accept_terms: accepts.terms,
-      p_accept_privacy: accepts.privacy,
-      p_ip: ip ?? undefined,
-      p_user_agent: userAgent ?? undefined,
-      p_children: children,
-      p_medical: medical,
+    // R-1 — la llamada y el MAPEO de su error viven en core: por esta RPC pasan las
+    // tres acciones del alta (acceptInvitation / acceptNewInvitee /
+    // acceptExistingUser) y ahora tambien la pantalla nativa. En cualquiera de ellas
+    // el mapeo se quedaria a medias. Lo de alrededor —imagenes, datos del hijo, aviso
+    // a direccion— sigue aqui porque es de la web y solo de la web.
+    const attached = await acceptPendingInvitationsFromClient(supabase, {
+      token: clicked.token,
+      accepts,
+      audit: { ip, userAgent },
+      children,
+      medical,
     });
 
-    if (error) {
+    if ('error' in attached) {
       // La transacción revirtió: no dejamos imágenes huérfanas en el bucket.
       await cleanupImages();
-      const msg = error.message ?? '';
-      // BC-6 — el candado de la RPC. Se mapea AQUÍ, en `attachAllPending`, porque es
-      // por donde pasan las tres acciones del alta (acceptInvitation /
-      // acceptNewInvitee / acceptExistingUser); en cualquiera de los tres callers se
-      // quedaría a medias.
-      if (msg.includes('account_deletion_in_progress')) {
-        return { error: 'account_deletion_in_progress' };
+      if (attached.error === 'generic') {
+        logError('rpc accept_pending', attached.raw, { invitation_id: clicked.id });
       }
-      if (msg.includes('consent_required')) return { error: 'consent_required' };
-      if (msg.includes('wrong_email')) return { error: 'wrong_email' };
-      if (msg.includes('not_found')) return { error: 'not_found' };
-      if (msg.includes('no_session')) return { error: 'no_session' };
-      if (msg.includes('image_decision_required')) return { error: 'image_decision_required' };
-      if (msg.includes('image_required')) return { error: 'image_required' };
-      logError('rpc accept_pending', error, {
-        invitation_id: clicked.id,
-        pg_code: error.code,
-      });
-      return { error: 'generic' };
+      return { error: attached.error };
     }
+    const data = attached.ok.processed;
 
     // Rework C/D — persistir nombre + fecha nac. del hijo confirmados por el
     // tutor. Best-effort tras la aceptación ya comprometida (admin/service_role:
@@ -631,87 +632,30 @@ export async function acceptNewInvitee(
       return { error: 'auth_update_failed' };
     }
 
-    // Paso 1+2: fija contraseña + metadata + limpia invite_pending sobre la
-    // cuenta no reclamada (invited_user_id o la recuperada de la sesión).
-    logStep('flow=new admin-set-password start', { invitation_id: invitation.id });
-    const { error: updErr } = await admin.auth.admin.updateUserById(targetUid, {
-      password: parsed.data.password,
-      // invite_pending: false TAMBIÉN en user_metadata (GoTrue fusiona, no reemplaza):
-      // es el bucket que lee el gate. Sin esto quedaba stale=true y un usuario ya
-      // configurado, al aceptar una invitación adicional, se iría a set_password.
-      user_metadata: {
-        full_name: parsed.data.full_name,
-        date_of_birth: parsed.data.date_of_birth,
+    // R-1 — pasos 1-4 (contraseña → sesión → perfil) en core: la pantalla nativa
+    // tiene que hacer exactamente lo mismo, y escribirlo dos veces es lo que
+    // acaba diciendo dos cosas. `targetUid` se resuelve ARRIBA, aquí, porque el
+    // cinturón anti-trampa depende de la sesión del magic link de la web y en
+    // nativa no hay ninguna sesión antes de esto.
+    logStep('flow=new claim start', { invitation_id: invitation.id });
+    const claimed = await claimInviteeAccount(
+      supabase,
+      admin,
+      {
+        targetUid,
+        email: invitation.email,
         locale,
-        invite_pending: false,
+        profile: parsed.data,
       },
-      app_metadata: { invite_pending: false },
-    });
-    if (updErr && !isSamePasswordError(updErr)) {
-      logError('flow=new admin-set-password', updErr, {
-        invitation_id: invitation.id,
-        user_email_masked: maskEmail(invitation.email),
-      });
-      return { error: 'auth_update_failed' };
-    }
-    if (updErr) {
-      // Contraseña ya era esa (re-claim idempotente): aseguramos metadata sin tocarla.
-      logStep('flow=new admin-set-password same-password-ignored', {
-        invitation_id: invitation.id,
-      });
-      await admin.auth.admin.updateUserById(targetUid, {
-        user_metadata: {
-          full_name: parsed.data.full_name,
-          date_of_birth: parsed.data.date_of_birth,
-          locale,
-          invite_pending: false,
-        },
-        app_metadata: { invite_pending: false },
-      });
-    } else {
-      logStep('flow=new admin-set-password ok', { invitation_id: invitation.id });
-    }
-
-    // Paso 3: crea sesión con la contraseña recién fijada (cliente ya creado arriba).
-    logStep('flow=new sign-in start', { invitation_id: invitation.id });
-    const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-      email: invitation.email,
-      password: parsed.data.password,
-    });
-    const user = signInData?.user ?? null;
-    if (signInErr || !user) {
-      logError('flow=new sign-in', signInErr ?? new Error('no user after sign-in'), {
-        invitation_id: invitation.id,
-        user_email_masked: maskEmail(invitation.email),
-      });
-      return { error: 'auth_update_failed' };
-    }
-    logStep('flow=new sign-in ok', { invitation_id: invitation.id });
-
-    // Paso 4: profiles bajo la sesión del invitee.
-    logStep('flow=new profile-update start', { invitation_id: invitation.id });
-    const { error: profErr } = await supabase
-      .from('profiles')
-      .update({
-        full_name: parsed.data.full_name,
-        // El teléfono llega ya validado por el schema (mismo criterio que el
-        // CHECK de la columna) y con `trim`. Nunca cadena vacía: el campo es
-        // obligatorio, así que aquí siempre hay número.
-        phone: parsed.data.phone,
-        date_of_birth: parsed.data.date_of_birth,
-        locale,
-      })
-      .eq('id', user.id);
-    if (profErr) {
-      logError('flow=new profile-update', profErr, {
-        invitation_id: invitation.id,
-        user_id: user.id,
-        pg_code: profErr.code,
-        is_rls: profErr.code === '42501',
-      });
-      return { error: 'profile_update_failed' };
-    }
-    logStep('flow=new profile-update ok', { invitation_id: invitation.id });
+      (error, step, extra) =>
+        logError(`flow=new ${step}`, error, {
+          ...extra,
+          invitation_id: invitation.id,
+          user_email_masked: maskEmail(invitation.email),
+        }),
+    );
+    if ('error' in claimed) return { error: claimed.error };
+    logStep('flow=new claim ok', { invitation_id: invitation.id });
 
     // Paso 5: attach de TODO el lote multi-hijo (+ consentimientos de cuenta).
     const result = await attachAllPending(invitation, formData);

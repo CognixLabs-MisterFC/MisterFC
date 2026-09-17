@@ -552,7 +552,20 @@
     "phone_placeholder": "600 123 456",
     "phone_hint": "El club l’utilitzarà per a localitzar-te si el teu fill o filla necessita alguna cosa en un entrenament o un partit.",
     "missing_phone": "Falta el teu telèfon de contacte.",
-    "error_phone_invalid": "Aquest telèfon no sembla vàlid. Revisa’l."
+    "error_phone_invalid": "Aquest telèfon no sembla vàlid. Revisa’l.",
+    "self_note": "Esta invitació és per al teu propi compte de jugador: te l'ha enviada el teu pare, mare o tutor legal. Les autoritzacions d'imatge, les teues dades mèdiques i la gestió de les teues dades personals continuen sent cosa seua.",
+    "error_reserved_for_tutor": "Eixes dades les gestiona el teu pare, mare o tutor legal; no es poden enviar des d’ací.",
+    "error_not_self": "Esta invitació no és per a un compte de jugador. Obri-la des de l'enllaç del correu en el navegador per a completar-la.",
+    "error_not_claimable": "Aquest correu ja té un compte. Inicia sessió amb ell i la invitació s'afegirà sola.",
+    "error_rate_limited": "Massa intents. Espera un poc i torna a provar.",
+    "error_rate_limited_in": "Massa intents. Torna a provar d'ací a {minutes} min.",
+    "error_unavailable": "No hem pogut comprovar la invitació ara mateix. Intenta-ho d'ací a uns minuts.",
+    "error_network": "Sense connexió. Comprova la teua xarxa i torna a intentar-ho.",
+    "error_no_web_url": "Aquesta versió de l'app no està configurada per a completar invitacions. Avisa el club.",
+    "error_invalid": "Aquest enllaç no és vàlid. Obri el que t'ha arribat per correu.",
+    "go_to_signin": "Anar a iniciar sessió",
+    "session_swap_warning": "Ara mateix estàs en el compte {email}. Si completes aquesta invitació, entraràs amb el compte del jugador.",
+    "error_sign_in_failed": "La teua contrasenya s'ha guardat, però no hem pogut iniciar la teua sessió. Intenta-ho de nou."
   },
   "directos": {
     "title": "Directes",
@@ -1345,7 +1358,7 @@
       "tutor_email": "Correu del tutor",
       "tutor_relation": "Relació del tutor",
       "relation_placeholder": "Selecciona la relació",
-      "tutor_help": "En crear el jugador s'enviarà automàticament la invitació a este correu.",
+      "tutor_help": "És el correu del pare, mare o tutor legal, no el del jugador: qui el reba quedarà registrat com a tutor seu. En crear el jugador se li enviarà la invitació automàticament.",
       "phone": "Telèfon del jugador",
       "phone_help": "Opcional. Només si el jugador té telèfon propi."
     },
@@ -1410,7 +1423,7 @@
       },
       "attendance": {
         "present_pct": "assistència",
-        "total": "{count} entrenaments registrats",
+        "total": "{count, plural, one {# entrenament registrat} other {# entrenaments registrats}}",
         "bucket": {
           "present": "Present",
           "justified": "Falta justificada",
@@ -1759,7 +1772,8 @@
       "upload": {
         "short": "Pujar",
         "title": "Puja el teu arxiu",
-        "help": "Usa la plantilla descarregable (4 columnes: Nom complet, Data de naixement, Equip, Email). Obligatoris: Nom complet, Data de naixement i Email. Data en format dia/mes/any (15/03/2010). Equip és opcional (si el deixes buit s'usa l'equip del lot)."
+        "help": "Usa la plantilla descarregable (4 columnes: Nom complet, Data de naixement, Equip, Email). Obligatoris: Nom complet, Data de naixement i Email. Data en format dia/mes/any (15/03/2010). Equip és opcional (si el deixes buit s'usa l'equip del lot).",
+        "email_help": "La columna Email és la del pare, mare o tutor legal de cada jugador, no la del jugador: qui la reba quedarà registrat com a tutor seu."
       },
       "preview": {
         "short": "Revisar",
@@ -2129,7 +2143,8 @@
         "9": "octubre",
         "10": "novembre",
         "11": "desembre"
-      }
+      },
+      "long": "{weekday}, {day} de {month}"
     },
     "season": {
       "tabs": {
@@ -2697,7 +2712,7 @@
     "range_season": "Temporada actual",
     "empty": "Encara no hi ha registres d'assistència",
     "pct_present": "Presència",
-    "total": "{n} entrenaments registrats",
+    "total": "{n, plural, one {# entrenament registrat} other {# entrenaments registrats}}",
     "breakdown": "Desglossament",
     "justified": "Justificada",
     "family_title": "Assistència"
@@ -5059,7 +5074,12 @@
     "erasure_reason_ph": "Motiu (opcional)",
     "erasure_ack": "Entenc que és una sol·licitud irreversible una vegada aprovada.",
     "erasure_cancel": "Cancel·lar",
-    "erasure_confirm": "Sol·licitar"
+    "erasure_confirm": "Sol·licitar",
+    "contact_title": "Contacte de la família",
+    "contact_hint": "Els tutors vinculats a este jugador. Són dades personals: fes-ne servir només per a allò que calga del club.",
+    "contact_none": "Encara no hi ha cap tutor vinculat.",
+    "contact_error": "No hem pogut carregar el contacte dels tutors.",
+    "contact_you": "Tu"
   },
   "inicio": {
     "unread_messages": "Missatges sense llegir: {n}",
@@ -5300,7 +5320,9 @@
       "entrenador_ayudante": "Entrenador ajudant",
       "preparador_fisico": "Preparador físic",
       "delegado": "Delegat"
-    }
+    },
+    "load_failed": "No hem pogut carregar els destinataris.",
+    "load_failed_hint": "Torna a entrar d'ací a un moment. Si continua igual, avisa el club."
   },
   "sesion_dia": {
     "empty": "Hui no hi ha entrenament",
@@ -5513,5 +5535,103 @@
     "claim_error": "No ho hem pogut comprovar ara mateix. Torna a intentar-ho en un moment.",
     "terms_link": "Condicions d’ús",
     "privacy_link": "Política de privacitat"
+  },
+  "invite_self": {
+    "action": "Donar accés al jugador",
+    "title": "Donar accés al jugador",
+    "description": "S'enviarà una invitació a {player} perquè entre amb el seu propi compte.",
+    "section": {
+      "title": "Accés del jugador",
+      "hint": "Pots donar-li el seu propi compte perquè entre amb el seu correu. Tu continues gestionant les seues autoritzacions d’imatge, les seues dades mèdiques i els seus drets sobre les seues dades."
+    },
+    "state": {
+      "invited": "Ja hi ha una invitació enviada, pendent que el jugador entre i l’accepte.",
+      "linked": "Este jugador ja té el seu propi compte."
+    },
+    "field": {
+      "email": "Correu del jugador",
+      "help": "Ha de ser un correu diferent del teu: és el compte del jugador, no un altre de teu."
+    },
+    "send": "Enviar invitació",
+    "cancel": "Cancel·lar",
+    "close": "Tancar",
+    "sent": "Invitació enviada a {email}.",
+    "errors": {
+      "email_invalid": "Eixe correu no és vàlid.",
+      "email_too_long": "Eixe correu és massa llarg.",
+      "forbidden": "Només el pare, mare o tutor legal del jugador pot donar-li accés.",
+      "erased": "Eixe jugador està donat de baixa.",
+      "already_linked": "Este jugador ja té el seu propi compte.",
+      "email_relation_conflict": "Eixe correu ja figura com el d’un tutor d’este jugador. El compte del jugador necessita un correu propi.",
+      "consents_required": "Abans cal respondre les autoritzacions d'imatge del jugador per a esta temporada.",
+      "no_active_season": "El club no té cap temporada activa.",
+      "generic": "No s'ha pogut enviar la invitació. Torna-ho a provar."
+    }
+  },
+  "mensajes_familia": {
+    "new": "Nou",
+    "new_title": "A qui escrius?",
+    "group_club": "El club",
+    "group_team": "El seu equip",
+    "nobody": "Ara mateix no hi ha ningú a qui escriure. Quan el club assigne cos tècnic a l'equip, apareixerà ací.",
+    "load_failed": "No hem pogut carregar a qui pots escriure.",
+    "load_failed_hint": "Torna a entrar d'ací a un moment. Si continua igual, avisa el club.",
+    "start_error": "No hem pogut obrir la conversa. Torna-ho a provar.",
+    "recipient_gone": "Eixa persona ja no està disponible. Actualitza la llista.",
+    "offline": "Sense connexió: per a escriure necessites estar en línia.",
+    "role": {
+      "admin_club": "Direcció del club",
+      "director": "Direcció del club",
+      "entrenador_principal": "Entrenador principal",
+      "entrenador_ayudante": "Entrenador ajudant",
+      "delegado": "Delegat",
+      "preparador_fisico": "Preparador físic",
+      "coordinador": "Coordinador"
+    }
+  },
+  "app_only": {
+    "title": "MisterFC ara s'usa des de l'app",
+    "body": "L'accés de les famílies a MisterFC està en l'aplicació per a mòbil. Entra amb el mateix correu i la mateixa contrasenya que uses ací.",
+    "account_title": "El teu compte està creat",
+    "account_email": "Has entrat amb aquest correu. És el mateix amb el qual has d'entrar en l'app:",
+    "account_email_unknown": "Entra en l'app amb el mateix correu amb el qual has entrat ací.",
+    "download_title": "Descarrega l'aplicació",
+    "download_soon": "Els enllaços de descàrrega estaran ací en quant l'app estiga publicada. Mentrestant, busca-la com «MisterFC» en App Store o en Google Play.",
+    "download_app_store": "Descarregar en App Store",
+    "download_play": "Descarregar en Google Play",
+    "terms_link": "Termes",
+    "privacy_link": "Privacitat"
+  },
+  "consentimientos": {
+    "section_title": "Permisos que has donat",
+    "intro": "Ací pots veure què has autoritzat, quan, i el text exacte que vas acceptar. Els permisos opcionals pots retirar-los quan vulgues.",
+    "account_group": "El teu compte",
+    "child_unnamed": "Fill/a",
+    "granted": "Acceptat",
+    "revoked": "Retirat",
+    "view_text": "Veure el text que vas acceptar",
+    "close": "Tancar",
+    "load_error": "No hem pogut carregar els teus permisos. Torna a entrar d'ací a un moment.",
+    "doc_error": "No s'ha pogut carregar el text.",
+    "doc_not_found": "Aquest text ja no està disponible.",
+    "revoke": "Retirar",
+    "revoke_title": "Retirar aquest permís?",
+    "revoke_note": "Retirar un permís no afecta el que ja es va fer mentre estava vigent. Pots tornar a donar-lo quan el club et demane revisar els permisos.",
+    "revoke_cancel": "Cancel·lar",
+    "revoke_confirm": "Retirar",
+    "revoke_effect": {
+      "image_internal": "La fotografia del teu fill o filla deixarà de veure's en l'aplicació immediatament.",
+      "image_social": "El club deixarà de tindre el teu permís per a publicar la seua imatge fora de l'aplicació. Això impedeix usos futurs: no retira el que ja s'haja publicat.",
+      "medical": "La informació de salut deixarà de veure's en l'aplicació i el club no podrà afegir ni modificar res. No s'esborra: queda bloquejada."
+    },
+    "offline": "Sense connexió no es poden retirar permisos. Intenta-ho quan tornes a tindre xarxa.",
+    "errors": {
+      "forbidden": "Ja no pots gestionar els permisos d'aquest jugador.",
+      "no_session": "La teua sessió ha caducat. Torna a entrar.",
+      "not_revocable": "Aquest permís no es pot retirar ací. Si no vols continuar usant MisterFC, pots eliminar el teu compte des d'aquesta mateixa pantalla.",
+      "nothing_to_revoke": "No hi ha res a retirar en aquest permís.",
+      "no_active_season": "El club no té una temporada activa. Avisa'l perquè puga registrar-se la retirada.",
+      "error": "No s'ha pogut retirar el permís. Intenta-ho de nou."
+    }
   }
 }

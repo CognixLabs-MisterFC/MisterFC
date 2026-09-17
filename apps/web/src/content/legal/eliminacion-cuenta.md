@@ -1,6 +1,6 @@
 # Eliminación de cuenta — MisterFC
 
-Última actualización: **12 de septiembre de 2026**  ·  Versión **1.0**
+Última actualización: **16 de septiembre de 2026**  ·  Versión **1.1**
 
 En MisterFC puedes eliminar tu cuenta y tus datos personales en cualquier momento, **desde la propia aplicación**. Esta página explica cómo hacerlo y qué ocurre con la información.
 
@@ -113,11 +113,15 @@ También puedes solicitarla escribiendo a **info.cognixlabs@gmail.com** o direct
 
 Además de la eliminación, puedes ejercer los derechos de acceso, rectificación, limitación, oposición y portabilidad, así como retirar los consentimientos otorgados.
 
-Desde la propia aplicación, en tu perfil, puedes en cualquier momento:
+Desde la propia aplicación, en **Perfil**, puedes en cualquier momento:
 
-- consultar los consentimientos que has otorgado y su fecha;
-- revocar cualquier consentimiento de forma inmediata;
+- consultar los permisos que has dado, su fecha y el texto exacto que aceptaste;
+- retirar los permisos opcionales —imagen del jugador y datos de salud— de forma inmediata;
 - descargar una copia de los datos del jugador.
+
+**Retirar un permiso impide usos futuros; no retira lo ya publicado.** Al retirar el de uso interno de la imagen, la fotografía deja de verse en la aplicación al instante. Al retirar el de difusión pública, el club deja de tener tu autorización para publicarla fuera de la aplicación, pero lo que ya se publicó debe reclamarse a quien lo publicó. Al retirar el de datos de salud, la información deja de verse y el club no puede añadirla ni modificarla: no se borra, queda bloqueada.
+
+Los **Términos y Condiciones** y la **Política de Privacidad** no se retiran desde ahí: son la base sobre la que existe tu cuenta, así que dejar de prestarlos es eliminarla, con lo que se explica más arriba en esta misma página.
 
 Para el resto de derechos, escribe a **info.cognixlabs@gmail.com**. Si tu solicitud afecta a datos de los que el club es responsable, se la trasladaremos y te informaremos de ello.
 

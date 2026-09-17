@@ -49,6 +49,13 @@ jobs:
       - name: Check invite senders census
         run: pnpm check:invite-senders
 
+      # Censo de puntos de corte de la web para familias (W-B). La web tiene DOS
+      # carcasas autenticadas y `/spectator` es HERMANA de `(authenticated)`: no
+      # hereda su guard. Este censo obliga a que una carcasa nueva declare a qué
+      # lado del corte cae, en vez de quedarse fuera en silencio.
+      - name: Check family web cut census
+        run: pnpm check:family-web-cut
+
       - name: Test (vitest)
         run: pnpm test
 
@@ -121,7 +128,11 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # CLI PINEADO a 2.98.2 (constante del proyecto: v2.99+ rompe el flujo db).
+      # CLI PINEADO a 2.98.2. Aquí el pin SÍ importa: `supabase start` corre código
+      # del CLI. Lo que decía esta nota —«v2.99+ rompe el flujo db»— no tiene ninguna
+      # medición detrás: el pin está sin tocar desde el primer commit (Fase 1, mayo
+      # 2026). Subirlo es un cambio propio, que se valida con este mismo job y un
+      # `db push --dry-run`. Ver docs/architecture/supabase-cli-without-link.md.
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
@@ -130,12 +141,12 @@ jobs:
       # Levanta el stack local y APLICA las 179 migraciones en limpio. Si alguna
       # migración falla (un club nuevo no se podría crear desde cero), este paso
       # sale en rojo y para el PR.
-      - name: supabase start (aplica las 179 migraciones en limpio)
+      - name: supabase start (aplica las 233 migraciones en limpio)
         run: supabase start
 
       # Red de verificación del propio stack antes de correr la suite:
       #  · el esquema `storage` existe (si no, los 2 tests de storage fallarían).
-      #  · las 179 migraciones quedaron registradas (clean apply completo).
+      #  · las 233 migraciones quedaron registradas (clean apply completo).
       - name: Verificar storage + recuento de migraciones
         run: |
           DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
@@ -151,7 +162,7 @@ jobs:
       # La suite pgTAP contra la BD local vía el override DATABASE_URL del script
       # (scripts/supabase-cli.sh). Sin DATABASE_URL el script seguiría yendo al
       # remoto — aquí lo forzamos a local. Bloqueante: rc != 0 => PR en rojo.
-      - name: pgTAP suite (76/76)
+      - name: pgTAP suite (106/106)
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
         run: pnpm db:test

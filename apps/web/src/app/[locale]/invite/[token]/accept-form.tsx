@@ -34,6 +34,10 @@ type CommonProps = {
   preAcceptedPrivacy: boolean;
   // F14-3a/3c — hijos pendientes de este email/club + docs de imagen vigentes.
   pendingChildren: PendingChild[];
+  // MN-5 — el lote incluye la invitación de CUENTA PROPIA del jugador. No cambia
+  // lo que se pide (eso ya lo decide `pendingChildren`, del que se ha quitado);
+  // cambia lo que hay que EXPLICARLE a quien está aceptando.
+  selfInvite: boolean;
   imageInternal: ImageConsentDoc | null;
   imageSocial: ImageConsentDoc | null;
   medicalDoc: MedicalConsentDoc | null;
@@ -181,6 +185,21 @@ function MissingList({ problems }: { problems: FormProblem[] }) {
   );
 }
 
+/**
+ * MN-5 — lo que un jugador tiene que saber al estrenar su cuenta: que la tiene
+ * porque su tutor se la abrió, y que hay cuatro cosas que siguen siendo de él.
+ * Decirlo aquí evita que luego busque en la app unos ajustes que no va a tener.
+ */
+function SelfInviteNote({ show }: { show: boolean }) {
+  const t = useTranslations('invite');
+  if (!show) return null;
+  return (
+    <p className="rounded-md border border-zinc-800 bg-zinc-900/40 px-3 py-2 text-xs text-zinc-300">
+      {t('self_note')}
+    </p>
+  );
+}
+
 function focusField(fieldId: string) {
   const el = document.getElementById(fieldId);
   if (!el) return;
@@ -279,6 +298,7 @@ export function AcceptForm({
   preAcceptedTerms,
   preAcceptedPrivacy,
   pendingChildren,
+  selfInvite,
   imageInternal,
   imageSocial,
   medicalDoc,
@@ -308,6 +328,7 @@ export function AcceptForm({
       className="flex w-full max-w-sm flex-col items-center gap-4"
     >
       <p className="text-sm text-zinc-300">{t('summary', { club: clubName, role })}</p>
+      <SelfInviteNote show={selfInvite} />
       <p className="text-xs text-zinc-500">{t('invited_email_hint', { email: invitedEmail })}</p>
 
       <ChildrenImageSection
@@ -362,6 +383,7 @@ export function AcceptWithProfileForm({
   preAcceptedTerms,
   preAcceptedPrivacy,
   pendingChildren,
+  selfInvite,
   imageInternal,
   imageSocial,
   medicalDoc,
@@ -392,6 +414,7 @@ export function AcceptWithProfileForm({
       className="flex w-full max-w-sm flex-col gap-4"
     >
       <p className="text-sm text-zinc-300">{t('set_password_summary', { club: clubName, role })}</p>
+      <SelfInviteNote show={selfInvite} />
 
       {/* 1 · Datos del tutor */}
       <label className="flex flex-col gap-2 text-left">
@@ -538,6 +561,7 @@ export function SignInToAcceptForm({
   preAcceptedTerms,
   preAcceptedPrivacy,
   pendingChildren,
+  selfInvite,
   imageInternal,
   imageSocial,
   medicalDoc,
@@ -568,6 +592,7 @@ export function SignInToAcceptForm({
       className="flex w-full max-w-sm flex-col gap-4"
     >
       <p className="text-sm text-zinc-300">{t('signin_summary', { club: clubName, role })}</p>
+      <SelfInviteNote show={selfInvite} />
 
       <ChildrenImageSection
         items={pendingChildren}
@@ -643,6 +668,10 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       no_session: 'error_no_session',
       wrong_credentials: 'error_wrong_credentials',
       auth_update_failed: 'error_auth_update_failed',
+      // BUG-4 — el paso de ENTRAR, separado del de fijar la contraseña: compartían
+      // código y el usuario leía que no se había podido establecer su contraseña con la
+      // contraseña ya guardada.
+      sign_in_failed: 'error_sign_in_failed',
       profile_update_failed: 'error_profile_update_failed',
       membership_failed: 'error_membership_failed',
       player_link_failed: 'error_player_link_failed',
@@ -653,6 +682,7 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       child_name_required: 'error_child_name_required',
       child_dob_invalid: 'error_child_dob_invalid',
       account_deletion_in_progress: 'error_account_deletion_in_progress',
+      reserved_for_tutor: 'error_reserved_for_tutor',
       generic: 'error_generic',
     }[error] ?? 'error_generic';
 

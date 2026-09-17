@@ -552,7 +552,20 @@
     "phone_placeholder": "600 123 456",
     "phone_hint": "The club will use it to reach you if your child needs anything during a training session or a match.",
     "missing_phone": "Your contact phone number is missing.",
-    "error_phone_invalid": "That phone number doesn't look valid. Please check it."
+    "error_phone_invalid": "That phone number doesn't look valid. Please check it.",
+    "self_note": "This invitation is for your own player account: your parent or legal guardian sent it to you. Image permissions, your medical data and the handling of your personal data remain with them.",
+    "error_reserved_for_tutor": "That information is handled by your parent or legal guardian and cannot be submitted here.",
+    "error_not_self": "This invitation is not for a player account. Open the link from your email in a browser to complete it.",
+    "error_not_claimable": "This email already has an account. Sign in with it and the invitation will be added automatically.",
+    "error_rate_limited": "Too many attempts. Wait a moment and try again.",
+    "error_rate_limited_in": "Too many attempts. Try again in {minutes} min.",
+    "error_unavailable": "We couldn't check the invitation right now. Try again in a few minutes.",
+    "error_network": "No connection. Check your network and try again.",
+    "error_no_web_url": "This version of the app isn't set up to complete invitations. Let your club know.",
+    "error_invalid": "This link isn't valid. Open the one you got by email.",
+    "go_to_signin": "Go to sign in",
+    "session_swap_warning": "You're currently signed in as {email}. If you complete this invitation, you'll be signed in as the player instead.",
+    "error_sign_in_failed": "Your password was saved, but we couldn't sign you in. Please try again."
   },
   "directos": {
     "title": "Live",
@@ -1345,7 +1358,7 @@
       "tutor_email": "Guardian's email",
       "tutor_relation": "Guardian's relationship",
       "relation_placeholder": "Select the relationship",
-      "tutor_help": "When you create the player, the invitation will automatically be sent to this email.",
+      "tutor_help": "This is the parent or legal guardian's email, not the player's: whoever receives it will be recorded as their guardian. The invitation is sent automatically when you create the player.",
       "phone": "Player's phone number",
       "phone_help": "Optional. Only if the player has their own phone."
     },
@@ -1410,7 +1423,7 @@
       },
       "attendance": {
         "present_pct": "attendance",
-        "total": "{count} trainings recorded",
+        "total": "{count, plural, one {# training recorded} other {# trainings recorded}}",
         "bucket": {
           "present": "Present",
           "justified": "Justified absence",
@@ -1759,7 +1772,8 @@
       "upload": {
         "short": "Upload",
         "title": "Upload your file",
-        "help": "Use the downloadable template (4 columns: Full name, Date of birth, Team, Email). Required: Full name, Date of birth, and Email. Date in day/month/year format (15/03/2010). Team is optional (if you leave it empty, the batch team is used)."
+        "help": "Use the downloadable template (4 columns: Full name, Date of birth, Team, Email). Required: Full name, Date of birth, and Email. Date in day/month/year format (15/03/2010). Team is optional (if you leave it empty, the batch team is used).",
+        "email_help": "The Email column is the parent or legal guardian's address for each player, not the player's: whoever receives it will be recorded as their guardian."
       },
       "preview": {
         "short": "Review",
@@ -2129,7 +2143,8 @@
         "9": "October",
         "10": "November",
         "11": "December"
-      }
+      },
+      "long": "{weekday}, {day} {month}"
     },
     "season": {
       "tabs": {
@@ -2697,7 +2712,7 @@
     "range_season": "Current season",
     "empty": "No attendance records yet",
     "pct_present": "Attendance",
-    "total": "{n} training sessions recorded",
+    "total": "{n, plural, one {# training session recorded} other {# training sessions recorded}}",
     "breakdown": "Breakdown",
     "justified": "Justified",
     "family_title": "Attendance"
@@ -5059,7 +5074,12 @@
     "erasure_reason_ph": "Reason (optional)",
     "erasure_ack": "I understand this is an irreversible request once approved.",
     "erasure_cancel": "Cancel",
-    "erasure_confirm": "Request"
+    "erasure_confirm": "Request",
+    "contact_title": "Family contact",
+    "contact_hint": "The guardians linked to this player. This is personal data: use it only for club matters.",
+    "contact_none": "No guardian is linked yet.",
+    "contact_error": "We couldn't load the guardians' contact details.",
+    "contact_you": "You"
   },
   "inicio": {
     "unread_messages": "Unread messages: {n}",
@@ -5300,7 +5320,9 @@
       "entrenador_ayudante": "Assistant coach",
       "preparador_fisico": "Fitness coach",
       "delegado": "Team manager"
-    }
+    },
+    "load_failed": "We couldn't load the recipients.",
+    "load_failed_hint": "Try opening this again in a moment. If it persists, tell the club."
   },
   "sesion_dia": {
     "empty": "No training today",
@@ -5513,5 +5535,103 @@
     "claim_error": "We couldn't check it right now. Please try again in a moment.",
     "terms_link": "Terms of Use",
     "privacy_link": "Privacy Policy"
+  },
+  "invite_self": {
+    "action": "Give the player access",
+    "title": "Give the player access",
+    "description": "An invitation will be sent to {player} so they can sign in with their own account.",
+    "section": {
+      "title": "Player access",
+      "hint": "You can give them their own account so they sign in with their email. You still manage their image permissions, their medical data and their data rights."
+    },
+    "state": {
+      "invited": "An invitation has already been sent, waiting for the player to sign in and accept it.",
+      "linked": "This player already has their own account."
+    },
+    "field": {
+      "email": "Player's email",
+      "help": "It has to be different from yours: it is the player’s account, not another one of yours."
+    },
+    "send": "Send invitation",
+    "cancel": "Cancel",
+    "close": "Close",
+    "sent": "Invitation sent to {email}.",
+    "errors": {
+      "email_invalid": "That email is not valid.",
+      "email_too_long": "That email is too long.",
+      "forbidden": "Only the player’s parent or legal guardian can give them access.",
+      "erased": "That player has been removed.",
+      "already_linked": "This player already has their own account.",
+      "email_relation_conflict": "That email is already registered as a guardian of this player. The player’s account needs an email of their own.",
+      "consents_required": "The player’s image permissions for this season need to be answered first.",
+      "no_active_season": "The club has no active season.",
+      "generic": "The invitation could not be sent. Please try again."
+    }
+  },
+  "mensajes_familia": {
+    "new": "New",
+    "new_title": "Who do you want to write to?",
+    "group_club": "The club",
+    "group_team": "Their team",
+    "nobody": "There's nobody to write to right now. Once the club assigns staff to the team, they'll show up here.",
+    "load_failed": "We couldn't load who you can write to.",
+    "load_failed_hint": "Try opening this again in a moment. If it persists, tell the club.",
+    "start_error": "We couldn't open the conversation. Please try again.",
+    "recipient_gone": "That person is no longer available. Refresh the list.",
+    "offline": "Offline: you need a connection to write.",
+    "role": {
+      "admin_club": "Club management",
+      "director": "Club management",
+      "entrenador_principal": "Head coach",
+      "entrenador_ayudante": "Assistant coach",
+      "delegado": "Team manager",
+      "preparador_fisico": "Fitness coach",
+      "coordinador": "Coordinator"
+    }
+  },
+  "app_only": {
+    "title": "MisterFC now runs in the app",
+    "body": "Family access to MisterFC is in the mobile app. Sign in with the same email and password you use here.",
+    "account_title": "Your account is set up",
+    "account_email": "You signed in with this email. It is the same one you need to use in the app:",
+    "account_email_unknown": "Sign in to the app with the same email you signed in with here.",
+    "download_title": "Download the app",
+    "download_soon": "The download links will be here as soon as the app is published. In the meantime, search for “MisterFC” on the App Store or Google Play.",
+    "download_app_store": "Download on the App Store",
+    "download_play": "Get it on Google Play",
+    "terms_link": "Terms",
+    "privacy_link": "Privacy"
+  },
+  "consentimientos": {
+    "section_title": "Permissions you have given",
+    "intro": "Here you can see what you have authorised, when, and the exact text you accepted. Optional permissions can be withdrawn whenever you want.",
+    "account_group": "Your account",
+    "child_unnamed": "Child",
+    "granted": "Accepted",
+    "revoked": "Withdrawn",
+    "view_text": "View the text you accepted",
+    "close": "Close",
+    "load_error": "We couldn't load your permissions. Please come back in a moment.",
+    "doc_error": "The text could not be loaded.",
+    "doc_not_found": "This text is no longer available.",
+    "revoke": "Withdraw",
+    "revoke_title": "Withdraw this permission?",
+    "revoke_note": "Withdrawing a permission does not affect what was already done while it was in force. You can give it again when the club asks you to review your permissions.",
+    "revoke_cancel": "Cancel",
+    "revoke_confirm": "Withdraw",
+    "revoke_effect": {
+      "image_internal": "Your child's photo will stop being visible in the app immediately.",
+      "image_social": "The club will no longer have your permission to publish their image outside the app. This prevents future uses: it does not take back what has already been published.",
+      "medical": "Health information will stop being visible in the app and the club will not be able to add or change anything. It is not deleted: it is blocked."
+    },
+    "offline": "Permissions cannot be withdrawn while offline. Try again when you are back on the network.",
+    "errors": {
+      "forbidden": "You can no longer manage this player's permissions.",
+      "no_session": "Your session has expired. Please sign in again.",
+      "not_revocable": "This permission cannot be withdrawn here. If you no longer want to use MisterFC, you can delete your account from this same screen.",
+      "nothing_to_revoke": "There is nothing to withdraw for this permission.",
+      "no_active_season": "The club has no active season. Let them know so the withdrawal can be recorded.",
+      "error": "The permission could not be withdrawn. Please try again."
+    }
   }
 }

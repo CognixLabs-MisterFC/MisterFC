@@ -10,10 +10,57 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      account_deletion_requests: {
+        Row: {
+          affected_membership_ids: string[]
+          cancelled_at: string | null
+          completed_at: string | null
+          deadline_at: string
+          entitlement_suspended_at: string | null
+          id: string
+          profile_id: string
+          reason: string | null
+          requested_at: string
+          status: string
+        }
+        Insert: {
+          affected_membership_ids?: string[]
+          cancelled_at?: string | null
+          completed_at?: string | null
+          deadline_at: string
+          entitlement_suspended_at?: string | null
+          id?: string
+          profile_id: string
+          reason?: string | null
+          requested_at?: string
+          status?: string
+        }
+        Update: {
+          affected_membership_ids?: string[]
+          cancelled_at?: string | null
+          completed_at?: string | null
+          deadline_at?: string
+          entitlement_suspended_at?: string | null
+          id?: string
+          profile_id?: string
+          reason?: string | null
+          requested_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_deletion_requests_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           author_profile_id: string
@@ -719,7 +766,9 @@ export type Database = {
       }
       erasure_requests: {
         Row: {
+          account_deletion_id: string | null
           club_id: string
+          created_by_account_deletion: boolean
           decided_at: string | null
           decided_by: string | null
           id: string
@@ -730,7 +779,9 @@ export type Database = {
           status: string
         }
         Insert: {
+          account_deletion_id?: string | null
           club_id: string
+          created_by_account_deletion?: boolean
           decided_at?: string | null
           decided_by?: string | null
           id?: string
@@ -741,7 +792,9 @@ export type Database = {
           status?: string
         }
         Update: {
+          account_deletion_id?: string | null
           club_id?: string
+          created_by_account_deletion?: boolean
           decided_at?: string | null
           decided_by?: string | null
           id?: string
@@ -752,6 +805,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "erasure_requests_account_deletion_id_fkey"
+            columns: ["account_deletion_id"]
+            isOneToOne: false
+            referencedRelation: "account_deletion_requests"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "erasure_requests_club_id_fkey"
             columns: ["club_id"]
@@ -1385,6 +1445,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      invite_accept_attempts: {
+        Row: {
+          allowed: boolean
+          created_at: string
+          id: number
+          ip: unknown
+          token: string
+          token_known: boolean
+        }
+        Insert: {
+          allowed: boolean
+          created_at?: string
+          id?: never
+          ip?: unknown
+          token: string
+          token_known: boolean
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string
+          id?: never
+          ip?: unknown
+          token?: string
+          token_known?: boolean
+        }
+        Relationships: []
       }
       legal_documents: {
         Row: {
@@ -3461,6 +3548,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          access_until?: string | null
           billing_issue_detected_at?: string | null
           created_at?: string
           expires_at?: string | null
@@ -3477,6 +3565,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          access_until?: string | null
           billing_issue_detected_at?: string | null
           created_at?: string
           expires_at?: string | null
@@ -3547,6 +3636,35 @@ export type Database = {
             foreignKeyName: "subscription_events_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_test_profiles: {
+        Row: {
+          created_at: string
+          motivo: string
+          profile_id: string
+          valid_until: string
+        }
+        Insert: {
+          created_at?: string
+          motivo: string
+          profile_id: string
+          valid_until: string
+        }
+        Update: {
+          created_at?: string
+          motivo?: string
+          profile_id?: string
+          valid_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_test_profiles_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -4340,13 +4458,13 @@ export type Database = {
           p_environment: string
           p_event_at: string
           p_event_id: string
-          p_expires_at: string | null
-          p_grace_period_expires_at: string | null
+          p_expires_at: string
+          p_grace_period_expires_at: string
           p_payload: Json
-          p_product_id: string | null
-          p_rc_customer_id: string | null
-          p_store: string | null
-          p_store_transaction_id: string | null
+          p_product_id: string
+          p_rc_customer_id: string
+          p_store: string
+          p_store_transaction_id: string
           p_type: string
         }
         Returns: string
@@ -4361,10 +4479,7 @@ export type Database = {
           sent_at: string
         }[]
       }
-      cancel_account_deletion: {
-        Args: never
-        Returns: undefined
-      }
+      cancel_account_deletion: { Args: never; Returns: undefined }
       cancel_event: {
         Args: { p_event_id: string; p_reason?: string }
         Returns: undefined
@@ -4407,6 +4522,22 @@ export type Database = {
       development_report_shared_for_team: {
         Args: { p_season_id: string; p_team_id: string }
         Returns: boolean
+      }
+      family_conversation_recipients: {
+        Args: { p_player_id: string }
+        Returns: {
+          conversation_id: string
+          full_name: string
+          kind: string
+          profile_id: string
+          staff_role: string
+          team_id: string
+          team_name: string
+        }[]
+      }
+      family_start_conversation: {
+        Args: { p_player_id: string; p_recipient_profile_id: string }
+        Returns: string
       }
       finalize_account_deletion: {
         Args: { p_profile_id: string }
@@ -4466,6 +4597,14 @@ export type Database = {
           player_id: string
           player_name: string
           title: string
+        }[]
+      }
+      invite_player_self: {
+        Args: { p_email: string; p_player_id: string }
+        Returns: {
+          email: string
+          id: string
+          token: string
         }[]
       }
       invite_spectator: {
@@ -4600,7 +4739,7 @@ export type Database = {
       my_subscription_status: {
         Args: never
         Returns: {
-          access_until: string | null
+          access_until: string
           billing_issue: boolean
           has_access: boolean
           requires_subscription: boolean
@@ -4694,14 +4833,32 @@ export type Database = {
         }[]
       }
       platform_propose_slug: { Args: { p_name: string }; Returns: string }
+      player_email_relation_conflict: {
+        Args: {
+          p_email: string
+          p_exclude_invitation?: string
+          p_player_id: string
+          p_relation: string
+        }
+        Returns: boolean
+      }
+      player_has_other_tutor: {
+        Args: { p_player_id: string; p_profile_id: string }
+        Returns: boolean
+      }
+      player_is_minor: { Args: { p_player_id: string }; Returns: boolean }
       player_photo_visible: { Args: { p_player_id: string }; Returns: boolean }
       player_promoted_to_event: {
         Args: { p_event_id: string; p_player_id: string }
         Returns: boolean
       }
-      profile_is_club_owner: {
-        Args: { p_club_id: string; p_profile_id: string }
-        Returns: boolean
+      player_self_account_status: {
+        Args: { p_player_id: string }
+        Returns: string
+      }
+      player_self_invite_blocker: {
+        Args: { p_player_id: string }
+        Returns: string
       }
       preview_account_deletion: {
         Args: never
@@ -4712,6 +4869,10 @@ export type Database = {
           last_name: string
           player_id: string
         }[]
+      }
+      profile_is_club_owner: {
+        Args: { p_club_id: string; p_profile_id: string }
+        Returns: boolean
       }
       profile_is_staff_of_club: {
         Args: { p_club_id: string; p_profile_id: string }
@@ -4756,6 +4917,20 @@ export type Database = {
           version: number
         }[]
       }
+      purge_invite_accept_attempts: { Args: never; Returns: number }
+      reconcile_subscription_entitlement: {
+        Args: {
+          p_billing_issue_at: string
+          p_expires_at: string
+          p_grace_period_expires_at: string
+          p_product_id?: string
+          p_profile_id: string
+          p_rc_customer_id?: string
+          p_store?: string
+          p_store_transaction_id?: string
+        }
+        Returns: string
+      }
       record_data_export: {
         Args: { p_ip?: string; p_player_id: string; p_user_agent?: string }
         Returns: undefined
@@ -4774,6 +4949,13 @@ export type Database = {
       register_expo_push_token: {
         Args: { p_device_info?: string; p_platform?: string; p_token: string }
         Returns: undefined
+      }
+      register_invite_accept_attempt: {
+        Args: { p_ip?: unknown; p_token: string }
+        Returns: {
+          decision: string
+          retry_after_seconds: number
+        }[]
       }
       remove_spectator: {
         Args: { p_player_id: string; p_spectator_profile_id: string }
@@ -4799,19 +4981,6 @@ export type Database = {
           proposal_owner_id: string
         }[]
       }
-      reconcile_subscription_entitlement: {
-        Args: {
-          p_billing_issue_at: string | null
-          p_expires_at: string | null
-          p_grace_period_expires_at: string | null
-          p_product_id?: string | null
-          p_profile_id: string
-          p_rc_customer_id?: string | null
-          p_store?: string | null
-          p_store_transaction_id?: string | null
-        }
-        Returns: string
-      }
       request_account_deletion: {
         Args: { p_reason?: string }
         Returns: {
@@ -4822,6 +4991,19 @@ export type Database = {
       request_player_erasure: {
         Args: { p_player_id: string; p_reason?: string }
         Returns: string
+      }
+      requires_subscription: {
+        Args: { p_profile_id: string }
+        Returns: boolean
+      }
+      revoke_player_consent: {
+        Args: {
+          p_consent_type: Database["public"]["Enums"]["consent_type"]
+          p_ip?: string
+          p_player_id: string
+          p_user_agent?: string
+        }
+        Returns: undefined
       }
       seed_club_legal_documents: {
         Args: { p_club_id: string }
@@ -4884,13 +5066,13 @@ export type Database = {
       subscription_reconcile_candidates: {
         Args: { p_limit?: number; p_soon_days?: number; p_stale_days?: number }
         Returns: {
-          access_until: string | null
+          access_until: string
           app_user_id: string
           billing_issue: boolean
           priority: string
           profile_id: string
-          rc_customer_id: string | null
-          reconciled_at: string | null
+          rc_customer_id: string
+          reconciled_at: string
         }[]
       }
       team_chat_member_profile_ids: {
@@ -5011,6 +5193,7 @@ export type Database = {
         Args: { p_conversation_id: string }
         Returns: boolean
       }
+      user_is_player_self: { Args: { p_player_id: string }; Returns: boolean }
       user_is_principal_of_assistant_team: {
         Args: { p_membership_id: string }
         Returns: boolean
@@ -5039,6 +5222,11 @@ export type Database = {
       }
       user_is_team_staff: { Args: { p_team_id: string }; Returns: boolean }
       user_is_tutor_of_player: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
+      user_manages_player: { Args: { p_player_id: string }; Returns: boolean }
+      user_manages_player_sensitive: {
         Args: { p_player_id: string }
         Returns: boolean
       }
@@ -5131,12 +5319,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -5160,11 +5348,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -5185,11 +5373,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -5210,11 +5398,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -5227,11 +5415,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

@@ -15,6 +15,7 @@ import { useCached } from '@/data/use-cached';
 import { reportDataError } from '@/lib/report-error';
 import { OfflineBanner, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatEventWhen } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 import { staffEventTarget } from '@/notifications/feed-target';
 import { ListCard, Tile, CountBadge } from './hub-parts';
@@ -52,15 +53,6 @@ const TYPE_ICON: Record<string, string> = {
   tournament: '🏆',
   other: '📌',
 };
-
-/** "Viernes, 21 de agosto · 18:00" — fecha (primera letra en mayúscula) + hora.
- * Mismo helper que el inicio del jugador (#489). */
-function formatEventWhen(iso: string): string {
-  const d = new Date(iso);
-  const date = d.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
-  const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-  return `${date.charAt(0).toUpperCase()}${date.slice(1)} · ${time}`;
-}
 
 export function StaffHomeScreen() {
   const t = useTranslations('');
@@ -184,7 +176,7 @@ export function StaffHomeScreen() {
                     </Text>
                   </View>
                   <Text className="mt-2 text-base font-semibold text-[#0F1B2E] tabular-nums">
-                    {formatEventWhen(nextEvent.starts_at)}
+                    {formatEventWhen(t, nextEvent.starts_at)}
                   </Text>
                   {nextEvent.teamName ? (
                     <Text className="text-sm text-zinc-500">{nextEvent.teamName}</Text>
