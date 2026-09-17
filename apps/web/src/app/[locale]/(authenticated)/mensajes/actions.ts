@@ -488,11 +488,9 @@ export async function listStaffDirectory(): Promise<StaffDirectoryResult> {
   const canMessage = await userCanMessageInClub(supabase, ctx);
   if (!canMessage) return { error: 'forbidden' };
 
-  const res = await listStaffDirectoryFromClient(
-    supabase,
-    { clubId, currentProfileId: ctx.user.id },
-    sentryLog,
-  );
+  // El directorio sale de la RPC `staff_conversation_directory`, que ya excluye a
+  // quien pregunta: el perfil actual dejó de ser un parámetro (mig 20261083000000).
+  const res = await listStaffDirectoryFromClient(supabase, clubId, sentryLog);
   if ('error' in res) return { error: res.error };
   return { staff: res.staff };
 }

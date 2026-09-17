@@ -1,6 +1,9 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
+  STAFF_ROLE_PRIORITY,
   listStaffDirectoryFromClient,
   startStaffConversationFromClient,
   sendStaffMessageFromClient,
@@ -17,7 +20,6 @@ const ME = 'dddddddd-0000-4000-8000-000000000001';
 const OTHER = 'dddddddd-0000-4000-8000-000000000002';
 const DIR = 'dddddddd-0000-4000-8000-000000000003';
 const DELE = 'dddddddd-0000-4000-8000-000000000004';
-const PLAYERPROF = 'dddddddd-0000-4000-8000-000000000005';
 const CONV = 'eeeeeeee-0000-4000-8000-000000000001';
 
 type Term = { data?: unknown; error?: unknown; count?: number };
@@ -69,63 +71,83 @@ function capturingFanOut() {
   return { fn, calls };
 }
 
+/**
+ * Cliente mock para lo que va por RPC. Aparte de `makeClient` a propósito: aquel
+ * encola por TABLA y esta lectura ya no toca ninguna. No tiene `from`, así que si
+ * alguien volviera a armar el directorio con consultas, el test revienta.
+ */
+function makeRpcClient(rpcs: Record<string, Term[]>) {
+  const calls: Array<{ fn: string; args: unknown }> = [];
+  const client = {
+    rpc: (fn: string, args: unknown) => {
+      calls.push({ fn, args });
+      const arr = rpcs[fn];
+      if (!arr || arr.length === 0) {
+        throw new Error(`sin respuesta en cola para la RPC ${fn}`);
+      }
+      return Promise.resolve(arr.shift()!);
+    },
+  } as unknown as SupabaseClient<Database>;
+  return { client, calls };
+}
+
 describe('listStaffDirectoryFromClient', () => {
-  it('une memberships de gestión y team_staff, excluye jugador y al propio usuario, rol canónico', async () => {
-    const sb = makeClient({
-      memberships: [
+  it('pide el directorio a la RPC, con el club, y no lee ninguna tabla', async () => {
+    const { client, calls } = makeRpcClient({
+      staff_conversation_directory: [
         {
           data: [
-            { profile_id: DIR, role: 'director' },
-            { profile_id: ME, role: 'entrenador_principal' }, // el propio → fuera
-            { profile_id: PLAYERPROF, role: 'jugador' }, // jugador → fuera
-          ],
-        },
-      ],
-      team_staff: [
-        {
-          data: [
-            { staff_role: 'delegado', memberships: { profile_id: DELE, club_id: CLUB } },
-            // DIR también es ayudante en un equipo → rol canónico sigue siendo director
-            { staff_role: 'entrenador_ayudante', memberships: { profile_id: DIR, club_id: CLUB } },
-          ],
-        },
-      ],
-      profiles: [
-        {
-          data: [
-            { id: DIR, full_name: 'Ana Gómez' },
-            { id: DELE, full_name: 'Zoe Ruiz' },
+            { profile_id: DIR, full_name: 'Ana Gómez', role: 'director' },
+            { profile_id: DELE, full_name: 'Zoe Ruiz', role: 'delegado' },
           ],
         },
       ],
     });
-
-    const r = await listStaffDirectoryFromClient(sb, { clubId: CLUB, currentProfileId: ME });
-    expect('staff' in r).toBe(true);
-    if (!('staff' in r)) return;
-    // Ordenado por nombre (Ana < Zoe); ME y PLAYERPROF fuera.
-    expect(r.staff).toEqual([
-      { profileId: DIR, fullName: 'Ana Gómez', role: 'director' },
-      { profileId: DELE, fullName: 'Zoe Ruiz', role: 'delegado' },
+    const r = await listStaffDirectoryFromClient(client, CLUB);
+    expect(r).toEqual({
+      staff: [
+        { profileId: DIR, fullName: 'Ana Gómez', role: 'director' },
+        { profileId: DELE, fullName: 'Zoe Ruiz', role: 'delegado' },
+      ],
+    });
+    expect(calls).toEqual([
+      { fn: 'staff_conversation_directory', args: { p_club_id: CLUB } },
     ]);
   });
 
-  it('sin staff (aparte del propio) devuelve lista vacía sin pedir profiles', async () => {
-    const sb = makeClient({
-      memberships: [{ data: [{ profile_id: ME, role: 'admin_club' }] }],
-      team_staff: [{ data: [] }],
-      // profiles NO se consulta (ids vacío) → si se pidiera, el mock lanzaría.
+  it('respeta el orden que llega del servidor y no reordena', async () => {
+    // El orden lo fija la RPC (unaccent+lower, desempate por id) porque aquí no se
+    // puede desempatar: en el club real hay cuatro personas con el mismo nombre.
+    const { client } = makeRpcClient({
+      staff_conversation_directory: [
+        {
+          data: [
+            { profile_id: DELE, full_name: 'Jose Coach', role: 'delegado' },
+            { profile_id: DIR, full_name: 'Jose Coach', role: 'director' },
+          ],
+        },
+      ],
     });
-    const r = await listStaffDirectoryFromClient(sb, { clubId: CLUB, currentProfileId: ME });
-    expect(r).toEqual({ staff: [] });
+    const r = await listStaffDirectoryFromClient(client, CLUB);
+    if (!('staff' in r)) throw new Error('esperaba staff');
+    expect(r.staff.map((e) => e.profileId)).toEqual([DELE, DIR]);
   });
 
-  it('propaga error de lectura como generic', async () => {
-    const sb = makeClient({
-      memberships: [{ error: { message: 'boom' } }],
+  it('un directorio vacío es una respuesta, no un fallo', async () => {
+    const { client } = makeRpcClient({ staff_conversation_directory: [{ data: [] }] });
+    expect(await listStaffDirectoryFromClient(client, CLUB)).toEqual({ staff: [] });
+  });
+
+  it('si la RPC falla, devuelve generic y lo apunta', async () => {
+    const { client } = makeRpcClient({
+      staff_conversation_directory: [{ data: null, error: { message: 'forbidden' } }],
     });
-    const r = await listStaffDirectoryFromClient(sb, { clubId: CLUB, currentProfileId: ME });
+    const anotado: Array<{ step: string; extra: Record<string, unknown> }> = [];
+    const r = await listStaffDirectoryFromClient(client, CLUB, (_e, step, extra) =>
+      anotado.push({ step, extra }),
+    );
     expect(r).toEqual({ error: 'generic' });
+    expect(anotado).toEqual([{ step: 'staff_directory', extra: { club_id: CLUB } }]);
   });
 });
 
@@ -376,5 +398,52 @@ describe('markStaffConversationReadFromClient', () => {
     const sb = makeClient({ staff_conversation_reads: [{ error: { message: 'boom' } }] });
     const r = await markStaffConversationReadFromClient(sb, CONV, ME, '2026-08-25T10:00:00.000Z');
     expect(r).toEqual({ ok: false });
+  });
+});
+
+/**
+ * La PRIORIDAD de rol vive en dos sitios a propósito: en el SQL para colapsar los
+ * varios roles de una persona en uno, y aquí para ordenar las secciones de las dos
+ * pantallas. Lo que no puede pasar es que se separen — si el SQL mete un rol nuevo y
+ * esta lista no, la sección de esa gente no se pinta y nadie se entera. Así que se
+ * comparan contra el fichero.
+ *
+ * Lo que NO se duplica es la regla de QUIÉN es staff: eso solo existe en
+ * `profile_is_staff_of_club`, dentro de la RPC.
+ */
+describe('contrato con la migración 20261083000000', () => {
+  function findMigration(): string {
+    let dir = process.cwd();
+    for (let i = 0; i < 8; i++) {
+      const candidate = join(
+        dir,
+        'supabase/migrations/20261083000000_directorio_staff_desde_el_predicado.sql',
+      );
+      if (existsSync(candidate)) return readFileSync(candidate, 'utf8');
+      const parent = dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+    throw new Error(`no encuentro la migración del directorio subiendo desde ${process.cwd()}`);
+  }
+
+  it('la prioridad de rol del SQL es exactamente la de core, y en el mismo orden', () => {
+    const sql = findMigration();
+    const tabla = sql.slice(
+      sql.indexOf('with prioridad(rol, orden) as ('),
+      sql.indexOf('candidatos as ('),
+    );
+    expect(tabla).not.toBe('');
+
+    // ('admin_club', 1) → ['admin_club', 1] en el orden en que aparecen.
+    const filas = [...tabla.matchAll(/\('([a-z_]+)',\s*(\d+)\)/g)].map((m) => ({
+      rol: m[1],
+      orden: Number(m[2]),
+    }));
+
+    expect(filas.map((f) => f.rol)).toEqual([...STAFF_ROLE_PRIORITY]);
+    // Y que el número diga lo mismo que el orden de la lista: una tabla con los roles
+    // bien pero los números permutados colapsaría al rol equivocado.
+    expect(filas.map((f) => f.orden)).toEqual(filas.map((_f, i) => i + 1));
   });
 });

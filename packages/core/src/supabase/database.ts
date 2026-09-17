@@ -5063,6 +5063,14 @@ export type Database = {
         Args: { p_session_id: string; p_shared: boolean }
         Returns: undefined
       }
+      staff_conversation_directory: {
+        Args: { p_club_id: string }
+        Returns: {
+          full_name: string
+          profile_id: string
+          role: string
+        }[]
+      }
       staff_conversation_players: {
         Args: { p_club_id: string }
         Returns: {
