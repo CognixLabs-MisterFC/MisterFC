@@ -50,6 +50,27 @@ function makeClient(responses: Record<string, Term[]>) {
   } as unknown as SupabaseClient<Database>;
 }
 
+/**
+ * Cliente mock para las lecturas que van por RPC. Aparte de `makeClient` a
+ * propósito: aquel encola por TABLA y estas funciones ya no tocan ninguna. Anota las
+ * llamadas, porque aquí lo que hay que probar no es solo lo que devuelve, sino que
+ * se llama a la RPC correcta con el club correcto.
+ */
+function makeRpcClient(rpcs: Record<string, Term[]>) {
+  const calls: Array<{ fn: string; args: unknown }> = [];
+  const client = {
+    rpc: (fn: string, args: unknown) => {
+      calls.push({ fn, args });
+      const arr = rpcs[fn];
+      if (!arr || arr.length === 0) {
+        throw new Error(`sin respuesta en cola para la RPC ${fn}`);
+      }
+      return Promise.resolve(arr.shift()!);
+    },
+  } as unknown as SupabaseClient<Database>;
+  return { client, calls };
+}
+
 describe('startConversationFromClient (1:1 — staff inicia)', () => {
   it('reusa la conversación existente (idempotente)', async () => {
     const sb = makeClient({
@@ -130,9 +151,11 @@ describe('createTeamConversationFromClient (chat de equipo — staff inicia)', (
 });
 
 describe('listMessageablePlayersFromClient (selector de destinatario)', () => {
-  it('devuelve los jugadores del club para el selector', async () => {
-    const sb = makeClient({
-      players: [
+  it('pide la lista a la RPC, con el club, y NO lee la tabla', async () => {
+    // El mock no tiene `from`: si volviera a consultar `players` directamente, esto
+    // reventaría. Es la forma de fijar que la regla se pregunta y no se reescribe.
+    const { client, calls } = makeRpcClient({
+      staff_conversation_players: [
         {
           data: [
             { id: PLAYER, first_name: 'Ana', last_name: 'García' },
@@ -141,12 +164,34 @@ describe('listMessageablePlayersFromClient (selector de destinatario)', () => {
         },
       ],
     });
-    const r = await listMessageablePlayersFromClient(sb, CLUB);
+    const r = await listMessageablePlayersFromClient(client, CLUB);
     expect(r).toEqual({
       players: [
         { id: PLAYER, first_name: 'Ana', last_name: 'García' },
         { id: 'p2', first_name: 'Luis', last_name: null },
       ],
     });
+    expect(calls).toEqual([{ fn: 'staff_conversation_players', args: { p_club_id: CLUB } }]);
+  });
+
+  it('una lista vacía es una respuesta, no un fallo', async () => {
+    // Un entrenador sin jugadores asignados existe. Colapsarlo con un error pintaría
+    // un aviso rojo donde lo que hay es un equipo sin plantilla.
+    const { client } = makeRpcClient({ staff_conversation_players: [{ data: [] }] });
+    expect(await listMessageablePlayersFromClient(client, CLUB)).toEqual({ players: [] });
+  });
+
+  it('si la RPC falla, devuelve generic y lo apunta', async () => {
+    const { client } = makeRpcClient({
+      staff_conversation_players: [{ data: null, error: { message: 'forbidden' } }],
+    });
+    const anotado: Array<{ step: string; extra: Record<string, unknown> }> = [];
+    const r = await listMessageablePlayersFromClient(client, CLUB, (_e, step, extra) =>
+      anotado.push({ step, extra }),
+    );
+    expect(r).toEqual({ error: 'generic' });
+    expect(anotado).toEqual([
+      { step: 'list_messageable_players', extra: { club_id: CLUB } },
+    ]);
   });
 });

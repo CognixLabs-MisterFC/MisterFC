@@ -155,25 +155,35 @@ export type ListMessageablePlayersResult =
   | { error: 'generic' };
 
 /**
- * Jugadores ACTIVOS del club (sin baja, sin supresión RGPD) para el selector 1:1,
- * ordenados por nombre. Solo lectura; la RLS `players_select_member` limita a los
- * visibles. NO crea nada — la conversación se abre después con
- * `startConversationFromClient` (idempotente). Cap 500 (clubs de la beta pequeños).
+ * Jugadores con los que quien llama PUEDE abrir hilo, ordenados por nombre. NO crea
+ * nada — la conversación se abre después con `startConversationFromClient`
+ * (idempotente).
+ *
+ * POR QUÉ ESTO ES UNA RPC Y NO UN `select` (migración 20261082000000). Hasta la
+ * 20261080 esto listaba TODOS los jugadores del club: la RLS de INSERT dejaba abrir
+ * hilo con cualquiera, así que coincidían. Al acotar la RLS a los jugadores del
+ * equipo de quien escribe, dejaron de coincidir, y la pantalla se quedó pintando 18
+ * nombres que devolvían `forbidden` al pulsarlos.
+ *
+ * La regla NO se reescribe aquí. Vive una sola vez en SQL —
+ * `user_can_open_conversation_with(player)` — y la usan los dos lados: el WITH CHECK
+ * de `conversations_insert_coach` y la RPC que devuelve esta lista. Dos copias en dos
+ * lenguajes se separan el día que una cambia, y la que se separa siempre es la que se
+ * ve. Es el mismo motivo por el que `family_start_conversation` valida contra la
+ * misma lista que ofrece `family_conversation_recipients`, en el otro extremo del
+ * mismo hilo.
+ *
+ * Los filtros de actividad (baja del club, supresión RGPD) y el tope de 500 siguen
+ * dentro de la RPC, que es lo que hacía la consulta que sustituye.
  */
 export async function listMessageablePlayersFromClient(
   supabase: Sb,
   clubId: string,
   logError: CreateConversationLogger = noopLog,
 ): Promise<ListMessageablePlayersResult> {
-  const { data, error } = await supabase
-    .from('players')
-    .select('id, first_name, last_name')
-    .eq('club_id', clubId)
-    .is('left_club_at', null)
-    .is('erased_at', null)
-    .order('first_name', { ascending: true })
-    .order('last_name', { ascending: true })
-    .limit(500);
+  const { data, error } = await supabase.rpc('staff_conversation_players', {
+    p_club_id: clubId,
+  });
 
   if (error) {
     logError(error, 'list_messageable_players', { club_id: clubId });
