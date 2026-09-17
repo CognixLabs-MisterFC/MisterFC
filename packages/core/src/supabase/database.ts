@@ -5063,6 +5063,14 @@ export type Database = {
         Args: { p_session_id: string; p_shared: boolean }
         Returns: undefined
       }
+      staff_conversation_players: {
+        Args: { p_club_id: string }
+        Returns: {
+          first_name: string
+          id: string
+          last_name: string
+        }[]
+      }
       subscription_reconcile_candidates: {
         Args: { p_limit?: number; p_soon_days?: number; p_stale_days?: number }
         Returns: {
@@ -5147,6 +5155,10 @@ export type Database = {
         Returns: boolean
       }
       user_can_manage_lineup: { Args: { p_event_id: string }; Returns: boolean }
+      user_can_open_conversation_with: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
       user_can_post_team_chat: { Args: { p_team_id: string }; Returns: boolean }
       user_can_post_team_chat_by_conversation: {
         Args: { p_conversation_id: string }
