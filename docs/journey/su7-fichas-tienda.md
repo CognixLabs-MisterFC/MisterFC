@@ -144,7 +144,7 @@ tránsito** y existe una **forma de pedir el borrado** (Perfil → Eliminar mi c
 | «Share between App User IDs» | **PROHIBIDO** — ADR-0022 §2. Es irreversible |
 | Subscriber attributes | ninguno |
 | `collectDeviceIdentifiers` | no se llama |
-| DPA | **pendiente de firma** — ver abajo |
+| DPA | **no se firma** — forma parte de sus Términos de Uso, ya aceptados |
 
 ---
 
@@ -156,8 +156,13 @@ Por orden de quién bloquea a quién:
       como subencargado. Lo exige nuestro propio contrato de encargo (§7.2) y **se mide en
       días de calendario**: es lo único de toda la serie que no se puede acelerar. Ver
       [la propuesta legal, decisión 〔6〕](../specs/SU.7-legal-suscripcion-propuesta.md).
-- [ ] **DPA de RevenueCat firmado** (`revenuecat.com/dpa`) y guardado con el resto de
-      contratos de encargo.
+- [x] **Acuerdo de encargo con RevenueCat** — 2026-09-17, Jose: **no hay DPA que firmar**.
+      El encargo forma parte de sus Términos de Uso, aceptados al abrir la cuenta. La
+      garantía de transferencia son las **cláusulas contractuales tipo** de la Comisión
+      Europea, no el Marco de Privacidad de Datos: es lo que resuelve el corchete de la
+      Política de Privacidad. Guardar copia de esos Términos con el resto de contratos de
+      encargo, y **redactar la evaluación de impacto de la transferencia** que el texto
+      publicado da por hecha.
 - [ ] **Texto legal aprobado** por el abogado y publicado
       ([propuesta](../specs/SU.7-legal-suscripcion-propuesta.md)): Términos con la sección
       de suscripción, Privacidad con RevenueCat, y el contrato de encargo con la fila

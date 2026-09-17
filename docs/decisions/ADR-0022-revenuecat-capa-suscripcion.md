@@ -2,7 +2,7 @@
 
 - **Status**: Accepted
 - **Date**: 2026-09-11
-- **Revisiones**: 2026-09-11 — Jose cambia la decisión 5: **el periodo de gracia de la tienda sí da acceso** (ver «Revisiones» al final)
+- **Revisiones**: 2026-09-11 — Jose cambia la decisión 5: **el periodo de gracia de la tienda sí da acceso** · 2026-09-17 — **el DPA no se firma**: va dentro de sus Términos de Uso (ver «Revisiones» al final)
 - **Deciders**: Iker Milla, Jose
 - **Related**: [ADR-0021 — el borrado es anonimización](./ADR-0021-anonimizacion-forzada-por-el-esquema.md) · [BC.0 §8 — hueco reservado de la suscripción](../specs/BC.0-borrado-de-cuenta.md) · [ADR-0008 — patrón de crons en Vercel](./ADR-0008-vercel-cron-patron-jobs.md) · migración `20261058000000_bc1_account_deletion_model` (`entitlement_suspended_at`)
 
@@ -73,8 +73,8 @@ transferir **hacia** una cuenta borrada, no desde ella.
 
 ### 3 · Minimización de datos
 
-RevenueCat pasa a ser **encargado de tratamiento**; MisterFC es el responsable. Se firma su DPA y se
-añade a la política de privacidad. Lo que reciben, con esta configuración:
+RevenueCat pasa a ser **encargado de tratamiento**; MisterFC es el responsable. El encargo no se
+firma aparte —va dentro de sus Términos de Uso— y se añade a la política de privacidad. Lo que reciben, con esta configuración:
 
 | Dato | ¿Llega? |
 | --- | --- |
@@ -250,3 +250,15 @@ dejan de bloquear; vuelve `grace` como estado que da acceso.
 Lo que la revisión **no** cambia: el account hold de Google (`ON_HOLD`) **no es gracia**, y sigue
 bloqueando. Lo que sí añade es la obligación de guardarse `grace_period_expiration_at_ms` del evento
 `BILLING_ISSUE`, porque Google no avisa de esa transición. Está desarrollado en la sección 6.
+
+### 2026-09-17 — el DPA no se firma
+
+La sección 3 daba por hecho un DPA que se firmaría aparte, y la lista de acciones previas al cobro
+lo llevaba como casilla pendiente. Jose lo comprueba: **no existe tal documento**. El acuerdo de
+encargo del artículo 28 forma parte de los **Términos de Uso** de RevenueCat, aceptados al abrir la
+cuenta, y la garantía del Capítulo V son las **cláusulas contractuales tipo** de la Comisión
+Europea, no el Marco de Privacidad de Datos UE-EE. UU.
+
+Esto es lo que resuelve el único corchete que quedaba en la Política de Privacidad (PR #588). Queda
+una obligación que el texto publicado da por cumplida: la **evaluación de impacto de la
+transferencia**, que sí hay que redactar y guardar.
