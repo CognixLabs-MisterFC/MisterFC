@@ -208,6 +208,65 @@ function logError(step: string, error: unknown, extra: Record<string, unknown> =
   });
 }
 
+/**
+ * Por cuál de las tres puertas del alta entró quien está aceptando. `attachAllPending`
+ * es común a las tres, así que sin este dato el rastro no dice si el fallo le pasó a un
+ * invitado nuevo fijando contraseña o a un miembro que ya tenía cuenta.
+ */
+type AcceptFlow = 'quick' | 'set_password' | 'sign_in';
+
+/** Código de error que devuelve el alta (el mismo que ve la pantalla). */
+type AcceptErrorCode = NonNullable<AcceptInvitationState['error']>;
+
+/**
+ * RASTRO DE UNA ACEPTACIÓN QUE NO CUAJÓ.
+ *
+ * Antes solo se registraba `generic`: los desenlaces CON NOMBRE —consentimiento que
+ * falta, decisión de imagen sin responder, borrado de cuenta en curso…— volvían a la
+ * pantalla y no dejaban nada detrás. Y son justo los que hay que poder reconstruir
+ * después, porque la RPC es una transacción: al fallar revierte entera y en la base de
+ * datos NO queda ni rastro del intento. Hubo que reconstruir uno a mano desde
+ * `auth.users.recovery_sent_at` y `last_sign_in_at`, que es tanto como adivinar.
+ *
+ * Se separan por naturaleza, no por gusto:
+ *  · `generic` es un fallo INESPERADO → `captureException`, que es lo que era.
+ *  · el resto son desenlaces ESPERADOS del formulario → `captureMessage` en warning.
+ *    Mandarlos como excepción llenaría Sentry de "errores" que son el producto
+ *    funcionando, y el ruido acaba en que nadie mira ninguno.
+ *
+ * NO viaja el email: con `invitation_id` se llega a él desde la base de datos, y un
+ * rastro no es sitio para un dato personal que no hace falta.
+ */
+function logAcceptFailure(
+  flow: AcceptFlow,
+  clicked: LoadedInvitation,
+  error: AcceptErrorCode,
+  raw?: unknown,
+) {
+  const extra = {
+    flow,
+    invitation_id: clicked.id,
+    club_id: clicked.club_id,
+    role: clicked.role,
+    reason: error,
+  };
+
+  if (error === 'generic') {
+    logError('rpc accept_pending', raw, extra);
+    return;
+  }
+
+  console.warn(
+    `[invite][accept] rechazada (${error}) ` +
+      JSON.stringify(raw === undefined ? extra : { ...extra, error: serializeError(raw) }),
+  );
+  Sentry.captureMessage(`[invite][accept] rechazada: ${error}`, {
+    level: 'warning',
+    tags: { feature: 'invitations', step: 'accept-rejected', reason: error, flow },
+    extra: raw === undefined ? extra : { ...extra, error_summary: serializeError(raw) },
+  });
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Gate por TOKEN (Rework B · B2)
 //
@@ -252,11 +311,24 @@ async function gateByToken(
 async function attachAllPending(
   clicked: LoadedInvitation,
   formData: FormData,
+  flow: AcceptFlow,
 ): Promise<AcceptInvitationState> {
   logStep('attach-all entered', {
+    flow,
     invitation_id: clicked.id,
     club_id: clicked.club_id,
   });
+
+  /**
+   * ÚNICA salida de error de esta función: registra y devuelve. Las seis salidas de
+   * abajo pasan por aquí, así que no hay forma de añadir una séptima que se escape
+   * sin dejar rastro — que es exactamente lo que pasaba con las cinco que no eran
+   * la de la RPC.
+   */
+  const fail = (error: AcceptErrorCode, raw?: unknown): AcceptInvitationState => {
+    logAcceptFailure(flow, clicked, error, raw);
+    return { error };
+  };
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
   const accepts = consentAcceptsFromForm(formData);
@@ -265,7 +337,7 @@ async function attachAllPending(
   // subir imágenes / llamar a la RPC: si son inválidos salimos sin efectos
   // secundarios. La persistencia se hace tras aceptar (más abajo).
   const childParse = await parseChildUpdates(clicked, formData);
-  if (!childParse.ok) return { error: childParse.error };
+  if (!childParse.ok) return fail(childParse.error);
 
   // Metadatos de auditoría (no se confía en el cliente). La IP sale del mismo sitio
   // que usa el límite de intentos de R-2: si divergieran, un día dirían cosas
@@ -334,8 +406,8 @@ async function attachAllPending(
       const internalRaw = formData.get(`image_internal_${pid}`);
       const socialRaw = formData.get(`image_social_${pid}`);
       // Decisiones explícitas (sí/no); guard server-side, no se confía en la UI.
-      if (internalRaw !== 'yes' && internalRaw !== 'no') return { error: 'image_decision_required' };
-      if (socialRaw !== 'yes' && socialRaw !== 'no') return { error: 'image_decision_required' };
+      if (internalRaw !== 'yes' && internalRaw !== 'no') return fail('image_decision_required');
+      if (socialRaw !== 'yes' && socialRaw !== 'no') return fail('image_decision_required');
 
       // F14-3c (revisión) — la foto es OPCIONAL. Sin fichero se sigue adelante y
       // el hijo viaja sin `path`; la RPC deja su photo_url como estuviera.
@@ -347,7 +419,7 @@ async function attachAllPending(
         // Si SÍ manda fichero, tiene que ser válido: un mime o un tamaño fuera de
         // rango es un error de verdad, no un "no quiero foto".
         const valid = playerPhotoUploadSchema.safeParse({ mimeType: file.type, size: file.size });
-        if (!valid.success) return { error: 'image_required' };
+        if (!valid.success) return fail('image_required');
 
         const ext = MIME_TO_EXT[file.type] ?? 'jpg';
         path = `${pid}/${randomUUID()}.${ext}`;
@@ -357,7 +429,7 @@ async function attachAllPending(
         if (upErr) {
           logError('image-upload', upErr, { player_id: pid });
           await cleanupImages();
-          return { error: 'generic' };
+          return fail('generic', upErr);
         }
         uploadedPaths.push(path);
       }
@@ -397,10 +469,7 @@ async function attachAllPending(
     if ('error' in attached) {
       // La transacción revirtió: no dejamos imágenes huérfanas en el bucket.
       await cleanupImages();
-      if (attached.error === 'generic') {
-        logError('rpc accept_pending', attached.raw, { invitation_id: clicked.id });
-      }
-      return { error: attached.error };
+      return fail(attached.error, attached.raw);
     }
     const data = attached.ok.processed;
 
@@ -432,7 +501,7 @@ async function attachAllPending(
       );
     }
 
-    logStep('attach-all done', { invitation_id: clicked.id, processed: data ?? 0 });
+    logStep('attach-all done', { flow, invitation_id: clicked.id, processed: data ?? 0 });
     return {};
   } catch (err) {
     // Fallo inesperado (p.ej. red): limpiamos antes de propagar.
@@ -529,7 +598,7 @@ export async function acceptInvitation(
     const gate = await gateByToken(token, user.email);
     if (!gate.ok) return { error: gate.error };
 
-    const result = await attachAllPending(gate.invitation, formData);
+    const result = await attachAllPending(gate.invitation, formData, 'quick');
     if (result.error) return result;
 
     logStep('flow=quick success', {
@@ -658,7 +727,7 @@ export async function acceptNewInvitee(
     logStep('flow=new claim ok', { invitation_id: invitation.id });
 
     // Paso 5: attach de TODO el lote multi-hijo (+ consentimientos de cuenta).
-    const result = await attachAllPending(invitation, formData);
+    const result = await attachAllPending(invitation, formData, 'set_password');
     if (result.error) return result;
 
     logStep('flow=new success', {
@@ -726,7 +795,7 @@ export async function acceptExistingUser(
     }
     logStep('flow=existing sign-in ok', { invitation_id: invitation.id });
 
-    const result = await attachAllPending(invitation, formData);
+    const result = await attachAllPending(invitation, formData, 'sign_in');
     if (result.error) return result;
 
     logStep('flow=existing success', {
