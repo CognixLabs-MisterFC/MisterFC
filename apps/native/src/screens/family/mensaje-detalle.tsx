@@ -22,6 +22,7 @@ import { invalidateAfterWrite } from '@/data/cache-resources';
 import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
+import { KeyboardStickyBar } from '@/ui/keyboard';
 import { appLocale, useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -178,7 +179,10 @@ export function Composer({
   }, [text, online, busy, onSend]);
 
   return (
-    <View className="border-t border-zinc-100 bg-white px-3 py-2">
+    // El cuadro de escribir está anclado abajo, así que lo que necesita no es
+    // scrollear: es SUBIR con el teclado. Antes se quedaba debajo — es el caso
+    // que Jose describió como «no se ve lo que se escribe».
+    <KeyboardStickyBar className="border-t border-zinc-100 bg-white px-3 py-2">
       {failed ? (
         <Text className="mb-1 px-1 text-xs text-red-600">{t('mensajes.errors.generic')}</Text>
       ) : null}
@@ -212,6 +216,6 @@ export function Composer({
           )}
         </Pressable>
       </View>
-    </View>
+    </KeyboardStickyBar>
   );
 }

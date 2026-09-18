@@ -11,6 +11,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { useTranslations } from '@/locale/provider';
 import { logOutPurchases } from '@/subscription/purchases';
+import { KeyboardModalView } from '@/ui/keyboard';
 
 /**
  * BC-5 — "Eliminar mi cuenta" (Apple Guideline 5.1.1 v). Vive en Perfil, la pantalla
@@ -143,7 +144,7 @@ export function DeleteAccountCard() {
       {error && !open ? <Text className="mt-2 text-xs text-red-600">{error}</Text> : null}
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <View className="flex-1 justify-center bg-black/50 p-6">
+        <KeyboardModalView className="flex-1 justify-center bg-black/50 p-6">
           <View className="max-h-[85%] rounded-2xl bg-white p-5">
             <Text className="text-lg font-bold text-[#0F1B2E]">{t('dialog_title')}</Text>
 
@@ -216,7 +217,7 @@ export function DeleteAccountCard() {
               </>
             )}
           </View>
-        </View>
+        </KeyboardModalView>
       </Modal>
     </View>
   );

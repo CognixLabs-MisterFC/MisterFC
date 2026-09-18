@@ -22,6 +22,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { ChildSelector } from '@/ui/child-selector';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
+import { KeyboardModalView } from '@/ui/keyboard';
 import { appLocale, useTranslations } from '@/locale/provider';
 
 /**
@@ -90,6 +91,7 @@ export function SeguidoresScreen() {
         <EmptyState message={t('seguidores.empty')} />
       ) : (
         <FlatList
+          keyboardShouldPersistTaps="handled"
           data={rows}
           keyExtractor={(s) => s.spectator_profile_id}
           contentContainerStyle={{ paddingVertical: 8 }}
@@ -200,7 +202,7 @@ function InviteModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
-      <View className="flex-1 items-center justify-center bg-black/50 px-6">
+      <KeyboardModalView className="flex-1 items-center justify-center bg-black/50 px-6">
         <View className="w-full max-w-md rounded-2xl bg-white p-5">
           {success ? (
             <>
@@ -258,7 +260,7 @@ function InviteModal({
             </>
           )}
         </View>
-      </View>
+      </KeyboardModalView>
     </Modal>
   );
 }

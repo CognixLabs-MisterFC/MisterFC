@@ -56,6 +56,14 @@ jobs:
       - name: Check family web cut census
         run: pnpm check:family-web-cut
 
+      # El teclado tapaba el campo en la app nativa, y el fallo no era una libreria
+      # ausente: era que el manejo se olvidaba pantalla a pantalla (15 de 17 sin
+      # nada, y las 2 que lo tenian montaban el KeyboardAvoidingView de RN con
+      # behavior undefined en Android). Este censo obliga a que una pantalla nueva
+      # con un campo de texto declare como se aparta del teclado.
+      - name: Check keyboard census (nativa)
+        run: pnpm check:teclado
+
       - name: Test (vitest)
         run: pnpm test
 

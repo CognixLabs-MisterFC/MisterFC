@@ -4,7 +4,6 @@ import {
   Alert,
   Image,
   Pressable,
-  ScrollView,
   Text,
   TextInput,
   View,
@@ -34,6 +33,7 @@ import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
 import { PushSettingsCard } from '@/notifications/push-settings-card';
 import { DeleteAccountCard } from '@/ui/delete-account-card';
 import { ConsentsCard } from '@/ui/consents-card';
+import { KeyboardScrollView } from '@/ui/keyboard';
 import { webBaseUrl } from '@/lib/server-api';
 import { uuidv4 } from '@/lib/uuid';
 import { appLocale, useLocale, useSetLocale, useTranslations } from '@/locale/provider';
@@ -86,7 +86,7 @@ export function ProfileScreen() {
   const fallback = (data?.full_name?.trim() || email || '·').slice(0, 2);
 
   return (
-    <ScrollView className="flex-1 bg-white">
+    <KeyboardScrollView className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
       <View className="gap-4 p-6">
         <Text className="text-xl font-semibold text-[#0F1B2E]">{t('title')}</Text>
@@ -136,7 +136,7 @@ export function ProfileScreen() {
             pantalla compartida por todas las áreas, así que la ve cualquier rol. */}
         <DeleteAccountCard />
       </View>
-    </ScrollView>
+    </KeyboardScrollView>
   );
 }
 

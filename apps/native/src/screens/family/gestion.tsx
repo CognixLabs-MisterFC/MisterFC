@@ -41,6 +41,7 @@ import { invalidateAfterWrite } from '@/data/cache-resources';
 import { ChildSelector } from '@/ui/child-selector';
 import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
+import { KeyboardModalView } from '@/ui/keyboard';
 import { appLocale, useTranslations } from '@/locale/provider';
 import { callServerEndpoint, downloadServerFile } from '@/lib/server-api';
 import { BRAND } from '@/theme';
@@ -493,7 +494,7 @@ function ErasureCard({ playerId, online }: { playerId: string; online: boolean }
       ) : null}
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
-        <View className="flex-1 items-center justify-center bg-black/50 px-6">
+        <KeyboardModalView className="flex-1 items-center justify-center bg-black/50 px-6">
           <View className="w-full max-w-md rounded-2xl bg-white p-5">
             <Text className="text-lg font-bold text-[#0F1B2E]">{t('gestion.erasure_title')}</Text>
             <Text className="mt-2 text-sm text-zinc-600">{t('gestion.erasure_warning')}</Text>
@@ -525,7 +526,7 @@ function ErasureCard({ playerId, online }: { playerId: string; online: boolean }
               </Pressable>
             </View>
           </View>
-        </View>
+        </KeyboardModalView>
       </Modal>
     </Card>
   );
@@ -821,7 +822,7 @@ function AccessCard({
       )}
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
-        <View className="flex-1 items-center justify-center bg-black/50 px-6">
+        <KeyboardModalView className="flex-1 items-center justify-center bg-black/50 px-6">
           <View className="w-full max-w-md rounded-2xl bg-white p-5">
             <Text className="text-lg font-bold text-[#0F1B2E]">
               {t('invite_self.title')}
@@ -887,7 +888,7 @@ function AccessCard({
               </>
             )}
           </View>
-        </View>
+        </KeyboardModalView>
       </Modal>
     </View>
   );

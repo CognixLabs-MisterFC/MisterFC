@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { webBaseUrl } from '@/lib/server-api';
 import { appLocale, useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
+import { KeyboardModalView } from '@/ui/keyboard';
 
 /**
  * RECUPERAR CONTRASEÑA desde el login de la app.
@@ -103,7 +104,7 @@ export function ForgotPasswordModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
-      <View className="flex-1 items-center justify-center bg-black/60 px-6">
+      <KeyboardModalView className="flex-1 items-center justify-center bg-black/60 px-6">
         <View className="w-full max-w-md rounded-2xl bg-white p-5">
           {sent ? (
             <>
@@ -174,7 +175,7 @@ export function ForgotPasswordModal({
             </>
           )}
         </View>
-      </View>
+      </KeyboardModalView>
     </Modal>
   );
 }

@@ -17,6 +17,7 @@ import {
 import { callServerEndpoint } from '@/lib/server-api';
 import { useTranslations } from '@/locale/provider';
 import { formatLongDate } from '@/lib/format-date';
+import { KeyboardModalView } from '@/ui/keyboard';
 
 /**
  * O2-7b-2 — Hoja de PUBLICAR convocatoria (staff, nativo). Opción 1: el móvil publica
@@ -167,116 +168,122 @@ export function PublishCallupSheet({
         className="flex-1 justify-end bg-black/50"
         onPress={onClose}
       >
-        <Pressable
-          className="max-h-[85%] rounded-t-3xl bg-white px-5 pb-8 pt-4"
-          onPress={() => {}}
-        >
-          <View className="mb-3 h-1 w-10 self-center rounded-full bg-zinc-300" />
-          <Text className="mb-1 text-lg font-bold text-[#0F1B2E]">
-            {t('convocatorias_staff.publish_title')}
-          </Text>
-          <Text className="mb-4 text-xs text-zinc-400">
-            {t('convocatorias_staff.publish_desc')}
-          </Text>
+        {/* La hoja sube con el teclado; el fondo que cierra al tocar se queda
+            fuera. Con la hoja levantada, su `max-h-[85%]` se mide contra el
+            hueco que deja el teclado, así que el ScrollView de dentro sigue
+            llegando a los cinco campos sin que haya que tocarlo. */}
+        <KeyboardModalView>
+          <Pressable
+            className="max-h-[85%] rounded-t-3xl bg-white px-5 pb-8 pt-4"
+            onPress={() => {}}
+          >
+            <View className="mb-3 h-1 w-10 self-center rounded-full bg-zinc-300" />
+            <Text className="mb-1 text-lg font-bold text-[#0F1B2E]">
+              {t('convocatorias_staff.publish_title')}
+            </Text>
+            <Text className="mb-4 text-xs text-zinc-400">
+              {t('convocatorias_staff.publish_desc')}
+            </Text>
 
-          <ScrollView keyboardShouldPersistTaps="handled">
-            <Field label={t('convocatorias_staff.meeting_at')}>
-              {matchDateLabel ? (
-                <Text className="mb-1 text-[11px] text-zinc-400">
-                  {matchDateLabel}
-                </Text>
-              ) : null}
-              <TextInput
-                value={hhmm}
-                onChangeText={setHhmm}
-                placeholder="HH:MM"
-                keyboardType="numbers-and-punctuation"
-                maxLength={5}
-                className="rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-[#0F1B2E]"
-              />
-            </Field>
+            <ScrollView keyboardShouldPersistTaps="handled">
+              <Field label={t('convocatorias_staff.meeting_at')}>
+                {matchDateLabel ? (
+                  <Text className="mb-1 text-[11px] text-zinc-400">
+                    {matchDateLabel}
+                  </Text>
+                ) : null}
+                <TextInput
+                  value={hhmm}
+                  onChangeText={setHhmm}
+                  placeholder="HH:MM"
+                  keyboardType="numbers-and-punctuation"
+                  maxLength={5}
+                  className="rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-[#0F1B2E]"
+                />
+              </Field>
 
-            <Field label={t('convocatorias_staff.meeting_location')}>
-              <TextInput
-                value={location}
-                onChangeText={setLocation}
-                maxLength={200}
-                className="rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-[#0F1B2E]"
-              />
-            </Field>
+              <Field label={t('convocatorias_staff.meeting_location')}>
+                <TextInput
+                  value={location}
+                  onChangeText={setLocation}
+                  maxLength={200}
+                  className="rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-[#0F1B2E]"
+                />
+              </Field>
 
-            <Field label={t('convocatorias_staff.meeting_address')}>
-              <TextInput
-                value={address}
-                onChangeText={setAddress}
-                maxLength={300}
-                className="rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-[#0F1B2E]"
-              />
-            </Field>
+              <Field label={t('convocatorias_staff.meeting_address')}>
+                <TextInput
+                  value={address}
+                  onChangeText={setAddress}
+                  maxLength={300}
+                  className="rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-[#0F1B2E]"
+                />
+              </Field>
 
-            <Field label={t('convocatorias_staff.transport_mode')}>
-              <View className="flex-row gap-2">
-                {TRANSPORT_MODES.map((m) => {
-                  const on = transport === m;
-                  return (
-                    <Pressable
-                      key={m}
-                      onPress={() => setTransport(on ? '' : m)}
-                      className={`rounded-full px-3 py-1.5 active:opacity-70 ${on ? '' : 'border border-zinc-200'}`}
-                      style={{ backgroundColor: on ? accent : undefined }}
-                    >
-                      <Text
-                        className={
-                          on
-                            ? 'text-xs font-semibold text-white'
-                            : 'text-xs text-zinc-600'
-                        }
+              <Field label={t('convocatorias_staff.transport_mode')}>
+                <View className="flex-row gap-2">
+                  {TRANSPORT_MODES.map((m) => {
+                    const on = transport === m;
+                    return (
+                      <Pressable
+                        key={m}
+                        onPress={() => setTransport(on ? '' : m)}
+                        className={`rounded-full px-3 py-1.5 active:opacity-70 ${on ? '' : 'border border-zinc-200'}`}
+                        style={{ backgroundColor: on ? accent : undefined }}
                       >
-                        {t(`transport_mode.${m}`)}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </Field>
+                        <Text
+                          className={
+                            on
+                              ? 'text-xs font-semibold text-white'
+                              : 'text-xs text-zinc-600'
+                          }
+                        >
+                          {t(`transport_mode.${m}`)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </Field>
 
-            <Field label={t('convocatorias_staff.transport_notes')}>
-              <TextInput
-                value={transportNotes}
-                onChangeText={setTransportNotes}
-                maxLength={500}
-                className="rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-[#0F1B2E]"
-              />
-            </Field>
+              <Field label={t('convocatorias_staff.transport_notes')}>
+                <TextInput
+                  value={transportNotes}
+                  onChangeText={setTransportNotes}
+                  maxLength={500}
+                  className="rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-[#0F1B2E]"
+                />
+              </Field>
 
-            <Field label={t('convocatorias_staff.notes_general')}>
-              <TextInput
-                value={notes}
-                onChangeText={setNotes}
-                maxLength={1000}
-                multiline
-                className="min-h-16 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-[#0F1B2E]"
-              />
-            </Field>
+              <Field label={t('convocatorias_staff.notes_general')}>
+                <TextInput
+                  value={notes}
+                  onChangeText={setNotes}
+                  maxLength={1000}
+                  multiline
+                  className="min-h-16 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm text-[#0F1B2E]"
+                />
+              </Field>
 
-            {errorText ? (
-              <Text className="mb-2 text-xs text-red-600">{errorText}</Text>
-            ) : null}
+              {errorText ? (
+                <Text className="mb-2 text-xs text-red-600">{errorText}</Text>
+              ) : null}
 
-            <Pressable
-              onPress={submit}
-              disabled={busy}
-              className="mt-2 rounded-xl py-3 active:opacity-80"
-              style={{ backgroundColor: accent, opacity: busy ? 0.5 : 1 }}
-            >
-              <Text className="text-center text-sm font-semibold text-white">
-                {busy
-                  ? t('convocatorias_staff.publishing')
-                  : t('convocatorias_staff.publish_now')}
-              </Text>
-            </Pressable>
-          </ScrollView>
-        </Pressable>
+              <Pressable
+                onPress={submit}
+                disabled={busy}
+                className="mt-2 rounded-xl py-3 active:opacity-80"
+                style={{ backgroundColor: accent, opacity: busy ? 0.5 : 1 }}
+              >
+                <Text className="text-center text-sm font-semibold text-white">
+                  {busy
+                    ? t('convocatorias_staff.publishing')
+                    : t('convocatorias_staff.publish_now')}
+                </Text>
+              </Pressable>
+            </ScrollView>
+          </Pressable>
+        </KeyboardModalView>
       </Pressable>
     </Modal>
   );

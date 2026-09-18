@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   getClubStaffFromClient,
@@ -11,6 +11,7 @@ import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { ListCard, RoleChip } from '@/screens/staff/hub-parts';
 import { DirectoryFilters, foldForSearch, type FilterTeam } from '@/ui/directory-filters';
+import { KeyboardScrollView } from '@/ui/keyboard';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
@@ -88,7 +89,7 @@ export function DireccionCuerpoTecnicoScreen() {
   return (
     <View className="flex-1 bg-white">
       <OfflineBanner show={fromCache} />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }}>
+      <KeyboardScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }}>
         <ScreenTitle>{t('dir_cuerpo.title')}</ScreenTitle>
 
         {/* D5 — búsqueda por nombre + filtro por equipo (temporada activa). */}
@@ -130,7 +131,7 @@ export function DireccionCuerpoTecnicoScreen() {
             </ListCard>
           ))
         )}
-      </ScrollView>
+      </KeyboardScrollView>
     </View>
   );
 }
