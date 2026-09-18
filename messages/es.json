@@ -39,7 +39,6 @@
   "common": {
     "app_name": "MisterFC",
     "welcome": "Bienvenido a MisterFC",
-    "tagline": "Gestión, metodología y desarrollo deportivo para entrenadores de fútbol base y amateur.",
     "footer": "Cognix Labs · v0.0.0",
     "fullscreen": {
       "enter": "Pantalla completa",
@@ -311,18 +310,12 @@
     },
     "welcome": "Bienvenido a {club}",
     "your_role": "Tu rol aquí es {role}.",
-    "next_steps_title": "Siguientes pasos",
-    "next_steps_body": "Empieza creando categorías y equipos en el menú lateral. Después podrás dar de alta jugadores y configurar al cuerpo técnico.",
     "dashboard_card": {
       "title": "Dashboard ejecutivo",
       "body": "Visión global del club: plantilla, resultados, asistencia, alertas y rankings.",
       "cta": "Abrir el dashboard →"
     },
-    "signed_in_as": "Sesión iniciada como {email}",
-    "your_clubs": "Tus clubs",
-    "no_clubs": "Todavía no perteneces a ningún club.",
     "signout": "Cerrar sesión",
-    "invitations_link": "Invitar personas",
     "cards": {
       "messages": {
         "title": "Mensajes sin leer",
@@ -414,7 +407,6 @@
     "live": "En directo",
     "vs": "vs",
     "back": "Volver a Directos",
-    "not_started_score": "Sin empezar",
     "phase": {
       "not_started": "Sin empezar",
       "first_half": "1ª parte",
@@ -736,7 +728,6 @@
     }
   },
   "equipos": {
-    "back_to_categorias": "← Volver a categorías",
     "subtitle": "Equipos de la temporada {season}.",
     "empty": "Aún no hay equipos en esta categoría.",
     "list_title": "Equipos",
@@ -887,7 +878,6 @@
     "title": "Invitaciones",
     "subtitle": "Invita a personas al club {club} con el rol que les corresponda.",
     "new_section_title": "Nueva invitación",
-    "list_section_title": "Enviadas",
     "empty": "Aún no has enviado ninguna invitación.",
     "status_pending": "Pendiente",
     "status_accepted": "Aceptada",
@@ -1000,7 +990,6 @@
     "consent_view": "ver",
     "consent_already": "Ya aceptado: {doc}",
     "consent_close": "Cerrar",
-    "children_heading": "Vas a dar de alta a:",
     "child_unnamed": "Jugador/a",
     "child_no_team": "Sin equipo asignado",
     "error_consent_required": "Debes aceptar los Términos y la Política de Privacidad para completar el alta.",
@@ -1041,12 +1030,8 @@
     "self_note": "Esta invitación es para tu propia cuenta de jugador: te la ha enviado tu padre, madre o tutor legal. Las autorizaciones de imagen, tus datos médicos y la gestión de tus datos personales siguen estando a su cargo.",
     "error_reserved_for_tutor": "Esos datos los gestiona tu padre, madre o tutor legal, no se pueden enviar desde aquí.",
     "error_not_self": "Esta invitación no es para una cuenta de jugador. Ábrela desde el enlace del correo en el navegador para completarla.",
-    "error_not_claimable": "Este correo ya tiene una cuenta. Inicia sesión con ella y la invitación se añadirá sola.",
     "error_rate_limited": "Demasiados intentos. Espera un poco y vuelve a probar.",
     "error_rate_limited_in": "Demasiados intentos. Vuelve a probar en {minutes} min.",
-    "error_unavailable": "No hemos podido comprobar la invitación ahora mismo. Inténtalo en unos minutos.",
-    "error_network": "Sin conexión. Comprueba tu red y vuelve a intentarlo.",
-    "error_no_web_url": "Esta versión de la app no está configurada para completar invitaciones. Avisa al club.",
     "error_invalid": "Este enlace no es válido. Abre el que te llegó por correo.",
     "go_to_signin": "Ir a iniciar sesión",
     "session_swap_warning": "Ahora mismo estás en la cuenta {email}. Si completas esta invitación, entrarás con la cuenta del jugador.",
@@ -1060,8 +1045,6 @@
     "no_team_for_season": "El jugador no tiene equipo en esta temporada.",
     "no_report": "Sin informe todavía.",
     "has_report": "Informe creado.",
-    "editor_rework_title": "Editor en reconstrucción",
-    "editor_rework_body": "El editor de puntuaciones se está rehaciendo con el nuevo modelo (valoración de equipo + informe individual por catálogo). Los objetivos siguen disponibles en el listado.",
     "create": "Crear informe",
     "edit": "Editar",
     "shared": "Compartido",
@@ -1086,7 +1069,6 @@
     "results_individual": "Resultados individuales",
     "results_team": "Resultados de equipo",
     "team_evolution_title": "Evolución del equipo",
-    "coming_soon": "Próximamente.",
     "cancel": "Cancelar",
     "delete": "Borrar",
     "confirm_delete": "¿Borrar este objetivo?",
@@ -1119,8 +1101,6 @@
       "generic": "No se pudo guardar. Inténtalo de nuevo."
     },
     "team_valuation": "Valoración de equipo",
-    "team_valuation_done": "Valoración de equipo creada",
-    "team_valuation_pending": "Valoración de equipo pendiente",
     "team_comment": "Comentario de equipo",
     "team_block_title": "Valoración de equipo (de este periodo)",
     "team_block_missing": "Aún no hay valoración de equipo para este periodo. Puedes guardar el informe individual igualmente; se enlazará cuando la crees.",
@@ -2197,7 +2177,6 @@
       "title": "Estadísticas del equipo",
       "file": "equipo",
       "by_player": "Por jugador",
-      "totals_row": "Total equipo",
       "empty": "Este equipo aún no tiene jugadores."
     },
     "col": {
@@ -2327,7 +2306,6 @@
   "dashboard": {
     "title": "Dashboard ejecutivo",
     "subtitle": "{club} · temporada {season}",
-    "coming_soon": "Próximamente.",
     "census": {
       "title": "Plantilla del club",
       "total_players": "jugadores activos",
@@ -2435,7 +2413,6 @@
     "by_type_title": "Totales del equipo",
     "rival": "Rival",
     "empty": "Este equipo aún no tiene jugadores.",
-    "totals_row": "Total equipo",
     "col": {
       "dorsal": "#",
       "player": "Jugador",
@@ -2713,7 +2690,6 @@
     },
     "team_filter": "Equipo",
     "team_all": "Todos los equipos",
-    "range_season": "Temporada actual",
     "empty": "Sin registros de asistencia todavía",
     "pct_present": "Presencia",
     "total": "{n, plural, one {# entreno registrado} other {# entrenos registrados}}",
@@ -3198,7 +3174,6 @@
     "staff_empty": "Sin cuerpo técnico asignado",
     "frames": "{count, plural, one {# frame} other {# frames}}",
     "nav_plantilla": "Plantilla",
-    "nav_sesiones": "Sesiones",
     "teammates_empty": "Sin compañeros todavía",
     "upcoming_empty": "Sin eventos próximos",
     "announcements": "Anuncios",
@@ -3206,7 +3181,6 @@
     "plantilla_empty": "Sin jugadores en la plantilla",
     "session_unavailable": "Esta sesión no está disponible",
     "session_no_tasks": "Sin ejercicios",
-    "sesiones_empty": "No hay sesiones publicadas",
     "family_no_team": "Este jugador no tiene equipo en la temporada activa"
   },
   "alineacion": {
@@ -3214,7 +3188,6 @@
     "tournament_label": "Torneo {name} · Ronda {round}",
     "back": "Volver a Gestión de partidos",
     "live_capture": "En directo",
-    "empty_hint": "Aún no hay alineación para este partido. Crea una para empezar.",
     "name_label": "Nombre",
     "formation_label": "Formación",
     "create": "Crear alineación",
@@ -3225,7 +3198,6 @@
     "bench": "Banquillo",
     "bench_empty": "Arrastra jugadores aquí.",
     "out": "Fuera de convocatoria",
-    "out_empty": "Sin descartes.",
     "remove": "Quitar de la alineación",
     "saving": "Guardando…",
     "saved": "Guardado",
@@ -3256,7 +3228,6 @@
       "forward": "DEL"
     },
     "share_label": "Compartir con equipo",
-    "resync": "Resincronizar",
     "planned_subs": "Cambios programados",
     "sub_minute": "Min",
     "sub_out": "Sale",
@@ -3267,11 +3238,7 @@
     "tactical_notes_placeholder": "Presión, vigilancias, objetivos por fases…",
     "tactical_notes_staff_only": "Solo visible para el cuerpo técnico.",
     "save_notes": "Guardar notas",
-    "confirm_published_title": "Convocatoria publicada",
-    "confirm_published_body": "La convocatoria ya está publicada. ¿Aplicar también los cambios de convocados/descartes a la convocatoria?",
     "cancel": "Cancelar",
-    "confirm_apply": "Aplicar",
-    "resync_done": "Resincronizado: {out} a fuera, {bench} a banquillo",
     "official_lineup_title": "Alineación oficial",
     "share_hint": "Actívalo para que jugadores y familias vean esta alineación oficial. Las notas tácticas siempre quedan ocultas.",
     "official_hint": "Marca esta como la alineación oficial del partido (solo puede haber una).",
@@ -3364,9 +3331,7 @@
   "partido_directo": {
     "back": "Volver a Gestión de partidos",
     "clock_label": "Cronómetro",
-    "clock_hint": "El cronómetro se activa en la próxima entrega",
     "status_not_started": "Sin empezar",
-    "side_label": "Equipo o rival",
     "side_own": "Equipo",
     "side_rival": "Rival",
     "palette_title": "Eventos",
@@ -3386,11 +3351,6 @@
       "corner_against": "Córner en contra"
     },
     "no_event": "ningún evento",
-    "stub_player": "{event} sobre {player} — el registro llega en la próxima entrega",
-    "stub_field": "{event} en el campo ({x}, {y}) — el registro llega en la próxima entrega",
-    "panel_own_title": "Tu equipo",
-    "panel_rival_title": "Equipo rival",
-    "panel_rival_hint": "Los eventos del rival se registran por dorsal (próxima entrega).",
     "landscape_hint": "Gira el dispositivo en horizontal para registrar mejor.",
     "friendly_note": "Amistoso · la toma de datos funciona igual que en un partido.",
     "scope_note": "Pantalla de captura en directo. El registro de eventos se activa en las siguientes entregas.",
@@ -3461,8 +3421,6 @@
     },
     "event_expelled_double_yellow": "Expulsado por doble amarilla: {player}",
     "event_expelled_red": "Expulsado (roja): {player} ({minute}')",
-    "register_not_field_event": "Ese evento va sobre un jugador: tócalo en el campo.",
-    "event_registered_field": "Registrado: {event} ({minute}')",
     "tool_absent": "No viene",
     "absent_hint": "Toca a un convocado (campo o banquillo) para marcarlo como ausente.",
     "sub_hint": "Cambio: toca quién SALE (campo) y luego quién ENTRA (banquillo).",
@@ -3506,10 +3464,6 @@
     "penalty_registered": "Penalti {outcome} · {player} ({minute}')",
     "rival_penalty_registered": "Penalti {outcome} · rival #{dorsal} ({minute}')",
     "foul_hint": "Toca a NUESTRO jugador (recibe / comete) para registrar la falta.",
-    "foul_pick_location": "Ahora toca la ubicación de la falta en el campo.",
-    "foul_pick_player": "Toca primero a nuestro jugador de la falta.",
-    "foul_loc_committed": "Falta en contra de {player}: toca la ubicación.",
-    "foul_loc_received": "Falta a favor de {player}: toca la ubicación.",
     "foul_committed": "Falta en contra",
     "foul_received": "Falta a favor",
     "foul_committed_registered": "Falta en contra · {player} ({minute}')",
@@ -3544,7 +3498,6 @@
     "stats_low_hint": "Por debajo del {pct}% del tiempo de juego transcurrido.",
     "stats_hint": "Minutos calculados en vivo desde el once inicial, los cambios y las expulsiones. Se actualizan con el reloj.",
     "reentry_on": "Cambios corridos",
-    "reentry_off": "Sin reentrada",
     "tactics_tool": "Mover/Táctica",
     "tactics_hint": "Arrastra a un jugador para recolocarlo; cambia la formación con el selector.",
     "formation_label": "Formación",
@@ -3836,7 +3789,6 @@
     "badge_custom": "Personalizada",
     "overlap_badge": "Solapa estándar",
     "overlap_hint": "Esta categoría coincide en grupo de edad con una estándar pero tiene otro nombre. Revísala.",
-    "standard_locked_hint": "Categoría estándar: el nombre y el grupo de edad están bloqueados. Solo puedes cambiar la duración.",
     "actions": {
       "create": "Nueva categoría",
       "edit": "Editar",
@@ -3852,11 +3804,8 @@
     "field": {
       "name": "Nombre",
       "kind": "Grupo de edad",
-      "kind_help": "Determina el régimen de cambios y el orden del listado.",
-      "half_duration": "Duración por tiempo (min)",
-      "half_duration_help": "Minutos de cada tiempo de partido (1–90)."
+      "half_duration": "Duración por tiempo (min)"
     },
-    "kind_none": "Sin grupo de edad",
     "delete": {
       "title": "¿Eliminar la categoría?",
       "description": "Vas a eliminar «{name}». Esta acción no se puede deshacer."
@@ -4413,7 +4362,6 @@
     "subtitle": "Efímera: nada se guarda. Dibuja sobre el campo para explicar la jugada.",
     "mode_blank": "En blanco",
     "mode_exercise": "Desde ejercicio",
-    "from_exercise": "Mostrando: {name}",
     "open_exercise": "Abrir en pizarra",
     "pick_hint": "Elige un ejercicio para cargarlo.",
     "pick_placeholder": "Elegir ejercicio",
@@ -4481,7 +4429,6 @@
       "reorder_block": "Reordenar bloque",
       "reorder_task": "Reordenar ejercicio",
       "plays_heading": "Jugadas a entrenar",
-      "plays_empty": "Sin jugadas todavía.",
       "play_untitled": "Jugada sin título",
       "frame_count": "{count, plural, =1 {# fotograma} other {# fotogramas}}",
       "move_up": "Subir",
@@ -4883,7 +4830,6 @@
   },
   "playbook": {
     "title": "Playbook",
-    "coming_soon": "Próximamente",
     "subtitle": "El playbook estará disponible pronto.",
     "unavailable": "Esta jugada no está disponible",
     "untitled": "Jugada",
