@@ -71,6 +71,14 @@ jobs:
       - name: Check intl locale census (web)
         run: pnpm check:intl-locale
 
+      # Una clave del catalogo que se queda sin uso no rompe nada: los mensajes de
+      # next-intl no estan tipados, asi que no hay error de tipos ni de lint, y el
+      # traductor la sigue traduciendo a tres idiomas. Se acumulan en silencio: al
+      # escribir el guard habia 57. Las 54 que quedan van declaradas en el script;
+      # una cadena NUEVA sin uso pone esto rojo.
+      - name: Check dead catalogue strings census
+        run: pnpm check:cadenas-muertas
+
       - name: Test (vitest)
         run: pnpm test
 
