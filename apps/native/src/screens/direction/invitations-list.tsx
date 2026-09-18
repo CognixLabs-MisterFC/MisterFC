@@ -10,9 +10,9 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, EmptyState, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatDayMonthYear } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 
-type T = (key: string, values?: Record<string, string>) => string;
 type Filter = 'all' | DireccionInvitationStatus;
 
 const FILTERS: Filter[] = ['all', 'pending', 'expired', 'accepted'];
@@ -22,15 +22,6 @@ const FILTER_LABEL: Record<Filter, string> = {
   expired: 'dir_inicio.inv_tab_expired',
   accepted: 'dir_inicio.inv_tab_accepted',
 };
-
-/**
- * Fecha (día + mes de CATÁLOGO + año), NUNCA `toLocaleString`/`toLocaleDateString`: la
- * app no usa el idioma del dispositivo (mismo criterio que #506 y la fecha de eventos).
- */
-function formatDate(t: T, iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()} ${t(`calendario.date.month.${d.getMonth()}`)} ${d.getFullYear()}`;
-}
 
 /**
  * Prefijo de la fecha relevante según estado; lleva además el ESTADO (no se repite en
@@ -110,7 +101,7 @@ export function DireccionTeamInvitationsScreen({
               {t(`roles.${item.role}`)}
             </Text>
             <Text className="text-xs text-zinc-400">
-              {`${t(datePrefixKey(item.status))} · ${formatDate(t, item.date)}`}
+              {`${t(datePrefixKey(item.status))} · ${formatDayMonthYear(t, item.date)}`}
             </Text>
           </View>
         )}

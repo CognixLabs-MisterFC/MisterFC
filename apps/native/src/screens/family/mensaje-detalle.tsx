@@ -24,6 +24,7 @@ import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { KeyboardStickyBar } from '@/ui/keyboard';
 import { appLocale, useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 
 const MESSAGES_POLL_MS = 5000;
@@ -131,6 +132,8 @@ function Bubble({
   mine: boolean;
   accent: string;
 }) {
+  const t = useTranslations('');
+
   return (
     <View className={mine ? 'items-end' : 'items-start'}>
       <View
@@ -140,7 +143,7 @@ function Bubble({
         <Text className={mine ? 'text-sm text-white' : 'text-sm text-[#0F1B2E]'}>{message.body}</Text>
       </View>
       <Text className="mt-0.5 text-[10px] text-zinc-400">
-        {new Date(message.sent_at).toLocaleString()}
+        {formatShortDateTime(t, message.sent_at)}
       </Text>
     </View>
   );

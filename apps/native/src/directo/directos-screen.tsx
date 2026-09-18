@@ -18,6 +18,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 
 /** Polling de marcadores en vivo (ms). Online refresca en vivo; offline sirve caché. */
@@ -130,13 +131,7 @@ function MatchCard({ match, detailPathname }: { match: WeekMatch; detailPathname
         : t('directos.status_scheduled');
   // E4 (decisión de Jose) — SIEMPRE día + hora (dd/mm/aaaa hh:mm), pase lo que pase
   // con el marcador: el marcador ya NO sustituye a la fecha.
-  const kickoff = new Date(match.startsAt).toLocaleString(undefined, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const kickoff = formatShortDateTime(t, match.startsAt);
   const scoreText =
     match.goalsOwn != null ? `${match.goalsOwn} - ${match.goalsRival}` : null;
   // Minuto SOLO si está EN JUEGO (reloj corriendo); en pausa/descanso, la fase.

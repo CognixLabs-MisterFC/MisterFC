@@ -15,6 +15,7 @@ import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { ReadonlyLineup, type ReadonlyLineupPlayer } from '@/ui/readonly-lineup';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 
 /** Polling de marcador/timeline en vivo (ms) — consistente con el listado (B1). */
@@ -143,13 +144,7 @@ function Scoreboard({
       : phaseLabel;
   // Bug 2 — fecha del partido en el DETALLE (la lista ya la mostraba desde #469;
   // el detalle nunca la pintaba). Mismo formato que la lista: día + hora, sin segundos.
-  const kickoff = new Date(detail.startsAt).toLocaleString(undefined, {
-    day: 'numeric',
-    month: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const kickoff = formatShortDateTime(t, detail.startsAt);
 
   return (
     <View

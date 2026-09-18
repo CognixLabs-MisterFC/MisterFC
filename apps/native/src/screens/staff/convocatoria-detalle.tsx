@@ -28,6 +28,7 @@ import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { NoAppBadge } from '@/ui/no-app-badge';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { PublishCallupSheet } from './publish-callup-sheet';
 import { SharedLineupCard } from '@/screens/family/shared-lineup-card';
 
@@ -229,7 +230,7 @@ export function ConvocatoriaStaffDetalleScreen({
         </Text>
         <Text className="text-xs text-zinc-400" numberOfLines={1}>
           {[
-            new Date(data.event.starts_at).toLocaleString(),
+            formatShortDateTime(t, data.event.starts_at),
             data.event.team_name,
             data.event.category_name,
           ]

@@ -11,6 +11,7 @@ import { useCached } from '@/data/use-cached';
 import { ChildSelector } from '@/ui/child-selector';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 
 /**
@@ -116,6 +117,8 @@ function CallupRow({
   accent: string;
   onPress: () => void;
 }) {
+  const t = useTranslations('');
+
   return (
     <Pressable
       onPress={onPress}
@@ -131,7 +134,7 @@ function CallupRow({
       </View>
       <View className="mt-1 flex-row items-center gap-2">
         <Text className="flex-1 text-xs text-zinc-400" numberOfLines={1}>
-          {[new Date(row.starts_at).toLocaleString(), row.team_name].filter(Boolean).join(' · ')}
+          {[formatShortDateTime(t, row.starts_at), row.team_name].filter(Boolean).join(' · ')}
         </Text>
         {row.my_decision ? <DecisionBadge decision={row.my_decision} /> : null}
       </View>

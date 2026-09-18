@@ -11,6 +11,7 @@ import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 
 /**
  * O2-7a — Lista de sesiones para PASAR LISTA (staff, SOLO LECTURA aquí). Entrena-
@@ -84,7 +85,7 @@ export function AsistenciaListScreen() {
                 </Text>
                 <Text className="text-xs text-zinc-400" numberOfLines={1}>
                   {[
-                    new Date(item.starts_at).toLocaleString(),
+                    formatShortDateTime(t, item.starts_at),
                     item.category_name,
                   ]
                     .filter(Boolean)

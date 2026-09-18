@@ -243,12 +243,12 @@
       "pending_callups": "Call-ups not published",
       "pending_approvals": "Holiday trainings to approve",
       "pending_reports": "Pending reports",
-      "reports_pending": "{count} pending",
+      "reports_pending": "{count, plural, one {# pending} other {# pending}}",
       "empty": "Nothing pending",
       "pending_invitations": "Pending invitations",
-      "pending_invitations_cta": "{count} unaccepted invitations",
+      "pending_invitations_cta": "{count, plural, one {# unaccepted invitation} other {# unaccepted invitations}}",
       "pending_erasure": "Pending erasures",
-      "pending_erasure_cta": "{count} erasures to review"
+      "pending_erasure_cta": "{count, plural, one {# erasure to review} other {# erasures to review}}"
     },
     "feed": {
       "title": "What's new",
@@ -386,10 +386,10 @@
     },
     "campaign_alert": {
       "title": "Open evaluation campaigns ({count})",
-      "item": "{period}: {count} reports pending",
-      "due": "Deadline: {date} · {days} days left",
-      "due_soon": "{days} days left! · {date}",
-      "overdue_days": "Overdue by {days} days · {date}",
+      "item": "{period}: {count, plural, one {# report pending} other {# reports pending}}",
+      "due": "Deadline: {date} · {days, plural, one {# day left} other {# days left}}",
+      "due_soon": "{days, plural, one {# day left!} other {# days left!}} · {date}",
+      "overdue_days": "{days, plural, one {Overdue by # day} other {Overdue by # days}} · {date}",
       "cta": "Go write"
     },
     "no_access": {
@@ -949,7 +949,7 @@
     },
     "division_regime": {
       "rolling": "Rolling subs",
-      "limited": "{max} subs"
+      "limited": "{max, plural, one {# sub} other {# subs}}"
     },
     "title": "Teams",
     "page_subtitle": "Club teams by season.",
@@ -1266,7 +1266,7 @@
       "publish_all": "Publish all",
       "publish_all_hint": "Publishes the period's completed reports to families. Incomplete ones aren't published.",
       "publish_all_confirm_title": "Publish the period's reports?",
-      "publish_all_confirm_body": "{done} completed reports will be published to families. {pending} will remain unpublished because they're incomplete. This can't be undone.",
+      "publish_all_confirm_body": "{done, plural, one {# completed report will be published} other {# completed reports will be published}} to families. {pending, plural, one {# will remain unpublished because it is incomplete} other {# will remain unpublished because they are incomplete}}. This can’t be undone.",
       "publish_all_cancel": "Cancel",
       "publish_all_confirm": "Publish all"
     },
@@ -1291,7 +1291,7 @@
       },
       "confirm": {
         "title": "Invite by email",
-        "body": "Invite {count} people? One email is sent per family (just one even if there are several children).",
+        "body": "{count, plural, one {Invite # person?} other {Invite # people?}} One email is sent per family (just one even if there are several children).",
         "cancel": "Cancel",
         "send": "Invite"
       },
@@ -1795,7 +1795,7 @@
       "invalid": "Invalid"
     },
     "preview": {
-      "truncated": "+{count} more rows are processed the same even if they aren't shown here.",
+      "truncated": "{count, plural, one {+# more row is processed the same even if it is not shown here.} other {+# more rows are processed the same even if they are not shown here.}}",
       "unmapped_headers": "Unrecognized columns (ignored): {headers}",
       "required_legend": "Required: Full name, Date of birth, and Email. Team is optional: if you leave it empty, the batch selector team is used.",
       "editable_hint": "You can fix any row with an error by editing it here; it is revalidated instantly."
@@ -1808,7 +1808,7 @@
     },
     "action": {
       "back": "Back",
-      "confirm": "Import {count} players"
+      "confirm": "{count, plural, one {Import # player} other {Import # players}}"
     },
     "col": {
       "first_name": "Full name",
@@ -1965,7 +1965,7 @@
         "end_until": "Until a date",
         "count_label": "Number of weeks",
         "until_label": "Until (inclusive)",
-        "preview": "{count} occurrences will be created on save.",
+        "preview": "{count, plural, one {# occurrence will be created on save.} other {# occurrences will be created on save.}}",
         "day_short": {
           "0": "M",
           "1": "T",
@@ -2144,7 +2144,10 @@
         "10": "November",
         "11": "December"
       },
-      "long": "{weekday}, {day} {month}"
+      "long": "{weekday}, {day} {month}",
+      "numeric": "{day}/{month}/{year}",
+      "numeric_time": "{date}, {time}",
+      "day_month_year": "{day} {month} {year}"
     },
     "season": {
       "tabs": {
@@ -2330,7 +2333,7 @@
       "by_category": "By category",
       "by_team": "By team",
       "empty": "No teams in the active season yet.",
-      "previous_total": "{season} season: {count} players",
+      "previous_total": "{season} season: {count, plural, one {# player} other {# players}}",
       "no_previous": "No previous season to compare against.",
       "links": {
         "players": "View full squad",
@@ -2397,8 +2400,8 @@
       "low_attendance": "Low attendance ({count})",
       "inactive": "Inactive players ({count})",
       "campaigns": "Evaluation campaigns due soon ({count})",
-      "campaign_soon": "{days} days left · {pending} reports pending across {teams} teams",
-      "campaign_overdue": "Overdue by {days} days · {pending} reports pending across {teams} teams",
+      "campaign_soon": "{days, plural, one {# day left} other {# days left}} · {pending, plural, one {# report pending} other {# reports pending}} across {teams, plural, one {# team} other {# teams}}",
+      "campaign_overdue": "{days, plural, one {Overdue by # day} other {Overdue by # days}} · {pending, plural, one {# report pending} other {# reports pending}} across {teams, plural, one {# team} other {# teams}}",
       "campaign_link": "Manage campaign",
       "col": {
         "player": "Player",
@@ -2655,7 +2658,7 @@
     },
     "stats": {
       "title": "Attendance stats",
-      "subtitle": "{total} records in the selected range.",
+      "subtitle": "{total, plural, one {# record} other {# records}} in the selected range.",
       "by_code": "By code",
       "by_player": "By player",
       "player": "Player",
@@ -2831,7 +2834,7 @@
         "cannot_unpublish": "Once published, the callup cannot become a draft again.",
         "forbidden": "You don't have permission to publish this callup.",
         "generic": "Could not save. Retry.",
-        "too_many_called_up": "There are {overflow} too many called up (max {max}). Discard players before publishing."
+        "too_many_called_up": "{overflow, plural, one {There is # too many called up} other {There are # too many called up}} (max {max}). Discard players before publishing."
       },
       "go_to_editor": "Go to lineup editor"
     },
@@ -3192,7 +3195,7 @@
     },
     "nav_staff": "Coaching staff",
     "staff_empty": "No coaching staff assigned",
-    "frames": "{count} frames",
+    "frames": "{count, plural, one {# frame} other {# frames}}",
     "nav_plantilla": "Squad",
     "nav_sesiones": "Sessions",
     "teammates_empty": "No teammates yet",
@@ -3267,8 +3270,8 @@
     "confirm_published_body": "The call-up is already published. Apply the called-up/discarded changes to it too?",
     "cancel": "Cancel",
     "confirm_apply": "Apply",
-    "auto_discarded": "{n} marked as not called up",
-    "auto_called_up": "{n} marked as called up",
+    "auto_discarded": "{n, plural, one {# marked as not called up} other {# marked as not called up}}",
+    "auto_called_up": "{n, plural, one {# marked as called up} other {# marked as called up}}",
     "resync_done": "Resynced: {out} to out, {bench} to bench",
     "official_lineup_title": "Official lineup",
     "share_hint": "Turn on so players and families can see this official lineup. Tactical notes always stay hidden.",
@@ -3306,7 +3309,7 @@
     "empty": "You have no formations yet. Create one with “New formation”.",
     "builder_hint": "Drag each position onto the pitch. Tap one to change its code.",
     "select_chip_hint": "Tap a position on the pitch to edit its code.",
-    "positions_count": "{count} positions",
+    "positions_count": "{count, plural, one {# position} other {# positions}}",
     "filter": {
       "all": "All"
     },
@@ -3389,7 +3392,7 @@
     "panel_own_title": "Your team",
     "panel_rival_title": "Opponent",
     "panel_rival_hint": "Opponent events are recorded by squad number (next drop).",
-    "panel_own_hint": "{count} players on the pitch.",
+    "panel_own_hint": "{count, plural, one {# player on the pitch.} other {# players on the pitch.}}",
     "landscape_hint": "Turn your device to landscape for easier recording.",
     "friendly_note": "Friendly · live capture works the same as a match.",
     "scope_note": "Live capture screen. Event recording is enabled in the next drops.",
@@ -3552,14 +3555,14 @@
     "subs_count": "Subs {n}/{max}",
     "timeline": {
       "title": "Timeline",
-      "count": "· {n} events",
+      "count": "· {n, plural, one {# event} other {# events}}",
       "empty": "No events yet.",
       "hint": "Edit the minute or player, delete, or add a forgotten event. Minutes, score and counters recompute automatically.",
       "add": "Add event",
       "add_cancel": "Cancel",
       "add_submit": "Add",
       "error": "Couldn't save",
-      "issues_title": "{n} consistency warning(s)",
+      "issues_title": "{n, plural, one {# consistency warning} other {# consistency warnings}}",
       "side_own": "Us",
       "side_rival": "Opponent",
       "edit": "Edit",
@@ -4112,7 +4115,7 @@
     "empty_history": "No past trainings this season yet.",
     "attendance_label": "Your attendance",
     "attendance_none": "No attendance recorded",
-    "history_show_more": "Show {count} earlier",
+    "history_show_more": "{count, plural, one {Show # earlier} other {Show # earlier}}",
     "history_show_less": "Show less"
   },
   "planificacion": {
@@ -5268,10 +5271,10 @@
     "type_red": "Red",
     "type_sub": "Substitution",
     "type_yellow": "Yellow",
-    "failed": "{count} couldn't be saved",
+    "failed": "{count, plural, one {# could not be saved} other {# could not be saved}}",
     "no_bench": "No substitutes available",
     "no_field_players": "No players on the pitch",
-    "pending": "{count} not uploaded · will upload when back online",
+    "pending": "{count, plural, one {# not uploaded · will upload when back online} other {# not uploaded · will upload when back online}}",
     "pick_in": "In…",
     "pick_out": "Out…",
     "pick_player": "Tap the player",
@@ -5492,7 +5495,7 @@
     "done_back": "Go to sign in",
     "pending_title": "Your account is being deleted",
     "pending_body": "It will be deleted by {date} at the latest. You no longer have access to any club and will not receive notifications.",
-    "pending_players": "{count} erasure requests are still waiting for the club to decide.",
+    "pending_players": "{count, plural, one {# erasure request is still waiting for the club to decide.} other {# erasure requests are still waiting for the club to decide.}}",
     "cancel_deletion": "Cancel the deletion",
     "errors": {
       "no_session": "Your session has expired. Please sign in again.",

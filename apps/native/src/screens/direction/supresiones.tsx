@@ -11,6 +11,7 @@ import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDate } from '@/lib/format-date';
 
 /**
  * O2-11c-2 — SUPRESIONES RGPD (dirección). La acción MÁS IRREVERSIBLE (borra datos
@@ -104,7 +105,7 @@ export function DireccionSupresionesScreen() {
               <Text className="mt-0.5 text-xs text-zinc-400">
                 {t('erasure.requested_by', {
                   who: item.requesterName ?? '—',
-                  date: new Date(item.requestedAt).toLocaleDateString(),
+                  date: formatShortDate(t, item.requestedAt),
                 })}
               </Text>
               {item.reason ? <Text className="mt-1 text-xs text-zinc-500">“{item.reason}”</Text> : null}

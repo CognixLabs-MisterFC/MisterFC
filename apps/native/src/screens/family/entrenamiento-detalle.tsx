@@ -1,16 +1,6 @@
 import { ScrollView, Text, View } from 'react-native';
 import { useTranslations } from '@/locale/provider';
-
-/** Día + hora sin segundos (mismo criterio que el resto de la app: `toLocaleString`). */
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
-    day: 'numeric',
-    month: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+import { formatShortDateTime } from '@/lib/format-date';
 
 /**
  * O2 — Detalle de un entrenamiento SIN sesión compartida: solo los datos del propio
@@ -45,7 +35,7 @@ export function EntrenamientoDetalleScreen({
             {title || t('entrenamientos.untitled')}
           </Text>
           <Text className="text-xs text-zinc-400">
-            {[startsAt ? formatDateTime(startsAt) : null, locationName]
+            {[startsAt ? formatShortDateTime(t, startsAt) : null, locationName]
               .filter(Boolean)
               .join(' · ')}
           </Text>

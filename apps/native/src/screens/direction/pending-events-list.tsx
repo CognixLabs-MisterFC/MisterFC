@@ -6,6 +6,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, EmptyState, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatDayMonthYear } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 import { directionEventTarget } from '@/notifications/feed-target';
 
@@ -20,10 +21,8 @@ type T = (key: string, values?: Record<string, string>) => string;
  * llegan a +60d / -72h y pueden cruzar cambio de año. → "12 agosto 2026 · 14:30".
  */
 function formatEventDateTime(t: T, iso: string): string {
-  const d = new Date(iso);
-  const date = `${d.getDate()} ${t(`calendario.date.month.${d.getMonth()}`)} ${d.getFullYear()}`;
-  const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-  return `${date} · ${time}`;
+  const time = new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return `${formatDayMonthYear(t, iso)} · ${time}`;
 }
 
 /**

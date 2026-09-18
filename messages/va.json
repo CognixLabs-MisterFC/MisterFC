@@ -243,12 +243,12 @@
       "pending_callups": "Convocatòries sense publicar",
       "pending_approvals": "Entrenaments en festiu per aprovar",
       "pending_reports": "Informes pendents",
-      "reports_pending": "{count} pendents",
+      "reports_pending": "{count, plural, one {# pendent} other {# pendents}}",
       "empty": "Sense pendents",
       "pending_invitations": "Invitacions pendents",
-      "pending_invitations_cta": "{count} invitacions sense acceptar",
+      "pending_invitations_cta": "{count, plural, one {# invitació sense acceptar} other {# invitacions sense acceptar}}",
       "pending_erasure": "Supressions pendents",
-      "pending_erasure_cta": "{count} supressions per revisar"
+      "pending_erasure_cta": "{count, plural, one {# supressió per revisar} other {# supressions per revisar}}"
     },
     "feed": {
       "title": "Novetats",
@@ -386,10 +386,10 @@
     },
     "campaign_alert": {
       "title": "Campanyes d'avaluació obertes ({count})",
-      "item": "{period}: {count} informes pendents",
-      "due": "Data límit: {date} · queden {days} dies",
-      "due_soon": "Queden {days} dies! · {date}",
-      "overdue_days": "Vençuda fa {days} dies · {date}",
+      "item": "{period}: {count, plural, one {# informe pendent} other {# informes pendents}}",
+      "due": "Data límit: {date} · {days, plural, one {queda # dia} other {queden # dies}}",
+      "due_soon": "{days, plural, one {Queda # dia!} other {Queden # dies!}} · {date}",
+      "overdue_days": "{days, plural, one {Vençuda fa # dia} other {Vençuda fa # dies}} · {date}",
       "cta": "Anar a redactar"
     },
     "no_access": {
@@ -949,7 +949,7 @@
     },
     "division_regime": {
       "rolling": "Canvis correguts",
-      "limited": "{max} canvis"
+      "limited": "{max, plural, one {# canvi} other {# canvis}}"
     },
     "title": "Equips",
     "page_subtitle": "Equips del club per temporada.",
@@ -1266,7 +1266,7 @@
       "publish_all": "Publicar tot",
       "publish_all_hint": "Publica a les famílies els informes complets del període. Els incomplets no es publiquen.",
       "publish_all_confirm_title": "Publicar els informes del període?",
-      "publish_all_confirm_body": "Es publicaran {done} informes complets a les famílies. {pending} quedaran sense publicar per estar incomplets. Aquesta acció no es pot desfer.",
+      "publish_all_confirm_body": "{done, plural, one {Es publicarà # informe complet} other {Es publicaran # informes complets}} a les famílies. {pending, plural, one {# quedarà sense publicar per estar incomplet} other {# quedaran sense publicar per estar incomplets}}. Aquesta acció no es pot desfer.",
       "publish_all_cancel": "Cancel·lar",
       "publish_all_confirm": "Publicar tot"
     },
@@ -1291,7 +1291,7 @@
       },
       "confirm": {
         "title": "Convidar per correu",
-        "body": "Voleu convidar {count} persones? S'envia un correu per família (només un encara que hi haja diversos fills).",
+        "body": "{count, plural, one {Voleu convidar # persona?} other {Voleu convidar # persones?}} S’envia un correu per família (només un encara que hi haja diversos fills).",
         "cancel": "Cancel·lar",
         "send": "Convidar"
       },
@@ -1795,7 +1795,7 @@
       "invalid": "No vàlides"
     },
     "preview": {
-      "truncated": "+{count} files més es processen igual encara que no es mostren ací.",
+      "truncated": "{count, plural, one {+# fila més es processa igual encara que no es mostre ací.} other {+# files més es processen igual encara que no es mostren ací.}}",
       "unmapped_headers": "Columnes no reconegudes (s'ignoren): {headers}",
       "required_legend": "Obligatoris: Nom complet, Data de naixement i Email. Equip és opcional: si el deixes buit s'usa l'equip del selector de lot.",
       "editable_hint": "Pots corregir qualsevol fila amb error editant-la ací; es revalida a l'instant."
@@ -1808,7 +1808,7 @@
     },
     "action": {
       "back": "Tornar",
-      "confirm": "Importar {count} jugadors"
+      "confirm": "{count, plural, one {Importar # jugador} other {Importar # jugadors}}"
     },
     "col": {
       "first_name": "Nom complet",
@@ -1965,7 +1965,7 @@
         "end_until": "Fins a una data",
         "count_label": "Nombre de setmanes",
         "until_label": "Fins al (inclusiu)",
-        "preview": "{count} ocurrències es crearan al guardar.",
+        "preview": "{count, plural, one {Es crearà # ocurrència al guardar.} other {Es crearan # ocurrències al guardar.}}",
         "day_short": {
           "0": "Dl",
           "1": "Dm",
@@ -2078,7 +2078,7 @@
       "unmark": "Desmarcar festiu",
       "unmark_title": "Desmarcar dia festiu",
       "unmark_description": "Es llevarà el festiu «{reason}» i es reactivaran els entrenaments que va cancel·lar (els cancel·lats per un altre motiu no es toquen).",
-      "skipped_summary": "S'{count, plural, one {ha omés # dia} other {han omés # dies}} per festiu ({dates}).",
+      "skipped_summary": "{count, plural, one {S'ha omés # dia} other {S'han omés # dies}} per festiu ({dates}).",
       "errors": {
         "forbidden": "Només la direcció pot marcar dies festius.",
         "already_holiday": "Eixe dia ja està marcat com a festiu.",
@@ -2144,7 +2144,10 @@
         "10": "novembre",
         "11": "desembre"
       },
-      "long": "{weekday}, {day} de {month}"
+      "long": "{weekday}, {day} de {month}",
+      "numeric": "{day}/{month}/{year}",
+      "numeric_time": "{date}, {time}",
+      "day_month_year": "{day} {month} {year}"
     },
     "season": {
       "tabs": {
@@ -2330,7 +2333,7 @@
       "by_category": "Per categoria",
       "by_team": "Per equip",
       "empty": "Encara no hi ha equips en la temporada activa.",
-      "previous_total": "Temporada {season}: {count} jugadors",
+      "previous_total": "Temporada {season}: {count, plural, one {# jugador} other {# jugadors}}",
       "no_previous": "Sense temporada anterior amb què comparar.",
       "links": {
         "players": "Veure plantilla completa",
@@ -2397,8 +2400,8 @@
       "low_attendance": "Baixa assistència ({count})",
       "inactive": "Jugadors inactius ({count})",
       "campaigns": "Campanyes d'avaluació a punt de vèncer ({count})",
-      "campaign_soon": "Queden {days} dies · {pending} informes pendents en {teams} equips",
-      "campaign_overdue": "Vençuda fa {days} dies · {pending} informes pendents en {teams} equips",
+      "campaign_soon": "{days, plural, one {Queda # dia} other {Queden # dies}} · {pending, plural, one {# informe pendent} other {# informes pendents}} en {teams, plural, one {# equip} other {# equips}}",
+      "campaign_overdue": "{days, plural, one {Vençuda fa # dia} other {Vençuda fa # dies}} · {pending, plural, one {# informe pendent} other {# informes pendents}} en {teams, plural, one {# equip} other {# equips}}",
       "campaign_link": "Gestionar campanya",
       "col": {
         "player": "Jugador",
@@ -2655,7 +2658,7 @@
     },
     "stats": {
       "title": "Estadístiques d'assistència",
-      "subtitle": "{total} registres en el rang seleccionat.",
+      "subtitle": "{total, plural, one {# registre} other {# registres}} en el rang seleccionat.",
       "by_code": "Per codi",
       "by_player": "Per jugador",
       "player": "Jugador",
@@ -2831,7 +2834,7 @@
         "cannot_unpublish": "Una vegada publicada, no es pot deixar com a esborrany.",
         "forbidden": "No tens permís per publicar esta convocatòria.",
         "generic": "No s'ha pogut guardar. Reintenta.",
-        "too_many_called_up": "Hi ha {overflow} convocat(s) de més (màx {max}). Descarta jugadors abans de publicar."
+        "too_many_called_up": "{overflow, plural, one {Hi ha # convocat de més} other {Hi ha # convocats de més}} (màx {max}). Descarta jugadors abans de publicar."
       },
       "go_to_editor": "Anar a l'editor d'alineació"
     },
@@ -3192,7 +3195,7 @@
     },
     "nav_staff": "Cos tècnic",
     "staff_empty": "Sense cos tècnic assignat",
-    "frames": "{count} fotogrames",
+    "frames": "{count, plural, one {# fotograma} other {# fotogrames}}",
     "nav_plantilla": "Plantilla",
     "nav_sesiones": "Sessions",
     "teammates_empty": "Sense companys encara",
@@ -3267,8 +3270,8 @@
     "confirm_published_body": "La convocatòria ja està publicada. Vols aplicar també els canvis de convocats/descarts a la convocatòria?",
     "cancel": "Cancel·lar",
     "confirm_apply": "Aplicar",
-    "auto_discarded": "{n} marcat(s) com a no convocat",
-    "auto_called_up": "{n} marcat(s) com a convocat",
+    "auto_discarded": "{n, plural, one {# marcat com a no convocat} other {# marcats com a no convocats}}",
+    "auto_called_up": "{n, plural, one {# marcat com a convocat} other {# marcats com a convocats}}",
     "resync_done": "Resincronitzat: {out} a fora, {bench} a banqueta",
     "official_lineup_title": "Alineació oficial",
     "share_hint": "Activaʼl perquè jugadors i famílies vegen esta alineació oficial. Les notes tàctiques sempre queden ocultes.",
@@ -3306,7 +3309,7 @@
     "empty": "Encara no tens formacions. Crea’n una amb «Nova formació».",
     "builder_hint": "Arrossega cada posició sobre el camp. Toca’n una per a canviar-ne el codi.",
     "select_chip_hint": "Toca una posició del camp per a editar-ne el codi.",
-    "positions_count": "{count} posicions",
+    "positions_count": "{count, plural, one {# posició} other {# posicions}}",
     "filter": {
       "all": "Totes"
     },
@@ -3389,7 +3392,7 @@
     "panel_own_title": "El teu equip",
     "panel_rival_title": "Equip rival",
     "panel_rival_hint": "Els esdeveniments del rival es registren per dorsal (pròxima entrega).",
-    "panel_own_hint": "{count} jugadors al camp.",
+    "panel_own_hint": "{count, plural, one {# jugador al camp.} other {# jugadors al camp.}}",
     "landscape_hint": "Gira el dispositiu en horitzontal per a registrar millor.",
     "friendly_note": "Amistós · la presa de dades funciona igual que en un partit.",
     "scope_note": "Pantalla de captura en directe. El registre d’esdeveniments s’activa en les pròximes entregues.",
@@ -3552,14 +3555,14 @@
     "subs_count": "Canvis {n}/{max}",
     "timeline": {
       "title": "Línia de temps",
-      "count": "· {n} esdeveniments",
+      "count": "· {n, plural, one {# esdeveniment} other {# esdeveniments}}",
       "empty": "Encara no hi ha esdeveniments.",
       "hint": "Edita el minut o el jugador, esborra o afig un esdeveniment oblidat. Minuts, marcador i comptadors es recalculen sols.",
       "add": "Afig esdeveniment",
       "add_cancel": "Cancel·la",
       "add_submit": "Afig",
       "error": "No s'ha pogut guardar",
-      "issues_title": "{n} avís(os) de coherència",
+      "issues_title": "{n, plural, one {# avís de coherència} other {# avisos de coherència}}",
       "side_own": "Nostre",
       "side_rival": "Rival",
       "edit": "Edita",
@@ -4112,7 +4115,7 @@
     "empty_history": "Encara no hi ha entrenaments passats aquesta temporada.",
     "attendance_label": "La teua assistència",
     "attendance_none": "Sense registre d'assistència",
-    "history_show_more": "Veure els {count} anteriors",
+    "history_show_more": "{count, plural, one {Veure # anterior} other {Veure els # anteriors}}",
     "history_show_less": "Veure menys"
   },
   "planificacion": {
@@ -5268,10 +5271,10 @@
     "type_red": "Roja",
     "type_sub": "Canvi",
     "type_yellow": "Groga",
-    "failed": "{count} no s'han pogut guardar",
+    "failed": "{count, plural, one {# no s’ha pogut guardar} other {# no s’han pogut guardar}}",
     "no_bench": "No hi ha suplents disponibles",
     "no_field_players": "No hi ha jugadors al camp",
-    "pending": "{count} sense pujar · es pujaran en reconnectar",
+    "pending": "{count, plural, one {# sense pujar · es pujarà en reconnectar} other {# sense pujar · es pujaran en reconnectar}}",
     "pick_in": "Entra…",
     "pick_out": "Ix…",
     "pick_player": "Toca el jugador",
@@ -5492,7 +5495,7 @@
     "done_back": "Anar a l'inici de sessió",
     "pending_title": "El teu compte està en procés d'eliminació",
     "pending_body": "S'eliminarà com a molt tard el {date}. Ja no tens accés a cap club i no rebràs avisos.",
-    "pending_players": "Queden {count} sol·licituds de supressió pendents que ha de decidir el club.",
+    "pending_players": "{count, plural, one {Queda # sol·licitud de supressió pendent que ha de decidir el club.} other {Queden # sol·licituds de supressió pendents que ha de decidir el club.}}",
     "cancel_deletion": "Cancel·lar l'eliminació",
     "errors": {
       "no_session": "La teua sessió ha caducat. Torna a entrar.",

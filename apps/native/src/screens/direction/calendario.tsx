@@ -14,6 +14,7 @@ import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { KeyboardScrollView } from '@/ui/keyboard';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 
 type CalData = { holidays: HolidayInfo[]; pending: PendingApprovalItem[] };
@@ -168,7 +169,7 @@ export function DireccionCalendarioScreen() {
                   {p.title}
                 </Text>
                 <Text className="text-xs text-zinc-400">
-                  {(p.teamName ?? '—') + ' · ' + new Date(p.startsAt).toLocaleString()}
+                  {(p.teamName ?? '—') + ' · ' + formatShortDateTime(t, p.startsAt)}
                 </Text>
                 {rejectingId === p.eventId ? (
                   <View className="mt-2 gap-2">

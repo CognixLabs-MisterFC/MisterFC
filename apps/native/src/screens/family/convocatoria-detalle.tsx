@@ -21,6 +21,7 @@ import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { SharedLineupCard } from './shared-lineup-card';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 
 /**
@@ -121,7 +122,7 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
             </Text>
           </View>
           <Text className="mt-1 text-xs text-zinc-400">
-            {[new Date(e.starts_at).toLocaleString(), e.team_name, e.category_name].filter(Boolean).join(' · ')}
+            {[formatShortDateTime(t, e.starts_at), e.team_name, e.category_name].filter(Boolean).join(' · ')}
           </Text>
           {e.location_name ? (
             <Text className="mt-1 text-xs text-zinc-400">📍 {e.location_name}</Text>
@@ -134,7 +135,7 @@ export function ConvocatoriaDetalleScreen({ eventId }: { eventId: string | null 
             <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
               {t('convocatorias.detail.citation_title')}
             </Text>
-            <InfoRow label={t('convocatorias.meeting_at')} value={data.meeting_at ? new Date(data.meeting_at).toLocaleString() : null} />
+            <InfoRow label={t('convocatorias.meeting_at')} value={data.meeting_at ? formatShortDateTime(t, data.meeting_at) : null} />
             <InfoRow label={t('convocatorias.tournament.field.location')} value={data.meeting_location} />
             <InfoRow label={t('convocatorias.publish.field.meeting_address')} value={data.meeting_address} />
             <InfoRow label={t('convocatorias.detail.citation_transport')} value={data.transport_notes} />

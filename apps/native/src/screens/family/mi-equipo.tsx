@@ -15,6 +15,7 @@ import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDate, formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 import { familyEventTarget } from '@/notifications/feed-target';
 
@@ -156,7 +157,7 @@ export function MiEquipoScreen() {
                   <Text className="text-sm font-medium text-[#0F1B2E]" numberOfLines={1}>{e.title}</Text>
                   <Text className="text-xs text-zinc-400" numberOfLines={1}>
                     {[
-                      new Date(e.starts_at).toLocaleString(),
+                      formatShortDateTime(t, e.starts_at),
                       e.opponent_name ? `vs ${e.opponent_name}` : null,
                       e.location_name,
                     ].filter(Boolean).join(' · ')}
@@ -190,7 +191,7 @@ export function MiEquipoScreen() {
                 </Text>
                 <Text className="text-xs text-zinc-400">
                   {a.team_id === null ? t('mi_equipo.cards.announcements.club_wide') : activeTeam.name}
-                  {' · '}{new Date(a.created_at).toLocaleDateString()}
+                  {' · '}{formatShortDate(t, a.created_at)}
                 </Text>
               </View>
             ))

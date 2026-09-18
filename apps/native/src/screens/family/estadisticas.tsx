@@ -11,6 +11,7 @@ import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDate } from '@/lib/format-date';
 
 type MatchStatsView = {
   header: MatchStatsHeader;
@@ -60,7 +61,7 @@ export function EstadisticasScreen({ eventId }: { eventId: string | null }) {
             {header.opponentName ? ` · ${header.opponentName}` : ''}
           </Text>
           <Text className="mt-1 text-xs text-zinc-400">
-            {[new Date(header.startsAt).toLocaleDateString(), header.teamName].filter(Boolean).join(' · ')}
+            {[formatShortDate(t, header.startsAt), header.teamName].filter(Boolean).join(' · ')}
           </Text>
         </View>
 

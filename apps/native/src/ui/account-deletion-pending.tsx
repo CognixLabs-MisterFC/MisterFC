@@ -5,14 +5,7 @@ import { useApp } from '@/auth/context';
 import { useIsOnline } from '@/data/connectivity';
 import { callServerEndpoint } from '@/lib/server-api';
 import { useTranslations } from '@/locale/provider';
-
-const pad = (n: number) => String(n).padStart(2, '0');
-
-/** Fecha límite como DD/MM/AAAA, determinista y sin depender del idioma del dispositivo. */
-function formatDeadline(iso: string): string {
-  const d = new Date(iso);
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
-}
+import { formatShortDate } from '@/lib/format-date';
 
 /**
  * BC-5 — pantalla terminal del borrado EN CURSO. La pinta el gatekeeper
@@ -30,6 +23,7 @@ function formatDeadline(iso: string): string {
 export function AccountDeletionPendingScreen() {
   const { accountDeletion, reload, signOut } = useApp();
   const t = useTranslations('account_deletion');
+  const tRoot = useTranslations('');
   const tShell = useTranslations('shell');
   const online = useIsOnline();
   const [busy, setBusy] = useState(false);
@@ -69,7 +63,7 @@ export function AccountDeletionPendingScreen() {
         <View className="gap-1 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
           <Text className="text-base font-semibold text-red-900">{t('pending_title')}</Text>
           <Text className="mt-1 text-sm text-red-800">
-            {t('pending_body', { date: formatDeadline(accountDeletion.deadlineAt) })}
+            {t('pending_body', { date: formatShortDate(tRoot, accountDeletion.deadlineAt) })}
           </Text>
           {accountDeletion.pendingPlayers > 0 ? (
             <Text className="mt-2 text-xs text-red-800">
