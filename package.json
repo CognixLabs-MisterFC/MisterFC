@@ -22,6 +22,7 @@
     "check:family-web-cut": "node scripts/check-family-web-cut.mjs",
     "check:teclado": "node scripts/check-teclado.mjs",
     "check:intl-locale": "node scripts/check-intl-locale.mjs",
+    "check:cadenas-muertas": "node scripts/check-cadenas-muertas.mjs",
     "gen:import-template": "node scripts/generate-import-template.mjs",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\" --ignore-path .gitignore",
