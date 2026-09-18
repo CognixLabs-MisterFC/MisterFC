@@ -48,7 +48,15 @@ coverage/
 
 # Sentry
 .sentryclirc
-Documentos/
+
+# OJO — `Documentos/` NO se ignora, y es deliberado. Los .md revisados por el abogado
+# son la copia MAESTRA de los textos legales que sirve apps/web/src/content/legal/, y
+# las dos copias tienen que coincidir byte a byte. Si la carpeta no viaja en git, el
+# guard `check:textos-legales` no puede compararlas en CI y la garantía se queda en
+# local, donde nadie la vigila. Estuvo ignorada desde el #455 —colada en un commit de
+# google-services.json, sin comentario y sin motivo— y no contiene nada que no esté ya
+# publicado: tres de los cuatro ficheros ya estaban en git (son las copias servidas) y
+# el cuarto, el contrato de encargo, es una plantilla en blanco.
 
 # Claves de cuenta de servicio (NUNCA al repo)
 *firebase-adminsdk*.json

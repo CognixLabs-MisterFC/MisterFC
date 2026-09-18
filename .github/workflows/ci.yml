@@ -79,6 +79,14 @@ jobs:
       - name: Check dead catalogue strings census
         run: pnpm check:cadenas-muertas
 
+      # Cada texto legal vive en DOS sitios: los .md del abogado (Documentos/, la copia
+      # maestra) y la copia que sirve la web (apps/web/src/content/legal/). Tienen que
+      # ser el mismo byte a byte, y hasta ahora la garantia era acordarse de copiar el
+      # fichero: Documentos/ estaba en el .gitignore desde el #455, colada en un commit
+      # de google-services.json sin motivo. Un texto legal desincronizado no da error.
+      - name: Check legal texts parity census
+        run: pnpm check:textos-legales
+
       - name: Test (vitest)
         run: pnpm test
 
