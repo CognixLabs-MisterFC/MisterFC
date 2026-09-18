@@ -4,6 +4,7 @@ import { Redirect } from 'expo-router';
 import { isAllowedInArea } from '@misterfc/core';
 import { useSession } from '@/auth/session';
 import { useApp } from '@/auth/context';
+import { useActivePlayer } from '@/auth/active-player';
 import { BRAND } from '@/theme';
 import type { ChromeArea } from './config';
 
@@ -22,22 +23,36 @@ type GuardStatus = 'loading' | 'allowed' | 'denied';
  * S2 director-entrenador: se pasa `hasStaffTeams` (del AppProvider) para que un
  * director/admin_club con equipos asignados pase el guard del área 'staff' (modo
  * entrenador). Un director SIN equipos sigue denegado en 'staff'.
+ *
+ * MODO TUTOR: se pasa `hasLinkedPlayers` (del ActivePlayerProvider, que ya carga la
+ * lista de hijos del club activo para CUALQUIER usuario) para que quien tenga hijos
+ * vinculados pase el guard de 'family'. ESTA ES LA PUERTA: no hay otra comprobación
+ * en la pantalla ni en el menú que valga por sí sola —el menú solo decide si pinta
+ * la entrada—, así que quien no tenga hijos no entra ni escribiendo la ruta.
  */
 export function useAreaGuard(area: ChromeArea): GuardStatus {
   const { user, loading: sessionLoading } = useSession();
   const app = useApp();
+  const linkedPlayers = useActivePlayer();
 
   if (sessionLoading || app.loading) return 'loading';
   if (!user) return 'denied';
 
   const role = app.activeClub?.role ?? null;
-  return isAllowedInArea(area, {
+  const allowed = isAllowedInArea(area, {
     kind: app.kind,
     role,
     hasStaffTeams: app.hasStaffTeams,
-  })
-    ? 'allowed'
-    : 'denied';
+    hasLinkedPlayers: linkedPlayers.players.length > 0,
+  });
+  if (allowed) return 'allowed';
+
+  // La lista de hijos llega en ASÍNCRONO, así que mientras carga un `false` no es una
+  // negativa: es un "todavía no lo sé". Negar ahí rebotaría a un director-tutor fuera
+  // de /family en cada arranque en frío. Solo espera el área que depende del dato; el
+  // resto deniega al instante, como siempre.
+  if (area === 'family' && linkedPlayers.loading) return 'loading';
+  return 'denied';
 }
 
 /**

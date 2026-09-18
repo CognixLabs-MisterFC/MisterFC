@@ -12,6 +12,7 @@ import { useChrome, AppHeader } from './chrome';
 import {
   AREA_TABS,
   AREA_SWITCH_TAB,
+  FAMILY_SWITCH_TAB,
   allMenuFiles,
   hrefFor,
   type ChromeArea,
@@ -62,26 +63,41 @@ export function AreaNavigator({ area }: { area: ChromeArea }) {
   // Badge verde de mensajes sin leer (familia, staff y dirección; mismo criterio).
   const unreadConversations = useUnreadConversations();
 
-  // S2-2 — pestaña CONMUTADOR (director-entrenador). Decide en runtime si esta barra
-  // lleva el tab de conmutación y a quién:
+  // Pestaña CONMUTADOR de área. Decide en runtime si esta barra la lleva y a quién:
   //  · DIRECCIÓN → "Míster" (a /staff) solo si el director tiene equipos (hasStaffTeams).
   //  · STAFF → "Club" (a /direction) solo si el hogar del usuario es dirección
   //    (director/admin); un entrenador/coordinador NO lo ve (el guard lo rebotaría).
+  //  · FAMILIA → vuelta al HOGAR en modo tutor ("Club" o "Míster" según el rol). Estar
+  //    montando esta barra ya implica que el AreaGuard permitió el área, así que aquí
+  //    basta con mirar el hogar: si es familia, no hay a dónde volver.
   const router = useRouter();
   const { activeClub, hasStaffTeams } = useApp();
   const role = (activeClub?.role ?? null) as Role | null;
-  const homeIsDirection = role != null && navAreaForRole(role) === 'direction';
-  const switchTab = AREA_SWITCH_TAB[area];
+  const home = role != null ? navAreaForRole(role) : null;
+  const homeIsDirection = home === 'direction';
+  // OJO — en familia el descriptor se resuelve SIEMPRE (aunque no se muestre): el
+  // fichero `rol` existe, y una `Tabs.Screen` sin declarar la sacaría como 5ª pestaña
+  // a TODA la familia. Cuando no toca, se declara igualmente con href:null.
+  const switchTab =
+    area === 'family'
+      ? home === 'staff'
+        ? FAMILY_SWITCH_TAB.staff
+        : FAMILY_SWITCH_TAB.direction
+      : AREA_SWITCH_TAB[area];
   const showSwitch =
     switchTab != null &&
     (area === 'direction'
       ? hasStaffTeams
       : area === 'staff'
         ? homeIsDirection
-        : false);
+        : area === 'family'
+          ? home === 'staff' || home === 'direction'
+          : false);
   // Con 6 pestañas (las 5 del área + el conmutador) los rótulos se estrechan; bajamos
   // la fuente a 9 SOLO en esas dos barras para que "Calendario" (10 car.) no se corte.
-  // Sin conmutador (5 pestañas) no se toca.
+  // Sin conmutador (5 pestañas) no se toca — y familia CON conmutador son 5, así que
+  // tampoco: su barra queda igual de ancha que la de staff.
+  const shrinkLabels = showSwitch && area !== 'family';
   const switchLabel = switchTab ? t(navI18nKey(switchTab.labelKey)) : '';
 
   return (
@@ -104,7 +120,7 @@ export function AreaNavigator({ area }: { area: ChromeArea }) {
         ),
         tabBarActiveTintColor: chromeTheme.color,
         tabBarInactiveTintColor: '#9CA3AF',
-        ...(showSwitch ? { tabBarLabelStyle: { fontSize: 9 } } : {}),
+        ...(shrinkLabels ? { tabBarLabelStyle: { fontSize: 9 } } : {}),
       }}
     >
       {AREA_TABS[area].map((tab) => (
@@ -129,7 +145,7 @@ export function AreaNavigator({ area }: { area: ChromeArea }) {
         />
       ))}
 
-      {/* S2-2 — tab conmutador (6º, a la derecha de Mensajes). El fichero-ruta existe
+      {/* Tab conmutador (último, a la derecha de Mensajes). El fichero-ruta existe
           siempre; cuando NO toca mostrarlo se declara href:null (no sale en la barra).
           Al pulsarlo, preventDefault + router.replace al área destino (sin apilar). */}
       {switchTab && (
