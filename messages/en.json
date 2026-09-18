@@ -5604,11 +5604,19 @@
   },
   "consentimientos": {
     "section_title": "Permissions you have given",
-    "intro": "Here you can see what you have authorised, when, and the exact text you accepted. Optional permissions can be withdrawn whenever you want.",
+    "intro": "Here you can see what you have authorised, when, and the exact text you accepted. You can give and withdraw the optional permissions whenever you want.",
     "account_group": "Your account",
     "child_unnamed": "Child",
+    "types": {
+      "image_internal": "Images inside the app",
+      "image_social": "Images outside the app",
+      "medical_data_processing": "Health information"
+    },
     "granted": "Accepted",
     "revoked": "Withdrawn",
+    "not_decided": "Not decided",
+    "no_longer_managed": "You no longer manage this person’s permissions. You can still see what you decided.",
+    "needs_club_document": "The club has not published this text yet, so there is nothing to accept. Once it does, you will be able to give the permission from here.",
     "view_text": "View the text you accepted",
     "close": "Close",
     "load_error": "We couldn't load your permissions. Please come back in a moment.",
@@ -5616,13 +5624,23 @@
     "doc_not_found": "This text is no longer available.",
     "revoke": "Withdraw",
     "revoke_title": "Withdraw this permission?",
-    "revoke_note": "Withdrawing a permission does not affect what was already done while it was in force. You can give it again when the club asks you to review your permissions.",
+    "revoke_note": "Withdrawing a permission does not affect what was already done while it was in force. You can give it again whenever you want, from this same screen.",
     "revoke_cancel": "Cancel",
     "revoke_confirm": "Withdraw",
     "revoke_effect": {
       "image_internal": "Your child's photo will stop being visible in the app immediately.",
       "image_social": "The club will no longer have your permission to publish their image outside the app. This prevents future uses: it does not take back what has already been published.",
       "medical": "Health information will stop being visible in the app and the club will not be able to add or change anything. It is not deleted: it is blocked."
+    },
+    "grant": "Give this permission",
+    "grant_title": "Give this permission",
+    "grant_note": "The version of the text you have just read is recorded. You can withdraw this permission whenever you want, from this same screen.",
+    "grant_cancel": "Cancel",
+    "grant_confirm": "I give this permission",
+    "grant_effect": {
+      "image_internal": "Your child’s photo will be visible in the app straight away.",
+      "image_social": "The club will have your permission to publish their image outside the app. Nothing is published automatically: a person at the club decides.",
+      "medical": "The club will be able to see the health information and add or change medical data."
     },
     "offline": "Permissions cannot be withdrawn while offline. Try again when you are back on the network.",
     "errors": {
@@ -5632,6 +5650,15 @@
       "nothing_to_revoke": "There is nothing to withdraw for this permission.",
       "no_active_season": "The club has no active season. Let them know so the withdrawal can be recorded.",
       "error": "The permission could not be withdrawn. Please try again."
+    },
+    "grant_errors": {
+      "forbidden": "You can no longer manage this player’s permissions.",
+      "no_session": "Your session has expired. Please sign in again.",
+      "not_grantable": "This permission is not given from here.",
+      "no_document": "The club has not published this text, so there is nothing to accept. Let them know so they can publish it.",
+      "document_changed": "The club has published a new version of this text. Open it again to read it before accepting.",
+      "no_active_season": "The club has no active season. Let them know so the permission can be recorded.",
+      "error": "The permission could not be saved. Please try again."
     }
   }
 }

@@ -56,6 +56,12 @@ export const WRITE_INVALIDATIONS = {
    *  no existe. Retirar el médico cierra la ficha. */
   revokeConsent: ['consents', 'photo-path', 'mgmt', 'plantilla', 'home', 'staff-roster', 'medical'],
 
+  /** RV-3 — conceder uno. La MISMA lista que retirar, y por la misma razón: los
+   *  efectos son simétricos. Conceder `image_internal` enciende
+   *  `player_photo_visible`, así que todo lo que pinta la foto estaba sirviendo un
+   *  hueco y ahora hay imagen; conceder el médico abre la ficha. */
+  grantConsent: ['consents', 'photo-path', 'mgmt', 'plantilla', 'home', 'staff-roster', 'medical'],
+
   /** Perfil del tutor (nombre/avatar/idioma). `tutors-contact` porque el tutor se ve
    *  a sí mismo en la tarjeta de contacto de Gestión: cambiarse el nombre o el
    *  teléfono y seguir viendo el viejo ahí es la clase de incoherencia que hace

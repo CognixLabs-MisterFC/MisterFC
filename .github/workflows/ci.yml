@@ -112,7 +112,7 @@ jobs:
   # F15-B — Suite pgTAP (RLS) contra una BD Supabase EFÍMERA por PR.
   #
   # Hermético: `supabase start` levanta un stack local en el runner (Docker),
-  # aplica las 179 migraciones EN LIMPIO y trae el esquema `storage` (2 tests lo
+  # aplica las 240 migraciones EN LIMPIO y trae el esquema `storage` (2 tests lo
   # necesitan). La suite corre con DATABASE_URL apuntando a la BD local
   # (127.0.0.1:54322) → NO usa secrets ni toca producción, y cada PR tiene su
   # propia BD (concurrencia resuelta por construcción).
@@ -146,15 +146,15 @@ jobs:
         with:
           version: 2.98.2
 
-      # Levanta el stack local y APLICA las 179 migraciones en limpio. Si alguna
+      # Levanta el stack local y APLICA las 240 migraciones en limpio. Si alguna
       # migración falla (un club nuevo no se podría crear desde cero), este paso
       # sale en rojo y para el PR.
-      - name: supabase start (aplica las 239 migraciones en limpio)
+      - name: supabase start (aplica las 240 migraciones en limpio)
         run: supabase start
 
       # Red de verificación del propio stack antes de correr la suite:
       #  · el esquema `storage` existe (si no, los 2 tests de storage fallarían).
-      #  · las 239 migraciones quedaron registradas (clean apply completo).
+      #  · las 240 migraciones quedaron registradas (clean apply completo).
       - name: Verificar storage + recuento de migraciones
         run: |
           DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
@@ -170,7 +170,7 @@ jobs:
       # La suite pgTAP contra la BD local vía el override DATABASE_URL del script
       # (scripts/supabase-cli.sh). Sin DATABASE_URL el script seguiría yendo al
       # remoto — aquí lo forzamos a local. Bloqueante: rc != 0 => PR en rojo.
-      - name: pgTAP suite (111/111)
+      - name: pgTAP suite (112/112)
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
         run: pnpm db:test

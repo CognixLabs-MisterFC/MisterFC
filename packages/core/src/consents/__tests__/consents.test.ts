@@ -4,12 +4,16 @@ import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../supabase/types';
 import {
+  GRANTABLE_CONSENT_TYPES,
   REVOCABLE_CONSENT_TYPES,
   getAcceptedLegalDocumentFromClient,
+  getLegalDocumentToSignFromClient,
+  getTutorConsentOptionsFromClient,
   getTutorConsentsFromClient,
+  isGrantableConsent,
   isRevocableConsent,
 } from '../reads';
-import { revokePlayerConsentFromClient } from '../actions';
+import { grantPlayerConsentFromClient, revokePlayerConsentFromClient } from '../actions';
 
 /**
  * Lo que se protege aquí:
@@ -185,44 +189,236 @@ describe('revokePlayerConsentFromClient', () => {
 });
 
 /**
- * CONTRATO con RV-1. La lista de retirables está escrita a mano en los dos sitios —en
- * el `if` de `revoke_player_consent` y aquí— porque una deriva del otro no se puede
- * leer de forma fiable. Lo que sí se puede es COMPARARLAS.
+ * CONTRATO con el SQL. La lista de opcionales está escrita a mano en tres sitios —el
+ * `if` de `revoke_player_consent`, el de `grant_player_consent` y aquí— porque una
+ * derivada de otra no se puede leer de forma fiable. Lo que sí se puede es COMPARARLAS.
  *
  * Si se separan, el daño es de los que no dan error: un botón que la base rechaza, o
- * peor, un consentimiento retirable al que la pantalla no ofrece botón.
+ * peor, un permiso decidible al que la pantalla no ofrece botón.
  */
-describe('la lista de retirables no puede derivar del SQL', () => {
-  function findMigration(): string {
+describe('la lista de opcionales no puede derivar del SQL', () => {
+  function findMigration(nombre: string): string {
     let dir = process.cwd();
     for (let i = 0; i < 6; i += 1) {
-      const candidate = join(
-        dir,
-        'supabase/migrations/20261077000000_rv1_revocar_consentimiento.sql',
-      );
+      const candidate = join(dir, 'supabase/migrations', nombre);
       if (existsSync(candidate)) return readFileSync(candidate, 'utf8');
       const parent = dirname(dir);
       if (parent === dir) break;
       dir = parent;
     }
-    throw new Error(`no encuentro la migración de RV-1 subiendo desde ${process.cwd()}`);
+    throw new Error(`no encuentro ${nombre} subiendo desde ${process.cwd()}`);
   }
 
-  it('los NO retirables del SQL son exactamente los que aquí faltan', () => {
-    const sql = findMigration();
-    const cuerpo = sql.slice(sql.indexOf('create or replace function public.revoke_player_consent'));
+  /** Los tipos que el `if` de una función declara PROHIBIDOS. */
+  function prohibidos(migracion: string, funcion: string): string[] {
+    const sql = findMigration(migracion);
+    const cuerpo = sql.slice(sql.indexOf(`create or replace function public.${funcion}`));
     const clausula = cuerpo.slice(cuerpo.indexOf('if p_consent_type in ('));
-    const noRetirables = [
-      ...clausula.slice(0, clausula.indexOf(')')).matchAll(/'([a-z_]+)'/g),
-    ].map((m) => m[1]);
+    return [...clausula.slice(0, clausula.indexOf(')')).matchAll(/'([a-z_]+)'/g)]
+      .map((m) => m[1])
+      .filter((x): x is string => x !== undefined);
+  }
 
-    expect(noRetirables.length).toBeGreaterThan(0);
-    for (const t of noRetirables) {
-      expect(isRevocableConsent(t as never)).toBe(false);
+  it.each([
+    [
+      '20261077000000_rv1_revocar_consentimiento.sql',
+      'revoke_player_consent',
+      isRevocableConsent,
+      REVOCABLE_CONSENT_TYPES,
+    ],
+    [
+      '20261084000000_rv3_conceder_consentimiento.sql',
+      'grant_player_consent',
+      isGrantableConsent,
+      GRANTABLE_CONSENT_TYPES,
+    ],
+  ])('%s: los prohibidos del SQL son exactamente los que aquí faltan', (mig, fn, pred, lista) => {
+    const noPermitidos = prohibidos(mig as string, fn as string);
+    expect(noPermitidos.length).toBeGreaterThan(0);
+    for (const t of noPermitidos) {
+      expect((pred as (x: never) => boolean)(t as never)).toBe(false);
     }
     // Y al revés: ninguno de los que ofrecemos está en la lista prohibida del SQL.
-    for (const t of REVOCABLE_CONSENT_TYPES) {
-      expect(noRetirables).not.toContain(t);
+    for (const t of lista as readonly string[]) {
+      expect(noPermitidos).not.toContain(t);
     }
+  });
+
+  // Retirar y conceder son los MISMOS tres. No es una casualidad que convenga
+  // comprobar: si un día se separan, este test dice dónde mirar.
+  it('las dos listas son la misma', () => {
+    expect([...GRANTABLE_CONSENT_TYPES]).toEqual([...REVOCABLE_CONSENT_TYPES]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RV-3 — la rejilla y la concesión.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const OPCION = {
+  player_id: 'p1',
+  player_name: 'Hijo Uno',
+  consent_type: 'image_internal',
+  state: 'never',
+  decided_at: null,
+  signed_document_id: null,
+  signed_document_title: null,
+  current_document_id: 'doc-vigente',
+  current_document_title: 'Imagen interna v2',
+};
+
+describe('getTutorConsentOptionsFromClient', () => {
+  it('mapea la rejilla tal cual', async () => {
+    const { sb, calls } = makeClient({
+      get_tutor_consent_options: { data: [OPCION], error: null },
+    });
+    expect(await getTutorConsentOptionsFromClient(sb, 'club-1')).toEqual({
+      ok: true,
+      options: [
+        {
+          playerId: 'p1',
+          playerName: 'Hijo Uno',
+          consentType: 'image_internal',
+          state: 'never',
+          decidedAt: null,
+          signedDocumentId: null,
+          signedDocumentTitle: null,
+          currentDocumentId: 'doc-vigente',
+          currentDocumentTitle: 'Imagen interna v2',
+        },
+      ],
+    });
+    expect(calls).toEqual([{ fn: 'get_tutor_consent_options', args: { p_club_id: 'club-1' } }]);
+  });
+
+  it('rejilla vacía es ok:true, NO un error', async () => {
+    const { sb } = makeClient({ get_tutor_consent_options: { data: [], error: null } });
+    expect(await getTutorConsentOptionsFromClient(sb, 'club-1')).toEqual({ ok: true, options: [] });
+  });
+
+  it.each([
+    ['boom', 'error'],
+    ['no_session', 'no_session'],
+  ])('el error %s llega como %s', async (mensaje, esperado) => {
+    const { sb } = makeClient({
+      get_tutor_consent_options: { data: null, error: { message: mensaje } },
+    });
+    expect(await getTutorConsentOptionsFromClient(sb, 'club-1')).toEqual({
+      ok: false,
+      reason: esperado,
+    });
+  });
+
+  /**
+   * El `state` solo lo produce el `case` de la RPC. Si llega otra cosa, el contrato se
+   * ha roto — y el fallo barato («no lo reconozco, lo trato como sin decidir») ofrecería
+   * CONCEDER un permiso cuyo estado real no conocemos. Mejor la tarjeta de fallo.
+   */
+  it('un estado que no existe NO se trata como «sin decidir»', async () => {
+    const { sb } = makeClient({
+      get_tutor_consent_options: {
+        data: [{ ...OPCION, state: 'quizas' }],
+        error: null,
+      },
+    });
+    expect(await getTutorConsentOptionsFromClient(sb, 'club-1')).toEqual({
+      ok: false,
+      reason: 'error',
+    });
+  });
+});
+
+/** Cliente con `from`: el texto a firmar sale de la TABLA, no de una RPC. */
+function makeTableClient(res: { data: unknown; error: { message: string } | null }) {
+  const calls: Array<{ tabla: string; id: unknown }> = [];
+  const sb = {
+    from: (tabla: string) => ({
+      select: () => ({
+        eq: (_col: string, id: unknown) => {
+          calls.push({ tabla, id });
+          return { maybeSingle: () => Promise.resolve(res) };
+        },
+      }),
+    }),
+  } as unknown as SupabaseClient<Database>;
+  return { sb, calls };
+}
+
+describe('getLegalDocumentToSignFromClient', () => {
+  it('lee el texto vigente de la tabla, no de la RPC gateada', async () => {
+    const { sb, calls } = makeTableClient({
+      data: { title: 'Imagen interna v2', body: 'cuerpo' },
+      error: null,
+    });
+    expect(await getLegalDocumentToSignFromClient(sb, 'doc-vigente')).toEqual({
+      ok: true,
+      document: { title: 'Imagen interna v2', body: 'cuerpo' },
+    });
+    expect(calls).toEqual([{ tabla: 'legal_documents', id: 'doc-vigente' }]);
+  });
+
+  // La policy del club decide: un documento de otro club no da error, da cero filas.
+  it('sin fila es not_found, no error', async () => {
+    const { sb } = makeTableClient({ data: null, error: null });
+    expect(await getLegalDocumentToSignFromClient(sb, 'doc-x')).toEqual({
+      ok: false,
+      reason: 'not_found',
+    });
+  });
+
+  it('un fallo de lectura es error', async () => {
+    const { sb } = makeTableClient({ data: null, error: { message: 'boom' } });
+    expect(await getLegalDocumentToSignFromClient(sb, 'doc-1')).toEqual({
+      ok: false,
+      reason: 'error',
+    });
+  });
+});
+
+describe('grantPlayerConsentFromClient', () => {
+  it('concede pasando el documento que la pantalla enseñó', async () => {
+    const { sb, calls } = makeClient({ grant_player_consent: { data: null, error: null } });
+    expect(
+      await grantPlayerConsentFromClient(sb, 'p1', 'image_internal', 'doc-vigente'),
+    ).toEqual({ ok: true });
+    expect(calls).toEqual([
+      {
+        fn: 'grant_player_consent',
+        args: {
+          p_player_id: 'p1',
+          p_consent_type: 'image_internal',
+          p_legal_document_id: 'doc-vigente',
+        },
+      },
+    ]);
+  });
+
+  // Ni siquiera llama: no se pinta un botón que la base va a rechazar. La autoridad
+  // sigue siendo el SQL — esto es interfaz, no seguridad.
+  it('los obligatorios ni se intentan', async () => {
+    const { sb, calls } = makeClient({ grant_player_consent: { data: null, error: null } });
+    expect(await grantPlayerConsentFromClient(sb, 'p1', 'terms_conditions', 'doc-1')).toEqual({
+      ok: false,
+      reason: 'not_grantable',
+    });
+    expect(calls).toEqual([]);
+  });
+
+  it.each([
+    ['forbidden', 'forbidden'],
+    ['no_session', 'no_session'],
+    ['not_grantable', 'not_grantable'],
+    ['no_document', 'no_document'],
+    ['document_changed', 'document_changed'],
+    ['no_active_season', 'no_active_season'],
+    ['algo raro', 'error'],
+  ])('el error %s del SQL llega como %s', async (mensaje, esperado) => {
+    const { sb } = makeClient({
+      grant_player_consent: { data: null, error: { message: mensaje } },
+    });
+    expect(await grantPlayerConsentFromClient(sb, 'p1', 'image_social', 'doc-1')).toEqual({
+      ok: false,
+      reason: esperado,
+    });
   });
 });
