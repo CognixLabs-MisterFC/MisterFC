@@ -20,6 +20,7 @@ import { useCached } from '@/data/use-cached';
 import { useIsOnline } from '@/data/connectivity';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDate, type Translate } from '@/lib/format-date';
 import {
   consentSections,
   consentTypeKey,
@@ -65,6 +66,7 @@ type GrantState = { row: OptionRow; text: DocState };
 
 export function ConsentsCard() {
   const t = useTranslations('consentimientos');
+  const tRoot = useTranslations('');
   const { activeClub } = useApp();
   const { user } = useSession();
   const online = useIsOnline();
@@ -210,7 +212,7 @@ export function ConsentsCard() {
       >
         <Text className="text-sm text-[#0F1B2E]">{row.title}</Text>
         <Text className="text-xs text-zinc-500">
-          {t(row.granted ? 'granted' : 'revoked')} · {formatDate(row.acceptedAt)}
+          {t(row.granted ? 'granted' : 'revoked')} · {formatDate(tRoot, row.acceptedAt)}
         </Text>
         <View className="mt-1 flex-row items-center gap-4">
           <Pressable onPress={() => void verTexto(row.legalDocumentId)}>
@@ -255,7 +257,7 @@ export function ConsentsCard() {
                     <Text className="text-xs text-zinc-500">
                       {row.state === 'never'
                         ? t('not_decided')
-                        : `${t(row.state === 'granted' ? 'granted' : 'revoked')} · ${formatDate(row.decidedAt)}`}
+                        : `${t(row.state === 'granted' ? 'granted' : 'revoked')} · ${formatDate(tRoot, row.decidedAt)}`}
                     </Text>
 
                     {/* El club no ha publicado el texto: no hay nada que aceptar, y no
@@ -449,11 +451,7 @@ export function ConsentsCard() {
   );
 }
 
-const pad = (n: number) => String(n).padStart(2, '0');
-
-/** DD/MM/AAAA, igual que el resto de fechas de la app. */
-function formatDate(iso: string | null): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+/** DD/MM/AAAA del catálogo, con el hueco a salvo: `decided_at` es null si nunca se decidió. */
+function formatDate(t: Translate, iso: string | null): string {
+  return iso ? formatShortDate(t, iso) : '';
 }

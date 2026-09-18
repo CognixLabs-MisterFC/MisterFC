@@ -11,6 +11,7 @@ import { useCached } from '@/data/use-cached';
 import { reportDataError } from '@/lib/report-error';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 
 /**
@@ -70,13 +71,7 @@ export function MatchPickerScreen({ target }: { target: 'alineacion' | 'post-par
                 {m.opponentName ? `  ${t('common.vs')}  ${m.opponentName}` : ''}
               </Text>
               <Text className="mt-0.5 text-xs text-zinc-400" numberOfLines={1}>
-                {new Date(m.startsAt).toLocaleString(undefined, {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {formatShortDateTime(t, m.startsAt)}
                 {m.categoryName ? ` · ${m.categoryName}` : ''}
               </Text>
             </Pressable>

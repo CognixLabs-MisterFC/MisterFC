@@ -30,6 +30,7 @@ import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { SessionPlanEntry } from '@/ui/session-plan-entry';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 
 /**
  * O2-7a — Pasar lista de UNA sesión (staff). Roster + estado actual; cada marca es
@@ -149,7 +150,7 @@ export function AsistenciaSesionScreen({ eventId }: { eventId: string | null }) 
         </Text>
         <Text className="text-xs text-zinc-400" numberOfLines={1}>
           {[
-            new Date(data.event.starts_at).toLocaleString(),
+            formatShortDateTime(t, data.event.starts_at),
             data.event.category_name,
           ]
             .filter(Boolean)

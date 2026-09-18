@@ -12,6 +12,7 @@ import { useCached } from '@/data/use-cached';
 import { reportDataError } from '@/lib/report-error';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 
 /**
  * O2-16 — Lista PARAMETRIZABLE de entrenos pendientes del entrenador. Las dos tareas
@@ -85,7 +86,7 @@ export function StaffPendingTrainingsScreen({ variant }: { variant: Variant }) {
                   {item.team_name}
                 </Text>
                 <Text className="text-xs text-zinc-400" numberOfLines={1}>
-                  {[new Date(item.starts_at).toLocaleString(), item.category_name]
+                  {[formatShortDateTime(t, item.starts_at), item.category_name]
                     .filter(Boolean)
                     .join(' · ')}
                 </Text>

@@ -10,6 +10,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDate } from '@/lib/format-date';
 
 type SessionView = {
   session: SessionForEdit;
@@ -105,7 +106,7 @@ export function SesionDetalleScreen({
           <Text className="text-xs text-zinc-400">
             {[
               session.session_date
-                ? new Date(`${session.session_date}T00:00:00`).toLocaleDateString()
+                ? formatShortDate(t, `${session.session_date}T00:00:00`)
                 : null,
               session.total_minutes != null
                 ? t('mi_equipo.session.minutes', { count: String(session.total_minutes) })

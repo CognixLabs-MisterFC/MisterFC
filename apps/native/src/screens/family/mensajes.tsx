@@ -11,6 +11,7 @@ import { useCached } from '@/data/use-cached';
 import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 
 /** Refresco del inbox (ms). Consistente con la web (polling 5s). */
@@ -109,7 +110,7 @@ function InboxRow({
             {title}
           </Text>
           <Text className="text-xs text-zinc-400" numberOfLines={1}>
-            {new Date(item.lastMessageAt).toLocaleString()}
+            {formatShortDateTime(t, item.lastMessageAt)}
           </Text>
         </View>
       </View>

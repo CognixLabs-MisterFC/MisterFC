@@ -243,12 +243,12 @@
       "pending_callups": "Convocatorias sin publicar",
       "pending_approvals": "Entrenamientos en festivo por aprobar",
       "pending_reports": "Informes pendientes",
-      "reports_pending": "{count} pendientes",
+      "reports_pending": "{count, plural, one {# pendiente} other {# pendientes}}",
       "empty": "Sin pendientes",
       "pending_invitations": "Invitaciones pendientes",
-      "pending_invitations_cta": "{count} invitaciones sin aceptar",
+      "pending_invitations_cta": "{count, plural, one {# invitación sin aceptar} other {# invitaciones sin aceptar}}",
       "pending_erasure": "Supresiones pendientes",
-      "pending_erasure_cta": "{count} supresiones por revisar"
+      "pending_erasure_cta": "{count, plural, one {# supresión por revisar} other {# supresiones por revisar}}"
     },
     "feed": {
       "title": "Novedades",
@@ -386,10 +386,10 @@
     },
     "campaign_alert": {
       "title": "Campañas de evaluación abiertas ({count})",
-      "item": "{period}: {count} informes pendientes",
-      "due": "Fecha límite: {date} · quedan {days} días",
-      "due_soon": "¡Quedan {days} días! · {date}",
-      "overdue_days": "Vencida hace {days} días · {date}",
+      "item": "{period}: {count, plural, one {# informe pendiente} other {# informes pendientes}}",
+      "due": "Fecha límite: {date} · {days, plural, one {queda # día} other {quedan # días}}",
+      "due_soon": "{days, plural, one {¡Queda # día!} other {¡Quedan # días!}} · {date}",
+      "overdue_days": "{days, plural, one {Vencida hace # día} other {Vencida hace # días}} · {date}",
       "cta": "Ir a redactar"
     },
     "no_access": {
@@ -788,7 +788,7 @@
     },
     "division_regime": {
       "rolling": "Cambios corridos",
-      "limited": "{max} cambios"
+      "limited": "{max, plural, one {# cambio} other {# cambios}}"
     },
     "title": "Equipos",
     "page_subtitle": "Equipos del club por temporada.",
@@ -1266,7 +1266,7 @@
       "publish_all": "Publicar todo",
       "publish_all_hint": "Publica a las familias los informes completos del periodo. Los incompletos no se publican.",
       "publish_all_confirm_title": "¿Publicar los informes del periodo?",
-      "publish_all_confirm_body": "Se publicarán {done} informes completos a las familias. {pending} quedarán sin publicar por estar incompletos. Esta acción no se puede deshacer.",
+      "publish_all_confirm_body": "{done, plural, one {Se publicará # informe completo} other {Se publicarán # informes completos}} a las familias. {pending, plural, one {# quedará sin publicar por estar incompleto} other {# quedarán sin publicar por estar incompletos}}. Esta acción no se puede deshacer.",
       "publish_all_cancel": "Cancelar",
       "publish_all_confirm": "Publicar todo"
     },
@@ -1291,7 +1291,7 @@
       },
       "confirm": {
         "title": "Invitar por email",
-        "body": "¿Invitar a {count} personas? Se envía un email por familia (uno solo aunque haya varios hijos).",
+        "body": "{count, plural, one {¿Invitar a # persona?} other {¿Invitar a # personas?}} Se envía un email por familia (uno solo aunque haya varios hijos).",
         "cancel": "Cancelar",
         "send": "Invitar"
       },
@@ -1795,7 +1795,7 @@
       "invalid": "Inválidas"
     },
     "preview": {
-      "truncated": "+{count} filas más se procesan igual aunque no se muestren aquí.",
+      "truncated": "{count, plural, one {+# fila más se procesa igual aunque no se muestre aquí.} other {+# filas más se procesan igual aunque no se muestren aquí.}}",
       "unmapped_headers": "Columnas no reconocidas (se ignoran): {headers}",
       "required_legend": "Obligatorios: Nombre completo, Fecha de nacimiento y Email. Equipo es opcional: si lo dejas vacío se usa el equipo del selector de lote.",
       "editable_hint": "Puedes corregir cualquier fila con error editándola aquí; se revalida al momento."
@@ -1808,7 +1808,7 @@
     },
     "action": {
       "back": "Volver",
-      "confirm": "Importar {count} jugadores"
+      "confirm": "{count, plural, one {Importar # jugador} other {Importar # jugadores}}"
     },
     "col": {
       "first_name": "Nombre completo",
@@ -1965,7 +1965,7 @@
         "end_until": "Hasta una fecha",
         "count_label": "Número de semanas",
         "until_label": "Hasta el (inclusive)",
-        "preview": "{count} ocurrencias se crearán al guardar.",
+        "preview": "{count, plural, one {Se creará # ocurrencia al guardar.} other {Se crearán # ocurrencias al guardar.}}",
         "day_short": {
           "0": "L",
           "1": "M",
@@ -2144,7 +2144,10 @@
         "10": "noviembre",
         "11": "diciembre"
       },
-      "long": "{weekday}, {day} de {month}"
+      "long": "{weekday}, {day} de {month}",
+      "numeric": "{day}/{month}/{year}",
+      "numeric_time": "{date}, {time}",
+      "day_month_year": "{day} {month} {year}"
     },
     "season": {
       "tabs": {
@@ -2330,7 +2333,7 @@
       "by_category": "Por categoría",
       "by_team": "Por equipo",
       "empty": "Aún no hay equipos en la temporada activa.",
-      "previous_total": "Temporada {season}: {count} jugadores",
+      "previous_total": "Temporada {season}: {count, plural, one {# jugador} other {# jugadores}}",
       "no_previous": "Sin temporada anterior con la que comparar.",
       "links": {
         "players": "Ver plantilla completa",
@@ -2397,8 +2400,8 @@
       "low_attendance": "Baja asistencia ({count})",
       "inactive": "Jugadores inactivos ({count})",
       "campaigns": "Campañas de evaluación por vencer ({count})",
-      "campaign_soon": "Quedan {days} días · {pending} informes pendientes en {teams} equipos",
-      "campaign_overdue": "Vencida hace {days} días · {pending} informes pendientes en {teams} equipos",
+      "campaign_soon": "{days, plural, one {Queda # día} other {Quedan # días}} · {pending, plural, one {# informe pendiente} other {# informes pendientes}} en {teams, plural, one {# equipo} other {# equipos}}",
+      "campaign_overdue": "{days, plural, one {Vencida hace # día} other {Vencida hace # días}} · {pending, plural, one {# informe pendiente} other {# informes pendientes}} en {teams, plural, one {# equipo} other {# equipos}}",
       "campaign_link": "Gestionar campaña",
       "col": {
         "player": "Jugador",
@@ -2655,7 +2658,7 @@
     },
     "stats": {
       "title": "Estadísticas de asistencia",
-      "subtitle": "{total} registros en el rango seleccionado.",
+      "subtitle": "{total, plural, one {# registro} other {# registros}} en el rango seleccionado.",
       "by_code": "Por código",
       "by_player": "Por jugador",
       "player": "Jugador",
@@ -2831,7 +2834,7 @@
         "cannot_unpublish": "Una vez publicada, no se puede dejar como borrador.",
         "forbidden": "No tienes permiso para publicar esta convocatoria.",
         "generic": "No se pudo guardar. Reintenta.",
-        "too_many_called_up": "Hay {overflow} convocado(s) de más (máx {max}). Descarta jugadores antes de publicar."
+        "too_many_called_up": "{overflow, plural, one {Hay # convocado de más} other {Hay # convocados de más}} (máx {max}). Descarta jugadores antes de publicar."
       },
       "go_to_editor": "Ir al editor de alineación"
     },
@@ -3192,7 +3195,7 @@
     },
     "nav_staff": "Cuerpo técnico",
     "staff_empty": "Sin cuerpo técnico asignado",
-    "frames": "{count} frames",
+    "frames": "{count, plural, one {# frame} other {# frames}}",
     "nav_plantilla": "Plantilla",
     "nav_sesiones": "Sesiones",
     "teammates_empty": "Sin compañeros todavía",
@@ -3267,8 +3270,8 @@
     "confirm_published_body": "La convocatoria ya está publicada. ¿Aplicar también los cambios de convocados/descartes a la convocatoria?",
     "cancel": "Cancelar",
     "confirm_apply": "Aplicar",
-    "auto_discarded": "{n} marcado(s) como no convocado",
-    "auto_called_up": "{n} marcado(s) como convocado",
+    "auto_discarded": "{n, plural, one {# marcado como no convocado} other {# marcados como no convocados}}",
+    "auto_called_up": "{n, plural, one {# marcado como convocado} other {# marcados como convocados}}",
     "resync_done": "Resincronizado: {out} a fuera, {bench} a banquillo",
     "official_lineup_title": "Alineación oficial",
     "share_hint": "Actívalo para que jugadores y familias vean esta alineación oficial. Las notas tácticas siempre quedan ocultas.",
@@ -3306,7 +3309,7 @@
     "empty": "Aún no tienes formaciones. Crea una con «Nueva formación».",
     "builder_hint": "Arrastra cada posición sobre el campo. Toca una para cambiar su código.",
     "select_chip_hint": "Toca una posición del campo para editar su código.",
-    "positions_count": "{count} posiciones",
+    "positions_count": "{count, plural, one {# posición} other {# posiciones}}",
     "filter": {
       "all": "Todas"
     },
@@ -3389,7 +3392,7 @@
     "panel_own_title": "Tu equipo",
     "panel_rival_title": "Equipo rival",
     "panel_rival_hint": "Los eventos del rival se registran por dorsal (próxima entrega).",
-    "panel_own_hint": "{count} jugadores en el campo.",
+    "panel_own_hint": "{count, plural, one {# jugador en el campo.} other {# jugadores en el campo.}}",
     "landscape_hint": "Gira el dispositivo en horizontal para registrar mejor.",
     "friendly_note": "Amistoso · la toma de datos funciona igual que en un partido.",
     "scope_note": "Pantalla de captura en directo. El registro de eventos se activa en las siguientes entregas.",
@@ -3552,14 +3555,14 @@
     "subs_count": "Cambios {n}/{max}",
     "timeline": {
       "title": "Línea de tiempo",
-      "count": "· {n} eventos",
+      "count": "· {n, plural, one {# evento} other {# eventos}}",
       "empty": "Aún no hay eventos.",
       "hint": "Edita el minuto o el jugador, borra o añade un evento olvidado. Minutos, marcador y contadores se recalculan solos.",
       "add": "Añadir evento",
       "add_cancel": "Cancelar",
       "add_submit": "Añadir",
       "error": "No se pudo guardar",
-      "issues_title": "{n} aviso(s) de coherencia",
+      "issues_title": "{n, plural, one {# aviso de coherencia} other {# avisos de coherencia}}",
       "side_own": "Nuestro",
       "side_rival": "Rival",
       "edit": "Editar",
@@ -4112,7 +4115,7 @@
     "empty_history": "Aún no hay entrenamientos pasados esta temporada.",
     "attendance_label": "Tu asistencia",
     "attendance_none": "Sin registro de asistencia",
-    "history_show_more": "Ver los {count} anteriores",
+    "history_show_more": "{count, plural, one {Ver el # anterior} other {Ver los # anteriores}}",
     "history_show_less": "Ver menos"
   },
   "planificacion": {
@@ -5268,10 +5271,10 @@
     "type_red": "Roja",
     "type_sub": "Cambio",
     "type_yellow": "Amarilla",
-    "failed": "{count} no se pudieron guardar",
+    "failed": "{count, plural, one {# no se pudo guardar} other {# no se pudieron guardar}}",
     "no_bench": "No hay suplentes disponibles",
     "no_field_players": "No hay jugadores en el campo",
-    "pending": "{count} sin subir · se subirán al reconectar",
+    "pending": "{count, plural, one {# sin subir · se subirá al reconectar} other {# sin subir · se subirán al reconectar}}",
     "pick_in": "Entra…",
     "pick_out": "Sale…",
     "pick_player": "Toca al jugador",
@@ -5492,7 +5495,7 @@
     "done_back": "Ir al inicio de sesión",
     "pending_title": "Tu cuenta está en proceso de eliminación",
     "pending_body": "Se eliminará como muy tarde el {date}. Ya no tienes acceso a ningún club y no recibirás avisos.",
-    "pending_players": "Quedan {count} solicitudes de supresión pendientes de que las decida el club.",
+    "pending_players": "{count, plural, one {Queda # solicitud de supresión pendiente de que la decida el club.} other {Quedan # solicitudes de supresión pendientes de que las decida el club.}}",
     "cancel_deletion": "Cancelar la eliminación",
     "errors": {
       "no_session": "Tu sesión ha caducado. Vuelve a entrar.",

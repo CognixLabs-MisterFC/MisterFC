@@ -11,6 +11,7 @@ import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 
 /**
  * O2-7b-1 — Convocatorias del staff (ARMAR): partidos próximos del scope del user
@@ -115,7 +116,7 @@ export function ConvocatoriasStaffListScreen({
               </View>
               <Text className="mt-1 text-xs text-zinc-400" numberOfLines={1}>
                 {[
-                  new Date(item.starts_at).toLocaleString(),
+                  formatShortDateTime(t, item.starts_at),
                   item.team_name,
                   item.category_name,
                 ]

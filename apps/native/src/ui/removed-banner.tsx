@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 import { useApp } from '@/auth/context';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDate } from '@/lib/format-date';
 
 /**
  * Baja de miembros (4c) — banner informativo en las pantallas SIN club (none/spectator).
@@ -15,17 +16,10 @@ import { useTranslations } from '@/locale/provider';
  *
  * NUNCA muestra la razón de la baja: la RPC ni la devuelve.
  */
-const pad = (n: number) => String(n).padStart(2, '0');
-
-/** Fecha de baja como DD/MM/AAAA (determinista, sin depender del idioma del dispositivo). */
-function formatLeftAt(isoDate: string): string {
-  const d = new Date(`${isoDate}T00:00:00`);
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
-}
-
 export function RemovedBanner({ variant }: { variant: 'member' | 'spectator' }) {
   const { removedMemberships } = useApp();
   const t = useTranslations('membership_removed');
+  const tRoot = useTranslations('');
 
   if (removedMemberships.length === 0) return null;
 
@@ -43,7 +37,7 @@ export function RemovedBanner({ variant }: { variant: 'member' | 'spectator' }) 
             {t(titleKey, { club: m.club_name })}
           </Text>
           <Text className="text-xs text-amber-800">
-            {t(bodyKey, { club: m.club_name, date: formatLeftAt(m.left_at) })}
+            {t(bodyKey, { club: m.club_name, date: formatShortDate(tRoot, `${m.left_at}T00:00:00`) })}
           </Text>
         </View>
       ))}

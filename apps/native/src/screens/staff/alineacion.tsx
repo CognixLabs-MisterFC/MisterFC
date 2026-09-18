@@ -27,6 +27,7 @@ import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feed
 import { LineupBoard, type DropTargetLite } from '@/ui/lineup-field';
 import { MatchPickerScreen } from '@/screens/staff/match-picker';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 
 /**
@@ -294,7 +295,7 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
             </Text>
           </View>
           <Text className="mt-1 text-xs text-zinc-400" numberOfLines={1}>
-            {[new Date(e.startsAt).toLocaleString(), e.teamName, e.categoryName]
+            {[formatShortDateTime(t, e.startsAt), e.teamName, e.categoryName]
               .filter(Boolean)
               .join(' · ')}
           </Text>

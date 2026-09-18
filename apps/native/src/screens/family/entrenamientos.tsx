@@ -15,19 +15,9 @@ import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { ChildSelector } from '@/ui/child-selector';
 import { BRAND } from '@/theme';
-
-/** Día + hora sin segundos (mismo criterio que el resto de la app: `toLocaleString`). */
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
-    day: 'numeric',
-    month: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
 
 type Data = {
   /** Todos los entrenos de la temporada (asc); se parten en próximos/histórico. */
@@ -287,6 +277,8 @@ function TrainingRow({
   untitled: string;
   attendance?: string | null;
 }) {
+  const t = useTranslations('');
+
   return (
     <Pressable
       onPress={onPress}
@@ -304,7 +296,7 @@ function TrainingRow({
       </View>
       <View className="mt-0.5 flex-row items-center justify-between gap-2">
         <Text className="flex-1 text-xs text-zinc-400" numberOfLines={1}>
-          {[formatDateTime(row.starts_at), row.location_name].filter(Boolean).join(' · ')}
+          {[formatShortDateTime(t, row.starts_at), row.location_name].filter(Boolean).join(' · ')}
         </Text>
         {attendance ? (
           <View className="rounded-full bg-zinc-100 px-2 py-0.5">

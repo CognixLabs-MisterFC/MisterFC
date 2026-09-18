@@ -16,6 +16,7 @@ import { useForegroundPoll } from '@/hooks/use-foreground-poll';
 import { callServerEndpoint } from '@/lib/server-api';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
 import { appLocale, useTranslations } from '@/locale/provider';
+import { formatShortDateTime } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 import { Composer } from '@/screens/family/mensaje-detalle';
 
@@ -130,6 +131,8 @@ function Bubble({
   mine: boolean;
   accent: string;
 }) {
+  const t = useTranslations('');
+
   return (
     <View className={mine ? 'items-end' : 'items-start'}>
       <View
@@ -141,7 +144,7 @@ function Bubble({
         </Text>
       </View>
       <Text className="mt-0.5 text-[10px] text-zinc-400">
-        {new Date(message.created_at).toLocaleString()}
+        {formatShortDateTime(t, message.created_at)}
       </Text>
     </View>
   );

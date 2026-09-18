@@ -11,6 +11,7 @@ import { useCached } from '@/data/use-cached';
 import { SpectatorPlayerSelector } from '@/ui/spectator-player-selector';
 import { OfflineBanner, EmptyState, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { formatShortDate } from '@/lib/format-date';
 
 type MatchStatItem = { match: ClosedTeamMatch; row: FamilyMatchStatRow | null };
 
@@ -78,7 +79,7 @@ function MatchStatCard({ match, row }: MatchStatItem) {
         </Text>
       </View>
       <Text className="mt-0.5 text-xs text-zinc-400">
-        {[new Date(match.startsAt).toLocaleDateString(), match.categoryName].filter(Boolean).join(' · ')}
+        {[formatShortDate(t, match.startsAt), match.categoryName].filter(Boolean).join(' · ')}
       </Text>
 
       {row ? (
