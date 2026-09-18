@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { loadSessionForEdit, loadSessionExerciseMeta } from '../../../sesiones/queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = { params: Promise<{ locale: string; id: string }> };
 
@@ -44,7 +45,7 @@ export default async function MiEquipoSesionPage({ params }: Props) {
   const tTechnical = await getTranslations('ejercicios.technical');
 
   const dateLabel = session.session_date
-    ? new Date(`${session.session_date}T00:00:00`).toLocaleDateString(locale, {
+    ? new Date(`${session.session_date}T00:00:00`).toLocaleDateString(intlLocale(locale), {
         weekday: 'long',
         day: 'numeric',
         month: 'long',

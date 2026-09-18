@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { loadSharedSessionsForTeams } from '../../sesiones/queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -117,7 +118,7 @@ export default async function PlanificacionPage({ params }: Props) {
                       <span>
                         {new Date(
                           `${s.session_date}T00:00:00`,
-                        ).toLocaleDateString(locale)}
+                        ).toLocaleDateString(intlLocale(locale))}
                       </span>
                       {s.total_minutes != null && (
                         <span className="inline-flex items-center gap-1">

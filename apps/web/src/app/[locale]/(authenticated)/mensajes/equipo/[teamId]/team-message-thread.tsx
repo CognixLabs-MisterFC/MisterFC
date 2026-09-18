@@ -13,6 +13,7 @@ import {
   CHAT_POLL_INTERVAL_MS,
 } from '@/hooks/use-chat-polling';
 import { sendTeamMessage, fetchTeamMessages } from '../../actions';
+import { intlLocale } from '@/lib/intl-locale';
 
 export type TeamMessage = {
   id: string;
@@ -152,7 +153,7 @@ export function TeamMessageThread({
                   <p className="whitespace-pre-wrap break-words">{m.body}</p>
                 </div>
                 <span className="mt-0.5 text-[10px] text-muted-foreground">
-                  {new Date(m.created_at).toLocaleTimeString(locale, {
+                  {new Date(m.created_at).toLocaleTimeString(intlLocale(locale), {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}

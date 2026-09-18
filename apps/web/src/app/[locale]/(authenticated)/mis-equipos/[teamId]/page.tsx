@@ -42,6 +42,7 @@ import {
 import { HubGridCards, type HubGridItem } from '@/components/shell/hub-grid';
 import { loadTeamDetail } from '../queries';
 import { PositionFilter } from './position-filter';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string; teamId: string }>;
@@ -64,7 +65,7 @@ function ageFromDob(dob: string): number {
 }
 
 function formatDateTime(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: 'short',
     day: '2-digit',
     month: 'short',

@@ -17,6 +17,7 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
+import { intlLocale } from '@/lib/intl-locale';
 
 type ActionResult = {
   error?: 'invalid' | 'forbidden' | 'no_campaign' | 'not_launched' | 'already_open' | 'generic';
@@ -171,7 +172,7 @@ async function notifyCoachesLaunched(
   const t = await getTranslations({ locale, namespace: 'informes.campaign_alert' });
   const tPeriod = await getTranslations({ locale, namespace: 'informes.period' });
   const periodLabel = tPeriod(period as 'inicial');
-  const dueLabel = new Intl.DateTimeFormat(locale, {
+  const dueLabel = new Intl.DateTimeFormat(intlLocale(locale), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

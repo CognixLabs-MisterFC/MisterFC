@@ -27,6 +27,7 @@ import {
   loadPlayerPendingCallup,
   type CoachMatchState,
 } from './next-match-queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 const COACH_ROLES = new Set<string>(CORE_COACH_ROLES);
 
@@ -46,7 +47,7 @@ function ctaHref(state: CoachMatchState, eventId: string): string | null {
 }
 
 function fmtDate(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: 'long',
     day: 'numeric',
     month: 'short',

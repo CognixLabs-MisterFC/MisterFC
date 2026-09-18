@@ -23,7 +23,7 @@
  */
 
 import { useCallback, useRef, useState, useSyncExternalStore, useTransition } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   Plus,
@@ -92,6 +92,7 @@ import { usePlayback, PLAYBACK_SPEEDS } from './use-playback';
 import { PlayDeleteButton } from './play-delete-button';
 import { PlayCycleActions } from './play-cycle-actions';
 import { PlaybackFullscreen } from './playback-fullscreen';
+import { intlLocale } from '@/lib/intl-locale';
 
 // Estado → variante visual del badge (la etiqueta se localiza por i18n).
 const STATUS_VARIANT: Record<
@@ -176,6 +177,7 @@ export function PlayEditor({
   isApprover?: boolean;
 }) {
   const t = useTranslations('jugadas');
+  const locale = useLocale();
   const tStatus = useTranslations('jugadas.status');
   const tStrategy = useTranslations('jugadas.strategy');
   const router = useRouter();
@@ -426,7 +428,7 @@ export function PlayEditor({
           {initial.approved_by_name
             ? t('detail.approved_by_at', {
                 name: initial.approved_by_name,
-                date: new Date(initial.approved_at).toLocaleDateString(),
+                date: new Date(initial.approved_at).toLocaleDateString(intlLocale(locale)),
               })
             : t('detail.published_note')}
         </p>

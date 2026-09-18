@@ -16,6 +16,7 @@ import { daysUntil, deadlineState } from '@misterfc/core';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
 import { loadCampaignAlerts } from './campaign-alert-queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   role: string;
@@ -34,7 +35,7 @@ export async function CampaignAlertPanel({ role, clubId, membershipId, locale }:
     new Date(),
   );
   const fmtDate = (ymd: string) =>
-    new Intl.DateTimeFormat(locale, {
+    new Intl.DateTimeFormat(intlLocale(locale), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',

@@ -42,6 +42,7 @@ import { SharedLineupSection } from '@/components/match/shared-lineup-section';
 import { NoAppBadge } from '@/components/no-app-badge';
 import { loadCallupDetail } from '../queries';
 import type { Role } from '../../jugadores/queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string; eventId: string }>;
@@ -50,7 +51,7 @@ type Props = {
 const ALLOWED: ReadonlyArray<Role> = ALL_CLUB_ROLES;
 
 function fmtDate(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: 'long',
     day: 'numeric',
     month: 'short',

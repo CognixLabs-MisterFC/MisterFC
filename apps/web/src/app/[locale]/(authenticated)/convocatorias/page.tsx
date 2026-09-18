@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { MarkNotificationsRead } from '@/components/notifications/mark-notifications-read';
 import { loadUpcomingCallups, type CallupMatchRow } from './queries';
 import type { Role } from '../jugadores/queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -29,7 +30,7 @@ type Props = {
 const ALLOWED: ReadonlyArray<Role> = ALL_CLUB_ROLES;
 
 function fmtDate(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',

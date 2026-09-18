@@ -17,6 +17,7 @@ import { loadPlays, PLAYS_PAGE_SIZE, type PlayStatusFilter } from './queries';
 import { PlayDeleteButton } from './_components/play-delete-button';
 import { PlaysSearchInput } from './_components/plays-search-input';
 import { PlayStatusSelect } from './_components/play-status-select';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -41,9 +42,6 @@ const STATUS_VALUES: ReadonlyArray<PlayStatusFilter> = [
   'rejected',
   'archived',
 ];
-
-// Intl no conoce 'va' (valenciano); cae a catalán para formatear fechas.
-const INTL_LOCALE: Record<string, string> = { es: 'es-ES', en: 'en-GB', va: 'ca-ES' };
 
 function normalizePage(v: string | undefined): number {
   const n = v != null ? parseInt(v, 10) : 1;
@@ -84,7 +82,7 @@ export default async function JugadasPage({ params, searchParams }: Props) {
   const result = await loadPlays(clubId, { search, status }, page, isReview);
   const totalPages = Math.max(1, Math.ceil(result.total / PLAYS_PAGE_SIZE));
   const hasFilters = search.length > 0 || status != null;
-  const fmt = new Intl.DateTimeFormat(INTL_LOCALE[locale] ?? 'es-ES', {
+  const fmt = new Intl.DateTimeFormat(intlLocale(locale), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

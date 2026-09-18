@@ -29,6 +29,7 @@ import { TrainingAlertPanel } from './training-alert-panel';
 import { CampaignAlertPanel } from './campaign-alert-panel';
 import { NotificationsPanel } from './notifications-panel';
 import { DireccionHome } from './direccion-home';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -297,7 +298,7 @@ export default async function Home({ params, searchParams }: Props) {
                           ? t('cards.announcements.club_wide')
                           : (a.teams?.name ?? '—')}
                         {' · '}
-                        {new Date(a.created_at).toLocaleDateString(locale)}
+                        {new Date(a.created_at).toLocaleDateString(intlLocale(locale))}
                       </span>
                     </Link>
                   </li>
@@ -336,7 +337,7 @@ export default async function Home({ params, searchParams }: Props) {
                         <span className="text-xs text-muted-foreground">
                           {t(`cards.upcoming.kind.${e.type}`)}
                           {' · '}
-                          {new Date(e.starts_at).toLocaleString(locale)}
+                          {new Date(e.starts_at).toLocaleString(intlLocale(locale))}
                           {/* El loader de core ya aplana `teams(name)` a `teamName`. */}
                           {e.teamName && ` · ${e.teamName}`}
                         </span>

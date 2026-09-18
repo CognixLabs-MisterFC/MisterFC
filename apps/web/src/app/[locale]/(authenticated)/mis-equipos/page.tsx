@@ -23,6 +23,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { loadCoachTeams } from './queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -34,7 +35,7 @@ type Props = {
 const MIS_EQUIPOS_ROLES: readonly Role[] = [...COACH_ROLES, 'coordinador'];
 
 function formatDateTime(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: 'short',
     day: '2-digit',
     month: 'short',

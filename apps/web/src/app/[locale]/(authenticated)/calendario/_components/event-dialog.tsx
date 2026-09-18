@@ -61,6 +61,7 @@ import type {
 import { EventDeleteDialog } from './event-delete-dialog';
 import { EventCancelControls } from './event-cancel-dialog';
 import { EventApprovalControls } from './event-approval-dialog';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Mode = 'new' | 'edit';
 
@@ -387,7 +388,7 @@ export function EventDialog({
         }
         // F14F-3 — al crear una serie, informa de los días omitidos por festivo.
         if (mode === 'new' && result.skipped_holidays?.length) {
-          const fmt = new Intl.DateTimeFormat(locale, {
+          const fmt = new Intl.DateTimeFormat(intlLocale(locale), {
             day: 'numeric',
             month: 'short',
           });

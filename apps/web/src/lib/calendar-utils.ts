@@ -6,6 +6,7 @@
  * para construir cuadrículas. Coherente con el patrón de packages/core
  * (events/tz.ts) y mantiene el bundle al mínimo (ver ADR-0006).
  */
+import { intlLocale } from '@/lib/intl-locale';
 
 import {
   fromZonedFields,
@@ -211,16 +212,6 @@ export function eventLocalDay(startsAtIso: string, tz: string = TIMEZONE_OLA1): 
 // ─────────────────────────────────────────────────────────────────────────────
 // Formato
 // ─────────────────────────────────────────────────────────────────────────────
-
-const intlLocaleMap: Record<string, string> = {
-  es: 'es-ES',
-  en: 'en-GB',
-  va: 'ca-ES', // valenciano comparte el ISO con catalán
-};
-
-function intlLocale(locale: string): string {
-  return intlLocaleMap[locale] ?? locale;
-}
 
 export function formatMonthLong(
   day: LocalDay,

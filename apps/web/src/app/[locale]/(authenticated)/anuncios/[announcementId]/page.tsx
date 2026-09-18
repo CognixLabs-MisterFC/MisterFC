@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DeleteAnnouncementButton } from './delete-announcement-button';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string; announcementId: string }>;
@@ -97,7 +98,7 @@ export default async function AnnouncementDetailPage({ params }: Props) {
               {' · '}
               {a.profiles.full_name ?? '—'}
               {' · '}
-              {new Date(a.created_at).toLocaleString(locale)}
+              {new Date(a.created_at).toLocaleString(intlLocale(locale))}
             </p>
           </div>
           {canDelete && (
@@ -114,7 +115,7 @@ export default async function AnnouncementDetailPage({ params }: Props) {
           </p>
           {a.expires_at && (
             <p className="mt-4 text-xs text-muted-foreground">
-              {t('expires_at')}: {new Date(a.expires_at).toLocaleString(locale)}
+              {t('expires_at')}: {new Date(a.expires_at).toLocaleString(intlLocale(locale))}
             </p>
           )}
         </CardContent>

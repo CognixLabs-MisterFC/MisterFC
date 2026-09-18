@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/card';
 import { GlobalAnnouncementForm } from './global-announcement-form';
 import { MarkNotificationsRead } from '@/components/notifications/mark-notifications-read';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -280,7 +281,7 @@ export default async function AnunciosGlobalesPage({
                     <p className="text-xs text-muted-foreground">
                       {a.team_id ? a.teams?.name ?? '—' : t('badge.club_wide')}
                       {' · '}
-                      {new Date(a.created_at).toLocaleString(locale)}
+                      {new Date(a.created_at).toLocaleString(intlLocale(locale))}
                     </p>
                   </Link>
                 </li>
