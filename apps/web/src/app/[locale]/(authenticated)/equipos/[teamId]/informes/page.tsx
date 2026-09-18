@@ -46,6 +46,7 @@ import {
   loadTeamReportScores,
   loadPlayerScoresByPlayer,
 } from './queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string; teamId: string }>;
@@ -122,7 +123,7 @@ export default async function TeamReportsPage({ params, searchParams }: Props) {
   );
   const dState = deadlineYmd ? deadlineState(daysUntil(deadlineYmd, todayMadrid)) : null;
   const deadlineLabel = deadlineYmd
-    ? new Intl.DateTimeFormat(locale, {
+    ? new Intl.DateTimeFormat(intlLocale(locale), {
         day: 'numeric',
         month: 'short',
         year: 'numeric',

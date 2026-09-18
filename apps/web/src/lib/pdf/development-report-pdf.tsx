@@ -33,6 +33,7 @@ import type {
   TeamPeriodAverages,
   ObjectiveRow,
 } from '@/app/[locale]/(authenticated)/jugadores/[playerId]/informes/queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 const NA = '—';
 const BORDER = '#E2E8F0';
@@ -391,7 +392,7 @@ export function DevelopmentReportPdfDocument(
       );
   }
   const fmtPromoDate = (iso: string) =>
-    new Intl.DateTimeFormat(props.locale, {
+    new Intl.DateTimeFormat(intlLocale(props.locale), {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',

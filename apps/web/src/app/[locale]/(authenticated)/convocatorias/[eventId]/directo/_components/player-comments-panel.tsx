@@ -29,6 +29,7 @@ import {
   deletePlayerNote,
   updatePlayerNote,
 } from '../../../../jugadores/player-notes-actions';
+import { intlLocale } from '@/lib/intl-locale';
 
 export function PlayerCommentsPanel({
   eventId,
@@ -74,7 +75,7 @@ export function PlayerCommentsPanel({
   };
 
   const fmtDate = (iso: string) =>
-    new Intl.DateTimeFormat(locale, {
+    new Intl.DateTimeFormat(intlLocale(locale), {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',

@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   eventId: string;
@@ -64,7 +65,7 @@ export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
   const [teamFilter, setTeamFilter] = useState<string>('');
 
   function fmt(iso: string): string {
-    return new Intl.DateTimeFormat(locale, {
+    return new Intl.DateTimeFormat(intlLocale(locale), {
       weekday: 'short',
       day: 'numeric',
       month: 'short',
@@ -151,7 +152,7 @@ export function PromotePlayerDialog({ eventId, locale, onDone }: Props) {
   // PASO 2 — filtro del picker: equipos base distintos + búsqueda por nombre.
   const teams = Array.from(
     new Set(candidates.map((c) => c.base_team_name).filter((n): n is string => !!n)),
-  ).sort((a, b) => a.localeCompare(b, locale, { sensitivity: 'base' }));
+  ).sort((a, b) => a.localeCompare(b, intlLocale(locale), { sensitivity: 'base' }));
   const q = search.trim().toLowerCase();
   const filtered = candidates.filter((c) => {
     const name = `${c.first_name} ${c.last_name ?? ''}`.toLowerCase();

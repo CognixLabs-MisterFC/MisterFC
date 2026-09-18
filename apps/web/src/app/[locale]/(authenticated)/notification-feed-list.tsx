@@ -8,18 +8,19 @@
 
 import { NotificationItemLink } from '@/components/notifications/notification-item-link';
 import type { MappedNotification } from './notifications-feed';
+import { intlLocale } from '@/lib/intl-locale';
 
 /** Fecha relativa compacta ("hace 5 min", "ayer"…) con caída a fecha corta. */
 function fmtRelative(iso: string, locale: string): string {
   const diffMs = new Date(iso).getTime() - Date.now();
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: 'auto', style: 'short' });
+  const rtf = new Intl.RelativeTimeFormat(intlLocale(locale), { numeric: 'auto', style: 'short' });
   const min = Math.round(diffMs / 60000);
   if (Math.abs(min) < 60) return rtf.format(min, 'minute');
   const hours = Math.round(diffMs / 3600000);
   if (Math.abs(hours) < 24) return rtf.format(hours, 'hour');
   const days = Math.round(diffMs / 86400000);
   if (Math.abs(days) < 7) return rtf.format(days, 'day');
-  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(new Date(iso));
+  return new Intl.DateTimeFormat(intlLocale(locale), { day: 'numeric', month: 'short' }).format(new Date(iso));
 }
 
 export function NotificationFeedList({

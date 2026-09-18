@@ -17,9 +17,10 @@ import {
 } from '@/components/ui/card';
 import { PlanSessionDialog } from './calendario/_components/plan-session-dialog';
 import { loadTrainingsWithoutSession } from './training-alert-queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 function fmtDate(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: 'long',
     day: 'numeric',
     month: 'short',

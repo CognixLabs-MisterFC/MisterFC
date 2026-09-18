@@ -12,6 +12,7 @@ import { DiagramFullscreenViewer } from './_components/diagram-fullscreen-viewer
 import { ExerciseActions } from '../_components/exercise-actions';
 import { ExerciseExportButton } from '../_components/exercise-export-button';
 import { loadExercise } from '../queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string; id: string }>;
@@ -202,7 +203,7 @@ export default async function EjercicioDetailPage({ params }: Props) {
                   ? tDetail('approved_by_at', {
                       name: exercise.approved_by_name,
                       date: exercise.approved_at
-                        ? new Date(exercise.approved_at).toLocaleDateString(locale)
+                        ? new Date(exercise.approved_at).toLocaleDateString(intlLocale(locale))
                         : '—',
                     })
                   : tDetail('published_note')}

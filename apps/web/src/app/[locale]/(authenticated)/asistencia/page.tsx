@@ -36,6 +36,7 @@ import {
   type StatsRange,
 } from './queries';
 import type { Role } from '../jugadores/queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -58,7 +59,7 @@ function parseRange(v: string | undefined): StatsRangePreset {
 }
 
 function fmtShortDate(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',

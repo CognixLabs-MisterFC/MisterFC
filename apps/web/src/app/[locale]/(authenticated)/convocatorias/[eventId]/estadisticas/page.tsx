@@ -15,6 +15,7 @@ import { MatchTimeline } from '@/components/match/match-timeline';
 import { loadMatchStats } from './queries';
 import { PlayerStatsTable } from './_components/player-stats-table';
 import type { Role } from '../../../jugadores/queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 // Vista de consulta; se hidrata del estado real (stats consolidadas) al entrar.
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,7 @@ type Props = {
 
 function fmtDate(iso: string, locale: string): string {
   try {
-    return new Intl.DateTimeFormat(locale, {
+    return new Intl.DateTimeFormat(intlLocale(locale), {
       day: '2-digit',
       month: 'short',
       year: 'numeric',

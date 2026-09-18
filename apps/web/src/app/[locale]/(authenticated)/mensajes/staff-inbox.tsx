@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Building2, UsersRound } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
+import { intlLocale } from '@/lib/intl-locale';
 
 export type InboxListItem = {
   kind: 'direct' | 'group' | 'staff';
@@ -97,7 +98,7 @@ export function StaffInbox({ locale, items }: Props) {
                         : item.title}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(item.last).toLocaleString(locale)}
+                      {new Date(item.last).toLocaleString(intlLocale(locale))}
                     </span>
                   </div>
                 </div>

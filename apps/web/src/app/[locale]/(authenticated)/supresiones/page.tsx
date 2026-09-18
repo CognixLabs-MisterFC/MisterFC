@@ -6,6 +6,7 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Card, CardContent } from '@/components/ui/card';
 import { DecisionButtons } from './decision-buttons';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -77,7 +78,7 @@ export default async function SupresionesPage({ params }: Props) {
                   <span className="text-xs text-muted-foreground">
                     {t('requested_by', {
                       who: r.requester?.full_name ?? '—',
-                      date: new Date(r.requested_at).toLocaleDateString(locale),
+                      date: new Date(r.requested_at).toLocaleDateString(intlLocale(locale)),
                     })}
                   </span>
                   {r.reason && <span className="text-xs text-muted-foreground">“{r.reason}”</span>}

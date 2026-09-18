@@ -16,13 +16,14 @@ import { MatchPdfDocument } from '@/lib/pdf/match-pdf';
 import { pdfResponse, slugForFile, type Translator } from '@/lib/pdf/shared';
 import { loadMatchStats } from '../queries';
 import type { Role } from '../../../../jugadores/queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 function fmtDate(iso: string, locale: string): string {
   try {
-    return new Intl.DateTimeFormat(locale, {
+    return new Intl.DateTimeFormat(intlLocale(locale), {
       day: '2-digit',
       month: 'short',
       year: 'numeric',

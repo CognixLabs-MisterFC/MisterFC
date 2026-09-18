@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { AnnouncementForm } from './announcement-form';
 import { AnnouncementActions } from './announcement-actions';
 import { userCanPublishAnnouncementsToTeam } from '@/lib/messaging-permissions';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string; teamId: string }>;
@@ -151,7 +152,7 @@ export default async function AnunciosPage({ params }: Props) {
                         </p>
                         <p className="mt-2 text-xs text-muted-foreground">
                           {a.profiles.full_name ?? '—'} ·{' '}
-                          {new Date(a.created_at).toLocaleString(locale)}
+                          {new Date(a.created_at).toLocaleString(intlLocale(locale))}
                         </p>
                       </div>
                       {canManage && (

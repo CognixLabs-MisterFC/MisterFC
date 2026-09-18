@@ -20,6 +20,7 @@ import { NewConversationDialog } from './new-conversation-dialog';
 import { NewTeamChatDialog } from './new-team-chat-dialog';
 import { NewStaffChatDialog } from './new-staff-chat-dialog';
 import { StaffInbox, type InboxListItem } from './staff-inbox';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -133,7 +134,7 @@ export default async function MensajesPage({ params }: Props) {
                             : item.title}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(item.last).toLocaleString(locale)}
+                          {new Date(item.last).toLocaleString(intlLocale(locale))}
                         </span>
                       </div>
                     </div>

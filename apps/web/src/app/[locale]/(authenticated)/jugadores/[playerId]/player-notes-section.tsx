@@ -16,6 +16,7 @@ import {
   deletePlayerNote,
   updatePlayerNote,
 } from '../player-notes-actions';
+import { intlLocale } from '@/lib/intl-locale';
 
 export type PlayerNoteItem = {
   id: string;
@@ -57,7 +58,7 @@ export function PlayerNotesSection({
   };
 
   const fmtDate = (iso: string) =>
-    new Intl.DateTimeFormat(locale, {
+    new Intl.DateTimeFormat(intlLocale(locale), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',

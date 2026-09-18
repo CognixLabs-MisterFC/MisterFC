@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { BellOff, BellRing, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { subscribePush, unsubscribePush } from './actions';
+import { intlLocale } from '@/lib/intl-locale';
 
 type SubscriptionRow = {
   id: string;
@@ -33,6 +34,7 @@ export function PushSubscriptionPanel({
   initialSubscriptions,
 }: Props) {
   const t = useTranslations('notificaciones.push');
+  const locale = useLocale();
   const [subs, setSubs] = useState<SubscriptionRow[]>(initialSubscriptions);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -250,7 +252,7 @@ export function PushSubscriptionPanel({
                     )}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(s.last_seen_at).toLocaleString()}
+                    {new Date(s.last_seen_at).toLocaleString(intlLocale(locale))}
                   </span>
                 </div>
                 <Button

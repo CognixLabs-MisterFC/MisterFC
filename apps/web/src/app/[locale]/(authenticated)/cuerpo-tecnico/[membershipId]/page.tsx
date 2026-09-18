@@ -33,6 +33,7 @@ import { EditStaffContactDialog } from '../_components/edit-staff-contact-dialog
 import { EditStaffRoleDialog } from '../_components/edit-staff-role-dialog';
 import { loadCoachDetail } from '../queries';
 import type { Role } from '../../jugadores/queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string; membershipId: string }>;
@@ -49,7 +50,7 @@ function initials(name: string): string {
 
 function formatDate(iso: string, locale: string): string {
   const d = new Date(`${iso}T00:00:00Z`);
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

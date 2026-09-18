@@ -52,6 +52,7 @@ import {
 } from '@/lib/pdf/access-export-pdf';
 import { clubLogoDataUrl } from '@/lib/pdf/club-logo-data';
 import { pdfResponse, slugForFile, type Translator } from '@/lib/pdf/shared';
+import { intlLocale } from '@/lib/intl-locale';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -366,7 +367,7 @@ export async function GET(
       versionById.set(d.id, d.version);
   }
 
-  const consentDateFmt = new Intl.DateTimeFormat(locale, {
+  const consentDateFmt = new Intl.DateTimeFormat(intlLocale(locale), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -418,7 +419,7 @@ export async function GET(
     clubName: clubName ?? 'MisterFC',
     logoDataUrl,
     generatedAtLabel: t('generated', {
-      date: new Intl.DateTimeFormat(locale, {
+      date: new Intl.DateTimeFormat(intlLocale(locale), {
         day: 'numeric',
         month: 'long',
         year: 'numeric',

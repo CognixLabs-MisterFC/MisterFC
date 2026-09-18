@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { SquareArrowOutUpRight } from 'lucide-react';
 import { LegalTextModal } from '@/components/legal/legal-text-modal';
 import { loadAcceptedLegalDocument } from './consents-actions';
+import { intlLocale } from '@/lib/intl-locale';
 
 export type TutorConsentRow = {
   player_id: string | null;
@@ -38,7 +39,7 @@ export function ConsentsSection({
   const [openDoc, setOpenDoc] = useState<OpenDoc | null>(null);
 
   const dateFmt = useMemo(
-    () => new Intl.DateTimeFormat(locale, { dateStyle: 'long' }),
+    () => new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: 'long' }),
     [locale],
   );
 

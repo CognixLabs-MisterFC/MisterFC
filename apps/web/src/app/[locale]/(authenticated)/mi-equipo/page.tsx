@@ -29,6 +29,7 @@ import {
 import { SharedLineupSection } from '@/components/match/shared-lineup-section';
 import { loadTeamPlaybook } from '../jugadas/queries';
 import { TeamSelectorWrapper } from './team-selector-wrapper';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -257,7 +258,7 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
                     <>
                       <span className="font-medium">{e.title}</span>
                       <span className="text-xs text-muted-foreground">
-                        {new Date(e.starts_at).toLocaleString(locale)}
+                        {new Date(e.starts_at).toLocaleString(intlLocale(locale))}
                         {e.opponent_name && ` · vs ${e.opponent_name}`}
                         {e.location_name && ` · ${e.location_name}`}
                       </span>
@@ -342,7 +343,7 @@ export default async function MiEquipoPage({ params, searchParams }: Props) {
                           ? t('cards.announcements.club_wide')
                           : activeTeam.name}
                         {' · '}
-                        {new Date(a.created_at).toLocaleDateString(locale)}
+                        {new Date(a.created_at).toLocaleDateString(intlLocale(locale))}
                       </span>
                     </Link>
                   </li>

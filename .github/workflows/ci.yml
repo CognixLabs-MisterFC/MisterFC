@@ -64,6 +64,13 @@ jobs:
       - name: Check keyboard census (nativa)
         run: pnpm check:teclado
 
+      # `va` no es un locale de Intl y NO falla: cae a en-US en silencio, asi que la
+      # web llevaba desde siempre pintando las fechas en INGLES a quien la tiene en
+      # valenciano. El mapeo ya existia escrito TRES veces y cubria 10 de 49 sitios:
+      # esto no se arregla una vez, se olvida fichero a fichero.
+      - name: Check intl locale census (web)
+        run: pnpm check:intl-locale
+
       - name: Test (vitest)
         run: pnpm test
 

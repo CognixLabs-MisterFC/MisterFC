@@ -38,6 +38,7 @@ import { ScoreGrid } from './score-grid';
 import { FichaHeader } from './ficha-header';
 import { GroupRadarChart, EvolutionChart } from './report-charts';
 import type { FichaStats, PeriodAverages, TeamPeriodAverages, ObjectiveRow } from '../queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 /** Series (clave de grupo → color) del gráfico de evolución individual y de equipo. */
 const INDIV_EVOLUTION_SERIES = [
@@ -80,7 +81,7 @@ export async function ReportFichaView({ data }: { data: ReportFichaData }) {
 
   // D3 — formateo de fecha de las subidas (fecha corta + hora, TZ del proyecto).
   const fmtPromoDate = (iso: string) =>
-    new Intl.DateTimeFormat(locale, {
+    new Intl.DateTimeFormat(intlLocale(locale), {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',

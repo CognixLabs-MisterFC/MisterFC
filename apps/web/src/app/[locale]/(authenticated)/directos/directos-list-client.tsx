@@ -22,6 +22,7 @@ import {
 } from '@/hooks/use-chat-polling';
 import { fetchWeekMatches } from './actions';
 import type { WeekMatch } from './queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   locale: string;
@@ -94,7 +95,7 @@ export function DirectosListClient({
   // timeZone fija (Europe/Madrid) para no desajustar entre SSR y cliente.
   const fmtDate = useMemo(
     () =>
-      new Intl.DateTimeFormat(locale, {
+      new Intl.DateTimeFormat(intlLocale(locale), {
         weekday: 'short',
         day: 'numeric',
         timeZone: 'Europe/Madrid',
@@ -103,7 +104,7 @@ export function DirectosListClient({
   );
   const fmtTime = useMemo(
     () =>
-      new Intl.DateTimeFormat(locale, {
+      new Intl.DateTimeFormat(intlLocale(locale), {
         hour: '2-digit',
         minute: '2-digit',
         timeZone: 'Europe/Madrid',

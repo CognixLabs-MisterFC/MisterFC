@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useTranslations, useFormatter } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import type { DireccionTeamInvitation, DireccionInvitationStatus } from '@misterfc/core';
 import { CancelInvitationButton } from '../cancel-invitation-button';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Filter = 'all' | 'pending' | 'expired' | 'accepted';
 
@@ -29,7 +30,6 @@ export function TeamInvitationsList({
   rows: DireccionTeamInvitation[];
 }) {
   const t = useTranslations('invitations');
-  const format = useFormatter();
   const [filter, setFilter] = useState<Filter>('all');
 
   const counts = useMemo(
@@ -48,11 +48,13 @@ export function TeamInvitationsList({
   );
 
   function dateLabel(row: DireccionTeamInvitation): string {
-    const date = format.dateTime(new Date(row.date), {
+    // `format.dateTime` de next-intl usa el locale DEL CONTEXTO, que es `va` tal cual:
+    // el mismo agujero que el resto, solo que escondido detrás del hook.
+    const date = new Intl.DateTimeFormat(intlLocale(locale), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
-    });
+    }).format(new Date(row.date));
     if (row.status === 'accepted') return t('date.accepted', { date });
     if (row.status === 'expired') return t('date.expired', { date });
     return t('date.expires', { date });

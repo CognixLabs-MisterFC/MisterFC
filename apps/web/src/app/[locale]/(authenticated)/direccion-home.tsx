@@ -24,6 +24,7 @@ import {
   type DireccionTaskItem,
 } from './direccion-home-queries';
 import { DireccionFilters } from './direccion-filters';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   role: string;
@@ -75,7 +76,7 @@ export async function DireccionHome({
     isAdminClub ? loadPendingErasureCount(clubId) : Promise.resolve(0),
   ]);
 
-  const fmt = (iso: string) => new Date(iso).toLocaleString(locale);
+  const fmt = (iso: string) => new Date(iso).toLocaleString(intlLocale(locale));
 
   return (
     <section className="flex flex-col gap-6">
@@ -169,7 +170,7 @@ export async function DireccionHome({
                       <span className="text-xs text-muted-foreground">
                         {t('direccion.reports_pending', { count: c.pending })}
                         {' · '}
-                        {new Date(c.dueDate).toLocaleDateString(locale)}
+                        {new Date(c.dueDate).toLocaleDateString(intlLocale(locale))}
                       </span>
                     </li>
                   ))}

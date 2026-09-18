@@ -28,6 +28,7 @@ import {
   loadClubTeams,
   loadTemplates,
 } from './queries';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -41,9 +42,6 @@ type Props = {
     page?: string;
   }>;
 };
-
-// Intl no conoce 'va' (valenciano); cae a catalán para formatear fechas.
-const INTL_LOCALE: Record<string, string> = { es: 'es-ES', en: 'en-GB', va: 'ca-ES' };
 
 function normalizePage(v: string | undefined): number {
   const n = v != null ? parseInt(v, 10) : 1;
@@ -171,7 +169,7 @@ async function ListView({
   const result = await loadSessions(clubId, { search, teamId: teamParam, from, to }, page);
   const totalPages = Math.max(1, Math.ceil(result.total / SESSIONS_PAGE_SIZE));
   const hasFilters = search.length > 0 || teamParam != null || from != null || to != null;
-  const fmt = new Intl.DateTimeFormat(INTL_LOCALE[locale] ?? 'es-ES', {
+  const fmt = new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -296,13 +294,13 @@ async function WeekView({
     byDay.set(r.session_date, arr);
   }
 
-  const dayFmt = new Intl.DateTimeFormat(INTL_LOCALE[locale] ?? 'es-ES', {
+  const dayFmt = new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
     timeZone: 'UTC',
   });
-  const rangeFmt = new Intl.DateTimeFormat(INTL_LOCALE[locale] ?? 'es-ES', {
+  const rangeFmt = new Intl.DateTimeFormat(intlLocale(locale), {
     day: 'numeric',
     month: 'short',
     timeZone: 'UTC',
@@ -392,7 +390,7 @@ async function TemplatesView({
   tTpl: Awaited<ReturnType<typeof getTranslations>>;
 }) {
   const templates = await loadTemplates(clubId);
-  const fmt = new Intl.DateTimeFormat(INTL_LOCALE[locale] ?? 'es-ES', {
+  const fmt = new Intl.DateTimeFormat(intlLocale(locale), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

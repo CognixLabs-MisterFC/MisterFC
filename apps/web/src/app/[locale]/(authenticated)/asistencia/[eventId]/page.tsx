@@ -15,6 +15,7 @@ import { AttendanceRow } from './_components/attendance-row';
 import { loadEventAttendance } from '../queries';
 import type { Role } from '../../jugadores/queries';
 import { ALL_CLUB_ROLES } from '@misterfc/core';
+import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
   params: Promise<{ locale: string; eventId: string }>;
@@ -24,7 +25,7 @@ const ALLOWED: ReadonlyArray<Role> = ALL_CLUB_ROLES;
 
 function fmtDate(iso: string, locale: string): string {
   const d = new Date(iso);
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(intlLocale(locale), {
     weekday: 'long',
     day: 'numeric',
     month: 'short',
