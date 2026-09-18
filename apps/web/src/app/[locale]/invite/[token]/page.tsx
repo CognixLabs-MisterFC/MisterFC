@@ -86,11 +86,7 @@ export default async function InvitePage({ params }: Props) {
   const legal = await loadCurrentLegalDocs(inv.club_id);
   const preAccepted =
     user && sessionEmailMatches
-      ? await loadAccountConsentStatus(
-          user.id,
-          legal.terms?.version ?? null,
-          legal.privacy?.version ?? null,
-        )
+      ? await loadAccountConsentStatus(user.id, inv.club_id)
       : { termsAccepted: false, privacyAccepted: false };
 
   // F14-3a — Alta MULTI-HIJO: todas las invitaciones pendientes de este email en
