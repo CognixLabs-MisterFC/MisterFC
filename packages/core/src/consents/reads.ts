@@ -105,3 +105,119 @@ export async function getAcceptedLegalDocumentFromClient(
   if (!row) return { ok: false, reason: 'not_found' };
   return { ok: true, document: { title: row.title, body: row.body } };
 }
+
+/**
+ * RV-3 — LOS MISMOS TRES, mirados desde el otro lado. Un permiso opcional se puede
+ * retirar y se puede conceder, así que la lista es la misma; el alias existe para que
+ * los dos sitios que la usan se lean con el verbo que les toca, y hay un test que
+ * compara las dos listas contra los `if` de las DOS migraciones (RV-1 y RV-3). Si
+ * alguien separa una, salta.
+ */
+export const GRANTABLE_CONSENT_TYPES = REVOCABLE_CONSENT_TYPES;
+
+export function isGrantableConsent(t: ConsentType): boolean {
+  return (GRANTABLE_CONSENT_TYPES as readonly ConsentType[]).includes(t);
+}
+
+/**
+ * Los tres estados en los que puede estar un permiso opcional. `never` es el que no
+ * existía hasta RV-3: el ledger no tiene fila, así que la pantalla no tenía nada que
+ * pintar y el permiso no se podía dar.
+ */
+export type ConsentOptionState = 'granted' | 'revoked' | 'never';
+
+/** Una casilla de la rejilla: un hijo × un permiso opcional. */
+export type ConsentOption = {
+  playerId: string;
+  playerName: string | null;
+  consentType: ConsentType;
+  state: ConsentOptionState;
+  /** `null` cuando nunca se decidió. */
+  decidedAt: string | null;
+  /** El texto que se aceptó. `null` cuando nunca se decidió. */
+  signedDocumentId: string | null;
+  signedDocumentTitle: string | null;
+  /**
+   * El texto que se aceptaría, y el que `grantPlayerConsentFromClient` exige. `null`
+   * cuando el club NO ha publicado ese documento: entonces no hay nada que conceder y
+   * la pantalla lo dice en vez de ofrecer un botón que la base va a rechazar.
+   */
+  currentDocumentId: string | null;
+  currentDocumentTitle: string | null;
+};
+
+export type TutorConsentOptionsResult =
+  | { ok: true; options: ConsentOption[] }
+  | { ok: false; reason: 'no_session' | 'error' };
+
+const ESTADOS: readonly string[] = ['granted', 'revoked', 'never'];
+
+/**
+ * RV-3 — la rejilla completa: cada hijo cuyos datos sensibles maneja esta persona ×
+ * los tres permisos opcionales, decididos o no.
+ *
+ * Por qué no vale `getTutorConsentsFromClient`: esa devuelve el LEDGER, y un permiso
+ * que nunca se dio no está en el ledger. Medido en producción antes de escribir nada:
+ * 6 de 21 combinaciones sin ninguna fila, dos jugadores enteros así y uno de ellos con
+ * foto — que tras #622 no se ve y no había forma de que se viera.
+ *
+ * Un `state` que no sea uno de los tres devuelve `error` en vez de colarse: el valor
+ * solo lo produce el `case` de la RPC, así que si llega otra cosa el contrato se ha
+ * roto, y el fallo barato («no lo reconozco, lo trato como sin decidir») ofrecería
+ * conceder algo cuyo estado real no conocemos.
+ */
+export async function getTutorConsentOptionsFromClient(
+  supabase: DbClient,
+  clubId: string,
+): Promise<TutorConsentOptionsResult> {
+  const { data, error } = await supabase.rpc('get_tutor_consent_options', {
+    p_club_id: clubId,
+  });
+  if (error) {
+    return { ok: false, reason: error.message?.includes('no_session') ? 'no_session' : 'error' };
+  }
+  const filas = data ?? [];
+  if (filas.some((r) => !ESTADOS.includes(r.state))) return { ok: false, reason: 'error' };
+  return {
+    ok: true,
+    options: filas.map((r) => ({
+      playerId: r.player_id,
+      playerName: r.player_name,
+      consentType: r.consent_type,
+      state: r.state as ConsentOptionState,
+      decidedAt: r.decided_at,
+      signedDocumentId: r.signed_document_id,
+      signedDocumentTitle: r.signed_document_title,
+      currentDocumentId: r.current_document_id,
+      currentDocumentTitle: r.current_document_title,
+    })),
+  };
+}
+
+/**
+ * RV-3 — el texto que se va a firmar, COMPLETO, antes de firmarlo.
+ *
+ * No usa `get_legal_document_body` y no es un despiste: esa RPC está gateada por
+ * «existe un consent tuyo que referencia este documento», así que un texto que nunca
+ * firmaste no se puede leer por ahí. Y conceder sin poder leer no es consentimiento.
+ *
+ * Se lee de la tabla porque la policy `legal_documents_select_own_club` ya lo permite a
+ * cualquier miembro del club — comprobado que `authenticated` conserva el SELECT
+ * después de #622, `body` incluido, y que los tutores de producción tienen membresía
+ * viva. O sea: no hace falta abrir nada nuevo. Son dos preguntas distintas y cada una
+ * tiene su puerta: «el texto que aceptaste» va por la RPC (prueba), «el texto que
+ * aceptarías» por la tabla.
+ */
+export async function getLegalDocumentToSignFromClient(
+  supabase: DbClient,
+  legalDocumentId: string,
+): Promise<AcceptedLegalDocumentResult> {
+  const { data, error } = await supabase
+    .from('legal_documents')
+    .select('title, body')
+    .eq('id', legalDocumentId)
+    .maybeSingle();
+  if (error) return { ok: false, reason: 'error' };
+  if (!data) return { ok: false, reason: 'not_found' };
+  return { ok: true, document: { title: data.title, body: data.body } };
+}

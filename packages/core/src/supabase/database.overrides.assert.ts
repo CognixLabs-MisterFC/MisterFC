@@ -85,6 +85,13 @@ export type _AssertGroupB = [
   Assert<IsStringOrNull<Fn['family_conversation_recipients']['Returns'][number]['full_name']>>,
   Assert<IsStringOrNull<Fn['family_conversation_recipients']['Returns'][number]['team_id']>>,
   Assert<IsStringOrNull<Fn['family_conversation_recipients']['Returns'][number]['team_name']>>,
+  // RV-3 — la rejilla de permisos: los seis NULL posibles.
+  Assert<IsStringOrNull<Fn['get_tutor_consent_options']['Returns'][number]['player_name']>>,
+  Assert<IsStringOrNull<Fn['get_tutor_consent_options']['Returns'][number]['decided_at']>>,
+  Assert<IsStringOrNull<Fn['get_tutor_consent_options']['Returns'][number]['signed_document_id']>>,
+  Assert<IsStringOrNull<Fn['get_tutor_consent_options']['Returns'][number]['signed_document_title']>>,
+  Assert<IsStringOrNull<Fn['get_tutor_consent_options']['Returns'][number]['current_document_id']>>,
+  Assert<IsStringOrNull<Fn['get_tutor_consent_options']['Returns'][number]['current_document_title']>>,
   Assert<IsStringOrNull<Fn['get_tutor_consents']['Returns'][number]['player_id']>>,
   Assert<IsStringOrNull<Fn['get_tutor_consents']['Returns'][number]['player_name']>>,
   Assert<IsStringOrNull<Fn['list_player_spectators']['Returns'][number]['email']>>,
@@ -124,6 +131,10 @@ export type _AssertPreservation = [
   Assert<IsPlainString<Fn['platform_list_clubs']['Returns'][number]['id']>>,
   Assert<IsPlainString<Fn['platform_list_clubs']['Returns'][number]['name']>>,
   Assert<IsPlainString<Fn['platform_list_clubs']['Returns'][number]['slug']>>,
+  // RV-3 — y la rejilla conserva las tres que NO son nullable: si el merge las
+  // pisara, `state` en `string | null` dejaria pasar un switch sin caso por defecto.
+  Assert<IsPlainString<Fn['get_tutor_consent_options']['Returns'][number]['player_id']>>,
+  Assert<IsPlainString<Fn['get_tutor_consent_options']['Returns'][number]['state']>>,
   // get_tutor_consents conserva su columna `title` (no-null) y el enum:
   Assert<IsPlainString<Fn['get_tutor_consents']['Returns'][number]['title']>>,
   // BC-1 — preview_account_deletion conserva sus 4 columnas no-null junto al override:

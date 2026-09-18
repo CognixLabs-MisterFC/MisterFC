@@ -150,6 +150,20 @@ export type DatabaseOverrides = {
       get_public_club_by_slug: {
         Returns: { logo_path: string | null }[];
       };
+      // RV-3 — la rejilla: seis de las nueve columnas pueden venir a NULL, y cada
+      // NULL significa algo distinto en la pantalla. `signed_*` y `decided_at` van
+      // vacíos cuando NUNCA se decidió; `current_*` cuando el club no ha publicado
+      // ese texto, que es justo lo que apaga el botón de conceder.
+      get_tutor_consent_options: {
+        Returns: {
+          player_name: string | null;
+          decided_at: string | null;
+          signed_document_id: string | null;
+          signed_document_title: string | null;
+          current_document_id: string | null;
+          current_document_title: string | null;
+        }[];
+      };
       get_tutor_consents: {
         Returns: {
           player_id: string | null;

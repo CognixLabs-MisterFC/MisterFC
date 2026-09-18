@@ -4499,6 +4499,10 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: boolean
       }
+      consent_document_type: {
+        Args: { p_consent_type: Database["public"]["Enums"]["consent_type"] }
+        Returns: Database["public"]["Enums"]["legal_document_type"]
+      }
       current_legal_version: {
         Args: {
           p_club_id: string
@@ -4587,6 +4591,20 @@ export type Database = {
           slug: string
         }[]
       }
+      get_tutor_consent_options: {
+        Args: { p_club_id: string }
+        Returns: {
+          consent_type: Database["public"]["Enums"]["consent_type"]
+          current_document_id: string
+          current_document_title: string
+          decided_at: string
+          player_id: string
+          player_name: string
+          signed_document_id: string
+          signed_document_title: string
+          state: string
+        }[]
+      }
       get_tutor_consents: {
         Args: { p_club_id: string }
         Returns: {
@@ -4598,6 +4616,16 @@ export type Database = {
           player_name: string
           title: string
         }[]
+      }
+      grant_player_consent: {
+        Args: {
+          p_consent_type: Database["public"]["Enums"]["consent_type"]
+          p_ip?: string
+          p_legal_document_id: string
+          p_player_id: string
+          p_user_agent?: string
+        }
+        Returns: undefined
       }
       invite_player_self: {
         Args: { p_email: string; p_player_id: string }
