@@ -107,3 +107,55 @@ describe('isAllowedInArea · excepción S2 director-entrenador', () => {
     expect(isAllowedInArea('staff', aud)).toBe(false);
   });
 });
+
+describe('isAllowedInArea · modo tutor (hijos vinculados)', () => {
+  it('cualquier rol CON hijos vinculados entra también en family, sin perder su hogar', () => {
+    for (const role of ALL_CLUB_ROLES) {
+      const aud = { kind: 'member' as const, role, hasLinkedPlayers: true };
+      expect(isAllowedInArea('family', aud)).toBe(true);
+      expect(isAllowedInArea(navAreaForRole(role), aud)).toBe(true);
+      // El flag NO es una llave maestra: no abre spectator ni el área ajena.
+      expect(isAllowedInArea('spectator', aud)).toBe(false);
+      if (navAreaForRole(role) !== 'direction') {
+        expect(isAllowedInArea('direction', aud)).toBe(false);
+      }
+    }
+  });
+
+  it('SIN hijos vinculados la puerta sigue cerrada (false explícito y default)', () => {
+    for (const role of ['admin_club', 'director', 'coordinador', 'entrenador_principal', 'entrenador_ayudante'] as Role[]) {
+      expect(
+        isAllowedInArea('family', { kind: 'member', role, hasLinkedPlayers: false }),
+      ).toBe(false);
+      expect(isAllowedInArea('family', { kind: 'member', role })).toBe(false);
+    }
+  });
+
+  it('el modo tutor NO cambia el hogar: navAreaForRole sigue igual', () => {
+    expect(navAreaForRole('director')).toBe('direction');
+    expect(navAreaForRole('entrenador_principal')).toBe('staff');
+  });
+
+  it('un seguidor con el flag puesto NO entra en family (no es miembro)', () => {
+    expect(
+      isAllowedInArea('family', {
+        kind: 'spectator',
+        role: null,
+        hasLinkedPlayers: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('las dos excepciones conviven: director con equipos E hijos entra en las tres', () => {
+    const aud = {
+      kind: 'member' as const,
+      role: 'director' as Role,
+      hasStaffTeams: true,
+      hasLinkedPlayers: true,
+    };
+    expect(isAllowedInArea('direction', aud)).toBe(true);
+    expect(isAllowedInArea('staff', aud)).toBe(true);
+    expect(isAllowedInArea('family', aud)).toBe(true);
+    expect(isAllowedInArea('spectator', aud)).toBe(false);
+  });
+});

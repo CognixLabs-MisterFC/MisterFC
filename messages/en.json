@@ -679,6 +679,7 @@
     "collapse_sidebar": "Hide menu",
     "expand_sidebar": "Show menu",
     "switch_club": "Switch club",
+    "switch_mode": "Switch mode",
     "menu": "Menu",
     "back": "Back",
     "placeholder_hint": "Screen under construction",
@@ -4961,6 +4962,7 @@
   "nav": {
     "mister": "Coach",
     "club": "Club",
+    "familia": "Family",
     "agenda": "Schedule",
     "alineacion": "Lineup",
     "anuncios": "Announcements",

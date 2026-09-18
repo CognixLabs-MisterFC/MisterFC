@@ -1,12 +1,18 @@
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
+  AREA_SEGMENT,
+  AREA_SWITCH_TAB,
+  AREA_TABS,
+  FAMILY_SWITCH_TAB,
   PUBLIC_ROUTE_SEGMENTS,
   SUBSCRIPTION_EXEMPT_SEGMENTS,
+  allMenuFiles,
   isPublicRoute,
   isSubscriptionExemptRoute,
+  type ChromeArea,
 } from './config';
 
 /**
@@ -118,5 +124,79 @@ describe('isSubscriptionExemptRoute', () => {
         (existsSync(asDir) && statSync(asDir).isDirectory());
       expect(ok, `falta la ruta ${seg}`).toBe(true);
     }
+  });
+});
+
+/**
+ * Cada fichero de ruta de un área se declara EXACTAMENTE una vez.
+ *
+ * `AreaNavigator` monta tres listas de `Tabs.Screen`: las pestañas de la barra
+ * (`AREA_TABS`), el conmutador de área y el resto como `href:null`
+ * (`allMenuFiles`). expo-router declara por su cuenta todo fichero que el layout
+ * NO declare, y lo hace como PESTAÑA: un fichero olvidado no da error de tipos ni
+ * de lint, simplemente aparece una pestaña de más en la barra de todo el mundo.
+ * Y declararlo dos veces (mismo `name`) revienta el navegador.
+ *
+ * Lo comprobamos contra el árbol de ficheros real, que es lo único que expo-router
+ * mira. Es el fallo que casi se cuela con el modo tutor: `app/family/rol.tsx` solo
+ * se muestra a quien tiene hijos vinculados, así que sin declararlo con href:null
+ * en el resto de casos habría salido como 5ª pestaña a TODAS las familias.
+ */
+describe('declaración de rutas por área', () => {
+  const AREAS: ChromeArea[] = ['family', 'staff', 'direction', 'spectator'];
+
+  /** Nombres de ruta declarados por el navegador para un área (con repetidos). */
+  function declaredNames(area: ChromeArea): string[] {
+    const switchNames =
+      area === 'family'
+        ? // Los dos descriptores comparten fichero a propósito (un solo `rol.tsx`).
+          [...new Set([FAMILY_SWITCH_TAB.direction.name, FAMILY_SWITCH_TAB.staff.name])]
+        : AREA_SWITCH_TAB[area]
+          ? [AREA_SWITCH_TAB[area]!.name]
+          : [];
+    return [
+      ...AREA_TABS[area].map((t) => t.name),
+      ...switchNames,
+      ...allMenuFiles(area).map((m) => m.name),
+    ];
+  }
+
+  /** Ficheros de ruta reales del área (sin `_layout`). */
+  function routeFiles(area: ChromeArea): string[] {
+    const dir = join(process.cwd(), 'app', AREA_SEGMENT[area]);
+    return readdirSync(dir, { withFileTypes: true })
+      .filter((e) => e.isFile() && e.name.endsWith('.tsx'))
+      .map((e) => e.name.replace(/\.tsx$/, ''))
+      .filter((n) => n !== '_layout');
+  }
+
+  it.each(AREAS)('«%s»: ningún fichero se declara dos veces', (area) => {
+    const names = declaredNames(area);
+    const dupes = names.filter((n, i) => names.indexOf(n) !== i);
+    expect(dupes, `declarados dos veces: ${dupes.join(', ')}`).toEqual([]);
+  });
+
+  it.each(AREAS)('«%s»: todo fichero de ruta está declarado', (area) => {
+    const declared = new Set(declaredNames(area));
+    const olvidados = routeFiles(area).filter((n) => !declared.has(n));
+    expect(
+      olvidados,
+      `saldrían como pestaña sin pedirlo: ${olvidados.join(', ')}`,
+    ).toEqual([]);
+  });
+
+  it.each(AREAS)('«%s»: todo lo declarado existe como fichero', (area) => {
+    const files = new Set(routeFiles(area));
+    const fantasmas = declaredNames(area).filter((n) => !files.has(n));
+    expect(fantasmas, `declaradas sin fichero: ${fantasmas.join(', ')}`).toEqual([]);
+  });
+
+  it('el conmutador de familia usa UN solo fichero para los dos hogares', () => {
+    // Si divergieran, la barra de familia declararía dos rutas y una sobraría
+    // siempre; y la que no se declarase saldría como pestaña.
+    expect(FAMILY_SWITCH_TAB.direction.name).toBe(FAMILY_SWITCH_TAB.staff.name);
+    // Y cada uno devuelve a SU hogar, no al del otro.
+    expect(FAMILY_SWITCH_TAB.direction.targetArea).toBe('direction');
+    expect(FAMILY_SWITCH_TAB.staff.targetArea).toBe('staff');
   });
 });

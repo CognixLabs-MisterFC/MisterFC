@@ -171,6 +171,29 @@ export const AREA_SWITCH_TAB: Partial<Record<ChromeArea, SwitchTabDef>> = {
   staff: { name: 'club', labelKey: 'nav.club', icon: '🛡️', targetArea: 'direction' },
 };
 
+/**
+ * MODO TUTOR — la VUELTA desde el área de familia al hogar de quien está en modo
+ * tutor. Mismo mecanismo que `AREA_SWITCH_TAB` (press interceptado en
+ * `navigator.tsx` + `router.replace`, fichero-ruta `rol` como stub-redirect), pero
+ * el destino y el rótulo dependen del HOGAR del usuario, no del área de origen:
+ * un director vuelve a "Club" y un entrenador a "Míster". Por eso es un Record por
+ * hogar y no una entrada más de `AREA_SWITCH_TAB`.
+ *
+ * Comparten el MISMO `name` a propósito: es un solo fichero de ruta
+ * (`app/family/rol.tsx`), y así la barra de familia no declara dos rutas de las que
+ * una siempre sobraría.
+ *
+ * La IDA (hogar → familia) NO es pestaña: las barras de staff y dirección ya llegan
+ * a 6 con el conmutador de S2-2 —tanto que `navigator.tsx` baja la fuente a 9 para
+ * que "Calendario" no se corte—, así que una séptima no cabe. La ida vive en el MENÚ
+ * hamburguesa (`menu.tsx`), junto al selector de club, que es donde ya se decide
+ * "quién soy ahora mismo". La vuelta sí cabe: familia solo tiene 4 pestañas.
+ */
+export const FAMILY_SWITCH_TAB: Record<'staff' | 'direction', SwitchTabDef> = {
+  direction: { name: 'rol', labelKey: 'nav.club', icon: '🛡️', targetArea: 'direction' },
+  staff: { name: 'rol', labelKey: 'nav.mister', icon: '🎽', targetArea: 'staff' },
+};
+
 // Orden EXACTO pedido por Jose (O2 QA). `nav.partidos` es el rótulo PROPIO de
 // familia (la pantalla `convocatorias`: lista de partidos con convocatoria,
 // disponibilidad y alineación); NO se toca `nav.convocatorias` del staff.

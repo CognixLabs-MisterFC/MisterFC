@@ -679,6 +679,7 @@
     "collapse_sidebar": "Amaga el menú",
     "expand_sidebar": "Mostra el menú",
     "switch_club": "Canviar de club",
+    "switch_mode": "Canviar de mode",
     "menu": "Menú",
     "back": "Tornar",
     "placeholder_hint": "Pantalla en construcció",
@@ -4961,6 +4962,7 @@
   "nav": {
     "mister": "Míster",
     "club": "Club",
+    "familia": "Família",
     "agenda": "Agenda",
     "alineacion": "Alineació",
     "anuncios": "Anuncis",
