@@ -39,7 +39,6 @@
   "common": {
     "app_name": "MisterFC",
     "welcome": "Welcome to MisterFC",
-    "tagline": "Management, methodology and sports development for grassroots and amateur football coaches.",
     "footer": "Cognix Labs · v0.0.0",
     "fullscreen": {
       "enter": "Fullscreen",
@@ -311,18 +310,12 @@
     },
     "welcome": "Welcome to {club}",
     "your_role": "Your role here is {role}.",
-    "next_steps_title": "Next steps",
-    "next_steps_body": "Start by creating categories and teams in the sidebar. Then you can add players and set up the coaching staff.",
     "dashboard_card": {
       "title": "Executive dashboard",
       "body": "Club-wide overview: squad, results, attendance, alerts and rankings.",
       "cta": "Open the dashboard →"
     },
-    "signed_in_as": "Signed in as {email}",
-    "your_clubs": "Your clubs",
-    "no_clubs": "You don't belong to any club yet.",
     "signout": "Sign out",
-    "invitations_link": "Invite people",
     "cards": {
       "messages": {
         "title": "Unread messages",
@@ -402,7 +395,6 @@
     "title": "Invitations",
     "subtitle": "Invite people to {club} with the appropriate role.",
     "new_section_title": "New invitation",
-    "list_section_title": "Sent",
     "empty": "You haven't sent any invitations yet.",
     "status_pending": "Pending",
     "status_accepted": "Accepted",
@@ -515,7 +507,6 @@
     "consent_view": "view",
     "consent_already": "Already accepted: {doc}",
     "consent_close": "Close",
-    "children_heading": "You'll be registering:",
     "child_unnamed": "Player",
     "child_no_team": "No team assigned",
     "error_consent_required": "You must accept the Terms and the Privacy Policy to finish signing up.",
@@ -556,12 +547,8 @@
     "self_note": "This invitation is for your own player account: your parent or legal guardian sent it to you. Image permissions, your medical data and the handling of your personal data remain with them.",
     "error_reserved_for_tutor": "That information is handled by your parent or legal guardian and cannot be submitted here.",
     "error_not_self": "This invitation is not for a player account. Open the link from your email in a browser to complete it.",
-    "error_not_claimable": "This email already has an account. Sign in with it and the invitation will be added automatically.",
     "error_rate_limited": "Too many attempts. Wait a moment and try again.",
     "error_rate_limited_in": "Too many attempts. Try again in {minutes} min.",
-    "error_unavailable": "We couldn't check the invitation right now. Try again in a few minutes.",
-    "error_network": "No connection. Check your network and try again.",
-    "error_no_web_url": "This version of the app isn't set up to complete invitations. Let your club know.",
     "error_invalid": "This link isn't valid. Open the one you got by email.",
     "go_to_signin": "Go to sign in",
     "session_swap_warning": "You're currently signed in as {email}. If you complete this invitation, you'll be signed in as the player instead.",
@@ -583,7 +570,6 @@
     "live": "Live",
     "vs": "vs",
     "back": "Back to Live",
-    "not_started_score": "Not started",
     "phase": {
       "not_started": "Not started",
       "first_half": "1st half",
@@ -897,7 +883,6 @@
     }
   },
   "equipos": {
-    "back_to_categorias": "← Back to categories",
     "subtitle": "Teams for the {season} season.",
     "empty": "There are no teams in this category yet.",
     "list_title": "Teams",
@@ -1060,8 +1045,6 @@
     "no_team_for_season": "The player has no team in this season.",
     "no_report": "No report yet.",
     "has_report": "Report created.",
-    "editor_rework_title": "Editor under reconstruction",
-    "editor_rework_body": "The scoring editor is being rebuilt with the new model (team assessment + individual report by catalog). Objectives are still available in the list.",
     "create": "Create report",
     "edit": "Edit",
     "shared": "Shared",
@@ -1086,7 +1069,6 @@
     "results_individual": "Individual results",
     "results_team": "Team results",
     "team_evolution_title": "Team evolution",
-    "coming_soon": "Coming soon.",
     "cancel": "Cancel",
     "delete": "Delete",
     "confirm_delete": "Delete this objective?",
@@ -1119,8 +1101,6 @@
       "generic": "Couldn't save. Please try again."
     },
     "team_valuation": "Team valuation",
-    "team_valuation_done": "Team valuation created",
-    "team_valuation_pending": "Team valuation pending",
     "team_comment": "Team comment",
     "team_block_title": "Team valuation (this period)",
     "team_block_missing": "There is no team valuation for this period yet. You can still save the individual report; it will be linked once you create it.",
@@ -2197,7 +2177,6 @@
       "title": "Team statistics",
       "file": "team",
       "by_player": "By player",
-      "totals_row": "Team total",
       "empty": "This team has no players yet."
     },
     "col": {
@@ -2327,7 +2306,6 @@
   "dashboard": {
     "title": "Executive dashboard",
     "subtitle": "{club} · {season} season",
-    "coming_soon": "Coming soon.",
     "census": {
       "title": "Club squad",
       "total_players": "active players",
@@ -2435,7 +2413,6 @@
     "by_type_title": "Team totals",
     "rival": "Opponent",
     "empty": "This team has no players yet.",
-    "totals_row": "Team total",
     "col": {
       "dorsal": "#",
       "player": "Player",
@@ -2713,7 +2690,6 @@
     },
     "team_filter": "Team",
     "team_all": "All teams",
-    "range_season": "Current season",
     "empty": "No attendance records yet",
     "pct_present": "Attendance",
     "total": "{n, plural, one {# training session recorded} other {# training sessions recorded}}",
@@ -3198,7 +3174,6 @@
     "staff_empty": "No coaching staff assigned",
     "frames": "{count, plural, one {# frame} other {# frames}}",
     "nav_plantilla": "Squad",
-    "nav_sesiones": "Sessions",
     "teammates_empty": "No teammates yet",
     "upcoming_empty": "No upcoming events",
     "announcements": "Announcements",
@@ -3206,7 +3181,6 @@
     "plantilla_empty": "No players in the squad",
     "session_unavailable": "This session is not available",
     "session_no_tasks": "No drills",
-    "sesiones_empty": "No published sessions",
     "family_no_team": "This player has no team in the active season"
   },
   "alineacion": {
@@ -3214,7 +3188,6 @@
     "tournament_label": "Tournament {name} · Round {round}",
     "back": "Back to match management",
     "live_capture": "Live",
-    "empty_hint": "No lineup yet for this match. Create one to start.",
     "name_label": "Name",
     "formation_label": "Formation",
     "create": "Create lineup",
@@ -3225,7 +3198,6 @@
     "bench": "Bench",
     "bench_empty": "Drag players here.",
     "out": "Not called up",
-    "out_empty": "No exclusions.",
     "remove": "Remove from lineup",
     "saving": "Saving…",
     "saved": "Saved",
@@ -3256,7 +3228,6 @@
       "forward": "FW"
     },
     "share_label": "Share with team",
-    "resync": "Resync",
     "planned_subs": "Planned subs",
     "sub_minute": "Min",
     "sub_out": "Out",
@@ -3267,11 +3238,7 @@
     "tactical_notes_placeholder": "Pressing, marking, phase goals…",
     "tactical_notes_staff_only": "Only visible to the coaching staff.",
     "save_notes": "Save notes",
-    "confirm_published_title": "Call-up published",
-    "confirm_published_body": "The call-up is already published. Apply the called-up/discarded changes to it too?",
     "cancel": "Cancel",
-    "confirm_apply": "Apply",
-    "resync_done": "Resynced: {out} to out, {bench} to bench",
     "official_lineup_title": "Official lineup",
     "share_hint": "Turn on so players and families can see this official lineup. Tactical notes always stay hidden.",
     "official_hint": "Mark this as the official lineup for the match (only one allowed).",
@@ -3364,9 +3331,7 @@
   "partido_directo": {
     "back": "Back to match management",
     "clock_label": "Stopwatch",
-    "clock_hint": "The stopwatch goes live in the next drop",
     "status_not_started": "Not started",
-    "side_label": "Team or opponent",
     "side_own": "Team",
     "side_rival": "Opponent",
     "palette_title": "Events",
@@ -3386,11 +3351,6 @@
       "corner_against": "Corner against"
     },
     "no_event": "no event",
-    "stub_player": "{event} on {player} — recording comes in the next drop",
-    "stub_field": "{event} on the pitch ({x}, {y}) — recording comes in the next drop",
-    "panel_own_title": "Your team",
-    "panel_rival_title": "Opponent",
-    "panel_rival_hint": "Opponent events are recorded by squad number (next drop).",
     "landscape_hint": "Turn your device to landscape for easier recording.",
     "friendly_note": "Friendly · live capture works the same as a match.",
     "scope_note": "Live capture screen. Event recording is enabled in the next drops.",
@@ -3461,8 +3421,6 @@
     },
     "event_expelled_double_yellow": "Sent off (two yellows): {player}",
     "event_expelled_red": "Sent off (red): {player} ({minute}')",
-    "register_not_field_event": "That event goes on a player: tap a player.",
-    "event_registered_field": "Recorded: {event} ({minute}')",
     "tool_absent": "No-show",
     "absent_hint": "Tap a called-up player (field or bench) to mark them absent.",
     "sub_hint": "Substitution: tap who goes OFF (field), then who comes ON (bench).",
@@ -3506,10 +3464,6 @@
     "penalty_registered": "Penalty {outcome} · {player} ({minute}')",
     "rival_penalty_registered": "Penalty {outcome} · opponent #{dorsal} ({minute}')",
     "foul_hint": "Tap OUR player (wins / commits) to log the foul.",
-    "foul_pick_location": "Now tap the spot of the foul on the pitch.",
-    "foul_pick_player": "Tap our player involved in the foul first.",
-    "foul_loc_committed": "Foul against, by {player}: tap the location.",
-    "foul_loc_received": "Foul for, won by {player}: tap the location.",
     "foul_committed": "Foul against",
     "foul_received": "Foul for",
     "foul_committed_registered": "Foul against · {player} ({minute}')",
@@ -3544,7 +3498,6 @@
     "stats_low_hint": "Below {pct}% of elapsed playing time.",
     "stats_hint": "Minutes computed live from the starting eleven, substitutions and sendings-off. They update with the clock.",
     "reentry_on": "Rolling subs",
-    "reentry_off": "No re-entry",
     "tactics_tool": "Move/Tactics",
     "tactics_hint": "Drag a player to reposition; change the formation with the selector.",
     "formation_label": "Formation",
@@ -3836,7 +3789,6 @@
     "badge_custom": "Custom",
     "overlap_badge": "Overlaps standard",
     "overlap_hint": "This category shares an age group with a standard one but has a different name. Review it.",
-    "standard_locked_hint": "Standard category: name and age group are locked. You can only change the duration.",
     "actions": {
       "create": "New category",
       "edit": "Edit",
@@ -3852,11 +3804,8 @@
     "field": {
       "name": "Name",
       "kind": "Age group",
-      "kind_help": "Determines the substitution rules and the list order.",
-      "half_duration": "Half duration (min)",
-      "half_duration_help": "Minutes of each match half (1–90)."
+      "half_duration": "Half duration (min)"
     },
-    "kind_none": "No age group",
     "delete": {
       "title": "Delete the category?",
       "description": "You are about to delete \"{name}\". This action cannot be undone."
@@ -4413,7 +4362,6 @@
     "subtitle": "Ephemeral: nothing is saved. Draw on the pitch to explain the play.",
     "mode_blank": "Blank",
     "mode_exercise": "From exercise",
-    "from_exercise": "Showing: {name}",
     "open_exercise": "Open in board",
     "pick_hint": "Choose an exercise to load it.",
     "pick_placeholder": "Choose exercise",
@@ -4481,7 +4429,6 @@
       "reorder_block": "Reorder block",
       "reorder_task": "Reorder exercise",
       "plays_heading": "Plays to train",
-      "plays_empty": "No plays yet.",
       "play_untitled": "Untitled play",
       "frame_count": "{count, plural, =1 {# frame} other {# frames}}",
       "move_up": "Move up",
@@ -4883,7 +4830,6 @@
   },
   "playbook": {
     "title": "Playbook",
-    "coming_soon": "Coming soon",
     "subtitle": "The playbook will be available soon.",
     "unavailable": "This play is not available",
     "untitled": "Play",

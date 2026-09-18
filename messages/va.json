@@ -39,7 +39,6 @@
   "common": {
     "app_name": "MisterFC",
     "welcome": "Benvingut a MisterFC",
-    "tagline": "Gestió, metodologia i desenvolupament esportiu per a entrenadors de futbol base i amateur.",
     "footer": "Cognix Labs · v0.0.0",
     "fullscreen": {
       "enter": "Pantalla completa",
@@ -311,18 +310,12 @@
     },
     "welcome": "Benvingut a {club}",
     "your_role": "El teu rol ací és {role}.",
-    "next_steps_title": "Passos següents",
-    "next_steps_body": "Comença creant categories i equips en el menú lateral. Després podràs donar d'alta jugadors i configurar el cos tècnic.",
     "dashboard_card": {
       "title": "Tauler executiu",
       "body": "Visió global del club: plantilla, resultats, assistència, alertes i rànquings.",
       "cta": "Obrir el tauler →"
     },
-    "signed_in_as": "Sessió iniciada com {email}",
-    "your_clubs": "Els teus clubs",
-    "no_clubs": "Encara no pertanys a cap club.",
     "signout": "Tancar sessió",
-    "invitations_link": "Convidar persones",
     "cards": {
       "messages": {
         "title": "Missatges sense llegir",
@@ -402,7 +395,6 @@
     "title": "Invitacions",
     "subtitle": "Convida persones al club {club} amb el rol que els correspon.",
     "new_section_title": "Nova invitació",
-    "list_section_title": "Enviades",
     "empty": "Encara no has enviat cap invitació.",
     "status_pending": "Pendent",
     "status_accepted": "Acceptada",
@@ -515,7 +507,6 @@
     "consent_view": "veure",
     "consent_already": "Ja acceptat: {doc}",
     "consent_close": "Tancar",
-    "children_heading": "Vas a donar d'alta a:",
     "child_unnamed": "Jugador/a",
     "child_no_team": "Sense equip assignat",
     "error_consent_required": "Has d'acceptar els Termes i la Política de Privacitat per completar l'alta.",
@@ -556,12 +547,8 @@
     "self_note": "Esta invitació és per al teu propi compte de jugador: te l'ha enviada el teu pare, mare o tutor legal. Les autoritzacions d'imatge, les teues dades mèdiques i la gestió de les teues dades personals continuen sent cosa seua.",
     "error_reserved_for_tutor": "Eixes dades les gestiona el teu pare, mare o tutor legal; no es poden enviar des d’ací.",
     "error_not_self": "Esta invitació no és per a un compte de jugador. Obri-la des de l'enllaç del correu en el navegador per a completar-la.",
-    "error_not_claimable": "Aquest correu ja té un compte. Inicia sessió amb ell i la invitació s'afegirà sola.",
     "error_rate_limited": "Massa intents. Espera un poc i torna a provar.",
     "error_rate_limited_in": "Massa intents. Torna a provar d'ací a {minutes} min.",
-    "error_unavailable": "No hem pogut comprovar la invitació ara mateix. Intenta-ho d'ací a uns minuts.",
-    "error_network": "Sense connexió. Comprova la teua xarxa i torna a intentar-ho.",
-    "error_no_web_url": "Aquesta versió de l'app no està configurada per a completar invitacions. Avisa el club.",
     "error_invalid": "Aquest enllaç no és vàlid. Obri el que t'ha arribat per correu.",
     "go_to_signin": "Anar a iniciar sessió",
     "session_swap_warning": "Ara mateix estàs en el compte {email}. Si completes aquesta invitació, entraràs amb el compte del jugador.",
@@ -583,7 +570,6 @@
     "live": "En directe",
     "vs": "vs",
     "back": "Tornar a Directes",
-    "not_started_score": "Sense començar",
     "phase": {
       "not_started": "Sense començar",
       "first_half": "1a part",
@@ -897,7 +883,6 @@
     }
   },
   "equipos": {
-    "back_to_categorias": "← Tornar a categories",
     "subtitle": "Equips de la temporada {season}.",
     "empty": "Encara no hi ha equips en esta categoria.",
     "list_title": "Equips",
@@ -1060,8 +1045,6 @@
     "no_team_for_season": "El jugador no té equip en esta temporada.",
     "no_report": "Sense informe encara.",
     "has_report": "Informe creat.",
-    "editor_rework_title": "Editor en reconstrucció",
-    "editor_rework_body": "L'editor de puntuacions s'està refent amb el nou model (valoració d'equip + informe individual per catàleg). Els objectius continuen disponibles al llistat.",
     "create": "Crear informe",
     "edit": "Editar",
     "shared": "Compartit",
@@ -1086,7 +1069,6 @@
     "results_individual": "Resultats individuals",
     "results_team": "Resultats d'equip",
     "team_evolution_title": "Evolució de l'equip",
-    "coming_soon": "Pròximament.",
     "cancel": "Cancel·lar",
     "delete": "Esborrar",
     "confirm_delete": "Esborrar este objectiu?",
@@ -1119,8 +1101,6 @@
       "generic": "No s'ha pogut guardar. Torna-ho a provar."
     },
     "team_valuation": "Valoració d'equip",
-    "team_valuation_done": "Valoració d'equip creada",
-    "team_valuation_pending": "Valoració d'equip pendent",
     "team_comment": "Comentari d'equip",
     "team_block_title": "Valoració d'equip (d'aquest període)",
     "team_block_missing": "Encara no hi ha valoració d'equip per a aquest període. Pots desar l'informe individual igualment; s'enllaçarà quan la crees.",
@@ -2197,7 +2177,6 @@
       "title": "Estadístiques de l'equip",
       "file": "equip",
       "by_player": "Per jugador",
-      "totals_row": "Total equip",
       "empty": "Aquest equip encara no té jugadors."
     },
     "col": {
@@ -2327,7 +2306,6 @@
   "dashboard": {
     "title": "Tauler executiu",
     "subtitle": "{club} · temporada {season}",
-    "coming_soon": "Pròximament.",
     "census": {
       "title": "Plantilla del club",
       "total_players": "jugadors actius",
@@ -2435,7 +2413,6 @@
     "by_type_title": "Totals de l'equip",
     "rival": "Rival",
     "empty": "Aquest equip encara no té jugadors.",
-    "totals_row": "Total equip",
     "col": {
       "dorsal": "#",
       "player": "Jugador",
@@ -2713,7 +2690,6 @@
     },
     "team_filter": "Equip",
     "team_all": "Tots els equips",
-    "range_season": "Temporada actual",
     "empty": "Encara no hi ha registres d'assistència",
     "pct_present": "Presència",
     "total": "{n, plural, one {# entrenament registrat} other {# entrenaments registrats}}",
@@ -3198,7 +3174,6 @@
     "staff_empty": "Sense cos tècnic assignat",
     "frames": "{count, plural, one {# fotograma} other {# fotogrames}}",
     "nav_plantilla": "Plantilla",
-    "nav_sesiones": "Sessions",
     "teammates_empty": "Sense companys encara",
     "upcoming_empty": "Sense esdeveniments pròxims",
     "announcements": "Anuncis",
@@ -3206,7 +3181,6 @@
     "plantilla_empty": "Sense jugadors a la plantilla",
     "session_unavailable": "Esta sessió no està disponible",
     "session_no_tasks": "Sense exercicis",
-    "sesiones_empty": "No hi ha sessions publicades",
     "family_no_team": "Este jugador no té equip en la temporada activa"
   },
   "alineacion": {
@@ -3214,7 +3188,6 @@
     "tournament_label": "Torneig {name} · Ronda {round}",
     "back": "Tornar a Gestió de partits",
     "live_capture": "En directe",
-    "empty_hint": "Encara no hi ha alineació per a aquest partit. Crea’n una per començar.",
     "name_label": "Nom",
     "formation_label": "Formació",
     "create": "Crear alineació",
@@ -3225,7 +3198,6 @@
     "bench": "Banqueta",
     "bench_empty": "Arrossega jugadors ací.",
     "out": "Fora de convocatòria",
-    "out_empty": "Sense descarts.",
     "remove": "Llevar de l’alineació",
     "saving": "Guardant…",
     "saved": "Guardat",
@@ -3256,7 +3228,6 @@
       "forward": "DAV"
     },
     "share_label": "Compartir amb equip",
-    "resync": "Resincronitzar",
     "planned_subs": "Canvis programats",
     "sub_minute": "Min",
     "sub_out": "Ix",
@@ -3267,11 +3238,7 @@
     "tactical_notes_placeholder": "Pressió, vigilàncies, objectius per fases…",
     "tactical_notes_staff_only": "Només visible per al cos tècnic.",
     "save_notes": "Guardar notes",
-    "confirm_published_title": "Convocatòria publicada",
-    "confirm_published_body": "La convocatòria ja està publicada. Vols aplicar també els canvis de convocats/descarts a la convocatòria?",
     "cancel": "Cancel·lar",
-    "confirm_apply": "Aplicar",
-    "resync_done": "Resincronitzat: {out} a fora, {bench} a banqueta",
     "official_lineup_title": "Alineació oficial",
     "share_hint": "Activaʼl perquè jugadors i famílies vegen esta alineació oficial. Les notes tàctiques sempre queden ocultes.",
     "official_hint": "Marca esta com l'alineació oficial del partit (només pot haver-ne una).",
@@ -3364,9 +3331,7 @@
   "partido_directo": {
     "back": "Tornar a Gestió de partits",
     "clock_label": "Cronòmetre",
-    "clock_hint": "El cronòmetre s’activa en la pròxima entrega",
     "status_not_started": "Sense començar",
-    "side_label": "Equip o rival",
     "side_own": "Equip",
     "side_rival": "Rival",
     "palette_title": "Esdeveniments",
@@ -3386,11 +3351,6 @@
       "corner_against": "Córner en contra"
     },
     "no_event": "cap esdeveniment",
-    "stub_player": "{event} sobre {player} — el registre arriba en la pròxima entrega",
-    "stub_field": "{event} al camp ({x}, {y}) — el registre arriba en la pròxima entrega",
-    "panel_own_title": "El teu equip",
-    "panel_rival_title": "Equip rival",
-    "panel_rival_hint": "Els esdeveniments del rival es registren per dorsal (pròxima entrega).",
     "landscape_hint": "Gira el dispositiu en horitzontal per a registrar millor.",
     "friendly_note": "Amistós · la presa de dades funciona igual que en un partit.",
     "scope_note": "Pantalla de captura en directe. El registre d’esdeveniments s’activa en les pròximes entregues.",
@@ -3461,8 +3421,6 @@
     },
     "event_expelled_double_yellow": "Expulsat per doble groga: {player}",
     "event_expelled_red": "Expulsat (roja): {player} ({minute}')",
-    "register_not_field_event": "Eixe esdeveniment va sobre un jugador: toca'l al camp.",
-    "event_registered_field": "Registrat: {event} ({minute}')",
     "tool_absent": "No ve",
     "absent_hint": "Toca un convocat (camp o banqueta) per a marcar-lo com a absent.",
     "sub_hint": "Canvi: toca qui IX (camp) i després qui ENTRA (banqueta).",
@@ -3506,10 +3464,6 @@
     "penalty_registered": "Penal {outcome} · {player} ({minute}')",
     "rival_penalty_registered": "Penal {outcome} · rival #{dorsal} ({minute}')",
     "foul_hint": "Toca el NOSTRE jugador (rep / comet) per registrar la falta.",
-    "foul_pick_location": "Ara toca la ubicació de la falta al camp.",
-    "foul_pick_player": "Toca primer el nostre jugador de la falta.",
-    "foul_loc_committed": "Falta en contra de {player}: toca la ubicació.",
-    "foul_loc_received": "Falta a favor de {player}: toca la ubicació.",
     "foul_committed": "Falta en contra",
     "foul_received": "Falta a favor",
     "foul_committed_registered": "Falta en contra · {player} ({minute}')",
@@ -3544,7 +3498,6 @@
     "stats_low_hint": "Per davall del {pct}% del temps de joc transcorregut.",
     "stats_hint": "Minuts calculats en viu des de l'onze inicial, els canvis i les expulsions. S'actualitzen amb el rellotge.",
     "reentry_on": "Canvis correguts",
-    "reentry_off": "Sense reentrada",
     "tactics_tool": "Moure/Tàctica",
     "tactics_hint": "Arrossega un jugador per recol·locar-lo; canvia la formació amb el selector.",
     "formation_label": "Formació",
@@ -3836,7 +3789,6 @@
     "badge_custom": "Personalitzada",
     "overlap_badge": "Solapa estàndard",
     "overlap_hint": "Esta categoria coincidix en grup d'edat amb una estàndard però té un altre nom. Revisa-la.",
-    "standard_locked_hint": "Categoria estàndard: el nom i el grup d'edat estan bloquejats. Només pots canviar la duració.",
     "actions": {
       "create": "Nova categoria",
       "edit": "Editar",
@@ -3852,11 +3804,8 @@
     "field": {
       "name": "Nom",
       "kind": "Grup d'edat",
-      "kind_help": "Determina el règim de canvis i l'orde del llistat.",
-      "half_duration": "Durada per temps (min)",
-      "half_duration_help": "Minuts de cada temps de partit (1–90)."
+      "half_duration": "Durada per temps (min)"
     },
-    "kind_none": "Sense grup d'edat",
     "delete": {
       "title": "Voleu eliminar la categoria?",
       "description": "Vas a eliminar «{name}». Esta acció no es pot desfer."
@@ -4413,7 +4362,6 @@
     "subtitle": "Efímera: no es guarda res. Dibuixa sobre el camp per a explicar la jugada.",
     "mode_blank": "En blanc",
     "mode_exercise": "Des d exercici",
-    "from_exercise": "Mostrant: {name}",
     "open_exercise": "Obrir en pissarra",
     "pick_hint": "Tria un exercici per a carregar-lo.",
     "pick_placeholder": "Triar exercici",
@@ -4481,7 +4429,6 @@
       "reorder_block": "Reordenar bloc",
       "reorder_task": "Reordenar exercici",
       "plays_heading": "Jugades a entrenar",
-      "plays_empty": "Sense jugades encara.",
       "play_untitled": "Jugada sense títol",
       "frame_count": "{count, plural, =1 {# fotograma} other {# fotogrames}}",
       "move_up": "Pujar",
@@ -4883,7 +4830,6 @@
   },
   "playbook": {
     "title": "Playbook",
-    "coming_soon": "Pròximament",
     "subtitle": "El playbook estarà disponible aviat.",
     "unavailable": "Esta jugada no està disponible",
     "untitled": "Jugada",

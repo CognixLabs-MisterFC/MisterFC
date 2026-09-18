@@ -8,6 +8,9 @@
  * escribir este guard había 57, y tres de ellas eran de una pantalla que se rehízo
  * hace meses. Nadie las iba a encontrar mirando.
  *
+ * Las 57 están borradas (#633 y #635), así que hoy el catálogo está a CERO y la lista de
+ * excepciones de abajo está VACÍA: cualquier cadena sin uso que aparezca es nueva.
+ *
  * CÓMO DECIDE SI UNA CLAVE SE USA. Dos vías, y la segunda es la importante:
  *
  *  1. LITERAL — su último segmento aparece como identificador en el código, o su ruta
@@ -47,7 +50,16 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 
-/** Raíces de código donde puede pedirse una traducción (los 3 paquetes del workspace). */
+/**
+ * Raíces de CÓDIGO donde puede pedirse una traducción (los 3 paquetes del workspace,
+ * comprobado contra pnpm-workspace.yaml).
+ *
+ * `docs/` NO está, y es a propósito: `docs/i18n/*.csv` son las entregas de las tandas de
+ * traducción (la auditoría del #443, T2–T6) y listan claves por su nombre. Nadie los lee
+ * en ejecución —son un registro de lo que se mandó a traducir entonces—, así que una
+ * clave mencionada ahí NO está en uso. Si se barrieran, 7 de las 54 muertas del censo
+ * habrían salido como vivas y no se habrían borrado nunca.
+ */
 const SRC_DIRS = [
   'apps/web/src',
   'apps/web/scripts',
@@ -67,72 +79,24 @@ const EXT = ['.ts', '.tsx', '.mjs', '.js'];
 const EXCLUIDOS = ['scripts/check-cadenas-muertas.mjs'];
 
 /**
- * PENDIENTES — las 54 que quedaron del censo del 2026-09-18, a la espera de que Jose
- * decida si se borran. NO es una lista de excepciones permanentes: es el punto de
- * partida. En cuanto se borren, esta lista queda VACÍA y el guard pasa a prohibir
- * cualquier cadena nueva sin uso, que es para lo que se escribió.
+ * PENDIENTES — **VACÍA, y así se queda**.
  *
- * Están casi todas agrupadas por pantalla, y eso dice de dónde vienen: `partido_directo`
- * son los textos de "próxima entrega" de cuando el directo era un esqueleto;
- * `home.*` es la home vieja de la web; los tres `coming_soon` son de secciones que ya
- * llegaron.
+ * El censo del 2026-09-18 encontró 57 cadenas sin uso. Se borraron las 57: las 3
+ * decididas en el #633 y las 54 restantes en el #635. O sea que el catálogo no tiene
+ * ni una cadena muerta y este guard no tiene ni una excepción.
+ *
+ * NO VUELVAS A LLENARLA para poner CI en verde. Una lista de excepciones que nadie
+ * vacía acaba siendo una lista que crece, y entonces el guard ya no dice "no hay
+ * cadenas muertas": dice "hay las que alguien apuntó aquí". Si el censo señala una
+ * cadena nueva, o se borra de los tres idiomas o se le da uso. Si señala una cadena que
+ * SÍ se usa, el fallo está en cómo la detecta —lo normal es una plantilla nueva que el
+ * lector no reconoce— y se arregla ahí arriba, no aquí.
+ *
+ * Solo tendría sentido una entrada temporal con fecha y motivo, para una cadena ya
+ * escrita cuya pantalla llega en el PR siguiente. Y entonces la entrada se va con ese
+ * PR: si la cadena se queda, la lista miente y el propio guard lo dice.
  */
-const PENDIENTES = [
-  'alineacion.confirm_apply',
-  'alineacion.confirm_published_body',
-  'alineacion.confirm_published_title',
-  'alineacion.empty_hint',
-  'alineacion.out_empty',
-  'alineacion.resync',
-  'alineacion.resync_done',
-  'asistencia.range_season',
-  'common.tagline',
-  'dashboard.coming_soon',
-  'directos.not_started_score',
-  'equipo_stats.totals_row',
-  'equipos.back_to_categorias',
-  'home.invitations_link',
-  'home.next_steps_body',
-  'home.next_steps_title',
-  'home.no_clubs',
-  'home.signed_in_as',
-  'home.your_clubs',
-  'informes.coming_soon',
-  'informes.editor_rework_body',
-  'informes.editor_rework_title',
-  'informes.team_valuation_done',
-  'informes.team_valuation_pending',
-  'invitations.list_section_title',
-  'invite.children_heading',
-  'invite.error_network',
-  'invite.error_no_web_url',
-  'invite.error_not_claimable',
-  'invite.error_unavailable',
-  'mi_equipo.nav_sesiones',
-  'mi_equipo.sesiones_empty',
-  'partido_directo.clock_hint',
-  'partido_directo.event_registered_field',
-  'partido_directo.foul_loc_committed',
-  'partido_directo.foul_loc_received',
-  'partido_directo.foul_pick_location',
-  'partido_directo.foul_pick_player',
-  'partido_directo.panel_own_title',
-  'partido_directo.panel_rival_hint',
-  'partido_directo.panel_rival_title',
-  'partido_directo.reentry_off',
-  'partido_directo.register_not_field_event',
-  'partido_directo.side_label',
-  'partido_directo.stub_field',
-  'partido_directo.stub_player',
-  'pdf.team.totals_row',
-  'pizarra.from_exercise',
-  'plantillas.field.half_duration_help',
-  'plantillas.field.kind_help',
-  'plantillas.kind_none',
-  'plantillas.standard_locked_hint',
-  'playbook.coming_soon',
-  'sesiones.blocks.plays_empty',
-];
+const PENDIENTES = [];
 
 // ── Catálogo ─────────────────────────────────────────────────────────────────
 function hojas(obj, pre = '', out = {}) {
@@ -241,8 +205,11 @@ if (errores.length > 0) {
   process.exit(1);
 }
 
+const resumen =
+  muertas.length === 0
+    ? 'ninguna sin uso'
+    : `${muertas.length} sin uso, todas declaradas en PENDIENTES`;
 console.log(
   `✓ check:cadenas-muertas — ${Object.keys(catalogo).length} claves, ` +
-    `${FUENTES.length} ficheros, ${PLANTILLAS.length} plantillas; ` +
-    `${muertas.length} sin uso, todas declaradas en PENDIENTES.`,
+    `${FUENTES.length} ficheros, ${PLANTILLAS.length} plantillas; ${resumen}.`,
 );
