@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ScrollView, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Pressable, Text, View } from 'react-native';
+import * as Sharing from 'expo-sharing';
 import {
   getPlayerReportBundleFromClient,
   computeGroupAverages,
@@ -11,9 +12,11 @@ import {
 import { useApp } from '@/auth/context';
 import { useActivePlayer } from '@/auth/active-player';
 import { useCached } from '@/data/use-cached';
+import { useIsOnline } from '@/data/connectivity';
+import { downloadServerFile } from '@/lib/server-api';
 import { PlayerAvatar } from '@/ui/player-avatar';
 import { OfflineBanner, LoadingScreen, EmptyState } from '@/ui/feedback';
-import { useTranslations } from '@/locale/provider';
+import { appLocale, useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 
 /**
@@ -123,6 +126,13 @@ export function MiInformeScreen() {
                 <Metric label={t('informe.trainings')} value={`${rep.fichaStats.trainingsAttended}/${rep.fichaStats.totalTrainings}`} />
               </View>
             </Section>
+
+            {/* Descargar en PDF (el mismo informe, con las gráficas) */}
+            <DownloadCard
+              playerId={playerId}
+              period={rep.period}
+              seasonLabel={data.activeSeason}
+            />
           </>
         )}
       </ScrollView>
@@ -239,5 +249,87 @@ function Metric({ label, value }: { label: string; value: string }) {
       <Text className="text-lg font-bold text-[#0F1B2E] tabular-nums">{value}</Text>
       <Text className="text-[10px] text-zinc-400">{label}</Text>
     </View>
+  );
+}
+
+/**
+ * Descarga del informe en PDF. El PDF NO se genera aquí: lo sirve el route handler
+ * de la web (`/jugadores/[id]/informes/[period]/pdf`), el mismo que ya usa
+ * /mi-informe en el navegador, así que el documento es idéntico en las dos
+ * superficies y trae MÁS que esta pantalla (los radares y las dos gráficas de
+ * evolución). La llamada va con bearer, como el expediente de RGPD (O2-5 F1).
+ *
+ * En un móvil "descargar" es COMPARTIR: se guarda en la caché de la app y se abre la
+ * hoja del sistema (Archivos, correo, WhatsApp…). Un fichero en la caché al que no se
+ * le ofrece salida no le sirve de nada a nadie.
+ *
+ * Solo se pinta con un informe delante, y el informe de esta pantalla es siempre uno
+ * PUBLICADO (el bundle de core solo lista periodos publicados), así que el portero
+ * del servidor no puede negar lo que aquí se ve.
+ */
+function DownloadCard({
+  playerId,
+  period,
+  seasonLabel,
+}: {
+  playerId: string;
+  period: string;
+  seasonLabel: string | null;
+}) {
+  const t = useTranslations('');
+  const online = useIsOnline();
+  const [busy, setBusy] = useState(false);
+  const [state, setState] = useState<'idle' | 'error' | 'unavailable'>('idle');
+
+  async function download() {
+    if (!online || busy) return; // write-guard: sin red no se llama
+    setBusy(true);
+    setState('idle');
+    try {
+      const qs = seasonLabel ? `?season=${encodeURIComponent(seasonLabel)}` : '';
+      const uri = await downloadServerFile(
+        `/${appLocale()}/jugadores/${playerId}/informes/${period}/pdf${qs}`,
+        // El periodo va en el nombre (inicial/medio/final: seguros en un fichero);
+        // el rótulo de temporada NO, que lleva barra ("2025/26").
+        `informe-${period}.pdf`,
+      );
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'application/pdf',
+          dialogTitle: t('informe.download_title'),
+        });
+      }
+    } catch (e) {
+      setState((e as Error)?.message === 'no_web_url' ? 'unavailable' : 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Section title={t('informe.download_title')}>
+      <Text className="mb-3 text-xs text-zinc-400">{t('informe.download_hint')}</Text>
+      <Pressable
+        onPress={download}
+        disabled={!online || busy}
+        accessibilityRole="button"
+        className="flex-row items-center gap-2 self-start rounded-full border border-zinc-300 px-4 py-2 active:opacity-60"
+        style={!online || busy ? { opacity: 0.5 } : undefined}
+      >
+        {busy ? <ActivityIndicator size="small" color={BRAND.navy} /> : null}
+        <Text className="text-sm font-medium text-[#0F1B2E]">
+          {t('informe.download_action')}
+        </Text>
+      </Pressable>
+      {!online ? (
+        <Text className="mt-2 text-xs text-amber-600">{t('informe.download_offline')}</Text>
+      ) : null}
+      {state === 'error' ? (
+        <Text className="mt-2 text-xs text-red-600">{t('informe.download_error')}</Text>
+      ) : null}
+      {state === 'unavailable' ? (
+        <Text className="mt-2 text-xs text-red-600">{t('informe.download_unavailable')}</Text>
+      ) : null}
+    </Section>
   );
 }

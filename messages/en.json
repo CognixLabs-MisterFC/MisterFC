@@ -5159,7 +5159,13 @@
       "open": "Open",
       "achieved": "Achieved",
       "dropped": "Dropped"
-    }
+    },
+    "download_title": "Download report",
+    "download_hint": "The full report as a PDF, with the radars and the progress charts.",
+    "download_action": "Download PDF",
+    "download_offline": "Offline: you cannot download right now",
+    "download_error": "The report could not be generated. Please try again.",
+    "download_unavailable": "Download not available in this version."
   },
   "staff_role": {
     "entrenador_principal": "Head coach",

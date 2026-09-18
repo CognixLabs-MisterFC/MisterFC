@@ -5159,7 +5159,13 @@
       "open": "Abierto",
       "achieved": "Logrado",
       "dropped": "Descartado"
-    }
+    },
+    "download_title": "Descargar informe",
+    "download_hint": "El informe completo en PDF, con los radares y las gráficas de evolución.",
+    "download_action": "Descargar PDF",
+    "download_offline": "Sin conexión: no puedes descargar ahora",
+    "download_error": "No se pudo generar el informe. Inténtalo de nuevo.",
+    "download_unavailable": "Descarga no disponible en esta versión."
   },
   "staff_role": {
     "entrenador_principal": "Entrenador principal",
