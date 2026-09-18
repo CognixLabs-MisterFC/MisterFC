@@ -3,24 +3,48 @@
  * jugador en un periodo (jugador×temporada×periodo). Molde de /sesiones/[id]/pdf
  * y /jugadores/[id]/pdf (9.B): cliente/sesión de la request → RLS heredada.
  *
- * Acceso (D13 + Regla #11): STAFF del club (ven borradores y publicados) y la
- * FAMILIA/JUGADOR (rol `jugador`) SOLO de un informe PUBLICADO suyo. No se abre
- * RLS: el cliente autenticado de la request ya recorta (la RLS de 13.10d deja al
- * jugador ver solo sus informes publicados); el PDF es un render de los MISMOS
- * datos que ya ve en /mi-informe.
+ * Acceso: STAFF del club (ven borradores y publicados) y la FAMILIA SOLO de un
+ * informe PUBLICADO suyo. No se abre RLS: el cliente autenticado de la request ya
+ * recorta (la RLS de 13.10d deja al jugador ver solo sus informes publicados); el
+ * PDF es un render de los MISMOS datos que ya ve en /mi-informe.
+ *
+ * DOS VÍAS DE IDENTIDAD (molde del expediente de RGPD, O2-5 F1): cookie de sesión
+ * (web, idéntico a antes) o `Authorization: Bearer` (app nativa, que no tiene
+ * cookie). Antes era solo cookie, así que la app recibía 401 y la descarga no
+ * existía en el móvil.
+ *
+ * Y EL PORTERO DE LA FAMILIA YA NO ES EL ROL DE CLUB. Antes se exigía
+ * `role === 'jugador'`, lo que ataba la descarga a la forma en que se modela una
+ * familia (una membresía con ese rol). Ahora se pregunta por el VÍNCULO con el
+ * jugador, como el expediente:
+ *  · `user_manages_player_sensitive` — tutor vinculado, o el propio jugador si ya
+ *    es mayor de edad. Es el mismo helper que usa /mi-ficha/export.
+ *  · `user_is_player_self` — Y ADEMÁS la cuenta propia del MENOR. El expediente la
+ *    deja fuera a propósito (es uno de los bloques que Jose reserva al tutor), pero
+ *    este informe no es dato sensible: es lo que el menor ya ve en su propia
+ *    pantalla de Mi informe. Sin esta segunda pregunta, las 2 cuentas propias de
+ *    menor que hay hoy perderían una descarga que la web sí les daba.
+ * Consecuencia buscada: un director o entrenador que ADEMÁS sea tutor descarga el
+ * informe de su hijo, cosa que con el gate por rol le daba 403.
+ *
+ * Y la suma de las dos preguntas es, a propósito, EXACTAMENTE la rama de familia de
+ * la RLS de `development_reports` (`visibility='team' AND user_is_account_of_player`):
+ * `relation` solo admite self/parent/guardian por CHECK, así que tutor ∪ propio = todo
+ * vínculo. El portero no estrecha ni ensancha lo que la RLS ya deja leer; se escriben
+ * las dos por separado porque así queda dicho POR QUÉ entra el menor con cuenta propia
+ * —para que nadie lo "endurezca" al gate sensible y le quite lo que ya ve en pantalla—.
+ * Si algún día aparece una cuarta `relation`, hay que volver aquí.
  */
 
 import { getTranslations } from 'next-intl/server';
 import {
-  createSupabaseServerClient,
   isDevelopmentPeriod,
   PLAYER_POSITIONS,
   STAFF_ROLES,
   type PlayerPosition,
   type Role,
 } from '@misterfc/core';
-import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { loadShellContext } from '@/lib/auth-shell';
+import { resolveUserFromRequest } from '@/lib/resolve-user';
 import { getActiveSeasonLabel } from '@/lib/active-season';
 import {
   loadClubSeasons,
@@ -45,16 +69,10 @@ export async function GET(
   const { locale, playerId, period } = await params;
   if (!isDevelopmentPeriod(period)) return new Response('Not found', { status: 404 });
 
-  const ctx = await loadShellContext();
-  if (!ctx) return new Response('Unauthorized', { status: 401 });
-
-  const role = ctx.activeClub.role as Role;
-  const isStaff = STAFF_ROLES.includes(role);
-  const isFamily = role === 'jugador';
-  if (!isStaff && !isFamily) return new Response('Forbidden', { status: 403 });
-
-  const supabase = createSupabaseServerClient(await createCookieAdapter());
-  const clubId = ctx.activeClub.club.id;
+  // Cookie (web) o bearer (app nativa). Cliente RLS-scoped al usuario, nunca admin.
+  const auth = await resolveUserFromRequest(req);
+  if (!auth) return new Response('Unauthorized', { status: 401 });
+  const { user, supabase, shell } = auth;
 
   // Jugador (RLS: staff del club lo ve; la familia ve a su jugador).
   const { data: player } = await supabase
@@ -62,7 +80,47 @@ export async function GET(
     .select('first_name, last_name, club_id, date_of_birth, dorsal, position_main, positions_secondary, foot')
     .eq('id', playerId)
     .maybeSingle();
-  if (!player || player.club_id !== clubId) return new Response('Not found', { status: 404 });
+  if (!player) return new Response('Not found', { status: 404 });
+  // Camino COOKIE: se conserva EXACTA la comprobación de club activo de antes. En
+  // bearer no hay club activo, así que el club se deriva del propio jugador.
+  if (shell && player.club_id !== shell.activeClub.club.id) {
+    return new Response('Not found', { status: 404 });
+  }
+  const clubId = player.club_id;
+
+  // Rol en el club DEL JUGADOR. En cookie se lee del shell —idéntico a antes, y así
+  // el club sintético del superadmin (F14B-8), que no tiene membresía real, sigue
+  // entrando—; en bearer sale de la membresía viva en ese club.
+  let role: Role | null = shell ? (shell.activeClub.role as Role) : null;
+  if (!shell) {
+    const { data: membership } = await supabase
+      .from('memberships')
+      .select('role')
+      .eq('profile_id', user.id)
+      .eq('club_id', clubId)
+      .is('left_at', null)
+      .maybeSingle();
+    role = (membership?.role ?? null) as Role | null;
+  }
+  const isStaff = role != null && STAFF_ROLES.includes(role);
+
+  // La familia entra por el VÍNCULO, no por el rol (ver cabecera). Solo se pregunta
+  // si no es staff: quien ya pasa por staff no necesita el vínculo.
+  let isFamily = false;
+  if (!isStaff) {
+    const { data: manages } = await supabase.rpc('user_manages_player_sensitive', {
+      p_player_id: playerId,
+    });
+    isFamily = manages === true;
+    if (!isFamily) {
+      // La cuenta propia del menor: ve su informe en pantalla, se lo puede llevar.
+      const { data: isSelf } = await supabase.rpc('user_is_player_self', {
+        p_player_id: playerId,
+      });
+      isFamily = isSelf === true;
+    }
+  }
+  if (!isStaff && !isFamily) return new Response('Forbidden', { status: 403 });
 
   // Temporada: ?season= (label) si es válida; si no, la activa del club.
   const seasonParam = new URL(req.url).searchParams.get('season');
@@ -79,8 +137,9 @@ export async function GET(
   // Informe individual (RLS: la familia solo recibe el publicado suyo).
   const report = await loadIndividualReport(supabase, playerId, seasonId, period);
   if (!report) return new Response('Not found', { status: 404 });
-  // Cinturón y tirantes: la familia solo descarga informes PUBLICADOS.
-  if (isFamily && report.visibility !== 'team') {
+  // Cinturón y tirantes: quien no es staff solo descarga informes PUBLICADOS. La RLS
+  // ya no le devolvería un borrador, pero la condición se queda escrita aquí.
+  if (!isStaff && report.visibility !== 'team') {
     return new Response('Forbidden', { status: 403 });
   }
 

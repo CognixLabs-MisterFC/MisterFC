@@ -5161,7 +5161,13 @@
       "open": "Obert",
       "achieved": "Assolit",
       "dropped": "Descartat"
-    }
+    },
+    "download_title": "Descarregar informe",
+    "download_hint": "L'informe complet en PDF, amb els radars i les gràfiques d'evolució.",
+    "download_action": "Descarregar PDF",
+    "download_offline": "Sense connexió: no pots descarregar ara",
+    "download_error": "No s'ha pogut generar l'informe. Torna-ho a provar.",
+    "download_unavailable": "Descàrrega no disponible en esta versió."
   },
   "staff_role": {
     "entrenador_principal": "Entrenador principal",
