@@ -140,13 +140,15 @@ export default async function CoachDetailPage({ params }: Props) {
             <h1 className="text-3xl font-bold tracking-tight">
               {coach.full_name}
             </h1>
-            {/* Bug 2 · 2a: solo admin_club, y no para uno mismo (eso va en /perfil). */}
-            {role === 'admin_club' && coach.profile_id !== ctx.user.id && (
-              <EditStaffNameDialog
-                targetProfileId={coach.profile_id}
-                currentName={coach.full_name}
-              />
-            )}
+            {/* Bug 2 · 2a: la DIRECCIÓN del club (mig 20261085000000 abrió las dos
+                RPC al director), y no para uno mismo (eso va en /perfil). */}
+            {(role === 'admin_club' || role === 'director') &&
+              coach.profile_id !== ctx.user.id && (
+                <EditStaffNameDialog
+                  targetProfileId={coach.profile_id}
+                  currentName={coach.full_name}
+                />
+              )}
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <p className="text-sm text-muted-foreground">
@@ -174,17 +176,19 @@ export default async function CoachDetailPage({ params }: Props) {
       </div>
 
       {/* Bug 2 · 2c: contacto gestionado por el club (solo staff, no público).
-          NO es el email de login. La edición se gatea a admin_club y no a uno mismo. */}
+          NO es el email de login. La edición se gatea a la DIRECCIÓN del club
+          (mig 20261085000000 abrió las dos RPC al director) y no a uno mismo. */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <CardTitle>{t('contact.title')}</CardTitle>
-          {role === 'admin_club' && coach.profile_id !== ctx.user.id && (
-            <EditStaffContactDialog
-              targetProfileId={coach.profile_id}
-              currentPhone={coach.phone}
-              currentContactEmail={coach.contact_email}
-            />
-          )}
+          {(role === 'admin_club' || role === 'director') &&
+            coach.profile_id !== ctx.user.id && (
+              <EditStaffContactDialog
+                targetProfileId={coach.profile_id}
+                currentPhone={coach.phone}
+                currentContactEmail={coach.contact_email}
+              />
+            )}
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           {coach.phone == null && coach.contact_email == null ? (
