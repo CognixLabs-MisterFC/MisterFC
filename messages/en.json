@@ -440,7 +440,12 @@
       "error_invalid_input": "Check the form fields",
       "error_forbidden": "You don't have permission to invite in this club",
       "error_no_club": "You don't belong to any club yet",
-      "error_generic": "We couldn't create the invitation. Please try again."
+      "error_generic": "We couldn't create the invitation. Please try again.",
+      "existing": {
+        "title": "That person is already in the club",
+        "body": "{name} is already in the club as {role}, so we have not sent any invitation. Inviting someone who is already in does not change their role: that is done from their profile.",
+        "ficha": "See their profile in Coaching staff"
+      }
     },
     "cancel": {
       "action": "Cancel invitation",

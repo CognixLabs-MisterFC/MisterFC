@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { sendInvitation, type SendInvitationFormState } from './actions';
 
 export type InviteFormTeam = { id: string; name: string };
@@ -100,6 +101,34 @@ export function InviteForm({
         <p role="status" className="text-sm text-emerald-400">
           {t('ok', { email: state.ok.email })}
         </p>
+      )}
+
+      {/* BUG 3 · B-1 — el correo ya es de alguien del club: no se ha invitado.
+          Se dice quién es y con qué rol. La ficha solo se enlaza cuando existe:
+          la de un rol `jugador` (una familia) no vive en Cuerpo técnico. */}
+      {state.existingMember && (
+        <div
+          role="status"
+          className="flex flex-col gap-2 rounded-md border border-zinc-700 bg-zinc-900/60 p-3 text-left"
+        >
+          <p className="text-sm font-medium text-zinc-100">
+            {t('existing.title')}
+          </p>
+          <p className="text-sm text-zinc-400">
+            {t('existing.body', {
+              name: state.existingMember.fullName,
+              role: t(`role_${state.existingMember.clubRole}`),
+            })}
+          </p>
+          {state.existingMember.hasFicha && (
+            <Link
+              href={`/cuerpo-tecnico/${state.existingMember.membershipId}`}
+              className="text-sm font-medium text-[#10B981] underline underline-offset-4"
+            >
+              {t('existing.ficha')}
+            </Link>
+          )}
+        </div>
       )}
 
       <button
