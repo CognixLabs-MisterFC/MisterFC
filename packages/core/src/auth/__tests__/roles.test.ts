@@ -58,6 +58,15 @@ describe('familias de rol de club', () => {
     expect(STAFF_ROLES).not.toContain('jugador');
   });
 
+  // La lista de Cuerpo técnico se construye con STAFF_ROLES: es el club entero
+  // menos los jugadores. Si algún día aparece un rol de club nuevo y nadie lo
+  // añade a STAFF_ROLES, esa gente sería INVISIBLE en la pantalla — ni lista ni
+  // ficha, sin error ninguno. Este test ata las dos listas para que el olvido
+  // salga en rojo aquí y no en producción.
+  it('STAFF_ROLES + jugador = ALL_CLUB_ROLES (ningún rol se queda fuera)', () => {
+    expect([...STAFF_ROLES, 'jugador'].sort()).toEqual([...ALL_CLUB_ROLES].sort());
+  });
+
   it('las familias de gestión son subconjuntos coherentes', () => {
     // admin ⊆ manager ⊆ staff
     for (const r of ADMIN_ROLES) expect(MANAGER_ROLES).toContain(r);

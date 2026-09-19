@@ -18,7 +18,7 @@
 
 import {
   ADMIN_ROLES,
-  COACH_ROLES,
+  STAFF_ROLES,
   TEAM_STAFF_ROLES,
   type TeamStaffRole,
   createSupabaseServerClient,
@@ -52,13 +52,13 @@ export type CoachRow = {
   full_name: string;
   avatar_url: string | null;
   /**
-   * Rol de CLUB del miembro. S1b (director-entrenador): además de los COACH_ROLES
-   * puede ser un rol alto (director/admin_club) o coordinador si está asignado como
-   * team_staff de un equipo — el listado incluye a "quién trabaja cada equipo",
-   * no solo a los entrenadores por rol. La UI lo trata como Role (no editable para
-   * roles altos: la ficha oculta EditStaffRoleDialog).
+   * Rol de CLUB del miembro: cualquiera de `STAFF_ROLES`, o sea el club entero
+   * menos los jugadores. Un rol alto (director/admin_club) o un coordinador
+   * figuran aquí trabajen o no algún equipo. La UI lo trata como Role (no
+   * editable para roles altos: la ficha oculta EditStaffRoleDialog).
    */
   club_role: Role;
+  /** Vacío = miembro del club sin equipo asignado. No es un error: es su estado. */
   assignments: CoachTeamAssignment[];
   /** Contacto gestionado por el club (Bug 2 · 2c). NO es el email de login. */
   phone: string | null;
@@ -355,18 +355,20 @@ export async function loadCoachList(
     };
   };
 
-  // Filtra por club. S1b (director-entrenador): NO se filtra por rol de club —
-  // cualquier miembro con team_staff ACTIVO (la query ya es `.is('left_at', null)`)
-  // trabaja ese equipo y debe figurar aquí, incluidos director/admin_club/coordinador
-  // asignados como staff. El listado es "quién trabaja cada equipo", no "quién tiene
-  // rol de entrenador". La baja cierra el team_staff (mig 20261053000000), así que un
-  // miembro dado de baja no aparece.
+  // Filtra por club y por rol de club. S1b (director-entrenador): aquí figura
+  // cualquier miembro con team_staff ACTIVO (la query ya es `.is('left_at', null)`),
+  // director/admin_club/coordinador incluidos — el listado es "quién trabaja cada
+  // equipo", no "quién tiene rol de entrenador". Lo único que NO entra es el
+  // `jugador`: esta pantalla es cuerpo técnico, y una familia no lo es aunque
+  // alguien le hubiera abierto una fila de staff por error. La baja cierra el
+  // team_staff (mig 20261053000000), así que un miembro dado de baja no aparece.
   const rows = (rawStaff ?? [])
     .map((r) => r as unknown as StaffJoin)
     .filter(
       (r) =>
         r.memberships.club_id === clubId &&
-        r.teams.categories.club_id === clubId
+        r.teams.categories.club_id === clubId &&
+        STAFF_ROLES.includes(r.memberships.role as Role)
     );
 
   // Agrupa por membership_id → CoachRow.
@@ -396,6 +398,58 @@ export async function loadCoachList(
         assignments: [assignment],
         phone: (r.memberships.phone as string | null) ?? null,
         contact_email: (r.memberships.contact_email as string | null) ?? null,
+      });
+    }
+  }
+
+  // SIN EQUIPO TAMBIÉN CUENTA. Hasta aquí la lista salía entera de `team_staff`,
+  // así que quien no entrenaba ningún equipo no aparecía en NINGUNA pantalla: ni
+  // en esta lista ni, por tanto, en su ficha. Un director o un admin recién
+  // llegado era invisible. Ahora se suman las membresías del club que no tienen
+  // asignación activa.
+  //
+  // Solo con scope 'all' (admin_club/director). Un principal o un coordinador ven
+  // "el staff de MIS equipos", y alguien sin equipo no está en ninguno de los
+  // suyos: darles el censo del club entero sería ensanchar su visibilidad, que es
+  // otra decisión y no esta.
+  if (scope.kind === 'all') {
+    type MemberRow = {
+      id: string;
+      role: string;
+      club_id: string;
+      profile_id: string;
+      phone: string | null;
+      contact_email: string | null;
+      profiles: {
+        id: string;
+        full_name: string | null;
+        avatar_url: string | null;
+      };
+    };
+
+    const { data: rawMembers } = await supabase
+      .from('memberships')
+      .select(
+        `id, role, club_id, profile_id, phone, contact_email,
+         profiles!inner(id, full_name, avatar_url)`
+      )
+      .eq('club_id', clubId)
+      .is('left_at', null);
+
+    for (const raw of rawMembers ?? []) {
+      const m = raw as unknown as MemberRow;
+      if (m.club_id !== clubId) continue;
+      if (!STAFF_ROLES.includes(m.role as Role)) continue;
+      if (byMembership.has(m.id)) continue;
+      byMembership.set(m.id, {
+        membership_id: m.id,
+        profile_id: m.profile_id,
+        full_name: m.profiles.full_name ?? '—',
+        avatar_url: m.profiles.avatar_url ?? null,
+        club_role: m.role as Role,
+        assignments: [],
+        phone: m.phone ?? null,
+        contact_email: m.contact_email ?? null,
       });
     }
   }
@@ -557,10 +611,13 @@ export async function loadCoachDetail(
 
   const active = hist.filter((r) => r.left_at == null);
 
-  // Gate de rol (S1b): un COACH_ROLE (principal/ayudante) tiene ficha siempre, aunque
-  // no tenga asignaciones activas. Un rol alto/coordinador solo si trabaja algún equipo
-  // (team_staff ACTIVO) — sin asignación activa no tiene nada que hacer aquí.
-  if (!COACH_ROLES.includes(m.role as Role) && active.length === 0) return null;
+  // Gate de rol: cuerpo técnico es el club entero MENOS los jugadores.
+  //
+  // Antes esto decía que un COACH_ROLE tenía ficha siempre y que un rol alto o un
+  // coordinador solo si trabajaba algún equipo. Eso dejaba sin ficha —404— a un
+  // director o a un admin sin asignación, que es justo a quien hay que poder abrir
+  // para darle una. La ficha es de la PERSONA, no de su trabajo en un equipo.
+  if (!STAFF_ROLES.includes(m.role as Role)) return null;
 
   // Si el scope es restricted (principal), exigimos al menos un team en
   // común para mostrar la ficha.
