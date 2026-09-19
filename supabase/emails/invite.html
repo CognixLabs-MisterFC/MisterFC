@@ -1,0 +1,104 @@
+{{- $k := "" -}}
+{{- with .Data }}{{ $k = print .invite_kind }}{{ end -}}
+<div style="margin:0;padding:0;background-color:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
+          <tr>
+            <td style="background-color:#0b5d3b;padding:24px 32px;">
+              <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:-0.3px;">MisterFC</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+
+              {{ if eq $k "tutor" }}
+              <h1 style="margin:0 0 12px;font-size:20px;color:#111827;font-weight:700;">Te han invitado a MisterFC</h1>
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">
+                Hola: el club de tu hijo o hija te ha invitado a <strong>MisterFC</strong>, donde el club comparte
+                entrenamientos, convocatorias y partidos con las familias.
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                Pulsa el botón para aceptar la invitación y crear tu acceso:
+              </p>
+
+              {{ else if eq $k "seguidor" }}
+              <h1 style="margin:0 0 12px;font-size:20px;color:#111827;font-weight:700;">Te han invitado a seguir a un jugador</h1>
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">
+                Hola: una familia te ha invitado a seguir a su jugador en <strong>MisterFC</strong>. Podrás ver sus
+                convocatorias y sus partidos.
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                Es solo para seguirle: no entras en el club ni gestionas nada. Pulsa el botón para crear tu acceso:
+              </p>
+
+              {{ else if eq $k "menor" }}
+              <h1 style="margin:0 0 12px;font-size:20px;color:#111827;font-weight:700;">Tu cuenta de MisterFC ya está lista</h1>
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">
+                Hola: tu familia te ha creado tu propia cuenta en <strong>MisterFC</strong>, la aplicación donde tu
+                club publica los entrenamientos, las convocatorias y los partidos.
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                Pulsa el botón para elegir tu contraseña y entrar:
+              </p>
+
+              {{ else if eq $k "admin" }}
+              <h1 style="margin:0 0 12px;font-size:20px;color:#111827;font-weight:700;">Te han invitado a administrar tu club</h1>
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">
+                Hola: te han dado la administración de tu club en <strong>MisterFC</strong>, la plataforma para
+                gestionar equipos de fútbol base.
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                Pulsa el botón para aceptar la invitación y crear tu acceso:
+              </p>
+
+              {{ else if eq $k "staff" }}
+              <h1 style="margin:0 0 12px;font-size:20px;color:#111827;font-weight:700;">Te han invitado a MisterFC</h1>
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">
+                Hola, has recibido una invitación para unirte al cuerpo técnico de tu club en <strong>MisterFC</strong>,
+                la plataforma para gestionar equipos de fútbol base.
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                Pulsa el botón para aceptar la invitación y crear tu acceso:
+              </p>
+
+              {{ else }}
+              <h1 style="margin:0 0 12px;font-size:20px;color:#111827;font-weight:700;">Te han invitado a MisterFC</h1>
+              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">
+                Hola, has recibido una invitación para unirte a tu club en <strong>MisterFC</strong>, la plataforma
+                para gestionar equipos de fútbol base.
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                Pulsa el botón para aceptar la invitación y crear tu acceso:
+              </p>
+              {{ end }}
+
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 24px;">
+                <tr>
+                  <td align="center" style="border-radius:8px;background-color:#0b5d3b;">
+                    <a href="{{ .RedirectTo }}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">{{ if eq $k "menor" }}Entrar en MisterFC{{ else }}Aceptar invitación{{ end }}</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#6b7280;">
+                Si el botón no funciona, copia y pega este enlace en tu navegador:
+              </p>
+              <p style="margin:0 0 24px;font-size:13px;line-height:1.6;word-break:break-all;">
+                <a href="{{ .RedirectTo }}" style="color:#0b5d3b;">{{ .RedirectTo }}</a>
+              </p>
+              <p style="margin:0;font-size:13px;line-height:1.6;color:#9ca3af;">
+                Si no esperabas esta invitación, puedes ignorar este correo.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px;background-color:#f9fafb;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;font-size:12px;color:#9ca3af;">MisterFC · Gestión de fútbol base</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
