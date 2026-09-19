@@ -1310,6 +1310,13 @@
     "empty": "Aún no hay jugadores en este club. Crea el primero arriba.",
     "create": "Crear jugador",
     "create_help": "Da de alta la ficha del jugador. Puedes asignarle un equipo ahora o más tarde.",
+    "existing_member": {
+      "title": "Esa persona ya está en el club",
+      "body": "{name} ya está en el club como {role}, así que no le hemos enviado ninguna invitación. El jugador ya está creado.",
+      "link": "Vincularlo a {name}",
+      "skip": "Ahora no",
+      "no_permission": "Solo un administrador o un director puede vincular el jugador a esa cuenta. Pídeselo y el jugador queda creado igualmente."
+    },
     "back_to_list": "Volver al listado",
     "age_years": "{age, plural, one {1 año} other {# años}}",
     "saved": "Cambios guardados.",

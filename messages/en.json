@@ -1310,6 +1310,13 @@
     "empty": "There are no players in this club yet. Create the first one above.",
     "create": "Create player",
     "create_help": "Add the player's profile. You can assign them a team now or later.",
+    "existing_member": {
+      "title": "That person is already in the club",
+      "body": "{name} is already in the club as {role}, so we have not sent any invitation. The player has been created.",
+      "link": "Link them to {name}",
+      "skip": "Not now",
+      "no_permission": "Only an administrator or a director can link the player to that account. Ask them to do it; the player is created either way."
+    },
     "back_to_list": "Back to list",
     "age_years": "{age, plural, one {1 year} other {# years}}",
     "saved": "Changes saved.",

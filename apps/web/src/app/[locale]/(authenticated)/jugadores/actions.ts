@@ -111,6 +111,17 @@ export type PlayerFormState = {
   error?: PlayerFormError;
   success?: boolean;
   playerId?: string;
+  /**
+   * BUG 3 · B-2 — el correo del tutor ya es de alguien del club. El jugador SÍ
+   * se creó; lo que NO se hizo es mandar una invitación a quien ya está dentro.
+   * La pantalla lo dice y ofrece vincularle el jugador.
+   */
+  existingMember?: {
+    membershipId: string;
+    fullName: string;
+    clubRole: string;
+    relation: 'parent' | 'guardian';
+  };
 };
 
 function mapPlayerError(message: string | undefined): PlayerFormError {
@@ -377,6 +388,43 @@ export async function createPlayer(
     player_id: created.id,
     team_id,
   });
+
+  // BUG 3 · B-2 — ¿el correo del tutor ya es de alguien de este club? Si lo es,
+  // NO se le invita: mandarle un correo para entrar donde ya está es el absurdo
+  // que abre esta serie. Se avisa y se ofrece vincularle el jugador.
+  //
+  // La pregunta NO se puede hacer con una consulta normal: `profiles` no guarda
+  // el correo y `auth.users` no lo puede leer un cliente de la app. La contesta
+  // `club_member_by_email` (mig 20261086000000), gateada al mismo conjunto que
+  // puede crear jugadores.
+  //
+  // Si la RPC falla —permisos, red—, se sigue por el camino de siempre: invitar.
+  // El alta no se queda a medias por un fallo del atajo.
+  const { data: memberRows, error: memberErr } = await supabase.rpc(
+    'club_member_by_email',
+    { p_club_id: clubId, p_email: invite_email },
+  );
+  if (memberErr) {
+    Sentry.captureException(memberErr, {
+      tags: { feature: 'invitations', step: 'create_player_member_lookup' },
+      extra: { player_id: created.id },
+    });
+  }
+  const existing = memberErr ? null : (memberRows ?? [])[0];
+
+  if (existing) {
+    revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
+    return {
+      success: true,
+      playerId: created.id,
+      existingMember: {
+        membershipId: existing.membership_id,
+        fullName: existing.full_name ?? '—',
+        clubRole: existing.role,
+        relation: player_relation,
+      },
+    };
+  }
 
   // Invitación AUTOMÁTICA al crear, mismo circuito que la ficha (con
   // anti-duplicado). Si el envío falla, el jugador YA está creado: NO abortamos

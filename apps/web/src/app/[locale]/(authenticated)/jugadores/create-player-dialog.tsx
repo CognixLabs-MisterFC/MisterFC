@@ -29,12 +29,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { createPlayer, type PlayerFormState } from './actions';
+import {
+  addPlayerLink,
+  type AddPlayerLinkState,
+} from '../cuerpo-tecnico/actions';
 
 type Props = {
   teams: Array<{ id: string; name: string }>;
+  /**
+   * ¿Puede este usuario vincular jugadores a una cuenta? La RLS
+   * `player_accounts_write_admin` es de admin_club/director; un entrenador
+   * detecta que la persona ya existe (la RPC sí le contesta) pero no puede
+   * hacer el vínculo, así que se le dice en vez de ofrecerle un botón que
+   * fallaría.
+   */
+  canLinkPlayers: boolean;
 };
 
-export function CreatePlayerDialog({ teams }: Props) {
+export function CreatePlayerDialog({ teams, canLinkPlayers }: Props) {
   const t = useTranslations('jugadores');
   const locale = useLocale();
   const router = useRouter();
@@ -48,14 +60,21 @@ export function CreatePlayerDialog({ teams }: Props) {
   );
 
   // Cierra dialog y redirige a la ficha del nuevo jugador al guardar OK.
+  // EXCEPTO si el tutor ya era miembro del club (B-2): ahí el alta termina con
+  // una pregunta, así que no se puede navegar sin más.
   const [lastHandledState, setLastHandledState] = useState(state);
   if (state !== lastHandledState) {
     setLastHandledState(state);
-    if (state.success && state.playerId) {
+    if (state.success && state.playerId && !state.existingMember) {
       setOpen(false);
       router.push(`/jugadores/${state.playerId}`);
     }
   }
+
+  const irAlJugador = (playerId: string) => {
+    setOpen(false);
+    router.push(`/jugadores/${playerId}`);
+  };
 
   const errorMsg = state.error ? t(`errors.${state.error}`) : null;
 
@@ -73,6 +92,14 @@ export function CreatePlayerDialog({ teams }: Props) {
           <DialogDescription>{t('create_help')}</DialogDescription>
         </DialogHeader>
 
+        {state.existingMember && state.playerId ? (
+          <ExistingMemberPanel
+            member={state.existingMember}
+            playerId={state.playerId}
+            canLink={canLinkPlayers}
+            onDone={irAlJugador}
+          />
+        ) : (
         <form action={formAction} className="flex flex-col gap-4">
           <p className="text-xs text-muted-foreground">
             {t('field.legend')}
@@ -242,6 +269,7 @@ export function CreatePlayerDialog({ teams }: Props) {
             </Button>
           </DialogFooter>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -262,5 +290,96 @@ function Opt({ t }: { t: (key: string) => string }) {
     <span className="text-xs font-normal text-muted-foreground">
       ({t('field.optional_tag')})
     </span>
+  );
+}
+
+
+/**
+ * BUG 3 · B-2 — el correo del tutor ya era de alguien del club, así que no se
+ * le mandó ninguna invitación. El jugador SÍ está creado; lo que falta es el
+ * vínculo, y se ofrece aquí mismo en vez de mandar a nadie a buscar una
+ * pantalla: es la misma acción que "Agregar jugador" de la ficha
+ * (`addPlayerLink`), con la persona y el jugador ya puestos.
+ *
+ * Los mensajes de error se leen del namespace de esa acción a propósito: es la
+ * misma acción y fallan por lo mismo. Duplicarlos sería duplicar el mantenimiento.
+ */
+function ExistingMemberPanel({
+  member,
+  playerId,
+  canLink,
+  onDone,
+}: {
+  member: NonNullable<PlayerFormState['existingMember']>;
+  playerId: string;
+  canLink: boolean;
+  onDone: (playerId: string) => void;
+}) {
+  const t = useTranslations('jugadores.existing_member');
+  const tLink = useTranslations('cuerpo_tecnico.players.add');
+  const tClubRole = useTranslations('roles');
+
+  const action = addPlayerLink.bind(null, member.membershipId);
+  const [state, formAction, pending] = useActionState<AddPlayerLinkState, FormData>(
+    action,
+    {}
+  );
+
+  const [lastHandled, setLastHandled] = useState(state);
+  if (state !== lastHandled) {
+    setLastHandled(state);
+    if (state.success) onDone(playerId);
+  }
+
+  const errorMsg = state.error ? tLink(`errors.${state.error}`) : null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-md border border-border bg-card/40 p-3">
+        <p className="text-sm font-medium">{t('title')}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t('body', {
+            name: member.fullName,
+            role: tClubRole(member.clubRole),
+          })}
+        </p>
+      </div>
+
+      {canLink ? (
+        <form action={formAction} className="flex flex-col gap-3">
+          <input type="hidden" name="player_id" value={playerId} />
+          <input type="hidden" name="relation" value={member.relation} />
+
+          {errorMsg && (
+            <p className="text-sm text-destructive" role="alert">
+              {errorMsg}
+            </p>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => onDone(playerId)}
+            >
+              {t('skip')}
+            </Button>
+            <Button type="submit" disabled={pending}>
+              {pending && <Loader2 className="size-4 animate-spin" aria-hidden />}
+              <span>{t('link', { name: member.fullName })}</span>
+            </Button>
+          </DialogFooter>
+        </form>
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground">{t('no_permission')}</p>
+          <DialogFooter>
+            <Button type="button" onClick={() => onDone(playerId)}>
+              {t('skip')}
+            </Button>
+          </DialogFooter>
+        </>
+      )}
+    </div>
   );
 }

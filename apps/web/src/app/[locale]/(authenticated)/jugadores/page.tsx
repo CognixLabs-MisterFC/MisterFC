@@ -183,7 +183,12 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
               nameById={pendingNameById}
             />
           )}
-          {canCreate && <CreatePlayerDialog teams={teamsForDialog} />}
+          {canCreate && (
+            <CreatePlayerDialog
+              teams={teamsForDialog}
+              canLinkPlayers={role === 'admin_club' || role === 'director'}
+            />
+          )}
         </div>
       </div>
 
