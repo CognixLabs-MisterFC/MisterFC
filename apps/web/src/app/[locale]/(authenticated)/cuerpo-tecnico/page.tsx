@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { StaffSearchInput } from './_components/staff-search-input';
 import { StaffFilters } from './_components/staff-filters';
 import { MoveStaffDialog } from './_components/move-staff-dialog';
+import { AddAssignmentDialog } from './_components/add-assignment-dialog';
 import { ExportCsvButton } from './_components/export-csv-button';
 import { loadCoachList } from './queries';
 import type { Role } from '../jugadores/queries';
@@ -104,7 +105,9 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
     name: t.name,
     category_name: t.category_name,
   }));
-  const moveAssignableRoles =
+  // Funciones ofrecidas al asignar o mover. El coordinador no nombra
+  // coordinadores (la RLS C-1d ya lo bloquea); admin/director, lista completa.
+  const assignableRoles =
     role === 'coordinador'
       ? TEAM_STAFF_ROLES.filter((r) => r !== 'coordinador')
       : TEAM_STAFF_ROLES;
@@ -262,6 +265,23 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
+                        {/* Agregar rol: el MISMO diálogo de la ficha. Aparece
+                            aunque la persona no tenga ninguna asignación — que es
+                            justo el caso que hay que poder resolver desde aquí.
+                            Equipos ofrecidos: los visibles según scope, no los
+                            acotados de "mover" (eso es una regla del movimiento,
+                            E-final-2, no de la asignación). */}
+                        {result.canManage && (
+                          <AddAssignmentDialog
+                            membershipId={c.membership_id}
+                            teams={result.visibleTeams.map((tm) => ({
+                              id: tm.id,
+                              name: tm.name,
+                              category_name: tm.category_name,
+                            }))}
+                            assignableRoles={assignableRoles}
+                          />
+                        )}
                         {result.canManage &&
                           c.assignments[0] &&
                           (coordinatedTeamIds === null ||
@@ -274,7 +294,7 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
                               teamStaffId={c.assignments[0].team_staff_id}
                               currentTeamId={c.assignments[0].team_id}
                               currentStaffRole={c.assignments[0].staff_role}
-                              assignableRoles={moveAssignableRoles}
+                              assignableRoles={assignableRoles}
                               targets={targetsForMove}
                             />
                           )}
