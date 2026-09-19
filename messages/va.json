@@ -1310,6 +1310,13 @@
     "empty": "Encara no hi ha jugadors en este club. Creeu el primer a dalt.",
     "create": "Crear jugador",
     "create_help": "Dona d'alta la fitxa del jugador. Podeu assignar-li un equip ara o més tard.",
+    "existing_member": {
+      "title": "Eixa persona ja està al club",
+      "body": "{name} ja està al club com a {role}, així que no li hem enviat cap invitació. El jugador ja està creat.",
+      "link": "Vincular-lo a {name}",
+      "skip": "Ara no",
+      "no_permission": "Només un administrador o un director pot vincular el jugador a eixe compte. Demana-li-ho; el jugador queda creat igualment."
+    },
     "back_to_list": "Tornar al llistat",
     "age_years": "{age, plural, one {1 any} other {# anys}}",
     "saved": "Canvis guardats.",

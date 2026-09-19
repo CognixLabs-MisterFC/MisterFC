@@ -4499,6 +4499,15 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: boolean
       }
+      club_member_by_email: {
+        Args: { p_club_id: string; p_email: string }
+        Returns: {
+          full_name: string
+          membership_id: string
+          profile_id: string
+          role: string
+        }[]
+      }
       consent_document_type: {
         Args: { p_consent_type: Database["public"]["Enums"]["consent_type"] }
         Returns: Database["public"]["Enums"]["legal_document_type"]
