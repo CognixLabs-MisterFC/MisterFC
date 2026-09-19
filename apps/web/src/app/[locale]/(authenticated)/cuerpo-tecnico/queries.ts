@@ -22,6 +22,7 @@ import {
   TEAM_STAFF_ROLES,
   type TeamStaffRole,
   createSupabaseServerClient,
+  formatPlayerName,
   getCurrentUser,
   teamsInActiveSeason,
 } from '@misterfc/core';
@@ -664,6 +665,94 @@ export async function loadCoachDetail(
     role === 'coordinador' ? await loadCoordinatedTeamIds(clubId) : null;
 
   return { coach, history, movableTargets, canManage, coordinatedTeamIds };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Jugadores vinculados a un miembro (BUG 3 · B-1)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type LinkedPlayerRow = {
+  link_id: string;
+  player_id: string;
+  full_name: string;
+  relation: string;
+};
+
+export type PlayerLinkOption = { id: string; full_name: string };
+
+export type MemberPlayerLinks = {
+  /** Lo que ya está vinculado a esta persona. */
+  linked: LinkedPlayerRow[];
+  /** Jugadores del club a los que todavía se la puede vincular. */
+  candidates: PlayerLinkOption[];
+};
+
+/**
+ * Hijos (o tutelados) de un miembro del club, y a quién más se le puede vincular.
+ *
+ * Los candidatos excluyen a los ya vinculados A ESTA PERSONA — un segundo enlace
+ * al mismo jugador chocaría con `UNIQUE (player_id, profile_id)` —, a los
+ * suprimidos por RGPD (`erased_at`) y a las bajas del club (`left_club_at`):
+ * vincular a un tutor con alguien que ya se fue no es un alta, es un enredo.
+ *
+ * Que el mismo jugador tenga VARIOS tutores sí es normal, así que no se descarta
+ * a los que ya tienen otra cuenta vinculada.
+ */
+export async function loadMemberPlayerLinks(
+  clubId: string,
+  profileId: string
+): Promise<MemberPlayerLinks> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  type LinkJoin = {
+    id: string;
+    player_id: string;
+    relation: string;
+    players: {
+      id: string;
+      first_name: string;
+      last_name: string | null;
+      club_id: string;
+    };
+  };
+
+  const { data: rawLinks } = await supabase
+    .from('player_accounts')
+    .select('id, player_id, relation, players!inner(id, first_name, last_name, club_id)')
+    .eq('profile_id', profileId);
+
+  const linked: LinkedPlayerRow[] = (rawLinks ?? [])
+    .map((r) => r as unknown as LinkJoin)
+    .filter((r) => r.players.club_id === clubId)
+    .map((r) => ({
+      link_id: r.id,
+      player_id: r.player_id,
+      full_name: formatPlayerName(r.players.first_name, r.players.last_name),
+      relation: r.relation,
+    }))
+    .sort((a, b) =>
+      a.full_name.localeCompare(b.full_name, 'es', { sensitivity: 'base' })
+    );
+
+  const yaVinculados = new Set(linked.map((l) => l.player_id));
+
+  const { data: rawPlayers } = await supabase
+    .from('players')
+    .select('id, first_name, last_name')
+    .eq('club_id', clubId)
+    .is('erased_at', null)
+    .is('left_club_at', null);
+
+  const candidates: PlayerLinkOption[] = (rawPlayers ?? [])
+    .map((p) => p as unknown as { id: string; first_name: string; last_name: string | null })
+    .filter((p) => !yaVinculados.has(p.id))
+    .map((p) => ({ id: p.id, full_name: formatPlayerName(p.first_name, p.last_name) }))
+    .sort((a, b) =>
+      a.full_name.localeCompare(b.full_name, 'es', { sensitivity: 'base' })
+    );
+
+  return { linked, candidates };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

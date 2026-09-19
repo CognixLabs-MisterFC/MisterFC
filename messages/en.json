@@ -2497,6 +2497,37 @@
         "generic": "Could not add the assignment."
       }
     },
+    "players": {
+      "title": "Linked players",
+      "empty": "No linked players.",
+      "relation": {
+        "parent": "Parent",
+        "guardian": "Legal guardian",
+        "self": "Own account"
+      },
+      "add": {
+        "action": "Add player",
+        "title": "Link a player",
+        "description": "Link a club player to this person. No invitation is sent: they are already in. For several children, repeat the step.",
+        "field": {
+          "player": "Player",
+          "player_placeholder": "Select player",
+          "relation": "Relationship",
+          "relation_placeholder": "Select relationship"
+        },
+        "save": "Link",
+        "cancel": "Cancel",
+        "empty": "There are no club players left to link to this person.",
+        "errors": {
+          "player_invalid": "Invalid player.",
+          "relation_invalid": "Invalid relationship.",
+          "cross_club": "That player does not belong to the same club.",
+          "already_linked": "This person is already linked to that player.",
+          "forbidden": "You do not have permission to link players.",
+          "generic": "The player could not be linked."
+        }
+      }
+    },
     "move": {
       "action": "Move",
       "title": "Move to another team",
