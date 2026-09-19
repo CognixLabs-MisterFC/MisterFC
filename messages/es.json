@@ -5668,5 +5668,8 @@
       "no_active_season": "El club no tiene una temporada activa. Avísale para que pueda registrarse el permiso.",
       "error": "No se ha podido guardar el permiso. Inténtalo de nuevo."
     }
+  },
+  "legal_publico": {
+    "solo_castellano": "Este documento solo existe en castellano."
   }
 }

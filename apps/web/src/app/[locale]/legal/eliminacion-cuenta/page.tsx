@@ -1,21 +1,23 @@
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
-import { LegalMarkdown } from '@/components/legal/legal-markdown';
-import { readLegalDoc } from '@/lib/legal-content';
-import { SITE_URL } from '@/lib/site-url';
+import { LegalDocument } from '@/components/legal/legal-document';
+import { legalMetadata } from '@/lib/legal-content';
 
 type Props = { params: Promise<{ locale: string }> };
 
-export const metadata: Metadata = {
-  title: 'Eliminación de cuenta — MisterFC',
-  description:
-    'Cómo solicitar la eliminación de tu cuenta y de tus datos en la plataforma MisterFC (Cognix Labs, S.L.).',
-  robots: { index: true, follow: true },
-  alternates: { canonical: `${SITE_URL}/es/legal/eliminacion-cuenta` },
-};
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  return legalMetadata({
+    slug: 'eliminacion-cuenta',
+    locale,
+    title: 'Eliminación de cuenta — MisterFC',
+    description:
+      'Cómo solicitar la eliminación de tu cuenta y de tus datos en la plataforma MisterFC (Cognix Labs, S.L.).',
+  });
+}
 
 export default async function EliminacionCuentaPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <LegalMarkdown body={readLegalDoc('eliminacion-cuenta')} />;
+  return <LegalDocument slug="eliminacion-cuenta" locale={locale} />;
 }

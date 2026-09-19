@@ -5668,5 +5668,8 @@
       "no_active_season": "The club has no active season. Let them know so the permission can be recorded.",
       "error": "The permission could not be saved. Please try again."
     }
+  },
+  "legal_publico": {
+    "solo_castellano": "This document is only available in Spanish."
   }
 }

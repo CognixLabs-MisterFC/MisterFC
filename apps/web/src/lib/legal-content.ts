@@ -1,6 +1,8 @@
 import 'server-only';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { Metadata } from 'next';
+import { SITE_URL } from '@/lib/site-url';
 
 /**
  * Textos legales públicos de Cognix Labs (política de privacidad, eliminación de
@@ -16,4 +18,35 @@ export type LegalSlug = 'privacidad' | 'eliminacion-cuenta' | 'terminos';
 
 export function readLegalDoc(slug: LegalSlug): string {
   return readFileSync(join(process.cwd(), 'src/content/legal', `${slug}.md`), 'utf8');
+}
+
+/**
+ * C-1 — Metadatos SEO de las tres páginas legales. Son el MISMO documento en
+ * castellano en /es, /en y /va (`readLegalDoc` no recibe locale: hay un .md por
+ * documento), así que:
+ *
+ *  · `canonical` apunta SIEMPRE a /es, también desde /es. Ya estaba así.
+ *  · `index` SOLO en /es. El canonical es una PISTA, no una orden: con las tres
+ *    rutas devolviendo 200, rastreo permitido y enlaces internos desde la app en
+ *    cada idioma, Google indexaba /en y /va igualmente. El `noindex` sí es una
+ *    orden.
+ *  · `follow` se queda en las tres: que no se indexen no significa que no se
+ *    sigan los enlaces cruzados del pie.
+ *
+ * Las URLs siguen respondiendo 200 a propósito (Google Play y App Store
+ * comprueban que la URL de privacidad es accesible), y por eso robots.txt las
+ * sigue PERMITIENDO: un `Disallow` impediría leer el propio `noindex`.
+ */
+export function legalMetadata(args: {
+  slug: LegalSlug;
+  locale: string;
+  title: string;
+  description: string;
+}): Metadata {
+  return {
+    title: args.title,
+    description: args.description,
+    robots: { index: args.locale === 'es', follow: true },
+    alternates: { canonical: `${SITE_URL}/es/legal/${args.slug}` },
+  };
 }
