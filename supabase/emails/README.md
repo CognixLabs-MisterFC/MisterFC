@@ -35,22 +35,26 @@ asunto ramificado medía 411 y se quedó sin pegar; el rechazo pasó desapercibi
 hasta que `plantillas:diff` dijo que el dashboard seguía con la plantilla vieja.
 Lo vigila el guard.
 
-**Por eso el asunto de la invitación solo tiene dos ramas.** Cada
-`{{ else if eq $k "..." }}` cuesta 27 de esos 255, así que las cinco no entran:
+**Por eso el asunto de la invitación solo tiene dos ramas**, y va escrito
+compacto (`{{if ...}}`, sin espacios dentro de las llaves): la sintaxis cuenta
+para los 255, cada `{{else if eq $k "..."}}` gasta 25, y el espacio que se ahorra
+es margen para el texto. El cuerpo no tiene ese problema y va espaciado y legible.
 
 | tipo | asunto |
 |---|---|
-| `tutor` | «Te han invitado al club de tu hijo o hija» |
+| `seguidor` | «Te han invitado a seguir a un jugador en MisterFC» |
 | `menor` | «Tu cuenta de MisterFC ya está lista» |
-| `staff`, `admin`, `seguidor` | «Te han invitado a MisterFC» (rama neutra) |
+| `tutor`, `admin`, `staff` | «Te han invitado a MisterFC» (rama neutra) |
 
-`tutor` es el grupo más numeroso con diferencia (9 de las 15 invitaciones de
-producción llevaban `player_id`), y `menor` es el único caso en el que «te han
-invitado» no describe lo que pasó: a ese chaval no le invita nadie, su familia le
-ha creado la cuenta. `staff` ya compartía texto con la rama neutra, así que no
-pierde nada, y para `admin` y `seguidor` «te han invitado a MisterFC» es **cierto**
-— lo que les explica quién les invita y a qué está en el cuerpo, que **sí**
-conserva las cinco ramas y no tiene problema de tamaño.
+La regla que decidió esto: **el asunto tiene que nombrar MisterFC**. Un asunto que
+no dice de qué app viene no se entiende en la pantalla de bloqueo de un móvil, por
+muy bien escrito que esté. Con esa regla, `tutor` y `admin` no ganan nada frente al
+neutro y se quedan en él; `seguidor` y `menor` sí dicen algo que el neutro no —
+que le invitan a **seguir** a alguien, y que la cuenta **ya está creada**, que a un
+chaval no le ha invitado nadie.
+
+El cuerpo **sí** conserva las cinco ramas: ahí es donde estaba la mentira («te unes
+al cuerpo técnico» a un padre) y ahí no hay límite de tamaño.
 
 **`invite` ramifica por `invite_kind`; `magic_link` NO.** En la invitación el
 `data` lo ponemos nosotros al crear la cuenta. En el magic link no se crea

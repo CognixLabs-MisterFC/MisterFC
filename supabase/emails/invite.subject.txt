@@ -1,1 +1,1 @@
-{{ $k := "" }}{{ with .Data }}{{ $k = print .invite_kind }}{{ end }}{{ if eq $k "tutor" }}Te han invitado al club de tu hijo o hija{{ else if eq $k "menor" }}Tu cuenta de MisterFC ya está lista{{ else }}Te han invitado a MisterFC{{ end }}
+{{$k := ""}}{{with .Data}}{{$k = print .invite_kind}}{{end}}{{if eq $k "seguidor"}}Te han invitado a seguir a un jugador en MisterFC{{else if eq $k "menor"}}Tu cuenta de MisterFC ya está lista{{else}}Te han invitado a MisterFC{{end}}
