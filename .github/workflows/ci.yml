@@ -87,6 +87,14 @@ jobs:
       - name: Check legal texts parity census
         run: pnpm check:textos-legales
 
+      # Las plantillas de correo viven en el dashboard de Supabase: sin revision, sin
+      # diff y sin que nadie se entere si cambian. supabase/emails/ es la copia
+      # revisada. Este guard NO habla con Supabase (este workflow no tiene secretos, y
+      # asi se queda): comprueba la copia contra si misma y contra INVITE_KINDS. Para
+      # comparar con lo VIVO hay `pnpm plantillas:diff`, que se lanza a mano.
+      - name: Check email templates copy
+        run: pnpm check:plantillas-correo
+
       - name: Test (vitest)
         run: pnpm test
 
