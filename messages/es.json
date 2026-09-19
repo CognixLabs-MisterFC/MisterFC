@@ -1682,38 +1682,13 @@
         "generic": "No se pudo añadir al cuerpo técnico."
       }
     },
-    "invite": {
-      "action": "Invitar staff",
-      "title": "Invitar cuerpo técnico",
-      "description": "Envía una invitación por email. Al aceptar quedará vinculado a este equipo con la función indicada.",
-      "field": {
-        "email": "Email",
-        "role": "Función en el equipo",
-        "help": "Solo un entrenador principal por equipo. Preparador físico y delegado se gestionan como ayudantes a nivel de club."
-      },
-      "send": "Enviar invitación",
-      "cancel": "Cancelar",
-      "close": "Cerrar",
-      "sent": "Invitación enviada a {email}.",
-      "errors": {
-        "email_invalid": "Email no válido.",
-        "email_too_long": "Email demasiado largo.",
-        "team_staff_role_invalid": "Función no válida.",
-        "principal_exists": "Ya hay un entrenador principal activo en este equipo. Quita el actual antes de invitar otro.",
-        "forbidden": "No tienes permiso para invitar staff en este equipo.",
-        "generic": "No se pudo enviar la invitación."
-      }
-    },
     "remove": {
       "action": "Quitar del cuerpo técnico",
       "title": "Quitar del cuerpo técnico",
       "description": "¿Seguro que quieres quitar a {name} del cuerpo técnico de este equipo? Su membership en el club no se ve afectada.",
       "cancel": "Cancelar",
       "confirm": "Quitar"
-    },
-    "pending_title": "Invitaciones pendientes",
-    "pending_status": "Enviada",
-    "pending_expired": "Caducada"
+    }
   },
   "match_picker": {
     "title": "Elige un partido",
@@ -2471,7 +2446,7 @@
   "cuerpo_tecnico": {
     "title": "Cuerpo técnico",
     "count": "{count, plural, =0 {Sin entrenadores activos} one {1 entrenador} other {# entrenadores}}",
-    "empty": "Aún no hay cuerpo técnico activo en el club. Invita entrenadores desde la ficha de un equipo.",
+    "empty": "Aún no hay cuerpo técnico en el club. Invítalo desde «Invitar staff».",
     "empty_filtered": "No hay entrenadores que coincidan con los filtros.",
     "filters": {
       "label": "Filtros",
@@ -2496,6 +2471,9 @@
     },
     "row_actions": {
       "open": "Ver ficha"
+    },
+    "invite": {
+      "action": "Invitar staff"
     },
     "add_role": {
       "action": "Agregar rol",

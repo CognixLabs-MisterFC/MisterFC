@@ -94,8 +94,8 @@ export type {
   PlayerTutorRelation,
 } from './player';
 
-export { sendStaffInvitationSchema, TEAM_STAFF_ROLES } from './staff';
-export type { SendStaffInvitationInput, TeamStaffRole } from './staff';
+export { TEAM_STAFF_ROLES } from './staff';
+export type { TeamStaffRole } from './staff';
 
 export {
   PLAYER_IMPORT_COLUMNS,

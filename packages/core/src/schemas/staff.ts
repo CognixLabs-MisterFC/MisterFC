@@ -1,36 +1,19 @@
-import { z } from 'zod';
-
 export const TEAM_STAFF_ROLES = [
   'entrenador_principal',
   'entrenador_ayudante',
   'preparador_fisico',
   'delegado',
   // Serie C (C-0) — el coordinador es staff de EQUIPO (una fila por equipo que
-  // coordina). sendStaffInvitationSchema lo admite vía este enum.
+  // coordina).
   'coordinador',
 ] as const;
 
 export type TeamStaffRole = (typeof TEAM_STAFF_ROLES)[number];
 
-/**
- * Invitar a alguien como cuerpo técnico de un equipo (F2.6).
- *
- * - team_staff_role describe la FUNCIÓN dentro del equipo.
- * - El membership.role de club se deriva: 'principal' → 'entrenador_principal',
- *   resto → 'entrenador_ayudante'. La app lo aplica al insertar.
- */
-export const sendStaffInvitationSchema = z.object({
-  email: z
-    .string()
-    .trim()
-    .toLowerCase()
-    .email({ message: 'email_invalid' })
-    .max(254, { message: 'email_too_long' }),
-  team_staff_role: z.enum(TEAM_STAFF_ROLES, {
-    message: 'team_staff_role_invalid',
-  }),
-});
-export type SendStaffInvitationInput = z.infer<typeof sendStaffInvitationSchema>;
+// `sendStaffInvitationSchema` (F2.6) se BORRÓ en BUG 3 · A-3 junto con
+// `inviteStaffToTeam`, su único consumidor: invitar dejó de vivir en la página de
+// un equipo y pasó a la pantalla de invitaciones del club, que valida con su
+// propio esquema. Lo que se quedó de aquello es este enum, que usa medio repo.
 
 // El sistema de capabilities del entrenador ayudante fue ELIMINADO (O2): todo el
 // cuerpo técnico puede de serie lo que antes requería capability. Ya no hay tabla

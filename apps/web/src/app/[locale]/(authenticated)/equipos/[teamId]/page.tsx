@@ -20,10 +20,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { InviteStaffDialog } from './invite-staff-dialog';
 import { AddStaffDialog, type StaffCandidate } from './add-staff-dialog';
 import { RemoveStaffButton } from './remove-staff-button';
-import { CancelInvitationButton } from '../../invitations/cancel-invitation-button';
 import { NoAppBadge } from '@/components/no-app-badge';
 
 type Props = {
@@ -125,16 +123,6 @@ export default async function TeamDetailPage({ params }: Props) {
       ? TEAM_STAFF_ROLES.filter((r) => r !== 'coordinador')
       : TEAM_STAFF_ROLES;
 
-  // Invitaciones pendientes del equipo (F2.6 hotfix 2026-05-30).
-  // Pendiente = sin aceptar Y sin expirar. Las expiradas también se incluyen
-  // para que el manager pueda limpiarlas (también caen bajo "pendientes" UX).
-  const { data: pendingInviteRows } = await supabase
-    .from('invitations')
-    .select('id, email, team_staff_role, expires_at, created_at')
-    .eq('team_id', teamId)
-    .is('accepted_at', null)
-    .order('created_at', { ascending: false });
-
   // Jugadores activos en el equipo (team_members con left_at null)
   const { data: rosterRows } = await supabase
     .from('team_members')
@@ -170,14 +158,6 @@ export default async function TeamDetailPage({ params }: Props) {
     };
   };
 
-  type PendingInvite = {
-    id: string;
-    email: string;
-    team_staff_role: string | null;
-    expires_at: string;
-    created_at: string;
-  };
-
   const staff = (staffRows ?? []) as unknown as StaffRow[];
   const roster = (rosterRows ?? []) as unknown as RosterRow[];
 
@@ -194,18 +174,6 @@ export default async function TeamDetailPage({ params }: Props) {
         )
       : []
   );
-
-  // Server component: render una vez por request, sin re-renders. La regla
-  // react-hooks/purity es over-protective aquí; el cálculo de "expirada" es
-  // determinista para el snapshot del request.
-  // eslint-disable-next-line react-hooks/purity
-  const nowMs = Date.now();
-  const pendingInvites = (
-    (pendingInviteRows ?? []) as unknown as PendingInvite[]
-  ).map((inv) => ({
-    ...inv,
-    expired: new Date(inv.expires_at).getTime() < nowMs,
-  }));
 
   return (
     <div className="mx-auto flex max-w-4xl flex-col gap-6">
@@ -262,14 +230,11 @@ export default async function TeamDetailPage({ params }: Props) {
             {tStaff('title')}
           </CardTitle>
           {canManageStaff && (
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <AddStaffDialog
-                teamId={teamId}
-                candidates={staffCandidates}
-                assignableRoles={assignableRoles}
-              />
-              <InviteStaffDialog locale={locale} teamId={teamId} />
-            </div>
+            <AddStaffDialog
+              teamId={teamId}
+              candidates={staffCandidates}
+              assignableRoles={assignableRoles}
+            />
           )}
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -305,41 +270,6 @@ export default async function TeamDetailPage({ params }: Props) {
             </ul>
           )}
 
-          {canManageStaff && pendingInvites.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                {tStaff('pending_title')}
-              </p>
-              <ul className="flex flex-col divide-y divide-border">
-                {pendingInvites.map((inv) => {
-                  return (
-                    <li
-                      key={inv.id}
-                      className="flex items-center justify-between gap-3 py-2"
-                    >
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate font-medium">{inv.email}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {inv.team_staff_role
-                            ? tStaff(`role.${inv.team_staff_role}`)
-                            : '—'}
-                          {' · '}
-                          {inv.expired
-                            ? tStaff('pending_expired')
-                            : tStaff('pending_status')}
-                        </span>
-                      </div>
-                      <CancelInvitationButton
-                        locale={locale}
-                        invitationId={inv.id}
-                        email={inv.email}
-                      />
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
         </CardContent>
       </Card>
 
