@@ -4,14 +4,15 @@
 -- Convención del repo: BEGIN/ROLLBACK; asserts con DO + raise exception. La
 -- función con set local role authenticated + request.jwt.claims.
 --
--- Setup: club A con admin, coordinador y un entrenador (target). Club B con su
--- propio admin y un entrenador (para el caso cross-club).
+-- Setup: club A con admin, DIRECTOR, coordinador y un entrenador (target). Club B
+-- con su propio admin y un entrenador (para el caso cross-club).
 --
 -- Casos:
 --   F1. admin de A guarda phone+contact_email del entrenador de A → ambos
 --       trim+actualizados; email de LOGIN (auth.users) intacto.
 --   F2. contact_email con formato inválido → contact_email_invalid (no cambia).
---   G1. coordinador de A → forbidden (solo admin_club).
+--   F3. DIRECTOR de A guarda el contacto → igual que el admin (mig 20261085000000).
+--   G1. coordinador de A → forbidden (dirección sí, coordinación no).
 --   G2. el entrenador (no admin) → forbidden.
 --   G3. admin de A → target de OTRO club → target_invalid.
 \ir helpers/auth_users.sql
@@ -23,6 +24,7 @@ insert into public.clubs (id, name, slug) values
   ('bc000000-0000-4000-8000-000000000002', 'Club B 2c', 'club-b-2c');
 
 select pg_temp.new_test_user('bc0a0000-aaaa-4000-8000-000000000001', 'c-admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('bc0a0000-dddd-4000-8000-000000000001', 'c-dir@test.local', '{}'::jsonb);
 select pg_temp.new_test_user('bc0a0000-cccc-4000-8000-000000000001', 'c-coord@test.local', '{}'::jsonb);
 select pg_temp.new_test_user('bc0a0000-eeee-4000-8000-000000000001', 'c-coach@test.local', '{}'::jsonb);
 select pg_temp.new_test_user('bc0b0000-aaaa-4000-8000-000000000001', 'c-badmin@test.local', '{}'::jsonb);
@@ -30,6 +32,7 @@ select pg_temp.new_test_user('bc0b0000-eeee-4000-8000-000000000001', 'c-bcoach@t
 
 insert into public.profiles (id, full_name) values
   ('bc0a0000-aaaa-4000-8000-000000000001', 'Admin A'),
+  ('bc0a0000-dddd-4000-8000-000000000001', 'Dir A'),
   ('bc0a0000-cccc-4000-8000-000000000001', 'Coord A'),
   ('bc0a0000-eeee-4000-8000-000000000001', 'Coach A'),
   ('bc0b0000-aaaa-4000-8000-000000000001', 'Admin B'),
@@ -38,6 +41,7 @@ on conflict (id) do update set full_name = excluded.full_name;
 
 insert into public.memberships (profile_id, club_id, role) values
   ('bc0a0000-aaaa-4000-8000-000000000001', 'bc000000-0000-4000-8000-000000000001', 'admin_club'),
+  ('bc0a0000-dddd-4000-8000-000000000001', 'bc000000-0000-4000-8000-000000000001', 'director'),
   ('bc0a0000-cccc-4000-8000-000000000001', 'bc000000-0000-4000-8000-000000000001', 'coordinador'),
   ('bc0a0000-eeee-4000-8000-000000000001', 'bc000000-0000-4000-8000-000000000001', 'entrenador_principal'),
   ('bc0b0000-aaaa-4000-8000-000000000001', 'bc000000-0000-4000-8000-000000000002', 'admin_club'),
@@ -86,6 +90,32 @@ begin
        and contact_email='coach.contacto@club.test'
   ) then
     raise exception 'FAIL [F2]: el contacto no debería haber cambiado tras el fallo';
+  end if;
+end $$;
+
+-- ── F3. el DIRECTOR de A guarda el contacto, igual que el admin ─────────────
+-- Antes de la migración 20261085000000 esto era `forbidden`: la condición se
+-- escribió con un rol suelto (`role = 'admin_club'`) en vez de con la dirección
+-- del club, y el director cayó fuera sin que nadie lo decidiera. La RLS de
+-- `memberships` sí le dejaba escribir esas mismas columnas.
+set local "request.jwt.claims" = '{"sub":"bc0a0000-dddd-4000-8000-000000000001","role":"authenticated"}';
+do $$
+begin
+  perform public.admin_update_staff_contact(
+    'bc000000-0000-4000-8000-000000000001',
+    'bc0a0000-eeee-4000-8000-000000000001',
+    '  611 222 333  ',
+    '  contacto.director@club.test  '
+  );
+
+  if not exists (
+    select 1 from public.memberships
+     where club_id='bc000000-0000-4000-8000-000000000001'
+       and profile_id='bc0a0000-eeee-4000-8000-000000000001'
+       and phone='611 222 333'
+       and contact_email='contacto.director@club.test'
+  ) then
+    raise exception 'FAIL [F3]: el director debería poder guardar el contacto, igual que el admin';
   end if;
 end $$;
 
@@ -164,5 +194,5 @@ end $$;
 rollback;
 
 \echo '──────────────────────────────────────────────'
-\echo '✅ Bug2c: admin_update_staff_contact (admin guarda phone/contact_email de su club, solo esas columnas, gateado, cross-club y no-admin rechazados; email de login intacto).'
+\echo '✅ Bug2c: admin_update_staff_contact (la DIRECCIÓN —admin y director— guarda phone/contact_email de su club, solo esas columnas; coordinador, no-admin y cross-club rechazados; email de login intacto).'
 \echo '──────────────────────────────────────────────'
