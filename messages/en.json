@@ -1658,6 +1658,30 @@
       "delegado": "Team official",
       "coordinador": "Coordinator"
     },
+    "add": {
+      "action": "Add staff",
+      "title": "Add to the coaching staff",
+      "description": "Pick someone already in the club and give them a role in this team. No invitation is sent and their club role stays the same.",
+      "field": {
+        "member": "Person",
+        "member_placeholder": "Select who to add",
+        "staff_role": "Role in the team",
+        "staff_role_placeholder": "Select role"
+      },
+      "save": "Add",
+      "cancel": "Cancel",
+      "empty": "There is nobody in the club to add. Invite the coaching staff first.",
+      "errors": {
+        "membership_invalid": "Invalid person.",
+        "team_staff_role_invalid": "Invalid role.",
+        "team_invalid": "Invalid team.",
+        "cross_club": "That person does not belong to the same club as the team.",
+        "principal_exists": "This team already has an active head coach.",
+        "role_exists": "This person already has that role active in this team.",
+        "forbidden": "You do not have permission to add staff to this team.",
+        "generic": "The person could not be added to the coaching staff."
+      }
+    },
     "invite": {
       "action": "Invite staff",
       "title": "Invite coaching staff",

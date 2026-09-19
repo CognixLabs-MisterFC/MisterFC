@@ -11,6 +11,7 @@ import {
   resolveActiveClub,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { assignStaffToTeam } from '@/lib/team-staff';
 import { STAFF_CLUB_ROLES } from './roles';
 
 async function activeClubId(): Promise<string | null> {
@@ -215,58 +216,14 @@ export async function addStaffAssignment(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // Coherencia de club: la membership y el equipo destino deben ser del mismo club.
-  const { data: membership } = await supabase
-    .from('memberships')
-    .select('id, club_id')
-    .eq('id', membershipId)
-    .maybeSingle();
-  if (!membership) return { error: 'forbidden' };
-
-  const { data: team } = await supabase
-    .from('teams')
-    .select('id, categories!inner(club_id)')
-    .eq('id', target_team_id)
-    .maybeSingle();
-  if (!team) return { error: 'team_invalid' };
-  const teamClubId = (team.categories as unknown as { club_id: string }).club_id;
-  if (teamClubId !== (membership.club_id as string)) {
-    return { error: 'cross_club' };
-  }
-
-  // Pre-check principal único por equipo (además del índice parcial).
-  if (staff_role === 'entrenador_principal') {
-    const { data: existing } = await supabase
-      .from('team_staff')
-      .select('id')
-      .eq('team_id', target_team_id)
-      .eq('staff_role', 'entrenador_principal')
-      .is('left_at', null)
-      .maybeSingle();
-    if (existing) return { error: 'principal_exists' };
-  }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const { error: insErr } = await supabase.from('team_staff').insert({
-    team_id: target_team_id,
-    membership_id: membershipId,
-    staff_role,
-    joined_at: today,
+  // La escritura vive en @/lib/team-staff: la comparte con addStaffToTeam, que
+  // hace lo mismo desde la página del equipo eligiendo persona en vez de equipo.
+  const res = await assignStaffToTeam(supabase, {
+    membershipId,
+    teamId: target_team_id,
+    staffRole: staff_role,
   });
-
-  if (insErr) {
-    if (insErr.code === '42501') return { error: 'forbidden' };
-    // UNIQUE parcial: principal duplicado, o mismo rol activo ya existente en el team.
-    if (insErr.code === '23505') {
-      return {
-        error:
-          staff_role === 'entrenador_principal'
-            ? 'principal_exists'
-            : 'role_exists',
-      };
-    }
-    return { error: 'generic' };
-  }
+  if (!res.ok) return { error: res.error };
 
   revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico', 'page');
   revalidatePath(
