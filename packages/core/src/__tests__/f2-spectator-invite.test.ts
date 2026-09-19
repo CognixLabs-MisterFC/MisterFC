@@ -13,9 +13,9 @@ import type { Database } from '../supabase/types';
 type UserOpts = {
   rpcData?: { id: string; token: string; email: string } | null;
   rpcError?: { message: string } | null;
-  resetError?: { message: string } | null;
+  existingEmailError?: { message: string } | null;
   onRpc?: () => void;
-  onReset?: () => void;
+  onExistingEmail?: () => void;
 };
 
 function makeUserClient(opts: UserOpts): SupabaseClient<Database> {
@@ -27,9 +27,9 @@ function makeUserClient(opts: UserOpts): SupabaseClient<Database> {
       },
     }),
     auth: {
-      resetPasswordForEmail: async () => {
-        opts.onReset?.();
-        return { error: opts.resetError ?? null };
+      signInWithOtp: async () => {
+        opts.onExistingEmail?.();
+        return { error: opts.existingEmailError ?? null };
       },
     },
   } as unknown as SupabaseClient<Database>;
@@ -106,16 +106,16 @@ describe('F2 · performSpectatorInvite (orden = seguridad)', () => {
     expect(link).toHaveBeenCalledWith('inv-1', 'auth-user-1');
   });
 
-  it('tutor + email YA usuario → reenvía por reset, no revienta (existing:true)', async () => {
-    const onReset = vi.fn();
-    const user = makeUserClient({ rpcData: OK_INVITE, onReset });
+  it('tutor + email YA usuario → le llega el correo de invitación, no revienta (existing:true)', async () => {
+    const onExistingEmail = vi.fn();
+    const user = makeUserClient({ rpcData: OK_INVITE, onExistingEmail });
     const admin = makeAdminClient({ inviteError: { code: 'email_exists' } });
 
     const link = makeLink();
     const res = await performSpectatorInvite(user, admin, ARGS, link);
 
     expect(res).toEqual({ ok: { email: ARGS.email, existing: true } });
-    expect(onReset).toHaveBeenCalledTimes(1); // fallback de reset ejecutado
+    expect(onExistingEmail).toHaveBeenCalledTimes(1); // el correo para cuenta existente salió
     // La cuenta es del propio invitado → invited_user_id NULL por diseño: NO se enlaza.
     expect(link).not.toHaveBeenCalled();
   });
@@ -157,11 +157,11 @@ describe('F2 · performSpectatorInvite (orden = seguridad)', () => {
     );
   });
 
-  it('reset fallback falla → generic (no queda a medias en silencio)', async () => {
+  it('el correo para cuenta existente falla → generic (no queda a medias en silencio)', async () => {
     const log = vi.fn();
     const user = makeUserClient({
       rpcData: OK_INVITE,
-      resetError: { message: 'reset boom' },
+      existingEmailError: { message: 'reset boom' },
     });
     const admin = makeAdminClient({ inviteError: { code: 'email_exists' } });
 

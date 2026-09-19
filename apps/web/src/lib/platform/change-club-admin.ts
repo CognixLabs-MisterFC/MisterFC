@@ -6,6 +6,7 @@ import {
   createSupabaseServerClient,
   createSupabaseAdminClient,
   inviteEmailMetadata,
+  sendInviteToExistingUser,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
@@ -123,7 +124,10 @@ export async function changeClubAdmin(input: {
         invErr.message?.toLowerCase().includes('already exists');
 
       if (alreadyExists) {
-        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+        const { error: resetErr } = await sendInviteToExistingUser(supabase, {
+          email,
+          redirectTo,
+        });
         if (resetErr) {
           console.error(
             '[platform][change-admin] reset_fallback_failed ' +

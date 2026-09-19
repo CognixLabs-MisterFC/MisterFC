@@ -6,6 +6,7 @@ import {
   createSupabaseServerClient,
   createSupabaseAdminClient,
   inviteEmailMetadata,
+  sendInviteToExistingUser,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
@@ -128,10 +129,13 @@ export async function inviteClubAdmin(input: {
         invErr.message?.toLowerCase().includes('already exists');
 
       if (alreadyExists) {
-        // El admin ya tenía cuenta: reenviamos por resetPasswordForEmail reusando
-        // la misma URL de invitación. invited_user_id queda NULL → al aceptar,
-        // inicia sesión con su contraseña (flujo "existing").
-        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+        // El admin ya tenía cuenta: le llega el correo de invitación para
+        // cuenta existente, reusando la misma URL. invited_user_id queda NULL →
+        // al aceptar, inicia sesión con su contraseña (flujo "existing").
+        const { error: resetErr } = await sendInviteToExistingUser(supabase, {
+          email,
+          redirectTo,
+        });
         if (resetErr) {
           console.error(
             '[platform][invite-admin] reset_fallback_failed ' +

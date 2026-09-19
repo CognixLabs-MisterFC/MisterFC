@@ -1,3 +1,4 @@
+export { sendInviteToExistingUser } from './invite-existing-user';
 export {
   INVITE_KINDS,
   inviteEmailMetadata,
