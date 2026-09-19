@@ -1,0 +1,12 @@
+-- Imagen-1 · 1/2 — TIPO de notificación del aviso de retirada del consentimiento
+-- de imagen.
+--
+-- Va SOLA y ANTES de su hermana por el mismo motivo que BC-1 (20261058000000) y
+-- SU-6a (20261064000000): `ALTER TYPE ... ADD VALUE` **no se puede USAR en la
+-- misma transacción** en la que se añade. La hermana `20261088000000` define
+-- `notify_image_consent_revoked`, cuyo cuerpo plpgsql resuelve el literal en
+-- EJECUCIÓN y por eso sí puede crearse ahí — pero cualquier INSERT directo, y
+-- cualquier test que dispare el trigger, tiene que ocurrir en otra transacción.
+--
+-- `ALTER TYPE ADD VALUE` es IRREVERSIBLE. El nombre es definitivo.
+alter type public.notification_type add value if not exists 'image_consent_revoked';
