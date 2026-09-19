@@ -20,21 +20,19 @@ import { sendInviteToExistingUser } from './invite-existing-user';
  *      tutor de ese jugador no crea invitación. NUNCA se llama con admin.
  *   2. Solo tras crear la invitación se usa `admin` (service-role) para el email.
  *
- * ⚠️ DUPLICACIÓN DELIBERADA, y no es decisión de este PR. El bloque de envío +
- * enlazado es casi idéntico al de `performSpectatorInvite`. Unificarlo en un
- * `inviteAndLink` está DISEÑADO Y APLAZADO desde el 2026-09-03: la decisión, sus
- * motivos y hasta el orden de adopción están escritos en
- * `apps/web/src/lib/link-invited-user.ts`. En corto: estos senders son el alta de
- * todos los usuarios, CI no ejercita el envío (necesita GoTrue) y una regresión solo
- * se ve cuando un padre no entra. La regla que fijó aquella decisión es «migrar un
- * sender por PR, con verificación manual de sus tres estados», y desde luego no
- * «de paso» mientras se construye otra cosa.
+ * ⚠️ DUPLICACIÓN DELIBERADA. El bloque de envío + enlazado es casi idéntico al de
+ * `performSpectatorInvite`, y así se queda. Unificarlo en un `inviteAndLink` estuvo
+ * diseñado y aplazado desde el 2026-09-03, y el 2026-09-19 se RETIRÓ: los motivos,
+ * y lo que sí se extrajo por el camino, están escritos en
+ * `apps/web/src/lib/link-invited-user.ts`.
  *
- * Hay además un motivo que el aplazamiento no menciona y conviene tener presente:
- * el guard de censo (`scripts/check-invite-senders.mjs`) cuenta llamadas LITERALES
- * a `auth.admin.inviteUserByEmail(` por fichero. Esconder el envío tras un helper
- * común lo dejaría ciego — un sender futuro no aparecería en ningún censo —, así
- * que extraer obliga a rediseñar a la vez cómo se vigila. No es un refactor neutro.
+ * En corto: estos senders son el alta de todos los usuarios, CI no ejercita el envío
+ * (necesita GoTrue) y una regresión solo se ve cuando un padre no entra. Y el guard
+ * de censo (`scripts/check-invite-senders.mjs`) cuenta llamadas LITERALES por
+ * fichero —hoy tres: el envío, `inviteEmailMetadata(` y `sendInviteToExistingUser(`—,
+ * así que esconder el envío tras un helper común lo dejaría ciego: un sender futuro
+ * no aparecería en ningún censo, que es justo el fallo histórico. Extraer obliga a
+ * rediseñar ANTES cómo se vigila.
  *
  * Este es el sender nº 8, declarado en los dos censos.
  */

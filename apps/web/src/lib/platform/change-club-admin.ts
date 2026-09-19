@@ -6,6 +6,7 @@ import {
   createSupabaseServerClient,
   createSupabaseAdminClient,
   inviteEmailMetadata,
+  isEmailAlreadyExistsError,
   sendInviteToExistingUser,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -117,13 +118,7 @@ export async function changeClubAdmin(input: {
     });
 
     if (invErr) {
-      const code = 'code' in invErr ? invErr.code : undefined;
-      const alreadyExists =
-        code === 'email_exists' ||
-        invErr.message?.toLowerCase().includes('already been registered') ||
-        invErr.message?.toLowerCase().includes('already exists');
-
-      if (alreadyExists) {
+      if (isEmailAlreadyExistsError(invErr)) {
         const { error: resetErr } = await sendInviteToExistingUser(supabase, {
           email,
           redirectTo,

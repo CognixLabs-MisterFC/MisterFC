@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/nextjs';
 import {
   STAFF_ROLES,
   inviteEmailMetadata,
+  isEmailAlreadyExistsError,
   sendInviteToExistingUser,
   sendInvitationSchema,
   createSupabaseServerClient,
@@ -339,13 +340,7 @@ export async function sendInvitation(
       // En ese caso se manda el correo de INVITACIÓN para cuenta existente
       // (plantilla de magic link), no el de restablecer contraseña. Ver
       // `sendInviteToExistingUser`.
-      const code = 'code' in invErr ? invErr.code : undefined;
-      const alreadyExists =
-        code === 'email_exists' ||
-        invErr.message?.toLowerCase().includes('already been registered') ||
-        invErr.message?.toLowerCase().includes('already exists');
-
-      if (alreadyExists) {
+      if (isEmailAlreadyExistsError(invErr)) {
         console.info('[invitations][invite-email] user_exists_falling_back_to_reset', {
           masked_email: maskedEmail,
           invitation_id: invite.id,
@@ -395,8 +390,9 @@ export async function sendInvitation(
       // Cuenta creada por nosotros para esta invitación (aún no reclamada).
       // Guardamos su auth.users.id en `invited_user_id`: Rework B · B2 lo usa
       // para fijar la contraseña SOLO sobre esta cuenta al aceptar por token.
-      // Si el email ya existía caímos en la rama `alreadyExists` y NO entramos
-      // aquí → invited_user_id queda NULL → invitee existente (inicia sesión).
+      // Si el email ya existía caímos en la rama de `isEmailAlreadyExistsError`
+      // y NO entramos aquí → invited_user_id queda NULL → invitee existente
+      // (inicia sesión con su contraseña).
       const invitedUserId = inviteData?.user?.id ?? null;
       if (!invitedUserId) {
         // Invite OK pero SIN user.id: no es normal (antes era MUDO — no logueaba).
