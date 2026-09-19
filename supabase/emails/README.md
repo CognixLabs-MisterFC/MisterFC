@@ -63,12 +63,35 @@ cierto vale más que uno específico y mentiroso.
 su rama tiene que existir aquí **antes** de usarlo: sin ella el correo sale con
 el texto neutro y nadie se entera. Eso lo vigila el guard.
 
-## Los dos comandos
+## El dashboard no puede guardar la de invitación
+
+Medido el 2026-09-19, y conviene saberlo antes de perder una tarde: **el
+formulario del dashboard rechaza la plantilla de invitación**. Con el asunto
+ramificado responde *«Failed to update email templates: failed to update Auth
+config»*; con uno de más de 255, *«Too big»*. Un asunto de `1` lo guarda sin
+problema, así que no es el tamaño ni el formulario en general: es la sintaxis de
+plantilla en el asunto.
+
+**La Management API sí la acepta.** Se probaron ocho variantes por la API —texto
+plano, `{{ .Email }}`, `if/else`, declarar variable, `with .Data`, asignar dentro
+del `with`, `.Data.x` directo y el asunto completo de 238— y **las ocho entran**.
+GoTrue ejecuta el asunto como plantilla (v2.197,
+`internal/mailer/templatemailer/template.go`); quien no lo admite es el
+formulario.
+
+Por eso hay un comando para aplicar. Sin él, esta carpeta sería un museo: la
+copia no tendría forma de llegar a producción.
+
+## Los tres comandos
 
 ```bash
-pnpm check:plantillas-correo   # en CI. No habla con Supabase.
-pnpm plantillas:diff           # a mano. Lee el dashboard y compara. No escribe.
+pnpm check:plantillas-correo        # en CI. No habla con Supabase.
+pnpm plantillas:diff                # a mano. Lee y compara. No escribe.
+pnpm plantillas:aplicar invite      # ensayo: enseña qué cambiaría
+pnpm plantillas:aplicar invite --si # lo aplica, y lo relee para verificarlo
 ```
+
+`aplicar` va de una en una y exige `--si`. No corre en CI ni se dispara solo.
 
 El guard comprueba la copia contra sí misma y contra `INVITE_KINDS`: que estén
 los seis ficheros, que las acciones de Go template cierren, que `.Data` vaya
