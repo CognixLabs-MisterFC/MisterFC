@@ -1658,6 +1658,30 @@
       "delegado": "Delegado",
       "coordinador": "Coordinador"
     },
+    "add": {
+      "action": "Añadir staff",
+      "title": "Añadir al cuerpo técnico",
+      "description": "Elige a alguien que ya está en el club y dale una función en este equipo. No se le envía ninguna invitación y su rol de club no cambia.",
+      "field": {
+        "member": "Persona",
+        "member_placeholder": "Selecciona a quién añadir",
+        "staff_role": "Función en el equipo",
+        "staff_role_placeholder": "Selecciona función"
+      },
+      "save": "Añadir",
+      "cancel": "Cancelar",
+      "empty": "No hay nadie en el club a quien añadir. Invita primero al cuerpo técnico.",
+      "errors": {
+        "membership_invalid": "Persona no válida.",
+        "team_staff_role_invalid": "Función no válida.",
+        "team_invalid": "Equipo no válido.",
+        "cross_club": "Esa persona no pertenece al mismo club que el equipo.",
+        "principal_exists": "Ya hay un entrenador principal activo en este equipo.",
+        "role_exists": "Esta persona ya tiene esa función activa en este equipo.",
+        "forbidden": "No tienes permiso para añadir staff en este equipo.",
+        "generic": "No se pudo añadir al cuerpo técnico."
+      }
+    },
     "invite": {
       "action": "Invitar staff",
       "title": "Invitar cuerpo técnico",

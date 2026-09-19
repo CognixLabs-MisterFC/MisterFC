@@ -1658,6 +1658,30 @@
       "delegado": "Delegat",
       "coordinador": "Coordinador"
     },
+    "add": {
+      "action": "Afegir staff",
+      "title": "Afegir al cos tècnic",
+      "description": "Tria algú que ja està al club i dona-li una funció en aquest equip. No se li envia cap invitació i el seu rol de club no canvia.",
+      "field": {
+        "member": "Persona",
+        "member_placeholder": "Selecciona qui afegir",
+        "staff_role": "Funció en l’equip",
+        "staff_role_placeholder": "Selecciona funció"
+      },
+      "save": "Afegir",
+      "cancel": "Cancel·lar",
+      "empty": "No hi ha ningú al club a qui afegir. Convida primer el cos tècnic.",
+      "errors": {
+        "membership_invalid": "Persona no vàlida.",
+        "team_staff_role_invalid": "Funció no vàlida.",
+        "team_invalid": "Equip no vàlid.",
+        "cross_club": "Aqueixa persona no pertany al mateix club que l’equip.",
+        "principal_exists": "Ja hi ha un entrenador principal actiu en aquest equip.",
+        "role_exists": "Aquesta persona ja té eixa funció activa en aquest equip.",
+        "forbidden": "No tens permís per a afegir staff en aquest equip.",
+        "generic": "No s’ha pogut afegir al cos tècnic."
+      }
+    },
     "invite": {
       "action": "Convidar staff",
       "title": "Convidar cos tècnic",

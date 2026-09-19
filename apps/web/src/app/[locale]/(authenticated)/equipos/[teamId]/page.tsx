@@ -4,6 +4,7 @@ import { ArrowLeft, UserRound, Users } from 'lucide-react';
 import {
   ADMIN_ROLES,
   STAFF_ROLES,
+  TEAM_STAFF_ROLES,
   createSupabaseServerClient,
   formatPlayerName,
   getPlayersWithoutAppFromClient,
@@ -20,6 +21,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { InviteStaffDialog } from './invite-staff-dialog';
+import { AddStaffDialog, type StaffCandidate } from './add-staff-dialog';
 import { RemoveStaffButton } from './remove-staff-button';
 import { CancelInvitationButton } from '../../invitations/cancel-invitation-button';
 import { NoAppBadge } from '@/components/no-app-badge';
@@ -84,6 +86,44 @@ export default async function TeamDetailPage({ params }: Props) {
     .eq('team_id', teamId)
     .is('left_at', null)
     .order('joined_at', { ascending: true });
+
+  // BUG 3 · A-2 — candidatos a los que AÑADIR: los miembros del club que no son
+  // jugadores. Antes, meter a alguien en un equipo pasaba siempre por invitarle
+  // por correo, aunque ya estuviera dentro. No se excluye a quien ya es staff de
+  // este equipo: el sistema admite dos funciones en el mismo equipo, y si se
+  // repite la misma el action devuelve `role_exists`.
+  let staffCandidates: StaffCandidate[] = [];
+  if (canManageStaff) {
+    type MemberRow = {
+      id: string;
+      role: string;
+      profiles: { full_name: string | null };
+    };
+    const { data: memberRows } = await supabase
+      .from('memberships')
+      .select('id, role, profiles!inner(full_name)')
+      .eq('club_id', category.club_id)
+      .is('left_at', null);
+
+    staffCandidates = (memberRows ?? [])
+      .map((r) => r as unknown as MemberRow)
+      .filter((r) => (STAFF_ROLES as readonly string[]).includes(r.role))
+      .map((r) => ({
+        membership_id: r.id,
+        full_name: r.profiles.full_name ?? '—',
+        club_role: r.role,
+      }))
+      .sort((a, b) =>
+        a.full_name.localeCompare(b.full_name, 'es', { sensitivity: 'base' })
+      );
+  }
+
+  // Funciones ofrecidas al añadir. El coordinador no nombra coordinadores: se lo
+  // impide la RLS `team_staff_insert_admin`, así que tampoco se le ofrece.
+  const assignableRoles =
+    ctx.activeClub.role === 'coordinador'
+      ? TEAM_STAFF_ROLES.filter((r) => r !== 'coordinador')
+      : TEAM_STAFF_ROLES;
 
   // Invitaciones pendientes del equipo (F2.6 hotfix 2026-05-30).
   // Pendiente = sin aceptar Y sin expirar. Las expiradas también se incluyen
@@ -222,7 +262,14 @@ export default async function TeamDetailPage({ params }: Props) {
             {tStaff('title')}
           </CardTitle>
           {canManageStaff && (
-            <InviteStaffDialog locale={locale} teamId={teamId} />
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <AddStaffDialog
+                teamId={teamId}
+                candidates={staffCandidates}
+                assignableRoles={assignableRoles}
+              />
+              <InviteStaffDialog locale={locale} teamId={teamId} />
+            </div>
           )}
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
