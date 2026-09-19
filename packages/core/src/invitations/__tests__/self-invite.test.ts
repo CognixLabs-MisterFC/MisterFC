@@ -11,9 +11,9 @@ import type { Database } from '../../supabase/types';
 type UserOpts = {
   rpcData?: { id: string; token: string; email: string } | null;
   rpcError?: { message: string } | null;
-  resetError?: { message: string } | null;
+  existingEmailError?: { message: string } | null;
   onRpc?: (name: string, args: unknown) => void;
-  onReset?: () => void;
+  onExistingEmail?: () => void;
 };
 
 function makeUserClient(opts: UserOpts): SupabaseClient<Database> {
@@ -25,9 +25,9 @@ function makeUserClient(opts: UserOpts): SupabaseClient<Database> {
       },
     }),
     auth: {
-      resetPasswordForEmail: async () => {
-        opts.onReset?.();
-        return { error: opts.resetError ?? null };
+      signInWithOtp: async () => {
+        opts.onExistingEmail?.();
+        return { error: opts.existingEmailError ?? null };
       },
     },
   } as unknown as SupabaseClient<Database>;
@@ -183,23 +183,23 @@ describe('MN-5 · performSelfInvite', () => {
   });
 
   it('si el correo ya es usuario, reenvía por reset y NO enlaza', async () => {
-    const onReset = vi.fn();
+    const onExistingEmail = vi.fn();
     const link = makeLink();
     const res = await performSelfInvite(
-      makeUserClient({ rpcData: OK_INVITE, onReset }),
+      makeUserClient({ rpcData: OK_INVITE, onExistingEmail }),
       makeAdminClient({ inviteError: { code: 'email_exists' } }),
       ARGS,
       link,
     );
     expect(res).toEqual({ ok: { email: 'hijo@correo.com', existing: true } });
-    expect(onReset).toHaveBeenCalledOnce();
+    expect(onExistingEmail).toHaveBeenCalledOnce();
     // La cuenta NO la hemos creado nosotros: invited_user_id queda NULL por diseño.
     expect(link).not.toHaveBeenCalled();
   });
 
   it('si el reset tambien falla, es generic', async () => {
     const res = await performSelfInvite(
-      makeUserClient({ rpcData: OK_INVITE, resetError: { message: 'nope' } }),
+      makeUserClient({ rpcData: OK_INVITE, existingEmailError: { message: 'nope' } }),
       makeAdminClient({ inviteError: { code: 'email_exists' } }),
       ARGS,
       makeLink(),

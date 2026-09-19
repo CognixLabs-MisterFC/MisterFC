@@ -11,6 +11,7 @@ import {
   createSupabaseServerClient,
   getCurrentUserClubs,
   inviteEmailMetadata,
+  sendInviteToExistingUser,
   invitePlayerTutorSchema,
   inviteSpectatorSchema,
   type PlayerTutorRelation,
@@ -277,13 +278,13 @@ async function sendOrRenewTutorInvitation(
         msg.includes('already been registered') ||
         msg.includes('already exists');
       if (alreadyExists) {
-        // Email ya registrado → mismo vehículo de redirect (patrón sendInvitation).
+        // Email ya registrado → correo de invitación para cuenta existente.
         // invited_user_id se deja como esté: es un invitee EXISTENTE (inicia
         // sesión con su contraseña); no lo creamos nosotros.
-        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
+        const { error: resetErr } = await sendInviteToExistingUser(supabase, {
           email,
-          { redirectTo },
-        );
+          redirectTo,
+        });
         if (resetErr) {
           Sentry.captureException(resetErr, {
             tags: { feature: 'invitations', step: 'reset_fallback_tutor' },
@@ -1162,11 +1163,12 @@ export async function inviteBatch(
           msg.includes('already been registered') ||
           msg.includes('already exists');
         if (alreadyExists) {
-          // Email ya registrado → mismo redirectTo vía reset (patrón de inviteTutorForPlayer).
-          const { error: resetErr } = await supabase.auth.resetPasswordForEmail(
-            group.email,
-            { redirectTo },
-          );
+          // Email ya registrado → correo de invitación para cuenta existente
+          // (patrón de inviteTutorForPlayer).
+          const { error: resetErr } = await sendInviteToExistingUser(supabase, {
+            email: group.email,
+            redirectTo,
+          });
           if (resetErr) {
             sendReason = 'send_failed';
             Sentry.captureException(resetErr, {

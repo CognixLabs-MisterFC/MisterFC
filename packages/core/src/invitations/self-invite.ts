@@ -5,6 +5,7 @@ import {
   type LinkInvitedUser,
 } from '../spectators/index';
 import { inviteEmailMetadata } from './invite-email-metadata';
+import { sendInviteToExistingUser } from './invite-existing-user';
 
 /**
  * MN-5 — el TUTOR invita a su hijo a tener cuenta propia.
@@ -131,12 +132,14 @@ export async function performSelfInvite(
 
     if (invErr) {
       if (isEmailAlreadyExistsError(invErr)) {
-        // Ya es usuario → `inviteUserByEmail` no puede. Reenvío por reset (mismo
-        // redirectTo), COMO EL USUARIO. La invitación ya existe → el accept se
-        // completa igual.
+        // Ya es usuario → `inviteUserByEmail` no puede. Sale el correo de
+        // invitación para cuenta existente (mismo redirectTo), COMO EL USUARIO.
+        // La invitación ya existe → el accept se completa igual.
         existing = true;
-        const { error: resetErr } =
-          await userSupabase.auth.resetPasswordForEmail(email, { redirectTo });
+        const { error: resetErr } = await sendInviteToExistingUser(
+          userSupabase,
+          { email, redirectTo }
+        );
         if (resetErr) {
           log(resetErr, 'reset_fallback_self', { invitation_id: invite.id });
           return { error: 'generic' };

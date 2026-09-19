@@ -37,6 +37,15 @@ const CALL = 'auth.admin.inviteUserByEmail(';
  * helper.
  */
 const META = 'inviteEmailMetadata(';
+/**
+ * B-2 — y que el camino de «el correo ya tiene cuenta» NO vuelva a salir por
+ * `resetPasswordForEmail`. Sale por `sendInviteToExistingUser` (plantilla de
+ * magic link, con asunto de invitación). El correo de restablecer contraseña
+ * sigue siendo legítimo donde toca —/forgot-password y el perfil de la app—,
+ * pero en un fichero que INVITA es un asunto que miente. Un envío, un fallback.
+ */
+const EXISTING = 'sendInviteToExistingUser(';
+const RESET = 'resetPasswordForEmail(';
 
 /**
  * CENSO (fichero → nº de llamadas). Los 7 senders viven en 6 ficheros, y cada
@@ -80,6 +89,8 @@ function walk(dir, out) {
 
 const found = {};
 const withMeta = {};
+const withExisting = {};
+const withReset = {};
 for (const base of SCAN) {
   for (const file of walk(join(ROOT, base), [])) {
     const lines = readFileSync(file, 'utf8')
@@ -90,6 +101,8 @@ for (const base of SCAN) {
       const rel = relative(ROOT, file).split(sep).join('/');
       found[rel] = count;
       withMeta[rel] = lines.filter((l) => l.includes(META)).length;
+      withExisting[rel] = lines.filter((l) => l.includes(EXISTING)).length;
+      withReset[rel] = lines.filter((l) => l.includes(RESET)).length;
     }
   }
 }
@@ -117,6 +130,20 @@ for (const [file, senders] of Object.entries(found)) {
         'Todo envío arma su `data` con el helper (invite_kind + invite_locale).',
     );
   }
+  // Cada envío, su fallback de cuenta existente.
+  const existing = withExisting[file] ?? 0;
+  if (existing !== senders) {
+    problems.push(
+      `· ${file}: ${senders} envío(s) pero ${existing} llamada(s) a sendInviteToExistingUser(). ` +
+        'Todo envío necesita su camino para cuando el email YA tiene cuenta.',
+    );
+  }
+  if ((withReset[file] ?? 0) > 0) {
+    problems.push(
+      `· ${file}: usa resetPasswordForEmail(). Un fichero que INVITA no manda ` +
+        'correos de restablecer contraseña: usa sendInviteToExistingUser().',
+    );
+  }
 }
 
 if (problems.length > 0) {
@@ -134,5 +161,5 @@ if (problems.length > 0) {
 const total = Object.values(found).reduce((a, b) => a + b, 0);
 console.log(
   `[invite-senders] OK — ${total} senders en ${Object.keys(found).length} ficheros, ` +
-    'censo cuadra y todos mandan su invite_kind.',
+    'censo cuadra, todos mandan su invite_kind y ninguno invita por reset.',
 );

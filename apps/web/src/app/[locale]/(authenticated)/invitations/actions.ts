@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/nextjs';
 import {
   STAFF_ROLES,
   inviteEmailMetadata,
+  sendInviteToExistingUser,
   sendInvitationSchema,
   createSupabaseServerClient,
   createSupabaseAdminClient,
@@ -335,9 +336,9 @@ export async function sendInvitation(
 
     if (invErr) {
       // Si el user ya existe (email previo) Supabase devuelve un error.
-      // En ese caso reenviamos el email de invitación vía resetPasswordForEmail
-      // como vehículo de transporte para reusar la misma URL de redirect,
-      // sin tener que reimplementar el template propio.
+      // En ese caso se manda el correo de INVITACIÓN para cuenta existente
+      // (plantilla de magic link), no el de restablecer contraseña. Ver
+      // `sendInviteToExistingUser`.
       const code = 'code' in invErr ? invErr.code : undefined;
       const alreadyExists =
         code === 'email_exists' ||
@@ -350,14 +351,15 @@ export async function sendInvitation(
           invitation_id: invite.id,
           original_error: serializeError(invErr),
         });
-        const { error: resetErr } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+        const { error: resetErr } = await sendInviteToExistingUser(supabase, {
+          email: parsed.data.email,
           redirectTo,
         });
         if (resetErr) {
           console.error(
-            '[invitations][invite-email] reset_fallback_failed ' +
+            '[invitations][invite-email] existing_user_email_failed ' +
               JSON.stringify({
-                step: 'resetPasswordForEmail_fallback',
+                step: 'invite_existing_user_fallback',
                 masked_email: maskedEmail,
                 invitation_id: invite.id,
                 error: serializeError(resetErr),
