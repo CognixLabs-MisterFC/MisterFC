@@ -1532,6 +1532,13 @@
         "relation_invalid": "Relació no vàlida.",
         "forbidden": "No tens permís per a convidar tutors en este club.",
         "generic": "No s'ha pogut enviar la invitació."
+      },
+      "existing": {
+        "title": "Eixa persona ja està al club",
+        "body": "{name} ja està al club com a {role}, així que no li hem enviat cap invitació: ja té compte. Pots vincular-la a esta fitxa directament.",
+        "link": "Vincular {name}",
+        "linked": "{name} ja està vinculat a esta fitxa.",
+        "no_permission": "Només un administrador o un director pot vincular eixa persona amb el jugador. Demana-li-ho a direcció."
       }
     },
     "assign": {

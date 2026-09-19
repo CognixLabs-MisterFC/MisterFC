@@ -12,6 +12,7 @@ import {
   getCurrentUserClubs,
   invitePlayerTutorSchema,
   inviteSpectatorSchema,
+  type PlayerTutorRelation,
   clearPlayerPhotoFromClient,
   removeSpectatorFromClient,
   resolveActiveClub,
@@ -633,6 +634,16 @@ export type InviteTutorState = {
     | 'forbidden'
     | 'generic';
   ok?: { email: string };
+  /**
+   * BUG 3 · B-2 (hueco hermano de #646) — el correo ya es de alguien del club:
+   * NO se ha invitado a nadie. El diálogo lo dice y ofrece el vínculo directo.
+   */
+  existingMember?: {
+    membershipId: string;
+    fullName: string;
+    clubRole: string;
+    relation: PlayerTutorRelation;
+  };
 };
 
 export async function inviteTutorForPlayer(
@@ -669,6 +680,39 @@ export async function inviteTutorForPlayer(
     .eq('id', playerId)
     .maybeSingle();
   if (!player) return { error: 'forbidden' };
+
+  // BUG 3 · B-2 — antes de invitar preguntamos si ese correo ya es de alguien
+  // del club. Si lo es, la invitación no sirve de nada: esa persona ya tiene
+  // cuenta, y el correo que recibiría la manda a crear otra. Se avisa y se
+  // ofrece vincularla a la ficha, igual que hace el alta de jugador (#646).
+  //
+  // La pregunta no se puede hacer con una consulta normal: `profiles` no guarda
+  // el correo y `auth.users` no lo puede leer un cliente de la app. La contesta
+  // `club_member_by_email` (mig 20261086000000), gateada a cuerpo técnico.
+  //
+  // Si la RPC falla —permisos, red—, se sigue por el camino de siempre: se
+  // invita. El botón no se queda muerto por un fallo del atajo.
+  const { data: memberRows, error: memberErr } = await supabase.rpc(
+    'club_member_by_email',
+    { p_club_id: player.club_id as string, p_email: parsed.data.email }
+  );
+  if (memberErr) {
+    Sentry.captureException(memberErr, {
+      tags: { feature: 'invitations', step: 'invite_tutor_member_lookup' },
+      extra: { player_id: player.id },
+    });
+  }
+  const existing = memberErr ? null : (memberRows ?? [])[0];
+  if (existing) {
+    return {
+      existingMember: {
+        membershipId: existing.membership_id,
+        fullName: existing.full_name ?? '—',
+        clubRole: existing.role,
+        relation: parsed.data.relation,
+      },
+    };
+  }
 
   // Circuito único (con anti-duplicado): si ya hay una invitación vigente para
   // este jugador, la renueva y reenvía; si no, la crea. La RLS de `invitations`

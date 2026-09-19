@@ -1532,6 +1532,13 @@
         "relation_invalid": "Relación no válida.",
         "forbidden": "No tienes permiso para invitar tutores en este club.",
         "generic": "No se pudo enviar la invitación."
+      },
+      "existing": {
+        "title": "Esa persona ya está en el club",
+        "body": "{name} ya está en el club como {role}, así que no le hemos enviado ninguna invitación: ya tiene cuenta. Puedes vincularla a esta ficha directamente.",
+        "link": "Vincular a {name}",
+        "linked": "{name} ya está vinculado a esta ficha.",
+        "no_permission": "Solo un administrador o un director puede vincular a esa persona con el jugador. Pídeselo a dirección."
       }
     },
     "assign": {
