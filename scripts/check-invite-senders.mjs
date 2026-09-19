@@ -28,16 +28,26 @@ const SCAN = ['apps', 'packages'];
 const SKIP = new Set(['node_modules', '.next', '.expo', '.turbo', 'dist', 'build', 'android', 'ios']);
 const EXT = /\.(ts|tsx)$/;
 const CALL = 'auth.admin.inviteUserByEmail(';
+/**
+ * A-1 — además del censo, se exige que CADA envío arme su `data` con el helper
+ * compartido. La plantilla del correo ramifica por `.Data.invite_kind`: un
+ * sender que escriba el objeto a mano y se deje la clave manda el texto neutro
+ * y NADIE se entera —el correo sale, solo que diciendo menos de lo que debía—.
+ * El tipo `InviteKind` impide equivocarse de valor; esto impide saltarse el
+ * helper.
+ */
+const META = 'inviteEmailMetadata(';
 
 /**
- * CENSO (fichero → nº de llamadas). Los 7 senders viven en 6 ficheros:
- *   1 sendInvitation ................ invitations/actions.ts
- *   2 sendOrRenewTutorInvitation ..... jugadores/actions.ts
- *   5 inviteBatch .................... jugadores/actions.ts  (2 en el mismo fichero)
- *   3 inviteClubAdmin ................ lib/platform/invite-club-admin.ts
- *   4 changeClubAdmin ................ lib/platform/change-club-admin.ts
- *   7 performSpectatorInvite ......... packages/core/src/spectators/index.ts
- *   8 performSelfInvite .............. packages/core/src/invitations/self-invite.ts
+ * CENSO (fichero → nº de llamadas). Los 7 senders viven en 6 ficheros, y cada
+ * uno manda su `invite_kind` a la plantilla (A-1):
+ *   1 sendInvitation ................ invitations/actions.ts            → staff
+ *   2 sendOrRenewTutorInvitation ..... jugadores/actions.ts               → tutor
+ *   5 inviteBatch .................... jugadores/actions.ts  (2 en el mismo fichero) → tutor
+ *   3 inviteClubAdmin ................ lib/platform/invite-club-admin.ts  → admin
+ *   4 changeClubAdmin ................ lib/platform/change-club-admin.ts  → admin
+ *   7 performSpectatorInvite ......... packages/core/src/spectators/index.ts → seguidor
+ *   8 performSelfInvite .............. packages/core/src/invitations/self-invite.ts → menor
  *
  * El 6 (inviteStaffToTeam, equipos/[teamId]) SE RETIRÓ en BUG 3 · A-3: invitar
  * dejó de vivir en la página de un equipo. Su hueco NO se reutiliza y la
@@ -69,12 +79,18 @@ function walk(dir, out) {
 }
 
 const found = {};
+const withMeta = {};
 for (const base of SCAN) {
   for (const file of walk(join(ROOT, base), [])) {
-    const count = readFileSync(file, 'utf8')
+    const lines = readFileSync(file, 'utf8')
       .split('\n')
-      .filter((l) => !isComment(l) && l.includes(CALL)).length;
-    if (count > 0) found[relative(ROOT, file).split(sep).join('/')] = count;
+      .filter((l) => !isComment(l));
+    const count = lines.filter((l) => l.includes(CALL)).length;
+    if (count > 0) {
+      const rel = relative(ROOT, file).split(sep).join('/');
+      found[rel] = count;
+      withMeta[rel] = lines.filter((l) => l.includes(META)).length;
+    }
   }
 }
 
@@ -92,6 +108,16 @@ for (const [file, expected] of Object.entries(CENSUS)) {
 for (const file of Object.keys(found)) {
   if (!(file in CENSUS)) problems.push(`· SENDER NUEVO sin declarar: ${file}`);
 }
+// Cada envío, su invite_kind: tantos `inviteEmailMetadata(` como envíos.
+for (const [file, senders] of Object.entries(found)) {
+  const metas = withMeta[file] ?? 0;
+  if (metas !== senders) {
+    problems.push(
+      `· ${file}: ${senders} envío(s) pero ${metas} llamada(s) a inviteEmailMetadata(). ` +
+        'Todo envío arma su `data` con el helper (invite_kind + invite_locale).',
+    );
+  }
+}
 
 if (problems.length > 0) {
   console.error('\n[invite-senders] El censo de senders de invitación NO cuadra:\n');
@@ -106,4 +132,7 @@ if (problems.length > 0) {
 }
 
 const total = Object.values(found).reduce((a, b) => a + b, 0);
-console.log(`[invite-senders] OK — ${total} senders en ${Object.keys(found).length} ficheros, censo cuadra.`);
+console.log(
+  `[invite-senders] OK — ${total} senders en ${Object.keys(found).length} ficheros, ` +
+    'censo cuadra y todos mandan su invite_kind.',
+);

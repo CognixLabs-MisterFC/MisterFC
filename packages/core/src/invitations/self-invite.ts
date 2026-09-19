@@ -4,6 +4,7 @@ import {
   isEmailAlreadyExistsError,
   type LinkInvitedUser,
 } from '../spectators/index';
+import { inviteEmailMetadata } from './invite-email-metadata';
 
 /**
  * MN-5 — el TUTOR invita a su hijo a tener cuenta propia.
@@ -89,12 +90,12 @@ function mapRpcError(message: string): SelfInviteError {
 export async function performSelfInvite(
   userSupabase: DbClient,
   admin: DbClient,
-  args: { playerId: string; email: string; linkBase: string },
+  args: { playerId: string; email: string; linkBase: string; locale: string },
   /** Obligatorio: no se puede enviar sin traer el enlazado. Ver `LinkInvitedUser`. */
   link: LinkInvitedUser,
   logError?: SelfInviteLogger
 ): Promise<SelfInviteResult> {
-  const { playerId, email, linkBase } = args;
+  const { playerId, email, linkBase, locale } = args;
   const log: SelfInviteLogger = logError ?? (() => {});
 
   // 1) RPC COMO EL USUARIO — los gates viven dentro, antes del INSERT.
@@ -121,7 +122,11 @@ export async function performSelfInvite(
     const { data: inviteData, error: invErr } =
       await admin.auth.admin.inviteUserByEmail(email, {
         redirectTo,
-        data: { invite_pending: true, invitation_id: invite.id },
+        data: inviteEmailMetadata({
+          invitationId: invite.id,
+          kind: 'menor',
+          locale,
+        }),
       });
 
     if (invErr) {

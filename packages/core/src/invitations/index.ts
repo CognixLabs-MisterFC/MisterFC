@@ -1,4 +1,10 @@
 export {
+  INVITE_KINDS,
+  inviteEmailMetadata,
+  type InviteKind,
+  type InviteEmailMetadata,
+} from './invite-email-metadata';
+export {
   summarizePendingInvites,
   type PendingInviteCandidate,
   type PendingInviteEmailGroup,

@@ -23,7 +23,7 @@ export type { SpectatorInviteResult };
 export function performSpectatorInvite(
   userSupabase: SupabaseClient<Database>,
   admin: SupabaseClient<Database>,
-  args: { playerId: string; email: string; linkBase: string },
+  args: { playerId: string; email: string; linkBase: string; locale: string },
 ): Promise<SpectatorInviteResult> {
   return corePerformSpectatorInvite(
     userSupabase,

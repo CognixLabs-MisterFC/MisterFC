@@ -2,7 +2,11 @@
 
 import { headers } from 'next/headers';
 import * as Sentry from '@sentry/nextjs';
-import { createSupabaseServerClient, createSupabaseAdminClient } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  createSupabaseAdminClient,
+  inviteEmailMetadata,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
 
@@ -104,7 +108,11 @@ export async function changeClubAdmin(input: {
   try {
     const { data: inviteData, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
       redirectTo,
-      data: { invite_pending: true, invitation_id: invite.invitation_id },
+      data: inviteEmailMetadata({
+        invitationId: invite.invitation_id,
+        kind: 'admin',
+        locale,
+      }),
     });
 
     if (invErr) {

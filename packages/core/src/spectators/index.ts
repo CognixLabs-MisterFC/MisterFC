@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { getCurrentUserFromClient } from '../auth/current-user';
+import { inviteEmailMetadata } from '../invitations/invite-email-metadata';
 import type { FollowedPlayer } from '../auth/spectator';
 
 /**
@@ -211,12 +212,12 @@ export function isEmailAlreadyExistsError(err: unknown): boolean {
 export async function performSpectatorInvite(
   userSupabase: DbClient,
   admin: DbClient,
-  args: { playerId: string; email: string; linkBase: string },
+  args: { playerId: string; email: string; linkBase: string; locale: string },
   /** Obligatorio: no se puede enviar sin traer el enlazado. Ver `LinkInvitedUser`. */
   link: LinkInvitedUser,
   logError?: SpectatorInviteLogger
 ): Promise<SpectatorInviteResult> {
-  const { playerId, email, linkBase } = args;
+  const { playerId, email, linkBase, locale } = args;
   const log: SpectatorInviteLogger = logError ?? (() => {});
 
   // 1) RPC COMO EL USUARIO — el gate tutor/self vive dentro (antes del INSERT).
@@ -241,7 +242,11 @@ export async function performSpectatorInvite(
     const { data: inviteData, error: invErr } =
       await admin.auth.admin.inviteUserByEmail(email, {
         redirectTo,
-        data: { invite_pending: true, invitation_id: invite.id },
+        data: inviteEmailMetadata({
+          invitationId: invite.id,
+          kind: 'seguidor',
+          locale,
+        }),
       });
 
     if (invErr) {

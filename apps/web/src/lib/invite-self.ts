@@ -22,7 +22,7 @@ export type { SelfInviteResult };
 export function performSelfInvite(
   userSupabase: SupabaseClient<Database>,
   admin: SupabaseClient<Database>,
-  args: { playerId: string; email: string; linkBase: string },
+  args: { playerId: string; email: string; linkBase: string; locale: string },
 ): Promise<SelfInviteResult> {
   return corePerformSelfInvite(
     userSupabase,
