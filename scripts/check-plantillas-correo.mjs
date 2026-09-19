@@ -55,6 +55,33 @@ for (const t of TEMPLATES) {
   }
 }
 
+// ── Asuntos: 255 caracteres, SINTAXIS INCLUIDA ───────────────────────────────
+// Límite del dashboard, no nuestro: al pegar un asunto más largo contesta
+// «Failed to validate template: subject: Too big: expected string to have <=255
+// characters» y NO GUARDA NADA — ni el asunto ni el cuerpo. Se descubrió pegando
+// a mano: el primer asunto ramificado medía 411 y el rechazo pasó por «aún no lo
+// he pegado» hasta que `plantillas:diff` dijo que el vivo seguía siendo el viejo.
+//
+// Cuenta la plantilla entera: `{{ if eq $k "tutor" }}` gasta 22 de esos 255. Por
+// eso el de invitación conserva solo dos ramas (ver el README).
+//
+// Se miden las DOS formas de contar —caracteres y bytes UTF-8— porque no sabemos
+// cuál usa el validador del dashboard, y un acento vale 1 o 2 según cuál sea.
+// Pasar las dos es la única manera de no volver a descubrirlo pegando.
+const MAX_ASUNTO = 255;
+for (const t of TEMPLATES) {
+  const asunto = subjects[t].trimEnd();
+  const chars = [...asunto].length;
+  const bytes = Buffer.byteLength(asunto, 'utf8');
+  if (chars > MAX_ASUNTO || bytes > MAX_ASUNTO) {
+    fail(
+      `el asunto de ${t} mide ${chars} caracteres (${bytes} bytes) y el máximo ` +
+        `del dashboard es ${MAX_ASUNTO}, sintaxis de plantilla incluida. ` +
+        'Si te pasas, Supabase rechaza el guardado entero.',
+    );
+  }
+}
+
 // ── Acciones de Go template balanceadas ──────────────────────────────────────
 // `{{ if }}`, `{{ with }}` y `{{ range }}` cierran con `{{ end }}`. Un `end` de
 // menos no rompe el render: rompe el ENVÍO, y el correo no sale.

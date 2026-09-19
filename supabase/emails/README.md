@@ -28,6 +28,30 @@ en la rama neutra: revienta el render y **el correo no se manda**.
 (`internal/mailer/templatemailer/template.go`): el asunto se parsea con
 `template.New("Subject")` y se ejecuta con el mismo mapa de datos que el cuerpo.
 
+**Y el asunto cabe en 255 caracteres, sintaxis incluida.** Es un límite del
+dashboard, no nuestro: con uno más largo contesta *«Failed to validate template:
+subject: Too big»* y **no guarda nada**, ni el asunto ni el cuerpo. El primer
+asunto ramificado medía 411 y se quedó sin pegar; el rechazo pasó desapercibido
+hasta que `plantillas:diff` dijo que el dashboard seguía con la plantilla vieja.
+Lo vigila el guard.
+
+**Por eso el asunto de la invitación solo tiene dos ramas.** Cada
+`{{ else if eq $k "..." }}` cuesta 27 de esos 255, así que las cinco no entran:
+
+| tipo | asunto |
+|---|---|
+| `tutor` | «Te han invitado al club de tu hijo o hija» |
+| `menor` | «Tu cuenta de MisterFC ya está lista» |
+| `staff`, `admin`, `seguidor` | «Te han invitado a MisterFC» (rama neutra) |
+
+`tutor` es el grupo más numeroso con diferencia (9 de las 15 invitaciones de
+producción llevaban `player_id`), y `menor` es el único caso en el que «te han
+invitado» no describe lo que pasó: a ese chaval no le invita nadie, su familia le
+ha creado la cuenta. `staff` ya compartía texto con la rama neutra, así que no
+pierde nada, y para `admin` y `seguidor` «te han invitado a MisterFC» es **cierto**
+— lo que les explica quién les invita y a qué está en el cuerpo, que **sí**
+conserva las cinco ramas y no tiene problema de tamaño.
+
 **`invite` ramifica por `invite_kind`; `magic_link` NO.** En la invitación el
 `data` lo ponemos nosotros al crear la cuenta. En el magic link no se crea
 ninguna cuenta, así que `{{ .Data }}` sería el metadata **viejo** del
