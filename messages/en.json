@@ -1532,6 +1532,13 @@
         "relation_invalid": "Invalid relationship.",
         "forbidden": "You don't have permission to invite guardians in this club.",
         "generic": "Couldn't send the invitation."
+      },
+      "existing": {
+        "title": "That person is already in the club",
+        "body": "{name} is already in the club as {role}, so we have not sent any invitation: they already have an account. You can link them to this profile directly.",
+        "link": "Link {name}",
+        "linked": "{name} is now linked to this profile.",
+        "no_permission": "Only an administrator or a director can link that person to the player. Ask them to do it."
       }
     },
     "assign": {

@@ -503,6 +503,10 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
                     locale={locale}
                     playerId={player.id}
                     playerName={fullName}
+                    canLinkPlayers={
+                      ctx.activeClub.role === 'admin_club' ||
+                      ctx.activeClub.role === 'director'
+                    }
                   />
                 )}
               </CardHeader>
