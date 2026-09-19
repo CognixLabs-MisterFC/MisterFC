@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import * as Sentry from '@sentry/nextjs';
+import { planAuthCallback } from '@misterfc/core';
 
 /**
  * Callback del magic link de Supabase Auth.
@@ -16,74 +17,51 @@ import * as Sentry from '@sentry/nextjs';
  *   construimos manualmente, especialmente con Next 16 + Turbopack. Mejor
  *   atarse al response directamente.
  *
- * Flujo:
- *   - Llega `/auth/callback?code=<otp>&next=<path>` desde Supabase.
- *   - Intercambiamos el code → cookies set en response.
- *   - Redirigimos al `next` (validado como path relativo) o a `/`.
- *   - Si falla → redirect a `/es/signin?error=callback_failed`.
+ * Qué hacer con lo que llega lo decide `planAuthCallback` (core, con tests):
+ *   - `code` (PKCE, lo más común desde Supabase Auth v2) → canjear.
+ *   - `token_hash` + `type` (OTP) → verificar.
+ *   - NADA en la query pero sí un `next` → DEJAR PASAR. BUG-4: los flujos
+ *     implícitos devuelven la sesión en el FRAGMENTO (`#access_token=…`), que un
+ *     Route Handler no puede ver. Antes esto se daba por enlace roto y se iba a
+ *     signin tirando el destino; el navegador arrastraba el fragmento hasta allí,
+ *     `AuthHashHandler` lo canjeaba y el usuario entraba en la app sin que nadie
+ *     le pidiera la contraseña nueva. Ahora seguimos al destino y el fragmento
+ *     se canja donde toca.
+ *   - Ni artefactos ni destino, o error explícito → signin.
  */
-function safeNextPath(raw: string | null): string {
-  if (!raw) return '/';
-  if (raw.startsWith('/') && !raw.startsWith('//')) {
-    return raw;
-  }
-  return '/';
-}
-
-type OtpType =
-  | 'invite'
-  | 'magiclink'
-  | 'recovery'
-  | 'email_change'
-  | 'signup'
-  | 'email';
-
-const VALID_OTP_TYPES: ReadonlySet<OtpType> = new Set([
-  'invite',
-  'magiclink',
-  'recovery',
-  'email_change',
-  'signup',
-  'email',
-]);
-
-function isOtpType(value: string | null): value is OtpType {
-  return value !== null && VALID_OTP_TYPES.has(value as OtpType);
-}
-
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const tokenHash = searchParams.get('token_hash');
-  const typeParam = searchParams.get('type');
-  const errorParam = searchParams.get('error') ?? searchParams.get('error_description');
-  const next = searchParams.get('next');
+  const plan = planAuthCallback({
+    code: searchParams.get('code'),
+    tokenHash: searchParams.get('token_hash'),
+    type: searchParams.get('type'),
+    error: searchParams.get('error') ?? searchParams.get('error_description'),
+    next: searchParams.get('next'),
+  });
 
-  // Aceptamos dos artefactos:
-  //   - `code` (PKCE, lo más común desde Supabase Auth v2).
-  //   - `token_hash` + `type` (OTP flow). Casos de fallback para entornos donde
-  //     el dashboard fuerza el patrón antiguo.
-  const hasCode = code !== null;
-  const hasOtp = tokenHash !== null && isOtpType(typeParam);
-  if (errorParam || (!hasCode && !hasOtp)) {
-    // D-4c — hoy este redirect descarta el motivo real. No hay objeto Error
+  if (plan.kind === 'fail') {
+    // D-4c — este redirect descarta el motivo real. No hay objeto Error
     // (Supabase pasa el fallo como query param, o simplemente no llegan
     // artefactos), así que reportamos el contexto con captureMessage.
     Sentry.captureMessage('auth callback: bad params', {
       level: 'warning',
-      tags: { feature: 'auth', step: 'callback_bad_params' },
+      tags: { feature: 'auth', step: 'callback_bad_params', reason: plan.reason },
       extra: {
-        error_param: errorParam ?? null,
-        has_code: hasCode,
-        has_token_hash: tokenHash !== null,
-        type_param: typeParam,
+        reason: plan.reason,
+        error_param: searchParams.get('error') ?? searchParams.get('error_description'),
+        has_token_hash: searchParams.get('token_hash') !== null,
+        type_param: searchParams.get('type'),
       },
     });
     return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
   }
 
   // Construimos el redirect ANTES de exchangear, para escribir cookies sobre él.
-  const response = NextResponse.redirect(`${origin}${safeNextPath(next)}`);
+  const response = NextResponse.redirect(`${origin}${plan.destination}`);
+
+  // Flujo implícito: no hay nada que canjear aquí, la sesión viaja en el
+  // fragmento y la recoge el cliente en el destino.
+  if (plan.kind === 'passthrough') return response;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -104,8 +82,8 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  if (hasCode) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+  if (plan.kind === 'exchange_code') {
+    const { error } = await supabase.auth.exchangeCodeForSession(plan.code);
     if (error) {
       // D-4c — capturamos el error real antes de tirarlo; el usuario sigue
       // viendo el mismo callback_failed genérico.
@@ -114,10 +92,10 @@ export async function GET(request: NextRequest) {
       });
       return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
     }
-  } else if (hasOtp && tokenHash && isOtpType(typeParam)) {
+  } else {
     const { error } = await supabase.auth.verifyOtp({
-      token_hash: tokenHash,
-      type: typeParam,
+      token_hash: plan.tokenHash,
+      type: plan.otpType,
     });
     if (error) {
       // D-4c — capturamos el error real antes de tirarlo.

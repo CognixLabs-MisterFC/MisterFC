@@ -45,7 +45,7 @@ function maskEmail(email: string): string {
  *  2. INSERT en `invitations` con token + expiración.
  *  3. `auth.admin.inviteUserByEmail` — crea el user (si no existe) con
  *     email confirmado y dispara el template "Invite user" de Supabase
- *     con `redirectTo=/auth/callback?next=/invite/{token}`.
+ *     con `redirectTo` DIRECTO a /{locale}/invite/{token} (ver el punto 3).
  *  4. Marca `app_metadata.invite_pending=true` para que la page de invitación
  *     muestre el form de password.
  *

@@ -85,6 +85,7 @@
       "confirm_label": "Confirma la contrasenya",
       "submit": "Guardar contrasenya",
       "submitting": "Guardant…",
+      "checking": "Un moment…",
       "no_session_title": "L'enllaç ha caducat",
       "no_session_body": "L'enllaç de reset ja s'ha usat o ha caducat. Demana'n un de nou.",
       "no_session_cta": "Demanar un nou enllaç",

@@ -2,7 +2,11 @@
 
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import { forgotPasswordSchema, createSupabaseServerClient } from '@misterfc/core';
+import {
+  forgotPasswordSchema,
+  createSupabaseServerClient,
+  recoveryRedirectTo,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 export type ForgotPasswordFormState = {
@@ -16,9 +20,10 @@ export type ForgotPasswordFormState = {
  * revela si el email existe o no — devuelve éxito en ambos casos. Por eso
  * redirigimos siempre a /check-email con context=reset.
  *
- * `redirectTo` apunta a /auth/callback con `next=/reset-password`. El callback
- * intercambia el code (creando sesión temporal) y redirige a reset-password,
- * donde el user fija la nueva contraseña.
+ * `redirectTo` apunta DIRECTO a /{locale}/reset-password (BUG-4). El rodeo por
+ * /auth/callback perdía la pantalla cuando el flujo era implícito; ver
+ * `recoveryRedirectTo` en core. Con PKCE —que es lo que usa esta Server Action,
+ * vía @supabase/ssr— llega `?code=` y el middleware lo reencamina al callback.
  */
 export async function requestPasswordReset(
   locale: string,
@@ -35,8 +40,7 @@ export async function requestPasswordReset(
   const hdrs = await headers();
   const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
   const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  const next = `/${locale}/reset-password`;
-  const redirectTo = `${proto}://${host}/auth/callback?next=${encodeURIComponent(next)}`;
+  const redirectTo = recoveryRedirectTo(`${proto}://${host}`, locale);
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
