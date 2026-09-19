@@ -2497,6 +2497,37 @@
         "generic": "No se pudo agregar la asignación."
       }
     },
+    "players": {
+      "title": "Jugadores vinculados",
+      "empty": "Sin jugadores vinculados.",
+      "relation": {
+        "parent": "Padre o madre",
+        "guardian": "Tutor legal",
+        "self": "Cuenta propia"
+      },
+      "add": {
+        "action": "Agregar jugador",
+        "title": "Vincular un jugador",
+        "description": "Vincula a un jugador del club con esta persona. No se envía ninguna invitación: ya está dentro. Para varios hijos, repite la operación.",
+        "field": {
+          "player": "Jugador",
+          "player_placeholder": "Selecciona jugador",
+          "relation": "Relación",
+          "relation_placeholder": "Selecciona relación"
+        },
+        "save": "Vincular",
+        "cancel": "Cancelar",
+        "empty": "No queda ningún jugador del club por vincular a esta persona.",
+        "errors": {
+          "player_invalid": "Jugador no válido.",
+          "relation_invalid": "Relación no válida.",
+          "cross_club": "Ese jugador no pertenece al mismo club.",
+          "already_linked": "Esta persona ya está vinculada a ese jugador.",
+          "forbidden": "No tienes permiso para vincular jugadores.",
+          "generic": "No se pudo vincular al jugador."
+        }
+      }
+    },
     "move": {
       "action": "Mover",
       "title": "Mover a otro equipo",

@@ -2497,6 +2497,37 @@
         "generic": "No s'ha pogut afegir l'assignació."
       }
     },
+    "players": {
+      "title": "Jugadors vinculats",
+      "empty": "Sense jugadors vinculats.",
+      "relation": {
+        "parent": "Pare o mare",
+        "guardian": "Tutor legal",
+        "self": "Compte propi"
+      },
+      "add": {
+        "action": "Afegir jugador",
+        "title": "Vincular un jugador",
+        "description": "Vincula un jugador del club amb aquesta persona. No s’envia cap invitació: ja està dins. Per a diversos fills, repeteix l’operació.",
+        "field": {
+          "player": "Jugador",
+          "player_placeholder": "Selecciona jugador",
+          "relation": "Relació",
+          "relation_placeholder": "Selecciona relació"
+        },
+        "save": "Vincular",
+        "cancel": "Cancel·lar",
+        "empty": "No queda cap jugador del club per vincular a aquesta persona.",
+        "errors": {
+          "player_invalid": "Jugador no vàlid.",
+          "relation_invalid": "Relació no vàlida.",
+          "cross_club": "Eixe jugador no pertany al mateix club.",
+          "already_linked": "Aquesta persona ja està vinculada a eixe jugador.",
+          "forbidden": "No tens permís per a vincular jugadors.",
+          "generic": "No s’ha pogut vincular el jugador."
+        }
+      }
+    },
     "move": {
       "action": "Moure",
       "title": "Moure a un altre equip",

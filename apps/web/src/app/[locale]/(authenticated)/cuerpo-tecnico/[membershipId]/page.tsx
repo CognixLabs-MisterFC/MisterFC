@@ -5,6 +5,7 @@ import {
   CalendarOff,
   Mail,
   Phone,
+  UserRound,
   Users,
 } from 'lucide-react';
 import { MANAGER_ROLES, TEAM_STAFF_ROLES } from '@misterfc/core';
@@ -27,11 +28,12 @@ import { CalendarAgenda } from '../../calendario/_components/calendar-agenda';
 import { today as todayLocal } from '@/lib/calendar-utils';
 import { MoveStaffDialog } from '../_components/move-staff-dialog';
 import { AddAssignmentDialog } from '../_components/add-assignment-dialog';
+import { AddPlayerLinkDialog } from '../_components/add-player-link-dialog';
 import { RemoveAssignmentButton } from '../_components/remove-assignment-button';
 import { EditStaffNameDialog } from '../_components/edit-staff-name-dialog';
 import { EditStaffContactDialog } from '../_components/edit-staff-contact-dialog';
 import { EditStaffRoleDialog } from '../_components/edit-staff-role-dialog';
-import { loadCoachDetail } from '../queries';
+import { loadCoachDetail, loadMemberPlayerLinks } from '../queries';
 import type { Role } from '../../jugadores/queries';
 import { intlLocale } from '@/lib/intl-locale';
 
@@ -78,6 +80,17 @@ export default async function CoachDetailPage({ params }: Props) {
 
   const { coach, history, movableTargets, canManage, coordinatedTeamIds } =
     detail;
+
+  // BUG 3 · B-1 — hijos y tutelados de esta persona. Gateado a la DIRECCIÓN del
+  // club: la RLS `player_accounts_write_admin` también deja al coordinador, pero
+  // solo con los jugadores de los equipos que coordina, así que ofrecerle el
+  // catálogo entero del club sería ofrecerle sobre todo errores. Cuando haga
+  // falta, se le ofrece su subconjunto; hoy no se le ofrece nada.
+  const canLinkPlayers = role === 'admin_club' || role === 'director';
+  const playerLinks = await loadMemberPlayerLinks(
+    ctx.activeClub.club.id,
+    coach.profile_id
+  );
 
   // E-final-2 — Mover staff acotado para el coordinador:
   //  · destino: solo equipos que coordina (coordinatedTeamIds); admin/director todos.
@@ -319,6 +332,45 @@ export default async function CoachDetailPage({ params }: Props) {
                       )}
                     </div>
                   )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+          <CardTitle className="flex items-center gap-2">
+            <UserRound className="size-5" aria-hidden />
+            {t('players.title')}
+          </CardTitle>
+          {canLinkPlayers && (
+            <AddPlayerLinkDialog
+              membershipId={coach.membership_id}
+              players={playerLinks.candidates}
+            />
+          )}
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {playerLinks.linked.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('players.empty')}</p>
+          ) : (
+            <ul className="flex flex-col divide-y divide-border">
+              {playerLinks.linked.map((l) => (
+                <li
+                  key={l.link_id}
+                  className="flex items-center justify-between gap-3 py-2"
+                >
+                  <Link
+                    href={`/jugadores/${l.player_id}`}
+                    className="truncate font-medium hover:underline"
+                  >
+                    {l.full_name}
+                  </Link>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {t(`players.relation.${l.relation}`)}
+                  </span>
                 </li>
               ))}
             </ul>
