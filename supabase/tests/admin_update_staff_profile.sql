@@ -4,14 +4,15 @@
 -- Convención del repo: BEGIN/ROLLBACK; asserts con DO + raise exception. La
 -- función con set local role authenticated + request.jwt.claims.
 --
--- Setup: club A con admin, coordinador, y un entrenador (target). Club B con su
--- propio admin y un entrenador (para el caso cross-club).
+-- Setup: club A con admin, DIRECTOR, coordinador, y un entrenador (target). Club B
+-- con su propio admin y un entrenador (para el caso cross-club).
 --
 -- Casos:
 --   F1. admin de A edita el nombre del entrenador de A → full_name actualizado;
 --       email en auth.users intacto (solo toca full_name).
 --   F2. nombre vacío/espacios → name_required (no cambia nada).
---   G1. coordinador de A → forbidden (solo admin_club).
+--   F3. DIRECTOR de A edita el nombre → igual que el admin (mig 20261085000000).
+--   G1. coordinador de A → forbidden (dirección sí, coordinación no).
 --   G2. el entrenador (no admin) → forbidden.
 --   G3. admin de A intenta editar a un miembro de OTRO club → target_invalid.
 \ir helpers/auth_users.sql
@@ -23,6 +24,7 @@ insert into public.clubs (id, name, slug) values
   ('ba000000-0000-4000-8000-000000000002', 'Club B 2a', 'club-b-2a');
 
 select pg_temp.new_test_user('ba0a0000-aaaa-4000-8000-000000000001', 'a-admin@test.local', '{}'::jsonb);
+select pg_temp.new_test_user('ba0a0000-dddd-4000-8000-000000000001', 'a-dir@test.local', '{}'::jsonb);
 select pg_temp.new_test_user('ba0a0000-cccc-4000-8000-000000000001', 'a-coord@test.local', '{}'::jsonb);
 select pg_temp.new_test_user('ba0a0000-eeee-4000-8000-000000000001', 'a-coach@test.local', '{}'::jsonb);
 select pg_temp.new_test_user('ba0b0000-aaaa-4000-8000-000000000001', 'b-admin@test.local', '{}'::jsonb);
@@ -32,6 +34,7 @@ select pg_temp.new_test_user('ba0b0000-eeee-4000-8000-000000000001', 'b-coach@te
 -- (full_name null). Les ponemos nombre vía upsert.
 insert into public.profiles (id, full_name) values
   ('ba0a0000-aaaa-4000-8000-000000000001', 'Admin A'),
+  ('ba0a0000-dddd-4000-8000-000000000001', 'Dir A'),
   ('ba0a0000-cccc-4000-8000-000000000001', 'Coord A'),
   ('ba0a0000-eeee-4000-8000-000000000001', 'Nombre Mal Escrito'),
   ('ba0b0000-aaaa-4000-8000-000000000001', 'Admin B'),
@@ -40,6 +43,7 @@ on conflict (id) do update set full_name = excluded.full_name;
 
 insert into public.memberships (profile_id, club_id, role) values
   ('ba0a0000-aaaa-4000-8000-000000000001', 'ba000000-0000-4000-8000-000000000001', 'admin_club'),
+  ('ba0a0000-dddd-4000-8000-000000000001', 'ba000000-0000-4000-8000-000000000001', 'director'),
   ('ba0a0000-cccc-4000-8000-000000000001', 'ba000000-0000-4000-8000-000000000001', 'coordinador'),
   ('ba0a0000-eeee-4000-8000-000000000001', 'ba000000-0000-4000-8000-000000000001', 'entrenador_principal'),
   ('ba0b0000-aaaa-4000-8000-000000000001', 'ba000000-0000-4000-8000-000000000002', 'admin_club'),
@@ -79,6 +83,26 @@ begin
   if not exists (select 1 from public.profiles
                   where id='ba0a0000-eeee-4000-8000-000000000001' and full_name='Nombre Corregido') then
     raise exception 'FAIL [F2]: el nombre no debería haber cambiado tras el fallo';
+  end if;
+end $$;
+
+-- ── F3. el DIRECTOR de A edita el nombre, igual que el admin ────────────────
+-- Antes de la migración 20261085000000 esto era `forbidden`: la condición se
+-- escribió con un rol suelto (`role = 'admin_club'`) en vez de con la dirección
+-- del club, y el director cayó fuera sin que nadie lo decidiera.
+set local "request.jwt.claims" = '{"sub":"ba0a0000-dddd-4000-8000-000000000001","role":"authenticated"}';
+do $$
+begin
+  perform public.admin_update_staff_profile(
+    'ba000000-0000-4000-8000-000000000001',
+    'ba0a0000-eeee-4000-8000-000000000001',
+    '  Nombre Del Director  '
+  );
+
+  if not exists (select 1 from public.profiles
+                  where id='ba0a0000-eeee-4000-8000-000000000001'
+                    and full_name='Nombre Del Director') then
+    raise exception 'FAIL [F3]: el director debería poder editar el nombre, igual que el admin';
   end if;
 end $$;
 
@@ -153,5 +177,5 @@ end $$;
 rollback;
 
 \echo '──────────────────────────────────────────────'
-\echo '✅ Bug2a: admin_update_staff_profile (admin edita full_name de su club, solo ese campo, gateado, cross-club y no-admin rechazados).'
+\echo '✅ Bug2a: admin_update_staff_profile (la DIRECCIÓN —admin y director— edita full_name de su club, solo ese campo, gateado; coordinador, no-admin y cross-club rechazados).'
 \echo '──────────────────────────────────────────────'
