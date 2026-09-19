@@ -72,10 +72,10 @@ insert into public.memberships (id, profile_id, club_id, role, left_at) values
 
 -- coachA y dirCoach entrenan el equipo del jugador; coachB el otro; exCoach lo dejo.
 insert into public.team_staff (team_id, membership_id, staff_role, left_at) values
-  ('c10e0000-0000-4000-8000-000000000001', 'c10f0000-0000-4000-8000-000000000004', 'principal', null),
+  ('c10e0000-0000-4000-8000-000000000001', 'c10f0000-0000-4000-8000-000000000004', 'entrenador_principal', null),
   ('c10e0000-0000-4000-8000-000000000001', 'c10f0000-0000-4000-8000-000000000006', 'delegado', null),
-  ('c10e0000-0000-4000-8000-000000000002', 'c10f0000-0000-4000-8000-000000000005', 'principal', null),
-  ('c10e0000-0000-4000-8000-000000000001', 'c10f0000-0000-4000-8000-000000000007', 'ayudante', current_date);
+  ('c10e0000-0000-4000-8000-000000000002', 'c10f0000-0000-4000-8000-000000000005', 'entrenador_principal', null),
+  ('c10e0000-0000-4000-8000-000000000001', 'c10f0000-0000-4000-8000-000000000007', 'entrenador_ayudante', current_date);
 
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
   ('c10b0000-0000-4000-8000-000000000001', 'c1000000-0000-4000-8000-000000000001', 'Hijo', 'Img', (current_date - interval '13 years')::date),
