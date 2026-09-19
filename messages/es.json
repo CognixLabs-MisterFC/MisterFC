@@ -923,7 +923,12 @@
       "error_invalid_input": "Revisa los datos del formulario",
       "error_forbidden": "No tienes permiso para invitar en este club",
       "error_no_club": "No perteneces a ningún club aún",
-      "error_generic": "No hemos podido crear la invitación. Inténtalo de nuevo."
+      "error_generic": "No hemos podido crear la invitación. Inténtalo de nuevo.",
+      "existing": {
+        "title": "Esa persona ya está en el club",
+        "body": "{name} ya está en el club como {role}, así que no le hemos enviado ninguna invitación. Invitar a alguien que ya está dentro no le cambia el rol: eso se hace desde su ficha.",
+        "ficha": "Ver su ficha en Cuerpo técnico"
+      }
     },
     "cancel": {
       "action": "Cancelar invitación",

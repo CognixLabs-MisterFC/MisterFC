@@ -440,7 +440,12 @@
       "error_invalid_input": "Revisa les dades del formulari",
       "error_forbidden": "No tens permís per convidar en aquest club",
       "error_no_club": "Encara no pertanys a cap club",
-      "error_generic": "No hem pogut crear la invitació. Torna-ho a provar."
+      "error_generic": "No hem pogut crear la invitació. Torna-ho a provar.",
+      "existing": {
+        "title": "Eixa persona ja està al club",
+        "body": "{name} ja està al club com a {role}, així que no li hem enviat cap invitació. Convidar algú que ja està dins no li canvia el rol: això es fa des de la seua fitxa.",
+        "ficha": "Veure la seua fitxa a Cos tècnic"
+      }
     },
     "cancel": {
       "action": "Cancel·lar invitació",

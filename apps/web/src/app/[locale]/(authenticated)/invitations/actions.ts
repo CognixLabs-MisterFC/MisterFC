@@ -5,6 +5,7 @@ import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import {
+  STAFF_ROLES,
   sendInvitationSchema,
   createSupabaseServerClient,
   createSupabaseAdminClient,
@@ -16,6 +17,17 @@ import { linkInvitedUser } from '@/lib/link-invited-user';
 export type SendInvitationFormState = {
   error?: 'invalid_input' | 'forbidden' | 'no_club' | 'generic';
   ok?: { email: string };
+  /**
+   * BUG 3 · B-1 — el correo ya es de alguien del club: no se ha creado
+   * invitación ni se ha mandado correo. `hasFicha` dice si esa persona tiene
+   * ficha en Cuerpo técnico (la de un rol `jugador` no existe: es una familia).
+   */
+  existingMember?: {
+    membershipId: string;
+    fullName: string;
+    clubRole: string;
+    hasFicha: boolean;
+  };
 };
 
 // Quién puede invitar (a roles bajos). director = admin en gestión de roles bajos.
@@ -136,6 +148,60 @@ export async function sendInvitation(
       });
       return { error: 'forbidden' };
     }
+  }
+
+  // BUG 3 · B-1 — antes de crear nada, preguntamos si ese correo ya es de
+  // alguien del club. Si lo es, la invitación no sirve para NADA, y el problema
+  // no es solo que el correo salga con asunto de contraseña:
+  //
+  //   accept_pending_invitations → insert into memberships ...
+  //     on conflict (profile_id, club_id) do update set role = case
+  //       when memberships.left_at is not null then excluded.role
+  //       else memberships.role end
+  //
+  // A un miembro ACTIVO la invitación NO le cambia el rol. Invitar a quien ya
+  // está dentro «para ascenderlo» mandaba un correo y no hacía nada: la pantalla
+  // prometía algo que no ocurría. Ahora se dice quién es y con qué rol.
+  //
+  // Quien está DE BAJA no cuenta como miembro (la RPC filtra `left_at is null`)
+  // y su invitación sigue su curso: es justo la que le reincorpora, porque en
+  // ese caso el CASE de arriba SÍ adopta el rol nuevo.
+  //
+  // Va ANTES del INSERT, y esa es la diferencia con el alta de jugador (#646):
+  // allí el jugador se crea igual porque el jugador ERA el objetivo; aquí el
+  // objetivo era la invitación, así que no dejamos ni la fila.
+  //
+  // Si la RPC falla —permisos, red—, se sigue por el camino de siempre: se
+  // invita. La pantalla no se queda muerta por un fallo del atajo.
+  const { data: memberRows, error: memberErr } = await supabase.rpc(
+    'club_member_by_email',
+    { p_club_id: authorized.club_id, p_email: parsed.data.email },
+  );
+  if (memberErr) {
+    console.error(
+      '[invitations] member_lookup_failed ' +
+        JSON.stringify({ masked_email: maskedEmail, error: memberErr.message }),
+    );
+    Sentry.captureException(memberErr, {
+      tags: { feature: 'invitations', step: 'send_invitation_member_lookup' },
+      extra: { club_id: authorized.club_id, masked_email: maskedEmail },
+    });
+  }
+  const existing = memberErr ? null : (memberRows ?? [])[0];
+  if (existing) {
+    console.info('[invitations] already_member_not_invited', {
+      masked_email: maskedEmail,
+      member_role: existing.role,
+      requested_role: parsed.data.role,
+    });
+    return {
+      existingMember: {
+        membershipId: existing.membership_id,
+        fullName: existing.full_name ?? '—',
+        clubRole: existing.role,
+        hasFicha: STAFF_ROLES.includes(existing.role as Role),
+      },
+    };
   }
 
   // Paso 2: INSERT en invitations.
