@@ -2467,6 +2467,7 @@
       "name": "Nom",
       "club_role": "Rol de club",
       "teams": "Equips assignats",
+      "no_teams": "Sense equip",
       "actions": "Accions"
     },
     "row_actions": {

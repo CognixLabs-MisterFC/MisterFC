@@ -2467,6 +2467,7 @@
       "name": "Nombre",
       "club_role": "Rol de club",
       "teams": "Equipos asignados",
+      "no_teams": "Sin equipo",
       "actions": "Acciones"
     },
     "row_actions": {

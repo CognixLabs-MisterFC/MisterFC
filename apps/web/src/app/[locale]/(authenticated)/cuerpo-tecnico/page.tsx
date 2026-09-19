@@ -233,26 +233,32 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
                       </span>
                     </TableCell>
                     <TableCell>
-                      <ul className="flex flex-wrap gap-1">
-                        {c.assignments.map((a) => (
-                          <li key={a.team_staff_id}>
-                            <Link
-                              href={`/equipos/${a.team_id}`}
-                              className="inline-flex items-center gap-1 rounded-md border border-border bg-card/30 px-2 py-0.5 text-xs hover:bg-card/60"
-                              style={{
-                                borderLeftWidth: 3,
-                                borderLeftColor: a.team_color,
-                              }}
-                              title={`${a.category_name} · ${tStaff(a.staff_role)}`}
-                            >
-                              <span className="font-medium">{a.team_name}</span>
-                              <span className="text-muted-foreground">
-                                · {tStaff(a.staff_role)}
-                              </span>
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
+                      {c.assignments.length === 0 ? (
+                        <span className="text-sm text-muted-foreground">
+                          {t('table.no_teams')}
+                        </span>
+                      ) : (
+                        <ul className="flex flex-wrap gap-1">
+                          {c.assignments.map((a) => (
+                            <li key={a.team_staff_id}>
+                              <Link
+                                href={`/equipos/${a.team_id}`}
+                                className="inline-flex items-center gap-1 rounded-md border border-border bg-card/30 px-2 py-0.5 text-xs hover:bg-card/60"
+                                style={{
+                                  borderLeftWidth: 3,
+                                  borderLeftColor: a.team_color,
+                                }}
+                                title={`${a.category_name} · ${tStaff(a.staff_role)}`}
+                              >
+                                <span className="font-medium">{a.team_name}</span>
+                                <span className="text-muted-foreground">
+                                  · {tStaff(a.staff_role)}
+                                </span>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
