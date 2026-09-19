@@ -40,42 +40,52 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   censo aquí, tócalo TAMBIÉN allí.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * FOLLOW-UP DISEÑADO Y APLAZADO — wrapper `inviteAndLink` (decisión 2026-09-03)
+ * WRAPPER `inviteAndLink` — RETIRADO (2026-09-19). Lo que se hizo y lo que no.
  * ─────────────────────────────────────────────────────────────────────────────
- *   El "email ya registrado" está reimplementado a mano en CINCO ficheros de web
- *   (`code === 'email_exists'` + dos `includes`), mientras core ya exporta
- *   `isEmailAlreadyExistsError`. Lo mismo con el guard de `user.id` ausente y el
- *   try/catch. Un wrapper único lo unificaría:
+ *   Desde el 2026-09-03 aquí había un diseño aplazado: un wrapper único
+ *   (`inviteAndLink`) que se tragara todo lo repetido en los senders —detectar
+ *   "email ya registrado", el guard de `user.id` ausente, el try/catch y la
+ *   orquestación envío+enlazado—. Esa nota se retira. Esto es lo que pasó.
  *
- *     packages/core/src/invitations/invite-and-link.ts
- *       inviteAndLink({ admin, resetClient, email, redirectTo, metadata,
- *                       invitationIds, link, log })
- *         → { sent: 'created' } | { sent: 'existing' }
- *         | { error: 'send_failed' | 'missing_user_id' | 'link_failed' }
+ *   SE HIZO, y no como refactor sino porque hacía falta arreglar algo:
+ *     · `inviteEmailMetadata` (#650) — el `data` de los 7 envíos. Nació porque
+ *       la plantilla del correo tenía que saber a QUIÉN escribe.
+ *     · `sendInviteToExistingUser` (#651) — el camino de "ya tiene cuenta".
+ *       Nació porque ese correo salía con asunto de restablecer contraseña.
+ *     · `isEmailAlreadyExistsError` en los 5 sitios de web — este PR. Era la
+ *       pieza pura: una función ya exportada por core y ya probada en unitarios,
+ *       con el MISMO comportamiento que las copias a mano (`code === 'email_exists'`
+ *       + los dos `includes`). Cero cambio de conducta, ningún correo que mandar
+ *       para validarla.
  *
- *   Con dos invariantes: los puertos (`link`, `log`) se inyectan —core sigue sin
- *   Sentry— y el wrapper NUNCA hace efectos secundarios: no borra invitaciones ni
- *   marca filas de lote; devuelve el resultado y decide el llamador (inviteBatch
- *   borra al fallar el envío pero NO al fallar el enlazado, y no aborta el lote).
+ *   QUEDA DUPLICADO, a propósito: el guard de `user.id` ausente y el try/catch
+ *   de cada sender. Se parecen, pero no son lo mismo — cada uno decide distinto
+ *   después: `inviteBatch` marca la fila del lote y sigue, `sendInvitation`
+ *   devuelve error al admin, los de plataforma abortan. Lo repetido es la forma,
+ *   no la decisión.
  *
- *   NO se hizo ahora, y la razón vale para el que lo lea dentro de seis meses:
- *   estos senders son el ALTA DE TODOS LOS USUARIOS, hoy correctos y
- *   verificados en producción; CI no ejercita el envío (necesita GoTrue), así que
- *   una regresión no la caza el pipeline y solo se ve cuando un padre no entra;
- *   y validarlo obliga a mandar correos reales por sender y por estado (email
- *   nuevo / email existente / fallo). El guard de CI de arriba ataca el fallo
- *   histórico real (un sender nuevo que nadie ve) sin tocar el alta.
+ *   POR QUÉ EL WRAPPER COMPLETO SE RETIRA, y no es pereza:
  *
- *   ORDEN DE ADOPCIÓN si algún día se hace, de menos a más riesgo:
- *     1º performSpectatorInvite (seguidores: sin él nadie se queda fuera del club)
- *     2º inviteClubAdmin y changeClubAdmin (superadmin, tráfico mínimo: si rompen,
- *        afectan a Jose, no a una familia)
- *     3º (era inviteStaffToTeam, ya retirado)
- *     último, o NUNCA: inviteBatch, sendOrRenewTutorInvitation, sendInvitation
- *        (lote del import, alta de tutores y alta general: máximo tráfico y
- *        post-condiciones propias)
- *   Regla: migrar un sender por PR, con verificación manual de sus tres estados.
- *   Y no migrar ninguno "de paso": solo cuando se toque por otra razón.
+ *     1. El motivo original sigue en pie. Estos senders son EL ALTA DE TODOS LOS
+ *        USUARIOS. CI no ejercita el envío (necesita GoTrue), así que una
+ *        regresión no la caza el pipeline: se ve cuando un padre no entra.
+ *
+ *     2. Y ahora hay uno nuevo, que no existía en septiembre: el guard de censo
+ *        (`scripts/check-invite-senders.mjs`) cuenta TRES literales por fichero
+ *        —`auth.admin.inviteUserByEmail(`, `inviteEmailMetadata(` y
+ *        `sendInviteToExistingUser(`— y exige que cuadren entre sí. Esconder el
+ *        envío tras un wrapper los deja ciegos a los tres de golpe: un sender
+ *        nuevo dejaría de aparecer en ningún censo, que es EXACTAMENTE el fallo
+ *        histórico (agosto 2026: tres senders invisibles durante semanas).
+ *        Extraer obliga a rediseñar antes cómo se vigila. No es un refactor
+ *        neutro, y el refactor no vale lo que cuesta la vigilancia.
+ *
+ *     3. Lo que quedaba de verdad duplicado era la detección, y ya está fuera.
+ *        Lo que queda (punto anterior) no es duplicación: es forma parecida con
+ *        decisiones distintas.
+ *
+ *   SI ALGUIEN LO RESUCITA algún día, que empiece por el guard, no por el
+ *   wrapper: mientras el censo cuente literales, el wrapper es un retroceso.
  *
  * Enlaza `invitations.invited_user_id` y EXIGE que el UPDATE afecte exactamente
  * 1 fila.

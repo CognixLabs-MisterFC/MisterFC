@@ -11,6 +11,7 @@ import {
   createSupabaseServerClient,
   getCurrentUserClubs,
   inviteEmailMetadata,
+  isEmailAlreadyExistsError,
   sendInviteToExistingUser,
   invitePlayerTutorSchema,
   inviteSpectatorSchema,
@@ -272,12 +273,7 @@ async function sendOrRenewTutorInvitation(
         }),
       });
     if (invErr) {
-      const msg = invErr.message?.toLowerCase() ?? '';
-      const alreadyExists =
-        ('code' in invErr && invErr.code === 'email_exists') ||
-        msg.includes('already been registered') ||
-        msg.includes('already exists');
-      if (alreadyExists) {
+      if (isEmailAlreadyExistsError(invErr)) {
         // Email ya registrado → correo de invitación para cuenta existente.
         // invited_user_id se deja como esté: es un invitee EXISTENTE (inicia
         // sesión con su contraseña); no lo creamos nosotros.
@@ -1157,12 +1153,7 @@ export async function inviteBatch(
         }),
       });
       if (invErr) {
-        const msg = invErr.message?.toLowerCase() ?? '';
-        const alreadyExists =
-          ('code' in invErr && invErr.code === 'email_exists') ||
-          msg.includes('already been registered') ||
-          msg.includes('already exists');
-        if (alreadyExists) {
+        if (isEmailAlreadyExistsError(invErr)) {
           // Email ya registrado → correo de invitación para cuenta existente
           // (patrón de inviteTutorForPlayer).
           const { error: resetErr } = await sendInviteToExistingUser(supabase, {

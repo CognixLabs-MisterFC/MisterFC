@@ -6,6 +6,7 @@ import {
   createSupabaseServerClient,
   createSupabaseAdminClient,
   inviteEmailMetadata,
+  isEmailAlreadyExistsError,
   sendInviteToExistingUser,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -122,13 +123,7 @@ export async function inviteClubAdmin(input: {
     });
 
     if (invErr) {
-      const code = 'code' in invErr ? invErr.code : undefined;
-      const alreadyExists =
-        code === 'email_exists' ||
-        invErr.message?.toLowerCase().includes('already been registered') ||
-        invErr.message?.toLowerCase().includes('already exists');
-
-      if (alreadyExists) {
+      if (isEmailAlreadyExistsError(invErr)) {
         // El admin ya tenía cuenta: le llega el correo de invitación para
         // cuenta existente, reusando la misma URL. invited_user_id queda NULL →
         // al aceptar, inicia sesión con su contraseña (flujo "existing").
