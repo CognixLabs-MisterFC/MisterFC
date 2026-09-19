@@ -75,6 +75,7 @@ export async function POST(req: Request) {
     playerId,
     email: parsedEmail.data.email,
     linkBase,
+    locale,
   });
 
   if ('error' in res) {

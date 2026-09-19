@@ -69,6 +69,7 @@ const ARGS = {
   playerId: 'player-1',
   email: 'abuelo@correo.com',
   linkBase: 'https://misterfc.es/es/invite',
+  locale: 'es',
 };
 
 describe('F2 · isEmailAlreadyExistsError (el caso delicado)', () => {

@@ -74,6 +74,7 @@ const ARGS = {
   playerId: 'player-1',
   email: 'hijo@correo.com',
   linkBase: 'https://misterfc.es/es/invite',
+  locale: 'es',
 };
 
 describe('MN-5 · performSelfInvite', () => {

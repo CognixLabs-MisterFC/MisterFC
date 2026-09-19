@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import {
   STAFF_ROLES,
+  inviteEmailMetadata,
   sendInvitationSchema,
   createSupabaseServerClient,
   createSupabaseAdminClient,
@@ -324,7 +325,11 @@ export async function sendInvitation(
       parsed.data.email,
       {
         redirectTo,
-        data: { invite_pending: true, invitation_id: invite.id },
+        data: inviteEmailMetadata({
+          invitationId: invite.id,
+          kind: 'staff',
+          locale,
+        }),
       },
     );
 

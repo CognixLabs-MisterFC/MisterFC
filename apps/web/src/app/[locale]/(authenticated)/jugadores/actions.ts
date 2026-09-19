@@ -10,6 +10,7 @@ import {
   createSupabaseAdminClient,
   createSupabaseServerClient,
   getCurrentUserClubs,
+  inviteEmailMetadata,
   invitePlayerTutorSchema,
   inviteSpectatorSchema,
   type PlayerTutorRelation,
@@ -263,7 +264,11 @@ async function sendOrRenewTutorInvitation(
     const { data: inviteData, error: invErr } =
       await admin.auth.admin.inviteUserByEmail(email, {
         redirectTo,
-        data: { invite_pending: true, invitation_id: invite.id },
+        data: inviteEmailMetadata({
+          invitationId: invite.id,
+          kind: 'tutor',
+          locale,
+        }),
       });
     if (invErr) {
       const msg = invErr.message?.toLowerCase() ?? '';
@@ -786,6 +791,7 @@ export async function inviteSpectatorForPlayer(
     playerId,
     email: parsed.data.email,
     linkBase,
+    locale,
   });
   if ('error' in res) return { error: res.error };
 
@@ -852,6 +858,7 @@ export async function inviteSelfForPlayer(
     playerId,
     email: parsed.data.email,
     linkBase,
+    locale,
   });
   if ('error' in res) return { error: res.error };
 
@@ -1140,7 +1147,13 @@ export async function inviteBatch(
     try {
       const { data: inviteData, error: invErr } = await admin.auth.admin.inviteUserByEmail(group.email, {
         redirectTo,
-        data: { invite_pending: true, invitation_id: anchor.id },
+        // La importación crea invitaciones de FAMILIA: el mismo texto que la
+        // ficha del jugador, no el de cuerpo técnico.
+        data: inviteEmailMetadata({
+          invitationId: anchor.id,
+          kind: 'tutor',
+          locale,
+        }),
       });
       if (invErr) {
         const msg = invErr.message?.toLowerCase() ?? '';
