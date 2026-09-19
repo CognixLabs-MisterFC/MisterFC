@@ -40,3 +40,12 @@ export {
   type InviteFormChoice,
   type InvitePendingUser,
 } from './invitation-token';
+export { recoveryRedirectTo } from './recovery-link';
+export {
+  planAuthCallback,
+  safeNextPath,
+  isAuthOtpType,
+  type AuthOtpType,
+  type AuthCallbackInput,
+  type AuthCallbackPlan,
+} from './auth-callback';

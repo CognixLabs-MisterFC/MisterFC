@@ -7,7 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { forgotPasswordSchema } from '@misterfc/core';
+import { forgotPasswordSchema, recoveryRedirectTo } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { webBaseUrl } from '@/lib/server-api';
 import { appLocale, useTranslations } from '@/locale/provider';
@@ -19,7 +19,7 @@ import { KeyboardModalView } from '@/ui/keyboard';
  *
  * Copia el patrón YA PROBADO del perfil (`profile-screen.tsx` → AccountCard):
  * `resetPasswordForEmail` con `redirectTo` a la WEB
- * (`/auth/callback?next=/{locale}/reset-password`). La app NO recibe el enlace del
+ * (`/{locale}/reset-password`, ver `recoveryRedirectTo`). La app NO recibe el enlace del
  * correo: no hay deep links (esquema `misterfc://` declarado, pero sin
  * intentFilters de Android ni associatedDomains de iOS), así que el aterrizaje es
  * la web, EXACTAMENTE igual que con el enlace de invitación. Aquí solo se dispara
@@ -86,10 +86,9 @@ export function ForgotPasswordModal({
 
     setSending(true);
     try {
-      const next = `/${appLocale()}/reset-password`;
       const { error: sendError } = await supabase.auth.resetPasswordForEmail(
         parsed.data.email,
-        { redirectTo: `${base}/auth/callback?next=${encodeURIComponent(next)}` },
+        { redirectTo: recoveryRedirectTo(base, appLocale()) },
       );
       // OJO: `sendError` NO distingue "cuenta inexistente" (Supabase responde OK en
       // ese caso); solo cubre fallos reales de envío. No se filtra nada.

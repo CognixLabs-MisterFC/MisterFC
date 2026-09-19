@@ -18,6 +18,7 @@ import {
   signAvatarFromClient,
   avatarUploadSchema,
   profileScopedCacheKey,
+  recoveryRedirectTo,
   PHONE_MAX_LENGTH,
   type ProfileData,
   type MyPhoneResult,
@@ -430,10 +431,7 @@ function AccountCard({ email, online }: { email: string; online: boolean }) {
     setBusy(true);
     try {
       const base = webBaseUrl();
-      const next = `/${appLocale()}/reset-password`;
-      const redirectTo = base
-        ? `${base}/auth/callback?next=${encodeURIComponent(next)}`
-        : undefined;
+      const redirectTo = base ? recoveryRedirectTo(base, appLocale()) : undefined;
       const { error } = await supabase.auth.resetPasswordForEmail(
         email,
         redirectTo ? { redirectTo } : undefined,
