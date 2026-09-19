@@ -28,13 +28,21 @@ import {
   CreditCard,
   FileText,
   Goal,
+  ImageOff,
   Megaphone,
   MessageSquare,
   UserMinus,
   Users,
   XCircle,
 } from 'lucide-react';
-import { notificationFeedText } from '@misterfc/core';
+import {
+  notificationFeedText,
+  imageConsentPlayerOf,
+  withImageConsentPlayerName,
+  NO_IMAGE_CONSENT_PLAYERS,
+  type ImageConsentPlayer,
+  type ImageConsentPlayers,
+} from '@misterfc/core';
 
 /** Fila in_app tal como la lee `loadNotificationFeed` (subset de notifications). */
 export type InAppNotificationRow = {
@@ -56,6 +64,12 @@ export type MappedNotification = {
   /** No leído = la fila in_app sigue en `pending`. */
   unread: boolean;
   createdAt: string;
+  /**
+   * Imagen-2 — SOLO en `image_consent_revoked`: el jugador cuya foto hay que
+   * retirar, resuelto en lectura (nombre + URL firmada). La fila lo pinta para que
+   * el club vea CUÁL es la foto, no solo que existe. null en todo lo demás.
+   */
+  player?: ImageConsentPlayer | null;
 };
 
 /** Función de traducción del namespace `home.feed` (next-intl). */
@@ -111,6 +125,8 @@ function iconFor(type: string): ComponentType<{ className?: string }> {
     case 'account_deletion_requested':
     case 'account_deletion_completed':
       return UserMinus;
+    case 'image_consent_revoked':
+      return ImageOff;
     case 'tutor_unlinked':
       return Users;
     case 'subscription_expiring':
@@ -212,6 +228,15 @@ function hrefFor(type: string, payload: Record<string, unknown> | null): string 
       derived = id ? `/mi-ficha?player=${id}` : '/mi-ficha';
       break;
     }
+    case 'image_consent_revoked': {
+      // Imagen-2 — a la ficha del jugador: dentro de MisterFC su foto está ahí y en
+      // ningún otro sitio, y ahí es donde se quita. La ficha no la cierra un rol sino
+      // la RLS de `players`, que es justo el mismo alcance de los destinatarios del
+      // aviso (dirección del club y staff de sus equipos).
+      const id = str(payload, 'player_id');
+      derived = id ? `/jugadores/${id}` : null;
+      break;
+    }
     case 'subscription_expiring':
       // SU-6b — a propósito SIN destino. `/suscripcion` rebota a quien todavía tiene
       // acceso (es el muro, y el muro solo es alcanzable estando bloqueado), y la
@@ -225,15 +250,31 @@ function hrefFor(type: string, payload: Record<string, unknown> | null): string 
   return derived ?? normalizeDeepLink(payload);
 }
 
-/** Convierte una fila in_app en un ítem de feed listo para pintar. */
-export function mapNotification(row: InAppNotificationRow, t: Translate): MappedNotification {
+/**
+ * Convierte una fila in_app en un ítem de feed listo para pintar.
+ *
+ * `players` (Imagen-2) trae los jugadores de los avisos de retirada de imagen ya
+ * resueltos en lote por el loader. Es opcional y por defecto está vacío: quien no
+ * pinta ese tipo de aviso no cambia en nada, y un aviso sin jugador resuelto (RLS,
+ * jugador borrado) se degrada solo al texto genérico.
+ */
+export function mapNotification(
+  row: InAppNotificationRow,
+  t: Translate,
+  players: ImageConsentPlayers = NO_IMAGE_CONSENT_PLAYERS,
+): MappedNotification {
   const payload = asRecord(row.payload);
   return {
     id: row.id,
     Icon: iconFor(row.type),
-    text: notificationFeedText(t, row.type, row.payload),
+    text: notificationFeedText(
+      t,
+      row.type,
+      withImageConsentPlayerName(row.type, row.payload, players),
+    ),
     href: hrefFor(row.type, payload),
     unread: row.status === 'pending',
     createdAt: row.created_at,
+    player: imageConsentPlayerOf(row.type, row.payload, players),
   };
 }

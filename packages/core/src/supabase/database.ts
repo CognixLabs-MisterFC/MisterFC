@@ -5360,6 +5360,7 @@ export type Database = {
         | "account_deletion_completed"
         | "tutor_unlinked"
         | "subscription_expiring"
+        | "image_consent_revoked"
       transport_mode: "club" | "individual" | "mixed"
     }
     CompositeTypes: {
@@ -5547,6 +5548,7 @@ export const Constants = {
         "account_deletion_completed",
         "tutor_unlinked",
         "subscription_expiring",
+        "image_consent_revoked",
       ],
       transport_mode: ["club", "individual", "mixed"],
     },
