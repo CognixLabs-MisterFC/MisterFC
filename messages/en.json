@@ -1682,38 +1682,13 @@
         "generic": "The person could not be added to the coaching staff."
       }
     },
-    "invite": {
-      "action": "Invite staff",
-      "title": "Invite coaching staff",
-      "description": "Sends an invitation by email. Upon accepting, they will be linked to this team with the specified role.",
-      "field": {
-        "email": "Email",
-        "role": "Role in the team",
-        "help": "Only one head coach per team. Fitness coach and team official are managed as assistants at the club level."
-      },
-      "send": "Send invitation",
-      "cancel": "Cancel",
-      "close": "Close",
-      "sent": "Invitation sent to {email}.",
-      "errors": {
-        "email_invalid": "Invalid email.",
-        "email_too_long": "Email too long.",
-        "team_staff_role_invalid": "Invalid role.",
-        "principal_exists": "There is already an active head coach on this team. Remove the current one before inviting another.",
-        "forbidden": "You don't have permission to invite staff to this team.",
-        "generic": "The invitation could not be sent."
-      }
-    },
     "remove": {
       "action": "Remove from coaching staff",
       "title": "Remove from coaching staff",
       "description": "Are you sure you want to remove {name} from this team's coaching staff? Their club membership is not affected.",
       "cancel": "Cancel",
       "confirm": "Remove"
-    },
-    "pending_title": "Pending invitations",
-    "pending_status": "Sent",
-    "pending_expired": "Expired"
+    }
   },
   "match_picker": {
     "title": "Choose a match",
@@ -2471,7 +2446,7 @@
   "cuerpo_tecnico": {
     "title": "Coaching staff",
     "count": "{count, plural, =0 {No active coaches} one {1 coach} other {# coaches}}",
-    "empty": "No active staff yet. Invite coaches from a team page.",
+    "empty": "There is no coaching staff in the club yet. Invite them from “Invite staff”.",
     "empty_filtered": "No coaches match the current filters.",
     "filters": {
       "label": "Filters",
@@ -2496,6 +2471,9 @@
     },
     "row_actions": {
       "open": "Open"
+    },
+    "invite": {
+      "action": "Invite staff"
     },
     "add_role": {
       "action": "Add role",

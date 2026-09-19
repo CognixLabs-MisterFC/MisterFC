@@ -12,15 +12,18 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   al form set_password por id y el invitee cae en la trampa (lo tapa el cinturón
  *   #539, pero se pierde el enlazado). NO basta con enviar el email.
  *
- *   Censo de senders (2026-09-13) — quien añada el 9º, que se sume aquí:
+ *   Censo de senders (2026-09-19) — quien añada el 9º, que se sume aquí:
  *     1 sendInvitation (invitations/actions.ts)      ✅ enlaza
  *     2 sendOrRenewTutorInvitation (jugadores)       ✅ enlaza
  *     3 inviteClubAdmin (platform/invite-club-admin) ✅ enlaza
  *     4 changeClubAdmin (platform/change-club-admin) ✅ enlaza
  *     5 inviteBatch (jugadores, import)              ✅ enlaza
- *     6 inviteStaffToTeam (equipos/[teamId])         ✅ enlaza
+ *     6 inviteStaffToTeam (equipos/[teamId])         ⛔ RETIRADO (BUG 3 · A-3)
  *     7 performSpectatorInvite (core/spectators)     ✅ enlaza (puerto inyectado)
  *     8 performSelfInvite (core/invitations)         ✅ enlaza (puerto inyectado)
+ *   El 6 se fue cuando invitar dejó de vivir en la página de un equipo: quedan 7
+ *   senders. El número NO se reutiliza — el siguiente es el 9 — para que los
+ *   comentarios viejos que citan "el 6" sigan diciendo la verdad.
  *   El barrido de #540 buscó el `.update`, no el envío, y se le escaparon 5/6/7.
  *   Para encontrarlos todos: `grep -rn inviteUserByEmail`, NO grep del update.
  *
@@ -56,7 +59,7 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   borra al fallar el envío pero NO al fallar el enlazado, y no aborta el lote).
  *
  *   NO se hizo ahora, y la razón vale para el que lo lea dentro de seis meses:
- *   estos seis senders son el ALTA DE TODOS LOS USUARIOS, hoy correctos y
+ *   estos senders son el ALTA DE TODOS LOS USUARIOS, hoy correctos y
  *   verificados en producción; CI no ejercita el envío (necesita GoTrue), así que
  *   una regresión no la caza el pipeline y solo se ve cuando un padre no entra;
  *   y validarlo obliga a mandar correos reales por sender y por estado (email
@@ -67,7 +70,7 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *     1º performSpectatorInvite (seguidores: sin él nadie se queda fuera del club)
  *     2º inviteClubAdmin y changeClubAdmin (superadmin, tráfico mínimo: si rompen,
  *        afectan a Jose, no a una familia)
- *     3º inviteStaffToTeam
+ *     3º (era inviteStaffToTeam, ya retirado)
  *     último, o NUNCA: inviteBatch, sendOrRenewTutorInvitation, sendInvitation
  *        (lote del import, alta de tutores y alta general: máximo tráfico y
  *        post-condiciones propias)

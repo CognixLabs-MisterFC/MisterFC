@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
-import { Users } from 'lucide-react';
+import { Mail, Users } from 'lucide-react';
 import { ADMIN_ROLES, TEAM_STAFF_ROLES, type TeamStaffRole } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -145,12 +145,27 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
             {t('count', { count: result.total })}
           </p>
         </div>
-        <ExportCsvButton
-          filename={csvFilename}
-          headers={csvHeaders}
-          rows={csvRows}
-          label={t('csv.export')}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          {/* BUG 3 · A-3 — invitar se pide AQUÍ, no desde un equipo. El orden es
+              primero entrar en el club y luego recibir equipos: quien ya está
+              dentro no se invita, se le añade (ver "Agregar rol" en cada fila).
+              La pantalla de invitaciones es solo dirección (C-2b), así que al
+              coordinador no se le ofrece un botón que le acabaría echando. */}
+          {(role === 'admin_club' || role === 'director') && (
+            <Button asChild variant="outline" size="sm" className="gap-2">
+              <Link href="/invitations">
+                <Mail className="size-4" aria-hidden />
+                <span>{t('invite.action')}</span>
+              </Link>
+            </Button>
+          )}
+          <ExportCsvButton
+            filename={csvFilename}
+            headers={csvHeaders}
+            rows={csvRows}
+            label={t('csv.export')}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

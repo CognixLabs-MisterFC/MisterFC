@@ -30,21 +30,25 @@ const EXT = /\.(ts|tsx)$/;
 const CALL = 'auth.admin.inviteUserByEmail(';
 
 /**
- * CENSO (fichero → nº de llamadas). Los 8 senders viven en 7 ficheros:
+ * CENSO (fichero → nº de llamadas). Los 7 senders viven en 6 ficheros:
  *   1 sendInvitation ................ invitations/actions.ts
  *   2 sendOrRenewTutorInvitation ..... jugadores/actions.ts
  *   5 inviteBatch .................... jugadores/actions.ts  (2 en el mismo fichero)
- *   6 inviteStaffToTeam .............. equipos/[teamId]/actions.ts
  *   3 inviteClubAdmin ................ lib/platform/invite-club-admin.ts
  *   4 changeClubAdmin ................ lib/platform/change-club-admin.ts
  *   7 performSpectatorInvite ......... packages/core/src/spectators/index.ts
  *   8 performSelfInvite .............. packages/core/src/invitations/self-invite.ts
+ *
+ * El 6 (inviteStaffToTeam, equipos/[teamId]) SE RETIRÓ en BUG 3 · A-3: invitar
+ * dejó de vivir en la página de un equipo. Su hueco NO se reutiliza y la
+ * numeración no se recoloca, para que los números sigan valiendo al leer los
+ * comentarios viejos del repo. El siguiente sender es el 9.
+ *
  * Si tocas esta lista, actualiza TAMBIÉN el censo de link-invited-user.ts.
  */
 const CENSUS = {
   'apps/web/src/app/[locale]/(authenticated)/invitations/actions.ts': 1,
   'apps/web/src/app/[locale]/(authenticated)/jugadores/actions.ts': 2,
-  'apps/web/src/app/[locale]/(authenticated)/equipos/[teamId]/actions.ts': 1,
   'apps/web/src/lib/platform/invite-club-admin.ts': 1,
   'apps/web/src/lib/platform/change-club-admin.ts': 1,
   'packages/core/src/spectators/index.ts': 1,

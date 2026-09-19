@@ -1682,38 +1682,13 @@
         "generic": "No s’ha pogut afegir al cos tècnic."
       }
     },
-    "invite": {
-      "action": "Convidar staff",
-      "title": "Convidar cos tècnic",
-      "description": "Envia una invitació per correu. En acceptar quedarà vinculat a este equip amb la funció indicada.",
-      "field": {
-        "email": "Email",
-        "role": "Funció en l'equip",
-        "help": "Només un entrenador principal per equip. Preparador físic i delegat es gestionen com a ajudants a nivell de club."
-      },
-      "send": "Enviar invitació",
-      "cancel": "Cancel·lar",
-      "close": "Tancar",
-      "sent": "Invitació enviada a {email}.",
-      "errors": {
-        "email_invalid": "Correu no vàlid.",
-        "email_too_long": "Correu massa llarg.",
-        "team_staff_role_invalid": "Funció no vàlida.",
-        "principal_exists": "Ja hi ha un entrenador principal actiu en este equip. Lleva l'actual abans de convidar-ne un altre.",
-        "forbidden": "No tens permís per a convidar staff en este equip.",
-        "generic": "No s'ha pogut enviar la invitació."
-      }
-    },
     "remove": {
       "action": "Llevar del cos tècnic",
       "title": "Llevar del cos tècnic",
       "description": "Segur que voleu llevar {name} del cos tècnic d'este equip? La seua pertinença al club no es veu afectada.",
       "cancel": "Cancel·lar",
       "confirm": "Llevar"
-    },
-    "pending_title": "Invitacions pendents",
-    "pending_status": "Enviada",
-    "pending_expired": "Caducada"
+    }
   },
   "match_picker": {
     "title": "Tria un partit",
@@ -2471,7 +2446,7 @@
   "cuerpo_tecnico": {
     "title": "Cos tècnic",
     "count": "{count, plural, =0 {Sense entrenadors actius} one {1 entrenador} other {# entrenadors}}",
-    "empty": "Encara no hi ha cos tècnic actiu al club. Convida entrenadors des de la fitxa d'un equip.",
+    "empty": "Encara no hi ha cos tècnic al club. Convida’l des de «Convidar staff».",
     "empty_filtered": "No hi ha entrenadors que coincidisquen amb els filtres.",
     "filters": {
       "label": "Filtres",
@@ -2496,6 +2471,9 @@
     },
     "row_actions": {
       "open": "Veure fitxa"
+    },
+    "invite": {
+      "action": "Convidar staff"
     },
     "add_role": {
       "action": "Afegir rol",
