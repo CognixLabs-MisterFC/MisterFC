@@ -49,14 +49,20 @@ coverage/
 # Sentry
 .sentryclirc
 
+# Legal-1 — la copia SERVIDA de los textos legales se GENERA en el build desde
+# `Documentos/*.md` (scripts/generar-textos-legales.mjs, encadenado en el `build` y el
+# `dev` de apps/web). No se versiona: si volviera al repo volvería la duplicación que
+# Legal-1 quitó, y el fichero commiteado mentiría sobre lo que se publica —el build lo
+# reescribe. La comprueba `check:textos-legales`.
+apps/web/src/content/legal/*.md
+
 # OJO — `Documentos/` NO se ignora, y es deliberado. Los .md revisados por el abogado
-# son la copia MAESTRA de los textos legales que sirve apps/web/src/content/legal/, y
-# las dos copias tienen que coincidir byte a byte. Si la carpeta no viaja en git, el
-# guard `check:textos-legales` no puede compararlas en CI y la garantía se queda en
-# local, donde nadie la vigila. Estuvo ignorada desde el #455 —colada en un commit de
+# son la ÚNICA copia de los textos legales: de ellos se genera, en el build, lo que
+# sirven las páginas públicas. Si la carpeta no viaja en git, la web no se puede
+# construir en Vercel. Estuvo ignorada desde el #455 —colada en un commit de
 # google-services.json, sin comentario y sin motivo— y no contiene nada que no esté ya
-# publicado: tres de los cuatro ficheros ya estaban en git (son las copias servidas) y
-# el cuarto, el contrato de encargo, es una plantilla en blanco.
+# publicado: tres de los cuatro ficheros son los textos públicos y el cuarto, el
+# contrato de encargo, es una plantilla en blanco.
 
 # Claves de cuenta de servicio (NUNCA al repo)
 *firebase-adminsdk*.json

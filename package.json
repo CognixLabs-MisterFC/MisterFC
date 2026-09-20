@@ -24,6 +24,7 @@
     "check:intl-locale": "node scripts/check-intl-locale.mjs",
     "check:cadenas-muertas": "node scripts/check-cadenas-muertas.mjs",
     "check:textos-legales": "node scripts/check-textos-legales.mjs",
+    "legal:generar": "node scripts/generar-textos-legales.mjs",
     "check:plantillas-correo": "node scripts/check-plantillas-correo.mjs",
     "plantillas:diff": "node scripts/plantillas-diff.mjs",
     "plantillas:aplicar": "node scripts/plantillas-aplicar.mjs",

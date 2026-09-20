@@ -1,180 +1,222 @@
 #!/usr/bin/env node
 /**
- * GUARD DE CENSO — las dos copias de cada texto legal dicen lo MISMO.
+ * GUARD — los textos legales tienen UNA sola copia, y llega al sitio donde se sirve.
  *
- * POR QUÉ EXISTE: un texto legal vive en dos sitios y tiene que ser el mismo en los
- * dos.
+ * POR QUÉ EXISTE, Y POR QUÉ COMPRUEBA OTRA COSA QUE ANTES (Legal-1):
  *
- *   · `Documentos/*.md` — los .md revisados por el abogado. La copia MAESTRA: es la
- *     que se manda a revisar y la que se archiva.
- *   · `apps/web/src/content/legal/*.md` — la copia que se SIRVE. La leen las páginas
- *     públicas (`/legal/privacidad`, `/legal/terminos`, `/legal/eliminacion-cuenta`)
- *     con `readLegalDoc`, desde el sistema de ficheros, en build-time.
+ * Hasta ahora un texto legal vivía en dos ficheros idénticos —`Documentos/*.md`, los
+ * .md revisados por el abogado, y `apps/web/src/content/legal/*.md`, la copia que
+ * sirven las páginas públicas— y este guard comparaba byte a byte que no hubieran
+ * divergido. Comparar es lo que se hace cuando no se puede evitar duplicar.
  *
- * La segunda existe porque la primera no se puede servir: `readLegalDoc` lee de
- * `process.cwd()` de apps/web y los .md se fuerzan en el trace de despliegue con
- * `outputFileTracingIncludes`. Duplicar es la solución; que las copias se separen sin
- * que nadie se entere, no.
+ * Ya no se duplica: la copia servida se GENERA en el build desde la maestra
+ * (`scripts/generar-textos-legales.mjs`) y no se versiona. No hay dos textos que
+ * puedan decir cosas distintas, así que esa comparación ya no vigila nada.
  *
- * Y ahí estaba el agujero: `Documentos/` llevaba en el .gitignore desde el #455 —una
- * línea colada en un commit de google-services.json, bajo el encabezado de Sentry, sin
- * comentario y sin motivo—, así que la copia maestra NO viajaba en git. La garantía de
- * que coincidían era que alguien se acordara de copiar el fichero a mano. Un texto
- * legal desincronizado no da error: la web publica una versión y el archivo del
- * abogado dice otra, que es exactamente lo que no puede pasar con un documento que
- * regula lo que el club hace con datos de menores.
+ * Lo que SÍ puede romperse ahora es la cadena que lleva la maestra hasta la página, y
+ * cada eslabón falla de una manera silenciosa distinta:
  *
- * QUÉ COMPRUEBA:
- *   1. cada par declarado existe y es idéntico BYTE A BYTE (sin normalizar nada: un
- *      espacio distinto dentro de un texto legal es un cambio real);
- *   2. todo .md de `content/legal/` está declarado — un texto servido nuevo sin
- *      original sería una copia sin maestra;
- *   3. todo .md de `Documentos/` está declarado, aunque no se sirva (el contrato de
- *      encargo no se sirve: se declara con `servido: null` y así consta);
- *   4. cada slug de `LegalSlug` tiene su fichero — un slug sin .md es un `readFileSync`
- *      que revienta en build-time, no un error de tipos.
+ *   1. la maestra existe y no está vacía — sin ella el build revienta (ruidoso, vale),
+ *      pero un fichero vacío publica una página en blanco que nadie mira;
+ *   2. todo .md de `Documentos/` está declarado en el censo, se sirva o no;
+ *   3. cada slug de `LegalSlug` tiene su par declarado — un slug sin .md es un
+ *      `readFileSync` que revienta al construir;
+ *   4. la copia generada NO está versionada. Si alguien la vuelve a commitear, el
+ *      build la pisa en silencio y el fichero del repo miente sobre lo publicado;
+ *   5. el .gitignore la ignora de verdad (comprobado con git, no leyendo el fichero);
+ *   6. `build` Y `dev` de apps/web invocan al generador. Si alguien quita la llamada,
+ *      en local sigue funcionando —con los .md que quedaron de la última vez— y falla
+ *      en Vercel, donde no queda nada;
+ *   7. `Documentos/**` está en `globalDependencies` de turbo.json. Sin eso la maestra
+ *      queda FUERA de las entradas del build de web: cambias el texto legal, turbo
+ *      sirve el build cacheado y se publica el texto viejo sin un solo error;
+ *   8. cada texto servido tiene su entrada en `outputFileTracingIncludes`
+ *      (next.config). Sin ella el .md no viaja al despliegue: la página funciona en
+ *      local y en producción da 500 al leerlo.
  *
  * Lo que NO comprueba: que el texto sea correcto. Eso lo dice el abogado.
  */
 
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { ROOT, MAESTRA_DIR, PARES, SERVIDOS, SERVIDA_REL } from './textos-legales.mjs';
 
-const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
-const MAESTRA_DIR = join(ROOT, 'Documentos');
-const SERVIDA_DIR = join(ROOT, 'apps/web/src/content/legal');
 const LEGAL_CONTENT_TS = join(ROOT, 'apps/web/src/lib/legal-content.ts');
-
-/**
- * El censo. `servido: null` = ese documento NO se publica en la web, y se declara
- * para que conste que la ausencia es a propósito y no un olvido.
- */
-const PARES = [
-  { maestra: 'misterfc-politica-privacidad.md', servido: 'privacidad.md' },
-  { maestra: 'misterfc-terminos-condiciones.md', servido: 'terminos.md' },
-  { maestra: 'misterfc-eliminacion-cuenta.md', servido: 'eliminacion-cuenta.md' },
-  {
-    maestra: 'misterfc-contrato-encargo-tratamiento.md',
-    servido: null,
-    // Anexo de protección de datos que se firma con cada club (art. 28 RGPD). No es
-    // una página pública: es una plantilla en blanco que se rellena por club.
-    motivo: 'contrato que se firma con cada club, no es una página pública',
-  },
-];
+const WEB_PKG = join(ROOT, 'apps/web/package.json');
+const NEXT_CONFIG = join(ROOT, 'apps/web/next.config.ts');
+const TURBO_JSON = join(ROOT, 'turbo.json');
+const GENERADOR = 'scripts/generar-textos-legales.mjs';
 
 const errores = [];
 
+/** Ficheros .md de una carpeta, o null si la carpeta no existe. */
 function md(dir) {
   try {
-    return readdirSync(dir).filter((f) => f.endsWith('.md')).sort();
+    return readdirSync(dir)
+      .filter((f) => f.endsWith('.md'))
+      .sort();
   } catch {
-    return null; // carpeta ausente: se reporta abajo con su nombre
+    return null;
   }
 }
 
 const enMaestra = md(MAESTRA_DIR);
-const enServida = md(SERVIDA_DIR);
 
 if (enMaestra === null) {
   errores.push(
-    `no existe la carpeta Documentos/. Es la copia MAESTRA de los textos legales y ` +
-      `tiene que viajar en git: si no, este guard no compara nada en CI y pasa en ` +
-      `verde sin haber comprobado una sola letra.`,
+    `no existe la carpeta Documentos/. Es la ÚNICA copia de los textos legales y tiene ` +
+      `que viajar en git: si no, el build no puede generar las páginas públicas y este ` +
+      `guard no comprueba una sola letra.`,
   );
-}
-if (enServida === null) {
-  errores.push(`no existe apps/web/src/content/legal/ (de donde lee readLegalDoc).`);
-}
-
-if (enMaestra && enServida) {
-  // 1 — los pares coinciden byte a byte.
-  let comparados = 0;
-  for (const par of PARES) {
-    if (par.servido === null) continue;
-    const a = join(MAESTRA_DIR, par.maestra);
-    const b = join(SERVIDA_DIR, par.servido);
-    if (!existsSync(a)) {
-      errores.push(`falta la copia maestra Documentos/${par.maestra}`);
-      continue;
-    }
-    if (!existsSync(b)) {
-      errores.push(`falta la copia servida content/legal/${par.servido}`);
-      continue;
-    }
-    const ta = readFileSync(a);
-    const tb = readFileSync(b);
-    comparados += 1;
-    if (!ta.equals(tb)) {
-      // Se da la primera línea que difiere: es lo que hace falta para arreglarlo.
-      const la = readFileSync(a, 'utf8').split('\n');
-      const lb = readFileSync(b, 'utf8').split('\n');
-      let n = 0;
-      while (n < Math.max(la.length, lb.length) && la[n] === lb[n]) n += 1;
+} else {
+  // 1 — cada maestra declarada existe y tiene contenido.
+  let comprobados = 0;
+  for (const par of SERVIDOS) {
+    const ruta = join(MAESTRA_DIR, par.maestra);
+    if (!existsSync(ruta)) {
       errores.push(
-        `DIVERGEN Documentos/${par.maestra} y content/legal/${par.servido} ` +
-          `(${ta.length} vs ${tb.length} bytes). Primera diferencia en la línea ` +
-          `${n + 1}:\n        maestra:  ${JSON.stringify(la[n] ?? '(fin de fichero)')}\n` +
-          `        servida:  ${JSON.stringify(lb[n] ?? '(fin de fichero)')}\n` +
-          `      La maestra manda: copia Documentos/${par.maestra} sobre ` +
-          `apps/web/src/content/legal/${par.servido}.`,
+        `falta la copia maestra Documentos/${par.maestra} (sirve a '${par.servido}').`,
+      );
+      continue;
+    }
+    comprobados += 1;
+    if (statSync(ruta).size === 0) {
+      errores.push(
+        `Documentos/${par.maestra} está VACÍO. El build lo copiaría igual y la página ` +
+          `legal '${par.servido}' saldría en blanco, sin un solo error.`,
       );
     }
   }
 
-  // Control positivo: si el censo se quedara sin pares, todo lo de arriba sería un
-  // bucle vacío y el guard pasaría en verde sin comparar nada.
-  if (comparados < 3) {
+  // Control positivo: sin esto, un censo vacío haría que todo lo de arriba fuera un
+  // bucle que no se ejecuta y el guard pasaría en verde sin mirar nada.
+  if (comprobados < 3) {
     errores.push(
-      `solo se compararon ${comparados} pares (esperados 3 o más). El censo PARES se ` +
-        `ha quedado corto y este guard ya no vigila lo que dice vigilar.`,
+      `solo se comprobaron ${comprobados} textos servidos (esperados 3 o más). El censo ` +
+        `PARES se ha quedado corto y este guard ya no vigila lo que dice vigilar.`,
     );
   }
 
-  // 2 — todo texto SERVIDO está declarado.
-  const declaradosServidos = new Set(
-    PARES.map((p) => p.servido).filter((x) => x !== null),
-  );
-  const servidosHuerfanos = enServida.filter((f) => !declaradosServidos.has(f));
-  if (servidosHuerfanos.length > 0) {
+  // 2 — todo .md de la maestra está declarado, se sirva o no.
+  const declaradas = new Set(PARES.map((p) => p.maestra));
+  const huerfanas = enMaestra.filter((f) => !declaradas.has(f));
+  if (huerfanas.length > 0) {
     errores.push(
-      `texto(s) servido(s) sin declarar en PARES: ${servidosHuerfanos.join(', ')}. ` +
-        `Se publican sin copia maestra que los respalde: declara su par (o di por qué ` +
-        `no tiene).`,
-    );
-  }
-
-  // 3 — todo .md de la maestra está declarado, se sirva o no.
-  const declaradosMaestra = new Set(PARES.map((p) => p.maestra));
-  const maestraHuerfanos = enMaestra.filter((f) => !declaradosMaestra.has(f));
-  if (maestraHuerfanos.length > 0) {
-    errores.push(
-      `documento(s) en Documentos/ sin declarar: ${maestraHuerfanos.join(', ')}. ` +
-        `Declara su par, o declárala con servido:null y el motivo, para que conste ` +
-        `que no publicarla es una decisión.`,
+      `documento(s) en Documentos/ sin declarar en PARES: ${huerfanas.join(', ')}. ` +
+        `Declara su par, o decláralo con servido:null y el motivo, para que conste que ` +
+        `no publicarlo es una decisión.`,
     );
   }
 }
 
-// 4 — cada slug de LegalSlug tiene su fichero servido.
-if (existsSync(LEGAL_CONTENT_TS) && enServida) {
+// 3 — cada slug de LegalSlug está declarado en el censo.
+const slugsServidos = new Set(SERVIDOS.map((p) => p.servido));
+if (existsSync(LEGAL_CONTENT_TS)) {
   const fuente = readFileSync(LEGAL_CONTENT_TS, 'utf8');
   const tipo = /export type LegalSlug\s*=([^;]+);/.exec(fuente)?.[1] ?? '';
   const slugs = [...tipo.matchAll(/'([^']+)'/g)].map((m) => m[1]);
   if (slugs.length === 0) {
     errores.push(
       `no se pudo leer LegalSlug en apps/web/src/lib/legal-content.ts (¿cambió de ` +
-        `forma?). Sin eso, un slug sin fichero se descubre en build-time.`,
+        `forma?). Sin eso, un slug sin texto maestro se descubre al construir la web.`,
     );
   }
   for (const slug of slugs) {
-    if (!enServida.includes(`${slug}.md`)) {
+    if (!slugsServidos.has(slug)) {
       errores.push(
-        `el slug '${slug}' de LegalSlug no tiene content/legal/${slug}.md: ` +
-          `readLegalDoc('${slug}') reventaría al construir la web.`,
+        `el slug '${slug}' de LegalSlug no está en el censo PARES: el generador no ` +
+          `escribiría ${SERVIDA_REL}/${slug}.md y readLegalDoc('${slug}') reventaría ` +
+          `al construir la web.`,
       );
     }
   }
+} else {
+  errores.push(`no existe apps/web/src/lib/legal-content.ts (de donde sale LegalSlug).`);
+}
+
+/** Salida de un git que puede fallar sin que eso sea un error del repo. */
+function git(args) {
+  try {
+    return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
+  } catch {
+    return null;
+  }
+}
+
+// 4 — la copia generada NO está versionada.
+const versionados = git(['ls-files', `${SERVIDA_REL}/`]);
+if (versionados === null) {
+  console.warn(
+    `  (aviso) no se pudo consultar git; no se comprueba que la copia generada esté ` +
+      `fuera del repo.`,
+  );
+} else if (versionados.length > 0) {
+  errores.push(
+    `hay copias GENERADAS versionadas en git:\n        ${versionados.split('\n').join('\n        ')}\n` +
+      `      El build las reescribe desde Documentos/, así que lo que diga el fichero ` +
+      `del repo no es lo que se publica. Sácalas con ` +
+      `\`git rm --cached ${SERVIDA_REL}/*.md\`.`,
+  );
+}
+
+// 5 — y el .gitignore las ignora DE VERDAD (lo dice git, no una lectura del fichero).
+const ignorado = git(['check-ignore', `${SERVIDA_REL}/privacidad.md`]);
+if (ignorado === null || ignorado.length === 0) {
+  errores.push(
+    `${SERVIDA_REL}/ no está ignorado por git. La copia generada volvería al repo en ` +
+      `el primer \`git add -A\`, y con ella la duplicación que Legal-1 quitó.`,
+  );
+}
+
+// 6 — build y dev de apps/web invocan al generador.
+if (existsSync(WEB_PKG)) {
+  const scripts = JSON.parse(readFileSync(WEB_PKG, 'utf8')).scripts ?? {};
+  for (const tarea of ['build', 'dev']) {
+    const cmd = scripts[tarea] ?? '';
+    if (!cmd.includes('generar-textos-legales')) {
+      errores.push(
+        `el script '${tarea}' de apps/web NO llama a ${GENERADOR}: "${cmd}". Sin esa ` +
+          `llamada, en local sigue funcionando con los .md que quedaron de la última ` +
+          `vez y en Vercel —donde no queda nada— el build revienta.`,
+      );
+    }
+  }
+} else {
+  errores.push(`no existe apps/web/package.json.`);
+}
+
+// 7 — la maestra es entrada del build en turbo (si no, caché servida con texto viejo).
+if (existsSync(TURBO_JSON)) {
+  const turbo = JSON.parse(readFileSync(TURBO_JSON, 'utf8'));
+  const globales = turbo.globalDependencies ?? [];
+  const cubre = globales.some((g) => g.startsWith('Documentos/'));
+  if (!cubre) {
+    errores.push(
+      `turbo.json no declara Documentos/ en globalDependencies (hay: ` +
+        `${globales.join(', ') || 'ninguna'}). La copia maestra vive FUERA de apps/web, ` +
+        `así que cambiarla no invalida la caché del build: turbo reutilizaría el build ` +
+        `anterior y se publicaría el texto legal viejo sin un solo error.`,
+    );
+  }
+} else {
+  errores.push(`no existe turbo.json.`);
+}
+
+// 8 — cada texto servido viaja en el trace de despliegue.
+if (existsSync(NEXT_CONFIG)) {
+  const conf = readFileSync(NEXT_CONFIG, 'utf8');
+  for (const par of SERVIDOS) {
+    if (!conf.includes(`src/content/legal/${par.servido}.md`)) {
+      errores.push(
+        `'${par.servido}.md' no aparece en outputFileTracingIncludes (next.config.ts). ` +
+          `El .md no viajaría al despliegue: la página va bien en local y da 500 en ` +
+          `producción al leerlo.`,
+      );
+    }
+  }
+} else {
+  errores.push(`no existe apps/web/next.config.ts.`);
 }
 
 if (errores.length > 0) {
@@ -183,8 +225,10 @@ if (errores.length > 0) {
   process.exit(1);
 }
 
-const servidos = PARES.filter((p) => p.servido !== null).length;
+const noServidos = PARES.length - SERVIDOS.length;
 console.log(
-  `✓ check:textos-legales — ${servidos} textos servidos idénticos a su copia ` +
-    `maestra, ${PARES.length - servidos} documento(s) declarado(s) como no servido(s).`,
+  `✓ check:textos-legales — ${SERVIDOS.length} textos con copia ÚNICA en Documentos/ ` +
+    `y generada al construir, ${noServidos} documento(s) declarado(s) como no ` +
+    `servido(s); generador enchufado a build y dev, maestra en las entradas de turbo ` +
+    `y en el trace de despliegue.`,
 );
