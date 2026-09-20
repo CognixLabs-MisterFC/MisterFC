@@ -25,7 +25,13 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   senders. El número NO se reutiliza — el siguiente es el 9 — para que los
  *   comentarios viejos que citan "el 6" sigan diciendo la verdad.
  *   El barrido de #540 buscó el `.update`, no el envío, y se le escaparon 5/6/7.
- *   Para encontrarlos todos: `grep -rn inviteUserByEmail`, NO grep del update.
+ *
+ *   OJO al buscar (Correo-B1): ya NO basta con `grep -rn inviteUserByEmail`. El 7
+ *   crea la cuenta con `auth.admin.createUser(` —que no manda correo— y manda él el
+ *   suyo, en el idioma del destinatario; la serie Correo-B irá pasando a los demás.
+ *   Los dos literales de búsqueda son `inviteUserByEmail(` y `createUser(`, y el
+ *   guard de CI cuenta los dos censos por separado. Lo que NO cambia es esto: el que
+ *   CREA la cuenta enlaza, venga el correo de donde venga.
  *
  *   El 7 y el 8 viven en `packages/core`, que NO puede importar Sentry ni este
  *   helper. Se resuelve con un PUERTO INYECTADO: cada uno recibe un parámetro
@@ -35,8 +41,10 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   duplica y el compilador impide enviar sin traer el enlazado.
  *
  *   GUARD DE CI: `pnpm check:invite-senders` (scripts/check-invite-senders.mjs)
- *   cuenta las llamadas reales a `auth.admin.inviteUserByEmail(` y las compara con
- *   el censo. Un sender nuevo rompe el PR hasta que alguien lea esto. Si tocas el
+ *   cuenta las llamadas reales a `auth.admin.inviteUserByEmail(` (legado) y a
+ *   `auth.admin.createUser(` (migrados a Resend) y las compara con sus dos censos.
+ *   Un sender nuevo rompe el PR hasta que alguien lea esto; uno a medio migrar —con
+ *   las dos llamadas— también, porque mandaría DOS correos al invitado. Si tocas el
  *   censo aquí, tócalo TAMBIÉN allí.
  *
  * ─────────────────────────────────────────────────────────────────────────────
