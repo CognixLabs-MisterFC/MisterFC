@@ -17,6 +17,7 @@ import { MarkAllReadButton } from '@/components/notifications/mark-all-read-butt
 import {
   loadNotificationsPage,
   countUnreadNotifications,
+  loadImageConsentPlayers,
   NOVEDADES_PAGE_SIZE,
 } from '../notifications-feed-queries';
 import { mapNotification } from '../notifications-feed';
@@ -48,7 +49,8 @@ export default async function NovedadesPage({ params, searchParams }: Props) {
     loadNotificationsPage(page),
     countUnreadNotifications(),
   ]);
-  const items = rows.map((r) => mapNotification(r, tFeed));
+  const players = await loadImageConsentPlayers(rows);
+  const items = rows.map((r) => mapNotification(r, tFeed, players));
   const totalPages = Math.max(1, Math.ceil(total / NOVEDADES_PAGE_SIZE));
 
   function pageHref(p: number): string {

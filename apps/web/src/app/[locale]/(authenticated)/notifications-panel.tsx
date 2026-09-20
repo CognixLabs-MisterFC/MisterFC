@@ -26,6 +26,7 @@ import { MarkAllReadButton } from '@/components/notifications/mark-all-read-butt
 import {
   loadNotificationFeed,
   countUnreadNotifications,
+  loadImageConsentPlayers,
 } from './notifications-feed-queries';
 import { mapNotification } from './notifications-feed';
 import { NotificationFeedList } from './notification-feed-list';
@@ -38,7 +39,8 @@ export async function NotificationsPanel({ locale }: { locale: string }) {
   ]);
   if (rows.length === 0) return null;
 
-  const items = rows.map((r) => mapNotification(r, t));
+  const players = await loadImageConsentPlayers(rows);
+  const items = rows.map((r) => mapNotification(r, t, players));
 
   return (
     <Card>

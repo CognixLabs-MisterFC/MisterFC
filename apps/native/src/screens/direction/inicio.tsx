@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import {
   getDireccionHomeCountsFromClient,
   getUnreadNotificationsFeedFromClient,
   markNotificationReadFromClient,
   notificationFeedText,
+  imageConsentPlayerOf,
+  withImageConsentPlayerName,
   clubScopedCacheKey,
   type DireccionHomeCounts,
   type NotificationFeedRow,
@@ -15,6 +17,7 @@ import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { invalidateAfterWrite } from '@/data/cache-resources';
 import { directionFeedTarget } from '@/notifications/feed-target';
+import { useImageConsentPlayers } from '@/notifications/use-image-consent-players';
 import { OfflineBanner, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { CountBadge } from '@/screens/staff/hub-parts';
 import { useTranslations } from '@/locale/provider';
@@ -61,6 +64,10 @@ export function DireccionInicioScreen() {
     'novedades.dir-inicio',
     (sb) => getUnreadNotificationsFeedFromClient(sb, DIR_INICIO_UNREAD_LIMIT),
   );
+
+  // Imagen-2 — jugadores (nombre + foto firmada) de los avisos de retirada de imagen
+  // del bloque. ANTES del early return: es un hook. Sin avisos de ese tipo no hay red.
+  const imageConsentPlayers = useImageConsentPlayers(unreadData ?? []);
 
   if (loading) return <LoadingScreen />;
   const c = data;
@@ -156,21 +163,37 @@ export function DireccionInicioScreen() {
               {t('dir_inicio.novedades_empty')}
             </Text>
           ) : (
-            unread.map((n) => (
+            unread.map((n) => {
+              const player = imageConsentPlayerOf(n.type, n.payload, imageConsentPlayers);
+              return (
               <Pressable
                 key={n.id}
                 onPress={() => openNovedad(n)}
                 className="flex-row items-start gap-3 rounded-2xl border border-zinc-200 p-4 active:opacity-70"
               >
                 <View className="mt-1.5 h-2 w-2 rounded-full bg-emerald-500" />
+                {/* Imagen-2: LA foto del jugador cuyo permiso se ha retirado (la de su
+                    ficha, la única de MisterFC). Sin foto, fila normal. */}
+                {player?.photoUrl ? (
+                  <Image
+                    source={{ uri: player.photoUrl }}
+                    accessibilityIgnoresInvertColors
+                    className="h-9 w-9 rounded-full"
+                  />
+                ) : null}
                 <View className="flex-1">
                   <Text className="text-sm text-[#0F1B2E]">
-                    {notificationFeedText(tFeed, n.type, n.payload)}
+                    {notificationFeedText(
+                      tFeed,
+                      n.type,
+                      withImageConsentPlayerName(n.type, n.payload, imageConsentPlayers),
+                    )}
                   </Text>
                   <Text className="text-xs text-zinc-400">{formatDayMonthYear(t, n.created_at)}</Text>
                 </View>
               </Pressable>
-            ))
+              );
+            })
           )}
         </View>
       </ScrollView>

@@ -55,6 +55,14 @@ export function familyFeedTarget(type: string, payload: unknown): FamilyTarget {
     case 'training_reminder':
       // Sin event_id en el payload → a la lista de Entrenamientos (Jose).
       return { pathname: '/family/entrenamientos' };
+    // Imagen-2 — `image_consent_revoked` NO aparece aquí a proposito. Este resolver lo
+    // usan familia y STAFF, y:
+    //  · a familia no le llega nunca (el aviso va a la direccion del club y al cuerpo
+    //    tecnico del equipo; el tutor que retira queda excluido por el propio trigger),
+    //  · y el area de staff no tiene ficha de jugador (la consulta del entrenador es la
+    //    lista del equipo, sin detalle por id), asi que no hay destino honesto.
+    // Fila informativa CON la foto, que es lo accionable: el entrenador ve cual es la
+    // foto que no puede usar. La ficha vive en la web y en el area de direccion.
     // SU-6b — `subscription_expiring` va SIN destino a propósito, no por olvido:
     // `/suscripcion` es el MURO, y enseñarle "Suscríbete" a quien ya está suscrito (que
     // es justo quien recibe este aviso) sería peor que una fila informativa. La
@@ -86,6 +94,19 @@ export function directionFeedTarget(type: string, payload?: unknown): FamilyTarg
   switch (type) {
     case 'erasure_requested':
       return { pathname: '/direction/supresiones' };
+    case 'image_consent_revoked': {
+      // Imagen-2 — a la ficha del jugador (O2-11a-2, `?playerId`): dentro de MisterFC
+      // su foto esta ahi y en ningun otro sitio. Sin player_id en el payload (no
+      // deberia pasar: el trigger siempre lo escribe) → fila informativa.
+      const data =
+        payload != null && typeof payload === 'object' && !Array.isArray(payload)
+          ? (payload as Record<string, unknown>)
+          : {};
+      const id = data.player_id;
+      return typeof id === 'string' && id.length > 0
+        ? { pathname: '/direction/jugador', params: { playerId: id } }
+        : null;
+    }
     case 'account_deletion_requested': {
       // BC-7 — alguien del club ha pedido eliminar su cuenta. La nativa NO tiene
       // pantalla de gestion de miembros (esa vive en la web, `/miembros`), asi que el

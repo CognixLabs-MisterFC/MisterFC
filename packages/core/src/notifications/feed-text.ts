@@ -172,6 +172,23 @@ export function notificationFeedText(
       if (name) return t('coach_invitation_accepted_named', { name });
       return t('coach_invitation_accepted');
     }
+    case 'image_consent_revoked': {
+      // Imagen-2 — la familia ha retirado el permiso de imagen. Dos textos, porque el
+      // aviso genérico no vale (decisión de Jose): retirar la foto de dentro del club
+      // no es lo mismo que retirar lo publicado en redes, y quien lo lee tiene que
+      // saber cuál de las dos cosas le toca hacer.
+      //
+      // El nombre NO viene en la fila guardada (BC-7a: `payload` es inmutable, un
+      // nombre ahí sobreviviría al borrado del menor). Lo inyecta quien pinta, resuelto
+      // en lectura (`withImageConsentPlayerName`): si el jugador ya no existe o el
+      // lector no alcanza su ficha, sale el texto sin nombre, que sigue siendo cierto.
+      const name = str(p, 'player_name');
+      const key =
+        p?.consent_type === 'image_social'
+          ? 'image_consent_revoked_social'
+          : 'image_consent_revoked_internal';
+      return name ? t(`${key}_named`, { name }) : t(key);
+    }
     case 'evaluation_campaign_launched':
       return t('evaluation_campaign_launched');
     case 'goal':

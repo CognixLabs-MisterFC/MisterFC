@@ -31,6 +31,17 @@ export { notificationFeedText } from './feed-text';
 export type { FeedTextTranslate } from './feed-text';
 
 export {
+  IMAGE_CONSENT_REVOKED,
+  NO_IMAGE_CONSENT_PLAYERS,
+  imageConsentPlayerId,
+  imageConsentPlayerIds,
+  imageConsentPlayerOf,
+  loadImageConsentPlayersFromClient,
+  withImageConsentPlayerName,
+} from './image-consent';
+export type { ImageConsentPlayer, ImageConsentPlayers } from './image-consent';
+
+export {
   getNotificationFeedFromClient,
   getNotificationsPageFromClient,
   getUnreadNotificationsFeedFromClient,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, Text, View } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import {
   getUnreadNotificationsFeedFromClient,
@@ -7,6 +7,8 @@ import {
   markAllNotificationsReadFromClient,
   markNotificationReadFromClient,
   notificationFeedText,
+  imageConsentPlayerOf,
+  withImageConsentPlayerName,
   type NotificationFeedRow,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
@@ -17,6 +19,7 @@ import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { useApp } from '@/auth/context';
 import { familyFeedTarget, type FamilyTarget } from '@/notifications/feed-target';
+import { useImageConsentPlayers } from '@/notifications/use-image-consent-players';
 
 type Tab = 'unread' | 'all';
 
@@ -129,6 +132,11 @@ export function NovedadesScreen({
     void invalidateAfterWrite('markNotifications');
   }, []);
 
+  // Imagen-2 — jugadores de los avisos de retirada de imagen que haya EN PANTALLA
+  // (nombre + foto firmada). Se pide sobre las dos pestañas a la vez para que el hook
+  // no se recargue al cambiar de pestaña; sin avisos de ese tipo no toca la red.
+  const imageConsentPlayers = useImageConsentPlayers([...unread, ...all]);
+
   if (unreadLoading) return <LoadingScreen />;
 
   const rows = tab === 'unread' ? unread : all;
@@ -164,12 +172,27 @@ export function NovedadesScreen({
           renderItem={({ item }) => {
             const clickable = feedTarget(item.type, item.payload) != null;
             const pending = item.status === 'pending';
+            const player = imageConsentPlayerOf(item.type, item.payload, imageConsentPlayers);
             const body = (
               <>
                 <View className={`mt-1.5 h-2 w-2 rounded-full ${pending ? 'bg-emerald-500' : 'bg-transparent'}`} />
+                {/* Imagen-2: en la retirada del permiso de imagen, LA foto del jugador
+                    (la de su ficha, la única que hay dentro de MisterFC). Sin foto o
+                    sin poder firmarla, la fila queda como cualquier otra. */}
+                {player?.photoUrl ? (
+                  <Image
+                    source={{ uri: player.photoUrl }}
+                    accessibilityIgnoresInvertColors
+                    className="h-9 w-9 rounded-full"
+                  />
+                ) : null}
                 <View className="flex-1">
                   <Text className="text-sm text-[#0F1B2E]">
-                    {notificationFeedText(tFeed, item.type, item.payload)}
+                    {notificationFeedText(
+                      tFeed,
+                      item.type,
+                      withImageConsentPlayerName(item.type, item.payload, imageConsentPlayers),
+                    )}
                   </Text>
                   <Text className="text-xs text-zinc-400">{item.created_at.slice(0, 10)}</Text>
                 </View>

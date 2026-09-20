@@ -42,9 +42,27 @@ export function NotificationFeedList({
                 it.unread ? 'bg-misterfc-green' : 'bg-transparent'
               }`}
             />
-            <it.Icon
-              className={`size-4 shrink-0 ${it.unread ? 'text-foreground' : 'text-muted-foreground'}`}
-            />
+            {/*
+              Imagen-2 — en la retirada del permiso de imagen, la fila enseña LA foto:
+              dentro de MisterFC el jugador tiene exactamente una, la de su ficha, y
+              enseñarla evita que el club tenga que adivinar cuál hay que quitar. Sin
+              foto (o sin permiso para firmarla) se cae al icono de siempre.
+            */}
+            {it.player?.photoUrl ? (
+              // URL FIRMADA de Storage con TTL corto: next/image la optimizaría y
+              // cachearía por URL, y la copia cacheada se serviría caducada.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={it.player.photoUrl}
+                alt=""
+                aria-hidden
+                className="size-8 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <it.Icon
+                className={`size-4 shrink-0 ${it.unread ? 'text-foreground' : 'text-muted-foreground'}`}
+              />
+            )}
             <span className={`flex-1 ${it.unread ? 'font-medium' : 'text-muted-foreground'}`}>
               {it.text}
             </span>
