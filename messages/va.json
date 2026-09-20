@@ -5675,5 +5675,16 @@
   },
   "legal_publico": {
     "solo_castellano": "Este document només existix en castellà."
+  },
+  "emails": {
+    "spectator_invite": {
+      "subject": "T'han convidat a seguir un jugador en MisterFC",
+      "heading": "T'han convidat a MisterFC",
+      "body": "Una família t'ha convidat a seguir el seu jugador en MisterFC: veuràs les seues convocatòries, els seus partits i les seues novetats. Entra amb aquest enllaç per a acceptar la invitació i crear el teu compte.",
+      "cta": "Acceptar la invitació",
+      "fallback": "Si el botó no funciona, copia aquesta adreça al teu navegador:",
+      "ignore": "Si no esperaves aquesta invitació, pots ignorar aquest correu: no es crearà res al teu nom.",
+      "signature": "L'equip de MisterFC"
+    }
   }
 }
