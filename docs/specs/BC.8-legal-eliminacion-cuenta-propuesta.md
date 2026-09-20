@@ -1,9 +1,8 @@
 # BC-8 · Propuesta de texto legal — eliminación de cuenta
 
 > **ESTO NO ESTÁ PUBLICADO.** Es una propuesta. El texto vivo sigue siendo
-> `Documentos/misterfc-eliminacion-cuenta.md`, del que
-> `apps/web/src/content/legal/eliminacion-cuenta.md` es copia verbatim (comprobado:
-> `diff` vacío). Nada de este fichero se sirve.
+> `Documentos/misterfc-eliminacion-cuenta.md`, del que la web genera su copia servida
+> en el build (Legal-1). Nada de este fichero se sirve.
 >
 > **Doble aprobación.** Jose decide el fondo; pero el texto vivo lo revisó un abogado
 > y esta propuesta **no la ha revisado nadie con esa formación**. Antes de publicar
@@ -214,8 +213,8 @@ consentimiento y de su retirada conforme a los artículos 5.2 y 7.1 del RGPD.
 
 - **`terminos.md`** — no describe el ciclo de vida de la cuenta; no encontré nada que
   quede desmentido por la serie BC.
-- **`Documentos/*.md`** — la propuesta tendría que copiarse ahí y a
-  `apps/web/src/content/legal/` **a la vez**, para que el `diff` siga saliendo vacío.
+- **`Documentos/*.md`** — la propuesta tendría que copiarse ahí, y solo ahí: desde
+  Legal-1 la copia que sirve la web se genera en el build y no se toca a mano.
 - **La suscripción de 3 €/año** — Apple exige avisar de que borrar la cuenta no cancela
   la suscripción. El hueco de copy y las claves i18n están reservados y vacíos desde
   BC-4; cuando la suscripción exista, este texto también tendrá que decirlo.

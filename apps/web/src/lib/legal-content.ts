@@ -6,10 +6,16 @@ import { SITE_URL } from '@/lib/site-url';
 
 /**
  * Textos legales públicos de Cognix Labs (política de privacidad, eliminación de
- * cuenta, términos). Copia VERBATIM de los .md revisados por el abogado
- * (Documentos/), en src/content/legal/. Se leen del sistema de ficheros en el
- * Server Component (build-time); los .md se fuerzan en el trace de despliegue vía
+ * cuenta, términos). Se leen del sistema de ficheros en el Server Component
+ * (build-time); los .md se fuerzan en el trace de despliegue vía
  * `outputFileTracingIncludes` (next.config). Server-only: usa fs.
+ *
+ * Legal-1 — `src/content/legal/*.md` NO se edita ni se versiona: lo GENERA el build
+ * desde `Documentos/*.md`, los .md revisados por el abogado, que son la única copia
+ * (scripts/generar-textos-legales.mjs, encadenado en `build` y `dev`). Editar aquí
+ * es escribir en algo que la siguiente construcción pisa sin avisar; el texto se
+ * cambia en Documentos/. El censo de qué .md alimenta a qué slug vive en
+ * scripts/textos-legales.mjs y lo vigila `check:textos-legales`.
  *
  * NO es `legal_documents` (F14-11/12), que son los textos POR CLUB en la BD. Esto
  * son documentos estáticos, iguales para todos, del prestador de la plataforma.

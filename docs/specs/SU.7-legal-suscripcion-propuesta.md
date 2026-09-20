@@ -1,8 +1,9 @@
 # SU-7 · Propuesta de texto legal — suscripción y RevenueCat
 
 > **ESTO NO ESTÁ PUBLICADO.** Es una propuesta. Los textos vivos siguen siendo
-> `apps/web/src/content/legal/terminos.md` y `.../privacidad.md`. Nada de este fichero se
-> sirve.
+> `Documentos/misterfc-terminos-condiciones.md` y `Documentos/misterfc-politica-privacidad.md`,
+> de los que la web genera su copia servida en el build (Legal-1). Nada de este fichero
+> se sirve.
 >
 > **Doble aprobación**, igual que en [BC.8](BC.8-legal-eliminacion-cuenta-propuesta.md):
 > Jose decide el fondo y un abogado revisa la forma. Aquí hay más motivo que nunca para
@@ -312,9 +313,9 @@ la pone el abogado.
 ## 6 · Al aprobarse
 
 1. El texto de los §2 y §3 se lleva a `Documentos/misterfc-terminos-condiciones.md` y
-   `Documentos/misterfc-politica-privacidad.md` (los vivos), y se copia **verbatim** a
-   `apps/web/src/content/legal/terminos.md` y `.../privacidad.md`. El `diff` entre cada
-   par tiene que quedar **vacío**: es la comprobación que se hizo en BC-8.
+   `Documentos/misterfc-politica-privacidad.md`, que desde Legal-1 son la **única**
+   copia: lo que sirve la web se genera de ahí en el build. No hay segundo fichero que
+   tocar ni `diff` que comprobar.
 2. Se añade RevenueCat a la tabla de subencargados del
    `Documentos/misterfc-contrato-encargo-tratamiento.md` **y se avisa a los clubes con 30
    días de antelación** (decisión 〔6〕).

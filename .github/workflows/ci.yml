@@ -79,12 +79,13 @@ jobs:
       - name: Check dead catalogue strings census
         run: pnpm check:cadenas-muertas
 
-      # Cada texto legal vive en DOS sitios: los .md del abogado (Documentos/, la copia
-      # maestra) y la copia que sirve la web (apps/web/src/content/legal/). Tienen que
-      # ser el mismo byte a byte, y hasta ahora la garantia era acordarse de copiar el
-      # fichero: Documentos/ estaba en el .gitignore desde el #455, colada en un commit
-      # de google-services.json sin motivo. Un texto legal desincronizado no da error.
-      - name: Check legal texts parity census
+      # Legal-1 — un texto legal tiene UNA copia, los .md del abogado (Documentos/). La
+      # que sirve la web se genera en el build, no se versiona y por eso no puede
+      # divergir. Lo que este guard vigila ahora es la CADENA que lleva la maestra hasta
+      # la pagina: generador enchufado a build y dev, maestra dentro de las entradas de
+      # turbo (o se publica el texto viejo desde la cache) y en el trace de despliegue
+      # (o la pagina va bien en local y da 500 en produccion). Nada de eso da error solo.
+      - name: Check legal texts census
         run: pnpm check:textos-legales
 
       # Las plantillas de correo viven en el dashboard de Supabase: sin revision, sin
