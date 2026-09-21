@@ -19,6 +19,13 @@ export type PushPayload = {
   body: string;
   deep_link?: string;
   tag?: string;
+  /**
+   * Audiencia declarada por el emisor (`audienceMark`). Viaja en la fila push
+   * PARA EL DRENADOR: cuando el eager no envía, el cron lee esta fila en crudo y
+   * de ahí sale el `data` del push. Ni `pushPayloadFromNotificationRow` ni el
+   * contenido que ve el usuario la usan — es solo enrutado.
+   */
+  audience?: string;
 };
 
 /**

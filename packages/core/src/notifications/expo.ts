@@ -16,6 +16,8 @@ import type { Json } from '../supabase/types';
  * encuentren en el payload (event_id, team_id, …). La app usa esto para derivar
  * la ruta con su propio port de `hrefFor(type, ids)`.
  */
+import { NOTIFICATION_AUDIENCE_KEY } from './native-route';
+
 export type ExpoNotificationData = { type: string } & Record<string, string>;
 
 /** Claves de ID de recurso que conoce el enrutado (espejo de lo que usa hrefFor). */
@@ -79,6 +81,17 @@ export function expoDataFromNotification(
       typeof p.deep_link === 'string' ? p.deep_link : undefined,
     );
     if (rid) data.resource_id = rid;
+  }
+
+  // La AUDIENCIA declarada por el emisor, si la mandó. No es un id de recurso: no
+  // dice a qué se navega, dice a qué ÁREA — y sin ella los tipos que llegan a dos
+  // audiencias (un mensaje del coach a la familia y la respuesta de la familia al
+  // coach son el MISMO `new_message`) no se pueden enrutar. Se copia tal cual y el
+  // que decide es `isFamilyAudienceNotification`; aquí no se valida el valor, igual
+  // que no se valida ningún otro campo del payload.
+  const audiencia = p[NOTIFICATION_AUDIENCE_KEY];
+  if (typeof audiencia === 'string' && audiencia.length > 0) {
+    data[NOTIFICATION_AUDIENCE_KEY] = audiencia;
   }
 
   return data;

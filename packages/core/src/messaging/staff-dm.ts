@@ -17,6 +17,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { audienceMark } from '../notifications/native-route';
 import type { Database } from '../supabase/types';
 import { sendMessageSchema, MESSAGE_RATE_LIMIT } from '../schemas/messaging';
 import type { MessageFanOut } from './send';
@@ -309,6 +310,10 @@ export async function sendStaffMessageFromClient(
       conv.profile_a === args.senderId ? conv.profile_b : conv.profile_a;
     const preview = parsed.data.body.slice(0, 140);
     const deepLink = `/${args.locale}/mensajes/staff/${parsed.data.conversation_id}`;
+    // Conversación ENTRE staff: le llega por su papel en el club, nunca por ser
+    // padre de nadie. Marcarlo como 'staff' no cambia su destino de hoy —el hogar—
+    // pero lo deja DICHO: si mañana `new_message` entrara en la tabla por tipo, este
+    // hilo seguiría abriéndose donde debe en vez de irse a familia de rebote.
     await fanOut([{ user_id: other }], {
       type: 'new_message',
       in_app_payload: {
@@ -316,12 +321,14 @@ export async function sendStaffMessageFromClient(
         message_id: inserted.id,
         sender_profile_id: args.senderId,
         deep_link: deepLink,
+        ...audienceMark('staff'),
       },
       push_payload: {
         title: args.senderName ?? 'Mensaje nuevo',
         body: preview,
         deep_link: deepLink,
         tag: `staff_conversation:${parsed.data.conversation_id}`,
+        ...audienceMark('staff'),
       },
       dedupe_base_prefix: `new_message:${inserted.id}`,
     });

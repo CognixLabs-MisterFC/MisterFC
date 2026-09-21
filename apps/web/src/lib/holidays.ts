@@ -2,6 +2,7 @@ import 'server-only';
 import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
+  audienceMark,
   markHolidayFromClient,
   unmarkHolidayFromClient,
   decideEventApprovalFromClient,
@@ -31,9 +32,22 @@ const TZ = TIMEZONE_OLA1;
 /**
  * F14F-2 — destinatarios del aviso de festivo para un equipo: ENTRENADORES
  * (team_staff activo) ∪ JUGADORES/FAMILIAS (team_members activo → player_accounts).
- * Deduplicado por profile_id. Se resuelve con el cliente del USUARIO (RLS).
+ * Se resuelve con el cliente del USUARIO (RLS).
+ *
+ * VUELVEN SEPARADOS, y antes volvían unidos. Es el mismo aviso para dos audiencias
+ * distintas, y desde PUSH-ÁREA eso decide a qué área lo abre cada uno: el entrenador
+ * a su calendario de staff, la familia al suyo.
+ *
+ * GANA STAFF (decisión de Jose). Quien entrena al equipo Y es padre de un jugador de
+ * ESE equipo está en los dos grupos, y como el dedupe del bus va por `user_id` solo
+ * recibiría uno de los dos avisos —el otro se descartaría en silencio por el UNIQUE
+ * de `dedupe_key`—. Se le quita de familia: si eres el entrenador del entreno que se
+ * cancela, tu contexto es el equipo. Al calendario de familia llega igual por su pie.
  */
-async function holidayTeamRecipients(supabase: Supa, teamId: string): Promise<string[]> {
+async function holidayTeamRecipients(
+  supabase: Supa,
+  teamId: string,
+): Promise<{ staff: string[]; family: string[] }> {
   const [{ data: staffRows }, { data: tms }] = await Promise.all([
     supabase
       .from('team_staff')
@@ -61,7 +75,14 @@ async function holidayTeamRecipients(supabase: Supa, teamId: string): Promise<st
     familyIds = (pas ?? []).map((r) => r.profile_id).filter(Boolean) as string[];
   }
 
-  return Array.from(new Set([...coachIds, ...familyIds]));
+  const staff = Array.from(new Set(coachIds));
+  const enStaff = new Set(staff);
+  return {
+    staff,
+    // La resta es la decisión "gana staff", y va aquí —donde se conocen los dos
+    // grupos— y no en el emisor, que ya solo reparte.
+    family: Array.from(new Set(familyIds)).filter((id) => !enStaff.has(id)),
+  };
 }
 
 /**
@@ -81,7 +102,7 @@ async function notifyHolidayEvents(
 
   for (const ev of withTeam) {
     const recipients = await holidayTeamRecipients(supabase, ev.team_id as string);
-    if (recipients.length === 0) continue;
+    if (recipients.staff.length === 0 && recipients.family.length === 0) continue;
 
     const whenEs = new Date(ev.starts_at).toLocaleString('es-ES', {
       weekday: 'long',
@@ -98,26 +119,38 @@ async function notifyHolidayEvents(
     const pushBody =
       kind === 'cancelled' && reason ? `Instalaciones cerradas (${reason}) · ${whenEs}` : whenEs;
 
-    await emitNotificationFanOut(
-      recipients.map((u) => ({ user_id: u })),
-      {
-        type,
-        in_app_payload: {
-          event_id: ev.event_id,
-          team_id: ev.team_id,
-          title: ev.title,
-          starts_at: ev.starts_at,
-          deep_link: '/calendario',
+    // DOS envíos, uno por audiencia. El `dedupe_base_prefix` es el MISMO a propósito:
+    // el sufijo del bus es el `user_id` y los dos grupos son ahora disjuntos, así que
+    // no hay forma de que una persona reciba dos filas ni de que el UNIQUE se coma
+    // una. Lo único que cambia entre los dos es la marca.
+    for (const [audiencia, destinatarios] of [
+      ['staff', recipients.staff],
+      ['family', recipients.family],
+    ] as const) {
+      if (destinatarios.length === 0) continue;
+      await emitNotificationFanOut(
+        destinatarios.map((u) => ({ user_id: u })),
+        {
+          type,
+          in_app_payload: {
+            event_id: ev.event_id,
+            team_id: ev.team_id,
+            title: ev.title,
+            starts_at: ev.starts_at,
+            deep_link: '/calendario',
+            ...audienceMark(audiencia),
+          },
+          push_payload: {
+            title: pushTitle,
+            body: pushBody,
+            deep_link: '/es/calendario',
+            tag: `${type}:${ev.event_id}`,
+            ...audienceMark(audiencia),
+          },
+          dedupe_base_prefix: `${type}:${ev.event_id}:${ev.starts_at}`,
         },
-        push_payload: {
-          title: pushTitle,
-          body: pushBody,
-          deep_link: '/es/calendario',
-          tag: `${type}:${ev.event_id}`,
-        },
-        dedupe_base_prefix: `${type}:${ev.event_id}:${ev.starts_at}`,
-      },
-    );
+      );
+    }
   }
 }
 

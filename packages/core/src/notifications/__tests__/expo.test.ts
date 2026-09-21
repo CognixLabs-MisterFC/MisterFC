@@ -105,3 +105,47 @@ describe('isDeviceNotRegistered / tallyExpoTickets', () => {
     });
   });
 });
+
+describe('la marca de audiencia viaja en el data del push', () => {
+  it('se copia al data cuando el emisor la manda', () => {
+    expect(
+      expoDataFromNotification('new_message', {
+        conversation_id: 'c1',
+        audience: 'family',
+      }),
+    ).toEqual({ type: 'new_message', conversation_id: 'c1', audience: 'family' });
+  });
+
+  it('el camino del DRENADOR también la lleva (push payload, sin ids)', () => {
+    // El cron no tiene el in_app_payload: pasa la fila push en crudo. Si la marca
+    // solo estuviera en el in_app, aquí se perdería — y el aviso iría al área
+    // equivocada solo cuando el envío inmediato falla. Por eso los emisores la
+    // escriben en los DOS payloads.
+    expect(
+      expoDataFromNotification('training_cancelled', {
+        title: 'Entrenamiento cancelado',
+        body: 'Instalaciones cerradas',
+        deep_link: '/es/calendario',
+        tag: 'training_cancelled:e1',
+        audience: 'staff',
+      }),
+    ).toEqual({ type: 'training_cancelled', audience: 'staff' });
+  });
+
+  it('sin marca, el data queda exactamente como antes', () => {
+    expect(
+      expoDataFromNotification('new_message', { conversation_id: 'c1' }),
+    ).toEqual({ type: 'new_message', conversation_id: 'c1' });
+  });
+
+  it('una marca vacía o no-cadena no se copia', () => {
+    expect(expoDataFromNotification('goal', { event_id: 'e1', audience: '' })).toEqual({
+      type: 'goal',
+      event_id: 'e1',
+    });
+    expect(expoDataFromNotification('goal', { event_id: 'e1', audience: 7 })).toEqual({
+      type: 'goal',
+      event_id: 'e1',
+    });
+  });
+});

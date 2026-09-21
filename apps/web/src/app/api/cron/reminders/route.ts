@@ -31,6 +31,7 @@
 import { NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import {
+  audienceMark,
   MATCH_SURFACE_TYPES,
   TIMEZONE_OLA1,
   buildDedupeKey,
@@ -514,10 +515,14 @@ async function handle(req: Request): Promise<NextResponse> {
   for (const tr of todayTrainings) {
     if (!tr.team_id) continue;
 
-    // Destinatarios = UNIÓN dedup de (jugadores+familias) ∪ (staff del equipo).
-    // Set de profile_ids → un usuario que sea a la vez familia y staff (o
-    // familia de dos hermanos del equipo) recibe UNA sola notificación.
-    const recipientProfileIds = new Set<string>();
+    // Destinatarios = (jugadores+familias) ∪ (staff del equipo), en DOS conjuntos.
+    // Un usuario que sea a la vez familia y staff (o familia de dos hermanos del
+    // equipo) sigue recibiendo UNA sola notificación — el dedupe_key lleva el
+    // user_id—, pero desde PUSH-ÁREA hace falta saber CUÁL de las dos es para que el
+    // push abra el área correcta. Gana STAFF (decisión de Jose): si entrenas al
+    // equipo, el recordatorio es de tu entreno.
+    const familyProfileIds = new Set<string>();
+    const staffProfileIds = new Set<string>();
 
     // (a) Jugadores/familias: roster del team a día de hoy → player_accounts
     //     (mismo patrón de roster que el bloque de match_callup_reminder).
@@ -542,7 +547,7 @@ async function handle(req: Request): Promise<NextResponse> {
         .select('profile_id')
         .in('player_id', rosterIds);
       for (const r of (pas ?? []) as { profile_id: string }[]) {
-        recipientProfileIds.add(r.profile_id);
+        familyProfileIds.add(r.profile_id);
       }
     }
 
@@ -555,10 +560,12 @@ async function handle(req: Request): Promise<NextResponse> {
       .is('left_at', null);
     type StaffRow2 = { memberships: { profile_id: string } };
     for (const r of (staffRows ?? []) as unknown as StaffRow2[]) {
-      recipientProfileIds.add(r.memberships.profile_id);
+      staffProfileIds.add(r.memberships.profile_id);
     }
 
-    if (recipientProfileIds.size === 0) continue;
+    // "Gana staff": quien está en los dos sale de familia.
+    for (const id of staffProfileIds) familyProfileIds.delete(id);
+    if (familyProfileIds.size === 0 && staffProfileIds.size === 0) continue;
 
     // Hora local Madrid para el cuerpo del push.
     const hhmm = new Intl.DateTimeFormat('es-ES', {
@@ -568,7 +575,14 @@ async function handle(req: Request): Promise<NextResponse> {
       hour12: false,
     }).format(new Date(tr.starts_at));
 
-    for (const profileId of recipientProfileIds) {
+    // Las dos audiencias, cada una con su marca. Este emisor NO pasa por el bus:
+    // inserta las dos filas a mano y las envía el drainer, que saca el `data` del
+    // push de la fila `channel='push'` — por eso la marca va en LAS DOS.
+    const destinatarios: ReadonlyArray<readonly [string, 'family' | 'staff']> = [
+      ...[...familyProfileIds].map((id) => [id, 'family'] as const),
+      ...[...staffProfileIds].map((id) => [id, 'staff'] as const),
+    ];
+    for (const [profileId, audiencia] of destinatarios) {
       inserts.push({
         user_id: profileId,
         type: 'training_reminder',
@@ -578,6 +592,7 @@ async function handle(req: Request): Promise<NextResponse> {
           title: tr.title,
           starts_at: tr.starts_at,
           deep_link: '/calendario',
+          ...audienceMark(audiencia),
         },
         dedupe_key: buildDedupeKey({
           type: 'training_reminder',
@@ -597,6 +612,7 @@ async function handle(req: Request): Promise<NextResponse> {
           body: `Hoy tienes entrenamiento: ${tr.title} a las ${hhmm}`,
           deep_link: '/es/calendario',
           tag: `training_reminder:${tr.id}`,
+          ...audienceMark(audiencia),
         },
         dedupe_key: buildDedupeKey({
           type: 'training_reminder',

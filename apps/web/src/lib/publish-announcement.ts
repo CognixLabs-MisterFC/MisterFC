@@ -2,6 +2,7 @@ import 'server-only';
 import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
+  audienceMark,
   publishAnnouncementFromClient,
   type Database,
   type PublishAnnouncementInput,
@@ -59,16 +60,19 @@ async function notifyTeamAnnouncement(
     recipientUserIds.map((u) => ({ user_id: u })),
     {
       type: 'new_announcement',
+      // Destinatarios: `player_accounts` del roster y nadie más. Es familia pura.
       in_app_payload: {
         announcement_id: announcementId,
         team_id: teamId,
         deep_link: `/${locale}/anuncios/${announcementId}`,
+        ...audienceMark('family'),
       },
       push_payload: {
         title,
         body: body.slice(0, 200),
         deep_link: `/${locale}/anuncios/${announcementId}`,
         tag: `announcement:${announcementId}`,
+        ...audienceMark('family'),
       },
       dedupe_base_prefix: `new_announcement:${announcementId}`,
     },
