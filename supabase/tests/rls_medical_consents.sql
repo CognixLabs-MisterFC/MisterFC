@@ -16,7 +16,10 @@
 --   L7  admin y director CON consentimiento             → ve
 --   L8  tutor → ve su hijo; hijo ajeno                  → forbidden
 --   L9  jugador sin vínculo / seguidor / coordinador ajeno al equipo → forbidden
---   L10 staff que PROMOCIONA al jugador, con consent    → ve
+--   L10 staff que PROMOCIONA, evento HOY                → ve
+--   L11 staff que PROMOCIONA, evento MAÑANA             → ve (la subida ya abre)
+--   L12 staff que PROMOCIONA, evento de AYER            → forbidden (caduca con el día)
+--   L12b ancla de L12: la dirección SÍ ve a ese jugador → el corte es la FECHA, no el consent
 -- ESCRITURA (set_player_medical = user_is_tutor_of_player AND user_has_medical_consent_write[activa]):
 --   E1  staff (no tutor)                                → forbidden
 --   E2  tutor SIN consent de la TEMPORADA ACTIVA        → forbidden (write season-scoped)
@@ -194,13 +197,43 @@ insert into public.player_accounts (player_id, profile_id, relation) values
 insert into public.player_spectators (spectator_profile_id, player_id) values
   ('ed100000-4444-0000-0000-000000000002', 'ed100000-0000-aaaa-0000-000000000001');
 
--- Promoción de P1 al equipo superior (teamPromo): evento en teamPromo + fila.
+-- Promociones al equipo superior (teamPromo): tres eventos y tres subidas.
+--
+-- Las fechas son RELATIVAS a hoy, y eso es parte del test: desde la migración
+-- 20261094000000 la médica que abre una promoción caduca al acabar el DÍA del
+-- evento, así que una fecha escrita a mano (esto decía '2025-09-20') envejece y
+-- acaba midiendo el calendario en vez de la regla. Se construyen a las 10:00 en
+-- hora del club, que es la zona con la que corta la función.
+--
+--   evento HOY    → P1 (L10, ve)
+--   evento MAÑANA → P6 (L11, ve: la subida abre desde que se crea)
+--   evento AYER   → P5 (L12, forbidden: ya caducó)
+--
+-- P5 y P6 sirven de sujeto porque su consentimiento de lectura está OTORGADO (el
+-- de P5 en temporada no activa, que para LEER vale) y porque staffPromo no los
+-- alcanza por ninguna otra rama: los dos están en team1, y él solo es staff de
+-- teamPromo. Si L12 sale forbidden, es por la fecha. L12b lo remacha.
 insert into public.events (id, club_id, team_id, type, title, starts_at, created_by) values
   ('ed100000-e0e0-0000-0000-0000000000a1', 'ed100000-cccc-0000-0000-000000000001',
-   'ed100000-7ea0-0000-0000-0000000000a3', 'match', 'Amistoso superior', '2025-09-20 10:00:00+00',
+   'ed100000-7ea0-0000-0000-0000000000a3', 'match', 'Amistoso superior (hoy)',
+   (((now() at time zone 'Europe/Madrid')::date + time '10:00') at time zone 'Europe/Madrid'),
+   'ed100000-2222-0000-0000-000000000001'),
+  ('ed100000-e0e0-0000-0000-0000000000a2', 'ed100000-cccc-0000-0000-000000000001',
+   'ed100000-7ea0-0000-0000-0000000000a3', 'match', 'Amistoso superior (mañana)',
+   (((now() at time zone 'Europe/Madrid')::date + 1 + time '10:00') at time zone 'Europe/Madrid'),
+   'ed100000-2222-0000-0000-000000000001'),
+  ('ed100000-e0e0-0000-0000-0000000000a3', 'ed100000-cccc-0000-0000-000000000001',
+   'ed100000-7ea0-0000-0000-0000000000a3', 'match', 'Amistoso superior (ayer)',
+   (((now() at time zone 'Europe/Madrid')::date - 1 + time '10:00') at time zone 'Europe/Madrid'),
    'ed100000-2222-0000-0000-000000000001');
+-- team_id, club_id y kind los pone el trigger desde el evento; se mandan igual
+-- que antes porque las columnas son NOT NULL.
 insert into public.player_promotions (player_id, event_id, team_id, kind, club_id) values
   ('ed100000-0000-aaaa-0000-000000000001', 'ed100000-e0e0-0000-0000-0000000000a1',
+   'ed100000-7ea0-0000-0000-0000000000a3', 'match', 'ed100000-cccc-0000-0000-000000000001'),
+  ('ed100000-0000-aaaa-0000-000000000006', 'ed100000-e0e0-0000-0000-0000000000a2',
+   'ed100000-7ea0-0000-0000-0000000000a3', 'match', 'ed100000-cccc-0000-0000-000000000001'),
+  ('ed100000-0000-aaaa-0000-000000000005', 'ed100000-e0e0-0000-0000-0000000000a3',
    'ed100000-7ea0-0000-0000-0000000000a3', 'match', 'ed100000-cccc-0000-0000-000000000001');
 
 -- Consentimientos médicos (sembrados como postgres; el forjado ya se prueba en
@@ -241,7 +274,10 @@ select pg_temp.assert_forbidden('L8b tutorA en hijo ajeno P6',   'ed100000-3333-
 select pg_temp.assert_forbidden('L9a jugador sin vínculo',       'ed100000-4444-0000-0000-000000000001', 'ed100000-0000-aaaa-0000-000000000001');
 select pg_temp.assert_forbidden('L9b seguidor',                  'ed100000-4444-0000-0000-000000000002', 'ed100000-0000-aaaa-0000-000000000001');
 select pg_temp.assert_forbidden('L9c coordinador ajeno',         'ed100000-2222-0000-0000-000000000003', 'ed100000-0000-aaaa-0000-000000000001');
-select pg_temp.assert_reads    ('L10 staffPromo (promociona P1)','ed100000-1111-0000-0000-000000000003', 'ed100000-0000-aaaa-0000-000000000001', 'P1-med');
+select pg_temp.assert_reads    ('L10 staffPromo, evento HOY',    'ed100000-1111-0000-0000-000000000003', 'ed100000-0000-aaaa-0000-000000000001', 'P1-med');
+select pg_temp.assert_reads    ('L11 staffPromo, evento MAÑANA', 'ed100000-1111-0000-0000-000000000003', 'ed100000-0000-aaaa-0000-000000000006', 'P6-med');
+select pg_temp.assert_forbidden('L12 staffPromo, evento AYER',   'ed100000-1111-0000-0000-000000000003', 'ed100000-0000-aaaa-0000-000000000005');
+select pg_temp.assert_reads    ('L12b ancla: admin ve a ese P5', 'ed100000-2222-0000-0000-000000000001', 'ed100000-0000-aaaa-0000-000000000005', 'P5-med');
 
 -- ── ESCRITURA ──────────────────────────────────────────────────────────────────
 select pg_temp.assert_write_forbidden('E1  staff (no tutor)',          'ed100000-1111-0000-0000-000000000001', 'ed100000-0000-aaaa-0000-000000000001');
