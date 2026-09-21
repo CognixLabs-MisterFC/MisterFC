@@ -1516,6 +1516,13 @@
         "parent": "Pare/mare",
         "guardian": "Tutor legal",
         "self": "El mateix jugador"
+      },
+      "invite_kind": {
+        "parent": "Tutor (pare/mare)",
+        "guardian": "Tutor legal",
+        "self": "Compte del jugador",
+        "spectator": "Seguidor",
+        "unknown": "Tipus d'invitació desconegut"
       }
     },
     "tutor": {

@@ -17,6 +17,7 @@ import {
   type RatingTimelinePoint,
   hasLinkedFamily,
   getPlayerContactFromClient,
+  playerInviteKind,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadPlayerCareer } from '@/lib/player-career';
@@ -342,9 +343,12 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
     .select('id, profile_id, relation, profiles!inner(full_name)')
     .eq('player_id', player.id);
 
+  // `role` va en el select porque sin él no se distingue al SEGUIDOR
+  // (role='spectator', sin relación) de una invitación de otra forma: se
+  // clasifica por rol Y relación, nunca por descarte. Ver playerInviteKind.
   const { data: pendingInvites } = await supabase
     .from('invitations')
-    .select('id, email, player_relation, expires_at')
+    .select('id, email, role, player_relation, expires_at')
     .eq('player_id', player.id)
     .is('accepted_at', null)
     .gt('expires_at', new Date().toISOString());
@@ -585,10 +589,13 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
                       >
                         <div className="flex flex-col">
                           <span className="font-medium">{inv.email}</span>
+                          {/* Qué es esta invitación: tutor, seguidor o la cuenta
+                              del propio jugador. Antes, la del seguidor no tenía
+                              relación y esta línea salía VACÍA: la abuela y el
+                              padre se veían igual, con el mismo botón de
+                              cancelar al lado. */}
                           <span className="text-xs text-muted-foreground">
-                            {inv.player_relation
-                              ? t(`family.relation.${inv.player_relation}`)
-                              : ''}
+                            {t(`family.invite_kind.${playerInviteKind(inv)}`)}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
