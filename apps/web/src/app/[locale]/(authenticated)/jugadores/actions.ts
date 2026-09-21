@@ -12,7 +12,6 @@ import {
   getCurrentUserClubs,
   inviteEmailMetadata,
   isEmailAlreadyExistsError,
-  sendInviteToExistingUser,
   invitePlayerTutorSchema,
   inviteSpectatorSchema,
   type PlayerTutorRelation,
@@ -27,6 +26,7 @@ import { linkInvitedUser } from '@/lib/link-invited-user';
 import { performSpectatorInvite } from '@/lib/invite-spectator';
 import { performSelfInvite } from '@/lib/invite-self';
 import { sendOrRenewTutorInvitation } from '@/lib/invite-tutor';
+import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 import { loadPendingInvitePlayers } from './queries';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -838,11 +838,15 @@ export type BatchInviteResult = {
  *    vigente ("comprobar antes"); un doble-clic simultáneo, en el peor caso, crea
  *    una invitación duplicada que accept_pending_invitations absorbe (player_accounts
  *    tiene on conflict do nothing).
- *  · Un inviteUserByEmail que falle NO tumba el lote: se registra en su fila y se
- *    sigue. Además, si el envío de un grupo falla, se BORRAN sus invitaciones recién
+ *  · Un correo que falle NO tumba el lote: se registra en su fila y se sigue.
+ *    Además, si el envío de un grupo falla, se BORRAN sus invitaciones recién
  *    insertadas para que el grupo vuelva a estar pendiente y sea reintentable (si no,
  *    quedarían "pendientes vigentes" bloqueando el reintento 7 días).
- *  · Enlazado invited_user_id: cuando NOSOTROS creamos la cuenta, se enlaza su id en
+ *  · Correo-B6 — el correo sale por Resend, EN EL IDIOMA DEL PADRE (su perfil si lo
+ *    tiene, el de quien importa si no). Antes lo mandaba GoTrue con la plantilla
+ *    única del dashboard, que no puede leer `profiles.locale`: una importación de 80
+ *    familias salía entera en castellano.
+ *  · Enlazado invited_user_id: cuando la cuenta es NUESTRA, se enlaza su id en
  *    TODAS las filas del grupo (un padre con N hijos = N invitaciones, una cuenta),
  *    con el guard de #540. Si el enlazado falla la fila va a error 'link_failed' PERO
  *    NO se borra: el email ya salió y borrar dejaría muerto su enlace; el invitado
@@ -958,55 +962,82 @@ export async function inviteBatch(
     // Si ningún insert del grupo salió, no hay email que enviar.
     if (inserted.length === 0) continue;
 
-    // 2) UN solo email por grupo, con la primera invitación como ancla (accept
+    // 2) UN solo correo por grupo, con la primera invitación como ancla (el accept
     //    aceptará todas las pendientes de ese email en el club de un clic).
+    //
+    //    Correo-B6 — antes esto era UNA llamada, `inviteUserByEmail`, que creaba la
+    //    cuenta Y mandaba el correo con la plantilla del dashboard de Supabase.
+    //    Ahora son tres pasos, y el orden ES la garantía: buscar al destinatario →
+    //    cuenta y ENLAZADO → correo al final. Con el correo en medio, un enlazado que
+    //    fallara dejaría al padre con un enlace que le pide una contraseña que nunca
+    //    fijó.
     const anchor = inserted[0]!;
     const redirectTo = `${proto}://${host}/${locale}/invite/${anchor.token}`;
     let sendReason: string | null = null;
-    // ¿Creamos NOSOTROS la cuenta en este envío? Solo entonces hay que enlazar
-    // invited_user_id. En el fallback "email ya existe" se deja NULL por diseño
-    // (invitee EXISTENTE: inicia sesión con su contraseña).
-    let createdAccount = false;
+    // Cuenta NUESTRA: la que creamos ahora o la que creamos en un lote anterior y
+    // nadie reclamó. Solo esas se enlazan. La cuenta propia de un padre que ya usa
+    // la app NO se toca: inicia sesión con su contraseña.
+    let ownAccount = false;
     let invitedUserId: string | null = null;
 
+    let found: Awaited<ReturnType<ReturnType<typeof inviteRecipientPort>>> = null;
     try {
-      const { data: inviteData, error: invErr } = await admin.auth.admin.inviteUserByEmail(group.email, {
-        redirectTo,
-        // La importación crea invitaciones de FAMILIA: el mismo texto que la
-        // ficha del jugador, no el de cuerpo técnico.
-        data: inviteEmailMetadata({
-          invitationId: anchor.id,
-          kind: 'tutor',
-          locale,
-        }),
+      found = await inviteRecipientPort(admin)(group.email);
+    } catch (thrown) {
+      // La búsqueda no tumba el grupo: se sigue por el camino de "no tiene cuenta",
+      // que es el normal, y `createUser` dirá la verdad después.
+      Sentry.captureException(thrown, {
+        tags: { feature: 'invitations', step: 'batch_lookup_recipient' },
+        extra: { club_id: clubId, invitation_id: anchor.id },
       });
-      if (invErr) {
-        if (isEmailAlreadyExistsError(invErr)) {
-          // Email ya registrado → correo de invitación para cuenta existente
-          // (patrón de inviteTutorForPlayer).
-          const { error: resetErr } = await sendInviteToExistingUser(supabase, {
-            email: group.email,
-            redirectTo,
-          });
-          if (resetErr) {
+    }
+    // El idioma del padre si tiene perfil; si no, el de quien lanza la importación.
+    const emailLocale = found?.locale ?? locale;
+
+    try {
+      if (found && !found.invitePending) {
+        // Cuenta suya de verdad: ni se toca ni se enlaza.
+      } else if (found && found.invitePending) {
+        // Cuenta de una invitación anterior que nadie reclamó. Se enlaza ÉSA: sin
+        // esto, reimportar a la misma familia la deja pidiendo una contraseña que no
+        // existe (la trampa de agosto de 2026).
+        ownAccount = true;
+        invitedUserId = found.userId;
+      } else {
+        const { data: created, error: createErr } = await admin.auth.admin.createUser({
+          email: group.email,
+          // Su correo ES su prueba. Sin esto GoTrue le niega el login al fijar la
+          // contraseña en /invite (BUG-4).
+          email_confirm: true,
+          // La importación crea invitaciones de FAMILIA: el mismo texto que la ficha
+          // del jugador, no el de cuerpo técnico.
+          user_metadata: inviteEmailMetadata({
+            invitationId: anchor.id,
+            kind: 'tutor',
+            locale: emailLocale,
+          }),
+        });
+
+        if (createErr) {
+          if (isEmailAlreadyExistsError(createErr)) {
+            // Carrera con la búsqueda de arriba. La cuenta es suya: no se enlaza y el
+            // correo sale igual.
+            Sentry.captureMessage('[invitations] createUser: el correo ya tenía cuenta (batch)', {
+              level: 'warning',
+              tags: { feature: 'invitations', step: 'batch_create_race' },
+              extra: { club_id: clubId, invitation_id: anchor.id },
+            });
+          } else {
             sendReason = 'send_failed';
-            Sentry.captureException(resetErr, {
+            Sentry.captureException(createErr, {
               tags: { feature: 'invitations', step: 'batch_invite' },
               extra: { club_id: clubId, invitation_id: anchor.id },
             });
           }
         } else {
-          sendReason = 'send_failed';
-          Sentry.captureException(invErr, {
-            tags: { feature: 'invitations', step: 'batch_invite' },
-            extra: { club_id: clubId, invitation_id: anchor.id },
-          });
+          ownAccount = true;
+          invitedUserId = created?.user?.id ?? null;
         }
-      } else {
-        // Cuenta creada por nosotros → hay que enlazar invited_user_id en TODAS
-        // las filas del grupo (se hace más abajo, tras confirmar que el email salió).
-        createdAccount = true;
-        invitedUserId = inviteData?.user?.id ?? null;
       }
     } catch (thrown) {
       sendReason = 'send_failed';
@@ -1016,9 +1047,59 @@ export async function inviteBatch(
       });
     }
 
+    // 3) ENLAZADO, antes del correo. Un padre con N hijos = N invitaciones y UNA
+    //    cuenta: se enlazan todas. Los que no se puedan enlazar van a 'link_failed'
+    //    pero NO se borran: el correo sale igual y el invitado completa por el
+    //    cinturón (#539, invite_pending en user_metadata).
+    const linkFailed = new Set<string>();
+    if (!sendReason && ownAccount) {
+      if (!invitedUserId) {
+        // #535: creación OK pero sin user.id → antes MUDO.
+        Sentry.captureMessage('[invitations] createUser sin user.id (batch)', {
+          level: 'error',
+          tags: { feature: 'invitations', step: 'batch_invite_missing_id' },
+          extra: { club_id: clubId, invitation_id: anchor.id },
+        });
+        for (const r of inserted) linkFailed.add(r.player_id);
+      } else {
+        for (const r of inserted) {
+          // Enlaza y EXIGE 1 fila afectada (guard #540): un UPDATE de cero filas no da
+          // error en PostgREST y dejaría invited_user_id NULL en silencio.
+          const linkRes = await linkInvitedUser(admin, r.id, invitedUserId, {
+            feature: 'invitations',
+            step: 'batch_invite_link',
+          });
+          if (!linkRes.ok) linkFailed.add(r.player_id);
+        }
+      }
+    }
+
+    // 4) El correo, LO ÚLTIMO, y en el idioma del destinatario.
+    if (!sendReason) {
+      const { error: mailErr } = await invitationEmailPort('tutor')({
+        to: group.email,
+        url: redirectTo,
+        locale: emailLocale,
+      });
+      if (mailErr) {
+        sendReason = 'send_failed';
+        Sentry.captureException(mailErr, {
+          tags: { feature: 'invitations', step: 'batch_send_email' },
+          extra: { club_id: clubId, invitation_id: anchor.id },
+        });
+      }
+    }
+
     if (sendReason) {
-      // El envío falló: borra las invitaciones recién creadas del grupo para que
+      // El correo no salió: borra las invitaciones recién creadas del grupo para que
       // vuelva a estar pendiente y reintentable (si no, K-1 lo ocultaría 7 días).
+      //
+      // La CUENTA que se acabara de crear NO se borra, y es a propósito: al
+      // reintentar, la búsqueda la encuentra sin reclamar y enlaza la invitación
+      // nueva a ella. Borrarla sería destruir una cuenta ajena por un fallo de
+      // correo. Lo único que queda rancio es el `invitation_id` de su
+      // `user_metadata`, que apunta a una fila borrada y ya no lo lee nadie: el
+      // enrutado de /invite mira `invite_pending` y `invited_user_id`.
       const { error: delErr } = await admin
         .from('invitations')
         .delete()
@@ -1033,40 +1114,12 @@ export async function inviteBatch(
         rows.push({ player_id: r.player_id, email: group.email, status: 'error', reason: sendReason });
       }
     } else {
-      // El email SÍ salió (cuenta nueva o reset de cuenta preexistente): cuenta
-      // como enviado a efectos del resumen del lote.
+      // El correo SÍ salió: cuenta como enviado a efectos del resumen del lote.
       sentEmails++;
-
-      // Si creamos la cuenta pero el invite no devolvió user.id (#535), no hay id
-      // que enlazar: aviso a Sentry una vez y las filas van a error 'link_failed'.
-      if (createdAccount && !invitedUserId) {
-        Sentry.captureMessage('[invitations] inviteUserByEmail sin user.id (batch)', {
-          level: 'error',
-          tags: { feature: 'invitations', step: 'batch_invite_missing_id' },
-          extra: { club_id: clubId, invitation_id: anchor.id },
-        });
-      }
-
       for (const r of inserted) {
-        // Solo enlazamos cuando NOSOTROS creamos la cuenta y tenemos su id. En el
-        // fallback "email ya existe" no se enlaza (invited_user_id NULL por diseño).
-        if (createdAccount) {
-          if (!invitedUserId) {
-            rows.push({ player_id: r.player_id, email: group.email, status: 'error', reason: 'link_failed' });
-            continue;
-          }
-          // Enlaza y EXIGE 1 fila afectada (guard #540). OJO: el email YA salió; si
-          // el enlazado falla NO borramos la invitación (dejaría muerto el enlace del
-          // correo). Fila a error 'link_failed' (Sentry lo registra en linkInvitedUser)
-          // y el invitado completa igual vía el cinturón (#539). El lote no aborta.
-          const linkRes = await linkInvitedUser(admin, r.id, invitedUserId, {
-            feature: 'invitations',
-            step: 'batch_invite_link',
-          });
-          if (!linkRes.ok) {
-            rows.push({ player_id: r.player_id, email: group.email, status: 'error', reason: 'link_failed' });
-            continue;
-          }
+        if (linkFailed.has(r.player_id)) {
+          rows.push({ player_id: r.player_id, email: group.email, status: 'error', reason: 'link_failed' });
+          continue;
         }
         rows.push({ player_id: r.player_id, email: group.email, status: 'sent' });
       }

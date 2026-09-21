@@ -5,12 +5,13 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
 
 /**
  * CONTRATO (léelo antes de escribir un sender nuevo):
- *   TODO sitio que llame a `admin.auth.admin.inviteUserByEmail(...)` y CREE la
- *   cuenta (es decir, la rama SIN error / SIN fallback a resetPasswordForEmail)
- *   DEBE enlazar después el `auth.users.id` en `invitations.invited_user_id`
- *   llamando a esta función. Sin ese enlazado, chooseInviteForm no puede enrutar
- *   al form set_password por id y el invitee cae en la trampa (lo tapa el cinturón
- *   #539, pero se pierde el enlazado). NO basta con enviar el email.
+ *   TODO sitio que cree la cuenta de un invitado —hoy, `admin.auth.admin.createUser(`—
+ *   DEBE enlazar después el `auth.users.id` en `invitations.invited_user_id` llamando
+ *   a esta función. Y también el que reutilice una cuenta que creamos antes y nadie
+ *   reclamó (`invite_pending`): es el MISMO caso, solo que la cuenta ya existía. Sin
+ *   ese enlazado, chooseInviteForm no puede enrutar al form set_password por id y el
+ *   invitee cae en la trampa (lo tapa el cinturón #539, pero se pierde el enlazado).
+ *   NO basta con enviar el email.
  *
  *   Censo de senders (2026-09-19) — quien añada el 9º, que se sume aquí:
  *     1 sendInvitation (invitations/actions.ts)      ✅ enlaza
@@ -26,18 +27,17 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   comentarios viejos que citan "el 6" sigan diciendo la verdad.
  *   El barrido de #540 buscó el `.update`, no el envío, y se le escaparon 5/6/7.
  *
- *   OJO al buscar (Correo-B): ya NO basta con `grep -rn inviteUserByEmail`. Los
- *   migrados crean la cuenta con `auth.admin.createUser(` —que no manda correo— y
- *   mandan ellos el suyo, en el idioma del destinatario. A 2026-09-21 van 6 (el 7,
- *   el 8, el 3, el 4, el 2 y el 1) y queda 1 por GoTrue: el 5, `inviteBatch`.
- *   Los dos literales de búsqueda son `inviteUserByEmail(` y `createUser(`, y el
- *   guard de CI cuenta los dos censos por separado. Lo que NO cambia es esto: el que
- *   CREA la cuenta enlaza, venga el correo de donde venga.
+ *   OJO al buscar: el literal es `createUser(`, NO `inviteUserByEmail(`. La serie
+ *   Correo-B (B1…B6, cerrada el 2026-09-21) pasó los 7 senders de GoTrue a Resend:
+ *   ahora la cuenta se crea con `auth.admin.createUser(`, que no manda nada, y el
+ *   correo lo compone la app en el idioma del destinatario. `inviteUserByEmail` ya no
+ *   existe en el repo y el guard de CI lo rechaza si vuelve. Lo que NO cambia es
+ *   esto: el que CREA la cuenta enlaza.
  *
  *   El 2 se mudó a `lib/invite-tutor.ts` en Correo-B4: compartía fichero con el 5
  *   (`jugadores/actions.ts`) y, migrado solo él, el fichero quedaba con las DOS
- *   llamadas — que es como el guard de CI describe un sender a medio migrar. Ver la
- *   nota de scripts/check-invite-senders.mjs.
+ *   llamadas a la vez — que es como el guard de CI describe un sender a medio migrar.
+ *   Ver la nota de scripts/check-invite-senders.mjs.
  *
  *   El 7 y el 8 viven en `packages/core`, que NO puede importar Sentry ni este
  *   helper. Se resuelve con un PUERTO INYECTADO: cada uno recibe un parámetro
@@ -47,11 +47,11 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   duplica y el compilador impide enviar sin traer el enlazado.
  *
  *   GUARD DE CI: `pnpm check:invite-senders` (scripts/check-invite-senders.mjs)
- *   cuenta las llamadas reales a `auth.admin.inviteUserByEmail(` (legado) y a
- *   `auth.admin.createUser(` (migrados a Resend) y las compara con sus dos censos.
- *   Un sender nuevo rompe el PR hasta que alguien lea esto; uno a medio migrar —con
- *   las dos llamadas— también, porque mandaría DOS correos al invitado. Si tocas el
- *   censo aquí, tócalo TAMBIÉN allí.
+ *   cuenta las llamadas reales a `auth.admin.createUser(` y las compara con el censo.
+ *   Un sender nuevo rompe el PR hasta que alguien lea esto. Comprueba además que
+ *   ninguna de las formas retiradas vuelva (`inviteUserByEmail`, el magic link de
+ *   cuenta existente, el reset) y que el correo de cada uno tenga texto en los tres
+ *   idiomas. Si tocas el censo aquí, tócalo TAMBIÉN allí.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * WRAPPER `inviteAndLink` — RETIRADO (2026-09-19). Lo que se hizo y lo que no.
@@ -65,7 +65,9 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *     · `inviteEmailMetadata` (#650) — el `data` de los 7 envíos. Nació porque
  *       la plantilla del correo tenía que saber a QUIÉN escribe.
  *     · `sendInviteToExistingUser` (#651) — el camino de "ya tiene cuenta".
- *       Nació porque ese correo salía con asunto de restablecer contraseña.
+ *       Nació porque ese correo salía con asunto de restablecer contraseña. RETIRADO
+ *       al cerrar Correo-B: a quien ya tiene cuenta se le manda el mismo correo de
+ *       invitación que a los demás, así que la función se borró de core.
  *     · `isEmailAlreadyExistsError` en los 5 sitios de web — este PR. Era la
  *       pieza pura: una función ya exportada por core y ya probada en unitarios,
  *       con el MISMO comportamiento que las copias a mano (`code === 'email_exists'`
@@ -85,9 +87,9 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *        regresión no la caza el pipeline: se ve cuando un padre no entra.
  *
  *     2. Y ahora hay uno nuevo, que no existía en septiembre: el guard de censo
- *        (`scripts/check-invite-senders.mjs`) cuenta TRES literales por fichero
- *        —`auth.admin.inviteUserByEmail(`, `inviteEmailMetadata(` y
- *        `sendInviteToExistingUser(`— y exige que cuadren entre sí. Esconder el
+ *        (`scripts/check-invite-senders.mjs`) cuenta literales por fichero
+ *        —`auth.admin.createUser(` e `inviteEmailMetadata(`— y exige que cuadren
+ *        entre sí. Esconder el
  *        envío tras un wrapper los deja ciegos a los tres de golpe: un sender
  *        nuevo dejaría de aparecer en ningún censo, que es EXACTAMENTE el fallo
  *        histórico (agosto 2026: tres senders invisibles durante semanas).
