@@ -270,7 +270,7 @@ export type SendTeamMessageResult = {
  * Envía un mensaje al hilo de grupo. La RLS de team_messages valida la
  * pertenencia (bidireccional — todo miembro escribe); el trigger fuerza sender =
  * auth.uid(). Tras insertar, notifica al resto de miembros derivados vía
- * team_chat_member_profile_ids (fan-out), respetando notification_preferences.
+ * team_chat_member_roles (fan-out por papel), respetando notification_preferences.
  *
  * NOTA F5B-4: aquí el director recibe como cualquiera. El filtrado observer
  * (excluir directores que solo vigilan) se añadirá filtrando `recipients` antes
