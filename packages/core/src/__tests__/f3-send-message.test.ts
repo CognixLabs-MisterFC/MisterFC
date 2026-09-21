@@ -37,6 +37,7 @@ type TablePlan = {
 function makeClient(opts: {
   tables: Record<string, TablePlan>;
   rpc?: Record<string, unknown[]>;
+  rpcErrors?: Record<string, { message: string }>;
   onInsert?: (table: string) => void;
 }): SupabaseClient<Database> {
   const plan = (table: string): TablePlan => opts.tables[table] ?? {};
@@ -78,7 +79,12 @@ function makeClient(opts: {
 
   return {
     from,
-    rpc: async (name: string) => ({ data: opts.rpc?.[name] ?? [] }),
+    rpc: async (name: string) => {
+      // `rpcErrors` permite simular una RPC que NO existe (migración sin aplicar).
+      const err = opts.rpcErrors?.[name];
+      if (err) return { data: null, error: err };
+      return { data: opts.rpc?.[name] ?? [] };
+    },
   } as unknown as SupabaseClient<Database>;
 }
 
@@ -201,7 +207,12 @@ const TEAM_ARGS = {
 };
 
 describe('F3 · sendTeamMessageFromClient (equipo)', () => {
-  it('miembro → inserta como el usuario + fan-out a los demás (sin el emisor)', async () => {
+  // PUSH-ÁREA — los destinatarios salen ahora de `team_chat_member_roles`, que da
+  // (profile_id, audience) en vez de una lista plana, y el fan-out se parte en UN
+  // ENVÍO POR PAPEL para que el push abra a cada uno su área. Lo que este test fijaba
+  // —que el emisor queda excluido— sigue fijado; lo que cambia es que los mismos tres
+  // miembros producen dos envíos en vez de uno.
+  it('miembro → inserta como el usuario + fan-out por papel (sin el emisor)', async () => {
     const fanOut = spyFanOut();
     const client = makeClient({
       tables: {
@@ -210,17 +221,54 @@ describe('F3 · sendTeamMessageFromClient (equipo)', () => {
         },
         team_messages: { count: 0, insertSingle: { data: { id: 'tm-1', sender_profile_id: 'fam-1', body: 'Vamos equipo', created_at: '2026-01-01T00:00:00Z' }, error: null } },
       },
-      rpc: { team_chat_member_profile_ids: ['fam-1', 'coach-1', 'fam-2'] },
+      rpc: {
+        team_chat_member_roles: [
+          { profile_id: 'fam-1', audience: 'family' },
+          { profile_id: 'coach-1', audience: 'staff' },
+          { profile_id: 'fam-2', audience: 'family' },
+        ],
+      },
     });
 
     const res = await sendTeamMessageFromClient(client, TEAM_ARGS, fanOut);
 
     expect('ok' in res && res.ok.teamId).toBe('team-1');
     expect('ok' in res && res.ok.message.id).toBe('tm-1');
+    // Dos papeles entre los destinatarios → dos envíos.
+    expect(fanOut).toHaveBeenCalledTimes(2);
+    const porMarca = new Map(
+      fanOut.mock.calls.map(([recipients, payload]) => [
+        (payload.in_app_payload as { audience?: string }).audience,
+        recipients,
+      ]),
+    );
+    expect(porMarca.get('staff')).toEqual([{ user_id: 'coach-1' }]);
+    // el emisor (fam-1) queda excluido, y fam-2 sigue recibiendo como familia
+    expect(porMarca.get('family')).toEqual([{ user_id: 'fam-2' }]);
+  });
+
+  it('si la RPC de papeles no está, notifica igual (sin marca) por la función de siempre', async () => {
+    // La red de seguridad: con la migración sin aplicar, la RPC devuelve error y sin
+    // este camino el chat de equipo se quedaría sin avisar a NADIE, en silencio.
+    const fanOut = spyFanOut();
+    const client = makeClient({
+      tables: {
+        team_conversations: {
+          selectMaybeSingle: { data: { id: 'tc-1', team_id: 'team-1', teams: { name: 'Alevín A' } } },
+        },
+        team_messages: { count: 0, insertSingle: { data: { id: 'tm-1', sender_profile_id: 'fam-1', body: 'Vamos equipo', created_at: '2026-01-01T00:00:00Z' }, error: null } },
+      },
+      rpcErrors: { team_chat_member_roles: { message: 'function does not exist' } },
+      rpc: { team_chat_member_profile_ids: ['fam-1', 'coach-1', 'fam-2'] },
+    });
+
+    const res = await sendTeamMessageFromClient(client, TEAM_ARGS, fanOut);
+
+    expect('ok' in res).toBe(true);
     expect(fanOut).toHaveBeenCalledTimes(1);
-    const [recipients] = fanOut.mock.calls[0]!;
-    // el emisor (fam-1) queda excluido
+    const [recipients, payload] = fanOut.mock.calls[0]!;
     expect(recipients).toEqual([{ user_id: 'coach-1' }, { user_id: 'fam-2' }]);
+    expect(payload.in_app_payload).not.toHaveProperty('audience');
   });
 
   it('NO miembro (RLS oculta el hilo) → not_found y fan-out NO se llama', async () => {
