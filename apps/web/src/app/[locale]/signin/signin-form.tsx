@@ -4,11 +4,20 @@ import { useActionState } from 'react';
 import { useTranslations } from 'next-intl';
 import { signInWithPassword, type SigninFormState } from './actions';
 
-export function SigninForm({ locale }: { locale: string }) {
+export function SigninForm({
+  locale,
+  initialError,
+}: {
+  locale: string;
+  /** Lo que pasó ANTES de llegar aquí; hoy solo `callback_failed`. */
+  initialError?: SigninFormState['error'];
+}) {
   const t = useTranslations('auth.signin');
+  // Va como estado INICIAL y no como un aviso aparte: así el primer intento de
+  // entrar lo sustituye solo, en vez de dejar dos mensajes a la vez en pantalla.
   const [state, formAction, isPending] = useActionState<SigninFormState, FormData>(
     signInWithPassword.bind(null, locale),
-    {},
+    { error: initialError },
   );
 
   return (
@@ -36,6 +45,11 @@ export function SigninForm({ locale }: { locale: string }) {
         />
       </label>
 
+      {state.error === 'callback_failed' && (
+        <p role="alert" className="text-sm text-amber-400">
+          {t('error_callback_failed')}
+        </p>
+      )}
       {state.error === 'invalid_input' && (
         <p role="alert" className="text-sm text-red-400">
           {t('error_invalid_input')}

@@ -61,6 +61,7 @@
       "error_email_not_confirmed": "You haven't verified your email yet. Check your inbox.",
       "error_generic": "We couldn't sign you in. Please try again.",
       "app_subtitle": "Sign in to your account",
+      "error_callback_failed": "We could not complete sign-in: the link has expired or has already been used. Sign in with your password or ask for a new link.",
       "app_error_invalid_input": "Check your email and password.",
       "app_error_invalid_credentials": "Wrong email or password.",
       "app_error_email_not_confirmed": "Confirm your email before signing in.",

@@ -8,11 +8,27 @@ import { SigninForm } from './signin-form';
 
 type Props = {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export default async function SigninPage({ params }: Props) {
+export default async function SigninPage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
+
+  /**
+   * `/auth/callback` manda aquí con `?error=callback_failed` cuando no puede
+   * completar el acceso: el enlace venía roto, caducado o ya usado.
+   *
+   * Hasta ahora ese parámetro no lo leía NADIE. El usuario aterrizaba en el login
+   * sin una palabra sobre lo que acababa de pasar, y se quedaba probando una
+   * contraseña que no era el problema. El motivo sí se reportaba —a Sentry—, o sea
+   * que lo sabíamos nosotros y no él.
+   *
+   * Solo se reconoce ESE valor: el parámetro viene de una URL y cualquiera puede
+   * escribir lo que quiera en él. Un código desconocido no pinta nada.
+   */
+  const { error } = await searchParams;
+  const inicial = error === 'callback_failed' ? 'callback_failed' : undefined;
 
   const adapter = await createCookieAdapter();
   const user = await getCurrentUser(adapter);
@@ -29,7 +45,7 @@ export default async function SigninPage({ params }: Props) {
           <h1 className="text-3xl font-bold text-[#10B981]">{t('title')}</h1>
           <p className="mt-2 text-sm text-zinc-300">{t('subtitle')}</p>
         </div>
-        <SigninForm locale={locale} />
+        <SigninForm locale={locale} initialError={inicial} />
         <div className="flex flex-col gap-2 text-sm text-zinc-400">
           <Link
             href={`/${locale}/forgot-password`}
