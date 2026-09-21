@@ -5132,6 +5132,13 @@ export type Database = {
         Args: { p_team_id: string }
         Returns: string[]
       }
+      team_chat_member_roles: {
+        Args: { p_team_id: string }
+        Returns: {
+          profile_id: string
+          audience: string
+        }[]
+      }
       team_chat_unread_counts: {
         Args: never
         Returns: {
