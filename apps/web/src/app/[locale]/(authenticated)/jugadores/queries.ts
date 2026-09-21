@@ -561,13 +561,24 @@ export async function loadPendingInvitePlayers(
   });
   if (candidates.length === 0) return EMPTY_PENDING;
 
-  // 2) Descartar los que YA tienen invitación pendiente vigente (no reinvitar).
+  // 2) Descartar los que YA tienen invitación DE TUTOR pendiente vigente (no
+  //    reinvitar). El filtro por rol y relación es el mismo —y por el mismo motivo—
+  //    que el de `lib/invite-tutor.ts`: con el mismo `player_id` conviven la del
+  //    tutor, la del SEGUIDOR (role='spectator', la crea la familia para el abuelo) y
+  //    la del MENOR (relation='self', la cuenta propia del hijo).
+  //
+  //    Sin filtrar, a un jugador cuya abuela tuviera invitación de seguidor pendiente
+  //    se le daba por "ya invitado" y DESAPARECÍA de la lista de pendientes: ni salía
+  //    en la pantalla de importación ni entraba en el lote. Su tutor no recibía nada,
+  //    y no había forma de notarlo — no es un error, es una ausencia.
   const candidateIds = candidates.map((r) => r.id);
   const nowIso = new Date().toISOString();
   const { data: pend } = await supabase
     .from('invitations')
     .select('player_id')
     .eq('club_id', clubId)
+    .eq('role', 'jugador')
+    .in('player_relation', ['parent', 'guardian'])
     .is('accepted_at', null)
     .gt('expires_at', nowIso)
     .in('player_id', candidateIds);
