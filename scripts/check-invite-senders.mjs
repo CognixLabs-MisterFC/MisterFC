@@ -90,8 +90,6 @@ const RESET = 'resetPasswordForEmail(';
 const CENSUS = {
   'apps/web/src/app/[locale]/(authenticated)/invitations/actions.ts': 1,
   'apps/web/src/app/[locale]/(authenticated)/jugadores/actions.ts': 2,
-  'apps/web/src/lib/platform/invite-club-admin.ts': 1,
-  'apps/web/src/lib/platform/change-club-admin.ts': 1,
 };
 
 /**
@@ -104,10 +102,14 @@ const CENSUS = {
  *
  *   7 performSpectatorInvite ......... packages/core/src/spectators/index.ts → seguidor
  *   8 performSelfInvite .............. packages/core/src/invitations/self-invite.ts → menor
+ *   3 inviteClubAdmin ................ apps/web/src/lib/platform/invite-club-admin.ts → admin
+ *   4 changeClubAdmin ................ apps/web/src/lib/platform/change-club-admin.ts → admin
  */
 const CENSUS_RESEND = {
   'packages/core/src/spectators/index.ts': 1,
   'packages/core/src/invitations/self-invite.ts': 1,
+  'apps/web/src/lib/platform/invite-club-admin.ts': 1,
+  'apps/web/src/lib/platform/change-club-admin.ts': 1,
 };
 
 /** Líneas de comentario (`//`, `/*`, ` *`): el contrato y los docs citan la llamada. */
