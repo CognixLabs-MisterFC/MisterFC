@@ -35,8 +35,9 @@
  *     Correo-B1 a esa persona se le manda el MISMO correo de invitación que a los
  *     demás, así que la función se borró de core al cerrar la serie.
  *   · `resetPasswordForEmail(` — invitar con un asunto de "restablecer contraseña".
- *     Sigue siendo legítimo donde toca (/forgot-password y el perfil de la app), pero
- *     no en un fichero que invita.
+ *     Donde toca sigue siendo legítimo —quedan las dos puertas de la app, censadas en
+ *     `check-correo-recuperacion.mjs`—, pero no en un fichero que invita. La web ya no
+ *     lo usa: su correo de recuperación también sale por Resend.
  *
  * Y ADEMÁS: que el correo que manda cada sender TENGA TEXTO en los tres idiomas. Ver
  * la nota de esa sección, más abajo.

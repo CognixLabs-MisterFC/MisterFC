@@ -26,6 +26,7 @@
     "check:textos-legales": "node scripts/check-textos-legales.mjs",
     "legal:generar": "node scripts/generar-textos-legales.mjs",
     "check:plantillas-correo": "node scripts/check-plantillas-correo.mjs",
+    "check:correo-recuperacion": "node scripts/check-correo-recuperacion.mjs",
     "plantillas:diff": "node scripts/plantillas-diff.mjs",
     "plantillas:aplicar": "node scripts/plantillas-aplicar.mjs",
     "gen:import-template": "node scripts/generate-import-template.mjs",
