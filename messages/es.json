@@ -1516,6 +1516,13 @@
         "parent": "Padre/madre",
         "guardian": "Tutor legal",
         "self": "El propio jugador"
+      },
+      "invite_kind": {
+        "parent": "Tutor (padre/madre)",
+        "guardian": "Tutor legal",
+        "self": "Cuenta del jugador",
+        "spectator": "Seguidor",
+        "unknown": "Tipo de invitación desconocido"
       }
     },
     "tutor": {

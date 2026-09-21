@@ -1516,6 +1516,13 @@
         "parent": "Parent",
         "guardian": "Legal guardian",
         "self": "The player themselves"
+      },
+      "invite_kind": {
+        "parent": "Parent",
+        "guardian": "Legal guardian",
+        "self": "Player's own account",
+        "spectator": "Follower",
+        "unknown": "Unknown invitation type"
       }
     },
     "tutor": {
