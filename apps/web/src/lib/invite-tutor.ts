@@ -1,11 +1,11 @@
 import 'server-only';
-import { headers } from 'next/headers';
 import * as Sentry from '@sentry/nextjs';
 import {
   createSupabaseAdminClient,
   createSupabaseServerClient,
   inviteEmailMetadata,
   isEmailAlreadyExistsError,
+  inviteLink,
 } from '@misterfc/core';
 import { linkInvitedUser } from '@/lib/link-invited-user';
 import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
@@ -156,10 +156,9 @@ export async function sendOrRenewTutorInvitation(
   if (!invite) return { error: 'generic' };
 
   // 2) El enlace del correo: directo a /invite/{token}, como siempre.
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
-  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
+  // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
+  const redirectTo = inviteLink(locale, invite.token);
 
   const admin = createSupabaseAdminClient();
 

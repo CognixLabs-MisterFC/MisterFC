@@ -28,3 +28,21 @@ export {
   isTutorAccount,
   hasLinkedFamily,
 } from './players/family-link';
+
+/**
+ * Los enlaces profundos. Entra ENTERO porque `deep-links/index.ts` no importa
+ * nada: son constantes y dos funciones que arman texto.
+ *
+ * Lo que cierra: `apps/native/src/deep-links/incoming.ts` tenia el host y los
+ * idiomas escritos A MANO, y la cabecera de ese mismo modulo de core avisa de que
+ * ese es justo el modo en que esto falla —si una copia se queda atras, el enlace
+ * deja de abrir la app y NO hay ningun error—. Ahora los lee de aqui.
+ */
+export {
+  DEEP_LINK_HOST,
+  DEEP_LINK_LOCALES,
+  INVITE_SEGMENT,
+  WEB_ORIGIN,
+  inviteLink,
+  inviteLinkBase,
+} from './deep-links/index';

@@ -17,14 +17,20 @@
  * que siga el camino normal». Devolver una ruta inventada para un enlace desconocido
  * mandaría a la app a una pantalla que no existe.
  */
+import { DEEP_LINK_HOST, DEEP_LINK_LOCALES } from '@misterfc/core/rules';
 
 /** El fragmento y la query se tiran: el token viaja en la RUTA. */
 function soloRuta(raw: string): string {
   return raw.split('#')[0]?.split('?')[0] ?? '';
 }
 
-const HOST = 'misterfc.es';
-const LOCALES = new Set(['es', 'en', 'va']);
+// El host y los idiomas vienen de core por `@misterfc/core/rules`, la entrada SIN
+// cliente de Supabase: estaban escritos a mano aqui, y la cabecera del modulo de
+// core avisa de que una copia que se queda atras rompe el enlace en silencio.
+// `rules` no arrastra nada, asi que este modulo sigue siendo puro y sus tests
+// rapidos (medido: 0,3 s de collect, frente a 10,4 s por el barrel).
+const HOST = DEEP_LINK_HOST;
+const LOCALES = new Set<string>(DEEP_LINK_LOCALES);
 
 /**
  * Los segmentos de la ruta, o `null` si la URL no es nuestra.

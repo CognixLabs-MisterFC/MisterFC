@@ -21,7 +21,9 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createSupabaseAdminClient, inviteSpectatorSchema } from '@misterfc/core';
+import { createSupabaseAdminClient, inviteSpectatorSchema,
+  inviteLinkBase,
+} from '@misterfc/core';
 import { resolveUserFromRequest } from '@/lib/resolve-user';
 import { performSelfInvite } from '@/lib/invite-self';
 
@@ -66,9 +68,9 @@ export async function POST(req: Request) {
 
   const locale =
     typeof b.locale === 'string' && LOCALE_RE.test(b.locale) ? b.locale : 'es';
-  const host = req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '';
-  const proto = req.headers.get('x-forwarded-proto') ?? 'https';
-  const linkBase = `${proto}://${host}/${locale}/invite`;
+  // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
+  const linkBase = inviteLinkBase(locale);
 
   const admin = createSupabaseAdminClient();
   const res = await performSelfInvite(auth.supabase, admin, {

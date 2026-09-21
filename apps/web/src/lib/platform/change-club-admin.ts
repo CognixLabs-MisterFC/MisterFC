@@ -1,12 +1,12 @@
 'use server';
 
-import { headers } from 'next/headers';
 import * as Sentry from '@sentry/nextjs';
 import {
   createSupabaseServerClient,
   createSupabaseAdminClient,
   inviteEmailMetadata,
   isEmailAlreadyExistsError,
+  inviteLink,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
@@ -109,10 +109,9 @@ export async function changeClubAdmin(input: {
   }
 
   // Paso 2: enviar el email (patrón inviteClubAdmin).
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
-  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
+  // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
+  const redirectTo = inviteLink(locale, invite.token);
 
   const admin = createSupabaseAdminClient();
 

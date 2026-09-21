@@ -10,6 +10,10 @@ import {
   IOS_APP_ID,
   buildAppleAppSiteAssociation,
   buildAssetLinks,
+  ANDROID_DEBUG_KEYSTORE_SHA256,
+  WEB_ORIGIN,
+  inviteLink,
+  inviteLinkBase,
 } from '../index';
 
 /**
@@ -129,5 +133,55 @@ describe('apple-app-site-association', () => {
 
   it('hay una ruta por idioma de la web', () => {
     expect(INVITE_DEEP_LINK_PATHS).toHaveLength(DEEP_LINK_LOCALES.length);
+  });
+});
+
+/**
+ * EL FALLO QUE ESTO IMPIDE. Un APK local no verifica los App Links porque
+ * `build-apk.sh` lo firma con el `debug.keystore` de la plantilla de Expo. La
+ * "solucion" tentadora es añadir esa huella aqui y que el enlace funcione en el
+ * movil de quien prueba. Seria un agujero: ese keystore es el UNIVERSAL —lo tiene
+ * cualquiera que haya abierto un proyecto Android—, asi que cualquier app firmada
+ * con el quedaria verificada como manejadora oficial de los enlaces de invitacion
+ * de misterfc.es. Y las invitaciones son de menores.
+ */
+describe('la huella de depuracion NO puede estar publicada', () => {
+  it('assetlinks no lleva el debug.keystore universal', () => {
+    expect(ANDROID_CERT_SHA256).not.toContain(ANDROID_DEBUG_KEYSTORE_SHA256);
+  });
+
+  // Ancla positiva: si la constante se vaciara, el `not.toContain` de arriba
+  // pasaria sin comprobar nada.
+  it('y la huella prohibida sigue teniendo forma de SHA-256', () => {
+    expect(ANDROID_DEBUG_KEYSTORE_SHA256).toMatch(/^([0-9A-F]{2}:){31}[0-9A-F]{2}$/);
+  });
+});
+
+/**
+ * El enlace del correo sale de UNA constante, no del host de la peticion. Antes lo
+ * componian nueve senders con `x-forwarded-host`: desde un preview de Vercel salia
+ * un enlace a `…vercel.app`, donde no hay ni assetlinks ni AASA.
+ */
+describe('el enlace de invitacion', () => {
+  it('sale siempre de https://misterfc.es', () => {
+    expect(WEB_ORIGIN).toBe('https://misterfc.es');
+    expect(inviteLink('es', 'abc')).toBe('https://misterfc.es/es/invite/abc');
+  });
+
+  it('cae en una ruta que el fichero de Apple reclama, en los tres idiomas', () => {
+    for (const locale of DEEP_LINK_LOCALES) {
+      const url = inviteLink(locale, 'tok');
+      expect(url.startsWith(`https://${DEEP_LINK_HOST}/${locale}/invite/`)).toBe(true);
+      expect(INVITE_DEEP_LINK_PATHS).toContain(`/${locale}/invite/*`);
+    }
+  });
+
+  it('un locale que no es de la web cae a es, no rompe el enlace', () => {
+    expect(inviteLinkBase('de')).toBe('https://misterfc.es/es/invite');
+  });
+
+  // El host EXACTO importa: www no tiene certificado ni ficheros.
+  it('nunca sale con www', () => {
+    expect(inviteLink('es', 'x')).not.toContain('www.');
   });
 });
