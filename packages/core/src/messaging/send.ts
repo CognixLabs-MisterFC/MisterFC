@@ -254,47 +254,90 @@ export async function sendTeamMessageFromClient(
   }
 
   try {
-    const { data: memberIds } = await supabase.rpc(
-      'team_chat_member_profile_ids',
+    // El papel de cada destinatario lo resuelve la BD (`team_chat_member_roles`,
+    // migración 20261091000000), no el cliente. Ver el bloque de abajo.
+    const { data: memberRoles, error: rolesError } = await supabase.rpc(
+      'team_chat_member_roles',
       { p_team_id: conv.team_id },
     );
-    const recipients = ((memberIds ?? []) as string[]).filter(
-      (id) => id !== args.senderId,
-    );
+
+    // RED DE SEGURIDAD, no adorno. Si esta pieza llegara a producción antes de que la
+    // migración esté APLICADA, la función no existiría, la RPC devolvería error y el
+    // chat de equipo se quedaría SIN NOTIFICAR A NADIE — en silencio, porque el
+    // fan-out va dentro de un try/catch que no frena el envío del mensaje. Cayendo a
+    // la función de siempre, lo peor que pasa es que los avisos vuelven a abrirse en
+    // el hogar de cada uno, que es exactamente lo que hacían hasta ahora. El fallo se
+    // reporta para que no pase desapercibido si se queda así.
+    let recipients: { profile_id: string; audience: string | null }[];
+    if (rolesError || memberRoles == null) {
+      const { data: memberIds } = await supabase.rpc(
+        'team_chat_member_profile_ids',
+        { p_team_id: conv.team_id },
+      );
+      recipients = ((memberIds ?? []) as string[]).map((id) => ({
+        profile_id: id,
+        audience: null,
+      }));
+      log(
+        rolesError ?? new Error('team_chat_member_roles no devolvió filas'),
+        'notify_team_roles_fallback',
+        { team_id: conv.team_id },
+      );
+    } else {
+      recipients = memberRoles;
+    }
+    recipients = recipients.filter((r) => r.profile_id !== args.senderId);
     if (recipients.length > 0) {
       const senderName = args.senderName ?? 'Mensaje nuevo';
       const preview = body.slice(0, 140);
       const deepLink = `/${args.locale}/mensajes/equipo/${conv.team_id}`;
-      // SIN MARCA DE AUDIENCIA, Y NO ES UN OLVIDO. El chat de equipo lo componen
-      // TRES audiencias a la vez —staff del equipo ∪ familias del roster ∪ dirección
-      // del club, ver `team_chat_member_profile_ids`— y la RPC devuelve una lista
-      // plana de profile_ids: no dice por qué está cada uno. Partirla desde aquí
-      // exigiría releer team_staff y memberships bajo la RLS del que envía, donde una
-      // familia no ve lo mismo que un coach: una lectura recortada clasificaría a un
-      // entrenador como familia y le abriría el área que no es. Un aviso de un chat
-      // de equipo llega POR SER DEL EQUIPO, en el papel que sea, así que el hogar de
-      // cada uno es una respuesta defendible; inventarse el papel no lo es. Si algún
-      // día se quiere partir, el sitio es una RPC que devuelva (profile_id, papel).
-      await fanOut(
-        recipients.map((u) => ({ user_id: u })),
-        {
-          type: 'new_message',
-          in_app_payload: {
-            team_conversation_id: args.teamConversationId,
-            message_id: inserted.id,
-            team_id: conv.team_id,
-            sender_profile_id: args.senderId,
-            deep_link: deepLink,
+      // UNA MARCA POR PAPEL, Y UN ENVÍO POR MARCA. El chat de equipo lo componen
+      // TRES audiencias a la vez —staff del equipo, familias del roster y dirección
+      // con participación activa—, así que aquí no hay una audiencia sino tres, y
+      // cada destinatario necesita la SUYA para que el push le abra su área.
+      //
+      // El papel lo dice la BD y no este código. Calcularlo aquí obligaría a releer
+      // team_staff y memberships bajo la RLS del que envía, donde una familia y un
+      // coach no ven lo mismo: una lectura recortada clasificaría a un entrenador
+      // como familia y le abriría el área que no es. `team_chat_member_roles` lo
+      // resuelve en una sola consulta, del lado que ve el club entero, y con la misma
+      // regla que el resto de la serie — gana el papel de TRABAJO: staff, luego
+      // direction, luego family.
+      //
+      // El `dedupe_base_prefix` no cambia entre grupos: el sufijo del bus es el
+      // `user_id` y la RPC da UN papel por persona, así que los grupos son disjuntos.
+      // `null` = un envío SIN marca (el del fallback de arriba): se comporta como
+      // antes de esta serie y el push abre el hogar de cada uno.
+      const porAudiencia = new Map<string | null, string[]>();
+      for (const r of recipients) {
+        const lista = porAudiencia.get(r.audience);
+        if (lista) lista.push(r.profile_id);
+        else porAudiencia.set(r.audience, [r.profile_id]);
+      }
+      for (const [audiencia, destinatarios] of porAudiencia) {
+        await fanOut(
+          destinatarios.map((u) => ({ user_id: u })),
+          {
+            type: 'new_message',
+            in_app_payload: {
+              team_conversation_id: args.teamConversationId,
+              message_id: inserted.id,
+              team_id: conv.team_id,
+              sender_profile_id: args.senderId,
+              deep_link: deepLink,
+              ...(audiencia ? audienceMark(audiencia as NotificationAudience) : {}),
+            },
+            push_payload: {
+              title: teamName ? teamName : senderName,
+              body: `${senderName}: ${preview}`,
+              deep_link: deepLink,
+              tag: `team_conversation:${args.teamConversationId}`,
+              ...(audiencia ? audienceMark(audiencia as NotificationAudience) : {}),
+            },
+            dedupe_base_prefix: `new_message:${inserted.id}`,
           },
-          push_payload: {
-            title: teamName ? teamName : senderName,
-            body: `${senderName}: ${preview}`,
-            deep_link: deepLink,
-            tag: `team_conversation:${args.teamConversationId}`,
-          },
-          dedupe_base_prefix: `new_message:${inserted.id}`,
-        },
-      );
+        );
+      }
     }
   } catch (notifyErr) {
     log(notifyErr, 'notify_team', { message_id: inserted.id });

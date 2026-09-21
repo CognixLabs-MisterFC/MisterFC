@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { sendDirectMessageFromClient, type MessageFanOut } from '../send';
+import {
+  sendDirectMessageFromClient,
+  sendTeamMessageFromClient,
+  type MessageFanOut,
+} from '../send';
 import type { Database } from '../../supabase/types';
 
 /**
@@ -148,5 +152,159 @@ describe('sendDirectMessageFromClient — marca de audiencia', () => {
       tag: `conversation:${CONV}`,
       deep_link: `/es/mensajes/${CONV}`,
     });
+  });
+});
+
+/**
+ * PUSH-ÁREA — el chat de EQUIPO, con el papel de cada uno.
+ *
+ * Aquí no hay una audiencia sino tres a la vez (staff del equipo, familias del roster
+ * y dirección con participación activa), así que el emisor parte el fan-out en un
+ * envío por papel. El papel NO lo calcula este código: lo dice
+ * `team_chat_member_roles` (migración 20261091000000), que ve el club entero en vez de
+ * lo que la RLS deja ver al que envía.
+ */
+const TEAM_CONV = 'eeeeeeee-0000-4000-8000-000000000002';
+const TEAM = 'bbbbbbbb-0000-4000-8000-000000000001';
+const T_COACH = 'dddddddd-0000-4000-8000-000000000010';
+const T_DIR = 'dddddddd-0000-4000-8000-000000000011';
+const T_PADRE = 'dddddddd-0000-4000-8000-000000000012';
+
+/** Mock que además responde a `rpc(nombre)` con lo que se le ponga en cola. */
+function makeTeamClient(
+  responses: Record<string, Term[]>,
+  rpcs: Record<string, Term>,
+) {
+  const base = makeClient(responses) as unknown as {
+    from: (t: string) => unknown;
+  };
+  return {
+    from: base.from,
+    rpc: (name: string) => Promise.resolve(rpcs[name] ?? { data: null, error: null }),
+  } as unknown as SupabaseClient<Database>;
+}
+
+function colasEquipo(): Record<string, Term[]> {
+  return {
+    team_conversations: [
+      { data: { id: TEAM_CONV, team_id: TEAM, teams: { name: 'Alevín A' } } },
+    ],
+    team_messages: [
+      { count: 0 },
+      {
+        data: {
+          id: 'ffffffff-0000-4000-8000-000000000002',
+          sender_profile_id: T_COACH,
+          body: 'entreno a las 18h',
+          created_at: '2026-09-21T10:00:00Z',
+        },
+      },
+    ],
+  };
+}
+
+describe('sendTeamMessageFromClient — un envío por papel', () => {
+  it('parte el fan-out en tres, cada uno con su marca', async () => {
+    const { fn, calls } = capturingFanOut();
+    const client = makeTeamClient(colasEquipo(), {
+      team_chat_member_roles: {
+        data: [
+          { profile_id: T_COACH, audience: 'staff' },
+          { profile_id: T_DIR, audience: 'direction' },
+          { profile_id: T_PADRE, audience: 'family' },
+        ],
+      },
+    });
+
+    const res = await sendTeamMessageFromClient(
+      client,
+      { teamConversationId: TEAM_CONV, body: 'entreno a las 18h', senderId: 'otro', senderName: 'Mister', locale: 'es' },
+      fn,
+    );
+
+    expect('ok' in res).toBe(true);
+    expect(calls).toHaveLength(3);
+    const porMarca = new Map(
+      calls.map(([recipients, payload]) => [
+        (payload.in_app_payload as { audience?: string }).audience,
+        recipients.map((r) => r.user_id),
+      ]),
+    );
+    expect(porMarca.get('staff')).toEqual([T_COACH]);
+    expect(porMarca.get('direction')).toEqual([T_DIR]);
+    expect(porMarca.get('family')).toEqual([T_PADRE]);
+    // Y en los dos payloads, como en el resto de la serie.
+    for (const [, payload] of calls) {
+      expect(payload.push_payload).toHaveProperty('audience');
+    }
+  });
+
+  it('agrupa: dos personas del mismo papel van en UN envío', async () => {
+    const { fn, calls } = capturingFanOut();
+    const client = makeTeamClient(colasEquipo(), {
+      team_chat_member_roles: {
+        data: [
+          { profile_id: T_COACH, audience: 'staff' },
+          { profile_id: T_DIR, audience: 'staff' },
+        ],
+      },
+    });
+
+    await sendTeamMessageFromClient(
+      client,
+      { teamConversationId: TEAM_CONV, body: 'hola', senderId: 'otro', senderName: 'M', locale: 'es' },
+      fn,
+    );
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]![0].map((r) => r.user_id)).toEqual([T_COACH, T_DIR]);
+  });
+
+  it('el emisor no se avisa a sí mismo', async () => {
+    const { fn, calls } = capturingFanOut();
+    const client = makeTeamClient(colasEquipo(), {
+      team_chat_member_roles: {
+        data: [
+          { profile_id: T_COACH, audience: 'staff' },
+          { profile_id: T_PADRE, audience: 'family' },
+        ],
+      },
+    });
+
+    await sendTeamMessageFromClient(
+      client,
+      { teamConversationId: TEAM_CONV, body: 'hola', senderId: T_COACH, senderName: 'M', locale: 'es' },
+      fn,
+    );
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]![0].map((r) => r.user_id)).toEqual([T_PADRE]);
+  });
+
+  it('RED DE SEGURIDAD: si la RPC nueva falla, se notifica como antes', async () => {
+    // El caso que esto evita: la migración todavía no aplicada → la función no
+    // existe → sin fallback, el chat de equipo se queda sin avisar a NADIE, y en
+    // silencio. Con fallback, todos reciben; lo único que se pierde es la marca.
+    const { fn, calls } = capturingFanOut();
+    const client = makeTeamClient(colasEquipo(), {
+      team_chat_member_roles: {
+        data: null,
+        error: { message: 'function public.team_chat_member_roles does not exist' },
+      },
+      team_chat_member_profile_ids: { data: [T_COACH, T_PADRE] },
+    });
+
+    const res = await sendTeamMessageFromClient(
+      client,
+      { teamConversationId: TEAM_CONV, body: 'hola', senderId: 'otro', senderName: 'M', locale: 'es' },
+      fn,
+    );
+
+    expect('ok' in res).toBe(true);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]![0].map((r) => r.user_id)).toEqual([T_COACH, T_PADRE]);
+    // Sin marca: el push vuelve a abrir el hogar de cada uno, como antes de la serie.
+    expect(calls[0]![1].in_app_payload).not.toHaveProperty('audience');
+    expect(calls[0]![1].push_payload).not.toHaveProperty('audience');
   });
 });
