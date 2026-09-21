@@ -5703,6 +5703,15 @@
       "fallback": "If the button does not work, copy this address into your browser:",
       "ignore": "If you were not expecting this invitation, you can ignore this email: nothing will be created in your name.",
       "signature": "The MisterFC team"
+    },
+    "tutor_invite": {
+      "subject": "You have been invited to MisterFC, your club's app",
+      "heading": "You have been invited to MisterFC",
+      "body": "Your child's club uses MisterFC: there you will see their call-ups, their training sessions and messages from the coach. Use this link to accept the invitation and create your account.",
+      "cta": "Accept the invitation",
+      "fallback": "If the button does not work, copy this address into your browser:",
+      "ignore": "If you were not expecting this invitation, you can ignore this email: nothing will be created in your name.",
+      "signature": "The MisterFC team"
     }
   }
 }

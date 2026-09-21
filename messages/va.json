@@ -5703,6 +5703,15 @@
       "fallback": "Si el botó no funciona, copia aquesta adreça al teu navegador:",
       "ignore": "Si no esperaves aquesta invitació, pots ignorar aquest correu: no es crearà res al teu nom.",
       "signature": "L'equip de MisterFC"
+    },
+    "tutor_invite": {
+      "subject": "T'han convidat a MisterFC, l'app del teu club",
+      "heading": "T'han convidat a MisterFC",
+      "body": "El club del teu fill o filla utilitza MisterFC: ahí veuràs les seues convocatòries, els seus entrenaments i els missatges de l'entrenador. Entra amb aquest enllaç per a acceptar la invitació i crear el teu compte.",
+      "cta": "Acceptar la invitació",
+      "fallback": "Si el botó no funciona, copia aquesta adreça al teu navegador:",
+      "ignore": "Si no esperaves aquesta invitació, pots ignorar aquest correu: no es crearà res al teu nom.",
+      "signature": "L'equip de MisterFC"
     }
   }
 }

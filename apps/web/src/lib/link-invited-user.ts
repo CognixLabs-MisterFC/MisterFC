@@ -14,7 +14,7 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *
  *   Censo de senders (2026-09-19) — quien añada el 9º, que se sume aquí:
  *     1 sendInvitation (invitations/actions.ts)      ✅ enlaza
- *     2 sendOrRenewTutorInvitation (jugadores)       ✅ enlaza
+ *     2 sendOrRenewTutorInvitation (invite-tutor.ts) ✅ enlaza
  *     3 inviteClubAdmin (platform/invite-club-admin) ✅ enlaza
  *     4 changeClubAdmin (platform/change-club-admin) ✅ enlaza
  *     5 inviteBatch (jugadores, import)              ✅ enlaza
@@ -26,12 +26,18 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   comentarios viejos que citan "el 6" sigan diciendo la verdad.
  *   El barrido de #540 buscó el `.update`, no el envío, y se le escaparon 5/6/7.
  *
- *   OJO al buscar (Correo-B1): ya NO basta con `grep -rn inviteUserByEmail`. El 7
- *   crea la cuenta con `auth.admin.createUser(` —que no manda correo— y manda él el
- *   suyo, en el idioma del destinatario; la serie Correo-B irá pasando a los demás.
+ *   OJO al buscar (Correo-B): ya NO basta con `grep -rn inviteUserByEmail`. Los
+ *   migrados crean la cuenta con `auth.admin.createUser(` —que no manda correo— y
+ *   mandan ellos el suyo, en el idioma del destinatario. A 2026-09-21 van 5 (el 7,
+ *   el 8, el 3, el 4 y el 2) y quedan 2 por GoTrue: el 1 y el 5.
  *   Los dos literales de búsqueda son `inviteUserByEmail(` y `createUser(`, y el
  *   guard de CI cuenta los dos censos por separado. Lo que NO cambia es esto: el que
  *   CREA la cuenta enlaza, venga el correo de donde venga.
+ *
+ *   El 2 se mudó a `lib/invite-tutor.ts` en Correo-B4: compartía fichero con el 5
+ *   (`jugadores/actions.ts`) y, migrado solo él, el fichero quedaba con las DOS
+ *   llamadas — que es como el guard de CI describe un sender a medio migrar. Ver la
+ *   nota de scripts/check-invite-senders.mjs.
  *
  *   El 7 y el 8 viven en `packages/core`, que NO puede importar Sentry ni este
  *   helper. Se resuelve con un PUERTO INYECTADO: cada uno recibe un parámetro

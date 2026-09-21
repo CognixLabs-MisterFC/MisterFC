@@ -37,6 +37,15 @@
  * Lo que este guard impide en los dos casos es lo de siempre —un sender nuevo sin que
  * nadie lo vea— y ahora además que un sender se quede A MEDIO MIGRAR: con las dos
  * llamadas a la vez mandaría dos correos, y sin ninguna no mandaría ninguno.
+ *
+ * ESA REGLA ES POR FICHERO, y en Correo-B4 eso obligó a MOVER un sender. En
+ * `jugadores/actions.ts` vivían dos —`sendOrRenewTutorInvitation` e `inviteBatch`— y
+ * migrar solo el primero dejaba el fichero con las dos llamadas: indistinguible de un
+ * sender a medias. Se separó el sender (`apps/web/src/lib/invite-tutor.ts`) en vez de
+ * ablandar la regla, porque la regla mide lo que importa —cuántos correos recibe el
+ * invitado— y contar por sender en vez de por fichero exigiría parsear de verdad el
+ * TypeScript. Si vuelve a pasar, la respuesta es la misma: sacar el sender a su
+ * fichero.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -70,15 +79,15 @@ const EXISTING = 'sendInviteToExistingUser(';
 const RESET = 'resetPasswordForEmail(';
 
 /**
- * CENSO (fichero → nº de llamadas). Los 7 senders viven en 6 ficheros, y cada
+ * CENSO (fichero → nº de llamadas). Los 7 senders viven en 7 ficheros, y cada
  * uno manda su `invite_kind` a la plantilla (A-1):
- *   1 sendInvitation ................ invitations/actions.ts            → staff
- *   2 sendOrRenewTutorInvitation ..... jugadores/actions.ts               → tutor
- *   5 inviteBatch .................... jugadores/actions.ts  (2 en el mismo fichero) → tutor
- *   3 inviteClubAdmin ................ lib/platform/invite-club-admin.ts  → admin
- *   4 changeClubAdmin ................ lib/platform/change-club-admin.ts  → admin
- *   7 performSpectatorInvite ......... packages/core/src/spectators/index.ts → seguidor
- *   8 performSelfInvite .............. packages/core/src/invitations/self-invite.ts → menor
+ *   1 sendInvitation ................ invitations/actions.ts             → staff
+ *   2 sendOrRenewTutorInvitation .... lib/invite-tutor.ts                → tutor
+ *   5 inviteBatch ................... jugadores/actions.ts               → tutor
+ *   3 inviteClubAdmin ............... lib/platform/invite-club-admin.ts  → admin
+ *   4 changeClubAdmin ............... lib/platform/change-club-admin.ts  → admin
+ *   7 performSpectatorInvite ........ packages/core/src/spectators/index.ts → seguidor
+ *   8 performSelfInvite ............. packages/core/src/invitations/self-invite.ts → menor
  *
  * El 6 (inviteStaffToTeam, equipos/[teamId]) SE RETIRÓ en BUG 3 · A-3: invitar
  * dejó de vivir en la página de un equipo. Su hueco NO se reutiliza y la
@@ -89,7 +98,7 @@ const RESET = 'resetPasswordForEmail(';
  */
 const CENSUS = {
   'apps/web/src/app/[locale]/(authenticated)/invitations/actions.ts': 1,
-  'apps/web/src/app/[locale]/(authenticated)/jugadores/actions.ts': 2,
+  'apps/web/src/app/[locale]/(authenticated)/jugadores/actions.ts': 1,
 };
 
 /**
@@ -104,12 +113,16 @@ const CENSUS = {
  *   8 performSelfInvite .............. packages/core/src/invitations/self-invite.ts → menor
  *   3 inviteClubAdmin ................ apps/web/src/lib/platform/invite-club-admin.ts → admin
  *   4 changeClubAdmin ................ apps/web/src/lib/platform/change-club-admin.ts → admin
+ *   2 sendOrRenewTutorInvitation ..... apps/web/src/lib/invite-tutor.ts → tutor
+ *
+ * Quedan 2 por migrar: el del cuerpo técnico (1) y el del lote (5).
  */
 const CENSUS_RESEND = {
   'packages/core/src/spectators/index.ts': 1,
   'packages/core/src/invitations/self-invite.ts': 1,
   'apps/web/src/lib/platform/invite-club-admin.ts': 1,
   'apps/web/src/lib/platform/change-club-admin.ts': 1,
+  'apps/web/src/lib/invite-tutor.ts': 1,
 };
 
 /** Líneas de comentario (`//`, `/*`, ` *`): el contrato y los docs citan la llamada. */

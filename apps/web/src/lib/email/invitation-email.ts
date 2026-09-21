@@ -94,6 +94,7 @@ const NAMESPACE_BY_KIND: Partial<Record<InviteKind, string>> = {
   seguidor: 'emails.spectator_invite',
   menor: 'emails.self_invite',
   admin: 'emails.admin_invite',
+  tutor: 'emails.tutor_invite',
 };
 
 /**
