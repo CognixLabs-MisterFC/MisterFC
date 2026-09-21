@@ -5,7 +5,19 @@ import { signinSchema, createSupabaseServerClient } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
 export type SigninFormState = {
-  error?: 'invalid_input' | 'invalid_credentials' | 'email_not_confirmed' | 'generic';
+  error?:
+    | 'invalid_input'
+    | 'invalid_credentials'
+    | 'email_not_confirmed'
+    | 'generic'
+    /**
+     * NO lo devuelve esta acción: entra como estado INICIAL cuando `/auth/callback`
+     * nos ha mandado aquí con `?error=callback_failed`. Vive en la misma unión
+     * porque es el mismo sitio de la pantalla y, sobre todo, porque así el primer
+     * envío del formulario lo sustituye solo — que es lo que hay que hacer con un
+     * aviso de lo que pasó ANTES de que la persona escribiera nada.
+     */
+    | 'callback_failed';
 };
 
 /**

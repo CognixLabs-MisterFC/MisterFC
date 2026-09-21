@@ -61,6 +61,7 @@
       "error_email_not_confirmed": "Encara no has verificat el teu correu. Revisa la safata d'entrada.",
       "error_generic": "No hem pogut iniciar la sessió. Torna-ho a provar.",
       "app_subtitle": "Entra amb el teu compte",
+      "error_callback_failed": "No hem pogut completar l'accés: l'enllaç ha caducat o ja s'ha fet servir. Entra amb la teua contrasenya o demana un enllaç nou.",
       "app_error_invalid_input": "Revisa el correu i la contrasenya.",
       "app_error_invalid_credentials": "Correu o contrasenya incorrectes.",
       "app_error_email_not_confirmed": "Confirma el teu correu abans d’entrar.",

@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import * as Sentry from '@sentry/nextjs';
-import { planAuthCallback } from '@misterfc/core';
+import { planAuthCallback, localeFromPath } from '@misterfc/core';
+import { routing } from '@/i18n/routing';
 
 /**
  * Callback del magic link de Supabase Auth.
@@ -31,6 +32,21 @@ import { planAuthCallback } from '@misterfc/core';
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
+
+  /**
+   * A dónde mandar a alguien si esto sale mal, Y EN QUÉ IDIOMA. Esta ruta vive fuera
+   * del segmento `[locale]`, así que el idioma no llega por parámetro: se lee del
+   * destino al que la persona iba. Antes estaba escrito a mano como `/es/signin`, y
+   * el aviso de «no hemos podido completar el acceso» habría sido inalcanzable en
+   * valenciano y en inglés.
+   */
+  const locale = localeFromPath(
+    searchParams.get('next'),
+    routing.locales,
+    routing.defaultLocale,
+  );
+  const signinConError = `${origin}/${locale}/signin?error=callback_failed`;
+
   const plan = planAuthCallback({
     code: searchParams.get('code'),
     tokenHash: searchParams.get('token_hash'),
@@ -53,7 +69,7 @@ export async function GET(request: NextRequest) {
         type_param: searchParams.get('type'),
       },
     });
-    return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
+    return NextResponse.redirect(signinConError);
   }
 
   // Construimos el redirect ANTES de exchangear, para escribir cookies sobre él.
@@ -66,7 +82,7 @@ export async function GET(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !anon) {
-    return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
+    return NextResponse.redirect(signinConError);
   }
 
   const supabase = createServerClient(url, anon, {
@@ -90,7 +106,7 @@ export async function GET(request: NextRequest) {
       Sentry.captureException(error, {
         tags: { feature: 'auth', step: 'callback_exchange' },
       });
-      return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
+      return NextResponse.redirect(signinConError);
     }
   } else {
     const { error } = await supabase.auth.verifyOtp({
@@ -102,7 +118,7 @@ export async function GET(request: NextRequest) {
       Sentry.captureException(error, {
         tags: { feature: 'auth', step: 'callback_verify' },
       });
-      return NextResponse.redirect(`${origin}/es/signin?error=callback_failed`);
+      return NextResponse.redirect(signinConError);
     }
   }
 

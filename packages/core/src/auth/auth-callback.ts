@@ -70,3 +70,35 @@ export function planAuthCallback(input: AuthCallbackInput): AuthCallbackPlan {
   if (destination === '/') return { kind: 'fail', reason: 'sin_artefactos' };
   return { kind: 'passthrough', destination };
 }
+
+/**
+ * EL IDIOMA AL QUE DEVOLVER A ALGUIEN, sacado de la ruta a la que iba.
+ *
+ * `/auth/callback` es un Route Handler y vive FUERA del segmento `[locale]`: no
+ * recibe el idioma por parámetro. Cuando algo falla hay que mandar a la persona al
+ * login, y hasta ahora ese redirect estaba escrito a mano como `/es/signin` — o sea
+ * que a quien tiene la app en valenciano o en inglés se le contestaba en castellano,
+ * que es justo lo que la serie Correo-B vino a quitar.
+ *
+ * Lo único que hay a mano para adivinarlo es el destino al que la persona iba
+ * (`next`), que en esta app SIEMPRE empieza por el idioma: `/va/reset-password`,
+ * `/en/invite/{token}`. De ahí sale.
+ *
+ * NO SIEMPRE SE PUEDE, y no es un fallo: cuando el enlace llega sin artefactos y sin
+ * destino no hay ni ruta de la que leerlo. Entonces se contesta con el de por
+ * defecto, que es lo mismo que se hacía antes pero solo en el caso en que de verdad
+ * no se sabe, en vez de siempre.
+ *
+ * La lista de idiomas se recibe, no se conoce aquí: la de verdad vive en la
+ * configuración de next-intl de web, y una copia en core sería una segunda lista que
+ * se queda vieja el día que se añada un idioma.
+ */
+export function localeFromPath(
+  path: string | null,
+  locales: readonly string[],
+  fallback: string,
+): string {
+  if (!path || !path.startsWith('/')) return fallback;
+  const primero = path.split('/')[1] ?? '';
+  return locales.includes(primero) ? primero : fallback;
+}

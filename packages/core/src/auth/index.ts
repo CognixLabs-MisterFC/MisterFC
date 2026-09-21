@@ -48,4 +48,5 @@ export {
   type AuthOtpType,
   type AuthCallbackInput,
   type AuthCallbackPlan,
+  localeFromPath,
 } from './auth-callback';
