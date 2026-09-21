@@ -97,7 +97,9 @@
       "error_password_too_short": "La contrasenya ha de tenir almenys 8 caràcters",
       "error_password_mismatch": "Les contrasenyes no coincideixen",
       "error_no_session": "No hi ha cap sessió activa. Demana un nou enllaç de reset.",
-      "error_generic": "No hem pogut actualitzar la contrasenya. Torna-ho a provar."
+      "error_generic": "No hem pogut actualitzar la contrasenya. Torna-ho a provar.",
+      "signout_hint": "Prefereixes no canviar-la ara? La teua contrasenya de sempre continua funcionant.",
+      "signout": "Tancar sessió"
     },
     "check_email": {
       "back_to_signin": "Tornar a iniciar sessió",

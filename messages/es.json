@@ -97,7 +97,9 @@
       "error_password_too_short": "La contraseña debe tener al menos 8 caracteres",
       "error_password_mismatch": "Las contraseñas no coinciden",
       "error_no_session": "No hay sesión activa. Pide un nuevo enlace de reset.",
-      "error_generic": "No hemos podido actualizar la contraseña. Inténtalo de nuevo."
+      "error_generic": "No hemos podido actualizar la contraseña. Inténtalo de nuevo.",
+      "signout_hint": "¿Prefieres no cambiarla ahora? Tu contraseña de siempre sigue funcionando.",
+      "signout": "Cerrar sesión"
     },
     "check_email": {
       "back_to_signin": "Volver a iniciar sesión",
