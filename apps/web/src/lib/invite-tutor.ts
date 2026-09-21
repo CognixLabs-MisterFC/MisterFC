@@ -67,12 +67,35 @@ export async function sendOrRenewTutorInvitation(
 ): Promise<TutorInviteResult> {
   const { playerId, clubId, email, relation, createdBy } = params;
 
-  // 1) ¿Invitación vigente para este jugador? (no aceptada y no caducada)
+  // 1) ¿Invitación de TUTOR vigente para este jugador? (no aceptada y no caducada)
+  //
+  // El filtro por rol y por relación NO es decorativo. En `invitations` conviven tres
+  // clases de fila que llevan el MISMO `player_id`, y las tres las escribe gente
+  // distinta:
+  //
+  //   · la de TUTOR    — role='jugador', relation 'parent'|'guardian' → esta;
+  //   · la de SEGUIDOR — role='spectator', relation NULL, la crea la familia desde
+  //     `invite_spectator` para el abuelo que solo mira;
+  //   · la del MENOR   — role='jugador', relation='self', la crea el tutor desde
+  //     `invite_player_self` para que su hijo tenga cuenta propia (MN-5).
+  //
+  // Sin filtrar, este `select` cogía la más reciente de las tres y la RENOVABA
+  // pisándole el correo y la relación. Con la del seguidor el CHECK
+  // `invitations_player_role_consistency` frenaba el desaguisado —un 'spectator' no
+  // puede llevar relación— pero a cambio el botón de invitar al tutor devolvía un
+  // error genérico que no explicaba nada. Con la del menor no frenaba NADA: la
+  // invitación del hijo se convertía en la del padre, en silencio.
+  //
+  // La lista de relaciones es explícita (no un `neq('player_relation','self')`) para
+  // que una relación nueva quede FUERA por defecto: crear una invitación de más se
+  // ve; pisar la de otro, no.
   const nowIso = new Date().toISOString();
   const { data: existing } = await supabase
     .from('invitations')
     .select('id')
     .eq('player_id', playerId)
+    .eq('role', 'jugador')
+    .in('player_relation', ['parent', 'guardian'])
     .is('accepted_at', null)
     .gt('expires_at', nowIso)
     .order('created_at', { ascending: false })
