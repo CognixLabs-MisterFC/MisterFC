@@ -120,6 +120,11 @@ export type _AssertGroupC = [
   Assert<IsStringOrNull<Tbl['invite_accept_attempts']['Insert']['ip']>>,
   Assert<IsStringOrNull<Tbl['invite_accept_attempts']['Update']['ip']>>,
   Assert<IsStringOrNull<Fn['register_invite_accept_attempt']['Args']['p_ip']>>,
+  // Correo-B · recuperación — la cuarta tabla con `ip`, y el param `inet` de su RPC.
+  Assert<IsStringOrNull<Tbl['password_recovery_attempts']['Row']['ip']>>,
+  Assert<IsStringOrNull<Tbl['password_recovery_attempts']['Insert']['ip']>>,
+  Assert<IsStringOrNull<Tbl['password_recovery_attempts']['Update']['ip']>>,
+  Assert<IsStringOrNull<Fn['register_password_recovery_attempt']['Args']['p_ip']>>,
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
