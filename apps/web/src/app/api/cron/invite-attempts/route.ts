@@ -1,5 +1,11 @@
 /**
- * R-2 — purga del registro de intentos del endpoint público de aceptación.
+ * Purga de los registros de intentos: el del endpoint público de aceptación (R-2) y
+ * el de las peticiones del correo de restablecer contraseña (Correo-B).
+ *
+ * Son dos tablas con la misma forma, la misma retención y la misma razón de existir,
+ * así que comparten cron en vez de estrenar uno: la ruta sigue llamándose
+ * `invite-attempts` porque renombrarla obligaría a tocar la configuración de crons de
+ * Vercel para no ganar nada.
  *
  * Frecuencia: CADA HORA (`0 * * * *`), y no diaria como los otros tres crons. El motivo
  * es el registro de tratamiento, no la técnica:
@@ -14,7 +20,8 @@
  * para la regla de 60/24h. Purgar justo a 24 le recortaría la cola por detrás y ese
  * límite quedaría más flojo de lo que dice, en silencio.
  *
- * DATO DECLARADO: IP del cliente, vida máxima 26 h.
+ * DATOS DECLARADOS: IP del cliente en las dos tablas, y además el correo tecleado en
+ * la de recuperación. Vida máxima 26 h en ambos casos.
  *
  * Protección: `Authorization: Bearer ${CRON_SECRET}`, el mismo secreto de proyecto que
  * usan los otros crons. Sin secreto configurado responde 401 — falla CERRADO.
@@ -38,13 +45,24 @@ async function handle(req: Request) {
   }
 
   const admin = createSupabaseAdminClient();
-  const { data, error } = await admin.rpc('purge_invite_accept_attempts');
 
-  if (error) {
+  // Las dos, siempre, y el fallo de una NO impide la otra: son independientes y
+  // saltarse la segunda por un tropiezo de la primera dejaría datos personales vivos
+  // más allá de lo declarado sin que nadie lo notase.
+  const [invitaciones, recuperacion] = await Promise.all([
+    admin.rpc('purge_invite_accept_attempts'),
+    admin.rpc('purge_password_recovery_attempts'),
+  ]);
+
+  if (invitaciones.error || recuperacion.error) {
     return NextResponse.json({ error: 'purge_failed' }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, deleted: (data as number | null) ?? 0 });
+  return NextResponse.json({
+    ok: true,
+    deleted: (invitaciones.data as number | null) ?? 0,
+    deletedRecovery: (recuperacion.data as number | null) ?? 0,
+  });
 }
 
 export async function POST(req: Request) {

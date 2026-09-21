@@ -75,7 +75,8 @@
       "submitting": "Enviant…",
       "back_to_signin": "Tornar a iniciar sessió",
       "error_invalid_email": "Email no vàlid",
-      "error_generic": "No hem pogut enviar l'enllaç. Torna-ho a provar."
+      "error_generic": "No hem pogut enviar l'enllaç. Torna-ho a provar.",
+      "error_rate_limited": "Has demanat l'enllaç massa vegades. Torna-ho a intentar d'ací a {minutes, plural, one {# minut} other {# minuts}}."
     },
     "reset_password": {
       "title": "Nova contrasenya",
@@ -5757,6 +5758,15 @@
           "body": "El teu club utilitza MisterFC per a organitzar-se: convocatòries, entrenaments, partits i els missatges de l'equip. T'han convidat com a jugador o família. Entra amb aquest enllaç per a acceptar la invitació i crear el teu compte."
         }
       }
+    },
+    "password_recovery": {
+      "subject": "Restableix la teua contrasenya de MisterFC",
+      "heading": "Restableix la teua contrasenya",
+      "body": "Has demanat restablir la contrasenya del teu compte a MisterFC. Prem el botó i podràs triar-ne una de nova.",
+      "cta": "Restablir la contrasenya",
+      "fallback": "Si el botó no funciona, copia aquesta adreça al teu navegador:",
+      "ignore": "Si no has demanat aquest canvi, pots ignorar aquest correu: la teua contrasenya no es modificarà.",
+      "signature": "L'equip de MisterFC"
     }
   }
 }

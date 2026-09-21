@@ -2,28 +2,33 @@
 
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import {
-  forgotPasswordSchema,
-  createSupabaseServerClient,
-  recoveryRedirectTo,
-} from '@misterfc/core';
-import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { forgotPasswordSchema } from '@misterfc/core';
+import { clientIpFrom } from '@/lib/client-ip';
+import { enviarCorreoRecuperacion } from '@/lib/email/password-recovery';
 
 export type ForgotPasswordFormState = {
-  error?: 'invalid_email' | 'generic';
+  error?: 'invalid_email' | 'generic' | 'rate_limited';
+  /** Minutos que faltan, solo con `rate_limited`. */
+  retryMinutes?: number;
 };
 
 /**
- * Server Action: pide reset de contraseña.
+ * Server Action: pide el correo para restablecer la contraseña.
  *
- * Llama a `supabase.auth.resetPasswordForEmail`. Por diseño, Supabase NO
- * revela si el email existe o no — devuelve éxito en ambos casos. Por eso
- * redirigimos siempre a /check-email con context=reset.
+ * Desde Correo-B el correo lo manda la app por Resend, en el idioma del destinatario
+ * (`profiles.locale`), y no Supabase con su plantilla única en castellano. Todo eso
+ * vive en `lib/email/password-recovery.ts`, que es el mismo sitio al que llamarán las
+ * dos puertas de la app; aquí solo queda traducir el resultado a lo que ve la
+ * pantalla.
  *
- * `redirectTo` apunta DIRECTO a /{locale}/reset-password (BUG-4). El rodeo por
- * /auth/callback perdía la pantalla cuando el flujo era implícito; ver
- * `recoveryRedirectTo` en core. Con PKCE —que es lo que usa esta Server Action,
- * vía @supabase/ssr— llega `?code=` y el middleware lo reencamina al callback.
+ * LO QUE NO CAMBIA, Y ES LO IMPORTANTE: no se revela si el correo existe. Una cuenta
+ * que no está y una a la que se le acaba de mandar el enlace terminan las dos en
+ * `/check-email`, que es lo que ya hacía Supabase por diseño.
+ *
+ * El límite SÍ se cuenta —`rate_limited` se ve—, y eso no es una fuga: el contador se
+ * indexa por correo exista o no la cuenta, así que verlo no dice nada sobre si hay
+ * alguien detrás. Callárselo sería peor: quien ha pedido el enlace cinco veces se
+ * quedaría mirando una pantalla que dice «revisa tu correo» sin que llegue nada.
  */
 export async function requestPasswordReset(
   locale: string,
@@ -40,16 +45,24 @@ export async function requestPasswordReset(
   const hdrs = await headers();
   const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
   const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  const redirectTo = recoveryRedirectTo(`${proto}://${host}`, locale);
 
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
+  const resultado = await enviarCorreoRecuperacion({
+    email: parsed.data.email,
+    locale,
+    ip: clientIpFrom(hdrs),
+    baseUrl: `${proto}://${host}`,
+  });
 
-  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, { redirectTo });
-
-  if (error) {
+  if (resultado.estado === 'limitado') {
+    return {
+      error: 'rate_limited',
+      retryMinutes: Math.max(1, Math.ceil(resultado.esperaSegundos / 60)),
+    };
+  }
+  if (resultado.estado === 'fallo' || resultado.estado === 'no_disponible') {
     return { error: 'generic' };
   }
 
+  // `enviado` y `sin_cuenta` acaban igual, a propósito.
   redirect(`/${locale}/check-email?context=reset&email=${encodeURIComponent(parsed.data.email)}`);
 }

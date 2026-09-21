@@ -108,6 +108,12 @@ jobs:
       - name: Check email templates copy
         run: pnpm check:plantillas-correo
 
+      # El octavo correo de Correo-B es el unico que se pide SIN SESION, y tiene dos
+      # formas de romperse mudo: un texto que falte en un idioma (excepcion en el
+      # envio, solo para ese idioma) y el destino del enlace, que fue el BUG 4.
+      - name: Check recovery email
+        run: pnpm check:correo-recuperacion
+
       - name: Test (vitest)
         run: pnpm test
 

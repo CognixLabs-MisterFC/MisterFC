@@ -35,6 +35,11 @@ export function ForgotPasswordForm({ locale }: { locale: string }) {
           {t('error_generic')}
         </p>
       )}
+      {state.error === 'rate_limited' && (
+        <p role="alert" className="text-sm text-amber-400">
+          {t('error_rate_limited', { minutes: state.retryMinutes ?? 1 })}
+        </p>
+      )}
 
       <button
         type="submit"

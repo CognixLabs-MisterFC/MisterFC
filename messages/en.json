@@ -75,7 +75,8 @@
       "submitting": "Sending…",
       "back_to_signin": "Back to sign in",
       "error_invalid_email": "Invalid email",
-      "error_generic": "We couldn't send the link. Please try again."
+      "error_generic": "We couldn't send the link. Please try again.",
+      "error_rate_limited": "You have asked for the link too many times. Try again in {minutes, plural, one {# minute} other {# minutes}}."
     },
     "reset_password": {
       "title": "New password",
@@ -5757,6 +5758,15 @@
           "body": "Your club uses MisterFC to organise itself: call-ups, training sessions, matches and the team's messages. You have been invited as a player or family. Use this link to accept the invitation and create your account."
         }
       }
+    },
+    "password_recovery": {
+      "subject": "Reset your MisterFC password",
+      "heading": "Reset your password",
+      "body": "You asked to reset the password for your MisterFC account. Use the button below to choose a new one.",
+      "cta": "Reset password",
+      "fallback": "If the button does not work, copy this address into your browser:",
+      "ignore": "If you did not ask for this change, you can ignore this email: your password will not be modified.",
+      "signature": "The MisterFC team"
     }
   }
 }

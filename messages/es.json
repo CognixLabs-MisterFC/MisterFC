@@ -75,7 +75,8 @@
       "submitting": "Enviando…",
       "back_to_signin": "Volver a iniciar sesión",
       "error_invalid_email": "Email no válido",
-      "error_generic": "No hemos podido enviar el enlace. Inténtalo de nuevo."
+      "error_generic": "No hemos podido enviar el enlace. Inténtalo de nuevo.",
+      "error_rate_limited": "Has pedido el enlace demasiadas veces. Vuelve a intentarlo en {minutes, plural, one {# minuto} other {# minutos}}."
     },
     "reset_password": {
       "title": "Nueva contraseña",
@@ -5757,6 +5758,15 @@
           "body": "Tu club usa MisterFC para organizarse: convocatorias, entrenamientos, partidos y los mensajes del equipo. Te han invitado como jugador o familia. Entra con este enlace para aceptar la invitación y crear tu cuenta."
         }
       }
+    },
+    "password_recovery": {
+      "subject": "Restablece tu contraseña de MisterFC",
+      "heading": "Restablece tu contraseña",
+      "body": "Has pedido restablecer la contraseña de tu cuenta en MisterFC. Pulsa el botón y podrás elegir una nueva.",
+      "cta": "Restablecer contraseña",
+      "fallback": "Si el botón no funciona, copia esta dirección en tu navegador:",
+      "ignore": "Si no has pedido este cambio, puedes ignorar este correo: tu contraseña no se modificará.",
+      "signature": "El equipo de MisterFC"
     }
   }
 }
