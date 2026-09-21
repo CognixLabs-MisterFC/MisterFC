@@ -26,7 +26,10 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const DIR = join(ROOT, 'supabase/emails');
-const TEMPLATES = ['invite', 'recovery', 'magic_link'];
+// Solo queda `recovery`: `invite` y `magic_link` se retiraron del dashboard al
+// cerrar Correo-B (nadie las disparaba ya) y `recovery` se ira cuando las apps
+// instaladas dejen de llamar a resetPasswordForEmail.
+const TEMPLATES = ['recovery'];
 
 const nombre = process.argv[2];
 const confirmado = process.argv.includes('--si');

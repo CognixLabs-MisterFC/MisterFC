@@ -14,6 +14,24 @@
  * que hay VIVO está `pnpm plantillas:diff`, que se lanza a mano.
  *
  * Lo que NO hace, a propósito: desplegar. Las plantillas se pegan a mano.
+ *
+ * ── QUEDA UNA, Y ES TEMPORAL ───────────────────────────────────────────────
+ *
+ * Eran tres. `invite` y `magic_link` se retiraron al cerrar Correo-B: los siete
+ * senders de invitación crean la cuenta con `createUser` y mandan su propio
+ * correo por Resend, y `signInWithOtp` no existe en el repo. Ninguna de las dos
+ * la disparaba ya nadie.
+ *
+ * `recovery` sigue aquí por una razón de CALENDARIO, no de diseño: las versiones
+ * de la app YA INSTALADAS llaman a `resetPasswordForEmail`, que la usa. Se retira
+ * cuando el build con las puertas nuevas esté fuera y las viejas hayan drenado.
+ *
+ * MEDIDO al retirar las otras dos, y conviene saberlo antes de retirar esta: una
+ * plantilla vacía NO hace que GoTrue caiga a la suya por defecto. El envío FALLA
+ * (HTTP 500, «Error sending invite email») y no se crea la cuenta. Para `invite`
+ * y `magic_link` eso es lo correcto —un camino retirado que falla a la vista es
+ * mejor que uno que manda algo raro en silencio—, pero para `recovery` querría
+ * decir que quien pida su contraseña desde una app vieja no recibe nada.
  */
 
 import { readFileSync, existsSync } from 'node:fs';
@@ -22,9 +40,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const DIR = join(ROOT, 'supabase/emails');
-const KINDS_FILE = join(ROOT, 'packages/core/src/invitations/invite-email-metadata.ts');
-
-const TEMPLATES = ['invite', 'recovery', 'magic_link'];
+const TEMPLATES = ['recovery'];
 
 const problems = [];
 const fail = (msg) => problems.push('· ' + msg);
@@ -112,58 +128,11 @@ for (const t of TEMPLATES) {
   }
 }
 
-// ── La invitación tiene una rama por destinatario ────────────────────────────
-// La lista MANDA desde el código (`INVITE_KINDS`): si aparece un sexto tipo, su
-// rama tiene que existir ANTES de usarlo. Sin ella el correo sale con el texto
-// neutro y nadie se entera.
-const kindsSrc = readFileSync(KINDS_FILE, 'utf8');
-const bloque = kindsSrc.match(/INVITE_KINDS\s*=\s*\[([\s\S]*?)\]\s*as const/);
-if (!bloque) {
-  fail(`no se pudo leer INVITE_KINDS de ${KINDS_FILE}`);
-} else {
-  const kinds = [...bloque[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
-  if (kinds.length === 0) fail('INVITE_KINDS se leyó vacío (¿cambió el formato?)');
-  // El CUERPO sí lleva una rama por tipo: ahí el texto cambia de verdad.
-  for (const kind of kinds) {
-    if (!bodies.invite.includes(`"${kind}"`)) {
-      fail(`invite (cuerpo): falta la rama de "${kind}"`);
-    }
-  }
-  // El ASUNTO no se exige tipo a tipo, y es deliberado: `staff` comparte asunto
-  // con la rama neutra («Te han invitado a MisterFC»), y obligar a escribir esa
-  // rama dos veces con el mismo texto sería ruido, no vigilancia. Lo que sí se
-  // exige es que el asunto SIGA RAMIFICANDO: si alguien lo aplana a una frase
-  // fija, los cuatro asuntos propios se pierden en silencio.
-  const kindsEnAsunto = kinds.filter((k) => subjects.invite.includes(`"${k}"`));
-  if (kindsEnAsunto.length === 0) {
-    fail('invite (asunto): no ramifica por invite_kind (¿se aplanó a un texto fijo?)');
-  }
-  // Y la rama neutra, que es la que recoge a quien llegue sin `invite_kind`
-  // (una invitación mandada desde el propio dashboard, por ejemplo).
-  if (!/\{\{\s*else\s*\}\}/.test(bodies.invite)) {
-    fail('invite (cuerpo): no hay rama neutra `{{ else }}`');
-  }
-  if (!/\{\{\s*else\s*\}\}/.test(subjects.invite)) {
-    fail('invite (asunto): no hay rama neutra `{{ else }}`');
-  }
-}
-
-// ── El enlace de cada plantilla ──────────────────────────────────────────────
-// invite y magic_link llevan a /{locale}/invite/{token} DIRECTO: manda la
-// caducidad de la invitación y no la del OTP, y la página funciona solo con el
-// token. `{{ .ConfirmationURL }}` ahí es el BUG 4 otra vez.
-// recovery sí necesita ConfirmationURL: ahí el artefacto ES el trámite.
-for (const t of ['invite', 'magic_link']) {
-  if (!bodies[t].includes('{{ .RedirectTo }}')) {
-    fail(`${t}: no usa {{ .RedirectTo }}`);
-  }
-  if (bodies[t].includes('.ConfirmationURL')) {
-    fail(
-      `${t}: usa {{ .ConfirmationURL }}. Ese fue el BUG 4 — debe ser ` +
-        '{{ .RedirectTo }}, que lleva directo a la invitación.',
-    );
-  }
-}
+// ── El enlace ────────────────────────────────────────────────────────────────
+// `recovery` SÍ necesita `{{ .ConfirmationURL }}`, al revés que las dos retiradas:
+// ahí el artefacto de sesión ES el trámite. La regla de llevar DIRECTO a la
+// pantalla —el arreglo del BUG 4— la sostiene hoy `recoveryRedirectTo` en core, y
+// la vigila `check:correo-recuperacion`.
 if (!bodies.recovery.includes('{{ .ConfirmationURL }}')) {
   fail('recovery: no usa {{ .ConfirmationURL }} (ahí sí es el enlace del trámite)');
 }
@@ -182,8 +151,9 @@ function report() {
     process.exit(1);
   }
   console.log(
-    `[plantillas-correo] OK — ${TEMPLATES.length} plantillas con su asunto, ` +
-      'ramas completas y enlaces correctos.',
+    `[plantillas-correo] OK — ${TEMPLATES.length} plantilla(s) con su asunto y su ` +
+      'enlace correcto. invite y magic_link quedaron retiradas al cerrar Correo-B; ' +
+      'recovery espera a que drenen las apps instaladas.',
   );
   process.exit(0);
 }
