@@ -220,6 +220,33 @@ que puedes instalarlo y probar convocatorias, directo y push fuera de casa.
 Instalar en el dispositivo:
    adb install -r "$APK"
 
+────────────────────────────────────────────────────────────────────────────────
+OJO CON LOS ENLACES DE INVITACION (App Links)
+
+Este APK va firmado con el debug.keystore de la plantilla de Expo:
+
+   FA:C6:17:45:DC:09:03:78:6F:B9:ED:E6:2A:96:2B:39:9F:73:48:F0:BB:6F:89:9B:83:32:66:75:91:03:3B:9C
+
+Esa huella NO esta —ni puede estar— en misterfc.es/.well-known/assetlinks.json:
+ese keystore lo tiene TODO EL MUNDO, y publicarlo dejaria que cualquier app
+firmada con el se verificara como manejadora oficial de los enlaces de
+invitacion. Asi que Android NO verificara el dominio y un enlace de invitacion
+abrira el NAVEGADOR, no la app. No es un fallo del montaje: el servidor esta bien.
+
+Para probar el enlace igualmente, aprueba la asociacion A MANO (Android 12+):
+
+   adb shell pm set-app-links --package com.misterfc.app 0 STATE_APPROVED
+   adb shell pm get-app-links com.misterfc.app          # debe decir: verified
+
+Y luego lanza un enlace de verdad:
+
+   adb shell am start -a android.intent.action.VIEW \
+     -d "https://misterfc.es/es/invite/<token>" com.misterfc.app
+
+Eso prueba el intent-filter, el reparto de +native-intent y la pantalla. Lo que NO
+prueba es la verificacion real, que solo se ve en un binario firmado por EAS o por
+Play. Para eso: build de EAS o la pista de pruebas internas.
+
 (Sigue siendo un build de QA, no de tiendas: EAS es el camino de release real.)
 Para iterar JS rápido con el ordenador delante:  ./build-apk.sh --metro
 EOF

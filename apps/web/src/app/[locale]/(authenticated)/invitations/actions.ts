@@ -1,7 +1,6 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import {
@@ -12,6 +11,7 @@ import {
   createSupabaseServerClient,
   createSupabaseAdminClient,
   type Role,
+  inviteLink,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
@@ -391,14 +391,13 @@ export async function sendInvitation(
   // en valenciano le llegaba igualmente en castellano. Ahora son dos pasos —la
   // cuenta con `createUser`, que no manda nada, y el correo por Resend— y el
   // idioma lo decide el sender.
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
-  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
   // redirectTo apunta directamente a la página de invitación, que intercambia el
   // token por sesión. Antes pasábamos por /auth/callback, pero si la URL no
   // estaba en la allowlist de Supabase caía en silencio al Site URL (la raíz) y
   // el code se perdía.
-  const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
+    // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
+  const redirectTo = inviteLink(locale, invite.token);
 
   console.info('[invitations][invite-email] sending', {
     masked_email: maskedEmail,

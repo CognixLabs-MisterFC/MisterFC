@@ -24,7 +24,9 @@
  */
 
 import { NextResponse } from 'next/server';
-import { createSupabaseAdminClient, inviteSpectatorSchema } from '@misterfc/core';
+import { createSupabaseAdminClient, inviteSpectatorSchema,
+  inviteLinkBase,
+} from '@misterfc/core';
 import { resolveUserFromRequest } from '@/lib/resolve-user';
 import { performSpectatorInvite } from '@/lib/invite-spectator';
 
@@ -62,10 +64,9 @@ export async function POST(req: Request) {
 
   const locale =
     typeof b.locale === 'string' && LOCALE_RE.test(b.locale) ? b.locale : 'es';
-  const host =
-    req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? '';
-  const proto = req.headers.get('x-forwarded-proto') ?? 'https';
-  const linkBase = `${proto}://${host}/${locale}/invite`;
+    // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
+  const linkBase = inviteLinkBase(locale);
 
   // El gate vive dentro del RPC (invocado por auth.supabase = cliente del usuario);
   // el admin solo se usa para el email, DESPUÉS de crear la invitación.

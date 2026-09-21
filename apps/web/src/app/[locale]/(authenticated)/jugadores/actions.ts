@@ -1,6 +1,6 @@
 'use server';
 
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import {
@@ -20,6 +20,8 @@ import {
   resolveActiveClub,
   setPlayerPhotoPathFromClient,
   updatePlayerSchema,
+  inviteLink,
+  inviteLinkBase,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
@@ -602,10 +604,9 @@ export async function inviteSpectatorForPlayer(
   } = await supabase.auth.getUser();
   if (!user) return { error: 'forbidden' };
 
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
-  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  const linkBase = `${proto}://${host}/${locale}/invite`;
+    // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
+  const linkBase = inviteLinkBase(locale);
 
   // Lógica compartida con el route handler nativo (O2-5 F2): RPC como el usuario
   // (gate tutor/self antes de crear) + email con admin DESPUÉS + fallback
@@ -673,10 +674,9 @@ export async function inviteSelfForPlayer(
   } = await supabase.auth.getUser();
   if (!user) return { error: 'forbidden' };
 
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
-  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  const linkBase = `${proto}://${host}/${locale}/invite`;
+    // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
+  const linkBase = inviteLinkBase(locale);
 
   const admin = createSupabaseAdminClient();
   const res = await performSelfInvite(supabase, admin, {
@@ -918,9 +918,6 @@ export async function inviteBatch(
     return { ...base(), skipped };
   }
 
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
-  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
   const admin = createSupabaseAdminClient();
 
   const rows: BatchInviteRow[] = [];
@@ -972,7 +969,7 @@ export async function inviteBatch(
     //    fallara dejaría al padre con un enlace que le pide una contraseña que nunca
     //    fijó.
     const anchor = inserted[0]!;
-    const redirectTo = `${proto}://${host}/${locale}/invite/${anchor.token}`;
+    const redirectTo = inviteLink(locale, anchor.token);
     let sendReason: string | null = null;
     // Cuenta NUESTRA: la que creamos ahora o la que creamos en un lote anterior y
     // nadie reclamó. Solo esas se enlazan. La cuenta propia de un padre que ya usa
