@@ -199,11 +199,74 @@ const FAMILY_AUDIENCE_TYPES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * ¿Este aviso se recibe por ser TUTOR (o el propio jugador), y no por el rol de club?
- * Un type desconocido responde `false`: ante la duda, el hogar — que es el
- * comportamiento de siempre.
+ * Clave del `data` con la que un emisor declara a qué audiencia manda ESTE envío.
+ *
+ * Existe por los MIXTOS de arriba: cuando un mismo `type` llega a dos audiencias, el
+ * tipo ya no alcanza y solo el emisor sabe de qué lado está cada destinatario —
+ * `send.ts` sabe si el mensaje va al coach o a la familia; `holidays.ts` sabe cuáles
+ * de sus destinatarios son cuerpo técnico. Marcarlo en el `data` es pasar ese dato
+ * al enrutado en vez de adivinarlo en el cliente.
+ *
+ * QUIÉN LA ESCRIBE. Los emisores de web/core, en su propio PR. Aquí solo se LEE, y
+ * de forma tolerante: mientras nadie la mande, todo sigue decidiéndose por el tipo.
+ * Por eso esta pieza puede entrar antes que la que la escribe sin cambiar nada.
+ *
+ * ⚠️ El valor es una CADENA acordada entre los dos lados ('family' | 'staff' |
+ * 'direction'). Si se renombra aquí, hay que renombrarla en los emisores el MISMO
+ * día: el fallo sería mudo —la marca dejaría de reconocerse y el enrutado caería a
+ * la tabla por tipo—, que es justo el fallo que esto viene a arreglar.
  */
-export function isFamilyAudienceNotification(type: string): boolean {
+export const NOTIFICATION_AUDIENCE_KEY = 'audience';
+
+/** Las audiencias que un emisor puede declarar. */
+export type NotificationAudience = 'family' | 'staff' | 'direction';
+
+/**
+ * El par que el emisor pega en SUS DOS payloads. Y son dos, no uno:
+ *
+ *   · `in_app_payload` — de ahí saca el `data` el envío EAGER (notify-bus);
+ *   · `push_payload`   — de ahí lo saca el DRENADOR del cron, que lee la fila
+ *     `channel='push'` en crudo cuando el eager no llegó a enviar.
+ *
+ * Marcar solo uno funcionaría en las pruebas y fallaría en producción cada vez que
+ * el envío inmediato falla y lo recoge el cron — un aviso de cada tantos, yendo al
+ * área equivocada, sin nada en los logs. Por eso esto es una función: para que el
+ * emisor escriba `...audienceMark('family')` en los dos sitios y no dependa de
+ * acordarse de una cadena.
+ */
+export function audienceMark(audience: NotificationAudience): {
+  audience: NotificationAudience;
+} {
+  return { [NOTIFICATION_AUDIENCE_KEY]: audience } as {
+    audience: NotificationAudience;
+  };
+}
+
+/** Audiencia declarada por el emisor, o `null` si este envío no viene marcado. */
+export function declaredAudience(
+  data: Record<string, unknown> | null | undefined,
+): string | null {
+  const v = (data ?? {})[NOTIFICATION_AUDIENCE_KEY];
+  return typeof v === 'string' && v.length > 0 ? v : null;
+}
+
+/**
+ * ¿Este aviso se recibe por ser TUTOR (o el propio jugador), y no por el rol de club?
+ *
+ * Orden de decisión, y el orden importa:
+ *   1. la marca del emisor, si viene — es el único que sabe la audiencia de un mixto,
+ *      y `audience: 'staff'` tiene que poder decir "este NO" aunque el tipo esté en
+ *      la tabla (el entrenador que además es padre y recibe el festivo de SU equipo);
+ *   2. la tabla por tipo, que resuelve los avisos de una sola audiencia;
+ *   3. y ante la duda —type desconocido, marca vacía— el hogar, que es el
+ *      comportamiento de siempre.
+ */
+export function isFamilyAudienceNotification(
+  type: string,
+  data?: Record<string, unknown> | null,
+): boolean {
+  const marcada = declaredAudience(data);
+  if (marcada !== null) return marcada === 'family';
   return FAMILY_AUDIENCE_TYPES.has(type);
 }
 
@@ -251,7 +314,7 @@ export function nativeTargetForNotification(
   const tutorArea = ctx.tutorArea ?? null;
   const tutorScreens = ctx.tutorScreens ?? null;
   if (
-    !isFamilyAudienceNotification(type) ||
+    !isFamilyAudienceNotification(type, data) ||
     tutorArea === null ||
     tutorScreens === null ||
     tutorArea === ctx.homeArea

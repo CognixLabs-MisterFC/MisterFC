@@ -46,6 +46,13 @@ export type PushPayload = {
   deep_link?: string;
   /** Identificador opcional para colapsar notificaciones (mismo tag = reemplaza). */
   tag?: string;
+  /**
+   * Audiencia declarada por el emisor (`audienceMark` de core). Va en la fila push
+   * para que el DRENADOR del cron pueda enrutar igual que el envío eager: aquel
+   * alimenta el `data` nativo desde el `in_app_payload` y este desde esta fila. No
+   * se enseña al usuario; es solo enrutado.
+   */
+  audience?: string;
 };
 
 export type SendPushResult = {

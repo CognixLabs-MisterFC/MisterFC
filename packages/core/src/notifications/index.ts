@@ -25,9 +25,16 @@ export {
   nativeHrefForNotification,
   nativeTargetForNotification,
   isFamilyAudienceNotification,
+  audienceMark,
+  declaredAudience,
+  NOTIFICATION_AUDIENCE_KEY,
   resourceIdForNotification,
 } from './native-route';
-export type { NativeRouteTarget, NotificationAreaContext } from './native-route';
+export type {
+  NativeRouteTarget,
+  NotificationAreaContext,
+  NotificationAudience,
+} from './native-route';
 
 export { notificationFeedText } from './feed-text';
 export type { FeedTextTranslate } from './feed-text';

@@ -16,6 +16,10 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
+import {
+  audienceMark,
+  type NotificationAudience,
+} from '../notifications/native-route';
 import { sendMessageSchema, MESSAGE_RATE_LIMIT } from '../schemas/messaging';
 import type { ConversationMessage, TeamThreadMessage } from './queries';
 
@@ -134,6 +138,12 @@ export async function sendDirectMessageFromClient(
   // FAN-OUT DESPUÉS del insert exitoso. Nunca frena el envío (try/catch → log).
   try {
     const recipientUserIds: string[] = [];
+    // AUDIENCIA — aquí se sabe con certeza y en ninguna otra parte se sabrá: quien
+    // recibe es la familia del jugador o es el coach, y lo decide quién envía. Sin
+    // esta marca, `new_message` es indistinguible de un lado y de otro (el `data`
+    // solo lleva `conversation_id`), y a un director-tutor el mensaje del entrenador
+    // de su hija le abría la bandeja de DIRECCIÓN, donde ese hilo no está.
+    let audiencia: NotificationAudience;
     if (conv.coach_profile_id === args.senderId) {
       // Coach → familia / jugador (todas las cuentas del jugador).
       const { data: pas } = await supabase
@@ -143,9 +153,11 @@ export async function sendDirectMessageFromClient(
       for (const r of pas ?? []) {
         if (r.profile_id) recipientUserIds.push(r.profile_id as string);
       }
+      audiencia = 'family';
     } else {
-      // Familia / jugador → coach.
+      // Familia / jugador → coach. Le llega POR SER EL COACH: su área de trabajo.
       recipientUserIds.push(conv.coach_profile_id);
+      audiencia = 'staff';
     }
 
     if (recipientUserIds.length > 0) {
@@ -160,12 +172,14 @@ export async function sendDirectMessageFromClient(
             message_id: inserted.id,
             sender_profile_id: args.senderId,
             deep_link: deepLink,
+            ...audienceMark(audiencia),
           },
           push_payload: {
             title: args.senderName ?? 'Mensaje nuevo',
             body: preview,
             deep_link: deepLink,
             tag: `conversation:${parsed.data.conversation_id}`,
+            ...audienceMark(audiencia),
           },
           dedupe_base_prefix: `new_message:${inserted.id}`,
         },
@@ -251,6 +265,16 @@ export async function sendTeamMessageFromClient(
       const senderName = args.senderName ?? 'Mensaje nuevo';
       const preview = body.slice(0, 140);
       const deepLink = `/${args.locale}/mensajes/equipo/${conv.team_id}`;
+      // SIN MARCA DE AUDIENCIA, Y NO ES UN OLVIDO. El chat de equipo lo componen
+      // TRES audiencias a la vez —staff del equipo ∪ familias del roster ∪ dirección
+      // del club, ver `team_chat_member_profile_ids`— y la RPC devuelve una lista
+      // plana de profile_ids: no dice por qué está cada uno. Partirla desde aquí
+      // exigiría releer team_staff y memberships bajo la RLS del que envía, donde una
+      // familia no ve lo mismo que un coach: una lectura recortada clasificaría a un
+      // entrenador como familia y le abriría el área que no es. Un aviso de un chat
+      // de equipo llega POR SER DEL EQUIPO, en el papel que sea, así que el hogar de
+      // cada uno es una respuesta defendible; inventarse el papel no lo es. Si algún
+      // día se quiere partir, el sitio es una RPC que devuelva (profile_id, papel).
       await fanOut(
         recipients.map((u) => ({ user_id: u })),
         {

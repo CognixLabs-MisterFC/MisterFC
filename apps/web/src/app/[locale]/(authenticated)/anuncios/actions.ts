@@ -3,7 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
-import { createSupabaseServerClient, ADMIN_ROLES } from '@misterfc/core';
+import {
+  createSupabaseServerClient,
+  ADMIN_ROLES,
+  audienceMark,
+  type NotificationAudience,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
 
@@ -140,6 +145,13 @@ export async function createGlobalAnnouncement(
       if (!row || !annId) continue;
 
       let recipientUserIds: string[] = [];
+      // AUDIENCIA del anuncio, que depende de a quién va:
+      //  · club-wide → a TODOS los miembros, y a cada uno le llega por ser del club:
+      //    su hogar ES su sitio. Sin marca (y `new_announcement` no está en la tabla
+      //    por tipo, así que se queda donde está hoy);
+      //  · de equipo → solo a `player_accounts` del roster: eso es familia, y a un
+      //    director-tutor le abría los anuncios de DIRECCIÓN.
+      let audiencia: NotificationAudience | null = null;
       if (row.team_id === null) {
         // Club-wide: todos los miembros del club (jugadores + familia + staff).
         const { data: mems } = await supabase
@@ -165,6 +177,7 @@ export async function createGlobalAnnouncement(
         recipientUserIds = Array.from(
           new Set((pas ?? []).map((r) => r.profile_id).filter(Boolean)),
         ) as string[];
+        audiencia = 'family';
       }
 
       // Excluir al autor.
@@ -179,12 +192,14 @@ export async function createGlobalAnnouncement(
             announcement_id: annId,
             team_id: row.team_id,
             deep_link: `/${locale}/anuncios/${annId}`,
+            ...(audiencia ? audienceMark(audiencia) : {}),
           },
           push_payload: {
             title: parsed.data.title,
             body: parsed.data.body.slice(0, 200),
             deep_link: `/${locale}/anuncios/${annId}`,
             tag: `announcement:${annId}`,
+            ...(audiencia ? audienceMark(audiencia) : {}),
           },
           dedupe_base_prefix: `new_announcement:${annId}`,
         },

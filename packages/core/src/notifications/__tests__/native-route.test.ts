@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  audienceMark,
+  declaredAudience,
   isFamilyAudienceNotification,
   nativeHrefForNotification,
   nativeTargetForNotification,
+  NOTIFICATION_AUDIENCE_KEY,
   resourceIdForNotification,
 } from '../native-route';
 
@@ -412,5 +415,104 @@ describe('nativeTargetForNotification (área por audiencia del aviso)', () => {
     expect(isFamilyAudienceNotification('training_reminder')).toBe(false);
     expect(isFamilyAudienceNotification('')).toBe(false);
     expect(isFamilyAudienceNotification('inventado')).toBe(false);
+  });
+});
+
+describe('marca de audiencia del emisor (mixtos)', () => {
+  it('new_message marcado como familia abre familia, y sin marca no', () => {
+    // El mismo type, los mismos ids: lo único que cambia es quién lo manda.
+    expect(
+      nativeTargetForNotification(
+        'new_message',
+        { type: 'new_message', conversation_id: 'c1', ...audienceMark('family') },
+        DIRECTOR_TUTOR,
+      ),
+    ).toEqual({ pathname: '/family/mensajes', params: { id: 'c1' } });
+    expect(
+      nativeTargetForNotification(
+        'new_message',
+        { type: 'new_message', conversation_id: 'c1' },
+        DIRECTOR_TUTOR,
+      ),
+    ).toEqual({ pathname: '/direction/mensajes', params: { id: 'c1' } });
+  });
+
+  it('LA DECISIÓN DE JOSE: gana staff — el entrenador que es padre de su equipo', () => {
+    // El festivo cancela el entreno que él dirige. Está en los dos grupos y el
+    // emisor ya lo ha puesto en el de staff; la marca tiene que PODER decir "este
+    // no es de familia" aunque su hogar sea otro.
+    const entrenadorPadre = {
+      homeArea: 'staff',
+      homeScreens: STAFF_REAL,
+      tutorArea: 'family',
+      tutorScreens: FAMILY_REAL,
+    };
+    expect(
+      nativeTargetForNotification(
+        'training_cancelled',
+        { type: 'training_cancelled', ...audienceMark('staff') },
+        entrenadorPadre,
+      ),
+    ).toEqual({ pathname: '/staff/calendario' });
+    // Y el padre que NO entrena a ese equipo recibe la otra mitad del envío.
+    expect(
+      nativeTargetForNotification(
+        'training_cancelled',
+        { type: 'training_cancelled', ...audienceMark('family') },
+        DIRECTOR_TUTOR,
+      ),
+    ).toEqual({ pathname: '/family/calendario' });
+  });
+
+  it('la marca GANA a la tabla por tipo, en los dos sentidos', () => {
+    // callup_published está en la tabla como familia; marcado 'staff' NO se mueve.
+    expect(
+      nativeTargetForNotification(
+        'callup_published',
+        { type: 'callup_published', event_id: 'e1', ...audienceMark('staff') },
+        DIRECTOR_TUTOR,
+      ),
+    ).toEqual({ pathname: '/direction/convocatorias', params: { id: 'e1' } });
+    // training_reminder NO está en la tabla; marcado 'family' sí se mueve… salvo
+    // que no tiene pantalla en familia, así que se queda (4ª condición).
+    expect(
+      nativeTargetForNotification(
+        'training_reminder',
+        { type: 'training_reminder', ...audienceMark('family') },
+        DIRECTOR_TUTOR,
+      ),
+    ).toEqual({ pathname: '/direction' });
+  });
+
+  it('una marca desconocida o vacía no rompe: se cae a la tabla por tipo', () => {
+    expect(
+      nativeTargetForNotification(
+        'callup_published',
+        { type: 'callup_published', event_id: 'e1', audience: '' },
+        DIRECTOR_TUTOR,
+      ),
+    ).toEqual({ pathname: '/family/convocatorias', params: { id: 'e1' } });
+    // Un valor que no es ninguna audiencia conocida NO es familia: al hogar.
+    expect(
+      nativeTargetForNotification(
+        'callup_published',
+        { type: 'callup_published', event_id: 'e1', audience: 'marciano' },
+        DIRECTOR_TUTOR,
+      ),
+    ).toEqual({ pathname: '/direction/convocatorias', params: { id: 'e1' } });
+  });
+
+  it('declaredAudience lee solo cadenas no vacías', () => {
+    expect(declaredAudience({ audience: 'family' })).toBe('family');
+    expect(declaredAudience({ audience: '' })).toBeNull();
+    expect(declaredAudience({ audience: 3 })).toBeNull();
+    expect(declaredAudience(null)).toBeNull();
+    expect(declaredAudience({})).toBeNull();
+  });
+
+  it('audienceMark escribe la clave que el lector espera', () => {
+    // Si alguien renombra la clave en un lado y no en el otro, el fallo sería mudo.
+    expect(audienceMark('family')).toEqual({ [NOTIFICATION_AUDIENCE_KEY]: 'family' });
+    expect(NOTIFICATION_AUDIENCE_KEY).toBe('audience');
   });
 });
