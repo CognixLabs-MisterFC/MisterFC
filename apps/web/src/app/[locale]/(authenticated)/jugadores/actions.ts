@@ -26,6 +26,7 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
 import { performSpectatorInvite } from '@/lib/invite-spectator';
 import { performSelfInvite } from '@/lib/invite-self';
+import { sendOrRenewTutorInvitation } from '@/lib/invite-tutor';
 import { loadPendingInvitePlayers } from './queries';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -155,180 +156,6 @@ function mapPlayerError(message: string | undefined): PlayerFormError {
     return message as PlayerFormError;
   }
   return 'generic';
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Circuito ÚNICO de invitación de tutor (rework B2) — reutilizado por el alta
-// manual (createPlayer) y el botón de la ficha (inviteTutorForPlayer).
-// ─────────────────────────────────────────────────────────────────────────────
-
-type TutorInviteResult =
-  | { ok: { email: string } }
-  | { error: 'forbidden' | 'generic' };
-
-/**
- * Envía —o RENUEVA— la invitación de tutor de un jugador. Anti-duplicado:
- *   1. Si ya hay una invitación VIGENTE (accepted_at IS NULL y no expirada) para
- *      el player, se RENUEVA (token nuevo + expiración +7d + email/relación del
- *      formulario) en vez de crear otra fila.
- *   2. Si no la hay, se INSERTA una nueva.
- *   3. Se envía el email con inviteUserByEmail; si el email ya está registrado,
- *      fallback a resetPasswordForEmail con el mismo redirectTo.
- * El permiso lo impone la RLS de `invitations` (INSERT admin/director; UPDATE
- * admin_club) — si el actor no puede, devuelve 'forbidden'.
- */
-async function sendOrRenewTutorInvitation(
-  supabase: ReturnType<typeof createSupabaseServerClient>,
-  locale: string,
-  params: {
-    playerId: string;
-    clubId: string;
-    email: string;
-    relation: 'parent' | 'guardian';
-    createdBy: string;
-  },
-): Promise<TutorInviteResult> {
-  const { playerId, clubId, email, relation, createdBy } = params;
-
-  // 1) ¿Invitación vigente para este jugador? (no aceptada y no caducada)
-  const nowIso = new Date().toISOString();
-  const { data: existing } = await supabase
-    .from('invitations')
-    .select('id')
-    .eq('player_id', playerId)
-    .is('accepted_at', null)
-    .gt('expires_at', nowIso)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let invite: { id: string; token: string } | null = null;
-
-  if (existing?.id) {
-    // 1a) Renovar la existente: token nuevo + +7d, y actualiza email/relación al
-    //     último valor del formulario. NO crea una segunda fila.
-    const renewedExpiry = new Date(Date.now() + 7 * 86_400_000).toISOString();
-    const { data: renewed, error: updErr } = await supabase
-      .from('invitations')
-      .update({
-        email,
-        player_relation: relation,
-        token: crypto.randomUUID(),
-        expires_at: renewedExpiry,
-      })
-      .eq('id', existing.id)
-      .select('id, token')
-      .single();
-    if (updErr) {
-      if (updErr.code === '42501') return { error: 'forbidden' };
-      Sentry.captureException(updErr, {
-        tags: { feature: 'invitations', step: 'renew_tutor' },
-        extra: { player_id: playerId, invitation_id: existing.id },
-      });
-      return { error: 'generic' };
-    }
-    invite = renewed as { id: string; token: string };
-  } else {
-    // 1b) Sin invitación vigente → crear.
-    const { data: inserted, error: insErr } = await supabase
-      .from('invitations')
-      .insert({
-        email,
-        role: 'jugador',
-        club_id: clubId,
-        player_id: playerId,
-        player_relation: relation,
-        created_by: createdBy,
-      })
-      .select('id, token')
-      .single();
-    if (insErr) {
-      if (insErr.code === '42501') return { error: 'forbidden' };
-      Sentry.captureException(insErr, {
-        tags: { feature: 'invitations', step: 'insert_tutor' },
-        extra: { player_id: playerId, relation },
-      });
-      return { error: 'generic' };
-    }
-    invite = inserted as { id: string; token: string };
-  }
-
-  if (!invite) return { error: 'generic' };
-
-  // 2) Enviar el email (mismo redirectTo directo a /invite/{token}).
-  const hdrs = await headers();
-  const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
-  const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
-
-  const admin = createSupabaseAdminClient();
-  try {
-    const { data: inviteData, error: invErr } =
-      await admin.auth.admin.inviteUserByEmail(email, {
-        redirectTo,
-        data: inviteEmailMetadata({
-          invitationId: invite.id,
-          kind: 'tutor',
-          locale,
-        }),
-      });
-    if (invErr) {
-      if (isEmailAlreadyExistsError(invErr)) {
-        // Email ya registrado → correo de invitación para cuenta existente.
-        // invited_user_id se deja como esté: es un invitee EXISTENTE (inicia
-        // sesión con su contraseña); no lo creamos nosotros.
-        const { error: resetErr } = await sendInviteToExistingUser(supabase, {
-          email,
-          redirectTo,
-        });
-        if (resetErr) {
-          Sentry.captureException(resetErr, {
-            tags: { feature: 'invitations', step: 'reset_fallback_tutor' },
-            extra: { invitation_id: invite.id },
-          });
-          return { error: 'generic' };
-        }
-      } else {
-        Sentry.captureException(invErr, {
-          tags: { feature: 'invitations', step: 'inviteUserByEmail_tutor' },
-          extra: { invitation_id: invite.id },
-        });
-        return { error: 'generic' };
-      }
-    } else {
-      // Cuenta creada por nosotros para esta invitación (aún no reclamada).
-      // Enlazamos su auth.users.id en invitations.invited_user_id — MISMO patrón
-      // que el circuito de staff (invitations/actions.ts): chooseInviteForm lo usa
-      // para enrutar al form set_password (pedir contraseña). Sin esto el invitee
-      // nuevo caía en quick/sign_in y nunca fijaba contraseña.
-      const invitedUserId = inviteData?.user?.id ?? null;
-      if (!invitedUserId) {
-        // #535: invite OK pero sin user.id → antes MUDO. Sin invited_user_id la
-        // invitación lleva a la trampa: ruidoso + error al admin para reintentar.
-        Sentry.captureMessage('[invitations] inviteUserByEmail sin user.id (tutor)', {
-          level: 'error',
-          tags: { feature: 'invitations', step: 'invited_user_missing_id_tutor' },
-          extra: { invitation_id: invite.id },
-        });
-        return { error: 'generic' };
-      }
-      // Enlaza y EXIGE 1 fila afectada: un UPDATE de cero filas no da error en
-      // PostgREST y dejaría invited_user_id NULL en silencio (raíz del incidente).
-      const linkRes = await linkInvitedUser(admin, invite.id, invitedUserId, {
-        feature: 'invitations',
-        step: 'link_invited_user_tutor',
-      });
-      if (!linkRes.ok) return { error: 'generic' };
-    }
-  } catch (thrown) {
-    Sentry.captureException(thrown, {
-      tags: { feature: 'invitations', step: 'inviteUserByEmail_tutor_thrown' },
-      extra: { invitation_id: invite.id },
-    });
-    return { error: 'generic' };
-  }
-
-  return { ok: { email } };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -744,10 +571,11 @@ export type InviteSpectatorState = {
 /**
  * F14C-2 — El tutor del jugador o el propio jugador (self) invitan a un SEGUIDOR
  * (abuelo/familiar) por email. El gate (tutor/self) lo impone el RPC
- * `invite_spectator` (SECURITY DEFINER); aquí solo mapeamos el error y enviamos el
- * email reutilizando la maquinaria de invitaciones (inviteUserByEmail con
- * invitation_id, patrón inviteTutorForPlayer). El seguidor NO obtiene membership ni
- * player_account: el accept crea SOLO player_spectators.
+ * `invite_spectator` (SECURITY DEFINER); aquí solo mapeamos el error y delegamos en
+ * `performSpectatorInvite` (core), que desde Correo-B1 crea la cuenta con
+ * `createUser` y manda el correo por Resend, en el idioma del destinatario. El
+ * seguidor NO obtiene membership ni player_account: el accept crea SOLO
+ * player_spectators.
  */
 export async function inviteSpectatorForPlayer(
   locale: string,
