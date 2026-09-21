@@ -2338,6 +2338,33 @@ export type Database = {
           },
         ]
       }
+      password_recovery_attempts: {
+        Row: {
+          account_known: boolean
+          allowed: boolean
+          created_at: string
+          email: string
+          id: number
+          ip: unknown
+        }
+        Insert: {
+          account_known: boolean
+          allowed: boolean
+          created_at?: string
+          email: string
+          id?: never
+          ip?: unknown
+        }
+        Update: {
+          account_known?: boolean
+          allowed?: boolean
+          created_at?: string
+          email?: string
+          id?: never
+          ip?: unknown
+        }
+        Relationships: []
+      }
       planned_substitutions: {
         Row: {
           created_at: string
@@ -4955,6 +4982,7 @@ export type Database = {
         }[]
       }
       purge_invite_accept_attempts: { Args: never; Returns: number }
+      purge_password_recovery_attempts: { Args: never; Returns: number }
       reconcile_subscription_entitlement: {
         Args: {
           p_billing_issue_at: string
@@ -4989,6 +5017,13 @@ export type Database = {
       }
       register_invite_accept_attempt: {
         Args: { p_ip?: unknown; p_token: string }
+        Returns: {
+          decision: string
+          retry_after_seconds: number
+        }[]
+      }
+      register_password_recovery_attempt: {
+        Args: { p_email: string; p_ip?: unknown }
         Returns: {
           decision: string
           retry_after_seconds: number

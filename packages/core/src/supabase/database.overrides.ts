@@ -55,6 +55,14 @@ export type DatabaseOverrides = {
         Insert: { ip?: string | null };
         Update: { ip?: string | null };
       };
+      // Correo-B · recuperación — la cuarta tabla con columna `ip`, por el mismo
+      // motivo que la de R-2: hoy no la lee nadie desde el cliente, pero la regla
+      // es de TIPO, no de uso.
+      password_recovery_attempts: {
+        Row: { ip: string | null };
+        Insert: { ip?: string | null };
+        Update: { ip?: string | null };
+      };
     };
     Functions: {
       // (1) Args de RPC que aceptan NULL (el generador emite no-null).
@@ -226,6 +234,17 @@ export type DatabaseOverrides = {
         Args: { p_ip?: string | null };
       };
       purge_invite_accept_attempts: {
+        Args: Record<string, never>;
+        Returns: number;
+      };
+
+      // Correo-B · recuperación — mismo caso que R-2: `p_ip` es `inet`, el
+      // generador emite `unknown`. La puerta le pasa la IP ya derivada, o null
+      // cuando no hay cabecera fiable (y entonces solo corre la regla del correo).
+      register_password_recovery_attempt: {
+        Args: { p_ip?: string | null };
+      };
+      purge_password_recovery_attempts: {
         Args: Record<string, never>;
         Returns: number;
       };
