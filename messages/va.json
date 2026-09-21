@@ -1470,14 +1470,6 @@
       }
     },
     "medical": {
-      "label": "Notes mèdiques",
-      "placeholder": "Al·lèrgies, lesions, tractaments en curs, contactes d'urgència…",
-      "help": "Visible només per a admin/coordinador, entrenador principal, ajudants amb permís explícit, i tutors legals vinculats.",
-      "errors": {
-        "medical_notes_too_long": "Les notes són massa llargues (màx. 5000 caràcters).",
-        "forbidden": "No tens permís per a editar les notes mèdiques.",
-        "generic": "No s'ha pogut guardar."
-      },
       "readonly_hint": "Només lectura. La família gestiona estes dades.",
       "allergies": "Alèrgies",
       "medication": "Medicació",

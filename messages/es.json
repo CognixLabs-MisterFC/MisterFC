@@ -1470,14 +1470,6 @@
       }
     },
     "medical": {
-      "label": "Notas médicas",
-      "placeholder": "Alergias, lesiones, tratamientos en curso, contactos de urgencia…",
-      "help": "Visible solo para admin/coordinador, entrenador principal, ayudantes con permiso explícito, y tutores legales vinculados.",
-      "errors": {
-        "medical_notes_too_long": "Las notas son demasiado largas (máx. 5000 caracteres).",
-        "forbidden": "No tienes permiso para editar las notas médicas.",
-        "generic": "No se pudo guardar."
-      },
       "readonly_hint": "Solo lectura. La familia gestiona estos datos.",
       "allergies": "Alergias",
       "medication": "Medicación",

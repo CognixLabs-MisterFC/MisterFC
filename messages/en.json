@@ -1470,14 +1470,6 @@
       }
     },
     "medical": {
-      "label": "Medical notes",
-      "placeholder": "Allergies, injuries, ongoing treatments, emergency contacts…",
-      "help": "Visible only to admin/coordinator, head coach, assistants with explicit permission, and linked legal guardians.",
-      "errors": {
-        "medical_notes_too_long": "The notes are too long (max. 5000 characters).",
-        "forbidden": "You don't have permission to edit the medical notes.",
-        "generic": "Couldn't save."
-      },
       "readonly_hint": "Read-only. The family manages this data.",
       "allergies": "Allergies",
       "medication": "Medication",
