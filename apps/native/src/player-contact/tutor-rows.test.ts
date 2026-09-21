@@ -54,3 +54,29 @@ describe('tutorContactRows', () => {
     expect(tutorContactRows([], 'ana')).toEqual([]);
   });
 });
+
+/**
+ * El filtro va en positivo (parent | guardian). Un valor que no conocemos no se
+ * cuela en la lista de la familia solo por no ser 'self'.
+ */
+describe('tutorContactRows · el filtro es una lista de admitidos', () => {
+  const DESCONOCIDA: TutorContact = {
+    tutorProfileId: 'x',
+    fullName: 'Quien sea',
+    relation: 'abuela',
+    email: null,
+    phone: null,
+  };
+
+  it('una relación que no es tutor se queda fuera', () => {
+    expect(tutorContactRows([ANA, DESCONOCIDA], null).map((r) => r.tutorProfileId)).toEqual([
+      'ana',
+    ]);
+  });
+
+  it('y la ficha de dirección, sin visor, sigue viendo a los tutores', () => {
+    const rows = tutorContactRows([ANA, LUIS, EL_JUGADOR], null);
+    expect(rows.map((r) => r.tutorProfileId)).toEqual(['ana', 'luis']);
+    expect(rows.every((r) => !r.isViewer)).toBe(true);
+  });
+});

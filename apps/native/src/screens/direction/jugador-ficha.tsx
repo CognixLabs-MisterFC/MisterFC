@@ -8,6 +8,7 @@ import {
   type PlayerFicha,
   type PlayerContactResult,
 } from '@misterfc/core';
+import { tutorContactRows } from '@/player-contact/tutor-rows';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
@@ -148,6 +149,8 @@ function ContactSection({
     );
   }
 
+  const tutores = tutorContactRows(contact.tutors, null);
+
   return (
     <Section title={t('ficha.contact')}>
       <Row
@@ -157,10 +160,15 @@ function ContactSection({
         accent={accent}
         empty={t('ficha.contact_no_phone')}
       />
-      {contact.tutors.length === 0 ? (
+      {/* La RPC devuelve TODAS las filas de player_accounts, y eso incluye la
+          CUENTA PROPIA del menor (relation='self'), que aquí salía como un tutor
+          más con el correo del padre dentro. Se pasa por el mismo filtro que la
+          pantalla de Familia de la app: tutores y nadie más. Quien mira es
+          dirección, nunca un tutor, así que no hay fila que marcar como suya. */}
+      {tutores.length === 0 ? (
         <Text className="mt-1 text-xs text-zinc-400">{t('ficha.contact_no_tutors')}</Text>
       ) : (
-        contact.tutors.map((tu) => (
+        tutores.map((tu) => (
           <View key={tu.tutorProfileId} className="mt-3 border-t border-zinc-100 pt-2">
             <Text className="text-sm font-medium text-[#0F1B2E]">
               {tu.fullName ?? t(`jugadores.family.relation.${tu.relation}`)}

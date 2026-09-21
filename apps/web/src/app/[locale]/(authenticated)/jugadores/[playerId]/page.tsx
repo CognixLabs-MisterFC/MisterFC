@@ -16,6 +16,7 @@ import {
   type AttendanceRow,
   type RatingTimelinePoint,
   hasLinkedFamily,
+  isTutorAccount,
   getPlayerContactFromClient,
   playerInviteKind,
 } from '@misterfc/core';
@@ -371,6 +372,21 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
   // más abajo; el marcador ya no las mira (un solo marcador para todos los roles).
   const noApp = !hasLinkedFamily(linkedAccounts);
 
+  // La lista de FAMILIA pinta solo a los TUTORES. La cuenta propia del menor
+  // (relation='self', serie MN) es una fila más de player_accounts y salía aquí
+  // como un tutor cualquiera —con el correo del padre dentro, porque la cuenta
+  // del hijo nace con él—. Decisión de Jose: se oculta.
+  //
+  // Se filtra AQUÍ y no en el select de arriba a propósito: `hasLinkedFamily`
+  // cuenta las filas para el marcador «Sin app», y un menor con cuenta propia y
+  // sin tutores vinculados SÍ tiene la app. Filtrar la consulta lo marcaría al
+  // revés.
+  //
+  // Quien lo veía era el CUERPO TÉCNICO: a un tutor la RLS
+  // (`player_accounts_select_self_or_staff`) ya le oculta la fila 'self' de su
+  // hijo — solo ve la suya.
+  const tutorAccounts = (linkedAccounts ?? []).filter(isTutorAccount);
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex items-center gap-2">
@@ -524,14 +540,14 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
                     {t('contact.unavailable')}
                   </p>
                 )}
-                {(linkedAccounts ?? []).length === 0 &&
+                {tutorAccounts.length === 0 &&
                 (pendingInvites ?? []).length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     {t('family.empty')}
                   </p>
                 ) : (
                   <ul className="flex flex-col divide-y divide-border">
-                    {(linkedAccounts ?? []).map((acc) => {
+                    {tutorAccounts.map((acc) => {
                       const profObj = (acc.profiles ?? null) as
                         | { full_name: string | null }
                         | null;
