@@ -110,10 +110,6 @@
         "body": "If an account exists for {email}, we've sent a link to reset your password.",
         "body_fallback": "If an account exists for that email, we've sent a link to reset your password."
       }
-    },
-    "callback": {
-      "error_title": "We couldn't complete sign-in",
-      "back_to_signin": "Back to sign in"
     }
   },
   "portada": {

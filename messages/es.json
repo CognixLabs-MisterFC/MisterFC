@@ -110,10 +110,6 @@
         "body": "Si existe una cuenta asociada a {email}, te hemos enviado un enlace para restablecer la contraseña.",
         "body_fallback": "Si existe una cuenta con ese correo, te hemos enviado un enlace para restablecer la contraseña."
       }
-    },
-    "callback": {
-      "error_title": "No hemos podido completar el acceso",
-      "back_to_signin": "Volver a iniciar sesión"
     }
   },
   "portada": {

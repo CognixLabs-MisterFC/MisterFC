@@ -110,10 +110,6 @@
         "body": "Si existeix un compte associat a {email}, t'hem enviat un enllaç per restablir la contrasenya.",
         "body_fallback": "Si existeix un compte amb aquest correu, t'hem enviat un enllaç per restablir la contrasenya."
       }
-    },
-    "callback": {
-      "error_title": "No hem pogut completar l'accés",
-      "back_to_signin": "Tornar a iniciar sessió"
     }
   },
   "portada": {
