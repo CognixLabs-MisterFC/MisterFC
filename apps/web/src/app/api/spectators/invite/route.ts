@@ -64,7 +64,7 @@ export async function POST(req: Request) {
 
   const locale =
     typeof b.locale === 'string' && LOCALE_RE.test(b.locale) ? b.locale : 'es';
-    // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
   // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
   const linkBase = inviteLinkBase(locale);
 

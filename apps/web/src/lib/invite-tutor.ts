@@ -156,7 +156,7 @@ export async function sendOrRenewTutorInvitation(
   if (!invite) return { error: 'generic' };
 
   // 2) El enlace del correo: directo a /invite/{token}, como siempre.
-    // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
   // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
   const redirectTo = inviteLink(locale, invite.token);
 

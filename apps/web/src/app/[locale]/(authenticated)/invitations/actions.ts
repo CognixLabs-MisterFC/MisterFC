@@ -395,7 +395,7 @@ export async function sendInvitation(
   // token por sesión. Antes pasábamos por /auth/callback, pero si la URL no
   // estaba en la allowlist de Supabase caía en silencio al Site URL (la raíz) y
   // el code se perdía.
-    // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
   // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
   const redirectTo = inviteLink(locale, invite.token);
 

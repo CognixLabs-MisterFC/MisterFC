@@ -115,7 +115,7 @@ export async function inviteClubAdmin(input: {
   }
 
   // Paso 2: enviar el email (patrón sendInvitation).
-    // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
   // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
   const redirectTo = inviteLink(locale, invite.token);
 

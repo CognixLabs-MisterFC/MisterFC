@@ -604,7 +604,7 @@ export async function inviteSpectatorForPlayer(
   } = await supabase.auth.getUser();
   if (!user) return { error: 'forbidden' };
 
-    // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
   // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
   const linkBase = inviteLinkBase(locale);
 
@@ -674,7 +674,7 @@ export async function inviteSelfForPlayer(
   } = await supabase.auth.getUser();
   if (!user) return { error: 'forbidden' };
 
-    // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
+  // El enlace sale SIEMPRE de misterfc.es, no del host de la peticion: es el unico
   // dominio con assetlinks.json y AASA, y el unico que la app acepta. Ver WEB_ORIGIN.
   const linkBase = inviteLinkBase(locale);
 
