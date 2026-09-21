@@ -22,7 +22,31 @@
  * no para pintar.
  */
 
-/** ¿Alguna familia completó el alta? (basta con que exista alguna player_account). */
+/**
+ * Las relaciones que son TUTOR. `player_accounts.relation` admite tres valores
+ * (`self | parent | guardian`, CHECK de la tabla) y solo dos son un tutor: la
+ * tercera es la CUENTA DEL PROPIO MENOR (serie MN).
+ *
+ * Se declara en positivo, no como «todo menos self», para que un cuarto valor no
+ * entre solo en la lista de la familia: entrar hay que pedirlo.
+ *
+ * Quien pinta la FAMILIA de un jugador usa esto. Quien cuenta si hay app
+ * instalada, NO: ver `hasLinkedFamily` justo debajo.
+ */
+export const TUTOR_RELATIONS = ['parent', 'guardian'] as const;
+
+/** ¿Esta fila de `player_accounts` es la de un tutor, y no la del propio menor? */
+export function isTutorAccount(row: { relation: string | null }): boolean {
+  return (TUTOR_RELATIONS as readonly string[]).includes(row.relation ?? '');
+}
+
+/**
+ * ¿Alguna familia completó el alta? (basta con que exista alguna player_account).
+ *
+ * MIRA TODAS LAS FILAS, la del propio menor incluida, y por eso no usa
+ * `isTutorAccount`: un menor con cuenta propia y sin tutores vinculados TIENE la
+ * app. Filtrar aquí lo marcaría «Sin app», que es justo lo contrario de la verdad.
+ */
 export function hasLinkedFamily(
   accounts: ReadonlyArray<unknown> | null | undefined,
 ): boolean {

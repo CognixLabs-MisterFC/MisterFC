@@ -46,6 +46,12 @@ export type TutorContactRow = TutorContact & {
  * La fila de quien mira SÍ se queda, marcada. Un tutor viendo su propia ficha de
  * contacto no es ruido: es lo que los demás ven de él.
  *
+ * El filtro va en POSITIVO —parent y guardian— y no como «todo menos self»: un
+ * cuarto valor de `relation` no debe colarse solo en la lista de la familia. Es la
+ * misma regla que `TUTOR_RELATIONS` de core; se repite aquí a propósito, porque
+ * este fichero NO importa de `@misterfc/core` (ver la cabecera). Si cambia una,
+ * cambian las dos.
+ *
  * El orden llega ya hecho de SQL (`order by relation, full_name`) y no se toca.
  */
 export function tutorContactRows(
@@ -53,6 +59,6 @@ export function tutorContactRows(
   viewerProfileId: string | null,
 ): TutorContactRow[] {
   return tutors
-    .filter((tu) => tu.relation !== 'self')
+    .filter((tu) => tu.relation === 'parent' || tu.relation === 'guardian')
     .map((tu) => ({ ...tu, isViewer: tu.tutorProfileId === viewerProfileId }));
 }
