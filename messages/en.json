@@ -97,7 +97,9 @@
       "error_password_too_short": "Password must be at least 8 characters",
       "error_password_mismatch": "Passwords don't match",
       "error_no_session": "No active session. Request a new reset link.",
-      "error_generic": "We couldn't update the password. Please try again."
+      "error_generic": "We couldn't update the password. Please try again.",
+      "signout_hint": "Rather not change it now? Your current password still works.",
+      "signout": "Sign out"
     },
     "check_email": {
       "back_to_signin": "Back to sign in",
