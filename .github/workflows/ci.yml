@@ -74,8 +74,11 @@ jobs:
       # Una clave del catalogo que se queda sin uso no rompe nada: los mensajes de
       # next-intl no estan tipados, asi que no hay error de tipos ni de lint, y el
       # traductor la sigue traduciendo a tres idiomas. Se acumulan en silencio: al
-      # escribir el guard habia 57. Las 54 que quedan van declaradas en el script;
-      # una cadena NUEVA sin uso pone esto rojo.
+      # escribir el guard habia 57. Las excepciones, si alguna vez hace falta alguna,
+      # van declaradas EN EL SCRIPT -con fecha y motivo, y se van con su PR-, no aqui:
+      # el numero que hubiera escrito aqui no lo comprueba nadie. Hoy la lista esta
+      # vacia y el propio guard lo dice en cada run. Una cadena NUEVA sin uso pone
+      # esto rojo.
       - name: Check dead catalogue strings census
         run: pnpm check:cadenas-muertas
 
@@ -144,8 +147,8 @@ jobs:
   # F15-B — Suite pgTAP (RLS) contra una BD Supabase EFÍMERA por PR.
   #
   # Hermético: `supabase start` levanta un stack local en el runner (Docker),
-  # aplica las 240 migraciones EN LIMPIO y trae el esquema `storage` (2 tests lo
-  # necesitan). La suite corre con DATABASE_URL apuntando a la BD local
+  # aplica TODAS las migraciones EN LIMPIO y trae el esquema `storage` (los tests
+  # de storage lo necesitan). La suite corre con DATABASE_URL apuntando a la BD local
   # (127.0.0.1:54322) → NO usa secrets ni toca producción, y cada PR tiene su
   # propia BD (concurrencia resuelta por construcción).
   #
@@ -178,15 +181,21 @@ jobs:
         with:
           version: 2.98.2
 
-      # Levanta el stack local y APLICA las 240 migraciones en limpio. Si alguna
+      # Levanta el stack local y APLICA TODAS las migraciones en limpio. Si alguna
       # migración falla (un club nuevo no se podría crear desde cero), este paso
       # sale en rojo y para el PR.
-      - name: supabase start (aplica las 240 migraciones en limpio)
+      - name: supabase start (aplica todas las migraciones en limpio)
         run: supabase start
 
       # Red de verificación del propio stack antes de correr la suite:
-      #  · el esquema `storage` existe (si no, los 2 tests de storage fallarían).
-      #  · las 240 migraciones quedaron registradas (clean apply completo).
+      #  · el esquema `storage` existe (si no, los tests de storage fallarían).
+      #  · TODAS las migraciones quedaron registradas (clean apply completo).
+      #
+      # Aquí NO va ningún número escrito a mano. El recuento que vale es el de
+      # abajo, `APPLIED -eq FILES`, que se mide en cada run: un número en un
+      # comentario no lo comprueba nadie y envejece en silencio —este job decía
+      # «las 240 migraciones» y «112/112» cuando ya iban por 246 y 116—, y leerlo
+      # induce a pensar que algo lo está verificando.
       - name: Verificar storage + recuento de migraciones
         run: |
           DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
@@ -202,7 +211,7 @@ jobs:
       # La suite pgTAP contra la BD local vía el override DATABASE_URL del script
       # (scripts/supabase-cli.sh). Sin DATABASE_URL el script seguiría yendo al
       # remoto — aquí lo forzamos a local. Bloqueante: rc != 0 => PR en rojo.
-      - name: pgTAP suite (112/112)
+      - name: pgTAP suite (la familia entera)
         env:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
         run: pnpm db:test
