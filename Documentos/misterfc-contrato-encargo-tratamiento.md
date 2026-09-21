@@ -108,11 +108,13 @@ El Club se obliga a:
 
 Ambas partes reconocen el carácter especialmente sensible de los datos tratados. En particular:
 
-**5.1** La plataforma restringe el acceso a las notas médicas a los perfiles expresamente autorizados y a los tutores legales vinculados al jugador.
+**5.1** El acceso a los datos de salud de cada jugador se restringe, mediante controles aplicados en la propia base de datos, a: (a) los perfiles de dirección del Club (administrador y directores); (b) el cuerpo técnico asignado al equipo del jugador, mientras dure dicha asignación; (c) el cuerpo técnico de otro equipo del Club al que el jugador haya sido convocado puntualmente, únicamente desde la convocatoria hasta el final del día del evento; (d) los tutores legales vinculados al jugador; y (e) el propio jugador, una vez alcanzada la mayoría de edad. Ningún otro perfil del Club puede acceder a ellos. En todo caso, el acceso requiere que conste el consentimiento para el tratamiento de datos de salud; sin él, ningún perfil puede consultarlos.
 
 **5.2** Todo acceso, modificación, eliminación o exportación de datos de salud queda registrado en un registro de auditoría que identifica al usuario, la fecha y hora, el registro afectado y los datos técnicos de la conexión.
 
-**5.3** El Club es responsable de determinar qué personal necesita acceder a datos de salud y de mantener actualizada dicha configuración.
+**5.3** El Club determina qué personas acceden a datos de salud mediante la asignación de roles y equipos en la plataforma: quién integra la dirección y qué personal forma parte del cuerpo técnico de cada equipo. Corresponde al Club mantener actualizada dicha asignación y retirar sin demora a quien deje de necesitar el acceso.
+
+**5.4** El personal del Encargado solo accederá a datos de salud cuando resulte necesario para la prestación del servicio o la resolución de incidencias, quedando dicho acceso registrado conforme a la cláusula 5.2.
 
 ## 6. Medidas de seguridad
 
