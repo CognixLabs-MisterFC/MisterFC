@@ -5712,6 +5712,44 @@
       "fallback": "Si el botó no funciona, copia aquesta adreça al teu navegador:",
       "ignore": "Si no esperaves aquesta invitació, pots ignorar aquest correu: no es crearà res al teu nom.",
       "signature": "L'equip de MisterFC"
+    },
+    "staff_invite": {
+      "cta": "Acceptar la invitació",
+      "fallback": "Si el botó no funciona, copia aquesta adreça al teu navegador:",
+      "ignore": "Si no esperaves aquesta invitació, pots ignorar aquest correu: no es crearà res al teu nom.",
+      "signature": "L'equip de MisterFC",
+      "roles": {
+        "admin_club": {
+          "subject": "T'han convidat a administrar el teu club en MisterFC",
+          "heading": "T'han convidat com a administrador del club",
+          "body": "El teu club utilitza MisterFC per a organitzar-se: convocatòries, entrenaments, partits i els missatges de l'equip. T'han convidat com a administrador o administradora del club. Entra amb aquest enllaç per a acceptar la invitació i crear el teu compte."
+        },
+        "director": {
+          "subject": "T'han convidat a MisterFC com a director",
+          "heading": "T'han convidat com a director",
+          "body": "El teu club utilitza MisterFC per a organitzar-se: convocatòries, entrenaments, partits i els missatges de l'equip. T'han convidat com a director o directora. Entra amb aquest enllaç per a acceptar la invitació i crear el teu compte."
+        },
+        "coordinador": {
+          "subject": "T'han convidat a MisterFC com a coordinador",
+          "heading": "T'han convidat com a coordinador",
+          "body": "El teu club utilitza MisterFC per a organitzar-se: convocatòries, entrenaments, partits i els missatges de l'equip. T'han convidat com a coordinador o coordinadora. Entra amb aquest enllaç per a acceptar la invitació i crear el teu compte."
+        },
+        "entrenador_principal": {
+          "subject": "T'han convidat a MisterFC com a entrenador principal",
+          "heading": "T'han convidat com a entrenador principal",
+          "body": "El teu club utilitza MisterFC per a organitzar-se: convocatòries, entrenaments, partits i els missatges de l'equip. T'han convidat com a entrenador o entrenadora principal. Entra amb aquest enllaç per a acceptar la invitació i crear el teu compte."
+        },
+        "entrenador_ayudante": {
+          "subject": "T'han convidat a MisterFC com a entrenador ajudant",
+          "heading": "T'han convidat com a entrenador ajudant",
+          "body": "El teu club utilitza MisterFC per a organitzar-se: convocatòries, entrenaments, partits i els missatges de l'equip. T'han convidat com a entrenador o entrenadora ajudant. Entra amb aquest enllaç per a acceptar la invitació i crear el teu compte."
+        },
+        "jugador": {
+          "subject": "T'han convidat a MisterFC, l'app del teu club",
+          "heading": "T'han convidat a MisterFC",
+          "body": "El teu club utilitza MisterFC per a organitzar-se: convocatòries, entrenaments, partits i els missatges de l'equip. T'han convidat com a jugador o família. Entra amb aquest enllaç per a acceptar la invitació i crear el teu compte."
+        }
+      }
     }
   }
 }

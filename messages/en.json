@@ -5712,6 +5712,44 @@
       "fallback": "If the button does not work, copy this address into your browser:",
       "ignore": "If you were not expecting this invitation, you can ignore this email: nothing will be created in your name.",
       "signature": "The MisterFC team"
+    },
+    "staff_invite": {
+      "cta": "Accept the invitation",
+      "fallback": "If the button does not work, copy this address into your browser:",
+      "ignore": "If you were not expecting this invitation, you can ignore this email: nothing will be created in your name.",
+      "signature": "The MisterFC team",
+      "roles": {
+        "admin_club": {
+          "subject": "You have been invited to manage your club on MisterFC",
+          "heading": "You have been invited as club administrator",
+          "body": "Your club uses MisterFC to organise itself: call-ups, training sessions, matches and the team's messages. You have been invited as club administrator. Use this link to accept the invitation and create your account."
+        },
+        "director": {
+          "subject": "You have been invited to MisterFC as a director",
+          "heading": "You have been invited as a director",
+          "body": "Your club uses MisterFC to organise itself: call-ups, training sessions, matches and the team's messages. You have been invited as a director. Use this link to accept the invitation and create your account."
+        },
+        "coordinador": {
+          "subject": "You have been invited to MisterFC as a coordinator",
+          "heading": "You have been invited as a coordinator",
+          "body": "Your club uses MisterFC to organise itself: call-ups, training sessions, matches and the team's messages. You have been invited as a coordinator. Use this link to accept the invitation and create your account."
+        },
+        "entrenador_principal": {
+          "subject": "You have been invited to MisterFC as head coach",
+          "heading": "You have been invited as head coach",
+          "body": "Your club uses MisterFC to organise itself: call-ups, training sessions, matches and the team's messages. You have been invited as head coach. Use this link to accept the invitation and create your account."
+        },
+        "entrenador_ayudante": {
+          "subject": "You have been invited to MisterFC as assistant coach",
+          "heading": "You have been invited as assistant coach",
+          "body": "Your club uses MisterFC to organise itself: call-ups, training sessions, matches and the team's messages. You have been invited as assistant coach. Use this link to accept the invitation and create your account."
+        },
+        "jugador": {
+          "subject": "You have been invited to MisterFC, your club's app",
+          "heading": "You have been invited to MisterFC",
+          "body": "Your club uses MisterFC to organise itself: call-ups, training sessions, matches and the team's messages. You have been invited as a player or family. Use this link to accept the invitation and create your account."
+        }
+      }
     }
   }
 }
