@@ -48,7 +48,7 @@
  * fichero.
  */
 
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -244,6 +244,92 @@ for (const [file, senders] of Object.entries(todos)) {
   }
 }
 
+/**
+ * ── Y que el correo que manda cada sender migrado TENGA TEXTO ────────────────
+ *
+ * El censo de arriba vigila que nadie mande sin que se vea. Esto vigila lo de
+ * después: que lo que se manda no salga vacío.
+ *
+ * `invitationEmail` compone con el catálogo de next-intl, así que una clave que falte
+ * en un idioma no es un error de compilación: es una excepción EN EL ENVÍO, en
+ * producción, y solo para quien tenga ese idioma. El sender la trata como un fallo de
+ * correo cualquiera —devuelve error y registra— pero la invitación ya está creada y
+ * el invitado no recibe nada. Se descubre cuando alguien no puede entrar.
+ *
+ * Lo que se exige, leyendo las dos listas del CÓDIGO (no de una copia a mano):
+ *   · cada `kind` de NAMESPACE_BY_KIND tiene su bloque en los TRES catálogos;
+ *   · con las cuatro piezas comunes (cta, fallback, ignore, signature);
+ *   · y el asunto, el título y el cuerpo — en `staff`, uno por cada rol de
+ *     ROL_CON_TEXTO, porque ahí el texto depende del papel con el que se invita.
+ */
+const PLANTILLA = join(ROOT, 'apps/web/src/lib/email/invitation-email.ts');
+const IDIOMAS = ['es', 'en', 'va'];
+const COMUNES = ['cta', 'fallback', 'ignore', 'signature'];
+const PROPIAS = ['subject', 'heading', 'body'];
+
+if (!existsSync(PLANTILLA)) {
+  problems.push(`· no existe apps/web/src/lib/email/invitation-email.ts (de donde salen los textos).`);
+} else {
+  const fuente = readFileSync(PLANTILLA, 'utf8');
+
+  const mapa = /const NAMESPACE_BY_KIND[^=]*=\s*{([^}]*)}/.exec(fuente)?.[1] ?? '';
+  const kinds = [...mapa.matchAll(/(\w+)\s*:\s*'([^']+)'/g)].map((m) => ({ kind: m[1], ns: m[2] }));
+
+  const rolesRaw = /const ROL_CON_TEXTO[^=]*=\s*{([^}]*)}/.exec(fuente)?.[1] ?? '';
+  const roles = [...rolesRaw.matchAll(/(\w+)\s*:\s*true/g)].map((m) => m[1]);
+
+  // Control positivo: si los dos lectores se rompen, esto NO puede pasar en verde
+  // sin mirar nada —que es justo como se pierde un guard—.
+  if (kinds.length < 3 || roles.length < 3) {
+    problems.push(
+      `· no se pudieron leer NAMESPACE_BY_KIND (${kinds.length}) ni ROL_CON_TEXTO ` +
+        `(${roles.length}) en invitation-email.ts. ¿Cambiaron de forma? Sin eso, este ` +
+        `guard no comprueba un solo texto.`,
+    );
+  } else {
+    for (const idioma of IDIOMAS) {
+      const ruta = join(ROOT, `messages/${idioma}.json`);
+      if (!existsSync(ruta)) {
+        problems.push(`· falta messages/${idioma}.json.`);
+        continue;
+      }
+      const catalogo = JSON.parse(readFileSync(ruta, 'utf8'));
+      for (const { kind, ns } of kinds) {
+        const bloque = ns.split('.').reduce((o, k) => (o == null ? o : o[k]), catalogo);
+        if (bloque == null || typeof bloque !== 'object') {
+          problems.push(
+            `· messages/${idioma}.json no tiene '${ns}', el correo del tipo '${kind}'. ` +
+              `Quien lo reciba en ${idioma} no recibirá nada.`,
+          );
+          continue;
+        }
+        const falta = (clave, obj = bloque) =>
+          typeof obj?.[clave] !== 'string' || obj[clave].trim().length === 0;
+
+        for (const clave of COMUNES) {
+          if (falta(clave)) problems.push(`· messages/${idioma}.json: falta '${ns}.${clave}'.`);
+        }
+        if (kind === 'staff') {
+          for (const rol of roles) {
+            for (const clave of PROPIAS) {
+              if (falta(clave, bloque.roles?.[rol])) {
+                problems.push(
+                  `· messages/${idioma}.json: falta '${ns}.roles.${rol}.${clave}'. Invitar ` +
+                    `con el rol '${rol}' reventaría al componer el correo.`,
+                );
+              }
+            }
+          }
+        } else {
+          for (const clave of PROPIAS) {
+            if (falta(clave)) problems.push(`· messages/${idioma}.json: falta '${ns}.${clave}'.`);
+          }
+        }
+      }
+    }
+  }
+}
+
 if (problems.length > 0) {
   console.error('\n[invite-senders] El censo de senders de invitación NO cuadra:\n');
   for (const p of problems) console.error('  ' + p);
@@ -261,5 +347,6 @@ const migrados = Object.values(foundResend).reduce((a, b) => a + b, 0);
 console.log(
   `[invite-senders] OK — ${legado + migrados} senders (${legado} por GoTrue, ` +
     `${migrados} por Resend), censo cuadra, todos mandan su invite_kind, ninguno ` +
-    'invita por reset y ninguno está a medio migrar.',
+    'invita por reset y ninguno está a medio migrar; y los correos migrados tienen ' +
+    'texto completo en es, en y va.',
 );

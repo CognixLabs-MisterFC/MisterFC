@@ -27,10 +27,10 @@ type DbClient = SupabaseClient<Database>;
  * decide el sender, que es quien sabe qué hay creado ya.
  */
 export function invitationEmailPort(kind: InviteKind) {
-  return async (args: { to: string; url: string; locale: string }) => {
+  return async (args: { to: string; url: string; locale: string; role?: string }) => {
     try {
       const locale = normalizeLocale(args.locale, 'es');
-      const message = await invitationEmail({ kind, locale, url: args.url });
+      const message = await invitationEmail({ kind, locale, url: args.url, role: args.role });
       return await sendEmail({ to: args.to, message });
     } catch (thrown) {
       // Componer también puede fallar (un `kind` sin textos, un catálogo incompleto).

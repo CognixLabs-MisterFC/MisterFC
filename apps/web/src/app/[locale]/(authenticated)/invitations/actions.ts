@@ -58,7 +58,8 @@ function maskEmail(email: string): string {
  * Flujo (ADR-0004 — auth por email+password):
  *  1. Validar permisos del actor (admin_club o director del club; los roles
  *     altos, solo el owner).
- *  2. INSERT en `invitations` con token + expiración.
+ *  2. RENOVAR la invitación pendiente de ese correo en ese club, si la hay, o
+ *     INSERTAR una nueva. A una persona se la invita UNA vez, con UN rol.
  *  3. Correo-B5 — buscar al destinatario, crear su cuenta con `createUser` si no
  *     la tiene, ENLAZAR `invited_user_id` y mandarle el correo por Resend, EN SU
  *     IDIOMA. Antes eran una sola llamada (`inviteUserByEmail`) y la plantilla
@@ -209,59 +210,178 @@ export async function sendInvitation(
     };
   }
 
-  // Paso 2: INSERT en invitations.
-  const insertPayload = {
-    email: parsed.data.email,
-    role: parsed.data.role,
-    club_id: authorized.club_id,
-    team_id: parsed.data.team_id ?? null,
-    created_by: user.id,
-  };
-
-  const { data: invite, error: insErr } = await supabase
+  // Paso 2: la invitación. RENOVAR si ya hay una pendiente para este correo en este
+  // club; si no, crearla.
+  //
+  // REGLA DE PRODUCTO: a una persona se la invita UNA vez, con UN rol. Los demás
+  // roles se le añaden después desde dentro (agregar rol, agregar jugador). Antes,
+  // reinvitar al mismo correo creaba una fila más: dos enlaces vivos para la misma
+  // persona y la lista de pendientes con la misma dirección repetida.
+  //
+  // Si la pendiente es de OTRO rol, se PISA con el del formulario: nadie ha aceptado
+  // nada todavía, así que no se pierde nada, y el caso real es una corrección ("me
+  // equivoqué de rol"). El pre-gate de rol alto (F1B-2, más arriba) ya ha corrido, así
+  // que por aquí no se asciende a nadie a admin_club/director sin ser el owner.
+  //
+  // ── El alcance lleva `player_id is null`, y NO es un detalle ────────────────────
+  // El circuito de tutor (lib/invite-tutor.ts) escribe en esta MISMA tabla con
+  // `role='jugador'` y un `player_id`. Sin ese filtro, invitar como delegada a una
+  // madre que tiene pendiente la invitación que la vincula a su hijo renovaría ESA
+  // fila y le pisaría el `player_id` y la relación — lo único que crea el vínculo
+  // familiar al aceptar. Aquí solo se tocan invitaciones DE CLUB.
+  //
+  // Una pendiente CADUCADA no se renueva: se crea otra, igual que hace el circuito de
+  // tutor. La caducada se queda hasta que alguien la borre; no estorba porque ya no
+  // vale como enlace.
+  const ahoraIso = new Date().toISOString();
+  const { data: pendientes, error: pendErr } = await supabase
     .from('invitations')
-    .insert(insertPayload)
-    .select('id, token')
-    .single();
+    .select('id, email, role')
+    .eq('club_id', authorized.club_id)
+    .is('player_id', null)
+    .is('accepted_at', null)
+    .gt('expires_at', ahoraIso)
+    .order('created_at', { ascending: false });
 
-  if (insErr) {
-    console.error('[invitations] insert_failed', {
-      step: 'insert_invitation',
-      code: insErr.code,
-      message: insErr.message,
-      details: insErr.details,
-      hint: insErr.hint,
-      payload: { ...insertPayload, email: maskedEmail },
-    });
-    Sentry.captureException(insErr, {
-      tags: {
-        feature: 'invitations',
-        step: 'insert_invitation',
-        pg_code: insErr.code ?? 'unknown',
-      },
-      extra: {
-        club_id: authorized.club_id,
-        role: parsed.data.role,
-        team_id: parsed.data.team_id ?? null,
-        masked_email: maskedEmail,
-      },
+  if (pendErr) {
+    console.error(
+      '[invitations] pending_lookup_failed ' +
+        JSON.stringify({
+          step: 'pending_lookup',
+          masked_email: maskedEmail,
+          code: pendErr.code,
+          message: pendErr.message,
+        }),
+    );
+    Sentry.captureException(pendErr, {
+      tags: { feature: 'invitations', step: 'pending_lookup' },
+      extra: { club_id: authorized.club_id, masked_email: maskedEmail },
     });
     return { error: 'generic' };
   }
+
+  // La comparación va en JS y en minúsculas a propósito. `invitations.email` guarda lo
+  // que se escribió (el schema hace trim, no lower), así que un `.eq` se dejaría
+  // "Ana@club.es" frente a "ana@club.es" y crearía justo el duplicado que esto evita.
+  // Y no se usa `ilike` porque `_` y `%` son comodines suyos y un correo puede llevar
+  // un `_` (pepe_ruiz@club.es casaría con pepeXruiz@club.es).
+  const buscado = parsed.data.email.trim().toLowerCase();
+  const pendiente =
+    (pendientes ?? []).find((p) => (p.email ?? '').trim().toLowerCase() === buscado) ?? null;
+
+  let invite: { id: string; token: string } | null = null;
+
+  if (pendiente) {
+    // Renovación: token nuevo (el anterior deja de valer), +7 días, y el rol y el
+    // equipo del formulario. Si quedaran duplicados de ANTES de esta regla, se renueva
+    // la más reciente y las otras siguen su curso hasta caducar.
+    const nuevaExpiracion = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    const { data: renovada, error: updErr } = await supabase
+      .from('invitations')
+      .update({
+        role: parsed.data.role,
+        team_id: parsed.data.team_id ?? null,
+        token: crypto.randomUUID(),
+        expires_at: nuevaExpiracion,
+      })
+      .eq('id', pendiente.id)
+      .select('id, token')
+      .single();
+
+    if (updErr) {
+      console.error(
+        '[invitations] renew_failed ' +
+          JSON.stringify({
+            step: 'renew_invitation',
+            masked_email: maskedEmail,
+            invitation_id: pendiente.id,
+            code: updErr.code,
+            message: updErr.message,
+          }),
+      );
+      if (updErr.code === '42501') return { error: 'forbidden' };
+      Sentry.captureException(updErr, {
+        tags: {
+          feature: 'invitations',
+          step: 'renew_invitation',
+          pg_code: updErr.code ?? 'unknown',
+        },
+        extra: {
+          club_id: authorized.club_id,
+          role: parsed.data.role,
+          masked_email: maskedEmail,
+        },
+      });
+      return { error: 'generic' };
+    }
+    invite = renovada as { id: string; token: string } | null;
+
+    if (invite) {
+      console.info('[invitations] renewed', {
+        invitation_id: invite.id,
+        rol_anterior: pendiente.role,
+        role: parsed.data.role,
+        masked_email: maskedEmail,
+      });
+    }
+  } else {
+    const insertPayload = {
+      email: parsed.data.email,
+      role: parsed.data.role,
+      club_id: authorized.club_id,
+      team_id: parsed.data.team_id ?? null,
+      created_by: user.id,
+    };
+
+    const { data: insertada, error: insErr } = await supabase
+      .from('invitations')
+      .insert(insertPayload)
+      .select('id, token')
+      .single();
+
+    if (insErr) {
+      console.error('[invitations] insert_failed', {
+        step: 'insert_invitation',
+        code: insErr.code,
+        message: insErr.message,
+        details: insErr.details,
+        hint: insErr.hint,
+        payload: { ...insertPayload, email: maskedEmail },
+      });
+      Sentry.captureException(insErr, {
+        tags: {
+          feature: 'invitations',
+          step: 'insert_invitation',
+          pg_code: insErr.code ?? 'unknown',
+        },
+        extra: {
+          club_id: authorized.club_id,
+          role: parsed.data.role,
+          team_id: parsed.data.team_id ?? null,
+          masked_email: maskedEmail,
+        },
+      });
+      return { error: 'generic' };
+    }
+    invite = insertada as { id: string; token: string } | null;
+
+    if (invite) {
+      console.info('[invitations] inserted', {
+        invitation_id: invite.id,
+        role: parsed.data.role,
+        masked_email: maskedEmail,
+      });
+    }
+  }
+
   if (!invite) {
-    console.error('[invitations] insert_returned_null');
-    Sentry.captureMessage('[invitations] insert returned null without error', {
+    console.error('[invitations] invitation_returned_null');
+    Sentry.captureMessage('[invitations] insert/update devolvió null sin error', {
       level: 'error',
       tags: { feature: 'invitations', step: 'insert_invitation' },
     });
     return { error: 'generic' };
   }
-
-  console.info('[invitations] inserted', {
-    invitation_id: invite.id,
-    role: parsed.data.role,
-    masked_email: maskedEmail,
-  });
 
   // Paso 3: la cuenta y el correo.
   //
@@ -472,6 +592,10 @@ export async function sendInvitation(
     to: parsed.data.email,
     url: redirectTo,
     locale: emailLocale,
+    // El PAPEL con el que se invita. Esta pantalla no invita solo a cuerpo técnico:
+    // también nombra administrador del club, dirección, coordinación o familia, y el
+    // correo lo dice. Con la plantilla de GoTrue los seis recibían el mismo texto.
+    role: parsed.data.role,
   });
   if (mailErr) {
     console.error(
