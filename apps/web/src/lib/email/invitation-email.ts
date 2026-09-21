@@ -95,6 +95,7 @@ const NAMESPACE_BY_KIND: Partial<Record<InviteKind, string>> = {
   menor: 'emails.self_invite',
   admin: 'emails.admin_invite',
   tutor: 'emails.tutor_invite',
+  staff: 'emails.staff_invite',
 };
 
 /**

@@ -8,7 +8,6 @@ import {
   STAFF_ROLES,
   inviteEmailMetadata,
   isEmailAlreadyExistsError,
-  sendInviteToExistingUser,
   sendInvitationSchema,
   createSupabaseServerClient,
   createSupabaseAdminClient,
@@ -16,6 +15,7 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
+import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 
 export type SendInvitationFormState = {
   error?: 'invalid_input' | 'forbidden' | 'no_club' | 'generic';
@@ -53,20 +53,22 @@ function maskEmail(email: string): string {
 }
 
 /**
- * Server Action: crea una invitación y dispara el email vía Supabase Invite.
+ * Server Action: crea la invitación de alguien del club y le manda su correo.
  *
- * Flow (ADR-0004 — auth por email+password):
- *  1. Validar permisos del actor (admin_club o coordinador del club).
+ * Flujo (ADR-0004 — auth por email+password):
+ *  1. Validar permisos del actor (admin_club o director del club; los roles
+ *     altos, solo el owner).
  *  2. INSERT en `invitations` con token + expiración.
- *  3. `auth.admin.inviteUserByEmail` — crea el user (si no existe) con
- *     email confirmado y dispara el template "Invite user" de Supabase
- *     con `redirectTo` DIRECTO a /{locale}/invite/{token} (ver el punto 3).
- *  4. Marca `app_metadata.invite_pending=true` para que la page de invitación
- *     muestre el form de password.
+ *  3. Correo-B5 — buscar al destinatario, crear su cuenta con `createUser` si no
+ *     la tiene, ENLAZAR `invited_user_id` y mandarle el correo por Resend, EN SU
+ *     IDIOMA. Antes eran una sola llamada (`inviteUserByEmail`) y la plantilla
+ *     única del dashboard, que sale siempre en castellano.
+ *  4. `user_metadata.invite_pending=true` (lo pone `inviteEmailMetadata`) para
+ *     que /invite muestre el form de contraseña.
  *
- * No usamos `signInWithOtp` aquí (era el método pre-ADR-0004). Sustituido por
- * inviteUserByEmail porque encaja mejor con email+password: el user llega ya
- * autenticado al callback y solo tiene que establecer password una vez.
+ * El orden importa: la cuenta y el enlazado ANTES del correo. Si el correo falla
+ * queda una invitación válida que se puede cancelar y rehacer; si fallara al
+ * revés, el invitado tendría un enlace que no lleva a ninguna parte.
  */
 export async function sendInvitation(
   locale: string,
@@ -261,17 +263,21 @@ export async function sendInvitation(
     masked_email: maskedEmail,
   });
 
-  // Paso 3: Supabase Invite (service role) — envía email y crea/upsert user
-  // con flag invite_pending. El template "Invite user" del dashboard debe
-  // contener `{{ .ConfirmationURL }}` que apunta a `redirectTo`.
+  // Paso 3: la cuenta y el correo.
+  //
+  // Correo-B5 — antes esto era UNA llamada, `inviteUserByEmail`, que creaba la
+  // cuenta Y mandaba el correo con la plantilla única del dashboard de Supabase.
+  // Esa plantilla no puede leer `profiles.locale`: al entrenador que tiene la app
+  // en valenciano le llegaba igualmente en castellano. Ahora son dos pasos —la
+  // cuenta con `createUser`, que no manda nada, y el correo por Resend— y el
+  // idioma lo decide el sender.
   const hdrs = await headers();
   const host = hdrs.get('x-forwarded-host') ?? hdrs.get('host') ?? '';
   const proto = hdrs.get('x-forwarded-proto') ?? 'https';
-  // redirectTo apunta directamente a la página de invitación: Supabase verify
-  // anexará `?code=<...>` (PKCE) o `?token_hash=<...>` (OTP), y la página se
-  // encarga de intercambiar el artefacto por sesión antes de mostrar el form.
-  // Antes pasábamos por /auth/callback, pero si la URL no estaba en la allowlist
-  // de Supabase, caía silenciosamente al Site URL (raíz) y el code se perdía.
+  // redirectTo apunta directamente a la página de invitación, que intercambia el
+  // token por sesión. Antes pasábamos por /auth/callback, pero si la URL no
+  // estaba en la allowlist de Supabase caía en silencio al Site URL (la raíz) y
+  // el code se perdía.
   const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
 
   console.info('[invitations][invite-email] sending', {
@@ -322,101 +328,40 @@ export async function sendInvitation(
     return { repr: String(err) };
   }
 
+  // ¿Ya tiene cuenta este correo? Antes de crear nada: decide si hay cuenta que
+  // crear, cuál enlazar y en qué IDIOMA escribir. Si la búsqueda tropieza se sigue
+  // por el camino de "no tiene cuenta", que es el normal, y `createUser` dirá la
+  // verdad después si resulta que sí la tenía.
+  let found: Awaited<ReturnType<ReturnType<typeof inviteRecipientPort>>> = null;
   try {
-    const { data: inviteData, error: invErr } = await admin.auth.admin.inviteUserByEmail(
-      parsed.data.email,
-      {
-        redirectTo,
-        data: inviteEmailMetadata({
-          invitationId: invite.id,
-          kind: 'staff',
-          locale,
-        }),
-      },
-    );
-
-    if (invErr) {
-      // Si el user ya existe (email previo) Supabase devuelve un error.
-      // En ese caso se manda el correo de INVITACIÓN para cuenta existente
-      // (plantilla de magic link), no el de restablecer contraseña. Ver
-      // `sendInviteToExistingUser`.
-      if (isEmailAlreadyExistsError(invErr)) {
-        console.info('[invitations][invite-email] user_exists_falling_back_to_reset', {
+    found = await inviteRecipientPort(admin)(parsed.data.email);
+  } catch (thrown) {
+    console.error(
+      '[invitations][invite-email] lookup_failed ' +
+        JSON.stringify({
+          step: 'lookup_recipient',
           masked_email: maskedEmail,
           invitation_id: invite.id,
-          original_error: serializeError(invErr),
-        });
-        const { error: resetErr } = await sendInviteToExistingUser(supabase, {
-          email: parsed.data.email,
-          redirectTo,
-        });
-        if (resetErr) {
-          console.error(
-            '[invitations][invite-email] existing_user_email_failed ' +
-              JSON.stringify({
-                step: 'invite_existing_user_fallback',
-                masked_email: maskedEmail,
-                invitation_id: invite.id,
-                error: serializeError(resetErr),
-              })
-          );
-          Sentry.captureException(resetErr, {
-            tags: { feature: 'invitations', step: 'reset_fallback' },
-            extra: { masked_email: maskedEmail, invitation_id: invite.id },
-          });
-          return { error: 'generic' };
-        }
-      } else {
-        console.error(
-          '[invitations][invite-email] invite_returned_error ' +
-            JSON.stringify({
-              step: 'inviteUserByEmail',
-              masked_email: maskedEmail,
-              invitation_id: invite.id,
-              error: serializeError(invErr),
-            })
-        );
-        Sentry.captureException(invErr, {
-          tags: {
-            feature: 'invitations',
-            step: 'inviteUserByEmail',
-            invite_status: String(invErr.status ?? 'unknown'),
-          },
-          extra: { masked_email: maskedEmail, invitation_id: invite.id },
-        });
-        return { error: 'generic' };
-      }
-    } else {
-      // Cuenta creada por nosotros para esta invitación (aún no reclamada).
-      // Guardamos su auth.users.id en `invited_user_id`: Rework B · B2 lo usa
-      // para fijar la contraseña SOLO sobre esta cuenta al aceptar por token.
-      // Si el email ya existía caímos en la rama de `isEmailAlreadyExistsError`
-      // y NO entramos aquí → invited_user_id queda NULL → invitee existente
-      // (inicia sesión con su contraseña).
-      const invitedUserId = inviteData?.user?.id ?? null;
-      if (!invitedUserId) {
-        // Invite OK pero SIN user.id: no es normal (antes era MUDO — no logueaba).
-        // Sin invited_user_id la invitación llevaría a "inicia sesión" sobre una
-        // cuenta sin contraseña (trampa). Lo hacemos RUIDOSO y devolvemos error al
-        // admin para que reintente, en vez de dar por buena una invitación rota.
-        console.error(
-          '[invitations][invite-email] invited_user_missing_id ' +
-            JSON.stringify({
-              step: 'invited_user_missing_id',
-              masked_email: maskedEmail,
-              invitation_id: invite.id,
-            })
-        );
-        Sentry.captureMessage('[invitations] inviteUserByEmail sin user.id', {
-          level: 'error',
-          tags: { feature: 'invitations', step: 'invited_user_missing_id' },
-          extra: { masked_email: maskedEmail, invitation_id: invite.id },
-        });
-        return { error: 'generic' };
-      }
-      // Enlaza y EXIGE 1 fila afectada: un UPDATE de cero filas no da error en
-      // PostgREST y dejaría invited_user_id NULL en silencio (raíz del incidente).
-      const linkRes = await linkInvitedUser(admin, invite.id, invitedUserId, {
+          error: serializeError(thrown),
+        }),
+    );
+  }
+  const emailLocale = found?.locale ?? locale;
+
+  try {
+    if (found && !found.invitePending) {
+      // Cuenta suya de verdad: no se toca ni se enlaza. Acepta con su propia
+      // sesión, y `invited_user_id` se queda NULL a propósito — enrutarla a
+      // set_password le pediría cambiar una contraseña que ya tiene.
+      console.info('[invitations][invite-email] cuenta_existente', {
+        masked_email: maskedEmail,
+        invitation_id: invite.id,
+      });
+    } else if (found && found.invitePending) {
+      // Cuenta que creamos en una invitación anterior y nadie reclamó: se ENLAZA
+      // ésa. Sin esto, reinvitar a la misma persona la deja pidiéndole una
+      // contraseña que nunca fijó — la trampa de agosto de 2026.
+      const linkRes = await linkInvitedUser(admin, invite.id, found.userId, {
         feature: 'invitations',
         step: 'link_invited_user',
         maskedEmail,
@@ -426,19 +371,120 @@ export async function sendInvitation(
         masked_email: maskedEmail,
         invitation_id: invite.id,
       });
+    } else {
+      const { data: created, error: createErr } = await admin.auth.admin.createUser({
+        email: parsed.data.email,
+        // Su correo ES su prueba. Sin esto GoTrue le niega el login al fijar la
+        // contraseña en /invite (BUG-4).
+        email_confirm: true,
+        user_metadata: inviteEmailMetadata({
+          invitationId: invite.id,
+          kind: 'staff',
+          locale: emailLocale,
+        }),
+      });
+
+      if (createErr) {
+        if (isEmailAlreadyExistsError(createErr)) {
+          // Carrera con la búsqueda de arriba (o cuenta creada entremedias). La
+          // invitación existe y el correo sale igual: se sigue.
+          console.info('[invitations][invite-email] create_race', {
+            masked_email: maskedEmail,
+            invitation_id: invite.id,
+            original_error: serializeError(createErr),
+          });
+        } else {
+          console.error(
+            '[invitations][invite-email] create_returned_error ' +
+              JSON.stringify({
+                step: 'createUser',
+                masked_email: maskedEmail,
+                invitation_id: invite.id,
+                error: serializeError(createErr),
+              }),
+          );
+          Sentry.captureException(createErr, {
+            tags: {
+              feature: 'invitations',
+              step: 'createUser',
+              invite_status: String((createErr as { status?: number }).status ?? 'unknown'),
+            },
+            extra: { masked_email: maskedEmail, invitation_id: invite.id },
+          });
+          return { error: 'generic' };
+        }
+      } else {
+        const invitedUserId = created?.user?.id ?? null;
+        if (!invitedUserId) {
+          // Creación OK pero SIN user.id: no es normal (antes era MUDO). Sin
+          // invited_user_id la invitación lleva a "inicia sesión" sobre una cuenta
+          // sin contraseña (la trampa). Ruidoso y error al admin para que
+          // reintente, en vez de dar por buena una invitación rota.
+          console.error(
+            '[invitations][invite-email] invited_user_missing_id ' +
+              JSON.stringify({
+                step: 'invited_user_missing_id',
+                masked_email: maskedEmail,
+                invitation_id: invite.id,
+              }),
+          );
+          Sentry.captureMessage('[invitations] createUser sin user.id', {
+            level: 'error',
+            tags: { feature: 'invitations', step: 'invited_user_missing_id' },
+            extra: { masked_email: maskedEmail, invitation_id: invite.id },
+          });
+          return { error: 'generic' };
+        }
+        // Enlaza y EXIGE 1 fila afectada: un UPDATE de cero filas no da error en
+        // PostgREST y dejaría invited_user_id NULL en silencio (raíz del incidente).
+        const linkRes = await linkInvitedUser(admin, invite.id, invitedUserId, {
+          feature: 'invitations',
+          step: 'link_invited_user',
+          maskedEmail,
+        });
+        if (!linkRes.ok) return { error: 'generic' };
+        console.info('[invitations][invite-email] invited_user_linked', {
+          masked_email: maskedEmail,
+          invitation_id: invite.id,
+        });
+      }
     }
   } catch (thrown) {
     console.error(
-      '[invitations][invite-email] invite_thrown ' +
+      '[invitations][invite-email] create_thrown ' +
         JSON.stringify({
-          step: 'inviteUserByEmail',
+          step: 'createUser',
           masked_email: maskedEmail,
           invitation_id: invite.id,
           error: serializeError(thrown),
-        })
+        }),
     );
     Sentry.captureException(thrown, {
-      tags: { feature: 'invitations', step: 'inviteUserByEmail_thrown' },
+      tags: { feature: 'invitations', step: 'createUser_thrown' },
+      extra: { masked_email: maskedEmail, invitation_id: invite.id },
+    });
+    return { error: 'generic' };
+  }
+
+  // El correo, LO ÚLTIMO. Si falla, la invitación queda creada y enlazada: se
+  // cancela y se vuelve a invitar desde la misma pantalla.
+  const { error: mailErr } = await invitationEmailPort('staff')({
+    to: parsed.data.email,
+    url: redirectTo,
+    locale: emailLocale,
+  });
+  if (mailErr) {
+    console.error(
+      '[invitations][invite-email] email_failed ' +
+        JSON.stringify({
+          step: 'send_invite_email',
+          masked_email: maskedEmail,
+          invitation_id: invite.id,
+          error: serializeError(mailErr),
+        }),
+    );
+    Sentry.captureException(mailErr, {
+      tags: { feature: 'invitations', step: 'send_invite_email' },
       extra: { masked_email: maskedEmail, invitation_id: invite.id },
     });
     return { error: 'generic' };

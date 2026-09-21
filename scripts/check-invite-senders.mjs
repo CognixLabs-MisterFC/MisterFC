@@ -97,7 +97,6 @@ const RESET = 'resetPasswordForEmail(';
  * Si tocas esta lista, actualiza TAMBIÉN el censo de link-invited-user.ts.
  */
 const CENSUS = {
-  'apps/web/src/app/[locale]/(authenticated)/invitations/actions.ts': 1,
   'apps/web/src/app/[locale]/(authenticated)/jugadores/actions.ts': 1,
 };
 
@@ -114,8 +113,9 @@ const CENSUS = {
  *   3 inviteClubAdmin ................ apps/web/src/lib/platform/invite-club-admin.ts → admin
  *   4 changeClubAdmin ................ apps/web/src/lib/platform/change-club-admin.ts → admin
  *   2 sendOrRenewTutorInvitation ..... apps/web/src/lib/invite-tutor.ts → tutor
+ *   1 sendInvitation ................. apps/web/src/app/[locale]/(authenticated)/invitations/actions.ts → staff
  *
- * Quedan 2 por migrar: el del cuerpo técnico (1) y el del lote (5).
+ * Queda 1 por migrar: el del lote (5), `inviteBatch`.
  */
 const CENSUS_RESEND = {
   'packages/core/src/spectators/index.ts': 1,
@@ -123,6 +123,7 @@ const CENSUS_RESEND = {
   'apps/web/src/lib/platform/invite-club-admin.ts': 1,
   'apps/web/src/lib/platform/change-club-admin.ts': 1,
   'apps/web/src/lib/invite-tutor.ts': 1,
+  'apps/web/src/app/[locale]/(authenticated)/invitations/actions.ts': 1,
 };
 
 /** Líneas de comentario (`//`, `/*`, ` *`): el contrato y los docs citan la llamada. */

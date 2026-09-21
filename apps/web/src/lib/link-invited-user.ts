@@ -28,8 +28,8 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *
  *   OJO al buscar (Correo-B): ya NO basta con `grep -rn inviteUserByEmail`. Los
  *   migrados crean la cuenta con `auth.admin.createUser(` —que no manda correo— y
- *   mandan ellos el suyo, en el idioma del destinatario. A 2026-09-21 van 5 (el 7,
- *   el 8, el 3, el 4 y el 2) y quedan 2 por GoTrue: el 1 y el 5.
+ *   mandan ellos el suyo, en el idioma del destinatario. A 2026-09-21 van 6 (el 7,
+ *   el 8, el 3, el 4, el 2 y el 1) y queda 1 por GoTrue: el 5, `inviteBatch`.
  *   Los dos literales de búsqueda son `inviteUserByEmail(` y `createUser(`, y el
  *   guard de CI cuenta los dos censos por separado. Lo que NO cambia es esto: el que
  *   CREA la cuenta enlaza, venga el correo de donde venga.
