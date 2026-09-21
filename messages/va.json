@@ -113,7 +113,6 @@
     },
     "callback": {
       "error_title": "No hem pogut completar l'accés",
-      "error_body": "L'enllaç ha caducat o ja s'ha usat. Demana'n un de nou des de l'inici de sessió.",
       "back_to_signin": "Tornar a iniciar sessió"
     }
   },
@@ -762,8 +761,7 @@
     "pw": {
       "sent_title": "Revisa el teu correu",
       "sent_body": "T’hem enviat un enllaç a {email} per a canviar la contrasenya.",
-      "error_title": "No s’ha pogut enviar",
-      "error_body": "Torna-ho a provar d’ací a uns minuts."
+      "error_title": "No s’ha pogut enviar"
     },
     "notifications_title": "Notificacions"
   },

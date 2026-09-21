@@ -113,7 +113,6 @@
     },
     "callback": {
       "error_title": "No hemos podido completar el acceso",
-      "error_body": "El enlace ha caducado o ya se ha usado. Pide uno nuevo desde el inicio de sesión.",
       "back_to_signin": "Volver a iniciar sesión"
     }
   },
@@ -602,8 +601,7 @@
     "pw": {
       "sent_title": "Revisa tu correo",
       "sent_body": "Te hemos enviado un enlace a {email} para cambiar la contraseña.",
-      "error_title": "No se pudo enviar",
-      "error_body": "Inténtalo de nuevo en unos minutos."
+      "error_title": "No se pudo enviar"
     },
     "notifications_title": "Notificaciones"
   },

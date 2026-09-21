@@ -113,7 +113,6 @@
     },
     "callback": {
       "error_title": "We couldn't complete sign-in",
-      "error_body": "The link is expired or already used. Request a new one from sign in.",
       "back_to_signin": "Back to sign in"
     }
   },
@@ -762,8 +761,7 @@
     "pw": {
       "sent_title": "Check your email",
       "sent_body": "We’ve sent a link to {email} to change your password.",
-      "error_title": "Couldn’t send",
-      "error_body": "Please try again in a few minutes."
+      "error_title": "Couldn’t send"
     },
     "notifications_title": "Notifications"
   },
