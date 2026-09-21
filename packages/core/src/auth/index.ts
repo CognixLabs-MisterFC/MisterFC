@@ -42,6 +42,11 @@ export {
 } from './invitation-token';
 export { recoveryRedirectTo } from './recovery-link';
 export {
+  requiresPasswordChange,
+  authMethodsFrom,
+  type AuthMethodReference,
+} from './password-change';
+export {
   planAuthCallback,
   safeNextPath,
   isAuthOtpType,
