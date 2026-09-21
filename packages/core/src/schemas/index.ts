@@ -68,7 +68,6 @@ export type {
 export {
   createPlayerSchema,
   updatePlayerSchema,
-  updateMedicalNotesSchema,
   playerPhotoUploadSchema,
   assignPlayerToTeamSchema,
   invitePlayerTutorSchema,
@@ -84,7 +83,6 @@ export {
 export type {
   CreatePlayerInput,
   UpdatePlayerInput,
-  UpdateMedicalNotesInput,
   PlayerPhotoUploadInput,
   AssignPlayerToTeamInput,
   InvitePlayerTutorInput,

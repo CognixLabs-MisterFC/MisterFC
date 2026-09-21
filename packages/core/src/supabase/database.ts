@@ -2868,7 +2868,6 @@ export type Database = {
           last_name_blocked: string | null
           left_club_at: string | null
           left_club_reason: string | null
-          medical_notes: string | null
           origin: string | null
           phone: string | null
           photo_url: string | null
@@ -2893,7 +2892,6 @@ export type Database = {
           last_name_blocked?: string | null
           left_club_at?: string | null
           left_club_reason?: string | null
-          medical_notes?: string | null
           origin?: string | null
           phone?: string | null
           photo_url?: string | null
@@ -2918,7 +2916,6 @@ export type Database = {
           last_name_blocked?: string | null
           left_club_at?: string | null
           left_club_reason?: string | null
-          medical_notes?: string | null
           origin?: string | null
           phone?: string | null
           photo_url?: string | null

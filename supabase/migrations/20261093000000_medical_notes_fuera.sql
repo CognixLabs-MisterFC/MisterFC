@@ -1,0 +1,42 @@
+-- ─────────────────────────────────────────────────────────────────────────────
+-- `players.medical_notes` FUERA. El segundo sitio donde cabían datos de salud.
+--
+-- DE DÓNDE VIENE. Hasta F14-4 las notas médicas del jugador vivían en esta
+-- columna de `players`, y las editaba el staff desde la ficha. F14-4 las movió a
+-- `player_medical` —tabla CERRADA al cliente (RLS on, 0 policies, privilegios
+-- revocados), que solo se lee por `get_player_medical` y solo se escribe por
+-- `set_player_medical`, ambas con gate de consentimiento. La acción de escritura
+-- se retiró entonces (queda la nota en jugadores/actions.ts). La COLUMNA no.
+--
+-- POR QUÉ SE BORRA, y no basta con que esté vacía. Su control de acceso es OTRO,
+-- mucho más flojo que el de `player_medical`, y no depende de lo que haya dentro:
+--
+--   · policy `players_select_member`: `user_role_in_club(club_id) is not null` →
+--     CUALQUIER miembro del club, con cualquier rol, incluido `jugador`.
+--   · grant de columna: `players.medical_notes` tenía SELECT para `authenticated`.
+--     La lista de columnas con grant es una whitelist deliberada (`phone`, por
+--     ejemplo, está fuera): esta se quedó dentro por olvido.
+--   · escritura: `players_update_staff` → admin, director, los dos entrenadores,
+--     o el coordinador del equipo.
+--
+-- O sea: el día que alguien escribiera ahí, lo leería el club entero —los propios
+-- jugadores con cuenta incluidos— sin pasar por el consentimiento médico ni dejar
+-- apunte en `audit_log`. Justo lo que F14-4 cerró en `player_medical`.
+--
+-- POR QUÉ AHORA, y por qué no hay que migrar nada: en producción la columna está
+-- VACÍA (0 de 43 jugadores con contenido) y no la lee ni la escribe NADIE —ni una
+-- función, ni una vista, ni una policy, ni una línea de app. El único rastro en
+-- el repo era schema muerto, que se va en este mismo PR (zod `updateMedicalNotesSchema`
+-- y sus exports, los tipos generados, y las cadenas del catálogo de la UI retirada).
+-- El importador ya la trataba como cabecera desconocida y la descartaba.
+--
+-- No hay backfill ni copia a `player_medical`: no hay nada que copiar.
+--
+-- Alcance: SOLO la columna. No se toca ninguna policy de `players` (ninguna la
+-- menciona), ni los grants de las otras 21 columnas, ni `player_medical`.
+-- Test: supabase/tests/medical_notes_fuera.sql
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- El DROP se lleva por delante los grants de columna (SELECT/INSERT/UPDATE a
+-- `authenticated` y `service_role`): no hay que revocarlos aparte.
+alter table public.players drop column if exists medical_notes;

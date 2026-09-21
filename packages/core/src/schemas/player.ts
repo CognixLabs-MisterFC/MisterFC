@@ -198,16 +198,6 @@ export const updatePlayerSchema = z.object({
 });
 export type UpdatePlayerInput = z.infer<typeof updatePlayerSchema>;
 
-export const updateMedicalNotesSchema = z.object({
-  medical_notes: z
-    .string()
-    .max(5000, { message: 'medical_notes_too_long' })
-    .optional()
-    .transform((v) => (v && v.trim().length > 0 ? v.trim() : null))
-    .nullable(),
-});
-export type UpdateMedicalNotesInput = z.infer<typeof updateMedicalNotesSchema>;
-
 /**
  * Foto del jugador. Tipos y tamaño aceptados: igual que avatar de perfil.
  * El path se construye client-side y se sube; aquí solo validamos los metadatos.
