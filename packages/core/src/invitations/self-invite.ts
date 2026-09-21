@@ -3,9 +3,10 @@ import type { Database } from '../supabase/types';
 import {
   isEmailAlreadyExistsError,
   type LinkInvitedUser,
+  type LookupInviteRecipient,
+  type SendInvitationEmail,
 } from '../spectators/index';
 import { inviteEmailMetadata } from './invite-email-metadata';
-import { sendInviteToExistingUser } from './invite-existing-user';
 
 /**
  * MN-5 — el TUTOR invita a su hijo a tener cuenta propia.
@@ -27,14 +28,21 @@ import { sendInviteToExistingUser } from './invite-existing-user';
  * `apps/web/src/lib/link-invited-user.ts`.
  *
  * En corto: estos senders son el alta de todos los usuarios, CI no ejercita el envío
- * (necesita GoTrue) y una regresión solo se ve cuando un padre no entra. Y el guard
- * de censo (`scripts/check-invite-senders.mjs`) cuenta llamadas LITERALES por
- * fichero —hoy tres: el envío, `inviteEmailMetadata(` y `sendInviteToExistingUser(`—,
- * así que esconder el envío tras un helper común lo dejaría ciego: un sender futuro
- * no aparecería en ningún censo, que es justo el fallo histórico. Extraer obliga a
+ * y una regresión solo se ve cuando un padre no entra. Y el guard de censo
+ * (`scripts/check-invite-senders.mjs`) cuenta llamadas LITERALES por fichero, así que
+ * esconder el envío tras un helper común lo dejaría ciego: un sender futuro no
+ * aparecería en ningún censo, que es justo el fallo histórico. Extraer obliga a
  * rediseñar ANTES cómo se vigila.
  *
  * Este es el sender nº 8, declarado en los dos censos.
+ *
+ * CORREO-B2 — migrado a Resend, igual que el 7 (Correo-B1) y por las mismas razones:
+ * la cuenta se crea con `createUser` (que no manda correo) y el correo lo manda el
+ * puerto `sendEmail` en el idioma del destinatario. Aquí ese idioma importa de una
+ * forma que no se ve a simple vista: la cuenta del menor suele llevar el correo del
+ * PADRE (por eso los borrados de tutores van por uuid y nunca filtrando por email),
+ * así que muy a menudo el destinatario ya tiene perfil y hay un `locale` suyo que
+ * respetar.
  */
 
 type DbClient = SupabaseClient<Database>;
@@ -90,8 +98,12 @@ export async function performSelfInvite(
   userSupabase: DbClient,
   admin: DbClient,
   args: { playerId: string; email: string; linkBase: string; locale: string },
-  /** Obligatorio: no se puede enviar sin traer el enlazado. Ver `LinkInvitedUser`. */
+  /** Obligatorio: no se puede crear la cuenta sin traer el enlazado. Ver `LinkInvitedUser`. */
   link: LinkInvitedUser,
+  /** Obligatorio: sin él habría invitación y cuenta, y nadie avisado. Ver `SendInvitationEmail`. */
+  sendEmail: SendInvitationEmail,
+  /** Obligatorio: sin él, reenviar una invitación sin reclamar deja al menor fuera. Ver `LookupInviteRecipient`. */
+  lookup: LookupInviteRecipient,
   logError?: SelfInviteLogger
 ): Promise<SelfInviteResult> {
   const { playerId, email, linkBase, locale } = args;
@@ -113,56 +125,87 @@ export async function performSelfInvite(
   }
   if (!invite) return { error: 'generic' };
 
-  const redirectTo = `${linkBase}/${invite.token}`;
+  const url = `${linkBase}/${invite.token}`;
 
-  // 2) Email con ADMIN — SOLO tras crear la invitación (los gates ya pasaron).
+  // 2) ¿QUIÉN ES EL DESTINATARIO? Antes de crear nada: decide si hay cuenta que
+  // crear, cuál enlazar y en qué idioma escribir (Correo-B2, ver el puerto).
+  let found: Awaited<ReturnType<LookupInviteRecipient>> = null;
+  try {
+    found = await lookup(email);
+  } catch (thrown) {
+    log(thrown, 'lookup_recipient_self_thrown', { invitation_id: invite.id });
+  }
+
+  const emailLocale = found?.locale ?? locale;
+
+  // 3) CUENTA con ADMIN — SOLO tras crear la invitación (los gates ya pasaron).
   let existing = false;
   try {
-    const { data: inviteData, error: invErr } =
-      await admin.auth.admin.inviteUserByEmail(email, {
-        redirectTo,
-        data: inviteEmailMetadata({
+    if (found && !found.invitePending) {
+      // Cuenta de verdad, suya. No se crea ni se enlaza nada: acepta con su sesión.
+      // Aquí esto es MÁS común que en seguidores: la cuenta del menor suele llevar
+      // el correo del padre, que casi siempre ya tiene cuenta.
+      existing = true;
+    } else if (found && found.invitePending) {
+      // Cuenta que creamos y nadie reclamó: se ENLAZA ésa a la invitación nueva, no
+      // se crea otra. Sin esto, un reenvío deja al menor con un formulario que le
+      // pide una contraseña que nunca fijó (incidente de agosto de 2026).
+      const linked = await link(invite.id, found.userId);
+      if (!linked.ok) return { error: 'generic' };
+    } else {
+      const { data: created, error: createErr } = await admin.auth.admin.createUser({
+        email,
+        // Su correo ES su prueba: el enlace le llega ahí. Sin esto GoTrue le niega el
+        // login al fijar la contraseña en /invite (BUG-4).
+        email_confirm: true,
+        user_metadata: inviteEmailMetadata({
           invitationId: invite.id,
           kind: 'menor',
-          locale,
+          locale: emailLocale,
         }),
       });
 
-    if (invErr) {
-      if (isEmailAlreadyExistsError(invErr)) {
-        // Ya es usuario → `inviteUserByEmail` no puede. Sale el correo de
-        // invitación para cuenta existente (mismo redirectTo), COMO EL USUARIO.
-        // La invitación ya existe → el accept se completa igual.
-        existing = true;
-        const { error: resetErr } = await sendInviteToExistingUser(
-          userSupabase,
-          { email, redirectTo }
-        );
-        if (resetErr) {
-          log(resetErr, 'reset_fallback_self', { invitation_id: invite.id });
+      if (createErr) {
+        if (isEmailAlreadyExistsError(createErr)) {
+          // La búsqueda dijo que no había cuenta y sí la hay: se trata como ajena
+          // —lo conservador— y queda rastro.
+          log(createErr, 'createUser_self_race', { invitation_id: invite.id });
+          existing = true;
+        } else {
+          log(createErr, 'createUser_self', { invitation_id: invite.id });
           return { error: 'generic' };
         }
       } else {
-        log(invErr, 'inviteUserByEmail_self', { invitation_id: invite.id });
-        return { error: 'generic' };
+        // Cuenta creada por NOSOTROS → hay que enlazar su auth.users.id.
+        const invitedUserId = created?.user?.id ?? null;
+        if (!invitedUserId) {
+          log(
+            new Error('createUser sin user.id (self)'),
+            'invited_user_missing_id_self',
+            { invitation_id: invite.id }
+          );
+          return { error: 'generic' };
+        }
+        // El puerto exige 1 fila afectada y reporta él mismo si falla.
+        const linked = await link(invite.id, invitedUserId);
+        if (!linked.ok) return { error: 'generic' };
       }
-    } else {
-      // Cuenta creada por NOSOTROS → hay que enlazar su auth.users.id.
-      const invitedUserId = inviteData?.user?.id ?? null;
-      if (!invitedUserId) {
-        log(
-          new Error('inviteUserByEmail sin user.id (self)'),
-          'invited_user_missing_id_self',
-          { invitation_id: invite.id }
-        );
-        return { error: 'generic' };
-      }
-      // El puerto exige 1 fila afectada y reporta él mismo si falla.
-      const linked = await link(invite.id, invitedUserId);
-      if (!linked.ok) return { error: 'generic' };
     }
   } catch (thrown) {
-    log(thrown, 'inviteUserByEmail_self_thrown', { invitation_id: invite.id });
+    log(thrown, 'createUser_self_thrown', { invitation_id: invite.id });
+    return { error: 'generic' };
+  }
+
+  // 4) EL CORREO, lo último: con la invitación creada y la cuenta ya enlazada. Si
+  // falla aquí no queda nada roto y reenviar vuelve a intentarlo.
+  try {
+    const { error: mailErr } = await sendEmail({ to: email, url, locale: emailLocale });
+    if (mailErr) {
+      log(mailErr, 'send_invite_email_self', { invitation_id: invite.id });
+      return { error: 'generic' };
+    }
+  } catch (thrown) {
+    log(thrown, 'send_invite_email_self_thrown', { invitation_id: invite.id });
     return { error: 'generic' };
   }
 

@@ -5685,6 +5685,15 @@
       "fallback": "Si el botón no funciona, copia esta dirección en tu navegador:",
       "ignore": "Si no esperabas esta invitación, puedes ignorar este correo: no se creará nada a tu nombre.",
       "signature": "El equipo de MisterFC"
+    },
+    "self_invite": {
+      "subject": "Tu cuenta de MisterFC ya está lista",
+      "heading": "Tu cuenta de MisterFC ya está lista",
+      "body": "Tu familia te ha creado una cuenta en MisterFC, la app de tu club: verás tus convocatorias, tus entrenamientos y los mensajes de tu entrenador. Entra con este enlace para terminar de configurarla y elegir tu contraseña.",
+      "cta": "Configurar mi cuenta",
+      "fallback": "Si el botón no funciona, copia esta dirección en tu navegador:",
+      "ignore": "Si crees que este correo no es para ti, puedes ignorarlo: no se creará nada a tu nombre.",
+      "signature": "El equipo de MisterFC"
     }
   }
 }

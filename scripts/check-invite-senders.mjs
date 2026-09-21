@@ -92,7 +92,6 @@ const CENSUS = {
   'apps/web/src/app/[locale]/(authenticated)/jugadores/actions.ts': 2,
   'apps/web/src/lib/platform/invite-club-admin.ts': 1,
   'apps/web/src/lib/platform/change-club-admin.ts': 1,
-  'packages/core/src/invitations/self-invite.ts': 1,
 };
 
 /**
@@ -104,9 +103,11 @@ const CENSUS = {
  * plantilla del dashboard: entonces esta distinción sobra y el guard se simplifica.
  *
  *   7 performSpectatorInvite ......... packages/core/src/spectators/index.ts → seguidor
+ *   8 performSelfInvite .............. packages/core/src/invitations/self-invite.ts → menor
  */
 const CENSUS_RESEND = {
   'packages/core/src/spectators/index.ts': 1,
+  'packages/core/src/invitations/self-invite.ts': 1,
 };
 
 /** Líneas de comentario (`//`, `/*`, ` *`): el contrato y los docs citan la llamada. */

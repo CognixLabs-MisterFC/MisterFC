@@ -10,12 +10,14 @@
  *      cliente resultante es RLS-scoped al usuario, NUNCA admin.
  *   2. `invite_spectator` (RPC SECURITY DEFINER) se llama COMO EL USUARIO; su gate
  *      tutor/self corre ANTES del INSERT → no-tutor no crea invitación (→ 403).
- *   3. Solo tras crear la invitación se usa el ADMIN client para el email. El
- *      service-role jamás actúa antes del gate.
+ *   3. Solo tras crear la invitación se usa el ADMIN client: buscar al destinatario,
+ *      crear su cuenta si no la tiene y mandarle el correo. El service-role jamás
+ *      actúa antes del gate.
  *
  * Respuestas: 200 {status:'ok'|'existing', email} · 401 unauthorized · 400
  * invalid|email_invalid · 403 forbidden (no-tutor) · 500 generic. `existing` marca
- * el caso "email ya registrado" (se reenvió por reset), para que la app lo muestre.
+ * el caso "el email ya tenía cuenta propia": recibe el MISMO correo de invitación
+ * (Correo-B1; antes era un magic link) y su cuenta no se toca ni se enlaza.
  *
  * No hay CORS: la app nativa no es un navegador (no dispara preflight). El único
  * requisito de acceso es un bearer válido; sin él, 401.
