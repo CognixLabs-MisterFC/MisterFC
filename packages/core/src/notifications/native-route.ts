@@ -131,3 +131,136 @@ export function nativeHrefForNotification(
   const id = resourceIdForNotification(type, data);
   return id ? { pathname, params: { id } } : { pathname };
 }
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * PUSH-ÁREA — el aviso sobre un hijo abre FAMILIA, aunque el hogar sea otro.
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * EL FALLO QUE ARREGLA. `NotificationsProvider` enrutaba el push al área HOGAR del
+ * usuario (`chromeAreaFor` → `navAreaForRole`). Para quien tiene UN solo papel eso
+ * es correcto y sigue siéndolo. Pero `memberships` tiene UNIQUE (profile_id,
+ * club_id): un director que además es padre solo puede tener UN rol, y su hogar es
+ * dirección. Resultado medido, con la convocatoria de su hija:
+ *
+ *     callup_published → /direction/convocatorias
+ *
+ * que es la lista club-wide de dirección, en SOLO LECTURA (D1b-2) — donde no puede
+ * responder por ella. Y `development_report_published` o `play_published`, que no
+ * tienen pantalla en dirección, caían directamente en el inicio de dirección.
+ *
+ * LA SEÑAL ES LA AUDIENCIA DEL AVISO, NO EL ROL DE QUIEN LO RECIBE. Medido en los
+ * emisores, un aviso de la lista de abajo resuelve sus destinatarios ÚNICAMENTE por
+ * `player_accounts` (`publish-callup.ts`, `promotion-actions.ts`, los informes,
+ * `equipos/[teamId]/jugadas`…): se recibe por ser tutor o jugador, NUNCA por el rol
+ * de club. Si te ha llegado, es por tu hijo. Eso es lo que se usa aquí.
+ *
+ * LO QUE ESTO NO ES. No abre ninguna puerta: quién puede montar la carcasa de
+ * familia lo decide `isAllowedInArea` (modo tutor, `hasLinkedPlayers`) y el acceso a
+ * los DATOS lo decide la RLS por `player_accounts`. Esto solo elige a qué área
+ * NAVEGA un toque, entre las que el usuario ya tenía permitidas.
+ *
+ * LOS MIXTOS SE QUEDAN FUERA, A PROPÓSITO. Hay tipos que llegan a DOS audiencias con
+ * el mismo nombre y el push no trae con qué distinguirlas:
+ *
+ *   · `new_message` — coach→familia y familia→coach son el mismo type; el `data`
+ *     lleva `conversation_id` y nada que diga de qué lado está quien lo recibe;
+ *   · `new_announcement` — club-wide va a TODOS los `memberships`; team-bound solo a
+ *     `player_accounts`;
+ *   · `training_cancelled` / `training_reinstated` — por festivo (`holidays.ts`) van
+ *     a `team_staff` Y a familia; por calendario, solo a familia;
+ *   · `training_reminder` — "hoy tienes entrenamiento" va a TODO el equipo:
+ *     jugadores, familias Y entrenadores;
+ *   · `image_consent_revoked` — dirección Y cuerpo técnico del equipo.
+ *
+ * Adivinar el lado desde el cliente sería inventarse un dato. Se resuelven marcando
+ * la audiencia en el `data` del emisor, y eso va en su propio PR. Hasta entonces
+ * siguen yendo al hogar, que es EXACTAMENTE lo que hacen hoy: esta pieza no los
+ * mejora, pero tampoco los cambia.
+ */
+const FAMILY_AUDIENCE_TYPES: ReadonlySet<string> = new Set([
+  // Convocatoria del jugador: roster activo + promocionados → player_accounts.
+  'callup_published',
+  'callup_updated',
+  'match_callup_reminder',
+  // Cambio de un evento del equipo del jugador (team_members → player_accounts).
+  'event_updated',
+  // Al jugador lo suben a un equipo superior (player_accounts del subido).
+  'player_promoted',
+  // Informe de desarrollo publicado (player_accounts del jugador).
+  'development_report_published',
+  // Jugada compartida al playbook de la familia (player_accounts del equipo).
+  'play_published',
+  // BC-7: el otro tutor del menor borró su cuenta. "El destinatario es su propio
+  // tutor" — y pasa a ser el único.
+  'tutor_unlinked',
+  // SU-6: solo a quien de verdad paga. "Al staff no se le avisa de nada."
+  'subscription_expiring',
+]);
+
+/**
+ * ¿Este aviso se recibe por ser TUTOR (o el propio jugador), y no por el rol de club?
+ * Un type desconocido responde `false`: ante la duda, el hogar — que es el
+ * comportamiento de siempre.
+ */
+export function isFamilyAudienceNotification(type: string): boolean {
+  return FAMILY_AUDIENCE_TYPES.has(type);
+}
+
+/** Lo que la app sabe de quién recibe el push, para elegir el área de destino. */
+export type NotificationAreaContext = {
+  /** Segmento del área HOGAR (la de su rol): 'family' | 'staff' | 'direction' | … */
+  homeArea: string;
+  /** Pantallas que existen en el área hogar. */
+  homeScreens: ReadonlySet<string>;
+  /**
+   * Segmento del área de familia SI el usuario puede entrar en ella (tiene hijos
+   * vinculados: el `hasLinkedPlayers` del modo tutor). `null` cuando no — y entonces
+   * aquí no se decide nada distinto de lo de siempre.
+   */
+  tutorArea?: string | null;
+  /** Pantallas del área de familia. Sin ellas, `tutorArea` se ignora. */
+  tutorScreens?: ReadonlySet<string> | null;
+};
+
+/**
+ * Destino nativo del push TENIENDO EN CUENTA a quién va dirigido el aviso. Envoltorio
+ * de `nativeHrefForNotification` (que sigue resolviendo type→pantalla dentro de un
+ * área) con la elección del ÁREA delante.
+ *
+ * El área de familia se elige SOLO si se cumple todo:
+ *   1. el aviso es de audiencia familia (`isFamilyAudienceNotification`);
+ *   2. el usuario puede entrar en familia (`tutorArea` no nulo ⇔ hasLinkedPlayers);
+ *   3. no es ya su hogar (si lo es, no hay nada que cambiar);
+ *   4. y el aviso ATERRIZA de verdad en una pantalla de familia.
+ *
+ * LA CUARTA CONDICIÓN NO ES UN DETALLE. `tutor_unlinked` y `subscription_expiring`
+ * son de audiencia familia pero no tienen pantalla nativa todavía: sin ella, cambiar
+ * de área solo serviría para dejar al director en el INICIO de familia en vez del
+ * suyo — moverlo de sitio sin llevarlo a nada. Mientras no exista el destino, se
+ * queda donde estaba. El día que se añada la pantalla, empiezan a cambiar de área
+ * solos, sin tocar esta función.
+ */
+export function nativeTargetForNotification(
+  type: string,
+  data: Record<string, unknown> | null | undefined,
+  ctx: NotificationAreaContext,
+): NativeRouteTarget {
+  const home = nativeHrefForNotification(type, data, ctx.homeArea, ctx.homeScreens);
+
+  const tutorArea = ctx.tutorArea ?? null;
+  const tutorScreens = ctx.tutorScreens ?? null;
+  if (
+    !isFamilyAudienceNotification(type) ||
+    tutorArea === null ||
+    tutorScreens === null ||
+    tutorArea === ctx.homeArea
+  ) {
+    return home;
+  }
+
+  const tutor = nativeHrefForNotification(type, data, tutorArea, tutorScreens);
+  // Sin pantalla en familia, el mapper devuelve el Inicio del área pelado: eso no es
+  // un destino, es un "no sé dónde ponerlo". No se cambia de área por eso.
+  return tutor.pathname === `/${tutorArea}` ? home : tutor;
+}

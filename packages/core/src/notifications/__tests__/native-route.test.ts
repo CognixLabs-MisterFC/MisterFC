@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isFamilyAudienceNotification,
   nativeHrefForNotification,
+  nativeTargetForNotification,
   resourceIdForNotification,
 } from '../native-route';
 
@@ -67,7 +69,11 @@ describe('nativeHrefForNotification (deep link O2-4)', () => {
   });
 
   it('pantalla NO disponible en el área → Inicio del área, no error', () => {
-    // 'convocatorias' no existe en dirección → cae en Inicio.
+    // Una pantalla que NO está en el set del área → Inicio. (El set DIRECTION de
+    // arriba es un espejo PARCIAL y algo viejo del config: en la app real
+    // 'convocatorias' sí existe en dirección, vía DIRECTION_HIDDEN. Lo que este
+    // test fija es la tolerancia del mapper, no el catálogo de dirección; el
+    // espejo fiel y completo está en los sets del bloque PUSH-ÁREA, abajo.)
     expect(
       nativeHrefForNotification(
         'callup_published',
@@ -185,5 +191,226 @@ describe('resourceIdForNotification', () => {
     expect(resourceIdForNotification('new_message', null)).toBeUndefined();
     // type de calendario: sin clave de id definida → resource_id o undefined.
     expect(resourceIdForNotification('training_cancelled', { event_id: 'e1' })).toBeUndefined();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PUSH-ÁREA — el aviso sobre un hijo abre familia aunque el hogar sea otro.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Espejo COMPLETO de las pantallas de cada área (apps/native nav/config:
+ * AREA_TABS + allMenuFiles, que incluye los bloques *_HIDDEN). Completo a
+ * propósito: el set DIRECTION de arriba es parcial y por eso dice que dirección
+ * no tiene 'convocatorias' cuando sí la tiene. Aquí eso importa: el caso que
+ * arregla esta pieza es justo un director que aterriza en LA CONVOCATORIA
+ * EQUIVOCADA (la lista club-wide de dirección, en solo lectura), no en el Inicio.
+ */
+const FAMILY_REAL: ReadonlySet<string> = new Set([
+  'anuncios', 'calendario', 'convocatoria', 'convocatorias', 'cuerpo-tecnico',
+  'directo', 'directos', 'entrenamiento', 'entrenamientos', 'estadisticas',
+  'gestion', 'index', 'jugada', 'jugadas', 'mensaje', 'mensaje-equipo',
+  'mensaje-nuevo', 'mensajes', 'mi-equipo', 'mi-ficha', 'mi-informe',
+  'novedades', 'perfil', 'plantilla', 'seguidores', 'sesion',
+]);
+const DIRECTION_REAL: ReadonlySet<string> = new Set([
+  'anuncios', 'calendario', 'calendario-festivos', 'calendario-proximos',
+  'calendario-temporada', 'coach', 'convocatoria', 'convocatorias',
+  'cuerpo-tecnico', 'dashboard', 'directo', 'directos', 'entrenamiento',
+  'entrenamientos', 'equipo', 'equipo-calendario', 'equipo-cuerpo-tecnico',
+  'equipo-estadisticas', 'equipo-plantilla', 'equipos', 'index',
+  'inicio-direccion', 'invitaciones-equipos', 'jugador', 'jugadores', 'mensaje',
+  'mensaje-equipo', 'mensaje-nuevo', 'mensaje-staff', 'mensajes', 'novedades',
+  'pendientes-asistencia', 'pendientes-convocatoria', 'pendientes-informes',
+  'pendientes-informes-jugadores', 'pendientes-invitaciones', 'pendientes-sesion',
+  'perfil', 'sesion', 'supresiones',
+]);
+const STAFF_REAL: ReadonlySet<string> = new Set([
+  'alineacion', 'anuncios', 'asistencia', 'asistencia-sesion', 'calendario',
+  'convocatoria', 'convocatorias', 'cuerpo-tecnico-direccion',
+  'cuerpo-tecnico-ligero', 'directo', 'directos', 'entrenos-sin-lista',
+  'entrenos-sin-sesion', 'equipo', 'estadisticas-equipo', 'index', 'informes',
+  'informes-jugadores', 'jugadores-consulta', 'mensaje', 'mensaje-equipo',
+  'mensaje-nuevo', 'mensaje-staff', 'mensajes', 'mis-equipos', 'novedades',
+  'perfil', 'post-partido', 'sesion-del-dia', 'sesion-editar',
+]);
+const SPECTATOR_REAL: ReadonlySet<string> = new Set([
+  'directo', 'directos', 'estadisticas', 'index', 'perfil',
+]);
+
+/** Un director-tutor: hogar dirección, con hijos vinculados (modo tutor abierto). */
+const DIRECTOR_TUTOR = {
+  homeArea: 'direction',
+  homeScreens: DIRECTION_REAL,
+  tutorArea: 'family',
+  tutorScreens: FAMILY_REAL,
+};
+/** El mismo director SIN hijos vinculados: el modo tutor no se le abre. */
+const DIRECTOR_SOLO = { homeArea: 'direction', homeScreens: DIRECTION_REAL };
+
+describe('nativeTargetForNotification (área por audiencia del aviso)', () => {
+  it('EL CASO: la convocatoria del hijo abre familia, no la lista de dirección', () => {
+    expect(
+      nativeTargetForNotification(
+        'callup_published',
+        { type: 'callup_published', event_id: 'e1' },
+        DIRECTOR_TUTOR,
+      ),
+    ).toEqual({ pathname: '/family/convocatorias', params: { id: 'e1' } });
+  });
+
+  it('y lo que hacía antes era aterrizar en la convocatoria de dirección', () => {
+    // No es el Inicio: 'convocatorias' SÍ existe en dirección (DIRECTION_HIDDEN),
+    // y es la lista club-wide en SOLO LECTURA. Por eso el fallo no se veía como
+    // un rebote, sino como "esta no es la convocatoria de mi hija".
+    expect(
+      nativeHrefForNotification(
+        'callup_published',
+        { type: 'callup_published', event_id: 'e1' },
+        'direction',
+        DIRECTION_REAL,
+      ),
+    ).toEqual({ pathname: '/direction/convocatorias', params: { id: 'e1' } });
+  });
+
+  it('sin hijos vinculados NO se cambia de área (la puerta es hasLinkedPlayers)', () => {
+    expect(
+      nativeTargetForNotification(
+        'callup_published',
+        { type: 'callup_published', event_id: 'e1' },
+        DIRECTOR_SOLO,
+      ),
+    ).toEqual({ pathname: '/direction/convocatorias', params: { id: 'e1' } });
+  });
+
+  it('un ENTRENADOR que además es padre: mismo arreglo (no es cosa de directores)', () => {
+    expect(
+      nativeTargetForNotification(
+        'development_report_published',
+        { type: 'development_report_published', development_report_id: 'r7' },
+        {
+          homeArea: 'staff',
+          homeScreens: STAFF_REAL,
+          tutorArea: 'family',
+          tutorScreens: FAMILY_REAL,
+        },
+      ),
+    ).toEqual({ pathname: '/family/mi-informe', params: { id: 'r7' } });
+  });
+
+  it('quien YA vive en familia no nota nada', () => {
+    expect(
+      nativeTargetForNotification(
+        'callup_published',
+        { type: 'callup_published', event_id: 'e1' },
+        {
+          homeArea: 'family',
+          homeScreens: FAMILY_REAL,
+          tutorArea: 'family',
+          tutorScreens: FAMILY_REAL,
+        },
+      ),
+    ).toEqual({ pathname: '/family/convocatorias', params: { id: 'e1' } });
+  });
+
+  it('los demás avisos de audiencia familia llegan a SU pantalla de familia', () => {
+    expect(
+      nativeTargetForNotification('play_published', { type: 'play_published', play_id: 'p1' }, DIRECTOR_TUTOR),
+    ).toEqual({ pathname: '/family/mi-equipo', params: { id: 'p1' } });
+    expect(
+      nativeTargetForNotification('player_promoted', { type: 'player_promoted' }, DIRECTOR_TUTOR),
+    ).toEqual({ pathname: '/family/calendario' });
+    expect(
+      nativeTargetForNotification('event_updated', { type: 'event_updated' }, DIRECTOR_TUTOR),
+    ).toEqual({ pathname: '/family/calendario' });
+    expect(
+      nativeTargetForNotification('match_callup_reminder', { type: 'match_callup_reminder', event_id: 'e2' }, DIRECTOR_TUTOR),
+    ).toEqual({ pathname: '/family/convocatorias', params: { id: 'e2' } });
+  });
+
+  it('el trabajo del director sigue en dirección (el festivo NO se va a familia)', () => {
+    expect(
+      nativeTargetForNotification(
+        'training_approval_requested',
+        { type: 'training_approval_requested', event_id: 'e1' },
+        DIRECTOR_TUTOR,
+      ),
+    ).toEqual({ pathname: '/direction/calendario-festivos' });
+  });
+
+  it('un aviso de staff se queda en staff aunque el entrenador tenga hijos', () => {
+    expect(
+      nativeTargetForNotification(
+        'attendance_pending_reminder',
+        { type: 'attendance_pending_reminder', event_id: 'e1' },
+        {
+          homeArea: 'staff',
+          homeScreens: STAFF_REAL,
+          tutorArea: 'family',
+          tutorScreens: FAMILY_REAL,
+        },
+      ),
+    ).toEqual({ pathname: '/staff/asistencia', params: { id: 'e1' } });
+  });
+
+  it('los MIXTOS siguen en el hogar: es el contrato de esta pieza, no un olvido', () => {
+    // new_message (coach↔familia), new_announcement (club-wide vs team-bound),
+    // training_cancelled/reinstated (festivo → staff Y familia), training_reminder
+    // (todo el equipo) e image_consent_revoked (dirección Y staff) llegan a dos
+    // audiencias con el mismo nombre. Se resuelven marcando la audiencia en el
+    // `data` del emisor, en su propio PR. Hasta entonces: como hoy.
+    expect(
+      nativeTargetForNotification('new_message', { type: 'new_message', conversation_id: 'c1' }, DIRECTOR_TUTOR),
+    ).toEqual({ pathname: '/direction/mensajes', params: { id: 'c1' } });
+    expect(
+      nativeTargetForNotification('new_announcement', { type: 'new_announcement', announcement_id: 'a1' }, DIRECTOR_TUTOR),
+    ).toEqual({ pathname: '/direction/anuncios', params: { id: 'a1' } });
+    for (const t of ['training_cancelled', 'training_reinstated', 'training_reminder']) {
+      expect(nativeTargetForNotification(t, { type: t }, DIRECTOR_TUTOR).pathname).toMatch(/^\/direction/);
+    }
+    expect(
+      nativeTargetForNotification('image_consent_revoked', { type: 'image_consent_revoked' }, DIRECTOR_TUTOR),
+    ).toEqual({ pathname: '/direction' });
+  });
+
+  it('audiencia familia SIN pantalla en familia → no se mueve de área por nada', () => {
+    // tutor_unlinked y subscription_expiring no tienen pantalla nativa: cambiar de
+    // área solo dejaría al director en el Inicio de FAMILIA en vez del suyo. Se
+    // queda donde estaba hasta que exista el destino.
+    expect(
+      nativeTargetForNotification('tutor_unlinked', { type: 'tutor_unlinked' }, DIRECTOR_TUTOR),
+    ).toEqual({ pathname: '/direction' });
+    expect(
+      nativeTargetForNotification('subscription_expiring', { type: 'subscription_expiring' }, DIRECTOR_TUTOR),
+    ).toEqual({ pathname: '/direction' });
+  });
+
+  it('el seguidor no tiene lado familia: su push no se mueve', () => {
+    expect(
+      nativeTargetForNotification(
+        'goal',
+        { type: 'goal', event_id: 'e1' },
+        { homeArea: 'spectator', homeScreens: SPECTATOR_REAL },
+      ),
+    ).toEqual({ pathname: '/spectator/directos', params: { id: 'e1' } });
+  });
+
+  it('tolerante: data null y type desconocido → Inicio del hogar, nunca error', () => {
+    expect(nativeTargetForNotification('callup_published', null, DIRECTOR_TUTOR)).toEqual({
+      pathname: '/family/convocatorias',
+    });
+    expect(
+      nativeTargetForNotification('type_que_no_existe', { type: 'x' }, DIRECTOR_TUTOR),
+    ).toEqual({ pathname: '/direction' });
+  });
+
+  it('isFamilyAudienceNotification: ante la duda, NO es de familia', () => {
+    expect(isFamilyAudienceNotification('callup_published')).toBe(true);
+    expect(isFamilyAudienceNotification('development_report_published')).toBe(true);
+    // Mixtos y desconocidos responden false: el hogar es el comportamiento de siempre.
+    expect(isFamilyAudienceNotification('new_message')).toBe(false);
+    expect(isFamilyAudienceNotification('training_reminder')).toBe(false);
+    expect(isFamilyAudienceNotification('')).toBe(false);
+    expect(isFamilyAudienceNotification('inventado')).toBe(false);
   });
 });

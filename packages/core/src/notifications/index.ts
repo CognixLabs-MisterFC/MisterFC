@@ -23,9 +23,11 @@ export type { ChannelResult } from './multi-channel';
 
 export {
   nativeHrefForNotification,
+  nativeTargetForNotification,
+  isFamilyAudienceNotification,
   resourceIdForNotification,
 } from './native-route';
-export type { NativeRouteTarget } from './native-route';
+export type { NativeRouteTarget, NotificationAreaContext } from './native-route';
 
 export { notificationFeedText } from './feed-text';
 export type { FeedTextTranslate } from './feed-text';
