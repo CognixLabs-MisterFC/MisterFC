@@ -40,16 +40,21 @@ const CLAVES = ['subject', 'heading', 'body', 'cta', 'fallback', 'ignore', 'sign
 /** El sender, y la función de core que decide el destino del enlace. */
 const SENDER = 'apps/web/src/lib/email/password-recovery.ts';
 const ENLACE = 'packages/core/src/auth/recovery-link.ts';
+/** El cliente de la app, de donde sale la lista de códigos con texto propio. */
+const CLIENTE = 'apps/native/src/auth/password-recovery.ts';
+const NS_PANTALLA = 'auth.forgot_password';
 
 /**
- * CENSO de la forma vieja (fichero → nº de llamadas). Manda por Supabase, en
- * castellano para todo el mundo. Quedan las DOS puertas de la app; la web ya salió.
- * Cuando se migren, este censo baja a cero y hay que dejarlo VACÍO aquí.
+ * CENSO de la forma vieja (fichero → nº de llamadas). Mandaba por Supabase, en
+ * castellano para todo el mundo.
+ *
+ * ESTÁ VACÍO, Y NO ES QUE SE HAYA OLVIDADO NADIE: las tres puertas están migradas y
+ * `resetPasswordForEmail(` no existe en ningún fichero del repo. Vacío es el estado
+ * CORRECTO, y el guard sigue vivo: cualquier aparición nueva cae en «PUERTA NUEVA sin
+ * declarar» de abajo. Lo que NO hay que hacer es volver a llenarlo para «arreglar» un
+ * rojo — el rojo significa que alguien ha reabierto el camino a Supabase.
  */
-const CENSO_RESET = {
-  'apps/native/src/screens/forgot-password-modal.tsx': 1,
-  'apps/native/src/screens/profile-screen.tsx': 1,
-};
+const CENSO_RESET = {};
 const RESET = 'resetPasswordForEmail(';
 
 /** Líneas de comentario: los docs citan las llamadas. */
@@ -91,7 +96,53 @@ for (const idioma of IDIOMAS) {
   }
 }
 
-// ── 2 · El destino del enlace (BUG 4) ────────────────────────────────────────
+// ── 2 · Los textos de la PANTALLA, que son otros ─────────────────────────────
+//
+// Los de arriba son los del CORREO. Estos son los que ve quien lo pide y algo falla.
+// Se leen de la lista del propio cliente (`CON_TEXTO`) y no de una copia a mano aquí:
+// una segunda lista se queda vieja el día que alguien añada un código y no la toque.
+//
+// Qué pasa si falta uno: `recoveryMessageKey` devuelve la clave, el catálogo no la
+// encuentra y la pantalla pinta «error_network» al usuario. No revienta nada, que es
+// justo por lo que nadie se entera.
+{
+  const ruta = join(ROOT, CLIENTE);
+  if (!existsSync(ruta)) {
+    problems.push(`· no existe ${CLIENTE} (el cliente de la app).`);
+  } else {
+    const fuente = readFileSync(ruta, 'utf8');
+    const lista = /const CON_TEXTO[^=]*=\s*new Set\(\[([^\]]*)\]/.exec(fuente)?.[1] ?? '';
+    const codigos = [...lista.matchAll(/'([^']+)'/g)].map((m) => m[1]);
+
+    // Control positivo: si el lector se rompe, esto NO puede pasar en verde sin mirar
+    // nada — que es justo como se pierde un guard.
+    if (codigos.length < 3) {
+      problems.push(
+        `· no se pudo leer CON_TEXTO en ${CLIENTE} (${codigos.length} códigos). ` +
+          '¿Cambió de forma? Sin eso, aquí no se comprueba un solo texto de pantalla.',
+      );
+    } else {
+      // `generic` es el suelo de `recoveryMessageKey`: si falta, no hay red debajo.
+      for (const codigo of [...codigos, 'generic']) {
+        for (const idioma of IDIOMAS) {
+          const ruta = join(ROOT, `messages/${idioma}.json`);
+          if (!existsSync(ruta)) continue;
+          const catalogo = JSON.parse(readFileSync(ruta, 'utf8'));
+          const bloque = NS_PANTALLA.split('.').reduce((o, k) => (o == null ? o : o[k]), catalogo);
+          const v = bloque?.[`error_${codigo}`];
+          if (typeof v !== 'string' || v.trim().length === 0) {
+            problems.push(
+              `· messages/${idioma}.json: falta '${NS_PANTALLA}.error_${codigo}'. La ` +
+                'pantalla pintaría el NOMBRE DE LA CLAVE al usuario.',
+            );
+          }
+        }
+      }
+    }
+  }
+}
+
+// ── 3 · El destino del enlace (BUG 4) ────────────────────────────────────────
 if (!existsSync(join(ROOT, ENLACE))) {
   problems.push(`· no existe ${ENLACE}, que es quien decide a dónde lleva el correo.`);
 } else {
@@ -117,7 +168,7 @@ if (!existsSync(join(ROOT, SENDER))) {
   }
 }
 
-// ── 3 · El censo de la forma vieja ───────────────────────────────────────────
+// ── 4 · El censo de la forma vieja ───────────────────────────────────────────
 const found = {};
 for (const base of SCAN) {
   for (const file of walk(join(ROOT, base), [])) {
@@ -142,9 +193,10 @@ for (const [file, expected] of Object.entries(CENSO_RESET)) {
 for (const file of Object.keys(found)) {
   if (!(file in CENSO_RESET)) {
     problems.push(
-      `· PUERTA NUEVA sin declarar: ${file} usa ${RESET}. Ese camino manda por ` +
-        'Supabase, siempre en castellano. Lo que hay que usar es ' +
-        `${SENDER}.`,
+      `· ${file} usa ${RESET}. Ese camino volvió a Supabase: manda la plantilla del ` +
+        'dashboard, siempre en castellano, y se salta el contador de envíos. Las tres ' +
+        `puertas piden el correo a ${SENDER} — la app, por ` +
+        '/api/auth/password-recovery.',
     );
   }
 }
@@ -167,6 +219,8 @@ if (problems.length > 0) {
 
 const pendientes = Object.values(CENSO_RESET).reduce((a, b) => a + b, 0);
 console.log(
-  `[correo-recuperacion] OK — textos completos en es, en y va; el enlace sigue yendo ` +
-    `directo a /{locale}/reset-password; ${pendientes} puerta(s) por migrar de las de la app.`,
+  `[correo-recuperacion] OK — textos del correo y de la pantalla completos en es, en ` +
+    `y va; el enlace sigue yendo ` +
+    `directo a /{locale}/reset-password; ${pendientes} puerta(s) por migrar ` +
+    '(las tres salen ya por Resend).',
 );

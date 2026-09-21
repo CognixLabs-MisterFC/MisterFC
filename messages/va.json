@@ -76,7 +76,9 @@
       "back_to_signin": "Tornar a iniciar sessió",
       "error_invalid_email": "Email no vàlid",
       "error_generic": "No hem pogut enviar l'enllaç. Torna-ho a provar.",
-      "error_rate_limited": "Has demanat l'enllaç massa vegades. Torna-ho a intentar d'ací a {minutes, plural, one {# minut} other {# minuts}}."
+      "error_rate_limited": "Has demanat l'enllaç massa vegades. Torna-ho a intentar d'ací a {minutes, plural, one {# minut} other {# minuts}}.",
+      "error_network": "No hem pogut connectar. Comprova la teua connexió i torna-ho a intentar.",
+      "error_no_web_url": "Aquesta versió de l'app no pot demanar l'enllaç. Fes-ho des del web o avisa el teu club."
     },
     "reset_password": {
       "title": "Nova contrasenya",

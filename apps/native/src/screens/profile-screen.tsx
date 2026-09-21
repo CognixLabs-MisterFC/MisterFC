@@ -18,7 +18,6 @@ import {
   signAvatarFromClient,
   avatarUploadSchema,
   profileScopedCacheKey,
-  recoveryRedirectTo,
   PHONE_MAX_LENGTH,
   type ProfileData,
   type MyPhoneResult,
@@ -35,7 +34,11 @@ import { PushSettingsCard } from '@/notifications/push-settings-card';
 import { DeleteAccountCard } from '@/ui/delete-account-card';
 import { ConsentsCard } from '@/ui/consents-card';
 import { KeyboardScrollView } from '@/ui/keyboard';
-import { webBaseUrl } from '@/lib/server-api';
+import {
+  recoveryMessageKey,
+  submitPasswordRecovery,
+} from '@/auth/password-recovery';
+import { callPublicServerEndpoint } from '@/lib/server-api';
 import { uuidv4 } from '@/lib/uuid';
 import { appLocale, useLocale, useSetLocale, useTranslations } from '@/locale/provider';
 import { LOCALES, type Locale } from '@/locale/catalogs';
@@ -424,25 +427,38 @@ function LanguageCard({
 // ── Cuenta (email readonly + cambiar contraseña por email) ──────────────────────
 function AccountCard({ email, online }: { email: string; online: boolean }) {
   const t = useTranslations('perfil');
+  /**
+   * El motivo del fallo se dice con los textos de la pantalla de recuperación, que
+   * ya están escritos y traducidos: la alternativa era un segundo juego de mensajes
+   * en `perfil.pw` diciendo lo mismo con otras palabras.
+   */
+  const tAuth = useTranslations('auth');
   const [busy, setBusy] = useState(false);
 
+  /**
+   * Desde Correo-B el correo lo manda la WEB por Resend, en el idioma del
+   * destinatario; la app solo lo pide. Aquí hay sesión —esto es el perfil—, pero se
+   * usa el MISMO endpoint público que el modal del login: la puerta que no puede
+   * pedir sesión marca el contrato, y dos caminos para el mismo correo serían dos
+   * sitios donde olvidarse del límite.
+   */
   async function changePassword() {
     if (!online || busy || !email) return; // write-guard
     setBusy(true);
     try {
-      const base = webBaseUrl();
-      const redirectTo = base ? recoveryRedirectTo(base, appLocale()) : undefined;
-      const { error } = await supabase.auth.resetPasswordForEmail(
+      const out = await submitPasswordRecovery(callPublicServerEndpoint, {
         email,
-        redirectTo ? { redirectTo } : undefined,
-      );
-      if (error) {
-        Alert.alert(t('pw.error_title'), t('pw.error_body'));
-      } else {
+        locale: appLocale(),
+      });
+      if ('ok' in out) {
         Alert.alert(t('pw.sent_title'), t('pw.sent_body', { email }));
+      } else {
+        const minutes = out.retryAfter ? Math.max(1, Math.ceil(out.retryAfter / 60)) : 1;
+        Alert.alert(
+          t('pw.error_title'),
+          tAuth(`forgot_password.${recoveryMessageKey(out.error)}`, { minutes }),
+        );
       }
-    } catch {
-      Alert.alert(t('pw.error_title'), t('pw.error_body'));
     } finally {
       setBusy(false);
     }

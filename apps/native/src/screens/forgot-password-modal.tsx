@@ -7,9 +7,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { forgotPasswordSchema, recoveryRedirectTo } from '@misterfc/core';
-import { supabase } from '@/lib/supabase';
-import { webBaseUrl } from '@/lib/server-api';
+import { forgotPasswordSchema } from '@misterfc/core';
+import {
+  recoveryMessageKey,
+  submitPasswordRecovery,
+  type RecoveryOutcome,
+} from '@/auth/password-recovery';
+import { callPublicServerEndpoint } from '@/lib/server-api';
 import { appLocale, useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { KeyboardModalView } from '@/ui/keyboard';
@@ -17,20 +21,22 @@ import { KeyboardModalView } from '@/ui/keyboard';
 /**
  * RECUPERAR CONTRASEÑA desde el login de la app.
  *
- * Copia el patrón YA PROBADO del perfil (`profile-screen.tsx` → AccountCard):
- * `resetPasswordForEmail` con `redirectTo` a la WEB
- * (`/{locale}/reset-password`, ver `recoveryRedirectTo`). La app NO recibe el enlace del
- * correo: no hay deep links (esquema `misterfc://` declarado, pero sin
- * intentFilters de Android ni associatedDomains de iOS), así que el aterrizaje es
- * la web, EXACTAMENTE igual que con el enlace de invitación. Aquí solo se dispara
- * el envío; el formulario de contraseña nueva es el de web, que ya existe y no se
- * toca.
+ * QUIÉN MANDA EL CORREO, desde Correo-B: la WEB, no la app. Sale por Resend en el
+ * idioma del destinatario (`profiles.locale`), y eso exige la service-role key, que
+ * en un móvil no puede vivir. Aquí solo se pide, contra `/api/auth/password-recovery`.
  *
- * NO REVELAR SI EL EMAIL EXISTE (lo más importante de esta pantalla): Supabase
- * devuelve éxito tanto si la cuenta existe como si no, y aquí NO se comprueba nada
- * antes de enviar. La confirmación es SIEMPRE la misma —"si existe una cuenta
- * asociada a …"—, igual que en la web. Un error solo se enseña cuando el envío
- * falla de verdad (p. ej. el límite de correos), nunca "ese email no existe".
+ * El destino del enlace ya no lo pone la app: lo decide el servidor con el host de la
+ * petición. La app NO recibe el enlace del correo —no hay deep links (esquema
+ * `misterfc://` declarado, pero sin intentFilters de Android ni associatedDomains de
+ * iOS)—, así que el aterrizaje sigue siendo la web, EXACTAMENTE igual que con el
+ * enlace de invitación. El formulario de contraseña nueva es el de web, que ya existe
+ * y no se toca.
+ *
+ * NO REVELAR SI EL EMAIL EXISTE (lo más importante de esta pantalla): el endpoint
+ * contesta 200 tanto si mandó el correo como si esa dirección no tiene cuenta, y aquí
+ * NO se comprueba nada antes de pedirlo. La confirmación es SIEMPRE la misma —"si
+ * existe una cuenta asociada a …"—, igual que en la web. Un error solo se enseña
+ * cuando la petición falla de verdad (el límite, la red), nunca "ese email no existe".
  *
  * Es un modal y no una ruta propia A PROPÓSITO: `SessionGuard` devuelve al login a
  * cualquier ruta sin sesión que no sea `/login`, así que una pantalla aparte
@@ -56,12 +62,15 @@ export function ForgotPasswordModal({
   const [email, setEmail] = useState(initialEmail ?? '');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState<'invalid_email' | 'generic' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  /** Solo con `rate_limited`: los minutos que dijo el servidor. */
+  const [retryMinutes, setRetryMinutes] = useState(1);
 
   function close() {
     if (sending) return;
     setSent(false);
     setError(null);
+    setRetryMinutes(1);
     onClose();
   }
 
@@ -75,27 +84,23 @@ export function ForgotPasswordModal({
       return;
     }
 
-    // Sin dominio web configurado no se envía: el enlace del correo aterrizaría
-    // donde decidiera el proyecto, no donde sabemos. El acceso ya está oculto en
-    // el login en ese caso; esto es el cinturón.
-    const base = webBaseUrl();
-    if (!base) {
-      setError('generic');
-      return;
-    }
-
     setSending(true);
     try {
-      const { error: sendError } = await supabase.auth.resetPasswordForEmail(
-        parsed.data.email,
-        { redirectTo: recoveryRedirectTo(base, appLocale()) },
-      );
-      // OJO: `sendError` NO distingue "cuenta inexistente" (Supabase responde OK en
-      // ese caso); solo cubre fallos reales de envío. No se filtra nada.
-      if (sendError) setError('generic');
-      else setSent(true);
-    } catch {
-      setError('generic');
+      // El destino del enlace NO viaja aquí: lo decide el servidor. El `locale` sí,
+      // pero solo como respaldo para cuando el destinatario no tiene idioma propio.
+      const out: RecoveryOutcome = await submitPasswordRecovery(callPublicServerEndpoint, {
+        email: parsed.data.email,
+        locale: appLocale(),
+      });
+
+      if ('ok' in out) {
+        // OJO: un `ok` NO significa que la cuenta exista. El endpoint contesta igual
+        // en los dos casos, y la pantalla de confirmación está escrita para eso.
+        setSent(true);
+      } else {
+        if (out.retryAfter) setRetryMinutes(Math.max(1, Math.ceil(out.retryAfter / 60)));
+        setError(out.error);
+      }
     } finally {
       setSending(false);
     }
@@ -148,7 +153,9 @@ export function ForgotPasswordModal({
 
               {error ? (
                 <Text className="mt-2 text-sm text-red-600">
-                  {t(`forgot_password.error_${error}`)}
+                  {t(`forgot_password.${recoveryMessageKey(error)}`, {
+                    minutes: retryMinutes,
+                  })}
                 </Text>
               ) : null}
 
