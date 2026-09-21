@@ -10,11 +10,17 @@
  * teléfono en texto, y nada que abra el marcador ni el cliente de correo. Si alguien
  * los echa de menos, la decisión es suya, no un olvido.
  *
- * NO importa de `@misterfc/core`: el tipo de entrada se declara aquí, estructural.
- * Si el de core cambia de forma, el sitio que los junta (la pantalla) deja de
- * compilar, que es donde queremos enterarnos. Lo que se evita es que un test de
- * lógica pura acabe cargando el cliente de Supabase (la lección de R-3).
+ * NO importa del BARREL de `@misterfc/core`: el tipo de entrada se declara aquí,
+ * estructural. Si el de core cambia de forma, el sitio que los junta (la pantalla)
+ * deja de compilar, que es donde queremos enterarnos. Lo que se evita es que un
+ * test de lógica pura acabe cargando el cliente de Supabase (la lección de R-3):
+ * medido, el barrel sube el `collect` de este test de 0,5 s a 10,4 s.
+ *
+ * La REGLA de quién es tutor sí viene de core, por `@misterfc/core/rules`, que es
+ * la entrada sin cliente creada justo para esto. Antes estaba copiada a mano aquí
+ * y en core; una regla escrita dos veces acaba diciendo dos cosas.
  */
+import { isTutorAccount } from '@misterfc/core/rules';
 
 /** Estructuralmente `PlayerTutorContact` de core. */
 export type TutorContact = {
@@ -47,10 +53,8 @@ export type TutorContactRow = TutorContact & {
  * contacto no es ruido: es lo que los demás ven de él.
  *
  * El filtro va en POSITIVO —parent y guardian— y no como «todo menos self»: un
- * cuarto valor de `relation` no debe colarse solo en la lista de la familia. Es la
- * misma regla que `TUTOR_RELATIONS` de core; se repite aquí a propósito, porque
- * este fichero NO importa de `@misterfc/core` (ver la cabecera). Si cambia una,
- * cambian las dos.
+ * cuarto valor de `relation` no debe colarse solo en la lista de la familia. La
+ * lista vive en core (`TUTOR_RELATIONS`) y se lee desde aquí: una sola.
  *
  * El orden llega ya hecho de SQL (`order by relation, full_name`) y no se toca.
  */
@@ -59,6 +63,6 @@ export function tutorContactRows(
   viewerProfileId: string | null,
 ): TutorContactRow[] {
   return tutors
-    .filter((tu) => tu.relation === 'parent' || tu.relation === 'guardian')
+    .filter(isTutorAccount)
     .map((tu) => ({ ...tu, isViewer: tu.tutorProfileId === viewerProfileId }));
 }
