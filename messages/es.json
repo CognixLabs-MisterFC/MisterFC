@@ -76,7 +76,9 @@
       "back_to_signin": "Volver a iniciar sesión",
       "error_invalid_email": "Email no válido",
       "error_generic": "No hemos podido enviar el enlace. Inténtalo de nuevo.",
-      "error_rate_limited": "Has pedido el enlace demasiadas veces. Vuelve a intentarlo en {minutes, plural, one {# minuto} other {# minutos}}."
+      "error_rate_limited": "Has pedido el enlace demasiadas veces. Vuelve a intentarlo en {minutes, plural, one {# minuto} other {# minutos}}.",
+      "error_network": "No hemos podido conectar. Comprueba tu conexión e inténtalo de nuevo.",
+      "error_no_web_url": "Esta versión de la app no puede pedir el enlace. Hazlo desde la web o avisa a tu club."
     },
     "reset_password": {
       "title": "Nueva contraseña",
@@ -108,11 +110,6 @@
         "body": "Si existe una cuenta asociada a {email}, te hemos enviado un enlace para restablecer la contraseña.",
         "body_fallback": "Si existe una cuenta con ese correo, te hemos enviado un enlace para restablecer la contraseña."
       }
-    },
-    "callback": {
-      "error_title": "No hemos podido completar el acceso",
-      "error_body": "El enlace ha caducado o ya se ha usado. Pide uno nuevo desde el inicio de sesión.",
-      "back_to_signin": "Volver a iniciar sesión"
     }
   },
   "portada": {
@@ -600,8 +597,7 @@
     "pw": {
       "sent_title": "Revisa tu correo",
       "sent_body": "Te hemos enviado un enlace a {email} para cambiar la contraseña.",
-      "error_title": "No se pudo enviar",
-      "error_body": "Inténtalo de nuevo en unos minutos."
+      "error_title": "No se pudo enviar"
     },
     "notifications_title": "Notificaciones"
   },

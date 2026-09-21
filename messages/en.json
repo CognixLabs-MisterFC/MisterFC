@@ -76,7 +76,9 @@
       "back_to_signin": "Back to sign in",
       "error_invalid_email": "Invalid email",
       "error_generic": "We couldn't send the link. Please try again.",
-      "error_rate_limited": "You have asked for the link too many times. Try again in {minutes, plural, one {# minute} other {# minutes}}."
+      "error_rate_limited": "You have asked for the link too many times. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
+      "error_network": "We could not connect. Check your connection and try again.",
+      "error_no_web_url": "This version of the app cannot request the link. Use the website or let your club know."
     },
     "reset_password": {
       "title": "New password",
@@ -108,11 +110,6 @@
         "body": "If an account exists for {email}, we've sent a link to reset your password.",
         "body_fallback": "If an account exists for that email, we've sent a link to reset your password."
       }
-    },
-    "callback": {
-      "error_title": "We couldn't complete sign-in",
-      "error_body": "The link is expired or already used. Request a new one from sign in.",
-      "back_to_signin": "Back to sign in"
     }
   },
   "portada": {
@@ -760,8 +757,7 @@
     "pw": {
       "sent_title": "Check your email",
       "sent_body": "We’ve sent a link to {email} to change your password.",
-      "error_title": "Couldn’t send",
-      "error_body": "Please try again in a few minutes."
+      "error_title": "Couldn’t send"
     },
     "notifications_title": "Notifications"
   },
