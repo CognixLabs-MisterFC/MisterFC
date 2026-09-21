@@ -1,5 +1,6 @@
 import 'server-only';
 import { getTranslations } from 'next-intl/server';
+import type { InviteKind } from '@misterfc/core';
 import type { EmailMessage } from './resend';
 
 /**
@@ -83,21 +84,38 @@ function enTexto(args: {
 }
 
 /**
- * Correo de invitación a SEGUIDOR, en el idioma que se le pase.
+ * Qué textos usa cada tipo de invitación. La serie Correo-B va añadiendo entradas
+ * según migra senders; los que faltan siguen saliendo por la plantilla de Supabase.
  *
- * NO dice el nombre del jugador al que se le invita a seguir, y es deliberado: a esa
- * dirección todavía no hay nadie identificado —puede estar mal escrita— y el nombre
- * de un menor no se manda a una dirección sin comprobar. Quién es se ve al entrar,
- * después del enlace, que exige el token.
+ * `InviteKind` viene de core y es el MISMO valor que el sender mete en el
+ * `user_metadata` de la cuenta, así que no hay dos listas que mantener a la vez.
  */
-export async function spectatorInviteEmail(args: {
+const NAMESPACE_BY_KIND: Partial<Record<InviteKind, string>> = {
+  seguidor: 'emails.spectator_invite',
+  menor: 'emails.self_invite',
+};
+
+/**
+ * Correo de invitación del tipo que sea, en el idioma que se le pase.
+ *
+ * NO dice el nombre del jugador, y es deliberado: a esa dirección todavía no hay
+ * nadie identificado —puede estar mal escrita— y el nombre de un menor no se manda a
+ * una dirección sin comprobar. Quién es se ve al entrar, después del enlace, que
+ * exige el token.
+ *
+ * Un `kind` sin textos LANZA en vez de mandar algo genérico: el sender lo trata como
+ * cualquier fallo de correo y queda el rastro. Un correo mudo no se nota.
+ */
+export async function invitationEmail(args: {
+  kind: InviteKind;
   locale: string;
   url: string;
 }): Promise<EmailMessage> {
-  const t = await getTranslations({
-    locale: args.locale,
-    namespace: 'emails.spectator_invite',
-  });
+  const namespace = NAMESPACE_BY_KIND[args.kind];
+  if (!namespace) {
+    throw new Error(`invitationEmail: no hay textos para el tipo '${args.kind}'`);
+  }
+  const t = await getTranslations({ locale: args.locale, namespace });
 
   const piezas = {
     heading: t('heading'),

@@ -7,9 +7,7 @@ import {
   type SpectatorInviteResult,
 } from '@misterfc/core';
 import { linkInvitedUser } from '@/lib/link-invited-user';
-import { sendEmail } from '@/lib/email/resend';
-import { spectatorInviteEmail } from '@/lib/email/invitation-email';
-import { lookupInviteRecipient, normalizeLocale } from '@/lib/email/invite-recipient';
+import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 
 export type { SpectatorInviteResult };
 
@@ -43,34 +41,12 @@ export function performSpectatorInvite(
         feature: 'invitations',
         step: 'link_invited_user_spectator',
       }),
-    sendSpectatorInviteEmail(),
-    (email) => lookupInviteRecipient(admin, email),
+    invitationEmailPort('seguidor'),
+    inviteRecipientPort(admin),
     (error, step, extra) =>
       Sentry.captureException(error, {
         tags: { feature: 'invitations', step },
         extra,
       }),
   );
-}
-
-/**
- * Correo-B1 — El puerto de correo del sender de seguidores.
- *
- * Compone con el catálogo del idioma que el sender ya resolvió y manda por Resend.
- * Devuelve `{ error }` sin lanzar: lo que decide qué hacer con un correo que no sale
- * es el sender, que sabe qué hay creado ya.
- */
-function sendSpectatorInviteEmail() {
-  return async (args: { to: string; url: string; locale: string }) => {
-    try {
-      const locale = normalizeLocale(args.locale, 'es');
-      const message = await spectatorInviteEmail({ locale, url: args.url });
-      return await sendEmail({ to: args.to, message });
-    } catch (thrown) {
-      // Componer también puede fallar (un catálogo sin la clave, p. ej.). Es un
-      // error de correo como cualquier otro: lo registra el sender, no revienta la
-      // Server Action de quien invita.
-      return { error: thrown };
-    }
-  };
 }

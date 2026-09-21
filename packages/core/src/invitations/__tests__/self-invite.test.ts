@@ -11,9 +11,7 @@ import type { Database } from '../../supabase/types';
 type UserOpts = {
   rpcData?: { id: string; token: string; email: string } | null;
   rpcError?: { message: string } | null;
-  existingEmailError?: { message: string } | null;
   onRpc?: (name: string, args: unknown) => void;
-  onExistingEmail?: () => void;
 };
 
 function makeUserClient(opts: UserOpts): SupabaseClient<Database> {
@@ -24,19 +22,13 @@ function makeUserClient(opts: UserOpts): SupabaseClient<Database> {
         return { data: opts.rpcData ?? null, error: opts.rpcError ?? null };
       },
     }),
-    auth: {
-      signInWithOtp: async () => {
-        opts.onExistingEmail?.();
-        return { error: opts.existingEmailError ?? null };
-      },
-    },
   } as unknown as SupabaseClient<Database>;
 }
 
 type AdminOpts = {
-  inviteError?: { message?: string; code?: string } | null;
-  onInvite?: () => void;
-  /** id de la cuenta que CREA el invite. `null` = respuesta sin user.id (#535). */
+  createError?: { message?: string; code?: string } | null;
+  onCreate?: (attrs: unknown) => void;
+  /** id de la cuenta creada. `null` = respuesta sin user.id (#535). */
   invitedUserId?: string | null;
   /** Espía: el admin NO puede llamar a la RPC. */
   onRpc?: () => void;
@@ -53,11 +45,11 @@ function makeAdminClient(opts: AdminOpts): SupabaseClient<Database> {
     }),
     auth: {
       admin: {
-        inviteUserByEmail: async () => {
-          opts.onInvite?.();
+        createUser: async (attrs: unknown) => {
+          opts.onCreate?.(attrs);
           return {
             data: uid ? { user: { id: uid } } : {},
-            error: opts.inviteError ?? null,
+            error: opts.createError ?? null,
           };
         },
       },
@@ -67,6 +59,22 @@ function makeAdminClient(opts: AdminOpts): SupabaseClient<Database> {
 
 function makeLink(ok = true) {
   return vi.fn(async (_invitationId: string, _invitedUserId: string) => ({ ok }));
+}
+
+/** Puerto de correo (Correo-B2). Espía: afirma QUÉ enlace y en QUÉ idioma sale. */
+function makeSendEmail(error: unknown = null) {
+  return vi.fn(async (_args: { to: string; url: string; locale: string }) => ({ error }));
+}
+
+/**
+ * Puerto de búsqueda. Por defecto: no tiene cuenta. OJO con el caso contrario en
+ * este sender: la cuenta del menor suele llevar el correo del PADRE, que casi
+ * siempre ya tiene cuenta, así que "ya existe" no es aquí el caso raro.
+ */
+function makeLookup(
+  found: { userId: string; invitePending: boolean; locale: string | null } | null = null,
+) {
+  return vi.fn(async (_email: string) => found);
 }
 
 const OK_INVITE = { id: 'inv-1', token: 'tok-1', email: 'hijo@correo.com' };
@@ -85,6 +93,8 @@ describe('MN-5 · performSelfInvite', () => {
       makeAdminClient({}),
       ARGS,
       link,
+      makeSendEmail(),
+      makeLookup(),
     );
     expect(res).toEqual({ ok: { email: 'hijo@correo.com', existing: false } });
     expect(link).toHaveBeenCalledWith('inv-1', 'auth-user-1');
@@ -100,6 +110,8 @@ describe('MN-5 · performSelfInvite', () => {
       makeAdminClient({ onRpc: onAdminRpc }),
       ARGS,
       makeLink(),
+      makeSendEmail(),
+      makeLookup(),
     );
     expect(onUserRpc).toHaveBeenCalledOnce();
     expect(onAdminRpc).not.toHaveBeenCalled();
@@ -116,6 +128,8 @@ describe('MN-5 · performSelfInvite', () => {
       makeAdminClient({}),
       ARGS,
       makeLink(),
+      makeSendEmail(),
+      makeLookup(),
     );
     expect(onRpc.mock.calls[0]?.[1]).toEqual({
       p_player_id: 'player-1',
@@ -123,16 +137,20 @@ describe('MN-5 · performSelfInvite', () => {
     });
   });
 
-  it('si el gate falla, NO se manda ningún correo', async () => {
-    const onInvite = vi.fn();
+  it('si el gate falla, NO se crea cuenta NI se manda ningún correo', async () => {
+    const onCreate = vi.fn();
+    const sendEmail = makeSendEmail();
     const res = await performSelfInvite(
       makeUserClient({ rpcError: { message: 'forbidden' } }),
-      makeAdminClient({ onInvite }),
+      makeAdminClient({ onCreate }),
       ARGS,
       makeLink(),
+      sendEmail,
+      makeLookup(),
     );
     expect(res).toEqual({ error: 'forbidden' });
-    expect(onInvite).not.toHaveBeenCalled();
+    expect(onCreate).not.toHaveBeenCalled();
+    expect(sendEmail).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -151,6 +169,8 @@ describe('MN-5 · performSelfInvite', () => {
       makeAdminClient({}),
       ARGS,
       makeLink(),
+      makeSendEmail(),
+      makeLookup(),
     );
     expect(res).toEqual({ error: expected });
   });
@@ -162,6 +182,8 @@ describe('MN-5 · performSelfInvite', () => {
       makeAdminClient({}),
       ARGS,
       makeLink(),
+      makeSendEmail(),
+      makeLookup(),
       log,
     );
     expect(res).toEqual({ error: 'generic' });
@@ -177,59 +199,137 @@ describe('MN-5 · performSelfInvite', () => {
       makeAdminClient({}),
       ARGS,
       makeLink(),
+      makeSendEmail(),
+      makeLookup(),
       log,
     );
     expect(log).not.toHaveBeenCalled();
   });
 
-  it('si el correo ya es usuario, reenvía por reset y NO enlaza', async () => {
-    const onExistingEmail = vi.fn();
+  it('si el correo ya tiene cuenta propia: mismo correo de invitación, sin crear ni enlazar', async () => {
+    const onCreate = vi.fn();
     const link = makeLink();
+    const sendEmail = makeSendEmail();
     const res = await performSelfInvite(
-      makeUserClient({ rpcData: OK_INVITE, onExistingEmail }),
-      makeAdminClient({ inviteError: { code: 'email_exists' } }),
+      makeUserClient({ rpcData: OK_INVITE }),
+      makeAdminClient({ onCreate }),
       ARGS,
       link,
+      sendEmail,
+      makeLookup({ userId: 'auth-padre', invitePending: false, locale: null }),
     );
     expect(res).toEqual({ ok: { email: 'hijo@correo.com', existing: true } });
-    expect(onExistingEmail).toHaveBeenCalledOnce();
+    expect(onCreate).not.toHaveBeenCalled();
     // La cuenta NO la hemos creado nosotros: invited_user_id queda NULL por diseño.
     expect(link).not.toHaveBeenCalled();
+    expect(sendEmail).toHaveBeenCalledTimes(1);
   });
 
-  it('si el reset tambien falla, es generic', async () => {
+  it('REENVÍO a la cuenta del menor sin reclamar: la enlaza, no crea otra', async () => {
+    const onCreate = vi.fn();
+    const link = makeLink();
     const res = await performSelfInvite(
-      makeUserClient({ rpcData: OK_INVITE, existingEmailError: { message: 'nope' } }),
-      makeAdminClient({ inviteError: { code: 'email_exists' } }),
+      makeUserClient({ rpcData: OK_INVITE }),
+      makeAdminClient({ onCreate }),
+      ARGS,
+      link,
+      makeSendEmail(),
+      makeLookup({ userId: 'auth-menor', invitePending: true, locale: null }),
+    );
+    expect(res).toEqual({ ok: { email: 'hijo@correo.com', existing: false } });
+    expect(onCreate).not.toHaveBeenCalled();
+    expect(link).toHaveBeenCalledWith('inv-1', 'auth-menor');
+  });
+
+  it('el idioma del destinatario manda: la cuenta del menor suele llevar el correo del padre', async () => {
+    const sendEmail = makeSendEmail();
+    await performSelfInvite(
+      makeUserClient({ rpcData: OK_INVITE }),
+      makeAdminClient({}),
       ARGS,
       makeLink(),
+      sendEmail,
+      makeLookup({ userId: 'auth-padre', invitePending: false, locale: 'va' }),
+    );
+    expect(sendEmail).toHaveBeenCalledWith({
+      to: 'hijo@correo.com',
+      url: 'https://misterfc.es/es/invite/tok-1',
+      locale: 'va',
+    });
+  });
+
+  it('la cuenta nace CONFIRMADA y con su invitation_id (F14D) y kind menor', async () => {
+    const onCreate = vi.fn();
+    await performSelfInvite(
+      makeUserClient({ rpcData: OK_INVITE }),
+      makeAdminClient({ onCreate }),
+      ARGS,
+      makeLink(),
+      makeSendEmail(),
+      makeLookup(),
+    );
+    expect(onCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'hijo@correo.com',
+        email_confirm: true,
+        user_metadata: expect.objectContaining({
+          invitation_id: 'inv-1',
+          invite_kind: 'menor',
+        }),
+      }),
+    );
+  });
+
+  it('si el correo no sale, es generic y queda el rastro', async () => {
+    const log = vi.fn();
+    const res = await performSelfInvite(
+      makeUserClient({ rpcData: OK_INVITE }),
+      makeAdminClient({}),
+      ARGS,
+      makeLink(),
+      makeSendEmail({ message: 'resend 422' }),
+      makeLookup(),
+      log,
     );
     expect(res).toEqual({ error: 'generic' });
+    expect(log).toHaveBeenCalledWith(
+      expect.anything(),
+      'send_invite_email_self',
+      expect.objectContaining({ invitation_id: 'inv-1' }),
+    );
   });
 
   // #535 — invite OK pero sin user.id: enlazar es imposible, así que se corta en
   // vez de dar por buena una invitación que nadie podrá completar.
-  it('invite sin user.id corta con generic y no enlaza', async () => {
+  it('cuenta creada sin user.id corta con generic, no enlaza y NO manda correo', async () => {
     const link = makeLink();
+    const sendEmail = makeSendEmail();
     const res = await performSelfInvite(
       makeUserClient({ rpcData: OK_INVITE }),
       makeAdminClient({ invitedUserId: null }),
       ARGS,
       link,
+      sendEmail,
+      makeLookup(),
     );
     expect(res).toEqual({ error: 'generic' });
     expect(link).not.toHaveBeenCalled();
+    expect(sendEmail).not.toHaveBeenCalled();
   });
 
   // #540 — el puerto exige 1 fila afectada; si no, la invitación queda rota.
-  it('si el enlazado falla, el resultado es generic', async () => {
+  it('si el enlazado falla, es generic y el correo NO sale (va el último)', async () => {
+    const sendEmail = makeSendEmail();
     const res = await performSelfInvite(
       makeUserClient({ rpcData: OK_INVITE }),
       makeAdminClient({}),
       ARGS,
       makeLink(false),
+      sendEmail,
+      makeLookup(),
     );
     expect(res).toEqual({ error: 'generic' });
+    expect(sendEmail).not.toHaveBeenCalled();
   });
 
   it('la RPC sin fila devuelta es generic', async () => {
@@ -238,6 +338,8 @@ describe('MN-5 · performSelfInvite', () => {
       makeAdminClient({}),
       ARGS,
       makeLink(),
+      makeSendEmail(),
+      makeLookup(),
     );
     expect(res).toEqual({ error: 'generic' });
   });
