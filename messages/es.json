@@ -84,6 +84,7 @@
     "reset_password": {
       "title": "Nueva contraseña",
       "subtitle": "Introduce tu nueva contraseña.",
+      "forced_hint": "Has entrado con un enlace de recuperación. Para seguir usando MisterFC, elige una contraseña nueva.",
       "password_label": "Nueva contraseña",
       "password_hint": "Mínimo 8 caracteres.",
       "confirm_label": "Confirma la contraseña",

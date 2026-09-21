@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { createServerClient } from '@supabase/ssr';
 import * as Sentry from '@sentry/nextjs';
+import { requiresPasswordChange, localeFromPath } from '@misterfc/core';
 import { routing } from './i18n/routing';
 
 const handleIntl = createIntlMiddleware(routing);
@@ -24,9 +25,16 @@ const handleIntl = createIntlMiddleware(routing);
  *
  *   3. Aplica el routing i18n de next-intl (prefijo de locale).
  *
- * No hace redirects de auth aquí (más allá del callback); cada página decide
- * qué hacer en función de `getCurrentUser()`. Eso evita doble lógica de
- * protección.
+ *   4. EL CANDADO DE LA CONTRASEÑA: quien llega por el enlace de recuperación
+ *      no navega a ningún sitio hasta fijar una nueva.
+ *
+ * Los redirects de auth NO viven aquí por norma —cada página decide con
+ * `getCurrentUser()`, y así no hay doble lógica de protección—, pero el candado
+ * es la segunda excepción (la primera es la portada de clubes). El motivo es que
+ * la regla es «CUALQUIER página», públicas incluidas, y los tres guards que ya
+ * existen (suscripción, re-consentimiento, corte de familia web) viven en el
+ * layout autenticado y por definición no llegan ahí. No cuesta una ida y vuelta
+ * extra: el `getUser()` de abajo ya estaba.
  */
 export default async function middleware(request: NextRequest) {
   // (0) Registro cerrado (F14D): el signup libre ya no existe. Cinturón y
@@ -99,6 +107,35 @@ export default async function middleware(request: NextRequest) {
     });
   }
 
+  // ── El candado de la contraseña ───────────────────────────────────────────
+  //
+  // Una sesión que nace del enlace de recuperación lo dice en su propio token
+  // (`amr`), así que esto no consulta ningún estado nuestro: ni cookie, ni tabla.
+  // La decisión vive en core, con pruebas (`requiresPasswordChange`); aquí solo
+  // se aplica. Y se abre sola: la acción de `/reset-password` vuelve a
+  // autenticar al terminar, lo que crea una sesión con `amr` de contraseña.
+  //
+  // EL TOKEN NO SE VUELVE A VERIFICAR: `getUser()`, justo arriba, ya lo ha hecho
+  // contra GoTrue. Aquí solo se leen las reclamaciones del que ya está validado,
+  // sin una segunda llamada.
+  //
+  // LAS RUTAS `/api` NO ENTRAN, Y NO ES UN OLVIDO NI DEUDA: es decisión tomada.
+  // Quien tiene el enlace ya tiene acceso a la cuenta, así que el candado no es
+  // una barrera de seguridad — es para que la persona acabe con una contraseña
+  // nueva, que es lo que pidió. Taparlas añadiría una capa que no protege de
+  // nadie y que habría que mantener en cada endpoint nuevo. (De hecho el
+  // `matcher` de abajo ya las excluye; esto explica por qué se deja así.)
+  const destinoCandado = `/${localeFromPath(pathname, routing.locales, routing.defaultLocale)}/reset-password`;
+  // El orden importa poco para la corrección y mucho para el coste: estando
+  // encerrado, la pantalla que más se pide es justo el destino, y ahí no hace
+  // falta ni mirar el token.
+  if (user && pathname !== destinoCandado && (await requiereContrasenaNueva(supabase))) {
+    const redirectRes = NextResponse.redirect(new URL(destinoCandado, request.url));
+    // Preserva las cookies que Supabase/next-intl hayan escrito sobre `response`.
+    for (const c of response.cookies.getAll()) redirectRes.cookies.set(c);
+    return redirectRes;
+  }
+
   // F14J-2 — Portada "elige tu club": la RAÍZ pública (misterfc.es → /{locale})
   // SIN sesión muestra la portada de clubes, no el login. Es SOLO la raíz: los
   // deep-links sin sesión siguen yendo a /signin vía el layout autenticado (sin
@@ -115,6 +152,41 @@ export default async function middleware(request: NextRequest) {
   }
 
   return response;
+}
+
+/**
+ * Lee `amr` del token que `getUser()` acaba de validar.
+ *
+ * `getSession()` lee de la cookie SIN verificar, y por eso no se usa para decidir
+ * quién es nadie — para eso está el `getUser()` de arriba. Lo que se saca de aquí
+ * es solo el cuerpo del mismo token ya validado, que es donde viaja `amr`;
+ * `getUser()` no lo devuelve.
+ *
+ * El parámetro se tipa por lo ÚNICO que se usa —`getSession`— y no como el cliente
+ * entero: así la firma dice sola que esto no consulta la base ni vuelve a GoTrue, y
+ * no queda atada a los genéricos de `createServerClient`.
+ *
+ * Cualquier tropiezo (sin sesión, token ilegible) responde `false`: el candado
+ * falla ABIERTO a propósito. Equivocarse cerrando deja a alguien dando vueltas
+ * sin salida; equivocarse abriendo solo significa que sigue con su contraseña
+ * vieja un rato más, que es exactamente donde estábamos antes de esta pieza.
+ */
+async function requiereContrasenaNueva(supabase: {
+  auth: { getSession: () => Promise<{ data: { session: { access_token: string } | null } }> };
+}): Promise<boolean> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return false;
+    const payload = token.split('.')[1];
+    if (!payload) return false;
+    const claims = JSON.parse(Buffer.from(payload, 'base64url').toString()) as {
+      amr?: unknown;
+    };
+    return requiresPasswordChange(claims.amr);
+  } catch {
+    return false;
+  }
 }
 
 export const config = {

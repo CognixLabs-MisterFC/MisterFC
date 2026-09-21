@@ -31,6 +31,10 @@ export function ResetPasswordPanel({ locale }: { locale: string }) {
         <div>
           <h1 className="text-3xl font-bold text-[#10B981]">{t('title')}</h1>
           <p className="mt-2 text-sm text-zinc-300">{t('subtitle')}</p>
+          {/* Con el candado puesto esto SIEMPRE es cierto: a esta pantalla solo se
+              llega por el enlace, y de aquí no se sale sin fijar contraseña. Por eso
+              el aviso no depende de ninguna condición. */}
+          <p className="mt-3 text-xs text-amber-300">{t('forced_hint')}</p>
         </div>
         <ResetPasswordForm locale={locale} />
         <form action={signout.bind(null, locale)} className="flex flex-col items-center gap-1">

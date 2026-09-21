@@ -84,6 +84,7 @@
     "reset_password": {
       "title": "Nova contrasenya",
       "subtitle": "Introdueix la teva nova contrasenya.",
+      "forced_hint": "Has entrat amb un enllaç de recuperació. Per a continuar utilitzant MisterFC, tria una contrasenya nova.",
       "password_label": "Nova contrasenya",
       "password_hint": "Mínim 8 caràcters.",
       "confirm_label": "Confirma la contrasenya",
