@@ -7,10 +7,10 @@ import {
   createSupabaseAdminClient,
   inviteEmailMetadata,
   isEmailAlreadyExistsError,
-  sendInviteToExistingUser,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
+import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 
 /**
  * Cambiar el admin de un club (consola superadmin). Mismo patrón que
@@ -22,6 +22,14 @@ import { linkInvitedUser } from '@/lib/link-invited-user';
  * Nota: el corte del viejo admin ya está commiteado por la RPC; si el email falla,
  * el club queda sin owner con la invitación pendiente → recuperable reinvitando
  * desde la misma pantalla (que pasa a estado "sin owner").
+ *
+ * Correo-B3 — la cuenta se crea con `createUser` (que no manda correo) y el correo lo
+ * manda la app por Resend, en el idioma del destinatario. Aquí ese idioma se acierta
+ * casi siempre: a quien se nombra admin de un club suele conocérsele ya, y si tiene
+ * cuenta manda su `profiles.locale`.
+ *
+ * DUPLICACIÓN DELIBERADA con `invite-club-admin.ts`, y el `createUser(` a la vista en
+ * los dos ficheros: es lo que cuenta el guard de censo. Ver la nota de allí.
  */
 
 export type ChangeClubAdminError =
@@ -107,67 +115,111 @@ export async function changeClubAdmin(input: {
   const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
 
   const admin = createSupabaseAdminClient();
-  try {
-    const { data: inviteData, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
-      redirectTo,
-      data: inviteEmailMetadata({
-        invitationId: invite.invitation_id,
-        kind: 'admin',
-        locale,
-      }),
-    });
 
-    if (invErr) {
-      if (isEmailAlreadyExistsError(invErr)) {
-        const { error: resetErr } = await sendInviteToExistingUser(supabase, {
-          email,
-          redirectTo,
-        });
-        if (resetErr) {
-          console.error(
-            '[platform][change-admin] reset_fallback_failed ' +
-              JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id, error: serializeError(resetErr) }),
-          );
-          Sentry.captureException(resetErr, { tags: { feature: 'platform', step: 'change_admin_reset_fallback' } });
-          return { error: 'generic' };
-        }
-      } else {
-        console.error(
-          '[platform][change-admin] invite_returned_error ' +
-            JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id, error: serializeError(invErr) }),
-        );
-        Sentry.captureException(invErr, { tags: { feature: 'platform', step: 'change_admin_invite' } });
-        return { error: 'generic' };
-      }
-    } else {
-      const invitedUserId = inviteData?.user?.id ?? null;
-      if (!invitedUserId) {
-        // #535: invite OK pero sin user.id → antes MUDO. Ruidoso + error al admin.
-        console.error(
-          '[platform][change-admin] invited_user_missing_id ' +
-            JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id }),
-        );
-        Sentry.captureMessage('[platform] inviteUserByEmail sin user.id (change-admin)', {
-          level: 'error',
-          tags: { feature: 'platform', step: 'change_admin_missing_id' },
-        });
-        return { error: 'generic' };
-      }
-      // Enlaza y EXIGE 1 fila afectada: un UPDATE de cero filas no da error en
-      // PostgREST y dejaría invited_user_id NULL en silencio (raíz del incidente).
-      const linkRes = await linkInvitedUser(admin, invite.invitation_id, invitedUserId, {
+  // ¿Ya tiene cuenta este correo? Antes de crear nada: decide si hay cuenta que
+  // crear, cuál enlazar y en qué idioma escribir.
+  let found: Awaited<ReturnType<ReturnType<typeof inviteRecipientPort>>> = null;
+  try {
+    found = await inviteRecipientPort(admin)(email);
+  } catch (thrown) {
+    console.error(
+      '[platform][change-admin] lookup_failed ' +
+        JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id, error: serializeError(thrown) }),
+    );
+  }
+  const emailLocale = found?.locale ?? locale;
+
+  try {
+    if (found && !found.invitePending) {
+      // Cuenta suya: no se toca ni se enlaza; acepta con su propia sesión.
+      console.info('[platform][change-admin] cuenta_existente', {
+        masked_email: maskedEmail,
+        invitation_id: invite.invitation_id,
+      });
+    } else if (found && found.invitePending) {
+      // Cuenta que creamos y nadie reclamó: se ENLAZA ésa. Aquí importa más que en
+      // ningún otro sender: el club ya se ha quedado SIN owner (la RPC cortó al
+      // admin viejo), así que una invitación sin enlazar deja el club sin nadie que
+      // pueda entrar.
+      const linkRes = await linkInvitedUser(admin, invite.invitation_id, found.userId, {
         feature: 'platform',
         step: 'change_admin_link',
         maskedEmail,
       });
       if (!linkRes.ok) return { error: 'generic' };
+    } else {
+      const { data: created, error: createErr } = await admin.auth.admin.createUser({
+        email,
+        // Su correo ES su prueba. Sin esto GoTrue le niega el login al fijar la
+        // contraseña en /invite (BUG-4).
+        email_confirm: true,
+        user_metadata: inviteEmailMetadata({
+          invitationId: invite.invitation_id,
+          kind: 'admin',
+          locale: emailLocale,
+        }),
+      });
+
+      if (createErr) {
+        if (isEmailAlreadyExistsError(createErr)) {
+          console.error(
+            '[platform][change-admin] create_race ' +
+              JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id, error: serializeError(createErr) }),
+          );
+        } else {
+          console.error(
+            '[platform][change-admin] create_returned_error ' +
+              JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id, error: serializeError(createErr) }),
+          );
+          Sentry.captureException(createErr, { tags: { feature: 'platform', step: 'change_admin_create' } });
+          return { error: 'generic' };
+        }
+      } else {
+        const invitedUserId = created?.user?.id ?? null;
+        if (!invitedUserId) {
+          // #535: creación OK pero sin user.id → antes MUDO. Ruidoso + error al admin.
+          console.error(
+            '[platform][change-admin] invited_user_missing_id ' +
+              JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id }),
+          );
+          Sentry.captureMessage('[platform] createUser sin user.id (change-admin)', {
+            level: 'error',
+            tags: { feature: 'platform', step: 'change_admin_missing_id' },
+          });
+          return { error: 'generic' };
+        }
+        // Enlaza y EXIGE 1 fila afectada: un UPDATE de cero filas no da error en
+        // PostgREST y dejaría invited_user_id NULL en silencio (raíz del incidente).
+        const linkRes = await linkInvitedUser(admin, invite.invitation_id, invitedUserId, {
+          feature: 'platform',
+          step: 'change_admin_link',
+          maskedEmail,
+        });
+        if (!linkRes.ok) return { error: 'generic' };
+      }
     }
   } catch (thrown) {
     console.error(
-      '[platform][change-admin] invite_thrown ' +
+      '[platform][change-admin] create_thrown ' +
         JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id, error: serializeError(thrown) }),
     );
-    Sentry.captureException(thrown, { tags: { feature: 'platform', step: 'change_admin_invite_thrown' } });
+    Sentry.captureException(thrown, { tags: { feature: 'platform', step: 'change_admin_create_thrown' } });
+    return { error: 'generic' };
+  }
+
+  // El correo, LO ÚLTIMO. Si falla, el club se queda sin owner con la invitación
+  // pendiente y enlazada: reinvitar desde la misma pantalla vuelve a mandarlo.
+  const { error: mailErr } = await invitationEmailPort('admin')({
+    to: email,
+    url: redirectTo,
+    locale: emailLocale,
+  });
+  if (mailErr) {
+    console.error(
+      '[platform][change-admin] email_failed ' +
+        JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.invitation_id, error: serializeError(mailErr) }),
+    );
+    Sentry.captureException(mailErr, { tags: { feature: 'platform', step: 'change_admin_send_email' } });
     return { error: 'generic' };
   }
 

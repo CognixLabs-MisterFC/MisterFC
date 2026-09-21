@@ -5694,6 +5694,15 @@
       "fallback": "Si el botó no funciona, copia aquesta adreça al teu navegador:",
       "ignore": "Si creus que aquest correu no és per a tu, pots ignorar-lo: no es crearà res al teu nom.",
       "signature": "L'equip de MisterFC"
+    },
+    "admin_invite": {
+      "subject": "T'han convidat a administrar el teu club en MisterFC",
+      "heading": "T'han convidat a administrar el teu club",
+      "body": "Seràs la persona administradora del teu club en MisterFC: podràs donar d'alta els equips i el cos tècnic, i convidar les famílies. Entra amb aquest enllaç per a acceptar la invitació i crear el teu compte.",
+      "cta": "Acceptar la invitació",
+      "fallback": "Si el botó no funciona, copia aquesta adreça al teu navegador:",
+      "ignore": "Si no esperaves aquesta invitació, pots ignorar aquest correu: no es crearà res al teu nom.",
+      "signature": "L'equip de MisterFC"
     }
   }
 }

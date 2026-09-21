@@ -7,10 +7,10 @@ import {
   createSupabaseAdminClient,
   inviteEmailMetadata,
   isEmailAlreadyExistsError,
-  sendInviteToExistingUser,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
+import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 
 /**
  * F14B-5b — Acción de consola (superadmin): invita al admin de un club SIN owner.
@@ -20,12 +20,21 @@ import { linkInvitedUser } from '@/lib/link-invited-user';
  *   1. Gate is_superadmin() (server-side + la RPC lo reimpone).
  *   2. platform_invite_club_admin (RPC SECURITY DEFINER) crea la invitación
  *      admin_club saltando invitations_insert_admin.
- *   3. inviteUserByEmail(email, { data: { invite_pending, invitation_id } }) —
- *      envía el email y crea la cuenta (o cae al fallback resetPasswordForEmail
- *      si el email ya existía), y enlaza invited_user_id.
+ *   3. Correo-B3 — se busca al destinatario, se crea su cuenta con `createUser` si
+ *      no la tiene, se enlaza `invited_user_id` y se le manda el correo por Resend,
+ *      EN SU IDIOMA. Antes lo mandaba GoTrue dentro de `inviteUserByEmail`, con la
+ *      plantilla única del dashboard, que no puede leer `profiles.locale` y salía
+ *      siempre en castellano.
  *
- * El guard F14D (handle_new_user) admite el alta porque el user creado por
- * inviteUserByEmail lleva invitation_id en user_metadata.
+ * El guard F14D (handle_new_user) admite el alta porque la cuenta se crea con
+ * invitation_id en user_metadata.
+ *
+ * DUPLICACIÓN DELIBERADA con `change-club-admin.ts`: los dos hacen lo mismo con
+ * distinto registro. El `createUser(` y el `inviteEmailMetadata(` se quedan a la
+ * vista EN CADA FICHERO porque el guard de censo los cuenta ahí
+ * (scripts/check-invite-senders.mjs); esconderlos tras un helper común dejaría
+ * ciegos a los dos censos de golpe. Lo que sí se comparte son los puertos de web
+ * (lib/email/invite-ports.ts), que no entran en ningún censo.
  */
 
 export type InviteClubAdminError =
@@ -112,72 +121,115 @@ export async function inviteClubAdmin(input: {
   const redirectTo = `${proto}://${host}/${locale}/invite/${invite.token}`;
 
   const admin = createSupabaseAdminClient();
-  try {
-    const { data: inviteData, error: invErr } = await admin.auth.admin.inviteUserByEmail(email, {
-      redirectTo,
-      data: inviteEmailMetadata({
-        invitationId: invite.id,
-        kind: 'admin',
-        locale,
-      }),
-    });
 
-    if (invErr) {
-      if (isEmailAlreadyExistsError(invErr)) {
-        // El admin ya tenía cuenta: le llega el correo de invitación para
-        // cuenta existente, reusando la misma URL. invited_user_id queda NULL →
-        // al aceptar, inicia sesión con su contraseña (flujo "existing").
-        const { error: resetErr } = await sendInviteToExistingUser(supabase, {
-          email,
-          redirectTo,
-        });
-        if (resetErr) {
-          console.error(
-            '[platform][invite-admin] reset_fallback_failed ' +
-              JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id, error: serializeError(resetErr) }),
-          );
-          Sentry.captureException(resetErr, { tags: { feature: 'platform', step: 'reset_fallback' } });
-          return { error: 'generic' };
-        }
-      } else {
-        console.error(
-          '[platform][invite-admin] invite_returned_error ' +
-            JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id, error: serializeError(invErr) }),
-        );
-        Sentry.captureException(invErr, { tags: { feature: 'platform', step: 'inviteUserByEmail' } });
-        return { error: 'generic' };
-      }
-    } else {
-      // Cuenta creada por nosotros: enlazamos invited_user_id (como sendInvitation).
-      const invitedUserId = inviteData?.user?.id ?? null;
-      if (!invitedUserId) {
-        // #535: invite OK pero sin user.id → antes MUDO. Sin invited_user_id la
-        // invitación lleva a la trampa: ruidoso + error al admin para reintentar.
-        console.error(
-          '[platform][invite-admin] invited_user_missing_id ' +
-            JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id }),
-        );
-        Sentry.captureMessage('[platform] inviteUserByEmail sin user.id (invite-admin)', {
-          level: 'error',
-          tags: { feature: 'platform', step: 'invited_user_missing_id' },
-        });
-        return { error: 'generic' };
-      }
-      // Enlaza y EXIGE 1 fila afectada: un UPDATE de cero filas no da error en
-      // PostgREST y dejaría invited_user_id NULL en silencio (raíz del incidente).
-      const linkRes = await linkInvitedUser(admin, invite.id, invitedUserId, {
+  // ¿Ya tiene cuenta este correo? Se mira ANTES de crear nada: decide si hay que
+  // crear cuenta, cuál enlazar y en qué idioma escribirle (Correo-B1, mismo criterio
+  // que los senders de core). Si la búsqueda falla, se sigue como si no la tuviera.
+  let found: Awaited<ReturnType<ReturnType<typeof inviteRecipientPort>>> = null;
+  try {
+    found = await inviteRecipientPort(admin)(email);
+  } catch (thrown) {
+    console.error(
+      '[platform][invite-admin] lookup_failed ' +
+        JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id, error: serializeError(thrown) }),
+    );
+  }
+  const emailLocale = found?.locale ?? locale;
+
+  try {
+    if (found && !found.invitePending) {
+      // Cuenta suya: no se toca ni se enlaza. invited_user_id queda NULL → al
+      // aceptar, inicia sesión con su contraseña (flujo "existing").
+      console.info('[platform][invite-admin] cuenta_existente', {
+        masked_email: maskedEmail,
+        invitation_id: invite.id,
+      });
+    } else if (found && found.invitePending) {
+      // Cuenta que creamos y nadie reclamó: se ENLAZA ésa, no se crea otra. Sin
+      // esto, reinvitar al mismo admin deja la invitación nueva sin enlazar y le
+      // pide una contraseña que nunca fijó (incidente de agosto de 2026).
+      const linkRes = await linkInvitedUser(admin, invite.id, found.userId, {
         feature: 'platform',
         step: 'link_invited_user',
         maskedEmail,
       });
       if (!linkRes.ok) return { error: 'generic' };
+    } else {
+      const { data: created, error: createErr } = await admin.auth.admin.createUser({
+        email,
+        // Su correo ES su prueba: el enlace le llega ahí. Sin esto GoTrue le niega
+        // el login al fijar la contraseña en /invite (BUG-4).
+        email_confirm: true,
+        user_metadata: inviteEmailMetadata({
+          invitationId: invite.id,
+          kind: 'admin',
+          locale: emailLocale,
+        }),
+      });
+
+      if (createErr) {
+        if (isEmailAlreadyExistsError(createErr)) {
+          // La búsqueda dijo que no había cuenta y sí la hay: se trata como ajena
+          // (lo conservador) y queda rastro.
+          console.error(
+            '[platform][invite-admin] create_race ' +
+              JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id, error: serializeError(createErr) }),
+          );
+        } else {
+          console.error(
+            '[platform][invite-admin] create_returned_error ' +
+              JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id, error: serializeError(createErr) }),
+          );
+          Sentry.captureException(createErr, { tags: { feature: 'platform', step: 'createUser' } });
+          return { error: 'generic' };
+        }
+      } else {
+        const invitedUserId = created?.user?.id ?? null;
+        if (!invitedUserId) {
+          // #535: creación OK pero sin user.id → antes MUDO. Sin invited_user_id la
+          // invitación lleva a la trampa: ruidoso + error al admin para reintentar.
+          console.error(
+            '[platform][invite-admin] invited_user_missing_id ' +
+              JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id }),
+          );
+          Sentry.captureMessage('[platform] createUser sin user.id (invite-admin)', {
+            level: 'error',
+            tags: { feature: 'platform', step: 'invited_user_missing_id' },
+          });
+          return { error: 'generic' };
+        }
+        // Enlaza y EXIGE 1 fila afectada: un UPDATE de cero filas no da error en
+        // PostgREST y dejaría invited_user_id NULL en silencio (raíz del incidente).
+        const linkRes = await linkInvitedUser(admin, invite.id, invitedUserId, {
+          feature: 'platform',
+          step: 'link_invited_user',
+          maskedEmail,
+        });
+        if (!linkRes.ok) return { error: 'generic' };
+      }
     }
   } catch (thrown) {
     console.error(
-      '[platform][invite-admin] invite_thrown ' +
+      '[platform][invite-admin] create_thrown ' +
         JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id, error: serializeError(thrown) }),
     );
-    Sentry.captureException(thrown, { tags: { feature: 'platform', step: 'inviteUserByEmail_thrown' } });
+    Sentry.captureException(thrown, { tags: { feature: 'platform', step: 'createUser_thrown' } });
+    return { error: 'generic' };
+  }
+
+  // El correo, LO ÚLTIMO: con la invitación creada y la cuenta ya enlazada. Si falla
+  // aquí no queda nada roto y reinvitar desde la consola vuelve a intentarlo.
+  const { error: mailErr } = await invitationEmailPort('admin')({
+    to: email,
+    url: redirectTo,
+    locale: emailLocale,
+  });
+  if (mailErr) {
+    console.error(
+      '[platform][invite-admin] email_failed ' +
+        JSON.stringify({ masked_email: maskedEmail, invitation_id: invite.id, error: serializeError(mailErr) }),
+    );
+    Sentry.captureException(mailErr, { tags: { feature: 'platform', step: 'send_invite_email' } });
     return { error: 'generic' };
   }
 
