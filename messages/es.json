@@ -1787,7 +1787,7 @@
       "upload": {
         "short": "Subir",
         "title": "Sube tu archivo",
-        "help": "Usa la plantilla descargable (4 columnas: Nombre completo, Fecha de nacimiento, Equipo, Email). Obligatorios: Nombre completo, Fecha de nacimiento y Email. Fecha en formato día/mes/año (15/03/2010). Equipo es opcional (si lo dejas vacío se usa el equipo del lote).",
+        "help": "Usa la plantilla descargable (5 columnas: Nombre, Apellidos, Fecha de nacimiento, Equipo, Email). Obligatorios: Nombre, Fecha de nacimiento y Email. Apellidos es opcional, pero va en su propia columna: no los pongas junto al nombre. Fecha en formato día/mes/año (15/03/2010). Equipo es opcional (si lo dejas vacío se usa el equipo del lote).",
         "email_help": "La columna Email es la del padre, madre o tutor legal de cada jugador, no la del jugador: quien la reciba quedará registrado como su tutor."
       },
       "preview": {
@@ -1812,7 +1812,7 @@
     "preview": {
       "truncated": "{count, plural, one {+# fila más se procesa igual aunque no se muestre aquí.} other {+# filas más se procesan igual aunque no se muestren aquí.}}",
       "unmapped_headers": "Columnas no reconocidas (se ignoran): {headers}",
-      "required_legend": "Obligatorios: Nombre completo, Fecha de nacimiento y Email. Equipo es opcional: si lo dejas vacío se usa el equipo del selector de lote.",
+      "required_legend": "Obligatorios: Nombre, Fecha de nacimiento y Email. Apellidos y Equipo son opcionales: el equipo vacío usa el del selector de lote.",
       "editable_hint": "Puedes corregir cualquier fila con error editándola aquí; se revalida al momento."
     },
     "team": {
@@ -1826,7 +1826,7 @@
       "confirm": "{count, plural, one {Importar # jugador} other {Importar # jugadores}}"
     },
     "col": {
-      "first_name": "Nombre completo",
+      "first_name": "Nombre",
       "last_name": "Apellidos",
       "date_of_birth": "Fecha de nacimiento",
       "dorsal": "Dorsal",
@@ -1877,7 +1877,8 @@
       "parse_failed": "No hemos podido leer el archivo. Comprueba el formato.",
       "empty_file": "El archivo está vacío.",
       "no_recognized_headers": "No reconocemos ninguna columna. Asegúrate de usar la plantilla.",
-      "too_many_rows": "Máximo {max} jugadores por importación (este archivo trae {count}). Divide el fichero y súbelo en partes."
+      "too_many_rows": "Máximo {max} jugadores por importación (este archivo trae {count}). Divide el fichero y súbelo en partes.",
+      "old_template": "Este archivo usa la plantilla antigua: trae una columna «{header}» con el nombre y los apellidos juntos. Descarga la plantilla nueva —pide nombre y apellidos en dos columnas— y vuelve a subirlo. No los separamos nosotros: con un nombre compuesto nos equivocaríamos."
     },
     "result": {
       "created": "Creados",

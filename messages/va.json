@@ -1787,7 +1787,7 @@
       "upload": {
         "short": "Pujar",
         "title": "Puja el teu arxiu",
-        "help": "Usa la plantilla descarregable (4 columnes: Nom complet, Data de naixement, Equip, Email). Obligatoris: Nom complet, Data de naixement i Email. Data en format dia/mes/any (15/03/2010). Equip és opcional (si el deixes buit s'usa l'equip del lot).",
+        "help": "Usa la plantilla descarregable (5 columnes: Nom, Cognoms, Data de naixement, Equip, Email). Obligatoris: Nom, Data de naixement i Email. Cognoms és opcional, però va en la seua pròpia columna: no els poses junt al nom. Data en format dia/mes/any (15/03/2010). Equip és opcional (si el deixes buit s'usa l'equip del lot).",
         "email_help": "La columna Email és la del pare, mare o tutor legal de cada jugador, no la del jugador: qui la reba quedarà registrat com a tutor seu."
       },
       "preview": {
@@ -1812,7 +1812,7 @@
     "preview": {
       "truncated": "{count, plural, one {+# fila més es processa igual encara que no es mostre ací.} other {+# files més es processen igual encara que no es mostren ací.}}",
       "unmapped_headers": "Columnes no reconegudes (s'ignoren): {headers}",
-      "required_legend": "Obligatoris: Nom complet, Data de naixement i Email. Equip és opcional: si el deixes buit s'usa l'equip del selector de lot.",
+      "required_legend": "Obligatoris: Nom, Data de naixement i Email. Cognoms i Equip són opcionals: l'equip buit usa el del selector de lot.",
       "editable_hint": "Pots corregir qualsevol fila amb error editant-la ací; es revalida a l'instant."
     },
     "team": {
@@ -1826,7 +1826,7 @@
       "confirm": "{count, plural, one {Importar # jugador} other {Importar # jugadors}}"
     },
     "col": {
-      "first_name": "Nom complet",
+      "first_name": "Nom",
       "last_name": "Cognoms",
       "date_of_birth": "Data de naixement",
       "dorsal": "Dorsal",
@@ -1877,7 +1877,8 @@
       "parse_failed": "No hem pogut llegir el fitxer. Comproveu el format.",
       "empty_file": "El fitxer està buit.",
       "no_recognized_headers": "No reconeixem cap columna. Assegureu-vos d'usar la plantilla.",
-      "too_many_rows": "Màxim {max} jugadors per importació (este fitxer en porta {count}). Dividiu el fitxer i pugeu-lo per parts."
+      "too_many_rows": "Màxim {max} jugadors per importació (este fitxer en porta {count}). Dividiu el fitxer i pugeu-lo per parts.",
+      "old_template": "Aquest arxiu usa la plantilla antiga: porta una columna «{header}» amb el nom i els cognoms junts. Descarrega la plantilla nova —demana nom i cognoms en dos columnes— i torna a pujar-lo. No els separem nosaltres: amb un nom compost ens equivocaríem."
     },
     "result": {
       "created": "Creats",
