@@ -9,6 +9,7 @@ import {
   acceptPendingInvitationsFromClient,
   claimInviteeAccount,
   assertInvitationValid,
+  childrenNeedingConsent,
   createSupabaseAdminClient,
   createSupabaseServerClient,
   isInvitePending,
@@ -105,6 +106,13 @@ type ChildUpdate = {
  * (campo `children_data`, JSON). Ancla al server: solo acepta player_ids que
  * estén entre las invitaciones PENDIENTES de este email+club (anti-tamper).
  * Devuelve la lista a persistir, o un código de error de validación.
+ *
+ * El ancla es `childrenNeedingConsent`, NO el lote entero: un lote pendiente
+ * puede llevar invitaciones de SEGUIDOR, que traen `player_id` y no convierten a
+ * nadie en tutor. Con el lote entero, un POST a mano podía reescribir el nombre y
+ * la fecha de nacimiento del nieto al que solo se sigue — y esta escritura va con
+ * `admin` (service_role), o sea por encima de la RLS. Lo que hoy lo tapaba era un
+ * accidente: la RPC reventaba antes con `player_not_in_batch`.
  */
 async function parseChildUpdates(
   clicked: LoadedInvitation,
@@ -127,7 +135,9 @@ async function parseChildUpdates(
 
   const pending = await loadPendingInvitationsForEmail(clicked.email, clicked.club_id);
   const allowed = new Set(
-    pending.map((p) => p.player_id).filter((x): x is string => !!x),
+    childrenNeedingConsent(pending)
+      .map((p) => p.player_id)
+      .filter((x): x is string => !!x),
   );
 
   const updates: ChildUpdate[] = [];

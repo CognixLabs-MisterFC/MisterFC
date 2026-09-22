@@ -16,6 +16,8 @@
 
 /** Forma mínima de una invitación del lote pendiente. */
 export type RelationCarrier = {
+  /** `jugador`, `spectator`, o uno de los roles de club. */
+  role: string | null;
   player_id: string | null;
   player_relation: string | null;
 };
@@ -31,15 +33,40 @@ export function hasSelfInvitation(rows: readonly RelationCarrier[]): boolean {
 }
 
 /**
- * Las invitaciones del lote que SÍ piden tarjeta de hijo: las que van sobre un
- * jugador y NO son la cuenta propia de quien acepta.
+ * `true` si esta invitación convierte a quien acepta en TUTOR del jugador, que es
+ * lo único que le da derecho —y obligación— de decidir por él.
  *
- * Un mismo lote puede llevar las dos cosas a la vez —un padre que es tutor de su
- * hija y además jugador adulto de su propia ficha— y por eso esto filtra fila a
- * fila en vez de decidir por el lote entero.
+ * Es el espejo EXACTO de la condición que usa `accept_pending_invitations` para
+ * meter al jugador en el lote (`v_batch_players`):
+ *
+ *   if v_inv.role = 'jugador' and v_inv.player_id is not null
+ *      and v_inv.player_relation is distinct from 'self' then
+ *
+ * Lo de mirar el ROL y no solo la relación no es defensa de más: la constraint
+ * `invitations_player_role_consistency` deja `player_id` no nulo en DOS casos, no
+ * en uno — `role='jugador'` con relación, y `role='spectator'` SIN relación. Un
+ * filtro que solo descartase `self` se queda al seguidor dentro.
+ */
+export function needsTutorConsent(row: RelationCarrier): boolean {
+  return row.role === 'jugador' && row.player_id != null && !isSelfInvitation(row);
+}
+
+/**
+ * Las invitaciones del lote que SÍ piden tarjeta de hijo.
+ *
+ * Un mismo lote puede llevar varias cosas a la vez —un padre que es tutor de su
+ * hija, jugador adulto de su propia ficha y seguidor de un sobrino— y por eso esto
+ * filtra fila a fila en vez de decidir por el lote entero.
+ *
+ * Quedan FUERA la cuenta propia del jugador (MN-5) y la invitación de SEGUIDOR: al
+ * abuelo que sigue a su nieto no se le piden las decisiones que toma el tutor, ni
+ * se le enseña la ficha del menor para que las tome. La rama de seguidor de la RPC
+ * crea `player_spectators` y nada más; si la pantalla le pidiera esos datos, el
+ * alta ENTERA se caía con `player_not_in_batch`, que ni siquiera tiene mapeo
+ * propio: el seguidor veía un error genérico y no podía entrar de ninguna manera.
  */
 export function childrenNeedingConsent<T extends RelationCarrier>(
   rows: readonly T[],
 ): T[] {
-  return rows.filter((row) => row.player_id != null && !isSelfInvitation(row));
+  return rows.filter(needsTutorConsent);
 }
