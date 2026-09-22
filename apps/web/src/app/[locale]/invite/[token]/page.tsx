@@ -94,11 +94,16 @@ export default async function InvitePage({ params }: Props) {
   // el padre vea a quién va a dar de alta en un solo paso. El batch real se
   // reevalúa server-side al aceptar (la lista es solo informativa).
   const pending = await loadPendingInvitationsForEmail(inv.email, inv.club_id);
-  // MN-5 — la invitación de CUENTA PROPIA no pinta tarjeta de hijo: quien acepta ES
-  // el jugador, y las decisiones de imagen, sus datos y la médica siguen siendo del
-  // tutor. La regla vive en core (`childrenNeedingConsent`), que es donde el CI la
-  // ejecuta; aquí solo se llama. Se filtra fila a fila porque un mismo lote puede
-  // llevar las dos cosas: un padre tutor de su hija y, además, jugador de su ficha.
+  // Solo pintan tarjeta de hijo las invitaciones que convierten a quien acepta en
+  // TUTOR del jugador. Quedan fuera dos:
+  //   · MN-5, la CUENTA PROPIA: quien acepta ES el jugador, y las decisiones de
+  //     imagen, sus datos y la médica siguen siendo del tutor.
+  //   · la de SEGUIDOR: al abuelo que sigue a su nieto no se le piden las decisiones
+  //     que toma el tutor, ni se le enseña la ficha del menor para que las tome.
+  // La regla vive en core (`childrenNeedingConsent`), que es donde el CI la ejecuta;
+  // aquí solo se llama. Se filtra fila a fila porque un mismo lote puede llevar de
+  // todo: un padre tutor de su hija, jugador de su propia ficha y seguidor de un
+  // sobrino, las tres con el mismo correo.
   const selfInvite = hasSelfInvitation(pending);
   const pendingChildren = childrenNeedingConsent(pending)
     .map((p) => ({

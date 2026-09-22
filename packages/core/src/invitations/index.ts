@@ -33,6 +33,7 @@ export {
 export {
   isSelfInvitation,
   hasSelfInvitation,
+  needsTutorConsent,
   childrenNeedingConsent,
   type RelationCarrier,
 } from './self';
