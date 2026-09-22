@@ -89,6 +89,10 @@ export function InvitePendingButton({
   // se le vincula el hijo. Se cuenta aparte porque para quien importa NO es lo mismo
   // que un envío —no hay correo que esperar— ni que un fallo.
   const linked = result?.rows.filter((r) => r.status === 'linked') ?? [];
+  // Invitación creada, correo NO: ese padre ya tenía una pendiente y su enlace cubre
+  // también a este hijo. Tampoco es un envío: si se contara como tal, quien importa
+  // esperaría un correo que no va a salir.
+  const covered = result?.rows.filter((r) => r.status === 'covered') ?? [];
   const failed = result?.rows.filter((r) => r.status === 'error') ?? [];
   const skipped = result?.skipped ?? [];
 
@@ -152,6 +156,7 @@ export function InvitePendingButton({
                 {t('result.summary', {
                   sent: sent.length,
                   linked: linked.length,
+                  covered: covered.length,
                   failed: failed.length,
                   skipped: skipped.length,
                 })}
@@ -173,6 +178,10 @@ export function InvitePendingButton({
                       {r.linked_to
                         ? t('row.linkedTo', { name: r.linked_to })
                         : t('row.linked')}
+                    </Badge>
+                  ) : r.status === 'covered' ? (
+                    <Badge variant="outline" className="shrink-0">
+                      {t('row.covered')}
                     </Badge>
                   ) : (
                     <Badge variant="destructive" className="shrink-0">

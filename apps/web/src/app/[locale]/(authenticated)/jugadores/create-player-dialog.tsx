@@ -65,7 +65,7 @@ export function CreatePlayerDialog({ teams, canLinkPlayers }: Props) {
   const [lastHandledState, setLastHandledState] = useState(state);
   if (state !== lastHandledState) {
     setLastHandledState(state);
-    if (state.success && state.playerId && !state.existingMember) {
+    if (state.success && state.playerId && !state.existingMember && !state.coveredByPending) {
       setOpen(false);
       router.push(`/jugadores/${state.playerId}`);
     }
@@ -97,6 +97,16 @@ export function CreatePlayerDialog({ teams, canLinkPlayers }: Props) {
             member={state.existingMember}
             playerId={state.playerId}
             canLink={canLinkPlayers}
+            onDone={irAlJugador}
+          />
+        ) : state.coveredByPending && state.playerId ? (
+          /* El jugador y su invitación están creados, pero NO ha salido correo: ese
+             tutor ya tenía una invitación pendiente y su enlace cubre también a este
+             hijo. Se para aquí en vez de navegar, porque si no, quien acaba de dar de
+             alta se queda esperando un correo que no va a llegar. */
+          <CoveredByPendingPanel
+            email={state.coveredByPending.email}
+            playerId={state.playerId}
             onDone={irAlJugador}
           />
         ) : (
@@ -380,6 +390,42 @@ function ExistingMemberPanel({
           </DialogFooter>
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * El jugador y su invitación están creados, pero NO ha salido correo: ese tutor ya
+ * tenía una invitación pendiente en el club y el enlace que recibió entonces cubre
+ * también a este hijo —al aceptarlo, `accept_pending_invitations` procesa todas sus
+ * pendientes—.
+ *
+ * Tiene panel propio, y no un simple toast, por la misma razón que lo tiene el caso
+ * de «ya está en el club»: el alta termina con algo que el que la hace necesita
+ * saber. Sin esto, cierra el diálogo y se queda esperando un correo que no llega.
+ */
+function CoveredByPendingPanel({
+  email,
+  playerId,
+  onDone,
+}: {
+  email: string;
+  playerId: string;
+  onDone: (playerId: string) => void;
+}) {
+  const t = useTranslations('jugadores.covered_by_pending');
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="rounded-md border border-border bg-card/40 p-3">
+        <p className="text-sm font-medium">{t('title')}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t('body', { email })}</p>
+      </div>
+      <DialogFooter>
+        <Button type="button" onClick={() => onDone(playerId)}>
+          {t('continue')}
+        </Button>
+      </DialogFooter>
     </div>
   );
 }

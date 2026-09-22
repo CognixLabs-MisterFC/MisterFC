@@ -6,9 +6,11 @@ export {
 } from './invite-email-metadata';
 export {
   summarizePendingInvites,
+  pendingCoversEmail,
   type PendingInviteCandidate,
   type PendingInviteEmailGroup,
   type PendingInviteSummary,
+  type PendingInvitationRow,
 } from './pending';
 export {
   findAcceptProblems,

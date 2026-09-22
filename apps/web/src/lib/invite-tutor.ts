@@ -9,6 +9,8 @@ import {
 } from '@misterfc/core';
 import { linkInvitedUser } from '@/lib/link-invited-user';
 import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
+import { pendingInvitationsForEmail } from '@/lib/pending-invitation';
+import { pendingCoversEmail } from '@misterfc/core';
 
 /**
  * Circuito ÚNICO de invitación de TUTOR — lo comparten el alta manual de jugador
@@ -36,7 +38,19 @@ import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-por
  * porque el guard de censo los cuenta aquí; ver la nota de `link-invited-user.ts`.
  */
 
-export type TutorInviteResult = { ok: { email: string } } | { error: 'forbidden' | 'generic' };
+export type TutorInviteResult =
+  | {
+      ok: {
+        email: string;
+        /**
+         * `true` = la invitación se creó pero NO salió correo: ese correo ya tenía
+         * una pendiente vigente y su enlace cubre también a este hijo. Quien llama
+         * tiene que DECIRLO; si lo pinta como «enviada», miente.
+         */
+        covered: boolean;
+      };
+    }
+  | { error: 'forbidden' | 'generic' };
 
 /**
  * Envía —o RENUEVA— la invitación de tutor de un jugador.
@@ -89,6 +103,19 @@ export async function sendOrRenewTutorInvitation(
   // La lista de relaciones es explícita (no un `neq('player_relation','self')`) para
   // que una relación nueva quede FUERA por defecto: crear una invitación de más se
   // ve; pisar la de otro, no.
+  // 0) ¿Ese correo ya tiene alguna invitación pendiente en el club? Se pregunta
+  //    ANTES de tocar nada, para que la respuesta no incluya la fila que estamos a
+  //    punto de crear. Lo que se decide con ella es solo si sale correo: la
+  //    invitación se crea igual, porque es la que mete a este hijo en el lote que
+  //    procesa `accept_pending_invitations` cuando el padre entre por el enlace que
+  //    YA tiene.
+  const pendingForEmail = await pendingInvitationsForEmail(
+    supabase,
+    clubId,
+    email,
+    'pending_lookup_tutor',
+  );
+
   const nowIso = new Date().toISOString();
   const { data: existing } = await supabase
     .from('invitations')
@@ -249,8 +276,24 @@ export async function sendOrRenewTutorInvitation(
     return { error: 'generic' };
   }
 
-  // 4) El correo, LO ÚLTIMO. Si falla, la invitación queda creada y enlazada: volver
-  //    a pulsar «invitar» en la ficha la RENUEVA y reenvía (paso 1a), no duplica.
+  // 4) El correo, LO ÚLTIMO — si es que toca mandarlo.
+  //
+  //    A una persona se le escribe UNA vez. Si ese correo ya tenía otra invitación
+  //    pendiente, el enlace que recibió entonces le sirve igual: al aceptarlo,
+  //    `accept_pending_invitations` procesa TODAS las pendientes de su correo en
+  //    este club, y este hijo entra con las demás. Un segundo correo no adelanta
+  //    nada y le deja dos enlaces vivos.
+  //
+  //    `renewingId` es lo que distingue crear de REENVIAR: si lo que hemos hecho
+  //    arriba es renovar SU invitación (paso 1a), es que alguien ha pulsado
+  //    «invitar» mirando la ficha, y eso sí manda correo. Sin esa distinción el
+  //    botón se queda mudo, que es un fallo que ya nos costó una vez.
+  if (pendingCoversEmail(pendingForEmail, { renewingId: existing?.id ?? null })) {
+    return { ok: { email, covered: true } };
+  }
+
+  //    Si falla, la invitación queda creada y enlazada: volver a pulsar «invitar»
+  //    en la ficha la RENUEVA y reenvía (paso 1a), no duplica.
   const { error: mailErr } = await invitationEmailPort('tutor')({
     to: email,
     url: redirectTo,
@@ -264,5 +307,5 @@ export async function sendOrRenewTutorInvitation(
     return { error: 'generic' };
   }
 
-  return { ok: { email } };
+  return { ok: { email, covered: false } };
 }

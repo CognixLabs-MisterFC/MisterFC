@@ -4532,6 +4532,15 @@ export type Database = {
           role: string
         }[]
       }
+      club_pending_invitation_by_email: {
+        Args: { p_club_id: string; p_email: string }
+        Returns: {
+          created_at: string
+          invitation_id: string
+          player_id: string
+          role: string
+        }[]
+      }
       consent_document_type: {
         Args: { p_consent_type: Database["public"]["Enums"]["consent_type"] }
         Returns: Database["public"]["Enums"]["legal_document_type"]

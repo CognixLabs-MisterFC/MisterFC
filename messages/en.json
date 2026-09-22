@@ -443,6 +443,7 @@
       "submit": "Send invitation",
       "submitting": "Sending…",
       "ok": "Invitation sent to {email}",
+      "ok_covered": "Invitation created, no new email: {email} already had a pending invitation and that link covers this one too.",
       "error_invalid_input": "Check the form fields",
       "error_forbidden": "You don't have permission to invite in this club",
       "error_no_club": "You don't belong to any club yet",
@@ -1299,12 +1300,13 @@
       },
       "result": {
         "title": "Send result",
-        "summary": "{sent} sent, {linked} linked without an email, {failed} failed, {skipped} skipped."
+        "summary": "{sent} sent, {linked} linked without an email, {covered} already invited (no new email), {failed} failed, {skipped} skipped."
       },
       "row": {
         "sent": "Sent",
         "linked": "Already in the club · linked",
         "linkedTo": "Linked to {name}, already in the club",
+        "covered": "Already invited · no new email",
         "skipped": "Skipped",
         "reason": {
           "forbidden": "No permission",
@@ -1329,6 +1331,11 @@
       "link": "Link them to {name}",
       "skip": "Not now",
       "no_permission": "Only an administrator or a director can link the player to that account. Ask them to do it; the player is created either way."
+    },
+    "covered_by_pending": {
+      "title": "No new email needed",
+      "body": "The player is created and so is their invitation. No new email was sent because {email} already had a pending one: when they open that link, this child comes in with the rest.",
+      "continue": "Got it"
     },
     "back_to_list": "Back to list",
     "age_years": "{age, plural, one {1 year} other {# years}}",
@@ -1538,6 +1545,7 @@
       "cancel": "Cancel",
       "close": "Close",
       "sent": "Invitation sent to {email}.",
+      "covered": "No new email was sent: {email} already had a pending invitation, and that link also covers this player.",
       "errors": {
         "email_invalid": "Invalid email.",
         "email_too_long": "Email too long.",

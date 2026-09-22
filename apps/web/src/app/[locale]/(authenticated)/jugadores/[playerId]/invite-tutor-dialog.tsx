@@ -102,10 +102,14 @@ function InviteTutorForm({
   );
 
   const [lastHandled, setLastHandled] = useState(state);
-  const [sentTo, setSentTo] = useState<string | null>(null);
+  // `covered` = la invitación se creó pero NO salió correo, porque ese correo ya
+  // tenía una pendiente cuyo enlace cubre también a este jugador. Se guarda con el
+  // email porque el mensaje NO puede ser el mismo: decir «enviada» cuando no ha
+  // salido nada deja a quien invita esperando un correo que no llega.
+  const [done, setDone] = useState<{ email: string; covered: boolean } | null>(null);
   if (state !== lastHandled) {
     setLastHandled(state);
-    if (state.ok) setSentTo(state.ok.email);
+    if (state.ok) setDone({ email: state.ok.email, covered: state.ok.covered });
   }
 
   const errorMsg = state.error ? t(`errors.${state.error}`) : null;
@@ -123,10 +127,12 @@ function InviteTutorForm({
     );
   }
 
-  if (sentTo) {
+  if (done) {
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-sm">{t('sent', { email: sentTo })}</p>
+        <p className="text-sm">
+          {done.covered ? t('covered', { email: done.email }) : t('sent', { email: done.email })}
+        </p>
         <DialogFooter>
           <Button type="button" onClick={onClose}>
             {t('close')}

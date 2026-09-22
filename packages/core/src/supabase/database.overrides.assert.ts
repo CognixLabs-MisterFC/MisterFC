@@ -66,8 +66,14 @@ export type _AssertGroupA = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GRUPO B — 19 columnas de RETURNS TABLE(...) nullable marcadas no-null,
-// más 1 retorno escalar nullable (finalize_account_deletion, que no es RETURNS TABLE).
+// GRUPO B — columnas de RETURNS TABLE(...) nullable que el generador marca
+// no-null, más 1 retorno escalar nullable (finalize_account_deletion, que no es
+// RETURNS TABLE).
+//
+// Sin número escrito a mano, por la misma razón que el job de pgTAP dejó de
+// llevarlo: decía 19 cuando ya iban 30, y un recuento que nadie comprueba
+// envejece en silencio y encima induce a fiarse de él. La lista de abajo ES el
+// recuento, y el compilador la ejecuta entera.
 // ─────────────────────────────────────────────────────────────────────────────
 export type _AssertGroupB = [
   Assert<IsStringOrNull<Fn['audit_get_conversation']['Returns'][number]['read_at']>>,
@@ -79,6 +85,8 @@ export type _AssertGroupB = [
   Assert<IsStringOrNull<Fn['get_player_medical']['Returns'][number]['medication']>>,
   Assert<IsStringOrNull<Fn['get_player_medical']['Returns'][number]['medical_conditions']>>,
   Assert<IsStringOrNull<Fn['get_player_medical']['Returns'][number]['emergency_contact']>>,
+  // Una pendiente de staff no lleva jugador: player_id NULL por diseño.
+  Assert<IsStringOrNull<Fn['club_pending_invitation_by_email']['Returns'][number]['player_id']>>,
   Assert<IsStringOrNull<Fn['get_public_club_by_slug']['Returns'][number]['logo_path']>>,
   // La familia abre hilo — `conversation_id` es la que decide abrir vs crear.
   Assert<IsStringOrNull<Fn['family_conversation_recipients']['Returns'][number]['conversation_id']>>,

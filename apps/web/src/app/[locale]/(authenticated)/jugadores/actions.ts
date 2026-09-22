@@ -22,6 +22,7 @@ import {
   updatePlayerSchema,
   inviteLink,
   inviteLinkBase,
+  pendingCoversEmail,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
@@ -30,6 +31,7 @@ import { performSelfInvite } from '@/lib/invite-self';
 import { sendOrRenewTutorInvitation } from '@/lib/invite-tutor';
 import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 import { loadPendingInvitePlayers } from './queries';
+import { pendingInvitationsForEmail } from '@/lib/pending-invitation';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -129,6 +131,12 @@ export type PlayerFormState = {
     clubRole: string;
     relation: 'parent' | 'guardian';
   };
+  /**
+   * El jugador se creó y su invitación TAMBIÉN, pero no salió correo: ese correo ya
+   * tenía una invitación pendiente y su enlace cubre igualmente a este hijo. Hay que
+   * decirlo: quien da de alta se queda esperando un correo que no va a llegar.
+   */
+  coveredByPending?: { email: string };
 };
 
 function mapPlayerError(message: string | undefined): PlayerFormError {
@@ -277,6 +285,16 @@ export async function createPlayer(
           extra: { player_id: created.id, reason: invite.error },
         },
       );
+    } else if (invite.ok.covered) {
+      // La invitación de este hijo existe, pero el correo NO salió: el tutor ya
+      // tenía una pendiente y su enlace cubre a los dos. Se devuelve para poder
+      // decirlo — si no, quien acaba de dar de alta espera un correo que no llega.
+      revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
+      return {
+        success: true,
+        playerId: created.id,
+        coveredByPending: { email: invite.ok.email },
+      };
     }
   }
 
@@ -464,7 +482,11 @@ export type InviteTutorState = {
     | 'relation_invalid'
     | 'forbidden'
     | 'generic';
-  ok?: { email: string };
+  ok?: {
+    email: string;
+    /** No salió correo: ese correo ya tenía una invitación pendiente que lo cubre. */
+    covered: boolean;
+  };
   /**
    * BUG 3 · B-2 (hueco hermano de #646) — el correo ya es de alguien del club:
    * NO se ha invitado a nadie. El diálogo lo dice y ofrece el vínculo directo.
@@ -805,10 +827,15 @@ export type BatchInviteRow = {
   player_id: string;
   email: string;
   /**
-   * `linked` = ese correo ya era de alguien del club: no se le invitó, se le
-   * vinculó el jugador. Un correo pertenece a UNA familia.
+   * `linked`  = ese correo ya era de alguien del club: no se le invitó, se le
+   *             vinculó el jugador.
+   * `covered` = ese correo ya tenía una invitación pendiente: la invitación de
+   *             este hijo SÍ se creó, pero no salió un segundo correo. El enlace
+   *             que el padre ya tiene cubre a los dos.
+   * Las dos son la misma regla: un correo pertenece a UNA familia y se le escribe
+   * UNA vez.
    */
-  status: 'sent' | 'linked' | 'error';
+  status: 'sent' | 'linked' | 'covered' | 'error';
   /**
    * Motivo cuando status='error':
    *   forbidden | insert_failed | send_failed | link_failed | member_link_failed
@@ -996,6 +1023,19 @@ export async function inviteBatch(
       continue;
     }
 
+    // 0b) ¿Y ya tiene una invitación pendiente? Se pregunta ANTES de insertar, para
+    //     que la respuesta no incluya las filas que este lote está a punto de crear.
+    //     Decide SOLO si sale correo: las invitaciones de estos hijos se crean igual,
+    //     porque son las que los meten en el lote que `accept_pending_invitations`
+    //     procesa cuando el padre entre por el enlace que ya recibió.
+    const pendingForEmail = await pendingInvitationsForEmail(
+      supabase,
+      clubId,
+      group.email,
+      'batch_pending_lookup',
+    );
+    const covered = pendingCoversEmail(pendingForEmail);
+
     // 1) Una invitación por jugador del grupo (relation='parent'). token y
     //    expires_at (now()+7d) los pone el default de la tabla.
     const inserted: { player_id: string; id: string; token: string }[] = [];
@@ -1143,8 +1183,10 @@ export async function inviteBatch(
       }
     }
 
-    // 4) El correo, LO ÚLTIMO, y en el idioma del destinatario.
-    if (!sendReason) {
+    // 4) El correo, LO ÚLTIMO, en el idioma del destinatario — y solo si toca.
+    //    A una persona se le escribe UNA vez: si ya tenía una invitación pendiente,
+    //    su enlace procesa también estos hijos al aceptarlo.
+    if (!sendReason && !covered) {
       const { error: mailErr } = await invitationEmailPort('tutor')({
         to: group.email,
         url: redirectTo,
@@ -1181,6 +1223,16 @@ export async function inviteBatch(
       }
       for (const r of inserted) {
         rows.push({ player_id: r.player_id, email: group.email, status: 'error', reason: sendReason });
+      }
+    } else if (covered) {
+      // Invitaciones creadas y enlazadas, sin correo nuevo. NO cuenta como enviado:
+      // quien importa no debe quedarse esperando un correo que no va a llegar.
+      for (const r of inserted) {
+        if (linkFailed.has(r.player_id)) {
+          rows.push({ player_id: r.player_id, email: group.email, status: 'error', reason: 'link_failed' });
+          continue;
+        }
+        rows.push({ player_id: r.player_id, email: group.email, status: 'covered' });
       }
     } else {
       // El correo SÍ salió: cuenta como enviado a efectos del resumen del lote.

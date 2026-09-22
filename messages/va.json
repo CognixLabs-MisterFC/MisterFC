@@ -443,6 +443,7 @@
       "submit": "Enviar invitació",
       "submitting": "Enviant…",
       "ok": "Invitació enviada a {email}",
+      "ok_covered": "Invitació creada, sense correu nou: {email} ja tenia una invitació pendent i eixe enllaç val també per a esta.",
       "error_invalid_input": "Revisa les dades del formulari",
       "error_forbidden": "No tens permís per convidar en aquest club",
       "error_no_club": "Encara no pertanys a cap club",
@@ -1299,12 +1300,13 @@
       },
       "result": {
         "title": "Resultat de l'enviament",
-        "summary": "{sent} enviats, {linked} vinculats sense correu, {failed} fallits, {skipped} saltats."
+        "summary": "{sent} enviats, {linked} vinculats sense correu, {covered} ja convidats (sense correu nou), {failed} fallits, {skipped} saltats."
       },
       "row": {
         "sent": "Enviat",
         "linked": "Ja estava en el club · vinculat",
         "linkedTo": "Vinculat a {name}, ja estava en el club",
+        "covered": "Ja convidat · sense correu nou",
         "skipped": "Omés",
         "reason": {
           "forbidden": "Sense permís",
@@ -1329,6 +1331,11 @@
       "link": "Vincular-lo a {name}",
       "skip": "Ara no",
       "no_permission": "Només un administrador o un director pot vincular el jugador a eixe compte. Demana-li-ho; el jugador queda creat igualment."
+    },
+    "covered_by_pending": {
+      "title": "No fa falta un correu nou",
+      "body": "El jugador està creat i la seua invitació també. No s'ha enviat cap correu nou perquè {email} ja tenia una invitació pendent: quan entre per eixe enllaç, este fill entrarà amb els altres.",
+      "continue": "Entesos"
     },
     "back_to_list": "Tornar al llistat",
     "age_years": "{age, plural, one {1 any} other {# anys}}",
@@ -1538,6 +1545,7 @@
       "cancel": "Cancel·lar",
       "close": "Tancar",
       "sent": "Invitació enviada a {email}.",
+      "covered": "No s'ha enviat cap correu nou: {email} ja tenia una invitació pendent, i eixe enllaç val també per a este jugador.",
       "errors": {
         "email_invalid": "Correu no vàlid.",
         "email_too_long": "Correu massa llarg.",
