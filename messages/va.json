@@ -1283,7 +1283,7 @@
       },
       "confirm": {
         "title": "Convidar per correu",
-        "body": "{count, plural, one {Voleu convidar # persona?} other {Voleu convidar # persones?}} S’envia un correu per família (només un encara que hi haja diversos fills).",
+        "body": "{count, plural, one {Voleu convidar # persona?} other {Voleu convidar # persones?}} S'envia un correu per família (un de sol encara que hi haja diversos fills). A qui ja estiga en el club no se li escriu: se li vincula el fill.",
         "cancel": "Cancel·lar",
         "send": "Convidar"
       },
@@ -1299,16 +1299,19 @@
       },
       "result": {
         "title": "Resultat de l'enviament",
-        "summary": "{sent} enviats, {failed} fallits, {skipped} omesos."
+        "summary": "{sent} enviats, {linked} vinculats sense correu, {failed} fallits, {skipped} saltats."
       },
       "row": {
         "sent": "Enviat",
+        "linked": "Ja estava en el club · vinculat",
+        "linkedTo": "Vinculat a {name}, ja estava en el club",
         "skipped": "Omés",
         "reason": {
           "forbidden": "Sense permís",
           "insert_failed": "Error en crear",
           "send_failed": "Error en enviar",
-          "link_failed": "Enviat, error en enllaçar"
+          "link_failed": "Enviat, error en enllaçar",
+          "member_link_failed": "Ja estava en el club, error en vincular"
         }
       },
       "close": "Tancar"

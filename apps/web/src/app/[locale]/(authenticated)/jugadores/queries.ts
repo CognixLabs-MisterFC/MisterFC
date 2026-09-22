@@ -532,12 +532,21 @@ export async function loadPendingInvitePlayers(
 
   // 1) Candidatos: con invite_email, no borrados, y traemos player_accounts para
   //    descartar a los que ya tienen acceso. (left_club_at NO se filtra.)
+  //
+  // EL `order` NO ES COSMÉTICO. `summarizePendingInvites` conserva el orden de
+  // llegada, y el lote manda UN correo por familia con la PRIMERA invitación del
+  // grupo como ancla: el enlace del correo lleva a esa. Sin `order by`, el orden lo
+  // decide Postgres y el ancla es un hijo cualquiera — quien importaba a un niño
+  // recibía el enlace de otro. Con esto, el ancla es siempre el jugador más antiguo
+  // del grupo. `id` desempata para que dos altas del mismo instante no bailen.
   let q = supabase
     .from('players')
     .select('id, first_name, last_name, invite_email, player_accounts(profile_id)')
     .eq('club_id', clubId)
     .is('erased_at', null)
-    .not('invite_email', 'is', null);
+    .not('invite_email', 'is', null)
+    .order('created_at', { ascending: true })
+    .order('id', { ascending: true });
 
   if (options.playerIds) {
     q = q.in('id', options.playerIds);

@@ -1283,7 +1283,7 @@
       },
       "confirm": {
         "title": "Invitar por email",
-        "body": "{count, plural, one {¿Invitar a # persona?} other {¿Invitar a # personas?}} Se envía un email por familia (uno solo aunque haya varios hijos).",
+        "body": "{count, plural, one {¿Invitar a # persona?} other {¿Invitar a # personas?}} Se envía un email por familia (uno solo aunque haya varios hijos). A quien ya esté en el club no se le escribe: se le vincula el hijo.",
         "cancel": "Cancelar",
         "send": "Invitar"
       },
@@ -1299,16 +1299,19 @@
       },
       "result": {
         "title": "Resultado del envío",
-        "summary": "{sent} enviados, {failed} fallidos, {skipped} saltados."
+        "summary": "{sent} enviados, {linked} vinculados sin correo, {failed} fallidos, {skipped} saltados."
       },
       "row": {
         "sent": "Enviado",
+        "linked": "Ya estaba en el club · vinculado",
+        "linkedTo": "Vinculado a {name}, ya estaba en el club",
         "skipped": "Saltado",
         "reason": {
           "forbidden": "Sin permiso",
           "insert_failed": "Error al crear",
           "send_failed": "Error al enviar",
-          "link_failed": "Enviado, error al enlazar"
+          "link_failed": "Enviado, error al enlazar",
+          "member_link_failed": "Ya estaba en el club, error al vincular"
         }
       },
       "close": "Cerrar"
