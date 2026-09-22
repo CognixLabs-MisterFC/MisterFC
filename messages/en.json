@@ -1787,7 +1787,7 @@
       "upload": {
         "short": "Upload",
         "title": "Upload your file",
-        "help": "Use the downloadable template (4 columns: Full name, Date of birth, Team, Email). Required: Full name, Date of birth, and Email. Date in day/month/year format (15/03/2010). Team is optional (if you leave it empty, the batch team is used).",
+        "help": "Use the downloadable template (5 columns: First name, Surname, Date of birth, Team, Email). Required: First name, Date of birth, and Email. Surname is optional, but it goes in its own column — do not put it next to the given name. Date in day/month/year format (15/03/2010). Team is optional (if you leave it empty, the batch team is used).",
         "email_help": "The Email column is the parent or legal guardian's address for each player, not the player's: whoever receives it will be recorded as their guardian."
       },
       "preview": {
@@ -1812,7 +1812,7 @@
     "preview": {
       "truncated": "{count, plural, one {+# more row is processed the same even if it is not shown here.} other {+# more rows are processed the same even if they are not shown here.}}",
       "unmapped_headers": "Unrecognized columns (ignored): {headers}",
-      "required_legend": "Required: Full name, Date of birth, and Email. Team is optional: if you leave it empty, the batch selector team is used.",
+      "required_legend": "Required: First name, Date of birth, and Email. Surname and Team are optional: an empty team uses the one from the batch selector.",
       "editable_hint": "You can fix any row with an error by editing it here; it is revalidated instantly."
     },
     "team": {
@@ -1826,8 +1826,8 @@
       "confirm": "{count, plural, one {Import # player} other {Import # players}}"
     },
     "col": {
-      "first_name": "Full name",
-      "last_name": "Last name",
+      "first_name": "First name",
+      "last_name": "Surname",
       "date_of_birth": "Date of birth",
       "dorsal": "Squad number",
       "position_main": "Position",
@@ -1877,7 +1877,8 @@
       "parse_failed": "We couldn't read the file. Check the format.",
       "empty_file": "The file is empty.",
       "no_recognized_headers": "We don't recognize any column. Make sure you use the template.",
-      "too_many_rows": "Maximum {max} players per import (this file has {count}). Split the file and upload it in parts."
+      "too_many_rows": "Maximum {max} players per import (this file has {count}). Split the file and upload it in parts.",
+      "old_template": "This file uses the old template: it has a “{header}” column with the given name and the surnames together. Download the new template — it asks for them in two separate columns — and upload it again. We do not split them ourselves: with a compound given name we would get it wrong."
     },
     "result": {
       "created": "Created",

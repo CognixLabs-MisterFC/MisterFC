@@ -3,7 +3,7 @@ import { mapHeaders } from '../parse';
 import { playerImportRowSchema } from '../schema';
 
 /**
- * O2-12a · Importador multiidioma. El parser acepta las 4 cabeceras del
+ * O2-12a · Importador multiidioma. El parser acepta las 5 cabeceras del
  * template y los valores de posición/pie en español, inglés y valenciano.
  * Las cabeceras españolas antiguas deben seguir mapeando (no regresión).
  *
@@ -14,27 +14,31 @@ import { playerImportRowSchema } from '../schema';
 type Lang = 'es' | 'en' | 'va';
 
 const BASE = {
-  first_name: 'Pepe Gómez García',
+  first_name: 'Pepe',
+  last_name: 'Gómez García',
   date_of_birth: '15/03/2010',
   invite_email: 'familia@example.com',
 };
 
-// header raw → columna canónica esperada, por idioma (los 4 del template).
+// header raw → columna canónica esperada, por idioma (los 5 del template).
 const TEMPLATE_HEADERS: Record<Lang, Array<[string, string]>> = {
   es: [
-    ['Nombre completo*', 'first_name'],
+    ['Nombre*', 'first_name'],
+    ['Apellidos', 'last_name'],
     ['Fecha de nacimiento*', 'date_of_birth'],
     ['Equipo', 'team'],
     ['Email*', 'invite_email'],
   ],
   en: [
-    ['Full name*', 'first_name'],
+    ['First name*', 'first_name'],
+    ['Surname', 'last_name'],
     ['Date of birth*', 'date_of_birth'],
     ['Team', 'team'],
     ['Email*', 'invite_email'],
   ],
   va: [
-    ['Nom complet*', 'first_name'],
+    ['Nom*', 'first_name'],
+    ['Cognoms', 'last_name'],
     ['Data de naixement*', 'date_of_birth'],
     ['Equip', 'team'],
     ['Email*', 'invite_email'],
@@ -55,7 +59,7 @@ const FOOT_SAMPLES: Record<Lang, [string, string]> = {
 
 for (const lang of ['es', 'en', 'va'] as const) {
   describe(`importador · ${lang}`, () => {
-    it('mapea las 4 cabeceras del template a columnas canónicas', () => {
+    it('mapea las 5 cabeceras del template a columnas canónicas', () => {
       const rawHeaders = TEMPLATE_HEADERS[lang].map(([h]) => h);
       const { mapping, unmapped } = mapHeaders(rawHeaders);
       expect(unmapped).toEqual([]);
@@ -86,7 +90,7 @@ for (const lang of ['es', 'en', 'va'] as const) {
 describe('no regresión — cabeceras españolas antiguas', () => {
   it('las cabeceras clásicas ES siguen mapeando', () => {
     const { mapping, unmapped } = mapHeaders([
-      'Nombre completo*',
+      'Nombre*',
       'Fecha de nacimiento*',
       'Equipo',
       'Email*',

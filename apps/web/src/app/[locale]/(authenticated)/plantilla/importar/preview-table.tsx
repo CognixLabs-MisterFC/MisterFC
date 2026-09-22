@@ -3,7 +3,12 @@
 import { useTranslations } from 'next-intl';
 import { normalizeDate, type ValidatedRow } from '@misterfc/core';
 
-export type EditableField = 'full_name' | 'date_of_birth' | 'team' | 'email';
+export type EditableField =
+  | 'first_name'
+  | 'last_name'
+  | 'date_of_birth'
+  | 'team'
+  | 'email';
 
 type Team = { id: string; name: string; category_name: string };
 
@@ -31,7 +36,7 @@ function str(v: unknown): string {
 }
 
 /**
- * Tabla EDITABLE (rework 2026-07). Cada fila muestra las 4 columnas de la
+ * Tabla EDITABLE (rework 2026-07). Cada fila muestra las 5 columnas de la
  * plantilla como campos editables; al cambiar cualquiera, el padre revalida esa
  * fila con el MISMO validador del import (validateRow + resolución de equipo +
  * dedup) y actualiza el estado (verde/ámbar/rojo) en vivo. Solo las filas en
@@ -58,6 +63,9 @@ export function PreviewTable({ rows, rawRows, teams, onEdit }: Props) {
             >
               {t('col.first_name')} *
             </th>
+            {/* Los apellidos van en su propia columna desde 2026-09. Siguen
+                siendo OPCIONALES (hotfix F2.9): hay fichas con solo nombre. */}
+            <th className="px-3 py-2">{t('col.last_name')}</th>
             <th
               className="px-3 py-2 text-emerald-300"
               title={t('col.required_hint')}
@@ -118,6 +126,7 @@ function RowItem({
   const reason = row.reason ? t(`reason.${row.reason}`) : '';
 
   const nameValue = str(raw.first_name);
+  const lastNameValue = str(raw.last_name);
   const emailValue = str(raw.invite_email);
   // input type=date exige yyyy-mm-dd: normalizamos el valor crudo (que puede
   // venir dd/mm/yyyy del archivo) para que se muestre.
@@ -144,7 +153,16 @@ function RowItem({
           className={inputCls}
           value={nameValue}
           aria-label={t('col.first_name')}
-          onChange={(e) => onEdit(row.index, 'full_name', e.target.value)}
+          onChange={(e) => onEdit(row.index, 'first_name', e.target.value)}
+        />
+      </td>
+      <td className="px-3 py-2 align-top">
+        <input
+          type="text"
+          className={inputCls}
+          value={lastNameValue}
+          aria-label={t('col.last_name')}
+          onChange={(e) => onEdit(row.index, 'last_name', e.target.value)}
         />
       </td>
       <td className="px-3 py-2 align-top">

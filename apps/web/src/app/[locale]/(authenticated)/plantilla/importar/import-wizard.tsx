@@ -33,7 +33,8 @@ type Team = { id: string; name: string; category_name: string };
 
 /** Campo editable del preview → columna canónica del parser. */
 const FIELD_TO_COLUMN: Record<EditableField, string> = {
-  full_name: 'first_name',
+  first_name: 'first_name',
+  last_name: 'last_name',
   date_of_birth: 'date_of_birth',
   team: 'team',
   email: 'invite_email',
@@ -387,10 +388,14 @@ function CountBadge({
 function ParseErrorMessage({ error }: { error: ParseFileError }) {
   const t = useTranslations('import');
   // F14K-3: too_many_rows lleva el conteo y el máximo en el mensaje.
+  // `old_template` nombra la columna que trae el fichero, para que quien lo sube
+  // sepa cuál es la que sobra sin tener que compararlo con la plantilla nueva.
   const message =
     error.code === 'too_many_rows'
       ? t('error.too_many_rows', { count: error.count, max: error.max })
-      : t(`error.${error.code}`);
+      : error.code === 'old_template'
+        ? t('error.old_template', { header: error.header })
+        : t(`error.${error.code}`);
   return (
     <p className="rounded-md border border-red-800 bg-red-950/30 px-3 py-2 text-sm text-red-200">
       {message}

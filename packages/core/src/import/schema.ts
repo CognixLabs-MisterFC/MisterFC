@@ -440,7 +440,7 @@ const inviteEmailField = z
   });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Row schema. Obligatorios: `first_name` (Nombre completo), `date_of_birth` e
+// Row schema. Obligatorios: `first_name` (SOLO el nombre), `date_of_birth` e
 // `invite_email` (rework 2026-07 — la plantilla nueva pide Email por fila).
 // `last_name` es opcional/NULL (F2.9 hotfix 2026-05-30, mig 20260603000002); el
 // resto de columnas de detalle siguen soportadas pero opcionales (compat).

@@ -14,30 +14,30 @@ import { PLAYER_IMPORT_COLUMNS, type PlayerImportColumn } from './schema';
  * sigue).
  */
 const HEADER_ALIASES: Record<string, PlayerImportColumn> = {
-  // first_name — la plantilla nueva (2026-07) usa "Nombre completo" (nombre +
-  // apellidos en una sola celda); mantenemos "Nombre" y variantes por compat.
-  'nombre completo': 'first_name',
-  'nombre y apellidos': 'first_name',
+  // first_name — SOLO el nombre. La plantilla trae `Nombre` y `Apellidos` en
+  // columnas separadas desde 2026-09: lo que venga aquí se guarda tal cual, sin
+  // partirlo por espacios. Ver FULL_NAME_HEADERS para la plantilla vieja.
   nombre: 'first_name',
   nombres: 'first_name',
-  'full name': 'first_name',
-  fullname: 'first_name',
-  'full name and surname': 'first_name',
-  'name and surname': 'first_name',
   first_name: 'first_name',
   'first name': 'first_name',
   firstname: 'first_name',
+  name: 'first_name',
   // first_name — valencià (O2-12a importador multiidioma).
-  'nom complet': 'first_name',
-  'nom i cognoms': 'first_name',
   nom: 'first_name',
   noms: 'first_name',
-  // last_name (ahora opcional, ver F2.9 hotfix 2026-05-30)
+  // last_name (opcional, ver F2.9 hotfix 2026-05-30: hay quien solo tiene nombre)
   apellido: 'last_name',
   apellidos: 'last_name',
   last_name: 'last_name',
   'last name': 'last_name',
+  'last names': 'last_name',
   lastname: 'last_name',
+  surname: 'last_name',
+  surnames: 'last_name',
+  // last_name — valencià.
+  cognom: 'last_name',
+  cognoms: 'last_name',
   // date_of_birth
   'fecha de nacimiento': 'date_of_birth',
   'fecha nacimiento': 'date_of_birth',
@@ -120,9 +120,37 @@ const HEADER_ALIASES: Record<string, PlayerImportColumn> = {
   'correu electronic': 'invite_email',
 };
 
+/**
+ * Cabeceras de NOMBRE COMPLETO — la plantilla de 2026-07, que pedía nombre y
+ * apellidos en una sola celda.
+ *
+ * No se mapean: se RECHAZA el fichero entero. Partir "Pepe Gómez García" por
+ * espacios es adivinar, y con "Juan Carlos Pérez García" se adivina mal; dejarlo
+ * entero en `first_name` es lo que dejó fichas con el apellido vacío y rompió la
+ * detección de duplicados, que compara (nombre, apellidos, fecha). Entre adivinar
+ * y no importar, no se importa: quien sube el fichero sabe separar las columnas,
+ * y nosotros no sabemos dónde parte su nombre.
+ *
+ * Son NUESTRAS cabeceras, no las de nadie: por eso se reconocen con seguridad y
+ * el aviso puede decir exactamente qué hacer. Un fichero con `Nombre` a secas y
+ * sin `Apellidos` NO cae aquí — se importa, y `last_name` queda vacío, que es un
+ * caso legítimo desde el hotfix F2.9.
+ */
+const FULL_NAME_HEADERS = new Set([
+  'nombre completo',
+  'nombre y apellidos',
+  'full name',
+  'fullname',
+  'full name and surname',
+  'name and surname',
+  'nom complet',
+  'nom i cognoms',
+]);
+
 export type ParseTabularError =
   | { code: 'empty_file' }
-  | { code: 'no_recognized_headers'; received: string[] };
+  | { code: 'no_recognized_headers'; received: string[] }
+  | { code: 'old_template'; header: string };
 
 export type ParsedTabular = {
   rows: Array<Partial<Record<PlayerImportColumn, unknown>>>;
@@ -156,11 +184,19 @@ function foldHeader(h: string): string {
 export function mapHeaders(rawHeaders: string[]): {
   mapping: Map<string, PlayerImportColumn>;
   unmapped: string[];
+  /** Cabecera de NOMBRE COMPLETO encontrada (plantilla vieja), tal cual venía. */
+  fullNameHeader: string | null;
 } {
   const mapping = new Map<string, PlayerImportColumn>();
   const unmapped: string[] = [];
+  let fullNameHeader: string | null = null;
   for (const h of rawHeaders) {
     const folded = foldHeader(h);
+    if (FULL_NAME_HEADERS.has(folded)) {
+      // La primera que aparezca es la que se nombra en el aviso.
+      fullNameHeader ??= h;
+      continue;
+    }
     const canonical = HEADER_ALIASES[folded];
     if (canonical) {
       mapping.set(h, canonical);
@@ -168,7 +204,7 @@ export function mapHeaders(rawHeaders: string[]): {
       unmapped.push(h);
     }
   }
-  return { mapping, unmapped };
+  return { mapping, unmapped, fullNameHeader };
 }
 
 /**
@@ -178,6 +214,7 @@ export function mapHeaders(rawHeaders: string[]): {
  *
  * Edge cases per spec §7:
  *  - Archivo vacío → `{ code: 'empty_file' }`.
+ *  - Plantilla vieja (columna de nombre completo) → `{ code: 'old_template' }`.
  *  - Sin headers reconocibles → `{ code: 'no_recognized_headers' }`.
  *  - Columnas extra → silencio (anotadas en `unmapped_headers`).
  */
@@ -189,7 +226,13 @@ export function parseTabular(
     return { ok: false, error: { code: 'empty_file' } };
   }
   const rawHeaders = Object.keys(firstRow);
-  const { mapping, unmapped } = mapHeaders(rawHeaders);
+  const { mapping, unmapped, fullNameHeader } = mapHeaders(rawHeaders);
+  // La plantilla vieja se rechaza ENTERA, y antes que nada: el fichero puede
+  // traer también `Fecha de nacimiento` y `Email`, así que `mapping` no estaría
+  // vacío y el import seguiría adelante sin nombre. Ver FULL_NAME_HEADERS.
+  if (fullNameHeader !== null) {
+    return { ok: false, error: { code: 'old_template', header: fullNameHeader } };
+  }
   if (mapping.size === 0) {
     return {
       ok: false,
