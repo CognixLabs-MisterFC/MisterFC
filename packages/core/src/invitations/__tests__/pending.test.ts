@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   summarizePendingInvites,
+  pendingCoversEmail,
   type PendingInviteCandidate,
 } from '../pending';
 
@@ -86,5 +87,39 @@ describe('summarizePendingInvites', () => {
     expect(s.emails).toHaveLength(1);
     expect(s.emails[0]!.player_ids[0]).toBe('mayor');
     expect(s.emails[0]!.player_ids).toEqual(['mayor', 'mediano', 'pequeno']);
+  });
+});
+
+describe('pendingCoversEmail', () => {
+  const inv = (id: string) => ({ id });
+
+  it('sin pendientes → no cubre: hay que mandar el correo', () => {
+    expect(pendingCoversEmail([])).toBe(false);
+  });
+
+  it('una pendiente ajena → cubre: el enlace que ya tiene sirve para el hijo nuevo', () => {
+    expect(pendingCoversEmail([inv('i1')])).toBe(true);
+  });
+
+  /**
+   * La distinción que de verdad importa. Renovar la PROPIA invitación es un
+   * REENVÍO pedido a mano desde la ficha: tiene que salir correo, porque si no el
+   * botón se queda mudo y el que lo pulsa no sabe si ha hecho algo.
+   */
+  it('solo está la que renuevo → NO cubre: reenviar a mano sí manda correo', () => {
+    expect(pendingCoversEmail([inv('i1')], { renewingId: 'i1' })).toBe(false);
+  });
+
+  it('renuevo la mía pero hay otra de un hermano → cubre', () => {
+    expect(pendingCoversEmail([inv('i1'), inv('i2')], { renewingId: 'i1' })).toBe(true);
+  });
+
+  it('renewingId que no está en la lista → cuenta todas las que hay', () => {
+    expect(pendingCoversEmail([inv('i1')], { renewingId: 'otra' })).toBe(true);
+  });
+
+  it('renewingId null o ausente son lo mismo', () => {
+    expect(pendingCoversEmail([inv('i1')], { renewingId: null })).toBe(true);
+    expect(pendingCoversEmail([inv('i1')], {})).toBe(true);
   });
 });

@@ -99,7 +99,12 @@ export function InviteForm({
       )}
       {state.ok && (
         <p role="status" className="text-sm text-emerald-400">
-          {t('ok', { email: state.ok.email })}
+          {/* Si ese correo ya tenía una invitación pendiente, la fila se ha creado
+              pero NO ha salido un segundo correo: su enlace de antes cubre también
+              esta. Pintarlo como «enviada» sería mentir. */}
+          {state.ok.covered
+            ? t('ok_covered', { email: state.ok.email })
+            : t('ok', { email: state.ok.email })}
         </p>
       )}
 

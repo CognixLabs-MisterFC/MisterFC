@@ -139,6 +139,13 @@ export type DatabaseOverrides = {
           emergency_contact: string | null;
         }[];
       };
+      club_pending_invitation_by_email: {
+        // `invitations.player_id` es NULL en las invitaciones que no van sobre un
+        // jugador (las de staff). Y no es un caso raro: la función contesta «¿este
+        // correo ya tiene algo pendiente aquí?» sin filtrar por rol, así que la fila
+        // de un entrenador pendiente sale con player_id NULL por diseño.
+        Returns: { player_id: string | null }[];
+      };
       // La familia abre hilo (mig 20261076000000). Cuatro columnas del RETURNS TABLE
       // que SON nulas y el generador marca no-null:
       //   · conversation_id → null mientras no exista el hilo. Es LA columna que

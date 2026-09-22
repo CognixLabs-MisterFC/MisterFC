@@ -12,14 +12,23 @@ import {
   createSupabaseAdminClient,
   type Role,
   inviteLink,
+  pendingCoversEmail,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
 import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
+import { pendingInvitationsForEmail } from '@/lib/pending-invitation';
 
 export type SendInvitationFormState = {
   error?: 'invalid_input' | 'forbidden' | 'no_club' | 'generic';
-  ok?: { email: string };
+  ok?: {
+    email: string;
+    /**
+     * No salió correo: ese correo ya tenía una invitación pendiente vigente en el
+     * club y su enlace cubre también a esta. A una persona se le escribe una vez.
+     */
+    covered: boolean;
+  };
   /**
    * BUG 3 · B-1 — el correo ya es de alguien del club: no se ha creado
    * invitación ni se ha mandado correo. `hasFicha` dice si esa persona tiene
@@ -268,6 +277,19 @@ export async function sendInvitation(
   const buscado = parsed.data.email.trim().toLowerCase();
   const pendiente =
     (pendientes ?? []).find((p) => (p.email ?? '').trim().toLowerCase() === buscado) ?? null;
+
+  // Y ADEMÁS, todas las pendientes de ese correo — también las que llevan jugador,
+  // que la consulta de arriba descarta a propósito (`player_id is null`) para no
+  // renovarlas. Esta lista no sirve para renovar nada: sirve para saber si ya se le
+  // escribió. Si una madre tiene pendiente la invitación que la vincula a su hija,
+  // nombrarla delegada crea su fila de staff pero NO le manda un segundo correo: al
+  // aceptar el enlace que ya tiene, `accept_pending_invitations` procesa las dos.
+  const pendientesDelCorreo = await pendingInvitationsForEmail(
+    supabase,
+    authorized.club_id,
+    parsed.data.email,
+    'send_invitation_pending_lookup',
+  );
 
   let invite: { id: string; token: string } | null = null;
 
@@ -585,8 +607,16 @@ export async function sendInvitation(
     return { error: 'generic' };
   }
 
-  // El correo, LO ÚLTIMO. Si falla, la invitación queda creada y enlazada: se
-  // cancela y se vuelve a invitar desde la misma pantalla.
+  // El correo, LO ÚLTIMO — y solo si toca. Renovar la SUYA es reenviar a mano desde
+  // esta pantalla y sí manda; lo que no manda es una fila nueva para un correo que
+  // ya tenía otra pendiente.
+  if (pendingCoversEmail(pendientesDelCorreo, { renewingId: pendiente?.id ?? null })) {
+    revalidatePath(`/${locale}/invitations`);
+    return { ok: { email: parsed.data.email, covered: true } };
+  }
+
+  // Si falla, la invitación queda creada y enlazada: se cancela y se vuelve a
+  // invitar desde la misma pantalla.
   const { error: mailErr } = await invitationEmailPort('staff')({
     to: parsed.data.email,
     url: redirectTo,
@@ -627,7 +657,7 @@ export async function sendInvitation(
   }
 
   revalidatePath(`/${locale}/invitations`);
-  return { ok: { email: parsed.data.email } };
+  return { ok: { email: parsed.data.email, covered: false } };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

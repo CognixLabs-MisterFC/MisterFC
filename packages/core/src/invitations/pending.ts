@@ -60,3 +60,40 @@ export function summarizePendingInvites(
     emails,
   };
 }
+
+/** Una invitación pendiente vigente, tal como la devuelve `club_pending_invitation_by_email`. */
+export type PendingInvitationRow = {
+  /** `invitations.id`. Es lo único que hace falta para saber si es la nuestra. */
+  id: string;
+};
+
+/**
+ * ¿Ese correo YA está cubierto por una invitación pendiente que no es la nuestra?
+ *
+ * LA REGLA: un correo pertenece a UNA familia, y a una persona se le escribe UNA
+ * vez. Si ya tiene una invitación pendiente vigente en el club, el enlace que ya
+ * recibió le sirve: al aceptarlo, `accept_pending_invitations` procesa TODAS las
+ * pendientes de su correo en ese club, así que el hijo que se acaba de dar de alta
+ * entra con él. Mandar un segundo correo no adelanta nada y multiplica los enlaces
+ * vivos de la misma persona.
+ *
+ * `renewingId` es lo que separa «crear» de «reenviar», y es la diferencia que
+ * importa:
+ *
+ *   · CREAR una fila nueva (importación, alta de jugador, invitar a un correo que
+ *     ya tenía algo pendiente) → si hay cualquier otra pendiente, NO sale correo.
+ *   · RENOVAR la suya (el botón «invitar» sobre una ficha que ya tenía invitación
+ *     pendiente) → eso es un REENVÍO a mano, pedido por una persona que está
+ *     mirando la pantalla, y sí sale. Suprimirlo dejaría el botón mudo, que es
+ *     exactamente el fallo que ya nos costó una vez.
+ *
+ * Pura a propósito: la consulta la hace la RPC `club_pending_invitation_by_email`
+ * (web), y la decisión vive aquí, que es donde el CI la ejecuta.
+ */
+export function pendingCoversEmail(
+  pending: readonly PendingInvitationRow[],
+  options: { renewingId?: string | null } = {},
+): boolean {
+  const renewing = options.renewingId ?? null;
+  return pending.some((row) => row.id !== renewing);
+}

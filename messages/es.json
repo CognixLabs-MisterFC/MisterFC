@@ -925,6 +925,7 @@
       "submit": "Enviar invitación",
       "submitting": "Enviando…",
       "ok": "Invitación enviada a {email}",
+      "ok_covered": "Invitación creada, sin correo nuevo: {email} ya tenía una invitación pendiente y ese enlace sirve también para esta.",
       "error_invalid_input": "Revisa los datos del formulario",
       "error_forbidden": "No tienes permiso para invitar en este club",
       "error_no_club": "No perteneces a ningún club aún",
@@ -1299,12 +1300,13 @@
       },
       "result": {
         "title": "Resultado del envío",
-        "summary": "{sent} enviados, {linked} vinculados sin correo, {failed} fallidos, {skipped} saltados."
+        "summary": "{sent} enviados, {linked} vinculados sin correo, {covered} ya invitados (sin correo nuevo), {failed} fallidos, {skipped} saltados."
       },
       "row": {
         "sent": "Enviado",
         "linked": "Ya estaba en el club · vinculado",
         "linkedTo": "Vinculado a {name}, ya estaba en el club",
+        "covered": "Ya invitado · sin correo nuevo",
         "skipped": "Saltado",
         "reason": {
           "forbidden": "Sin permiso",
@@ -1329,6 +1331,11 @@
       "link": "Vincularlo a {name}",
       "skip": "Ahora no",
       "no_permission": "Solo un administrador o un director puede vincular el jugador a esa cuenta. Pídeselo y el jugador queda creado igualmente."
+    },
+    "covered_by_pending": {
+      "title": "No hace falta un correo nuevo",
+      "body": "El jugador está creado y su invitación también. No se ha enviado un correo nuevo porque {email} ya tenía una invitación pendiente: cuando entre por ese enlace, este hijo entrará con los demás.",
+      "continue": "Entendido"
     },
     "back_to_list": "Volver al listado",
     "age_years": "{age, plural, one {1 año} other {# años}}",
@@ -1538,6 +1545,7 @@
       "cancel": "Cancelar",
       "close": "Cerrar",
       "sent": "Invitación enviada a {email}.",
+      "covered": "No se ha enviado un correo nuevo: {email} ya tenía una invitación pendiente, y su enlace sirve también para este jugador.",
       "errors": {
         "email_invalid": "Email no válido.",
         "email_too_long": "Email demasiado largo.",
