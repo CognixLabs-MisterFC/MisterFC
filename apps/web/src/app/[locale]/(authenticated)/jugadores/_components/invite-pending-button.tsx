@@ -85,6 +85,10 @@ export function InvitePendingButton({
   }
 
   const sent = result?.rows.filter((r) => r.status === 'sent') ?? [];
+  // Un correo pertenece a UNA familia: a quien ya estaba en el club no se le invita,
+  // se le vincula el hijo. Se cuenta aparte porque para quien importa NO es lo mismo
+  // que un envío —no hay correo que esperar— ni que un fallo.
+  const linked = result?.rows.filter((r) => r.status === 'linked') ?? [];
   const failed = result?.rows.filter((r) => r.status === 'error') ?? [];
   const skipped = result?.skipped ?? [];
 
@@ -147,6 +151,7 @@ export function InvitePendingButton({
               <DialogDescription>
                 {t('result.summary', {
                   sent: sent.length,
+                  linked: linked.length,
                   failed: failed.length,
                   skipped: skipped.length,
                 })}
@@ -162,6 +167,12 @@ export function InvitePendingButton({
                   {r.status === 'sent' ? (
                     <Badge variant="secondary" className="shrink-0">
                       {t('row.sent')}
+                    </Badge>
+                  ) : r.status === 'linked' ? (
+                    <Badge variant="outline" className="shrink-0">
+                      {r.linked_to
+                        ? t('row.linkedTo', { name: r.linked_to })
+                        : t('row.linked')}
                     </Badge>
                   ) : (
                     <Badge variant="destructive" className="shrink-0">

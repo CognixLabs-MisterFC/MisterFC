@@ -66,4 +66,25 @@ describe('summarizePendingInvites', () => {
     ]);
     expect(s.emails.map((e) => e.email)).toEqual(['z@x.com', 'a@x.com']);
   });
+
+  /**
+   * EL PRIMER `player_id` DE CADA GRUPO ES EL ANCLA DEL CORREO, y por eso el orden
+   * de entrada no es un detalle: el lote manda UN correo por familia con la
+   * invitación de ese primer jugador, y el enlace del correo lleva a ella. Mientras
+   * la consulta de pendientes no ordenaba, el ancla era un hijo cualquiera: quien
+   * importaba a un niño recibía el enlace de otro, y la pantalla de aceptar le
+   * enseñaba una ficha que no era la suya. La consulta ya ordena por `created_at`;
+   * esto fija la otra mitad del contrato —que este agrupado NO reordena—, que es la
+   * que vive en core y la que el CI ejecuta.
+   */
+  it('el ancla del correo es el primer jugador que llega, y el agrupado no reordena', () => {
+    const s = summarizePendingInvites([
+      p('mayor', 'padre@a.com'),
+      p('mediano', 'padre@a.com'),
+      p('pequeno', 'padre@a.com'),
+    ]);
+    expect(s.emails).toHaveLength(1);
+    expect(s.emails[0]!.player_ids[0]).toBe('mayor');
+    expect(s.emails[0]!.player_ids).toEqual(['mayor', 'mediano', 'pequeno']);
+  });
 });

@@ -804,9 +804,20 @@ const MAX_BATCH_EMAILS = 100;
 export type BatchInviteRow = {
   player_id: string;
   email: string;
-  status: 'sent' | 'error';
-  /** Motivo cuando status='error' (forbidden | insert_failed | send_failed | link_failed). */
+  /**
+   * `linked` = ese correo ya era de alguien del club: no se le invitó, se le
+   * vinculó el jugador. Un correo pertenece a UNA familia.
+   */
+  status: 'sent' | 'linked' | 'error';
+  /**
+   * Motivo cuando status='error':
+   *   forbidden | insert_failed | send_failed | link_failed | member_link_failed
+   * `link_failed` es «el correo salió pero no se pudo enlazar la cuenta»;
+   * `member_link_failed` es «ya estaba en el club y no se pudo vincular la ficha».
+   */
   reason?: string;
+  /** Nombre de la persona a la que se vinculó (solo con status='linked'). */
+  linked_to?: string;
 };
 
 export type BatchInviteResult = {
@@ -924,6 +935,67 @@ export async function inviteBatch(
   let sentEmails = 0;
 
   for (const group of pending.emails) {
+    // 0) ¿Ese correo ya es de alguien de ESTE club? Un correo pertenece a UNA
+    //    familia: si ya está dentro, no se le invita —mandarle un correo para
+    //    entrar donde ya está es el absurdo que abrió esta serie— y se le vincula
+    //    el hijo directamente.
+    //
+    //    Es la cuarta puerta del mismo guard: `createPlayer` (#646), el botón de la
+    //    ficha (#647) y `/invitations` (#648) ya lo hacían; la importación se quedó
+    //    fuera, y es justo la que invita de 100 en 100. El correo del 22-09-2026 a
+    //    la dirección del propio `admin_club` del club salió por aquí.
+    //
+    //    A diferencia de las otras tres, aquí NO se pregunta y se ofrece: se vincula
+    //    y se sigue. Un lote no puede pararse a hacer una pregunta por familia.
+    //
+    //    Si la RPC falla —permisos, red—, se sigue por el camino de siempre e
+    //    invita: el lote no se queda a medias por un fallo del atajo.
+    const { data: memberRows, error: memberErr } = await supabase.rpc(
+      'club_member_by_email',
+      { p_club_id: clubId, p_email: group.email },
+    );
+    if (memberErr) {
+      Sentry.captureException(memberErr, {
+        tags: { feature: 'invitations', step: 'batch_member_lookup' },
+        extra: { club_id: clubId },
+      });
+    }
+    const member = memberErr ? null : (memberRows ?? [])[0];
+
+    if (member) {
+      // Vínculo directo, un jugador a la vez: el `player_accounts` de cada hijo con
+      // el perfil que ya está en el club. `relation: 'parent'`, el mismo valor que
+      // llevaría la invitación que NO se manda.
+      for (const playerId of group.player_ids) {
+        const { error: linkErr } = await supabase.from('player_accounts').insert({
+          player_id: playerId,
+          profile_id: member.profile_id,
+          relation: 'parent',
+        });
+        if (linkErr && linkErr.code !== '23505') {
+          // 23505 = UNIQUE (player_id, profile_id): ya estaban vinculados. Eso es el
+          // resultado que buscábamos, no un error.
+          const reason = linkErr.code === '42501' ? 'forbidden' : 'member_link_failed';
+          rows.push({ player_id: playerId, email: group.email, status: 'error', reason });
+          if (linkErr.code !== '42501') {
+            Sentry.captureException(linkErr, {
+              tags: { feature: 'invitations', step: 'batch_link_member' },
+              extra: { club_id: clubId, player_id: playerId },
+            });
+          }
+          continue;
+        }
+        rows.push({
+          player_id: playerId,
+          email: group.email,
+          status: 'linked',
+          linked_to: member.full_name ?? undefined,
+        });
+      }
+      // Ni invitación ni correo para esta familia.
+      continue;
+    }
+
     // 1) Una invitación por jugador del grupo (relation='parent'). token y
     //    expires_at (now()+7d) los pone el default de la tabla.
     const inserted: { player_id: string; id: string; token: string }[] = [];

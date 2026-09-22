@@ -1283,7 +1283,7 @@
       },
       "confirm": {
         "title": "Invite by email",
-        "body": "{count, plural, one {Invite # person?} other {Invite # people?}} One email is sent per family (just one even if there are several children).",
+        "body": "{count, plural, one {Invite # person?} other {Invite # people?}} One email per family is sent (just one even with several children). Anyone already in the club is not emailed: their child is linked instead.",
         "cancel": "Cancel",
         "send": "Invite"
       },
@@ -1299,16 +1299,19 @@
       },
       "result": {
         "title": "Send result",
-        "summary": "{sent} sent, {failed} failed, {skipped} skipped."
+        "summary": "{sent} sent, {linked} linked without an email, {failed} failed, {skipped} skipped."
       },
       "row": {
         "sent": "Sent",
+        "linked": "Already in the club · linked",
+        "linkedTo": "Linked to {name}, already in the club",
         "skipped": "Skipped",
         "reason": {
           "forbidden": "No permission",
           "insert_failed": "Creation error",
           "send_failed": "Send error",
-          "link_failed": "Sent, link error"
+          "link_failed": "Sent, link error",
+          "member_link_failed": "Already in the club, could not link"
         }
       },
       "close": "Close"
