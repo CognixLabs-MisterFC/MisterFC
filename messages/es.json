@@ -3172,7 +3172,10 @@
       "enabling": "Activando…",
       "enable_button": "Activar notificaciones",
       "error_device": "No se pudieron activar en este dispositivo. Revisa los permisos e inténtalo de nuevo.",
-      "error_server": "No se pudieron guardar en el servidor. Inténtalo de nuevo."
+      "error_server": "No se pudieron guardar en el servidor. Inténtalo de nuevo.",
+      "disable_button": "Desactivar en este dispositivo",
+      "disabling": "Desactivando…",
+      "disabled_here": "Desactivadas en este dispositivo. Seguirás recibiéndolas en los demás donde las tengas activadas."
     }
   },
   "mi_plantilla": {

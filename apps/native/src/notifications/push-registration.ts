@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import * as Sentry from '@sentry/react-native';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@misterfc/core';
+import { isPushOptedOut, setPushOptedOut } from './opt-out-store';
 
 /**
  * O2-4 PR-2 — Registro del Expo push token del dispositivo.
@@ -123,7 +124,7 @@ async function getExpoTokenWithRetry(attempts = 3): Promise<string | null> {
 
 export type RegisterResult =
   | { ok: true; token: string }
-  | { ok: false; reason: 'no-permission' | 'no-token' | 'rpc-error' };
+  | { ok: false; reason: 'no-permission' | 'no-token' | 'rpc-error' | 'opted-out' };
 
 /**
  * Registra el token SOLO si el permiso ya está concedido (no lo pide). Se llama
@@ -131,10 +132,19 @@ export type RegisterResult =
  */
 export async function registerPushTokenIfPermitted(
   supabase: SupabaseClient<Database>,
+  /** Quién inicia sesión, para respetar su apagado en ESTE dispositivo. */
+  userId: string | null = null,
 ): Promise<RegisterResult> {
   try {
     // Android-only en O2-4 (iOS pospuesto: sin APNs configurado).
     if (Platform.OS !== 'android') return { ok: false, reason: 'no-permission' };
+
+    // Apagado en este aparato: no se vuelve a dar de alta. Va ANTES del permiso
+    // porque es una decisión del usuario, no del sistema — y sin esto el registro
+    // de cada login resucitaría el token y el interruptor duraría una sesión.
+    if (userId && (await isPushOptedOut(userId))) {
+      return { ok: false, reason: 'opted-out' };
+    }
 
     const perm = await Notifications.getPermissionsAsync();
     if (!perm.granted) return { ok: false, reason: 'no-permission' };
@@ -198,16 +208,21 @@ export type EnableResult =
  */
 export async function enablePushNotifications(
   supabase: SupabaseClient<Database>,
+  userId: string | null = null,
 ): Promise<EnableResult> {
   try {
     const perm = await Notifications.requestPermissionsAsync();
     if (!perm.granted) {
       return { status: 'denied', canAskAgain: perm.canAskAgain ?? false };
     }
-    const res = await registerPushTokenIfPermitted(supabase);
+    // Encender BORRA el apagado antes de registrar: si no, el registro se saltaría
+    // por el mismo recuerdo que acaba de contradecir quien pulsa el botón.
+    if (userId) await setPushOptedOut(userId, false);
+    const res = await registerPushTokenIfPermitted(supabase, userId);
     if (res.ok) return { status: 'enabled' };
     // 'rpc-error' = el token se obtuvo pero no se guardó → 'server'; el resto
-    // (no-token / no-permission) es del lado del dispositivo → 'device'.
+    // (no-token / no-permission / opted-out) es del lado del dispositivo →
+    // 'device'. 'opted-out' no puede llegar aquí: se acaba de limpiar arriba.
     return { status: 'error', reason: res.reason === 'rpc-error' ? 'server' : 'device' };
   } catch (err) {
     // Aquí solo puede llegar un throw de requestPermissionsAsync (register tiene su
@@ -220,6 +235,52 @@ export async function enablePushNotifications(
       err,
     );
     return { status: 'error', reason: 'device' };
+  }
+}
+
+/**
+ * Deja de recibir push EN ESTE DISPOSITIVO: borra su token.
+ *
+ * El permiso de Android NO se puede retirar desde dentro de la app —solo lo quita
+ * el usuario en los Ajustes del sistema—, así que «desactivar» aquí significa lo
+ * único que está en nuestra mano y lo que de verdad quiere quien lo pulsa: que el
+ * servidor deje de mandarle avisos a este teléfono. Es el mismo gesto que el
+ * «dejar de recibir en este dispositivo» de la web.
+ *
+ * Borra SOLO el token de este dispositivo, no los de los demás: una familia con
+ * tablet y móvil apaga uno y el otro sigue. La RLS
+ * (`expo_push_tokens_delete_own`) impide tocar los de nadie más.
+ *
+ * Si no se puede leer el token del dispositivo, se borra POR user_id + plataforma:
+ * sin eso, quien reinstala y quiere apagarlo se quedaría con una fila huérfana
+ * recibiendo avisos que ya no ve.
+ */
+export async function disablePushOnThisDevice(
+  supabase: SupabaseClient<Database>,
+  userId: string | null = null,
+): Promise<{ ok: boolean }> {
+  try {
+    // El recuerdo PRIMERO: si el borrado falla a medias, lo que no puede pasar es
+    // que el siguiente login lo dé de alta otra vez como si nada.
+    if (userId) await setPushOptedOut(userId, true);
+    const token = await getExpoTokenWithRetry(1);
+    const query = supabase.from('expo_push_tokens').delete();
+    const { error } = token
+      ? await query.eq('token', token)
+      : await query.eq('platform', 'android');
+    if (error) {
+      reportPushFailure(
+        'register',
+        'disable-failed',
+        `borrar el token falló: ${error.message}`,
+        { rpcCode: error.code ?? null, hadToken: Boolean(token) },
+      );
+      return { ok: false };
+    }
+    return { ok: true };
+  } catch (err) {
+    reportPushFailure('register', 'disable-exception', 'desactivar push lanzó', {}, err);
+    return { ok: false };
   }
 }
 

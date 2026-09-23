@@ -14,6 +14,7 @@
 import { Expo } from 'expo-server-sdk';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
+  acceptedTickets,
   buildExpoMessages,
   tallyExpoTickets,
   type ChannelResult,
@@ -38,6 +39,11 @@ export async function sendExpoToUser(
   userId: string,
   content: ExpoPushContent,
   data: ExpoNotificationData,
+  /**
+   * La notificación que origina el envío, para poder corregir su `status` cuando
+   * llegue el recibo. Opcional: hay envíos sin fila (pruebas, avisos sueltos).
+   */
+  notificationId: string | null = null,
 ): Promise<ChannelResult> {
   const { data: rows } = await supabase
     .from('expo_push_tokens')
@@ -74,6 +80,27 @@ export async function sendExpoToUser(
       .from('expo_push_tokens')
       .delete()
       .in('token', tally.dead_tokens);
+  }
+
+  // Los aceptados se ENCOLAN para pedir su recibo más tarde. Un ticket `ok` solo
+  // dice que Expo cogió el mensaje; si FCM lo rechaza —lo normal cuando alguien
+  // reinstala la app— el error aparece en el RECIBO, que no existe todavía. Sin
+  // esta cola, ese envío se quedaba marcado `sent` para siempre y el token muerto
+  // no se borraba nunca: el `delete` de arriba mira tickets, donde
+  // `DeviceNotRegistered` no aparece.
+  //
+  // Es best-effort: si la cola falla, el push YA salió y no se le dice al llamante
+  // que falló. Lo que se pierde es la comprobación, no el aviso.
+  const queued = acceptedTickets(tokens, tickets, notificationId);
+  if (queued.length > 0) {
+    await supabase.from('expo_push_tickets').upsert(
+      queued.map((q) => ({
+        ticket_id: q.ticketId,
+        token: q.token,
+        notification_id: q.notificationId,
+      })),
+      { onConflict: 'ticket_id', ignoreDuplicates: true },
+    );
   }
 
   return {

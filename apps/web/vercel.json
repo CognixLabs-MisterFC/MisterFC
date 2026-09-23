@@ -16,6 +16,10 @@
     {
       "path": "/api/cron/invite-attempts",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/push-receipts",
+      "schedule": "30 * * * *"
     }
   ]
 }

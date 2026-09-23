@@ -3172,7 +3172,10 @@
       "enabling": "Activant…",
       "enable_button": "Activar notificacions",
       "error_device": "No s’han pogut activar en aquest dispositiu. Revisa els permisos i torna-ho a provar.",
-      "error_server": "No s’han pogut guardar al servidor. Torna-ho a provar."
+      "error_server": "No s’han pogut guardar al servidor. Torna-ho a provar.",
+      "disable_button": "Desactivar en aquest dispositiu",
+      "disabling": "Desactivant…",
+      "disabled_here": "Desactivades en aquest dispositiu. Les continuaràs rebent en els altres on les tingues activades."
     }
   },
   "mi_plantilla": {
