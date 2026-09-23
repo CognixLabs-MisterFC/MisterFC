@@ -63,6 +63,10 @@ select pg_temp.new_test_user('bb0a0000-0000-4000-8000-000000000004', 'menor@rv3.
 select pg_temp.new_test_user('bb0a0000-0000-4000-8000-000000000005', 'adulto@rv3.test',  '{"full_name": "Adulto"}'::jsonb);
 select pg_temp.new_test_user('bb0a0000-0000-4000-8000-000000000006', 'tutor2@rv3.test',  '{"full_name": "Tutor Dos"}'::jsonb);
 select pg_temp.new_test_user('bb0a0000-0000-4000-8000-000000000007', 'cotutor@rv3.test', '{"full_name": "CoTutor"}'::jsonb);
+-- El tutor del Menor. No existía, y desde la mig 20261097000000 tiene que existir: la
+-- cuenta propia de un MENOR exige tutor (la de un adulto, no). No lo impersona ningún
+-- test; está para que la ficha del Menor modele un estado que el producto sí alcanza.
+select pg_temp.new_test_user('bb0a0000-0000-4000-8000-000000000008', 'tutordelmenor@rv3.test', '{"full_name": "Tutor Del Menor"}'::jsonb);
 
 insert into public.memberships (profile_id, club_id, role) values
   ('bb0a0000-0000-4000-8000-000000000001', 'bb000000-0000-4000-8000-000000000001', 'jugador'),
@@ -70,7 +74,8 @@ insert into public.memberships (profile_id, club_id, role) values
   ('bb0a0000-0000-4000-8000-000000000004', 'bb000000-0000-4000-8000-000000000001', 'jugador'),
   ('bb0a0000-0000-4000-8000-000000000005', 'bb000000-0000-4000-8000-000000000001', 'jugador'),
   ('bb0a0000-0000-4000-8000-000000000006', 'bb000000-0000-4000-8000-000000000002', 'jugador'),
-  ('bb0a0000-0000-4000-8000-000000000007', 'bb000000-0000-4000-8000-000000000001', 'jugador');
+  ('bb0a0000-0000-4000-8000-000000000007', 'bb000000-0000-4000-8000-000000000001', 'jugador'),
+  ('bb0a0000-0000-4000-8000-000000000008', 'bb000000-0000-4000-8000-000000000001', 'jugador');
 
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
   ('bb0b0000-0000-4000-8000-000000000001', 'bb000000-0000-4000-8000-000000000001', 'Hijo',   'Rv3', (current_date - interval '12 years')::date),
@@ -82,6 +87,7 @@ insert into public.players (id, club_id, first_name, last_name, date_of_birth) v
 insert into public.player_accounts (player_id, profile_id, relation) values
   ('bb0b0000-0000-4000-8000-000000000001', 'bb0a0000-0000-4000-8000-000000000001', 'parent'),
   ('bb0b0000-0000-4000-8000-000000000002', 'bb0a0000-0000-4000-8000-000000000002', 'parent'),
+  ('bb0b0000-0000-4000-8000-000000000003', 'bb0a0000-0000-4000-8000-000000000008', 'parent'),
   ('bb0b0000-0000-4000-8000-000000000003', 'bb0a0000-0000-4000-8000-000000000004', 'self'),
   ('bb0b0000-0000-4000-8000-000000000004', 'bb0a0000-0000-4000-8000-000000000005', 'self'),
   ('bb0b0000-0000-4000-8000-000000000005', 'bb0a0000-0000-4000-8000-000000000006', 'parent'),

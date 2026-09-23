@@ -29,9 +29,12 @@ insert into public.teams (id, category_id, name, format, color, season) values
 insert into public.seasons (id, club_id, label, status) values
   ('d15ea000-0000-4000-8000-000000000001', 'd1c00000-0000-4000-8000-000000000001', '2025-26', 'active');
 
+-- `self` = el jugador vinculado a su PROPIA ficha, que es para lo que la mig
+-- 20261038 creó esa relación: un ADULTO. Desde la mig 20261097000000 el `self`
+-- de un MENOR exige tutor, así que estas fichas nacen con fecha de adulto.
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
-  ('d1500000-0000-4000-8000-00000000000f', 'd1c00000-0000-4000-8000-000000000001', 'Fede', 'Team', '2012-01-01'),
-  ('d1500000-0000-4000-8000-000000000009', 'd1c00000-0000-4000-8000-000000000001', 'Gael', 'Otro', '2012-01-01');
+  ('d1500000-0000-4000-8000-00000000000f', 'd1c00000-0000-4000-8000-000000000001', 'Fede', 'Team', '1998-01-01'),
+  ('d1500000-0000-4000-8000-000000000009', 'd1c00000-0000-4000-8000-000000000001', 'Gael', 'Otro', '1998-01-01');
 
 insert into public.team_members (team_id, player_id, joined_at) values
   ('d1700000-0000-4000-8000-000000000001', 'd1500000-0000-4000-8000-00000000000f', '2025-09-01'),
@@ -465,7 +468,7 @@ reset role;  -- fixtures nuevos como owner (sin RLS)
 -- jugador B en Team A, con cuenta familiar jugB (misma familia-tier que jugA, otro jugador)
 select pg_temp.new_test_user('d1a00000-0000-4000-8000-0000000000eb', 'jugB@dr.test', '{}'::jsonb);
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
-  ('d1500000-0000-4000-8000-0000000000eb', 'd1c00000-0000-4000-8000-000000000001', 'Bruno', 'B', '2012-01-01');
+  ('d1500000-0000-4000-8000-0000000000eb', 'd1c00000-0000-4000-8000-000000000001', 'Bruno', 'B', '1998-01-01');
 insert into public.team_members (team_id, player_id, joined_at) values
   ('d1700000-0000-4000-8000-000000000001', 'd1500000-0000-4000-8000-0000000000eb', '2025-09-01');
 insert into public.memberships (id, profile_id, club_id, role) values

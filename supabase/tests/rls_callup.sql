@@ -53,8 +53,11 @@ insert into public.memberships (id, profile_id, club_id, role) values
 insert into public.team_staff (team_id, membership_id, staff_role) values
   ('33dd0000-0000-0000-0000-000000000001', '55dd0000-aaaa-3333-3333-333333333333', 'entrenador_principal');
 
+-- `self` = el jugador vinculado a su PROPIA ficha, que es para lo que la mig
+-- 20261038 creó esa relación: un ADULTO. Desde la mig 20261097000000 el `self`
+-- de un MENOR exige tutor, así que estas fichas nacen con fecha de adulto.
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
-  ('66dd0000-0000-0000-0000-000000000001', '11dd0000-0000-0000-0000-000000000001', 'Pol', 'Test', '2014-04-01'),
+  ('66dd0000-0000-0000-0000-000000000001', '11dd0000-0000-0000-0000-000000000001', 'Pol', 'Test', '1998-01-01'),
   -- Player de control para el test R4: existe en el mismo team/club para que la
   -- UPDATE intentando reasignar player_id no falle por FK/club mismatch antes
   -- de llegar al check de inmutabilidad.

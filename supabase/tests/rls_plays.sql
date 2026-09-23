@@ -27,9 +27,12 @@ insert into public.teams (id, category_id, name, format, color, season) values
   ('b1700000-0000-4000-8000-000000000001', 'b1ca0000-0000-4000-8000-000000000001', 'Team A',  'F11', '#10B981', '2025-26'),
   ('b1700000-0000-4000-8000-000000000002', 'b1ca0000-0000-4000-8000-000000000002', 'Team A2', 'F11', '#0EA5E9', '2025-26');
 
+-- `self` = el jugador vinculado a su PROPIA ficha, que es para lo que la mig
+-- 20261038 creó esa relación: un ADULTO. Desde la mig 20261097000000 el `self`
+-- de un MENOR exige tutor, así que estas fichas nacen con fecha de adulto.
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
-  ('b1500000-0000-4000-8000-00000000000f', 'b1c00000-0000-4000-8000-000000000001', 'Fede', 'Team', '2012-01-01'),
-  ('b1500000-0000-4000-8000-000000000009', 'b1c00000-0000-4000-8000-000000000001', 'Gael', 'Otro', '2012-01-01');
+  ('b1500000-0000-4000-8000-00000000000f', 'b1c00000-0000-4000-8000-000000000001', 'Fede', 'Team', '1998-01-01'),
+  ('b1500000-0000-4000-8000-000000000009', 'b1c00000-0000-4000-8000-000000000001', 'Gael', 'Otro', '1998-01-01');
 
 insert into public.team_members (team_id, player_id, joined_at) values
   ('b1700000-0000-4000-8000-000000000001', 'b1500000-0000-4000-8000-00000000000f', '2025-09-01'),

@@ -40,8 +40,11 @@ insert into public.memberships (id, profile_id, club_id, role) values
 -- F5 Lote A hotfix — la RLS SELECT amplió a "team_members + player_account
 -- activos" para anuncios team-bound. Añadimos player + vínculos para
 -- jug-ann@msg.test (la cuenta jugador, profile id ...b4).
+-- `self` = el jugador vinculado a su PROPIA ficha, que es para lo que la mig
+-- 20261038 creó esa relación: un ADULTO. Desde la mig 20261097000000 el `self`
+-- de un MENOR exige tutor, así que estas fichas nacen con fecha de adulto.
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
-  ('66666666-6666-4666-8666-66666666b001', '11111111-1111-4111-8111-1111111100b1', 'Test', 'JugAnn', '2012-01-01');
+  ('66666666-6666-4666-8666-66666666b001', '11111111-1111-4111-8111-1111111100b1', 'Test', 'JugAnn', '1998-01-01');
 
 insert into public.player_accounts (player_id, profile_id, relation) values
   ('66666666-6666-4666-8666-66666666b001', '44444444-4444-4444-8444-4444444400b4', 'self');

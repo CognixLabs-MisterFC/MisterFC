@@ -67,8 +67,11 @@ insert into public.team_staff (team_id, membership_id, staff_role) values
   ('a3000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-0000000000a3', 'entrenador_principal');
 
 -- ── Jugador (club A) en el equipo BASE (Cadete Segunda) ──────────────────────
+-- `self` = el jugador vinculado a su PROPIA ficha, que es para lo que la mig
+-- 20261038 creó esa relación: un ADULTO. Desde la mig 20261097000000 el `self`
+-- de un MENOR exige tutor, así que estas fichas nacen con fecha de adulto.
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
-  ('a6000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001', 'Marc', 'Promo', '2010-03-01');
+  ('a6000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000001', 'Marc', 'Promo', '1998-01-01');
 
 insert into public.team_members (team_id, player_id, joined_at) values
   ('a3000000-0000-0000-0000-000000000001', 'a6000000-0000-0000-0000-000000000001', (current_date - interval '90 days')::date);
