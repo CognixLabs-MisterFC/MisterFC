@@ -1,7 +1,11 @@
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { getCurrentUser, chooseInviteForm, isInvitePending } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { loadInvitationForPage, loadPendingInvitationsForEmail } from './invite-data';
+import {
+  loadInvitationForPage,
+  loadPendingInvitationsForEmail,
+  loadProfileDateOfBirth,
+} from './invite-data';
 import { childrenNeedingConsent, hasSelfInvitation } from '@misterfc/core';
 import {
   loadCurrentLegalDocs,
@@ -121,6 +125,20 @@ export default async function InvitePage({ params }: Props) {
   // F14-4 — texto informado de datos médicos (opcional por hijo).
   const medicalDoc = await loadMedicalLegalDoc(inv.club_id);
 
+  // ¿Hay que pedirle la fecha de nacimiento? Solo cuando este alta lo convierte en
+  // TUTOR de alguien y su perfil aún no la tiene. Es el dato del que depende la mig
+  // 20261099000000 para decidir si alguien puede figurar como tutor, y estaba al 0%.
+  //
+  // Quién es «él» depende del flujo: la sesión si coincide con el correo invitado, o
+  // la cuenta que creamos al invitar (`invited_user_id`). Si no se puede resolver
+  // ninguna de las dos, se pide: preguntar de más molesta, no preguntar de menos deja
+  // el candado sin datos. Y el servidor lo vuelve a decidir por su cuenta en
+  // `attachAllPending`, así que esto solo controla lo que se PINTA.
+  const acceptorId =
+    user && sessionEmailMatches ? user.id : (inv.invited_user_id ?? null);
+  const acceptorDob = acceptorId ? await loadProfileDateOfBirth(acceptorId) : null;
+  const requireTutorDob = pendingChildren.length > 0 && acceptorDob == null;
+
   const consentProps = {
     legalTerms: legal.terms,
     legalPrivacy: legal.privacy,
@@ -131,6 +149,7 @@ export default async function InvitePage({ params }: Props) {
     imageInternal: imageDocs.internal,
     imageSocial: imageDocs.social,
     medicalDoc,
+    requireTutorDob,
   };
 
   return (

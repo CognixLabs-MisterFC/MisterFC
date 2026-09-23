@@ -28,6 +28,7 @@ function baseRules(over: Partial<AcceptFormRules> = {}): AcceptFormRules {
     requireChildData: false,
     requireProfile: false,
     requireOwnPassword: false,
+    requireTutorDob: false,
     ...over,
   };
 }

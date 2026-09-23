@@ -565,7 +565,11 @@
     "error_invalid": "Aquest enllaç no és vàlid. Obri el que t'ha arribat per correu.",
     "go_to_signin": "Anar a iniciar sessió",
     "session_swap_warning": "Ara mateix estàs en el compte {email}. Si completes aquesta invitació, entraràs amb el compte del jugador.",
-    "error_sign_in_failed": "La teua contrasenya s'ha guardat, però no hem pogut iniciar la teua sessió. Intenta-ho de nou."
+    "error_sign_in_failed": "La teua contrasenya s'ha guardat, però no hem pogut iniciar la teua sessió. Intenta-ho de nou.",
+    "tutor_dob_hint": "Fa falta per a confirmar que qui tutela el jugador és major d’edat.",
+    "missing_tutor_dob": "Falta la teua data de naixement",
+    "error_date_of_birth_required": "Necessitem la teua data de naixement per a donar-te d’alta com a tutor.",
+    "error_tutor_menor_de_edad": "Eixe compte consta com a menor d’edat i no pot figurar com a tutor. Si eres el jugador, demana al teu club el compte propi; si és un error en la teua data de naixement, corregix-la i torna a intentar-ho."
   },
   "directos": {
     "title": "Directes",

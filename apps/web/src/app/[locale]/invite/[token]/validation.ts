@@ -53,6 +53,7 @@ const MESSAGE_KEY: Record<AcceptProblemCode, string> = {
   phone_missing: 'missing_phone',
   phone_invalid: 'error_phone_invalid',
   date_of_birth_invalid: 'error_date_of_birth_invalid',
+  date_of_birth_required: 'missing_tutor_dob',
   child_name_required: 'missing_child_name',
   child_dob_invalid: 'missing_child_dob',
   image_internal_missing: 'missing_image_internal',
@@ -77,6 +78,9 @@ function fieldIdFor(
     case 'phone_invalid':
       return fieldIds.phone;
     case 'date_of_birth_invalid':
+    case 'date_of_birth_required':
+      // El mismo control en los tres flujos: el del bloque de perfil cuando lo hay,
+      // y el de `TutorDobField` cuando no. Nunca se pintan los dos a la vez.
       return fieldIds.dateOfBirth;
     case 'child_name_required':
       return fieldIds.childFirstName(pid);

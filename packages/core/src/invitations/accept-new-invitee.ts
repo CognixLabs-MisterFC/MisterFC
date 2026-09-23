@@ -51,6 +51,13 @@ export type InviteAcceptError =
   | 'image_decision_required'
   | 'image_required'
   | 'reserved_for_tutor'
+  /**
+   * Mig 20261099000000: quien acepta CONSTA menor de edad y el alta lo convertiría
+   * en tutor. Tiene código propio porque sin él cae en 'generic' y el mensaje manda
+   * a mirar al sitio equivocado — que es exactamente lo que costó encontrar el
+   * BUG-4 de la contraseña.
+   */
+  | 'tutor_menor_de_edad'
   | 'generic';
 
 /** Sumidero de errores del llamador (web: Sentry). Core no importa Sentry. */
@@ -199,6 +206,7 @@ export function mapAcceptRpcError(message: string | null | undefined): InviteAcc
   if (msg.includes('image_decision_required')) return 'image_decision_required';
   if (msg.includes('image_required')) return 'image_required';
   if (msg.includes('reserved_for_tutor')) return 'reserved_for_tutor';
+  if (msg.includes('tutor_menor_de_edad')) return 'tutor_menor_de_edad';
   return 'generic';
 }
 

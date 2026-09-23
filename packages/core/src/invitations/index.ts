@@ -17,6 +17,7 @@ export {
   playerIdsFromFormKeys,
   validateChildRow,
   isValidChildDob,
+  isValidBirthDate,
   CHILD_FIRST_NAME_MAX,
   CHILD_LAST_NAME_MAX,
   type AcceptProblem,

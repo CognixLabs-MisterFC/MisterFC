@@ -23,10 +23,14 @@ export const CHILD_FIRST_NAME_MAX = 80;
 export const CHILD_LAST_NAME_MAX = 120;
 
 /**
- * Fecha de nacimiento del hijo. Mismo criterio que el alta (yyyy-mm-dd,
- * >= 1900, no futura).
+ * Fecha de nacimiento: yyyy-mm-dd, >= 1900, no futura. Mismo criterio que el alta
+ * y que `dateOfBirthField` del schema de auth.
+ *
+ * Es de quien sea —del hijo o del tutor—: la regla de qué es una fecha de
+ * nacimiento válida no depende de a quién pertenezca, y tenerla dos veces es cómo
+ * acaban diciendo cosas distintas.
  */
-export function isValidChildDob(s: string): boolean {
+export function isValidBirthDate(s: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
   const d = new Date(s);
   if (Number.isNaN(d.getTime())) return false;
@@ -34,6 +38,11 @@ export function isValidChildDob(s: string): boolean {
   if (year < 1900) return false;
   if (d.getTime() > Date.now()) return false;
   return true;
+}
+
+/** La del hijo. Conserva el nombre con el que la llaman la web y el validador. */
+export function isValidChildDob(s: string): boolean {
+  return isValidBirthDate(s);
 }
 
 export type ChildRowError = 'child_name_required' | 'child_dob_invalid';
@@ -63,6 +72,12 @@ export type AcceptProblemCode =
   | 'phone_missing'
   | 'phone_invalid'
   | 'date_of_birth_invalid'
+  /**
+   * Falta la fecha de nacimiento DEL TUTOR, y en este alta hace falta. Distinto de
+   * `date_of_birth_invalid`: ahí hay algo escrito que no vale; aquí no hay nada, y
+   * el aviso tiene que decir eso.
+   */
+  | 'date_of_birth_required'
   | 'child_name_required'
   | 'child_dob_invalid'
   | 'image_internal_missing'
@@ -91,6 +106,19 @@ export type AcceptFormRules = {
   requireChildData: boolean;
   /** El flujo pide nombre del tutor + contraseña nueva + confirmación. */
   requireProfile: boolean;
+  /**
+   * Este alta convierte a quien acepta en TUTOR de alguien y su perfil todavía no
+   * tiene fecha de nacimiento: hay que pedirla, y es obligatoria.
+   *
+   * POR QUÉ AHORA. Desde la mig 20261099000000 un perfil que CONSTE menor no puede
+   * figurar como tutor; ese candado se apoya en `profiles.date_of_birth`, que estaba
+   * al 0% porque el flujo rápido no la pedía y el del invitado nuevo la pedía como
+   * «(opcional)». Sin este campo, aquella regla no mide nada.
+   *
+   * Solo cuando el lote crea un vínculo de tutor: a un entrenador que acepta la
+   * invitación de un segundo club no se le pide nada, y sigue siendo de un clic.
+   */
+  requireTutorDob: boolean;
   /** El flujo pide la contraseña que el usuario ya tenía. */
   requireOwnPassword: boolean;
 };
@@ -142,6 +170,18 @@ export function findAcceptProblems(formData: FormData, rules: AcceptFormRules): 
         code: issue.message === 'phone_required' ? 'phone_missing' : 'phone_invalid',
       });
     } else if (field === 'date_of_birth') {
+      problems.push({ code: 'date_of_birth_invalid' });
+    }
+  }
+
+  // 1b · La fecha del TUTOR cuando este alta lo convierte en tutor. Va aquí y no
+  // dentro de `requireProfile` porque los tres flujos pueden necesitarla: el rápido
+  // y el de cuenta existente no piden perfil y aun así crean el vínculo.
+  if (rules.requireTutorDob) {
+    const dob = str(formData, 'date_of_birth').trim();
+    if (dob.length === 0) {
+      problems.push({ code: 'date_of_birth_required' });
+    } else if (!isValidBirthDate(dob)) {
       problems.push({ code: 'date_of_birth_invalid' });
     }
   }
