@@ -77,6 +77,10 @@ function segmentosDe(abs: string): string[] {
 /**
  * Destinos que sabemos leer:
  *  · literal — `<Redirect href="/x" />`, `router.replace('/x')`;
+ *  · con parámetros — `router.push({ pathname: '/x', params: {…} })`, que es como
+ *    navegan las pantallas que llevan un id (la ficha de un jugador desde la
+ *    plantilla de un equipo). El destino es el `pathname`; los params no cambian a
+ *    qué ruta se va, así que no se miran;
  *  · plantilla sobre `AREA_SEGMENT` — la del gatekeeper: `` `/${AREA_SEGMENT.spectator}` ``
  *    y `` `/${AREA_SEGMENT[area]}` ``, que se expande a las CUATRO áreas.
  *
@@ -94,7 +98,11 @@ function destinosDe(texto: string): { destinos: string[]; ilegibles: string[] } 
   for (const m of texto.matchAll(/<Redirect\b[^>]*?href\s*=\s*([^\s>]+)/gs)) {
     crudos.push(m[1] ?? '');
   }
-  for (const m of texto.matchAll(/router\.(?:replace|push|navigate)\(\s*([^\s)]+)/g)) {
+  // El primer alternante coge la forma de OBJETO entera (hasta la primera llave de
+  // cierre, que basta para ver el `pathname`); el segundo, la de siempre.
+  for (const m of texto.matchAll(
+    /router\.(?:replace|push|navigate)\(\s*(\{[\s\S]*?\}|[^\s)]+)/g,
+  )) {
     crudos.push(m[1] ?? '');
   }
 
@@ -102,6 +110,12 @@ function destinosDe(texto: string): { destinos: string[]; ilegibles: string[] } 
     const literal = /^\{?["'](\/[^"']*)["']/.exec(crudo);
     if (literal?.[1]) {
       destinos.push(literal[1]);
+      continue;
+    }
+    // `router.push({ pathname: '/x', params: {…} })` → el destino es el pathname.
+    const conPathname = /^\{[\s\S]*?pathname\s*:\s*["'](\/[^"']*)["']/.exec(crudo);
+    if (conPathname?.[1]) {
+      destinos.push(conPathname[1]);
       continue;
     }
     // `/${AREA_SEGMENT.spectator}` → una; `/${AREA_SEGMENT[algo]}` → las cuatro.
