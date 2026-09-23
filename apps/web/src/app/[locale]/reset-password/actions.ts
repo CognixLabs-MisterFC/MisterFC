@@ -97,5 +97,19 @@ export async function resetPassword(
     }
   }
 
-  redirect(`/${locale}`);
+  // El destino NO puede ser la raíz autenticada. A una cuenta de FAMILIA el corte
+  // de la web (`evaluateFamilyWebCut`, en `(authenticated)/layout.tsx`) la echa de
+  // ahí, así que acababa mirando la pantalla de «descárgate la app» sin que nadie
+  // le hubiera dicho que su contraseña SÍ se había cambiado. Justo después de
+  // cambiarla, y sin forma de saber si había funcionado.
+  //
+  // Se manda a `/aplicacion`, que vive FUERA de los dos layouts que cortan y que ya
+  // resuelve este mismo problema para el alta por invitación (ver su cabecera). El
+  // parámetro le dice QUÉ acaba de pasar, para que lo primero que se lea sea la
+  // confirmación y no el cartel de la app.
+  //
+  // A quien no le aplica el corte —cuerpo técnico, dirección— esa página lo devuelve
+  // a `/{locale}` ella sola (`if (!cut.closed) redirect(...)`), que es exactamente
+  // donde iba antes. Por eso no hace falta preguntar aquí quién es.
+  redirect(`/${locale}/aplicacion?hecho=contrasena`);
 }

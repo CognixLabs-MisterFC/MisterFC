@@ -9,13 +9,19 @@ import {
   previewAccountDeletionFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { familyWebCutDoneMark } from '@misterfc/core';
 import { APP_STORE_URL, PLAY_STORE_URL, evaluateFamilyWebCut } from '@/lib/family-web-cut';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogoutButton } from '@/components/shell/logout-button';
 import { AccountDeletionPending } from '@/components/shell/account-deletion-pending';
 import { DeleteAccountCard } from '../(authenticated)/perfil/delete-account-card';
 
-type Props = { params: Promise<{ locale: string }> };
+type Props = {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ hecho?: string | string[] }>;
+};
+
+
 
 /**
  * W-B — DESTINO del corte de la web para familias.
@@ -33,15 +39,23 @@ type Props = { params: Promise<{ locale: string }> };
  * después de haber rellenado un formulario largo. Por eso lo primero que se confirma es
  * la cuenta y el correo.
  *
+ * Lo mismo vale para el CAMBIO DE CONTRASEÑA (`reset-password/actions.ts`): antes
+ * acababa también en `redirect('/{locale}')`, el layout cortaba, y una familia se
+ * quedaba mirando «descárgate la app» sin que nadie le hubiera confirmado que su
+ * contraseña se había cambiado. Ahora llega con `?hecho=contrasena` y lo primero que
+ * lee es la confirmación.
+ *
  * Y lleva DENTRO el borrado de cuenta, por el mismo motivo que el muro de suscripción
  * (SU-5): una pantalla terminal no puede tapar el borrado sin romper Apple 5.1.1(v), que
  * es lo que toda la serie BC existe para cumplir. Con un agravante propio: si esta
  * pantalla fuera un callejón sin salida, la única forma de borrarse sería instalar la
  * app — pedirle a alguien que instale algo para poder irse no se sostiene.
  */
-export default async function AplicacionPage({ params }: Props) {
+export default async function AplicacionPage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
+  // La lista de marcas válidas vive en core, que es donde el CI la ejecuta.
+  const hecho = familyWebCutDoneMark((await searchParams).hecho);
 
   const adapter = await createCookieAdapter();
   const user = await getCurrentUser(adapter);
@@ -77,10 +91,23 @@ export default async function AplicacionPage({ params }: Props) {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-6 px-4 py-10">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('body')}</p>
-      </div>
+      {/* Cuando se viene de hacer algo, ESO es el titular. Quien acaba de cambiar su
+          contraseña ha venido a saber si funcionó, no a leer dónde está la app; el
+          cartel de siempre se queda justo debajo, que sigue haciendo falta. */}
+      {hecho === 'contrasena' ? (
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold text-emerald-600">
+            {t('password_changed_title')}
+          </h1>
+          <p className="text-foreground">{t('password_changed_body')}</p>
+          <p className="text-muted-foreground">{t('body')}</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold">{t('title')}</h1>
+          <p className="text-muted-foreground">{t('body')}</p>
+        </div>
+      )}
 
       {/* La confirmación del alta. `user.email` es `string | undefined` en supabase-js,
           así que hay un texto para cuando no lo sabemos: decir "entra con el mismo correo
