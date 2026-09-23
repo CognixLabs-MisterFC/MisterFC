@@ -28,9 +28,28 @@
 -- «la RPC es la ergonomía, pero dirección puede escribir la tabla directamente.
 -- Una regla que viva solo en la RPC no los alcanza.»
 --
+-- ── SOBRE QUÉ `self` MANDA ESTA REGLA, Y POR QUÉ NO SOBRE TODOS ─────────────
+-- `relation='self'` significa DOS cosas y las dos son legítimas. Lo dice la
+-- cabecera de MN-1: la mig 20261038 lo añadió para que el jugador ADULTO
+-- vinculado a su propia ficha gestionara sus cuatro secciones, y MN-5 le sumó
+-- después la cuenta propia del MENOR — «con la cuenta propia del menor, un
+-- `self` puede tener 11 años».
+--
+-- El invariante es solo sobre el segundo. Un adulto vinculado a su propia ficha
+-- NO necesita tutor y nunca lo tuvo: negárselo rompería lo que la 20261038 vino
+-- a permitir. La primera versión de esta migración no distinguía y lo prohibía;
+-- lo cazó la suite pgTAP entera, que es donde vive ese caso.
+--
+-- La edad se pregunta con `player_is_minor`, el helper que MN-1 ya dejó hecho, y
+-- no con una comparación escrita aquí: es la lección que el propio
+-- `invite_player_self` cita dos veces —«un predicado en dos sitios acaba diciendo
+-- dos cosas»—. Se calcula en vivo sobre `players.date_of_birth` (NOT NULL), así
+-- que el 18º cumpleaños cambia la respuesta sin trigger ni cron: ese día el tutor
+-- de un `self` ya puede retirarse, que es justo lo que se quiere.
+--
 -- ── LAS DOS MITADES DE LA MISMA REGLA ───────────────────────────────────────
--- 1. ENTRAR — un `self` exige que el jugador YA tenga tutor.
--- 2. SALIR  — no se retira al ÚLTIMO tutor de un jugador que tiene cuenta propia.
+-- 1. ENTRAR — el `self` de un MENOR exige que ya tenga tutor.
+-- 2. SALIR  — no se retira al ÚLTIMO tutor de un MENOR con cuenta propia.
 --
 -- La segunda no es un extra. Un candado que solo vale al entrar no es un
 -- invariante: bastaría crear el `self` con tutor y borrar el tutor después para
@@ -90,7 +109,8 @@ begin
   end if;
 
   -- ── 1) LO QUE ENTRA ───────────────────────────────────────────────────────
-  if tg_op in ('INSERT', 'UPDATE') and new.relation = 'self' then
+  if tg_op in ('INSERT', 'UPDATE') and new.relation = 'self'
+     and public.player_is_minor(new.player_id) then
     if not exists (
       select 1 from public.player_accounts pa
        where pa.player_id = new.player_id
@@ -99,8 +119,9 @@ begin
     ) then
       raise exception 'self_sin_tutor'
         using errcode = '23514',
-              hint = 'La cuenta propia de un jugador exige que ya tenga tutor. '
-                     'El camino es invite_player_self, que lo comprueba.';
+              hint = 'La cuenta propia de un jugador MENOR exige que ya tenga tutor. '
+                     'El camino es invite_player_self, que lo comprueba. Un jugador '
+                     'mayor de edad vinculado a su propia ficha no pasa por aquí.';
     end if;
   end if;
 
@@ -108,7 +129,8 @@ begin
   -- Un tutor "sale" de tres formas, y las tres dejan al jugador igual de solo:
   -- borrando la fila, cambiándole la relación, o moviéndola a otro jugador. Las
   -- tres se miran contra OLD.player_id, que es el jugador que se queda atrás.
-  if tg_op in ('DELETE', 'UPDATE') and old.relation in ('parent', 'guardian') then
+  if tg_op in ('DELETE', 'UPDATE') and old.relation in ('parent', 'guardian')
+     and public.player_is_minor(old.player_id) then
     if tg_op = 'DELETE'
        or new.relation not in ('parent', 'guardian')
        or new.player_id is distinct from old.player_id
@@ -131,10 +153,11 @@ begin
            and pa.relation in ('parent', 'guardian')
            and pa.id <> v_esta_fila
       ) then
-        raise exception 'ultimo_tutor_de_jugador_con_cuenta'
+        raise exception 'ultimo_tutor_de_menor_con_cuenta'
           using errcode = '23514',
-                hint = 'Ese jugador tiene cuenta propia y este es su único tutor. '
-                       'Vincula otro tutor antes de retirar este.';
+                hint = 'Ese jugador es menor, tiene cuenta propia y este es su único '
+                       'tutor. Vincula otro tutor antes de retirar este. Al cumplir '
+                       '18 deja de hacer falta, y la respuesta cambia sola.';
       end if;
     end if;
   end if;
@@ -149,11 +172,22 @@ end;
 $$;
 
 comment on function public.player_accounts_assert_self_con_tutor() is
-  'Punto 7 (camino B): un vínculo relation=''self'' exige que el jugador ya tenga '
-  'tutor, y no se retira al último tutor de un jugador que tiene cuenta propia. '
-  'Excepción: el borrado de cuenta (profiles.deleted_at ya puesto por el paso 5.1 '
-  'de finalize_account_deletion). SECURITY DEFINER porque la RLS de la tabla '
-  'ocultaría al menor la fila de su propio tutor.';
+  'Punto 7 (camino B): el vínculo relation=''self'' de un jugador MENOR exige que ya '
+  'tenga tutor, y no se retira al último tutor de un menor con cuenta propia. El '
+  'self de un jugador ADULTO (mig 20261038) no entra: nunca necesitó tutor. La edad '
+  'la da player_is_minor (MN-1), en vivo sobre players.date_of_birth. Excepción: el '
+  'borrado de cuenta (profiles.deleted_at ya puesto por el paso 5.1 de '
+  'finalize_account_deletion). SECURITY DEFINER porque la RLS de la tabla ocultaría '
+  'al menor la fila de su propio tutor.';
+
+-- ACL — el default de `public` abre EXECUTE a anon y a authenticated POR NOMBRE, así
+-- que un REVOKE de `public` a secas no basta. Sin esto, `anon_execute_cerrado` se pone
+-- rojo, y con razón: una función SECURITY DEFINER ejecutable por anon es superficie
+-- que nadie pidió. (Llamarla directamente fallaría por ser de trigger, pero el censo
+-- mide el permiso, no el resultado — y hace bien.)
+revoke all on function public.player_accounts_assert_self_con_tutor() from public;
+revoke all on function public.player_accounts_assert_self_con_tutor() from anon;
+revoke all on function public.player_accounts_assert_self_con_tutor() from authenticated;
 
 -- El DELETE va primero en la lista de eventos a propósito: `UPDATE OF <cols>` lleva
 -- lista de columnas y dejarlo en medio hace la declaración más difícil de leer.

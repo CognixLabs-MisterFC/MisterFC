@@ -5,9 +5,14 @@
 -- coordinador del equipo. Un `INSERT … relation='self'` a pelo dejaba al menor con
 -- cuenta y sin nadie detrás — medido contra producción con BEGIN…ROLLBACK.
 --
--- La regla tiene DOS mitades y aquí se prueban las dos: un `self` no ENTRA sin
--- tutor, y el último tutor no SALE mientras haya cuenta propia. Un candado que solo
--- vale al entrar no es un invariante.
+-- La regla tiene DOS mitades y aquí se prueban las dos: el `self` de un MENOR no
+-- ENTRA sin tutor, y el último tutor no SALE mientras el menor tenga cuenta propia.
+-- Un candado que solo vale al entrar no es un invariante.
+--
+-- Y manda SOLO sobre el menor. `relation='self'` significa dos cosas: el jugador
+-- ADULTO vinculado a su propia ficha (mig 20261038) y la cuenta propia del menor
+-- (MN-5). El adulto nunca necesitó tutor — T12 y T13 lo fijan, porque la primera
+-- versión de esta migración se lo prohibía y lo cazó la suite entera.
 --
 -- Invariantes:
 --   T0.  El trigger existe (si no, la migración está sin aplicar y el resto miente).
@@ -23,6 +28,8 @@
 --   T10. El trigger ve al tutor aunque quien escribe sea el MENOR (SECURITY DEFINER).
 --   T11. CONTROL NEGATIVO de las dos mitades: sin el trigger, lo de T2 y lo de T5
 --        pasan. Si este bloque falla, aquellos rechazos no los producía el trigger.
+--   T12. Jugador ADULTO con cuenta propia y SIN tutor ⇒ PASA (no es asunto de esta regla).
+--   T13. Retirar al único tutor de un ADULTO con cuenta propia ⇒ PASA (cumplió 18).
 \ir helpers/auth_users.sql
 
 begin;
@@ -51,18 +58,23 @@ insert into public.seasons (id, club_id, label, status) values
 
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
   ('f1970000-0000-aaaa-0000-00000000000a', 'f1970000-cccc-0000-0000-000000000001', 'Menor', 'ConTutor', '2014-03-01'),
-  ('f1970000-0000-bbbb-0000-00000000000b', 'f1970000-cccc-0000-0000-000000000001', 'Menor', 'Pelado',   '2015-06-02');
+  ('f1970000-0000-bbbb-0000-00000000000b', 'f1970000-cccc-0000-0000-000000000001', 'Menor', 'Pelado',   '2015-06-02'),
+  -- El ADULTO. Fecha fija y muy anterior a 18 años: nada de aritmética que dependa
+  -- del calendario del día en que corra la suite.
+  ('f1970000-0000-cccc-0000-00000000000c', 'f1970000-cccc-0000-0000-000000000001', 'Adulto', 'ConFicha', '1995-02-03');
 
 select pg_temp.new_test_user('f1970000-1111-1111-1111-000000000001', 'tutor1-p7@ts.test', '{}'::jsonb);
 select pg_temp.new_test_user('f1970000-1111-1111-1111-000000000002', 'tutor2-p7@ts.test', '{}'::jsonb);
 select pg_temp.new_test_user('f1970000-2222-2222-2222-000000000001', 'menor-a-p7@ts.test', '{}'::jsonb);
 select pg_temp.new_test_user('f1970000-2222-2222-2222-000000000002', 'menor-b-p7@ts.test', '{}'::jsonb);
+select pg_temp.new_test_user('f1970000-3333-3333-3333-000000000001', 'adulto-p7@ts.test', '{}'::jsonb);
 
 insert into public.memberships (id, profile_id, club_id, role) values
   ('f1970000-115e-0000-0000-000000000001', 'f1970000-1111-1111-1111-000000000001', 'f1970000-cccc-0000-0000-000000000001', 'jugador'),
   ('f1970000-115e-0000-0000-000000000002', 'f1970000-1111-1111-1111-000000000002', 'f1970000-cccc-0000-0000-000000000001', 'jugador'),
   ('f1970000-115e-0000-0000-000000000003', 'f1970000-2222-2222-2222-000000000001', 'f1970000-cccc-0000-0000-000000000001', 'jugador'),
-  ('f1970000-115e-0000-0000-000000000004', 'f1970000-2222-2222-2222-000000000002', 'f1970000-cccc-0000-0000-000000000001', 'jugador');
+  ('f1970000-115e-0000-0000-000000000004', 'f1970000-2222-2222-2222-000000000002', 'f1970000-cccc-0000-0000-000000000001', 'jugador'),
+  ('f1970000-115e-0000-0000-000000000005', 'f1970000-3333-3333-3333-000000000001', 'f1970000-cccc-0000-0000-000000000001', 'jugador');
 
 -- ── T3 primero, porque es el que construye el escenario: vincular un tutor a un
 --    jugador que no tiene nada NO lo toca la regla. ──
@@ -233,6 +245,35 @@ begin
 end $$;
 
 reset role;
+
+-- ── T12: EL CASO QUE ESTA MIGRACIÓN NO DEBE TOCAR. Un jugador mayor de edad
+--    vinculado a su propia ficha: es para lo que la mig 20261038 creó `self`, nunca
+--    tuvo tutor y no tiene por qué tenerlo. La primera versión de este trigger se lo
+--    prohibía; lo cazaron 20 ficheros de la suite. ──
+do $$
+begin
+  begin
+    insert into public.player_accounts (player_id, profile_id, relation) values
+      ('f1970000-0000-cccc-0000-00000000000c', 'f1970000-3333-3333-3333-000000000001', 'self');
+  exception when others then
+    raise exception 'FAIL [T12]: un jugador ADULTO no puede vincularse a su propia ficha sin tutor (%). La regla se ha pasado de ancha', sqlerrm;
+  end;
+end $$;
+
+-- ── T13: y su tutor, si lo tuviera, puede retirarse. Es lo que pasa solo el día del
+--    18º cumpleaños: `player_is_minor` se calcula en vivo, sin trigger ni cron. ──
+do $$
+begin
+  insert into public.player_accounts (player_id, profile_id, relation) values
+    ('f1970000-0000-cccc-0000-00000000000c', 'f1970000-1111-1111-1111-000000000002', 'parent');
+  begin
+    delete from public.player_accounts
+     where player_id = 'f1970000-0000-cccc-0000-00000000000c'
+       and profile_id = 'f1970000-1111-1111-1111-000000000002';
+  exception when others then
+    raise exception 'FAIL [T13]: retirar al tutor de un jugador ADULTO con cuenta propia debería pasar (%)', sqlerrm;
+  end;
+end $$;
 
 -- ── T11: CONTROL NEGATIVO, las DOS mitades. Se quita el trigger y se repite lo
 --    que T2 y T5 rechazaron. Si algo de esto fallara, aquellos rechazos los estaría

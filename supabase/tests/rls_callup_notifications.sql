@@ -33,8 +33,11 @@ insert into public.categories (id, club_id, name) values
   ('66ee0000-c100-0000-0000-000000000001', '66ee0000-c000-0000-0000-000000000001', 'Cat Notif');
 insert into public.teams (id, category_id, name, format, color, season) values
   ('66ee0000-c200-0000-0000-000000000001', '66ee0000-c100-0000-0000-000000000001', 'Team Notif', 'F8', '#0EA5E9', '2025-26');
+-- `self` = el jugador vinculado a su PROPIA ficha, que es para lo que la mig
+-- 20261038 creó esa relación: un ADULTO. Desde la mig 20261097000000 el `self`
+-- de un MENOR exige tutor, así que estas fichas nacen con fecha de adulto.
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
-  ('66ee0000-c300-0000-0000-00000000000A', '66ee0000-c000-0000-0000-000000000001', 'Ana', 'Roster', '2012-01-01');
+  ('66ee0000-c300-0000-0000-00000000000A', '66ee0000-c000-0000-0000-000000000001', 'Ana', 'Roster', '1998-01-01');
 insert into public.team_members (team_id, player_id, joined_at) values
   ('66ee0000-c200-0000-0000-000000000001', '66ee0000-c300-0000-0000-00000000000A', '2025-09-01');
 select pg_temp.new_test_user('66ee0000-ca00-0001-0000-000000000000', 'notif-jug@ts.test', '{}'::jsonb);

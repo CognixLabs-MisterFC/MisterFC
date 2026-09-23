@@ -66,8 +66,11 @@ insert into public.memberships (id, profile_id, club_id, role) values
   ('77777777-7777-7777-7777-777777777777', 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'entrenador_ayudante'),
   ('88888888-8888-8888-8888-888888888888', 'aaaaaaa3-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'jugador');
 
+-- `self` = el jugador vinculado a su PROPIA ficha, que es para lo que la mig
+-- 20261038 creó esa relación: un ADULTO. Desde la mig 20261097000000 el `self`
+-- de un MENOR exige tutor, así que estas fichas nacen con fecha de adulto.
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
-  ('99999999-9999-9999-9999-999999999999', '11111111-1111-1111-1111-111111111111', 'Joaquin', 'Jiménez', '2015-03-10');
+  ('99999999-9999-9999-9999-999999999999', '11111111-1111-1111-1111-111111111111', 'Joaquin', 'Jiménez', '1998-01-01');
 
 insert into public.player_accounts (player_id, profile_id, relation) values
   ('99999999-9999-9999-9999-999999999999', 'aaaaaaa3-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'self');
