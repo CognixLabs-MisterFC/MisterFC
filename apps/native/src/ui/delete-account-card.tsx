@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import {
+  getAccountDeletionHoldsFromClient,
   previewAccountDeletionFromClient,
   type AccountDeletionBlocker,
+  type AccountDeletionHold,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
@@ -25,6 +27,13 @@ import { KeyboardModalView } from '@/ui/keyboard';
  * solo importa a quien va a borrarse, y Perfil lo abre todo el mundo cada dos por tres.
  * Si el preview falla NO se sigue: prometer "no se pedirá la supresión de nadie" cuando
  * no lo sabemos sería mentir sobre el alcance de algo irreversible.
+ *
+ * RC-3 — y de esos jugadores, los que IMPIDEN el borrado: menores con cuenta propia (o
+ * con la invitación viva) de los que es el único tutor. Si se fuera, quedarían dentro de
+ * la app sin nadie que les tutele. Con alguno de esos no se puede confirmar, y se dice
+ * quiénes son y cómo arreglarlo él mismo (retirarles el acceso desde su tarjeta). La
+ * regla de verdad la pone la migración del PR-4; esto va desplegado ANTES a propósito,
+ * para que cuando se aplique nadie lea un "no se pudo completar" sin explicación.
  */
 export function DeleteAccountCard() {
   const t = useTranslations('account_deletion');
@@ -34,12 +43,15 @@ export function DeleteAccountCard() {
   const [open, setOpen] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [blockers, setBlockers] = useState<AccountDeletionBlocker[] | null>(null);
+  const [holds, setHolds] = useState<AccountDeletionHold[]>([]);
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const confirmWord = t('confirm_word');
-  const canConfirm = typed.trim().toLowerCase() === confirmWord.toLowerCase() && !busy;
+  // Escribir la palabra no basta si hay hijos que se quedarian sin tutor: eso primero.
+  const canConfirm =
+    typed.trim().toLowerCase() === confirmWord.toLowerCase() && !busy && holds.length === 0;
 
   // SU-4 — aviso que exige Apple: borrar la cuenta NO cancela la suscripción. La clave
   // estuvo VACÍA desde BC-4 a propósito (no había suscripción y no se iba a afirmar algo
@@ -52,16 +64,28 @@ export function DeleteAccountCard() {
     setError(null);
     setTyped('');
     setBlockers(null);
+    setHolds([]);
     setLoadingPreview(true);
     setOpen(true);
     const res = await previewAccountDeletionFromClient(supabase);
-    setLoadingPreview(false);
     if (!res.ok) {
+      setLoadingPreview(false);
+      setError(t('errors.generic'));
+      setOpen(false);
+      return;
+    }
+    // RC-3 — la misma razón que el preview: si no se pudo saber quién se queda sin
+    // tutor, no se sigue. Una lista vacía significa "nada te lo impide" y eso no se
+    // puede afirmar por descarte.
+    const conCuenta = await getAccountDeletionHoldsFromClient(supabase, res.blockers);
+    setLoadingPreview(false);
+    if (!conCuenta.ok) {
       setError(t('errors.generic'));
       setOpen(false);
       return;
     }
     setBlockers(res.blockers);
+    setHolds(conCuenta.holds);
   };
 
   const onConfirm = async () => {
@@ -70,7 +94,19 @@ export function DeleteAccountCard() {
     try {
       const res = await callServerEndpoint('/api/account/deletion/request');
       if (!res.ok) {
-        setError(t('errors.generic'));
+        // RC-3 — el endpoint devuelve el codigo en el cuerpo. Se acepta solo si lo
+        // conocemos, para que un codigo nuevo no acabe pintando una clave que no
+        // existe (mismo criterio que la tarjeta de acceso del jugador). Sin esto,
+        // `hijo_con_cuenta_propia` llegaria como "no se pudo completar" y el tutor no
+        // sabria que tiene arreglo ni cual.
+        let codigo: string | null = null;
+        try {
+          const cuerpo = (await res.json()) as { error?: string };
+          if (cuerpo?.error === 'hijo_con_cuenta_propia') codigo = cuerpo.error;
+        } catch {
+          codigo = null;
+        }
+        setError(t(codigo ? `errors.${codigo}` : 'errors.generic'));
         return;
       }
       const body = (await res.json()) as {
@@ -165,6 +201,21 @@ export function DeleteAccountCard() {
                   {t('kept_title')}
                 </Text>
                 <Text className="text-xs text-zinc-600">{t('kept_body')}</Text>
+
+                {holds.length > 0 ? (
+                  <View className="mt-3 rounded-xl border border-red-300 bg-red-50 px-3 py-2">
+                    <Text className="text-xs font-semibold text-red-800">
+                      {t('holds_title')}
+                    </Text>
+                    {holds.map((h) => (
+                      <Text key={h.playerId} className="mt-1 text-xs text-red-800">
+                        · {h.playerName} · {t(`holds_state.${h.estado}`)}
+                      </Text>
+                    ))}
+                    <Text className="mt-2 text-xs text-red-800">{t('holds_body')}</Text>
+                    <Text className="mt-2 text-xs text-red-800">{t('holds_how')}</Text>
+                  </View>
+                ) : null}
 
                 {blockers && blockers.length > 0 ? (
                   <View className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2">

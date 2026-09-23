@@ -6,6 +6,7 @@ import {
   createSupabaseServerClient,
   getCurrentUser,
   getMyAccountDeletionStatusFromClient,
+  getAccountDeletionHoldsFromClient,
   previewAccountDeletionFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -83,6 +84,13 @@ export default async function AplicacionPage({ params, searchParams }: Props) {
   // no se pueden leer NO se ofrece el botón — decir "no se pedirá la supresión de nadie"
   // cuando no lo sabemos sería peor que no ofrecerlo.
   const deletionPreview = pendingDeletion ? null : await previewAccountDeletionFromClient(supabase);
+
+  // RC-3 — de esos jugadores, los que IMPIDEN el borrado: menores con cuenta propia
+  // (o con la invitación viva) de los que es el único tutor. Misma lectura y mismo
+  // criterio que en Perfil: si no se pudo saber, la tarjeta NO se pinta.
+  const deletionHolds = deletionPreview?.ok
+    ? await getAccountDeletionHoldsFromClient(supabase, deletionPreview.blockers)
+    : null;
 
   const stores = [
     { href: APP_STORE_URL, label: t('download_app_store') },
@@ -182,7 +190,7 @@ export default async function AplicacionPage({ params, searchParams }: Props) {
       )}
 
       {/* Apple 5.1.1(v): el borrado sigue alcanzable DESDE el corte. */}
-      {deletionPreview?.ok && (
+      {deletionPreview?.ok && deletionHolds?.ok && (
         <Card className="border-destructive/40">
           <CardHeader>
             <CardTitle className="text-destructive text-base">{tDeletion('card_title')}</CardTitle>
@@ -190,6 +198,7 @@ export default async function AplicacionPage({ params, searchParams }: Props) {
           <CardContent>
             <DeleteAccountCard
               locale={locale}
+              holds={deletionHolds.holds}
               blockers={deletionPreview.blockers.map((b) => ({
                 playerId: b.playerId,
                 playerName: b.playerName,

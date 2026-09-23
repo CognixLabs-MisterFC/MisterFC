@@ -5512,6 +5512,13 @@
     "kept_body": "Els missatges que vas escriure es queden amb el seu contingut, atribuïts a un usuari eliminat. Els consentiments que vas signar es conserven com a prova legal. L'historial esportiu del jugador (partits, assistència, valoracions) és del club i es conserva amb el seu nom.",
     "blockers_title": "Eres l'únic tutor de:",
     "blockers_body": "En eliminar el teu compte també es demanarà la supressió de les seues dades, i la decidirà la direcció del club. El teu compte s'eliminarà com a molt tard en 30 dies, decidisca el que decidisca el club.",
+    "holds_title": "Abans has de retirar l’accés a:",
+    "holds_body": "Estos fills entren amb el seu propi compte i eres el seu únic tutor. Si te’n vas, es quedarien dins de l’app sense ningú que els tutele.",
+    "holds_how": "Pots retirar-los l’accés tu mateix, en la targeta «Accés del jugador» de cada fill. Després podràs eliminar el teu compte.",
+    "holds_state": {
+      "linked": "ja entra amb el seu compte",
+      "invited": "invitació enviada, sense acceptar"
+    },
     "subscription_note": "Eliminar el teu compte no cancel·la la teua subscripció. Si en tens una activa, cancel·la-la també en la teua botiga: en iPhone, Ajustos → el teu nom → Subscripcions; en Android, Google Play → Pagaments i subscripcions.",
     "confirm_label": "Escriu {word} per a confirmar",
     "confirm_word": "ELIMINAR",
@@ -5528,7 +5535,8 @@
       "no_session": "La teua sessió ha caducat. Torna a entrar.",
       "not_pending": "No hi ha cap eliminació en curs.",
       "admin_slot_taken": "El club ja té un altre administrador, així que no podem tornar-te el teu lloc. Parla amb el club.",
-      "generic": "No s'ha pogut completar. Torna-ho a intentar."
+      "generic": "No s'ha pogut completar. Torna-ho a intentar.",
+      "hijo_con_cuenta_propia": "Tens fills que entren amb el seu propi compte i eres el seu únic tutor. Retira’ls l’accés abans d’eliminar el teu."
     },
     "offline": "Sense connexió no es pot cancel·lar. Intenta-ho quan tornes a tindre xarxa."
   },

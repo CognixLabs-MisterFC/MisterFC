@@ -25,12 +25,19 @@ type DbClient = SupabaseClient<Database>;
  *  · `not_pending`      — cancelar sin borrado en curso (o ya completado/cancelado).
  *  · `admin_slot_taken` — al cancelar, el club ya tiene otro `admin_club` activo, así que
  *                         no se puede reactivar la membership. Hay que hablar con el club.
+ *  · `hijo_con_cuenta_propia` — RC-4: es el único tutor de un menor que tiene su propia
+ *                         cuenta (o una invitación viva). Primero la retira —puede él
+ *                         solo, desde la tarjeta de acceso del jugador— y luego se va.
+ *                         Esta pantalla lo avisa ANTES de pulsar (ver `holds.ts`); el
+ *                         código está mapeado también para el hueco entre que se pinta
+ *                         y se confirma, y para cualquier otro llamante de la RPC.
  *  · `generic`          — cualquier otra cosa; `raw` lleva el error crudo para logarlo.
  */
 export type AccountDeletionErrorCode =
   | 'no_session'
   | 'not_pending'
   | 'admin_slot_taken'
+  | 'hijo_con_cuenta_propia'
   | 'generic';
 
 export type AccountDeletionRequestResult =
@@ -45,6 +52,7 @@ export type AccountDeletionCancelResult =
 function mapError(error: { message?: string } | null): AccountDeletionErrorCode {
   const msg = (error?.message ?? '').toLowerCase();
   if (msg.includes('admin_slot_taken')) return 'admin_slot_taken';
+  if (msg.includes('hijo_con_cuenta_propia')) return 'hijo_con_cuenta_propia';
   if (msg.includes('not_pending')) return 'not_pending';
   if (msg.includes('no_session')) return 'no_session';
   return 'generic';

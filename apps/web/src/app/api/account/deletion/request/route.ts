@@ -37,7 +37,12 @@ export async function POST(req: Request) {
 
   const res = await requestAccountDeletionFromClient(auth.supabase, reason);
   if (!res.ok) {
-    const status = res.error === 'no_session' ? 401 : 500;
+    // RC-3 — `hijo_con_cuenta_propia` es un RECHAZO DE NEGOCIO, no una averia: sale
+    // con 409 y no con 500, para que no se cuente como incidencia y para que la
+    // nativa lo distinga. El codigo viaja en el cuerpo, que es lo que la pantalla
+    // traduce.
+    const status =
+      res.error === 'no_session' ? 401 : res.error === 'hijo_con_cuenta_propia' ? 409 : 500;
     return NextResponse.json({ error: res.error }, { status });
   }
 

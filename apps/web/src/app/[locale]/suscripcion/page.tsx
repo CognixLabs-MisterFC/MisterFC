@@ -5,6 +5,7 @@ import { Smartphone } from 'lucide-react';
 import {
   createSupabaseServerClient,
   getCurrentUser,
+  getAccountDeletionHoldsFromClient,
   previewAccountDeletionFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -74,6 +75,13 @@ export default async function SuscripcionPage({ params }: Props) {
   // lo sabemos sería peor que no ofrecerlo.
   const deletionPreview = await previewAccountDeletionFromClient(supabase);
 
+  // RC-3 — de esos jugadores, los que IMPIDEN el borrado: menores con cuenta propia
+  // (o con la invitación viva) de los que es el único tutor. Misma lectura y mismo
+  // criterio que en Perfil: si no se pudo saber, la tarjeta NO se pinta.
+  const deletionHolds = deletionPreview.ok
+    ? await getAccountDeletionHoldsFromClient(supabase, deletionPreview.blockers)
+    : null;
+
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-6 px-4 py-10">
       <div className="space-y-2">
@@ -130,7 +138,7 @@ export default async function SuscripcionPage({ params }: Props) {
       </p>
 
       {/* Apple 5.1.1(v): el borrado sigue alcanzable DESDE el muro. */}
-      {deletionPreview.ok && (
+      {deletionPreview.ok && deletionHolds?.ok && (
         <Card className="border-destructive/40">
           <CardHeader>
             <CardTitle className="text-destructive text-base">
@@ -140,6 +148,7 @@ export default async function SuscripcionPage({ params }: Props) {
           <CardContent>
             <DeleteAccountCard
               locale={locale}
+              holds={deletionHolds.holds}
               blockers={deletionPreview.blockers.map((b) => ({
                 playerId: b.playerId,
                 playerName: b.playerName,
