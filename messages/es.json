@@ -5512,6 +5512,13 @@
     "kept_body": "Los mensajes que escribiste se quedan con su contenido, atribuidos a un usuario eliminado. Los consentimientos que firmaste se conservan como prueba legal. El historial deportivo del jugador (partidos, asistencia, valoraciones) es del club y se conserva con su nombre.",
     "blockers_title": "Eres el único tutor de:",
     "blockers_body": "Al eliminar tu cuenta se pedirá también la supresión de sus datos, y la decidirá la dirección del club. Tu cuenta se eliminará como muy tarde en 30 días, decida lo que decida el club.",
+    "holds_title": "Antes tienes que retirar su acceso a:",
+    "holds_body": "Estos hijos entran con su propia cuenta y eres su único tutor. Si te vas, se quedarían dentro de la app sin nadie que les tutele.",
+    "holds_how": "Puedes retirarles el acceso tú mismo, en la tarjeta «Acceso del jugador» de cada hijo. Después podrás eliminar tu cuenta.",
+    "holds_state": {
+      "linked": "ya entra con su cuenta",
+      "invited": "invitación enviada, sin aceptar"
+    },
     "subscription_note": "Eliminar tu cuenta no cancela tu suscripción. Si tienes una activa, cancélala también en tu tienda: en iPhone, Ajustes → tu nombre → Suscripciones; en Android, Google Play → Pagos y suscripciones.",
     "confirm_label": "Escribe {word} para confirmar",
     "confirm_word": "ELIMINAR",
@@ -5528,7 +5535,8 @@
       "no_session": "Tu sesión ha caducado. Vuelve a entrar.",
       "not_pending": "No hay ninguna eliminación en curso.",
       "admin_slot_taken": "El club ya tiene otro administrador, así que no podemos devolverte tu puesto. Habla con el club.",
-      "generic": "No se pudo completar. Inténtalo de nuevo."
+      "generic": "No se pudo completar. Inténtalo de nuevo.",
+      "hijo_con_cuenta_propia": "Tienes hijos que entran con su propia cuenta y eres su único tutor. Retírales el acceso antes de eliminar la tuya."
     },
     "offline": "Sin conexión no se puede cancelar. Inténtalo cuando vuelvas a tener red."
   },

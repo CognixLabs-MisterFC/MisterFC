@@ -5512,6 +5512,13 @@
     "kept_body": "The messages you wrote stay with their content, attributed to a deleted user. The consents you signed are kept as legal evidence. The player's sporting history (matches, attendance, assessments) belongs to the club and is kept under their name.",
     "blockers_title": "You are the only guardian of:",
     "blockers_body": "Deleting your account also requests the erasure of their data, which the club's management decides. Your account will be deleted within 30 days at the latest, whatever the club decides.",
+    "holds_title": "First you need to remove access for:",
+    "holds_body": "These children sign in with their own account and you are their only guardian. If you leave, they would stay inside the app with nobody looking after them.",
+    "holds_how": "You can remove their access yourself, in each child’s “Player access” card. After that you will be able to delete your account.",
+    "holds_state": {
+      "linked": "already signs in with their account",
+      "invited": "invitation sent, not accepted yet"
+    },
     "subscription_note": "Deleting your account does not cancel your subscription. If you have an active one, cancel it in your store as well: on iPhone, Settings → your name → Subscriptions; on Android, Google Play → Payments and subscriptions.",
     "confirm_label": "Type {word} to confirm",
     "confirm_word": "DELETE",
@@ -5528,7 +5535,8 @@
       "no_session": "Your session has expired. Please sign in again.",
       "not_pending": "There is no deletion in progress.",
       "admin_slot_taken": "The club already has another administrator, so we cannot restore your role. Please contact the club.",
-      "generic": "Could not complete. Please try again."
+      "generic": "Could not complete. Please try again.",
+      "hijo_con_cuenta_propia": "You have children who sign in with their own account and you are their only guardian. Remove their access before deleting yours."
     },
     "offline": "You cannot cancel while offline. Try again when you are back online."
   },

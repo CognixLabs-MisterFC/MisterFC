@@ -5,5 +5,6 @@
  */
 export * from './actions';
 export * from './finalize';
+export * from './holds';
 export * from './reads';
 export * from './sweeps';

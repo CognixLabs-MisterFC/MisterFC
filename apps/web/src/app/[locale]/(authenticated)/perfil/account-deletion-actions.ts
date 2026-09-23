@@ -20,7 +20,7 @@ import { finalizeAccountDeletionWeb } from '@/lib/account-deletion';
 
 export type RequestAccountDeletionState =
   | { ok: true; completed: boolean; blockingPlayers: number }
-  | { ok: false; error: 'no_session' | 'generic' };
+  | { ok: false; error: 'no_session' | 'hijo_con_cuenta_propia' | 'generic' };
 
 /**
  * Pide el borrado. Si no quedaba nadie bloqueando, se remata aquí mismo y se cierra la
@@ -37,7 +37,16 @@ export async function requestAccountDeletion(
 
   const res = await requestAccountDeletionFromClient(supabase, reason);
   if (!res.ok) {
-    return { ok: false, error: res.error === 'no_session' ? 'no_session' : 'generic' };
+    // RC-3 — `hijo_con_cuenta_propia` viaja con su nombre. La pantalla ya lo avisa
+    // ANTES de pulsar (ver `holds`), pero entre que se pinta y se confirma el estado
+    // puede quedar rancio —el otro tutor invitando al crio a la vez, por ejemplo—, y
+    // ahi el rechazo tiene que explicarse solo. Es la misma razon por la que MN-9
+    // conserva el `already_linked` de la RPC aunque la tarjeta ya no ofrezca invitar.
+    if (res.error === 'no_session') return { ok: false, error: 'no_session' };
+    if (res.error === 'hijo_con_cuenta_propia') {
+      return { ok: false, error: 'hijo_con_cuenta_propia' };
+    }
+    return { ok: false, error: 'generic' };
   }
 
   let completed = false;

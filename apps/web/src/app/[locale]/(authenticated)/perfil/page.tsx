@@ -11,6 +11,7 @@ import {
   type SelfAccountStatus,
   getPlayerMedicalFromClient,
   getMyPhoneFromClient,
+  getAccountDeletionHoldsFromClient,
   previewAccountDeletionFromClient,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -63,6 +64,18 @@ export default async function PerfilPage({ params, searchParams }: Props) {
   // nadie" cuando no lo sabemos sería peor que no ofrecer el botón (core devuelve
   // ok:false justo para poder distinguirlo).
   const deletionPreview = await previewAccountDeletionFromClient(supabase);
+
+  // RC-3 — de esos jugadores, los que IMPIDEN el borrado: menores con cuenta propia (o
+  // con la invitación todavía viva) de los que es el único tutor. Si se fuera, quedarían
+  // dentro de la app sin nadie que les tutele. La regla la pondrá la migración del PR-4;
+  // esto la avisa antes de pulsar, y se despliega antes a propósito.
+  //
+  // Si la lectura falla NO se pinta la tarjeta, por lo mismo que el preview: decirle
+  // «nada te lo impide» a quien no sabemos si deja a un menor solo no es enseñar menos,
+  // es enseñar otra cosa.
+  const deletionHolds = deletionPreview.ok
+    ? await getAccountDeletionHoldsFromClient(supabase, deletionPreview.blockers)
+    : ({ ok: false, raw: null } as const);
 
   // F14-13 — consentimientos del tutor en el club activo (estado latest-wins).
   const { data: consentRows } = await supabase.rpc('get_tutor_consents', {
@@ -397,7 +410,7 @@ export default async function PerfilPage({ params, searchParams }: Props) {
 
       {/* Eliminar la cuenta. Al FINAL del todo y en su propia tarjeta: es lo más
           irreversible que un usuario puede hacer sobre sí mismo. */}
-      {deletionPreview.ok && (
+      {deletionPreview.ok && deletionHolds.ok && (
         <Card className="border-destructive/40">
           <CardHeader>
             <CardTitle className="text-destructive">{tAccountDeletion('card_title')}</CardTitle>
@@ -409,6 +422,12 @@ export default async function PerfilPage({ params, searchParams }: Props) {
                 playerId: b.playerId,
                 playerName: b.playerName,
                 clubName: b.clubName,
+              }))}
+              holds={deletionHolds.holds.map((h) => ({
+                playerId: h.playerId,
+                playerName: h.playerName,
+                clubName: h.clubName,
+                estado: h.estado,
               }))}
             />
           </CardContent>
