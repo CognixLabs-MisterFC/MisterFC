@@ -38,6 +38,9 @@ const CONFLICT = new Set([
   'consents_required',
   'no_active_season',
   'erased',
+  // RC-A. Es un gate de estado como los de arriba —la peticion es valida, el estado de
+  // quien invita no la permite—, asi que sale 409 y no 400.
+  'account_deletion_pending',
 ]);
 
 export async function POST(req: Request) {

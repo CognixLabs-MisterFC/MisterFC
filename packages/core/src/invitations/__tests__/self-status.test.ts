@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../supabase/types';
+import type { SelfInviteError } from '../self-invite';
 import {
   getSelfAccountStatusFromClient,
   isSelfAccountBlocker,
@@ -159,6 +160,46 @@ describe('los textos del bloque invite_self existen en los tres idiomas', () => 
         expect(typeof texto, `falta invite_self.${clave} en ${loc}.json`).toBe('string');
         expect((texto as string).trim().length, `invite_self.${clave} vacia en ${loc}`)
           .toBeGreaterThan(0);
+      }
+    });
+  }
+
+  /**
+   * Y lo mismo para los ERRORES de la RPC. El diálogo de la web pinta
+   * `t(`errors.${state.error}`)` SIN lista de conocidos delante, asi que una clave que
+   * falte no degrada a un texto generico: se ve la clave cruda.
+   *
+   * `TODOS_LOS_ERRORES` no puede derivarse de un tipo —hace falta una lista en tiempo
+   * de ejecucion—, asi que se escribe a mano y se ata por los dos lados: `satisfies`
+   * impide meter uno que no exista, y `Falta` no compila si core anade uno y aqui no
+   * se lista. Una lista escrita dos veces sin esa atadura es lo que dejo corta la
+   * union de `InviteSelfState` en la web.
+   */
+  const TODOS_LOS_ERRORES = [
+    'forbidden',
+    'erased',
+    'already_linked',
+    'email_relation_conflict',
+    'consents_required',
+    'no_active_season',
+    'account_deletion_pending',
+    'email_invalid',
+    'generic',
+  ] as const satisfies readonly SelfInviteError[];
+
+  type Falta = Exclude<SelfInviteError, (typeof TODOS_LOS_ERRORES)[number]>;
+  const _sinOlvidos: Falta extends never ? true : false = true;
+
+  for (const loc of LOCALES) {
+    it(`${loc}: ningun error de la RPC se queda sin frase`, () => {
+      expect(_sinOlvidos).toBe(true);
+      // `email_too_long` no es un gate de la RPC: lo pone el esquema del formulario
+      // antes de llamarla, y se pinta por el mismo sitio.
+      for (const err of [...TODOS_LOS_ERRORES, 'email_too_long']) {
+        const texto = textoDe(loc, `errors.${err}`);
+        expect(typeof texto, `falta invite_self.errors.${err} en ${loc}.json`).toBe(
+          'string',
+        );
       }
     });
   }

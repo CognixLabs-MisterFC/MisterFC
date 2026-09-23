@@ -743,6 +743,8 @@ type AccessOutcome =
   | 'consents_required'
   | 'no_active_season'
   | 'erased'
+  // RC-A — quien invita tiene un borrado de su propia cuenta en curso.
+  | 'account_deletion_pending'
   | 'error';
 
 function AccessCard({
@@ -809,6 +811,7 @@ function AccessCard({
           'consents_required',
           'no_active_season',
           'erased',
+          'account_deletion_pending',
         ];
         const got = json.error as AccessOutcome | undefined;
         setOutcome(got && known.includes(got) ? got : 'error');
