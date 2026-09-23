@@ -1,9 +1,7 @@
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { isAllowedInArea } from '@misterfc/core';
 import { useApp } from '@/auth/context';
-import { useActivePlayer } from '@/auth/active-player';
 import { NEUTRAL_COLOR, type ClubTheme } from '@/theme';
 import { useTranslations } from '@/locale/provider';
 import { hrefFor, type ChromeArea, type MenuDef } from './config';
@@ -44,7 +42,13 @@ export function navI18nKey(labelKey: string): string {
  * `@react-navigation/drawer` ni gesture-handler (no resolubles bajo pnpm
  * estricto → riesgo de bundle). Lista el RESTO de pantallas del rol (las que no
  * están en la barra), el selector de club (si el usuario tiene más de uno) y
- * cerrar sesión. Todas las pantallas son placeholders.
+ * cerrar sesión.
+ *
+ * El MODO TUTOR ya no está aquí. Vivía en este menú porque staff y dirección llegaban
+ * a 6 pestañas con el conmutador y no cabía una séptima; pero eso dejaba el mismo
+ * gesto —"quién soy ahora mismo"— repartido en dos sitios: un botón en la barra para
+ * Club/Míster y una entrada escondida en el menú para Familia. Ahora familia es la
+ * tercera parada de ESE botón (`AREA_SWITCH_LOOK` en config), no una pestaña nueva.
  */
 export function AppMenu({
   visible,
@@ -60,35 +64,12 @@ export function AppMenu({
   onClose: () => void;
 }) {
   const insets = useSafeAreaInsets();
-  const { kind, clubs, activeClub, setActiveClub, signOut } = useApp();
-  const { players } = useActivePlayer();
+  const { clubs, activeClub, setActiveClub, signOut } = useApp();
   const t = useTranslations(''); // claves con ruta completa (nav labels compartidos + shell.*)
 
   const go = (name: string) => {
     onClose();
     router.push(hrefFor(area, name));
-  };
-
-  // MODO TUTOR — la IDA al área de familia de quien tiene hijos vinculados y no es
-  // familia de nacimiento. Vive aquí y no en la barra porque staff y dirección ya
-  // llegan a 6 pestañas con el conmutador de S2-2 y no cabe una séptima; y porque el
-  // menú es donde ya se decide "quién soy ahora mismo" (el selector de club).
-  //
-  // Esto NO es el gate: la puerta la cierra `useAreaGuard`. Aquí solo se decide si se
-  // PINTA la entrada, con la MISMA regla de core para que no digan cosas distintas.
-  const showTutorMode =
-    area !== 'family' &&
-    isAllowedInArea('family', {
-      kind,
-      role: activeClub?.role ?? null,
-      hasLinkedPlayers: players.length > 0,
-    });
-
-  // `replace` y no `push`: cambiar de modo no apila áreas (igual que el conmutador de
-  // la barra). Con push, el atrás de Android devolvería a la carcasa anterior.
-  const goTutorMode = () => {
-    onClose();
-    router.replace(hrefFor('family', 'index'));
   };
 
   return (
@@ -129,25 +110,6 @@ export function AppMenu({
               <Text className="text-base text-zinc-800">{t(navI18nKey(item.labelKey))}</Text>
             </Pressable>
           ))}
-
-          {/* Modo tutor: entrada al área de familia (solo con hijos vinculados). */}
-          {showTutorMode && (
-            <View className="mt-4 px-4">
-              <Text className="mb-2 text-xs uppercase tracking-wide text-zinc-400">
-                {t('shell.switch_mode')}
-              </Text>
-              <Pressable
-                onPress={goTutorMode}
-                accessibilityRole="button"
-                className="flex-row items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 active:bg-zinc-50"
-              >
-                <Text className="text-base">👪</Text>
-                <Text className="flex-1 text-sm text-zinc-700" numberOfLines={1}>
-                  {t('nav.familia')}
-                </Text>
-              </Pressable>
-            </View>
-          )}
 
           {/* Selector de club: solo si pertenece a más de uno. */}
           {clubs.length > 1 && (

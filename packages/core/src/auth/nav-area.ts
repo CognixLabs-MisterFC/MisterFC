@@ -48,6 +48,19 @@ export type NavAudienceArea = NavArea | 'spectator';
 export type NavUserKind = 'member' | 'spectator' | 'none';
 
 /**
+ * Quién pregunta: el tipo de usuario, su rol en el club activo y las dos banderas
+ * que ABREN un área extra (equipos como staff, hijos vinculados). Los dos opcionales
+ * ausentes significan "no", nunca "no lo sé": quien no los pase obtiene el 1:1
+ * rol↔área de siempre.
+ */
+export type NavAudience = {
+  kind: NavUserKind;
+  role: Role | null;
+  hasStaffTeams?: boolean;
+  hasLinkedPlayers?: boolean;
+};
+
+/**
  * O2-2 — Regla PURA de acceso a un área de carcasa (defensa en profundidad: cada
  * layout de área la usa para protegerse a sí mismo, además del gatekeeper).
  *
@@ -80,12 +93,7 @@ export type NavUserKind = 'member' | 'spectator' | 'none';
  */
 export function isAllowedInArea(
   area: NavAudienceArea,
-  audience: {
-    kind: NavUserKind;
-    role: Role | null;
-    hasStaffTeams?: boolean;
-    hasLinkedPlayers?: boolean;
-  }
+  audience: NavAudience
 ): boolean {
   if (area === 'spectator') return audience.kind === 'spectator';
   if (audience.kind !== 'member' || audience.role == null) return false;
@@ -97,4 +105,48 @@ export function isAllowedInArea(
   }
   // Modo tutor: quien tiene hijos vinculados → también 'family'.
   return area === 'family' && audience.hasLinkedPlayers === true;
+}
+
+/**
+ * ORDEN de la rotación del CONMUTADOR de área (el único botón de la barra que
+ * cambia de carcasa). Es un anillo: se pulsa y se pasa a la siguiente área que el
+ * usuario TIENE, dando la vuelta al llegar al final.
+ *
+ * El orden es fijo y arbitrario en el buen sentido —lo que importa es que sea
+ * SIEMPRE el mismo—: el botón tiene que estar en el mismo sitio y llevar al mismo
+ * sitio en cada arranque, o deja de ser un gesto y pasa a ser una lotería.
+ *
+ * 'spectator' no está: el seguidor no rota (no tiene otra carcasa a la que ir).
+ */
+export const AREA_SWITCH_ORDER: readonly NavArea[] = ['direction', 'staff', 'family'];
+
+/**
+ * Las áreas entre las que ESTE usuario rota, en el orden del anillo.
+ *
+ * Se deriva de `isAllowedInArea`, la MISMA regla que usa el guard que deja entrar.
+ * No es una comodidad: si la barra ofreciera un área que el guard rechaza, el botón
+ * llevaría a un rebote al gatekeeper —sin error y sin pista— y si ofreciera menos de
+ * las que el guard permite, habría carcasas inalcanzables sin que nada lo avise.
+ */
+export function areaSwitchRing(audience: NavAudience): NavArea[] {
+  return AREA_SWITCH_ORDER.filter((area) => isAllowedInArea(area, audience));
+}
+
+/**
+ * Siguiente área del anillo desde `current`, o `null` si no hay conmutador.
+ *
+ * Devuelve null —y el botón no se pinta— en tres casos, todos legítimos:
+ *  · el usuario solo tiene UNA área (rotar sobre sí mismo no es rotar);
+ *  · está en un área que no rota ('spectator');
+ *  · está en un área que no le pertenece (no debería pasar: el guard va antes).
+ */
+export function nextAreaInSwitch(
+  current: NavAudienceArea,
+  audience: NavAudience
+): NavArea | null {
+  const ring = areaSwitchRing(audience);
+  if (ring.length < 2) return null;
+  const i = ring.indexOf(current as NavArea);
+  if (i < 0) return null;
+  return ring[(i + 1) % ring.length] ?? null;
 }

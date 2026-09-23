@@ -3,7 +3,7 @@ import { Tabs, useRouter } from 'expo-router';
 import {
   getInboxFromClient,
   countUnreadConversations,
-  navAreaForRole,
+  nextAreaInSwitch,
   profileScopedCacheKey,
   type InboxItem,
   type Role,
@@ -11,14 +11,16 @@ import {
 import { useChrome, AppHeader } from './chrome';
 import {
   AREA_TABS,
-  AREA_SWITCH_TAB,
-  FAMILY_SWITCH_TAB,
+  AREA_SWITCH_LOOK,
+  SWITCH_TAB_NAME,
   allMenuFiles,
+  hasSwitchTab,
   hrefFor,
   type ChromeArea,
 } from './config';
 import { navI18nKey } from './menu';
 import { useApp } from '@/auth/context';
+import { useActivePlayer } from '@/auth/active-player';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { useTranslations } from '@/locale/provider';
@@ -63,42 +65,34 @@ export function AreaNavigator({ area }: { area: ChromeArea }) {
   // Badge verde de mensajes sin leer (familia, staff y dirección; mismo criterio).
   const unreadConversations = useUnreadConversations();
 
-  // Pestaña CONMUTADOR de área. Decide en runtime si esta barra la lleva y a quién:
-  //  · DIRECCIÓN → "Míster" (a /staff) solo si el director tiene equipos (hasStaffTeams).
-  //  · STAFF → "Club" (a /direction) solo si el hogar del usuario es dirección
-  //    (director/admin); un entrenador/coordinador NO lo ve (el guard lo rebotaría).
-  //  · FAMILIA → vuelta al HOGAR en modo tutor ("Club" o "Míster" según el rol). Estar
-  //    montando esta barra ya implica que el AreaGuard permitió el área, así que aquí
-  //    basta con mirar el hogar: si es familia, no hay a dónde volver.
+  // Pestaña CONMUTADOR de área: UN botón que ROTA por las áreas que este usuario
+  // tiene (dirección → míster → familia → dirección). Quién tiene qué y qué viene
+  // después lo decide core con la MISMA regla que el guard que deja entrar: si la
+  // barra ofreciera un área que el guard rechaza, el botón rebotaría al gatekeeper
+  // sin error ni pista.
+  //
+  // La lista de hijos llega en asíncrono, así que en el primer render un tutor aún
+  // no cuenta como tal y el botón puede nombrar la siguiente parada sin familia.
+  // Dura lo que la consulta; esperar a que asiente retrasaría el conmutador de
+  // Míster/Club a TODO el mundo, y eso sí sería un paso atrás.
   const router = useRouter();
-  const { activeClub, hasStaffTeams } = useApp();
+  const { kind, activeClub, hasStaffTeams } = useApp();
+  const { players } = useActivePlayer();
   const role = (activeClub?.role ?? null) as Role | null;
-  const home = role != null ? navAreaForRole(role) : null;
-  const homeIsDirection = home === 'direction';
-  // OJO — en familia el descriptor se resuelve SIEMPRE (aunque no se muestre): el
-  // fichero `rol` existe, y una `Tabs.Screen` sin declarar la sacaría como 5ª pestaña
-  // a TODA la familia. Cuando no toca, se declara igualmente con href:null.
-  const switchTab =
-    area === 'family'
-      ? home === 'staff'
-        ? FAMILY_SWITCH_TAB.staff
-        : FAMILY_SWITCH_TAB.direction
-      : AREA_SWITCH_TAB[area];
-  const showSwitch =
-    switchTab != null &&
-    (area === 'direction'
-      ? hasStaffTeams
-      : area === 'staff'
-        ? homeIsDirection
-        : area === 'family'
-          ? home === 'staff' || home === 'direction'
-          : false);
+  const nextArea = nextAreaInSwitch(area, {
+    kind,
+    role,
+    hasStaffTeams,
+    hasLinkedPlayers: players.length > 0,
+  });
+  // El botón dice a dónde LLEVA, no dónde estás.
+  const switchLook = nextArea ? AREA_SWITCH_LOOK[nextArea] : null;
+  const switchLabel = switchLook ? t(navI18nKey(switchLook.labelKey)) : '';
   // Con 6 pestañas (las 5 del área + el conmutador) los rótulos se estrechan; bajamos
   // la fuente a 9 SOLO en esas dos barras para que "Calendario" (10 car.) no se corte.
   // Sin conmutador (5 pestañas) no se toca — y familia CON conmutador son 5, así que
   // tampoco: su barra queda igual de ancha que la de staff.
-  const shrinkLabels = showSwitch && area !== 'family';
-  const switchLabel = switchTab ? t(navI18nKey(switchTab.labelKey)) : '';
+  const shrinkLabels = nextArea != null && area !== 'family';
 
   return (
     <Tabs
@@ -146,28 +140,30 @@ export function AreaNavigator({ area }: { area: ChromeArea }) {
       ))}
 
       {/* Tab conmutador (último, a la derecha de Mensajes). El fichero-ruta existe
-          siempre; cuando NO toca mostrarlo se declara href:null (no sale en la barra).
-          Al pulsarlo, preventDefault + router.replace al área destino (sin apilar). */}
-      {switchTab && (
+          en las tres áreas que rotan; cuando NO toca mostrarlo se declara href:null
+          (no sale en la barra, pero queda declarado: sin eso, expo-router lo sacaría
+          como pestaña de más). Al pulsarlo, preventDefault + router.replace al área
+          siguiente (sin apilar). */}
+      {hasSwitchTab(area) && (
         <Tabs.Screen
-          name={switchTab.name}
+          name={SWITCH_TAB_NAME}
           options={
-            showSwitch
+            nextArea && switchLook
               ? {
                   title: switchLabel,
                   tabBarLabel: switchLabel,
                   tabBarIcon: ({ size }) => (
-                    <Text style={{ fontSize: size ?? 20 }}>{switchTab.icon}</Text>
+                    <Text style={{ fontSize: size ?? 20 }}>{switchLook.icon}</Text>
                   ),
                 }
               : { href: null }
           }
           listeners={
-            showSwitch
+            nextArea
               ? {
                   tabPress: (e) => {
                     e.preventDefault();
-                    router.replace(hrefFor(switchTab.targetArea, 'index'));
+                    router.replace(hrefFor(nextArea, 'index'));
                   },
                 }
               : undefined
