@@ -1,4 +1,4 @@
-import type { Role } from '@misterfc/core';
+import type { NavArea, Role } from '@misterfc/core';
 
 /**
  * O2-2 — Config de NAVEGACIÓN por área (la carcasa). Fuente única de verdad de
@@ -151,48 +151,45 @@ export const AREA_TABS: Record<ChromeArea, TabDef[]> = {
 };
 
 /**
- * S2-2 director-entrenador — pestaña CONMUTADOR de área. Un director/admin con equipos
- * asignados alterna entre su hogar (dirección) y el modo entrenador (staff):
- *  · en la barra de DIRECCIÓN, "Míster" → salta a /staff (solo si hasStaffTeams);
- *  · en la barra de STAFF, "Club" → vuelve a /direction (solo si su hogar es dirección).
+ * CONMUTADOR DE ÁREA — la pestaña que cambia de carcasa. UN solo botón, siempre el
+ * último de la barra, que ROTA por las áreas que el usuario tiene: dirección →
+ * míster → familia → dirección. El anillo (quién tiene qué y qué viene después) lo
+ * decide `nextAreaInSwitch` de core, la misma regla que usa el guard que deja entrar;
+ * aquí solo vive su ASPECTO.
+ *
  * NO es una pantalla: el press se intercepta en `navigator.tsx` con `router.replace`
- * (sin apilar áreas). El fichero-ruta (`mister`/`club`) existe como stub-redirect. La
- * VISIBILIDAD (y a quién) la decide `navigator.tsx` en runtime (rol + hasStaffTeams);
- * cuando no toca mostrarla, se declara `href:null`. Family/espectador no tienen.
+ * (sin apilar áreas). El fichero de ruta existe porque expo-router exige uno por ruta
+ * declarada, y se llama igual en las tres áreas —`rol.tsx`— porque su destino ya no es
+ * fijo: el mismo botón de dirección lleva a míster o a familia según el usuario. Un
+ * fichero llamado `mister.tsx` que a veces dice "Familia" sería una trampa para quien
+ * lo lea dentro de seis meses.
+ *
+ * La VISIBILIDAD la decide `navigator.tsx` en runtime; cuando no toca mostrarla, se
+ * declara igualmente con `href:null` — una `Tabs.Screen` sin declarar saldría como
+ * pestaña de más en la barra de todo el mundo, sin error que lo avise.
  */
-export type SwitchTabDef = {
-  name: string;
-  labelKey: string;
-  icon: string;
-  targetArea: ChromeArea;
-};
-export const AREA_SWITCH_TAB: Partial<Record<ChromeArea, SwitchTabDef>> = {
-  direction: { name: 'mister', labelKey: 'nav.mister', icon: '🎽', targetArea: 'staff' },
-  staff: { name: 'club', labelKey: 'nav.club', icon: '🛡️', targetArea: 'direction' },
+export const SWITCH_TAB_NAME = 'rol';
+
+/**
+ * Rótulo e icono del conmutador, por área de DESTINO: el botón dice a dónde lleva,
+ * no dónde estás. Por eso es un Record por destino y no por origen — desde staff, el
+ * mismo botón es "Club" o "Familia" según lo que venga después en el anillo.
+ */
+export const AREA_SWITCH_LOOK: Record<NavArea, { labelKey: string; icon: string }> = {
+  direction: { labelKey: 'nav.club', icon: '🛡️' },
+  staff: { labelKey: 'nav.mister', icon: '🎽' },
+  family: { labelKey: 'nav.familia', icon: '👪' },
 };
 
 /**
- * MODO TUTOR — la VUELTA desde el área de familia al hogar de quien está en modo
- * tutor. Mismo mecanismo que `AREA_SWITCH_TAB` (press interceptado en
- * `navigator.tsx` + `router.replace`, fichero-ruta `rol` como stub-redirect), pero
- * el destino y el rótulo dependen del HOGAR del usuario, no del área de origen:
- * un director vuelve a "Club" y un entrenador a "Míster". Por eso es un Record por
- * hogar y no una entrada más de `AREA_SWITCH_TAB`.
+ * ¿Esta área lleva pestaña conmutador —y por tanto fichero `rol.tsx`—?
  *
- * Comparten el MISMO `name` a propósito: es un solo fichero de ruta
- * (`app/family/rol.tsx`), y así la barra de familia no declara dos rutas de las que
- * una siempre sobraría.
- *
- * La IDA (hogar → familia) NO es pestaña: las barras de staff y dirección ya llegan
- * a 6 con el conmutador de S2-2 —tanto que `navigator.tsx` baja la fuente a 9 para
- * que "Calendario" no se corte—, así que una séptima no cabe. La ida vive en el MENÚ
- * hamburguesa (`menu.tsx`), junto al selector de club, que es donde ya se decide
- * "quién soy ahora mismo". La vuelta sí cabe: familia solo tiene 4 pestañas.
+ * Todas menos la del seguidor, que no rota: no tiene otra carcasa a la que ir. Y como
+ * no la lleva, tampoco tiene el fichero; declararla ahí sería una pestaña fantasma.
  */
-export const FAMILY_SWITCH_TAB: Record<'staff' | 'direction', SwitchTabDef> = {
-  direction: { name: 'rol', labelKey: 'nav.club', icon: '🛡️', targetArea: 'direction' },
-  staff: { name: 'rol', labelKey: 'nav.mister', icon: '🎽', targetArea: 'staff' },
-};
+export function hasSwitchTab(area: ChromeArea): boolean {
+  return area !== 'spectator';
+}
 
 // Orden EXACTO pedido por Jose (O2 QA). `nav.partidos` es el rótulo PROPIO de
 // familia (la pantalla `convocatorias`: lista de partidos con convocatoria,

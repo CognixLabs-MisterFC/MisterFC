@@ -21,7 +21,11 @@ export {
 export {
   navAreaForRole,
   isAllowedInArea,
+  areaSwitchRing,
+  nextAreaInSwitch,
+  AREA_SWITCH_ORDER,
   type NavArea,
+  type NavAudience,
   type NavAudienceArea,
   type NavUserKind,
 } from './nav-area';

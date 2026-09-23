@@ -4,16 +4,19 @@ import { describe, expect, it } from 'vitest';
 
 import {
   AREA_SEGMENT,
-  AREA_SWITCH_TAB,
+  AREA_SWITCH_LOOK,
   AREA_TABS,
-  FAMILY_SWITCH_TAB,
   PUBLIC_ROUTE_SEGMENTS,
   SUBSCRIPTION_EXEMPT_SEGMENTS,
+  SWITCH_TAB_NAME,
   allMenuFiles,
+  hasSwitchTab,
+  hrefFor,
   isPublicRoute,
   isSubscriptionExemptRoute,
   type ChromeArea,
 } from './config';
+import { AREA_SWITCH_ORDER } from '@misterfc/core';
 
 /**
  * Rutas públicas del guard de sesión.
@@ -147,16 +150,11 @@ describe('declaración de rutas por área', () => {
 
   /** Nombres de ruta declarados por el navegador para un área (con repetidos). */
   function declaredNames(area: ChromeArea): string[] {
-    const switchNames =
-      area === 'family'
-        ? // Los dos descriptores comparten fichero a propósito (un solo `rol.tsx`).
-          [...new Set([FAMILY_SWITCH_TAB.direction.name, FAMILY_SWITCH_TAB.staff.name])]
-        : AREA_SWITCH_TAB[area]
-          ? [AREA_SWITCH_TAB[area]!.name]
-          : [];
     return [
       ...AREA_TABS[area].map((t) => t.name),
-      ...switchNames,
+      // Un solo fichero por área, y el mismo nombre en las tres: el destino del
+      // conmutador ya no es fijo, así que el fichero no puede llamarse como uno.
+      ...(hasSwitchTab(area) ? [SWITCH_TAB_NAME] : []),
       ...allMenuFiles(area).map((m) => m.name),
     ];
   }
@@ -191,12 +189,48 @@ describe('declaración de rutas por área', () => {
     expect(fantasmas, `declaradas sin fichero: ${fantasmas.join(', ')}`).toEqual([]);
   });
 
-  it('el conmutador de familia usa UN solo fichero para los dos hogares', () => {
-    // Si divergieran, la barra de familia declararía dos rutas y una sobraría
-    // siempre; y la que no se declarase saldría como pestaña.
-    expect(FAMILY_SWITCH_TAB.direction.name).toBe(FAMILY_SWITCH_TAB.staff.name);
-    // Y cada uno devuelve a SU hogar, no al del otro.
-    expect(FAMILY_SWITCH_TAB.direction.targetArea).toBe('direction');
-    expect(FAMILY_SWITCH_TAB.staff.targetArea).toBe('staff');
+  it('las tres áreas que rotan tienen su fichero de conmutador, el seguidor no', () => {
+    // El conmutador es UN botón con destino variable, así que el fichero se llama
+    // igual en todas (`rol`). Si a un área le faltara, expo-router no declararía nada
+    // y el botón sería un hueco; si el seguidor lo tuviera, le saldría una pestaña que
+    // no lleva a ninguna parte.
+    for (const area of AREAS) {
+      const existe = existsSync(
+        join(process.cwd(), 'app', AREA_SEGMENT[area], `${SWITCH_TAB_NAME}.tsx`),
+      );
+      expect(existe, `${area}: fichero del conmutador`).toBe(hasSwitchTab(area));
+    }
+  });
+});
+
+/**
+ * ASPECTO del conmutador. El anillo (a dónde se va) lo decide core y se prueba allí;
+ * aquí solo se comprueba que la app sepa PINTAR cada parada de ese anillo. Un destino
+ * sin entrada en `AREA_SWITCH_LOOK` no da error de tipos si alguien amplía el anillo
+ * con un `as`: sale una pestaña sin rótulo ni icono.
+ */
+describe('aspecto del conmutador', () => {
+  it('cada parada del anillo tiene rótulo e icono', () => {
+    for (const area of AREA_SWITCH_ORDER) {
+      const look = AREA_SWITCH_LOOK[area];
+      expect(look, `falta el aspecto de ${area}`).toBeDefined();
+      expect(look.labelKey).toMatch(/^nav\./);
+      expect(look.icon.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('las tres paradas se distinguen entre sí', () => {
+    // Dos destinos con el mismo icono o el mismo rótulo hacen que el botón parezca
+    // el mismo botón mientras lleva a sitios distintos.
+    const looks = AREA_SWITCH_ORDER.map((a) => AREA_SWITCH_LOOK[a]);
+    expect(new Set(looks.map((l) => l.icon)).size).toBe(AREA_SWITCH_ORDER.length);
+    expect(new Set(looks.map((l) => l.labelKey)).size).toBe(AREA_SWITCH_ORDER.length);
+  });
+
+  it('cada parada es un área con carcasa de verdad', () => {
+    for (const area of AREA_SWITCH_ORDER) {
+      expect(AREA_SEGMENT[area]).toBeDefined();
+      expect(hrefFor(area, 'index')).toBe(`/${AREA_SEGMENT[area]}`);
+    }
   });
 });
