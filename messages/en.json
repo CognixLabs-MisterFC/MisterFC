@@ -565,7 +565,11 @@
     "error_invalid": "This link isn't valid. Open the one you got by email.",
     "go_to_signin": "Go to sign in",
     "session_swap_warning": "You're currently signed in as {email}. If you complete this invitation, you'll be signed in as the player instead.",
-    "error_sign_in_failed": "Your password was saved, but we couldn't sign you in. Please try again."
+    "error_sign_in_failed": "Your password was saved, but we couldn't sign you in. Please try again.",
+    "tutor_dob_hint": "We need it to confirm that the player’s guardian is of legal age.",
+    "missing_tutor_dob": "Your date of birth is missing",
+    "error_date_of_birth_required": "We need your date of birth to register you as a guardian.",
+    "error_tutor_menor_de_edad": "That account is recorded as a minor and cannot be listed as a guardian. If you are the player, ask your club for your own account; if your date of birth is wrong, correct it and try again."
   },
   "directos": {
     "title": "Live",

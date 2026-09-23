@@ -41,6 +41,12 @@ type CommonProps = {
   imageInternal: ImageConsentDoc | null;
   imageSocial: ImageConsentDoc | null;
   medicalDoc: MedicalConsentDoc | null;
+  /**
+   * Este alta convierte a quien acepta en TUTOR y su perfil aún no tiene fecha de
+   * nacimiento: se le pide, y es obligatoria. Lo decide la página; el servidor lo
+   * vuelve a decidir por su cuenta (`attachAllPending`) y no se fía de esto.
+   */
+  requireTutorDob: boolean;
 };
 
 /**
@@ -207,6 +213,39 @@ function focusField(fieldId: string) {
   el.focus({ preventScroll: true });
 }
 
+/**
+ * Fecha de nacimiento DEL TUTOR, obligatoria, en los flujos que no piden perfil.
+ *
+ * El flujo del invitado nuevo ya tiene su propio campo `date_of_birth` —el del
+ * bloque de perfil, que hasta ahora decía «(opcional)»—, así que este no se pinta
+ * ahí: dos inputs con el mismo `name` mandarían dos valores y ganaría el último.
+ */
+function TutorDobField({
+  show,
+  problem,
+}: {
+  show: boolean;
+  problem: FormProblem | undefined;
+}) {
+  const t = useTranslations('invite');
+  if (!show) return null;
+  return (
+    <label className="flex w-full flex-col gap-2 text-left">
+      <span className="text-sm font-medium text-zinc-200">{t('date_of_birth_label')}</span>
+      <input
+        type="date"
+        id={fieldIds.dateOfBirth}
+        name="date_of_birth"
+        autoComplete="bday"
+        aria-invalid={problem != null}
+        className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-base text-white outline-none transition focus:border-[#10B981]"
+      />
+      <span className="text-xs text-zinc-500">{t('tutor_dob_hint')}</span>
+      <FieldProblem problem={problem} />
+    </label>
+  );
+}
+
 type RulesInput = {
   legalTerms: AccountConsentDoc | null;
   legalPrivacy: AccountConsentDoc | null;
@@ -217,6 +256,7 @@ type RulesInput = {
   requireChildData: boolean;
   requireProfile: boolean;
   requireOwnPassword: boolean;
+  requireTutorDob: boolean;
 };
 
 /**
@@ -234,6 +274,7 @@ function acceptRules(input: RulesInput): AcceptFormRules {
     requireChildData: input.requireChildData,
     requireProfile: input.requireProfile,
     requireOwnPassword: input.requireOwnPassword,
+    requireTutorDob: input.requireTutorDob,
   };
 }
 
@@ -302,6 +343,7 @@ export function AcceptForm({
   imageInternal,
   imageSocial,
   medicalDoc,
+  requireTutorDob,
 }: CommonProps) {
   const t = useTranslations('invite');
   const rules = acceptRules({
@@ -314,6 +356,7 @@ export function AcceptForm({
     requireChildData: false,
     requireProfile: false,
     requireOwnPassword: false,
+    requireTutorDob,
   });
   const { state, formAction, isPending, problems, revalidate } = useAcceptSubmit(
     rules,
@@ -330,6 +373,11 @@ export function AcceptForm({
       <p className="text-sm text-zinc-300">{t('summary', { club: clubName, role })}</p>
       <SelfInviteNote show={selfInvite} />
       <p className="text-xs text-zinc-500">{t('invited_email_hint', { email: invitedEmail })}</p>
+
+      <TutorDobField
+        show={requireTutorDob}
+        problem={problems.find((p) => p.fieldId === fieldIds.dateOfBirth)}
+      />
 
       <ChildrenImageSection
         items={pendingChildren}
@@ -387,6 +435,7 @@ export function AcceptWithProfileForm({
   imageInternal,
   imageSocial,
   medicalDoc,
+  requireTutorDob,
 }: CommonProps) {
   const t = useTranslations('invite');
   const rules = acceptRules({
@@ -399,6 +448,7 @@ export function AcceptWithProfileForm({
     requireChildData: true,
     requireProfile: true,
     requireOwnPassword: false,
+    requireTutorDob,
   });
   const { state, formAction, isPending, problems, revalidate } = useAcceptSubmit(
     rules,
@@ -466,7 +516,12 @@ export function AcceptWithProfileForm({
       <label className="flex flex-col gap-2 text-left">
         <span className="text-sm font-medium text-zinc-200">
           {t('date_of_birth_label')}{' '}
-          <span className="text-xs font-normal text-zinc-500">{t('optional')}</span>
+          {/* Deja de ser opcional en cuanto este alta crea un vínculo de TUTOR: es el
+              dato en el que se apoya la mig 20261099000000, y estaba al 0% en parte
+              por esta etiqueta. */}
+          {!requireTutorDob && (
+            <span className="text-xs font-normal text-zinc-500">{t('optional')}</span>
+          )}
         </span>
         <input
           type="date"
@@ -565,6 +620,7 @@ export function SignInToAcceptForm({
   imageInternal,
   imageSocial,
   medicalDoc,
+  requireTutorDob,
 }: CommonProps) {
   const t = useTranslations('invite');
   const rules = acceptRules({
@@ -577,6 +633,7 @@ export function SignInToAcceptForm({
     requireChildData: false,
     requireProfile: false,
     requireOwnPassword: true,
+    requireTutorDob,
   });
   const { state, formAction, isPending, problems, revalidate } = useAcceptSubmit(
     rules,
@@ -593,6 +650,11 @@ export function SignInToAcceptForm({
     >
       <p className="text-sm text-zinc-300">{t('signin_summary', { club: clubName, role })}</p>
       <SelfInviteNote show={selfInvite} />
+
+      <TutorDobField
+        show={requireTutorDob}
+        problem={problemFor(fieldIds.dateOfBirth)}
+      />
 
       <ChildrenImageSection
         items={pendingChildren}
@@ -683,6 +745,8 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       child_dob_invalid: 'error_child_dob_invalid',
       account_deletion_in_progress: 'error_account_deletion_in_progress',
       reserved_for_tutor: 'error_reserved_for_tutor',
+      tutor_menor_de_edad: 'error_tutor_menor_de_edad',
+      date_of_birth_required: 'error_date_of_birth_required',
       generic: 'error_generic',
     }[error] ?? 'error_generic';
 

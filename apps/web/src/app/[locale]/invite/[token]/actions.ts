@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/nextjs';
 import {
   acceptInvitationWithProfileSchema,
   acceptPendingInvitationsFromClient,
+  isValidBirthDate,
   claimInviteeAccount,
   assertInvitationValid,
   childrenNeedingConsent,
@@ -84,8 +85,71 @@ export type AcceptInvitationState = {
     // expuesta a `authenticated` y su error tiene que tener nombre propio: si
     // cayera en 'generic' nadie sabría qué mirar.
     | 'reserved_for_tutor'
+    // Mig 20261099000000 — quien acepta CONSTA menor y este alta lo haría tutor.
+    // Con código propio: si cayera en 'generic', el mensaje mandaría a mirar al
+    // sitio equivocado, que es lo que costó encontrar el BUG-4.
+    | 'tutor_menor_de_edad'
+    // Este alta crea un vínculo de tutor y el perfil no tiene fecha de nacimiento.
+    | 'date_of_birth_required'
     | 'generic';
 };
+
+/**
+ * Asegura que quien acepta tenga fecha de nacimiento en su perfil CUANDO este alta
+ * lo convierte en tutor de alguien.
+ *
+ * Devuelve el código de error si no se puede seguir, o null si todo está en orden
+ * (incluido el caso en el que no hace falta pedir nada).
+ *
+ * Tres decisiones, y las tres tienen motivo:
+ *  · Solo si el lote crea un vínculo de TUTOR. Un entrenador que acepta el segundo
+ *    club no tiene por qué dar su fecha, y su alta sigue siendo de un clic.
+ *  · Si el perfil YA la tiene, no se vuelve a pedir ni se pisa. Quien ya la dio no
+ *    tiene que volver a darla, y una fecha guardada no se sobreescribe con lo que
+ *    venga en un formulario.
+ *  · Se escribe con la sesión del propio usuario, no con `admin`: es su perfil y su
+ *    RLS lo permite. Usar service_role aquí sería abrir una puerta que no hace falta.
+ */
+async function ensureTutorDob(
+  pending: Awaited<ReturnType<typeof loadPendingInvitationsForEmail>>,
+  formData: FormData,
+): Promise<AcceptErrorCode | null> {
+  if (childrenNeedingConsent(pending).length === 0) return null;
+
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return 'no_session';
+
+  const { data: prof, error: readErr } = await supabase
+    .from('profiles')
+    .select('date_of_birth')
+    .eq('id', user.id)
+    .maybeSingle();
+  if (readErr) {
+    logError('tutor-dob-read', readErr, { user_id: user.id });
+    return 'profile_update_failed';
+  }
+  if (prof?.date_of_birth) return null;
+
+  const raw = formData.get('date_of_birth');
+  const dob = typeof raw === 'string' ? raw.trim() : '';
+  if (dob.length === 0) return 'date_of_birth_required';
+  // El MISMO criterio que el formulario y que el schema del alta, una sola copia.
+  if (!isValidBirthDate(dob)) return 'date_of_birth_invalid';
+
+  const { error: updErr } = await supabase
+    .from('profiles')
+    .update({ date_of_birth: dob })
+    .eq('id', user.id);
+  if (updErr) {
+    logError('tutor-dob-write', updErr, { user_id: user.id, pg_code: updErr.code });
+    return 'profile_update_failed';
+  }
+  return null;
+}
 
 /** F14-3c — mime → extensión para el path del bucket player-photos. */
 const MIME_TO_EXT: Record<string, string> = {
@@ -115,7 +179,7 @@ type ChildUpdate = {
  * accidente: la RPC reventaba antes con `player_not_in_batch`.
  */
 async function parseChildUpdates(
-  clicked: LoadedInvitation,
+  pending: Awaited<ReturnType<typeof loadPendingInvitationsForEmail>>,
   formData: FormData,
 ): Promise<
   | { ok: true; updates: ChildUpdate[] }
@@ -133,7 +197,6 @@ async function parseChildUpdates(
   }
   if (!Array.isArray(parsed)) return { ok: false, error: 'invalid_input' };
 
-  const pending = await loadPendingInvitationsForEmail(clicked.email, clicked.club_id);
   const allowed = new Set(
     childrenNeedingConsent(pending)
       .map((p) => p.player_id)
@@ -346,8 +409,26 @@ async function attachAllPending(
   // Rework C/D — validar los datos del hijo confirmados por el tutor ANTES de
   // subir imágenes / llamar a la RPC: si son inválidos salimos sin efectos
   // secundarios. La persistencia se hace tras aceptar (más abajo).
-  const childParse = await parseChildUpdates(clicked, formData);
+  // El lote pendiente se lee UNA vez y lo miran las dos comprobaciones de abajo.
+  // Con dos lecturas podrían ver fotos distintas del mismo lote —una invitación
+  // cancelada entre medias— y decidir cosas que no encajan entre sí.
+  const pending = await loadPendingInvitationsForEmail(clicked.email, clicked.club_id);
+
+  const childParse = await parseChildUpdates(pending, formData);
   if (!childParse.ok) return fail(childParse.error);
+
+  // ── La fecha de nacimiento DEL TUTOR ────────────────────────────────────────
+  // Va aquí, en el punto común de los tres flujos, y no en cada Server Action: es
+  // la lección de BC-3 que este repo repite —la lógica en el punto común, no en los
+  // llamantes— y la razón por la que este dato estaba al 0%. El flujo rápido no la
+  // pedía y el del invitado nuevo la pedía como «(opcional)», así que la mig
+  // 20261099000000, que decide con ella si alguien puede ser tutor, no medía nada.
+  //
+  // ANTES de la RPC a propósito: es la RPC la que crea el vínculo `player_accounts`,
+  // y el trigger de aquella migración mira el perfil en ese instante. Escrita después,
+  // llegaría tarde para el alta que la necesita.
+  const dobFail = await ensureTutorDob(pending, formData);
+  if (dobFail) return fail(dobFail);
 
   // Metadatos de auditoría (no se confía en el cliente). La IP sale del mismo sitio
   // que usa el límite de intentos de R-2: si divergieran, un día dirían cosas

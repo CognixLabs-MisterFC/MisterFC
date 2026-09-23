@@ -1046,7 +1046,11 @@
     "error_invalid": "Este enlace no es válido. Abre el que te llegó por correo.",
     "go_to_signin": "Ir a iniciar sesión",
     "session_swap_warning": "Ahora mismo estás en la cuenta {email}. Si completas esta invitación, entrarás con la cuenta del jugador.",
-    "error_sign_in_failed": "Tu contraseña se ha guardado, pero no hemos podido iniciar tu sesión. Inténtalo de nuevo."
+    "error_sign_in_failed": "Tu contraseña se ha guardado, pero no hemos podido iniciar tu sesión. Inténtalo de nuevo.",
+    "tutor_dob_hint": "Hace falta para confirmar que quien tutela al jugador es mayor de edad.",
+    "missing_tutor_dob": "Falta tu fecha de nacimiento",
+    "error_date_of_birth_required": "Necesitamos tu fecha de nacimiento para darte de alta como tutor.",
+    "error_tutor_menor_de_edad": "Esa cuenta consta como menor de edad y no puede figurar como tutor. Si eres el jugador, pide a tu club la cuenta propia; si es un error en tu fecha de nacimiento, corrígela y vuelve a intentarlo."
   },
   "informes": {
     "title": "Informes de desarrollo",
