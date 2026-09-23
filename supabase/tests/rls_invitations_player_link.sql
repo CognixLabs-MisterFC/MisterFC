@@ -10,6 +10,7 @@
 --   T2. Trigger same_club: invitation con player_id del mismo club → OK.
 --   X1. relation='self' → OK desde MN-2 (la cuenta propia del menor).
 --   X2. Relation inventada → falla por CHECK de columna.
+\ir helpers/auth_users.sql
 
 begin;
 
@@ -21,6 +22,18 @@ insert into public.clubs (id, name, slug) values
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
   ('00000000-aaaa-2222-0000-000000000001', 'eeeeeeee-e0e0-e0e0-e0e0-e0e0e0e0e0e0', 'P', 'A', '2015-04-12'),
   ('00000000-bbbb-2222-0000-000000000001', 'eeeeeeee-e1e1-e1e1-e1e1-e1e1e1e1e1e1', 'P', 'B', '2015-04-12');
+
+-- Tutor del jugador A. Lo exige la mig 20261098000000: la invitación de cuenta propia
+-- de un MENOR no se crea sin tutor. X1 no mide eso —mide que el CHECK de columna deja
+-- pasar el catálogo de relaciones y ni una más—, así que el tutor está aquí para que
+-- X1 pueda seguir midiendo lo suyo y no muera por un motivo ajeno.
+select pg_temp.new_test_user('eeee0000-0000-4000-8000-00000000f001', 'tutor-a@inv.test', '{}'::jsonb);
+
+insert into public.memberships (profile_id, club_id, role) values
+  ('eeee0000-0000-4000-8000-00000000f001', 'eeeeeeee-e0e0-e0e0-e0e0-e0e0e0e0e0e0', 'jugador');
+
+insert into public.player_accounts (player_id, profile_id, relation) values
+  ('00000000-aaaa-2222-0000-000000000001', 'eeee0000-0000-4000-8000-00000000f001', 'parent');
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Aquí trabajamos en rol postgres (bypass RLS) — solo validamos constraints

@@ -34,11 +34,13 @@ insert into public.seasons (id, club_id, label, status) values
 select pg_temp.new_test_user('3eaa0000-0000-4000-8000-000000000001', 't1@mn4.test', '{}'::jsonb);
 select pg_temp.new_test_user('3eaa0000-0000-4000-8000-000000000002', 'm1@mn4.test', '{}'::jsonb);
 select pg_temp.new_test_user('3eaa0000-0000-4000-8000-000000000003', 't2@mn4.test', '{}'::jsonb);
+select pg_temp.new_test_user('3eaa0000-0000-4000-8000-000000000004', 'tutorbase@mn4.test', '{}'::jsonb);
 
 insert into public.memberships (profile_id, club_id, role) values
   ('3eaa0000-0000-4000-8000-000000000001', '3ea00000-0000-4000-8000-000000000001', 'jugador'),
   ('3eaa0000-0000-4000-8000-000000000002', '3ea00000-0000-4000-8000-000000000001', 'jugador'),
-  ('3eaa0000-0000-4000-8000-000000000003', '3ea00000-0000-4000-8000-000000000001', 'jugador');
+  ('3eaa0000-0000-4000-8000-000000000003', '3ea00000-0000-4000-8000-000000000001', 'jugador'),
+  ('3eaa0000-0000-4000-8000-000000000004', '3ea00000-0000-4000-8000-000000000001', 'jugador');
 
 -- j1 el que YA tiene las dos cuentas (tutor t1 + propia m1), con direcciones distintas:
 -- esa combinacion es legitima y no la toca nadie. j2 el de la rama de la RPC.
@@ -51,10 +53,18 @@ insert into public.players (id, club_id, first_name, last_name, date_of_birth) v
   ('3eab0000-0000-4000-8000-000000000005', '3ea00000-0000-4000-8000-000000000001', 'Cinco', 'Mn4', (current_date - interval '12 years')::date),
   ('3eab0000-0000-4000-8000-000000000006', '3ea00000-0000-4000-8000-000000000001', 'Seis',  'Mn4', (current_date - interval '12 years')::date);
 
+-- Tutor de j3..j6. Desde la mig 20261098000000 no se crea la invitación de cuenta
+-- propia de un MENOR sin tutor, y j3..j6 son los jugadores sobre los que estos
+-- bloques cursan esas invitaciones. Su dirección no aparece en ningún escenario:
+-- está para que exista el tutor, no para entrar en ningún choque de correos.
 insert into public.player_accounts (player_id, profile_id, relation) values
   ('3eab0000-0000-4000-8000-000000000001', '3eaa0000-0000-4000-8000-000000000001', 'parent'),
   ('3eab0000-0000-4000-8000-000000000001', '3eaa0000-0000-4000-8000-000000000002', 'self'),
-  ('3eab0000-0000-4000-8000-000000000002', '3eaa0000-0000-4000-8000-000000000003', 'parent');
+  ('3eab0000-0000-4000-8000-000000000002', '3eaa0000-0000-4000-8000-000000000003', 'parent'),
+  ('3eab0000-0000-4000-8000-000000000003', '3eaa0000-0000-4000-8000-000000000004', 'parent'),
+  ('3eab0000-0000-4000-8000-000000000004', '3eaa0000-0000-4000-8000-000000000004', 'parent'),
+  ('3eab0000-0000-4000-8000-000000000005', '3eaa0000-0000-4000-8000-000000000004', 'parent'),
+  ('3eab0000-0000-4000-8000-000000000006', '3eaa0000-0000-4000-8000-000000000004', 'parent');
 
 -- j2 con sus decisiones de imagen: es la precondicion de invite_player_self (MN-2), y
 -- sin ellas los bloques [3] fallarian por el motivo equivocado.
