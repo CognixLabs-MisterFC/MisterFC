@@ -179,3 +179,109 @@ export function tallyExpoTickets(
     dead_tokens: deadTokens,
   };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RECIBOS — la otra mitad, la que faltaba
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Un ticket ACEPTADO, a la espera de recibo.
+ *
+ * El ticket dice que Expo cogió el mensaje. El RECIBO dice si FCM lo entregó, y es
+ * el único sitio donde aparece `DeviceNotRegistered` cuando alguien reinstala la
+ * app: al token viejo lo mata FCM, no Expo. Mirando solo tickets, esos envíos se
+ * marcaban `sent` para siempre y el token muerto no se borraba nunca.
+ *
+ * Medido en producción el 2026-09-22: 7 de 7 tokens con ticket `ok` y recibo
+ * `DeviceNotRegistered`.
+ */
+export type PendingTicket = {
+  ticketId: string;
+  token: string;
+  notificationId: string | null;
+};
+
+export type ReceiptSweep = {
+  /** Recibos `ok`: entregado de verdad. */
+  delivered: string[];
+  /** Tokens a borrar de `expo_push_tokens` (el dispositivo ya no existe). */
+  dead_tokens: string[];
+  /** Notificaciones cuyo envío falló y NO es un token muerto (Expo/FCM caído, etc.). */
+  failed_notification_ids: string[];
+  /** Tickets ya resueltos: se sacan de la cola pasen lo que pasen. */
+  resolved_ticket_ids: string[];
+  /** Aún sin recibo (Expo todavía no lo tiene). Se quedan en la cola. */
+  unresolved_ticket_ids: string[];
+};
+
+/**
+ * Cruza la cola de tickets con lo que devuelve `getReceipts` y dice qué hacer.
+ *
+ * Pura y sin red: el caller trae el mapa `{ ticketId: receipt }` tal cual de Expo.
+ * Un ticket SIN recibo no se toca —Expo aún no lo tiene— y vuelve a preguntarse en
+ * la pasada siguiente; el descarte por antigüedad lo hace la consulta, no esto.
+ *
+ * `dead_tokens` no se deduplica aquí a propósito: un mismo token muerto aparece en
+ * tantos tickets como avisos se le mandaran, y quien borra usa `in (...)`, donde
+ * repetir es inofensivo. Deduplicar aquí escondería cuántos envíos se perdieron.
+ */
+export function sweepExpoReceipts(
+  pending: readonly PendingTicket[],
+  receipts: Readonly<Record<string, unknown>>,
+): ReceiptSweep {
+  const delivered: string[] = [];
+  const deadTokens: string[] = [];
+  const failedNotificationIds: string[] = [];
+  const resolved: string[] = [];
+  const unresolved: string[] = [];
+
+  for (const item of pending) {
+    // La ausencia de la clave es la señal, NO que el valor sea `undefined`:
+    // `getReceipts` OMITE los tickets que aún no tiene. Comprobarlo con
+    // `=== undefined` confundiría «todavía no hay recibo» con «hay un recibo que no
+    // entiendo», y el segundo caso se quedaría dando vueltas en la cola hasta
+    // caducar.
+    if (!Object.prototype.hasOwnProperty.call(receipts, item.ticketId)) {
+      unresolved.push(item.ticketId);
+      continue;
+    }
+    const receipt = receipts[item.ticketId];
+    resolved.push(item.ticketId);
+    const status = (receipt as { status?: unknown })?.status;
+    if (status === 'ok') {
+      delivered.push(item.ticketId);
+    } else if (isDeviceNotRegistered(receipt)) {
+      deadTokens.push(item.token);
+      // Un token muerto NO es un fallo de la notificación: el aviso salió bien, el
+      // dispositivo ya no está. Marcar la fila como fallida haría que el drenador
+      // la reintentara eternamente contra un token que acabamos de borrar.
+    } else if (item.notificationId) {
+      failedNotificationIds.push(item.notificationId);
+    }
+  }
+
+  return {
+    delivered,
+    dead_tokens: deadTokens,
+    failed_notification_ids: failedNotificationIds,
+    resolved_ticket_ids: resolved,
+    unresolved_ticket_ids: unresolved,
+  };
+}
+
+/** Los tickets `ok` de una tanda, emparejados con su token (para encolarlos). */
+export function acceptedTickets(
+  tokens: readonly string[],
+  tickets: readonly unknown[],
+  notificationId: string | null,
+): PendingTicket[] {
+  const out: PendingTicket[] = [];
+  tickets.forEach((ticket, i) => {
+    const token = tokens[i];
+    const t = ticket as { status?: unknown; id?: unknown };
+    if (token && t?.status === 'ok' && typeof t.id === 'string' && t.id.length > 0) {
+      out.push({ ticketId: t.id, token, notificationId });
+    }
+  });
+  return out;
+}

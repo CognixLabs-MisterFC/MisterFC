@@ -64,7 +64,7 @@ export function NotificationsProvider() {
     if (!user) return;
     let active = true;
     (async () => {
-      await registerPushTokenIfPermitted(supabase);
+      await registerPushTokenIfPermitted(supabase, user.id);
       // El resultado no gobierna UI aquí; la tarjeta del perfil refleja el estado.
       if (!active) return;
     })();

@@ -722,6 +722,7 @@ async function drainPushQueue(
         row.type,
         payload,
         row.payload,
+        row.id,
       );
       result.sent += r.sent;
       result.failed_gone += r.failed_gone;

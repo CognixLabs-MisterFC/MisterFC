@@ -3172,7 +3172,10 @@
       "enabling": "Enabling…",
       "enable_button": "Enable notifications",
       "error_device": "Couldn't enable them on this device. Check the permissions and try again.",
-      "error_server": "Couldn't save them on the server. Please try again."
+      "error_server": "Couldn't save them on the server. Please try again.",
+      "disable_button": "Turn off on this device",
+      "disabling": "Turning off…",
+      "disabled_here": "Turned off on this device. You will still get them on any other device where they are on."
     }
   },
   "mi_plantilla": {

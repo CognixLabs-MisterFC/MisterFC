@@ -1279,6 +1279,35 @@ export type Database = {
           },
         ]
       }
+      expo_push_tickets: {
+        Row: {
+          created_at: string
+          notification_id: string | null
+          ticket_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          notification_id?: string | null
+          ticket_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          notification_id?: string | null
+          ticket_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expo_push_tickets_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expo_push_tokens: {
         Row: {
           created_at: string

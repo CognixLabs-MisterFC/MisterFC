@@ -132,6 +132,13 @@ export async function sendPushToUser(
   notificationType: Database['public']['Enums']['notification_type'],
   payload: PushPayload,
   dataSource?: Json,
+  /**
+   * La fila `notifications` (channel='push') que origina el envío. Viaja hasta la
+   * cola de tickets para que, cuando llegue el RECIBO de Expo, se pueda corregir
+   * su `status`. Sin esto el recibo sabría qué token murió pero no qué aviso no
+   * llegó.
+   */
+  notificationId?: string | null,
 ): Promise<SendPushResult> {
   configureVapid();
 
@@ -178,6 +185,7 @@ export async function sendPushToUser(
           userId,
           { title: payload.title, body: payload.body },
           expoData,
+          notificationId ?? null,
         ),
       (err) =>
         Sentry.captureException(err, {

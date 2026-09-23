@@ -69,10 +69,14 @@ export {
   buildExpoMessages,
   isDeviceNotRegistered,
   tallyExpoTickets,
+  sweepExpoReceipts,
+  acceptedTickets,
 } from './expo';
 export type {
   ExpoNotificationData,
   ExpoPushContent,
   ExpoPushMessage,
   ExpoSendCounts,
+  PendingTicket,
+  ReceiptSweep,
 } from './expo';

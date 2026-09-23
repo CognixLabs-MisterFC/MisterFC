@@ -140,6 +140,7 @@ export async function emitNotification(
       input.type,
       input.push_payload,
       input.in_app_payload,
+      insertedPushRow.id,
     );
     eagerSent = r.sent;
     eagerFailedGone = r.failed_gone;
