@@ -172,7 +172,10 @@ jobs:
   pgtap:
     name: pgTAP · RLS (BD efímera)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 20 → 25 por el reintento del tirón: tres intentos y 135 s de espera en el peor
+    # caso. El camino bueno no cambia, este margen solo evita que el reintento muera
+    # por el reloj justo cuando hace falta.
+    timeout-minutes: 25
     # Solo lo que este job usa: `contents` para el checkout y `packages` para bajar
     # las imágenes de ghcr.io en el paso de abajo. Es el único job del fichero con
     # bloque propio, y por eso lleva uno: sin él hereda el permiso por defecto del
@@ -211,10 +214,11 @@ jobs:
       # Autenticarse con el GITHUB_TOKEN que el runner ya tiene mete el tirón en la
       # cuota de la cuenta, que es mucho más alta. No cuesta un secreto nuevo.
       #
-      # Lo que esto NO garantiza: si el `toomanyrequests` viniera del limitador global
-      # de ghcr.io y no de la cuota anónima, autenticarse no lo evita. Si vuelve a
-      # aparecer con el login puesto, la siguiente palanca es reintentar el
-      # `supabase start`, no volver a tocar esto.
+      # MEDIDO DESPUÉS: el login NO lo arregla. En este mismo PR el paso dijo `Login
+      # Succeeded!` y el tirón siguió cayendo con `toomanyrequests`, así que el límite
+      # es el GLOBAL de ghcr.io, no la cuota anónima. El login se queda igualmente —es
+      # la forma correcta de tirar de un registro y deja una hipótesis menos que
+      # revisar la próxima vez—, pero lo que desatasca el CI es el reintento de abajo.
       - name: Login en ghcr.io (cuota de tirones)
         uses: docker/login-action@v3
         with:
@@ -225,8 +229,37 @@ jobs:
       # Levanta el stack local y APLICA TODAS las migraciones en limpio. Si alguna
       # migración falla (un club nuevo no se podría crear desde cero), este paso
       # sale en rojo y para el PR.
+      #
+      # REINTENTO, y SOLO para el estrangulamiento del registro. Los reintentos que
+      # trae el CLI son de 4 s y 8 s: sirven para un hipo, no para una cuota, y por eso
+      # murieron seis runs seguidos. Aquí se espera 45 s y 90 s.
+      #
+      # La condición es la parte importante: se reintenta ÚNICAMENTE si la salida trae
+      # `toomanyrequests`. Reintentar a ciegas convertiría una migración rota —que es
+      # lo que este paso existe para cazar— en tres intentos y varios minutos antes de
+      # ponerse roja, y encima con el log del fallo de verdad enterrado. Cualquier otro
+      # error sale en rojo al primer intento, como hasta ahora.
       - name: supabase start (aplica todas las migraciones en limpio)
-        run: supabase start
+        run: |
+          set -u
+          for intento in 1 2 3; do
+            if out=$(supabase start 2>&1); then
+              echo "$out"
+              exit 0
+            fi
+            echo "$out"
+            if ! grep -q 'toomanyrequests' <<< "$out"; then
+              echo "::error::supabase start falló por algo que no es la cuota del registro."
+              exit 1
+            fi
+            echo "::warning::ghcr.io estranguló el tirón (intento $intento de 3)."
+            supabase stop --no-backup >/dev/null 2>&1 || true
+            # `if` explícito y no `[ … ] && sleep`: GitHub corre estos scripts con
+            # `bash -e`, y esa forma deja el último comando del bucle en no-cero.
+            if [ "$intento" -lt 3 ]; then sleep $((intento * 45)); fi
+          done
+          echo "::error::ghcr.io estranguló el tirón en los tres intentos."
+          exit 1
 
       # Red de verificación del propio stack antes de correr la suite:
       #  · el esquema `storage` existe (si no, los tests de storage fallarían).
