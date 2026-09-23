@@ -74,10 +74,14 @@ export function DeleteAccountCard() {
       setOpen(false);
       return;
     }
-    // RC-3 — la misma razón que el preview: si no se pudo saber quién se queda sin
+    // RC-5 — la misma razón que el preview: si no se pudo saber quién se queda sin
     // tutor, no se sigue. Una lista vacía significa "nada te lo impide" y eso no se
     // puede afirmar por descarte.
-    const conCuenta = await getAccountDeletionHoldsFromClient(supabase, res.blockers);
+    //
+    // Lo responde `account_deletion_holds()`, que es la MISMA función sobre la que se
+    // levanta el rechazo de la RPC (mig 20261101000000): un solo predicado para la
+    // pantalla y para la regla.
+    const conCuenta = await getAccountDeletionHoldsFromClient(supabase);
     setLoadingPreview(false);
     if (!conCuenta.ok) {
       setError(t('errors.generic'));
