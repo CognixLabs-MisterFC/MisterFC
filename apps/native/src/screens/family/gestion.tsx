@@ -17,8 +17,12 @@ import {
   getPlayerMedicalFromClient,
   getPlayerPhotoPathFromClient,
   getPlayerTutorsContactFromClient,
+  canOfferSelfRevoke,
   getSelfAccountStatusFromClient,
+  getSelfRevokeGateFromClient,
+  revokePlayerSelfAccountFromClient,
   selfAccountStatusMessageKey,
+  selfRevokeDoneMessageKey,
   playerScopedCacheKey,
   playerPhotoUploadSchema,
   requestPlayerErasureFromClient,
@@ -28,6 +32,8 @@ import {
   type PlayerMedical,
   type PlayerTutorsContactResult,
   type SelfAccountStatus,
+  type SelfRevokeGate,
+  type SelfRevokeOutcome,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { MIME_TO_EXT, base64ToBytes } from '@/lib/image-upload';
@@ -91,6 +97,18 @@ export function GestionScreen() {
     playerScopedCacheKey('self-status', clubId ?? 'none', playerId ?? 'none'),
     (sb) => (playerId ? getSelfAccountStatusFromClient(sb, playerId) : Promise.resolve(null)),
   );
+  // RC-2 — los DOS predicados con los que se gatea `revoke_player_self_account`.
+  // Se preguntan tal cual y no se derivan de `canManageSensitive`: un equivalente no
+  // es el mismo predicado, y el dia que uno cambie la tarjeta y el boton dirian cosas
+  // distintas. La decision (`canOfferSelfRevoke`) vive en core porque la web toma la
+  // misma, y una regla escrita dos veces se queda coja en una.
+  const revokeGate = useCached<SelfRevokeGate>(
+    playerScopedCacheKey('self-revoke-gate', clubId ?? 'none', playerId ?? 'none'),
+    (sb) =>
+      playerId
+        ? getSelfRevokeGateFromClient(sb, playerId)
+        : Promise.resolve({ isTutor: false, isMinor: false }),
+  );
 
   if (!playerId) return <EmptyState message={t('child.none')} />;
   if (access.loading) return <LoadingScreen />;
@@ -104,7 +122,11 @@ export function GestionScreen() {
   const canManageSensitive = access.data?.canManageSensitive ?? false;
   const canWriteMedical = access.data?.canWriteMedical ?? false;
   const fromCache =
-    access.fromCache || medical.fromCache || photo.fromCache || selfStatus.fromCache;
+    access.fromCache ||
+    medical.fromCache ||
+    photo.fromCache ||
+    selfStatus.fromCache ||
+    revokeGate.fromCache;
   const initials = (activePlayer?.name ?? '').trim().slice(0, 2);
 
   // La pantalla entera cuelga de la COMPARTIDA: sin ella no hay ni foto que tocar.
@@ -173,6 +195,14 @@ export function GestionScreen() {
             status={selfStatus.data}
             online={online}
             onInvited={selfStatus.refresh}
+            canRevoke={canOfferSelfRevoke({
+              status: selfStatus.data,
+              gate: revokeGate.data ?? { isTutor: false, isMinor: false },
+            })}
+            onRevoked={() => {
+              selfStatus.refresh();
+              revokeGate.refresh();
+            }}
           />
         ) : null}
         {/* RESERVADAS — `record_data_export` y `request_player_erasure`, las dos
@@ -721,12 +751,17 @@ function AccessCard({
   status,
   online,
   onInvited,
+  canRevoke,
+  onRevoked,
 }: {
   playerId: string;
   playerName: string;
   status: SelfAccountStatus;
   online: boolean;
   onInvited: () => void;
+  /** RC-2 — lo decide `canOfferSelfRevoke` fuera, con los predicados del SQL. */
+  canRevoke: boolean;
+  onRevoked: () => void;
 }) {
   const t = useTranslations('');
   const [open, setOpen] = useState(false);
@@ -816,9 +851,24 @@ function AccessCard({
         // MN-10 — los tres motivos de bloqueo dicen POR QUE, con el MISMO texto que
         // enseñaba la RPC despues de pulsar. La clave la da core: web y nativa pintan
         // los mismos seis estados y una lista escrita dos veces se queda coja en una.
-        <Text className="mt-1 text-sm text-zinc-600">
-          {t(`invite_self.${selfAccountStatusMessageKey(status) ?? 'section.hint'}`)}
-        </Text>
+        <>
+          <Text className="mt-1 text-sm text-zinc-600">
+            {t(`invite_self.${selfAccountStatusMessageKey(status) ?? 'section.hint'}`)}
+          </Text>
+          {/* RC-2 — retirar. NO cuelga del estado a secas: `player_self_account_status`
+              esta gateada con `user_manages_player`, asi que al PROPIO jugador le
+              contesta 'linked' igual que a su padre (MN-9, a proposito). Si colgara del
+              estado, un chaval de 18 con su cuenta veria un boton que el SQL le niega. */}
+          {canRevoke ? (
+            <RevokeAccessButton
+              playerId={playerId}
+              playerName={playerName}
+              invitedOnly={status === 'invited'}
+              online={online}
+              onRevoked={onRevoked}
+            />
+          ) : null}
+        </>
       )}
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
@@ -891,5 +941,139 @@ function AccessCard({
         </KeyboardModalView>
       </Modal>
     </View>
+  );
+}
+
+/**
+ * RC-2 — «Retirar el acceso», con confirmacion.
+ *
+ * Llama a `revoke_player_self_account` DIRECTAMENTE con el cliente de la sesion, sin
+ * pasar por un endpoint del servidor. Es la diferencia con invitar, que si lo
+ * necesita: alli hay que crear una cuenta y mandar un correo, y eso es service-role.
+ * Aqui no hay nada de eso — la autoridad entera esta en el SQL.
+ *
+ * Que quien mira vea este boton lo decide `canOfferSelfRevoke` fuera, con los DOS
+ * predicados con los que se gatea la RPC. Aqui no se vuelve a decidir nada.
+ *
+ * LA CONFIRMACION DICE TAMBIEN LO QUE NO PASA: retirar el acceso no da de baja al
+ * jugador. Sigue en el club, en su equipo y en sus convocatorias. Sin esa frase,
+ * «retirar» suena a borrar al nino.
+ */
+function RevokeAccessButton({
+  playerId,
+  playerName,
+  invitedOnly,
+  online,
+  onRevoked,
+}: {
+  playerId: string;
+  playerName: string;
+  invitedOnly: boolean;
+  online: boolean;
+  onRevoked: () => void;
+}) {
+  const t = useTranslations('');
+  const [open, setOpen] = useState(false);
+  const [working, setWorking] = useState(false);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [doneKey, setDoneKey] = useState<string | null>(null);
+
+  const confirmar = async () => {
+    if (!online || working) return; // write-guard
+    setWorking(true);
+    setErrorKey(null);
+    try {
+      const res = await revokePlayerSelfAccountFromClient(supabase, playerId);
+      if ('error' in res) {
+        setErrorKey(`invite_self.revoke.errors.${res.error}`);
+        return;
+      }
+      // El resultado dice QUE habia: cancelar una invitacion que nadie llego a usar no
+      // es lo mismo que quitarle el acceso a quien ya estaba dentro.
+      const outcome: SelfRevokeOutcome = res.ok;
+      setDoneKey(`invite_self.revoke.${selfRevokeDoneMessageKey(outcome)}`);
+      setOpen(false);
+      // La tarjeta se relee: el estado ha cambiado y, si no, seguiria ofreciendo
+      // retirar lo que ya no esta hasta el proximo arranque (la leccion de MN-9).
+      void invalidateAfterWrite('revokePlayerSelfAccount');
+      onRevoked();
+    } catch {
+      setErrorKey('invite_self.revoke.errors.generic');
+    } finally {
+      setWorking(false);
+    }
+  };
+
+  return (
+    <>
+      <Pressable
+        onPress={() => {
+          setErrorKey(null);
+          setOpen(true);
+        }}
+        disabled={!online}
+        className={`mt-3 self-start rounded-full border px-4 py-2 ${
+          online ? 'border-red-300 active:opacity-70' : 'border-zinc-200'
+        }`}
+      >
+        <Text className={`text-sm font-semibold ${online ? 'text-red-600' : 'text-zinc-400'}`}>
+          {t('invite_self.revoke.action')}
+        </Text>
+      </Pressable>
+
+      {doneKey ? (
+        <Text className="mt-2 text-sm text-zinc-600">{t(doneKey)}</Text>
+      ) : null}
+
+      <Modal
+        visible={open}
+        transparent
+        animationType="fade"
+        onRequestClose={() => (working ? undefined : setOpen(false))}
+      >
+        <View className="flex-1 items-center justify-center bg-black/50 px-6">
+          <View className="w-full max-w-md rounded-2xl bg-white p-5">
+            <Text className="text-lg font-bold text-[#0F1B2E]">
+              {t('invite_self.revoke.title')}
+            </Text>
+            <Text className="mt-2 text-sm text-zinc-700">
+              {t(
+                invitedOnly
+                  ? 'invite_self.revoke.confirm_invited'
+                  : 'invite_self.revoke.confirm',
+                { player: playerName },
+              )}
+            </Text>
+            <Text className="mt-2 text-sm text-zinc-500">
+              {t('invite_self.revoke.keeps_player')}
+            </Text>
+            {errorKey ? (
+              <Text className="mt-2 text-sm text-red-600">{t(errorKey)}</Text>
+            ) : null}
+            <View className="mt-4 flex-row justify-end gap-2">
+              <Pressable
+                onPress={() => (working ? undefined : setOpen(false))}
+                className="rounded-full px-4 py-2 active:opacity-60"
+              >
+                <Text className="text-sm font-semibold text-zinc-600">
+                  {t('invite_self.revoke.cancel')}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={confirmar}
+                disabled={working || !online}
+                className={`rounded-full px-4 py-2 ${
+                  working || !online ? 'bg-zinc-300' : 'bg-red-600 active:opacity-80'
+                }`}
+              >
+                <Text className="text-sm font-semibold text-white">
+                  {t('invite_self.revoke.confirm_action')}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }

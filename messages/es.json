@@ -5596,6 +5596,25 @@
       "consents_required": "Antes hay que responder las autorizaciones de imagen del jugador para esta temporada.",
       "no_active_season": "El club no tiene ninguna temporada activa.",
       "generic": "No se ha podido enviar la invitación. Inténtalo de nuevo."
+    },
+    "revoke": {
+      "action": "Retirar el acceso",
+      "title": "Retirar el acceso",
+      "confirm": "{player} dejará de entrar con su propia cuenta. Podrás volver a dársela cuando quieras.",
+      "confirm_invited": "Se cancelará la invitación enviada para que {player} tenga su propia cuenta. Podrás volver a invitarle cuando quieras.",
+      "keeps_player": "Sigue siendo jugador del club: no cambia su ficha, ni su equipo, ni sus convocatorias. Solo pierde el acceso a la app.",
+      "confirm_action": "Retirar",
+      "cancel": "Cancelar",
+      "done": {
+        "account": "Listo: ya no entra con su propia cuenta.",
+        "invitation": "Invitación cancelada.",
+        "none": "No había ninguna cuenta ni invitación que retirar."
+      },
+      "errors": {
+        "forbidden": "Solo el padre, madre o tutor legal del jugador puede retirarle el acceso.",
+        "jugador_mayor_de_edad": "El jugador ya es mayor de edad: su cuenta es suya y solo él puede cerrarla.",
+        "generic": "No se ha podido retirar el acceso. Inténtalo de nuevo."
+      }
     }
   },
   "mensajes_familia": {

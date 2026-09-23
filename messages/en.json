@@ -5596,6 +5596,25 @@
       "consents_required": "The player’s image permissions for this season need to be answered first.",
       "no_active_season": "The club has no active season.",
       "generic": "The invitation could not be sent. Please try again."
+    },
+    "revoke": {
+      "action": "Remove access",
+      "title": "Remove access",
+      "confirm": "{player} will no longer sign in with their own account. You can give it back whenever you want.",
+      "confirm_invited": "The invitation for {player} to have their own account will be cancelled. You can invite them again whenever you want.",
+      "keeps_player": "They are still a player at the club: their record, their team and their call-ups do not change. They only lose access to the app.",
+      "confirm_action": "Remove",
+      "cancel": "Cancel",
+      "done": {
+        "account": "Done: they no longer sign in with their own account.",
+        "invitation": "Invitation cancelled.",
+        "none": "There was no account or invitation to remove."
+      },
+      "errors": {
+        "forbidden": "Only the player’s parent or legal guardian can remove their access.",
+        "jugador_mayor_de_edad": "The player is already an adult: the account is theirs and only they can close it.",
+        "generic": "Access could not be removed. Please try again."
+      }
     }
   },
   "mensajes_familia": {

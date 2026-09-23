@@ -23,6 +23,9 @@ import {
   inviteLink,
   inviteLinkBase,
   pendingCoversEmail,
+  revokePlayerSelfAccountFromClient,
+  type SelfRevokeError,
+  type SelfRevokeOutcome,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
@@ -711,6 +714,45 @@ export async function inviteSelfForPlayer(
 
   revalidatePath('/[locale]/(authenticated)/perfil', 'page');
   return { ok: { email: res.ok.email } };
+}
+
+export type RevokeSelfState = {
+  error?: SelfRevokeError;
+  ok?: SelfRevokeOutcome;
+};
+
+/**
+ * RC-2 — el TUTOR retira la cuenta propia de su hijo. La acción simétrica de
+ * `inviteSelfForPlayer`, y mucho más corta: aquí no hay correo que mandar ni cuenta
+ * que crear, así que NO se toca service-role. Se llama con el cliente de la sesión y
+ * la autoridad entera vive en `revoke_player_self_account` (mig 20261100000000):
+ * tutor, menor de edad, y los dos estados que dan acceso —la cuenta y la invitación
+ * viva—. Aquí solo se mapea el error y se revalida.
+ */
+export async function revokeSelfForPlayer(
+  playerId: string
+): Promise<RevokeSelfState> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'forbidden' };
+
+  const res = await revokePlayerSelfAccountFromClient(supabase, playerId);
+  if ('error' in res) {
+    if (res.error === 'generic') {
+      Sentry.captureException(res.raw, {
+        tags: { feature: 'invitations', step: 'revoke_player_self_account' },
+        extra: { player_id: playerId },
+      });
+    }
+    return { error: res.error };
+  }
+
+  revalidatePath('/[locale]/(authenticated)/perfil', 'page');
+  return { ok: res.ok };
 }
 
 export type RemoveSpectatorState = {
