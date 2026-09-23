@@ -65,17 +65,15 @@ export default async function PerfilPage({ params, searchParams }: Props) {
   // ok:false justo para poder distinguirlo).
   const deletionPreview = await previewAccountDeletionFromClient(supabase);
 
-  // RC-3 — de esos jugadores, los que IMPIDEN el borrado: menores con cuenta propia (o
-  // con la invitación todavía viva) de los que es el único tutor. Si se fuera, quedarían
-  // dentro de la app sin nadie que les tutele. La regla la pondrá la migración del PR-4;
-  // esto la avisa antes de pulsar, y se despliega antes a propósito.
+  // RC-5 — los hijos que IMPIDEN el borrado: menores con cuenta propia (o con la
+  // invitación viva) de los que es el único tutor. Lo responde `account_deletion_holds()`,
+  // que es la MISMA función sobre la que se levanta el rechazo de la RPC
+  // (mig 20261101000000): un solo predicado para la pantalla y para la regla.
   //
   // Si la lectura falla NO se pinta la tarjeta, por lo mismo que el preview: decirle
   // «nada te lo impide» a quien no sabemos si deja a un menor solo no es enseñar menos,
   // es enseñar otra cosa.
-  const deletionHolds = deletionPreview.ok
-    ? await getAccountDeletionHoldsFromClient(supabase, deletionPreview.blockers)
-    : ({ ok: false, raw: null } as const);
+  const deletionHolds = await getAccountDeletionHoldsFromClient(supabase);
 
   // F14-13 — consentimientos del tutor en el club activo (estado latest-wins).
   const { data: consentRows } = await supabase.rpc('get_tutor_consents', {

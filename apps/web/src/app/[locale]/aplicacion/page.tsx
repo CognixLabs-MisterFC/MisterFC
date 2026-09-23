@@ -85,12 +85,15 @@ export default async function AplicacionPage({ params, searchParams }: Props) {
   // cuando no lo sabemos sería peor que no ofrecerlo.
   const deletionPreview = pendingDeletion ? null : await previewAccountDeletionFromClient(supabase);
 
-  // RC-3 — de esos jugadores, los que IMPIDEN el borrado: menores con cuenta propia
-  // (o con la invitación viva) de los que es el único tutor. Misma lectura y mismo
-  // criterio que en Perfil: si no se pudo saber, la tarjeta NO se pinta.
-  const deletionHolds = deletionPreview?.ok
-    ? await getAccountDeletionHoldsFromClient(supabase, deletionPreview.blockers)
-    : null;
+  // RC-5 — los hijos que IMPIDEN el borrado. Lo responde `account_deletion_holds()`,
+  // la misma función sobre la que se levanta el rechazo de la RPC. Mismo criterio que
+  // en Perfil: si no se pudo saber, la tarjeta NO se pinta.
+  // Con un borrado YA en curso la tarjeta no se pinta, así que tampoco se pregunta:
+  // misma condición que el preview de arriba, para no gastar una consulta de más en
+  // la pantalla que ve justo quien está a mitad del proceso.
+  const deletionHolds = pendingDeletion
+    ? null
+    : await getAccountDeletionHoldsFromClient(supabase);
 
   const stores = [
     { href: APP_STORE_URL, label: t('download_app_store') },

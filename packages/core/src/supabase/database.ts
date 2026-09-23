@@ -4471,6 +4471,17 @@ export type Database = {
           request_id: string
         }[]
       }
+      account_deletion_holds: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          hold_player_id: string
+          first_name: string
+          last_name: string
+          club_id: string
+          club_name: string
+          estado: string
+        }[]
+      }
       account_deletions_due: {
         Args: never
         Returns: {

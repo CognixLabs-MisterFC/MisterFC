@@ -75,12 +75,10 @@ export default async function SuscripcionPage({ params }: Props) {
   // lo sabemos sería peor que no ofrecerlo.
   const deletionPreview = await previewAccountDeletionFromClient(supabase);
 
-  // RC-3 — de esos jugadores, los que IMPIDEN el borrado: menores con cuenta propia
-  // (o con la invitación viva) de los que es el único tutor. Misma lectura y mismo
-  // criterio que en Perfil: si no se pudo saber, la tarjeta NO se pinta.
-  const deletionHolds = deletionPreview.ok
-    ? await getAccountDeletionHoldsFromClient(supabase, deletionPreview.blockers)
-    : null;
+  // RC-5 — los hijos que IMPIDEN el borrado. Lo responde `account_deletion_holds()`,
+  // la misma función sobre la que se levanta el rechazo de la RPC. Mismo criterio que
+  // en Perfil: si no se pudo saber, la tarjeta NO se pinta.
+  const deletionHolds = await getAccountDeletionHoldsFromClient(supabase);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-6 px-4 py-10">
@@ -138,7 +136,7 @@ export default async function SuscripcionPage({ params }: Props) {
       </p>
 
       {/* Apple 5.1.1(v): el borrado sigue alcanzable DESDE el muro. */}
-      {deletionPreview.ok && deletionHolds?.ok && (
+      {deletionPreview.ok && deletionHolds.ok && (
         <Card className="border-destructive/40">
           <CardHeader>
             <CardTitle className="text-destructive text-base">
