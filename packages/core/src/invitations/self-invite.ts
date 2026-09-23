@@ -60,6 +60,8 @@ export type SelfInviteError =
   | 'consents_required'
   /** El club no tiene temporada activa. */
   | 'no_active_season'
+  /** RC-A — quien invita tiene un borrado de su propia cuenta en curso. */
+  | 'account_deletion_pending'
   | 'email_invalid'
   | 'generic';
 
@@ -90,6 +92,10 @@ function mapRpcError(message: string): SelfInviteError {
   if (msg.includes('email_relation_conflict')) return 'email_relation_conflict';
   if (msg.includes('consents_required')) return 'consents_required';
   if (msg.includes('no_active_season')) return 'no_active_season';
+  // RC-A. Normalmente la tarjeta ya no ofrece el botón cuando esto pasa, pero el hueco
+  // entre pintar y enviar existe —el tutor pide el borrado en otra pestaña— y es el
+  // mismo hueco por el que `already_linked` sigue vivo arriba.
+  if (msg.includes('account_deletion_pending')) return 'account_deletion_pending';
   if (msg.includes('invalid_email')) return 'email_invalid';
   return 'generic';
 }

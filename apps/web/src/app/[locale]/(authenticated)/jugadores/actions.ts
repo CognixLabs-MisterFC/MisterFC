@@ -24,6 +24,7 @@ import {
   inviteLinkBase,
   pendingCoversEmail,
   revokePlayerSelfAccountFromClient,
+  type SelfInviteError,
   type SelfRevokeError,
   type SelfRevokeOutcome,
 } from '@misterfc/core';
@@ -654,17 +655,15 @@ export async function inviteSpectatorForPlayer(
 // Invitar al PROPIO JUGADOR a tener cuenta (MN-5)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Los gates los enumera CORE, en `SelfInviteError`, y aquí se derivan en vez de
+ * repetirse. Estaban escritos a mano y pasó lo que pasa siempre con una lista escrita
+ * dos veces: RC-A añadió `account_deletion_pending` en core y esta se quedó corta —lo
+ * cazó el typecheck de la web, no una prueba—. `email_too_long` sí se suma aquí porque
+ * no es un gate de la RPC: lo pone el esquema del formulario antes de llamarla.
+ */
 export type InviteSelfState = {
-  error?:
-    | 'email_invalid'
-    | 'email_too_long'
-    | 'forbidden'
-    | 'erased'
-    | 'already_linked'
-    | 'email_relation_conflict'
-    | 'consents_required'
-    | 'no_active_season'
-    | 'generic';
+  error?: SelfInviteError | 'email_too_long';
   ok?: { email: string };
 };
 

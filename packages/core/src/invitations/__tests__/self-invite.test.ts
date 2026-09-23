@@ -160,6 +160,7 @@ describe('MN-5 · performSelfInvite', () => {
     ['email_relation_conflict', 'email_relation_conflict'],
     ['consents_required', 'consents_required'],
     ['no_active_season', 'no_active_season'],
+    ['account_deletion_pending', 'account_deletion_pending'],
     ['invalid_email', 'email_invalid'],
   ] as const)('mapea el gate %s de la RPC', async (raised, expected) => {
     const res = await performSelfInvite(

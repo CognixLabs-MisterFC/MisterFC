@@ -743,6 +743,8 @@ type AccessOutcome =
   | 'consents_required'
   | 'no_active_season'
   | 'erased'
+  // RC-A — quien invita tiene un borrado de su propia cuenta en curso.
+  | 'account_deletion_pending'
   | 'error';
 
 function AccessCard({
@@ -809,6 +811,7 @@ function AccessCard({
           'consents_required',
           'no_active_season',
           'erased',
+          'account_deletion_pending',
         ];
         const got = json.error as AccessOutcome | undefined;
         setOutcome(got && known.includes(got) ? got : 'error');
@@ -848,9 +851,11 @@ function AccessCard({
           </Pressable>
         </>
       ) : (
-        // MN-10 — los tres motivos de bloqueo dicen POR QUE, con el MISMO texto que
+        // MN-10 — los motivos de bloqueo dicen POR QUE, con el MISMO texto que
         // enseñaba la RPC despues de pulsar. La clave la da core: web y nativa pintan
-        // los mismos seis estados y una lista escrita dos veces se queda coja en una.
+        // los mismos estados y una lista escrita dos veces se queda coja en una. Sin
+        // recuento a mano: RC-A anadio 'account_deletion_pending' y esta linea decia
+        // seis.
         <>
           <Text className="mt-1 text-sm text-zinc-600">
             {t(`invite_self.${selfAccountStatusMessageKey(status) ?? 'section.hint'}`)}
