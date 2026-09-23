@@ -5627,7 +5627,9 @@
     "download_app_store": "Download on the App Store",
     "download_play": "Get it on Google Play",
     "terms_link": "Terms",
-    "privacy_link": "Privacy"
+    "privacy_link": "Privacy",
+    "password_changed_title": "Password changed",
+    "password_changed_body": "Your new password is saved. Go back to the app and sign in with it."
   },
   "consentimientos": {
     "section_title": "Permissions you have given",

@@ -5627,7 +5627,9 @@
     "download_app_store": "Descarregar en App Store",
     "download_play": "Descarregar en Google Play",
     "terms_link": "Termes",
-    "privacy_link": "Privacitat"
+    "privacy_link": "Privacitat",
+    "password_changed_title": "Contrasenya canviada",
+    "password_changed_body": "La teua contrasenya nova ja està guardada. Torna a l’app i entra amb ella."
   },
   "consentimientos": {
     "section_title": "Permisos que has donat",

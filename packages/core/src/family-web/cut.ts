@@ -119,3 +119,43 @@ export async function evaluateFamilyWebCutFromClient(
 
   return decideFamilyWebCut(true, res.status.requiresSubscription);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QUÉ ACABA DE PASAR
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Acciones que la pantalla del corte sabe confirmar.
+ *
+ * `/aplicacion` es terminal: es donde acaba el alta por invitación y, desde este
+ * PR, también el cambio de contraseña. Quien llega después de HACER algo viene a
+ * saber si funcionó, así que la página necesita saber qué fue.
+ */
+export const FAMILY_WEB_CUT_DONE_MARKS = ['contrasena'] as const;
+
+export type FamilyWebCutDoneMark = (typeof FAMILY_WEB_CUT_DONE_MARKS)[number];
+
+/**
+ * Lee la marca del query param, y solo de la lista CERRADA.
+ *
+ * Vive en core por el motivo de siempre —`apps/web` no tiene runner de tests— y
+ * porque lo que decide no es cosmético: el valor viene de la URL, que la compone
+ * cualquiera. Sin comparación exacta contra una lista, esta pantalla se convertiría
+ * en un tablón donde hacerle decir a MisterFC lo que uno quiera; y como es la
+ * pantalla donde una familia confirma que su cuenta existe, el sitio es
+ * especialmente malo para dejar eso abierto.
+ *
+ * Un array (`?hecho=a&hecho=b`) se queda con el PRIMERO: Next entrega los repetidos
+ * así, y elegir uno es más honesto que rechazar la petición entera por una URL rara.
+ * Cualquier otra cosa —valor desconocido, vacío, ausente— devuelve `null` y la
+ * página se comporta como siempre.
+ */
+export function familyWebCutDoneMark(
+  raw: string | string[] | undefined | null,
+): FamilyWebCutDoneMark | null {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof value !== 'string') return null;
+  return (FAMILY_WEB_CUT_DONE_MARKS as readonly string[]).includes(value)
+    ? (value as FamilyWebCutDoneMark)
+    : null;
+}
