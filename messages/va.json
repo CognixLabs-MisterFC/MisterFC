@@ -5603,6 +5603,7 @@
       "email_relation_conflict": "Eixe correu ja figura com el d’un tutor d’este jugador. El compte del jugador necessita un correu propi.",
       "consents_required": "Abans cal respondre les autoritzacions d'imatge del jugador per a esta temporada.",
       "no_active_season": "El club no té cap temporada activa.",
+      "account_deletion_pending": "No pots donar accés mentre el teu compte està pendent d’eliminació. Cancel·la l’eliminació si vols continuar gestionant este jugador.",
       "generic": "No s'ha pogut enviar la invitació. Torna-ho a provar."
     },
     "revoke": {

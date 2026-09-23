@@ -848,9 +848,11 @@ function AccessCard({
           </Pressable>
         </>
       ) : (
-        // MN-10 — los tres motivos de bloqueo dicen POR QUE, con el MISMO texto que
+        // MN-10 — los motivos de bloqueo dicen POR QUE, con el MISMO texto que
         // enseñaba la RPC despues de pulsar. La clave la da core: web y nativa pintan
-        // los mismos seis estados y una lista escrita dos veces se queda coja en una.
+        // los mismos estados y una lista escrita dos veces se queda coja en una. Sin
+        // recuento a mano: RC-A anadio 'account_deletion_pending' y esta linea decia
+        // seis.
         <>
           <Text className="mt-1 text-sm text-zinc-600">
             {t(`invite_self.${selfAccountStatusMessageKey(status) ?? 'section.hint'}`)}

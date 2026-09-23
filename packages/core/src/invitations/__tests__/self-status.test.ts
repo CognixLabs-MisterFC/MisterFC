@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../supabase/types';
@@ -81,13 +83,16 @@ describe('selfAccountStatusMessageKey', () => {
     expect(selfAccountStatusMessageKey('linked')).toBe('state.linked');
   });
 
-  it('los tres bloqueos reutilizan el texto del error de la RPC', () => {
+  it('los bloqueos reutilizan el texto del error de la RPC', () => {
     // Misma frase en la tarjeta que despues de pulsar: dos textos para el mismo
     // hecho acaban divergiendo igual que divergen dos predicados.
     expect(selfAccountStatusMessageKey('erased')).toBe('errors.erased');
     expect(selfAccountStatusMessageKey('no_active_season')).toBe('errors.no_active_season');
     expect(selfAccountStatusMessageKey('consents_required')).toBe(
       'errors.consents_required',
+    );
+    expect(selfAccountStatusMessageKey('account_deletion_pending')).toBe(
+      'errors.account_deletion_pending',
     );
   });
 
@@ -106,5 +111,66 @@ describe('selfAccountStatusMessageKey', () => {
     for (const estado of ['none', 'invited', 'linked'] as SelfAccountStatus[]) {
       expect(isSelfAccountBlocker(estado)).toBe(false);
     }
+  });
+});
+
+/**
+ * RC-A — la clave que devuelve `selfAccountStatusMessageKey` TIENE QUE EXISTIR en los
+ * tres catalogos.
+ *
+ * Por que esto es un test y no una suposicion: una clave que falta no rompe nada
+ * ruidoso. No da error de tipos —los mensajes de next-intl no estan tipados—, no da
+ * error de lint, y el guard de censo del repo busca lo CONTRARIO (cadenas que nadie
+ * usa), asi que una clave usada y ausente se le escapa. Lo que se ve en pantalla es la
+ * clave cruda o un hueco, y solo en el estado raro que casi nadie reproduce.
+ *
+ * Es justo el riesgo que corria este PR: la migracion 20261103000000 empezo a devolver
+ * 'account_deletion_pending' ANTES de que el cliente supiera nada, y el unico motivo de
+ * que aquello no dejara un boton muerto es que `getSelfAccountStatusFromClient`
+ * devuelve `null` ante un valor desconocido. Aqui ya no hay esa red: si el estado esta
+ * en la lista, su texto tiene que estar escrito.
+ */
+const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const LOCALES = ['es', 'en', 'va'] as const;
+
+function textoDe(loc: string, clave: string): unknown {
+  const cat = JSON.parse(
+    readFileSync(join(RAIZ, 'messages', `${loc}.json`), 'utf8'),
+  ) as Record<string, unknown>;
+  return `invite_self.${clave}`
+    .split('.')
+    .reduce<unknown>(
+      (o, k) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[k] : undefined),
+      cat,
+    );
+}
+
+describe('los textos del bloque invite_self existen en los tres idiomas', () => {
+  for (const loc of LOCALES) {
+    it(`${loc}: ningun estado se queda sin frase`, () => {
+      for (const estado of [
+        'invited',
+        'linked',
+        ...SELF_ACCOUNT_BLOCKERS,
+      ] as SelfAccountStatus[]) {
+        const clave = selfAccountStatusMessageKey(estado);
+        expect(clave, `${estado} no tiene clave`).toBeTruthy();
+        const texto = textoDe(loc, clave as string);
+        expect(typeof texto, `falta invite_self.${clave} en ${loc}.json`).toBe('string');
+        expect((texto as string).trim().length, `invite_self.${clave} vacia en ${loc}`)
+          .toBeGreaterThan(0);
+      }
+    });
+  }
+
+  it('CONTROL POSITIVO: el lector encuentra de verdad los textos', () => {
+    // Sin esto, un lector roto que devolviera undefined para todo haria pasar el
+    // bloque de arriba en cuanto alguien cambiara un `toBe` por un `toBeDefined`, y
+    // un fallo de ruta (la raiz del repo se calcula a mano) se leeria como catalogo
+    // en regla.
+    expect(textoDe('es', 'errors.consents_required')).toBe(
+      'Antes hay que responder las autorizaciones de imagen del jugador para esta temporada.',
+    );
+    expect(textoDe('es', 'errors.no_existe_esta_clave')).toBeUndefined();
   });
 });

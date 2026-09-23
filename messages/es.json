@@ -5603,6 +5603,7 @@
       "email_relation_conflict": "Ese correo ya figura como el de un tutor de este jugador. La cuenta del jugador necesita un correo propio.",
       "consents_required": "Antes hay que responder las autorizaciones de imagen del jugador para esta temporada.",
       "no_active_season": "El club no tiene ninguna temporada activa.",
+      "account_deletion_pending": "No puedes dar acceso mientras tu cuenta está pendiente de borrado. Cancela el borrado si quieres seguir gestionando a este jugador.",
       "generic": "No se ha podido enviar la invitación. Inténtalo de nuevo."
     },
     "revoke": {

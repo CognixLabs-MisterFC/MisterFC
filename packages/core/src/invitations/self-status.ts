@@ -51,19 +51,32 @@ export type SelfAccountStatus =
   /** MN-10 — el club no tiene ninguna temporada abierta. */
   | 'no_active_season'
   /** MN-10 — faltan las decisiones de imagen de la temporada activa. */
-  | 'consents_required';
+  | 'consents_required'
+  /**
+   * RC-A — quien pregunta tiene un borrado de su propia cuenta EN CURSO. Es el único
+   * estado que NO habla del jugador sino del tutor que mira: el mismo crío le sale
+   * bloqueado a un tutor que se está borrando y disponible al otro que no. Lo decide
+   * `player_self_invite_blocker` (mig 20261103000000), y se desbloquea solo en cuanto
+   * el borrado se cancela o se remata: no hay estado propio que limpiar.
+   */
+  | 'account_deletion_pending';
 
 /**
- * MN-10 — los TRES motivos por los que `invite_player_self` se negaría con el tutor
- * delante y que sí se pueden saber antes de pulsar. El cuarto de la lista —
- * `email_relation_conflict`— NO está aquí y no es un olvido: se mide contra una
- * dirección concreta, la que el tutor todavía no ha escrito, así que no existe un
- * valor que calcular a priori. Ese sigue saliendo como error bajo el campo.
+ * MN-10 + RC-A — los motivos por los que `invite_player_self` se negaría con el tutor
+ * delante y que sí se pueden saber antes de pulsar. `email_relation_conflict` NO está
+ * aquí y no es un olvido: se mide contra una dirección concreta, la que el tutor
+ * todavía no ha escrito, así que no existe un valor que calcular a priori. Ese sigue
+ * saliendo como error bajo el campo.
+ *
+ * Los tres primeros son del JUGADOR. `account_deletion_pending` es del TUTOR QUE MIRA
+ * —lo añadió RC-A—, y aun así va en la misma lista: para la pantalla, «esto bloquea el
+ * botón y hay que decir por qué» es la misma cosa, venga de donde venga.
  */
 export const SELF_ACCOUNT_BLOCKERS = [
   'erased',
   'no_active_season',
   'consents_required',
+  'account_deletion_pending',
 ] as const;
 
 export type SelfAccountBlocker = (typeof SELF_ACCOUNT_BLOCKERS)[number];
@@ -117,8 +130,10 @@ export async function getSelfAccountStatusFromClient(
  * misma frase, y dos frases distintas para el mismo hecho acaban divergiendo igual
  * que divergen dos predicados.
  *
- * Vive en core, y no en cada pantalla, por lo mismo: web y nativa pintan seis
- * estados cada una, y una lista escrita dos veces se queda coja en una.
+ * Vive en core, y no en cada pantalla, por lo mismo: web y nativa pintan los mismos
+ * estados cada una, y una lista escrita dos veces se queda coja en una. Sin número
+ * escrito a mano: eran seis, RC-A hizo siete, y un recuento en un comentario no lo
+ * comprueba nadie.
  */
 export function selfAccountStatusMessageKey(
   estado: SelfAccountStatus,

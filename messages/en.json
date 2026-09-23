@@ -5603,6 +5603,7 @@
       "email_relation_conflict": "That email is already registered as a guardian of this player. The player’s account needs an email of their own.",
       "consents_required": "The player’s image permissions for this season need to be answered first.",
       "no_active_season": "The club has no active season.",
+      "account_deletion_pending": "You cannot give access while your account is pending deletion. Cancel the deletion if you want to keep managing this player.",
       "generic": "The invitation could not be sent. Please try again."
     },
     "revoke": {
