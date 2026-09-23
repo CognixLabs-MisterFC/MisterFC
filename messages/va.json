@@ -5596,6 +5596,25 @@
       "consents_required": "Abans cal respondre les autoritzacions d'imatge del jugador per a esta temporada.",
       "no_active_season": "El club no té cap temporada activa.",
       "generic": "No s'ha pogut enviar la invitació. Torna-ho a provar."
+    },
+    "revoke": {
+      "action": "Retirar l’accés",
+      "title": "Retirar l’accés",
+      "confirm": "{player} deixarà d’entrar amb el seu propi compte. Podràs tornar a donar-li’l quan vulgues.",
+      "confirm_invited": "Es cancel·larà la invitació enviada perquè {player} tinga el seu propi compte. Podràs tornar a invitar-lo quan vulgues.",
+      "keeps_player": "Continua sent jugador del club: no canvia la seua fitxa, ni el seu equip, ni les seues convocatòries. Només perd l’accés a l’app.",
+      "confirm_action": "Retirar",
+      "cancel": "Cancel·lar",
+      "done": {
+        "account": "Fet: ja no entra amb el seu propi compte.",
+        "invitation": "Invitació cancel·lada.",
+        "none": "No hi havia cap compte ni invitació per retirar."
+      },
+      "errors": {
+        "forbidden": "Només el pare, mare o tutor legal del jugador pot retirar-li l’accés.",
+        "jugador_mayor_de_edad": "El jugador ja és major d’edat: el seu compte és seu i només ell pot tancar-lo.",
+        "generic": "No s’ha pogut retirar l’accés. Torna-ho a provar."
+      }
     }
   },
   "mensajes_familia": {

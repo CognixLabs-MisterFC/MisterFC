@@ -5112,6 +5112,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      revoke_player_self_account: {
+        Args: { p_player_id: string }
+        Returns: string
+      }
       seed_club_legal_documents: {
         Args: { p_club_id: string }
         Returns: undefined

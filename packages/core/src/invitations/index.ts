@@ -67,3 +67,14 @@ export {
   type SelfInviteLogger,
   type SelfInviteResult,
 } from './self-invite';
+export {
+  canOfferSelfRevoke,
+  getSelfRevokeGateFromClient,
+  mapSelfRevokeError,
+  revokePlayerSelfAccountFromClient,
+  selfRevokeDoneMessageKey,
+  type SelfRevokeError,
+  type SelfRevokeGate,
+  type SelfRevokeOutcome,
+  type SelfRevokeResult,
+} from './self-revoke';

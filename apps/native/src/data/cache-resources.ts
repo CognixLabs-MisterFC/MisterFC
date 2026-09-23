@@ -62,6 +62,12 @@ export const WRITE_INVALIDATIONS = {
    *  hueco y ahora hay imagen; conceder el médico abre la ficha. */
   grantConsent: ['consents', 'photo-path', 'mgmt', 'plantilla', 'home', 'staff-roster', 'medical'],
 
+  /** RC-2 — el tutor retira la cuenta propia del hijo. `self-status` porque la
+   *  tarjeta pasa de 'linked'/'invited' a 'none', y `self-revoke-gate` porque el
+   *  boton de retirar tiene que irse con ella: seguir ofreciendo retirar lo que ya
+   *  no esta es el mismo defecto que MN-9 vino a quitar, por la otra cara. */
+  revokePlayerSelfAccount: ['self-status', 'self-revoke-gate'],
+
   /** Perfil del tutor (nombre/avatar/idioma). `tutors-contact` porque el tutor se ve
    *  a sí mismo en la tarjeta de contacto de Gestión: cambiarse el nombre o el
    *  teléfono y seguir viendo el viejo ahí es la clase de incoherencia que hace

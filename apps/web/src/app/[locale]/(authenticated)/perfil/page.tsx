@@ -4,7 +4,9 @@ import { Download } from 'lucide-react';
 import {
   createSupabaseServerClient,
   getPlayerManagementAccessFromClient,
+  canOfferSelfRevoke,
   getSelfAccountStatusFromClient,
+  getSelfRevokeGateFromClient,
   selfAccountStatusMessageKey,
   type SelfAccountStatus,
   getPlayerMedicalFromClient,
@@ -24,6 +26,7 @@ import { MedicalForm } from '../mi-ficha/medical-form';
 import { ErasureRequestButton } from '../mi-ficha/erasure-request-button';
 import { DeleteAccountCard } from './delete-account-card';
 import { InviteSelfDialog } from './invite-self-dialog';
+import { RevokeSelfDialog } from './revoke-self-dialog';
 import { PlayerPhotoUploader } from '../jugadores/[playerId]/player-photo-uploader';
 
 type Props = {
@@ -86,6 +89,9 @@ export default async function PerfilPage({ params, searchParams }: Props) {
   let canManageMedical = false;
   // MN-9 — estado de la cuenta propia del jugador activo: none | invited | linked.
   let selfStatus: SelfAccountStatus | null = null;
+  // RC-2 — ¿se le ofrece RETIRAR esa cuenta? Hace falta algo más que el estado: ver
+  // el comentario de la tarjeta, más abajo.
+  let canRevokeSelf = false;
   let medicalInitial: {
     allergies: string | null;
     medication: string | null;
@@ -126,6 +132,12 @@ export default async function PerfilPage({ params, searchParams }: Props) {
     // MN-9 — qué enseña la tarjeta de acceso. Sustituye al `!isSelf`, que la pintaba
     // para siempre porque miraba la relación de quien mira y no la del jugador.
     selfStatus = await getSelfAccountStatusFromClient(supabase, activePlayer.id);
+    // RC-2 — los DOS predicados con los que se gatea `revoke_player_self_account`,
+    // preguntados tal cual. La decisión vive en core porque nativa toma la misma.
+    canRevokeSelf = canOfferSelfRevoke({
+      status: selfStatus,
+      gate: await getSelfRevokeGateFromClient(supabase, activePlayer.id),
+    });
     if (canManageMedical) {
       medicalInitial = await getPlayerMedicalFromClient(supabase, activePlayer.id);
     }
@@ -216,9 +228,24 @@ export default async function PerfilPage({ params, searchParams }: Props) {
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {tInviteSelf(selfAccountStatusMessageKey(selfStatus) ?? 'section.hint')}
-                  </p>
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      {tInviteSelf(selfAccountStatusMessageKey(selfStatus) ?? 'section.hint')}
+                    </p>
+                    {/* RC-2 — retirar. NO cuelga del estado a secas: `player_self_account_status`
+                        está gateada con `user_manages_player`, así que al PROPIO jugador le
+                        contesta 'linked' igual que a su padre (MN-9 lo hace a propósito). Si
+                        colgara del estado, un chaval de 18 con su cuenta vería un «retirar mi
+                        cuenta» que el SQL le niega: el botón muerto por gate mudo que MN-6 y
+                        MN-9 llevan dos PRs quitando de esta misma pantalla. */}
+                    {canRevokeSelf && (
+                      <RevokeSelfDialog
+                        playerId={activePlayer.id}
+                        playerName={activePlayer.name}
+                        invitedOnly={selfStatus === 'invited'}
+                      />
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
