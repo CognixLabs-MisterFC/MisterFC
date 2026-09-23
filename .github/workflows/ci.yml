@@ -173,6 +173,13 @@ jobs:
     name: pgTAP · RLS (BD efímera)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # Solo lo que este job usa: `contents` para el checkout y `packages` para bajar
+    # las imágenes de ghcr.io en el paso de abajo. Es el único job del fichero con
+    # bloque propio, y por eso lleva uno: sin él hereda el permiso por defecto del
+    # repo, que no está escrito en ningún sitio y puede no incluir `packages`.
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -195,6 +202,25 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: 2.98.2
+
+      # El tirón de las imágenes iba ANÓNIMO, y ahí ghcr.io aplica su cuota más baja.
+      # Medido: cinco runs seguidos de tres PRs distintos murieron en el paso de abajo
+      # con `toomanyrequests` bajando `ghcr.io/supabase/postgres`, con el resto del CI
+      # en verde. El CLI reintenta dos veces (4s y 8s) y se rinde.
+      #
+      # Autenticarse con el GITHUB_TOKEN que el runner ya tiene mete el tirón en la
+      # cuota de la cuenta, que es mucho más alta. No cuesta un secreto nuevo.
+      #
+      # Lo que esto NO garantiza: si el `toomanyrequests` viniera del limitador global
+      # de ghcr.io y no de la cuota anónima, autenticarse no lo evita. Si vuelve a
+      # aparecer con el login puesto, la siguiente palanca es reintentar el
+      # `supabase start`, no volver a tocar esto.
+      - name: Login en ghcr.io (cuota de tirones)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       # Levanta el stack local y APLICA TODAS las migraciones en limpio. Si alguna
       # migración falla (un club nuevo no se podría crear desde cero), este paso
