@@ -9,6 +9,16 @@
 --   [5]  El menor borrando SU cuenta no arrastra al jugador: le queda su tutor.
 --   [6]  Un tutor que se borra deja la solicitud de supresion creada (lo que bloquea).
 --   [7]  CANDADO de privilegios del helper.
+--   [8]  RC-4 (mig 20261101000000) — y si al hijo le queda cuenta propia, el borrado ya
+--        NO se pide: se rechaza. Primero se retira su acceso.
+--
+-- ⚠️ POR QUE [3] Y [6] CAMBIARON DE SUJETO. Los escribio MN-BC sobre t1, el tutor unico
+-- del hijo CON cuenta propia — que es justo el caso que RC-4 pasa a rechazar. Medirlos
+-- ahi ya no es posible: no llega a crearse ninguna solicitud porque no llega a pedirse
+-- el borrado. Lo que [3] y [6] afirman (preview y request dicen lo mismo, y el unico
+-- tutor deja creada la supresion que bloquea) sigue siendo cierto y sigue midiendose,
+-- sobre t4 y j3: mismo caso, sin cuenta propia de por medio. El caso de t1 se mide
+-- ahora en [8], que es lo que le pasa hoy.
 --
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final), no deja rastro.
 \pset pager off
@@ -27,18 +37,24 @@ select pg_temp.new_test_user('3e9a0000-0000-4000-8000-000000000001', 't1@mnbc.te
 select pg_temp.new_test_user('3e9a0000-0000-4000-8000-000000000002', 'm1@mnbc.test', '{}'::jsonb);
 select pg_temp.new_test_user('3e9a0000-0000-4000-8000-000000000003', 't2@mnbc.test', '{}'::jsonb);
 select pg_temp.new_test_user('3e9a0000-0000-4000-8000-000000000004', 't3@mnbc.test', '{}'::jsonb);
+-- t4: tutor UNICO de j3, que NO tiene cuenta propia. Es donde se miden [3] y [6]
+-- desde RC-4. Ver la nota de la cabecera.
+select pg_temp.new_test_user('3e9a0000-0000-4000-8000-000000000005', 't4@mnbc.test', '{}'::jsonb);
 
 insert into public.memberships (profile_id, club_id, role) values
   ('3e9a0000-0000-4000-8000-000000000001', '3e900000-0000-4000-8000-000000000001', 'jugador'),
   ('3e9a0000-0000-4000-8000-000000000002', '3e900000-0000-4000-8000-000000000001', 'jugador'),
   ('3e9a0000-0000-4000-8000-000000000003', '3e900000-0000-4000-8000-000000000001', 'jugador'),
-  ('3e9a0000-0000-4000-8000-000000000004', '3e900000-0000-4000-8000-000000000001', 'jugador');
+  ('3e9a0000-0000-4000-8000-000000000004', '3e900000-0000-4000-8000-000000000001', 'jugador'),
+  ('3e9a0000-0000-4000-8000-000000000005', '3e900000-0000-4000-8000-000000000001', 'jugador');
 
 insert into public.players (id, club_id, first_name, last_name, date_of_birth) values
   ('3e9b0000-0000-4000-8000-000000000001', '3e900000-0000-4000-8000-000000000001',
    'Hijo', 'Mnbc', (current_date - interval '12 years')::date),
   ('3e9b0000-0000-4000-8000-000000000002', '3e900000-0000-4000-8000-000000000001',
-   'Dos', 'Mnbc', (current_date - interval '13 years')::date);
+   'Dos', 'Mnbc', (current_date - interval '13 years')::date),
+  ('3e9b0000-0000-4000-8000-000000000003', '3e900000-0000-4000-8000-000000000001',
+   'Tres', 'Mnbc', (current_date - interval '11 years')::date);
 
 -- j1: UN tutor + la cuenta propia del menor  ← el caso del agujero
 -- j2: DOS tutores
@@ -46,7 +62,8 @@ insert into public.player_accounts (player_id, profile_id, relation) values
   ('3e9b0000-0000-4000-8000-000000000001', '3e9a0000-0000-4000-8000-000000000001', 'parent'),
   ('3e9b0000-0000-4000-8000-000000000001', '3e9a0000-0000-4000-8000-000000000002', 'self'),
   ('3e9b0000-0000-4000-8000-000000000002', '3e9a0000-0000-4000-8000-000000000003', 'parent'),
-  ('3e9b0000-0000-4000-8000-000000000002', '3e9a0000-0000-4000-8000-000000000004', 'guardian');
+  ('3e9b0000-0000-4000-8000-000000000002', '3e9a0000-0000-4000-8000-000000000004', 'guardian'),
+  ('3e9b0000-0000-4000-8000-000000000003', '3e9a0000-0000-4000-8000-000000000005', 'parent');
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- [1] El helper
@@ -119,8 +136,11 @@ end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- [3] + [6] preview y request dicen lo MISMO, y request crea el bloqueo
+--
+-- Sobre t4, tutor unico de j3 (sin cuenta propia). Ver la nota de la cabecera: sobre
+-- t1 ya no se puede medir, porque desde RC-4 su borrado se rechaza antes de escribir.
 -- ─────────────────────────────────────────────────────────────────────────────
-set local "request.jwt.claims" = '{"sub":"3e9a0000-0000-4000-8000-000000000001","role":"authenticated"}';
+set local "request.jwt.claims" = '{"sub":"3e9a0000-0000-4000-8000-000000000005","role":"authenticated"}';
 
 do $$
 declare
@@ -132,7 +152,7 @@ begin
   perform public.request_account_deletion(null);
 
   select count(*) into v_er from public.erasure_requests
-   where player_id = '3e9b0000-0000-4000-8000-000000000001'
+   where player_id = '3e9b0000-0000-4000-8000-000000000003'
      and status = 'pending'
      and created_by_account_deletion;
 
@@ -142,6 +162,38 @@ begin
   if v_prev <> v_er then
     raise exception 'FAIL [3]: preview prometia % bloqueos y request creo %', v_prev, v_er;
   end if;
+end $$;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- [8] RC-4 — el caso de t1, que es el que MN-BC describio: tutor unico de un menor
+--     que YA entra con su cuenta. Antes se le creaba la supresion y el borrado seguia
+--     su curso hasta los 30 dias; ahora se rechaza, y el propio tutor tiene la llave
+--     (`revoke_player_self_account`, mig 20261100000000).
+-- ─────────────────────────────────────────────────────────────────────────────
+set local "request.jwt.claims" = '{"sub":"3e9a0000-0000-4000-8000-000000000001","role":"authenticated"}';
+
+do $$
+begin
+  perform public.request_account_deletion(null);
+  raise exception 'FAIL [8]: t1 ha podido pedir el borrado dejando a su hijo con cuenta y sin tutor';
+exception
+  when sqlstate 'P0001' then
+    if sqlerrm like 'FAIL %' then raise; end if;
+    if sqlerrm not like '%hijo_con_cuenta_propia%' then
+      raise exception 'FAIL [8]: esperaba hijo_con_cuenta_propia, dio: %', sqlerrm;
+    end if;
+end $$;
+
+-- Y con el acceso del hijo retirado, SI puede: el guard de MN-BC sigue contando al
+-- jugador como bloqueo, que es lo que [2] afirma, pero ya no hay nada que retenga.
+do $$
+begin
+  perform public.revoke_player_self_account('3e9b0000-0000-4000-8000-000000000001');
+  begin
+    perform public.request_account_deletion(null);
+  exception when others then
+    raise exception 'FAIL [8]: tras retirar la cuenta del hijo, t1 sigue sin poder borrarse (%)', sqlerrm;
+  end;
 end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
