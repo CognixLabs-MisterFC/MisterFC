@@ -25,11 +25,24 @@
 --   [9]  CANDADOS: ni anon ni authenticated ejecutan el espejo ni las dos funciones por
 --        perfil — listan el estado de suscripcion de terceros. `has_paid_access` SI
 --        sigue concedida a authenticated.
---   [10] M-2 SIGUE SIN ENCHUFAR NADA: ninguna policy usa el predicado.
 --
 -- Que el reparto no cambio el comportamiento de `has_paid_access()` lo mide
 -- `muro_m1_predicado.sql`, que corre en la misma suite y NO se ha tocado.
 --
+--
+-- BLOQUE [10] RETIRADO (M-3, mig 20261106000000). Decia "ninguna policy usa el predicado" y era cierto hasta que M-3
+-- enchufo las 18 politicas. Una asercion que el proyecto ha decidido incumplir a
+-- proposito no se deja fallando ni se comenta a medias: se retira y se dice donde vive
+-- ahora lo que sostenia.
+--
+-- Lo que sostenia era "entra el codigo, no el efecto". Eso lo miden ahora:
+--   · `muro_m3_politicas.sql` [10] — la migracion deja el interruptor APAGADO;
+--   · `muro_m3_politicas.sql` [1]  — el candado esta en las 18 tablas y SOLO en esas;
+--   · y el bloque [4] de este mismo fichero, que ya comprueba que con el interruptor
+--     apagado pasa todo el mundo.
+--
+-- No se sustituye por una comprobacion nueva aqui porque este fichero ENCIENDE el
+-- interruptor a mitad para medir, asi que no puede afirmar nada sobre su valor al final.
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final), no deja
 -- rastro. Las aserciones LEEN con el rol de la sesion: las comprobaciones van como
 -- postgres.
@@ -241,18 +254,5 @@ end $$;
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- [10] M-2 sigue sin enchufar nada.
--- ─────────────────────────────────────────────────────────────────────────────
-do $$
-declare v_pol text;
-begin
-  select string_agg(tablename || '.' || policyname, ', ') into v_pol
-    from pg_policies
-   where schemaname = 'public'
-     and coalesce(qual, '') || coalesce(with_check, '') like '%has_paid_access%';
-  if v_pol is not null then
-    raise exception 'FAIL [10]: M-2 tampoco enchufa nada, y estas politicas ya lo usan: %', v_pol;
-  end if;
-end $$;
-
 reset role;
 rollback;
