@@ -8,7 +8,7 @@ MisterFC es una plataforma que utilizan clubes deportivos para gestionar sus equ
 
 ## Quién responde de cada cosa
 
-- **Cognix Labs, S.L. es responsable del tratamiento de tu cuenta de usuario**: tu correo, tu contraseña, tu acceso a la plataforma y la relación de suscripción. Las solicitudes sobre esos datos las resolvemos nosotros.
+- **Cognix Labs, S.L.U. es responsable del tratamiento de tu cuenta de usuario**: tu correo, tu contraseña, tu acceso a la plataforma y la relación de suscripción. Las solicitudes sobre esos datos las resolvemos nosotros.
 - **Tu club es responsable del tratamiento de los datos deportivos**: la ficha del jugador, convocatorias, asistencias, alineaciones, estadísticas, valoraciones, informes y las comunicaciones internas del club. Cognix Labs actúa como **encargado del tratamiento** por cuenta del club, y no decide sobre esos datos. Las solicitudes que los afecten debe resolverlas el club.
 
 Puedes dirigirnos cualquier solicitud: si corresponde resolverla al club, se la trasladamos y te lo indicamos.
@@ -131,7 +131,7 @@ Puedes consultar el detalle de los tratamientos y de los plazos de conservación
 
 ---
 
-**Cognix Labs, S.L.**
+**Cognix Labs, S.L.U.**
 
 CIF B-93996122
 
