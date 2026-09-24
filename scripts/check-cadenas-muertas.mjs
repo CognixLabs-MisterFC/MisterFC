@@ -154,6 +154,12 @@ function seUsa(ruta) {
   const ultimo = ruta.slice(ruta.lastIndexOf('.') + 1);
   if (PALABRAS.has(ultimo)) return true;
   if (BLOB.includes(ruta)) return true;
+  // Una clave con GUION no puede salir de PALABRAS: el troceo es /[A-Za-z0-9_]+/ y
+  // parte `eliminacion-cuenta` en dos. Así que un `t('eliminacion-cuenta')` escrito
+  // del todo se acusaba como muerta — y este guard promete arriba que NO acusa en
+  // falso. Se busca la hoja como literal entrecomillado, que es exactamente la forma
+  // en que se escribe una clave; no vale con que la palabra ande suelta por ahí.
+  if (BLOB.includes(`'${ultimo}'`) || BLOB.includes(`"${ultimo}"`)) return true;
   const cola = ruta.includes('.') ? ruta.slice(ruta.indexOf('.') + 1) : ruta;
   return PLANTILLAS.some((rx) => rx.test(ruta) || rx.test(cola) || rx.test(ultimo));
 }

@@ -218,8 +218,15 @@ export function PaywallScreen() {
 
         {/* SU-7 · Apple lo EXIGE en el binario, no solo en la ficha: una suscripción
             auto-renovable sin enlaces a condiciones y privacidad es un rechazo por
-            Guideline 3.1.2. Van juntos y en la misma pantalla de la compra. */}
-        <View className="flex-row justify-center gap-4">
+            Guideline 3.1.2. Van juntos y en la misma pantalla de la compra.
+
+            D-2 · y con ellos el DESISTIMIENTO, que no lo pide Apple sino el abogado:
+            no puede descubrirse solo después de haber comprado. Por eso va aquí y no
+            escondido dentro de las condiciones.
+
+            `flex-wrap`: con tres etiquetas y la más larga siendo «Información sobre
+            desistimiento», en un móvil estrecho la tercera se salía de la fila. */}
+        <View className="flex-row flex-wrap justify-center gap-x-4">
           <Pressable
             onPress={() => void Linking.openURL(legalUrl('terminos', locale))}
             className="py-2 active:opacity-70"
@@ -231,6 +238,12 @@ export function PaywallScreen() {
             className="py-2 active:opacity-70"
           >
             <Text className="text-xs text-[#438832] underline">{t('privacy_link')}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => void Linking.openURL(legalUrl('desistimiento', locale))}
+            className="py-2 active:opacity-70"
+          >
+            <Text className="text-xs text-[#438832] underline">{t('withdrawal_link')}</Text>
           </Pressable>
         </View>
 

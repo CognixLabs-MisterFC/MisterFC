@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { PerfilForm } from './perfil-form';
 import { ConsentsSection, type TutorConsentRow } from './consents-section';
+import { LegalLinksCard } from '@/components/legal/legal-links-card';
 import { PlayerSelector } from '../mi-ficha/player-selector';
 import { MedicalForm } from '../mi-ficha/medical-form';
 import { ErasureRequestButton } from '../mi-ficha/erasure-request-button';
@@ -405,6 +406,12 @@ export default async function PerfilPage({ params, searchParams }: Props) {
           </a>
         </CardContent>
       </Card>
+
+      {/* D-3 — los legales de la plataforma, SIEMPRE alcanzables. Va antes del borrado
+          por lo mismo que los permisos: lo irreversible se queda al final. Ver la nota
+          de `LegalLinksCard`: el muro los enseña antes de pagar, pero deja de verse en
+          cuanto alguien paga — y el desistimiento son 14 días DESDE la contratación. */}
+      <LegalLinksCard locale={locale} />
 
       {/* Eliminar la cuenta. Al FINAL del todo y en su propia tarjeta: es lo más
           irreversible que un usuario puede hacer sobre sí mismo. */}

@@ -5578,7 +5578,8 @@
     "claim_none": "No hemos encontrado ninguna suscripción a nombre de esta cuenta. Si acabas de pagar, espera un momento y vuelve a intentarlo.",
     "claim_error": "No hemos podido comprobarlo ahora mismo. Inténtalo de nuevo en un momento.",
     "terms_link": "Condiciones de uso",
-    "privacy_link": "Política de privacidad"
+    "privacy_link": "Política de privacidad",
+    "withdrawal_link": "Información sobre desistimiento"
   },
   "invite_self": {
     "action": "Dar acceso al jugador",
@@ -5728,7 +5729,15 @@
     }
   },
   "legal_publico": {
-    "solo_castellano": "Este documento solo existe en castellano."
+    "solo_castellano": "Este documento solo existe en castellano.",
+    "perfil": {
+      "title": "Documentos legales",
+      "note": "Los documentos de MisterFC. Lo que aceptaste de tu club está más arriba, en «Permisos».",
+      "privacidad": "Política de privacidad",
+      "terminos": "Condiciones de uso",
+      "eliminacion-cuenta": "Eliminación de cuenta",
+      "desistimiento": "Información sobre desistimiento"
+    }
   },
   "emails": {
     "spectator_invite": {
