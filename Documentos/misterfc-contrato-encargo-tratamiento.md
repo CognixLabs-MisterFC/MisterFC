@@ -21,6 +21,7 @@ En adelante, «el Club».
 **ENCARGADO DEL TRATAMIENTO**
 
 - Entidad: Cognix Labs, S.L.U.
+- NIF: B93996122
 - Domicilio: Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España)
 - Correo electrónico: info.cognixlabs@gmail.com
 
