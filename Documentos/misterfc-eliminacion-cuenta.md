@@ -133,7 +133,7 @@ Puedes consultar el detalle de los tratamientos y de los plazos de conservación
 
 **Cognix Labs, S.L.U.**
 
-CIF B-93996122
+NIF: B93996122
 
 Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España)
 

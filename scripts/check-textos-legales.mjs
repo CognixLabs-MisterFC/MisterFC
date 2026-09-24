@@ -33,6 +33,11 @@
  *   8. cada texto servido tiene su entrada en `outputFileTracingIncludes`
  *      (next.config). Sin ella el .md no viaja al despliegue: la página funciona en
  *      local y en producción da 500 al leerlo.
+ *   9. cada texto servido está listado en TODAS las superficies que enumeran los
+ *      legales (pie público, pie cruzado, sitemap y las dos tarjetas de Perfil, más el
+ *      tipo `LegalDoc` de la nativa). Éste es el eslabón que se rompió de verdad:
+ *      publicar el desistimiento dejó tres listas con tres documentos, y la página
+ *      responde 200 aunque no se alcance desde ninguna parte.
  *
  * Lo que NO comprueba: que el texto sea correcto. Eso lo dice el abogado.
  */
@@ -219,6 +224,87 @@ if (existsSync(NEXT_CONFIG)) {
   errores.push(`no existe apps/web/next.config.ts.`);
 }
 
+// 9 — cada texto servido aparece en TODAS las superficies que enumeran los legales.
+//
+// El eslabón que se rompió de verdad (D-1/D-2): se publicó el formulario de
+// desistimiento —maestra, censo, slug, ruta, trace, todo lo de arriba en verde— y se
+// quedaron listando TRES documentos el pie público, el sitemap y el pie cruzado de las
+// propias páginas legales. Ninguna de las dos listas estaba cubierta por este guard,
+// así que el documento existía y no se alcanzaba desde donde se busca. Es el fallo más
+// silencioso de la cadena: la página responde 200 si escribes la URL a mano.
+//
+// Se comprueba por el SLUG entre comillas porque las seis superficies lo escriben así,
+// literal, y no por la etiqueta: las etiquetas son distintas en cada sitio (y en el
+// Perfil salen del catálogo, traducidas), el slug es el mismo.
+//
+// LOS DOS MUROS DE PAGO NO ESTÁN AQUÍ Y ES A PROPÓSITO: llevan tres enlaces de los
+// cuatro —condiciones, privacidad y desistimiento—, no la eliminación de cuenta, que
+// tiene su propia tarjeta en esa misma pantalla. Los vigila
+// `packages/core/src/subscription/__tests__/legal-links-census.test.ts`.
+const SUPERFICIES = [
+  {
+    ruta: 'apps/web/src/components/legal/legal-footer.tsx',
+    que: 'el pie legal de las páginas públicas SIN SESIÓN (/clubes y /signin)',
+    silencio: 'quien no ha entrado todavía no tiene forma de llegar al documento',
+  },
+  {
+    ruta: 'apps/web/src/app/[locale]/legal/layout.tsx',
+    que: 'el pie que cruza unas páginas legales con otras',
+    silencio: 'se llega a un documento y desde él no se ve que exista el otro',
+  },
+  {
+    ruta: 'apps/web/src/app/sitemap.ts',
+    que: 'el sitemap',
+    silencio: 'la página queda fuera de lo que indexan los buscadores',
+  },
+  {
+    ruta: 'apps/web/src/components/legal/legal-links-card.tsx',
+    que: 'la tarjeta de documentos legales del Perfil web',
+    silencio: 'quien ya paga deja de ver el muro y se queda sin el enlace',
+  },
+  {
+    ruta: 'apps/native/src/screens/profile-screen.tsx',
+    que: 'la tarjeta de documentos legales del Perfil nativo',
+    silencio: 'lo mismo, en la pantalla que usan de verdad las familias',
+  },
+  {
+    ruta: 'apps/native/src/legal/links.ts',
+    que: 'el tipo LegalDoc de la nativa',
+    silencio: 'la nativa no puede ni nombrar el documento para abrirlo',
+  },
+];
+
+let superficiesLeidas = 0;
+for (const sup of SUPERFICIES) {
+  const ruta = join(ROOT, sup.ruta);
+  if (!existsSync(ruta)) {
+    errores.push(
+      `no existe ${sup.ruta} (${sup.que}). Si se ha movido, actualiza SUPERFICIES: ` +
+        `mientras el fichero no esté, este guard no comprueba esa superficie.`,
+    );
+    continue;
+  }
+  superficiesLeidas += 1;
+  const fuente = readFileSync(ruta, 'utf8');
+  for (const par of SERVIDOS) {
+    if (!fuente.includes(`'${par.servido}'`) && !fuente.includes(`"${par.servido}"`)) {
+      errores.push(
+        `'${par.servido}' no aparece en ${sup.ruta} — ${sup.que}. La página se sirve ` +
+          `igual y responde 200, pero ${sup.silencio}.`,
+      );
+    }
+  }
+}
+
+// Control positivo del bloque: si SUPERFICIES se queda vacía o todas las rutas
+// cambian de sitio, lo de arriba es un bucle que no se ejecuta y pasa en verde.
+if (superficiesLeidas < SUPERFICIES.length) {
+  errores.push(
+    `solo se leyeron ${superficiesLeidas} de ${SUPERFICIES.length} superficies que ` +
+      `enumeran los legales. Este bloque ya no vigila lo que dice vigilar.`,
+  );
+}
+
 if (errores.length > 0) {
   console.error('✗ check:textos-legales\n');
   for (const e of errores) console.error(`  · ${e}\n`);
@@ -230,5 +316,6 @@ console.log(
   `✓ check:textos-legales — ${SERVIDOS.length} textos con copia ÚNICA en Documentos/ ` +
     `y generada al construir, ${noServidos} documento(s) declarado(s) como no ` +
     `servido(s); generador enchufado a build y dev, maestra en las entradas de turbo ` +
-    `y en el trace de despliegue.`,
+    `y en el trace de despliegue; los ${SERVIDOS.length} listados en las ` +
+    `${SUPERFICIES.length} superficies que los enumeran.`,
 );
