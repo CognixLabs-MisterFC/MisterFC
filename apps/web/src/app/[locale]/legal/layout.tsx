@@ -6,12 +6,13 @@ import { setRequestLocale } from 'next-intl/server';
  * Layout PÚBLICO de las páginas legales de Cognix Labs (fuera del grupo
  * (authenticated) → sin sesión). Panel oscuro (mismo #0F1B2E que el modal legal
  * de F14-13) para que `LegalMarkdown` —estilizado para fondo oscuro— quede legible
- * sin tocar el componente compartido. Pie con enlaces cruzados entre las tres.
+ * sin tocar el componente compartido. Pie con enlaces cruzados entre las cuatro.
  */
 const PAGES = [
   { slug: 'privacidad', label: 'Política de Privacidad' },
   { slug: 'terminos', label: 'Términos y Condiciones' },
   { slug: 'eliminacion-cuenta', label: 'Eliminación de cuenta' },
+  { slug: 'desistimiento', label: 'Formulario de desistimiento' },
 ] as const;
 
 type Props = {

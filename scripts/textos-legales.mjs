@@ -36,6 +36,7 @@ export const PARES = [
   { maestra: 'misterfc-politica-privacidad.md', servido: 'privacidad' },
   { maestra: 'misterfc-terminos-condiciones.md', servido: 'terminos' },
   { maestra: 'misterfc-eliminacion-cuenta.md', servido: 'eliminacion-cuenta' },
+  { maestra: 'misterfc-formulario-desistimiento.md', servido: 'desistimiento' },
   {
     maestra: 'misterfc-contrato-encargo-tratamiento.md',
     servido: null,

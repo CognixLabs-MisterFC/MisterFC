@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
     '/[locale]/legal/privacidad': ['./src/content/legal/privacidad.md'],
     '/[locale]/legal/eliminacion-cuenta': ['./src/content/legal/eliminacion-cuenta.md'],
     '/[locale]/legal/terminos': ['./src/content/legal/terminos.md'],
+    '/[locale]/legal/desistimiento': ['./src/content/legal/desistimiento.md'],
   },
   // F14-3c — el accept multi-hijo sube las fotos de los hijos por Server Action
   // (server-side con admin, porque el tutor aún no está vinculado). Cada foto

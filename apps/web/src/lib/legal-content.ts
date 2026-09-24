@@ -20,7 +20,11 @@ import { SITE_URL } from '@/lib/site-url';
  * NO es `legal_documents` (F14-11/12), que son los textos POR CLUB en la BD. Esto
  * son documentos estáticos, iguales para todos, del prestador de la plataforma.
  */
-export type LegalSlug = 'privacidad' | 'eliminacion-cuenta' | 'terminos';
+export type LegalSlug =
+  | 'privacidad'
+  | 'eliminacion-cuenta'
+  | 'terminos'
+  | 'desistimiento';
 
 export function readLegalDoc(slug: LegalSlug): string {
   return readFileSync(join(process.cwd(), 'src/content/legal', `${slug}.md`), 'utf8');

@@ -11,14 +11,14 @@ MisterFC es una plataforma de software como servicio (SaaS) que distintos clubes
 En función del tratamiento de que se trate, intervienen las siguientes figuras:
 
 - **Cada club es el responsable del tratamiento** de los datos de sus jugadores, familias y personal técnico. El club determina qué datos recoge, sobre qué personas y con qué finalidades deportivas y organizativas.
-- **Cognix Labs, S.L. es encargado del tratamiento**, actuando por cuenta de cada club y siguiendo sus instrucciones, conforme al artículo 28 del Reglamento (UE) 2016/679 (RGPD).
-- **Cognix Labs, S.L. actúa como responsable del tratamiento** respecto de los datos necesarios para crear y gestionar la propia cuenta de usuario, así como de los datos técnicos necesarios para prestar, mantener y asegurar el servicio.
+- **Cognix Labs, S.L.U. es encargado del tratamiento**, actuando por cuenta de cada club y siguiendo sus instrucciones, conforme al artículo 28 del Reglamento (UE) 2016/679 (RGPD).
+- **Cognix Labs, S.L.U. actúa como responsable del tratamiento** respecto de los datos necesarios para crear y gestionar la propia cuenta de usuario, así como de los datos técnicos necesarios para prestar, mantener y asegurar el servicio.
 
-Este esquema se sustenta en un contrato de encargo del tratamiento entre Cognix Labs, S.L. y cada club, independiente de esta Política de Privacidad. Cada club informa a sus propios usuarios sobre los tratamientos de los que es responsable.
+Este esquema se sustenta en un contrato de encargo del tratamiento entre Cognix Labs, S.L.U. y cada club, independiente de esta Política de Privacidad. Cada club informa a sus propios usuarios sobre los tratamientos de los que es responsable.
 
-**Datos de Cognix Labs, S.L.**
+**Datos de Cognix Labs, S.L.U.**
 
-- Titular: Cognix Labs, S.L.
+- Titular: Cognix Labs, S.L.U.
 - Domicilio: Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España)
 - Correo electrónico de privacidad: info.cognixlabs@gmail.com
 
@@ -95,7 +95,7 @@ Cuando se tenga conocimiento de que se han tratado datos de un menor sin la debi
 
 | Finalidad | Base jurídica |
 |---|---|
-| Creación y gestión de la cuenta de usuario y acceso a la plataforma | Art. 6.1.b RGPD (ejecución del contrato con Cognix Labs, S.L.) |
+| Creación y gestión de la cuenta de usuario y acceso a la plataforma | Art. 6.1.b RGPD (ejecución del contrato con Cognix Labs, S.L.U.) |
 | Gestión deportiva del club: equipos, entrenamientos, convocatorias, alineaciones, asistencia y estadísticas | Determinada por el club responsable, en el marco de la relación entre el club y sus miembros |
 | Tratamiento de datos de salud del jugador | Art. 6.1.a y art. 9.2.a RGPD (consentimiento explícito del tutor legal o del jugador mayor de edad) |
 | Tratamiento de la imagen del jugador | Art. 6.1.a RGPD (consentimiento específico, diferenciado para uso interno y para difusión) |
@@ -142,9 +142,9 @@ Para prestar el servicio se comparten datos con proveedores tecnológicos que ac
 
 No se venden ni ceden datos personales a terceros con fines comerciales o publicitarios. La aplicación no muestra publicidad.
 
-## 9. Encargados del tratamiento de Cognix Labs, S.L.
+## 9. Encargados del tratamiento de Cognix Labs, S.L.U.
 
-RevenueCat trata datos de los que Cognix Labs, S.L. es responsable —la cuenta de usuario y la suscripción—, no datos de los que sea responsable el club, por lo que no tiene la condición de subencargado de este.
+RevenueCat trata datos de los que Cognix Labs, S.L.U. es responsable —la cuenta de usuario y la suscripción—, no datos de los que sea responsable el club, por lo que no tiene la condición de subencargado de este.
 
 | Encargado | Finalidad | Ubicación |
 | --- | --- | --- |
@@ -176,13 +176,13 @@ Finalizada la relación, o ejercido el derecho de supresión cuando corresponda,
 
 **Revocación del acceso de seguidores.** Cuando la familia revoca el acceso de un seguidor, el vínculo se elimina de forma efectiva y el seguidor deja de tener acceso a cualquier dato del jugador.
 
-**Datos de la suscripción.** Al eliminar la cuenta se solicita la supresión de los datos de la suscripción al proveedor que la gestiona técnicamente. El **histórico de compra que conserva la tienda de aplicaciones** (Apple App Store o Google Play) no depende de Cognix Labs, S.L.: está sujeto a las condiciones y a los plazos de conservación de la tienda, y debe reclamarse ante ella.
+**Datos de la suscripción.** Al eliminar la cuenta se solicita la supresión de los datos de la suscripción al proveedor que la gestiona técnicamente. El **histórico de compra que conserva la tienda de aplicaciones** (Apple App Store o Google Play) no depende de Cognix Labs, S.L.U.: está sujeto a las condiciones y a los plazos de conservación de la tienda, y debe reclamarse ante ella.
 
 ## 12. Derechos
 
 Las personas cuyos datos sean objeto de tratamiento pueden ejercer, cuando resulten aplicables, los derechos de acceso, rectificación, supresión, limitación del tratamiento, oposición, portabilidad y retirada del consentimiento.
 
-Dado que el club es el responsable del tratamiento de los datos de gestión deportiva, **el usuario puede dirigir su solicitud directamente a su club**. También puede ponerse en contacto con Cognix Labs, S.L. en info.cognixlabs@gmail.com. Cuando Cognix Labs reciba una solicitud relativa a un tratamiento del que sea responsable el club, trasladará la solicitud al club correspondiente y le prestará la asistencia necesaria como encargado del tratamiento.
+Dado que el club es el responsable del tratamiento de los datos de gestión deportiva, **el usuario puede dirigir su solicitud directamente a su club**. También puede ponerse en contacto con Cognix Labs, S.L.U. en info.cognixlabs@gmail.com. Cuando Cognix Labs reciba una solicitud relativa a un tratamiento del que sea responsable el club, trasladará la solicitud al club correspondiente y le prestará la asistencia necesaria como encargado del tratamiento.
 
 En el caso de jugadores menores de edad, estos derechos serán ejercidos por su padre, madre o tutor legal.
 
@@ -239,6 +239,6 @@ Esta Política de Privacidad puede actualizarse para adaptarla a cambios legisla
 
 ---
 
-Cognix Labs, S.L.
+Cognix Labs, S.L.U.
 Domicilio: Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España)
 Correo electrónico de privacidad: info.cognixlabs@gmail.com

@@ -4,7 +4,7 @@
 
 ## 1. Información general
 
-Los presentes Términos y Condiciones regulan el uso de la plataforma digital MisterFC (en adelante, «la Plataforma»), integrada por la aplicación móvil MisterFC, el sitio web `misterfc.es` y el panel de gestión web, operada por **Cognix Labs, S.L.**, con domicilio social en Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España).
+Los presentes Términos y Condiciones regulan el uso de la plataforma digital MisterFC (en adelante, «la Plataforma»), integrada por la aplicación móvil MisterFC, el sitio web `misterfc.es` y el panel de gestión web, operada por **Cognix Labs, S.L.U.**, con domicilio social en Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España).
 
 Para cualquier consulta puede contactar en: **info.cognixlabs@gmail.com**
 
@@ -19,7 +19,7 @@ MisterFC es una herramienta de gestión que los clubes deportivos contratan para
 - comunicarse entre el personal del club y las familias mediante mensajes, anuncios y novedades;
 - gestionar las autorizaciones y consentimientos relativos a los jugadores.
 
-**Cognix Labs, S.L. presta un servicio tecnológico. No organiza actividades deportivas, no dirige equipos, no toma decisiones deportivas ni interviene en la relación entre el club y sus miembros.** El contenido introducido en la Plataforma y las decisiones que se adopten a partir de él corresponden exclusivamente al club.
+**Cognix Labs, S.L.U. presta un servicio tecnológico. No organiza actividades deportivas, no dirige equipos, no toma decisiones deportivas ni interviene en la relación entre el club y sus miembros.** El contenido introducido en la Plataforma y las decisiones que se adopten a partir de él corresponden exclusivamente al club.
 
 ## 3. Suscripción de acceso
 
@@ -43,7 +43,7 @@ La suscripción se contrata a título personal por el titular de la cuenta, que 
 
 Cuando la cuenta corresponde a un **jugador menor de edad**, la suscripción debe ser contratada o expresamente autorizada por su padre, madre o tutor legal, a quien corresponde facilitar el medio de pago y supervisar su utilización. Al contratar desde la cuenta de un menor se declara contar con esa autorización.
 
-Cognix Labs, S.L. podrá solicitar la confirmación del tutor cuando existan indicios de que la suscripción se ha contratado sin su autorización y, de no obtenerla, cancelarla y reembolsar la parte no disfrutada.
+Cognix Labs, S.L.U. podrá solicitar la confirmación del tutor cuando existan indicios de que la suscripción se ha contratado sin su autorización y, de no obtenerla, cancelarla y reembolsar la parte no disfrutada.
 
 ### 3.4 Duración y precio
 
@@ -55,7 +55,7 @@ Antes de confirmar la compra se muestran el precio total, la duración del perio
 
 La suscripción **se renueva automáticamente** por periodos iguales de un año, al precio vigente en cada renovación, salvo que el usuario la cancele con una antelación mínima de **24 horas** respecto de la fecha de renovación.
 
-Con independencia de los avisos que envíe la tienda de aplicaciones, Cognix Labs, S.L. recordará al usuario la renovación con al menos **6 días** de antelación.
+Con independencia de los avisos que envíe la tienda de aplicaciones, Cognix Labs, S.L.U. recordará al usuario la renovación con al menos **6 días** de antelación.
 
 ### 3.6 Derecho de desistimiento
 
@@ -77,9 +77,9 @@ En la actualidad la suscripción **solo puede contratarse desde la aplicación m
 
 ### 3.9 Cobro, facturación y devoluciones
 
-El cobro lo realiza la tienda de aplicaciones a través de la cuenta del usuario y conforme a sus propias condiciones. Según la tienda y el territorio, esta puede actuar como vendedora en nombre propio o como intermediaria de Cognix Labs, S.L.; el justificante de la compra y, en su caso, la factura, los emite quien ostente la condición de vendedor con arreglo a las condiciones de la tienda aplicable.
+El cobro lo realiza la tienda de aplicaciones a través de la cuenta del usuario y conforme a sus propias condiciones. Según la tienda y el territorio, esta puede actuar como vendedora en nombre propio o como intermediaria de Cognix Labs, S.L.U.; el justificante de la compra y, en su caso, la factura, los emite quien ostente la condición de vendedor con arreglo a las condiciones de la tienda aplicable.
 
-Las solicitudes de devolución se dirigen a la tienda, que es quien gestiona el pago. Ello se entiende sin perjuicio de los derechos que correspondan al usuario frente a Cognix Labs, S.L. conforme a estos Términos y a la normativa de consumo.
+Las solicitudes de devolución se dirigen a la tienda, que es quien gestiona el pago. Ello se entiende sin perjuicio de los derechos que correspondan al usuario frente a Cognix Labs, S.L.U. conforme a estos Términos y a la normativa de consumo.
 
 ### 3.10 Una cuenta, una suscripción
 
@@ -97,15 +97,15 @@ Cualquier modificación del precio se comunicará con la antelación y por los m
 
 ### 3.13 Modificaciones del servicio
 
-Las funcionalidades de la Plataforma pueden evolucionar. Cognix Labs, S.L. mantendrá el servicio conforme a lo contratado durante todo el periodo de suscripción y facilitará las actualizaciones necesarias para ello.
+Las funcionalidades de la Plataforma pueden evolucionar. Cognix Labs, S.L.U. mantendrá el servicio conforme a lo contratado durante todo el periodo de suscripción y facilitará las actualizaciones necesarias para ello.
 
 Si la Plataforma se modifica de manera que **reduzca sustancialmente** las funcionalidades contratadas y ello afecte negativamente al acceso o al uso del servicio, se comunicará al usuario con antelación razonable y este podrá resolver la suscripción con **reembolso proporcional** de la parte no disfrutada.
 
 ### 3.14 Disponibilidad
 
-Cognix Labs, S.L. procurará la disponibilidad continuada del servicio, sin que pueda garantizarse que sea ininterrumpido o esté libre de errores. Las tareas de mantenimiento programado se realizarán, siempre que sea posible, en horarios de menor uso y se avisarán con antelación.
+Cognix Labs, S.L.U. procurará la disponibilidad continuada del servicio, sin que pueda garantizarse que sea ininterrumpido o esté libre de errores. Las tareas de mantenimiento programado se realizarán, siempre que sea posible, en horarios de menor uso y se avisarán con antelación.
 
-Si el servicio resulta indisponible durante un periodo prolongado por causa no imputable al usuario, este podrá optar entre la prórroga de la suscripción por un tiempo equivalente o el reembolso proporcional. No se considerará incumplimiento la indisponibilidad debida a causas de fuerza mayor o a fallos de terceros proveedores ajenos al control de Cognix Labs, S.L.
+Si el servicio resulta indisponible durante un periodo prolongado por causa no imputable al usuario, este podrá optar entre la prórroga de la suscripción por un tiempo equivalente o el reembolso proporcional. No se considerará incumplimiento la indisponibilidad debida a causas de fuerza mayor o a fallos de terceros proveedores ajenos al control de Cognix Labs, S.L.U.
 
 ### 3.15 Relación con la eliminación de la cuenta
 
@@ -117,10 +117,10 @@ El acceso a la Plataforma se produce **por invitación del club** al que pertene
 
 En consecuencia:
 
-- La relación **deportiva y disciplinaria** del usuario es **con su club**, no con Cognix Labs, S.L. Lo mismo ocurre con las **cuotas, fichas, inscripciones, licencias federativas, seguros deportivos y cualquier otro pago propio de la actividad deportiva**, que el club gestiona por sus propios medios y son ajenos a la Plataforma.
-- La **suscripción de acceso** regulada en la sección 3 es la **única** relación económica entre el usuario y Cognix Labs, S.L., y es independiente de lo que el usuario pague o deba a su club. Impagar la cuota del club no afecta a la suscripción, y cancelar la suscripción no extingue ninguna obligación con el club.
+- La relación **deportiva y disciplinaria** del usuario es **con su club**, no con Cognix Labs, S.L.U. Lo mismo ocurre con las **cuotas, fichas, inscripciones, licencias federativas, seguros deportivos y cualquier otro pago propio de la actividad deportiva**, que el club gestiona por sus propios medios y son ajenos a la Plataforma.
+- La **suscripción de acceso** regulada en la sección 3 es la **única** relación económica entre el usuario y Cognix Labs, S.L.U., y es independiente de lo que el usuario pague o deba a su club. Impagar la cuota del club no afecta a la suscripción, y cancelar la suscripción no extingue ninguna obligación con el club.
 - El club decide qué usuarios tienen acceso, con qué rol y durante cuánto tiempo, y puede revocar dicho acceso, con los efectos previstos en la sección 11.
-- En materia de protección de datos, **Cognix Labs, S.L. es responsable del tratamiento de la cuenta de usuario y de la suscripción**, mientras que el **club es responsable de los datos deportivos** y Cognix Labs, S.L. actúa respecto de estos como encargado del tratamiento por cuenta del club.
+- En materia de protección de datos, **Cognix Labs, S.L.U. es responsable del tratamiento de la cuenta de usuario y de la suscripción**, mientras que el **club es responsable de los datos deportivos** y Cognix Labs, S.L.U. actúa respecto de estos como encargado del tratamiento por cuenta del club.
 
 Las reclamaciones relativas a la actividad deportiva, a la información publicada por el club o a las decisiones técnicas deben dirigirse al club.
 
@@ -130,7 +130,7 @@ El acceso y uso de la Plataforma implica la aceptación plena y sin reservas de 
 
 La aceptación se realiza por medios electrónicos al completar el proceso de alta mediante la invitación recibida. De conformidad con el Reglamento (UE) 910/2014 (eIDAS) y la Ley 6/2020, esta aceptación electrónica tiene plena validez jurídica.
 
-Como prueba de la aceptación, Cognix Labs, S.L. registrará y conservará la identidad de la cuenta, la fecha y hora de la aceptación y la versión del documento aceptado.
+Como prueba de la aceptación, Cognix Labs, S.L.U. registrará y conservará la identidad de la cuenta, la fecha y hora de la aceptación y la versión del documento aceptado.
 
 ## 6. Usuarios y cuentas
 
@@ -170,11 +170,11 @@ El usuario es responsable del contenido que introduce en la Plataforma, incluido
 
 En particular, quien incorpore datos o imágenes de un jugador menor de edad debe asegurarse de contar con la autorización de su padre, madre o tutor legal. La Plataforma proporciona los mecanismos para registrar dichas autorizaciones, pero su obtención corresponde al club.
 
-Cognix Labs, S.L. no revisa con carácter previo el contenido introducido por los usuarios. No obstante, podrá retirarlo o suspender el acceso cuando tenga conocimiento de que resulta manifiestamente ilícito o de que vulnera estos Términos.
+Cognix Labs, S.L.U. no revisa con carácter previo el contenido introducido por los usuarios. No obstante, podrá retirarlo o suspender el acceso cuando tenga conocimiento de que resulta manifiestamente ilícito o de que vulnera estos Términos.
 
 ## 9. Disponibilidad del servicio
 
-Cognix Labs, S.L. procurará mantener la Plataforma disponible de forma continua, pero no garantiza la ausencia de interrupciones. El servicio puede verse afectado por tareas de mantenimiento, actualizaciones, incidencias técnicas o fallos de los proveedores de infraestructura.
+Cognix Labs, S.L.U. procurará mantener la Plataforma disponible de forma continua, pero no garantiza la ausencia de interrupciones. El servicio puede verse afectado por tareas de mantenimiento, actualizaciones, incidencias técnicas o fallos de los proveedores de infraestructura.
 
 Se procurará que las interrupciones programadas se realicen en los horarios de menor uso y se informará de ellas cuando resulte posible.
 
@@ -182,7 +182,7 @@ Determinadas funcionalidades requieren conexión a internet. La aplicación móv
 
 ## 10. Modificaciones del servicio
 
-Cognix Labs, S.L. podrá modificar, añadir o retirar funcionalidades de la Plataforma para mejorarla o adaptarla a requisitos técnicos o legales. Cuando un cambio afecte de forma sustancial al uso del servicio, se informará a los usuarios con antelación razonable.
+Cognix Labs, S.L.U. podrá modificar, añadir o retirar funcionalidades de la Plataforma para mejorarla o adaptarla a requisitos técnicos o legales. Cuando un cambio afecte de forma sustancial al uso del servicio, se informará a los usuarios con antelación razonable.
 
 ## 11. Duración y terminación
 
@@ -194,7 +194,7 @@ El acceso puede finalizar cuando:
 - **la suscripción de acceso vence y no se renueva, o su cobro no puede completarse**;
 - el club revoca el acceso del usuario o finaliza su vinculación;
 - el club deja de utilizar la Plataforma;
-- Cognix Labs, S.L. suspende el acceso por incumplimiento grave de estos Términos.
+- Cognix Labs, S.L.U. suspende el acceso por incumplimiento grave de estos Términos.
 
 ### 11.1 Efecto sobre el periodo ya pagado
 
@@ -215,25 +215,25 @@ Durante ese periodo y con posterioridad, el usuario conserva íntegramente sus d
 
 El tratamiento de los datos personales se rige por la Política de Privacidad, que forma parte integrante de estos Términos.
 
-Con carácter general, **cada club es responsable del tratamiento** de los datos de sus jugadores, familias y personal técnico, y **Cognix Labs, S.L. actúa como encargado del tratamiento** por cuenta del club.
+Con carácter general, **cada club es responsable del tratamiento** de los datos de sus jugadores, familias y personal técnico, y **Cognix Labs, S.L.U. actúa como encargado del tratamiento** por cuenta del club.
 
 ## 13. Propiedad intelectual
 
-La Plataforma, su código, diseño, interfaz, marcas y contenidos son propiedad de Cognix Labs, S.L. o de sus licenciantes, y están protegidos por la legislación de propiedad intelectual e industrial.
+La Plataforma, su código, diseño, interfaz, marcas y contenidos son propiedad de Cognix Labs, S.L.U. o de sus licenciantes, y están protegidos por la legislación de propiedad intelectual e industrial.
 
 Se concede al usuario un derecho de uso personal, limitado, revocable y no exclusivo, circunscrito a la finalidad del servicio. Queda prohibida la reproducción, distribución, transformación, descompilación o ingeniería inversa de la Plataforma, así como su uso para desarrollar productos o servicios competidores.
 
-Los datos y contenidos introducidos por el club y sus usuarios siguen siendo de su titularidad. Cognix Labs, S.L. los trata únicamente para prestar el servicio.
+Los datos y contenidos introducidos por el club y sus usuarios siguen siendo de su titularidad. Cognix Labs, S.L.U. los trata únicamente para prestar el servicio.
 
 ## 14. Responsabilidad
 
-**14.1** Cognix Labs, S.L. presta un servicio tecnológico y no responde de las decisiones deportivas, organizativas o disciplinarias adoptadas por el club ni de la exactitud de la información que este introduce en la Plataforma.
+**14.1** Cognix Labs, S.L.U. presta un servicio tecnológico y no responde de las decisiones deportivas, organizativas o disciplinarias adoptadas por el club ni de la exactitud de la información que este introduce en la Plataforma.
 
-**14.2** Cognix Labs, S.L. no responde de los daños derivados de la práctica deportiva. La valoración de la aptitud física del jugador y el cumplimiento de las obligaciones en materia de seguridad y seguros corresponden al club y, en el caso de menores, a sus padres o tutores legales.
+**14.2** Cognix Labs, S.L.U. no responde de los daños derivados de la práctica deportiva. La valoración de la aptitud física del jugador y el cumplimiento de las obligaciones en materia de seguridad y seguros corresponden al club y, en el caso de menores, a sus padres o tutores legales.
 
 **14.3 La Plataforma no es un sistema médico ni sustituye al criterio sanitario.** Las notas médicas son información de apoyo introducida por el club y no constituyen diagnóstico, prescripción ni asistencia sanitaria. Ante cualquier incidencia de salud debe acudirse a los servicios sanitarios.
 
-**14.4** Cognix Labs, S.L. no responde del uso indebido que los usuarios hagan de la información a la que acceden a través de la Plataforma.
+**14.4** Cognix Labs, S.L.U. no responde del uso indebido que los usuarios hagan de la información a la que acceden a través de la Plataforma.
 
 **14.5** Nada en estos Términos excluye la responsabilidad que legalmente no pueda excluirse, en particular la derivada de dolo o negligencia grave.
 
@@ -245,7 +245,7 @@ No se envían comunicaciones comerciales ni publicitarias.
 
 ## 16. Modificaciones de estos Términos
 
-Cognix Labs, S.L. podrá modificar los presentes Términos y Condiciones. Los cambios sustanciales se notificarán con una antelación mínima de 15 días a través de la Plataforma o por correo electrónico. El uso continuado del servicio tras la entrada en vigor implicará su aceptación.
+Cognix Labs, S.L.U. podrá modificar los presentes Términos y Condiciones. Los cambios sustanciales se notificarán con una antelación mínima de 15 días a través de la Plataforma o por correo electrónico. El uso continuado del servicio tras la entrada en vigor implicará su aceptación.
 
 La versión vigente estará siempre disponible en esta dirección, con indicación de la fecha de última actualización.
 
@@ -261,38 +261,49 @@ Para la resolución de cualquier controversia, las partes se someten a los Juzga
 
 ## ANEXO 1 · MODELO DE FORMULARIO DE DESISTIMIENTO
 
-(solo debe cumplimentar y enviar este formulario si desea desistir del contrato)
+*(Solo debe cumplimentar y enviar este formulario si desea ejercer su derecho de desistimiento.)*
 
 **A la atención de:**
 
-Cognix Labs, S.L.
-
-CIF B-93996122
-
-Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España)
-
-info.cognixlabs@gmail.com
-
-Por la presente le comunico que desisto de mi contrato de prestación del siguiente servicio:
-
-**Suscripción anual de acceso a MisterFC**
-
-Contratado el: ............................................................
-
-Nombre del consumidor y usuario: ............................................................
-
-Domicilio del consumidor y usuario: ............................................................
-
-Correo electrónico de la cuenta MisterFC: ............................................................
-
-Firma (solo si este formulario se presenta en papel):
-
-............................................................
-
-Fecha: ............................................................
+COGNIX LABS, S.L.U.
+Calle Actor Antonio Ferrandis, 10
+46013 Valencia
+NIF: B93996122
+Correo electrónico: info.cognixlabs@gmail.com
 
 ---
 
-Cognix Labs, S.L.
+Por la presente le comunico que desisto del contrato celebrado para la prestación del siguiente servicio:
+
+**Suscripción anual al servicio digital MisterFC**
+Precio: 3 € al año, con renovación automática cada doce meses desde la fecha de contratación.
+
+**Plataforma mediante la que se realizó la contratación:**
+
+☐ Apple App Store
+☐ Google Play
+
+Fecha de contratación: .................................................
+
+Nombre del consumidor: .................................................
+
+Domicilio del consumidor: ..............................................
+
+Correo electrónico asociado a la cuenta de MisterFC: ....................
+
+Identificador de pedido o transacción (si se dispone de él): ............
+
+---
+
+Firma del consumidor
+*(solo si el presente formulario se presenta en papel)*
+
+....................................................
+
+Fecha: ....................................................
+
+---
+
+Cognix Labs, S.L.U.
 Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España)
 info.cognixlabs@gmail.com
