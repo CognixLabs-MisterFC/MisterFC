@@ -16,7 +16,8 @@ type T = (key: string, values?: Record<string, string>) => string;
 /**
  * Línea de desglose de una fila. Sin envíos → "Sin invitaciones enviadas" (la señal que
  * quiere ver dirección: a ese equipo se le olvidó invitar). Con envíos → "N enviadas" y
- * los segmentos no-cero de aceptadas/caducadas/pendientes (plurales ICU del catálogo).
+ * los segmentos no-cero de aceptadas/caducadas/pendientes (plurales ICU del catálogo),
+ * más las que NO LLEGARON (A-3), que es sobre lo único de aquí que hay que actuar.
  */
 function summaryLine(t: T, r: DireccionTeamInvitationSummary): string {
   if (r.sent === 0) return t('dir_inicio.inv_none_sent');
@@ -24,6 +25,12 @@ function summaryLine(t: T, r: DireccionTeamInvitationSummary): string {
   if (r.accepted > 0) parts.push(t('dir_inicio.inv_accepted', { count: String(r.accepted) }));
   if (r.expired > 0) parts.push(t('dir_inicio.inv_expired', { count: String(r.expired) }));
   if (r.pending > 0) parts.push(t('dir_inicio.inv_pending', { count: String(r.pending) }));
+  // A-3 — solo si hay alguna, y con la MISMA cadena que la web. No se resta de las
+  // otras: una que no llego sigue estando pendiente, es un corte distinto de las
+  // mismas filas.
+  if (r.not_delivered > 0) {
+    parts.push(t('invitations.summary.not_delivered', { count: String(r.not_delivered) }));
+  }
   return parts.join(' · ');
 }
 
