@@ -10,6 +10,9 @@ import { describe, expect, it } from 'vitest';
  * una suscripción auto-renovable sin esos dos enlaces en el binario es un rechazo por
  * Guideline 3.1.2. No es un detalle de copy: es el permiso para cobrar.
  *
+ * D-2 añade un tercer enlace, el del formulario de desistimiento, que no lo pide la
+ * tienda sino la normativa de consumo: se exige poder leerlo ANTES de pagar.
+ *
  * Se censan los dos muros por el mismo motivo que SU-5 censó los dos layouts: el segundo
  * es el que se olvida. Y se comprueba leyendo los ficheros porque ninguno de los dos se
  * puede renderizar en este runner — el de la nativa necesita React Native y el de la web
@@ -33,7 +36,7 @@ const MUROS = [
   { nombre: 'web', ruta: 'apps/web/src/app/[locale]/suscripcion/page.tsx' },
 ] as const;
 
-describe.each(MUROS)('el muro de $nombre lleva los dos enlaces legales', ({ ruta }) => {
+describe.each(MUROS)('el muro de $nombre lleva los enlaces legales', ({ ruta }) => {
   const src = readFileSync(join(ROOT, ruta), 'utf8');
 
   it('enlaza las condiciones de uso', () => {
@@ -44,6 +47,17 @@ describe.each(MUROS)('el muro de $nombre lleva los dos enlaces legales', ({ ruta
   it('enlaza la política de privacidad', () => {
     expect(src).toMatch(/privacy_link/);
     expect(src).toMatch(/legal\/privacidad|'privacidad'/);
+  });
+
+  /**
+   * D-2 — y el tercero: la información de DESISTIMIENTO. Este no lo pide Apple, lo exige
+   * el abogado, y por el mismo motivo por el que se censan los otros dos: el documento
+   * no puede descubrirse solo DESPUÉS de haber comprado. Se vigila porque desaparece
+   * igual de callado — quitar el enlace no rompe ninguna pantalla.
+   */
+  it('enlaza la información de desistimiento', () => {
+    expect(src).toMatch(/withdrawal_link/);
+    expect(src).toMatch(/legal\/desistimiento|'desistimiento'/);
   });
 
   /**

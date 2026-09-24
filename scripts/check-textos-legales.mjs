@@ -296,8 +296,19 @@ for (const sup of SUPERFICIES) {
   }
 }
 
-// Control positivo del bloque: si SUPERFICIES se queda vacía o todas las rutas
-// cambian de sitio, lo de arriba es un bucle que no se ejecuta y pasa en verde.
+// Controles positivos del bloque. Hacen falta LOS DOS, y el primero se me escapó: con
+// `SUPERFICIES` vacía, `superficiesLeidas < SUPERFICIES.length` es `0 < 0` y el guard
+// pasaba en VERDE sin mirar una sola superficie. Un censo vacío no es un censo que
+// cumple: es un bucle que no se ejecuta.
+const SUPERFICIES_MINIMAS = 6;
+if (SUPERFICIES.length < SUPERFICIES_MINIMAS) {
+  errores.push(
+    `SUPERFICIES declara ${SUPERFICIES.length} superficies y son al menos ` +
+      `${SUPERFICIES_MINIMAS}: pie público, pie cruzado, sitemap, las dos tarjetas de ` +
+      `Perfil y el tipo LegalDoc. Si de verdad desaparece una, baja este número a ` +
+      `mano y di por qué — que quitar la vigilancia sea una decisión y no un descuido.`,
+  );
+}
 if (superficiesLeidas < SUPERFICIES.length) {
   errores.push(
     `solo se leyeron ${superficiesLeidas} de ${SUPERFICIES.length} superficies que ` +
