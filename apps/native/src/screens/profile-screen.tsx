@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   Pressable,
   Text,
   TextInput,
@@ -23,6 +24,7 @@ import {
   type MyPhoneResult,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
+import { legalUrl, type LegalDoc } from '@/legal/links';
 import { MIME_TO_EXT, base64ToBytes } from '@/lib/image-upload';
 import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
@@ -133,6 +135,14 @@ export function ProfileScreen() {
             `get_tutor_consents` devuelve cero filas a quien no es tutor y la tarjeta no
             se pinta sola. */}
         <ConsentsCard />
+
+        {/* D-3 — los legales de la plataforma, SIEMPRE alcanzables. Va antes del
+            borrado por lo mismo que los permisos: lo irreversible se queda al final.
+            Y hace falta aparte del muro porque el muro deja de verse EN CUANTO
+            alguien paga (el paywall solo se pinta si `blocked`), mientras que el
+            desistimiento son 14 días DESDE la contratación: sin esto, el documento
+            queda visible justo para quien todavía no puede ejercerlo. */}
+        <LegalLinksCard />
 
         {/* BC-5 — Eliminar la cuenta (Apple 5.1.1 v). AL FINAL DEL TODO y en su propia
             tarjeta roja: es lo más irreversible que un usuario puede hacer sobre sí
@@ -482,6 +492,53 @@ function AccountCard({ email, online }: { email: string; online: boolean }) {
 }
 
 // ── Primitivas de UI (mismo lenguaje visual que la gestión de Familia) ──────────
+/**
+ * D-3 — los documentos legales de la PLATAFORMA. Abren la web: son las MISMAS páginas
+ * que sirve `/legal/*`, y duplicarlas dentro de la app daría dos textos que pueden
+ * divergir — justo lo que la serie Legal-1 quitó de en medio.
+ *
+ * NO es la tarjeta de «Permisos»: aquélla enseña lo que la familia firmó de SU CLUB
+ * (`legal_documents`, en la BD). Éstos son los del prestador, iguales para todos, y la
+ * nota del pie lo dice porque dos bloques con la palabra «legal» se confunden.
+ */
+const LEGAL_DOCS: readonly LegalDoc[] = [
+  'privacidad',
+  'terminos',
+  'eliminacion-cuenta',
+  'desistimiento',
+];
+
+function LegalLinksCard() {
+  const t = useTranslations('legal_publico.perfil');
+  const locale = useLocale();
+
+  // Con la clave ESCRITA, no `t(doc)`: el censo de cadenas muertas solo reconoce
+  // literales y plantillas, y con la variable las cuatro parecerían sin uso.
+  const etiqueta: Record<LegalDoc, string> = {
+    privacidad: t('privacidad'),
+    terminos: t('terminos'),
+    'eliminacion-cuenta': t('eliminacion-cuenta'),
+    desistimiento: t('desistimiento'),
+  };
+
+  return (
+    <Card title={t('title')}>
+      <View className="gap-2">
+        {LEGAL_DOCS.map((doc) => (
+          <Pressable
+            key={doc}
+            onPress={() => void Linking.openURL(legalUrl(doc, locale))}
+            className="py-1 active:opacity-70"
+          >
+            <Text className="text-sm text-[#438832] underline">{etiqueta[doc]}</Text>
+          </Pressable>
+        ))}
+        <Text className="mt-1 text-xs text-zinc-400">{t('note')}</Text>
+      </View>
+    </Card>
+  );
+}
+
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View className="rounded-2xl border border-zinc-200 p-4">

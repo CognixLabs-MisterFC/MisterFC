@@ -123,15 +123,22 @@ export default async function SuscripcionPage({ params }: Props) {
 
       <p className="text-xs text-muted-foreground">{t('terms_note')}</p>
 
-      {/* SU-7 · Los mismos dos enlaces que exige el muro de la nativa (Guideline 3.1.2).
+      {/* SU-7 · Los mismos enlaces que exige el muro de la nativa (Guideline 3.1.2).
           Aquí no se cobra, así que no es la tienda la que los pide: es que este muro es
-          donde alguien lee las condiciones antes de ir a pagar al móvil. */}
-      <p className="flex justify-center gap-4 text-xs">
+          donde alguien lee las condiciones antes de ir a pagar al móvil.
+
+          D-2 · el DESISTIMIENTO va con ellos, y ese no lo pide Apple sino el abogado:
+          no puede descubrirse solo después de haber comprado. `flex-wrap` porque con
+          tres etiquetas la tercera no cabe en una línea estrecha. */}
+      <p className="flex flex-wrap justify-center gap-x-4 text-xs">
         <Link href={`/${locale}/legal/terminos`} className="underline">
           {t('terms_link')}
         </Link>
         <Link href={`/${locale}/legal/privacidad`} className="underline">
           {t('privacy_link')}
+        </Link>
+        <Link href={`/${locale}/legal/desistimiento`} className="underline">
+          {t('withdrawal_link')}
         </Link>
       </p>
 

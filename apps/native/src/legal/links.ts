@@ -6,6 +6,12 @@
  * de alta, así que deja de ser del muro y pasa a ser de la app. El fichero se mueve de
  * sitio y no cambia de comportamiento.
  *
+ * D-2 — desde el formulario de desistimiento lo usa ademas el propio muro para un
+ * TERCER enlace, y el Perfil para los cuatro. El documento de desistimiento tiene que
+ * poder leerse ANTES de pagar (exigencia del abogado: no puede descubrirse solo despues
+ * de comprar) y TAMBIEN despues, porque el plazo son catorce dias desde la contratacion
+ * y quien ya paga deja de ver el muro en el mismo instante en que paga.
+ *
  * No es adorno: Apple lo exige. Su documentación de suscripciones dice que «your app and
  * App Store metadata must include links to your Terms of Use and Privacy Policy», y una
  * suscripción auto-renovable sin esos dos enlaces EN EL BINARIO es un rechazo por
@@ -23,7 +29,7 @@
 /** Dominio de producción. Es el mismo que sirve `/legal/*` y las fichas de las tiendas. */
 export const LEGAL_FALLBACK_BASE = 'https://misterfc.es';
 
-export type LegalDoc = 'terminos' | 'privacidad';
+export type LegalDoc = 'terminos' | 'privacidad' | 'eliminacion-cuenta' | 'desistimiento';
 
 export function legalBaseUrl(): string {
   const configured = (process.env.EXPO_PUBLIC_WEB_URL ?? '').replace(/\/+$/, '');

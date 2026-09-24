@@ -5578,7 +5578,8 @@
     "claim_none": "We found no subscription for this account. If you have just paid, wait a moment and try again.",
     "claim_error": "We couldn't check it right now. Please try again in a moment.",
     "terms_link": "Terms of Use",
-    "privacy_link": "Privacy Policy"
+    "privacy_link": "Privacy Policy",
+    "withdrawal_link": "Withdrawal information"
   },
   "invite_self": {
     "action": "Give the player access",
@@ -5728,7 +5729,15 @@
     }
   },
   "legal_publico": {
-    "solo_castellano": "This document is only available in Spanish."
+    "solo_castellano": "This document is only available in Spanish.",
+    "perfil": {
+      "title": "Legal documents",
+      "note": "MisterFC's documents. What you accepted from your club is above, under “Permissions”.",
+      "privacidad": "Privacy Policy",
+      "terminos": "Terms of Use",
+      "eliminacion-cuenta": "Account deletion",
+      "desistimiento": "Withdrawal information"
+    }
   },
   "emails": {
     "spectator_invite": {
