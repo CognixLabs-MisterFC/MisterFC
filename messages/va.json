@@ -406,6 +406,10 @@
     "status_pending": "Pendent",
     "status_accepted": "Acceptada",
     "status_expired": "Caducada",
+    "delivery_failed": "No va arribar",
+    "delivery_unconfirmed": "Sense confirmar",
+    "delivery_failed_hint": "El correu no va arribar a la seua destinació",
+    "delivery_unconfirmed_hint": "El correu va eixir i encara no consta lliurat",
     "by_team_title": "Per equip",
     "sin_equipo": "Sense equip",
     "open": "Veure",
@@ -415,13 +419,15 @@
       "sent": "{count, plural, one {# enviada} other {# enviades}}",
       "accepted": "{count, plural, one {# acceptada} other {# acceptades}}",
       "expired": "{count, plural, one {# caducada} other {# caducades}}",
-      "pending": "{count, plural, one {# pendent} other {# pendents}}"
+      "pending": "{count, plural, one {# pendent} other {# pendents}}",
+      "not_delivered": "{count, plural, one {# no va arribar} other {# no van arribar}}"
     },
     "filters": {
       "all": "Totes",
       "pending": "Pendents",
       "expired": "Caducades",
-      "accepted": "Acceptades"
+      "accepted": "Acceptades",
+      "not_delivered": "No van arribar"
     },
     "date": {
       "accepted": "Acceptada el {date}",

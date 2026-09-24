@@ -887,6 +887,10 @@
     "status_pending": "Pendiente",
     "status_accepted": "Aceptada",
     "status_expired": "Caducada",
+    "delivery_failed": "No llegó",
+    "delivery_unconfirmed": "Sin confirmar",
+    "delivery_failed_hint": "El correo no llegó a su destino",
+    "delivery_unconfirmed_hint": "El correo salió y todavía no consta entregado",
     "by_team_title": "Por equipo",
     "sin_equipo": "Sin equipo",
     "open": "Ver",
@@ -896,13 +900,15 @@
       "sent": "{count, plural, one {# enviada} other {# enviadas}}",
       "accepted": "{count, plural, one {# aceptada} other {# aceptadas}}",
       "expired": "{count, plural, one {# caducada} other {# caducadas}}",
-      "pending": "{count, plural, one {# pendiente} other {# pendientes}}"
+      "pending": "{count, plural, one {# pendiente} other {# pendientes}}",
+      "not_delivered": "{count, plural, one {# no llegó} other {# no llegaron}}"
     },
     "filters": {
       "all": "Todas",
       "pending": "Pendientes",
       "expired": "Caducadas",
-      "accepted": "Aceptadas"
+      "accepted": "Aceptadas",
+      "not_delivered": "No llegaron"
     },
     "date": {
       "accepted": "Aceptada el {date}",

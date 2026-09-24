@@ -121,6 +121,17 @@ export default async function InvitationsPage({ params }: Props) {
                         >
                           {t('summary.pending', { count: s.pending })}
                         </span>
+                        {/* A-3 — solo aparece si hay alguna. Un "0 no llegaron" en cada
+                            equipo sería una columna de ceros que nadie lee, y el día que
+                            haya un 1 no destacaría. */}
+                        {s.not_delivered > 0 && (
+                          <>
+                            <span aria-hidden>·</span>
+                            <span className="font-medium text-red-400">
+                              {t('summary.not_delivered', { count: s.not_delivered })}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                     <span className="shrink-0 text-xs font-medium text-[#10B981]">
