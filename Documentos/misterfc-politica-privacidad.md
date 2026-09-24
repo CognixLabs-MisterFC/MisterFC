@@ -19,6 +19,7 @@ Este esquema se sustenta en un contrato de encargo del tratamiento entre Cognix 
 **Datos de Cognix Labs, S.L.U.**
 
 - Titular: Cognix Labs, S.L.U.
+- NIF: B93996122
 - Domicilio: Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España)
 - Correo electrónico de privacidad: info.cognixlabs@gmail.com
 
@@ -240,5 +241,9 @@ Esta Política de Privacidad puede actualizarse para adaptarla a cambios legisla
 ---
 
 Cognix Labs, S.L.U.
+
+NIF: B93996122
+
 Domicilio: Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España)
+
 Correo electrónico de privacidad: info.cognixlabs@gmail.com
