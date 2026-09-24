@@ -270,6 +270,70 @@ export type DireccionTeamInvitationSummary = {
   pending: number;
 };
 
+/**
+ * EL EQUIPO DE UNA INVITACION, resuelto AL PINTAR.
+ *
+ * Por que no sale de `invitations.team_id`: esa columna nacio para la invitacion de
+ * STAFF —invitas a un entrenador A UN EQUIPO, y ahi el equipo es parte de lo que
+ * invitas—. La invitacion de FAMILIA no lleva equipo y nunca lo llevo: el jugador esta
+ * en `team_members`. Medido en produccion: 9 de 9 invitaciones con `player_id` tienen
+ * `team_id` nulo, vengan del alta individual, del reenvio desde la ficha o del envio en
+ * lote tras importar. Todas caian en "Sin equipo".
+ *
+ * Y NO se arregla copiando el equipo a la invitacion (decision de Jose): un dato copiado
+ * se queda viejo en cuanto el crio cambia de equipo, y ademas habria que decidir que
+ * hacer con las filas ya creadas. La pertenencia viva es la fuente de verdad, asi que se
+ * lee de ahi cada vez.
+ *
+ * LA REGLA, en un solo sitio porque la usan los DOS niveles del listado (el resumen por
+ * equipo y la lista de un equipo) y las dos apps. Escrita dos veces acabaria contando
+ * una cosa en el resumen y otra al entrar.
+ */
+export function effectiveInvitationTeamId(
+  inv: { team_id: string | null; player_id: string | null },
+  teamByPlayer: ReadonlyMap<string, string>,
+): string | null {
+  // 1 · La invitacion de staff manda: el equipo es parte de lo que se invito.
+  if (inv.team_id) return inv.team_id;
+  // 2 · La de familia, por el equipo VIVO de su jugador en la temporada activa.
+  if (inv.player_id) return teamByPlayer.get(inv.player_id) ?? null;
+  // 3 · Lo demas —director, admin de club— no va atado a ningun equipo.
+  return null;
+}
+
+/**
+ * Equipo VIVO de cada jugador en la temporada activa.
+ *
+ * `left_at is null` no es un detalle: `team_members` guarda el historico y un traspaso
+ * deja la fila vieja cerrada. Medido en produccion: 90 filas, 44 vivas, 44 jugadores
+ * distintos — exactamente UNA pertenencia viva por jugador, en todas las temporadas.
+ * Contar sin ese filtro hace aparecer jugadores en "dos equipos" que en realidad
+ * cambiaron de equipo a mitad de temporada.
+ *
+ * Devuelve un Map y no una lista porque un jugador tiene UN equipo: si algun dia
+ * hubiera dos, gana el primero que llegue y hay que venir aqui a decidir.
+ */
+async function activeTeamByPlayer(
+  supabase: DbClient,
+  clubId: string,
+  seasonLabel: string,
+  playerIds: readonly string[],
+): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (playerIds.length === 0) return out;
+  const { data } = await supabase
+    .from('team_members')
+    .select('player_id, team_id, teams!inner(season, categories!inner(club_id))')
+    .in('player_id', playerIds as string[])
+    .is('left_at', null)
+    .eq('teams.season', seasonLabel)
+    .eq('teams.categories.club_id', clubId);
+  for (const r of (data ?? []) as Array<{ player_id: string; team_id: string }>) {
+    if (!out.has(r.player_id)) out.set(r.player_id, r.team_id);
+  }
+  return out;
+}
+
 type InvAgg = { sent: number; accepted: number; expired: number; pending: number };
 const emptyAgg = (): InvAgg => ({ sent: 0, accepted: 0, expired: 0, pending: 0 });
 
@@ -318,24 +382,45 @@ export async function listTeamInvitationSummariesFromClient(
     }>).map((t) => ({ id: t.id, name: t.name, color: t.color ?? null }));
   }
 
-  // TODAS las invitaciones del club (estados derivados de las fechas).
+  // TODAS las invitaciones del club (estados derivados de las fechas). Se pide tambien
+  // `player_id`: el equipo de las de familia no esta en la fila, se resuelve debajo.
   const { data: invRows } = await supabase
     .from('invitations')
-    .select('team_id, accepted_at, expires_at')
+    .select('team_id, player_id, accepted_at, expires_at')
     .eq('club_id', clubId);
+
+  const invitations = (invRows ?? []) as Array<{
+    team_id: string | null;
+    player_id: string | null;
+    accepted_at: string | null;
+    expires_at: string;
+  }>;
+
+  // Una sola consulta para todos los jugadores implicados, no una por fila.
+  const teamByPlayer = season
+    ? await activeTeamByPlayer(
+        supabase,
+        clubId,
+        season.label as string,
+        Array.from(
+          new Set(
+            invitations
+              .filter((r) => !r.team_id && r.player_id)
+              .map((r) => r.player_id as string),
+          ),
+        ),
+      )
+    : new Map<string, string>();
 
   const byTeam = new Map<string, InvAgg>();
   const noTeam = emptyAgg();
-  for (const r of (invRows ?? []) as Array<{
-    team_id: string | null;
-    accepted_at: string | null;
-    expires_at: string;
-  }>) {
-    const agg = r.team_id ? byTeam.get(r.team_id) ?? emptyAgg() : noTeam;
+  for (const r of invitations) {
+    const teamId = effectiveInvitationTeamId(r, teamByPlayer);
+    const agg = teamId ? byTeam.get(teamId) ?? emptyAgg() : noTeam;
     agg.sent += 1;
     const st = invitationStatus(r.accepted_at, r.expires_at, nowMs);
     agg[st] += 1;
-    if (r.team_id) byTeam.set(r.team_id, agg);
+    if (teamId) byTeam.set(teamId, agg);
   }
 
   const rows: DireccionTeamInvitationSummary[] = teams.map((t) => {
@@ -380,20 +465,52 @@ export async function listTeamInvitationsFromClient(
   teamId: string | null
 ): Promise<DireccionTeamInvitation[]> {
   const nowMs = Date.now();
-  let query = supabase
-    .from('invitations')
-    .select('id, email, role, accepted_at, expires_at')
-    .eq('club_id', clubId);
-  query = teamId ? query.eq('team_id', teamId) : query.is('team_id', null);
-  const { data } = await query;
 
-  const rows: DireccionTeamInvitation[] = ((data ?? []) as Array<{
+  // El filtro por equipo YA NO se hace en SQL. El equipo de una invitacion de familia
+  // no esta en la fila —se resuelve con `effectiveInvitationTeamId`—, asi que un
+  // `.eq('team_id', …)` dejaria fuera justo las que hay que ensenar. Se traen las del
+  // club y se filtra en memoria; es el MISMO conjunto que ya lee el resumen de nivel 1
+  // de esta misma pantalla, y el volumen por club es de decenas.
+  const { data: season } = await supabase
+    .from('seasons')
+    .select('label')
+    .eq('club_id', clubId)
+    .eq('status', 'active')
+    .order('label', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { data } = await supabase
+    .from('invitations')
+    .select('id, email, role, team_id, player_id, accepted_at, expires_at')
+    .eq('club_id', clubId);
+
+  const all = (data ?? []) as Array<{
     id: string;
     email: string;
     role: string;
+    team_id: string | null;
+    player_id: string | null;
     accepted_at: string | null;
     expires_at: string;
-  }>).map((r) => {
+  }>;
+
+  const teamByPlayer = season
+    ? await activeTeamByPlayer(
+        supabase,
+        clubId,
+        season.label as string,
+        Array.from(
+          new Set(
+            all.filter((r) => !r.team_id && r.player_id).map((r) => r.player_id as string),
+          ),
+        ),
+      )
+    : new Map<string, string>();
+
+  const rows: DireccionTeamInvitation[] = all
+    .filter((r) => effectiveInvitationTeamId(r, teamByPlayer) === teamId)
+    .map((r) => {
     const status = invitationStatus(r.accepted_at, r.expires_at, nowMs);
     return {
       id: r.id,
