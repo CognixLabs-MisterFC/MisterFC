@@ -78,3 +78,19 @@ export {
   type SelfRevokeOutcome,
   type SelfRevokeResult,
 } from './self-revoke';
+export {
+  recordInvitationDelivery,
+  type DeliveryRecordLogger,
+} from './delivery';
+export {
+  ingestResendDeliveryEvent,
+  parseResendDeliveryEvent,
+  shouldRetryDelivery,
+  verifyResendSignature,
+  RESEND_NON_DELIVERY_EVENTS,
+  RESEND_SIGNATURE_HEADERS,
+  RESEND_SIGNATURE_TOLERANCE_SECONDS,
+  type DeliveryIngestResult,
+  type ResendDeliveryEvent,
+  type ResendSignatureHeaders,
+} from './delivery-webhook';

@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { getCurrentUserFromClient } from '../auth/current-user';
 import { inviteEmailMetadata } from '../invitations/invite-email-metadata';
+import { recordInvitationDelivery } from '../invitations/delivery';
 import type { FollowedPlayer } from '../auth/spectator';
 
 /**
@@ -200,7 +201,12 @@ export type SendInvitationEmail = (args: {
   url: string;
   /** Idioma YA resuelto en el que hay que escribirle. */
   locale: string;
-}) => Promise<{ error: unknown | null }>;
+  //
+  // A-2 — devuelve además el `id` que Resend da a ESE envío: es lo único que casa el
+  // webhook de entrega con la fila, y sin él la invitación sale muda (si rebota, nadie
+  // se entera). Es OPCIONAL a propósito: un envío puede salir bien y el id no llegar a
+  // leerse, y eso no es motivo para tumbar una invitación que ya ha salido.
+}) => Promise<{ error: unknown | null; id?: string }>;
 
 /**
  * PUERTO DE BÚSQUEDA DEL DESTINATARIO (Correo-B1) — ¿este correo ya tiene cuenta?
@@ -398,11 +404,24 @@ export async function performSpectatorInvite(
   // fallara aquí, no queda nada roto —invitación y cuenta están bien— y reenviar la
   // invitación vuelve a intentarlo.
   try {
-    const { error: mailErr } = await sendEmail({ to: email, url, locale: emailLocale });
+    const { error: mailErr, id: messageId } = await sendEmail({
+      to: email,
+      url,
+      locale: emailLocale,
+    });
     if (mailErr) {
       log(mailErr, 'send_invite_email_spectator', { invitation_id: invite.id });
       return { error: 'generic' };
     }
+    // A-2 — el correo ya ha salido: apuntar de qué envío es NO puede tumbarlo. Ver la
+    // nota de `recordInvitationDelivery`.
+    await recordInvitationDelivery(
+      admin,
+      [invite.id],
+      messageId,
+      log,
+      'delivery_record_spectator',
+    );
   } catch (thrown) {
     log(thrown, 'send_invite_email_spectator_thrown', { invitation_id: invite.id });
     return { error: 'generic' };

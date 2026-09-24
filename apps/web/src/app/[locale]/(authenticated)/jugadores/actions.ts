@@ -23,6 +23,7 @@ import {
   inviteLink,
   inviteLinkBase,
   pendingCoversEmail,
+  recordInvitationDelivery,
   revokePlayerSelfAccountFromClient,
   type SelfInviteError,
   type SelfRevokeError,
@@ -33,7 +34,7 @@ import { linkInvitedUser } from '@/lib/link-invited-user';
 import { performSpectatorInvite } from '@/lib/invite-spectator';
 import { performSelfInvite } from '@/lib/invite-self';
 import { sendOrRenewTutorInvitation } from '@/lib/invite-tutor';
-import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
+import { deliveryLogger, invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 import { loadPendingInvitePlayers } from './queries';
 import { pendingInvitationsForEmail } from '@/lib/pending-invitation';
 
@@ -1228,7 +1229,7 @@ export async function inviteBatch(
     //    A una persona se le escribe UNA vez: si ya tenía una invitación pendiente,
     //    su enlace procesa también estos hijos al aceptarlo.
     if (!sendReason && !covered) {
-      const { error: mailErr } = await invitationEmailPort('tutor')({
+      const { error: mailErr, id: messageId } = await invitationEmailPort('tutor')({
         to: group.email,
         url: redirectTo,
         locale: emailLocale,
@@ -1239,6 +1240,18 @@ export async function inviteBatch(
           tags: { feature: 'invitations', step: 'batch_send_email' },
           extra: { club_id: clubId, invitation_id: anchor.id },
         });
+      } else {
+        // A-2 — UN correo, TODAS las invitaciones del grupo. Aquí es donde más importa
+        // la lista: si el id se apuntara solo en el ancla, el rebote de ese correo
+        // dejaría muda la invitación del segundo hijo, que es el mismo correo que no
+        // llegó. Nunca tumba el envío: la función no lanza y solo registra si falla.
+        await recordInvitationDelivery(
+          admin,
+          inserted.map((r) => r.id),
+          messageId,
+          deliveryLogger('invitations'),
+          'delivery_record_batch',
+        );
       }
     }
 

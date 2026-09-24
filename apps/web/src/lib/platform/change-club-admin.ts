@@ -7,10 +7,11 @@ import {
   inviteEmailMetadata,
   isEmailAlreadyExistsError,
   inviteLink,
+  recordInvitationDelivery,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
-import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
+import { deliveryLogger, invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 
 /**
  * Cambiar el admin de un club (consola superadmin). Mismo patrón que
@@ -208,7 +209,7 @@ export async function changeClubAdmin(input: {
 
   // El correo, LO ÚLTIMO. Si falla, el club se queda sin owner con la invitación
   // pendiente y enlazada: reinvitar desde la misma pantalla vuelve a mandarlo.
-  const { error: mailErr } = await invitationEmailPort('admin')({
+  const { error: mailErr, id: messageId } = await invitationEmailPort('admin')({
     to: email,
     url: redirectTo,
     locale: emailLocale,
@@ -221,6 +222,16 @@ export async function changeClubAdmin(input: {
     Sentry.captureException(mailErr, { tags: { feature: 'platform', step: 'change_admin_send_email' } });
     return { error: 'generic' };
   }
+
+  // A-2 — el correo ya ha salido: apuntar de qué envío es NO puede tumbarlo (la
+  // función no lanza y solo registra si falla). Ver `recordInvitationDelivery`.
+  await recordInvitationDelivery(
+    admin,
+    [invite.invitation_id],
+    messageId,
+    deliveryLogger('platform'),
+    'delivery_record_change_admin',
+  );
 
   console.info('[platform][change-admin] done', { masked_email: maskedEmail, invitation_id: invite.invitation_id });
   return { ok: { email } };
