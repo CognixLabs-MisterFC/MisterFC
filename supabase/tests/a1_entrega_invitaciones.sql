@@ -23,8 +23,9 @@
 --   [7]  Lo normal sigue funcionando: `sent` → `delivered` avanza.
 --   [8]  Un rebote SI puede pisar a un `delivered` anterior: el fallo siempre entra.
 --   [9]  CANDADO ACL: ni anon ni authenticated ejecutan la funcion — es del webhook.
---   [10] A-1 NO CAMBIA NADA DE LO QUE SE VE: aplicada, ninguna invitacion existente
---        queda con estado de entrega. Entra el sitio donde apuntarlo, no el efecto.
+--   [10] RETIRADO al entrar A-2: ver la nota en su sitio. Probo lo que tenia que
+--        probar —A-1 no movio ninguna fila— y dejo de ser cierto en cuanto el webhook
+--        empezo a escribir de verdad.
 --
 -- Estilo: aserciones con raise exception. Transaccional (rollback al final), no deja
 -- rastro. Las aserciones LEEN con el rol de la sesion: las comprobaciones van como
@@ -51,16 +52,20 @@ begin
   end if;
 end $$;
 
--- ── [10] antes de tocar nada: el mundo tal y como esta ──────────────────────
-do $$
-declare v_n integer;
-begin
-  select count(*) into v_n from public.invitations
-   where delivery_state is not null or delivery_message_id is not null;
-  if v_n <> 0 then
-    raise exception 'FAIL [10]: la migracion dejo % invitaciones con estado de entrega. A-1 no escribe nada', v_n;
-  end if;
-end $$;
+-- ── [10] RETIRADO ───────────────────────────────────────────────────────────
+--
+-- Decia: "ninguna invitacion tiene estado de entrega". Servia para probar que A-1, por
+-- si sola, no cambiaba nada de lo que se veia — y lo probo: la migracion se aplico y no
+-- movio ni una fila.
+--
+-- Ya NO es cierto, y no por un fallo: A-2 (#711) puso el webhook en produccion y el
+-- primer envio real dejo su estado en la fila. Ademas se relleno a mano la unica
+-- invitacion que no llego (`chaodis@`, `delivery_delayed`), que era el caso medido.
+--
+-- Se retira en vez de aflojarlo. En una base limpia seguiria pasando —no hay filas— y
+-- eso es lo peligroso: quedaria VERDE en el CI mientras es rojo contra produccion, o
+-- sea una asercion que ya no describe el sistema y que solo pasa porque no hay nada que
+-- mirar. Lo que A-1 tenia que demostrar, quedo demostrado.
 
 -- ── Fixture ──────────────────────────────────────────────────────────────────
 insert into public.clubs (id, name, slug) values
