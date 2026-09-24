@@ -406,6 +406,10 @@
     "status_pending": "Pending",
     "status_accepted": "Accepted",
     "status_expired": "Expired",
+    "delivery_failed": "Didn't arrive",
+    "delivery_unconfirmed": "Unconfirmed",
+    "delivery_failed_hint": "The email did not reach its destination",
+    "delivery_unconfirmed_hint": "The email went out and is not yet confirmed as delivered",
     "by_team_title": "By team",
     "sin_equipo": "No team",
     "open": "View",
@@ -415,13 +419,15 @@
       "sent": "{count, plural, one {# sent} other {# sent}}",
       "accepted": "{count, plural, one {# accepted} other {# accepted}}",
       "expired": "{count, plural, one {# expired} other {# expired}}",
-      "pending": "{count, plural, one {# pending} other {# pending}}"
+      "pending": "{count, plural, one {# pending} other {# pending}}",
+      "not_delivered": "{count, plural, one {# didn't arrive} other {# didn't arrive}}"
     },
     "filters": {
       "all": "All",
       "pending": "Pending",
       "expired": "Expired",
-      "accepted": "Accepted"
+      "accepted": "Accepted",
+      "not_delivered": "Didn't arrive"
     },
     "date": {
       "accepted": "Accepted on {date}",

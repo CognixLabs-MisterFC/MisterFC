@@ -16,6 +16,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { MATCH_SURFACE_TYPES } from '../events/types';
 import {
+  invitationDeliveryOutcome,
+  type InvitationDeliveryOutcome,
+} from './delivery-status';
+import {
   reportStatus,
   DEVELOPMENT_REPORT_CATALOG,
 } from '../development-report/development-report';
@@ -268,6 +272,15 @@ export type DireccionTeamInvitationSummary = {
   accepted: number;
   expired: number;
   pending: number;
+  /**
+   * A-3 — cuántas de ese equipo NO llegaron. Se cuenta aquí y no solo al entrar porque
+   * este resumen es donde se mira «cuántos han aceptado y cuántos no»: un equipo con
+   * tres rebotes tiene que verse sin abrirlo.
+   *
+   * NO se resta de las otras: una invitación que no llegó sigue estando Pendiente. Es
+   * un corte distinto de las mismas filas, no una quinta categoría excluyente.
+   */
+  not_delivered: number;
 };
 
 /**
@@ -334,8 +347,14 @@ async function activeTeamByPlayer(
   return out;
 }
 
-type InvAgg = { sent: number; accepted: number; expired: number; pending: number };
-const emptyAgg = (): InvAgg => ({ sent: 0, accepted: 0, expired: 0, pending: 0 });
+type InvAgg = {
+  sent: number;
+  accepted: number;
+  expired: number;
+  pending: number;
+  not_delivered: number;
+};
+const emptyAgg = (): InvAgg => ({ sent: 0, accepted: 0, expired: 0, pending: 0, not_delivered: 0 });
 
 /**
  * D2-3 nivel 1 — Resumen de invitaciones POR EQUIPO de la temporada activa (SOLO
@@ -386,7 +405,11 @@ export async function listTeamInvitationSummariesFromClient(
   // `player_id`: el equipo de las de familia no esta en la fila, se resuelve debajo.
   const { data: invRows } = await supabase
     .from('invitations')
-    .select('team_id, player_id, accepted_at, expires_at')
+    // Una sola cadena LITERAL a proposito: PostgREST deduce los tipos leyendo este
+    // texto, y partirlo con `+` lo deja en `GenericStringError[]`.
+    .select(
+      'team_id, player_id, accepted_at, expires_at, created_at, delivery_message_id, delivery_state, delivery_at',
+    )
     .eq('club_id', clubId);
 
   const invitations = (invRows ?? []) as Array<{
@@ -394,6 +417,10 @@ export async function listTeamInvitationSummariesFromClient(
     player_id: string | null;
     accepted_at: string | null;
     expires_at: string;
+    created_at: string;
+    delivery_message_id: string | null;
+    delivery_state: string | null;
+    delivery_at: string | null;
   }>;
 
   // Una sola consulta para todos los jugadores implicados, no una por fila.
@@ -420,6 +447,9 @@ export async function listTeamInvitationSummariesFromClient(
     agg.sent += 1;
     const st = invitationStatus(r.accepted_at, r.expires_at, nowMs);
     agg[st] += 1;
+    // A-3 — corte aparte, no una quinta categoria: una que no llego sigue contando
+    // ademas en pendientes o en caducadas, que es donde esta.
+    if (invitationDeliveryOutcome(r, nowMs) === 'failed') agg.not_delivered += 1;
     if (teamId) byTeam.set(teamId, agg);
   }
 
@@ -450,6 +480,14 @@ export type DireccionTeamInvitation = {
   status: DireccionInvitationStatus;
   /** Fecha relevante según estado: aceptación si aceptada, caducidad en otro caso. */
   date: string;
+  /**
+   * A-3 — ¿le llegó el correo? Va SEPARADO de `status` a propósito: son dos preguntas
+   * distintas —¿la aceptaron? y ¿le llegó?— y una invitación puede estar Pendiente y
+   * además no haber llegado. Metidas en un solo campo habría que elegir cuál se pierde.
+   */
+  delivery: InvitationDeliveryOutcome;
+  /** El motivo que dio Resend, cuando lo hay. Es lo que hace accionable un «No llegó». */
+  delivery_detail: string | null;
 };
 
 /**
@@ -482,7 +520,10 @@ export async function listTeamInvitationsFromClient(
 
   const { data } = await supabase
     .from('invitations')
-    .select('id, email, role, team_id, player_id, accepted_at, expires_at')
+    // Literal de una pieza, por lo mismo que arriba.
+    .select(
+      'id, email, role, team_id, player_id, accepted_at, expires_at, created_at, delivery_message_id, delivery_state, delivery_detail, delivery_at',
+    )
     .eq('club_id', clubId);
 
   const all = (data ?? []) as Array<{
@@ -493,6 +534,11 @@ export async function listTeamInvitationsFromClient(
     player_id: string | null;
     accepted_at: string | null;
     expires_at: string;
+    created_at: string;
+    delivery_message_id: string | null;
+    delivery_state: string | null;
+    delivery_detail: string | null;
+    delivery_at: string | null;
   }>;
 
   const teamByPlayer = season
@@ -512,12 +558,17 @@ export async function listTeamInvitationsFromClient(
     .filter((r) => effectiveInvitationTeamId(r, teamByPlayer) === teamId)
     .map((r) => {
     const status = invitationStatus(r.accepted_at, r.expires_at, nowMs);
+    const delivery = invitationDeliveryOutcome(r, nowMs);
     return {
       id: r.id,
       email: r.email,
       role: r.role,
       status,
       date: status === 'accepted' ? (r.accepted_at as string) : r.expires_at,
+      delivery,
+      // El motivo solo acompaña a un fallo: en los demas casos o no lo hay, o es un
+      // detalle de un evento intermedio que no dice nada util a quien mira.
+      delivery_detail: delivery === 'failed' ? r.delivery_detail : null,
     };
   });
 
@@ -528,6 +579,9 @@ export async function listTeamInvitationsFromClient(
   };
   rows.sort(
     (a, b) =>
+      // A-3 — las que NO llegaron, arriba del todo. Es lo unico de esta pantalla sobre
+      // lo que hay que hacer algo hoy: las demas solo hay que esperarlas.
+      (a.delivery === 'failed' ? 0 : 1) - (b.delivery === 'failed' ? 0 : 1) ||
       ORDER[a.status] - ORDER[b.status] ||
       // Pendientes: la que caduca antes, primero. Caducadas/aceptadas: la más reciente primero.
       (a.status === 'pending' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date))

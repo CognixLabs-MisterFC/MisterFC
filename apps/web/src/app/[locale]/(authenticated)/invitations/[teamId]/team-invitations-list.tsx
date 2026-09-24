@@ -6,14 +6,28 @@ import type { DireccionTeamInvitation, DireccionInvitationStatus } from '@mister
 import { CancelInvitationButton } from '../cancel-invitation-button';
 import { intlLocale } from '@/lib/intl-locale';
 
-type Filter = 'all' | 'pending' | 'expired' | 'accepted';
+type Filter = 'all' | 'pending' | 'expired' | 'accepted' | 'not_delivered';
 
-const FILTERS: Filter[] = ['all', 'pending', 'expired', 'accepted'];
+const FILTERS: Filter[] = ['all', 'pending', 'expired', 'accepted', 'not_delivered'];
 
 const STATUS_BADGE: Record<DireccionInvitationStatus, string> = {
   pending: 'text-amber-400',
   expired: 'text-zinc-500',
   accepted: 'text-emerald-400',
+};
+
+/**
+ * A-3 — la marca de ENTREGA, que no sustituye al estado: lo acompaña. Una invitación
+ * puede estar Pendiente y además no haber llegado, y hasta ahora las dos se veían igual.
+ *
+ * `ok` no pinta nada a propósito: el silencio es la buena noticia y casi todas están
+ * bien; una marca por fila convertiría la pantalla en ruido y enterraría las dos que
+ * importan. Rojo para lo que no llegó (hay que hacer algo hoy), ámbar apagado para lo
+ * que no sabemos.
+ */
+const DELIVERY_BADGE: Record<'failed' | 'unconfirmed', string> = {
+  failed: 'border-red-500/40 bg-red-500/10 text-red-300',
+  unconfirmed: 'border-amber-500/30 bg-amber-500/5 text-amber-300/80',
 };
 
 /**
@@ -38,14 +52,18 @@ export function TeamInvitationsList({
       pending: rows.filter((r) => r.status === 'pending').length,
       expired: rows.filter((r) => r.status === 'expired').length,
       accepted: rows.filter((r) => r.status === 'accepted').length,
+      // A-3 — corte transversal, no una quinta categoría: una que no llegó sigue
+      // contando además en el filtro donde esté (casi siempre, en pendientes).
+      not_delivered: rows.filter((r) => r.delivery === 'failed').length,
     }),
     [rows],
   );
 
-  const visible = useMemo(
-    () => (filter === 'all' ? rows : rows.filter((r) => r.status === filter)),
-    [rows, filter],
-  );
+  const visible = useMemo(() => {
+    if (filter === 'all') return rows;
+    if (filter === 'not_delivered') return rows.filter((r) => r.delivery === 'failed');
+    return rows.filter((r) => r.status === filter);
+  }, [rows, filter]);
 
   function dateLabel(row: DireccionTeamInvitation): string {
     // `format.dateTime` de next-intl usa el locale DEL CONTEXTO, que es `va` tal cual:
@@ -95,8 +113,26 @@ export function TeamInvitationsList({
                 <div className="text-xs text-zinc-400">
                   {t(`form.role_${row.role}`)} · {dateLabel(row)}
                 </div>
+                {/* El motivo, debajo y solo cuando lo hay: es lo que convierte un
+                    "no llegó" en algo que se puede arreglar (un correo mal escrito,
+                    un buzón lleno). Lo escribe Resend, así que no se traduce. */}
+                {row.delivery === 'failed' && row.delivery_detail && (
+                  <div className="truncate text-xs text-red-300/70" title={row.delivery_detail}>
+                    {row.delivery_detail}
+                  </div>
+                )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
+                {row.delivery !== 'ok' && (
+                  <span
+                    className={
+                      'rounded-full border px-2 py-0.5 text-xs ' + DELIVERY_BADGE[row.delivery]
+                    }
+                    title={t(`delivery_${row.delivery}_hint`)}
+                  >
+                    {t(`delivery_${row.delivery}`)}
+                  </span>
+                )}
                 <span className={'text-xs ' + STATUS_BADGE[row.status]}>
                   {t(`status_${row.status}`)}
                 </span>

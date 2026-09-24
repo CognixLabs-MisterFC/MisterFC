@@ -4,4 +4,5 @@
 export * from './club-players';
 export * from './club-staff';
 export * from './home-counts';
+export * from './delivery-status';
 export * from './pending-lists';
