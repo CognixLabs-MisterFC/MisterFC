@@ -7,6 +7,7 @@ import {
   type SendInvitationEmail,
 } from '../spectators/index';
 import { inviteEmailMetadata } from './invite-email-metadata';
+import { recordInvitationDelivery } from './delivery';
 
 /**
  * MN-5 — el TUTOR invita a su hijo a tener cuenta propia.
@@ -205,11 +206,18 @@ export async function performSelfInvite(
   // 4) EL CORREO, lo último: con la invitación creada y la cuenta ya enlazada. Si
   // falla aquí no queda nada roto y reenviar vuelve a intentarlo.
   try {
-    const { error: mailErr } = await sendEmail({ to: email, url, locale: emailLocale });
+    const { error: mailErr, id: messageId } = await sendEmail({
+      to: email,
+      url,
+      locale: emailLocale,
+    });
     if (mailErr) {
       log(mailErr, 'send_invite_email_self', { invitation_id: invite.id });
       return { error: 'generic' };
     }
+    // A-2 — el correo ya ha salido: apuntar de qué envío es NO puede tumbarlo. Ver la
+    // nota de `recordInvitationDelivery`.
+    await recordInvitationDelivery(admin, [invite.id], messageId, log, 'delivery_record_self');
   } catch (thrown) {
     log(thrown, 'send_invite_email_self_thrown', { invitation_id: invite.id });
     return { error: 'generic' };

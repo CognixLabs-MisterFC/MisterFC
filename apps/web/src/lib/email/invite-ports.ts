@@ -1,7 +1,8 @@
 import 'server-only';
+import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database, InviteKind } from '@misterfc/core';
-import { sendEmail } from './resend';
+import type { Database, DeliveryRecordLogger, InviteKind } from '@misterfc/core';
+import { sendEmail, type SendEmailResult } from './resend';
 import { invitationEmail } from './invitation-email';
 import { lookupInviteRecipient, normalizeLocale } from './invite-recipient';
 
@@ -27,7 +28,14 @@ type DbClient = SupabaseClient<Database>;
  * decide el sender, que es quien sabe qué hay creado ya.
  */
 export function invitationEmailPort(kind: InviteKind) {
-  return async (args: { to: string; url: string; locale: string; role?: string }) => {
+  // El tipo de retorno se declara a mano: sin él, la rama del `catch` estrecha la
+  // inferencia a `{ error }` y el `id` del envío —lo que A-2 necesita— desaparece.
+  return async (args: {
+    to: string;
+    url: string;
+    locale: string;
+    role?: string;
+  }): Promise<SendEmailResult> => {
     try {
       const locale = normalizeLocale(args.locale, 'es');
       const message = await invitationEmail({ kind, locale, url: args.url, role: args.role });
@@ -38,6 +46,19 @@ export function invitationEmailPort(kind: InviteKind) {
       // revienta la acción de quien invita.
       return { error: thrown };
     }
+  };
+}
+
+/**
+ * A-2 — el logger que `recordInvitationDelivery` inyecta desde web. Mismo `console.error`
+ * + Sentry que el resto de los senders, y con la etiqueta de su área: los dos senders de
+ * plataforma (`invite-club-admin`, `change-club-admin`) van bajo `platform`, que es donde
+ * se miran sus incidentes.
+ */
+export function deliveryLogger(feature: 'invitations' | 'platform'): DeliveryRecordLogger {
+  return (error, step, extra) => {
+    console.error(`[${feature}] ${step}`, { ...extra, error });
+    Sentry.captureException(error, { tags: { feature, step }, extra });
   };
 }
 

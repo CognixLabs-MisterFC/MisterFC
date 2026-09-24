@@ -13,10 +13,11 @@ import {
   type Role,
   inviteLink,
   pendingCoversEmail,
+  recordInvitationDelivery,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
-import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
+import { deliveryLogger, invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 import { pendingInvitationsForEmail } from '@/lib/pending-invitation';
 
 export type SendInvitationFormState = {
@@ -617,7 +618,7 @@ export async function sendInvitation(
 
   // Si falla, la invitación queda creada y enlazada: se cancela y se vuelve a
   // invitar desde la misma pantalla.
-  const { error: mailErr } = await invitationEmailPort('staff')({
+  const { error: mailErr, id: messageId } = await invitationEmailPort('staff')({
     to: parsed.data.email,
     url: redirectTo,
     locale: emailLocale,
@@ -642,6 +643,16 @@ export async function sendInvitation(
     });
     return { error: 'generic' };
   }
+
+  // A-2 — el correo ya ha salido: apuntar de qué envío es NO puede tumbarlo (la
+  // función no lanza y solo registra si falla). Ver `recordInvitationDelivery`.
+  await recordInvitationDelivery(
+    admin,
+    [invite.id],
+    messageId,
+    deliveryLogger('invitations'),
+    'delivery_record_staff',
+  );
 
   console.info('[invitations][invite-email] sent', {
     masked_email: maskedEmail,

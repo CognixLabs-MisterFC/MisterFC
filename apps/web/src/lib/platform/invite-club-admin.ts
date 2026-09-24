@@ -7,10 +7,11 @@ import {
   inviteEmailMetadata,
   isEmailAlreadyExistsError,
   inviteLink,
+  recordInvitationDelivery,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { linkInvitedUser } from '@/lib/link-invited-user';
-import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
+import { deliveryLogger, invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 
 /**
  * F14B-5b — Acción de consola (superadmin): invita al admin de un club SIN owner.
@@ -218,7 +219,7 @@ export async function inviteClubAdmin(input: {
 
   // El correo, LO ÚLTIMO: con la invitación creada y la cuenta ya enlazada. Si falla
   // aquí no queda nada roto y reinvitar desde la consola vuelve a intentarlo.
-  const { error: mailErr } = await invitationEmailPort('admin')({
+  const { error: mailErr, id: messageId } = await invitationEmailPort('admin')({
     to: email,
     url: redirectTo,
     locale: emailLocale,
@@ -231,6 +232,16 @@ export async function inviteClubAdmin(input: {
     Sentry.captureException(mailErr, { tags: { feature: 'platform', step: 'send_invite_email' } });
     return { error: 'generic' };
   }
+
+  // A-2 — el correo ya ha salido: apuntar de qué envío es NO puede tumbarlo (la
+  // función no lanza y solo registra si falla). Ver `recordInvitationDelivery`.
+  await recordInvitationDelivery(
+    admin,
+    [invite.id],
+    messageId,
+    deliveryLogger('platform'),
+    'delivery_record_club_admin',
+  );
 
   console.info('[platform][invite-admin] sent', { masked_email: maskedEmail, invitation_id: invite.id });
   return { ok: { email } };

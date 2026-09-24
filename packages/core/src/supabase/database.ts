@@ -1394,6 +1394,10 @@ export type Database = {
           club_id: string
           created_at: string
           created_by: string | null
+          delivery_at: string | null
+          delivery_detail: string | null
+          delivery_message_id: string | null
+          delivery_state: string | null
           email: string
           expires_at: string
           id: string
@@ -1410,6 +1414,10 @@ export type Database = {
           club_id: string
           created_at?: string
           created_by?: string | null
+          delivery_at?: string | null
+          delivery_detail?: string | null
+          delivery_message_id?: string | null
+          delivery_state?: string | null
           email: string
           expires_at?: string
           id?: string
@@ -1426,6 +1434,10 @@ export type Database = {
           club_id?: string
           created_at?: string
           created_by?: string | null
+          delivery_at?: string | null
+          delivery_detail?: string | null
+          delivery_message_id?: string | null
+          delivery_state?: string | null
           email?: string
           expires_at?: string
           id?: string
@@ -4515,6 +4527,18 @@ export type Database = {
           p_target_profile_id: string
         }
         Returns: undefined
+      }
+      apply_invitation_delivery_event: {
+        Args: {
+          p_at: string
+          // `| null` A MANO: el generador escribe todos los argumentos como no nulos,
+          // pero `p_detail text` SÍ acepta NULL y es el caso normal (un `delivered` no
+          // trae motivo). Ojo: un `pnpm db:types` completo lo borra (ver PR #404).
+          p_detail: string | null
+          p_message_id: string
+          p_state: string
+        }
+        Returns: number
       }
       apply_subscription_event: {
         Args: {

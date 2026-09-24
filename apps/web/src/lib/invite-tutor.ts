@@ -8,9 +8,9 @@ import {
   inviteLink,
 } from '@misterfc/core';
 import { linkInvitedUser } from '@/lib/link-invited-user';
-import { invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
+import { deliveryLogger, invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 import { pendingInvitationsForEmail } from '@/lib/pending-invitation';
-import { pendingCoversEmail } from '@misterfc/core';
+import { pendingCoversEmail, recordInvitationDelivery } from '@misterfc/core';
 
 /**
  * Circuito ÚNICO de invitación de TUTOR — lo comparten el alta manual de jugador
@@ -294,7 +294,7 @@ export async function sendOrRenewTutorInvitation(
 
   //    Si falla, la invitación queda creada y enlazada: volver a pulsar «invitar»
   //    en la ficha la RENUEVA y reenvía (paso 1a), no duplica.
-  const { error: mailErr } = await invitationEmailPort('tutor')({
+  const { error: mailErr, id: messageId } = await invitationEmailPort('tutor')({
     to: email,
     url: redirectTo,
     locale: emailLocale,
@@ -306,6 +306,16 @@ export async function sendOrRenewTutorInvitation(
     });
     return { error: 'generic' };
   }
+
+  // A-2 — el correo ya ha salido: apuntar de qué envío es NO puede tumbarlo (la
+  // función no lanza y solo registra si falla). Ver `recordInvitationDelivery`.
+  await recordInvitationDelivery(
+    admin,
+    [invite.id],
+    messageId,
+    deliveryLogger('invitations'),
+    'delivery_record_tutor',
+  );
 
   return { ok: { email, covered: false } };
 }

@@ -54,6 +54,19 @@ const EXT = /\.(ts|tsx)$/;
 /** La forma ÚNICA de crear la cuenta de un invitado: no manda correo. */
 const CREATE = 'auth.admin.createUser(';
 /**
+ * A-2 — y que cada sender APUNTE de qué envío es su invitación.
+ *
+ * Es el mismo agujero que este guard ya vigila, un piso más abajo. `invitations` tiene
+ * dónde guardar el id que Resend da al envío, y el webhook de entrega casa por ahí: un
+ * sender que no lo apunte manda invitaciones MUDAS —si el correo rebota, no hay forma de
+ * saber de quién era— y eso no se ve nunca desde la pantalla, que es exactamente cómo
+ * este agujero llegó a producción.
+ *
+ * Se cuenta por FICHERO y no por envío: `inviteBatch` manda un correo por familia y
+ * apunta la lista entera de hermanos de una vez, así que la cuenta no cuadraría 1 a 1.
+ */
+const RECORD = 'recordInvitationDelivery(';
+/**
  * A-1 — además del censo, se exige que CADA envío arme su `data` con el helper
  * compartido. El `user_metadata` lleva el `invitation_id` que exige `handle_new_user`
  * y el `invite_kind` que elige el texto: un sender que escriba el objeto a mano y se
@@ -115,6 +128,7 @@ function walk(dir, out) {
 const found = {};
 const withMeta = {};
 const withReset = {};
+const withRecord = {};
 /** Apariciones de las formas retiradas, en CUALQUIER fichero (fichero → literal). */
 const retiradas = [];
 
@@ -135,6 +149,7 @@ for (const base of SCAN) {
       found[rel] = creates;
       withMeta[rel] = lines.filter((l) => l.includes(META)).length;
       withReset[rel] = lines.filter((l) => l.includes(RESET)).length;
+      withRecord[rel] = lines.filter((l) => l.includes(RECORD)).length;
     }
   }
 }
@@ -182,6 +197,13 @@ for (const [file, senders] of Object.entries(found)) {
     problems.push(
       `· ${file}: ${senders} envío(s) pero ${metas} llamada(s) a inviteEmailMetadata(). ` +
         'Todo envío arma su `data` con el helper (invitation_id + invite_kind + invite_locale).',
+    );
+  }
+  if ((withRecord[file] ?? 0) === 0) {
+    problems.push(
+      `· ${file}: ${senders} envío(s) y ninguna llamada a recordInvitationDelivery(). ` +
+        'Todo sender apunta en la invitación el id que Resend da al envío; sin él, ' +
+        'un correo que rebota no se puede atribuir a nadie (A-2).',
     );
   }
   if ((withReset[file] ?? 0) > 0) {
@@ -292,7 +314,7 @@ if (problems.length > 0) {
 
 const total = Object.values(found).reduce((a, b) => a + b, 0);
 console.log(
-  `[invite-senders] OK — ${total} senders, censo cuadra, todos mandan su invite_kind, ` +
+  `[invite-senders] OK — ${total} senders, censo cuadra, todos mandan su invite_kind, todos apuntan el id del envio, ` +
     'ninguna de las formas retiradas (inviteUserByEmail, el magic link de cuenta ' +
     'existente, el reset) sigue viva, y los correos tienen texto completo en es, en y va.',
 );
