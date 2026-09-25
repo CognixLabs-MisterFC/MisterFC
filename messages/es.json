@@ -1056,6 +1056,7 @@
     "tutor_dob_hint": "Hace falta para confirmar que quien tutela al jugador es mayor de edad.",
     "missing_tutor_dob": "Falta tu fecha de nacimiento",
     "error_date_of_birth_required": "Necesitamos tu fecha de nacimiento para darte de alta como tutor.",
+    "error_date_of_birth_not_adult": "Esa fecha es de un menor de edad. Aquí va TU fecha de nacimiento, la del tutor; la de tu hijo o hija se pide más abajo.",
     "error_tutor_menor_de_edad": "Esa cuenta consta como menor de edad y no puede figurar como tutor. Si eres el jugador, pide a tu club la cuenta propia; si es un error en tu fecha de nacimiento, corrígela y vuelve a intentarlo."
   },
   "informes": {

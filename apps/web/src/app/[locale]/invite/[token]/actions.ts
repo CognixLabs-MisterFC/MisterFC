@@ -8,6 +8,7 @@ import {
   acceptInvitationWithProfileSchema,
   acceptPendingInvitationsFromClient,
   isValidBirthDate,
+  isAdultBirthDate,
   claimInviteeAccount,
   assertInvitationValid,
   childrenNeedingConsent,
@@ -54,6 +55,7 @@ export type AcceptInvitationState = {
     | 'phone_missing'
     | 'phone_invalid'
     | 'date_of_birth_invalid'
+    | 'date_of_birth_not_adult'
     | 'password_too_short'
     | 'password_mismatch'
     | 'no_session'
@@ -132,13 +134,25 @@ async function ensureTutorDob(
     logError('tutor-dob-read', readErr, { user_id: user.id });
     return 'profile_update_failed';
   }
-  if (prof?.date_of_birth) return null;
+  // Una fecha guardada solo vale si es de alguien MAYOR DE EDAD.
+  //
+  // Antes este `return null` era un cheque en blanco: con cualquier fecha dentro, el
+  // servidor no volvía a mirarla nunca. Y como el trigger de la 20261099000000 sí la
+  // mira al crear el vínculo, una fecha de menor guardada aquí —la del hijo puesta en
+  // el campo del tutor— dejaba el alta rechazada EN CADA REINTENTO, para siempre, sin
+  // ninguna forma de corregirla desde esta pantalla. Medido: dos cuentas así en
+  // producción. Ahora una fecha que dice menor no cierra la puerta: se pide otra.
+  if (prof?.date_of_birth && isAdultBirthDate(prof.date_of_birth)) return null;
 
   const raw = formData.get('date_of_birth');
   const dob = typeof raw === 'string' ? raw.trim() : '';
   if (dob.length === 0) return 'date_of_birth_required';
   // El MISMO criterio que el formulario y que el schema del alta, una sola copia.
   if (!isValidBirthDate(dob)) return 'date_of_birth_invalid';
+  // Y el suelo de edad, ANTES de escribir. Es la diferencia entre avisar de algo que
+  // se puede arreglar y guardar un dato que luego tumba el alta desde la base de
+  // datos con un mensaje que nadie relaciona con este campo.
+  if (!isAdultBirthDate(dob)) return 'date_of_birth_not_adult';
 
   const { error: updErr } = await supabase
     .from('profiles')

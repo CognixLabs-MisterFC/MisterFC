@@ -18,6 +18,8 @@ export {
   validateChildRow,
   isValidChildDob,
   isValidBirthDate,
+  isAdultBirthDate,
+  TUTOR_MIN_AGE_YEARS,
   CHILD_FIRST_NAME_MAX,
   CHILD_LAST_NAME_MAX,
   type AcceptProblem,

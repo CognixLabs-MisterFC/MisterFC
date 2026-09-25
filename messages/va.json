@@ -575,6 +575,7 @@
     "tutor_dob_hint": "Fa falta per a confirmar que qui tutela el jugador és major d’edat.",
     "missing_tutor_dob": "Falta la teua data de naixement",
     "error_date_of_birth_required": "Necessitem la teua data de naixement per a donar-te d’alta com a tutor.",
+    "error_date_of_birth_not_adult": "Eixa data és d’un menor d’edat. Ací va LA TEUA data de naixement, la del tutor; la del teu fill o filla es demana més avall.",
     "error_tutor_menor_de_edad": "Eixe compte consta com a menor d’edat i no pot figurar com a tutor. Si eres el jugador, demana al teu club el compte propi; si és un error en la teua data de naixement, corregix-la i torna a intentar-ho."
   },
   "directos": {
