@@ -70,3 +70,28 @@ export function childrenNeedingConsent<T extends RelationCarrier>(
 ): T[] {
   return rows.filter(needsTutorConsent);
 }
+
+/**
+ * D-2 — los vínculos de tutor que este lote va a crear, por `player_id` y sin repetidos.
+ *
+ * Es la lista a la que se le pega la DECLARACIÓN de mayoría de edad después de aceptar:
+ * si la casilla se pidió por estos hijos, la prueba va en estos vínculos y en ninguno
+ * más. Sale de `childrenNeedingConsent` a propósito, y no de una condición nueva: es la
+ * MISMA regla que decide si la casilla es obligatoria (`ensureAdultDeclaration`). Dos
+ * listas distintas para lo mismo acabarían pidiendo una declaración que no se guarda, o
+ * guardándola donde no se pidió.
+ *
+ * SIN REPETIDOS, y no es cosmético: quien escribe compara cuántas filas ha anotado con
+ * cuántas esperaba, y un `player_id` duplicado en el lote haría que esa cuenta no
+ * cuadrara nunca y avisara de un fallo que no existe.
+ *
+ * Fuera quedan, por herencia de `needsTutorConsent`: la cuenta propia del jugador —en un
+ * `self` la declaración no significa nada y el CHECK de la 20261109000000 la rechaza— y
+ * la invitación de SEGUIDOR, que no crea vínculo de tutor.
+ */
+export function tutorLinkPlayerIds(rows: readonly RelationCarrier[]): string[] {
+  const ids = childrenNeedingConsent(rows)
+    .map((r) => r.player_id)
+    .filter((id): id is string => id != null);
+  return [...new Set(ids)];
+}

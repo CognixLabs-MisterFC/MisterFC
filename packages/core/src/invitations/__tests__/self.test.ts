@@ -4,6 +4,7 @@ import {
   hasSelfInvitation,
   isSelfInvitation,
   needsTutorConsent,
+  tutorLinkPlayerIds,
 } from '../self';
 
 /** Invitación de tutor: la que convierte a quien acepta en responsable del menor. */
@@ -103,5 +104,48 @@ describe('la abuela seguidora no responde por el nieto', () => {
       r.player_id != null && r.player_relation !== 'self';
     expect(viejoFiltro(seguidor('p1'))).toBe(true);
     expect(needsTutorConsent(seguidor('p1'))).toBe(false);
+  });
+});
+
+describe('D-2 · a qué vínculos se les pega la declaración de mayoría de edad', () => {
+  it('a los que este alta convierte en tutela, y por su player_id', () => {
+    expect(tutorLinkPlayerIds([row('p1', 'parent'), row('p2', 'guardian')])).toEqual(['p1', 'p2']);
+  });
+
+  it('a ninguno si el alta no le hace tutor: no hay nada que declarar', () => {
+    expect(tutorLinkPlayerIds([])).toEqual([]);
+    expect(tutorLinkPlayerIds([row(null, null)])).toEqual([]);
+    expect(tutorLinkPlayerIds([seguidor('p1')])).toEqual([]);
+  });
+
+  // El CHECK de la 20261109000000 rechaza una declaración en un `self`. Si esta lista lo
+  // dejara pasar, el alta de la cuenta propia acabaría con un error registrado en cada
+  // aceptación — y con el aviso de «declaración sin sellar» sonando para siempre.
+  it('nunca a la cuenta propia del jugador, que es lo que el CHECK rechaza', () => {
+    expect(tutorLinkPlayerIds([row('p1', 'self')])).toEqual([]);
+    expect(tutorLinkPlayerIds([row('p1', 'self'), row('p2', 'parent')])).toEqual(['p2']);
+  });
+
+  it('sin repetidos: quien escribe compara cuántas filas esperaba', () => {
+    // Dos invitaciones al mismo hijo en el mismo lote son UN vínculo, no dos. Con el
+    // duplicado dentro, `esperados` valdría 2, el UPDATE anotaría 1 y el aviso de avería
+    // saltaría en un alta perfectamente normal.
+    expect(tutorLinkPlayerIds([row('p1', 'parent'), row('p1', 'guardian')])).toEqual(['p1']);
+  });
+
+  it('es la MISMA lista que decide si la casilla es obligatoria', () => {
+    // La casilla se pide cuando childrenNeedingConsent no está vacío. Si estas dos se
+    // separaran, habría altas que piden la declaración y no la guardan, o al revés.
+    const lotes = [
+      [row('p1', 'parent')],
+      [row('p1', 'self')],
+      [seguidor('p1')],
+      [row(null, null)],
+      [row('p1', 'self'), row('p2', 'guardian')],
+      [],
+    ];
+    for (const lote of lotes) {
+      expect(tutorLinkPlayerIds(lote).length > 0).toBe(childrenNeedingConsent(lote).length > 0);
+    }
   });
 });
