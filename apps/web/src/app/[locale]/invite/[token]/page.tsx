@@ -4,9 +4,8 @@ import { createCookieAdapter } from '@/lib/supabase-cookies';
 import {
   loadInvitationForPage,
   loadPendingInvitationsForEmail,
-  loadProfileDateOfBirth,
 } from './invite-data';
-import { childrenNeedingConsent, hasSelfInvitation, isAdultBirthDate } from '@misterfc/core';
+import { childrenNeedingConsent, hasSelfInvitation } from '@misterfc/core';
 import {
   loadCurrentLegalDocs,
   loadAccountConsentStatus,
@@ -125,26 +124,16 @@ export default async function InvitePage({ params }: Props) {
   // F14-4 — texto informado de datos médicos (opcional por hijo).
   const medicalDoc = await loadMedicalLegalDoc(inv.club_id);
 
-  // ¿Hay que pedirle la fecha de nacimiento? Solo cuando este alta lo convierte en
-  // TUTOR de alguien y su perfil aún no la tiene. Es el dato del que depende la mig
-  // 20261099000000 para decidir si alguien puede figurar como tutor, y estaba al 0%.
+  // ¿Hay que pedirle la declaración de mayoría de edad? Solo cuando este alta lo
+  // convierte en TUTOR de alguien. A un entrenador que acepta la invitación de un
+  // segundo club no se le pide nada, y su alta sigue siendo de un clic.
   //
-  // Quién es «él» depende del flujo: la sesión si coincide con el correo invitado, o
-  // la cuenta que creamos al invitar (`invited_user_id`). Si no se puede resolver
-  // ninguna de las dos, se pide: preguntar de más molesta, no preguntar de menos deja
-  // el candado sin datos. Y el servidor lo vuelve a decidir por su cuenta en
-  // `attachAllPending`, así que esto solo controla lo que se PINTA.
-  const acceptorId =
-    user && sessionEmailMatches ? user.id : (inv.invited_user_id ?? null);
-  const acceptorDob = acceptorId ? await loadProfileDateOfBirth(acceptorId) : null;
-  // Se pide TAMBIÉN cuando la fecha guardada dice menor de edad. Es el único camino
-  // de vuelta: el trigger de la 20261099000000 tumba el vínculo mirando esa fecha, y
-  // hasta ahora el campo desaparecía en cuanto el perfil tenía una —cualquiera—, así
-  // que el aviso «corrígela y vuelve a intentarlo» mandaba a un campo que ya no se
-  // pintaba. Con la fecha mala dentro, cada reintento fallaba igual y para siempre.
-  const acceptorDobIsMinor = acceptorDob != null && !isAdultBirthDate(acceptorDob);
-  const requireTutorDob =
-    pendingChildren.length > 0 && (acceptorDob == null || acceptorDobIsMinor);
+  // Aquí estaba el cálculo de si pedir su FECHA de nacimiento, que necesitaba saber
+  // quién era «él» —la sesión o `invited_user_id`— y leer su perfil para ver si ya la
+  // tenía. Nada de eso hace falta para una casilla: no depende de lo que haya guardado.
+  // Y el servidor lo vuelve a decidir por su cuenta en `attachAllPending`, así que esto
+  // solo controla lo que se PINTA.
+  const requireAdultDeclaration = pendingChildren.length > 0;
 
   const consentProps = {
     legalTerms: legal.terms,
@@ -156,10 +145,7 @@ export default async function InvitePage({ params }: Props) {
     imageInternal: imageDocs.internal,
     imageSocial: imageDocs.social,
     medicalDoc,
-    requireTutorDob,
-    // Para que el campo salga CON la fecha que hay cuando hay que corregirla: un
-    // campo vacío no dice qué estaba mal, y quien lo ve no sabe que está reparando.
-    acceptorDob: acceptorDobIsMinor ? acceptorDob : null,
+    requireAdultDeclaration,
   };
 
   return (

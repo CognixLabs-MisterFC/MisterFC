@@ -103,10 +103,17 @@ export async function claimInviteeAccount(
   // reemplaza): es el bucket que lee el gate de la pantalla. Sin esto quedaba
   // stale=true y un usuario ya configurado, al aceptar una invitación adicional,
   // se iba otra vez a poner contraseña.
+  //
+  // Y la fecha de nacimiento SOLO SI VIENE. Desde que la pantalla web dejó de
+  // pedírsela al tutor, aquí llega `null` en ese flujo — y un `null` en
+  // `user_metadata` no deja el valor como estaba: GoTrue fusiona, así que BORRA la
+  // clave. Escribirla siempre significaría vaciar la fecha que el perfil ya tuviera.
+  // La sigue enviando la pantalla NATIVA del caso `self`, donde es la del propio
+  // jugador.
   const metadata = {
     user_metadata: {
       full_name: profile.full_name,
-      date_of_birth: profile.date_of_birth,
+      ...(profile.date_of_birth ? { date_of_birth: profile.date_of_birth } : {}),
       locale,
       invite_pending: false,
     },
@@ -168,7 +175,9 @@ export async function claimInviteeAccount(
     .update({
       full_name: profile.full_name,
       phone: profile.phone,
-      date_of_birth: profile.date_of_birth,
+      // Igual que arriba: solo si viene. Un `null` aquí pisaría con NULL la fecha que
+      // el perfil ya tuviera, y la decisión es dejar las que hay como están.
+      ...(profile.date_of_birth ? { date_of_birth: profile.date_of_birth } : {}),
       locale,
     })
     .eq('id', user.id);

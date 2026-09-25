@@ -45,37 +45,6 @@ export function isValidChildDob(s: string): boolean {
   return isValidBirthDate(s);
 }
 
-/** Años que hay que tener para figurar como tutor. El mismo número que el SQL. */
-export const TUTOR_MIN_AGE_YEARS = 18;
-
-/**
- * ¿Esa fecha es de alguien MAYOR DE EDAD? Solo para la fecha del TUTOR.
- *
- * POR QUÉ EXISTE Y POR QUÉ NO ESTÁ EN `isValidBirthDate`. Aquella responde «esto es
- * una fecha de nacimiento», y su comentario dice a propósito que es «de quien sea».
- * Tiene razón: la del hijo es de un menor y tiene que pasar. Así que el suelo de
- * edad no puede vivir ahí, y sin él `2020-01-01` era una fecha de tutor VÁLIDA para
- * el formulario. Se guardaba en `profiles.date_of_birth`, y el trigger de la
- * migración 20261099000000 tumbaba el vínculo DESPUÉS, desde la base de datos, con
- * un mensaje sobre menores de edad que quien rellenaba no podía relacionar con nada.
- *
- * El umbral es EL MISMO que el de aquella migración —«menor ⟺ date_of_birth >
- * current_date - interval '18 years'»— y por eso se compara por componentes en UTC:
- * la regla de la base de datos usa `current_date` del servidor, y restar 18 años con
- * milisegundos metería el desfase de horario y los bisiestos por medio. Quien cumple
- * 18 hoy es mayor: la comparación es `<=`, igual que allí.
- */
-export function isAdultBirthDate(s: string, now: Date = new Date()): boolean {
-  if (!isValidBirthDate(s)) return false;
-  const limite = Date.UTC(
-    now.getUTCFullYear() - TUTOR_MIN_AGE_YEARS,
-    now.getUTCMonth(),
-    now.getUTCDate(),
-  );
-  const [year, month, day] = s.split('-');
-  return Date.UTC(Number(year), Number(month) - 1, Number(day)) <= limite;
-}
-
 export type ChildRowError = 'child_name_required' | 'child_dob_invalid';
 
 /** Valida una fila de datos de hijo. Mismo orden de comprobaciones que el server. */
@@ -102,20 +71,16 @@ export type AcceptProblemCode =
   | 'full_name_too_long'
   | 'phone_missing'
   | 'phone_invalid'
-  | 'date_of_birth_invalid'
   /**
-   * Falta la fecha de nacimiento DEL TUTOR, y en este alta hace falta. Distinto de
-   * `date_of_birth_invalid`: ahí hay algo escrito que no vale; aquí no hay nada, y
-   * el aviso tiene que decir eso.
+   * No ha marcado «declaro que soy mayor de 18 años», y este alta le hace tutor.
+   *
+   * Sustituye a los tres códigos que había para la FECHA de nacimiento del tutor
+   * (`date_of_birth_required`, `date_of_birth_invalid`, `date_of_birth_not_adult`):
+   * ese campo ya no existe, porque nadie pone su edad en un formulario así — y al
+   * escribir la del hijo por error, la regla de la mig 20261099000000 tumbaba el
+   * alta desde la base de datos. Lo que se pide ahora es la declaración.
    */
-  | 'date_of_birth_required'
-  /**
-   * Hay una fecha, es una fecha de nacimiento válida, y es de un MENOR. Código
-   * propio y no `date_of_birth_invalid`: no está mal escrita, está mal atribuida —
-   * casi siempre es la del hijo puesta en el campo del tutor. El mensaje tiene que
-   * poder decir eso, y con el código de «no válida» no se podía.
-   */
-  | 'date_of_birth_not_adult'
+  | 'adult_declaration_required'
   | 'child_name_required'
   | 'child_dob_invalid'
   | 'image_internal_missing'
@@ -145,18 +110,20 @@ export type AcceptFormRules = {
   /** El flujo pide nombre del tutor + contraseña nueva + confirmación. */
   requireProfile: boolean;
   /**
-   * Este alta convierte a quien acepta en TUTOR de alguien y su perfil todavía no
-   * tiene fecha de nacimiento: hay que pedirla, y es obligatoria.
+   * Este alta convierte a quien acepta en TUTOR de alguien: tiene que declarar que
+   * es mayor de edad, y la casilla es obligatoria.
    *
-   * POR QUÉ AHORA. Desde la mig 20261099000000 un perfil que CONSTE menor no puede
-   * figurar como tutor; ese candado se apoya en `profiles.date_of_birth`, que estaba
-   * al 0% porque el flujo rápido no la pedía y el del invitado nuevo la pedía como
-   * «(opcional)». Sin este campo, aquella regla no mide nada.
+   * POR QUÉ UNA CASILLA Y NO SU FECHA. Antes aquí se pedía `profiles.date_of_birth`,
+   * porque la mig 20261099000000 decide con esa fecha si alguien puede figurar como
+   * tutor. Nadie pone su edad en un formulario de alta: lo medido en producción fue
+   * `2020-01-01` en dos perfiles —un relleno, ni siquiera la fecha de un niño—, y con
+   * ella dentro el trigger rechazaba el alta desde la base de datos. Un dato que se
+   * rellena mal no mide nada; una declaración, al menos, dice lo que afirma.
    *
    * Solo cuando el lote crea un vínculo de tutor: a un entrenador que acepta la
    * invitación de un segundo club no se le pide nada, y sigue siendo de un clic.
    */
-  requireTutorDob: boolean;
+  requireAdultDeclaration: boolean;
   /** El flujo pide la contraseña que el usuario ya tenía. */
   requireOwnPassword: boolean;
 };
@@ -188,7 +155,9 @@ export function findAcceptProblems(formData: FormData, rules: AcceptFormRules): 
     ? (acceptInvitationWithProfileSchema.safeParse({
         full_name: str(formData, 'full_name'),
         phone: str(formData, 'phone'),
-        date_of_birth: str(formData, 'date_of_birth'),
+        // `date_of_birth` NO se parsea: el campo ya no existe en esta pantalla. El
+        // schema lo tiene como opcional y lo sigue usando la pantalla NATIVA del
+        // caso `self`, donde la fecha es la del propio jugador y sí se pide.
         password: str(formData, 'password'),
         confirm: str(formData, 'confirm'),
       }).error?.issues ?? [])
@@ -207,40 +176,19 @@ export function findAcceptProblems(formData: FormData, rules: AcceptFormRules): 
       problems.push({
         code: issue.message === 'phone_required' ? 'phone_missing' : 'phone_invalid',
       });
-    } else if (field === 'date_of_birth') {
-      problems.push({ code: 'date_of_birth_invalid' });
     }
   }
 
-  // 1b · La fecha del TUTOR cuando este alta lo convierte en tutor. Va aquí y no
-  // dentro de `requireProfile` porque los tres flujos pueden necesitarla: el rápido
-  // y el de cuenta existente no piden perfil y aun así crean el vínculo.
+  // 1b · La DECLARACIÓN de mayoría de edad, cuando este alta le hace tutor. Va aquí
+  // y no dentro de `requireProfile` porque la necesitan los tres flujos: el rápido y
+  // el de cuenta existente no piden perfil y aun así crean el vínculo.
   //
-  // La condición mira las DOS puertas por las que se recoge esa fecha, no solo
-  // `requireTutorDob`: el flujo del invitado nuevo pinta su campo también con el
-  // perfil ya fechado (ahí dice «(opcional)»), y lo que se escriba PISA la fecha
-  // guardada. Con solo `requireTutorDob`, ese camino seguía dejando entrar la fecha
-  // de un menor.
-  const creaVinculoDeTutor = rules.children.length > 0;
-  if (rules.requireTutorDob || creaVinculoDeTutor) {
-    const dob = str(formData, 'date_of_birth').trim();
-    if (dob.length === 0) {
-      // Vacío solo es un problema cuando la fecha hace falta. Si el perfil ya la
-      // tiene, no escribir nada es dejarla como está, y eso es legítimo.
-      if (rules.requireTutorDob) problems.push({ code: 'date_of_birth_required' });
-    } else if (!isValidBirthDate(dob)) {
-      // El bloque de perfil ya puede haber avisado de esta misma fecha: sin esta
-      // comprobación la lista pintaba dos veces el mismo aviso en el flujo del
-      // invitado nuevo, que es el único donde corren los dos bloques.
-      if (!problems.some((p) => p.code === 'date_of_birth_invalid')) {
-        problems.push({ code: 'date_of_birth_invalid' });
-      }
-    } else if (!isAdultBirthDate(dob)) {
-      // Una sola regla, sin segundo predicado: si en esta pantalla se está recogiendo
-      // la fecha DEL TUTOR, tiene que ser de alguien mayor de edad. Da igual por cuál
-      // de las dos puertas se pida.
-      problems.push({ code: 'date_of_birth_not_adult' });
-    }
+  // Antes esto pedía y validaba la FECHA de nacimiento del tutor. Se cambió por la
+  // casilla porque nadie pone su edad en un formulario de alta: en producción llegó
+  // `2020-01-01` —un relleno— y con esa fecha dentro el trigger de la mig
+  // 20261099000000 rechazaba el vínculo desde la base de datos.
+  if (rules.requireAdultDeclaration && str(formData, 'declare_adult') !== 'true') {
+    problems.push({ code: 'adult_declaration_required' });
   }
 
   // 2 · Datos de cada hijo (nombre + fecha de nacimiento).

@@ -28,7 +28,7 @@ function baseRules(over: Partial<AcceptFormRules> = {}): AcceptFormRules {
     requireChildData: false,
     requireProfile: false,
     requireOwnPassword: false,
-    requireTutorDob: false,
+    requireAdultDeclaration: false,
     ...over,
   };
 }
@@ -169,14 +169,19 @@ describe('findAcceptProblems — perfil y contraseña', () => {
     expect(codes(fd, rules)).toEqual([]);
   });
 
-  it('la fecha del tutor es opcional, pero si se pone tiene que valer', () => {
+  it('la fecha del tutor ya no se mira: ni pedida, ni validada, ni guardada', () => {
+    // Este test decía lo contrario hasta hoy: que una fecha mala del TUTOR daba
+    // `date_of_birth_invalid`. El campo se retiró —nadie pone su edad en un
+    // formulario de alta, y lo que llegaba era la del hijo o un relleno—, así que
+    // ahora ni se parsea. Queda aquí, invertido, para que el cambio esté escrito:
+    // si alguien manda la fecha a mano, no pasa nada.
     const fd = new FormData();
     fd.set('full_name', 'Ana Pérez');
     fd.set('phone', '600123456');
     fd.set('password', 'unaclavelarga');
     fd.set('confirm', 'unaclavelarga');
     fd.set('date_of_birth', '1850-01-01');
-    expect(codes(fd, rules)).toEqual(['date_of_birth_invalid']);
+    expect(codes(fd, rules)).toEqual([]);
   });
 
   it('el teléfono es obligatorio: en blanco no pasa', () => {

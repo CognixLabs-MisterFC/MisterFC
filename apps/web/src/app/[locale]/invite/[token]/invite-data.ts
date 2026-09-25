@@ -184,21 +184,3 @@ export async function loadInvitationForPage(token: string): Promise<{
   return { invitation, verdict: assertInvitationValid(invitation, Date.now()) };
 }
 
-/**
- * Fecha de nacimiento de un perfil, o null si no la tiene (o si el perfil no existe).
- *
- * Con el cliente de SERVICIO, y es deliberado: la página corre SIN sesión en dos de
- * los tres flujos, así que la RLS de `profiles` no dejaría leer nada y la respuesta
- * sería «no la tiene» para todo el mundo — preguntaríamos su fecha a gente que ya la
- * dio. Solo se lee ESA columna, de UN id que la propia invitación determina.
- */
-export async function loadProfileDateOfBirth(profileId: string): Promise<string | null> {
-  const admin = createSupabaseAdminClient();
-  const { data, error } = await admin
-    .from('profiles')
-    .select('date_of_birth')
-    .eq('id', profileId)
-    .maybeSingle();
-  if (error) return null;
-  return data?.date_of_birth ?? null;
-}

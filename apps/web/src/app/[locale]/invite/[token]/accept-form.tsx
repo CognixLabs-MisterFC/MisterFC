@@ -43,17 +43,11 @@ type CommonProps = {
   imageSocial: ImageConsentDoc | null;
   medicalDoc: MedicalConsentDoc | null;
   /**
-   * Este alta convierte a quien acepta en TUTOR y su perfil aún no tiene fecha de
-   * nacimiento: se le pide, y es obligatoria. Lo decide la página; el servidor lo
+   * Este alta convierte a quien acepta en TUTOR: tiene que declarar que es mayor de
+   * edad, y la casilla es obligatoria. Lo decide la página; el servidor lo
    * vuelve a decidir por su cuenta (`attachAllPending`) y no se fía de esto.
    */
-  requireTutorDob: boolean;
-  /**
-   * La fecha que HAY guardada, y solo cuando dice menor de edad: es el caso en que
-   * hay que corregirla, y el campo sale con ella dentro. `null` en el alta normal,
-   * donde no hay nada que precargar.
-   */
-  acceptorDob: string | null;
+  requireAdultDeclaration: boolean;
 };
 
 /**
@@ -318,39 +312,52 @@ function focusField(fieldId: string) {
 }
 
 /**
- * Fecha de nacimiento DEL TUTOR, obligatoria, en los flujos que no piden perfil.
+ * LA DECLARACIÓN de mayoría de edad. Obligatoria cuando este alta te hace tutor.
  *
- * El flujo del invitado nuevo ya tiene su propio campo `date_of_birth` —el del
- * bloque de perfil, que hasta ahora decía «(opcional)»—, así que este no se pinta
- * ahí: dos inputs con el mismo `name` mandarían dos valores y ganaría el último.
+ * SUSTITUYE al campo de FECHA de nacimiento del tutor, que estuvo aquí hasta hoy.
+ * Aquel existía porque la mig 20261099000000 decide con `profiles.date_of_birth` si
+ * alguien puede figurar como tutor. Lo que llegó a producción fue `2020-01-01` en dos
+ * perfiles —un relleno, ni siquiera la fecha de un niño— y con esa fecha dentro el
+ * trigger rechazaba el alta desde la base de datos, con un mensaje sobre menores de
+ * edad que quien rellenaba no podía relacionar con nada. Nadie pone su edad en un
+ * formulario de alta.
+ *
+ * La casilla es una AFIRMACIÓN, no una comprobación, y eso es un cambio real de lo
+ * que el producto puede prometer: el candado que queda vivo es la vía (a) de aquella
+ * regla —la cuenta propia de un jugador menor, que se apoya en `players.date_of_birth`
+ * (NOT NULL, al 100%)—, y esa no depende de esta pantalla.
+ *
+ * Se pinta como las casillas de consentimiento y no como un campo de texto: es lo que
+ * es. Sin `defaultChecked`: marcarla tiene que ser un acto de quien acepta.
  */
-function TutorDobField({
+function AdultDeclarationField({
   show,
   problem,
-  defaultValue,
 }: {
   show: boolean;
   problem: FormProblem | undefined;
-  defaultValue: string | null;
 }) {
   const t = useTranslations('invite');
   if (!show) return null;
   return (
     <TutorBlock>
-    <label className="flex w-full flex-col gap-2 text-left">
-      <span className="text-sm font-medium text-zinc-200">{t('date_of_birth_label')}</span>
-      <input
-        type="date"
-        id={fieldIds.dateOfBirth}
-        name="date_of_birth"
-        autoComplete="bday"
-        defaultValue={defaultValue ?? undefined}
-        aria-invalid={problem != null}
-        className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-base text-white outline-none transition focus:border-[#10B981]"
-      />
-      <span className="text-xs text-zinc-500">{t('tutor_dob_hint')}</span>
-      <FieldProblem problem={problem} />
-    </label>
+      <label className="flex items-start gap-3 text-left">
+        <input
+          type="checkbox"
+          id={fieldIds.adultDeclaration}
+          name="declare_adult"
+          value="true"
+          aria-invalid={problem != null}
+          className="mt-0.5 size-4 shrink-0 rounded border-zinc-600 bg-zinc-900 accent-[#10B981]"
+        />
+        <span className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-zinc-200">
+            {t('adult_declaration_label')}
+          </span>
+          <span className="text-xs text-zinc-500">{t('adult_declaration_hint')}</span>
+          <FieldProblem problem={problem} />
+        </span>
+      </label>
     </TutorBlock>
   );
 }
@@ -365,7 +372,7 @@ type RulesInput = {
   requireChildData: boolean;
   requireProfile: boolean;
   requireOwnPassword: boolean;
-  requireTutorDob: boolean;
+  requireAdultDeclaration: boolean;
 };
 
 /**
@@ -383,7 +390,7 @@ function acceptRules(input: RulesInput): AcceptFormRules {
     requireChildData: input.requireChildData,
     requireProfile: input.requireProfile,
     requireOwnPassword: input.requireOwnPassword,
-    requireTutorDob: input.requireTutorDob,
+    requireAdultDeclaration: input.requireAdultDeclaration,
   };
 }
 
@@ -452,8 +459,7 @@ export function AcceptForm({
   imageInternal,
   imageSocial,
   medicalDoc,
-  requireTutorDob,
-  acceptorDob,
+  requireAdultDeclaration,
 }: CommonProps) {
   const t = useTranslations('invite');
   const rules = acceptRules({
@@ -466,7 +472,7 @@ export function AcceptForm({
     requireChildData: false,
     requireProfile: false,
     requireOwnPassword: false,
-    requireTutorDob,
+    requireAdultDeclaration,
   });
   const { state, formAction, isPending, problems, revalidate } = useAcceptSubmit(
     rules,
@@ -484,10 +490,9 @@ export function AcceptForm({
       <SelfInviteNote show={selfInvite} />
       <p className="text-xs text-zinc-500">{t('invited_email_hint', { email: invitedEmail })}</p>
 
-      <TutorDobField
-        show={requireTutorDob}
-        problem={problems.find((p) => p.fieldId === fieldIds.dateOfBirth)}
-        defaultValue={acceptorDob}
+      <AdultDeclarationField
+        show={requireAdultDeclaration}
+        problem={problems.find((p) => p.fieldId === fieldIds.adultDeclaration)}
       />
 
       <ChildSummarySection items={pendingChildren} locale={locale} />
@@ -527,7 +532,7 @@ export function AcceptForm({
  * contraseña ni datos de perfil. Pide:
  *   - email (readonly, prefilled desde la invitación)
  *   - full_name (obligatorio, >= 2 chars)
- *   - date_of_birth (opcional)
+ *   - la declaración de mayoría de edad, si este alta le hace tutor
  *   - password (>=8 chars) + confirm
  *   - consentimientos de cuenta obligatorios (F14-2)
  *
@@ -548,8 +553,7 @@ export function AcceptWithProfileForm({
   imageInternal,
   imageSocial,
   medicalDoc,
-  requireTutorDob,
-  acceptorDob,
+  requireAdultDeclaration,
 }: CommonProps) {
   const t = useTranslations('invite');
   const rules = acceptRules({
@@ -562,7 +566,7 @@ export function AcceptWithProfileForm({
     requireChildData: true,
     requireProfile: true,
     requireOwnPassword: false,
-    requireTutorDob,
+    requireAdultDeclaration,
   });
   const { state, formAction, isPending, problems, revalidate } = useAcceptSubmit(
     rules,
@@ -630,31 +634,28 @@ export function AcceptWithProfileForm({
         <FieldProblem problem={problemFor(fieldIds.phone)} />
       </label>
 
-      <label className="flex flex-col gap-2 text-left">
-        <span className="text-sm font-medium text-zinc-200">
-          {t('date_of_birth_label')}{' '}
-          {/* Deja de ser opcional en cuanto este alta crea un vínculo de TUTOR: es el
-              dato en el que se apoya la mig 20261099000000, y estaba al 0% en parte
-              por esta etiqueta. */}
-          {!requireTutorDob && (
-            <span className="text-xs font-normal text-zinc-500">{t('optional')}</span>
-          )}
-        </span>
-        {/* `defaultValue`: igual que en TutorDobField, si lo que hay guardado dice
-            menor de edad sale dentro para poder corregirlo. Normalmente es null y
-            el campo va vacío. */}
-        <input
-          type="date"
-          id={fieldIds.dateOfBirth}
-          name="date_of_birth"
-          autoComplete="bday"
-          defaultValue={acceptorDob ?? undefined}
-          aria-invalid={problemFor(fieldIds.dateOfBirth) != null}
-          className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-base text-white outline-none transition focus:border-[#10B981]"
-        />
-        <span className="text-xs text-zinc-500">{t('tutor_dob_hint')}</span>
-        <FieldProblem problem={problemFor(fieldIds.dateOfBirth)} />
-      </label>
+      {/* La declaración de mayoría de edad, en el mismo sitio donde estuvo su fecha
+          de nacimiento. El componente trae su propio TutorBlock, así que aquí va la
+          casilla suelta: este bloque ya está abierto. */}
+      {requireAdultDeclaration && (
+        <label className="flex items-start gap-3 text-left">
+          <input
+            type="checkbox"
+            id={fieldIds.adultDeclaration}
+            name="declare_adult"
+            value="true"
+            aria-invalid={problemFor(fieldIds.adultDeclaration) != null}
+            className="mt-0.5 size-4 shrink-0 rounded border-zinc-600 bg-zinc-900 accent-[#10B981]"
+          />
+          <span className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-zinc-200">
+              {t('adult_declaration_label')}
+            </span>
+            <span className="text-xs text-zinc-500">{t('adult_declaration_hint')}</span>
+            <FieldProblem problem={problemFor(fieldIds.adultDeclaration)} />
+          </span>
+        </label>
+      )}
       </TutorBlock>
 
       {/* 2 · Confirmar/corregir datos del hijo (multi-hijo) */}
@@ -743,8 +744,7 @@ export function SignInToAcceptForm({
   imageInternal,
   imageSocial,
   medicalDoc,
-  requireTutorDob,
-  acceptorDob,
+  requireAdultDeclaration,
 }: CommonProps) {
   const t = useTranslations('invite');
   const rules = acceptRules({
@@ -757,7 +757,7 @@ export function SignInToAcceptForm({
     requireChildData: false,
     requireProfile: false,
     requireOwnPassword: true,
-    requireTutorDob,
+    requireAdultDeclaration,
   });
   const { state, formAction, isPending, problems, revalidate } = useAcceptSubmit(
     rules,
@@ -775,10 +775,9 @@ export function SignInToAcceptForm({
       <p className="text-sm text-zinc-300">{t('signin_summary', { club: clubName, role })}</p>
       <SelfInviteNote show={selfInvite} />
 
-      <TutorDobField
-        show={requireTutorDob}
-        problem={problemFor(fieldIds.dateOfBirth)}
-        defaultValue={acceptorDob}
+      <AdultDeclarationField
+        show={requireAdultDeclaration}
+        problem={problemFor(fieldIds.adultDeclaration)}
       />
 
       <ChildSummarySection items={pendingChildren} locale={locale} />
@@ -851,7 +850,6 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       full_name_too_long: 'error_full_name_too_long',
       phone_missing: 'missing_phone',
       phone_invalid: 'error_phone_invalid',
-      date_of_birth_invalid: 'error_date_of_birth_invalid',
       password_too_short: 'error_password_too_short',
       password_mismatch: 'error_password_mismatch',
       no_session: 'error_no_session',
@@ -873,8 +871,7 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       account_deletion_in_progress: 'error_account_deletion_in_progress',
       reserved_for_tutor: 'error_reserved_for_tutor',
       tutor_menor_de_edad: 'error_tutor_menor_de_edad',
-      date_of_birth_required: 'error_date_of_birth_required',
-      date_of_birth_not_adult: 'error_date_of_birth_not_adult',
+      adult_declaration_required: 'error_adult_declaration_required',
       generic: 'error_generic',
     }[error] ?? 'error_generic';
 

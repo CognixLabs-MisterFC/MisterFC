@@ -76,10 +76,10 @@ describe('los tres formularios de aceptar invitación', () => {
 });
 
 describe('el marco que dice de quién es cada dato', () => {
-  it('la fecha del tutor va dentro del bloque del tutor, en los dos sitios donde se pinta', () => {
-    // `TutorDobField` (flujos rápido y de cuenta existente) y el bloque de perfil
-    // (invitado nuevo). Los dos tienen que estar envueltos: es el único sitio donde
-    // se dice que esa fecha es la de quien acepta y no la del jugador.
+  it('el bloque del tutor se abre y se cierra en los dos sitios donde hay datos suyos', () => {
+    // `AdultDeclarationField` (flujos rápido y de cuenta existente) y el bloque de
+    // perfil (invitado nuevo). Los dos envueltos: es el único sitio donde se dice que
+    // eso es de quien acepta y no del jugador.
     expect(FUENTE.match(/<TutorBlock>/g)?.length).toBe(2);
     expect(FUENTE.match(/<\/TutorBlock>/g)?.length).toBe(2);
   });
@@ -89,9 +89,22 @@ describe('el marco que dice de quién es cada dato', () => {
     expect(FUENTE).toContain("t('tutor_data_help')");
   });
 
-  it('el aviso de la edad sale en TODOS los sitios donde se pide la fecha', () => {
-    // Existía solo en el flujo rápido, y el que costaba el alta era el otro.
-    expect(FUENTE.match(/tutor_dob_hint/g)?.length).toBe(2);
+  it('la casilla de mayoría de edad se pinta en los dos sitios, con su nombre exacto', () => {
+    // El servidor la revalida leyendo `declare_adult` del FormData: si el `name` del
+    // input cambiara en uno de los dos sitios, la casilla se marcaría y el alta se
+    // rechazaría igual, sin que nada explique por qué.
+    expect(FUENTE.match(/name="declare_adult"/g)?.length).toBe(2);
+    expect(FUENTE.match(/adult_declaration_label/g)?.length).toBe(2);
+  });
+
+  it('y la FECHA del tutor ya no se pide en ninguna parte', () => {
+    // Lo que se retira con la decisión de producto: nadie pone su edad en un
+    // formulario así, y al escribir la del hijo por error el alta se caía desde la
+    // base de datos. Lo que queda es la declaración. Si alguien repusiera el campo,
+    // volvería el mismo fallo: la fecha se guarda en una sentencia y el vínculo se
+    // crea en otra.
+    expect(FUENTE).not.toContain('name="date_of_birth"');
+    expect(FUENTE).not.toContain('tutor_dob_hint');
   });
 
   it('la fecha del niño se formatea con intlLocale, nunca con el locale crudo', () => {

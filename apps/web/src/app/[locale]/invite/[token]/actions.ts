@@ -7,8 +7,6 @@ import * as Sentry from '@sentry/nextjs';
 import {
   acceptInvitationWithProfileSchema,
   acceptPendingInvitationsFromClient,
-  isValidBirthDate,
-  isAdultBirthDate,
   claimInviteeAccount,
   assertInvitationValid,
   childrenNeedingConsent,
@@ -54,8 +52,7 @@ export type AcceptInvitationState = {
     // Teléfono del tutor: OBLIGATORIO en el alta (y solo aquí).
     | 'phone_missing'
     | 'phone_invalid'
-    | 'date_of_birth_invalid'
-    | 'date_of_birth_not_adult'
+    | 'adult_declaration_required'
     | 'password_too_short'
     | 'password_mismatch'
     | 'no_session'
@@ -92,77 +89,35 @@ export type AcceptInvitationState = {
     // sitio equivocado, que es lo que costó encontrar el BUG-4.
     | 'tutor_menor_de_edad'
     // Este alta crea un vínculo de tutor y el perfil no tiene fecha de nacimiento.
-    | 'date_of_birth_required'
     | 'generic';
 };
 
 /**
- * Asegura que quien acepta tenga fecha de nacimiento en su perfil CUANDO este alta
- * lo convierte en tutor de alguien.
+ * La DECLARACIÓN de mayoría de edad, revalidada en el servidor.
  *
- * Devuelve el código de error si no se puede seguir, o null si todo está en orden
- * (incluido el caso en el que no hace falta pedir nada).
+ * Sustituye a `ensureTutorDob`, que pedía y GUARDABA `profiles.date_of_birth`. Aquella
+ * escribía el perfil en una sentencia y creaba el vínculo en otra (la RPC), así que una
+ * fecha equivocada quedaba escrita aunque el alta se revirtiera — y con ella dentro el
+ * trigger de la mig 20261099000000 rechazaba cada reintento. Esto ya no escribe nada:
+ * solo comprueba, y por eso no puede dejar nada a medias.
  *
- * Tres decisiones, y las tres tienen motivo:
- *  · Solo si el lote crea un vínculo de TUTOR. Un entrenador que acepta el segundo
- *    club no tiene por qué dar su fecha, y su alta sigue siendo de un clic.
- *  · Si el perfil YA la tiene, no se vuelve a pedir ni se pisa. Quien ya la dio no
- *    tiene que volver a darla, y una fecha guardada no se sobreescribe con lo que
- *    venga en un formulario.
- *  · Se escribe con la sesión del propio usuario, no con `admin`: es su perfil y su
- *    RLS lo permite. Usar service_role aquí sería abrir una puerta que no hace falta.
+ * Se revalida aquí y no se confía en el navegador por lo de siempre: el formulario lleva
+ * `noValidate` y un POST a mano no pasa por él.
+ *
+ * Mismo disparador que tenía la fecha —solo si el lote crea un vínculo de TUTOR—, así
+ * que al entrenador que acepta su segundo club no se le pide nada.
+ *
+ * LO QUE ESTO NO ES: una comprobación. Es una afirmación de quien acepta, sin nada que
+ * la contradiga desde la base de datos. El candado que sigue midiendo algo es la vía (a)
+ * de aquella migración —la cuenta propia de un jugador menor, sobre
+ * `players.date_of_birth`, que es NOT NULL y está al 100%—, y no depende de esto.
  */
-async function ensureTutorDob(
+function ensureAdultDeclaration(
   pending: Awaited<ReturnType<typeof loadPendingInvitationsForEmail>>,
   formData: FormData,
-): Promise<AcceptErrorCode | null> {
+): AcceptErrorCode | null {
   if (childrenNeedingConsent(pending).length === 0) return null;
-
-  const adapter = await createCookieAdapter();
-  const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return 'no_session';
-
-  const { data: prof, error: readErr } = await supabase
-    .from('profiles')
-    .select('date_of_birth')
-    .eq('id', user.id)
-    .maybeSingle();
-  if (readErr) {
-    logError('tutor-dob-read', readErr, { user_id: user.id });
-    return 'profile_update_failed';
-  }
-  // Una fecha guardada solo vale si es de alguien MAYOR DE EDAD.
-  //
-  // Antes este `return null` era un cheque en blanco: con cualquier fecha dentro, el
-  // servidor no volvía a mirarla nunca. Y como el trigger de la 20261099000000 sí la
-  // mira al crear el vínculo, una fecha de menor guardada aquí —la del hijo puesta en
-  // el campo del tutor— dejaba el alta rechazada EN CADA REINTENTO, para siempre, sin
-  // ninguna forma de corregirla desde esta pantalla. Medido: dos cuentas así en
-  // producción. Ahora una fecha que dice menor no cierra la puerta: se pide otra.
-  if (prof?.date_of_birth && isAdultBirthDate(prof.date_of_birth)) return null;
-
-  const raw = formData.get('date_of_birth');
-  const dob = typeof raw === 'string' ? raw.trim() : '';
-  if (dob.length === 0) return 'date_of_birth_required';
-  // El MISMO criterio que el formulario y que el schema del alta, una sola copia.
-  if (!isValidBirthDate(dob)) return 'date_of_birth_invalid';
-  // Y el suelo de edad, ANTES de escribir. Es la diferencia entre avisar de algo que
-  // se puede arreglar y guardar un dato que luego tumba el alta desde la base de
-  // datos con un mensaje que nadie relaciona con este campo.
-  if (!isAdultBirthDate(dob)) return 'date_of_birth_not_adult';
-
-  const { error: updErr } = await supabase
-    .from('profiles')
-    .update({ date_of_birth: dob })
-    .eq('id', user.id);
-  if (updErr) {
-    logError('tutor-dob-write', updErr, { user_id: user.id, pg_code: updErr.code });
-    return 'profile_update_failed';
-  }
-  return null;
+  return formData.get('declare_adult') === 'true' ? null : 'adult_declaration_required';
 }
 
 /** F14-3c — mime → extensión para el path del bucket player-photos. */
@@ -431,18 +386,16 @@ async function attachAllPending(
   const childParse = await parseChildUpdates(pending, formData);
   if (!childParse.ok) return fail(childParse.error);
 
-  // ── La fecha de nacimiento DEL TUTOR ────────────────────────────────────────
-  // Va aquí, en el punto común de los tres flujos, y no en cada Server Action: es
-  // la lección de BC-3 que este repo repite —la lógica en el punto común, no en los
-  // llamantes— y la razón por la que este dato estaba al 0%. El flujo rápido no la
-  // pedía y el del invitado nuevo la pedía como «(opcional)», así que la mig
-  // 20261099000000, que decide con ella si alguien puede ser tutor, no medía nada.
+  // ── La DECLARACIÓN de mayoría de edad ───────────────────────────────────────
+  // Va aquí, en el punto común de los tres flujos, y no en cada Server Action: es la
+  // lección de BC-3 que este repo repite —la lógica en el punto común, no en los
+  // llamantes—, y aquí además es lo que hace que la casilla sea obligatoria en los
+  // tres sin escribirla tres veces.
   //
-  // ANTES de la RPC a propósito: es la RPC la que crea el vínculo `player_accounts`,
-  // y el trigger de aquella migración mira el perfil en ese instante. Escrita después,
-  // llegaría tarde para el alta que la necesita.
-  const dobFail = await ensureTutorDob(pending, formData);
-  if (dobFail) return fail(dobFail);
+  // ANTES de la RPC, como su predecesora: es la RPC la que crea el vínculo de tutor,
+  // y no tiene sentido crearlo para descubrir después que no se declaró nada.
+  const sinDeclaracion = ensureAdultDeclaration(pending, formData);
+  if (sinDeclaracion) return fail(sinDeclaracion);
 
   // Metadatos de auditoría (no se confía en el cliente). La IP sale del mismo sitio
   // que usa el límite de intentos de R-2: si divergieran, un día dirían cosas
@@ -748,7 +701,11 @@ export async function acceptNewInvitee(
     const parsed = acceptInvitationWithProfileSchema.safeParse({
       full_name: formData.get('full_name'),
       phone: formData.get('phone'),
-      date_of_birth: formData.get('date_of_birth'),
+      // `date_of_birth` NO se lee: el campo ya no existe en esta pantalla. El schema
+      // lo tiene opcional, así que sin la clave sale `null` y `claimInviteeAccount`
+      // —que solo la escribe si viene— deja como está la que el perfil ya tuviera.
+      // No leerlo cierra además el único camino que quedaba para escribir una fecha
+      // desde aquí: un POST a mano con el campo puesto.
       password: formData.get('password'),
       confirm: formData.get('confirm'),
     });
@@ -759,7 +716,6 @@ export async function acceptNewInvitee(
       if (code === 'full_name_too_long') return { error: 'full_name_too_long' };
       if (code === 'phone_required') return { error: 'phone_missing' };
       if (code === 'phone_invalid') return { error: 'phone_invalid' };
-      if (code === 'date_of_birth_invalid') return { error: 'date_of_birth_invalid' };
       if (code === 'password_too_short') return { error: 'password_too_short' };
       if (code === 'password_mismatch') return { error: 'password_mismatch' };
       return { error: 'invalid_input' };
