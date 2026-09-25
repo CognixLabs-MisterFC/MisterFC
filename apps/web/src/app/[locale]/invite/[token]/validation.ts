@@ -22,7 +22,7 @@ export type { AcceptFormRules, AcceptChild };
 export const fieldIds = {
   fullName: 'invite-full-name',
   phone: 'invite-phone',
-  dateOfBirth: 'invite-date-of-birth',
+  adultDeclaration: 'invite-declare-adult',
   password: 'invite-password',
   confirm: 'invite-confirm',
   terms: 'invite-accept-terms',
@@ -52,9 +52,7 @@ const MESSAGE_KEY: Record<AcceptProblemCode, string> = {
   full_name_too_long: 'error_full_name_too_long',
   phone_missing: 'missing_phone',
   phone_invalid: 'error_phone_invalid',
-  date_of_birth_invalid: 'error_date_of_birth_invalid',
-  date_of_birth_required: 'missing_tutor_dob',
-  date_of_birth_not_adult: 'error_date_of_birth_not_adult',
+  adult_declaration_required: 'missing_adult_declaration',
   child_name_required: 'missing_child_name',
   child_dob_invalid: 'missing_child_dob',
   image_internal_missing: 'missing_image_internal',
@@ -78,12 +76,9 @@ function fieldIdFor(
     case 'phone_missing':
     case 'phone_invalid':
       return fieldIds.phone;
-    case 'date_of_birth_invalid':
-    case 'date_of_birth_required':
-    case 'date_of_birth_not_adult':
-      // El mismo control en los tres flujos: el del bloque de perfil cuando lo hay,
-      // y el de `TutorDobField` cuando no. Nunca se pintan los dos a la vez.
-      return fieldIds.dateOfBirth;
+    case 'adult_declaration_required':
+      // La misma casilla en los tres flujos: vive en el bloque del tutor.
+      return fieldIds.adultDeclaration;
     case 'child_name_required':
       return fieldIds.childFirstName(pid);
     case 'child_dob_invalid':
