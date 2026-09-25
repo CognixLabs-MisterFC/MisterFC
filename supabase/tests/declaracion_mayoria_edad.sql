@@ -22,6 +22,7 @@
 --   T7. Se puede insertar ya anotada, para el día que lo haga la propia RPC.
 --   T8. En un `self` no cabe: ni al insertar ni al actualizar.
 --   T9. Un UPDATE que no la toca sigue funcionando (parent → guardian).
+--   T11. La función del trigger no la puede ejecutar nadie por su nombre.
 --   T10. CONTROL NEGATIVO: sin el trigger, lo de T4 y T5 pasa.
 \ir helpers/auth_users.sql
 
@@ -212,6 +213,27 @@ begin
   exception when others then
     raise exception 'FAIL [T9]: un UPDATE que NO toca la declaración ha fallado (%). El trigger solo debe despertarse con su columna en el SET', sqlerrm;
   end;
+end $$;
+
+-- ── T11: la función del trigger, cerrada por su nombre. Una función nueva nace con
+--    la ACL por defecto, donde PUBLIC tiene EXECUTE, así que `anon` puede llamarla sin
+--    que nadie la conceda. Nadie la necesita: la despierta el trigger, y un trigger no
+--    comprueba el EXECUTE de quien hizo el UPDATE.
+--
+--    Esto lo caza también el bloque [1] de `anon_execute_cerrado` —de hecho lo cazó—,
+--    pero ese bloque es una lista global que se puede relajar. Aquí va nominal, por la
+--    misma razón que su bloque [2] existe. Con has_function_privilege, nunca provocando
+--    el 42501: un 42501 tumba la BD efímera del CI.
+do $$
+declare
+  v_rol text;
+begin
+  for v_rol in select unnest(array['anon', 'authenticated']) loop
+    if has_function_privilege(
+         v_rol, 'public.player_accounts_declaracion_inmutable()', 'execute') then
+      raise exception 'FAIL [T11]: % puede ejecutar player_accounts_declaracion_inmutable() por su nombre. Falta el revoke (hacen falta los dos: PUBLIC y el rol; son entradas distintas)', v_rol;
+    end if;
+  end loop;
 end $$;
 
 -- ── T10: CONTROL NEGATIVO. Sin el trigger, T4 y T5 entran. Si esto fallara, esos

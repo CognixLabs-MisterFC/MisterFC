@@ -109,6 +109,20 @@ comment on function public.player_accounts_declaracion_inmutable() is
   'service_role (los triggers corren para todos los roles y service_role se salta la '
   'RLS). Anotarla NULL → valor sí se permite: es lo que hace la web tras aceptar.';
 
+-- Nadie la llama por su nombre: la despierta el trigger, y un trigger no comprueba el
+-- EXECUTE de quien hizo el UPDATE. Así que se cierra a los tres, como su hermana
+-- `player_accounts_assert_tutor_mayor` de la 20261099000000.
+--
+-- Los DOS revokes hacen falta, y no es redundancia: una función nueva nace con la ACL
+-- por defecto, donde PUBLIC tiene EXECUTE, y eso basta para que `anon` pueda llamarla.
+-- Un `revoke ... from public` no quita una concesión directa a un rol, y un
+-- `revoke ... from anon` no quita la de PUBLIC: son dos entradas distintas (la
+-- 20261075000000 lo dejó medido y escrito). Sin esto, el bloque [1] del test
+-- `anon_execute_cerrado` se pone rojo nombrando esta función — que es justo lo que pasó.
+revoke all on function public.player_accounts_declaracion_inmutable() from public;
+revoke all on function public.player_accounts_declaracion_inmutable() from anon;
+revoke all on function public.player_accounts_declaracion_inmutable() from authenticated;
+
 -- `update of adult_declared_at`: el trigger solo se despierta cuando esa columna
 -- aparece en el SET. Un UPDATE de cualquier otra cosa no paga nada.
 drop trigger if exists player_accounts_declaracion_inmutable on public.player_accounts;
