@@ -2507,6 +2507,7 @@ export type Database = {
       }
       player_accounts: {
         Row: {
+          adult_declared_at: string | null
           created_at: string
           id: string
           player_id: string
@@ -2514,6 +2515,7 @@ export type Database = {
           relation: string
         }
         Insert: {
+          adult_declared_at?: string | null
           created_at?: string
           id?: string
           player_id: string
@@ -2521,6 +2523,7 @@ export type Database = {
           relation: string
         }
         Update: {
+          adult_declared_at?: string | null
           created_at?: string
           id?: string
           player_id?: string
@@ -3735,6 +3738,30 @@ export type Database = {
           },
         ]
       }
+      subscription_wall: {
+        Row: {
+          enabled: boolean
+          enabled_at: string | null
+          id: boolean
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          enabled_at?: string | null
+          id?: boolean
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          enabled_at?: string | null
+          id?: boolean
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       substitution_regimes: {
         Row: {
           allow_reentry: boolean
@@ -4474,6 +4501,17 @@ export type Database = {
         }
         Returns: number
       }
+      account_deletion_holds: {
+        Args: never
+        Returns: {
+          club_id: string
+          club_name: string
+          estado: string
+          first_name: string
+          hold_player_id: string
+          last_name: string
+        }[]
+      }
       account_deletions_auth_pending: {
         Args: never
         Returns: {
@@ -4481,17 +4519,6 @@ export type Database = {
           profile_id: string
           reason: string
           request_id: string
-        }[]
-      }
-      account_deletion_holds: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          hold_player_id: string
-          first_name: string
-          last_name: string
-          club_id: string
-          club_name: string
-          estado: string
         }[]
       }
       account_deletions_due: {
@@ -4733,6 +4760,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      has_paid_access: { Args: never; Returns: boolean }
       invite_player_self: {
         Args: { p_email: string; p_player_id: string }
         Returns: {
@@ -5008,6 +5036,7 @@ export type Database = {
         Args: { p_club_id: string; p_profile_id: string }
         Returns: boolean
       }
+      profile_is_minor: { Args: { p_profile_id: string }; Returns: boolean }
       profile_is_staff_of_club: {
         Args: { p_club_id: string; p_profile_id: string }
         Returns: boolean
@@ -5151,6 +5180,10 @@ export type Database = {
         Args: { p_player_id: string }
         Returns: string
       }
+      revoke_player_self_account_apply: {
+        Args: { p_player_id: string }
+        Returns: string
+      }
       seed_club_legal_documents: {
         Args: { p_club_id: string }
         Returns: undefined
@@ -5225,6 +5258,14 @@ export type Database = {
           last_name: string
         }[]
       }
+      subscription_access_state: {
+        Args: { p_profile_id: string }
+        Returns: string
+      }
+      subscription_grants_access: {
+        Args: { p_profile_id: string }
+        Returns: boolean
+      }
       subscription_reconcile_candidates: {
         Args: { p_limit?: number; p_soon_days?: number; p_stale_days?: number }
         Returns: {
@@ -5237,6 +5278,21 @@ export type Database = {
           reconciled_at: string
         }[]
       }
+      subscription_wall_mirror: {
+        Args: never
+        Returns: {
+          access_until: string
+          clubs: string
+          full_name: string
+          hijos: number
+          profile_id: string
+          roles: string
+          sigue: number
+          state: string
+          ultimo_evento_at: string
+          would_be_denied: boolean
+        }[]
+      }
       team_chat_member_profile_ids: {
         Args: { p_team_id: string }
         Returns: string[]
@@ -5244,8 +5300,8 @@ export type Database = {
       team_chat_member_roles: {
         Args: { p_team_id: string }
         Returns: {
-          profile_id: string
           audience: string
+          profile_id: string
         }[]
       }
       team_chat_unread_counts: {

@@ -15,6 +15,7 @@ import {
   isInvitePending,
   playerIdsFromFormKeys,
   playerPhotoUploadSchema,
+  tutorLinkPlayerIds,
   // Rework C/D — la regla de los datos del hijo la usan LOS DOS lados (este
   // server y el validador del formulario). Una sola copia, en core: si se
   // tocara aquí, el aviso del cliente diría otra cosa que el servidor.
@@ -531,6 +532,12 @@ async function attachAllPending(
     }
     const data = attached.ok.processed;
 
+    // ── D-2 — la DECLARACIÓN queda pegada al vínculo ────────────────────────────
+    // Va primero de lo que se hace después de aceptar porque es lo único de aquí que
+    // es una PRUEBA. Los datos del hijo se pueden volver a pedir; una declaración que
+    // no se guardó en su momento no se reconstruye.
+    await recordAdultDeclaration(admin, supabase, clicked, pending);
+
     // Rework C/D — persistir nombre + fecha nac. del hijo confirmados por el
     // tutor. Best-effort tras la aceptación ya comprometida (admin/service_role:
     // el vínculo player_accounts se acaba de crear en la RPC). Un fallo aquí no
@@ -566,6 +573,118 @@ async function attachAllPending(
     await cleanupImages();
     throw err;
   }
+}
+
+/**
+ * D-2 — SELLA LA DECLARACIÓN de mayoría de edad en los vínculos de tutor recién creados.
+ *
+ * La casilla la exige `ensureAdultDeclaration` ANTES de la RPC; esto es la otra mitad:
+ * sin escribirla en ninguna parte, la casilla es un trámite y no una declaración.
+ *
+ * POR QUÉ AQUÍ Y NO DENTRO DE LA RPC, dicho con su pega. Meterlo en
+ * `accept_pending_invitations` lo haría atómico, pero obliga a copiar entera una función
+ * `security definer` de 200 líneas en una migración nueva —la casa manda partir del
+ * `pg_get_functiondef` de producción— y a pasar un parámetro más por los cuatro
+ * llamantes, la pantalla nativa incluida. Así que se paga esto: NO ES ATÓMICO. Si esta
+ * escritura falla, queda el vínculo sin su declaración —evidencia que falta, y se
+ * registra—, pero nunca al revés: la declaración jamás existe sin el vínculo, porque
+ * este código solo corre cuando la RPC ya comprometió.
+ *
+ * `admin` y no la sesión del tutor: `player_accounts` no tiene ninguna policy que deje a
+ * un tutor actualizar su propia fila (la de escritura es del personal del club), así que
+ * con su sesión esto serían cero filas y ningún error.
+ */
+async function recordAdultDeclaration(
+  admin: ReturnType<typeof createSupabaseAdminClient>,
+  supabase: ReturnType<typeof createSupabaseServerClient>,
+  clicked: LoadedInvitation,
+  pending: Awaited<ReturnType<typeof loadPendingInvitationsForEmail>>,
+): Promise<void> {
+  const playerIds = tutorLinkPlayerIds(pending);
+  if (playerIds.length === 0) return; // este alta no le hace tutor de nadie: nada que declarar
+
+  // EL UID SALE DE LA SESIÓN Y DE NINGÚN OTRO SITIO. `clicked.invited_user_id` se usa de
+  // apoyo en otras partes de este fichero y aquí NO vale: si estuviera rancio, el filtro
+  // de abajo podría dar con el vínculo del OTRO tutor del mismo hijo y anotarle una
+  // declaración que no ha hecho. Inventar la prueba es peor que no tenerla.
+  // Sin sesión no se llega hasta aquí —la RPC exige `auth.uid()` y ya ha ido bien—, así
+  // que esto es un imposible que se registra en lugar de suponerse.
+  const { data: userData } = await supabase.auth.getUser();
+  const uid = userData.user?.id ?? null;
+  if (!uid) {
+    logError('adult-declaration', new Error('sin sesión tras una aceptación que fue bien'), {
+      invitation_id: clicked.id,
+    });
+    return;
+  }
+
+  // El instante es el del ALTA, con el reloj del servidor. No el del clic en la casilla,
+  // que no se puede saber: el navegador no lo manda y no se le iba a creer si lo mandara.
+  const cuando = new Date().toISOString();
+
+  // `is('adult_declared_at', null)` es lo que hace esto REPETIBLE. La RPC tolera el doble
+  // submit por idempotencia de fila, así que a este punto se puede llegar dos veces; sin
+  // este filtro, el segundo intento traería otra hora y el trigger
+  // `player_accounts_declaracion_inmutable` lo rechazaría con un 23514. Con él, la
+  // segunda vez son cero filas y ni se entera.
+  //
+  // El filtro de `relation` no es defensa de más: si el mismo perfil fuera ya la cuenta
+  // propia de ese jugador, el `on conflict do nothing` de la RPC habría dejado la fila en
+  // `self`, y anotarla rompería el CHECK de la 20261109000000. Filtrando, no se toca.
+  const { data: anotados, error } = await admin
+    .from('player_accounts')
+    .update({ adult_declared_at: cuando })
+    .eq('profile_id', uid)
+    .in('player_id', playerIds)
+    .in('relation', ['parent', 'guardian'])
+    .is('adult_declared_at', null)
+    .select('player_id');
+
+  if (error) {
+    logError('adult-declaration', error, {
+      invitation_id: clicked.id,
+      esperados: playerIds.length,
+    });
+    return;
+  }
+
+  // UNA ESCRITURA SIN COMPROBAR ES UNA ESCRITURA MUDA. Un `.update()` de PostgREST que
+  // no encaja con ninguna fila NO devuelve error: sin esto, un filtro equivocado dejaría
+  // de sellar declaraciones para siempre y nadie se enteraría.
+  if ((anotados?.length ?? 0) === playerIds.length) {
+    logStep('adult-declaration sellada', {
+      invitation_id: clicked.id,
+      vinculos: anotados?.length ?? 0,
+    });
+    return;
+  }
+
+  // Faltan filas. Antes de avisar hay que distinguir el reintento —donde ya estaban
+  // declaradas y esto es lo normal— de la avería, y eso no se puede deducir del número
+  // de arriba: se pregunta. Solo en este camino, que es el raro.
+  const { data: yaConstan } = await admin
+    .from('player_accounts')
+    .select('player_id')
+    .eq('profile_id', uid)
+    .in('player_id', playerIds)
+    .not('adult_declared_at', 'is', null);
+
+  const conDeclaracion = yaConstan?.length ?? 0;
+  if (conDeclaracion === playerIds.length) return; // reintento: ya estaban sellados
+
+  const extra = {
+    invitation_id: clicked.id,
+    club_id: clicked.club_id,
+    esperados: playerIds.length,
+    sellados_ahora: anotados?.length ?? 0,
+    con_declaracion: conDeclaracion,
+  };
+  console.error('[invite][accept] adult-declaration incompleta ' + JSON.stringify(extra));
+  Sentry.captureMessage('[invite][accept] declaración de mayoría sin sellar', {
+    level: 'error',
+    tags: { feature: 'invitations', step: 'adult-declaration-incompleta' },
+    extra,
+  });
 }
 
 /** Nombre de equipo del join `teams(name)` de PostgREST (objeto, array o null). */

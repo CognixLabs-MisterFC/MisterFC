@@ -36,6 +36,7 @@ export {
   hasSelfInvitation,
   needsTutorConsent,
   childrenNeedingConsent,
+  tutorLinkPlayerIds,
   type RelationCarrier,
 } from './self';
 export {
