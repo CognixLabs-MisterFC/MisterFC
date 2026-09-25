@@ -47,6 +47,12 @@ type CommonProps = {
    * vuelve a decidir por su cuenta (`attachAllPending`) y no se fía de esto.
    */
   requireTutorDob: boolean;
+  /**
+   * La fecha que HAY guardada, y solo cuando dice menor de edad: es el caso en que
+   * hay que corregirla, y el campo sale con ella dentro. `null` en el alta normal,
+   * donde no hay nada que precargar.
+   */
+  acceptorDob: string | null;
 };
 
 /**
@@ -223,9 +229,11 @@ function focusField(fieldId: string) {
 function TutorDobField({
   show,
   problem,
+  defaultValue,
 }: {
   show: boolean;
   problem: FormProblem | undefined;
+  defaultValue: string | null;
 }) {
   const t = useTranslations('invite');
   if (!show) return null;
@@ -237,6 +245,7 @@ function TutorDobField({
         id={fieldIds.dateOfBirth}
         name="date_of_birth"
         autoComplete="bday"
+        defaultValue={defaultValue ?? undefined}
         aria-invalid={problem != null}
         className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-base text-white outline-none transition focus:border-[#10B981]"
       />
@@ -344,6 +353,7 @@ export function AcceptForm({
   imageSocial,
   medicalDoc,
   requireTutorDob,
+  acceptorDob,
 }: CommonProps) {
   const t = useTranslations('invite');
   const rules = acceptRules({
@@ -377,6 +387,7 @@ export function AcceptForm({
       <TutorDobField
         show={requireTutorDob}
         problem={problems.find((p) => p.fieldId === fieldIds.dateOfBirth)}
+        defaultValue={acceptorDob}
       />
 
       <ChildrenImageSection
@@ -436,6 +447,7 @@ export function AcceptWithProfileForm({
   imageSocial,
   medicalDoc,
   requireTutorDob,
+  acceptorDob,
 }: CommonProps) {
   const t = useTranslations('invite');
   const rules = acceptRules({
@@ -523,11 +535,15 @@ export function AcceptWithProfileForm({
             <span className="text-xs font-normal text-zinc-500">{t('optional')}</span>
           )}
         </span>
+        {/* `defaultValue`: igual que en TutorDobField, si lo que hay guardado dice
+            menor de edad sale dentro para poder corregirlo. Normalmente es null y
+            el campo va vacío. */}
         <input
           type="date"
           id={fieldIds.dateOfBirth}
           name="date_of_birth"
           autoComplete="bday"
+          defaultValue={acceptorDob ?? undefined}
           aria-invalid={problemFor(fieldIds.dateOfBirth) != null}
           className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-base text-white outline-none transition focus:border-[#10B981]"
         />
@@ -621,6 +637,7 @@ export function SignInToAcceptForm({
   imageSocial,
   medicalDoc,
   requireTutorDob,
+  acceptorDob,
 }: CommonProps) {
   const t = useTranslations('invite');
   const rules = acceptRules({
@@ -654,6 +671,7 @@ export function SignInToAcceptForm({
       <TutorDobField
         show={requireTutorDob}
         problem={problemFor(fieldIds.dateOfBirth)}
+        defaultValue={acceptorDob}
       />
 
       <ChildrenImageSection
@@ -747,6 +765,7 @@ function ErrorMessage({ error }: { error: NonNullable<AcceptInvitationState['err
       reserved_for_tutor: 'error_reserved_for_tutor',
       tutor_menor_de_edad: 'error_tutor_menor_de_edad',
       date_of_birth_required: 'error_date_of_birth_required',
+      date_of_birth_not_adult: 'error_date_of_birth_not_adult',
       generic: 'error_generic',
     }[error] ?? 'error_generic';
 

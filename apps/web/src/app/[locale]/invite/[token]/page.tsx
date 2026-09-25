@@ -6,7 +6,7 @@ import {
   loadPendingInvitationsForEmail,
   loadProfileDateOfBirth,
 } from './invite-data';
-import { childrenNeedingConsent, hasSelfInvitation } from '@misterfc/core';
+import { childrenNeedingConsent, hasSelfInvitation, isAdultBirthDate } from '@misterfc/core';
 import {
   loadCurrentLegalDocs,
   loadAccountConsentStatus,
@@ -137,7 +137,14 @@ export default async function InvitePage({ params }: Props) {
   const acceptorId =
     user && sessionEmailMatches ? user.id : (inv.invited_user_id ?? null);
   const acceptorDob = acceptorId ? await loadProfileDateOfBirth(acceptorId) : null;
-  const requireTutorDob = pendingChildren.length > 0 && acceptorDob == null;
+  // Se pide TAMBIÉN cuando la fecha guardada dice menor de edad. Es el único camino
+  // de vuelta: el trigger de la 20261099000000 tumba el vínculo mirando esa fecha, y
+  // hasta ahora el campo desaparecía en cuanto el perfil tenía una —cualquiera—, así
+  // que el aviso «corrígela y vuelve a intentarlo» mandaba a un campo que ya no se
+  // pintaba. Con la fecha mala dentro, cada reintento fallaba igual y para siempre.
+  const acceptorDobIsMinor = acceptorDob != null && !isAdultBirthDate(acceptorDob);
+  const requireTutorDob =
+    pendingChildren.length > 0 && (acceptorDob == null || acceptorDobIsMinor);
 
   const consentProps = {
     legalTerms: legal.terms,
@@ -150,6 +157,9 @@ export default async function InvitePage({ params }: Props) {
     imageSocial: imageDocs.social,
     medicalDoc,
     requireTutorDob,
+    // Para que el campo salga CON la fecha que hay cuando hay que corregirla: un
+    // campo vacío no dice qué estaba mal, y quien lo ve no sabe que está reparando.
+    acceptorDob: acceptorDobIsMinor ? acceptorDob : null,
   };
 
   return (

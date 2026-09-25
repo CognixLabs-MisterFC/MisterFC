@@ -45,6 +45,37 @@ export function isValidChildDob(s: string): boolean {
   return isValidBirthDate(s);
 }
 
+/** Años que hay que tener para figurar como tutor. El mismo número que el SQL. */
+export const TUTOR_MIN_AGE_YEARS = 18;
+
+/**
+ * ¿Esa fecha es de alguien MAYOR DE EDAD? Solo para la fecha del TUTOR.
+ *
+ * POR QUÉ EXISTE Y POR QUÉ NO ESTÁ EN `isValidBirthDate`. Aquella responde «esto es
+ * una fecha de nacimiento», y su comentario dice a propósito que es «de quien sea».
+ * Tiene razón: la del hijo es de un menor y tiene que pasar. Así que el suelo de
+ * edad no puede vivir ahí, y sin él `2020-01-01` era una fecha de tutor VÁLIDA para
+ * el formulario. Se guardaba en `profiles.date_of_birth`, y el trigger de la
+ * migración 20261099000000 tumbaba el vínculo DESPUÉS, desde la base de datos, con
+ * un mensaje sobre menores de edad que quien rellenaba no podía relacionar con nada.
+ *
+ * El umbral es EL MISMO que el de aquella migración —«menor ⟺ date_of_birth >
+ * current_date - interval '18 years'»— y por eso se compara por componentes en UTC:
+ * la regla de la base de datos usa `current_date` del servidor, y restar 18 años con
+ * milisegundos metería el desfase de horario y los bisiestos por medio. Quien cumple
+ * 18 hoy es mayor: la comparación es `<=`, igual que allí.
+ */
+export function isAdultBirthDate(s: string, now: Date = new Date()): boolean {
+  if (!isValidBirthDate(s)) return false;
+  const limite = Date.UTC(
+    now.getUTCFullYear() - TUTOR_MIN_AGE_YEARS,
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  const [year, month, day] = s.split('-');
+  return Date.UTC(Number(year), Number(month) - 1, Number(day)) <= limite;
+}
+
 export type ChildRowError = 'child_name_required' | 'child_dob_invalid';
 
 /** Valida una fila de datos de hijo. Mismo orden de comprobaciones que el server. */
@@ -78,6 +109,13 @@ export type AcceptProblemCode =
    * el aviso tiene que decir eso.
    */
   | 'date_of_birth_required'
+  /**
+   * Hay una fecha, es una fecha de nacimiento válida, y es de un MENOR. Código
+   * propio y no `date_of_birth_invalid`: no está mal escrita, está mal atribuida —
+   * casi siempre es la del hijo puesta en el campo del tutor. El mensaje tiene que
+   * poder decir eso, y con el código de «no válida» no se podía.
+   */
+  | 'date_of_birth_not_adult'
   | 'child_name_required'
   | 'child_dob_invalid'
   | 'image_internal_missing'
@@ -177,12 +215,31 @@ export function findAcceptProblems(formData: FormData, rules: AcceptFormRules): 
   // 1b · La fecha del TUTOR cuando este alta lo convierte en tutor. Va aquí y no
   // dentro de `requireProfile` porque los tres flujos pueden necesitarla: el rápido
   // y el de cuenta existente no piden perfil y aun así crean el vínculo.
-  if (rules.requireTutorDob) {
+  //
+  // La condición mira las DOS puertas por las que se recoge esa fecha, no solo
+  // `requireTutorDob`: el flujo del invitado nuevo pinta su campo también con el
+  // perfil ya fechado (ahí dice «(opcional)»), y lo que se escriba PISA la fecha
+  // guardada. Con solo `requireTutorDob`, ese camino seguía dejando entrar la fecha
+  // de un menor.
+  const creaVinculoDeTutor = rules.children.length > 0;
+  if (rules.requireTutorDob || creaVinculoDeTutor) {
     const dob = str(formData, 'date_of_birth').trim();
     if (dob.length === 0) {
-      problems.push({ code: 'date_of_birth_required' });
+      // Vacío solo es un problema cuando la fecha hace falta. Si el perfil ya la
+      // tiene, no escribir nada es dejarla como está, y eso es legítimo.
+      if (rules.requireTutorDob) problems.push({ code: 'date_of_birth_required' });
     } else if (!isValidBirthDate(dob)) {
-      problems.push({ code: 'date_of_birth_invalid' });
+      // El bloque de perfil ya puede haber avisado de esta misma fecha: sin esta
+      // comprobación la lista pintaba dos veces el mismo aviso en el flujo del
+      // invitado nuevo, que es el único donde corren los dos bloques.
+      if (!problems.some((p) => p.code === 'date_of_birth_invalid')) {
+        problems.push({ code: 'date_of_birth_invalid' });
+      }
+    } else if (!isAdultBirthDate(dob)) {
+      // Una sola regla, sin segundo predicado: si en esta pantalla se está recogiendo
+      // la fecha DEL TUTOR, tiene que ser de alguien mayor de edad. Da igual por cuál
+      // de las dos puertas se pida.
+      problems.push({ code: 'date_of_birth_not_adult' });
     }
   }
 

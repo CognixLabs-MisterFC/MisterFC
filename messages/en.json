@@ -575,6 +575,7 @@
     "tutor_dob_hint": "We need it to confirm that the player’s guardian is of legal age.",
     "missing_tutor_dob": "Your date of birth is missing",
     "error_date_of_birth_required": "We need your date of birth to register you as a guardian.",
+    "error_date_of_birth_not_adult": "That date belongs to a minor. This is YOUR date of birth, the guardian’s; your child’s is asked for further down.",
     "error_tutor_menor_de_edad": "That account is recorded as a minor and cannot be listed as a guardian. If you are the player, ask your club for your own account; if your date of birth is wrong, correct it and try again."
   },
   "directos": {
