@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { PHONE_MAX_LENGTH } from '@misterfc/core';
 import {
@@ -12,6 +12,7 @@ import {
 import { ConsentGate } from './consent-gate';
 import type { AccountConsentDoc, ImageConsentDoc, MedicalConsentDoc } from './consent-data';
 import { ChildrenImageSection, type PendingChild } from './child-image-cards';
+import { intlLocale } from '@/lib/intl-locale';
 import {
   collectFormProblems,
   fieldIds,
@@ -54,6 +55,103 @@ type CommonProps = {
    */
   acceptorDob: string | null;
 };
+
+/**
+ * I-2 · EL MARCO QUE DICE DE QUIÉN SON LOS DATOS.
+ *
+ * Al invitar, el club escribe el nombre del NIÑO, la fecha de nacimiento del NIÑO, su
+ * equipo y el correo del TUTOR. En esta pantalla, los campos del tutor se llamaban
+ * «Nombre completo», «Teléfono de contacto» y «Fecha de nacimiento» —a secas— y justo
+ * debajo venía «Datos de tu hijo/a», cuyas etiquetas SÍ decían de quién eran. Con una
+ * invitación que habla del niño delante, ese orden invita a poner los datos del niño
+ * arriba. Y la fecha de arriba es la que decide si quien acepta puede figurar como
+ * tutor (mig 20261099000000).
+ *
+ * Así que los datos del tutor pasan a vivir en un bloque con título, como los del
+ * hijo, y las tres etiquetas dicen «tu». No es cosmética: es la mitad del fallo que
+ * I-1 arregló por el otro lado.
+ */
+function TutorBlock({ children }: { children: ReactNode }) {
+  const t = useTranslations('invite');
+  return (
+    <section className="flex w-full flex-col gap-3 rounded-md border border-zinc-800 bg-zinc-900/30 p-4 text-left">
+      <div>
+        <h2 className="text-sm font-semibold text-zinc-100">{t('tutor_data_title')}</h2>
+        <p className="text-xs text-zinc-400">{t('tutor_data_help')}</p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/**
+ * Los datos del hijo QUE YA CONOCEMOS, en los flujos que no los piden.
+ *
+ * El flujo del invitado nuevo los pinta para confirmar y corregir
+ * (`ChildDataSection`). Los otros dos —el rápido y el de cuenta existente— no
+ * pintaban NADA del niño: ni nombre, ni fecha, ni equipo. Quien acepta no veía a
+ * quién estaba aceptando, y la fecha de nacimiento que el club ya nos dio no se
+ * enseñaba en ninguna parte.
+ *
+ * De SOLO LECTURA, y a propósito: esos dos flujos no llevan el campo oculto
+ * `children_data`, así que el servidor no espera cambios del niño por aquí
+ * (`parseChildUpdates` solo valida lo que se envía). Enseñar es lo que falta;
+ * dejar editar sería otro cambio, en el servidor y con su propio ancla anti-tamper.
+ * Si algo no cuadra, el texto manda al club, que es quien puede arreglarlo.
+ *
+ * La fecha se formatea con `intlLocale(locale)` y nunca con el locale crudo: `va` no
+ * es un locale de Intl y caería a en-US (#630). Lo vigila `check:intl-locale`.
+ */
+function ChildSummarySection({
+  items,
+  locale,
+}: {
+  items: PendingChild[];
+  locale: string;
+}) {
+  const t = useTranslations('invite');
+  const kids = items.filter(
+    (c): c is PendingChild & { playerId: string } => c.playerId != null,
+  );
+  if (kids.length === 0) return null;
+
+  const fecha = (iso: string | null) => {
+    if (!iso) return t('child_dob_unknown');
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return t('child_dob_unknown');
+    return new Intl.DateTimeFormat(intlLocale(locale), {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(d);
+  };
+
+  return (
+    <section className="flex w-full flex-col gap-3 rounded-md border border-zinc-800 bg-zinc-900/30 p-4 text-left">
+      <div>
+        <h2 className="text-sm font-semibold text-zinc-100">{t('child_data_title')}</h2>
+        <p className="text-xs text-zinc-400">{t('child_summary_help')}</p>
+      </div>
+      {kids.map((c) => (
+        <div
+          key={c.playerId}
+          className="flex flex-col gap-0.5 border-t border-zinc-800 pt-3 first:border-t-0 first:pt-0"
+        >
+          <span className="text-sm font-medium text-zinc-100">
+            {c.playerName ?? t('child_unnamed')}
+          </span>
+          <span className="text-xs text-zinc-400">
+            {t('child_dob')}: {fecha(c.playerDob)}
+          </span>
+          <span className="text-xs uppercase tracking-wide text-zinc-500">
+            {c.teamName ?? t('child_no_team')}
+          </span>
+        </div>
+      ))}
+    </section>
+  );
+}
 
 /**
  * Rework C/D — paso de CONFIRMAR/CORREGIR datos de cada hijo (nombre + fecha de
@@ -238,6 +336,7 @@ function TutorDobField({
   const t = useTranslations('invite');
   if (!show) return null;
   return (
+    <TutorBlock>
     <label className="flex w-full flex-col gap-2 text-left">
       <span className="text-sm font-medium text-zinc-200">{t('date_of_birth_label')}</span>
       <input
@@ -252,6 +351,7 @@ function TutorDobField({
       <span className="text-xs text-zinc-500">{t('tutor_dob_hint')}</span>
       <FieldProblem problem={problem} />
     </label>
+    </TutorBlock>
   );
 }
 
@@ -390,6 +490,8 @@ export function AcceptForm({
         defaultValue={acceptorDob}
       />
 
+      <ChildSummarySection items={pendingChildren} locale={locale} />
+
       <ChildrenImageSection
         items={pendingChildren}
         imageInternal={imageInternal}
@@ -478,7 +580,10 @@ export function AcceptWithProfileForm({
       <p className="text-sm text-zinc-300">{t('set_password_summary', { club: clubName, role })}</p>
       <SelfInviteNote show={selfInvite} />
 
-      {/* 1 · Datos del tutor */}
+      {/* 1 · Datos del tutor, dentro de su bloque con título: aquí es donde la
+             confusión costaba un alta rechazada (I-1), porque «Fecha de nacimiento»
+             a secas y «Datos de tu hijo/a» justo debajo se leen como un solo bloque. */}
+      <TutorBlock>
       <label className="flex flex-col gap-2 text-left">
         <span className="text-sm font-medium text-zinc-200">{t('email_label')}</span>
         <input
@@ -547,8 +652,10 @@ export function AcceptWithProfileForm({
           aria-invalid={problemFor(fieldIds.dateOfBirth) != null}
           className="rounded-md border border-zinc-700 bg-zinc-900/60 px-3 py-2 text-base text-white outline-none transition focus:border-[#10B981]"
         />
+        <span className="text-xs text-zinc-500">{t('tutor_dob_hint')}</span>
         <FieldProblem problem={problemFor(fieldIds.dateOfBirth)} />
       </label>
+      </TutorBlock>
 
       {/* 2 · Confirmar/corregir datos del hijo (multi-hijo) */}
       <ChildDataSection items={pendingChildren} problems={problems} />
@@ -673,6 +780,8 @@ export function SignInToAcceptForm({
         problem={problemFor(fieldIds.dateOfBirth)}
         defaultValue={acceptorDob}
       />
+
+      <ChildSummarySection items={pendingChildren} locale={locale} />
 
       <ChildrenImageSection
         items={pendingChildren}
