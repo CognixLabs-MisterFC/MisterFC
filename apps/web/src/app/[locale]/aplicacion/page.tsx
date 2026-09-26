@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Smartphone } from 'lucide-react';
@@ -16,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LogoutButton } from '@/components/shell/logout-button';
 import { AccountDeletionPending } from '@/components/shell/account-deletion-pending';
 import { DeleteAccountCard } from '../(authenticated)/perfil/delete-account-card';
+import { LegalLinksCard } from '@/components/legal/legal-links-card';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -174,16 +174,23 @@ export default async function AplicacionPage({ params, searchParams }: Props) {
         </CardContent>
       </Card>
 
-      {/* Los textos legales siguen abiertos en la web, así que estos enlaces funcionan
-          igual que antes del corte. */}
-      <p className="flex justify-center gap-4 text-xs">
-        <Link href={`/${locale}/legal/terminos`} className="underline">
-          {t('terms_link')}
-        </Link>
-        <Link href={`/${locale}/legal/privacidad`} className="underline">
-          {t('privacy_link')}
-        </Link>
-      </p>
+      {/* L-1 · LOS CUATRO documentos, y con LA MISMA tarjeta que el Perfil.
+          Aquí había una lista escrita a mano de DOS enlaces —términos y privacidad—, de
+          cuando solo había dos documentos. Cuando #717 añadió el cuarto, esta pantalla no
+          se enteró: no está entre las seis superficies que vigila `check:textos-legales`
+          ni entre los dos muros que censa `legal-links-census.test.ts`.
+
+          Y es la pantalla que peor podía quedarse muda. Con el corte encendido esto es LA
+          web para una familia, y además es la última pantalla del alta (ver arriba): justo
+          quien acaba de darse de alta, que es quien está en plazo de desistir, era quien no
+          encontraba el formulario. El desistimiento son catorce días DESDE la contratación.
+
+          No se añade el cuarto enlace a mano: se reutiliza `LegalLinksCard`, que es la
+          lista del Perfil. Una lista menos que mantener es una lista menos que se queda
+          atrás, y con ella las etiquetas ya vienen traducidas (`legal_publico.perfil`).
+          Los textos legales siguen abiertos en la web, así que los enlaces funcionan igual
+          que antes del corte. */}
+      <LegalLinksCard locale={locale} />
 
       {pendingDeletion && (
         <AccountDeletionPending
