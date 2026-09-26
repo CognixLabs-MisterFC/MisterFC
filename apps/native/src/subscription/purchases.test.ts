@@ -268,12 +268,63 @@ describe('loadOffering', () => {
   it('si no hay offerings no revienta: devuelve annual null', async () => {
     offerings.value = { all: {}, current: null };
     const m = await load();
-    expect(await m.loadOffering()).toEqual({ ok: true, annual: null, packages: [] });
+    expect(await m.loadOffering()).toMatchObject({ ok: true, annual: null, packages: [] });
   });
 
   it('un fallo del SDK sale como ok:false', async () => {
     offerings.value = new Error('sin red');
     const m = await load();
     expect((await m.loadOffering()).ok).toBe(false);
+  });
+
+  /**
+   * D-1 — los dos desenlaces malos tienen que poder DISTINGUIRSE, porque se arreglan en
+   * sitios distintos: uno es el SDK y el otro es la tienda. Antes los dos acababan en la
+   * misma frase y el error del SDK se tiraba sin registrarlo.
+   */
+  it('cuando NO SE PUDO PREGUNTAR, el diagnóstico nombra el fallo del SDK', async () => {
+    const e = Object.assign(new Error('configuration error'), {
+      code: '23',
+      userInfo: { readableErrorCode: 'CONFIGURATION_ERROR' },
+    });
+    offerings.value = e;
+    const m = await load();
+    const res = await m.loadOffering();
+    expect(res.ok).toBe(false);
+    expect(res.diag).toMatchObject({
+      sdk_code: '23',
+      sdk_legible: 'CONFIGURATION_ERROR',
+      configurado: false,
+    });
+  });
+
+  it('cuando NO HAY NADA QUE VENDER, el diagnóstico dice cero paquetes y qué llegó', async () => {
+    // El caso real que hay que poder ver: el offering existe y llega VACÍO, porque
+    // RevenueCat quita los productos que la tienda no ha podido cotizar.
+    offerings.value = {
+      all: { default_misterfc: { identifier: 'default_misterfc', availablePackages: [], annual: null } },
+      current: null,
+    };
+    const m = await load();
+    const res = await m.loadOffering();
+    expect(res).toMatchObject({ ok: true, annual: null });
+    expect(res.diag).toMatchObject({
+      offerings: 1,
+      offering_ids: 'default_misterfc',
+      elegido: 'default_misterfc',
+      esperado: 'default_misterfc',
+      paquetes: 0,
+      productos: '(ninguno)',
+      hay_current: false,
+    });
+  });
+
+  it('y si el offering del panel se llama de otra forma, el diagnóstico lo dice', async () => {
+    // Un identificador mal escrito en el panel no da error: da un offering que no
+    // encontramos. Sin esto, «no hay precio» y «se llama distinto» son indistinguibles.
+    offerings.value = { all: { otro_nombre: { identifier: 'otro_nombre', availablePackages: [], annual: null } }, current: null };
+    const m = await load();
+    const res = await m.loadOffering();
+    expect(res.diag).toMatchObject({ offering_ids: 'otro_nombre', esperado: 'default_misterfc', elegido: '(ninguno)' });
   });
 });

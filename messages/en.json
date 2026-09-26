@@ -5565,7 +5565,8 @@
     "offline": "The purchase cannot be completed while offline. Try again when you are back online.",
     "terms_note": "The subscription renews automatically every year unless you cancel at least 24 hours before renewal. You can manage or cancel it at any time from your store account.",
     "errors": {
-      "offering": "We could not load the price. Please try again in a moment.",
+      "offering_unreadable": "We couldn't check the price. Check your connection and try again.",
+      "offering_empty": "There is no subscription available in your store right now. Please try again later.",
       "purchase": "The purchase could not be completed. You have not been charged.",
       "restore": "We could not check your purchases. Please try again.",
       "status": "We could not check your subscription."
