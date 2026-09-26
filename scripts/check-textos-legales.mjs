@@ -35,6 +35,10 @@
  *      local y en producción da 500 al leerlo.
  *   9. cada texto servido está listado en TODAS las superficies que enumeran los
  *      legales (pie público, pie cruzado, sitemap y las dos tarjetas de Perfil, más el
+ *  10. y las superficies NO se declaran: se DESCUBREN. Cualquier fichero que nombre
+ *      dos o más slugs está enumerando los documentos y tiene que nombrarlos todos, o
+ *      declararse excepción con su motivo. El 9 no basta: su lista es a mano, y
+ *      `/aplicacion` fue la séptima superficie que nadie añadió (L-1).
  *      tipo `LegalDoc` de la nativa). Éste es el eslabón que se rompió de verdad:
  *      publicar el desistimiento dejó tres listas con tres documentos, y la página
  *      responde 200 aunque no se alcance desde ninguna parte.
@@ -44,7 +48,7 @@
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { join } from 'node:path';
+import { join, extname } from 'node:path';
 import { ROOT, MAESTRA_DIR, PARES, SERVIDOS, SERVIDA_REL } from './textos-legales.mjs';
 
 const LEGAL_CONTENT_TS = join(ROOT, 'apps/web/src/lib/legal-content.ts');
@@ -316,6 +320,193 @@ if (superficiesLeidas < SUPERFICIES.length) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 10 — LAS SUPERFICIES SE DESCUBREN. El eslabón 9 no basta, y lo demostró L-1.
+//
+// El 9 comprueba una lista ESCRITA A MANO de seis ficheros. `/aplicacion` era el
+// séptimo: llevaba dos enlaces de los cuatro, y cuando #717 añadió el desistimiento no
+// se enteró nadie —ni este guard, ni el censo de `legal-links-census.test.ts`, que
+// también tiene su lista a mano, de dos—. Y era la peor pantalla donde pasara: con el
+// corte de la web encendido, `/aplicacion` es LA web para una familia, y es la última
+// pantalla del alta. Justo quien acaba de darse de alta, que es quien está en plazo de
+// desistir, era quien no encontraba el formulario.
+//
+// Así que aquí se invierte: en vez de preguntar «¿están los cuatro en los seis ficheros
+// que recuerdo?», se pregunta «¿QUÉ ficheros hablan de los legales, y les falta alguno?».
+// Un fichero que nombre DOS o más slugs está enumerando los documentos, y entonces tiene
+// que nombrarlos todos — o declararse excepción, con su motivo escrito.
+//
+// ── TRES DECISIONES QUE HACEN QUE ESTO NO DÉ LA LATA ─────────────────────────
+//
+//  1. SE QUITAN LOS COMENTARIOS ANTES DE MEDIR. Sin esto, el propio comentario que
+//     explica el arreglo de L-1 —que menciona «privacidad» y «desistimiento»— convertía
+//     `/aplicacion` en una superficie incompleta otra vez. Un guard que castiga a quien
+//     deja el motivo escrito enseña a no escribirlo.
+//
+//  2. FUERA LOS TESTS. Un test que censa los muros nombra tres slugs y no ofrece nada a
+//     nadie: no es una superficie, es la red. Confundirlos obligaría a que cada test
+//     mencionara los cuatro para poder hablar de uno.
+//
+//  3. EL UMBRAL ES DOS, no uno. La página de un documento nombra su propio slug y no
+//     enumera nada; con umbral uno, `legal/desistimiento/page.tsx` sería una superficie
+//     a la que le faltan tres.
+//
+// ── LAS EXCEPCIONES FIJAN SU JUEGO EXACTO ───────────────────────────────────
+// No dicen «esta está perdonada»: dicen QUÉ lleva. Si un día una gana o pierde un
+// documento, la excepción deja de cuadrar y salta — hay que volver a pensarla, que es lo
+// que se quiere. Es la misma idea que el `motivo` obligatorio de `subscription_grants`:
+// una excepción sin razón escrita es la que nadie se atreve a quitar.
+const EXCEPCIONES = [
+  {
+    ruta: 'apps/web/src/app/[locale]/suscripcion/page.tsx',
+    lleva: ['privacidad', 'terminos', 'desistimiento'],
+    motivo:
+      'muro de pago: Apple (Guideline 3.1.2) exige términos y privacidad, y el ' +
+      'desistimiento lo pide la normativa de consumo —debe leerse ANTES de pagar—. ' +
+      'La eliminación de cuenta no pertenece a ese trío: no se borra la cuenta desde el muro.',
+  },
+  {
+    ruta: 'apps/native/src/subscription/paywall.tsx',
+    lleva: ['privacidad', 'terminos', 'desistimiento'],
+    motivo: 'el mismo muro, en la nativa, y por las mismas tres razones.',
+  },
+  {
+    ruta: 'apps/native/app/invite/[token].tsx',
+    lleva: ['privacidad', 'terminos'],
+    motivo:
+      'no es un directorio legal: son las dos CASILLAS de aceptación del alta, una por ' +
+      'documento que se acepta, y se corresponden con los dos consent_type de la cuenta. ' +
+      'Nadie ACEPTA un formulario de desistimiento ni una política de eliminación.',
+  },
+];
+
+/**
+ * El código sin comentarios. Ni perfecto ni pretende serlo: quita bloques `/* *\/`,
+ * comentarios JSX y los de `//`, respetando `https://` (van precedidos de dos puntos).
+ * Si algún día se le escapa uno, el modo de fallo es una superficie de más que hay que
+ * mirar, no una de menos que pasa callada.
+ */
+function sinComentarios(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
+const EXT_CODIGO = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs']);
+const DIRS_FUERA = new Set(['node_modules', '.next', 'dist', 'build', 'content']);
+
+function ficherosDeCodigo(dirRel, acc = []) {
+  let entradas;
+  try {
+    entradas = readdirSync(join(ROOT, dirRel), { withFileTypes: true });
+  } catch {
+    return acc;
+  }
+  for (const e of entradas) {
+    const rel = `${dirRel}/${e.name}`;
+    if (e.isDirectory()) {
+      if (!DIRS_FUERA.has(e.name)) ficherosDeCodigo(rel, acc);
+    } else if (EXT_CODIGO.has(extname(e.name))) {
+      acc.push(rel);
+    }
+  }
+  return acc;
+}
+
+const esTest = (ruta) => ruta.includes('__tests__/') || /\.test\.[jt]sx?$/.test(ruta);
+const nombra = (src, slug) =>
+  new RegExp(`(?<![\\w-])${slug.replace(/[-]/g, '\\-')}(?![\\w-])`).test(src);
+
+const descubiertas = [];
+for (const ruta of [...ficherosDeCodigo('apps'), ...ficherosDeCodigo('packages')]) {
+  if (esTest(ruta)) continue;
+  let src;
+  try {
+    src = sinComentarios(readFileSync(join(ROOT, ruta), 'utf8'));
+  } catch {
+    continue;
+  }
+  const lleva = SERVIDOS.map((p) => p.servido).filter((slug) => nombra(src, slug));
+  if (lleva.length >= 2) descubiertas.push({ ruta, lleva });
+}
+
+// CONTROL POSITIVO, y es el que se me escapó una vez: si el barrido no encuentra nada,
+// el bucle de abajo no se ejecuta y el bloque pasa en VERDE sin mirar un solo fichero.
+// El suelo son las seis del eslabón 9 más las tres excepciones.
+const DESCUBIERTAS_MINIMAS = SUPERFICIES_MINIMAS + EXCEPCIONES.length;
+if (descubiertas.length < DESCUBIERTAS_MINIMAS) {
+  errores.push(
+    `el barrido del eslabón 10 encontró ${descubiertas.length} ficheros que enumeran ` +
+      `legales y son al menos ${DESCUBIERTAS_MINIMAS}. O se ha roto el recorrido, o ha ` +
+      `cambiado la forma de nombrar los slugs: este bloque ya no vigila nada.`,
+  );
+}
+
+// SEGUNDO CONTROL: las seis del eslabón 9 tienen que SALIR del barrido. Si una no sale,
+// el descubrimiento no ve lo que el 9 ya sabía, y entonces tampoco vería a su séptima.
+for (const sup of SUPERFICIES) {
+  if (!descubiertas.some((d) => d.ruta === sup.ruta)) {
+    errores.push(
+      `el barrido del eslabón 10 NO encontró ${sup.ruta}, que el eslabón 9 sí vigila. ` +
+        `El descubrimiento se le escapa una superficie conocida: no hay motivo para ` +
+        `creer que encontraría una nueva.`,
+    );
+  }
+}
+
+const porRuta = new Map(EXCEPCIONES.map((e) => [e.ruta, e]));
+for (const { ruta, lleva } of descubiertas) {
+  const faltan = SERVIDOS.map((p) => p.servido).filter((s) => !lleva.includes(s));
+  const exc = porRuta.get(ruta);
+
+  if (faltan.length === 0) {
+    // Una excepción que ya lleva los cuatro sobra, y sobrando estorba: la siguiente
+    // persona la lee como un permiso vigente.
+    if (exc) {
+      errores.push(
+        `${ruta} está en EXCEPCIONES pero ya nombra los ${SERVIDOS.length} documentos. ` +
+          `Quita la excepción: un permiso que no hace falta se acaba usando de coartada.`,
+      );
+    }
+    continue;
+  }
+
+  if (!exc) {
+    errores.push(
+      `${ruta} enumera legales (${lleva.join(', ')}) y le falta(n) ${faltan.join(', ')}. ` +
+        `La página se sirve igual y responde 200, pero desde ahí no se llega a ese ` +
+        `documento. Si de verdad no debe llevarlo, declárala en EXCEPCIONES con su ` +
+        `motivo — que la ausencia sea una decisión escrita y no un descuido.`,
+    );
+    continue;
+  }
+
+  // La excepción fija su juego EXACTO: sobra y falta se miran las dos.
+  const sobra = lleva.filter((s) => !exc.lleva.includes(s));
+  const noEstan = exc.lleva.filter((s) => !lleva.includes(s));
+  if (sobra.length > 0 || noEstan.length > 0) {
+    errores.push(
+      `la excepción de ${ruta} dice llevar [${exc.lleva.join(', ')}] y lleva ` +
+        `[${lleva.join(', ')}]` +
+        (sobra.length ? ` (de más: ${sobra.join(', ')})` : '') +
+        (noEstan.length ? ` (de menos: ${noEstan.join(', ')})` : '') +
+        `. Ha cambiado lo que hace, así que su motivo hay que volver a pensarlo: ` +
+        `«${exc.motivo}»`,
+    );
+  }
+}
+
+// Una excepción cuyo fichero ya no enumera legales —o ya no existe— es ruido que la
+// próxima persona leerá como vigente.
+for (const exc of EXCEPCIONES) {
+  if (!descubiertas.some((d) => d.ruta === exc.ruta)) {
+    errores.push(
+      `la excepción de ${exc.ruta} ya no corresponde a ningún fichero que enumere ` +
+        `legales (¿se movió, se borró, o dejó de enlazarlos?). Quítala.`,
+    );
+  }
+}
+
 if (errores.length > 0) {
   console.error('✗ check:textos-legales\n');
   for (const e of errores) console.error(`  · ${e}\n`);
@@ -328,5 +519,6 @@ console.log(
     `y generada al construir, ${noServidos} documento(s) declarado(s) como no ` +
     `servido(s); generador enchufado a build y dev, maestra en las entradas de turbo ` +
     `y en el trace de despliegue; los ${SERVIDOS.length} listados en las ` +
-    `${SUPERFICIES.length} superficies que los enumeran.`,
+    `${SUPERFICIES.length} superficies declaradas y en las ${descubiertas.length} ` +
+    `descubiertas (${EXCEPCIONES.length} con juego incompleto y motivo escrito).`,
 );
