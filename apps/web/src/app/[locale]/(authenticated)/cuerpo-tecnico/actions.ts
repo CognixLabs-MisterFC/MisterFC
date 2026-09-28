@@ -6,6 +6,8 @@ import { z } from 'zod';
 import {
   ACTIVE_CLUB_COOKIE_NAME,
   assignStaffToTeam,
+  updateStaffContactFromClient,
+  updateStaffNameFromClient,
   createSupabaseServerClient,
   getCurrentUserClubs,
   resolveActiveClub,
@@ -426,8 +428,18 @@ export type UpdateStaffNameState = {
 
 /**
  * Bug 2 (2a) — corrige el `full_name` (global) de un miembro del club. Delega en
- * la función SQL `admin_update_staff_profile` (SECURITY DEFINER, solo admin_club,
- * solo target del club, solo el campo nombre). No relaja profiles_update_self.
+ * la función SQL `admin_update_staff_profile` (SECURITY DEFINER, solo target del
+ * club, solo el campo nombre). No relaja profiles_update_self.
+ *
+ * QUIÉN PUEDE, corregido en W-4: este comentario decía «solo admin_club» y era
+ * FALSO desde la migración `20261085000000_director_edita_nombre_y_contacto`, que
+ * metió al DIRECTOR con el mismo argumento que el resto de su paridad con admin.
+ * El coordinador sigue fuera, y eso sí es a propósito: «la identidad es más
+ * sensible», dice el SQL. Ver `canEditStaffIdentity` en core — y ojo, NO es el
+ * mismo permiso que `staffAssignmentPermission`, donde el coordinador sí entra.
+ *
+ * W-4 — la validación y la traducción de los motivos del RPC viven ahora en core
+ * (`updateStaffNameFromClient`), compartidas con la app.
  */
 export async function updateStaffName(
   targetProfileId: string,
@@ -451,19 +463,12 @@ export async function updateStaffName(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { error } = await supabase.rpc('admin_update_staff_profile', {
-    p_club_id: clubId,
-    p_target_profile_id: targetProfileId,
-    p_full_name: parsed.data.full_name,
+  const res = await updateStaffNameFromClient(supabase, {
+    clubId,
+    targetProfileId,
+    fullName: parsed.data.full_name,
   });
-  if (error) {
-    const msg = error.message ?? '';
-    if (msg.includes('forbidden')) return { error: 'forbidden' };
-    if (msg.includes('target_invalid')) return { error: 'target_invalid' };
-    if (msg.includes('name_required')) return { error: 'name_required' };
-    if (msg.includes('name_too_long')) return { error: 'name_too_long' };
-    return { error: 'generic' };
-  }
+  if (!res.ok) return { error: res.error };
 
   revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico/[membershipId]', 'page');
   revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico', 'page');
@@ -578,8 +583,16 @@ export type UpdateStaffContactState = {
 /**
  * Bug 2 (2c) — guarda el contacto (phone/contact_email) de un miembro del club.
  * Delega en la función SQL `admin_update_staff_contact` (SECURITY DEFINER, solo
- * admin_club, solo target del club, solo esas dos columnas de memberships). NO
- * toca el email de login (auth.users) ni profiles.
+ * target del club, solo esas dos columnas de memberships). NO toca el email de
+ * login (auth.users) ni profiles.
+ *
+ * QUIÉN PUEDE: admin_club O DIRECTOR (mismo caso que `updateStaffName` — el
+ * comentario decía «solo admin_club» y llevaba desde la 20261085000000 sin ser
+ * verdad). El coordinador no.
+ *
+ * W-4 — validación y traducción de motivos en core
+ * (`updateStaffContactFromClient`), compartidas con la app. Vacío se guarda como
+ * NULL, no como cadena vacía.
  */
 export async function updateStaffContact(
   targetProfileId: string,
@@ -604,22 +617,14 @@ export async function updateStaffContact(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  const { error } = await supabase.rpc('admin_update_staff_contact', {
-    p_club_id: clubId,
-    p_target_profile_id: targetProfileId,
-    // El SQL acepta NULL (campos opcionales) pero el typegen los marca string.
-    p_phone: parsed.data.phone as unknown as string,
-    p_contact_email: parsed.data.contact_email as unknown as string,
+  const res = await updateStaffContactFromClient(supabase, {
+    clubId,
+    targetProfileId,
+    phone: parsed.data.phone ?? '',
+    contactEmail: parsed.data.contact_email ?? '',
   });
-  if (error) {
-    const msg = error.message ?? '';
-    if (msg.includes('forbidden')) return { error: 'forbidden' };
-    if (msg.includes('target_invalid')) return { error: 'target_invalid' };
-    if (msg.includes('phone_invalid')) return { error: 'phone_invalid' };
-    if (msg.includes('contact_email_invalid')) {
-      return { error: 'contact_email_invalid' };
-    }
-    return { error: 'generic' };
+  if (!res.ok) {
+    return { error: res.error };
   }
 
   revalidatePath('/[locale]/(authenticated)/cuerpo-tecnico/[membershipId]', 'page');

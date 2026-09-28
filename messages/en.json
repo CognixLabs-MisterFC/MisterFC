@@ -2617,6 +2617,10 @@
       },
       "save": "Save",
       "cancel": "Cancel",
+      "saving": "Saving…",
+      "close": "Close",
+      "done": "Name updated.",
+      "offline": "You cannot save while offline. Try again when you are back online.",
       "errors": {
         "name_required": "The name cannot be empty.",
         "name_too_long": "The name is too long (max 120).",
@@ -2643,6 +2647,10 @@
       },
       "save": "Save",
       "cancel": "Cancel",
+      "saving": "Saving…",
+      "close": "Close",
+      "done": "Contact details updated.",
+      "offline": "You cannot save while offline. Try again when you are back online.",
       "errors": {
         "phone_invalid": "The phone is not valid (between 3 and 32 characters).",
         "contact_email_invalid": "The contact email is not valid.",

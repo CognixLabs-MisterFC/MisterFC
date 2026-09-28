@@ -2617,6 +2617,10 @@
       },
       "save": "Guardar",
       "cancel": "Cancelar",
+      "saving": "Guardando…",
+      "close": "Cerrar",
+      "done": "Nombre actualizado.",
+      "offline": "Sin conexión no se puede guardar. Inténtalo cuando vuelvas a tener red.",
       "errors": {
         "name_required": "El nombre no puede estar vacío.",
         "name_too_long": "El nombre es demasiado largo (máx. 120).",
@@ -2643,6 +2647,10 @@
       },
       "save": "Guardar",
       "cancel": "Cancelar",
+      "saving": "Guardando…",
+      "close": "Cerrar",
+      "done": "Contacto actualizado.",
+      "offline": "Sin conexión no se puede guardar. Inténtalo cuando vuelvas a tener red.",
       "errors": {
         "phone_invalid": "El teléfono no es válido (entre 3 y 32 caracteres).",
         "contact_email_invalid": "El email de contacto no es válido.",

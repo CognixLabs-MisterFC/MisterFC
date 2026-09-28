@@ -36,3 +36,28 @@ export {
   getCoordinatedTeamIdsFromClient,
 } from './candidates';
 export type { StaffCandidate } from './candidates';
+
+/**
+ * W-4 — nombre y contacto de un miembro. SIN endpoint: el permiso vive dentro de los
+ * dos RPC SECURITY DEFINER, que se invocan como el usuario. Y OJO, el permiso NO es
+ * el de asignar: aquí el coordinador NO entra (ver `identity.ts`).
+ */
+export {
+  STAFF_NAME_MAX,
+  canEditStaffIdentity,
+  canEditStaffIdentityOf,
+  getStaffContactFromClient,
+  staffContactInput,
+  staffNameInput,
+  updateStaffContactFromClient,
+  updateStaffNameFromClient,
+} from './identity';
+export type {
+  ContactError,
+  NameError,
+  StaffContact,
+  StaffContactError,
+  StaffIdentityError,
+  StaffIdentityResult,
+  StaffNameError,
+} from './identity';

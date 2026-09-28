@@ -57,6 +57,9 @@ const SCREENS = {
 
   // ── Diálogos y hojas: el cuadro se aparta del teclado ─────────────────────
   'apps/native/src/screens/forgot-password-modal.tsx': { use: 'modal' },
+  // Editar nombre / contacto del cuerpo técnico: un solo diálogo con dos modos,
+  // y los dos tienen campo (nombre; teléfono y correo de contacto).
+  'apps/native/src/screens/direction/edit-identity-modal.tsx': { use: 'modal' },
   'apps/native/src/screens/family/seguidores.tsx': { use: 'modal' },
   'apps/native/src/screens/staff/publish-callup-sheet.tsx': { use: 'modal' },
   'apps/native/src/ui/delete-account-card.tsx': { use: 'modal' },
