@@ -188,14 +188,11 @@ export async function moveStaffToTeam(
 //     staff_role es 'coordinador'), y solo con entrenador_principal,
 //     entrenador_ayudante, preparador_fisico o delegado.
 //
-// ⚠️ Y una DISCREPANCIA medida en W-2, que sigue viva en esta pantalla: la UI le
-// ofrece al coordinador `visibleTeams`, que salen de `resolveStaffScope` y son los
-// equipos donde es team_staff con CUALQUIER función (C-2a) — más anchos que lo que
-// la RLS acepta. A un coordinador que además sea ayudante en otro equipo se le
-// ofrece ese equipo y el INSERT le responde 42501 → 'forbidden'. La app NO lo
-// reproduce: ofrece lo que la RLS acepta, vía `staffAssignmentPermission` y
-// `getAssignmentTargetTeamsFromClient` (core). Arreglarlo aquí es un cambio de
-// comportamiento de la web y va aparte.
+// La DISCREPANCIA que midió W-2 —la UI ofrecía al coordinador `visibleTeams`, más
+// anchos que lo que la RLS acepta, y el INSERT respondía 42501 → 'forbidden'— está
+// CORREGIDA en W-2b: las dos pantallas piden los destinos a
+// `assignmentTargetTeamIds` (core), el mismo que usa la app. Si vuelve a salir un
+// 'forbidden' desde aquí ya no es la lista de equipos ofrecida: es la RLS.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const addAssignmentSchema = z.object({

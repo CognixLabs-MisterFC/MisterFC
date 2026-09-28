@@ -1,7 +1,13 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { Mail, Users } from 'lucide-react';
-import { ADMIN_ROLES, TEAM_STAFF_ROLES, type TeamStaffRole } from '@misterfc/core';
+import {
+  ADMIN_ROLES,
+  TEAM_STAFF_ROLES,
+  assignmentTargetTeamIds,
+  staffAssignmentPermission,
+  type TeamStaffRole,
+} from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -105,12 +111,30 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
     name: t.name,
     category_name: t.category_name,
   }));
-  // Funciones ofrecidas al asignar o mover. El coordinador no nombra
-  // coordinadores (la RLS C-1d ya lo bloquea); admin/director, lista completa.
+  // Funciones ofrecidas al MOVER. El coordinador no nombra coordinadores (la RLS
+  // C-1d ya lo bloquea); admin/director, lista completa.
   const assignableRoles =
     role === 'coordinador'
       ? TEAM_STAFF_ROLES.filter((r) => r !== 'coordinador')
       : TEAM_STAFF_ROLES;
+
+  // W-2b — AGREGAR ROL. Lo que se ofrece sale de core, no de aquí.
+  //
+  // Antes esta pantalla le pasaba al diálogo `result.visibleTeams` enteros, con un
+  // comentario que decía que acotar a los coordinados era «una regla del movimiento,
+  // no de la asignación». Era falso: `team_staff_insert_admin` aplica
+  // `user_coordinates_team` AL PROPIO INSERT. Resultado medido en W-2: a un
+  // coordinador que además fuera ayudante en otro equipo se le ofrecía ese equipo y
+  // el INSERT le respondía 42501 → «No tienes permiso para asignar staff».
+  const permisoAsignar = staffAssignmentPermission(role);
+  const idsAsignables = new Set(
+    assignmentTargetTeamIds(
+      role,
+      result.visibleTeams.map((tm) => tm.id),
+      coordinatedTeamIds,
+    ),
+  );
+  const teamsParaAgregarRol = result.visibleTeams.filter((tm) => idsAsignables.has(tm.id));
 
   // E-7b — CSV de dirección. Filas construidas server-side desde el conjunto YA
   // visible/filtrado (result.coaches respeta scope de rol + filtros activos). Las
@@ -283,18 +307,17 @@ export default async function CuerpoTecnicoPage({ params, searchParams }: Props)
                         {/* Agregar rol: el MISMO diálogo de la ficha. Aparece
                             aunque la persona no tenga ninguna asignación — que es
                             justo el caso que hay que poder resolver desde aquí.
-                            Equipos ofrecidos: los visibles según scope, no los
-                            acotados de "mover" (eso es una regla del movimiento,
-                            E-final-2, no de la asignación). */}
-                        {result.canManage && (
+                            Equipos y funciones: los que acepta la RLS, resueltos en
+                            core (W-2b). */}
+                        {permisoAsignar.canAssign && (
                           <AddAssignmentDialog
                             membershipId={c.membership_id}
-                            teams={result.visibleTeams.map((tm) => ({
+                            teams={teamsParaAgregarRol.map((tm) => ({
                               id: tm.id,
                               name: tm.name,
                               category_name: tm.category_name,
                             }))}
-                            assignableRoles={assignableRoles}
+                            assignableRoles={permisoAsignar.roles}
                           />
                         )}
                         {result.canManage &&
