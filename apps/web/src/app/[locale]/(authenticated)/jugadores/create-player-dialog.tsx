@@ -37,11 +37,19 @@ import {
 type Props = {
   teams: Array<{ id: string; name: string }>;
   /**
-   * ¿Puede este usuario vincular jugadores a una cuenta? La RLS
-   * `player_accounts_write_admin` es de admin_club/director; un entrenador
-   * detecta que la persona ya existe (la RPC sí le contesta) pero no puede
-   * hacer el vínculo, así que se le dice en vez de ofrecerle un botón que
-   * fallaría.
+   * ¿Puede este usuario vincular jugadores a una cuenta? Lo decide
+   * `canLinkPlayers` (core), y ahí está la policy entera.
+   *
+   * W-5 — antes esto decía que la RLS `player_accounts_write_admin` «es de
+   * admin_club/director», y eso es FALSO a medias: la policy tiene una segunda
+   * rama que admite al coordinador para los jugadores de los equipos que
+   * coordina. El resultado es el mismo por otro motivo —no se le ofrece porque
+   * su lista de candidatos no viene recortada y casi todo le daría 42501—, pero
+   * el enunciado inducía a construir el candado equivocado.
+   *
+   * Lo que sigue valiendo: un entrenador detecta que la persona ya existe (la RPC
+   * sí le contesta) pero no puede hacer el vínculo, así que se le dice en vez de
+   * ofrecerle un botón que fallaría.
    */
   canLinkPlayers: boolean;
 };

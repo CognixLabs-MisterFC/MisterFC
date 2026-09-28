@@ -6,6 +6,8 @@ import { z } from 'zod';
 import {
   ACTIVE_CLUB_COOKIE_NAME,
   assignStaffToTeam,
+  linkPlayerToMember,
+  type LinkPlayerError,
   updateStaffContactFromClient,
   updateStaffNameFromClient,
   createSupabaseServerClient,
@@ -254,36 +256,29 @@ export async function addStaffAssignment(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// addPlayerLink (BUG 3 · B-1) — vincula un JUGADOR a un miembro del club como
-// su hijo o tutelado, SIN pasar por una invitación por correo.
+// addPlayerLink (BUG 3 · B-1 · W-5) — vincula un JUGADOR a un miembro del club
+// como su hijo o tutelado, SIN pasar por una invitación por correo.
 //
-// Hasta ahora la única forma de crear una fila de `player_accounts` era que
-// alguien aceptase una invitación: la escribía `accept_pending_invitations`. Si
-// la persona YA está en el club, esa vuelta no tiene sentido — es el mismo
-// argumento que el resto de la serie.
+// Hasta BUG 3 la única forma de crear una fila de `player_accounts` era que
+// alguien aceptase una invitación. Si la persona YA está en el club, esa vuelta
+// no tiene sentido — es el mismo argumento que el resto de la serie.
 //
-// El permiso lo pone la RLS `player_accounts_write_admin`, que ya existía:
-// admin_club/director del club del jugador, o quien coordina un equipo suyo.
-// Cero policy nueva, cero migración.
+// W-5 — la escritura entera (validar, resolver el perfil, comparar clubes y
+// traducir los dos códigos de Postgres) vive en core `linkPlayerToMember`, porque
+// la ficha nativa pide lo mismo. Aquí queda lo que es DE LA WEB: el FormData y
+// qué páginas revalidar.
 //
-// 'self' NO se ofrece Y NO SE ACEPTA (el enum del schema lo rechaza): esa
-// relación significa "la cuenta del propio jugador", que es otra cosa y nace por
-// otro camino (inviteSelfForPlayer). Aquí se vincula a un TUTOR.
+// El permiso lo pone la RLS `player_accounts_write_admin`, y core lleva escrito el
+// predicado entero (incluida la rama del coordinador, que `canLinkPlayers` deja
+// fuera a propósito). Aquí no se recomprueba nada.
+//
+// 'self' NO se ofrece Y NO SE ACEPTA: esa relación significa "la cuenta del propio
+// jugador", que es otra cosa y nace por otro camino (inviteSelfForPlayer). El Zod
+// que lo cortaba aquí ahora lo corta core, con test propio.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const addPlayerLinkSchema = z.object({
-  player_id: z.string().uuid({ message: 'player_invalid' }),
-  relation: z.enum(['parent', 'guardian'], { message: 'relation_invalid' }),
-});
-
 export type AddPlayerLinkState = {
-  error?:
-    | 'player_invalid'
-    | 'relation_invalid'
-    | 'cross_club'
-    | 'already_linked'
-    | 'forbidden'
-    | 'generic';
+  error?: LinkPlayerError;
   success?: boolean;
 };
 
@@ -292,61 +287,25 @@ export async function addPlayerLink(
   _prev: AddPlayerLinkState,
   formData: FormData
 ): Promise<AddPlayerLinkState> {
-  const parsed = addPlayerLinkSchema.safeParse({
-    player_id: formData.get('player_id'),
-    relation: formData.get('relation'),
-  });
-  if (!parsed.success) {
-    const code = parsed.error.issues[0]?.message;
-    if (code === 'player_invalid' || code === 'relation_invalid') {
-      return { error: code };
-    }
-    return { error: 'generic' };
-  }
-  const { player_id, relation } = parsed.data;
-
+  const playerId = formData.get('player_id');
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // La membership da el PERFIL al que se vincula. `player_accounts` guarda el
-  // profile_id, no la membership: el vínculo es con la persona, no con su papel
-  // en el club. Si mañana deja de ser entrenador, sigue siendo el padre.
-  const { data: membership } = await supabase
-    .from('memberships')
-    .select('id, profile_id, club_id')
-    .eq('id', membershipId)
-    .maybeSingle();
-  if (!membership) return { error: 'forbidden' };
-
-  const { data: player } = await supabase
-    .from('players')
-    .select('id, club_id')
-    .eq('id', player_id)
-    .maybeSingle();
-  if (!player) return { error: 'player_invalid' };
-  if ((player.club_id as string) !== (membership.club_id as string)) {
-    return { error: 'cross_club' };
-  }
-
-  const { error: insErr } = await supabase.from('player_accounts').insert({
-    player_id,
-    profile_id: membership.profile_id as string,
-    relation,
+  const res = await linkPlayerToMember(supabase, {
+    membershipId,
+    playerId: typeof playerId === 'string' ? playerId : '',
+    relation: formData.get('relation'),
   });
-
-  if (insErr) {
-    if (insErr.code === '42501') return { error: 'forbidden' };
-    // UNIQUE (player_id, profile_id): ya estaban vinculados.
-    if (insErr.code === '23505') return { error: 'already_linked' };
-    return { error: 'generic' };
-  }
+  if (!res.ok) return { error: res.error };
 
   revalidatePath(
     `/[locale]/(authenticated)/cuerpo-tecnico/${membershipId}`,
     'page'
   );
   revalidatePath('/[locale]/(authenticated)/jugadores', 'page');
-  revalidatePath(`/[locale]/(authenticated)/jugadores/${player_id}`, 'page');
+  if (typeof playerId === 'string') {
+    revalidatePath(`/[locale]/(authenticated)/jugadores/${playerId}`, 'page');
+  }
   return { success: true };
 }
 

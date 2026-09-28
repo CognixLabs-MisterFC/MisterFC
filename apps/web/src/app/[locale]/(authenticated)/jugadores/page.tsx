@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { UserRound } from 'lucide-react';
-import { MANAGER_ROLES, STAFF_ROLES } from '@misterfc/core';
+import { MANAGER_ROLES, STAFF_ROLES, canLinkPlayers } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -186,7 +186,7 @@ export default async function JugadoresPage({ params, searchParams }: Props) {
           {canCreate && (
             <CreatePlayerDialog
               teams={teamsForDialog}
-              canLinkPlayers={role === 'admin_club' || role === 'director'}
+              canLinkPlayers={canLinkPlayers(role)}
             />
           )}
         </div>

@@ -19,6 +19,7 @@ import {
   isTutorAccount,
   getPlayerContactFromClient,
   playerInviteKind,
+  canLinkPlayers,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadPlayerCareer } from '@/lib/player-career';
@@ -523,10 +524,7 @@ export default async function PlayerDetailPage({ params, searchParams }: Props) 
                     locale={locale}
                     playerId={player.id}
                     playerName={fullName}
-                    canLinkPlayers={
-                      ctx.activeClub.role === 'admin_club' ||
-                      ctx.activeClub.role === 'director'
-                    }
+                    canLinkPlayers={canLinkPlayers(ctx.activeClub.role)}
                   />
                 )}
               </CardHeader>

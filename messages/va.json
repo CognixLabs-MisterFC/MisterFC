@@ -2570,7 +2570,8 @@
           "player": "Jugador",
           "player_placeholder": "Selecciona jugador",
           "relation": "Relació",
-          "relation_placeholder": "Selecciona relació"
+          "relation_placeholder": "Selecciona relació",
+          "search_placeholder": "Busca per nom"
         },
         "save": "Vincular",
         "cancel": "Cancel·lar",
@@ -2582,7 +2583,11 @@
           "already_linked": "Aquesta persona ja està vinculada a eixe jugador.",
           "forbidden": "No tens permís per a vincular jugadors.",
           "generic": "No s’ha pogut vincular el jugador."
-        }
+        },
+        "no_match": "Cap jugador coincidix amb la busca.",
+        "done": "{name} queda vinculat a aquesta persona.",
+        "close": "Tancar",
+        "offline": "Sense connexió no es pot vincular. Intenta-ho quan tornes a tindre xarxa."
       }
     },
     "move": {

@@ -2570,7 +2570,8 @@
           "player": "Jugador",
           "player_placeholder": "Selecciona jugador",
           "relation": "Relación",
-          "relation_placeholder": "Selecciona relación"
+          "relation_placeholder": "Selecciona relación",
+          "search_placeholder": "Busca por nombre"
         },
         "save": "Vincular",
         "cancel": "Cancelar",
@@ -2582,7 +2583,11 @@
           "already_linked": "Esta persona ya está vinculada a ese jugador.",
           "forbidden": "No tienes permiso para vincular jugadores.",
           "generic": "No se pudo vincular al jugador."
-        }
+        },
+        "no_match": "Ningún jugador coincide con la búsqueda.",
+        "done": "{name} queda vinculado a esta persona.",
+        "close": "Cerrar",
+        "offline": "Sin conexión no se puede vincular. Inténtalo cuando vuelvas a tener red."
       }
     },
     "move": {

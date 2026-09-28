@@ -15,6 +15,7 @@ import {
   staffAssignmentPermission,
   canEditStaffIdentity,
   canEditStaffIdentityOf,
+  canLinkPlayers,
 } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -93,7 +94,11 @@ export default async function CoachDetailPage({ params }: Props) {
   // solo con los jugadores de los equipos que coordina, así que ofrecerle el
   // catálogo entero del club sería ofrecerle sobre todo errores. Cuando haga
   // falta, se le ofrece su subconjunto; hoy no se le ofrece nada.
-  const canLinkPlayers = role === 'admin_club' || role === 'director';
+  //
+  // W-5 — este razonamiento (que estaba AQUÍ y era el único de los tres correcto)
+  // vive ahora en core con la policy citada entera y con test. Estaba escrito a
+  // mano en tres páginas y viajaba por prop a dos diálogos más.
+  const puedeVincularJugadores = canLinkPlayers(role);
   // W-4 — editar NOMBRE y CONTACTO. Misma lista que `canLinkPlayers` hoy, pero es
   // otra decisión: esta la imponen los dos RPC (`admin_update_staff_profile` y
   // `admin_update_staff_contact`), y el coordinador queda fuera a propósito
@@ -373,7 +378,7 @@ export default async function CoachDetailPage({ params }: Props) {
             <UserRound className="size-5" aria-hidden />
             {t('players.title')}
           </CardTitle>
-          {canLinkPlayers && (
+          {puedeVincularJugadores && (
             <AddPlayerLinkDialog
               membershipId={coach.membership_id}
               players={playerLinks.candidates}

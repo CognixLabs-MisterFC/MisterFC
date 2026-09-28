@@ -3,20 +3,25 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
   getClubStaffFromClient,
+  getMemberPlayerLinksFromClient,
   getStaffContactFromClient,
   clubScopedCacheKey,
   canEditStaffIdentityOf,
+  canLinkPlayers,
   staffAssignmentPermission,
   type ClubStaffRow,
+  type MemberPlayerLinks,
   type StaffContact,
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
+import { useIsOnline } from '@/data/connectivity';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { RoleChip } from '@/screens/staff/hub-parts';
 import { useTranslations } from '@/locale/provider';
 import { AddRoleModal } from '@/screens/direction/add-role-modal';
+import { AddPlayerLinkModal } from '@/screens/direction/add-player-link-modal';
 import { EditIdentityModal } from '@/screens/direction/edit-identity-modal';
 import { reportDataError } from '@/lib/report-error';
 
@@ -30,6 +35,16 @@ import { reportDataError } from '@/lib/report-error';
  * pantalla; mover y quitar siguen siendo web. Quién ve el botón lo dice
  * `staffAssignmentPermission` (core), no un `role === …` escrito aquí; quién puede de
  * verdad, la RLS del INSERT.
+ *
+ * W-5 — y muestra los JUGADORES VINCULADOS (hijos y tutelados), con su botón de
+ * agregar. Tres permisos distintos conviven ya en esta pantalla y ninguno se reutiliza
+ * como atajo: asignar equipos, editar identidad y vincular jugadores.
+ *
+ * Quién llega hasta aquí: el área 'direction' es SOLO admin_club y director
+ * (`navAreaForRole`), y resulta que es el mismo conjunto que `canLinkPlayers` y que el
+ * de la RLS de lectura de `player_accounts`. Por eso esta tarjeta no necesita ninguna
+ * decisión de privacidad ni puede enseñar una lista recortada sin avisar — lo que sí le
+ * pasaría a un coordinador en la página equivalente de la web, que él alcanza.
  */
 export function DireccionCoachFichaScreen() {
   const t = useTranslations('');
@@ -41,6 +56,7 @@ export function DireccionCoachFichaScreen() {
 
   const [addOpen, setAddOpen] = useState(false);
   const [editando, setEditando] = useState<'name' | 'contact' | null>(null);
+  const puedeVincular = canLinkPlayers(activeClub?.role);
 
   const { data, fromCache, loading, refresh } = useCached<ClubStaffRow[]>(
     clubScopedCacheKey('dir-cuerpo', clubId ?? 'none'),
@@ -150,6 +166,19 @@ export function DireccionCoachFichaScreen() {
             ))
           )}
         </View>
+
+        {/* W-5 — hijos y tutelados. Es un componente aparte a propósito: su lectura
+            necesita el PERFIL del coach, que solo se conoce después de resolverlo, y
+            un hook no puede ir detrás de los `return` de arriba. Montarlo aquí es lo
+            que hace imposible ese error de orden. */}
+        {membershipId ? (
+          <TarjetaVinculos
+            membershipId={membershipId}
+            profileId={coach.profileId}
+            clubId={clubId}
+            puedeVincular={puedeVincular}
+          />
+        ) : null}
       </ScrollView>
 
       {editando ? (
@@ -173,6 +202,97 @@ export function DireccionCoachFichaScreen() {
           membershipId={membershipId}
           personName={coach.fullName || name || ''}
           onClose={() => setAddOpen(false)}
+          onDone={refresh}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * Los jugadores vinculados a esta persona, y el botón de agregar.
+ *
+ * Lectura APARTE de `getClubStaffFromClient` y con su propia clave de caché, como el
+ * contacto de W-4 y por el mismo motivo: esa lectura es club-wide y su caché también,
+ * así que meter aquí los hijos de cada miembro dejaría en el dispositivo el censo de
+ * familias del club entero por haber abierto una lista.
+ */
+function TarjetaVinculos({
+  membershipId,
+  profileId,
+  clubId,
+  puedeVincular,
+}: {
+  membershipId: string;
+  profileId: string;
+  clubId: string | null;
+  puedeVincular: boolean;
+}) {
+  const t = useTranslations('');
+  const online = useIsOnline();
+  const [abierto, setAbierto] = useState(false);
+
+  const { data, refresh } = useCached<MemberPlayerLinks>(
+    clubScopedCacheKey('dir-vinculos', membershipId),
+    (sb) =>
+      clubId
+        ? getMemberPlayerLinksFromClient(sb, { clubId, profileId }, (e) =>
+            reportDataError('member-player-links', e),
+          )
+        : Promise.resolve({ linked: [], candidates: [] }),
+  );
+
+  const vinculados = data?.linked ?? [];
+  const candidatos = data?.candidates ?? [];
+
+  return (
+    <View className="rounded-2xl border border-zinc-200 p-4">
+      <View className="mb-2 flex-row items-center justify-between gap-2">
+        <Text className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+          {t('cuerpo_tecnico.players.title')}
+        </Text>
+        {puedeVincular ? (
+          <Pressable
+            onPress={() => setAbierto(true)}
+            disabled={!online}
+            className="rounded-full border border-zinc-200 px-3 py-1 active:opacity-70"
+            style={!online ? { opacity: 0.5 } : undefined}
+          >
+            <Text className="text-xs font-medium text-zinc-600">
+              {t('cuerpo_tecnico.players.add.action')}
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
+
+      {vinculados.length === 0 ? (
+        <Text className="text-sm text-zinc-400">{t('cuerpo_tecnico.players.empty')}</Text>
+      ) : (
+        vinculados.map((l, i) => (
+          <View
+            key={l.linkId}
+            className={`flex-row items-center gap-3 py-2 ${
+              i > 0 ? 'border-t border-zinc-100' : ''
+            }`}
+          >
+            <Text className="flex-1 text-sm text-[#0F1B2E]" numberOfLines={1}>
+              {l.fullName}
+            </Text>
+            {/* Los tres valores del CHECK tienen texto, `self` incluido: un miembro
+                del club puede ser además jugador adulto con cuenta propia. */}
+            <Text className="text-xs text-zinc-400">
+              {t(`cuerpo_tecnico.players.relation.${l.relation}`)}
+            </Text>
+          </View>
+        ))
+      )}
+
+      {abierto ? (
+        <AddPlayerLinkModal
+          visible
+          membershipId={membershipId}
+          candidatos={candidatos}
+          onClose={() => setAbierto(false)}
           onDone={refresh}
         />
       ) : null}

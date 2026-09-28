@@ -22,8 +22,9 @@ import {
   TEAM_STAFF_ROLES,
   type TeamStaffRole,
   createSupabaseServerClient,
-  formatPlayerName,
   getCurrentUser,
+  getMemberPlayerLinksFromClient,
+  type LinkedPlayerRelation,
   teamsInActiveSeason,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
@@ -675,7 +676,8 @@ export type LinkedPlayerRow = {
   link_id: string;
   player_id: string;
   full_name: string;
-  relation: string;
+  /** Los tres del CHECK de la columna, no `string`: core los acota (W-5). */
+  relation: LinkedPlayerRelation;
 };
 
 export type PlayerLinkOption = { id: string; full_name: string };
@@ -690,13 +692,16 @@ export type MemberPlayerLinks = {
 /**
  * Hijos (o tutelados) de un miembro del club, y a quién más se le puede vincular.
  *
- * Los candidatos excluyen a los ya vinculados A ESTA PERSONA — un segundo enlace
- * al mismo jugador chocaría con `UNIQUE (player_id, profile_id)` —, a los
- * suprimidos por RGPD (`erased_at`) y a las bajas del club (`left_club_at`):
- * vincular a un tutor con alguien que ya se fue no es un alta, es un enredo.
+ * W-5 — la regla (excluir a los ya vinculados, a los suprimidos por RGPD y a las
+ * bajas del club, y ordenar en español) vive ahora en core
+ * `getMemberPlayerLinksFromClient`, porque la ficha nativa pide lo mismo. Aquí solo
+ * queda traducir a la forma snake_case que ya usan esta página y su diálogo.
  *
- * Que el mismo jugador tenga VARIOS tutores sí es normal, así que no se descarta
- * a los que ya tienen otra cuenta vinculada.
+ * Lo que devuelve depende de quién pregunta, y lo decide la RLS
+ * `player_accounts_select_self_or_staff`: un COORDINADOR solo ve los vínculos de los
+ * jugadores de los equipos que coordina, así que en esta página —que él alcanza,
+ * MANAGER_ROLES— la lista `linked` le viene recortada sin avisar. No lo introduce
+ * W-5; queda escrito porque hasta ahora no lo estaba en ningún sitio.
  */
 export async function loadMemberPlayerLinks(
   clubId: string,
@@ -705,54 +710,20 @@ export async function loadMemberPlayerLinks(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  type LinkJoin = {
-    id: string;
-    player_id: string;
-    relation: string;
-    players: {
-      id: string;
-      first_name: string;
-      last_name: string | null;
-      club_id: string;
-    };
+  const { linked, candidates } = await getMemberPlayerLinksFromClient(supabase, {
+    clubId,
+    profileId,
+  });
+
+  return {
+    linked: linked.map((l) => ({
+      link_id: l.linkId,
+      player_id: l.playerId,
+      full_name: l.fullName,
+      relation: l.relation,
+    })),
+    candidates: candidates.map((c) => ({ id: c.playerId, full_name: c.fullName })),
   };
-
-  const { data: rawLinks } = await supabase
-    .from('player_accounts')
-    .select('id, player_id, relation, players!inner(id, first_name, last_name, club_id)')
-    .eq('profile_id', profileId);
-
-  const linked: LinkedPlayerRow[] = (rawLinks ?? [])
-    .map((r) => r as unknown as LinkJoin)
-    .filter((r) => r.players.club_id === clubId)
-    .map((r) => ({
-      link_id: r.id,
-      player_id: r.player_id,
-      full_name: formatPlayerName(r.players.first_name, r.players.last_name),
-      relation: r.relation,
-    }))
-    .sort((a, b) =>
-      a.full_name.localeCompare(b.full_name, 'es', { sensitivity: 'base' })
-    );
-
-  const yaVinculados = new Set(linked.map((l) => l.player_id));
-
-  const { data: rawPlayers } = await supabase
-    .from('players')
-    .select('id, first_name, last_name')
-    .eq('club_id', clubId)
-    .is('erased_at', null)
-    .is('left_club_at', null);
-
-  const candidates: PlayerLinkOption[] = (rawPlayers ?? [])
-    .map((p) => p as unknown as { id: string; first_name: string; last_name: string | null })
-    .filter((p) => !yaVinculados.has(p.id))
-    .map((p) => ({ id: p.id, full_name: formatPlayerName(p.first_name, p.last_name) }))
-    .sort((a, b) =>
-      a.full_name.localeCompare(b.full_name, 'es', { sensitivity: 'base' })
-    );
-
-  return { linked, candidates };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

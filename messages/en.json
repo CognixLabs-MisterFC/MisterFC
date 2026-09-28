@@ -2570,7 +2570,8 @@
           "player": "Player",
           "player_placeholder": "Select player",
           "relation": "Relationship",
-          "relation_placeholder": "Select relationship"
+          "relation_placeholder": "Select relationship",
+          "search_placeholder": "Search by name"
         },
         "save": "Link",
         "cancel": "Cancel",
@@ -2582,7 +2583,11 @@
           "already_linked": "This person is already linked to that player.",
           "forbidden": "You do not have permission to link players.",
           "generic": "The player could not be linked."
-        }
+        },
+        "no_match": "No player matches the search.",
+        "done": "{name} is now linked to this person.",
+        "close": "Close",
+        "offline": "You cannot link while offline. Try again when you are back online."
       }
     },
     "move": {
