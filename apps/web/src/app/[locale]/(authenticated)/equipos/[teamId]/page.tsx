@@ -2,12 +2,14 @@ import { notFound, redirect } from 'next/navigation';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { ArrowLeft, UserRound, Users } from 'lucide-react';
 import {
-  ADMIN_ROLES,
   STAFF_ROLES,
-  TEAM_STAFF_ROLES,
+  canAssignStaffToTeam,
   createSupabaseServerClient,
   formatPlayerName,
+  getCoordinatedTeamIdsFromClient,
   getPlayersWithoutAppFromClient,
+  getStaffCandidatesFromClient,
+  staffAssignmentPermission,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { loadShellContext } from '@/lib/auth-shell';
@@ -27,8 +29,6 @@ import { NoAppBadge } from '@/components/no-app-badge';
 type Props = {
   params: Promise<{ locale: string; teamId: string }>;
 };
-
-const ROLES_THAT_CAN_MANAGE_STAFF = ADMIN_ROLES;
 
 function ageFromDob(dob: string): number {
   const d = new Date(dob);
@@ -71,8 +71,22 @@ export default async function TeamDetailPage({ params }: Props) {
   const tStaff = await getTranslations('staff');
   const tCat = await getTranslations('jugadores');
 
-  const canManageStaff = ROLES_THAT_CAN_MANAGE_STAFF.includes(
-    ctx.activeClub.role
+  // W-3 — quién puede añadir staff A ESTE EQUIPO.
+  //
+  // Antes era `ADMIN_ROLES.includes(role)` a secas, sin mirar el equipo. Para un
+  // coordinador eso era un botón que llevaba a un 42501: la RLS
+  // `team_staff_insert_admin` solo le deja insertar donde `user_coordinates_team`,
+  // o sea en los equipos que COORDINA, y esta página se lo ofrecía en todos. Es la
+  // tercera superficie con el mismo fallo (las otras dos, en W-2b).
+  const permisoAsignar = staffAssignmentPermission(ctx.activeClub.role);
+  const coordinatedTeamIds = await getCoordinatedTeamIdsFromClient(supabase, {
+    membershipId: ctx.activeClub.membershipId,
+    role: ctx.activeClub.role,
+  });
+  const canManageStaff = canAssignStaffToTeam(
+    ctx.activeClub.role,
+    teamId,
+    coordinatedTeamIds
   );
 
   // Cuerpo técnico activo
@@ -87,41 +101,25 @@ export default async function TeamDetailPage({ params }: Props) {
 
   // BUG 3 · A-2 — candidatos a los que AÑADIR: los miembros del club que no son
   // jugadores. Antes, meter a alguien en un equipo pasaba siempre por invitarle
-  // por correo, aunque ya estuviera dentro. No se excluye a quien ya es staff de
-  // este equipo: el sistema admite dos funciones en el mismo equipo, y si se
-  // repite la misma el action devuelve `role_exists`.
-  let staffCandidates: StaffCandidate[] = [];
-  if (canManageStaff) {
-    type MemberRow = {
-      id: string;
-      role: string;
-      profiles: { full_name: string | null };
-    };
-    const { data: memberRows } = await supabase
-      .from('memberships')
-      .select('id, role, profiles!inner(full_name)')
-      .eq('club_id', category.club_id)
-      .is('left_at', null);
-
-    staffCandidates = (memberRows ?? [])
-      .map((r) => r as unknown as MemberRow)
-      .filter((r) => (STAFF_ROLES as readonly string[]).includes(r.role))
-      .map((r) => ({
-        membership_id: r.id,
-        full_name: r.profiles.full_name ?? '—',
-        club_role: r.role,
+  // por correo, aunque ya estuviera dentro.
+  //
+  // W-3 — la consulta estaba aquí a mano y ahora es `getStaffCandidatesFromClient`
+  // (core), la misma que usa la app. Sigue SIN excluir a quien ya es staff de este
+  // equipo, a propósito: el sistema admite dos funciones en el mismo equipo, y si
+  // se repite la misma la escritura responde `role_exists` — un mensaje mucho más
+  // claro que una ausencia en un desplegable. El mapeo a snake_case es para el
+  // componente cliente, que espera esa forma.
+  const staffCandidates: StaffCandidate[] = canManageStaff
+    ? (await getStaffCandidatesFromClient(supabase, category.club_id)).map((c) => ({
+        membership_id: c.membershipId,
+        full_name: c.fullName,
+        club_role: c.clubRole,
       }))
-      .sort((a, b) =>
-        a.full_name.localeCompare(b.full_name, 'es', { sensitivity: 'base' })
-      );
-  }
+    : [];
 
-  // Funciones ofrecidas al añadir. El coordinador no nombra coordinadores: se lo
-  // impide la RLS `team_staff_insert_admin`, así que tampoco se le ofrece.
-  const assignableRoles =
-    ctx.activeClub.role === 'coordinador'
-      ? TEAM_STAFF_ROLES.filter((r) => r !== 'coordinador')
-      : TEAM_STAFF_ROLES;
+  // Funciones ofrecidas al añadir: las de la política (core). El coordinador no
+  // nombra coordinadores porque la RLS no se lo permite.
+  const assignableRoles = permisoAsignar.roles;
 
   // Jugadores activos en el equipo (team_members con left_at null)
   const { data: rosterRows } = await supabase
