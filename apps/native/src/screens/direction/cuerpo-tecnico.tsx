@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   getClubStaffFromClient,
   clubScopedCacheKey,
+  staffAssignmentPermission,
   type ClubStaffRow,
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
@@ -14,13 +15,18 @@ import { DirectoryFilters, foldForSearch, type FilterTeam } from '@/ui/directory
 import { KeyboardScrollView } from '@/ui/keyboard';
 import { useTranslations } from '@/locale/provider';
 import { BRAND } from '@/theme';
+import { AddRoleModal } from '@/screens/direction/add-role-modal';
 
 /**
  * O2-11a-2 — CUERPO TÉCNICO de DIRECCIÓN (lista CLUB-WIDE, SOLO LECTURA). Enumera
  * todo el cuerpo técnico del club vía `getClubStaffFromClient` (lectura NUEVA de
  * core, club-wide — no el motor de gestión de la web). Al tocar uno se abre su ficha
- * en lectura (`/direction/coach?membershipId`). NADA de mover staff (es web).
- * Candado = AreaGuard('direction'); caché club-scoped.
+ * (`/direction/coach?membershipId`). Candado = AreaGuard('direction'); caché
+ * club-scoped.
+ *
+ * W-2 — cada fila deja AGREGAR ROL, como la fila de la web. MOVER y QUITAR siguen
+ * siendo web: lo que baja aquí es solo añadir una función sin cerrar las otras. El
+ * botón lo decide `staffAssignmentPermission` (core); el permiso real, la RLS.
  *
  * D5 — con un cuerpo técnico grande la lista es inmanejable: BÚSQUEDA por nombre y
  * FILTRO por UN equipo (o "todos"). Filtrado en CLIENTE (la lista ya se trae entera).
@@ -61,8 +67,12 @@ export function DireccionCuerpoTecnicoScreen() {
 
   const [search, setSearch] = useState('');
   const [teamId, setTeamId] = useState<string | null>(null);
+  // Persona a la que se le va a agregar rol (null = modal cerrado).
+  const [addFor, setAddFor] = useState<{ membershipId: string; name: string } | null>(null);
 
-  const { data, fromCache, loading } = useCached<ClubStaffRow[]>(
+  const puedeAsignar = staffAssignmentPermission(activeClub?.role).canAssign;
+
+  const { data, fromCache, loading, refresh } = useCached<ClubStaffRow[]>(
     clubScopedCacheKey('dir-cuerpo', clubId ?? 'none'),
     (sb) => (clubId ? getClubStaffFromClient(sb, clubId) : Promise.resolve([])),
   );
@@ -124,6 +134,19 @@ export function DireccionCuerpoTecnicoScreen() {
                   {c.fullName}
                 </Text>
                 <RoleChip label={t(`club_role.${c.clubRole}`)} />
+                {/* Pressable DENTRO de la tarjeta: al tocarlo abre el modal y no
+                    navega a la ficha (el hijo se queda el gesto). */}
+                {puedeAsignar ? (
+                  <Pressable
+                    onPress={() => setAddFor({ membershipId: c.membershipId, name: c.fullName })}
+                    hitSlop={8}
+                    className="rounded-full bg-[#0F1B2E] px-2.5 py-1 active:opacity-80"
+                  >
+                    <Text className="text-xs font-medium text-white">
+                      {t('cuerpo_tecnico.add_role.action')}
+                    </Text>
+                  </Pressable>
+                ) : null}
               </View>
               <Text className="mt-0.5 text-xs text-zinc-400" numberOfLines={1}>
                 {c.assignments.map((a) => a.teamName).join(' · ') || t('dir_cuerpo.no_team')}
@@ -132,6 +155,16 @@ export function DireccionCuerpoTecnicoScreen() {
           ))
         )}
       </KeyboardScrollView>
+
+      {addFor ? (
+        <AddRoleModal
+          visible
+          membershipId={addFor.membershipId}
+          personName={addFor.name}
+          onClose={() => setAddFor(null)}
+          onDone={refresh}
+        />
+      ) : null}
     </View>
   );
 }

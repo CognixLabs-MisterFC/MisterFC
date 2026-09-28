@@ -2535,6 +2535,11 @@
       },
       "save": "Agregar",
       "cancel": "Cancelar",
+      "saving": "Agregando…",
+      "close": "Cerrar",
+      "done": "{name} ya tiene esa función en el equipo.",
+      "no_teams": "No hay equipos a los que puedas asignar en este momento.",
+      "offline": "Sin conexión no se puede agregar. Inténtalo cuando vuelvas a tener red.",
       "errors": {
         "team_invalid": "Equipo no válido.",
         "staff_role_invalid": "Función no válida.",

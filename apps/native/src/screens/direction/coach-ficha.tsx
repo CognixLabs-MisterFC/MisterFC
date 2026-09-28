@@ -1,8 +1,10 @@
-import { ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
   getClubStaffFromClient,
   clubScopedCacheKey,
+  staffAssignmentPermission,
   type ClubStaffRow,
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
@@ -10,20 +12,29 @@ import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { RoleChip } from '@/screens/staff/hub-parts';
 import { useTranslations } from '@/locale/provider';
+import { AddRoleModal } from '@/screens/direction/add-role-modal';
 
 /**
- * O2-11a-2 — FICHA de un miembro del cuerpo técnico (DIRECCIÓN, SOLO LECTURA).
- * Reutiliza la lectura club-wide `getClubStaffFromClient` (misma caché club-scoped
- * que la lista) y selecciona la membresía del parámetro. Muestra rol de club y sus
- * asignaciones (equipo·rol de staff). NADA de gestión (mover staff es web).
+ * O2-11a-2 — FICHA de un miembro del cuerpo técnico (DIRECCIÓN). Reutiliza la
+ * lectura club-wide `getClubStaffFromClient` (misma caché club-scoped que la lista) y
+ * selecciona la membresía del parámetro. Muestra rol de club y sus asignaciones
+ * (equipo·rol de staff).
+ *
+ * W-2 — y deja AGREGAR ROL, como la ficha de la web. Era la única escritura de esta
+ * pantalla; mover y quitar siguen siendo web. Quién ve el botón lo dice
+ * `staffAssignmentPermission` (core), no un `role === …` escrito aquí; quién puede de
+ * verdad, la RLS del INSERT.
  */
 export function DireccionCoachFichaScreen() {
   const t = useTranslations('');
   const { activeClub } = useApp();
   const { membershipId, name } = useLocalSearchParams<{ membershipId?: string; name?: string }>();
   const clubId = activeClub?.club.id ?? null;
+  const puedeAsignar = staffAssignmentPermission(activeClub?.role).canAssign;
 
-  const { data, fromCache, loading } = useCached<ClubStaffRow[]>(
+  const [addOpen, setAddOpen] = useState(false);
+
+  const { data, fromCache, loading, refresh } = useCached<ClubStaffRow[]>(
     clubScopedCacheKey('dir-cuerpo', clubId ?? 'none'),
     (sb) => (clubId ? getClubStaffFromClient(sb, clubId) : Promise.resolve([])),
   );
@@ -38,8 +49,18 @@ export function DireccionCoachFichaScreen() {
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}>
         <View>
           <ScreenTitle>{coach.fullName || name || ''}</ScreenTitle>
-          <View className="mt-1 flex-row">
+          <View className="mt-1 flex-row items-center gap-2">
             <RoleChip label={t(`club_role.${coach.clubRole}`)} />
+            {puedeAsignar ? (
+              <Pressable
+                onPress={() => setAddOpen(true)}
+                className="rounded-full bg-[#0F1B2E] px-3 py-1.5 active:opacity-80"
+              >
+                <Text className="text-xs font-medium text-white">
+                  {t('cuerpo_tecnico.add_role.action')}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         </View>
 
@@ -65,6 +86,16 @@ export function DireccionCoachFichaScreen() {
           )}
         </View>
       </ScrollView>
+
+      {membershipId ? (
+        <AddRoleModal
+          visible={addOpen}
+          membershipId={membershipId}
+          personName={coach.fullName || name || ''}
+          onClose={() => setAddOpen(false)}
+          onDone={refresh}
+        />
+      ) : null}
     </View>
   );
 }

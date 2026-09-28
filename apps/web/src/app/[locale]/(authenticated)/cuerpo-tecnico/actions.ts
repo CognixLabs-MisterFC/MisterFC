@@ -173,9 +173,29 @@ export async function moveStaffToTeam(
 // addStaffAssignment (Serie C · C-0) — AÑADE un rol/equipo a una membership
 // existente SIN cerrar las demás filas (a diferencia de moveStaffToTeam). Permite
 // multi-rol y multi-equipo, incl. 2 roles en el mismo equipo (habilitado por el
-// UNIQUE (team_id, membership_id, staff_role) de C-0). Guard = RLS
-// team_staff_insert_admin (admin/coord/director); la UI solo lo ofrece a
-// admin/director (coordinador NO asigna en C-0). Cero policy nueva.
+// UNIQUE (team_id, membership_id, staff_role) de C-0). Cero policy nueva.
+//
+// QUIÉN PUEDE, corregido en W-2. Este comentario decía «la UI solo lo ofrece a
+// admin/director (coordinador NO asigna en C-0)», y llevaba tiempo siendo FALSO:
+// C-2c le dio la acción al coordinador con la lista de funciones recortada, y
+// ADMIN_ROLES —de donde sale el `canManage` de queries.ts— incluye coordinador.
+// Se corrige aquí porque un comentario así no se deja para después: al portar
+// esta pantalla a la app se estuvo a punto de construir el candado equivocado.
+//
+// Lo que dice la RLS `team_staff_insert_admin` (única que decide):
+//   · admin_club/director → cualquier equipo de su club, cualquier staff_role.
+//   · coordinador → SOLO donde `user_coordinates_team` (es decir, donde su propio
+//     staff_role es 'coordinador'), y solo con entrenador_principal,
+//     entrenador_ayudante, preparador_fisico o delegado.
+//
+// ⚠️ Y una DISCREPANCIA medida en W-2, que sigue viva en esta pantalla: la UI le
+// ofrece al coordinador `visibleTeams`, que salen de `resolveStaffScope` y son los
+// equipos donde es team_staff con CUALQUIER función (C-2a) — más anchos que lo que
+// la RLS acepta. A un coordinador que además sea ayudante en otro equipo se le
+// ofrece ese equipo y el INSERT le responde 42501 → 'forbidden'. La app NO lo
+// reproduce: ofrece lo que la RLS acepta, vía `staffAssignmentPermission` y
+// `getAssignmentTargetTeamsFromClient` (core). Arreglarlo aquí es un cambio de
+// comportamiento de la web y va aparte.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const addAssignmentSchema = z.object({

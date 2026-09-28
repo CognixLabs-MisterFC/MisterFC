@@ -2535,6 +2535,11 @@
       },
       "save": "Afegir",
       "cancel": "Cancel·lar",
+      "saving": "Agregant…",
+      "close": "Tancar",
+      "done": "{name} ja té eixa funció en l'equip.",
+      "no_teams": "Ara mateix no hi ha equips als quals pugues assignar.",
+      "offline": "Sense connexió no es pot agregar. Intenta-ho quan tornes a tindre xarxa.",
       "errors": {
         "team_invalid": "Equip no vàlid.",
         "staff_role_invalid": "Funció no vàlida.",
