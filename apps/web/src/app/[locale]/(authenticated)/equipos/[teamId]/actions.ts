@@ -2,9 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { TEAM_STAFF_ROLES, createSupabaseServerClient } from '@misterfc/core';
+import {
+  TEAM_STAFF_ROLES,
+  assignStaffToTeam,
+  createSupabaseServerClient,
+} from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { assignStaffToTeam } from '@/lib/team-staff';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Añadir al cuerpo técnico a alguien que YA ESTÁ en el club (BUG 3 · A-2)
@@ -12,7 +15,7 @@ import { assignStaffToTeam } from '@/lib/team-staff';
 // La contraparte de invitar. Si la persona ya es miembro no hay nada que
 // invitar: se elige de entre los que están y se le da una función en el equipo.
 // La escritura la comparte con `addStaffAssignment` de Cuerpo técnico (allí se
-// elige el equipo; aquí, la persona) — ver @/lib/team-staff.
+// elige el equipo; aquí, la persona) — ver `assignStaffToTeam` en core.
 //
 // NO toca el rol de club: eso es lo que distingue añadir de invitar.
 // ─────────────────────────────────────────────────────────────────────────────
