@@ -1718,6 +1718,10 @@
       "save": "Add",
       "cancel": "Cancel",
       "empty": "There is nobody in the club to add. Invite the coaching staff first.",
+      "saving": "Adding…",
+      "close": "Close",
+      "done": "{name} is now part of this team’s staff.",
+      "offline": "You cannot add staff while offline. Try again when you are back online.",
       "errors": {
         "membership_invalid": "Invalid person.",
         "team_staff_role_invalid": "Invalid role.",

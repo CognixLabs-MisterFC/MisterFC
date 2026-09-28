@@ -1718,6 +1718,10 @@
       "save": "Afegir",
       "cancel": "Cancel·lar",
       "empty": "No hi ha ningú al club a qui afegir. Convida primer el cos tècnic.",
+      "saving": "Afegint…",
+      "close": "Tancar",
+      "done": "{name} ja forma part del cos tècnic d’aquest equip.",
+      "offline": "Sense connexió no es pot afegir. Intenta-ho quan tornes a tindre xarxa.",
       "errors": {
         "membership_invalid": "Persona no vàlida.",
         "team_staff_role_invalid": "Funció no vàlida.",

@@ -1718,6 +1718,10 @@
       "save": "Añadir",
       "cancel": "Cancelar",
       "empty": "No hay nadie en el club a quien añadir. Invita primero al cuerpo técnico.",
+      "saving": "Añadiendo…",
+      "close": "Cerrar",
+      "done": "{name} ya forma parte del cuerpo técnico de este equipo.",
+      "offline": "Sin conexión no se puede añadir. Inténtalo cuando vuelvas a tener red.",
       "errors": {
         "membership_invalid": "Persona no válida.",
         "team_staff_role_invalid": "Función no válida.",

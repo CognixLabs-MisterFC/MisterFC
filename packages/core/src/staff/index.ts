@@ -24,3 +24,15 @@ export { staffAssignmentPermission } from './assignment-policy';
 export type { AssignmentTeamSource, StaffAssignmentPermission } from './assignment-policy';
 export { getAssignmentTargetTeamsFromClient } from './assignment-targets';
 export { assignmentTargetTeamIds } from './assignment-targets';
+
+/**
+ * W-3 — añadir staff a un equipo (la persona se elige, el equipo viene fijo). Mismo
+ * `assignStaffToTeam` de W-1 y el MISMO endpoint que W-2; lo nuevo es a quién se
+ * ofrece y si sale el botón.
+ */
+export { canAssignStaffToTeam } from './assignment-targets';
+export {
+  getStaffCandidatesFromClient,
+  getCoordinatedTeamIdsFromClient,
+} from './candidates';
+export type { StaffCandidate } from './candidates';

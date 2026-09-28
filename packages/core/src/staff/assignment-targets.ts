@@ -45,6 +45,25 @@ export function assignmentTargetTeamIds(
   return visibleTeamIds.filter((id) => coordina.has(id));
 }
 
+/**
+ * W-3 — ¿se le puede ofrecer a esta persona añadir staff a ESTE equipo?
+ *
+ * La otra cara de `assignmentTargetTeamIds`: allí el equipo se elige de una lista;
+ * aquí viene fijo (la ficha de un equipo) y lo que se decide es si sale el botón.
+ * Se implementa CON la misma función a propósito, para que no puedan discrepar.
+ *
+ * Esto arregla, en W-3, la tercera superficie con el mismo fallo: la página del
+ * equipo enseñaba «Añadir staff» a cualquier ADMIN_ROLES sin mirar si el
+ * coordinador coordina este equipo, y el INSERT respondía 42501.
+ */
+export function canAssignStaffToTeam(
+  role: Role | null | undefined,
+  teamId: string,
+  coordinatedTeamIds: readonly string[] | null,
+): boolean {
+  return assignmentTargetTeamIds(role, [teamId], coordinatedTeamIds).length > 0;
+}
+
 export async function getAssignmentTargetTeamsFromClient(
   supabase: DbClient,
   params: {
