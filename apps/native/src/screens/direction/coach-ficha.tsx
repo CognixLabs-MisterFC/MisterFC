@@ -83,8 +83,10 @@ export function DireccionCoachFichaScreen() {
 
   // W-4 — editar identidad NO es el mismo permiso que asignar: el coordinador
   // entra en aquél y no en éste. Y lleva dentro la regla «no sobre uno mismo», que
-  // los RPC no imponen: este es el único sitio donde vive. Se calcula AQUÍ y no
-  // arriba porque necesita el perfil del coach, que sale de la lista ya cargada.
+  // en W-4 no imponía nadie abajo y desde W-7 (mig 20261111000000) sí: los dos RPC
+  // la comprueban. Esto sigue aquí para no ofrecer lo que el servidor rechazaría.
+  // Se calcula AQUÍ y no arriba porque necesita el perfil del coach, que sale de la
+  // lista ya cargada.
   const puedeEditar = canEditStaffIdentityOf(activeClub?.role, user?.id, coach.profileId);
 
   return (

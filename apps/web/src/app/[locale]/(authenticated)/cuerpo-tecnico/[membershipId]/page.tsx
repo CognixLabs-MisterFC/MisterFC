@@ -105,9 +105,16 @@ export default async function CoachDetailPage({ params }: Props) {
   // porque «la identidad es más sensible». Si algún día una de las dos cambia,
   // tienen que poder cambiar por separado.
   const canEditIdentity = canEditStaffIdentity(role);
-  // Y sobre ESTA persona: la regla «no sobre uno mismo» NO la imponen los RPC
-  // (se comprobó en W-4), así que este es el único sitio donde vive. Estaba
-  // escrita a mano en los dos diálogos.
+  // Y sobre ESTA persona: la regla «no sobre uno mismo». Estaba escrita a mano en
+  // los dos diálogos, y cuando se midió en W-4 los RPC no la imponían: este era el
+  // único sitio donde vivía.
+  //
+  // W-7 (mig 20261111000000) YA NO: los dos RPC la comprueban. Esto sigue aquí por
+  // el motivo de siempre —no ofrecer un botón que el servidor va a rechazar—, no
+  // porque sea el único candado. Y ojo con la asimetría, que está razonada en la
+  // migración: abajo el candado protege el CONTACTO de verdad (vive en
+  // `memberships`, que no tiene autoedición), mientras que el NOMBRE propio se
+  // puede cambiar igual por `/perfil` vía `profiles_update_self`.
   const canEditThisIdentity = canEditStaffIdentityOf(role, ctx.user.id, coach.profile_id);
   const playerLinks = await loadMemberPlayerLinks(
     ctx.activeClub.club.id,
