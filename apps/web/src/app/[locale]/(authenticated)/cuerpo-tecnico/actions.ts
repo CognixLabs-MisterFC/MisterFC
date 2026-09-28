@@ -5,13 +5,13 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import {
   ACTIVE_CLUB_COOKIE_NAME,
-  TEAM_STAFF_ROLES,
+  assignStaffToTeam,
   createSupabaseServerClient,
   getCurrentUserClubs,
   resolveActiveClub,
+  TEAM_STAFF_ROLES,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { assignStaffToTeam } from '@/lib/team-staff';
 import { STAFF_CLUB_ROLES } from './roles';
 
 async function activeClubId(): Promise<string | null> {
@@ -216,7 +216,7 @@ export async function addStaffAssignment(
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  // La escritura vive en @/lib/team-staff: la comparte con addStaffToTeam, que
+  // La escritura vive en core (W-1): la comparte con addTeamStaff, que
   // hace lo mismo desde la página del equipo eligiendo persona en vez de equipo.
   const res = await assignStaffToTeam(supabase, {
     membershipId,
