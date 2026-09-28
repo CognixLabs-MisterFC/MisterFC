@@ -13,6 +13,8 @@ import {
   TEAM_STAFF_ROLES,
   assignmentTargetTeamIds,
   staffAssignmentPermission,
+  canEditStaffIdentity,
+  canEditStaffIdentityOf,
 } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
@@ -92,6 +94,16 @@ export default async function CoachDetailPage({ params }: Props) {
   // catálogo entero del club sería ofrecerle sobre todo errores. Cuando haga
   // falta, se le ofrece su subconjunto; hoy no se le ofrece nada.
   const canLinkPlayers = role === 'admin_club' || role === 'director';
+  // W-4 — editar NOMBRE y CONTACTO. Misma lista que `canLinkPlayers` hoy, pero es
+  // otra decisión: esta la imponen los dos RPC (`admin_update_staff_profile` y
+  // `admin_update_staff_contact`), y el coordinador queda fuera a propósito
+  // porque «la identidad es más sensible». Si algún día una de las dos cambia,
+  // tienen que poder cambiar por separado.
+  const canEditIdentity = canEditStaffIdentity(role);
+  // Y sobre ESTA persona: la regla «no sobre uno mismo» NO la imponen los RPC
+  // (se comprobó en W-4), así que este es el único sitio donde vive. Estaba
+  // escrita a mano en los dos diálogos.
+  const canEditThisIdentity = canEditStaffIdentityOf(role, ctx.user.id, coach.profile_id);
   const playerLinks = await loadMemberPlayerLinks(
     ctx.activeClub.club.id,
     coach.profile_id
@@ -178,8 +190,7 @@ export default async function CoachDetailPage({ params }: Props) {
             </h1>
             {/* Bug 2 · 2a: la DIRECCIÓN del club (mig 20261085000000 abrió las dos
                 RPC al director), y no para uno mismo (eso va en /perfil). */}
-            {(role === 'admin_club' || role === 'director') &&
-              coach.profile_id !== ctx.user.id && (
+            {canEditThisIdentity && (
                 <EditStaffNameDialog
                   targetProfileId={coach.profile_id}
                   currentName={coach.full_name}
@@ -198,7 +209,7 @@ export default async function CoachDetailPage({ params }: Props) {
                 ofrece 'director' ni 'admin_club' como destino). Por eso se OCULTA si el
                 target es admin_club o director. Para coordinador/entrenadores sigue
                 disponible. La guarda del último admin la impone además la función SQL. */}
-            {(role === 'admin_club' || role === 'director') &&
+            {canEditIdentity &&
               coach.club_role !== 'admin_club' &&
               coach.club_role !== 'director' && (
                 <EditStaffRoleDialog
@@ -217,8 +228,7 @@ export default async function CoachDetailPage({ params }: Props) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <CardTitle>{t('contact.title')}</CardTitle>
-          {(role === 'admin_club' || role === 'director') &&
-            coach.profile_id !== ctx.user.id && (
+          {canEditThisIdentity && (
               <EditStaffContactDialog
                 targetProfileId={coach.profile_id}
                 currentPhone={coach.phone}

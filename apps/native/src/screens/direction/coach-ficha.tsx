@@ -3,16 +3,22 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import {
   getClubStaffFromClient,
+  getStaffContactFromClient,
   clubScopedCacheKey,
+  canEditStaffIdentityOf,
   staffAssignmentPermission,
   type ClubStaffRow,
+  type StaffContact,
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
+import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
 import { OfflineBanner, LoadingScreen, EmptyState, ScreenTitle } from '@/ui/feedback';
 import { RoleChip } from '@/screens/staff/hub-parts';
 import { useTranslations } from '@/locale/provider';
 import { AddRoleModal } from '@/screens/direction/add-role-modal';
+import { EditIdentityModal } from '@/screens/direction/edit-identity-modal';
+import { reportDataError } from '@/lib/report-error';
 
 /**
  * O2-11a-2 — FICHA de un miembro del cuerpo técnico (DIRECCIÓN). Reutiliza la
@@ -28,20 +34,42 @@ import { AddRoleModal } from '@/screens/direction/add-role-modal';
 export function DireccionCoachFichaScreen() {
   const t = useTranslations('');
   const { activeClub } = useApp();
+  const { user } = useSession();
   const { membershipId, name } = useLocalSearchParams<{ membershipId?: string; name?: string }>();
   const clubId = activeClub?.club.id ?? null;
   const puedeAsignar = staffAssignmentPermission(activeClub?.role).canAssign;
 
   const [addOpen, setAddOpen] = useState(false);
+  const [editando, setEditando] = useState<'name' | 'contact' | null>(null);
 
   const { data, fromCache, loading, refresh } = useCached<ClubStaffRow[]>(
     clubScopedCacheKey('dir-cuerpo', clubId ?? 'none'),
     (sb) => (clubId ? getClubStaffFromClient(sb, clubId) : Promise.resolve([])),
   );
 
+  // W-4 — el contacto se pide APARTE y no se mete en `getClubStaffFromClient`: esa
+  // lectura es club-wide y su caché es club-scoped, así que añadirle teléfono y
+  // correo dejaría el contacto de TODO el cuerpo técnico guardado en el dispositivo
+  // por haber abierto una lista. Aquí solo se lee al abrir una ficha.
+  const { data: contacto, refresh: refrescarContacto } = useCached<StaffContact | null>(
+    clubScopedCacheKey('dir-contacto', membershipId ?? 'none'),
+    (sb) =>
+      membershipId
+        ? getStaffContactFromClient(sb, membershipId, (e) =>
+            reportDataError('staff-contact', e),
+          )
+        : Promise.resolve(null),
+  );
+
   if (loading) return <LoadingScreen />;
   const coach = (data ?? []).find((c) => c.membershipId === membershipId) ?? null;
   if (!coach) return <EmptyState message={t('dir_cuerpo.not_found')} />;
+
+  // W-4 — editar identidad NO es el mismo permiso que asignar: el coordinador
+  // entra en aquél y no en éste. Y lleva dentro la regla «no sobre uno mismo», que
+  // los RPC no imponen: este es el único sitio donde vive. Se calcula AQUÍ y no
+  // arriba porque necesita el perfil del coach, que sale de la lista ya cargada.
+  const puedeEditar = canEditStaffIdentityOf(activeClub?.role, user?.id, coach.profileId);
 
   return (
     <View className="flex-1 bg-white">
@@ -61,8 +89,45 @@ export function DireccionCoachFichaScreen() {
                 </Text>
               </Pressable>
             ) : null}
+            {puedeEditar ? (
+              <Pressable
+                onPress={() => setEditando('name')}
+                className="rounded-full border border-zinc-200 px-3 py-1.5 active:opacity-70"
+              >
+                <Text className="text-xs font-medium text-zinc-600">
+                  {t('cuerpo_tecnico.edit_name.action')}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         </View>
+
+        {/* W-4 — CONTACTO gestionado por el club. Solo se pinta a quien puede
+            editarlo: no es un dato público ni el email de acceso, y esta ficha es de
+            dirección. Se lee aparte de la lista (ver arriba). */}
+        {puedeEditar ? (
+          <View className="rounded-2xl border border-zinc-200 p-4">
+            <View className="mb-2 flex-row items-center justify-between gap-2">
+              <Text className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                {t('cuerpo_tecnico.contact.title')}
+              </Text>
+              <Pressable
+                onPress={() => setEditando('contact')}
+                className="rounded-full border border-zinc-200 px-3 py-1 active:opacity-70"
+              >
+                <Text className="text-xs font-medium text-zinc-600">
+                  {t('cuerpo_tecnico.edit_contact.action')}
+                </Text>
+              </Pressable>
+            </View>
+            <Text className="text-sm text-[#0F1B2E]">
+              {contacto?.phone || t('cuerpo_tecnico.contact.empty')}
+            </Text>
+            <Text className="mt-0.5 text-sm text-[#0F1B2E]">
+              {contacto?.contactEmail || t('cuerpo_tecnico.contact.empty')}
+            </Text>
+          </View>
+        ) : null}
 
         <View className="rounded-2xl border border-zinc-200 p-4">
           <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400">
@@ -86,6 +151,21 @@ export function DireccionCoachFichaScreen() {
           )}
         </View>
       </ScrollView>
+
+      {editando ? (
+        <EditIdentityModal
+          visible
+          modo={editando}
+          targetProfileId={coach.profileId}
+          nombreActual={coach.fullName}
+          contactoActual={contacto ?? null}
+          onClose={() => setEditando(null)}
+          onDone={() => {
+            refresh();
+            refrescarContacto();
+          }}
+        />
+      ) : null}
 
       {membershipId ? (
         <AddRoleModal

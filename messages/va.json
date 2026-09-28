@@ -2617,6 +2617,10 @@
       },
       "save": "Guardar",
       "cancel": "Cancel·lar",
+      "saving": "Guardant…",
+      "close": "Tancar",
+      "done": "Nom actualitzat.",
+      "offline": "Sense connexió no es pot guardar. Intenta-ho quan tornes a tindre xarxa.",
       "errors": {
         "name_required": "El nom no pot estar buit.",
         "name_too_long": "El nom és massa llarg (màx. 120).",
@@ -2643,6 +2647,10 @@
       },
       "save": "Guardar",
       "cancel": "Cancel·lar",
+      "saving": "Guardant…",
+      "close": "Tancar",
+      "done": "Contacte actualitzat.",
+      "offline": "Sense connexió no es pot guardar. Intenta-ho quan tornes a tindre xarxa.",
       "errors": {
         "phone_invalid": "El telèfon no és vàlid (entre 3 i 32 caràcters).",
         "contact_email_invalid": "L'email de contacte no és vàlid.",
