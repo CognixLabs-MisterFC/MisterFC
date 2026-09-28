@@ -63,6 +63,8 @@ const SCREENS = {
   // Vincular un jugador: el campo es el BUSCADOR de la lista de candidatos, que es
   // el club entero.
   'apps/native/src/screens/direction/add-player-link-modal.tsx': { use: 'modal' },
+  // Nueva invitacion al club: el campo es el CORREO del invitado.
+  'apps/native/src/screens/direction/invite-staff-modal.tsx': { use: 'modal' },
   'apps/native/src/screens/family/seguidores.tsx': { use: 'modal' },
   'apps/native/src/screens/staff/publish-callup-sheet.tsx': { use: 'modal' },
   'apps/native/src/ui/delete-account-card.tsx': { use: 'modal' },

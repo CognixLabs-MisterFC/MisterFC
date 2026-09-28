@@ -458,7 +458,11 @@
         "title": "That person is already in the club",
         "body": "{name} is already in the club as {role}, so we have not sent any invitation. Inviting someone who is already in does not change their role: that is done from their profile.",
         "ficha": "See their profile in Coaching staff"
-      }
+      },
+      "action": "Invite",
+      "offline": "You cannot invite while offline. Try again when you are back online.",
+      "cancel": "Cancel",
+      "close": "Close"
     },
     "cancel": {
       "action": "Cancel invitation",

@@ -13,8 +13,8 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   invitee cae en la trampa (lo tapa el cinturón #539, pero se pierde el enlazado).
  *   NO basta con enviar el email.
  *
- *   Censo de senders (2026-09-19) — quien añada el 9º, que se sume aquí:
- *     1 sendInvitation (invitations/actions.ts)      ✅ enlaza
+ *   Censo de senders (2026-09-29) — quien añada el 9º, que se sume aquí:
+ *     1 performStaffInvite (core/invitations)       ✅ enlaza (puerto inyectado)
  *     2 sendOrRenewTutorInvitation (invite-tutor.ts) ✅ enlaza
  *     3 inviteClubAdmin (platform/invite-club-admin) ✅ enlaza
  *     4 changeClubAdmin (platform/change-club-admin) ✅ enlaza
@@ -26,6 +26,10 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *   senders. El número NO se reutiliza — el siguiente es el 9 — para que los
  *   comentarios viejos que citan "el 6" sigan diciendo la verdad.
  *   El barrido de #540 buscó el `.update`, no el envío, y se le escaparon 5/6/7.
+ *   W-6 bajó el 1 a core (`staff-invite.ts`): lo piden la web y el route handler de
+ *   la app nativa, que no puede llevar la service-role. Con eso ya son TRES los que
+ *   enlazan por puerto inyectado — 1, 7 y 8 — y el envoltorio web de cada uno es el
+ *   único sitio donde se nombra a esta función.
  *
  *   OJO al buscar: el literal es `createUser(`, NO `inviteUserByEmail(`. La serie
  *   Correo-B (B1…B6, cerrada el 2026-09-21) pasó los 7 senders de GoTrue a Resend:
@@ -76,7 +80,7 @@ type AdminClient = ReturnType<typeof createSupabaseAdminClient>;
  *
  *   QUEDA DUPLICADO, a propósito: el guard de `user.id` ausente y el try/catch
  *   de cada sender. Se parecen, pero no son lo mismo — cada uno decide distinto
- *   después: `inviteBatch` marca la fila del lote y sigue, `sendInvitation`
+ *   después: `inviteBatch` marca la fila del lote y sigue, `performStaffInvite`
  *   devuelve error al admin, los de plataforma abortan. Lo repetido es la forma,
  *   no la decisión.
  *

@@ -11,6 +11,7 @@ import { useCached } from '@/data/use-cached';
 import { OfflineBanner, EmptyState, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
 import { formatDayMonthYear } from '@/lib/format-date';
+import { InviteStaffAction } from '@/screens/direction/invite-staff-modal';
 import { BRAND } from '@/theme';
 
 type Filter = 'all' | DireccionInvitationStatus | 'not_delivered';
@@ -72,7 +73,7 @@ export function DireccionTeamInvitationsScreen({
 
   const [filter, setFilter] = useState<Filter>('all');
 
-  const { data, fromCache, loading } = useCached<DireccionTeamInvitation[]>(
+  const { data, fromCache, loading, refresh } = useCached<DireccionTeamInvitation[]>(
     teamScopedCacheKey('dir-pend-invite-team', clubId ?? 'none', teamId ?? 'none'),
     (sb) =>
       clubId ? listTeamInvitationsFromClient(sb, clubId, teamId) : Promise.resolve([]),
@@ -96,7 +97,13 @@ export function DireccionTeamInvitationsScreen({
         contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }}
         ListHeaderComponent={
           <View className="gap-3 pb-1">
-            <ScreenTitle>{teamName ?? t('dir_inicio.no_team')}</ScreenTitle>
+            <View className="flex-row items-center justify-between gap-2">
+              <ScreenTitle>{teamName ?? t('dir_inicio.no_team')}</ScreenTitle>
+              {/* W-6 — invitar, con el equipo de ESTA lista ya puesto. El candado va
+                  dentro de `InviteStaffAction` y se decide antes de pintar el botón:
+                  a un coordinador no se le ofrece, porque la RLS le diría 42501. */}
+              <InviteStaffAction teamId={teamId} onDone={refresh} />
+            </View>
             <View className="flex-row flex-wrap gap-2">
               {FILTERS.map((f) => (
                 <FilterChip

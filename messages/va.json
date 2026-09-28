@@ -458,7 +458,11 @@
         "title": "Eixa persona ja està al club",
         "body": "{name} ja està al club com a {role}, així que no li hem enviat cap invitació. Convidar algú que ja està dins no li canvia el rol: això es fa des de la seua fitxa.",
         "ficha": "Veure la seua fitxa a Cos tècnic"
-      }
+      },
+      "action": "Invitar",
+      "offline": "Sense connexió no es pot invitar. Intenta-ho quan tornes a tindre xarxa.",
+      "cancel": "Cancel·lar",
+      "close": "Tancar"
     },
     "cancel": {
       "action": "Cancel·lar invitació",

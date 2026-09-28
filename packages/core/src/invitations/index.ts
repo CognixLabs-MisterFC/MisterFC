@@ -95,3 +95,28 @@ export {
   type ResendDeliveryEvent,
   type ResendSignatureHeaders,
 } from './delivery-webhook';
+
+/**
+ * W-6 — invitar a alguien que NO está en el club. La única pieza de la serie que sí
+ * necesita endpoint: crear y enlazar la cuenta del invitado exige la service-role, que
+ * no puede vivir en un teléfono. El gate sigue siendo la RLS, porque la FILA se
+ * escribe con el cliente del usuario y el admin entra después. Ver `staff-invite.ts`.
+ */
+export {
+  canInviteToClub,
+  invitableRoles,
+  isHighClubRole,
+  matchPendingByEmail,
+  pendingInvitationsForEmailFromClient,
+  performStaffInvite,
+} from './staff-invite';
+export type {
+  InvitableRole,
+  PendingClubInvitation,
+  SendStaffInvitationEmail,
+  StaffInviteError,
+  StaffInviteErrorLogger,
+  StaffInviteExistingMember,
+  StaffInviteInfoLogger,
+  StaffInviteResult,
+} from './staff-invite';
