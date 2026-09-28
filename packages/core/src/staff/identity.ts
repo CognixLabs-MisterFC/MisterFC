@@ -37,18 +37,27 @@ export function canEditStaffIdentity(role: Role | null | undefined): boolean {
 /**
  * ¿Puede editar el nombre y el contacto DE ESTA PERSONA?
  *
- * Es `canEditStaffIdentity` MÁS una regla que no está en ningún sitio más: **no sobre
- * uno mismo**. La web la escribía a mano en sus dos diálogos, con el motivo al lado
- * («eso va en /perfil»), y al medirlo para W-4 salió lo importante: **los dos RPC NO
- * la imponen**. `admin_update_staff_profile` y `admin_update_staff_contact` dejarían a
- * un admin editarse por esta vía sin queja.
+ * Es `canEditStaffIdentity` MÁS otra regla: **no sobre uno mismo**. La web la
+ * escribía a mano en sus dos diálogos, con el motivo al lado («eso va en /perfil»), y
+ * al medirlo para W-4 salió lo importante: los dos RPC NO la imponían. Por eso subió
+ * aquí en vez de reescribirse en la pantalla nativa, que habría sido la tercera copia
+ * de algo que el servidor no vigilaba.
  *
- * O sea que esto no es un gate de seguridad duplicado: es el ÚNICO sitio donde esa
- * regla existe. Por eso sube aquí en vez de reescribirse en la pantalla nativa, que
- * habría sido la tercera copia de algo que el servidor no vigila.
+ * W-7 (mig 20261111000000) LA BAJÓ A LA BASE: `admin_update_staff_profile` y
+ * `admin_update_staff_contact` comprueban ahora `p_target_profile_id = auth.uid()` y
+ * responden `forbidden`. Así que esto ya no es el único candado — sigue aquí para no
+ * OFRECER lo que el servidor va a rechazar, que es el papel de core en toda la serie.
  *
- * Nota: la vía propia (`/perfil`) no es una limitación, es la correcta — ahí se edita
- * con `profiles_update_self` y sin pasar por un SECURITY DEFINER de administración.
+ * Y ATENCIÓN a la asimetría, que se midió al bajarla y está razonada en la migración:
+ *   · el NOMBRE propio se puede cambiar igual por `/perfil`, porque
+ *     `profiles_update_self` es `using (id = auth.uid())` sin restricción de columnas.
+ *     El candado de abajo no protege ahí: hace que el RPC diga lo que es.
+ *   · el CONTACTO no. `phone`/`contact_email` viven en `memberships`, que no tiene
+ *     policy de autoedición, así que ese RPC era la única vía de poner el propio y
+ *     desde W-7 te lo pone otro admin o director.
+ *
+ * La vía propia (`/perfil`) no es una limitación, es la correcta — ahí se edita con
+ * `profiles_update_self` y sin pasar por un SECURITY DEFINER de administración.
  */
 export function canEditStaffIdentityOf(
   viewerRole: Role | null | undefined,
