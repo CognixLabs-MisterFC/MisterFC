@@ -19,6 +19,32 @@ type DbClient = SupabaseClient<Database>;
  * `team_staff_insert_admin` en el INSERT. Lo que hace esto es no ofrecer opciones que
  * el servidor va a rechazar.
  */
+/**
+ * W-2b — el RECORTE, puro y sin base de datos: de una lista de equipos visibles,
+ * cuáles se pueden ofrecer como destino.
+ *
+ * Existe para que la web y la app no puedan discrepar. La lectura de la app
+ * (`getAssignmentTargetTeamsFromClient`, más abajo) delega aquí, y las dos pantallas
+ * de la web —que ya tienen los datos cargados— llaman a esto mismo. Antes de W-2b
+ * cada superficie decidía por su cuenta y las dos decidían mal.
+ *
+ * `coordinatedTeamIds` es null cuando NO aplica (admin/director). Si llega null
+ * siendo coordinador, se devuelve vacío: no se puede resolver qué coordina, así que
+ * no se le ofrece nada. Falla cerrado.
+ */
+export function assignmentTargetTeamIds(
+  role: Role | null | undefined,
+  visibleTeamIds: readonly string[],
+  coordinatedTeamIds: readonly string[] | null,
+): string[] {
+  const { teamSource } = staffAssignmentPermission(role);
+  if (teamSource === 'none') return [];
+  if (teamSource === 'all_club_teams') return [...visibleTeamIds];
+  if (coordinatedTeamIds === null) return [];
+  const coordina = new Set(coordinatedTeamIds);
+  return visibleTeamIds.filter((id) => coordina.has(id));
+}
+
 export async function getAssignmentTargetTeamsFromClient(
   supabase: DbClient,
   params: {
@@ -56,9 +82,18 @@ export async function getAssignmentTargetTeamsFromClient(
     return [];
   }
 
-  const coordinados = new Set((data ?? []).map((r) => r.team_id));
-  // La intersección se hace contra `todos`, que ya viene filtrado por TEMPORADA
-  // ACTIVA: una fila `team_staff` viva en el equipo del año pasado (mismo nombre,
-  // otro team_id) no debe colarse como destino.
-  return todos.filter((t) => coordinados.has(t.teamId));
+  // El recorte lo decide `assignmentTargetTeamIds`, el MISMO que usan las dos
+  // pantallas de la web (W-2b). Aquí solo se le da lo que ha leído.
+  //
+  // Se le pasan los ids de `todos`, que ya viene filtrado por TEMPORADA ACTIVA: una
+  // fila `team_staff` viva en el equipo del año pasado (mismo nombre, otro team_id)
+  // no debe colarse como destino.
+  const permitidos = new Set(
+    assignmentTargetTeamIds(
+      params.role,
+      todos.map((t) => t.teamId),
+      (data ?? []).map((r) => r.team_id),
+    ),
+  );
+  return todos.filter((t) => permitidos.has(t.teamId));
 }

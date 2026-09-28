@@ -8,7 +8,12 @@ import {
   UserRound,
   Users,
 } from 'lucide-react';
-import { MANAGER_ROLES, TEAM_STAFF_ROLES } from '@misterfc/core';
+import {
+  MANAGER_ROLES,
+  TEAM_STAFF_ROLES,
+  assignmentTargetTeamIds,
+  staffAssignmentPermission,
+} from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { Link } from '@/i18n/navigation';
 import {
@@ -103,6 +108,24 @@ export default async function CoachDetailPage({ params }: Props) {
     role === 'coordinador'
       ? TEAM_STAFF_ROLES.filter((r) => r !== 'coordinador')
       : TEAM_STAFF_ROLES;
+
+  // W-2b — AGREGAR ROL, resuelto en core.
+  //
+  // Aquí el fallo estaba escondido en un nombre: el diálogo recibía
+  // `movableTargets` y el comentario afirmaba «movableTargets ya acotado». El
+  // acotado es `moveTargets` (dos líneas arriba); `movableTargets` es la lista
+  // ANCHA. Dos caracteres de diferencia, y para un coordinador `movableTargets`
+  // sale del mismo `scope` que `visibleTeams`, o sea todos los equipos donde es
+  // staff de CUALQUIER función. La RLS solo acepta los que COORDINA.
+  const permisoAsignar = staffAssignmentPermission(role);
+  const idsAsignables = new Set(
+    assignmentTargetTeamIds(
+      role,
+      movableTargets.map((tm) => tm.id),
+      coordinatedTeamIds,
+    ),
+  );
+  const teamsParaAgregarRol = movableTargets.filter((tm) => idsAsignables.has(tm.id));
 
   const t = await getTranslations('cuerpo_tecnico');
   const tStaff = await getTranslations('staff.role');
@@ -246,24 +269,19 @@ export default async function CoachDetailPage({ params }: Props) {
             <Users className="size-5" aria-hidden />
             {t('detail.teams_title')}
           </CardTitle>
-          {/* Serie C — Agregar rol/equipo. admin/director asignan cualquier rol en
-              cualquier equipo; el coordinador (C-2c) solo en SUS equipos
-              (movableTargets ya acotado) y sin la opción 'coordinador'. */}
-          {(role === 'admin_club' ||
-            role === 'director' ||
-            role === 'coordinador') && (
+          {/* Serie C — Agregar rol/equipo. Quién lo ve, con qué funciones y sobre
+              qué equipos lo decide `staffAssignmentPermission` (core, W-2): antes
+              estaban aquí a mano, y eran la tercera y la cuarta copia de la misma
+              regla. */}
+          {permisoAsignar.canAssign && (
             <AddAssignmentDialog
               membershipId={coach.membership_id}
-              teams={movableTargets.map((tm) => ({
+              teams={teamsParaAgregarRol.map((tm) => ({
                 id: tm.id,
                 name: tm.name,
                 category_name: tm.category_name,
               }))}
-              assignableRoles={
-                role === 'coordinador'
-                  ? TEAM_STAFF_ROLES.filter((r) => r !== 'coordinador')
-                  : TEAM_STAFF_ROLES
-              }
+              assignableRoles={permisoAsignar.roles}
             />
           )}
         </CardHeader>

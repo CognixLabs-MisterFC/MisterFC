@@ -34,14 +34,11 @@ import { TEAM_STAFF_ROLES, type TeamStaffRole } from '../schemas/staff';
  * `user_coordinates_team` es `team_staff.staff_role = 'coordinador'` para ESE equipo.
  * O sea que al coordinador la RLS le deja insertar SOLO en los equipos que COORDINA.
  *
- * ⚠️ DISCREPANCIA MEDIDA EN W-2, y es de la web, no de aquí. La web le ofrece al
- * coordinador `visibleTeams`, que sale de `resolveStaffScope` y son los equipos donde
- * es team_staff con CUALQUIER función (C-2a). Su comentario dice que acotar a los
- * coordinados es «una regla del movimiento, E-final-2, no de la asignación» — y la
- * policy de arriba dice lo contrario: ese recorte también es de la asignación. Efecto:
- * a un coordinador que además sea ayudante en otro equipo, la web le ofrece ese equipo
- * y el INSERT le responde 42501 → `forbidden`. Aquí se ofrece lo que la RLS acepta, y
- * la web queda señalada aparte.
+ * La web decía lo contrario en DOS comentarios —que acotar a los coordinados era
+ * «una regla del movimiento, E-final-2, no de la asignación», y que `movableTargets`
+ * «ya estaba acotado» cuando el acotado era `moveTargets`— y le ofrecía al
+ * coordinador equipos que el INSERT rechazaba con 42501. W-2b lo corrige: sus dos
+ * pantallas piden los destinos a `assignmentTargetTeamIds`, el mismo que usa la app.
  */
 
 /** De dónde tiene que sacar la pantalla los equipos que ofrece como destino. */

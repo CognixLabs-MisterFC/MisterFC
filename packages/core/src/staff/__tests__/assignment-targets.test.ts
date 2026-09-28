@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../supabase/types';
-import { getAssignmentTargetTeamsFromClient } from '../assignment-targets';
+import {
+  assignmentTargetTeamIds,
+  getAssignmentTargetTeamsFromClient,
+} from '../assignment-targets';
 
 /**
  * W-2 — los equipos que se OFRECEN como destino al agregar un rol.
@@ -187,5 +190,63 @@ describe('getAssignmentTargetTeamsFromClient · a qué equipos', () => {
       }),
     ).toEqual([]);
     expect(tablas).toEqual([]);
+  });
+});
+
+/**
+ * W-2b — el recorte puro, que es el que comparten la web y la app.
+ *
+ * Lo que se vigila: que el conjunto ofrecido sea el que la RLS acepta, y que los
+ * casos raros fallen CERRADOS. Antes de W-2b las dos pantallas de la web ofrecían
+ * al coordinador todos los equipos donde era staff de cualquier función, y el
+ * INSERT los rechazaba con 42501.
+ */
+describe('assignmentTargetTeamIds · el recorte puro', () => {
+  const VISIBLES = ['t1', 't2', 't3'];
+
+  it('admin_club y director: los visibles, tal cual', () => {
+    for (const role of ['admin_club', 'director'] as const) {
+      expect(assignmentTargetTeamIds(role, VISIBLES, null)).toEqual(VISIBLES);
+    }
+  });
+
+  it('a admin/director no le afecta traer lista de coordinados', () => {
+    // Un director puede coordinar un equipo además de dirigir; eso NO le recorta.
+    expect(assignmentTargetTeamIds('director', VISIBLES, ['t2'])).toEqual(VISIBLES);
+  });
+
+  it('coordinador: solo la intersección con lo que coordina', () => {
+    expect(assignmentTargetTeamIds('coordinador', VISIBLES, ['t2', 't9'])).toEqual(['t2']);
+  });
+
+  it('coordinador: un equipo que coordina pero no es visible no se cuela', () => {
+    // 't9' está en su lista de coordinados pero no en los visibles (p. ej. otra
+    // temporada). La intersección manda.
+    expect(assignmentTargetTeamIds('coordinador', VISIBLES, ['t9'])).toEqual([]);
+  });
+
+  it('coordinador con la lista de coordinados en null: NADA (falla cerrado)', () => {
+    // null significa "no aplica" para admin/director. Si llega null siendo
+    // coordinador es que no se ha podido resolver, y entonces no se ofrece nada.
+    // Lo contrario —devolver los visibles— es exactamente el fallo de W-2b.
+    expect(assignmentTargetTeamIds('coordinador', VISIBLES, null)).toEqual([]);
+  });
+
+  it('coordinador sin nada coordinado: lista vacía', () => {
+    expect(assignmentTargetTeamIds('coordinador', VISIBLES, [])).toEqual([]);
+  });
+
+  it('quien no agrega roles: vacío, aunque le pasen equipos y coordinados', () => {
+    for (const role of ['entrenador_principal', 'entrenador_ayudante', 'jugador'] as const) {
+      expect(assignmentTargetTeamIds(role, VISIBLES, ['t1'])).toEqual([]);
+    }
+    expect(assignmentTargetTeamIds(null, VISIBLES, ['t1'])).toEqual([]);
+  });
+
+  it('no reordena ni duplica: conserva el orden de los visibles', () => {
+    expect(assignmentTargetTeamIds('coordinador', ['t3', 't1'], ['t1', 't3'])).toEqual([
+      't3',
+      't1',
+    ]);
   });
 });

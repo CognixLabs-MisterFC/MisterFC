@@ -23,3 +23,4 @@ export type { AssignStaffError, AssignStaffResult } from './team-assignment';
 export { staffAssignmentPermission } from './assignment-policy';
 export type { AssignmentTeamSource, StaffAssignmentPermission } from './assignment-policy';
 export { getAssignmentTargetTeamsFromClient } from './assignment-targets';
+export { assignmentTargetTeamIds } from './assignment-targets';
