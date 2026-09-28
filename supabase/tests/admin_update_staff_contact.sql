@@ -15,9 +15,28 @@
 --   G1. coordinador de A → forbidden (dirección sí, coordinación no).
 --   G2. el entrenador (no admin) → forbidden.
 --   G3. admin de A → target de OTRO club → target_invalid.
+--
+-- W-7 (mig 20261111000000) — «no sobre uno mismo». OJO: aquí el candado QUITA una
+-- vía de verdad. `phone`/`contact_email` viven en `memberships`, que no tiene policy
+-- de autoedición, así que este RPC era el único camino para poner el propio contacto;
+-- desde W-7 te lo pone otro admin o director. Está razonado en la migración.
+--   T0. La migración está aplicada.
+--   W1. El admin de A guarda SU PROPIO contacto → forbidden, y su fila NO cambia.
+--   W2. El DIRECTOR de A, igual.
+--   W3. OTRO admin/director SÍ puede ponerle el contacto al primero: el candado es
+--       «no sobre uno mismo», no «el admin no tiene contacto».
 \ir helpers/auth_users.sql
 
 begin;
+
+-- ── T0. ¿Está aplicada la 20261111000000? ───────────────────────────────────
+do $$
+begin
+  if position('p_target_profile_id = v_uid' in
+              pg_get_functiondef('public.admin_update_staff_contact(uuid,uuid,text,text)'::regprocedure)) = 0 then
+    raise exception 'FAIL [T0]: admin_update_staff_contact no lleva el candado de W-7 — la migración 20261111000000 no está aplicada en esta BD';
+  end if;
+end $$;
 
 insert into public.clubs (id, name, slug) values
   ('bc000000-0000-4000-8000-000000000001', 'Club A 2c', 'club-a-2c'),
@@ -191,8 +210,78 @@ begin
   end if;
 end $$;
 
+-- ── W1. el admin de A guarda SU PROPIO contacto ─────────────────────────────
+set local role authenticated;
+set local "request.jwt.claims" = '{"sub":"bc0a0000-aaaa-4000-8000-000000000001","role":"authenticated"}';
+do $$
+declare v_msg text := '';
+begin
+  begin
+    perform public.admin_update_staff_contact(
+      'bc000000-0000-4000-8000-000000000001',   -- club A
+      'bc0a0000-aaaa-4000-8000-000000000001',   -- ÉL MISMO
+      '600111222',
+      'yo@club.es'
+    );
+  exception when others then v_msg := sqlerrm; end;
+  if v_msg <> 'forbidden' then
+    raise exception 'FAIL [W1]: guardarse el propio contacto debe dar forbidden; dio %', coalesce(nullif(v_msg,''),'(ningún error)');
+  end if;
+end $$;
+
+-- ── W2. el DIRECTOR de A, igual ─────────────────────────────────────────────
+set local "request.jwt.claims" = '{"sub":"bc0a0000-dddd-4000-8000-000000000001","role":"authenticated"}';
+do $$
+declare v_msg text := '';
+begin
+  begin
+    perform public.admin_update_staff_contact(
+      'bc000000-0000-4000-8000-000000000001',
+      'bc0a0000-dddd-4000-8000-000000000001',   -- ÉL MISMO
+      '600333444',
+      'dir@club.es'
+    );
+  exception when others then v_msg := sqlerrm; end;
+  if v_msg <> 'forbidden' then
+    raise exception 'FAIL [W2]: el director tampoco puede guardarse el suyo; dio %', coalesce(nullif(v_msg,''),'(ningún error)');
+  end if;
+end $$;
+
+-- ── W3. pero OTRO director SÍ se lo pone al admin ───────────────────────────
+-- Esto es lo que separa «no sobre uno mismo» de «el admin se queda sin contacto», y
+-- es la vía que queda abierta después de W-7. Si esta cayera, el candado habría
+-- cerrado de más.
+do $$
+begin
+  perform public.admin_update_staff_contact(
+    'bc000000-0000-4000-8000-000000000001',
+    'bc0a0000-aaaa-4000-8000-000000000001',   -- el ADMIN, puesto por el DIRECTOR
+    '600555666',
+    'admin-contacto@club.es'
+  );
+end $$;
+
+reset role;
+
+-- W1/W2 (cont.): ninguno se puso el suyo. W3 (cont.): el del director sí llegó.
+do $$
+begin
+  if exists (select 1 from public.memberships
+              where profile_id='bc0a0000-dddd-4000-8000-000000000001'
+                and club_id='bc000000-0000-4000-8000-000000000001'
+                and (phone is not null or contact_email is not null)) then
+    raise exception 'FAIL [W2]: el director NO debe haberse guardado su contacto';
+  end if;
+  if not exists (select 1 from public.memberships
+                  where profile_id='bc0a0000-aaaa-4000-8000-000000000001'
+                    and club_id='bc000000-0000-4000-8000-000000000001'
+                    and phone='600555666' and contact_email='admin-contacto@club.es') then
+    raise exception 'FAIL [W3]: otro director SÍ debe poder ponerle el contacto al admin';
+  end if;
+end $$;
+
 rollback;
 
 \echo '──────────────────────────────────────────────'
-\echo '✅ Bug2c: admin_update_staff_contact (la DIRECCIÓN —admin y director— guarda phone/contact_email de su club, solo esas columnas; coordinador, no-admin y cross-club rechazados; email de login intacto).'
+\echo '✅ Bug2c: admin_update_staff_contact (la DIRECCIÓN —admin y director— guarda phone/contact_email de su club, solo esas columnas; coordinador, no-admin y cross-club rechazados; email de login intacto; W-7: NO sobre uno mismo, pero otro director SÍ).'
 \echo '──────────────────────────────────────────────'
