@@ -35,7 +35,14 @@ type Props = {
   locale: string;
   playerId: string;
   playerName: string;
-  /** Solo admin/director pueden escribir en `player_accounts` (RLS). */
+  /**
+   * Quién puede escribir en `player_accounts`. Lo decide `canLinkPlayers` (core).
+   *
+   * W-5 — decía «solo admin/director… (RLS)», y la policy
+   * `player_accounts_write_admin` también admite al coordinador con los jugadores
+   * de sus equipos. Que la lista acabe siendo la misma es una decisión de producto
+   * (ver core), no lo que dice la RLS.
+   */
   canLinkPlayers: boolean;
 };
 

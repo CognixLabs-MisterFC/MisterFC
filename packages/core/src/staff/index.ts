@@ -61,3 +61,26 @@ export type {
   StaffIdentityResult,
   StaffNameError,
 } from './identity';
+
+/**
+ * W-5 — vincular un jugador a un miembro (hijo o tutelado). SIN endpoint: la tabla
+ * `player_accounts` tiene su gate en la RLS, y la app escribe con su propia sesión
+ * como la web con su cookie. Y OJO con el permiso: la policy admite también al
+ * coordinador para los jugadores de sus equipos, pero `canLinkPlayers` lo deja fuera
+ * a propósito porque su lista de candidatos NO viene recortada (ver `player-links.ts`).
+ */
+export {
+  PLAYER_LINK_RELATIONS,
+  canLinkPlayers,
+  getMemberPlayerLinksFromClient,
+  linkPlayerToMember,
+} from './player-links';
+export type {
+  LinkPlayerError,
+  LinkPlayerResult,
+  LinkedPlayer,
+  LinkedPlayerRelation,
+  MemberPlayerLinks,
+  PlayerLinkCandidate,
+  PlayerLinkRelation,
+} from './player-links';
