@@ -16,6 +16,7 @@ import {
 import { claimSubscription } from '@/subscription/claim';
 import { legalUrl } from '@/legal/links';
 import { useSubscription } from '@/subscription/provider';
+import { reportDataError, reportDataSignal } from '@/lib/report-error';
 
 /**
  * SU-4 — el MURO. Decisión 3 de Jose: sin suscripción activa no se ve nada, pantalla de
@@ -47,6 +48,12 @@ export function PaywallScreen() {
   // DERIVA el "cargando" en vez de guardarlo: así el efecto no hace ningún setState
   // sincrónico (el lint del compilador de React lo rechaza, y con razón).
   const [pkg, setPkg] = useState<PurchasesPackage | null | undefined>(undefined);
+  /**
+   * D-1 · POR QUÉ no hay precio. Los dos casos acababan en la misma frase y se
+   * arreglan en sitios distintos: `unreadable` es el SDK (no se pudo ni preguntar),
+   * `empty` es que RevenueCat contestó y no había nada que vender.
+   */
+  const [sinOferta, setSinOferta] = useState<'unreadable' | 'empty' | null>(null);
   const [busy, setBusy] = useState<'buy' | 'restore' | 'activating' | 'claiming' | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -59,12 +66,28 @@ export function PaywallScreen() {
     void (async () => {
       const res = await loadOffering();
       if (!alive) return;
-      if (res.ok) {
-        setPkg(res.annual);
-      } else {
+
+      if (!res.ok) {
+        // A · NO SE PUDO PREGUNTAR. El `raw` del SDK va a Sentry: trae el `code` y el
+        // `readableErrorCode`, que es lo único que nombra el fallo de verdad.
+        reportDataError('subscription-offering', res.raw);
+        reportDataSignal('subscription-offering-fallo', res.diag);
         setPkg(null);
-        setMessage(t('errors.offering'));
+        setSinOferta('unreadable');
+        return;
       }
+
+      setPkg(res.annual);
+      if (res.annual === null) {
+        // B · CONTESTÓ Y NO HAY NADA QUE VENDER. No es una excepción —es el producto
+        // funcionando mal, no reventando—, así que va como señal y no como error: el
+        // criterio de este repo para no llenar Sentry de "errores" que nadie mira.
+        // `paquetes: 0` con un offering elegido es la tienda que no cotiza el producto.
+        reportDataSignal('subscription-offering-vacio', res.diag);
+        setSinOferta('empty');
+        return;
+      }
+      setSinOferta(null);
     })();
     return () => {
       alive = false;
@@ -200,7 +223,12 @@ export function PaywallScreen() {
           </>
         ) : (
           <View className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-            <Text className="text-sm text-zinc-700">{t('errors.offering')}</Text>
+            {/* D-1 · dos frases, porque son dos problemas. Y no se repite abajo en
+                `message`: el mismo texto dos veces en la misma pantalla se lee como un
+                fallo doble. */}
+            <Text className="text-sm text-zinc-700">
+              {sinOferta === 'unreadable' ? t('errors.offering_unreadable') : t('errors.offering_empty')}
+            </Text>
           </View>
         )}
 

@@ -98,25 +98,76 @@ export function currentPurchasesUser(): string | null {
   return configuredFor;
 }
 
-export type OfferingResult =
-  | { ok: true; annual: PurchasesPackage | null; packages: PurchasesPackage[] }
-  | { ok: false; raw: unknown };
+/**
+ * D-1 — metadatos TÉCNICOS del intento, para que el fallo se pueda diagnosticar sin un
+ * móvil delante. Escalares, porque van tal cual a `reportDataSignal`, y SIN PII: aquí no
+ * entra el App User ID —que es un `profiles.id`— ni nada de la persona. Solo qué
+ * contestó RevenueCat.
+ */
+export type OfferingDiag = Record<string, string | number | boolean>;
 
-/** El offering `default_misterfc`. Si no está, se cae al `current` que diga el panel. */
+export type OfferingResult =
+  /** Se pudo preguntar. `annual` null significa que NO HAY NADA QUE VENDER. */
+  | { ok: true; annual: PurchasesPackage | null; packages: PurchasesPackage[]; diag: OfferingDiag }
+  /** NO SE PUDO PREGUNTAR: el SDK lanzó. `raw` es lo que dijo. */
+  | { ok: false; raw: unknown; diag: OfferingDiag };
+
+/** El `code`/`readableErrorCode` de un error del SDK, que es lo que de verdad lo nombra. */
+function codigosDelSdk(e: unknown): OfferingDiag {
+  if (typeof e !== 'object' || e === null) return {};
+  const o = e as { code?: unknown; message?: unknown; userInfo?: { readableErrorCode?: unknown } };
+  const out: OfferingDiag = {};
+  if (o.code != null) out.sdk_code = String(o.code);
+  if (o.userInfo?.readableErrorCode != null) out.sdk_legible = String(o.userInfo.readableErrorCode);
+  if (o.message != null) out.sdk_mensaje = String(o.message).slice(0, 200);
+  return out;
+}
+
+/**
+ * El offering `default_misterfc`. Si no está, se cae al `current` que diga el panel.
+ *
+ * D-1 · DEVUELVE TAMBIÉN EL DIAGNÓSTICO, y esa es la mitad que faltaba. Los dos
+ * desenlaces malos —el SDK lanza, o contesta con un offering sin paquetes— acababan en el
+ * MISMO mensaje en pantalla, y el `raw` se tiraba: no había forma de saber cuál de los dos
+ * era ni qué había dicho el SDK. Son problemas opuestos (configuración del SDK contra la
+ * tienda que no cotiza el producto) y se arreglan en sitios distintos.
+ *
+ * `paquetes: 0` es el dato que más importa: RevenueCat QUITA de `availablePackages` los
+ * productos que la tienda no ha podido cotizar, así que un offering correcto puede llegar
+ * vacío sin un solo error.
+ */
 export async function loadOffering(): Promise<OfferingResult> {
+  // `configurado` va primero porque es la pregunta que se contesta sola: si el SDK no se
+  // había configurado, nada de lo demás significa nada.
+  const base: OfferingDiag = {
+    plataforma: Platform.OS,
+    configurado: configuredFor !== null,
+  };
   try {
     const offerings = await Purchases.getOfferings();
-    const offering = offerings.all[OFFERING_ID] ?? offerings.current;
-    if (!offering) return { ok: true, annual: null, packages: [] };
-    const packages = offering.availablePackages;
+    const ids = Object.keys(offerings.all ?? {});
+    const offering = offerings.all?.[OFFERING_ID] ?? offerings.current;
+    const packages = offering?.availablePackages ?? [];
+    const diag: OfferingDiag = {
+      ...base,
+      offerings: ids.length,
+      // Escritos tal cual: si el del panel se llama distinto, se ve aquí.
+      offering_ids: ids.join(',') || '(ninguno)',
+      hay_current: offerings.current != null,
+      esperado: OFFERING_ID,
+      elegido: offering?.identifier ?? '(ninguno)',
+      paquetes: packages.length,
+      productos: packages.map((p) => p.product.identifier).join(',') || '(ninguno)',
+    };
+    if (!offering) return { ok: true, annual: null, packages: [], diag };
     const annual =
       packages.find((p) => p.product.identifier === ANNUAL_PRODUCT_ID) ??
       offering.annual ??
       packages[0] ??
       null;
-    return { ok: true, annual, packages };
+    return { ok: true, annual, packages, diag };
   } catch (e) {
-    return { ok: false, raw: e };
+    return { ok: false, raw: e, diag: { ...base, ...codigosDelSdk(e) } };
   }
 }
 

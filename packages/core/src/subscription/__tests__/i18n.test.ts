@@ -55,7 +55,10 @@ const PAYWALL_KEYS = [
   'subscription.retry',
   'subscription.offline',
   'subscription.terms_note',
-  'subscription.errors.offering',
+  // D-1 · DOS claves y no una: «no se pudo preguntar» y «no hay nada que vender» son
+  // problemas opuestos y antes compartían frase.
+  'subscription.errors.offering_unreadable',
+  'subscription.errors.offering_empty',
   'subscription.errors.purchase',
   'subscription.errors.restore',
   'subscription.errors.status',
