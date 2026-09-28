@@ -939,7 +939,11 @@
         "title": "Esa persona ya está en el club",
         "body": "{name} ya está en el club como {role}, así que no le hemos enviado ninguna invitación. Invitar a alguien que ya está dentro no le cambia el rol: eso se hace desde su ficha.",
         "ficha": "Ver su ficha en Cuerpo técnico"
-      }
+      },
+      "action": "Invitar",
+      "offline": "Sin conexión no se puede invitar. Inténtalo cuando vuelvas a tener red.",
+      "cancel": "Cancelar",
+      "close": "Cerrar"
     },
     "cancel": {
       "action": "Cancelar invitación",

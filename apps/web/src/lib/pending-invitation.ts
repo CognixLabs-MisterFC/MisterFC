@@ -1,7 +1,11 @@
 import 'server-only';
 import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database, PendingInvitationRow } from '@misterfc/core';
+import {
+  pendingInvitationsForEmailFromClient,
+  type Database,
+  type PendingInvitationRow,
+} from '@misterfc/core';
 
 /**
  * ¿Qué invitaciones PENDIENTES vigentes tiene ya ese correo en este club?
@@ -12,16 +16,17 @@ import type { Database, PendingInvitationRow } from '@misterfc/core';
  * correo es invisible para ella. Por esa ventana salía un segundo correo a la
  * misma persona.
  *
- * Va por RPC (`club_pending_invitation_by_email`, mig 20261095000000) y no por un
- * `select`: la policy de `invitations` solo deja leer la tabla a dirección, al
- * invitado y a quien creó la fila, y aquí pregunta también un entrenador —puede
- * crear jugadores, y crear un jugador dispara la invitación del tutor—. Con un
- * `select` vería cero pendientes y mandaría el correo igual.
+ * W-6 — la consulta y su regla («si la RPC tropieza, lista vacía») viven en core
+ * (`pendingInvitationsForEmailFromClient`), porque el flujo de invitar bajó allí y la
+ * regla no puede estar en dos sitios. Aquí queda solo la inyección de Sentry.
  *
- * FALLA ABIERTO, a propósito: si la RPC tropieza se devuelve lista vacía, que es
- * «no hay nada pendiente» y lleva al camino de siempre (invitar). Un fallo del
- * atajo no puede dejar a un padre sin su correo; el precio es un correo de más en
- * un caso que además se registra en Sentry.
+ * Por qué va por RPC y no por un `select`: la policy de `invitations` solo deja leer
+ * la tabla a dirección, al invitado y a quien creó la fila, y esto lo pregunta también
+ * un entrenador —puede crear jugadores, y crear un jugador dispara la invitación del
+ * tutor—. Con un `select` vería cero pendientes y mandaría el correo igual.
+ *
+ * FALLA ABIERTO, a propósito: un fallo del atajo no puede dejar a un padre sin su
+ * correo; el precio es un correo de más en un caso que además se registra en Sentry.
  */
 export async function pendingInvitationsForEmail(
   supabase: SupabaseClient<Database>,
@@ -29,16 +34,16 @@ export async function pendingInvitationsForEmail(
   email: string,
   step: string,
 ): Promise<PendingInvitationRow[]> {
-  const { data, error } = await supabase.rpc('club_pending_invitation_by_email', {
-    p_club_id: clubId,
-    p_email: email,
-  });
-  if (error) {
-    Sentry.captureException(error, {
-      tags: { feature: 'invitations', step },
-      extra: { club_id: clubId },
-    });
-    return [];
-  }
-  return (data ?? []).map((row) => ({ id: row.invitation_id }));
+  return pendingInvitationsForEmailFromClient(
+    supabase,
+    clubId,
+    email,
+    (error, paso, extra) => {
+      Sentry.captureException(error, {
+        tags: { feature: 'invitations', step: paso },
+        extra,
+      });
+    },
+    step,
+  );
 }

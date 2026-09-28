@@ -87,13 +87,19 @@ const RESET = 'resetPasswordForEmail(';
  * cada uno manda su `invite_kind` (A-1). Hasta B6 hubo DOS censos, uno por forma de
  * envío, mientras la serie Correo-B iba migrando; ahora que todos salen igual sobra la
  * distinción y vuelve a ser una sola lista:
- *   1 sendInvitation ................ invitations/actions.ts             → staff
+ *   1 performStaffInvite ............ packages/core/src/invitations/staff-invite.ts → staff
  *   2 sendOrRenewTutorInvitation .... lib/invite-tutor.ts                → tutor
  *   5 inviteBatch ................... jugadores/actions.ts               → tutor
  *   3 inviteClubAdmin ............... lib/platform/invite-club-admin.ts  → admin
  *   4 changeClubAdmin ............... lib/platform/change-club-admin.ts  → admin
  *   7 performSpectatorInvite ........ packages/core/src/spectators/index.ts → seguidor
  *   8 performSelfInvite ............. packages/core/src/invitations/self-invite.ts → menor
+ *
+ * W-6 — el 1 BAJÓ a core: la Server Action `sendInvitation` (763 líneas que ningún
+ * test ejecutaba) se quedó con el FormData y el revalidate, y el flujo —cuenta,
+ * enlazado y correo— vive en `performStaffInvite`. Lo piden la web y el route handler
+ * de la app nativa, que no puede llevar la service-role. Es el mismo sitio donde ya
+ * vivían el 7 y el 8; el envío sigue siendo UNO.
  *
  * El 6 (inviteStaffToTeam, equipos/[teamId]) SE RETIRÓ en BUG 3 · A-3: invitar
  * dejó de vivir en la página de un equipo. Su hueco NO se reutiliza y la
@@ -103,13 +109,13 @@ const RESET = 'resetPasswordForEmail(';
  * Si tocas esta lista, actualiza TAMBIÉN el censo de link-invited-user.ts.
  */
 const CENSUS = {
-  'apps/web/src/app/[locale]/(authenticated)/invitations/actions.ts': 1,
   'apps/web/src/app/[locale]/(authenticated)/jugadores/actions.ts': 1,
   'apps/web/src/lib/invite-tutor.ts': 1,
   'apps/web/src/lib/platform/invite-club-admin.ts': 1,
   'apps/web/src/lib/platform/change-club-admin.ts': 1,
   'packages/core/src/spectators/index.ts': 1,
   'packages/core/src/invitations/self-invite.ts': 1,
+  'packages/core/src/invitations/staff-invite.ts': 1,
 };
 
 /** Líneas de comentario (`//`, `/*`, ` *`): el contrato y los docs citan la llamada. */
