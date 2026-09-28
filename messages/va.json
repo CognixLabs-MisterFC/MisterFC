@@ -5565,7 +5565,7 @@
     "offline": "Sense connexió no es pot completar la compra. Intenta-ho quan tornes a tindre xarxa.",
     "terms_note": "La subscripció es renova automàticament cada any llevat que la canceles almenys 24 hores abans de la renovació. Pots gestionar-la o cancel·lar-la en qualsevol moment des del teu compte de la botiga.",
     "errors": {
-      "offering_unreadable": "No hem pogut consultar el preu. Comprova la connexió i torna-ho a provar.",
+      "offering_unreadable": "No hem pogut consultar el preu. Intenta-ho de nou en un moment.",
       "offering_empty": "Ara mateix no hi ha cap subscripció disponible a la teua botiga. Torna-ho a provar més tard.",
       "purchase": "La compra no s'ha pogut completar. No se t'ha cobrat res.",
       "restore": "No hem pogut comprovar les teues compres. Intenta-ho de nou.",

@@ -5565,7 +5565,7 @@
     "offline": "Sin conexión no se puede completar la compra. Inténtalo cuando vuelvas a tener red.",
     "terms_note": "La suscripción se renueva automáticamente cada año salvo que la canceles al menos 24 horas antes de la renovación. Puedes gestionarla o cancelarla en cualquier momento desde tu cuenta de la tienda.",
     "errors": {
-      "offering_unreadable": "No hemos podido consultar el precio. Comprueba la conexión e inténtalo de nuevo.",
+      "offering_unreadable": "No hemos podido consultar el precio. Inténtalo de nuevo en un momento.",
       "offering_empty": "Ahora mismo no hay ninguna suscripción disponible en tu tienda. Vuelve a intentarlo más tarde.",
       "purchase": "La compra no se ha podido completar. No se te ha cobrado nada.",
       "restore": "No hemos podido comprobar tus compras. Inténtalo de nuevo.",
