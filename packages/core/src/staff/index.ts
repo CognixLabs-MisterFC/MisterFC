@@ -14,3 +14,12 @@ export type { StaffPendingTraining } from './pending-trainings';
  */
 export { assignStaffToTeam } from './team-assignment';
 export type { AssignStaffError, AssignStaffResult } from './team-assignment';
+
+/**
+ * W-2 — y el PERMISO de esa asignación: quién la ofrece, con qué funciones y de qué
+ * lista de equipos. Estaba repartido en tres sitios de `apps/web`, y uno de sus
+ * comentarios ya mentía. Ver `assignment-policy.ts`.
+ */
+export { staffAssignmentPermission } from './assignment-policy';
+export type { AssignmentTeamSource, StaffAssignmentPermission } from './assignment-policy';
+export { getAssignmentTargetTeamsFromClient } from './assignment-targets';

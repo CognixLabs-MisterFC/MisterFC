@@ -2535,6 +2535,11 @@
       },
       "save": "Add",
       "cancel": "Cancel",
+      "saving": "Adding…",
+      "close": "Close",
+      "done": "{name} now has that role in the team.",
+      "no_teams": "There are no teams you can assign to right now.",
+      "offline": "You cannot add a role while offline. Try again when you are back online.",
       "errors": {
         "team_invalid": "Invalid team.",
         "staff_role_invalid": "Invalid role.",
