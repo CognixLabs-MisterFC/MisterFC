@@ -583,7 +583,12 @@
     "go_to_signin": "Go to sign in",
     "session_swap_warning": "You're currently signed in as {email}. If you complete this invitation, you'll be signed in as the player instead.",
     "error_sign_in_failed": "Your password was saved, but we couldn't sign you in. Please try again.",
-    "error_tutor_menor_de_edad": "That account is recorded as a minor and cannot be listed as a guardian. If you are the player, ask your club for your own account; if your date of birth is wrong, correct it and try again."
+    "error_tutor_menor_de_edad": "That account is recorded as a minor and cannot be listed as a guardian. If you are the player, ask your club for your own account; if your date of birth is wrong, correct it and try again.",
+    "checking": "Checking the invitation…",
+    "link_to_copy": "Press and hold the link to copy it, then open it in your browser:",
+    "retry": "Try again",
+    "error_network": "We could not connect. Check your connection and try again.",
+    "error_no_web_url": "This version of the app cannot complete invitations. Open the link from your email in a browser."
   },
   "directos": {
     "title": "Live",

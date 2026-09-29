@@ -583,7 +583,12 @@
     "go_to_signin": "Anar a iniciar sessió",
     "session_swap_warning": "Ara mateix estàs en el compte {email}. Si completes aquesta invitació, entraràs amb el compte del jugador.",
     "error_sign_in_failed": "La teua contrasenya s'ha guardat, però no hem pogut iniciar la teua sessió. Intenta-ho de nou.",
-    "error_tutor_menor_de_edad": "Eixe compte consta com a menor d’edat i no pot figurar com a tutor. Si eres el jugador, demana al teu club el compte propi; si és un error en la teua data de naixement, corregix-la i torna a intentar-ho."
+    "error_tutor_menor_de_edad": "Eixe compte consta com a menor d’edat i no pot figurar com a tutor. Si eres el jugador, demana al teu club el compte propi; si és un error en la teua data de naixement, corregix-la i torna a intentar-ho.",
+    "checking": "Comprovant la invitació…",
+    "link_to_copy": "Mantín premut l'enllaç per a copiar-lo i obri'l en el navegador:",
+    "retry": "Reintenta-ho",
+    "error_network": "No hem pogut connectar. Comprova la teua connexió i torna-ho a intentar.",
+    "error_no_web_url": "Esta versió de l'aplicació no pot completar invitacions. Obri l'enllaç del correu en el navegador."
   },
   "directos": {
     "title": "Directes",

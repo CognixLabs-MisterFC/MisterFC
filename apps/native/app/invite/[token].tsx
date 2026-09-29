@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
@@ -16,7 +16,13 @@ import { useTranslations, useLocale } from '@/locale/provider';
 import { BRAND } from '@/theme';
 import { legalUrl } from '@/legal/links';
 import { submitSelfAccept, selfAcceptMessageKey } from '@/invitations/self-accept';
-import { callPublicServerEndpoint } from '@/lib/server-api';
+import {
+  fetchInvitePreflight,
+  preflightMandaAlNavegador,
+  preflightSePuedeReintentar,
+  type InvitePreflightOutcome,
+} from '@/invitations/preflight';
+import { callPublicServerEndpoint, webBaseUrl } from '@/lib/server-api';
 import { KeyboardScrollView } from '@/ui/keyboard';
 
 /**
@@ -83,6 +89,54 @@ export default function InviteScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<{ code: string; retryAfter?: number } | null>(null);
 
+  /**
+   * R-5 · N-2 — QUE INVITACION ES ESTA, antes de pintar el formulario.
+   *
+   * `null` = todavia no se sabe. No es un detalle: el estado inicial NO puede ser
+   * «es self», porque entonces el primer fotograma volveria a afirmar lo que aun no
+   * se ha comprobado, que es justo el fallo que esto cierra.
+   *
+   * El efecto va ANTES del `if (!token)` de abajo por las reglas de los hooks: un
+   * return antes de un hook cambia el orden entre renders.
+   */
+  const [respuesta, setRespuesta] = useState<{
+    para: string;
+    intento: number;
+    out: InvitePreflightOutcome;
+  } | null>(null);
+  const [intento, setIntento] = useState(0);
+
+  useEffect(() => {
+    if (!token) return;
+    let vivo = true;
+    void (async () => {
+      const out = await fetchInvitePreflight(callPublicServerEndpoint, token);
+      // Sin esto, volver atras mientras la peticion vuela deja un setState sobre una
+      // pantalla desmontada.
+      if (vivo) setRespuesta({ para: token, intento, out });
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [token, intento]);
+
+  /**
+   * El veredicto vale SOLO para el token y el intento de ahora; si cambia cualquiera de
+   * los dos, esto vuelve a `null` —«comprobando»— por si solo.
+   *
+   * Se guarda con su par en vez de poner el estado a `null` dentro del efecto, que es lo
+   * primero que escribi: eso es una cascada de renders y el lint del React Compiler lo
+   * caza (`eslint . --max-warnings=0` en esta app, asi que habria tumbado CI). Y ademas
+   * esta forma arregla algo que aquella no: al reintentar, y si expo-router reusa la
+   * pantalla con otro token, no se enseña ni un fotograma del veredicto ANTERIOR.
+   */
+  const pre =
+    respuesta && respuesta.para === token && respuesta.intento === intento
+      ? respuesta.out
+      : null;
+
+  const reintentar = useCallback(() => setIntento((n) => n + 1), []);
+
   if (!token) {
     return (
       <Verdict
@@ -92,6 +146,42 @@ export default function InviteScreen() {
       />
     );
   }
+
+  // ── R-5 · N-2 · Mientras no se sepa QUE invitacion es, no se pinta ni un campo ──
+  if (pre === null) {
+    return <Comprobando texto={t('checking')} />;
+  }
+
+  if ('error' in pre) {
+    const code = pre.error;
+    const sePuedeReintentar = preflightSePuedeReintentar(code);
+    // El unico veredicto que la web SI sabe atender es `not_self` (el padre que abre su
+    // invitacion desde el movil). Los demas son del token y en el navegador darian lo
+    // mismo, asi que ofrecer el enlace ahi seria mandar a alguien a un callejon.
+    const enlace =
+      preflightMandaAlNavegador(code) && webBaseUrl()
+        ? `${webBaseUrl()}/${locale}/invite/${token}`
+        : null;
+
+    return (
+      <Verdict
+        message={
+          code === 'rate_limited' && pre.retryAfter
+            ? t('error_rate_limited_in', {
+                minutes: Math.max(1, Math.ceil(pre.retryAfter / 60)),
+              })
+            : t(selfAcceptMessageKey(code))
+        }
+        link={enlace}
+        linkLabel={t('link_to_copy')}
+        actionLabel={sePuedeReintentar ? t('retry') : t('go_to_signin')}
+        onAction={sePuedeReintentar ? reintentar : () => router.replace('/login')}
+      />
+    );
+  }
+
+  // A partir de aqui el servidor ha dicho que SI: es una invitacion de cuenta propia del
+  // menor. El `self_note` de abajo ya no es una suposicion.
 
   async function onSubmit() {
     setError(null);
@@ -271,18 +361,60 @@ export default function InviteScreen() {
  * SIEMPRE con salida. Una pantalla sin ningún botón en una app que se acaba de abrir
  * desde un correo es un callejón: el usuario no tiene ni historial al que volver.
  */
+/**
+ * R-5 · N-2 — mientras se pregunta de que tipo es la invitacion.
+ *
+ * Una pantalla en blanco durante una peticion de red que puede tardar es
+ * indistinguible de una app rota; y lo que NO puede hacer es adelantar el formulario
+ * del menor «mientras tanto», que es la afirmacion sin comprobar que N-2 viene a quitar.
+ */
+function Comprobando({ texto }: { texto: string }) {
+  return (
+    <SafeAreaView
+      className="flex-1 items-center justify-center px-8"
+      style={{ backgroundColor: BRAND.navy }}
+    >
+      <ActivityIndicator color="#fff" />
+      <Text className="mt-4 text-center text-base text-zinc-300">{texto}</Text>
+    </SafeAreaView>
+  );
+}
+
 function Verdict({
   message,
   actionLabel,
   onAction,
+  link,
+  linkLabel,
 }: {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** R-5 · N-2 — el enlace que hay que abrir en el navegador, si lo hay. */
+  link?: string | null;
+  linkLabel?: string;
 }) {
   return (
     <SafeAreaView className="flex-1 items-center justify-center px-8" style={{ backgroundColor: BRAND.navy }}>
       <Text className="text-center text-lg font-semibold text-zinc-200">{message}</Text>
+      {link ? (
+        <View className="mt-6 w-full">
+          <Text className="text-center text-sm text-zinc-400">{linkLabel}</Text>
+          {/*
+            `selectable` y no un boton de copiar: copiar al portapapeles necesita
+            `expo-clipboard`, que es un modulo NATIVO — dependencia nueva y build nuevo,
+            y eso se mide en dispositivo antes de prometerlo (es N-3). Mantener pulsado
+            sobre un texto seleccionable ofrece «Copiar» en iOS y en Android sin añadir
+            nada, y funciona en el build que ya esta en la tienda.
+          */}
+          <Text
+            selectable
+            className="mt-2 rounded-xl bg-white/10 px-4 py-3 text-center text-sm text-zinc-200"
+          >
+            {link}
+          </Text>
+        </View>
+      ) : null}
       {actionLabel && onAction ? (
         <Pressable
           onPress={onAction}
