@@ -11,6 +11,7 @@ import { useSpectatorPlayer } from '@/auth/spectator-player';
 import { useCached } from '@/data/use-cached';
 import { SpectatorPlayerSelector } from '@/ui/spectator-player-selector';
 import { OfflineBanner, EmptyState, LoadingScreen } from '@/ui/feedback';
+import { ClubPartnersSection } from '@/ui/club-partners';
 import { useTranslations } from '@/locale/provider';
 
 /** Agenda de las próximas 4 semanas (28 días) desde hoy. */
@@ -96,39 +97,51 @@ export function SpectatorAgendaScreen() {
     <View className="flex-1 bg-white">
       <SpectatorPlayerSelector />
       <OfflineBanner show={fromCache} />
-      {items.length === 0 ? (
-        <EmptyState message={t('calendario.empty')} />
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.key}
-          contentContainerStyle={{ paddingVertical: 8 }}
-          renderItem={({ item }) =>
-            item.kind === 'holiday' ? (
-              <View className="mx-4 my-1 rounded-xl bg-amber-50 px-4 py-2">
-                <Text className="text-sm font-medium text-amber-800">
-                  {`${item.h.date.slice(5)} · ${t('calendario.holidays.badge')} — ${item.h.reason}`}
+      {/* V-3 — la agenda ya NO se sustituye por el vacío: la lista se pinta siempre,
+          con el mensaje de "sin eventos" como `ListEmptyComponent` y los socios del
+          club como pie. Así el seguidor sigue viendo a los patrocinadores el día que
+          no hay nada en el calendario, que es justo cuando antes desaparecían. El
+          mensaje va aquí y no con `EmptyState` porque ese componente es un ScrollView
+          y anidarlo dentro de la lista apila dos scrollers. */}
+      <FlatList
+        data={items}
+        keyExtractor={(item) => item.key}
+        contentContainerStyle={{ paddingVertical: 8 }}
+        ListEmptyComponent={
+          <View className="items-center justify-center px-6 py-10">
+            <Text className="text-center text-sm text-zinc-400">{t('calendario.empty')}</Text>
+          </View>
+        }
+        ListFooterComponent={
+          <View className="px-4 pb-6 pt-2">
+            <ClubPartnersSection clubId={clubId} />
+          </View>
+        }
+        renderItem={({ item }) =>
+          item.kind === 'holiday' ? (
+            <View className="mx-4 my-1 rounded-xl bg-amber-50 px-4 py-2">
+              <Text className="text-sm font-medium text-amber-800">
+                {`${item.h.date.slice(5)} · ${t('calendario.holidays.badge')} — ${item.h.reason}`}
+              </Text>
+            </View>
+          ) : (
+            <View className="mx-4 my-1 flex-row items-center gap-3 border-b border-zinc-100 px-1 py-2">
+              <Text className="text-lg">{TYPE_ICON[item.ev.type] ?? '📌'}</Text>
+              <View className="flex-1">
+                <Text
+                  className={`text-sm font-medium ${item.ev.cancelled_at ? 'text-zinc-400 line-through' : 'text-[#0F1B2E]'}`}
+                  numberOfLines={1}
+                >
+                  {item.ev.title}
+                </Text>
+                <Text className="text-xs text-zinc-400">
+                  {`${item.ev.starts_at.slice(5, 10)} ${item.ev.starts_at.slice(11, 16)}${item.ev.team_name ? ' · ' + item.ev.team_name : ''}`}
                 </Text>
               </View>
-            ) : (
-              <View className="mx-4 my-1 flex-row items-center gap-3 border-b border-zinc-100 px-1 py-2">
-                <Text className="text-lg">{TYPE_ICON[item.ev.type] ?? '📌'}</Text>
-                <View className="flex-1">
-                  <Text
-                    className={`text-sm font-medium ${item.ev.cancelled_at ? 'text-zinc-400 line-through' : 'text-[#0F1B2E]'}`}
-                    numberOfLines={1}
-                  >
-                    {item.ev.title}
-                  </Text>
-                  <Text className="text-xs text-zinc-400">
-                    {`${item.ev.starts_at.slice(5, 10)} ${item.ev.starts_at.slice(11, 16)}${item.ev.team_name ? ' · ' + item.ev.team_name : ''}`}
-                  </Text>
-                </View>
-              </View>
-            )
-          }
-        />
-      )}
+            </View>
+          )
+        }
+      />
     </View>
   );
 }

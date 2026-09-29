@@ -13,10 +13,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   canManageClubPartners,
+  getClubPartnerRowsFromClient,
   getClubPartnersFromClient,
+  signClubPartnerLogosFromClient,
   groupPartnersByKind,
   PARTNER_KINDS,
   type ClubPartner,
+  type ClubPartnerRow,
 } from '../club-partners';
 
 const CLUB = 'club-a';
@@ -270,5 +273,114 @@ describe('groupPartnersByKind', () => {
 
   it('el orden de las secciones lo manda PARTNER_KINDS, y quien paga va primero', () => {
     expect(PARTNER_KINDS).toEqual(['patrocinador', 'colaborador']);
+  });
+});
+
+/**
+ * V-3 — la lectura PARTIDA en dos.
+ *
+ * Lo que protege este bloque no es una funcion nueva: es que la app nativa no acabe
+ * guardando una URL FIRMADA en su cache de disco. Las firmas caducan en una hora y la
+ * cache dura lo que dure el movil sin conexion, asi que una firma cacheada es un logo
+ * muerto. Por eso las filas se leen sin firmar y la firma se pide aparte.
+ */
+describe('getClubPartnerRowsFromClient · filas sin firmar', () => {
+  it('NO firma nada: devuelve la RUTA, no una URL', async () => {
+    const f = clienteFalso({ filas: [fila()] });
+    const out = await getClubPartnerRowsFromClient(f.cliente, CLUB);
+    expect(out).toHaveLength(1);
+    expect(out[0]!.logoPath).toBe(`${CLUB}/paco.webp`);
+    // El test que de verdad importa: no se ha tocado Storage.
+    expect(f.firmasPedidas).toEqual([]);
+    // Y no se cuela una URL por ningun lado.
+    expect(JSON.stringify(out)).not.toContain('https://firmada.test');
+  });
+
+  it('acota al club y pide SOLO los activos', async () => {
+    const f = clienteFalso({ filas: [fila()] });
+    await getClubPartnerRowsFromClient(f.cliente, CLUB);
+    expect(f.eqs.club_id).toBe(CLUB);
+    // Si alguien quita este filtro, el director ve los retirados en su inicio.
+    expect(f.restringidas.has('active')).toBe(true);
+    expect(f.eqs.active).toBe(true);
+  });
+
+  it('ordena por sort_order y desempata por created_at', async () => {
+    const f = clienteFalso({ filas: [fila()] });
+    await getClubPartnerRowsFromClient(f.cliente, CLUB);
+    expect(f.orders).toEqual(['sort_order', 'created_at']);
+  });
+
+  it('un kind desconocido se cae y avisa, en vez de pintarse como patrocinador', async () => {
+    const onError = vi.fn();
+    const f = clienteFalso({ filas: [fila(), fila({ id: 'p2', kind: 'mecenas' })] });
+    const out = await getClubPartnerRowsFromClient(f.cliente, CLUB, onError);
+    expect(out.map((r) => r.id)).toEqual(['p1']);
+    expect(onError).toHaveBeenCalledWith(expect.any(Error), 'kind');
+  });
+
+  it('un fallo de lectura devuelve [] pero NO en silencio', async () => {
+    const onError = vi.fn();
+    const f = clienteFalso({ errorSelect: { message: 'rls' } });
+    await expect(getClubPartnerRowsFromClient(f.cliente, CLUB, onError)).resolves.toEqual([]);
+    expect(onError).toHaveBeenCalledWith({ message: 'rls' }, 'select');
+  });
+});
+
+describe('signClubPartnerLogosFromClient · la firma, aparte', () => {
+  it('firma EN LOTE: una sola llamada para todas las rutas', async () => {
+    const f = clienteFalso();
+    const m = await signClubPartnerLogosFromClient(f.cliente, [`${CLUB}/a.webp`, `${CLUB}/b.webp`]);
+    expect(f.firmasPedidas).toEqual([[`${CLUB}/a.webp`, `${CLUB}/b.webp`]]);
+    expect(m.get(`${CLUB}/a.webp`)).toBe(`https://firmada.test/${CLUB}/a.webp`);
+  });
+
+  it('sin rutas no llama a Storage', async () => {
+    const f = clienteFalso();
+    const m = await signClubPartnerLogosFromClient(f.cliente, []);
+    expect(m.size).toBe(0);
+    expect(f.firmasPedidas).toEqual([]);
+  });
+
+  it('si la firma falla, mapa vacio y aviso: nadie inventa una URL', async () => {
+    const onError = vi.fn();
+    const f = clienteFalso({ errorFirma: { message: 'nope' } });
+    const m = await signClubPartnerLogosFromClient(f.cliente, [`${CLUB}/a.webp`], onError);
+    expect(m.size).toBe(0);
+    expect(onError).toHaveBeenCalledWith({ message: 'nope' }, 'sign');
+  });
+
+  it('el TTL por defecto es el del modulo, y se puede acortar', async () => {
+    const ttls: number[] = [];
+    const cliente = {
+      storage: {
+        from: () => ({
+          createSignedUrls: async (paths: string[], ttl: number) => {
+            ttls.push(ttl);
+            return { data: paths.map((p) => ({ path: p, signedUrl: `s:${p}` })), error: null };
+          },
+        }),
+      },
+    } as never;
+    await signClubPartnerLogosFromClient(cliente, ['x']);
+    await signClubPartnerLogosFromClient(cliente, ['x'], undefined, 60);
+    expect(ttls).toEqual([3600, 60]);
+  });
+});
+
+describe('groupPartnersByKind · tambien agrupa filas sin firmar', () => {
+  it('sirve para ClubPartnerRow, que es lo que agrupa la nativa', () => {
+    const r = (id: string, kind: ClubPartnerRow['kind']): ClubPartnerRow => ({
+      id,
+      kind,
+      name: id,
+      tagline: null,
+      logoPath: `${CLUB}/${id}.webp`,
+      url: 'https://x.test',
+    });
+    const g = groupPartnersByKind([r('p1', 'patrocinador'), r('c1', 'colaborador')]);
+    // El tipo se conserva: sigue habiendo `logoPath` y no aparece `logoUrl`.
+    expect(g.patrocinador[0]!.logoPath).toBe(`${CLUB}/p1.webp`);
+    expect(g.colaborador.map((x) => x.id)).toEqual(['c1']);
   });
 });

@@ -10,6 +10,7 @@ import {
   recordInvitationDelivery,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { maskEmail } from '@/lib/mask-email';
 import { linkInvitedUser } from '@/lib/link-invited-user';
 import { deliveryLogger, invitationEmailPort, inviteRecipientPort } from '@/lib/email/invite-ports';
 
@@ -47,13 +48,6 @@ export type InviteClubAdminError =
   | 'generic';
 
 export type InviteClubAdminResult = { ok: { email: string } } | { error: InviteClubAdminError };
-
-function maskEmail(email: string): string {
-  const [user, domain] = email.split('@');
-  if (!user || !domain) return 'invalid';
-  const [domainName, ...tld] = domain.split('.');
-  return `${user.slice(0, 2)}***@${(domainName ?? '').slice(0, 1)}***${tld.length ? '.' + tld.join('.') : ''}`;
-}
 
 function serializeError(err: unknown): Record<string, unknown> {
   if (err instanceof Error) {

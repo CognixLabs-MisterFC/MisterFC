@@ -21,6 +21,7 @@ import { useImageConsentPlayers } from '@/notifications/use-image-consent-player
 import { OfflineBanner, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { CountBadge } from '@/screens/staff/hub-parts';
 import { useTranslations } from '@/locale/provider';
+import { ClubPartnersSection } from '@/ui/club-partners';
 import { formatDayMonthYear } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 
@@ -196,6 +197,11 @@ export function DireccionInicioScreen() {
             })
           )}
         </View>
+
+        {/* V-3 — Patrocinadores y colaboradores del club. Abajo del todo, a
+            propósito: es contenido del club, no una tarea pendiente. Si el club no
+            tiene ninguno, no pinta nada. */}
+        <ClubPartnersSection clubId={clubId} />
       </ScrollView>
     </View>
   );

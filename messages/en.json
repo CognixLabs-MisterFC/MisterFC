@@ -5857,5 +5857,10 @@
       "ignore": "If you did not ask for this change, you can ignore this email: your password will not be modified.",
       "signature": "The MisterFC team"
     }
+  },
+  "partners": {
+    "title": "Sponsors and partners",
+    "patrocinador": "Sponsors",
+    "colaborador": "Partners"
   }
 }
