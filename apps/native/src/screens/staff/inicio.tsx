@@ -15,6 +15,7 @@ import { useCached } from '@/data/use-cached';
 import { reportDataError } from '@/lib/report-error';
 import { OfflineBanner, LoadingScreen, ScreenTitle } from '@/ui/feedback';
 import { useTranslations } from '@/locale/provider';
+import { ClubPartnersSection } from '@/ui/club-partners';
 import { formatEventWhen } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 import { staffEventTarget } from '@/notifications/feed-target';
@@ -236,6 +237,11 @@ export function StaffHomeScreen() {
           <Tile icon="🔴" label={t('staff_home.tile_directos')} accent={accent} onPress={() => go('/staff/directos')} />
           <Tile icon="🏋️" label={t('staff_home.tile_today_training')} accent={accent} onPress={() => go('/staff/sesion-del-dia')} />
         </View>
+
+        {/* V-3 — Patrocinadores y colaboradores del club. Abajo del todo, a
+            propósito: es contenido del club, no una tarea pendiente. Si el club no
+            tiene ninguno, no pinta nada. */}
+        <ClubPartnersSection clubId={clubId} />
       </ScrollView>
     </View>
   );

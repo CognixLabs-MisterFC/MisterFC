@@ -26,6 +26,7 @@ import { invalidateAfterWrite } from '@/data/cache-resources';
 import { OfflineBanner, LoadingScreen } from '@/ui/feedback';
 import { ChildSelector } from '@/ui/child-selector';
 import { useTranslations } from '@/locale/provider';
+import { ClubPartnersSection } from '@/ui/club-partners';
 import { formatEventWhen } from '@/lib/format-date';
 import { BRAND } from '@/theme';
 import { familyEventTarget, familyFeedTarget, type FamilyTarget } from '@/notifications/feed-target';
@@ -363,6 +364,11 @@ export function InicioScreen() {
             </>
           )}
         </Section>
+
+        {/* V-3 — Patrocinadores y colaboradores del club. Abajo del todo, a
+            propósito: es contenido del club, no una tarea pendiente. Si el club no
+            tiene ninguno, no pinta nada. */}
+        <ClubPartnersSection clubId={clubId} />
       </ScrollView>
     </View>
   );

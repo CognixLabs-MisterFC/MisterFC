@@ -29,6 +29,7 @@ import { TrainingAlertPanel } from './training-alert-panel';
 import { CampaignAlertPanel } from './campaign-alert-panel';
 import { NotificationsPanel } from './notifications-panel';
 import { DireccionHome } from './direccion-home';
+import { ClubPartnersCard } from './club-partners-card';
 import { intlLocale } from '@/lib/intl-locale';
 
 type Props = {
@@ -391,6 +392,11 @@ export default async function Home({ params, searchParams }: Props) {
             </CardContent>
           </Card>
         )}
+
+        {/* V-3 — Patrocinadores y colaboradores del club. Para TODOS los roles y al
+            final de la rejilla: es contenido del club, no una tarea. Si el club no
+            tiene ninguno activo, la tarjeta no se pinta. */}
+        <ClubPartnersCard clubId={clubId} />
       </div>
     </div>
   );

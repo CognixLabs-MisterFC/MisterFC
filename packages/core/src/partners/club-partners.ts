@@ -7,11 +7,12 @@ type DbClient = SupabaseClient<Database>;
 /**
  * V-2 — PATROCINADORES Y COLABORADORES del club, la lectura y la regla.
  *
- * La tabla y su gate son de V-1 (mig 20261112000000, aplicada). Aquí baja lo que van
- * a necesitar las CUATRO superficies que lo pintan —familia (que cubre jugador),
- * staff, dirección y seguidor— y el CRUD de la web. Baja a core y no a cada pantalla
- * por el motivo de siempre en este repo: `apps/web` no ejecuta ni una prueba, y una
- * regla repetida en cuatro sitios es una regla que nadie comprueba.
+ * La tabla y su gate son de V-1 (mig 20261112000000, aplicada). Aquí baja lo que
+ * necesitan las CINCO superficies que lo pintan —los cuatro inicios de la app
+ * (familia, que cubre jugador; staff; dirección; seguidor) y el inicio de la web— y
+ * el CRUD de la web. Baja a core y no a cada pantalla por el motivo de siempre en
+ * este repo: `apps/web` no ejecuta ni una prueba, y una regla repetida en cinco
+ * sitios es una regla que nadie comprueba.
  *
  * ── LO QUE NO ES OBVIO, Y ES EL MOTIVO DE QUE ESTO EXISTA ───────────────────
  * La policy de lectura de V-1 filtra `active`, así que un entrenador o un tutor NUNCA
@@ -24,6 +25,13 @@ type DbClient = SupabaseClient<Database>;
  * director vería tres — y el tercero es el que se retiró. Por eso el filtro está aquí
  * dentro y no en cada pantalla.
  *
+ * ── LO SEGUNDO QUE NO ES OBVIO (V-3) ───────────────────────────────────────
+ * El logo vive en un bucket PRIVADO, así que se pinta con una URL firmada que caduca
+ * en una hora. La app nativa guarda en disco lo que lee, para funcionar sin
+ * conexión. Las dos cosas juntas no caben: una caché de ayer serviría firmas muertas.
+ * Por eso la lectura está PARTIDA en dos —las filas, que se cachean, y la firma, que
+ * no— y solo la web usa la función que hace ambas cosas de una vez.
+ *
  * El listado del CRUD (que sí quiere los retirados) es otra función y llega con V-4;
  * no se hace aquí para no tener una bandera `incluirRetirados` que alguien acabe
  * pasando en un inicio.
@@ -34,7 +42,7 @@ export type PartnerKind = 'patrocinador' | 'colaborador';
 
 /**
  * El orden de este array es el orden en que se pintan las secciones: primero quien
- * paga. Es dato, no cosmética: las cuatro superficies lo recorren en vez de escribir
+ * paga. Es dato, no cosmética: las cinco superficies lo recorren en vez de escribir
  * dos bloques a mano.
  */
 export const PARTNER_KINDS: readonly PartnerKind[] = ['patrocinador', 'colaborador'];
@@ -82,7 +90,28 @@ export const CLUB_PARTNER_LOGOS_BUCKET = 'club-partner-logos';
 export const CLUB_PARTNER_LOGO_TTL_SECONDS = 3600;
 
 /**
- * Los socios ACTIVOS de un club, ordenados y con el logo ya firmado.
+ * Una fila de socio TAL CUAL SE GUARDA: con la RUTA del logo, no con su URL firmada.
+ *
+ * Existe separada de `ClubPartner` por una razón concreta: esto SE PUEDE CACHEAR y
+ * una URL firmada NO. La app nativa guarda en disco lo que lee (`useCached`, caché
+ * offline), y una firma caduca en una hora; una caché de ayer serviría enlaces
+ * muertos y el club aparecería sin logos sin que nadie hubiera tocado nada. Es el
+ * mismo reparto que ya hace el repo con las fotos de jugador
+ * (`getPlayerPhotoPathFromClient` + `signPlayerPhotoFromClient`): la ruta se guarda,
+ * la llave se pide cada vez.
+ */
+export type ClubPartnerRow = {
+  id: string;
+  kind: PartnerKind;
+  name: string;
+  tagline: string | null;
+  /** Ruta DENTRO del bucket privado. No es una URL y no sirve para pintar. */
+  logoPath: string;
+  url: string;
+};
+
+/**
+ * Los socios ACTIVOS de un club, ordenados, SIN firmar.
  *
  * ORDEN: `sort_order` y, a igualdad, `created_at`. El desempate no es adorno — dos
  * socios con el mismo `sort_order` saldrían en orden arbitrario, y entonces la misma
@@ -93,17 +122,12 @@ export const CLUB_PARTNER_LOGO_TTL_SECONDS = 3600;
  * bajo el rótulo de «patrocinador» estaría diciendo algo falso de una empresa que
  * paga. Así que se descarta la fila y se llama a `onError`: no se inventa una sección
  * y no se pierde el rastro.
- *
- * SI LA FIRMA FALLA, la fila se queda sin logo en vez de desaparecer: mismo criterio
- * que `image-consent.ts` con las fotos. Un socio con nombre y enlace sigue sirviendo;
- * la pantalla decide si lo pinta.
  */
-export async function getClubPartnersFromClient(
+export async function getClubPartnerRowsFromClient(
   supabase: DbClient,
   clubId: string,
   onError?: (err: unknown, paso: string) => void,
-  ttlSeconds: number = CLUB_PARTNER_LOGO_TTL_SECONDS,
-): Promise<ClubPartner[]> {
+): Promise<ClubPartnerRow[]> {
   const { data: rows, error } = await supabase
     .from('club_partners')
     .select('id, kind, name, tagline, logo_path, url')
@@ -123,34 +147,91 @@ export async function getClubPartnersFromClient(
   }
   if (!rows || rows.length === 0) return [];
 
-  const validas = rows.filter((r) => {
-    if (esKindConocido(r.kind)) return true;
-    onError?.(new Error(`club_partners: kind desconocido '${String(r.kind)}'`), 'kind');
-    return false;
-  });
-  if (validas.length === 0) return [];
-
-  const paths = validas
-    .map((r) => r.logo_path)
-    .filter((p): p is string => typeof p === 'string' && p.length > 0);
-
-  const firmadas = new Map<string, string>();
-  if (paths.length > 0) {
-    const { data: lista, error: firmaErr } = await supabase.storage
-      .from(CLUB_PARTNER_LOGOS_BUCKET)
-      .createSignedUrls(paths, ttlSeconds);
-    if (firmaErr) onError?.(firmaErr, 'sign');
-    for (const s of lista ?? []) {
-      if (s.path && s.signedUrl) firmadas.set(s.path, s.signedUrl);
+  const salida: ClubPartnerRow[] = [];
+  for (const r of rows) {
+    if (!esKindConocido(r.kind)) {
+      onError?.(new Error(`club_partners: kind desconocido '${String(r.kind)}'`), 'kind');
+      continue;
     }
+    salida.push({
+      id: r.id,
+      kind: r.kind,
+      name: r.name,
+      tagline: r.tagline,
+      logoPath: r.logo_path,
+      url: r.url,
+    });
   }
+  return salida;
+}
 
-  return validas.map((r) => ({
+/**
+ * Firma UN LOTE de logos y devuelve `ruta → URL firmada`.
+ *
+ * En lote y no una a una: `createSignedUrls` es una sola llamada para los N logos del
+ * club, el mismo patrón que `notifications/image-consent.ts` con las fotos. Un inicio
+ * con seis socios haría seis peticiones si se firmara por fila.
+ *
+ * Lo que no se puede firmar sencillamente NO APARECE en el mapa. Quien pinta decide
+ * qué hacer con un socio sin logo; aquí no se inventa una URL ni se tira la fila.
+ */
+export async function signClubPartnerLogosFromClient(
+  supabase: DbClient,
+  paths: readonly string[],
+  onError?: (err: unknown, paso: string) => void,
+  ttlSeconds: number = CLUB_PARTNER_LOGO_TTL_SECONDS,
+): Promise<Map<string, string>> {
+  const firmadas = new Map<string, string>();
+  const limpias = paths.filter((p) => typeof p === 'string' && p.length > 0);
+  if (limpias.length === 0) return firmadas;
+
+  const { data: lista, error } = await supabase.storage
+    .from(CLUB_PARTNER_LOGOS_BUCKET)
+    .createSignedUrls([...limpias], ttlSeconds);
+  if (error) onError?.(error, 'sign');
+  for (const s of lista ?? []) {
+    if (s.path && s.signedUrl) firmadas.set(s.path, s.signedUrl);
+  }
+  return firmadas;
+}
+
+/**
+ * Los socios ACTIVOS de un club, ordenados y con el logo YA FIRMADO.
+ *
+ * Es la composición de las dos de arriba, y la que usa la WEB: se renderiza en el
+ * servidor en cada petición, así que la firma nace y se gasta en el mismo momento y
+ * no hay nada que caduque guardado.
+ *
+ * LA APP NATIVA NO DEBE USAR ESTA: lo que lee acaba en la caché de disco, y ahí una
+ * URL firmada se pudre en una hora. Allí van `getClubPartnerRowsFromClient` (a la
+ * caché) y `signClubPartnerLogosFromClient` (fuera de ella, solo online).
+ *
+ * SI LA FIRMA FALLA, la fila se queda sin logo en vez de desaparecer: mismo criterio
+ * que `image-consent.ts` con las fotos. Un socio con nombre y enlace sigue sirviendo;
+ * la pantalla decide si lo pinta.
+ */
+export async function getClubPartnersFromClient(
+  supabase: DbClient,
+  clubId: string,
+  onError?: (err: unknown, paso: string) => void,
+  ttlSeconds: number = CLUB_PARTNER_LOGO_TTL_SECONDS,
+): Promise<ClubPartner[]> {
+  const filas = await getClubPartnerRowsFromClient(supabase, clubId, onError);
+  if (filas.length === 0) return [];
+
+  const firmadas = await signClubPartnerLogosFromClient(
+    supabase,
+    filas.map((r) => r.logoPath),
+    onError,
+    ttlSeconds,
+  );
+
+  return filas.map((r) => ({
     id: r.id,
-    kind: r.kind as PartnerKind,
+    kind: r.kind,
     name: r.name,
     tagline: r.tagline,
-    logoUrl: firmadas.get(r.logo_path) ?? null,
+    logoUrl: firmadas.get(r.logoPath) ?? null,
     url: r.url,
   }));
 }
@@ -158,14 +239,19 @@ export async function getClubPartnersFromClient(
 /**
  * Reparte una lista en sus dos secciones, en el orden de `PARTNER_KINDS`.
  *
- * Existe para que las cuatro superficies no escriban cuatro veces el mismo `filter`.
+ * Existe para que las cinco superficies no escriban cinco veces el mismo `filter`.
  * Devuelve SIEMPRE las dos entradas, aunque estén vacías: así la pantalla decide si
  * pinta la sección mirando `length`, y no hay un `undefined` que recorrer.
+ *
+ * Genérica en la fila porque la nativa agrupa `ClubPartnerRow` (sin firmar, que es lo
+ * que sale de la caché) y la web agrupa `ClubPartner` (ya firmado). Una sola función
+ * para las dos: el reparto por `kind` es el mismo y no tiene por qué saber si hay
+ * logo.
  */
-export function groupPartnersByKind(
-  partners: readonly ClubPartner[],
-): Record<PartnerKind, ClubPartner[]> {
-  const out = { patrocinador: [] as ClubPartner[], colaborador: [] as ClubPartner[] };
+export function groupPartnersByKind<T extends { kind: PartnerKind }>(
+  partners: readonly T[],
+): Record<PartnerKind, T[]> {
+  const out = { patrocinador: [] as T[], colaborador: [] as T[] };
   for (const p of partners) out[p.kind].push(p);
   return out;
 }

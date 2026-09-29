@@ -5857,5 +5857,10 @@
       "ignore": "Si no has demanat aquest canvi, pots ignorar aquest correu: la teua contrasenya no es modificarà.",
       "signature": "L'equip de MisterFC"
     }
+  },
+  "partners": {
+    "title": "Patrocinadors i col·laboradors",
+    "patrocinador": "Patrocinadors",
+    "colaborador": "Col·laboradors"
   }
 }
