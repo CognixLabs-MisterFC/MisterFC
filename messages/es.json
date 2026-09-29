@@ -1067,10 +1067,12 @@
     "error_sign_in_failed": "Tu contraseña se ha guardado, pero no hemos podido iniciar tu sesión. Inténtalo de nuevo.",
     "error_tutor_menor_de_edad": "Esa cuenta consta como menor de edad y no puede figurar como tutor. Si eres el jugador, pide a tu club la cuenta propia; si es un error en tu fecha de nacimiento, corrígela y vuelve a intentarlo.",
     "checking": "Comprobando la invitación…",
-    "link_to_copy": "Mantén pulsado el enlace para copiarlo y ábrelo en el navegador:",
+    "link_to_copy": "O mantén pulsado el enlace para copiarlo:",
     "retry": "Reintentar",
     "error_network": "No hemos podido conectar. Comprueba tu conexión e inténtalo de nuevo.",
-    "error_no_web_url": "Esta versión de la app no puede completar invitaciones. Abre el enlace del correo en el navegador."
+    "error_no_web_url": "Esta versión de la app no puede completar invitaciones. Abre el enlace del correo en el navegador.",
+    "open_in_browser": "Abrir en el navegador",
+    "open_failed": "No se ha podido abrir el navegador. Copia este enlace y ábrelo a mano:"
   },
   "informes": {
     "title": "Informes de desarrollo",

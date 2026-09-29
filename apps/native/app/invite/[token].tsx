@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { acceptInvitationWithProfileSchema } from '@misterfc/core';
+import { acceptInvitationWithProfileSchema, openInBrowserPath } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { useSession } from '@/auth/session';
 import { useTranslations, useLocale } from '@/locale/provider';
@@ -105,6 +105,13 @@ export default function InviteScreen() {
     out: InvitePreflightOutcome;
   } | null>(null);
   const [intento, setIntento] = useState(0);
+  /**
+   * N-3b — `Linking.openURL` puede rechazar (un movil sin navegador que atienda
+   * https, o un perfil de trabajo que lo bloquea). Si eso pasa NO se traga el
+   * fallo: el rotulo de encima del enlace cambia y pide copiarlo a mano, que es lo
+   * que ya funcionaba antes de haber boton.
+   */
+  const [falloAlAbrir, setFalloAlAbrir] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -158,9 +165,26 @@ export default function InviteScreen() {
     // El unico veredicto que la web SI sabe atender es `not_self` (el padre que abre su
     // invitacion desde el movil). Los demas son del token y en el navegador darian lo
     // mismo, asi que ofrecer el enlace ahi seria mandar a alguien a un callejon.
+    /**
+     * N-3b — EL ENLACE ES EL ABRIDOR, no la ruta de invitacion.
+     *
+     * `/{locale}/invite/{token}` la reclama esta misma app (autoVerify en Android,
+     * AASA en iOS), asi que abrirla con `Linking.openURL` puede devolver al tutor
+     * aqui, al sitio del que viene. `/{locale}/abrir-invitacion/{token}` no la
+     * reclama nadie: el sistema la entrega al navegador y el 307 salta a la
+     * invitacion ya DENTRO del navegador. Medido en dispositivo con la version de
+     * pruebas internas de Play antes de poner el boton (N-3a, #745).
+     *
+     * El MISMO enlace sirve para el boton y para el texto copiable: una sola URL, un
+     * solo comportamiento, y es la que se verifico.
+     *
+     * La BASE sale de `webBaseUrl()` —como ya hacia esta pantalla, y por eso existe
+     * `error_no_web_url`— y el CAMINO de core, para que el segmento siga escrito en
+     * un unico sitio.
+     */
     const enlace =
       preflightMandaAlNavegador(code) && webBaseUrl()
-        ? `${webBaseUrl()}/${locale}/invite/${token}`
+        ? `${webBaseUrl()}${openInBrowserPath(locale, token)}`
         : null;
 
     return (
@@ -173,7 +197,16 @@ export default function InviteScreen() {
             : t(selfAcceptMessageKey(code))
         }
         link={enlace}
-        linkLabel={t('link_to_copy')}
+        linkLabel={falloAlAbrir ? t('open_failed') : t('link_to_copy')}
+        openLabel={enlace ? t('open_in_browser') : undefined}
+        onOpen={
+          enlace
+            ? () => {
+                setFalloAlAbrir(false);
+                void Linking.openURL(enlace).catch(() => setFalloAlAbrir(true));
+              }
+            : undefined
+        }
         actionLabel={sePuedeReintentar ? t('retry') : t('go_to_signin')}
         onAction={sePuedeReintentar ? reintentar : () => router.replace('/login')}
       />
@@ -386,6 +419,8 @@ function Verdict({
   onAction,
   link,
   linkLabel,
+  openLabel,
+  onOpen,
 }: {
   message: string;
   actionLabel?: string;
@@ -393,19 +428,38 @@ function Verdict({
   /** R-5 · N-2 — el enlace que hay que abrir en el navegador, si lo hay. */
   link?: string | null;
   linkLabel?: string;
+  /** N-3b — abre ese enlace en el navegador. Solo cuando hay enlace. */
+  openLabel?: string;
+  onOpen?: () => void;
 }) {
   return (
     <SafeAreaView className="flex-1 items-center justify-center px-8" style={{ backgroundColor: BRAND.navy }}>
       <Text className="text-center text-lg font-semibold text-zinc-200">{message}</Text>
       {link ? (
         <View className="mt-6 w-full">
+          {/*
+            N-3b — EL BOTON VA PRIMERO y el enlace queda debajo como respaldo.
+            `Linking.openURL` es el mismo que ya abre los documentos legales de esta
+            pantalla y del paywall: no estrena nada. El enlace apunta a la ruta
+            ABRIDORA, que no reclama ni Android ni iOS, asi que no puede devolver al
+            tutor a esta misma pantalla — medido en dispositivo (N-3a, #745).
+          */}
+          {openLabel && onOpen ? (
+            <Pressable
+              onPress={onOpen}
+              accessibilityRole="button"
+              className="mb-5 w-full rounded-xl px-6 py-3 active:opacity-70"
+              style={{ backgroundColor: BRAND.green }}
+            >
+              <Text className="text-center text-base font-semibold text-white">{openLabel}</Text>
+            </Pressable>
+          ) : null}
           <Text className="text-center text-sm text-zinc-400">{linkLabel}</Text>
           {/*
-            `selectable` y no un boton de copiar: copiar al portapapeles necesita
-            `expo-clipboard`, que es un modulo NATIVO — dependencia nueva y build nuevo,
-            y eso se mide en dispositivo antes de prometerlo (es N-3). Mantener pulsado
-            sobre un texto seleccionable ofrece «Copiar» en iOS y en Android sin añadir
-            nada, y funciona en el build que ya esta en la tienda.
+            El texto SIGUE siendo `selectable` y sigue sin `expo-clipboard`: es el
+            respaldo si `openURL` rechaza, y mantener pulsado ya ofrece «Copiar» en
+            las dos plataformas sin añadir un modulo nativo. Con el boton puesto,
+            `expo-clipboard` se queda fuera para siempre.
           */}
           <Text
             selectable
