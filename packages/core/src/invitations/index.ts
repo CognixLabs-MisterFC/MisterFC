@@ -58,6 +58,8 @@ export {
 } from './accept-new-invitee';
 export {
   decideSelfAccept,
+  decideInvitePreflight,
+  type InvitePreflight,
   type SelfAcceptDecision,
   type SelfAcceptInvitation,
   type SelfAcceptRefusal,

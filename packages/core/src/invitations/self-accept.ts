@@ -76,3 +76,41 @@ export function decideSelfAccept(
 
   return { ok: { targetUid: invitation.invited_user_id, email: invitation.email } };
 }
+
+/**
+ * R-5 — el MISMO veredicto, para poder preguntarlo ANTES de pedir nada.
+ *
+ * POR QUÉ EXISTE, medido en producción el 2026-09-29 con una invitación de tutor real:
+ * la pantalla nativa (`app/invite/[token].tsx`) atiende SOLO el caso `self`, pero la
+ * ruta `/{locale}/invite/*` la reclaman las dos tiendas (`autoVerify` en Android y el
+ * `apple-app-site-association` del dominio), así que CUALQUIER invitación abierta desde
+ * el móvil aterriza ahí. Y el veredicto solo se calculaba dentro del POST, y además
+ * DESPUÉS del esquema del cuerpo: un padre rellenaba nombre, teléfono y dos
+ * consentimientos para recibir `not_self` al final y ser mandado al navegador.
+ *
+ * NO ES UN GATE NUEVO, y eso es todo el diseño: llama a `decideSelfAccept` y no
+ * reimplementa ni una condición. Si fueran dos reglas, el día que una cambiara la
+ * pantalla ofrecería lo que el POST rechaza — que es la misma clase de fallo que la
+ * serie W estuvo cerrando.
+ *
+ * LO QUE NO DEJA SALIR. La rama `ok` del gate lleva `targetUid` y `email` porque el POST
+ * los necesita para reclamar la cuenta. El preflight los TIRA: contesta un estado y nada
+ * más. Es un endpoint público sin autenticar, y el token dice que quien lo tiene puede
+ * ACEPTAR esa invitación, no que pueda leer a quién se invitó ni con qué cuenta. Lo fija
+ * un test que cuenta las claves del objeto: si alguien añade el correo «para pintar un
+ * saludo», se pone rojo.
+ *
+ * Y TAMPOCO DICE DE QUÉ TIPO ES. Para todo lo que no es `self` la respuesta es
+ * `not_self`, sin distinguir tutor de seguidor: la pantalla hace lo mismo con todos
+ * —decirlo y mandar al navegador— y un dato que nadie usa es un dato que solo puede
+ * filtrarse.
+ */
+export type InvitePreflight = { status: 'self' } | { error: SelfAcceptRefusal };
+
+export function decideInvitePreflight(
+  invitation: SelfAcceptInvitation,
+  nowMs: number,
+): InvitePreflight {
+  const decision = decideSelfAccept(invitation, nowMs);
+  return 'error' in decision ? { error: decision.error } : { status: 'self' };
+}
