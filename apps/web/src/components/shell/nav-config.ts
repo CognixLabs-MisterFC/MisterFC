@@ -31,6 +31,7 @@ import {
   FileText,
   Settings,
   BookOpen,
+  Handshake,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -222,6 +223,13 @@ export const NAV: readonly NavEntry[] = [
   // F14E-1: Ajustes del club SIN director (lista propia, sin tocar DIRECCION que
   // comparten dashboard/equipos/plantilla/anuncios/invitaciones). coordinador se
   // MANTIENE como hoy. Guard server-side también revoca al director.
+  // V-4 — Patrocinadores y colaboradores del club: los gestionan admin_club y
+  // director (= ESTRUCTURA), que es el par de `canManageClubPartners` y el espejo de
+  // `user_is_admin_or_director`. NO cuelga de /ajustes: esa pantalla le revoca el
+  // acceso al director a proposito, y habria que relajar su puerta para meter esto.
+  // Guard server-side tambien en la pagina.
+  { key: 'patrocinadores', href: '/patrocinadores', icon: Handshake, roles: ESTRUCTURA },
+
   { key: 'ajustes', href: '/ajustes', icon: Settings, roles: ['admin_club', 'coordinador'] },
 
   { key: 'perfil', href: '/perfil', icon: UserRound, roles: ALL },
