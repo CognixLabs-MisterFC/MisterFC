@@ -7,11 +7,11 @@
 -- por tabla. No "parecidos": identicos.
 --
 -- Cubre:
---   [1]  ESTRUCTURAL: las 18 tablas llevan la policy, y la lista de tablas con candado
+--   [1]  ESTRUCTURAL: las 19 tablas llevan la policy, y la lista de tablas con candado
 --        es EXACTAMENTE la esperada. Si manana alguien anade una tabla de producto sin
 --        candado, o le pone candado a una que debia quedar abierta, esto se pone rojo.
 --   [2]  QUIEN PAGA NO PIERDE NADA. Recuentos identicos con el muro apagado y encendido.
---   [3]  Quien NO paga deja de ver el producto: cero en las 18.
+--   [3]  Quien NO paga deja de ver el producto: cero en las 19.
 --   [4]  Y sigue viendo lo que NO es producto: su perfil, su club, sus hijos, sus
 --        consentimientos, los legales y SUS AVISOS.
 --   [5]  EL STAFF NO SE ENTERA: el entrenador ve lo mismo con el muro encendido.
@@ -107,6 +107,12 @@ insert into public.announcements (club_id, team_id, author_profile_id, title, bo
   ('cc700000-0000-4000-8000-000000000001', 'cc7e0000-0000-4000-8000-000000000001',
    'cc7a0000-0000-4000-8000-00000000000e', 'Aviso Muro3', 'Cuerpo');
 
+-- V-1 · un socio del club: sin fila, [2] y [3] pasarian sin medir nada sobre la
+-- tabla 19. `logo_path` es un PATH (el CHECK rechaza una URL).
+insert into public.club_partners (club_id, kind, name, logo_path, url) values
+  ('cc700000-0000-4000-8000-000000000001', 'patrocinador', 'Socio Muro3',
+   'cc700000-0000-4000-8000-000000000001/socio.webp', 'https://socio-muro3.test');
+
 insert into public.conversations (id, club_id, player_id, coach_profile_id) values
   ('cc720000-0000-4000-8000-000000000001', 'cc700000-0000-4000-8000-000000000001',
    'cc7b0000-0000-4000-8000-000000000001', 'cc7a0000-0000-4000-8000-00000000000e'),
@@ -149,6 +155,7 @@ begin
       'callup_decisions','match_callup_meta','lineups','lineup_positions',
       'team_members','team_staff','conversations','messages','announcements',
       'assessment_campaigns','development_reports','team_development_reports','players',
+      'club_partners',
       'players_sporting',
       'profiles','memberships','clubs','player_accounts','consents','legal_documents',
       'notifications','seasons','categories','teams','invitations'
@@ -194,7 +201,8 @@ begin
       'events','match_state','match_events','match_periods','match_starters',
       'callup_decisions','match_callup_meta','lineups','lineup_positions',
       'team_members','team_staff','conversations','messages','announcements',
-      'assessment_campaigns','development_reports','team_development_reports','players'
+      'assessment_campaigns','development_reports','team_development_reports','players',
+      'club_partners'
     ]) t),
   puestas as (
     select tablename t from pg_policies
@@ -264,7 +272,8 @@ begin
        and tabla in ('events','match_state','match_events','match_periods','match_starters',
                      'callup_decisions','match_callup_meta','lineups','lineup_positions',
                      'team_members','team_staff','conversations','messages','announcements',
-                     'assessment_campaigns','development_reports','team_development_reports')
+                     'assessment_campaigns','development_reports','team_development_reports',
+                     'club_partners')
        and filas <> 0
   loop
     raise exception 'FAIL [3]: quien no paga sigue viendo % (% filas)', r.tabla, r.filas;
