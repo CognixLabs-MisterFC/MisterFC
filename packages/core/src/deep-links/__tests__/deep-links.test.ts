@@ -14,6 +14,9 @@ import {
   WEB_ORIGIN,
   inviteLink,
   inviteLinkBase,
+  OPEN_IN_BROWSER_SEGMENT,
+  openInBrowserPath,
+  openInBrowserLink,
 } from '../index';
 
 /**
@@ -183,5 +186,120 @@ describe('el enlace de invitacion', () => {
   // El host EXACTO importa: www no tiene certificado ni ficheros.
   it('nunca sale con www', () => {
     expect(inviteLink('es', 'x')).not.toContain('www.');
+  });
+});
+
+/**
+ * N-3a — LA RUTA ABRIDORA no la puede reclamar nadie.
+ *
+ * Existe para que el boton de la pantalla nativa (N-3b) mande al tutor al navegador
+ * sin que el sistema le devuelva a la app: `/{locale}/invite/{token}` SI esta
+ * reclamada, y abrirla con `Linking.openURL` lo devolveria al mismo sitio del que
+ * venia. `abrir-invitacion` no lo esta, y el salto a `/invite` ocurre ya dentro del
+ * navegador.
+ *
+ * Lo que vigila este bloque es que SIGA sin estarlo. Añadir el segmento al
+ * `intentFilters` de app.json o al AASA reintroduce el bucle, y —como todo en este
+ * fichero— en silencio: el enlace simplemente volveria a abrir la app.
+ *
+ * Y vigila el CONTROL NEGATIVO, que es lo que hace que lo anterior signifique algo:
+ * los mismos emparejadores tienen que decir que `/es/invite/abc` SI esta reclamada.
+ * Sin eso, un emparejador roto daria «no reclamada» para todo y el bloque pasaria
+ * entero sin medir nada.
+ */
+const RUTAS_ANDROID = (appJson.expo.android.intentFilters ?? []).flatMap((f) =>
+  f.data.map((d) => d.pathPrefix),
+);
+const RUTAS_APPLE = buildAppleAppSiteAssociation().applinks.details.flatMap(
+  (d) => d.paths ?? d.components?.map((c) => c['/']) ?? [],
+);
+
+/** Android empareja por PREFIJO de path, tal cual. */
+function androidLaReclama(path: string): boolean {
+  return RUTAS_ANDROID.some((prefijo) => path.startsWith(prefijo));
+}
+
+/** Apple empareja con patrones tipo `/es/invite/*`. */
+function appleLaReclama(path: string): boolean {
+  return RUTAS_APPLE.some((patron) => {
+    const re = new RegExp(
+      '^' + patron.split('*').map((t) => t.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$',
+    );
+    return re.test(path);
+  });
+}
+
+describe('N-3a · la ruta abridora', () => {
+  it('CONTROL NEGATIVO: los emparejadores dicen que la de invitacion SI esta reclamada', () => {
+    for (const locale of DEEP_LINK_LOCALES) {
+      const reclamada = `/${locale}/invite/abc123`;
+      expect(androidLaReclama(reclamada), `android: ${reclamada}`).toBe(true);
+      expect(appleLaReclama(reclamada), `apple: ${reclamada}`).toBe(true);
+    }
+  });
+
+  it('NO la reclama Android', () => {
+    for (const locale of DEEP_LINK_LOCALES) {
+      const abridora = openInBrowserPath(locale, 'abc123');
+      expect(androidLaReclama(abridora), `android reclama ${abridora}`).toBe(false);
+    }
+  });
+
+  it('NO la reclama iOS', () => {
+    for (const locale of DEEP_LINK_LOCALES) {
+      const abridora = openInBrowserPath(locale, 'abc123');
+      expect(appleLaReclama(abridora), `apple reclama ${abridora}`).toBe(false);
+    }
+  });
+
+  it('el segmento no empieza por el reclamado, ni al reves', () => {
+    // `pathPrefix` es un prefijo CRUDO: un segmento que empezara por «invite»
+    // quedaria reclamado sin que nadie lo hubiera querido.
+    expect(OPEN_IN_BROWSER_SEGMENT.startsWith('invite')).toBe(false);
+    expect('invite'.startsWith(OPEN_IN_BROWSER_SEGMENT)).toBe(false);
+  });
+
+  it('sale del mismo origen escrito que el enlace del correo', () => {
+    expect(openInBrowserLink('es', 'abc')).toBe(`${WEB_ORIGIN}/es/abrir-invitacion/abc`);
+    expect(openInBrowserLink('va', 'abc')).toBe(`${WEB_ORIGIN}/va/abrir-invitacion/abc`);
+  });
+
+  it('un locale que no es de la web cae en es, igual que el enlace del correo', () => {
+    expect(openInBrowserPath('pt', 'abc')).toBe('/es/abrir-invitacion/abc');
+  });
+
+  it('hay una ruta abridora por idioma, y ninguna choca con las reclamadas', () => {
+    const abridoras = DEEP_LINK_LOCALES.map((l) => openInBrowserPath(l, 'abc'));
+    expect(new Set(abridoras).size).toBe(DEEP_LINK_LOCALES.length);
+    expect(abridoras.some((a) => INVITE_DEEP_LINK_PATHS.includes(a))).toBe(false);
+  });
+});
+
+/**
+ * El redirect vive en `next.config.ts` y se lee como TEXTO a propósito: importarlo
+ * arrastraria los plugins de Next y Sentry a una prueba de core. Lo que importa es
+ * que exista, que use EL MISMO segmento que esta escrito aqui, y que apunte a la
+ * ruta reclamada — sin el salto, la abridora seria un 404.
+ */
+describe('N-3a · el redirect de la web', () => {
+  const nextConfig = readFileSync(raiz + 'apps/web/next.config.ts', 'utf8');
+
+  it('existe y usa el mismo segmento que core', () => {
+    expect(nextConfig).toContain(`/abrir-invitacion/:token`);
+    expect(OPEN_IN_BROWSER_SEGMENT).toBe('abrir-invitacion');
+  });
+
+  it('salta a la ruta de invitacion, que es la que la app sabe terminar', () => {
+    expect(nextConfig).toContain(`destination: '/:locale/invite/:token'`);
+  });
+
+  it('es TEMPORAL: un 308 se cachea para siempre y no habria vuelta atras', () => {
+    const i = nextConfig.indexOf('/abrir-invitacion/:token');
+    const trozo = nextConfig.slice(i, i + 200);
+    expect(trozo).toContain('permanent: false');
+  });
+
+  it('acota el locale a los tres de la web', () => {
+    expect(nextConfig).toContain(`'/:locale(${DEEP_LINK_LOCALES.join('|')})/abrir-invitacion/:token'`);
   });
 });

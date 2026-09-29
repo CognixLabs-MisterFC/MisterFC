@@ -145,6 +145,48 @@ export function inviteLink(locale: string, token: string): string {
 }
 
 /**
+ * El segmento de la ruta ABRIDORA: `/{locale}/abrir-invitacion/{token}`.
+ *
+ * ── N-3a · PARA QUÉ EXISTE ──────────────────────────────────────────────────
+ * La pantalla nativa de invitación, cuando el veredicto NO es «cuenta propia del
+ * menor», tiene que mandar al tutor al NAVEGADOR: la web es el único sitio que sabe
+ * terminar ese camino. Y ahí está la trampa: `/{locale}/invite/{token}` lo reclama la
+ * propia app (`autoVerify` en Android, AASA en iOS), así que abrirlo con
+ * `Linking.openURL` puede devolverlo a la app — al mismo sitio del que venía.
+ *
+ * Esta ruta NO la reclama nadie, así que el sistema la entrega al navegador; el salto
+ * a `/invite` ocurre ya DENTRO del navegador, donde ninguna de las dos plataformas
+ * vuelve a repartir. Es el mismo mecanismo que se midió con el correo antiguo, cuando
+ * el enlace de `supabase.co` redirigía aquí con un 303 y NO abría la app — lo que
+ * entonces era el problema, aquí es la solución.
+ *
+ * ── LO QUE HAY QUE NO ROMPER ────────────────────────────────────────────────
+ * Que este segmento siga SIN estar reclamado. Añadirlo al `intentFilters` de
+ * `app.json` o al AASA volvería a meter el bucle, y como todo en este fichero, en
+ * SILENCIO: el enlace simplemente volvería a abrir la app. Hay un test que lo
+ * comprueba contra las dos plataformas.
+ *
+ * El redirect vive en `redirects()` de `apps/web/next.config.ts`, que se evalúa ANTES
+ * del middleware de i18n.
+ */
+export const OPEN_IN_BROWSER_SEGMENT = 'abrir-invitacion';
+
+/** `/{locale}/abrir-invitacion/{token}` — la ruta, sin dominio. */
+export function openInBrowserPath(locale: string, token: string): string {
+  return `/${localeODefecto(locale)}/${OPEN_IN_BROWSER_SEGMENT}/${token}`;
+}
+
+/**
+ * El enlace completo que abrirá el botón de la pantalla nativa (N-3b).
+ *
+ * Se escribe aquí y no en la app por lo de siempre en este fichero: si la ruta se
+ * compone en dos sitios y uno se queda atrás, deja de funcionar sin que nada falle.
+ */
+export function openInBrowserLink(locale: string, token: string): string {
+  return `${WEB_ORIGIN}${openInBrowserPath(locale, token)}`;
+}
+
+/**
  * `apple-app-site-association`. Se emiten las DOS formas: `components`/`appIDs`
  * (iOS 13+) y `paths`/`appID` (anteriores). Son equivalentes; Apple usa la que
  * entiende.
