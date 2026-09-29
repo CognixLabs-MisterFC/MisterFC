@@ -139,3 +139,126 @@ describe('V-3 · la firma NO entra en la cache de disco', () => {
     expect(COMPONENTE).toContain('if (filas.length === 0) return null;');
   });
 });
+
+/**
+ * V-4 — las cadenas de la GESTION, que es de la web.
+ *
+ * Viven vigiladas desde aqui porque el catalogo es UNO para web y app, y porque
+ * `apps/web` no ejecuta ni un test: si estas claves no se comprueban en algun sitio,
+ * no se comprueban en ninguno. Lo que se afirma es que existen en los tres idiomas y
+ * que los mensajes de error CUBREN todos los codigos que devuelven las Server
+ * Actions — un codigo sin clave sale como texto generico y quien gestiona no se
+ * entera de que el problema era el enlace.
+ */
+const GESTION = [
+  'subtitle', 'count', 'empty', 'new', 'retired', 'retire', 'restore', 'edit', 'delete',
+  'delete_confirm', 'move_up', 'move_down', 'change_logo', 'save', 'cancel',
+  'field_name', 'field_tagline', 'field_url', 'field_logo',
+] as const;
+
+/** Los codigos que pueden llegar desde `actions.ts`, y el de reserva. */
+const CODIGOS_DE_ERROR = [
+  'error_logo_required', 'error_mime', 'error_too_large', 'error_upload',
+  'error_kind', 'error_name', 'error_tagline', 'error_url',
+  'error_forbidden', 'error_not_found', 'error_generic',
+] as const;
+
+const GESTOR = readFileSync(
+  join(RAIZ, 'apps', 'web', 'src', 'app', '[locale]', '(authenticated)', 'patrocinadores', 'partners-manager.tsx'),
+  'utf8',
+);
+const ACCIONES = readFileSync(
+  join(RAIZ, 'apps', 'web', 'src', 'app', '[locale]', '(authenticated)', 'patrocinadores', 'actions.ts'),
+  'utf8',
+);
+const PAGINA = readFileSync(
+  join(RAIZ, 'apps', 'web', 'src', 'app', '[locale]', '(authenticated)', 'patrocinadores', 'page.tsx'),
+  'utf8',
+);
+
+describe('V-4 · los textos de la gestion', () => {
+  it('estan en los tres idiomas', () => {
+    for (const locale of CATALOGOS) {
+      const cat = catalogo(locale);
+      for (const k of [...GESTION, ...CODIGOS_DE_ERROR]) {
+        const v = clave(cat, `partners.manage.${k}`);
+        expect(typeof v, `${locale}: falta partners.manage.${k}`).toBe('string');
+        expect((v as string).trim().length, `${locale}: ${k} vacia`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('el aviso de borrado nombra al socio y avisa de que se lleva el logo', () => {
+    for (const locale of CATALOGOS) {
+      const v = clave(catalogo(locale), 'partners.manage.delete_confirm') as string;
+      expect(v, `${locale}: sin {name}`).toContain('{name}');
+      expect(v.toLowerCase(), `${locale}: no menciona el logo`).toContain('logo');
+    }
+  });
+
+  it('el recuento usa plural ICU en los tres', () => {
+    for (const locale of CATALOGOS) {
+      const v = clave(catalogo(locale), 'partners.manage.count') as string;
+      expect(v, `${locale}`).toContain('plural,');
+    }
+  });
+
+  it('la entrada de menu tiene nombre en los tres', () => {
+    for (const locale of CATALOGOS) {
+      const v = clave(catalogo(locale), 'shell.nav.patrocinadores');
+      expect(typeof v, `${locale}: falta shell.nav.patrocinadores`).toBe('string');
+    }
+  });
+
+  it('cada codigo que devuelven las actions tiene su mensaje', () => {
+    // La tabla de traduccion vive en el componente. Un codigo nuevo en actions.ts que
+    // nadie anada a la tabla cae en generico, y este test lo hace visible.
+    const desde = GESTOR.indexOf('const claves');
+    const hasta = GESTOR.indexOf('function claveDeError');
+    expect(desde, 'no encuentro la tabla de claves').toBeGreaterThan(-1);
+    expect(hasta, 'no encuentro claveDeError').toBeGreaterThan(desde);
+    const tabla = GESTOR.slice(desde, hasta);
+    for (const code of ['kind', 'name', 'tagline', 'url', 'logo_path', 'forbidden', 'not_found', 'no_active_club', 'invalid']) {
+      expect(tabla, `la tabla no nombra ${code}`).toContain(`${code}:`);
+    }
+    expect(GESTOR, 'lo desconocido tiene que caer en generic').toContain(
+      ": 'manage.error_generic'",
+    );
+  });
+});
+
+describe('V-4 · la puerta y lo que no se le pregunta al cliente', () => {
+  it('la pagina comprueba el rol en el SERVIDOR, no solo esconde el menu', () => {
+    expect(PAGINA).toContain('canManageClubPartners');
+    const gate = PAGINA.indexOf('canManageClubPartners');
+    const carga = PAGINA.indexOf('getClubPartnersForManageFromClient');
+    expect(gate, 'el guard tiene que ir ANTES de leer nada').toBeLessThan(carga);
+    expect(PAGINA).toContain('redirect(');
+  });
+
+  it('borrar NO acepta la ruta del logo por parametro', () => {
+    // Si la aceptara, un cliente podria pasar la ruta del logo de OTRO socio: la
+    // policy de Storage autoriza a borrar cualquier objeto de la carpeta del club.
+    // La firma de la action es la garantia: un solo argumento.
+    expect(ACCIONES).toContain('export async function deletePartner(partnerId: unknown)');
+    expect(ACCIONES, 'la ruta se lee de la fila').toContain('filaDelClub');
+  });
+
+  it('el club sale de la cookie, no del cliente', () => {
+    expect(ACCIONES).toContain('ACTIVE_CLUB_COOKIE_NAME');
+    expect(ACCIONES).toContain('resolveActiveClub');
+  });
+
+  it('el movimiento se planea sobre la lista LEIDA, no sobre la del navegador', () => {
+    const i = ACCIONES.indexOf('export async function movePartner');
+    const trozo = ACCIONES.slice(i, i + 1200);
+    expect(trozo).toContain('getClubPartnersForManageFromClient');
+    expect(trozo).toContain('planClubPartnerMove');
+  });
+
+  it('la subida no admite SVG', () => {
+    // Un SVG es un documento con script, y esto lo manda una empresa por correo.
+    expect(GESTOR).toContain('AVATAR_MIME_TYPES');
+    expect(GESTOR).not.toContain('image/svg');
+  });
+});

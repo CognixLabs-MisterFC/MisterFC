@@ -11,14 +11,13 @@ import 'server-only';
  * oportunidad de que una se equivoque y nadie lo note: un log no falla, solo dice más
  * de lo que debía.
  *
- * V-3 — las dos de `lib/platform/*` (los flujos de superadmin) ya importan esta. Nota
- * de paso: eran las dos que tipaban `email: string` y NO toleraban nulo, así que al
- * unificarlas una cadena vacía pasa de 'invalid' a 'none'; las dos son etiquetas de
- * log, ninguna es el correo.
+ * V-3 y V-4 — YA NO QUEDA NINGUNA COPIA. Esta es la única, y cualquier sitio nuevo
+ * que enmascare un correo para un log tiene que importarla de aquí.
  *
- * QUEDA UNA, en `app/[locale]/invite/[token]/actions.ts`: la de ACEPTAR invitación,
- * hoy idéntica byte a byte a esta. El comentario anterior decía que solo quedaban las
- * de plataforma y no era cierto. Unificarla es trabajo aparte.
+ * Las dos de `lib/platform/*` (los flujos de superadmin) tipaban `email: string` y no
+ * toleraban nulo, así que al unificarlas una cadena vacía pasó de 'invalid' a 'none';
+ * las dos son etiquetas de log, ninguna es el correo. La de aceptar invitación era
+ * idéntica byte a byte a esta.
  *
  * Tolera null/undefined: hay sitios donde el correo de la fila puede no estar, y ahí
  * «none» es más útil que reventar el log.

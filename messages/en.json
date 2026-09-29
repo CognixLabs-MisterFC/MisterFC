@@ -696,7 +696,8 @@
       "pizarra": "Tactics board",
       "sesiones": "Sessions",
       "supresiones": "Erasure requests",
-      "platform": "Platform console"
+      "platform": "Platform console",
+      "patrocinadores": "Sponsors"
     },
     "collapse_sidebar": "Hide menu",
     "expand_sidebar": "Show menu",
@@ -5861,6 +5862,38 @@
   "partners": {
     "title": "Sponsors and partners",
     "patrocinador": "Sponsors",
-    "colaborador": "Partners"
+    "colaborador": "Partners",
+    "manage": {
+      "subtitle": "Add, order and retire whoever supports the club. They appear in the app, on the home screen of every family, player, coach, director and follower.",
+      "count": "{count, plural, =0 {none} one {# partner} other {# partners}}",
+      "empty": "None yet.",
+      "new": "Add",
+      "retired": "Retired",
+      "retire": "Retire",
+      "restore": "Restore",
+      "edit": "Edit",
+      "delete": "Delete",
+      "delete_confirm": "Delete “{name}”? Its logo is deleted too and this cannot be undone. If you only want to hide it, use Retire.",
+      "move_up": "Move up",
+      "move_down": "Move down",
+      "change_logo": "Change logo",
+      "save": "Save",
+      "cancel": "Cancel",
+      "field_name": "Name",
+      "field_tagline": "One line (optional)",
+      "field_url": "Link to their website",
+      "field_logo": "Logo",
+      "error_logo_required": "A logo is required to add it.",
+      "error_mime": "The logo must be JPG, PNG or WEBP.",
+      "error_too_large": "The logo cannot be larger than 2 MB.",
+      "error_upload": "The logo could not be uploaded. Please try again.",
+      "error_kind": "Choose whether it is a sponsor or a partner.",
+      "error_name": "The name cannot be empty or longer than 120 characters.",
+      "error_tagline": "The line of text cannot be longer than 160 characters.",
+      "error_url": "The link must start with http:// or https://.",
+      "error_forbidden": "You do not have permission to manage this club’s partners.",
+      "error_not_found": "That partner no longer exists. Reload the page.",
+      "error_generic": "It could not be saved. Please try again."
+    }
   }
 }

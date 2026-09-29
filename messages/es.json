@@ -504,7 +504,8 @@
       "pizarra": "Pizarra",
       "sesiones": "Sesiones",
       "supresiones": "Supresiones",
-      "platform": "Consola de plataforma"
+      "platform": "Consola de plataforma",
+      "patrocinadores": "Patrocinadores"
     },
     "collapse_sidebar": "Ocultar el menú",
     "expand_sidebar": "Mostrar el menú",
@@ -5861,6 +5862,38 @@
   "partners": {
     "title": "Patrocinadores y colaboradores",
     "patrocinador": "Patrocinadores",
-    "colaborador": "Colaboradores"
+    "colaborador": "Colaboradores",
+    "manage": {
+      "subtitle": "Añade, ordena y retira a quien apoya al club. Se ven en la app, en el inicio de cada familia, jugador, entrenador, directivo y seguidor.",
+      "count": "{count, plural, =0 {ninguno} one {# socio} other {# socios}}",
+      "empty": "Todavía no hay ninguno.",
+      "new": "Añadir",
+      "retired": "Retirado",
+      "retire": "Retirar",
+      "restore": "Devolver",
+      "edit": "Editar",
+      "delete": "Borrar",
+      "delete_confirm": "¿Borrar «{name}»? Se borra también su logo y no se puede deshacer. Si solo quieres que deje de verse, usa Retirar.",
+      "move_up": "Subir",
+      "move_down": "Bajar",
+      "change_logo": "Cambiar el logo",
+      "save": "Guardar",
+      "cancel": "Cancelar",
+      "field_name": "Nombre",
+      "field_tagline": "Una línea (opcional)",
+      "field_url": "Enlace a su web",
+      "field_logo": "Logo",
+      "error_logo_required": "Hace falta un logo para darlo de alta.",
+      "error_mime": "El logo tiene que ser JPG, PNG o WEBP.",
+      "error_too_large": "El logo no puede pasar de 2 MB.",
+      "error_upload": "No se ha podido subir el logo. Vuelve a intentarlo.",
+      "error_kind": "Elige si es patrocinador o colaborador.",
+      "error_name": "El nombre no puede estar vacío ni pasar de 120 caracteres.",
+      "error_tagline": "La línea de texto no puede pasar de 160 caracteres.",
+      "error_url": "El enlace tiene que empezar por http:// o https://.",
+      "error_forbidden": "No tienes permiso para gestionar los socios de este club.",
+      "error_not_found": "Ese socio ya no existe. Recarga la página.",
+      "error_generic": "No se ha podido guardar. Vuelve a intentarlo."
+    }
   }
 }

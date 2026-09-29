@@ -696,7 +696,8 @@
       "pizarra": "Pissarra",
       "sesiones": "Sessions",
       "supresiones": "Supressions",
-      "platform": "Consola de plataforma"
+      "platform": "Consola de plataforma",
+      "patrocinadores": "Patrocinadors"
     },
     "collapse_sidebar": "Amaga el menú",
     "expand_sidebar": "Mostra el menú",
@@ -5861,6 +5862,38 @@
   "partners": {
     "title": "Patrocinadors i col·laboradors",
     "patrocinador": "Patrocinadors",
-    "colaborador": "Col·laboradors"
+    "colaborador": "Col·laboradors",
+    "manage": {
+      "subtitle": "Afig, ordena i retira qui dóna suport al club. Es veuen en l'app, en l'inici de cada família, jugador, entrenador, directiu i seguidor.",
+      "count": "{count, plural, =0 {cap} one {# soci} other {# socis}}",
+      "empty": "Encara no hi ha cap.",
+      "new": "Afegir",
+      "retired": "Retirat",
+      "retire": "Retirar",
+      "restore": "Tornar",
+      "edit": "Editar",
+      "delete": "Esborrar",
+      "delete_confirm": "Esborrar «{name}»? També s'esborra el seu logo i no es pot desfer. Si només vols que deixe de veure's, usa Retirar.",
+      "move_up": "Pujar",
+      "move_down": "Baixar",
+      "change_logo": "Canviar el logo",
+      "save": "Guardar",
+      "cancel": "Cancel·lar",
+      "field_name": "Nom",
+      "field_tagline": "Una línia (opcional)",
+      "field_url": "Enllaç a la seua web",
+      "field_logo": "Logo",
+      "error_logo_required": "Fa falta un logo per a donar-lo d'alta.",
+      "error_mime": "El logo ha de ser JPG, PNG o WEBP.",
+      "error_too_large": "El logo no pot passar de 2 MB.",
+      "error_upload": "No s'ha pogut pujar el logo. Torna-ho a intentar.",
+      "error_kind": "Tria si és patrocinador o col·laborador.",
+      "error_name": "El nom no pot estar buit ni passar de 120 caràcters.",
+      "error_tagline": "La línia de text no pot passar de 160 caràcters.",
+      "error_url": "L’enllaç ha de començar per http:// o https://.",
+      "error_forbidden": "No tens permís per a gestionar els socis d'este club.",
+      "error_not_found": "Eixe soci ja no existix. Recarrega la pàgina.",
+      "error_generic": "No s'ha pogut guardar. Torna-ho a intentar."
+    }
   }
 }

@@ -22,6 +22,7 @@ import {
   validateChildRow,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
+import { maskEmail } from '@/lib/mask-email';
 import { clientIpFrom } from '@/lib/client-ip';
 import { emitInAppNotificationFanOut } from '@/lib/notify-bus';
 import {
@@ -200,14 +201,6 @@ async function parseChildUpdates(
 // grepables por `[invite][accept]`. Sentry recibe las mismas excepciones con
 // tags por step para poder filtrar incidencias en el dashboard.
 // ─────────────────────────────────────────────────────────────────────────────
-
-function maskEmail(email: string | null | undefined): string {
-  if (!email) return 'none';
-  const [user, domain] = email.split('@');
-  if (!user || !domain) return 'invalid';
-  const [domainName, ...tld] = domain.split('.');
-  return `${user.slice(0, 2)}***@${(domainName ?? '').slice(0, 1)}***${tld.length ? '.' + tld.join('.') : ''}`;
-}
 
 function serializeError(err: unknown): Record<string, unknown> {
   if (err instanceof Error) {
