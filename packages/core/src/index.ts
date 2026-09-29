@@ -20,6 +20,7 @@ export * from './plays/index';
 export * from './callups/index';
 export * from './messaging/index';
 export * from './invitations/index';
+export * from './partners/index';
 export * from './deep-links/index';
 export * from './offline/index';
 export * from './season/active-season';
