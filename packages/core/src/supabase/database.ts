@@ -399,6 +399,56 @@ export type Database = {
           },
         ]
       }
+      club_partners: {
+        Row: {
+          active: boolean
+          club_id: string
+          created_at: string
+          id: string
+          kind: string
+          logo_path: string
+          name: string
+          sort_order: number
+          tagline: string | null
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          club_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          logo_path: string
+          name: string
+          sort_order?: number
+          tagline?: string | null
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          club_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          logo_path?: string
+          name?: string
+          sort_order?: number
+          tagline?: string | null
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_partners_club_id_fkey"
+            columns: ["club_id"]
+            isOneToOne: false
+            referencedRelation: "clubs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       club_settings: {
         Row: {
           club_id: string
@@ -3704,6 +3754,35 @@ export type Database = {
             foreignKeyName: "subscription_events_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscription_grants: {
+        Row: {
+          created_at: string
+          motivo: string
+          profile_id: string
+          valid_until: string
+        }
+        Insert: {
+          created_at?: string
+          motivo: string
+          profile_id: string
+          valid_until: string
+        }
+        Update: {
+          created_at?: string
+          motivo?: string
+          profile_id?: string
+          valid_until?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_grants_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
