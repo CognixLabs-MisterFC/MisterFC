@@ -52,6 +52,33 @@ const nextConfig: NextConfig = {
         destination: '/:locale/equipos/plantillas',
         permanent: true,
       },
+
+      // ─────────────────────────────────────────────────────────────────────
+      // N-3a — LA RUTA ABRIDORA de una invitación.
+      //
+      // La pantalla nativa, cuando la invitación NO es de cuenta propia del menor,
+      // manda al tutor al navegador. Pero `/{locale}/invite/{token}` lo reclama la
+      // propia app (autoVerify en Android, AASA en iOS), así que abrirlo con
+      // `Linking.openURL` puede devolverlo a la app, al mismo sitio del que venía.
+      //
+      // `abrir-invitacion` NO lo reclama nadie: el sistema lo entrega al navegador y
+      // el salto a `/invite` ocurre ya DENTRO del navegador, donde ninguna de las dos
+      // plataformas vuelve a repartir. El segmento y el enlace se escriben UNA vez,
+      // en `packages/core/src/deep-links`, y hay un test que comprueba que sigue sin
+      // estar reclamado por ninguna de las dos.
+      //
+      // TEMPORAL (307) Y NO PERMANENTE, a propósito: un 308 se queda cacheado en el
+      // navegador indefinidamente, y si algún día hay que cambiar el destino —o
+      // retirar esto porque el bucle aparezca igual— los que ya lo visitaron se
+      // quedarían con el salto viejo grabado.
+      //
+      // El locale va acotado a los tres de la web para no capturar cualquier primer
+      // segmento.
+      {
+        source: '/:locale(es|en|va)/abrir-invitacion/:token',
+        destination: '/:locale/invite/:token',
+        permanent: false,
+      },
     ];
   },
 };
