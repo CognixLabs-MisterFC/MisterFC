@@ -9,7 +9,7 @@
 --   T1.  Las policies existen, y el candado del muro es RESTRICTIVE.
 --   T2.  Lee CUALQUIER miembro del club: admin, director, coordinador, entrenador,
 --        tutor y jugador. Seis lecturas, no una.
---   T3.  NO lee quien es de otro club. Ni `anon`.
+--   T3.  NO lee quien es de otro club. Y `anon` no llega ni a la RLS: 42501 de ACL.
 --   T4.  `active` lo filtra la POLICY: el miembro no ve el socio retirado; el que
 --        gestiona SÍ lo ve.
 --   T5.  Escriben admin_club y director: insert, update y delete.
@@ -182,7 +182,7 @@ end $$;
 
 -- ── T3 · Aislamiento: otro club, y anon ─────────────────────────────────────
 do $$
-declare v_n int;
+declare v_n int; v_ok boolean;
 begin
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims',
@@ -194,12 +194,27 @@ begin
     raise exception 'FAIL [T3]: el admin del club B ve % socios del club A', v_n;
   end if;
 
-  perform set_config('role', 'anon', true);
-  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
-  select count(*) into v_n from public.club_partners;
+  -- anon no llega ni a la RLS: no tiene NINGUN privilegio sobre la tabla, porque los
+  -- default privileges de este esquema se lo quitaron (mig 20261078000000, y lo vigila
+  -- `acl_tablas_cerradas`). Asi que el rechazo es un 42501 de ACL, no «cero filas».
+  --
+  -- Lo escribi primero como «ve 0 filas» y el CI de #741 lo tumbo con «permission
+  -- denied for table club_partners». Merece la pena que quede aqui: afirmar que ve
+  -- cero es afirmar algo MAS DEBIL que lo que pasa de verdad, y el dia que alguien
+  -- concediera un `select` a anon a mano, la version floja habria seguido pasando
+  -- —porque la RLS no le da policy— y esta no.
+  v_ok := false;
+  begin
+    perform set_config('role', 'anon', true);
+    perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+    select count(*) into v_n from public.club_partners;
+    v_ok := true;
+  exception when insufficient_privilege then
+    null;  -- lo esperado
+  end;
   perform set_config('role', 'postgres', true);
-  if v_n <> 0 then
-    raise exception 'FAIL [T3]: anon ve % socios, y no hay nada publico', v_n;
+  if v_ok then
+    raise exception 'FAIL [T3]: anon ha podido CONSULTAR club_partners (vio % filas): tenia que ser un 42501 de ACL', v_n;
   end if;
 end $$;
 
@@ -374,7 +389,7 @@ end $$;
 
 -- ── T10 · El bucket es PRIVADO y tiene su gate ──────────────────────────────
 do $$
-declare v_pub boolean; v_n int; v_ok boolean;
+declare v_pub boolean; v_n int; v_ok boolean; v_estado text;
 begin
   select public into v_pub from storage.buckets where id = 'club-partner-logos';
   if v_pub is null then
@@ -433,37 +448,44 @@ begin
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims',
     '{"sub":"cba00000-0000-4000-8000-00000000c000","role":"authenticated"}', true);
-  v_ok := false;
+  -- `when others` y no `insufficient_privilege`: Storage no siempre rechaza con 42501
+  -- (el test de player-photos tambien captura `others` por lo mismo). Lo que hace que
+  -- esto siga siendo una prueba y no un «algo fallo» es el CONTROL POSITIVO de justo
+  -- arriba: el INSERT del director es IDENTICO salvo el rol y pasa, asi que la unica
+  -- diferencia que puede explicar este rechazo es quien lo intenta.
+  v_ok := false; v_estado := null;
   begin
     insert into storage.objects (bucket_id, name, owner, metadata) values
       ('club-partner-logos', 'cb000000-0000-4000-8000-0000000000a0/del-coord.webp',
        'cba00000-0000-4000-8000-00000000c000', '{}'::jsonb);
     v_ok := true;
-  exception when insufficient_privilege then
-    null;
+  exception when others then
+    v_estado := sqlstate;
   end;
   perform set_config('role', 'postgres', true);
   if v_ok then
     raise exception 'FAIL [T10]: el coordinador ha podido subir un logo';
   end if;
+  raise notice 'T10: el coordinador fue rechazado con sqlstate %', v_estado;
 
   -- Ni el tutor.
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims',
     '{"sub":"cba00000-0000-4000-8000-000000000001","role":"authenticated"}', true);
-  v_ok := false;
+  v_ok := false; v_estado := null;
   begin
     insert into storage.objects (bucket_id, name, owner, metadata) values
       ('club-partner-logos', 'cb000000-0000-4000-8000-0000000000a0/del-tutor.webp',
        'cba00000-0000-4000-8000-000000000001', '{}'::jsonb);
     v_ok := true;
-  exception when insufficient_privilege then
-    null;
+  exception when others then
+    v_estado := sqlstate;
   end;
   perform set_config('role', 'postgres', true);
   if v_ok then
     raise exception 'FAIL [T10]: el TUTOR ha podido subir un logo';
   end if;
+  raise notice 'T10: el tutor fue rechazado con sqlstate %', v_estado;
 end $$;
 
 -- ── T11 · CONTROL NEGATIVO del muro ─────────────────────────────────────────
