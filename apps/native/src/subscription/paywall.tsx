@@ -207,19 +207,6 @@ export function PaywallScreen() {
                 <Text className="text-base font-semibold text-white">{t('subscribe')}</Text>
               )}
             </Pressable>
-
-            <Pressable
-              onPress={onRestore}
-              disabled={busy !== null || !online}
-              className="items-center rounded-xl border border-zinc-200 py-3 active:opacity-70"
-              style={busy !== null || !online ? { opacity: 0.5 } : undefined}
-            >
-              {busy === 'restore' ? (
-                <ActivityIndicator />
-              ) : (
-                <Text className="text-base font-medium text-zinc-700">{t('restore')}</Text>
-              )}
-            </Pressable>
           </>
         ) : (
           <View className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
@@ -232,6 +219,37 @@ export function PaywallScreen() {
           </View>
         )}
 
+        {/* RESTAURAR va FUERA del condicional del paquete, y eso es el arreglo.
+            Estaba dentro de la rama `pkg`, así que desaparecía junto con el precio
+            cuando el offering no cargaba: quien ya había pagado, reinstalaba y se
+            topaba con ese fallo se quedaba sin NINGUNA forma de recuperar su compra
+            —es el único botón de restaurar de toda la app— y es justo el caso para el
+            que Apple lo exige (Guideline 3.1.2).
+
+            Restaurar no necesita el paquete: pregunta a la tienda por las compras de
+            esta cuenta, no por lo que hay en venta. Lo único que necesita es que el
+            SDK esté configurado, y eso es exactamente `sellable`; por eso la guarda es
+            esa y no `pkg`. Sin clave de plataforma (Android hoy) `Purchases` no está
+            configurado y llamarlo lanzaría: ahí se sigue sin ofrecer el botón.
+
+            Tampoco se mira `loadingOffer`: si la consulta del precio se quedara
+            colgada, restaurar volvería a estar escondido por el mismo motivo que se
+            acaba de arreglar. */}
+        {sellable ? (
+          <Pressable
+            onPress={onRestore}
+            disabled={busy !== null || !online}
+            className="items-center rounded-xl border border-zinc-200 py-3 active:opacity-70"
+            style={busy !== null || !online ? { opacity: 0.5 } : undefined}
+          >
+            {busy === 'restore' ? (
+              <ActivityIndicator />
+            ) : (
+              <Text className="text-base font-medium text-zinc-700">{t('restore')}</Text>
+            )}
+          </Pressable>
+        ) : null}
+
         {busy === 'activating' ? (
           <Text className="text-center text-xs text-zinc-500">{t('activating')}</Text>
         ) : busy === 'claiming' ? (
@@ -242,7 +260,11 @@ export function PaywallScreen() {
         ) : null}
         {message ? <Text className="text-center text-sm text-zinc-700">{message}</Text> : null}
 
-        <Text className="mt-2 text-xs text-zinc-400">{t('terms_note')}</Text>
+        {/* El aviso de renovación automática y de cómo cancelar. `zinc-600` y no
+            `zinc-400`: aquel daba 2,6:1 de contraste sobre blanco a 12 px —por debajo
+            del mínimo de accesibilidad— y dejaba el texto que Apple revisa con más
+            lupa en 3.1.2 siendo el más apagado de la pantalla. `zinc-600` da 7,7:1. */}
+        <Text className="mt-2 text-xs text-zinc-600">{t('terms_note')}</Text>
 
         {/* SU-7 · Apple lo EXIGE en el binario, no solo en la ficha: una suscripción
             auto-renovable sin enlaces a condiciones y privacidad es un rechazo por
