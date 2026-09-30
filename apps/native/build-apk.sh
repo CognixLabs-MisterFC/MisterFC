@@ -8,9 +8,10 @@
 #   · AUTÓNOMO (por defecto): assembleRelease firmado con el debug keystore local y
 #     el JS + assets EMBEBIDOS. El APK funciona SOLO —sin Metro y sin el ordenador
 #     delante—, así Jose puede instalarlo y probar convocatorias/directo/push en
-#     condiciones reales fuera de casa. La minificación (R8/Proguard) se deja
-#     DESACTIVADA a propósito: da el empaquetado standalone de release sin sus fallos
-#     ni su coste, para iterar rápido en QA.
+#     condiciones reales fuera de casa. La minificación (R8) se deja DESACTIVADA a
+#     propósito: da el empaquetado standalone de release sin sus fallos ni su coste,
+#     para iterar rápido en QA. Los builds de RELEASE de verdad (EAS) sí la llevan
+#     desde D-2; ver la nota junto a `enableMinifyInReleaseBuilds` más abajo.
 #   · METRO (--metro): assembleDebug; el APK carga el JS desde Metro (dev server).
 #     Útil solo para iterar JS rápido con el ordenador delante.
 #
@@ -142,13 +143,32 @@ if [ "$MODE" = "metro" ]; then
     --no-parallel
 else
   # AUTÓNOMO: assembleRelease (developer support OFF → SIEMPRE usa el bundle embebido).
-  # Minificación DESACTIVADA a propósito (R8/Proguard y shrinkResources off): da el
-  # empaquetado standalone sin sus fallos ni su coste. Firma = debug keystore de la
-  # plantilla de Expo (android/app/debug.keystore) → APK instalable sin más.
+  # Minificación DESACTIVADA a propósito (R8 y shrinkResources off): da el empaquetado
+  # standalone sin sus fallos ni su coste. Firma = debug keystore de la plantilla de
+  # Expo (android/app/debug.keystore) → APK instalable sin más.
+  #
+  # ⚠️ D-2 — EL NOMBRE DE LA PROPIEDAD CAMBIÓ. Aquí ponía
+  # `android.enableProguardInReleaseBuilds`, que el build.gradle que genera el
+  # prebuild YA NO LEE (lee `android.enableMinifyInReleaseBuilds`, ver su línea 69).
+  # Era un flag muerto: no desactivaba nada, y solo parecía funcionar porque el valor
+  # por defecto ya era `false`. Desde que `expo-build-properties` pone
+  # `enableMinifyInReleaseBuilds=true` en gradle.properties para los builds de
+  # release, el flag viejo habría dejado que la QA local construyera CON R8 — justo
+  # lo contrario de lo que promete este comentario, y con el coste de tiempo que se
+  # quiere evitar aquí.
+  #
+  # Para REPRODUCIR el build minificado en local (es la única forma de probar R8 sin
+  # gastar un build de EAS), lanza gradle a mano desde apps/native/android con la
+  # propiedad en true:
+  #
+  #     ./gradlew assembleRelease -Pandroid.enableMinifyInReleaseBuilds=true
+  #
+  # Tarda bastante más. Y ojo: un crash por R8 no aparece al compilar, aparece al
+  # USAR la app, así que el APK hay que instalarlo y recorrerlo.
   echo "▶ ./gradlew assembleRelease  (AUTÓNOMO, sin minificar; ABI=$ABI, max-workers=$WORKERS, CMAKE_JOBS=$CMAKE_BUILD_PARALLEL_LEVEL, sin parallel)…"
   ./gradlew assembleRelease \
     -PreactNativeArchitectures="$ABI" \
-    -Pandroid.enableProguardInReleaseBuilds=false \
+    -Pandroid.enableMinifyInReleaseBuilds=false \
     -Pandroid.enableShrinkResourcesInReleaseBuilds=false \
     --max-workers="$WORKERS" \
     --no-parallel
