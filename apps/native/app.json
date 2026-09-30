@@ -66,7 +66,10 @@
         "@sentry/react-native",
         {
           "organization": "mister-fc",
-          "project": "misterfc-native"
+          "project": "misterfc-native",
+          "experimental_android": {
+            "enableAndroidGradlePlugin": true
+          }
         }
       ],
       [
@@ -93,6 +96,14 @@
         "expo-image-picker",
         {
           "photosPermission": "MisterFC accede a tus fotos para actualizar la foto del jugador."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true
+          }
         }
       ]
     ],
