@@ -40,6 +40,31 @@
 //
 // ⚠️ Si algún día se añade una pantalla que haga fotos con `launchCameraAsync`,
 // hay que quitar CAMERA de esa lista o la llamada fallará en tiempo de ejecución.
+//
+// ---------------------------------------------------------------------------
+// ORIENTACIÓN LIBRE (`orientation: "default"` en app.json)
+// ---------------------------------------------------------------------------
+// Mismo motivo para vivir aquí: app.json no admite comentarios.
+//
+// Estaba en `"portrait"`, y Play lo señala: «quita las restricciones de
+// redimensionamiento y orientación para que sea compatible con pantallas
+// grandes». Con `portrait`, el manifest sale con
+// `android:screenOrientation="portrait"` y la app no gira ni se redimensiona,
+// lo que en una tablet o en pantalla partida deja una franja vertical.
+//
+// `orientation` es una clave DE PRIMER NIVEL y no admite variante por
+// plataforma (el esquema solo acepta `default`, `portrait` y `landscape`), así
+// que esto desbloquea Android Y iOS. Es una decisión tomada: a Apple no le
+// molesta, y mantener iOS en vertical habría exigido un config plugin propio
+// para relajar solo el manifest de Android — más piezas para menos.
+//
+// ⚠️ LO QUE HAY QUE MIRAR EN DISPOSITIVO al girar, que es donde esto se rompe
+// si se rompe: `ui/lineup-field.tsx` mide COORDENADAS DE VENTANA para el
+// arrastrar y soltar (`fieldRectRef` / `benchRectRef`), y una rotación
+// invalida esas medidas hasta que se vuelven a tomar. Los tres sitios que
+// dependen del ancho están acotados —`Math.min(winW - 32, 420)` en
+// lineup-field, 460 en play-field y `width - 64` en el gráfico del dashboard—
+// así que en pantalla ancha no se estiran; el resto es flex y reflowea.
 module.exports = ({ config }) => ({
   ...config,
   extra: {
