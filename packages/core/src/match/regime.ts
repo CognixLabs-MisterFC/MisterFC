@@ -40,11 +40,29 @@ export function limitedRegime(maxSubs: number): SubstitutionRegime {
 }
 
 /**
- * Régimen por defecto cuando no hay fila para (categoría, división) — p.ej.
- * categorías adultas sin división de competición cargada. Por defecto CORRIDO
- * (coherente con el default histórico de base); editable migrando el seed.
+ * Régimen por defecto cuando NO hay fila para (categoría, división): categoría sin
+ * divisiones cargadas en `substitution_regimes`, equipo con `division` nula, o par
+ * que no existe en el catálogo.
+ *
+ * **LIMITADO A 7 SIN REENTRADA, y el porqué es lo importante.** Esto estuvo en
+ * `ROLLING_REGIME` y era el fallo del lado equivocado: un hueco en los datos de
+ * referencia regalaba cambios ILIMITADOS con reentrada, en silencio. Ni un error, ni
+ * un aviso en pantalla, ni forma de notarlo salvo mirando la tabla. Le pasó a `senior`,
+ * que no tenía ni una fila: un senior de tercera jugaba con la regla contraria a la
+ * real y nada lo decía.
+ *
+ * La regla confirmada por Jose es que el corrido es la EXCEPCIÓN —cadete e infantil de
+ * primera y segunda, y alevín, benjamín, prebenjamín y querubín— y que todo lo demás
+ * son 7 sin reentrada. Así que el valor por defecto correcto es también el seguro: si
+ * falta el dato, se aplica la regla más restrictiva. Equivocarse limitando se nota en
+ * el acto —el entrenador ve "0 cambios restantes" y lo dice— mientras que equivocarse
+ * permitiendo no se nota hasta que el árbitro no deja hacer el octavo.
+ *
+ * Esto NO sustituye a tener la fila: un equipo cuya división sí da corrido y que caiga
+ * aquí recibirá 7 cambios, que es incorrecto para él. El arreglo de ese caso es poner
+ * su `division`, y este valor solo decide hacia dónde se falla mientras no esté.
  */
-export const DEFAULT_REGIME: SubstitutionRegime = ROLLING_REGIME;
+export const DEFAULT_REGIME: SubstitutionRegime = limitedRegime(7);
 
 /**
  * ¿Se puede registrar OTRA sustitución dado el régimen y las ya hechas? En
