@@ -890,7 +890,8 @@ export async function loadMatchLive(
   });
 
   // F7.6c — régimen de cambios desde (categoría.kind, equipo.división) contra la
-  // tabla de referencia. Sin fila (p.ej. categoría adulta) → DEFAULT_REGIME.
+  // tabla de referencia. Sin fila → DEFAULT_REGIME, que es el RESTRICTIVO (7 sin
+  // reentrada): el hueco en los datos falla del lado seguro, no del permisivo.
   let regime: SubstitutionRegime = DEFAULT_REGIME;
   const kind = event.teams.categories.kind;
   const division = event.teams.division;

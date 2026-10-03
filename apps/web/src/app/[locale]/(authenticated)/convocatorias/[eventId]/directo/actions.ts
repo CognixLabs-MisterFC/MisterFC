@@ -731,7 +731,9 @@ async function loadLiveSquad(supabase: Supa, eventId: string) {
 /**
  * F7.6c — régimen de cambios del equipo del partido, resuelto desde
  * (categories.kind, teams.division) contra la tabla `substitution_regimes`.
- * Si no hay fila (p.ej. categoría adulta sin división cargada) → DEFAULT_REGIME.
+ * Si no hay fila (categoría sin divisiones cargadas, o `division` nula) →
+ * DEFAULT_REGIME, que es el RESTRICTIVO (7 sin reentrada): un hueco en los datos de
+ * referencia no puede regalar cambios ilimitados en silencio.
  */
 async function loadRegime(supabase: Supa, eventId: string): Promise<SubstitutionRegime> {
   const { data } = await supabase
