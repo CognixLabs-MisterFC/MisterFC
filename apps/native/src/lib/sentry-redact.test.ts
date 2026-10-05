@@ -8,8 +8,9 @@ import {
   type SanitizableEvent,
 } from './sentry-redact';
 
+// JWT sintético: existe para comprobar que el scrub lo tapa. No firma nada.
 const JWT =
-  'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMiLCJuYW1lIjoiTHVjaWEifQ.s5H3xg7yQe2r_1a-Bc';
+  'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMiLCJuYW1lIjoiTHVjaWEifQ.s5H3xg7yQe2r_1a-Bc'; // gitleaks:allow
 
 describe('redact', () => {
   it('redacta un JWT en medio de una frase', () => {

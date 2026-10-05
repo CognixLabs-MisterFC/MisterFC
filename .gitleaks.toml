@@ -1,0 +1,42 @@
+# Red contra fugas de secretos. Corre en CI, como un paso del job `validate`
+# —justo después del checkout, antes de instalar nada— y no como un job aparte:
+# así el run se cae en 20 segundos en vez de después del `pnpm install`, y no
+# cuesta un job más.
+#
+# Corre SIEMPRE, sin filtro de rutas: un secreto puede entrar por cualquier
+# fichero.
+#
+# ESTO NO SUSTITUYE AL ESCANEO DE GITHUB. El repositorio es PÚBLICO y tiene
+# activados el escaneo de secretos y la PROTECCIÓN DE PUSH (se encendieron el
+# 5-oct-2026; hasta entonces estaban los dos apagados). Esa protección rechaza
+# el push antes de que el secreto llegue a existir en el remoto, que es lo único
+# que de verdad evita la fuga: en un repo público, un secreto que llega a
+# `main` hay que darlo por comprometido aunque el commit se borre después.
+# gitleaks es la segunda vuelta: cubre lo que los patrones de GitHub no conocen.
+#
+# ⚠️ CÓMO SE AÑADE UNA EXCEPCIÓN. Con el valor EXACTO, nunca por regla ni por
+# carpeta: silenciar `generic-api-key` entero, o `**/__tests__/**`, deja de
+# avisar también del siguiente, que sí será de verdad. Para un literal de
+# prueba, lo preferido es un `gitleaks:allow` en SU línea, que deja la excusa al
+# lado de lo que excusa; así están los cuatro de los tests.
+#
+# Medido el 5-oct-2026 sobre el árbol entero: 5 avisos, los 5 falsos.
+
+[extend]
+useDefault = true
+
+# La clave de FCM de Android. `google-services.json` viaja DENTRO del APK, así
+# que su `AIza…` la extrae cualquiera del binario y Google la trata como
+# pública; el fichero no lleva ninguna clave privada (comprobado). Lo que la
+# protege es la restricción por paquete + huella SHA-1 en Google Cloud Console,
+# no el repositorio.
+#
+# ⚠️ Se permite EL VALOR, no el fichero. Lo normal sería poner la ruta en
+# `paths`, y lo probé en el repo hermano: con la ruta permitida, un `sk_live_…`
+# pegado dentro de ese JSON pasaba sin que nada protestase. Y `matchCondition =
+# "AND"` junto a `paths` no acotó nada en la 8.30.1: ganó la ruta. Si algún día
+# se regenera el fichero, CI se pondrá rojo UNA vez y habrá que cambiar el valor
+# aquí — que es exactamente el aviso que se quiere.
+[[allowlists]]
+description = "La clave AIza de FCM, por su valor exacto"
+regexes = ['''AIzaSyA_Otu83HGqUPUK-0EYZlX3cjjy6MNXxf0''']

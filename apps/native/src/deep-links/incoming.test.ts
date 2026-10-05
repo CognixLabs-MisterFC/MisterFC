@@ -9,7 +9,8 @@ import { resolveInvitePath } from '@/deep-links/incoming';
  * app abre en la portada y el enlace del correo parece no haber hecho nada.
  */
 
-const TOKEN = '3f7c2b10-8f4a-4e21-9a55-2c1d6e0b7a90';
+// uuid inventado para el test; no es un token de invitación de nadie.
+const TOKEN = '3f7c2b10-8f4a-4e21-9a55-2c1d6e0b7a90'; // gitleaks:allow
 
 describe('resolveInvitePath · lo que llega del correo', () => {
   it.each(['es', 'en', 'va'])('quita el locale /%s/ que la app no tiene', (loc) => {
