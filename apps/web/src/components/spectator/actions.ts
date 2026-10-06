@@ -41,17 +41,3 @@ export async function setActivePlayer(playerId: string): Promise<void> {
 
   revalidatePath('/', 'layout');
 }
-
-/**
- * Re-escribe la cookie del nieto activo cuando resolveActivePlayer detecta que
- * apuntaba a un jugador que ya no sigue (staleCookie=true). Idempotente.
- */
-export async function rewriteStaleActivePlayer(playerId: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(ACTIVE_PLAYER_COOKIE_NAME, playerId, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: COOKIE_MAX_AGE_SECONDS,
-  });
-}

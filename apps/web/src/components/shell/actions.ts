@@ -50,17 +50,3 @@ export async function setActiveClub(clubId: string): Promise<void> {
 
   revalidatePath('/', 'layout');
 }
-
-/**
- * Re-escribe la cookie de club activo cuando el resolveActiveClub detecta
- * que apuntaba a un club inválido (staleCookie=true). Idempotente.
- */
-export async function rewriteStaleActiveClub(clubId: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(ACTIVE_CLUB_COOKIE_NAME, clubId, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: COOKIE_MAX_AGE_SECONDS,
-  });
-}

@@ -158,6 +158,15 @@ jobs:
       - name: Check active club selection
         run: pnpm check:club-activo
 
+      # /es daba 500 en produccion: el layout reescribia la cookie de club activo
+      # EN PLENO RENDER llamando a una funcion de un fichero 'use server'. Esa
+      # directiva la hace invocable desde el CLIENTE; no convierte en Server Action
+      # una llamada hecha desde un Server Component, asi que el cookies().set()
+      # reventaba. Estaba en los DOS layouts hermanos, y cada funcion tenia un unico
+      # llamador: ese render. Nunca pudieron funcionar.
+      - name: Check cookies written during render
+        run: pnpm check:cookies-en-render
+
       # El octavo correo de Correo-B es el unico que se pide SIN SESION, y tiene dos
       # formas de romperse mudo: un texto que falte en un idioma (excepcion en el
       # envio, solo para ese idioma) y el destino del enlace, que fue el BUG 4.
