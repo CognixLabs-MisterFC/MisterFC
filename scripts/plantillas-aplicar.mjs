@@ -26,10 +26,25 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const DIR = join(ROOT, 'supabase/emails');
-// Solo queda `recovery`: `invite` y `magic_link` se retiraron del dashboard al
-// cerrar Correo-B (nadie las disparaba ya) y `recovery` se ira cuando las apps
-// instaladas dejen de llamar a resetPasswordForEmail.
-const TEMPLATES = ['recovery'];
+// NO queda ninguna propia: `invite` y `magic_link` se retiraron al cerrar Correo-B
+// (nadie las disparaba ya) y `recovery` el 06-10-2026, cuando las apps publicadas
+// dejaron de llamar a resetPasswordForEmail y los unicos binarios viejos eran los
+// de pruebas internas. Las tres quedaron con el contenido en blanco en el
+// dashboard. Si vuelve alguna, su nombre va aqui y su fichero a supabase/emails/.
+const TEMPLATES = [];
+
+// Sin esto, el mensaje de uso de abajo saldria como `<>` con la lista vacia. Y
+// conviene dejar dicho lo que este script NO hace, porque se confundio una vez:
+// PUBLICA la copia del repo, no vacia nada. Para RETIRAR una plantilla hay que
+// mandar la cadena vacia por la Management API — `null` da 400.
+if (TEMPLATES.length === 0) {
+  console.error(
+    '[plantillas:aplicar] No queda ninguna plantilla propia que publicar: invite,\n' +
+      '  magic_link y recovery estan retiradas. Este script PUBLICA la copia del\n' +
+      '  repo; para retirar una se manda la cadena vacia por la Management API.',
+  );
+  process.exit(2);
+}
 
 const nombre = process.argv[2];
 const confirmado = process.argv.includes('--si');

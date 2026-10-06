@@ -15,37 +15,63 @@
  *
  * Lo que NO hace, a propósito: desplegar. Las plantillas se pegan a mano.
  *
- * ── QUEDA UNA, Y ES TEMPORAL ───────────────────────────────────────────────
+ * ── NO QUEDA NINGUNA: EL CENSO ES DE CERO ──────────────────────────────────
  *
  * Eran tres. `invite` y `magic_link` se retiraron al cerrar Correo-B: los siete
  * senders de invitación crean la cuenta con `createUser` y mandan su propio
  * correo por Resend, y `signInWithOtp` no existe en el repo. Ninguna de las dos
  * la disparaba ya nadie.
  *
- * `recovery` sigue aquí por una razón de CALENDARIO, no de diseño: las versiones
- * de la app YA INSTALADAS llaman a `resetPasswordForEmail`, que la usa. Se retira
- * cuando el build con las puertas nuevas esté fuera y las viejas hayan drenado.
+ * `recovery` se retiró el 06-10-2026, al cumplirse la condición que la mantenía
+ * viva: el build con las puertas nuevas (#675, 21-09) está publicado en las dos
+ * tiendas, y los únicos binarios anteriores eran de pruebas internas y TestFlight,
+ * todos del propio Jose. MEDIDO en producción antes de tocar nada:
+ * `auth.users.recovery_sent_at` llevaba QUIETA desde el 2026-09-22 —catorce días—
+ * y su última actividad cae en la ventana 21-22/09, cuando aún no existía ningún
+ * binario nuevo y por fuerza todo lo instalado era viejo.
  *
- * MEDIDO al retirar las otras dos, y conviene saberlo antes de retirar esta: una
- * plantilla vacía NO hace que GoTrue caiga a la suya por defecto. El envío FALLA
- * (HTTP 500, «Error sending invite email») y no se crea la cuenta. Para `invite`
- * y `magic_link` eso es lo correcto —un camino retirado que falla a la vista es
- * mejor que uno que manda algo raro en silencio—, pero para `recovery` querría
- * decir que quien pida su contraseña desde una app vieja no recibe nada.
+ * OJO con esos dos instrumentos si hay que volver a medirlo: `recovery_sent_at`
+ * NO separa el camino viejo del nuevo, porque `admin.generateLink` sella la misma
+ * columna; y `password_recovery_attempts` tiene retención de 25 h, así que su
+ * recuento es la última jornada y NUNCA un censo histórico.
+ *
+ * MEDIDO al retirar las tres: una plantilla vacía NO hace que GoTrue caiga a la
+ * suya por defecto. La Management API no acepta `null` (400), así que lo único
+ * posible es dejar el contenido en blanco —`''`, que es como quedaron las tres— y
+ * entonces el envío FALLA con HTTP 500. Para un camino retirado es la forma
+ * correcta de fallar: a la vista, en vez de mandar algo raro en silencio.
+ *
+ * ── POR QUÉ SIGUE AQUÍ ESTE GUARD CON LA LISTA VACÍA ───────────────────────
+ *
+ * Porque el riesgo cambió de forma, no desapareció. Lo que hay que vigilar ahora
+ * es que nadie DEVUELVA una plantilla al dashboard dejando su fichero aquí sin
+ * pasar por revisión: el censo del final se pone rojo en cuanto aparece un
+ * `*.html` o `*.subject.txt` que no esté en TEMPLATES. Cero es el estado
+ * correcto; no se rellena la lista para tapar un rojo.
+ *
+ * Y la maquinaria por plantilla se queda intacta y gobernada por TEMPLATES: si
+ * algún día vuelve una, se recuperan TODAS las comprobaciones poniendo su nombre
+ * en la lista (y su enlace obligatorio en ENLACE_OBLIGATORIO). Lo que saben esas
+ * comprobaciones está medido y costó caro; borrarlas sería tirarlo.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const DIR = join(ROOT, 'supabase/emails');
-const TEMPLATES = ['recovery'];
+const TEMPLATES = [];
+
+// Qué enlace es obligatorio en cada plantilla, para cuando vuelva alguna.
+// `recovery` exigía `{{ .ConfirmationURL }}`: ahí el artefacto de sesión ES el
+// trámite, al revés que `invite`, donde el arreglo del BUG 4 fue `{{ .RedirectTo }}`.
+const ENLACE_OBLIGATORIO = { recovery: '{{ .ConfirmationURL }}' };
 
 const problems = [];
 const fail = (msg) => problems.push('· ' + msg);
 
-// ── Los seis ficheros ────────────────────────────────────────────────────────
+// ── Los ficheros de cada plantilla de la lista ───────────────────────────────
 const bodies = {};
 const subjects = {};
 for (const t of TEMPLATES) {
@@ -60,6 +86,27 @@ for (const t of TEMPLATES) {
     bag[t] = content;
   }
 }
+// ── CENSO DE CERO ────────────────────────────────────────────────────────────
+// Lo que de verdad vigila este guard desde que no queda ninguna propia: que no
+// aparezca un fichero de plantilla sin su entrada en TEMPLATES. Un fichero suelto
+// aquí significa una de dos, y las dos quieren conversación: o alguien devolvió
+// una plantilla al dashboard sin apuntarlo, o dejó la copia de una que ya no
+// existe. Vacío es el estado correcto.
+const ESPERADOS = new Set(TEMPLATES.flatMap((t) => [`${t}.html`, `${t}.subject.txt`]));
+const sueltos = existsSync(DIR)
+  ? readdirSync(DIR)
+      .filter((f) => f.endsWith('.html') || f.endsWith('.subject.txt'))
+      .filter((f) => !ESPERADOS.has(f))
+      .sort()
+  : [];
+for (const f of sueltos) {
+  fail(
+    `supabase/emails/${f} no tiene entrada en TEMPLATES. Si una plantilla vuelve, ` +
+      'su nombre va en la lista para que la vigilen todas las comprobaciones de ' +
+      'arriba; si no vuelve, su fichero no debería seguir aquí.',
+  );
+}
+
 if (problems.length > 0) report();
 
 // ── Asuntos: una sola línea ──────────────────────────────────────────────────
@@ -129,13 +176,18 @@ for (const t of TEMPLATES) {
 }
 
 // ── El enlace ────────────────────────────────────────────────────────────────
-// `recovery` SÍ necesita `{{ .ConfirmationURL }}`, al revés que las dos retiradas:
-// ahí el artefacto de sesión ES el trámite. La regla de llevar DIRECTO a la
-// pantalla —el arreglo del BUG 4— la sostiene hoy `recoveryRedirectTo` en core, y
-// la vigila `check:correo-recuperacion`.
-if (!bodies.recovery.includes('{{ .ConfirmationURL }}')) {
-  fail('recovery: no usa {{ .ConfirmationURL }} (ahí sí es el enlace del trámite)');
+// Antes esto miraba `bodies.recovery` por su nombre, y con la lista vacía eso
+// reventaba sobre `undefined` en vez de dar un rojo legible. Ahora va por la
+// lista, como todo lo demás. La regla de llevar DIRECTO a la pantalla —el arreglo
+// del BUG 4— la sostiene `recoveryRedirectTo` en core, y la vigila
+// `check:correo-recuperacion`.
+for (const t of TEMPLATES) {
+  const enlace = ENLACE_OBLIGATORIO[t];
+  if (enlace && !bodies[t].includes(enlace)) {
+    fail(`${t}: no usa ${enlace} (ahí el enlace ES el trámite)`);
+  }
 }
+
 
 report();
 
@@ -151,9 +203,10 @@ function report() {
     process.exit(1);
   }
   console.log(
-    `[plantillas-correo] OK — ${TEMPLATES.length} plantilla(s) con su asunto y su ` +
-      'enlace correcto. invite y magic_link quedaron retiradas al cerrar Correo-B; ' +
-      'recovery espera a que drenen las apps instaladas.',
+    `[plantillas-correo] OK — ${TEMPLATES.length} plantilla(s) propia(s) vigilada(s) ` +
+      `y ${sueltos.length} fichero(s) suelto(s). Las tres (invite, magic_link y ` +
+      'recovery) quedaron retiradas: contenido en blanco en el dashboard y el envío ' +
+      'falla a la vista. Cero es el estado correcto.',
   );
   process.exit(0);
 }

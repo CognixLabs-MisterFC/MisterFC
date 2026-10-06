@@ -138,9 +138,12 @@ jobs:
 
       # Las plantillas de correo viven en el dashboard de Supabase: sin revision, sin
       # diff y sin que nadie se entere si cambian. supabase/emails/ es la copia
-      # revisada. Este guard NO habla con Supabase (este workflow no tiene secretos, y
-      # asi se queda): comprueba la copia contra si misma y contra INVITE_KINDS. Para
-      # comparar con lo VIVO hay `pnpm plantillas:diff`, que se lanza a mano.
+      # revisada, y hoy esta VACIA: las tres propias (invite, magic_link, recovery)
+      # estan retiradas. Asi que lo que vigila este guard es un CENSO DE CERO — que
+      # nadie devuelva una plantilla dejando su fichero ahi sin pasar por revision—,
+      # mas las comprobaciones por plantilla, que siguen enteras para cuando vuelva
+      # alguna. NO habla con Supabase (este workflow no tiene secretos, y asi se
+      # queda). Para comparar con lo VIVO hay `pnpm plantillas:diff`, a mano.
       - name: Check email templates copy
         run: pnpm check:plantillas-correo
 
