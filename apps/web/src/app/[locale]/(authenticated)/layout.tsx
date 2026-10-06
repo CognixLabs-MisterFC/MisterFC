@@ -4,7 +4,6 @@ import { setRequestLocale } from 'next-intl/server';
 import { createSupabaseServerClient } from '@misterfc/core';
 import { loadShellContext } from '@/lib/auth-shell';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
-import { rewriteStaleActiveClub } from '@/components/shell/actions';
 import { AppShell } from '@/components/shell/app-shell';
 import { evaluateSubscriptionGate } from '@/lib/subscription-gate';
 import { evaluateFamilyWebCut } from '@/lib/family-web-cut';
@@ -33,9 +32,19 @@ export default async function AuthenticatedLayout({ children, params }: Props) {
     redirect(`/${locale}/onboarding`);
   }
 
-  if (ctx.staleCookie) {
-    await rewriteStaleActiveClub(ctx.activeClub.club.id);
-  }
+  // NO se reescribe aquí la cookie rancia, y el porqué importa: `cookies().set()`
+  // lanza «Cookies can only be modified in a Server Action or Route Handler» en
+  // pleno render de un Server Component. Esto llamaba a `rewriteStale…()`, que vive
+  // en un fichero `'use server'` — pero eso solo la hace invocable DESDE EL CLIENTE;
+  // llamarla desde aquí es una llamada de función normal y el `set` revienta igual.
+  // Tiraba /es con un 500 en producción (digest 907647121, 2026-10).
+  //
+  // Y no se sustituye por un try/catch: la reescritura no hacía falta. El resolver
+  // ya cae de forma determinista al primer club/jugador cuando la cookie no casa,
+  // así que la pantalla sale correcta con la cookie rancia, y esta se corrige sola
+  // en cuanto la persona cambia de club/nieto por el conmutador, que SÍ es una
+  // Server Action de verdad. `ctx.staleCookie` se conserva como señal: léela, pero
+  // no actúes sobre ella desde un render.
 
   // Un solo cliente para los tres guards que vienen (suscripción, re-consentimiento y
   // superadmin): son tres RPC sobre la MISMA sesión.
