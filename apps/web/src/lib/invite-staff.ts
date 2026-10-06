@@ -36,6 +36,8 @@ export function performStaffInvite(
   admin: SupabaseClient<Database>,
   args: {
     actorProfileId: string;
+    /** El club en el que se invita: lo decide el llamante. Ver core. */
+    clubId: string;
     email: string;
     role: InvitableRole;
     teamId: string | null;

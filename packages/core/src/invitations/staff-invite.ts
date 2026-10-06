@@ -234,6 +234,22 @@ export async function performStaffInvite(
   admin: DbClient,
   args: {
     actorProfileId: string;
+    /**
+     * EL CLUB EN EL QUE SE INVITA, y lo decide el LLAMANTE.
+     *
+     * Antes se adivinaba aquí dentro con
+     * `memberships.find((m) => canInviteToClub(m.role))` — «el primer club donde
+     * puedo invitar»— y encima sobre una consulta SIN `order by`, así que con dos
+     * membresías el club elegido era el que Postgres devolviera primero. La
+     * invitación podía nacer en el club equivocado y el correo salir nombrándolo.
+     * Es el mismo fallo que tenían las dos pantallas de /invitations (#755), pero
+     * ESCRIBIENDO.
+     *
+     * La web lo saca del club ACTIVO (`loadShellContext`) y la app del `activeClub`
+     * de su contexto. Que lo proponga el cliente no afloja nada: aquí abajo se
+     * comprueba el rol del actor EN ESE CLUB, y la RLS del INSERT lo reimpone.
+     */
+    clubId: string;
     email: string;
     role: InvitableRole;
     teamId: string | null;
@@ -251,7 +267,7 @@ export async function performStaffInvite(
   logError?: StaffInviteErrorLogger,
   logInfo?: StaffInviteInfoLogger,
 ): Promise<StaffInviteResult> {
-  const { actorProfileId, email, role, teamId, locale, linkBase } = args;
+  const { actorProfileId, clubId, email, role, teamId, locale, linkBase } = args;
   const errar: StaffInviteErrorLogger = logError ?? (() => {});
   const trazar: StaffInviteInfoLogger = logInfo ?? (() => {});
 
@@ -265,17 +281,32 @@ export async function performStaffInvite(
     errar(mErr, 'read_memberships', { user_id: actorProfileId });
     return { error: 'no_club' };
   }
-  if (!memberships || memberships.length === 0) {
-    trazar('no_memberships_found');
-    return { error: 'no_club' };
+  // La membresía DEL CLUB EN QUE SE INVITA, buscada POR ID. Ya no se elige club:
+  // se comprueba el rol en el que viene dado. Buscar por id es seguro por
+  // construcción —no decide nada, localiza algo que ya se sabe— y es la frontera
+  // que vigila `check:club-activo`.
+  const propia = (memberships ?? []).find((m) => m.club_id === clubId);
+  let rolDelActor: Role | null = propia ? (propia.role as Role) : null;
+
+  // SUPERADMIN en un club ajeno: no tiene membresía ahí, y aun así manda. No es
+  // un privilegio nuevo — `user_role_in_club` ya le devuelve 'admin_club' en
+  // CUALQUIER club desde 20260921000000_f14b_2_superadmin_chokepoint, así que la
+  // RLS del INSERT ya le dejaba pasar. Esto solo alinea la puerta de delante con
+  // la de atrás, igual que `loadShellContext` fabrica su club sintético (F14B-8).
+  // Sin esto, la pantalla le ofrecería un formulario que siempre diría 'forbidden'.
+  if (!rolDelActor) {
+    const { data: esSuper } = await userSupabase.rpc('is_superadmin');
+    if (esSuper === true) rolDelActor = 'admin_club';
   }
 
-  const autorizada = memberships.find((m) => canInviteToClub(m.role as Role));
-  if (!autorizada) {
-    trazar('forbidden_role', { roles: memberships.map((m) => m.role) });
+  if (!rolDelActor) {
+    trazar('no_membership_in_club', { club_id: clubId });
+    return { error: 'no_club' };
+  }
+  if (!canInviteToClub(rolDelActor)) {
+    trazar('forbidden_role', { club_id: clubId, role: rolDelActor });
     return { error: 'forbidden' };
   }
-  const clubId = autorizada.club_id as string;
 
   // Rol ALTO: exclusivo del owner (F1B-2). Pre-gate; la RLS lo reimpone.
   if (isHighClubRole(role as Role)) {

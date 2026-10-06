@@ -37,9 +37,11 @@
 
 import { NextResponse } from 'next/server';
 import {
+  canInviteToClub,
   createSupabaseAdminClient,
   inviteLinkBase,
   sendInvitationSchema,
+  type Role,
   type StaffInviteError,
 } from '@misterfc/core';
 import { resolveUserFromRequest } from '@/lib/resolve-user';
@@ -74,6 +76,7 @@ export async function POST(req: Request) {
     role?: unknown;
     teamId?: unknown;
     locale?: unknown;
+    clubId?: unknown;
   };
 
   // El MISMO schema que la web: el correo y el rol se validan una sola vez en un solo
@@ -93,10 +96,48 @@ export async function POST(req: Request) {
   const locale =
     typeof b.locale === 'string' && LOCALE_RE.test(b.locale) ? b.locale : 'es';
 
+  // EL CLUB. La app lo manda desde su `activeClub`; core ya no lo adivina, porque
+  // adivinarlo era el fallo (creaba la invitación en el primer club donde el actor
+  // pudiera invitar, y sin `order by`).
+  //
+  // Pero las versiones YA INSTALADAS no lo mandan, y aquí no hay OTA: un binario
+  // viejo se queda viejo. Así que si no viene, se DEDUCE — y solo cuando no hay
+  // ambigüedad. Con un único club donde el actor pueda invitar, la respuesta es esa
+  // y no hay nada que elegir; con dos, se contesta 400 en vez de acertar por
+  // sorteo. Falla a la vista, que es lo contrario de lo que hacía antes.
+  //
+  // Que el club lo PROPONGA el cliente no afloja nada: core comprueba el rol del
+  // actor EN ESE club y la RLS del INSERT lo reimpone.
+  let clubId = typeof b.clubId === 'string' && b.clubId.length > 0 ? b.clubId : null;
+  if (!clubId) {
+    const { data: ms, error: msErr } = await auth.supabase
+      .from('memberships')
+      .select('club_id, role')
+      .eq('profile_id', auth.user.id);
+    if (msErr) {
+      return NextResponse.json({ error: 'generic' }, { status: 500 });
+    }
+    const candidatos = [
+      ...new Set(
+        (ms ?? [])
+          .filter((m) => canInviteToClub(m.role as Role))
+          .map((m) => m.club_id as string),
+      ),
+    ];
+    if (candidatos.length !== 1) {
+      return NextResponse.json(
+        { error: candidatos.length === 0 ? 'no_club' : 'club_ambiguous' },
+        { status: 400 },
+      );
+    }
+    clubId = candidatos[0]!;
+  }
+
   // El gate es la RLS del INSERT, que corre con `auth.supabase` (el cliente del
   // usuario). El admin solo se usa para la cuenta y el correo, DESPUÉS.
   const res = await performStaffInvite(auth.supabase, createSupabaseAdminClient(), {
     actorProfileId: auth.user.id,
+    clubId,
     email: parsed.data.email,
     role: parsed.data.role,
     teamId: parsed.data.team_id ?? null,

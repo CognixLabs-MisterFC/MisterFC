@@ -13,6 +13,7 @@ import {
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { performStaffInvite } from '@/lib/invite-staff';
+import { loadShellContext } from '@/lib/auth-shell';
 import { maskEmail } from '@/lib/mask-email';
 
 export type SendInvitationFormState = {
@@ -82,8 +83,20 @@ export async function sendInvitation(
 
   // El enlace sale SIEMPRE de misterfc.es, no del host de la petición: es el único
   // dominio con assetlinks.json y AASA, y el único que la app acepta. Ver WEB_ORIGIN.
+  // El club es el ACTIVO, el mismo que pinta la pantalla. Antes no se pasaba y core
+  // lo adivinaba con «el primer club donde puedo invitar» (y sin `order by`), así
+  // que la invitación podía nacer en otro club y el correo nombrarlo. Mismo fallo
+  // que arreglaron las dos pantallas en #755, aquí ESCRIBIENDO.
+  //
+  // `loadShellContext` y no `resolveActiveClub` a pelo: para un superadmin en club
+  // ajeno ese club no está en sus membresías y es el shell quien fabrica el club
+  // sintético (F14B-8).
+  const ctx = await loadShellContext();
+  if (!ctx) redirect(`/${locale}/signin`);
+
   const res = await performStaffInvite(supabase, createSupabaseAdminClient(), {
     actorProfileId: user.id,
+    clubId: ctx.activeClub.club.id,
     email: parsed.data.email,
     role: parsed.data.role,
     teamId: parsed.data.team_id ?? null,

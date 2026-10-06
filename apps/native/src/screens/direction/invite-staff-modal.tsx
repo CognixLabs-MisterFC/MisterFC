@@ -120,6 +120,12 @@ function InviteStaffModal({
 }) {
   const t = useTranslations('');
   const { activeClub } = useApp();
+  // El id, en una variable SUELTA: en el array de dependencias tiene que ir un
+  // identificador llano. Con `activeClub?.club.id` ahí, el React Compiler da
+  // ERROR `preserve-manual-memoization` («Could not preserve existing manual
+  // memoization»), no un aviso — arreglar el exhaustive-deps a lo bruto cambiaba
+  // un aviso por un error.
+  const clubIdActivo = activeClub?.club.id ?? null;
   const online = useIsOnline();
 
   const [correo, setCorreo] = useState('');
@@ -156,7 +162,16 @@ function InviteStaffModal({
         // `appLocale()` y no un hook: es el patrón de la casa para el idioma que
         // viaja al servidor (igual que el auto-invitar de familia). El correo se
         // escribe en el idioma DEL DESTINATARIO si tiene perfil; esto es el de reserva.
-        body: { email: correo.trim(), role: rol, teamId, locale: appLocale() },
+        // `clubId` del club ACTIVO: el servidor ya no adivina en qué club se
+        // invita. Un binario viejo que no lo mande sigue funcionando si solo hay
+        // un club donde invitar; con dos, el servidor contesta y no sortea.
+        body: {
+          email: correo.trim(),
+          role: rol,
+          teamId,
+          locale: appLocale(),
+          clubId: clubIdActivo,
+        },
       });
       let json: {
         error?: unknown;
@@ -196,7 +211,7 @@ function InviteStaffModal({
     } finally {
       setSaving(false);
     }
-  }, [online, saving, rol, correo, teamId, onDone]);
+  }, [online, saving, rol, correo, teamId, onDone, clubIdActivo]);
 
   const puede = online && !saving && rol != null && correo.trim().length > 0;
 

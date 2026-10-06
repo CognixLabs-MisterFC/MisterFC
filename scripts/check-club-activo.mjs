@@ -31,8 +31,9 @@
  *   · si no, exige una entrada en CENSO justificando por qué.
  *
  * Y al revés: una entrada de CENSO cuyo fichero ya no tiene la expresión
- * TAMBIÉN es rojo, para que el censo no se quede rancio. Eso es lo que obliga a
- * quitar la entrada de staff-invite.ts cuando se arregle.
+ * TAMBIÉN es rojo, para que el censo no se quede rancio. Ya sirvió una vez:
+ * `staff-invite.ts` entró en el censo como «lo arregla el PR siguiente», y al
+ * arreglarlo el guard se puso rojo hasta que se quitó la entrada.
  *
  * SE QUITAN LOS COMENTARIOS ANTES DE BUSCAR. Si no, este guard se dispararía
  * con la explicación de arriba, y con los comentarios que las dos páginas
@@ -58,12 +59,6 @@ const CENSO = {
     'Elige el club PROPIO frente al acceso de plataforma (`!c.isPlatformAccess`), ' +
     'no por rol: no es una elección de club activo, es distinguir membresía real ' +
     'de modo superadmin.',
-  'packages/core/src/invitations/staff-invite.ts':
-    'PENDIENTE — mismo fallo que tenían las dos pantallas, pero ESCRIBIENDO: ' +
-    '`performStaffInvite` elige el club con `memberships.find((m) => ' +
-    'canInviteToClub(m.role))` y encima sin ORDER BY, así que la invitación puede ' +
-    'nacer en el club equivocado. Lo arregla el PR siguiente, que le pasa el ' +
-    'clubId desde el llamante. Al arreglarlo, QUITAR esta entrada.',
 };
 
 const problemas = [];

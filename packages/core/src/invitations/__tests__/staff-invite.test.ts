@@ -48,6 +48,8 @@ type UserOpts = {
   errorPendientesRpc?: { message: string } | null;
   errorInsert?: { code?: string; message?: string } | null;
   errorUpdate?: { code?: string; message?: string } | null;
+  /** `is_superadmin()`: el escape del superadmin en un club donde NO es miembro. */
+  esSuperadmin?: boolean;
   /** Se anota cada paso, EN ORDEN, para poder afirmar el orden del candado. */
   traza?: string[];
 };
@@ -138,6 +140,9 @@ function clienteUsuario(opts: UserOpts): SupabaseClient<Database> {
         ? { data: null, error: opts.errorMiembro }
         : { data: opts.miembro ?? [], error: null };
     }
+    if (nombre === 'is_superadmin') {
+      return { data: opts.esSuperadmin === true, error: null };
+    }
     if (nombre === 'club_pending_invitation_by_email') {
       return opts.errorPendientesRpc
         ? { data: null, error: opts.errorPendientesRpc }
@@ -189,6 +194,7 @@ const ADMIN_DIRECTOR = [{ id: 'm1', club_id: CLUB, role: 'director' }];
 function args(over: Partial<Parameters<typeof performStaffInvite>[2]> = {}) {
   return {
     actorProfileId: ACTOR,
+    clubId: CLUB,
     email: 'nueva@club.es',
     role: 'entrenador_principal' as InvitableRole,
     teamId: null,
@@ -947,5 +953,152 @@ describe('W-6 · el correo que sale', () => {
       (event, extra) => vistos.push({ event, extra }),
     );
     expect(JSON.stringify(vistos)).not.toContain('nueva@club.es');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EL CLUB LO DECIDE EL LLAMANTE (no se adivina)
+//
+// Antes, core elegía con `memberships.find((m) => canInviteToClub(m.role))` —«el
+// primer club donde puedo invitar»— sobre una consulta SIN `order by`. Con dos
+// membresías, la invitación podía nacer en el club equivocado y el correo salir
+// nombrándolo. Estos tests fijan que ya no elige: comprueba.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('el club que se invita es el que se pasa', () => {
+  /** Captura la fila insertada, mismo truco que «INSERTA con el club…». */
+  function conCaptura(user: SupabaseClient<Database>) {
+    const caja: { fila: Record<string, unknown> | null } = { fila: null };
+    const original = (user as unknown as { from: (t: string) => unknown }).from;
+    (user as unknown as { from: (t: string) => unknown }).from = (t: string) => {
+      const b = original(t) as Record<string, unknown>;
+      const ins = b.insert as (f: Record<string, unknown>) => unknown;
+      b.insert = (f: Record<string, unknown>) => {
+        caja.fila = f;
+        return ins(f);
+      };
+      return b;
+    };
+    return caja;
+  }
+
+  it('con DOS membresías, inserta en el club pedido y no en el primero de la lista', async () => {
+    // El orden es a propósito: `otro-club` va PRIMERO y su rol invita, así que es
+    // justo el que elegía el código viejo. CLUB va segundo.
+    const user = clienteUsuario({
+      membresias: [
+        { id: 'm-otro', club_id: 'otro-club', role: 'director' },
+        { id: 'm1', club_id: CLUB, role: 'admin_club' },
+      ],
+    });
+    const caja = conCaptura(user);
+    const p = puertos();
+    const res = await performStaffInvite(
+      user,
+      clienteAdmin({}),
+      args({ clubId: CLUB }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(res.ok, 'la invitación no se creó').toBeTruthy();
+    expect(caja.fila?.club_id).toBe(CLUB);
+    expect(caja.fila?.club_id).not.toBe('otro-club');
+  });
+
+  it('y al revés: pidiendo el otro club, inserta en el otro', async () => {
+    // El control que prueba que el test de arriba mide algo: si el club saliera de
+    // la lista y no del argumento, los dos darían lo mismo.
+    const user = clienteUsuario({
+      membresias: [
+        { id: 'm-otro', club_id: 'otro-club', role: 'director' },
+        { id: 'm1', club_id: CLUB, role: 'admin_club' },
+      ],
+    });
+    const caja = conCaptura(user);
+    const p = puertos();
+    await performStaffInvite(
+      user,
+      clienteAdmin({}),
+      args({ clubId: 'otro-club' }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(caja.fila?.club_id).toBe('otro-club');
+  });
+
+  it('el ROL se mide EN ESE club: jugador aquí y director en otro = forbidden', async () => {
+    // Este es el que el código viejo dejaba pasar: encontraba el `director` de otro
+    // club, lo daba por bueno, y escribía en el club de ese director.
+    const user = clienteUsuario({
+      membresias: [
+        { id: 'm-otro', club_id: 'otro-club', role: 'director' },
+        { id: 'm1', club_id: CLUB, role: 'jugador' },
+      ],
+      traza: [],
+    });
+    const p = puertos();
+    const res = await performStaffInvite(
+      user,
+      clienteAdmin({}),
+      args({ clubId: CLUB }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(res.error).toBe('forbidden');
+    expect(p.sendEmail, 'no debe salir correo').not.toHaveBeenCalled();
+  });
+
+  it('sin membresía en ese club y sin ser superadmin → no_club', async () => {
+    const p = puertos();
+    const res = await performStaffInvite(
+      clienteUsuario({ membresias: [{ id: 'm-otro', club_id: 'otro-club', role: 'director' }] }),
+      clienteAdmin({}),
+      args({ clubId: CLUB }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(res.error).toBe('no_club');
+    expect(p.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it('SUPERADMIN sin membresía en ese club SÍ invita (F14B-2 ya se lo permite en la RLS)', async () => {
+    const user = clienteUsuario({
+      membresias: [{ id: 'm-otro', club_id: 'otro-club', role: 'director' }],
+      esSuperadmin: true,
+    });
+    const caja = conCaptura(user);
+    const p = puertos();
+    const res = await performStaffInvite(
+      user,
+      clienteAdmin({}),
+      args({ clubId: CLUB }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(res.ok, 'al superadmin se le negó el club ajeno').toBeTruthy();
+    expect(caja.fila?.club_id).toBe(CLUB);
+  });
+
+  it('y sin el escape de superadmin, ese mismo caso es no_club', async () => {
+    // Control negativo del escape: con `esSuperadmin: false` el mismo montaje
+    // tiene que fallar, o el test de arriba no estaría midiendo el escape.
+    const p = puertos();
+    const res = await performStaffInvite(
+      clienteUsuario({
+        membresias: [{ id: 'm-otro', club_id: 'otro-club', role: 'director' }],
+        esSuperadmin: false,
+      }),
+      clienteAdmin({}),
+      args({ clubId: CLUB }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(res.error).toBe('no_club');
   });
 });
