@@ -147,6 +147,17 @@ jobs:
       - name: Check email templates copy
         run: pnpm check:plantillas-correo
 
+      # La pantalla de invitaciones mostraba, entrando en un club, las invitaciones
+      # de OTRO: elegia el club con `clubs.find(c => ROLES.includes(c.role))` —el
+      # primero de tus membresias, ordenadas por nombre— y no leia la cookie
+      # active_club_id. No era cosa de superadmin: lo sufre cualquiera con dos
+      # clubes y rol de direccion en uno. Y para un superadmin no hay red debajo,
+      # porque user_role_in_club le devuelve admin_club en CUALQUIER club (F14B-2).
+      # Este guard censa las formas de coger un club de una lista y exige que, si
+      # no comparan un id, esten justificadas.
+      - name: Check active club selection
+        run: pnpm check:club-activo
+
       # El octavo correo de Correo-B es el unico que se pide SIN SESION, y tiene dos
       # formas de romperse mudo: un texto que falte en un idioma (excepcion en el
       # envio, solo para ese idioma) y el destino del enlace, que fue el BUG 4.
