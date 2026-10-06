@@ -120,6 +120,12 @@ function InviteStaffModal({
 }) {
   const t = useTranslations('');
   const { activeClub } = useApp();
+  // El id, en una variable SUELTA: en el array de dependencias tiene que ir un
+  // identificador llano. Con `activeClub?.club.id` ahí, el React Compiler da
+  // ERROR `preserve-manual-memoization` («Could not preserve existing manual
+  // memoization»), no un aviso — arreglar el exhaustive-deps a lo bruto cambiaba
+  // un aviso por un error.
+  const clubIdActivo = activeClub?.club.id ?? null;
   const online = useIsOnline();
 
   const [correo, setCorreo] = useState('');
@@ -164,7 +170,7 @@ function InviteStaffModal({
           role: rol,
           teamId,
           locale: appLocale(),
-          clubId: activeClub?.club.id ?? null,
+          clubId: clubIdActivo,
         },
       });
       let json: {
@@ -205,7 +211,7 @@ function InviteStaffModal({
     } finally {
       setSaving(false);
     }
-  }, [online, saving, rol, correo, teamId, onDone, activeClub?.club.id]);
+  }, [online, saving, rol, correo, teamId, onDone, clubIdActivo]);
 
   const puede = online && !saving && rol != null && correo.trim().length > 0;
 
