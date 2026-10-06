@@ -18,7 +18,7 @@ import {
  * Lo que se prueba es que nuestra verificación case con la de ELLOS.
  */
 
-const SECRET_B64 = 'c2VjcmV0by1kZS1wcnVlYmEtcGFyYS1zdml4';
+const SECRET_B64 = 'c2VjcmV0by1kZS1wcnVlYmEtcGFyYS1zdml4'; // gitleaks:allow
 const SECRET = `whsec_${SECRET_B64}`;
 const NOW = new Date('2026-09-24T12:00:00Z');
 const TS = String(Math.floor(NOW.getTime() / 1000));
@@ -207,7 +207,7 @@ describe('verifyResendSignature', () => {
  *
  * El secreto es de usar y tirar, generado para este careo; no abre nada.
  */
-const SECRETO_SVIX = "whsec_YodnUTwxTRYJhCiwy8f1WMVgFmz4Capq";
+const SECRETO_SVIX = "whsec_YodnUTwxTRYJhCiwy8f1WMVgFmz4Capq"; // gitleaks:allow
 
 const VECTORES_SVIX = [
   {

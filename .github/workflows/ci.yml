@@ -19,6 +19,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ── SECRETOS · gitleaks ───────────────────────────────────────────
+      # Primer paso después del checkout, antes de instalar nada: si entra un
+      # secreto, el run se cae en 20 segundos en vez de después del `pnpm
+      # install` y el build. Y es un PASO, no un job: no añade un runner más.
+      #
+      # Corre sin filtro de rutas — un secreto entra por cualquier fichero.
+      #
+      # ⚠️ ESTO NO SUSTITUYE A LA PROTECCIÓN DE PUSH. El repo es PÚBLICO: un
+      # secreto que llega a `main` hay que darlo por comprometido aunque el
+      # commit se borre después, porque el historial lo guarda y cualquiera lo
+      # ha podido clonar. Lo que de verdad lo evita es la protección de push del
+      # escaneo de secretos de GitHub, que rechaza el push antes de que el
+      # secreto exista en el remoto; está activada desde el 5-oct-2026 (hasta
+      # ese día el escaneo estaba ENTERO apagado). gitleaks es la segunda vuelta:
+      # cubre patrones que GitHub no conoce y marca el PR en rojo.
+      #
+      # `--redact` es obligatorio aquí: los logs de un repo público los lee
+      # cualquiera, así que un hallazgo no puede imprimir el secreto.
+      #
+      # Versión y hash clavados: un `latest` que cambie de reglas convierte el
+      # verde de hoy en el rojo de mañana sin que nadie toque nada.
+      - name: Secretos (gitleaks)
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          set -euo pipefail
+          TGZ="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL -o "$TGZ" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${TGZ}"
+          echo "${GITLEAKS_SHA256}  ${TGZ}" | sha256sum -c -
+          tar xzf "$TGZ" gitleaks
+          ./gitleaks dir . --no-banner --redact --config .gitleaks.toml --exit-code 1
+          rm -f "$TGZ" gitleaks
+
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
