@@ -156,7 +156,16 @@ function InviteStaffModal({
         // `appLocale()` y no un hook: es el patrón de la casa para el idioma que
         // viaja al servidor (igual que el auto-invitar de familia). El correo se
         // escribe en el idioma DEL DESTINATARIO si tiene perfil; esto es el de reserva.
-        body: { email: correo.trim(), role: rol, teamId, locale: appLocale() },
+        // `clubId` del club ACTIVO: el servidor ya no adivina en qué club se
+        // invita. Un binario viejo que no lo mande sigue funcionando si solo hay
+        // un club donde invitar; con dos, el servidor contesta y no sortea.
+        body: {
+          email: correo.trim(),
+          role: rol,
+          teamId,
+          locale: appLocale(),
+          clubId: activeClub?.club.id ?? null,
+        },
       });
       let json: {
         error?: unknown;
