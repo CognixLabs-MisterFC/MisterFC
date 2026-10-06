@@ -22,10 +22,25 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
 const DIR = join(ROOT, 'supabase/emails');
-// Solo queda `recovery`: `invite` y `magic_link` se retiraron del dashboard al
-// cerrar Correo-B (nadie las disparaba ya) y `recovery` se ira cuando las apps
-// instaladas dejen de llamar a resetPasswordForEmail.
-const TEMPLATES = ['recovery'];
+// NO queda ninguna propia: `invite` y `magic_link` se retiraron al cerrar Correo-B
+// (nadie las disparaba ya) y `recovery` el 06-10-2026, cuando las apps publicadas
+// dejaron de llamar a resetPasswordForEmail y los unicos binarios viejos eran los
+// de pruebas internas. Las tres quedaron con el contenido en blanco en el
+// dashboard. Si vuelve alguna, su nombre va aqui y su fichero a supabase/emails/.
+const TEMPLATES = [];
+
+// Con la lista vacia no hay nada que comparar, y se dice ANTES de pedir el token:
+// no tiene sentido exigir un secreto para no hacer nada. Antes de esto el bucle
+// entraba a readFileSync sin guarda y, sin los ficheros, reventaba con ENOENT.
+if (TEMPLATES.length === 0) {
+  console.log(
+    '[plantillas:diff] No queda ninguna plantilla propia: invite, magic_link y\n' +
+      '  recovery estan retiradas, con el contenido en blanco en el dashboard.\n' +
+      '  Nada que comparar. Si vuelve alguna, anadela a TEMPLATES y trae su\n' +
+      '  fichero a supabase/emails/ — lo vigila check:plantillas-correo.',
+  );
+  process.exit(0);
+}
 
 function env(name) {
   if (process.env[name]) return process.env[name];

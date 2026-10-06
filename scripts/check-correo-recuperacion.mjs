@@ -18,10 +18,11 @@
  *      Aquí se vigila que siga apuntando ahí y que nadie se fabrique el destino a
  *      mano por su cuenta.
  *
- * Y un censo de `resetPasswordForEmail(`, que es la forma vieja: manda el correo por
- * Supabase, con la plantilla única del dashboard, siempre en castellano. Se va
- * retirando puerta a puerta y el censo dice cuántas quedan, para que la última no se
- * quede ahí para siempre sin que nadie se acuerde.
+ * Y un censo de `resetPasswordForEmail(`, que es la forma vieja: pedía el correo a
+ * Supabase, con la plantilla del dashboard y siempre en castellano. El censo está
+ * VACÍO desde #675, y desde el 06-10-2026 ese camino ya no es «peor», es que **no
+ * manda nada**: la plantilla `recovery` se retiró y GoTrue devuelve HTTP 500. Vacío
+ * es el estado correcto; no se rellena para tapar un rojo.
  */
 
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
@@ -193,9 +194,10 @@ for (const [file, expected] of Object.entries(CENSO_RESET)) {
 for (const file of Object.keys(found)) {
   if (!(file in CENSO_RESET)) {
     problems.push(
-      `· ${file} usa ${RESET}. Ese camino volvió a Supabase: manda la plantilla del ` +
-        'dashboard, siempre en castellano, y se salta el contador de envíos. Las tres ' +
-        `puertas piden el correo a ${SENDER} — la app, por ` +
+      `· ${file} usa ${RESET}. Ese camino volvió a Supabase, y ya no manda nada: la ` +
+        'plantilla `recovery` se retiró del dashboard el 06-10-2026, así que GoTrue ' +
+        'contesta HTTP 500 y el correo NO SALE. Además se salta el contador de ' +
+        `envíos. Las tres puertas piden el correo a ${SENDER} — la app, por ` +
         '/api/auth/password-recovery.',
     );
   }
