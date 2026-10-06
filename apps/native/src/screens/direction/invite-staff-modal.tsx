@@ -205,7 +205,7 @@ function InviteStaffModal({
     } finally {
       setSaving(false);
     }
-  }, [online, saving, rol, correo, teamId, onDone]);
+  }, [online, saving, rol, correo, teamId, onDone, activeClub?.club.id]);
 
   const puede = online && !saving && rol != null && correo.trim().length > 0;
 
