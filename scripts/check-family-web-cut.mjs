@@ -19,7 +19,8 @@
  *   2. los que CORTAN llaman de verdad a `evaluateFamilyWebCut`;
  *   3. los que NO cortan no la llaman (si la llaman, el motivo declarado miente);
  *   4. el rebote del muro de suscripción sigue en su sitio;
- *   5. cada clave que la página de destino pide existe en LOS TRES idiomas.
+ *   5. cada clave que la página de destino pide existe en LOS TRES idiomas;
+ *   6. los dos enlaces de tienda son `null` o una URL https de SU tienda.
  *
  * La 5 está aquí porque no puede estar en ningún otro sitio: `apps/web` no tiene runner
  * de tests y los mensajes de next-intl no están tipados, así que una clave que falte no
@@ -164,6 +165,63 @@ for (const loc of LOCALES) {
   }
 }
 
+// 6 · LOS DOS ENLACES DE TIENDA. Viven en family-web-cut.ts como constantes y los pinta
+//     `aplicacion/page.tsx`, que filtra los nulos. Aquí no se comprueba que la URL
+//     FUNCIONE —eso pide red y este guard corre en seco— sino que tenga la forma de la
+//     tienda que dice ser, que es el error que de verdad pasa: pegar la de Play en la
+//     constante de Apple deja los dos botones vivos y cada uno llevando al sitio
+//     equivocado, y nada falla. Se permite `null` a propósito: es la salida documentada
+//     para despublicar una tienda sin tocar la página.
+const CUT_LIB = 'apps/web/src/lib/family-web-cut.ts';
+const libSrc = readFileSync(join(ROOT, CUT_LIB), 'utf8');
+const TIENDAS = [
+  { constante: 'APP_STORE_URL', host: 'apps.apple.com', extra: /\/id\d{6,}/, pista: 'el ID numérico /idNNNNNNN que asigna App Store Connect' },
+  { constante: 'PLAY_STORE_URL', host: 'play.google.com', extra: null, pista: null },
+];
+for (const t of TIENDAS) {
+  const m = libSrc.match(new RegExp(`export const ${t.constante}: string \\| null =\\s*([^;]+);`));
+  if (!m) {
+    problems.push(
+      `· No encuentro la constante ${t.constante} en ${CUT_LIB}.\n` +
+        '    O cambió de forma o este guard dejó de leerla: si desaparece, el botón de esa\n' +
+        '    tienda deja de pintarse y la página no se queja.',
+    );
+    continue;
+  }
+  const valor = m[1].trim();
+  if (valor === 'null') continue; // tienda sin publicar o retirada: es válido
+  const url = valor.replace(/^['"`]|['"`]$/g, '');
+  if (!url.startsWith('https://')) {
+    problems.push(`· ${t.constante} no es https: ${url}`);
+    continue;
+  }
+  if (!url.includes(t.host)) {
+    problems.push(
+      `· ${t.constante} no apunta a ${t.host}: ${url}\n` +
+        '    ¿Están cruzadas las dos constantes? Cada botón lleva la etiqueta de SU tienda.',
+    );
+  }
+  if (t.extra && !t.extra.test(url)) {
+    problems.push(`· ${t.constante} no lleva ${t.pista}: ${url}`);
+  }
+}
+
+// Y el de Play tiene que llevar el MISMO applicationId que el build de la nativa: si
+// alguien renombra el paquete en app.json, esta URL se queda apuntando a una ficha que
+// ya no existe y sigue dando 200 en Google.
+const playM = libSrc.match(/export const PLAY_STORE_URL: string \| null =\s*([^;]+);/);
+if (playM && playM[1].trim() !== 'null') {
+  const appJson = JSON.parse(readFileSync(join(ROOT, 'apps', 'native', 'app.json'), 'utf8'));
+  const pkg = appJson?.expo?.android?.package;
+  if (!pkg) {
+    problems.push('· No he podido leer expo.android.package de apps/native/app.json');
+  } else if (!playM[1].includes(pkg)) {
+    problems.push(
+      `· PLAY_STORE_URL no lleva el applicationId del build (${pkg}): ${playM[1].trim()}`,
+    );
+  }
+}
+
 if (problems.length > 0) {
   console.error('\n[family-web-cut] El censo de puntos de corte NO cuadra:\n');
   for (const p of problems) console.error('  ' + p);
@@ -180,5 +238,6 @@ const cortan = Object.values(LAYOUTS).filter((l) => l.cuts).length;
 console.log(
   `[family-web-cut] OK — ${encontrados.length} layouts censados, ${cortan} cortan, ` +
     `${Object.keys(PAGES).length} páginas comprueban el corte, ` +
-    `${usadas.length} claves de "${I18N_BLOCK}" en ${LOCALES.length} idiomas.`,
+    `${usadas.length} claves de "${I18N_BLOCK}" en ${LOCALES.length} idiomas, ` +
+    `${TIENDAS.filter((t) => !new RegExp(`${t.constante}: string \\| null =\\s*null;`).test(libSrc)).length}/2 enlaces de tienda puestos.`,
 );

@@ -37,14 +37,27 @@ export async function evaluateFamilyWebCut(
 }
 
 /**
- * Enlaces de descarga. **Hoy los dos son `null` a propósito**: la app no está publicada,
- * así que no hay URL que poner (decisión 3 de Jose: «se escriben cuando existan; monta
- * la página ahora sin ellas»).
+ * Enlaces de descarga. **Las dos apps están publicadas desde octubre de 2026**, así que
+ * aquí ya hay URL y la página enseña los dos botones. Nacieron en `null` a propósito
+ * (decisión 3 de Jose: «se escriben cuando existan; monta la página ahora sin ellas»)
+ * porque un enlace muerto es peor que no tener enlace: el que no lleva a ninguna parte
+ * parece una avería.
  *
- * Mientras valgan `null`, la página enseña la instrucción de buscar la app por su nombre
- * en la tienda. En cuanto se pegue una URL aquí, el botón correspondiente aparece solo:
- * no hay nada más que tocar. Se prefiere esto a un enlace muerto, que es peor que no
- * tener enlace — un enlace que no lleva a ninguna parte parece una avería.
+ * El tipo sigue siendo `string | null` y eso NO es residuo. `aplicacion/page.tsx` filtra
+ * los nulos y, si no queda ninguno, enseña `download_soon` en vez de los botones. Es la
+ * salida para el día en que una tienda retire la ficha o haya que despublicar: se pone
+ * esa constante en `null` y la página se adapta sola, sin tocar nada más. Por eso
+ * tampoco se retira la cadena `download_soon`, que hoy no se ve.
+ *
+ * Comprobadas en vivo antes de pegarlas (2026-10-06): las dos dan 200; la de Apple
+ * titula «App MisterFC - App Store» y la de Play sirve la ficha de verdad —no una
+ * página de "no encontrado", que Google también devuelve con 200—.
+ *
+ * El identificador de Play es el `applicationId` del build (`com.misterfc.app`), el
+ * mismo de `app.json`; el de Apple es el ID numérico que asigna App Store Connect y no
+ * se puede deducir del repo.
  */
-export const APP_STORE_URL: string | null = null;
-export const PLAY_STORE_URL: string | null = null;
+export const APP_STORE_URL: string | null =
+  'https://apps.apple.com/es/app/misterfc/id6810337932';
+export const PLAY_STORE_URL: string | null =
+  'https://play.google.com/store/apps/details?id=com.misterfc.app';
