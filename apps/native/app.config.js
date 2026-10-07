@@ -65,6 +65,43 @@
 // dependen del ancho están acotados —`Math.min(winW - 32, 420)` en
 // lineup-field, 460 en play-field y `width - 64` en el gráfico del dashboard—
 // así que en pantalla ancha no se estiran; el resto es flex y reflowea.
+// ---------------------------------------------------------------------------
+// LA VERSIÓN (`version` en app.json)
+// ---------------------------------------------------------------------------
+// Mismo motivo para vivir aquí: app.json no admite comentarios.
+//
+// `expo.version` es la ÚNICA fuente del nombre de versión para las DOS
+// plataformas: sale como `CFBundleShortVersionString` en iOS y como
+// `versionName` en Android. Cambiarlo aquí cubre las dos; no hay un sitio por
+// plataforma que mantener.
+//
+// Y NO hay `ios.buildNumber` ni `android.versionCode` en app.json a propósito:
+// eas.json lleva `cli.appVersionSource: "remote"` y `autoIncrement: true` en el
+// perfil `production`, así que **el número de BUILD lo guarda y lo sube EAS
+// solo**. El nombre de versión NO: ese es manual y es este.
+//
+// 1.0.0 → 1.0.1 el 07-10-2026 porque App Store Connect rechazó el build 9:
+//
+//   ITMS-90186  el tren de la 1.0.0 está cerrado
+//   ITMS-90062  CFBundleShortVersionString debe ser mayor que la versión ya
+//               aprobada, 1.0.0
+//
+// Una vez Apple APRUEBA una versión, ese tren se cierra y no acepta más builds
+// para él: hace falta subir el nombre de versión, no solo el build.
+//
+// ⚠️ ANDROID NO LO EXIGE, y eso es justo lo que despista: Play solo pide un
+// `versionCode` mayor —el que EAS ya incrementa—, así que un AAB sube bien con
+// el `versionName` viejo. El «1.0.1» que se teclea al crear la release en Play
+// es solo una ETIQUETA de la consola; lo que ven las familias en los ajustes del
+// teléfono es el `versionName` del binario. O sea que el binario de Play estaba
+// diciendo 1.0.0. Se arregla con este mismo cambio, sin tocar nada más.
+//
+// `apps/native/android/` es prebuild LOCAL y está en .gitignore: su
+// `versionName` (0.1.0) es basura rancia que no lee nadie, y se regenera desde
+// aquí. La app no PINTA su versión en ninguna pantalla (nada lee
+// `expoConfig.version` ni `nativeApplicationVersion`), así que esto no cambia
+// ninguna interfaz.
+
 module.exports = ({ config }) => ({
   ...config,
   extra: {
