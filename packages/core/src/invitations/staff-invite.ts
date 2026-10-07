@@ -271,6 +271,22 @@ export async function performStaffInvite(
   const errar: StaffInviteErrorLogger = logError ?? (() => {});
   const trazar: StaffInviteInfoLogger = logInfo ?? (() => {});
 
+  /**
+   * ¿Es superadmin de plataforma? Lo preguntan DOS puertas de aquí abajo (el rol
+   * del actor y el reparto de roles ALTOS) y ninguna lo pregunta si ya ha decidido
+   * por la vía normal, así que la RPC se llama como mucho UNA vez por invitación y
+   * muchas veces ninguna. `is_superadmin` es SECURITY DEFINER y barata, pero esto
+   * es una ruta que escribe: no se consulta lo mismo dos veces.
+   */
+  let superadminMedido: boolean | null = null;
+  const esSuperadmin = async (): Promise<boolean> => {
+    if (superadminMedido === null) {
+      const { data } = await userSupabase.rpc('is_superadmin');
+      superadminMedido = data === true;
+    }
+    return superadminMedido;
+  };
+
   // ── 1. ¿Quién invita? ──────────────────────────────────────────────────────
   const { data: memberships, error: mErr } = await userSupabase
     .from('memberships')
@@ -294,9 +310,8 @@ export async function performStaffInvite(
   // RLS del INSERT ya le dejaba pasar. Esto solo alinea la puerta de delante con
   // la de atrás, igual que `loadShellContext` fabrica su club sintético (F14B-8).
   // Sin esto, la pantalla le ofrecería un formulario que siempre diría 'forbidden'.
-  if (!rolDelActor) {
-    const { data: esSuper } = await userSupabase.rpc('is_superadmin');
-    if (esSuper === true) rolDelActor = 'admin_club';
+  if (!rolDelActor && (await esSuperadmin())) {
+    rolDelActor = 'admin_club';
   }
 
   if (!rolDelActor) {
@@ -308,14 +323,55 @@ export async function performStaffInvite(
     return { error: 'forbidden' };
   }
 
-  // Rol ALTO: exclusivo del owner (F1B-2). Pre-gate; la RLS lo reimpone.
+  // ── Rol ALTO: lo reparte quien MANDA en el club (F1B-2) ────────────────────
+  //
+  // Pre-gate de la rama alta de `invitations_insert_admin`:
+  //
+  //   when public.membership_role_is_high(role) then public.user_is_club_owner(club_id)
+  //
+  // y la copia tiene que ser de esa función ENTERA, que desde RM-2
+  // (20260928000000_rm2_superadmin_owner_parity) empieza por el superadmin. Cuerpo
+  // VIVO, leído de producción el 07-10-2026:
+  //
+  //   select public.is_superadmin() or exists (
+  //     select 1 from public.clubs c where c.id = p_club_id and c.owner_profile_id = auth.uid());
+  //
+  // Aquí había un `club.owner_profile_id !== actorProfileId` a secas, escrito en
+  // F1B-2 (24-08-2026) cuando esa función aún no tenía la rama de superadmin, que
+  // llegó el 28-09. O sea que este pre-gate llevaba un mes siendo MÁS ESTRICTO que
+  // la RLS que dice reimponerlo: la puerta de atrás dejaba pasar al superadmin y
+  // la de delante no. Se vio en UDFonteta, un club con `owner_profile_id` a NULL
+  // —recién creado por consola, sin nadie que haya aceptado todavía la membresía
+  // admin_club— donde el `!==` ni siquiera comparaba dos personas: comparaba NULL.
+  // Y el formulario le OFRECÍA «director», porque `loadShellContext` fabrica su
+  // club sintético con `isOwner: true` citando precisamente RM-2 (F14B-8). Las dos
+  // mitades de la misma verdad, en desacuerdo dentro de la misma petición.
+  //
+  // ⚠️ DOS FUNCIONES QUE SE PARECEN Y NO SON LA MISMA REGLA. Perder esta distinción
+  // es lo que costó el arreglo, así que queda escrita:
+  //
+  //   · `user_is_club_owner(club)` mira al ACTOR —quién pide— y SÍ es superadmin-
+  //     aware. Su propio comentario en la base dice para qué se cableó: «paridad-
+  //     owner: invitar directores, gestionar roles altos». Es la que copia un gate
+  //     de permisos como este.
+  //   · `profile_is_club_owner(club, profile)` mira al OBJETIVO —a quién se le hace
+  //     algo— y NO lo es, a propósito: protege al owner REAL de que le cambien el
+  //     rol o le borren la membresía. Un pre-gate que copie ESTA se equivoca en la
+  //     dirección peligrosa, y RM-2 la dejó literal queriendo.
+  //
+  //   La frase que resume las dos: el superadmin no ES el owner, actúa como tal.
+  //
+  // El OR va al revés que en SQL —primero el owner, después el superadmin— a
+  // propósito: así un director normal invitando no gasta la RPC. Son las dos ramas
+  // del mismo OR, el resultado es idéntico.
   if (isHighClubRole(role as Role)) {
     const { data: club } = await userSupabase
       .from('clubs')
       .select('owner_profile_id')
       .eq('id', clubId)
       .single();
-    if (!club || club.owner_profile_id !== actorProfileId) {
+    const esOwnerReal = !!club && club.owner_profile_id === actorProfileId;
+    if (!esOwnerReal && !(await esSuperadmin())) {
       trazar('forbidden_high_role_requires_owner', { role });
       return { error: 'forbidden' };
     }

@@ -1102,3 +1102,120 @@ describe('el club que se invita es el que se pasa', () => {
     expect(res.error).toBe('no_club');
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EL SUPERADMIN REPARTE ROLES ALTOS (paridad-owner, RM-2)
+//
+// El pre-gate de rol alto comparaba `clubs.owner_profile_id !== actorProfileId` a
+// secas, copia de `user_is_club_owner` ANTES de que RM-2 (28-09-2026) le añadiera
+// la rama `is_superadmin()`. Un mes más estricto que la RLS que dice reimponer: la
+// pantalla ofrecía «director» —el shell fabrica `isOwner: true` citando RM-2— y al
+// enviar contestaba «No tienes permiso para invitar en este club».
+//
+// Y el caso que lo sacó a la luz es el peor de los dos: UDFonteta tiene
+// `owner_profile_id` NULL, así que el `!==` no comparaba dos personas, comparaba
+// NULL. Por eso el primer test de aquí abajo monta `owner: null`.
+//
+// OJO con la función vecina: `profile_is_club_owner` (el OBJETIVO) NO es
+// superadmin-aware a propósito y no se toca. Ver el comentario del gate.
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('el superadmin reparte roles ALTOS (paridad-owner)', () => {
+  const EN_OTRO = [{ id: 'm-otro', club_id: 'otro-club', role: 'director' }];
+  const DIRECTOR_AQUI = [{ id: 'm1', club_id: CLUB, role: 'director' }];
+
+  it('club SIN owner: el superadmin invita director (el caso de UDFonteta)', async () => {
+    const p = puertos();
+    const res = await performStaffInvite(
+      clienteUsuario({ membresias: EN_OTRO, owner: null, esSuperadmin: true }),
+      clienteAdmin({}),
+      args({ role: 'director' }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(res.error, 'el pre-gate volvió a negar el rol alto').toBeUndefined();
+    expect(res.ok).toBeTruthy();
+    expect(p.sendEmail).toHaveBeenCalled();
+  });
+
+  it('club CON otro owner: el superadmin también (la RLS es un OR, no un AND)', async () => {
+    const p = puertos();
+    const res = await performStaffInvite(
+      clienteUsuario({ membresias: EN_OTRO, owner: 'OTRO-perfil', esSuperadmin: true }),
+      clienteAdmin({}),
+      args({ role: 'admin_club' }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(res.ok, 'owner ajeno: el superadmin sigue actuando como owner').toBeTruthy();
+  });
+
+  it('con membresía en el club pero sin ser owner, el superadmin reparte igual', async () => {
+    // Un superadmin puede tener membresía real donde no es owner. La RLS no mira la
+    // membresía para el rol alto: mira `user_is_club_owner`, que es TRUE para él.
+    const p = puertos();
+    const res = await performStaffInvite(
+      clienteUsuario({ membresias: DIRECTOR_AQUI, owner: 'OTRO-perfil', esSuperadmin: true }),
+      clienteAdmin({}),
+      args({ role: 'director' }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(res.ok).toBeTruthy();
+  });
+
+  it('un director normal sin owner asignado NO cuela por el hueco del NULL', async () => {
+    // Control de la dirección peligrosa: que el club no tenga owner no abre la
+    // puerta a cualquiera. Solo el superadmin salta ese gate.
+    const traza: string[] = [];
+    const p = puertos();
+    const res = await performStaffInvite(
+      clienteUsuario({ membresias: DIRECTOR_AQUI, owner: null, esSuperadmin: false, traza }),
+      clienteAdmin({ traza }),
+      args({ role: 'director' }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(res).toEqual({ error: 'forbidden' });
+    expect(traza.filter((t) => t.startsWith('write:'))).toEqual([]);
+    expect(p.sendEmail).not.toHaveBeenCalled();
+  });
+
+  it('el owner REAL no gasta la RPC: el OR mira primero la columna', async () => {
+    // Fija el orden del OR, que está al revés que en SQL a propósito: un director
+    // normal invitando no debe pagar una consulta más.
+    const traza: string[] = [];
+    const p = puertos();
+    const res = await performStaffInvite(
+      clienteUsuario({ membresias: DIRECTOR_AQUI, owner: ACTOR, traza }),
+      clienteAdmin({ traza }),
+      args({ role: 'director' }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(res.ok).toBeTruthy();
+    expect(traza).not.toContain('rpc:is_superadmin');
+  });
+
+  it('`is_superadmin` se consulta UNA vez aunque la pidan las dos puertas', async () => {
+    // Sin membresía en el club Y con rol alto: el gate de rol y el de rol alto
+    // preguntan los dos. La respuesta se memoriza.
+    const traza: string[] = [];
+    const p = puertos();
+    const res = await performStaffInvite(
+      clienteUsuario({ membresias: EN_OTRO, owner: null, esSuperadmin: true, traza }),
+      clienteAdmin({ traza }),
+      args({ role: 'director' }),
+      p.link,
+      p.sendEmail,
+      p.lookup,
+    );
+    expect(res.ok).toBeTruthy();
+    expect(traza.filter((t) => t === 'rpc:is_superadmin')).toHaveLength(1);
+  });
+});
