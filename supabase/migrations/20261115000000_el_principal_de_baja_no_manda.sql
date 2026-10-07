@@ -26,6 +26,14 @@
 -- hoy, cierra lo que podría pasar mañana. Si hubiera habido colgantes, esto habría
 -- retirado permisos a alguien y habría ido con aviso, no de callada.
 --
+-- UNA SEGUNDA CONSECUENCIA DEL MISMO HUECO, que encontró el CI al construir la suite:
+-- existe `team_staff_principal_unique`, un índice único sobre `(team_id)` parcial
+-- `where left_at is null and staff_role='entrenador_principal'`. O sea que un equipo tiene
+-- UN principal activo y nada más. Así que la fila colgante de un despedido no solo le deja
+-- permisos: **le ocupa la plaza**, y al equipo no se le puede nombrar otro principal hasta
+-- que alguien cierre esa fila a mano. Esto no lo arregla esta migración —aquí solo se
+-- endurece el predicado— pero deja escrito que el colgante estorba por dos sitios.
+--
 -- QUIEN LO USA, censado en producción: TRES políticas y NINGUNA función.
 --   · announcements_update_author_or_manager  (UPDATE, #761)
 --   · announcements_delete_author_or_manager  (DELETE, #761)
