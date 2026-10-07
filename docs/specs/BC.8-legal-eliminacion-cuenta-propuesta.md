@@ -1,8 +1,15 @@
 # BC-8 · Propuesta de texto legal — eliminación de cuenta
 
-> **ESTO NO ESTÁ PUBLICADO.** Es una propuesta. El texto vivo sigue siendo
-> `Documentos/misterfc-eliminacion-cuenta.md`, del que la web genera su copia servida
-> en el build (Legal-1). Nada de este fichero se sirve.
+> **ADOPTADA. Lo de aquí ya está publicado** (comprobado el 2026-10-07): los textos
+> vivos de `Documentos/` se actualizaron el **2026-09-24**, después de esta propuesta
+> (2026-09-21), y **15 de las 29 frases largas de este fichero aparecen literalmente**
+> dentro de ellos. Lo que se sirve en la web sale SIEMPRE de `Documentos/*.md` (Legal-1,
+> vigilado por `check:textos-legales`); este fichero no se sirve y nunca se sirvió.
+>
+> Se conserva porque es lo único que explica **por qué** se redactó cada cláusula, y
+> porque el solape no es del 100 %: lo que no esté en `Documentos/` **no se adoptó**, y
+> esa diferencia no está marcada en ninguna parte. Para saber qué rige, el texto vivo;
+> para saber de dónde salió, esto.
 >
 > **Doble aprobación.** Jose decide el fondo; pero el texto vivo lo revisó un abogado
 > y esta propuesta **no la ha revisado nadie con esa formación**. Antes de publicar

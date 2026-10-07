@@ -1,5 +1,9 @@
 # MisterFC — Reglas operativas para Claude Code
 
+> **Vivía en `_bootstrap/CLAUDE.md`, donde no lo leía nadie: Claude Code carga el
+> `CLAUDE.md` de la RAÍZ y no había ninguno.** Movido aquí el 2026-10-07 por eso
+> mismo; sus reglas estaban vivas y el fichero estaba fuera de alcance.
+
 > Este documento es la guía permanente que Claude Code debe respetar en cualquier acción sobre este repo. Léelo entero antes de tocar nada. Si una instrucción del usuario contradice estas reglas, **detente y consulta** antes de actuar.
 
 ---
@@ -41,7 +45,6 @@
 - Force push a `main` (`--force` o `--force-with-lease`).
 - Commit de secrets: `.env`, `.env.local`, `.env.production`, tokens, claves API, passwords, DSNs reales. El `.gitignore` los protege pero verifica antes de cada commit.
 - Sobrescribir migraciones de Supabase ya aplicadas. Las migraciones son inmutables una vez en `main`. Crear una nueva para correcciones.
-- Tocar `_bootstrap/` después de cerrar Fase 0. Esa carpeta queda como artefacto histórico.
 - Eliminar archivos de `docs/decisions/` (ADRs). Si una decisión cambia, crear un nuevo ADR que supersede al anterior, no borrar.
 - Mezclar UI components con lógica de negocio. La regla:
   - **Lógica pura** (validación, schemas Zod, cliente Supabase, helpers, hooks no-React) → `packages/core/src/`
@@ -84,8 +87,7 @@ misterfc/
 │   ├── specs/                     Specs por subfase del Plan
 │   ├── decisions/                 ADRs
 │   ├── architecture/              Diagramas, modelos de datos
-│   └── journey/                   Plan maestro + progreso + retros
-├── _bootstrap/                    Solo Fase 0. Tras cerrarla, no se toca.
+│   └── journey/                   Plan maestro + registro de cierres
 ├── .github/
 │   ├── workflows/                 CI
 │   └── pull_request_template.md
@@ -206,8 +208,9 @@ pnpm add -w -D some-dev-tool                      # a la raíz (dev)
 ## 8. Al cerrar una subfase
 
 - Marca la subfase como `[hecho YYYY-MM-DD]` en `docs/journey/plan-maestro.md`.
-- Actualiza el estado en `docs/journey/progress.md`.
 - Si esa subfase cerró una fase entera, marca la fase como ☑ completada.
+- `docs/journey/progress.md` es **registro histórico congelado** (ver su cabecera): se
+  consulta para saber qué PR cerró qué subfase de la Ola 1, y ya no se actualiza.
 
 ---
 

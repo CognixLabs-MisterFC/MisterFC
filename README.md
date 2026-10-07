@@ -44,10 +44,10 @@ pnpm --filter web build           # build de Next.js
 ## Documentación
 
 - [Plan Maestro](docs/journey/plan-maestro.md) — fuente de verdad del roadmap.
-- [Progreso](docs/journey/progress.md) — estado de cada fase.
+- [Progreso](docs/journey/progress.md) — registro histórico: qué PR cerró qué subfase (congelado).
 - [ADRs](docs/decisions/) — decisiones técnicas.
 - [Specs](docs/specs/) — specs por subfase.
-- [Reglas operativas](\_bootstrap/CLAUDE.md) — convenciones permanentes.
+- [Reglas operativas](CLAUDE.md) — convenciones permanentes.
 
 ## Licencia
 

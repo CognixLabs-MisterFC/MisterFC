@@ -4,6 +4,23 @@
 >
 > **Cognix Labs** · Versión 1.0 · 2026-05-26 · Deadline Ola 1: septiembre 2026 (beta cerrada con primer club)
 
+> ## ⚠️ Lo que este documento NO dice bien (nota del 2026-10-07)
+>
+> Las marcas `☐` de más abajo **dejaron de mantenerse**, y hay 22. Las que más
+> engañan son las de **§7 Ola 2**: las catorce subfases `O2-0`…`O2-13` siguen en
+> `☐` y la app nativa **está publicada en App Store y Google Play** (versión
+> **1.0.1**, octubre de 2026). `O2-13` dice además «bloqueado por la constitución
+> de Cognix Labs, S.L. y por la serie BC»: las dos cosas se resolvieron.
+>
+> Lo mismo con **F14** (RGPD de menores), entregada por series, y lo que se
+> construyó después y no tiene fase en este plan: muro de suscripción, borrado de
+> cuenta, correo propio por Resend, consola de plataforma, serie D de Play.
+>
+> **Lo que sigue siendo fiable aquí**: el alcance y las decisiones de cada fase, y
+> las cabeceras `☑ cerrada <fecha>` de las fases de la Ola 1. El estado REAL de lo
+> entregado vive en el historial de PRs. Marcar una por una las subfases de Ola 2
+> es una decisión pendiente de Jose, no se ha hecho a ojo.
+
 ---
 
 ## Índice
@@ -166,6 +183,8 @@ Reservar un colchón adicional del 15–20 % para imprevistos. Con 2–3 h/día 
 **Horas**: 4–5 h · **Sesiones**: 2
 
 **Criterio de cierre**: repo `CognixLabs-MisterFC/MisterFC` creado con estructura Turborepo (`packages/core` + `apps/web`), CI verde, primer deploy en Vercel funcionando, estructura `docs/` con plantillas, CLAUDE.md y `_bootstrap/` en el repo, ADR-0003 documentando la estrategia monorepo.
+
+> `_bootstrap/` se **borró el 2026-10-07**: describía un repo vacío que dejó de existir el 2026-05-27. Su `CLAUDE.md`, que sí estaba vivo, pasó a la raíz del repo, que es donde se lee.
 
 **Riesgo**: bajo. **Dependencias**: ninguna.
 
@@ -877,7 +896,7 @@ F6 construye el componente `<MatchFieldEditor>` (campo SVG, drag&drop, chips de 
 
 **Horas**: 9–15 h (subfases 16.0–16.4: 6–10 h + F16.x bulk-invite +3–5 h) · **Sesiones**: 3–4
 
-**Criterio de cierre**: club piloto operando MisterFC en producción durante al menos un mes con uso real (partidos, entrenamientos, asistencia, valoraciones). Feedback documentado en `docs/journey/retros/`.
+**Criterio de cierre**: club piloto operando MisterFC en producción durante al menos un mes con uso real (partidos, entrenamientos, asistencia, valoraciones). Feedback documentado en un `*-summary.md` de `docs/journey/` (la carpeta `retros/` se borró el 2026-10-07: en cuatro meses y medio solo tuvo la plantilla).
 
 **Riesgo**: medio (depende del club).
 
@@ -1037,7 +1056,11 @@ Las siguientes funcionalidades quedan explícitamente fuera del alcance de Miste
 
 ## 12. Próximo paso concreto
 
-Cerrar Fase 0 ejecutando el `_bootstrap/PROMPT.md` con Claude Code. Al terminar y mergear el PR resultante, Fase 0 queda como ☑ completada y arrancamos Fase 1 (Modelo de datos y auth multi-rol con permisos configurables).
+> **Rancio, y se queda como registro de por dónde empezó esto.** Decía: «cerrar
+> Fase 0 ejecutando el `_bootstrap/PROMPT.md`». La Fase 0 cerró el **2026-05-27** y
+> ese prompt se borró el 2026-10-07 (describía un repo vacío). Hoy el siguiente
+> paso no sale de este documento: sale del historial de PRs y de lo que haya
+> abierto.
 
 ---
 
