@@ -54,11 +54,13 @@ const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..');
  * Raíces de CÓDIGO donde puede pedirse una traducción (los 3 paquetes del workspace,
  * comprobado contra pnpm-workspace.yaml).
  *
- * `docs/` NO está, y es a propósito: `docs/i18n/*.csv` son las entregas de las tandas de
- * traducción (la auditoría del #443, T2–T6) y listan claves por su nombre. Nadie los lee
- * en ejecución —son un registro de lo que se mandó a traducir entonces—, así que una
- * clave mencionada ahí NO está en uso. Si se barrieran, 7 de las 54 muertas del censo
- * habrían salido como vivas y no se habrían borrado nunca.
+ * `docs/` NO está, y NO se añada: una clave mencionada en documentación NO está en uso.
+ * El caso que lo prueba vivía en `docs/i18n/*.csv` —las entregas de las tandas de
+ * traducción, #443 T2–T6, que listaban claves por su nombre—: si se hubieran barrido,
+ * **7 de las 54 muertas del censo habrían salido como vivas** y no se habrían borrado
+ * nunca. Esos CSV se borraron el 2026-10-07 (no los leía nadie en ejecución y eran justo
+ * esa trampa), así que hoy la exclusión no tapa nada concreto; se queda porque la regla
+ * es la regla y el siguiente .md con claves dentro vuelve a abrir el agujero.
  */
 const SRC_DIRS = [
   'apps/web/src',

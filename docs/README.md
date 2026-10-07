@@ -4,10 +4,11 @@ Esta carpeta contiene toda la documentación viva del proyecto: planificación, 
 
 ## Índice
 
-- **[journey/](journey/)** — Plan maestro, progreso y retrospectivas.
+- **[journey/](journey/)** — Plan maestro y registro de cierres.
   - [plan-maestro.md](journey/plan-maestro.md) — Plan vivo de las 17 fases. Fuente de verdad.
-  - [progress.md](journey/progress.md) — Estado de cada fase.
-  - [retros/](journey/retros/) — Retrospectivas mensuales.
+  - [progress.md](journey/progress.md) — Registro histórico de cierres: qué PR cerró qué
+    subfase de la Ola 1. **Congelado**, ver su cabecera.
+  - `*-summary.md` — retrospectivas de cierre de las fases que la tuvieron.
 - **[specs/](specs/)** — Specs por subfase del Plan. Crear antes de implementar features no triviales.
 - **[decisions/](decisions/)** — ADRs (Architecture Decision Records). Inmutables: si una decisión cambia, crear un nuevo ADR que la supersede.
 - **[architecture/](architecture/)** — Diagramas, modelos de datos, notas transversales.
@@ -17,4 +18,4 @@ Esta carpeta contiene toda la documentación viva del proyecto: planificación, 
 1. Antes de empezar una subfase, lee `journey/plan-maestro.md`.
 2. Si la subfase es no trivial, copia `specs/_template.md` → `specs/N.M-titulo.md` y rellénala.
 3. Si tomas una decisión técnica con impacto, copia `decisions/_template.md` → `decisions/ADR-NNNN-titulo.md`.
-4. Al cerrar la subfase, marca `[hecho YYYY-MM-DD]` en `journey/plan-maestro.md` y actualiza `journey/progress.md`.
+4. Al cerrar la subfase, marca `[hecho YYYY-MM-DD]` en `journey/plan-maestro.md`.

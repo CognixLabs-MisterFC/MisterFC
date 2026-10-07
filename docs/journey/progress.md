@@ -1,6 +1,23 @@
-# Progreso — MisterFC Ola 1
+# Progreso — MisterFC Ola 1 · REGISTRO HISTÓRICO CONGELADO
 
-Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detallada es [plan-maestro.md](plan-maestro.md).
+> ## ⚠️ Esto no es un tablero de estado. Lo fue, y dejó de serlo.
+>
+> **Congelado el 2026-07-28.** Nada de aquí abajo se ha actualizado desde esa
+> fecha, y el proyecto siguió tres meses más: Ola 2 entera (app nativa
+> **publicada** en App Store y Google Play, versión 1.0.1), F14 por series, muro de
+> suscripción, borrado de cuenta, correo propio por Resend, consola de plataforma.
+>
+> **Las filas `☐ pendiente` de la tabla de abajo son falsas** —F14 se entregó— y las
+> fechas de cierre se quedaron en julio.
+>
+> **Para qué sirve, y por eso no se borra**: es el único sitio del repo que dice
+> **qué PR cerró qué subfase** de la Ola 1, con fechas. `plan-maestro.md` le delega
+> ese detalle en siete sitios («detalle por subfase + PR + fecha → progress.md»).
+> Se consulta hacia atrás; no se mantiene hacia adelante.
+>
+> El estado de hoy no está en ningún documento: está en el historial de PRs.
+
+Estado de cada una de las 17 fases del Plan Maestro, **tal como se dejó en julio de 2026**.
 
 **Leyenda**: ☐ pendiente · ⟳ en curso · ☑ completada
 
@@ -22,13 +39,13 @@ Estado de cada una de las 17 fases del Plan Maestro. La fuente de verdad detalla
 | 12 | Planificador de sesiones con plantillas microciclo | ☑ completada | 2026-06-18 | 2026-06-20 |
 | 13 | Pizarra táctica 2D con animación | ☑ completada | 2026-06-26 | 2026-06-27 |
 | 13.10 | Informes de desarrollo y campaña (extensión F8/F9 — **NO** la pizarra) | ☑ completada | 2026-06-23 | 2026-06-25 |
-| 14 | RGPD para menores | ☐ pendiente | — | — |
-| 15 | Testing E2E, observabilidad y runbook | ☐ pendiente | — | — |
-| 16 | Beta cerrada con primer club | ☐ pendiente | — | — |
+| 14 | RGPD para menores | ☑ entregada por series F14-* (ver PRs; esta tabla se quedó en julio) | — | — |
+| 15 | Testing E2E, observabilidad y runbook | ⟳ parcial: pgTAP en CI (F15-B) y Sentry activo; E2E y runbook no | — | — |
+| 16 | Beta cerrada con primer club | ⟳ en curso con UDFonteta | — | — |
 
 ---
 
-## Estado actual (2026-07-08)
+## Estado al congelar el registro (2026-07-08)
 
 - **F13 — Pizarra de jugadas (13.1–13.7)** — **cerrada** (2026-06-27). El contrato/editor/animación/reproducción/fullscreen ya existían (build original de `plays`); la **serie JR** (ADR-0019, **#229–#232**) los reorganizó a **banco del club + ciclo de aprobación** (proponer/aprobar/rechazar), **playbook por equipo** y **compartir con la familia** (con índice del playbook del jugador). **13.8 (exportar vídeo/GIF) descartado y eliminado del roadmap.**
 - **F13.10** (Informes de desarrollo y campaña de evaluaciones) — **cerrada** (#200–#221). Ver [fase-13.10-summary.md](fase-13.10-summary.md) y [spec 13.10](../specs/13.10-informes-desarrollo.md).
