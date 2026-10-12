@@ -1,15 +1,27 @@
 export {
   FFCV_BASE,
   FFCV_CABECERA_TOKEN,
+  FFCV_ESPERA_429_MS,
   FFCV_ESPERA_MS,
   FFCV_INTENTOS,
+  FFCV_INTENTOS_429,
+  FFCV_POR_MINUTO,
+  FFCV_VENTANA_MS,
+  crearMarcapasos,
   describirFallo,
   leerToken,
   motivoDeDegradacion,
   motivoDeRechazo,
   pedirJson,
 } from './client';
-export type { FfcvConfig, FfcvFallo, FfcvResultado } from './client';
+export type {
+  FfcvAhora,
+  FfcvConfig,
+  FfcvEspera,
+  FfcvFallo,
+  FfcvResultado,
+  Marcapasos,
+} from './client';
 export { aIsoUtc, partirFecha, partirHora } from './fecha';
 export {
   FFCV_CAMPOS_MAX_PAGINAS,

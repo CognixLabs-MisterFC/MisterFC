@@ -29,6 +29,27 @@
  *      llamada necesitó tres intentos. De ahí el reintento con espera, inyectable para
  *      que los tests no duerman.
  *
+ *  4 · EL LÍMITE DE RITMO, medido el 2026-10-12 (y añadido después de que mordiera).
+ *      La FFCV corta a las **60 peticiones por minuto**: la 60ª pasa y la 61ª devuelve
+ *      **HTTP 429** con `{"error":"too_many_requests","reason":"Rate limit excedido",
+ *      "reason_code":"RATE_LIMIT"}`. No es un límite por ruta —40 seguidas a la misma
+ *      ruta pasan sin un corte—, lo que corta es el VOLUMEN total. Se recupera entre los
+ *      15 s y los 30 s y **no manda `Retry-After`** ni cabeceras de cuota, así que no hay
+ *      nada que leer: hay que medirlo y respetarlo a ciegas.
+ *
+ *      Esto se descubrió barriendo los grupos de los 15 equipos (#768): la primera
+ *      pasada resolvió DOS equipos y perdió los TRECE restantes en cadena, porque un 429
+ *      salía por la puerta de `!res.ok` —sin espera y sin reintento— y el siguiente
+ *      equipo se encontraba la ventana igual de cerrada. Un fallo en cadena es lo peor
+ *      que le puede pasar a esto: trece calendarios perdidos por un corte de un minuto.
+ *
+ *      La defensa son DOS piezas, y hacen falta las dos:
+ *        · el MARCAPASOS, que no deja pasar del techo y evita el 429 (a 1,1 s por
+ *          llamada se midieron 397 llamadas con CERO cortes);
+ *        · el REINTENTO del 429, que es la garantía cuando el marcapasos no basta —otro
+ *          proceso consumiendo la misma cuota, o la misma IP compartida—. Su espera es
+ *          la recuperación medida, no los 3 s de la degradación.
+ *
  * ── UN ESTADO QUE NO ES DEGRADACIÓN ─────────────────────────────────────────────────
  * El proxy marca sus respuestas con `estado`: '1' bien, '0' mal. Un '0' SIN marcas de
  * degradación (ni `code_api`, ni `_upstream`, ni la palabra «degradado») no es el origen
@@ -44,13 +65,84 @@ export const FFCV_CABECERA_TOKEN = 'X-FFCV-Page-Token';
 export const FFCV_INTENTOS = 4;
 export const FFCV_ESPERA_MS = 3_000;
 
+/**
+ * El techo que se respeta. El límite medido son 60 por minuto; se deja margen a
+ * propósito, porque la cuota no es solo nuestra —la misma IP la gasta cualquier otra
+ * cosa que llame— y porque pasarse cuesta media ventana de espera.
+ */
+export const FFCV_POR_MINUTO = 50;
+export const FFCV_VENTANA_MS = 60_000;
+/** La recuperación medida fue de entre 15 s y 30 s. Se espera la peor. */
+export const FFCV_ESPERA_429_MS = 30_000;
+/** Dos esperas de 30 s cubren una ventana entera; una tercera ya no es un corte, es un muro. */
+export const FFCV_INTENTOS_429 = 3;
+
+/** Reloj inyectable: sin él, los tests del marcapasos dependerían del tiempo real. */
+export type FfcvAhora = () => number;
+export type FfcvEspera = (ms: number) => Promise<void>;
+
+/**
+ * El marcapasos. Reparte turnos para que no se pase del techo en una ventana.
+ *
+ * Es el único estado mutable de todo F-3, y es deliberado: el techo es de la FFCV, no de
+ * una llamada, así que no se puede respetar sin recordar las anteriores. Por defecto se
+ * comparte uno por módulo, que es lo que hace que los 15 equipos de una importación se
+ * marquen el paso entre ellos y no solo cada uno por dentro.
+ */
+export type Marcapasos = {
+  pedirTurno: (esperar: FfcvEspera, ahora: FfcvAhora) => Promise<void>;
+};
+
+export function crearMarcapasos(
+  porMinuto: number = FFCV_POR_MINUTO,
+  ventanaMs: number = FFCV_VENTANA_MS,
+): Marcapasos {
+  const sellos: number[] = [];
+  // Los turnos se encolan: si dos llamadas piden a la vez, no se cuentan como una.
+  let cola: Promise<void> = Promise.resolve();
+
+  const turno = async (esperar: FfcvEspera, ahora: FfcvAhora): Promise<void> => {
+    let t = ahora();
+    while (sellos.length > 0 && t - sellos[0]! >= ventanaMs) sellos.shift();
+    if (sellos.length >= porMinuto) {
+      const falta = ventanaMs - (t - sellos[0]!);
+      if (falta > 0) await esperar(falta);
+      // Se descuenta el más viejo y se pasa, SIN volver a mirar el reloj en bucle: si el
+      // tiempo no avanzó lo que se pidió, el reintento del 429 es la garantía. Un bucle
+      // aquí colgaría el proceso, que es mucho peor que un 429 que ya sabemos aguantar.
+      sellos.shift();
+      t = ahora();
+    }
+    sellos.push(t);
+  };
+
+  return {
+    pedirTurno: (esperar, ahora) => {
+      const mio = cola.then(() => turno(esperar, ahora));
+      cola = mio.catch(() => undefined);
+      return mio;
+    },
+  };
+}
+
+/** El compartido. Se usa cuando `cfg.marcapasos` no dice otra cosa. */
+const marcapasosCompartido = crearMarcapasos();
+
 export type FfcvConfig = {
   base?: string;
   fetchImpl?: FfcvFetch;
   intentos?: number;
   esperaMs?: number;
   /** Inyectable para que los tests no duerman de verdad. */
-  esperar?: (ms: number) => Promise<void>;
+  esperar?: FfcvEspera;
+  /** Inyectable para que los tests del marcapasos no dependan del reloj de pared. */
+  ahora?: FfcvAhora;
+  /** Quien reparte los turnos. Por defecto, el compartido del módulo. */
+  marcapasos?: Marcapasos;
+  /** Cuántas veces se aguanta un 429 antes de rendirse. */
+  intentos429?: number;
+  /** Cuánto se espera tras un 429. */
+  espera429Ms?: number;
   /** Token ya conocido. Si falta, se raspa de la portada en la 1ª llamada. */
   token?: string;
 };
@@ -60,6 +152,7 @@ export type FfcvFallo =
   | { motivo: 'http'; status: number }
   | { motivo: 'no_json'; detalle: string }
   | { motivo: 'degradado'; intentos: number; detalle: string }
+  | { motivo: 'limitado'; intentos: number }
   | { motivo: 'api'; detalle: string }
   | { motivo: 'filtro_ignorado'; detalle: string };
 
@@ -76,6 +169,8 @@ export function describirFallo(f: FfcvFallo): string {
       return `la respuesta no era JSON: ${f.detalle}`;
     case 'degradado':
       return `origen degradado tras ${f.intentos} intentos (${f.detalle})`;
+    case 'limitado':
+      return `la FFCV sigue limitando el ritmo tras ${f.intentos} esperas (HTTP 429)`;
     case 'api':
       return `la API dice que no: ${f.detalle}`;
     case 'filtro_ignorado':
@@ -129,15 +224,37 @@ function esperaPorDefecto(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Raspa el token de la portada de /competiciones/. */
+/**
+ * Raspa el token de la portada de /competiciones/.
+ *
+ * Cuenta para la cuota como cualquier otra llamada, así que pide turno al marcapasos; y
+ * aguanta el 429, porque si el raspado del token cae por un corte de ritmo se cae TODO
+ * lo que venga detrás sin haber llegado a pedir ni un dato.
+ */
 export async function leerToken(cfg: FfcvConfig = {}): Promise<FfcvResultado<string>> {
   const base = cfg.base ?? FFCV_BASE;
   const doFetch = cfg.fetchImpl ?? (globalThis.fetch as FfcvFetch);
+  const esperar = cfg.esperar ?? esperaPorDefecto;
+  const ahora = cfg.ahora ?? Date.now;
+  const marcapasos = cfg.marcapasos ?? marcapasosCompartido;
+  const intentos429 = cfg.intentos429 ?? FFCV_INTENTOS_429;
+  const espera429 = cfg.espera429Ms ?? FFCV_ESPERA_429_MS;
+
   let res: Response;
-  try {
-    res = await doFetch(base, { method: 'GET' });
-  } catch (e) {
-    return { ok: false, fallo: { motivo: 'sin_token', detalle: String(e) } };
+  let limitadas = 0;
+  for (;;) {
+    await marcapasos.pedirTurno(esperar, ahora);
+    try {
+      res = await doFetch(base, { method: 'GET' });
+    } catch (e) {
+      return { ok: false, fallo: { motivo: 'sin_token', detalle: String(e) } };
+    }
+    if (res.status !== 429) break;
+    limitadas += 1;
+    if (limitadas >= intentos429) {
+      return { ok: false, fallo: { motivo: 'limitado', intentos: limitadas } };
+    }
+    await esperar(espera429);
   }
   if (!res.ok) {
     return { ok: false, fallo: { motivo: 'sin_token', detalle: `HTTP ${res.status}` } };
@@ -178,6 +295,10 @@ export async function pedirJson<T>(
   const intentos = cfg.intentos ?? FFCV_INTENTOS;
   const esperaMs = cfg.esperaMs ?? FFCV_ESPERA_MS;
   const esperar = cfg.esperar ?? esperaPorDefecto;
+  const ahora = cfg.ahora ?? Date.now;
+  const marcapasos = cfg.marcapasos ?? marcapasosCompartido;
+  const intentos429 = cfg.intentos429 ?? FFCV_INTENTOS_429;
+  const espera429 = cfg.espera429Ms ?? FFCV_ESPERA_429_MS;
 
   let token = cfg.token;
   if (!token) {
@@ -187,8 +308,11 @@ export async function pedirJson<T>(
   }
 
   let ultimaDegradacion = 'sin detalle';
-  for (let intento = 1; intento <= intentos; intento += 1) {
+  let intento = 1;
+  let limitadas = 0;
+  while (intento <= intentos) {
     let res: Response;
+    await marcapasos.pedirTurno(esperar, ahora);
     try {
       res = await doFetch(base + ruta, {
         method: 'GET',
@@ -202,6 +326,22 @@ export async function pedirJson<T>(
       // Red caída: cuenta como degradación y se reintenta.
       ultimaDegradacion = `fetch: ${String(e)}`;
       if (intento < intentos) await esperar(esperaMs);
+      intento += 1;
+      continue;
+    }
+
+    // EL 429 NO GASTA INTENTOS DE DEGRADACIÓN. Son dos averías distintas —el origen caído
+    // y nuestro propio ritmo— y juntar sus presupuestos deja al límite comiéndose los
+    // reintentos del 503: la llamada que necesitó tres intentos por 503 se habría
+    // quedado sin ninguno. Tampoco se reintenta con los 3 s de la degradación, porque la
+    // ventana medida dura medio minuto y volver antes es gastar un intento a cambio de
+    // nada.
+    if (res.status === 429) {
+      limitadas += 1;
+      if (limitadas >= intentos429) {
+        return { ok: false, fallo: { motivo: 'limitado', intentos: limitadas } };
+      }
+      await esperar(espera429);
       continue;
     }
 
@@ -215,6 +355,7 @@ export async function pedirJson<T>(
       if (res.status >= 500) {
         ultimaDegradacion = `HTTP ${res.status} con cuerpo no JSON`;
         if (intento < intentos) await esperar(esperaMs);
+        intento += 1;
         continue;
       }
       return {
@@ -227,6 +368,7 @@ export async function pedirJson<T>(
     if (degradado !== null) {
       ultimaDegradacion = degradado;
       if (intento < intentos) await esperar(esperaMs);
+      intento += 1;
       continue;
     }
 
@@ -234,6 +376,7 @@ export async function pedirJson<T>(
     if (res.status >= 500) {
       ultimaDegradacion = `HTTP ${res.status}`;
       if (intento < intentos) await esperar(esperaMs);
+      intento += 1;
       continue;
     }
     if (!res.ok) return { ok: false, fallo: { motivo: 'http', status: res.status } };
