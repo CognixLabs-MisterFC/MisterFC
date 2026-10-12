@@ -43,6 +43,18 @@ import {
 } from '@misterfc/core';
 import { resolveUserFromRequest } from '@/lib/resolve-user';
 
+/**
+ * El tiempo que se le da a un viaje antes de rendirse, por debajo del `maxDuration` de
+ * 300 s de las rutas.
+ *
+ * Los 50 s de margen no son por gusto: la paciencia del cliente ante un 503 llega a
+ * ~101 s por llamada, y sin este freno DOS cortes en un viaje se pasan del techo y
+ * **Vercel mata la invocación**. Una invocación muerta no devuelve nada —ni qué equipo
+ * falló, ni por qué—, mientras que rendirse a tiempo devuelve un fallo con nombre que la
+ * barra sabe pintar. Más vale un «este equipo no se pudo leer» que un silencio.
+ */
+const MARGEN_MS = 250_000;
+
 export type ErrorFfcv =
   | 'unauthorized'
   | 'forbidden'
@@ -104,10 +116,11 @@ export async function prepararFfcv(
   const c = await contextoFfcv(req);
   if (!c.ok) return { ok: false, error: c.error };
 
-  const r = await prepararImportacionFromClient(c.ctx.supabase, {
-    clubId: c.ctx.clubId,
-    season: c.ctx.season,
-  });
+  const r = await prepararImportacionFromClient(
+    c.ctx.supabase,
+    { clubId: c.ctx.clubId, season: c.ctx.season },
+    { vencimientoMs: Date.now() + MARGEN_MS },
+  );
   if (!r.ok) return { ok: false, error: 'ffcv', detalle: r.detalle };
   return { ok: true, datos: r.datos };
 }
@@ -138,11 +151,11 @@ export async function importarEquipoFfcv(
   const equipo = preparado.equipos.find((e) => e.teamId === cuerpo.teamId);
   if (!equipo) return { ok: false, error: 'not_found' };
 
-  const resumen = await importarEquipoConDireccionesFromClient(c.ctx.supabase, {
-    equipo,
-    direcciones,
-    actorProfileId: c.ctx.actorProfileId,
-  });
+  const resumen = await importarEquipoConDireccionesFromClient(
+    c.ctx.supabase,
+    { equipo, direcciones, actorProfileId: c.ctx.actorProfileId },
+    { vencimientoMs: Date.now() + MARGEN_MS },
+  );
   return { ok: true, resumen };
 }
 

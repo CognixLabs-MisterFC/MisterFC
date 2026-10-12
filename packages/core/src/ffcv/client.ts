@@ -61,9 +61,47 @@ import type { FfcvFetch } from './types';
 
 export const FFCV_BASE = 'https://ffcv.es/competiciones/';
 export const FFCV_CABECERA_TOKEN = 'X-FFCV-Page-Token';
-/** 4 intentos: la peor llamada medida necesitó 3. */
-export const FFCV_INTENTOS = 4;
+/**
+ * ── LA PACIENCIA ANTE EL ORIGEN CAÍDO, Y POR QUÉ SUBIÓ ──────────────────────────────
+ * Esto empezó siendo 4 intentos de 3 s —9 s de paciencia total— porque la peor llamada
+ * medida con dobles necesitó tres. Contra la API DE VERDAD eso resultó ser muy poco:
+ *
+ *   · Barriendo los grupos de los 15 equipos (#768), una ventana de 503 se llevó SEIS
+ *     equipos de quince. Los seis salieron en una segunda pasada con esperas de 20 s.
+ *   · Midiendo la cobertura de direcciones, 9 s tumbaron la lectura de UN equipo del
+ *     todo; con esperas de 20 s pasó sin incidencias.
+ *   · En el alta de los 290 partidos, un corte en 364 llamadas, absorbido con 20 s.
+ *
+ * Así que la paciencia sube a ~100 s por llamada, con espera creciente y un techo: 3 s,
+ * 6 s, 12 s y luego 20 s. Creciente porque un corte de un segundo no merece esperar
+ * veinte, y con techo porque duplicar sin límite convierte una avería de un minuto en
+ * una espera de diez.
+ *
+ * Lo que NO se puede afirmar, y por eso no se escribe aquí: cuánto duran esas ventanas.
+ * Los logs cuentan reintentos, no distinguen si cuatro seguidos fueron de la misma
+ * llamada. Los números de abajo cubren lo medido con margen, no una duración conocida.
+ *
+ * Y la paciencia por llamada NO puede ser la única defensa: ver `vencimientoMs`.
+ */
+export const FFCV_INTENTOS = 8;
 export const FFCV_ESPERA_MS = 3_000;
+/** El techo de la espera creciente. */
+export const FFCV_ESPERA_MAX_MS = 20_000;
+
+/**
+ * La espera antes del intento siguiente: 3 s, 6 s, 12 s, 20 s, 20 s… Con
+ * `FFCV_INTENTOS = 8` suman ~101 s de paciencia por llamada.
+ */
+export function esperaDeIntento(
+  intento: number,
+  base: number = FFCV_ESPERA_MS,
+  techo: number = FFCV_ESPERA_MAX_MS,
+): number {
+  if (intento < 1) return base;
+  // 2^(intento-1) crece rápido; el techo es lo que lo hace usable.
+  const crecida = base * 2 ** (intento - 1);
+  return Math.min(crecida, techo);
+}
 
 /**
  * El techo que se respeta. El límite medido son 60 por minuto; se deja margen a
@@ -143,6 +181,20 @@ export type FfcvConfig = {
   intentos429?: number;
   /** Cuánto se espera tras un 429. */
   espera429Ms?: number;
+  /**
+   * EL FRENO DE LA PACIENCIA: instante (en ms, misma escala que `ahora()`) a partir del
+   * cual ya no se espera más y se devuelve `agotado`.
+   *
+   * Existe por el botón. Un viaje suyo son ~29 llamadas dentro de una invocación de
+   * Vercel con 300 s de techo; si cada llamada puede gastar 101 s esperando al origen,
+   * dos cortes se pasan del techo y **Vercel mata la invocación**. Y una invocación
+   * muerta no devuelve nada: el usuario no se enteraría de qué equipo falló ni por qué.
+   * Con vencimiento, la llamada se rinde a tiempo y el viaje contesta «este equipo no se
+   * pudo leer», que es lo que la barra sabe pintar.
+   *
+   * Sin él, la paciencia es la de `intentos`.
+   */
+  vencimientoMs?: number;
   /** Token ya conocido. Si falta, se raspa de la portada en la 1ª llamada. */
   token?: string;
 };
@@ -153,6 +205,7 @@ export type FfcvFallo =
   | { motivo: 'no_json'; detalle: string }
   | { motivo: 'degradado'; intentos: number; detalle: string }
   | { motivo: 'limitado'; intentos: number }
+  | { motivo: 'agotado'; esperadoMs: number; detalle: string }
   | { motivo: 'api'; detalle: string }
   | { motivo: 'filtro_ignorado'; detalle: string };
 
@@ -171,6 +224,8 @@ export function describirFallo(f: FfcvFallo): string {
       return `origen degradado tras ${f.intentos} intentos (${f.detalle})`;
     case 'limitado':
       return `la FFCV sigue limitando el ritmo tras ${f.intentos} esperas (HTTP 429)`;
+    case 'agotado':
+      return `se agoto el tiempo tras esperar ${Math.round(f.esperadoMs / 1000)}s (${f.detalle})`;
     case 'api':
       return `la API dice que no: ${f.detalle}`;
     case 'filtro_ignorado':
@@ -254,6 +309,14 @@ export async function leerToken(cfg: FfcvConfig = {}): Promise<FfcvResultado<str
     if (limitadas >= intentos429) {
       return { ok: false, fallo: { motivo: 'limitado', intentos: limitadas } };
     }
+    // El vencimiento manda también aquí: raspar el token no puede comerse el tiempo que
+    // le queda al viaje, porque entonces no quedaría ninguno para leer datos.
+    if (cfg.vencimientoMs !== undefined && ahora() + espera429 > cfg.vencimientoMs) {
+      return {
+        ok: false,
+        fallo: { motivo: 'agotado', esperadoMs: limitadas * espera429, detalle: 'HTTP 429 al raspar el token' },
+      };
+    }
     await esperar(espera429);
   }
   if (!res.ok) {
@@ -310,6 +373,19 @@ export async function pedirJson<T>(
   let ultimaDegradacion = 'sin detalle';
   let intento = 1;
   let limitadas = 0;
+  let esperadoMs = 0;
+
+  /**
+   * Espera lo que toque, o dice que NO hay tiempo. Mira el vencimiento ANTES de dormir,
+   * no después: comprobarlo después ya habría gastado el tiempo que se quería ahorrar.
+   */
+  const aguardar = async (ms: number): Promise<boolean> => {
+    if (cfg.vencimientoMs !== undefined && ahora() + ms > cfg.vencimientoMs) return false;
+    await esperar(ms);
+    esperadoMs += ms;
+    return true;
+  };
+
   while (intento <= intentos) {
     let res: Response;
     await marcapasos.pedirTurno(esperar, ahora);
@@ -325,7 +401,9 @@ export async function pedirJson<T>(
     } catch (e) {
       // Red caída: cuenta como degradación y se reintenta.
       ultimaDegradacion = `fetch: ${String(e)}`;
-      if (intento < intentos) await esperar(esperaMs);
+      if (intento < intentos && !(await aguardar(esperaDeIntento(intento, esperaMs)))) {
+        return { ok: false, fallo: { motivo: 'agotado', esperadoMs, detalle: ultimaDegradacion } };
+      }
       intento += 1;
       continue;
     }
@@ -341,7 +419,9 @@ export async function pedirJson<T>(
       if (limitadas >= intentos429) {
         return { ok: false, fallo: { motivo: 'limitado', intentos: limitadas } };
       }
-      await esperar(espera429);
+      if (!(await aguardar(espera429))) {
+        return { ok: false, fallo: { motivo: 'agotado', esperadoMs, detalle: 'HTTP 429' } };
+      }
       continue;
     }
 
@@ -354,7 +434,9 @@ export async function pedirJson<T>(
       // Un 5xx con cuerpo no-JSON es el origen caído; un 200 no-JSON es otra cosa.
       if (res.status >= 500) {
         ultimaDegradacion = `HTTP ${res.status} con cuerpo no JSON`;
-        if (intento < intentos) await esperar(esperaMs);
+        if (intento < intentos && !(await aguardar(esperaDeIntento(intento, esperaMs)))) {
+          return { ok: false, fallo: { motivo: 'agotado', esperadoMs, detalle: ultimaDegradacion } };
+        }
         intento += 1;
         continue;
       }
@@ -367,7 +449,9 @@ export async function pedirJson<T>(
     const degradado = motivoDeDegradacion(payload);
     if (degradado !== null) {
       ultimaDegradacion = degradado;
-      if (intento < intentos) await esperar(esperaMs);
+      if (intento < intentos && !(await aguardar(esperaDeIntento(intento, esperaMs)))) {
+        return { ok: false, fallo: { motivo: 'agotado', esperadoMs, detalle: ultimaDegradacion } };
+      }
       intento += 1;
       continue;
     }
@@ -375,7 +459,9 @@ export async function pedirJson<T>(
     // Ojo al orden: un 503 "limpio" (JSON sin marcas) llega aquí; también se reintenta.
     if (res.status >= 500) {
       ultimaDegradacion = `HTTP ${res.status}`;
-      if (intento < intentos) await esperar(esperaMs);
+      if (intento < intentos && !(await aguardar(esperaDeIntento(intento, esperaMs)))) {
+        return { ok: false, fallo: { motivo: 'agotado', esperadoMs, detalle: ultimaDegradacion } };
+      }
       intento += 1;
       continue;
     }

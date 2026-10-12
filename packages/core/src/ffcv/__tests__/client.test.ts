@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   FFCV_ESPERA_429_MS,
+  FFCV_ESPERA_MAX_MS,
+  FFCV_INTENTOS,
   FFCV_POR_MINUTO,
   FFCV_VENTANA_MS,
   crearMarcapasos,
   describirFallo,
+  esperaDeIntento,
   leerToken,
   motivoDeDegradacion,
   motivoDeRechazo,
@@ -256,7 +259,9 @@ describe('pedirJson · el 429', () => {
     });
     expect(r.ok).toBe(true);
     expect(f.llamadas).toHaveLength(4);
-    expect(esperas).toEqual([FFCV_ESPERA_429_MS, 3_000, 3_000]);
+    // Las dos esperas de degradación son la ESCALERA (3 s y luego 6 s), no 3 s y 3 s:
+    // la paciencia de 9 s que había antes se demostró corta contra la API de verdad.
+    expect(esperas).toEqual([FFCV_ESPERA_429_MS, 3_000, 6_000]);
   });
 
   it('se rinde tras las esperas configuradas, y el fallo dice que fue el ritmo', async () => {
@@ -390,5 +395,174 @@ describe('crearMarcapasos', () => {
   it('el techo por defecto deja margen bajo las 60 medidas', () => {
     expect(FFCV_POR_MINUTO).toBeLessThan(60);
     expect(FFCV_VENTANA_MS).toBe(60_000);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════════════
+// LA PACIENCIA ANTE EL ORIGEN CAÍDO (trampa 3, segunda vuelta). Los 9 s que había se
+// demostraron cortos CONTRA LA API DE VERDAD: una ventana de 503 se llevó seis equipos
+// de quince en el barrido de #768.
+// ════════════════════════════════════════════════════════════════════════════════════
+
+/** Reloj que avanza con las esperas, para poder medir el vencimiento sin dormir. */
+function relojFalso(inicio = 1_000_000) {
+  let t = inicio;
+  const esperas: number[] = [];
+  return {
+    ahora: () => t,
+    esperar: async (ms: number) => {
+      esperas.push(ms);
+      t += ms;
+    },
+    esperas,
+  };
+}
+
+describe('esperaDeIntento', () => {
+  it('es una escalera con techo: 3, 6, 12, 20, 20…', () => {
+    expect([1, 2, 3, 4, 5, 6].map((i) => esperaDeIntento(i))).toEqual([
+      3_000, 6_000, 12_000, 20_000, 20_000, 20_000,
+    ]);
+  });
+
+  it('con los 8 intentos por defecto suma ~101 s de paciencia', () => {
+    const total = [1, 2, 3, 4, 5, 6, 7].reduce((n, i) => n + esperaDeIntento(i), 0);
+    expect(total).toBe(101_000);
+    expect(FFCV_INTENTOS).toBe(8);
+  });
+
+  it('nunca pasa del techo, por alto que sea el intento', () => {
+    expect(esperaDeIntento(40)).toBe(FFCV_ESPERA_MAX_MS);
+  });
+});
+
+describe('pedirJson · el 503 largo', () => {
+  it('EL CASO MEDIDO: cuatro cortes seguidos y la quinta buena — antes se rendía', async () => {
+    // Con los 4 intentos de 3 s de antes, esto moría con la respuesta buena detrás.
+    const f = fingir([
+      { status: 503, texto: '<html>503</html>' },
+      { status: 503, texto: '<html>503</html>' },
+      { status: 503, texto: '<html>503</html>' },
+      { status: 503, texto: '<html>503</html>' },
+      { status: 200, body: BUENO },
+    ]);
+    const { esperar, esperas } = conEsperas();
+    const r = await pedirJson<typeof BUENO>('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar,
+      marcapasos: SIN_RITMO,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(true);
+    expect(f.llamadas).toHaveLength(5);
+    expect(esperas).toEqual([3_000, 6_000, 12_000, 20_000]);
+  });
+
+  it('el 200 degradado —el disfraz— sube por la MISMA escalera', async () => {
+    const f = fingir([
+      { status: 200, body: DEGRADADO_VACIO_200 },
+      { status: 200, body: DEGRADADO_VACIO_200 },
+      { status: 200, body: BUENO },
+    ]);
+    const { esperar, esperas } = conEsperas();
+    const r = await pedirJson<typeof BUENO>('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar,
+      marcapasos: SIN_RITMO,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(true);
+    expect(esperas).toEqual([3_000, 6_000]);
+  });
+
+  it('se rinde tras los ocho intentos y lo dice', async () => {
+    const f = fingir([{ status: 503, texto: 'x' }]);
+    const r = await pedirJson('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar: async () => {},
+      marcapasos: SIN_RITMO,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo.motivo).toBe('degradado');
+    expect(f.llamadas).toHaveLength(FFCV_INTENTOS);
+  });
+});
+
+describe('pedirJson · el vencimiento', () => {
+  it('EL FRENO QUE SALVA AL BOTÓN: se rinde a tiempo en vez de que Vercel lo mate', async () => {
+    // 10 s de margen: caben la espera de 3 s y la de 6 s, la de 12 s ya no.
+    const reloj = relojFalso();
+    const f = fingir([{ status: 503, texto: 'x' }]);
+    const r = await pedirJson('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar: reloj.esperar,
+      ahora: reloj.ahora,
+      vencimientoMs: reloj.ahora() + 10_000,
+      marcapasos: SIN_RITMO,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo).toEqual({
+      motivo: 'agotado',
+      esperadoMs: 9_000,
+      detalle: 'HTTP 503 con cuerpo no JSON',
+    });
+    // Y NO ha gastado los ocho intentos: tres llamadas y fuera.
+    expect(f.llamadas).toHaveLength(3);
+    expect(reloj.esperas).toEqual([3_000, 6_000]);
+    expect(describirFallo(r.fallo)).toContain('9s');
+  });
+
+  it('mira el vencimiento ANTES de dormir, no después', async () => {
+    // Sin margen para la primera espera: no debe dormir ni una vez.
+    const reloj = relojFalso();
+    const f = fingir([{ status: 503, texto: 'x' }]);
+    const r = await pedirJson('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar: reloj.esperar,
+      ahora: reloj.ahora,
+      vencimientoMs: reloj.ahora() + 1_000,
+      marcapasos: SIN_RITMO,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo.motivo).toBe('agotado');
+    expect(reloj.esperas).toEqual([]);
+    expect(f.llamadas).toHaveLength(1);
+  });
+
+  it('también frena las esperas del 429, que son las más largas', async () => {
+    const reloj = relojFalso();
+    const f = fingir([{ status: 429, body: LIMITADO }]);
+    const r = await pedirJson('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar: reloj.esperar,
+      ahora: reloj.ahora,
+      vencimientoMs: reloj.ahora() + 5_000,
+      marcapasos: SIN_RITMO,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo).toEqual({ motivo: 'agotado', esperadoMs: 0, detalle: 'HTTP 429' });
+    expect(reloj.esperas).toEqual([]);
+  });
+
+  it('sin vencimiento, la paciencia es la de siempre', async () => {
+    const f = fingir([
+      { status: 503, texto: 'x' },
+      { status: 200, body: BUENO },
+    ]);
+    const r = await pedirJson<typeof BUENO>('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar: async () => {},
+      marcapasos: SIN_RITMO,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(true);
   });
 });
