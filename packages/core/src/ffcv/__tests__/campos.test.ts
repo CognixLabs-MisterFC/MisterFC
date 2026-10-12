@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
   componerDireccion,
   descargarCatalogoCampos,
+  direccionDeMapa,
+  direccionDelCampoPropio,
+  direccionesConCampoPropio,
   direccionEnCatalogo,
   leerDatosCampo,
+  mapaDeDirecciones,
 } from '../campos';
 import type { CampoCrudo, FfcvFetch } from '../types';
 
@@ -120,5 +124,117 @@ describe('leerDatosCampo · la vía del campo PROPIO, que no está en el catálo
       nombre: 'Polideportivo Mpal. Quatre Carreres F-11',
       direccion: 'Carrer d`Angel de Villena, s/n, 46013 Valencia',
     });
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════════════
+// EL CAMPO PROPIO. Medido el 2026-10-12 sobre el calendario REAL del Infantil B: el
+// catálogo resolvía 11 de sus 26 partidos. Los 15 que faltaban eran los 13 de casa, uno
+// de fuera que también se juega en nuestro campo, y «Campo La Malvarrosa F-11».
+// ════════════════════════════════════════════════════════════════════════════════════
+
+/** La ficha REAL del Infantil B. De aquí sale el `codigo_campo` que el catálogo no tiene. */
+const FICHA_INFANTIL_B = {
+  estado: '1',
+  codigo_equipo: '15140',
+  codigo_club: '2946',
+  nombre_equipo: "U.D. Fonteta 'B'",
+  categoria: '2ª Regional Infantil',
+  codigo_categoria: '7818',
+  codigo_campo: '5338',
+  campo: 'Polideportivo Mpal. Quatre Carreres F-11',
+};
+
+describe('mapaDeDirecciones', () => {
+  it('reduce el catálogo a nombre → dirección', () => {
+    const catalogo = new Map<string, CampoCrudo>([
+      ['Polideportivo Mpal. de Nazaret F-11', NAZARET],
+      ['Campo Mpal. El Barranc F-11 Bonrepos', BONREPOS],
+    ]);
+    expect(mapaDeDirecciones(catalogo)).toEqual({
+      'Polideportivo Mpal. de Nazaret F-11': 'Carrer Fernando Morais de la Horra, 46024 Valencia',
+      'Campo Mpal. El Barranc F-11 Bonrepos':
+        'Carrer Baixada de Carpesa, 46131 Bonrepòs I Mirambell (Valencia)',
+    });
+  });
+
+  it('deja fuera los campos sin dirección en vez de meterlos vacíos', () => {
+    const catalogo = new Map<string, CampoCrudo>([
+      ['Sin nada', { nombre: 'Sin nada' }],
+      ['Polideportivo Mpal. de Nazaret F-11', NAZARET],
+    ]);
+    const mapa = mapaDeDirecciones(catalogo);
+    expect(Object.keys(mapa)).toEqual(['Polideportivo Mpal. de Nazaret F-11']);
+  });
+});
+
+describe('direccionDeMapa', () => {
+  const MAPA = { 'Polideportivo Mpal. de Nazaret F-11': 'una direccion' };
+
+  it('casa por nombre exacto, trimando', () => {
+    expect(direccionDeMapa('  Polideportivo Mpal. de Nazaret F-11 ', MAPA)).toBe('una direccion');
+  });
+
+  it('devuelve null si no está, sin inventar nada parecido', () => {
+    expect(direccionDeMapa('Polideportivo Mpal. de Nazaret F-8', MAPA)).toBeNull();
+  });
+});
+
+describe('direccionDelCampoPropio', () => {
+  it('va por la ficha y luego por el código: dos llamadas, una dirección', async () => {
+    const r = await direccionDelCampoPropio('15140', {
+      ...CFG,
+      fetchImpl: fingir([FICHA_INFANTIL_B, QUATRE_CARRERES]),
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.datos).toEqual({
+      nombre: 'Polideportivo Mpal. Quatre Carreres F-11',
+      direccion: 'Carrer d`Angel de Villena, s/n, 46013 Valencia',
+    });
+  });
+
+  it('un equipo sin campo declarado es null, NO un fallo', async () => {
+    // Es un estado real de la FFCV y no debe tumbar una importación.
+    const r = await direccionDelCampoPropio('15140', {
+      ...CFG,
+      fetchImpl: fingir([{ ...FICHA_INFANTIL_B, codigo_campo: '' }]),
+    });
+    expect(r).toEqual({ ok: true, datos: null });
+  });
+});
+
+describe('direccionesConCampoPropio', () => {
+  it('EL CASO MEDIDO: mete en el mapa el campo que el catálogo no tiene', async () => {
+    const delCatalogo = { 'Polideportivo Mpal. de Nazaret F-11': 'la de Nazaret' };
+    const { direcciones, fallo } = await direccionesConCampoPropio('15140', delCatalogo, {
+      ...CFG,
+      fetchImpl: fingir([FICHA_INFANTIL_B, QUATRE_CARRERES]),
+    });
+    expect(fallo).toBeNull();
+    expect(direcciones['Polideportivo Mpal. Quatre Carreres F-11']).toBe(
+      'Carrer d`Angel de Villena, s/n, 46013 Valencia',
+    );
+    // Y no se ha llevado por delante lo que ya había.
+    expect(direcciones['Polideportivo Mpal. de Nazaret F-11']).toBe('la de Nazaret');
+  });
+
+  it('si el campo propio no se resuelve, NO pierde las direcciones de los rivales', async () => {
+    const delCatalogo = { 'Polideportivo Mpal. de Nazaret F-11': 'la de Nazaret' };
+    const { direcciones, fallo } = await direccionesConCampoPropio('15140', delCatalogo, {
+      ...CFG,
+      fetchImpl: fingir([{ estado: '0', error: 'Respuesta vacía desde NSMApi_Equipos', code_api: 503 }]),
+    });
+    expect(fallo).not.toBeNull();
+    expect(direcciones).toEqual(delCatalogo);
+  });
+
+  it('no muta el mapa que recibe', async () => {
+    const delCatalogo = { 'Polideportivo Mpal. de Nazaret F-11': 'la de Nazaret' };
+    await direccionesConCampoPropio('15140', delCatalogo, {
+      ...CFG,
+      fetchImpl: fingir([FICHA_INFANTIL_B, QUATRE_CARRERES]),
+    });
+    expect(Object.keys(delCatalogo)).toEqual(['Polideportivo Mpal. de Nazaret F-11']);
   });
 });

@@ -12,6 +12,7 @@ import { CalendarMonth } from './_components/calendar-month';
 import { CalendarWeek } from './_components/calendar-week';
 import { CalendarAgenda } from './_components/calendar-agenda';
 import { EventDialog } from './_components/event-dialog';
+import { FfcvImportDialog } from './_components/ffcv-import-dialog';
 import {
   computeRange,
   loadCalendarData,
@@ -95,6 +96,13 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
   const canManageHolidays =
     ctx.activeClub.role === 'admin_club' || ctx.activeClub.role === 'director';
 
+  // El botón de la FFCV es de DIRECCIÓN, y lleva su propia constante aunque hoy la
+  // condición coincida con la de los festivos: son dos reglas distintas y compartir la
+  // expresión haría que tocar una moviera la otra sin querer. El cierre que manda es la
+  // RLS de `events`; esto solo evita gastar 458 llamadas a la FFCV para nada.
+  const canImportFfcv =
+    ctx.activeClub.role === 'admin_club' || ctx.activeClub.role === 'director';
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -110,6 +118,7 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
             activeCategoryIds={filters.categoryIds}
             activeTypes={filters.types}
           />
+          {canImportFfcv && <FfcvImportDialog />}
           {canCreateAny && (
             <EventDialog
               mode="new"

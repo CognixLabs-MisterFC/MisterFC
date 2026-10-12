@@ -22,7 +22,8 @@
  * antes de todo esto.
  */
 
-import { pedirJson, type FfcvConfig, type FfcvResultado } from './client';
+import { leerFichaEquipo } from './calendario';
+import { pedirJson, type FfcvConfig, type FfcvFallo, type FfcvResultado } from './client';
 import type { CampoCrudo, DireccionCampo } from './types';
 
 /** La página del catálogo sale de 100 aunque se pidan 200: el servidor topa ahí. */
@@ -90,6 +91,30 @@ export function direccionEnCatalogo(
   return direccion ? { nombre, direccion } : null;
 }
 
+/**
+ * El catálogo reducido a lo que de verdad hace falta: nombre exacto → dirección.
+ *
+ * Existe porque el catálogo entero son 2.213 filas con todos sus campos y este mapa son
+ * 214 KB (medido), que es lo que puede viajar entre el servidor y el navegador sin que la
+ * importación tenga que descargar las 23 páginas una vez por equipo.
+ */
+export function mapaDeDirecciones(catalogo: Map<string, CampoCrudo>): Record<string, string> {
+  const mapa: Record<string, string> = {};
+  for (const [nombre, campo] of catalogo) {
+    const direccion = componerDireccion(campo);
+    if (direccion !== null) mapa[nombre] = direccion;
+  }
+  return mapa;
+}
+
+/** Busca en el mapa ya compuesto. Mismo criterio que el catálogo: nombre EXACTO, trimado. */
+export function direccionDeMapa(
+  nombreCampo: string,
+  mapa: Readonly<Record<string, string>>,
+): string | null {
+  return mapa[nombreCampo.trim()] ?? null;
+}
+
 /** La ficha de un campo por su código: la vía del campo PROPIO, que no está en el catálogo. */
 export async function leerDatosCampo(
   codcampo: string,
@@ -103,4 +128,52 @@ export async function leerDatosCampo(
   const nombre = (r.datos.nombre_campo ?? r.datos.nombre ?? '').trim();
   const direccion = componerDireccion(r.datos);
   return { ok: true, datos: nombre && direccion ? { nombre, direccion } : null };
+}
+
+/**
+ * La dirección del campo PROPIO de un equipo. Dos llamadas: su ficha trae el
+ * `codigo_campo`, y con ese código `datos_campo.php` sí devuelve la dirección.
+ *
+ * ── POR QUÉ ESTAS DOS LLAMADAS VALEN LA PENA ────────────────────────────────────────
+ * Medido el 2026-10-12 sobre el calendario REAL del Infantil B: de sus 26 partidos, el
+ * catálogo resolvía la dirección de 11. Los 15 restantes son los 13 de casa, UNO de
+ * fuera que también se juega en nuestro campo, y «Campo La Malvarrosa F-11». Resolver el
+ * campo propio por código y meter ese par (nombre → dirección) en el mismo mapa sube la
+ * cobertura de 11 a 25 de 26 — porque el nombre es el mismo y cubre de paso el de fuera
+ * que se juega allí.
+ *
+ * Devuelve `null`, no fallo, cuando el equipo no declara campo: es un estado real de la
+ * FFCV y no debe tumbar una importación. Un fallo de red sí se propaga.
+ */
+export async function direccionDelCampoPropio(
+  codigoEquipo: string,
+  cfg: FfcvConfig = {},
+): Promise<FfcvResultado<DireccionCampo | null>> {
+  const ficha = await leerFichaEquipo(codigoEquipo, cfg);
+  if (!ficha.ok) return ficha;
+  const codigo = (ficha.datos.codigo_campo ?? '').trim();
+  if (!codigo) return { ok: true, datos: null };
+  return leerDatosCampo(codigo, cfg);
+}
+
+/**
+ * El mapa de direcciones con el campo propio del equipo añadido.
+ *
+ * Si el campo propio no se puede resolver, devuelve el mapa TAL CUAL en vez de fallar: la
+ * falta de una dirección no tumba una importación (es la regla de la cabecera), y el
+ * nombre del campo entra en el evento de todas formas. El fallo se devuelve aparte para
+ * que quien llame pueda contarlo sin tener que decidir si aborta.
+ */
+export async function direccionesConCampoPropio(
+  codigoEquipo: string,
+  mapa: Readonly<Record<string, string>>,
+  cfg: FfcvConfig = {},
+): Promise<{ direcciones: Record<string, string>; fallo: FfcvFallo | null }> {
+  const propio = await direccionDelCampoPropio(codigoEquipo, cfg);
+  if (!propio.ok) return { direcciones: { ...mapa }, fallo: propio.fallo };
+  if (propio.datos === null) return { direcciones: { ...mapa }, fallo: null };
+  return {
+    direcciones: { ...mapa, [propio.datos.nombre]: propio.datos.direccion },
+    fallo: null,
+  };
 }
