@@ -31,7 +31,13 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
-import type { FfcvConfig, FfcvFallo } from './client';
+import {
+  descargarCatalogoCampos,
+  direccionDeMapa,
+  direccionesConCampoPropio,
+  mapaDeDirecciones,
+} from './campos';
+import { describirFallo, type FfcvConfig, type FfcvFallo } from './client';
 import { leerCalendarioDeEquipo } from './calendario';
 import { CAMPO_MAX, RIVAL_MAX, TITULO_MAX, tituloDePartido } from './titulo';
 import type { PartidoFfcv } from './types';
@@ -281,4 +287,66 @@ export async function importarCalendariosFromClient(
     resumenes.push(await importarCalendarioDeEquipoFromClient(cliente, equipo, deps));
   }
   return resumenes;
+}
+
+/**
+ * EL PRIMER VIAJE DEL BOTÓN: qué equipos hay y el mapa de direcciones.
+ *
+ * Se separa del alta de cada equipo porque el catálogo de campos son 23 páginas y no debe
+ * descargarse una vez por equipo: se descarga aquí, viaja al navegador y el navegador lo
+ * devuelve en cada viaje. 23 llamadas una vez, en lugar de 345.
+ */
+export type PreparacionFfcv = EquiposDelClub & {
+  /** nombre exacto del campo → dirección, listo para `events.location_address`. */
+  direcciones: Record<string, string>;
+};
+
+export async function prepararImportacionFromClient(
+  cliente: Cliente,
+  params: { clubId: string; season: string },
+  cfg: FfcvConfig = {},
+): Promise<{ ok: true; datos: PreparacionFfcv } | { ok: false; detalle: string }> {
+  const equipos = await leerEquiposDelClubFromClient(cliente, params);
+  if (!equipos.ok) return equipos;
+
+  const catalogo = await descargarCatalogoCampos(cfg);
+  if (!catalogo.ok) {
+    // El catálogo falla CERRADO: medio catálogo convertido en «esta direccion no existe»
+    // es la misma mentira silenciosa que el 200 con lista vacía.
+    return { ok: false, detalle: `catalogo de campos: ${describirFallo(catalogo.fallo)}` };
+  }
+
+  return {
+    ok: true,
+    datos: { ...equipos.datos, direcciones: mapaDeDirecciones(catalogo.datos) },
+  };
+}
+
+/**
+ * UN VIAJE DEL BOTÓN: los partidos de UN equipo.
+ *
+ * Añade el campo propio al mapa antes de importar, porque el catálogo NO lo trae (medido:
+ * sin esto, 15 de los 26 partidos del Infantil B se quedaban sin dirección; con esto,
+ * uno). Si el campo propio no se resuelve, sigue adelante: la falta de una dirección no
+ * tumba un partido.
+ */
+export async function importarEquipoConDireccionesFromClient(
+  cliente: Cliente,
+  params: {
+    equipo: EquipoParaImportar;
+    direcciones: Readonly<Record<string, string>>;
+    actorProfileId: string;
+  },
+  cfg: FfcvConfig = {},
+): Promise<ResumenEquipo> {
+  const { direcciones } = await direccionesConCampoPropio(
+    params.equipo.ffcvTeamCode,
+    params.direcciones,
+    cfg,
+  );
+  return importarCalendarioDeEquipoFromClient(cliente, params.equipo, {
+    actorProfileId: params.actorProfileId,
+    cfg,
+    direccionDe: (nombre) => direccionDeMapa(nombre, direcciones),
+  });
 }

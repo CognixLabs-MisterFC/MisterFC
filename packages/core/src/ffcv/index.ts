@@ -28,8 +28,12 @@ export {
   FFCV_CAMPOS_POR_PAGINA,
   componerDireccion,
   descargarCatalogoCampos,
+  direccionDeMapa,
+  direccionDelCampoPropio,
+  direccionesConCampoPropio,
   direccionEnCatalogo,
   leerDatosCampo,
+  mapaDeDirecciones,
 } from './campos';
 export {
   leerCalendarioDeEquipo,
@@ -60,6 +64,8 @@ export {
   JORNADA_MIN,
   filaDeEvento,
   importarCalendarioDeEquipoFromClient,
+  importarEquipoConDireccionesFromClient,
+  prepararImportacionFromClient,
   importarCalendariosFromClient,
   leerEquiposDelClubFromClient,
   revisarPartido,
@@ -69,5 +75,6 @@ export type {
   EquipoParaImportar,
   EquiposDelClub,
   PartidoOmitido,
+  PreparacionFfcv,
   ResumenEquipo,
 } from './importar';

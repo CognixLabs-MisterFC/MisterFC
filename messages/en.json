@@ -2225,6 +2225,33 @@
       "upcoming_desc": "The clubs upcoming events",
       "season_desc": "Month and day view, filter by team",
       "holidays_desc": "Mark holidays and approve trainings"
+    },
+    "ffcv": {
+      "trigger": "Import FFCV fixtures",
+      "title": "Import the FFCV fixtures",
+      "description": "Creates the league fixtures of every club team as events.",
+      "aviso_tiempo": "This takes about eight minutes: the FFCV only allows 60 requests per minute and each team's matchdays must be read one by one. Keep this tab open while it runs.",
+      "aviso_repetible": "It only creates new fixtures; existing ones are left untouched. If it stops, press again and it will carry on where it left off.",
+      "empezar": "Import",
+      "cerrar": "Close",
+      "preparando": "Reading the teams and the ground addresses…",
+      "progreso": "{hechos} of {total} teams",
+      "progreso_etiqueta": "Import progress",
+      "equipo_hecho": "{creados} new, {yaEstaban} already there",
+      "equipo_omitidos": "{n} not imported",
+      "resumen": "Done: {creados} new fixtures and {yaEstaban} already there.",
+      "resumen_rotos": "{n} teams could not be imported",
+      "saltados": "No FFCV code, not imported: {equipos}",
+      "sin_equipos": "No club team has an FFCV code yet.",
+      "errors": {
+        "unauthorized": "Your session has expired. Please sign in again.",
+        "forbidden": "Only the club management can import fixtures.",
+        "no_active_season": "The club has no active season.",
+        "invalid": "The request was not valid.",
+        "not_found": "That team is no longer in the active season.",
+        "ffcv": "The FFCV did not respond. Try again in a few minutes.",
+        "red": "Could not connect. Check your connection and try again."
+      }
     }
   },
   "pdf": {

@@ -2225,6 +2225,33 @@
       "upcoming_desc": "Los próximos eventos del club",
       "season_desc": "Vista de mes y día, con filtro por equipos",
       "holidays_desc": "Marcar festivos y aprobar entrenos"
+    },
+    "ffcv": {
+      "trigger": "Importar partidos de la FFCV",
+      "title": "Importar los partidos de la FFCV",
+      "description": "Da de alta como eventos los partidos de liga de todos los equipos del club.",
+      "aviso_tiempo": "Tarda unos ocho minutos: la FFCV solo admite 60 consultas por minuto y hay que leer la jornada de cada equipo una por una. Deja esta pestaña abierta mientras avanza.",
+      "aviso_repetible": "Solo crea partidos nuevos; los que ya están no se tocan. Si se interrumpe, puedes volver a pulsar y seguirá donde lo dejó.",
+      "empezar": "Importar",
+      "cerrar": "Cerrar",
+      "preparando": "Leyendo los equipos y las direcciones de los campos…",
+      "progreso": "{hechos} de {total} equipos",
+      "progreso_etiqueta": "Avance de la importación",
+      "equipo_hecho": "{creados} nuevos, {yaEstaban} ya estaban",
+      "equipo_omitidos": "{n} sin importar",
+      "resumen": "Listo: {creados} partidos nuevos y {yaEstaban} que ya estaban.",
+      "resumen_rotos": "{n} equipos no se pudieron importar",
+      "saltados": "Sin código de la FFCV, no se han importado: {equipos}",
+      "sin_equipos": "Ningún equipo del club tiene todavía su código de la FFCV.",
+      "errors": {
+        "unauthorized": "Tu sesión ha caducado. Vuelve a entrar.",
+        "forbidden": "Solo la dirección del club puede importar los partidos.",
+        "no_active_season": "El club no tiene una temporada activa.",
+        "invalid": "La petición no era válida.",
+        "not_found": "Ese equipo ya no está en la temporada activa.",
+        "ffcv": "La FFCV no ha respondido. Vuelve a intentarlo en unos minutos.",
+        "red": "No se ha podido conectar. Comprueba la conexión y vuelve a intentarlo."
+      }
     }
   },
   "pdf": {

@@ -5,7 +5,9 @@ import {
   filaDeEvento,
   importarCalendarioDeEquipoFromClient,
   importarCalendariosFromClient,
+  importarEquipoConDireccionesFromClient,
   leerEquiposDelClubFromClient,
+  prepararImportacionFromClient,
   revisarPartido,
   type EquipoParaImportar,
 } from '../importar';
@@ -331,5 +333,156 @@ describe('filaDeEvento', () => {
     expect(fila.notes).toBeNull();
     expect(fila.all_day).toBe(false);
     expect(fila.type).toBe('match');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════════════
+// LOS DOS VIAJES DEL BOTÓN. El primero trae los equipos y el mapa de direcciones; cada
+// uno de los otros quince da de alta los partidos de UN equipo.
+// ════════════════════════════════════════════════════════════════════════════════════
+
+/** La ficha REAL del Infantil B: de aquí sale el campo propio, que el catálogo no tiene. */
+const FICHA = {
+  estado: '1',
+  codigo_equipo: '15140',
+  nombre_equipo: "U.D. Fonteta 'B'",
+  codigo_categoria: '7818',
+  codigo_campo: '5338',
+  campo: 'Polideportivo Mpal. Quatre Carreres F-11',
+};
+/** Lo que devuelve `datos_campo.php?codcampo=5338`, literal. */
+const CAMPO_PROPIO = {
+  nombre_campo: 'Polideportivo Mpal. Quatre Carreres F-11',
+  direccion: 'Carrer d`Angel de Villena, s/n',
+  localidad: 'Valencia',
+  provincia: 'Valencia',
+  codigo_postal: '46013',
+};
+/** Una página de catálogo con el campo de Nazaret y SIN el nuestro, como la de verdad. */
+const CATALOGO = {
+  estado: '1',
+  total_paginas: '1',
+  total_registros: '1',
+  campos: [
+    {
+      codigo: '5174',
+      nombre: 'Polideportivo Mpal. de Nazaret F-11',
+      direccion: 'Carrer Fernando Morais de la Horra',
+      localidad: 'Valencia',
+      provincia: 'Valencia',
+      codigo_postal: '46024',
+    },
+  ],
+};
+
+function apiCompleta(opciones: {
+  porJornada?: Record<string, PartidoCrudo[]>;
+  catalogo?: unknown;
+  ficha?: unknown;
+  campo?: unknown;
+  statusCatalogo?: number;
+}): FfcvFetch {
+  const jornadas = apiConJornadas(opciones.porJornada ?? { '1': [J1], '2': [J2] });
+  return async (url, init) => {
+    if (url.includes('campos.php')) {
+      return new Response(JSON.stringify(opciones.catalogo ?? CATALOGO), {
+        status: opciones.statusCatalogo ?? 200,
+      });
+    }
+    if (url.includes('ver_equipo')) {
+      return new Response(JSON.stringify(opciones.ficha ?? FICHA), { status: 200 });
+    }
+    if (url.includes('datos_campo')) {
+      return new Response(JSON.stringify(opciones.campo ?? CAMPO_PROPIO), { status: 200 });
+    }
+    return jornadas(url, init);
+  };
+}
+
+const FILA_EQUIPO = {
+  id: EQUIPO.teamId,
+  name: EQUIPO.nombre,
+  club_id: EQUIPO.clubId,
+  ffcv_team_code: EQUIPO.ffcvTeamCode,
+  ffcv_season_code: EQUIPO.ffcvSeasonCode,
+  ffcv_competition_code: EQUIPO.ffcvCompetitionCode,
+  ffcv_group_code: EQUIPO.ffcvGroupCode,
+};
+
+describe('prepararImportacionFromClient', () => {
+  it('devuelve los equipos importables y el mapa de direcciones del catálogo', async () => {
+    const { db } = cliente({ equipos: [FILA_EQUIPO] });
+    const r = await prepararImportacionFromClient(
+      db,
+      { clubId: EQUIPO.clubId, season: '2026-27' },
+      { ...CFG, fetchImpl: apiCompleta({}) },
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.datos.importables).toHaveLength(1);
+    expect(r.datos.direcciones).toEqual({
+      'Polideportivo Mpal. de Nazaret F-11': 'Carrer Fernando Morais de la Horra, 46024 Valencia',
+    });
+  });
+
+  it('si el catálogo falla, FALLA CERRADO en vez de devolver un mapa vacío', async () => {
+    // Un mapa a medias presentado como completo convierte «no se pudo leer» en «este
+    // campo no tiene direccion», que es la mentira silenciosa de siempre.
+    const { db } = cliente({ equipos: [FILA_EQUIPO] });
+    const r = await prepararImportacionFromClient(
+      db,
+      { clubId: EQUIPO.clubId, season: '2026-27' },
+      { ...CFG, fetchImpl: apiCompleta({ catalogo: { estado: '1' }, statusCatalogo: 200 }) },
+    );
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.detalle).toContain('catalogo de campos');
+  });
+});
+
+describe('importarEquipoConDireccionesFromClient', () => {
+  it('EL CASO MEDIDO: el partido en casa se guarda con la dirección que el catálogo NO traía', async () => {
+    const { db, inserciones } = cliente({ actas: [] });
+    const r = await importarEquipoConDireccionesFromClient(
+      db,
+      {
+        equipo: EQUIPO,
+        direcciones: {
+          'Polideportivo Mpal. de Nazaret F-11':
+            'Carrer Fernando Morais de la Horra, 46024 Valencia',
+        },
+        actorProfileId: ACTOR,
+      },
+      { ...CFG, fetchImpl: apiCompleta({}) },
+    );
+    expect(r.fallo).toBeNull();
+    expect(r.creados).toBe(2);
+
+    const enCasa = inserciones.find((i) => i.ffcv_match_code === '26539179');
+    expect(enCasa?.location_address).toBe('Carrer d`Angel de Villena, s/n, 46013 Valencia');
+    // Y el de fuera sigue saliendo del catálogo.
+    const fuera = inserciones.find((i) => i.ffcv_match_code === '26539172');
+    expect(fuera?.location_address).toBe('Carrer Fernando Morais de la Horra, 46024 Valencia');
+  });
+
+  it('si el campo propio no se resuelve, el partido se crea IGUAL, sin dirección', async () => {
+    const { db, inserciones } = cliente({ actas: [] });
+    const r = await importarEquipoConDireccionesFromClient(
+      db,
+      { equipo: EQUIPO, direcciones: {}, actorProfileId: ACTOR },
+      {
+        ...CFG,
+        fetchImpl: apiCompleta({
+          ficha: { estado: '0', error: 'Respuesta vacía desde NSMApi_Equipos', code_api: 503 },
+        }),
+      },
+    );
+    expect(r.fallo).toBeNull();
+    expect(r.creados).toBe(2);
+    expect(inserciones.every((i) => i.location_address === null)).toBe(true);
+    // El NOMBRE del campo sí va: es lo que la familia tenía antes de todo esto.
+    expect(inserciones.find((i) => i.ffcv_match_code === '26539179')?.location_name).toBe(
+      'Polideportivo Mpal. Quatre Carreres F-11',
+    );
   });
 });
