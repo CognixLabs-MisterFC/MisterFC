@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FFCV_ESPERA_429_MS,
+  FFCV_POR_MINUTO,
+  FFCV_VENTANA_MS,
+  crearMarcapasos,
   describirFallo,
   leerToken,
   motivoDeDegradacion,
@@ -184,5 +188,207 @@ describe('leerToken', () => {
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.fallo.motivo).toBe('sin_token');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════════════
+// EL LÍMITE DE RITMO (trampa 4). La FFCV corta a las 60 por minuto y la primera vez
+// que mordió se perdieron 13 de 15 calendarios en cadena.
+// ════════════════════════════════════════════════════════════════════════════════════
+
+/** El 429 literal de producción, medido el 2026-10-12. */
+const LIMITADO = {
+  error: 'too_many_requests',
+  reason: 'Rate limit excedido',
+  reason_code: 'RATE_LIMIT',
+  request_id: 'req_7f3a9c21',
+};
+
+function conEsperas(): { esperar: (ms: number) => Promise<void>; esperas: number[] } {
+  const esperas: number[] = [];
+  return {
+    esperar: async (ms: number) => {
+      esperas.push(ms);
+    },
+    esperas,
+  };
+}
+
+/** Un marcapasos que no estorba, para los tests que no van de eso. */
+const SIN_RITMO = crearMarcapasos(Number.POSITIVE_INFINITY);
+
+describe('pedirJson · el 429', () => {
+  it('lo espera y lo reintenta, en vez de devolverlo como fallo', async () => {
+    const f = fingir([
+      { status: 429, body: LIMITADO },
+      { status: 200, body: BUENO },
+    ]);
+    const { esperar, esperas } = conEsperas();
+    const r = await pedirJson<typeof BUENO>('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      ...CFG_BASE,
+      esperar,
+      marcapasos: SIN_RITMO,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(true);
+    expect(f.llamadas).toHaveLength(2);
+    // La espera es la recuperación MEDIDA (30 s), no los 3 s de la degradación.
+    expect(esperas).toEqual([FFCV_ESPERA_429_MS]);
+  });
+
+  it('EL FALLO EN CADENA QUE ESTO ARREGLA: no gasta los intentos de la degradación', async () => {
+    // Un 429 y luego los dos 503 que la peor llamada medida necesitó. Con un presupuesto
+    // compartido, el 429 se habría comido un intento y el tercer 503 habría agotado los
+    // tres: la llamada moriría teniendo respuesta buena detrás.
+    const f = fingir([
+      { status: 429, body: LIMITADO },
+      { status: 503, texto: '<html>502 Bad Gateway</html>' },
+      { status: 503, texto: '<html>502 Bad Gateway</html>' },
+      { status: 200, body: BUENO },
+    ]);
+    const { esperar, esperas } = conEsperas();
+    const r = await pedirJson<typeof BUENO>('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      ...CFG_BASE,
+      intentos: 3,
+      esperar,
+      marcapasos: SIN_RITMO,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(true);
+    expect(f.llamadas).toHaveLength(4);
+    expect(esperas).toEqual([FFCV_ESPERA_429_MS, 3_000, 3_000]);
+  });
+
+  it('se rinde tras las esperas configuradas, y el fallo dice que fue el ritmo', async () => {
+    const f = fingir([{ status: 429, body: LIMITADO }]);
+    const { esperar, esperas } = conEsperas();
+    const r = await pedirJson('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      ...CFG_BASE,
+      esperar,
+      marcapasos: SIN_RITMO,
+      intentos429: 3,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo).toEqual({ motivo: 'limitado', intentos: 3 });
+    expect(describirFallo(r.fallo)).toContain('429');
+    expect(f.llamadas).toHaveLength(3);
+    expect(esperas).toEqual([FFCV_ESPERA_429_MS, FFCV_ESPERA_429_MS]);
+  });
+
+  it('un 429 NO se confunde con un «no» de la API aunque el cuerpo sea JSON', async () => {
+    // El cuerpo del 429 es JSON válido y trae `error`. Si se parseara antes de mirar el
+    // estado, acabaría en `api` —que no se reintenta— y el corte sería definitivo.
+    const f = fingir([
+      { status: 429, body: LIMITADO },
+      { status: 200, body: BUENO },
+    ]);
+    const r = await pedirJson<typeof BUENO>('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      ...CFG_BASE,
+      marcapasos: SIN_RITMO,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(true);
+  });
+
+  it('pide turno al marcapasos en CADA intento, no solo en el primero', async () => {
+    let turnos = 0;
+    const espia = {
+      pedirTurno: async () => {
+        turnos += 1;
+      },
+    };
+    const f = fingir([
+      { status: 503, texto: 'x' },
+      { status: 503, texto: 'x' },
+      { status: 200, body: BUENO },
+    ]);
+    const r = await pedirJson<typeof BUENO>('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      ...CFG_BASE,
+      intentos: 3,
+      marcapasos: espia,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(true);
+    expect(turnos).toBe(3);
+  });
+});
+
+describe('leerToken · el 429', () => {
+  const PORTADA = '<html><meta name="ffcv-pt" content="' + 'b'.repeat(32) + '"></html>';
+
+  it('lo aguanta: si el raspado del token cae, cae todo lo de detrás', async () => {
+    const f = fingir([
+      { status: 429, body: LIMITADO },
+      { status: 200, texto: PORTADA },
+    ]);
+    const { esperar, esperas } = conEsperas();
+    const r = await leerToken({ esperar, marcapasos: SIN_RITMO, fetchImpl: f.fetchImpl });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.datos).toBe('b'.repeat(32));
+    expect(esperas).toEqual([FFCV_ESPERA_429_MS]);
+  });
+
+  it('si el 429 no cede, lo dice con su nombre y no como «sin_token»', async () => {
+    const f = fingir([{ status: 429, body: LIMITADO }]);
+    const r = await leerToken({
+      esperar: async () => {},
+      marcapasos: SIN_RITMO,
+      intentos429: 2,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo).toEqual({ motivo: 'limitado', intentos: 2 });
+  });
+});
+
+describe('crearMarcapasos', () => {
+  it('deja pasar hasta el techo sin esperar', async () => {
+    const m = crearMarcapasos(3, 1_000);
+    const { esperar, esperas } = conEsperas();
+    for (let i = 0; i < 3; i += 1) await m.pedirTurno(esperar, () => 0);
+    expect(esperas).toEqual([]);
+  });
+
+  it('en la siguiente espera EXACTAMENTE lo que le queda a la ventana', async () => {
+    const m = crearMarcapasos(3, 1_000);
+    const { esperar, esperas } = conEsperas();
+    let t = 0;
+    const ahora = () => t;
+    for (let i = 0; i < 3; i += 1) await m.pedirTurno(esperar, ahora);
+    t = 100;
+    await m.pedirTurno(esperar, ahora);
+    expect(esperas).toEqual([900]);
+  });
+
+  it('olvida los sellos que ya salieron de la ventana', async () => {
+    const m = crearMarcapasos(3, 1_000);
+    const { esperar, esperas } = conEsperas();
+    let t = 0;
+    const ahora = () => t;
+    for (let i = 0; i < 3; i += 1) await m.pedirTurno(esperar, ahora);
+    t = 1_200; // la ventana entera ha pasado
+    await m.pedirTurno(esperar, ahora);
+    await m.pedirTurno(esperar, ahora);
+    expect(esperas).toEqual([]);
+  });
+
+  it('NO SE CUELGA si el reloj no avanza: admite y deja que el 429 sea la garantía', async () => {
+    // Un bucle «espera y vuelve a mirar» aquí dejaría el proceso colgado para siempre
+    // cuando el reloj inyectado no avanza, y colgar es mucho peor que un 429.
+    const m = crearMarcapasos(1, 1_000);
+    const { esperar, esperas } = conEsperas();
+    await m.pedirTurno(esperar, () => 0);
+    await m.pedirTurno(esperar, () => 0);
+    await m.pedirTurno(esperar, () => 0);
+    expect(esperas).toEqual([1_000, 1_000]);
+  });
+
+  it('el techo por defecto deja margen bajo las 60 medidas', () => {
+    expect(FFCV_POR_MINUTO).toBeLessThan(60);
+    expect(FFCV_VENTANA_MS).toBe(60_000);
   });
 });
