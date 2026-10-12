@@ -1076,6 +1076,8 @@ export type Database = {
           created_at: string
           created_by: string
           ends_at: string | null
+          ffcv_match_code: string | null
+          ffcv_round: number | null
           id: string
           location_address: string | null
           location_name: string | null
@@ -1107,6 +1109,8 @@ export type Database = {
           created_at?: string
           created_by: string
           ends_at?: string | null
+          ffcv_match_code?: string | null
+          ffcv_round?: number | null
           id?: string
           location_address?: string | null
           location_name?: string | null
@@ -1138,6 +1142,8 @@ export type Database = {
           created_at?: string
           created_by?: string
           ends_at?: string | null
+          ffcv_match_code?: string | null
+          ffcv_round?: number | null
           id?: string
           location_address?: string | null
           location_name?: string | null
@@ -4417,6 +4423,10 @@ export type Database = {
           color: string
           created_at: string
           division: string | null
+          ffcv_competition_code: string | null
+          ffcv_group_code: string | null
+          ffcv_season_code: string | null
+          ffcv_team_code: string | null
           format: string
           id: string
           name: string
@@ -4428,6 +4438,10 @@ export type Database = {
           color?: string
           created_at?: string
           division?: string | null
+          ffcv_competition_code?: string | null
+          ffcv_group_code?: string | null
+          ffcv_season_code?: string | null
+          ffcv_team_code?: string | null
           format: string
           id?: string
           name: string
@@ -4439,6 +4453,10 @@ export type Database = {
           color?: string
           created_at?: string
           division?: string | null
+          ffcv_competition_code?: string | null
+          ffcv_group_code?: string | null
+          ffcv_season_code?: string | null
+          ffcv_team_code?: string | null
           format?: string
           id?: string
           name?: string
@@ -4916,6 +4934,8 @@ export type Database = {
           created_at: string
           created_by: string
           ends_at: string | null
+          ffcv_match_code: string | null
+          ffcv_round: number | null
           id: string
           location_address: string | null
           location_name: string | null

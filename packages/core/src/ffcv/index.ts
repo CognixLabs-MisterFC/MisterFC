@@ -42,3 +42,20 @@ export type {
   UbicacionCompetitiva,
   VerEquipoCrudo,
 } from './types';
+export { CAMPO_MAX, RIVAL_MAX, TITULO_MAX, tituloDePartido } from './titulo';
+export {
+  JORNADA_MAX,
+  JORNADA_MIN,
+  filaDeEvento,
+  importarCalendarioDeEquipoFromClient,
+  importarCalendariosFromClient,
+  leerEquiposDelClubFromClient,
+  revisarPartido,
+} from './importar';
+export type {
+  DepsImportacion,
+  EquipoParaImportar,
+  EquiposDelClub,
+  PartidoOmitido,
+  ResumenEquipo,
+} from './importar';
