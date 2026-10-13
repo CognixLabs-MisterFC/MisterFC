@@ -385,3 +385,57 @@ describe('leerCalendarioDeEquipo · cero partidos', () => {
     expect(describirFallo(r.fallo)).toContain('no aparece en ninguna');
   });
 });
+
+describe('leerCalendarioDeEquipo · el reloj de la invocación', () => {
+  /**
+   * LO QUE PASÓ EL 2026-10-13, reproducido. Treinta jornadas que contestan BIEN pero
+   * lentas: ningún reintento, ninguna espera, y el freno viejo —que solo miraba el
+   * vencimiento antes de dormir— no se consultaba ni una vez. La invocación se pasaba de
+   * los 300 s de Vercel, que devolvía HTML, y la pantalla decía «no se ha podido
+   * conectar» en los cinco últimos equipos de la serie.
+   *
+   * Ahora se rinde a tiempo y DICE que se le acabó el tiempo, que es lo que la barra
+   * sabe pintar.
+   */
+  it('EL CASO MEDIDO: treinta jornadas lentas ya no matan la invocación en silencio', async () => {
+    let t = 1_000_000;
+    let llamadas = 0;
+    const JORNADAS_30 = {
+      estado: '1',
+      jornadas: Array.from({ length: 30 }, (_, i) => ({
+        codjornada: String(i + 1),
+        fecha_jornada: '18-10-2026',
+      })),
+    };
+    const fetchImpl: FfcvFetch = async (url) => {
+      llamadas += 1;
+      t += 20_000; // cada llamada tarda 20 s: lento, pero CONTESTA BIEN
+      if (url.includes('jornadas_fetch')) {
+        return new Response(JSON.stringify(JORNADAS_30), { status: 200 });
+      }
+      // Con el eco de la jornada pedida: si no, saltaría la defensa del filtro ignorado
+      // y el test pasaría por un motivo que no es el que quiere medir.
+      const n = /cod_jornada=(\d+)/.exec(url)?.[1] ?? '1';
+      const body = { estado: '1', jornada: n, partidos: [PARTIDO_FUERA] };
+      return new Response(JSON.stringify(body), { status: 200 });
+    };
+    const r = await leerCalendarioDeEquipo(
+      { temporada: '22', competicion: '905431987', grupo: '905432005', codigoEquipo: '15140' },
+      {
+        token: 'a'.repeat(64),
+        fetchImpl,
+        esperar: async (ms) => {
+          t += ms;
+        },
+        ahora: () => t,
+        vencimientoMs: t + 250_000,
+      },
+    );
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo.motivo).toBe('agotado');
+    // Se rindió a tiempo: ni las 31 llamadas, ni los 620 s que habrían costado.
+    expect(llamadas).toBeLessThan(20);
+    expect(t - 1_000_000).toBeLessThanOrEqual(270_000);
+  });
+});

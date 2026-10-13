@@ -12,6 +12,7 @@ import {
   prepararImportacionFromClient,
   revisarPartido,
   veredictoDeEquipo,
+  veredictoDeRespuesta,
   type EquipoParaImportar,
   type EventoExistente,
 } from '../importar';
@@ -689,6 +690,61 @@ describe('veredictoDeEquipo · un fallo con HTTP 200 no se pinta como hecho', ()
     expect(veredictoDeEquipo(true, { ok: true, resumen: null })).toEqual({
       ok: false,
       clave: 'ffcv',
+    });
+  });
+});
+
+describe('veredictoDeRespuesta · un cuerpo que no es JSON no es un problema de red', () => {
+  /**
+   * El 2026-10-13, los cinco últimos equipos de la serie salieron con «No se ha podido
+   * conectar». No era la red: Vercel había matado la invocación a los 300 s y devuelto
+   * su página de error en HTML, y el `res.json()` del diálogo lanzaba dentro del mismo
+   * `catch` que la caída de red. El mensaje acusaba a la conexión de Jose.
+   */
+  it('EL CASO MEDIDO: la página de timeout de Vercel es «servidor», no «red»', () => {
+    const v = veredictoDeRespuesta(504, '<!DOCTYPE html><title>504: GATEWAY_TIMEOUT</title>');
+    expect(v).toEqual({ ok: false, clave: 'servidor', status: 504 });
+  });
+
+  it('un 200 con cuerpo que no es JSON también, y lleva su estado', () => {
+    expect(veredictoDeRespuesta(200, 'no soy json')).toEqual({
+      ok: false,
+      clave: 'servidor',
+      status: 200,
+    });
+  });
+
+  it('un JSON bueno con fallo dentro sigue siendo el fallo, no «servidor»', () => {
+    const fallo = { motivo: 'degradado', intentos: 8, detalle: 'HTTP 503' } as const;
+    const v = veredictoDeRespuesta(200, JSON.stringify({ ok: true, resumen: { fallo } }));
+    expect(v).toEqual({ ok: false, fallo });
+  });
+
+  it('y un JSON bueno sin fallo devuelve el resumen', () => {
+    const resumen = { fallo: null, leidos: 26, creados: 0, yaEstaban: 26 };
+    expect(veredictoDeRespuesta(200, JSON.stringify({ ok: true, resumen }))).toEqual({
+      ok: true,
+      resumen,
+    });
+  });
+
+  it('un error con su clave la conserva: el 403 no se convierte en «servidor»', () => {
+    expect(veredictoDeRespuesta(403, JSON.stringify({ error: 'forbidden' }))).toEqual({
+      ok: false,
+      clave: 'forbidden',
+    });
+  });
+
+  it('un cuerpo que es JSON pero no un objeto no cuela', () => {
+    expect(veredictoDeRespuesta(200, 'null')).toEqual({
+      ok: false,
+      clave: 'servidor',
+      status: 200,
+    });
+    expect(veredictoDeRespuesta(200, '"hola"')).toEqual({
+      ok: false,
+      clave: 'servidor',
+      status: 200,
     });
   });
 });

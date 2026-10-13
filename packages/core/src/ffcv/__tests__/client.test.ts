@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   FFCV_ESPERA_429_MS,
+  FFCV_TIEMPO_MAX_MS,
   FFCV_ESPERA_MAX_MS,
   FFCV_INTENTOS,
   FFCV_POR_MINUTO,
@@ -50,7 +51,11 @@ const RECHAZO = {
 
 type Paso = { status?: number; body?: unknown; texto?: string };
 
-function fingir(pasos: Paso[]): { fetchImpl: FfcvFetch; llamadas: string[]; cabeceras: Record<string, string>[] } {
+function fingir(pasos: Paso[]): {
+  fetchImpl: FfcvFetch;
+  llamadas: string[];
+  cabeceras: Record<string, string>[];
+} {
   const llamadas: string[] = [];
   const cabeceras: Record<string, string>[] = [];
   let i = 0;
@@ -98,10 +103,13 @@ describe('motivoDeDegradacion · reconoce al origen caído en sus cuatro disfrac
 describe('pedirJson', () => {
   it('EL CASO QUE JUSTIFICA F-3: un 200 con lista vacía NO es una lista vacía', async () => {
     const { fetchImpl } = fingir([{ status: 200, body: DEGRADADO_VACIO_200 }]);
-    const r = await pedirJson<{ jornadas: unknown[] }>('api/filtros/jornadas_fetch.php?cod_grupo=1', {
-      ...CFG_BASE,
-      fetchImpl,
-    });
+    const r = await pedirJson<{ jornadas: unknown[] }>(
+      'api/filtros/jornadas_fetch.php?cod_grupo=1',
+      {
+        ...CFG_BASE,
+        fetchImpl,
+      },
+    );
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.fallo.motivo).toBe('degradado');
@@ -147,11 +155,17 @@ describe('pedirJson', () => {
   });
 
   it('un filtro ignorado se caza en el payload, no en el parámetro', async () => {
-    const { fetchImpl } = fingir([{ status: 200, body: { estado: '1', jornada: '7', partidos: [] } }]);
-    const r = await pedirJson<{ jornada: string }>('api/partidos/x.php?cod_jornada=1', {
-      ...CFG_BASE,
-      fetchImpl,
-    }, (d) => (d.jornada === '1' ? null : `se pidio la 1 y vino la ${d.jornada}`));
+    const { fetchImpl } = fingir([
+      { status: 200, body: { estado: '1', jornada: '7', partidos: [] } },
+    ]);
+    const r = await pedirJson<{ jornada: string }>(
+      'api/partidos/x.php?cod_jornada=1',
+      {
+        ...CFG_BASE,
+        fetchImpl,
+      },
+      (d) => (d.jornada === '1' ? null : `se pidio la 1 y vino la ${d.jornada}`),
+    );
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.fallo.motivo).toBe('filtro_ignorado');
@@ -564,5 +578,158 @@ describe('pedirJson · el vencimiento', () => {
       fetchImpl: f.fetchImpl,
     });
     expect(r.ok).toBe(true);
+  });
+});
+
+describe('pedirJson · el tiempo que se gasta SIN dormir', () => {
+  /**
+   * El agujero del 2026-10-13. El vencimiento solo se miraba antes de dormir, así que
+   * una tanda de llamadas LENTAS PERO CON ÉXITO no lo consultaba nunca y la invocación
+   * de Vercel moría a los 300 s devolviendo HTML. En la pantalla salió como «no se ha
+   * podido conectar» en los cinco últimos equipos de la serie.
+   */
+  it('EL CASO MEDIDO: no empieza una llamada después de la hora', async () => {
+    const reloj = relojFalso();
+    const f = fingir([{ status: 200, body: BUENO }]);
+    const r = await pedirJson('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar: reloj.esperar,
+      ahora: reloj.ahora,
+      vencimientoMs: reloj.ahora() - 1, // la hora ya pasó
+      marcapasos: SIN_RITMO,
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo.motivo).toBe('agotado');
+    // Lo que importa: NI UNA llamada. Antes habría hecho la treintena entera.
+    expect(f.llamadas).toEqual([]);
+  });
+
+  it('con la hora pasada no pide NI TURNO: esperar turno puede costar un minuto', async () => {
+    // Son dos frenos, no uno: el de después de pedir turno no sirve si el marcapasos ya
+    // se ha comido el tiempo esperando. Este test es el que los distingue.
+    const reloj = relojFalso();
+    let turnos = 0;
+    const f = fingir([{ status: 200, body: BUENO }]);
+    const r = await pedirJson('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar: reloj.esperar,
+      ahora: reloj.ahora,
+      vencimientoMs: reloj.ahora() - 1,
+      marcapasos: {
+        pedirTurno: async () => {
+          turnos += 1;
+        },
+      },
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    expect(turnos).toBe(0);
+    expect(f.llamadas).toEqual([]);
+  });
+
+  it('y si el TURNO se come el tiempo, tampoco llama: el freno va también después', async () => {
+    // El caso patológico del marcapasos: la ventana entera esperando turno. Queda media
+    // hora de nada cuando por fin toca, y sin el segundo freno se llamaría igual.
+    const reloj = relojFalso();
+    const f = fingir([{ status: 200, body: BUENO }]);
+    const r = await pedirJson('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar: reloj.esperar,
+      ahora: reloj.ahora,
+      vencimientoMs: reloj.ahora() + 10_000,
+      marcapasos: {
+        pedirTurno: async () => {
+          await reloj.esperar(FFCV_VENTANA_MS);
+        },
+      },
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo.motivo).toBe('agotado');
+    expect(f.llamadas).toEqual([]);
+  });
+
+  it('una llamada lenta con éxito gasta el presupuesto y la siguiente ya no sale', async () => {
+    // Cada llamada tarda 20 s y NINGUNA falla: no hay reintentos, luego no hay esperas,
+    // luego el freno viejo (que solo miraba al dormir) no se enteraba jamás.
+    const reloj = relojFalso();
+    let llamadas = 0;
+    const fetchImpl: FfcvFetch = async () => {
+      llamadas += 1;
+      reloj.esperar(20_000); // el tiempo se va DENTRO del fetch, no durmiendo
+      return new Response(JSON.stringify(BUENO), { status: 200 });
+    };
+    const cfg = {
+      token: 'a'.repeat(64),
+      esperar: reloj.esperar,
+      ahora: reloj.ahora,
+      vencimientoMs: reloj.ahora() + 50_000,
+      marcapasos: SIN_RITMO,
+      fetchImpl,
+    };
+    const ruta = 'api/filtros/jornadas_fetch.php?cod_grupo=905432005';
+    // Tres llamadas caben en 50 s; la cuarta ya empieza pasada la hora.
+    for (let i = 0; i < 3; i += 1) expect((await pedirJson(ruta, cfg)).ok).toBe(true);
+    const cuarta = await pedirJson(ruta, cfg);
+    expect(cuarta.ok).toBe(false);
+    if (cuarta.ok) return;
+    expect(cuarta.fallo.motivo).toBe('agotado');
+    expect(llamadas).toBe(3);
+  });
+});
+
+describe('pedirJson · el corte por tiempo de UNA llamada', () => {
+  /** Un fetch que no contesta nunca y solo termina si lo abortan. */
+  const colgado = (): { fetchImpl: FfcvFetch; abortos: number } => {
+    const estado = { abortos: 0 };
+    const fetchImpl: FfcvFetch = (_url, init) =>
+      new Promise((_resolver, rechazar) => {
+        init?.signal?.addEventListener('abort', () => {
+          estado.abortos += 1;
+          rechazar(new DOMException('The operation was aborted.', 'AbortError'));
+        });
+      });
+    return {
+      fetchImpl,
+      get abortos() {
+        return estado.abortos;
+      },
+    };
+  };
+
+  it('EL AGUJERO: una conexión colgada ya no se come la invocación entera', async () => {
+    const c = colgado();
+    const r = await pedirJson('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar: async () => {},
+      intentos: 2,
+      tiempoMaxMs: 20,
+      marcapasos: SIN_RITMO,
+      fetchImpl: c.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo).toEqual({
+      motivo: 'degradado',
+      intentos: 2,
+      detalle: 'sin respuesta en 20 ms',
+    });
+    // Y se ha reintentado: una llamada colgada es el origen sin contestar, como un 503.
+    expect(c.abortos).toBe(2);
+  });
+
+  it('el token tampoco se queda colgado: es la PRIMERA llamada del viaje', async () => {
+    const c = colgado();
+    const r = await leerToken({ tiempoMaxMs: 20, marcapasos: SIN_RITMO, fetchImpl: c.fetchImpl });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo).toEqual({ motivo: 'sin_token', detalle: 'sin respuesta en 20 ms' });
+  });
+
+  it('el techo por defecto son 20 s: 2,7 veces la peor llamada medida (7,5 s)', () => {
+    expect(FFCV_TIEMPO_MAX_MS).toBe(20_000);
   });
 });

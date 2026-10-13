@@ -2250,11 +2250,13 @@
         "invalid": "The request was not valid.",
         "not_found": "That team is no longer in the active season.",
         "ffcv": "The FFCV did not respond. Try again in a few minutes.",
-        "red": "Could not connect. Check your connection and try again."
+        "red": "Could not connect. Check your connection and try again.",
+        "servidor": "The server cut this team short (HTTP {status}). Usually it took too long: try again."
       },
       "equipo_relleno": "{n} with a provisional time",
       "resumen_relleno": "{n} with a provisional time (9:00), waiting for the FFCV to confirm it",
-      "aviso_repaso": "It updates the date, time and ground of existing fixtures, because the FFCV changes them every week. What you write in MisterFC — notes, callups and attendance — is left untouched."
+      "aviso_repaso": "It updates the date, time and ground of existing fixtures, because the FFCV changes them every week. What you write in MisterFC — notes, callups and attendance — is left untouched.",
+      "reintentar": "Retry the {n} that failed"
     }
   },
   "pdf": {

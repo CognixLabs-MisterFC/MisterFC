@@ -147,7 +147,7 @@ export type DepsImportacion = {
  */
 export type VeredictoEquipo<R> =
   | { ok: true; resumen: R }
-  | { ok: false; clave: string }
+  | { ok: false; clave: string; status?: number }
   | { ok: false; fallo: FfcvFallo };
 
 export function veredictoDeEquipo<R extends { fallo: FfcvFallo | null }>(
@@ -159,6 +159,35 @@ export function veredictoDeEquipo<R extends { fallo: FfcvFallo | null }>(
   }
   if (cuerpo.resumen.fallo !== null) return { ok: false, fallo: cuerpo.resumen.fallo };
   return { ok: true, resumen: cuerpo.resumen };
+}
+
+/**
+ * El veredicto desde la respuesta CRUDA: el estado HTTP y el texto sin parsear.
+ *
+ * ── POR QUÉ NO VALE CON `res.json()` ────────────────────────────────────────────────
+ * `await res.json()` LANZA cuando el cuerpo no es JSON, y en la pantalla eso caía en el
+ * mismo `catch` que «no hay red», de modo que decía «comprueba la conexión» habiendo
+ * conectado perfectamente. El 2026-10-13 eso ocultó el fallo de verdad en los cinco
+ * últimos equipos de la serie: Vercel había matado la invocación por tiempo y devuelto
+ * su página de error, que es HTML.
+ *
+ * Un cuerpo que no es JSON NO es un problema de red: es el servidor contestando otra
+ * cosa, casi siempre porque la invocación se pasó de tiempo. Y el estado HTTP viaja en
+ * el veredicto para que la pantalla pueda decir cuál fue.
+ */
+export function veredictoDeRespuesta<R extends { fallo: FfcvFallo | null }>(
+  status: number,
+  texto: string,
+): VeredictoEquipo<R> {
+  let cuerpo: { ok?: boolean; error?: string; resumen?: R | null };
+  try {
+    cuerpo = JSON.parse(texto) as { ok?: boolean; error?: string; resumen?: R | null };
+  } catch {
+    return { ok: false, clave: 'servidor', status };
+  }
+  if (cuerpo === null || typeof cuerpo !== 'object')
+    return { ok: false, clave: 'servidor', status };
+  return veredictoDeEquipo(status >= 200 && status < 300, cuerpo);
 }
 
 /** Valida contra los CHECK de la tabla ANTES de ir a la base. */

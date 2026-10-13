@@ -108,6 +108,20 @@ export function esperaDeIntento(
  * propósito, porque la cuota no es solo nuestra —la misma IP la gasta cualquier otra
  * cosa que llame— y porque pasarse cuesta media ventana de espera.
  */
+/**
+ * TIEMPO MÁXIMO DE UNA LLAMADA. Sin esto no hay ninguno: `fetch` espera lo que haga
+ * falta, y una conexión que el origen deja colgada se come la invocación entera.
+ *
+ * Medido el 2026-10-13 contra el calendario REAL de Senior A, con el origen fallando el
+ * 56% de las llamadas: p50 294 ms, p90 2.941 ms, la PEOR 7.502 ms. 20 s son 2,7 veces la
+ * peor medida, así que no corta nada que fuera a contestar.
+ *
+ * Y es lo que cierra el presupuesto: con el vencimiento mirado ANTES de llamar, una
+ * invocación no puede pasar de `vencimientoMs + 20 s`. Con los 250 s que pasa la web,
+ * eso son 270 de los 300 que da Vercel.
+ */
+export const FFCV_TIEMPO_MAX_MS = 20_000;
+
 export const FFCV_POR_MINUTO = 50;
 export const FFCV_VENTANA_MS = 60_000;
 /** La recuperación medida fue de entre 15 s y 30 s. Se espera la peor. */
@@ -195,6 +209,8 @@ export type FfcvConfig = {
    * Sin él, la paciencia es la de `intentos`.
    */
   vencimientoMs?: number;
+  /** Tiempo máximo de UNA llamada antes de abortarla. Ver `FFCV_TIEMPO_MAX_MS`. */
+  tiempoMaxMs?: number;
   /** Token ya conocido. Si falta, se raspa de la portada en la 1ª llamada. */
   token?: string;
 };
@@ -294,15 +310,23 @@ export async function leerToken(cfg: FfcvConfig = {}): Promise<FfcvResultado<str
   const marcapasos = cfg.marcapasos ?? marcapasosCompartido;
   const intentos429 = cfg.intentos429 ?? FFCV_INTENTOS_429;
   const espera429 = cfg.espera429Ms ?? FFCV_ESPERA_429_MS;
+  const tiempoMaxMs = cfg.tiempoMaxMs ?? FFCV_TIEMPO_MAX_MS;
 
   let res: Response;
   let limitadas = 0;
   for (;;) {
     await marcapasos.pedirTurno(esperar, ahora);
+    // La portada tampoco puede quedarse colgada: es la PRIMERA llamada del viaje, y si
+    // se cuelga aquí no se llega a leer ni un partido.
+    const corte = new AbortController();
+    const reloj = setTimeout(() => corte.abort(), tiempoMaxMs);
     try {
-      res = await doFetch(base, { method: 'GET' });
+      res = await doFetch(base, { method: 'GET', signal: corte.signal });
     } catch (e) {
-      return { ok: false, fallo: { motivo: 'sin_token', detalle: String(e) } };
+      const detalle = corte.signal.aborted ? `sin respuesta en ${tiempoMaxMs} ms` : String(e);
+      return { ok: false, fallo: { motivo: 'sin_token', detalle } };
+    } finally {
+      clearTimeout(reloj);
     }
     if (res.status !== 429) break;
     limitadas += 1;
@@ -314,7 +338,11 @@ export async function leerToken(cfg: FfcvConfig = {}): Promise<FfcvResultado<str
     if (cfg.vencimientoMs !== undefined && ahora() + espera429 > cfg.vencimientoMs) {
       return {
         ok: false,
-        fallo: { motivo: 'agotado', esperadoMs: limitadas * espera429, detalle: 'HTTP 429 al raspar el token' },
+        fallo: {
+          motivo: 'agotado',
+          esperadoMs: limitadas * espera429,
+          detalle: 'HTTP 429 al raspar el token',
+        },
       };
     }
     await esperar(espera429);
@@ -362,6 +390,7 @@ export async function pedirJson<T>(
   const marcapasos = cfg.marcapasos ?? marcapasosCompartido;
   const intentos429 = cfg.intentos429 ?? FFCV_INTENTOS_429;
   const espera429 = cfg.espera429Ms ?? FFCV_ESPERA_429_MS;
+  const tiempoMaxMs = cfg.tiempoMaxMs ?? FFCV_TIEMPO_MAX_MS;
 
   let token = cfg.token;
   if (!token) {
@@ -386,9 +415,50 @@ export async function pedirJson<T>(
     return true;
   };
 
+  /**
+   * ¿Cabe todavía lo que viene? Lo mismo que `aguardar`, pero para el tiempo que se gasta
+   * SIN dormir: pedir turno y llamar.
+   *
+   * ── POR QUÉ HACE FALTA, MEDIDO EL 2026-10-13 ────────────────────────────────────
+   * El vencimiento solo se miraba antes de dormir, así que una tanda de llamadas LENTAS
+   * PERO CON ÉXITO no lo consultaba nunca: no hay reintento, luego no hay espera, luego
+   * no hay freno. Treinta jornadas a veinte segundos son diez minutos sin un solo
+   * `aguardar`, y a los 300 s Vercel mata la invocación y devuelve su página de error,
+   * que no es JSON. Eso le salió al usuario como «no se ha podido conectar» en los CINCO
+   * ÚLTIMOS equipos de la serie — habiendo conectado perfectamente.
+   *
+   * El origen que falla rápido ya estaba cubierto (la escalera duerme, y al dormir mira):
+   * ese mismo día Benjamín A sí contestó «degradado tras 8 intentos». Son los dos
+   * regímenes del mismo origen y faltaba la mitad.
+   */
+  const hayTiempo = (): boolean => cfg.vencimientoMs === undefined || ahora() <= cfg.vencimientoMs;
+
+  const seAcabo = (detalle: string): FfcvResultado<T> => ({
+    ok: false,
+    fallo: { motivo: 'agotado', esperadoMs, detalle },
+  });
+
   while (intento <= intentos) {
     let res: Response;
+    // Antes de pedir turno: si ya se pasó la hora, esperar turno es tirar tiempo.
+    if (!hayTiempo()) return seAcabo('se acabó el tiempo antes de pedir turno');
     await marcapasos.pedirTurno(esperar, ahora);
+    // Y otra vez después, porque el turno también cuesta.
+    //
+    // El criterio es «¿ya pasó la hora?» y NO «¿caben 20 s más?»: con lo segundo, una
+    // llamada de 300 ms se rechazaría por no caber un techo que casi nunca se gasta. El
+    // invariante que queda es suficiente: la última llamada EMPIEZA antes del
+    // vencimiento y la corta el reloj a los 20 s, así que la invocación termina como
+    // muy tarde en `vencimiento + 20 s` — 270 de los 300 que da Vercel.
+    //
+    // (La espera del marcapasos sí podría llegar a 60 s, pero eso solo pasa cuando han
+    // entrado 50 llamadas en un minuto, o sea cuando el origen va rápido, o sea cuando
+    // no estamos cerca del vencimiento. No es el caso que nos mordió.)
+    if (!hayTiempo()) return seAcabo('se acabó el tiempo esperando turno');
+
+    // El corte por tiempo de ESTA llamada. `fetch` no trae ninguno.
+    const corte = new AbortController();
+    const reloj = setTimeout(() => corte.abort(), tiempoMaxMs);
     try {
       res = await doFetch(base + ruta, {
         method: 'GET',
@@ -397,15 +467,22 @@ export async function pedirJson<T>(
           Accept: 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
         },
+        signal: corte.signal,
       });
     } catch (e) {
-      // Red caída: cuenta como degradación y se reintenta.
-      ultimaDegradacion = `fetch: ${String(e)}`;
+      // Red caída o llamada abortada por tiempo: las dos son el origen sin contestar, y
+      // las dos se reintentan. Se distinguen en el detalle porque no significan lo mismo
+      // para quien lo lea después.
+      ultimaDegradacion = corte.signal.aborted
+        ? `sin respuesta en ${tiempoMaxMs} ms`
+        : `fetch: ${String(e)}`;
       if (intento < intentos && !(await aguardar(esperaDeIntento(intento, esperaMs)))) {
         return { ok: false, fallo: { motivo: 'agotado', esperadoMs, detalle: ultimaDegradacion } };
       }
       intento += 1;
       continue;
+    } finally {
+      clearTimeout(reloj);
     }
 
     // EL 429 NO GASTA INTENTOS DE DEGRADACIÓN. Son dos averías distintas —el origen caído
@@ -435,7 +512,10 @@ export async function pedirJson<T>(
       if (res.status >= 500) {
         ultimaDegradacion = `HTTP ${res.status} con cuerpo no JSON`;
         if (intento < intentos && !(await aguardar(esperaDeIntento(intento, esperaMs)))) {
-          return { ok: false, fallo: { motivo: 'agotado', esperadoMs, detalle: ultimaDegradacion } };
+          return {
+            ok: false,
+            fallo: { motivo: 'agotado', esperadoMs, detalle: ultimaDegradacion },
+          };
         }
         intento += 1;
         continue;
