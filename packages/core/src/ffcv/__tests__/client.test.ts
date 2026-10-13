@@ -629,6 +629,29 @@ describe('pedirJson · el tiempo que se gasta SIN dormir', () => {
     expect(f.llamadas).toEqual([]);
   });
 
+  it('y si el TURNO se come el tiempo, tampoco llama: el freno va también después', async () => {
+    // El caso patológico del marcapasos: la ventana entera esperando turno. Queda media
+    // hora de nada cuando por fin toca, y sin el segundo freno se llamaría igual.
+    const reloj = relojFalso();
+    const f = fingir([{ status: 200, body: BUENO }]);
+    const r = await pedirJson('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar: reloj.esperar,
+      ahora: reloj.ahora,
+      vencimientoMs: reloj.ahora() + 10_000,
+      marcapasos: {
+        pedirTurno: async () => {
+          await reloj.esperar(FFCV_VENTANA_MS);
+        },
+      },
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.fallo.motivo).toBe('agotado');
+    expect(f.llamadas).toEqual([]);
+  });
+
   it('una llamada lenta con éxito gasta el presupuesto y la siguiente ya no sale', async () => {
     // Cada llamada tarda 20 s y NINGUNA falla: no hay reintentos, luego no hay esperas,
     // luego el freno viejo (que solo miraba al dormir) no se enteraba jamás.
