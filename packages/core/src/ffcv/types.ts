@@ -106,6 +106,13 @@ export type PartidoFfcv = {
   jornada: number;
   /** Instante UTC en ISO, ya resuelto el huso y el horario de verano. */
   fechaHoraIso: string;
+  /**
+   * true cuando la FFCV dio la FECHA pero no la HORA y se ha puesto la de relleno.
+   *
+   * Importa que viaje: un 9:00 inventado y un 9:00 de verdad son indistinguibles en la
+   * fila del evento, y sin esta marca nadie sabría cuál de los dos está mirando.
+   */
+  horaDeRelleno: boolean;
   /** true si jugamos en casa. Decide el ORDEN del título (local primero). */
   enCasa: boolean;
   /** Nombre del rival tal cual lo dice la FFCV, sin las comillas. */

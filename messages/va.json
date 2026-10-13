@@ -2231,15 +2231,15 @@
       "title": "Importar els partits de la FFCV",
       "description": "Dona d'alta com a esdeveniments els partits de lliga de tots els equips del club.",
       "aviso_tiempo": "Tarda uns huit minuts: la FFCV només admet 60 consultes per minut i cal llegir la jornada de cada equip una per una. Deixa esta pestanya oberta mentre avança.",
-      "aviso_repetible": "Només crea partits nous; els que ja estan no es toquen. Si s'interromp, pots tornar a prémer i continuarà on ho va deixar.",
+      "aviso_repetible": "No duplica res: cada partit es reconeix pel seu acta. Si s'interromp, pots tornar a prémer i continuarà on ho va deixar.",
       "empezar": "Importar",
       "cerrar": "Tancar",
       "preparando": "Llegint els equips i les adreces dels camps…",
       "progreso": "{hechos} de {total} equips",
       "progreso_etiqueta": "Avanç de la importació",
-      "equipo_hecho": "{creados} nous, {yaEstaban} ja estaven",
+      "equipo_hecho": "{leidos} partits · {creados} nous, {actualizados} actualitzats, {yaEstaban} sense canvis",
       "equipo_omitidos": "{n} sense importar",
-      "resumen": "Llest: {creados} partits nous i {yaEstaban} que ja estaven.",
+      "resumen": "Llest: {creados} partits nous, {actualizados} actualitzats i {yaEstaban} sense canvis.",
       "resumen_rotos": "{n} equips no s'han pogut importar",
       "saltados": "Sense codi de la FFCV, no s'han importat: {equipos}",
       "sin_equipos": "Cap equip del club té encara el seu codi de la FFCV.",
@@ -2251,7 +2251,10 @@
         "not_found": "Eixe equip ja no està en la temporada activa.",
         "ffcv": "La FFCV no ha respost. Torna-ho a intentar en uns minuts.",
         "red": "No s'ha pogut connectar. Comprova la connexió i torna-ho a intentar."
-      }
+      },
+      "equipo_relleno": "{n} amb hora provisional",
+      "resumen_relleno": "{n} amb hora provisional (9:00), esperant que la FFCV la confirme",
+      "aviso_repaso": "Actualitza la data, l’hora i el camp dels partits que ja existixen, perquè la FFCV els canvia cada setmana. El que escriviu en MisterFC —notes, convocatòries i assistència— no es toca."
     }
   },
   "pdf": {

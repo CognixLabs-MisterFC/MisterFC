@@ -2231,15 +2231,15 @@
       "title": "Importar los partidos de la FFCV",
       "description": "Da de alta como eventos los partidos de liga de todos los equipos del club.",
       "aviso_tiempo": "Tarda unos ocho minutos: la FFCV solo admite 60 consultas por minuto y hay que leer la jornada de cada equipo una por una. Deja esta pestaña abierta mientras avanza.",
-      "aviso_repetible": "Solo crea partidos nuevos; los que ya están no se tocan. Si se interrumpe, puedes volver a pulsar y seguirá donde lo dejó.",
+      "aviso_repetible": "No duplica nada: cada partido se reconoce por su acta. Si se interrumpe, puedes volver a pulsar y seguirá donde lo dejó.",
       "empezar": "Importar",
       "cerrar": "Cerrar",
       "preparando": "Leyendo los equipos y las direcciones de los campos…",
       "progreso": "{hechos} de {total} equipos",
       "progreso_etiqueta": "Avance de la importación",
-      "equipo_hecho": "{creados} nuevos, {yaEstaban} ya estaban",
+      "equipo_hecho": "{leidos} partidos · {creados} nuevos, {actualizados} actualizados, {yaEstaban} sin cambios",
       "equipo_omitidos": "{n} sin importar",
-      "resumen": "Listo: {creados} partidos nuevos y {yaEstaban} que ya estaban.",
+      "resumen": "Listo: {creados} partidos nuevos, {actualizados} actualizados y {yaEstaban} sin cambios.",
       "resumen_rotos": "{n} equipos no se pudieron importar",
       "saltados": "Sin código de la FFCV, no se han importado: {equipos}",
       "sin_equipos": "Ningún equipo del club tiene todavía su código de la FFCV.",
@@ -2251,7 +2251,10 @@
         "not_found": "Ese equipo ya no está en la temporada activa.",
         "ffcv": "La FFCV no ha respondido. Vuelve a intentarlo en unos minutos.",
         "red": "No se ha podido conectar. Comprueba la conexión y vuelve a intentarlo."
-      }
+      },
+      "equipo_relleno": "{n} con hora provisional",
+      "resumen_relleno": "{n} con hora provisional (9:00), a la espera de que la FFCV la confirme",
+      "aviso_repaso": "Actualiza la fecha, la hora y el campo de los partidos que ya existen, porque la FFCV los cambia cada semana. Lo que escribís en MisterFC —notas, convocatorias y asistencia— no se toca."
     }
   },
   "pdf": {

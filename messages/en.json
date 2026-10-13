@@ -2231,15 +2231,15 @@
       "title": "Import the FFCV fixtures",
       "description": "Creates the league fixtures of every club team as events.",
       "aviso_tiempo": "This takes about eight minutes: the FFCV only allows 60 requests per minute and each team's matchdays must be read one by one. Keep this tab open while it runs.",
-      "aviso_repetible": "It only creates new fixtures; existing ones are left untouched. If it stops, press again and it will carry on where it left off.",
+      "aviso_repetible": "Nothing is duplicated: each fixture is matched by its official code. If it stops, press again and it will carry on where it left off.",
       "empezar": "Import",
       "cerrar": "Close",
       "preparando": "Reading the teams and the ground addresses…",
       "progreso": "{hechos} of {total} teams",
       "progreso_etiqueta": "Import progress",
-      "equipo_hecho": "{creados} new, {yaEstaban} already there",
+      "equipo_hecho": "{leidos} fixtures · {creados} new, {actualizados} updated, {yaEstaban} unchanged",
       "equipo_omitidos": "{n} not imported",
-      "resumen": "Done: {creados} new fixtures and {yaEstaban} already there.",
+      "resumen": "Done: {creados} new fixtures, {actualizados} updated and {yaEstaban} unchanged.",
       "resumen_rotos": "{n} teams could not be imported",
       "saltados": "No FFCV code, not imported: {equipos}",
       "sin_equipos": "No club team has an FFCV code yet.",
@@ -2251,7 +2251,10 @@
         "not_found": "That team is no longer in the active season.",
         "ffcv": "The FFCV did not respond. Try again in a few minutes.",
         "red": "Could not connect. Check your connection and try again."
-      }
+      },
+      "equipo_relleno": "{n} with a provisional time",
+      "resumen_relleno": "{n} with a provisional time (9:00), waiting for the FFCV to confirm it",
+      "aviso_repaso": "It updates the date, time and ground of existing fixtures, because the FFCV changes them every week. What you write in MisterFC — notes, callups and attendance — is left untouched."
     }
   },
   "pdf": {
