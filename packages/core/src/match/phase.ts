@@ -25,12 +25,14 @@
 
 import {
   type ClockPeriod,
+  type PeriodCount,
   type PeriodKind,
   currentPeriod,
   isAtBreak,
   isClockRunning,
   isExtraPeriod,
   periodClockSeconds,
+  periodOrder,
 } from './clock';
 
 export type MatchStatus = 'not_started' | 'live' | 'closed';
@@ -46,15 +48,56 @@ export type MatchPhaseKind =
   | 'first_half'
   | 'half_time'
   | 'second_half'
+  | 'third_period'
   | 'extra_time'
   | 'penalties'
   | 'finished';
 
+/**
+ * ¿En esta fase el MINUTO significa algo? (el reloj está en juego). Las cinco
+ * pantallas del directo —web listado, web detalle, nativa listado, nativa
+ * familia, nativa staff— mostraban el minuto si la fase estaba en un
+ * `Set(['first_half','second_half','extra_time'])` escrito a mano EN CADA UNA.
+ * Cinco copias de la misma verdad, y ninguna conocía el tercer tiempo: en un
+ * partido de querubines las cinco habrían dejado de enseñar el minuto justo en
+ * el último tiempo.
+ *
+ * ── POR QUÉ UN `Record` Y NO UN `Set` ───────────────────────────────────────
+ * Un `Set` al que le falta un valor es un `Set` válido, así que el compilador
+ * no dice nada: eso es exactamente lo que acaba de pasar cinco veces. Un
+ * `Record<MatchPhaseKind, boolean>` obliga a enumerar TODAS las fases, de modo
+ * que la próxima que se añada no compila hasta que alguien decida si cuenta
+ * como tiempo de juego. No es un aviso: lo IMPIDE.
+ */
+const MINUTO_POR_FASE: Record<MatchPhaseKind, boolean> = {
+  not_started: false,
+  first_half: true,
+  half_time: false, // descanso: el minuto está congelado, se rotula la fase
+  second_half: true,
+  third_period: true,
+  extra_time: true,
+  penalties: false, // la tanda no es tiempo jugado
+  finished: false,
+};
+
+/** ¿Se muestra el minuto en esta fase, o la etiqueta de la fase? */
+export function phaseShowsMinute(phase: MatchPhaseKind): boolean {
+  return MINUTO_POR_FASE[phase];
+}
+
 export interface MatchPhaseInput {
   status: MatchStatus;
   periods: readonly ClockPeriod[];
-  /** Duración nominal de cada parte regular (min), de la categoría. */
+  /** Duración nominal de cada periodo regular (min), de la categoría. */
   halfDurationMinutes: number;
+  /**
+   * Cuántos periodos regulares juega la categoría (`categories.period_count`):
+   * dos partes o tres tiempos. OBLIGATORIO y sin valor por defecto a propósito:
+   * un `= 2` aquí dejaría a cada sitio que se olvide contando un partido de
+   * querubines como si tuviera dos partes, y el error no se vería hasta que
+   * alguien abriera ese directo. Se pasa `asPeriodCount(categoria.period_count)`.
+   */
+  periodCount: PeriodCount;
   /** Instante de evaluación (ms). Para un periodo en curso, avanza el minuto. */
   nowMs: number;
   /** Duración nominal de cada mitad de prórroga (min). Por defecto = halfDurationMinutes. */
@@ -76,6 +119,8 @@ function phaseKindOf(period: PeriodKind): MatchPhaseKind {
       return 'first_half';
     case 'second_half':
       return 'second_half';
+    case 'third_period':
+      return 'third_period';
     case 'extra_first':
     case 'extra_second':
       return 'extra_time';
@@ -84,24 +129,38 @@ function phaseKindOf(period: PeriodKind): MatchPhaseKind {
   }
 }
 
-/** Offset de marcador (min) con el que ARRANCA una parte = suma nominal de las previas. */
+/**
+ * Offset de marcador (min) con el que ARRANCA un periodo = suma nominal de los
+ * que van antes EN SU CATEGORÍA.
+ *
+ * Antes era un `switch` con las cinco cuentas escritas a mano (`2 * halfMin`
+ * para la prórroga, y así). Eso solo podía ser correcto mientras hubiera
+ * exactamente dos periodos regulares: con tres, la prórroga arranca en
+ * `3 * halfMin` y ninguna de esas constantes valía. Sumar el orden real no tiene
+ * ese problema y no hay que volver a tocarlo si mañana hay cuatro.
+ */
 function footballBaseMinutes(
   period: PeriodKind,
   halfMin: number,
   extraMin: number,
+  count: PeriodCount,
 ): number {
-  switch (period) {
-    case 'first_half':
-      return 0;
-    case 'second_half':
-      return halfMin;
-    case 'extra_first':
-      return 2 * halfMin;
-    case 'extra_second':
-      return 2 * halfMin + extraMin;
-    case 'penalties':
-      return 2 * halfMin + 2 * extraMin;
+  // Una fila `third_period` en una categoría que HOY dice dos no es un dato
+  // imposible: se jugó cuando la categoría decía tres y alguien la cambió
+  // después, y ese partido se sigue mirando. Sumando el orden de dos, el bucle
+  // no encontraría nunca el periodo y devolvería la suma ENTERA (cinco periodos
+  // nominales: 60' con tiempos de doce), un offset inventado. Se cuenta con el
+  // orden que sí contiene ese periodo, que es el que se jugó.
+  const orden = periodOrder(count).includes(period)
+    ? periodOrder(count)
+    : periodOrder(3);
+  let base = 0;
+  for (const previo of orden) {
+    if (previo === period) return base;
+    base += nominalMinutes(previo, halfMin, extraMin);
   }
+  // Inalcanzable: periodOrder(3) contiene los seis PeriodKind.
+  return base;
 }
 
 /** Duración nominal (min) de un periodo: regular = half, prórroga = extra. */
@@ -119,6 +178,7 @@ function footballMinuteOf(
   nowMs: number,
   halfMin: number,
   extraMin: number,
+  count: PeriodCount,
 ): { minute: number; addedTime: number } {
   // Tiempo real transcurrido DENTRO del periodo = reloj del periodo − su base
   // absoluto (independiente del offset de marcador). Para un periodo en pausa/
@@ -128,7 +188,7 @@ function footballMinuteOf(
     periodClockSeconds(period, nowMs) - period.baseOffsetSeconds,
   );
   const withinMin = Math.floor(withinSeconds / 60);
-  const base = footballBaseMinutes(period.period, halfMin, extraMin);
+  const base = footballBaseMinutes(period.period, halfMin, extraMin, count);
   const nominal = nominalMinutes(period.period, halfMin, extraMin);
 
   if (withinMin < nominal) {
@@ -149,7 +209,7 @@ function footballMinuteOf(
  * que no es tiempo jugado): en descanso/fin queda congelado en el último jugado.
  */
 export function matchPhase(input: MatchPhaseInput): MatchPhaseResult {
-  const { status, periods, halfDurationMinutes, nowMs } = input;
+  const { status, periods, halfDurationMinutes, nowMs, periodCount } = input;
   const halfMin = halfDurationMinutes;
   const extraMin = input.extraHalfDurationMinutes ?? halfDurationMinutes;
 
@@ -161,7 +221,7 @@ export function matchPhase(input: MatchPhaseInput): MatchPhaseResult {
   const timed = periods.filter((p) => p.period !== 'penalties');
   const timedCur = currentPeriod(timed);
   const { minute, addedTime } = timedCur
-    ? footballMinuteOf(timedCur, nowMs, halfMin, extraMin)
+    ? footballMinuteOf(timedCur, nowMs, halfMin, extraMin, periodCount)
     : { minute: 0, addedTime: 0 };
 
   let phase: MatchPhaseKind;
@@ -174,7 +234,7 @@ export function matchPhase(input: MatchPhaseInput): MatchPhaseResult {
     const cur = currentPeriod(periods);
     if (cur && !cur.ended) {
       phase = phaseKindOf(cur.period); // en periodo, en pausa
-    } else if (isAtBreak(periods)) {
+    } else if (isAtBreak(periods, periodCount)) {
       phase = 'half_time';
     } else {
       phase = 'finished'; // todos los periodos agotados (a la espera de cierre)

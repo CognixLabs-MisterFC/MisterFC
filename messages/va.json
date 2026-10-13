@@ -615,7 +615,10 @@
       "second_half": "2a part",
       "extra_time": "Pròrroga",
       "penalties": "Penals",
-      "finished": "Finalitzat"
+      "finished": "Finalitzat",
+      "first_of_three": "1r temps",
+      "second_of_three": "2n temps",
+      "third_period": "3r temps"
     },
     "minute": "{minute}'",
     "minute_added": "{minute}'+{added}",
@@ -3532,7 +3535,10 @@
       "second_half": "2a part",
       "extra_first": "Pròrroga 1",
       "extra_second": "Pròrroga 2",
-      "penalties": "Penals"
+      "penalties": "Penals",
+      "first_of_three": "1r temps",
+      "second_of_three": "2n temps",
+      "third_period": "3r temps"
     },
     "clock_error": {
       "forbidden": "No tens permís per a controlar el rellotge.",
@@ -5095,7 +5101,10 @@
       "second_half": "2a part",
       "extra_time": "Pròrroga",
       "penalties": "Penals",
-      "finished": "Final"
+      "finished": "Final",
+      "first_of_three": "1r temps",
+      "second_of_three": "2n temps",
+      "third_period": "3r temps"
     },
     "stat": {
       "goals": "Gols",
@@ -5354,7 +5363,10 @@
       "second_half": "2a part",
       "penalties": "Penals",
       "extra_first": "Pròrroga (1a)",
-      "extra_second": "Pròrroga (2a)"
+      "extra_second": "Pròrroga (2a)",
+      "first_of_three": "1r temps",
+      "second_of_three": "2n temps",
+      "third_period": "3r temps"
     },
     "adjust": "Ajust",
     "clock": "Rellotge",

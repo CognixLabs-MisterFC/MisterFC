@@ -10,7 +10,8 @@ import { useTranslations } from 'next-intl';
 import {
   matchPhase,
   type ClockPeriod,
-  type MatchPhaseKind,
+  periodLabelKey,
+  phaseShowsMinute,
 } from '@misterfc/core';
 import {
   MatchFieldEditor,
@@ -56,12 +57,6 @@ function frozenNow(periods: ClockPeriod[]): number {
   return running?.lastStartedAt ? Date.parse(running.lastStartedAt) : 0;
 }
 
-const LIVE_PHASES: ReadonlySet<MatchPhaseKind> = new Set([
-  'first_half',
-  'second_half',
-  'extra_time',
-]);
-
 // Tipos de evento que se listan (fase de partido: goles, tarjetas, etc.).
 const LISTED_EVENTS = new Set([
   'goal',
@@ -93,6 +88,7 @@ export function DirectoDetailClient({ initial }: Props) {
     status: detail.status,
     periods: detail.periods,
     halfDurationMinutes: detail.halfDurationMinutes,
+    periodCount: detail.periodCount,
     nowMs: now ?? frozenNow(detail.periods),
   });
   const minuteText =
@@ -147,12 +143,12 @@ export function DirectoDetailClient({ initial }: Props) {
               variant={isLive ? 'default' : 'secondary'}
               className={isLive ? 'bg-red-500 text-white hover:bg-red-500' : ''}
             >
-              {isLive ? t('live') : t(`phase.${phase}`)}
+              {isLive ? t('live') : t(`phase.${periodLabelKey(phase, detail.periodCount)}`)}
             </Badge>
             <span className="text-sm text-muted-foreground tabular-nums">
-              {isLive && LIVE_PHASES.has(phase)
+              {isLive && phaseShowsMinute(phase)
                 ? minuteText
-                : t(`phase.${phase}`)}
+                : t(`phase.${periodLabelKey(phase, detail.periodCount)}`)}
             </span>
           </div>
         </CardContent>

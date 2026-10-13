@@ -8,7 +8,8 @@ import {
   type MatchDetail,
   type PositionAssignment,
   type ClockPeriod,
-  type MatchPhaseKind,
+  periodLabelKey,
+  phaseShowsMinute,
 } from '@misterfc/core';
 import { useApp } from '@/auth/context';
 import { useCached } from '@/data/use-cached';
@@ -20,12 +21,6 @@ import { BRAND } from '@/theme';
 
 /** Polling de marcador/timeline en vivo (ms) — consistente con el listado (B1). */
 const LIVE_POLL_MS = 15_000;
-
-const LIVE_PHASES: ReadonlySet<MatchPhaseKind> = new Set([
-  'first_half',
-  'second_half',
-  'extra_time',
-]);
 
 /** Eventos que se listan en el timeline (fase de partido). */
 const LISTED_EVENTS = new Set([
@@ -133,11 +128,12 @@ function Scoreboard({
     status: detail.status,
     periods: detail.periods,
     halfDurationMinutes: detail.halfDurationMinutes,
+    periodCount: detail.periodCount,
     nowMs: isLive ? nowMs : frozenNow(detail.periods),
   });
-  const phaseLabel = t(`directo.phase.${phase}`);
+  const phaseLabel = t(`directo.phase.${periodLabelKey(phase, detail.periodCount)}`);
   const minuteText =
-    isLive && LIVE_PHASES.has(phase)
+    isLive && phaseShowsMinute(phase)
       ? addedTime > 0
         ? t('directo.minute_added', { minute: String(minute), added: String(addedTime) })
         : t('directos.minute', { minute: String(minute) })

@@ -3,14 +3,17 @@
  */
 
 export {
-  PERIOD_ORDER,
+  PERIOD_KINDS,
+  asPeriodCount,
+  periodOrder,
+  periodLabelKey,
   periodClockSeconds,
   clockSecondsAt,
   currentPeriod,
   isClockRunning,
   isAtBreak,
   nextPeriodAfter,
-  REGULAR_PERIODS,
+  regularPeriods,
   EXTRA_PERIODS,
   isRegularPeriod,
   isExtraPeriod,
@@ -26,6 +29,7 @@ export {
   displayMinute,
 } from './clock';
 export type {
+  PeriodCount,
   PeriodKind,
   ClockPeriod,
   ClockMutation,
@@ -155,7 +159,7 @@ export type {
   ConsolidationInput,
 } from './consolidation';
 
-export { matchPhase } from './phase';
+export { matchPhase, phaseShowsMinute } from './phase';
 export type {
   MatchStatus,
   MatchPhaseKind,

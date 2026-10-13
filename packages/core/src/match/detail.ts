@@ -6,7 +6,7 @@ import type { TeamFormat } from '../lineups/types';
 import { getSportingNamesFromClient } from '../player-profile/sporting-names';
 import { computeScore } from './score';
 import { aggregateMatchTeamStats, type MatchTeamStats } from './team-events';
-import type { ClockPeriod, PeriodKind } from './clock';
+import { asPeriodCount, type ClockPeriod, type PeriodCount, type PeriodKind } from './clock';
 
 /**
  * O2-5 B2 — DETALLE de un directo (SOLO LECTURA), extraído de
@@ -54,6 +54,8 @@ export type MatchDetail = {
   startsAt: string;
   format: TeamFormat;
   halfDurationMinutes: number;
+  /** Periodos regulares de la categoría: 2 (dos partes) o 3 (tres tiempos). */
+  periodCount: PeriodCount;
   status: 'not_started' | 'live' | 'closed';
   periods: ClockPeriod[];
   formationCode: string;
@@ -87,7 +89,7 @@ export async function getMatchDetailFromClient(
     .from('events')
     .select(
       `id, club_id, team_id, type, title, opponent_name, starts_at,
-       teams!inner(name, color, format, categories!inner(name, half_duration_minutes))`
+       teams!inner(name, color, format, categories!inner(name, half_duration_minutes, period_count))`
     )
     .eq('id', eventId)
     .maybeSingle();
@@ -106,7 +108,11 @@ export async function getMatchDetailFromClient(
       name: string;
       color: string;
       format: TeamFormat;
-      categories: { name: string; half_duration_minutes: number | null };
+      categories: {
+        name: string;
+        half_duration_minutes: number | null;
+        period_count: number | null;
+      };
     };
   };
   const event = ev as unknown as EvShape;
@@ -299,6 +305,7 @@ export async function getMatchDetailFromClient(
     startsAt: event.starts_at,
     format: event.teams.format,
     halfDurationMinutes: event.teams.categories.half_duration_minutes ?? 45,
+    periodCount: asPeriodCount(event.teams.categories.period_count),
     status,
     periods,
     formationCode,

@@ -22,6 +22,7 @@ import { getCurrentUserFromClient } from '../auth/current-user';
 import { isManageableMatchType } from '../events/types';
 import {
   adjustClockPatch,
+  asPeriodCount,
   buildNextPeriod,
   type ClockMutation,
   type ClockPeriod,
@@ -33,6 +34,7 @@ import {
   pauseClockPatch,
   type PeriodKind,
   resumeClockPatch,
+  type PeriodCount,
 } from './clock';
 import { consolidateMatch, type ConsolidationEvent } from './consolidation';
 import {
@@ -99,6 +101,26 @@ function toPeriodRow(m: ClockMutation): PeriodUpdate {
 }
 
 type PeriodRow = ClockPeriod & { id: string };
+
+/**
+ * Cuántos periodos regulares juega el partido: `period_count` de la categoría
+ * del equipo del evento.
+ *
+ * Una consulta más por escritura del reloj, y no se cachea: una escritura del
+ * reloj es un botón que pulsa una persona, no un bucle. Si el join no trae nada
+ * —evento sin equipo, categoría borrada— `asPeriodCount` devuelve DOS, que es
+ * el partido que la app siempre ha sabido contar.
+ */
+async function loadPeriodCount(supabase: DbClient, eventId: string): Promise<PeriodCount> {
+  const { data } = await supabase
+    .from('events')
+    .select('teams!inner(categories!inner(period_count))')
+    .eq('id', eventId)
+    .maybeSingle();
+  type Shape = { teams: { categories: { period_count: number | null } } } | null;
+  const fila = data as unknown as Shape;
+  return asPeriodCount(fila?.teams?.categories?.period_count);
+}
 
 async function loadPeriods(supabase: DbClient, eventId: string): Promise<PeriodRow[]> {
   const { data } = await supabase
@@ -236,7 +258,7 @@ export async function startMatchFromClient(
   // Arrancar la 1ª parte (solo si aún no hay periodos).
   const periods = await loadPeriods(supabase, event_id);
   if (periods.length === 0) {
-    const first = buildNextPeriod([], ms, iso);
+    const first = buildNextPeriod([], ms, iso, await loadPeriodCount(supabase, event_id));
     if (first) {
       const { error } = await supabase.from('match_periods').insert({
         event_id,
@@ -352,12 +374,13 @@ export async function startNextPeriodFromClient(
   const periods = await loadPeriods(supabase, event_id);
   if (periods.some((p) => p.running)) return { ok: false, error: 'period_running' };
 
-  const next = nextPeriodAfter(periods);
+  const cuantos = await loadPeriodCount(supabase, event_id);
+  const next = nextPeriodAfter(periods, cuantos);
   if (!next) return { ok: false, error: 'all_periods_played' };
   if (next.period !== period) return { ok: false, error: 'period_mismatch' };
 
   const { ms, iso } = now();
-  const built = buildNextPeriod(periods, ms, iso);
+  const built = buildNextPeriod(periods, ms, iso, cuantos);
   if (!built) return { ok: false, error: 'all_periods_played' };
 
   const { error } = await supabase.from('match_periods').insert({
@@ -537,7 +560,9 @@ export async function finishMatchFromClient(
   if (status !== 'live') return { ok: false, error: 'not_live' };
 
   const periods = await loadPeriods(supabase, event_id);
-  if (nextRegularPeriod(periods) !== null) return { ok: false, error: 'regulation_incomplete' };
+  if (nextRegularPeriod(periods, await loadPeriodCount(supabase, event_id)) !== null) {
+    return { ok: false, error: 'regulation_incomplete' };
+  }
 
   // Parar el reloj: terminar el periodo en curso si quedara sin terminar.
   const cur = currentPeriod(periods) as PeriodRow | null;

@@ -22,21 +22,89 @@
 export type PeriodKind =
   | 'first_half'
   | 'second_half'
+  | 'third_period'
   | 'extra_first'
   | 'extra_second'
   | 'penalties';
 
 /**
- * Orden de juego de los periodos. El índice + 1 es el `ordinal` con el que se
- * persiste cada fila (unique por evento). Mantiene el reloj absoluto monótono.
+ * TODOS los valores válidos de `period`, sin orden de juego. Para validar lo que
+ * llega de fuera (el enum de zod) y nada más: el ORDEN depende de la categoría.
  */
-export const PERIOD_ORDER: readonly PeriodKind[] = [
+export const PERIOD_KINDS: readonly PeriodKind[] = [
   'first_half',
   'second_half',
+  'third_period',
   'extra_first',
   'extra_second',
   'penalties',
 ] as const;
+
+/**
+ * Cuántos periodos REGULARES juega una categoría: dos partes, o TRES TIEMPOS
+ * (querubines). Es `categories.period_count`, y el CHECK de la base lo tiene
+ * topado en (2,3) justo porque esto es lo que el reloj sabe colocar.
+ */
+export type PeriodCount = 2 | 3;
+
+/**
+ * Lo que venga de la base (un smallint) traído al dominio del reloj.
+ *
+ * Un valor desconocido —o un null de un join que no trajo la categoría— cae en
+ * DOS, que es el comportamiento de siempre: ante la duda, el partido que ya
+ * sabíamos contar. El que impide un 4 es el CHECK de la base, no esto.
+ */
+export function asPeriodCount(n: number | null | undefined): PeriodCount {
+  return n === 3 ? 3 : 2;
+}
+
+/**
+ * Periodos REGULARES (los que siempre se juegan) de una categoría. La duración
+ * de cada uno sale de `categories.half_duration_minutes`.
+ */
+export function regularPeriods(count: PeriodCount): readonly PeriodKind[] {
+  return count === 3
+    ? (['first_half', 'second_half', 'third_period'] as const)
+    : (['first_half', 'second_half'] as const);
+}
+
+/**
+ * Orden de juego de los periodos PARA ESA CATEGORÍA. El índice + 1 es el
+ * `ordinal` con el que se persiste cada fila (unique por evento), así que el
+ * reloj absoluto sigue siendo monótono.
+ *
+ * ── POR QUÉ ESTO YA NO ES UNA CONSTANTE ─────────────────────────────────────
+ * Antes era `PERIOD_ORDER`, una constante global de cinco elementos, y por eso
+ * un partido tenía dos partes: no porque nadie lo hubiera decidido, sino porque
+ * la LISTA tenía dos. Con tres tiempos el orden cambia —y con él los ordinales
+ * de la prórroga, que pasan de 3 y 4 a 4 y 5—, de modo que no hay una respuesta
+ * única: depende de la categoría. La constante se ha retirado a propósito para
+ * que ningún sitio pueda seguir asumiendo la de dos sin decirlo.
+ */
+export function periodOrder(count: PeriodCount): readonly PeriodKind[] {
+  return [...regularPeriods(count), ...EXTRA_PERIODS, 'penalties'];
+}
+
+/**
+ * Sufijo de la clave de i18n con la que se rotula un periodo (o una fase, que
+ * comparte estos nombres).
+ *
+ * ── POR QUÉ NO VALE USAR LA CLAVE TAL CUAL ──────────────────────────────────
+ * En un partido de dos, los dos primeros periodos son «1ª parte» y «2ª parte».
+ * En uno de TRES no son partes de nada: son «1er tiempo», «2º tiempo» y «3er
+ * tiempo». Rotular un partido de querubines con «1ª parte» sería escribirle a
+ * las familias algo que no existe, y es justo el sitio donde se nota: la
+ * pantalla del directo.
+ *
+ * Los nombres de la base no cambian (ver la migración 20261121000000: son
+ * identificadores, no descripciones); lo que cambia es cómo se LEEN.
+ */
+export function periodLabelKey(clave: string, count: PeriodCount): string {
+  if (count !== 3) return clave;
+  if (clave === 'first_half') return 'first_of_three';
+  if (clave === 'second_half') return 'second_of_three';
+  return clave;
+}
 
 /**
  * Proyección de una fila de `match_periods` relevante para el reloj (camelCase,
@@ -145,11 +213,11 @@ export function isClockRunning(periods: readonly ClockPeriod[]): boolean {
  * todavía queda algún periodo por jugar (no hemos agotado el catálogo). Si el
  * último periodo posible ya terminó, no es descanso: es fin de partido.
  */
-export function isAtBreak(periods: readonly ClockPeriod[]): boolean {
+export function isAtBreak(periods: readonly ClockPeriod[], count: PeriodCount): boolean {
   if (periods.length === 0) return false;
   if (isClockRunning(periods)) return false;
   const someEnded = periods.some((p) => p.ended);
-  return someEnded && nextPeriodAfter(periods) !== null;
+  return someEnded && nextPeriodAfter(periods, count) !== null;
 }
 
 /**
@@ -159,25 +227,18 @@ export function isAtBreak(periods: readonly ClockPeriod[]): boolean {
  */
 export function nextPeriodAfter(
   periods: readonly ClockPeriod[],
+  count: PeriodCount,
 ): { period: PeriodKind; ordinal: number } | null {
   const existing = new Set(periods.map((p) => p.period));
-  for (let i = 0; i < PERIOD_ORDER.length; i++) {
-    const period = PERIOD_ORDER[i];
+  const orden = periodOrder(count);
+  for (let i = 0; i < orden.length; i++) {
+    const period = orden[i];
     if (period && !existing.has(period)) {
       return { period, ordinal: i + 1 };
     }
   }
   return null;
 }
-
-/**
- * Periodos REGULARES (siempre se juegan): 1ª y 2ª parte. La duración sugerida de
- * cada uno sale de `categories.half_duration_minutes` (§3.2).
- */
-export const REGULAR_PERIODS: readonly PeriodKind[] = [
-  'first_half',
-  'second_half',
-] as const;
 
 /**
  * Periodos OPCIONALES de prórroga (F7.7b): solo si el operador la añade. La
@@ -189,8 +250,13 @@ export const EXTRA_PERIODS: readonly PeriodKind[] = [
   'extra_second',
 ] as const;
 
-export function isRegularPeriod(period: PeriodKind): boolean {
-  return (REGULAR_PERIODS as readonly string[]).includes(period);
+/**
+ * ¿Es un periodo regular DE ESA CATEGORÍA? El tercer tiempo lo es solo cuando la
+ * categoría juega tres: en una de dos partes, una fila `third_period` sería un
+ * dato imposible y aquí no cuenta como reglamentario.
+ */
+export function isRegularPeriod(period: PeriodKind, count: PeriodCount): boolean {
+  return (regularPeriods(count) as readonly string[]).includes(period);
 }
 
 export function isExtraPeriod(period: PeriodKind): boolean {
@@ -204,9 +270,10 @@ export function isExtraPeriod(period: PeriodKind): boolean {
  */
 export function nextRegularPeriod(
   periods: readonly ClockPeriod[],
+  count: PeriodCount,
 ): { period: PeriodKind; ordinal: number } | null {
-  const next = nextPeriodAfter(periods);
-  return next && isRegularPeriod(next.period) ? next : null;
+  const next = nextPeriodAfter(periods, count);
+  return next && isRegularPeriod(next.period, count) ? next : null;
 }
 
 /**
@@ -216,8 +283,9 @@ export function nextRegularPeriod(
  */
 export function nextExtraPeriod(
   periods: readonly ClockPeriod[],
+  count: PeriodCount,
 ): { period: PeriodKind; ordinal: number } | null {
-  const next = nextPeriodAfter(periods);
+  const next = nextPeriodAfter(periods, count);
   return next && isExtraPeriod(next.period) ? next : null;
 }
 
@@ -227,10 +295,19 @@ export function nextExtraPeriod(
  * ningún periodo a medias (todos los creados están terminados). Permite finalizar
  * tras la 2ª parte y tras cualquier prórroga, sin forzar la prórroga.
  */
-export function canFinishMatch(periods: readonly ClockPeriod[]): boolean {
+export function canFinishMatch(
+  periods: readonly ClockPeriod[],
+  count: PeriodCount,
+): boolean {
   if (isClockRunning(periods)) return false;
-  const secondHalf = periods.find((p) => p.period === 'second_half');
-  if (!secondHalf || !secondHalf.ended) return false;
+  // El tiempo reglamentario está cubierto cuando ha terminado el ÚLTIMO periodo
+  // regular de la categoría: la 2ª parte en una de dos, el tercer tiempo en una
+  // de tres. Antes esto buscaba 'second_half' a mano, lo que en un partido de
+  // tres tiempos habría dejado finalizar con un tiempo entero por jugar.
+  const regulares = regularPeriods(count);
+  const ultimo = regulares[regulares.length - 1];
+  const fila = periods.find((p) => p.period === ultimo);
+  if (!fila || !fila.ended) return false;
   return periods.every((p) => p.ended);
 }
 
@@ -244,8 +321,9 @@ export function buildNextPeriod(
   periods: readonly ClockPeriod[],
   nowMs: number,
   nowIso: string,
+  count: PeriodCount,
 ): NewPeriod | null {
-  const next = nextPeriodAfter(periods);
+  const next = nextPeriodAfter(periods, count);
   if (!next) return null;
   return {
     period: next.period,

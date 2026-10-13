@@ -11,7 +11,8 @@ import { useTranslations } from 'next-intl';
 import {
   matchPhase,
   type ClockPeriod,
-  type MatchPhaseKind,
+  periodLabelKey,
+  phaseShowsMinute,
 } from '@misterfc/core';
 import { Link } from '@/i18n/navigation';
 import { Card, CardContent } from '@/components/ui/card';
@@ -66,12 +67,6 @@ function frozenNow(periods: ClockPeriod[]): number {
   const running = periods.find((p) => p.running && p.lastStartedAt);
   return running?.lastStartedAt ? Date.parse(running.lastStartedAt) : 0;
 }
-
-const LIVE_PHASES: ReadonlySet<MatchPhaseKind> = new Set([
-  'first_half',
-  'second_half',
-  'extra_time',
-]);
 
 export function DirectosListClient({
   locale,
@@ -138,10 +133,14 @@ export function DirectosListClient({
           status: m.status,
           periods: m.periods,
           halfDurationMinutes: m.halfDurationMinutes,
+          periodCount: m.periodCount,
           nowMs: now ?? frozenNow(m.periods),
         });
         const isLive = m.status === 'live';
-        const showMinute = LIVE_PHASES.has(phase);
+        // La fase se rotula según los periodos de la categoría: un partido de
+        // tres tiempos no tiene «1ª parte».
+        const faseEtiqueta = t(`phase.${periodLabelKey(phase, m.periodCount)}`);
+        const showMinute = phaseShowsMinute(phase);
         const minuteText =
           addedTime > 0
             ? t('minute_added', { minute, added: addedTime })
@@ -189,11 +188,11 @@ export function DirectosListClient({
                         isLive ? 'bg-red-500 text-white hover:bg-red-500' : ''
                       }
                     >
-                      {isLive ? t('live') : t(`phase.${phase}`)}
+                      {isLive ? t('live') : faseEtiqueta}
                     </Badge>
                     {isLive && (
                       <span className="text-xs text-muted-foreground tabular-nums">
-                        {showMinute ? minuteText : t(`phase.${phase}`)}
+                        {showMinute ? minuteText : faseEtiqueta}
                       </span>
                     )}
                   </div>

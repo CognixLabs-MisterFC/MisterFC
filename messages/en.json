@@ -615,7 +615,10 @@
       "second_half": "2nd half",
       "extra_time": "Extra time",
       "penalties": "Penalties",
-      "finished": "Full time"
+      "finished": "Full time",
+      "first_of_three": "1st period",
+      "second_of_three": "2nd period",
+      "third_period": "3rd period"
     },
     "minute": "{minute}'",
     "minute_added": "{minute}'+{added}",
@@ -3532,7 +3535,10 @@
       "second_half": "2nd half",
       "extra_first": "Extra time 1",
       "extra_second": "Extra time 2",
-      "penalties": "Penalties"
+      "penalties": "Penalties",
+      "first_of_three": "1st period",
+      "second_of_three": "2nd period",
+      "third_period": "3rd period"
     },
     "clock_error": {
       "forbidden": "You don't have permission to control the clock.",
@@ -5095,7 +5101,10 @@
       "second_half": "2nd half",
       "extra_time": "Extra time",
       "penalties": "Penalties",
-      "finished": "Full time"
+      "finished": "Full time",
+      "first_of_three": "1st period",
+      "second_of_three": "2nd period",
+      "third_period": "3rd period"
     },
     "stat": {
       "goals": "Goals",
@@ -5354,7 +5363,10 @@
       "second_half": "2nd half",
       "penalties": "Penalties",
       "extra_first": "Extra time (1st)",
-      "extra_second": "Extra time (2nd)"
+      "extra_second": "Extra time (2nd)",
+      "first_of_three": "1st period",
+      "second_of_three": "2nd period",
+      "third_period": "3rd period"
     },
     "adjust": "Adjust",
     "clock": "Clock",
