@@ -129,6 +129,38 @@ export type DepsImportacion = {
   direccionDe?: (nombreCampo: string) => string | null;
 };
 
+/**
+ * Qué decir de la respuesta de un equipo: hecho, o roto y por qué.
+ *
+ * ── POR QUÉ ESTO VIVE AQUÍ Y NO EN LA PANTALLA ──────────────────────────────────────
+ * Un fallo POR EQUIPO viaja con HTTP 200 y `ok: true`: es un resultado legítimo, porque
+ * la ruta aísla por equipo a propósito (decisión 2). Así que quien solo mire el HTTP y
+ * el sobre pinta ese equipo como HECHO con los contadores a cero, y eso se lee igual
+ * que «no había nada que hacer».
+ *
+ * Eso es exactamente lo que pasó el 2026-10-13: el diálogo no miraba `resumen.fallo` y
+ * Alevín C y Benjamín A —que no habían importado NADA— aparecieron al día. Era el peor
+ * de los cuatro agujeros, porque esconde a los otros tres.
+ *
+ * Está en core, y no inline en el diálogo, para que se pueda MEDIR: `apps/web` no tiene
+ * runner de tests y una decisión sin test es una decisión que vuelve a romperse.
+ */
+export type VeredictoEquipo<R> =
+  | { ok: true; resumen: R }
+  | { ok: false; clave: string }
+  | { ok: false; fallo: FfcvFallo };
+
+export function veredictoDeEquipo<R extends { fallo: FfcvFallo | null }>(
+  httpOk: boolean,
+  cuerpo: { ok?: boolean; error?: string; resumen?: R | null },
+): VeredictoEquipo<R> {
+  if (!httpOk || cuerpo.ok !== true || !cuerpo.resumen) {
+    return { ok: false, clave: cuerpo.error ?? 'ffcv' };
+  }
+  if (cuerpo.resumen.fallo !== null) return { ok: false, fallo: cuerpo.resumen.fallo };
+  return { ok: true, resumen: cuerpo.resumen };
+}
+
 /** Valida contra los CHECK de la tabla ANTES de ir a la base. */
 export function revisarPartido(
   nombreEquipo: string,

@@ -25,7 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { describirFallo, type FfcvFallo } from '@misterfc/core';
+import { describirFallo, veredictoDeEquipo, type FfcvFallo } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 
 type EquipoListado = { teamId: string; nombre: string };
@@ -123,20 +123,22 @@ export function FfcvImportDialog() {
           body: JSON.stringify({ teamId: equipo.teamId, direcciones }),
         });
         const cuerpo = (await res.json()) as { ok?: boolean; error?: string; resumen?: Resumen };
+        // UN FALLO POR EQUIPO VIENE CON HTTP 200 Y `ok: true` — así está diseñado F-4, que
+        // aísla por equipo. La decisión vive en `veredictoDeEquipo`, en core, porque aquí
+        // no hay runner de tests y mirar solo el HTTP fue el agujero del 2026-10-13.
+        const veredicto = veredictoDeEquipo(res.ok, cuerpo);
         setFilas((previas) =>
           previas.map((f) => {
             if (f.equipo.teamId !== equipo.teamId) return f;
-            if (!res.ok || !cuerpo.ok || !cuerpo.resumen) {
-              return { estado: 'roto', equipo, detalle: t(`errors.${cuerpo.error ?? 'ffcv'}`) };
-            }
-            // UN FALLO POR EQUIPO VIENE CON HTTP 200 Y `ok: true` — así está diseñado F-4,
-            // que aísla por equipo. Si no se mira `resumen.fallo`, ese equipo se pinta
-            // como hecho con los contadores a cero y se lee igual que «no había nada que
-            // hacer». Pasó el 2026-10-13 con Alevín C y Benjamín A.
-            if (cuerpo.resumen.fallo !== null) {
-              return { estado: 'roto', equipo, detalle: describirFallo(cuerpo.resumen.fallo) };
-            }
-            return { estado: 'hecho', equipo, resumen: cuerpo.resumen };
+            if (veredicto.ok) return { estado: 'hecho', equipo, resumen: veredicto.resumen };
+            return {
+              estado: 'roto',
+              equipo,
+              detalle:
+                'fallo' in veredicto
+                  ? describirFallo(veredicto.fallo)
+                  : t(`errors.${veredicto.clave}`),
+            };
           }),
         );
       } catch {

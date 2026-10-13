@@ -11,6 +11,7 @@ import {
   leerEquiposDelClubFromClient,
   prepararImportacionFromClient,
   revisarPartido,
+  veredictoDeEquipo,
   type EquipoParaImportar,
   type EventoExistente,
 } from '../importar';
@@ -649,5 +650,45 @@ describe('el repaso dentro del importador', () => {
     expect(r.actualizados).toEqual([]);
     expect(r.omitidos).toEqual([{ acta: '26539172', motivo: 'violates check constraint' }]);
     expect(r.fallo).toBeNull();
+  });
+});
+
+describe('veredictoDeEquipo · un fallo con HTTP 200 no se pinta como hecho', () => {
+  const FALLO = {
+    motivo: 'api',
+    detalle: 'el equipo 15146 no aparece en ninguna jornada',
+  } as const;
+
+  it('EL AGUJERO DEL 2026-10-13: ok:true con resumen.fallo es ROTO, no hecho', () => {
+    // Alevín C y Benjamín A llegaron exactamente así: 200, ok:true, contadores a cero y
+    // un fallo dentro. La pantalla los enseñó como «0 nuevos, 0 ya estaban».
+    const v = veredictoDeEquipo(true, {
+      ok: true,
+      resumen: { fallo: FALLO, leidos: 0, creados: 0, yaEstaban: 0 },
+    });
+    expect(v.ok).toBe(false);
+    expect(v).toEqual({ ok: false, fallo: FALLO });
+  });
+
+  it('sin fallo devuelve el resumen, ya estrechado', () => {
+    const resumen = { fallo: null, leidos: 26, creados: 0, yaEstaban: 26 };
+    const v = veredictoDeEquipo(true, { ok: true, resumen });
+    expect(v).toEqual({ ok: true, resumen });
+  });
+
+  it('un HTTP malo va por la clave de error de la ruta', () => {
+    expect(veredictoDeEquipo(false, { error: 'prohibido' })).toEqual({
+      ok: false,
+      clave: 'prohibido',
+    });
+  });
+
+  it('ok:false, o un sobre sin resumen, caen en la clave genérica', () => {
+    expect(veredictoDeEquipo(true, { ok: false })).toEqual({ ok: false, clave: 'ffcv' });
+    expect(veredictoDeEquipo(true, { ok: true })).toEqual({ ok: false, clave: 'ffcv' });
+    expect(veredictoDeEquipo(true, { ok: true, resumen: null })).toEqual({
+      ok: false,
+      clave: 'ffcv',
+    });
   });
 });

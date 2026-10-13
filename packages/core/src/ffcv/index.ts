@@ -74,6 +74,7 @@ export {
   importarCalendariosFromClient,
   leerEquiposDelClubFromClient,
   revisarPartido,
+  veredictoDeEquipo,
 } from './importar';
 export type {
   DepsImportacion,
@@ -84,4 +85,5 @@ export type {
   PartidoOmitido,
   PreparacionFfcv,
   ResumenEquipo,
+  VeredictoEquipo,
 } from './importar';
