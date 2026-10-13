@@ -7,6 +7,7 @@ export {
   FFCV_INTENTOS,
   FFCV_INTENTOS_429,
   FFCV_POR_MINUTO,
+  FFCV_TIEMPO_MAX_MS,
   FFCV_VENTANA_MS,
   crearMarcapasos,
   describirFallo,
@@ -75,6 +76,7 @@ export {
   leerEquiposDelClubFromClient,
   revisarPartido,
   veredictoDeEquipo,
+  veredictoDeRespuesta,
 } from './importar';
 export type {
   DepsImportacion,

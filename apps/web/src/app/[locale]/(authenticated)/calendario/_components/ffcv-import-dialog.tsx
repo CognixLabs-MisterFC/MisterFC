@@ -25,7 +25,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { describirFallo, veredictoDeEquipo, type FfcvFallo } from '@misterfc/core';
+import {
+  describirFallo,
+  veredictoDeRespuesta,
+  type FfcvFallo,
+  type VeredictoEquipo,
+} from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 
 type EquipoListado = { teamId: string; nombre: string };
@@ -53,6 +58,9 @@ export function FfcvImportDialog() {
   const [error, setError] = useState<string | null>(null);
   const [filas, setFilas] = useState<Fila[]>([]);
   const [saltados, setSaltados] = useState<EquipoListado[]>([]);
+  // El mapa de direcciones del viaje de preparación, guardado para poder REINTENTAR sin
+  // volver a descargar el catálogo (son 214 KB y 23 páginas de la FFCV).
+  const [direcciones, setDirecciones] = useState<Record<string, string>>({});
 
   const corriendo = fase === 'preparando' || fase === 'importando';
 
@@ -68,6 +76,55 @@ export function FfcvImportDialog() {
     return () => window.removeEventListener('beforeunload', avisar);
   }, [corriendo]);
 
+  /**
+   * El bucle: un viaje por equipo, en serie. Separado de `importar` porque el botón de
+   * reintento lo vuelve a llamar con SOLO los que fallaron — y repetir los quince para
+   * recuperar cinco son veinticinco minutos tirados.
+   *
+   * En serie a propósito: en paralelo los viajes se comerían el límite de ritmo de la
+   * FFCV los unos a los otros y todos irían más lentos.
+   */
+  const correr = useCallback(
+    async (cuales: EquipoListado[], mapa: Record<string, string>) => {
+      for (const equipo of cuales) {
+        setFilas((previas) =>
+          previas.map((f) => (f.equipo.teamId === equipo.teamId ? { estado: 'yendo', equipo } : f)),
+        );
+        let veredicto: VeredictoEquipo<Resumen>;
+        try {
+          const res = await fetch('/api/ffcv/importar-equipo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ teamId: equipo.teamId, direcciones: mapa }),
+          });
+          // `res.text()` y NO `res.json()`: el segundo LANZA cuando el cuerpo no es JSON
+          // —la página de error de Vercel al matar la invocación por tiempo lo es— y eso
+          // acababa en el catch de «no hay red», que es mentira: conectó perfectamente.
+          veredicto = veredictoDeRespuesta<Resumen>(res.status, await res.text());
+        } catch {
+          // Aquí sí: el fetch no llegó a contestar. Esto es la red de verdad.
+          veredicto = { ok: false, clave: 'red' };
+        }
+        setFilas((previas) =>
+          previas.map((f) => {
+            if (f.equipo.teamId !== equipo.teamId) return f;
+            if (veredicto.ok) return { estado: 'hecho', equipo, resumen: veredicto.resumen };
+            return {
+              estado: 'roto',
+              equipo,
+              detalle:
+                'fallo' in veredicto
+                  ? describirFallo(veredicto.fallo)
+                  : t(`errors.${veredicto.clave}`, { status: veredicto.status ?? 0 }),
+            };
+          }),
+        );
+      }
+      setFase('fin');
+    },
+    [t],
+  );
+
   const importar = useCallback(async () => {
     setError(null);
     setFilas([]);
@@ -75,7 +132,7 @@ export function FfcvImportDialog() {
     setFase('preparando');
 
     let equipos: EquipoListado[] = [];
-    let direcciones: Record<string, string> = {};
+    let direccionesLeidas: Record<string, string> = {};
     try {
       const res = await fetch('/api/ffcv/preparar', { method: 'POST' });
       const cuerpo = (await res.json()) as {
@@ -92,7 +149,8 @@ export function FfcvImportDialog() {
         return;
       }
       equipos = cuerpo.equipos ?? [];
-      direcciones = cuerpo.direcciones ?? {};
+      direccionesLeidas = cuerpo.direcciones ?? {};
+      setDirecciones(direccionesLeidas);
       setSaltados([...(cuerpo.sinUbicacion ?? []), ...(cuerpo.sinVincular ?? [])]);
     } catch {
       setError(t('errors.red'));
@@ -108,51 +166,21 @@ export function FfcvImportDialog() {
 
     setFilas(equipos.map((equipo) => ({ estado: 'pendiente', equipo })));
     setFase('importando');
+    await correr(equipos, direccionesLeidas);
+  }, [correr, t]);
 
-    // En serie, a propósito: en paralelo se comerían el límite de ritmo de la FFCV
-    // los unos a los otros y todos irían más lentos.
-    for (let i = 0; i < equipos.length; i += 1) {
-      const equipo = equipos[i]!;
-      setFilas((previas) =>
-        previas.map((f) => (f.equipo.teamId === equipo.teamId ? { estado: 'yendo', equipo } : f)),
-      );
-      try {
-        const res = await fetch('/api/ffcv/importar-equipo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ teamId: equipo.teamId, direcciones }),
-        });
-        const cuerpo = (await res.json()) as { ok?: boolean; error?: string; resumen?: Resumen };
-        // UN FALLO POR EQUIPO VIENE CON HTTP 200 Y `ok: true` — así está diseñado F-4, que
-        // aísla por equipo. La decisión vive en `veredictoDeEquipo`, en core, porque aquí
-        // no hay runner de tests y mirar solo el HTTP fue el agujero del 2026-10-13.
-        const veredicto = veredictoDeEquipo(res.ok, cuerpo);
-        setFilas((previas) =>
-          previas.map((f) => {
-            if (f.equipo.teamId !== equipo.teamId) return f;
-            if (veredicto.ok) return { estado: 'hecho', equipo, resumen: veredicto.resumen };
-            return {
-              estado: 'roto',
-              equipo,
-              detalle:
-                'fallo' in veredicto
-                  ? describirFallo(veredicto.fallo)
-                  : t(`errors.${veredicto.clave}`),
-            };
-          }),
-        );
-      } catch {
-        setFilas((previas) =>
-          previas.map((f) =>
-            f.equipo.teamId === equipo.teamId
-              ? { estado: 'roto', equipo, detalle: t('errors.red') }
-              : f,
-          ),
-        );
-      }
-    }
-    setFase('fin');
-  }, [t]);
+  /** Vuelve a intentar SOLO los que fallaron, con las direcciones ya descargadas. */
+  const reintentar = useCallback(async () => {
+    const rotos = filas.flatMap((f) => (f.estado === 'roto' ? [f.equipo] : []));
+    if (rotos.length === 0) return;
+    // Las filas de los rotos vuelven a «pendiente»; las de los buenos se quedan como
+    // están, que es el sentido de esto: no se repite lo que ya salió bien.
+    setFilas((previas) =>
+      previas.map((f) => (f.estado === 'roto' ? { estado: 'pendiente', equipo: f.equipo } : f)),
+    );
+    setFase('importando');
+    await correr(rotos, direcciones);
+  }, [correr, direcciones, filas]);
 
   const terminadas = filas.filter((f) => f.estado === 'hecho' || f.estado === 'roto').length;
   const creados = filas.reduce((n, f) => (f.estado === 'hecho' ? n + f.resumen.creados : n), 0);
@@ -285,6 +313,9 @@ export function FfcvImportDialog() {
 
         <DialogFooter>
           {fase === 'inicio' && <Button onClick={() => void importar()}>{t('empezar')}</Button>}
+          {fase === 'fin' && rotos > 0 && (
+            <Button onClick={() => void reintentar()}>{t('reintentar', { n: rotos })}</Button>
+          )}
           {fase === 'fin' && (
             <Button variant="outline" onClick={() => setOpen(false)}>
               {t('cerrar')}

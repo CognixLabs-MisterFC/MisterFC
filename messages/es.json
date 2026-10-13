@@ -2250,11 +2250,13 @@
         "invalid": "La petición no era válida.",
         "not_found": "Ese equipo ya no está en la temporada activa.",
         "ffcv": "La FFCV no ha respondido. Vuelve a intentarlo en unos minutos.",
-        "red": "No se ha podido conectar. Comprueba la conexión y vuelve a intentarlo."
+        "red": "No se ha podido conectar. Comprueba la conexión y vuelve a intentarlo.",
+        "servidor": "El servidor cortó este equipo (HTTP {status}). Suele ser que tardó demasiado: reinténtalo."
       },
       "equipo_relleno": "{n} con hora provisional",
       "resumen_relleno": "{n} con hora provisional (9:00), a la espera de que la FFCV la confirme",
-      "aviso_repaso": "Actualiza la fecha, la hora y el campo de los partidos que ya existen, porque la FFCV los cambia cada semana. Lo que escribís en MisterFC —notas, convocatorias y asistencia— no se toca."
+      "aviso_repaso": "Actualiza la fecha, la hora y el campo de los partidos que ya existen, porque la FFCV los cambia cada semana. Lo que escribís en MisterFC —notas, convocatorias y asistencia— no se toca.",
+      "reintentar": "Reintentar los {n} que fallaron"
     }
   },
   "pdf": {
