@@ -11,6 +11,7 @@ const BASE: PartidoFfcv = {
   codigoRival: '906821360',
   campo: 'Polideportivo Mpal. de Nazaret F-11',
   jugado: false,
+  horaDeRelleno: false,
 };
 
 describe('tituloDePartido · el orden dice dónde se juega', () => {

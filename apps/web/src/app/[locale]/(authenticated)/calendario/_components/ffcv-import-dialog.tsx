@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { describirFallo, veredictoDeEquipo, type FfcvFallo } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 
 type EquipoListado = { teamId: string; nombre: string };
@@ -34,8 +35,10 @@ type Resumen = {
   leidos: number;
   creados: number;
   yaEstaban: number;
+  actualizados: { acta: string; cambios: string[] }[];
+  conHoraDeRelleno: number;
   omitidos: { acta: string; motivo: string }[];
-  fallo: { motivo: string } | null;
+  fallo: FfcvFallo | null;
 };
 type Fila =
   | { estado: 'pendiente'; equipo: EquipoListado }
@@ -120,13 +123,22 @@ export function FfcvImportDialog() {
           body: JSON.stringify({ teamId: equipo.teamId, direcciones }),
         });
         const cuerpo = (await res.json()) as { ok?: boolean; error?: string; resumen?: Resumen };
+        // UN FALLO POR EQUIPO VIENE CON HTTP 200 Y `ok: true` — así está diseñado F-4, que
+        // aísla por equipo. La decisión vive en `veredictoDeEquipo`, en core, porque aquí
+        // no hay runner de tests y mirar solo el HTTP fue el agujero del 2026-10-13.
+        const veredicto = veredictoDeEquipo(res.ok, cuerpo);
         setFilas((previas) =>
           previas.map((f) => {
             if (f.equipo.teamId !== equipo.teamId) return f;
-            if (!res.ok || !cuerpo.ok || !cuerpo.resumen) {
-              return { estado: 'roto', equipo, detalle: t(`errors.${cuerpo.error ?? 'ffcv'}`) };
-            }
-            return { estado: 'hecho', equipo, resumen: cuerpo.resumen };
+            if (veredicto.ok) return { estado: 'hecho', equipo, resumen: veredicto.resumen };
+            return {
+              estado: 'roto',
+              equipo,
+              detalle:
+                'fallo' in veredicto
+                  ? describirFallo(veredicto.fallo)
+                  : t(`errors.${veredicto.clave}`),
+            };
           }),
         );
       } catch {
@@ -145,6 +157,14 @@ export function FfcvImportDialog() {
   const terminadas = filas.filter((f) => f.estado === 'hecho' || f.estado === 'roto').length;
   const creados = filas.reduce((n, f) => (f.estado === 'hecho' ? n + f.resumen.creados : n), 0);
   const yaEstaban = filas.reduce((n, f) => (f.estado === 'hecho' ? n + f.resumen.yaEstaban : n), 0);
+  const actualizados = filas.reduce(
+    (n, f) => (f.estado === 'hecho' ? n + f.resumen.actualizados.length : n),
+    0,
+  );
+  const conRelleno = filas.reduce(
+    (n, f) => (f.estado === 'hecho' ? n + f.resumen.conHoraDeRelleno : n),
+    0,
+  );
   const rotos = filas.filter((f) => f.estado === 'roto').length;
   const porcentaje = filas.length === 0 ? 0 : Math.round((terminadas / filas.length) * 100);
 
@@ -172,6 +192,7 @@ export function FfcvImportDialog() {
         {fase === 'inicio' && (
           <div className="space-y-3 text-sm">
             <p className="text-muted-foreground">{t('aviso_tiempo')}</p>
+            <p className="text-muted-foreground">{t('aviso_repaso')}</p>
             <p className="text-muted-foreground">{t('aviso_repetible')}</p>
             {error !== null && <p className="text-destructive">{error}</p>}
           </div>
@@ -224,9 +245,13 @@ export function FfcvImportDialog() {
                       <span className="text-muted-foreground">
                         {' · '}
                         {t('equipo_hecho', {
+                          leidos: f.resumen.leidos,
                           creados: f.resumen.creados,
+                          actualizados: f.resumen.actualizados.length,
                           yaEstaban: f.resumen.yaEstaban,
                         })}
+                        {f.resumen.conHoraDeRelleno > 0 &&
+                          ` · ${t('equipo_relleno', { n: f.resumen.conHoraDeRelleno })}`}
                         {f.resumen.omitidos.length > 0 &&
                           ` · ${t('equipo_omitidos', { n: f.resumen.omitidos.length })}`}
                       </span>
@@ -244,7 +269,8 @@ export function FfcvImportDialog() {
 
             {fase === 'fin' && (
               <p className="text-sm">
-                {t('resumen', { creados, yaEstaban })}
+                {t('resumen', { creados, actualizados, yaEstaban })}
+                {conRelleno > 0 && ` · ${t('resumen_relleno', { n: conRelleno })}`}
                 {rotos > 0 && ` · ${t('resumen_rotos', { n: rotos })}`}
               </p>
             )}
@@ -258,9 +284,7 @@ export function FfcvImportDialog() {
         )}
 
         <DialogFooter>
-          {fase === 'inicio' && (
-            <Button onClick={() => void importar()}>{t('empezar')}</Button>
-          )}
+          {fase === 'inicio' && <Button onClick={() => void importar()}>{t('empezar')}</Button>}
           {fase === 'fin' && (
             <Button variant="outline" onClick={() => setOpen(false)}>
               {t('cerrar')}

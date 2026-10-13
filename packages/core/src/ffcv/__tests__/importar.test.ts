@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../supabase/types';
 import {
+  COLUMNAS_DE_LA_FFCV,
+  cambiosDelPartido,
   filaDeEvento,
   importarCalendarioDeEquipoFromClient,
   importarCalendariosFromClient,
@@ -9,7 +11,9 @@ import {
   leerEquiposDelClubFromClient,
   prepararImportacionFromClient,
   revisarPartido,
+  veredictoDeEquipo,
   type EquipoParaImportar,
+  type EventoExistente,
 } from '../importar';
 import type { FfcvFetch, PartidoCrudo, PartidoFfcv } from '../types';
 
@@ -74,17 +78,47 @@ const CFG = { token: 'a'.repeat(64), esperar: async () => {}, intentos: 2 };
 type Insercion = Record<string, unknown>;
 
 /**
- * Cliente falso. `update` LANZA a propósito: la decisión 3 dice que un partido que ya
- * existe no se toca, y si alguien añadiera una ruta de actualización este doble lo grita
- * en vez de dejarlo pasar.
+ * La jornada 1 TAL COMO ESTÁ EN LA BASE tras el alta del 2026-10-12. Sirve para el caso
+ * normal del repaso: la FFCV no ha movido nada y no debe escribirse ni una fila.
+ *
+ * Ojo al `starts_at`: la base lo devuelve con `+00:00` y nosotros construimos `.000Z`.
+ * Son el MISMO instante escritos distinto, y por eso el fixture usa la forma de la base:
+ * si la comparación fuera textual, este test sería el que lo cazara.
+ */
+const FILA_J1_EN_LA_BASE: Partial<EventoExistente & { ffcv_match_code: string }> = {
+  id: 'e0000000-0000-4000-8000-000000000001',
+  ffcv_match_code: '26539172',
+  starts_at: '2026-10-18T08:30:00+00:00',
+  title: 'C.D. At. Nazaret C - Infantil B',
+  location_name: 'Polideportivo Mpal. de Nazaret F-11',
+  location_address: null,
+  opponent_name: 'C.D. At. Nazaret C',
+  ffcv_round: 1,
+};
+
+/**
+ * Cliente falso.
+ *
+ * ── EL GRITO QUE CAMBIA, Y POR QUÉ ──────────────────────────────────────────────────
+ * Hasta el 2026-10-13 este doble tenía `update` LANZANDO una excepción, porque la
+ * decisión era «solo crea» y queríamos que cualquier ruta de actualización colada se
+ * delatara. Esa alarma hizo su trabajo: salta en cuanto se añadió el repaso.
+ *
+ * Ahora actualizar es lo que se pide, así que el doble lo DEJA pasar — pero sigue
+ * gritando si el parche toca una columna que NO es de la FFCV. Eso es justo lo que no
+ * debe pasar nunca: el repaso no puede llevarse por delante las notas del entrenador, la
+ * aprobación ni la cancelación.
  */
 function cliente(opciones: {
-  actas?: (string | null)[];
+  /** Actas que ya existen, con los valores que tienen en la base. */
+  eventos?: Partial<EventoExistente & { ffcv_match_code: string }>[];
   errorLectura?: { message: string };
   errorInsert?: { message: string; code?: string };
+  errorUpdate?: { message: string };
   equipos?: Record<string, unknown>[];
-}): { db: SupabaseClient<Database>; inserciones: Insercion[] } {
+}): { db: SupabaseClient<Database>; inserciones: Insercion[]; parches: Insercion[] } {
   const inserciones: Insercion[] = [];
+  const parches: Insercion[] = [];
   const lecturaEventos = {
     select: () => lecturaEventos,
     eq: () => lecturaEventos,
@@ -93,7 +127,7 @@ function cliente(opciones: {
       Promise.resolve(
         opciones.errorLectura
           ? { data: null, error: opciones.errorLectura }
-          : { data: (opciones.actas ?? []).map((a) => ({ ffcv_match_code: a })), error: null },
+          : { data: opciones.eventos ?? [], error: null },
       ),
   };
   const lecturaEquipos = {
@@ -108,17 +142,27 @@ function cliente(opciones: {
         inserciones.push(fila);
         return Promise.resolve({ error: opciones.errorInsert ?? null });
       },
-      update: () => {
-        throw new Error('SOLO CREA: nadie debe actualizar un partido ya existente');
+      update: (parche: Insercion) => {
+        for (const clave of Object.keys(parche)) {
+          if (!(COLUMNAS_DE_LA_FFCV as readonly string[]).includes(clave)) {
+            throw new Error(
+              `el repaso ha tocado \`${clave}\`, que NO es de la FFCV: las notas, la aprobacion y la cancelacion son de MisterFC`,
+            );
+          }
+        }
+        parches.push(parche);
+        return {
+          eq: () => Promise.resolve({ error: opciones.errorUpdate ?? null }),
+        };
       },
     }),
   } as unknown as SupabaseClient<Database>;
-  return { db, inserciones };
+  return { db, inserciones, parches };
 }
 
 describe('importarCalendarioDeEquipoFromClient', () => {
   it('crea los que faltan y NO toca los que ya están', async () => {
-    const { db, inserciones } = cliente({ actas: ['26539172'] });
+    const { db, inserciones } = cliente({ eventos: [FILA_J1_EN_LA_BASE] });
     const r = await importarCalendarioDeEquipoFromClient(db, EQUIPO, {
       actorProfileId: ACTOR,
       cfg: { ...CFG, fetchImpl: apiConJornadas({ '1': [J1], '2': [J2] }) },
@@ -135,7 +179,7 @@ describe('importarCalendarioDeEquipoFromClient', () => {
 
   it('la fila que escribe lleva lo acordado, y el título con el orden de la FFCV', async () => {
     const { db, inserciones } = cliente({
-      actas: [],
+      eventos: [],
       equipos: [],
     });
     await importarCalendarioDeEquipoFromClient(db, EQUIPO, {
@@ -166,7 +210,7 @@ describe('importarCalendarioDeEquipoFromClient', () => {
   });
 
   it('sin dirección resuelta, el evento entra igual con el nombre del campo', async () => {
-    const { db, inserciones } = cliente({ actas: [] });
+    const { db, inserciones } = cliente({ eventos: [] });
     await importarCalendarioDeEquipoFromClient(db, EQUIPO, {
       actorProfileId: ACTOR,
       cfg: { ...CFG, fetchImpl: apiConJornadas({ '1': [J1] }) },
@@ -190,7 +234,10 @@ describe('importarCalendarioDeEquipoFromClient', () => {
   });
 
   it('un 23505 es «ya estaba», no un omitido: el único de F-2 ha mordido', async () => {
-    const { db } = cliente({ actas: [], errorInsert: { message: 'duplicate key', code: '23505' } });
+    const { db } = cliente({
+      eventos: [],
+      errorInsert: { message: 'duplicate key', code: '23505' },
+    });
     const r = await importarCalendarioDeEquipoFromClient(db, EQUIPO, {
       actorProfileId: ACTOR,
       cfg: { ...CFG, fetchImpl: apiConJornadas({ '1': [J1] }) },
@@ -201,7 +248,7 @@ describe('importarCalendarioDeEquipoFromClient', () => {
   });
 
   it('otro error de la base sí es un omitido, con su motivo', async () => {
-    const { db } = cliente({ actas: [], errorInsert: { message: 'violates check constraint' } });
+    const { db } = cliente({ eventos: [], errorInsert: { message: 'violates check constraint' } });
     const r = await importarCalendarioDeEquipoFromClient(db, EQUIPO, {
       actorProfileId: ACTOR,
       cfg: { ...CFG, fetchImpl: apiConJornadas({ '1': [J1] }) },
@@ -211,7 +258,7 @@ describe('importarCalendarioDeEquipoFromClient', () => {
   });
 
   it('si el lector falla (origen degradado), el equipo entero queda sin tocar', async () => {
-    const { db, inserciones } = cliente({ actas: [] });
+    const { db, inserciones } = cliente({ eventos: [] });
     const degradado: FfcvFetch = async () =>
       new Response(JSON.stringify({ jornadas: [], _source: 'degraded_empty' }), { status: 200 });
     const r = await importarCalendarioDeEquipoFromClient(db, EQUIPO, {
@@ -225,8 +272,13 @@ describe('importarCalendarioDeEquipoFromClient', () => {
 
 describe('importarCalendariosFromClient · aislar por equipo (decisión 2)', () => {
   it('el fallo de un equipo no impide el siguiente', async () => {
-    const { db, inserciones } = cliente({ actas: [] });
-    const otro: EquipoParaImportar = { ...EQUIPO, teamId: 'otro-team', nombre: 'Infantil C', ffcvTeamCode: '900463025' };
+    const { db, inserciones } = cliente({ eventos: [] });
+    const otro: EquipoParaImportar = {
+      ...EQUIPO,
+      teamId: 'otro-team',
+      nombre: 'Infantil C',
+      ffcvTeamCode: '900463025',
+    };
     // La API responde mal SOLO para el grupo del primer equipo.
     const fetchImpl: FfcvFetch = async (url) => {
       if (url.includes('cod_grupo=905432005') || url.includes('905432005')) {
@@ -260,6 +312,7 @@ describe('revisarPartido · los CHECK de la tabla, antes de la base', () => {
     codigoRival: '2',
     campo: 'C',
     jugado: false,
+    horaDeRelleno: false,
   };
 
   it('acepta un partido normal', () => {
@@ -324,6 +377,7 @@ describe('filaDeEvento', () => {
         codigoRival: '9',
         campo: 'C',
         jugado: false,
+        horaDeRelleno: false,
       },
       'T',
       ACTOR,
@@ -442,7 +496,7 @@ describe('prepararImportacionFromClient', () => {
 
 describe('importarEquipoConDireccionesFromClient', () => {
   it('EL CASO MEDIDO: el partido en casa se guarda con la dirección que el catálogo NO traía', async () => {
-    const { db, inserciones } = cliente({ actas: [] });
+    const { db, inserciones } = cliente({ eventos: [] });
     const r = await importarEquipoConDireccionesFromClient(
       db,
       {
@@ -466,7 +520,7 @@ describe('importarEquipoConDireccionesFromClient', () => {
   });
 
   it('si el campo propio no se resuelve, el partido se crea IGUAL, sin dirección', async () => {
-    const { db, inserciones } = cliente({ actas: [] });
+    const { db, inserciones } = cliente({ eventos: [] });
     const r = await importarEquipoConDireccionesFromClient(
       db,
       { equipo: EQUIPO, direcciones: {}, actorProfileId: ACTOR },
@@ -484,5 +538,157 @@ describe('importarEquipoConDireccionesFromClient', () => {
     expect(inserciones.find((i) => i.ffcv_match_code === '26539179')?.location_name).toBe(
       'Polideportivo Mpal. Quatre Carreres F-11',
     );
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════════════
+// EL REPASO DE LOS MARTES. La FFCV cambia dia y hora cada semana; con «solo crea» el
+// calendario se quedaba con la fecha vieja y las familias iban al partido equivocado.
+// ════════════════════════════════════════════════════════════════════════════════════
+
+describe('cambiosDelPartido', () => {
+  const EXISTENTE = FILA_J1_EN_LA_BASE as EventoExistente;
+  const DESEADA = {
+    starts_at: '2026-10-18T08:30:00.000Z',
+    title: 'C.D. At. Nazaret C - Infantil B',
+    location_name: 'Polideportivo Mpal. de Nazaret F-11',
+    location_address: null,
+    opponent_name: 'C.D. At. Nazaret C',
+    ffcv_round: 1,
+  };
+
+  it('LA TRAMPA: el mismo instante escrito distinto NO es un cambio', () => {
+    // La base da `+00:00`, nosotros `.000Z`. Comparar como texto marcaria los 290
+    // partidos como movidos cada martes y reescribiria la tabla entera para nada.
+    expect(cambiosDelPartido(EXISTENTE, DESEADA)).toEqual([]);
+  });
+
+  it('caza la hora movida, que es el caso de todas las semanas', () => {
+    expect(
+      cambiosDelPartido(EXISTENTE, { ...DESEADA, starts_at: '2026-10-18T09:00:00.000Z' }),
+    ).toEqual(['fecha']);
+  });
+
+  it('caza el campo, el titulo, el rival y la jornada, cada uno con su nombre', () => {
+    expect(cambiosDelPartido(EXISTENTE, { ...DESEADA, location_name: 'Otro campo' })).toEqual([
+      'campo',
+    ]);
+    expect(
+      cambiosDelPartido(EXISTENTE, { ...DESEADA, title: 'Infantil B - C.D. At. Nazaret C' }),
+    ).toEqual(['titulo']);
+    expect(cambiosDelPartido(EXISTENTE, { ...DESEADA, opponent_name: 'Otro rival' })).toEqual([
+      'rival',
+    ]);
+    expect(cambiosDelPartido(EXISTENTE, { ...DESEADA, ffcv_round: 2 })).toEqual(['jornada']);
+    expect(cambiosDelPartido(EXISTENTE, { ...DESEADA, location_address: 'Una calle' })).toEqual([
+      'direccion',
+    ]);
+  });
+
+  it('una fecha ilegible en la base cuenta como cambio, no como igual', () => {
+    const roto = { ...EXISTENTE, starts_at: 'no es una fecha' };
+    expect(cambiosDelPartido(roto, DESEADA)).toContain('fecha');
+  });
+});
+
+describe('el repaso dentro del importador', () => {
+  it('EL FALLO QUE ESTO ARREGLA: la FFCV mueve la hora y el partido se actualiza', async () => {
+    // En la base, la J1 esta a las 08:30Z; la FFCV la da ahora a las 10:30 locales de
+    // otro dia. Antes esto se contaba como «ya estaba» y la familia iba a la hora vieja.
+    const { db, inserciones, parches } = cliente({
+      eventos: [{ ...FILA_J1_EN_LA_BASE, starts_at: '2026-10-17T08:30:00+00:00' }],
+    });
+    const r = await importarCalendarioDeEquipoFromClient(db, EQUIPO, {
+      actorProfileId: ACTOR,
+      cfg: { ...CFG, fetchImpl: apiConJornadas({ '1': [J1] }) },
+    });
+    expect(r.leidos).toBe(1);
+    expect(r.yaEstaban).toBe(0);
+    expect(r.creados).toBe(0);
+    expect(r.actualizados).toEqual([{ acta: '26539172', cambios: ['fecha'] }]);
+    expect(inserciones).toHaveLength(0);
+    expect(parches).toHaveLength(1);
+    expect(parches[0]).toMatchObject({ starts_at: '2026-10-18T08:30:00.000Z' });
+  });
+
+  it('el parche SOLO lleva columnas de la FFCV (el doble revienta si no)', async () => {
+    const { db, parches } = cliente({
+      eventos: [{ ...FILA_J1_EN_LA_BASE, location_name: 'Campo viejo' }],
+    });
+    await importarCalendarioDeEquipoFromClient(db, EQUIPO, {
+      actorProfileId: ACTOR,
+      cfg: { ...CFG, fetchImpl: apiConJornadas({ '1': [J1] }) },
+    });
+    expect(Object.keys(parches[0] ?? {}).sort()).toEqual([...COLUMNAS_DE_LA_FFCV].sort());
+    // Nada de notas, aprobacion ni cancelacion: son de MisterFC.
+    expect(Object.keys(parches[0] ?? {})).not.toContain('notes');
+    expect(Object.keys(parches[0] ?? {})).not.toContain('approval_status');
+    expect(Object.keys(parches[0] ?? {})).not.toContain('cancelled_at');
+  });
+
+  it('si no ha cambiado nada, NO escribe: cuenta «ya estaba»', async () => {
+    const { db, inserciones, parches } = cliente({ eventos: [FILA_J1_EN_LA_BASE] });
+    const r = await importarCalendarioDeEquipoFromClient(db, EQUIPO, {
+      actorProfileId: ACTOR,
+      cfg: { ...CFG, fetchImpl: apiConJornadas({ '1': [J1] }) },
+    });
+    expect(r.yaEstaban).toBe(1);
+    expect(r.actualizados).toEqual([]);
+    expect(inserciones).toHaveLength(0);
+    expect(parches).toHaveLength(0);
+  });
+
+  it('un update que falla no se come el equipo: va a omitidos y sigue', async () => {
+    const { db } = cliente({
+      eventos: [{ ...FILA_J1_EN_LA_BASE, starts_at: '2026-10-17T08:30:00+00:00' }],
+      errorUpdate: { message: 'violates check constraint' },
+    });
+    const r = await importarCalendarioDeEquipoFromClient(db, EQUIPO, {
+      actorProfileId: ACTOR,
+      cfg: { ...CFG, fetchImpl: apiConJornadas({ '1': [J1] }) },
+    });
+    expect(r.actualizados).toEqual([]);
+    expect(r.omitidos).toEqual([{ acta: '26539172', motivo: 'violates check constraint' }]);
+    expect(r.fallo).toBeNull();
+  });
+});
+
+describe('veredictoDeEquipo · un fallo con HTTP 200 no se pinta como hecho', () => {
+  const FALLO = {
+    motivo: 'api',
+    detalle: 'el equipo 15146 no aparece en ninguna jornada',
+  } as const;
+
+  it('EL AGUJERO DEL 2026-10-13: ok:true con resumen.fallo es ROTO, no hecho', () => {
+    // Alevín C y Benjamín A llegaron exactamente así: 200, ok:true, contadores a cero y
+    // un fallo dentro. La pantalla los enseñó como «0 nuevos, 0 ya estaban».
+    const v = veredictoDeEquipo(true, {
+      ok: true,
+      resumen: { fallo: FALLO, leidos: 0, creados: 0, yaEstaban: 0 },
+    });
+    expect(v.ok).toBe(false);
+    expect(v).toEqual({ ok: false, fallo: FALLO });
+  });
+
+  it('sin fallo devuelve el resumen, ya estrechado', () => {
+    const resumen = { fallo: null, leidos: 26, creados: 0, yaEstaban: 26 };
+    const v = veredictoDeEquipo(true, { ok: true, resumen });
+    expect(v).toEqual({ ok: true, resumen });
+  });
+
+  it('un HTTP malo va por la clave de error de la ruta', () => {
+    expect(veredictoDeEquipo(false, { error: 'prohibido' })).toEqual({
+      ok: false,
+      clave: 'prohibido',
+    });
+  });
+
+  it('ok:false, o un sobre sin resumen, caen en la clave genérica', () => {
+    expect(veredictoDeEquipo(true, { ok: false })).toEqual({ ok: false, clave: 'ffcv' });
+    expect(veredictoDeEquipo(true, { ok: true })).toEqual({ ok: false, clave: 'ffcv' });
+    expect(veredictoDeEquipo(true, { ok: true, resumen: null })).toEqual({
+      ok: false,
+      clave: 'ffcv',
+    });
   });
 });

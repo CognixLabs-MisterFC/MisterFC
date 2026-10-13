@@ -38,6 +38,15 @@ import type {
   VerEquipoCrudo,
 } from './types';
 
+/**
+ * La hora que se pone cuando la FFCV aún no ha publicado la del partido.
+ *
+ * Son las 9:00 por decisión de Jose: es una hora plausible de partido de base, así que no
+ * descoloca la agenda, y la marca `horaDeRelleno` dice que es de relleno para que nadie
+ * la confunda con una hora confirmada.
+ */
+export const HORA_DE_RELLENO = '09:00';
+
 /** La FFCV escribe el equipo como `U.D. Fonteta 'B'`. Decisión de Jose: verbatim, sin las comillas. */
 export function limpiarNombreEquipo(nombre: string): string {
   return nombre.replace(/['‘’]/g, '').replace(/\s+/g, ' ').trim();
@@ -261,15 +270,32 @@ export function mapearPartido(
   if (!enCasa && !fuera) return null;
 
   const acta = (crudo.codacta ?? '').trim();
-  const fechaHoraIso = aIsoUtc(crudo.fecha ?? '', crudo.hora ?? '');
   const rivalCrudo = enCasa ? crudo.visitante : crudo.local;
   const codigoRival = (enCasa ? crudo.cod_equipo_visitante : crudo.cod_equipo_local) ?? '';
+
+  // ── LA HORA QUE LA FFCV TODAVÍA NO HA PUESTO ────────────────────────────────────────
+  // Medido el 2026-10-12: dos equipos (Alevín C y Benjamín A) traían un partido con
+  // fecha y la hora VACÍA, y como esto devolvía null el calendario ENTERO de esos dos
+  // equipos se quedaba sin importar — una hora sin poner costaba 30 partidos.
+  //
+  // Decisión de Jose (2026-10-13): entra con las 9:00 de relleno. La FFCV confirma la
+  // hora el lunes antes de las 23:59 y el entrenador la corrige al convocar; el repaso
+  // del martes la sobreescribe con la de verdad en cuanto exista.
+  //
+  // Una FECHA ilegible sigue siendo fallo: ahí no hay nada que rellenar sin inventarse
+  // el día, y un partido en el día equivocado no se nota que está mal.
+  const horaCruda = (crudo.hora ?? '').trim();
+  const conHora = horaCruda === '' ? null : aIsoUtc(crudo.fecha ?? '', horaCruda);
+  const horaDeRelleno = conHora === null;
+  const fechaHoraIso = conHora ?? aIsoUtc(crudo.fecha ?? '', HORA_DE_RELLENO);
+
   if (!acta || !fechaHoraIso || !rivalCrudo) return null;
 
   return {
     acta,
     jornada,
     fechaHoraIso,
+    horaDeRelleno,
     enCasa,
     rival: limpiarNombreEquipo(rivalCrudo),
     codigoRival,
@@ -301,7 +327,10 @@ export async function leerCalendarioDeEquipo(
   for (const j of jornadas.datos) {
     const codjornada = (j.codjornada ?? '').trim();
     if (!codjornada) continue;
-    const r = await leerPartidosDeJornada({ temporada, competicion, grupo, jornada: codjornada }, cfg);
+    const r = await leerPartidosDeJornada(
+      { temporada, competicion, grupo, jornada: codjornada },
+      cfg,
+    );
     if (!r.ok) return r;
 
     for (const crudo of r.datos) {
@@ -320,6 +349,25 @@ export async function leerCalendarioDeEquipo(
       }
       partidos.push(p);
     }
+  }
+
+  // ── CERO PARTIDOS NO ES UN CALENDARIO VACÍO: ES UNA LECTURA QUE NO VALE ─────────────
+  // Un equipo que está en un grupo juega. Si no aparece en NINGUNA de las jornadas, lo
+  // que ha fallado es la lectura —o el grupo que tenemos en caché ya no es el suyo—, y
+  // devolver `partidos: []` con ok:true convierte eso en «no hay nada que hacer».
+  //
+  // Esto mordió de verdad el 2026-10-13: Cadete A e Infantil A, con 30 y 26 partidos
+  // creados, salieron en el botón como «0 nuevos, 0 ya estaban». Indistinguible de que
+  // todo estuviera al día. Es la trampa 1 del fichero `client.ts` con otra cara: el
+  // vacío disfrazado de éxito.
+  if (partidos.length === 0) {
+    return {
+      ok: false,
+      fallo: {
+        motivo: 'api',
+        detalle: `el equipo ${codigoEquipo} no aparece en ninguna de las ${jornadas.datos.length} jornadas del grupo ${grupo}`,
+      },
+    };
   }
 
   return { ok: true, datos: { partidos, jornadasLeidas: jornadas.datos.length } };

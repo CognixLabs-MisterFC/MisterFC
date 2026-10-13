@@ -38,6 +38,7 @@ export {
   mapaDeDirecciones,
 } from './campos';
 export {
+  HORA_DE_RELLENO,
   leerCalendarioDeEquipo,
   leerFichaEquipo,
   leerJornadas,
@@ -64,6 +65,8 @@ export { CAMPO_MAX, RIVAL_MAX, TITULO_MAX, tituloDePartido } from './titulo';
 export {
   JORNADA_MAX,
   JORNADA_MIN,
+  COLUMNAS_DE_LA_FFCV,
+  cambiosDelPartido,
   filaDeEvento,
   importarCalendarioDeEquipoFromClient,
   importarEquipoConDireccionesFromClient,
@@ -71,12 +74,16 @@ export {
   importarCalendariosFromClient,
   leerEquiposDelClubFromClient,
   revisarPartido,
+  veredictoDeEquipo,
 } from './importar';
 export type {
   DepsImportacion,
   EquipoParaImportar,
+  EventoExistente,
+  PartidoCambiado,
   EquiposDelClub,
   PartidoOmitido,
   PreparacionFfcv,
   ResumenEquipo,
+  VeredictoEquipo,
 } from './importar';

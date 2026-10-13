@@ -63,6 +63,42 @@ export type EquipoParaImportar = {
 
 export type PartidoOmitido = { acta: string; motivo: string };
 
+/** Un partido que ya existía y que la FFCV ha movido. `cambios` dice QUÉ se movió. */
+export type PartidoCambiado = { acta: string; cambios: string[] };
+
+/**
+ * Las columnas del evento que son de la FFCV y por tanto se sobreescriben en el repaso.
+ *
+ * ── POR QUÉ ESTAS Y NO OTRAS ────────────────────────────────────────────────────────
+ * La FFCV cambia día y hora cada semana. Con «solo crea», el calendario se quedaba con
+ * la fecha vieja y las familias iban al partido equivocado — eso es el fallo que esto
+ * arregla, y por eso la FFCV MANDA sobre estas seis.
+ *
+ * `title` y `opponent_name` entran aunque Jose solo pidiera «fecha, hora y campo»: el
+ * título lleva el orden local-visitante, así que si un partido cambia de campo porque se
+ * invierte la condición de local, un título sin actualizar DICE que jugamos en casa
+ * cuando no. Dejarlo fuera sería dejar una mentira a medio camino.
+ *
+ * ── Y LO QUE NO SE TOCA NUNCA ───────────────────────────────────────────────────────
+ * `notes` (lo que escribe el entrenador), `approval_status` y sus campos, los
+ * `cancelled_*` (cancelar es de MisterFC, no de la federación), `created_by` y las otras
+ * tablas: convocatoria y asistencia no se miran siquiera.
+ *
+ * ── LA CONSECUENCIA, DICHA EN VOZ ALTA ──────────────────────────────────────────────
+ * Una corrección hecha a mano en la fecha, la hora o el campo SE PIERDE en el repaso
+ * siguiente. Es lo que significa que la FFCV sea la fuente de verdad de esas columnas.
+ */
+export const COLUMNAS_DE_LA_FFCV = [
+  'starts_at',
+  'title',
+  'location_name',
+  'location_address',
+  'opponent_name',
+  'ffcv_round',
+] as const;
+
+export type ColumnaDeLaFfcv = (typeof COLUMNAS_DE_LA_FFCV)[number];
+
 export type ResumenEquipo = {
   teamId: string;
   nombre: string;
@@ -72,6 +108,10 @@ export type ResumenEquipo = {
   /** Ya tenían su evento: no se tocan (decisión 3). */
   yaEstaban: number;
   omitidos: PartidoOmitido[];
+  /** Los que ya existían y la FFCV ha movido. Es el repaso de los martes. */
+  actualizados: PartidoCambiado[];
+  /** Cuántos entraron con la hora de relleno porque la FFCV no la ha puesto todavía. */
+  conHoraDeRelleno: number;
   /** Si el lector o la base fallaron del todo para ESTE equipo. */
   fallo: FfcvFallo | null;
 };
@@ -88,6 +128,38 @@ export type DepsImportacion = {
    */
   direccionDe?: (nombreCampo: string) => string | null;
 };
+
+/**
+ * Qué decir de la respuesta de un equipo: hecho, o roto y por qué.
+ *
+ * ── POR QUÉ ESTO VIVE AQUÍ Y NO EN LA PANTALLA ──────────────────────────────────────
+ * Un fallo POR EQUIPO viaja con HTTP 200 y `ok: true`: es un resultado legítimo, porque
+ * la ruta aísla por equipo a propósito (decisión 2). Así que quien solo mire el HTTP y
+ * el sobre pinta ese equipo como HECHO con los contadores a cero, y eso se lee igual
+ * que «no había nada que hacer».
+ *
+ * Eso es exactamente lo que pasó el 2026-10-13: el diálogo no miraba `resumen.fallo` y
+ * Alevín C y Benjamín A —que no habían importado NADA— aparecieron al día. Era el peor
+ * de los cuatro agujeros, porque esconde a los otros tres.
+ *
+ * Está en core, y no inline en el diálogo, para que se pueda MEDIR: `apps/web` no tiene
+ * runner de tests y una decisión sin test es una decisión que vuelve a romperse.
+ */
+export type VeredictoEquipo<R> =
+  | { ok: true; resumen: R }
+  | { ok: false; clave: string }
+  | { ok: false; fallo: FfcvFallo };
+
+export function veredictoDeEquipo<R extends { fallo: FfcvFallo | null }>(
+  httpOk: boolean,
+  cuerpo: { ok?: boolean; error?: string; resumen?: R | null },
+): VeredictoEquipo<R> {
+  if (!httpOk || cuerpo.ok !== true || !cuerpo.resumen) {
+    return { ok: false, clave: cuerpo.error ?? 'ffcv' };
+  }
+  if (cuerpo.resumen.fallo !== null) return { ok: false, fallo: cuerpo.resumen.fallo };
+  return { ok: true, resumen: cuerpo.resumen };
+}
 
 /** Valida contra los CHECK de la tabla ANTES de ir a la base. */
 export function revisarPartido(
@@ -138,21 +210,75 @@ export function filaDeEvento(
 }
 
 /** Las actas que este equipo ya tiene en su calendario. */
-async function actasYaPuestas(
+/** Lo que ya hay en la base para este equipo, indexado por acta y CON sus valores. */
+export type EventoExistente = {
+  id: string;
+  starts_at: string;
+  title: string;
+  location_name: string | null;
+  location_address: string | null;
+  opponent_name: string | null;
+  ffcv_round: number | null;
+};
+
+async function partidosYaPuestos(
   cliente: Cliente,
   teamId: string,
-): Promise<{ ok: true; actas: Set<string> } | { ok: false; detalle: string }> {
+): Promise<{ ok: true; porActa: Map<string, EventoExistente> } | { ok: false; detalle: string }> {
+  // Se leen los VALORES, no solo las actas: sin ellos no se puede saber qué ha movido la
+  // FFCV, y un repaso que no compara tendría que reescribir las 290 filas cada martes.
   const { data, error } = await cliente
     .from('events')
-    .select('ffcv_match_code')
+    .select(
+      'id, ffcv_match_code, starts_at, title, location_name, location_address, opponent_name, ffcv_round',
+    )
     .eq('team_id', teamId)
     .not('ffcv_match_code', 'is', null);
   if (error) return { ok: false, detalle: String(error.message ?? error) };
-  const actas = new Set<string>();
+  const porActa = new Map<string, EventoExistente>();
   for (const f of data ?? []) {
-    if (f.ffcv_match_code) actas.add(f.ffcv_match_code);
+    if (!f.ffcv_match_code) continue;
+    porActa.set(f.ffcv_match_code, {
+      id: f.id,
+      starts_at: f.starts_at,
+      title: f.title,
+      location_name: f.location_name,
+      location_address: f.location_address,
+      opponent_name: f.opponent_name,
+      ffcv_round: f.ffcv_round,
+    });
   }
-  return { ok: true, actas };
+  return { ok: true, porActa };
+}
+
+/**
+ * Qué columnas de la FFCV han cambiado. Pura y exportada: es el corazón del repaso y
+ * tiene que poder probarse sin red ni base.
+ *
+ * `starts_at` se compara como INSTANTE, no como texto. La base devuelve
+ * `2026-10-18T08:30:00+00:00` y nosotros construimos `2026-10-18T08:30:00.000Z`: son el
+ * mismo momento y dos cadenas distintas. Compararlas como texto marcaría los 290
+ * partidos como cambiados todos los martes y reescribiría la tabla entera para nada.
+ */
+export function cambiosDelPartido(
+  existente: EventoExistente,
+  deseada: Pick<
+    FilaEvento,
+    'starts_at' | 'title' | 'location_name' | 'location_address' | 'opponent_name' | 'ffcv_round'
+  >,
+): string[] {
+  const cambios: string[] = [];
+  const antes = new Date(existente.starts_at).getTime();
+  const ahora = new Date(deseada.starts_at).getTime();
+  if (!Number.isFinite(antes) || !Number.isFinite(ahora) || antes !== ahora) cambios.push('fecha');
+  if (existente.title !== deseada.title) cambios.push('titulo');
+  if ((existente.location_name ?? null) !== (deseada.location_name ?? null)) cambios.push('campo');
+  if ((existente.location_address ?? null) !== (deseada.location_address ?? null)) {
+    cambios.push('direccion');
+  }
+  if ((existente.opponent_name ?? null) !== (deseada.opponent_name ?? null)) cambios.push('rival');
+  if ((existente.ffcv_round ?? null) !== (deseada.ffcv_round ?? null)) cambios.push('jornada');
+  return cambios;
 }
 
 /** Importa el calendario de UN equipo. Nunca lanza: el fallo va en el resumen. */
@@ -168,13 +294,15 @@ export async function importarCalendarioDeEquipoFromClient(
     creados: 0,
     yaEstaban: 0,
     omitidos: [],
+    actualizados: [],
+    conHoraDeRelleno: 0,
     fallo: null,
   };
 
-  const yaPuestas = await actasYaPuestas(cliente, equipo.teamId);
-  if (!yaPuestas.ok) {
+  const yaPuestos = await partidosYaPuestos(cliente, equipo.teamId);
+  if (!yaPuestos.ok) {
     // Una lectura muda aquí haría creer que no hay nada y duplicaría los 26 partidos.
-    resumen.fallo = { motivo: 'api', detalle: `lectura de events: ${yaPuestas.detalle}` };
+    resumen.fallo = { motivo: 'api', detalle: `lectura de events: ${yaPuestos.detalle}` };
     return resumen;
   }
 
@@ -195,10 +323,8 @@ export async function importarCalendarioDeEquipoFromClient(
   resumen.leidos = calendario.datos.partidos.length;
 
   for (const partido of calendario.datos.partidos) {
-    if (yaPuestas.actas.has(partido.acta)) {
-      resumen.yaEstaban += 1;
-      continue;
-    }
+    if (partido.horaDeRelleno) resumen.conHoraDeRelleno += 1;
+
     const revision = revisarPartido(equipo.nombre, partido);
     if ('motivo' in revision) {
       resumen.omitidos.push({ acta: partido.acta, motivo: revision.motivo });
@@ -206,6 +332,43 @@ export async function importarCalendarioDeEquipoFromClient(
     }
     const direccion = deps.direccionDe ? deps.direccionDe(partido.campo) : null;
     const fila = filaDeEvento(equipo, partido, revision.titulo, deps.actorProfileId, direccion);
+
+    // ── EL REPASO ───────────────────────────────────────────────────────────────────
+    // Si ya existe, la FFCV manda sobre SUS columnas y nada más. Se comparan primero
+    // para no reescribir 290 filas cada martes cuando no ha cambiado nada.
+    const existente = yaPuestos.porActa.get(partido.acta);
+    if (existente) {
+      const cambios = cambiosDelPartido(existente, fila);
+      if (cambios.length === 0) {
+        resumen.yaEstaban += 1;
+        continue;
+      }
+      // `Pick` ata el parche a COLUMNAS_DE_LA_FFCV: si alguien añade una columna a la
+      // lista y se olvida de ponerla aquí, el typecheck lo para. Y si pone una que no
+      // está en la lista, también.
+      const parche: Pick<FilaEvento, ColumnaDeLaFfcv> = {
+        starts_at: fila.starts_at,
+        title: fila.title,
+        location_name: fila.location_name,
+        location_address: fila.location_address,
+        opponent_name: fila.opponent_name,
+        ffcv_round: fila.ffcv_round,
+      };
+      const { error: errorUpdate } = await cliente
+        .from('events')
+        .update(parche)
+        .eq('id', existente.id);
+      if (errorUpdate) {
+        resumen.omitidos.push({
+          acta: partido.acta,
+          motivo: String(errorUpdate.message ?? errorUpdate),
+        });
+        continue;
+      }
+      resumen.actualizados.push({ acta: partido.acta, cambios });
+      continue;
+    }
+
     const { error } = await cliente.from('events').insert(fila);
     if (error) {
       const codigo = (error as { code?: string }).code;
