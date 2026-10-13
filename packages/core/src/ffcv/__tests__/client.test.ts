@@ -606,6 +606,29 @@ describe('pedirJson · el tiempo que se gasta SIN dormir', () => {
     expect(f.llamadas).toEqual([]);
   });
 
+  it('con la hora pasada no pide NI TURNO: esperar turno puede costar un minuto', async () => {
+    // Son dos frenos, no uno: el de después de pedir turno no sirve si el marcapasos ya
+    // se ha comido el tiempo esperando. Este test es el que los distingue.
+    const reloj = relojFalso();
+    let turnos = 0;
+    const f = fingir([{ status: 200, body: BUENO }]);
+    const r = await pedirJson('api/filtros/jornadas_fetch.php?cod_grupo=905432005', {
+      token: 'a'.repeat(64),
+      esperar: reloj.esperar,
+      ahora: reloj.ahora,
+      vencimientoMs: reloj.ahora() - 1,
+      marcapasos: {
+        pedirTurno: async () => {
+          turnos += 1;
+        },
+      },
+      fetchImpl: f.fetchImpl,
+    });
+    expect(r.ok).toBe(false);
+    expect(turnos).toBe(0);
+    expect(f.llamadas).toEqual([]);
+  });
+
   it('una llamada lenta con éxito gasta el presupuesto y la siguiente ya no sale', async () => {
     // Cada llamada tarda 20 s y NINGUNA falla: no hay reintentos, luego no hay esperas,
     // luego el freno viejo (que solo miraba al dormir) no se enteraba jamás.
