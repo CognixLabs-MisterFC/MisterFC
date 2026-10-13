@@ -77,6 +77,17 @@ describe('catálogo de formaciones', () => {
     }
   });
 
+  it('F5: las tres de Jose, y la 1-2-2 es la de por defecto', () => {
+    // Decisión de producto (2026-10-13), no un detalle de implementación: el orden
+    // del catálogo ES la elección de la formación por defecto.
+    expect(formationsForFormat('F5').map((f) => f.code)).toEqual(['1-2-2', '1-1-2-1', '1-3-1']);
+    expect(defaultFormation('F5').code).toBe('1-2-2');
+    // Cuatro de campo más portero, en las tres.
+    for (const f of formationsForFormat('F5')) {
+      expect(f.slots, f.code).toHaveLength(5);
+    }
+  });
+
   it('el portero está centrado y en su propio campo (y alto)', () => {
     for (const f of FORMATIONS) {
       const gk = f.slots.find((s) => s.role === 'GK')!;
