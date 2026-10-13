@@ -3,15 +3,22 @@
  *
  * `positions` es un array de objetos {position_code, x_pct, y_pct} en snake_case
  * (la misma forma que persiste el JSONB y valida el trigger de BD). El nº de
- * items debe coincidir con la modalidad: F7=7, F8=8, F11=11 (incluye portero).
+ * items debe coincidir con la modalidad: F5=5, F7=7, F8=8, F11=11 (incluye portero),
+ * y sale de `startersFor` para no ser una tercera copia de la cuenta.
  */
 
 import { z } from 'zod';
 import { startersFor } from '../lineups/rules';
 import { POSITION_KEYS } from '../lineups/positions';
-import type { TeamFormat } from '../lineups/types';
+import { TEAM_FORMATS, type TeamFormat } from '../lineups/types';
 
-export const COACH_FORMATION_FORMATS = ['F7', 'F8', 'F11'] as const;
+/**
+ * Las mismas modalidades que los equipos: desde la migración 20261120000000 los
+ * dos CHECK de la base (`teams.format` y `coach_formations.format`) llevan la
+ * misma lista, así que tener aquí una copia aparte solo creaba sitio para que se
+ * separaran.
+ */
+export const COACH_FORMATION_FORMATS = TEAM_FORMATS;
 
 /**
  * Un hueco de la plantilla, tal cual se guarda en el JSONB. `position_code` es
@@ -67,9 +74,7 @@ export const createCoachFormationSchema = z
   })
   .superRefine(refinePositionsCount);
 
-export type CreateCoachFormationInput = z.infer<
-  typeof createCoachFormationSchema
->;
+export type CreateCoachFormationInput = z.infer<typeof createCoachFormationSchema>;
 
 export const updateCoachFormationSchema = z
   .object({
@@ -80,14 +85,10 @@ export const updateCoachFormationSchema = z
   })
   .superRefine(refinePositionsCount);
 
-export type UpdateCoachFormationInput = z.infer<
-  typeof updateCoachFormationSchema
->;
+export type UpdateCoachFormationInput = z.infer<typeof updateCoachFormationSchema>;
 
 export const deleteCoachFormationSchema = z.object({
   id: z.string().uuid({ message: 'id_invalid' }),
 });
 
-export type DeleteCoachFormationInput = z.infer<
-  typeof deleteCoachFormationSchema
->;
+export type DeleteCoachFormationInput = z.infer<typeof deleteCoachFormationSchema>;

@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, Plus, Trash2, Pencil } from 'lucide-react';
-import type { CoachFormation, TeamFormat } from '@misterfc/core';
+import { TEAM_FORMATS, type CoachFormation, type TeamFormat } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -22,17 +22,15 @@ import { toast } from 'sonner';
 import { FormationBuilder } from './formation-builder';
 import { deleteFormation } from '../actions';
 
-const FILTERS: (TeamFormat | 'all')[] = ['all', 'F7', 'F8', 'F11'];
+// Igual que en el builder: la lista sale de TEAM_FORMATS para que no se quede corta.
+const FILTERS: readonly (TeamFormat | 'all')[] = ['all', ...TEAM_FORMATS];
 
 type Props = {
   formations: CoachFormation[];
   canCreate: boolean;
 };
 
-type View =
-  | { mode: 'list' }
-  | { mode: 'create' }
-  | { mode: 'edit'; formation: CoachFormation };
+type View = { mode: 'list' } | { mode: 'create' } | { mode: 'edit'; formation: CoachFormation };
 
 function DeleteButton({ formation }: { formation: CoachFormation }) {
   const t = useTranslations('formaciones');
@@ -68,9 +66,7 @@ function DeleteButton({ formation }: { formation: CoachFormation }) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>
-            {t('actions.cancel')}
-          </AlertDialogCancel>
+          <AlertDialogCancel disabled={pending}>{t('actions.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
               e.preventDefault();
@@ -93,10 +89,7 @@ export function FormationsManager({ formations, canCreate }: Props) {
   const [view, setView] = useState<View>({ mode: 'list' });
 
   const visible = useMemo(
-    () =>
-      filter === 'all'
-        ? formations
-        : formations.filter((f) => f.format === filter),
+    () => (filter === 'all' ? formations : formations.filter((f) => f.format === filter)),
     [formations, filter],
   );
 

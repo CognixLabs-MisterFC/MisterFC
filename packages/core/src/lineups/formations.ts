@@ -30,8 +30,9 @@ function spreadX(n: number): number[] {
   if (n <= 0) return [];
   if (n === 1) return [50];
   const span = 100 - 2 * X_MARGIN;
-  return Array.from({ length: n }, (_, i) =>
-    Math.round((X_MARGIN + (span * i) / (n - 1)) * 100) / 100,
+  return Array.from(
+    { length: n },
+    (_, i) => Math.round((X_MARGIN + (span * i) / (n - 1)) * 100) / 100,
   );
 }
 
@@ -39,11 +40,7 @@ function spreadX(n: number): number[] {
  * Construye una formación a partir de filas. Inserta siempre un GK en (50, 94)
  * cuando la primera fila no es ya el portero. Los códigos se numeran por rol.
  */
-function build(
-  code: string,
-  format: TeamFormat,
-  rows: Row[],
-): Formation {
+function build(code: string, format: TeamFormat, rows: Row[]): Formation {
   const slots: FormationSlot[] = [];
   const counters: Record<SlotRole, number> = { GK: 0, DF: 0, MF: 0, FW: 0 };
 
@@ -67,6 +64,27 @@ function build(
 
   return { code, label: code, format, slots };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// F5 — 4 de campo + portero (querubines). Las tres que juega el club, decididas
+// por Jose el 2026-10-13; la primera es la de por defecto (`defaultFormation`).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const F5: Formation[] = [
+  build('1-2-2', 'F5', [
+    { role: 'DF', y: 70, n: 2 },
+    { role: 'FW', y: 34, n: 2 },
+  ]),
+  build('1-1-2-1', 'F5', [
+    { role: 'DF', y: 74, n: 1 },
+    { role: 'MF', y: 52, n: 2 },
+    { role: 'FW', y: 26, n: 1 },
+  ]),
+  build('1-3-1', 'F5', [
+    { role: 'DF', y: 72, n: 3 },
+    { role: 'FW', y: 30, n: 1 },
+  ]),
+];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // F7 — 6 de campo + portero.
@@ -169,11 +187,9 @@ const F11: Formation[] = [
 ];
 
 /** Catálogo completo, indexado por código. */
-export const FORMATIONS: readonly Formation[] = [...F7, ...F8, ...F11];
+export const FORMATIONS: readonly Formation[] = [...F5, ...F7, ...F8, ...F11];
 
-const BY_CODE: ReadonlyMap<string, Formation> = new Map(
-  FORMATIONS.map((f) => [f.code, f]),
-);
+const BY_CODE: ReadonlyMap<string, Formation> = new Map(FORMATIONS.map((f) => [f.code, f]));
 
 /** Devuelve la formación por código, o undefined si no está en el catálogo. */
 export function getFormation(code: string): Formation | undefined {
@@ -198,10 +214,8 @@ export const DEFAULT_LINEUP_NAME = 'Plan A';
 /**
  * Defaults para auto-crear el borrador de alineación al entrar a /alineacion sin
  * ninguna previa (Bug BB): "Plan A" + la primera formación del catálogo para la
- * modalidad (F7→1-3-3, F8→1-3-3-1, F11→4-4-2). Sin paso intermedio.
+ * modalidad (F5→1-2-2, F7→1-3-3, F8→1-3-3-1, F11→4-4-2). Sin paso intermedio.
  */
-export function defaultLineupDraft(
-  format: TeamFormat,
-): { name: string; formationCode: string } {
+export function defaultLineupDraft(format: TeamFormat): { name: string; formationCode: string } {
   return { name: DEFAULT_LINEUP_NAME, formationCode: defaultFormation(format).code };
 }

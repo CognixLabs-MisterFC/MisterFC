@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TEAM_FORMATS } from '../lineups/types';
 
 const nameField = z
   .string()
@@ -11,15 +12,11 @@ const seasonField = z
   .trim()
   .regex(/^\d{4}-\d{2}$/, { message: 'season_invalid' });
 
-const orderField = z.coerce
-  .number()
-  .int()
-  .min(0)
-  .max(9999)
-  .optional()
-  .default(0);
+const orderField = z.coerce.number().int().min(0).max(9999).optional().default(0);
 
-export const TEAM_FORMATS = ['F7', 'F8', 'F11'] as const;
+// La tupla vive en lineups/types (fuente única, de donde se deriva `TeamFormat`).
+// Se re-exporta desde aquí porque es el camino por el que la importa la web.
+export { TEAM_FORMATS } from '../lineups/types';
 
 const formatField = z.enum(TEAM_FORMATS, { message: 'format_invalid' });
 
@@ -181,7 +178,8 @@ export function currentSeason(now: Date = new Date()): string {
  */
 export function seasonStartIso(label: string): string {
   const parsed = Number(label.slice(0, 4));
-  const startYear = Number.isFinite(parsed) && parsed > 0 ? parsed : Number(currentSeason().slice(0, 4));
+  const startYear =
+    Number.isFinite(parsed) && parsed > 0 ? parsed : Number(currentSeason().slice(0, 4));
   return `${startYear}-08-01T00:00:00.000Z`;
 }
 
@@ -196,7 +194,7 @@ export type SeasonStatus = 'active' | 'finalized';
 
 /** Devuelve el label de la temporada activa, o null si no hay ninguna. */
 export function activeSeasonLabel(
-  seasons: ReadonlyArray<{ label: string; status: string }>
+  seasons: ReadonlyArray<{ label: string; status: string }>,
 ): string | null {
   const active = seasons.find((s) => s.status === 'active');
   return active ? active.label : null;
@@ -227,7 +225,7 @@ export function nextSeasonLabel(label: string): string {
  */
 export function teamsInActiveSeason<T extends { season: string }>(
   teams: ReadonlyArray<T>,
-  activeSeason: string
+  activeSeason: string,
 ): T[] {
   return teams.filter((t) => t.season === activeSeason);
 }
@@ -299,8 +297,5 @@ export function customOverlapsStandardKind(params: {
   kind: string | null;
 }): boolean {
   if (params.isStandard) return false;
-  return (
-    params.kind !== null &&
-    (CATEGORY_KINDS as readonly string[]).includes(params.kind)
-  );
+  return params.kind !== null && (CATEGORY_KINDS as readonly string[]).includes(params.kind);
 }
