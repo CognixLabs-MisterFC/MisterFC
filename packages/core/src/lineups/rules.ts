@@ -17,6 +17,12 @@ export interface ModalityRules {
 }
 
 export const MODALITY_RULES: Record<TeamFormat, ModalityRules> = {
+  // F5 — querubines: cuatro de campo más portero. Decisión de Jose (2026-10-13):
+  // quince convocados, que con cinco en el campo deja diez en el banquillo. Es el
+  // cupo más generoso de las cuatro modalidades a propósito: a estas edades juegan
+  // todos, el régimen de cambios es rodado y sin tope (`substitution_regimes`,
+  // kind 'querubin'), así que llevar a quince no deja a nadie sentado.
+  F5: { starters: 5, maxCalledUp: 15, maxBench: 10 },
   F7: { starters: 7, maxCalledUp: 12, maxBench: 5 },
   F8: { starters: 8, maxCalledUp: 14, maxBench: 6 },
   F11: { starters: 11, maxCalledUp: 18, maxBench: 7 },

@@ -19,6 +19,7 @@ import {
   type CoachFormationPosition,
   type PositionKey,
   type TeamFormat,
+  TEAM_FORMATS,
 } from '@misterfc/core';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,7 +35,9 @@ import { useRouter } from '@/i18n/navigation';
 import { FieldMarkings } from '@/components/match/field-markings';
 import { createFormation, updateFormation } from '../actions';
 
-const FORMATS: TeamFormat[] = ['F7', 'F8', 'F11'];
+// De TEAM_FORMATS y no a mano: una lista propia aquí no la caza el typecheck
+// —un `TeamFormat[]` más corto es válido— y se quedaría sin la modalidad nueva.
+const FORMATS: readonly TeamFormat[] = TEAM_FORMATS;
 
 // Posiciones canónicas para asignar a cada slot (clave neutra; la etiqueta sale
 // por i18n `positions.<key>`).
@@ -58,8 +61,9 @@ function PositionChip({
   selected: boolean;
   onSelect: (i: number) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: `pos:${index}` });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: `pos:${index}`,
+  });
 
   const style: React.CSSProperties = {
     left: `${pos.x_pct}%`,
@@ -103,9 +107,7 @@ export function FormationBuilder({ initial, onClose }: Props) {
   const [selected, setSelected] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   function changeFormat(next: TeamFormat) {
     setFormat(next);

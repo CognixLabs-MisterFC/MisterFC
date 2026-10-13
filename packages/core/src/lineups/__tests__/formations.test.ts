@@ -1,14 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import {
-  FORMATIONS,
-  defaultFormation,
-  formationsForFormat,
-  getFormation,
-} from '../formations';
-import type { TeamFormat } from '../types';
+import { FORMATIONS, defaultFormation, formationsForFormat, getFormation } from '../formations';
+import { TEAM_FORMATS, type TeamFormat } from '../types';
 
 /** Nº esperado de jugadores de campo por modalidad (sin contar al portero). */
-const OUTFIELD: Record<TeamFormat, number> = { F7: 6, F8: 7, F11: 10 };
+const OUTFIELD: Record<TeamFormat, number> = { F5: 4, F7: 6, F8: 7, F11: 10 };
 
 describe('catálogo de formaciones', () => {
   it('cada formación tiene exactamente un portero', () => {
@@ -32,7 +27,7 @@ describe('catálogo de formaciones', () => {
         .filter((n) => /^\d+$/.test(n))
         .map(Number)
         .reduce((a, b) => a + b, 0);
-      // El primer '1' del código F7/F8 es el portero; F11 no lo lleva.
+      // El primer '1' del código F5/F7/F8 es el portero; F11 no lo lleva.
       const outfield = f.format === 'F11' ? fromCode : fromCode - 1;
       expect(outfield, f.code).toBe(OUTFIELD[f.format]);
     }
@@ -66,12 +61,30 @@ describe('catálogo de formaciones', () => {
     expect(getFormation('no-existe')).toBeUndefined();
   });
 
-  it('formationsForFormat filtra por modalidad y defaultFormation devuelve la primera', () => {
-    for (const fmt of ['F7', 'F8', 'F11'] as const) {
+  /**
+   * Recorre TEAM_FORMATS y no una lista escrita aquí: así una modalidad nueva
+   * entra en este test sola. Es la única red contra el agujero que el tipo NO
+   * puede tapar — un formato en la lista sin formaciones en el catálogo hace que
+   * `defaultFormation` LANCE en caliente, al abrir /alineacion, y el typecheck no
+   * dice nada. Medido el 2026-10-13 al añadir el F5.
+   */
+  it('cada modalidad de TEAM_FORMATS tiene catálogo, y la primera es la de por defecto', () => {
+    for (const fmt of TEAM_FORMATS) {
       const list = formationsForFormat(fmt);
       expect(list.length).toBeGreaterThan(0);
       expect(list.every((f) => f.format === fmt)).toBe(true);
       expect(defaultFormation(fmt)).toBe(list[0]);
+    }
+  });
+
+  it('F5: las tres de Jose, y la 1-2-2 es la de por defecto', () => {
+    // Decisión de producto (2026-10-13), no un detalle de implementación: el orden
+    // del catálogo ES la elección de la formación por defecto.
+    expect(formationsForFormat('F5').map((f) => f.code)).toEqual(['1-2-2', '1-1-2-1', '1-3-1']);
+    expect(defaultFormation('F5').code).toBe('1-2-2');
+    // Cuatro de campo más portero, en las tres.
+    for (const f of formationsForFormat('F5')) {
+      expect(f.slots, f.code).toHaveLength(5);
     }
   });
 
