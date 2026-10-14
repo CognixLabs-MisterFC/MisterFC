@@ -284,3 +284,23 @@ export async function loadCanCreateSessions(clubId: string): Promise<boolean> {
   const { data } = await supabase.rpc('user_can_create_sessions', { p_club_id: clubId });
   return data === true;
 }
+
+/**
+ * ¿El usuario es superadmin de plataforma? Lo pide UNA cosa de esta página: el
+ * botón de importar los partidos federados, que desde el 14-10-2026 es solo
+ * suyo.
+ *
+ * No se mira el ROL del club activo, y no es un detalle: cuando un superadmin
+ * entra en un club ajeno, `loadShellContext` le fabrica un acceso sintético con
+ * `role: 'admin_club'` (F14B-8), así que por el rol no se distingue al admin del
+ * club del superadmin de visita. `is_superadmin()` sí.
+ *
+ * Esto es solo para la UI. El cierre que decide vive en la ruta (`contextoFfcv`),
+ * que vuelve a preguntarlo: esconder un botón no es una puerta.
+ */
+export async function loadIsSuperadmin(): Promise<boolean> {
+  const adapter = await createCookieAdapter();
+  const supabase = createSupabaseServerClient(adapter);
+  const { data } = await supabase.rpc('is_superadmin');
+  return data === true;
+}

@@ -1,5 +1,9 @@
 # Dependencies
-node_modules/
+# Sin barra A PROPÓSITO: con `node_modules/` git ignora el DIRECTORIO pero no un
+# ENLACE SIMBÓLICO llamado node_modules, que es lo que deja pnpm en los paquetes
+# del workspace. Un `git add -A -- packages` lo mete en el commit como blob 120000
+# sin que `git status` lo cante, y se cuela en el PR.
+node_modules
 
 # Build output
 .next/

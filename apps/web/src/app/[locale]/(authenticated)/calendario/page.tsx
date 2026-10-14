@@ -20,6 +20,7 @@ import {
   loadManageableTeams,
   loadCanCreateSessions,
   loadHolidays,
+  loadIsSuperadmin,
   type CalendarFilters as Filters,
 } from './queries';
 
@@ -96,12 +97,14 @@ export default async function CalendarioPage({ params, searchParams }: Props) {
   const canManageHolidays =
     ctx.activeClub.role === 'admin_club' || ctx.activeClub.role === 'director';
 
-  // El botón de la FFCV es de DIRECCIÓN, y lleva su propia constante aunque hoy la
-  // condición coincida con la de los festivos: son dos reglas distintas y compartir la
-  // expresión haría que tocar una moviera la otra sin querer. El cierre que manda es la
-  // RLS de `events`; esto solo evita gastar 458 llamadas a la FFCV para nada.
-  const canImportFfcv =
-    ctx.activeClub.role === 'admin_club' || ctx.activeClub.role === 'director';
+  // El botón de la FFCV ya NO es de dirección: desde el 14-10-2026 es SOLO del
+  // superadmin de plataforma. Sigue llevando su propia constante —ya no coincide con
+  // la de los festivos, que sí es de dirección— y no se mira el rol a propósito:
+  // el superadmin de visita en un club ajeno viaja con `role: 'admin_club'`
+  // sintético (F14B-8) y por el rol no se le distingue del admin de ese club.
+  // Esconder el botón NO es la puerta: la puerta es `contextoFfcv` en la ruta,
+  // que vuelve a preguntar `is_superadmin()` antes de gastar 458 llamadas.
+  const canImportFfcv = await loadIsSuperadmin();
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-4">

@@ -19,14 +19,35 @@
  * viaje lo descargara, serían 345 llamadas en vez de 23 y la importación pasaría de 7 a
  * 13 minutos. Así que lo descarga el viaje de preparación y lo devuelve; el navegador lo
  * guarda y lo manda en cada viaje. Que pase por el cliente no abre nada: quien pulsa es
- * admin o director y ya puede escribir cualquier dirección a mano en cualquier evento.
+ * superadmin y ya puede escribir cualquier dirección a mano en cualquier evento.
  *
  * ── LA PUERTA ───────────────────────────────────────────────────────────────────────
- * Dos cierres, y el segundo es el que manda:
- *   1. Aquí se exige admin_club o director del club activo. Es para no gastar 458
- *      llamadas a la FFCV por alguien que no va a poder escribir.
- *   2. La RLS. El INSERT va con el cliente del USUARIO, nunca service-role, y
- *      `user_can_manage_event` decide. Un no autorizado se queda en 42501.
+ * SOLO SUPERADMIN (decisión de producto del 14-10-2026; antes admin_club o director).
+ * La regla vive en `permisoImportarFfcv`, en core, donde se puede probar con un
+ * `expect` y donde NO recibe el rol: ver su cabecera.
+ *
+ * Esta cabecera decía antes «dos cierres, y el SEGUNDO es el que manda», contando la
+ * RLS como el cierre de verdad y esta puerta como un ahorro de llamadas. Para la
+ * regla vieja —admin_club o director— era cierto: la RLS de `events` deja escribir
+ * exactamente a quien esta puerta dejaba pasar, así que una se apoyaba en la otra.
+ * Para la regla nueva es FALSO, y por eso se reescribe:
+ *
+ *   · ESTA PUERTA es, HOY, lo ÚNICO que sostiene «solo superadmin». Nada más abajo
+ *     vuelve a preguntarlo. (Y además evita gastar 458 llamadas a la FFCV.)
+ *   · LA RLS sigue ahí y sigue siendo necesaria, pero garantiza OTRA COSA: que nadie
+ *     escriba en un club que no es suyo. El INSERT va con el cliente del USUARIO,
+ *     nunca service-role, y `user_can_manage_event` decide; un no autorizado se queda
+ *     en 42501. Lo que la RLS NO puede hacer es distinguir un partido importado de
+ *     uno creado a mano —crear eventos a mano es el trabajo de un director—, así que
+ *     no sabe nada de esta decisión y no la refuerza.
+ *
+ * O sea: quien cambie este fichero está cambiando la única barrera que hay. Un
+ * cierre en la BASE —un trigger que exija `is_superadmin()` para escribir
+ * `events.ffcv_match_code`— está aprobado y va en su propio PR, con su migración y su
+ * pgTAP; mientras no esté aplicado, esta frase se lee tal cual: la única barrera es
+ * esta. Y para que nadie la abra sin que se vea, `check:ffcv-superadmin` falla en CI
+ * si este fichero deja de preguntar `is_superadmin()` o vuelve a mirar el rol.
+ *
  * Y de ahí sale lo que Jose pidió: los eventos los firma QUIEN PULSA
  * (`created_by = su profile`), no un perfil «Importador FFCV» ni el service-role.
  */
@@ -34,6 +55,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   activeSeasonLabel,
+  permisoImportarFfcv,
   importarEquipoConDireccionesFromClient,
   prepararImportacionFromClient,
   type EquipoParaImportar,
@@ -82,12 +104,30 @@ export async function contextoFfcv(
   req: Request,
 ): Promise<{ ok: true; ctx: Contexto } | { ok: false; error: ErrorFfcv }> {
   const auth = await resolveUserFromRequest(req);
-  if (!auth) return { ok: false, error: 'unauthorized' };
-  // El botón es de la web: sin shell no hay club activo y no hay nada que importar.
-  if (!auth.shell) return { ok: false, error: 'forbidden' };
 
-  const rol = auth.shell.activeClub.role;
-  if (rol !== 'admin_club' && rol !== 'director') return { ok: false, error: 'forbidden' };
+  // `is_superadmin()` solo se pregunta si hay con quién: sin sesión no hay cliente que
+  // pueda llamarla y la respuesta ya está decidida.
+  let esSuperadmin = false;
+  if (auth) {
+    const { data } = await auth.supabase.rpc('is_superadmin');
+    esSuperadmin = data === true;
+  }
+
+  const permiso = permisoImportarFfcv({
+    haySesion: auth !== null,
+    // El botón es de la web: sin shell no hay club activo y no hay nada que importar.
+    hayClubActivo: auth?.shell != null,
+    esSuperadmin,
+  });
+  if (!permiso.puede) {
+    return {
+      ok: false,
+      error: permiso.motivo === 'sin_sesion' ? 'unauthorized' : 'forbidden',
+    };
+  }
+  // Lo que el permiso ya garantizó. El `if` es para el compilador, no una segunda
+  // opinión sobre la regla: si esta rama se ejecutara, la regla estaría rota.
+  if (!auth?.shell) return { ok: false, error: 'forbidden' };
 
   const clubId = auth.shell.activeClub.club.id;
   const { data, error } = await auth.supabase

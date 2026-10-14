@@ -89,3 +89,6 @@ export type {
   ResumenEquipo,
   VeredictoEquipo,
 } from './importar';
+
+export { permisoImportarFfcv } from './permiso';
+export type { ActorFfcv, PermisoFfcv } from './permiso';

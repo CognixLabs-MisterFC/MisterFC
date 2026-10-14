@@ -2248,7 +2248,7 @@
       "sin_equipos": "Ningún equipo del club tiene todavía su código de la FFCV.",
       "errors": {
         "unauthorized": "Tu sesión ha caducado. Vuelve a entrar.",
-        "forbidden": "Solo la dirección del club puede importar los partidos.",
+        "forbidden": "Solo el superadministrador de la plataforma puede importar los partidos.",
         "no_active_season": "El club no tiene una temporada activa.",
         "invalid": "La petición no era válida.",
         "not_found": "Ese equipo ya no está en la temporada activa.",
