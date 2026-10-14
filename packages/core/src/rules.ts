@@ -46,3 +46,16 @@ export {
   inviteLink,
   inviteLinkBase,
 } from './deep-links/index';
+
+/**
+ * Quién puede lanzar la importación de partidos federados. Entra aquí porque
+ * `ffcv/permiso.ts` NO IMPORTA NADA: son tres booleanos y tres `if`.
+ *
+ * Y entra a propósito, no por comodidad: una regla de autorización tiene que ser
+ * decidible con los datos que recibe. Si un día empezara a consultar la base para
+ * averiguar su propia respuesta, `check:core-rules-puras` pondría el PR en rojo.
+ * El guard, aquí, no protege el tiempo de arranque: protege que la puerta se
+ * pueda contestar con un `expect`.
+ */
+export { permisoImportarFfcv } from './ffcv/permiso';
+export type { ActorFfcv, PermisoFfcv } from './ffcv/permiso';

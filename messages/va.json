@@ -2248,7 +2248,7 @@
       "sin_equipos": "Cap equip del club té encara el seu codi de la FFCV.",
       "errors": {
         "unauthorized": "La teua sessió ha caducat. Torna a entrar.",
-        "forbidden": "Només la direcció del club pot importar els partits.",
+        "forbidden": "Només el superadministrador de la plataforma pot importar els partits.",
         "no_active_season": "El club no té una temporada activa.",
         "invalid": "La petició no era vàlida.",
         "not_found": "Eixe equip ja no està en la temporada activa.",

@@ -2248,7 +2248,7 @@
       "sin_equipos": "No club team has an FFCV code yet.",
       "errors": {
         "unauthorized": "Your session has expired. Please sign in again.",
-        "forbidden": "Only the club management can import fixtures.",
+        "forbidden": "Only the platform superadmin can import fixtures.",
         "no_active_season": "The club has no active season.",
         "invalid": "The request was not valid.",
         "not_found": "That team is no longer in the active season.",

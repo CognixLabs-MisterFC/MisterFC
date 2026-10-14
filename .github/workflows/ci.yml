@@ -101,6 +101,15 @@ jobs:
       - name: Check core pure-rules entry
         run: pnpm check:core-rules-puras
 
+      # La importacion de partidos federados es SOLO del superadmin (14-10-2026).
+      # La regla vive en core y esta medida con tests; el CABLEADO no se puede medir
+      # porque apps/web no tiene suite, y es justo donde esto se deshace: pasarle
+      # `esSuperadmin: rol === 'admin_club'` compila, pasa el typecheck y devuelve la
+      # puerta vieja sin que nada se ponga rojo. Este guard censa las rutas y exige
+      # que la puerta pregunte is_superadmin() y no mire el rol del club.
+      - name: Check FFCV import is superadmin-only
+        run: pnpm check:ffcv-superadmin
+
       # El teclado tapaba el campo en la app nativa, y el fallo no era una libreria
       # ausente: era que el manejo se olvidaba pantalla a pantalla (15 de 17 sin
       # nada, y las 2 que lo tenian montaban el KeyboardAvoidingView de RN con
