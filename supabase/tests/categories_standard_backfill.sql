@@ -11,8 +11,9 @@
 --   C1. Club VIEJO con custom (kind null) + una de kind 'infantil' + una llamada
 --       'Cadete': la custom queda intacta (is_standard=false); NO se siembra
 --       infantil ni cadete (solape por kind/nombre); el resto de estándar sí.
---   H1. half_duration y period_count canónicos en las estándar insertadas
---       (infantil=35; querubín 12 minutos × 3 periodos, mig 20261123000000).
+--   H1. half_duration, period_count y break_minutes canónicos en las estándar
+--       insertadas (infantil 35 y descanso 15; querubín 12 minutos × 3 periodos
+--       con descanso de 4 — migs 20261123000000 y 20261124000000).
 
 begin;
 
@@ -45,15 +46,18 @@ end $$;
 -- Querubín era 15 aquí hasta la mig 20261123000000: son TRES TIEMPOS DE DOCE, y
 -- eso vale en todos los clubes, no solo en el que lo pidió.
 do $$
-declare v_inf integer; v_que integer; v_que_per smallint;
+declare v_inf integer; v_inf_desc smallint; v_que integer; v_que_per smallint; v_que_desc smallint;
 begin
-  select half_duration_minutes into v_inf from public.categories
+  select half_duration_minutes, break_minutes into v_inf, v_inf_desc from public.categories
    where club_id = 'c1000000-0000-4000-8000-000000000001' and kind = 'infantil';
-  select half_duration_minutes, period_count into v_que, v_que_per from public.categories
+  select half_duration_minutes, period_count, break_minutes into v_que, v_que_per, v_que_desc
+    from public.categories
    where club_id = 'c1000000-0000-4000-8000-000000000001' and kind = 'querubin';
   if v_inf <> 35 then raise exception 'FAIL [H1]: infantil half_duration debería ser 35, es %', v_inf; end if;
+  if v_inf_desc <> 15 then raise exception 'FAIL [H1]: infantil descanso debería ser 15, es %', v_inf_desc; end if;
   if v_que <> 12 then raise exception 'FAIL [H1]: querubin half_duration debería ser 12, es %', v_que; end if;
   if v_que_per <> 3 then raise exception 'FAIL [H1]: querubin period_count debería ser 3, es %', v_que_per; end if;
+  if v_que_desc <> 4 then raise exception 'FAIL [H1]: querubin descanso debería ser 4, es %', v_que_desc; end if;
 end $$;
 
 -- ── I1. Idempotencia: re-ejecutar no duplica ─────────────────────────────────
