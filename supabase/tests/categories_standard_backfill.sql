@@ -11,7 +11,8 @@
 --   C1. Club VIEJO con custom (kind null) + una de kind 'infantil' + una llamada
 --       'Cadete': la custom queda intacta (is_standard=false); NO se siembra
 --       infantil ni cadete (solape por kind/nombre); el resto de estándar sí.
---   H1. half_duration canónico en las estándar insertadas (infantil=35, querubin=15).
+--   H1. half_duration y period_count canónicos en las estándar insertadas
+--       (infantil=35; querubín 12 minutos × 3 periodos, mig 20261123000000).
 
 begin;
 
@@ -40,16 +41,19 @@ begin
   end if;
 end $$;
 
--- ── H1. half_duration canónico ───────────────────────────────────────────────
+-- ── H1. half_duration y period_count canónicos ───────────────────────────────
+-- Querubín era 15 aquí hasta la mig 20261123000000: son TRES TIEMPOS DE DOCE, y
+-- eso vale en todos los clubes, no solo en el que lo pidió.
 do $$
-declare v_inf integer; v_que integer;
+declare v_inf integer; v_que integer; v_que_per smallint;
 begin
   select half_duration_minutes into v_inf from public.categories
    where club_id = 'c1000000-0000-4000-8000-000000000001' and kind = 'infantil';
-  select half_duration_minutes into v_que from public.categories
+  select half_duration_minutes, period_count into v_que, v_que_per from public.categories
    where club_id = 'c1000000-0000-4000-8000-000000000001' and kind = 'querubin';
   if v_inf <> 35 then raise exception 'FAIL [H1]: infantil half_duration debería ser 35, es %', v_inf; end if;
-  if v_que <> 15 then raise exception 'FAIL [H1]: querubin half_duration debería ser 15, es %', v_que; end if;
+  if v_que <> 12 then raise exception 'FAIL [H1]: querubin half_duration debería ser 12, es %', v_que; end if;
+  if v_que_per <> 3 then raise exception 'FAIL [H1]: querubin period_count debería ser 3, es %', v_que_per; end if;
 end $$;
 
 -- ── I1. Idempotencia: re-ejecutar no duplica ─────────────────────────────────

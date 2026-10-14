@@ -12,6 +12,14 @@
 -- Caveat: si alguien creó categorías DESPUÉS de la migración con un nombre
 -- estándar (p.ej. "Cadete A 2026"), el default 45 prevalece. El UI de
 -- /es/categorias (cuando exista) deberá permitir editar half_duration.
+--
+-- ⚠️ EL 15 DE QUERUBÍN DE ESTE FICHERO ESTÁ CONGELADO, NO VIGENTE. Desde la mig
+-- 20261123000000 el catálogo dice que querubín son TRES TIEMPOS DE DOCE, y el
+-- semillero siembra 12. Este test sigue en 15 a propósito: mide el backfill
+-- one-shot de junio de 2026, que mapeaba por NOMBRE (con `kind` todavía a NULL)
+-- y que puso 15 en las filas de entonces. Sus fixtures los inserta él mismo, así
+-- que ni cambia de color ni debe actualizarse. Lo canónico de hoy se mide en
+-- categories_standard_backfill.sql [H1] y categories_seed_on_club_create.sql [S4].
 
 begin;
 
