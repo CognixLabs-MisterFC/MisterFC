@@ -20,6 +20,12 @@
 --       NULL son distintos entre sí. El caso lo comprueba de las dos formas.
 --   T6. El CHECK de formato, para la equivocación realista: 'Jornada 1' en la columna del
 --       acta, rechazado; los 8 dígitos de un acta de verdad, aceptados.
+--   NOTA (2026-10-14): T8 ya no escribe `ffcv_match_code` bajo sesion. El trigger
+--       `events_guard_ffcv_code` (20261122000000) reserva esa columna al superadmin,
+--       asi que T8 pone el acta SIN sesion —la rama exenta, la de una migracion de
+--       datos— y mide el grant con `ffcv_round`, que tambien es una columna nueva.
+--       Quien puede o no vincular a la FFCV se mide en `el_acta_es_del_superadmin.sql`.
+--
 --   T7. `ffcv_round`: sin acta, rechazada; cero, rechazada; con acta y 1, aceptada. La
 --       dependencia es de UN sentido, así que NO se exige jornada para tener acta.
 --   T8. ANTI-REGRESIÓN de permisos, sobre la puerta VIVA, que es la de O2
@@ -206,15 +212,23 @@ end $$;
 do $$
 declare n int; v_team uuid;
 begin
+  -- El ACTA la pone aqui SIN sesion (role postgres, sin claims todavia): desde
+  -- 20261122000000 solo un superadmin puede escribir `ffcv_match_code`, y este
+  -- bloque no va de eso. Poner el acta sin sesion es lo que hace una migracion de
+  -- datos, y es la rama exenta de ese trigger. Asi (a) y (b) siguen midiendo lo
+  -- suyo —el grant de `events`— con una columna NUEVA que no esta protegida.
+  update public.events set ffcv_match_code = '26539201'
+   where id = 'd1ee0000-0000-4000-8000-000000000007';
+
   -- (a) el admin del club escribe el evento de E1
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claims', '{"sub":"d1aa0000-0000-4000-8000-000000000001","role":"authenticated"}', true);
-  update public.events set ffcv_match_code = '26539201', ffcv_round = 5
+  update public.events set ffcv_round = 5
    where id = 'd1ee0000-0000-4000-8000-000000000007';
   get diagnostics n = row_count;
   perform set_config('role', 'postgres', true);
   if n <> 1 then
-    raise exception 'FAIL[T8a]: el admin_club debia poder escribir el acta; si da 0, el grant de events es POR COLUMNA y no alcanza a las nuevas (filas=%)', n;
+    raise exception 'FAIL[T8a]: el admin_club debia poder escribir ffcv_round; si da 0, el grant de events es POR COLUMNA y no alcanza a las nuevas (filas=%)', n;
   end if;
 
   -- (b) el ayudante, staff ACTIVO de E1, tambien: es la decision de O2
