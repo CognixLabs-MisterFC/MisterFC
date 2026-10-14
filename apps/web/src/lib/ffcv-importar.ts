@@ -41,11 +41,20 @@
  *     uno creado a mano —crear eventos a mano es el trabajo de un director—, así que
  *     no sabe nada de esta decisión y no la refuerza.
  *
- * O sea: quien cambie este fichero está cambiando la única barrera que hay. Un
- * cierre en la BASE —un trigger que exija `is_superadmin()` para escribir
- * `events.ffcv_match_code`— está aprobado y va en su propio PR, con su migración y su
- * pgTAP; mientras no esté aplicado, esta frase se lee tal cual: la única barrera es
- * esta. Y para que nadie la abra sin que se vea, `check:ffcv-superadmin` falla en CI
+ * ── Y DESDE EL 14-10-2026 HAY UN TERCER CIERRE, EN LA BASE ──────────────────
+ * El trigger `events_guard_ffcv_code` (migración 20261122000000, aplicada) exige
+ * `is_superadmin()` para poner, cambiar o quitar `events.ffcv_match_code`. Este
+ * párrafo decía «quien cambie este fichero está cambiando la única barrera que
+ * hay», y era verdad el día que se escribió; ya no lo es.
+ *
+ * Importa saber qué cubre cada uno, porque no son el mismo cierre:
+ *   · ESTA PUERTA decide quién puede LANZAR la importación (y ahorra las 458
+ *     llamadas a la FFCV). Es la única que impide que alguien la arranque.
+ *   · EL TRIGGER impide ESCRIBIR el vínculo federado, venga por donde venga —y
+ *     también desde un camino que no exista todavía—. Pero no muerde sin sesión
+ *     (`auth.uid()` NULL: migración de datos, pgTAP, job), así que no sustituye a
+ *     esta puerta: la respalda.
+ * Y para que nadie abra esta sin que se vea, `check:ffcv-superadmin` falla en CI
  * si este fichero deja de preguntar `is_superadmin()` o vuelve a mirar el rol.
  *
  * Y de ahí sale lo que Jose pidió: los eventos los firma QUIEN PULSA
