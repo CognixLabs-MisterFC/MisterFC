@@ -20,6 +20,47 @@ en su propio PR.
 
 ## Deuda viva
 
+### Mover un partido con acta a otro equipo DUPLICA el partido en el repaso siguiente
+- **Detectado en**: 2026-10-14, al cerrar el trigger `events_guard_ffcv_code`
+  (migración `20261122000000`, el cierre en la base de «la importación federada es solo
+  del superadmin»). Lo vio Jose al leer el borde que yo había dejado apuntado como «solo
+  de permisos»: no lo es.
+- **Qué pasa**: la clave de idempotencia del importador es **`ffcv_match_code` + `team_id`**,
+  no el acta sola. `partidosYaPuestos()` lee los partidos ya puestos con
+  `.eq('team_id', teamId).not('ffcv_match_code','is',null)` y los indexa por acta
+  (`packages/core/src/ffcv/importar.ts`). Si alguien mueve a mano un partido importado al
+  equipo B, el repaso del equipo A **no encuentra esa acta en A**, la trata como partido
+  nuevo y **la vuelve a crear**. Resultado: el mismo partido federado dos veces, uno en
+  cada equipo, y el de A reaparece cada martes.
+- **Por qué el trigger nuevo NO lo tapa, y es correcto que no lo tape**: el trigger vigila
+  `update of ffcv_match_code`. Mover el partido cambia `team_id`, no el acta: no crea ni
+  destruye el vínculo, lo traslada. Ensanchar el trigger a «cualquier campo de un partido
+  con acta» se descartó a propósito —las **horas provisionales** de la FFCV las corrigen a
+  mano los **entrenadores**, y eso es trabajo legítimo sobre partidos con acta—, así que
+  esto es deuda, no un olvido del PR.
+- **Y por qué el arreglo NO es estrechar el índice único**: `events_ffcv_match_code_team_uniq`
+  es sobre `(ffcv_match_code, team_id)` **a propósito**. En un **derbi entre dos equipos del
+  mismo club**, la misma acta genera legítimamente DOS eventos, uno por equipo, y cada uno
+  se importa en la pasada de su equipo. El pgTAP lo deja fijado: *«un partido entre dos
+  equipos del club debía dar DOS eventos; el único no puede ser solo
+  `(ffcv_match_code)`»* (`supabase/tests/eventos_idempotencia_ffcv.sql`, T3). Quien intente
+  cerrar esto con un único global rompe los derbis.
+- **Candidatos, sin decidir**:
+  1. **Impedir el movimiento**: trigger sobre `update of team_id` que rechace cuando
+     `ffcv_match_code is not null`. Barato, y NO toca las horas provisionales. Hay que
+     contestar primero si mover un partido importado es alguna vez legítimo — hoy no lo
+     es, porque el repaso lo recrea de todas formas.
+  2. **Que el importador lo detecte**: buscar el acta en los equipos del CLUB, no solo en
+     el que se importa, y reportar «este partido está en otro equipo» en vez de crearlo.
+     Ojo: el derbi hace que una acta en dos equipos sea legal, así que el acta sola no
+     distingue «movido» de «derbi» y hace falta otro discriminante.
+  3. **No hacer nada** y vivir con que el duplicado se ve en el calendario. Es visible y
+     reparable a mano, pero vuelve cada martes.
+- **Referencia**: `packages/core/src/ffcv/importar.ts` (`partidosYaPuestos`),
+  índice `events_ffcv_match_code_team_uniq` (`supabase/migrations/20261117000000_eventos_idempotencia_ffcv.sql`),
+  trigger `events_guard_ffcv_code` (`supabase/migrations/20261122000000_el_acta_es_del_superadmin.sql`).
+  **NO arreglado** (solo anotado).
+
 ### `announcements` UPDATE/DELETE — gobernado por rol de CLUB, no contempla al principal del equipo (deuda menor)
 - **Detectado en**: 2026-06-27, barrido del fix de edición de sesiones por staff del equipo (PR #236, Opción A).
 - **Contexto**: tras alinear sesiones con "staff del equipo ∪ owner ∪ admin", se revisaron otros write-paths de recursos de equipo. En `announcements`, el **INSERT** (`announcements_insert_managers`) **sí** reconoce al principal del equipo vía `team_staff` (rama `EXISTS team_staff … staff_role='entrenador_principal'`), pero **UPDATE/DELETE** (`announcements_update_author_or_manager` / `announcements_delete_author_or_manager`) usan **`user_role_in_club(club_id) IN (admin_club, coordinador, entrenador_principal)`** — es el **rol de CLUB**, no `team_staff`. Efecto: un entrenador con rol de club `entrenador_ayudante` que es **principal de su equipo** puede crear y editar **sus propios** anuncios (rama `author_profile_id = auth.uid()`), pero **no moderar** (editar/borrar) los anuncios de **otros** en su equipo. Bajo impacto.
@@ -53,6 +94,24 @@ en su propio PR.
 ---
 
 ## Lecciones que valen para cualquier PR
+
+### Lección — un grep por UNA forma no mide el MECANISMO: `set local role` vs `set_config('role', …)`
+- **Detectado en**: 2026-10-14, PR del trigger `events_guard_ffcv_code`.
+- **Qué pasó**: antes de escribir un trigger que solo muerde con sesión, había que saber si
+  la suite pgTAP que ya existía abría sesión en algún sitio. Se buscó con
+  `grep "set local role|reset role"` sobre `supabase/tests/*.sql`, salió **nada** para
+  `eventos_idempotencia_ffcv.sql`, y de ahí se afirmó —en el cuerpo del PR y en el commit—
+  que esa suite «corre sin sesión y por eso sigue verde». Era falso: ese fichero cambia de
+  actor con **`perform set_config('role','authenticated', true)`** dentro de un `DO`, que
+  es la otra forma de hacer exactamente lo mismo. El PR salió rojo en pgTAP.
+- **La regla**: cuando lo que se busca es un MECANISMO («¿hay sesión en estos tests?»), el
+  grep tiene que cubrir sus formas, no la primera que viene a la cabeza. Aquí son al menos
+  dos: `set local role` / `set local "request.jwt.claims"` y
+  `set_config('role', …)` / `set_config('request.jwt.claims', …)`. Y lo que convierte el
+  error en daño no es el grep: es **escribir la conclusión como un hecho** («corre sin
+  sesión») en vez de como lo que era («no encuentro sesión por esta vía»).
+- **Lo que sí funcionó**: el CI. Los once casos nuevos pasaron a la primera y los dos
+  rojos fueron de suites ajenas — que es el reparto que uno quiere.
 
 ### Lección F1B — recrear una policy "copia fiel" NO es copia fiel si cambia un helper de privilegio ✅ CERRADO (fix #280)
 - **Detectado en**: 2026-07-06, aceptación de invitación de director rota en preview (F1B-3c+d).
