@@ -39,6 +39,13 @@ export type CalendarEvent = {
   rejection_reason: string | null;
 };
 
+/**
+ * Los tres campos de duración viajan JUNTOS —duración de cada periodo, cuántos
+ * periodos y el descanso entre ellos— porque los tres hacen falta para sugerir el
+ * fin de un partido (`matchBlockMinutes`). Son obligatorios a propósito: un
+ * `TeamOption` sin `break_minutes` no compila, que es lo que impide que el próximo
+ * consumidor vuelva a suponer que el descanso son quince.
+ */
 export type TeamOption = {
   id: string;
   name: string;
@@ -47,12 +54,16 @@ export type TeamOption = {
   category_name: string;
   season: string;
   half_duration_minutes: number;
+  period_count: number;
+  break_minutes: number;
 };
 
 export type CategoryOption = {
   id: string;
   name: string;
   half_duration_minutes: number;
+  period_count: number;
+  break_minutes: number;
 };
 
 export type CalendarFilters = {
@@ -218,7 +229,7 @@ export async function getCalendarDataFromClient(
   const { data: rawTeams } = await supabase
     .from('teams')
     .select(
-      'id, name, color, season, category_id, categories!inner(name, club_id, half_duration_minutes)'
+      'id, name, color, season, category_id, categories!inner(name, club_id, half_duration_minutes, period_count, break_minutes)'
     )
     .order('name');
   const allTeams = (rawTeams ?? [])
@@ -227,6 +238,8 @@ export async function getCalendarDataFromClient(
         name: string;
         club_id: string;
         half_duration_minutes: number;
+        period_count: number;
+        break_minutes: number;
       };
       return {
         id: t.id as string,
@@ -237,6 +250,8 @@ export async function getCalendarDataFromClient(
         season: t.season as string,
         club_id: cat.club_id,
         half_duration_minutes: cat.half_duration_minutes ?? 45,
+        period_count: cat.period_count ?? 2,
+        break_minutes: cat.break_minutes ?? 15,
       };
     })
     .filter((t) => t.club_id === clubId)
@@ -251,13 +266,18 @@ export async function getCalendarDataFromClient(
 
   const { data: rawCategories } = await supabase
     .from('categories')
-    .select('id, name, half_duration_minutes')
+    .select('id, name, half_duration_minutes, period_count, break_minutes')
     .eq('club_id', clubId)
     .order('name');
+  // Los `?? ` son los MISMOS defaults que la base: 45/2/15. No son una opinión
+  // nueva, son el valor por defecto de la columna repetido aquí por si el select
+  // devuelve null (la fila existe siempre: el join de arriba es !inner).
   const categories: CategoryOption[] = (rawCategories ?? []).map((c) => ({
     id: c.id as string,
     name: c.name as string,
     half_duration_minutes: (c.half_duration_minutes as number | null) ?? 45,
+    period_count: (c.period_count as number | null) ?? 2,
+    break_minutes: (c.break_minutes as number | null) ?? 15,
   }));
 
   return { events, teams, categories };
