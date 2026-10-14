@@ -100,9 +100,9 @@ apps/web/src/app/[locale]/
    - Hay que subir `CACHE_NAME` a `misterfc-shell-v3`.
 2. **PWA instalada** (`public/manifest.json`): `start_url "/"`.
    - Hoy, un entrenador con la sesión caducada abre la PWA y ve «Elige tu club». Tras el cambio vería la portada comercial.
-   - Propuesta: `start_url "/clubes"`. Con sesión, `/clubes` ya manda al Inicio (`clubes/page.tsx:34-37`); sin sesión, enseña el selector. → **Pregunta abierta 4** (§12.2).
+   - **Decidido:** la PWA sigue arrancando en el selector de clubes: `start_url "/clubes"`. Con sesión, `/clubes` ya manda al Inicio (`clubes/page.tsx:34-37`); sin sesión, enseña el selector.
 3. **Enlace «Volver» de las páginas legales** (`WP/legal/layout.tsx:43`): apunta a `/clubes`.
-   - Las páginas legales no se tocan, así que se queda como está, salvo que digas lo contrario (pregunta abierta 4).
+   - **Decidido:** sigue llevando a `/clubes`.
 4. **Metadatos del layout raíz** (`WP/layout.tsx:18-34`): la descripción es fija y en castellano, y no hay OpenGraph.
    - Las páginas comerciales llevan metadatos propios por idioma (§11). El layout raíz no se toca.
 
@@ -528,20 +528,20 @@ Son 6 obligatorios, más la casilla. No hay casilla de comunicaciones comerciale
 
 Antes de capturar hay que revisar los datos del club de test en producción. Desde el repo ya se ve que **no todo es ficticio**:
 
-| Dato                                                                                | Dónde consta                                    | Problema                                                                                                    |
-| ----------------------------------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Jugador «Jose Milla», equipo Alevín B                                               | `docs/journey/cuentas-prueba.md:43-44`          | Parece un nombre real (coincide con el titular de las cuentas `jovimib+…`). **No puede salir en capturas.** |
-| Jugador «Andrés Test»                                                               | `cuentas-prueba.md:45`                          | Ficticio, pero «Test» queda mal en una captura comercial.                                                   |
-| Nombres de cuenta «Jugador 1 (Jose self)», «Familia 1 (Jose parent)», «Jugador 2 …» | `apps/web/scripts/seed-test-accounts.mjs:46-58` | Salen en mensajes, en la cabecera y en el perfil.                                                           |
-| Nombre del club «Club Beta Test»                                                    | `seed-test-accounts.mjs:2`                      | Sale en casi todas las pantallas. → **Pregunta abierta A** (§12.2).                                         |
+| Dato                                                                                | Dónde consta                                    | Problema                                                                                                                               |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Jugador «Jose Milla», equipo Alevín B                                               | `docs/journey/cuentas-prueba.md:43-44`          | Parece un nombre real (coincide con el titular de las cuentas `jovimib+…`). **No puede salir en capturas.**                            |
+| Jugador «Andrés Test»                                                               | `cuentas-prueba.md:45`                          | Ficticio, pero «Test» queda mal en una captura comercial.                                                                              |
+| Nombres de cuenta «Jugador 1 (Jose self)», «Familia 1 (Jose parent)», «Jugador 2 …» | `apps/web/scripts/seed-test-accounts.mjs:46-58` | Salen en mensajes, en la cabecera y en el perfil.                                                                                      |
+| Nombre del club «Club Beta Test»                                                    | `seed-test-accounts.mjs:2`                      | Sale en casi todas las pantallas. **Decidido:** se llamará «CF Playas El Saler»; el cambio se hace al preparar las capturas, no antes. |
 
-**Lo que no puedo ver sin leer producción:** el resto de jugadores, el staff, el escudo, las fotos, los rivales, los mensajes y los informes. No lo he leído: en este checkpoint no se toca Supabase. → **Pregunta abierta B** (§12.2).
+**Lo que no puedo ver sin leer producción:** el resto de jugadores, el staff, el escudo, las fotos, los rivales, los mensajes y los informes. No lo he leído. **Decidido:** no se toca la base de datos ni se crean cuentas hasta que preparemos las capturas.
 
-### 9.3 Preparación de los datos (Checkpoint B, nada hecho todavía)
+### 9.3 Preparación de los datos (cuando se hagan las capturas; no antes)
 
 1. **Inventario en solo lectura** de todo lo que se ve en las pantallas de §9.4 y §9.5, con estas consultas: club (nombre y escudo), equipos, jugadores (nombre, foto), staff y familias (`profiles.full_name`, avatar), eventos (rival, lugar), mensajes, anuncios, informes, ejercicios, sesiones y jugadas. Sale una tabla «ficticio / no ficticio / falta».
 2. **Script de preparación** en el repo (`supabase/scripts/capturas-club-test.sql`), solo sobre filas de `club-beta-test` y con un aserto que aborte si toca otro club:
-   - renombrar lo que no sea ficticio (Jose Milla incluido);
+   - renombrar el club a «CF Playas El Saler» y lo que no sea ficticio (Jose Milla incluido);
    - completar lo que falte para que las pantallas se vean llenas: 2 o 3 equipos, unos 15 jugadores por equipo, staff, 4 o 5 ejercicios con diagrama, una semana de sesiones, una convocatoria publicada con respuestas, un partido con directo (goles, tarjeta, cambio) y valoraciones, un informe de desarrollo, mensajes y un anuncio;
    - escudo ficticio subido al almacenamiento del club.
 3. **Lo aplicas tú**, como toda escritura en producción: ensayo con `ROLLBACK`, visto bueno y aplicación copiando el `cat` del fichero commiteado.
@@ -550,7 +550,7 @@ Antes de capturar hay que revisar los datos del club de test en producción. Des
 
 ### 9.4 Capturas web (las hago yo)
 
-- Playwright contra producción, con cuentas del club de test: dirección, entrenador y familia. → necesito sus credenciales (pregunta abierta B).
+- Playwright contra producción, con cuentas del club de test: dirección, entrenador y familia. Las cuentas se crean en la preparación de §9.3, no antes.
 - Resoluciones 1440×900 y 390×844, castellano, modo claro. Las versiones en valenciano e inglés, si las pantallas lo permiten; si no, se usa la de castellano.
 - Se guardan en `apps/web/public/web/capturas/` y se pintan con `next/image`. Mockups de portátil y móvil.
 - Hasta tener las capturas, cada sitio lleva un hueco con marco, igual que en NIDO.
@@ -623,7 +623,7 @@ La cuenta de familia para M1, M4, M5 y M6 **no es** la de la revisión de Apple 
 
 ### 10.4 Cambios en la política de privacidad (`Documentos/misterfc-politica-privacidad.md`)
 
-**A. Añadir un apartado para la web comercial.** En el formulario de demo, Cognix es **responsable**, no encargado como en la app.
+**A. Añadir un apartado para la web comercial (decidido: se añade, en W6, con la marca de pendiente de revisión).** En el formulario de demo, Cognix es **responsable**, no encargado como en la app.
 
 - **Datos:** los del formulario.
 - **Finalidad:** atender la solicitud y organizar la demo; sin comunicaciones comerciales.
@@ -655,13 +655,13 @@ La cuenta de familia para M1, M4, M5 y M6 **no es** la de la revisión de Apple 
   - **Nuevo:** la portada, `/funciones`, `/seguridad` y `/demo` en los 3 idiomas, con alternates; y las 6 legales en `/es`, como ahora.
   - `/demo/gracias` no entra.
 - **`robots.txt`:** igual; ya permite `/`.
-- **hreflang:** `es`, `ca` para `/va` y `en`, con `x-default` → `/es`. Así se hizo en NIDO, porque `va` no es un código hreflang válido. → **Pregunta abierta 3** (§12.2).
+- **hreflang:** `es`, `ca` para `/va` y `en`, con `x-default` → `/es`. Así se hizo en NIDO, porque `va` no es un código hreflang válido. **Decidido.**
 - **Canonical:**
   - la portada canoniza a `/{idioma}` (nunca a `/portada`);
   - cada página comercial, a sí misma.
 - **OpenGraph:** imagen por idioma, generada en el build con Inter y el logo; título y descripción por página.
 - **`metadataBase`** desde `SITE_URL` (`apps/web/src/lib/site-url.ts`).
-- **Páginas de acceso** (`/clubes`, `/{slug}`, `/signin`): propongo `noindex`, para que en Google salga la portada y no el selector de clubes. Es un cambio de metadatos sin efecto funcional. → **Pregunta abierta 4** (§12.2).
+- **Páginas de acceso** (`/clubes`, `/{slug}`, `/signin`): `noindex` (decidido), para que en Google salga la portada y no el selector de clubes. Es un cambio de metadatos sin efecto funcional.
 - **Analítica:** `@vercel/analytics`, **solo en el layout `(web)`**, para no medir la app. Hay que activarla en el panel de Vercel; eso lo haces tú.
 
 ---
@@ -670,40 +670,56 @@ La cuenta de familia para M1, M4, M5 y M6 **no es** la de la revisión de Apple 
 
 ### 12.1 Cerradas (respuestas del 2026-10-14)
 
-| #   | Tema                        | Decisión                                                                                    | Dónde se aplica   |
-| --- | --------------------------- | ------------------------------------------------------------------------------------------- | ----------------- |
-| 1   | Tratamiento                 | Tuteo, como la app.                                                                         | §4                |
-| 2   | Slugs                       | En castellano en los 3 idiomas; no se traducen.                                             | §2.2, §3.2        |
-| 5   | Reserva de hora             | Sin calendario ni enlace. Se acuerda la hora por correo.                                    | §8.4              |
-| 6   | Plazo y duración            | Respuesta en un máximo de 2 días laborables; videollamada de 30 minutos.                    | §4.8, §8.2, §8.3  |
-| 7   | Coste para las familias     | La app es gratuita para las familias (mientras `SUBSCRIPTION_GATE` siga apagado).           | §4.10, §5.3, §7.1 |
-| 8   | Conversaciones              | No se menciona que la dirección puede consultarlas.                                         | §5.3              |
-| 9   | Acceso de Cognix            | No se menciona, y la web nunca dice «ni nosotros vemos tus datos» ni nada equivalente.      | §4.5, §6.1, §6.2  |
-| 10  | Región                      | Irlanda (UE), medido: `eu-west-1`. Frase permitida: «datos alojados en la Unión Europea».   | S19, §6.2         |
-| 11  | Capturas                    | Club de test, nunca UD Fonteta. Web: las hago yo. Móvil: las haces tú con la lista de §9.5. | §9                |
-| 12  | Conservación de solicitudes | 12 meses desde el último contacto.                                                          | §10.4             |
-| 13  | Logo                        | Icono de la app + «MisterFC» en texto.                                                      | §3.3              |
-| 14  | Verde                       | `#10B981` (esmeralda).                                                                      | §3.3              |
-| 15  | Remitente                   | `demo@misterfc.es` con «responder a» `info.cognixlabs@gmail.com`.                           | §8.3              |
-| —   | Política de privacidad      | No se cambia en este trabajo. Los 8 puntos van a la abogada (Anexo B).                      | §10.4             |
+| #   | Tema                        | Decisión                                                                                                                              | Dónde se aplica   |
+| --- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| 1   | Tratamiento                 | Tuteo, como la app.                                                                                                                   | §4                |
+| 2   | Slugs                       | En castellano en los 3 idiomas; no se traducen.                                                                                       | §2.2, §3.2        |
+| 5   | Reserva de hora             | Sin calendario ni enlace. Se acuerda la hora por correo.                                                                              | §8.4              |
+| 6   | Plazo y duración            | Respuesta en un máximo de 2 días laborables; videollamada de 30 minutos.                                                              | §4.8, §8.2, §8.3  |
+| 7   | Coste para las familias     | La app es gratuita para las familias (mientras `SUBSCRIPTION_GATE` siga apagado).                                                     | §4.10, §5.3, §7.1 |
+| 8   | Conversaciones              | No se menciona que la dirección puede consultarlas.                                                                                   | §5.3              |
+| 9   | Acceso de Cognix            | No se menciona, y la web nunca dice «ni nosotros vemos tus datos» ni nada equivalente.                                                | §4.5, §6.1, §6.2  |
+| 10  | Región                      | Irlanda (UE), medido: `eu-west-1`. Frase permitida: «datos alojados en la Unión Europea».                                             | S19, §6.2         |
+| 11  | Capturas                    | Club de test, nunca UD Fonteta. Web: las hago yo. Móvil: las haces tú con la lista de §9.5.                                           | §9                |
+| 12  | Conservación de solicitudes | 12 meses desde el último contacto.                                                                                                    | §10.4             |
+| 13  | Logo                        | Icono de la app + «MisterFC» en texto.                                                                                                | §3.3              |
+| 14  | Verde                       | `#10B981` (esmeralda).                                                                                                                | §3.3              |
+| 15  | Remitente                   | `demo@misterfc.es` con «responder a» `info.cognixlabs@gmail.com`.                                                                     | §8.3              |
+| —   | Política de privacidad      | Se añade el apartado del formulario de demo (§10.4 A). Los 8 puntos no se tocan: van a la abogada (Anexo B), con un 9.º sobre `iad1`. | §10.4, Anexo B    |
+| 3   | hreflang                    | `ca` para `/va`.                                                                                                                      | §11               |
+| 4   | Sesión caducada             | PWA en `/clubes`; «Volver» de las legales a `/clubes`; `noindex` en `/clubes`, `/{slug}` y `/signin`.                                 | §1.5, §11         |
+| A   | Club de las capturas        | «CF Playas El Saler». Se renombra al preparar las capturas, no ahora.                                                                 | §9.2, §9.3        |
+| B   | Base de datos y cuentas     | No se tocan ni se crean ahora.                                                                                                        | §9.3              |
+| C   | Privacidad de la demo       | Se añade ya (W6): Cognix responsable, 12 meses, Vercel y Resend.                                                                      | §10.4 A           |
+| D   | Vercel en Washington        | 9.º punto para la abogada.                                                                                                            | Anexo B           |
 
 ### 12.2 Abiertas
 
-**De la lista original, sin respuesta:**
+Ninguna. Las tareas aparte (cabeceras de seguridad, `.env.example` incompleto, slugs reservados solo en las RPC e iconos de `manifest.json`) siguen anotadas y no piden respuesta.
 
-3. **Valenciano para buscadores:** ¿hreflang `ca` para `/va`, como en NIDO? La redirección por idioma no se toca: el navegador en `ca` sigue entrando en castellano.
-4. **Acceso de entrenadores con la sesión caducada:**
-   - ¿cambiamos el `start_url` de la PWA a `/clubes` (§1.5)?
-   - ¿«Volver» en las páginas legales lleva a la portada o sigue en `/clubes`?
-   - ¿`noindex` en `/clubes`, `/{slug}` y `/signin` (§11)?
-5. **Tareas aparte:** no piden respuesta; siguen anotadas: cabeceras de seguridad, `.env.example` incompleto, slugs reservados solo en las RPC e iconos de `manifest.json` que no existen.
+## 13. Checkpoint B: construcción por piezas
 
-**Nuevas, salidas de las respuestas:**
+### 13.1 Interruptor `MARKETING_SITE`
 
-- **A. Nombre del club en las capturas.** «Club Beta Test» sale en casi todas las pantallas. ¿Se renombra en producción a un nombre ficticio (por ejemplo «CF Ribera Nord»), o se deja? Renombrarlo cambia también lo que ven las cuentas de prueba y la revisión de Apple.
-- **B. Acceso para revisar el club de test.** El inventario de §9.3.1 es una lectura de producción, y no tengo acceso válido: el token de la CLI de Supabase está caducado. ¿Lo lanzas tú con las consultas que te prepare, o me das una vía de solo lectura? Para las capturas web también necesito cuentas de dirección, entrenador y familia del club de test.
-- **C. Privacidad del formulario de demo.** Decías que la política actual no se cambia en este trabajo. Pero el formulario necesita un texto de privacidad que lo cubra (§10.4 A: Cognix como responsable, 12 meses, Vercel y Resend, analítica). ¿Ese apartado nuevo tampoco se añade ahora, o sí se añade y lo que no se toca son los 8 puntos?
-- **D. Funciones de Vercel en EE. UU.** La base de datos está en Irlanda, pero la app se ejecuta en `iad1` (Washington), así que los datos pasan por allí al servirse. «Datos alojados en la UE» sigue siendo cierto. La política dice de Vercel «Global (red de distribución)». ¿Lo añado como 9.º punto para la abogada? Mover las funciones a `dub1` (Dublín) sería una tarea aparte, que además acercaría la app a su base de datos.
+- La web comercial va en el mismo proyecto de Vercel que la app: **cada merge a `main` sale en `misterfc.es` al momento.**
+- Por eso todo lo de la web comercial va detrás de la variable de servidor `MARKETING_SITE`, **apagada por defecto en producción**. Mientras esté apagada, `misterfc.es` se comporta exactamente como hoy:
+  - el anónimo en `/{idioma}` sigue yendo a `/{idioma}/clubes`;
+  - las rutas nuevas (`/funciones`, `/seguridad`, `/demo`, `/portada`) responden lo mismo que hoy, es decir, lo que responde `/{idioma}/{slug}` con un slug que no es de ningún club.
+- **Solo se enciende en producción cuando lo diga el titular.**
+- **Vistas previas:** encendida por defecto (`VERCEL_ENV=preview`), sin tocar la configuración de Vercel. `MARKETING_SITE=off` la apaga y `MARKETING_SITE=on` la enciende en cualquier entorno.
+
+### 13.2 Piezas (una pieza = una rama = un PR; el merge lo hace el titular)
+
+| Pieza | Contenido                                                                                                                                                                                                       |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W1    | Grupo de rutas y layout propio; middleware para el anónimo en `/{idioma}` solo con el interruptor encendido (`?code=` intacto); slugs reservados y su test; tokens de color (`#10B981`) y logo (icono + texto). |
+| W2    | Cabecera y pie (§3.3, §3.4).                                                                                                                                                                                    |
+| W3    | Portada (§4), con huecos para las capturas, familias y el apartado de clubes oculto (§7).                                                                                                                       |
+| W4    | Páginas de Funciones y Seguridad (§5, §6).                                                                                                                                                                      |
+| W5    | Formulario de demo y página de gracias (§8).                                                                                                                                                                    |
+| W6    | Legal y SEO (§10, §11) y Vercel Web Analytics.                                                                                                                                                                  |
+
+No se tocan Supabase, DNS ni la app nativa.
 
 ---
 
@@ -719,13 +735,13 @@ La cuenta de familia para M1, M4, M5 y M6 **no es** la de la revisión de Apple 
 | Raíz             | `/` → `/es` → `/es/clubes`; Accept-Language `en` → `/en`; `ca` → `/es`; pone la cookie `NEXT_LOCALE`                                       |
 | Región           | Supabase en `eu-west-1` (Irlanda), por la IP de `db.<ref>.supabase.co` en los rangos de AWS; funciones de Vercel en `iad1` (`x-vercel-id`) |
 
-### Anexo B: texto para la abogada (los 8 puntos de §10.4 B)
+### Anexo B: texto para la abogada (los 8 puntos de §10.4 B y el de `iad1`)
 
 > Para enviar tal cual. No incluye rutas de código; cada punto dice qué pone el texto publicado y cómo funciona hoy la aplicación. La política no se ha cambiado.
 
-**Asunto:** MisterFC — 8 puntos en los que los textos legales publicados no coinciden con la aplicación
+**Asunto:** MisterFC — 9 puntos en los que los textos legales publicados no coinciden con la aplicación
 
-Revisando la aplicación MisterFC hemos encontrado 8 puntos en los que los textos publicados en misterfc.es no coinciden con cómo funciona hoy. No hemos cambiado nada: los enviamos para que decidas la redacción.
+Revisando la aplicación MisterFC hemos encontrado 9 puntos en los que los textos publicados en misterfc.es no coinciden con cómo funciona hoy. No hemos cambiado nada: los enviamos para que decidas la redacción.
 
 1. **Quién ve los datos médicos** (Política de privacidad, medidas de seguridad). El texto dice: administrador del club, coordinador, entrenadores y tutores. En la aplicación los ven: la dirección (administrador y director), el coordinador solo si está asignado al equipo del jugador, el cuerpo técnico del equipo del jugador, el del equipo que lo convoca (solo hasta el final del día del partido), los tutores y el propio jugador cuando es mayor de edad. Siempre con el consentimiento médico registrado.
 2. **Cloudflare R2** (apartado 8, proveedores). Figura como almacenamiento de archivos, pero no se usa: los archivos se guardan en Supabase.
@@ -738,3 +754,4 @@ Revisando la aplicación MisterFC hemos encontrado 8 puntos en los que los texto
    - Dice que desde los 14 años el menor ejerce sus derechos; la aplicación aplica 18: hasta entonces los gestiona el tutor.
    - Los plazos de «7 días» de copias de seguridad y «3 años» de consentimientos y auditoría no constan en la configuración que podemos comprobar.
    - El registro de consentimientos no se puede borrar: retirar un consentimiento añade una entrada nueva.
+9. **Dónde se ejecuta la aplicación** (apartado 8, Vercel). La base de datos y los archivos están en la Unión Europea (Irlanda), pero las funciones de servidor que sirven la aplicación se ejecutan en Washington (Estados Unidos, región `iad1` de Vercel), así que los datos pasan por allí al mostrarse. El texto dice de Vercel «Alojamiento del sitio web y del panel de gestión» con ubicación «Global (red de distribución)».
