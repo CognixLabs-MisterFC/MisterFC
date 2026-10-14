@@ -25,7 +25,7 @@ import {
   isManageableMatchType,
   TIMEZONE_OLA1,
   computeEndsAt,
-  HALFTIME_BREAK_MINUTES,
+  matchBlockMinutes,
 } from '@misterfc/core';
 import {
   Dialog,
@@ -88,6 +88,30 @@ type Props = {
 };
 
 type TargetKind = 'team' | 'category' | 'club';
+
+/**
+ * La forma del partido con los tres números NO nulos. `MatchBlockShape` los
+ * admite nulos porque tolera datos sucios; aquí vienen de `TeamOption` /
+ * `CategoryOption`, donde son obligatorios, así que el cartel puede pintarlos sin
+ * un solo `??` que oculte un hueco.
+ */
+type FormaPartido = {
+  halfDurationMinutes: number;
+  periodCount: number;
+  breakMinutes: number;
+};
+
+function formaDeCategoria(c: {
+  half_duration_minutes: number;
+  period_count: number;
+  break_minutes: number;
+}): FormaPartido {
+  return {
+    halfDurationMinutes: c.half_duration_minutes,
+    periodCount: c.period_count,
+    breakMinutes: c.break_minutes,
+  };
+}
 
 // 0=lunes ... 6=domingo en ISO. El form de UI también usa ISO.
 const WEEKDAYS_ISO = [0, 1, 2, 3, 4, 5, 6] as const;
@@ -188,21 +212,30 @@ export function EventDialog({
     return teams.filter((tm) => manageableTeamIds.includes(tm.id));
   }, [teams, manageableTeamIds]);
 
-  // F4.9 — half_duration_minutes del target activo (team o category):
-  // - team → su categoría.
+  // F4.9 — la forma del partido del target activo (team o category): duración de
+  // cada periodo, cuántos periodos y descanso entre ellos. Los tres salen de la
+  // categoría; antes aquí solo viajaba la duración y el resto eran constantes.
+  // - team → la de su categoría.
   // - category → directa.
-  // - club → null (no sabemos qué duración aplicar).
-  const targetHalfDuration = useMemo<number | null>(() => {
+  // - club → null (no sabemos qué categoría aplicar).
+  const targetForma = useMemo<FormaPartido | null>(() => {
     if (targetKind === 'team') {
       const tm = teams.find((t) => t.id === teamId);
-      return tm?.half_duration_minutes ?? null;
+      return tm ? formaDeCategoria(tm) : null;
     }
     if (targetKind === 'category') {
       const c = categories.find((cat) => cat.id === categoryId);
-      return c?.half_duration_minutes ?? null;
+      return c ? formaDeCategoria(c) : null;
     }
     return null;
   }, [targetKind, teamId, categoryId, teams, categories]);
+
+  // El MISMO número que rellena `ends_at` y que explica el cartel de debajo del
+  // campo. Una sola cuenta: cuando eran dos, la del cartel se quedó atrás.
+  const targetBloqueMin = useMemo<number | null>(
+    () => (targetForma ? matchBlockMinutes(targetForma) : null),
+    [targetForma]
+  );
 
   // F4.9 — Auto-rellenar ends_at para type=match: la sugerencia se computa
   // derivada durante render (sin useEffect, para cumplir con el lint
@@ -215,16 +248,16 @@ export function EventDialog({
   );
 
   const autoEndsAtSuggestion = useMemo<string | null>(() => {
-    if (type !== 'match' || !startsAt || targetHalfDuration == null) return null;
+    if (type !== 'match' || !startsAt || targetForma == null) return null;
     let startIso: string;
     try {
       startIso = localInputToIso(startsAt);
     } catch {
       return null;
     }
-    const suggested = computeEndsAt(startIso, targetHalfDuration);
+    const suggested = computeEndsAt(startIso, targetForma);
     return suggested ? isoToLocalInput(suggested) : null;
-  }, [type, startsAt, targetHalfDuration]);
+  }, [type, startsAt, targetForma]);
 
   const effectiveEndsAt =
     endsAtTouched || autoEndsAtSuggestion == null ? endsAt : autoEndsAtSuggestion;
@@ -594,13 +627,20 @@ export function EventDialog({
                 }}
                 disabled={readonly}
               />
-              {type === 'match' && targetHalfDuration != null && !endsAtTouched && (
-                <p className="text-xs text-muted-foreground">
-                  {t('dialog.field.ends_at_auto', {
-                    minutes: 2 * targetHalfDuration + HALFTIME_BREAK_MINUTES,
-                  })}
-                </p>
-              )}
+              {type === 'match' &&
+                targetForma != null &&
+                targetBloqueMin != null &&
+                !endsAtTouched && (
+                  <p className="text-xs text-muted-foreground">
+                    {t('dialog.field.ends_at_auto', {
+                      minutes: targetBloqueMin,
+                      periods: targetForma.periodCount,
+                      half: targetForma.halfDurationMinutes,
+                      pauses: targetForma.periodCount - 1,
+                      pause: targetForma.breakMinutes,
+                    })}
+                  </p>
+                )}
             </div>
           </div>
 

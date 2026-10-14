@@ -52,6 +52,7 @@ export type {
 export {
   computeEndsAt,
   computeCitacionAt,
+  matchBlockMinutes,
   DEFAULT_CITACION_LEAD_MINUTES,
-  HALFTIME_BREAK_MINUTES,
 } from './match-duration';
+export type { MatchBlockShape } from './match-duration';

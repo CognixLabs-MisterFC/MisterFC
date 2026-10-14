@@ -363,6 +363,7 @@ export type Database = {
       }
       categories: {
         Row: {
+          break_minutes: number
           club_id: string
           created_at: string
           half_duration_minutes: number
@@ -373,6 +374,7 @@ export type Database = {
           period_count: number
         }
         Insert: {
+          break_minutes?: number
           club_id: string
           created_at?: string
           half_duration_minutes?: number
@@ -383,6 +385,7 @@ export type Database = {
           period_count?: number
         }
         Update: {
+          break_minutes?: number
           club_id?: string
           created_at?: string
           half_duration_minutes?: number
