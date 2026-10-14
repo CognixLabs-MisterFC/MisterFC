@@ -1,6 +1,6 @@
 # Web comercial de MisterFC (misterfc.es) — Especificación · Checkpoint A
 
-> **Estado:** Checkpoint A. Es solo especificación: no hay código, ni cambios en Vercel, DNS o Supabase.
+> **Estado:** Checkpoint A, **revisado con las respuestas del 2026-10-14** (§12.1). Es solo especificación: no hay código, ni cambios en Vercel, DNS o Supabase.
 > **Base:** `origin/main` en `477783f5` (2026-10-14). He leído el código y he comprobado en producción, sin escribir nada, lo que se ve desde fuera (`misterfc.es`).
 > **Titular:** Cognix Labs, S.L.U. · Contacto: info.cognixlabs@gmail.com
 > Las rutas de código son relativas a la raíz del monorepo. Uso estas abreviaturas:
@@ -15,7 +15,7 @@
 - **Seguridad y protección del menor:** solo afirmaciones que se pueden comprobar en el código o la configuración del repo (§6.1). La lista de lo que **no** se puede afirmar está en §6.2.
 - **Sin precios.** En §5.3 aparece un precio que existe en el código: la suscripción de las familias, hoy apagada. No sale en la web.
 - **Sin nombres de clubes, logos de clubes ni opiniones** mientras no haya permiso por escrito. El apartado para mostrarlos queda preparado y oculto (§7.2).
-- **Capturas:** solo de la app real con datos ficticios. Nunca nombres, caras ni fotos reales de jugadores ni de clubes reales (§9).
+- **Capturas:** solo de la app real, con el club de test (`club-beta-test`) y datos ficticios. Nunca UD Fonteta ni ningún club real, y nunca nombres, caras ni fotos de personas reales (§9).
 - **Sin superlativos sin prueba, sin cifras sin respaldo y sin testimonios**, tampoco «testimonios próximamente».
 - **Vocabulario:** en castellano y valenciano no se dice «Login», sino «Acceso clubes» y «Entrar».
 
@@ -100,9 +100,9 @@ apps/web/src/app/[locale]/
    - Hay que subir `CACHE_NAME` a `misterfc-shell-v3`.
 2. **PWA instalada** (`public/manifest.json`): `start_url "/"`.
    - Hoy, un entrenador con la sesión caducada abre la PWA y ve «Elige tu club». Tras el cambio vería la portada comercial.
-   - Propuesta: `start_url "/clubes"`. Con sesión, `/clubes` ya manda al Inicio (`clubes/page.tsx:34-37`); sin sesión, enseña el selector. → **Pregunta 4.**
+   - Propuesta: `start_url "/clubes"`. Con sesión, `/clubes` ya manda al Inicio (`clubes/page.tsx:34-37`); sin sesión, enseña el selector. → **Pregunta abierta 4** (§12.2).
 3. **Enlace «Volver» de las páginas legales** (`WP/legal/layout.tsx:43`): apunta a `/clubes`.
-   - Las páginas legales no se tocan, así que se queda como está, salvo que digas lo contrario (pregunta 4).
+   - Las páginas legales no se tocan, así que se queda como está, salvo que digas lo contrario (pregunta abierta 4).
 4. **Metadatos del layout raíz** (`WP/layout.tsx:18-34`): la descripción es fija y en castellano, y no hay OpenGraph.
    - Las páginas comerciales llevan metadatos propios por idioma (§11). El layout raíz no se toca.
 
@@ -120,13 +120,12 @@ apps/web/src/app/[locale]/
 
 ### 2.2 Palabras que se añaden
 
-| Grupo                                      | Palabras                                                                              | Motivo                                                                                       |
-| ------------------------------------------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Web comercial (nuevas)                     | `funciones`, `seguridad`, `demo`, `portada`                                           | Segmentos de `WP/(web)/` (§1.2). `portada` es el destino interno del rewrite.                |
-| Web comercial (reservas defensivas)        | `precios`, `contacto`, `soporte`, `ayuda`, `blog`, `empresa`, `clientes`              | Páginas que es razonable añadir más adelante. Reservarlas ahora no cuesta nada.              |
-| Ya faltan hoy (tu lista)                   | `aplicacion`, `cuenta-eliminada`, `suscripcion`, `abrir-invitacion`, `patrocinadores` | Existen como ruta (o como redirect, en el caso de `abrir-invitacion`) y no están reservadas. |
-| **Ya falta hoy (no estaba en tu lista)**   | `miembros`                                                                            | Existe `W/miembros/` y no está reservada.                                                    |
-| Solo si se traducen los slugs (pregunta 2) | `funcions`, `seguretat`, `features`, `security`                                       | Las variantes en valenciano e inglés.                                                        |
+| Grupo                                    | Palabras                                                                              | Motivo                                                                                       |
+| ---------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Web comercial (nuevas)                   | `funciones`, `seguridad`, `demo`, `portada`                                           | Segmentos de `WP/(web)/` (§1.2). `portada` es el destino interno del rewrite.                |
+| Web comercial (reservas defensivas)      | `precios`, `contacto`, `soporte`, `ayuda`, `blog`, `empresa`, `clientes`              | Páginas que es razonable añadir más adelante. Reservarlas ahora no cuesta nada.              |
+| Ya faltan hoy (tu lista)                 | `aplicacion`, `cuenta-eliminada`, `suscripcion`, `abrir-invitacion`, `patrocinadores` | Existen como ruta (o como redirect, en el caso de `abrir-invitacion`) y no están reservadas. |
+| **Ya falta hoy (no estaba en tu lista)** | `miembros`                                                                            | Existe `W/miembros/` y no está reservada.                                                    |
 
 - `aviso-legal` y `cookies` **no** hacen falta: propongo que cuelguen de `/legal/`, y `legal` ya está reservada (§10).
 - **Test nuevo, propuesto para el Checkpoint B:** un test que lea las carpetas de primer nivel de `WP/` y de `W/`, y los `source` de `redirects()` en `next.config.ts`, y falle si alguno no está en `is_reserved_slug`. Así no vuelve a desfasarse.
@@ -142,7 +141,7 @@ apps/web/src/app/[locale]/
 select slug from public.clubs
 where slug = any (array['funciones','seguridad','demo','portada','precios','contacto','soporte',
   'ayuda','blog','empresa','clientes','aplicacion','cuenta-eliminada','suscripcion',
-  'abrir-invitacion','patrocinadores','miembros','funcions','seguretat','features','security']);
+  'abrir-invitacion','patrocinadores','miembros']);
 -- esperado: 0 filas
 ```
 
@@ -165,11 +164,11 @@ where slug = any (array['funciones','seguridad','demo','portada','precios','cont
 | Acceso clubes                                              | `/es/clubes`            | Existente (selector de clubes)       |
 | 404                                                        | —                       | La actual de la app                  |
 
-### 3.2 Slugs en los 3 idiomas: propongo **no traducirlos**
+### 3.2 Slugs en los 3 idiomas: **no se traducen** (decidido)
 
 - La app no usa `pathnames` de next-intl (`apps/web/src/i18n/routing.ts`): todas sus rutas son en castellano en los tres idiomas (`/en/calendario`, `/va/jugadores`).
 - **Para traducir los slugs habría que activar `pathnames` en toda la app.** Con eso activo, next-intl obliga a declarar cada ruta y su `Link` pasa a ser estricto, así que el cambio afectaría a las cientos de rutas de la app.
-- **Propuesta:** `/es/funciones`, `/va/funciones` y `/en/funciones`, igual que el resto de la app. → **Pregunta 2.**
+- **Decidido:** `/es/funciones`, `/va/funciones` y `/en/funciones`, igual que el resto de la app. No hace falta reservar variantes traducidas.
 
 ### 3.3 Cabecera
 
@@ -177,6 +176,8 @@ where slug = any (array['funciones','seguridad','demo','portada','precios','cont
 [MisterFC]   Funciones   Seguridad          ES · VA · EN    Acceso clubes   [ Solicitar demo ]
 ```
 
+- **Logo:** el icono de la app (`apps/native/assets/icon.png`) seguido de «MisterFC» en texto. No hay fichero de logo y no se dibuja uno nuevo.
+- **Verde principal:** `#10B981` (esmeralda), el de la web (`apps/web/src/app/globals.css`). El `#438832` del icono nativo no se usa como color de la web.
 - **«Solicitar demo»** es el botón principal, relleno en verde (`#10B981`).
 - **«Acceso clubes»** es un enlace discreto que lleva a `/{idioma}/clubes`. En inglés es «Club login».
 - **Idioma:** el selector lleva a la misma página en el otro idioma.
@@ -199,7 +200,7 @@ where slug = any (array['funciones','seguridad','demo','portada','precios','cont
 
 ## 4. Portada sección a sección (borrador en castellano)
 
-El tono es de **tú**, como la app (`messages/es.json`: «Elige tu club», «Entra a tu club»). → **Pregunta 1.**
+El tono es de **tú** (decidido), como la app (`messages/es.json`: «Elige tu club», «Entra a tu club»). Vale para toda la web comercial, el formulario y el correo de acuse.
 
 ### 4.1 Hero
 
@@ -240,9 +241,10 @@ El tono es de **tú**, como la app (`messages/es.json`: «Elige tu club», «Ent
 Cinco puntos, todos de §6.1:
 
 - Solo se entra a un club por invitación.
-- Cada club solo ve sus datos: el control de acceso se aplica en la propia base de datos.
+- Un club no puede ver los datos de otro: el control de acceso se aplica en la propia base de datos.
 - La foto de un jugador no se muestra sin la autorización de imagen.
-- Los datos de salud solo los ven quienes los necesitan, y cada consulta del personal queda registrada.
+- Dentro del club, los datos de salud solo los ve quien los necesita, y cada consulta del personal queda registrada.
+- Los datos se alojan en la Unión Europea.
 - El tutor puede descargar los datos de su hijo o pedir su supresión.
 
 → enlace «Cómo protegemos los datos» · CTA «Solicitar una demo» (3.º).
@@ -257,7 +259,7 @@ Cinco puntos, todos de §6.1:
 
 ### 4.8 Cómo empezamos (3 pasos)
 
-1. **Demo de 30 minutos** por videollamada, con tu caso. _(La duración está pendiente: pregunta 6.)_
+1. **Demo de 30 minutos** por videollamada, con tu caso.
 2. **Montamos tu club:** equipos de la temporada, importación de jugadores desde Excel y tu escudo y tus colores.
 3. **Invitas a tu cuerpo técnico y a las familias**, y empezáis a usarlo.
 
@@ -268,12 +270,13 @@ MisterFC es un producto de Cognix Labs, S.L.U., con sede en Valencia. (Sin cifra
 ### 4.10 Preguntas frecuentes (antes del CTA final)
 
 - **¿Cuánto cuesta?** Depende del tamaño del club y de lo que necesites. Te lo contamos en la demo, sin compromiso. _(Sin cifras.)_
-- **¿Las familias tienen que pagar algo?** → **Pregunta 7.** Hay una suscripción para familias construida pero apagada (§5.3); no la menciono hasta que decidas.
+- **¿Las familias tienen que pagar algo?** No: la app es gratuita para las familias.
+  - ⚠️ Es verdad mientras `SUBSCRIPTION_GATE` siga apagado (§5.3). **Si algún día se enciende, esta respuesta y §7.1 se cambian antes de encenderlo.** Lo dejo anotado en el código de la FAQ, junto al texto.
 - **¿Tenemos que instalar algo?** La dirección y los entrenadores pueden usar la web desde cualquier navegador. Para el día a día hay app en iOS y Android.
 - **¿Funciona sin conexión?** La app móvil permite consultar la información ya descargada y registrar las acciones del partido sin cobertura.
 - **¿Podemos traer nuestros jugadores?** Sí, desde una hoja de Excel o CSV con nuestra plantilla.
 - **¿Está en valenciano?** Sí: castellano, valenciano e inglés, en la web y en la app.
-- **¿Quién puede ver los datos de los menores?** Resumen de §6.1 con enlace a Seguridad.
+- **¿Quién puede ver los datos de los menores?** Resumen de §6.1 con enlace a Seguridad, siempre con «dentro del club» (§6.2, primera fila).
 
 ### 4.11 CTA final
 
@@ -372,19 +375,19 @@ Verificadas en el código el 2026-10-14. Roles: `admin_club` y `director` (direc
 
 ### 5.3 No se anuncia
 
-| Qué                                                                                                | Por qué                                                                                             |
-| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Suscripción de las familias (precio por cuenta y año en `packages/core/src/subscription/rules.ts`) | Apagada (`SUBSCRIPTION_GATE`), y la web no lleva precios. → Pregunta 7                              |
-| Corte web para familias (`FAMILY_WEB_CUT`)                                                         | Apagado. Hoy las familias también pueden usar la web; la web comercial solo dice que tienen la app. |
-| Importación de partidos de la FFCV                                                                 | Herramienta interna del superadmin (`packages/core/src/ffcv/permiso.ts`).                           |
-| Notificaciones por correo                                                                          | Canal desactivado (`W/perfil/notificaciones/preferences-matrix.tsx:41`).                            |
-| Permisos configurables por entrenador                                                              | El sistema se eliminó (`apps/web/src/lib/messaging-permissions.ts:24`).                             |
-| Confirmación de asistencia a entrenamientos por las familias                                       | No existe en el código; está en el backlog (`docs/journey/plan-maestro.md:924`).                    |
-| Invitación masiva por correo desde Excel                                                           | Solo spec (`docs/specs/16.x-bulk-invite-excel.md`).                                                 |
-| Traspaso de propiedad del club, cuotas y finanzas, scouting, vídeo, GPS                            | No construido o fuera del plan (`plan-maestro.md:936, 1026-1031`).                                  |
-| Inteligencia artificial                                                                            | No existe; en el plan es Ola 3. No se menciona.                                                     |
-| Consola de plataforma, `dev-diagram`, `dev-pitch-editor`                                           | Internas o solo de desarrollo.                                                                      |
-| Que la dirección puede consultar las conversaciones                                                | Existe (modo observador y `conversation.audit_read`). Es delicado de anunciar. → Pregunta 8         |
+| Qué                                                                                                | Por qué                                                                                                                |
+| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Suscripción de las familias (precio por cuenta y año en `packages/core/src/subscription/rules.ts`) | Apagada (`SUBSCRIPTION_GATE`), y la web no lleva precios. La web dice que la app es gratuita para las familias (§7.1). |
+| Corte web para familias (`FAMILY_WEB_CUT`)                                                         | Apagado. Hoy las familias también pueden usar la web; la web comercial solo dice que tienen la app.                    |
+| Importación de partidos de la FFCV                                                                 | Herramienta interna del superadmin (`packages/core/src/ffcv/permiso.ts`).                                              |
+| Notificaciones por correo                                                                          | Canal desactivado (`W/perfil/notificaciones/preferences-matrix.tsx:41`).                                               |
+| Permisos configurables por entrenador                                                              | El sistema se eliminó (`apps/web/src/lib/messaging-permissions.ts:24`).                                                |
+| Confirmación de asistencia a entrenamientos por las familias                                       | No existe en el código; está en el backlog (`docs/journey/plan-maestro.md:924`).                                       |
+| Invitación masiva por correo desde Excel                                                           | Solo spec (`docs/specs/16.x-bulk-invite-excel.md`).                                                                    |
+| Traspaso de propiedad del club, cuotas y finanzas, scouting, vídeo, GPS                            | No construido o fuera del plan (`plan-maestro.md:936, 1026-1031`).                                                     |
+| Inteligencia artificial                                                                            | No existe; en el plan es Ola 3. No se menciona.                                                                        |
+| Consola de plataforma, `dev-diagram`, `dev-pitch-editor`                                           | Internas o solo de desarrollo.                                                                                         |
+| Que la dirección puede consultar las conversaciones                                                | Existe (modo observador y `conversation.audit_read`). **Decidido: no se menciona.**                                    |
 
 ---
 
@@ -392,43 +395,44 @@ Verificadas en el código el 2026-10-14. Roles: `admin_club` y `director` (direc
 
 ### 6.1 Afirmaciones que se publican (verificadas)
 
-| #   | Afirmación (borrador)                                                                                                                                                                                                                                                          | Evidencia                                                                                                                                                                 |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| S1  | **Solo se entra a un club por invitación.** No hay registro abierto.                                                                                                                                                                                                           | Trigger `registro_no_permitido`, `supabase/migrations/20260919000000_f14d_close_open_signup.sql:36-52`; `/signup` redirige, `middleware.ts:40-49`                         |
-| S2  | **Cada club solo ve sus datos:** el control de acceso se aplica en la propia base de datos, tabla a tabla, no solo en la pantalla.                                                                                                                                             | RLS activa en todas las tablas de `public` (`supabase/migrations/`); test `supabase/tests/rls_multi_tenant.sql`                                                           |
-| S3  | **Cada cambio pasa más de 140 pruebas automáticas de seguridad de la base de datos** antes de publicarse.                                                                                                                                                                      | 144 ficheros en `supabase/tests/`; job `pgtap` bloqueante en `.github/workflows/ci.yml:230-376`                                                                           |
-| S4  | Cada persona ve lo que le corresponde según su papel: dirección, coordinación, entrenador o familia.                                                                                                                                                                           | Roles en `20260822000000_f1b0_director_role_and_club_owner.sql:26-33`; funciones de acceso por rol en la RLS                                                              |
-| S5  | **La minoría de edad se calcula cada día con la fecha de nacimiento.** Mientras el jugador es menor, sus datos sensibles (salud, consentimientos, supresión y descarga) los gestiona su tutor; a los 18 pasan al jugador.                                                      | `player_is_minor` y `user_manages_player_sensitive`, `20261067000000_mn1_cuenta_menor_helpers.sql:85-135`                                                                 |
-| S6  | **Un menor no puede tener cuenta propia sin un tutor vinculado**, y el último tutor no puede desvincularse mientras el menor la tenga.                                                                                                                                         | `20261097000000_self_no_nace_sin_tutor.sql`, `20261098000000_invitacion_self_sin_tutor.sql`; test `self_no_nace_sin_tutor.sql`                                            |
-| S7  | **Consentimientos separados** (imagen interna, imagen en redes, datos médicos), en un registro que no se puede editar ni borrar: retirar un consentimiento añade una entrada nueva.                                                                                            | `20260901000000_f14_1_consent_base.sql:33-39, 82-134`                                                                                                                     |
-| S8  | **Sin autorización de imagen, la foto del jugador no se muestra.** Si se retira, deja de verse al momento, también en el almacenamiento de archivos.                                                                                                                           | `20261079000000_foto_sin_decision_no_se_ve.sql:53-74`; storage en `20260910000000_f14_5_season_consents.sql:110`; buckets privados; test `foto_sin_decision_no_se_ve.sql` |
-| S9  | **Los datos de salud solo los ven** la dirección del club, el cuerpo técnico del equipo del jugador (y el del equipo que lo convoca, solo hasta el final del día del partido), el tutor y el propio jugador si es mayor de edad. **Siempre con el consentimiento registrado.** | `user_can_access_player_medical`, `20261094000000_promocion_caduca_medica.sql:71-103`; puerta en `get_player_medical`; test `rls_medical_consents.sql`                    |
-| S10 | **Cada consulta de datos de salud por parte del personal queda registrada:** quién, cuándo y desde dónde.                                                                                                                                                                      | `get_player_medical` escribe `medical.read` en `audit_log` (`20260924000000_f14b_4_superadmin_medical_audit.sql:21-54`)                                                   |
-| S11 | **El tutor puede descargar en PDF todos los datos de su hijo** y pedir su supresión, que aprueba el club.                                                                                                                                                                      | `W/mi-ficha/export/[playerId]/route.ts`; `apps/web/src/app/api/erasures/approve/route.ts`                                                                                 |
-| S12 | **Cualquier usuario puede eliminar su cuenta**, desde la app o desde la web.                                                                                                                                                                                                   | `apps/native/src/ui/delete-account-card.tsx`, `W/perfil/delete-account-card.tsx`; cron diario `api/cron/account-deletions`                                                |
-| S13 | Recuperar la contraseña tiene **límites de intentos**, y la invitación también.                                                                                                                                                                                                | `20261092000000_limite_envios_recuperacion.sql`, `20261074000000_r2_limite_intentos_aceptacion.sql`                                                                       |
-| S14 | **En el móvil, la sesión se guarda en el almacén seguro del sistema** (Keychain y Keystore).                                                                                                                                                                                   | `apps/native/src/lib/supabase.ts:30` (`expo-secure-store`)                                                                                                                |
-| S15 | Los informes de errores técnicos no incluyen correos, IP ni cookies, y **no se graban las sesiones** de uso.                                                                                                                                                                   | `apps/web/sentry.*.config.ts` (replays a 0), `apps/native/src/lib/sentry.ts:12-53`                                                                                        |
-| S16 | **No guardamos datos de tarjeta:** los pagos dentro de la app los procesan Apple y Google.                                                                                                                                                                                     | `apps/native/src/subscription/purchases.ts:67`; no hay ninguna librería de pago con tarjeta                                                                               |
-| S17 | **Sin publicidad ni analítica de terceros en la app.**                                                                                                                                                                                                                         | `apps/web/package.json` (sin GA ni similares); Sentry por túnel propio `/monitoring`                                                                                      |
-| S18 | **Proveedores:** Supabase (base de datos y archivos), Vercel (alojamiento), Resend (correo), Sentry (errores), Expo, Apple y Google (avisos al móvil) y RevenueCat (suscripciones en la app).                                                                                  | Código: `apps/web/src/lib/email/resend.ts`, `lib/expo-push.ts`, `sentry.*`, `api/webhooks/revenuecat`                                                                     |
+| #   | Afirmación (borrador)                                                                                                                                                                                                                                                                           | Evidencia                                                                                                                                                                                                                                                                                                                       |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1  | **Solo se entra a un club por invitación.** No hay registro abierto.                                                                                                                                                                                                                            | Trigger `registro_no_permitido`, `supabase/migrations/20260919000000_f14d_close_open_signup.sql:36-52`; `/signup` redirige, `middleware.ts:40-49`                                                                                                                                                                               |
+| S2  | **Un club no puede ver los datos de otro club:** el control de acceso se aplica en la propia base de datos, tabla a tabla, no solo en la pantalla.                                                                                                                                              | RLS activa en todas las tablas de `public` (`supabase/migrations/`); test `supabase/tests/rls_multi_tenant.sql`                                                                                                                                                                                                                 |
+| S3  | **Cada cambio pasa más de 140 pruebas automáticas de seguridad de la base de datos** antes de publicarse.                                                                                                                                                                                       | 144 ficheros en `supabase/tests/`; job `pgtap` bloqueante en `.github/workflows/ci.yml:230-376`                                                                                                                                                                                                                                 |
+| S4  | Cada persona ve lo que le corresponde según su papel: dirección, coordinación, entrenador o familia.                                                                                                                                                                                            | Roles en `20260822000000_f1b0_director_role_and_club_owner.sql:26-33`; funciones de acceso por rol en la RLS                                                                                                                                                                                                                    |
+| S5  | **La minoría de edad se calcula cada día con la fecha de nacimiento.** Mientras el jugador es menor, sus datos sensibles (salud, consentimientos, supresión y descarga) los gestiona su tutor; a los 18 pasan al jugador.                                                                       | `player_is_minor` y `user_manages_player_sensitive`, `20261067000000_mn1_cuenta_menor_helpers.sql:85-135`                                                                                                                                                                                                                       |
+| S6  | **Un menor no puede tener cuenta propia sin un tutor vinculado**, y el último tutor no puede desvincularse mientras el menor la tenga.                                                                                                                                                          | `20261097000000_self_no_nace_sin_tutor.sql`, `20261098000000_invitacion_self_sin_tutor.sql`; test `self_no_nace_sin_tutor.sql`                                                                                                                                                                                                  |
+| S7  | **Consentimientos separados** (imagen interna, imagen en redes, datos médicos), en un registro que no se puede editar ni borrar: retirar un consentimiento añade una entrada nueva.                                                                                                             | `20260901000000_f14_1_consent_base.sql:33-39, 82-134`                                                                                                                                                                                                                                                                           |
+| S8  | **Sin autorización de imagen, la foto del jugador no se muestra.** Si se retira, deja de verse al momento, también en el almacenamiento de archivos.                                                                                                                                            | `20261079000000_foto_sin_decision_no_se_ve.sql:53-74`; storage en `20260910000000_f14_5_season_consents.sql:110`; buckets privados; test `foto_sin_decision_no_se_ve.sql`                                                                                                                                                       |
+| S9  | **Dentro del club, los datos de salud solo los ven** la dirección del club, el cuerpo técnico del equipo del jugador (y el del equipo que lo convoca, solo hasta el final del día del partido), el tutor y el propio jugador si es mayor de edad. **Siempre con el consentimiento registrado.** | `user_can_access_player_medical`, `20261094000000_promocion_caduca_medica.sql:71-103`; puerta en `get_player_medical`; test `rls_medical_consents.sql`                                                                                                                                                                          |
+| S10 | **Cada consulta de datos de salud por parte del personal queda registrada:** quién, cuándo y desde dónde.                                                                                                                                                                                       | `get_player_medical` escribe `medical.read` en `audit_log` (`20260924000000_f14b_4_superadmin_medical_audit.sql:21-54`)                                                                                                                                                                                                         |
+| S11 | **El tutor puede descargar en PDF todos los datos de su hijo** y pedir su supresión, que aprueba el club.                                                                                                                                                                                       | `W/mi-ficha/export/[playerId]/route.ts`; `apps/web/src/app/api/erasures/approve/route.ts`                                                                                                                                                                                                                                       |
+| S12 | **Cualquier usuario puede eliminar su cuenta**, desde la app o desde la web.                                                                                                                                                                                                                    | `apps/native/src/ui/delete-account-card.tsx`, `W/perfil/delete-account-card.tsx`; cron diario `api/cron/account-deletions`                                                                                                                                                                                                      |
+| S13 | Recuperar la contraseña tiene **límites de intentos**, y la invitación también.                                                                                                                                                                                                                 | `20261092000000_limite_envios_recuperacion.sql`, `20261074000000_r2_limite_intentos_aceptacion.sql`                                                                                                                                                                                                                             |
+| S14 | **En el móvil, la sesión se guarda en el almacén seguro del sistema** (Keychain y Keystore).                                                                                                                                                                                                    | `apps/native/src/lib/supabase.ts:30` (`expo-secure-store`)                                                                                                                                                                                                                                                                      |
+| S15 | Los informes de errores técnicos no incluyen correos, IP ni cookies, y **no se graban las sesiones** de uso.                                                                                                                                                                                    | `apps/web/sentry.*.config.ts` (replays a 0), `apps/native/src/lib/sentry.ts:12-53`                                                                                                                                                                                                                                              |
+| S16 | **No guardamos datos de tarjeta:** los pagos dentro de la app los procesan Apple y Google.                                                                                                                                                                                                      | `apps/native/src/subscription/purchases.ts:67`; no hay ninguna librería de pago con tarjeta                                                                                                                                                                                                                                     |
+| S17 | **Sin publicidad ni analítica de terceros en la app.**                                                                                                                                                                                                                                          | `apps/web/package.json` (sin GA ni similares); Sentry por túnel propio `/monitoring`                                                                                                                                                                                                                                            |
+| S18 | **Proveedores:** Supabase (base de datos y archivos), Vercel (alojamiento), Resend (correo), Sentry (errores), Expo, Apple y Google (avisos al móvil) y RevenueCat (suscripciones en la app).                                                                                                   | Código: `apps/web/src/lib/email/resend.ts`, `lib/expo-push.ts`, `sentry.*`, `api/webhooks/revenuecat`                                                                                                                                                                                                                           |
+| S19 | **Los datos se alojan en la Unión Europea** (Irlanda): la base de datos y los archivos. Frase autorizada: «datos alojados en la Unión Europea».                                                                                                                                                 | Medido el 2026-10-14 sin credenciales: `db.tvbdykkuoyalyzllnqkn.supabase.co` → `2a05:d018:a0:6001:…`, dentro de `2a05:d018::/35` = `eu-west-1` en `ip-ranges.amazonaws.com` (control: `2a05:d014::1` sale `eu-central-1`). Coincide con `scripts/supabase-cli.sh:56`. Los archivos van en el mismo proyecto (Supabase Storage). |
 
 ### 6.2 Lo que NO se publica
 
-| Afirmación                                                               | Motivo                                                                                                                                                                                                                                   |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| «Ni siquiera nosotros vemos tus datos» / «aislamiento absoluto»          | **Falso.** El superadmin de Cognix actúa como `admin_club` en todos los clubes, datos de salud incluidos (`20260921000000_f14b_2_superadmin_chokepoint.sql:6-11`). Queda registrado (`medical.read.platform`), pero existe. → Pregunta 9 |
-| Región concreta («datos en la UE», «servidores en España»)               | No consta en el repo: `vercel.json` no tiene `regions` y la región de Supabase no está en la configuración. → Pregunta 10                                                                                                                |
-| «Cifrado en reposo», «copias diarias», «cifrado de campos»               | No se puede comprobar con el repo; no hay cifrado propio de campos.                                                                                                                                                                      |
-| «Contraseñas robustas», «verificación en dos pasos», «bloqueo de cuenta» | No hay segundo factor. La política de contraseñas de producción no está en el repo, y en local el mínimo es 6.                                                                                                                           |
-| «Verificamos la identidad o la tutela»                                   | No: la asume el club (`Documentos/misterfc-politica-privacidad.md:91`).                                                                                                                                                                  |
-| «Los menores gestionan sus derechos desde los 14»                        | El código usa 18 (S5).                                                                                                                                                                                                                   |
-| «Cabeceras de seguridad», «CSP»                                          | No hay (`next.config.ts` sin `headers()`). Lo apunto como tarea aparte (§12).                                                                                                                                                            |
-| «Cumplimos el RGPD» o certificaciones                                    | No se afirma cumplimiento ni certificación. Se describen medidas concretas.                                                                                                                                                              |
+| Afirmación                                                                                                                                    | Motivo                                                                                                                                                                                                                                                                                                                                                                                                           |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| «Ni siquiera nosotros vemos tus datos», «aislamiento absoluto», «solo tu club ve tus datos», «nadie más accede» y cualquier frase equivalente | **Falso.** El superadmin de Cognix actúa como `admin_club` en todos los clubes, datos de salud incluidos (`20260921000000_f14b_2_superadmin_chokepoint.sql:6-11`). **Decidido: no se menciona ese acceso y no se dice nada que lo niegue.** Por eso S2 dice «un club no ve los de otro» y S9 va acotada con «dentro del club»: cualquier lista de quién ve algo que no lleve ese acote sería exhaustiva y falsa. |
+| «Los datos no salen de la UE», «todo en Europa», «servidores en España»                                                                       | **Falso o sin comprobar.** Lo que está en Irlanda es el almacenamiento (S19). Las funciones de Vercel que sirven la app se ejecutan en **`iad1` (Washington, EE. UU.)**: cabecera `x-vercel-id: cdg1::iad1::…` en `/es/clubes`, `/api/health` y `/es/udfonteta` (2026-10-14); `vercel.json` no fija `regions`. La frase permitida es solo «datos alojados en la Unión Europea».                                  |
+| «Cifrado en reposo», «copias diarias», «cifrado de campos»                                                                                    | No se puede comprobar con el repo; no hay cifrado propio de campos.                                                                                                                                                                                                                                                                                                                                              |
+| «Contraseñas robustas», «verificación en dos pasos», «bloqueo de cuenta»                                                                      | No hay segundo factor. La política de contraseñas de producción no está en el repo, y en local el mínimo es 6.                                                                                                                                                                                                                                                                                                   |
+| «Verificamos la identidad o la tutela»                                                                                                        | No: la asume el club (`Documentos/misterfc-politica-privacidad.md:91`).                                                                                                                                                                                                                                                                                                                                          |
+| «Los menores gestionan sus derechos desde los 14»                                                                                             | El código usa 18 (S5).                                                                                                                                                                                                                                                                                                                                                                                           |
+| «Cabeceras de seguridad», «CSP»                                                                                                               | No hay (`next.config.ts` sin `headers()`). Lo apunto como tarea aparte (§12).                                                                                                                                                                                                                                                                                                                                    |
+| «Cumplimos el RGPD» o certificaciones                                                                                                         | No se afirma cumplimiento ni certificación. Se describen medidas concretas.                                                                                                                                                                                                                                                                                                                                      |
 
 ### 6.3 Página `/seguridad`
 
-- **Bloques:** acceso y aislamiento (S1-S4), menores (S5-S8), salud (S9-S10), derechos de las familias (S11-S12), cuentas y contraseñas (S13-S14), proveedores y privacidad (S15-S18).
+- **Bloques:** acceso y aislamiento (S1-S4), menores (S5-S8), salud (S9-S10), derechos de las familias (S11-S12), cuentas y contraseñas (S13-S14), proveedores, privacidad y ubicación de los datos (S15-S19).
 - **Al final, enlace a la política de privacidad.**
 
 ---
@@ -438,7 +442,8 @@ Verificadas en el código el 2026-10-14. Roles: `admin_club` y `director` (direc
 ### 7.1 Familias (pequeño, en la portada y en el pie)
 
 **Título:** ¿Eres familia de un jugador?
-**Texto:** Tu club te invitará a la app MisterFC: convocatorias, calendario, mensajes y la evolución de tu hijo o hija.
+**Texto:** Tu club te invitará a la app MisterFC: convocatorias, calendario, mensajes y la evolución de tu hijo o hija. **La app es gratuita para las familias.**
+(Misma condición que la FAQ de §4.10: depende de que `SUBSCRIPTION_GATE` siga apagado.)
 **Botones** (enlaces reales, `apps/web/src/lib/family-web-cut.ts:61-64`):
 
 - App Store: `https://apps.apple.com/es/app/misterfc/id6810337932`
@@ -479,8 +484,8 @@ Son 6 obligatorios, más la casilla. No hay casilla de comunicaciones comerciale
 
 ### 8.2 Textos
 
-- **«¿Qué pasa después?»:** Te escribiremos al correo que nos indiques para acordar día y hora. La demo es por videollamada y dura unos 30 minutos. Solicitarla no te compromete a nada.
-  - **El plazo de respuesta** solo se pone si se puede cumplir, por ejemplo «en un máximo de 2 días laborables». → **Pregunta 6.**
+- **«¿Qué pasa después?»:** Te escribiremos en un máximo de 2 días laborables al correo que nos indiques para acordar día y hora. La demo es una videollamada de 30 minutos. Solicitarla no te compromete a nada.
+  - El plazo (2 días laborables) y la duración (30 minutos) están decididos y se repiten igual en el acuse y en `/demo/gracias`.
 - **Información básica de protección de datos** bajo el botón. Responsable: Cognix Labs, S.L.U. Finalidad: atender la solicitud de demo. Base: medidas precontractuales. Destinatarios: Vercel y Resend. Conservación y derechos según §10. Enlace a la privacidad.
 - **Si el envío falla:** error con el correo de contacto como alternativa.
 
@@ -490,15 +495,16 @@ Son 6 obligatorios, más la casilla. No hay casilla de comunicaciones comerciale
 - **Remitente propuesto:** `MisterFC <demo@misterfc.es>` (variable `DEMO_FROM`). `misterfc.es` ya está verificado en Resend; hoy envía `no-reply@misterfc.es` (`apps/web/src/lib/email/resend.ts:25`).
   - ⚠️ **`misterfc.es` no tiene MX** (consulta DNS del 2026-10-14). Un correo a `demo@misterfc.es` rebotaría.
   - Por eso el **acuse lleva `Reply-To: info.cognixlabs@gmail.com`**: si el club contesta al acuse, la respuesta llega.
-- **Acuse al solicitante:** en su idioma, sin publicidad. «Hemos recibido tu solicitud; te escribiremos para acordar la demo.»
+- **Remitente:** decidido, `demo@misterfc.es` con `Reply-To: info.cognixlabs@gmail.com`.
+- **Acuse al solicitante:** en su idioma, sin publicidad. «Hemos recibido tu solicitud. Te escribiremos en un máximo de 2 días laborables para acordar la hora de la demo, una videollamada de 30 minutos.»
 - **Envío técnico:** se reutiliza `sendEmail` (`apps/web/src/lib/email/resend.ts`), que ya existe, y la misma `RESEND_API_KEY`.
   - Los eventos de este correo llegarán al webhook de Resend, que hoy solo sigue invitaciones; ese webhook los ignora con un 200 (`apps/web/src/app/api/webhooks/resend/route.ts`).
 - **Límite:** 5 envíos por IP y hora, en memoria, igual que en NIDO. Es aproximado: hay un contador por instancia de la función.
 
-### 8.4 Enlace para reservar hora
+### 8.4 Reserva de hora: no hay
 
-- **No va incrustado en la web**, porque los calendarios externos suelen poner cookies y obligarían a poner aviso de cookies.
-- **Propuesta:** si hay herramienta de reservas, el enlace va **en el acuse por correo**. Si no, la cita se acuerda por correo, como en NIDO. → **Pregunta 5.**
+- **Decidido:** sin calendario ni enlace de reserva, ni en la web ni en el acuse. El club envía el formulario y le escribimos por correo para acordar la hora.
+- Ventaja añadida: sin terceros incrustados, la web no necesita banner de cookies (§10.3).
 
 ### 8.5 Páginas
 
@@ -509,46 +515,75 @@ Son 6 obligatorios, más la casilla. No hay casilla de comunicaciones comerciale
 
 ## 9. Capturas
 
-### 9.1 Reglas
+### 9.1 Reglas (decididas el 2026-10-14)
 
-- **Solo datos ficticios, en un entorno local**, nunca en producción. `apps/web/scripts/seed-test-accounts.mjs` escribe en el Supabase **remoto**: no se usa para esto.
-- **Hoy no hay datos de prueba realistas.** No existe `supabase/seed.sql`, aunque `supabase/config.toml:60-65` lo referencia.
-- **Club ficticio** con nombre inventado (por ejemplo «CF Ribera Nord», tras comprobar que no existe) y escudo dibujado para la ocasión.
-- **Personas:**
-  - nombres y apellidos generados (combinaciones comunes, sin personas reales);
-  - **ninguna foto de jugador**: sin foto, o con las iniciales que ya pinta la app;
-  - sin caras en ninguna imagen.
-- **Nunca `udfonteta`** ni ningún club real.
+- **Solo con el club de test, `club-beta-test` («Club Beta Test»).** Está en el Supabase de **producción** (`docs/journey/cuentas-prueba.md:9-11`) y oculto en el directorio (`is_public = false`, `20261056000000_f14j_5a_clubs_is_public.sql:79`).
+- **Nunca con UD Fonteta** (`udfonteta`): es un club real y no hay permiso. Tampoco con ningún otro club real.
+- **Todo lo que se vea tiene que ser ficticio:** nombres de jugadores, staff y familias, fotos, escudos, rivales, campos, textos de mensajes y de informes.
+  - Ninguna foto de persona; sin foto, la app pinta las iniciales.
+  - Escudos dibujados para la ocasión, nunca el de un club real, tampoco el de un rival.
+- **Capturas web:** las hago yo (Checkpoint B). **Capturas de la app móvil:** las haces tú con el móvil, según la lista de §9.5.
 
-### 9.2 Cómo se generan (Checkpoint B)
+### 9.2 Revisión del club de test: lo que ya se ve desde el repo
 
-1. `supabase start` local, con todas las migraciones del repo.
-2. **Seed nuevo**, `supabase/seed/web-demo.sql`:
-   - un club con 6 equipos de la temporada y unos 90 jugadores ficticios;
-   - cuerpo técnico, ejercicios con diagrama, sesiones, convocatorias, un partido con eventos de directo, informes y mensajes.
-   - **No lo carga `config.toml`.** Se aplica a mano, para que no se mezcle con los tests.
-3. **Web:** script de Playwright que inicia sesión con cada rol y captura las pantallas en 1440×900 y en 390×844.
-4. **App nativa:** build de desarrollo de Expo contra el Supabase local, capturas en el emulador de Android y en el simulador de iOS. → **Pregunta 11.**
-5. **Mockups** de portátil y móvil; las capturas se guardan en `apps/web/public/web/capturas/` con `next/image`.
+Antes de capturar hay que revisar los datos del club de test en producción. Desde el repo ya se ve que **no todo es ficticio**:
 
-### 9.3 Lista
+| Dato                                                                                | Dónde consta                                    | Problema                                                                                                    |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Jugador «Jose Milla», equipo Alevín B                                               | `docs/journey/cuentas-prueba.md:43-44`          | Parece un nombre real (coincide con el titular de las cuentas `jovimib+…`). **No puede salir en capturas.** |
+| Jugador «Andrés Test»                                                               | `cuentas-prueba.md:45`                          | Ficticio, pero «Test» queda mal en una captura comercial.                                                   |
+| Nombres de cuenta «Jugador 1 (Jose self)», «Familia 1 (Jose parent)», «Jugador 2 …» | `apps/web/scripts/seed-test-accounts.mjs:46-58` | Salen en mensajes, en la cabecera y en el perfil.                                                           |
+| Nombre del club «Club Beta Test»                                                    | `seed-test-accounts.mjs:2`                      | Sale en casi todas las pantallas. → **Pregunta abierta A** (§12.2).                                         |
 
-| #   | Captura                                         | Plataforma | Dónde se usa            |
-| --- | ----------------------------------------------- | ---------- | ----------------------- |
-| C1  | Dashboard de dirección                          | Web        | Hero (portátil), §4.4-5 |
-| C2  | Convocatoria vista por la familia, respondiendo | Nativa     | Hero (móvil), §4.4-2    |
-| C3  | Planificador semanal de sesiones                | Web        | §4.4-1, Funciones B     |
-| C4  | Ejercicio con diagrama                          | Web        | Funciones B             |
-| C5  | Editor de alineación                            | Web        | §4.4-2, Funciones C     |
-| C6  | Directo del partido (entrada rápida)            | Nativa     | §4.4-3, Funciones C     |
-| C7  | Informe de desarrollo con gráficas              | Web        | §4.4-4, Funciones D     |
-| C8  | Mensajes del equipo                             | Nativa     | §4.4-6, Funciones E     |
-| C9  | Ficha deportiva del jugador                     | Nativa     | Funciones D, familias   |
-| C10 | Consentimientos de imagen y salud               | Nativa     | Seguridad               |
-| C11 | Jugada animada                                  | Web        | Funciones B             |
-| C12 | Login del club con escudo y color               | Web        | Funciones A             |
+**Lo que no puedo ver sin leer producción:** el resto de jugadores, el staff, el escudo, las fotos, los rivales, los mensajes y los informes. No lo he leído: en este checkpoint no se toca Supabase. → **Pregunta abierta B** (§12.2).
 
-Hasta tener las capturas, cada sitio lleva un hueco con marco, igual que en NIDO.
+### 9.3 Preparación de los datos (Checkpoint B, nada hecho todavía)
+
+1. **Inventario en solo lectura** de todo lo que se ve en las pantallas de §9.4 y §9.5, con estas consultas: club (nombre y escudo), equipos, jugadores (nombre, foto), staff y familias (`profiles.full_name`, avatar), eventos (rival, lugar), mensajes, anuncios, informes, ejercicios, sesiones y jugadas. Sale una tabla «ficticio / no ficticio / falta».
+2. **Script de preparación** en el repo (`supabase/scripts/capturas-club-test.sql`), solo sobre filas de `club-beta-test` y con un aserto que aborte si toca otro club:
+   - renombrar lo que no sea ficticio (Jose Milla incluido);
+   - completar lo que falte para que las pantallas se vean llenas: 2 o 3 equipos, unos 15 jugadores por equipo, staff, 4 o 5 ejercicios con diagrama, una semana de sesiones, una convocatoria publicada con respuestas, un partido con directo (goles, tarjeta, cambio) y valoraciones, un informe de desarrollo, mensajes y un anuncio;
+   - escudo ficticio subido al almacenamiento del club.
+3. **Lo aplicas tú**, como toda escritura en producción: ensayo con `ROLLBACK`, visto bueno y aplicación copiando el `cat` del fichero commiteado.
+4. **Cuidado con la cuenta de la revisión de Apple** (`jovimib+familia1@gmail.com`, `cuentas-prueba.md:72-80`): el script no la borra ni la desvincula, y no cambia su contraseña.
+5. Nombres generados (combinaciones comunes de nombre y dos apellidos), y comprobación de que el nombre del club y de los rivales no existe en la FFCV.
+
+### 9.4 Capturas web (las hago yo)
+
+- Playwright contra producción, con cuentas del club de test: dirección, entrenador y familia. → necesito sus credenciales (pregunta abierta B).
+- Resoluciones 1440×900 y 390×844, castellano, modo claro. Las versiones en valenciano e inglés, si las pantallas lo permiten; si no, se usa la de castellano.
+- Se guardan en `apps/web/public/web/capturas/` y se pintan con `next/image`. Mockups de portátil y móvil.
+- Hasta tener las capturas, cada sitio lleva un hueco con marco, igual que en NIDO.
+
+| #   | Pantalla                           | Cuenta     | Ruta                                    | Dónde se usa            |
+| --- | ---------------------------------- | ---------- | --------------------------------------- | ----------------------- |
+| C1  | Dashboard de dirección             | Dirección  | `/es/dashboard`                         | Hero (portátil), §4.4-5 |
+| C3  | Planificador semanal de sesiones   | Entrenador | `/es/sesiones` (vista semana)           | §4.4-1, Funciones B     |
+| C4  | Ejercicio con diagrama             | Entrenador | `/es/ejercicios/{id}`                   | Funciones B             |
+| C5  | Editor de alineación               | Entrenador | `/es/convocatorias/{id}/alineacion`     | §4.4-2, Funciones C     |
+| C7  | Informe de desarrollo con gráficas | Entrenador | `/es/jugadores/{id}/informes/{periodo}` | §4.4-4, Funciones D     |
+| C11 | Jugada animada                     | Entrenador | `/es/jugadas/{id}`                      | Funciones B             |
+| C12 | Acceso del club con escudo y color | Sin sesión | `/es/club-beta-test`                    | Funciones A             |
+
+### 9.5 Capturas de la app móvil (las haces tú)
+
+**Antes de empezar:**
+
+- La app de la tienda, en castellano, con modo claro.
+- Barra de estado limpia: sin notificaciones, batería llena y, si se puede, la hora fija (por ejemplo 9:41).
+- Captura de pantalla completa del sistema, sin recortar ni editar. Envíamelas en PNG con el nombre del código (`M1.png`…).
+- Las hago después de que esté aplicada la preparación de §9.3. Si en alguna pantalla ves un nombre, una foto o un escudo que no sea ficticio, no la envíes y dime cuál.
+
+| #   | Captura                  | Cuenta                   | Cómo se llega                                           | Qué tiene que verse                                                                                                                                   | Dónde se usa          |
+| --- | ------------------------ | ------------------------ | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| M1  | Convocatoria (familia)   | Familia del club de test | Inicio → la convocatoria pendiente                      | Rival, fecha, hora de citación y lugar; los botones de respuesta, **sin responder todavía**; el nombre del jugador convocado                          | Hero (móvil), §4.4-2  |
+| M2  | Directo del partido      | Entrenador del equipo    | Directos → el partido en curso → entrada rápida abierta | Marcador con al menos un gol de cada equipo, el reloj en marcha, la entrada rápida abierta y la lista de acciones con un gol, una tarjeta y un cambio | §4.4-3, Funciones C   |
+| M3  | Mensajes del equipo      | Entrenador del equipo    | Mensajes → conversación del equipo                      | 4 a 6 mensajes entre el entrenador y varias familias, con nombres ficticios, sin fotos y sin el teclado abierto                                       | §4.4-6, Funciones E   |
+| M4  | Ficha deportiva          | Familia del club de test | Inicio → Mi ficha                                       | Nombre del jugador, equipo y temporada; partidos, goles, asistencia y valoraciones con números, no a cero; sin foto (iniciales)                       | Funciones D, familias |
+| M5  | Consentimientos          | Familia del club de test | Perfil → tarjeta de consentimientos                     | Los tres consentimientos (imagen interna, imagen en redes, datos médicos) con su estado: por ejemplo, interna sí, redes no y médicos sí               | Seguridad             |
+| M6  | Calendario de la familia | Familia del club de test | Calendario                                              | Una semana con al menos dos entrenamientos y un partido                                                                                               | §4.6, familias        |
+
+La cuenta de familia para M1, M4, M5 y M6 **no es** la de la revisión de Apple (§9.3.4); la crea el script de preparación.
 
 ---
 
@@ -593,12 +628,12 @@ Hasta tener las capturas, cada sitio lleva un hueco con marco, igual que en NIDO
 - **Datos:** los del formulario.
 - **Finalidad:** atender la solicitud y organizar la demo; sin comunicaciones comerciales.
 - **Base:** medidas precontractuales (art. 6.1.b).
-- **Conservación:** **pendiente**. En NIDO son 12 meses desde el último contacto. → Pregunta 12
+- **Conservación:** 12 meses desde el último contacto (decidido).
 - **Destinatarios:** Vercel y Resend.
 - **Transferencias:** las de la redacción definitiva de NIDO.
 - **Analítica:** Vercel Web Analytics, solo en las páginas comerciales. **Base pendiente:** en NIDO, interés legítimo (art. 6.1.f).
 
-**B. Contradicciones que he encontrado entre la política actual y el código**, para que las vea la abogada (no las cambio yo):
+**B. Contradicciones que he encontrado entre la política actual y el código.** **Decidido:** la política actual **no se cambia en este trabajo**; los 8 puntos van a la abogada con el texto del Anexo B:
 
 1. **Lista de quién ve los datos médicos** (§13, línea 208). No coincide con el código (S9): el código incluye al director y al jugador mayor de edad, y al coordinador solo si está asignado al equipo.
 2. **Cloudflare R2** aparece como proveedor (§8), pero no se usa: los archivos están en Supabase Storage.
@@ -620,52 +655,86 @@ Hasta tener las capturas, cada sitio lleva un hueco con marco, igual que en NIDO
   - **Nuevo:** la portada, `/funciones`, `/seguridad` y `/demo` en los 3 idiomas, con alternates; y las 6 legales en `/es`, como ahora.
   - `/demo/gracias` no entra.
 - **`robots.txt`:** igual; ya permite `/`.
-- **hreflang:** `es`, `ca` para `/va` y `en`, con `x-default` → `/es`. Así se hizo en NIDO, porque `va` no es un código hreflang válido. → **Pregunta 3.**
+- **hreflang:** `es`, `ca` para `/va` y `en`, con `x-default` → `/es`. Así se hizo en NIDO, porque `va` no es un código hreflang válido. → **Pregunta abierta 3** (§12.2).
 - **Canonical:**
   - la portada canoniza a `/{idioma}` (nunca a `/portada`);
   - cada página comercial, a sí misma.
 - **OpenGraph:** imagen por idioma, generada en el build con Inter y el logo; título y descripción por página.
 - **`metadataBase`** desde `SITE_URL` (`apps/web/src/lib/site-url.ts`).
-- **Páginas de acceso** (`/clubes`, `/{slug}`, `/signin`): propongo `noindex`, para que en Google salga la portada y no el selector de clubes. Es un cambio de metadatos sin efecto funcional. → **Pregunta 4.**
+- **Páginas de acceso** (`/clubes`, `/{slug}`, `/signin`): propongo `noindex`, para que en Google salga la portada y no el selector de clubes. Es un cambio de metadatos sin efecto funcional. → **Pregunta abierta 4** (§12.2).
 - **Analítica:** `@vercel/analytics`, **solo en el layout `(web)`**, para no medir la app. Hay que activarla en el panel de Vercel; eso lo haces tú.
 
 ---
 
-## 12. Dudas y decisiones que necesito que me cierres
+## 12. Decisiones y preguntas
 
-1. **Tratamiento:** ¿tú, como la app («Elige tu club»), o usted, como NIDO? El borrador va de tú.
-2. **Slugs:** ¿se quedan en castellano en los 3 idiomas (`/en/funciones`), como el resto de la app? Es lo que propongo, porque traducirlos obliga a activar `pathnames` en toda la app (§3.2).
+### 12.1 Cerradas (respuestas del 2026-10-14)
+
+| #   | Tema                        | Decisión                                                                                    | Dónde se aplica   |
+| --- | --------------------------- | ------------------------------------------------------------------------------------------- | ----------------- |
+| 1   | Tratamiento                 | Tuteo, como la app.                                                                         | §4                |
+| 2   | Slugs                       | En castellano en los 3 idiomas; no se traducen.                                             | §2.2, §3.2        |
+| 5   | Reserva de hora             | Sin calendario ni enlace. Se acuerda la hora por correo.                                    | §8.4              |
+| 6   | Plazo y duración            | Respuesta en un máximo de 2 días laborables; videollamada de 30 minutos.                    | §4.8, §8.2, §8.3  |
+| 7   | Coste para las familias     | La app es gratuita para las familias (mientras `SUBSCRIPTION_GATE` siga apagado).           | §4.10, §5.3, §7.1 |
+| 8   | Conversaciones              | No se menciona que la dirección puede consultarlas.                                         | §5.3              |
+| 9   | Acceso de Cognix            | No se menciona, y la web nunca dice «ni nosotros vemos tus datos» ni nada equivalente.      | §4.5, §6.1, §6.2  |
+| 10  | Región                      | Irlanda (UE), medido: `eu-west-1`. Frase permitida: «datos alojados en la Unión Europea».   | S19, §6.2         |
+| 11  | Capturas                    | Club de test, nunca UD Fonteta. Web: las hago yo. Móvil: las haces tú con la lista de §9.5. | §9                |
+| 12  | Conservación de solicitudes | 12 meses desde el último contacto.                                                          | §10.4             |
+| 13  | Logo                        | Icono de la app + «MisterFC» en texto.                                                      | §3.3              |
+| 14  | Verde                       | `#10B981` (esmeralda).                                                                      | §3.3              |
+| 15  | Remitente                   | `demo@misterfc.es` con «responder a» `info.cognixlabs@gmail.com`.                           | §8.3              |
+| —   | Política de privacidad      | No se cambia en este trabajo. Los 8 puntos van a la abogada (Anexo B).                      | §10.4             |
+
+### 12.2 Abiertas
+
+**De la lista original, sin respuesta:**
+
 3. **Valenciano para buscadores:** ¿hreflang `ca` para `/va`, como en NIDO? La redirección por idioma no se toca: el navegador en `ca` sigue entrando en castellano.
 4. **Acceso de entrenadores con la sesión caducada:**
    - ¿cambiamos el `start_url` de la PWA a `/clubes` (§1.5)?
    - ¿«Volver» en las páginas legales lleva a la portada o sigue en `/clubes`?
    - ¿`noindex` en `/clubes`, `/{slug}` y `/signin` (§11)?
-5. **Reserva de hora:** ¿tenéis herramienta (Calendly, Google Calendar…)? Si la hay, el enlace va en el acuse por correo, no en la web.
-6. **Plazo y duración de la demo:** ¿qué plazo de respuesta podéis cumplir («2 días laborables»)? ¿La demo dura 30 minutos?
-7. **Coste para las familias:** la FAQ «¿Las familias tienen que pagar algo?» depende de la suscripción, que está construida pero apagada. ¿La quito, o qué respuesta damos sin cifras?
-8. **Conversaciones:** ¿se anuncia que la dirección puede consultar las conversaciones del club (modo observador)? Es una garantía para las familias, pero es delicado; por defecto no lo pongo.
-9. **Acceso de Cognix:** ¿decimos en Seguridad que el soporte de Cognix puede entrar a un club y que cada consulta de datos de salud queda registrada? Es verdad y verificable; callarlo no es mentir, pero «nadie más ve tus datos» sí lo sería.
-10. **Región de los datos:** ¿puedes confirmar en los paneles la región de Supabase y la de las funciones de Vercel? Sin eso no se publica «datos en la UE» (§6.2).
-11. **Capturas de la app nativa:** ¿vale generarlas con un build de desarrollo contra un Supabase local con datos ficticios (§9.2), o preferís otra vía?
-12. **Conservación de solicitudes de demo:** ¿12 meses desde el último contacto, como en NIDO? Lo revisa la abogada.
-13. **Logo:** en el repo **no hay fichero de logo** de MisterFC. La web de la app escribe «MisterFC» como texto verde (`apps/web/src/components/shell/sidebar.tsx:39`) y la nativa solo tiene el icono (`apps/native/assets/icon.png`). ¿Me pasas el logo en SVG o PNG grande? ¿O uso el icono más el nombre en texto?
-14. **Verde de marca:** la web usa `#10B981` (`apps/web/src/app/globals.css`) y la app nativa `#438832` como fondo del icono (`apps/native/app.json`). ¿Cuál manda en la web comercial?
-15. **Remitente:** ¿`demo@misterfc.es`, con `Reply-To` a info.cognixlabs@gmail.com porque `misterfc.es` no recibe correo (§8.3)?
-16. **Tareas aparte** (no son de la web comercial, solo las anoto):
-    - cabeceras de seguridad, que no hay;
-    - `.env.example` incompleto (`NEXT_PUBLIC_SITE_URL`, `CRON_SECRET`, VAPID y RevenueCat);
-    - la lista de slugs reservados, que solo se aplica en las RPC y no en un UPDATE directo;
-    - los iconos de `manifest.json`, que no existen (`public/icons/` solo tiene un README).
+5. **Tareas aparte:** no piden respuesta; siguen anotadas: cabeceras de seguridad, `.env.example` incompleto, slugs reservados solo en las RPC e iconos de `manifest.json` que no existen.
+
+**Nuevas, salidas de las respuestas:**
+
+- **A. Nombre del club en las capturas.** «Club Beta Test» sale en casi todas las pantallas. ¿Se renombra en producción a un nombre ficticio (por ejemplo «CF Ribera Nord»), o se deja? Renombrarlo cambia también lo que ven las cuentas de prueba y la revisión de Apple.
+- **B. Acceso para revisar el club de test.** El inventario de §9.3.1 es una lectura de producción, y no tengo acceso válido: el token de la CLI de Supabase está caducado. ¿Lo lanzas tú con las consultas que te prepare, o me das una vía de solo lectura? Para las capturas web también necesito cuentas de dirección, entrenador y familia del club de test.
+- **C. Privacidad del formulario de demo.** Decías que la política actual no se cambia en este trabajo. Pero el formulario necesita un texto de privacidad que lo cubra (§10.4 A: Cognix como responsable, 12 meses, Vercel y Resend, analítica). ¿Ese apartado nuevo tampoco se añade ahora, o sí se añade y lo que no se toca son los 8 puntos?
+- **D. Funciones de Vercel en EE. UU.** La base de datos está en Irlanda, pero la app se ejecuta en `iad1` (Washington), así que los datos pasan por allí al servirse. «Datos alojados en la UE» sigue siendo cierto. La política dice de Vercel «Global (red de distribución)». ¿Lo añado como 9.º punto para la abogada? Mover las funciones a `dub1` (Dublín) sería una tarea aparte, que además acercaría la app a su base de datos.
 
 ---
 
-### Anexo: resumen de comprobaciones en producción (2026-10-14, solo lectura)
+### Anexo A: resumen de comprobaciones en producción (2026-10-14, solo lectura)
 
-| Comprobación     | Resultado                                                                                                                           |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Dominio          | `misterfc.es` (raíz `A 216.198.79.1`, Vercel); `www` → CNAME a Vercel con 308 a la raíz; nameservers de Arsys (`servidoresdns.net`) |
-| Correo           | DKIM y SPF de Resend en `resend._domainkey` y `send`; `_dmarc p=none`; **sin MX en la raíz**                                        |
-| Vercel           | Proyecto `misterfc-web`, equipo Cognix (Pro), raíz `apps/web`                                                                       |
-| `/.well-known/*` | JSON correcto; solo reclaman `/{es,en,va}/invite/*`                                                                                 |
-| Legales          | `/es/legal/{privacidad,terminos,eliminacion-cuenta,desistimiento}` → 200; `/legal/privacidad` → 308 a `/es/legal/privacidad`        |
-| Raíz             | `/` → `/es` → `/es/clubes`; Accept-Language `en` → `/en`; `ca` → `/es`; pone la cookie `NEXT_LOCALE`                                |
+| Comprobación     | Resultado                                                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Dominio          | `misterfc.es` (raíz `A 216.198.79.1`, Vercel); `www` → CNAME a Vercel con 308 a la raíz; nameservers de Arsys (`servidoresdns.net`)        |
+| Correo           | DKIM y SPF de Resend en `resend._domainkey` y `send`; `_dmarc p=none`; **sin MX en la raíz**                                               |
+| Vercel           | Proyecto `misterfc-web`, equipo Cognix (Pro), raíz `apps/web`                                                                              |
+| `/.well-known/*` | JSON correcto; solo reclaman `/{es,en,va}/invite/*`                                                                                        |
+| Legales          | `/es/legal/{privacidad,terminos,eliminacion-cuenta,desistimiento}` → 200; `/legal/privacidad` → 308 a `/es/legal/privacidad`               |
+| Raíz             | `/` → `/es` → `/es/clubes`; Accept-Language `en` → `/en`; `ca` → `/es`; pone la cookie `NEXT_LOCALE`                                       |
+| Región           | Supabase en `eu-west-1` (Irlanda), por la IP de `db.<ref>.supabase.co` en los rangos de AWS; funciones de Vercel en `iad1` (`x-vercel-id`) |
+
+### Anexo B: texto para la abogada (los 8 puntos de §10.4 B)
+
+> Para enviar tal cual. No incluye rutas de código; cada punto dice qué pone el texto publicado y cómo funciona hoy la aplicación. La política no se ha cambiado.
+
+**Asunto:** MisterFC — 8 puntos en los que los textos legales publicados no coinciden con la aplicación
+
+Revisando la aplicación MisterFC hemos encontrado 8 puntos en los que los textos publicados en misterfc.es no coinciden con cómo funciona hoy. No hemos cambiado nada: los enviamos para que decidas la redacción.
+
+1. **Quién ve los datos médicos** (Política de privacidad, medidas de seguridad). El texto dice: administrador del club, coordinador, entrenadores y tutores. En la aplicación los ven: la dirección (administrador y director), el coordinador solo si está asignado al equipo del jugador, el cuerpo técnico del equipo del jugador, el del equipo que lo convoca (solo hasta el final del día del partido), los tutores y el propio jugador cuando es mayor de edad. Siempre con el consentimiento médico registrado.
+2. **Cloudflare R2** (apartado 8, proveedores). Figura como almacenamiento de archivos, pero no se usa: los archivos se guardan en Supabase.
+3. **Sentry** (apartado 8). El texto dice que se eliminan los parámetros de las direcciones que puedan contener datos de autenticación. En la app móvil es así; en la versión web no se eliminan.
+4. **Cookies** (apartado 15). La cookie de sesión dura 400 días, no «la duración de la sesión». `NEXT_LOCALE` es de sesión salvo que el usuario elija idioma en su perfil (entonces, 1 año). Falta `mfc_sidebar_collapsed` (recuerda si el menú lateral está plegado; 1 año).
+5. **Alta de menores** (apartado 3). El texto dice que la cuenta de un menor «solo puede crearse por invitación de su padre, madre o tutor». La dirección del club también puede invitar al menor, siempre que ya tenga un tutor vinculado.
+6. **Proveedores que faltan** (apartado 8). El servicio de notificaciones de Expo (intermediario de los avisos al móvil) y los servicios de notificaciones web de los navegadores.
+7. **Nombre del titular.** La descripción de la página de privacidad dice «Cognix Labs, S.L.»; el documento dice «Cognix Labs, S.L.U.».
+8. **Eliminación de cuenta** (documento propio).
+   - Dice que desde los 14 años el menor ejerce sus derechos; la aplicación aplica 18: hasta entonces los gestiona el tutor.
+   - Los plazos de «7 días» de copias de seguridad y «3 años» de consentimientos y auditoría no constan en la configuración que podemos comprobar.
+   - El registro de consentimientos no se puede borrar: retirar un consentimiento añade una entrada nueva.
