@@ -70,6 +70,7 @@ import {
   type TeamEventLite,
   type SubstitutionRegime,
   type TeamFormat,
+  type PeriodCount,
 } from '@misterfc/core';
 import {
   MatchFieldEditor,
@@ -161,6 +162,8 @@ type Props = {
   matchStatus: 'not_started' | 'live' | 'closed';
   periods: ClockPeriod[];
   halfDurationMinutes: number;
+  /** Periodos regulares de la categoría (2 o 3): viaja hasta el reloj. */
+  periodCount: PeriodCount;
   recentEvents: LiveMatchEvent[];
   benchPlayers: LiveBenchPlayer[];
   substitutions: LiveSubstitution[];
@@ -203,6 +206,7 @@ export function LiveCaptureClient({
   matchStatus,
   periods,
   halfDurationMinutes,
+  periodCount,
   recentEvents,
   benchPlayers,
   substitutions,
@@ -1171,6 +1175,7 @@ export function LiveCaptureClient({
           status={matchStatus}
           periods={periods}
           halfDurationMinutes={halfDurationMinutes}
+          periodCount={periodCount}
           onOpenShootout={() => setShootoutOpen(true)}
           shootoutOpen={showShootout}
         />

@@ -38,6 +38,12 @@ type Opts = {
   events?: unknown[]; // match_events list
   absences?: Array<{ player_id: string }>;
   canRecord?: boolean;
+  /**
+   * `categories.period_count` del equipo del evento, que es de donde sale
+   * cuántos periodos regulares tiene el partido. Por defecto 2: el join viaja
+   * en la MISMA lectura de `events` que ya hacían estas pruebas.
+   */
+  periodCount?: number;
   failOn?: { table: string; op: 'insert' | 'update' | 'delete'; code?: string };
 };
 
@@ -48,7 +54,15 @@ function makeClient(opts: Opts, userId: string | null = 'u-1') {
     switch (table) {
       case 'events':
         return opts.event === undefined
-          ? { id: EVENT, club_id: 'club-1', team_id: 't-1', type: 'match' }
+          ? {
+              id: EVENT,
+              club_id: 'club-1',
+              team_id: 't-1',
+              type: 'match',
+              // `loadPeriodCount` lee esto con un select anidado
+              // (teams!inner.categories!inner.period_count).
+              teams: { categories: { period_count: opts.periodCount ?? 2 } },
+            }
           : opts.event;
       case 'match_state':
         return opts.matchState ?? null;
@@ -353,5 +367,137 @@ describe('O2-9a · reopenMatch + gate', () => {
     expect(await userCanRecordMatchFromClient(client, EVENT)).toBe(true);
     const { client: c2 } = makeClient({ canRecord: false });
     expect(await userCanRecordMatchFromClient(c2, EVENT)).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EL CAMINO DE ESCRITURA CON TRES PERIODOS. Los tests de `clock.ts` miden el
+// motor; estos miden que el número de periodos LLEGA desde la categoría hasta
+// los botones. Si `loadPeriodCount` dejara de leerse, el motor seguiría siendo
+// correcto y el botón seguiría equivocándose.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('tres tiempos · las escrituras leen period_count de la categoría', () => {
+  const endedFirst: Period = {
+    ...runningPeriod,
+    running: false,
+    last_started_at: null,
+    accumulated_seconds: 720, // 12:00
+    ended: true,
+  };
+  const endedSecond: Period = {
+    id: 'p2',
+    period: 'second_half',
+    ordinal: 2,
+    base_offset_seconds: 720,
+    accumulated_seconds: 720,
+    running: false,
+    last_started_at: null,
+    ended: true,
+  };
+
+  it('EL FRENO: finalizar con el tercer tiempo sin jugar → regulation_incomplete', async () => {
+    const { client, writes } = makeClient({
+      matchState: { status: 'live' },
+      periods: [endedFirst, endedSecond],
+      periodCount: 3,
+    });
+    expect(await finishMatchFromClient(client, ref)).toEqual({
+      ok: false,
+      error: 'regulation_incomplete',
+    });
+    // Y no ha consolidado nada: el marcador de un partido a medias no se cierra.
+    expect(writes.length).toBe(0);
+  });
+
+  it('el MISMO partido en una categoría de dos sí finaliza (la diferencia es la categoría)', async () => {
+    const { client } = makeClient({
+      matchState: { status: 'live' },
+      periods: [endedFirst, endedSecond],
+      periodCount: 2,
+      starters: [],
+      events: [],
+    });
+    expect(await finishMatchFromClient(client, ref)).toEqual({ ok: true });
+  });
+
+  it('con los tres jugados sí finaliza', async () => {
+    const tercero: Period = {
+      id: 'p3',
+      period: 'third_period',
+      ordinal: 3,
+      base_offset_seconds: 1440,
+      accumulated_seconds: 720,
+      running: false,
+      last_started_at: null,
+      ended: true,
+    };
+    const { client } = makeClient({
+      matchState: { status: 'live' },
+      periods: [endedFirst, endedSecond, tercero],
+      periodCount: 3,
+      starters: [],
+      events: [],
+    });
+    expect(await finishMatchFromClient(client, ref)).toEqual({ ok: true });
+  });
+
+  it('startNextPeriod: tras la 2ª, el que toca es el tercer tiempo con ordinal 3', async () => {
+    const { client, writes } = makeClient({
+      matchState: { status: 'live' },
+      periods: [endedFirst, endedSecond],
+      periodCount: 3,
+    });
+    const r = await startNextPeriodFromClient(client, {
+      event_id: EVENT,
+      period: 'third_period',
+    });
+    expect(r).toEqual({ ok: true });
+    const ins = writes.find((w) => w.table === 'match_periods' && w.op === 'insert');
+    expect(ins!.payload).toMatchObject({
+      period: 'third_period',
+      ordinal: 3,
+      base_offset_seconds: 1440, // 12+12, el reloj acumulado
+      running: true,
+    });
+  });
+
+  it('startNextPeriod: pedir prórroga saltándose el tercer tiempo → period_mismatch', async () => {
+    const { client, writes } = makeClient({
+      matchState: { status: 'live' },
+      periods: [endedFirst, endedSecond],
+      periodCount: 3,
+    });
+    const r = await startNextPeriodFromClient(client, {
+      event_id: EVENT,
+      period: 'extra_first',
+    });
+    expect(r).toEqual({ ok: false, error: 'period_mismatch' });
+    expect(writes.length).toBe(0);
+  });
+
+  it('y en una categoría de dos, pedir el tercer tiempo → period_mismatch', async () => {
+    const { client } = makeClient({
+      matchState: { status: 'live' },
+      periods: [endedFirst, endedSecond],
+      periodCount: 2,
+    });
+    const r = await startNextPeriodFromClient(client, {
+      event_id: EVENT,
+      period: 'third_period',
+    });
+    expect(r).toEqual({ ok: false, error: 'period_mismatch' });
+  });
+
+  it('una categoría sin period_count (join vacío) cuenta DOS, no revienta', async () => {
+    // `event` a mano, SIN la categoría anidada: es lo que llega si el equipo o
+    // la categoría no están. El partido se comporta como el de siempre.
+    const { client } = makeClient({
+      event: { id: EVENT, club_id: 'club-1', team_id: 't-1', type: 'match' },
+      matchState: { status: 'live' },
+      periods: [endedFirst, endedSecond],
+      starters: [],
+      events: [],
+    });
+    expect(await finishMatchFromClient(client, ref)).toEqual({ ok: true });
   });
 });

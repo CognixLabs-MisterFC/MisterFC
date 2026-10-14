@@ -27,9 +27,10 @@ import {
   type DetailEvent,
   type LineupRosterPlayer,
   type MatchDetail,
-  type MatchPhaseKind,
   type PeriodKind,
   type QuickEntryInput,
+  periodLabelKey,
+  phaseShowsMinute,
 } from '@misterfc/core';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
@@ -67,12 +68,6 @@ const LISTED_EVENTS = new Set([
  */
 
 const LIVE_POLL_MS = 15_000;
-const LIVE_PHASES: ReadonlySet<MatchPhaseKind> = new Set([
-  'first_half',
-  'second_half',
-  'extra_time',
-]);
-
 type ControlData = { detail: MatchDetail; canRecord: boolean; roster: LineupRosterPlayer[] };
 
 /** "Ahora" que tickea cada segundo con el partido en vivo (patrón B1/B2, sin setState-en-effect del reloj). */
@@ -195,9 +190,12 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
   const periods = detail.periods;
   const cur = currentPeriod(periods);
   const running = isClockRunning(periods);
-  const atBreak = isAtBreak(periods);
-  const next = nextPeriodAfter(periods);
-  const canFinish = canFinishMatch(periods);
+  // Cuántos periodos regulares juega la categoría: de ello dependen el periodo
+  // que toca, si esto es descanso y si se puede finalizar ya.
+  const cuantos = detail.periodCount;
+  const atBreak = isAtBreak(periods, cuantos);
+  const next = nextPeriodAfter(periods, cuantos);
+  const canFinish = canFinishMatch(periods, cuantos);
   const ref = { event_id: eventId };
 
   // Reloj/fase (matchPhase, tick local en vivo).
@@ -205,16 +203,18 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
     status: detail.status,
     periods,
     halfDurationMinutes: detail.halfDurationMinutes,
+    periodCount: detail.periodCount,
     nowMs: isLive ? now : frozenNow(periods),
   });
   const minuteText =
-    isLive && LIVE_PHASES.has(phase)
+    isLive && phaseShowsMinute(phase)
       ? addedTime > 0
         ? t('directo.minute_added', { minute: String(minute), added: String(addedTime) })
         : t('directo.minute', { minute: String(minute) })
-      : t(`directo.phase.${phase}`);
+      : t(`directo.phase.${periodLabelKey(phase, detail.periodCount)}`);
 
-  const periodLabel = (p: PeriodKind) => t(`directo_control.period.${p}`);
+  const periodLabel = (p: PeriodKind) =>
+    t(`directo_control.period.${periodLabelKey(p, cuantos)}`);
 
   // O2-9b — TIMELINE y MARCADOR OPTIMISTAS: eventos del servidor + los de la cola
   // (pending/uploaded, sin failed), deduplicados por uuid (mergeLiveEvents), y el

@@ -49,6 +49,9 @@ import {
   nextExtraPeriod,
   nextRegularPeriod,
   periodClockSeconds,
+  regularPeriods,
+  type PeriodCount,
+  periodLabelKey,
 } from '@misterfc/core';
 import { Link, useRouter } from '@/i18n/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -72,15 +75,21 @@ type Props = {
   periods: ClockPeriod[];
   /** Duración SUGERIDA de cada tiempo (min), de la categoría del equipo. */
   halfDurationMinutes: number;
+  /** Periodos regulares de la categoría (2 o 3). Decide la secuencia entera. */
+  periodCount: PeriodCount;
   /** F7.7c — abrir la tanda de penaltis (desempate) desde el flujo de fin. */
   onOpenShootout?: () => void;
   /** F7.7c — ¿la tanda ya está abierta? (oculta el botón de entrada). */
   shootoutOpen?: boolean;
 };
 
-// Tiempos a los que aplica la duración sugerida de la categoría. La prórroga y
-// los penaltis no tienen duración "de categoría" definida → solo se cuentan.
-const HALF_PERIODS: ReadonlyArray<PeriodKind> = ['first_half', 'second_half'];
+// La barra de progreso del periodo se pinta solo en los tiempos a los que aplica
+// la duración sugerida de la categoría (la prórroga y los penaltis no tienen
+// duración "de categoría" definida → solo se cuentan). Cuáles son sale de
+// `regularPeriods(periodCount)`: antes era una lista a mano
+// `['first_half','second_half']` que en un partido de TRES TIEMPOS no habría
+// pintado el tercero, y eso el typecheck no lo dice —un `PeriodKind[]` más corto
+// es un `PeriodKind[]` válido.
 
 // Botones de ajuste manual (segundos). Táctil: pocos y grandes.
 const ADJUST_STEPS = [-60, -10, 10, 60] as const;
@@ -119,6 +128,7 @@ export function MatchClock({
   status,
   periods,
   halfDurationMinutes,
+  periodCount,
   onOpenShootout,
   shootoutOpen,
 }: Props) {
@@ -154,12 +164,12 @@ export function MatchClock({
   }
 
   const cur = currentPeriod(periods);
-  const atBreak = isAtBreak(periods);
+  const atBreak = isAtBreak(periods, periodCount);
   // F7.7b — flujo por defecto 1ª → 2ª → finalizar; la prórroga es OPCIONAL.
   // `regularNext` = la 2ª parte tras la 1ª (null tras la 2ª); `extraNext` = la
   // prórroga que se podría AÑADIR (null si no procede).
-  const regularNext = nextRegularPeriod(periods);
-  const extraNext = nextExtraPeriod(periods);
+  const regularNext = nextRegularPeriod(periods, periodCount);
+  const extraNext = nextExtraPeriod(periods, periodCount);
   const hasStarted = periods.length > 0 && status !== 'not_started';
   // En un periodo (corriendo o en pausa, sin terminar) vs en una pausa de
   // decisión (periodo terminado y reloj parado).
@@ -181,11 +191,12 @@ export function MatchClock({
     !atBreak &&
     cur != null &&
     !cur.ended &&
-    HALF_PERIODS.includes(cur.period);
+    regularPeriods(periodCount).includes(cur.period);
   const periodElapsed = cur ? periodClockSeconds(cur, effectiveNow) - cur.baseOffsetSeconds : 0;
   const overSuggested = showHalfProgress && periodElapsed > suggestedHalfSeconds;
 
-  const periodLabel = (p: PeriodKind) => t(`period.${p}`);
+  // En un partido de tres tiempos, «1ª parte» no existe: lo traduce periodLabelKey.
+  const periodLabel = (p: PeriodKind) => t(`period.${periodLabelKey(p, periodCount)}`);
 
   // Etiqueta de estado bajo el reloj. F7B-0: la FASE la deriva el helper puro
   // compartido `matchPhase` (misma lógica que usará la pantalla de familias),
@@ -195,6 +206,7 @@ export function MatchClock({
     status,
     periods,
     halfDurationMinutes,
+    periodCount,
     nowMs: effectiveNow,
   }).phase;
   let phaseLabel: string;

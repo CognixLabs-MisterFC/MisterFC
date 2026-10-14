@@ -24,6 +24,8 @@ import {
   type PeriodKind,
   type SubstitutionRegime,
   type TeamFormat,
+  asPeriodCount,
+  type PeriodCount,
 } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 
@@ -248,6 +250,7 @@ export type MatchLiveData = {
      * juvenil/amateur 45… nunca un valor fijo.
      */
     halfDurationMinutes: number;
+    periodCount: PeriodCount;
   };
   /** Formación del once mostrado (oficial si existe; si no, default de la modalidad). */
   formationCode: string;
@@ -337,7 +340,7 @@ export async function loadMatchLive(
     .from('events')
     .select(
       `id, club_id, team_id, type, tournament_id, title, opponent_name, starts_at,
-       teams!inner(name, color, format, division, season, categories!inner(name, half_duration_minutes, kind))`,
+       teams!inner(name, color, format, division, season, categories!inner(name, half_duration_minutes, kind, period_count))`,
     )
     .eq('id', eventId)
     .maybeSingle();
@@ -364,6 +367,7 @@ export async function loadMatchLive(
       categories: {
         name: string;
         half_duration_minutes: number | null;
+        period_count: number | null;
         kind: string | null;
       };
     };
@@ -927,6 +931,7 @@ export async function loadMatchLive(
       format: event.teams.format,
       // La columna es NOT NULL default 45; el ?? es solo defensivo.
       halfDurationMinutes: event.teams.categories.half_duration_minutes ?? 45,
+      periodCount: asPeriodCount(event.teams.categories.period_count),
     },
     formationCode,
     fieldPlayers,

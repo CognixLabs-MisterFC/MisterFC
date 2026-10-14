@@ -370,6 +370,7 @@ export type Database = {
           is_standard: boolean
           kind: string | null
           name: string
+          period_count: number
         }
         Insert: {
           club_id: string
@@ -379,6 +380,7 @@ export type Database = {
           is_standard?: boolean
           kind?: string | null
           name: string
+          period_count?: number
         }
         Update: {
           club_id?: string
@@ -388,6 +390,7 @@ export type Database = {
           is_standard?: boolean
           kind?: string | null
           name?: string
+          period_count?: number
         }
         Relationships: [
           {

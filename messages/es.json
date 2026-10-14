@@ -421,7 +421,10 @@
       "second_half": "2ª parte",
       "extra_time": "Prórroga",
       "penalties": "Penaltis",
-      "finished": "Finalizado"
+      "finished": "Finalizado",
+      "first_of_three": "1er tiempo",
+      "second_of_three": "2º tiempo",
+      "third_period": "3er tiempo"
     },
     "minute": "{minute}'",
     "minute_added": "{minute}'+{added}",
@@ -3532,7 +3535,10 @@
       "second_half": "2ª parte",
       "extra_first": "Prórroga 1",
       "extra_second": "Prórroga 2",
-      "penalties": "Penaltis"
+      "penalties": "Penaltis",
+      "first_of_three": "1er tiempo",
+      "second_of_three": "2º tiempo",
+      "third_period": "3er tiempo"
     },
     "clock_error": {
       "forbidden": "No tienes permiso para controlar el reloj.",
@@ -5095,7 +5101,10 @@
       "second_half": "2ª parte",
       "extra_time": "Prórroga",
       "penalties": "Penaltis",
-      "finished": "Final"
+      "finished": "Final",
+      "first_of_three": "1er tiempo",
+      "second_of_three": "2º tiempo",
+      "third_period": "3er tiempo"
     },
     "stat": {
       "goals": "Goles",
@@ -5354,7 +5363,10 @@
       "second_half": "2ª parte",
       "penalties": "Penaltis",
       "extra_first": "Prórroga (1ª)",
-      "extra_second": "Prórroga (2ª)"
+      "extra_second": "Prórroga (2ª)",
+      "first_of_three": "1er tiempo",
+      "second_of_three": "2º tiempo",
+      "third_period": "3er tiempo"
     },
     "adjust": "Ajuste",
     "clock": "Reloj",

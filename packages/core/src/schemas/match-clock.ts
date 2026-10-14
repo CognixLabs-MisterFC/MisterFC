@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { PERIOD_ORDER } from '../match/clock';
+import { PERIOD_KINDS } from '../match/clock';
 
 const uuid = z.string().uuid({ message: 'invalid_id' });
 
@@ -15,7 +15,7 @@ export type MatchEventRefInput = z.infer<typeof matchEventRefSchema>;
 /** Empezar el siguiente periodo (2ª parte, prórroga…). */
 export const startNextPeriodSchema = z.object({
   event_id: uuid,
-  period: z.enum(PERIOD_ORDER as unknown as [string, ...string[]], {
+  period: z.enum(PERIOD_KINDS as unknown as [string, ...string[]], {
     message: 'period_invalid',
   }),
 });

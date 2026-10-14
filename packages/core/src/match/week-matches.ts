@@ -1,7 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { MANAGEABLE_MATCH_TYPES } from '../events/types';
-import type { ClockPeriod, PeriodKind } from './clock';
+import {
+  asPeriodCount,
+  type ClockPeriod,
+  type PeriodCount,
+  type PeriodKind,
+} from './clock';
 
 /**
  * O2-5 B1 — Listado "Directos" de la semana (SOLO LECTURA), extraído de
@@ -20,6 +25,8 @@ export type WeekMatch = {
   opponentName: string | null;
   startsAt: string;
   halfDurationMinutes: number;
+  /** Periodos regulares de la categoría: 2 o 3. */
+  periodCount: PeriodCount;
   status: 'not_started' | 'live' | 'closed';
   goalsOwn: number | null;
   goalsRival: number | null;
@@ -75,7 +82,7 @@ export async function getWeekMatchesFromClient(
     .from('events')
     .select(
       `id, team_id, title, opponent_name, starts_at, type,
-       teams!inner(name, color, format, categories!inner(name, half_duration_minutes))`
+       teams!inner(name, color, format, categories!inner(name, half_duration_minutes, period_count))`
     )
     .eq('club_id', clubId)
     .in('type', MANAGEABLE_MATCH_TYPES)
@@ -96,7 +103,11 @@ export async function getWeekMatchesFromClient(
     teams: {
       name: string;
       color: string;
-      categories: { name: string; half_duration_minutes: number | null };
+      categories: {
+        name: string;
+        half_duration_minutes: number | null;
+        period_count: number | null;
+      };
     };
   };
   const events = (evRows ?? []) as unknown as EvRow[];
@@ -175,6 +186,7 @@ export async function getWeekMatchesFromClient(
       opponentName: e.opponent_name,
       startsAt: e.starts_at,
       halfDurationMinutes: e.teams.categories.half_duration_minutes ?? 45,
+      periodCount: asPeriodCount(e.teams.categories.period_count),
       status,
       goalsOwn,
       goalsRival,

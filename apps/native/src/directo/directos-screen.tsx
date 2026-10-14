@@ -9,7 +9,8 @@ import {
   clubScopedCacheKey,
   type WeekMatch,
   type FollowableTeam,
-  type MatchPhaseKind,
+  periodLabelKey,
+  phaseShowsMinute,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
 import { useApp } from '@/auth/context';
@@ -99,13 +100,6 @@ function LiveList({ clubId, detailPathname }: { clubId: string | null; detailPat
   );
 }
 
-/** Fases EN JUEGO (el reloj corre): se muestra el minuto. El resto → etiqueta de fase. */
-const INPLAY_PHASES: ReadonlySet<MatchPhaseKind> = new Set([
-  'first_half',
-  'second_half',
-  'extra_time',
-]);
-
 /** "Ahora" que tickea cada segundo solo con un partido en vivo (patrón del detalle);
  *  evita `Date.now()` en render (regla de pureza del React Compiler). */
 function useTickingNow(active: boolean): number {
@@ -140,15 +134,16 @@ function MatchCard({ match, detailPathname }: { match: WeekMatch; detailPathname
         status: 'live',
         periods: match.periods,
         halfDurationMinutes: match.halfDurationMinutes,
+        periodCount: match.periodCount,
         nowMs: now,
       })
     : null;
   const minuteText = mp
-    ? INPLAY_PHASES.has(mp.phase)
+    ? phaseShowsMinute(mp.phase)
       ? mp.addedTime > 0
         ? t('directo.minute_added', { minute: String(mp.minute), added: String(mp.addedTime) })
         : t('directo.minute', { minute: String(mp.minute) })
-      : t(`directo.phase.${mp.phase}`)
+      : t(`directo.phase.${periodLabelKey(mp.phase, match.periodCount)}`)
     : null;
   return (
     <Pressable
