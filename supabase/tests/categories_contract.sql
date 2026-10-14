@@ -14,6 +14,8 @@
 --       retiró en A6; la season la aporta /equipos).
 --   D1. dedup re-apunta teams.category_id y events.category_id al superviviente y
 --       borra la categoría duplicada (fixture con 2 categorías mismo nombre).
+--   B1. break_minutes (mig 20261124000000): nace en 15, el 0 entra (un torneo sin
+--       descanso es legítimo) y 31 y -1 no (CHECK between 0 and 30).
 \ir helpers/auth_users.sql
 
 begin;
@@ -133,6 +135,41 @@ begin
   if v_dup_exists then
     raise exception 'FAIL [D1]: la categoría duplicada debería haberse borrado';
   end if;
+end $$;
+
+-- ── B1. El descanso: default, el 0 legítimo y el CHECK con dientes ───────────
+do $$
+declare v_desc smallint;
+begin
+  -- Default: 15, que es lo que la app aplicaba cuando era una constante.
+  insert into public.categories (id, club_id, name, kind)
+    values ('a6000000-0dd0-4000-8000-0000000000b1',
+            'a6000000-0000-4000-8000-000000000001', 'Descanso Default', null)
+    returning break_minutes into v_desc;
+  if v_desc <> 15 then
+    raise exception 'FAIL [B1]: break_minutes por defecto debería ser 15, es %', v_desc;
+  end if;
+
+  -- El 0 entra: hay torneos que se juegan del tirón.
+  update public.categories set break_minutes = 0
+   where id = 'a6000000-0dd0-4000-8000-0000000000b1'
+   returning break_minutes into v_desc;
+  if v_desc <> 0 then
+    raise exception 'FAIL [B1]: break_minutes = 0 debería entrar, quedó en %', v_desc;
+  end if;
+
+  -- Y el techo y el suelo muerden.
+  begin
+    update public.categories set break_minutes = 31
+     where id = 'a6000000-0dd0-4000-8000-0000000000b1';
+    raise exception 'FAIL [B1]: break_minutes = 31 debería dar check_violation';
+  exception when check_violation then null; end;
+
+  begin
+    update public.categories set break_minutes = -1
+     where id = 'a6000000-0dd0-4000-8000-0000000000b1';
+    raise exception 'FAIL [B1]: break_minutes = -1 debería dar check_violation';
+  exception when check_violation then null; end;
 end $$;
 
 rollback;

@@ -17,8 +17,9 @@
 --   S1. Club creado por platform_create_club → exactamente 10 categorías is_standard=true.
 --   S2. Sin custom (is_standard=false) en el club nuevo.
 --   S3. Los 10 kinds canónicos presentes.
---   S4. Querubín nace en TRES TIEMPOS DE DOCE (mig 20261123000000).
---   S5. Y solo querubín: las otras nueve nacen a dos partes.
+--   S4. Querubín nace en TRES TIEMPOS DE DOCE con descansos de CUATRO
+--       (migs 20261123000000 y 20261124000000).
+--   S5. Y solo querubín: las otras nueve nacen a dos partes con descanso de 15.
 --
 -- Por qué S4/S5 llevan los números a mano y no leen standard_category_catalog():
 -- un aserto que lee el catálogo mide que el semillero sea coherente consigo
@@ -46,6 +47,7 @@ declare
   v_per smallint;
   v_dur integer;
   v_otras int;
+  v_desc smallint;
 begin
   v_club_id := public.platform_create_club('Club C2 Seed', 'club-c2-seed-test', 'es');
   if v_club_id is null then
@@ -75,23 +77,27 @@ begin
     raise exception 'FAIL [S3]: faltan kinds canónicos, hay %', v_kinds;
   end if;
 
-  -- S4. Tres tiempos de doce, en un club que acaba de nacer.
-  select period_count, half_duration_minutes into v_per, v_dur
+  -- S4. Tres tiempos de doce con descansos de cuatro: 12+4+12+4+12 = 44 minutos.
+  select period_count, half_duration_minutes, break_minutes
+    into v_per, v_dur, v_desc
     from public.categories
    where club_id = v_club_id and kind = 'querubin';
-  if v_per is distinct from 3::smallint or v_dur is distinct from 12 then
+  if v_per is distinct from 3::smallint or v_dur is distinct from 12
+     or v_desc is distinct from 4::smallint then
     raise exception
-      'FAIL [S4]: querubín de un club NUEVO debería nacer en 3 × 12, nació en % × %',
-      v_per, v_dur;
+      'FAIL [S4]: querubín de un club NUEVO debería nacer en 3 × 12 con descanso 4, nació en % × % con descanso %',
+      v_per, v_dur, v_desc;
   end if;
 
-  -- S5. Y nadie más: el 3 no se ha escapado a otra fila del catálogo.
+  -- S5. Y nadie más: ni el 3 ni el 4 se han escapado a otra fila del catálogo.
   select count(*) into v_otras
     from public.categories
-   where club_id = v_club_id and kind <> 'querubin' and period_count <> 2;
+   where club_id = v_club_id
+     and kind <> 'querubin'
+     and (period_count <> 2 or break_minutes <> 15);
   if v_otras <> 0 then
     raise exception
-      'FAIL [S5]: % categorías que no son querubín han nacido sin ser dos partes', v_otras;
+      'FAIL [S5]: % categorías que no son querubín han nacido sin ser dos partes con descanso de 15', v_otras;
   end if;
 end $$;
 
@@ -99,5 +105,5 @@ reset role;
 rollback;
 
 \echo '──────────────────────────────────────────────'
-\echo '✅ C2: club nuevo (platform_create_club) nace con las 10 estándar, y su Querubín en 3 × 12.'
+\echo '✅ C2: club nuevo (platform_create_club) nace con las 10 estándar, y su Querubín en 3 × 12 con descanso de 4.'
 \echo '──────────────────────────────────────────────'
