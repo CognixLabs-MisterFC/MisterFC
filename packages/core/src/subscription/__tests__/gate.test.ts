@@ -131,8 +131,7 @@ describe('censo: todo layout autenticado pasa por el gate', () => {
   const EXEMPT: Record<string, string> = {
     'layout.tsx': 'raíz de locale: envuelve también signin, invite y las páginas públicas',
     'legal/layout.tsx': 'los textos legales son públicos y deben verse SIN sesión',
-    'platform/layout.tsx':
-      'consola de superadmin: no es familia y no paga (requires_subscription=false)',
+    'platform/layout.tsx': 'consola de superadmin: no es familia y no paga (requires_subscription=false)',
     '(web)/layout.tsx':
       'web comercial (portada, funciones, seguridad, demo): pública, se ve SIN sesión y no es la app',
   };
@@ -157,8 +156,7 @@ describe('censo: todo layout autenticado pasa por el gate', () => {
       const dir = join(base, entry);
       if (!statSync(dir).isDirectory()) continue;
       const file = join(dir, 'layout.tsx');
-      if (existsSync(file))
-        out.push({ rel: `${entry}/layout.tsx`, src: readFileSync(file, 'utf8') });
+      if (existsSync(file)) out.push({ rel: `${entry}/layout.tsx`, src: readFileSync(file, 'utf8') });
     }
     return out;
   }
@@ -198,9 +196,9 @@ describe('censo: todo layout autenticado pasa por el gate', () => {
     expect(
       existsSync(join(repoRoot(), 'apps/web/src/app/[locale]/(authenticated)/suscripcion')),
     ).toBe(false);
-    expect(existsSync(join(repoRoot(), 'apps/web/src/app/[locale]/spectator/suscripcion'))).toBe(
-      false,
-    );
+    expect(
+      existsSync(join(repoRoot(), 'apps/web/src/app/[locale]/spectator/suscripcion')),
+    ).toBe(false);
   });
 
   it('el muro lleva la tarjeta de borrar la cuenta (Apple 5.1.1 v)', () => {
