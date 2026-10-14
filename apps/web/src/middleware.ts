@@ -2,7 +2,12 @@ import { NextResponse, type NextRequest } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { createServerClient } from '@supabase/ssr';
 import * as Sentry from '@sentry/nextjs';
-import { requiresPasswordChange, localeFromPath } from '@misterfc/core';
+import {
+  requiresPasswordChange,
+  localeFromPath,
+  isMarketingSiteOn,
+  marketingRootDecision,
+} from '@misterfc/core';
 import { routing } from './i18n/routing';
 
 const handleIntl = createIntlMiddleware(routing);
@@ -141,14 +146,34 @@ export default async function middleware(request: NextRequest) {
   // deep-links sin sesión siguen yendo a /signin vía el layout autenticado (sin
   // cambios), así el login sigue accesible. Con sesión, la raíz pasa al home de
   // la app como hasta ahora (no entra aquí).
-  const localeRoot = pathname.match(/^\/(es|en|va)$/);
-  if (localeRoot && !user) {
-    const redirectRes = NextResponse.redirect(
-      new URL(`/${localeRoot[1]}/clubes`, request.url),
-    );
+  //
+  // Web comercial: con `MARKETING_SITE` encendida, el anónimo en /{locale} ve la
+  // portada comercial (rewrite a /{locale}/portada, la URL no cambia) y
+  // /{locale}/portada da 308 a /{locale}. APAGADA —lo normal en producción— todo
+  // queda como arriba. La decisión vive en core con sus pruebas
+  // (`marketingRootDecision`); aquí solo se aplica. Los `?code=` ya salieron en (1).
+  const decision = marketingRootDecision(pathname, {
+    locales: routing.locales,
+    signedIn: user !== null,
+    siteOn: isMarketingSiteOn(process.env),
+  });
+  if (decision.kind === 'redirect') {
+    const redirectRes = NextResponse.redirect(new URL(decision.to, request.url), decision.status);
     // Preserva las cookies que Supabase/next-intl hayan escrito sobre `response`.
     for (const c of response.cookies.getAll()) redirectRes.cookies.set(c);
     return redirectRes;
+  }
+  if (decision.kind === 'rewrite') {
+    const rewriteRes = NextResponse.rewrite(new URL(decision.to, request.url));
+    // Lo que next-intl haya pasado a la request (cabeceras `x-middleware-request-*`)
+    // y las cookies escritas sobre `response` viajan igual que sin rewrite.
+    for (const [k, v] of response.headers) {
+      if (k.startsWith('x-middleware-request-') || k === 'x-middleware-override-headers') {
+        rewriteRes.headers.set(k, v);
+      }
+    }
+    for (const c of response.cookies.getAll()) rewriteRes.cookies.set(c);
+    return rewriteRes;
   }
 
   return response;
