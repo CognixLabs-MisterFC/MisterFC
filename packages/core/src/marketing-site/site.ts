@@ -15,10 +15,8 @@
  * Falla CERRADA a propósito: un valor mal escrito en producción deja la web como estaba,
  * que es lo que se puede permitir; nunca enciende la web comercial por error.
  */
-export type MarketingSiteEnv = {
-  readonly MARKETING_SITE?: string | undefined;
-  readonly VERCEL_ENV?: string | undefined;
-};
+/** La forma de `process.env`: solo se leen `MARKETING_SITE` y `VERCEL_ENV`. */
+export type MarketingSiteEnv = Readonly<Record<string, string | undefined>>;
 
 export function isMarketingSiteOn(env: MarketingSiteEnv): boolean {
   const value = env.MARKETING_SITE?.trim().toLowerCase();
