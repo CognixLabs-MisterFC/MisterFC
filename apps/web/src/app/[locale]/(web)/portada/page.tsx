@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import {
@@ -24,6 +25,7 @@ import { DemoButton } from '@/components/web/demo-button';
 import { StoreBadges } from '@/components/web/store-badges';
 import { ClubsShowcase } from '../_components/clubs-showcase';
 import ClubLoginPage from '../../[slug]/page';
+import { webMetadata } from '@/lib/web/web-metadata';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -43,6 +45,19 @@ type Props = { params: Promise<{ locale: string }> };
  * sin club. Esta carpeta estática le gana a `[slug]`, así que se delega en esa misma
  * página con `slug = 'portada'`: misterfc.es responde exactamente lo de antes.
  */
+/** Título, descripción, canonical, hreflang y OpenGraph (spec §11). Apagada, nada. */
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'webComercial.portada' });
+  return webMetadata({
+    locale,
+    path: '',
+    title: `MisterFC · ${t('hero.antetitulo')}`,
+    description: t('hero.subtitulo'),
+    absoluteTitle: true,
+  });
+}
+
 export default async function PortadaPage({ params }: Props) {
   const { locale } = await params;
   if (!isMarketingSiteOn(process.env)) {

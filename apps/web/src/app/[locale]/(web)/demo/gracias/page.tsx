@@ -8,9 +8,11 @@ import { isMarketingSiteOn } from '@misterfc/core';
 type Props = { params: Promise<{ locale: string }> };
 
 /** Confirmación de la solicitud: fuera de los buscadores (spec §8.5). */
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isMarketingSiteOn(process.env)) return {};
-  return { robots: { index: false, follow: false } };
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'webComercial.demo.gracias' });
+  return { title: t('titulo'), robots: { index: false, follow: false } };
 }
 
 /**

@@ -5,6 +5,7 @@ import { createSupabaseServerClient, getCurrentUser } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { ClubLogo } from '@/components/ui/club-logo';
 import { ClubLoginForm } from './club-login-form';
+import { accesoMetadata } from '@/lib/web/acceso-metadata';
 
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
@@ -30,6 +31,11 @@ type PublicClub = {
  *     público F14J-1). 0 filas / error → "club no encontrado". Slug válido →
  *     LOGO del club en grande + formulario de login (form 3b).
  */
+/** `noindex` con la web comercial encendida (spec §11); apagada, nada. */
+export function generateMetadata() {
+  return accesoMetadata();
+}
+
 export default async function ClubLoginPage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);

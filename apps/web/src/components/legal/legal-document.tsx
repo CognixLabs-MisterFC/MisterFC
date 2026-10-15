@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 import { LegalMarkdown } from './legal-markdown';
-import { readLegalDoc, type LegalSlug } from '@/lib/legal-content';
+import { LEGAL_PENDIENTES_REVISION, readLegalDoc, type LegalSlug } from '@/lib/legal-content';
+import { LegalPendiente } from './legal-pendiente';
 
 /**
  * C-1 — Cuerpo de una página legal pública. Existe para que el aviso y el
@@ -32,9 +33,25 @@ export async function LegalDocument({
           {t('solo_castellano')}
         </p>
       )}
+      {LEGAL_PENDIENTES_REVISION.includes(slug) && <LegalPendiente />}
       <div lang="es">
         <LegalMarkdown body={readLegalDoc(slug)} />
       </div>
     </>
+  );
+}
+
+/**
+ * Un apartado que se añade al final de otro documento (el 17 de la privacidad, para la
+ * web comercial). Sin el aviso de idioma, que ya lleva el documento al que se añade.
+ */
+export function LegalAnexo({ slug }: { slug: LegalSlug }) {
+  return (
+    <section className="mt-10 border-t border-zinc-700 pt-8">
+      {LEGAL_PENDIENTES_REVISION.includes(slug) && <LegalPendiente />}
+      <div lang="es">
+        <LegalMarkdown body={readLegalDoc(slug)} />
+      </div>
+    </section>
   );
 }

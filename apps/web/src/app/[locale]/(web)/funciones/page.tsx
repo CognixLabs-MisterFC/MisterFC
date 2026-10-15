@@ -1,9 +1,11 @@
+import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { isMarketingSiteOn } from '@misterfc/core';
 import { CapturePlaceholder } from '@/components/web/capture-placeholder';
 import { captureLabels, type CaptureId } from '@/components/web/captures';
 import { DemoButton } from '@/components/web/demo-button';
 import ClubLoginPage from '../../[slug]/page';
+import { webMetadata } from '@/lib/web/web-metadata';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -47,6 +49,18 @@ const AREAS: readonly {
   { key: 'F', captures: [{ id: 'M6', device: 'phone' }] },
   { key: 'G', captures: [] },
 ];
+
+/** Título, descripción, canonical, hreflang y OpenGraph (spec §11). Apagada, nada. */
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'webComercial.funciones' });
+  return webMetadata({
+    locale,
+    path: '/funciones',
+    title: t('titulo'),
+    description: t('intro'),
+  });
+}
 
 export default async function FuncionesPage({ params }: Props) {
   const { locale } = await params;

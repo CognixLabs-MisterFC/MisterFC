@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { HeartPulse, KeyRound, Lock, Server, ShieldCheck, Users } from 'lucide-react';
@@ -5,6 +6,7 @@ import { isMarketingSiteOn } from '@misterfc/core';
 import { CapturePlaceholder } from '@/components/web/capture-placeholder';
 import { captureLabels } from '@/components/web/captures';
 import ClubLoginPage from '../../[slug]/page';
+import { webMetadata } from '@/lib/web/web-metadata';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -26,6 +28,18 @@ const BLOCKS = [
   { key: 'b5', icon: KeyRound, items: ['S13', 'S14'] },
   { key: 'b6', icon: Server, items: ['S15', 'S16', 'S17', 'S18', 'S19'] },
 ] as const;
+
+/** Título, descripción, canonical, hreflang y OpenGraph (spec §11). Apagada, nada. */
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'webComercial.seguridad' });
+  return webMetadata({
+    locale,
+    path: '/seguridad',
+    title: t('titulo'),
+    description: t('intro'),
+  });
+}
 
 export default async function SeguridadPage({ params }: Props) {
   const { locale } = await params;

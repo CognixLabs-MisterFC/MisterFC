@@ -5,11 +5,17 @@ import { getCurrentUser } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { LegalFooter } from '@/components/legal/legal-footer';
 import { SigninForm } from './signin-form';
+import { accesoMetadata } from '@/lib/web/acceso-metadata';
 
 type Props = {
   params: Promise<{ locale: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+/** `noindex` con la web comercial encendida (spec §11); apagada, nada. */
+export function generateMetadata() {
+  return accesoMetadata();
+}
 
 export default async function SigninPage({ params, searchParams }: Props) {
   const { locale } = await params;

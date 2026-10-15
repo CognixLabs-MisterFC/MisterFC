@@ -101,6 +101,19 @@ describe('marketingRootDecision — la raíz de cada idioma', () => {
     }
   });
 
+  it('APAGADA: las legales de la web comercial también (el 404 de antes)', () => {
+    for (const sub of ['legal/aviso-legal', 'legal/cookies']) {
+      expect(decide(`/va/${sub}`, false, false)).toEqual({
+        kind: 'rewrite',
+        to: `/va/${sub}/__sin-ruta`,
+      });
+      expect(decide(`/va/${sub}`, false, true)).toEqual({ kind: 'next' });
+    }
+    // Las cuatro de siempre no se tocan nunca.
+    expect(decide('/es/legal/privacidad', false, false)).toEqual({ kind: 'next' });
+    expect(decide('/es/legal/terminos', false, false)).toEqual({ kind: 'next' });
+  });
+
   it('ENCENDIDA: /{idioma}/demo/gracias sigue su camino', () => {
     expect(decide('/es/demo/gracias', false, true)).toEqual({ kind: 'next' });
     expect(decide('/va/demo/gracias', true, true)).toEqual({ kind: 'next' });

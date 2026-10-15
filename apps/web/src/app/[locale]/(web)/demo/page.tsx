@@ -1,8 +1,10 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { DEMO_EQUIPOS, DEMO_PAPELES, isMarketingSiteOn } from '@misterfc/core';
 import ClubLoginPage from '../../[slug]/page';
 import { DemoForm, type DemoFormTextos } from './demo-form';
+import { webMetadata } from '@/lib/web/web-metadata';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -18,6 +20,19 @@ const CONTACTO = 'info.cognixlabs@gmail.com';
  * APAGADA: antes de la web comercial, `/{idioma}/demo` caía en `[slug]` como un slug sin
  * club. Esta carpeta estática le gana a `[slug]`, así que se delega en esa misma página.
  */
+/** Título, descripción, canonical, hreflang y OpenGraph (spec §11). Apagada, nada. */
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'webComercial.demo' });
+  const tp = await getTranslations({ locale, namespace: 'webComercial.portada' });
+  return webMetadata({
+    locale,
+    path: '/demo',
+    title: t('titulo'),
+    description: tp('final.texto'),
+  });
+}
+
 export default async function DemoPage({ params }: Props) {
   const { locale } = await params;
   if (!isMarketingSiteOn(process.env)) {

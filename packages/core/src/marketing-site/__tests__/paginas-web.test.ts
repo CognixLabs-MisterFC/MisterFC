@@ -47,18 +47,32 @@ function subpaginas(dir: string, rel = ''): string[] {
 }
 const hondas = subpaginas(WEB);
 
+/**
+ * Las legales de la web comercial (`ambito: 'web'` en `scripts/textos-legales.mjs`)
+ * viven en `legal/`, fuera de `(web)`, para llevar el layout de las legales. Se leen del
+ * censo de textos legales, no de una lista a mano.
+ */
+const LOCALE = join(ROOT, 'apps/web/src/app/[locale]');
+const LEGALES_WEB = [
+  ...readFileSync(join(ROOT, 'scripts/textos-legales.mjs'), 'utf8').matchAll(
+    /servido: '([^']+)', ambito: 'web' \}/g,
+  ),
+].map((m) => `legal/${m[1]}`);
+
 describe('páginas de la web comercial con el interruptor apagado', () => {
   it('premisa: el censo encuentra las páginas', () => {
     expect(paginas).toEqual(expect.arrayContaining(['portada', 'funciones', 'seguridad', 'demo']));
     expect(hondas).toEqual(expect.arrayContaining(['demo/gracias']));
+    expect(LEGALES_WEB).toEqual(['legal/aviso-legal', 'legal/cookies']);
   });
 
   it('cada subpágina está en MARKETING_SUBPAGES: el middleware le da el 404 de antes', () => {
-    expect([...MARKETING_SUBPAGES].sort()).toEqual([...hondas].sort());
+    expect([...MARKETING_SUBPAGES].sort()).toEqual([...hondas, ...LEGALES_WEB].sort());
   });
 
-  it.each(hondas)('%s además da 404 por sí misma cuando está apagada', (p) => {
-    const src = readFileSync(join(WEB, p, 'page.tsx'), 'utf8');
+  it.each([...MARKETING_SUBPAGES])('%s además da 404 por sí misma cuando está apagada', (p) => {
+    const enWeb = join(WEB, p, 'page.tsx');
+    const src = readFileSync(existsSync(enWeb) ? enWeb : join(LOCALE, p, 'page.tsx'), 'utf8');
     expect(src).toContain('if (!isMarketingSiteOn(process.env)) notFound();');
   });
 

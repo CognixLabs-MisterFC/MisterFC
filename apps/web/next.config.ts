@@ -10,7 +10,12 @@ const nextConfig: NextConfig = {
   // Server Component; se fuerzan en el trace de despliegue para que Vercel los
   // empaquete (si no, la lectura fallaría en runtime).
   outputFileTracingIncludes: {
-    '/[locale]/legal/privacidad': ['./src/content/legal/privacidad.md'],
+    '/[locale]/legal/privacidad': [
+      './src/content/legal/privacidad.md',
+      './src/content/legal/privacidad-web.md',
+    ],
+    '/[locale]/legal/aviso-legal': ['./src/content/legal/aviso-legal.md'],
+    '/[locale]/legal/cookies': ['./src/content/legal/cookies.md'],
     '/[locale]/legal/eliminacion-cuenta': ['./src/content/legal/eliminacion-cuenta.md'],
     '/[locale]/legal/terminos': ['./src/content/legal/terminos.md'],
     '/[locale]/legal/desistimiento': ['./src/content/legal/desistimiento.md'],

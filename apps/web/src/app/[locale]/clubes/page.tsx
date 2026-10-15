@@ -4,6 +4,7 @@ import { createSupabaseServerClient, getCurrentUser } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { ClubLogo } from '@/components/ui/club-logo';
 import { LegalFooter } from '@/components/legal/legal-footer';
+import { accesoMetadata } from '@/lib/web/acceso-metadata';
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -26,6 +27,11 @@ type PublicClub = {
  * Con sesión NO se muestra: redirige directo a la app (`/{locale}`), igual que
  * hace /signin. La raíz sin sesión llega aquí vía el middleware (F14J-2).
  */
+/** `noindex` con la web comercial encendida (spec §11); apagada, nada. */
+export function generateMetadata() {
+  return accesoMetadata();
+}
+
 export default async function PortadaClubesPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);

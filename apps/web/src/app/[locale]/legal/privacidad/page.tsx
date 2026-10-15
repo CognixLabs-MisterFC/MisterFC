@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { setRequestLocale } from 'next-intl/server';
-import { LegalDocument } from '@/components/legal/legal-document';
+import { isMarketingSiteOn } from '@misterfc/core';
+import { LegalAnexo, LegalDocument } from '@/components/legal/legal-document';
 import { legalMetadata } from '@/lib/legal-content';
 
 type Props = { params: Promise<{ locale: string }> };
@@ -19,5 +20,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PrivacidadPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <LegalDocument slug="privacidad" locale={locale} />;
+  // El apartado 17 (web comercial y demo, spec §10.4 A) solo con la web encendida:
+  // apagada, la política es la de siempre, letra a letra.
+  return (
+    <>
+      <LegalDocument slug="privacidad" locale={locale} />
+      {isMarketingSiteOn(process.env) && <LegalAnexo slug="privacidad-web" />}
+    </>
+  );
 }
