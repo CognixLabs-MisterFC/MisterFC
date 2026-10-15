@@ -28,6 +28,20 @@ export function isMarketingSiteOn(env: MarketingSiteEnv): boolean {
 /** Segmento interno de la portada. Nunca es una URL pública: `/{idioma}` la sirve. */
 export const MARKETING_HOME_SEGMENT = 'portada';
 
+/**
+ * Subpáginas de la web comercial (más de un segmento tras el idioma). Antes de la web
+ * no casaban con ninguna ruta —`[slug]` no tiene hijos— y daban el 404 global de Next.
+ * Un censo comprueba que esta lista coincide con las carpetas de `(web)`.
+ */
+export const MARKETING_SUBPAGES: readonly string[] = ['demo/gracias'];
+
+/**
+ * A dónde se desvía una subpágina con la web apagada: una ruta que no casa con nada,
+ * para que Next pinte el MISMO 404 global de antes. Un `notFound()` en la página no
+ * vale: se pintaría dentro del layout de `[locale]` (otro título, otro HTML).
+ */
+export const MARKETING_SIN_RUTA = '__sin-ruta';
+
 export type MarketingRootDecision =
   | { readonly kind: 'next' }
   | { readonly kind: 'redirect'; readonly to: string; readonly status: 307 | 308 }
@@ -43,6 +57,8 @@ export type MarketingRootDecision =
  *   · `/{idioma}/portada`:
  *       - encendida → 308 a `/{idioma}`, para que la portada tenga UNA sola URL;
  *       - apagada  → nada: cae en `/{slug}` como cualquier slug sin club, como antes.
+ *   · Subpáginas (`/{idioma}/demo/gracias`) con la web APAGADA → rewrite a una ruta que
+ *     no existe: el 404 global de antes. Encendida → nada.
  *   · Todo lo demás → nada.
  *
  * Los artefactos de auth (`?code=`, `?token_hash=`) NO pasan por aquí: el middleware
@@ -68,6 +84,11 @@ export function marketingRootDecision(
 
   if (segment === MARKETING_HOME_SEGMENT && rest.length === 0 && opts.siteOn) {
     return { kind: 'redirect', to: `/${locale}`, status: 308 };
+  }
+
+  const sub = [segment, ...rest].join('/');
+  if (!opts.siteOn && MARKETING_SUBPAGES.includes(sub)) {
+    return { kind: 'rewrite', to: `/${locale}/${sub}/${MARKETING_SIN_RUTA}` };
   }
 
   return { kind: 'next' };

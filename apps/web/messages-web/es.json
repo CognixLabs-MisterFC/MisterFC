@@ -253,5 +253,70 @@
     "S18": "<b>Proveedores:</b> Supabase (base de datos y archivos), Vercel (alojamiento), Resend (correo), Sentry (errores), Expo, Apple y Google (avisos al móvil) y RevenueCat (suscripciones en la app).",
     "S19": "<b>Los datos se alojan en la Unión Europea</b> (Irlanda): la base de datos y los archivos.",
     "privacidad": "Más detalles en la <link>política de privacidad</link>."
+  },
+  "demo": {
+    "titulo": "Solicitar una demo",
+    "campos": {
+      "nombre": "Nombre y apellidos",
+      "papel": "Tu papel en el club",
+      "club": "Nombre del club",
+      "municipio": "Municipio",
+      "equipos": "Número de equipos",
+      "email": "Correo electrónico",
+      "telefono": "Teléfono",
+      "comentario": "Comentario",
+      "privacidad": "He leído la <link>política de privacidad</link>"
+    },
+    "opcional": "opcional",
+    "elige": "Elige una opción",
+    "comentarioMax": "Máximo 500 caracteres.",
+    "papeles": {
+      "direccion": "Dirección",
+      "coordinacion": "Coordinación",
+      "entrenador": "Entrenador o entrenadora",
+      "otro": "Otro"
+    },
+    "equiposOpciones": {
+      "hasta5": "1-5",
+      "de6a10": "6-10",
+      "de11a20": "11-20",
+      "masDe20": "Más de 20"
+    },
+    "enviar": "Solicitar una demo",
+    "enviando": "Enviando…",
+    "despues": {
+      "titulo": "¿Qué pasa después?",
+      "texto": "Te escribiremos en un máximo de 2 días laborables al correo que nos indiques para acordar día y hora. La demo es una videollamada de 30 minutos. Solicitarla no te compromete a nada."
+    },
+    "proteccion": {
+      "titulo": "Información básica de protección de datos",
+      "responsable": "<b>Responsable:</b> Cognix Labs, S.L.U.",
+      "finalidad": "<b>Finalidad:</b> atender la solicitud de demo.",
+      "base": "<b>Base:</b> medidas precontractuales.",
+      "destinatarios": "<b>Destinatarios:</b> Vercel y Resend.",
+      "conservacion": "<b>Conservación y derechos:</b> guardamos la solicitud 12 meses desde el último contacto. Tus derechos y el resto de la información, en la <link>política de privacidad</link>."
+    },
+    "errores": {
+      "resumen": "Revisa los campos marcados.",
+      "requerido": "Este campo es obligatorio.",
+      "email": "Escribe un correo electrónico válido.",
+      "telefono": "Escribe un teléfono válido.",
+      "comentario": "El comentario no puede pasar de 500 caracteres.",
+      "privacidad": "Marca la casilla para enviar la solicitud.",
+      "envio": "No hemos podido enviar tu solicitud. Vuelve a intentarlo o escríbenos a <correo>info.cognixlabs@gmail.com</correo>.",
+      "limite": "Has enviado varias solicitudes seguidas. Vuelve a intentarlo más tarde o escríbenos a <correo>info.cognixlabs@gmail.com</correo>."
+    },
+    "gracias": {
+      "titulo": "Hemos recibido tu solicitud",
+      "texto": "Te escribiremos en un máximo de 2 días laborables para acordar día y hora. La demo es una videollamada de 30 minutos.",
+      "volver": "Volver al inicio"
+    },
+    "acuse": {
+      "asunto": "Hemos recibido tu solicitud de demo",
+      "titulo": "Solicitud de demo de MisterFC",
+      "texto": "Hemos recibido tu solicitud. Te escribiremos en un máximo de 2 días laborables para acordar la hora de la demo, una videollamada de 30 minutos.",
+      "ignorar": "Si no has pedido una demo de MisterFC, puedes ignorar este correo.",
+      "firma": "El equipo de MisterFC"
+    }
   }
 }

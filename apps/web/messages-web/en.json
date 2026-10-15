@@ -253,5 +253,70 @@
     "S18": "<b>Providers:</b> Supabase (database and files), Vercel (hosting), Resend (email), Sentry (errors), Expo, Apple and Google (mobile notifications) and RevenueCat (in-app subscriptions).",
     "S19": "<b>Data is hosted in the European Union</b> (Ireland): the database and the files.",
     "privacidad": "More details in the <link>privacy policy</link>."
+  },
+  "demo": {
+    "titulo": "Request a demo",
+    "campos": {
+      "nombre": "Full name",
+      "papel": "Your role at the club",
+      "club": "Club name",
+      "municipio": "Town or city",
+      "equipos": "Number of teams",
+      "email": "Email",
+      "telefono": "Phone",
+      "comentario": "Comments",
+      "privacidad": "I have read the <link>privacy policy</link>"
+    },
+    "opcional": "optional",
+    "elige": "Choose an option",
+    "comentarioMax": "500 characters maximum.",
+    "papeles": {
+      "direccion": "Club management",
+      "coordinacion": "Coordination",
+      "entrenador": "Coach",
+      "otro": "Other"
+    },
+    "equiposOpciones": {
+      "hasta5": "1-5",
+      "de6a10": "6-10",
+      "de11a20": "11-20",
+      "masDe20": "More than 20"
+    },
+    "enviar": "Request a demo",
+    "enviando": "Sending…",
+    "despues": {
+      "titulo": "What happens next?",
+      "texto": "We will email you within 2 working days at the address you give us to agree on a day and time. The demo is a 30-minute video call. Requesting it commits you to nothing."
+    },
+    "proteccion": {
+      "titulo": "Basic data protection information",
+      "responsable": "<b>Controller:</b> Cognix Labs, S.L.U.",
+      "finalidad": "<b>Purpose:</b> handling your demo request.",
+      "base": "<b>Legal basis:</b> pre-contractual measures.",
+      "destinatarios": "<b>Recipients:</b> Vercel and Resend.",
+      "conservacion": "<b>Retention and rights:</b> we keep the request for 12 months from the last contact. Your rights and the rest of the information are in the <link>privacy policy</link>."
+    },
+    "errores": {
+      "resumen": "Please check the highlighted fields.",
+      "requerido": "This field is required.",
+      "email": "Enter a valid email address.",
+      "telefono": "Enter a valid phone number.",
+      "comentario": "Comments cannot be longer than 500 characters.",
+      "privacidad": "Tick the box to send the request.",
+      "envio": "We could not send your request. Try again or write to us at <correo>info.cognixlabs@gmail.com</correo>.",
+      "limite": "You have sent several requests in a row. Try again later or write to us at <correo>info.cognixlabs@gmail.com</correo>."
+    },
+    "gracias": {
+      "titulo": "We have received your request",
+      "texto": "We will email you within 2 working days to agree on a day and time. The demo is a 30-minute video call.",
+      "volver": "Back to home"
+    },
+    "acuse": {
+      "asunto": "We have received your demo request",
+      "titulo": "MisterFC demo request",
+      "texto": "We have received your request. We will email you within 2 working days to agree on a time for the demo, a 30-minute video call.",
+      "ignorar": "If you did not request a MisterFC demo, you can ignore this email.",
+      "firma": "The MisterFC team"
+    }
   }
 }

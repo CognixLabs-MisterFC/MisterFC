@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { MARKETING_SUBPAGES } from '../site';
 
 /**
  * CENSO de las páginas de la web comercial y de sus textos.
@@ -32,9 +33,33 @@ const paginas = readdirSync(WEB).filter(
     existsSync(join(WEB, d, 'page.tsx')),
 );
 
+/** Páginas más hondas (`demo/gracias`): bajo `[slug]` no había nada, así que eran un 404. */
+function subpaginas(dir: string, rel = ''): string[] {
+  const out: string[] = [];
+  for (const e of readdirSync(dir)) {
+    const f = join(dir, e);
+    if (e.startsWith('_') || !statSync(f).isDirectory()) continue;
+    const r = rel ? `${rel}/${e}` : e;
+    if (rel && existsSync(join(f, 'page.tsx'))) out.push(r);
+    out.push(...subpaginas(f, r));
+  }
+  return out;
+}
+const hondas = subpaginas(WEB);
+
 describe('páginas de la web comercial con el interruptor apagado', () => {
   it('premisa: el censo encuentra las páginas', () => {
-    expect(paginas).toEqual(expect.arrayContaining(['portada', 'funciones', 'seguridad']));
+    expect(paginas).toEqual(expect.arrayContaining(['portada', 'funciones', 'seguridad', 'demo']));
+    expect(hondas).toEqual(expect.arrayContaining(['demo/gracias']));
+  });
+
+  it('cada subpágina está en MARKETING_SUBPAGES: el middleware le da el 404 de antes', () => {
+    expect([...MARKETING_SUBPAGES].sort()).toEqual([...hondas].sort());
+  });
+
+  it.each(hondas)('%s además da 404 por sí misma cuando está apagada', (p) => {
+    const src = readFileSync(join(WEB, p, 'page.tsx'), 'utf8');
+    expect(src).toContain('if (!isMarketingSiteOn(process.env)) notFound();');
   });
 
   it.each(paginas)('%s delega en [slug] con su propio nombre cuando está apagada', (p) => {

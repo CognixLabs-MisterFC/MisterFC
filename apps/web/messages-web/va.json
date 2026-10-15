@@ -253,5 +253,70 @@
     "S18": "<b>Proveïdors:</b> Supabase (base de dades i arxius), Vercel (allotjament), Resend (correu), Sentry (errors), Expo, Apple i Google (avisos al mòbil) i RevenueCat (subscripcions en l'app).",
     "S19": "<b>Les dades s'allotgen a la Unió Europea</b> (Irlanda): la base de dades i els arxius.",
     "privacidad": "Més detalls en la <link>política de privacitat</link>."
+  },
+  "demo": {
+    "titulo": "Sol·licitar una demo",
+    "campos": {
+      "nombre": "Nom i cognoms",
+      "papel": "El teu paper en el club",
+      "club": "Nom del club",
+      "municipio": "Municipi",
+      "equipos": "Nombre d’equips",
+      "email": "Correu electrònic",
+      "telefono": "Telèfon",
+      "comentario": "Comentari",
+      "privacidad": "He llegit la <link>política de privacitat</link>"
+    },
+    "opcional": "opcional",
+    "elige": "Tria una opció",
+    "comentarioMax": "Màxim 500 caràcters.",
+    "papeles": {
+      "direccion": "Direcció",
+      "coordinacion": "Coordinació",
+      "entrenador": "Entrenador o entrenadora",
+      "otro": "Altre"
+    },
+    "equiposOpciones": {
+      "hasta5": "1-5",
+      "de6a10": "6-10",
+      "de11a20": "11-20",
+      "masDe20": "Més de 20"
+    },
+    "enviar": "Sol·licitar una demo",
+    "enviando": "S’està enviant…",
+    "despues": {
+      "titulo": "Què passa després?",
+      "texto": "T’escriurem en un màxim de 2 dies laborables al correu que ens indiques per a acordar dia i hora. La demo és una videotrucada de 30 minuts. Sol·licitar-la no et compromet a res."
+    },
+    "proteccion": {
+      "titulo": "Informació bàsica de protecció de dades",
+      "responsable": "<b>Responsable:</b> Cognix Labs, S.L.U.",
+      "finalidad": "<b>Finalitat:</b> atendre la sol·licitud de demo.",
+      "base": "<b>Base:</b> mesures precontractuals.",
+      "destinatarios": "<b>Destinataris:</b> Vercel i Resend.",
+      "conservacion": "<b>Conservació i drets:</b> guardem la sol·licitud 12 mesos des de l’últim contacte. Els teus drets i la resta de la informació, en la <link>política de privacitat</link>."
+    },
+    "errores": {
+      "resumen": "Revisa els camps marcats.",
+      "requerido": "Aquest camp és obligatori.",
+      "email": "Escriu un correu electrònic vàlid.",
+      "telefono": "Escriu un telèfon vàlid.",
+      "comentario": "El comentari no pot passar de 500 caràcters.",
+      "privacidad": "Marca la casella per a enviar la sol·licitud.",
+      "envio": "No hem pogut enviar la teua sol·licitud. Torna-ho a intentar o escriu-nos a <correo>info.cognixlabs@gmail.com</correo>.",
+      "limite": "Has enviat diverses sol·licituds seguides. Torna-ho a intentar més tard o escriu-nos a <correo>info.cognixlabs@gmail.com</correo>."
+    },
+    "gracias": {
+      "titulo": "Hem rebut la teua sol·licitud",
+      "texto": "T’escriurem en un màxim de 2 dies laborables per a acordar dia i hora. La demo és una videotrucada de 30 minuts.",
+      "volver": "Tornar a l’inici"
+    },
+    "acuse": {
+      "asunto": "Hem rebut la teua sol·licitud de demo",
+      "titulo": "Sol·licitud de demo de MisterFC",
+      "texto": "Hem rebut la teua sol·licitud. T’escriurem en un màxim de 2 dies laborables per a acordar l’hora de la demo, una videotrucada de 30 minuts.",
+      "ignorar": "Si no has demanat una demo de MisterFC, pots ignorar aquest correu.",
+      "firma": "L’equip de MisterFC"
+    }
   }
 }
