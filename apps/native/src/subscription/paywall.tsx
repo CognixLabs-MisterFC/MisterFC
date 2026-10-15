@@ -234,8 +234,9 @@ export function PaywallScreen() {
             Restaurar no necesita el paquete: pregunta a la tienda por las compras de
             esta cuenta, no por lo que hay en venta. Lo único que necesita es que el
             SDK esté configurado, y eso es exactamente `sellable`; por eso la guarda es
-            esa y no `pkg`. Sin clave de plataforma (Android hoy) `Purchases` no está
-            configurado y llamarlo lanzaría: ahí se sigue sin ofrecer el botón.
+            esa y no `pkg`. Sin clave de plataforma —un build que no la lleve, como el
+            perfil `development` de eas.json— `Purchases` no está configurado y llamarlo
+            lanzaría: ahí se sigue sin ofrecer el botón.
 
             Tampoco se mira `loadingOffer`: si la consulta del precio se quedara
             colgada, restaurar volvería a estar escondido por el mismo motivo que se

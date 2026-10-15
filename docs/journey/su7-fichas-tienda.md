@@ -124,11 +124,12 @@ Y dos casillas que ya deberían estar marcadas desde BC: los datos van **cifrado
 tránsito** y existe una **forma de pedir el borrado** (Perfil → Eliminar mi cuenta, y
 `https://misterfc.es/es/legal/eliminacion-cuenta`).
 
-> **Play no está configurado todavía.** Mientras falte
-> `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY`, `canPurchase()` es false en Android y el muro lo
-> dice en vez de ofrecer un botón muerto. El interruptor del cobro **no se enciende hasta
-> que las dos tiendas puedan cobrar** — si no, una familia con Android se queda fuera sin
-> forma de pagar.
+> **Play ya está configurado** (octubre de 2026). La clave pública de cada tienda vive en
+> las variables de EAS (entorno `production`), que es el que declaran los perfiles
+> `preview` y `production` de `eas.json`, así que los builds de tienda la llevan. Lo que
+> sigue en pie es el build **sin** clave —el perfil `development` no declara entorno—: ahí
+> `canPurchase()` es false y el muro lo dice en vez de ofrecer un botón muerto. Y la
+> condición que ponía esta nota, que las dos tiendas puedan cobrar, **ya se cumple**.
 
 ---
 
@@ -176,7 +177,8 @@ Por orden de quién bloquea a quién:
       [apple-review-notes.md](apple-review-notes.md) §7.3.
 - [ ] Productos creados y **aprobados** en las dos tiendas.
 - [ ] `REVENUECAT_WEBHOOK_SECRET` y `REVENUECAT_SECRET_KEY` en Vercel.
-- [ ] `EXPO_PUBLIC_REVENUECAT_IOS_KEY` y `_ANDROID_KEY` en EAS.
+- [x] `EXPO_PUBLIC_REVENUECAT_IOS_KEY` y `_ANDROID_KEY` en EAS (entorno `production`;
+      los builds de tienda las llevan).
 - [ ] Webhook registrado en RevenueCat y probado (un evento de sandbox debe quedar en
       `subscription_events` con `skipped_reason = 'sandbox'`: eso prueba que llega, que se
       verifica la firma y que no aplica).

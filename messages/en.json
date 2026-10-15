@@ -5638,7 +5638,7 @@
     "activating": "We are activating your subscription. Please keep the app open.",
     "activating_slow": "Your payment went through, but activation is taking longer than usual. Reopen the app in a few minutes or tap \"Restore purchases\".",
     "billing_issue": "Your last payment could not be charged and the grace period has ended. Check your payment method in the store and subscribe again.",
-    "unavailable_platform": "Subscribing is not available on this device yet. You can subscribe from an iPhone or iPad and then sign in here: the subscription belongs to your account, not to the phone.",
+    "unavailable_platform": "Subscribing is not available from this app right now. Try again later, and contact support if it continues.",
     "retry": "Try again",
     "offline": "The purchase cannot be completed while offline. Try again when you are back online.",
     "terms_note": "The subscription renews automatically every year unless you cancel at least 24 hours before renewal. You can manage or cancel it at any time from your store account.",
