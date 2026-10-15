@@ -68,6 +68,10 @@ const LAYOUTS = {
     cuts: false,
     why: 'Consola de superadmin (requireSuperadmin); un superadmin nunca es familia.',
   },
+  'apps/web/src/app/[locale]/(web)/layout.tsx': {
+    cuts: false,
+    why: 'Web comercial (portada, funciones, seguridad, demo): pública, no es la app.',
+  },
 };
 
 /** Páginas SIN layout propio que aun así tienen que rebotar. */
