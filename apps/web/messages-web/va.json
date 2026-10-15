@@ -1,8 +1,121 @@
 {
   "portada": {
-    "antetitulo": "Per a clubs de futbol base",
-    "titular": "Tot el teu club en un sol lloc, perquè el temps vaja al camp",
-    "subtitulo": "Equips, entrenaments, convocatòries, partits i comunicació amb les famílies, en la web i en el mòbil. Pensat per a la direcció del club i per als seus entrenadors."
+    "hero": {
+      "antetitulo": "Per a clubs de futbol base",
+      "titular": "Tot el teu club en un sol lloc, perquè el temps vaja al camp",
+      "subtitulo": "Equips, entrenaments, convocatòries, partits i comunicació amb les famílies, en la web i en el mòbil. Pensat per a la direcció del club i per als seus entrenadors.",
+      "ctaDemo": "Sol·licitar una demo",
+      "ctaFunciones": "Veure funcions"
+    },
+    "problema": {
+      "titulo": "Et sona?",
+      "i1t": "Informació repartida",
+      "i1d": "Fulls de càlcul, grups de missatgeria, llibretes: cada equip a la seua manera.",
+      "i2t": "La direcció no veu el conjunt",
+      "i2d": "Saber com van l'assistència, els informes o les convocatòries de tots els equips porta hores.",
+      "i3t": "Les famílies, per mil canals",
+      "i3d": "Convocatòries, horaris i avisos es perden entre missatges."
+    },
+    "roles": {
+      "titulo": "Què canvia per a cadascú",
+      "direccionT": "Direcció",
+      "direccionD": "L'estat de tots els equips en un panell; temporades, equips i cos tècnic; campanyes d'informes i anuncis a tot el club.",
+      "coordinacionT": "Coordinació",
+      "coordinacionD": "Els equips que coordines, les seues plantilles, el seu cos tècnic i el seguiment dels informes.",
+      "entrenadoresT": "Entrenadors",
+      "entrenadoresD": "Sessions, exercicis, convocatòries, alineacions i presa de dades del partit des del mòbil.",
+      "familiasT": "Famílies",
+      "familiasD": "L'app MisterFC, per a respondre a les convocatòries, consultar el calendari i seguir l'evolució del seu fill o filla."
+    },
+    "funciones": {
+      "titulo": "Funcions destacades",
+      "f1t": "Planifica els entrenaments",
+      "f1d": "Biblioteca d'exercicis amb diagrames, planificador setmanal de sessions i PDF per al camp.",
+      "f2t": "Convoca i alinea",
+      "f2d": "Publica la convocatòria, rep les respostes de les famílies i prepara l'alineació arrossegant jugadors.",
+      "f3t": "El partit, en directe",
+      "f3d": "Gols, targetes i canvis des del mòbil, fins i tot sense connexió; en acabar, la valoració de cada jugador.",
+      "f4t": "Informes de desenvolupament",
+      "f4d": "Objectius i informe per període per a cada jugador, amb PDF per a les famílies.",
+      "f5t": "Un panell per a la direcció",
+      "f5d": "Cens, resultats, assistència i alertes de tot el club.",
+      "f6t": "Comunicació ordenada",
+      "f6d": "Missatges, anuncis i notificacions dins de l'app, sense dependre de grups de missatgeria.",
+      "verTodas": "Veure totes les funcions"
+    },
+    "seguridad": {
+      "titulo": "Dades de menors, tractades com el que són",
+      "p1": "Només es pot entrar a un club per invitació.",
+      "p2": "Un club no pot veure les dades d'un altre: el control d'accés s'aplica en la mateixa base de dades.",
+      "p3": "La foto d'un jugador no es mostra sense l'autorització d'imatge.",
+      "p4": "Dins del club, les dades de salut només les veu qui les necessita, i cada consulta del personal queda registrada.",
+      "p5": "Les dades s'allotgen a la Unió Europea.",
+      "p6": "El tutor pot descarregar les dades del seu fill o demanar-ne la supressió.",
+      "enlace": "Com protegim les dades"
+    },
+    "plataformas": {
+      "titulo": "Web i mòbil",
+      "webT": "Web",
+      "webD": "Per a la direcció i els entrenadors: la planificació, els informes i la gestió del club.",
+      "appT": "App per a iOS i Android",
+      "appD": "Per al dia a dia: la convocatòria, el directe del partit, els missatges i el calendari.",
+      "idiomasT": "En castellà, valencià i anglés",
+      "idiomasD": "En la web i en l'app."
+    },
+    "familias": {
+      "titulo": "Eres família d'un jugador?",
+      "texto": "El teu club et convidarà a l'app MisterFC: convocatòries, calendari, missatges i l'evolució del teu fill o filla.",
+      "gratis": "L'app és gratuïta per a les famílies."
+    },
+    "pasos": {
+      "titulo": "Com comencem",
+      "p1t": "Demo de 30 minuts",
+      "p1d": "Per videotrucada, amb el teu cas.",
+      "p2t": "Muntem el teu club",
+      "p2d": "Equips de la temporada, importació de jugadors des d'Excel i el teu escut i els teus colors.",
+      "p3t": "Convides el teu cos tècnic i les famílies",
+      "p3d": "I comenceu a utilitzar-lo."
+    },
+    "quien": {
+      "titulo": "Qui hi ha darrere",
+      "texto": "MisterFC és un producte de Cognix Labs, S.L.U., amb seu a València."
+    },
+    "faq": {
+      "titulo": "Preguntes freqüents",
+      "costeP": "Quant costa?",
+      "costeR": "Depén de la grandària del club i del que necessites. Te ho expliquem en la demo, sense compromís.",
+      "familiasP": "Les famílies han de pagar alguna cosa?",
+      "familiasR": "No: l'app és gratuïta per a les famílies.",
+      "instalarP": "Hem d'instal·lar alguna cosa?",
+      "instalarR": "La direcció i els entrenadors poden utilitzar la web des de qualsevol navegador. Per al dia a dia hi ha app en iOS i Android.",
+      "conexionP": "Funciona sense connexió?",
+      "conexionR": "L'app mòbil permet consultar la informació ja descarregada i registrar les accions del partit sense cobertura.",
+      "jugadoresP": "Podem portar els nostres jugadors?",
+      "jugadoresR": "Sí, des d'un full d'Excel o CSV amb la nostra plantilla.",
+      "valencianoP": "Està en valencià?",
+      "valencianoR": "Sí: castellà, valencià i anglés, en la web i en l'app.",
+      "menoresP": "Qui pot veure les dades dels menors?",
+      "menoresR": "Dins del club, cada persona veu el que li correspon segons el seu paper: direcció, coordinació, entrenador o família. Les dades de salut només les veu qui les necessita, sempre amb el consentiment registrat, i cada consulta del personal queda registrada.",
+      "menoresEnlace": "Més sobre seguretat"
+    },
+    "final": {
+      "titulo": "Et mostrem MisterFC amb els equips del teu club.",
+      "texto": "Una videotrucada i responem tots els teus dubtes. Sol·licitar-la no et compromet a res.",
+      "cta": "Sol·licitar una demo"
+    },
+    "capturas": {
+      "pendiente": "Captura pendent",
+      "C1": "Tauler de direcció",
+      "M1": "Convocatòria vista per la família",
+      "C3": "Planificador setmanal de sessions",
+      "C5": "Editor d'alineació",
+      "M2": "Directe del partit",
+      "C7": "Informe de desenvolupament",
+      "M3": "Missatges de l'equip"
+    },
+    "showcase": {
+      "titulo": "Clubs que treballen amb MisterFC"
+    }
   },
   "cabecera": {
     "inicio": "MisterFC, inici",

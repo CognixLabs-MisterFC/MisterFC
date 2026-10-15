@@ -1,8 +1,121 @@
 {
   "portada": {
-    "antetitulo": "For youth football clubs",
-    "titular": "Your whole club in one place, so the time goes to the pitch",
-    "subtitulo": "Teams, training, call-ups, matches and communication with families, on the web and on mobile. Built for club management and for its coaches."
+    "hero": {
+      "antetitulo": "For youth football clubs",
+      "titular": "Your whole club in one place, so the time goes to the pitch",
+      "subtitulo": "Teams, training, call-ups, matches and communication with families, on the web and on mobile. Built for club management and for its coaches.",
+      "ctaDemo": "Request a demo",
+      "ctaFunciones": "See features"
+    },
+    "problema": {
+      "titulo": "Sound familiar?",
+      "i1t": "Information all over the place",
+      "i1d": "Spreadsheets, messaging groups, notebooks: every team does it its own way.",
+      "i2t": "Management can't see the whole picture",
+      "i2d": "Finding out how attendance, reports or call-ups are going across all teams takes hours.",
+      "i3t": "Families, through a thousand channels",
+      "i3d": "Call-ups, schedules and notices get lost among messages."
+    },
+    "roles": {
+      "titulo": "What changes for each of you",
+      "direccionT": "Club management",
+      "direccionD": "The status of every team on one dashboard; seasons, teams and coaching staff; report campaigns and announcements to the whole club.",
+      "coordinacionT": "Coordinators",
+      "coordinacionD": "The teams you coordinate, their squads, their coaching staff and report follow-up.",
+      "entrenadoresT": "Coaches",
+      "entrenadoresD": "Sessions, drills, call-ups, line-ups and match data entry from your phone.",
+      "familiasT": "Families",
+      "familiasD": "The MisterFC app, to reply to call-ups, check the calendar and follow how their son or daughter is progressing."
+    },
+    "funciones": {
+      "titulo": "Key features",
+      "f1t": "Plan your training",
+      "f1d": "A drill library with diagrams, a weekly session planner and PDFs for the pitch.",
+      "f2t": "Call up and pick the line-up",
+      "f2d": "Publish the call-up, get the families’ replies and build the line-up by dragging players.",
+      "f3t": "The match, live",
+      "f3d": "Goals, cards and substitutions from your phone, even offline; at full time, a rating for every player.",
+      "f4t": "Development reports",
+      "f4d": "Goals and a report per period for every player, with a PDF for families.",
+      "f5t": "A dashboard for club management",
+      "f5d": "Headcount, results, attendance and alerts across the whole club.",
+      "f6t": "Organised communication",
+      "f6d": "Messages, announcements and notifications inside the app, without relying on messaging groups.",
+      "verTodas": "See all features"
+    },
+    "seguridad": {
+      "titulo": "Children's data, treated as what it is",
+      "p1": "You can only join a club by invitation.",
+      "p2": "A club cannot see another club's data: access control is enforced in the database itself.",
+      "p3": "A player's photo is not shown without image consent.",
+      "p4": "Within the club, health data is only visible to those who need it, and every access by staff is logged.",
+      "p5": "Data is hosted in the European Union.",
+      "p6": "A guardian can download their child's data or request its deletion.",
+      "enlace": "How we protect data"
+    },
+    "plataformas": {
+      "titulo": "Web and mobile",
+      "webT": "Web",
+      "webD": "For club management and coaches: planning, reports and running the club.",
+      "appT": "App for iOS and Android",
+      "appD": "For day-to-day use: call-ups, live match, messages and the calendar.",
+      "idiomasT": "In Spanish, Valencian and English",
+      "idiomasD": "On the web and in the app."
+    },
+    "familias": {
+      "titulo": "Are you a player's family?",
+      "texto": "Your club will invite you to the MisterFC app: call-ups, calendar, messages and how your son or daughter is progressing.",
+      "gratis": "The app is free for families."
+    },
+    "pasos": {
+      "titulo": "How we get started",
+      "p1t": "A 30-minute demo",
+      "p1d": "By video call, built around your club.",
+      "p2t": "We set up your club",
+      "p2d": "This season's teams, importing players from Excel, and your crest and colours.",
+      "p3t": "You invite your coaching staff and families",
+      "p3d": "And you start using it."
+    },
+    "quien": {
+      "titulo": "Who's behind it",
+      "texto": "MisterFC is a product of Cognix Labs, S.L.U., based in Valencia."
+    },
+    "faq": {
+      "titulo": "Frequently asked questions",
+      "costeP": "How much does it cost?",
+      "costeR": "It depends on the size of your club and what you need. We will go through it in the demo, with no commitment.",
+      "familiasP": "Do families have to pay anything?",
+      "familiasR": "No: the app is free for families.",
+      "instalarP": "Do we need to install anything?",
+      "instalarR": "Club management and coaches can use the web from any browser. For day-to-day use there is an app for iOS and Android.",
+      "conexionP": "Does it work offline?",
+      "conexionR": "The mobile app lets you view information already downloaded and record match events without signal.",
+      "jugadoresP": "Can we bring our players?",
+      "jugadoresR": "Yes, from an Excel or CSV sheet using our template.",
+      "valencianoP": "Is it available in Valencian?",
+      "valencianoR": "Yes: Spanish, Valencian and English, on the web and in the app.",
+      "menoresP": "Who can see children's data?",
+      "menoresR": "Within the club, each person sees what corresponds to their role: management, coordinator, coach or family. Health data is only visible to those who need it, always with recorded consent, and every access by staff is logged.",
+      "menoresEnlace": "More about security"
+    },
+    "final": {
+      "titulo": "We will show you MisterFC with your own club’s teams.",
+      "texto": "One video call and we answer all your questions. Requesting it commits you to nothing.",
+      "cta": "Request a demo"
+    },
+    "capturas": {
+      "pendiente": "Screenshot pending",
+      "C1": "Management dashboard",
+      "M1": "Call-up as seen by the family",
+      "C3": "Weekly session planner",
+      "C5": "Line-up editor",
+      "M2": "Live match",
+      "C7": "Development report",
+      "M3": "Team messages"
+    },
+    "showcase": {
+      "titulo": "Clubs working with MisterFC"
+    }
   },
   "cabecera": {
     "inicio": "MisterFC, home",
