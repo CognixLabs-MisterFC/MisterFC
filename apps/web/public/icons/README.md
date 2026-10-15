@@ -1,10 +1,14 @@
 # Iconos PWA
 
-Placeholders. En Fase 13 (branding) se generan los iconos definitivos.
+Los que declara el manifiesto (`packages/core/src/marketing-site/manifest.ts`):
 
-Tamaños requeridos:
+- `icon-192.png` — 192×192 (pantalla de inicio de Android).
+- `icon-512.png` — 512×512 (splash y tiendas de apps web).
 
-- `icon-192.png` — 192×192 (Android home screen, splash).
-- `icon-512.png` — 512×512 (Android splash hi-res, Vercel cards).
+Salen del icono de la app nativa (`apps/native/assets/icon.png`, 1024×1024), escalados.
+Son cuadrados y opacos, sin esquinas: el manifiesto los declara `any maskable` y es
+Android quien los recorta (círculo, squircle…). El dibujo cabe en la zona segura
+central (círculo del 80 %), así que el recorte no se come nada.
 
-Mientras tanto los archivos no existen y el navegador mostrará el fallback. Ningún error de runtime.
+Los iconos de la pestaña (`favicon.ico`, `icon.png`, `apple-icon.png`) viven en
+`apps/web/src/app/`.
