@@ -178,7 +178,12 @@ export function PaywallScreen() {
           </View>
         ) : null}
 
-        {/* Android todavía no puede cobrar: se dice, no se ofrece un botón muerto. */}
+        {/* Build sin la clave de su tienda (el perfil `development` de eas.json no
+            declara entorno): se dice, no se ofrece un botón muerto. Las dos tiendas
+            cobran desde octubre de 2026, así que esto ya no es «Android no puede».
+            OJO, y es la mitad que este cambio no toca: el texto de `unavailable_platform`
+            sigue diciendo «suscríbete desde un iPhone o iPad», que era verdad cuando Play
+            no cobraba. Es texto de pantalla en tres idiomas, no un comentario. */}
         {!sellable ? (
           <View className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
             <Text className="text-sm text-zinc-700">{t('unavailable_platform')}</Text>

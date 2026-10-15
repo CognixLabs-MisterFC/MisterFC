@@ -12,9 +12,16 @@
  * tienda. Son claves PÚBLICAS de SDK: no son la secret key, que vive solo en el
  * servidor (SU-3) y no puede entrar aquí.
  *
- * ⚠️ ANDROID NO ESTÁ CONFIGURADO todavía. Si falta la clave de la plataforma, el SDK
- * NO se configura y `canPurchase()` es false: la pantalla de suscripción lo dice en
- * vez de ofrecer un botón que no puede funcionar.
+ * Las dos tiendas están configuradas y cobran: Apple y Google Play. La clave pública de
+ * cada plataforma vive en las variables de EAS (entorno `production`), que es el que
+ * declaran los perfiles `preview` y `production` de `eas.json`, así que los builds de
+ * tienda la llevan puesta.
+ *
+ * Lo que sigue en pie es el caso del build SIN clave —el perfil `development` de
+ * `eas.json` no declara entorno—: ahí el SDK no se configura, `canPurchase()` es false y
+ * el muro lo dice en vez de ofrecer un botón que no puede funcionar. Es una condición
+ * del BUILD, no de la plataforma: hasta octubre de 2026 este comentario decía que Android
+ * no estaba configurado, y eso mandaba a buscar una tarea que ya estaba hecha.
  */
 
 import { Platform } from 'react-native';
@@ -37,7 +44,7 @@ function apiKeyForPlatform(): string | null {
   return key && key.length > 0 ? key : null;
 }
 
-/** ¿Se puede cobrar en ESTA plataforma? False mientras falte la clave (Android hoy). */
+/** ¿Se puede cobrar en ESTA plataforma? False solo si el build no lleva su clave. */
 export function canPurchase(): boolean {
   return apiKeyForPlatform() !== null;
 }
