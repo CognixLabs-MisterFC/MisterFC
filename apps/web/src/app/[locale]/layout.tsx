@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
 import { Inter } from 'next/font/google';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
-import { setRequestLocale } from 'next-intl/server';
+import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegister } from '@/components/service-worker-register';
@@ -58,13 +58,20 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
 
+  // Los textos de la web comercial (`webComercial`) se usan solo en el servidor: no
+  // viajan al navegador en ninguna página. Sin esto irían en el HTML de TODAS las
+  // pantallas de la app, y con la web comercial apagada el HTML ya no sería el de antes.
+  const clientMessages = Object.fromEntries(
+    Object.entries(await getMessages()).filter(([namespace]) => namespace !== 'webComercial'),
+  );
+
   return (
     <html lang={locale} className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <Suspense fallback={null}>
           <AuthHashHandler />
         </Suspense>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={clientMessages}>{children}</NextIntlClientProvider>
         <Toaster />
         <ServiceWorkerRegister />
       </body>

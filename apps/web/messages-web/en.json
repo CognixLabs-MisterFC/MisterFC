@@ -3,5 +3,26 @@
     "antetitulo": "For youth football clubs",
     "titular": "Your whole club in one place, so the time goes to the pitch",
     "subtitulo": "Teams, training, call-ups, matches and communication with families, on the web and on mobile. Built for club management and for its coaches."
+  },
+  "cabecera": {
+    "inicio": "MisterFC, home",
+    "navPrincipal": "Main",
+    "funciones": "Features",
+    "seguridad": "Security",
+    "idioma": "Language",
+    "accesoClubes": "Club login",
+    "irAMiClub": "Go to my club",
+    "solicitarDemo": "Request a demo",
+    "demoCorto": "Demo",
+    "menu": "Menu"
+  },
+  "pie": {
+    "producto": "MisterFC is a product of Cognix Labs.",
+    "contacto": "Contact",
+    "navWeb": "MisterFC",
+    "legal": "Legal",
+    "app": "App for families",
+    "altAppStore": "Download on the App Store",
+    "altGooglePlay": "Get it on Google Play"
   }
 }
