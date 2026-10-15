@@ -49,7 +49,15 @@
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, extname } from 'node:path';
-import { ROOT, MAESTRA_DIR, PARES, SERVIDOS, SERVIDA_REL } from './textos-legales.mjs';
+import {
+  ROOT,
+  MAESTRA_DIR,
+  PARES,
+  SERVIDOS,
+  SERVIDOS_APP,
+  SERVIDOS_WEB,
+  SERVIDA_REL,
+} from './textos-legales.mjs';
 
 const LEGAL_CONTENT_TS = join(ROOT, 'apps/web/src/lib/legal-content.ts');
 const WEB_PKG = join(ROOT, 'apps/web/package.json');
@@ -290,7 +298,7 @@ for (const sup of SUPERFICIES) {
   }
   superficiesLeidas += 1;
   const fuente = readFileSync(ruta, 'utf8');
-  for (const par of SERVIDOS) {
+  for (const par of SERVIDOS_APP) {
     if (!fuente.includes(`'${par.servido}'`) && !fuente.includes(`"${par.servido}"`)) {
       errores.push(
         `'${par.servido}' no aparece en ${sup.ruta} — ${sup.que}. La página se sirve ` +
@@ -304,6 +312,42 @@ for (const sup of SUPERFICIES) {
 // `SUPERFICIES` vacía, `superficiesLeidas < SUPERFICIES.length` es `0 < 0` y el guard
 // pasaba en VERDE sin mirar una sola superficie. Un censo vacío no es un censo que
 // cumple: es un bucle que no se ejecuta.
+/**
+ * Los textos de la web comercial (`ambito: 'web'`) tienen sus propias superficies: no
+ * están en las de la app —la nativa no los enlaza, y no se toca para esto— y sí tienen
+ * que estar en el pie de la web, en el pie cruzado de las legales y en el sitemap. Un
+ * anexo (`anexoDe`) no es una página: lo tiene que leer la página a la que se añade.
+ */
+const SUPERFICIES_WEB = [
+  'apps/web/src/components/web/site-footer.tsx',
+  'apps/web/src/app/[locale]/legal/layout.tsx',
+  'apps/web/src/app/sitemap.ts',
+];
+let webComprobados = 0;
+for (const par of SERVIDOS_WEB) {
+  const rutas = par.anexoDe
+    ? [`apps/web/src/app/[locale]/legal/${par.anexoDe}/page.tsx`]
+    : SUPERFICIES_WEB;
+  for (const r of rutas) {
+    const ruta = join(ROOT, r);
+    if (!existsSync(ruta)) {
+      errores.push(`no existe ${r}, donde tiene que aparecer '${par.servido}' (web comercial).`);
+      continue;
+    }
+    const fuente = readFileSync(ruta, 'utf8');
+    if (!fuente.includes(`'${par.servido}'`) && !fuente.includes(`"${par.servido}"`)) {
+      errores.push(
+        `'${par.servido}' (web comercial) no aparece en ${r}. La página se sirve igual, ` +
+          `pero desde ahí no se llega a ella${par.anexoDe ? ': el apartado no se pinta' : ''}.`,
+      );
+    }
+    webComprobados += 1;
+  }
+}
+if (SERVIDOS_WEB.length > 0 && webComprobados === 0) {
+  errores.push(`hay textos de la web comercial y no se comprobó ninguna de sus superficies.`);
+}
+
 const SUPERFICIES_MINIMAS = 6;
 if (SUPERFICIES.length < SUPERFICIES_MINIMAS) {
   errores.push(
@@ -435,7 +479,9 @@ for (const ruta of [...ficherosDeCodigo('apps'), ...ficherosDeCodigo('packages')
   } catch {
     continue;
   }
-  const lleva = SERVIDOS.map((p) => p.servido).filter((slug) => nombra(src, slug));
+  // Solo los de la app: los de la web tienen superficies declaradas (arriba), y
+  // `cookies` como palabra suelta sale en cualquier fichero que lea cookies.
+  const lleva = SERVIDOS_APP.map((p) => p.servido).filter((slug) => nombra(src, slug));
   if (lleva.length >= 2) descubiertas.push({ ruta, lleva });
 }
 
@@ -465,7 +511,7 @@ for (const sup of SUPERFICIES) {
 
 const porRuta = new Map(EXCEPCIONES.map((e) => [e.ruta, e]));
 for (const { ruta, lleva } of descubiertas) {
-  const faltan = SERVIDOS.map((p) => p.servido).filter((s) => !lleva.includes(s));
+  const faltan = SERVIDOS_APP.map((p) => p.servido).filter((s) => !lleva.includes(s));
   const exc = porRuta.get(ruta);
 
   if (faltan.length === 0) {
@@ -473,7 +519,7 @@ for (const { ruta, lleva } of descubiertas) {
     // persona la lee como un permiso vigente.
     if (exc) {
       errores.push(
-        `${ruta} está en EXCEPCIONES pero ya nombra los ${SERVIDOS.length} documentos. ` +
+        `${ruta} está en EXCEPCIONES pero ya nombra los ${SERVIDOS_APP.length} documentos. ` +
           `Quita la excepción: un permiso que no hace falta se acaba usando de coartada.`,
       );
     }
@@ -527,7 +573,8 @@ console.log(
   `✓ check:textos-legales — ${SERVIDOS.length} textos con copia ÚNICA en Documentos/ ` +
     `y generada al construir, ${noServidos} documento(s) declarado(s) como no ` +
     `servido(s); generador enchufado a build y dev, maestra en las entradas de turbo ` +
-    `y en el trace de despliegue; los ${SERVIDOS.length} listados en las ` +
+    `y en el trace de despliegue; los ${SERVIDOS_APP.length} de la app listados en las ` +
     `${SUPERFICIES.length} superficies declaradas y en las ${descubiertas.length} ` +
-    `descubiertas (${EXCEPCIONES.length} con juego incompleto y motivo escrito).`,
+    `descubiertas (${EXCEPCIONES.length} con juego incompleto y motivo escrito); ` +
+    `los ${SERVIDOS_WEB.length} de la web comercial, en sus ${webComprobados} sitios.`,
 );

@@ -30,10 +30,15 @@ export const MARKETING_HOME_SEGMENT = 'portada';
 
 /**
  * Subpáginas de la web comercial (más de un segmento tras el idioma). Antes de la web
- * no casaban con ninguna ruta —`[slug]` no tiene hijos— y daban el 404 global de Next.
- * Un censo comprueba que esta lista coincide con las carpetas de `(web)`.
+ * no casaban con ninguna ruta —`[slug]` no tiene hijos, y `legal/` solo tenía sus cuatro
+ * carpetas— y daban el 404 global de Next. Un censo comprueba que esta lista coincide
+ * con las subpáginas de `(web)` más las legales de la web comercial.
  */
-export const MARKETING_SUBPAGES: readonly string[] = ['demo/gracias'];
+export const MARKETING_SUBPAGES: readonly string[] = [
+  'demo/gracias',
+  'legal/aviso-legal',
+  'legal/cookies',
+];
 
 /**
  * A dónde se desvía una subpágina con la web apagada: una ruta que no casa con nada,
@@ -57,7 +62,7 @@ export type MarketingRootDecision =
  *   · `/{idioma}/portada`:
  *       - encendida → 308 a `/{idioma}`, para que la portada tenga UNA sola URL;
  *       - apagada  → nada: cae en `/{slug}` como cualquier slug sin club, como antes.
- *   · Subpáginas (`/{idioma}/demo/gracias`) con la web APAGADA → rewrite a una ruta que
+ *   · Subpáginas (`/{idioma}/demo/gracias`, `/{idioma}/legal/cookies`…) con la web APAGADA → rewrite a una ruta que
  *     no existe: el 404 global de antes. Encendida → nada.
  *   · Todo lo demás → nada.
  *

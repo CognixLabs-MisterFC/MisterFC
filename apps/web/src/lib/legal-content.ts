@@ -24,7 +24,21 @@ export type LegalSlug =
   | 'privacidad'
   | 'eliminacion-cuenta'
   | 'terminos'
-  | 'desistimiento';
+  | 'desistimiento'
+  | 'aviso-legal'
+  | 'cookies'
+  | 'privacidad-web';
+
+/**
+ * Textos de la web comercial (spec §10): se publican con `MARKETING_SITE` encendida y
+ * con la marca «Pendiente: revisión de este texto por un abogado» hasta que la abogada
+ * los revise. La marca se quita sacando el slug de aquí.
+ */
+export const LEGAL_PENDIENTES_REVISION: readonly LegalSlug[] = [
+  'aviso-legal',
+  'cookies',
+  'privacidad-web',
+];
 
 export function readLegalDoc(slug: LegalSlug): string {
   return readFileSync(join(process.cwd(), 'src/content/legal', `${slug}.md`), 'utf8');

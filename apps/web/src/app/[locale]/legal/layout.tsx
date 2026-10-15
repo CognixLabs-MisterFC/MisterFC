@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { setRequestLocale } from 'next-intl/server';
+import { isMarketingSiteOn } from '@misterfc/core';
 
 /**
  * Layout PÚBLICO de las páginas legales de Cognix Labs (fuera del grupo
@@ -13,6 +14,12 @@ const PAGES = [
   { slug: 'terminos', label: 'Términos y Condiciones' },
   { slug: 'eliminacion-cuenta', label: 'Eliminación de cuenta' },
   { slug: 'desistimiento', label: 'Formulario de desistimiento' },
+] as const;
+
+/** Los de la web comercial (spec §10): solo con `MARKETING_SITE` encendida. */
+const WEB_PAGES = [
+  { slug: 'aviso-legal', label: 'Aviso legal' },
+  { slug: 'cookies', label: 'Política de cookies' },
 ] as const;
 
 type Props = {
@@ -30,7 +37,7 @@ export default async function LegalLayout({ children, params }: Props) {
         <article className="flex-1">{children}</article>
 
         <nav className="mt-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-zinc-700 pt-5 text-sm">
-          {PAGES.map((p) => (
+          {[...PAGES, ...(isMarketingSiteOn(process.env) ? WEB_PAGES : [])].map((p) => (
             <Link
               key={p.slug}
               href={`/${locale}/legal/${p.slug}`}

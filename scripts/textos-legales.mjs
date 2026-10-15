@@ -37,6 +37,19 @@ export const PARES = [
   { maestra: 'misterfc-terminos-condiciones.md', servido: 'terminos' },
   { maestra: 'misterfc-eliminacion-cuenta.md', servido: 'eliminacion-cuenta' },
   { maestra: 'misterfc-formulario-desistimiento.md', servido: 'desistimiento' },
+  // Web comercial (spec §10): textos de quien VISITA misterfc.es, no de quien usa la
+  // app. `ambito: 'web'` los saca de las superficies de la app —incluida la nativa,
+  // que no los enlaza— y los vigila en las suyas (`check-textos-legales.mjs`). Se
+  // publican solo con `MARKETING_SITE` encendida, con la marca de pendiente de revisión.
+  { maestra: 'misterfc-aviso-legal.md', servido: 'aviso-legal', ambito: 'web' },
+  { maestra: 'misterfc-politica-cookies.md', servido: 'cookies', ambito: 'web' },
+  {
+    maestra: 'misterfc-privacidad-web-comercial.md',
+    servido: 'privacidad-web',
+    ambito: 'web',
+    // No es una página: es el apartado 17 que la de privacidad añade al final.
+    anexoDe: 'privacidad',
+  },
   {
     maestra: 'misterfc-contrato-encargo-tratamiento.md',
     servido: null,
@@ -48,6 +61,12 @@ export const PARES = [
 
 /** Pares que SÍ se publican. */
 export const SERVIDOS = PARES.filter((p) => p.servido !== null);
+
+/** Los de la app: los que enlazan todas sus superficies, web y nativa. */
+export const SERVIDOS_APP = SERVIDOS.filter((p) => p.ambito !== 'web');
+
+/** Los de la web comercial (spec §10). */
+export const SERVIDOS_WEB = SERVIDOS.filter((p) => p.ambito === 'web');
 
 /**
  * Copia cada maestra sobre su texto servido. Devuelve lo que hizo, para que el
