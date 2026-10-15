@@ -1,6 +1,11 @@
 import { getTranslations } from 'next-intl/server';
 import { LegalMarkdown } from './legal-markdown';
-import { LEGAL_PENDIENTES_REVISION, readLegalDoc, type LegalSlug } from '@/lib/legal-content';
+import {
+  LEGAL_PENDIENTES_REVISION,
+  legalDocLocale,
+  readLegalDoc,
+  type LegalSlug,
+} from '@/lib/legal-content';
 import { LegalPendiente } from './legal-pendiente';
 
 /**
@@ -16,26 +21,24 @@ import { LegalPendiente } from './legal-pendiente';
  *    pantalla en inglés lee español con voz inglesa —ininteligible— y la página
  *    miente sobre su idioma (`<html lang="en">` con cuerpo español). El aviso
  *    queda FUERA del `lang`, porque ese sí va en el idioma del lector.
+ *
+ * Los textos de la web comercial están TRADUCIDOS (`LEGAL_TRADUCCIONES`): en esos no
+ * hay aviso y el `lang` es el del lector.
  */
-export async function LegalDocument({
-  slug,
-  locale,
-}: {
-  slug: LegalSlug;
-  locale: string;
-}) {
+export async function LegalDocument({ slug, locale }: { slug: LegalSlug; locale: string }) {
   const t = await getTranslations({ locale, namespace: 'legal_publico' });
+  const idioma = legalDocLocale(slug, locale);
 
   return (
     <>
-      {locale !== 'es' && (
+      {idioma !== locale && (
         <p className="mb-6 rounded-md border border-zinc-700 bg-zinc-900/60 px-4 py-3 text-sm text-zinc-300">
           {t('solo_castellano')}
         </p>
       )}
-      {LEGAL_PENDIENTES_REVISION.includes(slug) && <LegalPendiente />}
-      <div lang="es">
-        <LegalMarkdown body={readLegalDoc(slug)} />
+      {LEGAL_PENDIENTES_REVISION.includes(slug) && <LegalPendiente locale={idioma} />}
+      <div lang={idioma}>
+        <LegalMarkdown body={readLegalDoc(slug, idioma)} />
       </div>
     </>
   );
@@ -44,13 +47,15 @@ export async function LegalDocument({
 /**
  * Un apartado que se añade al final de otro documento (el 17 de la privacidad, para la
  * web comercial). Sin el aviso de idioma, que ya lleva el documento al que se añade.
+ * Va traducido aunque el documento al que se añade siga en castellano.
  */
-export function LegalAnexo({ slug }: { slug: LegalSlug }) {
+export function LegalAnexo({ slug, locale }: { slug: LegalSlug; locale: string }) {
+  const idioma = legalDocLocale(slug, locale);
   return (
     <section className="mt-10 border-t border-zinc-700 pt-8">
-      {LEGAL_PENDIENTES_REVISION.includes(slug) && <LegalPendiente />}
-      <div lang="es">
-        <LegalMarkdown body={readLegalDoc(slug)} />
+      {LEGAL_PENDIENTES_REVISION.includes(slug) && <LegalPendiente locale={idioma} />}
+      <div lang={idioma}>
+        <LegalMarkdown body={readLegalDoc(slug, idioma)} />
       </div>
     </section>
   );

@@ -12,8 +12,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     slug: 'privacidad',
     locale,
     title: 'Política de Privacidad — MisterFC',
-    description:
-      'Política de privacidad de la plataforma MisterFC, prestada por Cognix Labs, S.L.',
+    description: 'Política de privacidad de la plataforma MisterFC, prestada por Cognix Labs, S.L.',
   });
 }
 
@@ -25,7 +24,7 @@ export default async function PrivacidadPage({ params }: Props) {
   return (
     <>
       <LegalDocument slug="privacidad" locale={locale} />
-      {isMarketingSiteOn(process.env) && <LegalAnexo slug="privacidad-web" />}
+      {isMarketingSiteOn(process.env) && <LegalAnexo slug="privacidad-web" locale={locale} />}
     </>
   );
 }

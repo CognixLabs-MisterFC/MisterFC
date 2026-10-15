@@ -10,12 +10,22 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isMarketingSiteOn(process.env)) return {};
   const { locale } = await params;
-  return legalMetadata({
-    slug: 'aviso-legal',
-    locale,
-    title: 'Aviso legal — MisterFC',
-    description: 'Aviso legal del sitio web misterfc.es, de Cognix Labs, S.L.U.',
-  });
+  const textos = {
+    es: {
+      title: 'Aviso legal — MisterFC',
+      description: 'Aviso legal del sitio web misterfc.es, de Cognix Labs, S.L.U.',
+    },
+    en: {
+      title: 'Legal notice — MisterFC',
+      description: 'Legal notice of the misterfc.es website, owned by Cognix Labs, S.L.U.',
+    },
+    va: {
+      title: 'Avís legal — MisterFC',
+      description: 'Avís legal del lloc web misterfc.es, de Cognix Labs, S.L.U.',
+    },
+  };
+  const texto = textos[locale as keyof typeof textos] ?? textos.es;
+  return legalMetadata({ slug: 'aviso-legal', locale, ...texto });
 }
 
 /**

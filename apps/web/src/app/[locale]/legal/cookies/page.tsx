@@ -10,12 +10,22 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!isMarketingSiteOn(process.env)) return {};
   const { locale } = await params;
-  return legalMetadata({
-    slug: 'cookies',
-    locale,
-    title: 'Política de cookies — MisterFC',
-    description: 'Cookies que utiliza el sitio web misterfc.es, de Cognix Labs, S.L.U.',
-  });
+  const textos = {
+    es: {
+      title: 'Política de cookies — MisterFC',
+      description: 'Cookies que utiliza el sitio web misterfc.es, de Cognix Labs, S.L.U.',
+    },
+    en: {
+      title: 'Cookie policy — MisterFC',
+      description: 'Cookies used by the misterfc.es website, owned by Cognix Labs, S.L.U.',
+    },
+    va: {
+      title: 'Política de galetes — MisterFC',
+      description: 'Galetes que utilitza el lloc web misterfc.es, de Cognix Labs, S.L.U.',
+    },
+  };
+  const texto = textos[locale as keyof typeof textos] ?? textos.es;
+  return legalMetadata({ slug: 'cookies', locale, ...texto });
 }
 
 /**

@@ -41,12 +41,27 @@ export const PARES = [
   // app. `ambito: 'web'` los saca de las superficies de la app —incluida la nativa,
   // que no los enlaza— y los vigila en las suyas (`check-textos-legales.mjs`). Se
   // publican solo con `MARKETING_SITE` encendida, con la marca de pendiente de revisión.
-  { maestra: 'misterfc-aviso-legal.md', servido: 'aviso-legal', ambito: 'web' },
-  { maestra: 'misterfc-politica-cookies.md', servido: 'cookies', ambito: 'web' },
+  //
+  // `traducciones`: idiomas con su propia maestra junto a la castellana
+  // (`misterfc-aviso-legal.en.md`), que se sirve como `aviso-legal.en.md`. Los demás
+  // textos son del abogado y existen solo en castellano.
+  {
+    maestra: 'misterfc-aviso-legal.md',
+    servido: 'aviso-legal',
+    ambito: 'web',
+    traducciones: ['en', 'va'],
+  },
+  {
+    maestra: 'misterfc-politica-cookies.md',
+    servido: 'cookies',
+    ambito: 'web',
+    traducciones: ['en', 'va'],
+  },
   {
     maestra: 'misterfc-privacidad-web-comercial.md',
     servido: 'privacidad-web',
     ambito: 'web',
+    traducciones: ['en', 'va'],
     // No es una página: es el apartado 17 que la de privacidad añade al final.
     anexoDe: 'privacidad',
   },
@@ -69,6 +84,26 @@ export const SERVIDOS_APP = SERVIDOS.filter((p) => p.ambito !== 'web');
 export const SERVIDOS_WEB = SERVIDOS.filter((p) => p.ambito === 'web');
 
 /**
+ * Los ficheros de un par: la maestra castellana y una por traducción, cada una con el
+ * nombre del .md servido. `servidoFichero` es lo que lee `readLegalDoc`.
+ */
+export function ficherosDe(par) {
+  const base = { maestra: par.maestra, servidoFichero: `${par.servido}.md`, idioma: 'es' };
+  const traducidos = (par.traducciones ?? []).map((idioma) => ({
+    maestra: par.maestra.replace(/\.md$/, `.${idioma}.md`),
+    servidoFichero: `${par.servido}.${idioma}.md`,
+    idioma,
+  }));
+  return [base, ...traducidos];
+}
+
+/** Slugs con traducción y sus idiomas: lo que `LEGAL_TRADUCCIONES` tiene que decir. */
+export const TRADUCIDOS = SERVIDOS.filter((p) => (p.traducciones ?? []).length > 0).map((p) => ({
+  slug: p.servido,
+  idiomas: p.traducciones,
+}));
+
+/**
  * Copia cada maestra sobre su texto servido. Devuelve lo que hizo, para que el
  * caller lo cuente.
  *
@@ -80,17 +115,23 @@ export function generar() {
   mkdirSync(SERVIDA_DIR, { recursive: true });
   const escritos = [];
   for (const par of SERVIDOS) {
-    const origen = join(MAESTRA_DIR, par.maestra);
-    if (!existsSync(origen)) {
-      throw new Error(
-        `falta la copia maestra Documentos/${par.maestra}. Sin ella la página legal ` +
-          `'${par.servido}' no se puede construir: readLegalDoc('${par.servido}') ` +
-          `reventaría al hacer el build.`,
-      );
+    for (const f of ficherosDe(par)) {
+      const origen = join(MAESTRA_DIR, f.maestra);
+      if (!existsSync(origen)) {
+        throw new Error(
+          `falta la copia maestra Documentos/${f.maestra}. Sin ella la página legal ` +
+            `'${par.servido}' (${f.idioma}) no se puede construir: readLegalDoc ` +
+            `reventaría al hacer el build.`,
+        );
+      }
+      const texto = readFileSync(origen);
+      writeFileSync(join(SERVIDA_DIR, f.servidoFichero), texto);
+      escritos.push({
+        slug: f.servidoFichero.replace(/\.md$/, ''),
+        maestra: f.maestra,
+        bytes: texto.length,
+      });
     }
-    const texto = readFileSync(origen);
-    writeFileSync(join(SERVIDA_DIR, `${par.servido}.md`), texto);
-    escritos.push({ slug: par.servido, maestra: par.maestra, bytes: texto.length });
   }
   return escritos;
 }
