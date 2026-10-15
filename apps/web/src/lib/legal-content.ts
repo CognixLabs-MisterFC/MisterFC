@@ -68,7 +68,9 @@ export function legalMetadata(args: {
   description: string;
 }): Metadata {
   return {
-    title: args.title,
+    // `absolute`: el título ya lleva «— MisterFC». Con la plantilla del layout raíz
+    // («%s · MisterFC») salía «Política de Privacidad — MisterFC · MisterFC».
+    title: { absolute: args.title },
     description: args.description,
     robots: { index: args.locale === 'es', follow: true },
     alternates: { canonical: `${SITE_URL}/es/legal/${args.slug}` },

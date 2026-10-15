@@ -718,6 +718,7 @@ Ninguna. Las tareas aparte (cabeceras de seguridad, `.env.example` incompleto, s
 | W4    | Páginas de Funciones y Seguridad (§5, §6).                                                                                                                                                                      |
 | W5    | Formulario de demo y página de gracias (§8).                                                                                                                                                                    |
 | W6    | Legal y SEO (§10, §11) y Vercel Web Analytics.                                                                                                                                                                  |
+| W7    | Preparación para encender: `CACHE_NAME` del service worker (§1.5.1), títulos de las legales sin «· MisterFC» duplicado, Anexo B completo y lista de encendido (§13.4).                                          |
 
 No se tocan Supabase, DNS ni la app nativa.
 
@@ -741,6 +742,29 @@ No se tocan Supabase, DNS ni la app nativa.
   - **«¿Las familias tienen que pagar algo?» (§4.10):** «Sí: una suscripción anual por cuenta, que se contrata en la app. Una sola suscripción sirve para todos los hijos de esa cuenta. Cada familiar que siga al jugador desde su propia cuenta, como los abuelos, necesita la suya. Quien forma parte del cuerpo técnico o de la dirección del club no paga, aunque también sea familia.»
   - **«Sin coste para el club.»** debajo de los botones del hero y en la respuesta de «¿Cuánto cuesta?» («Para el club, nada»). **En el bloque final, no.**
 
+### 13.4 Encendido en producción (en orden)
+
+Hoy producción no tiene `MARKETING_SITE` (comprobado el 2026-10-15): la web comercial está apagada. Pasos para encenderla:
+
+1. **Abogada.** Enviar el texto del Anexo B con los tres documentos adjuntos (`Documentos/misterfc-aviso-legal.md`, `misterfc-politica-cookies.md` y `misterfc-privacidad-web-comercial.md`).
+2. **Correcciones legales.** Lo que diga la abogada se aplica en `Documentos/` en un PR. Si da el visto bueno a los tres textos nuevos, se quita la marca de pendiente sacando sus slugs de `LEGAL_PENDIENTES_REVISION` (`apps/web/src/lib/legal-content.ts`). Los 11 puntos de la política actual van en su propio PR; no bloquean el encendido salvo que ella diga lo contrario. **Decides tú** si se enciende con la marca de pendiente o se espera a quitarla.
+3. **Preparar el club de capturas (§9.3).** Inventario en solo lectura, script `supabase/scripts/capturas-club-test.sql` (renombra `club-beta-test` a «CF Playas El Saler», sustituye lo no ficticio y completa datos) y su aplicación por el titular con ensayo `ROLLBACK`. Sin tocar la cuenta de la revisión de Apple.
+4. **Capturas.** Las web (C1, C3, C4, C5, C7, C11 y C12, §9.4) las hago yo; las móviles (M1–M6, §9.5) las haces tú. Un PR las sube a `apps/web/public/web/capturas/` y sustituye los huecos.
+5. **Vercel Web Analytics.** Activarla en el panel del proyecto `misterfc-web`.
+6. **Prueba del formulario en una vista previa.** Una solicitud real: llega el aviso a info.cognixlabs@gmail.com desde demo@misterfc.es, responder al aviso escribe al solicitante, y el acuse llega con «responder a» info.cognixlabs@gmail.com. Producción ya tiene `RESEND_API_KEY`.
+7. **Encender.** En Vercel → Settings → Environment Variables, `MARKETING_SITE=on` solo en **Production**, y **volver a desplegar** el último despliegue de `main` (las variables solo se aplican a despliegues nuevos; el sitemap y el manifiesto se generan en el build).
+8. **Comprobar en producción**, sin sesión y con sesión:
+   - `misterfc.es` → portada en `/es` (sin sesión) e Inicio de la app (con sesión);
+   - `/es/portada` → 308 a `/es`; `/es/clubes` sigue funcionando y lleva `noindex`;
+   - `/es/funciones`, `/es/seguridad`, `/es/demo` y una solicitud real de demo;
+   - las 6 legales, el apartado 17 al final de la privacidad, `sitemap.xml` y `manifest.json` (`start_url` `/clubes`);
+   - el acceso de un club por su slug y el inicio de sesión de siempre;
+   - la PWA instalada arranca en el selector de clubes.
+9. **Buscadores.** Enviar `https://misterfc.es/sitemap.xml` en Google Search Console.
+10. **Vuelta atrás**, si algo falla: `MARKETING_SITE=off` (o borrar la variable) y volver a desplegar. Todo vuelve a como estaba; no hay migraciones que deshacer.
+
+Tareas aparte que no bloquean (§12.2): cabeceras de seguridad, `.env.example` incompleto, slugs reservados solo en las RPC e iconos de `manifest.json`. El apartado de clubes (§7.2) sigue oculto hasta tener permiso por escrito (`NEXT_PUBLIC_WEB_SHOWCASE`).
+
 ---
 
 ### Anexo A: resumen de comprobaciones en producción (2026-10-14, solo lectura)
@@ -755,18 +779,34 @@ No se tocan Supabase, DNS ni la app nativa.
 | Raíz             | `/` → `/es` → `/es/clubes`; Accept-Language `en` → `/en`; `ca` → `/es`; pone la cookie `NEXT_LOCALE`                                       |
 | Región           | Supabase en `eu-west-1` (Irlanda), por la IP de `db.<ref>.supabase.co` en los rangos de AWS; funciones de Vercel en `iad1` (`x-vercel-id`) |
 
-### Anexo B: texto para la abogada (los 8 puntos de §10.4 B y el de `iad1`)
+### Anexo B: texto para la abogada (actualizado el 2026-10-15 en W7)
 
-> Para enviar tal cual. No incluye rutas de código; cada punto dice qué pone el texto publicado y cómo funciona hoy la aplicación. La política no se ha cambiado.
+> Para enviar tal cual, con los tres documentos de la parte A adjuntos. No incluye rutas de código; cada punto de la parte B dice qué pone el texto publicado y cómo funciona hoy la aplicación. Los textos publicados no se han cambiado.
 
-**Asunto:** MisterFC — 9 puntos en los que los textos legales publicados no coinciden con la aplicación
+**Asunto:** MisterFC — revisión de textos legales: 3 textos nuevos y 11 puntos que no coinciden con la aplicación
 
-Revisando la aplicación MisterFC hemos encontrado 9 puntos en los que los textos publicados en misterfc.es no coinciden con cómo funciona hoy. No hemos cambiado nada: los enviamos para que decidas la redacción.
+Hola:
+
+Te enviamos dos cosas sobre los textos legales de MisterFC (misterfc.es): tres textos nuevos para que los revises antes de publicarlos, y 11 puntos en los que los textos ya publicados no coinciden con cómo funciona hoy la aplicación. No hemos cambiado los textos publicados: te enviamos los puntos para que decidas la redacción.
+
+**A. Textos nuevos (adjuntos)**
+
+Son para las páginas informativas de misterfc.es (portada, funciones, seguridad y un formulario para que los clubes soliciten una demo). Todavía no están publicados; cuando se publiquen, irán marcados como pendientes de revisión hasta que nos digas.
+
+1. **Aviso legal** (`misterfc-aviso-legal.md`), conforme al artículo 10 de la LSSI-CE.
+2. **Política de cookies** (`misterfc-politica-cookies.md`). Necesitamos que confirmes que no hace falta aviso ni banner de cookies, porque todas son propias y técnicas o funcionales. En particular, `mfc_sidebar_collapsed`, que solo recuerda si el menú lateral de la aplicación está plegado.
+3. **Apartado 17 de la Política de Privacidad** (`misterfc-privacidad-web-comercial.md`), «Páginas informativas y solicitudes de demo». Aquí Cognix Labs actúa como responsable, no como encargado de un club. Necesitamos que confirmes:
+   - la base jurídica del formulario: medidas precontractuales (artículo 6.1.b);
+   - la base jurídica de la analítica de visitas (Vercel Web Analytics, sin cookies y con estadísticas agregadas): hemos puesto interés legítimo (artículo 6.1.f);
+   - las transferencias internacionales: el apartado remite al apartado 10 de la propia política;
+   - la conservación de las solicitudes: 12 meses desde el último contacto.
+
+**B. Puntos en los que los textos publicados no coinciden con la aplicación**
 
 1. **Quién ve los datos médicos** (Política de privacidad, medidas de seguridad). El texto dice: administrador del club, coordinador, entrenadores y tutores. En la aplicación los ven: la dirección (administrador y director), el coordinador solo si está asignado al equipo del jugador, el cuerpo técnico del equipo del jugador, el del equipo que lo convoca (solo hasta el final del día del partido), los tutores y el propio jugador cuando es mayor de edad. Siempre con el consentimiento médico registrado.
 2. **Cloudflare R2** (apartado 8, proveedores). Figura como almacenamiento de archivos, pero no se usa: los archivos se guardan en Supabase.
 3. **Sentry** (apartado 8). El texto dice que se eliminan los parámetros de las direcciones que puedan contener datos de autenticación. En la app móvil es así; en la versión web no se eliminan.
-4. **Cookies** (apartado 15). La cookie de sesión dura 400 días, no «la duración de la sesión». `NEXT_LOCALE` es de sesión salvo que el usuario elija idioma en su perfil (entonces, 1 año). Falta `mfc_sidebar_collapsed` (recuerda si el menú lateral está plegado; 1 año).
+4. **Cookies** (apartado 15). La cookie de sesión dura 400 días, no «la duración de la sesión». Falta `mfc_sidebar_collapsed` (recuerda si el menú lateral está plegado; 1 año). La duración de `NEXT_LOCALE`, en el punto 11.
 5. **Alta de menores** (apartado 3). El texto dice que la cuenta de un menor «solo puede crearse por invitación de su padre, madre o tutor». La dirección del club también puede invitar al menor, siempre que ya tenga un tutor vinculado.
 6. **Proveedores que faltan** (apartado 8). El servicio de notificaciones de Expo (intermediario de los avisos al móvil) y los servicios de notificaciones web de los navegadores.
 7. **Nombre del titular.** La descripción de la página de privacidad dice «Cognix Labs, S.L.»; el documento dice «Cognix Labs, S.L.U.».
@@ -775,3 +815,7 @@ Revisando la aplicación MisterFC hemos encontrado 9 puntos en los que los texto
    - Los plazos de «7 días» de copias de seguridad y «3 años» de consentimientos y auditoría no constan en la configuración que podemos comprobar.
    - El registro de consentimientos no se puede borrar: retirar un consentimiento añade una entrada nueva.
 9. **Dónde se ejecuta la aplicación** (apartado 8, Vercel). La base de datos y los archivos están en la Unión Europea (Irlanda), pero las funciones de servidor que sirven la aplicación se ejecutan en Washington (Estados Unidos, región `iad1` de Vercel), así que los datos pasan por allí al mostrarse. El texto dice de Vercel «Alojamiento del sitio web y del panel de gestión» con ubicación «Global (red de distribución)».
+10. **Analítica** (apartado 15). El texto dice que «no se emplea ninguna herramienta de analítica de producto ni de seguimiento del comportamiento del usuario». Cuando se publiquen las páginas informativas, medirán sus visitas con Vercel Web Analytics: sin cookies, con estadísticas agregadas y solo en esas páginas, no en la aplicación. El apartado 17 nuevo lo explica, pero el 15 lo contradice.
+11. **Duración de `NEXT_LOCALE`** (apartado 15 frente a la nueva Política de cookies). La política de privacidad dice 1 año. La política de cookies nueva dice «de sesión, o 1 año si se elige el idioma en el perfil», que es lo que hace la aplicación. Los dos textos se contradicen.
+
+Gracias.
