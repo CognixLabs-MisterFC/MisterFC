@@ -3,5 +3,26 @@
     "antetitulo": "Para clubes de fútbol base",
     "titular": "Todo tu club en un solo sitio, para que el tiempo vaya al campo",
     "subtitulo": "Equipos, entrenamientos, convocatorias, partidos y comunicación con las familias, en la web y en el móvil. Pensado para la dirección del club y para sus entrenadores."
+  },
+  "cabecera": {
+    "inicio": "MisterFC, inicio",
+    "navPrincipal": "Principal",
+    "funciones": "Funciones",
+    "seguridad": "Seguridad",
+    "idioma": "Idioma",
+    "accesoClubes": "Acceso clubes",
+    "irAMiClub": "Ir a mi club",
+    "solicitarDemo": "Solicitar demo",
+    "demoCorto": "Demo",
+    "menu": "Menú"
+  },
+  "pie": {
+    "producto": "MisterFC es un producto de Cognix Labs.",
+    "contacto": "Contacto",
+    "navWeb": "MisterFC",
+    "legal": "Legal",
+    "app": "App para familias",
+    "altAppStore": "Consíguelo en el App Store",
+    "altGooglePlay": "Disponible en Google Play"
   }
 }

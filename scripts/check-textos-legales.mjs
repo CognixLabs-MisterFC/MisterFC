@@ -378,6 +378,15 @@ const EXCEPCIONES = [
       'documento que se acepta, y se corresponden con los dos consent_type de la cuenta. ' +
       'Nadie ACEPTA un formulario de desistimiento ni una política de eliminación.',
   },
+  {
+    ruta: 'apps/web/src/components/web/site-footer.tsx',
+    lleva: ['privacidad', 'terminos'],
+    motivo:
+      'pie de la web comercial: lleva exactamente lo que fija la spec (§3.4: aviso legal, ' +
+      'privacidad, cookies y términos), que son los textos de quien visita la web. La ' +
+      'eliminación de cuenta y el desistimiento son de quien ya usa la app, y siguen a un ' +
+      'clic: «Acceso clubes», en ese mismo pie, lleva a /clubes, cuyo pie legal los tiene todos.',
+  },
 ];
 
 /**
