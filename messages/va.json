@@ -5638,7 +5638,7 @@
     "activating": "Estem activant la teua subscripció. No tanques l'app.",
     "activating_slow": "El teu pagament s'ha registrat, però l'activació està tardant. Torna a obrir l'app d'ací a uns minuts o prem \"Restaurar compres\".",
     "billing_issue": "L'últim pagament no s'ha pogut cobrar i el període de gràcia ha acabat. Revisa el teu mètode de pagament en la botiga i torna a subscriure't.",
-    "unavailable_platform": "Encara no es pot subscriure des d'aquest dispositiu. Pots subscriure't des d'un iPhone o iPad i accedir després des d'ací: la subscripció és del teu compte, no del mòbil.",
+    "unavailable_platform": "Ara mateix no es pot subscriure des d'esta aplicació. Intenta-ho més tard i, si continua així, contacta amb suport.",
     "retry": "Tornar a intentar-ho",
     "offline": "Sense connexió no es pot completar la compra. Intenta-ho quan tornes a tindre xarxa.",
     "terms_note": "La subscripció es renova automàticament cada any llevat que la canceles almenys 24 hores abans de la renovació. Pots gestionar-la o cancel·lar-la en qualsevol moment des del teu compte de la botiga.",

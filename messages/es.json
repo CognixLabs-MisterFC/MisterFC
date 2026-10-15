@@ -5638,7 +5638,7 @@
     "activating": "Estamos activando tu suscripción. No cierres la app.",
     "activating_slow": "Tu pago se ha registrado, pero la activación está tardando. Vuelve a abrir la app en unos minutos o pulsa \"Restaurar compras\".",
     "billing_issue": "Tu último pago no se pudo cobrar y el periodo de gracia ha terminado. Revisa tu método de pago en la tienda y vuelve a suscribirte.",
-    "unavailable_platform": "Todavía no se puede suscribir desde este dispositivo. Puedes suscribirte desde un iPhone o iPad y acceder luego desde aquí: la suscripción es de tu cuenta, no del móvil.",
+    "unavailable_platform": "Ahora mismo no se puede suscribir desde esta aplicación. Inténtalo más tarde y, si sigue así, contacta con soporte.",
     "retry": "Volver a intentarlo",
     "offline": "Sin conexión no se puede completar la compra. Inténtalo cuando vuelvas a tener red.",
     "terms_note": "La suscripción se renueva automáticamente cada año salvo que la canceles al menos 24 horas antes de la renovación. Puedes gestionarla o cancelarla en cualquier momento desde tu cuenta de la tienda.",
