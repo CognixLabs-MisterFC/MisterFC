@@ -97,7 +97,7 @@ begin
       ('9e4a484c-4351-424d-8312-c82f42790a6e'::uuid, 'Marcos',    'Belda Ortiz',      2, 'defender',   true),
       ('ffac036b-582a-4afc-8761-af788dcf3f6e'::uuid, 'Mario',     'Pons Esteve',      3, 'defender',   false),
       ('c2dd4571-c9e4-49ed-867d-b6c99e64c722'::uuid, 'Pablo',     'Vidal Ramos',      4, 'defender',   false),
-      ('5c2c5742-794f-40de-9edb-db93aa55c02b'::uuid, 'Juan',      'Ferrer Gil',       5, 'defender',   false),
+      ('5c3c5742-caf7-4038-95fe-5b7fefba8244'::uuid, 'Juan',      'Ferrer Gil',       5, 'defender',   false),
       ('058a2256-73b5-48b2-9415-12c2dedd7ffb'::uuid, 'Pablo',     'Gómez Rubio',      6, 'defender',   false),
       ('67941878-5fab-4f17-9e5c-1d628636c4d3'::uuid, 'África',    'Navarro Pla',      7, 'midfielder', false),
       ('7c255461-6721-4b2a-8ac6-0d966e2d8890'::uuid, 'Agustín',   'Soria Peris',      8, 'midfielder', false),
@@ -164,7 +164,7 @@ begin
 
   -- Marta y Lucía, familias de Juan y Pablo (Infantil B): remitentes del chat (M3).
   insert into public.player_accounts (player_id, profile_id, relation) values
-    ('5c2c5742-794f-40de-9edb-db93aa55c02b', v_fam_marta, 'parent'),
+    ('5c3c5742-caf7-4038-95fe-5b7fefba8244', v_fam_marta, 'parent'),
     ('058a2256-73b5-48b2-9415-12c2dedd7ffb', v_fam_lucia, 'parent')
   on conflict (player_id, profile_id) do nothing;
   get diagnostics v_n = row_count;
