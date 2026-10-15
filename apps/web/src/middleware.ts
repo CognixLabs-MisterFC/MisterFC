@@ -150,7 +150,8 @@ export default async function middleware(request: NextRequest) {
   // Web comercial: con `MARKETING_SITE` encendida, el anónimo en /{locale} ve la
   // portada comercial (rewrite a /{locale}/portada, la URL no cambia) y
   // /{locale}/portada da 308 a /{locale}. APAGADA —lo normal en producción— todo
-  // queda como arriba. La decisión vive en core con sus pruebas
+  // queda como arriba, y las subpáginas nuevas (/{locale}/demo/gracias) dan el 404
+  // global de antes por un rewrite a una ruta que no existe. La decisión vive en core con sus pruebas
   // (`marketingRootDecision`); aquí solo se aplica. Los `?code=` ya salieron en (1).
   const decision = marketingRootDecision(pathname, {
     locales: routing.locales,

@@ -55,6 +55,10 @@ function emailError(message: string, extra?: Record<string, unknown>): Error {
 export async function sendEmail(args: {
   to: string;
   message: EmailMessage;
+  /** Otro remitente del dominio verificado. Sin él, `EMAIL_FROM`. */
+  from?: string;
+  /** A dónde van las respuestas. Sin él no se manda la cabecera. */
+  replyTo?: string;
 }): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -69,8 +73,9 @@ export async function sendEmail(args: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: EMAIL_FROM,
+        from: args.from ?? EMAIL_FROM,
         to: [args.to],
+        ...(args.replyTo ? { reply_to: args.replyTo } : {}),
         subject: args.message.subject,
         html: args.message.html,
         text: args.message.text,

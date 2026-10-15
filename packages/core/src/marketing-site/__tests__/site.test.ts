@@ -81,10 +81,29 @@ describe('marketingRootDecision — la raíz de cada idioma', () => {
       '/ca',
       '/',
       '/fr/portada',
+      '/es/demo',
+      '/es/demo/gracias/x',
+      '/fr/demo/gracias',
     ]) {
       expect(decide(p, false, true)).toEqual({ kind: 'next' });
       expect(decide(p, false, false)).toEqual({ kind: 'next' });
     }
+  });
+
+  it('APAGADA: /{idioma}/demo/gracias va a una ruta que no existe (el 404 de antes)', () => {
+    for (const l of LOCALES) {
+      for (const signedIn of [false, true]) {
+        expect(decide(`/${l}/demo/gracias`, signedIn, false)).toEqual({
+          kind: 'rewrite',
+          to: `/${l}/demo/gracias/__sin-ruta`,
+        });
+      }
+    }
+  });
+
+  it('ENCENDIDA: /{idioma}/demo/gracias sigue su camino', () => {
+    expect(decide('/es/demo/gracias', false, true)).toEqual({ kind: 'next' });
+    expect(decide('/va/demo/gracias', true, true)).toEqual({ kind: 'next' });
   });
 });
 
