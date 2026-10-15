@@ -10,7 +10,9 @@
  * la activación nueva (clients refresh tras navegación).
  */
 
-const CACHE_NAME = 'misterfc-shell-v2';
+// v3 — web comercial (spec §1.5.1): con `MARKETING_SITE` encendida, `/` deja de ser
+// el selector de clubes para el anónimo. Subir la versión borra la shell vieja en caché.
+const CACHE_NAME = 'misterfc-shell-v3';
 const PRECACHE_URLS = ['/'];
 
 self.addEventListener('install', (event) => {
