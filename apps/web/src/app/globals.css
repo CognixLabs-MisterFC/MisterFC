@@ -6,6 +6,8 @@
 @theme inline {
   --color-misterfc-navy: #0F1B2E;
   --color-misterfc-green: #10B981;
+  /* Web comercial: el mismo verde para texto sobre blanco (#10B981 da 2,5:1; este, 5,5:1). */
+  --color-misterfc-green-ink: #047857;
   --font-sans: var(--font-inter);
 
   --color-background: var(--background);

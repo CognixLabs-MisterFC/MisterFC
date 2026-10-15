@@ -132,6 +132,8 @@ describe('censo: todo layout autenticado pasa por el gate', () => {
     'layout.tsx': 'raíz de locale: envuelve también signin, invite y las páginas públicas',
     'legal/layout.tsx': 'los textos legales son públicos y deben verse SIN sesión',
     'platform/layout.tsx': 'consola de superadmin: no es familia y no paga (requires_subscription=false)',
+    '(web)/layout.tsx':
+      'web comercial (portada, funciones, seguridad, demo): pública, se ve SIN sesión y no es la app',
   };
 
   function repoRoot(): string {

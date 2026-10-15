@@ -36,6 +36,7 @@ export * from './erasures/index';
 export * from './account-deletion/index';
 export * from './subscription/index';
 export * from './family-web/index';
+export * from './marketing-site/index';
 export * from './consents/index';
 export * from './profile/index';
 export * from './players/family-link';
