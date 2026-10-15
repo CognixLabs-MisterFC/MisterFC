@@ -5,7 +5,8 @@
       "titular": "Your whole club in one place, so the time goes to the pitch",
       "subtitulo": "Teams, training, call-ups, matches and communication with families, on the web and on mobile. Built for club management and for its coaches.",
       "ctaDemo": "Request a demo",
-      "ctaFunciones": "See features"
+      "ctaFunciones": "See features",
+      "sinCoste": "No cost to the club."
     },
     "problema": {
       "titulo": "Sound familiar?",
@@ -65,7 +66,7 @@
     "familias": {
       "titulo": "Are you a player's family?",
       "texto": "Your club will invite you to the MisterFC app: call-ups, calendar, messages and how your son or daughter is progressing.",
-      "gratis": "The app is free for families."
+      "suscripcion": "For families, the app works with an annual subscription purchased inside the app itself. It is per account: a single subscription covers all your children."
     },
     "pasos": {
       "titulo": "How we get started",
@@ -83,9 +84,9 @@
     "faq": {
       "titulo": "Frequently asked questions",
       "costeP": "How much does it cost?",
-      "costeR": "It depends on the size of your club and what you need. We will go through it in the demo, with no commitment.",
+      "costeR": "For the club, nothing. MisterFC is paid for by families, with an annual subscription per account purchased inside the app. Coaching staff and club management do not pay.",
       "familiasP": "Do families have to pay anything?",
-      "familiasR": "No: the app is free for families.",
+      "familiasR": "Yes: an annual subscription per account, purchased in the app. A single subscription covers all the children on that account. Each relative who follows the player from their own account, such as grandparents, needs their own. Anyone on the coaching staff or club management does not pay, even if they are also family.",
       "instalarP": "Do we need to install anything?",
       "instalarR": "Club management and coaches can use the web from any browser. For day-to-day use there is an app for iOS and Android.",
       "conexionP": "Does it work offline?",
@@ -102,16 +103,6 @@
       "titulo": "We will show you MisterFC with your own club’s teams.",
       "texto": "One video call and we answer all your questions. Requesting it commits you to nothing.",
       "cta": "Request a demo"
-    },
-    "capturas": {
-      "pendiente": "Screenshot pending",
-      "C1": "Management dashboard",
-      "M1": "Call-up as seen by the family",
-      "C3": "Weekly session planner",
-      "C5": "Line-up editor",
-      "M2": "Live match",
-      "C7": "Development report",
-      "M3": "Team messages"
     },
     "showcase": {
       "titulo": "Clubs working with MisterFC"
@@ -137,5 +128,130 @@
     "app": "App for families",
     "altAppStore": "Download on the App Store",
     "altGooglePlay": "Get it on Google Play"
+  },
+  "capturas": {
+    "pendiente": "Screenshot pending",
+    "C1": "Management dashboard",
+    "C3": "Weekly session planner",
+    "C4": "Drill with diagram",
+    "C5": "Line-up editor",
+    "C7": "Development report",
+    "C11": "Animated play",
+    "C12": "Club login with crest and colour",
+    "M1": "Call-up as seen by the family",
+    "M2": "Live match",
+    "M3": "Team messages",
+    "M4": "Player profile",
+    "M5": "Consents",
+    "M6": "Family calendar"
+  },
+  "funciones": {
+    "titulo": "Features",
+    "intro": "What MisterFC does today, area by area.",
+    "A": {
+      "titulo": "Club management",
+      "items": [
+        "Teams per season (5-, 7-, 8- and 11-a-side) and age categories.",
+        "Season changeover: place players in the new teams and handle pending players and departures.",
+        "Coaching staff: assignments, team moves, roles, contact details and CSV export.",
+        "Club members: departures and reactivations.",
+        "Invitations for coaching staff and management.",
+        "Management dashboard: headcount compared with last season, results, attendance with trends, rankings and alerts.",
+        "Evaluation campaigns, with a deadline and progress per team.",
+        "The club's crest and colour, and the club's own login page at misterfc.es/your-club.",
+        "The club's sponsors, shown on the app's home screens.",
+        "The club's own legal documents, with versions.",
+        "Player import from Excel or CSV, with templates in Spanish, Valencian and English."
+      ]
+    },
+    "B": {
+      "titulo": "Training and methodology",
+      "items": [
+        "Drill library with diagram, objectives, intensity and space, and a review workflow: draft, proposed and published.",
+        "Session planner in list and weekly views, with templates, PDF and a link to the calendar.",
+        "Tactics board with image export.",
+        "The club's animated plays, with a playbook per team, the option to share them with families, and full screen.",
+        "Training attendance and its statistics.",
+        "Sessions shared with families, read-only."
+      ]
+    },
+    "C": {
+      "titulo": "Matches",
+      "items": [
+        "Calendar of training sessions, matches, tournaments and friendlies, with repeats and cancellation.",
+        "Holidays, approved by club management.",
+        "Call-ups with a mobile notification, the family’s reply and a daily reminder.",
+        "Line-ups: drag players, bench, planned substitutions, your own formations and the option to share it with the family.",
+        "Live match: clock, goals, cards, substitutions and quick entry. On mobile it works offline.",
+        "After the match: a 1–10 rating, MVP and comment per player, and a team assessment.",
+        "Match and team statistics, with PDF.",
+        "The club's live matches, with every match of the week, and following teams with an alert for every goal."
+      ]
+    },
+    "D": {
+      "titulo": "Player development",
+      "items": [
+        "Development reports per period, with player and team objectives and a PDF with charts.",
+        "Player profile: seasons, statistics, attendance, progress, ratings and achievements.",
+        "Coaching staff notes on each player."
+      ]
+    },
+    "E": {
+      "titulo": "Communication",
+      "items": [
+        "Individual, team and coaching staff messages.",
+        "Club and team announcements.",
+        "In-app updates and notifications on the web and on mobile, with preferences."
+      ]
+    },
+    "F": {
+      "titulo": "Families",
+      "items": [
+        "App for iOS and Android: call-ups, calendar, profile, reports, shared sessions and plays, and messages.",
+        "Separate consents (internal images, images on social media and medical data), which can be withdrawn.",
+        "Followers: the family invites grandparents or other relatives to follow the player.",
+        "PDF download of the child's data."
+      ]
+    },
+    "G": {
+      "titulo": "Web, app and languages",
+      "items": [
+        "Spanish, Valencian and English, on the web and in the app.",
+        "App for iOS and Android, published in the stores.",
+        "Web that can be installed as an app (PWA).",
+        "On mobile, information already downloaded can be viewed offline."
+      ]
+    },
+    "cta": "Request a demo"
+  },
+  "seguridad": {
+    "titulo": "Security and child protection",
+    "intro": "How MisterFC handles the club's data and, above all, children's data.",
+    "b1": "Access and isolation",
+    "b2": "Children",
+    "b3": "Health",
+    "b4": "Families' rights",
+    "b5": "Accounts and passwords",
+    "b6": "Providers, privacy and data location",
+    "S1": "<b>You can only join a club by invitation.</b> There is no open sign-up.",
+    "S2": "<b>A club cannot see another club's data:</b> access control is enforced in the database itself, table by table, not just on screen.",
+    "S3": "<b>Every change passes more than 140 automated database security tests</b> before it is released.",
+    "S4": "Each person sees what corresponds to their role: management, coordinator, coach or family.",
+    "S5": "<b>Whether a player is a minor is calculated every day from their date of birth.</b> While the player is a minor, their sensitive data (health, consents, deletion and download) is managed by their guardian; at 18 it passes to the player.",
+    "S6": "<b>A minor cannot have their own account without a linked guardian</b>, and the last guardian cannot unlink while the minor has one.",
+    "S7": "<b>Separate consents</b> (internal images, images on social media, medical data), in a record that cannot be edited or deleted: withdrawing a consent adds a new entry.",
+    "S8": "<b>Without image consent, the player's photo is not shown.</b> If consent is withdrawn, it stops being visible immediately, in file storage too.",
+    "S9": "<b>Within the club, health data is only visible to</b> club management, the coaching staff of the player's team (and of the team calling the player up, only until the end of the match day), the guardian, and the player themselves if they are an adult. <b>Always with recorded consent.</b>",
+    "S10": "<b>Every access to health data by staff is logged:</b> who, when and from where.",
+    "S11": "<b>A guardian can download all of their child's data as a PDF</b> and request its deletion, which the club approves.",
+    "S12": "<b>Any user can delete their account</b>, from the app or from the web.",
+    "S13": "Password recovery has <b>attempt limits</b>, and so do invitations.",
+    "S14": "<b>On mobile, the session is stored in the system's secure storage</b> (Keychain and Keystore).",
+    "S15": "Technical error reports do not include emails, IP addresses or cookies, and <b>sessions are not recorded</b>.",
+    "S16": "<b>We do not store card details:</b> in-app payments are processed by Apple and Google.",
+    "S17": "<b>No third-party advertising or analytics in the app.</b>",
+    "S18": "<b>Providers:</b> Supabase (database and files), Vercel (hosting), Resend (email), Sentry (errors), Expo, Apple and Google (mobile notifications) and RevenueCat (in-app subscriptions).",
+    "S19": "<b>Data is hosted in the European Union</b> (Ireland): the database and the files.",
+    "privacidad": "More details in the <link>privacy policy</link>."
   }
 }

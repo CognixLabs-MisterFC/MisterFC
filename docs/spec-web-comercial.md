@@ -13,7 +13,8 @@
 
 - **La web solo anuncia lo que existe hoy en la app**, sea en la web o en la nativa. Cada función lleva su origen en el repo (§5). Lo que está planificado, apagado por un interruptor o es interno no se anuncia (§5.3).
 - **Seguridad y protección del menor:** solo afirmaciones que se pueden comprobar en el código o la configuración del repo (§6.1). La lista de lo que **no** se puede afirmar está en §6.2.
-- **Sin precios.** En §5.3 aparece un precio que existe en el código: la suscripción de las familias, hoy apagada. No sale en la web.
+- **Quién paga (corrección del 2026-10-15):** MisterFC lo pagan las **familias**, con una suscripción dentro de la app (Apple/Google, vía RevenueCat). **Los clubes no pagan.** La decisión anterior («la app es gratuita para las familias») era incorrecta y se retira de todos los textos (§4.10, §7.1, §12.1).
+- **Sin precios.** El precio existe en el código (`packages/core/src/subscription/rules.ts`, ADR-0022) y **no sale en la web** en ningún sitio.
 - **Sin nombres de clubes, logos de clubes ni opiniones** mientras no haya permiso por escrito. El apartado para mostrarlos queda preparado y oculto (§7.2).
 - **Capturas:** solo de la app real, con el club de test (`club-beta-test`) y datos ficticios. Nunca UD Fonteta ni ningún club real, y nunca nombres, caras ni fotos de personas reales (§9).
 - **Sin superlativos sin prueba, sin cifras sin respaldo y sin testimonios**, tampoco «testimonios próximamente».
@@ -208,6 +209,7 @@ El tono es de **tú** (decidido), como la app (`messages/es.json`: «Elige tu cl
 - **Titular:** Todo tu club en un solo sitio, para que el tiempo vaya al campo
 - **Subtítulo:** Equipos, entrenamientos, convocatorias, partidos y comunicación con las familias, en la web y en el móvil. Pensado para la dirección del club y para sus entrenadores.
 - **CTA principal:** Solicitar una demo · **Secundario:** Ver funciones
+- **Debajo de los botones, en pequeño:** Sin coste para el club. _(Aprobado el 2026-10-15.)_
 - **Imagen:** mockup de portátil con el dashboard de dirección y móvil con la convocatoria (§9).
 
 ### 4.2 El problema (tres tarjetas)
@@ -269,9 +271,8 @@ MisterFC es un producto de Cognix Labs, S.L.U., con sede en Valencia. (Sin cifra
 
 ### 4.10 Preguntas frecuentes (antes del CTA final)
 
-- **¿Cuánto cuesta?** Depende del tamaño del club y de lo que necesites. Te lo contamos en la demo, sin compromiso. _(Sin cifras.)_
-- **¿Las familias tienen que pagar algo?** No: la app es gratuita para las familias.
-  - ⚠️ Es verdad mientras `SUBSCRIPTION_GATE` siga apagado (§5.3). **Si algún día se enciende, esta respuesta y §7.1 se cambian antes de encenderlo.** Lo dejo anotado en el código de la FAQ, junto al texto.
+- **¿Cuánto cuesta?** Para el club, nada. MisterFC lo pagan las familias, con una suscripción anual por cuenta que se contrata dentro de la app. El cuerpo técnico y la dirección del club no pagan. _(Aprobado el 2026-10-15. Sin cifras.)_
+- **¿Las familias tienen que pagar algo?** Sí: una suscripción anual por cuenta, que se contrata en la app. Una sola suscripción sirve para todos los hijos de esa cuenta. Cada familiar que siga al jugador desde su propia cuenta, como los abuelos, necesita la suya. Quien forma parte del cuerpo técnico o de la dirección del club no paga, aunque también sea familia. _(Aprobado el 2026-10-15.)_
 - **¿Tenemos que instalar algo?** La dirección y los entrenadores pueden usar la web desde cualquier navegador. Para el día a día hay app en iOS y Android.
 - **¿Funciona sin conexión?** La app móvil permite consultar la información ya descargada y registrar las acciones del partido sin cobertura.
 - **¿Podemos traer nuestros jugadores?** Sí, desde una hoja de Excel o CSV con nuestra plantilla.
@@ -375,19 +376,19 @@ Verificadas en el código el 2026-10-14. Roles: `admin_club` y `director` (direc
 
 ### 5.3 No se anuncia
 
-| Qué                                                                                                | Por qué                                                                                                                |
-| -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Suscripción de las familias (precio por cuenta y año en `packages/core/src/subscription/rules.ts`) | Apagada (`SUBSCRIPTION_GATE`), y la web no lleva precios. La web dice que la app es gratuita para las familias (§7.1). |
-| Corte web para familias (`FAMILY_WEB_CUT`)                                                         | Apagado. Hoy las familias también pueden usar la web; la web comercial solo dice que tienen la app.                    |
-| Importación de partidos de la FFCV                                                                 | Herramienta interna del superadmin (`packages/core/src/ffcv/permiso.ts`).                                              |
-| Notificaciones por correo                                                                          | Canal desactivado (`W/perfil/notificaciones/preferences-matrix.tsx:41`).                                               |
-| Permisos configurables por entrenador                                                              | El sistema se eliminó (`apps/web/src/lib/messaging-permissions.ts:24`).                                                |
-| Confirmación de asistencia a entrenamientos por las familias                                       | No existe en el código; está en el backlog (`docs/journey/plan-maestro.md:924`).                                       |
-| Invitación masiva por correo desde Excel                                                           | Solo spec (`docs/specs/16.x-bulk-invite-excel.md`).                                                                    |
-| Traspaso de propiedad del club, cuotas y finanzas, scouting, vídeo, GPS                            | No construido o fuera del plan (`plan-maestro.md:936, 1026-1031`).                                                     |
-| Inteligencia artificial                                                                            | No existe; en el plan es Ola 3. No se menciona.                                                                        |
-| Consola de plataforma, `dev-diagram`, `dev-pitch-editor`                                           | Internas o solo de desarrollo.                                                                                         |
-| Que la dirección puede consultar las conversaciones                                                | Existe (modo observador y `conversation.audit_read`). **Decidido: no se menciona.**                                    |
+| Qué                                                                                         | Por qué                                                                                             |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| El **precio** de la suscripción de las familias (`packages/core/src/subscription/rules.ts`) | La web no lleva precios. Que la suscripción existe **sí** se dice (§7.1, §4.10), sin cifras.        |
+| Corte web para familias (`FAMILY_WEB_CUT`)                                                  | Apagado. Hoy las familias también pueden usar la web; la web comercial solo dice que tienen la app. |
+| Importación de partidos de la FFCV                                                          | Herramienta interna del superadmin (`packages/core/src/ffcv/permiso.ts`).                           |
+| Notificaciones por correo                                                                   | Canal desactivado (`W/perfil/notificaciones/preferences-matrix.tsx:41`).                            |
+| Permisos configurables por entrenador                                                       | El sistema se eliminó (`apps/web/src/lib/messaging-permissions.ts:24`).                             |
+| Confirmación de asistencia a entrenamientos por las familias                                | No existe en el código; está en el backlog (`docs/journey/plan-maestro.md:924`).                    |
+| Invitación masiva por correo desde Excel                                                    | Solo spec (`docs/specs/16.x-bulk-invite-excel.md`).                                                 |
+| Traspaso de propiedad del club, cuotas y finanzas, scouting, vídeo, GPS                     | No construido o fuera del plan (`plan-maestro.md:936, 1026-1031`).                                  |
+| Inteligencia artificial                                                                     | No existe; en el plan es Ola 3. No se menciona.                                                     |
+| Consola de plataforma, `dev-diagram`, `dev-pitch-editor`                                    | Internas o solo de desarrollo.                                                                      |
+| Que la dirección puede consultar las conversaciones                                         | Existe (modo observador y `conversation.audit_read`). **Decidido: no se menciona.**                 |
 
 ---
 
@@ -442,8 +443,7 @@ Verificadas en el código el 2026-10-14. Roles: `admin_club` y `director` (direc
 ### 7.1 Familias (pequeño, en la portada y en el pie)
 
 **Título:** ¿Eres familia de un jugador?
-**Texto:** Tu club te invitará a la app MisterFC: convocatorias, calendario, mensajes y la evolución de tu hijo o hija. **La app es gratuita para las familias.**
-(Misma condición que la FAQ de §4.10: depende de que `SUBSCRIPTION_GATE` siga apagado.)
+**Texto:** Tu club te invitará a la app MisterFC: convocatorias, calendario, mensajes y la evolución de tu hijo o hija. Para las familias, la app funciona con una suscripción anual que se contrata dentro de la propia app. Es por cuenta: una sola suscripción sirve para todos tus hijos. _(Aprobado el 2026-10-15; lo de «gratuita» queda retirado.)_
 **Botones** (enlaces reales, `apps/web/src/lib/family-web-cut.ts:61-64`):
 
 - App Store: `https://apps.apple.com/es/app/misterfc/id6810337932`
@@ -676,7 +676,7 @@ La cuenta de familia para M1, M4, M5 y M6 **no es** la de la revisión de Apple 
 | 2   | Slugs                       | En castellano en los 3 idiomas; no se traducen.                                                                                       | §2.2, §3.2        |
 | 5   | Reserva de hora             | Sin calendario ni enlace. Se acuerda la hora por correo.                                                                              | §8.4              |
 | 6   | Plazo y duración            | Respuesta en un máximo de 2 días laborables; videollamada de 30 minutos.                                                              | §4.8, §8.2, §8.3  |
-| 7   | Coste para las familias     | La app es gratuita para las familias (mientras `SUBSCRIPTION_GATE` siga apagado).                                                     | §4.10, §5.3, §7.1 |
+| 7   | Coste para las familias     | **Corregido el 2026-10-15:** pagan las familias (suscripción en la app); los clubes no pagan; sin precios. Textos en §13.3.           | §4.10, §5.3, §7.1 |
 | 8   | Conversaciones              | No se menciona que la dirección puede consultarlas.                                                                                   | §5.3              |
 | 9   | Acceso de Cognix            | No se menciona, y la web nunca dice «ni nosotros vemos tus datos» ni nada equivalente.                                                | §4.5, §6.1, §6.2  |
 | 10  | Región                      | Irlanda (UE), medido: `eu-west-1`. Frase permitida: «datos alojados en la Unión Europea».                                             | S19, §6.2         |
@@ -720,6 +720,26 @@ Ninguna. Las tareas aparte (cabeceras de seguridad, `.env.example` incompleto, s
 | W6    | Legal y SEO (§10, §11) y Vercel Web Analytics.                                                                                                                                                                  |
 
 No se tocan Supabase, DNS ni la app nativa.
+
+### 13.3 Corrección del 2026-10-15: pagan las familias
+
+- **Hechos del código** (`packages/core/src/subscription/rules.ts`, ADR-0022):
+  - la suscripción es **anual** y **por cuenta**, no por hijo ni por club;
+  - pagan las cuentas con vínculo familiar: tutor, jugador y seguidor;
+  - **el cuerpo técnico y la dirección no pagan**, aunque también sean familia;
+  - **solo se paga desde el móvil** (decisión 6; la web no cobra).
+- **En producción** (comprobado el 2026-10-15 en las variables de EAS, entorno `production`, sin leer valores):
+  - el pago está configurado en **Apple y en Google Play**: `EXPO_PUBLIC_REVENUECAT_IOS_KEY` (`appl_…`) y `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (`goog_…`, creada el 25-09);
+  - la suscripción está **encendida**: `EXPO_PUBLIC_SUBSCRIPTION_GATE=on`;
+  - la última compilación de Android para la tienda (v1.0.1 (7), 2026-10-07) se hizo con la clave: el aviso «suscríbete desde un iPhone» (`paywall.tsx:181-185`) no se muestra.
+  - Los comentarios de `purchases.ts:15-17, 40` y `paywall.tsx:180` que dicen que Android no cobra están desfasados; los corrige otra sesión.
+- **W3 se corrige en el PR de W4:** fuera «La app es gratuita para las familias» en los 3 idiomas, en la portada (familias) y en la FAQ.
+- **W4 publica S16 y S18 tal cual** (opción 2).
+- **Textos aprobados el 2026-10-15** (castellano; valenciano e inglés, traducción en W4):
+  - **Familias (§7.1):** «Tu club te invitará a la app MisterFC: convocatorias, calendario, mensajes y la evolución de tu hijo o hija. Para las familias, la app funciona con una suscripción anual que se contrata dentro de la propia app. Es por cuenta: una sola suscripción sirve para todos tus hijos.»
+  - **«¿Cuánto cuesta?» (§4.10):** «Para el club, nada. MisterFC lo pagan las familias, con una suscripción anual por cuenta que se contrata dentro de la app. El cuerpo técnico y la dirección del club no pagan.»
+  - **«¿Las familias tienen que pagar algo?» (§4.10):** «Sí: una suscripción anual por cuenta, que se contrata en la app. Una sola suscripción sirve para todos los hijos de esa cuenta. Cada familiar que siga al jugador desde su propia cuenta, como los abuelos, necesita la suya. Quien forma parte del cuerpo técnico o de la dirección del club no paga, aunque también sea familia.»
+  - **«Sin coste para el club.»** debajo de los botones del hero y en la respuesta de «¿Cuánto cuesta?» («Para el club, nada»). **En el bloque final, no.**
 
 ---
 

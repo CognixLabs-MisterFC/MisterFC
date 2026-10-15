@@ -5,7 +5,8 @@
       "titular": "Tot el teu club en un sol lloc, perquè el temps vaja al camp",
       "subtitulo": "Equips, entrenaments, convocatòries, partits i comunicació amb les famílies, en la web i en el mòbil. Pensat per a la direcció del club i per als seus entrenadors.",
       "ctaDemo": "Sol·licitar una demo",
-      "ctaFunciones": "Veure funcions"
+      "ctaFunciones": "Veure funcions",
+      "sinCoste": "Sense cost per al club."
     },
     "problema": {
       "titulo": "Et sona?",
@@ -65,7 +66,7 @@
     "familias": {
       "titulo": "Eres família d'un jugador?",
       "texto": "El teu club et convidarà a l'app MisterFC: convocatòries, calendari, missatges i l'evolució del teu fill o filla.",
-      "gratis": "L'app és gratuïta per a les famílies."
+      "suscripcion": "Per a les famílies, l'app funciona amb una subscripció anual que es contracta dins de la mateixa app. És per compte: una sola subscripció serveix per a tots els teus fills."
     },
     "pasos": {
       "titulo": "Com comencem",
@@ -83,9 +84,9 @@
     "faq": {
       "titulo": "Preguntes freqüents",
       "costeP": "Quant costa?",
-      "costeR": "Depén de la grandària del club i del que necessites. Te ho expliquem en la demo, sense compromís.",
+      "costeR": "Per al club, res. MisterFC el paguen les famílies, amb una subscripció anual per compte que es contracta dins de l'app. El cos tècnic i la direcció del club no paguen.",
       "familiasP": "Les famílies han de pagar alguna cosa?",
-      "familiasR": "No: l'app és gratuïta per a les famílies.",
+      "familiasR": "Sí: una subscripció anual per compte, que es contracta en l'app. Una sola subscripció serveix per a tots els fills d'eixe compte. Cada familiar que seguisca el jugador des del seu propi compte, com els iaios, necessita la seua. Qui forma part del cos tècnic o de la direcció del club no paga, encara que també siga família.",
       "instalarP": "Hem d'instal·lar alguna cosa?",
       "instalarR": "La direcció i els entrenadors poden utilitzar la web des de qualsevol navegador. Per al dia a dia hi ha app en iOS i Android.",
       "conexionP": "Funciona sense connexió?",
@@ -102,16 +103,6 @@
       "titulo": "Et mostrem MisterFC amb els equips del teu club.",
       "texto": "Una videotrucada i responem tots els teus dubtes. Sol·licitar-la no et compromet a res.",
       "cta": "Sol·licitar una demo"
-    },
-    "capturas": {
-      "pendiente": "Captura pendent",
-      "C1": "Tauler de direcció",
-      "M1": "Convocatòria vista per la família",
-      "C3": "Planificador setmanal de sessions",
-      "C5": "Editor d'alineació",
-      "M2": "Directe del partit",
-      "C7": "Informe de desenvolupament",
-      "M3": "Missatges de l'equip"
     },
     "showcase": {
       "titulo": "Clubs que treballen amb MisterFC"
@@ -137,5 +128,130 @@
     "app": "App per a famílies",
     "altAppStore": "Descarregar a l'App Store",
     "altGooglePlay": "Baixa a Google Play"
+  },
+  "capturas": {
+    "pendiente": "Captura pendent",
+    "C1": "Tauler de direcció",
+    "C3": "Planificador setmanal de sessions",
+    "C4": "Exercici amb diagrama",
+    "C5": "Editor d'alineació",
+    "C7": "Informe de desenvolupament",
+    "C11": "Jugada animada",
+    "C12": "Accés del club amb escut i color",
+    "M1": "Convocatòria vista per la família",
+    "M2": "Directe del partit",
+    "M3": "Missatges de l'equip",
+    "M4": "Fitxa esportiva",
+    "M5": "Consentiments",
+    "M6": "Calendari de la família"
+  },
+  "funciones": {
+    "titulo": "Funcions",
+    "intro": "El que fa hui MisterFC, àrea per àrea.",
+    "A": {
+      "titulo": "Gestió del club",
+      "items": [
+        "Equips per temporada (F5, F7, F8 i F11) i categories per edat.",
+        "Canvi de temporada: col·loca els jugadors en els equips nous i gestiona pendents i baixes.",
+        "Cos tècnic: assignacions, canvis d'equip, rols, contacte i exportació a CSV.",
+        "Membres del club: baixes i reactivacions.",
+        "Invitacions al cos tècnic i a la direcció.",
+        "Panell de direcció: cens respecte a la temporada anterior, resultats, assistència amb tendència, rànquings i alertes.",
+        "Campanyes d'avaluació, amb data límit i progrés per equip.",
+        "Escut i color del club, i accés propi del club en misterfc.es/el-teu-club.",
+        "Patrocinadors del club, visibles en l'inici de l'app.",
+        "Documents legals propis del club, amb versions.",
+        "Importació de jugadors des d'Excel o CSV, amb plantilles en castellà, valencià i anglés."
+      ]
+    },
+    "B": {
+      "titulo": "Entrenaments i metodologia",
+      "items": [
+        "Biblioteca d'exercicis amb diagrama, objectius, intensitat i espai, i un circuit de revisió: esborrany, proposat i publicat.",
+        "Planificador de sessions en llista i per setmanes, amb plantilles, PDF i enllaç al calendari.",
+        "Pissarra tàctica amb exportació a imatge.",
+        "Jugades animades del club, amb playbook per equip, opció de compartir-les amb les famílies i pantalla completa.",
+        "Assistència als entrenaments i les seues estadístiques.",
+        "Sessions compartides amb les famílies, en només lectura."
+      ]
+    },
+    "C": {
+      "titulo": "Partits",
+      "items": [
+        "Calendari d'entrenaments, partits, tornejos i amistosos, amb repetició i cancel·lació.",
+        "Dies festius, amb aprovació de la direcció.",
+        "Convocatòries amb avís en el mòbil, resposta de la família i recordatori diari.",
+        "Alineacions: arrossega jugadors, banqueta, canvis previstos, formacions pròpies i opció de compartir-la amb la família.",
+        "Directe del partit: rellotge, gols, targetes, canvis i entrada ràpida. En el mòbil funciona sense connexió.",
+        "Després del partit: nota de l'1 al 10, MVP i comentari per jugador, i valoració de l'equip.",
+        "Estadístiques del partit i de l'equip, amb PDF.",
+        "Directes del club, amb tots els partits de la setmana, i seguiment d'equips amb avís de cada gol."
+      ]
+    },
+    "D": {
+      "titulo": "Desenvolupament del jugador",
+      "items": [
+        "Informes de desenvolupament per període, amb objectius del jugador i de l'equip i PDF amb gràfiques.",
+        "Fitxa esportiva: temporades, estadístiques, assistència, evolució, valoracions i assoliments.",
+        "Notes del cos tècnic sobre cada jugador."
+      ]
+    },
+    "E": {
+      "titulo": "Comunicació",
+      "items": [
+        "Missatges individuals, d'equip i del cos tècnic.",
+        "Anuncis del club i de l'equip.",
+        "Novetats dins de l'app i notificacions en la web i en el mòbil, amb preferències."
+      ]
+    },
+    "F": {
+      "titulo": "Famílies",
+      "items": [
+        "App per a iOS i Android: convocatòries, calendari, fitxa, informes, sessions i jugades compartides, i missatges.",
+        "Consentiments separats (imatge interna, imatge en xarxes i dades mèdiques), que es poden retirar.",
+        "Seguidors: la família convida els iaios o altres familiars a seguir el jugador.",
+        "Descàrrega en PDF de les dades del menor."
+      ]
+    },
+    "G": {
+      "titulo": "Web, app i idiomes",
+      "items": [
+        "Castellà, valencià i anglés, en la web i en l'app.",
+        "App per a iOS i Android, publicada en les botigues.",
+        "Web instal·lable com a aplicació (PWA).",
+        "En el mòbil, la informació ja descarregada es pot consultar sense connexió."
+      ]
+    },
+    "cta": "Sol·licitar una demo"
+  },
+  "seguridad": {
+    "titulo": "Seguretat i protecció del menor",
+    "intro": "Com tracta MisterFC les dades del club i, sobretot, les dels menors.",
+    "b1": "Accés i aïllament",
+    "b2": "Menors",
+    "b3": "Salut",
+    "b4": "Drets de les famílies",
+    "b5": "Comptes i contrasenyes",
+    "b6": "Proveïdors, privacitat i ubicació de les dades",
+    "S1": "<b>Només es pot entrar a un club per invitació.</b> No hi ha registre obert.",
+    "S2": "<b>Un club no pot veure les dades d'un altre club:</b> el control d'accés s'aplica en la mateixa base de dades, taula a taula, no sols en la pantalla.",
+    "S3": "<b>Cada canvi passa més de 140 proves automàtiques de seguretat de la base de dades</b> abans de publicar-se.",
+    "S4": "Cada persona veu el que li correspon segons el seu paper: direcció, coordinació, entrenador o família.",
+    "S5": "<b>La minoria d'edat es calcula cada dia amb la data de naixement.</b> Mentre el jugador és menor, les seues dades sensibles (salut, consentiments, supressió i descàrrega) les gestiona el seu tutor; als 18 passen al jugador.",
+    "S6": "<b>Un menor no pot tindre compte propi sense un tutor vinculat</b>, i l'últim tutor no pot desvincular-se mentre el menor en tinga.",
+    "S7": "<b>Consentiments separats</b> (imatge interna, imatge en xarxes, dades mèdiques), en un registre que no es pot editar ni esborrar: retirar un consentiment afig una entrada nova.",
+    "S8": "<b>Sense autorització d'imatge, la foto del jugador no es mostra.</b> Si es retira, deixa de veure's al moment, també en l'emmagatzematge d'arxius.",
+    "S9": "<b>Dins del club, les dades de salut només les veuen</b> la direcció del club, el cos tècnic de l'equip del jugador (i el de l'equip que el convoca, només fins al final del dia del partit), el tutor i el mateix jugador si és major d'edat. <b>Sempre amb el consentiment registrat.</b>",
+    "S10": "<b>Cada consulta de dades de salut per part del personal queda registrada:</b> qui, quan i des d'on.",
+    "S11": "<b>El tutor pot descarregar en PDF totes les dades del seu fill</b> i demanar-ne la supressió, que aprova el club.",
+    "S12": "<b>Qualsevol usuari pot eliminar el seu compte</b>, des de l'app o des de la web.",
+    "S13": "Recuperar la contrasenya té <b>límits d'intents</b>, i la invitació també.",
+    "S14": "<b>En el mòbil, la sessió es guarda en el magatzem segur del sistema</b> (Keychain i Keystore).",
+    "S15": "Els informes d'errors tècnics no inclouen correus, IP ni galetes, i <b>no es graven les sessions</b> d'ús.",
+    "S16": "<b>No guardem dades de targeta:</b> els pagaments dins de l'app els processen Apple i Google.",
+    "S17": "<b>Sense publicitat ni analítica de tercers en l'app.</b>",
+    "S18": "<b>Proveïdors:</b> Supabase (base de dades i arxius), Vercel (allotjament), Resend (correu), Sentry (errors), Expo, Apple i Google (avisos al mòbil) i RevenueCat (subscripcions en l'app).",
+    "S19": "<b>Les dades s'allotgen a la Unió Europea</b> (Irlanda): la base de dades i els arxius.",
+    "privacidad": "Més detalls en la <link>política de privacitat</link>."
   }
 }

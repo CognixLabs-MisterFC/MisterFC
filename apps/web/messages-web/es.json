@@ -5,7 +5,8 @@
       "titular": "Todo tu club en un solo sitio, para que el tiempo vaya al campo",
       "subtitulo": "Equipos, entrenamientos, convocatorias, partidos y comunicación con las familias, en la web y en el móvil. Pensado para la dirección del club y para sus entrenadores.",
       "ctaDemo": "Solicitar una demo",
-      "ctaFunciones": "Ver funciones"
+      "ctaFunciones": "Ver funciones",
+      "sinCoste": "Sin coste para el club."
     },
     "problema": {
       "titulo": "¿Te suena?",
@@ -65,7 +66,7 @@
     "familias": {
       "titulo": "¿Eres familia de un jugador?",
       "texto": "Tu club te invitará a la app MisterFC: convocatorias, calendario, mensajes y la evolución de tu hijo o hija.",
-      "gratis": "La app es gratuita para las familias."
+      "suscripcion": "Para las familias, la app funciona con una suscripción anual que se contrata dentro de la propia app. Es por cuenta: una sola suscripción sirve para todos tus hijos."
     },
     "pasos": {
       "titulo": "Cómo empezamos",
@@ -83,9 +84,9 @@
     "faq": {
       "titulo": "Preguntas frecuentes",
       "costeP": "¿Cuánto cuesta?",
-      "costeR": "Depende del tamaño del club y de lo que necesites. Te lo contamos en la demo, sin compromiso.",
+      "costeR": "Para el club, nada. MisterFC lo pagan las familias, con una suscripción anual por cuenta que se contrata dentro de la app. El cuerpo técnico y la dirección del club no pagan.",
       "familiasP": "¿Las familias tienen que pagar algo?",
-      "familiasR": "No: la app es gratuita para las familias.",
+      "familiasR": "Sí: una suscripción anual por cuenta, que se contrata en la app. Una sola suscripción sirve para todos los hijos de esa cuenta. Cada familiar que siga al jugador desde su propia cuenta, como los abuelos, necesita la suya. Quien forma parte del cuerpo técnico o de la dirección del club no paga, aunque también sea familia.",
       "instalarP": "¿Tenemos que instalar algo?",
       "instalarR": "La dirección y los entrenadores pueden usar la web desde cualquier navegador. Para el día a día hay app en iOS y Android.",
       "conexionP": "¿Funciona sin conexión?",
@@ -102,16 +103,6 @@
       "titulo": "Te enseñamos MisterFC con los equipos de tu club.",
       "texto": "Una videollamada y respondemos todas tus dudas. Solicitarla no te compromete a nada.",
       "cta": "Solicitar una demo"
-    },
-    "capturas": {
-      "pendiente": "Captura pendiente",
-      "C1": "Dashboard de dirección",
-      "M1": "Convocatoria vista por la familia",
-      "C3": "Planificador semanal de sesiones",
-      "C5": "Editor de alineación",
-      "M2": "Directo del partido",
-      "C7": "Informe de desarrollo",
-      "M3": "Mensajes del equipo"
     },
     "showcase": {
       "titulo": "Clubes que trabajan con MisterFC"
@@ -137,5 +128,130 @@
     "app": "App para familias",
     "altAppStore": "Consíguelo en el App Store",
     "altGooglePlay": "Disponible en Google Play"
+  },
+  "capturas": {
+    "pendiente": "Captura pendiente",
+    "C1": "Dashboard de dirección",
+    "C3": "Planificador semanal de sesiones",
+    "C4": "Ejercicio con diagrama",
+    "C5": "Editor de alineación",
+    "C7": "Informe de desarrollo",
+    "C11": "Jugada animada",
+    "C12": "Acceso del club con escudo y color",
+    "M1": "Convocatoria vista por la familia",
+    "M2": "Directo del partido",
+    "M3": "Mensajes del equipo",
+    "M4": "Ficha deportiva",
+    "M5": "Consentimientos",
+    "M6": "Calendario de la familia"
+  },
+  "funciones": {
+    "titulo": "Funciones",
+    "intro": "Lo que hace hoy MisterFC, área por área.",
+    "A": {
+      "titulo": "Gestión del club",
+      "items": [
+        "Equipos por temporada (F5, F7, F8 y F11) y categorías por edad.",
+        "Cambio de temporada: coloca a los jugadores en los equipos nuevos y gestiona pendientes y bajas.",
+        "Cuerpo técnico: asignaciones, cambios de equipo, roles, contacto y exportación a CSV.",
+        "Miembros del club: bajas y reactivaciones.",
+        "Invitaciones al cuerpo técnico y a la dirección.",
+        "Panel de dirección: censo frente a la temporada anterior, resultados, asistencia con tendencia, rankings y alertas.",
+        "Campañas de evaluación, con fecha límite y progreso por equipo.",
+        "Escudo y color del club, y acceso propio del club en misterfc.es/tu-club.",
+        "Patrocinadores del club, visibles en el inicio de la app.",
+        "Documentos legales propios del club, con versiones.",
+        "Importación de jugadores desde Excel o CSV, con plantillas en castellano, valenciano e inglés."
+      ]
+    },
+    "B": {
+      "titulo": "Entrenamientos y metodología",
+      "items": [
+        "Biblioteca de ejercicios con diagrama, objetivos, intensidad y espacio, y un circuito de revisión: borrador, propuesto y publicado.",
+        "Planificador de sesiones en lista y por semanas, con plantillas, PDF y enlace al calendario.",
+        "Pizarra táctica con exportación a imagen.",
+        "Jugadas animadas del club, con playbook por equipo, opción de compartirlas con las familias y pantalla completa.",
+        "Asistencia a los entrenamientos y sus estadísticas.",
+        "Sesiones compartidas con las familias, en solo lectura."
+      ]
+    },
+    "C": {
+      "titulo": "Partidos",
+      "items": [
+        "Calendario de entrenamientos, partidos, torneos y amistosos, con repetición y cancelación.",
+        "Días festivos, con aprobación de la dirección.",
+        "Convocatorias con aviso en el móvil, respuesta de la familia y recordatorio diario.",
+        "Alineaciones: arrastra jugadores, banquillo, cambios previstos, formaciones propias y opción de compartirla con la familia.",
+        "Directo del partido: reloj, goles, tarjetas, cambios y entrada rápida. En el móvil funciona sin conexión.",
+        "Después del partido: nota del 1 al 10, MVP y comentario por jugador, y valoración del equipo.",
+        "Estadísticas del partido y del equipo, con PDF.",
+        "Directos del club, con todos los partidos de la semana, y seguimiento de equipos con aviso de cada gol."
+      ]
+    },
+    "D": {
+      "titulo": "Desarrollo del jugador",
+      "items": [
+        "Informes de desarrollo por periodo, con objetivos del jugador y del equipo y PDF con gráficas.",
+        "Ficha deportiva: temporadas, estadísticas, asistencia, evolución, valoraciones y logros.",
+        "Notas del cuerpo técnico sobre cada jugador."
+      ]
+    },
+    "E": {
+      "titulo": "Comunicación",
+      "items": [
+        "Mensajes individuales, de equipo y del cuerpo técnico.",
+        "Anuncios del club y del equipo.",
+        "Novedades dentro de la app y notificaciones en la web y en el móvil, con preferencias."
+      ]
+    },
+    "F": {
+      "titulo": "Familias",
+      "items": [
+        "App para iOS y Android: convocatorias, calendario, ficha, informes, sesiones y jugadas compartidas, y mensajes.",
+        "Consentimientos separados (imagen interna, imagen en redes y datos médicos), que se pueden retirar.",
+        "Seguidores: la familia invita a abuelos u otros familiares a seguir al jugador.",
+        "Descarga en PDF de los datos del menor."
+      ]
+    },
+    "G": {
+      "titulo": "Web, app e idiomas",
+      "items": [
+        "Castellano, valenciano e inglés, en la web y en la app.",
+        "App para iOS y Android, publicada en las tiendas.",
+        "Web instalable como aplicación (PWA).",
+        "En el móvil, la información ya descargada se puede consultar sin conexión."
+      ]
+    },
+    "cta": "Solicitar una demo"
+  },
+  "seguridad": {
+    "titulo": "Seguridad y protección del menor",
+    "intro": "Cómo trata MisterFC los datos del club y, sobre todo, los de los menores.",
+    "b1": "Acceso y aislamiento",
+    "b2": "Menores",
+    "b3": "Salud",
+    "b4": "Derechos de las familias",
+    "b5": "Cuentas y contraseñas",
+    "b6": "Proveedores, privacidad y ubicación de los datos",
+    "S1": "<b>Solo se entra a un club por invitación.</b> No hay registro abierto.",
+    "S2": "<b>Un club no puede ver los datos de otro club:</b> el control de acceso se aplica en la propia base de datos, tabla a tabla, no solo en la pantalla.",
+    "S3": "<b>Cada cambio pasa más de 140 pruebas automáticas de seguridad de la base de datos</b> antes de publicarse.",
+    "S4": "Cada persona ve lo que le corresponde según su papel: dirección, coordinación, entrenador o familia.",
+    "S5": "<b>La minoría de edad se calcula cada día con la fecha de nacimiento.</b> Mientras el jugador es menor, sus datos sensibles (salud, consentimientos, supresión y descarga) los gestiona su tutor; a los 18 pasan al jugador.",
+    "S6": "<b>Un menor no puede tener cuenta propia sin un tutor vinculado</b>, y el último tutor no puede desvincularse mientras el menor la tenga.",
+    "S7": "<b>Consentimientos separados</b> (imagen interna, imagen en redes, datos médicos), en un registro que no se puede editar ni borrar: retirar un consentimiento añade una entrada nueva.",
+    "S8": "<b>Sin autorización de imagen, la foto del jugador no se muestra.</b> Si se retira, deja de verse al momento, también en el almacenamiento de archivos.",
+    "S9": "<b>Dentro del club, los datos de salud solo los ven</b> la dirección del club, el cuerpo técnico del equipo del jugador (y el del equipo que lo convoca, solo hasta el final del día del partido), el tutor y el propio jugador si es mayor de edad. <b>Siempre con el consentimiento registrado.</b>",
+    "S10": "<b>Cada consulta de datos de salud por parte del personal queda registrada:</b> quién, cuándo y desde dónde.",
+    "S11": "<b>El tutor puede descargar en PDF todos los datos de su hijo</b> y pedir su supresión, que aprueba el club.",
+    "S12": "<b>Cualquier usuario puede eliminar su cuenta</b>, desde la app o desde la web.",
+    "S13": "Recuperar la contraseña tiene <b>límites de intentos</b>, y la invitación también.",
+    "S14": "<b>En el móvil, la sesión se guarda en el almacén seguro del sistema</b> (Keychain y Keystore).",
+    "S15": "Los informes de errores técnicos no incluyen correos, IP ni cookies, y <b>no se graban las sesiones</b> de uso.",
+    "S16": "<b>No guardamos datos de tarjeta:</b> los pagos dentro de la app los procesan Apple y Google.",
+    "S17": "<b>Sin publicidad ni analítica de terceros en la app.</b>",
+    "S18": "<b>Proveedores:</b> Supabase (base de datos y archivos), Vercel (alojamiento), Resend (correo), Sentry (errores), Expo, Apple y Google (avisos al móvil) y RevenueCat (suscripciones en la app).",
+    "S19": "<b>Los datos se alojan en la Unión Europea</b> (Irlanda): la base de datos y los archivos.",
+    "privacidad": "Más detalles en la <link>política de privacidad</link>."
   }
 }
