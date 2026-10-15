@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { isMarketingSiteOn } from '@misterfc/core';
 import { CapturePlaceholder } from '@/components/web/capture-placeholder';
+import { captureLabels } from '@/components/web/captures';
 import { DemoButton } from '@/components/web/demo-button';
 import { StoreBadges } from '@/components/web/store-badges';
 import { ClubsShowcase } from '../_components/clubs-showcase';
@@ -50,12 +51,7 @@ export default async function PortadaPage({ params }: Props) {
   setRequestLocale(locale);
   const t = await getTranslations('webComercial.portada');
   const tp = await getTranslations('webComercial.pie');
-  const pending = t('capturas.pendiente');
-  const capture = (id: 'C1' | 'M1' | 'C3' | 'C5' | 'M2' | 'C7' | 'M3') => ({
-    id,
-    name: t(`capturas.${id}`),
-    pendingLabel: pending,
-  });
+  const capture = await captureLabels();
 
   const container = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
   const h2 = 'text-2xl font-bold tracking-tight sm:text-3xl';
@@ -93,9 +89,8 @@ export default async function PortadaPage({ params }: Props) {
     { icon: Languages, t: t('plataformas.idiomasT'), d: t('plataformas.idiomasD') },
   ];
   const pasos = [1, 2, 3].map((n) => ({ n, t: t(`pasos.p${n}t`), d: t(`pasos.p${n}d`) }));
-  // ⚠️ `familias`: «la app es gratuita para las familias» es verdad MIENTRAS
-  // `SUBSCRIPTION_GATE` siga apagado (spec §4.10 y §7.1). Si algún día se enciende, esta
-  // respuesta y el apartado de familias se cambian ANTES de encenderlo.
+  // `coste` y `familias`: MisterFC lo pagan las familias (suscripción anual por cuenta,
+  // en la app); los clubes no pagan. Sin cifras en ningún sitio (spec §13.3).
   const faq = [
     'coste',
     'familias',
@@ -127,6 +122,7 @@ export default async function PortadaPage({ params }: Props) {
                 {t('hero.ctaFunciones')}
               </Link>
             </div>
+            <p className="text-sm text-zinc-600">{t('hero.sinCoste')}</p>
           </div>
           <div className="relative mx-auto w-full max-w-xl pb-6 pr-10 sm:pr-16">
             <CapturePlaceholder device="laptop" {...capture('C1')} />
@@ -258,7 +254,7 @@ export default async function PortadaPage({ params }: Props) {
               {t('familias.titulo')}
             </h2>
             <p className="mt-2 text-zinc-700">{t('familias.texto')}</p>
-            <p className="mt-2 font-semibold">{t('familias.gratis')}</p>
+            <p className="mt-2 text-zinc-700">{t('familias.suscripcion')}</p>
           </div>
           <StoreBadges
             locale={locale}

@@ -209,6 +209,7 @@ El tono es de **tú** (decidido), como la app (`messages/es.json`: «Elige tu cl
 - **Titular:** Todo tu club en un solo sitio, para que el tiempo vaya al campo
 - **Subtítulo:** Equipos, entrenamientos, convocatorias, partidos y comunicación con las familias, en la web y en el móvil. Pensado para la dirección del club y para sus entrenadores.
 - **CTA principal:** Solicitar una demo · **Secundario:** Ver funciones
+- **Debajo de los botones, en pequeño:** Sin coste para el club. _(Aprobado el 2026-10-15.)_
 - **Imagen:** mockup de portátil con el dashboard de dirección y móvil con la convocatoria (§9).
 
 ### 4.2 El problema (tres tarjetas)
@@ -270,8 +271,8 @@ MisterFC es un producto de Cognix Labs, S.L.U., con sede en Valencia. (Sin cifra
 
 ### 4.10 Preguntas frecuentes (antes del CTA final)
 
-- **¿Cuánto cuesta?** _(Texto nuevo PENDIENTE de aprobación, §13.3. Sin cifras.)_
-- **¿Las familias tienen que pagar algo?** _(Texto nuevo PENDIENTE de aprobación, §13.3.)_
+- **¿Cuánto cuesta?** Para el club, nada. MisterFC lo pagan las familias, con una suscripción anual por cuenta que se contrata dentro de la app. El cuerpo técnico y la dirección del club no pagan. _(Aprobado el 2026-10-15. Sin cifras.)_
+- **¿Las familias tienen que pagar algo?** Sí: una suscripción anual por cuenta, que se contrata en la app. Una sola suscripción sirve para todos los hijos de esa cuenta. Cada familiar que siga al jugador desde su propia cuenta, como los abuelos, necesita la suya. Quien forma parte del cuerpo técnico o de la dirección del club no paga, aunque también sea familia. _(Aprobado el 2026-10-15.)_
 - **¿Tenemos que instalar algo?** La dirección y los entrenadores pueden usar la web desde cualquier navegador. Para el día a día hay app en iOS y Android.
 - **¿Funciona sin conexión?** La app móvil permite consultar la información ya descargada y registrar las acciones del partido sin cobertura.
 - **¿Podemos traer nuestros jugadores?** Sí, desde una hoja de Excel o CSV con nuestra plantilla.
@@ -442,7 +443,7 @@ Verificadas en el código el 2026-10-14. Roles: `admin_club` y `director` (direc
 ### 7.1 Familias (pequeño, en la portada y en el pie)
 
 **Título:** ¿Eres familia de un jugador?
-**Texto:** _PENDIENTE de aprobación (§13.3)._ Dice que la app tiene una suscripción para las familias, sin cifras. Lo de «gratuita» queda retirado.
+**Texto:** Tu club te invitará a la app MisterFC: convocatorias, calendario, mensajes y la evolución de tu hijo o hija. Para las familias, la app funciona con una suscripción anual que se contrata dentro de la propia app. Es por cuenta: una sola suscripción sirve para todos tus hijos. _(Aprobado el 2026-10-15; lo de «gratuita» queda retirado.)_
 **Botones** (enlaces reales, `apps/web/src/lib/family-web-cut.ts:61-64`):
 
 - App Store: `https://apps.apple.com/es/app/misterfc/id6810337932`
@@ -727,12 +728,18 @@ No se tocan Supabase, DNS ni la app nativa.
   - pagan las cuentas con vínculo familiar: tutor, jugador y seguidor;
   - **el cuerpo técnico y la dirección no pagan**, aunque también sean familia;
   - **solo se paga desde el móvil** (decisión 6; la web no cobra).
-- **Hoy, en el repo:**
-  - el gate de la suscripción se envía **apagado** (`EXPO_PUBLIC_SUBSCRIPTION_GATE`, `SUBSCRIPTION_GATE`);
-  - en Android aún **no se puede pagar**: falta la clave (`apps/native/src/subscription/purchases.ts:40-43`).
+- **En producción** (comprobado el 2026-10-15 en las variables de EAS, entorno `production`, sin leer valores):
+  - el pago está configurado en **Apple y en Google Play**: `EXPO_PUBLIC_REVENUECAT_IOS_KEY` (`appl_…`) y `EXPO_PUBLIC_REVENUECAT_ANDROID_KEY` (`goog_…`, creada el 25-09);
+  - la suscripción está **encendida**: `EXPO_PUBLIC_SUBSCRIPTION_GATE=on`;
+  - la última compilación de Android para la tienda (v1.0.1 (7), 2026-10-07) se hizo con la clave: el aviso «suscríbete desde un iPhone» (`paywall.tsx:181-185`) no se muestra.
+  - Los comentarios de `purchases.ts:15-17, 40` y `paywall.tsx:180` que dicen que Android no cobra están desfasados; los corrige otra sesión.
 - **W3 se corrige en el PR de W4:** fuera «La app es gratuita para las familias» en los 3 idiomas, en la portada (familias) y en la FAQ.
 - **W4 publica S16 y S18 tal cual** (opción 2).
-- **Textos nuevos** (familias, «¿Cuánto cuesta?», «¿Las familias tienen que pagar algo?», «sin coste para el club»): propuestos al titular el 2026-10-15, **pendientes de aprobación**. Cuando se aprueben, se escriben aquí.
+- **Textos aprobados el 2026-10-15** (castellano; valenciano e inglés, traducción en W4):
+  - **Familias (§7.1):** «Tu club te invitará a la app MisterFC: convocatorias, calendario, mensajes y la evolución de tu hijo o hija. Para las familias, la app funciona con una suscripción anual que se contrata dentro de la propia app. Es por cuenta: una sola suscripción sirve para todos tus hijos.»
+  - **«¿Cuánto cuesta?» (§4.10):** «Para el club, nada. MisterFC lo pagan las familias, con una suscripción anual por cuenta que se contrata dentro de la app. El cuerpo técnico y la dirección del club no pagan.»
+  - **«¿Las familias tienen que pagar algo?» (§4.10):** «Sí: una suscripción anual por cuenta, que se contrata en la app. Una sola suscripción sirve para todos los hijos de esa cuenta. Cada familiar que siga al jugador desde su propia cuenta, como los abuelos, necesita la suya. Quien forma parte del cuerpo técnico o de la dirección del club no paga, aunque también sea familia.»
+  - **«Sin coste para el club.»** debajo de los botones del hero y en la respuesta de «¿Cuánto cuesta?» («Para el club, nada»). **En el bloque final, no.**
 
 ---
 
