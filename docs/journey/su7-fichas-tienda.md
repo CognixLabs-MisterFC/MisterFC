@@ -183,9 +183,11 @@ Por orden de quién bloquea a quién:
       `subscription_events` con `skipped_reason = 'sandbox'`: eso prueba que llega, que se
       verifica la firma y que no aplica).
 - [ ] Precio de la app a **Free** en App Store Connect.
-- [ ] Y al final, los dos interruptores **a la vez**: `SUBSCRIPTION_GATE=on` en Vercel y
+- [x] Y al final, los dos interruptores **a la vez**: `SUBSCRIPTION_GATE=on` en Vercel y
       `EXPO_PUBLIC_SUBSCRIPTION_GATE=on` en el build de EAS. Encender solo uno deja la web
-      y la app diciendo cosas distintas a la misma familia.
+      y la app diciendo cosas distintas a la misma familia. **Los dos están encendidos en
+      producción desde octubre de 2026.** El estado de los dos vive en Vercel y en EAS, no
+      en el repo: esta casilla lo refleja, no lo comprueba.
 - [ ] **`FAMILY_WEB_CUT=on` en Vercel** (W-B) — cierra la web a familias y seguidores, que
       pasan a la app. Es un interruptor aparte y **sin gemela en EAS**: la app es el
       destino del corte, no la otra mitad de un muro. Va con la publicación, no con las
