@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import { NextIntlClientProvider, hasLocale } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { Analytics } from '@vercel/analytics/next';
 import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegister } from '@/components/service-worker-register';
 import { AuthHashHandler } from '@/components/auth-hash-handler';
@@ -74,6 +75,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={clientMessages}>{children}</NextIntlClientProvider>
         <Toaster />
         <ServiceWorkerRegister />
+        <Analytics />
       </body>
     </html>
   );

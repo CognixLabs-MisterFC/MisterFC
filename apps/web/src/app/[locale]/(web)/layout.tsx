@@ -1,4 +1,3 @@
-import { Analytics } from '@vercel/analytics/next';
 import { isMarketingSiteOn, getCurrentUser } from '@misterfc/core';
 import { createCookieAdapter } from '@/lib/supabase-cookies';
 import { SiteHeader } from '@/components/web/site-header';
@@ -9,14 +8,14 @@ import { SiteFooter } from '@/components/web/site-footer';
  *
  * No pasa por la carcasa de la app (`(authenticated)/layout.tsx`): comparte con ella
  * solo el layout raíz de `[locale]` (html, fuente y textos). Pone la cabecera y el pie
- * (W2) y la analítica (W6).
+ * (W2).
  *
  * La sesión solo se mira para el enlace de la cabecera («Acceso clubes» o «Ir a mi
  * club», spec §3.3). No protege nada: todas estas páginas son públicas.
  *
- * Vercel Web Analytics va AQUÍ y solo aquí (spec §11): mide la web comercial y no la
- * app. No pone cookies. Hay que activarla en el panel de Vercel; sin eso, el script no
- * manda nada.
+ * Vercel Web Analytics está configurado en el layout raíz (`[locale]/layout.tsx`), no
+ * pone cookies. Hay que activarla en el panel de Vercel; sin eso, el script no manda
+ * nada.
  *
  * APAGADA (`MARKETING_SITE`), este layout no añade nada ni consulta la sesión: cada
  * página del grupo pinta lo que pintaba esa URL antes de la web comercial (ver
@@ -38,7 +37,6 @@ export default async function WebLayout({
       <SiteHeader locale={locale} signedIn={user !== null} />
       {children}
       <SiteFooter locale={locale} />
-      <Analytics />
     </div>
   );
 }
