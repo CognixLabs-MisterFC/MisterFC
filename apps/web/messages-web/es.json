@@ -1,8 +1,121 @@
 {
   "portada": {
-    "antetitulo": "Para clubes de fútbol base",
-    "titular": "Todo tu club en un solo sitio, para que el tiempo vaya al campo",
-    "subtitulo": "Equipos, entrenamientos, convocatorias, partidos y comunicación con las familias, en la web y en el móvil. Pensado para la dirección del club y para sus entrenadores."
+    "hero": {
+      "antetitulo": "Para clubes de fútbol base",
+      "titular": "Todo tu club en un solo sitio, para que el tiempo vaya al campo",
+      "subtitulo": "Equipos, entrenamientos, convocatorias, partidos y comunicación con las familias, en la web y en el móvil. Pensado para la dirección del club y para sus entrenadores.",
+      "ctaDemo": "Solicitar una demo",
+      "ctaFunciones": "Ver funciones"
+    },
+    "problema": {
+      "titulo": "¿Te suena?",
+      "i1t": "Información repartida",
+      "i1d": "Hojas de cálculo, grupos de mensajería, libretas: cada equipo a su manera.",
+      "i2t": "La dirección no ve el conjunto",
+      "i2d": "Saber cómo van la asistencia, los informes o las convocatorias de todos los equipos lleva horas.",
+      "i3t": "Las familias, por mil canales",
+      "i3d": "Convocatorias, horarios y avisos se pierden entre mensajes."
+    },
+    "roles": {
+      "titulo": "Qué cambia para cada uno",
+      "direccionT": "Dirección",
+      "direccionD": "El estado de todos los equipos en un panel; temporadas, equipos y cuerpo técnico; campañas de informes y anuncios a todo el club.",
+      "coordinacionT": "Coordinación",
+      "coordinacionD": "Los equipos que coordinas, sus plantillas, su cuerpo técnico y el seguimiento de los informes.",
+      "entrenadoresT": "Entrenadores",
+      "entrenadoresD": "Sesiones, ejercicios, convocatorias, alineaciones y toma de datos del partido desde el móvil.",
+      "familiasT": "Familias",
+      "familiasD": "La app MisterFC, para responder a las convocatorias, consultar el calendario y seguir la evolución de su hijo o hija."
+    },
+    "funciones": {
+      "titulo": "Funciones destacadas",
+      "f1t": "Planifica los entrenamientos",
+      "f1d": "Biblioteca de ejercicios con diagramas, planificador semanal de sesiones y PDF para el campo.",
+      "f2t": "Convoca y alinea",
+      "f2d": "Publica la convocatoria, recibe las respuestas de las familias y prepara la alineación arrastrando jugadores.",
+      "f3t": "El partido, en directo",
+      "f3d": "Goles, tarjetas y cambios desde el móvil, incluso sin conexión; al acabar, la valoración de cada jugador.",
+      "f4t": "Informes de desarrollo",
+      "f4d": "Objetivos e informe por periodo para cada jugador, con PDF para las familias.",
+      "f5t": "Un panel para la dirección",
+      "f5d": "Censo, resultados, asistencia y alertas de todo el club.",
+      "f6t": "Comunicación ordenada",
+      "f6d": "Mensajes, anuncios y notificaciones dentro de la app, sin depender de grupos de mensajería.",
+      "verTodas": "Ver todas las funciones"
+    },
+    "seguridad": {
+      "titulo": "Datos de menores, tratados como lo que son",
+      "p1": "Solo se entra a un club por invitación.",
+      "p2": "Un club no puede ver los datos de otro: el control de acceso se aplica en la propia base de datos.",
+      "p3": "La foto de un jugador no se muestra sin la autorización de imagen.",
+      "p4": "Dentro del club, los datos de salud solo los ve quien los necesita, y cada consulta del personal queda registrada.",
+      "p5": "Los datos se alojan en la Unión Europea.",
+      "p6": "El tutor puede descargar los datos de su hijo o pedir su supresión.",
+      "enlace": "Cómo protegemos los datos"
+    },
+    "plataformas": {
+      "titulo": "Web y móvil",
+      "webT": "Web",
+      "webD": "Para la dirección y los entrenadores: la planificación, los informes y la gestión del club.",
+      "appT": "App para iOS y Android",
+      "appD": "Para el día a día: la convocatoria, el directo del partido, los mensajes y el calendario.",
+      "idiomasT": "En castellano, valenciano e inglés",
+      "idiomasD": "En la web y en la app."
+    },
+    "familias": {
+      "titulo": "¿Eres familia de un jugador?",
+      "texto": "Tu club te invitará a la app MisterFC: convocatorias, calendario, mensajes y la evolución de tu hijo o hija.",
+      "gratis": "La app es gratuita para las familias."
+    },
+    "pasos": {
+      "titulo": "Cómo empezamos",
+      "p1t": "Demo de 30 minutos",
+      "p1d": "Por videollamada, con tu caso.",
+      "p2t": "Montamos tu club",
+      "p2d": "Equipos de la temporada, importación de jugadores desde Excel y tu escudo y tus colores.",
+      "p3t": "Invitas a tu cuerpo técnico y a las familias",
+      "p3d": "Y empezáis a usarlo."
+    },
+    "quien": {
+      "titulo": "Quién está detrás",
+      "texto": "MisterFC es un producto de Cognix Labs, S.L.U., con sede en Valencia."
+    },
+    "faq": {
+      "titulo": "Preguntas frecuentes",
+      "costeP": "¿Cuánto cuesta?",
+      "costeR": "Depende del tamaño del club y de lo que necesites. Te lo contamos en la demo, sin compromiso.",
+      "familiasP": "¿Las familias tienen que pagar algo?",
+      "familiasR": "No: la app es gratuita para las familias.",
+      "instalarP": "¿Tenemos que instalar algo?",
+      "instalarR": "La dirección y los entrenadores pueden usar la web desde cualquier navegador. Para el día a día hay app en iOS y Android.",
+      "conexionP": "¿Funciona sin conexión?",
+      "conexionR": "La app móvil permite consultar la información ya descargada y registrar las acciones del partido sin cobertura.",
+      "jugadoresP": "¿Podemos traer nuestros jugadores?",
+      "jugadoresR": "Sí, desde una hoja de Excel o CSV con nuestra plantilla.",
+      "valencianoP": "¿Está en valenciano?",
+      "valencianoR": "Sí: castellano, valenciano e inglés, en la web y en la app.",
+      "menoresP": "¿Quién puede ver los datos de los menores?",
+      "menoresR": "Dentro del club, cada persona ve lo que le corresponde según su papel: dirección, coordinación, entrenador o familia. Los datos de salud solo los ve quien los necesita, siempre con el consentimiento registrado, y cada consulta del personal queda registrada.",
+      "menoresEnlace": "Más sobre seguridad"
+    },
+    "final": {
+      "titulo": "Te enseñamos MisterFC con los equipos de tu club.",
+      "texto": "Una videollamada y respondemos todas tus dudas. Solicitarla no te compromete a nada.",
+      "cta": "Solicitar una demo"
+    },
+    "capturas": {
+      "pendiente": "Captura pendiente",
+      "C1": "Dashboard de dirección",
+      "M1": "Convocatoria vista por la familia",
+      "C3": "Planificador semanal de sesiones",
+      "C5": "Editor de alineación",
+      "M2": "Directo del partido",
+      "C7": "Informe de desarrollo",
+      "M3": "Mensajes del equipo"
+    },
+    "showcase": {
+      "titulo": "Clubes que trabajan con MisterFC"
+    }
   },
   "cabecera": {
     "inicio": "MisterFC, inicio",
