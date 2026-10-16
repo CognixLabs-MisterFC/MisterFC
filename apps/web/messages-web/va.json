@@ -131,7 +131,9 @@
   },
   "ampliar": {
     "abrir": "Amplia la captura: {name}",
-    "cerrar": "Tanca"
+    "cerrar": "Tanca",
+    "pista": "Pessiga per a ampliar",
+    "pistaGirar": "Pessiga per a ampliar o gira el mòbil"
   },
   "capturas": {
     "C1": "Tauler de direcció",

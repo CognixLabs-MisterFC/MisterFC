@@ -131,7 +131,9 @@
   },
   "ampliar": {
     "abrir": "Enlarge screenshot: {name}",
-    "cerrar": "Close"
+    "cerrar": "Close",
+    "pista": "Pinch to zoom",
+    "pistaGirar": "Pinch to zoom or rotate your phone"
   },
   "capturas": {
     "C1": "Management dashboard",

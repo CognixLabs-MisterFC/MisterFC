@@ -131,7 +131,9 @@
   },
   "ampliar": {
     "abrir": "Ampliar captura: {name}",
-    "cerrar": "Cerrar"
+    "cerrar": "Cerrar",
+    "pista": "Pellizca para ampliar",
+    "pistaGirar": "Pellizca para ampliar o gira el móvil"
   },
   "capturas": {
     "C1": "Dashboard de dirección",
