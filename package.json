@@ -26,6 +26,7 @@
     "check:intl-locale": "node scripts/check-intl-locale.mjs",
     "check:cadenas-muertas": "node scripts/check-cadenas-muertas.mjs",
     "check:cadenas-fantasma": "node scripts/check-cadenas-fantasma.mjs",
+    "check:crones-registrados": "node scripts/check-crones-registrados.mjs",
     "check:textos-legales": "node scripts/check-textos-legales.mjs",
     "legal:generar": "node scripts/generar-textos-legales.mjs",
     "check:cookies-en-render": "node scripts/check-cookies-en-render.mjs",
