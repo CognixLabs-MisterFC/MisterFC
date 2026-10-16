@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { HeartPulse, KeyRound, Lock, Server, ShieldCheck, Users } from 'lucide-react';
 import { isMarketingSiteOn } from '@misterfc/core';
-import { CapturePlaceholder } from '@/components/web/capture-placeholder';
+import { CaptureFrame } from '@/components/web/capture-frame';
 import { captureLabels } from '@/components/web/captures';
 import ClubLoginPage from '../../[slug]/page';
 import { webMetadata } from '@/lib/web/web-metadata';
@@ -91,7 +91,12 @@ export default async function SeguridadPage({ params }: Props) {
               </ul>
             </div>
             {key === 'b2' && (
-              <CapturePlaceholder device="phone" {...capture('M5')} className="mx-auto w-36" />
+              <CaptureFrame
+                device="phone"
+                {...capture('M5')}
+                className="mx-auto w-36"
+                sizes="150px"
+              />
             )}
           </section>
         ))}

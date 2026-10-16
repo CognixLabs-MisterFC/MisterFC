@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { isMarketingSiteOn } from '@misterfc/core';
-import { CapturePlaceholder } from '@/components/web/capture-placeholder';
+import { CaptureFrame } from '@/components/web/capture-frame';
 import { captureLabels, type CaptureId } from '@/components/web/captures';
 import { DemoButton } from '@/components/web/demo-button';
 import ClubLoginPage from '../../[slug]/page';
@@ -11,7 +11,7 @@ type Props = { params: Promise<{ locale: string }> };
 
 /**
  * Página de funciones (spec §5): lo que hace HOY la app, por áreas (A–G de §5.1), con el
- * hueco de cada captura (§9.4 y §9.5). Solo lo que existe; lo de §5.3 no se anuncia, y
+ * captura de cada una (§9.4 y §9.5). Solo lo que existe; lo de §5.3 no se anuncia, y
  * lo que es solo web no se dice «desde el móvil» (§5.2).
  *
  * APAGADA: antes de la web comercial, `/{idioma}/funciones` caía en `[slug]` como un slug
@@ -114,10 +114,11 @@ export default async function FuncionesPage({ params }: Props) {
               {area.captures.length > 0 && (
                 <div className="flex flex-wrap content-center items-center justify-center gap-6">
                   {area.captures.map((c) => (
-                    <CapturePlaceholder
+                    <CaptureFrame
                       key={c.id}
                       device={c.device}
                       {...capture(c.id)}
+                      sizes={c.device === 'phone' ? '150px' : '(min-width: 1024px) 440px, 90vw'}
                       className={
                         c.device === 'phone'
                           ? 'w-32 sm:w-36'
