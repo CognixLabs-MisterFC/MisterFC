@@ -13,6 +13,7 @@ export {
   isClockRunning,
   isAtBreak,
   nextPeriodAfter,
+  reconstructedPeriods,
   regularPeriods,
   EXTRA_PERIODS,
   isRegularPeriod,
