@@ -93,6 +93,11 @@ export async function captureLabels() {
   return (id: CaptureId) => ({
     id,
     name: t(id),
-    zoom: { open: tz('abrir', { name: t(id) }), close: tz('cerrar') },
+    zoom: {
+      open: tz('abrir', { name: t(id) }),
+      close: tz('cerrar'),
+      hint: tz('pista'),
+      hintRotate: tz('pistaGirar'),
+    },
   });
 }

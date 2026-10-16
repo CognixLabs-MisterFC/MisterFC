@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import Image from 'next/image';
 import { X, ZoomIn } from 'lucide-react';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import { cn } from '@/lib/utils';
+import { ZoomableImage } from './zoomable-image';
 
-export type CaptureZoomLabels = { open: string; close: string };
+export type CaptureZoomLabels = { open: string; close: string; hint: string; hintRotate: string };
 
 /**
  * Hace ampliable una captura de la web comercial: encima del marco va un botón que la
@@ -15,7 +15,9 @@ export type CaptureZoomLabels = { open: string; close: string };
  * de Radix ya lleva el foco atrapado y lo devuelve al botón al cerrar.
  *
  * La grande es el fichero original (`unoptimized`), no la miniatura del marco: las
- * capturas ya son WebP optimizados, y así no se escala hacia arriba.
+ * capturas ya son WebP optimizados, y así no se escala hacia arriba. En pantallas
+ * táctiles se puede pellizcar, arrastrar y hacer doble toque (`ZoomableImage`), con un
+ * aviso que en las capturas apaisadas sugiere también girar el móvil.
  */
 export function CaptureZoom({
   src,
@@ -67,17 +69,16 @@ export function CaptureZoom({
           }}
         >
           <DialogPrimitive.Title className="sr-only">{name}</DialogPrimitive.Title>
-          <Image
+          <ZoomableImage
             src={src}
-            alt={name}
             width={width}
             height={height}
-            unoptimized
-            className="h-auto max-h-full w-auto max-w-full rounded-lg bg-white object-contain shadow-2xl"
+            alt={name}
+            hint={width > height ? labels.hintRotate : labels.hint}
           />
           <DialogPrimitive.Close
             aria-label={labels.close}
-            className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             <X aria-hidden="true" className="h-6 w-6" />
           </DialogPrimitive.Close>
