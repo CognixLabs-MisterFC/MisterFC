@@ -164,12 +164,34 @@ describe('O2-9a · startMatchFromClient', () => {
     expect(await startMatchFromClient(client, ref)).toEqual({ ok: false, error: 'already_closed' });
   });
 
-  it('sin alineación oficial → no_official_lineup', async () => {
-    const { client } = makeClient({ matchState: null, starters: [], official: null });
+  it('sin alineación oficial → no_official_lineup Y NO SE ESCRIBE NADA', async () => {
+    // EL DIENTE DE ESTE TEST ES LA SEGUNDA MITAD. Afirmar solo el valor devuelto
+    // dejaba pasar el bug real: la comprobación de la alineación estaba DESPUÉS de
+    // poner `match_state` en `live`, y esto no es una transacción. El partido se
+    // quedaba live —saliendo en la lista de directos de las familias, que mira
+    // `status === 'live'`— sin once y sin periodos, y la llamada devolvía este
+    // mismo error. El test estaba verde porque el retorno era el correcto.
+    const { client, writes } = makeClient({ matchState: null, starters: [], official: null });
     expect(await startMatchFromClient(client, ref)).toEqual({
       ok: false,
       error: 'no_official_lineup',
     });
+    expect(writes, 'una negativa no puede dejar escrituras detrás').toEqual([]);
+  });
+
+  it('el once YA congelado no exige alineación: re-arrancar sigue funcionando', async () => {
+    // La otra orilla de la puerta. Si se exigiera la alineación también con el once
+    // ya congelado, borrarla después dejaría el partido sin poder reanudarse — y de
+    // esta rama depende la idempotencia de la función.
+    const { client, writes } = makeClient({
+      matchState: { status: 'live' },
+      starters: [{ player_id: 'pl-1' }],
+      official: null,
+      periods: [],
+    });
+    expect(await startMatchFromClient(client, ref)).toEqual({ ok: true });
+    expect(writes.find((w) => w.table === 'match_starters')).toBeUndefined();
+    expect(writes.find((w) => w.table === 'match_periods' && w.op === 'insert')).toBeTruthy();
   });
 
   it('arranque limpio: inserta match_state live, once y 1ª parte', async () => {
@@ -188,8 +210,16 @@ describe('O2-9a · startMatchFromClient', () => {
   });
 
   it('rechazo RLS (42501) al crear match_state → forbidden', async () => {
+    // El fixture LLEVA alineación oficial a propósito: la comprobación de la
+    // alineación va antes del write, así que sin ella este test no llegaría nunca
+    // al insert donde está montado el 42501 y mediría otra cosa. Cuando la puerta
+    // estaba después, este fixture pasaba sin alineación — o sea que el propio
+    // fixture codificaba el orden equivocado.
     const { client } = makeClient({
       matchState: null,
+      starters: [],
+      official: { id: 'l-1' },
+      positions: [{ player_id: 'pl-1', position_code: 'GK' }],
       failOn: { table: 'match_state', op: 'insert', code: '42501' },
     });
     expect(await startMatchFromClient(client, ref)).toEqual({ ok: false, error: 'forbidden' });
