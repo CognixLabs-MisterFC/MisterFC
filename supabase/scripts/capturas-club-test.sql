@@ -183,12 +183,13 @@ begin
   if v_n < 3 then raise exception 'Paso 6: % citaciones con Fonteta (esperadas al menos 3)', v_n; end if;
   insert into _resumen (paso, filas) values ('6 · citaciones sin Fonteta', v_n);
 
-  -- Eventos: el lugar (nombre → Las Dunas, dirección → null) y el título y el rival
-  -- («Fonteta vs Amistat», 4 filas al inventariar), donde Fonteta se sustituye.
+  -- Eventos: el lugar (nombre → Las Dunas, dirección → null) y el rival. En el título
+  -- («Fonteta vs Amistat», 4 filas al inventariar) Fonteta es el club, no el campo:
+  -- pasa a «CF Playas El Saler».
   update public.events
      set location_name = case when location_name ilike '%fonteta%' then 'Campo Municipal Las Dunas' else location_name end,
          location_address = case when location_name ilike '%fonteta%' or location_address ilike '%fonteta%' then null else location_address end,
-         title = regexp_replace(title, 'fonteta', 'Campo Municipal Las Dunas', 'gi'),
+         title = regexp_replace(title, 'fonteta', 'CF Playas El Saler', 'gi'),
          opponent_name = regexp_replace(opponent_name, 'fonteta', 'Campo Municipal Las Dunas', 'gi')
    where club_id = c_club
      and concat_ws(' ', title, opponent_name, location_name, location_address) ilike '%fonteta%';
