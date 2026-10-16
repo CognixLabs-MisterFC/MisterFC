@@ -5421,7 +5421,8 @@
     "rival_dorsal": "Opponent's squad number (1–99)",
     "title": "Record event",
     "type_rival": "Opponent goal",
-    "unsynced": "Not uploaded"
+    "unsynced": "Not uploaded",
+    "discard": "Discard"
   },
   "estadisticas_equipo": {
     "player": "Player",
@@ -5964,6 +5965,23 @@
       "error_forbidden": "You do not have permission to manage this club’s partners.",
       "error_not_found": "That partner no longer exists. Reload the page.",
       "error_generic": "It could not be saved. Please try again."
+    }
+  },
+  "directo_edit": {
+    "title": "Fix",
+    "minute_label": "Minute",
+    "save": "Save",
+    "delete": "Delete event",
+    "delete_confirm": "Yes, delete",
+    "offline": "Offline: a correction can't be saved. Try again with coverage.",
+    "unsynced": "This event hasn't been uploaded yet. You can fix it once it uploads.",
+    "not_editable": "This match has not started: there is nothing to fix.",
+    "errors": {
+      "not_found": "That event is no longer in the match.",
+      "no_period": "The match has no periods, so there is no minute to move it to.",
+      "player_not_in_team": "That player wasn't in the team on match day.",
+      "invalid": "That change doesn't fit this event.",
+      "generic": "We couldn't save the correction. Please try again."
     }
   }
 }

@@ -1,10 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import type {
-  DetailFieldPlayer,
-  LineupRosterPlayer,
-  QuickEntryInput,
-} from '@misterfc/core';
+import type { DetailFieldPlayer, LineupRosterPlayer, QuickEntryInput } from '@misterfc/core';
 import { useTranslations } from '@/locale/provider';
 
 /**
@@ -40,10 +36,7 @@ export function QuickEntry({
   const [subOut, setSubOut] = useState<string | null>(null);
   const [dorsal, setDorsal] = useState('');
 
-  const onFieldIds = useMemo(
-    () => new Set(fieldPlayers.map((p) => p.playerId)),
-    [fieldPlayers],
-  );
+  const onFieldIds = useMemo(() => new Set(fieldPlayers.map((p) => p.playerId)), [fieldPlayers]);
   // Banquillo elegible a ENTRAR = roster que no está en el campo ahora mismo.
   const bench = useMemo(
     () => roster.filter((r) => !onFieldIds.has(r.playerId)),
@@ -146,11 +139,14 @@ export function QuickEntry({
       {mode === 'sub' ? (
         <ActorGrid
           title={subOut ? t('directo_entry.pick_in') : t('directo_entry.pick_out')}
-          players={(subOut ? bench.map((r) => rosterChip(r, t)) : fieldPlayers.map((p) => ({
-            id: p.playerId,
-            label: p.label,
-            dorsal: p.dorsal,
-          }))).filter((p) => p.id !== subOut)}
+          players={(subOut
+            ? bench.map((r) => rosterChip(r, t))
+            : fieldPlayers.map((p) => ({
+                id: p.playerId,
+                label: p.label,
+                dorsal: p.dorsal,
+              }))
+          ).filter((p) => p.id !== subOut)}
           onPick={pickSub}
           accent={accent}
           empty={subOut ? t('directo_entry.no_bench') : t('directo_entry.no_field_players')}
@@ -186,23 +182,35 @@ export function QuickEntry({
   );
 }
 
-function rosterChip(r: LineupRosterPlayer, t: (key: string) => string): { id: string; label: string; dorsal: number | null } {
+/** Chip de un jugador de la plantilla. Exportado: lo reusa la hoja de corrección. */
+export function rosterChip(
+  r: LineupRosterPlayer,
+  t: (key: string) => string,
+): { id: string; label: string; dorsal: number | null } {
   const name = `${r.firstName} ${r.lastName}`.trim();
   return { id: r.playerId, label: name || t('directo_entry.player'), dorsal: r.dorsal };
 }
 
-function ActorGrid({
+/**
+ * Rejilla de actores. Exportada porque la hoja de corrección elige jugador igual que
+ * la entrada rápida: una segunda rejilla sería la misma pantalla escrita dos veces.
+ * `disabled` es aditivo (por defecto false) y lo necesita el write-guard: sin red los
+ * chips SE VEN, atenuados, en vez de desaparecer.
+ */
+export function ActorGrid({
   title,
   players,
   onPick,
   accent,
   empty,
+  disabled = false,
 }: {
   title: string;
   players: { id: string; label: string; dorsal: number | null }[];
   onPick: (id: string) => void;
   accent: string;
   empty: string;
+  disabled?: boolean;
 }) {
   return (
     <View style={{ gap: 6 }}>
@@ -214,9 +222,10 @@ function ActorGrid({
           {players.map((p) => (
             <Pressable
               key={p.id}
+              disabled={disabled}
               onPress={() => onPick(p.id)}
               className="flex-row items-center gap-1.5 rounded-lg border border-zinc-200 px-2.5 py-2 active:opacity-70"
-              style={{ borderLeftWidth: 3, borderLeftColor: accent }}
+              style={{ borderLeftWidth: 3, borderLeftColor: accent, opacity: disabled ? 0.4 : 1 }}
             >
               {p.dorsal != null ? (
                 <Text className="text-xs font-bold text-zinc-400 tabular-nums">{p.dorsal}</Text>

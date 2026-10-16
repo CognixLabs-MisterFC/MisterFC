@@ -95,10 +95,7 @@ export function buildMatchEventRow(
   input: QuickEntryInput,
   ctx: BuildEventContext,
 ): QueuedMatchEventRow {
-  const { clockSeconds, period, displayMinute } = playerEventClockFields(
-    ctx.periods,
-    ctx.nowMs,
-  );
+  const { clockSeconds, period, displayMinute } = playerEventClockFields(ctx.periods, ctx.nowMs);
   const base = {
     id: ctx.id,
     event_id: ctx.eventId,
@@ -202,11 +199,7 @@ export type DrainResult =
   | { kind: 'permanent'; error: EventQueueError }
   | { kind: 'transient' };
 
-export function applyDrainResult(
-  queue: EventQueue,
-  id: string,
-  result: DrainResult,
-): EventQueue {
+export function applyDrainResult(queue: EventQueue, id: string, result: DrainResult): EventQueue {
   return queue.map((e) => {
     if (e.row.id !== id) return e;
     const attempts = e.attempts + 1;
@@ -240,10 +233,25 @@ export function pruneConfirmed(queue: EventQueue, serverIds: ReadonlySet<string>
 /** Reintentar a mano los `failed`: vuelven a `pending` (attempts a 0). */
 export function resetFailedToPending(queue: EventQueue): EventQueue {
   return queue.map((e) =>
-    e.status === 'failed'
-      ? { ...e, status: 'pending', attempts: 0, failure: undefined }
-      : e,
+    e.status === 'failed' ? { ...e, status: 'pending', attempts: 0, failure: undefined } : e,
   );
+}
+
+/**
+ * DESCARTAR una fila rechazada. Solo toca las `failed`: una `pending` o una
+ * `uploaded` no se descartan nunca —la primera todavía puede subir, la segunda ya
+ * está en el servidor y se poda con `pruneConfirmed` cuando vuelve confirmada—.
+ *
+ * Existe porque `resetFailedToPending` era la ÚNICA salida de una fila rechazada, y
+ * para un rechazo PERMANENTE (RLS, CHECK, un jugador que no estaba en el equipo ese
+ * día) reintentar no la va a arreglar: la fila se quedaba en la cola para siempre,
+ * con su aviso en pantalla y sin forma de quitarla.
+ *
+ * Que solo se puedan descartar las rechazadas es lo que hace que esto NO pueda
+ * perder un evento que iba a entrar.
+ */
+export function dropFailedEntry(queue: EventQueue, rowId: string): EventQueue {
+  return queue.filter((e) => !(e.status === 'failed' && e.row.id === rowId));
 }
 
 /**

@@ -11,6 +11,7 @@ import {
   overlayRows,
   pendingForDrain,
   pruneConfirmed,
+  dropFailedEntry,
   resetFailedToPending,
   upsertMatchEventFromClient,
   EMPTY_QUEUE,
@@ -208,6 +209,46 @@ describe('cola: transiciones puras', () => {
     expect(q[0]!.status).toBe('pending');
     expect(q[0]!.attempts).toBe(0);
     expect(q[0]!.failure).toBeUndefined();
+  });
+
+  // DESCARTE. Antes el reintento era la unica salida de una fila rechazada, y para un
+  // rechazo PERMANENTE (RLS, CHECK, un jugador que no estaba en el equipo ese dia)
+  // reintentar no la arregla: se quedaba en la cola para siempre.
+  it('dropFailedEntry se lleva la rechazada', () => {
+    let q = enqueueEvent(EMPTY_QUEUE, row1);
+    q = applyDrainResult(q, row1.id, { kind: 'permanent', error: 'player_not_in_team' });
+    q = dropFailedEntry(q, row1.id);
+    expect(q).toHaveLength(0);
+  });
+
+  // Lo que hace que esto NO pueda perder un evento que iba a entrar.
+  it('dropFailedEntry NO toca una pendiente, ni con el id correcto', () => {
+    const q = enqueueEvent(EMPTY_QUEUE, row1);
+    expect(q[0]!.status).toBe('pending');
+    expect(dropFailedEntry(q, row1.id)).toHaveLength(1);
+  });
+
+  it('dropFailedEntry NO toca una ya subida (esa la poda pruneConfirmed)', () => {
+    let q = enqueueEvent(EMPTY_QUEUE, row1);
+    q = applyDrainResult(q, row1.id, { kind: 'ok' });
+    expect(q[0]!.status).toBe('uploaded');
+    expect(dropFailedEntry(q, row1.id)).toHaveLength(1);
+  });
+
+  it('dropFailedEntry solo se lleva la del id pedido', () => {
+    let q = enqueueEvent(EMPTY_QUEUE, row1);
+    q = enqueueEvent(q, row2);
+    q = applyDrainResult(q, row1.id, { kind: 'permanent', error: 'forbidden' });
+    q = applyDrainResult(q, row2.id, { kind: 'permanent', error: 'forbidden' });
+    q = dropFailedEntry(q, row1.id);
+    expect(q).toHaveLength(1);
+    expect(q[0]!.row.id).toBe(row2.id);
+  });
+
+  it('un id que no esta en la cola no cambia nada', () => {
+    let q = enqueueEvent(EMPTY_QUEUE, row1);
+    q = applyDrainResult(q, row1.id, { kind: 'permanent', error: 'forbidden' });
+    expect(dropFailedEntry(q, 'no-existe')).toHaveLength(1);
   });
 });
 

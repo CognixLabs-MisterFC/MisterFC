@@ -6,7 +6,9 @@ import {
   canFinishMatch,
   computeScore,
   currentPeriod,
+  deleteMatchEventFromClient,
   endPeriodFromClient,
+  eventEditAvailability,
   eventScopedCacheKey,
   finishMatchFromClient,
   getLineupForEventFromClient,
@@ -21,10 +23,14 @@ import {
   resumeClockFromClient,
   startMatchFromClient,
   startNextPeriodFromClient,
+  updateMatchEventActorFromClient,
+  updateMatchEventMinuteFromClient,
   userCanRecordMatchFromClient,
   type ClockPeriod,
   type ClockWriteError,
   type DetailEvent,
+  type EventEditError,
+  type EventEditOutcome,
   type LineupRosterPlayer,
   type MatchDetail,
   type PeriodKind,
@@ -34,6 +40,7 @@ import {
 } from '@misterfc/core';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import { EventEditSheet } from '@/directo/event-edit-sheet';
 import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
@@ -50,8 +57,16 @@ import { BRAND } from '@/theme';
 
 /** Eventos que se listan en el timeline (misma familia que B2). */
 const LISTED_EVENTS = new Set([
-  'goal', 'penalty', 'assist', 'yellow_card', 'red_card',
-  'substitution', 'corner', 'foul', 'offside', 'shot',
+  'goal',
+  'penalty',
+  'assist',
+  'yellow_card',
+  'red_card',
+  'substitution',
+  'corner',
+  'foul',
+  'offside',
+  'shot',
 ]);
 
 /**
@@ -104,6 +119,26 @@ function errorKeyFor(e: ClockWriteError): string {
   }
 }
 
+/** Error de una corrección → clave de cadena. Hermano de `errorKeyFor` del reloj. */
+function editErrorKeyFor(e: EventEditError): string {
+  switch (e) {
+    case 'forbidden':
+      return 'directo_control.err_forbidden';
+    case 'not_editable':
+      return 'directo_edit.not_editable';
+    case 'not_found':
+      return 'directo_edit.errors.not_found';
+    case 'no_period':
+      return 'directo_edit.errors.no_period';
+    case 'player_not_in_team':
+      return 'directo_edit.errors.player_not_in_team';
+    case 'invalid':
+      return 'directo_edit.errors.invalid';
+    default:
+      return 'directo_edit.errors.generic';
+  }
+}
+
 export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
   const t = useTranslations('');
   const { activeClub, theme } = useApp();
@@ -131,6 +166,11 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
 
   const [busy, setBusy] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
+  // Hoja de corrección: qué fila se está corrigiendo, y su propio busy/error (los del
+  // reloj son otros: un fallo al corregir no debe pintar un error del cronómetro).
+  const [editing, setEditing] = useState<DetailEvent | null>(null);
+  const [editBusy, setEditBusy] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   const detail = data?.detail ?? null;
   const canRecord = !!data?.canRecord;
@@ -166,7 +206,10 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
 
   const run = useCallback(
     async (
-      fn: (sb: typeof supabase, input: unknown) => Promise<{ ok: true } | { ok: false; error: ClockWriteError }>,
+      fn: (
+        sb: typeof supabase,
+        input: unknown,
+      ) => Promise<{ ok: true } | { ok: false; error: ClockWriteError }>,
       input: unknown,
     ) => {
       if (!eventId || !editable) return;
@@ -213,8 +256,7 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
         : t('directo.minute', { minute: String(minute) })
       : t(`directo.phase.${periodLabelKey(phase, detail.periodCount)}`);
 
-  const periodLabel = (p: PeriodKind) =>
-    t(`directo_control.period.${periodLabelKey(p, cuantos)}`);
+  const periodLabel = (p: PeriodKind) => t(`directo_control.period.${periodLabelKey(p, cuantos)}`);
 
   // O2-9b — TIMELINE y MARCADOR OPTIMISTAS: eventos del servidor + los de la cola
   // (pending/uploaded, sin failed), deduplicados por uuid (mergeLiveEvents), y el
@@ -238,9 +280,53 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
   const mergedEvents = mergeLiveEvents(detail.events, overlayEvents);
   const score = computeScore(mergedEvents);
   const serverIds = new Set(detail.events.map((e) => e.id));
-  const optimisticIds = new Set(
-    queue.overlay.map((r) => r.id).filter((id) => !serverIds.has(id)),
-  );
+  const optimisticIds = new Set(queue.overlay.map((r) => r.id).filter((id) => !serverIds.has(id)));
+
+  // ── CORRECCIÓN de un evento ya subido (borrar · minuto · actor) ────────────
+  // Escritura RLS DIRECTA y ONLINE, como el reloj: no se encola. La regla de si se
+  // puede está en core (`eventEditAvailability`), no aquí.
+  const editAvailability = eventEditAvailability({
+    canRecord,
+    online,
+    status: detail.status,
+  });
+
+  const correccion = async (fn: () => Promise<EventEditOutcome>) => {
+    setEditBusy(true);
+    setEditError(null);
+    const r = await fn();
+    setEditBusy(false);
+    if (!r.ok) {
+      setEditError(editErrorKeyFor(r.error));
+      return;
+    }
+    // La fila cambió en el servidor: se vuelve a leer en vez de parchear en local (el
+    // timeline y el marcador se DERIVAN de los eventos, no se sincronizan).
+    setEditing(null);
+    await refresh();
+  };
+
+  const onDeleteEvent = (rowId: string) =>
+    void correccion(() => deleteMatchEventFromClient(supabase, { event_id: eventId, id: rowId }));
+
+  const onEventMinute = (rowId: string, minute: number) =>
+    void correccion(() =>
+      updateMatchEventMinuteFromClient(supabase, {
+        event_id: eventId,
+        id: rowId,
+        display_minute: minute,
+      }),
+    );
+
+  const onEventActor = (rowId: string, actor: { playerId?: string; rivalDorsal?: number }) =>
+    void correccion(() =>
+      updateMatchEventActorFromClient(supabase, {
+        event_id: eventId,
+        id: rowId,
+        player_id: actor.playerId,
+        rival_dorsal: actor.rivalDorsal,
+      }),
+    );
 
   // Registrar un evento: uuid + reloj CONGELADOS en el toque → fila completa →
   // encolar (optimista + persistente). La subida idempotente la hace el hook.
@@ -269,7 +355,10 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
           style={{ borderLeftWidth: 4, borderLeftColor: accent }}
         >
           <View className="flex-row items-center justify-center gap-2">
-            <View className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: detail.teamColor || accent }} />
+            <View
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ backgroundColor: detail.teamColor || accent }}
+            />
             <Text className="text-xs text-zinc-400" numberOfLines={1}>
               {detail.teamName} · {detail.categoryName}
             </Text>
@@ -291,7 +380,9 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
           </View>
           <View className="mt-2 flex-row items-center justify-center gap-2">
             {isLive ? (
-              <View className={`rounded-full px-2 py-0.5 ${running ? 'bg-red-500' : 'bg-amber-500'}`}>
+              <View
+                className={`rounded-full px-2 py-0.5 ${running ? 'bg-red-500' : 'bg-amber-500'}`}
+              >
                 <Text className="text-[10px] font-bold text-white">
                   {running ? t('directo.live') : t('directo_control.paused')}
                 </Text>
@@ -336,7 +427,9 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
                   label={t('directo_control.start_next', { period: periodLabel(next.period) })}
                   accent={accent}
                   disabled={!editable}
-                  onPress={() => run(startNextPeriodFromClient, { event_id: eventId, period: next.period })}
+                  onPress={() =>
+                    run(startNextPeriodFromClient, { event_id: eventId, period: next.period })
+                  }
                   primary
                 />
               ) : running ? (
@@ -370,7 +463,9 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
                       <Pressable
                         key={d}
                         disabled={!editable}
-                        onPress={() => run(adjustClockFromClient, { event_id: eventId, delta_seconds: d })}
+                        onPress={() =>
+                          run(adjustClockFromClient, { event_id: eventId, delta_seconds: d })
+                        }
                         className="rounded-lg border border-zinc-200 px-2.5 py-1.5 active:opacity-70"
                         style={{ opacity: editable ? 1 : 0.4 }}
                       >
@@ -402,7 +497,9 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
                 label={t('directo_control.go_post_match')}
                 accent={accent}
                 disabled={false}
-                onPress={() => router.push({ pathname: '/staff/post-partido', params: { eventId } })}
+                onPress={() =>
+                  router.push({ pathname: '/staff/post-partido', params: { eventId } })
+                }
                 primary
               />
               <ConfirmBtn
@@ -437,27 +534,88 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
           </View>
         ) : null}
         {queue.failedCount > 0 ? (
-          <FailedBanner count={queue.failedCount} onRetry={queue.retryFailed} />
+          <FailedBanner
+            count={queue.failedCount}
+            onRetry={queue.retryFailed}
+            onDiscard={queue.discardFailed}
+          />
         ) : null}
 
-        {/* TIMELINE en vivo: servidor + cola, deduplicado por uuid. */}
-        <EventsTimeline events={mergedEvents} optimisticIds={optimisticIds} />
+        {/* TIMELINE en vivo: servidor + cola, deduplicado por uuid. Tocar una fila YA
+            SUBIDA abre la hoja de corrección; las de la cola no son pulsables. */}
+        <EventsTimeline
+          events={mergedEvents}
+          optimisticIds={optimisticIds}
+          onPick={(e) => {
+            setEditError(null);
+            setEditing(e);
+          }}
+        />
+
+        {editing ? (
+          <EventEditSheet
+            evento={{
+              id: editing.id,
+              type: editing.type,
+              side: editing.side,
+              displayMinute: editing.displayMinute ?? Math.floor(editing.clockSeconds / 60),
+            }}
+            roster={roster}
+            availability={editAvailability}
+            accent={accent}
+            busy={editBusy}
+            errorKey={editError}
+            onDelete={() => onDeleteEvent(editing.id)}
+            onMinute={(minute) => onEventMinute(editing.id, minute)}
+            onActor={(actor) => onEventActor(editing.id, actor)}
+            onClose={() => {
+              setEditing(null);
+              setEditError(null);
+            }}
+          />
+        ) : null}
       </KeyboardScrollView>
     </View>
   );
 }
 
 /** Aviso de eventos RECHAZADOS por el servidor al subir (RLS/CHECK): no se pierden. */
-function FailedBanner({ count, onRetry }: { count: number; onRetry: () => void }) {
+/**
+ * Aviso de filas RECHAZADAS, con sus dos salidas. Antes solo tenia una, reintentar, y
+ * para un rechazo PERMANENTE (RLS, CHECK, un jugador que no estaba en el equipo ese
+ * dia) reintentar no la arregla: la fila se quedaba en la cola para siempre, con este
+ * aviso en pantalla y sin forma de quitarla.
+ *
+ * `onDiscard` se las lleva TODAS las rechazadas: el aviso cuenta, no enumera, asi que
+ * un descarte por fila necesitaria una pantalla que hoy no existe. `dropFailedEntry`
+ * (core) toca una sola, y solo si esta `failed`.
+ */
+function FailedBanner({
+  count,
+  onRetry,
+  onDiscard,
+}: {
+  count: number;
+  onRetry: () => void;
+  onDiscard: () => void;
+}) {
   const t = useTranslations('');
   return (
     <View className="flex-row items-center justify-between rounded-xl bg-red-50 px-4 py-2">
       <Text className="flex-1 text-xs text-red-600">
         {t('directo_entry.failed', { count: String(count) })}
       </Text>
-      <Pressable onPress={onRetry} className="rounded-lg bg-red-600 px-3 py-1.5 active:opacity-70">
-        <Text className="text-xs font-semibold text-white">{t('directo_entry.retry')}</Text>
-      </Pressable>
+      <View className="flex-row items-center gap-2">
+        <Pressable onPress={onDiscard} className="px-2 py-1.5 active:opacity-60">
+          <Text className="text-xs font-semibold text-red-600">{t('directo_entry.discard')}</Text>
+        </Pressable>
+        <Pressable
+          onPress={onRetry}
+          className="rounded-lg bg-red-600 px-3 py-1.5 active:opacity-70"
+        >
+          <Text className="text-xs font-semibold text-white">{t('directo_entry.retry')}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -466,9 +624,16 @@ function FailedBanner({ count, onRetry }: { count: number; onRetry: () => void }
 function EventsTimeline({
   events,
   optimisticIds,
+  onPick,
 }: {
   events: DetailEvent[];
   optimisticIds: Set<string>;
+  /**
+   * Abrir la hoja de corrección de una fila. Solo llega para las que YA ESTÁN en el
+   * servidor: una fila `pending` no se puede corregir porque todavía no existe allí,
+   * y una `failed` no se corrige, se descarta.
+   */
+  onPick: (e: DetailEvent) => void;
 }) {
   const t = useTranslations('');
   const listed = events
@@ -486,9 +651,16 @@ function EventsTimeline({
           const min = e.displayMinute ?? Math.floor(e.clockSeconds / 60);
           const pending = optimisticIds.has(e.id);
           return (
-            <View key={e.id} className="flex-row items-center gap-3 border-b border-zinc-100 py-2">
+            <Pressable
+              key={e.id}
+              disabled={pending}
+              onPress={() => onPick(e)}
+              className="flex-row items-center gap-3 border-b border-zinc-100 py-2 active:opacity-60"
+            >
               <Text className="w-8 text-right text-sm text-zinc-400 tabular-nums">{`${min}'`}</Text>
-              <Text className="text-sm font-medium text-[#0F1B2E]">{t(`directo.event.${e.type}`)}</Text>
+              <Text className="text-sm font-medium text-[#0F1B2E]">
+                {t(`directo.event.${e.type}`)}
+              </Text>
               <Text className="flex-1 text-sm text-zinc-500" numberOfLines={1}>
                 {e.side === 'rival' ? `${t('directo.event.rival')} ${e.label}` : e.label}
               </Text>
@@ -499,7 +671,7 @@ function EventsTimeline({
                   </Text>
                 </View>
               ) : null}
-            </View>
+            </Pressable>
           );
         })
       )}
@@ -543,9 +715,7 @@ function Btn({
         opacity: disabled ? 0.4 : 1,
       }}
     >
-      <Text
-        className={`text-center text-sm font-semibold ${bg ? 'text-white' : 'text-[#0F1B2E]'}`}
-      >
+      <Text className={`text-center text-sm font-semibold ${bg ? 'text-white' : 'text-[#0F1B2E]'}`}>
         {label}
       </Text>
     </Pressable>
@@ -584,7 +754,9 @@ function ConfirmBtn({
         opacity: disabled ? 0.4 : 1,
       }}
     >
-      <Text className={`text-center text-sm font-semibold ${armed ? 'text-red-600' : 'text-[#0F1B2E]'}`}>
+      <Text
+        className={`text-center text-sm font-semibold ${armed ? 'text-red-600' : 'text-[#0F1B2E]'}`}
+      >
         {armed ? confirmLabel : label}
       </Text>
     </Pressable>
