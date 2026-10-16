@@ -25,7 +25,7 @@ Les dades s'utilitzen per a atendre la sol·licitud i, si és el cas, organitzar
 
 **Base jurídica**
 
-La base jurídica indicada per a este tractament és l'aplicació, a petició de la persona interessada, de mesures precontractuals, d'acord amb l'article 6.1.b del Reglament general de protecció de dades (RGPD).
+La base jurídica d'este tractament és l'aplicació, a petició de la persona interessada, de mesures precontractuals, d'acord amb l'article 6.1.b del Reglament general de protecció de dades (RGPD).
 
 **Conservació**
 

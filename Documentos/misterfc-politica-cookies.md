@@ -10,7 +10,7 @@ Las cookies son pequeños archivos que un sitio web puede almacenar en el navega
 
 ## 2. Cookies utilizadas
 
-MisterFC utiliza cookies propias de carácter técnico o funcional. No se utilizan cookies publicitarias ni de perfilado. El inventario comunicado es el siguiente:
+MisterFC utiliza cookies propias de carácter técnico o funcional. No se utilizan cookies publicitarias ni de perfilado. El sitio web utiliza las siguientes cookies:
 
 | Cookie                                                                    | Finalidad                                                                     | Duración                                              |
 | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------- |

@@ -10,7 +10,7 @@ Cookies are small files that a website may store in the user's browser or device
 
 ## 2. Cookies used
 
-MisterFC uses its own technical or functional cookies. No advertising or profiling cookies are used. The reported inventory is as follows:
+MisterFC uses its own technical or functional cookies. No advertising or profiling cookies are used. The website uses the following cookies:
 
 | Cookie                                                                    | Purpose                                                                | Duration                                                    |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------- |

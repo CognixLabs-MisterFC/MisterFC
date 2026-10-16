@@ -25,7 +25,7 @@ Los datos se utilizan para atender la solicitud y, en su caso, organizar y reali
 
 **Base jurídica**
 
-La base jurídica indicada para este tratamiento es la aplicación, a petición de la persona interesada, de medidas precontractuales, conforme al artículo 6.1.b del Reglamento General de Protección de Datos (RGPD).
+La base jurídica de este tratamiento es la aplicación, a petición de la persona interesada, de medidas precontractuales, conforme al artículo 6.1.b del Reglamento General de Protección de Datos (RGPD).
 
 **Conservación**
 

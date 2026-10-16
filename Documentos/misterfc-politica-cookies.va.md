@@ -10,7 +10,7 @@ Les galetes (cookies) són xicotets arxius que un lloc web pot emmagatzemar en e
 
 ## 2. Galetes utilitzades
 
-MisterFC utilitza galetes pròpies de caràcter tècnic o funcional. No s'utilitzen galetes publicitàries ni d'elaboració de perfils. L'inventari comunicat és el següent:
+MisterFC utilitza galetes pròpies de caràcter tècnic o funcional. No s'utilitzen galetes publicitàries ni d'elaboració de perfils. El lloc web utilitza les galetes següents:
 
 | Galeta                                                                    | Finalitat                                                                  | Duració                                             |
 | ------------------------------------------------------------------------- | -------------------------------------------------------------------------- | --------------------------------------------------- |

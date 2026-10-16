@@ -25,7 +25,7 @@ The data is used to handle the request and, where applicable, to arrange and giv
 
 **Legal basis**
 
-The legal basis stated for this processing is the taking of pre-contractual steps at the request of the data subject, under Article 6(1)(b) of the General Data Protection Regulation (GDPR).
+The legal basis for this processing is the taking of pre-contractual steps at the request of the data subject, under Article 6(1)(b) of the General Data Protection Regulation (GDPR).
 
 **Retention**
 
