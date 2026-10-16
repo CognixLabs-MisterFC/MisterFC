@@ -22,7 +22,7 @@ MisterFC utiliza cookies propias de carácter técnico o funcional. No se utiliz
 
 ## 3. Diferencia entre la web pública y la aplicación
 
-En las páginas informativas públicas (portada, funciones, seguridad y solicitud de demostración), las personas que no han iniciado sesión reciben únicamente la cookie `NEXT_LOCALE` para recordar el idioma. Las demás cookies del inventario se utilizan al acceder a la aplicación.
+En las páginas informativas públicas (portada, funciones, seguridad y solicitud de demostración), las personas que no han iniciado sesión reciben únicamente la cookie `NEXT_LOCALE` para recordar el idioma. Las demás cookies de la tabla se utilizan al acceder a la aplicación.
 
 ## 4. Analítica de visitas
 

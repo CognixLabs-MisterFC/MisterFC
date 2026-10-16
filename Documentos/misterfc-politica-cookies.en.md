@@ -22,7 +22,7 @@ MisterFC uses its own technical or functional cookies. No advertising or profili
 
 ## 3. Difference between the public website and the application
 
-On the public information pages (home, features, security and demonstration request), people who have not signed in receive only the `NEXT_LOCALE` cookie, to remember the language. The other cookies in the inventory are used when accessing the application.
+On the public information pages (home, features, security and demonstration request), people who have not signed in receive only the `NEXT_LOCALE` cookie, to remember the language. The other cookies in the table are used when accessing the app.
 
 ## 4. Visitor analytics
 

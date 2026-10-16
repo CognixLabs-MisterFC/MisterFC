@@ -22,7 +22,7 @@ MisterFC utilitza galetes pròpies de caràcter tècnic o funcional. No s'utilit
 
 ## 3. Diferència entre la web pública i l'aplicació
 
-En les pàgines informatives públiques (portada, funcions, seguretat i sol·licitud de demostració), les persones que no han iniciat sessió reben únicament la galeta `NEXT_LOCALE` per a recordar l'idioma. La resta de galetes de l'inventari s'utilitzen en accedir a l'aplicació.
+En les pàgines informatives públiques (portada, funcions, seguretat i sol·licitud de demostració), les persones que no han iniciat sessió reben únicament la galeta `NEXT_LOCALE` per a recordar l'idioma. La resta de galetes de la taula s'utilitzen en accedir a l'aplicació.
 
 ## 4. Analítica de visites
 
