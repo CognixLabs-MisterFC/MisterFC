@@ -40,7 +40,7 @@ export type DrainResult = {
 export async function drainPushQueue(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   cap: number,
-  opts: { onlyPerishable?: boolean } = {},
+  opts: { onlyPerishable?: boolean; dedupePrefix?: string } = {},
 ): Promise<DrainResult> {
   const result: DrainResult = {
     scanned: 0,
@@ -63,6 +63,10 @@ export async function drainPushQueue(
   // El cron de cada minuto mira SOLO lo que caduca: es a lo que corre prisa, y así una
   // cola larga de recordatorios no le quita el sitio a un gol.
   if (opts.onlyPerishable) q = q.in('type', perishablePushTypes());
+  // ACOTADO A UN AVISO (envío eager): el llamante pide "manda las filas de ESTE gol,
+  // ya". El prefijo lo compone core (`goalDedupeLikePrefix`), no se escribe aquí.
+  // `like` sin comodines del llamante: el prefijo se usa tal cual + '%'.
+  if (opts.dedupePrefix) q = q.like('dedupe_key', `${opts.dedupePrefix}%`);
   const { data: pendings } = await q.order('created_at', { ascending: true }).limit(cap);
 
   if (!pendings || pendings.length === 0) return result;

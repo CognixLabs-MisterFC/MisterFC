@@ -16,6 +16,7 @@ import {
   createSupabaseAdminClient,
   computeScore,
   formatGoalPush,
+  goalDedupeBasePrefix,
   resolveGoalRecipients,
   type ScoreEvent,
 } from '@misterfc/core';
@@ -106,7 +107,9 @@ export async function emitGoalPush(params: {
           tag: `goal:${params.eventId}`,
         },
         // dedupe por fila de gol: reintentos idempotentes, cada gol notifica una vez.
-        dedupe_base_prefix: `goal:${params.goalRowId}`,
+        // El formato sale de core porque el trigger `notify_goal` escribe el MISMO en
+        // SQL: si los dos no coinciden carácter a carácter, el gol avisa dos veces.
+        dedupe_base_prefix: goalDedupeBasePrefix(params.goalRowId),
       },
     );
   } catch {

@@ -18,8 +18,18 @@ export type {
   NotificationFinalStatus,
 } from './push-drain';
 
-export { formatGoalPush, resolveGoalRecipients } from './goal-push';
-export type { GoalPushInput, GoalPushMessage } from './goal-push';
+export {
+  formatGoalPush,
+  goalDedupeBasePrefix,
+  goalDedupeLikePrefix,
+  goalPushRequestDecision,
+  resolveGoalRecipients,
+} from './goal-push';
+export type {
+  GoalPushInput,
+  GoalPushMessage,
+  GoalPushRequestDecision,
+} from './goal-push';
 
 export { mergeChannelOutcomes, sendChannelIsolated } from './multi-channel';
 export type { ChannelResult } from './multi-channel';
