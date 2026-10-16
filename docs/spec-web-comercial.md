@@ -553,12 +553,12 @@ Antes de capturar hay que revisar los datos del club de test en producción. Des
 - Playwright contra producción, con cuentas del club de test: dirección, entrenador y familia. Las cuentas se crean en la preparación de §9.3, no antes.
 - Resoluciones 1440×900 y 390×844, castellano, modo claro. Las versiones en valenciano e inglés, si las pantallas lo permiten; si no, se usa la de castellano.
 - Se guardan en `apps/web/public/web/capturas/` y se pintan con `next/image`. Mockups de portátil y móvil.
-- Hasta tener las capturas, cada sitio lleva un hueco con marco, igual que en NIDO.
+- Ya están (2026-10-16): en `public/web/capturas/` en WebP, declaradas en `apps/web/src/components/web/captures.ts`. Las web con versión a 390×844 se enseñan en un marco de móvil en pantallas pequeñas; C7 y C11 no la tienen y se enseña la de escritorio.
 
 | #   | Pantalla                           | Cuenta     | Ruta                                    | Dónde se usa            |
 | --- | ---------------------------------- | ---------- | --------------------------------------- | ----------------------- |
 | C1  | Dashboard de dirección             | Dirección  | `/es/dashboard`                         | Hero (portátil), §4.4-5 |
-| C3  | Planificador semanal de sesiones   | Entrenador | `/es/sesiones` (vista semana)           | §4.4-1, Funciones B     |
+| C3  | Sesión por bloques (editor)        | Entrenador | `/es/sesiones/{id}/editar` (bloques)    | §4.4-1, Funciones B     |
 | C4  | Ejercicio con diagrama             | Entrenador | `/es/ejercicios/{id}`                   | Funciones B             |
 | C5  | Editor de alineación               | Entrenador | `/es/convocatorias/{id}/alineacion`     | §4.4-2, Funciones C     |
 | C7  | Informe de desarrollo con gráficas | Entrenador | `/es/jugadores/{id}/informes/{periodo}` | §4.4-4, Funciones D     |

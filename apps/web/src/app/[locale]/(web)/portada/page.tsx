@@ -19,7 +19,7 @@ import {
   Users,
 } from 'lucide-react';
 import { isMarketingSiteOn } from '@misterfc/core';
-import { CapturePlaceholder } from '@/components/web/capture-placeholder';
+import { CaptureFrame } from '@/components/web/capture-frame';
 import { captureLabels } from '@/components/web/captures';
 import { DemoButton } from '@/components/web/demo-button';
 import { StoreBadges } from '@/components/web/store-badges';
@@ -38,8 +38,8 @@ type Props = { params: Promise<{ locale: string }> };
  * oculto) · preguntas frecuentes · CTA final. «Solicitar demo» sale 5 veces: cabecera,
  * hero, tras funciones, tras seguridad y al final (§3.4).
  *
- * Las capturas aún no existen: cada sitio lleva su hueco con marco y el código de la
- * lista de capturas (§9.4 y §9.5).
+ * Cada sitio lleva su captura en un marco de portátil o de móvil (`CaptureFrame`), con
+ * el código de la lista de capturas (§9.4 y §9.5).
  *
  * APAGADA: antes de la web comercial, `/{idioma}/portada` caía en `[slug]` como un slug
  * sin club. Esta carpeta estática le gana a `[slug]`, así que se delega en esa misma
@@ -140,10 +140,18 @@ export default async function PortadaPage({ params }: Props) {
             <p className="text-sm text-zinc-600">{t('hero.sinCoste')}</p>
           </div>
           <div className="relative mx-auto w-full max-w-xl pb-6 pr-10 sm:pr-16">
-            <CapturePlaceholder device="laptop" {...capture('C1')} />
-            <CapturePlaceholder
+            <CaptureFrame
+              device="laptop"
+              {...capture('C1')}
+              adaptive={false}
+              priority
+              sizes="(min-width: 1024px) 520px, 85vw"
+            />
+            <CaptureFrame
               device="phone"
               {...capture('M1')}
+              priority
+              sizes="140px"
               className="absolute bottom-0 right-0 w-[24%] min-w-[84px]"
             />
           </div>
@@ -195,9 +203,14 @@ export default async function PortadaPage({ params }: Props) {
           {funciones.map((f) => (
             <li key={f.n} className="flex flex-col gap-4">
               <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-zinc-50 p-4">
-                <CapturePlaceholder
+                <CaptureFrame
                   device={f.device}
                   {...f.cap}
+                  sizes={
+                    f.device === 'phone'
+                      ? '120px'
+                      : '(min-width: 1024px) 300px, (min-width: 768px) 40vw, 80vw'
+                  }
                   className={f.device === 'phone' ? 'w-[28%]' : 'w-[82%]'}
                 />
               </div>

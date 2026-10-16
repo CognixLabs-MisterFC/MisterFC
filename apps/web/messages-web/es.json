@@ -130,9 +130,8 @@
     "altGooglePlay": "Disponible en Google Play"
   },
   "capturas": {
-    "pendiente": "Captura pendiente",
     "C1": "Dashboard de dirección",
-    "C3": "Planificador semanal de sesiones",
+    "C3": "Sesión de entrenamiento por bloques",
     "C4": "Ejercicio con diagrama",
     "C5": "Editor de alineación",
     "C7": "Informe de desarrollo",
