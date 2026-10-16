@@ -5811,6 +5811,7 @@
   },
   "legal_publico": {
     "solo_castellano": "Este documento solo existe en castellano.",
+    "pendiente_revision": "Pendiente: revisión de este texto por un abogado",
     "perfil": {
       "title": "Documentos legales",
       "note": "Los documentos de MisterFC. Lo que aceptaste de tu club está más arriba, en «Permisos».",

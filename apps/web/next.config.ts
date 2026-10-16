@@ -13,9 +13,19 @@ const nextConfig: NextConfig = {
     '/[locale]/legal/privacidad': [
       './src/content/legal/privacidad.md',
       './src/content/legal/privacidad-web.md',
+      './src/content/legal/privacidad-web.en.md',
+      './src/content/legal/privacidad-web.va.md',
     ],
-    '/[locale]/legal/aviso-legal': ['./src/content/legal/aviso-legal.md'],
-    '/[locale]/legal/cookies': ['./src/content/legal/cookies.md'],
+    '/[locale]/legal/aviso-legal': [
+      './src/content/legal/aviso-legal.md',
+      './src/content/legal/aviso-legal.en.md',
+      './src/content/legal/aviso-legal.va.md',
+    ],
+    '/[locale]/legal/cookies': [
+      './src/content/legal/cookies.md',
+      './src/content/legal/cookies.en.md',
+      './src/content/legal/cookies.va.md',
+    ],
     '/[locale]/legal/eliminacion-cuenta': ['./src/content/legal/eliminacion-cuenta.md'],
     '/[locale]/legal/terminos': ['./src/content/legal/terminos.md'],
     '/[locale]/legal/desistimiento': ['./src/content/legal/desistimiento.md'],

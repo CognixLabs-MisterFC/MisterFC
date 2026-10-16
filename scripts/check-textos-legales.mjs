@@ -57,6 +57,8 @@ import {
   SERVIDOS_APP,
   SERVIDOS_WEB,
   SERVIDA_REL,
+  TRADUCIDOS,
+  ficherosDe,
 } from './textos-legales.mjs';
 
 const LEGAL_CONTENT_TS = join(ROOT, 'apps/web/src/lib/legal-content.ts');
@@ -90,19 +92,21 @@ if (enMaestra === null) {
   // 1 — cada maestra declarada existe y tiene contenido.
   let comprobados = 0;
   for (const par of SERVIDOS) {
-    const ruta = join(MAESTRA_DIR, par.maestra);
-    if (!existsSync(ruta)) {
-      errores.push(
-        `falta la copia maestra Documentos/${par.maestra} (sirve a '${par.servido}').`,
-      );
-      continue;
-    }
-    comprobados += 1;
-    if (statSync(ruta).size === 0) {
-      errores.push(
-        `Documentos/${par.maestra} está VACÍO. El build lo copiaría igual y la página ` +
-          `legal '${par.servido}' saldría en blanco, sin un solo error.`,
-      );
+    for (const f of ficherosDe(par)) {
+      const ruta = join(MAESTRA_DIR, f.maestra);
+      if (!existsSync(ruta)) {
+        errores.push(
+          `falta la copia maestra Documentos/${f.maestra} (sirve a '${par.servido}', ${f.idioma}).`,
+        );
+        continue;
+      }
+      comprobados += 1;
+      if (statSync(ruta).size === 0) {
+        errores.push(
+          `Documentos/${f.maestra} está VACÍO. El build lo copiaría igual y la página ` +
+            `legal '${par.servido}' (${f.idioma}) saldría en blanco, sin un solo error.`,
+        );
+      }
     }
   }
 
@@ -116,7 +120,9 @@ if (enMaestra === null) {
   }
 
   // 2 — todo .md de la maestra está declarado, se sirva o no.
-  const declaradas = new Set(PARES.map((p) => p.maestra));
+  const declaradas = new Set(
+    PARES.flatMap((p) => (p.servido ? ficherosDe(p) : [p]).map((f) => f.maestra)),
+  );
   const huerfanas = enMaestra.filter((f) => !declaradas.has(f));
   if (huerfanas.length > 0) {
     errores.push(
@@ -146,6 +152,40 @@ if (existsSync(LEGAL_CONTENT_TS)) {
           `escribiría ${SERVIDA_REL}/${slug}.md y readLegalDoc('${slug}') reventaría ` +
           `al construir la web.`,
       );
+    }
+  }
+
+  // 3b — las traducciones que conoce la web son las del censo, ni una más ni una menos.
+  // Una de más: readLegalDoc busca un .md que el generador no escribe y la página
+  // revienta. Una de menos: la traducción se genera y nadie la sirve, y la página
+  // sigue en castellano diciendo «solo existe en castellano».
+  const mapa = /export const LEGAL_TRADUCCIONES[^=]*=\s*\{([^}]*)\}/.exec(fuente)?.[1];
+  if (mapa === undefined) {
+    errores.push(
+      `no se pudo leer LEGAL_TRADUCCIONES en apps/web/src/lib/legal-content.ts (¿cambió ` +
+        `de forma?). Sin eso no se sabe qué idiomas sirve cada texto.`,
+    );
+  } else {
+    const enWeb = new Map(
+      [...mapa.matchAll(/'?([\w-]+)'?\s*:\s*\[([^\]]*)\]/g)].map((m) => [
+        m[1],
+        [...m[2].matchAll(/'([^']+)'/g)]
+          .map((x) => x[1])
+          .sort()
+          .join(','),
+      ]),
+    );
+    const enCenso = new Map(TRADUCIDOS.map((t) => [t.slug, [...t.idiomas].sort().join(',')]));
+    for (const slug of new Set([...enWeb.keys(), ...enCenso.keys()])) {
+      if (enWeb.get(slug) !== enCenso.get(slug)) {
+        errores.push(
+          `traducciones de '${slug}': el censo dice [${enCenso.get(slug) ?? ''}] y ` +
+            `LEGAL_TRADUCCIONES dice [${enWeb.get(slug) ?? ''}]. Tienen que coincidir.`,
+        );
+      }
+    }
+    if (TRADUCIDOS.length > 0 && enWeb.size === 0) {
+      errores.push(`LEGAL_TRADUCCIONES está vacío y el censo declara traducciones.`);
     }
   }
 } else {
@@ -223,10 +263,10 @@ if (existsSync(TURBO_JSON)) {
 // 8 — cada texto servido viaja en el trace de despliegue.
 if (existsSync(NEXT_CONFIG)) {
   const conf = readFileSync(NEXT_CONFIG, 'utf8');
-  for (const par of SERVIDOS) {
-    if (!conf.includes(`src/content/legal/${par.servido}.md`)) {
+  for (const fichero of SERVIDOS.flatMap((p) => ficherosDe(p).map((f) => f.servidoFichero))) {
+    if (!conf.includes(`src/content/legal/${fichero}`)) {
       errores.push(
-        `'${par.servido}.md' no aparece en outputFileTracingIncludes (next.config.ts). ` +
+        `'${fichero}' no aparece en outputFileTracingIncludes (next.config.ts). ` +
           `El .md no viajaría al despliegue: la página va bien en local y da 500 en ` +
           `producción al leerlo.`,
       );
@@ -440,9 +480,7 @@ const EXCEPCIONES = [
  * mirar, no una de menos que pasa callada.
  */
 function sinComentarios(src) {
-  return src
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(^|[^:])\/\/.*$/gm, '$1');
+  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
 }
 
 const EXT_CODIGO = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs']);

@@ -1,6 +1,6 @@
 # Aviso legal — MisterFC
 
-Última actualización: 15 de octubre de 2026
+Última actualización: 16 de octubre de 2026
 
 ---
 
@@ -10,43 +10,43 @@ En cumplimiento del artículo 10 de la Ley 34/2002, de 11 de julio, de servicios
 
 - Titular: Cognix Labs, S.L.U.
 - NIF: B93996122
-- Domicilio: Calle Actor Antonio Ferrandis, 10 — 46013 Valencia (España)
+- Domicilio: Calle Actor Antonio Ferrandis, 10, 46013 Valencia, España.
 - Correo electrónico: info.cognixlabs@gmail.com
-- Datos registrales: inscrita en el Registro Mercantil de Valencia, sección 8.ª, hoja V-237563, inscripción 1.ª, de 8 de septiembre de 2026.
+- Datos registrales: Registro Mercantil de Valencia, sección 8.ª, hoja V-237563, inscripción 1.ª, de 8 de septiembre de 2026.
 
-## 2. Objeto
+## 2. Objeto del sitio web
 
-El sitio web `misterfc.es` informa sobre MisterFC, una plataforma de gestión para clubes de fútbol base, y permite a los clubes solicitar una demostración.
+El sitio web `misterfc.es` ofrece información sobre MisterFC, una plataforma de gestión para clubes de fútbol base, y permite a los clubes solicitar una demostración.
 
-El enlace «Acceso clubes» lleva a la aplicación MisterFC. Su uso se rige por sus propios [Términos y Condiciones](/es/legal/terminos) y por la [Política de Privacidad](/es/legal/privacidad).
+El enlace «Acceso clubes» dirige a la aplicación MisterFC. El uso de la aplicación se rige por las condiciones y la política de privacidad aplicables a dicho servicio.
 
 ## 3. Condiciones de uso
 
-El acceso a las páginas informativas no requiere registro. Al utilizarlas, el usuario se compromete a:
+El acceso a las páginas informativas no requiere registro. La persona usuaria se compromete a:
 
-- hacer un uso lícito del sitio web, conforme a la ley, a la buena fe y a este aviso legal;
-- no dañar, inutilizar o sobrecargar el sitio web, ni introducir programas o código malicioso;
-- facilitar datos veraces en el formulario de solicitud de demo.
+- utilizar el sitio web de forma lícita y de acuerdo con la legislación aplicable, la buena fe y este aviso legal;
+- no dañar, inutilizar, sobrecargar ni deteriorar el sitio web, sus sistemas o redes, ni introducir código o programas maliciosos;
+- facilitar información veraz cuando utilice el formulario de solicitud de demostración.
 
 ## 4. Responsabilidad
 
-Cognix Labs, S.L.U. procura que la información del sitio web sea correcta y esté actualizada, pero no garantiza la ausencia de errores ni la disponibilidad ininterrumpida del sitio. No responde de los daños que pudieran derivarse de interrupciones del servicio, errores en el contenido o virus que no haya podido evitar con medidas razonables.
+Cognix Labs, S.L.U. procura que la información publicada en este sitio web sea correcta y esté actualizada. No obstante, no garantiza que los contenidos estén permanentemente libres de errores ni que el sitio web esté disponible de forma ininterrumpida. Se aplicarán las responsabilidades que correspondan conforme a la legislación vigente.
 
-El sitio contiene enlaces a sitios de terceros, como App Store y Google Play. Cognix Labs, S.L.U. no controla esos sitios ni responde de su contenido.
+El sitio web puede incluir enlaces a sitios de terceros, como App Store o Google Play. Cognix Labs, S.L.U. no controla esos sitios externos y no asume responsabilidad por sus contenidos o políticas, sin perjuicio de las obligaciones legales que pudieran resultar aplicables.
 
 ## 5. Propiedad intelectual e industrial
 
-Los contenidos del sitio web —textos, diseño, logotipos, imágenes y software— son titularidad de Cognix Labs, S.L.U. o de sus licenciantes. No se permite su reproducción, distribución o transformación sin autorización, salvo para uso personal y privado.
+Salvo que se indique otra titularidad, los contenidos del sitio web —incluidos textos, diseño, logotipos, imágenes y software— pertenecen a Cognix Labs, S.L.U. o se utilizan con autorización de sus titulares. No podrán reproducirse, distribuirse ni transformarse sin autorización, salvo en los casos permitidos por la legislación aplicable.
 
-App Store es una marca de Apple Inc. Google Play es una marca de Google LLC.
+App Store es una marca de Apple Inc. y Google Play es una marca de Google LLC.
 
 ## 6. Protección de datos y cookies
 
-El tratamiento de los datos personales se explica en la [Política de Privacidad](/es/legal/privacidad). Las cookies que utiliza el sitio se explican en la [Política de cookies](/es/legal/cookies).
+El tratamiento de los datos personales recogidos a través de las páginas informativas y del formulario de solicitud de demostración se describe en la [Política de privacidad](/es/legal/privacidad). La información sobre las cookies y tecnologías similares se recoge en la [Política de cookies](/es/legal/cookies).
 
 ## 7. Legislación aplicable y jurisdicción
 
-Este aviso legal se rige por la legislación española. Para cualquier controversia, serán competentes los juzgados y tribunales que correspondan conforme a la ley. Cuando el usuario sea consumidor, los de su domicilio.
+Este aviso legal se rige por la legislación española. Las controversias se someterán a los juzgados y tribunales que resulten competentes conforme a la normativa aplicable. Cuando la persona usuaria tenga la condición legal de consumidora, se respetarán los fueros imperativos que le correspondan.
 
 ---
 

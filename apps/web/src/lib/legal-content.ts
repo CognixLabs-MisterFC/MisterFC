@@ -2,6 +2,7 @@ import 'server-only';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Metadata } from 'next';
+import { marketingLanguages } from '@misterfc/core';
 import { SITE_URL } from '@/lib/site-url';
 
 /**
@@ -40,8 +41,27 @@ export const LEGAL_PENDIENTES_REVISION: readonly LegalSlug[] = [
   'privacidad-web',
 ];
 
-export function readLegalDoc(slug: LegalSlug): string {
-  return readFileSync(join(process.cwd(), 'src/content/legal', `${slug}.md`), 'utf8');
+/**
+ * Textos de la web comercial traducidos: cada idioma tiene su maestra en Documentos/
+ * (`misterfc-aviso-legal.en.md`). Los demás son del abogado y solo existen en
+ * castellano. Tiene que coincidir con `traducciones` del censo
+ * (scripts/textos-legales.mjs); lo vigila `check:textos-legales`.
+ */
+export const LEGAL_TRADUCCIONES: Partial<Record<LegalSlug, readonly string[]>> = {
+  'aviso-legal': ['en', 'va'],
+  cookies: ['en', 'va'],
+  'privacidad-web': ['en', 'va'],
+};
+
+/** Idioma en que se sirve un texto a quien lee en `locale`: el suyo, o castellano. */
+export function legalDocLocale(slug: LegalSlug, locale: string): string {
+  return LEGAL_TRADUCCIONES[slug]?.includes(locale) ? locale : 'es';
+}
+
+export function readLegalDoc(slug: LegalSlug, locale = 'es'): string {
+  const idioma = legalDocLocale(slug, locale);
+  const fichero = idioma === 'es' ? `${slug}.md` : `${slug}.${idioma}.md`;
+  return readFileSync(join(process.cwd(), 'src/content/legal', fichero), 'utf8');
 }
 
 /**
@@ -57,6 +77,10 @@ export function readLegalDoc(slug: LegalSlug): string {
  *  · `follow` se queda en las tres: que no se indexen no significa que no se
  *    sigan los enlaces cruzados del pie.
  *
+ * Un texto TRADUCIDO (`LEGAL_TRADUCCIONES`) es otra cosa: cada idioma es su propia
+ * página, así que se indexa en los tres, canoniza a sí misma y lleva sus `hreflang`,
+ * como las páginas comerciales.
+ *
  * Las URLs siguen respondiendo 200 a propósito (Google Play y App Store
  * comprueban que la URL de privacidad es accesible), y por eso robots.txt las
  * sigue PERMITIENDO: un `Disallow` impediría leer el propio `noindex`.
@@ -67,6 +91,15 @@ export function legalMetadata(args: {
   title: string;
   description: string;
 }): Metadata {
+  if (LEGAL_TRADUCCIONES[args.slug]) {
+    const languages = marketingLanguages(SITE_URL, `/legal/${args.slug}`);
+    return {
+      title: { absolute: args.title },
+      description: args.description,
+      robots: { index: true, follow: true },
+      alternates: { canonical: `${SITE_URL}/${args.locale}/legal/${args.slug}`, languages },
+    };
+  }
   return {
     // `absolute`: el título ya lleva «— MisterFC». Con la plantilla del layout raíz
     // («%s · MisterFC») salía «Política de Privacidad — MisterFC · MisterFC».
