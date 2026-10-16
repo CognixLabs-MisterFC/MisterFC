@@ -199,6 +199,48 @@ export async function startMatchFromClient(
   const status = await loadStatus(supabase, event_id);
   if (status === 'closed') return { ok: false, error: 'already_closed' };
 
+  // ── LA PUERTA, Y VA ANTES DE ESCRIBIR ──────────────────────────────────────
+  // El once se congela desde la alineación oficial, así que sin alineación no se
+  // empieza. Esta comprobación estaba DESPUÉS de poner `match_state` en `live`, y
+  // esto no es una transacción: son llamadas sueltas de PostgREST y nada se
+  // deshacía. El partido se quedaba en `live` sin once y sin periodos —o sea
+  // saliendo en la lista de directos de las familias, porque esa lista mira
+  // `status === 'live'`— mientras la llamada devolvía `no_official_lineup`. No era
+  // un bloqueo permanente: en cuanto existía la alineación, la siguiente pulsación
+  // congelaba el once y arrancaba. Era una ventana, y la ventana la abría el orden.
+  //
+  // Si el once YA está congelado no se exige nada: re-arrancar un partido cuya
+  // alineación alguien borró después tiene que seguir funcionando, y de eso
+  // depende la idempotencia de esta función.
+  const { data: existingStarters } = await supabase
+    .from('match_starters')
+    .select('player_id')
+    .eq('event_id', event_id)
+    .limit(1);
+  const onceCongelado = (existingStarters ?? []).length > 0;
+
+  let starters: { event_id: string; player_id: string; position_code: string | null }[] = [];
+  if (!onceCongelado) {
+    const { data: official } = await supabase
+      .from('lineups')
+      .select('id')
+      .eq('event_id', event_id)
+      .eq('is_official', true)
+      .maybeSingle();
+    if (!official) return { ok: false, error: 'no_official_lineup' };
+
+    const { data: positions } = await supabase
+      .from('lineup_positions')
+      .select('player_id, position_code')
+      .eq('lineup_id', official.id as string)
+      .eq('location', 'field');
+    starters = (positions ?? []).map((p) => ({
+      event_id,
+      player_id: p.player_id as string,
+      position_code: (p.position_code as string | null) ?? null,
+    }));
+  }
+
   if (status == null) {
     const { error } = await supabase.from('match_state').insert({
       event_id,
@@ -224,35 +266,11 @@ export async function startMatchFromClient(
     if (error) return { ok: false, error: mapClockPgErr(error.message, error.code) };
   }
 
-  // Congelar el once desde la alineación oficial (solo la primera vez).
-  const { data: existingStarters } = await supabase
-    .from('match_starters')
-    .select('player_id')
-    .eq('event_id', event_id)
-    .limit(1);
-  if ((existingStarters ?? []).length === 0) {
-    const { data: official } = await supabase
-      .from('lineups')
-      .select('id')
-      .eq('event_id', event_id)
-      .eq('is_official', true)
-      .maybeSingle();
-    if (!official) return { ok: false, error: 'no_official_lineup' };
-
-    const { data: positions } = await supabase
-      .from('lineup_positions')
-      .select('player_id, position_code')
-      .eq('lineup_id', official.id as string)
-      .eq('location', 'field');
-    const starters = (positions ?? []).map((p) => ({
-      event_id,
-      player_id: p.player_id as string,
-      position_code: (p.position_code as string | null) ?? null,
-    }));
-    if (starters.length > 0) {
-      const { error } = await supabase.from('match_starters').insert(starters);
-      if (error) return { ok: false, error: mapClockPgErr(error.message, error.code) };
-    }
+  // Congelar el once, ya leído arriba antes de escribir nada. Solo la primera vez:
+  // `starters` viene vacío cuando el once ya estaba congelado.
+  if (starters.length > 0) {
+    const { error } = await supabase.from('match_starters').insert(starters);
+    if (error) return { ok: false, error: mapClockPgErr(error.message, error.code) };
   }
 
   // Arrancar la 1ª parte (solo si aún no hay periodos).
