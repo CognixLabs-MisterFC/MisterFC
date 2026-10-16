@@ -49,7 +49,7 @@ export function CaptureZoom({
           <span
             aria-hidden="true"
             className={cn(
-              'absolute flex h-7 w-7 items-center justify-center rounded-full bg-misterfc-navy/70 text-white shadow transition group-hover:bg-misterfc-navy group-focus-visible:bg-misterfc-navy',
+              'absolute flex h-7 w-7 items-center justify-center rounded-full bg-misterfc-navy/70 text-white shadow ring-2 ring-white/90 transition group-hover:bg-misterfc-navy group-focus-visible:bg-misterfc-navy',
               iconClassName,
             )}
           >
