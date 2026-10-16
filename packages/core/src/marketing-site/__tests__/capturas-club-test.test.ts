@@ -21,8 +21,22 @@ function repoRoot(): string {
 }
 
 const DIR = join(repoRoot(), 'supabase/scripts');
-const ensayo = readFileSync(join(DIR, 'capturas-club-test.ensayo.sql'), 'utf8');
-const definitivo = readFileSync(join(DIR, 'capturas-club-test.sql'), 'utf8');
+const leer = (f: string) => readFileSync(join(DIR, f), 'utf8');
+const ensayo = leer('capturas-club-test.ensayo.sql');
+const definitivo = leer('capturas-club-test.sql');
+
+/**
+ * Los scripts de capturas que van en pareja ensayo/definitivo. El de la jornada 7
+ * deshace un directo empezado por error durante las capturas.
+ */
+const PAREJAS = [
+  { nombre: 'club de capturas', ensayo, definitivo },
+  {
+    nombre: 'jornada 7 sin directo',
+    ensayo: leer('capturas-jornada7-reset.ensayo.sql'),
+    definitivo: leer('capturas-jornada7-reset.sql'),
+  },
+];
 
 /** Lo que va desde `begin;` hasta el final del bloque `do`. */
 function bloque(sql: string): string {
@@ -42,7 +56,7 @@ function transacciones(sql: string): string[] {
     .filter((l) => /^(begin|commit|rollback|end)\s*;$/.test(l));
 }
 
-describe('script del club de capturas', () => {
+describe.each(PAREJAS)('script $nombre', ({ ensayo, definitivo }) => {
   it('el ensayo es ensayo: v_ensayo = true y termina en rollback, sin commit', () => {
     expect(ensayo).toContain('v_ensayo constant boolean := true;');
     expect(transacciones(ensayo)).toEqual(['begin;', 'end;', 'rollback;']);
@@ -64,7 +78,9 @@ describe('script del club de capturas', () => {
       /if v_ensayo then\s+raise exception E'ENSAYO CORRECTO, NADA APLICADO/,
     );
   });
+});
 
+describe('script del club de capturas', () => {
   it('no toca la cuenta de Apple ni a Carlos Vicente', () => {
     const b = bloque(definitivo);
     // La cuenta de Apple solo se lee para comprobar que existe y que no es una de las renombradas.
