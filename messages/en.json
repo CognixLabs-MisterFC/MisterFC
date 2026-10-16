@@ -3423,8 +3423,10 @@
     "readonly_hint": "Read-only view.",
     "unavailable": "This lineup is not available",
     "app_bench_empty": "No substitutes",
-    "forbidden": "You don't have permission to change this lineup.",
-    "save_error": "We couldn't save the lineup change. Try again."
+    "create_cta": "Create lineup",
+    "create_hint": "Plan A will be created with the called-up players on the bench.",
+    "create_no_permission": "You don't have permission to create this match's lineup.",
+    "create_seed_failed": "The lineup was created, but the bench is empty: we couldn't place the called-up players. Open it on the web to finish it."
   },
   "formaciones": {
     "title": "My formations",
@@ -5353,7 +5355,7 @@
     "roster_empty": "No players in the roster",
     "transport_mode": "Transport (optional)",
     "transport_notes": "Transport notes (optional)",
-    "view_lineup": "View lineup",
+    "view_lineup": "Lineup",
     "forbidden": "You don't have permission to change this match's call-up.",
     "error": "We couldn't save the call-up change. Try again.",
     "pub_err_forbidden": "You don't have permission to publish this call-up.",

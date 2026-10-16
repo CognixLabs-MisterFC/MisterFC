@@ -3423,8 +3423,10 @@
     "readonly_hint": "Vista de solo lectura.",
     "unavailable": "Esta alineación no está disponible",
     "app_bench_empty": "Sin suplentes",
-    "forbidden": "No tienes permiso para cambiar esta alineación.",
-    "save_error": "No hemos podido guardar el cambio en la alineación. Inténtalo otra vez."
+    "create_cta": "Crear alineación",
+    "create_hint": "Se creará el Plan A con los convocados en el banquillo.",
+    "create_no_permission": "No tienes permiso para crear la alineación de este partido.",
+    "create_seed_failed": "La alineación se ha creado, pero el banquillo ha quedado vacío: no hemos podido colocar a los convocados. Ábrela en la web para completarla."
   },
   "formaciones": {
     "title": "Mis formaciones",
@@ -5353,7 +5355,7 @@
     "roster_empty": "Sin jugadores en el roster",
     "transport_mode": "Transporte (opcional)",
     "transport_notes": "Notas de transporte (opcional)",
-    "view_lineup": "Ver alineación",
+    "view_lineup": "Alineación",
     "forbidden": "No tienes permiso para cambiar la convocatoria de este partido.",
     "error": "No hemos podido guardar el cambio en la convocatoria. Inténtalo otra vez.",
     "pub_err_forbidden": "No tienes permiso para publicar esta convocatoria.",

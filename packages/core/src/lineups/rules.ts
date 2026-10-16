@@ -67,3 +67,31 @@ export function calledUpLimitApplies(eventType: string): boolean {
 export function exceedsStarters(fieldCount: number, format: TeamFormat): boolean {
   return fieldCount > MODALITY_RULES[format].starters;
 }
+
+/**
+ * Qué ofrece una pantalla de alineación cuando el partido NO tiene ninguna.
+ *
+ * Tres estados, y el que faltaba es el tercero: la app nativa pintaba la misma
+ * frase («Aún no hay alineación para este partido») al entrenador que podía
+ * crearla y al que no, y no ofrecía nada en ninguno de los dos casos. La frase sin
+ * salida era todo lo que había.
+ *
+ *   · 'create'          — se puede crear ahora.
+ *   · 'create_offline'  — se podría, pero no hay red: crear NO se encola (la cola
+ *                         offline es solo del directo), así que el botón va
+ *                         apagado con su aviso en vez de prometer un guardado.
+ *   · 'no_permission'   — no es cosa de red: este usuario no gestiona esta
+ *                         alineación, y la pantalla lo dice con su propia frase.
+ *
+ * Es una regla pura a propósito: la app nativa no tiene tests de componente, así
+ * que si la decisión vive en el JSX no la mide nadie.
+ */
+export type LineupEmptyAction = 'create' | 'create_offline' | 'no_permission';
+
+export function lineupEmptyAction(state: {
+  canManage: boolean;
+  online: boolean;
+}): LineupEmptyAction {
+  if (!state.canManage) return 'no_permission';
+  return state.online ? 'create' : 'create_offline';
+}
