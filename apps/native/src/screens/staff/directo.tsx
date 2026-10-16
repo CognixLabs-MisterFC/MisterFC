@@ -6,6 +6,7 @@ import {
   canFinishMatch,
   computeScore,
   currentPeriod,
+  addMatchEventFromClient,
   deleteMatchEventFromClient,
   endPeriodFromClient,
   eventEditAvailability,
@@ -41,6 +42,7 @@ import {
 import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { EventEditSheet } from '@/directo/event-edit-sheet';
+import { EventForm, type AddEventInput } from '@/directo/event-form';
 import { useApp } from '@/auth/context';
 import { useSession } from '@/auth/session';
 import { useCached } from '@/data/use-cached';
@@ -169,6 +171,9 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
   // Hoja de corrección: qué fila se está corrigiendo, y su propio busy/error (los del
   // reloj son otros: un fallo al corregir no debe pintar un error del cronómetro).
   const [editing, setEditing] = useState<DetailEvent | null>(null);
+  // El alta se abre DESDE la hoja de corrección y arranca en el minuto de la fila que
+  // se estaba mirando: es el minuto que el entrenador tiene en la cabeza.
+  const [adding, setAdding] = useState<number | null>(null);
   const [editBusy, setEditBusy] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -303,6 +308,7 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
     // La fila cambió en el servidor: se vuelve a leer en vez de parchear en local (el
     // timeline y el marcador se DERIVAN de los eventos, no se sincronizan).
     setEditing(null);
+    setAdding(null);
     await refresh();
   };
 
@@ -315,6 +321,15 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
         event_id: eventId,
         id: rowId,
         display_minute: minute,
+      }),
+    );
+
+  const onAddEvent = (input: AddEventInput) =>
+    void correccion(() =>
+      addMatchEventFromClient(supabase, {
+        ...input,
+        event_id: eventId,
+        id: uuidv4(),
       }),
     );
 
@@ -552,6 +567,50 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
           }}
         />
 
+        {adding != null ? (
+          <View className="rounded-2xl border border-zinc-200 p-4" style={{ gap: 12 }}>
+            <View className="flex-row items-center justify-between">
+              <Text className="text-xs font-semibold uppercase tracking-wide text-zinc-400">
+                {t('partido_directo.timeline.add')}
+              </Text>
+              <Pressable
+                onPress={() => {
+                  setAdding(null);
+                  setEditError(null);
+                }}
+                className="px-2 py-1 active:opacity-60"
+              >
+                <Text className="text-xs text-zinc-500">
+                  {t('partido_directo.timeline.add_cancel')}
+                </Text>
+              </Pressable>
+            </View>
+            {editAvailability === 'edit' ? null : (
+              <Banner
+                text={t(
+                  editAvailability === 'no_permission'
+                    ? 'directo_control.no_permission'
+                    : editAvailability === 'not_editable'
+                      ? 'directo_edit.not_editable'
+                      : 'directo_edit.offline',
+                )}
+              />
+            )}
+            {editError ? (
+              <View className="rounded-xl bg-red-50 px-4 py-2">
+                <Text className="text-center text-xs text-red-600">{t(editError)}</Text>
+              </View>
+            ) : null}
+            <EventForm
+              roster={roster}
+              minutoInicial={adding}
+              accent={accent}
+              disabled={editAvailability !== 'edit' || editBusy}
+              onSubmit={onAddEvent}
+            />
+          </View>
+        ) : null}
+
         {editing ? (
           <EventEditSheet
             evento={{
@@ -568,6 +627,10 @@ export function DirectoControlScreen({ eventId }: { eventId: string | null }) {
             onDelete={() => onDeleteEvent(editing.id)}
             onMinute={(minute) => onEventMinute(editing.id, minute)}
             onActor={(actor) => onEventActor(editing.id, actor)}
+            onAdd={() => {
+              setAdding(editing.displayMinute ?? Math.floor(editing.clockSeconds / 60));
+              setEditing(null);
+            }}
             onClose={() => {
               setEditing(null);
               setEditError(null);

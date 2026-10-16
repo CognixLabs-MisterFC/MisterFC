@@ -33,6 +33,7 @@ export function EventEditSheet({
   onDelete,
   onMinute,
   onActor,
+  onAdd,
   onClose,
 }: {
   evento: { id: string; type: string; side: 'own' | 'rival'; displayMinute: number };
@@ -44,6 +45,8 @@ export function EventEditSheet({
   onDelete: () => void;
   onMinute: (minute: number) => void;
   onActor: (actor: { playerId?: string; rivalDorsal?: number }) => void;
+  /** Abrir el alta de un evento olvidado. Sin ella, la hoja no ofrece añadir. */
+  onAdd?: () => void;
   onClose: () => void;
 }) {
   const t = useTranslations('');
@@ -99,7 +102,7 @@ export function EventEditSheet({
           {/* ── Minuto ── */}
           <View style={{ gap: 6 }}>
             <Text className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-              {t('directo_edit.minute_label')}
+              {t('partido_directo.timeline.field_minute')}
             </Text>
             <View className="flex-row items-center gap-2">
               <TextInput
@@ -117,7 +120,9 @@ export function EventEditSheet({
                 className="rounded-full px-4 py-2 active:opacity-70"
                 style={{ backgroundColor: accent, ...atenuado }}
               >
-                <Text className="text-sm font-semibold text-white">{t('directo_edit.save')}</Text>
+                <Text className="text-sm font-semibold text-white">
+                  {t('partido_directo.timeline.save_minute')}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -137,7 +142,7 @@ export function EventEditSheet({
           ) : (
             <View style={{ gap: 6 }}>
               <Text className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-                {t('directo_entry.rival_dorsal')}
+                {t('partido_directo.timeline.field_dorsal')}
               </Text>
               <View className="flex-row items-center gap-2">
                 <TextInput
@@ -155,11 +160,28 @@ export function EventEditSheet({
                   className="rounded-full px-4 py-2 active:opacity-70"
                   style={{ backgroundColor: accent, ...atenuado }}
                 >
-                  <Text className="text-sm font-semibold text-white">{t('directo_edit.save')}</Text>
+                  <Text className="text-sm font-semibold text-white">
+                    {t('partido_directo.timeline.save_dorsal')}
+                  </Text>
                 </Pressable>
               </View>
             </View>
           )}
+
+          {/* ── Añadir un evento OLVIDADO. No es una corrección de ESTA fila: es el alta
+                 de otra, y arranca en el minuto de la que se está mirando. ── */}
+          {onAdd ? (
+            <Pressable
+              disabled={!puede}
+              onPress={onAdd}
+              className="self-start rounded-full border px-4 py-2 active:opacity-70"
+              style={{ borderColor: accent, ...atenuado }}
+            >
+              <Text className="text-sm font-semibold" style={{ color: accent }}>
+                {t('partido_directo.timeline.add')}
+              </Text>
+            </Pressable>
+          ) : null}
 
           {/* ── Borrar, en dos toques ── */}
           <Pressable
@@ -172,7 +194,9 @@ export function EventEditSheet({
             style={atenuado}
           >
             <Text className="text-sm font-semibold text-red-600">
-              {confirmando ? t('directo_edit.delete_confirm') : t('directo_edit.delete')}
+              {confirmando
+                ? t('directo_edit.delete_confirm')
+                : t('partido_directo.timeline.delete')}
             </Text>
           </Pressable>
         </>

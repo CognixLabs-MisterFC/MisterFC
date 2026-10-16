@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   actorPatchFor,
+  addMatchEventFromClient,
+  buildTimelineEventRow,
   eventEditAvailability,
   deleteMatchEventFromClient,
   updateMatchEventActorFromClient,
@@ -103,6 +105,12 @@ function makeClient(opts: Opts, userId: string | null = 'u-1') {
     b.insert = (payload: unknown) => {
       writes.push({ table, op: 'insert', payload, filtros: [] });
       return Promise.resolve({ error: null });
+    };
+    // El alta usa `upsert(onConflict:'id', ignoreDuplicates)`: subir dos veces el
+    // mismo id de cliente no duplica. Se registra como insert, que es lo que es.
+    b.upsert = (payload: unknown) => {
+      writes.push({ table, op: 'insert', payload, filtros: [] });
+      return Promise.resolve(maybeErr('insert'));
     };
     b.update = (payload: unknown) => {
       const u: Record<string, unknown> = {};
@@ -427,5 +435,251 @@ describe('eventEditAvailability · qué puede ofrecer la pantalla', () => {
     expect(eventEditAvailability({ canRecord: true, online: false, status: 'not_started' })).toBe(
       'not_editable',
     );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe('buildTimelineEventRow · las reglas de los 10 tipos', () => {
+  const PERIODOS = [
+    {
+      period: 'first_half' as const,
+      ordinal: 1,
+      baseOffsetSeconds: 0,
+      accumulatedSeconds: 2700,
+      running: false,
+      lastStartedAt: null,
+      ended: true,
+    },
+    {
+      period: 'second_half' as const,
+      ordinal: 2,
+      baseOffsetSeconds: 2700,
+      accumulatedSeconds: 2700,
+      running: false,
+      lastStartedAt: null,
+      ended: true,
+    },
+  ];
+  const CTX = { clubId: 'club-1', createdBy: 'u-1', periods: PERIODOS };
+  const base = { id: ROW, event_id: EVENT, display_minute: 20 };
+
+  const fila = (extra: Record<string, unknown>) =>
+    buildTimelineEventRow({ ...base, ...extra } as never, CTX);
+
+  it('el reloj sale del MINUTO elegido, no de ahora', () => {
+    const r = fila({ side: 'own', type: 'goal', player_id: PLAYER });
+    expect(r.clock_seconds).toBe(20 * 60);
+    expect(r.display_minute).toBe(20);
+    expect(r.period).toBe('first_half');
+  });
+
+  it('el minuto 50 cae en la segunda parte', () => {
+    expect(fila({ side: 'own', type: 'goal', player_id: PLAYER, display_minute: 50 }).period).toBe(
+      'second_half',
+    );
+  });
+
+  // Falta y córner se registran desde NUESTRO panel (§7.4b): un side rival que llegue
+  // se corrige aquí en vez de dejar que lo rechace la base con un error que no explica
+  // nada al entrenador.
+  it('una FALTA es nuestra aunque pidan rival', () => {
+    const r = fila({ side: 'rival', type: 'foul', player_id: PLAYER, foul_kind: 'tactical' });
+    expect(r.side).toBe('own');
+    expect(r.rival_dorsal).toBeNull();
+    expect(r.player_id).toBe(PLAYER);
+  });
+
+  it('un CÓRNER es nuestro, y no lleva jugador (va por ubicación)', () => {
+    const r = fila({ side: 'rival', type: 'corner', player_id: PLAYER, corner_side: 'left' });
+    expect(r.side).toBe('own');
+    expect(r.player_id).toBeNull();
+    expect(r.metadata).toEqual({ corner_side: 'left' });
+  });
+
+  it('FUERA DE JUEGO propio no lleva jugador', () => {
+    expect(fila({ side: 'own', type: 'offside', player_id: PLAYER }).player_id).toBeNull();
+  });
+
+  it('TIRO propio tampoco', () => {
+    expect(fila({ side: 'own', type: 'shot', player_id: PLAYER }).player_id).toBeNull();
+  });
+
+  it('un gol del RIVAL lleva dorsal y NINGÚN jugador nuestro', () => {
+    const r = fila({ side: 'rival', type: 'goal', rival_dorsal: 9, player_id: PLAYER });
+    expect(r.rival_dorsal).toBe(9);
+    expect(r.player_id).toBeNull();
+    expect(r.related_player_id).toBeNull();
+  });
+
+  it('el segundo jugador SOLO viaja en una sustitución', () => {
+    const sub = fila({
+      side: 'own',
+      type: 'substitution',
+      player_id: PLAYER,
+      related_player_id: PLAYER_2,
+    });
+    expect(sub.related_player_id).toBe(PLAYER_2);
+    const gol = fila({
+      side: 'own',
+      type: 'goal',
+      player_id: PLAYER,
+      related_player_id: PLAYER_2,
+    });
+    expect(gol.related_player_id).toBeNull();
+  });
+
+  it('el metadata se monta POR TIPO y no arrastra lo ajeno', () => {
+    const penalti = fila({
+      side: 'own',
+      type: 'penalty',
+      player_id: PLAYER,
+      outcome: 'scored',
+      foul_kind: 'committed',
+      corner_side: 'for',
+    });
+    expect(penalti.metadata).toEqual({ outcome: 'scored' });
+  });
+
+  // Y EN EL OTRO SENTIDO, que es el que se me escapó al escribir el de arriba: que
+  // un penalti no arrastre `foul_kind` no dice nada sobre si un GOL arrastra
+  // `outcome`. Medido: quitar la condición del tipo al montar el metadata no mataba
+  // ningún test. Los tres campos, cada uno en el tipo que no es el suyo.
+  it('un campo en el tipo que NO es el suyo no viaja', () => {
+    const golConOutcome = fila({
+      side: 'own',
+      type: 'goal',
+      player_id: PLAYER,
+      outcome: 'scored',
+    });
+    expect(golConOutcome.metadata).toEqual({});
+
+    const tarjetaConFalta = fila({
+      side: 'own',
+      type: 'yellow_card',
+      player_id: PLAYER,
+      foul_kind: 'committed',
+    });
+    expect(tarjetaConFalta.metadata).toEqual({});
+
+    const faltaConCorner = fila({
+      side: 'own',
+      type: 'foul',
+      player_id: PLAYER,
+      foul_kind: 'committed',
+      corner_side: 'for',
+    });
+    expect(faltaConCorner.metadata).toEqual({ foul_kind: 'committed' });
+  });
+
+  it('la NOTA solo en eventos del rival (es donde no hay ficha de jugador)', () => {
+    expect(
+      fila({ side: 'rival', type: 'goal', rival_dorsal: 7, note: '  el 7 alto  ' }).metadata,
+    ).toEqual({ note: 'el 7 alto' });
+    expect(fila({ side: 'own', type: 'goal', player_id: PLAYER, note: 'algo' }).metadata).toEqual(
+      {},
+    );
+  });
+
+  // El CHECK `coords_field_only` admite el córner, pero el córner no se marca en el
+  // campo: no se le inventan coordenadas.
+  it('las coordenadas solo en falta, fuera de juego y tiro', () => {
+    expect(
+      fila({
+        side: 'own',
+        type: 'foul',
+        player_id: PLAYER,
+        foul_kind: 'tactical',
+        x_pct: 10,
+        y_pct: 20,
+      }).x_pct,
+    ).toBe(10);
+    expect(fila({ side: 'own', type: 'shot', x_pct: 10, y_pct: 20 }).y_pct).toBe(20);
+    expect(
+      fila({ side: 'own', type: 'corner', corner_side: 'left', x_pct: 10, y_pct: 20 }).x_pct,
+    ).toBeNull();
+    expect(
+      fila({ side: 'own', type: 'goal', player_id: PLAYER, x_pct: 10, y_pct: 20 }).x_pct,
+    ).toBeNull();
+  });
+
+  it('el club y el autor los pone el contexto, no el input', () => {
+    const r = fila({
+      side: 'own',
+      type: 'goal',
+      player_id: PLAYER,
+      club_id: 'otro',
+      created_by: 'otro',
+    });
+    expect(r.club_id).toBe('club-1');
+    expect(r.created_by).toBe('u-1');
+  });
+
+  it('es pura: el mismo input da la misma fila', () => {
+    const a = fila({ side: 'own', type: 'goal', player_id: PLAYER });
+    const b = fila({ side: 'own', type: 'goal', player_id: PLAYER });
+    expect(a).toEqual(b);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe('addMatchEventFromClient', () => {
+  const alta = {
+    event_id: EVENT,
+    id: ROW,
+    side: 'own' as const,
+    type: 'goal',
+    display_minute: 20,
+    player_id: PLAYER,
+  };
+
+  it('da de alta el evento con upsert idempotente', async () => {
+    const { client, writes } = makeClient({});
+    expect(await addMatchEventFromClient(client, alta)).toEqual({ ok: true });
+    const insert = writes.find((w) => w.table === 'match_events');
+    expect(insert?.op).toBe('insert');
+  });
+
+  it('partido sin empezar → not_editable, sin escribir', async () => {
+    const { client, writes } = makeClient({ status: 'not_started' });
+    expect(await addMatchEventFromClient(client, alta)).toEqual({
+      ok: false,
+      error: 'not_editable',
+    });
+    expect(writes).toHaveLength(0);
+  });
+
+  it('sin periodos no hay minuto al que anclar → no_period', async () => {
+    const { client, writes } = makeClient({ periods: [] });
+    expect(await addMatchEventFromClient(client, alta)).toEqual({
+      ok: false,
+      error: 'no_period',
+    });
+    expect(writes).toHaveLength(0);
+  });
+
+  it('un alta sin los campos que su tipo pide la para el esquema', async () => {
+    const { client, writes } = makeClient({});
+    // Falta sin `foul_kind`: el esquema lo exige.
+    expect(await addMatchEventFromClient(client, { ...alta, type: 'foul' })).toEqual({
+      ok: false,
+      error: 'invalid',
+    });
+    expect(writes).toHaveLength(0);
+  });
+
+  it('partido CERRADO: re-consolida (el acta tiene que cuadrar)', async () => {
+    const { client, writes } = makeClient({ status: 'closed' });
+    await addMatchEventFromClient(client, alta);
+    expect(writes.some((w) => w.table === 'match_player_stats')).toBe(true);
+  });
+
+  // LA CARGA EN CADENA. Re-consolidar en cada alta son N pasadas completas para
+  // cargar un partido entero; en cadena se salta y se consolida UNA vez al final.
+  it('con reconsolidate:false NO re-consolida, aunque esté cerrado', async () => {
+    const { client, writes } = makeClient({ status: 'closed' });
+    expect(await addMatchEventFromClient(client, alta, { reconsolidate: false })).toEqual({
+      ok: true,
+    });
+    expect(writes.some((w) => w.table === 'match_player_stats')).toBe(false);
   });
 });

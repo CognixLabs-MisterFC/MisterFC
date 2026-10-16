@@ -19,11 +19,11 @@
 
 import { revalidatePath } from 'next/cache';
 import {
+  addMatchEventFromClient,
   addTimelineEventSchema,
   assignPlayersToFormation,
   canRegisterSubstitution,
   changeFormationSchema,
-  clockFieldsForMinute,
   type ClockPeriod,
   consolidateMatchAndPersistFromClient,
   createSupabaseServerClient,
@@ -419,32 +419,14 @@ async function consolidateAndPersist(
   return consolidateMatchAndPersistFromClient(supabase, eventId, closedBy);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// F14H — Reconsolidación automática al editar el acta de un partido YA CERRADO.
+// F14H — la RECONSOLIDACIÓN automática al editar el acta de un partido ya cerrado
+// vivía aquí y ahora está en core (`reconsolidateIfClosed`, privada de
+// match/event-edits.ts), porque la misma corrección se hace desde la app nativa y
+// dejarla aquí habría dejado el acta descuadrada por ese camino. Las cuatro
+// operaciones del acta (borrar, minuto, actor, alta) la llevan dentro.
 //
-// Las stats (match_player_stats) y el marcador se materializan al finalizar
-// (consolidateAndPersist ← finishMatch). Si se añade/edita/borra un evento con el
-// partido ya 'closed' (entrada rápida días después), hay que RE-materializar para
-// que todo cuadre solo. Reusa consolidateAndPersist (delete+reinsert idempotente),
-// que NO cambia match_state.status → el partido SIGUE cerrado. Sin efectos
-// colaterales (ni reopen→finish, ni notificaciones). En 'live' no toca nada: las
-// stats aún no existen y se calcularán al cerrar como siempre.
-// ─────────────────────────────────────────────────────────────────────────────
-async function reconsolidateIfClosed(
-  supabase: Supa,
-  eventId: string,
-): Promise<EventActionError | null> {
-  const status = await loadStatus(supabase, eventId);
-  if (status !== 'closed') return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return 'forbidden';
-  const err = await consolidateAndPersist(supabase, eventId, user.id);
-  if (!err) return null;
-  // consolidateAndPersist solo devuelve invalid/forbidden/generic; el resto → generic.
-  return err === 'invalid' || err === 'forbidden' ? err : 'generic';
-}
+// Si buscas por qué el partido sigue 'closed' tras corregirlo: es `consolidateMatch`
+// con delete+reinsert, que NO toca match_state.status.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // finishMatch — "Finalizar partido" (F7.7b): marca el partido como TERMINADO
@@ -1429,107 +1411,27 @@ export async function updateMatchEventActor(input: unknown): Promise<RegisterEve
   return { success: true, eventRowId: id };
 }
 
-// addMatchEvent — ALTA de un evento olvidado en un minuto dado. Reusa el mismo
-// modelo que las register* (mismo type, mismo metadata) pero con clock derivado
-// del MINUTO elegido (no de "ahora"). Las sustituciones, cambios de formación y la
-// tanda tienen su propia UI/derivación y no se dan de alta aquí.
+// addMatchEvent — ALTA de un evento olvidado en un minuto dado. DELEGA en core
+// (`addMatchEventFromClient`), que construye la fila con `buildTimelineEventRow`: el
+// reloj sale del MINUTO elegido y no de «ahora», y las reglas por tipo (falta y córner
+// siempre nuestras, fuera de juego/tiro/córner propios sin jugador, el metadata por
+// tipo) viven ahí, con sus tests. La app nativa usa el mismo camino.
+//
+// El cambio de formación y la tanda tienen su propia UI y NO se dan de alta aquí. La
+// SUSTITUCIÓN sí: entró en el alta manual en F14H, y es imprescindible para que los
+// minutos jugados salgan bien al reconstruir un partido (sin cambios, todos contarían
+// el partido entero). El comentario anterior decía que no, y llevaba razón solo hasta
+// que F14H la metió.
 export async function addMatchEvent(input: unknown): Promise<RegisterEventState> {
   const parsed = addTimelineEventSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
-  const {
-    event_id,
-    id,
-    side,
-    type,
-    display_minute,
-    player_id,
-    related_player_id,
-    rival_dorsal,
-    outcome,
-    foul_kind,
-    corner_side,
-    x_pct,
-    y_pct,
-    note,
-  } = parsed.data;
+  const { event_id, id } = parsed.data;
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: 'forbidden' };
 
-  const { data: ev } = await supabase
-    .from('events')
-    .select('club_id')
-    .eq('id', event_id)
-    .maybeSingle();
-  if (!ev) return { error: 'not_found' };
-  const clubId = ev.club_id as string;
-
-  if ((await loadEditableStatus(supabase, event_id)) == null) return { error: 'not_editable' };
-
-  const periods = await loadPeriods(supabase, event_id);
-  if (periods.length === 0) return { error: 'no_period' };
-
-  const { clockSeconds, period, displayMinute } = clockFieldsForMinute(periods, display_minute);
-
-  // Falta y córner SIEMPRE son de nuestro panel (side='own' con su bando, §7.4b).
-  const effectiveSide: 'own' | 'rival' = type === 'foul' || type === 'corner' ? 'own' : side;
-
-  // Actor coherente con el bando. offside/shot/corner propios van por ubicación
-  // (sin jugador); el resto de tipos propios llevan jugador.
-  const ownByLocation = type === 'offside' || type === 'shot' || type === 'corner';
-  const finalPlayerId = effectiveSide === 'own' && !ownByLocation ? (player_id ?? null) : null;
-  const finalDorsal = effectiveSide === 'rival' ? (rival_dorsal ?? null) : null;
-  // F14H — sustitución: related_player_id = jugador que ENTRA (solo en 'substitution',
-  // el CHECK related_only_sub del modelo lo exige). player_id = jugador que SALE.
-  const finalRelated = type === 'substitution' ? (related_player_id ?? null) : null;
-
-  // Coordenadas solo en tipos de campo (foul/offside/shot); el córner no lleva.
-  const isFieldCoords = type === 'foul' || type === 'offside' || type === 'shot';
-  const xPct = isFieldCoords && x_pct !== undefined ? x_pct : null;
-  const yPct = isFieldCoords && y_pct !== undefined ? y_pct : null;
-
-  const metadata: {
-    outcome?: string;
-    foul_kind?: string;
-    corner_side?: string;
-    note?: string;
-  } = {};
-  if (type === 'penalty' && outcome) metadata.outcome = outcome;
-  if (type === 'foul' && foul_kind) metadata.foul_kind = foul_kind;
-  if (type === 'corner' && corner_side) metadata.corner_side = corner_side;
-  const trimmed = note?.trim();
-  if (effectiveSide === 'rival' && trimmed) metadata.note = trimmed;
-
-  const { error } = await supabase.from('match_events').upsert(
-    {
-      id,
-      event_id,
-      club_id: clubId,
-      created_by: user.id,
-      side: effectiveSide,
-      type,
-      player_id: finalPlayerId,
-      related_player_id: finalRelated,
-      rival_dorsal: finalDorsal,
-      x_pct: xPct,
-      y_pct: yPct,
-      period,
-      clock_seconds: clockSeconds,
-      display_minute: displayMinute,
-      metadata,
-    },
-    { onConflict: 'id', ignoreDuplicates: true },
-  );
-  if (error) return { error: mapEventErr(error.message, error.code) };
-
-  // F14H — partido cerrado: recalcular stats/marcador con el nuevo evento (un gol
-  // metido días después debe cuadrar solo). En vivo, se consolidará al cerrar.
-  const rc = await reconsolidateIfClosed(supabase, event_id);
-  if (rc) return { error: rc };
+  const r = await addMatchEventFromClient(supabase, parsed.data);
+  if (!r.ok) return { error: r.error as EventActionError };
 
   revalidate(event_id);
   return { success: true, eventRowId: id };

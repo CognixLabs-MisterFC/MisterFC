@@ -85,6 +85,10 @@ const SCREENS = {
     use: null,
     why: 'Hoja embebida en la MISMA pantalla que quick-entry (staff/directo.tsx), dentro de su KeyboardScrollView.',
   },
+  'apps/native/src/directo/event-form.tsx': {
+    use: null,
+    why: 'Formulario embebido; el scroll lo pone la superficie que lo monta (hoy staff/directo.tsx, con KeyboardScrollView).',
+  },
   'apps/native/src/ui/directory-filters.tsx': {
     use: null,
     why: 'Buscador embebido; el scroll lo ponen direction/jugadores.tsx y direction/cuerpo-tecnico.tsx.',
@@ -98,11 +102,17 @@ const SCREENS = {
 /** Pantallas SIN campo propio que cargan con el scroll de un hijo que sí tiene. */
 const SCROLL_POR_UN_HIJO = {
   'apps/native/src/screens/staff/directo.tsx': 'Monta QuickEntry, que trae el campo del gol.',
-  'apps/native/src/screens/direction/jugadores.tsx': 'Monta DirectoryFilters, que trae el buscador.',
-  'apps/native/src/screens/direction/cuerpo-tecnico.tsx': 'Monta DirectoryFilters, que trae el buscador.',
+  'apps/native/src/screens/direction/jugadores.tsx':
+    'Monta DirectoryFilters, que trae el buscador.',
+  'apps/native/src/screens/direction/cuerpo-tecnico.tsx':
+    'Monta DirectoryFilters, que trae el buscador.',
 };
 
-const COMPONENTE = { scroll: 'KeyboardScrollView', modal: 'KeyboardModalView', sticky: 'KeyboardStickyBar' };
+const COMPONENTE = {
+  scroll: 'KeyboardScrollView',
+  modal: 'KeyboardModalView',
+  sticky: 'KeyboardStickyBar',
+};
 
 function walk(dir, out) {
   for (const entry of readdirSync(dir)) {

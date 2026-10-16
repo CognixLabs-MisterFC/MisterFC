@@ -5969,9 +5969,6 @@
   },
   "directo_edit": {
     "title": "Fix",
-    "minute_label": "Minute",
-    "save": "Save",
-    "delete": "Delete event",
     "delete_confirm": "Yes, delete",
     "offline": "Offline: a correction can't be saved. Try again with coverage.",
     "unsynced": "This event hasn't been uploaded yet. You can fix it once it uploads.",
