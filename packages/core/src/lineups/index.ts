@@ -54,6 +54,7 @@ export {
   calledUpOverflow,
   calledUpLimitApplies,
   exceedsStarters,
+  lineupEmptyAction,
 } from './rules';
 export type { ModalityRules } from './rules';
 
@@ -104,6 +105,7 @@ export {
   setLineupVisibilityFromClient,
   mapLineupPgErr,
 } from './writes';
+export type { LineupEmptyAction } from './rules';
 export type {
   CreateLineupOutcome,
   CreatedLineup,

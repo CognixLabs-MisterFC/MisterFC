@@ -3,12 +3,14 @@ import { Pressable, ScrollView, Switch, Text, View } from 'react-native';
 import {
   applyDrop,
   coachFormationToFormation,
+  createLineupFromClient,
   eventScopedCacheKey,
   exceedsStarters,
   formatPlayerNameNatural,
   formationsForFormat,
   getFormation,
   getLineupForEventFromClient,
+  lineupEmptyAction,
   setLineupFormationFromClient,
   setLineupOfficialFromClient,
   setLineupVisibilityFromClient,
@@ -73,6 +75,7 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
   });
   const [busyFormation, setBusyFormation] = useState(false);
   const [busyShare, setBusyShare] = useState(false);
+  const [busyCreate, setBusyCreate] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
   // Semilla de estado desde lo GUARDADO: se REsemilla en cada fetch nuevo (identidad
   // de `data` cambia) — patrón "ajustar estado al cambiar una prop" de React, sin
@@ -123,8 +126,8 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
             r.error === 'too_many_starters'
               ? 'alineacion.field_full'
               : r.error === 'forbidden'
-                ? 'alineacion.forbidden'
-                : 'alineacion.save_error',
+                ? 'alineacion.errors.forbidden'
+                : 'alineacion.errors.generic',
           );
           return;
         }
@@ -172,7 +175,7 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
       });
       if (!rf.ok) {
         setBusyFormation(false);
-        setErrorKey(rf.error === 'forbidden' ? 'alineacion.forbidden' : 'alineacion.save_error');
+        setErrorKey(rf.error === 'forbidden' ? 'alineacion.errors.forbidden' : 'alineacion.errors.generic');
         return;
       }
       // Vacía el campo: cada titular actual → banquillo (net = campo vacío + code nuevo).
@@ -184,7 +187,7 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
         });
         if (!r.ok) {
           setBusyFormation(false);
-          setErrorKey(r.error === 'forbidden' ? 'alineacion.forbidden' : 'alineacion.save_error');
+          setErrorKey(r.error === 'forbidden' ? 'alineacion.errors.forbidden' : 'alineacion.errors.generic');
           refresh();
           return;
         }
@@ -253,11 +256,58 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
     [lineupId, busyShare, refresh],
   );
 
+  // CREAR la alineación: la pantalla ya no es un callejón sin salida cuando el
+  // partido no tiene ninguna. Delega en core (`createLineupFromClient`), que crea la
+  // cabecera («Plan A» + primera formación de la modalidad) y siembra el banquillo
+  // con los convocados — la misma regla que usa la web.
+  //
+  // POR QUÉ UN BOTÓN Y NO AL ABRIR, como hace la web: aquí la lectura va por la capa
+  // de caché y se REPITE al enfocar la pantalla, así que auto-crear sería escribir
+  // desde un camino de lectura (y crear alineaciones por pasearse por la app). El
+  // botón cuesta un toque y deja la lectura limpia.
+  //
+  // WRITE-GUARD de la casa: sin red no se pulsa (crear no se encola; la cola offline
+  // es solo del directo) y sin permiso no hay botón, sino la frase que lo dice.
+  const onCreate = useCallback(async () => {
+    if (!eventId || !canManage || !online || busyCreate) return;
+    setBusyCreate(true);
+    setErrorKey(null);
+    const r = await createLineupFromClient(supabase, { event_id: eventId });
+    setBusyCreate(false);
+    if (!r.ok) {
+      // Cadena por error, con `generic` de red de seguridad: el bloque
+      // `alineacion.errors.*` cubre hoy los once valores de `LineupWriteError`, y si
+      // core añade uno nuevo sale una frase y no la clave en crudo.
+      setErrorKey(
+        r.error === 'forbidden'
+          ? 'alineacion.errors.forbidden'
+          : r.error === 'event_without_team'
+            ? 'alineacion.errors.event_without_team'
+            : r.error === 'not_found'
+              ? 'alineacion.errors.not_found'
+              : 'alineacion.errors.generic',
+      );
+      return;
+    }
+    // La cabecera YA está escrita (no hay transacción sobre PostgREST). Si falló la
+    // siembra, el banquillo queda vacío y desde aquí no hay forma de rellenarlo: se
+    // pinta solo desde `lineup_positions`, así que no hay ficha que arrastrar y
+    // volver a pulsar crearía una SEGUNDA alineación. Se dice tal cual.
+    if (r.seedError) setErrorKey('alineacion.create_seed_failed');
+    refresh();
+    void invalidateAfterWrite('setLineup');
+  }, [eventId, canManage, online, busyCreate, refresh]);
+
   // E6 — Sin eventId (abierta desde el menú): en vez de un texto sin salida, se
   // interpone el SELECTOR de partido (partidos de la temporada, pasados y futuros).
   if (!eventId) return <MatchPickerScreen target="alineacion" />;
   if (loading) return <LoadingScreen />;
   if (!data) return <EmptyState message={t('alineacion.unavailable')} />;
+
+  // Qué ofrecer si el partido NO tiene alineación: crear, crear-sin-red o decir que
+  // no tienes permiso. La decisión es una regla pura de core (medida con tests; la
+  // app nativa no tiene tests de componente).
+  const sinAlineacion = lineupEmptyAction({ canManage, online });
 
   const rosterById = new Map(data.roster.map((r) => [r.playerId, r]));
   const labelOf = (pid: string): string => {
@@ -325,8 +375,35 @@ export function AlineacionScreen({ eventId }: { eventId: string | null }) {
         ) : null}
 
         {data.lineupId == null ? (
-          <View className="rounded-2xl border border-zinc-200 p-4">
+          <View className="rounded-2xl border border-zinc-200 p-4" style={{ gap: 10 }}>
             <Text className="text-sm text-zinc-500">{t('alineacion.none_yet')}</Text>
+            {sinAlineacion === 'no_permission' ? (
+              // Lo que pedía el censo: sin permiso la pantalla lo DICE, en vez de
+              // dejar la misma frase que a quien sí puede crearla.
+              <Text className="text-xs text-zinc-400">
+                {t('alineacion.create_no_permission')}
+              </Text>
+            ) : (
+              <>
+                <Text className="text-xs text-zinc-400">{t('alineacion.create_hint')}</Text>
+                <Pressable
+                  disabled={sinAlineacion === 'create_offline' || busyCreate}
+                  onPress={onCreate}
+                  className="self-start rounded-full px-4 py-2 active:opacity-70"
+                  style={{
+                    backgroundColor: accent,
+                    opacity: sinAlineacion === 'create_offline' || busyCreate ? 0.4 : 1,
+                  }}
+                >
+                  <Text className="text-sm font-semibold text-white">
+                    {t('alineacion.create_cta')}
+                  </Text>
+                </Pressable>
+                {sinAlineacion === 'create_offline' ? (
+                  <Banner text={t('alineacion.offline_write')} />
+                ) : null}
+              </>
+            )}
           </View>
         ) : (
           <>

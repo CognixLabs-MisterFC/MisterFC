@@ -3423,8 +3423,10 @@
     "readonly_hint": "Vista de només lectura.",
     "unavailable": "Esta alineació no està disponible",
     "app_bench_empty": "Sense suplents",
-    "forbidden": "No tens permís per a canviar esta alineació.",
-    "save_error": "No hem pogut guardar el canvi en l'alineació. Intenta-ho una altra vegada."
+    "create_cta": "Crear alineació",
+    "create_hint": "Es crearà el Pla A amb els convocats a la banqueta.",
+    "create_no_permission": "No tens permís per a crear l'alineació d'este partit.",
+    "create_seed_failed": "L'alineació s'ha creat, però la banqueta ha quedat buida: no hem pogut col·locar els convocats. Obri-la en la web per a completar-la."
   },
   "formaciones": {
     "title": "Les meues formacions",
@@ -5353,7 +5355,7 @@
     "roster_empty": "Sense jugadors en la plantilla",
     "transport_mode": "Transport (opcional)",
     "transport_notes": "Notes de transport (opcional)",
-    "view_lineup": "Veure alineació",
+    "view_lineup": "Alineació",
     "forbidden": "No tens permís per a canviar la convocatòria d'este partit.",
     "error": "No hem pogut guardar el canvi en la convocatòria. Intenta-ho una altra vegada.",
     "pub_err_forbidden": "No tens permís per a publicar esta convocatòria.",

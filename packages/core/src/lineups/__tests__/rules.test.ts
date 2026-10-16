@@ -7,6 +7,7 @@ import {
   maxCalledUpFor,
   modalityRules,
   startersFor,
+  lineupEmptyAction,
 } from '../rules';
 import { fieldCapacity } from '../geometry';
 import { TEAM_FORMATS } from '../types';
@@ -76,5 +77,38 @@ describe('reglas por modalidad', () => {
     expect(exceedsStarters(9, 'F8')).toBe(true);
     expect(exceedsStarters(11, 'F11')).toBe(false);
     expect(exceedsStarters(12, 'F11')).toBe(true);
+  });
+});
+
+/**
+ * lineupEmptyAction — qué ofrece la pantalla cuando el partido no tiene alineación.
+ *
+ * La app nativa pintaba la MISMA frase sin salida al entrenador que podía crearla y
+ * al que no. Esta es la decisión que lo arregla, y vive aquí porque en el JSX de la
+ * nativa no la mediría nadie: ese paquete no tiene tests de componente.
+ */
+describe('lineupEmptyAction', () => {
+  it('la tabla entera: 4 combinaciones → 3 estados', () => {
+    expect(lineupEmptyAction({ canManage: true, online: true })).toBe('create');
+    expect(lineupEmptyAction({ canManage: true, online: false })).toBe('create_offline');
+    expect(lineupEmptyAction({ canManage: false, online: true })).toBe('no_permission');
+    expect(lineupEmptyAction({ canManage: false, online: false })).toBe('no_permission');
+  });
+
+  it('sin permiso manda el permiso, no la red: con red y sin ella dice lo mismo', () => {
+    // Si esto se invirtiera, a quien no gestiona la alineación se le diría que el
+    // problema es la conexión y volvería a intentarlo para siempre.
+    expect(lineupEmptyAction({ canManage: false, online: true })).toBe(
+      lineupEmptyAction({ canManage: false, online: false }),
+    );
+  });
+
+  it('los tres estados son distintos entre sí (ninguno es alias de otro)', () => {
+    const estados = new Set([
+      lineupEmptyAction({ canManage: true, online: true }),
+      lineupEmptyAction({ canManage: true, online: false }),
+      lineupEmptyAction({ canManage: false, online: true }),
+    ]);
+    expect(estados.size).toBe(3);
   });
 });
