@@ -35,6 +35,9 @@ import {
   adjustClockFromClient,
   finishMatchFromClient,
   reopenMatchFromClient,
+  deleteMatchEventFromClient,
+  updateMatchEventActorFromClient,
+  updateMatchEventMinuteFromClient,
   deleteMatchEventSchema,
   DEFAULT_REGIME,
   deriveExpelledPlayers,
@@ -111,10 +114,7 @@ function mapPgErr(message: string | undefined, code: string | undefined): Action
 }
 
 function revalidate(eventId: string) {
-  revalidatePath(
-    `/[locale]/(authenticated)/convocatorias/${eventId}/directo`,
-    'page',
-  );
+  revalidatePath(`/[locale]/(authenticated)/convocatorias/${eventId}/directo`, 'page');
   revalidatePath(`/[locale]/(authenticated)/convocatorias/${eventId}`, 'page');
 }
 
@@ -542,10 +542,7 @@ export type RegisterEventState = {
   expelled?: boolean;
 };
 
-function mapEventErr(
-  message: string | undefined,
-  code: string | undefined,
-): EventActionError {
+function mapEventErr(message: string | undefined, code: string | undefined): EventActionError {
   if (code === '42501') return 'forbidden';
   if (!message) return 'generic';
   if (message.includes('player_not_in_team_at_event')) return 'player_not_in_team';
@@ -554,9 +551,7 @@ function mapEventErr(
   return 'generic';
 }
 
-export async function registerPlayerEvent(
-  input: unknown,
-): Promise<RegisterEventState> {
+export async function registerPlayerEvent(input: unknown): Promise<RegisterEventState> {
   const parsed = registerPlayerEventSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
   const { event_id, id, type, player_id } = parsed.data;
@@ -778,9 +773,7 @@ async function countSubstitutions(supabase: Supa, eventId: string): Promise<numb
 // (player_id=sale, related_player_id=entra) con el reloj de 7.7.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function registerSubstitution(
-  input: unknown,
-): Promise<RegisterEventState> {
+export async function registerSubstitution(input: unknown): Promise<RegisterEventState> {
   const parsed = registerSubstitutionSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
   const { event_id, id, player_out_id, player_in_id } = parsed.data;
@@ -866,7 +859,10 @@ export async function setPlayerAbsent(input: unknown): Promise<RegisterEventStat
   if (absent) {
     const { error } = await supabase
       .from('match_absences')
-      .upsert({ event_id, player_id }, { onConflict: 'event_id,player_id', ignoreDuplicates: true });
+      .upsert(
+        { event_id, player_id },
+        { onConflict: 'event_id,player_id', ignoreDuplicates: true },
+      );
     if (error) return { error: mapEventErr(error.message, error.code) };
   } else {
     const { error } = await supabase
@@ -888,9 +884,7 @@ export async function setPlayerAbsent(input: unknown): Promise<RegisterEventStat
 // display_minute derivados del reloj de 7.7. Sin tarjetas ni enlace de asistencia.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function registerFieldEvent(
-  input: unknown,
-): Promise<RegisterEventState> {
+export async function registerFieldEvent(input: unknown): Promise<RegisterEventState> {
   const parsed = registerFieldEventSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
   const { event_id, id, type, x_pct, y_pct } = parsed.data;
@@ -949,9 +943,7 @@ export async function registerFieldEvent(
 // match_player_stats.shots por jugador.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function registerPlayerFieldEvent(
-  input: unknown,
-): Promise<RegisterEventState> {
+export async function registerPlayerFieldEvent(input: unknown): Promise<RegisterEventState> {
   const parsed = registerPlayerFieldEventSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
   const { event_id, id, type, player_id } = parsed.data;
@@ -1008,9 +1000,7 @@ export async function registerPlayerFieldEvent(
 // tarjetas/expulsión del rival son informativas (no hay squad rival que gestionar).
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function registerRivalEvent(
-  input: unknown,
-): Promise<RegisterEventState> {
+export async function registerRivalEvent(input: unknown): Promise<RegisterEventState> {
   const parsed = registerRivalEventSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
   const { event_id, id, type, rival_dorsal, note, x_pct, y_pct } = parsed.data;
@@ -1385,6 +1375,10 @@ async function loadEditableStatus(
 }
 
 // deleteMatchEvent — borra un evento de la línea de tiempo (por su id de cliente).
+// DELEGA en core (`deleteMatchEventFromClient`): la misma corrección se hace ahora
+// desde la app nativa, y la regla —ventana de edición, mapeo de errores y la
+// RE-CONSOLIDACIÓN si el partido está cerrado— tiene que estar escrita una vez. Aquí
+// solo queda lo que es de la web: el cliente con cookie y el `revalidate`.
 export async function deleteMatchEvent(input: unknown): Promise<RegisterEventState> {
   const parsed = deleteMatchEventSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
@@ -1393,19 +1387,8 @@ export async function deleteMatchEvent(input: unknown): Promise<RegisterEventSta
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  if ((await loadEditableStatus(supabase, event_id)) == null) return { error: 'not_editable' };
-
-  const { error } = await supabase
-    .from('match_events')
-    .delete()
-    .eq('event_id', event_id)
-    .eq('id', id);
-  if (error) return { error: mapEventErr(error.message, error.code) };
-
-  // F14H — si el partido ya está cerrado, recalcular stats/marcador (borrar un gol
-  // mal metido debe cuadrar el acta). En vivo no hace nada.
-  const rc = await reconsolidateIfClosed(supabase, event_id);
-  if (rc) return { error: rc };
+  const r = await deleteMatchEventFromClient(supabase, parsed.data);
+  if (!r.ok) return { error: r.error as EventActionError };
 
   revalidate(event_id);
   return { success: true, eventRowId: id };
@@ -1415,83 +1398,32 @@ export async function deleteMatchEvent(input: unknown): Promise<RegisterEventSta
 export async function updateMatchEventMinute(input: unknown): Promise<RegisterEventState> {
   const parsed = updateEventMinuteSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
-  const { event_id, id, display_minute } = parsed.data;
+  const { event_id, id } = parsed.data;
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  if ((await loadEditableStatus(supabase, event_id)) == null) return { error: 'not_editable' };
-
-  const periods = await loadPeriods(supabase, event_id);
-  if (periods.length === 0) return { error: 'no_period' };
-
-  // clock_seconds/period del minuto elegido, coherentes con el catálogo del reloj.
-  const { clockSeconds, period, displayMinute } = clockFieldsForMinute(periods, display_minute);
-
-  const { error } = await supabase
-    .from('match_events')
-    .update({
-      clock_seconds: clockSeconds,
-      period,
-      display_minute: displayMinute,
-    })
-    .eq('event_id', event_id)
-    .eq('id', id);
-  if (error) return { error: mapEventErr(error.message, error.code) };
-
-  const rc = await reconsolidateIfClosed(supabase, event_id);
-  if (rc) return { error: rc };
+  const r = await updateMatchEventMinuteFromClient(supabase, parsed.data);
+  if (!r.ok) return { error: r.error as EventActionError };
 
   revalidate(event_id);
   return { success: true, eventRowId: id };
 }
 
 // updateMatchEventActor — cambia el jugador propio / dorsal rival / (sub) los
-// jugadores implicados. Solo aplica los campos coherentes con el side/type de la
-// fila (no rompe el CHECK actor_by_side ni related_only_sub).
+// jugadores implicados. La regla de qué campos son coherentes con el side/type de la
+// fila (para no romper los CHECK actor_by_side / related_only_sub) es `actorPatchFor`
+// en core, que es pura y tiene sus tests; aquí solo se delega.
 export async function updateMatchEventActor(input: unknown): Promise<RegisterEventState> {
   const parsed = updateEventActorSchema.safeParse(input);
   if (!parsed.success) return { error: 'invalid' };
-  const { event_id, id, player_id, related_player_id, rival_dorsal } = parsed.data;
+  const { event_id, id } = parsed.data;
 
   const adapter = await createCookieAdapter();
   const supabase = createSupabaseServerClient(adapter);
 
-  if ((await loadEditableStatus(supabase, event_id)) == null) return { error: 'not_editable' };
-
-  const { data: row } = await supabase
-    .from('match_events')
-    .select('side, type')
-    .eq('event_id', event_id)
-    .eq('id', id)
-    .maybeSingle();
-  if (!row) return { error: 'not_found' };
-
-  const patch: {
-    player_id?: string;
-    related_player_id?: string;
-    rival_dorsal?: number;
-  } = {};
-  if (row.side === 'own') {
-    if (player_id) patch.player_id = player_id;
-    // El segundo jugador (entra) solo en sustituciones (related_only_sub).
-    if (row.type === 'substitution' && related_player_id) {
-      patch.related_player_id = related_player_id;
-    }
-  } else if (rival_dorsal != null) {
-    patch.rival_dorsal = rival_dorsal;
-  }
-  if (Object.keys(patch).length === 0) return { error: 'invalid' };
-
-  const { error } = await supabase
-    .from('match_events')
-    .update(patch)
-    .eq('event_id', event_id)
-    .eq('id', id);
-  if (error) return { error: mapEventErr(error.message, error.code) };
-
-  const rc = await reconsolidateIfClosed(supabase, event_id);
-  if (rc) return { error: rc };
+  const r = await updateMatchEventActorFromClient(supabase, parsed.data);
+  if (!r.ok) return { error: r.error as EventActionError };
 
   revalidate(event_id);
   return { success: true, eventRowId: id };
@@ -1544,19 +1476,16 @@ export async function addMatchEvent(input: unknown): Promise<RegisterEventState>
   const { clockSeconds, period, displayMinute } = clockFieldsForMinute(periods, display_minute);
 
   // Falta y córner SIEMPRE son de nuestro panel (side='own' con su bando, §7.4b).
-  const effectiveSide: 'own' | 'rival' =
-    type === 'foul' || type === 'corner' ? 'own' : side;
+  const effectiveSide: 'own' | 'rival' = type === 'foul' || type === 'corner' ? 'own' : side;
 
   // Actor coherente con el bando. offside/shot/corner propios van por ubicación
   // (sin jugador); el resto de tipos propios llevan jugador.
   const ownByLocation = type === 'offside' || type === 'shot' || type === 'corner';
-  const finalPlayerId =
-    effectiveSide === 'own' && !ownByLocation ? (player_id ?? null) : null;
+  const finalPlayerId = effectiveSide === 'own' && !ownByLocation ? (player_id ?? null) : null;
   const finalDorsal = effectiveSide === 'rival' ? (rival_dorsal ?? null) : null;
   // F14H — sustitución: related_player_id = jugador que ENTRA (solo en 'substitution',
   // el CHECK related_only_sub del modelo lo exige). player_id = jugador que SALE.
-  const finalRelated =
-    type === 'substitution' ? (related_player_id ?? null) : null;
+  const finalRelated = type === 'substitution' ? (related_player_id ?? null) : null;
 
   // Coordenadas solo en tipos de campo (foul/offside/shot); el córner no lleva.
   const isFieldCoords = type === 'foul' || type === 'offside' || type === 'shot';
@@ -1633,10 +1562,7 @@ async function loadLiveTactics(supabase: Supa, eventId: string): Promise<LiveTac
 }
 
 /** Modalidad del equipo del partido (para validar la formación del catálogo). */
-async function loadTeamFormat(
-  supabase: Supa,
-  eventId: string,
-): Promise<TeamFormat | null> {
+async function loadTeamFormat(supabase: Supa, eventId: string): Promise<TeamFormat | null> {
   const { data } = await supabase
     .from('events')
     .select('teams!inner(format)')

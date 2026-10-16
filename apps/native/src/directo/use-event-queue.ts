@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   applyDrainResult,
   countFailed,
+  dropFailedEntry,
   countPending,
   enqueueEvent,
   failedEntries,
@@ -49,6 +50,8 @@ export type EventQueueApi = {
   enqueue: (row: QueuedMatchEventRow) => Promise<void>;
   /** Reintentar a mano los rechazados. */
   retryFailed: () => Promise<void>;
+  /** Descartar los rechazados: la otra salida, para los que nunca van a subir. */
+  discardFailed: () => Promise<void>;
   /** Podar los `uploaded` que el servidor ya devuelve (ida y vuelta confirmado). */
   reconcile: (serverIds: Set<string>) => void;
 };
@@ -131,6 +134,21 @@ export function useEventQueue(eventId: string | null, online: boolean): EventQue
     void drain();
   }, [eventId, commit, drain]);
 
+  /**
+   * DESCARTE. Un rechazo PERMANENTE (RLS, CHECK, un jugador que no estaba en el equipo
+   * ese día) no se arregla reintentando, y hasta ahora reintentar era la única salida:
+   * la fila se quedaba en la cola para siempre. `dropFailedEntry` solo toca las
+   * `failed`, así que esto NO puede perder un evento que todavía iba a subir.
+   */
+  const discardFailed = useCallback(async () => {
+    if (!eventId) return;
+    let next = queueRef.current;
+    for (const e of failedEntries(next)) next = dropFailedEntry(next, e.row.id);
+    if (next.length === queueRef.current.length) return; // no había nada que descartar
+    await saveQueue(eventId, next);
+    commit(next);
+  }, [eventId, commit]);
+
   const reconcile = useCallback(
     (serverIds: Set<string>) => {
       if (!eventId) return;
@@ -151,8 +169,9 @@ export function useEventQueue(eventId: string | null, online: boolean): EventQue
       failed: failedEntries(queue),
       enqueue,
       retryFailed,
+      discardFailed,
       reconcile,
     }),
-    [queue, enqueue, retryFailed, reconcile],
+    [queue, enqueue, retryFailed, discardFailed, reconcile],
   );
 }

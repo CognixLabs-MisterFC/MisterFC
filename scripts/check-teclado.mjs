@@ -81,6 +81,10 @@ const SCREENS = {
     use: null,
     why: 'Tarjeta embebida; el scroll lo pone su pantalla (staff/directo.tsx), y ahí es KeyboardScrollView.',
   },
+  'apps/native/src/directo/event-edit-sheet.tsx': {
+    use: null,
+    why: 'Hoja embebida en la MISMA pantalla que quick-entry (staff/directo.tsx), dentro de su KeyboardScrollView.',
+  },
   'apps/native/src/ui/directory-filters.tsx': {
     use: null,
     why: 'Buscador embebido; el scroll lo ponen direction/jugadores.tsx y direction/cuerpo-tecnico.tsx.',

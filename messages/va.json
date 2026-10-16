@@ -5421,7 +5421,8 @@
     "rival_dorsal": "Dorsal del rival (1–99)",
     "title": "Registrar esdeveniment",
     "type_rival": "Gol rival",
-    "unsynced": "Sense pujar"
+    "unsynced": "Sense pujar",
+    "discard": "Descartar"
   },
   "estadisticas_equipo": {
     "player": "Jugador",
@@ -5964,6 +5965,23 @@
       "error_forbidden": "No tens permís per a gestionar els socis d'este club.",
       "error_not_found": "Eixe soci ja no existix. Recarrega la pàgina.",
       "error_generic": "No s'ha pogut guardar. Torna-ho a intentar."
+    }
+  },
+  "directo_edit": {
+    "title": "Corregir",
+    "minute_label": "Minut",
+    "save": "Guardar",
+    "delete": "Esborrar esdeveniment",
+    "delete_confirm": "Sí, esborrar",
+    "offline": "Sense connexió: una correcció no es pot guardar. Intenta-ho amb cobertura.",
+    "unsynced": "Este esdeveniment encara no s’ha pujat. Es podrà corregir quan puge.",
+    "not_editable": "Este partit encara no ha començat: no hi ha res a corregir.",
+    "errors": {
+      "not_found": "Eixe esdeveniment ja no està en el partit.",
+      "no_period": "El partit no té periodes, així que no hi ha minut on moure’l.",
+      "player_not_in_team": "Eixe jugador no estava en l’equip el dia del partit.",
+      "invalid": "Eixe canvi no encaixa amb este esdeveniment.",
+      "generic": "No hem pogut guardar la correcció. Intenta-ho una altra vegada."
     }
   }
 }

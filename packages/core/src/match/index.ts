@@ -28,13 +28,7 @@ export {
   formatClock,
   displayMinute,
 } from './clock';
-export type {
-  PeriodCount,
-  PeriodKind,
-  ClockPeriod,
-  ClockMutation,
-  NewPeriod,
-} from './clock';
+export type { PeriodCount, PeriodKind, ClockPeriod, ClockMutation, NewPeriod } from './clock';
 
 export {
   PLAYER_EVENT_TYPES,
@@ -61,14 +55,7 @@ export type {
 } from './event';
 
 export { deriveSquad } from './squad';
-export type {
-  FieldSlot,
-  Sub,
-  BenchStatus,
-  BenchEntry,
-  Squad,
-  DeriveSquadParams,
-} from './squad';
+export type { FieldSlot, Sub, BenchStatus, BenchEntry, Squad, DeriveSquadParams } from './squad';
 
 // Nota: `clampPct` ya se exporta desde lineups (coach-formations); aquí solo lo
 // usamos internamente en tactics, no lo re-exportamos para evitar el choque.
@@ -136,12 +123,7 @@ export type {
   MatchTeamStats,
 } from './team-events';
 
-export {
-  periodAtClock,
-  clockFieldsForMinute,
-  sortTimeline,
-  findTimelineIssues,
-} from './timeline';
+export { periodAtClock, clockFieldsForMinute, sortTimeline, findTimelineIssues } from './timeline';
 export type {
   MinuteClockFields,
   TimelineOrderable,
@@ -160,12 +142,7 @@ export type {
 } from './consolidation';
 
 export { matchPhase, phaseShowsMinute } from './phase';
-export type {
-  MatchStatus,
-  MatchPhaseKind,
-  MatchPhaseInput,
-  MatchPhaseResult,
-} from './phase';
+export type { MatchStatus, MatchPhaseKind, MatchPhaseInput, MatchPhaseResult } from './phase';
 export * from './week-matches';
 export * from './staff-matches';
 export * from './detail';
@@ -202,6 +179,7 @@ export {
   pruneConfirmed,
   resetFailedToPending,
   overlayRows,
+  dropFailedEntry,
   failedEntries,
   upsertMatchEventFromClient,
   EMPTY_QUEUE,
@@ -218,3 +196,17 @@ export type {
   UploadOutcome,
   EventQueueError,
 } from './event-queue';
+
+export {
+  actorPatchFor,
+  eventEditAvailability,
+  deleteMatchEventFromClient,
+  updateMatchEventActorFromClient,
+  updateMatchEventMinuteFromClient,
+} from './event-edits';
+export type {
+  ActorPatch,
+  EventEditAvailability,
+  EventEditError,
+  EventEditOutcome,
+} from './event-edits';
