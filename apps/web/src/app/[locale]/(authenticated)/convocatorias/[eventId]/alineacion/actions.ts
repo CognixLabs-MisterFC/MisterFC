@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import {
   calledUpOnRemove,
   callupEventIdFor,
+  createLineupFromClient,
   createLineupSchema,
   createPlannedSubSchema,
   createSupabaseServerClient,
@@ -132,10 +133,22 @@ async function clearCalledUpOnRemoval(
 // ─────────────────────────────────────────────────────────────────────────────
 // createLineup — crea la cabecera y siembra el banquillo con los CONVOCADOS.
 //
-// Rediseño Lote B': la alineación distribuye a los convocados (called_up), no a
-// todo el roster. called_up = roster a fecha − descartados en callup_decisions.
-// Si aún no hay decisiones (convocatoria sin tocar), called_up = roster entero
-// (todos los que el coach espera llevar).
+// DELEGA en core (`createLineupFromClient`): la cabecera y la siembra del banquillo
+// (roster a la fecha ∪ subidos al evento − descartados) viven ahí y las comparte la
+// app nativa, que antes no podía crear nada. Aquí quedan el `revalidatePath` de Next
+// y la propagación a la convocatoria.
+//
+// UN CAMBIO DE COMPORTAMIENTO, a propósito: ahora también siembra a los jugadores
+// SUBIDOS al evento (`player_promotions`, D2.1). Esta acción es anterior a esa regla
+// y leía solo `team_members`, así que un Plan B dejaba al subido fuera del banquillo
+// — mientras que abrir la pantalla (el auto-crear de `loadLineupEditor`) sí lo
+// sembraba. Eran dos copias de la misma regla que no decían lo mismo; gana la que ve
+// el entrenador al abrir la alineación.
+//
+// La propagación a la convocatoria (BUG 2) se queda AQUÍ y no baja a core: el
+// auto-crear de la pantalla NO la hace, así que no está duplicada. Alinear los dos
+// caminos cambiaría lo que ve un entrenador —abrir la alineación le marcaría la
+// convocatoria entera— y eso es una decisión, no un refactor.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function createLineup(input: unknown): Promise<LineupActionState> {
@@ -150,86 +163,40 @@ export async function createLineup(input: unknown): Promise<LineupActionState> {
   if (!user) return { error: 'forbidden' };
 
   const { event_id, name, formation_code } = parsed.data;
+  const r = await createLineupFromClient(supabase, { event_id, name, formation_code });
+  if (!r.ok) return { error: r.error as ActionError };
 
-  const { data: created, error } = await supabase
-    .from('lineups')
-    .insert({ event_id, name, formation_code, created_by: user.id })
-    .select('id')
-    .maybeSingle();
-  if (error) return { error: mapPgErr(error.message, error.code) };
-  const lineupId = created?.id as string | undefined;
-  if (!lineupId) return { error: 'generic' };
-
-  // Siembra el banquillo con los convocados (roster a fecha − descartados).
-  const { data: ev } = await supabase
-    .from('events')
-    .select('team_id, starts_at, tournament_id')
-    .eq('id', event_id)
-    .maybeSingle();
-  if (ev?.team_id) {
-    const eventDate = (ev.starts_at as string).slice(0, 10);
-    // F13B (T-2) — la convocatoria se lee de la cabecera si es partido de torneo;
-    // y en ese caso la alineación NO escribe called_up (solo distribuye).
-    const tournamentId = (ev.tournament_id as string | null) ?? null;
-    const callupEventId = callupEventIdFor({ id: event_id, tournament_id: tournamentId });
-    const writesCallup = lineupWritesCallup({ tournament_id: tournamentId });
-
-    const { data: tms } = await supabase
-      .from('team_members')
-      .select('player_id, joined_at, left_at')
-      .eq('team_id', ev.team_id)
-      .lte('joined_at', eventDate);
-    type TM = { player_id: string; joined_at: string; left_at: string | null };
-    const rosterIds = (tms ?? [])
-      .map((r) => r as unknown as TM)
-      .filter((r) => r.left_at == null || r.left_at >= eventDate)
-      .map((r) => r.player_id);
-
-    const { data: decisions } = await supabase
-      .from('callup_decisions')
-      .select('player_id, decision')
-      .eq('event_id', callupEventId);
-    const discarded = new Set(
-      (decisions ?? [])
-        .filter((d) => (d.decision as string) === 'discarded')
-        .map((d) => d.player_id as string),
-    );
-    const calledUp = rosterIds.filter((pid) => !discarded.has(pid));
-
-    if (calledUp.length > 0) {
-      await supabase.from('lineup_positions').insert(
-        calledUp.map((pid) => ({
-          lineup_id: lineupId,
-          player_id: pid,
-          location: 'bench' as const,
-        })),
-      );
-
-      // BUG 2 — los sembrados al banquillo quedan CONVOCADOS en la convocatoria
-      // (solo en borrador; regla 6.6). Marca called_up a los que aún no tienen
-      // ninguna decisión; no pisa descartes. F13B: NO para partidos de torneo
-      // (su plantilla se maneja solo en la cabecera).
-      if (writesCallup && !(await isCallupPublished(supabase, event_id))) {
-        const decided = new Set(
-          (decisions ?? []).map((d) => d.player_id as string),
+  // BUG 2 — los sembrados al banquillo quedan CONVOCADOS en la convocatoria (solo
+  // en borrador; regla 6.6). Marca called_up a los que aún no tienen ninguna
+  // decisión; no pisa descartes. F13B: NO para partidos de torneo (su plantilla se
+  // maneja solo en la cabecera).
+  if (r.seeded.length > 0) {
+    const tournamentId = await eventTournamentId(supabase, event_id);
+    if (
+      lineupWritesCallup({ tournament_id: tournamentId }) &&
+      !(await isCallupPublished(supabase, event_id))
+    ) {
+      const { data: decisions } = await supabase
+        .from('callup_decisions')
+        .select('player_id')
+        .eq('event_id', callupEventIdFor({ id: event_id, tournament_id: tournamentId }));
+      const decided = new Set((decisions ?? []).map((d) => d.player_id as string));
+      const toMark = r.seeded.filter((pid) => !decided.has(pid));
+      if (toMark.length > 0) {
+        await supabase.from('callup_decisions').insert(
+          toMark.map((pid) => ({
+            event_id,
+            player_id: pid,
+            decision: 'called_up' as const,
+            decided_by: user.id,
+          })),
         );
-        const toMark = calledUp.filter((pid) => !decided.has(pid));
-        if (toMark.length > 0) {
-          await supabase.from('callup_decisions').insert(
-            toMark.map((pid) => ({
-              event_id,
-              player_id: pid,
-              decision: 'called_up' as const,
-              decided_by: user.id,
-            })),
-          );
-        }
       }
     }
   }
 
   revalidate(event_id);
-  return { success: true, lineupId };
+  return { success: true, lineupId: r.lineup.id };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

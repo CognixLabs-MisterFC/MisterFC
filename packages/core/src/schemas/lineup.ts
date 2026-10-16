@@ -38,6 +38,26 @@ export const createLineupSchema = z.object({
 });
 export type CreateLineupInput = z.infer<typeof createLineupSchema>;
 
+/**
+ * Crear desde CLIENTE (core `createLineupFromClient`): `name` y `formation_code`
+ * son OPCIONALES. El borrador por defecto («Plan A» + primera formación de la
+ * modalidad, `defaultLineupDraft`) se resuelve DENTRO, porque para resolverlo hace
+ * falta la modalidad del equipo y eso es una lectura — pedírsela a cada llamador es
+ * la vía por la que la regla se vuelve a escribir dos veces. El editor de web, que
+ * sí tiene nombre y formación elegidos, los pasa.
+ */
+export const createLineupFromClientSchema = z.object({
+  event_id: uuid,
+  name: z
+    .string()
+    .trim()
+    .min(1, { message: 'name_required' })
+    .max(60, { message: 'name_too_long' })
+    .optional(),
+  formation_code: formationCode.optional(),
+});
+export type CreateLineupFromClientInput = z.infer<typeof createLineupFromClientSchema>;
+
 export const setLineupFormationSchema = z.object({
   lineup_id: uuid,
   formation_code: formationCodeOrCoachId,

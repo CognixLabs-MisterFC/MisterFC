@@ -23,17 +23,18 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import {
+  createLineupFromClientSchema,
   setLineupFormationSchema,
   setLineupOfficialSchema,
   setLineupVisibilitySchema,
   upsertLineupPositionSchema,
 } from '../schemas/lineup';
-import { getFormation, defaultFormation } from './formations';
+import { defaultLineupDraft, getFormation, defaultFormation } from './formations';
 import { remapToFormation } from './geometry';
 import { roleFromPosition } from './geometry';
 import { exceedsStarters } from './rules';
 import { calledUpOnPlace } from './callup-sync';
-import { lineupWritesCallup } from '../events/aggregation';
+import { callupEventIdFor, lineupWritesCallup } from '../events/aggregation';
 import { getCurrentUserFromClient } from '../auth/current-user';
 import type { PlayerPositionMain } from './geometry';
 import type { CallupDecision } from './callup-sync';
@@ -396,4 +397,178 @@ export async function setLineupFormationFromClient(
   }
 
   return { ok: true, eventId };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// createLineupFromClient — CREAR la alineación: cabecera + banquillo sembrado.
+//
+// POR QUÉ EXISTE. La regla «sembrar el banquillo con los convocados» estaba
+// escrita DOS VECES en web y CERO en core, así que la app nativa no podía crear
+// nada: sus cuatro escrituras de alineación (colocar, formación, oficial,
+// visibilidad) exigen una fila que ya exista. Las dos copias de web eran:
+//
+//   · `createLineup` (server action) — el camino explícito, para una segunda
+//     alineación (Plan B). Lee `team_members` a la fecha del evento.
+//   · el auto-crear de `loadLineupEditor` (queries.ts, «Bug BB») — el camino que
+//     de verdad se usa: abrir la pantalla CREA el borrador. Siembra con el roster
+//     que ya tenía cargado, que incluye a los SUBIDOS (`player_promotions`, D2.1).
+//
+// Y no decían lo mismo: la acción explícita NO sembraba a los jugadores subidos
+// (es anterior a D2.1), así que un Plan B dejaba al subido fuera del banquillo. Al
+// unificar aquí gana la versión del auto-crear —roster a la fecha ∪ subidos al
+// evento− descartados—, que es la que ve un entrenador al abrir la alineación y la
+// que la BD acepta desde D2.1 (`player_promoted_to_event` en el trigger).
+//
+// LA SIEMBRA ES BEST-EFFORT, Y ESO SE DEVUELVE. No hay transacción sobre PostgREST:
+// la cabecera ya está escrita cuando se intenta el banquillo, así que un fallo ahí
+// NO puede devolverse como «no se ha creado» —sería mentira, y el llamador volvería
+// a crear otra—. Se devuelve `ok: true` con `seedError`, y el llamador decide qué
+// avisa. La web hoy ignora ese error en los dos sitios; la nativa lo necesita,
+// porque su banquillo se pinta SOLO desde `lineup_positions`: sin siembra no hay
+// ficha que arrastrar.
+//
+// Lo que NO entra aquí: la propagación a la convocatoria (BUG 2, marcar called_up a
+// los sembrados). Eso lo hace solo la acción explícita de web y NO el auto-crear, o
+// sea que no está duplicado y no es de esta pieza. Se queda en su llamador, con
+// `seeded` como entrada, y la divergencia queda anotada en vez de resuelta a
+// escondidas: alinear los dos caminos cambia lo que ve un entrenador (abrir la
+// pantalla le llenaría la convocatoria) y eso es una decisión, no un refactor.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type CreatedLineup = {
+  id: string;
+  name: string;
+  formationCode: string;
+  isOfficial: boolean;
+  visibility: 'staff' | 'team';
+};
+
+export type CreateLineupOutcome =
+  | {
+      ok: true;
+      lineup: CreatedLineup;
+      /** Jugadores sembrados al banquillo (los convocados), en orden de roster. */
+      seeded: string[];
+      /** Fallo de la siembra, con la cabecera YA creada. null = todo bien. */
+      seedError: LineupWriteError | null;
+    }
+  | { ok: false; error: LineupWriteError };
+
+/**
+ * Los CONVOCADOS del evento: roster a la fecha del partido ∪ subidos a ese evento,
+ * menos los descartados. El ancla de la convocatoria es `callupEventIdFor` (la
+ * cabecera si es partido de torneo, F13B).
+ */
+async function calledUpForSeeding(
+  supabase: DbClient,
+  event: { id: string; team_id: string; starts_at: string; tournament_id: string | null },
+): Promise<string[]> {
+  const eventDate = event.starts_at.slice(0, 10);
+
+  const { data: tms } = await supabase
+    .from('team_members')
+    .select('player_id, joined_at, left_at')
+    .eq('team_id', event.team_id)
+    .lte('joined_at', eventDate);
+  type TM = { player_id: string; joined_at: string; left_at: string | null };
+  const rosterIds = (tms ?? [])
+    .map((r) => r as unknown as TM)
+    .filter((r) => r.left_at == null || r.left_at >= eventDate)
+    .map((r) => r.player_id);
+
+  // D2.1 — subidos a ESTE evento: alineables como uno más, sin estar en el roster.
+  const { data: promos } = await supabase
+    .from('player_promotions')
+    .select('player_id')
+    .eq('event_id', event.id);
+  const todos = [...rosterIds];
+  for (const p of promos ?? []) {
+    const pid = p.player_id as string;
+    if (!todos.includes(pid)) todos.push(pid);
+  }
+
+  const { data: decisions } = await supabase
+    .from('callup_decisions')
+    .select('player_id, decision')
+    .eq('event_id', callupEventIdFor(event));
+  const descartados = new Set(
+    (decisions ?? [])
+      .filter((d) => (d.decision as string) === 'discarded')
+      .map((d) => d.player_id as string),
+  );
+
+  return todos.filter((pid) => !descartados.has(pid));
+}
+
+export async function createLineupFromClient(
+  supabase: DbClient,
+  input: unknown,
+): Promise<CreateLineupOutcome> {
+  const parsed = createLineupFromClientSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: 'invalid' };
+  const { event_id, name, formation_code } = parsed.data;
+
+  const user = await getCurrentUserFromClient(supabase);
+  if (!user) return { ok: false, error: 'forbidden' };
+
+  // El evento da la fecha (roster histórico), el equipo y la MODALIDAD (para el
+  // borrador por defecto). El trigger de BD valida type='match' y team_id, pero
+  // sin team_id aquí no se puede sembrar: se corta antes con el mismo error.
+  const { data: evRow } = await supabase
+    .from('events')
+    .select('id, team_id, starts_at, tournament_id, teams!inner(format)')
+    .eq('id', event_id)
+    .maybeSingle();
+  type EventShape = {
+    id: string;
+    team_id: string | null;
+    starts_at: string;
+    tournament_id: string | null;
+    teams: { format: TeamFormat };
+  };
+  const ev = evRow as unknown as EventShape | null;
+  if (!ev) return { ok: false, error: 'not_found' };
+  if (ev.team_id == null) return { ok: false, error: 'event_without_team' };
+
+  const draft = defaultLineupDraft(ev.teams.format);
+  const { data: created, error } = await supabase
+    .from('lineups')
+    .insert({
+      event_id,
+      name: name ?? draft.name,
+      formation_code: formation_code ?? draft.formationCode,
+      created_by: user.id,
+    })
+    .select('id, name, formation_code, is_official, visibility')
+    .maybeSingle();
+  if (error) return { ok: false, error: mapLineupPgErr(error.message, error.code) };
+  if (!created) return { ok: false, error: 'generic' };
+
+  const lineup: CreatedLineup = {
+    id: created.id as string,
+    name: created.name as string,
+    formationCode: created.formation_code as string,
+    isOfficial: created.is_official as boolean,
+    visibility: created.visibility as 'staff' | 'team',
+  };
+
+  const seeded = await calledUpForSeeding(supabase, {
+    id: ev.id,
+    team_id: ev.team_id,
+    starts_at: ev.starts_at,
+    tournament_id: ev.tournament_id,
+  });
+  let seedError: LineupWriteError | null = null;
+  if (seeded.length > 0) {
+    const { error: posErr } = await supabase.from('lineup_positions').insert(
+      seeded.map((pid) => ({
+        lineup_id: lineup.id,
+        player_id: pid,
+        location: 'bench' as const,
+      })),
+    );
+    if (posErr) seedError = mapLineupPgErr(posErr.message, posErr.code);
+  }
+
+  return { ok: true, lineup, seeded, seedError };
 }

@@ -199,6 +199,7 @@ export type {
 
 export {
   createLineupSchema,
+  createLineupFromClientSchema,
   setLineupFormationSchema,
   renameLineupSchema,
   setLineupOfficialSchema,
@@ -211,6 +212,7 @@ export {
 } from './lineup';
 export type {
   CreateLineupInput,
+  CreateLineupFromClientInput,
   SetLineupFormationInput,
   RenameLineupInput,
   SetLineupOfficialInput,

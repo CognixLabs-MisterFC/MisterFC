@@ -97,13 +97,19 @@ export type {
 // O2 alineación compartida — marcar oficial + compartir con el equipo (dos toggles,
 // como la web); la web pasa a DELEGAR en estas (comportamiento idéntico).
 export {
+  createLineupFromClient,
   upsertLineupPositionFromClient,
   setLineupFormationFromClient,
   setLineupOfficialFromClient,
   setLineupVisibilityFromClient,
   mapLineupPgErr,
 } from './writes';
-export type { LineupWriteError, LineupWriteOutcome } from './writes';
+export type {
+  CreateLineupOutcome,
+  CreatedLineup,
+  LineupWriteError,
+  LineupWriteOutcome,
+} from './writes';
 
 export {
   calledUpOnPlace,
