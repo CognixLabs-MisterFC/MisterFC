@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { MARKETING_SUBPAGES } from '../site';
 
@@ -53,11 +54,13 @@ const hondas = subpaginas(WEB);
  * censo de textos legales, no de una lista a mano.
  */
 const LOCALE = join(ROOT, 'apps/web/src/app/[locale]');
-const LEGALES_WEB = [
-  ...readFileSync(join(ROOT, 'scripts/textos-legales.mjs'), 'utf8').matchAll(
-    /servido: '([^']+)', ambito: 'web' \}/g,
-  ),
-].map((m) => `legal/${m[1]}`);
+// Se IMPORTA el censo, no se lee su forma con una regex: la regex casaba con la entrada
+// escrita en una línea y se quedó en cero cuando las entradas pasaron a ocupar varias.
+// Un anexo (`anexoDe`) no es una página: se pinta dentro de otra.
+const censo = (await import(pathToFileURL(join(ROOT, 'scripts/textos-legales.mjs')).href)) as {
+  SERVIDOS_WEB: { servido: string; anexoDe?: string }[];
+};
+const LEGALES_WEB = censo.SERVIDOS_WEB.filter((p) => !p.anexoDe).map((p) => `legal/${p.servido}`);
 
 describe('páginas de la web comercial con el interruptor apagado', () => {
   it('premisa: el censo encuentra las páginas', () => {
