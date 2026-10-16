@@ -129,6 +129,10 @@
     "altAppStore": "Descarregar a l'App Store",
     "altGooglePlay": "Baixa a Google Play"
   },
+  "ampliar": {
+    "abrir": "Amplia la captura: {name}",
+    "cerrar": "Tanca"
+  },
   "capturas": {
     "C1": "Tauler de direcció",
     "C3": "Sessió d'entrenament per blocs",

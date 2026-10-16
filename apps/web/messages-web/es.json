@@ -129,6 +129,10 @@
     "altAppStore": "Consíguelo en el App Store",
     "altGooglePlay": "Disponible en Google Play"
   },
+  "ampliar": {
+    "abrir": "Ampliar captura: {name}",
+    "cerrar": "Cerrar"
+  },
   "capturas": {
     "C1": "Dashboard de dirección",
     "C3": "Sesión de entrenamiento por bloques",

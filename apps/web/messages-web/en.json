@@ -129,6 +129,10 @@
     "altAppStore": "Download on the App Store",
     "altGooglePlay": "Get it on Google Play"
   },
+  "ampliar": {
+    "abrir": "Enlarge screenshot: {name}",
+    "cerrar": "Close"
+  },
   "capturas": {
     "C1": "Management dashboard",
     "C3": "Training session in blocks",
