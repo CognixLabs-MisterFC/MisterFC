@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   pushPayloadFromNotificationRow,
   decideNotificationOutcome,
+  pushRowIsStale,
+  PUSH_TTL_MINUTES,
 } from '../push-drain';
 
 describe('pushPayloadFromNotificationRow', () => {
@@ -108,5 +110,114 @@ describe('decideNotificationOutcome', () => {
       failed_gone: 1,
     });
     expect(o.status).toBe('sent');
+  });
+});
+
+/**
+ * El TEXTO del gol desde los ingredientes, y la CADUCIDAD en la cola.
+ *
+ * Los dos nacen del mismo agujero: el aviso de gol ahora puede nacer en el TRIGGER de
+ * la base (`notify_goal`, mig 20261126000000), que guarda los ingredientes del
+ * marcador y NO la frase —para que la frase viva en un solo sitio— y que puede dejar
+ * la fila esperando en la cola hasta que pase el drenador.
+ */
+describe('gol nacido en el trigger: el texto se arma aquí', () => {
+  const delTrigger = {
+    event_id: 'ev-1',
+    team_id: 'tm-1',
+    deep_link: '/es/directos/ev-1',
+    own: 2,
+    rival: 1,
+    team_name: 'Cadete A',
+    opponent_name: 'CD Rival',
+  };
+
+  it('sin title/body en la fila, los arma con formatGoalPush', () => {
+    const p = pushPayloadFromNotificationRow({ payload: delTrigger, type: 'goal' });
+    expect(p.title).toBe('Gol');
+    expect(p.body).toBe('Cadete A 2 - 1 CD Rival');
+  });
+
+  it('el tag sale del event_id, para que dos goles seguidos se colapsen', () => {
+    const p = pushPayloadFromNotificationRow({ payload: delTrigger, type: 'goal' });
+    expect(p.tag).toBe('goal:ev-1');
+  });
+
+  it('si la fila YA trae title/body (el emisor de web), manda la fila', () => {
+    const p = pushPayloadFromNotificationRow({
+      payload: { ...delTrigger, title: 'Gol!', body: 'otro texto', tag: 'goal:zzz' },
+      type: 'goal',
+    });
+    expect(p.title).toBe('Gol!');
+    expect(p.body).toBe('otro texto');
+    expect(p.tag).toBe('goal:zzz');
+  });
+
+  it('sin rival es un amistoso sin nombre: el marcador se pinta igual', () => {
+    const p = pushPayloadFromNotificationRow({
+      payload: { ...delTrigger, opponent_name: null },
+      type: 'goal',
+    });
+    expect(p.body).toBe('Cadete A 2 - 1');
+  });
+
+  it('ingredientes INCOMPLETOS → defaults de siempre, no una frase a medias', () => {
+    const p = pushPayloadFromNotificationRow({
+      payload: { event_id: 'ev-1', team_name: 'Cadete A' },
+      type: 'goal',
+    });
+    expect(p.title).toBe('Gol');
+    expect(p.body).toBe('');
+  });
+
+  it('otro tipo con los mismos números NO se formatea como gol', () => {
+    const p = pushPayloadFromNotificationRow({
+      payload: delTrigger,
+      type: 'new_message',
+    });
+    expect(p.body).toBe('');
+  });
+});
+
+describe('pushRowIsStale · avisos que caducan esperando en la cola', () => {
+  const T0 = Date.parse('2026-10-24T10:00:00.000Z');
+  const hace = (minutos: number) =>
+    new Date(T0 - minutos * 60_000).toISOString();
+
+  it('premisa: el gol es el único tipo con caducidad declarada hoy', () => {
+    expect(PUSH_TTL_MINUTES.goal).toBe(10);
+    expect(Object.keys(PUSH_TTL_MINUTES)).toEqual(['goal']);
+  });
+
+  it('un gol recién creado se envía', () => {
+    expect(pushRowIsStale({ type: 'goal', created_at: hace(1) }, T0)).toBe(false);
+  });
+
+  it('un gol de hace 11 minutos ya no', () => {
+    expect(pushRowIsStale({ type: 'goal', created_at: hace(11) }, T0)).toBe(true);
+  });
+
+  it('justo en el umbral (10 min) todavía se envía', () => {
+    expect(pushRowIsStale({ type: 'goal', created_at: hace(10) }, T0)).toBe(false);
+  });
+
+  it('el caso que lo motivó: la fila espera al cron de las 08:00 → 14 horas', () => {
+    expect(pushRowIsStale({ type: 'goal', created_at: hace(14 * 60) }, T0)).toBe(true);
+  });
+
+  it('un recordatorio de convocatoria NO caduca: llegar tarde es su diseño', () => {
+    expect(
+      pushRowIsStale({ type: 'match_callup_reminder', created_at: hace(14 * 60) }, T0),
+    ).toBe(false);
+    expect(
+      pushRowIsStale({ type: 'attendance_pending_reminder', created_at: hace(999) }, T0),
+    ).toBe(false);
+  });
+
+  it('fecha ilegible, ausente o futura → NO caduca (un fallo no es una edad)', () => {
+    expect(pushRowIsStale({ type: 'goal', created_at: 'no-es-fecha' }, T0)).toBe(false);
+    expect(pushRowIsStale({ type: 'goal', created_at: null }, T0)).toBe(false);
+    expect(pushRowIsStale({ type: 'goal', created_at: undefined }, T0)).toBe(false);
+    expect(pushRowIsStale({ type: 'goal', created_at: hace(-30) }, T0)).toBe(false);
   });
 });

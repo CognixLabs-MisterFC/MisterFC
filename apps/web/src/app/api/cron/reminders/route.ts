@@ -40,6 +40,7 @@ import {
   createSupabaseAdminClient,
   dayBucketMadrid,
   fromZonedFields,
+  pushRowIsStale,
   type Json,
 } from '@misterfc/core';
 
@@ -672,6 +673,8 @@ type DrainResult = {
   scanned: number;
   sent: number;
   skipped_user_pref: number;
+  /** Filas que CADUCARON esperando en la cola (hoy solo el gol). */
+  skipped_stale: number;
   failed_gone: number;
   failed_other: number;
   no_subscriptions: number;
@@ -685,6 +688,7 @@ async function drainPushQueue(
     scanned: 0,
     sent: 0,
     skipped_user_pref: 0,
+    skipped_stale: 0,
     failed_gone: 0,
     failed_other: 0,
     no_subscriptions: 0,
@@ -692,7 +696,9 @@ async function drainPushQueue(
 
   const { data: pendings } = await supabase
     .from('notifications')
-    .select('id, user_id, type, payload')
+    // `created_at` entra para medir CUÁNTO LLEVA ESPERANDO la fila: hay avisos que
+    // caducan en la cola (hoy el gol). Ver `pushRowIsStale` en core.
+    .select('id, user_id, type, payload, created_at')
     .eq('channel', 'push')
     .eq('status', 'pending')
     .is('sent_at', null)
@@ -708,7 +714,23 @@ async function drainPushQueue(
     '@/lib/web-push'
   );
 
+  const ahora = Date.now();
+
   for (const row of pendings) {
+    // CADUCIDAD EN LA COLA (mitad de abajo de la frescura del gol; la de arriba está
+    // en el trigger `notify_goal`, que decide si la fila se crea midiendo el reloj del
+    // partido). Un «GOL» que sale horas después confunde: la pantalla del directo ya
+    // enseña el marcador bueno. Se marca `skipped` —y no se deja `pending`— para que
+    // no vuelva a leerse en cada pasada ni ocupe sitio del `cap`.
+    if (pushRowIsStale({ type: row.type, created_at: row.created_at }, ahora)) {
+      result.skipped_stale += 1;
+      await supabase
+        .from('notifications')
+        .update({ status: 'skipped', sent_at: new Date().toISOString() })
+        .eq('id', row.id);
+      continue;
+    }
+
     const payload = pushPayloadFromNotificationRow({
       payload: row.payload,
       type: row.type,
