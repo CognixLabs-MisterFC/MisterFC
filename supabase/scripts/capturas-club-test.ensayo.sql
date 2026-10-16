@@ -171,19 +171,28 @@ begin
   insert into _resumen (paso, filas) values ('5b · vínculos familia nuevos (0 si ya existían)', v_n);
 
   -- ── 6 · Partidos que ya había: sin «Campo Fonteta», con rival ──────────────
-  update public.match_callup_meta m set meeting_location = 'Campo Municipal Las Dunas'
+  -- Citaciones: «Campo Fonteta» y «Fonteta futbol» (14 filas al inventariar). El lugar
+  -- entero pasa a «Campo Municipal Las Dunas» y la dirección, a null.
+  update public.match_callup_meta m
+     set meeting_location = 'Campo Municipal Las Dunas', meeting_address = null
     from public.events e
-   where m.event_id = e.id and e.club_id = c_club and m.meeting_location = 'Campo Fonteta';
+   where m.event_id = e.id and e.club_id = c_club
+     and (m.meeting_location ilike '%fonteta%' or m.meeting_address ilike '%fonteta%');
   get diagnostics v_n = row_count;
-  if v_n < 3 then raise exception 'Paso 6: % filas con Campo Fonteta (esperadas al menos 3)', v_n; end if;
-  insert into _resumen (paso, filas) values ('6 · citaciones sin Campo Fonteta', v_n);
+  if v_n < 3 then raise exception 'Paso 6: % citaciones con Fonteta (esperadas al menos 3)', v_n; end if;
+  insert into _resumen (paso, filas) values ('6 · citaciones sin Fonteta', v_n);
 
+  -- Eventos: el lugar (nombre → Las Dunas, dirección → null) y el título y el rival
+  -- («Fonteta vs Amistat», 4 filas al inventariar), donde Fonteta se sustituye.
   update public.events
      set location_name = case when location_name ilike '%fonteta%' then 'Campo Municipal Las Dunas' else location_name end,
-         location_address = case when location_address ilike '%fonteta%' then null else location_address end
-   where club_id = c_club and (location_name ilike '%fonteta%' or location_address ilike '%fonteta%');
+         location_address = case when location_name ilike '%fonteta%' or location_address ilike '%fonteta%' then null else location_address end,
+         title = regexp_replace(title, 'fonteta', 'Campo Municipal Las Dunas', 'gi'),
+         opponent_name = regexp_replace(opponent_name, 'fonteta', 'Campo Municipal Las Dunas', 'gi')
+   where club_id = c_club
+     and concat_ws(' ', title, opponent_name, location_name, location_address) ilike '%fonteta%';
   get diagnostics v_n = row_count;
-  insert into _resumen (paso, filas) values ('6a · eventos con Fonteta en el lugar (0 si no había)', v_n);
+  insert into _resumen (paso, filas) values ('6a · eventos con Fonteta en título, rival o lugar', v_n);
 
   update public.events e
      set title = 'Amistoso', opponent_name = v.rival,
