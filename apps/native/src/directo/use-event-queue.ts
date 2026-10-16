@@ -17,8 +17,10 @@ import {
   type QueuedMatchEventRow,
 } from '@misterfc/core';
 import { supabase } from '@/lib/supabase';
+import { callServerEndpoint } from '@/lib/server-api';
 import { getIsOnline } from '@/data/connectivity';
 import { loadQueue, saveQueue } from './event-queue-store';
+import { nudgeGoalPush } from './goal-push-nudge';
 
 /**
  * O2-9b — Orquestación de la COLA de eventos del directo (la única escritura
@@ -93,6 +95,10 @@ export function useEventQueue(eventId: string | null, online: boolean): EventQue
         working = applyDrainResult(working, entry.row.id, result);
         await saveQueue(eventId, working);
         commit(working);
+        // EMPUJÓN DEL GOL — fuera del camino de la cola a propósito: sin `await`, y la
+        // función no lanza. La fila ya está subida y persistida; el push es un extra
+        // que, si no sale, recoge el drenador de cada minuto. Ver `goal-push-nudge`.
+        if (out.ok) void nudgeGoalPush(entry.row, callServerEndpoint);
         // Red caída (transitorio): no seguir martilleando; se reintenta luego.
         if (!out.ok && !out.permanent) break;
       }
