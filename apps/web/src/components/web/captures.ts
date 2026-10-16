@@ -83,10 +83,16 @@ export const CAPTURES: Record<CaptureId, CaptureImage> = {
 };
 
 /**
- * Devuelve, para un código de captura, las props del marco (`CaptureFrame`): el código y
- * su descripción en el idioma de la página, que es el texto alternativo de la imagen.
+ * Devuelve, para un código de captura, las props del marco (`CaptureFrame`): el código,
+ * su descripción en el idioma de la página, que es el texto alternativo de la imagen, y
+ * los textos del botón que la amplía y del que cierra la ampliación.
  */
 export async function captureLabels() {
   const t = await getTranslations('webComercial.capturas');
-  return (id: CaptureId) => ({ id, name: t(id) });
+  const tz = await getTranslations('webComercial.ampliar');
+  return (id: CaptureId) => ({
+    id,
+    name: t(id),
+    zoom: { open: tz('abrir', { name: t(id) }), close: tz('cerrar') },
+  });
 }
