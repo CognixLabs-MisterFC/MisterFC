@@ -3422,7 +3422,9 @@
     "pick_match": "Abre un partido y pulsa «Ver alineación»",
     "readonly_hint": "Vista de solo lectura.",
     "unavailable": "Esta alineación no está disponible",
-    "app_bench_empty": "Sin suplentes"
+    "app_bench_empty": "Sin suplentes",
+    "forbidden": "No tienes permiso para cambiar esta alineación.",
+    "save_error": "No hemos podido guardar el cambio en la alineación. Inténtalo otra vez."
   },
   "formaciones": {
     "title": "Mis formaciones",
@@ -3885,7 +3887,13 @@
     "stat_min": "Min",
     "unavailable": "Este post-partido no está disponible",
     "app_no_players": "Ningún jugador participó todavía",
-    "app_reopen_stage": "Reabrir valoraciones"
+    "app_reopen_stage": "Reabrir valoraciones",
+    "err_forbidden": "No tienes permiso para valorar en este partido.",
+    "err_rating_required": "En un partido la nota es obligatoria para guardar la valoración.",
+    "err_mvp_taken": "Ya hay un MVP en este partido. Quítaselo al otro jugador primero.",
+    "err_not_closed": "El partido no está finalizado: la valoración no se puede guardar todavía.",
+    "err_empty": "No hay nada que guardar: pon una nota o escribe un comentario.",
+    "err_generic": "No hemos podido guardar la valoración. Inténtalo otra vez."
   },
   "mi_ficha": {
     "title": "Mi ficha",
@@ -5308,7 +5316,9 @@
     "not_found": "Sesión no encontrada",
     "offline_write": "Sin conexión: no puedes pasar lista ahora",
     "roster_empty": "Sin jugadores en el roster",
-    "title": "Pasar lista"
+    "title": "Pasar lista",
+    "forbidden": "No tienes permiso para pasar la asistencia de esta sesión.",
+    "error": "No hemos podido guardar la asistencia. Inténtalo otra vez."
   },
   "convocatorias_staff": {
     "clear": "Quitar",
@@ -5343,7 +5353,12 @@
     "roster_empty": "Sin jugadores en el roster",
     "transport_mode": "Transporte (opcional)",
     "transport_notes": "Notas de transporte (opcional)",
-    "view_lineup": "Ver alineación"
+    "view_lineup": "Ver alineación",
+    "forbidden": "No tienes permiso para cambiar la convocatoria de este partido.",
+    "error": "No hemos podido guardar el cambio en la convocatoria. Inténtalo otra vez.",
+    "pub_err_forbidden": "No tienes permiso para publicar esta convocatoria.",
+    "pub_err_unauthorized": "Tu sesión ha caducado. Vuelve a entrar y publica otra vez.",
+    "pub_err_generic": "No hemos podido publicar la convocatoria. Inténtalo otra vez."
   },
   "cuerpo_direccion": {
     "title": "Cuerpo técnico de dirección",
@@ -5377,7 +5392,13 @@
     "paused": "PAUSA",
     "pick_match": "Abre un partido y pulsa «Directo»",
     "reopen_confirm": "Confirmar reapertura",
-    "start_next": "Empezar {period}"
+    "start_next": "Empezar {period}",
+    "err_no_lineup": "Marca una alineación como oficial antes de empezar el partido.",
+    "err_forbidden": "No tienes permiso para controlar este partido.",
+    "err_regulation": "Quedan periodos por jugar: no se puede finalizar el partido todavía.",
+    "err_closed": "El partido ya está finalizado. Reábrelo para cambiar el reloj.",
+    "err_not_live": "El partido no está en directo. Empiézalo para mover el reloj.",
+    "err_generic": "No hemos podido guardar el cambio del reloj. Inténtalo otra vez."
   },
   "directo_entry": {
     "cancel": "Cancelar",

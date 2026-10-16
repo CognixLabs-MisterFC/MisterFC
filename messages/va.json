@@ -3422,7 +3422,9 @@
     "pick_match": "Obri un partit i toca «Veure alineació»",
     "readonly_hint": "Vista de només lectura.",
     "unavailable": "Esta alineació no està disponible",
-    "app_bench_empty": "Sense suplents"
+    "app_bench_empty": "Sense suplents",
+    "forbidden": "No tens permís per a canviar esta alineació.",
+    "save_error": "No hem pogut guardar el canvi en l'alineació. Intenta-ho una altra vegada."
   },
   "formaciones": {
     "title": "Les meues formacions",
@@ -3885,7 +3887,13 @@
     "stat_min": "Min",
     "unavailable": "Este postpartit no està disponible",
     "app_no_players": "Cap jugador ha participat encara",
-    "app_reopen_stage": "Reobrir valoracions"
+    "app_reopen_stage": "Reobrir valoracions",
+    "err_forbidden": "No tens permís per a valorar en este partit.",
+    "err_rating_required": "En un partit la nota és obligatòria per a guardar la valoració.",
+    "err_mvp_taken": "Ja hi ha un MVP en este partit. Lleva-li'l a l'altre jugador primer.",
+    "err_not_closed": "El partit no està finalitzat: la valoració encara no es pot guardar.",
+    "err_empty": "No hi ha res per a guardar: posa una nota o escriu un comentari.",
+    "err_generic": "No hem pogut guardar la valoració. Intenta-ho una altra vegada."
   },
   "mi_ficha": {
     "title": "La meua fitxa",
@@ -5308,7 +5316,9 @@
     "not_found": "Sessió no trobada",
     "offline_write": "Sense connexió: no pots passar llista ara",
     "roster_empty": "Sense jugadors en la plantilla",
-    "title": "Passar llista"
+    "title": "Passar llista",
+    "forbidden": "No tens permís per a passar l'assistència d'esta sessió.",
+    "error": "No hem pogut guardar l'assistència. Intenta-ho una altra vegada."
   },
   "convocatorias_staff": {
     "clear": "Llevar",
@@ -5343,7 +5353,12 @@
     "roster_empty": "Sense jugadors en la plantilla",
     "transport_mode": "Transport (opcional)",
     "transport_notes": "Notes de transport (opcional)",
-    "view_lineup": "Veure alineació"
+    "view_lineup": "Veure alineació",
+    "forbidden": "No tens permís per a canviar la convocatòria d'este partit.",
+    "error": "No hem pogut guardar el canvi en la convocatòria. Intenta-ho una altra vegada.",
+    "pub_err_forbidden": "No tens permís per a publicar esta convocatòria.",
+    "pub_err_unauthorized": "La teua sessió ha caducat. Torna a entrar i publica una altra vegada.",
+    "pub_err_generic": "No hem pogut publicar la convocatòria. Intenta-ho una altra vegada."
   },
   "cuerpo_direccion": {
     "title": "Cos tècnic de direcció",
@@ -5377,7 +5392,13 @@
     "paused": "PAUSA",
     "pick_match": "Obri un partit i toca «Directe»",
     "reopen_confirm": "Confirmar reobertura",
-    "start_next": "Començar {period}"
+    "start_next": "Començar {period}",
+    "err_no_lineup": "Marca una alineació com a oficial abans de començar el partit.",
+    "err_forbidden": "No tens permís per a controlar este partit.",
+    "err_regulation": "Queden periodes per jugar: encara no es pot finalitzar el partit.",
+    "err_closed": "El partit ja està finalitzat. Reobri'l per a canviar el rellotge.",
+    "err_not_live": "El partit no està en directe. Comença'l per a moure el rellotge.",
+    "err_generic": "No hem pogut guardar el canvi del rellotge. Intenta-ho una altra vegada."
   },
   "directo_entry": {
     "cancel": "Cancel·lar",
