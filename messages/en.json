@@ -3422,7 +3422,9 @@
     "pick_match": "Open a match and tap “View lineup”",
     "readonly_hint": "Read-only view.",
     "unavailable": "This lineup is not available",
-    "app_bench_empty": "No substitutes"
+    "app_bench_empty": "No substitutes",
+    "forbidden": "You don't have permission to change this lineup.",
+    "save_error": "We couldn't save the lineup change. Try again."
   },
   "formaciones": {
     "title": "My formations",
@@ -3885,7 +3887,13 @@
     "stat_min": "Min",
     "unavailable": "This post-match is not available",
     "app_no_players": "No player has played yet",
-    "app_reopen_stage": "Reopen ratings"
+    "app_reopen_stage": "Reopen ratings",
+    "err_forbidden": "You don't have permission to rate players in this match.",
+    "err_rating_required": "In a match the rating is required to save the evaluation.",
+    "err_mvp_taken": "This match already has an MVP. Remove it from the other player first.",
+    "err_not_closed": "The match isn't finished: the evaluation can't be saved yet.",
+    "err_empty": "There's nothing to save: add a rating or write a comment.",
+    "err_generic": "We couldn't save the evaluation. Try again."
   },
   "mi_ficha": {
     "title": "My profile",
@@ -5308,7 +5316,9 @@
     "not_found": "Session not found",
     "offline_write": "You’re offline: you can’t take attendance right now",
     "roster_empty": "No players in the roster",
-    "title": "Take attendance"
+    "title": "Take attendance",
+    "forbidden": "You don't have permission to take attendance for this session.",
+    "error": "We couldn't save the attendance. Try again."
   },
   "convocatorias_staff": {
     "clear": "Remove",
@@ -5343,7 +5353,12 @@
     "roster_empty": "No players in the roster",
     "transport_mode": "Transport (optional)",
     "transport_notes": "Transport notes (optional)",
-    "view_lineup": "View lineup"
+    "view_lineup": "View lineup",
+    "forbidden": "You don't have permission to change this match's call-up.",
+    "error": "We couldn't save the call-up change. Try again.",
+    "pub_err_forbidden": "You don't have permission to publish this call-up.",
+    "pub_err_unauthorized": "Your session has expired. Sign in again and publish once more.",
+    "pub_err_generic": "We couldn't publish the call-up. Try again."
   },
   "cuerpo_direccion": {
     "title": "Management staff",
@@ -5377,7 +5392,13 @@
     "paused": "PAUSED",
     "pick_match": "Open a match and tap “Live”",
     "reopen_confirm": "Confirm reopen",
-    "start_next": "Start {period}"
+    "start_next": "Start {period}",
+    "err_no_lineup": "Mark a lineup as official before starting the match.",
+    "err_forbidden": "You don't have permission to control this match.",
+    "err_regulation": "There are periods left to play: the match can't be finished yet.",
+    "err_closed": "The match is already finished. Reopen it to change the clock.",
+    "err_not_live": "The match isn't live. Start it to move the clock.",
+    "err_generic": "We couldn't save the clock change. Try again."
   },
   "directo_entry": {
     "cancel": "Cancel",

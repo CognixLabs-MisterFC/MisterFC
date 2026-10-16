@@ -32,7 +32,7 @@ type Props = {
  */
 export function AddTournamentMatchDialog({ tournamentId }: Props) {
   const t = useTranslations('convocatorias.tournament');
-  const tErrors = useTranslations('calendario.errors');
+  const tErrors = useTranslations('calendario.dialog.errors');
   const router = useRouter();
 
   const [open, setOpen] = useState(false);

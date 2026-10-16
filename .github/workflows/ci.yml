@@ -136,6 +136,15 @@ jobs:
       - name: Check dead catalogue strings census
         run: pnpm check:cadenas-muertas
 
+      # La direccion contraria, y es la que se VE: pedir una clave que no existe no da
+      # error de tipos (los mensajes de next-intl no estan tipados), ni de lint, ni rompe
+      # el build, ni lanza nada. Pinta la clave en crudo delante del usuario. Un
+      # entrenador vio «directo_control.err_no_lineup» en el banner del directo; al censar
+      # habia 21 asi en cinco pantallas de la nativa, mas un namespace entero inexistente
+      # en web. Son las cadenas que solo se ven cuando algo va mal.
+      - name: Check ghost catalogue keys census
+        run: pnpm check:cadenas-fantasma
+
       # Legal-1 — un texto legal tiene UNA copia, los .md del abogado (Documentos/). La
       # que sirve la web se genera en el build, no se versiona y por eso no puede
       # divergir. Lo que este guard vigila ahora es la CADENA que lleva la maestra hasta
