@@ -8,6 +8,7 @@ export type { NotificationType, NotificationChannel } from './dedupe';
 export {
   pushPayloadFromNotificationRow,
   pushRowIsStale,
+  perishablePushTypes,
   PUSH_TTL_MINUTES,
   decideNotificationOutcome,
 } from './push-drain';

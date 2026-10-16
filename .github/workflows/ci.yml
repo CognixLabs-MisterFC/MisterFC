@@ -145,6 +145,13 @@ jobs:
       - name: Check ghost catalogue keys census
         run: pnpm check:cadenas-fantasma
 
+      # Un cron de Vercel son DOS cosas en dos sitios: el route handler y su horario en
+      # vercel.json. Sin el horario el handler existe, compila, pasa el typecheck y NO
+      # SE EJECUTA NUNCA: un job que no arranca no da rojo ni verde, no da nada. Al
+      # reves, un horario que apunta a una ruta borrada es un 404 en cada disparo.
+      - name: Check cron routes are scheduled
+        run: pnpm check:crones-registrados
+
       # Legal-1 — un texto legal tiene UNA copia, los .md del abogado (Documentos/). La
       # que sirve la web se genera en el build, no se versiona y por eso no puede
       # divergir. Lo que este guard vigila ahora es la CADENA que lleva la maestra hasta

@@ -178,6 +178,17 @@ export const PUSH_TTL_MINUTES: Partial<Record<NotificationType, number>> = {
 };
 
 /**
+ * Los tipos que CADUCAN, sacados del mismo mapa que los define.
+ *
+ * Es una lista derivada a propósito: escribirla a mano sería la segunda copia de la
+ * misma regla, y el día que alguien añada un tipo perecedero al mapa se olvidaría de
+ * la lista — el drenador frecuente dejaría de mirar justo el aviso que corre prisa.
+ */
+export function perishablePushTypes(): NotificationType[] {
+  return Object.keys(PUSH_TTL_MINUTES) as NotificationType[];
+}
+
+/**
  * ¿Esta fila de push ya no vale la pena enviarla? Un tipo sin TTL NUNCA caduca.
  *
  * Una fecha ilegible o futura cuenta como NO caducada: no se puede distinguir «este

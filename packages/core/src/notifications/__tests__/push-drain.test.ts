@@ -4,6 +4,7 @@ import {
   decideNotificationOutcome,
   pushRowIsStale,
   PUSH_TTL_MINUTES,
+  perishablePushTypes,
 } from '../push-drain';
 
 describe('pushPayloadFromNotificationRow', () => {
@@ -219,5 +220,36 @@ describe('pushRowIsStale · avisos que caducan esperando en la cola', () => {
     expect(pushRowIsStale({ type: 'goal', created_at: null }, T0)).toBe(false);
     expect(pushRowIsStale({ type: 'goal', created_at: undefined }, T0)).toBe(false);
     expect(pushRowIsStale({ type: 'goal', created_at: hace(-30) }, T0)).toBe(false);
+  });
+});
+
+describe('perishablePushTypes · la lista sale del mapa, no a mano', () => {
+  it('es exactamente las claves del mapa de TTL', () => {
+    expect(perishablePushTypes()).toEqual(Object.keys(PUSH_TTL_MINUTES));
+  });
+
+  it('hoy es el gol, y solo el gol', () => {
+    expect(perishablePushTypes()).toEqual(['goal']);
+  });
+
+  it('todo tipo perecedero tiene TTL, y al revés: no hay huérfanos', () => {
+    for (const t of perishablePushTypes()) {
+      expect(PUSH_TTL_MINUTES[t], `${t} esta en la lista sin TTL`).toBeGreaterThan(0);
+    }
+    expect(perishablePushTypes().length).toBe(Object.keys(PUSH_TTL_MINUTES).length);
+  });
+
+  // Los tres asertos de arriba NO distinguen la lista derivada de un ['goal'] escrito
+  // a mano: hoy las dos dan lo mismo. El que lo distingue es este, que añade un tipo
+  // al mapa en caliente y exige que la lista lo recoja sola.
+  it('si mañana se añade un tipo perecedero, la lista lo recoge sola', () => {
+    const mapa = PUSH_TTL_MINUTES as Record<string, number>;
+    mapa.new_message = 5;
+    try {
+      expect(perishablePushTypes()).toContain('new_message');
+    } finally {
+      delete mapa.new_message;
+    }
+    expect(perishablePushTypes()).toEqual(['goal']);
   });
 });

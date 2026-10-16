@@ -20,6 +20,10 @@
     {
       "path": "/api/cron/push-receipts",
       "schedule": "30 * * * *"
+    },
+    {
+      "path": "/api/cron/push-drain",
+      "schedule": "* * * * *"
     }
   ]
 }

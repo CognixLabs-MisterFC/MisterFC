@@ -40,9 +40,9 @@ import {
   createSupabaseAdminClient,
   dayBucketMadrid,
   fromZonedFields,
-  pushRowIsStale,
   type Json,
 } from '@misterfc/core';
+import { drainPushQueue } from '@/lib/drain-push-queue';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -648,9 +648,10 @@ async function handle(req: Request): Promise<NextResponse> {
     inserted = data?.length ?? 0;
   }
 
-  // F5.7 — Drainer de push notifications pending. Rate-limited a 100 por
-  // ejecución para no saturar el cron ni el push service. Las que sobren
-  // quedan para mañana.
+  // F5.7 — Drenador de la cola de push, AHORA COMPARTIDO (`@/lib/drain-push-queue`)
+  // con el cron de cada minuto. Este pasa SIN filtro: se lleva todo lo que quede
+  // pendiente, perecedero o no. Tope de 100 por ejecución para no saturar el cron ni
+  // el servicio de push; las que sobren quedan para mañana.
   const drainResult = await drainPushQueue(supabase, 100);
 
   return finish(
@@ -667,119 +668,4 @@ async function handle(req: Request): Promise<NextResponse> {
       push_drain: drainResult,
     }),
   );
-}
-
-type DrainResult = {
-  scanned: number;
-  sent: number;
-  skipped_user_pref: number;
-  /** Filas que CADUCARON esperando en la cola (hoy solo el gol). */
-  skipped_stale: number;
-  failed_gone: number;
-  failed_other: number;
-  no_subscriptions: number;
-};
-
-async function drainPushQueue(
-  supabase: ReturnType<typeof createSupabaseAdminClient>,
-  cap: number,
-): Promise<DrainResult> {
-  const result: DrainResult = {
-    scanned: 0,
-    sent: 0,
-    skipped_user_pref: 0,
-    skipped_stale: 0,
-    failed_gone: 0,
-    failed_other: 0,
-    no_subscriptions: 0,
-  };
-
-  const { data: pendings } = await supabase
-    .from('notifications')
-    // `created_at` entra para medir CUÁNTO LLEVA ESPERANDO la fila: hay avisos que
-    // caducan en la cola (hoy el gol). Ver `pushRowIsStale` en core.
-    .select('id, user_id, type, payload, created_at')
-    .eq('channel', 'push')
-    .eq('status', 'pending')
-    .is('sent_at', null)
-    .order('created_at', { ascending: true })
-    .limit(cap);
-
-  if (!pendings || pendings.length === 0) return result;
-  result.scanned = pendings.length;
-
-  // Importamos lazy para que la ruta no falle en build si web-push no está
-  // disponible (también nos protege en tests).
-  const { sendPushToUser, pushPayloadFromNotificationRow } = await import(
-    '@/lib/web-push'
-  );
-
-  const ahora = Date.now();
-
-  for (const row of pendings) {
-    // CADUCIDAD EN LA COLA (mitad de abajo de la frescura del gol; la de arriba está
-    // en el trigger `notify_goal`, que decide si la fila se crea midiendo el reloj del
-    // partido). Un «GOL» que sale horas después confunde: la pantalla del directo ya
-    // enseña el marcador bueno. Se marca `skipped` —y no se deja `pending`— para que
-    // no vuelva a leerse en cada pasada ni ocupe sitio del `cap`.
-    if (pushRowIsStale({ type: row.type, created_at: row.created_at }, ahora)) {
-      result.skipped_stale += 1;
-      await supabase
-        .from('notifications')
-        .update({ status: 'skipped', sent_at: new Date().toISOString() })
-        .eq('id', row.id);
-      continue;
-    }
-
-    const payload = pushPayloadFromNotificationRow({
-      payload: row.payload,
-      type: row.type,
-    });
-    try {
-      // O2-4 — envío a web + expo. El `data` nativo sale de `row.payload` (para
-      // el push, del `deep_link` se extrae el resource_id si lo hay).
-      const r = await sendPushToUser(
-        supabase,
-        row.user_id,
-        row.type,
-        payload,
-        row.payload,
-        row.id,
-      );
-      result.sent += r.sent;
-      result.failed_gone += r.failed_gone;
-      result.failed_other += r.failed_other;
-
-      if (r.skipped_user_pref) {
-        result.skipped_user_pref += 1;
-        await supabase
-          .from('notifications')
-          .update({ status: 'skipped', sent_at: new Date().toISOString() })
-          .eq('id', row.id);
-      } else if (r.skipped_no_subscriptions) {
-        result.no_subscriptions += 1;
-        // Lo dejamos pending — quizá el user se suscribe mañana.
-      } else if (r.sent > 0) {
-        await supabase
-          .from('notifications')
-          .update({ status: 'sent', sent_at: new Date().toISOString() })
-          .eq('id', row.id);
-      } else if (r.failed_gone > 0 && r.failed_other === 0 && r.sent === 0) {
-        // Todos los endpoints estaban muertos. Marcar failed.
-        await supabase
-          .from('notifications')
-          .update({ status: 'failed', sent_at: new Date().toISOString() })
-          .eq('id', row.id);
-      }
-    } catch (e) {
-      // Error INESPERADO de envío (failed_other). NO capturamos failed_gone:
-      // endpoint muerto = suscripción caducada, churn normal → sería ruido.
-      Sentry.captureException(e, {
-        tags: { cron: CRON_MONITOR_SLUG, step: 'push_send' },
-      });
-      result.failed_other += 1;
-    }
-  }
-
-  return result;
 }
