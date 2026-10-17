@@ -20,6 +20,7 @@
 import { revalidatePath } from 'next/cache';
 import {
   addTimelineEventSchema,
+  asPeriodCount,
   assignPlayersToFormation,
   canRegisterSubstitution,
   changeFormationSchema,
@@ -35,6 +36,8 @@ import {
   adjustClockFromClient,
   finishMatchFromClient,
   reopenMatchFromClient,
+  type PeriodCount,
+  reconstructedPeriods,
   deleteMatchEventFromClient,
   updateMatchEventActorFromClient,
   updateMatchEventMinuteFromClient,
@@ -186,10 +189,16 @@ export async function startMatch(input: unknown): Promise<ClockActionState> {
 // esto RECONSTRUYE un partido ya jugado:
 //   1. Congela el once desde la ALINEACIÓN OFICIAL (misma fuente que startMatch).
 //      Sin alineación oficial → 'no_official_lineup' (no se inventa un once).
-//   2. Siembra las DOS partes canónicas desde categories.half_duration_minutes:
-//      1ª (offset 0) y 2ª (offset media·60), ambas con la media acumulada y
-//      TERMINADAS. Así el reloj total = 2·media·60 (minutos jugados correctos) y
-//      cada minuto cae en su parte (periodAtClock): <media → 1ª, ≥media → 2ª.
+//   2. Siembra los periodos REGULARES DE LA CATEGORÍA (`reconstructedPeriods`, core)
+//      desde categories.period_count + half_duration_minutes: dos partes, o TRES
+//      tiempos en querubín. Todos con la duración acumulada y TERMINADOS, así el
+//      reloj total = count·media·60 (minutos jugados correctos) y cada minuto cae en
+//      su periodo (periodAtClock).
+//
+//      Antes sembraba DOS a mano, sin leer period_count: en una categoría de tres
+//      tiempos el reloj quedaba en 2·12 en vez de 3·12 y un evento del tercer tiempo
+//      se guardaba como `second_half`. Era el único sitio del reloj que leía
+//      half_duration_minutes sin leer period_count.
 //   3. Deja match_state en 'closed' (acta reconstruida), con el entrenador como
 //      operador. A partir de aquí, la entrada rápida añade eventos y cada alta
 //      RECONSOLIDA (reconsolidateIfClosed) → stats al día.
@@ -254,48 +263,41 @@ export async function prepareMatchSheet(input: unknown): Promise<ClockActionStat
     if (error) return { error: mapPgErr(error.message, error.code) };
   }
 
-  // 2. Sembrar las dos partes canónicas (media desde la categoría del equipo).
+  // 2. Sembrar los periodos regulares DE LA CATEGORÍA (duración y cuántos).
   const { data: team } = await supabase
     .from('teams')
     .select('category_id')
     .eq('id', teamId)
     .maybeSingle();
   let halfMinutes = 45;
+  let periodCount: PeriodCount = 2;
   if (team?.category_id) {
     const { data: cat } = await supabase
       .from('categories')
-      .select('half_duration_minutes')
+      .select('half_duration_minutes, period_count')
       .eq('id', team.category_id as string)
       .maybeSingle();
     const hm = cat?.half_duration_minutes as number | undefined;
     if (hm && hm > 0) halfMinutes = hm;
+    // Las dos columnas del reloj viajan juntas: cuánto dura un periodo y CUÁNTOS hay.
+    periodCount = asPeriodCount(cat?.period_count as number | null | undefined);
   }
   const halfSeconds = halfMinutes * 60;
 
   const existingPeriods = await loadPeriods(supabase, event_id);
   if (existingPeriods.length === 0) {
-    const { error } = await supabase.from('match_periods').insert([
-      {
+    const { error } = await supabase.from('match_periods').insert(
+      reconstructedPeriods(periodCount, halfSeconds).map((p) => ({
         event_id,
-        period: 'first_half',
-        ordinal: 1,
-        base_offset_seconds: 0,
-        accumulated_seconds: halfSeconds,
-        running: false,
-        last_started_at: null,
-        ended: true,
-      },
-      {
-        event_id,
-        period: 'second_half',
-        ordinal: 2,
-        base_offset_seconds: halfSeconds,
-        accumulated_seconds: halfSeconds,
-        running: false,
-        last_started_at: null,
-        ended: true,
-      },
-    ]);
+        period: p.period,
+        ordinal: p.ordinal,
+        base_offset_seconds: p.baseOffsetSeconds,
+        accumulated_seconds: p.accumulatedSeconds,
+        running: p.running,
+        last_started_at: p.lastStartedAt,
+        ended: p.ended,
+      })),
+    );
     if (error) return { error: mapPgErr(error.message, error.code) };
   }
 

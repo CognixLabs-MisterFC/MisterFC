@@ -86,6 +86,37 @@ export function periodOrder(count: PeriodCount): readonly PeriodKind[] {
 }
 
 /**
+ * Los periodos de un acta RECONSTRUIDA: un partido que nunca se abrió en el directo
+ * y se carga después, con el acta delante. Todos TERMINADOS y con la duración
+ * completa, de modo que el reloj total sea `count · halfSeconds` y cada minuto caiga
+ * en su periodo (`periodAtClock`).
+ *
+ * ── POR QUÉ ESTA FUNCIÓN EXISTE ─────────────────────────────────────────────
+ * Porque el sitio que lo hacía escribía DOS filas a mano, `first_half` y
+ * `second_half`, sin leer `categories.period_count`. En una categoría de tres tiempos
+ * —querubín— eso sembraba 2 de 3: el reloj total quedaba en 2·12 en vez de 3·12, los
+ * minutos jugados salían cortos, y un evento del tercer tiempo se guardaba como
+ * `second_half`, porque `periodAtClock` se queda con el último periodo que cabe.
+ *
+ * Es exactamente lo que la cabecera de `periodOrder` dice que pasa cuando un sitio
+ * asume la lista de dos sin decirlo: la constante global se retiró para que nadie
+ * pudiera hacerlo, pero ahí estaba escrita a mano, donde ninguna retirada la alcanza.
+ * Ahora el `count` es un ARGUMENTO OBLIGATORIO: no se puede sembrar sin decidirlo.
+ */
+export function reconstructedPeriods(count: PeriodCount, halfSeconds: number): ClockPeriod[] {
+  const dur = Math.max(0, Math.floor(halfSeconds));
+  return regularPeriods(count).map((period, i) => ({
+    period,
+    ordinal: i + 1,
+    baseOffsetSeconds: i * dur,
+    accumulatedSeconds: dur,
+    running: false,
+    lastStartedAt: null,
+    ended: true,
+  }));
+}
+
+/**
  * Sufijo de la clave de i18n con la que se rotula un periodo (o una fase, que
  * comparte estos nombres).
  *
@@ -159,9 +190,7 @@ function runningElapsedSeconds(period: ClockPeriod, nowMs: number): number {
  */
 export function periodClockSeconds(period: ClockPeriod, nowMs: number): number {
   return (
-    period.baseOffsetSeconds +
-    period.accumulatedSeconds +
-    runningElapsedSeconds(period, nowMs)
+    period.baseOffsetSeconds + period.accumulatedSeconds + runningElapsedSeconds(period, nowMs)
   );
 }
 
@@ -171,10 +200,7 @@ export function periodClockSeconds(period: ClockPeriod, nowMs: number): number {
  * periodo activo (corriendo o el último jugado) siempre da el valor mayor.
  * Independiente del orden del array. Sin periodos → 0.
  */
-export function clockSecondsAt(
-  periods: readonly ClockPeriod[],
-  nowMs: number,
-): number {
+export function clockSecondsAt(periods: readonly ClockPeriod[], nowMs: number): number {
   let max = 0;
   for (const p of periods) {
     const c = periodClockSeconds(p, nowMs);
@@ -189,9 +215,7 @@ export function clockSecondsAt(
  * (acumuló juego, terminó o corre); si nada empezó, el de menor ordinal. null
  * si no hay periodos.
  */
-export function currentPeriod(
-  periods: readonly ClockPeriod[],
-): ClockPeriod | null {
+export function currentPeriod(periods: readonly ClockPeriod[]): ClockPeriod | null {
   if (periods.length === 0) return null;
   const running = periods.find((p) => p.running);
   if (running) return running;
@@ -245,10 +269,7 @@ export function nextPeriodAfter(
  * tanda de penaltis (`penalties`) NO entra en este flujo (no es tiempo jugado);
  * queda en el catálogo del reloj pero no se ofrece como prórroga.
  */
-export const EXTRA_PERIODS: readonly PeriodKind[] = [
-  'extra_first',
-  'extra_second',
-] as const;
+export const EXTRA_PERIODS: readonly PeriodKind[] = ['extra_first', 'extra_second'] as const;
 
 /**
  * ¿Es un periodo regular DE ESA CATEGORÍA? El tercer tiempo lo es solo cuando la
@@ -295,10 +316,7 @@ export function nextExtraPeriod(
  * ningún periodo a medias (todos los creados están terminados). Permite finalizar
  * tras la 2ª parte y tras cualquier prórroga, sin forzar la prórroga.
  */
-export function canFinishMatch(
-  periods: readonly ClockPeriod[],
-  count: PeriodCount,
-): boolean {
+export function canFinishMatch(periods: readonly ClockPeriod[], count: PeriodCount): boolean {
   if (isClockRunning(periods)) return false;
   // El tiempo reglamentario está cubierto cuando ha terminado el ÚLTIMO periodo
   // regular de la categoría: la 2ª parte en una de dos, el tercer tiempo en una
@@ -340,10 +358,7 @@ export function buildNextPeriod(
  * Pausar el periodo en curso: pliega el tiempo corrido en `accumulated` y para
  * el cronómetro. Idempotente si ya está en pausa.
  */
-export function pauseClockPatch(
-  period: ClockPeriod,
-  nowMs: number,
-): ClockMutation {
+export function pauseClockPatch(period: ClockPeriod, nowMs: number): ClockMutation {
   if (!period.running) return {};
   return {
     accumulatedSeconds: period.accumulatedSeconds + runningElapsedSeconds(period, nowMs),
@@ -361,10 +376,7 @@ export function resumeClockPatch(nowIso: string): ClockMutation {
  * Terminar el periodo en curso (fin de parte → descanso, o fin de partido):
  * pliega el tiempo corrido, para el cronómetro y marca `ended`.
  */
-export function endPeriodPatch(
-  period: ClockPeriod,
-  nowMs: number,
-): ClockMutation {
+export function endPeriodPatch(period: ClockPeriod, nowMs: number): ClockMutation {
   return {
     accumulatedSeconds: period.accumulatedSeconds + runningElapsedSeconds(period, nowMs),
     running: false,

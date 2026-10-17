@@ -152,6 +152,15 @@ jobs:
       - name: Check cron routes are scheduled
         run: pnpm check:crones-registrados
 
+      # Quien siembra periodos tiene que saber CUÁNTOS hay. prepareMatchSheet escribia
+      # DOS filas a mano leyendo solo half_duration_minutes: en querubin (tres tiempos)
+      # sembraba 2 de 3, el reloj total quedaba corto y un evento del tercer tiempo se
+      # guardaba como second_half. La migracion de los tres tiempos retiro la constante
+      # global PERIOD_ORDER para que nadie asumiera la de dos; aquel sitio la tenia
+      # escrita a mano, donde ninguna retirada la alcanza.
+      - name: Check period seeding knows the category count
+        run: pnpm check:periodos-sembrados
+
       # Legal-1 — un texto legal tiene UNA copia, los .md del abogado (Documentos/). La
       # que sirve la web se genera en el build, no se versiona y por eso no puede
       # divergir. Lo que este guard vigila ahora es la CADENA que lleva la maestra hasta

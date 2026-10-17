@@ -14,6 +14,7 @@ import {
   isRegularPeriod,
   isExtraPeriod,
   asPeriodCount,
+  reconstructedPeriods,
   regularPeriods,
   periodLabelKey,
   PERIOD_KINDS,
@@ -25,6 +26,7 @@ import {
   formatClock,
   displayMinute,
 } from '../clock';
+import { clockFieldsForMinute } from '../timeline';
 
 // Instante de referencia para todos los tests (ISO + ms). Date.now() NO se usa:
 // el motor recibe `nowMs`/`nowIso` por parámetro (puro y determinista).
@@ -141,7 +143,13 @@ describe('clockSecondsAt — segunda parte / prórroga (monótono)', () => {
   it('prórroga: extra_first parte del reloj acumulado de los 90+', () => {
     const periods: ClockPeriod[] = [
       period({ accumulatedSeconds: 2700, ended: true }),
-      period({ period: 'second_half', ordinal: 2, baseOffsetSeconds: 2700, accumulatedSeconds: 2760, ended: true }),
+      period({
+        period: 'second_half',
+        ordinal: 2,
+        baseOffsetSeconds: 2700,
+        accumulatedSeconds: 2760,
+        ended: true,
+      }),
     ];
     const next = buildNextPeriod(periods, at(0), T0_ISO, 2);
     expect(next).not.toBeNull();
@@ -178,9 +186,7 @@ describe('clockSecondsAt — segunda parte / prórroga (monótono)', () => {
       running: true,
       lastStartedAt: T0_ISO,
     });
-    expect(clockSecondsAt([second, first], at(60))).toBe(
-      clockSecondsAt([first, second], at(60)),
-    );
+    expect(clockSecondsAt([second, first], at(60))).toBe(clockSecondsAt([first, second], at(60)));
   });
 });
 
@@ -242,7 +248,13 @@ describe('currentPeriod', () => {
 
   it('devuelve el que corre', () => {
     const first = period({ accumulatedSeconds: 2700, ended: true });
-    const second = period({ period: 'second_half', ordinal: 2, baseOffsetSeconds: 2700, running: true, lastStartedAt: T0_ISO });
+    const second = period({
+      period: 'second_half',
+      ordinal: 2,
+      baseOffsetSeconds: 2700,
+      running: true,
+      lastStartedAt: T0_ISO,
+    });
     expect(currentPeriod([first, second])?.period).toBe('second_half');
   });
 
@@ -273,9 +285,7 @@ describe('nextPeriodAfter / buildNextPeriod', () => {
   });
 
   it('agotado el catálogo → null', () => {
-    const all = periodOrder(2).map((p, i) =>
-      period({ period: p, ordinal: i + 1, ended: true }),
-    );
+    const all = periodOrder(2).map((p, i) => period({ period: p, ordinal: i + 1, ended: true }));
     expect(nextPeriodAfter(all, 2)).toBeNull();
     expect(buildNextPeriod(all, T0, T0_ISO, 2)).toBeNull();
   });
@@ -296,9 +306,7 @@ describe('isAtBreak', () => {
   });
 
   it('fin de partido (penalties terminada) → false (no es descanso)', () => {
-    const all = periodOrder(2).map((p, i) =>
-      period({ period: p, ordinal: i + 1, ended: true }),
-    );
+    const all = periodOrder(2).map((p, i) => period({ period: p, ordinal: i + 1, ended: true }));
     expect(isAtBreak(all, 2)).toBe(false);
   });
 });
@@ -326,18 +334,17 @@ describe('flujo de periodos (7.7b): regular vs prórroga + finalizar', () => {
       period: 'second_half',
       ordinal: 2,
     });
-    expect(
-      nextRegularPeriod([ended('first_half', 1), ended('second_half', 2)], 2),
-    ).toBeNull();
+    expect(nextRegularPeriod([ended('first_half', 1), ended('second_half', 2)], 2)).toBeNull();
   });
 
   it('nextExtraPeriod: solo tras el tiempo reglamentario; 1ª → 2ª → null', () => {
     // Antes de acabar el reglamentario no hay prórroga disponible.
     expect(nextExtraPeriod([ended('first_half', 1)], 2)).toBeNull();
     // Tras la 2ª parte → 1ª prórroga.
-    expect(
-      nextExtraPeriod([ended('first_half', 1), ended('second_half', 2)], 2),
-    ).toEqual({ period: 'extra_first', ordinal: 3 });
+    expect(nextExtraPeriod([ended('first_half', 1), ended('second_half', 2)], 2)).toEqual({
+      period: 'extra_first',
+      ordinal: 3,
+    });
     // Tras la 1ª prórroga → 2ª prórroga.
     expect(
       nextExtraPeriod(
@@ -386,10 +393,7 @@ describe('flujo de periodos (7.7b): regular vs prórroga + finalizar', () => {
   });
 
   it('con prórroga: 4 periodos → FINALIZAR', () => {
-    let periods: ClockPeriod[] = [
-      ended('first_half', 1),
-      ended('second_half', 2),
-    ];
+    let periods: ClockPeriod[] = [ended('first_half', 1), ended('second_half', 2)];
     // Añadir prórroga (1ª) y terminarla.
     periods = [...periods, ended('extra_first', 3)];
     expect(canFinishMatch(periods, 2)).toBe(true); // puede finalizar entre prórrogas
@@ -540,9 +544,7 @@ describe('tres tiempos: la secuencia completa', () => {
     expect(nextRegularPeriod(dos, 2)).toBeNull();
     expect(nextRegularPeriod(dos, 3)).toEqual({ period: 'third_period', ordinal: 3 });
     // Y tras el tercero ya no queda reglamentario.
-    expect(
-      nextRegularPeriod([...dos, ended('third_period', 3)], 3),
-    ).toBeNull();
+    expect(nextRegularPeriod([...dos, ended('third_period', 3)], 3)).toBeNull();
   });
 
   it('nextExtraPeriod: no hay prórroga mientras falte el tercer tiempo', () => {
@@ -566,11 +568,7 @@ describe('tres tiempos: la secuencia completa', () => {
   });
 
   it('finalizar sigue siendo opcional tras cada prórroga', () => {
-    const tres = [
-      ended('first_half', 1),
-      ended('second_half', 2),
-      ended('third_period', 3),
-    ];
+    const tres = [ended('first_half', 1), ended('second_half', 2), ended('third_period', 3)];
     expect(canFinishMatch([...tres, ended('extra_first', 4)], 3)).toBe(true);
     expect(canFinishMatch([...tres, ended('extra_first', 4), ended('extra_second', 5)], 3)).toBe(
       true,
@@ -651,5 +649,74 @@ describe('periodLabelKey: en un partido de tres no hay «partes»', () => {
     for (const clave of [...PERIOD_KINDS, 'half_time', 'extra_time', 'finished', 'not_started']) {
       expect(periodLabelKey(clave, 2)).toBe(clave);
     }
+  });
+});
+
+describe('reconstructedPeriods · el acta que se carga después', () => {
+  const DOCE = 12 * 60;
+  const CUARENTA_Y_CINCO = 45 * 60;
+
+  it('dos partes: offsets 0 y la media, las dos terminadas', () => {
+    const p = reconstructedPeriods(2, CUARENTA_Y_CINCO);
+    expect(p.map((x) => x.period)).toEqual(['first_half', 'second_half']);
+    expect(p.map((x) => x.baseOffsetSeconds)).toEqual([0, CUARENTA_Y_CINCO]);
+    expect(p.every((x) => x.ended && !x.running && x.lastStartedAt === null)).toBe(true);
+  });
+
+  // EL FALLO QUE ESTO ARREGLA. Querubín juega TRES tiempos; el sitio que sembraba
+  // esto escribía dos filas a mano sin leer `period_count`.
+  it('tres tiempos: TRES periodos, con el tercero en su offset', () => {
+    const p = reconstructedPeriods(3, DOCE);
+    expect(p.map((x) => x.period)).toEqual(['first_half', 'second_half', 'third_period']);
+    expect(p.map((x) => x.baseOffsetSeconds)).toEqual([0, DOCE, 2 * DOCE]);
+    expect(p.map((x) => x.ordinal)).toEqual([1, 2, 3]);
+  });
+
+  it('el reloj total es count · duración (de ahí salen los minutos jugados)', () => {
+    expect(clockSecondsAt(reconstructedPeriods(3, DOCE), Date.now())).toBe(3 * DOCE);
+    expect(clockSecondsAt(reconstructedPeriods(2, DOCE), Date.now())).toBe(2 * DOCE);
+  });
+
+  it('no depende del reloj real: nada corriendo, nada que medir contra ahora', () => {
+    const p = reconstructedPeriods(3, DOCE);
+    expect(clockSecondsAt(p, 0)).toBe(clockSecondsAt(p, Date.now() + 86_400_000));
+  });
+
+  it('una duración absurda no revienta ni genera offsets negativos', () => {
+    const p = reconstructedPeriods(3, -10);
+    expect(p.map((x) => x.baseOffsetSeconds)).toEqual([0, 0, 0]);
+    expect(p).toHaveLength(3);
+  });
+});
+
+describe('reconstructedPeriods · el minuto cae en SU periodo (punta a punta)', () => {
+  const DOCE = 12 * 60;
+
+  // Lo que de verdad se rompía: con dos periodos sembrados en una categoría de tres,
+  // `periodAtClock` se queda con el ÚLTIMO que cabe, así que un gol del minuto 30 se
+  // guardaba como `second_half`. Este test compara los dos sembrados sobre el MISMO
+  // minuto, que es lo que distingue el arreglo de la casualidad.
+  it('un evento del minuto 30 en tres tiempos de doce es third_period', () => {
+    const bien = clockFieldsForMinute(reconstructedPeriods(3, DOCE), 30);
+    expect(bien.period).toBe('third_period');
+
+    const comoEstaba = clockFieldsForMinute(reconstructedPeriods(2, DOCE), 30);
+    expect(comoEstaba.period).toBe('second_half');
+  });
+
+  it('y los dos primeros tiempos siguen cayendo donde deben', () => {
+    const p = reconstructedPeriods(3, DOCE);
+    expect(clockFieldsForMinute(p, 5).period).toBe('first_half');
+    expect(clockFieldsForMinute(p, 11).period).toBe('first_half');
+    expect(clockFieldsForMinute(p, 12).period).toBe('second_half');
+    expect(clockFieldsForMinute(p, 23).period).toBe('second_half');
+    expect(clockFieldsForMinute(p, 24).period).toBe('third_period');
+  });
+
+  it('en una categoría de dos partes nada cambia', () => {
+    const p = reconstructedPeriods(2, 45 * 60);
+    expect(clockFieldsForMinute(p, 20).period).toBe('first_half');
+    expect(clockFieldsForMinute(p, 45).period).toBe('second_half');
+    expect(clockFieldsForMinute(p, 90).period).toBe('second_half');
   });
 });
