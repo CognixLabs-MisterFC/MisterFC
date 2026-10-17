@@ -18,6 +18,7 @@ import {
   defaultLineupDraft,
   getFormation,
   isManageableMatchType,
+  isOwnGoal,
   type ClockPeriod,
   type ManageableMatchType,
   type LivePositions,
@@ -108,6 +109,12 @@ export type LiveRivalEvent = {
     | 'shot'
     | 'penalty';
   dorsal: number | null;
+  /**
+   * AUTOGOL: nombre de NUESTRO jugador que lo marcó (`isOwnGoal`). Solo en goles del
+   * rival; en el resto es null y el actor es el dorsal. El panel del rival tiene que
+   * saberlo o pintaría un `#` sin número.
+   */
+  ownGoalLabel: string | null;
   note: string | null;
   clockSeconds: number;
   displayMinute: number | null;
@@ -698,9 +705,15 @@ export async function loadMatchLive(
     'shot',
     'penalty',
   ];
+  // El `player_id` + su nombre van en el select por el AUTOGOL: un gol del rival
+  // marcado por los nuestros lleva jugador y NO lleva dorsal (mig 20261128000000).
+  // El embed se desambigua por el FK de `player_id` (hay dos FKs a players).
   const { data: rivalRows, error: rivalErr } = await supabase
     .from('match_events')
-    .select('id, type, rival_dorsal, metadata, clock_seconds, display_minute, period')
+    .select(
+      `id, type, rival_dorsal, player_id, metadata, clock_seconds, display_minute, period,
+       actor:players!match_events_player_id_fkey(first_name, last_name)`,
+    )
     .eq('event_id', eventId)
     .eq('side', 'rival')
     .in('type', RIVAL_DISPLAY_TYPES)
@@ -713,17 +726,23 @@ export async function loadMatchLive(
     id: string;
     type: LiveRivalEvent['type'];
     rival_dorsal: number | null;
+    player_id: string | null;
     metadata: { note?: string; outcome?: string } | null;
     clock_seconds: number;
     display_minute: number | null;
     period: PeriodKind;
+    actor: { first_name: string; last_name: string | null } | null;
   };
   const rivalEvents: LiveRivalEvent[] = (rivalRows ?? []).map((row) => {
     const r = row as unknown as RivalRowShape;
+    const autogol = isOwnGoal({ side: 'rival', type: r.type, playerId: r.player_id });
     return {
       id: r.id,
       type: r.type,
       dorsal: r.rival_dorsal,
+      ownGoalLabel: autogol
+        ? r.actor?.last_name || r.actor?.first_name || '—'
+        : null,
       note: r.metadata?.note ?? null,
       clockSeconds: r.clock_seconds,
       displayMinute: r.display_minute,

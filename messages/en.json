@@ -3493,6 +3493,7 @@
     "status_not_started": "Not started",
     "side_own": "Team",
     "side_rival": "Opponent",
+    "own_goal": "Own goal",
     "palette_title": "Events",
     "palette_hint": "Select an event and tap a player to record it.",
     "event": {

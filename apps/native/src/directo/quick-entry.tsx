@@ -11,12 +11,18 @@ import { useTranslations } from '@/locale/provider';
  *   · Gol propio / Amarilla / Roja → tocar TIPO, tocar JUGADOR   → 2 toques.
  *   · Cambio                        → tocar «Cambio», SALE, ENTRA → 3 toques.
  *   · Gol rival                     → tocar «Gol rival», dorsal, registrar.
+ *   · En propia                     → tocar «En propia», tocar JUGADOR → 2 toques.
+ *
+ * El AUTOGOL está aquí, y no solo en el alta manual, porque pasa EN VIVO: si hubiera
+ * que esperar al final para apuntarlo, el entrenador volvería a la salida de hoy —un
+ * gol del rival con un dorsal inventado—, que es la mentira que esto quita. La fila
+ * es un gol del RIVAL (eso decide el marcador) con autor NUESTRO.
  *
  * El último toque CONFIRMA (no hay botón extra en los de un actor): el evento se
  * registra al instante (optimista + cola). No decide red ni gate: eso lo llevan el
  * hook de cola (offline) y la RLS (al subir). Aquí solo se ELIGE qué pasó.
  */
-type Mode = null | 'goal' | 'yellow_card' | 'red_card' | 'sub' | 'rival';
+type Mode = null | 'goal' | 'yellow_card' | 'red_card' | 'sub' | 'rival' | 'own_goal';
 
 export function QuickEntry({
   fieldPlayers,
@@ -51,6 +57,7 @@ export function QuickEntry({
 
   const pickPlayer = (playerId: string) => {
     if (mode === 'goal') onRegister({ kind: 'player_goal', playerId });
+    else if (mode === 'own_goal') onRegister({ kind: 'own_goal', playerId });
     else if (mode === 'yellow_card' || mode === 'red_card')
       onRegister({ kind: 'card', card: mode, playerId });
     reset();
@@ -81,6 +88,9 @@ export function QuickEntry({
     { key: 'red_card', label: t('directo_entry.type_red'), tone: 'r' },
     { key: 'sub', label: t('directo_entry.type_sub') },
     { key: 'rival', label: t('directo_entry.type_rival') },
+    // `partido_directo.own_goal`: la ÚNICA cadena nueva de la pieza, en el catálogo
+    // compartido, porque la usan también el formulario de alta y la web.
+    { key: 'own_goal', label: t('partido_directo.own_goal') },
   ];
 
   return (
@@ -126,7 +136,7 @@ export function QuickEntry({
       </View>
 
       {/* Paso 2 — ACTOR. */}
-      {mode === 'goal' || mode === 'yellow_card' || mode === 'red_card' ? (
+      {mode === 'goal' || mode === 'own_goal' || mode === 'yellow_card' || mode === 'red_card' ? (
         <ActorGrid
           title={t('directo_entry.pick_player')}
           players={fieldPlayers.map((p) => ({ id: p.playerId, label: p.label, dorsal: p.dorsal }))}

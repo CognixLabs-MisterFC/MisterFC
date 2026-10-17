@@ -724,7 +724,13 @@ function EventsTimeline({
                 {t(`directo.event.${e.type}`)}
               </Text>
               <Text className="flex-1 text-sm text-zinc-500" numberOfLines={1}>
-                {e.side === 'rival' ? `${t('directo.event.rival')} ${e.label}` : e.label}
+                {/* El AUTOGOL se rotula con el NOMBRE de quien lo marcó, no con
+                    «Rival #dorsal»: es del rival en el marcador y nuestro en el acta. */}
+                {e.ownGoal
+                  ? `${t('partido_directo.own_goal')} · ${e.label}`
+                  : e.side === 'rival'
+                    ? `${t('directo.event.rival')} ${e.label}`
+                    : e.label}
               </Text>
               {pending ? (
                 <View className="rounded-full bg-amber-100 px-2 py-0.5">

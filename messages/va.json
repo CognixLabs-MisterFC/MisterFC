@@ -3493,6 +3493,7 @@
     "status_not_started": "Sense començar",
     "side_own": "Equip",
     "side_rival": "Rival",
+    "own_goal": "En pròpia",
     "palette_title": "Esdeveniments",
     "palette_hint": "Selecciona un esdeveniment i toca un jugador per a registrar-lo.",
     "event": {

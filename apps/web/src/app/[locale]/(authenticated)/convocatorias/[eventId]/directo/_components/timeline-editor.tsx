@@ -26,6 +26,8 @@ import {
   FOUL_KINDS,
   PENALTY_OUTCOMES,
   TIMELINE_ADD_TYPES,
+  isOwnGoal,
+  canBeOwnGoal,
   type ClockPeriod,
   type TimelineIssue,
 } from '@misterfc/core';
@@ -191,6 +193,12 @@ export function TimelineEditor({
   }
 
   function actorText(e: TimelineEntry): string | null {
+    // AUTOGOL: un gol del rival con jugador NUESTRO. Va con su nombre, no con un
+    // dorsal que no existe. La regla la pone core (`isOwnGoal`), no esta pantalla.
+    if (isOwnGoal({ side: e.side, type: e.type, playerId: e.playerId })) {
+      const quien = e.playerId ? (rosterLabel.get(e.playerId) ?? e.playerLabel) : null;
+      return `${t('own_goal')} · ${quien ?? '—'}`;
+    }
     if (e.side === 'rival') return e.rivalDorsal != null ? `#${e.rivalDorsal}` : null;
     if (e.playerId) return rosterLabel.get(e.playerId) ?? e.playerLabel ?? null;
     return null;
@@ -391,10 +399,14 @@ function EditRow({
 
   const isRival = entry.side === 'rival';
   const isSub = entry.type === 'substitution';
+  // Un GOL del rival puede ser un autogol: ofrece las DOS cosas (dorsal y jugador
+  // nuestro), y core apaga la que sale, así que la fila nunca acaba con dos actores.
+  const rivalGoal = canBeOwnGoal(entry);
   // Eventos propios con jugador asignable (no por ubicación ni de equipo/táctica).
   const ownHasPlayer =
-    entry.side === 'own' &&
-    !['corner', 'offside', 'shot', 'formation_change'].includes(entry.type);
+    (entry.side === 'own' &&
+      !['corner', 'offside', 'shot', 'formation_change'].includes(entry.type)) ||
+    rivalGoal;
 
   return (
     <div className="mt-2 flex flex-wrap items-end gap-2 rounded-md bg-background/60 p-2">
@@ -412,7 +424,13 @@ function EditRow({
 
       {ownHasPlayer && (
         <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
-          <span>{isSub ? t('timeline.field_player_out') : t('timeline.field_player')}</span>
+          <span>
+            {isSub
+              ? t('timeline.field_player_out')
+              : rivalGoal
+                ? t('own_goal')
+                : t('timeline.field_player')}
+          </span>
           <select
             value={playerId}
             onChange={(ev) => setPlayerId(ev.target.value)}
@@ -544,6 +562,7 @@ export function AddEventForm({
   const [outcome, setOutcome] = useState<string>('scored');
   const [foulKind, setFoulKind] = useState<string>('committed');
   const [cornerSide, setCornerSide] = useState<string>('for');
+  const [ownGoal, setOwnGoal] = useState<boolean>(false);
   const minuteRef = useRef<HTMLInputElement | null>(null);
 
   const addable = TIMELINE_ADD_TYPES.filter((ty) => !NON_ADDABLE.has(ty));
@@ -555,9 +574,15 @@ export function AddEventForm({
   const effectiveSide: 'own' | 'rival' = sideHidden ? 'own' : side;
   const assistOnlyOwn = type === 'assist';
   const ownByLocation = type === 'offside' || type === 'shot' || type === 'corner';
+  // AUTOGOL: un gol del rival marcado por los nuestros. Cambia a QUIÉN se pide —
+  // jugador en vez de dorsal—, no el bando: la fila sigue siendo del rival, que es
+  // lo que hace que cuente en su marcador sin que nada más tenga que enterarse.
+  const puedeSerAutogol = canBeOwnGoal({ side: effectiveSide, type });
+  const isOwnGoalEntry = puedeSerAutogol && ownGoal;
   // needsPlayer: actor propio, o el jugador que SALE en la sustitución.
-  const needsPlayer = effectiveSide === 'own' && !ownByLocation && type !== 'corner';
-  const needsDorsal = effectiveSide === 'rival';
+  const needsPlayer =
+    (effectiveSide === 'own' && !ownByLocation && type !== 'corner') || isOwnGoalEntry;
+  const needsDorsal = effectiveSide === 'rival' && !isOwnGoalEntry;
 
   const canSubmit =
     minute >= 0 &&
@@ -593,6 +618,10 @@ export function AddEventForm({
       setOutcome('scored');
       setFoulKind('committed');
       setCornerSide('for');
+      // «En propia» se apaga siempre, al revés que tipo y bando: dos autogoles
+      // seguidos no existen, y una casilla olvidada encendida convertiría el
+      // siguiente gol del rival en un autogol de uno de nuestros críos.
+      setOwnGoal(false);
       minuteRef.current?.focus();
     }
   };
@@ -648,7 +677,11 @@ export function AddEventForm({
 
       {needsPlayer && (
         <label className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
-          <span>{t(isSub ? 'timeline.field_player_out' : 'timeline.field_player')}</span>
+          <span>
+            {isOwnGoalEntry
+              ? t('own_goal')
+              : t(isSub ? 'timeline.field_player_out' : 'timeline.field_player')}
+          </span>
           <select
             value={playerId}
             onChange={(ev) => setPlayerId(ev.target.value)}
@@ -679,6 +712,18 @@ export function AddEventForm({
               </option>
             ))}
           </select>
+        </label>
+      )}
+
+      {puedeSerAutogol && (
+        <label className="flex items-center gap-1.5 self-end pb-1 text-[11px] text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={ownGoal}
+            onChange={(ev) => setOwnGoal(ev.target.checked)}
+            className="size-3.5 accent-primary"
+          />
+          <span>{t('own_goal')}</span>
         </label>
       )}
 
